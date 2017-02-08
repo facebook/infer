@@ -235,6 +235,12 @@ public class Ownership {
     }
   }
 
+  public void ownedAfterCastOk() {
+    Object o = new Obj();
+    Obj owned = (Obj) o;
+    owned.f = new Object();
+  }
+
   // TODO: need to handle multiple ownership attributes in order to get this one
   public void FP_ownAndConditionalOwnOk() {
     Obj owned = new Obj();

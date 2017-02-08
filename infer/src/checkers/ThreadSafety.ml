@@ -271,6 +271,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | None ->
               astate
         end
+
+    | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname),
+                (target_exp, target_typ) :: (Exp.Sizeof (cast_typ, _, _), _) :: _ , _, _)
+      when Procname.equal callee_pname BuiltinDecl.__cast ->
+        let lhs_access_path_opt =
+          Some (AccessPath.of_id ret_id (Typ.Tptr (cast_typ, Pk_pointer))) in
+        let rhs_access_path_opt = AccessPath.of_lhs_exp target_exp target_typ ~f_resolve_id in
+        let attribute_map =
+          propagate_attributes
+            lhs_access_path_opt rhs_access_path_opt target_exp astate.attribute_map extras in
+        { astate with attribute_map; }
+
     | Sil.Call (ret_opt, Const (Cfun callee_pname), actuals, loc, _) ->
         let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
