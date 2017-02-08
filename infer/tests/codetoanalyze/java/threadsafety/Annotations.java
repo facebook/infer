@@ -241,4 +241,14 @@ class Annotations implements FunctionalInterface {
     return mBoxedLong;
   }
 
+  public boolean propagateFunctional() {
+    return returnBool();
+  }
+
+  // show that we can handle indirect returns of procedures marked @Functional
+  public void propagateFunctionalOk() {
+    boolean returnedFunctional = propagateFunctional();
+    mBool = returnedFunctional;
+  }
+
 }

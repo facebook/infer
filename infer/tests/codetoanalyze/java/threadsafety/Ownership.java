@@ -164,10 +164,6 @@ public class Ownership {
     owned.g = new Obj();
   }
 
-  Obj id(Obj param) {
-    return param;
-  }
-
   Obj returnOwnedOrNull(boolean b) {
     if (b) {
       return null;
@@ -196,10 +192,69 @@ public class Ownership {
     mutateIfNotNull(o);
   }
 
-  // need to be able to propagate ownership rather than just return it for this to work
-  public void FP_passOwnershipInIdFunctionOk() {
+  Obj id(Obj param) {
+    return param;
+  }
+
+  public void passOwnershipInIdFunctionOk() {
     Obj owned = new Obj();
-    Obj shouldBeOwned = id(owned); // we'll lose ownership here, but ideally we wouldn't
+    Obj shouldBeOwned = id(owned);
+    shouldBeOwned.f = new Object();
+  }
+
+  Obj id2(Obj param) {
+    return id(param);
+  }
+
+  public void passOwnershipInMultiLevelIdFunctionOk() {
+    Obj owned = new Obj();
+    Obj shouldBeOwned = id2(owned);
+    shouldBeOwned.f = new Object();
+  }
+
+  native boolean nondet();
+
+  public Obj returnConditionalOwnedInTwoBranches(Obj param) {
+    if (nondet()) {
+      return param;
+    }
+    return param;
+  }
+
+  public void returnConditionalOwnedInTwoBranchesOk() {
+    Obj owned = new Obj();
+    Obj shouldBeOwned = returnConditionalOwnedInTwoBranches(owned);
+    shouldBeOwned.f = new Object();
+  }
+
+  public Obj returnOwnedOrConditionalOwned(Obj param) {
+    if (nondet()) {
+      return param;
+    } else {
+      return new Obj();
+    }
+  }
+
+  // TODO: need to handle multiple ownership attributes in order to get this one
+  public void FP_ownAndConditionalOwnOk() {
+    Obj owned = new Obj();
+    Obj shouldBeOwned = returnOwnedOrConditionalOwned(owned);
+    shouldBeOwned.f = new Object();
+  }
+
+  public Obj twoDifferentConditionalOwns(Obj param1, Obj param2) {
+    if (nondet()) {
+      return param1;
+    } else {
+      return param2;
+    }
+  }
+
+  // need to handle multiple ownership attributes in order to get this one
+  public void FP_twoDifferentConditionalOwnsOk() {
+    Obj owned1 = new Obj();
+    Obj owned2 = new Obj();
+    Obj shouldBeOwned = twoDifferentConditionalOwns(owned1, owned2);
     shouldBeOwned.f = new Object();
   }
 

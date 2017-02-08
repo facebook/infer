@@ -23,6 +23,10 @@ module Summary = Summary.Make (struct
       payload.Specs.threadsafety
   end)
 
+let is_owned access_path attribute_map =
+  ThreadSafetyDomain.AttributeMapDomain.has_attribute
+    access_path ThreadSafetyDomain.Attribute.unconditionally_owned attribute_map
+
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ThreadSafetyDomain
@@ -68,12 +72,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Exp.Const _ -> true
     | _ -> false
 
-  let propagate_attributes lhs_access_path_opt rhs_access_path_opt rhs_exp attribute_map =
+  let add_conditional_ownership_attribute access_path formal_map attribute_map attributes =
+    match FormalMap.get_formal_index (fst access_path) formal_map with
+    | Some formal_index when not (is_owned access_path attribute_map) ->
+        Domain.AttributeSetDomain.add (Domain.Attribute.OwnedIf (Some formal_index)) attributes
+    | _ ->
+        attributes
+
+  let propagate_attributes
+      lhs_access_path_opt rhs_access_path_opt rhs_exp attribute_map formal_map =
     match lhs_access_path_opt, rhs_access_path_opt with
     | Some lhs_access_path, Some rhs_access_path ->
         let rhs_attributes =
-          try Domain.AttributeMapDomain.find rhs_access_path attribute_map
-          with Not_found -> Domain.AttributeSetDomain.empty in
+          (try Domain.AttributeMapDomain.find rhs_access_path attribute_map
+           with Not_found -> Domain.AttributeSetDomain.empty)
+          |> add_conditional_ownership_attribute rhs_access_path formal_map attribute_map in
         Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
     | Some lhs_access_path, None ->
         let rhs_attributes =
@@ -81,11 +94,57 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           then
             (* constants are both owned and functional *)
             Domain.AttributeSetDomain.of_list
-              [Domain.Attribute.Owned; Domain.Attribute.Functional]
+              [Domain.Attribute.unconditionally_owned; Domain.Attribute.Functional]
           else
             Domain.AttributeSetDomain.empty in
         Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
     | _ ->
+        attribute_map
+
+  let propagate_return_attributes
+      ret_opt ret_attributes actuals attribute_map ~f_resolve_id formal_map =
+    match ret_opt with
+    | Some (ret_id, ret_typ) ->
+        let ownership_attributes, other_attributes =
+          Domain.AttributeSetDomain.partition
+            (function
+              | OwnedIf _ -> true
+              | _ -> false)
+            ret_attributes in
+        let caller_return_attributes =
+          match Domain.AttributeSetDomain.elements ownership_attributes with
+          | [] -> other_attributes
+          | [(OwnedIf None) as unconditionally_owned] ->
+              Domain.AttributeSetDomain.add unconditionally_owned other_attributes
+          | [OwnedIf (Some formal_index)] ->
+              begin
+                match List.nth actuals formal_index with
+                | Some (actual_exp, actual_typ) ->
+                    begin
+                      match
+                        AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
+                      | Some actual_ap ->
+                          if is_owned actual_ap attribute_map
+                          then
+                            Domain.AttributeSetDomain.add
+                              Domain.Attribute.unconditionally_owned other_attributes
+                          else
+                            add_conditional_ownership_attribute
+                              actual_ap formal_map attribute_map  other_attributes
+                      | None ->
+                          other_attributes
+                    end
+                | None ->
+                    other_attributes
+              end
+          | _multiple_ownership_attributes ->
+              (* TODO: handle multiple ownership attributes *)
+              other_attributes in
+        Domain.AttributeMapDomain.add
+          (AccessPath.of_id ret_id ret_typ)
+          caller_return_attributes
+          attribute_map
+    | None ->
         attribute_map
 
   let add_path_to_state exp typ loc path_state id_map attribute_map tenv =
@@ -120,9 +179,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else
       IList.fold_left
         (fun acc rawpath ->
-           if not (Domain.AttributeMapDomain.has_attribute
-                     (truncate rawpath) Domain.Attribute.Owned attribute_map) &&
-              not (is_safe_write rawpath tenv)
+           if not (is_owned (truncate rawpath) attribute_map) && not (is_safe_write rawpath tenv)
            then Domain.PathDomain.add_sink (Domain.make_access rawpath loc) acc
            else acc)
         path_state
@@ -206,7 +263,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           match AccessPath.of_lhs_exp (Exp.Var lhs_id) lhs_typ ~f_resolve_id with
           | Some lhs_access_path ->
               let attribute_map =
-                AttributeMapDomain.add_attribute lhs_access_path Owned astate.attribute_map in
+                AttributeMapDomain.add_attribute
+                  lhs_access_path
+                  Attribute.unconditionally_owned
+                  astate.attribute_map in
               { astate with attribute_map; }
           | None ->
               astate
@@ -235,7 +295,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         callee_reads,
                         callee_conditional_writes,
                         callee_unconditional_writes,
-                        is_retval_owned) ->
+                        return_attributes) ->
                     let locks' = callee_locks || astate.locks in
                     let astate' =
                       (* TODO (14842325): report on constructors that aren't threadsafe
@@ -259,8 +319,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                               begin
                                 match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
                                 | Some actual_access_path ->
-                                    if AttributeMapDomain.has_attribute
-                                        actual_access_path Owned astate.attribute_map
+                                    if is_owned actual_access_path astate.attribute_map
                                     then
                                       (* the actual passed to the current callee is owned. drop all
                                          the conditional writes for that actual, since they're all
@@ -311,12 +370,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         { astate with reads; conditional_writes; unconditional_writes; }
                       else
                         astate in
-                    let attribute_map = match ret_opt with
-                      | Some (ret_id, ret_typ) when is_retval_owned ->
-                          AttributeMapDomain.add_attribute
-                            (AccessPath.of_id ret_id ret_typ) Owned astate'.attribute_map
-                      | _ ->
-                          astate'.attribute_map in
+                    let attribute_map =
+                      propagate_return_attributes
+                        ret_opt
+                        return_attributes
+                        actuals
+                        astate.attribute_map
+                        ~f_resolve_id
+                        extras in
                     { astate' with locks = locks'; attribute_map; }
                 | None ->
                     if is_box callee_pname
@@ -415,7 +476,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let rhs_access_path_opt = AccessPath.of_lhs_exp rhs_exp lhs_typ ~f_resolve_id in
         let attribute_map =
           propagate_attributes
-            lhs_access_path_opt rhs_access_path_opt rhs_exp astate.attribute_map in
+            lhs_access_path_opt rhs_access_path_opt rhs_exp astate.attribute_map extras in
         { astate with conditional_writes; unconditional_writes; attribute_map; }
 
     | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
@@ -431,7 +492,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let rhs_access_path_opt = AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id in
         let attribute_map =
           propagate_attributes
-            lhs_access_path_opt rhs_access_path_opt rhs_exp astate.attribute_map in
+            lhs_access_path_opt rhs_access_path_opt rhs_exp astate.attribute_map extras in
         { astate with Domain.reads; id_map; attribute_map; }
 
     | Sil.Remove_temps (ids, _) ->
@@ -548,9 +609,9 @@ let make_results_table get_proc_desc file_env =
     fun (idenv, tenv, proc_name, proc_desc) ->
       let open ThreadSafetyDomain in
       let has_lock = false in
-      let ret_is_owned = false in
+      let return_attrs = AttributeSetDomain.empty in
       let empty =
-        has_lock, PathDomain.empty, ConditionalWritesDomain.empty, PathDomain.empty, ret_is_owned in
+        has_lock, PathDomain.empty, ConditionalWritesDomain.empty, PathDomain.empty, return_attrs in
       (* convert the abstract state to a summary by dropping the id map *)
       let compute_post ({ ProcData.pdesc; tenv; extras; } as proc_data) =
         if should_analyze_proc pdesc tenv
@@ -566,7 +627,7 @@ let make_results_table get_proc_desc file_env =
                     let attribute_map =
                       AttributeMapDomain.add_attribute
                         (base, [])
-                        Owned
+                        Attribute.unconditionally_owned
                         ThreadSafetyDomain.empty.attribute_map in
                     { ThreadSafetyDomain.empty with attribute_map; }
                 | None -> ThreadSafetyDomain.empty
@@ -578,9 +639,10 @@ let make_results_table get_proc_desc file_env =
                   AccessPath.of_pvar
                     (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
                     (Procdesc.get_ret_type pdesc) in
-                let return_is_owned =
-                  AttributeMapDomain.has_attribute return_var_ap Owned attribute_map in
-                Some (locks, reads, conditional_writes, unconditional_writes, return_is_owned)
+                let return_attributes =
+                  try AttributeMapDomain.find return_var_ap attribute_map
+                  with Not_found -> AttributeSetDomain.empty in
+                Some (locks, reads, conditional_writes, unconditional_writes, return_attributes)
             | None ->
                 None
           end

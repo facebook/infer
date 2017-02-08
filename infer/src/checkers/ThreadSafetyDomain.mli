@@ -30,9 +30,14 @@ module ConditionalWritesDomain : module type of (AbstractDomain.Map (IntMap) (Pa
 
 module Attribute : sig
   type t =
-    | Owned
+    | OwnedIf of int option
+    (** owned unconditionally if OwnedIf None, owned when formal at index i is owned otherwise *)
     | Functional
+    (** holds a value returned from a callee marked @Functional *)
   [@@deriving compare]
+
+  (** alias for OwnedIf None *)
+  val unconditionally_owned : t
 
   val pp : F.formatter -> t -> unit
 
@@ -80,10 +85,14 @@ type astate =
     (** map of access paths to attributes such as owned, functional, ... *)
   }
 
-(** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of a
-    boolean that is true if the return value is owned *)
+(** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of the
+    attributes associated with the return value *)
 type summary =
-  LocksDomain.astate * PathDomain.astate * ConditionalWritesDomain.astate * PathDomain.astate * bool
+  LocksDomain.astate *
+  PathDomain.astate *
+  ConditionalWritesDomain.astate *
+  PathDomain.astate *
+  AttributeSetDomain.astate
 
 include AbstractDomain.WithBottom with type astate := astate
 

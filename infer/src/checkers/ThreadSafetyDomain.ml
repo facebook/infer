@@ -53,13 +53,16 @@ module ConditionalWritesDomain = AbstractDomain.Map (IntMap) (PathDomain)
 
 module Attribute = struct
   type t =
-    | Owned
+    | OwnedIf of int option
     | Functional
   [@@deriving compare]
 
   let pp fmt = function
-    | Owned -> F.fprintf fmt "Owned"
+    | OwnedIf None -> F.fprintf fmt "Owned"
+    | OwnedIf (Some formal_index) -> F.fprintf fmt "Owned if formal %d is owned" formal_index
     | Functional -> F.fprintf fmt "Functional"
+
+  let unconditionally_owned = OwnedIf None
 
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t
@@ -99,7 +102,11 @@ type astate =
   }
 
 type summary =
-  LocksDomain.astate * PathDomain.astate * ConditionalWritesDomain.astate * PathDomain.astate * bool
+  LocksDomain.astate *
+  PathDomain.astate *
+  ConditionalWritesDomain.astate *
+  PathDomain.astate *
+  AttributeSetDomain.astate
 
 let empty =
   let locks = false in
@@ -153,15 +160,15 @@ let widen ~prev ~next ~num_iters =
       AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters in
     { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; }
 
-let pp_summary fmt (locks, reads, conditional_writes, unconditional_writes, retval_owned) =
+let pp_summary fmt (locks, reads, conditional_writes, unconditional_writes, return_attributes) =
   F.fprintf
     fmt
-    "Locks: %a Reads: %a Conditional Writes: %a Unconditional Writes: %a Retval owned: %b"
+    "Locks: %a Reads: %a Conditional Writes: %a Unconditional Writes: %a Return Attributes: %a"
     LocksDomain.pp locks
     PathDomain.pp reads
     ConditionalWritesDomain.pp conditional_writes
     PathDomain.pp unconditional_writes
-    retval_owned
+    AttributeSetDomain.pp return_attributes
 
 let pp fmt { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; } =
   F.fprintf
