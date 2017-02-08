@@ -15,6 +15,7 @@ Here is an overview of the linter checks we provide in Infer:
   - [Global variable initialized with function or method call](/docs/linters-bug-types.html#GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL)
   - [Registered observer being deallocated](/docs/linters-bug-types.html#REGISTERED_OBSERVER_BEING_DEALLOCATED)
   - [Strong delegate warning](/docs/linters-bug-types.html#STRONG_DELEGATE_WARNING)
+  - [Unavailable api in supported ios sdk](/docs/linters-bug-types.html#UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK)
   
 - Issues reported in iOS code about [ComponentKit](http://componentkit.org)
   - [Component factory funciton](/docs/linters-bug-types.html#COMPONENT_FACTORY_FUNCTION)
@@ -83,6 +84,24 @@ In that case we would get a crash.
 
 This check warns you when you have a property called delegate or variations thereof which is declared strong. The idea is that
 delegates should generally be weak, otherwise this may cause retain cycles.
+
+## <a name="UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK"></a> Unavailable api in supported ios sdk
+
+This checks warns you when you are using an API (constant, method call, etc.) that is only defined in a version higher than the version 
+that you support. To enable this check, pass to Infer the option --iphoneos-target-sdk-version <min. supported version>. Calling an undefined API will lead to a crash in the app. To fix this, you can choose a different API or use it inside an if, as in:
+/[
+if ([UIFont respondsToSelector:@selector(systemFontOfSize:weight:)]) {
+  font = [UIFont systemFontOfSize:size weight:0];
+}
+\]
+
+or 
+/[
+if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_9_0) {
+  font = [UIFont systemFontOfSize:size weight:0];
+}
+\]
+
 
 ## <a name="COMPONENT_FACTORY_FUNCTION"></a> Component factory function
 
