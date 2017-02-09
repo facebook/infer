@@ -87,7 +87,7 @@ class Annotations implements FunctionalInterface {
     con.x = 7;
   }
 
-  @ThreadConfined
+  @ThreadConfined(ThreadConfined.UI)
   class Confined {
     Integer x;
 
@@ -100,7 +100,7 @@ class Annotations implements FunctionalInterface {
     Object fld;
   }
 
-  @ThreadConfined Obj encapsulatedField;
+  @ThreadConfined(ThreadConfined.ANY) Obj encapsulatedField;
 
   public void mutateConfinedFieldDirectlyOk() {
     this.encapsulatedField = new Obj();
@@ -114,7 +114,7 @@ class Annotations implements FunctionalInterface {
     this.encapsulatedField.fld = new Object();
   }
 
-  @ThreadConfined
+  @ThreadConfined("some_custom_string")
   public void threadConfinedMethodOk() {
     this.f = new Object();
   }
