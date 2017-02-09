@@ -455,7 +455,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           (* highly polymorphic call sites stress reactive mode too much by using too much memory.
              here, we choose an arbitrary call limit that allows us to finish the analysis in
              practice. this is obviously unsound; will try to remove in the future. *)
-          let max_calls = 10 in
+          let max_calls = 3 in
           let targets =
             if IList.length call_flags.cf_targets <= max_calls
             then
