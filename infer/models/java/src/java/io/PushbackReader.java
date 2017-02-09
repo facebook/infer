@@ -11,19 +11,7 @@ package java.io;
 
 import com.facebook.infer.builtins.InferUndefined;
 
-public class PushbackReader extends FilterReader {
-
-    public PushbackReader(Reader in, int size) {
-        super(in);
-    }
-
-    public PushbackReader(Reader in) {
-        super(in);
-    }
-
-    public void close() throws IOException {
-        super.close();
-    }
+public abstract class PushbackReader {
 
     public int read() throws IOException {
         return InferUndefined.can_throw_ioexception_int();
@@ -60,6 +48,5 @@ public class PushbackReader extends FilterReader {
     public void unread(int c) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
-
 
 }

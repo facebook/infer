@@ -9,40 +9,24 @@
 
 package java.io;
 
+import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
 import com.facebook.infer.builtins.InferUtils;
 
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
-public class InputStreamReader extends Reader {
-
-    private InputStream in;
-
-    public InputStreamReader(InputStream in) {
-        this.in = in;
-    }
+public abstract class InputStreamReader {
 
     public InputStreamReader(InputStream in, String charsetName)
             throws UnsupportedEncodingException {
         if (charsetName == null)
             throw new NullPointerException("charsetName");
         else if (InferUtils.isValidCharset(charsetName)) {
-            this.in = in;
+          InferBuiltins.__set_mem_attribute(in);
+          InferBuiltins.__set_file_attribute(this);
         } else
             throw new UnsupportedEncodingException();
-    }
-
-    public InputStreamReader(InputStream in, Charset cs) {
-        this.in = in;
-    }
-
-    public InputStreamReader(InputStream in, CharsetDecoder dec) {
-        this.in = in;
-    }
-
-    public void close() throws IOException {
-        in.close();
     }
 
     public int read() throws IOException {

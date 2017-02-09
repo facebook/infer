@@ -11,18 +11,7 @@ package java.io;
 
 import com.facebook.infer.builtins.InferUndefined;
 
-public abstract class FilterReader extends Reader {
-
-    protected Reader in;
-
-    protected FilterReader(Reader in) {
-        this.in = in;
-    }
-
-    public void close() throws IOException {
-        if (in instanceof InputStreamReader)
-            ((InputStreamReader) in).close();
-    }
+public abstract class FilterReader {
 
     public int read() throws IOException {
         return InferUndefined.can_throw_ioexception_int();

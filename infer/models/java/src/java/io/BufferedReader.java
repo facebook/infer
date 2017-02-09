@@ -11,27 +11,7 @@ package java.io;
 
 import com.facebook.infer.builtins.InferUndefined;
 
-public class BufferedReader extends Reader {
-
-    private Reader in;
-
-    public BufferedReader(Reader in, int sz) {
-        this.in = in;
-    }
-
-    public BufferedReader(Reader in) {
-        this.in = in;
-    }
-
-    public void close() throws IOException {
-        if (in instanceof InputStreamReader) {
-            ((InputStreamReader) in).close();
-        } else if (in instanceof BufferedReader) {
-            ((BufferedReader) in).close();
-        } else {
-            in.close();
-        }
-    }
+public abstract class BufferedReader {
 
     public int read() throws IOException {
         return InferUndefined.can_throw_ioexception_int();
