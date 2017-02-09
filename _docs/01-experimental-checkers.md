@@ -9,8 +9,8 @@ Infer contains a number of experimental checkers that can be run using just like
 `checker_name` can be `threadsafety`, `siof`, `bufferoverrun`, or `quandary`. We'll explain the capabilities of each experimental checker, its level of maturity (on a scale including "in development", "medium", and "probably deployable"), and the language(s) it targets.
 
 # Thread-safety
-#### Languages: Java
-#### Maturity: Probably deployable
+### Languages: Java
+### Maturity: Probably deployable
 
 When a class is marked `@ThreadSafe` or a method is marked [`@ThreadSafeMethod`](https://github.com/facebook/infer/blob/master/infer/annotations/com/facebook/infer/annotation/ThreadSafeMethod.java), this checker will complain if any methods in the class/the marked method writes to a field outside of sychronization.
 The idea here is that any race condition involves two concurrent accesses where at least one is a write. 
