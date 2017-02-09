@@ -46,6 +46,7 @@ let rec get_responds_to_selector stmt =
   let open Clang_ast_t in
   match stmt with
   | ObjCMessageExpr (_, [_; ObjCSelectorExpr (_, _, _, method_name)], _, mdi)
+  | ObjCMessageExpr (_, [ObjCSelectorExpr (_, _, _, method_name)], _, mdi)
     when  String.equal mdi.Clang_ast_t.omei_selector "respondsToSelector:" ->
       [method_name]
   | BinaryOperator (_, [stmt1;stmt2], _, bo_info)

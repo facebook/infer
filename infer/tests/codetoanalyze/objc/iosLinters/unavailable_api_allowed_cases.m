@@ -73,4 +73,17 @@
   }
 }
 
+// no bug
+- (void)uifont_with_respondstoselector:(CGFloat)size {
+  UIFont* font;
+  if ([UIFont respondsToSelector:@selector(systemFontOfSize:weight:)]) {
+    font = [UIFont systemFontOfSize:size weight:0];
+  }
+}
+
+// bug
+- (void)uifont_without_respondstoselector:(CGFloat)size {
+  UIFont* font = [UIFont systemFontOfSize:size weight:0];
+}
+
 @end
