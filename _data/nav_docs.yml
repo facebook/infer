@@ -9,6 +9,7 @@
   - id: eradicate
   - id: checkers
   - id: linters
+  - id: experimental-checkers
   - id: advanced-features
   - id: adding-models
 - title: Foundations
