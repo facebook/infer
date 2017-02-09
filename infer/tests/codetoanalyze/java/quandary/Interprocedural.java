@@ -326,26 +326,61 @@ class Interprocedural {
     callSinkThenDiverge(InferTaint.inferSecretSource());
   }
 
-  public static void assignSourceToParam(Object o) {
-    o = InferTaint.inferSecretSource();
+  public void callSinkOnParam(Object o) {
+    InferTaint.inferSensitiveSink(o);
   }
 
-  // Java is call-by-value; this is fine
-  public static void assignSourceToParamOk() {
-    Object o = null;
-    assignSourceToParam(o);
-    InferTaint.inferSensitiveSink(o);
+  public void callSinkIndirectOnParam(Object o) {
+    callSinkOnParam(o);
+  }
+
+  public void callDeepSinkBad1() {
+    Object source = InferTaint.inferSecretSource();
+    callSinkIndirectOnParam(source);
+  }
+
+  Obj propagate(Object param) {
+    Obj o = new Obj();
+    o.f = param;
+    return o;
+  }
+
+  public void FN_callSinkDeepBad2() {
+    Obj source = propagate(InferTaint.inferSecretSource());
+    callSink1(source);
+  }
+
+  void callSink1(Obj o) {
+    callSink2(o);
+  }
+
+  void callSink2(Obj o) {
+    InferTaint.inferSensitiveSink(id(o));
   }
 
   public static void swapParams(Object o1, Object o2) {
     o1 = o2;
   }
 
-  public static void swapParamsOk() {
+  public static void assignSourceToParam(Object o) {
+    o = InferTaint.inferSecretSource();
+  }
+
+  // need to understand that Java is call-by-value for this...
+  public static void FP_swapParamsOk() {
     Object notASource = null;
     Object source = InferTaint.inferSecretSource();
     swapParams(notASource, source);
     InferTaint.inferSensitiveSink(notASource);
   }
+
+  // ...and this
+  public static void FP_assignSourceToParamOk() {
+    Object o = null;
+    assignSourceToParam(o);
+    InferTaint.inferSensitiveSink(o);
+  }
+
+
 
 }

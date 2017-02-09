@@ -225,7 +225,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         actuals
         summary
         (astate_in : Domain.astate)
-        proc_data
+        (proc_data : FormalMap.t ProcData.t)
         callee_site =
       let callee_loc = CallSite.loc callee_site in
       let caller_access_tree = astate_in.access_tree in
@@ -264,46 +264,35 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   None
             end in
 
-      let get_caller_ap_node ap =
+      let get_caller_ap_node ap access_tree =
         match get_caller_ap ap with
         | Some caller_ap ->
             let caller_node_opt =
-              access_path_get_node caller_ap caller_access_tree proc_data callee_loc in
+              access_path_get_node caller_ap access_tree proc_data callee_loc in
             let caller_node = match caller_node_opt with
               | Some caller_node -> caller_node | None -> TaintDomain.empty_node in
             caller_ap, caller_node
         | None ->
             ap, TaintDomain.empty_node in
 
-      let replace_footprint_sources callee_trace caller_trace =
+      let replace_footprint_sources callee_trace caller_trace access_tree =
         let replace_footprint_source source acc =
           match TraceDomain.Source.get_footprint_access_path source with
           | Some footprint_access_path ->
-              let _, (caller_ap_trace, _) = get_caller_ap_node footprint_access_path in
+              let _, (caller_ap_trace, _) = get_caller_ap_node footprint_access_path access_tree in
               TraceDomain.join caller_ap_trace acc
           | None ->
               acc in
         TraceDomain.Sources.fold
           replace_footprint_source (TraceDomain.sources callee_trace) caller_trace in
 
-      let add_to_caller_tree acc callee_ap callee_trace =
-        let can_assign ap =
-          let (base, _), accesses = AccessPath.extract ap in
-          match base with
-          | Var.LogicalVar id ->
-              (* Java is pass-by-value, so we can't assign directly to a formal *)
-              Ident.is_footprint id && accesses <> []
-          | Var.ProgramVar pvar ->
-              (* can't assign to callee locals in the caller *)
-              Pvar.is_global pvar || Pvar.is_return pvar in
-        let caller_ap, (caller_trace, caller_tree) = get_caller_ap_node callee_ap in
-        let caller_trace' = replace_footprint_sources callee_trace caller_trace in
+      let add_to_caller_tree access_tree_acc callee_ap callee_trace =
+        let caller_ap, (caller_trace, caller_tree) = get_caller_ap_node callee_ap access_tree_acc in
+        let caller_trace' = replace_footprint_sources callee_trace caller_trace access_tree_acc in
         let appended_trace =
           TraceDomain.append caller_trace' callee_trace callee_site in
         report_trace appended_trace callee_site proc_data;
-        if can_assign callee_ap
-        then TaintDomain.add_node caller_ap (appended_trace, caller_tree) acc
-        else acc in
+        TaintDomain.add_node caller_ap (appended_trace, caller_tree) access_tree_acc in
 
       let access_tree =
         TaintDomain.fold

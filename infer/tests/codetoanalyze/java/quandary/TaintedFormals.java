@@ -9,6 +9,9 @@
 
 package codetoanalyze.java.quandary;
 
+import android.app.Activity;
+import android.content.Intent;
+
 import com.facebook.infer.builtins.InferTaint;
 
 class Obj {
@@ -17,18 +20,23 @@ class Obj {
 
 public class TaintedFormals {
 
+  public Activity mActivity;
+
   public void callSink(Object formal) {
     InferTaint.inferSensitiveSink(formal);
   }
 
   // taintedFormal1 and taintedFormal2 were are modeled as tainted
-  public void taintedContextBad(String taintedFormal1, Boolean untaintedFormal, Integer taintedFormal2) {
+  public void taintedContextBad(String taintedFormal1,
+                                Intent untaintedFormal,
+                                Integer taintedFormal2) {
     InferTaint.inferSensitiveSink(taintedFormal1); // should report here
     InferTaint.inferSensitiveSink(taintedFormal2); // should report here
     callSink(taintedFormal1); // should report here
     callSink(taintedFormal2); // should report here
 
-    InferTaint.inferSensitiveSink(untaintedFormal); // should not report here
+    // using different sink to avoid confusion with the above
+    mActivity.startService(untaintedFormal); // should not report here
   }
 
   public Object taintedContextBad(String taintedFormal) {
@@ -41,7 +49,7 @@ public class TaintedFormals {
   }
 
   public void callTaintedContextBad2() {
-    taintedContextBad(null, (Boolean) InferTaint.inferSecretSource(), null);
+    taintedContextBad(null, (Intent) InferTaint.inferSecretSource(), null);
   }
 
   public void callTaintedContextOk1() {
