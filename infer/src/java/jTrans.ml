@@ -601,8 +601,7 @@ let method_invocation
         call_instrs @ [set_file_attr]
 
     (* remove file attribute when calling the close method of a subtype of Closeable *)
-    | (_, typ) as exp :: []
-      when Procname.java_is_close callee_procname && JTransType.is_closeable program tenv typ ->
+    | exp :: [] when Procname.java_is_close callee_procname ->
         let set_mem_attr =
           let set_builtin = Exp.Const (Const.Cfun BuiltinDecl.__set_mem_attribute) in
           Sil.Call (None, set_builtin, [exp], loc, CallFlags.default) in
