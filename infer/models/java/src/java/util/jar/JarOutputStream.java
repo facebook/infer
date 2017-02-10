@@ -9,6 +9,7 @@
 
 package java.util.jar;
 
+import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
 
 import java.io.IOException;
@@ -16,20 +17,21 @@ import java.io.OutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class JarOutputStream extends ZipOutputStream {
 
-    public JarOutputStream(OutputStream out, Manifest man) throws IOException {
-        super(out);
-        InferUndefined.can_throw_ioexception_void();
-    }
+public class JarOutputStream {
 
-    public JarOutputStream(OutputStream out) throws IOException {
-        super(out);
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public JarOutputStream(OutputStream out, Manifest man) throws IOException {
+    this(out);
+  }
 
-    public void putNextEntry(ZipEntry ze) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public JarOutputStream(OutputStream out) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+    InferBuiltins.__set_mem_attribute(out);
+    InferBuiltins.__set_file_attribute(this);
+  }
+
+  public void putNextEntry(ZipEntry ze) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
 }

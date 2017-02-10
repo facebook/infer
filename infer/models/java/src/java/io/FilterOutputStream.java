@@ -11,7 +11,7 @@ package java.io;
 
 import com.facebook.infer.builtins.InferUndefined;
 
-public class FilterOutputStream extends OutputStream {
+public class FilterOutputStream {
 
     protected OutputStream out;
 
@@ -19,16 +19,12 @@ public class FilterOutputStream extends OutputStream {
     }
 
     public FilterOutputStream(OutputStream out) {
-        this.out = out;
+      this.out = out;
     }
 
     public void close() throws IOException {
         if (out != null) {
-            if (out instanceof FileOutputStream) {
-                ((FileOutputStream) out).close();
-            } else {
-                out.close();
-            }
+          out.close();
         }
     }
 

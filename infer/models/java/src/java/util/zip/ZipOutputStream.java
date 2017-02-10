@@ -17,11 +17,7 @@ import java.io.OutputStream;
 import com.facebook.infer.builtins.InferUndefined;
 
 
-public class ZipOutputStream extends DeflaterOutputStream {
-
-    public ZipOutputStream(OutputStream out) {
-        super(out);
-    }
+public class ZipOutputStream {
 
     public void putNextEntry(ZipEntry e) throws IOException {
         InferUndefined.can_throw_ioexception_void();
@@ -31,13 +27,4 @@ public class ZipOutputStream extends DeflaterOutputStream {
         InferUndefined.can_throw_ioexception_void();
     }
 
-    public void close() throws IOException {
-        if (out != null) {
-            if (out instanceof FileOutputStream) {
-                ((FileOutputStream) out).close();
-            } else if (out instanceof BufferedOutputStream) {
-                ((BufferedOutputStream) out).close();
-            }
-        }
-    }
 }
