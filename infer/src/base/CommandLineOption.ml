@@ -55,10 +55,11 @@ let warnf =
   else if not is_originator then fun fmt -> F.ifprintf F.err_formatter fmt
   else F.eprintf
 
-type section = Analysis | Clang | Driver | Java | Print [@@deriving compare]
+type section = Analysis | BufferOverrun | Clang | Crashcontext | Driver | Java | Print | Quandary
+[@@deriving compare]
 
 let equal_section = [%compare.equal : section ]
-let all_sections = [ Analysis; Clang; Driver; Java; Print ]
+let all_sections = [ Analysis; BufferOverrun; Clang; Crashcontext; Driver; Java; Print; Quandary ]
 
 type 'a parse = Infer of 'a | Javac | NoParse [@@deriving compare]
 
@@ -77,7 +78,7 @@ let to_parse_tag = function | Infer _ -> Infer () | Javac -> Javac | NoParse -> 
 
 let accept_unknown_args = function
   | Infer Print | Javac | NoParse -> true
-  | Infer Analysis | Infer Clang | Infer Driver | Infer Java -> false
+  | Infer (Analysis | BufferOverrun | Clang | Crashcontext | Driver | Java | Quandary) -> false
 
 type desc = {
   long: string; short: string; meta: string; doc: string; spec: spec;
@@ -605,7 +606,7 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
   in
   let add_to_curr_speclist ?(add_help=false) ?header parse_action =
     let mk_header_spec heading =
-      ("", Unit (fun () -> ()), "\n  " ^ heading ^ "\n") in
+      ("", Unit (fun () -> ()), "\n## " ^ heading ^ "\n") in
     let exe_descs =
       match parse_action with
       | Infer section ->
@@ -638,8 +639,9 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
   curr_speclist := [];
   if equal_parse_action parse_action (Infer Driver) then (
     add_to_curr_speclist ~add_help:true ~header:"Driver options" (Infer Driver);
-    add_to_curr_speclist ~header:"Analysis (backend) options" (Infer Analysis);
-    add_to_curr_speclist ~header:"Clang frontend options" (Infer Clang)
+    add_to_curr_speclist ~header:"Clang-specific options" (Infer Clang);
+    add_to_curr_speclist ~header:"Java-specific options" (Infer Java);
+    add_to_curr_speclist ~header:"Quandary checker options" (Infer Quandary)
   ) else
     add_to_curr_speclist ~add_help:true parse_action
   ;

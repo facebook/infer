@@ -527,12 +527,12 @@ and blacklist =
 
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
-    ~parse_mode:CLOpt.(Infer [Driver])
+    ~parse_mode:CLOpt.(Infer [Java])
     "Specify the Java bootclasspath"
 
 and bo_debug =
   CLOpt.mk_int ~default:0 ~long:"bo-debug"
-    ~parse_mode:CLOpt.(Infer [Driver]) "Debug mode for buffer-overrun checker"
+    ~parse_mode:CLOpt.(Infer [BufferOverrun]) "Debug mode for buffer-overrun checker"
 
 (** Automatically set when running from within Buck *)
 and buck =
@@ -589,7 +589,7 @@ and changed_files_index =
 
 and check_duplicate_symbols =
   CLOpt.mk_bool ~long:"check-duplicate-symbols"
-    ~parse_mode:CLOpt.(Infer [Analysis])
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Check if a symbol with the same name is defined in more than one file."
 
 and checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun =
@@ -599,12 +599,12 @@ and checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun =
   in
   let crashcontext =
     CLOpt.mk_bool_group ~deprecated:["crashcontext"] ~long:"crashcontext"
-      "Activate the crashcontext checker for java stack trace context reconstruction"
+      "Activate the crashcontext checker for Java stack trace context reconstruction"
       [checkers] []
   in
   let eradicate =
     CLOpt.mk_bool_group ~deprecated:["eradicate"] ~long:"eradicate"
-      "Activate the eradicate checker for java annotations"
+      "Activate the eradicate checker for Java annotations"
       [checkers] []
   in
   let quandary =
@@ -618,7 +618,7 @@ and checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun =
       [checkers] []
   in
   let bufferoverrun =
-    CLOpt.mk_bool_group ~deprecated:["bufferoverrun"] ~long:"bufferoverrn"
+    CLOpt.mk_bool_group ~long:"bufferoverrun"
       "Activate the buffer overrun analysis"
       [checkers] []
   in
@@ -634,11 +634,12 @@ and clang_biniou_file =
 
 and clang_compilation_db_files =
   CLOpt.mk_path_list ~long:"clang-compilation-db-files"
-    "Files that contain compilation commands"
+    ~parse_mode:CLOpt.(Infer [Clang])
+    "File that contain compilation commands (can be specified multiple times)"
 
 and clang_frontend_action =
   CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
-    ~parse_mode:CLOpt.(Infer [Clang;Driver])
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Specify whether the clang frontend should capture or lint or both."
     ~symbols:clang_frontend_action_symbols
 
@@ -659,7 +660,7 @@ and cluster =
 and compute_analytics =
   CLOpt.mk_bool ~long:"compute-analytics"
     ~default:false
-    ~parse_mode:CLOpt.(Infer [Clang;Driver])
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Emit analytics as info-level issues, like component kit line count and \
      component kit file cyclomatic complexity"
 
@@ -673,7 +674,7 @@ and continue =
 
 and linters_ignore_clang_failures =
   CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
-    ~parse_mode:CLOpt.(Infer [Driver])
+    ~parse_mode:CLOpt.(Infer [Clang])
     ~default:false
     "Continue linting files even if some compilation fails."
 
@@ -743,7 +744,7 @@ and (
   in
   let debug =
     CLOpt.mk_bool_group ~deprecated:["debug"] ~long:"debug" ~short:"g"
-      ~parse_mode:CLOpt.(Infer [Analysis])
+      ~parse_mode:CLOpt.(Infer [Driver])
       "Debug mode (also sets --developer-mode, --no-filtering, --print-buckets, --print-types, \
        --reports-include-ml-loc, --no-test, --trace-error, --write-dotty, --write-html)"
       [developer_mode; print_buckets; print_types; reports_include_ml_loc; trace_error; write_html;
@@ -772,6 +773,7 @@ and (
   )
 and dependencies =
   CLOpt.mk_bool ~deprecated:["dependencies"] ~long:"dependencies"
+    ~parse_mode:CLOpt.(Infer [Java])
     "Translate all the dependencies during the capture. The classes in the given jar file will be \
      translated. No sources needed."
 
@@ -884,7 +886,7 @@ and frontend_tests =
 
 and generated_classes =
   CLOpt.mk_path_opt ~long:"generated-classes"
-    ~parse_mode:CLOpt.(Infer [Driver])
+    ~parse_mode:CLOpt.(Infer [Java])
     "Specify where to load the generated class files"
 
 and headers =
@@ -902,7 +904,7 @@ and infer_cache =
     ~meta:"dir" "Select a directory to contain the infer cache (Buck and Java only)"
 
 and iphoneos_target_sdk_version =
-  CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version" ~parse_mode:CLOpt.(Infer [Clang;Driver])
+  CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version" ~parse_mode:CLOpt.(Infer [Clang])
     "Specify the target SDK version to use for iphoneos"
 
 and iterations =
@@ -945,7 +947,7 @@ and load_average =
 
 and load_results =
   CLOpt.mk_path_opt ~deprecated:["load_results"] ~long:"load-results"
-    ~parse_mode:CLOpt.(Infer [Analysis])
+    ~parse_mode:CLOpt.(Infer [Print])
     ~meta:"file.iar" "Load analysis results from Infer Analysis Results file file.iar"
 
 (** name of the makefile to create with clusters and dependencies *)
@@ -1063,10 +1065,14 @@ and progress_bar =
     "Show a progress bar"
 
 and quandary_sources =
-  CLOpt.mk_json ~long:"quandary-sources" "Specify custom sources for Quandary"
+  CLOpt.mk_json ~long:"quandary-sources"
+    ~parse_mode:CLOpt.(Infer [Quandary])
+    "Specify custom sources for Quandary"
 
 and quandary_sinks =
-  CLOpt.mk_json ~long:"quandary-sinks" "Specify custom sinks for Quandary"
+  CLOpt.mk_json ~long:"quandary-sinks"
+    ~parse_mode:CLOpt.(Infer [Quandary])
+    "Specify custom sinks for Quandary"
 
 and quiet =
   CLOpt.mk_bool ~long:"quiet" ~short:"q" ~default:(current_exe <> Print)
@@ -1116,6 +1122,7 @@ and results_dir =
 
 and save_results =
   CLOpt.mk_path_opt ~deprecated:["save_results"] ~long:"save-results"
+    ~parse_mode:CLOpt.(Infer [Print])
     ~meta:"file.iar" "Save analysis results to Infer Analysis Results file file.iar"
 
 and seconds_per_iteration =
@@ -1179,13 +1186,13 @@ and specs_library =
   specs_library
 
 and stacktrace =
-  CLOpt.mk_path_opt ~long:"stacktrace" ~short:"st" ~parse_mode:CLOpt.(Infer [Driver])
+  CLOpt.mk_path_opt ~long:"stacktrace" ~short:"st" ~parse_mode:CLOpt.(Infer [Crashcontext])
     ~meta:"file" "File path containing a json-encoded Java crash stacktrace. Used to guide the \
                   analysis (only with '-a crashcontext').  See \
                   tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
 
 and stacktraces_dir =
-  CLOpt.mk_path_opt ~long:"stacktraces-dir" ~parse_mode:CLOpt.(Infer [Driver])
+  CLOpt.mk_path_opt ~long:"stacktraces-dir" ~parse_mode:CLOpt.(Infer [Crashcontext])
     ~meta:"dir" "Directory path containing multiple json-encoded Java crash stacktraces. \
                  Used to guide the  analysis (only with '-a crashcontext').  See \
                  tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
@@ -1236,7 +1243,7 @@ and type_size =
 
 and unsafe_malloc =
   CLOpt.mk_bool ~long:"unsafe-malloc"
-    ~parse_mode:CLOpt.(Infer [Analysis])
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Assume that malloc(3) never returns null."
 
 and use_compilation_database =
@@ -1255,10 +1262,9 @@ and version =
     ~parse_mode:CLOpt.(Infer [Analysis;Clang;Driver;Print])
     "Print version information and exit" ;
   CLOpt.mk_set var `Json ~deprecated:["version_json"] ~long:"version-json"
-    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Print])
+    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Driver;Print])
     "Print version information in json format and exit" ;
   CLOpt.mk_set var `Vcs ~long:"version-vcs"
-    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Print])
     "Print version control system commit and exit" ;
   var
 
@@ -1282,13 +1288,13 @@ and worklist_mode =
 
 and xcode_developer_dir =
   CLOpt.mk_path_opt ~long:"xcode-developer-dir"
-    ~parse_mode:CLOpt.(Infer [Driver])
+    ~parse_mode:CLOpt.(Infer [Clang])
     ~meta:"XCODE_DEVELOPER_DIR" "Specify the path to Xcode developer directory (Buck flavors only)"
 
 and xcpretty =
   CLOpt.mk_bool ~long:"xcpretty"
     ~default:true
-    ~parse_mode:CLOpt.(Infer [Driver])
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Infer will use xcpretty together with xcodebuild to analyze an iOS app. xcpretty just needs \
      to be in the path, infer command is still just infer -- <xcodebuild command>. (Recommended)"
 
