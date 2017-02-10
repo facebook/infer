@@ -53,7 +53,8 @@ val is_node : string -> Ctl_parser_types.ast_node -> bool
 
 val pp_predicate : Format.formatter -> t -> unit
 
-val decl_unavailable_in_supported_ios_sdk : Ctl_parser_types.ast_node -> bool
+val decl_unavailable_in_supported_ios_sdk : CLintersContext.context -> Ctl_parser_types.ast_node
+  -> bool
 
 val get_available_attr_ios_sdk : Ctl_parser_types.ast_node -> string option
 

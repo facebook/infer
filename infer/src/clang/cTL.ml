@@ -433,7 +433,7 @@ let rec eval_Atomic pred_name args an lcxt =
   | "in_node", [nodename], an -> CPredicates.is_node nodename an
   | "isa", [classname], an -> CPredicates.isa classname an
   | "decl_unavailable_in_supported_ios_sdk", [], an ->
-      CPredicates.decl_unavailable_in_supported_ios_sdk an
+      CPredicates.decl_unavailable_in_supported_ios_sdk lcxt an
   | "within_responds_to_selector_block", [], an ->
       CPredicates.within_responds_to_selector_block lcxt an
   | _ -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: " ^ pred_name)

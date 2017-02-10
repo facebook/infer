@@ -20,6 +20,7 @@ let () =
     AddressTakenTests.tests;
     BoundedCallTreeTests.tests;
     CopyPropagationTests.tests;
+    CiOSVersionNumbersTests.tests;
     ProcCfgTests.tests;
     LivenessTests.tests;
     SchedulerTests.tests;

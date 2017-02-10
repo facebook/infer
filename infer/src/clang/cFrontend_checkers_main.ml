@@ -56,14 +56,63 @@ let rec get_responds_to_selector stmt =
       get_responds_to_selector stmt
   | _ -> []
 
+let rec is_core_foundation_version_number stmt =
+  let open Clang_ast_t in
+  match stmt with
+  | DeclRefExpr (_, _, _, decl_ref_info) ->
+      (match decl_ref_info.drti_decl_ref with
+       | Some decl_ref_info ->
+           let name_info, _, _ = CAst_utils.get_info_from_decl_ref  decl_ref_info in
+           String.equal name_info.ni_name "kCFCoreFoundationVersionNumber"
+       | None -> false)
+  | ImplicitCastExpr (_, [stmt], _, _) ->
+      is_core_foundation_version_number stmt
+  | _ -> false
+
+let rec current_os_version_constant stmt =
+  let open Clang_ast_t in
+  match stmt with
+  | FloatingLiteral (_, _, _, number) ->
+      CiOSVersionNumbers.version_of number
+  | IntegerLiteral (_, _, _, info) ->
+      CiOSVersionNumbers.version_of info.ili_value
+  | ImplicitCastExpr (_, [stmt], _, _) ->
+      current_os_version_constant stmt
+  | _ -> None
+
+let rec get_current_os_version stmt =
+  let open Clang_ast_t in
+  match stmt with
+  | BinaryOperator (_, [stmt1;stmt2], _, bo_info) when
+      PVariant.(=) bo_info.Clang_ast_t.boi_kind `GE &&
+      is_core_foundation_version_number stmt1 ->
+      Option.to_list (current_os_version_constant stmt2)
+  | BinaryOperator (_, [stmt1;stmt2], _, bo_info) when
+      PVariant.(=) bo_info.Clang_ast_t.boi_kind `LE &&
+      is_core_foundation_version_number stmt2 ->
+      Option.to_list (current_os_version_constant stmt1)
+  | BinaryOperator (_, [stmt1;stmt2], _, bo_info) when
+      PVariant.(=) bo_info.Clang_ast_t.boi_kind `LAnd ->
+      List.append (get_current_os_version stmt1) (get_current_os_version stmt2)
+  | ImplicitCastExpr (_, [stmt], _, _)
+  | ParenExpr (_, [stmt], _)
+  | ExprWithCleanups(_, [stmt], _, _) ->
+      get_current_os_version stmt
+  | _ -> []
+
 let compute_if_context (context:CLintersContext.context) stmt =
-  let prev_responds_to_selector =
+  let selector = get_responds_to_selector stmt in
+  let os_version = get_current_os_version stmt in
+  let within_responds_to_selector_block, ios_version_guard =
     match context.if_context with
-    | Some if_context -> if_context.within_responds_to_selector_block
-    | None -> [] in
-  let within_responds_to_selector_block =
-    List.append (get_responds_to_selector stmt) (prev_responds_to_selector) in
-  Some ({within_responds_to_selector_block} : CLintersContext.if_context)
+    | Some if_context ->
+        let within_responds_to_selector_block =
+          List.append selector if_context.within_responds_to_selector_block in
+        let ios_version_guard =
+          List.append os_version if_context.ios_version_guard in
+        within_responds_to_selector_block, ios_version_guard
+    | None -> selector, os_version in
+  Some ({within_responds_to_selector_block; ios_version_guard} : CLintersContext.if_context)
 
 let is_factory_method (context: CLintersContext.context) decl =
   let interface_decl_opt =

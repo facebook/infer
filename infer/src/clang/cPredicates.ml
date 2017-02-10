@@ -232,11 +232,20 @@ let isa classname an =
        | _ -> false)
   | _ -> false
 
-let decl_unavailable_in_supported_ios_sdk an =
+
+let decl_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
+  let allowed_os_versions =
+    match Config.iphoneos_target_sdk_version,
+          (cxt.if_context : CLintersContext.if_context option) with
+    | Some iphoneos_target_sdk_version, Some if_context ->
+        iphoneos_target_sdk_version :: if_context.ios_version_guard
+    | Some iphoneos_target_sdk_version, None -> [iphoneos_target_sdk_version]
+    | _ -> [] in
+  let max_allowed_version_opt = List.max_elt allowed_os_versions ~cmp:Utils.compare_versions in
   let available_attr_ios_sdk = get_available_attr_ios_sdk an in
-  match available_attr_ios_sdk, Config.iphoneos_target_sdk_version with
-  | Some available_attr_ios_sdk, Some iphoneos_target_sdk_version ->
-      Int.equal (Utils.compare_versions available_attr_ios_sdk iphoneos_target_sdk_version) 1
+  match available_attr_ios_sdk, max_allowed_version_opt with
+  | Some available_attr_ios_sdk, Some max_allowed_version ->
+      (Utils.compare_versions available_attr_ios_sdk max_allowed_version) > 0
   | _ -> false
 
 

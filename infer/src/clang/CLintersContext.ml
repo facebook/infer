@@ -11,6 +11,7 @@ open! IStd
 
 type if_context = {
   within_responds_to_selector_block : string list;
+  ios_version_guard : string list
 }
 
 type context = {
