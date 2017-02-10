@@ -47,6 +47,7 @@ release](http://fbinfer.com/docs/getting-started.html) (faster), or to
 compile everything from source (see the end of this document).
 
 - opam >= 1.2.0
+- Install opam modules `opam install ocamlfind atdgen camlzip extlib javalib sawja`
 - Python 2.7
 - pkg-config
 - libffi >= 3.0
