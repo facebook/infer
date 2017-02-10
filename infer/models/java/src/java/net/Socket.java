@@ -17,67 +17,31 @@ import com.facebook.infer.builtins.InferBuiltins;
 
 public class Socket {
 
-    SocketImpl impl;
+  InputStream inputStream;
+  OutputStream outputStream;
 
-    public Socket() {
-        try {
-            setImpl();
-        } catch (IOException e) {
-        }
-    }
+  public Socket() {
+    InferBuiltins.__set_file_attribute(this);
+    inputStream = new InputStream();
+    InferBuiltins.__set_file_attribute(inputStream);
+    outputStream = new OutputStream();
+    InferBuiltins.__set_file_attribute(outputStream);
+  }
 
-    void setImpl() throws IOException {
-        impl = new PlainSocketImpl();
-    }
+  public InputStream getInputStream() throws IOException {
+    InferBuiltins.__check_untainted(this);
+    return inputStream;
+  }
 
-    public Socket(Proxy proxy) {
-        this();
-    }
+  public OutputStream getOutputStream() throws IOException {
+    InferBuiltins.__check_untainted(this);
+    return outputStream;
+  }
 
-    protected Socket(SocketImpl impl) throws SocketException {
-        this();
-    }
-
-    public Socket(String host, int port) throws UnknownHostException,
-            IOException {
-        this();
-    }
-
-    public Socket(InetAddress address, int port) throws IOException {
-        this();
-    }
-
-    public Socket(String host, int port, InetAddress localAddr, int localPort)
-            throws IOException {
-        this();
-    }
-
-    public Socket(InetAddress address, int port, InetAddress localAddr,
-                  int localPort) throws IOException {
-        this();
-    }
-
-    public Socket(String host, int port, boolean stream) throws IOException {
-        this();
-    }
-
-    public Socket(InetAddress host, int port, boolean stream)
-            throws IOException {
-        this();
-    }
-
-    public InputStream getInputStream() throws IOException {
-      InferBuiltins.__check_untainted(this);
-      return ((PlainSocketImpl) impl).getInputStream();
-    }
-
-    public OutputStream getOutputStream() throws IOException {
-      InferBuiltins.__check_untainted(this);
-      return ((PlainSocketImpl) impl).getOutputStream();
-    }
-
-    public synchronized void close() throws IOException {
-        ((PlainSocketImpl) impl).close();
-    }
+  public void close() {
+    InferBuiltins.__set_mem_attribute(this);
+    InferBuiltins.__set_mem_attribute(inputStream);
+    InferBuiltins.__set_mem_attribute(outputStream);
+  }
 
 }

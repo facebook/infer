@@ -12,17 +12,7 @@ package java.io;
 import com.facebook.infer.builtins.InferUndefined;
 
 
-public class BufferedWriter extends Writer {
-
-    private Writer out;
-
-    public BufferedWriter(Writer out) {
-        this.out = out;
-    }
-
-    public BufferedWriter(Writer out, int sz) {
-        this.out = out;
-    }
+public abstract class BufferedWriter extends Writer {
 
     public void flush() throws IOException {
         InferUndefined.can_throw_ioexception_void();
@@ -51,12 +41,5 @@ public class BufferedWriter extends Writer {
     public void write(String str, int off, int len) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
-
-    public void close() throws IOException {
-        if (out instanceof OutputStreamWriter) {
-            ((OutputStreamWriter) out).close();
-        }
-    }
-
 
 }

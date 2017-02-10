@@ -11,7 +11,7 @@ package java.io;
 
 import com.facebook.infer.builtins.InferUndefined;
 
-public abstract class Writer implements Closeable {
+public abstract class Writer {
 
     public Writer append(char c) throws IOException {
         InferUndefined.can_throw_ioexception_void();
@@ -27,16 +27,6 @@ public abstract class Writer implements Closeable {
             throws IOException {
         InferUndefined.can_throw_ioexception_void();
         return this;
-    }
-
-    public void close() throws IOException {
-        if (this instanceof OutputStreamWriter) {
-            ((OutputStreamWriter) this).close();
-        } else if (this instanceof BufferedWriter) {
-            ((BufferedWriter) this).close();
-        } else if (this instanceof PrintWriter) {
-            ((PrintWriter) this).close();
-        }
     }
 
     public void flush() throws IOException {
@@ -62,6 +52,5 @@ public abstract class Writer implements Closeable {
     public void write(String str, int off, int len) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
-
 
 }

@@ -17,55 +17,47 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 
-class PlainSocketImpl extends SocketImpl {
+abstract class PlainSocketImpl extends SocketImpl {
 
     PlainSocketImpl() {
         InferBuiltins.__set_file_attribute(this);
     }
 
-
     protected void create(boolean stream) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
-
 
     protected void connect(String host, int port) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
 
-
     protected void connect(InetAddress address, int port) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
-
 
     protected void connect(SocketAddress address, int timeout) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
 
-
     protected void bind(InetAddress host, int port) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
 
-
     protected void listen(int backlog) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
-
 
     protected void accept(SocketImpl s) throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
 
     public synchronized InputStream getInputStream() throws IOException {
-        return new PlainSocketInputStream(this);
+        return new PlainSocketInputStream();
     }
 
     public synchronized OutputStream getOutputStream() throws IOException {
-        return new PlainSocketOutputStream(this);
+        return new PlainSocketOutputStream();
     }
-
 
     protected int available() throws IOException {
         return InferUndefined.can_throw_ioexception_int();
@@ -137,48 +129,48 @@ class PlainSocketImpl extends SocketImpl {
         InferUndefined.can_throw_ioexception_void();
     }
 
-    private static class PlainSocketInputStream extends InputStream {
-        private PlainSocketImpl socketImpl;
+  private static class PlainSocketInputStream extends InputStream {
 
-        public PlainSocketInputStream(PlainSocketImpl socketImpl) {
-            this.socketImpl = socketImpl;
-        }
-
-        public int available() throws IOException {
-            return InferUndefined.can_throw_ioexception_int();
-        }
-
-        public void close() throws IOException {
-            socketImpl.close();
-        }
-
-        public int read() throws IOException {
-            return InferUndefined.can_throw_ioexception_int();
-        }
-
-        public int read(byte[] buffer, int byteOffset, int byteCount) throws IOException {
-            return InferUndefined.can_throw_ioexception_int();
-        }
+    public PlainSocketInputStream() {
+      InferBuiltins.__set_file_attribute(this);
     }
 
-    private static class PlainSocketOutputStream extends OutputStream {
-        private PlainSocketImpl socketImpl;
-
-        public PlainSocketOutputStream(PlainSocketImpl socketImpl) {
-            this.socketImpl = socketImpl;
-        }
-
-        public void close() throws IOException {
-            socketImpl.close();
-        }
-
-        public void write(int oneByte) throws IOException {
-            InferUndefined.can_throw_ioexception_void();
-        }
-
-        public void write(byte[] buffer, int offset, int byteCount) throws IOException {
-            InferUndefined.can_throw_ioexception_void();
-        }
+    public int available() throws IOException {
+      return InferUndefined.can_throw_ioexception_int();
     }
+
+    public int read() throws IOException {
+      return InferUndefined.can_throw_ioexception_int();
+    }
+
+    public int read(byte[] buffer, int byteOffset, int byteCount) throws IOException {
+      return InferUndefined.can_throw_ioexception_int();
+    }
+
+    public void close() {
+      InferBuiltins.__set_mem_attribute(this);
+    }
+
+  }
+
+  private static class PlainSocketOutputStream extends OutputStream {
+
+    public PlainSocketOutputStream() {
+      InferBuiltins.__set_file_attribute(this);
+    }
+
+    public void write(int oneByte) throws IOException {
+      InferUndefined.can_throw_ioexception_void();
+    }
+
+    public void write(byte[] buffer, int offset, int byteCount) throws IOException {
+      InferUndefined.can_throw_ioexception_void();
+    }
+
+    public void close() {
+      InferBuiltins.__set_mem_attribute(this);
+    }
+
+  }
 
 }

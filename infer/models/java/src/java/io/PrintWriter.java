@@ -9,98 +9,66 @@
 
 package java.io;
 
+import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
 
-public class PrintWriter extends Writer {
+public abstract class PrintWriter {
 
-    protected Writer out;
+  OutputStream mOutputStream;
 
-    public PrintWriter(OutputStream out) {
-        this(new OutputStreamWriter(out));
+  public PrintWriter(OutputStream out) {
+    mOutputStream = out;
+  }
+
+  public PrintWriter(OutputStream out, boolean autoFlush) {
+    mOutputStream = out;
+  }
+
+  public PrintWriter append(char c) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+    return this;
+  }
+
+  public PrintWriter append(CharSequence csq) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+    return this;
+  }
+
+  public PrintWriter append(CharSequence csq, int start, int end)
+      throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+    return this;
+  }
+
+  public void flush() throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
+
+  public void write(char cbuf[]) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
+
+  public void write(char cbuf[], int off, int len) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
+
+  public void write(int c) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
+
+  public void write(String str) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
+
+  public void write(String str, int off, int len) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
+
+  public void close() throws IOException {
+    InferBuiltins.__set_mem_attribute(this);
+    if (mOutputStream != null) {
+      mOutputStream.close();
     }
-
-    public PrintWriter(OutputStream out, boolean autoFlush) {
-        this(new OutputStreamWriter(out), autoFlush);
-    }
-
-    public PrintWriter(Writer wr) {
-        out = wr;
-    }
-
-    public PrintWriter(Writer wr, boolean autoFlush) {
-        out = wr;
-    }
-
-    public PrintWriter(File file) throws FileNotFoundException {
-        this(new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(file))));
-    }
-
-    public PrintWriter(File file, String csn) throws FileNotFoundException,
-            UnsupportedEncodingException {
-        this(new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(file))));
-    }
-
-    public PrintWriter(String fileName) throws FileNotFoundException {
-        this(new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(fileName))));
-    }
-
-    public PrintWriter(String fileName, String csn)
-            throws FileNotFoundException, UnsupportedEncodingException {
-        this(new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream(fileName))));
-    }
-
-    public PrintWriter append(char c) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-        return this;
-    }
-
-    public PrintWriter append(CharSequence csq) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-        return this;
-    }
-
-    public PrintWriter append(CharSequence csq, int start, int end)
-            throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-        return this;
-    }
-
-    public void close() {
-        if (out != null) {
-            try {
-                if (out instanceof OutputStreamWriter) {
-                    ((OutputStreamWriter) out).close();
-                } else if (out instanceof BufferedWriter) {
-                    ((BufferedWriter) out).close();
-                }
-            } catch (IOException x) {
-            }
-        }
-    }
-
-    public void flush() throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    public void write(char cbuf[]) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    public void write(char cbuf[], int off, int len) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    public void write(int c) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    public void write(String str) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    public void write(String str, int off, int len) throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
+  }
 
 }
