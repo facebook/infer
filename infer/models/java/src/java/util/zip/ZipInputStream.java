@@ -16,33 +16,18 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class ZipInputStream extends InflaterInputStream {
+public class ZipInputStream {
 
-    private ZipEntry currentEntry;
+  public ZipEntry getNextEntry() throws IOException {
+    boolean undef = InferUndefined.boolean_undefined();
+    if (undef) {
+      return new ZipEntry("");
+    } else
+      throw new IOException();
+  }
 
-    public ZipInputStream(InputStream in) {
-        super(in);
-    }
-
-    public ZipEntry getNextEntry() throws IOException {
-        boolean undef = InferUndefined.boolean_undefined();
-        if (undef) {
-            return currentEntry;
-        } else
-            throw new IOException();
-    }
-
-    public void closeEntry() throws IOException {
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    public void close() throws IOException {
-        if (in != null)
-            if (in instanceof FileInputStream) {
-                ((FileInputStream) in).close();
-            } else if (in instanceof BufferedInputStream) {
-                ((BufferedInputStream) in).close();
-            }
-    }
+  public void closeEntry() throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+  }
 
 }

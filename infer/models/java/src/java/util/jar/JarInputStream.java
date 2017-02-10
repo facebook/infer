@@ -9,23 +9,23 @@
 
 package java.util.jar;
 
+import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.ZipInputStream;
 
+public class JarInputStream {
 
-public class JarInputStream extends ZipInputStream {
+  public JarInputStream(InputStream in) throws IOException {
+    InferUndefined.can_throw_ioexception_void();
+    InferBuiltins.__set_mem_attribute(in);
+    InferBuiltins.__set_file_attribute(this);
+  }
 
-    public JarInputStream(InputStream in) throws IOException {
-        super(in);
-        InferUndefined.can_throw_ioexception_void();
-    }
-
-    public JarInputStream(InputStream in, boolean verify) throws IOException {
-        super(in);
-        InferUndefined.can_throw_ioexception_void();
-    }
+  public JarInputStream(InputStream in, boolean verify) throws IOException {
+    this(in);
+  }
 
 }

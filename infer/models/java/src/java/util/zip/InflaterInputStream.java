@@ -17,24 +17,8 @@ import java.io.InputStream;
 
 public class InflaterInputStream extends FilterInputStream {
 
-    public InflaterInputStream(InputStream in, Inflater inf, int size) {
-        super(in);
-    }
-
-    public InflaterInputStream(InputStream in, Inflater inf) {
-        super(in);
-    }
-
-    public InflaterInputStream(InputStream in) {
-        super(in);
-    }
-
     public int available() throws IOException {
         return InferUndefined.can_throw_ioexception_int();
-    }
-
-    public void close() throws IOException {
-        super.close();
     }
 
     public int read() throws IOException {
@@ -52,7 +36,6 @@ public class InflaterInputStream extends FilterInputStream {
     public void reset() throws IOException {
         InferUndefined.can_throw_ioexception_void();
     }
-
 
     public long skip(long n) throws IOException {
         return InferUndefined.can_throw_ioexception_long();

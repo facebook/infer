@@ -11,28 +11,10 @@ package java.io;
 
 import com.facebook.infer.builtins.InferUndefined;
 
-public class FilterInputStream extends InputStream {
-
-    protected volatile InputStream in;
-
-    protected FilterInputStream(InputStream in) {
-        this.in = in;
-    }
+public class FilterInputStream {
 
     public int available() throws IOException {
         return InferUndefined.can_throw_ioexception_int();
-    }
-
-    public void close() throws IOException {
-        if (in != null) {
-            if (in instanceof FileInputStream) {
-                ((FileInputStream) in).close();
-            } else if (in instanceof BufferedInputStream) {
-                ((FilterInputStream) in).close();
-            } else {
-                in.close();
-            }
-        }
     }
 
     public int read() throws IOException {
