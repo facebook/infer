@@ -133,8 +133,7 @@ OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
 INFER_BASE_TARGETS = \
   $(INFER_MAIN).native \
   $(INFERANALYZE_MAIN).native \
-  $(INFERPRINT_MAIN).native \
-  $(INFERUNIT_MAIN).native
+  $(INFERPRINT_MAIN).native
 
 INFER_ALL_TARGETS = $(INFER_BASE_TARGETS) \
   $(INFERCLANG_MAIN).native \
@@ -184,7 +183,6 @@ $(BIN_DIR): Makefile
 $(INFER_BIN).native: $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(BIN_DIR)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).native $(INFERUNIT_BIN)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
 endif
@@ -199,7 +197,8 @@ infer: $(CLANG_BINIOU_DICT)
 endif
 
 $(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES)
-	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) $(INFER_ALL_TARGETS:.native=.byte)
+	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
+	  $(INFER_ALL_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte
 	@touch $@
 
 $(INFER_BIN).byte: $(INFER_BUILD_DIR)/$(INFER_MAIN).byte $(BIN_DIR)
@@ -231,7 +230,7 @@ module: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES)
 $(TEST_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES) toplevel.mlpack
 	$(OCAMLBUILD_ALL) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
-	  $(INFER_ALL_TARGETS:.native=.byte) toplevel.cmo
+	  $(INFER_ALL_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte toplevel.cmo
 	@touch $@
 
 .PHONY: test_build
