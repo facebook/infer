@@ -23,7 +23,7 @@ let frame_id_of_stackframe frame =
     loc_str
 
 let frame_id_of_summary stacktree =
-  let short_name = IList.hd
+  let short_name = List.hd_exn
       (Str.split (Str.regexp "(") stacktree.Stacktree_j.method_name) in
   match stacktree.Stacktree_j.location with
   | None ->

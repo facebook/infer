@@ -450,13 +450,16 @@ end = struct
     if n1 <> 0 then n1 else Exp.compare e2 e2'
 
   let get_fresh_exp e1 e2 =
-    try
-      let (_, _, e) = IList.find (fun (e1', e2', _) -> Exp.equal e1 e1' && Exp.equal e2 e2') !t in
-      e
-    with Not_found ->
-      let e = Exp.get_undefined (JoinState.get_footprint ()) in
-      t := (e1, e2, e)::!t;
-      e
+    match
+      List.find ~f:(fun (e1', e2', _) -> Exp.equal e1 e1' && Exp.equal e2 e2') !t |>
+      Option.map ~f:trd3
+    with
+    | Some res ->
+        res
+    | None ->
+        let e = Exp.get_undefined (JoinState.get_footprint ()) in
+        t := (e1, e2, e)::!t;
+        e
 
   let get_induced_atom tenv acc strict_lower upper e =
     let ineq_lower = Prop.mk_inequality tenv (Exp.BinOp(Binop.Lt, strict_lower, e)) in
@@ -478,14 +481,19 @@ end = struct
     let rec f_eqs_entry ((e1, e2, e) as entry) eqs_acc t_seen = function
       | [] -> eqs_acc, t_seen
       | ((e1', e2', e') as entry'):: t_rest' ->
-          try
-            let n = IList.find (fun n -> add_and_chk_eq e1 e1' n && add_and_chk_eq e2 e2' n) minus2_to_2 in
-            let eq = add_and_gen_eq e e' n in
-            let eqs_acc' = eq:: eqs_acc in
-            f_eqs_entry entry eqs_acc' t_seen t_rest'
-          with Not_found ->
-            let t_seen' = entry':: t_seen in
-            f_eqs_entry entry eqs_acc t_seen' t_rest' in
+          (match
+             List.find ~f:(fun n ->
+                 add_and_chk_eq e1 e1' n && add_and_chk_eq e2 e2' n) minus2_to_2 |>
+             Option.map ~f:(fun n ->
+                 let eq = add_and_gen_eq e e' n in
+                 let eqs_acc' = eq:: eqs_acc in
+                 f_eqs_entry entry eqs_acc' t_seen t_rest')
+           with
+           | Some res ->
+               res
+           | None ->
+               let t_seen' = entry':: t_seen in
+               f_eqs_entry entry eqs_acc t_seen' t_rest') in
     let rec f_eqs eqs_acc t_acc = function
       | [] -> (eqs_acc, t_acc)
       | entry:: t_rest ->
@@ -505,15 +513,6 @@ end = struct
       | _ -> acc in
     IList.fold_left f_ineqs eqs t_minimal
 
-(*
-  let lookup side e =
-    try
-      let (e1, e2, e) =
-        IList.find (fun (e1', e2', _) -> Exp.equal e (select side e1' e2')) !t in
-      Some (e, select (opposite side) e1 e2)
-    with Not_found ->
-      None
-*)
 end
 
 (** {2 Modules for renaming} *)
@@ -556,7 +555,7 @@ end = struct
           (Ident.is_footprint id) &&
           (Sil.fav_for_all (Sil.exp_fav e) (fun id -> not (Ident.is_primed id)))
       | _ -> false in
-    let t' = IList.filter f !tbl in
+    let t' = List.filter ~f !tbl in
     tbl := t';
     t'
 
@@ -571,7 +570,7 @@ end = struct
         | Exp.Lvar _ | Exp.Var _
         | Exp.BinOp (Binop.PlusA, Exp.Var _, _) ->
             let is_same_e (e1, e2, _) = Exp.equal e (select side e1 e2) in
-            let assoc = IList.filter is_same_e !tbl in
+            let assoc = List.filter ~f:is_same_e !tbl in
             IList.map (fun (e1, e2, _) -> select side_op e1 e2) assoc
         | _ ->
             L.d_str "no pattern match in check lost_little e: "; Sil.d_exp e; L.d_ln ();
@@ -583,7 +582,7 @@ end = struct
 
   let lookup_side' side e =
     let f (e1, e2, _) = Exp.equal e (select side e1 e2) in
-    IList.filter f !tbl
+    List.filter ~f !tbl
 
   let lookup_side_induced' side e =
     let res = ref [] in
@@ -624,7 +623,7 @@ end = struct
 
   let to_subst_proj (side: side) vars =
     let renaming_restricted =
-      IList.filter (function (_, _, Exp.Var i) -> Sil.fav_mem vars i | _ -> assert false) !tbl in
+      List.filter ~f:(function (_, _, Exp.Var i) -> Sil.fav_mem vars i | _ -> assert false) !tbl in
     let sub_list_side =
       IList.map
         (function (e1, e2, Exp.Var i) -> (i, select side e1 e2) | _ -> assert false)
@@ -644,7 +643,7 @@ end = struct
         match select side e1 e2 with
         | Exp.Var i -> can_rename i
         | _ -> false in
-      IList.filter pick_id_case !tbl in
+      List.filter ~f:pick_id_case !tbl in
     let sub_list =
       let project (e1, e2, e) =
         match select side e1 e2 with
@@ -747,41 +746,35 @@ end = struct
   (* Extend the renaming relation. At least one of e1 and e2
    * should be a primed or footprint variable *)
   let extend e1 e2 default_op =
-    try
-      let eq_to_e (f1, f2, _) = Exp.equal e1 f1 && Exp.equal e2 f2 in
-      let _, _, res = IList.find eq_to_e !tbl in
-      res
-    with Not_found ->
-      let fav1 = Sil.exp_fav e1 in
-      let fav2 = Sil.exp_fav e2 in
-      let no_ren1 = not (Sil.fav_exists fav1 can_rename) in
-      let no_ren2 = not (Sil.fav_exists fav2 can_rename) in
-      let some_primed () = Sil.fav_exists fav1 Ident.is_primed || Sil.fav_exists fav2 Ident.is_primed in
-      let e =
-        if (no_ren1 && no_ren2) then
-          if (Exp.equal e1 e2) then e1 else (L.d_strln "failure reason 13"; raise IList.Fail)
-        else
-          match default_op with
-          | ExtDefault e -> e
-          | ExtFresh ->
-              let kind = if JoinState.get_footprint () && not (some_primed ()) then Ident.kfootprint else Ident.kprimed in
-              Exp.Var (Ident.create_fresh kind) in
-      let entry = e1, e2, e in
-      push entry;
-      Todo.push entry;
-      e
-(*
-  let get e1 e2 =
-    let f (e1', e2', _) = Exp.equal e1 e1' && Exp.equal e2 e2' in
-    match (IList.filter f !tbl) with
-    | [] -> None
-    | (_, _, e):: _ -> Some e
-
-  let pp pe f renaming =
-    let pp_triple f (e1, e2, e3) =
-      F.fprintf f "(%a,%a,%a)" (Sil.pp_exp pe) e3 (Sil.pp_exp pe) e1 (Sil.pp_exp pe) e2 in
-    (pp_seq pp_triple) f renaming
-*)
+    match
+      List.find ~f:(fun (f1, f2, _) -> Exp.equal e1 f1 && Exp.equal e2 f2) !tbl |>
+      Option.map ~f:trd3
+    with
+    | Some res ->
+        res
+    | None ->
+        let fav1 = Sil.exp_fav e1 in
+        let fav2 = Sil.exp_fav e2 in
+        let no_ren1 = not (Sil.fav_exists fav1 can_rename) in
+        let no_ren2 = not (Sil.fav_exists fav2 can_rename) in
+        let some_primed () =
+          Sil.fav_exists fav1 Ident.is_primed || Sil.fav_exists fav2 Ident.is_primed in
+        let e =
+          if (no_ren1 && no_ren2) then
+            if (Exp.equal e1 e2) then e1 else (L.d_strln "failure reason 13"; raise IList.Fail)
+          else
+            match default_op with
+            | ExtDefault e -> e
+            | ExtFresh ->
+                let kind =
+                  if JoinState.get_footprint () && not (some_primed ())
+                  then Ident.kfootprint
+                  else Ident.kprimed in
+                Exp.Var (Ident.create_fresh kind) in
+        let entry = e1, e2, e in
+        push entry;
+        Todo.push entry;
+        e
 end
 
 (** {2 Functions for constructing fresh sil data types} *)
@@ -1821,7 +1814,7 @@ let footprint_partial_join' tenv (p1: Prop.normal Prop.t) (p2: Prop.normal Prop.
     let pi_fp =
       let pi_fp0 = Prop.get_pure efp in
       let f a = Sil.fav_for_all (Sil.atom_fav a) Ident.is_footprint in
-      IList.filter f pi_fp0 in
+      List.filter ~f pi_fp0 in
     let sigma_fp =
       let sigma_fp0 = efp.Prop.sigma in
       let f a = Sil.fav_exists (Sil.hpred_fav a) (fun a -> not (Ident.is_footprint a)) in

@@ -306,24 +306,21 @@ let attrs_opt_get_annots = function
 let returns_tainted callee_pname callee_attrs_opt =
   let procname_matches taint_info =
     Procname.equal taint_info.PredSymb.taint_source callee_pname in
-  try
-    let taint_info = IList.find procname_matches sources in
-    Some taint_info.PredSymb.taint_kind
-  with Not_found ->
-    let ret_annot, _ = attrs_opt_get_annots callee_attrs_opt in
-    if Annotations.ia_is_integrity_source ret_annot
-    then Some PredSymb.Tk_integrity_annotation
-    else if Annotations.ia_is_privacy_source ret_annot
-    then Some PredSymb.Tk_privacy_annotation
-    else None
+  match List.find ~f:procname_matches sources with
+  | Some taint_info ->
+      Some taint_info.PredSymb.taint_kind
+  | None ->
+      let ret_annot, _ = attrs_opt_get_annots callee_attrs_opt in
+      if Annotations.ia_is_integrity_source ret_annot
+      then Some PredSymb.Tk_integrity_annotation
+      else if Annotations.ia_is_privacy_source ret_annot
+      then Some PredSymb.Tk_privacy_annotation
+      else None
 
 let find_callee taint_infos callee_pname =
-  try
-    Some
-      (IList.find
-         (fun (taint_info, _) -> Procname.equal taint_info.PredSymb.taint_source callee_pname)
-         taint_infos)
-  with Not_found -> None
+  List.find
+    ~f:(fun (taint_info, _) -> Procname.equal taint_info.PredSymb.taint_source callee_pname)
+    taint_infos
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
 let accepts_sensitive_params callee_pname callee_attrs_opt =
@@ -361,8 +358,7 @@ let has_taint_annotation fieldname (struct_typ: StructTyp.t) =
 (* add tainting attributes to a list of paramenters *)
 let get_params_to_taint tainted_param_nums formal_params =
   let get_taint_kind index =
-    try Some (IList.find (fun (taint_index, _) -> Int.equal index taint_index) tainted_param_nums)
-    with Not_found -> None in
+    List.find ~f:(fun (taint_index, _) -> Int.equal index taint_index) tainted_param_nums in
   let collect_params_to_taint params_to_taint_acc (index, param) =
     match get_taint_kind index with
     | Some (_, taint_kind) -> (param, taint_kind) :: params_to_taint_acc

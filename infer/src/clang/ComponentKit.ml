@@ -233,14 +233,14 @@ let component_with_multiple_factory_methods_advice context an =
     let attrs = match decl with
       | ObjCMethodDecl (decl_info, _, _) -> decl_info.Clang_ast_t.di_attributes
       | _ -> assert false in
-    let unavailable_attrs = (IList.filter is_unavailable_attr attrs) in
+    let unavailable_attrs = (List.filter ~f:is_unavailable_attr attrs) in
     let is_available = Int.equal (IList.length unavailable_attrs) 0 in
     (CAst_utils.is_objc_factory_method if_decl decl) && is_available in
 
   let check_interface if_decl =
     match if_decl with
     | Clang_ast_t.ObjCInterfaceDecl (_, _, decls, _, _) ->
-        let factory_methods = IList.filter (is_available_factory_method if_decl) decls in
+        let factory_methods = List.filter ~f:(is_available_factory_method if_decl) decls in
         CTL.True, IList.map (fun meth_decl -> {
               CIssue.name = "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS";
               severity = Exceptions.Kadvice;
@@ -290,7 +290,7 @@ let rec _component_initializer_with_side_effects_advice
     | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info) ->
         let refs = [decl_ref_expr_info.drti_decl_ref;
                     decl_ref_expr_info.drti_found_decl_ref] in
-        (match IList.find_map_opt CAst_utils.name_of_decl_ref_opt refs with
+        (match List.find_map ~f:CAst_utils.name_of_decl_ref_opt refs with
          | Some "dispatch_after"
          | Some "dispatch_async"
          | Some "dispatch_sync" ->

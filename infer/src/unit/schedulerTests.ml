@@ -39,19 +39,17 @@ module MockProcCfg = struct
   let equal_id = Int.equal
 
   let succs t n =
-    try
-      let node_id = id n in
-      IList.find
-        (fun (node, _) -> equal_id (id node) node_id)
-        t
-      |> snd
-    with Not_found -> []
+    let node_id = id n in
+    List.find
+      ~f:(fun (node, _) -> equal_id (id node) node_id)
+      t |>
+    Option.value_map ~f:snd ~default:[]
 
   let preds t n =
     try
       let node_id = id n in
-      IList.filter
-        (fun (_, succs) ->
+      List.filter
+        ~f:(fun (_, succs) ->
            List.exists ~f:(fun node -> equal_id (id node) node_id) succs)
         t
       |> IList.map fst

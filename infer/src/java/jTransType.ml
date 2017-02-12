@@ -391,14 +391,14 @@ let param_type program tenv cn name vt =
 
 let get_var_type_from_sig (context : JContext.t) var =
   let program = context.program in
-  try
-    let tenv = JContext.get_tenv context in
-    let vt', var' =
-      IList.find
-        (fun (_, var') -> JBir.var_equal var var')
-        (JBir.params context.impl) in
-    Some (param_type program tenv context.cn var' vt')
-  with Not_found -> None
+  let tenv = JContext.get_tenv context in
+  List.find_map ~f:(
+    fun (vt', var') ->
+      if JBir.var_equal var var'
+      then Some (param_type program tenv context.cn var' vt')
+      else None
+  )
+    (JBir.params context.impl)
 
 
 let get_var_type context var =

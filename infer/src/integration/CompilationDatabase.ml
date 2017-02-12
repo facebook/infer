@@ -58,13 +58,13 @@ let decode_json_file (database : t) json_path =
     | `List arguments ->
         IList.iter parse_json arguments
     | `Assoc l ->
-        let dir = match IList.find_map_opt get_dir l with
+        let dir = match List.find_map ~f:get_dir l with
           | Some dir -> dir
           | None -> exit_format_error () in
-        let file = match IList.find_map_opt get_file l with
+        let file = match List.find_map ~f:get_file l with
           | Some file -> file
           | None -> exit_format_error () in
-        let cmd = match IList.find_map_opt get_cmd l with
+        let cmd = match List.find_map ~f:get_cmd l with
           | Some cmd -> cmd
           | None -> exit_format_error () in
         let command, args = parse_command_and_arguments cmd in

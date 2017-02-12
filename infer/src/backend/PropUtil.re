@@ -25,7 +25,7 @@ let get_name_of_objc_static_locals (curr_f: Procdesc.t) p => {
     | _ => []
     };
   let vars_sigma = IList.map hpred_local_static p.Prop.sigma;
-  IList.flatten (IList.flatten vars_sigma)
+  List.concat (List.concat vars_sigma)
 };
 
 /* returns a list of local variables that points to an objc block in a proposition */
@@ -41,7 +41,7 @@ let get_name_of_objc_block_locals p => {
     | _ => []
     };
   let vars_sigma = IList.map hpred_local_blocks p.Prop.sigma;
-  IList.flatten (IList.flatten vars_sigma)
+  List.concat (List.concat vars_sigma)
 };
 
 let remove_abduced_retvars tenv p => {
@@ -101,8 +101,8 @@ let remove_abduced_retvars tenv p => {
         | Exp.BinOp _ e0 e1
         | Exp.Lindex e0 e1 => exp_contains e0 || exp_contains e1
         | _ => false;
-      IList.filter
-        (
+      List.filter
+        f::(
           fun
           | Sil.Aeq lhs rhs
           | Sil.Aneq lhs rhs => exp_contains lhs || exp_contains rhs
@@ -202,6 +202,6 @@ let remove_seed_vars tenv (prop: Prop.t 'a) :Prop.t Prop.normal => {
     | Sil.Hpointsto (Exp.Lvar pv) _ _ => not (Pvar.is_seed pv)
     | _ => true;
   let sigma = prop.sigma;
-  let sigma' = IList.filter hpred_not_seed sigma;
+  let sigma' = List.filter f::hpred_not_seed sigma;
   Prop.normalize tenv (Prop.set prop sigma::sigma')
 };

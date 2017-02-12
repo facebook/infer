@@ -491,7 +491,7 @@ struct
 
   let get_symbols : astate -> Itv.Symbol.t list
     = fun mem ->
-      IList.flatten (IList.map (fun (_, v) -> Val.get_symbols v) (bindings mem))
+      List.concat (IList.map (fun (_, v) -> Val.get_symbols v) (bindings mem))
 
   let get_return : astate -> Val.t
     = fun mem ->

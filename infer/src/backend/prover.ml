@@ -20,10 +20,10 @@ let decrease_indent_when_exception thunk =
   with exn when SymOp.exn_not_failure exn -> (L.d_decrease_indent 1; raise exn)
 
 let compute_max_from_nonempty_int_list l =
-  IList.hd (IList.rev (IList.sort IntLit.compare_value l))
+  uw (List.max_elt ~cmp:IntLit.compare_value l)
 
 let compute_min_from_nonempty_int_list l =
-  IList.hd (IList.sort IntLit.compare_value l)
+  uw (List.min_elt ~cmp:IntLit.compare_value l)
 
 let rec list_rev_acc acc = function
   | [] -> acc
@@ -129,7 +129,7 @@ end = struct
 
   let remove_redundancy constraints =
     let constraints' = sort_then_remove_redundancy constraints in
-    IList.filter (fun entry -> List.exists ~f:(equal entry) constraints') constraints
+    List.filter ~f:(fun entry -> List.exists ~f:(equal entry) constraints') constraints
 
   let rec combine acc_todos acc_seen constraints_new constraints_old =
     match constraints_new, constraints_old with
@@ -477,7 +477,7 @@ end = struct
     | Exp.Const (Const.Cint n1) -> Some n1
     | _ ->
         let e_upper_list =
-          IList.filter (function
+          List.filter ~f:(function
               | e', Exp.Const (Const.Cint _) -> Exp.equal e1 e'
               | _, _ -> false) leqs in
         let upper_list =
@@ -494,7 +494,7 @@ end = struct
     | Exp.Sizeof _ -> Some IntLit.zero
     | _ ->
         let e_lower_list =
-          IList.filter (function
+          List.filter ~f:(function
               | Exp.Const (Const.Cint _), e' -> Exp.equal e1 e'
               | _, _ -> false) lts in
         let lower_list =
@@ -2143,7 +2143,7 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     let filter (id, e) =
       Ident.is_normal id && Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
     let sub1_base =
-      Sil.sub_filter_pair filter prop1.Prop.sub in
+      Sil.sub_filter_pair ~f:filter prop1.Prop.sub in
     let pi1, pi2 = Prop.get_pure prop1, Prop.get_pure prop2 in
     let sigma1, sigma2 = prop1.Prop.sigma, prop2.Prop.sigma in
     let subs = pre_check_pure_implication tenv calc_missing (prop1.Prop.sub, sub1_base) pi1 pi2 in

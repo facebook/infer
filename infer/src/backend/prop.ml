@@ -271,9 +271,9 @@ let create_pvar_env (sigma: sigma) : (Exp.t -> Exp.t) =
     | _ -> () in
   IList.iter filter sigma;
   let find e =
-    try
-      snd (IList.find (fun (e1, _) -> Exp.equal e1 e) !env)
-    with Not_found -> e in
+    List.find ~f:(fun (e1, _) -> Exp.equal e1 e) !env |>
+    Option.map ~f:snd |>
+    Option.value ~default:e in
   find
 
 (** Update the object substitution given the stack variables in the prop *)
@@ -412,10 +412,10 @@ let sigma_fav_in_pvars_add fav sigma =
   IList.iter (hpred_fav_in_pvars_add fav) sigma
 
 let sigma_fpv sigma =
-  IList.flatten (IList.map Sil.hpred_fpv sigma)
+  List.concat (IList.map Sil.hpred_fpv sigma)
 
 let pi_fpv pi =
-  IList.flatten (IList.map Sil.atom_fpv pi)
+  List.concat (IList.map Sil.atom_fpv pi)
 
 let prop_fpv prop =
   (Sil.sub_fpv prop.sub) @
@@ -1465,17 +1465,17 @@ module Normalize = struct
           lt_list_tightened in
       le_ineq_list @ lt_ineq_list in
     let nonineq_list' =
-      IList.filter
-        (fun (a : Sil.atom) -> match a with
-           | Aneq (Const (Cint n), e)
-           | Aneq (e, Const (Cint n)) ->
-               (not (List.exists
-                       ~f:(fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
-                       le_list_tightened)) &&
-               (not (List.exists
-                       ~f:(fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
-                       lt_list_tightened))
-           | _ -> true)
+      List.filter
+        ~f:(fun (a : Sil.atom) -> match a with
+            | Aneq (Const (Cint n), e)
+            | Aneq (e, Const (Cint n)) ->
+                (not (List.exists
+                        ~f:(fun (e', n') -> Exp.equal e e' && IntLit.lt n' n)
+                        le_list_tightened)) &&
+                (not (List.exists
+                        ~f:(fun (n', e') -> Exp.equal e e' && IntLit.leq n n')
+                        lt_list_tightened))
+            | _ -> true)
         nonineq_list in
     (ineq_list', nonineq_list')
 
@@ -1512,7 +1512,7 @@ module Normalize = struct
     let pi' =
       IList.stable_sort
         Sil.compare_atom
-        ((IList.filter filter_useful_atom nonineq_list) @ ineq_list) in
+        ((List.filter ~f:filter_useful_atom nonineq_list) @ ineq_list) in
     let pi'' = pi_sorted_remove_redundant pi' in
     if equal_pi pi0 pi'' then pi0 else pi''
 
@@ -1550,7 +1550,7 @@ module Normalize = struct
   (** This function assumes that if (x,Exp.Var(y)) in sub, then compare x y = 1 *)
   let sub_normalize sub =
     let f (id, e) = (not (Ident.is_primed id)) && (not (Sil.ident_in_exp id e)) in
-    let sub' = Sil.sub_filter_pair f sub in
+    let sub' = Sil.sub_filter_pair ~f sub in
     if Sil.equal_subst sub sub' then sub else sub'
 
   (** Conjoin a pure atomic predicate by normal conjunction. *)
@@ -1924,9 +1924,9 @@ let prop_rename_array_indices tenv prop =
     let rec select_minimal_indices indices_seen = function
       | [] -> IList.rev indices_seen
       | index:: indices_rest ->
-          let indices_seen' = IList.filter (not_same_base_lt_offsets index) indices_seen in
+          let indices_seen' = List.filter ~f:(not_same_base_lt_offsets index) indices_seen in
           let indices_seen_new = index:: indices_seen' in
-          let indices_rest_new = IList.filter (not_same_base_lt_offsets index) indices_rest in
+          let indices_rest_new = List.filter ~f:(not_same_base_lt_offsets index) indices_rest in
           select_minimal_indices indices_seen_new indices_rest_new in
     let minimal_indices = select_minimal_indices [] indices in
     let subst = compute_reindexing_from_indices minimal_indices in
@@ -1936,7 +1936,7 @@ let prop_rename_array_indices tenv prop =
 let compute_renaming fav =
   let ids = Sil.fav_to_list fav in
   let ids_primed, ids_nonprimed = IList.partition Ident.is_primed ids in
-  let ids_footprint = IList.filter Ident.is_footprint ids_nonprimed in
+  let ids_footprint = List.filter ~f:Ident.is_footprint ids_nonprimed in
 
   let id_base_primed = Ident.create Ident.kprimed 0 in
   let id_base_footprint = Ident.create Ident.kfootprint 0 in
@@ -2190,7 +2190,7 @@ let remove_seed_captured_vars_block tenv captured_vars prop =
     | _ -> false in
   let sigma = prop.sigma in
   let sigma' =
-    IList.filter (fun hpred  -> not (hpred_seed_captured hpred)) sigma in
+    List.filter ~f:(fun hpred  -> not (hpred_seed_captured hpred)) sigma in
   Normalize.normalize tenv (set prop ~sigma:sigma')
 
 (** {2 Prop iterators} *)
@@ -2425,7 +2425,7 @@ let rec strexp_gc_fields (fav: Sil.fav) (se : Sil.strexp) =
   | Estruct (fsel, inst) ->
       let fselo = IList.map (fun (f, se) -> (f, strexp_gc_fields fav se)) fsel in
       let fsel' =
-        let fselo' = IList.filter (function | (_, Some _) -> true | _ -> false) fselo in
+        let fselo' = List.filter ~f:(function | (_, Some _) -> true | _ -> false) fselo in
         IList.map (function (f, seo) -> (f, unSome seo)) fselo' in
       if [%compare.equal: (Ident.fieldname * Sil.strexp) list] fsel fsel' then Some se
       else Some (Sil.Estruct (fsel', inst))
@@ -2567,8 +2567,8 @@ module CategorizePreconditions = struct
       let check_sigma sigma =
         IList.for_all hpred_filter sigma in
       check_pi pre.pi && check_sigma pre.sigma in
-    let pres_no_constraints = IList.filter (check_pre hpred_is_var) preconditions in
-    let pres_only_allocation = IList.filter (check_pre hpred_only_allocation) preconditions in
+    let pres_no_constraints = List.filter ~f:(check_pre hpred_is_var) preconditions in
+    let pres_only_allocation = List.filter ~f:(check_pre hpred_only_allocation) preconditions in
     match preconditions, pres_no_constraints, pres_only_allocation with
     | [], _, _ ->
         NoPres

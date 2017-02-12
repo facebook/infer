@@ -238,11 +238,10 @@ struct
     function_arg_is_cftype typ && String.equal funct cf_release
 
   let is_core_graphics_release typ funct =
-    try
-      let cg_typ = IList.find
-          (fun lib -> (String.equal funct (lib^upper_release))) core_graphics_types in
-      (String.is_substring ~substring:(cg_typ^ref) typ)
-    with Not_found -> false
+    let f lib =
+      String.equal funct (lib ^ upper_release) &&
+      String.is_substring ~substring:(lib ^ ref) typ in
+    List.exists ~f core_graphics_types
 
 (*
   let function_arg_is_core_pgraphics typ =

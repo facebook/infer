@@ -122,19 +122,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 failwith "Proc type not supported by crashcontext: block" in
           String.equal frame.Stacktrace.method_str (Procname.get_method caller) &&
           matches_class caller in
-        let all_frames = IList.flatten
+        let all_frames = List.concat
             (IList.map (fun trace -> trace.Stacktrace.frames) traces) in
         begin
-          try
-            let frame = IList.find matches_proc all_frames in
-            let new_astate = Domain.add pn astate in
-            if Stacktrace.frame_matches_location frame loc then begin
-              let pdesc = proc_data.ProcData.pdesc in
-              output_json_summary pdesc new_astate loc "call_site" get_proc_desc
-            end;
-            new_astate
-          with
-            Not_found -> astate
+          match List.find ~f:matches_proc all_frames with
+          | Some frame ->
+              let new_astate = Domain.add pn astate in
+              if Stacktrace.frame_matches_location frame loc then begin
+                let pdesc = proc_data.ProcData.pdesc in
+                output_json_summary pdesc new_astate loc "call_site" get_proc_desc
+              end;
+              new_astate
+          | None ->
+              astate
         end
     | Sil.Call _ ->
         (* We currently ignore calls through function pointers in C and

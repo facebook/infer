@@ -223,7 +223,8 @@ let get_all_nodes (g: t) => {
   IList.map (fun node => (node, get_calls g node)) nodes
 };
 
-let get_nodes_and_calls (g: t) => IList.filter (fun (n, _) => node_defined g n) (get_all_nodes g);
+let get_nodes_and_calls (g: t) =>
+  List.filter f::(fun (n, _) => node_defined g n) (get_all_nodes g);
 
 let node_get_num_ancestors g n => (n, Procname.Set.cardinal (get_ancestors g n));
 
@@ -331,7 +332,7 @@ let get_nodes_and_edges (g: t) :nodes_and_edges => {
 let get_defined_nodes (g: t) => {
   let (nodes, _) = get_nodes_and_edges g;
   let get_node (node, _) => node;
-  IList.map get_node (IList.filter (fun (_, defined) => defined) nodes)
+  IList.map get_node (List.filter f::(fun (_, defined) => defined) nodes)
 };
 
 

@@ -88,7 +88,7 @@ let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
   | Some { methods } ->
       (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
-        IList.find (fun decl_proc ->
+        List.find_exn ~f:(fun decl_proc ->
             match decl_proc with
             | Procname.Java decl_proc_java ->
                 String.equal lifecycle_proc (Procname.java_get_method decl_proc_java)

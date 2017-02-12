@@ -33,7 +33,7 @@ let find_json_files_in_dir dir => {
     {
       let content = Array.to_list (Sys.readdir dir);
       let content_with_path = IList.map (fun p => Filename.concat dir p) content;
-      IList.filter is_valid_json_file content_with_path
+      List.filter f::is_valid_json_file content_with_path
     } :
     []
 };

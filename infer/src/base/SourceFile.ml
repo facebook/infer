@@ -128,8 +128,7 @@ let of_header header_file =
   let file_opt = match ext_opt with
     | Some ext when List.mem ~equal:String.equal header_exts ext -> (
         let possible_files = IList.map (fun ext -> file_no_ext ^ "." ^ ext) source_exts in
-        try Some (IList.find path_exists possible_files)
-        with Not_found -> None
+        List.find ~f:path_exists possible_files
       )
     | _ -> None in
   Option.map ~f:from_abs_path file_opt

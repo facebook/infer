@@ -181,7 +181,7 @@ let pad_and_xform doc_width left_width desc =
             wrap_line "" doc_width s
           else [s] in
         IList.map wrap_line lines in
-      let doc = indent_doc (String.concat ~sep:"\n" (IList.flatten wrapped_lines)) in
+      let doc = indent_doc (String.concat ~sep:"\n" (List.concat wrapped_lines)) in
       xdesc {desc with doc}
 
 let align desc_list =
@@ -325,7 +325,7 @@ type 'a t =
 
 let string_json_decoder ~long json = [dashdash long; YBU.to_string json]
 
-let list_json_decoder json_decoder json = IList.flatten (YBU.convert_each json_decoder json)
+let list_json_decoder json_decoder json = List.concat (YBU.convert_each json_decoder json)
 
 let mk_set var value ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="") doc =
   let setter () = var := value in
@@ -544,6 +544,7 @@ let mk_rest ?(parse_mode=Infer []) doc =
 
 let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
   let full_speclist = ref [] in
+
   let curr_usage status =
     prerr_endline (String.concat_array ~sep:" " !args_to_parse) ;
     Arg.usage !curr_speclist usage ;
@@ -626,8 +627,8 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
       opt = "" ||
       IList.for_all (fun (opt', _, doc') ->
           (doc <> "" && doc' = "") || (not (String.equal opt opt'))) speclist in
-    let unique_exe_speclist = IList.filter (is_not_dup_with_doc !curr_speclist) exe_speclist in
-    curr_speclist := IList.filter (is_not_dup_with_doc unique_exe_speclist) !curr_speclist @
+    let unique_exe_speclist = List.filter ~f:(is_not_dup_with_doc !curr_speclist) exe_speclist in
+    curr_speclist := List.filter ~f:(is_not_dup_with_doc unique_exe_speclist) !curr_speclist @
                      (match header with
                       | Some s -> (to_arg_spec_triple (mk_header_spec s)):: unique_exe_speclist
                       | None -> unique_exe_speclist)
@@ -682,10 +683,10 @@ let decode_inferconfig_to_argv path =
   let one_config_item result (key, json_val) =
     try
       let {decode_json} =
-        IList.find
-          (fun {long; short} ->
-             String.equal key long
-             || (* for deprecated options *) String.equal key short)
+        List.find_exn
+          ~f:(fun {long; short} ->
+              String.equal key long
+              || (* for deprecated options *) String.equal key short)
           !desc_list in
       decode_json json_val @ result
     with
@@ -704,7 +705,7 @@ let env_var_sep = '^'
 
 let encode_argv_to_env argv =
   String.concat ~sep:(String.make 1 env_var_sep)
-    (IList.filter (fun arg ->
+    (List.filter ~f:(fun arg ->
          not (String.contains arg env_var_sep)
          || (
            warnf "Ignoring unsupported option containing '%c' character: %s@\n"

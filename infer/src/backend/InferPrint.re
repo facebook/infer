@@ -33,13 +33,13 @@ let load_specfiles () => {
       | Sys_error _ => []
       };
     let all_filepaths = IList.map (fun fname => Filename.concat dir fname) all_filenames;
-    IList.filter is_specs_file all_filepaths
+    List.filter f::is_specs_file all_filepaths
   };
   let specs_dirs = {
     let result_specs_dir = DB.filename_to_string DB.Results_dir.specs_dir;
     [result_specs_dir, ...Config.specs_library]
   };
-  IList.flatten (IList.map specs_files_in_dir specs_dirs)
+  List.concat (IList.map specs_files_in_dir specs_dirs)
 };
 
 
@@ -543,7 +543,8 @@ let pp_tests_of_report fmt report => {
   let pp_trace_elem fmt {description} => F.fprintf fmt "%s" description;
   let pp_trace fmt trace =>
     if Config.print_traces_in_tests {
-      let trace_without_empty_descs = IList.filter (fun {description} => description != "") trace;
+      let trace_without_empty_descs =
+        List.filter f::(fun {description} => description != "") trace;
       F.fprintf fmt ", [%a]" (Pp.comma_seq pp_trace_elem) trace_without_empty_descs
     };
   let pp_row jsonbug =>

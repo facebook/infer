@@ -79,7 +79,7 @@ let edge_from_source g n footprint_part is_hpred =
     match edge_get_source hpred with
     | Some e -> Exp.equal n e
     | None -> false in
-  match IList.filter starts_from edges with
+  match List.filter ~f:starts_from edges with
   | [] -> None
   | edge:: _ -> Some edge
 
@@ -106,8 +106,7 @@ let edge_equal e1 e2 = match e1, e2 with
 (** [contains_edge footprint_part g e] returns true if the graph [g] contains edge [e],
     searching the footprint part if [footprint_part] is true. *)
 let contains_edge (footprint_part: bool) (g: t) (e: edge) =
-  try ignore (IList.find (fun e' -> edge_equal e e') (get_edges footprint_part g)); true
-  with Not_found -> false
+  List.exists ~f:(fun e' -> edge_equal e e') (get_edges footprint_part g)
 
 (** [iter_edges footprint_part f g] iterates function [f] on the edges in [g] in the same order as returned by [get_edges];
     if [footprint_part] is true the edges are taken from the footprint part. *)
@@ -166,7 +165,7 @@ let compute_edge_diff (oldedge: edge) (newedge: edge) : Obj.t list = match olded
       compute_exp_diff e1 e2
   | Eatom (Sil.Apred (_, es1)), Eatom (Sil.Apred (_, es2))
   | Eatom (Sil.Anpred (_, es1)), Eatom (Sil.Anpred (_, es2)) ->
-      IList.flatten (try IList.map2 compute_exp_diff es1 es2 with IList.Fail -> [])
+      List.concat (try IList.map2 compute_exp_diff es1 es2 with IList.Fail -> [])
   | Esub_entry (_, e1), Esub_entry (_, e2) ->
       compute_exp_diff e1 e2
   | _ -> [Obj.repr newedge]

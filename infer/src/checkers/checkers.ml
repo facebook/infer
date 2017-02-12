@@ -220,7 +220,7 @@ let callback_check_write_to_parcel_java
     match typ with
     | Typ.Tptr (Tstruct name, _) -> (
         match Tenv.lookup tenv name with
-        | Some { methods } -> IList.filter is_parcel_constructor methods
+        | Some { methods } -> List.filter ~f:is_parcel_constructor methods
         | None -> []
       )
     | _ -> [] in
@@ -261,11 +261,11 @@ let callback_check_write_to_parcel_java
 
     let r_call_descs =
       IList.map node_to_call_desc
-        (IList.filter is_serialization_node
+        (List.filter ~f:is_serialization_node
            (Procdesc.get_sliced_slope r_desc is_serialization_node)) in
     let w_call_descs =
       IList.map node_to_call_desc
-        (IList.filter is_serialization_node
+        (List.filter ~f:is_serialization_node
            (Procdesc.get_sliced_slope w_desc is_serialization_node)) in
 
     let rec check_match = function
@@ -332,7 +332,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
         | Typ.Tstruct _ -> true
         | Typ.Tptr (Typ.Tstruct _, _) -> true
         | _ -> false in
-      IList.filter is_class_type formals in
+      List.filter ~f:is_class_type formals in
     IList.map fst class_formals) in
   let equal_formal_param exp formal_name = match exp with
     | Exp.Lvar pvar ->
@@ -368,7 +368,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
       begin
         let was_not_found formal_name =
           not (Exp.Set.exists (fun exp -> equal_formal_param exp formal_name) !checks_to_formals) in
-        let missing = IList.filter was_not_found formal_names in
+        let missing = List.filter ~f:was_not_found formal_names in
         let loc = Procdesc.get_loc proc_desc in
         let pp_file_loc fmt () =
           F.fprintf fmt "%a:%d" SourceFile.pp loc.Location.file loc.Location.line in
@@ -420,18 +420,15 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
   let reverse_find_instr f node =
     (* this is not really sound but for the moment a sufficient approximation *)
     let has_instr node =
-      try ignore(IList.find f (Procdesc.Node.get_instrs node)); true
-      with Not_found -> false in
+      List.exists ~f (Procdesc.Node.get_instrs node) in
     let preds =
       Procdesc.Node.get_generated_slope
         node
         (fun n -> Procdesc.Node.get_sliced_preds n has_instr) in
     let instrs =
-      IList.flatten
+      List.concat
         (IList.map (fun n -> IList.rev (Procdesc.Node.get_instrs n)) preds) in
-    try
-      Some (IList.find f instrs)
-    with Not_found -> None in
+    List.find ~f instrs in
 
   let get_return_const proc_name' =
     try

@@ -47,7 +47,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       && not (Pvar.is_compile_constant pv)
       && not (is_compile_time_constructed pdesc pv) in
     let globals_accesses =
-      Exp.get_vars e |> snd |> IList.filter is_dangerous_global
+      Exp.get_vars e |> snd |> List.filter ~f:is_dangerous_global
       |> IList.map (fun v -> (v, loc)) in
     GlobalsAccesses.of_list globals_accesses
 
@@ -149,12 +149,12 @@ let report_siof trace pdesc gname loc =
   let has_foreign_sink (_, path) =
     List.exists
       ~f:(fun (sink, _) ->
-         GlobalsAccesses.exists (is_foreign tu_opt)
-           (SiofTrace.Sink.kind sink))
+          GlobalsAccesses.exists (is_foreign tu_opt)
+            (SiofTrace.Sink.kind sink))
       path in
 
   SiofTrace.get_reportable_sink_paths trace ~trace_of_pname
-  |> IList.filter has_foreign_sink
+  |> List.filter ~f:has_foreign_sink
   |> IList.iter report_one_path
 
 let siof_check pdesc gname = function

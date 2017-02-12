@@ -152,7 +152,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let truncate = function
       | base, []
       | base, _ :: [] -> base, []
-      | base, accesses -> base, IList.rev (IList.tl (IList.rev accesses)) in
+      | base, accesses -> base, IList.rev (List.tl_exn (IList.rev accesses)) in
 
     (* we don't want to warn on writes to the field if it is (a) thread-confined, or (b) volatile *)
     let is_safe_write access_path tenv =
@@ -714,8 +714,8 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
     let pp_accesses fmt sink =
       let _, accesses = PathDomain.Sink.kind sink in
       AccessPath.pp_access_list fmt accesses in
-    let initial_sink, _ = IList.hd (IList.rev sinks) in
-    let final_sink, _ = IList.hd sinks in
+    let initial_sink, _ = List.last_exn sinks in
+    let final_sink, _ = List.hd_exn sinks in
     let initial_sink_site = PathDomain.Sink.call_site initial_sink in
     let final_sink_site = PathDomain.Sink.call_site final_sink in
     let desc_of_sink sink =

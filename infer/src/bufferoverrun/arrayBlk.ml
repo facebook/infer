@@ -97,7 +97,7 @@ struct
       let s1 = Itv.get_symbols arr.offset in
       let s2 = Itv.get_symbols arr.size in
       let s3 = Itv.get_symbols arr.stride in
-      IList.flatten [s1; s2; s3]
+      List.concat [s1; s2; s3]
 
   let normalize : t -> t
     = fun arr ->
@@ -176,7 +176,7 @@ let subst : astate -> Itv.Bound.t Itv.SubstMap.t -> astate
 
 let get_symbols : astate -> Itv.Symbol.t list
   = fun a ->
-    IList.flatten (IList.map (fun (_, ai) -> ArrInfo.get_symbols ai) (bindings a))
+    List.concat (IList.map (fun (_, ai) -> ArrInfo.get_symbols ai) (bindings a))
 
 let normalize : astate -> astate
   = fun a -> map ArrInfo.normalize a

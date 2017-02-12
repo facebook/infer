@@ -212,7 +212,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
   let node_add_nullify_instructions node pvars =
     let loc = Procdesc.Node.get_last_loc node in
     let nullify_instrs =
-      IList.filter is_local pvars
+      List.filter ~f:is_local pvars
       |> IList.map (fun pvar -> Sil.Nullify (pvar, loc)) in
     if nullify_instrs <> []
     then Procdesc.Node.append_instrs node (IList.rev nullify_instrs) in

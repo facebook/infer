@@ -214,7 +214,7 @@ let do_frontend_checks trans_unit_ctx ast =
         let is_decl_allowed decl =
           let decl_info = Clang_ast_proj.get_decl_tuple decl in
           CLocation.should_do_frontend_check trans_unit_ctx decl_info.Clang_ast_t.di_source_range in
-        let allowed_decls = IList.filter is_decl_allowed decl_list in
+        let allowed_decls = List.filter ~f:is_decl_allowed decl_list in
         (* We analyze the top level and then all the allowed declarations *)
         CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl ast);
         IList.iter (do_frontend_checks_decl context) allowed_decls;

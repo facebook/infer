@@ -46,7 +46,7 @@ let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
 
 (** Given a node, returns a list of pvar of blocks that have been nullified in the block. *)
 let get_blocks_nullified node =
-  let null_blocks = IList.flatten(IList.map (fun i -> match i with
+  let null_blocks = List.concat (IList.map (fun i -> match i with
       | Sil.Nullify(pvar, _) when Sil.is_block_pvar pvar -> [pvar]
       | _ -> []) (Procdesc.Node.get_instrs node)) in
   null_blocks
@@ -142,8 +142,8 @@ let rec apply_offlist
       match Tenv.lookup tenv name with
       | Some ({fields} as struct_typ) -> (
           let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
-          match IList.find (fun fse -> Ident.equal_fieldname fld (fst fse)) fsel with
-          | _, se' ->
+          match List.find ~f:(fun fse -> Ident.equal_fieldname fld (fst fse)) fsel with
+          | Some (_, se') ->
               let res_e', res_se', res_t', res_pred_insts_op' =
                 apply_offlist
                   pdesc tenv p fp_root nullify_struct
@@ -156,7 +156,7 @@ let rec apply_offlist
               let fields' = IList.map replace_fta fields in
               ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
               (res_e', res_se, typ, res_pred_insts_op')
-          | exception Not_found ->
+          | None ->
               (* This case should not happen. The rearrangement should
                  have materialized all the accessed cells. *)
               pp_error();
@@ -172,26 +172,25 @@ let rec apply_offlist
 
   | (Sil.Off_index idx) :: offlist', Sil.Earray (len, esel, inst1), Typ.Tarray (t', len') -> (
       let nidx = Prop.exp_normalize_prop tenv p idx in
-      try
-        let idx_ese', se' = IList.find (fun ese -> Prover.check_equal tenv p nidx (fst ese)) esel in
-        let res_e', res_se', res_t', res_pred_insts_op' =
-          apply_offlist
-            pdesc tenv p fp_root nullify_struct
-            (root_lexp, se', t') offlist' f inst lookup_inst in
-        let replace_ese ese =
-          if Exp.equal idx_ese' (fst ese)
-          then (idx_ese', res_se')
-          else ese in
-        let res_se = Sil.Earray (len, IList.map replace_ese esel, inst1) in
-        let res_t = Typ.Tarray (res_t', len') in
-        (res_e', res_se, res_t, res_pred_insts_op')
-      with Not_found ->
-        (* return a nondeterministic value if the index is not found after rearrangement *)
-        L.d_str "apply_offlist: index "; Sil.d_exp idx;
-        L.d_strln " not materialized -- returning nondeterministic value";
-        let res_e' = Exp.Var (Ident.create_fresh Ident.kprimed) in
-        (res_e', strexp, typ, None)
-    )
+      match List.find ~f:(fun ese -> Prover.check_equal tenv p nidx (fst ese)) esel with
+      | Some (idx_ese', se') ->
+          let res_e', res_se', res_t', res_pred_insts_op' =
+            apply_offlist
+              pdesc tenv p fp_root nullify_struct
+              (root_lexp, se', t') offlist' f inst lookup_inst in
+          let replace_ese ese =
+            if Exp.equal idx_ese' (fst ese)
+            then (idx_ese', res_se')
+            else ese in
+          let res_se = Sil.Earray (len, IList.map replace_ese esel, inst1) in
+          let res_t = Typ.Tarray (res_t', len') in
+          (res_e', res_se, res_t, res_pred_insts_op')
+      | None ->
+          (* return a nondeterministic value if the index is not found after rearrangement *)
+          L.d_str "apply_offlist: index "; Sil.d_exp idx;
+          L.d_strln " not materialized -- returning nondeterministic value";
+          let res_e' = Exp.Var (Ident.create_fresh Ident.kprimed) in
+          (res_e', strexp, typ, None))
   | (Sil.Off_index _) :: _, _, _ ->
       (* This case should not happen. The rearrangement should
          have materialized all the accessed cells. *)
@@ -423,10 +422,9 @@ let check_arith_norm_exp tenv pname exp prop =
 (** Check if [cond] is testing for NULL a pointer already dereferenced *)
 let check_already_dereferenced tenv pname cond prop =
   let find_hpred lhs =
-    try Some (IList.find (function
+    List.find ~f:(function
         | Sil.Hpointsto (e, _, _) -> Exp.equal e lhs
-        | _ -> false) prop.Prop.sigma)
-    with Not_found -> None in
+        | _ -> false) prop.Prop.sigma in
   let rec is_check_zero = function
     | Exp.Var id ->
         Some id
@@ -568,7 +566,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
           let target_receiver_typ = get_receiver_typ target_pname actual_receiver_typ in
           Prover.Subtyping_check.check_subtype tenv target_receiver_typ actual_receiver_typ in
         let resolved_pname = do_resolve callee_pname receiver_exp actual_receiver_typ in
-        let feasible_targets = IList.filter may_dispatch_to targets in
+        let feasible_targets = List.filter ~f:may_dispatch_to targets in
         (* make sure [resolved_pname] is not a duplicate *)
         if List.mem ~equal:Procname.equal feasible_targets resolved_pname
         then feasible_targets
@@ -748,7 +746,7 @@ let handle_objc_instance_method_call_or_skip tenv actual_pars path callee_pname 
         let propset = prune_ne tenv ~positive:false receiver Exp.zero pre_with_attr_or_null in
         if Propset.is_empty propset then []
         else
-          let prop = IList.hd (Propset.to_proplist propset) in
+          let prop = List.hd_exn (Propset.to_proplist propset) in
           let path = Paths.Path.add_description path path_description in
           [(prop, path)] in
       res_null @ (res ())
@@ -1161,7 +1159,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                 else
                   proc_call (Option.value_exn resolved_summary_opt)
                     (call_args prop resolved_pname n_actual_params ret_id loc) in
-              IList.flatten (IList.map do_call sentinel_result)
+              List.concat (IList.map do_call sentinel_result)
         )
     )
   | Sil.Call (ret_id, fun_exp, actual_params, loc, call_flags) -> (* Call via function pointer *)
@@ -1244,7 +1242,7 @@ and instrs ?(mask_errors=false) tenv pdesc instrs ppl =
         ("Generated Instruction Failed with: " ^
          (Localise.to_string err_name)^loc ); L.d_ln();
       [(p, path)] in
-  let f plist instr = IList.flatten (IList.map (exe_instr instr) plist) in
+  let f plist instr = List.concat (IList.map (exe_instr instr) plist) in
   IList.fold_left f ppl instrs
 
 and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname callee_loc =
@@ -1301,11 +1299,11 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
           (* bind actual passed by ref to the abduced value pointed to by the synthetic pvar *)
           let prop' =
             let filtered_sigma =
-              IList.filter
-                (function
-                  | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual ->
-                      false
-                  | _ -> true)
+              List.filter
+                ~f:(function
+                    | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual ->
+                        false
+                    | _ -> true)
                 prop.Prop.sigma in
             Prop.normalize tenv (Prop.set prop ~sigma:filtered_sigma) in
           IList.fold_left
@@ -1341,7 +1339,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
           not is_const
       | None ->
           true in
-    IList.filter is_not_const actuals_by_ref in
+    List.filter ~f:is_not_const actuals_by_ref in
   IList.fold_left do_actual_by_ref prop non_const_actuals_by_ref
 
 and check_untainted tenv exp taint_kind caller_pname callee_pname prop =
@@ -1391,11 +1389,10 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       | param_nums ->
           let check_taint_if_nums_match (prop_acc, param_num) (actual_exp, _actual_typ) =
             let prop_acc' =
-              try
-                let _, taint_kind =
-                  IList.find (fun (num, _) -> Int.equal num param_num) param_nums in
-                check_untainted tenv actual_exp taint_kind caller_pname callee_pname prop_acc
-              with Not_found -> prop_acc in
+              match List.find ~f:(fun (num, _) -> Int.equal num param_num) param_nums with
+              | Some (_, taint_kind) ->
+                  check_untainted tenv actual_exp taint_kind caller_pname callee_pname prop_acc
+              | None -> prop_acc in
             prop_acc', param_num + 1 in
           IList.fold_left
             check_taint_if_nums_match

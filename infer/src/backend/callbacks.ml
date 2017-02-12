@@ -122,7 +122,7 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
   (* Procedures matching the given language or all if no language is specified. *)
   let relevant_procedures language_opt =
     Option.value_map
-      ~f:(fun l -> IList.filter (fun p -> Config.equal_language l (get_language p)) proc_names)
+      ~f:(fun l -> List.filter ~f:(fun p -> Config.equal_language l (get_language p)) proc_names)
       ~default:proc_names
       language_opt in
 

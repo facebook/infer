@@ -140,13 +140,11 @@ module Tags = struct
   let create () = ref []
   let add tags tag value = tags := (tag, value) :: !tags
   let update tags tag value =
-    let tags' = IList.filter (fun (t, _) -> t <> tag) tags in
+    let tags' = List.filter ~f:(fun (t, _) -> t <> tag) tags in
     (tag, value) :: tags'
   let get tags tag =
-    try
-      let (_, v) = IList.find (fun (t, _) -> String.equal t tag) tags in
-      Some v
-    with Not_found -> None
+    List.find ~f:(fun (t, _) -> String.equal t tag) tags |>
+    Option.map ~f:snd
 end
 
 module BucketLevel = struct
@@ -164,10 +162,9 @@ let error_desc_extract_tag_value err_desc tag_to_extract =
     match v with
     | (t, _) when String.equal t tag -> true
     | _ -> false in
-  try
-    let _, s = IList.find (find_value tag_to_extract) err_desc.tags in
-    s
-  with Not_found -> ""
+  match List.find ~f:(find_value tag_to_extract) err_desc.tags with
+  | Some (_, s) -> s
+  | None -> ""
 
 let error_desc_to_tag_value_pairs err_desc = err_desc.tags
 
@@ -193,8 +190,8 @@ let error_desc_set_bucket err_desc bucket show_in_message =
 (** get the value tag, if any *)
 let get_value_line_tag tags =
   try
-    let value = snd (IList.find (fun (tag, _) -> String.equal tag Tags.value) tags) in
-    let line = snd (IList.find (fun (tag, _) -> String.equal tag Tags.line) tags) in
+    let value = snd (List.find_exn ~f:(fun (tag, _) -> String.equal tag Tags.value) tags) in
+    let line = snd (List.find_exn ~f:(fun (tag, _) -> String.equal tag Tags.line) tags) in
     Some [value; line]
   with Not_found -> None
 

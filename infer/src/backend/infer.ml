@@ -225,7 +225,7 @@ let capture = function
               ["--java-jar-compiler"; p]) @
           (match IList.rev Config.buck_build_args with
            | args when in_buck_mode ->
-               IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> IList.flatten
+               IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> List.concat
            | _ -> []) @
           (if not Config.debug_mode then [] else
              ["--debug"]) @

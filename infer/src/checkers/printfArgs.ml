@@ -46,12 +46,9 @@ let add_printf_like_function plf =
 
 let printf_like_function
     (proc_name: Procname.t): printf_signature option =
-  try
-    Some (
-      IList.find
-        (fun printf -> String.equal printf.unique_id (Procname.to_unique_id proc_name))
-        !printf_like_functions)
-  with Not_found -> None
+  List.find
+    ~f:(fun printf -> String.equal printf.unique_id (Procname.to_unique_id proc_name))
+    !printf_like_functions
 
 let default_format_type_name
     (format_type: string): string =

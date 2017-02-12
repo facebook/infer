@@ -74,7 +74,7 @@ let get_all_procs cfg => {
 
 
 /** Get the procedures whose body is defined in this cfg */
-let get_defined_procs cfg => IList.filter Procdesc.is_defined (get_all_procs cfg);
+let get_defined_procs cfg => List.filter f::Procdesc.is_defined (get_all_procs cfg);
 
 
 /** checks whether a cfg is connected or not */

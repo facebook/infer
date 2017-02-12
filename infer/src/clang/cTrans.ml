@@ -168,10 +168,10 @@ struct
     (f exps, !insts)
 
   let collect_exprs res_trans_list =
-    IList.flatten (IList.map (fun res_trans -> res_trans.exps) res_trans_list)
+    List.concat (IList.map (fun res_trans -> res_trans.exps) res_trans_list)
 
   let collect_initid_exprs res_trans_list =
-    IList.flatten (IList.map (fun res_trans -> res_trans.initd_exps) res_trans_list)
+    List.concat (IList.map (fun res_trans -> res_trans.initd_exps) res_trans_list)
 
   (* If e is a block and the calling node has the priority then *)
   (* we need to release the priority to allow*)
@@ -443,7 +443,7 @@ struct
       let open Clang_ast_t in
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
       let get_attr_opt = function DeprecatedAttr a -> Some a | _ -> None in
-      match IList.find_map_opt get_attr_opt decl_info.di_attributes with
+      match List.find_map ~f:get_attr_opt decl_info.di_attributes with
       | Some attribute_info ->
           (match attribute_info.ai_parameters with
            | [_; arg; _; _; _; _] -> Some arg
@@ -888,7 +888,7 @@ struct
           Option.value_map
             ~f:CTrans_models.is_cf_retain_release ~default:false callee_pname_opt in
         let act_params =
-          let params = IList.tl (collect_exprs result_trans_subexprs) in
+          let params = List.tl_exn (collect_exprs result_trans_subexprs) in
           if Int.equal (IList.length params) (IList.length params_stmt) then
             params
           else (Logging.err_debug
@@ -929,7 +929,7 @@ struct
     let sil_loc = CLocation.get_sil_location si context in
     (* first for method address, second for 'this' expression *)
     assert (Int.equal (IList.length result_trans_callee.exps) 2);
-    let (sil_method, _) = IList.hd result_trans_callee.exps in
+    let (sil_method, _) = List.hd_exn result_trans_callee.exps in
     let callee_pname =
       match sil_method with
       | Exp.Const (Const.Cfun pn) -> pn
@@ -944,7 +944,7 @@ struct
       let res_trans_p = IList.map (instruction' trans_state_param) params_stmt in
       result_trans_callee :: res_trans_p in
     (* first expr is method address, rest are params including 'this' parameter *)
-    let actual_params = IList.tl (collect_exprs result_trans_subexprs) in
+    let actual_params = List.tl_exn (collect_exprs result_trans_subexprs) in
     match cxx_method_builtin_trans trans_state_pri sil_loc result_trans_subexprs callee_pname with
     | Some builtin -> builtin
     | _ ->

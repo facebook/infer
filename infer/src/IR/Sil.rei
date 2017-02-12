@@ -716,7 +716,7 @@ let sub_filter: (Ident.t => bool) => subst => subst;
 
 /** [sub_filter_exp filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter(id, sub(id))]. */
-let sub_filter_pair: ((Ident.t, Exp.t) => bool) => subst => subst;
+let sub_filter_pair: subst => f::((Ident.t, Exp.t) => bool) => subst;
 
 
 /** [sub_range_partition filter sub] partitions [sub] according to

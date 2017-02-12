@@ -86,8 +86,8 @@ let ia_contains ia ann_name =
   List.exists ~f:(class_name_matches ann_name) ia
 
 let ia_get ia ann_name =
-  try Some (fst (IList.find (class_name_matches ann_name) ia))
-  with Not_found -> None
+  List.find ~f:(class_name_matches ann_name) ia |>
+  Option.map ~f:fst
 
 let pdesc_has_parameter_annot pdesc predicate =
   let _, param_annotations = (Procdesc.get_attributes pdesc).ProcAttributes.method_annotation in

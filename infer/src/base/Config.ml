@@ -49,7 +49,7 @@ let string_to_analyzer =
    ("bufferoverrun", Bufferoverrun)]
 
 let string_of_analyzer a =
-  IList.find (fun (_, a') -> equal_analyzer a a') string_to_analyzer |> fst
+  List.find_exn ~f:(fun (_, a') -> equal_analyzer a a') string_to_analyzer |> fst
 
 let clang_frontend_action_symbols = [
   ("lint", `Lint);

@@ -41,7 +41,7 @@ let rec exp_match e1 sub vars e2 : (Sil.subst * Ident.t list) option =
     in if (Exp.equal e1 e2_inst) then Some(sub, vars) else None in
   match e1, e2 with
   | _, Exp.Var id2 when (Ident.is_primed id2 && mem_idlist id2 vars) ->
-      let vars_new = IList.filter (fun id -> not (Ident.equal id id2)) vars in
+      let vars_new = List.filter ~f:(fun id -> not (Ident.equal id id2)) vars in
       let sub_new = match (Sil.extend_sub sub id2 e1) with
         | None -> assert false (* happens when vars contains the same variable twice. *)
         | Some sub_new -> sub_new
@@ -545,7 +545,7 @@ and generate_todos_from_iel mode todos iel1 iel2 =
 let corres_extend_front e1 e2 corres =
   let filter (e1', e2') = (Exp.equal e1 e1') || (Exp.equal e2 e2') in
   let checker e1' e2' = (Exp.equal e1 e1') && (Exp.equal e2 e2')
-  in match (IList.filter filter corres) with
+  in match (List.filter ~f:filter corres) with
   | [] -> Some ((e1, e2) :: corres)
   | [(e1', e2')] when checker e1' e2' -> Some corres
   | _ -> None
@@ -557,7 +557,7 @@ let corres_extensible corres e1 e2 =
 let corres_related corres e1 e2 =
   let filter (e1', e2') = (Exp.equal e1 e1') || (Exp.equal e2 e2') in
   let checker e1' e2' = (Exp.equal e1 e1') && (Exp.equal e2 e2') in
-  match (IList.filter filter corres) with
+  match (List.filter ~f:filter corres) with
   | [] -> Exp.equal e1 e2
   | [(e1', e2')] when checker e1' e2' -> true
   | _ -> false
@@ -714,12 +714,12 @@ let generic_para_create tenv corres sigma1 elist1 =
     let not_same_consts = function
       | Exp.Const c1, Exp.Const c2 -> not (Const.equal c1 c2)
       | _ -> true in
-    let new_corres' = IList.filter not_same_consts corres in
+    let new_corres' = List.filter ~f:not_same_consts corres in
     let add_fresh_id pair = (pair, Ident.create_fresh Ident.kprimed) in
     IList.map add_fresh_id new_corres' in
   let (es_shared, ids_shared, ids_exists) =
     let not_in_elist1 ((e1, _), _) = not (List.exists ~f:(Exp.equal e1) elist1) in
-    let corres_ids_no_elist1 = IList.filter not_in_elist1 corres_ids in
+    let corres_ids_no_elist1 = List.filter ~f:not_in_elist1 corres_ids in
     let should_be_shared ((e1, e2), _) = Exp.equal e1 e2 in
     let shared, exists = IList.partition should_be_shared corres_ids_no_elist1 in
     let es_shared = IList.map (fun ((e1, _), _) -> e1) shared in
@@ -739,11 +739,10 @@ let hpara_create tenv corres sigma1 root1 next1 =
   let renaming, body, ids_exists, ids_shared, es_shared =
     generic_para_create tenv corres sigma1 [root1; next1] in
   let get_id1 e1 =
-    try
-      let is_equal_to_e1 (e1', _) = Exp.equal e1 e1' in
-      let _, id = IList.find is_equal_to_e1 renaming in
-      id
-    with Not_found -> assert false in
+    let is_equal_to_e1 (e1', _) = Exp.equal e1 e1' in
+    match List.find ~f:is_equal_to_e1 renaming with
+    | Some (_, id) -> id
+    | None -> assert false in
   let id_root = get_id1 root1 in
   let id_next = get_id1 next1 in
   let hpara =
@@ -762,11 +761,10 @@ let hpara_dll_create tenv corres sigma1 root1 blink1 flink1 =
   let renaming, body, ids_exists, ids_shared, es_shared =
     generic_para_create tenv corres sigma1 [root1; blink1; flink1] in
   let get_id1 e1 =
-    try
-      let is_equal_to_e1 (e1', _) = Exp.equal e1 e1' in
-      let _, id = IList.find is_equal_to_e1 renaming in
-      id
-    with Not_found -> assert false in
+    let is_equal_to_e1 (e1', _) = Exp.equal e1 e1' in
+    match List.find ~f:is_equal_to_e1 renaming with
+    | Some (_, id) -> id
+    | None -> assert false in
   let id_root = get_id1 root1 in
   let id_blink = get_id1 blink1 in
   let id_flink = get_id1 flink1 in

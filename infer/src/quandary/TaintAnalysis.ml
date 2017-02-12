@@ -168,8 +168,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             TraceDomain.empty in
 
       let pp_path_short fmt (_, sources_passthroughs, sinks_passthroughs) =
-        let original_source = fst (IList.hd sources_passthroughs) in
-        let final_sink = fst (IList.hd sinks_passthroughs) in
+        let original_source = fst (List.hd_exn sources_passthroughs) in
+        let final_sink = fst (List.hd_exn sinks_passthroughs) in
         F.fprintf
           fmt
           "%a -> %a"

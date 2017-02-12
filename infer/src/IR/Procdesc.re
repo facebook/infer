@@ -89,7 +89,7 @@ let module Node = {
           NodeSet.singleton n
         } else {
           NodeSet.union
-            acc (slice_nodes (IList.filter (fun s => not (NodeSet.mem s !visited)) n.succs))
+            acc (slice_nodes (List.filter f::(fun s => not (NodeSet.mem s !visited)) n.succs))
         }
       };
       IList.fold_left do_node NodeSet.empty nodes
@@ -105,7 +105,7 @@ let module Node = {
           NodeSet.singleton n
         } else {
           NodeSet.union
-            acc (slice_nodes (IList.filter (fun s => not (NodeSet.mem s !visited)) n.preds))
+            acc (slice_nodes (List.filter f::(fun s => not (NodeSet.mem s !visited)) n.preds))
         }
       };
       IList.fold_left do_node NodeSet.empty nodes
@@ -132,9 +132,9 @@ let module Node = {
     let visited = ref NodeSet.empty;
     let rec nodes n => {
       visited := NodeSet.add n !visited;
-      let succs = IList.filter (fun n => not (NodeSet.mem n !visited)) (generator n);
-      switch (IList.length succs) {
-      | 1 => [n, ...nodes (IList.hd succs)]
+      let succs = List.filter f::(fun n => not (NodeSet.mem n !visited)) (generator n);
+      switch succs {
+      | [hd] => [n, ...nodes hd]
       | _ => [n]
       }
     };

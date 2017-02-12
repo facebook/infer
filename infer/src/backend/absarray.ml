@@ -76,14 +76,16 @@ end = struct
     | Sil.Estruct (fsel, _), Tstruct name, Field (fld, _) :: syn_offs' -> (
         match Tenv.lookup tenv name with
         | Some { fields } ->
-            let se' = snd (IList.find (fun (f', _) -> Ident.equal_fieldname f' fld) fsel) in
-            let t' = snd3 (IList.find (fun (f', _, _) -> Ident.equal_fieldname f' fld) fields) in
+            let se' =
+              snd (List.find_exn ~f:(fun (f', _) -> Ident.equal_fieldname f' fld) fsel) in
+            let t' =
+              snd3 (List.find_exn ~f:(fun (f', _, _) -> Ident.equal_fieldname f' fld) fields) in
             get_strexp_at_syn_offsets tenv se' t' syn_offs'
         | None ->
             fail ()
       )
     | Sil.Earray (_, esel, _), Typ.Tarray (t', _), Index ind :: syn_offs' ->
-        let se' = snd (IList.find (fun (i', _) -> Exp.equal i' ind) esel) in
+        let se' = snd (List.find_exn ~f:(fun (i', _) -> Exp.equal i' ind) esel) in
         get_strexp_at_syn_offsets tenv se' t' syn_offs'
     | _ ->
         fail ()
@@ -96,9 +98,9 @@ end = struct
     | Sil.Estruct (fsel, inst), Tstruct name, Field (fld, _) :: syn_offs' -> (
         match Tenv.lookup tenv name with
         | Some { fields } ->
-            let se' = snd (IList.find (fun (f', _) -> Ident.equal_fieldname f' fld) fsel) in
+            let se' = snd (List.find_exn ~f:(fun (f', _) -> Ident.equal_fieldname f' fld) fsel) in
             let t' = (fun (_,y,_) -> y)
-                (IList.find (fun (f', _, _) ->
+                (List.find_exn ~f:(fun (f', _, _) ->
                      Ident.equal_fieldname f' fld) fields) in
             let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
             let fsel' =
@@ -110,7 +112,7 @@ end = struct
             assert false
       )
     | Sil.Earray (len, esel, inst), Tarray (t', _), Index idx :: syn_offs' ->
-        let se' = snd (IList.find (fun (i', _) -> Exp.equal i' idx) esel) in
+        let se' = snd (List.find_exn ~f:(fun (i', _) -> Exp.equal i' idx) esel) in
         let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
         let esel' =
           IList.map (fun ese -> if Exp.equal (fst ese) idx then (idx, se_mod) else ese) esel in
@@ -150,7 +152,7 @@ end = struct
     let filter = function
       | Sil.Hpointsto (e, _, _) -> Exp.equal root e
       | _ -> false in
-    let hpred = IList.find filter sigma in
+    let hpred = List.find_exn ~f:filter sigma in
     (sigma, hpred, syn_offs)
 
   (** Find a sub strexp with the given property. Can raise [Not_found] *)
@@ -177,11 +179,12 @@ end = struct
       | [] -> ()
       | (f, se) :: fsel' ->
           begin
-            try
-              let t = snd3 (IList.find (fun (f', _, _) -> Ident.equal_fieldname f' f) ftal) in
-              find_offset_sexp sigma_other hpred root ((Field (f, typ)) :: offs) se t
-            with Not_found ->
-              L.d_strln ("Can't find field " ^ (Ident.fieldname_to_string f) ^ " in StrexpMatch.find")
+            match List.find ~f:(fun (f', _, _) -> Ident.equal_fieldname f' f) ftal with
+            | Some (_, t, _) ->
+                find_offset_sexp sigma_other hpred root ((Field (f, typ)) :: offs) se t
+            | None ->
+                L.d_strln
+                  ("Can't find field " ^ (Ident.fieldname_to_string f) ^ " in StrexpMatch.find")
           end;
           find_offset_fsel sigma_other hpred root offs fsel' ftal typ
     and find_offset_esel sigma_other hpred root offs esel t = match esel with
@@ -261,18 +264,6 @@ end = struct
       | _ -> assert false in
     let hpred' = hpred_replace_strexp tenv footprint_part hpred syn_offs update in
     replace_hpred (sigma, hpred, syn_offs) hpred'
-(*
-  (** Get the partition of the sigma: the unmatched part of the sigma and the matched hpred *)
-  let get_sigma_partition (sigma, hpred, _) =
-    let sigma_unmatched = IList.filter (fun hpred' -> not (hpred' == hpred)) sigma in
-    (sigma_unmatched, hpred)
-
-  (** Replace the strexp and the unmatched part of the sigma by the given inputs *)
-  let replace_strexp_sigma footprint_part ((_, hpred, syn_offs) : t) se_in sigma_in =
-    let new_sigma = hpred :: sigma_in in
-    let sigma' = replace_strexp tenv footprint_part (new_sigma, hpred, syn_offs) se_in in
-    IList.sort Sil.compare_hpred sigma'
-*)
 end
 
 (** This function renames expressions in [p]. The renaming is, roughly
@@ -292,10 +283,9 @@ let prop_replace_path_index tenv
           ) acc_outer map
       ) [] elist_path in
   let expmap_fun e' =
-    try
-      let _, fresh_e = IList.find (fun (e, _) -> Exp.equal e e') expmap_list in
-      fresh_e
-    with Not_found -> e' in
+    Option.value_map
+      ~f:snd (List.find ~f:(fun (e, _) -> Exp.equal e e') expmap_list)
+      ~default:e' in
   Prop.prop_expmap expmap_fun p
 
 (** This function uses [update] and transforms the two sigma parts of [p],
@@ -376,7 +366,7 @@ let index_is_pointed_to tenv (p: Prop.normal Prop.t) (path: StrexpMatch.path) (i
     let elist_path = StrexpMatch.path_to_exps path in
     let add_index i e = Prop.exp_normalize_prop tenv p (Exp.Lindex(e, i)) in
     fun i -> IList.map (add_index i) elist_path in
-  let pointers = IList.flatten (IList.map add_index_to_paths indices) in
+  let pointers = List.concat (IList.map add_index_to_paths indices) in
   let filter = function
     | Sil.Hpointsto (_, Sil.Eexp (e, _), _) -> List.exists ~f:(Exp.equal e) pointers
     | _ -> false in
@@ -502,7 +492,7 @@ let strexp_do_abstract tenv
     let default_indices =
       match IList.map fst esel with
       | [] -> []
-      | indices -> [IList.hd (IList.rev indices)] (* keep last key at least *) in
+      | indices -> [List.hd_exn (IList.rev indices)] (* keep last key at least *) in
     partition_abstract should_keep abstract esel default_indices in
   let do_footprint () =
     match se_in with
@@ -510,7 +500,7 @@ let strexp_do_abstract tenv
     | _ -> assert false in
 
   let filter_abstract d_keys should_keep abstract ksel default_keys =
-    let keep_ksel = IList.filter should_keep ksel in
+    let keep_ksel = List.filter ~f:should_keep ksel in
     let keep_keys = IList.map fst keep_ksel in
     let keep_keys' = if List.is_empty keep_keys then default_keys else keep_keys in
     if Config.trace_absarray then (L.d_str "keep "; d_keys keep_keys'; L.d_ln ());
@@ -593,7 +583,7 @@ let remove_redundant_elements tenv prop =
     Sil.fav_duplicates := false;
     (* L.d_str "favl_curr "; IList.iter (fun id -> Sil.d_exp (Exp.Var id)) favl_curr; L.d_ln();
        L.d_str "favl_foot "; IList.iter (fun id -> Sil.d_exp (Exp.Var id)) favl_foot; L.d_ln(); *)
-    let num_occur l id = IList.length (IList.filter (fun id' -> Ident.equal id id') l) in
+    let num_occur l id = IList.length (List.filter ~f:(fun id' -> Ident.equal id id') l) in
     let at_most_once v =
       num_occur favl_curr v <= 1 && num_occur favl_foot v <= 1 in
     at_most_once in
@@ -613,7 +603,7 @@ let remove_redundant_elements tenv prop =
     | _ -> true in
   let remove_redundant_se fp_part = function
     | Sil.Earray (len, esel, inst) ->
-        let esel' = IList.filter (filter_redundant_e_se fp_part) esel in
+        let esel' = List.filter ~f:(filter_redundant_e_se fp_part) esel in
         Sil.Earray (len, esel', inst)
     | se -> se in
   let remove_redundant_hpred fp_part = function

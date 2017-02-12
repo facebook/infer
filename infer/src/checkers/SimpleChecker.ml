@@ -90,8 +90,8 @@ module Make (Spec : Spec) : S = struct
       then
         (* should never fail since keys in the invariant map should always be real node id's *)
         let node =
-          IList.find
-            (fun node -> Procdesc.Node.equal_id node_id (Procdesc.Node.get_id node))
+          List.find_exn
+            ~f:(fun node -> Procdesc.Node.equal_id node_id (Procdesc.Node.get_id node))
             nodes in
         Domain.iter
           (fun astate ->

@@ -151,7 +151,7 @@ let get_assume_not_null_calls param_decls =
             decl_info name qt.Clang_ast_t.qt_type_ptr in
         [(`ClangStmt assume_call)]
     | _ -> [] in
-  IList.flatten (IList.map do_one_param param_decls)
+  List.concat (IList.map do_one_param param_decls)
 
 let get_init_list_instrs method_decl_info =
   let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in

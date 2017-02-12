@@ -93,8 +93,8 @@ let add tenv name struct_typ => TypenameHash.replace tenv name struct_typ;
 /** Get method that is being overriden by java_pname (if any) **/
 let get_overriden_method tenv pname_java => {
   let struct_typ_get_method_by_name (struct_typ: StructTyp.t) method_name =>
-    IList.find
-      (fun meth => String.equal method_name (Procname.get_method meth)) struct_typ.methods;
+    List.find_exn
+      f::(fun meth => String.equal method_name (Procname.get_method meth)) struct_typ.methods;
   let rec get_overriden_method_in_supers pname_java supers =>
     switch supers {
     | [superclass, ...supers_tail] =>

@@ -38,7 +38,7 @@ let add_or_replace_check_changed tenv check_attribute_change prop atom0 =
   | Sil.Apred (att0, ((_ :: _) as exps0)) | Anpred (att0, ((_ :: _) as exps0)) ->
       let pairs =
         IList.map (fun e -> (e, Prop.exp_normalize_prop tenv prop e)) exps0 in
-      let _, nexp = IList.hd pairs in (* len exps0 > 0 by match *)
+      let _, nexp = List.hd_exn pairs in (* len exps0 > 0 by match *)
       let natom = Sil.atom_replace_exp pairs atom0 in
       let atom_map = function
         | Sil.Apred (att, exp :: _) | Anpred (att, exp :: _)
@@ -69,7 +69,7 @@ let get_all (prop: 'a Prop.t) =
 
 (** Get all the attributes of the prop *)
 let get_for_symb prop att =
-  IList.filter (function
+  List.filter ~f:(function
       | Sil.Apred (att', _) | Anpred (att', _) -> PredSymb.equal att' att
       | _ -> false
     ) prop.Prop.pi
@@ -86,14 +86,12 @@ let get_for_exp tenv (prop: 'a Prop.t) exp =
 
 let get tenv prop exp category =
   let atts = get_for_exp tenv prop exp in
-  try
-    Some
-      (IList.find (function
-           | Sil.Apred (att, _) | Anpred (att, _) ->
-               PredSymb.equal_category (PredSymb.to_category att) category
-           | _ -> false
-         ) atts)
-  with Not_found -> None
+  List.find
+    ~f:(function
+        | Sil.Apred (att, _) | Anpred (att, _) ->
+            PredSymb.equal_category (PredSymb.to_category att) category
+        | _ -> false)
+    atts
 
 let get_undef tenv prop exp =
   get tenv prop exp ACundef
@@ -248,11 +246,15 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
     | Exp.Sizeof (_, None, _) -> ()
     | Exp.Sizeof (_, Some len, _) -> walk len in
   walk exp;
-  try Some (Div0 (IList.find check_zero !exps_divided)), !res
-  with Not_found ->
-    (match !uminus_unsigned with
-     | (e, t):: _ -> Some (UminusUnsigned (e, t)), !res
-     | _ -> None, !res)
+  let problem_opt =
+    match (List.find ~f:check_zero !exps_divided, !uminus_unsigned) with
+    | Some e, _ ->
+        Some (Div0 e)
+    | None, (e, t):: _ ->
+        Some (UminusUnsigned (e, t))
+    | None, [] ->
+        None in
+  problem_opt, !res
 
 (** Deallocate the stack variables in [pvars], and replace them by normal variables.
     Return the list of stack variables whose address was still present after deallocation. *)

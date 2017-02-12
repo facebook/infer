@@ -593,7 +593,7 @@ end = struct
   let filter f ps =
     let elements = ref [] in
     PropMap.iter (fun p _ -> elements := p :: !elements) ps;
-    elements := IList.filter (fun p -> not (f p)) !elements;
+    elements := List.filter ~f:(fun p -> not (f p)) !elements;
     let filtered_map = ref ps in
     IList.iter (fun p -> filtered_map := PropMap.remove p !filtered_map) !elements;
     !filtered_map

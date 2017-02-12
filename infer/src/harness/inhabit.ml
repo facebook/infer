@@ -60,8 +60,8 @@ let create_fresh_local_name () =
   incr local_name_cntr;
   "dummy_local" ^ string_of_int !local_name_cntr
 
-(** more forgiving variation of IList.tl that won't raise an exception on the empty list *)
-let tl_or_empty l = if List.is_empty l then l else IList.tl l
+(** more forgiving variation of List.tl that won't raise an exception on the empty list *)
+let tl_or_empty l = if List.is_empty l then l else List.tl_exn l
 
 let get_non_receiver_formals formals = tl_or_empty formals
 
@@ -106,7 +106,7 @@ let rec inhabit_typ tenv typ cfg env =
                       && IList.for_all (fun (_, typ) ->
                           not (TypSet.mem typ env.cur_inhabiting)
                         ) (try_get_non_receiver_formals p) in
-                    IList.filter (fun p -> is_suitable_constructor p) methods
+                    List.filter ~f:(fun p -> is_suitable_constructor p) methods
                 | _ -> []
               )
             | _ -> []

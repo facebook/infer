@@ -78,9 +78,9 @@ let find_in_node_or_preds start_node f_node_instr =
       begin
         visited := Procdesc.NodeSet.add node !visited;
         let instrs = Procdesc.Node.get_instrs node in
-        match IList.find_map_opt (f_node_instr node) (IList.rev instrs) with
+        match List.find_map ~f:(f_node_instr node) (IList.rev instrs) with
         | Some res -> Some res
-        | None -> IList.find_map_opt find (Procdesc.Node.get_preds node)
+        | None -> List.find_map ~f:find (Procdesc.Node.get_preds node)
       end in
   find start_node
 
@@ -537,9 +537,9 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
                  Pvar.d pvar; L.d_ln ());
               [pvar]
           | _ -> [] in
-        let nullify_pvars = IList.flatten (IList.map get_nullify node_instrs) in
+        let nullify_pvars = List.concat (IList.map get_nullify node_instrs) in
         let nullify_pvars_notmp =
-          IList.filter (fun pvar -> not (Pvar.is_frontend_tmp pvar)) nullify_pvars in
+          List.filter ~f:(fun pvar -> not (Pvar.is_frontend_tmp pvar)) nullify_pvars in
         value_str_from_pvars_vpath nullify_pvars_notmp vpath
     | Some (Sil.Store (lexp, _, _, _)) when is_none vpath ->
         if verbose
@@ -581,11 +581,9 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
                let typo = match texp with
                  | Exp.Sizeof (Tstruct name, _, _) -> (
                      match Tenv.lookup tenv name with
-                     | Some {fields} -> (
-                         match IList.find (fun (f', _, _) -> Ident.equal_fieldname f' f) fields with
-                         | _, t, _ -> Some t
-                         | exception Not_found -> None
-                       )
+                     | Some {fields} ->
+                         List.find ~f:(fun (f', _, _) -> Ident.equal_fieldname f' f) fields |>
+                         Option.map ~f:snd3
                      | _ ->
                          None
                    )

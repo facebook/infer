@@ -67,11 +67,11 @@ module SourceKind = struct
                 | None ->
                     (* check the list of externally specified sources *)
                     let procedure = class_name ^ "." ^ method_name in
-                    IList.find_map_opt
-                      (fun (source_spec : QuandaryConfig.Source.t) ->
-                         if Str.string_match source_spec.procedure procedure 0
-                         then Some (of_string source_spec.kind)
-                         else None)
+                    List.find_map
+                      ~f:(fun (source_spec : QuandaryConfig.Source.t) ->
+                          if Str.string_match source_spec.procedure procedure 0
+                          then Some (of_string source_spec.kind)
+                          else None)
                       external_sources
               end
         end
@@ -156,7 +156,7 @@ module SinkKind = struct
       let actuals_to_taint, offset =
         if Procname.java_is_static pname || taint_this
         then actuals, 0
-        else IList.tl actuals, 1 in
+        else List.tl_exn actuals, 1 in
       IList.mapi
         (fun param_num _ -> kind, param_num + offset, report_reachable)
         actuals_to_taint in
@@ -236,19 +236,19 @@ module SinkKind = struct
                 | class_name, method_name ->
                     (* check the list of externally specified sinks *)
                     let procedure = class_name ^ "." ^ method_name in
-                    IList.find_map_opt
-                      (fun (sink_spec : QuandaryConfig.Sink.t) ->
-                         if Str.string_match sink_spec.procedure procedure 0
-                         then
-                           let kind = of_string sink_spec.kind in
-                           try
-                             let n = int_of_string sink_spec.index in
-                             Some (taint_nth n kind ~report_reachable:true)
-                           with Failure _ ->
-                             (* couldn't parse the index, just taint everything *)
-                             Some (taint_all kind ~report_reachable:true)
-                         else
-                           None)
+                    List.find_map
+                      ~f:(fun (sink_spec : QuandaryConfig.Sink.t) ->
+                          if Str.string_match sink_spec.procedure procedure 0
+                          then
+                            let kind = of_string sink_spec.kind in
+                            try
+                              let n = int_of_string sink_spec.index in
+                              Some (taint_nth n kind ~report_reachable:true)
+                            with Failure _ ->
+                              (* couldn't parse the index, just taint everything *)
+                              Some (taint_all kind ~report_reachable:true)
+                          else
+                            None)
                       external_sinks in
               begin
                 match

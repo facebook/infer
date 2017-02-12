@@ -419,7 +419,7 @@ let write_proc_html source whole_seconds pdesc =
     begin
       let pname = Procdesc.get_proc_name pdesc in
       let nodes = IList.sort Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
-      let linenum = (Procdesc.Node.get_loc (IList.hd nodes)).Location.line in
+      let linenum = (Procdesc.Node.get_loc (List.hd_exn nodes)).Location.line in
       let fd, fmt =
         Io_infer.Html.create
           (DB.Results_dir.Abs_source_dir source)

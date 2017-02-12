@@ -49,7 +49,7 @@ struct
     = fun pname ret params node mem ->
       match ret with
       | Some (id, _) ->
-          let (typ, size) = get_malloc_info (IList.hd params |> fst) in
+          let (typ, size) = get_malloc_info (List.hd_exn params |> fst) in
           let size = Sem.eval size mem (CFG.loc node) |> Dom.Val.get_itv in
           let v = Sem.eval_array_alloc pname node typ Itv.zero size 0 1 in
           Dom.Mem.add_stack (Loc.of_id id) v mem
@@ -59,7 +59,7 @@ struct
     : Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
       -> Dom.Mem.t -> Dom.Mem.t
     = fun pname ret params node mem ->
-      model_malloc pname ret (IList.tl params) node mem
+      model_malloc pname ret (List.tl_exn params) node mem
 
   let model_natual_itv : (Ident.t * Typ.t) option -> Dom.Mem.t -> Dom.Mem.t
     = fun ret mem ->

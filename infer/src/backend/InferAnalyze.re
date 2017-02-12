@@ -54,7 +54,7 @@ let analyze_cluster cluster_num (cluster: Cluster.t) => {
 };
 
 let output_json_makefile_stats clusters => {
-  let clusters_to_analyze = IList.filter ClusterMakefile.cluster_should_be_analyzed clusters;
+  let clusters_to_analyze = List.filter f::ClusterMakefile.cluster_should_be_analyzed clusters;
   let num_files = IList.length clusters_to_analyze;
   let num_procs = 0;
   /* can't compute it at this stage */

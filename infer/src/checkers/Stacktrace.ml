@@ -101,7 +101,7 @@ let of_json filename json =
     Yojson.Basic.Util.to_list (extract_json_member frames_key)
     |> IList.map Yojson.Basic.Util.to_string
     |> IList.map String.strip
-    |> IList.filter (fun s -> s <> "")
+    |> List.filter ~f:(fun s -> s <> "")
     |> IList.map parse_stack_frame in
   make exception_name frames
 

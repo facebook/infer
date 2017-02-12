@@ -7,16 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-type 'a t = 'a list [@@deriving compare]
-
 let exists = List.exists
-let filter = List.filter
-let find = List.find
 let fold_left = List.fold_left
 let fold_left2 = List.fold_left2
 let for_all = List.for_all
 let for_all2 = List.for_all2
-let hd = List.hd
 let iter = List.iter
 let iter2 = List.iter2
 let iteri = List.iteri
@@ -28,7 +23,6 @@ let rev_append = List.rev_append
 let rev_map = List.rev_map
 let sort = List.sort
 let stable_sort = List.stable_sort
-let tl = List.tl
 
 let rec last = function
   | [] -> None
@@ -44,13 +38,6 @@ let fold_right f l a =
 let fold_lefti (f : 'a -> int -> 'b -> 'a) a l =
   fold_left (fun (i, acc) e -> i +1, f acc i e) (0, a) l
   |> snd
-
-(** tail-recursive variant of List.flatten *)
-let flatten =
-  let rec flatten acc l = match l with
-    | [] -> acc
-    | x:: l' -> flatten (rev_append x acc) l' in
-  fun l -> rev (flatten [] l)
 
 let flatten_options list =
   fold_left (fun list -> function | Some x -> x:: list | None -> list) [] list
@@ -198,17 +185,6 @@ let rec find_map_opt f = function
       then e'
       else find_map_opt f l'
 
-(** Like find_map_opt, but with indices *)
-let find_mapi_opt (f : int -> 'a -> 'b option) l =
-  let rec find_mapi_opt_ f i = function
-    | [] -> None
-    | e :: l' ->
-        let e' = f i e in
-        if e' <> None
-        then e'
-        else find_mapi_opt_ f (i + 1) l' in
-  find_mapi_opt_ f 0 l
-
 let to_string f l =
   let rec aux l =
     match l with
@@ -223,7 +199,7 @@ let mem_assoc equal a l =
 
 (** Like List.assoc but without builtin equality *)
 let assoc equal a l =
-  snd (find (fun x -> equal a (fst x)) l)
+  snd (List.find (fun x -> equal a (fst x)) l)
 
 let range i j =
   let rec aux n acc =

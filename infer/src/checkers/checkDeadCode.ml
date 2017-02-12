@@ -75,8 +75,8 @@ let check_final_state tenv proc_name proc_desc final_s =
   if tot_nodes <> tot_visited then
     begin
       let not_visited =
-        IList.filter
-          (fun n -> not (Procdesc.NodeSet.mem n (State.get_visited final_s)))
+        List.filter
+          ~f:(fun n -> not (Procdesc.NodeSet.mem n (State.get_visited final_s)))
           proc_nodes in
       let do_node n =
         let loc = Procdesc.Node.get_loc n in

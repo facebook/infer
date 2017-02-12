@@ -100,20 +100,20 @@ let retrieve_fieldname fieldname =
     if Int.equal (IList.length subs) 0 then
       assert false
     else
-      IList.hd (IList.rev subs)
+      List.hd_exn (IList.rev subs)
   with _ -> assert false
 
 
 let get_field_name program static tenv cn fs =
   let { StructTyp.fields; statics; } = JTransType.get_class_struct_typ program tenv cn in
   match
-    IList.find
-      (fun (fieldname, _, _) -> String.equal (retrieve_fieldname fieldname) (JBasics.fs_name fs))
+    List.find
+      ~f:(fun (fieldname, _, _) -> String.equal (retrieve_fieldname fieldname) (JBasics.fs_name fs))
       (if static then statics else fields)
   with
-  | fieldname, _, _ ->
+  | Some (fieldname, _, _) ->
       fieldname
-  | exception Not_found ->
+  | None ->
       (* TODO: understand why fields cannot be found here *)
       L.do_err "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);
       raise (Frontend_error "Cannot find fieldname")

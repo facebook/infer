@@ -48,7 +48,7 @@ let rec supertype_find_map_opt tenv f name =
   | Some ({supers} as struct_typ) ->
       begin
         match f name struct_typ with
-        | None -> IList.find_map_opt (supertype_find_map_opt tenv f) supers
+        | None -> List.find_map ~f:(supertype_find_map_opt tenv f) supers
         | result -> result
       end
   | None ->
@@ -134,9 +134,11 @@ let get_field_type_name tenv
   | Tstruct name | Tptr (Tstruct name, _) -> (
       match Tenv.lookup tenv name with
       | Some { fields } -> (
-          match IList.find (function | (fn, _, _) -> Ident.equal_fieldname fn fieldname) fields with
-          | _, ft, _ -> Some (get_type_name ft)
-          | exception Not_found -> None
+          match List.find
+                  ~f:(function | (fn, _, _) -> Ident.equal_fieldname fn fieldname)
+                  fields with
+          | Some (_, ft, _) -> Some (get_type_name ft)
+          | None -> None
         )
       | None -> None
     )
@@ -405,7 +407,7 @@ let check_current_class_attributes check tenv = function
 let rec find_superclasses_with_attributes check tenv tname =
   match Tenv.lookup tenv tname with
   | Some (struct_typ) ->
-      let result_from_supers = IList.flatten
+      let result_from_supers = List.concat
           (IList.map (find_superclasses_with_attributes check tenv) struct_typ.supers)
       in
       if check struct_typ.annots then

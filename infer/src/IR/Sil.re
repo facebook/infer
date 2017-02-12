@@ -692,21 +692,22 @@ let module Predicates: {
       Can be applied only once, as it destroys the todo list */
   let iter (env: env) f f_dll =>
     while (env.todo != [] || env.todo_dll != []) {
-      if (env.todo != []) {
-        let hpara = IList.hd env.todo;
-        let () = env.todo = IList.tl env.todo;
+      switch env.todo {
+      | [hpara, ...todo'] =>
+        env.todo = todo';
         let (n, emitted) = HparaHash.find env.hash hpara;
         if (not emitted) {
           f n hpara
         }
-      } else if (
-        env.todo_dll != []
-      ) {
-        let hpara_dll = IList.hd env.todo_dll;
-        let () = env.todo_dll = IList.tl env.todo_dll;
-        let (n, emitted) = HparaDllHash.find env.hash_dll hpara_dll;
-        if (not emitted) {
-          f_dll n hpara_dll
+      | [] =>
+        switch env.todo_dll {
+        | [hpara_dll, ...todo_dll'] =>
+          env.todo_dll = todo_dll';
+          let (n, emitted) = HparaDllHash.find env.hash_dll hpara_dll;
+          if (not emitted) {
+            f_dll n hpara_dll
+          }
+        | [] => ()
         }
       }
     };
@@ -1223,7 +1224,7 @@ let hpred_get_lexp acc =>
 
 let hpred_list_get_lexps (filter: Exp.t => bool) (hlist: list hpred) :list Exp.t => {
   let lexps = IList.fold_left hpred_get_lexp [] hlist;
-  IList.filter filter lexps
+  List.filter f::filter lexps
 };
 
 
@@ -1246,7 +1247,7 @@ let rec exp_fpv e =>
   | Sizeof _ _ _ => []
   };
 
-let exp_list_fpv el => IList.flatten (IList.map exp_fpv el);
+let exp_list_fpv el => List.concat (IList.map exp_fpv el);
 
 let atom_fpv =
   fun
@@ -1260,12 +1261,12 @@ let rec strexp_fpv =
   | Eexp e _ => exp_fpv e
   | Estruct fld_se_list _ => {
       let f (_, se) => strexp_fpv se;
-      IList.flatten (IList.map f fld_se_list)
+      List.concat (IList.map f fld_se_list)
     }
   | Earray len idx_se_list _ => {
       let fpv_in_len = exp_fpv len;
       let f (idx, se) => exp_fpv idx @ strexp_fpv se;
-      fpv_in_len @ IList.flatten (IList.map f idx_se_list)
+      fpv_in_len @ List.concat (IList.map f idx_se_list)
     };
 
 let rec hpred_fpv =
@@ -1286,7 +1287,7 @@ let rec hpred_fpv =
     analysis. In interprocedural analysis, we should consider the issue
     of scopes of program variables. */
 and hpara_fpv para => {
-  let fpvars_in_body = IList.flatten (IList.map hpred_fpv para.body);
+  let fpvars_in_body = List.concat (IList.map hpred_fpv para.body);
   switch fpvars_in_body {
   | [] => []
   | _ => assert false
@@ -1297,7 +1298,7 @@ and hpara_fpv para => {
     analysis. In interprocedural analysis, we should consider the issue
     of scopes of program variables. */
 and hpara_dll_fpv para => {
-  let fpvars_in_body = IList.flatten (IList.map hpred_fpv para.body_dll);
+  let fpvars_in_body = List.concat (IList.map hpred_fpv para.body_dll);
   switch fpvars_in_body {
   | [] => []
   | _ => assert false
@@ -1391,11 +1392,11 @@ let fav_imperative_to_functional f x => {
 
 
 /** [fav_filter_ident fav f] only keeps [id] if [f id] is true. */
-let fav_filter_ident fav filter => fav := IList.filter filter !fav;
+let fav_filter_ident fav filter => fav := List.filter f::filter !fav;
 
 
 /** Like [fav_filter_ident] but return a copy. */
-let fav_copy_filter_ident fav filter => ref (IList.filter filter !fav);
+let fav_copy_filter_ident fav filter => ref (List.filter f::filter !fav);
 
 
 /** checks whether every element in l1 appears l2 **/
@@ -1730,17 +1731,17 @@ let sub_symmetric_difference sub1_in sub2_in => {
 
 /** [sub_find filter sub] returns the expression associated to the first identifier
     that satisfies [filter]. Raise [Not_found] if there isn't one. */
-let sub_find filter (sub: subst) => snd (IList.find (fun (i, _) => filter i) sub);
+let sub_find filter (sub: subst) => snd (List.find_exn f::(fun (i, _) => filter i) sub);
 
 
 /** [sub_filter filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter]. */
-let sub_filter filter (sub: subst) => IList.filter (fun (i, _) => filter i) sub;
+let sub_filter filter (sub: subst) => List.filter f::(fun (i, _) => filter i) sub;
 
 
 /** [sub_filter_pair filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter(id, sub(id))]. */
-let sub_filter_pair = IList.filter;
+let sub_filter_pair = List.filter;
 
 
 /** [sub_range_partition filter sub] partitions [sub] according to
@@ -1795,7 +1796,7 @@ let sub_fav_add fav (sub: subst) =>
     )
     sub;
 
-let sub_fpv (sub: subst) => IList.flatten (IList.map (fun (_, e) => exp_fpv e) sub);
+let sub_fpv (sub: subst) => List.concat (IList.map (fun (_, e) => exp_fpv e) sub);
 
 
 /** Substitutions do not contain binders */
@@ -2235,12 +2236,7 @@ let hpred_sub subst => {
 
 /** {2 Functions for replacing occurrences of expressions.} */
 let exp_replace_exp epairs e =>
-  try {
-    let (_, e') = IList.find (fun (e1, _) => Exp.equal e e1) epairs;
-    e'
-  } {
-  | Not_found => e
-  };
+  List.find f::(fun (e1, _) => Exp.equal e e1) epairs |> Option.value_map f::snd default::e;
 
 let atom_replace_exp epairs atom => atom_expmap (fun e => exp_replace_exp epairs e) atom;
 
@@ -2382,13 +2378,13 @@ let sigma_to_sigma_ne sigma :list (list atom, list hpred) =>
           ([Aeq e1 e2, ...eqs], sigma),
           (eqs, [Hlseg Lseg_NE para e1 e2 el, ...sigma])
         ];
-        IList.flatten (IList.map g eqs_sigma_list)
+        List.concat (IList.map g eqs_sigma_list)
       | Hdllseg Lseg_PE para_dll e1 e2 e3 e4 el =>
         let g (eqs, sigma) => [
           ([Aeq e1 e3, Aeq e2 e4, ...eqs], sigma),
           (eqs, [Hdllseg Lseg_NE para_dll e1 e2 e3 e4 el, ...sigma])
         ];
-        IList.flatten (IList.map g eqs_sigma_list)
+        List.concat (IList.map g eqs_sigma_list)
       };
     IList.fold_left f [([], [])] sigma
   } else {

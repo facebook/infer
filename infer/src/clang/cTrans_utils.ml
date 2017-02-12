@@ -723,7 +723,7 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
               IList.map (fun (fieldname, _, _) -> Exp.Lfield (e, fieldname, typ)) fields in
             let lh_types = IList.map (fun (_, fieldtype, _) -> fieldtype) fields in
             let exp_types = zip lh_exprs lh_types in
-            IList.map (fun (e, t) -> IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types
+            IList.map (fun (e, t) -> List.concat (var_or_zero_in_init_list' e t tns)) exp_types
         | None ->
             assert false
       )
@@ -737,12 +737,12 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         let lh_types = replicate size arrtyp in
         let exp_types = zip lh_exprs lh_types in
         IList.map (fun (e, t) ->
-            IList.flatten (var_or_zero_in_init_list' e t tns)) exp_types
+            List.concat (var_or_zero_in_init_list' e t tns)) exp_types
     | Typ.Tint _ | Typ.Tfloat _  | Typ.Tptr _ ->
         let exp = if return_zero then Sil.zero_value_of_numerical_type typ else e in
         [ [(exp, typ)] ]
     | Typ.Tfun _ | Typ.Tvoid | Typ.Tarray _ -> assert false in
-  IList.flatten (var_or_zero_in_init_list' e typ String.Set.empty)
+  List.concat (var_or_zero_in_init_list' e typ String.Set.empty)
 
 (*
 (** Similar to extract_item_from_singleton but for option type *)

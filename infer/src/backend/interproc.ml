@@ -394,8 +394,8 @@ let check_assignement_guard pdesc node =
   let is_prune_exp e =
     let prune_var n =
       let ins = Procdesc.Node.get_instrs n in
-      let pi = IList.filter is_prune_instr ins in
-      let leti = IList.filter is_load_instr ins in
+      let pi = List.filter ~f:is_prune_instr ins in
+      let leti = List.filter ~f:is_load_instr ins in
       match pi, leti with
       | [Sil.Prune (Exp.Var (e1), _, _, _)], [Sil.Load (e2, e', _, _)]
       | [Sil.Prune (Exp.UnOp (Unop.LNot, Exp.Var e1, _), _, _, _)],
@@ -406,7 +406,7 @@ let check_assignement_guard pdesc node =
             L.d_strln ("Found " ^ (Exp.to_string e') ^ " as prune var");
           [e']
       | _ -> [] in
-    let prune_vars = IList.flatten(IList.map (fun n -> prune_var n) succs) in
+    let prune_vars = List.concat(IList.map (fun n -> prune_var n) succs) in
     IList.for_all (fun e' -> Exp.equal e' e) prune_vars in
   let succs_loc = IList.map (fun n -> Procdesc.Node.get_loc n) succs in
   let succs_are_all_prune_nodes () =
@@ -441,10 +441,10 @@ let check_assignement_guard pdesc node =
      (* at this point all successors are at the same location, so we can take the first*)
      | loc_succ:: _ ->
          let set_instr_at_succs_loc =
-           IList.filter
-             (fun i ->
-                Location.equal (Sil.instr_get_loc i) loc_succ &&
-                is_set_instr i)
+           List.filter
+             ~f:(fun i ->
+                 Location.equal (Sil.instr_get_loc i) loc_succ &&
+                 is_set_instr i)
              instr in
          (match set_instr_at_succs_loc with
           | [Sil.Store (e, _, _, _)] ->
@@ -616,17 +616,17 @@ let forward_tabulate tenv pdesc wl source =
     [reachable_hpreds]. *)
 let get_fld_typ_path_opt src_exps sink_exp_ reachable_hpreds_ =
   let strexp_matches target_exp = function
-    | (_, Sil.Eexp (e, _)) -> Exp.equal target_exp e
+    | Sil.Eexp (e, _) -> Exp.equal target_exp e
     | _ -> false in
   let extend_path hpred (sink_exp, path, reachable_hpreds) = match hpred with
     | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
-        (try
-           let fld, _ = IList.find (fun fld -> strexp_matches sink_exp fld) flds in
-           let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
-           (lhs, (Some fld, typ) :: path, reachable_hpreds')
-         with Not_found -> (sink_exp, path, reachable_hpreds))
+        List.find ~f:(function _, se -> strexp_matches sink_exp se) flds |>
+        Option.value_map ~f:(function fld, _ ->
+            let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
+            (lhs, (Some fld, typ) :: path, reachable_hpreds'))
+          ~default:(sink_exp, path, reachable_hpreds)
     | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Exp.Sizeof (typ, _, _)) ->
-        if List.exists ~f:(fun pair -> strexp_matches sink_exp pair) elems
+        if List.exists ~f:(function _, se -> strexp_matches sink_exp se) elems
         then
           let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
           (* None means "no field name" ~=~ nameless array index *)
@@ -1405,7 +1405,7 @@ let interprocedural_algorithm exe_env : unit =
     let summary = Specs.get_summary_unsafe "main_algorithm" proc_name in
     Int.equal (Specs.get_timestamp summary) 0 in
   let procs_to_analyze =
-    IList.filter filter_initial (Cg.get_defined_nodes call_graph) in
+    List.filter ~f:filter_initial (Cg.get_defined_nodes call_graph) in
   let to_analyze proc_name =
     match Exe_env.get_proc_desc exe_env proc_name with
     | Some proc_desc ->

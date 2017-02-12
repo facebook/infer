@@ -153,7 +153,7 @@ let is_instof t => equal_kind (snd t) INSTOF;
 
 let list_intersect equal l1 l2 => {
   let in_l2 a => List.mem equal::equal l2 a;
-  IList.filter in_l2 l1
+  List.filter f::in_l2 l1
 };
 
 let join_flag flag1 flag2 =>

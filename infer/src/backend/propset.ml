@@ -72,7 +72,7 @@ let to_proplist pset =
 (** Apply function to all the elements of [propset], removing those where it returns [None]. *)
 let map_option tenv f pset =
   let plisto = IList.map f (to_proplist pset) in
-  let plisto = IList.filter (function | Some _ -> true | None -> false) plisto in
+  let plisto = List.filter ~f:(function | Some _ -> true | None -> false) plisto in
   let plist = IList.map (function Some p -> p | None -> assert false) plisto in
   from_proplist tenv plist
 
