@@ -166,13 +166,16 @@ let ctl_strong_delegate_warning lctx an =
   let open CTL in
   let name_contains_delegate =
     Atomic ("property_name_contains_word", ["delegate"]) in
+  let name_does_not_contain_delegates =
+    Not(Atomic ("property_name_contains_word", ["delegates"])) in
   let name_does_not_contains_queue =
     Not(Atomic ("property_name_contains_word", ["queue"])) in
   let is_strong_property =
     Atomic("is_strong_property", []) in
   let condition = InNode (["ObjCPropertyDecl"], And (name_contains_delegate,
-                                                     And (name_does_not_contains_queue,
-                                                          is_strong_property))) in
+                                                And (name_does_not_contain_delegates,
+                                                And (name_does_not_contains_queue,
+                                                     is_strong_property)))) in
   let issue_desc = {
     CIssue.issue = CIssue.Strong_delegate_warning;
     CIssue.description = Printf.sprintf
