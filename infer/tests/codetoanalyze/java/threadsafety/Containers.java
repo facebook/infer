@@ -20,6 +20,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+class ContainerWrapper {
+  private final List<Object> children = new ArrayList<Object>();
+
+  public Object write(Object v) {
+    return _write(v);
+  }
+
+  private Object _write(Object node)
+  {
+    children.add(node);
+    return this;
+  }
+
+}
+
 @ThreadSafe
 class Containers {
 
@@ -124,6 +139,17 @@ class Containers {
 
     concurrentMap.remove(key);
     concurrentHashMap.remove(key);
+  }
+
+  public void containerWrapperOwnedWriteOk(Object o) {
+    ContainerWrapper wrapper = new ContainerWrapper();
+    wrapper.write(o);
+  }
+
+  ContainerWrapper mContainerWrapper;
+
+  public void containerWrapperUnownedWriteBad(Object o) {
+    mContainerWrapper.write(o);
   }
 
 }
