@@ -421,6 +421,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         end
                     | _ ->
                         astate
+                  else if FbThreadSafety.is_graphql_constructor callee_pname
+                  then
+                    (* assume generated GraphQL code returns ownership *)
+                    match ret_opt with
+                    | Some (ret_id, ret_typ) ->
+                        let attribute_map =
+                          AttributeMapDomain.add_attribute
+                            (AccessPath.of_id ret_id ret_typ)
+                            Attribute.unconditionally_owned
+                            astate.attribute_map in
+                        { astate with attribute_map; }
+                    | None -> astate
                   else
                     astate in
         begin
