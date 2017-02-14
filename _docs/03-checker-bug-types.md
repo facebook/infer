@@ -28,6 +28,6 @@ Action: Nullify the `View` in question in `onDestroyView`.
 
 ## <a name="STATIC_INITIALIZATION_ORDER_FIASCO"></a>Static initialization order fiasco
 
-This error is reported in C++. It fires when initialization of a static variable (`A`), accesses static variable (`B`) from another translation unit (another `.cpp` file). There are no guarantees whether `B` has been already initialized or not at that point.
+This error is reported in C++. It fires when the initialization of a static variable `A`, accesses a static variable `B` from another translation unit (usually another `.cpp` file). There are no guarantees whether `B` has been already initialized or not at that point.
 
-For more technical definition and techniques to avoid/remediate, see the [FAQ](https://isocpp.org/wiki/faq/ctors#static-init-order)
+For more technical definition and techniques to avoid/remediate, see the [FAQ](https://isocpp.org/wiki/faq/ctors#static-init-order).
