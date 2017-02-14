@@ -10,5 +10,11 @@
       "class": "android.view.View",
       "method": "findViewById"
     }
+  ],
+  "annotation-reachability": [
+    {
+       "sources": ["UserDefinedSource1", "UserDefinedSource2"],
+       "sink": "UserDefinedSink"
+    }
   ]
 }

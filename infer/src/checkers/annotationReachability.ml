@@ -20,15 +20,24 @@ let dummy_constructor_annot = "__infer_is_constructor"
 let annotation_of_str annot_str =
   { Annot.class_name = annot_str; parameters = []; }
 
-(* TODO: read custom source/sink pairs from user code here *)
 let src_snk_pairs () =
+  (* parse user-defined specs from .inferconfig *)
+  let parse_user_defined_specs = function
+    | `List user_specs ->
+        let parse_user_spec json =
+          let open Yojson.Basic.Util in
+          let sources = member "sources" json |> to_list |> List.map ~f:to_string in
+          let sinks = member "sink" json |> to_string in
+          sources, sinks in
+        List.map ~f:parse_user_spec user_specs
+    | _ ->
+        [] in
   let specs =
-    [
-      ([Annotations.performance_critical], Annotations.expensive);
-      ([Annotations.no_allocation], dummy_constructor_annot);
-      ([Annotations.any_thread; Annotations.for_non_ui_thread], Annotations.ui_thread);
-      ([Annotations.ui_thread; Annotations.for_ui_thread], Annotations.for_non_ui_thread);
-    ] in
+    ([Annotations.performance_critical], Annotations.expensive) ::
+    ([Annotations.no_allocation], dummy_constructor_annot) ::
+    ([Annotations.any_thread; Annotations.for_non_ui_thread], Annotations.ui_thread) ::
+    ([Annotations.ui_thread; Annotations.for_ui_thread], Annotations.for_non_ui_thread) ::
+    (parse_user_defined_specs Config.annotation_reachability) in
   IList.map
     (fun (src_annot_str_list, snk_annot_str) ->
        IList.map annotation_of_str src_annot_str_list, annotation_of_str snk_annot_str)

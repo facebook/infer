@@ -148,6 +148,7 @@ val analysis_stops : bool
 val analysis_suppress_errors : analyzer -> string list
 val analyzer : analyzer
 val angelic_execution : bool
+val annotation_reachability : Yojson.Basic.json
 val array_level : int
 val ast_file : string option
 val blacklist : string option

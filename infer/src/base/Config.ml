@@ -508,6 +508,13 @@ and angelic_execution =
   CLOpt.mk_bool ~deprecated:["angelic_execution"] ~long:"angelic-execution" ~default:true
     "Angelic execution, where the analysis ignores errors caused by unknown procedure calls"
 
+and annotation_reachability =
+  CLOpt.mk_json ~long:"annotation-reachability"
+    ~parse_mode:CLOpt.(Infer [Analysis])
+    "Specify custom sources/sink for the annotation reachability checker\n\
+     Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}\n\
+     { \"sources\" : [\"Source1\", \"Source2\"], \"sink\" : \"Sink1\" }"
+
 and array_level =
   CLOpt.mk_int ~deprecated:["arraylevel"] ~long:"array-level" ~default:0
     ~meta:"int" "Level of treating the array indexing and pointer arithmetic:\n\
@@ -1439,6 +1446,7 @@ and analysis_suppress_errors_options =
   IList.map (fun (a, b) -> (a, !b)) analysis_suppress_errors_options
 and analysis_stops = !analysis_stops
 and angelic_execution = !angelic_execution
+and annotation_reachability = !annotation_reachability
 and array_level = !array_level
 and ast_file = !ast_file
 and blacklist = !blacklist
