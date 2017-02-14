@@ -10,10 +10,18 @@
 package codetoanalyze.java.checkers;
 
 import javax.annotation.concurrent.ThreadSafe;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 class Obj {
   Object f;
   Obj g;
+}
+
+interface CustomProvider<T> extends Provider<T> {
+
+  @Override
+  public T get();
 }
 
 @ThreadSafe
@@ -24,6 +32,18 @@ public class Ownership {
   public Ownership(Obj o) {
     field = o;
   }
+
+  // understand that ownership can be acquired via DI
+  @Inject Ownership(Provider<Obj> objProvider) {
+    Obj owned = objProvider.get();
+    owned.f = new Object(); // should not report
+  }
+
+  @Inject Ownership(CustomProvider<Obj> objProvider) {
+    Obj owned = objProvider.get();
+    owned.f = new Object(); // should not report
+  }
+
 
   native void leakToAnotherThread(Object o);
 

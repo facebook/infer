@@ -221,10 +221,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       is_annotated_functional pn || is_modeled_functional pn in
     proc_is_functional pname || PatternMatch.override_exists proc_is_functional tenv pname
 
-  let exec_instr (astate : Domain.astate) { ProcData.pdesc; tenv; extras; } _ =
+  let acquires_ownership pname tenv =
     let is_allocation pn =
-      Procname.equal pn BuiltinDecl.__new ||
-      Procname.equal pn BuiltinDecl.__new_array in
+      Procname.equal pn BuiltinDecl.__new || Procname.equal pn BuiltinDecl.__new_array in
+    (* in dependency injection, the allocation happens behind the scenes. so we model it. *)
+    let is_dependency_injection_provider = function
+      | Procname.Java java_pname ->
+          begin
+            match Procname.java_get_class_name java_pname,
+                  Procname.java_get_method java_pname with
+            | "javax.inject.Provider", "get" -> true
+            | _ -> false
+          end
+      | _ ->
+          false in
+    is_allocation pname ||
+    is_dependency_injection_provider pname ||
+    PatternMatch.override_exists is_dependency_injection_provider tenv pname
+
+  let exec_instr (astate : Domain.astate) { ProcData.pdesc; tenv; extras; } _ =
     let is_container_write pn tenv = match pn with
       | Procname.Java java_pname ->
           let typename = Typename.Java.from_string (Procname.java_get_class_name java_pname) in
@@ -299,7 +314,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
     let open Domain in
     function
-    | Sil.Call (Some (lhs_id, lhs_typ), Const (Cfun pn), _, _, _) when is_allocation pn ->
+    | Sil.Call (Some (lhs_id, lhs_typ), Const (Cfun pn), _, _, _) when acquires_ownership pn tenv ->
         begin
           match AccessPath.of_lhs_exp (Exp.Var lhs_id) lhs_typ ~f_resolve_id with
           | Some lhs_access_path ->
