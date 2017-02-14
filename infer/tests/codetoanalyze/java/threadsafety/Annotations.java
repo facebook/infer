@@ -251,4 +251,26 @@ class Annotations implements FunctionalInterface {
     mBool = returnedFunctional;
   }
 
+  @Functional native int returnInt();
+  int mInt;
+
+  public void functionalAcrossLogicalOpsOk() {
+    boolean functionalBool = returnBool();
+    int functionalInt = returnInt();
+    boolean propagated = functionalBool && true || 2 < returnInt() && 3 == functionalInt;
+    mBool = propagated;
+  }
+
+  public void functionalAcrossArithmeticOpsOk() {
+    int functional = returnInt();
+    int propagated = functional + 1 - returnInt() * 7 % 2;
+    mInt = functional;
+  }
+
+  native int returnNonFunctionalInt();
+
+  public void functionalAndNonfunctionalBad() {
+    mInt = returnNonFunctionalInt() + returnInt();
+  }
+
 }

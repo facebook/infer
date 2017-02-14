@@ -79,27 +79,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         attributes
 
-  let propagate_attributes
-      lhs_access_path_opt rhs_access_path_opt rhs_exp attribute_map formal_map =
-    match lhs_access_path_opt, rhs_access_path_opt with
-    | Some lhs_access_path, Some rhs_access_path ->
-        let rhs_attributes =
+  (* if rhs has associated attributes, propagate them to the lhs *)
+  let propagate_attributes lhs_access_path rhs_exp rhs_typ ~f_resolve_id attribute_map formal_map =
+    let rhs_access_paths = AccessPath.of_exp rhs_exp rhs_typ ~f_resolve_id in
+    let rhs_attributes =
+      if List.is_empty rhs_access_paths (* only happens when rhs is a constant *)
+      then
+        (* rhs is a constant, and constants are both owned and functional *)
+        Domain.AttributeSetDomain.of_list
+          [Domain.Attribute.unconditionally_owned; Domain.Attribute.Functional]
+      else
+        let propagate_attributes_ acc rhs_access_path =
           (try Domain.AttributeMapDomain.find rhs_access_path attribute_map
-           with Not_found -> Domain.AttributeSetDomain.empty)
+           with Not_found -> acc)
           |> add_conditional_ownership_attribute rhs_access_path formal_map attribute_map in
-        Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
-    | Some lhs_access_path, None ->
-        let rhs_attributes =
-          if is_constant rhs_exp
-          then
-            (* constants are both owned and functional *)
-            Domain.AttributeSetDomain.of_list
-              [Domain.Attribute.unconditionally_owned; Domain.Attribute.Functional]
-          else
-            Domain.AttributeSetDomain.empty in
-        Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
-    | _ ->
-        attribute_map
+        List.fold
+          ~f:propagate_attributes_
+          ~init:Domain.AttributeSetDomain.empty
+          rhs_access_paths in
+    Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
 
   let propagate_return_attributes
       ret_opt ret_attributes actuals attribute_map ~f_resolve_id formal_map =
@@ -318,12 +316,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname),
                 (target_exp, target_typ) :: (Exp.Sizeof (cast_typ, _, _), _) :: _ , _, _)
       when Procname.equal callee_pname BuiltinDecl.__cast ->
-        let lhs_access_path_opt =
-          Some (AccessPath.of_id ret_id (Typ.Tptr (cast_typ, Pk_pointer))) in
-        let rhs_access_path_opt = AccessPath.of_lhs_exp target_exp target_typ ~f_resolve_id in
+        let lhs_access_path = AccessPath.of_id ret_id (Typ.Tptr (cast_typ, Pk_pointer)) in
         let attribute_map =
           propagate_attributes
-            lhs_access_path_opt rhs_access_path_opt target_exp astate.attribute_map extras in
+            lhs_access_path target_exp target_typ ~f_resolve_id astate.attribute_map extras in
         { astate with attribute_map; }
 
     | Sil.Call (ret_opt, Const (Cfun callee_pname), actuals, loc, _) ->
@@ -473,7 +469,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               astate_callee
         end
 
-    | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _) when Pvar.is_frontend_tmp lhs_pvar ->
+    | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _)
+      when Pvar.is_frontend_tmp lhs_pvar && not (is_constant rhs_exp) ->
         let id_map' = analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate in
         { astate with id_map = id_map'; }
 
@@ -523,15 +520,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               end
           | _ ->
               astate.conditional_writes, astate.unconditional_writes in
-
-        (* if rhs is owned/functional, propagate to lhs. otherwise, remove lhs from
-           ownership/functional set (since it may have previously held an owned/functional memory
-           loc and is now being reassigned *)
-        let lhs_access_path_opt = AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id in
-        let rhs_access_path_opt = AccessPath.of_lhs_exp rhs_exp lhs_typ ~f_resolve_id in
         let attribute_map =
-          propagate_attributes
-            lhs_access_path_opt rhs_access_path_opt rhs_exp astate.attribute_map extras in
+          match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id with
+          | Some lhs_access_path ->
+              propagate_attributes
+                lhs_access_path rhs_exp lhs_typ ~f_resolve_id astate.attribute_map extras
+          | None ->
+              astate.attribute_map in
         { astate with conditional_writes; unconditional_writes; attribute_map; }
 
     | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
@@ -542,12 +537,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               add_path_to_state rhs_exp typ loc astate.reads astate.id_map astate.attribute_map tenv
           | _ ->
               astate.reads in
-        (* if rhs is owned/functional, propagate to lhs *)
-        let lhs_access_path_opt = Some (AccessPath.of_id lhs_id rhs_typ) in
-        let rhs_access_path_opt = AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id in
+        let lhs_access_path = AccessPath.of_id lhs_id rhs_typ in
         let attribute_map =
           propagate_attributes
-            lhs_access_path_opt rhs_access_path_opt rhs_exp astate.attribute_map extras in
+            lhs_access_path rhs_exp rhs_typ ~f_resolve_id astate.attribute_map extras in
         { astate with Domain.reads; id_map; attribute_map; }
 
     | Sil.Remove_temps (ids, _) ->
