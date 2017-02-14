@@ -23,10 +23,15 @@ include
       | QuandarySummary.AccessTree.Java access_tree -> access_tree
       | _ -> assert false
 
-    let handle_unknown_call pname ret_typ_opt actuals =
-      let types_match typ class_string = match typ with
-        | Typ.Tptr (Tstruct typename, _) -> String.equal (Typename.name typename) class_string
-        | _ -> false in
+    let handle_unknown_call pname ret_typ_opt actuals tenv =
+      let types_match typ class_string tenv = match typ with
+        | Typ.Tptr (Tstruct original_typename, _) ->
+            PatternMatch.supertype_exists
+              tenv
+              (fun typename _ -> String.equal (Typename.name typename) class_string)
+              original_typename
+        | _ ->
+            false in
       match pname with
       | (Procname.Java java_pname) as pname ->
           let is_static = Procname.java_is_static pname in
@@ -43,7 +48,7 @@ include
                 begin
                   match actuals with
                   | (_, receiver_typ) :: _
-                    when not is_static && types_match receiver_typ classname ->
+                    when not is_static && types_match receiver_typ classname tenv ->
                       (* if the receiver and return type are the same, propagate to both. we're
                          assuming the call is one of the common "builder-style" methods that both
                          updates and returns the receiver *)

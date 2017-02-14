@@ -23,6 +23,6 @@ include
       | QuandarySummary.AccessTree.Clang tree -> tree
       | _ -> assert false
 
-    let handle_unknown_call _ _ _ =
+    let handle_unknown_call _ _ _ _ =
       []
   end)

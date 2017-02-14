@@ -85,19 +85,7 @@ public class Intents {
     Intent intent = new Intent();
     intent.fillIn(taintedIntent, 0);
     intent.makeMainSelectorActivity(taintedString, null);
-    intent.parseIntent(taintedResources, null, null);
-    intent.parseUri(taintedString, 0);
-    intent.replaceExtras(taintedIntent);
-    intent.setAction(taintedString);
-    intent.setClassName(taintedString, null);
-    intent.setData(taintedUri);
-    intent.setDataAndNormalize(taintedUri);
-    intent.setDataAndType(taintedUri, null);
-    intent.setDataAndTypeAndNormalize(taintedUri, null);
-    intent.setPackage(taintedString);
-    intent.setSelector(taintedIntent);
-    intent.setType(taintedString);
-    intent.setTypeAndNormalize(taintedString); // 15 sinks, 15 expected reports
+    intent.parseIntent(taintedResources, null, null); // 3 sinks, 3 expected results
   }
 
   // make sure the rules apply to subclasses of Intent and Context too
