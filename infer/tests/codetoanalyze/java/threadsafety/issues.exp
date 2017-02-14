@@ -1,3 +1,4 @@
+codetoanalyze/java/threadsafety/AndroidModels.java, void AndroidModels.someResourceMethodsNotFunctionalBad(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.AndroidModels.mField]
 codetoanalyze/java/threadsafety/Annotations.java, boolean Annotations.FP_functionalAcrossUnboxingOk(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.mBool]
 codetoanalyze/java/threadsafety/Annotations.java, double Annotations.functionalDoubleBad(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.mDouble]
 codetoanalyze/java/threadsafety/Annotations.java, long Annotations.FP_functionalAcrossBoxingLongOk(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.mBoxedLong]

@@ -191,14 +191,37 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Some rhs_access_path -> IdAccessPathMapDomain.add lhs_id rhs_access_path id_map
     | None -> id_map
 
-  (* like PatternMatch.override_exists, but also applies [predicate] to [pname] *)
-  let proc_or_override_is_annotated pname tenv predicate =
-    let has_return_annot pn =
-      Annotations.pname_has_return_annot
-        pn
-        ~attrs_of_pname:Specs.proc_resolve_attributes
-        predicate in
-    has_return_annot pname || PatternMatch.override_exists has_return_annot tenv pname
+  let is_functional pname tenv =
+    let proc_is_functional pn =
+      let is_annotated_functional pn =
+        Annotations.pname_has_return_annot
+          pn
+          ~attrs_of_pname:Specs.proc_resolve_attributes
+          Annotations.ia_is_functional in
+      let is_modeled_functional = function
+        | Procname.Java java_pname ->
+            begin
+              match Procname.java_get_class_name java_pname,
+                    Procname.java_get_method java_pname with
+              | "android.content.res.Resources", method_name ->
+                  (* all methods of Resources are considered @Functional except for the ones in this
+                     blacklist *)
+                  let non_functional_resource_methods = [
+                    "getAssets";
+                    "getConfiguration";
+                    "getSystem";
+                    "newTheme";
+                    "openRawResource";
+                    "openRawResourceFd"
+                  ] in
+                  not (List.mem non_functional_resource_methods method_name)
+              | _ ->
+                  false
+            end
+        | _ ->
+            false in
+      is_annotated_functional pn || is_modeled_functional pn in
+    proc_is_functional pname || PatternMatch.override_exists proc_is_functional tenv pname
 
   let exec_instr (astate : Domain.astate) { ProcData.pdesc; tenv; extras; } _ =
     let is_allocation pn =
@@ -441,8 +464,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               (* writes to longs and doubles are not guaranteed to be atomic in Java, so don't
                  bother tracking whether a returned long or float value is functional *)
               astate_callee
-          | Some (ret_id, ret_typ) when
-              proc_or_override_is_annotated callee_pname tenv Annotations.ia_is_functional ->
+          | Some (ret_id, ret_typ) when is_functional callee_pname tenv ->
               let attribute_map =
                 AttributeMapDomain.add_attribute
                   (AccessPath.of_id ret_id ret_typ) Functional astate.attribute_map in
