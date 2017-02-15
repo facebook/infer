@@ -51,6 +51,7 @@ let present = "Present"
 let privacy_source = "PrivacySource"
 let privacy_sink = "PrivacySink"
 let strict = "com.facebook.infer.annotation.Strict"
+let returns_ownership = "ReturnsOwnership"
 let suppress_lint = "SuppressLint"
 let suppress_view_nullability = "SuppressViewNullability"
 let thread_confined = "ThreadConfined"
@@ -143,6 +144,9 @@ let ia_is_nonnull ia =
 
 let ia_is_false_on_null ia =
   ia_ends_with ia false_on_null
+
+let ia_is_returns_ownership ia =
+  ia_ends_with ia returns_ownership
 
 let ia_is_true_on_null ia =
   ia_ends_with ia true_on_null

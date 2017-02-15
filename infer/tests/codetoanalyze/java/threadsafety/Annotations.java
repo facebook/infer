@@ -21,6 +21,7 @@ import android.support.annotation.UiThread;
 import com.facebook.infer.annotation.AssumeThreadSafe;
 import com.facebook.infer.annotation.Functional;
 import com.facebook.infer.annotation.ThreadConfined;
+import com.facebook.infer.annotation.ReturnsOwnership;
 
 /** tests for classes and method annotations that are meaningful w.r.t thread-safety */
 
@@ -49,13 +50,14 @@ import com.facebook.infer.annotation.ThreadConfined;
 @interface OnUnmount {
 }
 
-interface FunctionalInterface {
+interface Interface {
 
-  @Functional Object method();
+  @Functional Object functionalMethod();
+  @ReturnsOwnership Obj returnsOwnershipMethod();
 }
 
 @ThreadSafe
-class Annotations implements FunctionalInterface {
+class Annotations implements Interface {
   Object f;
 
   @UiThread
@@ -96,10 +98,6 @@ class Annotations implements FunctionalInterface {
     }
   }
 
-  static class Obj {
-    Object fld;
-  }
-
   @ThreadConfined(ThreadConfined.ANY) Obj encapsulatedField;
 
   public void mutateConfinedFieldDirectlyOk() {
@@ -111,7 +109,7 @@ class Annotations implements FunctionalInterface {
   }
 
   public void mutateSubfieldOfConfinedBad() {
-    this.encapsulatedField.fld = new Object();
+    this.encapsulatedField.f = new Object();
   }
 
   @ThreadConfined("some_custom_string")
@@ -147,7 +145,7 @@ class Annotations implements FunctionalInterface {
   @Functional native Object returnFunctional1();
   @Functional Object returnFunctional2() { return null; }
   // marked @Functional in interface
-  @Override public Object method() { return null; }
+  @Override public Object functionalMethod() { return null; }
 
   Object mAssignToFunctional;
 
@@ -167,7 +165,7 @@ class Annotations implements FunctionalInterface {
 
   public Object functionalOk3() {
     if (mAssignToFunctional == null) {
-      mAssignToFunctional = method();
+      mAssignToFunctional = functionalMethod();
     }
     return mAssignToFunctional;
   }
@@ -271,6 +269,21 @@ class Annotations implements FunctionalInterface {
 
   public void functionalAndNonfunctionalBad() {
     mInt = returnNonFunctionalInt() + returnInt();
+  }
+
+  @ReturnsOwnership native Obj returnsOwned();
+
+  @Override
+  public native Obj returnsOwnershipMethod(); // marked @ReturnsOwnership in interface
+
+  void mutateAnnotatedOwnedOk() {
+    Obj owned = returnsOwned();
+    owned.f = new Object();
+  }
+
+  void mutateAnnotatedOverrideOwnedOk() {
+    Obj owned = returnsOwnershipMethod();
+    owned.f = new Object();
   }
 
 }
