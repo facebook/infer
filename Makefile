@@ -13,21 +13,26 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
   include $(ROOT_DIR)/facebook/Makefile.env
 endif
 
-BUILD_SYSTEMS_TESTS = \
-  assembly ck_analytics ck_imports clang_multiple_files clang_translation clang_unknown_ext \
-  delete_results_dir fail_on_issue gradle j1 javac linters make project_root_rel reactive \
-  utf8_in_procname utf8_in_pwd waf run_hidden_linters
-ifneq ($(ANT),no)
-BUILD_SYSTEMS_TESTS += ant
-endif
-ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += buck genrule
-endif
+ifeq ($(BUILD_C_ANALYZERS),yes)
+BUILD_SYSTEMS_TESTS += \
+  assembly \
+  ck_analytics ck_imports \
+  clang_multiple_files \
+  clang_translation \
+  clang_unknown_ext \
+  delete_results_dir \
+  fail_on_issue \
+  j1 \
+  linters \
+  make \
+  project_root_rel \
+  reactive \
+  run_hidden_linters \
+  utf8_in_procname utf8_in_pwd \
+  waf \
+
 ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake
-endif
-ifneq ($(MVN),no)
-BUILD_SYSTEMS_TESTS += mvn
 endif
 ifneq ($(NDKBUILD),no)
 BUILD_SYSTEMS_TESTS += ndk_build
@@ -35,10 +40,24 @@ endif
 ifneq ($(PYTHON_lxml),no)
 BUILD_SYSTEMS_TESTS += results_xml
 endif
+endif
 
-DIRECT_TESTS=
+ifeq ($(BUILD_JAVA_ANALYZERS),yes)
+BUILD_SYSTEMS_TESTS += gradle javac
+ifneq ($(ANT),no)
+BUILD_SYSTEMS_TESTS += ant
+endif
+ifneq ($(BUCK),no)
+BUILD_SYSTEMS_TESTS += buck genrule
+endif
+ifneq ($(MVN),no)
+BUILD_SYSTEMS_TESTS += mvn
+endif
+endif
+
 ifeq ($(BUILD_C_ANALYZERS),yes)
-DIRECT_TESTS += c_errors c_frontend c_bufferoverrun cpp_checkers cpp_errors cpp_frontend cpp_quandary
+DIRECT_TESTS += \
+  c_errors c_frontend c_bufferoverrun cpp_checkers cpp_errors cpp_frontend cpp_quandary
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 DIRECT_TESTS += \
@@ -46,7 +65,8 @@ DIRECT_TESTS += \
   java_crashcontext java_harness
 endif
 ifneq ($(XCODE_SELECT),no)
-DIRECT_TESTS += objc_frontend objc_errors objc_linters objc_ioslints objcpp_frontend objcpp_linters
+DIRECT_TESTS += \
+  objc_frontend objc_errors objc_linters objc_ioslints objcpp_frontend objcpp_linters
 endif
 
 .PHONY: all
