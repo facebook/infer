@@ -8,7 +8,7 @@
  *)
 open! IStd
 
-let compilation_db = lazy (CompilationDatabase.from_json_files !Config.clang_compilation_db_files)
+let compilation_db = lazy (CompilationDatabase.from_json_files !Config.clang_compilation_dbs)
 
 (** Given proc_attributes try to produce proc_attributes' where proc_attributes'.is_defined = true
     It may trigger capture of extra files to do so and when it does, it waits for

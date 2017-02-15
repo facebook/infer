@@ -39,8 +39,11 @@ let cluster_should_be_analyzed cluster =
 
 let pp_prolog fmt clusters =
   let escape = Escape.escape_map (fun c -> if Char.equal c '#' then Some "\\#" else None) in
+  let infer_flag_of_compilation_db = function
+    | `Escaped f -> F.sprintf "--clang-compilation-db-files-escaped '%s'" f
+    | `Raw f -> F.sprintf "--clang-compilation-db-files '%s'" f in
   let compilation_dbs_cmd =
-    IList.map (F.sprintf "--clang-compilation-db-files '%s'") !Config.clang_compilation_db_files
+    List.map ~f:infer_flag_of_compilation_db !Config.clang_compilation_dbs
     |> String.concat ~sep:" " |> escape in
   F.fprintf fmt "INFERANALYZE= %s --results-dir '%s' %s \n@."
     (Config.bin_dir ^/ (Config.exe_name Analyze))

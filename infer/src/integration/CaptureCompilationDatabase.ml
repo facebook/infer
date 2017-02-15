@@ -110,13 +110,11 @@ let get_compilation_database_files_buck () =
          match fst @@ Utils.with_process_in buck_targets In_channel.input_lines with
          | [] -> Logging.stdout "There are no files to process, exiting."; exit 0
          | lines ->
-             Logging.out "Reading compilation database from:@\n%s@\n" (String.concat ~sep:"\n" lines);
+             Logging.out "Reading compilation database from:@\n%s@\n"
+               (String.concat ~sep:"\n" lines);
              let scan_output compilation_database_files chan =
-               Scanf.sscanf chan "%s %s"
-                 (fun target file -> String.Map.add ~key:target ~data:file compilation_database_files) in
-             (* Map from targets to json output *)
-             let compilation_database_files = IList.fold_left scan_output String.Map.empty lines in
-             String.Map.data compilation_database_files
+               Scanf.sscanf chan "%s %s" (fun _ file -> `Raw file::compilation_database_files) in
+             IList.fold_left scan_output [] lines
        with Unix.Unix_error (err, _, _) ->
          Process.print_error_and_exit
            "Cannot execute %s\n%!"
@@ -142,7 +140,7 @@ let get_compilation_database_files_xcodebuild () =
       ~producer_prog:xcodebuild_prog ~producer_args:xcodebuild_args
       ~consumer_prog:xcpretty_prog ~consumer_args:xcpretty_args in
   match producer_status, consumer_status with
-  | Ok (), Ok () -> [tmp_file]
+  | Ok (), Ok () -> [`Escaped tmp_file]
   | _ ->
       Logging.stderr "There was an error executing the build command";
       exit 1

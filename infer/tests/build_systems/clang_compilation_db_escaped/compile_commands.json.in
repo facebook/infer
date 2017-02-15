@@ -1,0 +1,7 @@
+[
+   {
+      "command" : "clang -c hel\\ lo.c",
+      "directory" : "%pwd%/../codetoanalyze/path\\ with\\ spaces",
+      "file" : "hel\\ lo.c"
+   }
+]

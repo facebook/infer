@@ -36,18 +36,25 @@ let parse_command_and_arguments command_and_arguments =
     to be compiled, the directory to be compiled in, and the compilation command as a list
     and as a string. We pack this information into the compilationDatabase map, and remove the
     clang invocation part, because we will use a clang wrapper. *)
-let decode_json_file (database : t) json_path =
+let decode_json_file (database : t) json_format =
+  let json_path = match json_format with | `Raw x | `Escaped x -> x in
+  let to_string s = match json_format with
+    | `Raw _ ->
+        s
+    | `Escaped _ ->
+        Utils.with_process_in (Printf.sprintf "/bin/sh -c 'printf \"%%s\" %s'" s) input_line
+        |> fst in
   Logging.out "parsing compilation database from %s@\n" json_path;
   let exit_format_error () =
     failwith ("Json file doesn't have the expected format") in
   let json = Yojson.Basic.from_file json_path in
   let get_dir el =
     match el with
-    | ("directory", `String dir) -> Some dir
+    | ("directory", `String dir) -> Some (to_string dir)
     | _ -> None in
   let get_file el =
     match el with
-    | ("file", `String file) -> Some file
+    | ("file", `String file) -> Some (to_string file)
     | _ -> None in
   let get_cmd el =
     match el with

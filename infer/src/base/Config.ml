@@ -639,10 +639,18 @@ and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file" ~parse_mode:CLOpt.(Infer [Clang]) ~meta:"file"
     "Specify a file containing the AST of the program, in biniou format"
 
+and clang_compilation_dbs = ref []
+
 and clang_compilation_db_files =
   CLOpt.mk_path_list ~long:"clang-compilation-db-files"
     ~parse_mode:CLOpt.(Infer [Clang])
     "File that contain compilation commands (can be specified multiple times)"
+
+and clang_compilation_db_files_escaped =
+  CLOpt.mk_path_list ~long:"clang-compilation-db-files-escaped"
+    ~parse_mode:CLOpt.(Infer [Clang])
+    "File that contain compilation commands where all entries are escaped for the shell, eg coming \
+     from Xcode (can be specified multiple times)"
 
 and clang_frontend_action =
   CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
@@ -1407,6 +1415,10 @@ let post_parsing_initialization () =
   in
   if is_none !symops_per_iteration then symops_per_iteration := symops_timeout ;
   if is_none !seconds_per_iteration then seconds_per_iteration := seconds_timeout ;
+
+  clang_compilation_dbs :=
+    List.rev_map ~f:(fun x -> `Raw x) !clang_compilation_db_files
+    |> List.rev_map_append ~f:(fun x -> `Escaped x) !clang_compilation_db_files_escaped;
 
   match !analyzer with
   | Some Checkers -> checkers := true

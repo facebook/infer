@@ -73,7 +73,7 @@ type driver_mode =
   | Analyze
   | BuckGenrule of string
   | BuckCompilationDB
-  | ClangCompilationDB of string list
+  | ClangCompilationDB of [ `Escaped of string | `Raw of string ] list
   | Javac of Javac.compiler * string * string list
   | Maven of string * string list
   | PythonCapture of build_system * string list
@@ -182,7 +182,10 @@ let check_xcpretty () =
 
 let capture_with_compilation_database db_files =
   let root = Unix.getcwd () in
-  Config.clang_compilation_db_files := IList.map (Utils.filename_to_absolute ~root) db_files;
+  Config.clang_compilation_dbs := List.map db_files ~f:(function
+      | `Escaped fname -> `Escaped (Utils.filename_to_absolute ~root fname)
+      | `Raw fname -> `Raw (Utils.filename_to_absolute ~root fname)
+    );
   let compilation_database = CompilationDatabase.from_json_files db_files in
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
@@ -351,8 +354,8 @@ let log_infer_args driver_mode =
 let driver_mode_of_build_cmd build_cmd =
   match build_cmd with
   | [] ->
-      if not (List.is_empty !Config.clang_compilation_db_files) then
-        ClangCompilationDB !Config.clang_compilation_db_files
+      if not (List.is_empty !Config.clang_compilation_dbs) then
+        ClangCompilationDB !Config.clang_compilation_dbs
       else
         Analyze
   | prog :: args ->

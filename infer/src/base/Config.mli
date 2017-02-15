@@ -333,7 +333,7 @@ val run_with_abs_val_equal_zero : ('a -> 'b) -> 'a -> 'b
 
 val allow_leak : bool ref
 
-val clang_compilation_db_files : string list ref
+val clang_compilation_dbs : [ `Escaped of string | `Raw of string ] list ref
 
 (** Command Line Interface Documentation *)
 
