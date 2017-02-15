@@ -27,13 +27,20 @@ let normalize prog::prog args::args :list action_item => {
       "%s 2>&1"
       (
         ClangCommand.prepend_arg "-###" cmd |>
-        /* c++ modules are not supported, so let clang know in case it was passed
-           "-fmodules". Unfortunately we cannot know accurately if "-fmodules" was passed because we
-           don't go into argument files at this point ("clang -### ..." will do that for us), so we
-           also pass "-Qunused-arguments" to silence the potential warning that "-fno-cxx-modules"
-           was ignored. Moreover, "-fno-cxx-modules" is only accepted by the clang driver so we have
-           to pass it now. */
-        ClangCommand.append_args ["-fno-cxx-modules", "-Qunused-arguments"] |> ClangCommand.command_to_run
+        /* c++ modules are not supported, so let clang know in case it was passed "-fmodules".
+           Unfortunately we cannot know accurately if "-fmodules" was passed because we don't go
+           into argument files at this point ("clang -### ..." will do that for us), so we also pass
+           "-Qunused-arguments" to silence the potential warning that "-fno-cxx-modules" was
+           ignored. Moreover, "-fno-cxx-modules" is only accepted by the clang driver so we have to
+           pass it now.
+
+           Using clang instead of gcc may trigger warnings about unsupported optimization flags;
+           passing -Wno-ignored-optimization-argument prevents that. */
+        ClangCommand.append_args [
+          "-fno-cxx-modules",
+          "-Qunused-arguments",
+          "-Wno-ignored-optimization-argument"
+        ] |> ClangCommand.command_to_run
       );
   Logging.out "clang -### invocation: %s@\n" clang_hashhashhash;
   let normalized_commands = ref [];
