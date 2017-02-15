@@ -138,11 +138,12 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 DEFINE-CHECKER STRONG_DELEGATE_WARNING = {
 
   LET name_contains_delegate = property_name_contains_word(delegate);
+  LET name_does_not_contain_delegates = NOT property_name_contains_word(delegates);
   LET name_does_not_contains_queue = NOT property_name_contains_word(queue);
 
   SET report_when =
 	    WHEN
-				name_contains_delegate AND name_does_not_contains_queue AND is_strong_property()
+				name_contains_delegate AND name_does_not_contain_delegates AND name_does_not_contains_queue AND is_strong_property()
 			HOLDS-IN-NODE ObjCPropertyDecl;
 
   SET message = "Property or ivar %decl_name% declared strong";
