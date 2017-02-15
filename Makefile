@@ -17,6 +17,7 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   assembly \
   ck_analytics ck_imports \
+  clang_compilation_db_relpath \
   clang_multiple_files \
   clang_translation \
   clang_unknown_ext \

@@ -69,12 +69,13 @@ let decode_json_file (database : t) json_path =
           | None -> exit_format_error () in
         let command, args = parse_command_and_arguments cmd in
         let compilation_data = { dir; command; args;} in
-        let source_file = SourceFile.from_abs_path file in
+        let abs_file = if Filename.is_relative file then dir ^/ file else file in
+        let source_file = SourceFile.from_abs_path abs_file in
         database := SourceFile.Map.add source_file compilation_data !database
     | _ -> exit_format_error () in
   parse_json json
 
-let from_json_files  db_json_files =
+let from_json_files db_json_files =
   let db = empty () in
   IList.iter (decode_json_file db) db_json_files;
   Logging.out "created database with %d entries@\n" (get_size db);

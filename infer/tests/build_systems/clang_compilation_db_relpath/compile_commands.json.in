@@ -1,0 +1,22 @@
+[
+   {
+      "command" : "clang -c hello.c",
+      "directory" : "%pwd%/../codetoanalyze",
+      "file" : "hello.c"
+   },
+   {
+      "directory" : "%pwd%/../codetoanalyze/path with spaces",
+      "file" : "hel lo.c",
+      "command" : "clang -c hel\\ lo.c"
+   },
+   {
+      "directory" : "%pwd%/../codetoanalyze",
+      "file" : "hello2.c",
+      "command" : "clang -c hello2.c"
+   },
+   {
+      "command" : "clang -c hello3.c",
+      "directory" : "%pwd%/../codetoanalyze",
+      "file" : "hello3.c"
+   }
+]
