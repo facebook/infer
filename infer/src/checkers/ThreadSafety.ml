@@ -146,16 +146,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         attribute_map
 
   let add_path_to_state exp typ loc path_state id_map attribute_map tenv =
-    (* remove the last field of the access path, if it has any *)
-    let truncate = function
-      | base, []
-      | base, _ :: [] -> base, []
-      | base, accesses -> base, IList.rev (List.tl_exn (IList.rev accesses)) in
 
     (* we don't want to warn on writes to the field if it is (a) thread-confined, or (b) volatile *)
     let is_safe_write access_path tenv =
-      let is_thread_safe_write accesses tenv = match IList.rev accesses with
-        | AccessPath.FieldAccess (fieldname, Typ.Tstruct typename) :: _ ->
+      let is_thread_safe_write accesses tenv =
+        match IList.rev accesses,
+              AccessPath.Raw.get_typ (AccessPath.Raw.truncate access_path) tenv with
+        | AccessPath.FieldAccess fieldname :: _,
+          Some (Typ.Tstruct typename | Tptr (Tstruct typename, _)) ->
             begin
               match Tenv.lookup tenv typename with
               | Some struct_typ ->
@@ -177,7 +175,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else
       IList.fold_left
         (fun acc rawpath ->
-           if not (is_owned (truncate rawpath) attribute_map) && not (is_safe_write rawpath tenv)
+           if not (is_owned (AccessPath.Raw.truncate rawpath) attribute_map) &&
+              not (is_safe_write rawpath tenv)
            then Domain.PathDomain.add_sink (Domain.make_access rawpath loc) acc
            else acc)
         path_state

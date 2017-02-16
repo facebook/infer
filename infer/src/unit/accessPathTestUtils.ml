@@ -17,7 +17,7 @@ let make_fieldname fld_str =
   Ident.create_fieldname (Mangled.from_string fld_str) 0
 
 let make_field_access access_str =
-  AccessPath.FieldAccess (make_fieldname access_str, Typ.Tvoid)
+  AccessPath.FieldAccess (make_fieldname access_str)
 
 let make_array_access typ =
   AccessPath.ArrayAccess typ

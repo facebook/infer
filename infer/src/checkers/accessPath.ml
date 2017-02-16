@@ -21,7 +21,7 @@ let equal_base = [%compare.equal : base]
 
 type access =
   | ArrayAccess of Typ.t
-  | FieldAccess of Ident.fieldname * Typ.t
+  | FieldAccess of Ident.fieldname
 [@@deriving compare]
 
 let equal_access = [%compare.equal : access]
@@ -30,7 +30,7 @@ let pp_base fmt (pvar, _) =
   Var.pp fmt pvar
 
 let pp_access fmt = function
-  | FieldAccess (field_name, _) -> Ident.pp_fieldname fmt field_name
+  | FieldAccess field_name -> Ident.pp_fieldname fmt field_name
   | ArrayAccess _ -> F.fprintf fmt "[_]"
 
 let pp_access_list fmt accesses =
@@ -40,6 +40,26 @@ let pp_access_list fmt accesses =
 module Raw = struct
   type t = base * access list [@@deriving compare]
   let equal = [%compare.equal : t]
+
+  let truncate = function
+    | base, []
+    | base, _ :: [] -> base, []
+    | base, accesses -> base, List.rev (List.tl_exn (List.rev accesses))
+
+  let get_typ ((_, base_typ), accesses) tenv =
+    let rec accesses_get_typ last_typ tenv = function
+      | [] ->
+          Some last_typ
+      | FieldAccess field_name :: accesses ->
+          let lookup = Tenv.lookup tenv in
+          begin
+            match StructTyp.get_field_type_and_annotation ~lookup field_name last_typ with
+            | Some (field_typ, _) -> accesses_get_typ field_typ tenv accesses
+            | None -> None
+          end
+      | ArrayAccess array_typ :: accesses ->
+          accesses_get_typ array_typ tenv accesses in
+    accesses_get_typ base_typ tenv accesses
 
   let pp fmt = function
     | base, [] ->  pp_base fmt base
@@ -84,7 +104,7 @@ let of_exp exp0 typ0 ~(f_resolve_id : Var.t -> Raw.t option) =
     | Exp.Lvar pvar ->
         (base_of_pvar pvar typ, accesses) :: acc
     | Exp.Lfield (root_exp, fld, root_exp_typ) ->
-        let field_access = FieldAccess (fld, typ) in
+        let field_access = FieldAccess fld in
         of_exp_ root_exp root_exp_typ (field_access :: accesses) acc
     | Exp.Lindex (root_exp, _) ->
         let array_access = ArrayAccess typ in

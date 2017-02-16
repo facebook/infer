@@ -15,7 +15,7 @@ type base = Var.t * Typ.t [@@deriving compare]
 
 type access =
   | ArrayAccess of Typ.t (* array element type. index is unknown *)
-  | FieldAccess of Ident.fieldname * Typ.t (* field name * field type *)
+  | FieldAccess of Ident.fieldname (* field name *)
 [@@deriving compare]
 
 module Raw : sig
@@ -23,7 +23,16 @@ module Raw : sig
       representedas (x, [f; g]) *)
   type t = base * access list [@@deriving compare]
 
+  (** remove the last access of the access path if the access list is non-empty. returns the
+      original access path if the access list is empty *)
+  val truncate : t -> t
+
+  (** get the typ of the last access in the list of accesses if the list is non-empty, or the base
+      if the list is empty. that is, for x.f.g, return typ(g), and for x, return typ(x) *)
+  val get_typ : t -> Tenv.t -> Typ.t option
+
   val equal : t -> t -> bool
+
   val pp : Format.formatter -> t -> unit
 end
 
