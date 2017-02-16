@@ -1351,12 +1351,9 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
       let payload =
         { summary.Specs.payload with
           Specs.preposts = Some specs; } in
-      let dependency_map =
-        Specs.re_initialize_dependency_map summary.Specs.dependency_map in
       { summary with
         Specs.timestamp = 0;
         phase = Specs.RE_EXECUTION;
-        dependency_map;
         payload;
       } in
   Specs.add_summary proc_name summary'
@@ -1437,7 +1434,7 @@ let do_analysis exe_env =
     let f (callee_pname, loc) = calls := (callee_pname, loc) :: !calls in
     Procdesc.iter_calls f caller_pdesc;
     IList.rev !calls in
-  let init_proc (pname, dep) =
+  let init_proc pname =
     let pdesc = match Exe_env.get_proc_desc exe_env pname with
       | Some pdesc ->
           pdesc
@@ -1454,15 +1451,15 @@ let do_analysis exe_env =
       if Config.dynamic_dispatch = `Lazy
       then Some pdesc
       else None in
-    Specs.init_summary (dep, nodes, proc_flags, calls, None, attributes, proc_desc_option) in
+    Specs.init_summary (nodes, proc_flags, calls, None, attributes, proc_desc_option) in
 
   IList.iter
-    (fun ((pn, _) as x) ->
+    (fun (pn, _) ->
        let should_init () =
          Config.models_mode ||
          is_none (Specs.get_summary pn) in
        if should_init ()
-       then init_proc x)
+       then init_proc pn)
     procs_and_defined_children;
 
   let callbacks =

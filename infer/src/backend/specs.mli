@@ -121,8 +121,6 @@ type phase = FOOTPRINT | RE_EXECUTION
 
 val equal_phase : phase -> phase -> bool
 
-type dependency_map_t = int Procname.Map.t
-
 type call_summary = CallSite.Set.t Annot.Map.t
 
 (** Payload: results of some analysis *)
@@ -140,18 +138,17 @@ type payload =
   }
 
 (** Procedure summary *)
-type summary =
-  { dependency_map: dependency_map_t;  (** maps children procs to timestamp as last seen at the start of an analysys phase for this proc *)
-    nodes: Procdesc.Node.id list; (** ids of cfg nodes of the procedure *)
-    phase: phase; (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
-    payload: payload;  (** payload containing the result of some analysis *)
-    sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)
-    stats: stats;  (** statistics: execution time and list of errors *)
-    status: status; (** ACTIVE when the proc is being analyzed *)
-    timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
-    attributes : ProcAttributes.t; (** Attributes of the procedure *)
-    proc_desc_option : Procdesc.t option;
-  }
+type summary = {
+  nodes: Procdesc.Node.id list; (** ids of cfg nodes of the procedure *)
+  phase: phase; (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
+  payload: payload;  (** payload containing the result of some analysis *)
+  sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)
+  stats: stats;  (** statistics: execution time and list of errors *)
+  status: status; (** ACTIVE when the proc is being analyzed *)
+  timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
+  attributes : ProcAttributes.t; (** Attributes of the procedure *)
+  proc_desc_option : Procdesc.t option;
+}
 
 (** Add the summary to the table for the given function *)
 val add_summary : Procname.t -> summary -> unit
@@ -213,13 +210,12 @@ val is_active : summary -> bool
 (** Initialize the summary for [proc_name] given dependent procs in list [depend_list].
     Do nothing if a summary exists already. *)
 val init_summary :
-  (Procname.t list * (* depend list *)
-   Procdesc.Node.id list * (* nodes *)
-   ProcAttributes.proc_flags * (* procedure flags *)
-   (Procname.t * Location.t) list * (* calls *)
-   (Cg.in_out_calls option) * (* in and out calls *)
-   ProcAttributes.t * (* attributes of the procedure *)
-   Procdesc.t option) (* procdesc option *)
+  ( Procdesc.Node.id list * (* nodes *)
+    ProcAttributes.proc_flags * (* procedure flags *)
+    (Procname.t * Location.t) list * (* calls *)
+    (Cg.in_out_calls option) * (* in and out calls *)
+    ProcAttributes.t * (* attributes of the procedure *)
+    Procdesc.t option) (* procdesc option *)
   -> unit
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
@@ -264,9 +260,6 @@ val proc_resolve_attributes : Procname.t -> ProcAttributes.t option
     It's not defined, and there is no spec file for it. *)
 val proc_is_library : ProcAttributes.t -> bool
 
-(** Re-initialize a dependency map *)
-val re_initialize_dependency_map : dependency_map_t -> dependency_map_t
-
 (** Set the current status for the proc *)
 val set_status : Procname.t -> status -> unit
 
@@ -281,7 +274,3 @@ val store_summary : Procname.t -> summary -> unit
 
 (** Return a compact representation of the summary *)
 val summary_compact : Sil.sharing_env -> summary -> summary
-
-(** Update the dependency map of [proc_name] with the current
-    timestamps of the dependents *)
-val update_dependency_map : Procname.t -> unit
