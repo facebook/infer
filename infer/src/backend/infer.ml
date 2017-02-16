@@ -120,8 +120,9 @@ let create_results_dir () =
   Unix.mkdir_p (Config.results_dir ^/ Config.specs_dir_name)
 
 let clean_results_dir () =
-  let dirs = ["classnames"; "filelists"; "multicore"; "sources"] in
-  let suffixes = [".cfg"; ".cg"] in
+  let dirs = ["classnames"; "filelists"; "multicore"; "sources"; "log";
+              "attributes"; "backend_stats"; "reporting_stats"; "frontend_stats"] in
+  let suffixes = [".cfg"; ".cg"; ".txt"; ".csv"; ".json"] in
   let rec clean name =
     match Unix.opendir name with
     | dir -> (
@@ -139,8 +140,13 @@ let clean_results_dir () =
               Unix.closedir dir in
         cleandir dir
       )
+    | exception Unix.Unix_error (Unix.ENOTDIR, _, _)
+      when String.equal (Filename.basename name) "report.json" ->
+        (* Keep the JSON report *)
+        ()
     | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
-        if List.exists ~f:(Filename.check_suffix name) suffixes then
+        if not (String.equal (Filename.basename name) "report.json")
+        && List.exists ~f:(Filename.check_suffix name) suffixes then
           Unix.unlink name
     | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
         () in
@@ -395,7 +401,7 @@ let () =
     remove_results_dir () ;
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)
-  L.set_log_file_identifier CLOpt.(Infer Driver) None ;
+  if not Config.buck_cache_mode then L.set_log_file_identifier CLOpt.(Infer Driver) None;
   if Config.print_builtins then Builtin.print_and_exit () ;
   if CLOpt.is_originator then L.do_out "%s@\n" Config.version_string ;
   if Config.debug_mode || Config.stats_mode then log_infer_args driver_mode ;
@@ -404,17 +410,19 @@ let () =
      anyway, pretend that we are not called from another make to prevent make falling back to a
      mono-threaded execution. *)
   Unix.unsetenv "MAKEFLAGS";
-  register_perf_stats_report () ;
-  touch_start_file () ;
+  if not Config.buck_cache_mode then register_perf_stats_report () ;
+  if Config.buck_cache_mode && Config.reactive_mode then
+    failwith "The reactive analysis mode is not compatible with the Buck integration for Java";
+  if not Config.buck_cache_mode then touch_start_file () ;
   capture driver_mode ;
   analyze driver_mode ;
   if CLOpt.is_originator then (
-    StatsAggregator.generate_files () ;
     let in_buck_mode = match driver_mode with | PythonCapture (BBuck, _) -> true | _ -> false in
+    StatsAggregator.generate_files () ;
     if Config.equal_analyzer Config.analyzer Config.Crashcontext then
       Crashcontext.crashcontext_epilogue ~in_buck_mode;
-    if in_buck_mode then
-      clean_results_dir () ;
     if Config.fail_on_bug then
       fail_on_issue_epilogue () ;
-  )
+  );
+  if Config.buck_cache_mode then
+    clean_results_dir ()

@@ -1401,6 +1401,8 @@ let main report_csv::report_csv report_json::report_json => {
     (Stats, init_stats_format_list ()),
     (Summary, init_summary_format_list ())
   ];
-  register_perf_stats_report ();
+  if (not Config.buck_cache_mode) {
+    register_perf_stats_report ()
+  };
   print_issues formats_by_report_kind
 };

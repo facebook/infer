@@ -26,7 +26,7 @@ let register_perf_stats_report source_file =
 
 
 let init_global_state source_file =
-  register_perf_stats_report source_file ;
+  if not Config.buck_cache_mode then register_perf_stats_report source_file ;
   Config.curr_language := Config.Java;
   DB.Results_dir.init source_file;
   Ident.NameGenerator.reset ();

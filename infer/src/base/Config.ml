@@ -1466,6 +1466,7 @@ and bootclasspath = !bootclasspath
 and bo_debug = !bo_debug
 and buck = !buck
 and buck_build_args = !buck_build_args
+and buck_cache_mode = !buck && not !debug
 and buck_out = !buck_out
 and bufferoverrun = !bufferoverrun
 and bugs_csv = !bugs_csv

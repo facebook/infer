@@ -156,6 +156,7 @@ val bootclasspath : string option
 val bo_debug : int
 val buck : bool
 val buck_build_args : string list
+val buck_cache_mode : bool
 val buck_out : string option
 val bufferoverrun : bool
 val bugs_csv : string option
