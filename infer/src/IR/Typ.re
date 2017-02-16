@@ -149,7 +149,12 @@ let array_sensitive_compare t1 t2 =>
 /** Pretty print a type with all the details, using the C syntax. */
 let rec pp_full pe f =>
   fun
-  | Tstruct tname => F.fprintf f "%s" (Typename.to_string tname)
+  | Tstruct tname =>
+    if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
+      F.fprintf f "%s" (Typename.to_string tname |> Escape.escape_xml)
+    } else {
+      F.fprintf f "%s" (Typename.to_string tname)
+    }
   | Tint ik => F.fprintf f "%s" (ikind_to_string ik)
   | Tfloat fk => F.fprintf f "%s" (fkind_to_string fk)
   | Tvoid => F.fprintf f "void"
