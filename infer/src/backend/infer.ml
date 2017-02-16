@@ -357,14 +357,51 @@ let log_infer_args driver_mode =
   L.out "CWD = %s@\n" (Sys.getcwd ());
   L.out "Driver mode:@\n%a@." pp_driver_mode driver_mode
 
+let assert_supported_mode required_analyzer requested_mode_string =
+  let analyzer_enabled = match required_analyzer with
+    | `Clang -> Version.clang_enabled
+    | `Java -> Version.java_enabled
+    | `Xcode -> Version.clang_enabled && Version.xcode_enabled in
+  if not analyzer_enabled then
+    let analyzer_string = match required_analyzer with
+      | `Clang -> "clang"
+      | `Java -> "java"
+      | `Xcode -> "clang and xcode" in
+    failwithf
+      "Unsupported build mode: %s@\nInfer was built with %s analyzers disabled.@ Please rebuild \
+       infer with %s enabled.@."
+      requested_mode_string analyzer_string analyzer_string
+
+let assert_supported_build_system build_system = match build_system with
+  | BAnt | BGradle | BJava | BJavac | BMvn ->
+      string_of_build_system build_system
+      |> assert_supported_mode `Java
+  | BMake | BNdk ->
+      string_of_build_system build_system
+      |> assert_supported_mode `Clang
+  | BXcode ->
+      string_of_build_system build_system
+      |> assert_supported_mode `Xcode
+  | BBuck ->
+      let (analyzer, build_string) = if Config.flavors then
+          (`Clang, "buck with flavors")
+        else
+          (`Java, string_of_build_system build_system) in
+      assert_supported_mode analyzer build_string
+  | BAnalyze ->
+      ()
+
 let driver_mode_of_build_cmd build_cmd =
   match build_cmd with
   | [] ->
-      if not (List.is_empty !Config.clang_compilation_dbs) then
+      if not (List.is_empty !Config.clang_compilation_dbs) then (
+        assert_supported_mode `Clang "clang compilation database";
         ClangCompilationDB !Config.clang_compilation_dbs
-      else
+      ) else
         Analyze
   | prog :: args ->
+      let build_system = build_system_of_exe_name (Filename.basename prog) in
+      assert_supported_build_system build_system;
       match build_system_of_exe_name (Filename.basename prog) with
       | BAnalyze ->
           Analyze
@@ -390,6 +427,7 @@ let get_driver_mode () =
         | [] -> [] in
       Javac (Javac.Javac, "javac", build_args)
   | Some path ->
+      assert_supported_mode `Java "Buck genrule";
       BuckGenrule path
   | None ->
       driver_mode_of_build_cmd (IList.rev Config.rest)

@@ -12,3 +12,7 @@ open! IStd
 val commit : string
 val versionString : string
 val versionJson : string
+
+val clang_enabled : bool
+val java_enabled : bool
+val xcode_enabled : bool

@@ -360,7 +360,7 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $@
 
-base/Version.ml: base/Version.ml.in Makefile
+base/Version.ml: base/Version.ml.in Makefile $(ROOT_DIR)/Makefile.autoconf
 	TMPFILE=$$(mktemp $@.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
 	INFER_GIT_BRANCH=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --abbrev-ref HEAD || printf "unknown"); \
@@ -371,6 +371,9 @@ base/Version.ml: base/Version.ml.in Makefile
 	  -e 's|@IS_RELEASE_TREE[@]|$(IS_RELEASE_TREE)|g' \
 	  -e "s|@INFER_GIT_COMMIT[@]|$$INFER_GIT_COMMIT|g" \
 	  -e "s|@INFER_GIT_BRANCH[@]|$$INFER_GIT_BRANCH|g" \
+	  -e "s|@BUILD_C_ANALYZERS[@]|$(BUILD_C_ANALYZERS)|g" \
+	  -e "s|@BUILD_JAVA_ANALYZERS[@]|$(BUILD_JAVA_ANALYZERS)|g" \
+	  -e "s|@XCODE_SELECT[@]|$(XCODE_SELECT)|g" \
 	  $< > "$$TMPFILE"; \
 	mv "$$TMPFILE" $@
 
