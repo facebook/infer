@@ -7,4 +7,5 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-let main _ = ()
+let from_arguments _ = ()
+let from_verbose_out _ = ()

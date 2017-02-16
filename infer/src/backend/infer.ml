@@ -204,7 +204,7 @@ let capture = function
       capture_with_compilation_database json_cdb
   | BuckGenrule path ->
       L.stdout "Capturing for Buck genrule compatibility...@\n";
-      JMain.main (lazy (JClasspath.load_from_arguments path))
+      JMain.from_arguments path
   | ClangCompilationDB db_files ->
       L.stdout "Capturing using compilation database...@\n";
       capture_with_compilation_database db_files

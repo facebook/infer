@@ -10,4 +10,8 @@
 
 open! IStd
 
-val main: JClasspath.t Lazy.t -> unit
+(** loads the source files from command line arguments and translates them *)
+val from_arguments : string -> unit
+
+(** loads the source files from javac's verbose output translates them *)
+val from_verbose_out : string -> unit
