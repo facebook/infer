@@ -27,7 +27,9 @@ let volatile = {class_name: "volatile", parameters: []};
 
 
 /** Pretty print an annotation. */
-let pp fmt annotation => F.fprintf fmt "@@%s" annotation.class_name;
+let prefix = Config.curr_language_is Config.Java ? "@" : "_";
+
+let pp fmt annotation => F.fprintf fmt "%s%s" prefix annotation.class_name;
 
 let module Map = PrettyPrintable.MakePPMap {
   type nonrec t = t;

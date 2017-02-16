@@ -958,13 +958,18 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
   let pp_label fmt n =
     match Procdesc.Node.get_kind n with
     | Procdesc.Node.Start_node pname ->
+        let pname_string = Procname.to_string pname in
         Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a"
-          (Procname.to_string pname)
+          pname_string
           pp_etlist (Procdesc.get_formals pdesc)
           pp_local_list (Procdesc.get_locals pdesc);
         if IList.length (Procdesc.get_captured pdesc) <> 0 then
           Format.fprintf fmt "\\nCaptured: %a"
-            pp_local_list (Procdesc.get_captured pdesc)
+            pp_local_list (Procdesc.get_captured pdesc);
+        let attributes = Procdesc.get_attributes pdesc in
+        let method_annotation = attributes.ProcAttributes.method_annotation in
+        if not (Annot.Method.is_empty method_annotation) then
+          Format.fprintf fmt "\\nAnnotation: %a" (Annot.Method.pp pname_string) method_annotation
     | Procdesc.Node.Exit_node pname ->
         Format.fprintf fmt "Exit %s" (Procname.to_string pname)
     | Procdesc.Node.Join_node ->
