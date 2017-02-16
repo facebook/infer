@@ -1403,27 +1403,18 @@ let interprocedural_algorithm exe_env : unit =
     Int.equal (Specs.get_timestamp summary) 0 in
   let procs_to_analyze =
     List.filter ~f:filter_initial (Cg.get_defined_nodes call_graph) in
-  let to_analyze proc_name =
-    match Exe_env.get_proc_desc exe_env proc_name with
-    | Some proc_desc ->
-        let reactive_changed =
-          if Config.reactive_mode
-          then (Procdesc.get_attributes proc_desc).ProcAttributes.changed
-          else true in
-        if
-          reactive_changed && (* in reactive mode, only analyze changed procedures *)
-          Ondemand.procedure_should_be_analyzed proc_name
-        then
-          Some proc_desc
-        else
-          None
-    | None ->
-        None in
   let process_one_proc proc_name =
-    match to_analyze proc_name with
-    | Some pdesc -> Ondemand.analyze_proc_name ~propagate_exceptions:false pdesc proc_name
+    let analyze proc_desc =
+      Ondemand.analyze_proc_desc ~propagate_exceptions:false proc_desc proc_desc in
+    match Exe_env.get_proc_desc exe_env proc_name with
+    | Some proc_desc
+      when Config.reactive_mode (* in reactive mode, only analyze changed procedures *)
+        && (Procdesc.get_attributes proc_desc).ProcAttributes.changed ->
+        analyze proc_desc
+    | Some proc_desc -> analyze proc_desc
     | None -> () in
-  IList.iter process_one_proc procs_to_analyze
+  List.iter ~f:process_one_proc procs_to_analyze
+
 
 (** Perform the analysis of an exe_env *)
 let do_analysis exe_env =
