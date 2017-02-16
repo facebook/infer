@@ -134,7 +134,6 @@ type summary_val = {
   vfile: string,
   vflags: ProcAttributes.proc_flags,
   vline: int,
-  vtop: string,
   vsignature: string,
   vweight: int,
   vproof_coverage: string,
@@ -146,12 +145,11 @@ type summary_val = {
 
 
 /** compute values from summary data to export to csv and xml format */
-let summary_values top_proc_set summary => {
+let summary_values summary => {
   let stats = summary.Specs.stats;
   let attributes = summary.Specs.attributes;
   let err_log = attributes.ProcAttributes.err_log;
   let proc_name = Specs.get_proc_name summary;
-  let is_top = Procname.Set.mem proc_name top_proc_set;
   let signature = Specs.get_signature summary;
   let nodes_nr = IList.length summary.Specs.nodes;
   let specs = Specs.get_specs_from_payload summary;
@@ -204,7 +202,6 @@ let summary_values top_proc_set summary => {
     vflags: attributes.ProcAttributes.proc_flags,
     vfile: SourceFile.to_string attributes.ProcAttributes.loc.Location.file,
     vline: attributes.ProcAttributes.loc.Location.line,
-    vtop: if is_top {"Y"} else {"N"},
     vsignature: signature,
     vweight: nodes_nr,
     vproof_coverage: Printf.sprintf "%2.2f" node_coverage,
@@ -242,9 +239,9 @@ let module ProcsCsv = {
       Io_infer.Xml.tag_proof_trace;
 
   /** Write proc summary stats in csv format */
-  let pp_summary fmt top_proc_set summary => {
+  let pp_summary fmt summary => {
     let pp x => F.fprintf fmt x;
-    let sv = summary_values top_proc_set summary;
+    let sv = summary_values summary;
     pp "\"%s\"," (Escape.escape_csv sv.vname);
     pp "\"%s\"," (Escape.escape_csv sv.vname_id);
     pp "%d," sv.vspecs;
@@ -254,7 +251,6 @@ let module ProcsCsv = {
     pp "%d," sv.verr;
     pp "%s," sv.vfile;
     pp "%d," sv.vline;
-    pp "%s," sv.vtop;
     pp "\"%s\"," (Escape.escape_csv sv.vsignature);
     pp "%d," sv.vweight;
     pp "%s," sv.vproof_coverage;
@@ -269,8 +265,8 @@ let module ProcsXml = {
   let xml_procs_id = ref 0;
 
   /** print proc in xml */
-  let pp_proc fmt top_proc_set summary => {
-    let sv = summary_values top_proc_set summary;
+  let pp_proc fmt summary => {
+    let sv = summary_values summary;
     let subtree label contents => Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
     let tree = {
       incr xml_procs_id;
@@ -285,7 +281,6 @@ let module ProcsXml = {
         subtree Io_infer.Xml.tag_err (string_of_int sv.verr),
         subtree Io_infer.Xml.tag_file sv.vfile,
         subtree Io_infer.Xml.tag_line (string_of_int sv.vline),
-        subtree Io_infer.Xml.tag_top sv.vtop,
         subtree Io_infer.Xml.tag_signature (Escape.escape_xml sv.vsignature),
         subtree Io_infer.Xml.tag_weight (string_of_int sv.vweight),
         subtree Io_infer.Xml.tag_proof_coverage sv.vproof_coverage,
@@ -711,30 +706,6 @@ let module CallsCsv = {
   };
 };
 
-
-/** Module to compute the top procedures.
-    A procedure is top if it has specs and any procedure calling it has no specs */
-let module TopProcedures: {
-  type t;
-  let create: unit => t;
-  let process_summary: t => (string, Specs.summary) => unit;
-  let top_set: t => Procname.Set.t;
-} = {
-  type t = {mutable possible: Procname.Set.t, mutable impossible: Procname.Set.t};
-  let create () => {possible: Procname.Set.empty, impossible: Procname.Set.empty};
-  let mark_possible x pname => x.possible = Procname.Set.add pname x.possible;
-  let mark_impossible x pname => x.impossible = Procname.Set.add pname x.impossible;
-  let top_set x => Procname.Set.diff x.possible x.impossible;
-  let process_summary x (_, summary) => {
-    let proc_name = Specs.get_proc_name summary;
-    let nspecs = IList.length (Specs.get_specs_from_payload summary);
-    if (nspecs > 0) {
-      mark_possible x proc_name;
-      Procname.Map.iter (fun p _ => mark_impossible x p) summary.Specs.dependency_map
-    }
-  };
-};
-
 let module Stats = {
   type t = {
     files: Hashtbl.t SourceFile.t unit,
@@ -1080,10 +1051,10 @@ let pp_issues error_filter linereader summary bug_format_list => {
   pp_issues_of_error_log error_filter linereader (Some loc) procname err_log bug_format_list
 };
 
-let pp_procs top_proc_set summary procs_format_list => {
+let pp_procs summary procs_format_list => {
   let pp_procs_in_format format => {
     let pp_procs = pp_procs_in_format format;
-    pp_procs top_proc_set summary
+    pp_procs summary
   };
   IList.iter pp_procs_in_format procs_format_list
 };
@@ -1118,7 +1089,6 @@ let pp_summary summary fname summary_format_list => {
 let pp_summary_by_report_kind
     formats_by_report_kind
     summary
-    top_proc_set
     fname
     error_filter
     linereader
@@ -1127,7 +1097,7 @@ let pp_summary_by_report_kind
   let pp_summary_by_report_kind (report_kind, format_list) =>
     switch (report_kind, format_list) {
     | (Issues, [_, ..._]) => pp_issues error_filter linereader summary format_list
-    | (Procs, [_, ..._]) => pp_procs top_proc_set summary format_list
+    | (Procs, [_, ..._]) => pp_procs summary format_list
     | (Stats, [_, ..._]) => pp_stats (error_filter file) linereader summary stats format_list
     | (Calls, [_, ..._]) => pp_calls summary format_list
     | (Summary, _) => pp_summary summary fname format_list
@@ -1183,14 +1153,14 @@ let pp_lint_issues filters formats_by_report_kind linereader procname error_log 
 
 
 /** Process a summary */
-let process_summary filters formats_by_report_kind linereader stats top_proc_set (fname, summary) => {
+let process_summary filters formats_by_report_kind linereader stats (fname, summary) => {
   let file = summary.Specs.attributes.ProcAttributes.loc.Location.file;
   let proc_name = Specs.get_proc_name summary;
   let error_filter = error_filter filters proc_name;
   let pp_simple_saved = !Config.pp_simple;
   Config.pp_simple := true;
   pp_summary_by_report_kind
-    formats_by_report_kind summary top_proc_set fname error_filter linereader stats file;
+    formats_by_report_kind summary fname error_filter linereader stats file;
   if Config.precondition_stats {
     PreconditionStats.do_summary proc_name summary
   };
@@ -1311,9 +1281,6 @@ let module AnalysisResults = {
   };
 };
 
-/* warning: computing top procedures iterates over summaries twice */
-let compute_top_procedures = ref false;
-
 let register_perf_stats_report () => {
   let stats_dir = Filename.concat Config.results_dir Config.reporting_stats_dir_name;
   let stats_file = Filename.concat stats_dir (Config.perf_stats_prefix ^ ".json");
@@ -1406,12 +1373,7 @@ let pp_summary_and_issues formats_by_report_kind => {
   let linereader = Printer.LineReader.create ();
   let filters = Inferconfig.create_filters Config.analyzer;
   let iterate_summaries = AnalysisResults.get_summary_iterator ();
-  let top_proc = TopProcedures.create ();
-  let top_proc_set = TopProcedures.top_set top_proc;
-  if (!compute_top_procedures && (Config.procs_csv != None || Config.procs_xml != None)) {
-    iterate_summaries (TopProcedures.process_summary top_proc)
-  };
-  iterate_summaries (process_summary filters formats_by_report_kind linereader stats top_proc_set);
+  iterate_summaries (process_summary filters formats_by_report_kind linereader stats);
   if Config.precondition_stats {
     PreconditionStats.pp_stats ()
   };
