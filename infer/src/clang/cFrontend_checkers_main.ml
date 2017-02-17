@@ -52,7 +52,9 @@ let rec get_responds_to_selector stmt =
   | BinaryOperator (_, [stmt1;stmt2], _, bo_info)
     when PVariant.(=) bo_info.Clang_ast_t.boi_kind `LAnd ->
       List.append (get_responds_to_selector stmt1) (get_responds_to_selector stmt2)
-  | ImplicitCastExpr (_, [stmt], _, _) ->
+  | ImplicitCastExpr (_, [stmt], _, _)
+  | ParenExpr (_, [stmt], _)
+  | ExprWithCleanups(_, [stmt], _, _) ->
       get_responds_to_selector stmt
   | _ -> []
 

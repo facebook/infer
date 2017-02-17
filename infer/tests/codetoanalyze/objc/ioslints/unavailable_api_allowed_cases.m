@@ -7,12 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 #import <UIKit/UIKit.h>
+#import <AVFoundation/AVPlayer.h>
 
 @interface Unavailable_api_allowed_cases : NSObject
 
 - (void)m NS_AVAILABLE(10_12, 10_0);
 
 - (void)n NS_AVAILABLE(10_12, 10_0);
+
+@property(nonatomic, strong) AVPlayer* player;
 
 @end
 
@@ -182,6 +185,13 @@
     destinationPixelBufferAttributes = @{
       (NSString*)kCVPixelBufferOpenGLESTextureCacheCompatibilityKey : @YES
     };
+  }
+}
+
+// no bug
+- (void)playInReverse {
+  if ([self.player respondsToSelector:@selector(playImmediatelyAtRate:)]) {
+    [self.player playImmediatelyAtRate:-1.0];
   }
 }
 
