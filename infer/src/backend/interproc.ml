@@ -1405,7 +1405,7 @@ let interprocedural_algorithm exe_env : unit =
     List.filter ~f:filter_initial (Cg.get_defined_nodes call_graph) in
   let process_one_proc proc_name =
     let analyze proc_desc =
-      Ondemand.analyze_proc_desc ~propagate_exceptions:false proc_desc proc_desc in
+      ignore (Ondemand.analyze_proc_desc ~propagate_exceptions:false proc_desc proc_desc) in
     match Exe_env.get_proc_desc exe_env proc_name with
     | Some proc_desc
       when Config.reactive_mode (* in reactive mode, only analyze changed procedures *)

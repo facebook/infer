@@ -46,7 +46,7 @@ module Make (H : Helper) = struct
         failwithf "Summary for %a should exist, but does not!@." Procname.pp pname
 
   let read_summary caller_pdesc callee_pname =
-    Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc callee_pname;
+    ignore (Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc callee_pname);
     match Specs.get_summary callee_pname with
     | None -> None
     | Some summary -> H.read_from_payload summary.Specs.payload

@@ -154,7 +154,8 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
         timestamp = summary.Specs.timestamp + 1 } in
     Specs.add_summary callee_pname summary';
     Checkers.ST.store_summary callee_pname;
-    Printer.write_proc_html source false callee_pdesc in
+    Printer.write_proc_html source false callee_pdesc;
+    summary' in
 
   let log_error_and_continue exn kind =
     Reporting.log_error callee_pname exn;
@@ -165,14 +166,16 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
       { prev_summary.Specs.payload with Specs.preposts = Some []; } in
     let new_summary =
       { prev_summary with Specs.stats; payload; timestamp; } in
-    Specs.add_summary callee_pname new_summary in
+    Specs.add_summary callee_pname new_summary;
+    new_summary in
 
   let old_state = save_global_state () in
   let source = preprocess () in
   try
     analyze_proc source callee_pdesc;
-    postprocess source;
+    let summary = postprocess source in
     restore_global_state old_state;
+    summary
   with exn ->
     L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@?"
       Procname.pp callee_pname
@@ -193,32 +196,39 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
           log_error_and_continue exn (FKcrash (Exn.to_string exn))
 
 
-let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc =
+let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc : Specs.summary option =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let proc_attributes = Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
-  | Some callbacks
-    when should_be_analyzed callee_pname proc_attributes ->
-      run_proc_analysis ~propagate_exceptions callbacks.analyze_ondemand curr_pdesc callee_pdesc
-  | _ -> ()
+  | Some callbacks ->
+      if should_be_analyzed callee_pname proc_attributes then
+        let summary =
+          run_proc_analysis
+            ~propagate_exceptions callbacks.analyze_ondemand curr_pdesc callee_pdesc in
+        Some summary
+      else
+        Specs.get_summary callee_pname
+  | None -> None
 
 
 
 (** analyze_proc_name curr_pdesc proc_name
     performs an on-demand analysis of proc_name
     triggered during the analysis of curr_pname. *)
-let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname =
-
+let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname : Specs.summary option =
   match !callbacks_ref with
-  | Some callbacks
-    when procedure_should_be_analyzed callee_pname ->
-      begin
-        match callbacks.get_proc_desc callee_pname with
-        | Some callee_pdesc -> analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc
-        | None -> ()
-      end
-  | _ ->
-      () (* skipping *)
+  | Some callbacks ->
+      if procedure_should_be_analyzed callee_pname then
+        begin
+          match callbacks.get_proc_desc callee_pname with
+          | Some callee_pdesc ->
+              analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc
+          | None -> None
+        end
+      else
+        Specs.get_summary callee_pname
+  | None -> None
+
 
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 let get_proc_desc callee_pname =
