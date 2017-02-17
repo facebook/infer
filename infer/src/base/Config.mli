@@ -157,6 +157,7 @@ val bo_debug : int
 val buck : bool
 val buck_build_args : string list
 val buck_cache_mode : bool
+val buck_compilation_database : [ `Deps | `NoDeps ] option
 val buck_out : string option
 val bufferoverrun : bool
 val bugs_csv : string option
@@ -285,7 +286,6 @@ val trace_join : bool
 val trace_rearrange : bool
 val type_size : bool
 val unsafe_malloc : bool
-val use_compilation_database : [ `Deps | `NoDeps ] option
 val whole_seconds : bool
 val worklist_mode : int
 val write_dotty : bool

@@ -405,7 +405,7 @@ let driver_mode_of_build_cmd build_cmd =
       match build_system_of_exe_name (Filename.basename prog) with
       | BAnalyze ->
           Analyze
-      | BBuck when Config.use_compilation_database <> None ->
+      | BBuck when Option.is_some Config.buck_compilation_database ->
           BuckCompilationDB
       | BJava ->
           Javac (Javac.Java, prog, args)

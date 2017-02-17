@@ -34,7 +34,7 @@ let check_args_for_targets args =
 
 let add_flavor_to_targets args =
   let flavor =
-    match Config.use_compilation_database with
+    match Config.buck_compilation_database with
     | Some `Deps -> "#uber-compilation-database"
     | Some `NoDeps -> "#compilation-database"
     | _ -> assert false (* cannot happen *) in
@@ -89,7 +89,7 @@ let run_compilation_database compilation_database should_capture_file =
   let fail_on_failed_job =
     if Config.linters_ignore_clang_failures then false
     else
-      match Config.use_compilation_database with
+      match Config.buck_compilation_database with
       | Some `NoDeps -> Config.clang_frontend_do_lint
       | _ -> false in
   Process.run_jobs_in_parallel ~fail_on_failed_job jobs_stack

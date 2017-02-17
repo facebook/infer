@@ -18,7 +18,7 @@ val capture_file_in_database : CompilationDatabase.t -> SourceFile.t -> unit
 
 (** Get the compilation database files that contain the compilation given by the
     buck command. It will be the compilation of the passed targets only or also
-    the dependencies according to the flag --use-compilation-database deps | no-deps *)
+    the dependencies according to the flag --buck-compilation-database deps | no-deps *)
 val get_compilation_database_files_buck : unit -> [> `Raw of string ] list
 
 (** Get the compilation database files that contain the compilation given by the

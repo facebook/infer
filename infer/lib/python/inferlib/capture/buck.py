@@ -53,12 +53,6 @@ def create_argparser(group_name=MODULE_NAME):
                             'and not for Java. Note: this flag should be used '
                             'in combination with passing the #infer flavor '
                             'to the Buck target.')
-    group.add_argument('--use-compilation-database', action='store_true',
-                       help='Run Infer analysis through the use of the flavor '
-                            'compilation database. Currently this is '
-                            'supported only for the cxx_* targets of Buck '
-                            '- e.g. cxx_library, cxx_binary - and not for '
-                            'Java.')
     group.add_argument('--xcode-developer-dir',
                        help='Specify the path to Xcode developer directory '
                             '(requires --use-flavors to work)')

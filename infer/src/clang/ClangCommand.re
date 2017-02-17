@@ -91,11 +91,11 @@ let clang_cc1_cmd_sanitizer cmd => {
     } else if (
       String.is_suffix arg suffix::"dep.tmp"
     ) {
-      /* compilation-database-buck integration produces path to `dep.tmp` file that doesn't exist. Create it */
+      /* compilation-database Buck integration produces path to `dep.tmp` file that doesn't exist. Create it */
       Unix.mkdir_p (Filename.dirname arg);
       arg
     } else if (
-      String.equal option "-dependency-file" && Option.is_some Config.use_compilation_database
+      String.equal option "-dependency-file" && Option.is_some Config.buck_compilation_database
       /* In compilation database mode, dependency files are not assumed to exist */
     ) {
       "/dev/null"

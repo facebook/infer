@@ -29,4 +29,4 @@ infer-out/report.json: compile_commands.json $(SOURCES) Makefile \
                        ../codetoanalyze/path\ with\ spaces/hel\ lo.c
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --project-root $(TESTS_DIR) \
-      --clang-compilation-db-files-escaped $<)
+      --compilation-database-escaped $<)

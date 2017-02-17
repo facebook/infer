@@ -551,6 +551,11 @@ and buck_build_args =
     ~parse_mode:CLOpt.(Infer [Driver])
     "Pass values as command-line arguments to invocations of `buck build` (Buck flavors only)"
 
+and buck_compilation_database =
+  CLOpt.mk_symbol_opt ~long:"buck-compilation-database" ~deprecated:["-use-compilation-database"]
+    "Buck integration using the compilation database, with or without dependencies."
+    ~symbols:[("deps", `Deps); ("no-deps", `NoDeps)]
+
 and buck_out =
   CLOpt.mk_path_opt ~long:"buck-out"
     ~parse_mode:CLOpt.(Infer [Driver]) ~meta:"dir" "Specify the root directory of buck-out"
@@ -641,17 +646,6 @@ and clang_biniou_file =
 
 and clang_compilation_dbs = ref []
 
-and clang_compilation_db_files =
-  CLOpt.mk_path_list ~long:"clang-compilation-db-files"
-    ~parse_mode:CLOpt.(Infer [Clang])
-    "File that contain compilation commands (can be specified multiple times)"
-
-and clang_compilation_db_files_escaped =
-  CLOpt.mk_path_list ~long:"clang-compilation-db-files-escaped"
-    ~parse_mode:CLOpt.(Infer [Clang])
-    "File that contain compilation commands where all entries are escaped for the shell, eg coming \
-     from Xcode (can be specified multiple times)"
-
 and clang_frontend_action =
   CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
     ~parse_mode:CLOpt.(Infer [Clang])
@@ -671,6 +665,19 @@ and classpath =
 and cluster =
   CLOpt.mk_path_opt ~deprecated:["cluster"] ~long:"cluster"
     ~meta:"file" "Specify a .cluster file to be analyzed"
+
+and compilation_database =
+  CLOpt.mk_path_list ~long:"compilation-database"
+    ~deprecated:["-clang-compilation-db-files"]
+    ~parse_mode:CLOpt.(Infer [Clang])
+    "File that contain compilation commands (can be specified multiple times)"
+
+and compilation_database_escaped =
+  CLOpt.mk_path_list ~long:"compilation-database-escaped"
+    ~deprecated:["-clang-compilation-db-files-escaped"]
+    ~parse_mode:CLOpt.(Infer [Clang])
+    "File that contain compilation commands where all entries are escaped for the shell, eg coming \
+     from Xcode (can be specified multiple times)"
 
 and compute_analytics =
   CLOpt.mk_bool ~long:"compute-analytics"
@@ -1257,11 +1264,6 @@ and unsafe_malloc =
     ~parse_mode:CLOpt.(Infer [Clang])
     "Assume that malloc(3) never returns null."
 
-and use_compilation_database =
-  CLOpt.mk_symbol_opt ~long:"compilation-database" ~deprecated:["-use-compilation-database"]
-    "Buck integration using the compilation database, with or without dependencies."
-    ~symbols:[("deps", `Deps); ("no-deps", `NoDeps)]
-
 (** Set the path to the javac verbose output *)
 and verbose_out =
   CLOpt.mk_path ~deprecated:["verbose_out"] ~long:"verbose-out" ~default:""
@@ -1413,8 +1415,8 @@ let post_parsing_initialization () =
   if is_none !seconds_per_iteration then seconds_per_iteration := seconds_timeout ;
 
   clang_compilation_dbs :=
-    List.rev_map ~f:(fun x -> `Raw x) !clang_compilation_db_files
-    |> List.rev_map_append ~f:(fun x -> `Escaped x) !clang_compilation_db_files_escaped;
+    List.rev_map ~f:(fun x -> `Raw x) !compilation_database
+    |> List.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped;
 
   match !analyzer with
   | Some Checkers -> checkers := true
@@ -1463,6 +1465,7 @@ and bo_debug = !bo_debug
 and buck = !buck
 and buck_build_args = !buck_build_args
 and buck_cache_mode = !buck && not !debug
+and buck_compilation_database = !buck_compilation_database
 and buck_out = !buck_out
 and bufferoverrun = !bufferoverrun
 and bugs_csv = !bugs_csv
@@ -1593,7 +1596,6 @@ and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 and type_size = !type_size
 and unsafe_malloc = !unsafe_malloc
-and use_compilation_database = !use_compilation_database
 and whole_seconds = !whole_seconds
 and worklist_mode = !worklist_mode
 and write_dotty = !write_dotty
