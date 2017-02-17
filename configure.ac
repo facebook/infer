@@ -287,6 +287,8 @@ fi
 
 AC_CHECK_PYTHON_MODULE([$PYTHON27], [lxml])
 
+AC_CHECK_TOOL([XCPRETTY], [xcpretty], [no])
+
 BREW=no
 if which brew > /dev/null; then
   BREW="$(which brew)"

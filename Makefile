@@ -41,7 +41,13 @@ endif
 ifneq ($(PYTHON_lxml),no)
 BUILD_SYSTEMS_TESTS += results_xml
 endif
+ifneq ($(XCODE_SELECT),no)
+BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
+ifneq ($(XCPRETTY),no)
+BUILD_SYSTEMS_TESTS += xcodebuild
 endif
+endif # XCODE_SELECT
+endif # BUILD_C_ANALYZERS
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += gradle javac

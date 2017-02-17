@@ -131,10 +131,13 @@ let get_compilation_database_files_xcodebuild () =
   let tmp_file = Filename.temp_file ~in_dir:temp_dir "cdb" ".json" in
   let xcodebuild_prog, xcodebuild_args =
     match prog_args with
-    | prog :: args -> (prog, args)
+    | prog :: _ -> (prog, prog_args)
     | [] -> failwith("Build command cannot be empty") in
   let xcpretty_prog = "xcpretty" in
-  let xcpretty_args = ["--report"; "json-compilation-database"; "--output"; tmp_file] in
+  let xcpretty_args =
+    [xcpretty_prog; "--report"; "json-compilation-database"; "--output"; tmp_file] in
+  Logging.out "Running %s | %s\n@." (List.to_string ~f:Fn.id xcodebuild_args)
+    (List.to_string ~f:Fn.id xcpretty_args);
   let producer_status, consumer_status =
     Process.pipeline
       ~producer_prog:xcodebuild_prog ~producer_args:xcodebuild_args
