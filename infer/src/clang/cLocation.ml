@@ -73,7 +73,7 @@ let should_translate_lib trans_unit_ctx source_range decl_trans_context ~transla
   || should_translate trans_unit_ctx source_range decl_trans_context ~translate_when_used
 
 let is_file_blacklisted file =
-  let paths = Config.skip_clang_analysis_in_path in
+  let paths = Config.skip_analysis_in_path in
   let is_file_blacklisted =
     List.exists
       ~f:(fun path -> Str.string_match (Str.regexp ("^.*/" ^ path)) file 0)

@@ -1145,14 +1145,10 @@ and seconds_per_iteration =
     ~meta:"float" "Set the number of seconds per iteration (see --iterations)"
 
 and skip_analysis_in_path =
-  CLOpt.mk_string_list ~long:"skip-analysis-in-path"
-    ~parse_mode:CLOpt.(Infer [Clang])
-    ~meta:"path prefix" "Ignore files whose path matches the given prefix"
-
-and skip_clang_analysis_in_path =
-  CLOpt.mk_string_list ~long:"skip-clang-analysis-in-path"
-    ~parse_mode:CLOpt.(Infer [Clang])
-    ~meta:"path prefix" "Ignore files whose path matches the given prefix"
+  CLOpt.mk_string_list ~deprecated:["-skip-clang-analysis-in-path"] ~long:"skip-analysis-in-path"
+    ~parse_mode:CLOpt.(Infer [Driver])
+    ~meta:"path prefix OCaml regex"
+    "Ignore files whose path matches the given prefix (can be specified multiple times)"
 
 and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
@@ -1577,7 +1573,6 @@ and seconds_per_iteration = !seconds_per_iteration
 and show_buckets = !print_buckets
 and show_progress_bar = !progress_bar
 and skip_analysis_in_path = !skip_analysis_in_path
-and skip_clang_analysis_in_path = !skip_clang_analysis_in_path
 and skip_translation_headers = !skip_translation_headers
 and sources = !sources
 and sourcepath = !sourcepath
