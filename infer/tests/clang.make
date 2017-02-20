@@ -14,7 +14,7 @@ OBJECTS = $(foreach source,$(SOURCES),$(basename $(source)).o)
 include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/clang-base.make
 
-infer-out$(TEST_SUFFIX)/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
+infer-out$(TEST_SUFFIX)/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS) $(TESTS_DIR)/.inferconfig
 	$(call silent_on_success,\
 	  $(INFER_BIN) --results-dir $(@D) --check-duplicate-symbols \
 	    $(INFER_OPTIONS) -a $(ANALYZER) -- \

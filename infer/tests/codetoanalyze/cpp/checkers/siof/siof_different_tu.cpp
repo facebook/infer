@@ -33,12 +33,34 @@ SomeNonPODObject& getGlobalNonPOD() {
   return global_object2;
 }
 
+SomeNonPODObject& getGlobalNonPODWhitelisted() {
+  some_other_global_object2.some_method();
+  return global_object2;
+}
+
 // initialise static class field
 SomeConstexprObject SomeConstexprObject::instance_;
 
 SomeConstexprObject& getGlobalConstexpr() {
   return SomeConstexprObject::singletonMethod();
 }
+
+namespace whitelisted {
+
+SomeNonPODObject& getGlobalNonPOD() {
+  some_other_global_object2.some_method();
+  return global_object2;
+}
+
+template <typename T>
+SomeNonPODObject& TemplatedObject<T>::getGlobalNonPOD() {
+  some_other_global_object2.some_method();
+  return global_object2;
+}
+
+// instantiate template so that infer analyses it
+template struct TemplatedObject<int>;
+} // namespace whitelisted
 
 // initialise static class field
 template <typename T>

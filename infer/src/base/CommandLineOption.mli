@@ -12,7 +12,8 @@
 open! IStd
 
 (** a section is a part of infer that can be affected by an infer option *)
-type section = Analysis | BufferOverrun | Clang | Crashcontext | Driver | Java | Print | Quandary
+type section =
+    Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Print | Quandary
 [@@deriving compare]
 
 val all_sections : section list

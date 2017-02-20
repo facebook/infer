@@ -55,11 +55,13 @@ let warnf =
   else if not is_originator then fun fmt -> F.ifprintf F.err_formatter fmt
   else F.eprintf
 
-type section = Analysis | BufferOverrun | Clang | Crashcontext | Driver | Java | Print | Quandary
+type section =
+    Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Print | Quandary
 [@@deriving compare]
 
 let equal_section = [%compare.equal : section ]
-let all_sections = [ Analysis; BufferOverrun; Clang; Crashcontext; Driver; Java; Print; Quandary ]
+let all_sections =
+  [ Analysis; BufferOverrun; Checkers; Clang; Crashcontext; Driver; Java; Print; Quandary ]
 
 type 'a parse = Infer of 'a | Javac | NoParse [@@deriving compare]
 
@@ -78,7 +80,8 @@ let to_parse_tag = function | Infer _ -> Infer () | Javac -> Javac | NoParse -> 
 
 let accept_unknown_args = function
   | Infer Print | Javac | NoParse -> true
-  | Infer (Analysis | BufferOverrun | Clang | Crashcontext | Driver | Java | Quandary) -> false
+  | Infer (Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Quandary) ->
+      false
 
 type desc = {
   long: string; short: string; meta: string; doc: string; spec: spec;
@@ -640,6 +643,7 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
   curr_speclist := [];
   if equal_parse_action parse_action (Infer Driver) then (
     add_to_curr_speclist ~add_help:true ~header:"Driver options" (Infer Driver);
+    add_to_curr_speclist ~header:"Checkers options" (Infer Checkers);
     add_to_curr_speclist ~header:"Clang-specific options" (Infer Clang);
     add_to_curr_speclist ~header:"Java-specific options" (Infer Java);
     add_to_curr_speclist ~header:"Quandary checker options" (Infer Quandary)

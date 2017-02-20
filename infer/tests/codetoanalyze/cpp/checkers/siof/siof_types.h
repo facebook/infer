@@ -57,3 +57,13 @@ int access_to_templated_non_pod();
 int access_to_non_pod();
 SomeNonPODObject& getFunctionStaticNonPOD();
 SomeNonPODObject& getGlobalNonPOD();
+SomeNonPODObject& getGlobalNonPODWhitelisted();
+
+namespace whitelisted {
+SomeNonPODObject& getGlobalNonPOD();
+
+template <typename T>
+struct TemplatedObject {
+  static SomeNonPODObject& getGlobalNonPOD();
+};
+} // namespace whitelisted

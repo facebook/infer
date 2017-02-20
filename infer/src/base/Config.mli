@@ -130,8 +130,8 @@ val unsafe_unret : string
 val use_jar_cache : bool
 val version_string : string
 val weak : string
-val whitelisted_cpp_methods : string list list
-val whitelisted_cpp_classes : string list list
+val whitelisted_cpp_methods : string list
+val whitelisted_cpp_classes : string list
 val wrappers_dir : string
 
 
@@ -266,6 +266,7 @@ val save_analysis_results : string option
 val seconds_per_iteration : float option
 val show_buckets : bool
 val show_progress_bar : bool
+val siof_safe_methods : string list
 val skip_analysis_in_path : string list
 val skip_translation_headers : string list
 val spec_abs_level : int

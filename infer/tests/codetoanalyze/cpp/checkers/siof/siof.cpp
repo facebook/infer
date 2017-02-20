@@ -41,6 +41,14 @@ int X::static_pod_accesses_non_pod = access_to_non_pod(); // SIOF!
 SomeNonPODObject initWithStatic = getFunctionStaticNonPOD(); // OK
 SomeNonPODObject initWithGlobal = getGlobalNonPOD(); // SIOF!
 
+SomeNonPODObject initWithGlobalWhitelisted = getGlobalNonPODWhitelisted(); // OK
+
+SomeNonPODObject initWithGlobalWhitelistedNamespaced =
+    whitelisted::getGlobalNonPOD(); // OK
+
+SomeNonPODObject initWithGlobalWhitelistedTemplated =
+    whitelisted::TemplatedObject<int>::getGlobalNonPOD(); // OK
+
 extern SomeConstexprObject& getGlobalConstexpr();
 SomeConstexprObject initWithConstexpr = getGlobalConstexpr();
 

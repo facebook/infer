@@ -14,6 +14,15 @@ module L = Logging
 
 module GlobalsAccesses = SiofTrace.GlobalsAccesses
 
+let whitelisted_models =
+  List.map Config.siof_safe_methods ~f:Procname.qualifiers_of_fuzzy_qual_name
+
+let is_whitelisted (pname : Procname.t) =
+  (* This is linear in the number of whitelisted models, which is not good if there are many
+     models... *)
+  List.exists whitelisted_models
+    ~f:(fun fuzzy_qualifiers -> Procname.fuzzy_equal pname ~fuzzy_qualifiers)
+
 module Summary = Summary.Make (struct
     type summary = SiofDomain.astate
 
@@ -77,6 +86,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Prune (exp, loc, _, _) ->
         let proc_loc = Procdesc.get_loc pdesc in
         get_globals pdesc loc exp |> add_globals astate proc_loc
+    | Call (_, Const (Cfun callee_pname), _, _, _) when is_whitelisted callee_pname ->
+        at_least_nonbottom astate
     | Call (_, Const (Cfun callee_pname), _::params_without_self, loc, _)
       when Procname.is_c_method callee_pname && Procname.is_constructor callee_pname
            && Procname.is_constexpr callee_pname ->
