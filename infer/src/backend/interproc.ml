@@ -496,12 +496,12 @@ let add_taint_attrs tenv proc_name proc_desc prop =
       let formal_params' =
         IList.map (fun (p, _) -> Pvar.mk p proc_name) formal_params in
       Taint.get_params_to_taint tainted_param_nums formal_params'
-      |> IList.fold_left
-        (fun prop_acc (param, taint_kind) ->
-           let attr =
-             PredSymb.Ataint { taint_source = proc_name; taint_kind; } in
-           Taint.add_tainting_attribute tenv attr param prop_acc)
-        prop
+      |> List.fold
+        ~f:(fun prop_acc (param, taint_kind) ->
+            let attr =
+              PredSymb.Ataint { taint_source = proc_name; taint_kind; } in
+            Taint.add_tainting_attribute tenv attr param prop_acc)
+        ~init:prop
 
 let forward_tabulate tenv pdesc wl source =
   let pname = Procdesc.get_proc_name pdesc in
@@ -668,15 +668,15 @@ let report_context_leaks pname sigma tenv =
       context_exps in
   (* get the set of pointed-to expressions of type T <: Context *)
   let context_exps =
-    IList.fold_left
-      (fun exps hpred -> match hpred with
-         | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct name, _), _, _))
-           when not (Exp.is_null_literal exp)
-             && AndroidFramework.is_context tenv name
-             && not (AndroidFramework.is_application tenv name) ->
-             (exp, name) :: exps
-         | _ -> exps)
-      []
+    List.fold
+      ~f:(fun exps hpred -> match hpred with
+          | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct name, _), _, _))
+            when not (Exp.is_null_literal exp)
+              && AndroidFramework.is_context tenv name
+              && not (AndroidFramework.is_application tenv name) ->
+              (exp, name) :: exps
+          | _ -> exps)
+      ~init:[]
       sigma in
   IList.iter
     (function
@@ -780,7 +780,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
         | Some (post, path) -> Paths.PathSet.add_renamed_prop post path current_posts in
       let new_visited = Specs.Visitedset.union visited current_visited in
       Pmap.add pre (new_posts, new_visited) map in
-    IList.fold_left add Pmap.empty pre_post_visited_list in
+    List.fold ~f:add ~init:Pmap.empty pre_post_visited_list in
   let specs = ref [] in
   let add_spec pre ((posts : Paths.PathSet.t), visited) =
     let posts' =
@@ -841,7 +841,7 @@ let create_seed_vars sigma =
     | Sil.Hpointsto (Exp.Lvar pv, se, typ) when not (Pvar.is_abduced pv) ->
         Sil.Hpointsto(Exp.Lvar (Pvar.to_seed pv), se, typ) :: sigma
     | _ -> sigma in
-  IList.fold_left hpred_add_seed [] sigma
+  List.fold ~f:hpred_add_seed ~init:[] sigma
 
 (** Initialize proposition for execution given formal and global
     parameters. The footprint is initialized according to the
@@ -1125,8 +1125,8 @@ let exception_preconditions tenv pname summary =
         ((pre, exn_name) :: exns, all_post_exn)
     | _ -> (exns, false) in
   let collect_spec errors spec =
-    IList.fold_left (collect_exceptions spec.Specs.pre) errors spec.Specs.posts in
-  IList.fold_left collect_spec ([], true) (Specs.get_specs_from_payload summary)
+    List.fold ~f:(collect_exceptions spec.Specs.pre) ~init:errors spec.Specs.posts in
+  List.fold ~f:collect_spec ~init:([], true) (Specs.get_specs_from_payload summary)
 
 (* Collect all pairs of the kind (precondition, custom error) from a summary *)
 let custom_error_preconditions summary =
@@ -1135,8 +1135,8 @@ let custom_error_preconditions summary =
     | None -> (errors, false)
     | Some e -> ((pre, e) :: errors, all_post_error) in
   let collect_spec errors spec =
-    IList.fold_left (collect_errors spec.Specs.pre) errors spec.Specs.posts in
-  IList.fold_left collect_spec ([], true) (Specs.get_specs_from_payload summary)
+    List.fold ~f:(collect_errors spec.Specs.pre) ~init:errors spec.Specs.posts in
+  List.fold ~f:collect_spec ~init:([], true) (Specs.get_specs_from_payload summary)
 
 
 (* Remove the constrain of the form this != null which is true for all Java virtual calls *)
@@ -1150,11 +1150,11 @@ let remove_this_not_null tenv prop =
     | Sil.Aneq (Exp.Var v, e)
       when Ident.equal v var && Exp.equal e Exp.null -> atoms
     | a -> a:: atoms in
-  match IList.fold_left collect_hpred (None, []) prop.Prop.sigma with
+  match List.fold ~f:collect_hpred ~init:(None, []) prop.Prop.sigma with
   | None, _ -> prop
   | Some var, filtered_hpreds ->
       let filtered_atoms =
-        IList.fold_left (collect_atom var) [] prop.Prop.pi in
+        List.fold ~f:(collect_atom var) ~init:[] prop.Prop.pi in
       let prop' = Prop.set Prop.prop_emp ~pi:filtered_atoms ~sigma:filtered_hpreds in
       Prop.normalize tenv prop'
 
@@ -1227,12 +1227,12 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
   let changed = ref false in
   let current_specs =
     ref
-      (IList.fold_left
-         (fun map spec ->
-            SpecMap.add
-              spec.Specs.pre
-              (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map)
-         SpecMap.empty old_specs) in
+      (List.fold
+         ~f:(fun map spec ->
+             SpecMap.add
+               spec.Specs.pre
+               (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) map)
+         ~init:SpecMap.empty old_specs) in
   let re_exe_filter old_spec = (* filter out pres which failed re-exe *)
     if Specs.equal_phase phase Specs.RE_EXECUTION &&
        not (List.exists

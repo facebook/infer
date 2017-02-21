@@ -116,7 +116,7 @@ CHECKCOPYRIGHT_MAIN = $(SCRIPT_SOURCES)/checkCopyright
 #### End of declarations ####
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
-EXTRA_DEPS = facebook facebook/scripts
+EXTRA_DEPS = facebook
 else
 EXTRA_DEPS = opensource
 endif
@@ -258,7 +258,7 @@ rei:
 roots:=Infer InferAnalyzeExe InferClang InferPrintExe StatsAggregator
 clusters:=base clang java IR
 
-ml_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.ml\(i\)*' -not -path facebook/scripts/eradicate_stats.ml)
+ml_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.ml\(i\)*')
 re_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.re\(i\)*')
 inc_flags:=$(foreach dir,$(DEPENDENCIES),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
@@ -297,7 +297,7 @@ toplevel.mlpack: base/Version.ml $(OCAML_CONFIG_SOURCES) $(MAKEFILE_LIST)
 	$(foreach module,\
 	  $(filter-out $(foreach root,$(roots),%/$(root)),\
 	  $(foreach source,\
-	    $(filter-out unit/% facebook/scripts/eradicate_stats.ml,$(OCAML_CONFIG_SOURCES)),\
+	    $(filter-out unit/%,$(OCAML_CONFIG_SOURCES)),\
 	    $(call to_ocaml_module,$(source)))),\
 	  $(shell echo $(module) >> $($@_tmp)))
 	mv $($@_tmp) $@

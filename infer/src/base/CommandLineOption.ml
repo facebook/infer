@@ -155,7 +155,8 @@ let wrap_line indent_string wrap_length line =
         (new_line::rev_lines, false, indent_string, indent_length)
       else
         (rev_lines, new_non_empty, new_line, String.length new_line) in
-  let (rev_lines, _, line, _) = IList.fold_left add_word_to_paragraph ([], false, "", 0) words in
+  let (rev_lines, _, line, _) =
+    List.fold ~f:add_word_to_paragraph ~init:([], false, "", 0) words in
   IList.rev (line::rev_lines)
 
 let pad_and_xform doc_width left_width desc =
@@ -205,7 +206,8 @@ let align desc_list =
      NOTE: this doesn't take into account "--help | -h" nor "--help-full", but fortunately these
      have short names *)
   let left_width =
-    let opt_left_width = IList.fold_left (max_left_length max_left_width) 0 desc_list in
+    let opt_left_width =
+      List.fold ~f:(max_left_length max_left_width) ~init:0 desc_list in
     let (--) a b = float_of_int a -. float_of_int b in
     let multiplier = (max_left_width -- min_left_width) /. (max_term_width -- min_term_width) in
     (* at 80 columns use min_left_width then use extra columns until opt_left_width *)
@@ -701,7 +703,7 @@ let decode_inferconfig_to_argv path =
         warnf "WARNING: while reading config file %s:@\nIll-formed value %s for option %s: %s@."
           path (Yojson.Basic.to_string json) key msg ;
         result in
-  IList.fold_left one_config_item [] json_config
+  List.fold ~f:one_config_item ~init:[] json_config
 
 
 (** separator of argv elements when encoded into environment variables *)

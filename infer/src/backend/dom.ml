@@ -213,7 +213,7 @@ end = struct
 
   let get_lexp_set' sigma =
     let lexp_lst = Sil.hpred_list_get_lexps (fun _ -> true) sigma in
-    IList.fold_left (fun set e -> Exp.Set.add e set) Exp.Set.empty lexp_lst
+    List.fold ~f:(fun set e -> Exp.Set.add e set) ~init:Exp.Set.empty lexp_lst
   let init sigma1 sigma2 =
     lexps1 := get_lexp_set' sigma1;
     lexps2 := get_lexp_set' sigma2
@@ -511,7 +511,7 @@ end = struct
           let e_upper1 = Exp.int upper1 in
           get_induced_atom tenv acc e_strict_lower1 e_upper1 e
       | _ -> acc in
-    IList.fold_left f_ineqs eqs t_minimal
+    List.fold ~f:f_ineqs ~init:eqs t_minimal
 
 end
 
@@ -1664,11 +1664,11 @@ let pi_partial_join tenv mode
     end;
     let atom_list1 =
       let p2 = Prop.normalize tenv ep2 in
-      IList.fold_left (handle_atom_with_widening Lhs p2 pi2) [] pi1 in
+      List.fold ~f:(handle_atom_with_widening Lhs p2 pi2) ~init:[] pi1 in
     if Config.trace_join then (L.d_str "atom_list1: "; Prop.d_pi atom_list1; L.d_ln ());
     let atom_list2 =
       let p1 = Prop.normalize tenv ep1 in
-      IList.fold_left (handle_atom_with_widening Rhs p1 pi1) [] pi2 in
+      List.fold ~f:(handle_atom_with_widening Rhs p1 pi1) ~init:[] pi2 in
     if Config.trace_join then
       (L.d_str "atom_list2: "; Prop.d_pi atom_list2; L.d_ln ());
     let atom_list_combined = IList.inter Sil.compare_atom atom_list1 atom_list2 in
@@ -1697,9 +1697,10 @@ let pi_partial_meet tenv (p: Prop.normal Prop.t) (ep1: 'a Prop.t) (ep2: 'b Prop.
   let pi1 = ep1.Prop.pi in
   let pi2 = ep2.Prop.pi in
 
-  let p_pi1 = IList.fold_left f1 p pi1 in
-  let p_pi2 = IList.fold_left f2 p_pi1 pi2 in
-  if (Prover.check_inconsistency_base tenv p_pi2) then (L.d_strln "check_inconsistency_base failed"; raise IList.Fail)
+  let p_pi1 = List.fold ~f:f1 ~init:p pi1 in
+  let p_pi2 = List.fold ~f:f2 ~init:p_pi1 pi2 in
+  if (Prover.check_inconsistency_base tenv p_pi2)
+  then (L.d_strln "check_inconsistency_base failed"; raise IList.Fail)
   else p_pi2
 
 (** {2 Join and Meet for Prop} *)
@@ -1800,7 +1801,7 @@ let eprop_partial_join' tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed 
         L.d_strln "pi_partial_join succeeded";
         let pi_from_fresh_vars = FreshVarExp.get_induced_pi tenv () in
         let pi_all = pi' @ pi_from_fresh_vars in
-        IList.fold_left (Prop.prop_atom_and tenv) p_sub_sigma pi_all in
+        List.fold ~f:(Prop.prop_atom_and tenv) ~init:p_sub_sigma pi_all in
       p_sub_sigma_pi
   | _ ->
       L.d_strln "leftovers not empty"; raise IList.Fail

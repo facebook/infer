@@ -83,7 +83,8 @@ module MakeNoCFG
         | l -> l in
       let underlying_node = CFG.underlying_node node in
       NodePrinter.start_session underlying_node;
-      let astate_post, inv_map_post = IList.fold_left compute_post (pre, inv_map) instr_ids in
+      let astate_post, inv_map_post =
+        List.fold ~f:compute_post ~init:(pre, inv_map) instr_ids in
       if Config.write_html
       then
         begin
@@ -120,9 +121,10 @@ module MakeNoCFG
       let normal_posts = IList.map extract_post_ (CFG.normal_preds cfg node) in
       (* if the [pred] -> [node] transition was exceptional, use pre([pred]) *)
       let extract_pre_f acc pred = extract_pre (CFG.id pred) inv_map :: acc in
-      let all_posts = IList.fold_left extract_pre_f normal_posts (CFG.exceptional_preds cfg node) in
+      let all_posts =
+        List.fold ~f:extract_pre_f ~init:normal_posts (CFG.exceptional_preds cfg node) in
       match IList.flatten_options all_posts with
-      | post :: posts -> Some (IList.fold_left Domain.join post posts)
+      | post :: posts -> Some (List.fold ~f:Domain.join ~init:post posts)
       | [] -> None in
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->

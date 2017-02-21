@@ -52,10 +52,10 @@ let stitch_summaries stacktrace_file summary_files out_file =
   let summaries = IList.map
       (Ag_util.Json.from_file Stacktree_j.read_stacktree)
       summary_files in
-  let summary_map = IList.fold_left
-      (fun acc stacktree ->
-         String.Map.add ~key:(frame_id_of_summary stacktree) ~data:stacktree acc)
-      String.Map.empty
+  let summary_map = List.fold
+      ~f:(fun acc stacktree ->
+          String.Map.add ~key:(frame_id_of_summary stacktree) ~data:stacktree acc)
+      ~init:String.Map.empty
       summaries in
   let expand_stack_frame frame =
     (* TODO: Implement k > 1 case *)

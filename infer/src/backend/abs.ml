@@ -33,7 +33,7 @@ let sigma_rewrite tenv p r : Prop.normal Prop.t option =
       else
         let res_pi = r.r_new_pi p p_leftover sub in
         let res_sigma = Prop.sigma_sub sub r.r_new_sigma in
-        let p_with_res_pi = IList.fold_left (Prop.prop_atom_and tenv) p_leftover res_pi in
+        let p_with_res_pi = List.fold ~f:(Prop.prop_atom_and tenv) ~init:p_leftover res_pi in
         let p_new = Prop.prop_sigma_star p_with_res_pi res_sigma in
         Some (Prop.normalize tenv p_new)
 
@@ -494,7 +494,7 @@ let discover_para_candidates tenv p =
         let edges_matched = List.filter ~f:(fun (e1', _) -> Exp.equal e2 e1') edges_others in
         let new_found =
           let f found_acc (_, e3) = (e1, e2, e3) :: found_acc in
-          IList.fold_left f found edges_matched in
+          List.fold ~f ~init:found edges_matched in
         let new_edges_seen = (e1, e2) :: edges_seen in
         find_all_consecutive_edges new_found new_edges_seen edges_notseen in
   let sigma = p.Prop.sigma in
@@ -514,7 +514,7 @@ let discover_para_dll_candidates tenv p =
           match se with
           | Sil.Eexp (e, _) -> e:: acc
           | _ -> assert false in
-        let links = IList.rev (IList.fold_left convert_to_exp [] fsel') in
+        let links = IList.rev (List.fold ~f:convert_to_exp ~init:[] fsel') in
         let rec iter_pairs = function
           | [] -> ()
           | x:: l -> (IList.iter (fun y -> add_edge (root, x, y)) l; iter_pairs l) in
@@ -534,7 +534,7 @@ let discover_para_dll_candidates tenv p =
         let edges_matched = List.filter ~f:(fun (e1', _, _) -> Exp.equal flink e1') edges_others in
         let new_found =
           let f found_acc (_, _, flink2) = (iF, blink, flink, flink2) :: found_acc in
-          IList.fold_left f found edges_matched in
+          List.fold ~f ~init:found edges_matched in
         let new_edges_seen = (iF, blink, flink) :: edges_seen in
         find_all_consecutive_edges new_found new_edges_seen edges_notseen in
   let sigma = p.Prop.sigma in
@@ -549,7 +549,7 @@ let discover_para tenv p =
     match (discover_para_roots tenv p root next next out) with
     | None -> paras
     | Some para -> if already_defined para paras then paras else para :: paras in
-  IList.fold_left f [] candidates
+  List.fold ~f ~init:[] candidates
 
 let discover_para_dll tenv p =
   (*
@@ -563,7 +563,7 @@ let discover_para_dll tenv p =
     match (discover_para_dll_roots tenv p iF oB iF' iF' iF oF) with
     | None -> paras
     | Some para -> if already_defined para paras then paras else para :: paras in
-  IList.fold_left f [] candidates
+  List.fold ~f ~init:[] candidates
 (******************  End of Predicate Discovery  ******************)
 
 (****************** Start of the ADT abs_rules ******************)
@@ -667,7 +667,7 @@ let sigma_special_cases ids sigma : (Ident.t list * Sil.hpred list) list =
       | None -> acc
       | Some (ids_res, sub) ->
           (ids_res, IList.map (Sil.hpred_sub sub) sigma_cur) :: acc in
-    IList.fold_left f [] special_cases_eqs in
+    List.fold ~f ~init:[] special_cases_eqs in
   IList.rev special_cases_rev
 
 let hpara_special_cases hpara : Sil.hpara list =
@@ -692,9 +692,9 @@ let abs_rules_apply_rsets tenv (rsets: rule_set list) (p_in: Prop.normal Prop.t)
         (true, p') in
   let rec apply_rule_set p rset =
     let (_, rules) = rset in
-    let (changed, p') = IList.fold_left apply_rule (false, p) rules in
+    let (changed, p') = List.fold ~f:apply_rule ~init:(false, p) rules in
     if changed then apply_rule_set p' rset else p' in
-  IList.fold_left apply_rule_set p_in rsets
+  List.fold ~f:apply_rule_set ~init:p_in rsets
 
 let abs_rules_apply_lists tenv (p_in: Prop.normal Prop.t) : Prop.normal Prop.t =
   let new_rsets = ref [] in
@@ -773,25 +773,25 @@ let abstract_pure_part tenv p ~(from_abstract_footprint: bool) =
             else true) in
       List.filter ~f:filter pure in
     let new_pure =
-      IList.fold_left
-        (fun pi a ->
-           match a with
-           (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
-           | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Lt, _, _))
-           | Sil.Aeq (Exp.BinOp (Binop.Lt, _, _), Exp.Const (Const.Cint i))
-           | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Le, _, _))
-           | Sil.Aeq (Exp.BinOp (Binop.Le, _, _), Exp.Const (Const.Cint i)) when IntLit.isone i ->
-               a :: pi
-           | Sil.Aeq (Exp.Var name, e) when not (Ident.is_primed name) ->
-               (match e with
-                | Exp.Var _
-                | Exp.Const _ -> a :: pi
-                | _ -> pi)
-           | Sil.Aneq (Var _, _)
-           | Sil.Apred (_, Var _ :: _) | Anpred (_, Var _ :: _) -> a :: pi
-           | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ -> pi
-        )
-        [] pi_filtered in
+      List.fold
+        ~f:(fun pi a ->
+            match a with
+            (* we only use Lt and Le because Gt and Ge are inserted in terms of Lt and Le. *)
+            | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Lt, _, _))
+            | Sil.Aeq (Exp.BinOp (Binop.Lt, _, _), Exp.Const (Const.Cint i))
+            | Sil.Aeq (Exp.Const (Const.Cint i), Exp.BinOp (Binop.Le, _, _))
+            | Sil.Aeq (Exp.BinOp (Binop.Le, _, _), Exp.Const (Const.Cint i)) when IntLit.isone i ->
+                a :: pi
+            | Sil.Aeq (Exp.Var name, e) when not (Ident.is_primed name) ->
+                (match e with
+                 | Exp.Var _
+                 | Exp.Const _ -> a :: pi
+                 | _ -> pi)
+            | Sil.Aneq (Var _, _)
+            | Sil.Apred (_, Var _ :: _) | Anpred (_, Var _ :: _) -> a :: pi
+            | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ -> pi
+          )
+        ~init:[] pi_filtered in
     IList.rev new_pure in
 
   let new_pure = do_pure (Prop.get_pure p) in

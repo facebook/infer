@@ -27,8 +27,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exp_add_live exp astate =
     let (ids, pvars) = Exp.get_vars exp in
     let astate' =
-      IList.fold_left (fun astate_acc id -> Domain.add (Var.of_id id) astate_acc) astate ids in
-    IList.fold_left (fun astate_acc pvar -> Domain.add (Var.of_pvar pvar) astate_acc) astate' pvars
+      List.fold
+        ~f:(fun astate_acc id -> Domain.add (Var.of_id id) astate_acc)
+        ~init:astate
+        ids in
+    List.fold
+      ~f:(fun astate_acc pvar -> Domain.add (Var.of_pvar pvar) astate_acc)
+      ~init:astate'
+      pvars
 
   let exec_instr astate _ _ = function
     | Sil.Load (lhs_id, rhs_exp, _, _) ->
@@ -49,7 +55,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Option.value_map ~f:(fun (ret_id, _) -> Domain.remove (Var.of_id ret_id) astate)
           ~default:astate ret_id
         |> exp_add_live call_exp
-        |> IList.fold_right exp_add_live (IList.map fst params)
+        |> (fun x -> List.fold_right ~f:exp_add_live (IList.map fst params) ~init:x)
     | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 end

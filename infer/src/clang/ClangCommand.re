@@ -32,8 +32,8 @@ let plugin_name = "BiniouASTExporter";
 let infer_cxx_models = Config.cxx;
 
 let value_of_argv_option argv opt_name =>
-  IList.fold_left
-    (
+  List.fold
+    f::(
       fun (prev_arg, result) arg => {
         let result' =
           if (Option.is_some result) {
@@ -46,7 +46,7 @@ let value_of_argv_option argv opt_name =>
         (arg, result')
       }
     )
-    ("", None)
+    init::("", None)
     argv |> snd;
 
 let value_of_option {orig_argv} => value_of_argv_option orig_argv;

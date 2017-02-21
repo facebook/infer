@@ -93,7 +93,7 @@ let trace_of_error loc gname path =
             []
           ::err_trace in
         GlobalsAccesses.elements globals
-        |> IList.fold_left add_trace_elem_of_access rest
+        |> List.fold ~f:add_trace_elem_of_access ~init:rest
         |> IList.rev
     | _ -> trace_with_set_of_globals
   in

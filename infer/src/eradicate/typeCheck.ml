@@ -470,7 +470,7 @@ let typecheck_instr
 
   match instr with
   | Sil.Remove_temps (idl, _) ->
-      if remove_temps then IList.fold_right TypeState.remove_id idl typestate
+      if remove_temps then List.fold_right ~f:TypeState.remove_id idl ~init:typestate
       else typestate
   | Sil.Declare_locals _
   | Sil.Abstract _
@@ -596,7 +596,7 @@ let typecheck_instr
           typecheck_expr_for_errors typestate e1 loc;
           let e2, typestate2 = convert_complex_exp_to_pvar node false e1 typestate1 loc in
           (((e1, e2), t1) :: etl1), typestate2 in
-        IList.fold_right handle_et etl ([], typestate) in
+        List.fold_right ~f:handle_et etl ~init:([], typestate) in
 
       let annotated_signature =
         Models.get_modelled_annotated_signature callee_attributes in
@@ -669,7 +669,7 @@ let typecheck_instr
                     pvar_apply loc clear_nullable_flag ts pvar1
                 | _ -> ts in
               let vararg_values = PatternMatch.java_get_vararg_values node pvar idenv in
-              IList.fold_right do_vararg_value vararg_values typestate'
+              List.fold_right ~f:do_vararg_value vararg_values ~init:typestate'
             else
               pvar_apply loc clear_nullable_flag typestate' pvar
         | None -> typestate' in
@@ -1108,7 +1108,7 @@ let typecheck_node
   (* This is used to track if it is set to true for all visit to the node. *)
   TypeErr.node_reset_forall canonical_node;
 
-  let typestate_succ = IList.fold_left (do_instruction ext) typestate instrs in
+  let typestate_succ = List.fold ~f:(do_instruction ext) ~init:typestate instrs in
   let dont_propagate =
     Procdesc.Node.equal_nodekind
       (Procdesc.Node.get_kind node)

@@ -329,10 +329,13 @@ let check_dereferences tenv callee_pname actual_pre sub spec_pre formal_params =
     | Sil.Hpointsto (lexp, se, _) ->
         check_dereference (Exp.root_of_lexp lexp) se
     | _ -> None in
-  let deref_err_list = IList.fold_left (fun deref_errs hpred -> match check_hpred hpred with
-      | Some reason -> reason :: deref_errs
-      | None -> deref_errs
-    ) [] spec_pre.Prop.sigma in
+  let deref_err_list =
+    List.fold
+      ~f:(fun deref_errs hpred -> match check_hpred hpred with
+          | Some reason -> reason :: deref_errs
+          | None -> deref_errs)
+      ~init:[]
+      spec_pre.Prop.sigma in
   match deref_err_list with
   | [] -> None
   | deref_err :: _ ->
@@ -610,7 +613,7 @@ let prop_copy_footprint_pure tenv p1 p2 =
       Attribute.add_or_replace_check_changed tenv check_attr_dealloc_mismatch prop atom
     else
       prop in
-  IList.fold_left replace_attr (Prop.normalize tenv res_noattr) pi2_attr
+  List.fold ~f:replace_attr ~init:(Prop.normalize tenv res_noattr) pi2_attr
 
 (** check if an expression is an exception *)
 let exp_is_exn = function
@@ -807,11 +810,11 @@ let mk_pre tenv pre formal_params callee_pname callee_attrs =
     | [] -> pre
     | tainted_param_nums ->
         Taint.get_params_to_taint tainted_param_nums formal_params
-        |> IList.fold_left
-          (fun prop_acc (param, taint_kind) ->
-             let attr = PredSymb.Auntaint { taint_source = callee_pname; taint_kind; } in
-             Taint.add_tainting_attribute tenv attr param prop_acc)
-          (Prop.normalize tenv pre)
+        |> List.fold
+          ~f:(fun prop_acc (param, taint_kind) ->
+              let attr = PredSymb.Auntaint { taint_source = callee_pname; taint_kind; } in
+              Taint.add_tainting_attribute tenv attr param prop_acc)
+          ~init:(Prop.normalize tenv pre)
         |> Prop.expose
   else pre
 
@@ -933,7 +936,7 @@ let inconsistent_actualpre_missing tenv actual_pre split_opt =
   match split_opt with
   | Some split ->
       let prop'= Prop.normalize tenv (Prop.prop_sigma_star actual_pre split.missing_sigma) in
-      let prop''= IList.fold_left (Prop.prop_atom_and tenv) prop' split.missing_pi in
+      let prop''= List.fold ~f:(Prop.prop_atom_and tenv) ~init:prop' split.missing_pi in
       Prover.check_inconsistency tenv prop''
   | None -> false
 
@@ -956,9 +959,9 @@ let do_taint_check tenv caller_pname callee_pname calling_prop missing_pi sub ac
         Exp.Map.add e (taint_atoms, atom :: untaint_atoms) acc_map
     | _ -> acc_map in
   let taint_untaint_exp_map =
-    IList.fold_left
-      collect_taint_untaint_exprs
-      Exp.Map.empty
+    List.fold
+      ~f:collect_taint_untaint_exprs
+      ~init:Exp.Map.empty
       combined_pi
     |> Exp.Map.filter (fun _ (taint, untaint) -> taint <> []  && untaint <> []) in
   (* TODO: in the future, we will have a richer taint domain that will require making sure that the

@@ -228,9 +228,9 @@ module Make (CFG : ProcCfg.S with type node = Procdesc.Node.t) (T : TransferFunc
           (* add the assertion to be checked after analysis converges *)
           node, M.add (CFG.id node) (inv_str, inv_label) assert_map
     and structured_instrs_to_node last_node assert_map exn_handlers instrs =
-      IList.fold_left
-        (fun acc instr -> structured_instr_to_node acc exn_handlers instr)
-        (last_node, assert_map)
+      List.fold
+        ~f:(fun acc instr -> structured_instr_to_node acc exn_handlers instr)
+        ~init:(last_node, assert_map)
         instrs in
     let start_node = create_node (Procdesc.Node.Start_node pname) [] in
     Procdesc.set_start_node pdesc start_node;

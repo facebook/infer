@@ -149,7 +149,7 @@ let instrs_normalize instrs =
     let do_instr ids = function
       | Sil.Load (id, _, _, _) -> id :: ids
       | _ -> ids in
-    IList.fold_left do_instr [] instrs in
+    List.fold ~f:do_instr ~init:[] instrs in
   let subst =
     let count = ref Int.min_value in
     let gensym id =
@@ -216,9 +216,10 @@ let mk_find_duplicate_nodes proc_desc : (Procdesc.Node.t -> Procdesc.NodeSet.t) 
         let equal_normalized_instrs (_, normalized_instrs') =
           List.equal ~equal:Sil.equal_instr node_normalized_instrs normalized_instrs' in
         List.filter ~f:equal_normalized_instrs elements in
-      IList.fold_left
-        (fun nset (node', _) -> Procdesc.NodeSet.add node' nset)
-        Procdesc.NodeSet.empty duplicates
+      List.fold
+        ~f:(fun nset (node', _) -> Procdesc.NodeSet.add node' nset)
+        ~init:Procdesc.NodeSet.empty
+        duplicates
     with Not_found -> Procdesc.NodeSet.singleton node in
 
   find_duplicate_nodes

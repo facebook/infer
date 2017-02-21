@@ -351,7 +351,7 @@ let sil_method_annotation_of_args args : Annot.Method.t =
     if CAst_utils.is_type_nullable qt_type_ptr then
       [mk_annot arg_name Annotations.nullable] :: acc
     else Annot.Item.empty::acc in
-  let param_annots = IList.fold_right arg_to_sil_annot args []  in
+  let param_annots = List.fold_right ~f:arg_to_sil_annot args ~init:[]  in
   (* TODO: parse annotations on return value *)
   let retval_annot = [] in
   retval_annot, param_annots

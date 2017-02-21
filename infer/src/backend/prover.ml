@@ -286,9 +286,9 @@ end = struct
 
   let saturate { leqs = leqs; lts = lts; neqs = neqs } =
     let diff_constraints1 =
-      IList.fold_left
-        DiffConstr.from_lt
-        (IList.fold_left DiffConstr.from_leq [] leqs)
+      List.fold
+        ~f:DiffConstr.from_lt
+        ~init:(List.fold ~f:DiffConstr.from_leq ~init:[] leqs)
         lts in
     let inconsistent, diff_constraints2 = DiffConstr.saturate diff_constraints1 in
     if inconsistent then inconsistent_ineq

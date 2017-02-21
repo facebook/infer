@@ -142,14 +142,14 @@ let changed_files_set =
       from_abs_path path in
   Option.bind Config.changed_files_index Utils.read_file |>
   Option.map ~f:(
-    IList.fold_left
-      (fun changed_files line ->
-         let source_file = create_source_file line in
-         let changed_files' = Set.add source_file changed_files in
-         (* Add source corresponding to changed header if it exists *)
-         match of_header source_file with
-         | Some src -> Set.add src changed_files'
-         | None -> changed_files'
-      )
-      Set.empty
+    List.fold
+      ~f:(fun changed_files line ->
+          let source_file = create_source_file line in
+          let changed_files' = Set.add source_file changed_files in
+          (* Add source corresponding to changed header if it exists *)
+          match of_header source_file with
+          | Some src -> Set.add src changed_files'
+          | None -> changed_files'
+        )
+      ~init:Set.empty
   )

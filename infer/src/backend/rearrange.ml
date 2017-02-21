@@ -18,9 +18,10 @@ module F = Format
 let list_product l1 l2 =
   let l1' = IList.rev l1 in
   let l2' = IList.rev l2 in
-  IList.fold_left
-    (fun acc x -> IList.fold_left (fun acc' y -> (x, y):: acc') acc l2')
-    [] l1'
+  List.fold
+    ~f:(fun acc x -> List.fold ~f:(fun acc' y -> (x, y):: acc') ~init:acc l2')
+    ~init:[]
+    l1'
 
 let rec list_rev_and_concat l1 l2 =
   match l1 with
@@ -228,7 +229,7 @@ let rec _strexp_extend_values
                       IList.sort StructTyp.compare_field (IList.map replace_fta fields) in
                     ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                     (res_atoms', Sil.Estruct (res_fsel', inst'), typ) :: acc in
-                  IList.fold_left replace [] atoms_se_typ_list'
+                  List.fold ~f:replace ~init:[] atoms_se_typ_list'
               | None ->
                   let atoms', se', res_typ' =
                     create_struct_values
@@ -280,7 +281,7 @@ let rec _strexp_extend_values
               :: acc
             else
               raise (Exceptions.Bad_footprint __POS__) in
-          IList.fold_left replace [] atoms_se_typ_list'
+          List.fold ~f:replace ~init:[] atoms_se_typ_list'
       | None ->
           array_case_analysis_index pname tenv orig_prop
             footprint_part kind max_stamp
@@ -341,14 +342,16 @@ and array_case_analysis_index pname tenv orig_prop
             _strexp_extend_values
               pname tenv orig_prop footprint_part kind max_stamp se typ_cont off inst in
           let atoms_se_typ_list' =
-            IList.fold_left (fun acc' (atoms', se', typ') ->
-                check_sound typ';
-                let atoms_new = Sil.Aeq (index, i) :: atoms' in
-                let isel_new = list_rev_and_concat isel_seen_rev ((i, se'):: isel_unseen) in
-                let array_new = Sil.Earray (array_len, isel_new, inst_arr) in
-                let typ_new = Typ.Tarray (typ', typ_array_len) in
-                (atoms_new, array_new, typ_new):: acc'
-              ) [] atoms_se_typ_list in
+            List.fold
+              ~f:(fun acc' (atoms', se', typ') ->
+                  check_sound typ';
+                  let atoms_new = Sil.Aeq (index, i) :: atoms' in
+                  let isel_new = list_rev_and_concat isel_seen_rev ((i, se'):: isel_unseen) in
+                  let array_new = Sil.Earray (array_len, isel_new, inst_arr) in
+                  let typ_new = Typ.Tarray (typ', typ_array_len) in
+                  (atoms_new, array_new, typ_new):: acc')
+              ~init:[]
+              atoms_se_typ_list in
           let acc_new = atoms_se_typ_list' :: acc in
           let isel_seen_rev_new = ise :: isel_seen_rev in
           handle_case acc_new isel_seen_rev_new isel_unseen in
@@ -520,7 +523,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
         end
     | _ -> assert false in
   let atoms_se_te_to_iter e (atoms, se, te) =
-    let iter' = IList.fold_left (Prop.prop_iter_add_atom !Config.footprint) iter atoms in
+    let iter' = List.fold ~f:(Prop.prop_iter_add_atom !Config.footprint) ~init:iter atoms in
     Prop.prop_iter_update_current iter' (Sil.Hpointsto (e, se, te)) in
   let do_extend e se te =
     if Config.trace_rearrange then begin
@@ -562,7 +565,8 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
         let iter_atoms_fp_sigma_list =
           list_product iter_list atoms_fp_sigma_list in
         IList.map (fun (iter, (atoms, fp_sigma)) ->
-            let iter' = IList.fold_left (Prop.prop_iter_add_atom !Config.footprint) iter atoms in
+            let iter' =
+              List.fold ~f:(Prop.prop_iter_add_atom !Config.footprint) ~init:iter atoms in
             Prop.prop_iter_replace_footprint_sigma iter' fp_sigma
           ) iter_atoms_fp_sigma_list in
     let res_prop_list =
@@ -600,7 +604,8 @@ let prop_iter_add_hpred_footprint_to_prop pname tenv prop (lexp, typ) inst =
   let sigma_fp = ptsto_foot :: eprop.Prop.sigma_fp in
   let nsigma_fp = Prop.sigma_normalize_prop tenv Prop.prop_emp sigma_fp in
   let prop' = Prop.normalize tenv (Prop.set eprop ~sigma_fp:nsigma_fp) in
-  let prop_new = IList.fold_left (Prop.prop_atom_and tenv ~footprint:!Config.footprint) prop' atoms in
+  let prop_new =
+    List.fold ~f:(Prop.prop_atom_and tenv ~footprint:!Config.footprint) ~init:prop' atoms in
   let iter = match (Prop.prop_iter_create prop_new) with
     | None ->
         let prop_new' = Prop.normalize tenv (Prop.prop_hpred_star prop_new ptsto) in
@@ -895,7 +900,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     | _ -> prop_acc in
   let hpred_check_flds prop_acc = function
     | Sil.Hpointsto (_, Estruct (flds, _), Sizeof (typ, _, _)) ->
-        IList.fold_left (check_fld_locks typ) prop_acc flds
+        List.fold ~f:(check_fld_locks typ) ~init:prop_acc flds
     | _ ->
         prop_acc in
   match lexp with
@@ -904,7 +909,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       enforce_guarded_access fld typ prop
   | _ ->
       (* check for access via alias *)
-      IList.fold_left hpred_check_flds prop prop.Prop.sigma
+      List.fold ~f:hpred_check_flds ~init:prop prop.Prop.sigma
 
 (** Add a pointsto for [root(lexp): typ] to the iterator and to the
     footprint, if it's compatible with the allowed footprint
@@ -924,7 +929,8 @@ let prop_iter_add_hpred_footprint pname tenv orig_prop iter (lexp, typ) inst =
   L.d_ln (); L.d_ln ();
   let sigma_fp = ptsto_foot :: (Prop.prop_iter_get_footprint_sigma iter) in
   let iter_foot = Prop.prop_iter_prev_then_insert iter ptsto in
-  let iter_foot_atoms = IList.fold_left (Prop.prop_iter_add_atom (!Config.footprint)) iter_foot atoms in
+  let iter_foot_atoms =
+    List.fold ~f:(Prop.prop_iter_add_atom (!Config.footprint)) ~init:iter_foot atoms in
   let iter' = Prop.prop_iter_replace_footprint_sigma iter_foot_atoms sigma_fp in
   let offsets_default = Sil.exp_get_offsets lexp in
   Prop.prop_iter_set_state iter' offsets_default
@@ -982,7 +988,8 @@ let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
               strexp_extend_values
                 pname tenv orig_prop false Ident.kprimed max_stamp se te offset inst in
             let handle_case (atoms', se', te') =
-              let iter' = IList.fold_left (Prop.prop_iter_add_atom !Config.footprint) iter atoms' in
+              let iter' =
+                List.fold ~f:(Prop.prop_iter_add_atom !Config.footprint) ~init:iter atoms' in
               Prop.prop_iter_update_current iter' (Sil.Hpointsto (e, se', te')) in
             let filter it =
               let p = Prop.prop_iter_to_prop tenv it in

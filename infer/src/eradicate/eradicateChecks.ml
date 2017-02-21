@@ -549,7 +549,7 @@ let check_overridden_annotations
     and overridden_params = overriden_signature.AnnotatedSignature.params in
     let initial_pos = if is_virtual current_params then 0 else 1 in
     if Int.equal (IList.length current_params) (IList.length overridden_params) then
-      ignore (IList.fold_left2 compare initial_pos current_params overridden_params) in
+      ignore (List.fold2_exn ~f:compare ~init:initial_pos current_params overridden_params) in
 
   let check overriden_proc_name =
     match Specs.proc_resolve_attributes overriden_proc_name with

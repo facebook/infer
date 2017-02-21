@@ -299,7 +299,7 @@ struct
             (match Tenv.lookup tenv typename with
              | Some str ->
                  let fns = IList.map get_field_name str.StructTyp.fields in
-                 IList.fold_left (add_pair_field v1 v2) pairs fns
+                 List.fold ~f:(add_pair_field v1 v2) ~init:pairs fns
              | _ -> pairs)
         | Typ.Tptr (_ ,_) ->
             let v1' = deref_ptr v1 callee_mem in
@@ -321,13 +321,13 @@ struct
             else assert false
         | _ -> assert false
       in
-      IList.fold_left add_pair Itv.SubstMap.empty pairs
+      List.fold ~f:add_pair ~init:Itv.SubstMap.empty pairs
 
   let rec list_fold2_def
     : Val.t -> ('a -> Val.t -> 'b -> 'b) -> 'a list -> Val.t list -> 'b -> 'b
     = fun default f xs ys acc ->
       match xs, ys with
-      | [x], _ -> f x (IList.fold_left Val.join Val.bot ys) acc
+      | [x], _ -> f x (List.fold ~f:Val.join ~init:Val.bot ys) acc
       | [], _ -> acc
       | x :: xs', [] -> list_fold2_def default f xs' ys (f x default acc)
       | x :: xs', y :: ys' -> list_fold2_def default f xs' ys' (f x y acc)

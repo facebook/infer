@@ -109,7 +109,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let add_params_globals astate pdesc call_loc params =
     IList.map (fun (e, _) -> get_globals pdesc call_loc e) params
-    |> IList.fold_left GlobalsAccesses.union GlobalsAccesses.empty
+    |> List.fold ~f:GlobalsAccesses.union ~init:GlobalsAccesses.empty
     |> add_globals astate (Procdesc.get_loc pdesc)
 
   let at_least_nonbottom =

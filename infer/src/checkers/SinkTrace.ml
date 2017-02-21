@@ -59,11 +59,11 @@ module Make (TraceElem : TraceElem.S) = struct
     to_loc_trace ?desc_of_sink ?sink_should_nest (passthroughs, [], sinks)
 
   let with_callsite t call_site =
-    IList.fold_left
-      (fun t_acc sink ->
-         let callee_sink = Sink.with_callsite sink call_site in
-         add_sink callee_sink t_acc)
-      empty
+    List.fold
+      ~f:(fun t_acc sink ->
+          let callee_sink = Sink.with_callsite sink call_site in
+          add_sink callee_sink t_acc)
+      ~init:empty
       (Sinks.elements (sinks t))
 
   let pp fmt t =

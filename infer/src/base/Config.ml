@@ -1675,7 +1675,7 @@ let specs_library =
                 Zip.close_in zip_channel in
         extract_specs key_dir filename;
         key_dir :: specs_library in
-      IList.fold_left add_spec_lib [] !specs_library
+      List.fold ~f:add_spec_lib ~init:[] !specs_library
   | _ ->
       !specs_library
 

@@ -153,7 +153,7 @@ and inhabit_args tenv formals cfg env =
   let inhabit_arg (_, formal_typ) (args, env) =
     let (exp, env) = inhabit_typ tenv formal_typ cfg env in
     ((exp, formal_typ) :: args, env) in
-  IList.fold_right inhabit_arg formals ([], env)
+  List.fold_right ~f:inhabit_arg formals ~init:([], env)
 
 (** create Sil that calls the constructor in constr_name on allocated_obj and inhabits the
  * remaining arguments *)
@@ -272,7 +272,11 @@ let inhabit_trace tenv trace harness_name cg cfg =
         cur_inhabiting = TypSet.empty;
         harness_name = harness_name; } in
     (* invoke lifecycle methods *)
-    let env'' = IList.fold_left (fun env to_call -> inhabit_call tenv to_call cfg env) empty_env trace in
+    let env'' =
+      List.fold
+        ~f:(fun env to_call -> inhabit_call tenv to_call cfg env)
+        ~init:empty_env
+        trace in
     try
       setup_harness_cfg harness_name env'' cg cfg;
       write_harness_to_file (IList.rev env''.instrs) harness_filename

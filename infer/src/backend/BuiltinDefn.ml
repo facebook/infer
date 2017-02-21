@@ -565,7 +565,7 @@ let execute___release_autorelease_pool
             )
             ~default:res
       | _ -> res in
-    IList.fold_left call_release [(prop_without_attribute, path)] autoreleased_objects
+    List.fold ~f:call_release ~init:[(prop_without_attribute, path)] autoreleased_objects
   else execute___no_op prop_ path
 
 let set_attr tenv pdesc prop path exp attr =
@@ -703,7 +703,7 @@ let _execute_free_nonzero mk pdesc tenv instr prop lexp typ loc =
           assert false
       | Some _ ->
           let prop_list =
-            IList.fold_left (_execute_free tenv mk loc) []
+            List.fold ~f:(_execute_free tenv mk loc) ~init:[]
               (Rearrange.rearrange pdesc tenv lexp typ prop loc) in
           IList.rev prop_list
     end

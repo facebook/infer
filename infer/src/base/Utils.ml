@@ -117,7 +117,7 @@ let filename_to_absolute ~root fname =
     | _ -> entry :: rev_done
   in
   let abs_fname = if Filename.is_absolute fname then fname else root ^/ fname in
-  Filename.of_parts (List.rev (List.fold_left ~f:add_entry ~init:[] (Filename.parts abs_fname)))
+  Filename.of_parts (List.rev (List.fold ~f:add_entry ~init:[] (Filename.parts abs_fname)))
 
 
 (** Convert an absolute filename to one relative to the given directory. *)

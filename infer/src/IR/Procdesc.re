@@ -92,7 +92,7 @@ let module Node = {
             acc (slice_nodes (List.filter f::(fun s => not (NodeSet.mem s !visited)) n.succs))
         }
       };
-      IList.fold_left do_node NodeSet.empty nodes
+      List.fold f::do_node init::NodeSet.empty nodes
     };
     NodeSet.elements (slice_nodes node.succs)
   };
@@ -108,7 +108,7 @@ let module Node = {
             acc (slice_nodes (List.filter f::(fun s => not (NodeSet.mem s !visited)) n.preds))
         }
       };
-      IList.fold_left do_node NodeSet.empty nodes
+      List.fold f::do_node init::NodeSet.empty nodes
     };
     NodeSet.elements (slice_nodes node.preds)
   };
@@ -158,7 +158,7 @@ let module Node = {
         }
       | _ => callees
       };
-    IList.fold_left collect [] (get_instrs node)
+    List.fold f::collect init::[] (get_instrs node)
   };
 
   /** Get the location of the node */
@@ -399,9 +399,11 @@ let iter_nodes f pdesc => IList.iter f (IList.rev (get_nodes pdesc));
 
 let fold_calls f acc pdesc => {
   let do_node a node =>
-    IList.fold_left
-      (fun b callee_pname => f b (callee_pname, Node.get_loc node)) a (Node.get_callees node);
-  IList.fold_left do_node acc (get_nodes pdesc)
+    List.fold
+      f::(fun b callee_pname => f b (callee_pname, Node.get_loc node))
+      init::a
+      (Node.get_callees node);
+  List.fold f::do_node init::acc (get_nodes pdesc)
 };
 
 
@@ -413,11 +415,11 @@ let iter_instrs f pdesc => {
   iter_nodes do_node pdesc
 };
 
-let fold_nodes f acc pdesc => IList.fold_left f acc (IList.rev (get_nodes pdesc));
+let fold_nodes f acc pdesc => List.fold f::f init::acc (IList.rev (get_nodes pdesc));
 
 let fold_instrs f acc pdesc => {
   let fold_node acc node =>
-    IList.fold_left (fun acc instr => f acc node instr) acc (Node.get_instrs node);
+    List.fold f::(fun acc instr => f acc node instr) init::acc (Node.get_instrs node);
   fold_nodes fold_node acc pdesc
 };
 

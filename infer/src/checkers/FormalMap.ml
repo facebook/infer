@@ -23,9 +23,9 @@ let make pdesc =
          let pvar = Pvar.mk name pname in
          AccessPath.base_of_pvar pvar typ, index)
       attrs.ProcAttributes.formals in
-  IList.fold_left
-    (fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
-    AccessPath.BaseMap.empty
+  List.fold
+    ~f:(fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
+    ~init:AccessPath.BaseMap.empty
     formals_with_nums
 
 let empty = AccessPath.BaseMap.empty

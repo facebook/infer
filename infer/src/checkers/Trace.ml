@@ -290,7 +290,7 @@ module Make (Spec : Spec) = struct
              let loc2 = CallSite.loc (Passthrough.site passthrough2) in
              Int.compare loc1.Location.line loc2.Location.line)
           (Passthroughs.elements passthroughs) in
-      IList.fold_right trace_elem_of_passthrough sorted_passthroughs acc0 in
+      List.fold_right ~f:trace_elem_of_passthrough sorted_passthroughs ~init:acc0 in
 
     let get_nesting should_nest elems start_nesting =
       let level = ref start_nesting in
@@ -318,10 +318,12 @@ module Make (Spec : Spec) = struct
     let sources_with_level = get_nesting source_should_nest sources (-1) in
     let sinks_with_level = get_nesting sink_should_nest sinks 0 in
     let trace_prefix =
-      IList.fold_right trace_elems_of_sink sinks_with_level []
+      List.fold_right ~f:trace_elems_of_sink sinks_with_level ~init:[]
       |> trace_elems_of_passthroughs 0 passthroughs in
-    IList.fold_left
-      (fun acc source -> trace_elems_of_source source acc) trace_prefix sources_with_level
+    List.fold
+      ~f:(fun acc source -> trace_elems_of_source source acc)
+      ~init:trace_prefix
+      sources_with_level
 
   let of_source source =
     let sources = Sources.singleton source in

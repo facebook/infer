@@ -682,6 +682,6 @@ end = struct
 
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the list *)
   let from_renamed_list (pl : ('a Prop.t * Path.t) list) : t =
-    IList.fold_left (fun ps (p, pa) -> add_renamed_prop p pa ps) empty pl
+    List.fold ~f:(fun ps (p, pa) -> add_renamed_prop p pa ps) ~init:empty pl
 end
 (* =============== END of the PathSet module ===============*)

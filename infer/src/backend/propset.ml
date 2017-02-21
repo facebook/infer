@@ -31,9 +31,11 @@ type t = PropSet.t
 
 let add tenv p pset =
   let ps = Prop.prop_expand tenv p in
-  IList.fold_left (fun pset' p' ->
-      PropSet.add (Prop.prop_rename_primed_footprint_vars tenv p') pset'
-    ) pset ps
+  List.fold
+    ~f:(fun pset' p' ->
+        PropSet.add (Prop.prop_rename_primed_footprint_vars tenv p') pset')
+    ~init:pset
+    ps
 
 (** Singleton set. *)
 let singleton tenv p =
@@ -64,7 +66,7 @@ let size = PropSet.cardinal
 let filter = PropSet.filter
 
 let from_proplist tenv plist =
-  IList.fold_left (fun pset p -> add tenv p pset) empty plist
+  List.fold ~f:(fun pset p -> add tenv p pset) ~init:empty plist
 
 let to_proplist pset =
   PropSet.elements pset
@@ -84,7 +86,7 @@ let map tenv f pset =
     where [p1 ... pN] are the elements of pset, in increasing order. *)
 let fold f a pset =
   let l = to_proplist pset in
-  IList.fold_left f a l
+  List.fold ~f ~init:a l
 
 (** [iter f pset] computes (f p1;f p2;..;f pN)
     where [p1 ... pN] are the elements of pset, in increasing order. *)

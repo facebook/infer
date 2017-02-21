@@ -250,7 +250,7 @@ let ptsto_update pdesc tenv p (lexp, se, typ, len, st) offlist exp =
 
 let update_iter iter pi sigma =
   let iter' = Prop.prop_iter_update_current_by_list iter sigma in
-  IList.fold_left (Prop.prop_iter_add_atom false) iter' pi
+  List.fold ~f:(Prop.prop_iter_add_atom false) ~init:iter' pi
 
 (** Precondition: se should not include hpara_psto
     that could mean nonempty heaps. *)
@@ -597,13 +597,13 @@ let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
       resolved_pname_java
     else
       let resolved_params =
-        IList.fold_left2
-          (fun accu (arg_exp, _) name ->
-             match resolve_typename prop arg_exp with
-             | Some class_name ->
-                 (Procname.split_classname (Typename.name class_name)) :: accu
-             | None -> name :: accu)
-          [] args (Procname.java_get_parameters resolved_pname_java) |> IList.rev in
+        List.fold2_exn
+          ~f:(fun accu (arg_exp, _) name ->
+              match resolve_typename prop arg_exp with
+              | Some class_name ->
+                  (Procname.split_classname (Typename.name class_name)) :: accu
+              | None -> name :: accu)
+          ~init:[] args (Procname.java_get_parameters resolved_pname_java) |> IList.rev in
       Procname.java_replace_parameters resolved_pname_java resolved_params in
   let resolved_pname_java, other_args =
     match args with
@@ -791,7 +791,7 @@ let normalize_params tenv pdesc prop actual_params =
   let norm_arg (p, args) (e, t) =
     let e', p' = check_arith_norm_exp tenv pdesc e p in
     (p', (e', t) :: args) in
-  let prop, args = IList.fold_left norm_arg (prop, []) actual_params in
+  let prop, args = List.fold ~f:norm_arg ~init:(prop, []) actual_params in
   (prop, IList.rev args)
 
 let do_error_checks tenv node_opt instr pname pdesc = match node_opt with
@@ -843,7 +843,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
           when Pvar.equal pv abduced ->
             Prop.conjoin_eq tenv exp_to_bind rhs prop
         | _ -> prop in
-      IList.fold_left bind_exp prop prop.Prop.sigma in
+      List.fold ~f:bind_exp ~init:prop prop.Prop.sigma in
     (* To avoid obvious false positives, assume skip functions do not return null pointers *)
     let add_ret_non_null exp typ prop =
       if has_nullable_annot
@@ -920,7 +920,7 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
         begin
           match pred_insts_op with
           | None -> update acc_in ([],[])
-          | Some pred_insts -> IList.rev (IList.fold_left update acc_in pred_insts)
+          | Some pred_insts -> IList.rev (List.fold ~f:update ~init:acc_in pred_insts)
         end
     | (Sil.Hpointsto _, _) ->
         Errdesc.warning_err loc "no offset access in execute_load -- treating as skip@.";
@@ -943,7 +943,7 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
             match callee_opt, atom with
             | None, Sil.Apred (Aundef _, _) -> Some atom
             | _ -> callee_opt in
-          IList.fold_left fold_undef_pname None (Attribute.get_for_exp tenv prop exp) in
+          List.fold ~f:fold_undef_pname ~init:None (Attribute.get_for_exp tenv prop exp) in
         let prop' =
           if Config.angelic_execution then
             (* when we try to deref an undefined value, add it to the footprint *)
@@ -956,7 +956,7 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
           else prop in
         let iter_list =
           Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop' loc in
-        IList.rev (IList.fold_left (execute_load_ pdesc tenv id loc) [] iter_list)
+        IList.rev (List.fold ~f:(execute_load_ pdesc tenv id loc) ~init:[] iter_list)
   with Rearrange.ARRAY_ACCESS ->
     if Int.equal Config.array_level 0 then assert false
     else
@@ -988,14 +988,14 @@ let execute_store ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_e
       prop' :: acc in
     match pred_insts_op with
     | None -> update acc_in ([],[])
-    | Some pred_insts -> IList.fold_left update acc_in pred_insts in
+    | Some pred_insts -> List.fold ~f:update ~init:acc_in pred_insts in
   try
     let n_lhs_exp, prop_' = check_arith_norm_exp tenv pname lhs_exp prop_ in
     let n_rhs_exp, prop = check_arith_norm_exp tenv pname rhs_exp prop_' in
     let prop = Attribute.replace_objc_null tenv prop n_lhs_exp n_rhs_exp in
     let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_lhs_exp in
     let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
-    IList.rev (IList.fold_left (execute_store_ pdesc tenv n_rhs_exp) [] iter_list)
+    IList.rev (List.fold ~f:(execute_store_ pdesc tenv n_rhs_exp) ~init:[] iter_list)
   with Rearrange.ARRAY_ACCESS ->
     if Int.equal Config.array_level 0 then assert false
     else [prop_]
@@ -1128,7 +1128,10 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                 | Some callee_summary ->
                     let handled_args = call_args norm_prop pname url_handled_args ret_id loc in
                     proc_call callee_summary handled_args in
-              IList.fold_left (fun acc pname -> exec_one_pname pname @ acc) [] resolved_pnames
+              List.fold
+                ~f:(fun acc pname -> exec_one_pname pname @ acc)
+                ~init:[]
+                resolved_pnames
           | _ -> (* Generic fun call with known name *)
               let (prop_r, n_actual_params) =
                 normalize_params tenv current_pname prop_ actual_params in
@@ -1269,7 +1272,7 @@ and instrs ?(mask_errors=false) tenv pdesc instrs ppl =
          (Localise.to_string err_name)^loc ); L.d_ln();
       [(p, path)] in
   let f plist instr = List.concat (IList.map (exe_instr instr) plist) in
-  IList.fold_left f ppl instrs
+  List.fold ~f ~init:ppl instrs
 
 and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname callee_loc =
   (* replace an hpred of the form actual_var |-> _ with new_hpred in prop *)
@@ -1332,14 +1335,14 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
                     | _ -> true)
                 prop.Prop.sigma in
             Prop.normalize tenv (Prop.set prop ~sigma:filtered_sigma) in
-          IList.fold_left
-            (fun p hpred ->
-               match hpred with
-               | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abduced_ref_pv ->
-                   let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
-                   Prop.normalize tenv (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
-               | _ -> p)
-            prop'
+          List.fold
+            ~f:(fun p hpred ->
+                match hpred with
+                | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abduced_ref_pv ->
+                    let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
+                    Prop.normalize tenv (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
+                | _ -> p)
+            ~init:prop'
             prop'.Prop.sigma
     | _ -> assert false in
   (* non-angelic mode; havoc each var passed by reference by assigning it to a fresh id *)
@@ -1366,7 +1369,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
       | None ->
           true in
     List.filter ~f:is_not_const actuals_by_ref in
-  IList.fold_left do_actual_by_ref prop non_const_actuals_by_ref
+  List.fold ~f:do_actual_by_ref ~init:prop non_const_actuals_by_ref
 
 and check_untainted tenv exp taint_kind caller_pname callee_pname prop =
   match Attribute.get_taint tenv prop exp with
@@ -1400,14 +1403,14 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
         match atom with
         | Sil.Apred ((Aresource {ra_res = Rfile} as res), _) -> Attribute.remove_for_attr tenv q res
         | _ -> q in
-      IList.fold_left do_attribute p (Attribute.get_for_exp tenv p e) in
+      List.fold ~f:do_attribute ~init:p (Attribute.get_for_exp tenv p e) in
     let filtered_args =
       match args, instr with
       | _:: other_args, Sil.Call (_, _, _, _, { CallFlags.cf_virtual }) when cf_virtual ->
           (* Do not remove the file attribute on the reciver for virtual calls *)
           other_args
       | _ -> args in
-    IList.fold_left do_exp prop filtered_args in
+    List.fold ~f:do_exp ~init:prop filtered_args in
   let add_tainted_pre prop actuals caller_pname callee_pname =
     if Config.taint_analysis then
       match Taint.accepts_sensitive_params callee_pname None with
@@ -1420,9 +1423,9 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
                   check_untainted tenv actual_exp taint_kind caller_pname callee_pname prop_acc
               | None -> prop_acc in
             prop_acc', param_num + 1 in
-          IList.fold_left
-            check_taint_if_nums_match
-            (prop, 0)
+          List.fold
+            ~f:check_taint_if_nums_match
+            ~init:(prop, 0)
             actuals
           |> fst
     else prop in
@@ -1455,8 +1458,10 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
     (* otherwise, add undefined attribute to retvals and actuals passed by ref *)
     let exps_to_mark =
       let ret_exps = Option.value_map ~f:(fun (id, _) -> [Exp.Var id]) ~default:[] ret_id in
-      IList.fold_left
-        (fun exps_to_mark (exp, _, _) -> exp :: exps_to_mark) ret_exps actuals_by_ref in
+      List.fold
+        ~f:(fun exps_to_mark (exp, _, _) -> exp :: exps_to_mark)
+        ~init:ret_exps
+        actuals_by_ref in
     let prop_with_undef_attr =
       let path_pos = State.get_path_pos () in
       Attribute.mark_vars_as_undefined tenv
@@ -1479,8 +1484,8 @@ and check_variadic_sentinel
   let mk_non_terminal_argsi (acc, i) a =
     if i < first_var_arg_pos || i >= sentinel_pos then (acc, i +1)
     else ((a, i):: acc, i +1) in
-  (* IList.fold_left reverses the arguments *)
-  let non_terminal_argsi = fst (IList.fold_left mk_non_terminal_argsi ([], 0) args) in
+  (* fold_left reverses the arguments *)
+  let non_terminal_argsi = fst (List.fold ~f:mk_non_terminal_argsi ~init:([], 0) args) in
   let check_allocated result ((lexp, typ), i) =
     (* simulate a Load for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
@@ -1496,9 +1501,9 @@ and check_variadic_sentinel
         raise (Exceptions.Premature_nil_termination (err_desc, __POS__))
       else
         raise e in
-  (* IList.fold_left reverses the arguments back so that we report an *)
+  (* fold_left reverses the arguments back so that we report an *)
   (* error on the first premature nil argument *)
-  IList.fold_left check_allocated [(prop_, path)] non_terminal_argsi
+  List.fold ~f:check_allocated ~init:[(prop_, path)] non_terminal_argsi
 
 and check_variadic_sentinel_if_present
     ({ Builtin.prop_; path; proc_name; } as builtin_args) =
@@ -1694,4 +1699,4 @@ let node handle_exn tenv pdesc node (pset : Paths.PathSet.t) : Paths.PathSet.t =
     Paths.PathSet.union pset2 pset1 in
   let exe_instr_pset pset instr =
     Paths.PathSet.fold (exe_instr_prop instr) pset Paths.PathSet.empty in
-  IList.fold_left exe_instr_pset pset (Procdesc.Node.get_instrs node)
+  List.fold ~f:exe_instr_pset ~init:pset (Procdesc.Node.get_instrs node)

@@ -56,7 +56,7 @@ let collect_specs_filenames jar_filename =
       let proc_filename = (Filename.chop_extension (Filename.basename filename)) in
       String.Set.add set proc_filename in
   models_specs_filenames :=
-    IList.fold_left collect !models_specs_filenames (Zip.entries zip_channel);
+    List.fold ~f:collect ~init:!models_specs_filenames (Zip.entries zip_channel);
   models_tenv := load_models_tenv zip_channel;
   Zip.close_in zip_channel
 
@@ -187,9 +187,9 @@ let load_from_verbose_output javac_verbose_out =
     | End_of_file ->
         In_channel.close file_in;
         let classpath =
-          IList.fold_left
-            append_path
-            ""
+          List.fold
+            ~f:append_path
+            ~init:""
             ((String.Set.elements roots) @ paths) in
         (classpath, sources, classes) in
   loop [] String.Set.empty String.Map.empty JBasics.ClassSet.empty
@@ -207,15 +207,15 @@ let extract_classnames classnames jar_filename =
     | basename, Some "class" ->
         (classname_of_class_filename basename) :: classes
     | _ -> classes in
-  let classnames_after = IList.fold_left collect classnames (Zip.entries file_in) in
+  let classnames_after = List.fold ~f:collect ~init:classnames (Zip.entries file_in) in
   Zip.close_in file_in;
   classnames_after
 
 
 let collect_classnames start_classmap jar_filename =
-  IList.fold_left
-    (fun map cn -> JBasics.ClassSet.add cn map)
-    start_classmap
+  List.fold
+    ~f:(fun map cn -> JBasics.ClassSet.add cn map)
+    ~init:start_classmap
     (extract_classnames [] jar_filename)
 
 
@@ -238,9 +238,9 @@ let search_classes path =
 
 let search_sources () =
   let initial_map =
-    IList.fold_left
-      (fun map path -> add_source_file path map)
-      String.Map.empty
+    List.fold
+      ~f:(fun map path -> add_source_file path map)
+      ~init:String.Map.empty
       Config.sources in
   match Config.sourcepath with
   | None -> initial_map
@@ -259,7 +259,7 @@ let load_from_arguments classes_out_path =
   let split cp_option =
     Option.value_map ~f:split_classpath ~default:[] cp_option in
   let combine path_list classpath =
-    IList.fold_left append_path classpath (IList.rev path_list) in
+    List.fold ~f:append_path ~init:classpath (IList.rev path_list) in
   let classpath =
     combine (split Config.classpath) ""
     |> combine (String.Set.elements roots)
@@ -317,9 +317,9 @@ let collect_classes start_classmap jar_filename =
     with JBasics.Class_structure_error _ ->
       classmap in
   let classmap =
-    IList.fold_left
-      collect
-      start_classmap
+    List.fold
+      ~f:collect
+      ~init:start_classmap
       (extract_classnames [] jar_filename) in
   Javalib.close_class_path classpath;
   classmap

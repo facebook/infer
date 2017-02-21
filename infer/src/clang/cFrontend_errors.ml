@@ -103,7 +103,7 @@ let make_condition_issue_desc_pair checkers =
       severity = Exceptions.Kwarning;
       mode = CIssue.On;
     } in
-    let issue, condition = IList.fold_left (fun (issue', cond') d  ->
+    let issue, condition = List.fold ~f:(fun (issue', cond') d  ->
         match d with
         | CSet (s, phi) when String.equal s report_when_const ->
             issue', phi
@@ -115,7 +115,7 @@ let make_condition_issue_desc_pair checkers =
             {issue' with severity = string_to_err_kind sev}, cond'
         | CDesc (s, m) when String.equal s mode_const ->
             {issue' with mode = string_to_issue_mode m }, cond'
-        | _ -> issue', cond') (dummy_issue, CTL.False) c.definitions in
+        | _ -> issue', cond') ~init:(dummy_issue, CTL.False) c.definitions in
     if Config.debug_mode then (
       Logging.out "\nMaking condition and issue desc for checker '%s'\n"
         c.name;
@@ -159,15 +159,15 @@ let expand_checkers checkers =
   let expand_one_checker c =
     Logging.out " +Start expanding %s\n" c.name;
     let map : CTL.t Core.Std.String.Map.t = Core.Std.String.Map.empty in
-    let map = IList.fold_left (fun map' d -> match d with
+    let map = List.fold ~f:(fun map' d -> match d with
         | CLet (k,formula) -> Core.Std.Map.add map' ~key:k ~data:formula
-        | _ -> map') map c.definitions in
-    let exp_defs = IList.fold_left (fun defs clause ->
+        | _ -> map') ~init:map c.definitions in
+    let exp_defs = List.fold ~f:(fun defs clause ->
         match clause with
         | CSet (report_when_const, phi) ->
             Logging.out "  -Expanding report_when\n";
             CSet (report_when_const, expand phi map) :: defs
-        | cl -> cl :: defs) [] c.definitions in
+        | cl -> cl :: defs) ~init:[] c.definitions in
     { c with definitions = exp_defs} in
   let expanded_checkers = IList.map expand_one_checker checkers in
   expanded_checkers

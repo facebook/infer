@@ -229,13 +229,14 @@ let report_call_stack end_of_stack lookup_next_calls report call_site calls =
       let new_stack_str = stack_str ^ callee_pname_str ^ " -> " in
       let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
       let unseen_pnames, updated_visited =
-        IList.fold_left
-          (fun (accu, set) call_site ->
-             let p = CallSite.pname call_site in
-             let loc = CallSite.loc call_site in
-             if Procname.Set.mem p set then (accu, set)
-             else ((p, loc) :: accu, Procname.Set.add p set))
-          ([], visited_pnames) next_calls in
+        List.fold
+          ~f:(fun (accu, set) call_site ->
+              let p = CallSite.pname call_site in
+              let loc = CallSite.loc call_site in
+              if Procname.Set.mem p set then (accu, set)
+              else ((p, loc) :: accu, Procname.Set.add p set))
+          ~init:([], visited_pnames)
+          next_calls in
       IList.iter (loop fst_call_loc updated_visited (new_trace, new_stack_str)) unseen_pnames in
   IList.iter
     (fun fst_call_site ->
@@ -390,9 +391,10 @@ module Interprocedural = struct
 
     let initial =
       let init_map =
-        IList.fold_left
-          (fun astate_acc (_, snk_annot) -> CallsDomain.add snk_annot CallSiteSet.empty astate_acc)
-          CallsDomain.empty
+        List.fold
+          ~f:(fun astate_acc (_, snk_annot) ->
+              CallsDomain.add snk_annot CallSiteSet.empty astate_acc)
+          ~init:CallsDomain.empty
           (src_snk_pairs ()) in
       Domain.NonBottom
         (init_map, Domain.TrackingVar.empty) in

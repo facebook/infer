@@ -53,7 +53,7 @@ let captured_variables_cxx_ref an =
     | _ -> reference_captured_vars in
   match an with
   | Ctl_parser_types.Decl (BlockDecl (_, bdi)) ->
-      IList.fold_left capture_var_is_cxx_ref [] bdi.bdi_captured_variables
+      List.fold ~f:capture_var_is_cxx_ref ~init:[] bdi.bdi_captured_variables
   | _ -> []
 
 

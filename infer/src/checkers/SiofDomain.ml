@@ -31,7 +31,9 @@ let normalize ((trace, initialized) as astate) = match trace with
           let loc = CallSite.loc (SiofTrace.Sink.call_site access) in
           let kind =
             IList.map SiofTrace.Sink.kind direct
-            |> IList.fold_left SiofTrace.GlobalsAccesses.union SiofTrace.GlobalsAccesses.empty in
+            |> List.fold
+              ~f:SiofTrace.GlobalsAccesses.union
+              ~init:SiofTrace.GlobalsAccesses.empty in
           let trace' =
             SiofTrace.make_access kind loc::indirect
             |> SiofTrace.Sinks.of_list

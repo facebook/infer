@@ -156,9 +156,9 @@ module Exceptional = struct
           Procdesc.IdMap.add exn_succ_node_id (n :: existing_exn_preds) exn_preds_acc
         else
           exn_preds_acc in
-      IList.fold_left add_exn_pred exn_preds_acc (Procdesc.Node.get_exn n) in
+      List.fold ~f:add_exn_pred ~init:exn_preds_acc (Procdesc.Node.get_exn n) in
     let exceptional_preds =
-      IList.fold_left add_exn_preds Procdesc.IdMap.empty (Procdesc.get_nodes pdesc) in
+      List.fold ~f:add_exn_preds ~init:Procdesc.IdMap.empty (Procdesc.get_nodes pdesc) in
     pdesc, exceptional_preds
 
   let instrs = Procdesc.Node.get_instrs

@@ -173,13 +173,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     then
       path_state
     else
-      IList.fold_left
-        (fun acc rawpath ->
-           if not (is_owned (AccessPath.Raw.truncate rawpath) attribute_map) &&
-              not (is_safe_write rawpath tenv)
-           then Domain.PathDomain.add_sink (Domain.make_access rawpath loc) acc
-           else acc)
-        path_state
+      List.fold
+        ~f:(fun acc rawpath ->
+            if not (is_owned (AccessPath.Raw.truncate rawpath) attribute_map) &&
+               not (is_safe_write rawpath tenv)
+            then Domain.PathDomain.add_sink (Domain.make_access rawpath loc) acc
+            else acc)
+        ~init:path_state
         (AccessPath.of_exp exp typ ~f_resolve_id)
 
   let analyze_id_assignment lhs_id rhs_exp rhs_typ { Domain.id_map; } =
@@ -365,7 +365,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       (* add the conditional writes rooted in the callee formal at [index] to
                          the current state *)
                       let add_conditional_writes
-                          ((cond_writes, uncond_writes) as acc) index (actual_exp, actual_typ) =
+                          index ((cond_writes, uncond_writes) as acc) (actual_exp, actual_typ) =
                         if is_constant actual_exp
                         then
                           acc
@@ -419,9 +419,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         let combined_unconditional_writes =
                           PathDomain.with_callsite callee_unconditional_writes call_site
                           |> PathDomain.join astate.unconditional_writes in
-                        IList.fold_lefti
-                          add_conditional_writes
-                          (astate.conditional_writes, combined_unconditional_writes)
+                        List.foldi
+                          ~f:add_conditional_writes
+                          ~init:(astate.conditional_writes, combined_unconditional_writes)
                           actuals in
                       let reads =
                         PathDomain.with_callsite callee_reads call_site
@@ -572,9 +572,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
     | Sil.Remove_temps (ids, _) ->
         let id_map =
-          IList.fold_left
-            (fun acc id -> IdAccessPathMapDomain.remove (Var.of_id id) acc)
-            astate.id_map
+          List.fold
+            ~f:(fun acc id -> IdAccessPathMapDomain.remove (Var.of_id id) acc)
+            ~init:astate.id_map
             ids in
         { astate with id_map; }
 
@@ -675,9 +675,10 @@ let should_report_on_proc (_, _, proc_name, proc_desc) =
 let make_results_table get_proc_desc file_env =
   (* make a Map sending each element e of list l to (f e) *)
   let map_post_computation_over_procs f l =
-    IList.fold_left (fun m p -> ResultsTableType.add p (f p) m
-                    ) ResultsTableType.empty l
-  in
+    List.fold
+      ~f:(fun m p -> ResultsTableType.add p (f p) m)
+      ~init:ResultsTableType.empty
+      l in
   let is_initializer tenv proc_name =
     Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
   let compute_post_for_procedure = (* takes proc_env as arg *)

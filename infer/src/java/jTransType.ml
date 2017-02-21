@@ -265,8 +265,8 @@ let add_model_fields program classpath_fields cn =
   let statics, nonstatics = classpath_fields in
   let classpath_field_map =
     let collect_fields map =
-      IList.fold_left
-        (fun map (fn, ft, _) -> Ident.FieldMap.add fn ft map) map in
+      List.fold
+        ~f:(fun map (fn, ft, _) -> Ident.FieldMap.add fn ft map) ~init:map in
     collect_fields (collect_fields Ident.FieldMap.empty statics) nonstatics in
   try
     match JBasics.ClassMap.find cn (JClasspath.get_models program) with

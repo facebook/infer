@@ -425,7 +425,7 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let path_str =
     let path_prefix =
       if List.is_empty leak_path then "Leaked "
-      else (IList.fold_left leak_path_entry_to_str "" leak_path) ^ " Leaked " in
+      else (List.fold ~f:leak_path_entry_to_str ~init:"" leak_path) ^ " Leaked " in
     path_prefix ^ context_str in
   let preamble =
     let pname_str = match pname with

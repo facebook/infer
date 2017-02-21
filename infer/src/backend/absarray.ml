@@ -275,13 +275,13 @@ let prop_replace_path_index tenv
   =
   let elist_path = StrexpMatch.path_to_exps path in
   let expmap_list =
-    IList.fold_left (fun acc_outer e_path ->
-        IList.fold_left (fun acc_inner (old_index, new_index) ->
+    List.fold ~f:(fun acc_outer e_path ->
+        List.fold ~f:(fun acc_inner (old_index, new_index) ->
             let old_e_path_index = Prop.exp_normalize_prop tenv p (Exp.Lindex(e_path, old_index)) in
             let new_e_path_index = Prop.exp_normalize_prop tenv p (Exp.Lindex(e_path, new_index)) in
             (old_e_path_index, new_e_path_index) :: acc_inner
-          ) acc_outer map
-      ) [] elist_path in
+          ) ~init:acc_outer map
+      ) ~init:[] elist_path in
   let expmap_fun e' =
     Option.value_map
       ~f:snd (List.find ~f:(fun (e, _) -> Exp.equal e e') expmap_list)
@@ -411,10 +411,9 @@ let blur_array_index tenv
 let blur_array_indices tenv
     (p: Prop.normal Prop.t)
     (root: StrexpMatch.path)
-    (indices: Exp.t list) : Prop.normal Prop.t * bool
-  =
+    (indices: Exp.t list) : Prop.normal Prop.t * bool =
   let f prop index = blur_array_index tenv prop root index in
-  (IList.fold_left f p indices, IList.length indices > 0)
+  (List.fold ~f ~init:p indices, IList.length indices > 0)
 
 
 (** Given [p] containing an array at [root], only keep [indices] in it *)

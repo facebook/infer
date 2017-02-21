@@ -100,9 +100,9 @@ module MakeDF(St: DFStateType) : DF with type state = St.t = struct
     | Transition of state * state list * state list
 
   let join states initial_state =
-    IList.fold_left
-      St.join
-      initial_state
+    List.fold
+      ~f:St.join
+      ~init:initial_state
       states
 
   (** Propagate [new_state] to all the nodes immediately reachable. *)

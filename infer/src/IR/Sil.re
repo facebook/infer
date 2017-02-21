@@ -269,7 +269,7 @@ let is_static_local_name pname pvar => {
 
 
 /** {2 Sets of expressions} */
-let elist_to_eset es => IList.fold_left (fun set e => Exp.Set.add e set) Exp.Set.empty es;
+let elist_to_eset es => List.fold f::(fun set e => Exp.Set.add e set) init::Exp.Set.empty es;
 
 
 /** {2 Sets of heap predicates} */
@@ -1223,7 +1223,7 @@ let hpred_get_lexp acc =>
   | Hdllseg _ _ e1 _ _ e2 _ => [e1, e2, ...acc];
 
 let hpred_list_get_lexps (filter: Exp.t => bool) (hlist: list hpred) :list Exp.t => {
-  let lexps = IList.fold_left hpred_get_lexp [] hlist;
+  let lexps = List.fold f::hpred_get_lexp init::[] hlist;
   List.filter f::filter lexps
 };
 
@@ -1254,7 +1254,7 @@ let atom_fpv =
   | Aeq e1 e2 => exp_fpv e1 @ exp_fpv e2
   | Aneq e1 e2 => exp_fpv e1 @ exp_fpv e2
   | Apred _ es
-  | Anpred _ es => IList.fold_left (fun fpv e => IList.rev_append (exp_fpv e) fpv) [] es;
+  | Anpred _ es => List.fold f::(fun fpv e => IList.rev_append (exp_fpv e) fpv) init::[] es;
 
 let rec strexp_fpv =
   fun
@@ -2099,8 +2099,8 @@ let compare_structural_instr instr1 instr2 exp_map => {
     if (n != 0) {
       (n, exp_map)
     } else {
-      IList.fold_left2
-        (
+      List.fold2_exn
+        f::(
           fun (n, exp_map) id1 id2 =>
             if (n != 0) {
               (n, exp_map)
@@ -2108,7 +2108,7 @@ let compare_structural_instr instr1 instr2 exp_map => {
               exp_compare_structural (Var id1) (Var id2) exp_map
             }
         )
-        (0, exp_map)
+        init::(0, exp_map)
         ids1
         ids2
     }
@@ -2162,8 +2162,8 @@ let compare_structural_instr instr1 instr2 exp_map => {
       if (n != 0) {
         (n, exp_map)
       } else {
-        IList.fold_left2
-          (
+        List.fold2_exn
+          f::(
             fun (n, exp_map) arg1 arg2 =>
               if (n != 0) {
                 (n, exp_map)
@@ -2171,7 +2171,7 @@ let compare_structural_instr instr1 instr2 exp_map => {
                 exp_typ_compare_structural arg1 arg2 exp_map
               }
           )
-          (0, exp_map)
+          init::(0, exp_map)
           args1
           args2
       }
@@ -2204,8 +2204,8 @@ let compare_structural_instr instr1 instr2 exp_map => {
     if (n != 0) {
       (n, exp_map)
     } else {
-      IList.fold_left2
-        (
+      List.fold2_exn
+        f::(
           fun (n, exp_map) (pv1, t1) (pv2, t2) =>
             if (n != 0) {
               (n, exp_map)
@@ -2218,7 +2218,7 @@ let compare_structural_instr instr1 instr2 exp_map => {
               }
             }
         )
-        (0, exp_map)
+        init::(0, exp_map)
         ptl1
         ptl2
     }
@@ -2386,7 +2386,7 @@ let sigma_to_sigma_ne sigma :list (list atom, list hpred) =>
         ];
         List.concat (IList.map g eqs_sigma_list)
       };
-    IList.fold_left f [([], [])] sigma
+    List.fold f::f init::[([], [])] sigma
   } else {
     [([], sigma)]
   };

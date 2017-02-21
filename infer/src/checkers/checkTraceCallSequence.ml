@@ -123,7 +123,7 @@ module State = struct
   let map2 (f : Elem.t -> Elem.t list) (s : t) : t =
     let l = ElemSet.elements s in
     let l' = List.filter ~f:Elem.is_consistent (List.concat (IList.map f l)) in
-    IList.fold_right ElemSet.add l' ElemSet.empty
+    List.fold_right ~f:ElemSet.add l' ~init:ElemSet.empty
 
   let map (f : Elem.t -> Elem.t) s =
     map2 (fun elem -> [f elem]) s

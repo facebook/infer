@@ -88,7 +88,7 @@ let exp_list_match es1 sub vars es2 =
     | None -> None
     | Some (sub_acc, vars_leftover) -> exp_match e1 sub_acc vars_leftover e2 in
   Option.find_map
-    ~f:(fun es_combined -> IList.fold_left f (Some (sub, vars)) es_combined)
+    ~f:(fun es_combined -> List.fold ~f ~init:(Some (sub, vars)) es_combined)
     (List.zip es1 es2)
 
 (** Checks sexp1 = sexp2[sub ++ sub'] for some sub' with

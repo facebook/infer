@@ -97,10 +97,10 @@ let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
           ) methods in
       (* convert each of the framework lifecycle proc strings to a lifecycle method procname *)
       let lifecycle_procs =
-        IList.fold_left (fun lifecycle_procs lifecycle_proc_str ->
+        List.fold ~f:(fun lifecycle_procs lifecycle_proc_str ->
             try (lookup_proc lifecycle_proc_str) :: lifecycle_procs
             with Not_found -> lifecycle_procs)
-          [] lifecycle_proc_strs in
+          ~init:[] lifecycle_proc_strs in
       lifecycle_procs
   | _ -> []
 

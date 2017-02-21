@@ -217,7 +217,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             end
         | None ->
             access_tree_acc in
-      let access_tree' = IList.fold_left add_sink_to_actual access_tree sinks in
+      let access_tree' = List.fold ~f:add_sink_to_actual ~init:access_tree sinks in
       { astate with Domain.access_tree = access_tree'; }
 
     let apply_summary
@@ -376,7 +376,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               let initial_trace =
                 access_path_get_trace access_path astate.access_tree proc_data callee_loc in
               let trace_with_propagation =
-                IList.fold_left exp_join_traces initial_trace actuals in
+                List.fold ~f:exp_join_traces ~init:initial_trace actuals in
               let access_tree =
                 TaintDomain.add_trace access_path trace_with_propagation astate.access_tree in
               { astate with access_tree; } in
@@ -407,7 +407,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 (Option.map ~f:snd ret)
                 actuals
                 proc_data.tenv in
-            IList.fold_left handle_unknown_call_ astate propagations in
+            List.fold ~f:handle_unknown_call_ ~init:astate propagations in
 
           let analyze_call astate_acc callee_pname =
             let call_site = CallSite.make callee_pname callee_loc in
@@ -459,7 +459,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 [called_pname]
               end in
           (* for each possible target of the call, apply the summary. join all results together *)
-          IList.fold_left analyze_call Domain.empty targets
+          List.fold ~f:analyze_call ~init:Domain.empty targets
       | Sil.Call _ ->
           failwith "Unimp: non-pname call expressions"
       | Sil.Nullify (pvar, _) ->
@@ -467,9 +467,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           { astate with id_map; }
       | Sil.Remove_temps (ids, _) ->
           let id_map =
-            IList.fold_left
-              (fun acc id -> IdMapDomain.remove (Var.of_id id) acc)
-              astate.id_map
+            List.fold
+              ~f:(fun acc id -> IdMapDomain.remove (Var.of_id id) acc)
+              ~init:astate.id_map
               ids in
           { astate with id_map; }
       | Sil.Prune _ | Abstract _ | Declare_locals _ ->
@@ -500,14 +500,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let make_initial pdesc =
       let pname = Procdesc.get_proc_name pdesc in
       let access_tree =
-        IList.fold_left (fun acc (name, typ, taint_opt) ->
+        List.fold ~f:(fun acc (name, typ, taint_opt) ->
             match taint_opt with
             | Some source ->
                 let base_ap = AccessPath.Exact (AccessPath.of_pvar (Pvar.mk name pname) typ) in
                 TaintDomain.add_trace base_ap (TraceDomain.of_source source) acc
             | None ->
                 acc)
-          TaintDomain.empty
+          ~init:TaintDomain.empty
           (TraceDomain.Source.get_tainted_formals pdesc tenv) in
       if TaintDomain.BaseMap.is_empty access_tree
       then Domain.empty

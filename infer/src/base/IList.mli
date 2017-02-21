@@ -10,20 +10,12 @@
 (** Remove all None elements from the list. *)
 val flatten_options : ('a option) list -> 'a list
 
-val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b list -> 'a
-val fold_left2 : ('a -> 'b -> 'c -> 'a) -> 'a -> 'b list -> 'c list -> 'a
 val for_all : ('a -> bool) -> 'a list -> bool
 val for_all2 : ('a -> 'b -> bool) -> 'a list -> 'b list -> bool
 val iter : ('a -> unit) -> 'a list -> unit
 val iter2 : ('a -> 'b -> unit) -> 'a list -> 'b list -> unit
 val iteri : (int -> 'a -> unit) -> 'a list -> unit
 val length : 'a list -> int
-
-(** tail-recursive variant of List.fold_right *)
-val fold_right : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b
-
-(** fold_left with indices *)
-val fold_lefti : ('a -> int -> 'b -> 'a) -> 'a -> 'b list -> 'a
 
 (** tail-recursive variant of List.map *)
 val map : ('a -> 'b) -> 'a list -> 'b list

@@ -150,12 +150,12 @@ let iterate_callbacks store_summary call_graph exe_env =
         "unknown" in
   let cluster proc_names =
     let cluster_map =
-      IList.fold_left
-        (fun map proc_name ->
-           let proc_cluster = cluster_id proc_name in
-           let bucket = try String.Map.find_exn map proc_cluster with Not_found -> [] in
-           String.Map.add ~key:proc_cluster ~data:(proc_name:: bucket) map)
-        String.Map.empty
+      List.fold
+        ~f:(fun map proc_name ->
+            let proc_cluster = cluster_id proc_name in
+            let bucket = try String.Map.find_exn map proc_cluster with Not_found -> [] in
+            String.Map.add ~key:proc_cluster ~data:(proc_name:: bucket) map)
+        ~init:String.Map.empty
         proc_names in
     (* Return all values of the map *)
     String.Map.data cluster_map in

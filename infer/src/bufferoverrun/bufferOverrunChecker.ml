@@ -161,7 +161,7 @@ struct
       | Typ.Tstruct typename ->
           (match Tenv.lookup tenv typename with
            | Some str ->
-               IList.fold_left decl_fld (mem, sym_num + 6) str.StructTyp.fields
+               List.fold ~f:decl_fld ~init:(mem, sym_num + 6) str.StructTyp.fields
            | _ -> (mem, sym_num + 6))
       | _ -> (mem, sym_num + 6)
 
@@ -183,7 +183,7 @@ struct
             (mem, inst_num + 1, sym_num)
         | _ -> (mem, inst_num, sym_num) (* TODO: add other cases if necessary *)
       in
-      IList.fold_left add_formal (mem, inst_num, 0) (Sem.get_formals pdesc)
+      List.fold ~f:add_formal ~init:(mem, inst_num, 0) (Sem.get_formals pdesc)
       |> fst3
 
   let instantiate_ret
@@ -260,7 +260,7 @@ struct
                  handle_unknown_call pname ret callee_pname params node mem loc)
         | Declare_locals (locals, _) ->
             (* array allocation in stack e.g., int arr[10] *)
-            let (mem, inst_num) = IList.fold_left try_decl_arr (mem, 1) locals in
+            let (mem, inst_num) = List.fold ~f:try_decl_arr ~init:(mem, 1) locals in
             declare_symbolic_parameter pdesc tenv node inst_num mem
         | Call _
         | Remove_temps _
@@ -373,7 +373,7 @@ struct
     : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.t
       -> Dom.ConditionSet.t -> Dom.ConditionSet.t
     = fun pdata node instrs mem cond_set ->
-      IList.fold_left (collect_instr pdata node) (cond_set, mem) instrs
+      List.fold ~f:(collect_instr pdata node) ~init:(cond_set, mem) instrs
       |> fst
 
   let collect_node

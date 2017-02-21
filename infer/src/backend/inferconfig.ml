@@ -118,14 +118,14 @@ module FileOrProcMatcher = struct
       default_matcher
     else
       let pattern_map =
-        IList.fold_left
-          (fun map pattern ->
-             let previous =
-               try
-                 String.Map.find_exn map pattern.class_name
-               with Not_found -> [] in
-             String.Map.add ~key:pattern.class_name ~data:(pattern :: previous) map)
-          String.Map.empty
+        List.fold
+          ~f:(fun map pattern ->
+              let previous =
+                try
+                  String.Map.find_exn map pattern.class_name
+                with Not_found -> [] in
+              String.Map.add ~key:pattern.class_name ~data:(pattern :: previous) map)
+          ~init:String.Map.empty
           m_patterns in
       let do_java pname_java =
         let class_name = Procname.java_get_class_name pname_java
@@ -152,7 +152,7 @@ module FileOrProcMatcher = struct
       let collect (s_patterns, m_patterns) = function
         | Source_contains (_, s) -> (s:: s_patterns, m_patterns)
         | Method_pattern (_, mp) -> (s_patterns, mp :: m_patterns) in
-      IList.fold_left collect ([], []) patterns in
+      List.fold ~f:collect ~init:([], []) patterns in
     let s_matcher =
       let matcher = FileContainsStringMatcher.create_matcher s_patterns in
       fun source_file _ -> matcher source_file
@@ -253,7 +253,7 @@ let patterns_of_json_with_key (json_key, json) =
       let collect accu = function
         | `String s -> s:: accu
         | _ -> failwith ("Unrecognised parameters in " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      IList.rev (IList.fold_left collect [] l) in
+      IList.rev (List.fold ~f:collect ~init:[] l) in
     let create_method_pattern assoc =
       let loop mp = function
         | (key, `String s) when String.equal key "class" ->
@@ -264,13 +264,13 @@ let patterns_of_json_with_key (json_key, json) =
             { mp with parameters = Some (collect_params l) }
         | (key, _) when String.equal key "language" -> mp
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      IList.fold_left loop default_method_pattern assoc
+      List.fold ~f:loop ~init:default_method_pattern assoc
     and create_string_contains assoc =
       let loop sc = function
         | (key, `String pattern) when String.equal key "source_contains" -> pattern
         | (key, _) when String.equal key "language" -> sc
         | _ -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      IList.fold_left loop default_source_contains assoc in
+      List.fold ~f:loop ~init:default_source_contains assoc in
     match detect_pattern assoc with
     | Ok (Method_pattern (language, _)) ->
         Ok (Method_pattern (language, create_method_pattern assoc))
@@ -293,7 +293,7 @@ let patterns_of_json_with_key (json_key, json) =
             warn_user msg;
             accu)
     | `List l ->
-        IList.fold_left translate accu l
+        List.fold ~f:translate ~init:accu l
     | json ->
         warn_user (Printf.sprintf "expected list or assoc json type, but got value %s"
                      (Yojson.Basic.to_string json));
@@ -369,9 +369,10 @@ let test () =
       (fun (name, analyzer) -> (name, analyzer, create_filters analyzer))
       Config.string_to_analyzer in
   let matching_analyzers path =
-    IList.fold_left
-      (fun l (n, a, f) -> if f.path_filter path then (n,a) :: l else l)
-      [] filters in
+    List.fold
+      ~f:(fun l (n, a, f) -> if f.path_filter path then (n,a) :: l else l)
+      ~init:[]
+      filters in
   Utils.directory_iter
     (fun path ->
        if DB.is_source_file path then

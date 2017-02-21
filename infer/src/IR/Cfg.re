@@ -51,9 +51,9 @@ let iter_all_nodes sorted::sorted=false f cfg => {
     Procname.Hash.fold
       (
         fun _ pdesc desc_nodes =>
-          IList.fold_left
-            (fun desc_nodes node => [(pdesc, node), ...desc_nodes])
-            desc_nodes
+          List.fold
+            f::(fun desc_nodes node => [(pdesc, node), ...desc_nodes])
+            init::desc_nodes
             (Procdesc.get_nodes pdesc)
       )
       cfg.proc_desc_table
@@ -434,7 +434,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
   let rec convert_node node => {
     let loc = Procdesc.Node.get_loc node
     and kind = convert_node_kind (Procdesc.Node.get_kind node)
-    and instrs = IList.fold_left convert_instr [] (Procdesc.Node.get_instrs node) |> IList.rev;
+    and instrs = List.fold f::convert_instr init::[] (Procdesc.Node.get_instrs node) |> IList.rev;
     Procdesc.create_node resolved_pdesc loc kind instrs
   }
   and loop callee_nodes =>
@@ -471,8 +471,8 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
 let specialize_types callee_pdesc resolved_pname args => {
   let callee_attributes = Procdesc.get_attributes callee_pdesc;
   let (resolved_params, substitutions) =
-    IList.fold_left2
-      (
+    List.fold2_exn
+      f::(
         fun (params, subts) (param_name, param_typ) (_, arg_typ) =>
           switch arg_typ {
           | Typ.Tptr (Tstruct typename) Pk_pointer =>
@@ -481,7 +481,7 @@ let specialize_types callee_pdesc resolved_pname args => {
           | _ => ([(param_name, param_typ), ...params], subts)
           }
       )
-      ([], Mangled.Map.empty)
+      init::([], Mangled.Map.empty)
       callee_attributes.formals
       args;
   let resolved_attributes = {

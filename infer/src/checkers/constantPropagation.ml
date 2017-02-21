@@ -117,9 +117,9 @@ module ConstantFlow = Dataflow.MakeDF(struct
             (Procdesc.Node.get_instrs node)
         end;
       let constants =
-        IList.fold_left
-          do_instr
-          constants
+        List.fold
+          ~f:do_instr
+          ~init:constants
           (Procdesc.Node.get_instrs node) in
       if verbose then L.stdout "%a\n@." pp constants;
       [constants], [constants]

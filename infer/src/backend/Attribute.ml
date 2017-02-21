@@ -82,7 +82,7 @@ let get_for_exp tenv (prop: 'a Prop.t) exp =
     | Sil.Apred (_, es) | Anpred (_, es)
       when List.mem ~equal:Exp.equal es nexp -> atom :: attributes
     | _ -> attributes in
-  IList.fold_left atom_get_attr [] prop.pi
+  List.fold ~f:atom_get_attr ~init:[] prop.pi
 
 let get tenv prop exp category =
   let atts = get_for_exp tenv prop exp in
@@ -204,7 +204,7 @@ let mark_vars_as_undefined tenv prop vars_to_mark callee_pname ret_annots loc pa
     match exp with
     | Exp.Var _ | Lvar _ -> add_or_replace tenv prop (Apred (att_undef, [exp]))
     | _ -> prop in
-  IList.fold_left (fun prop id -> mark_var_as_undefined id prop) prop vars_to_mark
+  List.fold ~f:(fun prop id -> mark_var_as_undefined id prop) ~init:prop vars_to_mark
 
 (** type for arithmetic problems *)
 type arith_problem =
@@ -291,14 +291,14 @@ let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
         end in
     IList.iter do_var !fresh_address_vars;
     !res in
-  !stack_vars_address_in_post, IList.fold_left (Prop.prop_atom_and tenv) p'' pi
+  !stack_vars_address_in_post, List.fold ~f:(Prop.prop_atom_and tenv) ~init:p'' pi
 
 (** Input of this method is an exp in a prop. Output is a formal variable or path from a
     formal variable that is equal to the expression,
     or the OBJC_NULL attribute of the expression. *)
 let find_equal_formal_path tenv e prop =
   let rec find_in_sigma e seen_hpreds =
-    IList.fold_right (
+    List.fold_right ~f:(
       fun hpred res ->
         if List.mem ~equal:Sil.equal_hpred seen_hpreds hpred then None
         else
@@ -312,7 +312,7 @@ let find_equal_formal_path tenv e prop =
                      (Pvar.is_local pvar1 || Pvar.is_seed pvar1) ->
                   Some (Exp.Lvar pvar1)
               | Sil.Hpointsto (exp1, Sil.Estruct (fields, _), _) ->
-                  IList.fold_right (fun (field, strexp) res ->
+                  List.fold_right ~f:(fun (field, strexp) res ->
                       match res with
                       | Some _ -> res
                       | None ->
@@ -321,8 +321,8 @@ let find_equal_formal_path tenv e prop =
                               (match find_in_sigma exp1 seen_hpreds with
                                | Some vfs -> Some (Exp.Lfield (vfs, field, Typ.Tvoid))
                                | None -> None)
-                          | _ -> None) fields None
-              | _ -> None) prop.Prop.sigma None in
+                          | _ -> None) fields ~init:None
+              | _ -> None) prop.Prop.sigma ~init:None in
   match find_in_sigma e [] with
   | Some vfs -> Some vfs
   | None ->

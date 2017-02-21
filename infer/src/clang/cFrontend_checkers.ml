@@ -99,4 +99,4 @@ let cxx_ref_captured_in_block an =
     | _ -> [] in
   let var_desc vars var_named_decl_info =
     vars ^ "'" ^ var_named_decl_info.ni_name ^ "'" in
-  IList.fold_left var_desc "" capt_refs
+  List.fold ~f:var_desc ~init:"" capt_refs

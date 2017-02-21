@@ -30,7 +30,7 @@ let modified_targets = ref String.Set.empty
 let modified_file file =
   match Utils.read_file file with
   | Some targets ->
-      modified_targets := IList.fold_left String.Set.add String.Set.empty targets
+      modified_targets := List.fold ~f:String.Set.add ~init:String.Set.empty targets
   | None ->
       ()
 

@@ -336,7 +336,7 @@ let accepts_sensitive_params callee_pname callee_attrs_opt =
         else if Annotations.ia_is_privacy_sink attr
         then (index, PredSymb.Tk_privacy_annotation) :: acc
         else acc in
-      IList.fold_left tag_tainted_indices [] indices_and_annots
+      List.fold ~f:tag_tainted_indices ~init:[] indices_and_annots
   | Some (taint_info, tainted_param_indices) ->
       IList.map (fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
 
@@ -364,17 +364,18 @@ let get_params_to_taint tainted_param_nums formal_params =
     | Some (_, taint_kind) -> (param, taint_kind) :: params_to_taint_acc
     | None -> params_to_taint_acc in
   let numbered_params = IList.mapi (fun i param -> (i, param)) formal_params in
-  IList.fold_left collect_params_to_taint [] numbered_params
+  List.fold ~f:collect_params_to_taint ~init:[] numbered_params
 
 (* add tainting attribute to a pvar in a prop *)
 let add_tainting_attribute tenv att pvar_param prop =
-  IList.fold_left
-    (fun prop_acc hpred ->
-       match hpred with
-       | Sil.Hpointsto (Exp.Lvar pvar, (Sil.Eexp (rhs, _)), _)
-         when Pvar.equal pvar pvar_param ->
-           L.d_strln ("TAINT ANALYSIS: setting taint/untaint attribute of parameter " ^
-                      (Pvar.to_string pvar));
-           Attribute.add_or_replace tenv prop_acc (Apred (att, [rhs]))
-       | _ -> prop_acc)
-    prop prop.Prop.sigma
+  List.fold
+    ~f:(fun prop_acc hpred ->
+        match hpred with
+        | Sil.Hpointsto (Exp.Lvar pvar, (Sil.Eexp (rhs, _)), _)
+          when Pvar.equal pvar pvar_param ->
+            L.d_strln ("TAINT ANALYSIS: setting taint/untaint attribute of parameter " ^
+                       (Pvar.to_string pvar));
+            Attribute.add_or_replace tenv prop_acc (Apred (att, [rhs]))
+        | _ -> prop_acc)
+    ~init:prop
+    prop.Prop.sigma

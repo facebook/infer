@@ -484,7 +484,7 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
               ((fld, Sil.Eexp (Exp.one, inst)) :: flds, None)
             else
               ((fld, create_strexp_of_type tenv struct_init_mode t len inst) :: flds, None) in
-          let flds, _ = IList.fold_right f fields ([], len) in
+          let flds, _ = List.fold_right ~f fields ~init:([], len) in
           Estruct (flds, inst)
       | _ ->
           Estruct ([], inst)
@@ -593,19 +593,28 @@ let strexp_get_exps strexp =
     | Eexp (Exn e, _) -> Exp.Set.add e exps
     | Eexp (e, _) -> Exp.Set.add e exps
     | Estruct (flds, _) ->
-        IList.fold_left (fun exps (_, strexp) -> strexp_get_exps_rec exps strexp) exps flds
+        List.fold
+          ~f:(fun exps (_, strexp) -> strexp_get_exps_rec exps strexp)
+          ~init:exps
+          flds
     | Earray (_, elems, _) ->
-        IList.fold_left (fun exps (_, strexp) -> strexp_get_exps_rec exps strexp) exps elems in
+        List.fold
+          ~f:(fun exps (_, strexp) -> strexp_get_exps_rec exps strexp)
+          ~init:exps
+          elems in
   strexp_get_exps_rec Exp.Set.empty strexp
 
 (** get the set of expressions on the righthand side of [hpred] *)
 let hpred_get_targets (hpred : Sil.hpred) = match hpred with
   | Hpointsto (_, rhs, _) -> strexp_get_exps rhs
   | Hlseg (_, _, _, e, el) ->
-      IList.fold_left (fun exps e -> Exp.Set.add e exps) Exp.Set.empty (e :: el)
+      List.fold ~f:(fun exps e -> Exp.Set.add e exps) ~init:Exp.Set.empty (e :: el)
   | Hdllseg (_, _, _, oB, oF, iB, el) ->
       (* only one direction supported for now *)
-      IList.fold_left (fun exps e -> Exp.Set.add e exps) Exp.Set.empty (oB :: oF :: iB :: el)
+      List.fold
+        ~f:(fun exps e -> Exp.Set.add e exps)
+        ~init:Exp.Set.empty
+        (oB :: oF :: iB :: el)
 
 (** return the set of hpred's and exp's in [sigma] that are reachable from an expression in
     [exps] *)
@@ -617,7 +626,7 @@ let compute_reachable_hpreds sigma exps =
           let reach_exps = hpred_get_targets hpred in
           (reach', Exp.Set.union exps reach_exps)
       | _ -> reach, exps in
-    let reach', exps' = IList.fold_left add_hpred_if_reachable (reach, exps) sigma in
+    let reach', exps' = List.fold ~f:add_hpred_if_reachable ~init:(reach, exps) sigma in
     if Int.equal (Sil.HpredSet.cardinal reach) (Sil.HpredSet.cardinal reach') then (reach, exps)
     else compute_reachable_hpreds_rec sigma (reach', exps') in
   compute_reachable_hpreds_rec sigma (Sil.HpredSet.empty, exps)
@@ -1425,7 +1434,7 @@ module Normalize = struct
         | Aneq (Const (Cint n), e)
         | Aneq(e, Const (Cint n)) -> (e, n) :: acc
         | _ -> acc in
-      IList.fold_left get_disequality_info [] nonineq_list in
+      List.fold ~f:get_disequality_info ~init:[] nonineq_list in
     let is_neq e n =
       List.exists ~f:(fun (e', n') -> Exp.equal e e' && IntLit.eq n n') diseq_list in
     let le_list_tightened =
@@ -1438,7 +1447,7 @@ module Normalize = struct
         | (e, n):: le_list_todo -> (* e <= n *)
             if is_neq e n then le_tighten le_list_done ((e, n -- IntLit.one):: le_list_todo)
             else le_tighten ((e, n):: le_list_done) (le_list_todo) in
-      let le_list = IList.rev (IList.fold_left get_le_inequality_info [] ineq_list) in
+      let le_list = IList.rev (List.fold ~f:get_le_inequality_info ~init:[] ineq_list) in
       le_tighten [] le_list in
     let lt_list_tightened =
       let get_lt_inequality_info acc a =
@@ -1452,7 +1461,7 @@ module Normalize = struct
             if is_neq e n_plus_one
             then lt_tighten lt_list_done ((n ++ IntLit.one, e):: lt_list_todo)
             else lt_tighten ((n, e):: lt_list_done) (lt_list_todo) in
-      let lt_list = IList.rev (IList.fold_left get_lt_inequality_info [] ineq_list) in
+      let lt_list = IList.rev (List.fold ~f:get_lt_inequality_info ~init:[] ineq_list) in
       lt_tighten [] lt_list in
     let ineq_list' =
       let le_ineq_list =
@@ -1573,7 +1582,7 @@ module Normalize = struct
             let p' =
               unsafe_cast_to_normal
                 (set p ~sub:nsub' ~pi:npi' ~sigma:nsigma'') in
-            IList.fold_left (prop_atom_and tenv ~footprint) p' eqs_zero
+            List.fold ~f:(prop_atom_and tenv ~footprint) ~init:p' eqs_zero
         | Aeq (e1, e2) when Exp.equal e1 e2 ->
             p
         | Aneq (e1, e2) ->
@@ -1615,7 +1624,7 @@ module Normalize = struct
     let p0 =
       unsafe_cast_to_normal
         (set prop_emp ~sigma: (sigma_normalize tenv Sil.sub_empty eprop.sigma)) in
-    let nprop = IList.fold_left (prop_atom_and tenv) p0 (get_pure eprop) in
+    let nprop = List.fold ~f:(prop_atom_and tenv) ~init:p0 (get_pure eprop) in
     unsafe_cast_to_normal
       (footprint_normalize tenv (set nprop ~pi_fp:eprop.pi_fp ~sigma_fp:eprop.sigma_fp))
 
@@ -1841,11 +1850,11 @@ let rec strexp_get_array_indices acc (se : Sil.strexp) = match se with
       acc
   | Estruct (fsel, _) ->
       let se_list = IList.map snd fsel in
-      IList.fold_left strexp_get_array_indices acc se_list
+      List.fold ~f:strexp_get_array_indices ~init:acc se_list
   | Earray (_, isel, _) ->
-      let acc_new = IList.fold_left (fun acc' (idx, _) -> idx:: acc') acc isel in
+      let acc_new = List.fold ~f:(fun acc' (idx, _) -> idx:: acc') ~init:acc isel in
       let se_list = IList.map snd isel in
-      IList.fold_left strexp_get_array_indices acc_new se_list
+      List.fold ~f:strexp_get_array_indices ~init:acc_new se_list
 
 let hpred_get_array_indices acc (hpred : Sil.hpred) = match hpred with
   | Hpointsto (_, se, _) ->
@@ -1854,7 +1863,7 @@ let hpred_get_array_indices acc (hpred : Sil.hpred) = match hpred with
       acc
 
 let sigma_get_array_indices sigma =
-  let indices = IList.fold_left hpred_get_array_indices [] sigma in
+  let indices = List.fold ~f:hpred_get_array_indices ~init:[] sigma in
   IList.rev indices
 
 let compute_reindexing fav_add get_id_offset list =
@@ -1909,7 +1918,7 @@ let apply_reindexing tenv subst prop =
   let p' =
     unsafe_cast_to_normal
       (set prop ~sub:nsub ~pi:npi ~sigma:nsigma) in
-  IList.fold_left (Normalize.prop_atom_and tenv) p' atoms
+  List.fold ~f:(Normalize.prop_atom_and tenv) ~init:p' atoms
 
 let prop_rename_array_indices tenv prop =
   if !Config.footprint then prop
@@ -2234,9 +2243,10 @@ let prop_iter_to_prop tenv iter =
          ~sigma:sigma
          ~pi_fp:iter.pit_pi_fp
          ~sigma_fp:iter.pit_sigma_fp) in
-  IList.fold_left
-    (fun p (footprint, atom) -> Normalize.prop_atom_and tenv ~footprint: footprint p atom)
-    prop iter.pit_newpi
+  List.fold
+    ~f:(fun p (footprint, atom) -> Normalize.prop_atom_and tenv ~footprint: footprint p atom)
+    ~init:prop
+    iter.pit_newpi
 
 (** Add an atom to the pi part of prop iter. The
     first parameter records whether it is done
@@ -2265,9 +2275,10 @@ let prop_iter_current tenv iter =
     unsafe_cast_to_normal
       (set prop_emp ~sigma:[curr]) in
   let prop' =
-    IList.fold_left
-      (fun p (footprint, atom) -> Normalize.prop_atom_and tenv ~footprint: footprint p atom)
-      prop iter.pit_newpi in
+    List.fold
+      ~f:(fun p (footprint, atom) -> Normalize.prop_atom_and tenv ~footprint: footprint p atom)
+      ~init:prop
+      iter.pit_newpi in
   match prop'.sigma with
   | [curr'] -> (curr', iter.pit_state)
   | _ -> assert false
@@ -2465,8 +2476,8 @@ let prop_case_split tenv prop =
     let prop' =
       unsafe_cast_to_normal
         (set prop ~sigma:sigma') in
-    (IList.fold_left (Normalize.prop_atom_and tenv) prop' pi):: props_acc in
-  IList.fold_left f [] pi_sigma_list
+    (List.fold ~f:(Normalize.prop_atom_and tenv) ~init:prop' pi):: props_acc in
+  List.fold ~f ~init:[] pi_sigma_list
 
 let prop_expand prop =
   (*

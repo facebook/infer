@@ -77,7 +77,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
         with Not_found -> WorkUnit.make t.cfg node_to_schedule in
       let new_work = WorkUnit.add_visited_pred t.cfg old_work node_id in
       M.add id_to_schedule new_work worklist_acc in
-    let new_worklist = IList.fold_left schedule_succ t.worklist (CFG.succs t.cfg node) in
+    let new_worklist = List.fold ~f:schedule_succ ~init:t.worklist (CFG.succs t.cfg node) in
     { t with worklist = new_worklist; }
 
   (* remove and return the node with the highest priority (note that smaller integers have higher

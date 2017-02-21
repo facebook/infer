@@ -135,7 +135,7 @@ let aggregate_all_stats origin => {
   let stats_paths =
     switch origin {
     | Buck_out tf =>
-      IList.fold_left (fun acc (_, paths) => accumulate_paths acc paths) empty_stats_paths tf
+      List.fold f::(fun acc (_, paths) => accumulate_paths acc paths) init::empty_stats_paths tf
     | Infer_out paths => paths
     };
   {
@@ -152,7 +152,7 @@ let aggregate_stats_by_target tp => {
       | Some v => [(t, v), ...acc]
       | None => acc
       };
-    let l = IList.fold_left (fun acc (t, p) => collect_valid_stats acc t (f p)) [] aggr_stats;
+    let l = List.fold f::(fun acc (t, p) => collect_valid_stats acc t (f p)) init::[] aggr_stats;
     switch l {
     | [] => None
     | _ as v => Some (`Assoc v)

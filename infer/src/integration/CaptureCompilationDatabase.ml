@@ -114,7 +114,7 @@ let get_compilation_database_files_buck () =
                (String.concat ~sep:"\n" lines);
              let scan_output compilation_database_files chan =
                Scanf.sscanf chan "%s %s" (fun _ file -> `Raw file::compilation_database_files) in
-             IList.fold_left scan_output [] lines
+             List.fold ~f:scan_output ~init:[] lines
        with Unix.Unix_error (err, _, _) ->
          Process.print_error_and_exit
            "Cannot execute %s\n%!"

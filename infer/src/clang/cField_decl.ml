@@ -98,4 +98,4 @@ let modelled_field class_name_info =
       let name = CGeneral_utils.mk_class_field_name field_name_qualified in
       (name, typ, Annot.Item.empty) :: res
     else res in
-  IList.fold_left modelled_field_in_class [] modelled_fields_in_classes
+  List.fold ~f:modelled_field_in_class ~init:[] modelled_fields_in_classes

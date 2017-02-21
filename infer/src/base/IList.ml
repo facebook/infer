@@ -9,7 +9,6 @@
 
 let exists = List.exists
 let fold_left = List.fold_left
-let fold_left2 = List.fold_left2
 let for_all = List.for_all
 let for_all2 = List.for_all2
 let iter = List.iter
@@ -28,16 +27,6 @@ let rec last = function
   | [] -> None
   | [x] -> Some x
   | _ :: xs -> last xs
-
-(** tail-recursive variant of List.fold_right *)
-let fold_right f l a =
-  let g x y = f y x in
-  fold_left g a (rev l)
-
-(** fold_left with indices *)
-let fold_lefti (f : 'a -> int -> 'b -> 'a) a l =
-  fold_left (fun (i, acc) e -> i +1, f acc i e) (0, a) l
-  |> snd
 
 let flatten_options list =
   fold_left (fun list -> function | Some x -> x:: list | None -> list) [] list

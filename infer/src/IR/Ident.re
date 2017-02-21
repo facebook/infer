@@ -104,7 +104,8 @@ let module FieldMap = Caml.Map.Make {
   type t = fieldname [@@deriving compare];
 };
 
-let idlist_to_idset ids => IList.fold_left (fun set id => IdentSet.add id set) IdentSet.empty ids;
+let idlist_to_idset ids =>
+  List.fold f::(fun set id => IdentSet.add id set) init::IdentSet.empty ids;
 
 
 /** {2 Conversion between Names and Strings} */

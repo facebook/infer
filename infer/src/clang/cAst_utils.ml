@@ -60,7 +60,7 @@ let fold_qual_name qual_name_list =
   match qual_name_list with
   | [] -> ""
   | name :: quals ->
-      let s = (IList.fold_right (fun el res -> res ^ el ^ "::") quals "") ^ name in
+      let s = (List.fold_right ~f:(fun el res -> res ^ el ^ "::") quals ~init:"") ^ name in
       let no_slash_space = Str.global_replace (Str.regexp "[/ ]") "_" s in
       no_slash_space
 

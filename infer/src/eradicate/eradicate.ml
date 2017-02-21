@@ -78,7 +78,10 @@ struct
       TypeState.add pvar (typ, ta, []) typestate in
     let get_initial_typestate () =
       let typestate_empty = TypeState.empty Extension.ext in
-      IList.fold_left add_formal typestate_empty annotated_signature.AnnotatedSignature.params in
+      List.fold
+        ~f:add_formal
+        ~init:typestate_empty
+        annotated_signature.AnnotatedSignature.params in
 
     (* Check the nullable flag computed for the return value and report inconsistencies. *)
     let check_return find_canonical_duplicate exit_node final_typestate ret_ia ret_type loc : unit =

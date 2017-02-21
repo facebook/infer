@@ -238,7 +238,7 @@ let check_redundancies tenv c l => {
       };
     (l, add && should_add)
   };
-  IList.fold_left aux ([], true) l
+  List.fold f::aux init::([], true) l
 };
 
 let rec updates_head f c l =>

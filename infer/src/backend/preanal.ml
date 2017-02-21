@@ -274,20 +274,20 @@ let do_copy_propagation pdesc tenv =
 
   (* perform copy-propagation on each instruction in [node] *)
   let rev_transform_node_instrs node =
-    IList.fold_left
-      (fun (instrs, changed) (instr, id_opt) ->
-         match id_opt with
-         | Some id ->
-             begin
-               match CopyProp.extract_pre id copy_prop_inv_map with
-               | Some pre when not (CopyPropagation.Domain.is_empty pre) ->
-                   let instr' = Sil.instr_sub_ids ~sub_id_binders:false (id_sub pre) instr in
-                   instr' :: instrs, changed || not (phys_equal instr' instr)
-               | _ ->
-                   instr :: instrs, changed
-             end
-         | None -> instr :: instrs, changed)
-      ([], false)
+    List.fold
+      ~f:(fun (instrs, changed) (instr, id_opt) ->
+          match id_opt with
+          | Some id ->
+              begin
+                match CopyProp.extract_pre id copy_prop_inv_map with
+                | Some pre when not (CopyPropagation.Domain.is_empty pre) ->
+                    let instr' = Sil.instr_sub_ids ~sub_id_binders:false (id_sub pre) instr in
+                    instr' :: instrs, changed || not (phys_equal instr' instr)
+                | _ ->
+                    instr :: instrs, changed
+              end
+          | None -> instr :: instrs, changed)
+      ~init:([], false)
       (ExceptionalOneInstrPerNodeCfg.instr_ids node) in
 
   IList.iter

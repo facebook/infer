@@ -43,4 +43,4 @@ let get_methods curr_class decl_list =
           CGeneral_utils.mk_procname_from_objc_method class_name method_name method_kind in
         meth_name:: list_methods
     | _ -> list_methods in
-  IList.fold_right get_method decl_list []
+  List.fold_right ~f:get_method decl_list ~init:[]

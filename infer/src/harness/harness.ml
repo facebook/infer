@@ -22,13 +22,13 @@ let try_create_lifecycle_trace name lifecycle_name lifecycle_procs tenv =
       if PatternMatch.is_subtype tenv name lifecycle_name &&
          not (AndroidFramework.is_android_lib_class name) then
         let ptr_to_struct_typ = Some (Typ.Tptr (Tstruct name, Pk_pointer)) in
-        IList.fold_left
-          (fun trace lifecycle_proc ->
-             (* given a lifecycle subclass T, resolve the call T.lifecycle_proc() to the procname
-              * that will actually be called at runtime *)
-             let resolved_proc = SymExec.resolve_method tenv name lifecycle_proc in
-             (resolved_proc, ptr_to_struct_typ) :: trace)
-          []
+        List.fold
+          ~f:(fun trace lifecycle_proc ->
+              (* given a lifecycle subclass T, resolve the call T.lifecycle_proc() to the procname
+               * that will actually be called at runtime *)
+              let resolved_proc = SymExec.resolve_method tenv name lifecycle_proc in
+              (resolved_proc, ptr_to_struct_typ) :: trace)
+          ~init:[]
           lifecycle_procs
       else
         []

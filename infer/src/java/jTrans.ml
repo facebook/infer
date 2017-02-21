@@ -133,7 +133,7 @@ let formals_from_signature program tenv cn ms kind =
   let init_arg_list = match kind with
     | Procname.Static -> []
     | Procname.Non_Static -> [(JConfig.this, JTransType.get_class_type program tenv cn)] in
-  IList.rev (IList.fold_left collect init_arg_list (JBasics.ms_args ms))
+  IList.rev (List.fold ~f:collect ~init:init_arg_list (JBasics.ms_args ms))
 
 (** Creates the list of formal variables from a procedure based on ... *)
 let translate_formals program tenv cn impl =
@@ -141,15 +141,15 @@ let translate_formals program tenv cn impl =
     let name = Mangled.from_string (JBir.var_name_g var) in
     let typ = JTransType.param_type program tenv cn var vt in
     (name, typ):: l in
-  IList.rev (IList.fold_left collect [] (JBir.params impl))
+  IList.rev (List.fold ~f:collect ~init:[] (JBir.params impl))
 
 (** Creates the list of local variables from the bytecode and add the variables from
     the JBir representation *)
 let translate_locals program tenv formals bytecode jbir_code =
   let formal_set =
-    IList.fold_left
-      (fun set (var, _) -> Mangled.Set.add var set)
-      Mangled.Set.empty
+    List.fold
+      ~f:(fun set (var, _) -> Mangled.Set.add var set)
+      ~init:Mangled.Set.empty
       formals in
   let collect (seen_vars, l) (var, typ) =
     if Mangled.Set.mem var seen_vars then
@@ -162,12 +162,12 @@ let translate_locals program tenv formals bytecode jbir_code =
     match bytecode.JCode.c_local_variable_table with
     | None -> init
     | Some variable_table ->
-        IList.fold_left
-          (fun accu (_, _, var_name, var_type, _) ->
-             let var = Mangled.from_string var_name
-             and typ = JTransType.value_type program tenv var_type in
-             collect accu (var, typ))
-          init
+        List.fold
+          ~f:(fun accu (_, _, var_name, var_type, _) ->
+              let var = Mangled.from_string var_name
+              and typ = JTransType.value_type program tenv var_type in
+              collect accu (var, typ))
+          ~init
           variable_table in
   (* TODO (#4040807): Needs to add the JBir temporary variables since other parts of the
      code are still relying on those *)
@@ -555,11 +555,11 @@ let method_invocation
           | _ -> [] in
         (instrs, [(sil_obj_expr, sil_obj_type)]) in
   let (instrs, call_args) =
-    IList.fold_left
-      (fun (instrs_accu, args_accu) expr ->
-         let (instrs, sil_expr, sil_expr_type) = expression context pc expr in
-         (instrs_accu @ instrs, args_accu @ [(sil_expr, sil_expr_type)]))
-      init
+    List.fold
+      ~f:(fun (instrs_accu, args_accu) expr ->
+          let (instrs, sil_expr, sil_expr_type) = expression context pc expr in
+          (instrs_accu @ instrs, args_accu @ [(sil_expr, sil_expr_type)]))
+      ~init
       expr_list in
   let callee_procname =
     let proc = Procname.from_string_c_fun (JBasics.ms_name ms) in
@@ -619,11 +619,11 @@ let get_array_length context pc expr_list content_type =
     match other_instrs with
     | (other_instrs, other_exprs) ->
         (instrs @ other_instrs, sil_len_expr :: other_exprs) in
-  let (instrs, sil_len_exprs) = (IList.fold_right get_expr_instr expr_list ([],[])) in
+  let (instrs, sil_len_exprs) = List.fold_right ~f:get_expr_instr expr_list ~init:([],[]) in
   let get_array_type_len sil_len_expr (content_type, _) =
     (Typ.Tarray (content_type, None), Some sil_len_expr) in
   let array_type, array_len =
-    IList.fold_right get_array_type_len sil_len_exprs (content_type, None) in
+    List.fold_right ~f:get_array_type_len sil_len_exprs ~init:(content_type, None) in
   let array_size = Exp.Sizeof (array_type, array_len, Subtype.exact) in
   (instrs, array_size)
 
