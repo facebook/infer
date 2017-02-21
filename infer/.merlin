@@ -4,7 +4,7 @@ PKG atdgen
 PKG core
 PKG ctypes
 PKG javalib
-PKG ounit
+PKG oUnit
 PKG ppx_compare
 PKG ptrees
 PKG sawja
