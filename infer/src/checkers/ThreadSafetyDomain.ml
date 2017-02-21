@@ -11,7 +11,7 @@ open! IStd
 
 module F = Format
 
-module AccessPathSetDomain = AbstractDomain.InvertedSet(AccessPath.RawSet)
+module AccessPathSetDomain = AbstractDomain.InvertedSet(AccessPath.UntypedRawSet)
 
 module TraceElem = struct
   module Kind = AccessPath.Raw
@@ -74,7 +74,7 @@ end
 module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute.Set)
 
 module AttributeMapDomain = struct
-  include AbstractDomain.InvertedMap (AccessPath.RawMap) (AttributeSetDomain)
+  include AbstractDomain.InvertedMap (AccessPath.UntypedRawMap) (AttributeSetDomain)
 
   let has_attribute access_path attribute t =
     try
@@ -114,7 +114,7 @@ let empty =
   let conditional_writes = ConditionalWritesDomain.empty in
   let unconditional_writes = PathDomain.empty in
   let id_map = IdAccessPathMapDomain.empty in
-  let attribute_map = AccessPath.RawMap.empty in
+  let attribute_map = AccessPath.UntypedRawMap.empty in
   { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; }
 
 let (<=) ~lhs ~rhs =

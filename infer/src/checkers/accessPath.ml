@@ -19,6 +19,11 @@ type base = Var.t * _array_sensitive_typ [@@deriving compare]
 
 let equal_base = [%compare.equal : base]
 
+let compare_base_untyped (base_var1, _) (base_var2, _) =
+  if phys_equal base_var1 base_var2
+  then 0
+  else Var.compare base_var1 base_var2
+
 type access =
   | ArrayAccess of Typ.t
   | FieldAccess of Ident.fieldname
@@ -64,6 +69,22 @@ module Raw = struct
   let pp fmt = function
     | base, [] ->  pp_base fmt base
     | base, accesses ->  F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
+end
+
+module UntypedRaw = struct
+  type t = Raw.t
+
+  (* untyped comparison *)
+  let compare ((base1, accesses1) as raw1) ((base2, accesses2) as raw2) =
+    if phys_equal raw1 raw2
+    then
+      0
+    else
+      let n = compare_base_untyped base1 base2 in
+      if n <> 0 then n
+      else List.compare compare_access accesses1 accesses2
+
+  let pp = Raw.pp
 end
 
 type t =
@@ -183,3 +204,7 @@ module AccessMap = PrettyPrintable.MakePPMap(struct
 module RawSet = PrettyPrintable.MakePPSet(Raw)
 
 module RawMap = PrettyPrintable.MakePPMap(Raw)
+
+module UntypedRawSet = PrettyPrintable.MakePPSet(UntypedRaw)
+
+module UntypedRawMap = PrettyPrintable.MakePPMap(UntypedRaw)

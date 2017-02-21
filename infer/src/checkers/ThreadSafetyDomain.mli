@@ -11,7 +11,7 @@ open! IStd
 
 module F = Format
 
-module AccessPathSetDomain : module type of AbstractDomain.InvertedSet (AccessPath.RawSet)
+module AccessPathSetDomain : module type of AbstractDomain.InvertedSet (AccessPath.UntypedRawSet)
 
 module TraceElem : TraceElem.S with module Kind = AccessPath.Raw
 
@@ -47,7 +47,7 @@ end
 module AttributeSetDomain : module type of AbstractDomain.InvertedSet (Attribute.Set)
 
 module AttributeMapDomain : sig
-  include module type of AbstractDomain.InvertedMap (AccessPath.RawMap) (AttributeSetDomain)
+  include module type of AbstractDomain.InvertedMap (AccessPath.UntypedRawMap) (AttributeSetDomain)
 
   val has_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> bool
 
