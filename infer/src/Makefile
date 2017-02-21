@@ -150,7 +150,9 @@ DEPENDENCIES += java_stubs
 endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
 INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native
-DEPENDENCIES += clang
+DEPENDENCIES += clang unit/clang
+else
+DEPENDENCIES += unit/clang_stubs
 endif
 
 OCAML_BASE_SOURCES = \
@@ -158,9 +160,9 @@ OCAML_BASE_SOURCES = \
              $(DEPENDENCIES:=/[a-zA-Z]*.mll) $(DEPENDENCIES:=/[a-zA-Z]*.mly) \
              $(DEPENDENCIES:=/[a-zA-Z]*.re) $(DEPENDENCIES:=/[a-zA-Z]*.rei)) \
   $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
-OCAML_SOURCES = $(OCAML_BASE_SOURCES)
+OCAML_CONFIG_SOURCES = $(OCAML_BASE_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
-OCAML_SOURCES += $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+OCAML_CONFIG_SOURCES += $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 endif
 OCAML_ALL_SOURCES = $(OCAML_BASE_SOURCES) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 
@@ -171,7 +173,7 @@ all: infer
 
 # single out infer.native as the source of truth for make, knowing that in fact several targets are
 # produced by the build
-$(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(BUILD_DIR) $(OCAML_SOURCES) \
+$(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(BUILD_DIR) $(OCAML_CONFIG_SOURCES) \
                                          $(MAKEFILE_LIST)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(INFER_CONFIG_TARGETS)
 # let make know that the target is up-to-date even if ocamlbuild cached it
@@ -197,9 +199,9 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 infer: $(CLANG_BINIOU_DICT)
 endif
 
-$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES)
-	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
-	  $(INFER_ALL_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte
+$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_CONFIG_SOURCES)
+	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
+	  $(INFER_CONFIG_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte
 	@touch $@
 
 $(INFER_BIN).byte: $(INFER_BUILD_DIR)/$(INFER_MAIN).byte $(BIN_DIR)
@@ -228,11 +230,11 @@ module: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES)
           $(MFLAGS) \
 	  $(M)
 
-$(TEST_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES) \
+$(TEST_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_CONFIG_SOURCES) \
                                       toplevel.mlpack $(MAKEFILE_LIST)
-	$(OCAMLBUILD_ALL) -build-dir $(TEST_BUILD_DIR) \
+	$(OCAMLBUILD_CONFIG) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
-	  $(INFER_ALL_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte toplevel.cmo
+	  $(INFER_CONFIG_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte toplevel.cmo
 	@touch $@
 
 .PHONY: test_build
@@ -283,7 +285,7 @@ $(shell \
   | awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}')
 endef
 
-toplevel.mlpack: base/Version.ml $(OCAML_ALL_SOURCES) $(MAKEFILE_LIST)
+toplevel.mlpack: base/Version.ml $(OCAML_CONFIG_SOURCES) $(MAKEFILE_LIST)
 #	We need to pack all the infer modules into another module to avoid name clashes with some
 #	of them coming from ocaml libraries (Ident for example).  To do that, we generate a .mlpack
 #	file containing namespaced modules.
@@ -295,13 +297,13 @@ toplevel.mlpack: base/Version.ml $(OCAML_ALL_SOURCES) $(MAKEFILE_LIST)
 	$(foreach module,\
 	  $(filter-out $(foreach root,$(roots),%/$(root)),\
 	  $(foreach source,\
-	    $(filter-out unit/% facebook/scripts/eradicate_stats.ml,$(OCAML_ALL_SOURCES)),\
+	    $(filter-out unit/% facebook/scripts/eradicate_stats.ml,$(OCAML_CONFIG_SOURCES)),\
 	    $(call to_ocaml_module,$(source)))),\
 	  $(shell echo $(module) >> $($@_tmp)))
 	mv $($@_tmp) $@
 
 $(INFER_BUILD_DIR)/toplevel.cmo: toplevel.mlpack $(BUILD_DIR)
-	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) toplevel.cmo
+	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) toplevel.cmo
 	@touch $@
 
 .PHONY: toplevel

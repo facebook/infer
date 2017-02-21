@@ -29,7 +29,7 @@ BUILD_SYSTEMS_TESTS += \
   project_root_rel \
   reactive \
   run_hidden_linters \
-  utf8_in_procname utf8_in_pwd \
+  utf8_in_procname \
   waf \
 
 ifneq ($(CMAKE),no)
@@ -50,7 +50,7 @@ endif # XCODE_SELECT
 endif # BUILD_C_ANALYZERS
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-BUILD_SYSTEMS_TESTS += gradle javac
+BUILD_SYSTEMS_TESTS += gradle javac utf8_in_pwd
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
@@ -223,9 +223,15 @@ endtoend_test: print_direct_tests print_build_systems_tests
 
 .PHONY: inferTraceBugs_test
 inferTraceBugs_test: infer
+ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(INFER_BIN) -o __test-infer-out__ -- \
 	  javac $(EXAMPLES_DIR)/Hello.java \
 	   > /dev/null
+else
+	$(INFER_BIN) -o __test-infer-out__ -- \
+	  clang -c $(EXAMPLES_DIR)/hello.c \
+	   > /dev/null
+endif
 	@rm -f Hello.class
 	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
 	  --select 0 --max-level max > /dev/null
