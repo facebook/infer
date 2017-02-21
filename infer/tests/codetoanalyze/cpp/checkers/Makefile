@@ -22,7 +22,10 @@ SOURCES = \
   siof/siof.cpp \
   siof/siof_templated.cpp \
   siof/siof_different_tu.cpp \
+  siof/std_ios_base_init.cpp \
 
 HEADERS = siof/siof_types.h
 
 include $(TESTS_DIR)/clang.make
+
+infer-out/report.json: $(MAKEFILE_LIST)
