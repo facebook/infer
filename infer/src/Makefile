@@ -171,7 +171,8 @@ all: infer
 
 # single out infer.native as the source of truth for make, knowing that in fact several targets are
 # produced by the build
-$(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(BUILD_DIR) $(OCAML_SOURCES)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(BUILD_DIR) $(OCAML_SOURCES) \
+                                         $(MAKEFILE_LIST)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(INFER_CONFIG_TARGETS)
 # let make know that the target is up-to-date even if ocamlbuild cached it
 	@touch $@
@@ -227,7 +228,8 @@ module: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES)
           $(MFLAGS) \
 	  $(M)
 
-$(TEST_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES) toplevel.mlpack
+$(TEST_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(BUILD_DIR) $(OCAML_ALL_SOURCES) \
+                                      toplevel.mlpack $(MAKEFILE_LIST)
 	$(OCAMLBUILD_ALL) -build-dir $(TEST_BUILD_DIR) \
 	  -cflags -warn-error,$(OCAML_FATAL_WARNINGS) \
 	  $(INFER_ALL_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte toplevel.cmo
@@ -281,7 +283,7 @@ $(shell \
   | awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}')
 endef
 
-toplevel.mlpack: base/Version.ml $(OCAML_ALL_SOURCES)
+toplevel.mlpack: base/Version.ml $(OCAML_ALL_SOURCES) $(MAKEFILE_LIST)
 #	We need to pack all the infer modules into another module to avoid name clashes with some
 #	of them coming from ocaml libraries (Ident for example).  To do that, we generate a .mlpack
 #	file containing namespaced modules.
@@ -360,7 +362,7 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $@
 
-base/Version.ml: base/Version.ml.in Makefile $(ROOT_DIR)/Makefile.autoconf
+base/Version.ml: base/Version.ml.in $(MAKEFILE_LIST)
 	TMPFILE=$$(mktemp $@.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
 	INFER_GIT_BRANCH=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --abbrev-ref HEAD || printf "unknown"); \
@@ -375,7 +377,8 @@ base/Version.ml: base/Version.ml.in Makefile $(ROOT_DIR)/Makefile.autoconf
 	  -e "s|@BUILD_JAVA_ANALYZERS[@]|$(BUILD_JAVA_ANALYZERS)|g" \
 	  -e "s|@XCODE_SELECT[@]|$(XCODE_SELECT)|g" \
 	  $< > "$$TMPFILE"; \
-	mv "$$TMPFILE" $@
+	cat "$$TMPFILE" > $@; \
+	$(REMOVE) "$$TMPFILE"
 
 $(BUILD_DIR):
 	$(MKDIR_P) $(BUILD_DIR)

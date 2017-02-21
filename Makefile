@@ -79,8 +79,15 @@ endif
 .PHONY: all
 all: infer
 
+configure: configure.ac $(wildcard m4/*.m4)
+	./autogen.sh
+
+Makefile.autoconf: configure
+#	rerun ./configure with the flags that were used last time it was run (if available)
+	./configure $(shell cat config.flags 2> /dev/null || true)
+
 .PHONY: src_build
-src_build:
+src_build: $(MAKEFILE_LIST)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	@$(MAKE) -C facebook setup
 endif
