@@ -691,13 +691,41 @@ let call_constructor_url_update_args pname actual_params =
      | _ -> actual_params)
   else actual_params
 
+let receiver_self receiver prop =
+  List.exists ~f:(fun hpred ->
+      match hpred with
+      | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (e, _), _) ->
+          Exp.equal e receiver && Pvar.is_seed pv &&
+          Mangled.equal (Pvar.get_name pv) (Mangled.from_string "self")
+      | _ -> false) (prop.Prop.sigma)
+
+(* When current ObjC method is an initializer and the method call is also an initializer,
+   and the receiver is self, i.e. the call is [super init], then we want to assume that it
+   can return null, regardless of code or annotations, so that the next statement should be
+   a check for null, which is considered good practice.  *)
+let force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver =
+  let current_pname = Procdesc.get_proc_name pdesc in
+  if Procname.is_constructor callee_pname &&
+     receiver_self receiver pre &&
+     !Config.footprint && Procname.is_constructor current_pname then
+    match ret_id with
+    | Some (ret_id, _) ->
+        let propset = prune_ne tenv ~positive:false (Exp.Var ret_id) Exp.zero pre in
+        if Propset.is_empty propset then []
+        else
+          let prop = List.hd_exn (Propset.to_proplist propset) in
+          [(prop, path)]
+    | _ -> []
+  else []
+
 (* This method is used to handle the special semantics of ObjC instance method calls. *)
 (* res = [obj foo] *)
 (*  1. We know that obj is null, then we return null *)
 (*  2. We don't know, but obj could be null, we return both options, *)
 (* (obj = null, res = null), (obj != null, res = [obj foo]) *)
 (*  We want the same behavior even when we are going to skip the function. *)
-let handle_objc_instance_method_call_or_skip tenv actual_pars path callee_pname pre ret_id res =
+let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_pname pre
+    ret_id res =
   let path_description =
     "Message " ^
     (Procname.to_simplified_string callee_pname) ^
@@ -720,12 +748,11 @@ let handle_objc_instance_method_call_or_skip tenv actual_pars path callee_pname 
         match Attribute.find_equal_formal_path tenv receiver prop with
         | Some vfs ->
             Attribute.add_or_replace tenv prop (Apred (Aobjc_null, [Exp.Var ret_id; vfs]))
-        | None ->
-            Prop.conjoin_eq tenv (Exp.Var ret_id) Exp.zero prop
+        | None -> Prop.conjoin_eq tenv (Exp.Var ret_id) Exp.zero prop
       )
     | _ -> prop in
   if is_receiver_null then
-    (* objective-c instance method with a null receiver just return objc_null(res) *)
+    (* objective-c instance method with a null receiver just return objc_null(res). *)
     let path = Paths.Path.add_description path path_description in
     L.d_strln
       ("Object-C method " ^
@@ -737,18 +764,20 @@ let handle_objc_instance_method_call_or_skip tenv actual_pars path callee_pname 
        so that in a NPE we can separate it into a different error type *)
     [(add_objc_null_attribute_or_nullify_result pre, path)]
   else
-    let is_undef = Option.is_some (Attribute.get_undef tenv pre receiver) in
-    if !Config.footprint && not is_undef then
-      let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
-        let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
-        let propset = prune_ne tenv ~positive:false receiver Exp.zero pre_with_attr_or_null in
-        if Propset.is_empty propset then []
-        else
-          let prop = List.hd_exn (Propset.to_proplist propset) in
-          let path = Paths.Path.add_description path path_description in
-          [(prop, path)] in
-      res_null @ (res ())
-    else res () (* Not known if receiver = 0 and not footprint. Standard tabulation *)
+    match force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver with
+    | [] ->
+        if !Config.footprint && Option.is_none (Attribute.get_undef tenv pre receiver) then
+          let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
+            let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
+            let propset = prune_ne tenv ~positive:false receiver Exp.zero pre_with_attr_or_null in
+            if Propset.is_empty propset then []
+            else
+              let prop = List.hd_exn (Propset.to_proplist propset) in
+              let path = Paths.Path.add_description path path_description in
+              [(prop, path)] in
+          List.append res_null (res ())
+        else res () (* Not known if receiver = 0 and not footprint. Standard tabulation *)
+    | res_null -> List.append res_null (res ())
 
 (* This method handles ObjC instance method calls, in particular the fact that calling a method *)
 (* with nil returns nil. The exec_call function is either standard call execution or execution *)
@@ -756,7 +785,7 @@ let handle_objc_instance_method_call_or_skip tenv actual_pars path callee_pname 
 let handle_objc_instance_method_call actual_pars actual_params pre tenv ret_id pdesc callee_pname
     loc path exec_call =
   let res () = exec_call tenv ret_id pdesc callee_pname loc actual_params pre path in
-  handle_objc_instance_method_call_or_skip tenv actual_pars path callee_pname pre ret_id res
+  handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_pname pre ret_id res
 
 let normalize_params tenv pdesc prop actual_params =
   let norm_arg (p, args) (e, t) =
@@ -1012,7 +1041,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           proc_name= callee_pname; loc; } in
     if is_objc_instance_method then
       handle_objc_instance_method_call_or_skip
-        tenv actual_args path callee_pname prop ret_id skip_res
+        current_pdesc tenv actual_args path callee_pname prop ret_id skip_res
     else skip_res () in
   let call_args prop_ proc_name args ret_id loc = {
     Builtin.pdesc = current_pdesc; instr; tenv; prop_; path; ret_id; args; proc_name; loc; } in
