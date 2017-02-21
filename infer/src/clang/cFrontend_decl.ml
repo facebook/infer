@@ -137,21 +137,22 @@ struct
   let process_methods trans_unit_ctx tenv cg cfg curr_class decl_list =
     IList.iter (process_one_method_decl trans_unit_ctx tenv cg cfg curr_class) decl_list
 
-  let is_whitelisted_qual_name qual_name whitelist =
-    List.exists whitelist
-      ~f:(fun fuzzy_qualifiers -> Procname.fuzzy_qualifiers_equal ~fuzzy_qualifiers qual_name)
-
   (** Given REVERSED list of method qualifiers (method_name::class_name::rest_quals), return
       whether method should be translated based on method and class whitelists *)
   let is_whitelisted_cpp_method =
-    let method_whitelist =
-      List.map ~f:Procname.qualifiers_of_fuzzy_qual_name Config.whitelisted_cpp_methods in
-    let class_whitelist =
-      List.map ~f:Procname.qualifiers_of_fuzzy_qual_name Config.whitelisted_cpp_classes in
+    let method_matcher =
+      QualifiedCppName.quals_matcher_of_fuzzy_qual_names Config.whitelisted_cpp_methods in
+    let class_matcher =
+      QualifiedCppName.quals_matcher_of_fuzzy_qual_names Config.whitelisted_cpp_classes in
     fun qual_method_rev ->
-      (* method is either explictely whitelisted, or all method of a class are whitelisted *)
-      is_whitelisted_qual_name (List.rev qual_method_rev) method_whitelist ||
-      is_whitelisted_qual_name (List.tl_exn qual_method_rev |> List.rev) class_whitelist
+      (* either the method is explictely whitelisted, or the whole class is whitelisted *)
+      QualifiedCppName.match_qualifiers method_matcher (List.rev qual_method_rev) ||
+      match qual_method_rev with
+      | _::(_::_ as class_name_rev) ->
+          (* make sure the class name is not empty; in particular, it cannot be a C function *)
+          QualifiedCppName.match_qualifiers class_matcher (List.rev class_name_rev)
+      | _ ->
+          false
 
   let should_translate_decl trans_unit_ctx dec decl_trans_context =
     let info = Clang_ast_proj.get_decl_tuple dec in

@@ -276,37 +276,4 @@ let to_unique_id: t => string;
 /** Convert a proc name to a filename. */
 let to_filename: t => string;
 
-
-/** Return whether two qualified C++ procnames match up to namescapes and templating. In particular,
-     this deals with the following issues:
-
-     1. 'std::' namespace may have inline namespace afterwards: std::move becomes std::__1::move. This
-         happens on libc++ and to some extent on libstdc++. To work around this problem, make matching
-         against 'std::' more fuzzier: std::X::Y::Z will match std::.*::X::Y::Z (but only for the
-         'std' namespace).
-
-     2. The names are allowed not to commit to a template specialization: we want std::move to match
-        std::__1::move<const X&> and std::__1::move<int>. To do so, comparison function for qualifiers
-        will ignore template specializations.
-
-        For example:
-        ["std", "move"]:
-        matches: ["std", "blah", "blah<int>","move"]
-        does not match: ["std","blah", "move", "BAD"] - we don't want std::.*::X::.* to pass
-        does not match: ["stdBAD", "move"], - it's not std namespace anymore
-
-        ["folly", "someFunction"]
-        matches: ["folly","someFunction"]
-        matches: ["folly","someFunction<int>"]
-        matches: ["folly<int>","someFunction"]
-        does not match: ["folly", "BAD", "someFunction"] - unlike 'std' any other namespace needs all
-                                                           qualifiers to match
-        does not match: ["folly","someFunction<int>", "BAD"] - same as previous example
-    */
-let fuzzy_equal: fuzzy_qualifiers::list string => t => bool;
-
-let fuzzy_qualifiers_equal: fuzzy_qualifiers::list string => list string => bool;
-
-
-/** parse the argument into a list::of::qualifiers::without::templates */
-let qualifiers_of_fuzzy_qual_name: string => list string;
+let get_qualifiers: t => list string;

@@ -575,51 +575,11 @@ let module Set = Caml.Set.Make {
 /** Pretty print a set of proc names */
 let pp_set fmt set => Set.iter (fun pname => F.fprintf fmt "%a " pp pname) set;
 
-let fuzzy_qualifiers_equal fuzzy_qualifiers::fuzzy_qualifiers qualifiers => {
-  let qual_equal q1 q2 => {
-    /* qual_name may have qualifiers with template parameters -
-       drop them to whitelist all instantiations */
-    let no_template_name s => List.hd_exn (String.split on::'<' s);
-    String.equal (no_template_name q1) (no_template_name q2)
+let get_qualifiers pname =>
+  switch pname {
+  | C c => fst c |> QualifiedCppName.qualifiers_of_qual_name
+  | ObjC_Cpp objc_cpp =>
+    List.append
+      (QualifiedCppName.qualifiers_of_qual_name objc_cpp.class_name) [objc_cpp.method_name]
+  | _ => []
   };
-  let is_std_qual = String.equal "std";
-  switch fuzzy_qualifiers {
-  | [first, ...rest] when is_std_qual first =>
-    /* add special handling for std:: namespace to avoid problems with inconsistent
-       inline namespaces (such as __1 in libc++) */
-    List.hd qualifiers |> Option.value_map default::false f::is_std_qual &&
-    List.is_prefix (List.rev qualifiers) prefix::(List.rev rest) equal::qual_equal
-  | _ => List.equal equal::qual_equal fuzzy_qualifiers qualifiers
-  }
-};
-
-/* This is simplistic and will give the wrong answer in some cases, eg
-   "foo<bar::baz<goo>>::someMethod" will get parsed as ["foo<bar", "baz<goo>>",
-   "someMethod"]. Ideally, we would keep the list of qualifiers in the procname, which would save us
-   from having to properly parse them. */
-let qualifiers_of_qual_name = {
-  let class_sep_regex = Str.regexp_string "::";
-  /* wait until here to define the function so that [class_sep_regex] is only computed once */
-  Str.split class_sep_regex
-};
-
-let qualifiers_of_fuzzy_qual_name qual_name => {
-  /* Fail if we detect templates in the fuzzy name. Template instantiations are not taken into
-     account when fuzzy matching, and templates may produce wrong results when parsing qualified
-     names. */
-  if (String.contains qual_name '<') {
-    failwithf "Unexpected template in fuzzy qualified name %s." qual_name
-  };
-  qualifiers_of_qual_name qual_name
-};
-
-let fuzzy_equal fuzzy_qualifiers::fuzzy_qualifiers pname => {
-  let qualifiers =
-    switch pname {
-    | C c => fst c |> qualifiers_of_qual_name
-    | ObjC_Cpp objc_cpp =>
-      List.append (qualifiers_of_qual_name objc_cpp.class_name) [objc_cpp.method_name]
-    | _ => []
-    };
-  fuzzy_qualifiers_equal fuzzy_qualifiers::fuzzy_qualifiers qualifiers
-};

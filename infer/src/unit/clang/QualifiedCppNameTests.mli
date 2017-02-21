@@ -8,7 +8,4 @@
  *)
 open! IStd
 
-let tests = [
-  CiOSVersionNumbersTests.tests;
-  QualifiedCppNameTests.tests;
-]
+val tests: OUnit2.test

@@ -14,14 +14,11 @@ module L = Logging
 
 module GlobalsAccesses = SiofTrace.GlobalsAccesses
 
-let whitelisted_models =
-  List.map Config.siof_safe_methods ~f:Procname.qualifiers_of_fuzzy_qual_name
+let methods_whitelist = QualifiedCppName.quals_matcher_of_fuzzy_qual_names Config.siof_safe_methods
 
 let is_whitelisted (pname : Procname.t) =
-  (* This is linear in the number of whitelisted models, which is not good if there are many
-     models... *)
-  List.exists whitelisted_models
-    ~f:(fun fuzzy_qualifiers -> Procname.fuzzy_equal pname ~fuzzy_qualifiers)
+  Procname.get_qualifiers pname
+  |> QualifiedCppName.match_qualifiers methods_whitelist
 
 module Summary = Summary.Make (struct
     type summary = SiofDomain.astate
