@@ -228,20 +228,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let acquires_ownership pname tenv =
     let is_allocation pn =
       Procname.equal pn BuiltinDecl.__new || Procname.equal pn BuiltinDecl.__new_array in
-    (* in dependency injection, the allocation happens behind the scenes. so we model it. *)
-    let is_dependency_injection_provider = function
+    (* identify library functions that maintain ownership invariants behind the scenes *)
+    let is_owned_in_library = function
       | Procname.Java java_pname ->
           begin
             match Procname.java_get_class_name java_pname,
                   Procname.java_get_method java_pname with
-            | "javax.inject.Provider", "get" -> true
+            | "javax.inject.Provider", "get" ->
+                (* in dependency injection, the library allocates fresh values behind the scenes *)
+                true
+            | "java.lang.ThreadLocal", "get" ->
+                (* ThreadLocal prevents sharing between threads behind the scenes *)
+                true
             | _ -> false
           end
       | _ ->
           false in
     is_allocation pname ||
-    is_dependency_injection_provider pname ||
-    PatternMatch.override_exists is_dependency_injection_provider tenv pname
+    is_owned_in_library pname ||
+    PatternMatch.override_exists is_owned_in_library tenv pname
 
   let exec_instr (astate : Domain.astate) { ProcData.pdesc; tenv; extras; } _ =
     let is_container_write pn tenv = match pn with

@@ -276,6 +276,10 @@ public class Ownership {
     }
   }
 
+  public void threadLocalOk(ThreadLocal<Obj> threadLocal) {
+    threadLocal.get().f = new Object();
+  }
+
   // need to handle multiple ownership attributes in order to get this one
   public void FP_twoDifferentConditionalOwnsOk() {
     Obj owned1 = new Obj();
