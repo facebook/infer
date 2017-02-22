@@ -31,6 +31,9 @@ type access =
 
 let equal_access = [%compare.equal : access]
 
+
+let equal_access_list l1 l2 =  Int.equal (List.compare compare_access l1 l2) 0
+
 let pp_base fmt (pvar, _) =
   Var.pp fmt pvar
 

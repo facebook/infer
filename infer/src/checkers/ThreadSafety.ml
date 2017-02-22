@@ -760,6 +760,7 @@ let calculate_addendum_message tenv pname =
       else ""
   | _ -> ""
 
+
 let combine_conditional_unconditional_writes conditional_writes unconditional_writes =
   let open ThreadSafetyDomain in
   ConditionalWritesDomain.fold
@@ -767,7 +768,51 @@ let combine_conditional_unconditional_writes conditional_writes unconditional_wr
     conditional_writes
     unconditional_writes
 
-let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
+let conflicting_accesses (sink1 : ThreadSafetyDomain.TraceElem.t)
+    (sink2 : ThreadSafetyDomain.TraceElem.t) =
+  AccessPath.equal_access_list
+    (snd (ThreadSafetyDomain.TraceElem.kind sink1))
+    (snd (ThreadSafetyDomain.TraceElem.kind sink2))
+
+(* trace is really reads or writes set. Fix terminology later *)
+let filter_conflicting_sinks sink trace =
+  let conflicts =
+    ThreadSafetyDomain.PathDomain.Sinks.filter
+      (fun sink2 -> conflicting_accesses sink sink2)
+      (ThreadSafetyDomain.PathDomain.sinks trace) in
+  ThreadSafetyDomain.PathDomain.update_sinks trace conflicts
+
+(* Given a sink representing a read access,
+   return a list of (proc_env,access-astate) pairs where
+   access-astate is a non-empty collection of conflicting
+   write accesses*)
+let collect_conflicting_writes sink tab =
+  let procs_and_writes =
+    IList.map
+      (fun (key,(_, _, conditional_writes, unconditional_writes, _)) ->
+         let conflicting_writes =
+           combine_conditional_unconditional_writes
+             conditional_writes unconditional_writes
+           |> filter_conflicting_sinks sink in
+         key, conflicting_writes
+      )
+      (ResultsTableType.bindings tab) in
+  List.filter
+    ~f:(fun (proc_env,writes) ->
+        (should_report_on_proc proc_env)
+        && not (ThreadSafetyDomain.PathDomain.Sinks.is_empty
+                  (ThreadSafetyDomain.PathDomain.sinks writes))
+      )
+    procs_and_writes
+
+(*A helper function used int he error reporting*)
+let pp_accesses_sink fmt sink =
+  let _, accesses = ThreadSafetyDomain.PathDomain.Sink.kind sink in
+  AccessPath.pp_access_list fmt accesses
+
+
+(* trace is really a set of accesses*)
+let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description trace tab =
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
@@ -776,9 +821,6 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
     | _ ->
         PathDomain.empty in
   let report_one_path ((_, sinks) as path) =
-    let pp_accesses fmt sink =
-      let _, accesses = PathDomain.Sink.kind sink in
-      AccessPath.pp_access_list fmt accesses in
     let initial_sink, _ = List.last_exn sinks in
     let final_sink, _ = List.hd_exn sinks in
     let initial_sink_site = PathDomain.Sink.call_site initial_sink in
@@ -786,25 +828,73 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) trace =
     let desc_of_sink sink =
       if CallSite.equal (PathDomain.Sink.call_site sink) final_sink_site
       then
-        Format.asprintf "access to %a" pp_accesses sink
+        Format.asprintf "access to %a" pp_accesses_sink sink
       else
         Format.asprintf
           "call to %a" Procname.pp (CallSite.pname (PathDomain.Sink.call_site sink)) in
     let loc = CallSite.loc (PathDomain.Sink.call_site initial_sink) in
     let ltr = PathDomain.to_sink_loc_trace ~desc_of_sink path in
     let msg = Localise.to_string Localise.thread_safety_violation in
-    let description =
-      Format.asprintf "Public method %a%s writes to field %a outside of synchronization.%s"
-        Procname.pp pname
-        (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
-        pp_accesses final_sink
-        (calculate_addendum_message tenv pname) in
+    let description = make_description tenv pname final_sink_site
+        initial_sink_site final_sink tab in
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
     Reporting.log_error pname ~loc ~ltr exn in
 
   IList.iter
     report_one_path
     (PathDomain.get_reportable_sink_paths trace ~trace_of_pname)
+
+
+let make_unprotected_write_description
+    tenv pname final_sink_site initial_sink_site final_sink _ =
+  Format.asprintf
+    "Unprotected write. Public method %a%s writes to field %a outside of synchronization.%s"
+    Procname.pp pname
+    (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
+    pp_accesses_sink final_sink
+    (calculate_addendum_message tenv pname)
+
+let make_read_write_race_description tenv pname final_sink_site initial_sink_site final_sink tab =
+  let conflicting_proc_envs = IList.map
+      fst
+      (collect_conflicting_writes final_sink tab) in
+  let conflicting_proc_names = IList.map
+      (fun (_,_,proc_name,_) -> proc_name)
+      conflicting_proc_envs in
+  let pp_proc_name_list fmt proc_names =
+    let pp_sep _ _ = F.fprintf fmt " , " in
+    F.pp_print_list ~pp_sep Procname.pp fmt proc_names in
+  let conflicts_description =
+    Format.asprintf "Potentially races with writes in method%s %a."
+      (if IList.length conflicting_proc_names > 1 then "s" else "")
+      pp_proc_name_list conflicting_proc_names in
+  Format.asprintf "Read/Write race. Public method %a%s reads from field %a. %s %s"
+    Procname.pp pname
+    (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
+    pp_accesses_sink final_sink
+    conflicts_description
+    (calculate_addendum_message tenv pname)
+
+
+(* find those elements of reads which have conflicts
+        somewhere else, and report them *)
+let report_reads proc_env reads tab =
+  let racy_read_sinks =
+    ThreadSafetyDomain.PathDomain.Sinks.filter
+      (fun sink ->
+         (* there exists a postcondition whose write set conflicts with
+            sink*)
+         not (List.is_empty (collect_conflicting_writes sink tab))
+      )
+      (ThreadSafetyDomain.PathDomain.sinks reads)
+  in
+  let racy_reads =
+    ThreadSafetyDomain.PathDomain.update_sinks reads racy_read_sinks
+  in
+  report_thread_safety_violations proc_env
+    make_read_write_race_description
+    racy_reads
+    tab
 
 (* Currently we analyze if there is an @ThreadSafe annotation on at least one of
    the classes in a file. This might be tightened in future or even broadened in future
@@ -842,11 +932,18 @@ let process_results_table file_env tab =
     (should_report_on_all_procs || is_thread_safe_method pdesc tenv)
     && should_report_on_proc proc_env in
   ResultsTableType.iter (* report errors for each method *)
-    (fun proc_env (_, _, conditional_writes, unconditional_writes, _) ->
+    (fun proc_env (_, reads, conditional_writes, unconditional_writes, _) ->
        if should_report proc_env then
-         combine_conditional_unconditional_writes conditional_writes unconditional_writes
-         |> report_thread_safety_violations proc_env)
+         let writes = combine_conditional_unconditional_writes
+             conditional_writes unconditional_writes in
+         begin
+           report_thread_safety_violations
+             proc_env make_unprotected_write_description writes tab
+         ; report_reads proc_env reads tab
+         end
+    )
     tab
+
 
 (*This is a "cluster checker" *)
 (*Gathers results by analyzing all the methods in a file, then post-processes

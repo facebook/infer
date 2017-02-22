@@ -59,6 +59,7 @@ interface Interface {
 @ThreadSafe
 class Annotations implements Interface {
   Object f;
+  boolean b;
 
   @UiThread
   public void setF(Object newF) {
@@ -178,18 +179,18 @@ class Annotations implements Interface {
 
   // writes to doubles are not atomic on all platforms, so this is not a benign race
   public double functionalDoubleBad() {
-    if (mDouble == 0.0) {
+    if (b) {
       mDouble = returnDouble();
     }
-    return mDouble;
+    return 0.0;
   }
 
   // writes to longs are not atomic on all platforms, so this is not a benign race
   public long functionaLongBad() {
-    if (mLong == 0L) {
+    if (b) {
       mLong = returnLong();
     }
-    return mLong;
+    return 2;
   }
 
   Boolean mBoxedBool;
@@ -197,46 +198,52 @@ class Annotations implements Interface {
   @Functional native boolean returnBool();
 
   public boolean functionalAcrossBoxingOk() {
-    if (mBoxedBool != null) {
+    if (b) {
       mBoxedBool = returnBool();
     }
-    return mBoxedBool;
+    return b;
   }
 
   boolean mBool;
 
   @Functional native Boolean returnBoxedBool();
 
+  boolean mBool2;
+
   public boolean FP_functionalAcrossUnboxingOk() {
-    if (!mBool) {
-      mBool = returnBoxedBool();
+    if (b) {
+      mBool2 = returnBoxedBool();
     }
-    return mBool;
+    return b;
   }
 
   Long mBoxedLong;
 
   @Functional native Long returnBoxedLong();
 
-  public Long functionalBoxedLongOk() {
-    if (mBoxedLong == null) {
+  public int functionalBoxedLongOk() {
+    if (b) {
       mBoxedLong = returnBoxedLong();
     }
-    return mBoxedLong;
+    return 22;
   }
 
-  public long functionalAcrossUnboxingLongBad() {
-    if (mLong != 0L) {
-      mLong = returnBoxedLong();
+  long mLong2;
+
+  public int functionalAcrossUnboxingLongBad() {
+    if (b) {
+      mLong2 = returnBoxedLong();
     }
-    return mLong;
+    return 2;
   }
 
-  public long FP_functionalAcrossBoxingLongOk() {
-    if (mBoxedLong != null) {
-      mBoxedLong = returnLong();
+  long mBoxedLong2;
+
+  public int FP_functionalAcrossBoxingLongOk() {
+    if (b) {
+      mBoxedLong2 = returnLong();
     }
-    return mBoxedLong;
+    return 2;
   }
 
   public boolean propagateFunctional() {
