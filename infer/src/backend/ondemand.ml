@@ -152,8 +152,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
       { summary with
         Specs.status = Specs.INACTIVE;
         timestamp = summary.Specs.timestamp + 1 } in
-    Specs.add_summary callee_pname summary';
-    Checkers.ST.store_summary callee_pname;
+    Specs.store_summary callee_pname summary';
     Printer.write_proc_html source false callee_pdesc;
     summary' in
 
