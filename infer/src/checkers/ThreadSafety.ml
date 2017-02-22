@@ -772,11 +772,19 @@ let combine_conditional_unconditional_writes conditional_writes unconditional_wr
     conditional_writes
     unconditional_writes
 
-let conflicting_accesses (sink1 : ThreadSafetyDomain.TraceElem.t)
+
+let equal_accesses (sink1 : ThreadSafetyDomain.TraceElem.t)
     (sink2 : ThreadSafetyDomain.TraceElem.t) =
   AccessPath.equal_access_list
     (snd (ThreadSafetyDomain.TraceElem.kind sink1))
     (snd (ThreadSafetyDomain.TraceElem.kind sink2))
+
+(* For now equal-access and conflicting-access are equivalent.
+   But that will change when we (soon) consider conficting accesses
+   that are not via assignment, such as add and get for containers*)
+let conflicting_accesses (sink1 : ThreadSafetyDomain.TraceElem.t)
+    (sink2 : ThreadSafetyDomain.TraceElem.t) =
+  equal_accesses sink1 sink2
 
 (* trace is really reads or writes set. Fix terminology later *)
 let filter_conflicting_sinks sink trace =
@@ -792,14 +800,14 @@ let filter_conflicting_sinks sink trace =
    write accesses*)
 let collect_conflicting_writes sink tab =
   let procs_and_writes =
-    IList.map
-      (fun (key,(_, _, conditional_writes, unconditional_writes, _)) ->
-         let conflicting_writes =
-           combine_conditional_unconditional_writes
-             conditional_writes unconditional_writes
-           |> filter_conflicting_sinks sink in
-         key, conflicting_writes
-      )
+    List.map
+      ~f:(fun (key,(_, _, conditional_writes, unconditional_writes, _)) ->
+          let conflicting_writes =
+            combine_conditional_unconditional_writes
+              conditional_writes unconditional_writes
+            |> filter_conflicting_sinks sink in
+          key, conflicting_writes
+        )
       (ResultsTableType.bindings tab) in
   List.filter
     ~f:(fun (proc_env,writes) ->
@@ -809,7 +817,28 @@ let collect_conflicting_writes sink tab =
       )
     procs_and_writes
 
-(*A helper function used int he error reporting*)
+(* keep only the first copy of an access per procedure  *)
+let de_dup trace =
+  let original_sinks = ThreadSafetyDomain.PathDomain.sinks trace in
+  let list_of_original_sinks = ThreadSafetyDomain.PathDomain.Sinks.elements original_sinks in
+  let de_duped_sinks =
+    ThreadSafetyDomain.PathDomain.Sinks.filter
+      (fun sink ->
+         (* for each sink we will keep one in the equivalence class of those
+            with same access path. We select that by using find_exn to get
+            the first element equivalent ot sink in a list of sinks. This
+            first element is the dedup representative, and it happens to
+            typically be the first such access in a method.  *)
+         let first_sink =
+           List.find_exn
+             ~f:(fun sink2 -> equal_accesses sink sink2)
+             list_of_original_sinks in
+         Int.equal (ThreadSafetyDomain.TraceElem.compare sink first_sink) 0
+      )
+      original_sinks in
+  ThreadSafetyDomain.PathDomain.update_sinks trace de_duped_sinks
+
+(*A helper function used in the error reporting*)
 let pp_accesses_sink fmt sink =
   let _, accesses = ThreadSafetyDomain.PathDomain.Sink.kind sink in
   AccessPath.pp_access_list fmt accesses
@@ -846,7 +875,7 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
 
   IList.iter
     report_one_path
-    (PathDomain.get_reportable_sink_paths trace ~trace_of_pname)
+    (PathDomain.get_reportable_sink_paths (de_dup trace) ~trace_of_pname)
 
 
 let make_unprotected_write_description
@@ -878,7 +907,6 @@ let make_read_write_race_description tenv pname final_sink_site initial_sink_sit
     pp_accesses_sink final_sink
     conflicts_description
     (calculate_addendum_message tenv pname)
-
 
 (* find those elements of reads which have conflicts
         somewhere else, and report them *)
