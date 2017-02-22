@@ -20,6 +20,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import android.support.v4.util.Pools.SynchronizedPool;
+
 class ContainerWrapper {
   private final List<Object> children = new ArrayList<Object>();
 
@@ -150,6 +152,39 @@ class Containers {
 
   public void containerWrapperUnownedWriteBad(Object o) {
     mContainerWrapper.write(o);
+  }
+
+  static SynchronizedPool<Obj> sPool;
+
+  void poolAcquireOk() {
+    Obj obj = sPool.acquire();
+    obj.f = new Object();
+  }
+
+  void poolAcquireThenNullCheckOk() {
+    Obj obj = sPool.acquire();
+    if (obj == null) {
+      obj = new Obj();
+    }
+    obj.f = new Object();
+  }
+
+  // need to understand semantics of release to get this one
+  void FN_poolReleaseThenWriteBad() {
+    Obj obj = sPool.acquire();
+    sPool.release(obj);
+    obj.f = new Object(); // should flag
+  }
+
+  void release(Obj o) {
+    sPool.release(o);
+  }
+
+  // we won't catch this without a fancier ownership domain
+  void FN_poolReleaseThenWriteInterprocBad() {
+    Obj obj = sPool.acquire();
+    release(obj);
+    obj.f = new Object(); // should flag
   }
 
 }

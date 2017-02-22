@@ -236,7 +236,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | "java.lang.ThreadLocal", "get" ->
                 (* ThreadLocal prevents sharing between threads behind the scenes *)
                 true
-            | _ -> false
+            | "android.support.v4.util.Pools$SynchronizedPool", "acquire" ->
+                (* a pool should own all of its objects *)
+                true
+            | _ ->
+                false
           end
       | _ ->
           false in
