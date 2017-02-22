@@ -82,13 +82,12 @@ val proc_calls :
   (Procname.t -> ProcAttributes.t -> bool) ->
   (Procname.t * ProcAttributes.t) list
 
-(** Return true if applying the given predicate to an override of [procname] returns [true]. Note
-    that this does apply the predicate to [procname] itself. For the moment, this only works for
-    Java *)
+(** Return true if applying the given predicate to an override of [procname] or [procname] itself
+    returns true. For the moment, this only works for Java *)
 val override_exists : (Procname.t -> bool) -> Tenv.t -> Procname.t -> bool
 
-(** Apply the given predicate to each override of [procname]. Notet hat this does apply the
-    predicate to [procname] itself. For the moment, this only works for Java *)
+(** Apply the given predicate to procname and each override of [procname]. For the moment, this only
+    works for Java *)
 val override_iter : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
 
 val type_get_annotation : Tenv.t -> Typ.t -> Annot.Item.t option

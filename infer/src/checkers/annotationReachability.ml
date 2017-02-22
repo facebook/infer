@@ -140,7 +140,6 @@ let check_attributes check tenv pname =
   Annotations.pname_has_return_annot pname ~attrs_of_pname:Specs.proc_resolve_attributes check
 
 let method_overrides is_annotated tenv pname =
-  is_annotated tenv pname ||
   PatternMatch.override_exists (fun pn -> is_annotated tenv pn) tenv pname
 
 let method_has_annot annot tenv pname =

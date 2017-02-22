@@ -343,6 +343,8 @@ let override_exists f tenv proc_name =
         List.exists ~f:(super_type_exists tenv) supers
     | _ ->
         false in
+
+  f proc_name ||
   match proc_name with
   | Procname.Java proc_name_java ->
       let type_name = Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in

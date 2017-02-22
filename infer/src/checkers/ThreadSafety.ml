@@ -194,10 +194,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~attrs_of_pname:Specs.proc_resolve_attributes
       predicate
 
-  (* like PatternMatch.override_exists, but also applies [predicate] to [pname] *)
-  let proc_or_override_exists pname tenv (predicate : Procname.t -> bool) =
-    predicate pname || PatternMatch.override_exists predicate tenv pname
-
   let is_functional pname =
     let is_annotated_functional =
       has_return_annot Annotations.ia_is_functional in
@@ -486,7 +482,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               astate_callee
           | Some (ret_id, ret_typ) ->
               let add_if_annotated predicate attribute attribute_map =
-                if proc_or_override_exists callee_pname tenv predicate
+                if PatternMatch.override_exists predicate tenv callee_pname
                 then
                   AttributeMapDomain.add_attribute
                     (AccessPath.of_id ret_id ret_typ) attribute attribute_map
@@ -834,16 +830,14 @@ let process_results_table file_env tab =
   let should_report_on_all_procs = should_report_on_file file_env in
   (* TODO (t15588153): clean this up *)
   let is_thread_safe_method pdesc tenv =
-    let overrides_thread_safe_method pname tenv =
-      PatternMatch.override_exists
-        (fun pn ->
-           Annotations.pname_has_return_annot
-             pn
-             ~attrs_of_pname:Specs.proc_resolve_attributes
-             Annotations.ia_is_thread_safe_method)
-        tenv pname in
-    Annotations.pdesc_return_annot_ends_with pdesc Annotations.thread_safe_method ||
-    overrides_thread_safe_method (Procdesc.get_proc_name pdesc) tenv in
+    PatternMatch.override_exists
+      (fun pn ->
+         Annotations.pname_has_return_annot
+           pn
+           ~attrs_of_pname:Specs.proc_resolve_attributes
+           Annotations.ia_is_thread_safe_method)
+      tenv
+      (Procdesc.get_proc_name pdesc) in
   let should_report ((_, tenv, _, pdesc) as proc_env) =
     (should_report_on_all_procs || is_thread_safe_method pdesc tenv)
     && should_report_on_proc proc_env in
