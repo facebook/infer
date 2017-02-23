@@ -136,6 +136,17 @@ let get_translate_as_friend_decl decl_list =
   | _ -> None
   | exception Not_found -> None
 
+let get_record_definition decl =
+  let open Clang_ast_t in
+  match decl with
+  | ClassTemplateSpecializationDecl
+      (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _, _)
+  | CXXRecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _)
+  | RecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr})
+    when not rdi_is_complete_definition && rdi_definition_ptr <> 0 ->
+      CAst_utils.get_decl rdi_definition_ptr |> Option.value ~default:decl
+  | _ -> decl
+
 let rec get_struct_fields tenv decl =
   let open Clang_ast_t in
   let decl_list = match decl with
@@ -156,56 +167,56 @@ let rec get_struct_fields tenv decl =
 
 (* For a record declaration it returns/constructs the type *)
 and get_record_declaration_type tenv decl =
-  match get_record_custom_type tenv decl with
+  let definition_decl = get_record_definition decl in
+  match get_record_custom_type tenv definition_decl with
   | Some t -> t
-  | None -> get_record_declaration_struct_type tenv decl
+  | None -> get_record_struct_type tenv definition_decl
 
-and get_record_custom_type tenv decl =
+and get_record_custom_type tenv definition_decl =
   let open Clang_ast_t in
-  match decl with
+  match definition_decl with
   | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _) ->
       Option.map ~f:(type_ptr_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
   | _ -> None
 
-and get_record_declaration_struct_type tenv decl =
+and get_record_struct_type tenv definition_decl =
   let open Clang_ast_t in
-  match decl with
+  match definition_decl with
   | ClassTemplateSpecializationDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _, _)
   | CXXRecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _)
   | RecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info) ->
-      let csu, name = get_record_name_csu decl in
+      let csu, name = get_record_name_csu definition_decl in
       let mangled_name = Mangled.from_string name in
-      let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
       let sil_typename = Typename.TN_csu (csu, mangled_name) in
-      let extra_fields = if CTrans_models.is_objc_memory_model_controlled name then
-          [StructTyp.objc_ref_counter_field]
-        else [] in
-      let annots =
-        if Csu.equal csu (Csu.Class Csu.CPP) then Annot.Class.cpp
-        else Annot.Item.empty (* No annotations for structs *) in
-      if is_complete_definition then (
-        CAst_utils.update_sil_types_map type_ptr (Typ.Tstruct sil_typename);
-        let non_statics = get_struct_fields tenv decl in
-        let fields = CGeneral_utils.append_no_duplicates_fields non_statics extra_fields in
-        let statics = [] in (* Note: We treat static field same as global variables *)
-        let methods = get_class_methods name decl_list in (* C++ methods only *)
-        let supers = get_superclass_list_cpp decl in
-        ignore (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename);
-        let sil_type = Typ.Tstruct sil_typename in
-        CAst_utils.update_sil_types_map type_ptr sil_type;
-        sil_type
-      ) else (
-        match Tenv.lookup tenv sil_typename with
-        | Some _ -> Typ.Tstruct sil_typename (* just reuse what is already in tenv *)
-        | None ->
-            (* This is first forward declaration seen. Add Tstruct to sil_types_map and struct with
-               only ref counter field to tenv. Later, when we see the definition, the tenv will be
-               updated with a new struct including the other fields. *)
-            ignore (Tenv.mk_struct tenv ~fields:extra_fields sil_typename);
-            let tvar_type = Typ.Tstruct sil_typename in
-            CAst_utils.update_sil_types_map type_ptr tvar_type;
-            tvar_type)
+      (match Tenv.lookup tenv sil_typename with
+       | Some _ -> Typ.Tstruct sil_typename (* just reuse what is already in tenv *)
+       | None ->
+           let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
+           let extra_fields = if CTrans_models.is_objc_memory_model_controlled name then
+               [StructTyp.objc_ref_counter_field]
+             else [] in
+           let annots =
+             if Csu.equal csu (Csu.Class Csu.CPP) then Annot.Class.cpp
+             else Annot.Item.empty (* No annotations for structs *) in
+           if is_complete_definition then (
+             CAst_utils.update_sil_types_map type_ptr (Typ.Tstruct sil_typename);
+             let non_statics = get_struct_fields tenv definition_decl in
+             let fields = CGeneral_utils.append_no_duplicates_fields non_statics extra_fields in
+             let statics = [] in (* Note: We treat static field same as global variables *)
+             let methods = get_class_methods name decl_list in (* C++ methods only *)
+             let supers = get_superclass_list_cpp definition_decl in
+             ignore (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename);
+             let sil_type = Typ.Tstruct sil_typename in
+             CAst_utils.update_sil_types_map type_ptr sil_type;
+             sil_type
+           ) else (
+             (* There is no definition for that struct in whole translation unit.
+                Put empty struct into tenv to prevent backend problems *)
+             ignore (Tenv.mk_struct tenv ~fields:extra_fields sil_typename);
+             let tvar_type = Typ.Tstruct sil_typename in
+             CAst_utils.update_sil_types_map type_ptr tvar_type;
+             tvar_type))
   | _ -> assert false
 
 and add_types_from_decl_to_tenv tenv decl =

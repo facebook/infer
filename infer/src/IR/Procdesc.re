@@ -564,8 +564,8 @@ let pp_variable_list fmt etl =>
   if (List.is_empty etl) {
     Format.fprintf fmt "None"
   } else {
-    IList.iter
-      (fun (id, ty) => Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty) etl
+    List.iter
+      f::(fun (id, ty) => Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty) etl
   };
 
 let pp_signature fmt pdesc => {
