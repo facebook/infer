@@ -67,3 +67,5 @@ let remove_proc_desc: cfg => Procname.t => unit;
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types */
 let specialize_types: Procdesc.t => Procname.t => list (Exp.t, Typ.t) => Procdesc.t;
+
+let pp_proc_signatures: Format.formatter => cfg => unit;

@@ -67,5 +67,6 @@ let do_source_file translation_unit_context ast =
   || Option.is_some Config.icfg_dotty_outfile then
     (Dotty.print_icfg_dotty source_file cfg;
      Cg.save_call_graph_dotty source_file Specs.get_specs call_graph);
+  Logging.out_debug "%a" Cfg.pp_proc_signatures cfg;
   (* NOTE: nothing should be written to source_dir after this *)
   DB.mark_file_updated (DB.source_dir_to_string source_dir)

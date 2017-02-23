@@ -280,3 +280,5 @@ let set_start_node: t => Node.t => unit;
 let signal_did_preanalysis: t => unit;
 
 let is_loop_head: t => Node.t => bool;
+
+let pp_signature: Format.formatter => t => unit;

@@ -559,3 +559,36 @@ let is_loop_head pdesc (node: Node.t) => {
     };
   NodeSet.mem node lh
 };
+
+let pp_variable_list fmt etl =>
+  if (List.is_empty etl) {
+    Format.fprintf fmt "None"
+  } else {
+    IList.iter
+      (fun (id, ty) => Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty) etl
+  };
+
+let pp_signature fmt pdesc => {
+  let pname = get_proc_name pdesc;
+  let pname_string = Procname.to_string pname;
+  let defined_string = is_defined pdesc ? "defined" : "undefined";
+  Format.fprintf
+    fmt
+    "%s [%s, Return type: %s, Formals: %a, Locals: %a"
+    pname_string
+    defined_string
+    (Typ.to_string (get_ret_type pdesc))
+    pp_variable_list
+    (get_formals pdesc)
+    pp_variable_list
+    (get_locals pdesc);
+  if (not (List.is_empty (get_captured pdesc))) {
+    Format.fprintf fmt ", Captured: %a" pp_variable_list (get_captured pdesc)
+  };
+  let attributes = get_attributes pdesc;
+  let method_annotation = attributes.ProcAttributes.method_annotation;
+  if (not (Annot.Method.is_empty method_annotation)) {
+    Format.fprintf fmt ", Annotation: %a" (Annot.Method.pp pname_string) method_annotation
+  };
+  Format.fprintf fmt "]@\n"
+};
