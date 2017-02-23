@@ -160,6 +160,8 @@ val is_objc_if_descendant :
 
 val type_ptr_to_objc_interface : Clang_ast_types.t_ptr -> Clang_ast_t.decl option
 
+val type_ptr_is_typedef_named : Clang_ast_types.t_ptr -> string -> bool
+
 (** A class method that returns an instance of the class is a factory method. *)
 val is_objc_factory_method : Clang_ast_t.decl -> Clang_ast_t.decl -> bool
 

@@ -30,7 +30,8 @@ let decl_checkers_list =
 (* List of checkers on stmts *that return 0 or 1 issue* *)
 let stmt_single_checkers_list =
   [ComponentKit.component_file_cyclomatic_complexity_info;
-   ComponentKit.component_initializer_with_side_effects_advice;]
+   ComponentKit.component_initializer_with_side_effects_advice;
+   GraphQL.DeprecatedAPIUsage.checker;]
 
 let stmt_checkers_list = IList.map single_to_multi stmt_single_checkers_list
 
