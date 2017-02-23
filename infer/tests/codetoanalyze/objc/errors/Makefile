@@ -50,6 +50,7 @@ SOURCES_DEFAULT = \
   shared/property/PropertyAttributes.m \
   shared/protocol_procdesc/Bicycle.m \
   shared/protocol_procdesc/main.c \
+	shared/annotations/nullable_annotations.m \
   taint/sources.m \
   taint/viewController.m \
 

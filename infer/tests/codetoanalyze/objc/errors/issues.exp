@@ -113,6 +113,7 @@ codetoanalyze/objc/errors/taint/sources.m, testNSHTTPCookie2, 5, TAINTED_VALUE_R
 codetoanalyze/objc/errors/taint/sources.m, testNSHTTPCookie3, 5, TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION, [start of procedure testNSHTTPCookie3()]
 codetoanalyze/objc/errors/taint/sources.m, testNSHTTPCookie4, 5, TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION, [start of procedure testNSHTTPCookie4()]
 codetoanalyze/objc/errors/taint/viewController.m, ExampleDelegate_application:openURL:sourceApplication:annotation:, 7, TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION, [start of procedure application:openURL:sourceApplication:annotation:,start of procedure init,return from a call to VCA_init,start of procedure ExampleSanitizer(),Condition is false,return from a call to ExampleSanitizer,Condition is false,Condition is true]
+codetoanalyze/objc/shared/annotations/nullable_annotations.m, User_otherUserName, 2, NULL_DEREFERENCE, [start of procedure otherUserName]
 codetoanalyze/objc/shared/block/block-it.m, MyBlock_array, 3, RETURN_VALUE_IGNORED, [start of procedure array,Condition is true]
 codetoanalyze/objc/shared/block/block-it.m, __objc_anonymous_block_MyBlock_array______1, 5, UNINITIALIZED_VALUE, [start of procedure block,Condition is false]
 codetoanalyze/objc/shared/block/block-it.m, __objc_anonymous_block_MyBlock_array_trans______2, 4, UNINITIALIZED_VALUE, [start of procedure block,Condition is false]

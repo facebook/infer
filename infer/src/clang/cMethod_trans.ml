@@ -341,21 +341,19 @@ let should_create_procdesc cfg procname defined =
       else false
   | None -> true
 
-let sil_method_annotation_of_args args : Annot.Method.t =
+let sil_method_annotation_of_args args method_type : Annot.Method.t =
   let default_visibility = true in
-  let mk_annot param_name annot_name =
-    let annot = { Annot.class_name = annot_name; parameters = [param_name]; } in
+  let mk_annot annot_name =
+    let annot = { Annot.class_name = annot_name; parameters = []; } in
     annot, default_visibility in
-  let arg_to_sil_annot (arg_mangled, {Clang_ast_t.qt_type_ptr}) acc  =
-    let arg_name = Mangled.to_string arg_mangled in
-    if CAst_utils.is_type_nullable qt_type_ptr then
-      [mk_annot arg_name Annotations.nullable] :: acc
-    else Annot.Item.empty::acc in
-  let param_annots = List.fold_right ~f:arg_to_sil_annot args ~init:[]  in
-  (* TODO: parse annotations on return value *)
-  let retval_annot = [] in
+  let sil_annot_of_type type_ptr =
+    if CAst_utils.is_type_nullable type_ptr then
+      [mk_annot Annotations.nullable]
+    else Annot.Item.empty in
+  let args_types = List.map ~f:(fun (_, qt) -> qt.Clang_ast_t.qt_type_ptr) args in
+  let param_annots = List.map ~f:sil_annot_of_type args_types in
+  let retval_annot = sil_annot_of_type method_type in
   retval_annot, param_annots
-
 
 let is_pointer_to_const type_ptr = match CAst_utils.get_type type_ptr with
   | Some PointerType (_, {Clang_ast_t.qt_is_const})
@@ -387,8 +385,9 @@ let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst
   let proc_name = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
+  let method_ret_type = CMethod_signature.ms_get_ret_type ms in
   let method_annotation =
-    sil_method_annotation_of_args (CMethod_signature.ms_get_args ms) in
+    sil_method_annotation_of_args (CMethod_signature.ms_get_args ms) method_ret_type in
   let is_cpp_inst_method =
     CMethod_signature.ms_is_instance ms &&
     CFrontend_config.equal_clang_lang (CMethod_signature.ms_get_lang ms) CFrontend_config.CPP in

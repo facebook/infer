@@ -1,0 +1,62 @@
+/* @generated */
+digraph iCFG {
+"User_tellMeSomethinginstance.b54f02b8c304dfa023d23f9f4df4c2e1_1" [label="1: Start User_tellMeSomething\nFormals:  self:class User*\nLocals: \nAnnotation: <_Nullable> User_tellMeSomething(<>) \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
+	
+
+	 "User_tellMeSomethinginstance.b54f02b8c304dfa023d23f9f4df4c2e1_1" -> "User_tellMeSomethinginstance.b54f02b8c304dfa023d23f9f4df4c2e1_3" ;
+"User_tellMeSomethinginstance.b54f02b8c304dfa023d23f9f4df4c2e1_2" [label="2: Exit User_tellMeSomething \n  " color=yellow style=filled]
+	
+
+"User_tellMeSomethinginstance.b54f02b8c304dfa023d23f9f4df4c2e1_3" [label="3:  Return Stmt \n   n$1=_fun_NSString_stringWithUTF8String:(\"Hi\":char*) [line 30]\n  *&return:class NSString*=n$1 [line 30]\n " shape="box"]
+	
+
+	 "User_tellMeSomethinginstance.b54f02b8c304dfa023d23f9f4df4c2e1_3" -> "User_tellMeSomethinginstance.b54f02b8c304dfa023d23f9f4df4c2e1_2" ;
+"User_tellMeSomethingNotNullableinstance.a40d0ee63f3aeb90706900a49136196b_1" [label="1: Start User_tellMeSomethingNotNullable\nFormals:  self:class User*\nLocals:  \n   DECLARE_LOCALS(&return); [line 33]\n " color=yellow style=filled]
+	
+
+	 "User_tellMeSomethingNotNullableinstance.a40d0ee63f3aeb90706900a49136196b_1" -> "User_tellMeSomethingNotNullableinstance.a40d0ee63f3aeb90706900a49136196b_3" ;
+"User_tellMeSomethingNotNullableinstance.a40d0ee63f3aeb90706900a49136196b_2" [label="2: Exit User_tellMeSomethingNotNullable \n  " color=yellow style=filled]
+	
+
+"User_tellMeSomethingNotNullableinstance.a40d0ee63f3aeb90706900a49136196b_3" [label="3:  Return Stmt \n   n$2=_fun_NSString_stringWithUTF8String:(\"Hi\":char*) [line 34]\n  *&return:class NSString*=n$2 [line 34]\n " shape="box"]
+	
+
+	 "User_tellMeSomethingNotNullableinstance.a40d0ee63f3aeb90706900a49136196b_3" -> "User_tellMeSomethingNotNullableinstance.a40d0ee63f3aeb90706900a49136196b_2" ;
+"User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_1" [label="1: Start User_otherUserName\nFormals:  self:class User*\nLocals:  ou:class User* \n   DECLARE_LOCALS(&return,&ou); [line 44]\n " color=yellow style=filled]
+	
+
+	 "User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_1" -> "User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_4" ;
+"User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_2" [label="2: Exit User_otherUserName \n  " color=yellow style=filled]
+	
+
+"User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_3" [label="3:  Return Stmt \n   n$4=*&ou:class User* [line 46]\n  n$5=*n$4._name:class NSString* [line 46]\n  *&return:class NSString*=n$5 [line 46]\n " shape="box"]
+	
+
+	 "User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_3" -> "User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_2" ;
+"User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_4" [label="4:  DeclStmt \n   n$6=*&self:class User* [line 45]\n  n$7=_fun_User_otherUser(n$6:class User*) virtual [line 45]\n  *&ou:class User*=n$7 [line 45]\n " shape="box"]
+	
+
+	 "User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_4" -> "User_otherUserNameinstance.d96d9ea375a633021df5bfc33fa4c63c_3" ;
+"User_initWithName:instance.9593030a12738a1c563396f127eaaa37_1" [label="1: Start User_initWithName:\nFormals:  self:class User* name:class NSString*\nLocals: \nAnnotation: <_Nullable> User_initWithName:(<> <_Nullable>) \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+	
+
+	 "User_initWithName:instance.9593030a12738a1c563396f127eaaa37_1" -> "User_initWithName:instance.9593030a12738a1c563396f127eaaa37_3" ;
+"User_initWithName:instance.9593030a12738a1c563396f127eaaa37_2" [label="2: Exit User_initWithName: \n  " color=yellow style=filled]
+	
+
+"User_initWithName:instance.9593030a12738a1c563396f127eaaa37_3" [label="3:  Return Stmt \n   n$0=*&self:class User* [line 26]\n  *&return:struct objc_object*=n$0 [line 26]\n " shape="box"]
+	
+
+	 "User_initWithName:instance.9593030a12738a1c563396f127eaaa37_3" -> "User_initWithName:instance.9593030a12738a1c563396f127eaaa37_2" ;
+"User_tellMeSomething:and:and:and:instance.12fb98968dde54a144a6102e598bee03_1" [label="1: Start User_tellMeSomething:and:and:and:\nFormals:  self:class User* s1:class NSString* s2:class NSString* s3:class NSString* s4:class NSString*\nLocals: \nAnnotation: <> User_tellMeSomething:and:and:and:(<> <> <> <_Nullable> <>) \n   DECLARE_LOCALS(&return); [line 37]\n " color=yellow style=filled]
+	
+
+	 "User_tellMeSomething:and:and:and:instance.12fb98968dde54a144a6102e598bee03_1" -> "User_tellMeSomething:and:and:and:instance.12fb98968dde54a144a6102e598bee03_3" ;
+"User_tellMeSomething:and:and:and:instance.12fb98968dde54a144a6102e598bee03_2" [label="2: Exit User_tellMeSomething:and:and:and: \n  " color=yellow style=filled]
+	
+
+"User_tellMeSomething:and:and:and:instance.12fb98968dde54a144a6102e598bee03_3" [label="3:  Return Stmt \n   n$3=_fun_NSString_stringWithUTF8String:(\"Hi\":char*) [line 41]\n  *&return:class NSString*=n$3 [line 41]\n " shape="box"]
+	
+
+	 "User_tellMeSomething:and:and:and:instance.12fb98968dde54a144a6102e598bee03_3" -> "User_tellMeSomething:and:and:and:instance.12fb98968dde54a144a6102e598bee03_2" ;
+}
