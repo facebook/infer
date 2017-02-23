@@ -258,7 +258,7 @@ let java_get_parameters j => j.parameters;
 
 /** Return the parameters of a java procname as strings. */
 let java_get_parameters_as_strings j =>
-  IList.map (fun param => java_type_to_string param) j.parameters;
+  List.map f::(fun param => java_type_to_string param) j.parameters;
 
 
 /** Return true if the java procedure is static */

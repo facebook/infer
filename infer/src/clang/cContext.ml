@@ -113,7 +113,7 @@ let create_curr_class tenv class_name ck =
   let class_tn_name = Typename.TN_csu (Csu.Class ck, (Mangled.from_string class_name)) in
   match Tenv.lookup tenv class_tn_name with
   | Some { supers } ->
-      (let supers_names = IList.map Typename.name supers in
+      (let supers_names = List.map ~f:Typename.name supers in
        match supers_names with
        | superclass:: protocols ->
            ContextCls (class_name, Some superclass, protocols)

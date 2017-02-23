@@ -95,7 +95,7 @@ let tests =
         |> MockTrace.add_sink sink2 in
       let reports = MockTrace.get_reports trace in
 
-      assert_equal (IList.length reports) 2;
+      assert_equal (List.length reports) 2;
       assert_bool
         "Reports should contain source1 -> sink1"
         (List.exists

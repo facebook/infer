@@ -46,9 +46,9 @@ let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
 
 (** Given a node, returns a list of pvar of blocks that have been nullified in the block. *)
 let get_blocks_nullified node =
-  let null_blocks = List.concat (IList.map (fun i -> match i with
+  let null_blocks = List.concat_map ~f:(fun i -> match i with
       | Sil.Nullify(pvar, _) when Sil.is_block_pvar pvar -> [pvar]
-      | _ -> []) (Procdesc.Node.get_instrs node)) in
+      | _ -> []) (Procdesc.Node.get_instrs node) in
   null_blocks
 
 (** Given a proposition and an objc block checks whether by existentially quantifying
@@ -150,10 +150,10 @@ let rec apply_offlist
                   (root_lexp, se', t') offlist' f inst lookup_inst in
               let replace_fse fse =
                 if Ident.equal_fieldname fld (fst fse) then (fld, res_se') else fse in
-              let res_se = Sil.Estruct (IList.map replace_fse fsel, inst') in
+              let res_se = Sil.Estruct (List.map ~f:replace_fse fsel, inst') in
               let replace_fta (f, t, a) =
                 if Ident.equal_fieldname fld f then (fld, res_t', a) else (f, t, a) in
-              let fields' = IList.map replace_fta fields in
+              let fields' = List.map ~f:replace_fta fields in
               ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
               (res_e', res_se, typ, res_pred_insts_op')
           | None ->
@@ -182,7 +182,7 @@ let rec apply_offlist
             if Exp.equal idx_ese' (fst ese)
             then (idx_ese', res_se')
             else ese in
-          let res_se = Sil.Earray (len, IList.map replace_ese esel, inst1) in
+          let res_se = Sil.Earray (len, List.map ~f:replace_ese esel, inst1) in
           let res_t = Typ.Tarray (res_t', len') in
           (res_e', res_se, res_t, res_pred_insts_op')
       | None ->
@@ -258,10 +258,10 @@ let rec execute_nullify_se = function
   | Sil.Eexp _ ->
       Sil.Eexp (Exp.zero, Sil.inst_nullify)
   | Sil.Estruct (fsel, _) ->
-      let fsel' = IList.map (fun (fld, se) -> (fld, execute_nullify_se se)) fsel in
+      let fsel' = List.map ~f:(fun (fld, se) -> (fld, execute_nullify_se se)) fsel in
       Sil.Estruct (fsel', Sil.inst_nullify)
   | Sil.Earray (len, esel, _) ->
-      let esel' = IList.map (fun (idx, se) -> (idx, execute_nullify_se se)) esel in
+      let esel' = List.map ~f:(fun (idx, se) -> (idx, execute_nullify_se se)) esel in
       Sil.Earray (len, esel', Sil.inst_nullify)
 
 (** Do pruning for conditional [if (e1 != e2) ] if [positive] is true
@@ -366,7 +366,7 @@ and prune_union tenv ~positive condition1 condition2 prop =
 
 let dangerous_functions =
   let dangerous_list = ["gets"] in
-  ref ((IList.map Procname.from_string_c_fun) dangerous_list)
+  ref ((List.map ~f:Procname.from_string_c_fun) dangerous_list)
 
 let check_inherently_dangerous_function caller_pname callee_pname =
   if List.exists ~f:(Procname.equal callee_pname) !dangerous_functions then
@@ -593,7 +593,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
 let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
   let resolve_from_args resolved_pname_java args =
     let parameters = Procname.java_get_parameters resolved_pname_java in
-    if IList.length args <> IList.length parameters then
+    if List.length args <> List.length parameters then
       resolved_pname_java
     else
       let resolved_params =
@@ -1008,7 +1008,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
   State.set_prop_tenv_pdesc prop_ tenv current_pdesc; (* mark prop,tenv,pdesc last seen *)
   SymOp.pay(); (* pay one symop *)
   let ret_old_path pl = (* return the old path unchanged *)
-    IList.map (fun p -> (p, path)) pl in
+    List.map ~f:(fun p -> (p, path)) pl in
   let instr = match _instr with
     | Sil.Call (ret, exp, par, loc, call_flags) ->
         let exp' = Prop.exp_normalize_prop tenv prop_ exp in
@@ -1016,7 +1016,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           | Exp.Closure c ->
               let proc_exp = Exp.Const (Const.Cfun c.name) in
               let proc_exp' = Prop.exp_normalize_prop tenv prop_ proc_exp in
-              let par' = IList.map (fun (id_exp, _, typ) -> (id_exp, typ)) c.captured_vars in
+              let par' = List.map ~f:(fun (id_exp, _, typ) -> (id_exp, typ)) c.captured_vars in
               Sil.Call (ret, proc_exp', par' @ par, loc, call_flags)
           | _ ->
               Sil.Call (ret, exp', par, loc, call_flags) in
@@ -1188,7 +1188,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                 else
                   proc_call (Option.value_exn resolved_summary_opt)
                     (call_args prop resolved_pname n_actual_params ret_id loc) in
-              List.concat (IList.map do_call sentinel_result)
+              List.concat_map ~f:do_call sentinel_result
         )
     )
   | Sil.Call (ret_id, fun_exp, actual_params, loc, call_flags) -> (* Call via function pointer *)
@@ -1244,9 +1244,9 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       let sigma_locals =
         let add_None (x, y) = (x, Exp.Sizeof (y, None, Subtype.exact), None) in
         let sigma_locals () =
-          IList.map
-            (Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_initial)
-            (IList.map add_None ptl) in
+          List.map
+            ~f:(Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_initial)
+            (List.map ~f:add_None ptl) in
         Config.run_in_re_execution_mode (* no footprint vars for locals *)
           sigma_locals () in
       let sigma' = prop_.Prop.sigma @ sigma_locals in
@@ -1271,17 +1271,17 @@ and instrs ?(mask_errors=false) tenv pdesc instrs ppl =
         ("Generated Instruction Failed with: " ^
          (Localise.to_string err_name)^loc ); L.d_ln();
       [(p, path)] in
-  let f plist instr = List.concat (IList.map (exe_instr instr) plist) in
+  let f plist instr = List.concat_map ~f:(exe_instr instr) plist in
   List.fold ~f ~init:ppl instrs
 
 and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname callee_loc =
   (* replace an hpred of the form actual_var |-> _ with new_hpred in prop *)
   let replace_actual_hpred actual_var new_hpred prop =
     let sigma' =
-      IList.map
-        (function
-          | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual_var -> new_hpred
-          | hpred -> hpred)
+      List.map
+        ~f:(function
+            | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual_var -> new_hpred
+            | hpred -> hpred)
         prop.Prop.sigma in
     Prop.normalize tenv (Prop.set prop ~sigma:sigma') in
   let add_actual_by_ref_to_footprint prop (actual, actual_typ, _) =
@@ -1317,11 +1317,11 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
                    (Typ.to_string typ)) in
           (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
           let filtered_sigma =
-            IList.map
-              (function
-                | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
-                    Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
-                | hpred -> hpred)
+            List.map
+              ~f:(function
+                  | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
+                      Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
+                  | hpred -> hpred)
               prop'.Prop.sigma in
           Prop.normalize tenv (Prop.set prop' ~sigma:filtered_sigma)
         else
@@ -1430,11 +1430,11 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
           |> fst
     else prop in
   let actuals_by_ref =
-    IList.flatten_options (IList.mapi
-                             (fun i actual -> match actual with
-                                | (Exp.Lvar _ as e, (Typ.Tptr _ as t)) -> Some (e, t, i)
-                                | _ -> None)
-                             args) in
+    List.filter_mapi
+      ~f:(fun i actual -> match actual with
+          | (Exp.Lvar _ as e, (Typ.Tptr _ as t)) -> Some (e, t, i)
+          | _ -> None)
+      args in
   let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
   let pre_final =
     (* in Java, assume that skip functions close resources passed as params *)
@@ -1478,7 +1478,7 @@ and check_variadic_sentinel
   (* useful if you would prefer to not have *any* formal parameters, *)
   (* but the language forces you to have at least one. *)
   let first_var_arg_pos = if null_pos > n_formals then 0 else n_formals - null_pos in
-  let nargs = IList.length args in
+  let nargs = List.length args in
   (* sentinels start counting from the last argument to the function *)
   let sentinel_pos = nargs - sentinel - 1 in
   let mk_non_terminal_argsi (acc, i) a =
@@ -1516,7 +1516,7 @@ and check_variadic_sentinel_if_present
       | None -> [(prop_, path)]
       | Some sentinel_arg ->
           let formals = callee_attributes.ProcAttributes.formals in
-          check_variadic_sentinel (IList.length formals) sentinel_arg builtin_args
+          check_variadic_sentinel (List.length formals) sentinel_arg builtin_args
 
 and sym_exec_objc_getter field_name ret_typ tenv ret_id pdesc pname loc args prop =
   L.d_strln ("No custom getter found. Executing the ObjC builtin getter with ivar "^
@@ -1551,7 +1551,7 @@ and sym_exec_objc_accessor property_accesor ret_typ tenv ret_id pdesc _ loc args
      since this is the procname of the setter/getter method *)
   let cur_pname = Procdesc.get_proc_name pdesc in
   f_accessor ret_typ tenv ret_id pdesc cur_pname loc args prop
-  |> IList.map (fun p -> (p, path))
+  |> List.map ~f:(fun p -> (p, path))
 
 (** Perform symbolic execution for a function call *)
 and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actual_pars; loc; } =
@@ -1571,7 +1571,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
       Reporting.log_warning caller_pname exn in
   check_inherently_dangerous_function caller_pname callee_pname;
   begin
-    let formal_types = IList.map (fun (_, typ) -> typ) (Specs.get_formals summary) in
+    let formal_types = List.map ~f:(fun (_, typ) -> typ) (Specs.get_formals summary) in
     let rec comb actual_pars formal_types =
       match actual_pars, formal_types with
       | [], [] -> actual_pars
@@ -1584,13 +1584,13 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
           L.d_warning
             "likely use of variable-arguments function, or function prototype missing";
           L.d_ln();
-          L.d_str "actual parameters: "; Sil.d_exp_list (IList.map fst actual_pars); L.d_ln ();
+          L.d_str "actual parameters: "; Sil.d_exp_list (List.map ~f:fst actual_pars); L.d_ln ();
           L.d_str "formal parameters: "; Typ.d_list formal_types; L.d_ln ();
           actual_pars
       | [], _ ->
           L.d_str ("**** ERROR: Procedure " ^ Procname.to_string callee_pname);
           L.d_strln (" mismatch in the number of parameters ****");
-          L.d_str "actual parameters: "; Sil.d_exp_list (IList.map fst actual_pars); L.d_ln ();
+          L.d_str "actual parameters: "; Sil.d_exp_list (List.map ~f:fst actual_pars); L.d_ln ();
           L.d_str "formal parameters: "; Typ.d_list formal_types; L.d_ln ();
           raise (Exceptions.Wrong_argument_number __POS__) in
     let actual_params = comb actual_pars formal_types in
@@ -1620,12 +1620,12 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
     Sil.fav_filter_ident fav Ident.is_primed;
     let ids_primed = Sil.fav_to_list fav in
     let ids_primed_normal =
-      IList.map (fun id -> (id, Ident.create_fresh Ident.knormal)) ids_primed in
+      List.map ~f:(fun id -> (id, Ident.create_fresh Ident.knormal)) ids_primed in
     let ren_sub =
-      Sil.sub_of_list (IList.map
-                         (fun (id1, id2) -> (id1, Exp.Var id2)) ids_primed_normal) in
+      Sil.sub_of_list (List.map
+                         ~f:(fun (id1, id2) -> (id1, Exp.Var id2)) ids_primed_normal) in
     let p' = Prop.normalize tenv (Prop.prop_sub ren_sub p) in
-    let fav_normal = Sil.fav_from_list (IList.map snd ids_primed_normal) in
+    let fav_normal = Sil.fav_from_list (List.map ~f:snd ids_primed_normal) in
     p', fav_normal in
   let prop_normal_to_primed fav_normal p = (* rename given normal vars to fresh primed *)
     if List.is_empty (Sil.fav_to_list fav_normal) then p
@@ -1665,15 +1665,15 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
         (fun () -> sym_exec tenv pdesc instr prop' path)
         () in
     let res_list_nojunk =
-      IList.map
-        (fun (p, path) -> (post_process_result fav_normal p path, path))
+      List.map
+        ~f:(fun (p, path) -> (post_process_result fav_normal p path, path))
         res_list in
     let results =
-      IList.map
-        (fun (p, path) -> (Prop.prop_rename_primed_footprint_vars tenv p, path))
+      List.map
+        ~f:(fun (p, path) -> (Prop.prop_rename_primed_footprint_vars tenv p, path))
         res_list_nojunk in
     L.d_strln "Instruction Returns";
-    Propgraph.d_proplist prop (IList.map fst results); L.d_ln ();
+    Propgraph.d_proplist prop (List.map ~f:fst results); L.d_ln ();
     State.mark_instr_ok ();
     Paths.PathSet.from_renamed_list results
   with exn when Exceptions.handle_exception exn && !Config.footprint ->

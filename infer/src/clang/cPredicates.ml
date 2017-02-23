@@ -196,7 +196,7 @@ let is_objc_dealloc context =
   | _ -> false
 
 let captures_cxx_references an =
-  IList.length (captured_variables_cxx_ref an) > 0
+  List.length (captured_variables_cxx_ref an) > 0
 
 let is_binop_with_kind str_kind an =
   if not (Clang_ast_proj.is_valid_binop_kind_name str_kind) then

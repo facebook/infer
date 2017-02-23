@@ -215,8 +215,8 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
     else
       Abs.abstract_no_symop tenv prop in
   let pres =
-    IList.map
-      (fun spec -> Specs.Jprop.to_prop spec.Specs.pre)
+    List.map
+      ~f:(fun spec -> Specs.Jprop.to_prop spec.Specs.pre)
       (Specs.get_specs proc_name) in
   let pset = Propset.from_proplist tenv pres in
   let pset' =
@@ -237,14 +237,15 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
   L.d_decrease_indent 2; L.d_ln ();
   L.d_strln ("#### Footprint of " ^ Procname.to_string proc_name ^ " after Join  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist; L.d_decrease_indent 1; L.d_ln ();
-  let jplist' = IList.map (Specs.Jprop.map (Prop.prop_rename_primed_footprint_vars tenv)) jplist in
+  let jplist' =
+    List.map ~f:(Specs.Jprop.map (Prop.prop_rename_primed_footprint_vars tenv)) jplist in
   L.d_strln ("#### Renamed footprint of " ^ Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist'; L.d_decrease_indent 1; L.d_ln ();
   let jplist'' =
     let f p =
       Prop.prop_primed_vars_to_normal_vars tenv
         (collect_do_abstract_one proc_name tenv p) in
-    IList.map (Specs.Jprop.map f) jplist' in
+    List.map ~f:(Specs.Jprop.map f) jplist' in
   L.d_strln ("#### Abstracted footprint of " ^ Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist''; L.d_decrease_indent 1; L.d_ln();
   jplist''
@@ -406,9 +407,9 @@ let check_assignement_guard pdesc node =
             L.d_strln ("Found " ^ (Exp.to_string e') ^ " as prune var");
           [e']
       | _ -> [] in
-    let prune_vars = List.concat(IList.map (fun n -> prune_var n) succs) in
+    let prune_vars = List.concat_map ~f:(fun n -> prune_var n) succs in
     List.for_all ~f:(fun e' -> Exp.equal e' e) prune_vars in
-  let succs_loc = IList.map (fun n -> Procdesc.Node.get_loc n) succs in
+  let succs_loc = List.map ~f:(fun n -> Procdesc.Node.get_loc n) succs in
   let succs_are_all_prune_nodes () =
     List.for_all ~f:(fun n -> match Procdesc.Node.get_kind n with
         | Procdesc.Node.Prune_node(_) -> true
@@ -494,7 +495,7 @@ let add_taint_attrs tenv proc_name proc_desc prop =
   | tainted_param_nums ->
       let formal_params = Procdesc.get_formals proc_desc in
       let formal_params' =
-        IList.map (fun (p, _) -> Pvar.mk p proc_name) formal_params in
+        List.map ~f:(fun (p, _) -> Pvar.mk p proc_name) formal_params in
       Taint.get_params_to_taint tainted_param_nums formal_params'
       |> List.fold
         ~f:(fun prop_acc (param, taint_kind) ->
@@ -728,8 +729,8 @@ let compute_visited vset =
   let res = ref Specs.Visitedset.empty in
   let node_get_all_lines n =
     let node_loc = Procdesc.Node.get_loc n in
-    let instrs_loc = IList.map Sil.instr_get_loc (Procdesc.Node.get_instrs n) in
-    let lines = IList.map (fun loc -> loc.Location.line) (node_loc :: instrs_loc) in
+    let instrs_loc = List.map ~f:Sil.instr_get_loc (Procdesc.Node.get_instrs n) in
+    let lines = List.map ~f:(fun loc -> loc.Location.line) (node_loc :: instrs_loc) in
     IList.remove_duplicates Int.compare (IList.sort Int.compare lines) in
   let do_node n =
     res :=
@@ -746,8 +747,8 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       (fun prop _ -> Prop.prop_fav_add fav prop)
       pathset;
     let sub_list =
-      IList.map
-        (fun id -> (id, Exp.Var (Ident.create_fresh (Ident.knormal))))
+      List.map
+        ~f:(fun id -> (id, Exp.Var (Ident.create_fresh (Ident.knormal))))
         (Sil.fav_to_list fav) in
     Sil.sub_of_list sub_list in
   let pre_post_visited_list =
@@ -768,7 +769,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
         vset_ref_add_path vset_ref path;
         compute_visited !vset_ref in
       (pre', post', visited) in
-    IList.map f pplist in
+    List.map ~f:f pplist in
   let pre_post_map =
     let add map (pre, post, visited) =
       let current_posts, current_visited =
@@ -784,8 +785,8 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let specs = ref [] in
   let add_spec pre ((posts : Paths.PathSet.t), visited) =
     let posts' =
-      IList.map
-        (fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
+      List.map
+        ~f:(fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
         (Paths.PathSet.elements (do_join_post pname tenv posts)) in
     let spec =
       { Specs.pre = Specs.Jprop.Prop (1, pre);
@@ -854,7 +855,7 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
         | Config.Clang -> Exp.Sizeof (typ, None, Subtype.exact)
         | Config.Java -> Exp.Sizeof (typ, None, Subtype.subtypes) in
       Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_formal (pv, texp, None) in
-    IList.map do_formal new_formals in
+    List.map ~f:do_formal new_formals in
   let sigma_seed =
     create_seed_vars
       (* formals already there plus new ones *)
@@ -875,7 +876,7 @@ let initial_prop
     (Pvar.mk x (Procdesc.get_proc_name curr_f), typ) in
   let new_formals =
     if add_formals
-    then IList.map construct_decl (Procdesc.get_formals curr_f)
+    then List.map ~f:construct_decl (Procdesc.get_formals curr_f)
     else [] (* no new formals added *) in
   let prop1 =
     Prop.prop_reset_inst
@@ -894,8 +895,8 @@ let initial_prop_from_pre tenv curr_f pre =
   if !Config.footprint then
     let vars = Sil.fav_to_list (Prop.prop_fav pre) in
     let sub_list =
-      IList.map
-        (fun id -> (id, Exp.Var (Ident.create_fresh (Ident.kfootprint))))
+      List.map
+        ~f:(fun id -> (id, Exp.Var (Ident.create_fresh (Ident.kfootprint))))
         vars in
     let sub = Sil.sub_of_list sub_list in
     let pre2 = Prop.prop_sub sub pre in
@@ -935,8 +936,8 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
     let posts, visited =
       let pset, visited = collect_postconditions wl tenv pdesc in
       let plist =
-        IList.map
-          (fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
+        List.map
+          ~f:(fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
           (Paths.PathSet.elements pset) in
       plist, visited in
     let pre =
@@ -962,9 +963,9 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
 
 (** get all the nodes in the current call graph with their defined children *)
 let get_procs_and_defined_children call_graph =
-  IList.map
-    (fun (n, ns) ->
-       (n, Procname.Set.elements ns))
+  List.map
+    ~f:(fun (n, ns) ->
+        (n, Procname.Set.elements ns))
     (Cg.get_nodes_and_defined_children call_graph)
 
 let pp_intra_stats wl proc_desc fmt _ =
@@ -977,7 +978,7 @@ let pp_intra_stats wl proc_desc fmt _ =
           Paths.PathSet.size
             (htable_retrieve wl.Worklist.path_set_visited (Procdesc.Node.get_id node)))
     nodes;
-  F.fprintf fmt "(%d nodes containing %d states)" (IList.length nodes) !nstates
+  F.fprintf fmt "(%d nodes containing %d states)" (List.length nodes) !nstates
 
 type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase)
 
@@ -1008,7 +1009,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
         (* rename spec vars to footrpint vars, and copy current to footprint *)
         let mk_init precondition =
           initial_prop_from_pre tenv pdesc (Specs.Jprop.to_prop precondition) in
-        IList.map (fun spec -> mk_init spec.Specs.pre) specs in
+        List.map ~f:(fun spec -> mk_init spec.Specs.pre) specs in
       let init_props = Propset.from_proplist tenv (init_prop :: init_props_from_pres) in
       let init_edgeset =
         let add pset prop =
@@ -1050,8 +1051,8 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
 
   let re_execution () : exe_phase =
     let candidate_preconditions =
-      IList.map
-        (fun spec -> spec.Specs.pre)
+      List.map
+        ~f:(fun spec -> spec.Specs.pre)
         (Specs.get_specs pname) in
     let valid_specs = ref [] in
     let go () =
@@ -1074,13 +1075,13 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
       if Config.undo_join then
         ignore (Specs.Jprop.filter filter candidate_preconditions)
       else
-        ignore (IList.map filter candidate_preconditions) in
+        ignore (List.map ~f:filter candidate_preconditions) in
     let get_results () =
       let specs = !valid_specs in
       L.out "#### [FUNCTION %a] ... OK #####@\n" Procname.pp pname;
       L.out "#### Finished: Re-Execution for %a ####@." Procname.pp pname;
       let valid_preconditions =
-        IList.map (fun spec -> spec.Specs.pre) specs in
+        List.map ~f:(fun spec -> spec.Specs.pre) specs in
       let filename =
         DB.Results_dir.path_to_filename
           (DB.Results_dir.Abs_source_dir source)
@@ -1284,7 +1285,7 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
 
 (** update a summary after analysing a procedure *)
 let update_summary tenv prev_summary specs phase proc_name elapsed res =
-  let normal_specs = IList.map (Specs.spec_normalize tenv) specs in
+  let normal_specs = List.map ~f:(Specs.spec_normalize tenv) specs in
   let new_specs, changed = update_specs tenv proc_name phase normal_specs in
   let timestamp = max 1 (prev_summary.Specs.timestamp + if changed then 1 else 0) in
   let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
@@ -1300,8 +1301,10 @@ let update_summary tenv prev_summary specs phase proc_name elapsed res =
     } in
   let preposts =
     match phase with
-    | Specs.FOOTPRINT -> Some new_specs
-    | Specs.RE_EXECUTION -> Some (IList.map (Specs.NormSpec.erase_join_info_pre tenv) new_specs) in
+    | Specs.FOOTPRINT ->
+        Some new_specs
+    | Specs.RE_EXECUTION ->
+        Some (List.map ~f:(Specs.NormSpec.erase_join_info_pre tenv) new_specs) in
   let payload = { prev_summary.Specs.payload with Specs.preposts; } in
   { prev_summary with
     Specs.phase;
@@ -1341,12 +1344,12 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
       }
     else
       let specs =
-        IList.map
-          (fun jp ->
-             Specs.spec_normalize tenv
-               { Specs.pre = jp;
-                 posts = [];
-                 visited = Specs.Visitedset.empty })
+        List.map
+          ~f:(fun jp ->
+              Specs.spec_normalize tenv
+                { Specs.pre = jp;
+                  posts = [];
+                  visited = Specs.Visitedset.empty })
           joined_pres in
       let payload =
         { summary.Specs.payload with
@@ -1431,7 +1434,7 @@ let do_analysis exe_env =
           pdesc
       | None ->
           assert false in
-    let nodes = IList.map (fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes pdesc) in
+    let nodes = List.map ~f:(fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes pdesc) in
     let proc_flags = Procdesc.get_flags pdesc in
     let static_err_log = Procdesc.get_err_log pdesc in (* err log from translation *)
     let calls = get_calls pdesc in
@@ -1543,7 +1546,7 @@ let print_stats_cfg proc_shadowed source cfg =
       let err_log = summary.Specs.attributes.ProcAttributes.err_log in
       incr num_proc;
       let specs = Specs.get_specs_from_payload summary in
-      tot_specs := (IList.length specs) + !tot_specs;
+      tot_specs := (List.length specs) + !tot_specs;
       let () =
         match specs,
               Errlog.size
@@ -1567,8 +1570,8 @@ let print_stats_cfg proc_shadowed source cfg =
     F.fprintf fmt "@\n++++++++++++++++++++++++++++++++++++++++++++++++++@\n";
     F.fprintf fmt "+ FILE: %a  VISITED: %d/%d SYMOPS: %d@\n"
       SourceFile.pp source
-      (IList.length nodes_visited)
-      (IList.length nodes_total)
+      (List.length nodes_visited)
+      (List.length nodes_total)
       !tot_symops;
     F.fprintf fmt "+  num_procs: %d (%d ok, %d timeouts, %d errors, %d warnings, %d infos)@\n"
       !num_proc num_ok_proc !num_timeout num_errors num_warnings num_infos;

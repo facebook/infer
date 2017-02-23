@@ -217,7 +217,7 @@ module Debug = struct
                 | Stmt stmt -> Clang_ast_proj.get_stmt_kind_string stmt
                 | Decl decl -> Clang_ast_proj.get_decl_kind_string decl in
               let smart_string_of_formula phi =
-                let num_children = IList.length children in
+                let num_children = List.length children in
                 match phi with
                 | And _ when Int.equal num_children 2 -> "(...) AND (...)"
                 | Or _ when Int.equal num_children 2 -> "(...) OR (...)"
@@ -312,11 +312,11 @@ let get_successor_nodes an =
   match an with
   | Stmt st ->
       let _, succs_st = Clang_ast_proj.get_stmt_tuple st in
-      let succs = IList.map (fun s -> Stmt s) succs_st in
+      let succs = List.map ~f:(fun s -> Stmt s) succs_st in
       succs @ (get_decl_of_stmt st)
   | Decl dec ->
       (match Clang_ast_proj.get_decl_context_tuple dec with
-       | Some (decl_list, _) -> IList.map (fun d -> Decl d) decl_list
+       | Some (decl_list, _) -> List.map ~f:(fun d -> Decl d) decl_list
        | None -> [])
 
 let node_to_string an =

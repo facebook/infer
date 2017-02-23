@@ -93,7 +93,7 @@ module SourceKind = struct
           formal_name, formal_typ, Some kind
         else
           make_untainted formal in
-      IList.map taint_formal_with_types formals in
+      List.map ~f:taint_formal_with_types formals in
 
     let formals = Procdesc.get_formals pdesc in
     match Procdesc.get_proc_name pdesc with
@@ -157,8 +157,8 @@ module SinkKind = struct
         if Procname.java_is_static pname || taint_this
         then actuals, 0
         else List.tl_exn actuals, 1 in
-      IList.mapi
-        (fun param_num _ -> kind, param_num + offset, report_reachable)
+      List.mapi
+        ~f:(fun param_num _ -> kind, param_num + offset, report_reachable)
         actuals_to_taint in
     (* taint the nth non-"this" parameter (0-indexed) *)
     let taint_nth n kind ~report_reachable =

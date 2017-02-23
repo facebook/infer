@@ -131,9 +131,9 @@ end = struct
              [".."]
              (Procdesc.Node.get_proc_name node)
              ~description:""
-             ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
-             ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
-             ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
+             ~preds:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
+             ~succs:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
+             ~exn:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
              ~isvisited:(is_visited node)
              ~isproof:false
              fmt (Procdesc.Node.get_id node :> int)) preds;
@@ -143,9 +143,9 @@ end = struct
              [".."]
              (Procdesc.Node.get_proc_name node)
              ~description:""
-             ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
-             ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
-             ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
+             ~preds:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
+             ~succs:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
+             ~exn:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
              ~isvisited:(is_visited node)
              ~isproof:false
              fmt (Procdesc.Node.get_id node :> int)) succs;
@@ -155,9 +155,9 @@ end = struct
              [".."]
              (Procdesc.Node.get_proc_name node)
              ~description:""
-             ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
-             ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
-             ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
+             ~preds:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_preds node) :> int list)
+             ~succs:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_succs node) :> int list)
+             ~exn:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_exn node) :> int list)
              ~isvisited:(is_visited node)
              ~isproof:false
              fmt (Procdesc.Node.get_id node :> int)) exns;
@@ -435,9 +435,9 @@ let write_proc_html source whole_seconds pdesc =
               []
               (Procdesc.Node.get_proc_name n)
               ~description:(Procdesc.Node.get_description (Pp.html Black) n)
-              ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
-              ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
-              ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
+              ~preds:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
+              ~succs:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
+              ~exn:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
               ~isvisited:(is_visited n)
               ~isproof:false
               fmt (Procdesc.Node.get_id n :> int))
@@ -543,9 +543,9 @@ let write_html_file linereader filename procs =
             [fname_encoding]
             (Procdesc.Node.get_proc_name n)
             ~description:(Procdesc.Node.get_description (Pp.html Black) n)
-            ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
-            ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
-            ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
+            ~preds:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
+            ~succs:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
+            ~exn:(List.map ~f:Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
             ~isvisited:(is_visited n)
             ~isproof
             fmt (Procdesc.Node.get_id n :> int))
@@ -554,7 +554,7 @@ let write_html_file linereader filename procs =
       ~f:(fun n ->
           match Procdesc.Node.get_kind n with
           | Procdesc.Node.Start_node proc_name ->
-              let num_specs = IList.length (Specs.get_specs proc_name) in
+              let num_specs = List.length (Specs.get_specs proc_name) in
               let label =
                 (Escape.escape_xml (Procname.to_string proc_name)) ^
                 ": " ^

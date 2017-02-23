@@ -73,7 +73,7 @@ let from_json json =
   }
 
 let aggregate s =
-  let mk_stats f = StatisticsToolbox.compute_statistics (IList.map f s) in
+  let mk_stats f = StatisticsToolbox.compute_statistics (List.map ~f:f s) in
   let aggr_rtime = mk_stats (fun stats -> stats.rtime) in
   let aggr_utime = mk_stats (fun stats -> stats.utime) in
   let aggr_stime = mk_stats (fun stats -> stats.stime) in
@@ -90,7 +90,7 @@ let aggregate s =
   let aggr_stack_kb = mk_stats (fun stats -> stats.stack_kb) in
   let aggr_minor_heap_kb = mk_stats (fun stats -> stats.minor_heap_kb) in
   let aggr_attributes_table =
-    AttributesTable.aggregate (IList.map (fun stats -> stats.attributes_table) s) in
+    AttributesTable.aggregate (List.map ~f:(fun stats -> stats.attributes_table) s) in
   `Assoc [
     ("rtime", StatisticsToolbox.to_json aggr_rtime);
     ("utime", StatisticsToolbox.to_json aggr_utime);

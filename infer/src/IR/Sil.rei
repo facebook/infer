@@ -169,8 +169,10 @@ let inst_new_loc: Location.t => inst => inst;
 /** Update [inst_old] to [inst_new] preserving the zero flag */
 let update_inst: inst => inst => inst;
 
+exception JoinFail;
 
-/** join of instrumentations */
+
+/** join of instrumentations, can raise JoinFail */
 let inst_partial_join: inst => inst => inst;
 
 

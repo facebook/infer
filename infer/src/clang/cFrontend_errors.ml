@@ -25,7 +25,7 @@ let decl_single_checkers_list =
 let decl_checkers_list =
   ComponentKit.component_with_multiple_factory_methods_advice::
   (ComponentKit.component_file_line_count_info::
-   (IList.map single_to_multi decl_single_checkers_list))
+   (List.map ~f:single_to_multi decl_single_checkers_list))
 
 (* List of checkers on stmts *that return 0 or 1 issue* *)
 let stmt_single_checkers_list =
@@ -33,7 +33,7 @@ let stmt_single_checkers_list =
    ComponentKit.component_initializer_with_side_effects_advice;
    GraphQL.DeprecatedAPIUsage.checker;]
 
-let stmt_checkers_list = IList.map single_to_multi stmt_single_checkers_list
+let stmt_checkers_list = List.map ~f:single_to_multi stmt_single_checkers_list
 
 (* List of checkers that will be filled after parsing them from a file *)
 let checkers_decl_stmt = ref []
@@ -123,7 +123,7 @@ let make_condition_issue_desc_pair checkers =
       Logging.out "\nCondition =\n     %a\n" CTL.Debug.pp_formula condition;
       Logging.out "\nIssue_desc = %a\n" CIssue.pp_issue issue);
     condition, issue in
-  checkers_decl_stmt := IList.map do_one_checker checkers
+  checkers_decl_stmt := List.map ~f:do_one_checker checkers
 
 
 (* expands use of let defined formula id in checkers with their definition *)
@@ -170,7 +170,7 @@ let expand_checkers checkers =
             CSet (report_when_const, expand phi map) :: defs
         | cl -> cl :: defs) ~init:[] c.definitions in
     { c with definitions = exp_defs} in
-  let expanded_checkers = IList.map expand_one_checker checkers in
+  let expanded_checkers = List.map ~f:expand_one_checker checkers in
   expanded_checkers
 
 let get_err_log translation_unit_context method_decl_opt =

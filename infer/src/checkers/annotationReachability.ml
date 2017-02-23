@@ -38,9 +38,9 @@ let src_snk_pairs () =
     ([Annotations.any_thread; Annotations.for_non_ui_thread], Annotations.ui_thread) ::
     ([Annotations.ui_thread; Annotations.for_ui_thread], Annotations.for_non_ui_thread) ::
     (parse_user_defined_specs Config.annotation_reachability) in
-  IList.map
-    (fun (src_annot_str_list, snk_annot_str) ->
-       IList.map annotation_of_str src_annot_str_list, annotation_of_str snk_annot_str)
+  List.map
+    ~f:(fun (src_annot_str_list, snk_annot_str) ->
+        List.map ~f:annotation_of_str src_annot_str_list, annotation_of_str snk_annot_str)
     specs
 
 module Domain = struct
@@ -385,7 +385,7 @@ module Interprocedural = struct
             (CallSite.make proc_name loc)
             calls in
       let calls = extract_calls_with_annot snk_annot call_map in
-      if not (Int.equal (IList.length calls) 0)
+      if not (Int.equal (List.length calls) 0)
       then List.iter ~f:(report_src_snk_path calls) src_annot_list in
 
     let initial =

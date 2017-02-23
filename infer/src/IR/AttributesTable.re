@@ -170,9 +170,9 @@ let from_json json => {
 };
 
 let aggregate s => {
-  let all_num_bindings = IList.map (fun stats => float_of_int stats.num_bindings) s;
-  let all_num_buckets = IList.map (fun stats => float_of_int stats.num_buckets) s;
-  let all_max_bucket_length = IList.map (fun stats => float_of_int stats.max_bucket_length) s;
+  let all_num_bindings = List.map f::(fun stats => float_of_int stats.num_bindings) s;
+  let all_num_buckets = List.map f::(fun stats => float_of_int stats.num_buckets) s;
+  let all_max_bucket_length = List.map f::(fun stats => float_of_int stats.max_bucket_length) s;
   let aggr_num_bindings = StatisticsToolbox.compute_statistics all_num_bindings;
   let aggr_num_buckets = StatisticsToolbox.compute_statistics all_num_buckets;
   let aggr_max_bucket_length = StatisticsToolbox.compute_statistics all_max_bucket_length;

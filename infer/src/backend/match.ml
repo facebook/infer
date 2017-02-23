@@ -159,7 +159,7 @@ and isel_match isel1 sub vars isel2 =
 (* extends substitution sub by creating a new substitution for vars *)
 let sub_extend_with_ren (sub: Sil.subst) vars =
   let f id = (id, Exp.Var (Ident.create_fresh Ident.kprimed)) in
-  let renaming_for_vars = Sil.sub_of_list (IList.map f vars) in
+  let renaming_for_vars = Sil.sub_of_list (List.map ~f:f vars) in
   Sil.sub_join sub renaming_for_vars
 
 type sidecondition = Prop.normal Prop.t -> Sil.subst -> bool
@@ -312,7 +312,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
         let (para2_exist_vars, para2_inst) = Sil.hpara_instantiate para2 e_start2 e_end2 es_shared2 in
         (* let allow_impl hpred = {hpred=hpred; flag=hpat.flag} in *)
         let allow_impl hpred = { hpred = hpred; flag = true } in
-        let (para2_hpat, para2_hpats) = match IList.map allow_impl para2_inst with
+        let (para2_hpat, para2_hpats) = match List.map ~f:allow_impl para2_inst with
           | [] -> assert false (* the body of a parameter should contain at least one * conjunct *)
           | para2_pat :: para2_pats -> (para2_pat, para2_pats) in
         let new_vars = para2_exist_vars @ vars in
@@ -369,7 +369,7 @@ let rec iter_match_with_impl tenv iter condition sub vars hpat hpats =
               let (para2_exist_vars, para2_inst) = Sil.hpara_dll_instantiate para2 iF2 oB2 oF2 es_shared2 in
               (* let allow_impl hpred = {hpred=hpred; flag=hpat.flag} in *)
               let allow_impl hpred = { hpred = hpred; flag = true } in
-              let (para2_hpat, para2_hpats) = match IList.map allow_impl para2_inst with
+              let (para2_hpat, para2_hpats) = match List.map ~f:allow_impl para2_inst with
                 | [] -> assert false (* the body of a parameter should contain at least one * conjunct *)
                 | para2_pat :: para2_pats -> (para2_pat, para2_pats) in
               let new_vars = para2_exist_vars @ vars_leftover in
@@ -409,12 +409,12 @@ and hpara_common_match_with_impl tenv impl_ok ids1 sigma1 eids2 ids2 sigma2 =
     let sub_ids =
       let ren_ids = List.zip_exn ids2 ids1 in
       let f (id2, id1) = (id2, Exp.Var id1) in
-      IList.map f ren_ids in
+      List.map ~f:f ren_ids in
     let (sub_eids, eids_fresh) =
       let f id = (id, Ident.create_fresh Ident.kprimed) in
-      let ren_eids = IList.map f eids2 in
-      let eids_fresh = IList.map snd ren_eids in
-      let sub_eids = IList.map (fun (id2, id1) -> (id2, Exp.Var id1)) ren_eids in
+      let ren_eids = List.map ~f:f eids2 in
+      let eids_fresh = List.map ~f:snd ren_eids in
+      let sub_eids = List.map ~f:(fun (id2, id1) -> (id2, Exp.Var id1)) ren_eids in
       (sub_eids, eids_fresh) in
     let sub = Sil.sub_of_list (sub_ids @ sub_eids) in
     match sigma2 with
@@ -423,7 +423,7 @@ and hpara_common_match_with_impl tenv impl_ok ids1 sigma1 eids2 ids2 sigma2 =
         let (hpat2, hpats2) =
           let (hpred2_ren, sigma2_ren) = (Sil.hpred_sub sub hpred2, Prop.sigma_sub sub sigma2) in
           let allow_impl hpred = { hpred = hpred; flag = impl_ok } in
-          (allow_impl hpred2_ren, IList.map allow_impl sigma2_ren) in
+          (allow_impl hpred2_ren, List.map ~f:allow_impl sigma2_ren) in
         let condition _ _ = true in
         let p1 = Prop.normalize tenv (Prop.from_sigma sigma1) in
         begin
@@ -491,13 +491,13 @@ let rec generate_todos_from_strexp mode todos sexp1 sexp2 =
   | Sil.Eexp _, _ ->
       None
   | Sil.Estruct (fel1, _), Sil.Estruct (fel2, _) -> (* assume sorted w.r.t. fields *)
-      if (IList.length fel1 <> IList.length fel2) && equal_iso_mode mode Exact
+      if (List.length fel1 <> List.length fel2) && equal_iso_mode mode Exact
       then None
       else generate_todos_from_fel mode todos fel1 fel2
   | Sil.Estruct _, _ ->
       None
   | Sil.Earray (len1, iel1, _), Sil.Earray (len2, iel2, _) ->
-      if (not (Exp.equal len1 len2) || IList.length iel1 <> IList.length iel2)
+      if (not (Exp.equal len1 len2) || List.length iel1 <> List.length iel2)
       then None
       else generate_todos_from_iel mode todos iel1 iel2
   | Sil.Earray _, _ ->
@@ -700,7 +700,7 @@ let hpred_lift_to_pe hpred =
 
 (** Lift the kind of list segment predicates to PE in a given sigma *)
 let sigma_lift_to_pe sigma =
-  IList.map hpred_lift_to_pe sigma
+  List.map ~f:hpred_lift_to_pe sigma
 
 (** [generic_para_create] takes a correspondence, and a sigma
     and a list of expressions for the first part of this
@@ -716,18 +716,18 @@ let generic_para_create tenv corres sigma1 elist1 =
       | _ -> true in
     let new_corres' = List.filter ~f:not_same_consts corres in
     let add_fresh_id pair = (pair, Ident.create_fresh Ident.kprimed) in
-    IList.map add_fresh_id new_corres' in
+    List.map ~f:add_fresh_id new_corres' in
   let (es_shared, ids_shared, ids_exists) =
     let not_in_elist1 ((e1, _), _) = not (List.exists ~f:(Exp.equal e1) elist1) in
     let corres_ids_no_elist1 = List.filter ~f:not_in_elist1 corres_ids in
     let should_be_shared ((e1, e2), _) = Exp.equal e1 e2 in
     let shared, exists = IList.partition should_be_shared corres_ids_no_elist1 in
-    let es_shared = IList.map (fun ((e1, _), _) -> e1) shared in
-    (es_shared, IList.map snd shared, IList.map snd exists) in
-  let renaming = IList.map (fun ((e1, _), id) -> (e1, id)) corres_ids in
+    let es_shared = List.map ~f:(fun ((e1, _), _) -> e1) shared in
+    (es_shared, List.map ~f:snd shared, List.map ~f:snd exists) in
+  let renaming = List.map ~f:(fun ((e1, _), id) -> (e1, id)) corres_ids in
   let body =
     let sigma1' = sigma_lift_to_pe sigma1 in
-    let renaming_exp = IList.map (fun (e1, id) -> (e1, Exp.Var id)) renaming in
+    let renaming_exp = List.map ~f:(fun (e1, id) -> (e1, Exp.Var id)) renaming in
     Prop.sigma_replace_exp tenv renaming_exp sigma1' in
   (renaming, body, ids_exists, ids_shared, es_shared)
 

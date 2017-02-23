@@ -139,7 +139,7 @@ let find_normal_variable_funcall
     (id: Ident.t): (Exp.t * (Exp.t list) * Location.t * CallFlags.t) option =
   let find_declaration _ = function
     | Sil.Call (Some (id0, _), fun_exp, args, loc, call_flags) when Ident.equal id id0 ->
-        Some (fun_exp, IList.map fst args, loc, call_flags)
+        Some (fun_exp, List.map ~f:fst args, loc, call_flags)
     | _ -> None in
   let res = find_in_node_or_preds node find_declaration in
   if verbose && is_none res
@@ -234,12 +234,12 @@ let rec _find_normal_variable_load tenv (seen : Exp.Set.t) node id : DExp.t opti
 
         let fun_dexp = DExp.Dconst (Const.Cfun pname) in
         let args_dexp =
-          let args_dexpo = IList.map (fun (e, _) -> _exp_rv_dexp tenv seen node e) args in
+          let args_dexpo = List.map ~f:(fun (e, _) -> _exp_rv_dexp tenv seen node e) args in
           if List.exists ~f:is_none args_dexpo
           then []
           else
             let unNone = function Some x -> x | None -> assert false in
-            IList.map unNone args_dexpo in
+            List.map ~f:unNone args_dexpo in
         Some (DExp.Dretcall (fun_dexp, args_dexp, loc, call_flags))
     | Sil.Store (Exp.Lvar pvar, _, Exp.Var id0, _)
       when is_infer && Ident.equal id id0 && not (Pvar.is_frontend_tmp pvar) ->
@@ -299,11 +299,11 @@ and _exp_lv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
                   match find_normal_variable_funcall node' id with
                   | Some (fun_exp, eargs, loc, call_flags) ->
                       let fun_dexpo = _exp_rv_dexp tenv seen node' fun_exp in
-                      let blame_args = IList.map (_exp_rv_dexp tenv seen node') eargs in
+                      let blame_args = List.map ~f:(_exp_rv_dexp tenv seen node') eargs in
                       if List.exists ~f:is_none (fun_dexpo:: blame_args) then None
                       else
                         let unNone = function Some x -> x | None -> assert false in
-                        let args = IList.map unNone blame_args in
+                        let args = List.map ~f:unNone blame_args in
                         Some (DExp.Dfcall (unNone fun_dexpo, args, loc, call_flags))
                   | None ->
                       _exp_rv_dexp tenv seen node' (Exp.Var id)
@@ -537,7 +537,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
                  Pvar.d pvar; L.d_ln ());
               [pvar]
           | _ -> [] in
-        let nullify_pvars = List.concat (IList.map get_nullify node_instrs) in
+        let nullify_pvars = List.concat_map ~f:get_nullify node_instrs in
         let nullify_pvars_notmp =
           List.filter ~f:(fun pvar -> not (Pvar.is_frontend_tmp pvar)) nullify_pvars in
         value_str_from_pvars_vpath nullify_pvars_notmp vpath
@@ -964,7 +964,7 @@ let explain_nth_function_parameter tenv use_buckets deref_str prop n pvar_off =
   match State.get_instr () with
   | Some Sil.Call (_, _, args, _, _) ->
       (try
-         let arg = fst (IList.nth args (n - 1)) in
+         let arg = fst (List.nth_exn args (n - 1)) in
          let dexp_opt = exp_rv_dexp tenv node arg in
          let dexp_opt' = match dexp_opt with
            | Some de ->

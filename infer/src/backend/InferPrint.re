@@ -32,14 +32,14 @@ let load_specfiles () => {
       try (Array.to_list (Sys.readdir dir)) {
       | Sys_error _ => []
       };
-    let all_filepaths = IList.map (fun fname => Filename.concat dir fname) all_filenames;
+    let all_filepaths = List.map f::(fun fname => Filename.concat dir fname) all_filenames;
     List.filter f::is_specs_file all_filepaths
   };
   let specs_dirs = {
     let result_specs_dir = DB.filename_to_string DB.Results_dir.specs_dir;
     [result_specs_dir, ...Config.specs_library]
   };
-  List.concat (IList.map specs_files_in_dir specs_dirs)
+  List.concat_map f::specs_files_in_dir specs_dirs
 };
 
 
@@ -76,7 +76,7 @@ let error_desc_to_xml_string error_desc => {
 let error_desc_to_xml_tags error_desc => {
   let tags = Localise.error_desc_get_tags error_desc;
   let subtree label contents => Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
-  IList.map (fun (tag, value) => subtree tag (Escape.escape_xml value)) tags
+  List.map f::(fun (tag, value) => subtree tag (Escape.escape_xml value)) tags
 };
 
 let get_bug_hash
@@ -105,7 +105,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =>
   | _ =>
     /* writes a trace as a record for atdgen conversion */
     let node_tags_to_records tags_list =>
-      IList.map (fun tag => {Jsonbug_j.tag: fst tag, value: snd tag}) tags_list;
+      List.map f::(fun tag => {Jsonbug_j.tag: fst tag, value: snd tag}) tags_list;
     let trace_item_to_record trace_item => {
       Jsonbug_j.level: trace_item.Errlog.lt_level,
       filename: SourceFile.to_string trace_item.Errlog.lt_loc.Location.file,
@@ -113,14 +113,14 @@ let loc_trace_to_jsonbug_record trace_list ekind =>
       description: trace_item.Errlog.lt_description,
       node_tags: node_tags_to_records trace_item.Errlog.lt_node_tags
     };
-    let record_list = IList.rev (IList.rev_map trace_item_to_record trace_list);
+    let record_list = IList.rev (List.rev_map f::trace_item_to_record trace_list);
     record_list
   };
 
 let error_desc_to_qualifier_tags_records error_desc => {
   let tag_value_pairs = Localise.error_desc_to_tag_value_pairs error_desc;
   let tag_value_to_record (tag, value) => {Jsonbug_j.tag: tag, value};
-  IList.map (fun tag_value => tag_value_to_record tag_value) tag_value_pairs
+  List.map f::(fun tag_value => tag_value_to_record tag_value) tag_value_pairs
 };
 
 type summary_val = {
@@ -151,7 +151,7 @@ let summary_values summary => {
   let err_log = attributes.ProcAttributes.err_log;
   let proc_name = Specs.get_proc_name summary;
   let signature = Specs.get_signature summary;
-  let nodes_nr = IList.length summary.Specs.nodes;
+  let nodes_nr = List.length summary.Specs.nodes;
   let specs = Specs.get_specs_from_payload summary;
   let (nr_nodes_visited, lines_visited) = {
     let visited = ref Specs.Visitedset.empty;
@@ -188,7 +188,7 @@ let summary_values summary => {
   {
     vname: Procname.to_string proc_name,
     vname_id: Procname.to_filename proc_name,
-    vspecs: IList.length specs,
+    vspecs: List.length specs,
     vtime: Printf.sprintf "%.0f" stats.Specs.stats_time,
     vto: Option.value_map f::pp_failure default::"NONE" stats.Specs.stats_failure,
     vsymop: stats.Specs.symops,
@@ -605,7 +605,8 @@ let module IssuesXml = {
     let code_to_xml code => subtree Io_infer.Xml.tag_code code;
     let description_to_xml descr => subtree Io_infer.Xml.tag_description (Escape.escape_xml descr);
     let node_tags_to_xml node_tags => {
-      let escaped_tags = IList.map (fun (tag, value) => (tag, Escape.escape_xml value)) node_tags;
+      let escaped_tags =
+        List.map f::(fun (tag, value) => (tag, Escape.escape_xml value)) node_tags;
       Io_infer.Xml.create_tree Io_infer.Xml.tag_node escaped_tags []
     };
     let num = ref 0;
@@ -629,7 +630,7 @@ let module IssuesXml = {
           node_tags_to_xml lt.Errlog.lt_node_tags
         ]
     };
-    IList.rev (IList.rev_map loc_to_xml ltr)
+    IList.rev (List.rev_map f::loc_to_xml ltr)
   };
 
   /** print issues from summary in xml */
@@ -815,7 +816,7 @@ let module Stats = {
       | _ => true
       };
     stats.nprocs = stats.nprocs + 1;
-    stats.nspecs = stats.nspecs + IList.length specs;
+    stats.nspecs = stats.nspecs + List.length specs;
     if is_verified {
       stats.nverified = stats.nverified + 1
     };
@@ -938,7 +939,7 @@ let module PreconditionStats = {
   let nr_dataconstraints = ref 0;
   let do_summary proc_name summary => {
     let specs = Specs.get_specs_from_payload summary;
-    let preconditions = IList.map (fun spec => Specs.Jprop.to_prop spec.Specs.pre) specs;
+    let preconditions = List.map f::(fun spec => Specs.Jprop.to_prop spec.Specs.pre) specs;
     switch (Prop.CategorizePreconditions.categorize preconditions) {
     | Prop.CategorizePreconditions.Empty =>
       incr nr_empty;

@@ -147,7 +147,7 @@ module StructuredSil = struct
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
   let call_unknown ret_id_str_opt arg_strs =
-    let args = IList.map (fun param_str -> (var_of_str param_str, dummy_typ)) arg_strs in
+    let args = List.map ~f:(fun param_str -> (var_of_str param_str, dummy_typ)) arg_strs in
     let ret_id = Option.map ~f:(fun (str, typ) -> (ident_of_str str, typ)) ret_id_str_opt in
     make_call ret_id args
 
@@ -278,7 +278,7 @@ module Make (CFG : ProcCfg.S with type node = Procdesc.Node.t) (T : TransferFunc
 
   let create_tests ?(test_pname=Procname.empty_block) ~initial ?pp_opt extras tests =
     let open OUnit2 in
-    IList.map (fun (name, test_program) ->
+    List.map ~f:(fun (name, test_program) ->
         name>::create_test test_program extras ~initial pp_opt test_pname) tests
 
 end

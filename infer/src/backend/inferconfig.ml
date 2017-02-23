@@ -322,9 +322,9 @@ let filters_from_inferconfig inferconfig : filters =
   let path_filter =
     let whitelist_filter : path_filter =
       if List.is_empty inferconfig.whitelist then default_path_filter
-      else is_matching (IList.map Str.regexp inferconfig.whitelist) in
+      else is_matching (List.map ~f:Str.regexp inferconfig.whitelist) in
     let blacklist_filter : path_filter =
-      is_matching (IList.map Str.regexp inferconfig.blacklist) in
+      is_matching (List.map ~f:Str.regexp inferconfig.blacklist) in
     let blacklist_files_containing_filter : path_filter =
       FileContainsStringMatcher.create_matcher inferconfig.blacklist_files_containing in
     function source_file ->
@@ -365,8 +365,8 @@ let is_checker_enabled checker_name =
 (* be reported on path/to/file.java both for infer and for eradicate *)
 let test () =
   let filters =
-    IList.map
-      (fun (name, analyzer) -> (name, analyzer, create_filters analyzer))
+    List.map
+      ~f:(fun (name, analyzer) -> (name, analyzer, create_filters analyzer))
       Config.string_to_analyzer in
   let matching_analyzers path =
     List.fold
@@ -379,7 +379,7 @@ let test () =
          let source_file = SourceFile.from_abs_path path in
          let matching = matching_analyzers source_file in
          if matching <> [] then
-           let matching_s = String.concat ~sep:", " (IList.map fst matching) in
+           let matching_s = String.concat ~sep:", " (List.map ~f:fst matching) in
            L.stderr "%s -> {%s}@."
              (SourceFile.to_rel_path source_file)
              matching_s)

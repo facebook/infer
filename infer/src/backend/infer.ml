@@ -222,7 +222,7 @@ let capture = function
         List.rev_append Config.anon_args (
           ["--analyzer";
            IList.assoc Config.equal_analyzer Config.analyzer
-             (IList.map (fun (n,a) -> (a,n)) Config.string_to_analyzer)] @
+             (List.map ~f:(fun (n,a) -> (a,n)) Config.string_to_analyzer)] @
           (match Config.blacklist with
            | Some s when in_buck_mode -> ["--blacklist-regex"; s]
            | _ -> []) @
@@ -234,7 +234,7 @@ let capture = function
               ["--java-jar-compiler"; p]) @
           (match IList.rev Config.buck_build_args with
            | args when in_buck_mode ->
-               IList.map (fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> List.concat
+               List.map ~f:(fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> List.concat
            | _ -> []) @
           (if not Config.debug_mode then [] else
              ["--debug"]) @

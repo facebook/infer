@@ -143,7 +143,7 @@ let command_to_run cmd => {
   let mk_cmd normalizer => {
     let {exec, argv, quoting_style} = normalizer cmd;
     Printf.sprintf
-      "'%s' %s" exec (IList.map (ClangQuotes.quote quoting_style) argv |> String.concat sep::" ")
+      "'%s' %s" exec (List.map f::(ClangQuotes.quote quoting_style) argv |> String.concat sep::" ")
   };
   if (can_attach_ast_exporter cmd) {
     mk_cmd clang_cc1_cmd_sanitizer

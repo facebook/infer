@@ -49,8 +49,8 @@ let stracktree_of_frame frame =
 (** k = 1 implementation, where k is the number of levels of calls inlined *)
 let stitch_summaries stacktrace_file summary_files out_file =
   let stacktrace = Stacktrace.of_json_file stacktrace_file in
-  let summaries = IList.map
-      (Ag_util.Json.from_file Stacktree_j.read_stacktree)
+  let summaries = List.map
+      ~f:(Ag_util.Json.from_file Stacktree_j.read_stacktree)
       summary_files in
   let summary_map = List.fold
       ~f:(fun acc stacktree ->
@@ -64,7 +64,7 @@ let stitch_summaries stacktrace_file summary_files out_file =
       String.Map.find_exn summary_map frame_id
     else
       stracktree_of_frame frame in
-  let expanded_frames = IList.map expand_stack_frame stacktrace.frames in
+  let expanded_frames = List.map ~f:expand_stack_frame stacktrace.frames in
   let crashcontext = { Stacktree_j.stack = expanded_frames} in
   Ag_util.Json.to_file Stacktree_j.write_crashcontext_t out_file crashcontext
 

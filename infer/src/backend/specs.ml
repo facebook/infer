@@ -148,7 +148,7 @@ let visited_str vis =
   let s = ref "" in
   let lines = ref Int.Set.empty in
   let do_one (_, ns) =
-    (* if IList.length ns > 1 then
+    (* if List.length ns > 1 then
        begin
        let ss = ref "" in
        List.iter ~f:(fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
@@ -189,7 +189,8 @@ end = struct
 
   let spec_sub tenv sub spec =
     { pre = Jprop.normalize tenv (Jprop.jprop_sub sub spec.pre);
-      posts = IList.map (fun (p, path) -> (Prop.normalize tenv (Prop.prop_sub sub p), path)) spec.posts;
+      posts =
+        List.map ~f:(fun (p, path) -> (Prop.normalize tenv (Prop.prop_sub sub p), path)) spec.posts;
       visited = spec.visited }
 
   (** Convert spec into normal form w.r.t. variable renaming *)
@@ -198,14 +199,14 @@ end = struct
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
     let sub =
-      Sil.sub_of_list (IList.map (fun id ->
+      Sil.sub_of_list (List.map ~f:(fun id ->
           incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
     spec_sub tenv sub spec
 
   (** Return a compact representation of the spec *)
   let compact sh spec =
     let pre = Jprop.compact sh spec.pre in
-    let posts = IList.map (fun (p, path) -> (Prop.prop_compact sh p, path)) spec.posts in
+    let posts = List.map ~f:(fun (p, path) -> (Prop.prop_compact sh p, path)) spec.posts in
     { pre = pre; posts = posts; visited = spec.visited }
 
   (** Erase join info from pre of spec *)
@@ -372,7 +373,7 @@ let pp_spec pe num_opt fmt spec =
     | Some (n, tot) -> Format.sprintf "%d of %d [nvisited:%s]" n tot (visited_str spec.visited) in
   let pre = Jprop.to_prop spec.pre in
   let pe_post = Prop.prop_update_obj_sub pe pre in
-  let post_list = IList.map fst spec.posts in
+  let post_list = List.map ~f:fst spec.posts in
   match pe.Pp.kind with
   | TEXT ->
       F.fprintf fmt "--------------------------- %s ---------------------------@\n" num_str;
@@ -392,7 +393,7 @@ let pp_spec pe num_opt fmt spec =
 let d_spec (spec: 'a spec) = L.add_print_action (L.PTspec, Obj.repr spec)
 
 let pp_specs pe fmt specs =
-  let total = IList.length specs in
+  let total = List.length specs in
   let cnt = ref 0 in
   match pe.Pp.kind with
   | TEXT ->
@@ -420,9 +421,9 @@ let get_signature summary =
   let s = ref "" in
   List.iter
     ~f:(fun (p, typ) ->
-       let pp f = F.fprintf f "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
-       let decl = F.asprintf "%t" pp in
-       s := if String.equal !s "" then decl else !s ^ ", " ^ decl)
+        let pp f = F.fprintf f "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
+        let decl = F.asprintf "%t" pp in
+        s := if String.equal !s "" then decl else !s ^ ", " ^ decl)
     summary.attributes.ProcAttributes.formals;
   let pp f =
     F.fprintf
@@ -510,7 +511,7 @@ let payload_compact sh payload =
   match payload.preposts with
   | Some specs ->
       { payload with
-        preposts = Some (IList.map (NormSpec.compact sh) specs);
+        preposts = Some (List.map ~f:(NormSpec.compact sh) specs);
       }
   | None ->
       payload
@@ -536,8 +537,8 @@ let res_dir_specs_filename pname =
 
 (** paths to the .specs file for the given procedure in the current spec libraries *)
 let specs_library_filenames pname =
-  IList.map
-    (fun specs_dir -> DB.filename_from_string (Filename.concat specs_dir (specs_filename pname)))
+  List.map
+    ~f:(fun specs_dir -> DB.filename_from_string (Filename.concat specs_dir (specs_filename pname)))
     Config.specs_library
 
 (** paths to the .specs file for the given procedure in the models folder *)

@@ -343,7 +343,7 @@ end = struct
         let leqs' = Exp.Map.fold
             (fun e upper acc_leqs -> (e, Exp.int upper):: acc_leqs)
             umap' [] in
-        let leqs'' = (IList.map DiffConstr.to_leq diff_constraints2) @ leqs' in
+        let leqs'' = (List.map ~f:DiffConstr.to_leq diff_constraints2) @ leqs' in
         leqs_sort_then_remove_redundancy leqs'' in
       let lts_res =
         let lmap = lmap_create_from_lts Exp.Map.empty lts in
@@ -351,7 +351,7 @@ end = struct
         let lts' = Exp.Map.fold
             (fun e lower acc_lts -> (Exp.int lower, e):: acc_lts)
             lmap' [] in
-        let lts'' = (IList.map DiffConstr.to_lt diff_constraints2) @ lts' in
+        let lts'' = (List.map ~f:DiffConstr.to_lt diff_constraints2) @ lts' in
         lts_sort_then_remove_redundancy lts'' in
       { leqs = leqs_res; lts = lts_res; neqs = neqs }
     end
@@ -481,7 +481,7 @@ end = struct
               | e', Exp.Const (Const.Cint _) -> Exp.equal e1 e'
               | _, _ -> false) leqs in
         let upper_list =
-          IList.map (function
+          List.map ~f:(function
               | _, Exp.Const (Const.Cint n) -> n
               | _ -> assert false) e_upper_list in
         if List.is_empty upper_list then None
@@ -498,7 +498,7 @@ end = struct
               | Exp.Const (Const.Cint _), e' -> Exp.equal e1 e'
               | _, _ -> false) lts in
         let lower_list =
-          IList.map (function
+          List.map ~f:(function
               | Exp.Const (Const.Cint n), _ -> n
               | _ -> assert false) e_lower_list in
         if List.is_empty lower_list then None
@@ -523,15 +523,15 @@ end = struct
     Format.fprintf fmt "%a %a %a" (pp_seq pp_leq) leqs (pp_seq pp_lt) lts (pp_seq pp_neq) neqs
 
   let d_leqs { leqs = leqs; lts = lts; neqs = neqs } =
-    let elist = IList.map (fun (e1, e2) -> Exp.BinOp(Binop.Le, e1, e2)) leqs in
+    let elist = List.map ~f:(fun (e1, e2) -> Exp.BinOp(Binop.Le, e1, e2)) leqs in
     Sil.d_exp_list elist
 
   let d_lts { leqs = leqs; lts = lts; neqs = neqs } =
-    let elist = IList.map (fun (e1, e2) -> Exp.BinOp(Binop.Lt, e1, e2)) lts in
+    let elist = List.map ~f:(fun (e1, e2) -> Exp.BinOp(Binop.Lt, e1, e2)) lts in
     Sil.d_exp_list elist
 
   let d_neqs { leqs = leqs; lts = lts; neqs = neqs } =
-    let elist = IList.map (fun (e1, e2) -> Exp.BinOp(Binop.Ne, e1, e2)) lts in
+    let elist = List.map ~f:(fun (e1, e2) -> Exp.BinOp(Binop.Ne, e1, e2)) lts in
     Sil.d_exp_list elist
 *)
 end
@@ -1306,7 +1306,7 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
             raise (Exceptions.Abduction_case_not_implemented __POS__)
       end
   | Sil.Earray (len1, esel1, inst1), Sil.Earray (len2, esel2, _) ->
-      let indices2 = IList.map fst esel2 in
+      let indices2 = List.map ~f:fst esel2 in
       let subs' = array_len_imply tenv calc_missing subs len1 len2 indices2 in
       let subs'', index_frame, index_missing =
         array_imply tenv source calc_index_frame calc_missing subs' esel1 esel2 typ2 in
@@ -1323,7 +1323,7 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
       d_impl_err ("WARNING: function call with parameters of struct type, treating as unknown", subs, (EXC_FALSE_SEXPS (se1, se2)));
       let fsel' =
         let g (f, _) = (f, Sil.Eexp (Exp.Var (Ident.create_fresh Ident.knormal), inst)) in
-        IList.map g fsel in
+        List.map ~f:g fsel in
       sexp_imply tenv source calc_index_frame calc_missing subs (Sil.Estruct (fsel', inst')) se2 typ2
   | Sil.Eexp _, Sil.Earray (len, _, inst)
   | Sil.Estruct _, Sil.Earray (len, _, inst) ->
@@ -1528,7 +1528,7 @@ let expand_hpred_pointer =
       | Sil.Hpointsto (Exp.BinOp (Binop.PlusPI, e1, e2), Sil.Earray (len, esel, inst), t) ->
           let shift_exp e = Exp.BinOp (Binop.PlusA, e, e2) in
           let len' = shift_exp len in
-          let esel' = IList.map (fun (e, se) -> (shift_exp e, se)) esel in
+          let esel' = List.map ~f:(fun (e, se) -> (shift_exp e, se)) esel in
           let hpred' = Sil.Hpointsto (e1, Sil.Earray (len', esel', inst), t) in
           expand true calc_index_frame hpred'
       | _ -> changed, calc_index_frame, hpred in
@@ -1859,7 +1859,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
          | Some iter1 ->
              (match Prop.prop_iter_find iter1 (filter_hpred (fst subs) (Sil.hpred_sub (snd subs) hpred2)) with
               | None ->
-                  let elist2 = IList.map (fun e -> Sil.exp_sub (snd subs) e) _elist2 in
+                  let elist2 = List.map ~f:(fun e -> Sil.exp_sub (snd subs) e) _elist2 in
                   let _, para_inst2 = Sil.hpara_instantiate para2 e2 f2 elist2 in
                   L.d_increase_indent 1;
                   let res =
@@ -1869,7 +1869,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                   L.d_decrease_indent 1;
                   res
               | Some iter1' ->
-                  let elist2 = IList.map (fun e -> Sil.exp_sub (snd subs) e) _elist2 in
+                  let elist2 = List.map ~f:(fun e -> Sil.exp_sub (snd subs) e) _elist2 in
                   (* force instantiation of existentials *)
                   let subs' = exp_list_imply tenv calc_missing subs (f2:: elist2) (f2:: elist2) in
                   let prop1' = Prop.prop_iter_remove_curr_then_to_prop tenv iter1' in
@@ -1925,7 +1925,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
        | Some iter1 ->
            (match Prop.prop_iter_find iter1 (filter_hpred (fst subs) (Sil.hpred_sub (snd subs) hpred2)) with
             | None ->
-                let elist2 = IList.map (fun e -> Sil.exp_sub (snd subs) e) elist2 in
+                let elist2 = List.map ~f:(fun e -> Sil.exp_sub (snd subs) e) elist2 in
                 let _, para_inst2 =
                   if Exp.equal iF2 iB2 then
                     Sil.hpara_dll_instantiate para2 iF2 oB2 oF2 elist2
@@ -1938,7 +1938,7 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2 
                 L.d_decrease_indent 1;
                 res
             | Some iter1' -> (* Only consider implications between identical listsegs for now *)
-                let elist2 = IList.map (fun e -> Sil.exp_sub (snd subs) e) elist2 in
+                let elist2 = List.map ~f:(fun e -> Sil.exp_sub (snd subs) e) elist2 in
                 (* force instantiation of existentials *)
                 let subs' =
                   exp_list_imply tenv calc_missing subs
@@ -1976,7 +1976,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
             let se = Sil.Eexp (Exp.Var (Ident.create_fresh Ident.kprimed), Sil.Inone) in
             (fld, se) in
           let fields = ["java.lang.String.count"; "java.lang.String.hash"; "java.lang.String.offset"; "java.lang.String.value"] in
-          Sil.Estruct (IList.map mk_fld_sexp fields, Sil.inst_none) in
+          Sil.Estruct (List.map ~f:mk_fld_sexp fields, Sil.inst_none) in
     let const_string_texp =
       match !Config.curr_language with
       | Config.Clang ->
@@ -2238,7 +2238,7 @@ exception NO_COVER
 (** Find miminum set of pi's in [cases] whose disjunction covers true *)
 let find_minimum_pure_cover tenv cases =
   let cases =
-    let compare (pi1, _) (pi2, _) = Int.compare (IList.length pi1) (IList.length pi2)
+    let compare (pi1, _) (pi2, _) = Int.compare (List.length pi1) (List.length pi2)
     in IList.sort compare cases in
   let rec grow seen todo = match todo with
     | [] -> raise NO_COVER
@@ -2251,7 +2251,7 @@ let find_minimum_pure_cover tenv cases =
         if is_cover tenv (seen @ todo') then _shrink seen todo'
         else _shrink ((pi, x):: seen) todo' in
   let shrink cases =
-    if IList.length cases > 2 then _shrink [] cases
+    if List.length cases > 2 then _shrink [] cases
     else cases
   in try Some (shrink (grow [] cases))
   with NO_COVER -> None

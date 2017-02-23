@@ -260,7 +260,7 @@ let setup_harness_cfg harness_name env cg cfg =
 (** create a procedure named harness_name that calls each of the methods in trace in the specified
  * order with the specified receiver and add it to the execution environment *)
 let inhabit_trace tenv trace harness_name cg cfg =
-  if IList.length trace > 0 then
+  if List.length trace > 0 then
     let source_file = Cg.get_source cg in
     let harness_filename = create_dummy_harness_filename harness_name in
     let start_line = 1 in

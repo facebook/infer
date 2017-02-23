@@ -120,7 +120,7 @@ module Normal = struct
   include (DefaultNode : module type of DefaultNode with type t := node)
 
   let instrs = Procdesc.Node.get_instrs
-  let instr_ids n = IList.map (fun i -> i, None) (instrs n)
+  let instr_ids n = List.map ~f:(fun i -> i, None) (instrs n)
   let normal_succs _ n = Procdesc.Node.get_succs n
   let normal_preds _ n = Procdesc.Node.get_preds n
   (* prune away exceptional control flow *)
@@ -163,7 +163,7 @@ module Exceptional = struct
 
   let instrs = Procdesc.Node.get_instrs
 
-  let instr_ids n = IList.map (fun i -> i, None) (instrs n)
+  let instr_ids n = List.map ~f:(fun i -> i, None) (instrs n)
 
   let nodes (t, _) = Procdesc.get_nodes t
 
@@ -229,8 +229,8 @@ module OneInstrPerNode (Base : S with type node = Procdesc.Node.t
 
   (* keep the invariants before/after each instruction *)
   let instr_ids t =
-    IList.mapi
-      (fun i instr ->
+    List.mapi
+      ~f:(fun i instr ->
          let id = Procdesc.Node.get_id t, Instr_index i in
          instr, Some id)
       (instrs t)

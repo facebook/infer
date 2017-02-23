@@ -23,7 +23,7 @@ module Source = struct
           let procedure = json |> member "procedure" |> to_string |> Str.regexp in
           let kind = json |> member "kind" |> to_string in
           { procedure; kind; } in
-        IList.map parse_source sources
+        List.map ~f:parse_source sources
     | _ ->
         []
 end
@@ -39,7 +39,7 @@ module Sink = struct
           let kind = json |> member "kind" |> to_string in
           let index = json |> member "index" |> to_string in
           { procedure; kind; index; } in
-        IList.map parse_sink sinks
+        List.map ~f:parse_sink sinks
     | _ ->
         []
 end

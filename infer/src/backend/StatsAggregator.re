@@ -32,7 +32,7 @@ let find_json_files_in_dir dir => {
   dir_exists dir ?
     {
       let content = Array.to_list (Sys.readdir dir);
-      let content_with_path = IList.map (fun p => Filename.concat dir p) content;
+      let content_with_path = List.map f::(fun p => Filename.concat dir p) content;
       List.filter f::is_valid_json_file content_with_path
     } :
     []
@@ -71,7 +71,7 @@ let load_data_from_infer_deps file => {
   let lines = Utils.read_file file;
   try (
     switch lines {
-    | Some l => Ok (IList.map extract_target_and_path l)
+    | Some l => Ok (List.map f::extract_target_and_path l)
     | None => raise (Failure ("Error reading '" ^ file ^ "'"))
     }
   ) {
@@ -97,8 +97,9 @@ let collect_all_stats_files () => {
       | Ok r =>
         let buck_out_parent = Filename.concat p Filename.parent_dir_name;
         let targets_files =
-          IList.map
-            (fun (t, p) => (t, find_stats_files_in_dir (concatenate_paths buck_out_parent p))) r;
+          List.map
+            f::(fun (t, p) => (t, find_stats_files_in_dir (concatenate_paths buck_out_parent p)))
+            r;
         Ok (Buck_out targets_files)
       | Error _ as e => e
       }
@@ -111,7 +112,8 @@ let collect_all_stats_files () => {
 
 let aggregate_stats_files paths => {
   let open_json_file file => Yojson.Basic.from_file file;
-  let load_stats paths => IList.map (fun path => PerfStats.from_json (open_json_file path)) paths;
+  let load_stats paths =>
+    List.map f::(fun path => PerfStats.from_json (open_json_file path)) paths;
   let all_perf_stats = load_stats paths;
   switch all_perf_stats {
   | [] => None

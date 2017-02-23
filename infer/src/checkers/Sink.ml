@@ -72,8 +72,8 @@ module Make (Kind : Kind) = struct
     { sink; index; report_reachable; }
 
   let get site actuals tenv =
-    IList.map
-      (fun (kind, index, report_reachable) ->
+    List.map
+      ~f:(fun (kind, index, report_reachable) ->
          make_sink_param (make kind site) index ~report_reachable)
       (Kind.get (CallSite.pname site) actuals tenv)
 

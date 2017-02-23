@@ -257,13 +257,13 @@ module Make (Spec : Spec) = struct
           sink ~elems_passthroughs_of_pname:sinks_of_pname ~filter_passthroughs in
       sources_passthroughs, sinks_passthroughs in
 
-    IList.map
-      (fun (source, sink, passthroughs) ->
-         let sources_passthroughs, sinks_passthroughs = expand_path source sink in
-         let filtered_passthroughs =
-           filter_passthroughs_
-             Top_level (Source.call_site source) (Sink.call_site sink) passthroughs in
-         filtered_passthroughs, sources_passthroughs, sinks_passthroughs)
+    List.map
+      ~f:(fun (source, sink, passthroughs) ->
+          let sources_passthroughs, sinks_passthroughs = expand_path source sink in
+          let filtered_passthroughs =
+            filter_passthroughs_
+              Top_level (Source.call_site source) (Sink.call_site sink) passthroughs in
+          filtered_passthroughs, sources_passthroughs, sinks_passthroughs)
       (get_reports ?cur_site t)
 
   let to_loc_trace
@@ -298,7 +298,7 @@ module Make (Spec : Spec) = struct
         if should_nest elem
         then incr level;
         pair, !level in
-      IList.map get_nesting_ (IList.rev elems) in
+      List.map ~f:get_nesting_ (IList.rev elems) in
 
     let trace_elems_of_path_elem call_site desc ~is_source ((elem, passthroughs), lt_level) acc =
       let desc = desc elem in
@@ -353,8 +353,8 @@ module Make (Spec : Spec) = struct
         then
           caller_trace.sources
         else
-          IList.map
-            (fun sink -> Source.with_callsite sink callee_site)
+          List.map
+            ~f:(fun sink -> Source.with_callsite sink callee_site)
             (Sources.elements non_footprint_callee_sources)
           |> Sources.of_list
           |> Sources.union caller_trace.sources in
@@ -364,8 +364,8 @@ module Make (Spec : Spec) = struct
         then
           caller_trace.sinks
         else
-          IList.map
-            (fun sink -> Sink.with_callsite sink callee_site)
+          List.map
+            ~f:(fun sink -> Sink.with_callsite sink callee_site)
             (Sinks.elements callee_trace.sinks)
           |> Sinks.of_list
           |> Sinks.union caller_trace.sinks in

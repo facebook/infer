@@ -75,18 +75,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let stacktree_of_astate pdesc astate loc location_type get_proc_desc =
     let procs = Domain.elements astate in
-    let callees = IList.map
-        (fun pn ->
-           match SpecSummary.read_summary pdesc pn with
-           | None | Some None -> (match get_proc_desc pn with
-               | None -> stacktree_stub_of_procname pn
-               (* This can happen when the callee is in the same cluster/ buck
-                  target, but it hasn't been checked yet. So we need both the
-                  inter-target lookup (SpecSummary) and the intra-target
-                  lookup (using get_proc_desc). *)
-               | Some callee_pdesc ->
-                   stacktree_of_pdesc callee_pdesc "proc_start")
-           | Some (Some stracktree) -> stracktree )
+    let callees = List.map
+        ~f:(fun pn ->
+            match SpecSummary.read_summary pdesc pn with
+            | None | Some None -> (match get_proc_desc pn with
+                | None -> stacktree_stub_of_procname pn
+                (* This can happen when the callee is in the same cluster/ buck
+                   target, but it hasn't been checked yet. So we need both the
+                   inter-target lookup (SpecSummary) and the intra-target
+                   lookup (using get_proc_desc). *)
+                | Some callee_pdesc ->
+                    stacktree_of_pdesc callee_pdesc "proc_start")
+            | Some (Some stracktree) -> stracktree )
         procs in
     stacktree_of_pdesc pdesc ~loc ~callees location_type
 
@@ -123,7 +123,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           String.equal frame.Stacktrace.method_str (Procname.get_method caller) &&
           matches_class caller in
         let all_frames = List.concat
-            (IList.map (fun trace -> trace.Stacktrace.frames) traces) in
+            (List.map ~f:(fun trace -> trace.Stacktrace.frames) traces) in
         begin
           match List.find ~f:matches_proc all_frames with
           | Some frame ->
@@ -161,7 +161,7 @@ let loaded_stacktraces =
     | Some fname, Some dir -> Some (fname :: (json_files_in_dir dir)) in
   match filenames with
   | None -> None
-  | Some files -> Some (IList.map Stacktrace.of_json_file files)
+  | Some files -> Some (List.map ~f:Stacktrace.of_json_file files)
 
 let checker { Callbacks.proc_desc; tenv; get_proc_desc; } =
   match loaded_stacktraces with

@@ -118,7 +118,7 @@ let get_parameters trans_unit_ctx tenv function_method_decl_info =
           | _ -> qt.Clang_ast_t.qt_type_ptr in
         (mangled, {qt with qt_type_ptr})
     | _ -> assert false in
-  let pars = IList.map par_to_ms_par (get_param_decls function_method_decl_info) in
+  let pars = List.map ~f:par_to_ms_par (get_param_decls function_method_decl_info) in
   get_class_param function_method_decl_info @ pars @ get_return_param tenv function_method_decl_info
 
 (** get return type of the function and optionally type of function's return parameter *)
@@ -151,11 +151,11 @@ let get_assume_not_null_calls param_decls =
             decl_info name qt.Clang_ast_t.qt_type_ptr in
         [(`ClangStmt assume_call)]
     | _ -> [] in
-  List.concat (IList.map do_one_param param_decls)
+  List.concat_map ~f:do_one_param param_decls
 
 let get_init_list_instrs method_decl_info =
   let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
-  IList.map create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
+  List.map ~f:create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
 
 let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
   let open Clang_ast_t in
@@ -381,7 +381,7 @@ let get_const_args_indices ~shift args =
 
 (** Creates a procedure description. *)
 let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst_method =
-  let defined = not (Int.equal (IList.length fbody) 0) in
+  let defined = not (Int.equal (List.length fbody) 0) in
   let proc_name = CMethod_signature.ms_get_name ms in
   let pname = Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
@@ -393,11 +393,11 @@ let create_local_procdesc trans_unit_ctx cfg tenv ms fbody captured is_objc_inst
     CFrontend_config.equal_clang_lang (CMethod_signature.ms_get_lang ms) CFrontend_config.CPP in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
-    let captured_mangled = IList.map (fun (var, t) -> (Pvar.get_name var), t) captured in
+    let captured_mangled = List.map ~f:(fun (var, t) -> (Pvar.get_name var), t) captured in
     (* Captured variables for blocks are treated as parameters *)
     let formals = captured_mangled @ formals in
     let const_formals = get_const_args_indices
-        ~shift:(IList.length captured_mangled)
+        ~shift:(List.length captured_mangled)
         (CMethod_signature.ms_get_args ms) in
     let source_range = CMethod_signature.ms_get_loc ms in
     Logging.out_debug "\nCreating a new procdesc for function: '%s'\n@." pname;
@@ -445,7 +445,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
       let ret_type, formals =
         (match type_opt with
          | Some (ret_type, arg_types) ->
-             ret_type, IList.map (fun typ -> (Mangled.from_string "x", typ)) arg_types
+             ret_type, List.map ~f:(fun typ -> (Mangled.from_string "x", typ)) arg_types
          | None -> Typ.Tvoid, []) in
       let loc = Location.dummy in
       let proc_attributes =

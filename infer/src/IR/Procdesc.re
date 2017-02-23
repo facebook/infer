@@ -192,7 +192,7 @@ let module Node = {
       (Pvar.get_ret_pvar pname, ret_type)
     };
     let construct_decl (x, typ) => (Pvar.mk x pname, typ);
-    let ptl = [ret_var, ...IList.map construct_decl locals];
+    let ptl = [ret_var, ...List.map f::construct_decl locals];
     let instr = Sil.Declare_locals ptl loc;
     prepend_instrs node [instr]
   };
@@ -541,7 +541,7 @@ let get_loop_heads pdesc => {
       } else {
         let ancester = NodeSet.add n ancester;
         let succs = List.append (Node.get_succs n) (Node.get_exn n);
-        let works = IList.map (fun m => (m, ancester)) succs;
+        let works = List.map f::(fun m => (m, ancester)) succs;
         set_loop_head_rec (NodeSet.add n visited) heads (List.append works wl')
       }
     };

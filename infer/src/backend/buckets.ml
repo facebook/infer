@@ -59,7 +59,7 @@ let check_access access_opt de_opt =
         | None -> []
         | Some (_, _, pdesc) ->
             Procdesc.get_formals pdesc in
-      let formal_names = IList.map fst formals in
+      let formal_names = List.map ~f:fst formals in
       let is_formal pvar =
         let name = Pvar.get_name pvar in
         List.exists ~f:(Mangled.equal name) formal_names in

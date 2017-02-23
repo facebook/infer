@@ -51,8 +51,8 @@ module Make (TraceElem : TraceElem.S) = struct
     of_source dummy_source
 
   let get_reportable_sink_paths t ~trace_of_pname =
-    IList.map
-      (fun (passthroughs, _, sinks) -> passthroughs, sinks)
+    List.map
+      ~f:(fun (passthroughs, _, sinks) -> passthroughs, sinks)
       (get_reportable_paths t ~trace_of_pname)
 
   let to_sink_loc_trace ?desc_of_sink ?sink_should_nest (passthroughs, sinks) =

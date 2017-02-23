@@ -24,7 +24,7 @@ let get_name_of_objc_static_locals (curr_f: Procdesc.t) p => {
     | Sil.Hpointsto e _ _ => [local_static e]
     | _ => []
     };
-  let vars_sigma = IList.map hpred_local_static p.Prop.sigma;
+  let vars_sigma = List.map f::hpred_local_static p.Prop.sigma;
   List.concat (List.concat vars_sigma)
 };
 
@@ -40,7 +40,7 @@ let get_name_of_objc_block_locals p => {
     | Sil.Hpointsto e _ _ => [local_blocks e]
     | _ => []
     };
-  let vars_sigma = IList.map hpred_local_blocks p.Prop.sigma;
+  let vars_sigma = List.map f::hpred_local_blocks p.Prop.sigma;
   List.concat (List.concat vars_sigma)
 };
 
@@ -145,7 +145,7 @@ let remove_abduced_retvars tenv p => {
 };
 
 let remove_locals tenv (curr_f: Procdesc.t) p => {
-  let names_of_locals = IList.map (get_name_of_local curr_f) (Procdesc.get_locals curr_f);
+  let names_of_locals = List.map f::(get_name_of_local curr_f) (Procdesc.get_locals curr_f);
   let names_of_locals' =
     switch !Config.curr_language {
     | Config.Clang =>
@@ -168,7 +168,7 @@ let remove_locals tenv (curr_f: Procdesc.t) p => {
 
 let remove_formals tenv (curr_f: Procdesc.t) p => {
   let pname = Procdesc.get_proc_name curr_f;
-  let formal_vars = IList.map (fun (n, _) => Pvar.mk n pname) (Procdesc.get_formals curr_f);
+  let formal_vars = List.map f::(fun (n, _) => Pvar.mk n pname) (Procdesc.get_formals curr_f);
   Attribute.deallocate_stack_vars tenv p formal_vars
 };
 

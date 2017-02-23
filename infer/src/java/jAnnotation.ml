@@ -26,7 +26,7 @@ let translate a : Annot.t =
   let element_value_pairs = a.JBasics.element_value_pairs in
   { Annot.
     class_name;
-    parameters = IList.map translate_value_pair element_value_pairs }
+    parameters = List.map ~f:translate_value_pair element_value_pairs }
 
 
 (** Translate an item annotation. *)
@@ -35,7 +35,7 @@ let translate_item avlist : Annot.Item.t =
     | Javalib.RTVisible -> true
     | Javalib.RTInvisible -> false in
   let trans (a, v) = translate a, trans_vis v in
-  IList.map trans avlist
+  List.map ~f:trans avlist
 
 
 (** Translate a method annotation. *)
@@ -43,5 +43,5 @@ let translate_method ann : Annot.Method.t =
   let global_ann = ann.Javalib.ma_global in
   let param_ann = ann.Javalib.ma_parameters in
   let ret_item = translate_item global_ann in
-  let param_items = IList.map translate_item param_ann in
+  let param_items = List.map ~f:translate_item param_ann in
   ret_item, param_items

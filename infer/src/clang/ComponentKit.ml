@@ -234,14 +234,14 @@ let component_with_multiple_factory_methods_advice context an =
       | ObjCMethodDecl (decl_info, _, _) -> decl_info.Clang_ast_t.di_attributes
       | _ -> assert false in
     let unavailable_attrs = (List.filter ~f:is_unavailable_attr attrs) in
-    let is_available = Int.equal (IList.length unavailable_attrs) 0 in
+    let is_available = Int.equal (List.length unavailable_attrs) 0 in
     (CAst_utils.is_objc_factory_method if_decl decl) && is_available in
 
   let check_interface if_decl =
     match if_decl with
     | Clang_ast_t.ObjCInterfaceDecl (_, _, decls, _, _) ->
         let factory_methods = List.filter ~f:(is_available_factory_method if_decl) decls in
-        CTL.True, IList.map (fun meth_decl -> {
+        CTL.True, List.map ~f:(fun meth_decl -> {
               CIssue.name = "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS";
               severity = Exceptions.Kadvice;
               mode = CIssue.On;
@@ -328,7 +328,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
       let source_file =
         context.translation_unit_context.CFrontend_config.source_file in
       let line_count = SourceFile.line_count source_file in
-      CTL.True, IList.map (fun i -> {
+      CTL.True, List.map ~f:(fun i -> {
             CIssue.name = "COMPONENT_FILE_LINE_COUNT";
             severity = Exceptions.Kinfo;
             mode = CIssue.Off;

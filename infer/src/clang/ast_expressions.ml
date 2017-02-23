@@ -310,7 +310,7 @@ let translate_dispatch_function stmt_info stmt_list n =
   match stmt_list with
   | _:: args_stmts ->
       let expr_info_call = make_general_expr_info create_void_star_type `XValue `Ordinary in
-      let arg_stmt = try IList.nth args_stmts n with Failure _ -> assert false in
+      let arg_stmt = try List.nth_exn args_stmts n with Failure _ -> assert false in
       CallExpr (stmt_info, [arg_stmt], expr_info_call)
   | _ -> assert false
 

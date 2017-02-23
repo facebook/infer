@@ -190,7 +190,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let f_resolve_id = resolve_id id_map in
       (* add [sink] to the trace associated with the [formal_index]th actual *)
       let add_sink_to_actual access_tree_acc (sink_param : TraceDomain.Sink.parameter) =
-        let actual_exp, actual_typ = IList.nth actuals sink_param.index in
+        let actual_exp, actual_typ = List.nth_exn actuals sink_param.index in
         match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
         | Some actual_ap_raw ->
             let actual_ap =
@@ -236,12 +236,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           | None -> failwith "Have summary for retval, but no ret id to bind it to!" in
         let get_actual_ap formal_index =
           let f_resolve_id = resolve_id astate_in.id_map in
-          try
-            let actual_exp, actual_typ =
-              IList.nth actuals formal_index in
-            AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id
-          with Failure _ ->
-            None in
+          List.nth actuals formal_index |>
+          Option.value_map
+            ~f:(fun (actual_exp, actual_typ) ->
+                AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id )
+            ~default:None in
         let project ~formal_ap ~actual_ap =
           let projected_ap = AccessPath.append actual_ap (snd (AccessPath.extract formal_ap)) in
           if AccessPath.is_exact formal_ap
@@ -450,7 +449,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
              practice. this is obviously unsound; will try to remove in the future. *)
           let max_calls = 3 in
           let targets =
-            if IList.length call_flags.cf_targets <= max_calls
+            if List.length call_flags.cf_targets <= max_calls
             then
               called_pname :: call_flags.cf_targets
             else

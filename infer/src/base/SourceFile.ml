@@ -127,7 +127,7 @@ let of_header header_file =
   let file_no_ext, ext_opt = Filename.split_extension abs_path in
   let file_opt = match ext_opt with
     | Some ext when List.mem ~equal:String.equal header_exts ext -> (
-        let possible_files = IList.map (fun ext -> file_no_ext ^ "." ^ ext) source_exts in
+        let possible_files = List.map ~f:(fun ext -> file_no_ext ^ "." ^ ext) source_exts in
         List.find ~f:path_exists possible_files
       )
     | _ -> None in

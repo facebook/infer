@@ -153,7 +153,7 @@ let pp_hpred_stackvar pe0 f (hpred : Sil.hpred) =
 
 (** Pretty print a substitution. *)
 let pp_sub pe f sub =
-  let pi_sub = IList.map (fun (id, e) -> Sil.Aeq (Var id, e)) (Sil.sub_to_list sub) in
+  let pi_sub = List.map ~f:(fun (id, e) -> Sil.Aeq (Var id, e)) (Sil.sub_to_list sub) in
   (Pp.semicolon_seq_oneline pe (Sil.pp_atom pe)) f pi_sub
 
 (** Dump a substitution. *)
@@ -221,7 +221,7 @@ let d_pi_sigma pi sigma =
   d_pi pi; d_separator (); d_sigma sigma
 
 let pi_of_subst sub =
-  IList.map (fun (id1, e2) -> Sil.Aeq (Var id1, e2)) (Sil.sub_to_list sub)
+  List.map ~f:(fun (id1, e2) -> Sil.Aeq (Var id1, e2)) (Sil.sub_to_list sub)
 
 (** Return the pure part of [prop]. *)
 let get_pure (p: 'a t) : pi =
@@ -412,10 +412,10 @@ let sigma_fav_in_pvars_add fav sigma =
   List.iter ~f:(hpred_fav_in_pvars_add fav) sigma
 
 let sigma_fpv sigma =
-  List.concat (IList.map Sil.hpred_fpv sigma)
+  List.concat_map ~f:Sil.hpred_fpv sigma
 
 let pi_fpv pi =
-  List.concat (IList.map Sil.atom_fpv pi)
+  List.concat_map ~f:Sil.atom_fpv pi
 
 let prop_fpv prop =
   (Sil.sub_fpv prop.sub) @
@@ -428,11 +428,11 @@ let prop_fpv prop =
 
 let pi_sub (subst: Sil.subst) pi =
   let f = Sil.atom_sub subst in
-  IList.map f pi
+  List.map ~f:f pi
 
 let sigma_sub subst sigma =
   let f = Sil.hpred_sub subst in
-  IList.map f sigma
+  List.map ~f:f sigma
 
 (** Return [true] if the atom is an inequality *)
 let atom_is_inequality (atom : Sil.atom) = match atom with
@@ -566,7 +566,7 @@ let exp_collapse_consecutive_indices_prop (typ : Typ.t) exp =
 
 (** Return a compact representation of the prop *)
 let prop_compact sh (prop : normal t) : normal t =
-  let sigma' = IList.map (Sil.hpred_compact sh) prop.sigma in
+  let sigma' = List.map ~f:(Sil.hpred_compact sh) prop.sigma in
   unsafe_cast_to_normal (set prop ~sigma:sigma')
 
 (** {2 Query about Proposition} *)
@@ -708,7 +708,7 @@ module Normalize = struct
           e
       | Closure c ->
           let captured_vars =
-            IList.map (fun (exp, pvar, typ) -> (eval exp, pvar, typ)) c.captured_vars in
+            List.map ~f:(fun (exp, pvar, typ) -> (eval exp, pvar, typ)) c.captured_vars in
           Closure { c with captured_vars; }
       | Const _ ->
           e
@@ -1282,9 +1282,9 @@ module Normalize = struct
       | Aneq (e1, e2) ->
           handle_boolean_operation false e1 e2
       | Apred (a, es) ->
-          Apred (a, IList.map (fun e -> exp_normalize tenv sub e) es)
+          Apred (a, List.map ~f:(fun e -> exp_normalize tenv sub e) es)
       | Anpred (a, es) ->
-          Anpred (a, IList.map (fun e -> exp_normalize tenv sub e) es) in
+          Anpred (a, List.map ~f:(fun e -> exp_normalize tenv sub e) es) in
     if atom_is_inequality a' then inequality_normalize tenv a' else a'
 
   let normalize_and_strengthen_atom tenv (p : normal t) (a : Sil.atom) : Sil.atom =
@@ -1316,7 +1316,7 @@ module Normalize = struct
           | [] -> se
           | _ ->
               let fld_cnts' =
-                IList.map (fun (fld, cnt) ->
+                List.map ~f:(fun (fld, cnt) ->
                     fld, strexp_normalize tenv sub cnt) fld_cnts in
               let fld_cnts'' = IList.sort [%compare: Ident.fieldname * Sil.strexp] fld_cnts' in
               Estruct (fld_cnts'', inst)
@@ -1329,7 +1329,7 @@ module Normalize = struct
               if Exp.equal len len' then se else Earray (len', idx_cnts, inst)
           | _ ->
               let idx_cnts' =
-                IList.map (fun (idx, cnt) ->
+                List.map ~f:(fun (idx, cnt) ->
                     let idx' = exp_normalize tenv sub idx in
                     idx', strexp_normalize tenv sub cnt) idx_cnts in
               let idx_cnts'' =
@@ -1399,7 +1399,7 @@ module Normalize = struct
     | Hlseg (k, para, e1, e2, elist) ->
         let normalized_e1 = exp_normalize tenv sub e1 in
         let normalized_e2 = exp_normalize tenv sub e2 in
-        let normalized_elist = IList.map (exp_normalize tenv sub) elist in
+        let normalized_elist = List.map ~f:(exp_normalize tenv sub) elist in
         let normalized_para = hpara_normalize tenv para in
         Hlseg (k, normalized_para, normalized_e1, normalized_e2, normalized_elist)
     | Hdllseg (k, para, e1, e2, e3, e4, elist) ->
@@ -1407,24 +1407,24 @@ module Normalize = struct
         let norm_e2 = exp_normalize tenv sub e2 in
         let norm_e3 = exp_normalize tenv sub e3 in
         let norm_e4 = exp_normalize tenv sub e4 in
-        let norm_elist = IList.map (exp_normalize tenv sub) elist in
+        let norm_elist = List.map ~f:(exp_normalize tenv sub) elist in
         let norm_para = hpara_dll_normalize tenv para in
         Hdllseg (k, norm_para, norm_e1, norm_e2, norm_e3, norm_e4, norm_elist)
 
   and hpara_normalize tenv (para : Sil.hpara) =
-    let normalized_body = IList.map (hpred_normalize tenv Sil.sub_empty) (para.body) in
+    let normalized_body = List.map ~f:(hpred_normalize tenv Sil.sub_empty) (para.body) in
     let sorted_body = IList.sort Sil.compare_hpred normalized_body in
     { para with body = sorted_body }
 
   and hpara_dll_normalize tenv (para : Sil.hpara_dll) =
-    let normalized_body = IList.map (hpred_normalize tenv Sil.sub_empty) (para.body_dll) in
+    let normalized_body = List.map ~f:(hpred_normalize tenv Sil.sub_empty) (para.body_dll) in
     let sorted_body = IList.sort Sil.compare_hpred normalized_body in
     { para with body_dll = sorted_body }
 
 
   let sigma_normalize tenv sub sigma =
     let sigma' =
-      IList.stable_sort Sil.compare_hpred (IList.map (hpred_normalize tenv sub) sigma) in
+      IList.stable_sort Sil.compare_hpred (List.map ~f:(hpred_normalize tenv sub) sigma) in
     if equal_sigma sigma sigma' then sigma else sigma'
 
   let pi_tighten_ineq tenv pi =
@@ -1465,12 +1465,12 @@ module Normalize = struct
       lt_tighten [] lt_list in
     let ineq_list' =
       let le_ineq_list =
-        IList.map
-          (fun (e, n) -> mk_inequality tenv (BinOp(Le, e, Exp.int n)))
+        List.map
+          ~f:(fun (e, n) -> mk_inequality tenv (BinOp(Le, e, Exp.int n)))
           le_list_tightened in
       let lt_ineq_list =
-        IList.map
-          (fun (n, e) -> mk_inequality tenv (BinOp(Lt, Exp.int n, e)))
+        List.map
+          ~f:(fun (n, e) -> mk_inequality tenv (BinOp(Lt, Exp.int n, e)))
           lt_list_tightened in
       le_ineq_list @ lt_ineq_list in
     let nonineq_list' =
@@ -1491,7 +1491,7 @@ module Normalize = struct
   (** Normalization of pi.
       The normalization filters out obviously - true disequalities, such as e <> e + 1. *)
   let pi_normalize tenv sub sigma pi0 =
-    let pi = IList.map (atom_normalize tenv sub) pi0 in
+    let pi = List.map ~f:(atom_normalize tenv sub) pi0 in
     let ineq_list, nonineq_list = pi_tighten_ineq tenv pi in
     let syntactically_different : Exp.t * Exp.t -> bool = function
       | BinOp(op1, e1, Const c1), BinOp(op2, e2, Const c2)
@@ -1548,9 +1548,9 @@ module Normalize = struct
       else (* replace primed vars by fresh footprint vars *)
         let ids_primed = Sil.fav_to_list fp_vars in
         let ids_footprint =
-          IList.map (fun id -> (id, Ident.create_fresh Ident.kfootprint)) ids_primed in
+          List.map ~f:(fun id -> (id, Ident.create_fresh Ident.kfootprint)) ids_primed in
         let ren_sub =
-          Sil.sub_of_list (IList.map (fun (id1, id2) -> (id1, Exp.Var id2)) ids_footprint) in
+          Sil.sub_of_list (List.map ~f:(fun (id1, id2) -> (id1, Exp.Var id2)) ids_footprint) in
         let nsigma' = sigma_normalize tenv Sil.sub_empty (sigma_sub ren_sub nsigma) in
         let npi' = pi_normalize tenv Sil.sub_empty nsigma' (pi_sub ren_sub npi) in
         (npi', nsigma') in
@@ -1639,7 +1639,7 @@ let lexp_normalize_prop tenv p lexp =
   let offsets = Sil.exp_get_offsets lexp in
   let nroot = exp_normalize_prop tenv p root in
   let noffsets =
-    IList.map (fun (n : Sil.offset) -> match n with
+    List.map ~f:(fun (n : Sil.offset) -> match n with
         | Off_fld _ ->
             n
         | Off_index e ->
@@ -1663,7 +1663,7 @@ let pi_normalize_prop tenv prop pi =
   Config.run_with_abs_val_equal_zero (Normalize.pi_normalize tenv prop.sub prop.sigma) pi
 
 let sigma_replace_exp tenv epairs sigma =
-  let sigma' = IList.map (Sil.hpred_replace_exp epairs) sigma in
+  let sigma' = List.map ~f:(Sil.hpred_replace_exp epairs) sigma in
   Normalize.sigma_normalize tenv Sil.sub_empty sigma'
 
 (** Construct an atom. *)
@@ -1728,8 +1728,8 @@ let conjoin_neq tenv ?(footprint = false) exp1 exp2 prop =
 
 (** Reset every inst in the prop using the given map *)
 let prop_reset_inst inst_map prop =
-  let sigma' = IList.map (Sil.hpred_instmap inst_map) prop.sigma in
-  let sigma_fp' = IList.map (Sil.hpred_instmap inst_map) prop.sigma_fp in
+  let sigma' = List.map ~f:(Sil.hpred_instmap inst_map) prop.sigma in
+  let sigma_fp' = List.map ~f:(Sil.hpred_instmap inst_map) prop.sigma_fp in
   set prop ~sigma:sigma' ~sigma_fp:sigma_fp'
 
 
@@ -1752,8 +1752,8 @@ let extract_spec (p : normal t) : normal t * normal t =
 (** [prop_set_fooprint p p_foot] sets proposition [p_foot] as footprint of [p]. *)
 let prop_set_footprint p p_foot =
   let pi =
-    (IList.map
-       (fun (i, e) -> Sil.Aeq(Var i, e))
+    (List.map
+       ~f:(fun (i, e) -> Sil.Aeq(Var i, e))
        (Sil.sub_to_list p_foot.sub)) @ p_foot.pi in
   set p ~pi_fp:pi ~sigma_fp:p_foot.sigma
 
@@ -1849,11 +1849,11 @@ let rec strexp_get_array_indices acc (se : Sil.strexp) = match se with
   | Eexp _ ->
       acc
   | Estruct (fsel, _) ->
-      let se_list = IList.map snd fsel in
+      let se_list = List.map ~f:snd fsel in
       List.fold ~f:strexp_get_array_indices ~init:acc se_list
   | Earray (_, isel, _) ->
       let acc_new = List.fold ~f:(fun acc' (idx, _) -> idx:: acc') ~init:acc isel in
-      let se_list = IList.map snd isel in
+      let se_list = List.map ~f:snd isel in
       List.fold ~f:strexp_get_array_indices ~init:acc_new se_list
 
 let hpred_get_array_indices acc (hpred : Sil.hpred) = match hpred with
@@ -1889,7 +1889,7 @@ let compute_reindexing fav_add get_id_offset list =
     let offset_new = Exp.int (IntLit.neg offset) in
     let exp_new : Exp.t = BinOp (PlusA, base_new, offset_new) in
     (id, exp_new) in
-  let reindexing = IList.map transform list_passed in
+  let reindexing = List.map ~f:transform list_passed in
   Sil.sub_of_list reindexing
 
 let compute_reindexing_from_indices indices =
@@ -1904,15 +1904,15 @@ let apply_reindexing tenv subst prop =
   let nsigma = Normalize.sigma_normalize tenv subst prop.sigma in
   let npi = Normalize.pi_normalize tenv subst nsigma prop.pi in
   let nsub, atoms =
-    let dom_subst = IList.map fst (Sil.sub_to_list subst) in
+    let dom_subst = List.map ~f:fst (Sil.sub_to_list subst) in
     let in_dom_subst id = List.exists ~f:(Ident.equal id) dom_subst in
     let sub' = Sil.sub_filter (fun id -> not (in_dom_subst id)) prop.sub in
     let contains_substituted_id e = Sil.fav_exists (Sil.exp_fav e) in_dom_subst in
     let sub_eqs, sub_keep = Sil.sub_range_partition contains_substituted_id sub' in
     let eqs = Sil.sub_to_list sub_eqs in
     let atoms =
-      IList.map
-        (fun (id, e) -> Sil.Aeq (Var id, Normalize.exp_normalize tenv subst e))
+      List.map
+        ~f:(fun (id, e) -> Sil.Aeq (Var id, Normalize.exp_normalize tenv subst e))
         eqs in
     (sub_keep, atoms) in
   let p' =
@@ -2007,22 +2007,22 @@ let atom_captured_ren ren (a : Sil.atom) : Sil.atom = match a with
   | Aneq (e1, e2) ->
       Aneq (exp_captured_ren ren e1, exp_captured_ren ren e2)
   | Apred (a, es) ->
-      Apred (a, IList.map (fun e -> exp_captured_ren ren e) es)
+      Apred (a, List.map ~f:(fun e -> exp_captured_ren ren e) es)
   | Anpred (a, es) ->
-      Anpred (a, IList.map (fun e -> exp_captured_ren ren e) es)
+      Anpred (a, List.map ~f:(fun e -> exp_captured_ren ren e) es)
 
 let rec strexp_captured_ren ren (se : Sil.strexp) : Sil.strexp = match se with
   | Eexp (e, inst) ->
       Eexp (exp_captured_ren ren e, inst)
   | Estruct (fld_se_list, inst) ->
       let f (fld, se) = (fld, strexp_captured_ren ren se) in
-      Estruct (IList.map f fld_se_list, inst)
+      Estruct (List.map ~f:f fld_se_list, inst)
   | Earray (len, idx_se_list, inst) ->
       let f (idx, se) =
         let idx' = exp_captured_ren ren idx in
         (idx', strexp_captured_ren ren se) in
       let len' = exp_captured_ren ren len in
-      Earray (len', IList.map f idx_se_list, inst)
+      Earray (len', List.map ~f:f idx_se_list, inst)
 
 and hpred_captured_ren ren (hpred : Sil.hpred) : Sil.hpred = match hpred with
   | Hpointsto (base, se, te) ->
@@ -2034,7 +2034,7 @@ and hpred_captured_ren ren (hpred : Sil.hpred) : Sil.hpred = match hpred with
       let para' = hpara_ren para in
       let e1' = exp_captured_ren ren e1 in
       let e2' = exp_captured_ren ren e2 in
-      let elist' = IList.map (exp_captured_ren ren) elist in
+      let elist' = List.map ~f:(exp_captured_ren ren) elist in
       Hlseg (k, para', e1', e2', elist')
   | Hdllseg (k, para, e1, e2, e3, e4, elist) ->
       let para' = hpara_dll_ren para in
@@ -2042,7 +2042,7 @@ and hpred_captured_ren ren (hpred : Sil.hpred) : Sil.hpred = match hpred with
       let e2' = exp_captured_ren ren e2 in
       let e3' = exp_captured_ren ren e3 in
       let e4' = exp_captured_ren ren e4 in
-      let elist' = IList.map (exp_captured_ren ren) elist in
+      let elist' = List.map ~f:(exp_captured_ren ren) elist in
       Hdllseg (k, para', e1', e2', e3', e4', elist')
 
 and hpara_ren (para : Sil.hpara) : Sil.hpara =
@@ -2050,9 +2050,9 @@ and hpara_ren (para : Sil.hpara) : Sil.hpara =
   let ren = compute_renaming av in
   let root = ident_captured_ren ren para.root in
   let next = ident_captured_ren ren para.next in
-  let svars = IList.map (ident_captured_ren ren) para.svars in
-  let evars = IList.map (ident_captured_ren ren) para.evars in
-  let body = IList.map (hpred_captured_ren ren) para.body in
+  let svars = List.map ~f:(ident_captured_ren ren) para.svars in
+  let evars = List.map ~f:(ident_captured_ren ren) para.evars in
+  let body = List.map ~f:(hpred_captured_ren ren) para.body in
   { root; next; svars; evars; body}
 
 and hpara_dll_ren (para : Sil.hpara_dll) : Sil.hpara_dll =
@@ -2061,9 +2061,9 @@ and hpara_dll_ren (para : Sil.hpara_dll) : Sil.hpara_dll =
   let iF = ident_captured_ren ren para.cell in
   let oF = ident_captured_ren ren para.flink in
   let oB = ident_captured_ren ren para.blink in
-  let svars' = IList.map (ident_captured_ren ren) para.svars_dll in
-  let evars' = IList.map (ident_captured_ren ren) para.evars_dll in
-  let body' = IList.map (hpred_captured_ren ren) para.body_dll in
+  let svars' = List.map ~f:(ident_captured_ren ren) para.svars_dll in
+  let evars' = List.map ~f:(ident_captured_ren ren) para.evars_dll in
+  let body' = List.map ~f:(hpred_captured_ren ren) para.body_dll in
   { cell = iF;
     flink = oF;
     blink = oB;
@@ -2072,10 +2072,10 @@ and hpara_dll_ren (para : Sil.hpara_dll) : Sil.hpara_dll =
     body_dll = body'}
 
 let pi_captured_ren ren pi =
-  IList.map (atom_captured_ren ren) pi
+  List.map ~f:(atom_captured_ren ren) pi
 
 let sigma_captured_ren ren sigma =
-  IList.map (hpred_captured_ren ren) sigma
+  List.map ~f:(hpred_captured_ren ren) sigma
 
 let sub_captured_ren ren sub =
   Sil.sub_map (ident_captured_ren ren) (exp_captured_ren ren) sub
@@ -2127,7 +2127,7 @@ let exist_quantify tenv fav (prop : normal t) : normal t =
   if List.exists ~f:Ident.is_primed ids then assert false; (* sanity check *)
   if List.is_empty ids then prop else
     let gen_fresh_id_sub id = (id, Exp.Var (Ident.create_fresh Ident.kprimed)) in
-    let ren_sub = Sil.sub_of_list (IList.map gen_fresh_id_sub ids) in
+    let ren_sub = Sil.sub_of_list (List.map ~f:gen_fresh_id_sub ids) in
     let prop' =
       (* throw away x=E if x becomes _x *)
       let mem_idlist i = List.exists ~f:(fun id -> Ident.equal i id) in
@@ -2145,18 +2145,18 @@ let exist_quantify tenv fav (prop : normal t) : normal t =
 (** Apply the substitution [fe] to all the expressions in the prop. *)
 let prop_expmap (fe: Exp.t -> Exp.t) prop =
   let f (e, sil_opt) = (fe e, sil_opt) in
-  let pi = IList.map (Sil.atom_expmap fe) prop.pi in
-  let sigma = IList.map (Sil.hpred_expmap f) prop.sigma in
-  let pi_fp = IList.map (Sil.atom_expmap fe) prop.pi_fp in
-  let sigma_fp = IList.map (Sil.hpred_expmap f) prop.sigma_fp in
+  let pi = List.map ~f:(Sil.atom_expmap fe) prop.pi in
+  let sigma = List.map ~f:(Sil.hpred_expmap f) prop.sigma in
+  let pi_fp = List.map ~f:(Sil.atom_expmap fe) prop.pi_fp in
+  let sigma_fp = List.map ~f:(Sil.hpred_expmap f) prop.sigma_fp in
   set prop ~pi ~sigma ~pi_fp ~sigma_fp
 
 (** convert identifiers in fav to kind [k] *)
 let vars_make_unprimed tenv fav prop =
   let ids = Sil.fav_to_list fav in
   let ren_sub =
-    Sil.sub_of_list (IList.map
-                       (fun i -> (i, Exp.Var (Ident.create_fresh Ident.knormal)))
+    Sil.sub_of_list (List.map
+                       ~f:(fun i -> (i, Exp.Var (Ident.create_fresh Ident.knormal)))
                        ids) in
   prop_ren_sub tenv ren_sub prop
 
@@ -2183,8 +2183,8 @@ let prop_rename_fav_with_existentials tenv (p : normal t) : normal t =
   let fav = Sil.fav_new () in
   prop_fav_add fav p;
   let ids = Sil.fav_to_list fav in
-  let ids' = IList.map (fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
-  let ren_sub = Sil.sub_of_list (IList.map (fun (i, i') -> (i, Exp.Var i')) ids') in
+  let ids' = List.map ~f:(fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
+  let ren_sub = Sil.sub_of_list (List.map ~f:(fun (i, i') -> (i, Exp.Var i')) ids') in
   let p' = prop_sub ren_sub p in
   (*L.d_strln "Prop after renaming:"; d_prop p'; L.d_strln "";*)
   Normalize.normalize tenv p'
@@ -2367,7 +2367,7 @@ let prop_iter_make_id_primed tenv id iter =
         get_eqs (Sil.Aeq(e1, e2):: acc) pairs in
 
   let sub_new, sub_use, eqs_add =
-    let eqs = IList.map normalize (Sil.sub_to_list iter.pit_sub) in
+    let eqs = List.map ~f:normalize (Sil.sub_to_list iter.pit_sub) in
     let pairs_unpid, pairs_pid = split [] [] eqs in
     match pairs_pid with
     | [] ->
@@ -2377,7 +2377,7 @@ let prop_iter_make_id_primed tenv id iter =
     | (id1, e1):: _ ->
         let sub_id1 = Sil.sub_of_list [(id1, e1)] in
         let pairs_unpid' =
-          IList.map (fun (id', e') -> (id', Sil.exp_sub sub_id1 e')) pairs_unpid in
+          List.map ~f:(fun (id', e') -> (id', Sil.exp_sub sub_id1 e')) pairs_unpid in
         let sub_unpid = Sil.sub_of_list pairs_unpid' in
         let pairs = (id, e1) :: pairs_unpid' in
         sub_unpid, Sil.sub_of_list pairs, get_eqs [] pairs_pid in
@@ -2401,7 +2401,7 @@ let prop_iter_footprint_fav iter =
 let prop_iter_fav_add fav iter =
   Sil.sub_fav_add fav iter.pit_sub;
   pi_fav_add fav iter.pit_pi;
-  pi_fav_add fav (IList.map snd iter.pit_newpi);
+  pi_fav_add fav (List.map ~f:snd iter.pit_newpi);
   sigma_fav_add fav iter.pit_old;
   sigma_fav_add fav iter.pit_new;
   Sil.hpred_fav_add fav iter.pit_curr;
@@ -2434,10 +2434,10 @@ let rec strexp_gc_fields (fav: Sil.fav) (se : Sil.strexp) =
   | Eexp _ ->
       Some se
   | Estruct (fsel, inst) ->
-      let fselo = IList.map (fun (f, se) -> (f, strexp_gc_fields fav se)) fsel in
+      let fselo = List.map ~f:(fun (f, se) -> (f, strexp_gc_fields fav se)) fsel in
       let fsel' =
         let fselo' = List.filter ~f:(function | (_, Some _) -> true | _ -> false) fselo in
-        IList.map (function (f, seo) -> (f, unSome seo)) fselo' in
+        List.map ~f:(function (f, seo) -> (f, unSome seo)) fselo' in
       if [%compare.equal: (Ident.fieldname * Sil.strexp) list] fsel fsel' then Some se
       else Some (Sil.Estruct (fsel', inst))
   | Earray _ ->
@@ -2510,7 +2510,7 @@ end = struct
     let size = ref 0 in
     List.iter ~f:(fun hpred -> size := hpred_size hpred + !size) sigma; !size
 
-  let pi_size pi = pi_weight * IList.length pi
+  let pi_size pi = pi_weight * List.length pi
 
   (** Compute a size value for the prop, which indicates its
       complexity *)

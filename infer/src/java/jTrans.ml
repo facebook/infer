@@ -97,7 +97,7 @@ let get_undefined_method_call ovt =
 let retrieve_fieldname fieldname =
   try
     let subs = Str.split (Str.regexp (Str.quote ".")) (Ident.fieldname_to_string fieldname) in
-    if Int.equal (IList.length subs) 0 then
+    if Int.equal (List.length subs) 0 then
       assert false
     else
       List.hd_exn (IList.rev subs)
@@ -286,7 +286,7 @@ let create_am_procdesc program icfg am proc_name : Procdesc.t =
     let proc_attributes =
       { (ProcAttributes.default proc_name Config.Java) with
         ProcAttributes.access = trans_access am.Javalib.am_access;
-        exceptions = IList.map JBasics.cn_name am.Javalib.am_exceptions;
+        exceptions = List.map ~f:JBasics.cn_name am.Javalib.am_exceptions;
         formals;
         is_abstract = true;
         is_bridge_method = am.Javalib.am_bridge;
@@ -318,7 +318,7 @@ let create_native_procdesc program icfg cm proc_name =
   let proc_attributes =
     { (ProcAttributes.default proc_name Config.Java) with
       ProcAttributes.access = trans_access cm.Javalib.cm_access;
-      exceptions = IList.map JBasics.cn_name cm.Javalib.cm_exceptions;
+      exceptions = List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions;
       formals;
       is_bridge_method = cm.Javalib.cm_bridge;
       is_model = Config.models_mode;
@@ -351,7 +351,7 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
       let proc_attributes =
         { (ProcAttributes.default proc_name Config.Java) with
           ProcAttributes.access = trans_access cm.Javalib.cm_access;
-          exceptions = IList.map JBasics.cn_name cm.Javalib.cm_exceptions;
+          exceptions = List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions;
           formals;
           is_bridge_method = cm.Javalib.cm_bridge;
           is_defined = true;
@@ -837,7 +837,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
     | JBir.NewArray (var, vt, expr_list) ->
         let builtin_new_array = Exp.Const (Const.Cfun BuiltinDecl.__new_array) in
         let content_type = JTransType.value_type program tenv vt in
-        let array_type = JTransType.create_array_type content_type (IList.length expr_list) in
+        let array_type = JTransType.create_array_type content_type (List.length expr_list) in
         let array_name = JContext.set_pvar context var array_type in
         let (instrs, array_size) = get_array_length context pc expr_list content_type in
         let call_args = [(array_size, array_type)] in

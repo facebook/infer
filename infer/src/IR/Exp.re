@@ -230,7 +230,7 @@ let rec pp_ pe pp_t f e => {
   | BinOp op e1 e2 => F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
   | Exn e => F.fprintf f "EXN %a" pp_exp e
   | Closure {name, captured_vars} =>
-    let id_exps = IList.map (fun (id_exp, _, _) => id_exp) captured_vars;
+    let id_exps = List.map f::(fun (id_exp, _, _) => id_exp) captured_vars;
     F.fprintf f "(%a)" (Pp.comma_seq pp_exp) [Const (Cfun name), ...id_exps]
   | Lvar pv => Pvar.pp pe f pv
   | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld

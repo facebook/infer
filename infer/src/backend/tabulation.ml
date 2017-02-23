@@ -106,12 +106,12 @@ let spec_rename_vars pname spec =
   Specs.Jprop.fav_add fav spec.Specs.pre;
   List.iter ~f:(fun (p, _) -> Prop.prop_fav_add fav p) spec.Specs.posts;
   let ids = Sil.fav_to_list fav in
-  let ids' = IList.map (fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
-  let ren_sub = Sil.sub_of_list (IList.map (fun (i, i') -> (i, Exp.Var i')) ids') in
+  let ids' = List.map ~f:(fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
+  let ren_sub = Sil.sub_of_list (List.map ~f:(fun (i, i') -> (i, Exp.Var i')) ids') in
   let pre' = Specs.Jprop.jprop_sub ren_sub spec.Specs.pre in
-  let posts' = IList.map (fun (p, path) -> (Prop.prop_sub ren_sub p, path)) spec.Specs.posts in
+  let posts' = List.map ~f:(fun (p, path) -> (Prop.prop_sub ren_sub p, path)) spec.Specs.posts in
   let pre'' = jprop_add_callee_suffix pre' in
-  let posts'' = IList.map (fun (p, path) -> (prop_add_callee_suffix p, path)) posts' in
+  let posts'' = List.map ~f:(fun (p, path) -> (prop_add_callee_suffix p, path)) posts' in
   { Specs.pre = pre''; Specs.posts = posts''; Specs.visited = spec.Specs.visited }
 
 (** Find and number the specs for [proc_name],
@@ -130,8 +130,8 @@ let spec_find_rename trace_call (proc_name : Procname.t)
                  (Localise.verbatim_desc (Procname.to_string proc_name), __POS__))
       end;
     let formal_parameters =
-      IList.map (fun (x, _) -> Pvar.mk_callee x proc_name) formals in
-    IList.map f specs, formal_parameters
+      List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) formals in
+    List.map ~f:f specs, formal_parameters
   with Not_found -> begin
       L.d_strln
         ("ERROR: found no entry for procedure " ^
@@ -158,8 +158,8 @@ let process_splitting
     let sub1_list = Sil.sub_to_list sub1 in
     let sub1_list' = List.filter ~f:(function (_, Exp.Var _) -> true | _ -> false) sub1_list in
     let sub1_inverse_list =
-      IList.map
-        (function (id, Exp.Var id') -> (id', Exp.Var id) | _ -> assert false)
+      List.map
+        ~f:(function (id, Exp.Var id') -> (id', Exp.Var id) | _ -> assert false)
         sub1_list'
     in Sil.sub_of_list_duplicates sub1_inverse_list in
   let fav_actual_pre =
@@ -205,30 +205,30 @@ let process_splitting
         let rng1 = Sil.sub_range sub1 in
         let dom2 = Sil.sub_domain sub2 in
         let rng2 = Sil.sub_range sub2 in
-        let vars_actual_pre = IList.map (fun id -> Exp.Var id) (Sil.fav_to_list fav_actual_pre) in
+        let vars_actual_pre = List.map ~f:(fun id -> Exp.Var id) (Sil.fav_to_list fav_actual_pre) in
         L.d_str "fav_actual_pre: "; Sil.d_exp_list vars_actual_pre; L.d_ln ();
-        L.d_str "Dom(Sub1): "; Sil.d_exp_list (IList.map (fun id -> Exp.Var id) dom1); L.d_ln ();
+        L.d_str "Dom(Sub1): "; Sil.d_exp_list (List.map ~f:(fun id -> Exp.Var id) dom1); L.d_ln ();
         L.d_str "Ran(Sub1): "; Sil.d_exp_list rng1; L.d_ln ();
-        L.d_str "Dom(Sub2): "; Sil.d_exp_list (IList.map (fun id -> Exp.Var id) dom2); L.d_ln ();
+        L.d_str "Dom(Sub2): "; Sil.d_exp_list (List.map ~f:(fun id -> Exp.Var id) dom2); L.d_ln ();
         L.d_str "Ran(Sub2): "; Sil.d_exp_list rng2; L.d_ln ();
         L.d_str "Don't know about id: "; Sil.d_exp (Exp.Var id); L.d_ln ();
         assert false;
       end
-    in Sil.sub_of_list (IList.map f fav_sub_list) in
+    in Sil.sub_of_list (List.map ~f:f fav_sub_list) in
   let sub2_list =
     let f id = (id, Exp.Var (Ident.create_fresh Ident.kfootprint))
-    in IList.map f (Sil.fav_to_list fav_missing_primed) in
+    in List.map ~f:f (Sil.fav_to_list fav_missing_primed) in
   let sub_list' =
-    IList.map (fun (id, e) -> (id, Sil.exp_sub sub1 e)) sub_list in
+    List.map ~f:(fun (id, e) -> (id, Sil.exp_sub sub1 e)) sub_list in
   let sub' = Sil.sub_of_list (sub2_list @ sub_list') in
   (* normalize everything w.r.t sub' *)
   let norm_missing_pi = Prop.pi_sub sub' missing_pi in
   let norm_missing_sigma = Prop.sigma_sub sub' missing_sigma in
   let norm_frame_fld = Prop.sigma_sub sub' frame_fld in
   let norm_frame_typ =
-    IList.map (fun (e, te) -> Sil.exp_sub sub' e, Sil.exp_sub sub' te) frame_typ in
+    List.map ~f:(fun (e, te) -> Sil.exp_sub sub' e, Sil.exp_sub sub' te) frame_typ in
   let norm_missing_typ =
-    IList.map (fun (e, te) -> Sil.exp_sub sub' e, Sil.exp_sub sub' te) missing_typ in
+    List.map ~f:(fun (e, te) -> Sil.exp_sub sub' e, Sil.exp_sub sub' te) missing_typ in
   let norm_missing_fld =
     let sigma = Prop.sigma_sub sub' missing_fld in
     let filter hpred =
@@ -268,12 +268,12 @@ let rec find_dereference_without_null_check_in_sexp = function
   | Sil.Estruct (fsel, inst) ->
       let res = find_dereference_without_null_check_in_inst inst in
       if is_none res then
-        find_dereference_without_null_check_in_sexp_list (IList.map snd fsel)
+        find_dereference_without_null_check_in_sexp_list (List.map ~f:snd fsel)
       else res
   | Sil.Earray (_, esel, inst) ->
       let res = find_dereference_without_null_check_in_inst inst in
       if is_none res then
-        find_dereference_without_null_check_in_sexp_list (IList.map snd esel)
+        find_dereference_without_null_check_in_sexp_list (List.map ~f:snd esel)
       else res
 and find_dereference_without_null_check_in_sexp_list = function
   | [] -> None
@@ -359,7 +359,7 @@ let post_process_sigma tenv (sigma: Sil.hpred list) loc : Sil.hpred list =
   let map_inst inst = Sil.inst_new_loc loc inst in
   let do_hpred (_, _, hpred) = Sil.hpred_instmap map_inst hpred in
   (* update the location of instrumentations *)
-  IList.map (fun hpred -> do_hpred (Prover.expand_hpred_pointer tenv false hpred)) sigma
+  List.map ~f:(fun hpred -> do_hpred (Prover.expand_hpred_pointer tenv false hpred)) sigma
 
 (** check for interprocedural path errors in the post *)
 let check_path_errors_in_post tenv caller_pname post post_path =
@@ -397,7 +397,7 @@ let post_process_post tenv
         Sil.Apred (Aresource ra', [e])
     | a -> a in
   let prop' = Prop.set post ~sigma:(post_process_sigma tenv post.Prop.sigma loc) in
-  let pi' = IList.map atom_update_alloc_attribute prop'.Prop.pi in
+  let pi' = List.map ~f:atom_update_alloc_attribute prop'.Prop.pi in
   (* update alloc attributes to refer to the caller *)
   let post' = Prop.set prop' ~pi:pi' in
   check_path_errors_in_post tenv caller_pname post' post_path;
@@ -414,9 +414,9 @@ let rec sexp_set_inst inst = function
   | Sil.Eexp (e, _) ->
       Sil.Eexp (e, inst)
   | Sil.Estruct (fsel, _) ->
-      Sil.Estruct ((IList.map (fun (f, se) -> (f, sexp_set_inst inst se)) fsel), inst)
+      Sil.Estruct ((List.map ~f:(fun (f, se) -> (f, sexp_set_inst inst se)) fsel), inst)
   | Sil.Earray (len, esel, _) ->
-      Sil.Earray (len, IList.map (fun (e, se) -> (e, sexp_set_inst inst se)) esel, inst)
+      Sil.Earray (len, List.map ~f:(fun (e, se) -> (e, sexp_set_inst inst se)) esel, inst)
 
 let rec fsel_star_fld fsel1 fsel2 = match fsel1, fsel2 with
   | [], fsel2 -> fsel2
@@ -433,7 +433,7 @@ and array_content_star se1 se2 =
 
 and esel_star_fld esel1 esel2 = match esel1, esel2 with
   | [], esel2 -> (* don't know whether element is read or written in fun call with array *)
-      IList.map (fun (e, se) -> (e, sexp_set_inst Sil.Inone se)) esel2
+      List.map ~f:(fun (e, se) -> (e, sexp_set_inst Sil.Inone se)) esel2
   | esel1,[] -> esel1
   | (e1, se1):: esel1', (e2, se2):: esel2' ->
       (match Exp.compare e1 e2 with
@@ -664,7 +664,7 @@ let prop_set_exn tenv pname prop se_exn =
     | Sil.Hpointsto (e, _, t) when Exp.equal e ret_pvar ->
         Sil.Hpointsto(e, se_exn, t)
     | hpred -> hpred in
-  let sigma' = IList.map map_hpred prop.Prop.sigma in
+  let sigma' = List.map ~f:map_hpred prop.Prop.sigma in
   Prop.normalize tenv (Prop.set prop ~sigma:sigma')
 
 (** Include a subtrace for a procedure call if the callee is not a model. *)
@@ -688,19 +688,19 @@ let combine tenv
         (* with updated footprint and inconsistent current *)
         [(Prop.set Prop.prop_emp ~pi:[Sil.Aneq (Exp.zero, Exp.zero)], path_pre)]
       else
-        IList.map
-          (fun (p, path_post) ->
-             (p,
-              Paths.Path.add_call
-                (include_subtrace callee_pname)
-                path_pre
-                callee_pname
-                path_post))
+        List.map
+          ~f:(fun (p, path_post) ->
+              (p,
+               Paths.Path.add_call
+                 (include_subtrace callee_pname)
+                 path_pre
+                 callee_pname
+                 path_post))
           posts in
-    IList.map
-      (fun (p, path) ->
-         (post_process_post tenv
-            caller_pname callee_pname loc actual_pre (Prop.prop_sub split.sub p, path)))
+    List.map
+      ~f:(fun (p, path) ->
+          (post_process_post tenv
+             caller_pname callee_pname loc actual_pre (Prop.prop_sub split.sub p, path)))
       posts' in
   L.d_increase_indent 1;
   L.d_strln "New footprint:"; Prop.d_pi_sigma split.missing_pi split.missing_sigma; L.d_ln ();
@@ -716,7 +716,7 @@ let combine tenv
       Prover.d_typings split.missing_typ; L.d_ln (); end;
   L.d_strln "Instantiated frame:"; Prop.d_sigma split.frame; L.d_ln ();
   L.d_strln "Instantiated post:";
-  Propgraph.d_proplist Prop.prop_emp (IList.map fst instantiated_post);
+  Propgraph.d_proplist Prop.prop_emp (List.map ~f:fst instantiated_post);
   L.d_decrease_indent 1; L.d_ln ();
   let compute_result post_p =
     let post_p' =
@@ -767,7 +767,7 @@ let combine tenv
                   let p = Prop.prop_iter_remove_curr_then_to_prop tenv iter' in
                   Prop.conjoin_eq tenv e' (Exp.Var id) p
               | Sil.Hpointsto (_, Sil.Estruct (ftl, _), _), _
-                when Int.equal (IList.length ftl) (if is_none ret_id then 0 else 1) ->
+                when Int.equal (List.length ftl) (if is_none ret_id then 0 else 1) ->
                   (* TODO(jjb): Is this case dead? *)
                   let rec do_ftl_ids p = function
                     | [], None -> p
@@ -792,14 +792,14 @@ let combine tenv
           split.missing_typ
       else Some post_p3 in
     post_p4 in
-  let _results = IList.map (fun (p, path) -> (compute_result p, path)) instantiated_post in
+  let _results = List.map ~f:(fun (p, path) -> (compute_result p, path)) instantiated_post in
   if List.exists ~f:(fun (x, _) -> is_none x) _results then (* at least one combine failed *)
     None
   else
     let results =
-      IList.map (function (Some x, path) -> (x, path) | (None, _) -> assert false)
+      List.map ~f:(function (Some x, path) -> (x, path) | (None, _) -> assert false)
         _results in
-    print_results tenv actual_pre (IList.map fst results);
+    print_results tenv actual_pre (List.map ~f:fst results);
     Some results
 
 (* Add Auntaint attribute to a callee_pname precondition *)
@@ -869,9 +869,9 @@ let mk_actual_precondition tenv prop actual_params formal_params =
             begin
               let str =
                 "more actual pars than formal pars in fun call (" ^
-                string_of_int (IList.length actual_params) ^
+                string_of_int (List.length actual_params) ^
                 " vs " ^
-                string_of_int (IList.length formal_params) ^
+                string_of_int (List.length formal_params) ^
                 ")" in
               L.d_warning str; L.d_ln ()
             end;
@@ -883,7 +883,7 @@ let mk_actual_precondition tenv prop actual_params formal_params =
       (Exp.Lvar formal_var)
       (Sil.Eexp (actual_e, Sil.inst_actual_precondition))
       (Exp.Sizeof (actual_t, None, Subtype.exact)) in
-  let instantiated_formals = IList.map mk_instantiation formals_actuals in
+  let instantiated_formals = List.map ~f:mk_instantiation formals_actuals in
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
   Prop.normalize tenv actual_pre
 
@@ -922,7 +922,7 @@ let mk_posts tenv ret_id prop callee_pname callee_attrs posts =
                   (Apred (Ataint { taint_source = callee_pname; taint_kind; }, [Exp.Var ret_id]))
                 |> Prop.expose in
               (prop', path) in
-            IList.map taint_retval posts
+            List.map ~f:taint_retval posts
         | None -> posts in
       let posts' =
         if Config.idempotent_getters && Config.curr_language_is Config.Java
@@ -1142,9 +1142,9 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
   let valid_res0, invalid_res0 =
     IList.partition filter_valid_res results in
   let valid_res =
-    IList.map (function Valid_res cr -> cr | Invalid_res _ -> assert false) valid_res0 in
+    List.map ~f:(function Valid_res cr -> cr | Invalid_res _ -> assert false) valid_res0 in
   let invalid_res =
-    IList.map (function Valid_res _ -> assert false | Invalid_res ir -> ir) invalid_res0 in
+    List.map ~f:(function Valid_res _ -> assert false | Invalid_res ir -> ir) invalid_res0 in
   let valid_res_miss_pi, valid_res_no_miss_pi =
     IList.partition (fun vr -> vr.vr_pi <> []) valid_res in
   let _, valid_res_cons_pre_missing =
@@ -1226,46 +1226,46 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
               if not vr.incons_pre_missing && List.is_empty vr.vr_cons_res
               then (* no consistent results on one spec: divergence *)
                 let incons_res =
-                  IList.map
-                    (fun (p, path) -> (prop_pure_to_footprint tenv p, path))
+                  List.map
+                    ~f:(fun (p, path) -> (prop_pure_to_footprint tenv p, path))
                     vr.vr_incons_res in
                 State.add_diverging_states (Paths.PathSet.from_renamed_list incons_res) in
             save_diverging_states ();
             vr.vr_cons_res in
-          IList.map
-            (fun (p, path) -> (prop_pure_to_footprint tenv p, path))
-            (List.concat (IList.map process_valid_res valid_res))
+          List.map
+            ~f:(fun (p, path) -> (prop_pure_to_footprint tenv p, path))
+            (List.concat_map ~f:process_valid_res valid_res)
       end
     else if valid_res_no_miss_pi <> [] then
-      List.concat (IList.map (fun vr -> vr.vr_cons_res) valid_res_no_miss_pi)
+      List.concat_map ~f:(fun vr -> vr.vr_cons_res) valid_res_no_miss_pi
     else if List.is_empty valid_res_miss_pi then
       raise (Exceptions.Precondition_not_met (call_desc None, __POS__))
     else
       begin
         L.d_strln "Missing pure facts for the function call:";
-        List.iter ~f:print_pi (IList.map (fun vr -> vr.vr_pi) valid_res_miss_pi);
+        List.iter ~f:print_pi (List.map ~f:(fun vr -> vr.vr_pi) valid_res_miss_pi);
         match
           Prover.find_minimum_pure_cover tenv
-            (IList.map (fun vr -> (vr.vr_pi, vr.vr_cons_res)) valid_res_miss_pi) with
+            (List.map ~f:(fun vr -> (vr.vr_pi, vr.vr_cons_res)) valid_res_miss_pi) with
         | None ->
             trace_call Specs.CallStats.CR_not_met;
             raise (Exceptions.Precondition_not_met (call_desc None, __POS__))
         | Some cover ->
             L.d_strln "Found minimum cover";
-            List.iter ~f:print_pi (IList.map fst cover);
-            List.concat (IList.map snd cover)
+            List.iter ~f:print_pi (List.map ~f:fst cover);
+            List.concat_map ~f:snd cover
       end in
   trace_call Specs.CallStats.CR_success;
   let res =
-    IList.map
-      (fun (p, path) -> (quantify_path_idents_remove_constant_strings tenv p, path))
+    List.map
+      ~f:(fun (p, path) -> (quantify_path_idents_remove_constant_strings tenv p, path))
       res_with_path_idents in
   let ret_annot, _ = callee_attrs.ProcAttributes.method_annotation in
   let returns_nullable ret_annot = Annotations.ia_is_nullable ret_annot in
   let should_add_ret_attr _ =
     let is_likely_getter = function
       | Procname.Java pn_java ->
-          Int.equal (IList.length (Procname.java_get_parameters pn_java)) 0
+          Int.equal (List.length (Procname.java_get_parameters pn_java)) 0
       | _ ->
           false in
     (Config.idempotent_getters &&
@@ -1279,7 +1279,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
       let mark_id_as_retval (p, path) =
         let att_retval = PredSymb.Aretval (callee_pname, ret_annot) in
         Attribute.add tenv p att_retval [ret_var], path in
-      IList.map mark_id_as_retval res
+      List.map ~f:mark_id_as_retval res
   | _ -> res
 
 (** Execute the function call and return the list of results with return value *)
@@ -1293,7 +1293,7 @@ let exe_function_call
         Specs.CallStats.trace
           summary.Specs.stats.Specs.call_stats callee_pname loc res !Config.footprint in
   let spec_list, formal_params = spec_find_rename trace_call callee_pname in
-  let nspecs = IList.length spec_list in
+  let nspecs = List.length spec_list in
   L.d_strln
     ("Found " ^
      string_of_int nspecs ^
@@ -1315,5 +1315,5 @@ let exe_function_call
       spec
       actual_params
       formal_params in
-  let results = IList.map exe_one_spec spec_list in
+  let results = List.map ~f:exe_one_spec spec_list in
   exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc results

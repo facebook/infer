@@ -220,7 +220,7 @@ let get_calls (g: t) node => {
 
 let get_all_nodes (g: t) => {
   let nodes = Procname.Set.elements (get_nodes g);
-  IList.map (fun node => (node, get_calls g node)) nodes
+  List.map f::(fun node => (node, get_calls g node)) nodes
 };
 
 let get_nodes_and_calls (g: t) =>
@@ -306,7 +306,7 @@ let get_nodes_and_defined_children (g: t) => {
     )
     g;
   let nodes_list = Procname.Set.elements !nodes;
-  IList.map (fun n => (n, get_defined_children g n)) nodes_list
+  List.map f::(fun n => (n, get_defined_children g n)) nodes_list
 };
 
 
@@ -332,7 +332,7 @@ let get_nodes_and_edges (g: t) :nodes_and_edges => {
 let get_defined_nodes (g: t) => {
   let (nodes, _) = get_nodes_and_edges g;
   let get_node (node, _) => node;
-  IList.map get_node (List.filter f::(fun (_, defined) => defined) nodes)
+  List.map f::get_node (List.filter f::(fun (_, defined) => defined) nodes)
 };
 
 
@@ -380,7 +380,7 @@ let store_to_file (filename: DB.filename) (call_graph: t) =>
 let pp_graph_dotty get_specs (g: t) fmt => {
   let nodes_with_calls = get_all_nodes g;
   let num_specs n =>
-    try (IList.length (get_specs n)) {
+    try (List.length (get_specs n)) {
     | exn when SymOp.exn_not_failure exn => (-1)
     };
   let get_color (n, _) =>

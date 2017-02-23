@@ -10,6 +10,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
 module F = Format
 module L = Logging
 
@@ -19,8 +20,7 @@ module Symbol =
 struct
   type t = Procname.t * int [@@deriving compare]
 
-  let eq : t -> t -> bool
-    = fun x y -> compare x y = 0
+  let eq = [%compare.equal : t]
 
   let get_new : Procname.t -> t
     = fun pname ->
@@ -39,11 +39,11 @@ struct
         F.fprintf fmt "%s-s$%d" (fst x |> Procname.to_string) (snd x)
 end
 
-module SubstMap = Map.Make (Symbol)
+module SubstMap = Caml.Map.Make (Symbol)
 
 module SymLinear =
 struct
-  module M = Map.Make (Symbol)
+  module M = Caml.Map.Make (Symbol)
 
   type t = int M.t [@@deriving compare]
 
@@ -87,8 +87,8 @@ struct
 
   let pp1 : F.formatter -> (Symbol.t * int) -> unit
     = fun fmt (s, c) ->
-      if c = 0 then ()
-      else if c = 1 then
+      if Int.equal c 0 then ()
+      else if Int.equal c 1 then
         F.fprintf fmt "%a" Symbol.pp s
       else if c < 0 then
         F.fprintf fmt "(%d)x%a" c Symbol.pp s
@@ -97,7 +97,7 @@ struct
 
   let pp : F.formatter -> t -> unit
     = fun fmt x ->
-      if M.cardinal x = 0 then F.fprintf fmt "empty" else
+      if M.is_empty x then F.fprintf fmt "empty" else
         let (s1, c1) = M.min_binding x in
         pp1 fmt (s1, c1);
         M.iter (fun s c -> F.fprintf fmt " + %a" pp1 (s, c)) (M.remove s1 x)
@@ -106,19 +106,19 @@ struct
     = M.empty
 
   let is_zero : t -> bool
-    = fun x -> M.for_all (fun _ v -> v = 0) x
+    = fun x -> M.for_all (fun _ v -> Int.equal v 0) x
 
   let is_mod_zero : t -> int -> bool
     = fun x n ->
       assert (n <> 0);
-      M.for_all (fun _ v -> v mod n = 0) x
+      M.for_all (fun _ v -> Int.equal (v mod n) 0) x
 
   let neg : t -> t
     = fun x -> M.map (~-) x
 
   (* Returns (Some n) only when n is not 0. *)
   let is_non_zero : int -> int option
-    = fun n -> if n = 0 then None else Some n
+    = fun n -> if Int.equal n 0 then None else Some n
 
   let plus : t -> t -> t
     = fun x y ->
@@ -153,9 +153,9 @@ struct
   let one_symbol : t -> Symbol.t option
     = fun x ->
       let x = M.filter (fun _ v -> v <> 0) x in
-      if M.cardinal x = 1 then
+      if Int.equal (M.cardinal x) 1 then
         let (k, v) = M.choose x in
-        if v = 1 then Some k else None
+        if Int.equal v 1 then Some k else None
       else None
 
   let is_one_symbol : t -> bool
@@ -165,7 +165,7 @@ struct
       | None -> false
 
   let get_symbols : t -> Symbol.t list
-    = fun x -> IList.map fst (M.bindings x)
+    = fun x -> List.map ~f:fst (M.bindings x)
 end
 
 module Bound =
@@ -178,6 +178,8 @@ struct
     | Bot
   [@@deriving compare]
 and min_max_t = Min | Max
+
+let equal = [%compare.equal : t]
 
 let pp_min_max : F.formatter -> min_max_t -> unit
   = fun fmt -> function
@@ -193,7 +195,7 @@ let pp : F.formatter -> t -> unit
     | Linear (c, x) ->
         if SymLinear.le x SymLinear.empty then
           F.fprintf fmt "%d" c
-        else if c = 0 then
+        else if Int.equal c 0 then
           F.fprintf fmt "%a" SymLinear.pp x
         else
           F.fprintf fmt "%a + %d" SymLinear.pp x c
@@ -221,12 +223,12 @@ let opt_lift : ('a -> 'b -> bool) -> 'a option -> 'b option -> bool
 let eq_symbol : Symbol.t -> t -> bool
   = fun s -> function
     | Linear (c, se) ->
-        c = 0 && opt_lift Symbol.eq (SymLinear.one_symbol se) (Some s)
+        Int.equal c 0 && opt_lift Symbol.eq (SymLinear.one_symbol se) (Some s)
     | _ -> false
 
 let one_symbol : t -> Symbol.t option
   = function
-    | Linear (c, se) when c = 0 -> SymLinear.one_symbol se
+    | Linear (c, se) when Int.equal c 0 -> SymLinear.one_symbol se
     | _ -> None
 
 let is_one_symbol : t -> bool
@@ -288,10 +290,10 @@ let le : t -> t -> bool
     | MinMax (Max, c0, x0), MinMax (Max, c1, x1) -> c0 <= c1 && Symbol.eq x0 x1
     | MinMax (Min, c0, x0), Linear (c1, x1) ->
         (c0 <= c1 && SymLinear.is_zero x1)
-        || (c1 = 0 && opt_lift Symbol.eq (SymLinear.one_symbol x1) (Some x0))
+        || (Int.equal c1 0 && opt_lift Symbol.eq (SymLinear.one_symbol x1) (Some x0))
     | Linear (c1, x1), MinMax (Max, c0, x0) ->
         (c1 <= c0 && SymLinear.is_zero x1)
-        || (c1 = 0 && opt_lift Symbol.eq (SymLinear.one_symbol x1) (Some x0))
+        || (Int.equal c1 0 && opt_lift Symbol.eq (SymLinear.one_symbol x1) (Some x0))
     | MinMax (Min, c0, x0), MinMax (Max, c1, x1) -> c0 <= c1 || Symbol.eq x0 x1
     | _, _ -> false
 
@@ -315,8 +317,8 @@ let gt : t -> t -> bool
 
 let eq : t -> t -> bool
   = fun x y ->
-    if x = Bot && y = Bot then true else
-    if x = Bot || y = Bot then false else
+    if equal x Bot && equal y Bot then true else
+    if equal x Bot || equal y Bot then false else
       le x y && le y x
 
 let min : t -> t -> t
@@ -326,12 +328,12 @@ let min : t -> t -> t
     if le y x then y else
       match x, y with
       | Linear (c0, x0), Linear (c1, x1)
-        when SymLinear.is_zero x0 && c1 = 0 && SymLinear.is_one_symbol x1 ->
+        when SymLinear.is_zero x0 && Int.equal c1 0 && SymLinear.is_one_symbol x1 ->
           (match SymLinear.one_symbol x1 with
            | Some x' -> MinMax (Min, c0, x')
            | None -> assert false)
       | Linear (c0, x0), Linear (c1, x1)
-        when SymLinear.is_zero x1 && c0 = 0 && SymLinear.is_one_symbol x0 ->
+        when SymLinear.is_zero x1 && Int.equal c0 0 && SymLinear.is_one_symbol x0 ->
           (match SymLinear.one_symbol x0 with
            | Some x' -> MinMax (Min, c1, x')
            | None -> assert false)
@@ -347,12 +349,12 @@ let max : t -> t -> t
     if le y x then x else
       match x, y with
       | Linear (c0, x0), Linear (c1, x1)
-        when SymLinear.is_zero x0 && c1 = 0 && SymLinear.is_one_symbol x1 ->
+        when SymLinear.is_zero x0 && Int.equal c1 0 && SymLinear.is_one_symbol x1 ->
           (match SymLinear.one_symbol x1 with
            | Some x' -> MinMax (Max, c0, x')
            | None -> assert false)
       | Linear (c0, x0), Linear (c1, x1)
-        when SymLinear.is_zero x1 && c0 = 0 && SymLinear.is_one_symbol x0 ->
+        when SymLinear.is_zero x1 && Int.equal c0 0 && SymLinear.is_one_symbol x0 ->
           (match SymLinear.one_symbol x0 with
            | Some x' -> MinMax (Max, c1, x')
            | None -> assert false)
@@ -364,14 +366,14 @@ let max : t -> t -> t
 let widen_l : t -> t -> t
   = fun x y ->
     assert (x <> Bot && y <> Bot);
-    if x = PInf || y = PInf then failwith "Lower bound cannot be +oo." else
+    if equal x PInf || equal y PInf then failwith "Lower bound cannot be +oo." else
     if le x y then x else
       MInf
 
 let widen_u : t -> t -> t
   = fun x y ->
     assert (x <> Bot && y <> Bot);
-    if x = MInf || y = MInf then failwith "Upper bound cannot be -oo." else
+    if equal x MInf || equal y MInf then failwith "Upper bound cannot be -oo." else
     if le y x then x else
       PInf
 
@@ -391,7 +393,7 @@ let is_zero : t -> bool
   = fun x ->
     assert (x <> Bot);
     match x with
-    | Linear (c, y) -> c = 0 && SymLinear.is_zero y
+    | Linear (c, y) -> Int.equal c 0 && SymLinear.is_zero y
     | _ -> false
 
 let is_const : t -> int option
@@ -436,12 +438,12 @@ let mult_const : t -> int -> t option
 let div_const : t -> int -> t option
   = fun x n ->
     assert (x <> Bot);
-    if n = 0 then Some zero else
+    if Int.equal n 0 then Some zero else
       match x with
       | MInf -> Some (if n > 0 then MInf else PInf)
       | PInf -> Some (if n > 0 then PInf else MInf)
       | Linear (c, x') ->
-          if c mod n = 0 && SymLinear.is_mod_zero x' n then
+          if Int.equal (c mod n) 0 && SymLinear.is_mod_zero x' n then
             Some (Linear (c / n, SymLinear.div_const x' n))
           else None
       | _ -> None
@@ -459,12 +461,12 @@ let make_min_max : min_max_t -> t -> t -> t option
     assert (x <> Bot && y <> Bot);
     match x, y with
     | Linear (cx, x'), Linear (cy, y')
-      when cy = 0 && SymLinear.is_zero x' && SymLinear.is_one_symbol y' ->
+      when Int.equal cy 0 && SymLinear.is_zero x' && SymLinear.is_one_symbol y' ->
         (match SymLinear.one_symbol y' with
          | Some s -> Some (MinMax (m, cx, s))
          | None -> None)
     | Linear (cx, x'), Linear (cy, y')
-      when cx = 0 && SymLinear.is_zero y' && SymLinear.is_one_symbol x' ->
+      when Int.equal cx 0 && SymLinear.is_zero y' && SymLinear.is_one_symbol x' ->
         (match SymLinear.one_symbol x' with
          | Some s -> Some (MinMax (m, cy, s))
          | None -> None)
@@ -579,7 +581,7 @@ struct
   let is_const : t -> int option
     = fun (l, u) ->
       match Bound.is_const l, Bound.is_const u with
-      | Some n, Some m when n = m -> Some n
+      | Some n, Some m when Int.equal n m -> Some n
       | _, _ -> None
 
   let is_symbolic : t -> bool
@@ -587,8 +589,8 @@ struct
 
   let neg : t -> t
     = fun (l, u) ->
-      let l' = Option.default Bound.MInf (Bound.neg u) in
-      let u' = Option.default Bound.PInf (Bound.neg l) in
+      let l' = Option.value ~default:Bound.MInf (Bound.neg u) in
+      let u' = Option.value ~default:Bound.PInf (Bound.neg l) in
       (l', u')
 
   let lnot : t -> t
@@ -605,14 +607,14 @@ struct
 
   let mult_const : t -> int -> t
     = fun (l, u) n ->
-      if n = 0 then zero else
+      if Int.equal n 0 then zero else
       if n > 0 then
-        let l' = Option.default Bound.MInf (Bound.mult_const l n) in
-        let u' = Option.default Bound.PInf (Bound.mult_const u n) in
+        let l' = Option.value ~default:Bound.MInf (Bound.mult_const l n) in
+        let u' = Option.value ~default:Bound.PInf (Bound.mult_const u n) in
         (l', u')
       else
-        let l' = Option.default Bound.MInf (Bound.mult_const u n) in
-        let u' = Option.default Bound.PInf (Bound.mult_const l n) in
+        let l' = Option.value ~default:Bound.MInf (Bound.mult_const u n) in
+        let u' = Option.value ~default:Bound.PInf (Bound.mult_const l n) in
         (l', u')
 
   (* Returns a correct value only when all coefficients are divided by
@@ -621,12 +623,12 @@ struct
     = fun (l, u) n ->
       assert (n <> 0);
       if n > 0 then
-        let l' = Option.default Bound.MInf (Bound.div_const l n) in
-        let u' = Option.default Bound.PInf (Bound.div_const u n) in
+        let l' = Option.value ~default:Bound.MInf (Bound.div_const l n) in
+        let u' = Option.value ~default:Bound.PInf (Bound.div_const u n) in
         (l', u')
       else
-        let l' = Option.default Bound.MInf (Bound.div_const u n) in
-        let u' = Option.default Bound.PInf (Bound.div_const l n) in
+        let l' = Option.value ~default:Bound.MInf (Bound.div_const u n) in
+        let u' = Option.value ~default:Bound.PInf (Bound.div_const l n) in
         (l', u')
 
   let mult : t -> t -> t
@@ -646,7 +648,7 @@ struct
   let mod_sem : t -> t -> t
     = fun x y ->
       match is_const x, is_const y with
-      | Some n, Some m -> if m = 0 then x else of_int (n mod m)
+      | Some n, Some m -> if Int.equal m 0 then x else of_int (n mod m)
       | _, Some m -> (Bound.of_int (-m), Bound.of_int m)
       | _, None -> top
 
@@ -708,13 +710,13 @@ struct
 
   let invalid : t -> bool
     = fun (l, u) ->
-      l = Bound.Bot || u = Bound.Bot
+      Bound.equal l Bound.Bot || Bound.equal u Bound.Bot
       || Bound.eq l Bound.PInf || Bound.eq u Bound.MInf || Bound.lt u l
 
   let prune_le : t -> t -> t
     = fun x y ->
       match x, y with
-      | (l1, u1), (_, u2) when u1 = Bound.PInf -> (l1, u2)
+      | (l1, u1), (_, u2) when Bound.equal u1 Bound.PInf -> (l1, u2)
       | (l1, Bound.Linear (c1, s1)), (_, Bound.Linear (c2, s2))
         when SymLinear.eq s1 s2 ->
           (l1, Bound.Linear (min c1 c2, s1))
@@ -741,7 +743,7 @@ struct
   let prune_ge : t -> t -> t
     = fun x y ->
       match x, y with
-      | (l1, u1), (l2, _) when l1 = Bound.MInf -> (l2, u1)
+      | (l1, u1), (l2, _) when Bound.equal l1 Bound.MInf -> (l2, u1)
       | (Bound.Linear (c1, s1), u1), (Bound.Linear (c2, s2), _)
         when SymLinear.eq s1 s2 ->
           (Bound.Linear (max c1 c2, s1), u1)
@@ -816,7 +818,7 @@ struct
 
   let has_bnd_bot : t -> bool
     = fun (l, u) ->
-      l = Bound.Bot || u = Bound.Bot
+      Bound.equal l Bound.Bot || Bound.equal u Bound.Bot
 end
 
 include AbstractDomain.BottomLifted (ItvPure)
@@ -830,6 +832,8 @@ let compare : t -> t -> int
     | Bottom, _ -> -1
     | _, Bottom -> 1
     | NonBottom x, NonBottom y -> ItvPure.compare_astate x y
+
+let equal = [%compare.equal : t]
 
 let compare_astate = compare
 
@@ -853,7 +857,7 @@ let of_int : int -> astate
   = fun n -> NonBottom (ItvPure.of_int n)
 
 let is_bot : t -> bool
-  = fun x -> x = Bottom
+  = fun x -> equal x Bottom
 
 let is_finite : t -> bool
   = function

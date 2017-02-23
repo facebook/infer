@@ -43,7 +43,7 @@ let active_procedure_checkers () =
       ] in
     (* make sure SimpleChecker.ml is not dead code *)
     if false then (let module SC = SimpleChecker.Make in ());
-    IList.map (fun (x, y) -> (x, y, Some Config.Java)) l in
+    List.map ~f:(fun (x, y) -> (x, y, Some Config.Java)) l in
   let c_cpp_checkers =
     let l =
       [
@@ -54,7 +54,7 @@ let active_procedure_checkers () =
         Siof.checker, checkers_enabled;
         BufferOverrunChecker.checker, Config.bufferoverrun;
       ] in
-    IList.map (fun (x, y) -> (x, y, Some Config.Clang)) l in
+    List.map ~f:(fun (x, y) -> (x, y, Some Config.Clang)) l in
 
   java_checkers @ c_cpp_checkers
 

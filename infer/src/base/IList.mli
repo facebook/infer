@@ -7,28 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-(** Remove all None elements from the list. *)
-val flatten_options : ('a option) list -> 'a list
-
-val length : 'a list -> int
-
-(** tail-recursive variant of List.map *)
-val map : ('a -> 'b) -> 'a list -> 'b list
-
 (** like map, but returns the original list if unchanged *)
 val map_changed : ('a -> 'a) -> 'a list -> 'a list
 
 (** like filter, but returns the original list if unchanged *)
 val filter_changed : ('a -> bool) -> 'a list -> 'a list
 
-(** tail-recursive variant of List.mapi *)
-val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
-
-val nth : 'a list -> int -> 'a
 val partition : ('a -> bool) -> 'a list -> 'a list * 'a list
 val rev : 'a list -> 'a list
 val rev_append : 'a list -> 'a list -> 'a list
-val rev_map : ('a -> 'b) -> 'a list -> 'b list
 val sort : ('a -> 'a -> int) -> 'a list -> 'a list
 
 val stable_sort : ('a -> 'a -> int) -> 'a list -> 'a list
@@ -63,11 +50,6 @@ val mem_assoc : ('a -> 'a -> bool) -> 'a -> ('a * 'b) list -> bool
 
 (** Like List.assoc but without builtin equality *)
 val assoc : ('a -> 'a -> bool) -> 'a -> ('a * 'b) list -> 'b
-
-exception Fail
-
-(** Apply [f] to pairs of elements; raise [Fail] if the two lists have different lenghts. *)
-val map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
 
 (** Return the first non-None result found when applying f to elements of l *)
 val find_map_opt : ('a -> 'b option) -> 'a list -> 'b option

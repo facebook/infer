@@ -30,7 +30,7 @@ let exes = [
 ]
 
 let exe_name =
-  let exe_to_name = IList.map (fun (n,a) -> (a,n)) exes in
+  let exe_to_name = List.map ~f:(fun (n,a) -> (a,n)) exes in
   fun exe -> IList.assoc equal_exe exe exe_to_name
 
 let frontend_parse_modes = CLOpt.(Infer [Clang])
@@ -445,7 +445,7 @@ and (
     let mk_option analyzer_name =
       let long = Printf.sprintf "%s-%s" analyzer_name suffix in
       let deprecated =
-        IList.map (Printf.sprintf "%s_%s" analyzer_name) deprecated_suffix in
+        List.map ~f:(Printf.sprintf "%s_%s" analyzer_name) deprecated_suffix in
       (* empty doc to hide the options from --help since there are many redundant ones *)
       CLOpt.mk_string_list ~deprecated ~long ~meta "" in
     ignore (
@@ -454,7 +454,7 @@ and (
         ~parse_mode:CLOpt.(Infer [Driver;Print])
         help
     );
-    IList.map (fun (name, analyzer) -> (analyzer, mk_option name)) string_to_analyzer in
+    List.map ~f:(fun (name, analyzer) -> (analyzer, mk_option name)) string_to_analyzer in
   (
     mk_filtering_options
       ~suffix:"blacklist-files-containing"
@@ -1383,7 +1383,7 @@ let post_parsing_initialization () =
        let analyzer_name =
          IList.assoc equal_analyzer
            (match !analyzer with Some a -> a | None -> Infer)
-           (IList.map (fun (n,a) -> (a,n)) string_to_analyzer) in
+           (List.map ~f:(fun (n,a) -> (a,n)) string_to_analyzer) in
        let infer_version = Version.commit in
        F.eprintf "%s/%s/%s@." javac_version analyzer_name infer_version
    | `Javac ->
@@ -1453,13 +1453,13 @@ and abs_struct = !abs_struct
 and abs_val_orig = !abs_val
 and allow_specs_cleanup = !allow_specs_cleanup
 and analysis_path_regex_whitelist_options =
-  IList.map (fun (a, b) -> (a, !b)) analysis_path_regex_whitelist_options
+  List.map ~f:(fun (a, b) -> (a, !b)) analysis_path_regex_whitelist_options
 and analysis_path_regex_blacklist_options =
-  IList.map (fun (a, b) -> (a, !b)) analysis_path_regex_blacklist_options
+  List.map ~f:(fun (a, b) -> (a, !b)) analysis_path_regex_blacklist_options
 and analysis_blacklist_files_containing_options =
-  IList.map (fun (a, b) -> (a, !b)) analysis_blacklist_files_containing_options
+  List.map ~f:(fun (a, b) -> (a, !b)) analysis_blacklist_files_containing_options
 and analysis_suppress_errors_options =
-  IList.map (fun (a, b) -> (a, !b)) analysis_suppress_errors_options
+  List.map ~f:(fun (a, b) -> (a, !b)) analysis_suppress_errors_options
 and analysis_stops = !analysis_stops
 and angelic_execution = !angelic_execution
 and annotation_reachability = !annotation_reachability

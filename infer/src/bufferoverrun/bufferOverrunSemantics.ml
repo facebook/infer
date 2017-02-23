@@ -259,7 +259,7 @@ struct
     = fun pdesc ->
       let proc_name = Procdesc.get_proc_name pdesc in
       Procdesc.get_formals pdesc
-      |> IList.map (fun (name, typ) -> (Pvar.mk name proc_name, typ))
+      |> List.map ~f:(fun (name, typ) -> (Pvar.mk name proc_name, typ))
 
   let get_matching_pairs
     : Tenv.t -> Val.t -> Val.t -> Typ.t -> Mem.astate -> Mem.astate
@@ -298,7 +298,7 @@ struct
         | Typ.Tptr (Typ.Tstruct typename, _) ->
             (match Tenv.lookup tenv typename with
              | Some str ->
-                 let fns = IList.map get_field_name str.StructTyp.fields in
+                 let fns = List.map ~f:get_field_name str.StructTyp.fields in
                  List.fold ~f:(add_pair_field v1 v2) ~init:pairs fns
              | _ -> pairs)
         | Typ.Tptr (_ ,_) ->
@@ -344,7 +344,7 @@ struct
         List.append new_matching l
       in
       let formals = get_formals callee_pdesc in
-      let actuals = IList.map (fun (a, _) -> eval a caller_mem loc) params in
+      let actuals = List.map ~f:(fun (a, _) -> eval a caller_mem loc) params in
       list_fold2_def Val.bot add_pair formals actuals []
       |> subst_map_of_pairs
 end

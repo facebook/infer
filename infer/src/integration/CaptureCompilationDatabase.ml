@@ -42,7 +42,7 @@ let add_flavor_to_targets args =
     (* Targets are assumed to start with //, aliases are not allowed *)
     if String.is_prefix ~prefix:"//" arg then arg ^ flavor
     else arg in
-  IList.map process_arg args
+  List.map ~f:process_arg args
 
 let create_files_stack compilation_database should_capture_file =
   let stack = Stack.create () in

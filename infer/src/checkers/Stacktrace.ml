@@ -84,7 +84,7 @@ let of_string s =
   match lines with
   | exception_line :: trace ->
       let exception_name = parse_exception_line exception_line in
-      let parsed = IList.map parse_stack_frame trace in
+      let parsed = List.map ~f:parse_stack_frame trace in
       make exception_name parsed
   | [] -> failwith "Empty stack trace"
 
@@ -99,10 +99,10 @@ let of_json filename json =
     Yojson.Basic.Util.to_string (extract_json_member exception_name_key) in
   let frames =
     Yojson.Basic.Util.to_list (extract_json_member frames_key)
-    |> IList.map Yojson.Basic.Util.to_string
-    |> IList.map String.strip
+    |> List.map ~f:Yojson.Basic.Util.to_string
+    |> List.map ~f:String.strip
     |> List.filter ~f:(fun s -> s <> "")
-    |> IList.map parse_stack_frame in
+    |> List.map ~f:parse_stack_frame in
   make exception_name frames
 
 let of_json_file filename =

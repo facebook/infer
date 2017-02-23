@@ -63,8 +63,8 @@ module SinkKind = struct
 
   let get pname actuals _ =
     let taint_all actuals kind ~report_reachable =
-      IList.mapi
-        (fun actual_num _ -> kind, actual_num, report_reachable)
+      List.mapi
+        ~f:(fun actual_num _ -> kind, actual_num, report_reachable)
         actuals in
     match pname with
     | (Procname.ObjC_Cpp cpp_pname) as pname ->

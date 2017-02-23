@@ -513,7 +513,7 @@ let define_condition_side_effects e_cond instrs_cond sil_loc =
   | _ -> [(e', typ)], instrs_cond
 
 let fix_param_exps_mismatch params_stmt exps_param =
-  let diff = IList.length params_stmt - IList.length exps_param in
+  let diff = List.length params_stmt - List.length exps_param in
   let args = if diff >0 then Array.create ~len:diff dummy_exp
     else assert false in
   let exps'= exps_param @ (Array.to_list args) in
@@ -694,7 +694,7 @@ let is_dispatch_function stmt_list =
                    | None -> None
                    | Some (_, block_arg_pos) ->
                        try
-                         let arg_stmt = IList.nth arg_stmts block_arg_pos in
+                         let arg_stmt = List.nth_exn arg_stmts block_arg_pos in
                          if is_block_stmt arg_stmt then Some block_arg_pos else None
                        with Failure _ -> None)
               | _ -> None))
@@ -720,10 +720,10 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         match Tenv.lookup tenv tn with
         | Some { fields } ->
             let lh_exprs =
-              IList.map (fun (fieldname, _, _) -> Exp.Lfield (e, fieldname, typ)) fields in
-            let lh_types = IList.map (fun (_, fieldtype, _) -> fieldtype) fields in
+              List.map ~f:(fun (fieldname, _, _) -> Exp.Lfield (e, fieldname, typ)) fields in
+            let lh_types = List.map ~f:(fun (_, fieldtype, _) -> fieldtype) fields in
             let exp_types = zip lh_exprs lh_types in
-            IList.map (fun (e, t) -> List.concat (var_or_zero_in_init_list' e t tns)) exp_types
+            List.map ~f:(fun (e, t) -> List.concat (var_or_zero_in_init_list' e t tns)) exp_types
         | None ->
             assert false
       )
@@ -731,12 +731,12 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         let size = IntLit.to_int n in
         let indices = list_range 0 (size - 1) in
         let index_constants =
-          IList.map (fun i -> (Exp.Const (Const.Cint (IntLit.of_int i)))) indices in
+          List.map ~f:(fun i -> (Exp.Const (Const.Cint (IntLit.of_int i)))) indices in
         let lh_exprs =
-          IList.map (fun index_expr -> Exp.Lindex (e, index_expr)) index_constants in
+          List.map ~f:(fun index_expr -> Exp.Lindex (e, index_expr)) index_constants in
         let lh_types = replicate size arrtyp in
         let exp_types = zip lh_exprs lh_types in
-        IList.map (fun (e, t) ->
+        List.map ~f:(fun (e, t) ->
             List.concat (var_or_zero_in_init_list' e t tns)) exp_types
     | Typ.Tint _ | Typ.Tfloat _  | Typ.Tptr _ ->
         let exp = if return_zero then Sil.zero_value_of_numerical_type typ else e in

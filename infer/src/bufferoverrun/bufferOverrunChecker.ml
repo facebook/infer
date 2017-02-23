@@ -380,7 +380,7 @@ struct
     : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t ->
       CFG.node -> Dom.ConditionSet.t
     = fun pdata inv_map cond_set node ->
-      let instrs = CFG.instr_ids node |> IList.map fst in
+      let instrs = CFG.instr_ids node |> List.map ~f:fst in
       match Analyzer.extract_pre (CFG.id node) inv_map with
       | Some mem -> collect_instrs pdata node instrs mem cond_set
       | _ -> cond_set

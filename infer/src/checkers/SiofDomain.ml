@@ -30,7 +30,7 @@ let normalize ((trace, initialized) as astate) = match trace with
              procdesc. Use the loc of the first access. *)
           let loc = CallSite.loc (SiofTrace.Sink.call_site access) in
           let kind =
-            IList.map SiofTrace.Sink.kind direct
+            List.map ~f:SiofTrace.Sink.kind direct
             |> List.fold
               ~f:SiofTrace.GlobalsAccesses.union
               ~init:SiofTrace.GlobalsAccesses.empty in

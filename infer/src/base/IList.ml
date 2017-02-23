@@ -7,14 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-let exists = List.exists
-let fold_left = List.fold_left
-let length = List.length
-let nth = List.nth
 let partition = List.partition
 let rev = List.rev
 let rev_append = List.rev_append
-let rev_map = List.rev_map
 let sort = List.sort
 let stable_sort = List.stable_sort
 
@@ -22,10 +17,6 @@ let rec last = function
   | [] -> None
   | [x] -> Some x
   | _ :: xs -> last xs
-
-let flatten_options list =
-  fold_left (fun list -> function | Some x -> x:: list | None -> list) [] list
-  |> rev
 
 let rec drop_first n = function
   | xs when n == 0 -> xs
@@ -35,14 +26,10 @@ let rec drop_first n = function
 let drop_last n list =
   rev (drop_first n (rev list))
 
-(** tail-recursive variant of List.map *)
-let map f l =
-  rev (rev_map f l)
-
 (** like map, but returns the original list if unchanged *)
 let map_changed (f : 'a -> 'a) l =
   let l', changed =
-    fold_left
+    List.fold_left
       (fun (l_acc, changed) e ->
          let e' = f e in
          e' :: l_acc, changed || e' != e)
@@ -55,7 +42,7 @@ let map_changed (f : 'a -> 'a) l =
 (** like filter, but returns the original list if unchanged *)
 let filter_changed (f : 'a -> bool) l =
   let l', changed =
-    fold_left
+    List.fold_left
       (fun (l_acc, changed) e ->
          if f e
          then e :: l_acc, changed
@@ -65,15 +52,6 @@ let filter_changed (f : 'a -> bool) l =
   if changed
   then rev l'
   else l
-
-(** tail-recursive variant of List.mapi *)
-let mapi f l =
-  let i = ref 0 in
-  rev (rev_map
-         (fun x ->
-            incr i;
-            f (!i - 1) x)
-         l)
 
 (** Remove consecutive equal elements from a list (according to the given comparison functions) *)
 let remove_duplicates compare l =
@@ -147,19 +125,6 @@ let inter compare xs ys =
   in
   inter_ [] rev_xs rev_ys
 
-exception Fail
-
-(** Apply [f] to pairs of elements; raise [Fail] if the two lists have different lenghts. *)
-let map2 f l1 l2 =
-  let rec go l1 l2 acc =
-    match l1, l2 with
-    | [],[] -> rev acc
-    | x1 :: l1', x2 :: l2' ->
-        let x' = f x1 x2 in
-        go l1' l2' (x':: acc)
-    | _ -> raise Fail in
-  go l1 l2 []
-
 (** Return the first non-None result found when applying f to elements of l *)
 let rec find_map_opt f = function
   | [] -> None
@@ -179,7 +144,7 @@ let to_string f l =
 
 (** Like List.mem_assoc but without builtin equality *)
 let mem_assoc equal a l =
-  exists (fun x -> equal a (fst x)) l
+  List.exists (fun x -> equal a (fst x)) l
 
 (** Like List.assoc but without builtin equality *)
 let assoc equal a l =

@@ -186,9 +186,9 @@ let create_type tenv n_lexp typ prop =
   let sil_is_nonnull = Exp.UnOp (Unop.LNot, sil_is_null, None) in
   let null_case = Propset.to_proplist (prune tenv ~positive:true sil_is_null prop) in
   let non_null_case = Propset.to_proplist (prune tenv ~positive:true sil_is_nonnull prop_type) in
-  if ((IList.length non_null_case) > 0) && (!Config.footprint) then
+  if ((List.length non_null_case) > 0) && (!Config.footprint) then
     non_null_case
-  else if ((IList.length non_null_case) > 0) && (is_undefined_opt tenv prop n_lexp) then
+  else if ((List.length non_null_case) > 0) && (is_undefined_opt tenv prop n_lexp) then
     non_null_case
   else null_case @ non_null_case
 
@@ -209,7 +209,7 @@ let execute___get_type_of { Builtin.pdesc; tenv; prop_; path; ret_id; args; }
             ((return_result tenv texp prop ret_id), path)
         | None ->
             ((return_result tenv Exp.zero prop ret_id), path) in
-      (IList.map aux props)
+      (List.map ~f:aux props)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 (** replace the type of the ptsto rooted at [root_e] with [texp] in [prop] *)
@@ -297,7 +297,7 @@ let execute___instanceof_cast ~instof
           | None ->
               [(return_result tenv val1 prop ret_id, path)] in
       let props = create_type tenv val1 typ1 prop in
-      List.concat (IList.map exe_one_prop props)
+      List.concat_map ~f:exe_one_prop props
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
 let execute___instanceof builtin_args
@@ -409,8 +409,8 @@ let execute___get_hidden_field { Builtin.tenv; pdesc; prop_; path; ret_id; args;
             set_ret_val();
             hpred
         | _ -> hpred in
-      let sigma' = IList.map (do_hpred false) prop.Prop.sigma in
-      let sigma_fp' = IList.map (do_hpred true) prop.Prop.sigma_fp in
+      let sigma' = List.map ~f:(do_hpred false) prop.Prop.sigma in
+      let sigma_fp' = List.map ~f:(do_hpred true) prop.Prop.sigma_fp in
       let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp' in
       let prop'' = return_val (Prop.normalize tenv prop') in
       [(prop'', path)]
@@ -443,8 +443,8 @@ let execute___set_hidden_field { Builtin.tenv; pdesc; prop_; path; args; }
             let fsel' = (Ident.fieldname_hidden, se) :: fsel in
             Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
         | _ -> hpred in
-      let sigma' = IList.map (do_hpred false) prop.Prop.sigma in
-      let sigma_fp' = IList.map (do_hpred true) prop.Prop.sigma_fp in
+      let sigma' = List.map ~f:(do_hpred false) prop.Prop.sigma in
+      let sigma_fp' = List.map ~f:(do_hpred true) prop.Prop.sigma_fp in
       let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp' in
       let prop'' = Prop.normalize tenv prop' in
       [(prop'', path)]
@@ -729,10 +729,12 @@ let execute_free mk { Builtin.pdesc; instr; tenv; prop_; path; args; loc; }
           Propset.to_proplist (prune tenv ~positive:false n_lexp prop) in
         let plist =
           prop_zero @ (* model: if 0 then skip else _execute_free_nonzero *)
-          List.concat (IList.map (fun p ->
-              _execute_free_nonzero mk pdesc tenv instr p
-                (Prop.exp_normalize_prop tenv p lexp) typ loc) prop_nonzero) in
-        IList.map (fun p -> (p, path)) plist
+          List.concat_map
+            ~f:(fun p ->
+                _execute_free_nonzero mk pdesc tenv instr p
+                  (Prop.exp_normalize_prop tenv p lexp) typ loc)
+            prop_nonzero in
+        List.map ~f:(fun p -> (p, path)) plist
       end
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
 
@@ -850,7 +852,7 @@ let execute_skip { Builtin.prop_; path; } : Builtin.ret_typ =
 let execute_scan_function skip_n_arguments ({ Builtin.args } as call_args)
   : Builtin.ret_typ =
   match args with
-  | _ when IList.length args >= skip_n_arguments ->
+  | _ when List.length args >= skip_n_arguments ->
       let varargs = ref args in
       varargs := List.drop !varargs skip_n_arguments;
       SymExec.unknown_or_scan_call
@@ -898,7 +900,7 @@ let execute___split_get_nth { Builtin.tenv; pdesc; prop_; path; ret_id; args; }
            (let n = IntLit.to_int n_sil in
             try
               let parts = Str.split (Str.regexp_string str2) str1 in
-              let n_part = IList.nth parts n in
+              let n_part = List.nth_exn parts n in
               let res = Exp.Const (Const.Cstr n_part) in
               [(return_result tenv res prop ret_id, path)]
             with Not_found -> assert false)
@@ -938,7 +940,7 @@ let execute___infer_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
 let execute___assert_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
   : Builtin.ret_typ =
   let error_str =
-    match IList.length args with
+    match List.length args with
     | 4 ->
         Config.default_failure_name
     | _ ->

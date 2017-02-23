@@ -50,7 +50,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     let priority t = t.priority
 
     let compute_priority cfg node visited_preds =
-      IList.length (CFG.preds cfg node) - IdSet.cardinal visited_preds
+      List.length (CFG.preds cfg node) - IdSet.cardinal visited_preds
 
     let make cfg node =
       let visited_preds = IdSet.empty in

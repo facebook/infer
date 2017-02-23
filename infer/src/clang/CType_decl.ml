@@ -92,7 +92,7 @@ let get_class_methods class_name decl_list =
         Some procname
     | _ -> None in
   (* poor mans list_filter_map *)
-  IList.flatten_options (IList.map process_method_decl decl_list)
+  List.filter_map ~f:process_method_decl decl_list
 
 let get_superclass_decls decl =
   let open Clang_ast_t in
@@ -104,7 +104,7 @@ let get_superclass_decls decl =
       let get_decl_or_fail typ_ptr = match CAst_utils.get_decl_from_typ_ptr typ_ptr with
         | Some decl -> decl
         | None -> assert false in
-      IList.map get_decl_or_fail base_ptr
+      List.map ~f:get_decl_or_fail base_ptr
   | _ -> []
 
 (** fetches list of superclasses for C++ classes *)
@@ -113,7 +113,7 @@ let get_superclass_list_cpp decl =
   let decl_to_mangled_name decl = Mangled.from_string (get_record_name decl) in
   let get_super_field super_decl =
     Typename.TN_csu (Csu.Class Csu.CPP, decl_to_mangled_name super_decl) in
-  IList.map get_super_field base_decls
+  List.map ~f:get_super_field base_decls
 
 let get_translate_as_friend_decl decl_list =
   let is_translate_as_friend_name (_, name_info) =
@@ -162,8 +162,8 @@ let rec get_struct_fields tenv decl =
         [(id, typ, annotation_items)]
     | _ -> [] in
   let base_decls = get_superclass_decls decl in
-  let base_class_fields = IList.map (get_struct_fields tenv) base_decls in
-  List.concat (base_class_fields @ (IList.map do_one_decl decl_list))
+  let base_class_fields = List.map ~f:(get_struct_fields tenv) base_decls in
+  List.concat (base_class_fields @ (List.map ~f:do_one_decl decl_list))
 
 (* For a record declaration it returns/constructs the type *)
 and get_record_declaration_type tenv decl =

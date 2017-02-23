@@ -79,7 +79,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       && not (is_compile_time_constructed pdesc pv) in
     let globals_accesses =
       Exp.get_vars e |> snd |> List.filter ~f:is_dangerous_global
-      |> IList.map (fun v -> (v, loc)) in
+      |> List.map ~f:(fun v -> (v, loc)) in
     GlobalsAccesses.of_list globals_accesses
 
   let filter_global_accesses initialized globals =
@@ -108,7 +108,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (Domain.BottomSiofTrace.NonBottom globals_trace, snd astate)
 
   let add_params_globals astate pdesc call_loc params =
-    IList.map (fun (e, _) -> get_globals pdesc call_loc e) params
+    List.map ~f:(fun (e, _) -> get_globals pdesc call_loc e) params
     |> List.fold ~f:GlobalsAccesses.union ~init:GlobalsAccesses.empty
     |> add_globals astate (Procdesc.get_loc pdesc)
 

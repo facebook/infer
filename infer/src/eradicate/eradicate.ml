@@ -46,7 +46,7 @@ struct
   let update_summary proc_name proc_desc final_typestate_opt =
     match Specs.get_summary proc_name with
     | Some old_summ ->
-        let nodes = IList.map (fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes proc_desc) in
+        let nodes = List.map ~f:(fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes proc_desc) in
         let method_annotation =
           (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation in
         let new_summ =

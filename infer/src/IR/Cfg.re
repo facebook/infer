@@ -88,19 +88,19 @@ let check_cfg_connectedness cfg => {
     let succs = Procdesc.Node.get_succs n;
     let preds = Procdesc.Node.get_preds n;
     switch (Procdesc.Node.get_kind n) {
-    | Procdesc.Node.Start_node _ => Int.equal (IList.length succs) 0 || IList.length preds > 0
-    | Procdesc.Node.Exit_node _ => IList.length succs > 0 || Int.equal (IList.length preds) 0
+    | Procdesc.Node.Start_node _ => Int.equal (List.length succs) 0 || List.length preds > 0
+    | Procdesc.Node.Exit_node _ => List.length succs > 0 || Int.equal (List.length preds) 0
     | Procdesc.Node.Stmt_node _
     | Procdesc.Node.Prune_node _
     | Procdesc.Node.Skip_node _ =>
-      Int.equal (IList.length succs) 0 || Int.equal (IList.length preds) 0
+      Int.equal (List.length succs) 0 || Int.equal (List.length preds) 0
     | Procdesc.Node.Join_node =>
       /* Join node has the exception that it may be without predecessors
          and pointing to an exit node */
       /* if the if brances end with a return */
       switch succs {
       | [n'] when is_exit_node n' => false
-      | _ => Int.equal (IList.length preds) 0
+      | _ => Int.equal (List.length preds) 0
       }
     }
   };
@@ -183,13 +183,13 @@ let inline_synthetic_method ret_id etl pdesc loc_call :option Sil.instr => {
     | (Sil.Call ret_id' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
         when
           Bool.equal (is_none ret_id) (is_none ret_id') &&
-          Int.equal (IList.length etl') (IList.length etl) =>
+          Int.equal (List.length etl') (List.length etl) =>
       let instr' = Sil.Call ret_id (Exp.Const (Const.Cfun pn)) etl loc_call cf;
       found instr instr'
     | (Sil.Call ret_id' (Exp.Const (Const.Cfun pn)) etl' _ cf, _, _)
         when
           Bool.equal (is_none ret_id) (is_none ret_id') &&
-          Int.equal (IList.length etl' + 1) (IList.length etl) =>
+          Int.equal (List.length etl' + 1) (List.length etl) =>
       let etl1 =
         switch (IList.rev etl) {
         /* remove last element */
@@ -234,7 +234,7 @@ let proc_inline_synthetic_methods cfg pdesc :unit => {
         instr'
       };
     let instrs = Procdesc.Node.get_instrs node;
-    let instrs' = IList.map do_instr instrs;
+    let instrs' = List.map f::do_instr instrs;
     if !modified {
       Procdesc.Node.replace_instrs node instrs'
     }
@@ -399,7 +399,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
           Procname.replace_class
             (Procname.Java callee_pname_java) (Typename.name redirected_typename);
         let args = {
-          let other_args = IList.map (fun (exp, typ) => (convert_exp exp, typ)) origin_args;
+          let other_args = List.map f::(fun (exp, typ) => (convert_exp exp, typ)) origin_args;
           [(Exp.Var id, redirected_typ), ...other_args]
         };
         let call_instr =
@@ -407,7 +407,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
         [call_instr, ...instrs]
       }
     | Sil.Call return_ids origin_call_exp origin_args loc call_flags => {
-        let converted_args = IList.map (fun (exp, typ) => (convert_exp exp, typ)) origin_args;
+        let converted_args = List.map f::(fun (exp, typ) => (convert_exp exp, typ)) origin_args;
         let call_instr =
           Sil.Call return_ids (convert_exp origin_call_exp) converted_args loc call_flags;
         [call_instr, ...instrs]
@@ -417,7 +417,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
         ...instrs
       ]
     | Sil.Declare_locals typed_vars loc => {
-        let new_typed_vars = IList.map (fun (pvar, typ) => (convert_pvar pvar, typ)) typed_vars;
+        let new_typed_vars = List.map f::(fun (pvar, typ) => (convert_pvar pvar, typ)) typed_vars;
         [Sil.Declare_locals new_typed_vars loc, ...instrs]
       }
     | Sil.Nullify _

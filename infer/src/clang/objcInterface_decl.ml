@@ -29,7 +29,7 @@ let get_super_interface_decl otdi_super =
   | _ -> None
 
 let get_protocols protocols =
-  let protocol_names = IList.map (
+  let protocol_names = List.map ~f:(
       fun decl -> match decl.Clang_ast_t.dr_name with
         | Some name_info -> CAst_utils.get_qualified_name name_info
         | None -> assert false
@@ -77,7 +77,7 @@ let get_interface_supers super_opt protocols =
     match super_opt with
     | None -> []
     | Some super -> [Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string super)] in
-  let protocol_names = IList.map (
+  let protocol_names = List.map ~f:(
       fun name -> Typename.TN_csu (Csu.Protocol, Mangled.from_string name)
     ) protocols in
   let super_classes = super_class@protocol_names in

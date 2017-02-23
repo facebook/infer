@@ -267,7 +267,7 @@ let java_method_to_procname java_method =
        (Procname.split_classname java_method.classname)
        (Some (Procname.split_classname java_method.ret_type))
        java_method.method_name
-       (IList.map Procname.split_classname java_method.params)
+       (List.map ~f:Procname.split_classname java_method.params)
        (if java_method.is_static then Procname.Static else Procname.Non_Static))
 
 (* turn string specificiation of an objc method into a procname *)
@@ -284,11 +284,11 @@ let taint_spec_to_taint_info taint_spec =
   { PredSymb.taint_source; taint_kind = taint_spec.taint_kind }
 
 let sources =
-  IList.map taint_spec_to_taint_info sources0
+  List.map ~f:taint_spec_to_taint_info sources0
 
 let mk_pname_param_num methods =
-  IList.map
-    (fun (mname, param_num) -> taint_spec_to_taint_info mname, param_num)
+  List.map
+    ~f:(fun (mname, param_num) -> taint_spec_to_taint_info mname, param_num)
     methods
 
 let taint_sinks =
@@ -329,7 +329,7 @@ let accepts_sensitive_params callee_pname callee_attrs_opt =
       let _, param_annots = attrs_opt_get_annots callee_attrs_opt in
       let offset = if Procname.java_is_static callee_pname then 0 else 1 in
       let indices_and_annots =
-        IList.mapi (fun param_num attr  -> param_num + offset, attr) param_annots in
+        List.mapi ~f:(fun param_num attr  -> param_num + offset, attr) param_annots in
       let tag_tainted_indices acc (index, attr) =
         if Annotations.ia_is_integrity_sink attr
         then (index, PredSymb.Tk_privacy_annotation) :: acc
@@ -338,14 +338,14 @@ let accepts_sensitive_params callee_pname callee_attrs_opt =
         else acc in
       List.fold ~f:tag_tainted_indices ~init:[] indices_and_annots
   | Some (taint_info, tainted_param_indices) ->
-      IList.map (fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
+      List.map ~f:(fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
 
 (** returns list of zero-indexed parameter numbers of [callee_pname] that should be
     considered tainted during symbolic execution *)
 let tainted_params callee_pname =
   match find_callee func_with_tainted_params callee_pname with
   | Some (taint_info, tainted_param_indices) ->
-      IList.map (fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
+      List.map ~f:(fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
   | None -> []
 
 let has_taint_annotation fieldname (struct_typ: StructTyp.t) =
@@ -363,7 +363,7 @@ let get_params_to_taint tainted_param_nums formal_params =
     match get_taint_kind index with
     | Some (_, taint_kind) -> (param, taint_kind) :: params_to_taint_acc
     | None -> params_to_taint_acc in
-  let numbered_params = IList.mapi (fun i param -> (i, param)) formal_params in
+  let numbered_params = List.mapi ~f:(fun i param -> (i, param)) formal_params in
   List.fold ~f:collect_params_to_taint ~init:[] numbered_params
 
 (* add tainting attribute to a pvar in a prop *)

@@ -573,14 +573,14 @@ let typecheck_instr
             proc_attributes
         | None ->
             let formals =
-              IList.mapi
-                (fun i (_, typ) ->
-                   let arg =
-                     if Int.equal i 0 &&
-                        not (Procname.java_is_static callee_pname)
-                     then "this"
-                     else Printf.sprintf "arg%d" i in
-                   (Mangled.from_string arg, typ))
+              List.mapi
+                ~f:(fun i (_, typ) ->
+                    let arg =
+                      if Int.equal i 0 &&
+                         not (Procname.java_is_static callee_pname)
+                      then "this"
+                      else Printf.sprintf "arg%d" i in
+                    (Mangled.from_string arg, typ))
                 etl_ in
             let ret_type = Typ.java_proc_return_typ callee_pname_java in
             let proc_attributes =
@@ -818,7 +818,7 @@ let typecheck_instr
                 (typecheck_expr find_canonical_duplicate calls_this checks tenv);
             let typestate2 =
               if checks.check_extension then
-                let etl' = IList.map (fun ((_, e), t) -> (e, t)) call_params in
+                let etl' = List.map ~f:(fun ((_, e), t) -> (e, t)) call_params in
                 let extension = TypeState.get_extension typestate1 in
                 let extension' =
                   ext.TypeState.check_instr
@@ -839,7 +839,7 @@ let typecheck_instr
             if has_method callee_pname "checkNotNull"
             && Procname.java_is_vararg callee_pname
             then
-              let last_parameter = IList.length call_params in
+              let last_parameter = List.length call_params in
               do_preconditions_check_not_null
                 last_parameter
                 true (* is_vararg *)

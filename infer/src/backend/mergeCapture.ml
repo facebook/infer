@@ -160,7 +160,7 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
     then
       begin
         let captured_files = Array.to_list (Sys.readdir captured_src) in
-        num_captured_files := IList.length captured_files;
+        num_captured_files := List.length captured_files;
         List.for_all
           ~f:(fun file ->
               check_file (Filename.concat captured_dst file))

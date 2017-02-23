@@ -24,7 +24,7 @@ let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
       "update .* set.*";
       "delete .* from.*";
     ] in
-    IList.map Str.regexp_case_fold _sql_start in
+    List.map ~f:Str.regexp_case_fold _sql_start in
 
   (* Check for SQL string concatenations *)
   let do_instr const_map node instr =

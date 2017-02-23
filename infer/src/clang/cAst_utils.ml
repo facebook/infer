@@ -335,7 +335,7 @@ let get_tag ast_item =
 let rec generate_key_stmt stmt =
   let tag_str = string_of_int (get_tag stmt) in
   let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
-  let tags = IList.map generate_key_stmt stmts in
+  let tags = List.map ~f:generate_key_stmt stmts in
   let buffer = Buffer.create 16 in
   let tags = tag_str :: tags in
   List.iter ~f:(fun tag -> Buffer.add_string buffer tag) tags;

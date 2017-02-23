@@ -35,7 +35,7 @@ let fields_superclass tenv interface_decl_info ck =
   | _ -> []
 
 let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attributes =
-  let prop_atts = IList.map Clang_ast_j.string_of_property_attribute prop_attributes in
+  let prop_atts = List.map ~f:Clang_ast_j.string_of_property_attribute prop_attributes in
   let annotation_from_type t =
     match t with
     | Typ.Tptr (_, Typ.Pk_objc_weak) -> [Config.weak]

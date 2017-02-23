@@ -585,7 +585,7 @@ end = struct
     !plist
 
   let to_proplist ps =
-    IList.map fst (elements ps)
+    List.map ~f:fst (elements ps)
 
   let to_propset tenv ps =
     Propset.from_proplist tenv (to_proplist ps)

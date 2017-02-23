@@ -130,7 +130,7 @@ let list_range i j =
     if n < i then acc else aux (n -1) (n :: acc)
   in aux j [] ;;
 
-let replicate n el = IList.map (fun _ -> el) (list_range 0 (n -1))
+let replicate n el = List.map ~f:(fun _ -> el) (list_range 0 (n -1))
 
 let mk_class_field_name field_qual_name =
   let field_name = field_qual_name.Clang_ast_t.ni_name in

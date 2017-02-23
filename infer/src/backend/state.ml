@@ -140,7 +140,9 @@ let node_simple_key node =
 let node_key node =
   let succs = Procdesc.Node.get_succs node in
   let preds = Procdesc.Node.get_preds node in
-  let v = (node_simple_key node, IList.map node_simple_key succs, IList.map node_simple_key preds) in
+  let v = (node_simple_key node,
+           List.map ~f:node_simple_key succs,
+           List.map ~f:node_simple_key preds) in
   Hashtbl.hash v
 
 (** normalize the list of instructions by renaming let-bound ids *)
@@ -155,8 +157,8 @@ let instrs_normalize instrs =
     let gensym id =
       incr count;
       Ident.set_stamp id !count in
-    Sil.sub_of_list (IList.map (fun id -> (id, Exp.Var (gensym id))) bound_ids) in
-  IList.map (Sil.instr_sub subst) instrs
+    Sil.sub_of_list (List.map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids) in
+  List.map ~f:(Sil.instr_sub subst) instrs
 
 (** Create a function to find duplicate nodes.
     A node is a duplicate of another one if they have the same kind and location
@@ -251,7 +253,7 @@ let extract_pre p tenv pdesc abstract_fun =
     let fav = Prop.prop_fav p in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
-    Sil.sub_of_list (IList.map (fun id ->
+    Sil.sub_of_list (List.map ~f:(fun id ->
         incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
   let _, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let pre, _ = Prop.extract_spec p' in

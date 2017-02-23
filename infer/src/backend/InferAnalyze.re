@@ -48,14 +48,14 @@ let exe_env_from_cluster cluster => {
 let analyze_cluster cluster_num (cluster: Cluster.t) => {
   let exe_env = exe_env_from_cluster cluster;
   let defined_procs = Cg.get_defined_nodes (Exe_env.get_cg exe_env);
-  let num_procs = IList.length defined_procs;
+  let num_procs = List.length defined_procs;
   L.err "@.Processing cluster #%d with %d procedures@." (cluster_num + 1) num_procs;
   analyze_exe_env exe_env
 };
 
 let output_json_makefile_stats clusters => {
   let clusters_to_analyze = List.filter f::ClusterMakefile.cluster_should_be_analyzed clusters;
-  let num_files = IList.length clusters_to_analyze;
+  let num_files = List.length clusters_to_analyze;
   let num_procs = 0;
   /* can't compute it at this stage */
   let num_lines = 0;
@@ -111,7 +111,7 @@ let main makefile => {
       MergeCapture.merge_captured_targets ()
     };
     let clusters = DB.find_source_dirs ();
-    L.stdout "Found %d source files in %s@." (IList.length clusters) Config.results_dir;
+    L.stdout "Found %d source files in %s@." (List.length clusters) Config.results_dir;
     if (makefile != "") {
       ClusterMakefile.create_cluster_makefile clusters makefile
     } else {

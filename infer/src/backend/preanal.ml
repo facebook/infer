@@ -42,7 +42,7 @@ let add_dispatch_calls pdesc cg tenv =
            | ((_, target_pname) :: _) as all_targets ->
                let targets_to_add =
                  if sound_dynamic_dispatch then
-                   IList.map snd all_targets
+                   List.map ~f:snd all_targets
                  else
                    (* if sound dispatch is turned off, consider only the first target. we do this
                       because choosing all targets is too expensive for everyday use *)
@@ -57,7 +57,7 @@ let add_dispatch_calls pdesc cg tenv =
       | instr -> instr in
     let instrs = Procdesc.Node.get_instrs node in
     if has_dispatch_call instrs then
-      IList.map replace_dispatch_calls instrs
+      List.map ~f:replace_dispatch_calls instrs
       |> Procdesc.Node.replace_instrs node in
   let pname = Procdesc.get_proc_name pdesc in
   Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc
@@ -74,7 +74,7 @@ let add_abstraction_instructions pdesc =
     if List.exists ~f:is_exit succ_nodes then true
     else match succ_nodes with
       | [] -> false
-      | [h] -> IList.length (Node.get_preds h) > 1
+      | [h] -> List.length (Node.get_preds h) > 1
       | _ -> false in
   let node_requires_abstraction node =
     match Node.get_kind node with
@@ -187,7 +187,7 @@ let remove_dead_frontend_stores pdesc liveness_inv_map =
     let instr_nodes' = IList.filter_changed is_used_store instr_nodes in
     if not (phys_equal instr_nodes' instr_nodes)
     then
-      Procdesc.Node.replace_instrs node (IList.rev_map fst instr_nodes') in
+      Procdesc.Node.replace_instrs node (List.rev_map ~f:fst instr_nodes') in
   Procdesc.iter_nodes node_remove_dead_stores pdesc
 
 let add_nullify_instrs pdesc tenv liveness_inv_map =
@@ -213,7 +213,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
     let loc = Procdesc.Node.get_last_loc node in
     let nullify_instrs =
       List.filter ~f:is_local pvars
-      |> IList.map (fun pvar -> Sil.Nullify (pvar, loc)) in
+      |> List.map ~f:(fun pvar -> Sil.Nullify (pvar, loc)) in
     if nullify_instrs <> []
     then Procdesc.Node.append_instrs node (IList.rev nullify_instrs) in
 

@@ -84,15 +84,15 @@ let format_arguments
     (printf: printf_signature)
     (args: (Exp.t * Typ.t) list): (string option * (Exp.t list) * (Exp.t option)) =
 
-  let format_string = match IList.nth args printf.format_pos with
+  let format_string = match List.nth_exn args printf.format_pos with
     | Exp.Const (Const.Cstr fmt), _ -> Some fmt
     | _ -> None in
 
-  let fixed_nvars = IList.map
-      (fun i -> fst (IList.nth args i))
+  let fixed_nvars = List.map
+      ~f:(fun i -> fst (List.nth_exn args i))
       printf.fixed_pos in
   let varargs_nvar = match printf.vararg_pos with
-    | Some pos -> Some (fst (IList.nth args pos))
+    | Some pos -> Some (fst (List.nth_exn args pos))
     | None -> None in
 
   format_string, fixed_nvars, varargs_nvar
@@ -178,7 +178,7 @@ let check_printf_args_ok tenv
           try
             let fmt, fixed_nvars, array_nvar = format_arguments printf args in
             let instrs = Procdesc.Node.get_instrs node in
-            let fixed_nvar_type_names = IList.map (fixed_nvar_type_name instrs) fixed_nvars in
+            let fixed_nvar_type_names = List.map ~f:(fixed_nvar_type_name instrs) fixed_nvars in
             let vararg_ivar_type_names = match array_nvar with
               | Some nvar -> (
                   let ivar = array_ivar instrs nvar in
@@ -218,6 +218,6 @@ let printf_signature_to_string
     "{%s; %d [%s] %s}"
     printf.unique_id
     printf.format_pos
-    (String.concat ~sep:"," (IList.map string_of_int printf.fixed_pos))
+    (String.concat ~sep:"," (List.map ~f:string_of_int printf.fixed_pos))
     (match printf.vararg_pos with | Some i -> string_of_int i | _ -> "-")
 *)

@@ -176,7 +176,7 @@ let subst : astate -> Itv.Bound.t Itv.SubstMap.t -> astate
 
 let get_symbols : astate -> Itv.Symbol.t list
   = fun a ->
-    List.concat (IList.map (fun (_, ai) -> ArrInfo.get_symbols ai) (bindings a))
+    List.concat_map ~f:(fun (_, ai) -> ArrInfo.get_symbols ai) (bindings a)
 
 let normalize : astate -> astate
   = fun a -> map ArrInfo.normalize a

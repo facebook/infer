@@ -122,7 +122,7 @@ module State = struct
   (** Map a function to the elements of the set, and filter out inconsistencies. *)
   let map2 (f : Elem.t -> Elem.t list) (s : t) : t =
     let l = ElemSet.elements s in
-    let l' = List.filter ~f:Elem.is_consistent (List.concat (IList.map f l)) in
+    let l' = List.filter ~f:Elem.is_consistent (List.concat_map ~f:f l) in
     List.fold_right ~f:ElemSet.add l' ~init:ElemSet.empty
 
   let map (f : Elem.t -> Elem.t) s =
