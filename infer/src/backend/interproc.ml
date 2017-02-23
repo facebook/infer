@@ -1401,11 +1401,6 @@ let perform_transition exe_env tenv proc_name source =
 
 let interprocedural_algorithm exe_env : unit =
   let call_graph = Exe_env.get_cg exe_env in
-  let filter_initial proc_name =
-    let summary = Specs.get_summary_unsafe "main_algorithm" proc_name in
-    Int.equal (Specs.get_timestamp summary) 0 in
-  let procs_to_analyze =
-    List.filter ~f:filter_initial (Cg.get_defined_nodes call_graph) in
   let process_one_proc proc_name =
     let analyze proc_desc =
       ignore (Ondemand.analyze_proc_desc ~propagate_exceptions:false proc_desc proc_desc) in
@@ -1416,7 +1411,7 @@ let interprocedural_algorithm exe_env : unit =
         analyze proc_desc
     | Some proc_desc -> analyze proc_desc
     | None -> () in
-  List.iter ~f:process_one_proc procs_to_analyze
+  List.iter ~f:process_one_proc (Cg.get_defined_nodes call_graph)
 
 
 (** Perform the analysis of an exe_env *)
