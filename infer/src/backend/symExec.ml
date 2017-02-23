@@ -467,7 +467,7 @@ let check_deallocate_static_memory prop_after =
         raise (Exceptions.Deallocate_static_memory freed_desc)
     | _ -> () in
   let exp_att_list = Attribute.get_all prop_after in
-  IList.iter check_deallocated_attribute exp_att_list;
+  List.iter ~f:check_deallocated_attribute exp_att_list;
   prop_after
 
 let method_exists right_proc_name methods =
@@ -1230,7 +1230,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
   | Sil.Abstract _ ->
       let node = State.get_node () in
       let blocks_nullified = get_blocks_nullified node in
-      IList.iter (check_block_retain_cycle tenv current_pname prop_) blocks_nullified;
+      List.iter ~f:(check_block_retain_cycle tenv current_pname prop_) blocks_nullified;
       if Prover.check_inconsistency tenv prop_
       then
         ret_old_path []

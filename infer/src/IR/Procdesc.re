@@ -324,7 +324,7 @@ let compute_distance_to_exit_node pdesc => {
         node.dist_exit = Some dist;
         next_nodes := node.preds @ !next_nodes
       };
-    IList.iter do_node nodes;
+    List.iter f::do_node nodes;
     if (!next_nodes != []) {
       mark_distance (dist + 1) !next_nodes
     }
@@ -395,7 +395,7 @@ let is_body_empty pdesc => List.is_empty (Node.get_succs (get_start_node pdesc))
 
 let is_java_synchronized pdesc => pdesc.attributes.is_java_synchronized_method;
 
-let iter_nodes f pdesc => IList.iter f (IList.rev (get_nodes pdesc));
+let iter_nodes f pdesc => List.iter f::f (IList.rev (get_nodes pdesc));
 
 let fold_calls f acc pdesc => {
   let do_node a node =>
@@ -411,7 +411,7 @@ let fold_calls f acc pdesc => {
 let iter_calls f pdesc => fold_calls (fun _ call => f call) () pdesc;
 
 let iter_instrs f pdesc => {
-  let do_node node => IList.iter (fun i => f node i) (Node.get_instrs node);
+  let do_node node => List.iter f::(fun i => f node i) (Node.get_instrs node);
   iter_nodes do_node pdesc
 };
 
@@ -440,7 +440,7 @@ let iter_slope f pdesc => {
 };
 
 let iter_slope_calls f pdesc => {
-  let do_node node => IList.iter (fun callee_pname => f callee_pname) (Node.get_callees node);
+  let do_node node => List.iter f::(fun callee_pname => f callee_pname) (Node.get_callees node);
   iter_slope do_node pdesc
 };
 
@@ -485,7 +485,7 @@ let append_locals pdesc new_locals =>
 let set_succs_exn_base (node: Node.t) succs exn => {
   node.succs = succs;
   node.exn = exn;
-  IList.iter (fun (n: Node.t) => n.preds = [node, ...n.preds]) succs
+  List.iter f::(fun (n: Node.t) => n.preds = [node, ...n.preds]) succs
 };
 
 

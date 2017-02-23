@@ -873,8 +873,8 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
     Reporting.log_error pname ~loc ~ltr exn in
 
-  IList.iter
-    report_one_path
+  List.iter
+    ~f:report_one_path
     (PathDomain.get_reportable_sink_paths (de_dup trace) ~trace_of_pname)
 
 
@@ -888,18 +888,18 @@ let make_unprotected_write_description
     (calculate_addendum_message tenv pname)
 
 let make_read_write_race_description tenv pname final_sink_site initial_sink_site final_sink tab =
-  let conflicting_proc_envs = IList.map
-      fst
+  let conflicting_proc_envs = List.map
+      ~f:fst
       (collect_conflicting_writes final_sink tab) in
-  let conflicting_proc_names = IList.map
-      (fun (_,_,proc_name,_) -> proc_name)
+  let conflicting_proc_names = List.map
+      ~f:(fun (_,_,proc_name,_) -> proc_name)
       conflicting_proc_envs in
   let pp_proc_name_list fmt proc_names =
     let pp_sep _ _ = F.fprintf fmt " , " in
     F.pp_print_list ~pp_sep Procname.pp fmt proc_names in
   let conflicts_description =
     Format.asprintf "Potentially races with writes in method%s %a."
-      (if IList.length conflicting_proc_names > 1 then "s" else "")
+      (if List.length conflicting_proc_names > 1 then "s" else "")
       pp_proc_name_list conflicting_proc_names in
   Format.asprintf "Read/Write race. Public method %a%s reads from field %a. %s %s"
     Procname.pp pname

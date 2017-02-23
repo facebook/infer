@@ -133,7 +133,7 @@ let node_simple_key node =
       | Sil.Abstract _ -> add_key 6
       | Sil.Remove_temps _ -> add_key 7
       | Sil.Declare_locals _ -> add_key 8 in
-  IList.iter do_instr (Procdesc.Node.get_instrs node);
+  List.iter ~f:do_instr (Procdesc.Node.get_instrs node);
   Hashtbl.hash !key
 
 (** key for a node: look at the current node, successors and predecessors *)
@@ -198,7 +198,7 @@ let mk_find_duplicate_nodes proc_desc : (Procdesc.Node.t -> Procdesc.NodeSet.t) 
 
     let nodes = Procdesc.get_nodes proc_desc in
     try
-      IList.iter do_node nodes;
+      List.iter ~f:do_node nodes;
       !m
     with E.Threshold ->
       M.empty in

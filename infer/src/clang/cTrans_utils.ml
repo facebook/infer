@@ -169,8 +169,8 @@ let collect_res_trans pdesc l =
           if rt'.leaf_nodes <> [] then rt'.leaf_nodes
           else rt.leaf_nodes in
         if rt'.root_nodes <> [] then
-          IList.iter
-            (fun n -> Procdesc.node_set_succs_exn pdesc n rt'.root_nodes [])
+          List.iter
+            ~f:(fun n -> Procdesc.node_set_succs_exn pdesc n rt'.root_nodes [])
             rt.leaf_nodes;
         collect l'
           { root_nodes = root_nodes;
@@ -246,8 +246,8 @@ struct
       let node_kind = Procdesc.Node.Stmt_node (nd_name) in
       let node = Nodes.create_node node_kind res_state.instrs loc trans_state.context in
       Procdesc.node_set_succs_exn trans_state.context.procdesc node trans_state.succ_nodes [];
-      IList.iter
-        (fun leaf -> Procdesc.node_set_succs_exn trans_state.context.procdesc leaf [node] [])
+      List.iter
+        ~f:(fun leaf -> Procdesc.node_set_succs_exn trans_state.context.procdesc leaf [node] [])
         res_state.leaf_nodes;
       (* Invariant: if root_nodes is empty then the params have not created a node.*)
       let root_nodes = (if res_state.root_nodes <> [] then res_state.root_nodes

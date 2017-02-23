@@ -114,7 +114,7 @@ struct
       fname, typ, item_annot in
     let fields = IList.map mk_field_from_captured_var captured_vars in
     Logging.out_debug "Block %s field:\n" block_name;
-    IList.iter (fun (fn, _, _) ->
+    List.iter ~f:(fun (fn, _, _) ->
         Logging.out_debug "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
     let mblock = Mangled.from_string block_name in
     let block_name = Typename.TN_csu (Csu.Class Csu.Objc, mblock) in
@@ -763,8 +763,8 @@ struct
 
     if res_trans_idx.root_nodes <> []
     then
-      IList.iter
-        (fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans_idx.root_nodes [])
+      List.iter
+        ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans_idx.root_nodes [])
         res_trans_a.leaf_nodes;
 
     (* Note the order of res_trans_idx.ids @ res_trans_a.ids is important. *)
@@ -1149,8 +1149,8 @@ struct
           "ConditinalStmt Branch" stmt_info all_res_trans in
       let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
-      IList.iter
-        (fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans.root_nodes [])
+      List.iter
+        ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans.root_nodes [])
         prune_nodes' in
     (match stmt_list with
      | [cond; exp1; exp2] ->
@@ -1231,8 +1231,8 @@ struct
         define_condition_side_effects res_trans_cond.exps res_trans_cond.instrs sil_loc in
       let prune_t = mk_prune_node true e' instrs' in
       let prune_f = mk_prune_node false e' instrs' in
-      IList.iter
-        (fun n' -> Procdesc.node_set_succs_exn context.procdesc n' [prune_t; prune_f] [])
+      List.iter
+        ~f:(fun n' -> Procdesc.node_set_succs_exn context.procdesc n' [prune_t; prune_f] [])
         res_trans_cond.leaf_nodes;
       let rnodes = if Int.equal (IList.length res_trans_cond.root_nodes) 0 then
           [prune_t; prune_f]
@@ -1264,8 +1264,8 @@ struct
           | Binop.LAnd -> prune_nodes_t, prune_nodes_f
           | Binop.LOr -> prune_nodes_f, prune_nodes_t
           | _ -> assert false) in
-      IList.iter
-        (fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans_s2.root_nodes [])
+      List.iter
+        ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans_s2.root_nodes [])
         prune_to_s2;
       let root_nodes_to_parent =
         if Int.equal (IList.length res_trans_s1.root_nodes) 0
@@ -1320,8 +1320,8 @@ struct
              res_trans_b.root_nodes) in
       let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
-      IList.iter
-        (fun n -> Procdesc.node_set_succs_exn context.procdesc n nodes_branch [])
+      List.iter
+        ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n nodes_branch [])
         prune_nodes' in
     (match stmt_list with
      | [_; decl_stmt; cond; stmt1; stmt2] ->
@@ -1357,9 +1357,9 @@ struct
         let switch_special_cond_node =
           let node_kind = Procdesc.Node.Stmt_node "Switch_stmt" in
           create_node node_kind res_trans_cond_tmp.instrs sil_loc context in
-        IList.iter
-          (fun n' ->
-             Procdesc.node_set_succs_exn context.procdesc n' [switch_special_cond_node] [])
+        List.iter
+          ~f:(fun n' ->
+              Procdesc.node_set_succs_exn context.procdesc n' [switch_special_cond_node] [])
           res_trans_cond_tmp.leaf_nodes;
         let root_nodes =
           if res_trans_cond_tmp.root_nodes <> [] then res_trans_cond_tmp.root_nodes
@@ -1479,8 +1479,8 @@ struct
         Procdesc.node_set_succs_exn
           context.procdesc switch_special_cond_node top_prune_nodes [];
         let top_nodes = res_trans_decl.root_nodes in
-        IList.iter
-          (fun n' -> Procdesc.Node.append_instrs n' []) succ_nodes;
+        List.iter
+          ~f:(fun n' -> Procdesc.Node.append_instrs n' []) succ_nodes;
         (* succ_nodes will remove the temps *)
         { empty_res_trans with root_nodes = top_nodes; leaf_nodes = succ_nodes }
     | _ -> assert false
@@ -1559,11 +1559,11 @@ struct
       | Loops.For _ | Loops.While _ -> res_trans_body.root_nodes
       | Loops.DoWhile _ -> [join_node] in
     Procdesc.node_set_succs_exn context.procdesc join_node join_succ_nodes [];
-    IList.iter
-      (fun n -> Procdesc.node_set_succs_exn context.procdesc n prune_t_succ_nodes [])
+    List.iter
+      ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n prune_t_succ_nodes [])
       prune_nodes_t;
-    IList.iter
-      (fun n -> Procdesc.node_set_succs_exn context.procdesc n succ_nodes [])
+    List.iter
+      ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n succ_nodes [])
       prune_nodes_f;
     let root_nodes =
       match loop_kind with
@@ -1945,8 +1945,8 @@ struct
               add_autorelease_call context sil_expr ret_type sil_loc in
             let instrs = var_instrs @ res_trans_stmt.instrs @ ret_instrs @ autorelease_instrs in
             let ret_node = mk_ret_node instrs in
-            IList.iter
-              (fun n -> Procdesc.node_set_succs_exn procdesc n [ret_node] [])
+            List.iter
+              ~f:(fun n -> Procdesc.node_set_succs_exn procdesc n [ret_node] [])
               res_trans_stmt.leaf_nodes;
             let root_nodes_to_parent =
               if IList.length res_trans_stmt.root_nodes >0

@@ -1195,7 +1195,7 @@ and specs_library =
           failwith ("Failing because path " ^ path ^ " is not absolute") in
       match Utils.read_file (resolve fname) with
       | Some pathlist ->
-          IList.iter validate_path pathlist;
+          List.iter ~f:validate_path pathlist;
           pathlist
       | None -> failwith ("cannot read file " ^ fname ^ " from cwd " ^ (Sys.getcwd ()))
     in
@@ -1671,7 +1671,7 @@ let specs_library =
                   let dest_file = dest_dir ^/ (Filename.basename entry.filename) in
                   if Filename.check_suffix entry.filename specs_files_suffix
                   then Zip.copy_entry_to_file zip_channel entry dest_file in
-                IList.iter extract_entry entries;
+                List.iter ~f:extract_entry entries;
                 Zip.close_in zip_channel in
         extract_specs key_dir filename;
         key_dir :: specs_library in

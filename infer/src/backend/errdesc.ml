@@ -20,7 +20,7 @@ let vector_class = ["std"; "vector"]
 
 let is_one_of_classes class_name classes =
   List.exists ~f:(fun wrapper_class ->
-      IList.for_all (fun wrapper_class_substring ->
+      List.for_all ~f:(fun wrapper_class_substring ->
           String.is_substring ~substring:wrapper_class_substring class_name) wrapper_class)
     classes
 
@@ -447,9 +447,9 @@ let leak_from_list_abstraction hpred prop =
     | Some texp' when Exp.equal texp texp' -> found := true
     | _ -> () in
   let check_hpara texp _ hpara =
-    IList.iter (check_hpred texp) hpara.Sil.body in
+    List.iter ~f:(check_hpred texp) hpara.Sil.body in
   let check_hpara_dll texp _ hpara =
-    IList.iter (check_hpred texp) hpara.Sil.body_dll in
+    List.iter ~f:(check_hpred texp) hpara.Sil.body_dll in
   match hpred_type hpred with
   | Some texp ->
       let env = Prop.prop_pred_env prop in
@@ -473,7 +473,7 @@ let find_typ_without_ptr prop pvar =
     | Sil.Hpointsto (e, _, te) when Exp.equal e (Exp.Lvar pvar) ->
         res := Some te
     | _ -> () in
-  IList.iter do_hpred prop.Prop.sigma;
+  List.iter ~f:do_hpred prop.Prop.sigma;
   !res
 
 (** Produce a description of a leak by looking at the current state.
@@ -620,7 +620,7 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
                None, None)
       | Sil.Estruct (fsel, _) ->
           let res = ref (None, None) in
-          IList.iter (do_fse res sigma_acc' sigma_todo' lexp texp) fsel;
+          List.iter ~f:(do_fse res sigma_acc' sigma_todo' lexp texp) fsel;
           !res
       | _ ->
           None, None in
@@ -673,7 +673,7 @@ let explain_dexp_access prop dexp is_nullable =
       | Sil.Hpointsto (e', se, _) when Exp.equal e e' ->
           res := Some se
       | _ -> () in
-    IList.iter do_hpred sigma;
+    List.iter ~f:do_hpred sigma;
     !res in
   let rec lookup_fld fsel f = match fsel with
     | [] ->
@@ -986,7 +986,7 @@ let find_with_exp prop exp =
     | Sil.Eexp (e, _) ->
         if Exp.equal e exp then found_in_struct pv fld_lst
     | Sil.Estruct (fsel, _) ->
-        IList.iter (fun (f, se) -> search_struct pv (f:: fld_lst) se) fsel
+        List.iter ~f:(fun (f, se) -> search_struct pv (f:: fld_lst) se) fsel
     | _ -> () in
   let do_hpred_pointed_by_pvar pv e = function
     | Sil.Hpointsto(e1, se, _) ->
@@ -995,9 +995,9 @@ let find_with_exp prop exp =
   let do_hpred = function
     | Sil.Hpointsto(Exp.Lvar pv, Sil.Eexp (e, _), _) ->
         if Exp.equal e exp then found_in_pvar pv
-        else IList.iter (do_hpred_pointed_by_pvar pv e) prop.Prop.sigma
+        else List.iter ~f:(do_hpred_pointed_by_pvar pv e) prop.Prop.sigma
     | _ -> () in
-  IList.iter do_hpred prop.Prop.sigma;
+  List.iter ~f:do_hpred prop.Prop.sigma;
   !res
 
 (** return a description explaining value [exp] in [prop] in terms of a source expression

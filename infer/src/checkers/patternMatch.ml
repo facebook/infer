@@ -211,7 +211,7 @@ let has_formal_proc_argument_type_names proc_desc argument_type_names =
   let formals = Procdesc.get_formals proc_desc in
   let equal_formal_arg (_, typ) arg_type_name = String.equal (get_type_name typ) arg_type_name in
   Int.equal (IList.length formals) (IList.length argument_type_names)
-  && IList.for_all2 equal_formal_arg formals argument_type_names
+  && List.for_all2_exn ~f:equal_formal_arg formals argument_type_names
 
 let has_formal_method_argument_type_names cfg pname_java argument_type_names =
   has_formal_proc_argument_type_names
@@ -305,7 +305,7 @@ let java_get_vararg_values node pvar idenv =
         values := content_exp :: !values
     | _ -> () in
   let do_node n =
-    IList.iter do_instr (Procdesc.Node.get_instrs n) in
+    List.iter ~f:do_instr (Procdesc.Node.get_instrs n) in
   let () = match Errdesc.find_program_variable_assignment node pvar with
     | Some (node', _) ->
         Procdesc.iter_slope_range do_node node' node
@@ -326,9 +326,9 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
     | _ -> () in
   let do_node node =
     let instrs = Procdesc.Node.get_instrs node in
-    IList.iter (do_instruction node) instrs in
+    List.iter ~f:(do_instruction node) instrs in
   let nodes = Procdesc.get_nodes pdesc in
-  IList.iter do_node nodes;
+  List.iter ~f:do_node nodes;
   IList.rev !res
 
 let override_exists f tenv proc_name =

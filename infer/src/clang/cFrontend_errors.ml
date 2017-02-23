@@ -216,10 +216,10 @@ let invoke_set_of_hard_coded_checkers_an context (an : Ctl_parser_types.ast_node
   let checkers, key  = match an with
     | Decl dec -> decl_checkers_list, CAst_utils.generate_key_decl dec
     | Stmt st -> stmt_checkers_list, CAst_utils.generate_key_stmt st in
-  IList.iter (fun checker ->
+  List.iter ~f:(fun checker ->
       let condition, issue_desc_list = checker context an in
       if CTL.eval_formula condition an context then
-        IList.iter (fun issue_desc ->
+        List.iter ~f:(fun issue_desc ->
             if CIssue.should_run_check issue_desc.CIssue.mode then
               let loc = issue_desc.CIssue.loc in
               fill_issue_desc_info_and_log context an key issue_desc loc
@@ -231,7 +231,7 @@ let invoke_set_of_parsed_checkers_an context (an : Ctl_parser_types.ast_node) =
   let key = match an with
     | Decl dec -> CAst_utils.generate_key_decl dec
     | Stmt st -> CAst_utils.generate_key_stmt st in
-  IList.iter (fun (condition, issue_desc) ->
+  List.iter ~f:(fun (condition, issue_desc) ->
       if CIssue.should_run_check issue_desc.CIssue.mode &&
          CTL.eval_formula condition an context then
         let loc = CFrontend_checkers.location_from_an context an in

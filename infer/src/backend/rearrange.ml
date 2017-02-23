@@ -487,7 +487,7 @@ let prop_iter_check_fields_ptsto_shallow tenv iter lexp =
 let fav_max_stamp fav =
   let max_stamp = ref 0 in
   let f id = max_stamp := max !max_stamp (Ident.get_stamp id) in
-  IList.iter f (Sil.fav_to_list fav);
+  List.iter ~f:f (Sil.fav_to_list fav);
   max_stamp
 
 (** [prop_iter_extend_ptsto iter lexp] extends the current psto
@@ -1291,45 +1291,45 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
   (* return true if deref_exp is only pointed to by fields/params with @Nullable annotations *)
   let is_only_pt_by_nullable_fld_or_param deref_exp =
     let ann_sig = Models.get_modelled_annotated_signature (Specs.pdesc_resolve_attributes pdesc) in
-    IList.for_all
-      (fun hpred ->
-         match hpred with
-         | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var _ as exp, _), _)
-           when Exp.equal exp deref_exp ->
-             let is_weak_captured_var = is_weak_captured_var pdesc pvar in
-             let is_nullable =
-               if AnnotatedSignature.param_is_nullable pvar ann_sig || is_weak_captured_var
-               then
-                 begin
-                   nullable_obj_str := Some (Pvar.to_string pvar);
-                   nullable_str_is_weak_captured_var := is_weak_captured_var;
-                   true
-                 end
-               else
-                 let is_nullable_attr = function
-                   | Sil.Apred ((Aretval (pname, ret_attr) | Aundef (pname, ret_attr, _, _)), _)
-                     when Annotations.ia_is_nullable ret_attr ->
-                       nullable_obj_str := Some (Procname.to_string pname);
-                       true
-                   | _ -> false in
-                 List.exists ~f:is_nullable_attr (Attribute.get_for_exp tenv prop exp) in
-             (* it's ok for a non-nullable local to point to deref_exp *)
-             is_nullable || Pvar.is_local pvar
-         | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
-             let fld_is_nullable fld =
-               match StructTyp.get_field_type_and_annotation ~lookup fld typ with
-               | Some (_, annot) -> Annotations.ia_is_nullable annot
-               | _ -> false in
-             let is_strexp_pt_by_nullable_fld (fld, strexp) =
-               match strexp with
-               | Sil.Eexp (Exp.Var _ as exp, _) when Exp.equal exp deref_exp ->
-                   let is_nullable = fld_is_nullable fld in
-                   if is_nullable then
-                     nullable_obj_str := Some (Ident.fieldname_to_simplified_string fld);
-                   is_nullable
-               | _ -> true in
-             IList.for_all is_strexp_pt_by_nullable_fld flds
-         | _ -> true)
+    List.for_all
+      ~f:(fun hpred ->
+          match hpred with
+          | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var _ as exp, _), _)
+            when Exp.equal exp deref_exp ->
+              let is_weak_captured_var = is_weak_captured_var pdesc pvar in
+              let is_nullable =
+                if AnnotatedSignature.param_is_nullable pvar ann_sig || is_weak_captured_var
+                then
+                  begin
+                    nullable_obj_str := Some (Pvar.to_string pvar);
+                    nullable_str_is_weak_captured_var := is_weak_captured_var;
+                    true
+                  end
+                else
+                  let is_nullable_attr = function
+                    | Sil.Apred ((Aretval (pname, ret_attr) | Aundef (pname, ret_attr, _, _)), _)
+                      when Annotations.ia_is_nullable ret_attr ->
+                        nullable_obj_str := Some (Procname.to_string pname);
+                        true
+                    | _ -> false in
+                  List.exists ~f:is_nullable_attr (Attribute.get_for_exp tenv prop exp) in
+              (* it's ok for a non-nullable local to point to deref_exp *)
+              is_nullable || Pvar.is_local pvar
+          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
+              let fld_is_nullable fld =
+                match StructTyp.get_field_type_and_annotation ~lookup fld typ with
+                | Some (_, annot) -> Annotations.ia_is_nullable annot
+                | _ -> false in
+              let is_strexp_pt_by_nullable_fld (fld, strexp) =
+                match strexp with
+                | Sil.Eexp (Exp.Var _ as exp, _) when Exp.equal exp deref_exp ->
+                    let is_nullable = fld_is_nullable fld in
+                    if is_nullable then
+                      nullable_obj_str := Some (Ident.fieldname_to_simplified_string fld);
+                    is_nullable
+                | _ -> true in
+              List.for_all ~f:is_strexp_pt_by_nullable_fld flds
+          | _ -> true)
       prop.Prop.sigma &&
     !nullable_obj_str <> None in
   let root = Exp.root_of_lexp lexp in

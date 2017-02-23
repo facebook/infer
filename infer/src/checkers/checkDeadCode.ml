@@ -87,7 +87,7 @@ let check_final_state tenv proc_name proc_desc final_s =
           | _ -> true in
         if report
         then report_error tenv description proc_name proc_desc loc in
-      IList.iter do_node not_visited
+      List.iter ~f:do_node not_visited
     end
 
 (** Simple check for dead code. *)

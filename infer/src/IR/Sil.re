@@ -660,19 +660,19 @@ let module Predicates: {
   let rec process_sexp env =>
     fun
     | Eexp _ => ()
-    | Earray _ esel _ => IList.iter (fun (_, se) => process_sexp env se) esel
-    | Estruct fsel _ => IList.iter (fun (_, se) => process_sexp env se) fsel;
+    | Earray _ esel _ => List.iter f::(fun (_, se) => process_sexp env se) esel
+    | Estruct fsel _ => List.iter f::(fun (_, se) => process_sexp env se) fsel;
 
   /** Process one hpred, updating env */
   let rec process_hpred env =>
     fun
     | Hpointsto _ se _ => process_sexp env se
     | Hlseg _ hpara _ _ _ => {
-        IList.iter (process_hpred env) hpara.body;
+        List.iter f::(process_hpred env) hpara.body;
         process_hpara env hpara
       }
     | Hdllseg _ hpara_dll _ _ _ _ _ => {
-        IList.iter (process_hpred env) hpara_dll.body_dll;
+        List.iter f::(process_hpred env) hpara_dll.body_dll;
         process_hpara_dll env hpara_dll
       };
 
@@ -1324,7 +1324,7 @@ let fav_is_empty fav =>
 
 
 /** Check whether a predicate holds for all elements. */
-let fav_for_all fav predicate => IList.for_all predicate !fav;
+let fav_for_all fav predicate => List.for_all f::predicate !fav;
 
 
 /** Check whether a predicate holds for some elements. */
@@ -1344,7 +1344,7 @@ let (++) fav id =>
 
 
 /** extend [fav] with ident list [idl] */
-let (+++) fav idl => IList.iter (fun id => fav ++ id) idl;
+let (+++) fav idl => List.iter f::(fun id => fav ++ id) idl;
 
 
 /** add identity lists to fav */
@@ -1354,7 +1354,7 @@ let ident_list_fav_add idl fav => fav +++ idl;
 /** Convert a list to a fav. */
 let fav_from_list l => {
   let fav = fav_new ();
-  let _ = IList.iter (fun id => fav ++ id) l;
+  let _ = List.iter f::(fun id => fav ++ id) l;
   fav
 };
 
@@ -1426,7 +1426,7 @@ let rec exp_fav_add fav e =>
   switch (e: Exp.t) {
   | Var id => fav ++ id
   | Exn e => exp_fav_add fav e
-  | Closure {captured_vars} => IList.iter (fun (e, _, _) => exp_fav_add fav e) captured_vars
+  | Closure {captured_vars} => List.iter f::(fun (e, _, _) => exp_fav_add fav e) captured_vars
   | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => ()
   | Cast _ e
   | UnOp _ e _ => exp_fav_add fav e
@@ -1462,7 +1462,7 @@ let atom_fav_add fav =>
       exp_fav_add fav e2
     }
   | Apred _ es
-  | Anpred _ es => IList.iter (fun e => exp_fav_add fav e) es;
+  | Anpred _ es => List.iter f::(fun e => exp_fav_add fav e) es;
 
 let atom_fav = fav_imperative_to_functional atom_fav_add;
 
@@ -1473,11 +1473,11 @@ let atom_av_add = atom_fav_add;
 let rec strexp_fav_add fav =>
   fun
   | Eexp e _ => exp_fav_add fav e
-  | Estruct fld_se_list _ => IList.iter (fun (_, se) => strexp_fav_add fav se) fld_se_list
+  | Estruct fld_se_list _ => List.iter f::(fun (_, se) => strexp_fav_add fav se) fld_se_list
   | Earray len idx_se_list _ => {
       exp_fav_add fav len;
-      IList.iter
-        (
+      List.iter
+        f::(
           fun (e, se) => {
             exp_fav_add fav e;
             strexp_fav_add fav se
@@ -1496,14 +1496,14 @@ let hpred_fav_add fav =>
   | Hlseg _ _ e1 e2 elist => {
       exp_fav_add fav e1;
       exp_fav_add fav e2;
-      IList.iter (exp_fav_add fav) elist
+      List.iter f::(exp_fav_add fav) elist
     }
   | Hdllseg _ _ e1 e2 e3 e4 elist => {
       exp_fav_add fav e1;
       exp_fav_add fav e2;
       exp_fav_add fav e3;
       exp_fav_add fav e4;
-      IList.iter (exp_fav_add fav) elist
+      List.iter f::(exp_fav_add fav) elist
     };
 
 let hpred_fav = fav_imperative_to_functional hpred_fav_add;
@@ -1539,14 +1539,14 @@ let exp_av_add = exp_fav_add; /** Expressions do not bind variables */
 let strexp_av_add = strexp_fav_add; /** Structured expressions do not bind variables */
 
 let rec hpara_av_add fav para => {
-  IList.iter (hpred_av_add fav) para.body;
+  List.iter f::(hpred_av_add fav) para.body;
   fav ++ para.root;
   fav ++ para.next;
   fav +++ para.svars;
   fav +++ para.evars
 }
 and hpara_dll_av_add fav para => {
-  IList.iter (hpred_av_add fav) para.body_dll;
+  List.iter f::(hpred_av_add fav) para.body_dll;
   fav ++ para.cell;
   fav ++ para.blink;
   fav ++ para.flink;
@@ -1564,7 +1564,7 @@ and hpred_av_add fav =>
       hpara_av_add fav para;
       exp_av_add fav e1;
       exp_av_add fav e2;
-      IList.iter (exp_av_add fav) elist
+      List.iter f::(exp_av_add fav) elist
     }
   | Hdllseg _ para e1 e2 e3 e4 elist => {
       hpara_dll_av_add fav para;
@@ -1572,11 +1572,11 @@ and hpred_av_add fav =>
       exp_av_add fav e2;
       exp_av_add fav e3;
       exp_av_add fav e4;
-      IList.iter (exp_av_add fav) elist
+      List.iter f::(exp_av_add fav) elist
     };
 
 let hpara_shallow_av_add fav para => {
-  IList.iter (hpred_fav_add fav) para.body;
+  List.iter f::(hpred_fav_add fav) para.body;
   fav ++ para.root;
   fav ++ para.next;
   fav +++ para.svars;
@@ -1584,7 +1584,7 @@ let hpara_shallow_av_add fav para => {
 };
 
 let hpara_dll_shallow_av_add fav para => {
-  IList.iter (hpred_fav_add fav) para.body_dll;
+  List.iter f::(hpred_fav_add fav) para.body_dll;
   fav ++ para.cell;
   fav ++ para.blink;
   fav ++ para.flink;
@@ -1787,8 +1787,8 @@ let extend_sub sub id exp :option subst => {
 /** Free auxilary variables in the domain and range of the
     substitution. */
 let sub_fav_add fav (sub: subst) =>
-  IList.iter
-    (
+  List.iter
+    f::(
       fun (id, e) => {
         fav ++ id;
         exp_fav_add fav e

@@ -395,8 +395,8 @@ let mk_bool ?(deprecated_no=[]) ?(default=false) ?(f=fun b -> b)
 let mk_bool_group ?(deprecated_no=[]) ?(default=false)
     ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="") doc children no_children =
   let f b =
-    IList.iter (fun child -> child := b) children ;
-    IList.iter (fun child -> child := not b) no_children ;
+    List.iter ~f:(fun child -> child := b) children ;
+    List.iter ~f:(fun child -> child := not b) no_children ;
     b
   in
   mk_bool ~deprecated ~deprecated_no ~default ~long ?short ~f ?parse_mode ~meta doc
@@ -630,7 +630,7 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
        and that instance is the one that has a non-empty docstring if there is one. *)
     let is_not_dup_with_doc speclist (opt, _, doc) =
       opt = "" ||
-      IList.for_all (fun (opt', _, doc') ->
+      List.for_all ~f:(fun (opt', _, doc') ->
           (doc <> "" && doc' = "") || (not (String.equal opt opt'))) speclist in
     let unique_exe_speclist = List.filter ~f:(is_not_dup_with_doc !curr_speclist) exe_speclist in
     curr_speclist := List.filter ~f:(is_not_dup_with_doc unique_exe_speclist) !curr_speclist @

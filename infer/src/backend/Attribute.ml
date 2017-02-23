@@ -64,7 +64,7 @@ let add_or_replace tenv prop atom =
 let get_all (prop: 'a Prop.t) =
   let res = ref [] in
   let do_atom a = if is_pred a then res := a :: !res in
-  IList.iter do_atom prop.pi;
+  List.iter ~f:do_atom prop.pi;
   IList.rev !res
 
 (** Get all the attributes of the prop *)
@@ -289,7 +289,7 @@ let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
           let pred = Sil.Apred (Adangling DAaddr_stack_var, [Exp.Var freshv]) in
           res := add_or_replace tenv !res pred
         end in
-    IList.iter do_var !fresh_address_vars;
+    List.iter ~f:do_var !fresh_address_vars;
     !res in
   !stack_vars_address_in_post, List.fold ~f:(Prop.prop_atom_and tenv) ~init:p'' pi
 

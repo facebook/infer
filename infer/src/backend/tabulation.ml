@@ -104,7 +104,7 @@ let spec_rename_vars pname spec =
         Specs.Jprop.Joined (n, prop_add_callee_suffix p, jp1, jp2) in
   let fav = Sil.fav_new () in
   Specs.Jprop.fav_add fav spec.Specs.pre;
-  IList.iter (fun (p, _) -> Prop.prop_fav_add fav p) spec.Specs.posts;
+  List.iter ~f:(fun (p, _) -> Prop.prop_fav_add fav p) spec.Specs.posts;
   let ids = Sil.fav_to_list fav in
   let ids' = IList.map (fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
   let ren_sub = Sil.sub_of_list (IList.map (fun (i, i') -> (i, Exp.Var i')) ids') in
@@ -165,7 +165,7 @@ let process_splitting
   let fav_actual_pre =
     let fav_sub2 = (* vars which represent expansions of fields *)
       let fav = Sil.fav_new () in
-      IList.iter (Sil.exp_fav_add fav) (Sil.sub_range sub2);
+      List.iter ~f:(Sil.exp_fav_add fav) (Sil.sub_range sub2);
       let filter id = Int.equal (Ident.get_stamp id) (-1) in
       Sil.fav_filter_ident fav filter;
       fav in
@@ -192,7 +192,7 @@ let process_splitting
   let sub_list = Sil.sub_to_list sub in
   let fav_sub_list =
     let fav_sub = Sil.fav_new () in
-    IList.iter (fun (_, e) -> Sil.exp_fav_add fav_sub e) sub_list;
+    List.iter ~f:(fun (_, e) -> Sil.exp_fav_add fav_sub e) sub_list;
     Sil.fav_to_list fav_sub in
   let sub1 =
     let f id =
@@ -377,7 +377,7 @@ let check_path_errors_in_post tenv caller_pname post post_path =
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
           Reporting.log_warning caller_pname exn
     | _ -> () in
-  IList.iter check_attr (Attribute.get_all post)
+  List.iter ~f:check_attr (Attribute.get_all post)
 
 (** Post process the instantiated post after the function call so that
     x.f |-> se becomes x |-> \{ f: se \}.
@@ -848,7 +848,7 @@ let check_taint_on_variadic_function tenv callee_pname caller_pname actual_param
          " onwards.");
       let actual_params' = n_tail actual_params tp_abs in
       L.d_str "Paramters to be checked:  [ ";
-      IList.iter(fun (e,_) ->
+      List.iter ~f:(fun (e,_) ->
           L.d_str (" " ^ (Exp.to_string e) ^ " ");
           match Attribute.get_taint tenv calling_prop e with
           | Some (Apred (Ataint taint_info, _)) ->
@@ -973,7 +973,7 @@ let do_taint_check tenv caller_pname callee_pname calling_prop missing_pi sub ac
         | Apred (Ataint taint_info, _) -> taint_info
         | _ -> failwith "Expected to get taint attr on atom" in
       report_taint_error e taint_info callee_pname caller_pname calling_prop in
-    IList.iter report_one_error taint_atoms in
+    List.iter ~f:report_one_error taint_atoms in
   Exp.Map.iter report_taint_errors taint_untaint_exp_map;
   (* filter out UNTAINT(e) atoms from [missing_pi] such that we have already reported a taint
      error on e. without doing this, we will get PRECONDITION_NOT_MET (and failed spec
@@ -1008,7 +1008,7 @@ let get_check_exn tenv check callee_pname loc ml_loc = match check with
       class_cast_exn tenv (Some callee_pname) texp1 texp2 exp ml_loc
 
 let check_uninitialize_dangling_deref tenv callee_pname actual_pre sub formal_params props =
-  IList.iter (fun (p, _ ) ->
+  List.iter ~f:(fun (p, _ ) ->
       match check_dereferences tenv callee_pname actual_pre sub p formal_params with
       | Some (Deref_undef_exp, desc) ->
           raise (Exceptions.Dangling_pointer_dereference (Some PredSymb.DAuninit, desc, __POS__))
@@ -1065,7 +1065,7 @@ let exe_spec
                         vr_cons_res = consistent_results;
                         vr_incons_res = inconsistent_results } in
       begin
-        IList.iter log_check_exn checks;
+        List.iter ~f:log_check_exn checks;
         let subbed_pre = (Prop.prop_sub sub1 actual_pre) in
         match check_dereferences tenv callee_pname subbed_pre sub2 spec_pre formal_params with
         | Some (Deref_undef _, _) when Config.angelic_execution ->
@@ -1243,7 +1243,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
     else
       begin
         L.d_strln "Missing pure facts for the function call:";
-        IList.iter print_pi (IList.map (fun vr -> vr.vr_pi) valid_res_miss_pi);
+        List.iter ~f:print_pi (IList.map (fun vr -> vr.vr_pi) valid_res_miss_pi);
         match
           Prover.find_minimum_pure_cover tenv
             (IList.map (fun vr -> (vr.vr_pi, vr.vr_cons_res)) valid_res_miss_pi) with
@@ -1252,7 +1252,7 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
             raise (Exceptions.Precondition_not_met (call_desc None, __POS__))
         | Some cover ->
             L.d_strln "Found minimum cover";
-            IList.iter print_pi (IList.map fst cover);
+            List.iter ~f:print_pi (IList.map fst cover);
             List.concat (IList.map snd cover)
       end in
   trace_call Specs.CallStats.CR_success;

@@ -705,7 +705,7 @@ let typecheck_instr
                   | _ -> ()
                 end
             | _ -> () in
-          IList.iter do_instr (Procdesc.Node.get_instrs cond_node) in
+          List.iter ~f:do_instr (Procdesc.Node.get_instrs cond_node) in
         let handle_optional_isPresent node' e =
           match convert_complex_exp_to_pvar node' false e typestate' loc with
           | Exp.Lvar pvar', _ ->
@@ -721,8 +721,8 @@ let typecheck_instr
               (* In foo(cond1 && cond2), the node that sets the result to false
                  has all the negated conditions as parents. *)
               | Some boolean_assignment_node ->
-                  IList.iter
-                    handle_negated_condition
+                  List.iter
+                    ~f:handle_negated_condition
                     (Procdesc.Node.get_preds boolean_assignment_node);
                   !res_typestate
               | None ->
@@ -1031,7 +1031,7 @@ let typecheck_instr
                 when Exp.equal (Exp.Lvar pvar) (Idenv.expand_expr idenv e') ->
                   found := Some e
               | _ -> () in
-            IList.iter do_instr (Procdesc.Node.get_instrs prev_node);
+            List.iter ~f:do_instr (Procdesc.Node.get_instrs prev_node);
             !found
         | _ -> None in
 

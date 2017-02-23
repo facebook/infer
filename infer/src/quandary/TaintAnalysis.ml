@@ -184,7 +184,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
         Reporting.log_error caller_pname ~loc:(CallSite.loc cur_site) ~ltr exn in
 
-      IList.iter report_error (TraceDomain.get_reportable_paths ~cur_site trace ~trace_of_pname)
+      List.iter ~f:report_error (TraceDomain.get_reportable_paths ~cur_site trace ~trace_of_pname)
 
     let add_sinks sinks actuals ({ Domain.access_tree; id_map; } as astate) proc_data callee_site =
       let f_resolve_id = resolve_id id_map in

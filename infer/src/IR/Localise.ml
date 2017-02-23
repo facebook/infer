@@ -783,7 +783,7 @@ let desc_retain_cycle cycle loc cycle_dotty =
         str_cycle := !str_cycle ^ step;
         ct:=!ct +1
     | _ -> () in
-  IList.iter do_edge cycle;
+  List.iter ~f:do_edge cycle;
   let desc = Format.sprintf "Retain cycle involving the following objects: %s  %s"
       !str_cycle (at_line tags loc) in
   { no_desc with descriptions = [desc]; tags = !tags; dotty = cycle_dotty }

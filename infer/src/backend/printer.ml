@@ -126,7 +126,7 @@ end = struct
          (Escape.escape_xml (Procname.to_string proc_name))
          (Io_infer.Html.pp_line_link source [".."]) loc.Location.line;
        F.fprintf fmt "<br>PREDS:@\n";
-       IList.iter (fun node ->
+       List.iter ~f:(fun node ->
            Io_infer.Html.pp_node_link
              [".."]
              (Procdesc.Node.get_proc_name node)
@@ -138,7 +138,7 @@ end = struct
              ~isproof:false
              fmt (Procdesc.Node.get_id node :> int)) preds;
        F.fprintf fmt "<br>SUCCS: @\n";
-       IList.iter (fun node ->
+       List.iter ~f:(fun node ->
            Io_infer.Html.pp_node_link
              [".."]
              (Procdesc.Node.get_proc_name node)
@@ -150,7 +150,7 @@ end = struct
              ~isproof:false
              fmt (Procdesc.Node.get_id node :> int)) succs;
        F.fprintf fmt "<br>EXN: @\n";
-       IList.iter (fun node ->
+       List.iter ~f:(fun node ->
            Io_infer.Html.pp_node_link
              [".."]
              (Procdesc.Node.get_proc_name node)
@@ -365,8 +365,8 @@ let () = L.printer_hook := force_delayed_print
 let force_delayed_prints () =
   Config.forcing_delayed_prints := true;
   F.fprintf !curr_html_formatter "@?"; (* flush html stream *)
-  IList.iter
-    (force_delayed_print !curr_html_formatter)
+  List.iter
+    ~f:(force_delayed_print !curr_html_formatter)
     (IList.rev (L.get_delayed_prints ()));
   F.fprintf !curr_html_formatter "@?";
   L.reset_delayed_prints ();
@@ -429,18 +429,18 @@ let write_proc_html source whole_seconds pdesc =
            ~text: (Some (Escape.escape_xml (Procname.to_string pname)))
            [])
         linenum;
-      IList.iter
-        (fun n ->
-           Io_infer.Html.pp_node_link
-             []
-             (Procdesc.Node.get_proc_name n)
-             ~description:(Procdesc.Node.get_description (Pp.html Black) n)
-             ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
-             ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
-             ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
-             ~isvisited:(is_visited n)
-             ~isproof:false
-             fmt (Procdesc.Node.get_id n :> int))
+      List.iter
+        ~f:(fun n ->
+            Io_infer.Html.pp_node_link
+              []
+              (Procdesc.Node.get_proc_name n)
+              ~description:(Procdesc.Node.get_description (Pp.html Black) n)
+              ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
+              ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
+              ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
+              ~isvisited:(is_visited n)
+              ~isproof:false
+              fmt (Procdesc.Node.get_id n :> int))
         nodes;
       (match Specs.get_summary pname with
        | None ->
@@ -488,14 +488,14 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
         SourceFile.equal source_captured (Procdesc.get_loc proc_desc).file in
   if process_proc then
     begin
-      IList.iter process_node (Procdesc.get_nodes proc_desc);
+      List.iter ~f:process_node (Procdesc.get_nodes proc_desc);
       match Specs.get_summary proc_name with
       | None ->
           ()
       | Some summary ->
-          IList.iter
-            (fun sp ->
-               proof_cover := Specs.Visitedset.union sp.Specs.visited !proof_cover)
+          List.iter
+            ~f:(fun sp ->
+                proof_cover := Specs.Visitedset.union sp.Specs.visited !proof_cover)
             (Specs.get_specs_from_payload summary);
           Errlog.update global_err_log summary.Specs.attributes.ProcAttributes.err_log
     end
@@ -535,38 +535,38 @@ let write_html_file linereader filename procs =
       "</td><td class=\"line\">" ^
       line_html in
     F.fprintf fmt "%s" str;
-    IList.iter
-      (fun n ->
-         let isproof =
-           Specs.Visitedset.mem (Procdesc.Node.get_id n, []) !proof_cover in
-         Io_infer.Html.pp_node_link
-           [fname_encoding]
-           (Procdesc.Node.get_proc_name n)
-           ~description:(Procdesc.Node.get_description (Pp.html Black) n)
-           ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
-           ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
-           ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
-           ~isvisited:(is_visited n)
-           ~isproof
-           fmt (Procdesc.Node.get_id n :> int))
+    List.iter
+      ~f:(fun n ->
+          let isproof =
+            Specs.Visitedset.mem (Procdesc.Node.get_id n, []) !proof_cover in
+          Io_infer.Html.pp_node_link
+            [fname_encoding]
+            (Procdesc.Node.get_proc_name n)
+            ~description:(Procdesc.Node.get_description (Pp.html Black) n)
+            ~preds:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_preds n) :> int list)
+            ~succs:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_succs n) :> int list)
+            ~exn:(IList.map Procdesc.Node.get_id (Procdesc.Node.get_exn n) :> int list)
+            ~isvisited:(is_visited n)
+            ~isproof
+            fmt (Procdesc.Node.get_id n :> int))
       nodes_at_linenum;
-    IList.iter
-      (fun n ->
-         match Procdesc.Node.get_kind n with
-         | Procdesc.Node.Start_node proc_name ->
-             let num_specs = IList.length (Specs.get_specs proc_name) in
-             let label =
-               (Escape.escape_xml (Procname.to_string proc_name)) ^
-               ": " ^
-               (string_of_int num_specs) ^
-               " specs" in
-             Io_infer.Html.pp_proc_link [fname_encoding] proc_name fmt label
-         | _ ->
-             ())
+    List.iter
+      ~f:(fun n ->
+          match Procdesc.Node.get_kind n with
+          | Procdesc.Node.Start_node proc_name ->
+              let num_specs = IList.length (Specs.get_specs proc_name) in
+              let label =
+                (Escape.escape_xml (Procname.to_string proc_name)) ^
+                ": " ^
+                (string_of_int num_specs) ^
+                " specs" in
+              Io_infer.Html.pp_proc_link [fname_encoding] proc_name fmt label
+          | _ ->
+              ())
       nodes_at_linenum;
-    IList.iter
-      (fun err_string ->
-         F.fprintf fmt "%s" (create_err_message err_string))
+    List.iter
+      ~f:(fun err_string ->
+          F.fprintf fmt "%s" (create_err_message err_string))
       errors_at_linenum;
     F.fprintf fmt "%s" "</td></tr>\n" in
 
@@ -574,7 +574,7 @@ let write_html_file linereader filename procs =
   let global_err_log = Errlog.empty () in
   let table_nodes_at_linenum = Hashtbl.create 11 in
   let proof_cover = ref Specs.Visitedset.empty in
-  IList.iter (write_html_proc filename proof_cover table_nodes_at_linenum global_err_log) procs;
+  List.iter ~f:(write_html_proc filename proof_cover table_nodes_at_linenum global_err_log) procs;
   let table_err_per_line = create_table_err_per_line global_err_log in
   let linenum = ref 0 in
 

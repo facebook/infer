@@ -306,7 +306,7 @@ let do_node tenv pn pd idenv _ node (s : State.t) : (State.t list) * (State.t li
     let state2 = BooleanVars.do_instr pn pd idenv instr state1 in
     curr_state := state2 in
 
-  IList.iter do_instr (Procdesc.Node.get_instrs node);
+  List.iter ~f:do_instr (Procdesc.Node.get_instrs node);
   [!curr_state], [!curr_state]
 
 (** Check the final state at the end of the analysis. *)

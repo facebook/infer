@@ -95,8 +95,8 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
       exe_env.source_files <- SourceFile.Set.add source exe_env.source_files;
       let defined_procs = Cg.get_defined_nodes cg in
 
-      IList.iter
-        (fun pname ->
+      List.iter
+        ~f:(fun pname ->
            (match AttributesTable.find_file_capturing_procedure pname with
             | None ->
                 ()

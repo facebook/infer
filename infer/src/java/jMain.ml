@@ -128,8 +128,8 @@ let do_all_files classpath sources classes =
         | JClasspath.Singleton source_file ->
             translate_source_file basename (None, source_file) source_file
         | JClasspath.Duplicate source_files ->
-            IList.iter
-              (fun (package, source_file) ->
+            List.iter
+              ~f:(fun (package, source_file) ->
                  translate_source_file basename (Some package, source_file) source_file)
               source_files)
     sources;

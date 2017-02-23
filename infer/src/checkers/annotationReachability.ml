@@ -236,13 +236,13 @@ let report_call_stack end_of_stack lookup_next_calls report call_site calls =
               else ((p, loc) :: accu, Procname.Set.add p set))
           ~init:([], visited_pnames)
           next_calls in
-      IList.iter (loop fst_call_loc updated_visited (new_trace, new_stack_str)) unseen_pnames in
-  IList.iter
-    (fun fst_call_site ->
-       let fst_callee_pname = CallSite.pname fst_call_site in
-       let fst_call_loc = CallSite.loc fst_call_site in
-       let start_trace = update_trace (CallSite.loc call_site) [] in
-       loop fst_call_loc Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
+      List.iter ~f:(loop fst_call_loc updated_visited (new_trace, new_stack_str)) unseen_pnames in
+  List.iter
+    ~f:(fun fst_call_site ->
+        let fst_callee_pname = CallSite.pname fst_call_site in
+        let fst_call_loc = CallSite.loc fst_call_site in
+        let start_trace = update_trace (CallSite.loc call_site) [] in
+        loop fst_call_loc Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
     calls
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -386,7 +386,7 @@ module Interprocedural = struct
             calls in
       let calls = extract_calls_with_annot snk_annot call_map in
       if not (Int.equal (IList.length calls) 0)
-      then IList.iter (report_src_snk_path calls) src_annot_list in
+      then List.iter ~f:(report_src_snk_path calls) src_annot_list in
 
     let initial =
       let init_map =
@@ -402,7 +402,7 @@ module Interprocedural = struct
             ~make_extras:ProcData.make_empty_extras
             proc_data with
     | Some Domain.NonBottom (call_map, _) ->
-        IList.iter (report_src_snk_paths call_map) (src_snk_pairs ())
+        List.iter ~f:(report_src_snk_paths call_map) (src_snk_pairs ())
     | Some Domain.Bottom | None ->
         ()
 end

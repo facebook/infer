@@ -44,7 +44,7 @@ let create_proc_desc cfg (proc_attributes: ProcAttributes.t) => {
 /** Iterate over all the nodes in the cfg */
 let iter_all_nodes sorted::sorted=false f cfg => {
   let do_proc_desc _ (pdesc: Procdesc.t) =>
-    IList.iter (fun node => f pdesc node) (Procdesc.get_nodes pdesc);
+    List.iter f::(fun node => f pdesc node) (Procdesc.get_nodes pdesc);
   if (not sorted) {
     iter_proc_desc cfg do_proc_desc
   } else {
@@ -59,7 +59,7 @@ let iter_all_nodes sorted::sorted=false f cfg => {
       cfg.proc_desc_table
       [] |>
     IList.sort [%compare : (Procdesc.t, Procdesc.Node.t)] |>
-    IList.iter (fun (d, n) => f d n)
+    List.iter f::(fun (d, n) => f d n)
   }
 };
 
@@ -115,7 +115,7 @@ let check_cfg_connectedness cfg => {
     }
   };
   let pdescs = get_all_procs cfg;
-  IList.iter do_pdesc pdescs
+  List.iter f::do_pdesc pdescs
 };
 
 
@@ -144,7 +144,7 @@ let save_attributes source_file cfg => {
     };
     AttributesTable.store_attributes attributes'
   };
-  IList.iter save_proc (get_all_procs cfg)
+  List.iter f::save_proc (get_all_procs cfg)
 };
 
 
@@ -295,7 +295,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
           equal::Procdesc.Node.equal (Procdesc.Node.get_preds n1) (Procdesc.Node.get_preds n2) &&
         instrs_eq (Procdesc.Node.get_instrs n1) (Procdesc.Node.get_instrs n2)
       };
-      try (IList.for_all2 node_eq n1s n2s) {
+      try (List.for_all2_exn f::node_eq n1s n2s) {
       | Invalid_argument _ => false
       }
     };

@@ -104,7 +104,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
       ocidi.Clang_ast_t.otdi_protocols in
   let decl_methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let fields_sc = CField_decl.fields_superclass tenv ocidi Csu.Objc in
-  IList.iter (fun (fn, ft, _) ->
+  List.iter ~f:(fun (fn, ft, _) ->
       Logging.out_debug "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
       Logging.out_debug "type: '%s'\n" (Typ.to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
@@ -121,7 +121,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv curr_class decl_info name_info d
   let modelled_fields = StructTyp.objc_ref_counter_field :: CField_decl.modelled_field name_info in
   let all_fields = CGeneral_utils.append_no_duplicates_fields modelled_fields fields in
   Logging.out_debug "Class %s field:\n" class_name;
-  IList.iter (fun (fn, _, _) ->
+  List.iter ~f:(fun (fn, _, _) ->
       Logging.out_debug "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) all_fields;
   ignore(
     Tenv.mk_struct tenv

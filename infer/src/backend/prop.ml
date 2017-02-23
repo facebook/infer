@@ -269,7 +269,7 @@ let create_pvar_env (sigma: sigma) : (Exp.t -> Exp.t) =
     | Sil.Hpointsto (Lvar pvar, Eexp (Var v, _), _) ->
         if not (Pvar.is_global pvar) then env := (Exp.Var v, Exp.Lvar pvar) :: !env
     | _ -> () in
-  IList.iter filter sigma;
+  List.iter ~f:filter sigma;
   let find e =
     List.find ~f:(fun (e1, _) -> Exp.equal e1 e) !env |>
     Option.map ~f:snd |>
@@ -296,8 +296,8 @@ let pp_footprint_simple _pe env f fp =
 (** Create a predicate environment for a prop *)
 let prop_pred_env prop =
   let env = Sil.Predicates.empty_env () in
-  IList.iter (Sil.Predicates.process_hpred env) prop.sigma;
-  IList.iter (Sil.Predicates.process_hpred env) prop.sigma_fp;
+  List.iter ~f:(Sil.Predicates.process_hpred env) prop.sigma;
+  List.iter ~f:(Sil.Predicates.process_hpred env) prop.sigma_fp;
   env
 
 (** Pretty print a proposition. *)
@@ -364,13 +364,13 @@ let d_proplist_with_typ (pl: 'a t list) =
 (** {1 Functions for computing free non-program variables} *)
 
 let pi_fav_add fav pi =
-  IList.iter (Sil.atom_fav_add fav) pi
+  List.iter ~f:(Sil.atom_fav_add fav) pi
 
 let pi_fav =
   Sil.fav_imperative_to_functional pi_fav_add
 
 let sigma_fav_add fav sigma =
-  IList.iter (Sil.hpred_fav_add fav) sigma
+  List.iter ~f:(Sil.hpred_fav_add fav) sigma
 
 let sigma_fav =
   Sil.fav_imperative_to_functional sigma_fav_add
@@ -409,7 +409,7 @@ let hpred_fav_in_pvars_add fav (hpred : Sil.hpred) = match hpred with
       ()
 
 let sigma_fav_in_pvars_add fav sigma =
-  IList.iter (hpred_fav_in_pvars_add fav) sigma
+  List.iter ~f:(hpred_fav_in_pvars_add fav) sigma
 
 let sigma_fpv sigma =
   List.concat (IList.map Sil.hpred_fpv sigma)
@@ -533,7 +533,7 @@ let sigma_get_unsigned_exps sigma =
       when Typ.ikind_is_unsigned ik ->
         uexps := e :: !uexps
     | _ -> () in
-  IList.iter do_hpred sigma;
+  List.iter ~f:do_hpred sigma;
   !uexps
 
 (** Collapse consecutive indices that should be added. For instance,
@@ -1769,7 +1769,7 @@ end = struct
   let stack = Stack.create ()
   let init es =
     Stack.clear stack;
-    IList.iter (fun e -> Stack.push stack e) (IList.rev es)
+    List.iter ~f:(fun e -> Stack.push stack e) (IList.rev es)
   let final () = Stack.clear stack
   let is_empty () = Stack.is_empty stack
   let push e = Stack.push stack e
@@ -1794,9 +1794,9 @@ let sigma_dfs_sort tenv sigma =
     | Eexp (e, _) ->
         ExpStack.push e
     | Estruct (fld_se_list, _) ->
-        IList.iter (fun (_, se) -> handle_strexp se) fld_se_list
+        List.iter ~f:(fun (_, se) -> handle_strexp se) fld_se_list
     | Earray (_, idx_se_list, _) ->
-        IList.iter (fun (_, se) -> handle_strexp se) idx_se_list in
+        List.iter ~f:(fun (_, se) -> handle_strexp se) idx_se_list in
 
   let rec handle_e visited seen e (sigma : sigma) = match sigma with
     | [] -> (visited, IList.rev seen)
@@ -1807,11 +1807,11 @@ let sigma_dfs_sort tenv sigma =
               handle_strexp se;
               (hpred:: visited, IList.rev_append cur seen)
           | Hlseg (_, _, root, next, shared) when Exp.equal e root ->
-              IList.iter ExpStack.push (next:: shared);
+              List.iter ~f:ExpStack.push (next:: shared);
               (hpred:: visited, IList.rev_append cur seen)
           | Hdllseg (_, _, iF, oB, oF, iB, shared)
             when Exp.equal e iF || Exp.equal e iB ->
-              IList.iter ExpStack.push (oB:: oF:: shared);
+              List.iter ~f:ExpStack.push (oB:: oF:: shared);
               (hpred:: visited, IList.rev_append cur seen)
           | _ ->
               handle_e visited (hpred:: seen) e cur
@@ -1875,8 +1875,8 @@ let compute_reindexing fav_add get_id_offset list =
           | None -> list_passed
           | Some (id, _) ->
               let fav = Sil.fav_new () in
-              IList.iter (fav_add fav) list_seen;
-              IList.iter (fav_add fav) list_passed;
+              List.iter ~f:(fav_add fav) list_seen;
+              List.iter ~f:(fav_add fav) list_passed;
               if (Sil.fav_exists fav (Ident.equal id))
               then list_passed
               else (x:: list_passed) in
@@ -2508,7 +2508,7 @@ end = struct
 
   and sigma_size sigma =
     let size = ref 0 in
-    IList.iter (fun hpred -> size := hpred_size hpred + !size) sigma; !size
+    List.iter ~f:(fun hpred -> size := hpred_size hpred + !size) sigma; !size
 
   let pi_size pi = pi_weight * IList.length pi
 
@@ -2557,7 +2557,7 @@ module CategorizePreconditions = struct
       | Eexp (Var _, _) ->
           true
       | Estruct (fsel, _) ->
-          IList.for_all (fun (_, se) -> rhs_only_vars se) fsel
+          List.for_all ~f:(fun (_, se) -> rhs_only_vars se) fsel
       | Earray _ ->
           true
       | _ ->
@@ -2576,7 +2576,7 @@ module CategorizePreconditions = struct
       let check_pi pi =
         List.is_empty pi in
       let check_sigma sigma =
-        IList.for_all hpred_filter sigma in
+        List.for_all ~f:hpred_filter sigma in
       check_pi pre.pi && check_sigma pre.sigma in
     let pres_no_constraints = List.filter ~f:(check_pre hpred_is_var) preconditions in
     let pres_only_allocation = List.filter ~f:(check_pre hpred_only_allocation) preconditions in

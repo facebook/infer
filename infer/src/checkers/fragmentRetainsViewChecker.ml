@@ -42,8 +42,8 @@ let callback_fragment_retains_view_java
             List.filter ~f:(is_declared_view_typ class_typename) fields in
           let fields_nullified = PatternMatch.get_fields_nullified proc_desc in
           (* report if a field is declared by C, but not nulled out in C.onDestroyView *)
-          IList.iter
-            (fun (fname, fld_typ, _) ->
+          List.iter
+            ~f:(fun (fname, fld_typ, _) ->
                if not (Ident.FieldSet.mem fname fields_nullified) then
                  report_error
                    (Tstruct class_typename) fname fld_typ (Procname.Java pname_java) proc_desc)

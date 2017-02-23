@@ -66,5 +66,5 @@ let active_cluster_checkers () =
 let register () =
   let register registry (callback, active, language_opt) =
     if active then registry language_opt callback in
-  IList.iter (register Callbacks.register_procedure_callback) (active_procedure_checkers ());
-  IList.iter (register Callbacks.register_cluster_callback) (active_cluster_checkers ())
+  List.iter ~f:(register Callbacks.register_procedure_callback) (active_procedure_checkers ());
+  List.iter ~f:(register Callbacks.register_cluster_callback) (active_cluster_checkers ())

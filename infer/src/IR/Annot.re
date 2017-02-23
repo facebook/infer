@@ -83,5 +83,5 @@ let module Method = {
   let empty = ([], []);
 
   /** Check if the method annodation is empty. */
-  let is_empty (ia, ial) => IList.for_all Item.is_empty [ia, ...ial];
+  let is_empty (ia, ial) => List.for_all f::Item.is_empty [ia, ...ial];
 };

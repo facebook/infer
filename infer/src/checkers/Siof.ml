@@ -222,7 +222,7 @@ let report_siof trace pdesc gname loc =
 
   SiofTrace.get_reportable_sink_paths trace ~trace_of_pname
   |> List.filter ~f:has_foreign_sink
-  |> IList.iter report_one_path
+  |> List.iter ~f:report_one_path
 
 let siof_check pdesc gname = function
   | Some ((SiofDomain.BottomSiofTrace.NonBottom post, _)) ->

@@ -311,7 +311,7 @@ and get_class_struct_typ program tenv cn =
           Tenv.mk_struct tenv name
       | Some node ->
           let create_super_list interface_names =
-            IList.iter (fun cn -> ignore (get_class_struct_typ program tenv cn)) interface_names;
+            List.iter ~f:(fun cn -> ignore (get_class_struct_typ program tenv cn)) interface_names;
             IList.map typename_of_classname interface_names in
           let supers, fields, statics, annots =
             match node with

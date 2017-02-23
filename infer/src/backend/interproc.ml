@@ -291,8 +291,8 @@ let propagate_nodes_divergence
       Propgraph.d_proplist Prop.prop_emp (Paths.PathSet.to_proplist prop_incons); L.d_ln ();
       propagate wl pname ~is_exception:false prop_incons exit_node
     end;
-  IList.iter (propagate wl pname ~is_exception:false pset_ok) succ_nodes;
-  IList.iter (propagate wl pname ~is_exception:true pset_exn) exn_nodes
+  List.iter ~f:(propagate wl pname ~is_exception:false pset_ok) succ_nodes;
+  List.iter ~f:(propagate wl pname ~is_exception:true pset_exn) exn_nodes
 
 (* ===================== END of symbolic execution ===================== *)
 
@@ -306,7 +306,7 @@ let do_symexec_join pname tenv wl curr_node (edgeset_todo : Paths.PathSet.t) =
   let old_dset = Join_table.find wl.Worklist.join_table curr_node_id in
   let old_dset', new_dset' = Dom.pathset_join pname tenv old_dset new_dset in
   Join_table.add wl.Worklist.join_table curr_node_id (Paths.PathSet.union old_dset' new_dset');
-  IList.iter (fun node ->
+  List.iter ~f:(fun node ->
       Paths.PathSet.iter (fun prop path ->
           State.set_path path None;
           propagate wl pname ~is_exception:false
@@ -350,8 +350,8 @@ let instrs_get_normal_vars instrs =
   let do_instr instr =
     let do_e e = Sil.exp_fav_add fav e in
     let exps = Sil.instr_get_exps instr in
-    IList.iter do_e exps in
-  IList.iter do_instr instrs;
+    List.iter ~f:do_e exps in
+  List.iter ~f:do_instr instrs;
   Sil.fav_filter_ident fav Ident.is_normal;
   Sil.fav_to_list fav
 
@@ -407,17 +407,17 @@ let check_assignement_guard pdesc node =
           [e']
       | _ -> [] in
     let prune_vars = List.concat(IList.map (fun n -> prune_var n) succs) in
-    IList.for_all (fun e' -> Exp.equal e' e) prune_vars in
+    List.for_all ~f:(fun e' -> Exp.equal e' e) prune_vars in
   let succs_loc = IList.map (fun n -> Procdesc.Node.get_loc n) succs in
   let succs_are_all_prune_nodes () =
-    IList.for_all (fun n -> match Procdesc.Node.get_kind n with
+    List.for_all ~f:(fun n -> match Procdesc.Node.get_kind n with
         | Procdesc.Node.Prune_node(_) -> true
         | _ -> false) succs in
   let succs_same_loc_as_node () =
     if verbose then
       (L.d_str ("LOCATION NODE: line: " ^ (string_of_int l_node.Location.line));
        L.d_strln " ");
-    IList.for_all (fun l ->
+    List.for_all ~f:(fun l ->
         if verbose then
           (L.d_str ("LOCATION l: line: " ^ (string_of_int l.Location.line));
            L.d_strln " ");
@@ -430,8 +430,8 @@ let check_assignement_guard pdesc node =
       | Sil.Prune _ -> false
       | _ -> true in
     let check_guard n =
-      IList.for_all check_instr (Procdesc.Node.get_instrs n) in
-    IList.for_all check_guard succs in
+      List.for_all ~f:check_instr (Procdesc.Node.get_instrs n) in
+    List.for_all ~f:check_guard succs in
   if Config.curr_language_is Config.Clang &&
      succs_are_all_prune_nodes () &&
      succs_same_loc_as_node () &&
@@ -654,17 +654,17 @@ let report_context_leaks pname sigma tenv =
     let reachable_hpreds, reachable_exps =
       Prop.compute_reachable_hpreds sigma fld_exps in
     (* raise an error if any Context expression is in [reachable_exps] *)
-    IList.iter
-      (fun (context_exp, name) ->
-         if Exp.Set.mem context_exp reachable_exps then
-           let leak_path =
-             match get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
-             | Some path -> path
-             | None -> assert false (* a path must exist in order for a leak to be reported *) in
-           let err_desc =
-             Errdesc.explain_context_leak pname (Typ.Tstruct name) fld_name leak_path in
-           let exn = Exceptions.Context_leak (err_desc, __POS__) in
-           Reporting.log_error pname exn)
+    List.iter
+      ~f:(fun (context_exp, name) ->
+          if Exp.Set.mem context_exp reachable_exps then
+            let leak_path =
+              match get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
+              | Some path -> path
+              | None -> assert false (* a path must exist in order for a leak to be reported *) in
+            let err_desc =
+              Errdesc.explain_context_leak pname (Typ.Tstruct name) fld_name leak_path in
+            let exn = Exceptions.Context_leak (err_desc, __POS__) in
+            Reporting.log_error pname exn)
       context_exps in
   (* get the set of pointed-to expressions of type T <: Context *)
   let context_exps =
@@ -678,15 +678,15 @@ let report_context_leaks pname sigma tenv =
           | _ -> exps)
       ~init:[]
       sigma in
-  IList.iter
-    (function
-      | Sil.Hpointsto (Exp.Lvar pv, Sil.Estruct (static_flds, _), _)
-        when Pvar.is_global pv ->
-          IList.iter
-            (fun (f_name, f_strexp) ->
-               check_reachable_context_from_fld (f_name, f_strexp) context_exps)
-            static_flds
-      | _ -> ())
+  List.iter
+    ~f:(function
+        | Sil.Hpointsto (Exp.Lvar pv, Sil.Estruct (static_flds, _), _)
+          when Pvar.is_global pv ->
+            List.iter
+              ~f:(fun (f_name, f_strexp) ->
+                  check_reachable_context_from_fld (f_name, f_strexp) context_exps)
+              static_flds
+        | _ -> ())
     sigma
 
 (** Remove locals and formals,
@@ -700,7 +700,7 @@ let remove_locals_formals_and_check tenv pdesc p =
     let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
     let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
     Reporting.log_warning pname exn in
-  IList.iter check_pvar pvars;
+  List.iter ~f:check_pvar pvars;
   p'
 
 (** Collect the analysis results for the exit node. *)
@@ -970,12 +970,12 @@ let get_procs_and_defined_children call_graph =
 let pp_intra_stats wl proc_desc fmt _ =
   let nstates = ref 0 in
   let nodes = Procdesc.get_nodes proc_desc in
-  IList.iter
-    (fun node ->
-       nstates :=
-         !nstates +
-         Paths.PathSet.size
-           (htable_retrieve wl.Worklist.path_set_visited (Procdesc.Node.get_id node)))
+  List.iter
+    ~f:(fun node ->
+        nstates :=
+          !nstates +
+          Paths.PathSet.size
+            (htable_retrieve wl.Worklist.path_set_visited (Procdesc.Node.get_id node)))
     nodes;
   F.fprintf fmt "(%d nodes containing %d states)" (IList.length nodes) !nstates
 
@@ -1199,7 +1199,7 @@ let report_runtime_exceptions tenv pdesc summary =
       let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
       Reporting.log_error pname exn in
-  IList.iter report exn_preconditions
+  List.iter ~f:report exn_preconditions
 
 
 let report_custom_errors tenv summary =
@@ -1212,7 +1212,7 @@ let report_custom_errors tenv summary =
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
       Reporting.log_error pname exn in
-  IList.iter report error_preconditions
+  List.iter ~f:report error_preconditions
 
 module SpecMap = Caml.Map.Make (struct
     type t = Prop.normal Specs.Jprop.t
@@ -1277,8 +1277,8 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
         { Specs.pre = pre;
           Specs.posts = Paths.PathSet.elements post_set;
           Specs.visited = visited }:: !res in
-  IList.iter re_exe_filter old_specs; (* filter out pre's which failed re-exe *)
-  IList.iter add_spec new_specs; (* add new specs *)
+  List.iter ~f:re_exe_filter old_specs; (* filter out pre's which failed re-exe *)
+  List.iter ~f:add_spec new_specs; (* add new specs *)
   SpecMap.iter convert !current_specs;
   !res,!changed
 
@@ -1444,13 +1444,13 @@ let do_analysis exe_env =
       else None in
     Specs.init_summary (nodes, proc_flags, calls, None, attributes, proc_desc_option) in
 
-  IList.iter
-    (fun (pn, _) ->
-       let should_init () =
-         Config.models_mode ||
-         is_none (Specs.get_summary pn) in
-       if should_init ()
-       then init_proc pn)
+  List.iter
+    ~f:(fun (pn, _) ->
+        let should_init () =
+          Config.models_mode ||
+          is_none (Specs.get_summary pn) in
+        if should_init ()
+        then init_proc pn)
     procs_and_defined_children;
 
   let callbacks =
@@ -1592,7 +1592,7 @@ let print_stats_cfg proc_shadowed source cfg =
       print_file_stats fmt ();
       Out_channel.close outc
     with Sys_error _ -> () in
-  IList.iter compute_stats_proc (Cfg.get_defined_procs cfg);
+  List.iter ~f:compute_stats_proc (Cfg.get_defined_procs cfg);
   L.out "%a" print_file_stats ();
   save_file_stats ()
 

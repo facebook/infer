@@ -103,7 +103,7 @@ let rec inhabit_typ tenv typ cfg env =
                       let try_get_non_receiver_formals p =
                         get_non_receiver_formals (formals_from_name cfg p) in
                       Procname.is_constructor p
-                      && IList.for_all (fun (_, typ) ->
+                      && List.for_all ~f:(fun (_, typ) ->
                           not (TypSet.mem typ env.cur_inhabiting)
                         ) (try_get_non_receiver_formals p) in
                     List.filter ~f:(fun p -> is_suitable_constructor p) methods
@@ -214,7 +214,7 @@ let create_dummy_harness_filename harness_name =
 (* TODO (t3040429): fill this file up with Java-like code that matches the SIL *)
 let write_harness_to_file harness_instrs harness_file_name =
   let harness_file = Utils.create_outfile harness_file_name in
-  let pp_harness fmt = IList.iter (fun instr ->
+  let pp_harness fmt = List.iter ~f:(fun instr ->
       Format.fprintf fmt "%a\n" (Sil.pp_instr Pp.text) instr) harness_instrs in
   Utils.do_outf harness_file (fun outf ->
       pp_harness outf.fmt;
@@ -223,8 +223,8 @@ let write_harness_to_file harness_instrs harness_file_name =
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
 let add_harness_to_cg harness_name harness_node cg =
   Cg.add_defined_node cg (Procname.Java harness_name);
-  IList.iter
-    (fun p -> Cg.add_edge cg (Procname.Java harness_name) p)
+  List.iter
+    ~f:(fun p -> Cg.add_edge cg (Procname.Java harness_name) p)
     (Procdesc.Node.get_callees harness_node)
 
 (** create and fill the appropriate nodes and add them to the harness cfg. also add the harness

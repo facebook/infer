@@ -185,8 +185,8 @@ end = struct
       | v:: vars', _ ->
           let r = find' tbl v in
           let set = lookup_const' const_tbl r in
-          (IList.for_all (fun v' -> Exp.equal (find' tbl v') r) vars') &&
-          (IList.for_all (fun c -> Exp.Set.mem c set) nonvars)
+          (List.for_all ~f:(fun v' -> Exp.equal (find' tbl v') r) vars') &&
+          (List.for_all ~f:(fun c -> Exp.Set.mem c set) nonvars)
 
 end
 
@@ -578,7 +578,7 @@ end = struct
       lost_little side e assoc_es in
     let lhs_es = IList.map (fun (e1, _, _) -> e1) !tbl in
     let rhs_es = IList.map (fun (_, e2, _) -> e2) !tbl in
-    (IList.for_all (f Rhs) rhs_es) && (IList.for_all (f Lhs) lhs_es)
+    (List.for_all ~f:(f Rhs) rhs_es) && (List.for_all ~f:(f Lhs) lhs_es)
 
   let lookup_side' side e =
     let f (e1, e2, _) = Exp.equal e (select side e1 e2) in
@@ -599,7 +599,7 @@ end = struct
           res := v'::!res
       | _ -> () in
     begin
-      IList.iter f !tbl;
+      List.iter ~f:f !tbl;
       IList.rev !res
     end
 
@@ -715,11 +715,11 @@ end = struct
             build_other_atoms (fun e0 -> Prop.mk_neq tenv e0 e') side e
 
         | Sil.Apred (a, (Var id as e) :: es)
-          when not (Ident.is_normal id) && IList.for_all exp_contains_only_normal_ids es ->
+          when not (Ident.is_normal id) && List.for_all ~f:exp_contains_only_normal_ids es ->
             build_other_atoms (fun e0 -> Prop.mk_pred tenv a (e0 :: es)) side e
 
         | Sil.Anpred (a, (Var id as e) :: es)
-          when not (Ident.is_normal id) && IList.for_all exp_contains_only_normal_ids es ->
+          when not (Ident.is_normal id) && List.for_all ~f:exp_contains_only_normal_ids es ->
             build_other_atoms (fun e0 -> Prop.mk_npred tenv a (e0 :: es)) side e
 
         | Sil.Aeq((Exp.Var id as e), e') | Sil.Aeq(e', (Exp.Var id as e))
@@ -1571,7 +1571,7 @@ let pi_partial_join tenv mode
       | Sil.Hpointsto (_, Sil.Earray (Exp.Const (Const.Cint n), _, _), _) ->
           (if IntLit.geq n IntLit.one then len_list := n :: !len_list)
       | _ -> () in
-    IList.iter do_hpred prop.Prop.sigma;
+    List.iter ~f:do_hpred prop.Prop.sigma;
     !len_list in
   let bounds =
     let bounds1 = get_array_len ep1 in
@@ -1686,7 +1686,7 @@ let pi_partial_meet tenv (p: Prop.normal Prop.t) (ep1: 'a Prop.t) (ep2: 'b Prop.
 
   let handle_atom sub dom atom =
     let fav_list = Sil.fav_to_list (Sil.atom_fav atom) in
-    if IList.for_all (fun id -> Ident.IdentSet.mem id dom) fav_list then
+    if List.for_all ~f:(fun id -> Ident.IdentSet.mem id dom) fav_list then
       Sil.atom_sub sub atom
     else (L.d_str "handle_atom failed on "; Sil.d_atom atom; L.d_ln (); raise IList.Fail) in
   let f1 p' atom =
@@ -1719,13 +1719,13 @@ let eprop_partial_meet tenv (ep1: 'a Prop.t) (ep2: 'b Prop.t) : 'c Prop.t =
     let sub2 = ep2.Prop.sub in
     let range1 = Sil.sub_range sub1 in
     let f e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
-    Sil.equal_subst sub1 sub2 && IList.for_all f range1 in
+    Sil.equal_subst sub1 sub2 && List.for_all ~f:f range1 in
 
   if not (sub_check ()) then
     (L.d_strln "sub_check() failed"; raise IList.Fail)
   else begin
     let todos = IList.map (fun x -> (x, x, x)) es in
-    IList.iter Todo.push todos;
+    List.iter ~f:Todo.push todos;
     let sigma_new = sigma_partial_meet tenv sigma1 sigma2 in
     let ep = Prop.set ep1 ~sigma:sigma_new in
     let ep' = Prop.set ep ~pi:[] in
@@ -1785,7 +1785,7 @@ let eprop_partial_join' tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed 
       raise IList.Fail
     end;
   let todos = IList.map (fun x -> (x, x, x)) es1 in
-  IList.iter Todo.push todos;
+  List.iter ~f:Todo.push todos;
   match sigma_partial_join tenv mode sigma1 sigma2 with
   | sigma_new, [], [] ->
       L.d_strln "sigma_partial_join succeeded";

@@ -47,8 +47,8 @@ let add_dispatch_calls pdesc cg tenv =
                    (* if sound dispatch is turned off, consider only the first target. we do this
                       because choosing all targets is too expensive for everyday use *)
                    [target_pname] in
-               IList.iter
-                 (fun target_pname -> Cg.add_edge cg caller_pname target_pname)
+               List.iter
+                 ~f:(fun target_pname -> Cg.add_edge cg caller_pname target_pname)
                  targets_to_add;
                let call_flags' = { call_flags with CallFlags.cf_targets = targets_to_add; } in
                Sil.Call (ret_id, call_exp, args, loc, call_flags')
@@ -222,24 +222,24 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
       let loc = Procdesc.Node.get_last_loc node in
       Procdesc.Node.append_instrs node [Sil.Remove_temps (IList.rev ids, loc)] in
 
-  IList.iter
-    (fun node ->
-       match NullifyAnalysis.extract_post (ProcCfg.Exceptional.id node) nullify_inv_map with
-       | Some (_, to_nullify) ->
-           let pvars_to_nullify, ids_to_remove =
-             Var.Set.fold
-               (fun var (pvars_acc, ids_acc) -> match Var.to_exp var with
-                  (* we nullify all address taken variables at the end of the procedure *)
-                  | Exp.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
-                      pvar :: pvars_acc, ids_acc
-                  | Exp.Var id ->
-                      pvars_acc, id :: ids_acc
-                  | _ -> pvars_acc, ids_acc)
-               to_nullify
-               ([], []) in
-           node_add_removetmps_instructions node ids_to_remove;
-           node_add_nullify_instructions node pvars_to_nullify
-       | None -> ())
+  List.iter
+    ~f:(fun node ->
+        match NullifyAnalysis.extract_post (ProcCfg.Exceptional.id node) nullify_inv_map with
+        | Some (_, to_nullify) ->
+            let pvars_to_nullify, ids_to_remove =
+              Var.Set.fold
+                (fun var (pvars_acc, ids_acc) -> match Var.to_exp var with
+                   (* we nullify all address taken variables at the end of the procedure *)
+                   | Exp.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->
+                       pvar :: pvars_acc, ids_acc
+                   | Exp.Var id ->
+                       pvars_acc, id :: ids_acc
+                   | _ -> pvars_acc, ids_acc)
+                to_nullify
+                ([], []) in
+            node_add_removetmps_instructions node ids_to_remove;
+            node_add_nullify_instructions node pvars_to_nullify
+        | None -> ())
     (ProcCfg.Exceptional.nodes nullify_proc_cfg);
   (* nullify all address taken variables *)
   if not (AddressTaken.Domain.is_empty address_taken_vars)
@@ -290,11 +290,11 @@ let do_copy_propagation pdesc tenv =
       ~init:([], false)
       (ExceptionalOneInstrPerNodeCfg.instr_ids node) in
 
-  IList.iter
-    (fun node ->
-       let instrs, changed = rev_transform_node_instrs node in
-       if changed
-       then Procdesc.Node.replace_instrs node (IList.rev instrs))
+  List.iter
+    ~f:(fun node ->
+        let instrs, changed = rev_transform_node_instrs node in
+        if changed
+        then Procdesc.Node.replace_instrs node (IList.rev instrs))
     (Procdesc.get_nodes pdesc)
 
 let do_liveness pdesc tenv =

@@ -33,7 +33,8 @@ let read dir::dir :option t => {
   | None => None
   | Some lines =>
     let links = create ();
-    IList.iter (fun line => String.Table.set links key::(Filename.basename line) data::line) lines;
+    List.iter
+      f::(fun line => String.Table.set links key::(Filename.basename line) data::line) lines;
     String.Table.set multilink_files_cache key::dir data::links;
     Some links
   }

@@ -287,7 +287,7 @@ module Err_table = struct
     ErrLogHash.iter f err_table;
 
     let pp ekind (nodeidkey, _, loc, ml_loc_opt, _, _, _) fmt err_names =
-      IList.iter (fun (err_name, desc) ->
+      List.iter ~f:(fun (err_name, desc) ->
           Exceptions.pp_err nodeidkey loc ekind err_name desc ml_loc_opt fmt ()) err_names in
     F.fprintf fmt "@.Detailed errors during footprint phase:@.";
     LocMap.iter (fun nslm err_names ->

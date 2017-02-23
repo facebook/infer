@@ -9,11 +9,6 @@
 
 let exists = List.exists
 let fold_left = List.fold_left
-let for_all = List.for_all
-let for_all2 = List.for_all2
-let iter = List.iter
-let iter2 = List.iter2
-let iteri = List.iteri
 let length = List.length
 let nth = List.nth
 let partition = List.partition

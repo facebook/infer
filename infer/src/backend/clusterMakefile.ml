@@ -51,10 +51,10 @@ let pp_prolog fmt clusters =
     compilation_dbs_cmd;
   F.fprintf fmt "CLUSTERS=";
 
-  IList.iteri
-    (fun i cl ->
-       if cluster_should_be_analyzed cl
-       then F.fprintf fmt "%a " Cluster.pp_cluster_name (i+1))
+  List.iteri
+    ~f:(fun i cl ->
+        if cluster_should_be_analyzed cl
+        then F.fprintf fmt "%a " Cluster.pp_cluster_name (i+1))
     clusters;
 
   F.fprintf fmt "@.@.default: test@.@.all: test@.@.";
@@ -71,6 +71,6 @@ let create_cluster_makefile (clusters: Cluster.t list) (fname: string) =
     F.fprintf fmt "#%s@\n" (DB.source_dir_to_string cluster);
     Cluster.pp_cluster fmt (cluster_nr + 1, cluster) in
   pp_prolog fmt clusters;
-  IList.iteri do_cluster clusters;
+  List.iteri ~f:do_cluster clusters;
   pp_epilog fmt () ;
   Out_channel.close outc

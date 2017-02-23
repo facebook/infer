@@ -156,10 +156,10 @@ let summary_values summary => {
   let (nr_nodes_visited, lines_visited) = {
     let visited = ref Specs.Visitedset.empty;
     let do_spec spec => visited := Specs.Visitedset.union spec.Specs.visited !visited;
-    IList.iter do_spec specs;
+    List.iter f::do_spec specs;
     let visited_lines = ref Int.Set.empty;
     Specs.Visitedset.iter
-      (fun (_, ls) => IList.iter (fun l => visited_lines := Int.Set.add !visited_lines l) ls)
+      (fun (_, ls) => List.iter f::(fun l => visited_lines := Int.Set.add !visited_lines l) ls)
       !visited;
     (Specs.Visitedset.cardinal !visited, Int.Set.elements !visited_lines)
   };
@@ -552,7 +552,7 @@ let pp_tests_of_report fmt report => {
       jsonbug.bug_type
       pp_trace
       jsonbug.bug_trace;
-  IList.iter pp_row report
+  List.iter f::pp_row report
 };
 
 let tests_jsonbug_compare bug1 bug2 =>
@@ -592,7 +592,7 @@ let pp_text_of_report fmt report => {
         jsonbug.bug_type
         jsonbug.qualifier
     );
-  IList.iter pp_row report
+  List.iter f::pp_row report
 };
 
 let module IssuesXml = {
@@ -770,7 +770,7 @@ let module Stats = {
       };
       res := [line, "", ...!res]
     };
-    IList.iter loc_to_string ltr;
+    List.iter f::loc_to_string ltr;
     IList.rev !res
   };
   let process_err_log error_filter linereader err_log stats => {
@@ -844,7 +844,7 @@ let module Stats = {
     F.fprintf fmt "Infos: %d@\n" stats.ninfos;
     F.fprintf fmt "@\n -------------------@\n";
     F.fprintf fmt "@\nDetailed Errors@\n@\n";
-    IList.iter (fun s => F.fprintf fmt "%s@\n" s) (IList.rev stats.saved_errors)
+    List.iter f::(fun s => F.fprintf fmt "%s@\n" s) (IList.rev stats.saved_errors)
   };
 };
 
@@ -1041,7 +1041,7 @@ let pp_summary_in_format (format_kind, outf: Utils.outfile) =>
 let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list => {
   let pp_issues_in_format format =>
     pp_issues_in_format format error_filter linereader proc_loc_opt procname err_log;
-  IList.iter pp_issues_in_format bug_format_list
+  List.iter f::pp_issues_in_format bug_format_list
 };
 
 let pp_issues error_filter linereader summary bug_format_list => {
@@ -1056,7 +1056,7 @@ let pp_procs summary procs_format_list => {
     let pp_procs = pp_procs_in_format format;
     pp_procs summary
   };
-  IList.iter pp_procs_in_format procs_format_list
+  List.iter f::pp_procs_in_format procs_format_list
 };
 
 let pp_calls summary calls_format_list => {
@@ -1064,7 +1064,7 @@ let pp_calls summary calls_format_list => {
     let pp_calls = pp_calls_in_format format;
     pp_calls summary
   };
-  IList.iter pp_calls_in_format calls_format_list
+  List.iter f::pp_calls_in_format calls_format_list
 };
 
 let pp_stats error_filter linereader summary stats stats_format_list => {
@@ -1072,7 +1072,7 @@ let pp_stats error_filter linereader summary stats stats_format_list => {
     let pp_stats = pp_stats_in_format format;
     pp_stats error_filter summary linereader stats
   };
-  IList.iter pp_stats_in_format stats_format_list
+  List.iter f::pp_stats_in_format stats_format_list
 };
 
 let pp_summary summary fname summary_format_list => {
@@ -1080,7 +1080,7 @@ let pp_summary summary fname summary_format_list => {
     let pp_summary = pp_summary_in_format format;
     pp_summary summary
   };
-  IList.iter pp_summary_in_format summary_format_list;
+  List.iter f::pp_summary_in_format summary_format_list;
   Summary.pp_summary_out summary;
   Summary.pp_summary_xml summary fname;
   Summary.print_summary_dot_svg summary fname
@@ -1103,7 +1103,7 @@ let pp_summary_by_report_kind
     | (Summary, _) => pp_summary summary fname format_list
     | _ => ()
     };
-  IList.iter pp_summary_by_report_kind formats_by_report_kind
+  List.iter f::pp_summary_by_report_kind formats_by_report_kind
 };
 
 let pp_json_report_by_report_kind formats_by_report_kind fname =>
@@ -1119,7 +1119,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =>
         | Xml => failwith "Printing issues from json does not support xml output"
         | Latex => failwith "Printing issues from json does not support latex output"
         };
-      IList.iter pp_json_issue format_list
+      List.iter f::pp_json_issue format_list
     };
     let sorted_report = {
       let report = Jsonbug_j.report_of_string (String.concat sep::"\n" report_lines);
@@ -1130,7 +1130,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =>
       | (Issues, [_, ..._]) => pp_json_issues format_list sorted_report
       | _ => ()
       };
-    IList.iter pp_report_by_report_kind formats_by_report_kind
+    List.iter f::pp_report_by_report_kind formats_by_report_kind
   | None => failwithf "Error reading %s. Does the file exist?" fname
   };
 
@@ -1141,7 +1141,7 @@ let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader
       pp_issues_of_error_log error_filter linereader None procname error_log format_list
     | _ => ()
     };
-  IList.iter pp_summary_by_report_kind formats_by_report_kind
+  List.iter f::pp_summary_by_report_kind formats_by_report_kind
 };
 
 
@@ -1173,8 +1173,8 @@ let module AnalysisResults = {
     if CLOpt.is_originator {
       /* Find spec files specified by command-line arguments.  Not run at init time since the specs
          files may be generated between init and report time. */
-      IList.iter
-        (
+      List.iter
+        f::(
           fun arg =>
             if (not (Filename.check_suffix arg Config.specs_files_suffix) && arg != ".") {
               print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files")
@@ -1214,7 +1214,7 @@ let module AnalysisResults = {
         exit 0
       | Some summary => summaries := [(fname, summary), ...!summaries]
       };
-    apply_without_gc (IList.iter load_file) (spec_files_from_cmdline ());
+    apply_without_gc (List.iter f::load_file) (spec_files_from_cmdline ());
     let summ_cmp (_, summ1) (_, summ2) => {
       let n =
         SourceFile.compare
@@ -1241,7 +1241,7 @@ let module AnalysisResults = {
         exit 0
       | Some summary => f (fname, summary)
       };
-    let iterate f => IList.iter (do_spec f) sorted_spec_files;
+    let iterate f => List.iter f::(do_spec f) sorted_spec_files;
     iterate
   };
 
@@ -1260,7 +1260,7 @@ let module AnalysisResults = {
       If options - load_results or - save_results are used,
       all the summaries are loaded in memory */
   let get_summary_iterator () => {
-    let iterator_of_summary_list r f => IList.iter f r;
+    let iterator_of_summary_list r f => List.iter f::f r;
     switch Config.load_analysis_results {
     | None =>
       switch Config.save_analysis_results {
@@ -1334,9 +1334,9 @@ let init_files format_list_by_kind => {
       | (Latex, Summary) => begin_latex_file outfile.fmt
       | (Csv | Json | Latex | Tests | Text | Xml, _) => ()
       };
-    IList.iter init_files_of_format format_list
+    List.iter f::init_files_of_format format_list
   };
-  IList.iter init_files_of_report_kind format_list_by_kind
+  List.iter f::init_files_of_report_kind format_list_by_kind
 };
 
 let finalize_and_close_files format_list_by_kind stats pdflatex => {
@@ -1361,10 +1361,10 @@ let finalize_and_close_files format_list_by_kind stats pdflatex => {
         ignore (Sys.command ("open " ^ pdf_name))
       }
     };
-    IList.iter close_files_of_format format_list;
+    List.iter f::close_files_of_format format_list;
     ()
   };
-  IList.iter close_files_of_report_kind format_list_by_kind
+  List.iter f::close_files_of_report_kind format_list_by_kind
 };
 
 let pp_summary_and_issues formats_by_report_kind => {

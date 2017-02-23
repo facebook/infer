@@ -542,11 +542,13 @@ let check_after_array_abstraction tenv prop =
     | Sil.Earray (_, esel, _) -> (* check that no more than 2 elements are in the array *)
         let typ_elem = Typ.array_elem (Some Typ.Tvoid) typ in
         if IList.length esel > 2 && array_typ_can_abstract typ then
-          if IList.for_all (check_index root offs) esel then ()
+          if List.for_all ~f:(check_index root offs) esel then ()
           else report_error prop
-        else IList.iter (fun (ind, se) -> check_se root (offs @ [Sil.Off_index ind]) typ_elem se) esel
+        else List.iter
+            ~f:(fun (ind, se) -> check_se root (offs @ [Sil.Off_index ind]) typ_elem se)
+            esel
     | Sil.Estruct (fsel, _) ->
-        IList.iter (fun (f, se) ->
+        List.iter ~f:(fun (f, se) ->
             let typ_f = StructTyp.fld_typ ~lookup ~default:Tvoid f typ in
             check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
   let check_hpred = function
@@ -554,7 +556,7 @@ let check_after_array_abstraction tenv prop =
         let typ = Exp.texp_to_typ (Some Typ.Tvoid) texp in
         check_se root [] typ se
     | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
-  let check_sigma sigma = IList.iter check_hpred sigma in
+  let check_sigma sigma = List.iter ~f:check_hpred sigma in
   (* check_footprint_pure prop; *)
   check_sigma prop.Prop.sigma;
   check_sigma prop.Prop.sigma_fp
@@ -580,8 +582,6 @@ let remove_redundant_elements tenv prop =
     let favl_curr = Sil.fav_to_list fav_curr in
     let favl_foot = Sil.fav_to_list fav_foot in
     Sil.fav_duplicates := false;
-    (* L.d_str "favl_curr "; IList.iter (fun id -> Sil.d_exp (Exp.Var id)) favl_curr; L.d_ln();
-       L.d_str "favl_foot "; IList.iter (fun id -> Sil.d_exp (Exp.Var id)) favl_foot; L.d_ln(); *)
     let num_occur l id = IList.length (List.filter ~f:(fun id' -> Ident.equal id id') l) in
     let at_most_once v =
       num_occur favl_curr v <= 1 && num_occur favl_foot v <= 1 in

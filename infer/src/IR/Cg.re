@@ -190,7 +190,7 @@ let node_map_iter f g => {
   let table = ref [];
   Procname.Hash.iter (fun node info => table := [(node, info), ...!table]) g.node_map;
   let cmp (n1: Procname.t, _) (n2: Procname.t, _) => Procname.compare n1 n2;
-  IList.iter (fun (n, info) => f n info) (IList.sort cmp !table)
+  List.iter f::(fun (n, info) => f n info) (IList.sort cmp !table)
 };
 
 let get_nodes (g: t) => {
@@ -344,8 +344,8 @@ let get_source (g: t) => g.source;
     undefined nodes become defined if at least one side is. */
 let extend cg_old cg_new => {
   let (nodes, edges) = get_nodes_and_edges cg_new;
-  IList.iter (fun (node, defined) => add_node cg_old node defined::defined) nodes;
-  IList.iter (fun (nfrom, nto) => add_edge cg_old nfrom nto) edges
+  List.iter f::(fun (node, defined) => add_node cg_old node defined::defined) nodes;
+  List.iter f::(fun (nfrom, nto) => add_edge cg_old nfrom nto) edges
 };
 
 
@@ -359,15 +359,15 @@ let load_from_file (filename: DB.filename) :option t =>
   | None => None
   | Some (source, (nodes, edges)) =>
     let g = create (Some source);
-    IList.iter
-      (
+    List.iter
+      f::(
         fun (node, defined) =>
           if defined {
             add_defined_node g node
           }
       )
       nodes;
-    IList.iter (fun (nfrom, nto) => add_edge g nfrom nto) edges;
+    List.iter f::(fun (nfrom, nto) => add_edge g nfrom nto) edges;
     Some g
   };
 
@@ -406,8 +406,8 @@ let pp_graph_dotty get_specs (g: t) fmt => {
       calls.out_calls
       (num_specs n);
   F.fprintf fmt "digraph {@\n";
-  IList.iter
-    (
+  List.iter
+    f::(
       fun nc =>
         F.fprintf
           fmt
@@ -420,7 +420,7 @@ let pp_graph_dotty get_specs (g: t) fmt => {
           (get_shape nc)
     )
     nodes_with_calls;
-  IList.iter (fun (s, d) => F.fprintf fmt "%a -> %a@\n" pp_node s pp_node d) (get_edges g);
+  List.iter f::(fun (s, d) => F.fprintf fmt "%a -> %a@\n" pp_node s pp_node d) (get_edges g);
   F.fprintf fmt "}@."
 };
 

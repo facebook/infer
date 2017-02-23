@@ -182,7 +182,7 @@ let callback_check_access { Callbacks.tenv; proc_desc } =
 
 (** Report all field accesses and method calls of a class. *)
 let callback_check_cluster_access exe_env all_procs get_proc_desc _ =
-  IList.iter (fun proc_name ->
+  List.iter ~f:(fun proc_name ->
       match get_proc_desc proc_name with
       | Some proc_desc ->
           let tenv = Exe_env.get_tenv exe_env proc_name in
@@ -542,7 +542,7 @@ let callback_check_field_access { Callbacks.proc_desc } =
         do_read_exp e
     | Sil.Call (_, e, etl, _, _) ->
         do_read_exp e;
-        IList.iter (fun (e, _) -> do_read_exp e) etl
+        List.iter ~f:(fun (e, _) -> do_read_exp e) etl
     | Sil.Nullify _
     | Sil.Abstract _
     | Sil.Remove_temps _

@@ -115,7 +115,7 @@ let main makefile => {
     if (makefile != "") {
       ClusterMakefile.create_cluster_makefile clusters makefile
     } else {
-      IList.iteri (fun i cluster => analyze_cluster i cluster) clusters;
+      List.iteri f::(fun i cluster => analyze_cluster i cluster) clusters;
       L.stdout "@\nAnalysis finished in %as@." Pp.elapsed_time ()
     };
     output_json_makefile_stats clusters

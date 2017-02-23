@@ -324,8 +324,8 @@ end = struct
           | [] -> [] in
         remove_until_seen inverse_sequence
       else IList.rev inverse_sequence in
-    IList.iter
-      (fun (level, p, session, exn_opt) -> f level p session exn_opt)
+    List.iter
+      ~f:(fun (level, p, session, exn_opt) -> f level p session exn_opt)
       sequence_up_to_last_seen
 
   (** return the node visited most, and number of visits, in the shortest linear sequence *)
@@ -595,14 +595,16 @@ end = struct
     PropMap.iter (fun p _ -> elements := p :: !elements) ps;
     elements := List.filter ~f:(fun p -> not (f p)) !elements;
     let filtered_map = ref ps in
-    IList.iter (fun p -> filtered_map := PropMap.remove p !filtered_map) !elements;
+    List.iter ~f:(fun p -> filtered_map := PropMap.remove p !filtered_map) !elements;
     !filtered_map
 
   let partition f ps =
     let elements = ref [] in
     PropMap.iter (fun p _ -> elements := p :: !elements) ps;
     let el1, el2 = ref ps, ref ps in
-    IList.iter (fun p -> if f p then el2 := PropMap.remove p !el2 else el1 := PropMap.remove p !el1) !elements;
+    List.iter
+      ~f:(fun p -> if f p then el2 := PropMap.remove p !el2 else el1 := PropMap.remove p !el1)
+      !elements;
     !el1, !el2
 
   (** It's the caller's resposibility to ensure that Prop.prop_rename_primed_footprint_vars was called on the prop *)

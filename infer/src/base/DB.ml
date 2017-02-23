@@ -44,11 +44,11 @@ let find_source_dirs () =
   let files_in_results_dir = Array.to_list (Sys.readdir captured_dir) in
   let add_cg_files_from_dir dir =
     let files = Array.to_list (Sys.readdir dir) in
-    IList.iter (fun fname ->
+    List.iter ~f:(fun fname ->
         let path = Filename.concat dir fname in
         if Filename.check_suffix path ".cg" then source_dirs := dir :: !source_dirs)
       files in
-  IList.iter (fun fname ->
+  List.iter ~f:(fun fname ->
       let dir = Filename.concat captured_dir fname in
       if Sys.is_directory dir = `Yes then add_cg_files_from_dir dir)
     files_in_results_dir;

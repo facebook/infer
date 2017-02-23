@@ -83,26 +83,26 @@ let iterate_procedure_callbacks exe_env caller_pname =
 
   Option.iter
     ~f:(fun (idenv, tenv, proc_name, proc_desc, _) ->
-        IList.iter
-          (fun (language_opt, proc_callback) ->
-             let language_matches = match language_opt with
-               | Some language -> Config.equal_language language procedure_language
-               | None -> true in
-             if language_matches then
-               begin
-                 let init_time = Unix.gettimeofday () in
-                 proc_callback
-                   {
-                     get_proc_desc;
-                     get_procs_in_file;
-                     idenv;
-                     tenv;
-                     proc_name;
-                     proc_desc;
-                   };
-                 let elapsed = Unix.gettimeofday () -. init_time in
-                 update_time proc_name elapsed
-               end)
+        List.iter
+          ~f:(fun (language_opt, proc_callback) ->
+              let language_matches = match language_opt with
+                | Some language -> Config.equal_language language procedure_language
+                | None -> true in
+              if language_matches then
+                begin
+                  let init_time = Unix.gettimeofday () in
+                  proc_callback
+                    {
+                      get_proc_desc;
+                      get_procs_in_file;
+                      idenv;
+                      tenv;
+                      proc_name;
+                      proc_desc;
+                    };
+                  let elapsed = Unix.gettimeofday () -. init_time in
+                  update_time proc_name elapsed
+                end)
           !procedure_callbacks)
     (get_procedure_definition exe_env caller_pname)
 
@@ -126,11 +126,11 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
       ~default:proc_names
       language_opt in
 
-  IList.iter
-    (fun (language_opt, cluster_callback) ->
-       let proc_names = relevant_procedures language_opt in
-       if IList.length proc_names > 0 then
-         cluster_callback exe_env all_procs get_procdesc environment)
+  List.iter
+    ~f:(fun (language_opt, cluster_callback) ->
+        let proc_names = relevant_procedures language_opt in
+        if IList.length proc_names > 0 then
+          cluster_callback exe_env all_procs get_procdesc environment)
     !cluster_callbacks
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
@@ -168,17 +168,17 @@ let iterate_callbacks store_summary call_graph exe_env =
     then Specs.reset_summary call_graph proc_name attributes_opt None in
 
   (* Make sure summaries exists. *)
-  IList.iter reset_summary procs_to_analyze;
+  List.iter ~f:reset_summary procs_to_analyze;
 
   (* Invoke callbacks. *)
-  IList.iter
-    (iterate_procedure_callbacks exe_env)
+  List.iter
+    ~f:(iterate_procedure_callbacks exe_env)
     procs_to_analyze;
 
-  IList.iter
-    (iterate_cluster_callbacks originally_defined_procs exe_env)
+  List.iter
+    ~f:(iterate_cluster_callbacks originally_defined_procs exe_env)
     (cluster procs_to_analyze);
 
-  IList.iter store_summary procs_to_analyze;
+  List.iter ~f:store_summary procs_to_analyze;
 
   Config.curr_language := saved_language

@@ -157,8 +157,8 @@ let pp_list pe f pvl => F.fprintf f "%a" (Pp.seq (fun f e => F.fprintf f "%a" (p
 
 /** Dump a list of program variables. */
 let d_list pvl =>
-  IList.iter
-    (
+  List.iter
+    f::(
       fun pv => {
         d pv;
         L.d_str " "

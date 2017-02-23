@@ -333,7 +333,7 @@ struct
     | String s ->
         F.fprintf fmt "%s%s%s" indent s newline
   and pp_forest newline indent fmt forest =
-    IList.iter (pp_node newline indent fmt) forest
+    List.iter ~f:(pp_node newline indent fmt) forest
 
   let pp_prelude fmt = pp fmt "%s" "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 

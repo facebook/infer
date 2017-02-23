@@ -135,7 +135,7 @@ struct
         ()
 
   let process_methods trans_unit_ctx tenv cg cfg curr_class decl_list =
-    IList.iter (process_one_method_decl trans_unit_ctx tenv cg cfg curr_class) decl_list
+    List.iter ~f:(process_one_method_decl trans_unit_ctx tenv cg cfg curr_class) decl_list
 
   (** Given REVERSED list of method qualifiers (method_name::class_name::rest_quals), return
       whether method should be translated based on method and class whitelists *)
@@ -269,19 +269,19 @@ struct
               true
           | _ -> false in
         let method_decls, no_method_decls = IList.partition is_method_decl decl_list in
-        IList.iter translate no_method_decls;
+        List.iter ~f:translate no_method_decls;
         ignore (CType_decl.add_types_from_decl_to_tenv tenv dec);
-        IList.iter translate method_decls
+        List.iter ~f:translate method_decls
     | EnumDecl _ -> ignore (CEnum_decl.enum_decl dec)
     | LinkageSpecDecl (_, decl_list, _) ->
         Logging.out_debug "ADDING: LinkageSpecDecl decl list@\n";
-        IList.iter translate decl_list
+        List.iter ~f:translate decl_list
     | NamespaceDecl (_, _, decl_list, _, _) ->
-        IList.iter translate decl_list
+        List.iter ~f:translate decl_list
     | ClassTemplateDecl (_, _, template_decl_info)
     | FunctionTemplateDecl (_, _, template_decl_info) ->
         let decl_list = template_decl_info.Clang_ast_t.tdi_specializations in
-        IList.iter translate decl_list
+        List.iter ~f:translate decl_list
     | _ -> ()
 
 end

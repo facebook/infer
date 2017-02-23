@@ -111,7 +111,7 @@ let contains_edge (footprint_part: bool) (g: t) (e: edge) =
 (** [iter_edges footprint_part f g] iterates function [f] on the edges in [g] in the same order as returned by [get_edges];
     if [footprint_part] is true the edges are taken from the footprint part. *)
 let iter_edges footprint_part f g =
-  IList.iter f (get_edges footprint_part g)  (* For now simple iterator; later might use a specific traversal *)
+  List.iter ~f:f (get_edges footprint_part g)
 
 (** Graph annotated with the differences w.r.t. a previous graph *)
 type diff =
@@ -190,7 +190,7 @@ let compute_diff default_color oldgraph newgraph : diff =
           )
         | None ->
             () in
-    IList.iter build_changed newedges;
+    List.iter ~f:build_changed newedges;
     let colormap (o: Obj.t) =
       if List.exists ~f:(fun x -> phys_equal x o) !changed then Pp.Red
       else default_color in

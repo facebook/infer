@@ -335,7 +335,7 @@ let set_exps_neq_zero pi =
         exps_neq_zero := e :: !exps_neq_zero
     | _ -> () in
   exps_neq_zero := [];
-  IList.iter f pi
+  List.iter ~f:f pi
 
 let box_dangling e =
   let entry_e = List.filter ~f:(fun b -> match b with
@@ -357,8 +357,8 @@ let compute_fields_struct sigma =
   let rec do_strexp se in_struct =
     match se with
     | Sil.Eexp (e, _) -> if in_struct then fields_structs:= e ::!fields_structs else ()
-    | Sil.Estruct (l, _) -> IList.iter (fun e -> do_strexp e true) (snd (List.unzip l))
-    | Sil.Earray (_, l, _) -> IList.iter (fun e -> do_strexp e false) (snd (List.unzip l)) in
+    | Sil.Estruct (l, _) -> List.iter ~f:(fun e -> do_strexp e true) (snd (List.unzip l))
+    | Sil.Earray (_, l, _) -> List.iter ~f:(fun e -> do_strexp e false) (snd (List.unzip l)) in
   let rec fs s =
     match s with
     | [] -> ()
@@ -512,7 +512,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
       (match src with
        | [] -> assert false
        | nl ->
-           (* L.out "@\n@\n List of nl= "; IList.iter (L.out " %i ") nl; L.out "@.@.@."; *)
+           (* L.out "@\n@\n List of nl= "; List.iter ~f:(L.out " %i ") nl; L.out "@.@.@."; *)
            let target_list = compute_target_struct_fields dotnodes lfld p f lambda cycle in
            let ff n = IList.map (fun (k, lab_src, m, lab_trg) ->
                mk_link k (mk_coordinate n lambda) lab_src (mk_coordinate m lambda) lab_trg
@@ -679,7 +679,7 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
           end
         end
     | _ -> () in
-  IList.iter handle_one_node nodes;
+  List.iter ~f:handle_one_node nodes;
   (!tmp_nodes,!tmp_links)
 
 (* print a struct node *)
@@ -793,10 +793,10 @@ and build_visual_graph f pe p cycle =
   compute_fields_struct sigma;
   compute_struct_exp_nodes sigma;
   (* L.out "@\n@\n Computed fields structs: ";
-     IList.iter (fun e -> L.out " %a " (Sil.pp_exp_printenv pe) e) !fields_structs;
+     List.iter ~f:(fun e -> L.out " %a " (Sil.pp_exp_printenv pe) e) !fields_structs;
      L.out "@\n@.";
      L.out "@\n@\n Computed exp structs nodes: ";
-     IList.iter (fun e -> L.out " %a " (Sil.pp_exp_printenv pe) e) !struct_exp_nodes;
+     List.iter ~f:(fun e -> L.out " %a " (Sil.pp_exp_printenv pe) e) !struct_exp_nodes;
      L.out "@\n@."; *)
   let sigma_lambda = IList.map (fun hp -> (hp,!lambda_counter)) sigma in
   let nodes = (dotty_mk_node pe) sigma_lambda in
@@ -853,11 +853,11 @@ and pp_dotty f kind (_prop: Prop.normal Prop.t) cycle =
   let (nodes, links) = build_visual_graph f pe prop cycle in
   let all_nodes = (nodes @ !dangling_dotboxes @ !nil_dotboxes) in
   if !print_full_prop then
-    IList.iter ((dotty_pp_state f pe) cycle) all_nodes
+    List.iter ~f:((dotty_pp_state f pe) cycle) all_nodes
   else
-    IList.iter (fun node ->
+    List.iter ~f:(fun node ->
         if node_in_cycle cycle node then (dotty_pp_state f pe) cycle node) all_nodes;
-  IList.iter (dotty_pp_link f) links;
+  List.iter ~f:(dotty_pp_link f) links;
   (* F.fprintf f "\n } \n"; *)
   F.fprintf f "\n } \n"
 
@@ -873,16 +873,16 @@ let pp_dotty_one_spec f pre posts =
   invisible_arrows:= true;
   pp_dotty f Spec_precondition pre None;
   invisible_arrows:= false;
-  IList.iter (fun (po, _) -> incr post_counter ; pp_dotty f (Spec_postcondition pre) po None;
-               for j = 1 to 4 do
-                 F.fprintf f "  inv_%i%i%i%i -> state_pi_%i [style=invis]\n"
-                   !spec_counter
-                   j
-                   j
-                   j
-                   !target_invisible_arrow_pre;
-               done
-             ) posts;
+  List.iter ~f:(fun (po, _) -> incr post_counter ; pp_dotty f (Spec_postcondition pre) po None;
+                 for j = 1 to 4 do
+                   F.fprintf f "  inv_%i%i%i%i -> state_pi_%i [style=invis]\n"
+                     !spec_counter
+                     j
+                     j
+                     j
+                     !target_invisible_arrow_pre;
+                 done
+               ) posts;
   F.fprintf f "\n } \n"
 
 (* this is used to print a list of proposition when considered in a path of nodes *)
@@ -893,8 +893,8 @@ let pp_dotty_prop_list_in_path f plist prev_n curr_n =
     F.fprintf f "\n subgraph cluster_%i { color=blue \n" !dotty_state_count;
     incr dotty_state_count;
     F.fprintf f "\n state%iN [label=\"NODE %i \",  style=filled, color= lightblue]\n" curr_n curr_n;
-    IList.iter (fun po -> incr proposition_counter ;
-                 pp_dotty f Generic_proposition po None) plist;
+    List.iter ~f:(fun po -> incr proposition_counter ;
+                   pp_dotty f Generic_proposition po None) plist;
     if prev_n <> - 1 then F.fprintf f "\n state%iN ->state%iN\n" prev_n curr_n;
     F.fprintf f "\n } \n"
   with exn when SymOp.exn_not_failure exn ->
@@ -947,11 +947,11 @@ let pp_cfgnodename pname fmt (n : Procdesc.Node.t) =
   F.fprintf fmt "\"%s_%d\"" (Procname.to_filename pname) (Procdesc.Node.get_id n :> int)
 
 let pp_etlist fmt etl =
-  IList.iter (fun (id, ty) ->
+  List.iter ~f:(fun (id, ty) ->
       Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty) etl
 
 let pp_local_list fmt etl =
-  IList.iter (fun (id, ty) ->
+  List.iter ~f:(fun (id, ty) ->
       Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty) etl
 
 let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
@@ -983,7 +983,7 @@ let pp_cfgnodelabel pdesc fmt (n : Procdesc.Node.t) =
     let str = F.asprintf "%t" pp in
     Escape.escape_dotty str in
   let pp_instrs fmt instrs =
-    IList.iter (fun i -> F.fprintf fmt " %s\\n " (instr_string i)) instrs in
+    List.iter ~f:(fun i -> F.fprintf fmt " %s\\n " (instr_string i)) instrs in
   let instrs = Procdesc.Node.get_instrs n in
   F.fprintf fmt "%d: %a \\n  %a" (Procdesc.Node.get_id n :> int) pp_label n pp_instrs instrs
 
@@ -1013,8 +1013,8 @@ let pp_cfgnode pdesc fmt (n: Procdesc.Node.t) =
           (pp_cfgnodename pname) n1
           (pp_cfgnodename pname) n2
           color in
-  IList.iter (fun n' -> print_edge n n' false) (Procdesc.Node.get_succs n);
-  IList.iter (fun n' -> print_edge n n' true) (Procdesc.Node.get_exn n)
+  List.iter ~f:(fun n' -> print_edge n n' false) (Procdesc.Node.get_succs n);
+  List.iter ~f:(fun n' -> print_edge n n' true) (Procdesc.Node.get_exn n)
 
 (* * print control flow graph (in dot form) for fundec to channel let      *)
 (* print_cfg_channel (chan : out_channel) (fd : fundec) = let pnode (s:    *)
@@ -1066,7 +1066,9 @@ let pp_speclist_dotty f (splist: Prop.normal Specs.spec list) =
   F.fprintf f "@\n@\n\ndigraph main { \nnode [shape=box]; @\n";
   F.fprintf f "@\n compound = true; @\n";
   (*  F.fprintf f "\n size=\"12,7\"; ratio=fill; \n"; *)
-  IList.iter (fun s -> pp_dotty_one_spec f (Specs.Jprop.to_prop s.Specs.pre) s.Specs.posts) splist;
+  List.iter
+    ~f:(fun s -> pp_dotty_one_spec f (Specs.Jprop.to_prop s.Specs.pre) s.Specs.posts)
+    splist;
   F.fprintf f "@\n}";
   Config.pp_simple := pp_simple_saved
 

@@ -478,7 +478,7 @@ let discover_para_candidates tenv p =
           match nextse with
           | Sil.Eexp (next, _) -> add_edge (root, next)
           | _ -> assert false in
-        IList.iter process fsel' in
+        List.iter ~f:process fsel' in
   let rec get_edges_sigma = function
     | [] -> ()
     | Sil.Hlseg _ :: sigma_rest | Sil.Hdllseg _ :: sigma_rest ->
@@ -517,7 +517,7 @@ let discover_para_dll_candidates tenv p =
         let links = IList.rev (List.fold ~f:convert_to_exp ~init:[] fsel') in
         let rec iter_pairs = function
           | [] -> ()
-          | x:: l -> (IList.iter (fun y -> add_edge (root, x, y)) l; iter_pairs l) in
+          | x:: l -> (List.iter ~f:(fun y -> add_edge (root, x, y)) l; iter_pairs l) in
         iter_pairs links in
   let rec get_edges_sigma = function
     | [] -> ()
@@ -852,8 +852,8 @@ let sigma_reachable root_fav sigma =
   let do_hpred hpred =
     let hp_fav_set = fav_to_set (Sil.hpred_fav hpred) in
     let add_entry e = edges := (e, hp_fav_set) :: !edges in
-    IList.iter add_entry (hpred_entries hpred) in
-  IList.iter do_hpred sigma;
+    List.iter ~f:add_entry (hpred_entries hpred) in
+  List.iter ~f:do_hpred sigma;
   let edge_fires (e, _) = match e with
     | Exp.Var id ->
         if (Ident.is_primed id || Ident.is_footprint id) then Ident.IdentSet.mem id !reach_set
@@ -890,7 +890,7 @@ let get_cycle root prop =
     | _ -> None in
   let print_cycle cyc =
     (L.d_str "Cycle= ";
-     IList.iter (fun ((e, t), f, e') ->
+     List.iter ~f:(fun ((e, t), f, e') ->
          match e, e' with
          | Sil.Eexp (e, _), Sil.Eexp (e', _) ->
              L.d_str ("("^(Exp.to_string e)^": "^(Typ.to_string t)^", "
@@ -1063,7 +1063,7 @@ let check_junk ?original_prop pname tenv prop =
             (Ident.is_primed id || Ident.is_footprint id)
             && not (Sil.fav_mem fav_root id) && not (id_considered_reachable id)
         | _ -> false in
-      IList.for_all predicate entries in
+      List.for_all ~f:predicate entries in
     let hpred_in_cycle hpred = (* check if the predicate belongs to a cycle in the heap *)
       let id_in_cycle id =
         let set1 = sigma_reachable (Sil.fav_from_list [id]) sigma in
@@ -1111,7 +1111,7 @@ let check_junk ?original_prop pname tenv prop =
                        | Some (Apred (Aundef _ as a, _)) ->
                            res := Some a
                        | _ -> ()) in
-                IList.iter do_entry entries;
+                List.iter ~f:do_entry entries;
                 !res in
               L.d_decrease_indent 1;
               let is_undefined =

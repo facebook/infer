@@ -24,7 +24,7 @@ let create_handler_table impl =
       Hashtbl.replace handler_tb pc (exn_handler:: handlers)
     with Not_found ->
       Hashtbl.add handler_tb pc [exn_handler] in
-  IList.iter collect (JBir.exception_edges impl);
+  List.iter ~f:collect (JBir.exception_edges impl);
   handler_tb
 
 let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handler_table =

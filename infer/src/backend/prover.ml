@@ -370,7 +370,7 @@ end = struct
           lts := (e1, e2) :: !lts (* < *)
       | Sil.Aeq _
       | Sil.Apred _ | Anpred _ -> () in
-    IList.iter process_atom pi;
+    List.iter ~f:process_atom pi;
     saturate { leqs = !leqs; lts = !lts; neqs = !neqs }
 
   let from_sigma tenv sigma =
@@ -397,13 +397,13 @@ end = struct
             Option.bind t (fun t' ->
                 Option.map ~f:fst @@ StructTyp.get_field_type_and_annotation ~lookup f t'
               ) in
-          IList.iter (fun (f, se) -> strexp_extract (se, get_field_type f)) fsel
+          List.iter ~f:(fun (f, se) -> strexp_extract (se, get_field_type f)) fsel
       | Sil.Earray (len, isel, _), t ->
           let elt_t = match t with
             | Some Typ.Tarray (t, _) -> Some t
             | _ -> None in
           add_lt_minus1_e len;
-          IList.iter (fun (idx, se) ->
+          List.iter ~f:(fun (idx, se) ->
               add_lt_minus1_e idx;
               strexp_extract (se, elt_t)) isel in
     let hpred_extract = function
@@ -411,7 +411,7 @@ end = struct
           if texp_is_unsigned texp then strexp_lt_minus1 se;
           strexp_extract (se, type_of_texp texp)
       | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
-    IList.iter hpred_extract sigma;
+    List.iter ~f:hpred_extract sigma;
     saturate { leqs = !leqs; lts = !lts; neqs = [] }
 
   let join ineq1 ineq2 =
@@ -942,7 +942,7 @@ type check =
 let d_typings typings =
   let d_elem (exp, texp) =
     Sil.d_exp exp; L.d_str ": "; Sil.d_texp_full texp; L.d_str " " in
-  IList.iter d_elem typings
+  List.iter ~f:d_elem typings
 
 (** Module to encapsulate operations on the internal state of the prover *)
 module ProverState : sig
@@ -998,7 +998,7 @@ end = struct
       | Sil.Hpointsto (_, Sil.Earray (Exp.Var _ as len, _, _), _) ->
           Sil.exp_fav_add fav len
       | _ -> () in
-    IList.iter do_hpred prop.Prop.sigma;
+    List.iter ~f:do_hpred prop.Prop.sigma;
     fav
 
   let reset lhs rhs =
@@ -2069,7 +2069,7 @@ let imply_pi tenv calc_missing (sub1, sub2) prop pi2 =
     | IMPL_EXC _ when calc_missing ->
         L.d_str "imply_pi: adding missing atom "; Sil.d_atom a; L.d_ln ();
         ProverState.add_missing_pi a in
-  IList.iter do_atom pi2
+  List.iter ~f:do_atom pi2
 
 let imply_atom tenv calc_missing (sub1, sub2) prop a =
   imply_pi tenv calc_missing (sub1, sub2) prop [a]
@@ -2128,12 +2128,12 @@ let check_array_bounds tenv (sub1, sub2) prop =
            Sil.d_exp len1; L.d_str " "; Sil.d_exp len2; L.d_ln(); *)
         let indices_to_check = match len2 with
           | _ -> [Exp.BinOp(Binop.PlusA, len2, Exp.minus_one)] (* only check len *) in
-        IList.iter (fail_if_le len1) indices_to_check
+        List.iter ~f:(fail_if_le len1) indices_to_check
     | ProverState.BCfrom_pre _atom ->
         let atom_neg = atom_negate tenv (Sil.atom_sub sub2 _atom) in
         (* L.d_strln_color Orange "BCFrom_pre"; Sil.d_atom atom_neg; L.d_ln (); *)
         if check_atom tenv prop atom_neg then check_failed atom_neg in
-  IList.iter check_bound (ProverState.get_bounds_checks ())
+  List.iter ~f:check_bound (ProverState.get_bounds_checks ())
 
 (** [check_implication_base] returns true if [prop1|-prop2],
     ignoring the footprint part of the props *)
@@ -2149,7 +2149,7 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     let subs = pre_check_pure_implication tenv calc_missing (prop1.Prop.sub, sub1_base) pi1 pi2 in
     let pi2_bcheck, pi2_nobcheck = (* find bounds checks implicit in pi2 *)
       IList.partition ProverState.atom_is_array_bounds_check pi2 in
-    IList.iter (fun a -> ProverState.add_bounds_check (ProverState.BCfrom_pre a)) pi2_bcheck;
+    List.iter ~f:(fun a -> ProverState.add_bounds_check (ProverState.BCfrom_pre a)) pi2_bcheck;
     L.d_strln "pre_check_pure_implication";
     L.d_strln "pi1:";
     L.d_increase_indent 1; Prop.d_pi pi1; L.d_decrease_indent 1; L.d_ln ();
@@ -2230,7 +2230,7 @@ let is_cover tenv cases =
     match cases with
     | [] -> check_inconsistency_pi tenv acc_pi
     | (pi, _):: cases' ->
-        IList.for_all (fun a -> _is_cover ((atom_negate tenv a) :: acc_pi) cases') pi in
+        List.for_all ~f:(fun a -> _is_cover ((atom_negate tenv a) :: acc_pi) cases') pi in
   _is_cover [] cases
 
 exception NO_COVER

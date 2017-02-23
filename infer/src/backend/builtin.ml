@@ -58,7 +58,7 @@ let pp_registered fmt () =
   builtin_names := IList.sort Procname.compare !builtin_names;
   let pp pname = Format.fprintf fmt "%a@\n" Procname.pp pname in
   Format.fprintf fmt "Registered builtins:@\n  @[";
-  IList.iter pp !builtin_names;
+  List.iter ~f:pp !builtin_names;
   Format.fprintf fmt "@]@."
 
 (** print the builtin functions and exit *)

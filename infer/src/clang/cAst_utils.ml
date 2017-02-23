@@ -264,7 +264,7 @@ let add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt fail_if_not_fo
 let add_type_from_decl_ref_list type_ptr_to_sil_type tenv decl_ref_list =
   let add_elem dr =
     ignore (type_ptr_to_sil_type tenv (`DeclPtr dr.Clang_ast_t.dr_decl_pointer)) in
-  IList.iter add_elem decl_ref_list
+  List.iter ~f:add_elem decl_ref_list
 
 let get_function_decl_with_body decl_ptr =
   let open Clang_ast_t in
@@ -338,7 +338,7 @@ let rec generate_key_stmt stmt =
   let tags = IList.map generate_key_stmt stmts in
   let buffer = Buffer.create 16 in
   let tags = tag_str :: tags in
-  IList.iter (fun tag -> Buffer.add_string buffer tag) tags;
+  List.iter ~f:(fun tag -> Buffer.add_string buffer tag) tags;
   Buffer.contents buffer
 
 (* Generates a key for a declaration based on its name and the declaration tag. *)

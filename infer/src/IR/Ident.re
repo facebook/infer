@@ -323,7 +323,7 @@ let make_unprimed id =>
 /** Update the name generator so that the given id's are not generated again */
 let update_name_generator ids => {
   let upd id => ignore (create_with_stamp id.kind id.name id.stamp);
-  IList.iter upd ids
+  List.iter f::upd ids
 };
 
 

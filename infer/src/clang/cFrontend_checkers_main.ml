@@ -26,7 +26,7 @@ let parse_ctl_file linters_files =
     | Ctl_parser.Error ->
         Logging.err "%a: syntax error\n" print_position lexbuf;
         exit (-1) in
-  IList.iter (fun fn ->
+  List.iter ~f:(fun fn ->
       Logging.out "Loading linters rules from %s\n" fn;
       let inx = open_in fn in
       let lexbuf = Lexing.from_channel inx in
@@ -36,7 +36,7 @@ let parse_ctl_file linters_files =
            Logging.out "#### Start Expanding checkers #####\n";
            let exp_checkers = CFrontend_errors.expand_checkers parsed_checkers in
            Logging.out "#### Checkers Expanded #####\n";
-           if Config.debug_mode then IList.iter CTL.print_checker exp_checkers;
+           if Config.debug_mode then List.iter ~f:CTL.print_checker exp_checkers;
            CFrontend_errors.make_condition_issue_desc_pair exp_checkers;
        | None -> Logging.out "No linters found.\n");
       In_channel.close inx) linters_files
@@ -131,20 +131,20 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
   let do_all_checks_on_stmts context stmt =
     (match stmt with
      | DeclStmt (_, _, decl_list) ->
-         IList.iter (do_frontend_checks_decl context) decl_list
+         List.iter ~f:(do_frontend_checks_decl context) decl_list
      | BlockExpr (_, _, _, decl) ->
-         IList.iter (do_frontend_checks_decl context) [decl]
+         List.iter ~f:(do_frontend_checks_decl context) [decl]
      | _ -> ());
     do_frontend_checks_stmt context stmt in
   CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Stmt stmt);
   match stmt with
   | ObjCAtSynchronizedStmt (_, stmt_list) ->
       let stmt_context = { context with CLintersContext.in_synchronized_block = true } in
-      IList.iter (do_all_checks_on_stmts stmt_context) stmt_list
+      List.iter ~f:(do_all_checks_on_stmts stmt_context) stmt_list
   | IfStmt (_, [stmt1; stmt2; cond_stmt; inside_if_stmt; inside_else_stmt]) ->
       (* here we analyze the children of the if stmt with the standard context,
          except for inside_if_stmt... *)
-      IList.iter (do_all_checks_on_stmts context) [stmt1; stmt2; cond_stmt; inside_else_stmt];
+      List.iter ~f:(do_all_checks_on_stmts context) [stmt1; stmt2; cond_stmt; inside_else_stmt];
       let inside_if_stmt_context =
         {context with CLintersContext.if_context = compute_if_context context cond_stmt } in
       (* ...and here we analyze the stmt inside the if with the context
@@ -152,7 +152,7 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
       do_all_checks_on_stmts inside_if_stmt_context inside_if_stmt
   | _ ->
       let stmts = CAst_utils.get_stmts_from_stmt stmt in
-      IList.iter (do_all_checks_on_stmts context) stmts
+      List.iter ~f:(do_all_checks_on_stmts context) stmts
 
 and do_frontend_checks_decl (context: CLintersContext.context) decl =
   let open Clang_ast_t in
@@ -182,10 +182,10 @@ and do_frontend_checks_decl (context: CLintersContext.context) decl =
        | None -> ())
   | ObjCImplementationDecl (_, _, decls, _, _) ->
       let context' = {context with current_objc_impl = Some decl} in
-      IList.iter (do_frontend_checks_decl context') decls
+      List.iter ~f:(do_frontend_checks_decl context') decls
   | _ -> match Clang_ast_proj.get_decl_context_tuple decl with
     | Some (decls, _) ->
-        IList.iter (do_frontend_checks_decl context) decls
+        List.iter ~f:(do_frontend_checks_decl context) decls
     | None -> ()
 
 let context_with_ck_set context decl_list =
@@ -219,7 +219,7 @@ let do_frontend_checks trans_unit_ctx ast =
         let allowed_decls = List.filter ~f:is_decl_allowed decl_list in
         (* We analyze the top level and then all the allowed declarations *)
         CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl ast);
-        IList.iter (do_frontend_checks_decl context) allowed_decls;
+        List.iter ~f:(do_frontend_checks_decl context) allowed_decls;
         if (LintIssues.exists_issues ()) then
           store_issues source_file;
         Logging.out "End linting file %a@\n" SourceFile.pp source_file;

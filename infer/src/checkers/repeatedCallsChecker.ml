@@ -75,7 +75,7 @@ struct
         | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) when proc_is_new pn ->
             found := Some loc
         | _ -> () in
-      IList.iter do_instr (Procdesc.Node.get_instrs node);
+      List.iter ~f:do_instr (Procdesc.Node.get_instrs node);
       !found in
 
     let module DFAllocCheck = Dataflow.MakeDF(struct
@@ -114,7 +114,7 @@ struct
             (* same temporary variable does not imply same value *)
             not (Pvar.is_frontend_tmp pvar)
         | _ -> true in
-      IList.for_all filter_arg args in
+      List.for_all ~f:filter_arg args in
 
     match instr with
     | Sil.Call (Some _ as ret_id, Exp.Const (Const.Cfun callee_pname), _, loc, call_flags)

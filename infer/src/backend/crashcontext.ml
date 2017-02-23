@@ -111,7 +111,7 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
     | Some pair -> pair :: pairs_for_stactrace_dir in
   let process_stacktrace (stacktrace_file, out_file) =
     stitch_summaries stacktrace_file method_summaries out_file in
-  IList.iter process_stacktrace input_output_file_pairs
+  List.iter ~f:process_stacktrace input_output_file_pairs
 
 let crashcontext_epilogue ~in_buck_mode =
   (* if we are the top-level process, then find the output directory and

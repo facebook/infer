@@ -142,11 +142,11 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
   let symlinks_up_to_date captured_file =
     if Sys.is_directory captured_file = `Yes then
       let contents = Array.to_list (Sys.readdir captured_file) in
-      IList.for_all
-        (fun file ->
-           let file_path = Filename.concat captured_file file in
-           Sys.file_exists file_path = `Yes &&
-           (not check_timestamp_of_symlinks || symlink_up_to_date file_path))
+      List.for_all
+        ~f:(fun file ->
+            let file_path = Filename.concat captured_file file in
+            Sys.file_exists file_path = `Yes &&
+            (not check_timestamp_of_symlinks || symlink_up_to_date file_path))
         contents
     else true in
   let check_file captured_file =
@@ -161,9 +161,9 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
       begin
         let captured_files = Array.to_list (Sys.readdir captured_src) in
         num_captured_files := IList.length captured_files;
-        IList.for_all
-          (fun file ->
-             check_file (Filename.concat captured_dst file))
+        List.for_all
+          ~f:(fun file ->
+              check_file (Filename.concat captured_dst file))
           captured_files
       end
     else
@@ -199,7 +199,7 @@ let process_merge_file deps_file =
     | _ ->
         () in
   Option.iter
-    ~f:(fun lines -> IList.iter process_line lines)
+    ~f:(fun lines -> List.iter ~f:process_line lines)
     (Utils.read_file deps_file);
   create_multilinks ();
   L.stdout "Captured results merged.@.";

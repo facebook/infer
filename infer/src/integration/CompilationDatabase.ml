@@ -63,7 +63,7 @@ let decode_json_file (database : t) json_format =
   let rec parse_json json =
     match json with
     | `List arguments ->
-        IList.iter parse_json arguments
+        List.iter ~f:parse_json arguments
     | `Assoc l ->
         let dir = match List.find_map ~f:get_dir l with
           | Some dir -> dir
@@ -84,6 +84,6 @@ let decode_json_file (database : t) json_format =
 
 let from_json_files db_json_files =
   let db = empty () in
-  IList.iter (decode_json_file db) db_json_files;
+  List.iter ~f:(decode_json_file db) db_json_files;
   Logging.out "created database with %d entries@\n" (get_size db);
   db

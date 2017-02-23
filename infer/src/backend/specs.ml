@@ -151,10 +151,10 @@ let visited_str vis =
     (* if IList.length ns > 1 then
        begin
        let ss = ref "" in
-       IList.iter (fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
+       List.iter ~f:(fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
        L.err "Node %d has lines %s@." node !ss
        end; *)
-    IList.iter (fun n -> lines := Int.Set.add !lines n) ns in
+    List.iter ~f:(fun n -> lines := Int.Set.add !lines n) ns in
   Visitedset.iter do_one vis;
   Int.Set.iter ~f:(fun n -> s := !s ^ " " ^ string_of_int n) !lines;
   !s
@@ -184,7 +184,7 @@ end = struct
   let spec_fav tenv (spec: Prop.normal spec) : Sil.fav =
     let fav = Sil.fav_new () in
     Jprop.fav_add_dfs tenv fav spec.pre;
-    IList.iter (fun (p, _) -> Prop.prop_fav_add_dfs tenv fav p) spec.posts;
+    List.iter ~f:(fun (p, _) -> Prop.prop_fav_add_dfs tenv fav p) spec.posts;
     fav
 
   let spec_sub tenv sub spec =
@@ -247,7 +247,7 @@ module CallStats = struct (** module for tracing stats of function calls *)
   let init calls =
     let hash = PnameLocHash.create 1 in
     let do_call pn_loc = PnameLocHash.add hash pn_loc empty_trace in
-    IList.iter do_call calls;
+    List.iter ~f:do_call calls;
     hash
 
   let trace t proc_name loc res in_footprint =
@@ -279,7 +279,7 @@ module CallStats = struct (** module for tracing stats of function calls *)
       let compare (pname_loc1, _) (pname_loc2, _) =
         [%compare: Procname.t * Location.t] pname_loc1 pname_loc2 in
       IList.sort compare !elems in
-    IList.iter (fun (x, tr) -> f x tr) sorted_elems
+    List.iter ~f:(fun (x, tr) -> f x tr) sorted_elems
 
 (*
   let pp fmt t =
@@ -396,15 +396,15 @@ let pp_specs pe fmt specs =
   let cnt = ref 0 in
   match pe.Pp.kind with
   | TEXT ->
-      IList.iter (fun spec -> incr cnt;
-                   F.fprintf fmt "%a" (pp_spec pe (Some (!cnt, total))) spec) specs
+      List.iter ~f:(fun spec -> incr cnt;
+                     F.fprintf fmt "%a" (pp_spec pe (Some (!cnt, total))) spec) specs
   | HTML ->
-      IList.iter (fun spec -> incr cnt;
-                   F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
+      List.iter ~f:(fun spec -> incr cnt;
+                     F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec) specs
   | LATEX ->
-      IList.iter (fun spec -> incr cnt;
-                   F.fprintf fmt "\\subsection*{Spec %d of %d}@\n\\(%a\\)@\n"
-                     !cnt total (pp_spec pe None) spec) specs
+      List.iter ~f:(fun spec -> incr cnt;
+                     F.fprintf fmt "\\subsection*{Spec %d of %d}@\n\\(%a\\)@\n"
+                       !cnt total (pp_spec pe None) spec) specs
 
 let describe_timestamp summary =
   ("Timestamp", Printf.sprintf "%d" summary.timestamp)
@@ -418,8 +418,8 @@ let describe_phase summary =
 (** Return the signature of a procedure declaration as a string *)
 let get_signature summary =
   let s = ref "" in
-  IList.iter
-    (fun (p, typ) ->
+  List.iter
+    ~f:(fun (p, typ) ->
        let pp f = F.fprintf f "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
        let decl = F.asprintf "%t" pp in
        s := if String.equal !s "" then decl else !s ^ ", " ^ decl)

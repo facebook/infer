@@ -232,7 +232,7 @@ type model_table_t = (string, bool * bool list) Hashtbl.t
 
 let mk_table list =
   let map = Hashtbl.create 1 in
-  IList.iter (function (v, pn_id) -> Hashtbl.replace map pn_id v) list;
+  List.iter ~f:(function (v, pn_id) -> Hashtbl.replace map pn_id v) list;
   map
 
 let this_file = __FILE__
