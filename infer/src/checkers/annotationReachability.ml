@@ -406,3 +406,5 @@ module Interprocedural = struct
     | Some Domain.Bottom | None ->
         ()
 end
+
+let checker = Interprocedural.check_and_report
