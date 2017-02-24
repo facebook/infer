@@ -41,7 +41,7 @@ module Make (H : Helper) = struct
     | Some global_summary ->
         let payload = H.update_payload summary global_summary.Specs.payload in
         let timestamp = global_summary.timestamp + 1 in
-        Specs.add_summary pname { global_summary with payload; timestamp; }
+        Specs.store_summary pname { global_summary with payload; timestamp; }
     | None ->
         failwithf "Summary for %a should exist, but does not!@." Procname.pp pname
 
