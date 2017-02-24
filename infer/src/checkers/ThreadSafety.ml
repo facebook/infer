@@ -27,6 +27,20 @@ let is_owned access_path attribute_map =
   ThreadSafetyDomain.AttributeMapDomain.has_attribute
     access_path ThreadSafetyDomain.Attribute.unconditionally_owned attribute_map
 
+let container_write_string = "__CONTAINERWRITE__"
+
+let is_container_write_str str =
+  String.is_substring ~substring:container_write_string str
+
+let strip_container_write str =
+  String.substr_replace_first str ~pattern:container_write_string ~with_:""
+
+let is_container_write_sink (sink:ThreadSafetyDomain.TraceElem.t) =
+  let access_list = snd (ThreadSafetyDomain.TraceElem.kind sink) in
+  match List.rev access_list with
+  |  FieldAccess (fn) :: _  -> is_container_write_str (Ident.fieldname_to_string fn)
+  | _ -> false
+
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ThreadSafetyDomain
@@ -271,7 +285,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* create a dummy write that represents mutating the contents of the container *)
           let open Domain in
           let dummy_fieldname =
-            Ident.create_fieldname (Mangled.from_string (Procname.get_method callee_pname)) 0 in
+            Ident.create_fieldname
+              (Mangled.from_string
+                 (container_write_string ^ (Procname.get_method callee_pname))) 0 in
           let dummy_access_exp = Exp.Lfield (receiver_exp, dummy_fieldname, receiver_typ) in
           let callee_conditional_writes =
             match AccessPath.of_lhs_exp dummy_access_exp receiver_typ ~f_resolve_id with
@@ -839,9 +855,15 @@ let de_dup trace =
   ThreadSafetyDomain.PathDomain.update_sinks trace de_duped_sinks
 
 (*A helper function used in the error reporting*)
-let pp_accesses_sink fmt sink =
-  let _, accesses = ThreadSafetyDomain.PathDomain.Sink.kind sink in
-  AccessPath.pp_access_list fmt accesses
+let pp_accesses_sink fmt ~is_write_access sink =
+  let access_path = ThreadSafetyDomain.PathDomain.Sink.kind sink in
+  let container_write = is_write_access && is_container_write_sink sink in
+  F.fprintf fmt
+    (if container_write then "container %a" else "%a")
+    AccessPath.pp_access_list (if container_write then
+                                 snd (AccessPath.Raw.truncate access_path)
+                               else snd access_path
+                              )
 
 
 (* trace is really a set of accesses*)
@@ -859,9 +881,10 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
     let initial_sink_site = PathDomain.Sink.call_site initial_sink in
     let final_sink_site = PathDomain.Sink.call_site final_sink in
     let desc_of_sink sink =
-      if CallSite.equal (PathDomain.Sink.call_site sink) final_sink_site
+      if
+        CallSite.equal (PathDomain.Sink.call_site sink) final_sink_site
       then
-        Format.asprintf "access to %a" pp_accesses_sink sink
+        Format.asprintf "access to %a" (pp_accesses_sink ~is_write_access:true) sink
       else
         Format.asprintf
           "call to %a" Procname.pp (CallSite.pname (PathDomain.Sink.call_site sink)) in
@@ -881,10 +904,11 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
 let make_unprotected_write_description
     tenv pname final_sink_site initial_sink_site final_sink _ =
   Format.asprintf
-    "Unprotected write. Public method %a%s writes to field %a outside of synchronization.%s"
+    "Unprotected write. Public method %a%s %s %a outside of synchronization.%s"
     Procname.pp pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
-    pp_accesses_sink final_sink
+    (if is_container_write_sink final_sink then "mutates"  else "writes to field")
+    (pp_accesses_sink ~is_write_access:true) final_sink
     (calculate_addendum_message tenv pname)
 
 let make_read_write_race_description tenv pname final_sink_site initial_sink_site final_sink tab =
@@ -904,7 +928,7 @@ let make_read_write_race_description tenv pname final_sink_site initial_sink_sit
   Format.asprintf "Read/Write race. Public method %a%s reads from field %a. %s %s"
     Procname.pp pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
-    pp_accesses_sink final_sink
+    (pp_accesses_sink ~is_write_access:false) final_sink
     conflicts_description
     (calculate_addendum_message tenv pname)
 
