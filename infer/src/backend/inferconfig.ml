@@ -253,7 +253,7 @@ let patterns_of_json_with_key (json_key, json) =
       let collect accu = function
         | `String s -> s:: accu
         | _ -> failwith ("Unrecognised parameters in " ^ Yojson.Basic.to_string (`Assoc assoc)) in
-      IList.rev (List.fold ~f:collect ~init:[] l) in
+      List.rev (List.fold ~f:collect ~init:[] l) in
     let create_method_pattern assoc =
       let loop mp = function
         | (key, `String s) when String.equal key "class" ->

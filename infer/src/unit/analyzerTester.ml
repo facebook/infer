@@ -268,7 +268,7 @@ module Make (CFG : ProcCfg.S with type node = Procdesc.Node.t) (T : TransferFunc
         let mismatches_str =
           F.pp_print_list
             (fun fmt error_msg -> F.fprintf fmt "%s" error_msg) F.str_formatter
-            (IList.rev error_msgs)
+            (List.rev error_msgs)
           |> F.flush_str_formatter in
         let assert_fail_message =
           F.fprintf F.str_formatter "Error while analyzing@.%a:@.%s@."

@@ -211,7 +211,7 @@ let mk_find_duplicate_nodes proc_desc : (Procdesc.Node.t -> Procdesc.NodeSet.t) 
       let elements = S.elements s in
       let (_, node_normalized_instrs), _ =
         let filter (node', _) = Procdesc.Node.equal node node' in
-        match IList.partition filter elements with
+        match List.partition_tf ~f:filter elements with
         | [this], others -> this, others
         | _ -> raise Not_found in
       let duplicates =

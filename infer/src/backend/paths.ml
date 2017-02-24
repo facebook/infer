@@ -319,11 +319,11 @@ end = struct
       if !position_seen then
         let rec remove_until_seen = function
           | ((_, p, _, _) as x):: l ->
-              if path_pos_at_path p then IList.rev (x :: l)
+              if path_pos_at_path p then List.rev (x :: l)
               else remove_until_seen l
           | [] -> [] in
         remove_until_seen inverse_sequence
-      else IList.rev inverse_sequence in
+      else List.rev inverse_sequence in
     List.iter
       ~f:(fun (level, p, session, exn_opt) -> f level p session exn_opt)
       sequence_up_to_last_seen
@@ -493,13 +493,8 @@ end = struct
       let n = Int.compare lt1.Errlog.lt_level lt2.Errlog.lt_level in
       if n <> 0 then n else Location.compare lt1.Errlog.lt_loc lt2.Errlog.lt_loc in
     let relevant lt = lt.Errlog.lt_node_tags <> [] in
-    IList.remove_irrelevant_duplicates compare relevant (IList.rev !trace)
-    (* IList.remove_duplicates compare (IList.sort compare !trace) *)
+    IList.remove_irrelevant_duplicates compare relevant (List.rev !trace)
 
-(*
-  let equal p1 p2 =
-    compare p1 p2 = 0
-*)
 end
 (* =============== END of the Path module ===============*)
 

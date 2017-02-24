@@ -30,8 +30,8 @@ let rec list_rev_acc acc = function
   | x:: l -> list_rev_acc (x:: acc) l
 
 let rec remove_redundancy have_same_key acc = function
-  | [] -> IList.rev acc
-  | [x] -> IList.rev (x:: acc)
+  | [] -> List.rev acc
+  | [x] -> List.rev (x:: acc)
   | x:: ((y:: l') as l) ->
       if have_same_key x y then remove_redundancy have_same_key acc (x:: l')
       else remove_redundancy have_same_key (x:: acc) l
@@ -123,7 +123,7 @@ end = struct
           generate constr acc rest
 
   let sort_then_remove_redundancy constraints =
-    let constraints_sorted = IList.sort compare constraints in
+    let constraints_sorted = List.sort ~cmp:compare constraints in
     let have_same_key (e1, e2, _) (f1, f2, _) = [%compare.equal: Exp.t * Exp.t] (e1, e2) (f1, f2) in
     remove_redundancy have_same_key [] constraints_sorted
 
@@ -133,8 +133,8 @@ end = struct
 
   let rec combine acc_todos acc_seen constraints_new constraints_old =
     match constraints_new, constraints_old with
-    | [], [] -> IList.rev acc_todos, IList.rev acc_seen
-    | [], _ -> IList.rev acc_todos, list_rev_acc constraints_old acc_seen
+    | [], [] -> List.rev acc_todos, List.rev acc_seen
+    | [], _ -> List.rev acc_todos, list_rev_acc constraints_old acc_seen
     | _, [] -> list_rev_acc constraints_new acc_todos, list_rev_acc constraints_new acc_seen
     | constr:: rest, constr':: rest' ->
         let e1, e2, n = constr in
@@ -268,7 +268,7 @@ end = struct
     if c2 <> 0 then c2 else - (Exp.compare e1 f1)
 
   let leqs_sort_then_remove_redundancy leqs =
-    let leqs_sorted = IList.sort leq_compare leqs in
+    let leqs_sorted = List.sort ~cmp:leq_compare leqs in
     let have_same_key leq1 leq2 =
       match leq1, leq2 with
       | (e1, Exp.Const (Const.Cint n1)), (e2, Exp.Const (Const.Cint n2)) ->
@@ -276,7 +276,7 @@ end = struct
       | _, _ -> false in
     remove_redundancy have_same_key [] leqs_sorted
   let lts_sort_then_remove_redundancy lts =
-    let lts_sorted = IList.sort lt_compare lts in
+    let lts_sorted = List.sort ~cmp:lt_compare lts in
     let have_same_key lt1 lt2 =
       match lt1, lt2 with
       | (Exp.Const (Const.Cint n1), e1), (Exp.Const (Const.Cint n2), e2) ->
@@ -643,7 +643,7 @@ let check_disequal tenv prop e1 e2 =
                let sigma_irrelevant' = hpred :: sigma_irrelevant
                in f sigma_irrelevant' e sigma_rest
            | Some _ ->
-               let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
+               let sigma_irrelevant' = List.rev_append sigma_irrelevant sigma_rest
                in Some (true, sigma_irrelevant'))
       | Sil.Hlseg (k, _, e1, e2, _) as hpred :: sigma_rest ->
           (match is_root tenv prop e1 e with
@@ -652,20 +652,20 @@ let check_disequal tenv prop e1 e2 =
                in f sigma_irrelevant' e sigma_rest
            | Some _ ->
                if (Sil.equal_lseg_kind k Sil.Lseg_NE || check_pi_implies_disequal e1 e2) then
-                 let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
+                 let sigma_irrelevant' = List.rev_append sigma_irrelevant sigma_rest
                  in Some (true, sigma_irrelevant')
                else if (Exp.equal e2 Exp.zero) then
-                 let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
+                 let sigma_irrelevant' = List.rev_append sigma_irrelevant sigma_rest
                  in Some (false, sigma_irrelevant')
                else
-                 let sigma_rest' = (IList.rev sigma_irrelevant) @ sigma_rest
+                 let sigma_rest' = List.rev_append sigma_irrelevant sigma_rest
                  in f [] e2 sigma_rest')
       | Sil.Hdllseg (Sil.Lseg_NE, _, iF, _, _, iB, _) :: sigma_rest ->
           if is_root tenv prop iF e <> None || is_root tenv prop iB e <> None then
-            let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
+            let sigma_irrelevant' = List.rev_append sigma_irrelevant sigma_rest
             in Some (true, sigma_irrelevant')
           else
-            let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
+            let sigma_irrelevant' = List.rev_append sigma_irrelevant sigma_rest
             in Some (false, sigma_irrelevant')
       | Sil.Hdllseg (Sil.Lseg_PE, _, iF, _, oF, _, _) as hpred :: sigma_rest ->
           (match is_root tenv prop iF e with
@@ -674,18 +674,18 @@ let check_disequal tenv prop e1 e2 =
                in f sigma_irrelevant' e sigma_rest
            | Some _ ->
                if (check_pi_implies_disequal iF oF) then
-                 let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
+                 let sigma_irrelevant' = List.rev_append sigma_irrelevant sigma_rest
                  in Some (true, sigma_irrelevant')
                else if (Exp.equal oF Exp.zero) then
-                 let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
+                 let sigma_irrelevant' = List.rev_append sigma_irrelevant sigma_rest
                  in Some (false, sigma_irrelevant')
                else
-                 let sigma_rest' = (IList.rev sigma_irrelevant) @ sigma_rest
+                 let sigma_rest' = List.rev_append sigma_irrelevant sigma_rest
                  in f [] oF sigma_rest') in
     let f_null_check sigma_irrelevant e sigma_rest =
       if not (Exp.equal e Exp.zero) then f sigma_irrelevant e sigma_rest
       else
-        let sigma_irrelevant' = (IList.rev sigma_irrelevant) @ sigma_rest
+        let sigma_irrelevant' = List.rev_append sigma_irrelevant sigma_rest
         in Some (false, sigma_irrelevant')
     in match f_null_check [] n_e1 spatial_part with
     | None -> false
@@ -1474,7 +1474,8 @@ let move_primed_lhs_from_front subs sigma = match sigma with
   | [] -> sigma
   | hpred:: _ ->
       if hpred_has_primed_lhs (snd subs) hpred then
-        let (sigma_primed, sigma_unprimed) = IList.partition (hpred_has_primed_lhs (snd subs)) sigma
+        let (sigma_primed, sigma_unprimed) =
+          List.partition_tf ~f:(hpred_has_primed_lhs (snd subs)) sigma
         in match sigma_unprimed with
         | [] -> raise (IMPL_EXC ("every hpred has primed lhs, cannot proceed", subs, (EXC_FALSE_SIGMA sigma)))
         | _:: _ -> sigma_unprimed @ sigma_primed
@@ -2148,7 +2149,7 @@ let check_implication_base pname tenv check_frame_empty calc_missing prop1 prop2
     let sigma1, sigma2 = prop1.Prop.sigma, prop2.Prop.sigma in
     let subs = pre_check_pure_implication tenv calc_missing (prop1.Prop.sub, sub1_base) pi1 pi2 in
     let pi2_bcheck, pi2_nobcheck = (* find bounds checks implicit in pi2 *)
-      IList.partition ProverState.atom_is_array_bounds_check pi2 in
+      List.partition_tf ~f:ProverState.atom_is_array_bounds_check pi2 in
     List.iter ~f:(fun a -> ProverState.add_bounds_check (ProverState.BCfrom_pre a)) pi2_bcheck;
     L.d_strln "pre_check_pure_implication";
     L.d_strln "pi1:";
@@ -2239,7 +2240,7 @@ exception NO_COVER
 let find_minimum_pure_cover tenv cases =
   let cases =
     let compare (pi1, _) (pi2, _) = Int.compare (List.length pi1) (List.length pi2)
-    in IList.sort compare cases in
+    in List.sort ~cmp:compare cases in
   let rec grow seen todo = match todo with
     | [] -> raise NO_COVER
     | (pi, x):: todo' ->

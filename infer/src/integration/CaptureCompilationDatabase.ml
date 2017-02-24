@@ -97,7 +97,7 @@ let run_compilation_database compilation_database should_capture_file =
 
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck () =
-  let cmd = List.rev_append Config.rest (IList.rev Config.buck_build_args) in
+  let cmd = List.rev_append Config.rest (List.rev Config.buck_build_args) in
   match cmd with
   | buck :: build :: args ->
       (check_args_for_targets args;

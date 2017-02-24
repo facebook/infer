@@ -1147,7 +1147,7 @@ struct
       let all_res_trans = [res_trans_b; tmp_var_res_trans] in
       let res_trans = PriorityNode.compute_results_to_parent trans_state'' sil_loc
           "ConditinalStmt Branch" stmt_info all_res_trans in
-      let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
+      let prune_nodes_t, prune_nodes_f = List.partition_tf ~f:is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
       List.iter
         ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans.root_nodes [])
@@ -1254,7 +1254,7 @@ struct
     let short_circuit binop s1 s2 =
       let res_trans_s1 = cond_trans trans_state s1 in
       let prune_nodes_t, prune_nodes_f =
-        IList.partition is_true_prune_node res_trans_s1.leaf_nodes in
+        List.partition_tf ~f:is_true_prune_node res_trans_s1.leaf_nodes in
       let res_trans_s2 = cond_trans trans_state s2 in
       (* prune_to_s2 is the prune node that is connected with the root node of the *)
       (* translation of s2.*)
@@ -1318,7 +1318,7 @@ struct
                 (Procdesc.Node.Stmt_node "IfStmt Branch") res_trans_b.instrs sil_loc context]
          | _ ->
              res_trans_b.root_nodes) in
-      let prune_nodes_t, prune_nodes_f = IList.partition is_true_prune_node prune_nodes in
+      let prune_nodes_t, prune_nodes_f = List.partition_tf ~f:is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
       List.iter
         ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n nodes_branch [])
@@ -1416,7 +1416,7 @@ struct
                  aux rest (x :: acc) cases
              | [] ->
                  cases, acc) in
-          aux (IList.rev stmt_list) [] [] in
+          aux (List.rev stmt_list) [] [] in
         let list_of_cases, pre_case_stmts = merge_into_cases stmt_list in
         let rec connected_instruction rev_instr_list successor_nodes =
           (* returns the entry point of the translated set of instr *)
@@ -1454,7 +1454,7 @@ struct
           | CaseStmt(_, _ :: _ :: case_content) as case :: rest ->
               let last_nodes, last_prune_nodes =
                 translate_and_connect_cases rest next_nodes next_prune_nodes in
-              let case_entry_point = connected_instruction (IList.rev case_content) last_nodes in
+              let case_entry_point = connected_instruction (List.rev case_content) last_nodes in
               (* connects between cases, then continuation has priority about breaks *)
               let prune_node_t, prune_node_f = create_prune_nodes_for_case case in
               Procdesc.node_set_succs_exn context.procdesc prune_node_t case_entry_point [];
@@ -1468,14 +1468,14 @@ struct
               let last_nodes, last_prune_nodes =
                 translate_and_connect_cases rest next_nodes [placeholder_entry_point] in
               let default_entry_point =
-                connected_instruction (IList.rev default_content) last_nodes in
+                connected_instruction (List.rev default_content) last_nodes in
               Procdesc.node_set_succs_exn
                 context.procdesc placeholder_entry_point default_entry_point [];
               default_entry_point, last_prune_nodes
           | _ -> assert false in
         let top_entry_point, top_prune_nodes =
           translate_and_connect_cases list_of_cases succ_nodes succ_nodes in
-        let _ = connected_instruction (IList.rev pre_case_stmts) top_entry_point in
+        let _ = connected_instruction (List.rev pre_case_stmts) top_entry_point in
         Procdesc.node_set_succs_exn
           context.procdesc switch_special_cond_node top_prune_nodes [];
         let top_nodes = res_trans_decl.root_nodes in
@@ -1489,7 +1489,7 @@ struct
     let stmt =
       extract_stmt_from_singleton stmt_list "ERROR: StmtExpr should have only one statement.\n" in
     let res_trans_stmt = instruction trans_state stmt in
-    let exps' = IList.rev res_trans_stmt.exps in
+    let exps' = List.rev res_trans_stmt.exps in
     match exps' with
     | last_exp :: _ ->
         { res_trans_stmt with exps = [last_exp]; }
@@ -1553,7 +1553,7 @@ struct
       | Loops.DoWhile _ -> res_trans_body.root_nodes in
     (* Note: prune nodes are by contruction the res_trans_cond.leaf_nodes *)
     let prune_nodes_t, prune_nodes_f =
-      IList.partition is_true_prune_node res_trans_cond.leaf_nodes in
+      List.partition_tf ~f:is_true_prune_node res_trans_cond.leaf_nodes in
     let prune_t_succ_nodes =
       match loop_kind with
       | Loops.For _ | Loops.While _ -> res_trans_body.root_nodes
@@ -1658,8 +1658,7 @@ struct
       (* of literals the array is initialized with *)
       let lh =
         if is_array var_type && List.length lh > List.length rh_exps then
-          let i = List.length lh - List.length rh_exps in
-          IList.drop_last i lh
+          List.take lh (List.length rh_exps)
         else lh in
       if Int.equal (List.length rh_exps) (List.length lh) then
         (* Creating new instructions by assigning right hand side to left hand side expressions *)
@@ -2723,7 +2722,7 @@ struct
             exps = res_trans_tail.exps @ res_trans_s.exps;
             initd_exps = res_trans_tail.initd_exps @ res_trans_s.initd_exps;
           } in
-    exec_trans_instrs_no_rev trans_state (IList.rev trans_stmt_fun_list)
+    exec_trans_instrs_no_rev trans_state (List.rev trans_stmt_fun_list)
 
   and get_clang_stmt_trans stmt =
     fun trans_state -> exec_with_node_creation instruction trans_state stmt

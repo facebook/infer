@@ -117,7 +117,7 @@ let contains_edge (footprint_part: bool) (g: t) (e: edge) =
 (** [iter_edges footprint_part f g] iterates function [f] on the edges in [g] in the same order as returned by [get_edges];
     if [footprint_part] is true the edges are taken from the footprint part. *)
 let iter_edges footprint_part f g =
-  List.iter ~f:f (get_edges footprint_part g)
+  List.iter ~f (get_edges footprint_part g)
 
 (** Graph annotated with the differences w.r.t. a previous graph *)
 type diff =

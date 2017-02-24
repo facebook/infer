@@ -411,11 +411,11 @@ let typecheck_instr
               | fp:: tail when is_hidden_parameter fp -> 1 + drop_n_args tail
               | _ -> 0 in
             let n = drop_n_args proc_attributes.ProcAttributes.formals in
-            let visible_params = IList.drop_first n params in
+            let visible_params = List.drop params n in
 
             (* Drop the trailing hidden parameter if the constructor is synthetic. *)
             if proc_attributes.ProcAttributes.is_synthetic_method then
-              IList.drop_last 1 visible_params
+              List.take visible_params (List.length visible_params - 1)
             else
               visible_params
           end
@@ -427,7 +427,9 @@ let typecheck_instr
   let drop_unchecked_signature_params proc_attributes annotated_signature =
     if Procname.is_constructor (proc_attributes.ProcAttributes.proc_name) &&
        proc_attributes.ProcAttributes.is_synthetic_method then
-      IList.drop_last 1 annotated_signature.AnnotatedSignature.params
+      List.take
+        annotated_signature.AnnotatedSignature.params
+        (List.length annotated_signature.AnnotatedSignature.params - 1)
     else
       annotated_signature.AnnotatedSignature.params in
 

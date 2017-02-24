@@ -1256,7 +1256,7 @@ let atom_fpv =
   | Aeq e1 e2 => exp_fpv e1 @ exp_fpv e2
   | Aneq e1 e2 => exp_fpv e1 @ exp_fpv e2
   | Apred _ es
-  | Anpred _ es => List.fold f::(fun fpv e => IList.rev_append (exp_fpv e) fpv) init::[] es;
+  | Anpred _ es => List.fold f::(fun fpv e => List.rev_append (exp_fpv e) fpv) init::[] es;
 
 let rec strexp_fpv =
   fun
@@ -1374,7 +1374,7 @@ let rec remove_duplicates_from_sorted special_equal =>
 
 /** Convert a [fav] to a list of identifiers while preserving the order
     that the identifiers were added to [fav]. */
-let fav_to_list fav => IList.rev !fav;
+let fav_to_list fav => List.rev !fav;
 
 
 /** Pretty print a fav. */
@@ -1657,7 +1657,7 @@ let sub_check_duplicated_ids sub => {
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. */
 let sub_of_list sub => {
-  let sub' = IList.sort compare_ident_exp sub;
+  let sub' = List.sort cmp::compare_ident_exp sub;
   let sub'' = remove_duplicates_from_sorted equal_ident_exp sub';
   if (sub_check_duplicated_ids sub'') {
     assert false
@@ -1668,7 +1668,7 @@ let sub_of_list sub => {
 
 /** like sub_of_list, but allow duplicate ids and only keep the first occurrence */
 let sub_of_list_duplicates sub => {
-  let sub' = IList.sort compare_ident_exp sub;
+  let sub' = List.sort cmp::compare_ident_exp sub;
   let rec remove_duplicate_ids =
     fun
     | [(id1, e1), (id2, e2), ...l] =>
@@ -1748,12 +1748,12 @@ let sub_filter_pair = List.filter;
 
 /** [sub_range_partition filter sub] partitions [sub] according to
     whether range expressions satisfy [filter]. */
-let sub_range_partition filter (sub: subst) => IList.partition (fun (_, e) => filter e) sub;
+let sub_range_partition filter (sub: subst) => List.partition_tf f::(fun (_, e) => filter e) sub;
 
 
 /** [sub_domain_partition filter sub] partitions [sub] according to
     whether domain identifiers satisfy [filter]. */
-let sub_domain_partition filter (sub: subst) => IList.partition (fun (i, _) => filter i) sub;
+let sub_domain_partition filter (sub: subst) => List.partition_tf f::(fun (i, _) => filter i) sub;
 
 
 /** Return the list of identifiers in the domain of the substitution. */

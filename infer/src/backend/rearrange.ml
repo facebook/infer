@@ -16,8 +16,8 @@ module L = Logging
 module F = Format
 
 let list_product l1 l2 =
-  let l1' = IList.rev l1 in
-  let l2' = IList.rev l2 in
+  let l1' = List.rev l1 in
+  let l2' = List.rev l2 in
   List.fold
     ~f:(fun acc x -> List.fold ~f:(fun acc' y -> (x, y):: acc') ~init:acc l2')
     ~init:[]
@@ -117,7 +117,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
                 let replace_typ_of_f (f', t', a') =
                   if Ident.equal_fieldname f f' then (f, res_t', a') else (f', t', a') in
                 let fields' =
-                  IList.sort StructTyp.compare_field (List.map ~f:replace_typ_of_f fields) in
+                  List.sort ~cmp:StructTyp.compare_field (List.map ~f:replace_typ_of_f fields) in
                 ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                 (atoms', se, t)
             | None ->
@@ -220,13 +220,13 @@ let rec _strexp_extend_values
                     let replace_fse ((f1, _) as ft1) =
                       if Ident.equal_fieldname f1 f then (f1, res_se') else ft1 in
                     let res_fsel' =
-                      IList.sort
-                        [%compare: Ident.fieldname * Sil.strexp]
+                      List.sort
+                        ~cmp:[%compare: Ident.fieldname * Sil.strexp]
                         (List.map ~f:replace_fse fsel) in
                     let replace_fta ((f1, _, a1) as fta1) =
                       if Ident.equal_fieldname f f1 then (f1, res_typ', a1) else fta1 in
                     let fields' =
-                      IList.sort StructTyp.compare_field (List.map ~f:replace_fta fields) in
+                      List.sort ~cmp:StructTyp.compare_field (List.map ~f:replace_fta fields) in
                     ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                     (res_atoms', Sil.Estruct (res_fsel', inst'), typ) :: acc in
                   List.fold ~f:replace ~init:[] atoms_se_typ_list'
@@ -235,11 +235,11 @@ let rec _strexp_extend_values
                     create_struct_values
                       pname tenv orig_prop footprint_part kind max_stamp typ' off' inst in
                   let res_fsel' =
-                    IList.sort [%compare: Ident.fieldname * Sil.strexp] ((f, se'):: fsel) in
+                    List.sort ~cmp:[%compare: Ident.fieldname * Sil.strexp] ((f, se'):: fsel) in
                   let replace_fta (f', t', a') =
                     if Ident.equal_fieldname f' f then (f, res_typ', a') else (f', t', a') in
                   let fields' =
-                    IList.sort StructTyp.compare_field (List.map ~f:replace_fta fields) in
+                    List.sort ~cmp:StructTyp.compare_field (List.map ~f:replace_fta fields) in
                   ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                   [(atoms', Sil.Estruct (res_fsel', inst'), typ)]
             )
@@ -317,7 +317,7 @@ and array_case_analysis_index pname tenv orig_prop
       create_struct_values
         pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst in
     check_sound elem_typ;
-    let cont_new = IList.sort [%compare: Exp.t * Sil.strexp] ((index, elem_se):: array_cont) in
+    let cont_new = List.sort ~cmp:[%compare: Exp.t * Sil.strexp] ((index, elem_se):: array_cont) in
     let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
     let typ_new = Typ.Tarray (elem_typ, typ_array_len) in
     [(atoms, array_new, typ_new)]
@@ -330,13 +330,14 @@ and array_case_analysis_index pname tenv orig_prop
           create_struct_values
             pname tenv orig_prop footprint_part kind max_stamp typ_cont off inst in
         check_sound elem_typ;
-        let cont_new = IList.sort [%compare: Exp.t * Sil.strexp] ((index, elem_se):: array_cont) in
+        let cont_new =
+          List.sort ~cmp:[%compare: Exp.t * Sil.strexp] ((index, elem_se):: array_cont) in
         let array_new = Sil.Earray (array_len, cont_new, inst_arr) in
         let typ_new = Typ.Tarray (elem_typ, typ_array_len) in
         [(atoms, array_new, typ_new)]
       end in
     let rec handle_case acc isel_seen_rev = function
-      | [] -> List.concat (IList.rev (res_new:: acc))
+      | [] -> List.concat (List.rev (res_new:: acc))
       | (i, se) as ise :: isel_unseen ->
           let atoms_se_typ_list =
             _strexp_extend_values
@@ -367,7 +368,7 @@ let laundry_offset_for_footprint max_stamp offs_in =
   let rec laundry offs_seen eqs offs =
     match offs with
     | [] ->
-        (IList.rev offs_seen, IList.rev eqs)
+        (List.rev offs_seen, List.rev eqs)
     | (Sil.Off_fld _ as off):: offs' ->
         let offs_seen' = off:: offs_seen in
         laundry offs_seen' eqs offs'
@@ -487,7 +488,7 @@ let prop_iter_check_fields_ptsto_shallow tenv iter lexp =
 let fav_max_stamp fav =
   let max_stamp = ref 0 in
   let f id = max_stamp := max !max_stamp (Ident.get_stamp id) in
-  List.iter ~f:f (Sil.fav_to_list fav);
+  List.iter ~f (Sil.fav_to_list fav);
   max_stamp
 
 (** [prop_iter_extend_ptsto iter lexp] extends the current psto
@@ -555,7 +556,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
         let atoms_fp_sigma_list =
           let footprint_sigma = Prop.prop_iter_get_footprint_sigma iter in
           let sigma_pto, sigma_rest =
-            IList.partition (function
+            List.partition_tf ~f:(function
                 | Sil.Hpointsto(e', _, _) -> Exp.equal e e'
                 | Sil.Hlseg (_, _, e1, _, _) -> Exp.equal e e1
                 | Sil.Hdllseg (_, _, e_iF, _, _, e_iB, _) ->
@@ -570,7 +571,7 @@ let prop_iter_extend_ptsto pname tenv orig_prop iter lexp inst =
                 L.d_warning "Cannot extend "; Sil.d_exp lexp; L.d_strln " in"; Prop.d_prop (Prop.prop_iter_to_prop tenv iter); L.d_ln();
                 [([], footprint_sigma)] in
           List.map
-            ~f:(fun (atoms, sigma') -> (atoms, IList.stable_sort Sil.compare_hpred sigma'))
+            ~f:(fun (atoms, sigma') -> (atoms, List.stable_sort ~cmp:Sil.compare_hpred sigma'))
             atoms_sigma_list in
         let iter_atoms_fp_sigma_list =
           list_product iter_list atoms_fp_sigma_list in
@@ -1232,7 +1233,7 @@ let rec iter_rearrange
       else
         iter_rearrange pname tenv (Prop.lexp_normalize_prop tenv prop' lexp) typ prop' iter' inst in
     let rec f_many_iters iters_lst = function
-      | [] -> List.concat (IList.rev iters_lst)
+      | [] -> List.concat (List.rev iters_lst)
       | iter':: iters' ->
           let iters_res' = f_one_iter iter' in
           f_many_iters (iters_res':: iters_lst) iters' in

@@ -205,7 +205,7 @@ let normalize_subtypes t_opt c1 c2 flag1 flag2 => {
   | Some t =>
     switch t {
     | Exact => Some (t, new_flag)
-    | Subtypes l => Some (Subtypes (IList.sort Typename.compare l), new_flag)
+    | Subtypes l => Some (Subtypes (List.sort cmp::Typename.compare l), new_flag)
     }
   | None => None
   }

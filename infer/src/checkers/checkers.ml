@@ -427,7 +427,7 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
         (fun n -> Procdesc.Node.get_sliced_preds n has_instr) in
     let instrs =
       List.concat
-        (List.map ~f:(fun n -> IList.rev (Procdesc.Node.get_instrs n)) preds) in
+        (List.map ~f:(fun n -> List.rev (Procdesc.Node.get_instrs n)) preds) in
     List.find ~f instrs in
 
   let get_return_const proc_name' =

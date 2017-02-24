@@ -78,7 +78,7 @@ let find_in_node_or_preds start_node f_node_instr =
       begin
         visited := Procdesc.NodeSet.add node !visited;
         let instrs = Procdesc.Node.get_instrs node in
-        match List.find_map ~f:(f_node_instr node) (IList.rev instrs) with
+        match List.find_map ~f:(f_node_instr node) (List.rev instrs) with
         | Some res -> Some res
         | None -> List.find_map ~f:find (Procdesc.Node.get_preds node)
       end in
@@ -172,7 +172,7 @@ let find_struct_by_value_assignment node pvar =
     let find_instr node = function
       | Sil.Call (_, Const (Cfun pname), args, loc, cf) ->
           begin
-            match IList.last args with
+            match List.last args with
             | Some (Exp.Lvar last_arg, _) when Pvar.equal pvar last_arg ->
                 Some (node, pname, loc, cf)
             | _ ->
@@ -575,7 +575,7 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
   let rec find sigma_acc sigma_todo exp =
     let do_fse res sigma_acc' sigma_todo' lexp texp (f, se) = match se with
       | Sil.Eexp (e, _) when Exp.equal exp e ->
-          let sigma' = (IList.rev_append sigma_acc' sigma_todo') in
+          let sigma' = (List.rev_append sigma_acc' sigma_todo') in
           (match lexp with
            | Exp.Lvar pv ->
                let typo = match texp with
@@ -601,7 +601,7 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
       | _ -> () in
     let do_sexp sigma_acc' sigma_todo' lexp sexp texp = match sexp with
       | Sil.Eexp (e, _) when Exp.equal exp e ->
-          let sigma' = (IList.rev_append sigma_acc' sigma_todo') in
+          let sigma' = (List.rev_append sigma_acc' sigma_todo') in
           (match lexp with
            | Exp.Lvar pv when not (Pvar.is_frontend_tmp pv) ->
                let typo = match texp with
@@ -981,7 +981,7 @@ let find_with_exp prop exp =
     if not (Pvar.is_abduced pv) && not (Pvar.is_this pv) then
       res := Some (pv, Fpvar) in
   let found_in_struct pv fld_lst = (* found_in_pvar has priority *)
-    if is_none !res then res := Some (pv, Fstruct (IList.rev fld_lst)) in
+    if is_none !res then res := Some (pv, Fstruct (List.rev fld_lst)) in
   let rec search_struct pv fld_lst = function
     | Sil.Eexp (e, _) ->
         if Exp.equal e exp then found_in_struct pv fld_lst

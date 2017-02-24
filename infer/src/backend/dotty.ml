@@ -335,7 +335,7 @@ let set_exps_neq_zero pi =
         exps_neq_zero := e :: !exps_neq_zero
     | _ -> () in
   exps_neq_zero := [];
-  List.iter ~f:f pi
+  List.iter ~f pi
 
 let box_dangling e =
   let entry_e = List.filter ~f:(fun b -> match b with
@@ -1316,10 +1316,10 @@ let rec pointsto_contents_to_xml (co: Sil.strexp) : Io_infer.Xml.node =
       Io_infer.Xml.create_tree "cell" [("content-value", exp_to_xml_string e)] []
   | Sil.Estruct (fel, _) ->
       let f (fld, exp) = Io_infer.Xml.create_tree "struct-field" [("id", Ident.fieldname_to_string fld)] [(pointsto_contents_to_xml exp)] in
-      Io_infer.Xml.create_tree "struct" [] (List.map ~f:f fel)
+      Io_infer.Xml.create_tree "struct" [] (List.map ~f fel)
   | Sil.Earray (len, nel, _) ->
       let f (e, se) = Io_infer.Xml.create_tree "array-element" [("index", exp_to_xml_string e)] [pointsto_contents_to_xml se] in
-      Io_infer.Xml.create_tree "array" [("size", exp_to_xml_string len)] (List.map ~f:f nel)
+      Io_infer.Xml.create_tree "array" [("size", exp_to_xml_string len)] (List.map ~f nel)
 
 (* Convert an atom to xml in a light version. Namely, the expressions are not fully blown-up into *)
 (* xml tree but visualized as strings *)

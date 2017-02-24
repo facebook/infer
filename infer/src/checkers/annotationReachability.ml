@@ -175,7 +175,7 @@ let string_of_pname =
 
 let report_allocation_stack
     src_annot pname fst_call_loc trace stack_str constructor_pname call_loc =
-  let final_trace = IList.rev (update_trace call_loc trace) in
+  let final_trace = List.rev (update_trace call_loc trace) in
   let constr_str = string_of_pname constructor_pname in
   let description =
     Printf.sprintf
@@ -193,7 +193,7 @@ let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str sn
   if String.equal snk_annot dummy_constructor_annot
   then report_allocation_stack src_annot src_pname loc trace stack_str snk_pname call_loc
   else
-    let final_trace = IList.rev (update_trace call_loc trace) in
+    let final_trace = List.rev (update_trace call_loc trace) in
     let exp_pname_str = string_of_pname snk_pname in
     let description =
       Printf.sprintf

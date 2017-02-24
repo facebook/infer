@@ -78,7 +78,7 @@ let create_test test_graph expected_result _ =
     match S.pop q with
     | Some (n, _, q') ->
         pop_schedule_record (S.schedule_succs q' n) (n :: visited_acc)
-    | None -> IList.rev visited_acc in
+    | None -> List.rev visited_acc in
   let pp_diff fmt (exp, actual) =
     let pp_sched fmt l =
       F.pp_print_list ~pp_sep:F.pp_print_space (fun fmt i -> F.fprintf fmt "%d" i) fmt l in

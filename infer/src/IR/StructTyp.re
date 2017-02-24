@@ -95,7 +95,7 @@ let rec get_extensible_array_element_typ lookup::lookup (typ: Typ.t) =>
   | Tstruct name =>
     switch (lookup name) {
     | Some {fields} =>
-      switch (IList.last fields) {
+      switch (List.last fields) {
       | Some (_, fld_typ, _) => get_extensible_array_element_typ lookup::lookup fld_typ
       | None => None
       }

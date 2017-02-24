@@ -91,7 +91,7 @@ module Inference = struct
     | Some buf ->
         let boolvec = ref [] in
         String.iter ~f:(fun c -> boolvec := (Char.equal c '1') :: !boolvec) buf;
-        Some (IList.rev !boolvec)
+        Some (List.rev !boolvec)
 end (* Inference *)
 
 

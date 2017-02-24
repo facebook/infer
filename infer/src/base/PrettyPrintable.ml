@@ -55,7 +55,7 @@ module MakePPCompareSet
   let pp_element = Ord.pp
 
   let pp fmt s =
-    let elements_alpha = IList.sort Ord.compare_pp (elements s) in
+    let elements_alpha = List.sort ~cmp:Ord.compare_pp (elements s) in
     pp_collection ~pp_item:pp_element fmt elements_alpha
 end
 

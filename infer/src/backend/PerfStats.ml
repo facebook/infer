@@ -73,7 +73,7 @@ let from_json json =
   }
 
 let aggregate s =
-  let mk_stats f = StatisticsToolbox.compute_statistics (List.map ~f:f s) in
+  let mk_stats f = StatisticsToolbox.compute_statistics (List.map ~f s) in
   let aggr_rtime = mk_stats (fun stats -> stats.rtime) in
   let aggr_utime = mk_stats (fun stats -> stats.utime) in
   let aggr_stime = mk_stats (fun stats -> stats.stime) in

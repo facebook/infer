@@ -131,7 +131,7 @@ let spec_find_rename trace_call (proc_name : Procname.t)
       end;
     let formal_parameters =
       List.map ~f:(fun (x, _) -> Pvar.mk_callee x proc_name) formals in
-    List.map ~f:f specs, formal_parameters
+    List.map ~f specs, formal_parameters
   with Not_found -> begin
       L.d_strln
         ("ERROR: found no entry for procedure " ^
@@ -214,10 +214,10 @@ let process_splitting
         L.d_str "Don't know about id: "; Sil.d_exp (Exp.Var id); L.d_ln ();
         assert false;
       end
-    in Sil.sub_of_list (List.map ~f:f fav_sub_list) in
+    in Sil.sub_of_list (List.map ~f fav_sub_list) in
   let sub2_list =
     let f id = (id, Exp.Var (Ident.create_fresh Ident.kfootprint))
-    in List.map ~f:f (Sil.fav_to_list fav_missing_primed) in
+    in List.map ~f (Sil.fav_to_list fav_missing_primed) in
   let sub_list' =
     List.map ~f:(fun (id, e) -> (id, Sil.exp_sub sub1 e)) sub_list in
   let sub' = Sil.sub_of_list (sub2_list @ sub_list') in
@@ -497,8 +497,8 @@ let hpred_star_fld tenv (hpred1 : Sil.hpred) (hpred2 : Sil.hpred) : Sil.hpred =
 
 (** Implementation of [*] for the field-splitting model *)
 let sigma_star_fld tenv (sigma1 : Sil.hpred list) (sigma2 : Sil.hpred list) : Sil.hpred list =
-  let sigma1 = IList.stable_sort hpred_lhs_compare sigma1 in
-  let sigma2 = IList.stable_sort hpred_lhs_compare sigma2 in
+  let sigma1 = List.stable_sort ~cmp:hpred_lhs_compare sigma1 in
+  let sigma2 = List.stable_sort ~cmp:hpred_lhs_compare sigma2 in
   (* L.out "@.@. computing %a@.STAR @.%a@.@." pp_sigma sigma1 pp_sigma sigma2; *)
   let rec star sg1 sg2 : Sil.hpred list =
     match sg1, sg2 with
@@ -532,8 +532,8 @@ let hpred_star_typing (hpred1 : Sil.hpred) (_, te2) : Sil.hpred =
 let sigma_star_typ
     (sigma1 : Sil.hpred list) (typings2 : (Exp.t * Exp.t) list) : Sil.hpred list =
   let typing_lhs_compare (e1, _) (e2, _) = Exp.compare e1 e2 in
-  let sigma1 = IList.stable_sort hpred_lhs_compare sigma1 in
-  let typings2 = IList.stable_sort typing_lhs_compare typings2 in
+  let sigma1 = List.stable_sort ~cmp:hpred_lhs_compare sigma1 in
+  let typings2 = List.stable_sort ~cmp:typing_lhs_compare typings2 in
   let rec star sg1 typ2 : Sil.hpred list =
     match sg1, typ2 with
     | [], _ -> []
@@ -605,7 +605,7 @@ let prop_copy_footprint_pure tenv p1 p2 =
   let p2' =
     Prop.set p2 ~pi_fp:p1.Prop.pi_fp ~sigma_fp:p1.Prop.sigma_fp in
   let pi2 = p2'.Prop.pi in
-  let pi2_attr, pi2_noattr = IList.partition Attribute.is_pred pi2 in
+  let pi2_attr, pi2_noattr = List.partition_tf ~f:Attribute.is_pred pi2 in
   let res_noattr = Prop.set p2' ~pi:(Prop.get_pure p1 @ pi2_noattr) in
   let replace_attr prop atom = (* call replace_atom_attribute which deals with existing attibutes *)
     (* if [atom] represents an attribute [att], add the attribure to [prop] *)
@@ -1057,7 +1057,7 @@ let exe_spec
             check_uninitialize_dangling_deref tenv
               callee_pname actual_pre split.sub formal_params results;
             let inconsistent_results, consistent_results =
-              IList.partition (fun (p, _) -> Prover.check_inconsistency tenv p) results in
+              List.partition_tf ~f:(fun (p, _) -> Prover.check_inconsistency tenv p) results in
             let incons_pre_missing = inconsistent_actualpre_missing tenv actual_pre (Some split) in
             Valid_res { incons_pre_missing = incons_pre_missing;
                         vr_pi = split.missing_pi;
@@ -1140,15 +1140,15 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
     | Invalid_res _ -> false
     | Valid_res _ -> true in
   let valid_res0, invalid_res0 =
-    IList.partition filter_valid_res results in
+    List.partition_tf ~f:filter_valid_res results in
   let valid_res =
     List.map ~f:(function Valid_res cr -> cr | Invalid_res _ -> assert false) valid_res0 in
   let invalid_res =
     List.map ~f:(function Valid_res _ -> assert false | Invalid_res ir -> ir) invalid_res0 in
   let valid_res_miss_pi, valid_res_no_miss_pi =
-    IList.partition (fun vr -> vr.vr_pi <> []) valid_res in
+    List.partition_tf ~f:(fun vr -> vr.vr_pi <> []) valid_res in
   let _, valid_res_cons_pre_missing =
-    IList.partition (fun vr -> vr.incons_pre_missing) valid_res in
+    List.partition_tf ~f:(fun vr -> vr.incons_pre_missing) valid_res in
   let deref_errors =
     List.filter ~f:(function Dereference_error _ -> true | _ -> false) invalid_res in
   let print_pi pi =

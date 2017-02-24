@@ -157,7 +157,7 @@ let wrap_line indent_string wrap_length line =
         (rev_lines, new_non_empty, new_line, String.length new_line) in
   let (rev_lines, _, line, _) =
     List.fold ~f:add_word_to_paragraph ~init:([], false, "", 0) words in
-  IList.rev (line::rev_lines)
+  List.rev (line::rev_lines)
 
 let pad_and_xform doc_width left_width desc =
   match desc with
@@ -226,7 +226,7 @@ let check_no_duplicates desc_list =
     | _ :: tl ->
         check_for_duplicates_ tl
   in
-  check_for_duplicates_ (IList.sort (fun (x, _, _) (y, _, _) -> String.compare x y) desc_list)
+  check_for_duplicates_ (List.sort ~cmp:(fun (x, _, _) (y, _, _) -> String.compare x y) desc_list)
 
 
 let parse_tag_desc_lists = List.map ~f:(fun parse_tag -> (parse_tag, ref [])) all_parse_tags
@@ -491,8 +491,8 @@ let mk_path_list ?(default=[]) ?(deprecated=[]) ~long ?short ?parse_mode ?(meta=
 let mk_symbol ~default ~symbols ~eq ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="") doc =
   let strings = List.map ~f:fst symbols in
   let sym_to_str = List.map ~f:(fun (x,y) -> (y,x)) symbols in
-  let of_string str = IList.assoc String.equal str symbols in
-  let to_string sym = IList.assoc eq sym sym_to_str in
+  let of_string str = List.Assoc.find_exn ~equal:String.equal symbols str in
+  let to_string sym = List.Assoc.find_exn ~equal:eq sym_to_str sym in
   mk ~deprecated ~long ?short ~default ?parse_mode ~meta doc
     ~default_to_string:(fun s -> to_string s)
     ~mk_setter:(fun var str -> var := of_string str)
@@ -501,7 +501,7 @@ let mk_symbol ~default ~symbols ~eq ?(deprecated=[]) ~long ?short ?parse_mode ?(
 
 let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="") doc =
   let strings = List.map ~f:fst symbols in
-  let of_string str = IList.assoc String.equal str symbols in
+  let of_string str = List.Assoc.find_exn ~equal:String.equal symbols str in
   mk ~deprecated ~long ?short ~default:None ?parse_mode ~meta doc
     ~default_to_string:(fun _ -> "")
     ~mk_setter:(fun var str -> var := Some (of_string str))
@@ -511,8 +511,8 @@ let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="") 
 let mk_symbol_seq ?(default=[]) ~symbols ~eq ?(deprecated=[]) ~long ?short ?parse_mode
     ?(meta="") doc =
   let sym_to_str = List.map ~f:(fun (x,y) -> (y,x)) symbols in
-  let of_string str = IList.assoc String.equal str symbols in
-  let to_string sym = IList.assoc eq sym sym_to_str in
+  let of_string str = List.Assoc.find_exn ~equal:String.equal symbols str in
+  let to_string sym = List.Assoc.find_exn ~equal:eq sym_to_str sym in
   mk ~deprecated ~long ?short ~default ?parse_mode ~meta:(",-separated sequence" ^ meta) doc
     ~default_to_string:(fun syms -> String.concat ~sep:" " (List.map ~f:to_string syms))
     ~mk_setter:(fun var str_seq ->
@@ -607,7 +607,7 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
       | _ ->
           let lower_norm s = String.lowercase @@ norm s in
           String.compare (lower_norm x) (lower_norm y) in
-    let sort speclist = IList.sort compare_specs speclist in
+    let sort speclist = List.sort ~cmp:compare_specs speclist in
     align (sort speclist)
   in
   let add_to_curr_speclist ?(add_help=false) ?header parse_action =

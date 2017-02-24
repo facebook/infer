@@ -71,7 +71,7 @@ let rec append_no_duplicates_fields list1 list2 =
 let sort_fields fields =
   let compare (name1, _, _) (name2, _, _) =
     Ident.compare_fieldname name1 name2 in
-  IList.sort compare fields
+  List.sort ~cmp:compare fields
 
 
 let sort_fields_tenv tenv =

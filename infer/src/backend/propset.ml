@@ -73,14 +73,14 @@ let to_proplist pset =
 
 (** Apply function to all the elements of [propset], removing those where it returns [None]. *)
 let map_option tenv f pset =
-  let plisto = List.map ~f:f (to_proplist pset) in
+  let plisto = List.map ~f (to_proplist pset) in
   let plisto = List.filter ~f:(function | Some _ -> true | None -> false) plisto in
   let plist = List.map ~f:(function Some p -> p | None -> assert false) plisto in
   from_proplist tenv plist
 
 (** Apply function to all the elements of [propset]. *)
 let map tenv f pset =
-  from_proplist tenv (List.map ~f:f (to_proplist pset))
+  from_proplist tenv (List.map ~f (to_proplist pset))
 
 (** [fold f pset a] computes [f (... (f (f a p1) p2) ...) pn]
     where [p1 ... pN] are the elements of pset, in increasing order. *)

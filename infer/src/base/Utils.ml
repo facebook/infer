@@ -38,7 +38,7 @@ let read_file fname =
   with
   | End_of_file ->
       cleanup ();
-      Some (IList.rev !res)
+      Some (List.rev !res)
   | Sys_error _ ->
       cleanup ();
       None

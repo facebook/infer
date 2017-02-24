@@ -259,7 +259,7 @@ let load_from_arguments classes_out_path =
   let split cp_option =
     Option.value_map ~f:split_classpath ~default:[] cp_option in
   let combine path_list classpath =
-    List.fold ~f:append_path ~init:classpath (IList.rev path_list) in
+    List.fold ~f:append_path ~init:classpath (List.rev path_list) in
   let classpath =
     combine (split Config.classpath) ""
     |> combine (String.Set.elements roots)

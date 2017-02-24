@@ -192,7 +192,7 @@ module Debug = struct
           result in
         let dotty_of_tree cluster_id tree =
           let get_root tree = match tree with Tree (root, _) -> root in
-          let get_children tree = match tree with Tree (_, children) -> IList.rev children in
+          let get_children tree = match tree with Tree (_, children) -> List.rev children in
           (* shallow: emit dotty about root node and edges to its children *)
           let shallow_dotty_of_tree tree =
             let root_node = get_root tree in
@@ -246,7 +246,7 @@ module Debug = struct
         let buf = Buffer.create 16 in
         List.iteri
           ~f:(fun cluster_id tree -> Buffer.add_string buf ((dotty_of_tree cluster_id tree) ^ "\n"))
-          (IList.rev t.forest);
+          (List.rev t.forest);
         Printf.sprintf "digraph CTL_Evaluation {\n%s\n}\n" (buffer_content buf)
     end
   end

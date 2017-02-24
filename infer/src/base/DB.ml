@@ -52,7 +52,7 @@ let find_source_dirs () =
       let dir = Filename.concat captured_dir fname in
       if Sys.is_directory dir = `Yes then add_cg_files_from_dir dir)
     files_in_results_dir;
-  IList.rev !source_dirs
+  List.rev !source_dirs
 
 (** {2 Filename} *)
 
@@ -165,7 +165,7 @@ module Results_dir = struct
       | [] -> base
       | name:: names ->
           Filename.concat (f names) (if String.equal name ".." then Filename.parent_dir_name else name) in
-    f (IList.rev path)
+    f (List.rev path)
 
   (** convert a path to a filename *)
   let path_to_filename pk path =
@@ -205,7 +205,7 @@ module Results_dir = struct
           let new_path = Filename.concat (create names) name in
           Utils.create_dir new_path;
           new_path in
-    let filename, dir_path = match IList.rev path with
+    let filename, dir_path = match List.rev path with
       | filename:: dir_path -> filename, dir_path
       | [] -> raise (Failure "create_path") in
     let full_fname = Filename.concat (create dir_path) filename in

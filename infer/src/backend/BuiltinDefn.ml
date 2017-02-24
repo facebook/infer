@@ -116,7 +116,7 @@ let execute___set_array_length { Builtin.tenv; pdesc; prop_; path; ret_id; args;
            let pname = Procdesc.get_proc_name pdesc in
            let n_lexp, prop__ = check_arith_norm_exp tenv pname lexp prop_a in
            let n_len, prop = check_arith_norm_exp tenv pname len prop__ in
-           let hpred, sigma' = IList.partition (function
+           let hpred, sigma' = List.partition_tf ~f:(function
                | Sil.Hpointsto(e, _, _) -> Exp.equal e n_lexp
                | _ -> false) prop.Prop.sigma in
            (match hpred with
@@ -216,7 +216,7 @@ let execute___get_type_of { Builtin.pdesc; tenv; prop_; path; ret_id; args; }
 let replace_ptsto_texp tenv prop root_e texp =
   let process_sigma sigma =
     let sigma1, sigma2 =
-      IList.partition (function
+      List.partition_tf ~f:(function
           | Sil.Hpointsto(e, _, _) -> Exp.equal e root_e
           | _ -> false) sigma in
     match sigma1 with
@@ -705,7 +705,7 @@ let _execute_free_nonzero mk pdesc tenv instr prop lexp typ loc =
           let prop_list =
             List.fold ~f:(_execute_free tenv mk loc) ~init:[]
               (Rearrange.rearrange pdesc tenv lexp typ prop loc) in
-          IList.rev prop_list
+          List.rev prop_list
     end
   with Rearrange.ARRAY_ACCESS ->
     if (Int.equal Config.array_level 0) then assert false

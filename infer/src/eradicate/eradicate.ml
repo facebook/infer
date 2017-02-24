@@ -251,7 +251,7 @@ struct
               final_typestates := (pname, final_typestate) :: !final_typestates
           | _, None -> () in
         List.iter ~f:get_final_typestate initializers_recursive;
-        IList.rev !final_typestates
+        List.rev !final_typestates
 
       let pname_and_pdescs_with f =
         let res = ref [] in
@@ -265,7 +265,7 @@ struct
                 res := (pname, pdesc) :: !res
             | None -> () in
         List.iter ~f:do_proc (get_procs_in_file curr_pname);
-        IList.rev !res
+        List.rev !res
 
       let get_class pn = match pn with
         | Procname.Java pn_java ->

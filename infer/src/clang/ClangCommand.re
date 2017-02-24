@@ -111,7 +111,7 @@ let clang_cc1_cmd_sanitizer cmd => {
       arg
     };
   let post_args_rev =
-    [] |> IList.rev_append ["-include", Config.lib_dir ^\/ "clang_wrappers" ^\/ "global_defines.h"] |>
+    [] |> List.rev_append ["-include", Config.lib_dir ^\/ "clang_wrappers" ^\/ "global_defines.h"] |>
     /* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
        are appended at the end to override previous opposite settings.  How it's done: suppress
        all the warnings, since there are no warnings, compiler can't elevate them to error
@@ -121,7 +121,7 @@ let clang_cc1_cmd_sanitizer cmd => {
     fun
     | [] =>
       /* return non-reversed list */
-      IList.rev (post_args_rev @ res_rev)
+      List.rev (post_args_rev @ res_rev)
     | [flag, ...tl] when List.mem equal::String.equal flags_blacklist flag =>
       filter_unsupported_args_and_swap_includes (flag, res_rev) tl
     | [arg, ...tl] => {
@@ -167,8 +167,8 @@ let with_plugin_args args => {
     /* -cc1 has to be the first argument or clang will think it runs in driver mode */
     argv_cons "-cc1" |>
     /* It's important to place this option before other -isystem options. */
-    argv_do_if infer_cxx_models (IList.rev_append ["-isystem", Config.cpp_extra_include_dir]) |>
-    IList.rev_append [
+    argv_do_if infer_cxx_models (List.rev_append ["-isystem", Config.cpp_extra_include_dir]) |>
+    List.rev_append [
       "-load",
       plugin_path,
       /* (t7400979) this is a workaround to avoid that clang crashes when the -fmodules flag and the
@@ -189,7 +189,7 @@ let with_plugin_args args => {
   /* add -O0 option to avoid compiler obfuscation of AST */
   let args_after_rev =
     [] |> argv_cons "-O0" |> argv_do_if Config.fcp_syntax_only (argv_cons "-fsyntax-only");
-  {...args, argv: IList.rev_append args_before_rev (args.argv @ IList.rev args_after_rev)}
+  {...args, argv: List.rev_append args_before_rev (args.argv @ List.rev args_after_rev)}
 };
 
 let prepend_arg arg clang_args => {...clang_args, argv: [arg, ...clang_args.argv]};

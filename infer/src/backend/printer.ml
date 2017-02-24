@@ -42,7 +42,7 @@ struct
       assert false (* execution never reaches here *)
     with End_of_file ->
       (In_channel.close cin;
-       Array.of_list (IList.rev !lines))
+       Array.of_list (List.rev !lines))
 
   let file_data (hash: t) fname =
     try
@@ -367,7 +367,7 @@ let force_delayed_prints () =
   F.fprintf !curr_html_formatter "@?"; (* flush html stream *)
   List.iter
     ~f:(force_delayed_print !curr_html_formatter)
-    (IList.rev (L.get_delayed_prints ()));
+    (List.rev (L.get_delayed_prints ()));
   F.fprintf !curr_html_formatter "@?";
   L.reset_delayed_prints ();
   Config.forcing_delayed_prints := false
@@ -418,7 +418,7 @@ let write_proc_html source whole_seconds pdesc =
   if Config.write_html then
     begin
       let pname = Procdesc.get_proc_name pdesc in
-      let nodes = IList.sort Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
+      let nodes = List.sort ~cmp:Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
       let linenum = (Procdesc.Node.get_loc (List.hd_exn nodes)).Location.line in
       let fd, fmt =
         Io_infer.Html.create

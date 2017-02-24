@@ -190,7 +190,7 @@ let node_map_iter f g => {
   let table = ref [];
   Procname.Hash.iter (fun node info => table := [(node, info), ...!table]) g.node_map;
   let cmp (n1: Procname.t, _) (n2: Procname.t, _) => Procname.compare n1 n2;
-  List.iter f::(fun (n, info) => f n info) (IList.sort cmp !table)
+  List.iter f::(fun (n, info) => f n info) (List.sort cmp::cmp !table)
 };
 
 let get_nodes (g: t) => {

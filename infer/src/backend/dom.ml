@@ -35,15 +35,15 @@ let equal_sigma sigma1 sigma2 =
     | hpred1:: sigma1_rest', hpred2:: sigma2_rest' ->
         if Sil.equal_hpred hpred1 hpred2 then f sigma1_rest' sigma2_rest'
         else (L.d_strln "failure reason 2"; raise Sil.JoinFail) in
-  let sigma1_sorted = IList.sort Sil.compare_hpred sigma1 in
-  let sigma2_sorted = IList.sort Sil.compare_hpred sigma2 in
+  let sigma1_sorted = List.sort ~cmp:Sil.compare_hpred sigma1 in
+  let sigma2_sorted = List.sort ~cmp:Sil.compare_hpred sigma2 in
   f sigma1_sorted sigma2_sorted
 
 let sigma_get_start_lexps_sort sigma =
   let exp_compare_neg e1 e2 = - (Exp.compare e1 e2) in
   let filter e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
   let lexps = Sil.hpred_list_get_lexps filter sigma in
-  IList.sort exp_compare_neg lexps
+  List.sort ~cmp:exp_compare_neg lexps
 
 (** {2 Utility functions for side} *)
 
@@ -172,7 +172,7 @@ end = struct
 
   let check side es =
     let f = function Exp.Var id -> can_rename id | _ -> false in
-    let vars, nonvars = IList.partition f es in
+    let vars, nonvars = List.partition_tf ~f es in
     let tbl, const_tbl =
       match side with
       | Lhs -> equiv_tbl1, const_tbl1
@@ -469,7 +469,7 @@ end = struct
   let minus2_to_2 = List.map ~f:IntLit.of_int [-2; -1; 0; 1; 2]
 
   let get_induced_pi tenv () =
-    let t_sorted = IList.sort entry_compare !t in
+    let t_sorted = List.sort ~cmp:entry_compare !t in
 
     let add_and_chk_eq e1 e1' n =
       match e1, e1' with
@@ -599,8 +599,8 @@ end = struct
           res := v'::!res
       | _ -> () in
     begin
-      List.iter ~f:f !tbl;
-      IList.rev !res
+      List.iter ~f !tbl;
+      List.rev !res
     end
 
   (* Return the triple whose side is [e], if it exists unique *)
@@ -629,7 +629,7 @@ end = struct
         ~f:(function (e1, e2, Exp.Var i) -> (i, select side e1 e2) | _ -> assert false)
         renaming_restricted in
     let sub_list_side_sorted =
-      IList.sort (fun (_, e) (_, e') -> Exp.compare e e') sub_list_side in
+      List.sort ~cmp:(fun (_, e) (_, e') -> Exp.compare e e') sub_list_side in
     let rec find_duplicates =
       function
       | (_, e):: ((_, e'):: _ as t) -> Exp.equal e e' || find_duplicates t
@@ -652,7 +652,7 @@ end = struct
       List.map ~f:project renaming_restricted in
     let sub_list_sorted =
       let compare (i, _) (i', _) = Ident.compare i i' in
-      IList.sort compare sub_list in
+      List.sort ~cmp:compare sub_list in
     let rec find_duplicates = function
       | (i, _):: ((i', _):: _ as t) -> Ident.equal i i' || find_duplicates t
       | _ -> false in
@@ -1055,12 +1055,12 @@ let rec strexp_partial_join mode (strexp1: Sil.strexp) (strexp2: Sil.strexp) : S
 
   let rec f_fld_se_list inst mode acc fld_se_list1 fld_se_list2 =
     match fld_se_list1, fld_se_list2 with
-    | [], [] -> Sil.Estruct (IList.rev acc, inst)
+    | [], [] -> Sil.Estruct (List.rev acc, inst)
     | [], _ | _, [] ->
         begin
           match mode with
           | JoinState.Pre -> (L.d_strln "failure reason 42"; raise Sil.JoinFail)
-          | JoinState.Post -> Sil.Estruct (IList.rev acc, inst)
+          | JoinState.Post -> Sil.Estruct (List.rev acc, inst)
         end
     | (fld1, se1):: fld_se_list1', (fld2, se2):: fld_se_list2' ->
         let comparison = Ident.compare_fieldname fld1 fld2 in
@@ -1085,13 +1085,13 @@ let rec strexp_partial_join mode (strexp1: Sil.strexp) (strexp2: Sil.strexp) : S
 
   let rec f_idx_se_list inst len idx_se_list_acc idx_se_list1 idx_se_list2 =
     match idx_se_list1, idx_se_list2 with
-    | [], [] -> Sil.Earray (len, IList.rev idx_se_list_acc, inst)
+    | [], [] -> Sil.Earray (len, List.rev idx_se_list_acc, inst)
     | [], _ | _, [] ->
         begin
           match mode with
           | JoinState.Pre -> (L.d_strln "failure reason 44"; raise Sil.JoinFail)
           | JoinState.Post ->
-              Sil.Earray (len, IList.rev idx_se_list_acc, inst)
+              Sil.Earray (len, List.rev idx_se_list_acc, inst)
         end
     | (idx1, se1):: idx_se_list1', (idx2, se2):: idx_se_list2' ->
         let idx = exp_partial_join idx1 idx2 in
@@ -1116,12 +1116,12 @@ let rec strexp_partial_meet (strexp1: Sil.strexp) (strexp2: Sil.strexp) : Sil.st
   let construct side rev_list ref_list =
     let construct_offset_se (off, se) = (off, strexp_construct_fresh side se) in
     let acc = List.map ~f:construct_offset_se ref_list in
-    IList.rev_append rev_list acc in
+    List.rev_append rev_list acc in
 
   let rec f_fld_se_list inst acc fld_se_list1 fld_se_list2 =
     match fld_se_list1, fld_se_list2 with
     | [], [] ->
-        Sil.Estruct (IList.rev acc, inst)
+        Sil.Estruct (List.rev acc, inst)
     | [], _ ->
         Sil.Estruct (construct Rhs acc fld_se_list2, inst)
     | _, [] ->
@@ -1144,7 +1144,7 @@ let rec strexp_partial_meet (strexp1: Sil.strexp) (strexp2: Sil.strexp) : Sil.st
   let rec f_idx_se_list inst len acc idx_se_list1 idx_se_list2 =
     match idx_se_list1, idx_se_list2 with
     | [],[] ->
-        Sil.Earray (len, IList.rev acc, inst)
+        Sil.Earray (len, List.rev acc, inst)
     | [], _ ->
         Sil.Earray (len, construct Rhs acc idx_se_list2, inst)
     | _, [] ->
@@ -1285,7 +1285,7 @@ let find_hpred_by_address tenv (e: Exp.t) (sigma: Prop.sigma) : Sil.hpred option
     | [] -> None, sigma
     | hpred:: sigma ->
         if contains_e hpred then
-          Some hpred, (IList.rev sigma_acc) @ sigma
+          Some hpred, List.rev_append sigma_acc sigma
         else
           f (hpred:: sigma_acc) sigma in
   f [] sigma
@@ -1578,8 +1578,8 @@ let pi_partial_join tenv mode
   let bounds =
     let bounds1 = get_array_len ep1 in
     let bounds2 = get_array_len ep2 in
-    let bounds_sorted = IList.sort IntLit.compare_value (bounds1@bounds2) in
-    IList.rev (IList.remove_duplicates IntLit.compare_value bounds_sorted) in
+    let bounds_sorted = List.sort ~cmp:IntLit.compare_value (bounds1@bounds2) in
+    List.rev (List.remove_consecutive_duplicates ~equal:IntLit.eq bounds_sorted) in
   let widening_atom a =
     (* widening heuristic for upper bound: take the length of some array, -2 and -1 *)
     match Prop.atom_exp_le_const a, bounds with
@@ -1723,7 +1723,7 @@ let eprop_partial_meet tenv (ep1: 'a Prop.t) (ep2: 'b Prop.t) : 'c Prop.t =
     let sub2 = ep2.Prop.sub in
     let range1 = Sil.sub_range sub1 in
     let f e = Sil.fav_for_all (Sil.exp_fav e) Ident.is_normal in
-    Sil.equal_subst sub1 sub2 && List.for_all ~f:f range1 in
+    Sil.equal_subst sub1 sub2 && List.for_all ~f range1 in
 
   if not (sub_check ()) then
     (L.d_strln "sub_check() failed"; raise Sil.JoinFail)
@@ -1870,7 +1870,7 @@ let eprop_partial_join tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed P
 
 let list_reduce name dd f list =
   let rec element_list_reduce acc (x, p1) = function
-    | [] -> ((x, p1), IList.rev acc)
+    | [] -> ((x, p1), List.rev acc)
     | (y, p2):: ys -> begin
         L.d_strln ("COMBINE[" ^ name ^ "] ....");
         L.d_str "ENTRY1: "; L.d_ln (); dd x; L.d_ln ();
@@ -1886,7 +1886,7 @@ let list_reduce name dd f list =
             element_list_reduce acc (x', p1) ys
       end in
   let rec reduce acc = function
-    | [] -> IList.rev acc
+    | [] -> List.rev acc
     | x:: xs ->
         let (x', xs') = element_list_reduce [] x xs in
         reduce (x':: acc) xs' in
@@ -1954,7 +1954,7 @@ let pathset_join
   let ppalist1 = pset_to_plist pset1 in
   let ppalist2 = pset_to_plist pset2 in
   let rec join_proppath_plist ppalist2_acc ((p2, pa2) as ppa2) = function
-    | [] -> (ppa2, IList.rev ppalist2_acc)
+    | [] -> (ppa2, List.rev ppalist2_acc)
     | ((p2', pa2') as ppa2') :: ppalist2_rest -> begin
         L.d_strln ".... JOIN ....";
         L.d_strln "JOIN SYM HEAP1: "; Prop.d_prop p2; L.d_ln ();

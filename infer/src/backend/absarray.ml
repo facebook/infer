@@ -159,7 +159,7 @@ end = struct
   let find tenv (sigma : sigma) (pred : strexp_data -> bool) : t list =
     let found = ref [] in
     let rec find_offset_sexp sigma_other hpred root offs se (typ: Typ.t) =
-      let offs' = IList.rev offs in
+      let offs' = List.rev offs in
       let path = (root, offs') in
       if pred (path, se, typ) then found := (sigma, hpred, offs') :: !found
       else begin
@@ -429,7 +429,7 @@ let keep_only_indices tenv
       match se with
       | Sil.Earray (len, esel, inst) ->
           let esel', esel_leftover' =
-            IList.partition (fun (e, _) -> List.exists ~f:(Exp.equal e) indices) esel in
+            List.partition_tf ~f:(fun (e, _) -> List.exists ~f:(Exp.equal e) indices) esel in
           if List.is_empty esel_leftover' then (sigma, false)
           else begin
             let se' = Sil.Earray (len, esel', inst) in
@@ -479,7 +479,7 @@ let strexp_do_abstract tenv
     prune_and_blur Sil.d_exp_list (keep_only_indices tenv) (blur_array_indices tenv) in
 
   let partition_abstract should_keep abstract ksel default_keys =
-    let keep_ksel, remove_ksel = IList.partition should_keep ksel in
+    let keep_ksel, remove_ksel = List.partition_tf ~f:should_keep ksel in
     let keep_keys, _, _ =
       List.map ~f:fst keep_ksel, List.map ~f:fst remove_ksel, List.map ~f:fst ksel in
     let keep_keys' = if List.is_empty keep_keys then default_keys else keep_keys in
@@ -491,7 +491,7 @@ let strexp_do_abstract tenv
     let default_indices =
       match List.map ~f:fst esel with
       | [] -> []
-      | indices -> [List.hd_exn (IList.rev indices)] (* keep last key at least *) in
+      | indices -> [List.last_exn indices] (* keep last key at least *) in
     partition_abstract should_keep abstract esel default_indices in
   let do_footprint () =
     match se_in with

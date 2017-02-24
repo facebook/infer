@@ -205,7 +205,7 @@ let get_vararg_type_names tenv
           | None -> type_names n)
       | _ -> raise Not_found in
 
-  IList.rev (type_names call_node)
+  List.rev (type_names call_node)
 
 let has_formal_proc_argument_type_names proc_desc argument_type_names =
   let formals = Procdesc.get_formals proc_desc in
@@ -329,7 +329,7 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
     List.iter ~f:(do_instruction node) instrs in
   let nodes = Procdesc.get_nodes pdesc in
   List.iter ~f:do_node nodes;
-  IList.rev !res
+  List.rev !res
 
 let override_exists f tenv proc_name =
   let rec super_type_exists tenv super_class_name =

@@ -58,7 +58,7 @@ let iter_all_nodes sorted::sorted=false f cfg => {
       )
       cfg.proc_desc_table
       [] |>
-    IList.sort [%compare : (Procdesc.t, Procdesc.Node.t)] |>
+    List.sort cmp::[%compare : (Procdesc.t, Procdesc.Node.t)] |>
     List.iter f::(fun (d, n) => f d n)
   }
 };
@@ -191,9 +191,9 @@ let inline_synthetic_method ret_id etl pdesc loc_call :option Sil.instr => {
           Bool.equal (is_none ret_id) (is_none ret_id') &&
           Int.equal (List.length etl' + 1) (List.length etl) =>
       let etl1 =
-        switch (IList.rev etl) {
+        switch (List.rev etl) {
         /* remove last element */
-        | [_, ...l] => IList.rev l
+        | [_, ...l] => List.rev l
         | [] => assert false
         };
       let instr' = Sil.Call ret_id (Exp.Const (Const.Cfun pn)) etl1 loc_call cf;
@@ -434,7 +434,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
   let rec convert_node node => {
     let loc = Procdesc.Node.get_loc node
     and kind = convert_node_kind (Procdesc.Node.get_kind node)
-    and instrs = List.fold f::convert_instr init::[] (Procdesc.Node.get_instrs node) |> IList.rev;
+    and instrs = List.fold f::convert_instr init::[] (Procdesc.Node.get_instrs node) |> List.rev;
     Procdesc.create_node resolved_pdesc loc kind instrs
   }
   and loop callee_nodes =>
@@ -486,7 +486,7 @@ let specialize_types callee_pdesc resolved_pname args => {
       args;
   let resolved_attributes = {
     ...callee_attributes,
-    formals: IList.rev resolved_params,
+    formals: List.rev resolved_params,
     proc_name: resolved_pname
   };
   AttributesTable.store_attributes resolved_attributes;

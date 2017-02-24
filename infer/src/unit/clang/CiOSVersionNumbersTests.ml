@@ -15,7 +15,7 @@ let test_correct_ios_version =
     let output = CiOSVersionNumbers.version_of version in
     let cmp = fun s1 s2 -> Option.equal String.equal s1 s2 in
     assert_equal ~pp_diff:CiOSVersionNumbers.pp_diff_of_version_opt
-      ~cmp:cmp expected_version output in
+      ~cmp expected_version output in
   [
     (
       "test_correct_ios_version_some_version",

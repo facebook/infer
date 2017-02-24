@@ -603,7 +603,7 @@ let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
               | Some class_name ->
                   (Procname.split_classname (Typename.name class_name)) :: accu
               | None -> name :: accu)
-          ~init:[] args (Procname.java_get_parameters resolved_pname_java) |> IList.rev in
+          ~init:[] args (Procname.java_get_parameters resolved_pname_java) |> List.rev in
       Procname.java_replace_parameters resolved_pname_java resolved_params in
   let resolved_pname_java, other_args =
     match args with
@@ -792,7 +792,7 @@ let normalize_params tenv pdesc prop actual_params =
     let e', p' = check_arith_norm_exp tenv pdesc e p in
     (p', (e', t) :: args) in
   let prop, args = List.fold ~f:norm_arg ~init:(prop, []) actual_params in
-  (prop, IList.rev args)
+  (prop, List.rev args)
 
 let do_error_checks tenv node_opt instr pname pdesc = match node_opt with
   | Some node ->
@@ -920,7 +920,7 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
         begin
           match pred_insts_op with
           | None -> update acc_in ([],[])
-          | Some pred_insts -> IList.rev (List.fold ~f:update ~init:acc_in pred_insts)
+          | Some pred_insts -> List.rev (List.fold ~f:update ~init:acc_in pred_insts)
         end
     | (Sil.Hpointsto _, _) ->
         Errdesc.warning_err loc "no offset access in execute_load -- treating as skip@.";
@@ -956,7 +956,7 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
           else prop in
         let iter_list =
           Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop' loc in
-        IList.rev (List.fold ~f:(execute_load_ pdesc tenv id loc) ~init:[] iter_list)
+        List.rev (List.fold ~f:(execute_load_ pdesc tenv id loc) ~init:[] iter_list)
   with Rearrange.ARRAY_ACCESS ->
     if Int.equal Config.array_level 0 then assert false
     else
@@ -995,7 +995,7 @@ let execute_store ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_e
     let prop = Attribute.replace_objc_null tenv prop n_lhs_exp n_rhs_exp in
     let n_lhs_exp' = Prop.exp_collapse_consecutive_indices_prop typ n_lhs_exp in
     let iter_list = Rearrange.rearrange ~report_deref_errors pdesc tenv n_lhs_exp' typ prop loc in
-    IList.rev (List.fold ~f:(execute_store_ pdesc tenv n_rhs_exp) ~init:[] iter_list)
+    List.rev (List.fold ~f:(execute_store_ pdesc tenv n_rhs_exp) ~init:[] iter_list)
   with Rearrange.ARRAY_ACCESS ->
     if Int.equal Config.array_level 0 then assert false
     else [prop_]
@@ -1211,8 +1211,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
   | Sil.Nullify (pvar, _) ->
       begin
         let eprop = Prop.expose prop_ in
-        match IList.partition
-                (function
+        match List.partition_tf
+                ~f:(function
                   | Sil.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar'
                   | _ -> false) eprop.Prop.sigma with
         | [Sil.Hpointsto(e, se, typ)], sigma' ->

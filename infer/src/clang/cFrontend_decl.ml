@@ -264,7 +264,7 @@ struct
              | CXXDestructorDecl _ | FunctionTemplateDecl _ ->
                  true
              | _ -> false in
-           let method_decls, no_method_decls = IList.partition is_method_decl decl_list in
+           let method_decls, no_method_decls = List.partition_tf ~f:is_method_decl decl_list in
            List.iter ~f:translate no_method_decls;
            ignore (CType_decl.add_types_from_decl_to_tenv tenv dec);
            List.iter ~f:translate method_decls

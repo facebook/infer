@@ -166,7 +166,7 @@ let module Node = {
 
   /** Get the source location of the last instruction in the node */
   let get_last_loc n =>
-    switch (IList.rev (get_instrs n)) {
+    switch (List.rev (get_instrs n)) {
     | [instr, ..._] => Sil.instr_get_loc instr
     | [] => n.loc
     };
@@ -395,7 +395,7 @@ let is_body_empty pdesc => List.is_empty (Node.get_succs (get_start_node pdesc))
 
 let is_java_synchronized pdesc => pdesc.attributes.is_java_synchronized_method;
 
-let iter_nodes f pdesc => List.iter f::f (IList.rev (get_nodes pdesc));
+let iter_nodes f pdesc => List.iter f::f (List.rev (get_nodes pdesc));
 
 let fold_calls f acc pdesc => {
   let do_node a node =>
@@ -415,7 +415,7 @@ let iter_instrs f pdesc => {
   iter_nodes do_node pdesc
 };
 
-let fold_nodes f acc pdesc => List.fold f::f init::acc (IList.rev (get_nodes pdesc));
+let fold_nodes f acc pdesc => List.fold f::f init::acc (List.rev (get_nodes pdesc));
 
 let fold_instrs f acc pdesc => {
   let fold_node acc node =>

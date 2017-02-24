@@ -81,7 +81,7 @@ let normalize prog::prog args::args :list action_item => {
     };
   /* collect stdout and stderr output together (in reverse order) */
   Utils.with_process_in clang_hashhashhash consume_input |> ignore;
-  normalized_commands := IList.rev !normalized_commands;
+  normalized_commands := List.rev !normalized_commands;
   !normalized_commands
 };
 

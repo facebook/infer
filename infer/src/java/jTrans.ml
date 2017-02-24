@@ -100,7 +100,7 @@ let retrieve_fieldname fieldname =
     if Int.equal (List.length subs) 0 then
       assert false
     else
-      List.hd_exn (IList.rev subs)
+      List.last_exn subs
   with _ -> assert false
 
 
@@ -133,7 +133,7 @@ let formals_from_signature program tenv cn ms kind =
   let init_arg_list = match kind with
     | Procname.Static -> []
     | Procname.Non_Static -> [(JConfig.this, JTransType.get_class_type program tenv cn)] in
-  IList.rev (List.fold ~f:collect ~init:init_arg_list (JBasics.ms_args ms))
+  List.rev (List.fold ~f:collect ~init:init_arg_list (JBasics.ms_args ms))
 
 (** Creates the list of formal variables from a procedure based on ... *)
 let translate_formals program tenv cn impl =
@@ -141,7 +141,7 @@ let translate_formals program tenv cn impl =
     let name = Mangled.from_string (JBir.var_name_g var) in
     let typ = JTransType.param_type program tenv cn var vt in
     (name, typ):: l in
-  IList.rev (List.fold ~f:collect ~init:[] (JBir.params impl))
+  List.rev (List.fold ~f:collect ~init:[] (JBir.params impl))
 
 (** Creates the list of local variables from the bytecode and add the variables from
     the JBir representation *)

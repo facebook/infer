@@ -22,7 +22,7 @@ let normalize ((trace, initialized) as astate) = match trace with
   | BottomSiofTrace.Bottom -> astate
   | BottomSiofTrace.NonBottom trace ->
       let elems = SiofTrace.Sinks.elements (SiofTrace.sinks trace) in
-      let (direct, indirect) = IList.partition SiofTrace.is_intraprocedural_access elems in
+      let (direct, indirect) = List.partition_tf ~f:SiofTrace.is_intraprocedural_access elems in
       match direct with
       | [] | _::[] -> astate
       | access::_ ->

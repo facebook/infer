@@ -37,7 +37,7 @@ let add_dispatch_calls pdesc cg tenv =
                 receiver_typ in
           let sorted_overrides =
             let overrides = Prover.get_overrides_of tenv receiver_typ_no_ptr callee_pname in
-            IList.sort (fun (_, p1) (_, p2) -> Procname.compare p1 p2) overrides in
+            List.sort ~cmp:(fun (_, p1) (_, p2) -> Procname.compare p1 p2) overrides in
           (match sorted_overrides with
            | ((_, target_pname) :: _) as all_targets ->
                let targets_to_add =
@@ -127,7 +127,7 @@ module NullifyTransferFunctions = struct
   let last_instr_in_node node =
     let get_last_instr () =
       let instrs = CFG.instrs node in
-      match IList.rev instrs with
+      match List.rev instrs with
       | instr :: _ -> instr
       | [] -> Sil.skip_instr in
     if phys_equal node !cache_node
@@ -215,12 +215,12 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
       List.filter ~f:is_local pvars
       |> List.map ~f:(fun pvar -> Sil.Nullify (pvar, loc)) in
     if nullify_instrs <> []
-    then Procdesc.Node.append_instrs node (IList.rev nullify_instrs) in
+    then Procdesc.Node.append_instrs node (List.rev nullify_instrs) in
 
   let node_add_removetmps_instructions node ids =
     if ids <> [] then
       let loc = Procdesc.Node.get_last_loc node in
-      Procdesc.Node.append_instrs node [Sil.Remove_temps (IList.rev ids, loc)] in
+      Procdesc.Node.append_instrs node [Sil.Remove_temps (List.rev ids, loc)] in
 
   List.iter
     ~f:(fun node ->
@@ -294,7 +294,7 @@ let do_copy_propagation pdesc tenv =
     ~f:(fun node ->
         let instrs, changed = rev_transform_node_instrs node in
         if changed
-        then Procdesc.Node.replace_instrs node (IList.rev instrs))
+        then Procdesc.Node.replace_instrs node (List.rev instrs))
     (Procdesc.get_nodes pdesc)
 
 let do_liveness pdesc tenv =

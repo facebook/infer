@@ -250,7 +250,7 @@ let component_with_multiple_factory_methods_advice context an =
                 Some "Instead, always expose all parameters in a single \
                       designated initializer and document which are optional.";
               loc = CFrontend_checkers.location_from_decl context meth_decl
-            }) (IList.drop_first 1 factory_methods)
+            }) (List.drop factory_methods 1)
     | _ -> assert false in
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
@@ -340,7 +340,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
               Location.file = source_file
             }
           }
-        ) (IList.range 1 line_count)
+        ) (List.range 1 line_count ~start:`inclusive ~stop:`inclusive)
   | _ -> CTL.False, []
 
 (** Computes a component file's cyclomatic complexity.

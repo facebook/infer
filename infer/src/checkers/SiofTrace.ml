@@ -84,7 +84,7 @@ let trace_of_error loc gname path =
     (* the last element of the trace gotten by [to_sink_loc_trace] contains a set of procedure-local
        accesses to globals. We want to remove it in exchange for as many trace elems as there are
        accesses. *)
-    match (IList.rev trace_with_set_of_globals, snd path) with
+    match (List.rev trace_with_set_of_globals, snd path) with
     | telem::rest, ({TraceElem.kind = (`Access, globals)}, _)::_ ->
         let nesting = telem.Errlog.lt_level in
         let add_trace_elem_of_access err_trace (global, loc) =
@@ -94,7 +94,7 @@ let trace_of_error loc gname path =
           ::err_trace in
         GlobalsAccesses.elements globals
         |> List.fold ~f:add_trace_elem_of_access ~init:rest
-        |> IList.rev
+        |> List.rev
     | _ -> trace_with_set_of_globals
   in
   trace_elem_of_global::trace

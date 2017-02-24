@@ -731,7 +731,7 @@ let compute_visited vset =
     let node_loc = Procdesc.Node.get_loc n in
     let instrs_loc = List.map ~f:Sil.instr_get_loc (Procdesc.Node.get_instrs n) in
     let lines = List.map ~f:(fun loc -> loc.Location.line) (node_loc :: instrs_loc) in
-    IList.remove_duplicates Int.compare (IList.sort Int.compare lines) in
+    List.remove_consecutive_duplicates ~equal:Int.equal (List.sort ~cmp:Int.compare lines) in
   let do_node n =
     res :=
       Specs.Visitedset.add (Procdesc.Node.get_id n, node_get_all_lines n) !res in
@@ -769,7 +769,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
         vset_ref_add_path vset_ref path;
         compute_visited !vset_ref in
       (pre', post', visited) in
-    List.map ~f:f pplist in
+    List.map ~f pplist in
   let pre_post_map =
     let add map (pre, post, visited) =
       let current_posts, current_visited =
@@ -1422,7 +1422,7 @@ let do_analysis exe_env =
     let calls = ref [] in
     let f (callee_pname, loc) = calls := (callee_pname, loc) :: !calls in
     Procdesc.iter_calls f caller_pdesc;
-    IList.rev !calls in
+    List.rev !calls in
   let init_proc pname =
     let pdesc = match Exe_env.get_proc_desc exe_env pname with
       | Some pdesc ->

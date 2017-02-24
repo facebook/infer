@@ -90,7 +90,7 @@ let tests =
            else acc)
         astate.MockTaintAnalysis.Domain.access_tree
         [] in
-    PrettyPrintable.pp_collection ~pp_item fmt (IList.rev trace_assocs) in
+    PrettyPrintable.pp_collection ~pp_item fmt (List.rev trace_assocs) in
   let assign_to_source ret_str =
     let procname = Procname.from_string_c_fun "SOURCE" in
     make_call ~procname (Some (ident_of_str ret_str, dummy_typ)) [] in

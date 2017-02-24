@@ -113,7 +113,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =>
       description: trace_item.Errlog.lt_description,
       node_tags: node_tags_to_records trace_item.Errlog.lt_node_tags
     };
-    let record_list = IList.rev (List.rev_map f::trace_item_to_record trace_list);
+    let record_list = List.rev (List.rev_map f::trace_item_to_record trace_list);
     record_list
   };
 
@@ -630,7 +630,7 @@ let module IssuesXml = {
           node_tags_to_xml lt.Errlog.lt_node_tags
         ]
     };
-    IList.rev (List.rev_map f::loc_to_xml ltr)
+    List.rev (List.rev_map f::loc_to_xml ltr)
   };
 
   /** print issues from summary in xml */
@@ -772,7 +772,7 @@ let module Stats = {
       res := [line, "", ...!res]
     };
     List.iter f::loc_to_string ltr;
-    IList.rev !res
+    List.rev !res
   };
   let process_err_log error_filter linereader err_log stats => {
     let found_errors = ref false;
@@ -791,7 +791,7 @@ let module Stats = {
             [F.asprintf "%t" pp1, F.asprintf "%t" pp2, F.asprintf "%t" pp3]
           };
           let trace = loc_trace_to_string_list linereader 1 ltr;
-          stats.saved_errors = IList.rev_append (error_strs @ trace @ [""]) stats.saved_errors
+          stats.saved_errors = List.rev_append (error_strs @ trace @ [""]) stats.saved_errors
         | Exceptions.Kwarning => stats.nwarnings = stats.nwarnings + 1
         | Exceptions.Kinfo => stats.ninfos = stats.ninfos + 1
         | Exceptions.Kadvice => stats.nadvice = stats.nadvice + 1
@@ -845,7 +845,7 @@ let module Stats = {
     F.fprintf fmt "Infos: %d@\n" stats.ninfos;
     F.fprintf fmt "@\n -------------------@\n";
     F.fprintf fmt "@\nDetailed Errors@\n@\n";
-    List.iter f::(fun s => F.fprintf fmt "%s@\n" s) (IList.rev stats.saved_errors)
+    List.iter f::(fun s => F.fprintf fmt "%s@\n" s) (List.rev stats.saved_errors)
   };
 };
 
@@ -1124,7 +1124,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =>
     };
     let sorted_report = {
       let report = Jsonbug_j.report_of_string (String.concat sep::"\n" report_lines);
-      IList.sort tests_jsonbug_compare report
+      List.sort cmp::tests_jsonbug_compare report
     };
     let pp_report_by_report_kind (report_kind, format_list) =>
       switch (report_kind, format_list) {
@@ -1229,12 +1229,12 @@ let module AnalysisResults = {
           summ2.Specs.attributes.ProcAttributes.loc.Location.line
       }
     };
-    IList.sort summ_cmp !summaries
+    List.sort cmp::summ_cmp !summaries
   };
 
   /** Create an iterator which loads spec files one at a time */
   let iterator_of_spec_files () => {
-    let sorted_spec_files = IList.sort String.compare (spec_files_from_cmdline ());
+    let sorted_spec_files = List.sort cmp::String.compare (spec_files_from_cmdline ());
     let do_spec f fname =>
       switch (Specs.load_summary (DB.filename_from_string fname)) {
       | None =>

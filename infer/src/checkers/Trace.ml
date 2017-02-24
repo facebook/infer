@@ -218,7 +218,7 @@ module Make (Spec : Spec) = struct
       pp_sources sources_passthroughs
       Procname.pp cur_pname
       pp_passthroughs cur_passthroughs
-      pp_sinks (IList.rev sinks_passthroughs)
+      pp_sinks (List.rev sinks_passthroughs)
 
   type passthrough_kind =
     | Source (* passthroughs of a source *)
@@ -284,11 +284,11 @@ module Make (Spec : Spec) = struct
         (Errlog.make_trace_element lt_level (CallSite.loc passthrough_site) desc []) :: acc in
       (* sort passthroughs by ascending line number to create a coherent trace *)
       let sorted_passthroughs =
-        IList.sort
-          (fun passthrough1 passthrough2 ->
-             let loc1 = CallSite.loc (Passthrough.site passthrough1) in
-             let loc2 = CallSite.loc (Passthrough.site passthrough2) in
-             Int.compare loc1.Location.line loc2.Location.line)
+        List.sort
+          ~cmp:(fun passthrough1 passthrough2 ->
+              let loc1 = CallSite.loc (Passthrough.site passthrough1) in
+              let loc2 = CallSite.loc (Passthrough.site passthrough2) in
+              Int.compare loc1.Location.line loc2.Location.line)
           (Passthroughs.elements passthroughs) in
       List.fold_right ~f:trace_elem_of_passthrough sorted_passthroughs ~init:acc0 in
 
@@ -298,7 +298,7 @@ module Make (Spec : Spec) = struct
         if should_nest elem
         then incr level;
         pair, !level in
-      List.map ~f:get_nesting_ (IList.rev elems) in
+      List.map ~f:get_nesting_ (List.rev elems) in
 
     let trace_elems_of_path_elem call_site desc ~is_source ((elem, passthroughs), lt_level) acc =
       let desc = desc elem in

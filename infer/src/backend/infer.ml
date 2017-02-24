@@ -221,8 +221,8 @@ let capture = function
       let args =
         List.rev_append Config.anon_args (
           ["--analyzer";
-           IList.assoc Config.equal_analyzer Config.analyzer
-             (List.map ~f:(fun (n,a) -> (a,n)) Config.string_to_analyzer)] @
+           List.Assoc.find_exn ~equal:Config.equal_analyzer
+             (List.map ~f:(fun (n,a) -> (a,n)) Config.string_to_analyzer) Config.analyzer] @
           (match Config.blacklist with
            | Some s when in_buck_mode -> ["--blacklist-regex"; s]
            | _ -> []) @
@@ -232,7 +232,7 @@ let capture = function
              ["--buck"]) @
           (match Config.java_jar_compiler with None -> [] | Some p ->
               ["--java-jar-compiler"; p]) @
-          (match IList.rev Config.buck_build_args with
+          (match List.rev Config.buck_build_args with
            | args when in_buck_mode ->
                List.map ~f:(fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> List.concat
            | _ -> []) @
@@ -430,7 +430,7 @@ let get_driver_mode () =
       assert_supported_mode `Java "Buck genrule";
       BuckGenrule path
   | None ->
-      driver_mode_of_build_cmd (IList.rev Config.rest)
+      driver_mode_of_build_cmd (List.rev Config.rest)
 
 let () =
   let driver_mode = get_driver_mode () in

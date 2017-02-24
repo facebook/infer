@@ -175,16 +175,16 @@ let collect_res_trans pdesc l =
         collect l'
           { root_nodes = root_nodes;
             leaf_nodes = leaf_nodes;
-            instrs = IList.rev_append rt'.instrs rt.instrs;
-            exps = IList.rev_append rt'.exps rt.exps;
-            initd_exps = IList.rev_append rt'.initd_exps rt.initd_exps;
+            instrs = List.rev_append rt'.instrs rt.instrs;
+            exps = List.rev_append rt'.exps rt.exps;
+            initd_exps = List.rev_append rt'.initd_exps rt.initd_exps;
             is_cpp_call_virtual = false; } in
   let rt = collect l empty_res_trans in
   {
     rt with
-    instrs = IList.rev rt.instrs;
-    exps = IList.rev rt.exps;
-    initd_exps = IList.rev rt.initd_exps;
+    instrs = List.rev rt.instrs;
+    exps = List.rev rt.exps;
+    initd_exps = List.rev rt.initd_exps;
   }
 
 let extract_var_exp_or_fail transt_state =

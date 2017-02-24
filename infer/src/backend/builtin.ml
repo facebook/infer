@@ -55,7 +55,7 @@ let register proc_name sym_exe_fun : registered =
 let pp_registered fmt () =
   let builtin_names = ref [] in
   Procname.Hash.iter (fun name _ -> builtin_names := name :: !builtin_names) builtin_functions;
-  builtin_names := IList.sort Procname.compare !builtin_names;
+  builtin_names := List.sort ~cmp:Procname.compare !builtin_names;
   let pp pname = Format.fprintf fmt "%a@\n" Procname.pp pname in
   Format.fprintf fmt "Registered builtins:@\n  @[";
   List.iter ~f:pp !builtin_names;

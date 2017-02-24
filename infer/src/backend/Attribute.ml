@@ -65,7 +65,7 @@ let get_all (prop: 'a Prop.t) =
   let res = ref [] in
   let do_atom a = if is_pred a then res := a :: !res in
   List.iter ~f:do_atom prop.pi;
-  IList.rev !res
+  List.rev !res
 
 (** Get all the attributes of the prop *)
 let get_for_symb prop att =
@@ -263,7 +263,7 @@ let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
     | Sil.Hpointsto (Exp.Lvar v, _, _) ->
         List.exists ~f:(Pvar.equal v) pvars
     | _ -> false in
-  let sigma_stack, sigma_other = IList.partition filter p.sigma in
+  let sigma_stack, sigma_other = List.partition_tf ~f:filter p.sigma in
   let fresh_address_vars = ref [] in (* fresh vars substituted for the address of stack vars *)
   let stack_vars_address_in_post = ref [] in (* stack vars whose address is still present *)
   let exp_replace = List.map ~f:(function

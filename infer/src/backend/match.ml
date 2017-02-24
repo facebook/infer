@@ -159,7 +159,7 @@ and isel_match isel1 sub vars isel2 =
 (* extends substitution sub by creating a new substitution for vars *)
 let sub_extend_with_ren (sub: Sil.subst) vars =
   let f id = (id, Exp.Var (Ident.create_fresh Ident.kprimed)) in
-  let renaming_for_vars = Sil.sub_of_list (List.map ~f:f vars) in
+  let renaming_for_vars = Sil.sub_of_list (List.map ~f vars) in
   Sil.sub_join sub renaming_for_vars
 
 type sidecondition = Prop.normal Prop.t -> Sil.subst -> bool
@@ -409,10 +409,10 @@ and hpara_common_match_with_impl tenv impl_ok ids1 sigma1 eids2 ids2 sigma2 =
     let sub_ids =
       let ren_ids = List.zip_exn ids2 ids1 in
       let f (id2, id1) = (id2, Exp.Var id1) in
-      List.map ~f:f ren_ids in
+      List.map ~f ren_ids in
     let (sub_eids, eids_fresh) =
       let f id = (id, Ident.create_fresh Ident.kprimed) in
-      let ren_eids = List.map ~f:f eids2 in
+      let ren_eids = List.map ~f eids2 in
       let eids_fresh = List.map ~f:snd ren_eids in
       let sub_eids = List.map ~f:(fun (id2, id1) -> (id2, Exp.Var id1)) ren_eids in
       (sub_eids, eids_fresh) in
@@ -471,7 +471,7 @@ let sigma_remove_hpred eq sigma e =
     | Sil.Hpointsto (root, _, _)
     | Sil.Hlseg (_, _, root, _, _)
     | Sil.Hdllseg (_, _, root, _, _, _, _) -> eq root e in
-  let sigma_e, sigma_no_e = IList.partition filter sigma in
+  let sigma_e, sigma_no_e = List.partition_tf ~f:filter sigma in
   match sigma_e with
   | [] -> (None, sigma)
   | [hpred_e] -> (Some hpred_e, sigma_no_e)
@@ -579,7 +579,7 @@ let rec generic_find_partial_iso tenv mode update corres sigma_corres todos sigm
   match todos with
   | [] ->
       let sigma1, sigma2 = sigma_corres in
-      Some (IList.rev corres, IList.rev sigma1, IList.rev sigma2, sigma_todo)
+      Some (List.rev corres, List.rev sigma1, List.rev sigma2, sigma_todo)
   | (e1, e2) :: todos' when corres_related corres e1 e2 ->
       begin
         match corres_extend_front e1 e2 corres with
@@ -721,7 +721,7 @@ let generic_para_create tenv corres sigma1 elist1 =
     let not_in_elist1 ((e1, _), _) = not (List.exists ~f:(Exp.equal e1) elist1) in
     let corres_ids_no_elist1 = List.filter ~f:not_in_elist1 corres_ids in
     let should_be_shared ((e1, e2), _) = Exp.equal e1 e2 in
-    let shared, exists = IList.partition should_be_shared corres_ids_no_elist1 in
+    let shared, exists = List.partition_tf ~f:should_be_shared corres_ids_no_elist1 in
     let es_shared = List.map ~f:(fun ((e1, _), _) -> e1) shared in
     (es_shared, List.map ~f:snd shared, List.map ~f:snd exists) in
   let renaming = List.map ~f:(fun ((e1, _), id) -> (e1, id)) corres_ids in

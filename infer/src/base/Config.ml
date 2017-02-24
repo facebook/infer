@@ -31,7 +31,7 @@ let exes = [
 
 let exe_name =
   let exe_to_name = List.map ~f:(fun (n,a) -> (a,n)) exes in
-  fun exe -> IList.assoc equal_exe exe exe_to_name
+  fun exe -> List.Assoc.find_exn ~equal:equal_exe exe_to_name exe
 
 let frontend_parse_modes = CLOpt.(Infer [Clang])
 
@@ -262,8 +262,8 @@ let real_exe_name =
   Utils.realpath Sys.executable_name
 
 let current_exe =
-  try IList.assoc String.equal (Filename.basename real_exe_name) exes
-  with Not_found -> Driver
+  List.Assoc.find ~equal:String.equal exes (Filename.basename real_exe_name) |>
+  Option.value ~default:Driver
 
 let bin_dir =
   Filename.dirname real_exe_name
@@ -1381,9 +1381,9 @@ let post_parsing_initialization () =
          Unix.close_process_full chans |> ignore;
          err in
        let analyzer_name =
-         IList.assoc equal_analyzer
-           (match !analyzer with Some a -> a | None -> Infer)
-           (List.map ~f:(fun (n,a) -> (a,n)) string_to_analyzer) in
+         List.Assoc.find_exn ~equal:equal_analyzer
+           (List.map ~f:(fun (n,a) -> (a,n)) string_to_analyzer)
+           (match !analyzer with Some a -> a | None -> Infer) in
        let infer_version = Version.commit in
        F.eprintf "%s/%s/%s@." javac_version analyzer_name infer_version
    | `Javac ->
@@ -1615,13 +1615,13 @@ and xml_specs = !xml_specs
 (** Configuration values derived from command-line options *)
 
 let analysis_path_regex_whitelist analyzer =
-  IList.assoc equal_analyzer analyzer analysis_path_regex_whitelist_options
+  List.Assoc.find_exn ~equal:equal_analyzer analysis_path_regex_whitelist_options analyzer
 and analysis_path_regex_blacklist analyzer =
-  IList.assoc equal_analyzer analyzer analysis_path_regex_blacklist_options
+  List.Assoc.find_exn ~equal:equal_analyzer analysis_path_regex_blacklist_options analyzer
 and analysis_blacklist_files_containing analyzer =
-  IList.assoc equal_analyzer analyzer analysis_blacklist_files_containing_options
+  List.Assoc.find_exn ~equal:equal_analyzer analysis_blacklist_files_containing_options analyzer
 and analysis_suppress_errors analyzer =
-  IList.assoc equal_analyzer analyzer analysis_suppress_errors_options
+  List.Assoc.find_exn ~equal:equal_analyzer analysis_suppress_errors_options analyzer
 
 let checkers_enabled = not (eradicate || crashcontext || quandary || threadsafety)
 

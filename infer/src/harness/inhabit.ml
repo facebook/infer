@@ -242,7 +242,7 @@ let setup_harness_cfg harness_name env cg cfg =
     Cfg.create_proc_desc cfg proc_attributes in
   let harness_node =
     (* important to reverse the list or there will be scoping issues! *)
-    let instrs = (IList.rev env.instrs) in
+    let instrs = (List.rev env.instrs) in
     let nodekind = Procdesc.Node.Stmt_node "method_body" in
     Procdesc.create_node procdesc env.pc nodekind instrs in
   let (start_node, exit_node) =
@@ -279,5 +279,5 @@ let inhabit_trace tenv trace harness_name cg cfg =
         trace in
     try
       setup_harness_cfg harness_name env'' cg cfg;
-      write_harness_to_file (IList.rev env''.instrs) harness_filename
+      write_harness_to_file (List.rev env''.instrs) harness_filename
     with Not_found -> ()

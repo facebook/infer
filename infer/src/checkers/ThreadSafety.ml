@@ -150,7 +150,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     (* we don't want to warn on writes to the field if it is (a) thread-confined, or (b) volatile *)
     let is_safe_write access_path tenv =
       let is_thread_safe_write accesses tenv =
-        match IList.rev accesses,
+        match List.rev accesses,
               AccessPath.Raw.get_typ (AccessPath.Raw.truncate access_path) tenv with
         | AccessPath.FieldAccess fieldname :: _,
           Some (Typ.Tstruct typename | Tptr (Tstruct typename, _)) ->

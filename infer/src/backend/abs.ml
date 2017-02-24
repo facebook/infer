@@ -242,7 +242,7 @@ let mk_rule_ptspts_dll tenv impl_ok1 impl_ok2 para =
   let ids_shared =
     let svars = para.Sil.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
-    List.map ~f:f svars in
+    List.map ~f svars in
   let exp_iF = Exp.Var id_iF in
   let exp_iF' = Exp.Var id_iF' in
   let exp_oB = Exp.Var id_oB in
@@ -290,7 +290,7 @@ let mk_rule_ptsdll_dll tenv k2 impl_ok1 impl_ok2 para =
   let ids_shared =
     let svars = para.Sil.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
-    List.map ~f:f svars in
+    List.map ~f svars in
   let exp_iF = Exp.Var id_iF in
   let exp_iF' = Exp.Var id_iF' in
   let exp_oB = Exp.Var id_oB in
@@ -326,7 +326,7 @@ let mk_rule_dllpts_dll tenv k1 impl_ok1 impl_ok2 para =
   let ids_shared =
     let svars = para.Sil.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
-    List.map ~f:f svars in
+    List.map ~f svars in
   let exp_iF = Exp.Var id_iF in
   let exp_iF' = Exp.Var id_iF' in
   let exp_oB = Exp.Var id_oB in
@@ -360,7 +360,7 @@ let mk_rule_dlldll_dll tenv k1 k2 impl_ok1 impl_ok2 para =
   let ids_shared =
     let svars = para.Sil.svars_dll in
     let f _ = Ident.create_fresh Ident.kprimed in
-    List.map ~f:f svars in
+    List.map ~f svars in
   let exp_iF = Exp.Var id_iF in
   let exp_iF' = Exp.Var id_iF' in
   let exp_oB = Exp.Var id_oB in
@@ -488,9 +488,9 @@ let discover_para_candidates tenv p =
         get_edges_strexp rec_flds root se;
         get_edges_sigma sigma_rest in
   let rec find_all_consecutive_edges found edges_seen = function
-    | [] -> IList.rev found
+    | [] -> List.rev found
     | (e1, e2) :: edges_notseen ->
-        let edges_others = (IList.rev edges_seen) @ edges_notseen in
+        let edges_others = List.rev_append edges_seen edges_notseen in
         let edges_matched = List.filter ~f:(fun (e1', _) -> Exp.equal e2 e1') edges_others in
         let new_found =
           let f found_acc (_, e3) = (e1, e2, e3) :: found_acc in
@@ -509,12 +509,12 @@ let discover_para_dll_candidates tenv p =
     match se with
     | Sil.Eexp _ | Sil.Earray _ -> ()
     | Sil.Estruct (fsel, _) ->
-        let fsel' = List.filter ~f:(fun (fld, _) -> is_rec_fld fld) fsel in
+        let fsel' = List.rev_filter ~f:(fun (fld, _) -> is_rec_fld fld) fsel in
         let convert_to_exp acc (_, se) =
           match se with
           | Sil.Eexp (e, _) -> e:: acc
           | _ -> assert false in
-        let links = IList.rev (List.fold ~f:convert_to_exp ~init:[] fsel') in
+        let links = List.fold ~f:convert_to_exp ~init:[] fsel' in
         let rec iter_pairs = function
           | [] -> ()
           | x:: l -> (List.iter ~f:(fun y -> add_edge (root, x, y)) l; iter_pairs l) in
@@ -528,9 +528,9 @@ let discover_para_dll_candidates tenv p =
         get_edges_strexp rec_flds root se;
         get_edges_sigma sigma_rest in
   let rec find_all_consecutive_edges found edges_seen = function
-    | [] -> IList.rev found
+    | [] -> List.rev found
     | (iF, blink, flink) :: edges_notseen ->
-        let edges_others = (IList.rev edges_seen) @ edges_notseen in
+        let edges_others = List.rev_append edges_seen edges_notseen in
         let edges_matched = List.filter ~f:(fun (e1', _, _) -> Exp.equal flink e1') edges_others in
         let new_found =
           let f found_acc (_, _, flink2) = (iF, blink, flink, flink2) :: found_acc in
@@ -635,7 +635,7 @@ let eqs_solve ids_in eqs_in =
 let sigma_special_cases_eqs sigma =
   let rec f ids_acc eqs_acc sigma_acc = function
     | [] ->
-        [(IList.rev ids_acc, IList.rev eqs_acc, IList.rev sigma_acc)]
+        [(List.rev ids_acc, List.rev eqs_acc, List.rev sigma_acc)]
     | Sil.Hpointsto _ as hpred :: sigma_rest ->
         f ids_acc eqs_acc (hpred:: sigma_acc) sigma_rest
     | Sil.Hlseg(_, para, e1, e2, es) as hpred :: sigma_rest ->
@@ -668,7 +668,7 @@ let sigma_special_cases ids sigma : (Ident.t list * Sil.hpred list) list =
       | Some (ids_res, sub) ->
           (ids_res, List.map ~f:(Sil.hpred_sub sub) sigma_cur) :: acc in
     List.fold ~f ~init:[] special_cases_eqs in
-  IList.rev special_cases_rev
+  List.rev special_cases_rev
 
 let hpara_special_cases hpara : Sil.hpara list =
   let update_para (evars', body') = { hpara with Sil.evars = evars'; Sil.body = body'} in
@@ -780,7 +780,7 @@ let abstract_pure_part tenv p ~(from_abstract_footprint: bool) =
             | Sil.Aeq _ | Aneq _ | Apred _ | Anpred _ -> pi
           )
         ~init:[] pi_filtered in
-    IList.rev new_pure in
+    List.rev new_pure in
 
   let new_pure = do_pure (Prop.get_pure p) in
   let eprop' = Prop.set p ~pi:new_pure ~sub:Sil.sub_empty in
@@ -1072,7 +1072,7 @@ let check_junk ?original_prop pname tenv prop =
       hpred_is_loop || List.exists ~f:predicate entries in
     let rec remove_junk_recursive sigma_done sigma_todo =
       match sigma_todo with
-      | [] -> IList.rev sigma_done
+      | [] -> List.rev sigma_done
       | hpred :: sigma_todo' ->
           let entries = hpred_entries hpred in
           if should_remove_hpred entries then

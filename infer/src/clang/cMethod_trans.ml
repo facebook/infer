@@ -321,7 +321,7 @@ let get_return_type tenv ms =
 
 let sil_func_attributes_of_attributes attrs =
   let rec do_translation acc al = match al with
-    | [] -> IList.rev acc
+    | [] -> List.rev acc
     | Clang_ast_t.SentinelAttr attribute_info:: tl ->
         let (sentinel, null_pos) = match attribute_info.Clang_ast_t.ai_parameters with
           | a:: b::[] -> (int_of_string a, int_of_string b)
@@ -370,7 +370,7 @@ let get_const_args_indices ~shift args =
   let i = ref shift in
   let rec aux result = function
     | [] ->
-        IList.rev result
+        List.rev result
     | (_, {Clang_ast_t.qt_type_ptr})::tl ->
         incr i;
         if is_pointer_to_const qt_type_ptr then

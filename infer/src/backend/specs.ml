@@ -271,7 +271,7 @@ module CallStats = struct (** module for tracing stats of function calls *)
   let pp_trace fmt tr =
     Pp.seq
       (fun fmt x -> F.fprintf fmt "%s" (tr_elem_str x))
-      fmt (IList.rev tr)
+      fmt (List.rev tr)
 
   let iter f t =
     let elems = ref [] in
@@ -279,7 +279,7 @@ module CallStats = struct (** module for tracing stats of function calls *)
     let sorted_elems =
       let compare (pname_loc1, _) (pname_loc2, _) =
         [%compare: Procname.t * Location.t] pname_loc1 pname_loc2 in
-      IList.sort compare !elems in
+      List.sort ~cmp:compare !elems in
     List.iter ~f:(fun (x, tr) -> f x tr) sorted_elems
 
 (*

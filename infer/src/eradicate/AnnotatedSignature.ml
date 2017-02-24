@@ -40,7 +40,7 @@ let get proc_attributes : t =
           []
       | _ :: _, [] ->
           assert false in
-    IList.rev (extract (IList.rev ial0) (IList.rev formals)) in
+    List.rev (extract (List.rev ial0) (List.rev formals)) in
   let annotated_signature = { ret = (ia, ret_type); params = natl } in
   annotated_signature
 

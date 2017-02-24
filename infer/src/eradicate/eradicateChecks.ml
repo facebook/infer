@@ -506,7 +506,7 @@ let check_call_parameters tenv
       Specs.get_summary callee_pname <> None in
   if should_check_parameters then
     (* left to right to avoid guessing the different lengths *)
-    check (IList.rev sig_params) (IList.rev call_params)
+    check (List.rev sig_params) (List.rev call_params)
 
 (** Checks if the annotations are consistent with the inherited class or with the
     implemented interfaces *)
