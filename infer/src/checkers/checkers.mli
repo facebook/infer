@@ -35,9 +35,6 @@ module ST : sig
     string ->
     unit
 
-  (** Store the summary to a .specs file. *)
-  val store_summary : Procname.t -> unit
-
 end (* ST *)
 
 module PP : sig

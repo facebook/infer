@@ -673,6 +673,9 @@ let is_active summary =
 let get_timestamp summary =
   summary.timestamp
 
+let increment_timestamp summary =
+  { summary with timestamp = summary.timestamp + 1 }
+
 let get_proc_name summary =
   summary.attributes.ProcAttributes.proc_name
 

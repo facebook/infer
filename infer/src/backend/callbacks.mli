@@ -45,4 +45,4 @@ val register_cluster_callback : Config.language option -> cluster_callback_t -> 
 val unregister_all_callbacks : unit -> unit
 
 (** Invoke all the registered callbacks. *)
-val iterate_callbacks : (Procname.t -> unit) -> Cg.t -> Exe_env.t -> unit
+val iterate_callbacks : Cg.t -> Exe_env.t -> unit

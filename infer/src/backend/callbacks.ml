@@ -133,7 +133,7 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
     !cluster_callbacks
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
-let iterate_callbacks store_summary call_graph exe_env =
+let iterate_callbacks call_graph exe_env =
   let procs_to_analyze =
     (* analyze all the currently defined procedures *)
     Cg.get_defined_nodes call_graph in
@@ -178,6 +178,12 @@ let iterate_callbacks store_summary call_graph exe_env =
     ~f:(iterate_cluster_callbacks originally_defined_procs exe_env)
     (cluster procs_to_analyze);
 
-  List.iter ~f:store_summary procs_to_analyze;
+  (* Store all the summaries to disk *)
+  List.iter
+    ~f:(fun pname ->
+        let updated_summary_opt =
+          Option.map (Specs.get_summary pname) ~f:Specs.increment_timestamp in
+        Option.iter ~f:(Specs.store_summary pname) updated_summary_opt)
+    procs_to_analyze;
 
   Config.curr_language := saved_language

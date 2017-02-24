@@ -201,6 +201,9 @@ val get_summary_unsafe : string -> Procname.t -> summary
 (** Return the current timestamp for the summary *)
 val get_timestamp : summary -> int
 
+(** Increment the number of times a summary has been updated *)
+val increment_timestamp : summary -> summary
+
 (** Return the status (active v.s. inactive) of a procedure summary *)
 val get_status : summary -> status
 
