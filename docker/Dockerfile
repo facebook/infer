@@ -19,6 +19,7 @@ RUN apt-get update && \
             git \
             groff \
             libc6-dev \
+            libffi-dev \
             libgmp-dev \
             libmpc-dev \
             libmpfr-dev \
