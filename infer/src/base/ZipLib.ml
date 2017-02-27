@@ -27,7 +27,7 @@ let get_cache_dir infer_cache zip_filename =
 
 let load_from_cache serializer zip_path cache_dir zip_library =
   let absolute_path = Filename.concat cache_dir zip_path in
-  let deserialize = Serialization.from_file serializer in
+  let deserialize = Serialization.read_from_file serializer in
   let extract to_path =
     if (Sys.file_exists to_path) <> `Yes then
       begin
@@ -44,7 +44,7 @@ let load_from_cache serializer zip_path cache_dir zip_library =
 
 let load_from_zip serializer zip_path zip_library =
   let lazy zip_channel = zip_library.zip_channel in
-  let deserialize = Serialization.from_string serializer in
+  let deserialize = Serialization.read_from_string serializer in
   match deserialize (Zip.read_entry zip_channel (Zip.find_entry zip_channel zip_path)) with
   | Some data -> Some data
   | None -> None

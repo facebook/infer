@@ -120,12 +120,12 @@ let check_cfg_connectedness cfg => {
 
 
 /** Serializer for control flow graphs */
-let cfg_serializer: Serialization.serializer cfg = Serialization.create_serializer Serialization.cfg_key;
+let cfg_serializer: Serialization.serializer cfg = Serialization.create_serializer Serialization.Key.cfg;
 
 
 /** Load a cfg from a file */
 let load_cfg_from_file (filename: DB.filename) :option cfg =>
-  Serialization.from_file cfg_serializer filename;
+  Serialization.read_from_file cfg_serializer filename;
 
 
 /** Save the .attr files for the procedures in the cfg. */
@@ -336,7 +336,7 @@ let store_cfg_to_file source_file::source_file (filename: DB.filename) (cfg: cfg
      OndemandCapture module relies on it - it uses existance of .cfg file as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) */
   save_attributes source_file cfg;
-  Serialization.to_file cfg_serializer filename cfg
+  Serialization.write_to_file cfg_serializer filename cfg
 };
 
 

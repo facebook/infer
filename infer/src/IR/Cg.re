@@ -350,12 +350,12 @@ let extend cg_old cg_new => {
 
 
 /** Begin support for serialization */
-let callgraph_serializer: Serialization.serializer (SourceFile.t, nodes_and_edges) = Serialization.create_serializer Serialization.cg_key;
+let callgraph_serializer: Serialization.serializer (SourceFile.t, nodes_and_edges) = Serialization.create_serializer Serialization.Key.cg;
 
 
 /** Load a call graph from a file */
 let load_from_file (filename: DB.filename) :option t =>
-  switch (Serialization.from_file callgraph_serializer filename) {
+  switch (Serialization.read_from_file callgraph_serializer filename) {
   | None => None
   | Some (source, (nodes, edges)) =>
     let g = create (Some source);
@@ -374,7 +374,7 @@ let load_from_file (filename: DB.filename) :option t =>
 
 /** Save a call graph into a file */
 let store_to_file (filename: DB.filename) (call_graph: t) =>
-  Serialization.to_file
+  Serialization.write_to_file
     callgraph_serializer filename (call_graph.source, get_nodes_and_edges call_graph);
 
 let pp_graph_dotty get_specs (g: t) fmt => {

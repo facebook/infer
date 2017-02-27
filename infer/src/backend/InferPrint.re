@@ -1247,15 +1247,15 @@ let module AnalysisResults = {
   };
 
   /** Serializer for analysis results */
-  let analysis_results_serializer: Serialization.serializer t = Serialization.create_serializer Serialization.analysis_results_key;
+  let analysis_results_serializer: Serialization.serializer t = Serialization.create_serializer Serialization.Key.analysis_results;
 
   /** Load analysis_results from a file */
   let load_analysis_results_from_file (filename: DB.filename) :option t =>
-    Serialization.from_file analysis_results_serializer filename;
+    Serialization.read_from_file analysis_results_serializer filename;
 
   /** Save analysis_results into a file */
   let store_analysis_results_to_file (filename: DB.filename) (analysis_results: t) =>
-    Serialization.to_file analysis_results_serializer filename analysis_results;
+    Serialization.write_to_file analysis_results_serializer filename analysis_results;
 
   /** Return an iterator over all the summaries.
       If options - load_results or - save_results are used,

@@ -115,7 +115,7 @@ let get_overriden_method tenv pname_java => {
 
 
 /** Serializer for type environments */
-let tenv_serializer: Serialization.serializer t = Serialization.create_serializer Serialization.tenv_key;
+let tenv_serializer: Serialization.serializer t = Serialization.create_serializer Serialization.Key.tenv;
 
 let global_tenv: ref (option t) = ref None;
 
@@ -124,11 +124,11 @@ let global_tenv: ref (option t) = ref None;
 let load_from_file (filename: DB.filename) :option t =>
   if (DB.equal_filename filename DB.global_tenv_fname) {
     if (is_none !global_tenv) {
-      global_tenv := Serialization.from_file tenv_serializer DB.global_tenv_fname
+      global_tenv := Serialization.read_from_file tenv_serializer DB.global_tenv_fname
     };
     !global_tenv
   } else {
-    Serialization.from_file tenv_serializer filename
+    Serialization.read_from_file tenv_serializer filename
   };
 
 
@@ -139,7 +139,7 @@ let store_to_file (filename: DB.filename) (tenv: t) => {
   if (DB.equal_filename filename DB.global_tenv_fname) {
     global_tenv := Some tenv
   };
-  Serialization.to_file tenv_serializer filename tenv;
+  Serialization.write_to_file tenv_serializer filename tenv;
   if Config.debug_mode {
     let debug_filename = DB.filename_to_string (DB.filename_add_suffix filename ".debug");
     let out_channel = open_out debug_filename;

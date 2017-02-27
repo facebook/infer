@@ -22,15 +22,15 @@ type serializer_t = int * t
 
 (** Serializer for clusters *)
 let serializer : serializer_t Serialization.serializer =
-  Serialization.create_serializer Serialization.cluster_key
+  Serialization.create_serializer Serialization.Key.cluster
 
 (** Load a cluster from a file *)
 let load_from_file (filename : DB.filename) : serializer_t option =
-  Serialization.from_file serializer filename
+  Serialization.read_from_file serializer filename
 
 (** Save a cluster into a file *)
 let store_to_file (filename : DB.filename) (serializer_t: serializer_t) =
-  Serialization.to_file serializer filename serializer_t
+  Serialization.write_to_file serializer filename serializer_t
 
 let cl_name n = "cl" ^ string_of_int n
 let cl_file n = "x" ^ (cl_name n) ^ ".cluster"

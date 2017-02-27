@@ -549,7 +549,7 @@ let summary_exists_in_models pname =
   Sys.file_exists (DB.filename_to_string (specs_models_filename pname)) = `Yes
 
 let summary_serializer : summary Serialization.serializer =
-  Serialization.create_serializer Serialization.summary_key
+  Serialization.create_serializer Serialization.Key.summary
 
 (** Save summary for the procedure into the spec database *)
 let store_summary pname (summ1: summary) =
@@ -562,11 +562,11 @@ let store_summary pname (summ1: summary) =
       { summ2 with
         stats = { summ1.stats with stats_time = 0.0} } in
   add_summary pname summ3 (* Make sure the summary in memory is identical to the saved one *);
-  Serialization.to_file summary_serializer (res_dir_specs_filename pname) summ3
+  Serialization.write_to_file summary_serializer (res_dir_specs_filename pname) summ3
 
 (** Load procedure summary from the given file *)
 let load_summary specs_file =
-  Serialization.from_file summary_serializer specs_file
+  Serialization.read_from_file summary_serializer specs_file
 
 
 (** Load procedure summary for the given procedure name and update spec table *)

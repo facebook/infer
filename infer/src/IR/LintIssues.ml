@@ -23,15 +23,15 @@ let get_err_log procname =
     errLogMap := Procname.Map.add procname errlog !errLogMap; errlog
 
 let lint_issues_serializer : (Errlog.t Procname.Map.t) Serialization.serializer =
-  Serialization.create_serializer Serialization.lint_issues_key
+  Serialization.create_serializer Serialization.Key.lint_issues
 
 (** Save issues to a file *)
 let store_issues filename errLogMap =
-  Serialization.to_file lint_issues_serializer filename errLogMap
+  Serialization.write_to_file lint_issues_serializer filename errLogMap
 
 (** Load issues from the given file *)
 let load_issues issues_file =
-  Serialization.from_file lint_issues_serializer issues_file
+  Serialization.read_from_file lint_issues_serializer issues_file
 
 (** Load all the lint issues in the given dir and update the issues map *)
 let load_issues_to_errlog_map dir =

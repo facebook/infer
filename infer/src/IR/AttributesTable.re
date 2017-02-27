@@ -18,7 +18,7 @@ let module L = Logging;
 
 
 /** Module to manage the table of attributes. */
-let serializer: Serialization.serializer ProcAttributes.t = Serialization.create_serializer Serialization.attributes_key;
+let serializer: Serialization.serializer ProcAttributes.t = Serialization.create_serializer Serialization.Key.attributes;
 
 let attributes_filename defined::defined pname_file =>
   pname_file ^ (defined ? ".attr" : ".decl.attr");
@@ -50,9 +50,9 @@ let load_attr defined_only::defined_only proc_name => {
   let attributes_file defined::defined proc_name => Multilinks.resolve (
     res_dir_attr_filename defined::defined proc_name
   );
-  let attr = Serialization.from_file serializer (attributes_file defined::true proc_name);
+  let attr = Serialization.read_from_file serializer (attributes_file defined::true proc_name);
   if (is_none attr && not defined_only) {
-    Serialization.from_file serializer (attributes_file defined::false proc_name)
+    Serialization.read_from_file serializer (attributes_file defined::false proc_name)
   } else {
     attr
   }
@@ -62,7 +62,8 @@ let load_attr defined_only::defined_only proc_name => {
    If defined, delete the declared file if it exists. */
 let write_and_delete proc_name (proc_attributes: ProcAttributes.t) => {
   let attributes_file defined => res_dir_attr_filename defined::defined proc_name;
-  Serialization.to_file serializer (attributes_file proc_attributes.is_defined) proc_attributes;
+  Serialization.write_to_file
+    serializer (attributes_file proc_attributes.is_defined) proc_attributes;
   if proc_attributes.is_defined {
     let fname_declared = DB.filename_to_string (attributes_file false);
     if (Sys.file_exists fname_declared == `Yes) {
