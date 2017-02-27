@@ -15,7 +15,6 @@ module L = Logging
 (** Annotations. *)
 
 let any_thread = "AnyThread"
-let assume_thread_safe = "AssumeThreadSafe"
 let bind = "Bind"
 let bind_view = "BindView"
 let bind_array = "BindArray"
@@ -56,7 +55,6 @@ let suppress_lint = "SuppressLint"
 let suppress_view_nullability = "SuppressViewNullability"
 let thread_confined = "ThreadConfined"
 let thread_safe = "ThreadSafe"
-let thread_safe_method = "ThreadSafeMethod"
 let true_on_null = "TrueOnNull"
 let ui_thread = "UiThread"
 let verify_annotation = "com.facebook.infer.annotation.Verify"
@@ -121,15 +119,6 @@ let struct_typ_has_annot (struct_typ : StructTyp.t) predicate =
 
 let ia_is_not_thread_safe ia =
   ia_ends_with ia not_thread_safe
-
-let ia_is_thread_safe ia =
-  ia_ends_with ia thread_safe
-
-let ia_is_thread_safe_method ia =
-  ia_ends_with ia thread_safe_method
-
-let ia_is_assume_thread_safe ia =
-  ia_ends_with ia assume_thread_safe
 
 let ia_is_nullable ia =
   ia_ends_with ia nullable

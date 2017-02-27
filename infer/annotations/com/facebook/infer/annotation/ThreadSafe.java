@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 - present Facebook, Inc.
+ * Copyright (c) 2004 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
@@ -14,9 +14,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** like javax.annotation.concurrent.ThreadSafe, but for individual methods rather than classes */
+/**
+ * Similar to @ThreadSafe annotation from javax.concurrent.annotation, but can be applied to
+ * methods. In addition, you can ask Infer to assume thread-safety rather than checking it by using
+ * @ThreadSafe(enableChecks = false).
+ */
 
-@Target(ElementType.METHOD)
+@Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.CLASS)
-public @interface ThreadSafeMethod {
+public @interface ThreadSafe {
+  boolean enableChecks() default true;
 }

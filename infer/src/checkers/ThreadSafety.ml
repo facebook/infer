@@ -669,8 +669,29 @@ let runs_on_ui_thread proc_desc =
                   Annotations.ia_is_on_unbind annot ||
                   Annotations.ia_is_on_unmount annot)
 
-let is_assumed_thread_safe pdesc =
-  Annotations.pdesc_return_annot_ends_with pdesc Annotations.assume_thread_safe
+
+(* returns true if the annotation is @ThreadSafe or @ThreadSafe(enableChecks = true) *)
+let is_thread_safe item_annot =
+  let f (annot, _) =
+    Annotations.annot_ends_with annot Annotations.thread_safe &&
+    match annot.Annot.parameters with
+    | ["false"] -> false
+    | _ -> true in
+  List.exists ~f item_annot
+
+(* returns true if the annotation is @ThreadSafe(enableChecks = false) *)
+let is_assumed_thread_safe item_annot =
+  let f (annot, _) =
+    Annotations.annot_ends_with annot Annotations.thread_safe &&
+    match annot.Annot.parameters with
+    | ["false"] -> true
+    | _ -> false in
+  List.exists ~f item_annot
+
+let pdesc_is_assumed_thread_safe pdesc tenv =
+  is_assumed_thread_safe (Annotations.pdesc_get_return_annot pdesc) ||
+  PatternMatch.check_current_class_attributes
+    is_assumed_thread_safe tenv (Procdesc.get_proc_name pdesc)
 
 (* return true if we should compute a summary for the procedure. if this returns false, we won't
    analyze the procedure or report any warnings on it *)
@@ -684,7 +705,7 @@ let should_analyze_proc pdesc tenv =
   not (is_call_to_immutable_collection_method tenv pn) &&
   not (runs_on_ui_thread pdesc) &&
   not (is_thread_confined_method tenv pdesc) &&
-  not (is_assumed_thread_safe pdesc)
+  not (pdesc_is_assumed_thread_safe pdesc tenv)
 
 (* return true if we should report on unprotected accesses during the procedure *)
 let should_report_on_proc (_, _, proc_name, proc_desc) =
@@ -762,8 +783,9 @@ let get_current_class_and_threadsafe_superclasses tenv pname =
   match pname with
   | Procname.Java java_pname ->
       let current_class = Procname.java_get_class_type_name java_pname in
-      let thread_safe_annotated_classes = PatternMatch.find_superclasses_with_attributes
-          Annotations.ia_is_thread_safe tenv current_class
+      let thread_safe_annotated_classes =
+        PatternMatch.find_superclasses_with_attributes
+          is_thread_safe tenv current_class
       in
       Some (current_class,thread_safe_annotated_classes)
   | _ -> None  (*shouldn't happen*)
@@ -981,7 +1003,7 @@ let process_results_table file_env tab =
          Annotations.pname_has_return_annot
            pn
            ~attrs_of_pname:Specs.proc_resolve_attributes
-           Annotations.ia_is_thread_safe_method)
+           is_thread_safe)
       tenv
       (Procdesc.get_proc_name pdesc) in
   let should_report ((_, tenv, _, pdesc) as proc_env) =

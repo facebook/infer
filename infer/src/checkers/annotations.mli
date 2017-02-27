@@ -12,7 +12,6 @@ open! IStd
 (** Annotations. *)
 
 val any_thread : string
-val assume_thread_safe : string
 val expensive : string
 val no_allocation : string
 val nullable : string
@@ -26,7 +25,6 @@ val strict : string
 val suppress_lint : string
 val thread_confined : string
 val thread_safe : string
-val thread_safe_method : string
 val ui_thread : string
 val visibleForTesting : string
 
@@ -77,9 +75,6 @@ val ia_is_integrity_source : Annot.Item.t -> bool
 val ia_is_integrity_sink : Annot.Item.t -> bool
 val ia_is_guarded_by : Annot.Item.t -> bool
 val ia_is_not_thread_safe : Annot.Item.t -> bool
-val ia_is_thread_safe : Annot.Item.t -> bool
-val ia_is_thread_safe_method : Annot.Item.t -> bool
-val ia_is_assume_thread_safe : Annot.Item.t -> bool
 val ia_is_ui_thread : Annot.Item.t -> bool
 val ia_is_thread_confined : Annot.Item.t -> bool
 val ia_is_returns_ownership : Annot.Item.t -> bool

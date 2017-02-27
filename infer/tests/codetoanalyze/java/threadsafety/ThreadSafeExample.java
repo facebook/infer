@@ -10,11 +10,10 @@
 package codetoanalyze.java.checkers;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.annotation.concurrent.ThreadSafe;
+
+import com.facebook.infer.annotation.ThreadSafe;
 
 import com.google.common.annotations.VisibleForTesting;
-
-import com.facebook.infer.annotation.ThreadSafeMethod;
 
 @ThreadSafe
 public class ThreadSafeExample{
@@ -161,12 +160,12 @@ class NonThreadSafeClass {
 
   Object field;
 
-  @ThreadSafeMethod
+  @ThreadSafe
   public void threadSafeMethod() {
     this.field = new Object(); // should warn
   }
 
-  @ThreadSafeMethod
+  @ThreadSafe
   public void safeMethod() {
   }
 
@@ -175,12 +174,12 @@ class NonThreadSafeClass {
 class NonThreadSafeSubclass extends NonThreadSafeClass {
 
   @Override
-  // overrides method annotated with @ThreadSafeMethod, should warn
+  // overrides method annotated with @ThreadSafe, should warn
   public void safeMethod() {
     this.field = new Object();
   }
 
-  // won't report this now, but should in the future. if a method annotated with @ThreadSafeMethod
+  // won't report this now, but should in the future. if a method annotated with @ThreadSafe
   // in class C touches field f, then all other accesses to f in C must also be thread-safe
   public void FN_touchesSameFieldAsThreadSafeMethod() {
     this.field = new Object();

@@ -14,11 +14,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import javax.annotation.concurrent.ThreadSafe;
-
 import android.support.annotation.UiThread;
 
-import com.facebook.infer.annotation.AssumeThreadSafe;
+import com.facebook.infer.annotation.ThreadSafe;
 import com.facebook.infer.annotation.Functional;
 import com.facebook.infer.annotation.ThreadConfined;
 import com.facebook.infer.annotation.ReturnsOwnership;
@@ -54,6 +52,16 @@ interface Interface {
 
   @Functional Object functionalMethod();
   @ReturnsOwnership Obj returnsOwnershipMethod();
+}
+
+@ThreadSafe(enableChecks = false)
+class AssumedThreadSafe {
+
+  Object field;
+
+  public void writeOk() {
+    this.field = new Object();
+  }
 }
 
 @ThreadSafe
@@ -138,7 +146,7 @@ class Annotations implements Interface {
     this.f = new Object();
   }
 
-  @AssumeThreadSafe(because = "it's a test")
+  @ThreadSafe(enableChecks = false)
   public void assumeThreadSafeOk() {
     this.f = new Object();
   }
@@ -291,6 +299,10 @@ class Annotations implements Interface {
   void mutateAnnotatedOverrideOwnedOk() {
     Obj owned = returnsOwnershipMethod();
     owned.f = new Object();
+  }
+
+  public void writeToAssumedThreadSafeClassOk(AssumedThreadSafe c) {
+    c.writeOk();
   }
 
 }
