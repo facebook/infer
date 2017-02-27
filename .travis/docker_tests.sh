@@ -7,8 +7,11 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+set -x
 
 # assumes we are in .travis/
 cd "${SCRIPT_DIR}/../docker"
