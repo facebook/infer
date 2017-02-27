@@ -22,10 +22,13 @@ INFER_SOURCE="$ROOT_INFER_DIR"/infer-source
 cd "$ROOT_INFER_DIR"
 # This assumes the current commit is the one with the release bump
 ./build-infer.sh
+find "$CLANG_PREFIX"/{bin,lib} -type f -print0 | xargs -0 strip -x || true
 
 # Get a copy of the github repo
-git clone https://github.com/facebook/infer.git "$INFER_SOURCE" || \
-  git -C "$INFER_SOURCE" fetch origin master
+if ! git -C "$INFER_SOURCE" status > /dev/null; then
+  git clone https://github.com/facebook/infer.git "$INFER_SOURCE"
+fi
+git -C "$INFER_SOURCE" fetch origin master
 pushd "$INFER_SOURCE"
 # Name of the release package
 VERSION=`git describe --abbrev=0 --tags`
@@ -41,9 +44,11 @@ PKG_CLANG_PREFIX="$PKG_PLUGIN_DIR"/clang/install
 
 git checkout "$VERSION"
 git submodule update --init
+git clean -xfd
 popd
 
 # Copy infer source
+rm -fr "$PKG_DIR"
 mkdir -p "$PKG_DIR"
 rsync -a \
   --exclude="**/.git" \
@@ -78,6 +83,3 @@ if grep -Ir "$FBDASHONLY" "$PKG_DIR"; then
 fi
 
 cd "$ROOT_INFER_DIR" && tar cJf "$RELEASE_TARBALL" "$RELEASE_NAME"
-
-# Cleanup.
-rm -rf "$PKG_DIR" "$INFER_SOURCE"
