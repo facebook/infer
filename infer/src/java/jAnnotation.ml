@@ -16,18 +16,25 @@ open Javalib_pack
 (** Translate an annotation. *)
 let translate a : Annot.t =
   let class_name = JBasics.cn_name a.JBasics.kind in
-  let translate_value_pair (_, value) =
+  let translate_value_pair acc (_, value) =
     match value with
     | JBasics.EVArray [JBasics.EVCstString s] ->
-        s
+        (* TODO (t16352423) see if this case is used *)
+        s :: acc
     | JBasics.EVCstString s ->
-        s
-    | _ -> "?" in
-  let element_value_pairs = a.JBasics.element_value_pairs in
-  { Annot.
-    class_name;
-    parameters = List.map ~f:translate_value_pair element_value_pairs }
-
+        s :: acc
+    | JBasics.EVCstBoolean 0 ->
+        (* just translate bools as strings. means we can't distinguish between a boolean false
+           literal parameter and string literal "false" parameter, but that's ok. *)
+        "false" :: acc
+    | JBasics.EVCstBoolean 1 ->
+        "true" :: acc
+    | _ ->
+        acc in
+  let parameters =
+    List.fold ~f:translate_value_pair ~init:[] a.JBasics.element_value_pairs
+    |> List.rev in
+  { Annot.class_name; parameters; }
 
 (** Translate an item annotation. *)
 let translate_item avlist : Annot.Item.t =
