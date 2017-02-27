@@ -1,0 +1,21 @@
+From 1bc647221616bbc45c938bbddbcd810493c9c0a4 Mon Sep 17 00:00:00 2001
+From: Matthew Haughton <3flex@users.noreply.github.com>
+Date: Thu, 23 Feb 2017 22:24:10 -0500
+Subject: [PATCH] Dockerfile: add missing libffi build dependency
+
+---
+ docker/Dockerfile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/docker/Dockerfile b/docker/Dockerfile
+index 6c5f130..748ef4b 100644
+--- a/docker/Dockerfile
++++ b/docker/Dockerfile
+@@ -19,6 +19,7 @@ RUN apt-get update && \
+             git \
+             groff \
+             libc6-dev \
++            libffi-dev \
+             libgmp-dev \
+             libmpc-dev \
+             libmpfr-dev \
