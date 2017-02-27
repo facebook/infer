@@ -165,7 +165,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
       { prev_summary.Specs.payload with Specs.preposts = Some []; } in
     let new_summary =
       { prev_summary with Specs.stats; payload; timestamp; } in
-    Specs.add_summary callee_pname new_summary;
+    Specs.store_summary callee_pname new_summary;
     new_summary in
 
   let old_state = save_global_state () in
