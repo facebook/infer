@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-package codetoanalyze.java.errors;
+package codetoanalyze.java.infer;
 
 
 import android.app.DownloadManager;
@@ -30,17 +30,6 @@ public class CursorNPEs {
       return cursor.getCount();
     } finally {
       cursor.close();
-    }
-  }
-
-  public int cursorNotClosed(SQLiteDatabase sqLiteDatabase) {
-    Cursor cursor = sqLiteDatabase.query(
-        "events", null,
-        null, null, null, null, null);
-    if (cursor == null) {
-      return 0;
-    } else {
-      return cursor.getCount();
     }
   }
 
