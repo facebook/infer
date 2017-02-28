@@ -9,6 +9,6 @@
   <url>http://maven.apache.org</url>
   <modules>
     <module>module1</module>
-    <module>module2</module>
+    <module>module2parent</module>
   </modules>
 </project>
