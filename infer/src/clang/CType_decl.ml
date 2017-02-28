@@ -78,22 +78,6 @@ let get_record_name_csu decl =
 
 let get_record_name decl = snd (get_record_name_csu decl)
 
-let get_class_methods class_name decl_list =
-  let process_method_decl meth_decl = match meth_decl with
-    | Clang_ast_t.CXXMethodDecl (_, name_info, _, fdi, mdi)
-    | Clang_ast_t.CXXConstructorDecl (_, name_info, _, fdi, mdi)
-    | Clang_ast_t.CXXConversionDecl (_, name_info, _, fdi, mdi)
-    | Clang_ast_t.CXXDestructorDecl (_, name_info, _, fdi, mdi) ->
-        let method_name = name_info.Clang_ast_t.ni_name in
-        Logging.out_debug "  ...Declaring method '%s'.\n" method_name;
-        let mangled = CGeneral_utils.get_mangled_method_name fdi mdi in
-        let procname =
-          CGeneral_utils.mk_procname_from_cpp_method class_name method_name ~meth_decl mangled in
-        Some procname
-    | _ -> None in
-  (* poor mans list_filter_map *)
-  List.filter_map ~f:process_method_decl decl_list
-
 let get_superclass_decls decl =
   let open Clang_ast_t in
   match decl with
@@ -183,9 +167,9 @@ and get_record_custom_type tenv definition_decl =
 and get_record_struct_type tenv definition_decl =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _, _)
-  | CXXRecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info, _)
-  | RecordDecl (_, _, _, type_ptr, decl_list, _, record_decl_info) ->
+  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, record_decl_info, _, _)
+  | CXXRecordDecl (_, _, _, type_ptr, _, _, record_decl_info, _)
+  | RecordDecl (_, _, _, type_ptr, _, _, record_decl_info) ->
       let csu, name = get_record_name_csu definition_decl in
       let mangled_name = Mangled.from_string name in
       let sil_typename = Typename.TN_csu (csu, mangled_name) in
@@ -204,7 +188,7 @@ and get_record_struct_type tenv definition_decl =
              let non_statics = get_struct_fields tenv definition_decl in
              let fields = CGeneral_utils.append_no_duplicates_fields non_statics extra_fields in
              let statics = [] in (* Note: We treat static field same as global variables *)
-             let methods = get_class_methods name decl_list in (* C++ methods only *)
+             let methods = [] in (* C++ methods are not put into tenv (info isn't used) *)
              let supers = get_superclass_list_cpp definition_decl in
              ignore (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename);
              let sil_type = Typ.Tstruct sil_typename in
