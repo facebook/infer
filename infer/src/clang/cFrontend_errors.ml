@@ -175,7 +175,7 @@ let expand_checkers checkers =
 
 let get_err_log translation_unit_context method_decl_opt =
   let procname = match method_decl_opt with
-    | Some method_decl -> CGeneral_utils.procname_of_decl translation_unit_context method_decl
+    | Some method_decl -> CProcname.from_decl translation_unit_context method_decl
     | None -> Procname.Linters_dummy_method in
   LintIssues.get_err_log procname
 

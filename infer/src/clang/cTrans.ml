@@ -43,12 +43,12 @@ struct
       | None ->  (* fall back to our method resolution if clang's fails *)
           let class_name = CMethod_trans.get_class_name_method_call_from_receiver_kind context
               obj_c_message_expr_info act_params in
-          CGeneral_utils.mk_procname_from_objc_method class_name selector method_kind in
+          CProcname.NoAstDecl.objc_method_of_string_kind class_name selector method_kind in
     let predefined_ms_opt = match proc_name with
       | Procname.ObjC_Cpp objc_cpp ->
           let class_name = Procname.objc_cpp_get_class_name objc_cpp in
           CTrans_models.get_predefined_model_method_signature class_name selector
-            CGeneral_utils.mk_procname_from_objc_method CFrontend_config.ObjC
+            CProcname.NoAstDecl.objc_method_of_string_kind CFrontend_config.ObjC
       | _ ->
           None in
     match predefined_ms_opt, ms_opt with
@@ -1120,7 +1120,7 @@ struct
   and block_enumeration_trans trans_state stmt_info stmt_list ei =
     Logging.out_debug "\n Call to a block enumeration function treated as special case...\n@.";
     let procname = Procdesc.get_proc_name trans_state.context.CContext.procdesc in
-    let pvar = CGeneral_utils.get_next_block_pvar procname in
+    let pvar = CProcname.get_next_block_pvar procname in
     let transformed_stmt, _ =
       Ast_expressions.translate_block_enumerate (Pvar.to_string pvar) stmt_info stmt_list ei in
     instruction trans_state transformed_stmt
@@ -2061,7 +2061,7 @@ struct
     | Clang_ast_t.BlockDecl (_, block_decl_info) ->
         let open CContext in
         let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
-        let block_pname = CGeneral_utils.mk_fresh_block_procname procname in
+        let block_pname = CProcname.mk_fresh_block_procname procname in
         let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
         (* We need to set the explicit dependency between the newly created block and the *)
         (* defining procedure. We add an edge in the call graph.*)

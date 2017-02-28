@@ -106,7 +106,7 @@ struct
                         Some (ProcAttributes.Objc_getter field_name)
                       else
                         Some (ProcAttributes.Objc_setter field_name) in
-                    let procname = CGeneral_utils.procname_of_decl trans_unit_ctx d in
+                    let procname = CProcname.from_decl trans_unit_ctx d in
                     let attrs = { (ProcAttributes.default procname Config.Clang) with
                                   loc = loc;
                                   objc_accessor = property_accessor; } in

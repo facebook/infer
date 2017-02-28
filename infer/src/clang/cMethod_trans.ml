@@ -162,7 +162,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
   match meth_decl, block_data_opt with
   | FunctionDecl (decl_info, _, qt, fdi), _ ->
       let func_decl = Func_decl_info (fdi, qt.Clang_ast_t.qt_type_ptr) in
-      let procname = CGeneral_utils.procname_of_decl trans_unit_ctx meth_decl in
+      let procname = CProcname.from_decl trans_unit_ctx meth_decl in
       let ms = build_method_signature trans_unit_ctx tenv decl_info procname func_decl None None in
       let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       ms, fdi.Clang_ast_t.fdi_body, extra_instrs
@@ -170,7 +170,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
   | CXXConstructorDecl (decl_info, _, qt, fdi, mdi), _
   | CXXConversionDecl (decl_info, _, qt, fdi, mdi), _
   | CXXDestructorDecl (decl_info, _, qt, fdi, mdi), _ ->
-      let procname = CGeneral_utils.procname_of_decl trans_unit_ctx meth_decl in
+      let procname = CProcname.from_decl trans_unit_ctx meth_decl in
       let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
       let method_decl = Cpp_Meth_decl_info (fdi, mdi, parent_ptr, qt.Clang_ast_t.qt_type_ptr)  in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -180,7 +180,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
       ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
   | ObjCMethodDecl (decl_info, _, mdi), _ ->
-      let procname = CGeneral_utils.procname_of_decl trans_unit_ctx meth_decl in
+      let procname = CProcname.from_decl trans_unit_ctx meth_decl in
       let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
       let method_decl = ObjC_Meth_decl_info (mdi, parent_ptr) in
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
@@ -468,9 +468,9 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
       let callee_name =
         match class_name_opt with
         | Some class_name ->
-            CGeneral_utils.mk_procname_from_cpp_method class_name name None
+            CProcname.NoAstDecl.cpp_method_of_string class_name name
         | None ->
-            CGeneral_utils.mk_procname_from_function context.translation_unit_context name None in
+            CProcname.NoAstDecl.c_function_of_string context.translation_unit_context name in
       create_external_procdesc context.cfg callee_name false None;
       callee_name
 

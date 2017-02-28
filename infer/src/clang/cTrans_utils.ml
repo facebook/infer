@@ -335,7 +335,7 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
   let is_instance = true in
   let call_flags = { CallFlags.default with CallFlags.cf_virtual = is_instance; } in
   let pname =
-    CGeneral_utils.mk_procname_from_objc_method
+    CProcname.NoAstDecl.objc_method_of_string_kind
       cls_name CFrontend_config.init Procname.ObjCInstanceMethod in
   CMethod_trans.create_external_procdesc trans_state.context.CContext.cfg pname is_instance None;
   let args = [(alloc_ret_exp, alloc_ret_type)] in
