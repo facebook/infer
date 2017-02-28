@@ -23,8 +23,6 @@ val append_no_duplicates_fields : (Ident.fieldname * Typ.t * Annot.Item.t) list 
 val append_no_duplicates_csu :
   Typename.t list -> Typename.t list -> Typename.t list
 
-val append_no_duplicates_methods : Procname.t list -> Procname.t list -> Procname.t list
-
 val sort_fields :
   (Ident.fieldname * Typ.t * Annot.Item.t) list ->
   (Ident.fieldname * Typ.t * Annot.Item.t) list

@@ -69,19 +69,17 @@ let get_base_class_name_from_category decl =
 (* to the corresponding class. Update the tenv accordingly.*)
 let process_category type_ptr_to_sil_type tenv curr_class decl_info decl_list =
   let decl_fields = CField_decl.get_fields type_ptr_to_sil_type tenv curr_class decl_list in
-  let decl_methods = ObjcProperty_decl.get_methods curr_class decl_list in
   let class_name = CContext.get_curr_class_name curr_class in
   let mang_name = Mangled.from_string class_name in
   let class_tn_name = Typename.TN_csu (Csu.Class Csu.Objc, mang_name) in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
   (match Tenv.lookup tenv class_tn_name with
-   | Some ({ fields; methods } as struct_typ) ->
+   | Some ({ fields } as struct_typ) ->
        let new_fields = CGeneral_utils.append_no_duplicates_fields decl_fields fields in
-       let new_methods = CGeneral_utils.append_no_duplicates_methods decl_methods methods in
        ignore(
          Tenv.mk_struct tenv
-           ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:new_methods class_tn_name );
+           ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:[] class_tn_name );
        Logging.out_debug " Updating info for class '%s' in tenv\n" class_name
    | _ -> ());
   Typ.Tstruct class_tn_name
