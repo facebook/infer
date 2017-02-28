@@ -117,7 +117,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
                 let replace_typ_of_f (f', t', a') =
                   if Ident.equal_fieldname f f' then (f, res_t', a') else (f', t', a') in
                 let fields' =
-                  List.sort ~cmp:StructTyp.compare_field (List.map ~f:replace_typ_of_f fields) in
+                  List.sort ~cmp:Typ.Struct.compare_field (List.map ~f:replace_typ_of_f fields) in
                 ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                 (atoms', se, t)
             | None ->
@@ -226,7 +226,7 @@ let rec _strexp_extend_values
                     let replace_fta ((f1, _, a1) as fta1) =
                       if Ident.equal_fieldname f f1 then (f1, res_typ', a1) else fta1 in
                     let fields' =
-                      List.sort ~cmp:StructTyp.compare_field (List.map ~f:replace_fta fields) in
+                      List.sort ~cmp:Typ.Struct.compare_field (List.map ~f:replace_fta fields) in
                     ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                     (res_atoms', Sil.Estruct (res_fsel', inst'), typ) :: acc in
                   List.fold ~f:replace ~init:[] atoms_se_typ_list'
@@ -239,7 +239,7 @@ let rec _strexp_extend_values
                   let replace_fta (f', t', a') =
                     if Ident.equal_fieldname f' f then (f, res_typ', a') else (f', t', a') in
                   let fields' =
-                    List.sort ~cmp:StructTyp.compare_field (List.map ~f:replace_fta fields) in
+                    List.sort ~cmp:Typ.Struct.compare_field (List.map ~f:replace_fta fields) in
                   ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
                   [(atoms', Sil.Estruct (res_fsel', inst'), typ)]
             )
@@ -705,7 +705,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     List.find_map ~f:annot_suppress_warnings_str item_annot in
   (* if [fld] is annotated with @GuardedBy("mLock"), return mLock *)
   let get_guarded_by_fld_str fld typ =
-    match StructTyp.get_field_type_and_annotation ~lookup fld typ with
+    match Typ.Struct.get_field_type_and_annotation ~lookup fld typ with
     | Some (_, item_annot) ->
         begin
           match extract_guarded_by_str item_annot with
@@ -727,7 +727,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
 
     let get_fld_strexp_and_typ typ f flds =
       let match_one (fld, strexp) =
-        match StructTyp.get_field_type_and_annotation ~lookup fld typ with
+        match Typ.Struct.get_field_type_and_annotation ~lookup fld typ with
         | Some (fld_typ, _) when f fld fld_typ -> Some (strexp, fld_typ)
         | _ -> None in
       List.find_map ~f:match_one flds in
@@ -1328,7 +1328,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
               is_nullable || Pvar.is_local pvar
           | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
               let fld_is_nullable fld =
-                match StructTyp.get_field_type_and_annotation ~lookup fld typ with
+                match Typ.Struct.get_field_type_and_annotation ~lookup fld typ with
                 | Some (_, annot) -> Annotations.ia_is_nullable annot
                 | _ -> false in
               let is_strexp_pt_by_nullable_fld (fld, strexp) =

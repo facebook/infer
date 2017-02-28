@@ -75,7 +75,7 @@ let sort_fields fields =
 
 
 let sort_fields_tenv tenv =
-  let sort_fields_struct name ({StructTyp.fields} as st) =
+  let sort_fields_struct name ({Typ.Struct.fields} as st) =
     ignore (Tenv.mk_struct tenv ~default:st ~fields:(sort_fields fields) name) in
   Tenv.iter sort_fields_struct tenv
 

@@ -122,19 +122,31 @@ let ptr_kind_string =
 /** statically determined length of an array type, if any */
 type static_length = option IntLit.t [@@deriving compare];
 
+let module T = {
 
-/** types for sil (structured) expressions */
-type t =
-  | Tint ikind /** integer type */
-  | Tfloat fkind /** float type */
-  | Tvoid /** void type */
-  | Tfun bool /** function type with noreturn attribute */
-  | Tptr t ptr_kind /** pointer type */
-  | Tstruct Typename.t /** structured value type name */
-  | Tarray t static_length /** array type with statically fixed length */
-[@@deriving compare];
+  /** types for sil (structured) expressions */
+  type t =
+    | Tint ikind /** integer type */
+    | Tfloat fkind /** float type */
+    | Tvoid /** void type */
+    | Tfun bool /** function type with noreturn attribute */
+    | Tptr t ptr_kind /** pointer type */
+    | Tstruct Typename.t /** structured value type name */
+    | Tarray t static_length /** array type with statically fixed length */
+  [@@deriving compare];
+  let equal = [%compare.equal : t];
+  let hash = Hashtbl.hash;
+};
 
-let equal = [%compare.equal : t];
+include T;
+
+
+/** {2 Sets and maps of types} */
+let module Set = Caml.Set.Make T;
+
+let module Map = Caml.Map.Make T;
+
+let module Tbl = Hashtbl.Make T;
 
 
 /** type comparison that treats T* [] and T** as the same type. Needed for C/C++ */
@@ -193,24 +205,6 @@ let d_full (t: t) => L.add_print_action (L.PTtyp_full, Obj.repr t);
 
 /** dump a list of types. */
 let d_list (tl: list t) => L.add_print_action (L.PTtyp_list, Obj.repr tl);
-
-
-/** {2 Sets and maps of types} */
-let module Set = Caml.Set.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
-
-let module Map = Caml.Map.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
-
-let module Tbl = Hashtbl.Make {
-  type nonrec t = t;
-  let equal = equal;
-  let hash = Hashtbl.hash;
-};
 
 let name =
   fun
@@ -301,3 +295,122 @@ let java_proc_return_typ pname_java =>
   | Tstruct _ as typ => Tptr typ Pk_pointer
   | typ => typ
   };
+
+type typ = t;
+
+let module Struct = {
+  type field = (Ident.fieldname, T.t, Annot.Item.t) [@@deriving compare];
+  type fields = list field;
+
+  /** Type for a structured value. */
+  type t = {
+    fields: fields, /** non-static fields */
+    statics: fields, /** static fields */
+    supers: list Typename.t, /** superclasses */
+    methods: list Procname.t, /** methods defined */
+    annots: Annot.Item.t /** annotations */
+  };
+  type lookup = Typename.t => option t;
+  let pp pe name f {fields, supers, methods, annots} =>
+    if Config.debug_mode {
+      /* change false to true to print the details of struct */
+      F.fprintf
+        f
+        "%a \n\tfields: {%a\n\t}\n\tsupers: {%a\n\t}\n\tmethods: {%a\n\t}\n\tannots: {%a\n\t}"
+        Typename.pp
+        name
+        (
+          Pp.seq (
+            fun f (fld, t, _) => F.fprintf f "\n\t\t%a %a" (pp_full pe) t Ident.pp_fieldname fld
+          )
+        )
+        fields
+        (Pp.seq (fun f n => F.fprintf f "\n\t\t%a" Typename.pp n))
+        supers
+        (Pp.seq (fun f m => F.fprintf f "\n\t\t%a" Procname.pp m))
+        methods
+        Annot.Item.pp
+        annots
+    } else {
+      F.fprintf f "%a" Typename.pp name
+    };
+  let internal_mk_struct
+      default::default=?
+      fields::fields=?
+      statics::statics=?
+      methods::methods=?
+      supers::supers=?
+      annots::annots=?
+      () => {
+    let mk_struct_
+        default::
+          default={fields: [], statics: [], methods: [], supers: [], annots: Annot.Item.empty}
+        fields::fields=default.fields
+        statics::statics=default.statics
+        methods::methods=default.methods
+        supers::supers=default.supers
+        annots::annots=default.annots
+        () => {
+      fields,
+      statics,
+      methods,
+      supers,
+      annots
+    };
+    mk_struct_
+      default::?default
+      fields::?fields
+      statics::?statics
+      methods::?methods
+      supers::?supers
+      annots::?annots
+      ()
+  };
+
+  /** the element typ of the final extensible array in the given typ, if any */
+  let rec get_extensible_array_element_typ lookup::lookup (typ: T.t) =>
+    switch typ {
+    | Tarray typ _ => Some typ
+    | Tstruct name =>
+      switch (lookup name) {
+      | Some {fields} =>
+        switch (List.last fields) {
+        | Some (_, fld_typ, _) => get_extensible_array_element_typ lookup::lookup fld_typ
+        | None => None
+        }
+      | None => None
+      }
+    | _ => None
+    };
+
+  /** If a struct type with field f, return the type of f. If not, return the default */
+  let fld_typ lookup::lookup default::default fn (typ: T.t) =>
+    switch typ {
+    | Tstruct name =>
+      switch (lookup name) {
+      | Some {fields} =>
+        List.find f::(fun (f, _, _) => Ident.equal_fieldname f fn) fields |>
+        Option.value_map f::snd3 default::default
+      | None => default
+      }
+    | _ => default
+    };
+  let get_field_type_and_annotation lookup::lookup fn (typ: T.t) =>
+    switch typ {
+    | Tstruct name
+    | Tptr (Tstruct name) _ =>
+      switch (lookup name) {
+      | Some {fields, statics} =>
+        List.find_map
+          f::(fun (f, t, a) => Ident.equal_fieldname f fn ? Some (t, a) : None) (fields @ statics)
+      | None => None
+      }
+    | _ => None
+    };
+  let objc_ref_counter_annot = [({Annot.class_name: "ref_counter", parameters: []}, false)];
+
+  /** Field used for objective-c reference counting */
+  let objc_ref_counter_field = (Ident.fieldname_hidden, T.Tint IInt, objc_ref_counter_annot);
+  let is_objc_ref_counter_field (fld, _, a) =>
+    Ident.fieldname_is_hidden fld && Annot.Item.equal a objc_ref_counter_annot;
+};

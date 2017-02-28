@@ -108,13 +108,13 @@ let pname_has_return_annot pname ~attrs_of_pname predicate =
   | Some attributes -> predicate (fst attributes.ProcAttributes.method_annotation)
   | None -> false
 
-let field_has_annot fieldname (struct_typ : StructTyp.t) predicate =
+let field_has_annot fieldname (struct_typ : Typ.Struct.t) predicate =
   let fld_has_taint_annot (fname, _, annot) =
     Ident.equal_fieldname fieldname fname && predicate annot in
   List.exists ~f:fld_has_taint_annot struct_typ.fields ||
   List.exists ~f:fld_has_taint_annot struct_typ.statics
 
-let struct_typ_has_annot (struct_typ : StructTyp.t) predicate =
+let struct_typ_has_annot (struct_typ : Typ.Struct.t) predicate =
   predicate struct_typ.annots
 
 let ia_is_not_thread_safe ia =

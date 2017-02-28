@@ -178,7 +178,7 @@ and get_record_struct_type tenv definition_decl =
        | None ->
            let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
            let extra_fields = if CTrans_models.is_objc_memory_model_controlled name then
-               [StructTyp.objc_ref_counter_field]
+               [Typ.Struct.objc_ref_counter_field]
              else [] in
            let annots =
              if Csu.equal csu (Csu.Class Csu.CPP) then Annot.Class.cpp

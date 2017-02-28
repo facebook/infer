@@ -348,7 +348,7 @@ let tainted_params callee_pname =
       List.map ~f:(fun param_num -> param_num, taint_info.PredSymb.taint_kind) tainted_param_indices
   | None -> []
 
-let has_taint_annotation fieldname (struct_typ: StructTyp.t) =
+let has_taint_annotation fieldname (struct_typ: Typ.Struct.t) =
   let fld_has_taint_annot (fname, _, annot) =
     Ident.equal_fieldname fieldname fname &&
     (Annotations.ia_is_privacy_source annot || Annotations.ia_is_integrity_source annot) in

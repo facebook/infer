@@ -61,7 +61,7 @@ module Raw = struct
       | FieldAccess field_name :: accesses ->
           let lookup = Tenv.lookup tenv in
           begin
-            match StructTyp.get_field_type_and_annotation ~lookup field_name last_typ with
+            match Typ.Struct.get_field_type_and_annotation ~lookup field_name last_typ with
             | Some (field_typ, _) -> accesses_get_typ field_typ tenv accesses
             | None -> None
           end

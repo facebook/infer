@@ -22,7 +22,7 @@ let check_library_calls = false
 
 let get_field_annotation tenv fn typ =
   let lookup = Tenv.lookup tenv in
-  match StructTyp.get_field_type_and_annotation ~lookup fn typ with
+  match Typ.Struct.get_field_type_and_annotation ~lookup fn typ with
   | None -> None
   | Some (t, ia) ->
       let ia' =

@@ -480,7 +480,7 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
           (* pass len as an accumulator, so that it is passed to create_strexp_of_type for the last
              field, but always return None so that only the last field receives len *)
           let f (fld, t, a) (flds, len) =
-            if StructTyp.is_objc_ref_counter_field (fld, t, a) then
+            if Typ.Struct.is_objc_ref_counter_field (fld, t, a) then
               ((fld, Sil.Eexp (Exp.one, inst)) :: flds, None)
             else
               ((fld, create_strexp_of_type tenv struct_init_mode t len inst) :: flds, None) in
@@ -871,7 +871,7 @@ module Normalize = struct
           (* test if the extensible array at the end of [typ] has elements of type [elt] *)
           let extensible_array_element_typ_equal elt typ =
             Option.value_map ~f:(Typ.equal elt) ~default:false
-              (StructTyp.get_extensible_array_element_typ ~lookup typ) in
+              (Typ.Struct.get_extensible_array_element_typ ~lookup typ) in
           begin
             match e1', e2' with
             (* pattern for arrays and extensible structs:

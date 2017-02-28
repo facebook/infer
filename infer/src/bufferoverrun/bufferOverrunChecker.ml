@@ -161,7 +161,7 @@ struct
       | Typ.Tstruct typename ->
           (match Tenv.lookup tenv typename with
            | Some str ->
-               List.fold ~f:decl_fld ~init:(mem, sym_num + 6) str.StructTyp.fields
+               List.fold ~f:decl_fld ~init:(mem, sym_num + 6) str.Typ.Struct.fields
            | _ -> (mem, sym_num + 6))
       | _ -> (mem, sym_num + 6)
 

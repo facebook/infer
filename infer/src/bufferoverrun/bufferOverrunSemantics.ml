@@ -298,7 +298,7 @@ struct
         | Typ.Tptr (Typ.Tstruct typename, _) ->
             (match Tenv.lookup tenv typename with
              | Some str ->
-                 let fns = List.map ~f:get_field_name str.StructTyp.fields in
+                 let fns = List.map ~f:get_field_name str.Typ.Struct.fields in
                  List.fold ~f:(add_pair_field v1 v2) ~init:pairs fns
              | _ -> pairs)
         | Typ.Tptr (_ ,_) ->

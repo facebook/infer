@@ -82,12 +82,22 @@ type t =
 [@@deriving compare];
 
 
-/** type comparison that treats T* [] and T** as the same type. Needed for C/C++ */
-let array_sensitive_compare: t => t => int;
-
-
 /** Equality for types. */
 let equal: t => t => bool;
+
+
+/** Sets of types. */
+let module Set: Caml.Set.S with type elt = t;
+
+
+/** Maps with type keys. */
+let module Map: Caml.Map.S with type key = t;
+
+let module Tbl: Caml.Hashtbl.S with type key = t;
+
+
+/** type comparison that treats T* [] and T** as the same type. Needed for C/C++ */
+let array_sensitive_compare: t => t => int;
 
 
 /** Pretty print a type with all the details. */
@@ -106,16 +116,6 @@ let d_full: t => unit;
 
 /** Dump a list of types. */
 let d_list: list t => unit;
-
-
-/** Sets of types. */
-let module Set: Caml.Set.S with type elt = t;
-
-
-/** Maps with type keys. */
-let module Map: Caml.Map.S with type key = t;
-
-let module Tbl: Caml.Hashtbl.S with type key = t;
 
 
 /** The name of a type */
@@ -151,3 +151,49 @@ let unsome: string => option t => t;
 
 /** Return the return type of [pname_java]. */
 let java_proc_return_typ: Procname.java => t;
+
+type typ = t;
+
+let module Struct: {
+  type field = (Ident.fieldname, typ, Annot.Item.t) [@@deriving compare];
+  type fields = list field;
+
+  /** Type for a structured value. */
+  type t = private {
+    fields: fields, /** non-static fields */
+    statics: fields, /** static fields */
+    supers: list Typename.t, /** supers */
+    methods: list Procname.t, /** methods defined */
+    annots: Annot.Item.t /** annotations */
+  };
+  type lookup = Typename.t => option t;
+
+  /** Pretty print a struct type. */
+  let pp: Pp.env => Typename.t => F.formatter => t => unit;
+
+  /** Construct a struct_typ, normalizing field types */
+  let internal_mk_struct:
+    default::t? =>
+    fields::fields? =>
+    statics::fields? =>
+    methods::list Procname.t? =>
+    supers::list Typename.t? =>
+    annots::Annot.Item.t? =>
+    unit =>
+    t;
+
+  /** the element typ of the final extensible array in the given typ, if any */
+  let get_extensible_array_element_typ: lookup::lookup => typ => option typ;
+
+  /** If a struct type with field f, return the type of f.
+      If not, return the default type if given, otherwise raise an exception */
+  let fld_typ: lookup::lookup => default::typ => Ident.fieldname => typ => typ;
+
+  /** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] */
+  let get_field_type_and_annotation:
+    lookup::lookup => Ident.fieldname => typ => option (typ, Annot.Item.t);
+
+  /** Field used for objective-c reference counting */
+  let objc_ref_counter_field: (Ident.fieldname, typ, Annot.Item.t);
+  let is_objc_ref_counter_field: (Ident.fieldname, typ, Annot.Item.t) => bool;
+};

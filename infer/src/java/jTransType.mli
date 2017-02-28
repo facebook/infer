@@ -32,7 +32,7 @@ val get_method_procname :
 val translate_method_name : JCode.jcode Javalib.jmethod -> Procname.t
 
 (** [get_class_struct_typ program tenv cn] returns the struct_typ representation of the class *)
-val get_class_struct_typ: JClasspath.program -> Tenv.t -> JBasics.class_name -> StructTyp.t
+val get_class_struct_typ: JClasspath.program -> Tenv.t -> JBasics.class_name -> Typ.Struct.t
 
 (** [get_class_type_no_pointer program tenv cn] returns the sil type representation of the class
     without the pointer part *)
