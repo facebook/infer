@@ -1,18 +1,13 @@
 # Base image
-FROM heikomaass/android-sdk
+FROM buildpack-deps:xenial-curl
 
 MAINTAINER Infer
-
-# Add android-22 and build-tools-22 to the Android SDK
-RUN ["/opt/sdk-tools/android-accept-licenses.sh", \
-     "android update sdk --filter \"android-22\" --no-ui --force --all"]
-RUN ["/opt/sdk-tools/android-accept-licenses.sh", \
-     "android update sdk --filter \"build-tools-22.0.1\" --no-ui --force --all"]
 
 # Debian config
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
             autoconf \
+            automake \
             curl \
             gcc \
             g++ \
@@ -27,6 +22,7 @@ RUN apt-get update && \
             make \
             ncurses-dev \
             ocaml \
+            openjdk-8-jdk-headless \
             pkg-config \
             python-software-properties \
             rsync \
@@ -60,3 +56,21 @@ RUN cd /infer && \
 # Install Infer
 ENV INFER_HOME /infer/infer
 ENV PATH ${INFER_HOME}/bin:${PATH}
+
+# Install dependencies for Android sample
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+            libc6-dev \
+            libc6-i386 \
+            lib32z1 \
+            lib32stdc++6 && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV ANDROID_HOME /opt/android-sdk-linux
+WORKDIR $ANDROID_HOME
+RUN curl -o sdk-tools-linux.zip \
+      https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip && \
+    unzip sdk-tools-linux.zip && \
+    rm sdk-tools-linux.zip
+ENV PATH ${ANDROID_HOME}/tools/bin:${PATH}
+RUN echo "sdk.dir=${ANDROID_HOME}" > /infer/examples/android_hello/local.properties
