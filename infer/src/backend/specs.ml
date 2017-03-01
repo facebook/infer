@@ -557,7 +557,7 @@ let store_summary pname (summ1: summary) =
         stats = { summ1.stats with stats_time = 0.0} } in
   let final_summary = { summ3 with status = Analyzed } in
   add_summary pname summ3 (* Make sure the summary in memory is identical to the saved one *);
-  Serialization.write_to_file summary_serializer (res_dir_specs_filename pname) final_summary
+  Serialization.write_to_file summary_serializer (res_dir_specs_filename pname) ~data:final_summary
 
 (** Load procedure summary from the given file *)
 let load_summary specs_file =

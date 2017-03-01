@@ -375,7 +375,7 @@ let load_from_file (filename: DB.filename) :option t =>
 /** Save a call graph into a file */
 let store_to_file (filename: DB.filename) (call_graph: t) =>
   Serialization.write_to_file
-    callgraph_serializer filename (call_graph.source, get_nodes_and_edges call_graph);
+    callgraph_serializer filename data::(call_graph.source, get_nodes_and_edges call_graph);
 
 let pp_graph_dotty get_specs (g: t) fmt => {
   let nodes_with_calls = get_all_nodes g;

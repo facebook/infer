@@ -27,7 +27,7 @@ let lint_issues_serializer : (Errlog.t Procname.Map.t) Serialization.serializer 
 
 (** Save issues to a file *)
 let store_issues filename errLogMap =
-  Serialization.write_to_file lint_issues_serializer filename errLogMap
+  Serialization.write_to_file lint_issues_serializer filename ~data:errLogMap
 
 (** Load issues from the given file *)
 let load_issues issues_file =

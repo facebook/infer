@@ -1233,7 +1233,7 @@ let module AnalysisResults = {
 
   /** Save analysis_results into a file */
   let store_analysis_results_to_file (filename: DB.filename) (analysis_results: t) =>
-    Serialization.write_to_file analysis_results_serializer filename analysis_results;
+    Serialization.write_to_file analysis_results_serializer filename data::analysis_results;
 
   /** Return an iterator over all the summaries.
       If options - load_results or - save_results are used,

@@ -16,9 +16,10 @@ module F = Format
 (** Generic serializer *)
 type 'a serializer =
   {
-    read_from_string: (string -> 'a option);
-    read_from_file: (DB.filename -> 'a option);
-    write_to_file: (DB.filename -> 'a -> unit);
+    read_from_string: string -> 'a option;
+    read_from_file: DB.filename -> 'a option;
+    update_file : f:('a option -> 'a) -> DB.filename -> unit;
+    write_to_file: data:'a -> DB.filename -> unit;
   }
 
 module Key = struct
@@ -49,6 +50,9 @@ let retry_exception ~timeout ~catch_exn ~f x =
         retry () in
   retry ()
 
+type 'a write_command =
+  | Replace of 'a
+  | Update of ('a option -> 'a)
 
 let create_serializer (key : Key.t) : 'a serializer =
   let read_data ((key': Key.t), (version': int), (value: 'a)) source_msg =
@@ -88,17 +92,31 @@ let create_serializer (key : Key.t) : 'a serializer =
         SymOp.try_finally
           (fun () -> retry_exception ~timeout:1.0 ~catch_exn ~f:read ())
           (fun () -> In_channel.close inc) in
-  let write_to_file (fname : DB.filename) (value : 'a) =
+  let execute_write_command (fname : DB.filename) (cmd : 'a write_command) =
     let fname_str = DB.filename_to_string fname in
-    (* support nonblocking reads and writes in parallel: *)
-    (* write to a tmp file and use rename which is atomic *)
-    let fname_tmp = Filename.temp_file
-        ~in_dir:(Filename.dirname fname_str) (Filename.basename fname_str) ".tmp" in
-    let outc = open_out_bin fname_tmp in
-    Marshal.to_channel outc (key, version, value) [];
-    Out_channel.close outc;
-    Unix.rename ~src:fname_tmp ~dst:fname_str in
-  {read_from_string; read_from_file; write_to_file}
+    let file_descr = Unix.openfile ~mode:[Unix.O_WRONLY; Unix.O_CREAT] fname_str in
+    if (Unix.flock file_descr Unix.Flock_command.lock_exclusive)
+    then begin
+      let (value_to_write : 'a) = match cmd with
+        | Replace value ->
+            value
+        | Update upd ->
+            let old_value_opt =
+              let st_size = (Unix.fstat file_descr).st_size in
+              if st_size > 0L
+              then read_from_file fname
+              else None in
+            upd old_value_opt in
+      let outc = Unix.out_channel_of_descr file_descr in
+      Marshal.to_channel outc (key, version, value_to_write) [];
+      ignore (Unix.flock file_descr Unix.Flock_command.unlock);
+      Out_channel.close outc
+    end in
+  let write_to_file ~(data : 'a) (fname : DB.filename) =
+    execute_write_command fname (Replace data) in
+  let update_file ~f (fname : DB.filename) =
+    execute_write_command fname (Update f) in
+  {read_from_string; read_from_file; update_file; write_to_file; }
 
 
 let read_from_string s =
@@ -106,6 +124,9 @@ let read_from_string s =
 
 let read_from_file s =
   s.read_from_file
+
+let update_file s =
+  s.update_file
 
 let write_to_file s =
   s.write_to_file

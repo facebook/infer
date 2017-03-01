@@ -63,7 +63,7 @@ let load_attr defined_only::defined_only proc_name => {
 let write_and_delete proc_name (proc_attributes: ProcAttributes.t) => {
   let attributes_file defined => res_dir_attr_filename defined::defined proc_name;
   Serialization.write_to_file
-    serializer (attributes_file proc_attributes.is_defined) proc_attributes;
+    serializer (attributes_file proc_attributes.is_defined) data::proc_attributes;
   if proc_attributes.is_defined {
     let fname_declared = DB.filename_to_string (attributes_file false);
     if (Sys.file_exists fname_declared == `Yes) {

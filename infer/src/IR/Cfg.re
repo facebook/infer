@@ -336,7 +336,7 @@ let store_cfg_to_file source_file::source_file (filename: DB.filename) (cfg: cfg
      OndemandCapture module relies on it - it uses existance of .cfg file as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) */
   save_attributes source_file cfg;
-  Serialization.write_to_file cfg_serializer filename cfg
+  Serialization.write_to_file cfg_serializer filename data::cfg
 };
 
 

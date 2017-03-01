@@ -29,8 +29,8 @@ let load_from_file (filename : DB.filename) : serializer_t option =
   Serialization.read_from_file serializer filename
 
 (** Save a cluster into a file *)
-let store_to_file (filename : DB.filename) (serializer_t: serializer_t) =
-  Serialization.write_to_file serializer filename serializer_t
+let store_to_file (filename : DB.filename) (data: serializer_t) =
+  Serialization.write_to_file serializer filename ~data
 
 let cl_name n = "cl" ^ string_of_int n
 let cl_file n = "x" ^ (cl_name n) ^ ".cluster"

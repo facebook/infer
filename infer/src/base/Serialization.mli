@@ -59,5 +59,9 @@ val read_from_file : 'a serializer -> DB.filename -> 'a option
 (** Deserialize a string and check the keys *)
 val read_from_string : 'a serializer -> string -> 'a option
 
-(** Serialize into a file *)
-val write_to_file : 'a serializer -> DB.filename -> 'a -> unit
+(** Serialize into a file.
+    The upd function takes the old value, if any, and returns the value to write *)
+val update_file : 'a serializer -> f:('a option -> 'a) -> DB.filename -> unit
+
+(** Serialize into a file writing value *)
+val write_to_file : 'a serializer -> data:'a -> DB.filename -> unit
