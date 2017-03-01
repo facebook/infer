@@ -44,7 +44,8 @@ RUN INFER_VERSION=v0.10.0; \
 
 # Compile Infer
 RUN cd /infer && \
-    ./build-infer.sh
+    ./build-infer.sh && \
+    rm -rf /root/.opam
 
 # Install Infer
 ENV INFER_HOME /infer/infer
