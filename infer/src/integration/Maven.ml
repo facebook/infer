@@ -37,7 +37,7 @@ let infer_profile = lazy
 
 let pom_worklist = ref [CLOpt.init_work_dir]
 
-let add_infer_profile_to_xml maven_xml infer_xml =
+let add_infer_profile_to_xml dir maven_xml infer_xml =
   let copy xml_in xml_out = Xmlm.output xml_out (Xmlm.input xml_in) in
   (* whether we ever found a <profiles> tag *)
   let found_profiles_tag = ref false in
@@ -90,7 +90,7 @@ let add_infer_profile_to_xml maven_xml infer_xml =
              L.do_out "Found infer profile, not adding one@.";
              found_infer_profile := true
          | "module"::"modules"::_ ->
-             let abs_data = CLOpt.init_work_dir ^/ data in
+             let abs_data = dir ^/ data in
              L.do_out "Adding maven module %s@." abs_data;
              pom_worklist := abs_data::!pom_worklist
          | _ -> ()
@@ -118,7 +118,7 @@ let add_infer_profile mvn_pom infer_pom =
     let with_ic () =
       let xml_in = Xmlm.make_input ~strip:false (`Channel ic) in
       let xml_out = Xmlm.make_output ~nl:true (`Channel out_chan) in
-      add_infer_profile_to_xml xml_in xml_out in
+      add_infer_profile_to_xml (Filename.dirname mvn_pom) xml_in xml_out in
     protect ~f:with_ic ~finally:(fun () -> In_channel.close ic) in
   Utils.with_file infer_pom ~f:with_oc
 
