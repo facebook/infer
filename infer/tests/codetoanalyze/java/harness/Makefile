@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = infer
 INFER_OPTIONS = --android-harness --no-filtering --debug-exceptions
-INFERPRINT_OPTIONS = --no-print-traces-in-tests --issues-tests
+INFERPRINT_OPTIONS = --issues-fields "file,procedure,line_offset,bug_type" --issues-tests
 SOURCES = \
   BasicHarnessActivity.java \
 

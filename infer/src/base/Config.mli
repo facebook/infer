@@ -40,6 +40,24 @@ val ml_bucket_symbols :
   (string * [ `MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown ])
     list
 
+val issues_fields_symbols :
+  (string * [`Issue_field_bug_class
+            | `Issue_field_kind
+            | `Issue_field_bug_type
+            | `Issue_field_qualifier
+            | `Issue_field_severity
+            | `Issue_field_visibility
+            | `Issue_field_line
+            | `Issue_field_column
+            | `Issue_field_procedure
+            | `Issue_field_procedure_id
+            | `Issue_field_procedure_start_line
+            | `Issue_field_file
+            | `Issue_field_bug_trace
+            | `Issue_field_key
+            | `Issue_field_hash
+            | `Issue_field_line_offset]) list
+
 
 type os_type = Unix | Win32 | Cygwin
 
@@ -218,6 +236,22 @@ val headers : bool
 val icfg_dotty_outfile : string option
 val infer_cache : string option
 val iphoneos_target_sdk_version : string option
+val issues_fields : [`Issue_field_bug_class
+                    | `Issue_field_kind
+                    | `Issue_field_bug_type
+                    | `Issue_field_qualifier
+                    | `Issue_field_severity
+                    | `Issue_field_visibility
+                    | `Issue_field_line
+                    | `Issue_field_column
+                    | `Issue_field_procedure
+                    | `Issue_field_procedure_id
+                    | `Issue_field_procedure_start_line
+                    | `Issue_field_file
+                    | `Issue_field_bug_trace
+                    | `Issue_field_key
+                    | `Issue_field_hash
+                    | `Issue_field_line_offset] list
 val iterations : int
 val java_jar_compiler : string option
 val javac_classes_out : string
@@ -245,7 +279,6 @@ val pmd_xml : bool
 val precondition_stats : bool
 val print_logs : bool
 val print_builtins : bool
-val print_traces_in_tests : bool
 val print_types : bool
 val print_using_diff : bool
 val procs_csv : string option

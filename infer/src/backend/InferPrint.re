@@ -511,26 +511,48 @@ let module IssuesJson = {
   };
 };
 
-let pp_tests_of_report fmt report => {
-  open Jsonbug_t;
-  let pp_trace_elem fmt {description} => F.fprintf fmt "%s" description;
-  let pp_trace fmt trace =>
-    if Config.print_traces_in_tests {
+let pp_custom_of_report fmt report fields => {
+  let pp_custom_of_issue fmt issue => {
+    open Jsonbug_t;
+    let comma_separator index =>
+      if (index > 0) {
+        ", "
+      } else {
+        ""
+      };
+    let pp_trace fmt trace comma => {
+      let pp_trace_elem fmt {description} => F.fprintf fmt "%s" description;
       let trace_without_empty_descs =
         List.filter f::(fun {description} => description != "") trace;
-      F.fprintf fmt ", [%a]" (Pp.comma_seq pp_trace_elem) trace_without_empty_descs
+      F.fprintf fmt "%s[%a]" comma (Pp.comma_seq pp_trace_elem) trace_without_empty_descs
     };
-  let pp_row jsonbug =>
-    F.fprintf
-      fmt
-      "%s, %s, %d, %s%a@."
-      jsonbug.file
-      jsonbug.procedure
-      (jsonbug.line - jsonbug.procedure_start_line)
-      jsonbug.bug_type
-      pp_trace
-      jsonbug.bug_trace;
-  List.iter f::pp_row report
+    let pp_field index field =>
+      switch field {
+      | `Issue_field_bug_class => Format.fprintf fmt "%s%s" (comma_separator index) issue.bug_class
+      | `Issue_field_kind => Format.fprintf fmt "%s%s" (comma_separator index) issue.kind
+      | `Issue_field_bug_type => Format.fprintf fmt "%s%s" (comma_separator index) issue.bug_type
+      | `Issue_field_qualifier => Format.fprintf fmt "%s%s" (comma_separator index) issue.qualifier
+      | `Issue_field_severity => Format.fprintf fmt "%s%s" (comma_separator index) issue.severity
+      | `Issue_field_visibility =>
+        Format.fprintf fmt "%s%s" (comma_separator index) issue.visibility
+      | `Issue_field_line => Format.fprintf fmt "%s%d" (comma_separator index) issue.line
+      | `Issue_field_column => Format.fprintf fmt "%s%d" (comma_separator index) issue.column
+      | `Issue_field_procedure => Format.fprintf fmt "%s%s" (comma_separator index) issue.procedure
+      | `Issue_field_procedure_id =>
+        Format.fprintf fmt "%s%s" (comma_separator index) issue.procedure_id
+      | `Issue_field_procedure_start_line =>
+        Format.fprintf fmt "%s%d" (comma_separator index) issue.procedure_start_line
+      | `Issue_field_file => Format.fprintf fmt "%s%s" (comma_separator index) issue.file
+      | `Issue_field_bug_trace => pp_trace fmt issue.bug_trace (comma_separator index)
+      | `Issue_field_key => Format.fprintf fmt "%s%d" (comma_separator index) issue.key
+      | `Issue_field_hash => Format.fprintf fmt "%s%d" (comma_separator index) issue.hash
+      | `Issue_field_line_offset =>
+        Format.fprintf fmt "%s%d" (comma_separator index) (issue.line - issue.procedure_start_line)
+      };
+    List.iteri f::pp_field fields;
+    Format.fprintf fmt "@."
+  };
+  List.iter f::(pp_custom_of_issue fmt) report
 };
 
 let tests_jsonbug_compare bug1 bug2 =>
@@ -1091,7 +1113,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =>
     let pp_json_issues format_list report => {
       let pp_json_issue (format_kind, outf: Utils.outfile) =>
         switch format_kind {
-        | Tests => pp_tests_of_report outf.fmt report
+        | Tests => pp_custom_of_report outf.fmt report Config.issues_fields
         | Text => pp_text_of_report outf.fmt report
         | Json => failwith "Printing issues from json does not support json output"
         | Csv => failwith "Printing issues from json does not support csv output"

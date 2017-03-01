@@ -75,6 +75,24 @@ let ml_bucket_symbols = [
   ("unknown_origin", `MLeak_unknown);
 ]
 
+let issues_fields_symbols = [
+  ("bug_class", `Issue_field_bug_class);
+  ("kind", `Issue_field_kind);
+  ("bug_type", `Issue_field_bug_type);
+  ("qualifier", `Issue_field_qualifier);
+  ("severity", `Issue_field_severity);
+  ("visibility", `Issue_field_visibility);
+  ("line", `Issue_field_line);
+  ("column", `Issue_field_column);
+  ("procedure", `Issue_field_procedure);
+  ("procedure_id", `Issue_field_procedure_id);
+  ("procedure_start_line", `Issue_field_procedure_start_line);
+  ("file", `Issue_field_file);
+  ("bug_trace", `Issue_field_bug_trace);
+  ("key", `Issue_field_key);
+  ("hash", `Issue_field_hash);
+  ("line_offset", `Issue_field_line_offset);
+]
 
 type os_type = Unix | Win32 | Cygwin
 
@@ -929,6 +947,19 @@ and iphoneos_target_sdk_version =
   CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version" ~parse_mode:CLOpt.(Infer [Clang])
     "Specify the target SDK version to use for iphoneos"
 
+and issues_fields =
+  CLOpt.mk_symbol_seq ~long:"issues-fields"
+    ~parse_mode:CLOpt.(Infer [Print])
+    ~default:[
+      `Issue_field_file;
+      `Issue_field_procedure;
+      `Issue_field_line_offset;
+      `Issue_field_bug_type;
+      `Issue_field_bug_trace;
+    ]
+    ~symbols:issues_fields_symbols ~eq:PVariant.(=)
+    "Fields to emit with --issues-tests"
+
 and iterations =
   CLOpt.mk_int ~deprecated:["iterations"] ~long:"iterations" ~default:1
     ~meta:"int"
@@ -1061,11 +1092,6 @@ and print_logs =
 and print_builtins =
   CLOpt.mk_bool ~deprecated:["print_builtins"] ~long:"print-builtins"
     "Print the builtin functions and exit"
-
-and print_traces_in_tests =
-  CLOpt.mk_bool ~long:"print-traces-in-tests" ~default:true
-    ~parse_mode:CLOpt.(Infer [Print])
-    "Include symbolic traces summaries in the output of --issues-tests"
 
 and print_using_diff =
   CLOpt.mk_bool ~deprecated_no:["noprintdiff"] ~long:"print-using-diff" ~default:true
@@ -1528,6 +1554,7 @@ and headers = !headers
 and icfg_dotty_outfile = !icfg_dotty_outfile
 and infer_cache = !infer_cache
 and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
+and issues_fields = !issues_fields
 and iterations = !iterations
 and java_jar_compiler = !java_jar_compiler
 and javac_classes_out = !javac_classes_out
@@ -1560,7 +1587,6 @@ and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats
 and print_logs = !print_logs
 and print_builtins = !print_builtins
-and print_traces_in_tests = !print_traces_in_tests
 and print_types = !print_types
 and print_using_diff = !print_using_diff
 and procs_csv = !procs_csv
