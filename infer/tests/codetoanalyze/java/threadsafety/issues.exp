@@ -27,6 +27,7 @@ codetoanalyze/java/threadsafety/Containers.java, void Containers.mapPutBad(Strin
 codetoanalyze/java/threadsafety/Containers.java, void Containers.mapRemoveBad(String), 1, THREAD_SAFETY_VIOLATION, [access to container codetoanalyze.java.checkers.Containers.mMap]
 codetoanalyze/java/threadsafety/Containers.java, void Containers.mapSubclassWriteBad(HashMap,String), 1, THREAD_SAFETY_VIOLATION, [access to container ]
 codetoanalyze/java/threadsafety/DeDup.java, void DeDup.twoWritesOneInCaller(), 1, THREAD_SAFETY_VIOLATION, [call to void DeDup.writeToField(),access to codetoanalyze.java.checkers.DeDup.field]
+codetoanalyze/java/threadsafety/DeDup.java, void DeDup.two_fields(), 1, THREAD_SAFETY_VIOLATION, [call to void DeDup.foo(),access to codetoanalyze.java.checkers.DeDup.fielda]
 codetoanalyze/java/threadsafety/DeDup.java, void DeDup.two_reads(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.DeDup.field]
 codetoanalyze/java/threadsafety/DeDup.java, void DeDup.two_writes(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.DeDup.field]
 codetoanalyze/java/threadsafety/DeDup.java, void DeDup.write_read(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.DeDup.field]

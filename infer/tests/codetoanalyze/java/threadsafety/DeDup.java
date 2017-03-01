@@ -15,6 +15,18 @@ import javax.annotation.concurrent.ThreadSafe;
 class DeDup{
 
 Integer field;
+Integer fielda, fieldb;
+
+  /* Only want one rather than two reports */
+  void two_fields(){
+    foo();
+  }
+
+  private void foo() {
+    fielda = 88;
+    fieldb = 99;
+   }
+
 
   /*Only the first write should be reported*/
   void two_writes(){
