@@ -298,7 +298,6 @@ type stats =
   { stats_time: float; (** Analysis time for the procedure *)
     stats_failure:
       SymOp.failure_kind option; (** what type of failure stopped the analysis (if any) *)
-    stats_calls: Cg.in_out_calls; (** num of procs calling, and called *)
     symops: int; (** Number of SymOp's throughout the whole analysis of the function *)
     mutable nodes_visited_fp : IntSet.t; (** Nodes visited during the footprint phase *)
     mutable nodes_visited_re : IntSet.t; (** Nodes visited during the re-execution phase *)
@@ -368,9 +367,8 @@ let pp_errlog fmt err_log =
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
 
 let pp_stats whole_seconds fmt stats =
-  F.fprintf fmt "TIME:%a FAILURE:%a SYMOPS:%d CALLS:%d,%d@\n" (pp_time whole_seconds)
+  F.fprintf fmt "TIME:%a FAILURE:%a SYMOPS:%d@\n" (pp_time whole_seconds)
     stats.stats_time pp_failure_kind_opt stats.stats_failure stats.symops
-    stats.stats_calls.Cg.in_calls stats.stats_calls.Cg.out_calls
 
 
 (** Print the spec *)
@@ -494,13 +492,9 @@ let pp_summary_html ~whole_seconds source color fmt summary =
   pp_specs pe fmt (get_specs_from_payload summary);
   F.fprintf fmt "</LISTING>@\n"
 
-let empty_stats calls in_out_calls_opt =
+let empty_stats calls =
   { stats_time = 0.0;
     stats_failure = None;
-    stats_calls =
-      (match in_out_calls_opt with
-       | Some in_out_calls -> in_out_calls
-       | None -> { Cg.in_calls = 0; Cg.out_calls = 0 });
     symops = 0;
     nodes_visited_fp = IntSet.empty;
     nodes_visited_re = IntSet.empty;
@@ -731,7 +725,7 @@ let empty_payload =
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary
     (nodes,
-     proc_flags, calls, in_out_calls_opt,
+     proc_flags, calls,
      proc_attributes,
      proc_desc_option) =
   let summary =
@@ -740,7 +734,7 @@ let init_summary
       phase = FOOTPRINT;
       sessions = ref 0;
       payload = empty_payload;
-      stats = empty_stats calls in_out_calls_opt;
+      stats = empty_stats calls;
       status = Initialized;
       attributes =
         { proc_attributes with
@@ -750,7 +744,7 @@ let init_summary
   Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name summary
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-let reset_summary call_graph proc_name attributes_opt proc_desc_option =
+let reset_summary proc_name attributes_opt proc_desc_option =
   let proc_attributes = match attributes_opt with
     | Some attributes ->
         attributes
@@ -760,7 +754,6 @@ let reset_summary call_graph proc_name attributes_opt proc_desc_option =
     [],
     ProcAttributes.proc_flags_empty (),
     [],
-    Some (Cg.get_calls call_graph proc_name),
     proc_attributes,
     proc_desc_option
   )

@@ -1428,7 +1428,7 @@ let do_analysis exe_env =
       if Config.dynamic_dispatch = `Lazy
       then Some pdesc
       else None in
-    Specs.init_summary (nodes, proc_flags, calls, None, attributes, proc_desc_option) in
+    Specs.init_summary (nodes, proc_flags, calls, attributes, proc_desc_option) in
 
   List.iter
     ~f:(fun (pn, _) ->

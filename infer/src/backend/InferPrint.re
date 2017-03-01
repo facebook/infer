@@ -137,9 +137,6 @@ type summary_val = {
   vsignature: string,
   vweight: int,
   vproof_coverage: string,
-  vrank: string,
-  vin_calls: int,
-  vout_calls: int,
   vproof_trace: string
 };
 
@@ -174,16 +171,6 @@ let summary_values summary => {
     } else {
       float_of_int nr_nodes_visited /. float_of_int nodes_nr
     };
-  let logscale x => log10 (float_of_int (x + 1));
-  let (in_calls, out_calls) = {
-    let calls = stats.Specs.stats_calls;
-    (calls.Cg.in_calls, calls.Cg.out_calls)
-  };
-  let call_rank = {
-    let c1 = 1
-    and c2 = 1;
-    logscale (c1 * in_calls + c2 * out_calls)
-  };
   let pp_failure failure => F.asprintf "%a" SymOp.pp_failure_kind failure;
   {
     vname: Procname.to_string proc_name,
@@ -205,9 +192,6 @@ let summary_values summary => {
     vsignature: signature,
     vweight: nodes_nr,
     vproof_coverage: Printf.sprintf "%2.2f" node_coverage,
-    vrank: Printf.sprintf "%2.2f" call_rank,
-    vin_calls: in_calls,
-    vout_calls: out_calls,
     vproof_trace: proof_trace
   }
 };
@@ -254,9 +238,6 @@ let module ProcsCsv = {
     pp "\"%s\"," (Escape.escape_csv sv.vsignature);
     pp "%d," sv.vweight;
     pp "%s," sv.vproof_coverage;
-    pp "%s," sv.vrank;
-    pp "%d," sv.vin_calls;
-    pp "%d," sv.vout_calls;
     pp "%s@\n" sv.vproof_trace
   };
 };
@@ -284,9 +265,6 @@ let module ProcsXml = {
         subtree Io_infer.Xml.tag_signature (Escape.escape_xml sv.vsignature),
         subtree Io_infer.Xml.tag_weight (string_of_int sv.vweight),
         subtree Io_infer.Xml.tag_proof_coverage sv.vproof_coverage,
-        subtree Io_infer.Xml.tag_rank sv.vrank,
-        subtree Io_infer.Xml.tag_in_calls (string_of_int sv.vin_calls),
-        subtree Io_infer.Xml.tag_out_calls (string_of_int sv.vin_calls),
         subtree Io_infer.Xml.tag_proof_trace sv.vproof_trace,
         subtree Io_infer.Xml.tag_flags (string_of_int (Hashtbl.length sv.vflags))
       ];
