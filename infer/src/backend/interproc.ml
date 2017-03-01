@@ -1467,7 +1467,8 @@ let do_analysis exe_env =
 
       let summaryre =
         Config.run_in_re_execution_mode (analyze_proc source exe_env) proc_desc in
-      Specs.add_summary proc_name summaryre in
+      Specs.add_summary proc_name summaryre;
+      summaryre in
     {
       Ondemand.analyze_ondemand;
       get_proc_desc;

@@ -168,7 +168,10 @@ module Interprocedural (Summ : Summary.S) = struct
       | None ->
           None in
     let analyze_ondemand source pdesc =
-      ignore (analyze_ondemand_ source pdesc) in
+      ignore (analyze_ondemand_ source pdesc);
+      Specs.get_summary_unsafe
+        "Inferprocedural.compute_and_store_post"
+        (Procdesc.get_proc_name pdesc) in
     let callbacks =
       {
         Ondemand.analyze_ondemand;

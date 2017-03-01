@@ -414,7 +414,8 @@ let callback_eradicate
         { callback_args with
           Callbacks.idenv = idenv_pname;
           proc_name = (Procdesc.get_proc_name pdesc);
-          proc_desc = pdesc; } in
+          proc_desc = pdesc; };
+      Specs.get_summary_unsafe "callback_eradicate" (Procdesc.get_proc_name pdesc) in
     {
       Ondemand.analyze_ondemand;
       get_proc_desc;

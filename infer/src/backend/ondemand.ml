@@ -27,7 +27,7 @@ let dirs_to_analyze =
       changed_files String.Set.empty in
   Option.map ~f:process_changed_files SourceFile.changed_files_set
 
-type analyze_ondemand = SourceFile.t -> Procdesc.t -> unit
+type analyze_ondemand = SourceFile.t -> Procdesc.t -> Specs.summary
 
 type get_proc_desc = Procname.t -> Procdesc.t option
 
@@ -141,9 +141,8 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     Specs.set_status callee_pname Specs.Active;
     source in
 
-  let postprocess source =
+  let postprocess source summary =
     decr nesting;
-    let summary = Specs.get_summary_unsafe "ondemand" callee_pname in
     Specs.store_summary callee_pname summary;
     Printer.write_proc_html source false callee_pdesc;
     summary in
@@ -161,8 +160,8 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
   let old_state = save_global_state () in
   let source = preprocess () in
   try
-    analyze_proc source callee_pdesc;
-    let summary = postprocess source in
+    let summary =
+      analyze_proc source callee_pdesc |> postprocess source in
     restore_global_state old_state;
     summary
   with exn ->
