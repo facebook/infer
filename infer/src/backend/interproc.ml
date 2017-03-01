@@ -533,8 +533,9 @@ let forward_tabulate tenv pdesc wl source =
       let summary = Specs.get_summary_unsafe "forward_tabulate" proc_name in
       let phase_string =
         if Specs.equal_phase (Specs.get_phase summary) Specs.FOOTPRINT then "FP" else "RE" in
-      let timestamp = Specs.get_timestamp summary in
-      F.sprintf "[%s:%d] %s" phase_string timestamp (Procname.to_string proc_name) in
+      let status = Specs.get_status summary in
+      F.sprintf
+        "[%s:%s] %s" phase_string (Specs.string_of_status status) (Procname.to_string proc_name) in
     L.d_strln ("**** " ^ (log_string pname) ^ " " ^
                "Node: " ^ string_of_int (Procdesc.Node.get_id curr_node :> int) ^ ", " ^
                "Procedure: " ^ Procname.to_string pname ^ ", " ^
@@ -989,16 +990,8 @@ type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.p
     [go ()] was interrupted by and exception. *)
 let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
   : exe_phase =
-  let summary = Specs.get_summary_unsafe "check_recursion_level" pname in
+  let summary = Specs.get_summary_unsafe "perform_analysis_phase" pname in
   let start_node = Procdesc.get_start_node pdesc in
-
-  let check_recursion_level () =
-    let recursion_level = Specs.get_timestamp summary in
-    if recursion_level > Config.max_recursion then
-      begin
-        L.err "Reached maximum level of recursion, raising a Timeout@.";
-        raise (SymOp.Analysis_failure_exe (FKrecursion_timeout recursion_level))
-      end in
 
   let compute_footprint () : exe_phase =
     let go (wl : Worklist.t) () =
@@ -1020,7 +1013,6 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
       L.d_strln "initial props =";
       Propset.d Prop.prop_emp init_props; L.d_ln (); L.d_ln();
       L.d_decrease_indent 1;
-      check_recursion_level ();
       Worklist.add wl start_node;
       Config.arc_mode :=
         Hashtbl.mem
@@ -1057,7 +1049,6 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
     let valid_specs = ref [] in
     let go () =
       L.out "@.#### Start: Re-Execution for %a ####@." Procname.pp pname;
-      check_recursion_level ();
       let filter p =
         let wl = path_set_create_worklist pdesc in
         let speco = execute_filter_prop wl tenv pdesc start_node p source in
@@ -1286,8 +1277,7 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
 (** update a summary after analysing a procedure *)
 let update_summary tenv prev_summary specs phase proc_name elapsed res =
   let normal_specs = List.map ~f:(Specs.spec_normalize tenv) specs in
-  let new_specs, changed = update_specs tenv proc_name phase normal_specs in
-  let timestamp = max 1 (prev_summary.Specs.timestamp + if changed then 1 else 0) in
+  let new_specs, _ = update_specs tenv proc_name phase normal_specs in
   let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
   let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
   let stats_failure = match res with
@@ -1310,7 +1300,6 @@ let update_summary tenv prev_summary specs phase proc_name elapsed res =
     Specs.phase;
     stats;
     payload;
-    timestamp;
   }
 
 
@@ -1355,8 +1344,7 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
         { summary.Specs.payload with
           Specs.preposts = Some specs; } in
       { summary with
-        Specs.timestamp = 0;
-        phase = Specs.RE_EXECUTION;
+        Specs.phase = Specs.RE_EXECUTION;
         payload;
       } in
   Specs.add_summary proc_name summary'

@@ -24,8 +24,7 @@ module type S = sig
   type summary
   (*  type astate*)
 
-  (** Write the [summary] for the procname to persistent storage. Returns the summary actually
-      written. *)
+  (** Write the [summary] for the procname to persistent storage. *)
   val write_summary : Procname.t -> summary -> unit
 
   (** read and return the summary for [callee_pname] called from [caller_pdesc]. does the analysis
@@ -40,8 +39,7 @@ module Make (H : Helper) = struct
     match Specs.get_summary pname with
     | Some global_summary ->
         let payload = H.update_payload summary global_summary.Specs.payload in
-        let timestamp = global_summary.timestamp + 1 in
-        Specs.store_summary pname { global_summary with payload; timestamp; }
+        Specs.store_summary pname { global_summary with payload; }
     | None ->
         failwithf "Summary for %a should exist, but does not!@." Procname.pp pname
 

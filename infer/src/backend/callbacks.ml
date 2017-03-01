@@ -181,9 +181,7 @@ let iterate_callbacks call_graph exe_env =
   (* Store all the summaries to disk *)
   List.iter
     ~f:(fun pname ->
-        let updated_summary_opt =
-          Option.map (Specs.get_summary pname) ~f:Specs.increment_timestamp in
-        Option.iter ~f:(Specs.store_summary pname) updated_summary_opt)
+        Specs.store_summary pname (Specs.get_summary_unsafe "Checkers: store summaries" pname))
     procs_to_analyze;
 
   Config.curr_language := saved_language

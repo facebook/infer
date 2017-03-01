@@ -34,7 +34,7 @@ module Key = struct
 end
 
 (** version of the binary files, to be incremented for each change *)
-let version = 26
+let version = 27
 
 
 (** Retry the function while an exception filtered is thrown,

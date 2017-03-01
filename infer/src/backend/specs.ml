@@ -305,7 +305,15 @@ type stats =
     call_stats : call_stats;
   }
 
-type status = ACTIVE | INACTIVE | STALE [@@deriving compare]
+type status = Initialized | Active | Analyzed [@@deriving compare]
+
+let string_of_status = function
+  | Initialized -> "Initialized"
+  | Active -> "Active"
+  | Analyzed -> "Analyzed"
+
+let pp_status fmt status =
+  F.fprintf fmt "%s" (string_of_status status)
 
 let equal_status = [%compare.equal : status]
 
@@ -335,8 +343,7 @@ type summary = {
   payload: payload;  (** payload containing the result of some analysis *)
   sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)
   stats: stats;  (** statistics: execution time and list of errors *)
-  status: status; (** ACTIVE when the proc is being analyzed *)
-  timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
+  status: status; (** Analysis status of the procedure *)
   attributes : ProcAttributes.t; (** Attributes of the procedure *)
   proc_desc_option : Procdesc.t option;
 }
@@ -407,12 +414,6 @@ let pp_specs pe fmt specs =
                      F.fprintf fmt "\\subsection*{Spec %d of %d}@\n\\(%a\\)@\n"
                        !cnt total (pp_spec pe None) spec) specs
 
-let describe_timestamp summary =
-  ("Timestamp", Printf.sprintf "%d" summary.timestamp)
-
-let describe_status summary =
-  ("Status", if equal_status summary.status ACTIVE then "ACTIVE" else "INACTIVE")
-
 let describe_phase summary =
   ("Phase", if equal_phase summary.phase FOOTPRINT then "FOOTPRINT" else "RE_EXECUTION")
 
@@ -444,8 +445,7 @@ let get_specs_from_payload summary =
 let pp_summary_no_stats_specs fmt summary =
   let pp_pair fmt (x, y) = F.fprintf fmt "%s: %s" x y in
   F.fprintf fmt "%s@\n" (get_signature summary);
-  F.fprintf fmt "%a@\n" pp_pair (describe_timestamp summary);
-  F.fprintf fmt "%a@\n" pp_pair (describe_status summary);
+  F.fprintf fmt "%a@\n" pp_status summary.status;
   F.fprintf fmt "%a@\n" pp_pair (describe_phase summary)
 
 let pp_payload pe fmt { preposts; typestate; crashcontext_frame; quandary; siof; threadsafety; buffer_overrun } =
@@ -561,8 +561,9 @@ let store_summary pname (summ1: summary) =
     else
       { summ2 with
         stats = { summ1.stats with stats_time = 0.0} } in
+  let final_summary = { summ3 with status = Analyzed } in
   add_summary pname summ3 (* Make sure the summary in memory is identical to the saved one *);
-  Serialization.write_to_file summary_serializer (res_dir_specs_filename pname) summ3
+  Serialization.write_to_file summary_serializer (res_dir_specs_filename pname) final_summary
 
 (** Load procedure summary from the given file *)
 let load_summary specs_file =
@@ -668,13 +669,7 @@ let get_status summary =
   summary.status
 
 let is_active summary =
-  equal_status (get_status summary) ACTIVE
-
-let get_timestamp summary =
-  summary.timestamp
-
-let increment_timestamp summary =
-  { summary with timestamp = summary.timestamp + 1 }
+  equal_status (get_status summary) Active
 
 let get_proc_name summary =
   summary.attributes.ProcAttributes.proc_name
@@ -746,8 +741,7 @@ let init_summary
       sessions = ref 0;
       payload = empty_payload;
       stats = empty_stats calls in_out_calls_opt;
-      status = INACTIVE;
-      timestamp = 0;
+      status = Initialized;
       attributes =
         { proc_attributes with
           ProcAttributes.proc_flags = proc_flags; };

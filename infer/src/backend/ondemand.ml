@@ -55,7 +55,7 @@ let should_be_analyzed proc_name proc_attributes =
   let already_analyzed () =
     match Specs.get_summary proc_name with
     | Some summary ->
-        Specs.get_timestamp summary > 0
+        Specs.equal_status (Specs.get_status summary) Specs.Analyzed
     | None ->
         false in
   proc_attributes.ProcAttributes.is_defined && (* we have the implementation *)
@@ -142,29 +142,23 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
       then Some callee_pdesc
       else None in
     Specs.reset_summary call_graph callee_pname attributes_opt callee_pdesc_option;
-    Specs.set_status callee_pname Specs.ACTIVE;
+    Specs.set_status callee_pname Specs.Active;
     source in
 
   let postprocess source =
     decr nesting;
     let summary = Specs.get_summary_unsafe "ondemand" callee_pname in
-    let summary' =
-      { summary with
-        Specs.status = Specs.INACTIVE;
-        timestamp = summary.Specs.timestamp + 1 } in
-    Specs.store_summary callee_pname summary';
+    Specs.store_summary callee_pname summary;
     Printer.write_proc_html source false callee_pdesc;
-    summary' in
+    summary in
 
   let log_error_and_continue exn kind =
     Reporting.log_error callee_pname exn;
     let prev_summary = Specs.get_summary_unsafe "Ondemand.do_analysis" callee_pname in
-    let timestamp = max 1 (prev_summary.Specs.timestamp) in
     let stats = { prev_summary.Specs.stats with Specs.stats_failure = Some kind } in
     let payload =
       { prev_summary.Specs.payload with Specs.preposts = Some []; } in
-    let new_summary =
-      { prev_summary with Specs.stats; payload; timestamp; } in
+    let new_summary = { prev_summary with Specs.stats; payload } in
     Specs.store_summary callee_pname new_summary;
     new_summary in
 

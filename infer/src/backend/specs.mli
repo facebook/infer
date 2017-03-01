@@ -115,7 +115,17 @@ type stats =
     call_stats : CallStats.t;
   }
 
-type status = ACTIVE | INACTIVE | STALE
+(** Analysis status of the procedure:
+    - Initialized means that the summary has been created by the procedure has not been analyzed yet
+    - Active meas that the procedure is being analyzed
+    - Analyzed means that the analysis of the procedure is finished *)
+type status = Initialized | Active | Analyzed
+
+val equal_status : status -> status -> bool
+
+val string_of_status : status -> string
+
+val pp_status : Format.formatter -> status -> unit
 
 type phase = FOOTPRINT | RE_EXECUTION
 
@@ -144,8 +154,7 @@ type summary = {
   payload: payload;  (** payload containing the result of some analysis *)
   sessions: int ref; (** Session number: how many nodes went trough symbolic execution *)
   stats: stats;  (** statistics: execution time and list of errors *)
-  status: status; (** ACTIVE when the proc is being analyzed *)
-  timestamp: int; (** Timestamp of the specs, >= 0, increased every time the specs change *)
+  status: status; (** Analysis status of the procedure *)
   attributes : ProcAttributes.t; (** Attributes of the procedure *)
   proc_desc_option : Procdesc.t option;
 }
@@ -197,12 +206,6 @@ val get_specs_from_payload : summary -> Prop.normal spec list
 
 (** @deprecated Return the summary for the procedure name. Raises an exception when not found. *)
 val get_summary_unsafe : string -> Procname.t -> summary
-
-(** Return the current timestamp for the summary *)
-val get_timestamp : summary -> int
-
-(** Increment the number of times a summary has been updated *)
-val increment_timestamp : summary -> summary
 
 (** Return the status (active v.s. inactive) of a procedure summary *)
 val get_status : summary -> status
