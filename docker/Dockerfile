@@ -8,11 +8,10 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
             autoconf \
             automake \
-            curl \
             gcc \
             g++ \
             git \
-            groff \
+            groff-base \
             libc6-dev \
             libffi-dev \
             libgmp-dev \
@@ -25,11 +24,11 @@ RUN apt-get update && \
             opam \
             openjdk-8-jdk-headless \
             pkg-config \
-            python-software-properties \
+            python2.7 \
             rsync \
-            software-properties-common \
             unzip \
-            zlib1g-dev
+            zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN opam init -y --comp=4.02.3
 
