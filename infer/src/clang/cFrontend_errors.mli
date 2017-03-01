@@ -19,3 +19,5 @@ val expand_checkers : CTL.ctl_checker list -> CTL.ctl_checker list
 
 val make_condition_issue_desc_pair :
   CTL.ctl_checker list -> unit
+
+val remove_new_lines : string -> string

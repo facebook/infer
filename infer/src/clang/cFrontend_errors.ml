@@ -73,6 +73,9 @@ let rec expand_message_string message an =
     expand_message_string message' an
   with Not_found -> message
 
+let remove_new_lines message =
+  String.substr_replace_all ~pattern:"\n" ~with_:" " message
+
 let string_to_err_kind = function
   | "WARNING" -> Exceptions.Kwarning
   | "ERROR" -> Exceptions.Kerror
@@ -206,7 +209,8 @@ let get_current_method context (an : Ctl_parser_types.ast_node) =
   | _ -> context.CLintersContext.current_method
 
 let fill_issue_desc_info_and_log context an key issue_desc loc =
-  let desc = expand_message_string issue_desc.CIssue.description an in
+  let desc = remove_new_lines
+      (expand_message_string issue_desc.CIssue.description an) in
   let issue_desc' =
     {issue_desc with CIssue.description = desc; CIssue.loc = loc } in
   log_frontend_issue context.CLintersContext.translation_unit_context
