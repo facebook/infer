@@ -6,6 +6,7 @@ MAINTAINER Infer
 # Debian config
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+            aspcud \
             autoconf \
             automake \
             gcc \
