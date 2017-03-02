@@ -1,9 +1,9 @@
 ---
 layout: home
-title: Infer | A static analyzer for mobile apps
+title: Infer static analyzer
 id: home
 excerpt: >
-  Facebook Infer is a static analysis tool - if you give Infer some Objective-C, Java, or C code, it produces a list of potential bugs. Anyone can use Infer to intercept critical bugs before they have shipped to people's phones, and help prevent crashes or poor performance.
+  Infer is a static analysis tool - if you give Infer some Java or C/C++/Objective-C code it produces a list of potential bugs. Anyone can use Infer to intercept critical bugs before they have shipped to users, and help prevent crashes or poor performance.
 ---
 
 {% include content/gridblocks.html data_source=site.data.features align="center" %}

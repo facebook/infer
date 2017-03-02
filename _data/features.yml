@@ -1,9 +1,7 @@
 - title: Android and Java
   text: |
         Infer reports null pointer exceptions and resource leaks in Android and Java code.
-  image: images/android.svg
 
-- title: iOS and Objective-C
+- title: C, C++, and iOS/Objective-C
   text: |
-        Infer also reports memory leak problems in iOS and C code.
-  image: images/apple.svg
+        Infer also reports memory leak problems in C, C++, and Objective-C code.
