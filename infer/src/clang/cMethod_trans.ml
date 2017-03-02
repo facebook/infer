@@ -342,17 +342,9 @@ let should_create_procdesc cfg procname defined =
   | None -> true
 
 let sil_method_annotation_of_args args method_type : Annot.Method.t =
-  let default_visibility = true in
-  let mk_annot annot_name =
-    let annot = { Annot.class_name = annot_name; parameters = []; } in
-    annot, default_visibility in
-  let sil_annot_of_type type_ptr =
-    if CAst_utils.is_type_nullable type_ptr then
-      [mk_annot Annotations.nullable]
-    else Annot.Item.empty in
   let args_types = List.map ~f:(fun (_, qt) -> qt.Clang_ast_t.qt_type_ptr) args in
-  let param_annots = List.map ~f:sil_annot_of_type args_types in
-  let retval_annot = sil_annot_of_type method_type in
+  let param_annots = List.map ~f:CAst_utils.sil_annot_of_type args_types in
+  let retval_annot = CAst_utils.sil_annot_of_type method_type in
   retval_annot, param_annots
 
 let is_pointer_to_const type_ptr = match CAst_utils.get_type type_ptr with

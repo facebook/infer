@@ -232,11 +232,21 @@ let is_type_nonnull type_ptr =
   | _ ->
       false
 
-let is_type_nullable type_ptr =
-  let open Clang_ast_t in
-  match get_type type_ptr with
-  | Some AttributedType (_, attr_info) -> attr_info.ati_attr_kind = `Nullable
-  | _ -> false
+let sil_annot_of_type type_ptr =
+  let default_visibility = true in
+  let mk_annot annot_name_opt =
+    match annot_name_opt with
+    | Some annot_name ->
+        [{ Annot.class_name = annot_name; parameters = []; }, default_visibility]
+    | None -> Annot.Item.empty in
+  let annot_name_opt =
+    match get_type type_ptr with
+    | Some AttributedType (_, attr_info) ->
+        if attr_info.ati_attr_kind = `Nullable then Some Annotations.nullable
+        (* other annotations go here *)
+        else None
+    | _ -> None in
+  mk_annot annot_name_opt
 
 let string_of_type_ptr type_ptr = Clang_ast_j.string_of_type_ptr type_ptr
 

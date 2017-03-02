@@ -34,8 +34,6 @@ val is_copy : Clang_ast_t.property_attribute option -> bool
 
 val is_type_nonnull : Clang_ast_t.type_ptr -> bool
 
-val is_type_nullable : Clang_ast_t.type_ptr -> bool
-
 val get_fresh_pointer : unit -> Clang_ast_t.pointer
 
 val get_invalid_pointer : unit -> Clang_ast_t.pointer
@@ -166,3 +164,5 @@ val type_ptr_is_typedef_named : Clang_ast_types.t_ptr -> string -> bool
 val is_objc_factory_method : Clang_ast_t.decl -> Clang_ast_t.decl -> bool
 
 val name_of_decl_ref_opt : Clang_ast_t.decl_ref option -> string option
+
+val sil_annot_of_type : Clang_ast_types.t_ptr -> Annot.Item.t
