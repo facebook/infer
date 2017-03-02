@@ -178,7 +178,7 @@ let is_source_node_of_exp e node =
   | Dotpointsto (_, e', _) -> Exp.equal e e'
   | _ -> false
 
-(* given a node returns its coordinates and the expression. Return -1 in case the expressio doesn.t*)
+(* given a node returns its coordinates and the expression. Return -1 in case the expression doesn't*)
 (* make sense for that case *)
 let get_coordinate_and_exp dotnode =
   match dotnode with
@@ -608,7 +608,7 @@ let print_kind f kind =
 
           incr dotty_state_count
 
-(* print a link between two noeds in the graph *)
+(* print a link between two nodes in the graph *)
 let dotty_pp_link f link =
   let n1 = link.src.id in
   let lambda1 = link.src.lambda in
