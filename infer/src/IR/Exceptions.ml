@@ -335,7 +335,7 @@ let err_class_string = function
   | Nocat -> ""
   | Linters -> "Linters"
 
-(** wether to print the bug key together with the error message *)
+(** whether to print the bug key together with the error message *)
 let print_key = false
 
 (** pretty print an error given its (id,key), location, kind, name, description, and optional ml location *)
