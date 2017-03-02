@@ -1,9 +1,9 @@
 # Site settings
 permalink: /blog/:year/:month/:day/:title.html
 title: Infer
-tagline: A tool to detect bugs in Android and iOS apps before they ship
+tagline: A tool to detect bugs in Java and C/C++/Objective-C code before it ships
 description: >
-  Facebook's Infer is a static analysis tool - if you give Infer some Objective-C, Java, or C code, it produces a list of potential bugs.
+  Infer is a static analysis tool – if you give Infer some Java, or Objective-C/C++/C code, it produces a list of potential bugs.
 fbappid: "1615782811974223"
 gacode: "UA-44373548-7"
 description:

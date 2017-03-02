@@ -6,7 +6,7 @@ permalink: /docs/experimental-checkers.html
 ---
 
 Infer contains a number of experimental checkers that can be run using just like the normal infer analysis `infer -a <checker name> -- <your build command>`. 
-`checker_name` can be `threadsafety`, `siof`, `bufferoverrun`, or `quandary`. We'll explain the capabilities of each experimental checker, its level of maturity (on a scale including "in development", "medium", and "probably deployable"), and the language(s) it targets.
+`checker_name` can be `threadsafety`, `bufferoverrun`, or `quandary`. We'll explain the capabilities of each experimental checker, its level of maturity (on a scale including "in development", "medium", and "probably deployable"), and the language(s) it targets.
 
 # Thread-safety
 - Languages: Java
@@ -17,12 +17,6 @@ The idea here is that any race condition involves two concurrent accesses where 
 This checker aims to identify the writes that may be involved in a race.
 
 There are several specialized annotations like `@ThreadConfined` and `@AssumeThreadSafe` that can be used to suppress warnings for the thread-safety analysis; you can read more about what these do in the source [files](https://github.com/facebook/infer/tree/master/infer/annotations/com/facebook/infer/annotation) for the annotations.
-
-# SIOF (static initialization order fiasco)
-- Languages: C++
-- Maturity: Probably deployable
-
-This checker identifies a class of nondeterministic order-of-initialization [issues](https://isocpp.org/wiki/faq/ctors#static-init-order) in C++.
 
 # Inferbo
 - Languages: C (but should be easy to adapt to Objective-C/C++, and possibly Java.)
