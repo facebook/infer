@@ -8,14 +8,13 @@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
-C_MODELS_FILE = $(SPECS_LIB_DIR)/c_models
 C_MODELS_SOURCES = $(shell find src/ -name "*.c")
 INFER_RESULTS = out/report.json
 
 all: install
 
-$(INFER_RESULTS): $(C_MODELS_SOURCES) $(CLANG_DEPS)
-# make clean in src/ in case $(CLANG_DEPS) have changed
+$(INFER_RESULTS): $(C_MODELS_SOURCES) $(CLANG_DEPS_NO_MODELS)
+# make clean in src/ to recompile all the models
 	$(call silent_on_success,\
 	  $(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src clean all)
 

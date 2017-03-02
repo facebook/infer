@@ -8,18 +8,12 @@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
-ANDROID_JAR = $(LIB_DIR)/java/android/android-23.jar
-GUAVA_JAR = $(DEPENDENCIES_DIR)/java/guava/guava-10.0.1-fork.jar
-INFER_ANNOTATIONS_JAR = $(ANNOTATIONS_DIR)/annotations.jar
-JACKSON_JAR = $(DEPENDENCIES_DIR)/java/jackson/jackson-2.2.3.jar
-JSR_305_JAR = $(DEPENDENCIES_DIR)/java/jsr-305/jsr305.jar
-
 MODELS_OUT = models
 INFER_RESULTS_DIR = $(MODELS_OUT)/infer
 INFER_REPORT = $(INFER_RESULTS_DIR)/report.json
 MODELS_JAR = models.jar
 
-JAVA_SOURCES = $(JAVA_BUILTINS_SOURCES) $(JAVA_MODELS_SOURCES)
+JAVA_SOURCES = $(shell find $(JAVA_BUILTINS_DIR) $(JAVA_MODELS_DIR) -name "*.java")
 
 MODELS_CLASSPATH = $(ANDROID_JAR):$(GUAVA_JAR):$(JACKSON_JAR):$(JSR_305_JAR):$(INFER_ANNOTATIONS_JAR)
 
@@ -33,7 +27,7 @@ clean:
 compile:
 	javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) $(JAVA_SOURCES)
 
-$(INFER_REPORT): $(ANDROID_JAR) $(GUAVA_JAR) $(JACKSON_JAR) $(JSR_305_JAR) $(INFER_ANNOTATIONS_JAR) $(JAVA_DEPS) $(JAVA_SOURCES)
+$(INFER_REPORT): $(JAVA_DEPS_NO_MODELS) $(JAVA_SOURCES)
 	@rm -fr $(MODELS_OUT)
 	mkdir -p $(MODELS_OUT)
 	@rm -f $(JAVA_MODELS_JAR)
