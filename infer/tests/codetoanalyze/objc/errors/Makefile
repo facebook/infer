@@ -51,6 +51,7 @@ SOURCES_DEFAULT = \
   shared/protocol_procdesc/Bicycle.m \
   shared/protocol_procdesc/main.c \
 	shared/annotations/nullable_annotations.m \
+	shared/annotations/nullable_annotations_fields.m \
   taint/sources.m \
   taint/viewController.m \
 

@@ -321,7 +321,8 @@ let module Struct = {
         name
         (
           Pp.seq (
-            fun f (fld, t, _) => F.fprintf f "\n\t\t%a %a" (pp_full pe) t Ident.pp_fieldname fld
+            fun f (fld, t, a) =>
+              F.fprintf f "\n\t\t%a %a %a" (pp_full pe) t Ident.pp_fieldname fld Annot.Item.pp a
           )
         )
         fields

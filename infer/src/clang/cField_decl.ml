@@ -45,11 +45,12 @@ let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attribute
   let typ = type_ptr_to_sil_type tenv type_ptr in
   let item_annotations = match prop_atts with
     | [] ->
-        [({ Annot.class_name = Config.ivar_attributes; parameters = annotation_from_type typ },
-          true)]
+        ({ Annot.class_name = Config.ivar_attributes; parameters = annotation_from_type typ },
+         true)
     | _ ->
-        [({ Annot.class_name = Config.property_attributes; parameters = prop_atts },
-          true)] in
+        ({ Annot.class_name = Config.property_attributes; parameters = prop_atts },
+         true) in
+  let item_annotations = item_annotations :: (CAst_utils.sil_annot_of_type type_ptr) in
   fname, typ, item_annotations
 
 (* Given a list of declarations in an interface returns a list of fields  *)
