@@ -20,7 +20,7 @@ import java.lang.annotation.Target;
  * @ThreadSafe(enableChecks = false).
  */
 
-@Target({ ElementType.METHOD, ElementType.TYPE })
+@Target({ ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.CLASS)
 public @interface ThreadSafe {
   boolean enableChecks() default true;
