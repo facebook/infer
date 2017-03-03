@@ -16,18 +16,31 @@ let module F = Format;
 
 let module L = Logging;
 
+type attr_kind =
+  | ProcDefined
+  | ProcObjCAccessor
+  | ProcUndefined
+[@@deriving compare];
+
 
 /** Module to manage the table of attributes. */
 let serializer: Serialization.serializer ProcAttributes.t = Serialization.create_serializer Serialization.Key.attributes;
 
-let attributes_filename defined::defined pname_file =>
-  pname_file ^ (defined ? ".attr" : ".decl.attr");
+let attributes_filename proc_kind::proc_kind pname_file => {
+  let file_suffix =
+    switch proc_kind {
+    | ProcDefined => ".attr"
+    | ProcObjCAccessor => ".objc_acc.attr"
+    | ProcUndefined => ".decl.attr"
+    };
+  pname_file ^ file_suffix
+};
 
 
 /** path to the .attr file for the given procedure in the current results directory */
-let res_dir_attr_filename defined::defined pname => {
+let res_dir_attr_filename proc_kind::proc_kind pname => {
   let pname_file = Procname.to_filename pname;
-  let attr_fname = attributes_filename defined::defined pname_file;
+  let attr_fname = attributes_filename proc_kind::proc_kind pname_file;
   let bucket_dir = {
     let base = pname_file;
     let len = String.length base;
@@ -47,46 +60,94 @@ let res_dir_attr_filename defined::defined pname => {
 /* Load the proc attribute for the defined filename if it exists,
    otherwise try to load the declared filename. */
 let load_attr defined_only::defined_only proc_name => {
-  let attributes_file defined::defined proc_name => Multilinks.resolve (
-    res_dir_attr_filename defined::defined proc_name
+  let attributes_file proc_kind::proc_kind proc_name => Multilinks.resolve (
+    res_dir_attr_filename proc_kind::proc_kind proc_name
   );
-  let attr = Serialization.read_from_file serializer (attributes_file defined::true proc_name);
+  let attr =
+    Serialization.read_from_file serializer (attributes_file proc_kind::ProcDefined proc_name);
   if (is_none attr && not defined_only) {
-    Serialization.read_from_file serializer (attributes_file defined::false proc_name)
+    /* We try to load the objc accesor one if they exist, if not then we load the undefined one */
+    let attr =
+      Serialization.read_from_file
+        serializer (attributes_file proc_kind::ProcObjCAccessor proc_name);
+    switch attr {
+    | Some attr => Some attr
+    | None =>
+      Serialization.read_from_file serializer (attributes_file proc_kind::ProcUndefined proc_name)
+    }
   } else {
     attr
   }
 };
 
+let create_proc_kind (proc_attributes: ProcAttributes.t) =>
+  if proc_attributes.is_defined {
+    ProcDefined
+  } else if (
+    Option.is_some proc_attributes.objc_accessor
+  ) {
+    ProcObjCAccessor
+  } else {
+    ProcUndefined
+  };
+
+let less_relevant_proc_kinds proc_kind =>
+  switch proc_kind {
+  | ProcDefined => [ProcObjCAccessor, ProcUndefined]
+  | ProcObjCAccessor => [ProcUndefined]
+  | ProcUndefined => []
+  };
+
 /* Write a proc attributes to file.
    If defined, delete the declared file if it exists. */
 let write_and_delete proc_name (proc_attributes: ProcAttributes.t) => {
-  let attributes_file defined => res_dir_attr_filename defined::defined proc_name;
-  Serialization.write_to_file
-    serializer (attributes_file proc_attributes.is_defined) data::proc_attributes;
-  if proc_attributes.is_defined {
-    let fname_declared = DB.filename_to_string (attributes_file false);
+  let proc_kind = create_proc_kind proc_attributes;
+  let attributes_file proc_kind => res_dir_attr_filename proc_kind::proc_kind proc_name;
+  Serialization.write_to_file serializer (attributes_file proc_kind) data::proc_attributes;
+  let upgrade_relevance less_relevant_proc_kind => {
+    let fname_declared = DB.filename_to_string (attributes_file less_relevant_proc_kind);
     if (Sys.file_exists fname_declared == `Yes) {
       try (Unix.unlink fname_declared) {
       | Unix.Unix_error _ => ()
       }
     }
-  }
+  };
+  List.iter f::upgrade_relevance (less_relevant_proc_kinds proc_kind)
 };
+
+/* This creates an ordering in the attribute files: 1.defined, 2.objc accessor, 3.else.
+   To be used to figure out if we should override an existing attribute file with a new
+   one, if relevant information will be updated, or lost.
+   If the relevance is not upgraded, choose based on whether its associated file has higher
+   rank (alphabetically) than the other. */
+let should_override_attr (new_attr: ProcAttributes.t) (old_attr: ProcAttributes.t) =>
+  if new_attr.is_defined {
+    if old_attr.is_defined {
+      SourceFile.compare new_attr.loc.file old_attr.loc.file > 0
+    } else {
+      true /* new becomes defined, override  */
+    }
+  } else if
+    old_attr.is_defined {
+    false /* old was defined, new isn't, don't override */
+  } else if (
+    Option.is_some new_attr.objc_accessor
+  ) {
+    if (Option.is_some old_attr.objc_accessor) {
+      SourceFile.compare new_attr.loc.file old_attr.loc.file > 0
+    } else {
+      true /* new becomes objc accessor, override */
+    }
+  } else {
+    false /* new isn't defined or objc accessor, don't overide */
+  };
 
 let store_attributes (proc_attributes: ProcAttributes.t) => {
   let proc_name = proc_attributes.proc_name;
   let should_write =
     switch (load_attr defined_only::false proc_name) {
     | None => true
-    | Some proc_attributes_on_disk =>
-      let higher_rank_than_on_disk () =>
-        proc_attributes.is_defined &&
-        SourceFile.compare proc_attributes.loc.file proc_attributes_on_disk.loc.file > 0;
-      let becomes_defined = proc_attributes.is_defined && not proc_attributes_on_disk.is_defined;
-      /* Only overwrite the attribute file if the procedure becomes defined
-         or its associated file has higher rank (alphabetically) than on disk. */
-      becomes_defined || higher_rank_than_on_disk ()
+    | Some proc_attributes_on_disk => should_override_attr proc_attributes proc_attributes_on_disk
     };
   if should_write {
     write_and_delete proc_name proc_attributes

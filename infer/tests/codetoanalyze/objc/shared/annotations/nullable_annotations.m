@@ -8,6 +8,12 @@
  */
 #import <Foundation/Foundation.h>
 
+@interface Person : NSObject
+
+@property(nullable, copy) Person* child;
+
+@end
+
 @interface User : NSObject
 
 - (nullable instancetype)initWithName:(nullable NSString*)name;
@@ -45,4 +51,11 @@
   User* ou = [self otherUser];
   return ou->_name;
 }
+
+NSDictionary* npe_property_nullable() {
+  Person* person = [Person new];
+  Person* child = person.child;
+  return @{ @"key" : child };
+}
+
 @end

@@ -25,9 +25,10 @@ val equal_method_call_type : method_call_type -> method_call_type -> bool
 
 val should_add_return_param : Typ.t -> is_objc_method:bool -> bool
 
-val create_local_procdesc : CFrontend_config.translation_unit_context -> Cfg.cfg -> Tenv.t ->
-  CMethod_signature.method_signature -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list -> bool ->
-  bool
+val create_local_procdesc : ?set_objc_accessor_attr:bool ->
+  CFrontend_config.translation_unit_context -> Cfg.cfg -> Tenv.t ->
+  CMethod_signature.method_signature -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list ->
+  bool -> bool
 
 val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Typ.t * Typ.t list) option -> unit
 

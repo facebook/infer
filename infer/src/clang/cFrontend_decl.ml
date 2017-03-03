@@ -72,49 +72,38 @@ struct
             return_param_typ_opt false outer_context_opt extra_instrs
     | None -> ()
 
-  let process_method_decl trans_unit_ctx tenv cg cfg curr_class meth_decl ~is_objc =
+  let process_method_decl ?(set_objc_accessor_attr=false) trans_unit_ctx tenv cg cfg
+      curr_class meth_decl ~is_objc =
     let ms, body_opt, extra_instrs =
       CMethod_trans.method_signature_of_decl trans_unit_ctx tenv meth_decl None in
+    let is_instance = CMethod_signature.ms_is_instance ms in
+    let is_objc_inst_method = is_instance && is_objc in
     match body_opt with
     | Some body ->
-        let is_instance = CMethod_signature.ms_is_instance ms in
         let procname = CMethod_signature.ms_get_name ms in
-        let is_objc_inst_method = is_instance && is_objc in
         let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
-        if CMethod_trans.create_local_procdesc
+        if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr
             trans_unit_ctx cfg tenv ms [body] [] is_objc_inst_method then
           add_method trans_unit_ctx tenv cg cfg curr_class procname body return_param_typ_opt
             is_objc None extra_instrs
-    | None -> ()
+    | None ->
+        if set_objc_accessor_attr then
+          ignore (CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx
+                    cfg tenv ms [] [] is_objc_inst_method)
 
-  let process_property_implementation cfg trans_unit_ctx obj_c_property_impl_decl_info =
+  let process_property_implementation trans_unit_ctx tenv cg cfg curr_class
+      obj_c_property_impl_decl_info =
     let property_decl_opt = obj_c_property_impl_decl_info.Clang_ast_t.opidi_property_decl in
     match CAst_utils.get_decl_opt_with_decl_ref property_decl_opt with
     | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info) ->
-        let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
-        (match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
-         | Some ObjCIvarDecl (_, named_decl_info, _, _, _) ->
-             let field_name = CGeneral_utils.mk_class_field_name named_decl_info in
-             let process_accessor pointer ~getter =
-               (match CAst_utils.get_decl_opt_with_decl_ref pointer with
-                | Some (ObjCMethodDecl (decl_info, _, _) as d) ->
-                    let source_range = decl_info.Clang_ast_t.di_source_range in
-                    let loc =
-                      CLocation.get_sil_location_from_range trans_unit_ctx source_range true in
-                    let property_accessor =
-                      if getter then
-                        Some (ProcAttributes.Objc_getter field_name)
-                      else
-                        Some (ProcAttributes.Objc_setter field_name) in
-                    let procname = CProcname.from_decl trans_unit_ctx d in
-                    let attrs = { (ProcAttributes.default procname Config.Clang) with
-                                  loc = loc;
-                                  objc_accessor = property_accessor; } in
-                    ignore (Cfg.create_proc_desc cfg attrs)
-                | _ -> ()) in
-             process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_getter_method ~getter:true;
-             process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_setter_method ~getter:false
-         | _ -> ())
+        let process_accessor pointer =
+          (match CAst_utils.get_decl_opt_with_decl_ref pointer with
+           | Some (ObjCMethodDecl _ as dec) ->
+               process_method_decl ~set_objc_accessor_attr:true trans_unit_ctx tenv cg cfg
+                 curr_class dec ~is_objc:true
+           | _ -> ()) in
+        process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_getter_method;
+        process_accessor obj_c_property_decl_info.Clang_ast_t.opdi_setter_method
     | _ -> ()
 
   let process_one_method_decl trans_unit_ctx tenv cg cfg curr_class dec =
@@ -125,7 +114,8 @@ struct
     | ObjCMethodDecl _ ->
         process_method_decl trans_unit_ctx tenv cg cfg curr_class dec ~is_objc:true
     | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info) ->
-        process_property_implementation cfg trans_unit_ctx obj_c_property_impl_decl_info
+        process_property_implementation trans_unit_ctx tenv cg cfg curr_class
+          obj_c_property_impl_decl_info
     | EmptyDecl _
     | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | _ ->
