@@ -175,8 +175,7 @@ struct
             let ann_sig =
               Models.get_modelled_annotated_signature (Procdesc.get_attributes pdesc) in
             let loc = Procdesc.get_loc pdesc in
-            let idenv_pn = Idenv.create_from_idenv idenv pdesc in
-            (ann_sig, loc, idenv_pn) in
+            (ann_sig, loc, Idenv.create pdesc) in
       let checks', calls_this' =
         if do_checks then checks, calls_this
         else
@@ -400,7 +399,7 @@ module Main =
 
 (** Eradicate checker for Java @Nullable annotations. *)
 let callback_eradicate
-    ({ Callbacks.get_proc_desc; idenv; proc_name } as callback_args) =
+    ({ Callbacks.get_proc_desc; proc_name } as callback_args) =
   let checks =
     {
       TypeCheck.eradicate = true;
@@ -409,7 +408,7 @@ let callback_eradicate
     } in
   let callbacks =
     let analyze_ondemand _ pdesc =
-      let idenv_pname = Idenv.create_from_idenv idenv pdesc in
+      let idenv_pname = Idenv.create pdesc in
       Main.callback checks
         { callback_args with
           Callbacks.idenv = idenv_pname;

@@ -16,7 +16,6 @@ open! IStd
 type t
 
 val create : Procdesc.t -> t
-val create_from_idenv : t -> Procdesc.t -> t
 val lookup : t -> Ident.t -> Exp.t option
 val expand_expr : t -> Exp.t -> Exp.t
 

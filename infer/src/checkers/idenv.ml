@@ -29,11 +29,6 @@ let create proc_desc =
   let map = lazy (create_ proc_desc) in
   map
 
-(* create an idenv for another procedure *)
-let create_from_idenv _ proc_desc =
-  let map = lazy (create_ proc_desc) in
-  map
-
 let lookup map_ id =
   let map = Lazy.force map_ in
   try
