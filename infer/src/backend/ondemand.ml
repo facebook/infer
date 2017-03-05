@@ -143,7 +143,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
 
   let postprocess source summary =
     decr nesting;
-    Specs.store_summary callee_pname summary;
+    Specs.store_summary summary;
     Printer.write_proc_html source false callee_pdesc;
     summary in
 
@@ -154,7 +154,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     let payload =
       { prev_summary.Specs.payload with Specs.preposts = Some []; } in
     let new_summary = { prev_summary with Specs.stats; payload } in
-    Specs.store_summary callee_pname new_summary;
+    Specs.store_summary new_summary;
     new_summary in
 
   let old_state = save_global_state () in

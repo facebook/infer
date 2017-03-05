@@ -545,24 +545,9 @@ let summary_exists_in_models pname =
 let summary_serializer : summary Serialization.serializer =
   Serialization.create_serializer Serialization.Key.summary
 
-(** Save summary for the procedure into the spec database *)
-let store_summary pname (summ1: summary) =
-  let summ2 = if Config.save_compact_summaries
-    then summary_compact (Sil.create_sharing_env ()) summ1
-    else summ1 in
-  let summ3 = if Config.save_time_in_summaries
-    then summ2
-    else
-      { summ2 with
-        stats = { summ1.stats with stats_time = 0.0} } in
-  let final_summary = { summ3 with status = Analyzed } in
-  add_summary pname summ3 (* Make sure the summary in memory is identical to the saved one *);
-  Serialization.write_to_file summary_serializer (res_dir_specs_filename pname) ~data:final_summary
-
 (** Load procedure summary from the given file *)
 let load_summary specs_file =
   Serialization.read_from_file summary_serializer specs_file
-
 
 (** Load procedure summary for the given procedure name and update spec table *)
 let load_summary_to_spec_table proc_name =
@@ -701,6 +686,25 @@ let get_specs proc_name =
 (** Return the current phase for the proc *)
 let get_phase summary =
   summary.phase
+
+(** Save summary for the procedure into the spec database *)
+let store_summary (summ1: summary) =
+  let summ2 = if Config.save_compact_summaries
+    then summary_compact (Sil.create_sharing_env ()) summ1
+    else summ1 in
+  let summ3 = if Config.save_time_in_summaries
+    then summ2
+    else
+      { summ2 with
+        stats = { summ1.stats with stats_time = 0.0} } in
+  let final_summary = { summ3 with status = Analyzed } in
+  let proc_name = get_proc_name final_summary in
+  (* Make sure the summary in memory is identical to the saved one *)
+  add_summary proc_name final_summary;
+  Serialization.write_to_file
+    summary_serializer
+    (res_dir_specs_filename proc_name)
+    ~data:final_summary
 
 (** Set the current status for the proc *)
 let set_status proc_name status =

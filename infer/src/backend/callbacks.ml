@@ -181,7 +181,7 @@ let iterate_callbacks call_graph exe_env =
   (* Store all the summaries to disk *)
   List.iter
     ~f:(fun pname ->
-        Specs.store_summary pname (Specs.get_summary_unsafe "Checkers: store summaries" pname))
+        Specs.store_summary (Specs.get_summary_unsafe "Checkers: store summaries" pname))
     procs_to_analyze;
 
   Config.curr_language := saved_language

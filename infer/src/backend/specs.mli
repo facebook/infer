@@ -274,7 +274,7 @@ val spec_normalize : Tenv.t -> Prop.normal spec -> NormSpec.t
 val res_dir_specs_filename : Procname.t -> DB.filename
 
 (** Save summary for the procedure into the spec database *)
-val store_summary : Procname.t -> summary -> unit
+val store_summary : summary -> unit
 
 (** Return a compact representation of the summary *)
 val summary_compact : Sil.sharing_env -> summary -> summary
