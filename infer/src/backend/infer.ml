@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 (** Top-level driver that orchestrates build system integration, frontends, backend, and
     reporting *)
@@ -160,14 +161,15 @@ let register_perf_stats_report () =
   Unix.mkdir_p stats_dir;
   PerfStats.register_report_at_exit stats_file
 
-
-let touch_start_file () =
+(* Create the .start file, and update the timestamp unless in continue mode *)
+let touch_start_file_unless_continue () =
   let start = Config.results_dir ^/ Config.start_filename in
-  let flags =
-    Unix.O_CREAT :: Unix.O_WRONLY :: (if Config.continue_capture then [Unix.O_EXCL] else []) in
-  (* create new file, or open existing file for writing to update modified timestamp *)
-  try Unix.close (Unix.openfile ~perm:0o0666 ~mode:flags start)
-  with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
+  let delete () =
+    Unix.unlink start in
+  let create () =
+    Unix.close (Unix.openfile ~perm:0o0666 ~mode:[Unix.O_CREAT; Unix.O_WRONLY] start) in
+  if not (Sys.file_exists start = `Yes) then create ()
+  else if not Config.continue_capture then (delete (); create ())
 
 
 let run_command ~prog ~args cleanup =
@@ -451,7 +453,7 @@ let () =
   if not Config.buck_cache_mode then register_perf_stats_report () ;
   if Config.buck_cache_mode && Config.reactive_mode then
     failwith "The reactive analysis mode is not compatible with the Buck integration for Java";
-  if not Config.buck_cache_mode then touch_start_file () ;
+  if not Config.buck_cache_mode then touch_start_file_unless_continue () ;
   capture driver_mode ;
   analyze driver_mode ;
   if CLOpt.is_originator then (
