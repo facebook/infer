@@ -289,22 +289,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               (Mangled.from_string
                  (container_write_string ^ (Procname.get_method callee_pname))) 0 in
           let dummy_access_exp = Exp.Lfield (receiver_exp, dummy_fieldname, receiver_typ) in
-          let callee_conditional_writes =
+          let callee_writes =
             match AccessPath.of_lhs_exp dummy_access_exp receiver_typ ~f_resolve_id with
             | Some container_ap ->
-                let writes =
-                  PathDomain.add_sink
-                    (make_access container_ap callee_loc)
-                    PathDomain.empty in
-                ConditionalWritesDomain.add 0 writes ConditionalWritesDomain.empty
+                AccessDomain.add_access
+                  (ProtectedIf (Some 0))
+                  (make_access container_ap callee_loc)
+                  AccessDomain.empty
             | None ->
-                ConditionalWritesDomain.empty in
-          Some
-            (false,
-             PathDomain.empty,
-             callee_conditional_writes,
-             PathDomain.empty,
-             AttributeSetDomain.empty)
+                AccessDomain.empty in
+          Some (false, PathDomain.empty, callee_writes, AttributeSetDomain.empty)
       | _ ->
           failwithf
             "Call to %a is marked as a container write, but has no receiver"
@@ -375,79 +369,79 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 get_summary pdesc callee_pname actuals ~f_resolve_id loc tenv with
               | Some (callee_locks,
                       callee_reads,
-                      callee_conditional_writes,
-                      callee_unconditional_writes,
+                      callee_writes,
                       return_attributes) ->
                   let locks' = callee_locks || astate.locks in
                   let astate' =
                     if is_unprotected locks'
                     then
                       let call_site = CallSite.make callee_pname loc in
-                      (* add the conditional writes rooted in the callee formal at [index] to
-                         the current state *)
-                      let add_conditional_writes
-                          index ((cond_writes, uncond_writes) as acc) (actual_exp, actual_typ) =
+                      let add_conditional_writes index writes_acc (actual_exp, actual_typ) =
                         if is_constant actual_exp
                         then
-                          acc
+                          (* the actual is a constant, so it's owned in the caller. *)
+                          writes_acc
                         else
-                          try
-                            let callee_cond_writes_for_index' =
-                              let callee_cond_writes_for_index =
-                                ConditionalWritesDomain.find index callee_conditional_writes in
-                              PathDomain.with_callsite callee_cond_writes_for_index call_site in
-                            begin
-                              match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
-                              | Some actual_access_path ->
-                                  if is_owned actual_access_path astate.attribute_map
-                                  then
-                                    (* the actual passed to the current callee is owned. drop all
-                                       the conditional writes for that actual, since they're all
-                                       safe *)
-                                    acc
-                                  else
-                                    let base = fst actual_access_path in
-                                    begin
-                                      match FormalMap.get_formal_index base extras with
-                                      | Some formal_index ->
-                                          (* the actual passed to the current callee is rooted in
-                                             a formal. add to conditional writes *)
-                                          let conditional_writes' =
-                                            try
-                                              ConditionalWritesDomain.find
-                                                formal_index cond_writes
-                                              |> PathDomain.join callee_cond_writes_for_index'
-                                            with Not_found ->
-                                              callee_cond_writes_for_index' in
-                                          let cond_writes' =
-                                            ConditionalWritesDomain.add
-                                              formal_index conditional_writes' cond_writes in
-                                          cond_writes', uncond_writes
-                                      | None ->
-                                          (* access path not owned and not rooted in a formal. add
-                                             to unconditional writes *)
-                                          cond_writes,
-                                          PathDomain.join
-                                            uncond_writes callee_cond_writes_for_index'
-                                    end
-                              | _ ->
-                                  cond_writes,
-                                  PathDomain.join uncond_writes callee_cond_writes_for_index'
-                            end
-                          with Not_found ->
-                            acc in
-                      let conditional_writes, unconditional_writes =
-                        let combined_unconditional_writes =
-                          PathDomain.with_callsite callee_unconditional_writes call_site
-                          |> PathDomain.join astate.unconditional_writes in
-                        List.foldi
-                          ~f:add_conditional_writes
-                          ~init:(astate.conditional_writes, combined_unconditional_writes)
-                          actuals in
+                          let callee_conditional_writes =
+                            PathDomain.with_callsite
+                              (AccessDomain.get_accesses (ProtectedIf (Some index)) callee_writes)
+                              call_site in
+                          begin
+                            match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
+                            | Some actual_access_path ->
+                                if is_owned actual_access_path astate.attribute_map
+                                then
+                                  (* the actual passed to the current callee is owned. drop all the
+                                     conditional writes for that actual, since they're all safe *)
+                                  writes_acc
+                                else
+                                  let base = fst actual_access_path in
+                                  begin
+                                    match FormalMap.get_formal_index base extras with
+                                    | Some formal_index ->
+                                        (* the actual passed to the current callee is rooted in a
+                                           formal. add to conditional writes *)
+                                        PathDomain.Sinks.fold
+                                          (AccessDomain.add_access
+                                             (ProtectedIf (Some formal_index)))
+                                          (PathDomain.sinks callee_conditional_writes)
+                                          writes_acc
+                                    | None ->
+                                        (* access path not owned and not rooted in a formal. add to
+                                           unsafe writes *)
+                                        PathDomain.Sinks.fold
+                                          (AccessDomain.add_access AccessPrecondition.unprotected)
+                                          (PathDomain.sinks callee_conditional_writes)
+                                          writes_acc
+                                  end
+                            | None ->
+                                PathDomain.Sinks.fold
+                                  (AccessDomain.add_access AccessPrecondition.unprotected)
+                                  (PathDomain.sinks callee_conditional_writes)
+                                  writes_acc
+                          end in
+
                       let reads =
                         PathDomain.with_callsite callee_reads call_site
                         |> PathDomain.join astate.reads in
-                      { astate with reads; conditional_writes; unconditional_writes; }
+                      let combined_unsafe_writes =
+                        PathDomain.with_callsite
+                          (AccessDomain.get_accesses AccessPrecondition.unprotected callee_writes)
+                          call_site
+                        |> PathDomain.join
+                          (AccessDomain.get_accesses
+                             AccessPrecondition.unprotected astate.writes) in
+                      let writes_with_unsafe =
+                        AccessDomain.add
+                          AccessPrecondition.unprotected
+                          combined_unsafe_writes
+                          astate.writes in
+                      let writes =
+                        List.foldi
+                          ~f:add_conditional_writes
+                          ~init:writes_with_unsafe
+                          actuals in
+                      { astate with reads; writes; }
                     else
                       astate in
                   let attribute_map =
@@ -532,7 +526,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               AttributeMapDomain.has_attribute access_path Functional attribute_map
           | None ->
               false in
-        let conditional_writes, unconditional_writes =
+        let writes =
           match lhs_exp with
           | Lfield (base_exp, _, typ)
             when is_unprotected astate.locks (* abstracts no lock being held *) &&
@@ -540,34 +534,35 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               begin
                 match get_formal_index base_exp typ with
                 | Some formal_index ->
-                    let conditional_writes_for_index =
-                      try ConditionalWritesDomain.find formal_index astate.conditional_writes
-                      with Not_found -> PathDomain.empty in
-                    let conditional_writes_for_index' =
+                    let pre = AccessPrecondition.ProtectedIf (Some formal_index) in
+                    let conditional_writes_for_pre =
+                      AccessDomain.get_accesses pre astate.writes in
+                    let conditional_writes_for_pre' =
                       add_path_to_state
                         lhs_exp
                         typ
                         loc
-                        conditional_writes_for_index
+                        conditional_writes_for_pre
                         astate.id_map
                         astate.attribute_map
                         tenv in
-                    ConditionalWritesDomain.add
-                      formal_index conditional_writes_for_index' astate.conditional_writes,
-                    astate.unconditional_writes
+                    AccessDomain.add pre conditional_writes_for_pre' astate.writes
                 | None ->
-                    astate.conditional_writes,
-                    add_path_to_state
-                      lhs_exp
-                      typ
-                      loc
-                      astate.unconditional_writes
-                      astate.id_map
-                      astate.attribute_map
-                      tenv
+                    let unsafe_writes =
+                      AccessDomain.get_accesses AccessPrecondition.unprotected astate.writes in
+                    let unsafe_writes' =
+                      add_path_to_state
+                        lhs_exp
+                        typ
+                        loc
+                        unsafe_writes
+                        astate.id_map
+                        astate.attribute_map
+                        tenv in
+                    AccessDomain.add AccessPrecondition.unprotected unsafe_writes' astate.writes
               end
           | _ ->
-              astate.conditional_writes, astate.unconditional_writes in
+              astate.writes in
         let attribute_map =
           match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id with
           | Some lhs_access_path ->
@@ -575,7 +570,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 lhs_access_path rhs_exp lhs_typ ~f_resolve_id astate.attribute_map extras
           | None ->
               astate.attribute_map in
-        { astate with conditional_writes; unconditional_writes; attribute_map; }
+        { astate with writes; attribute_map; }
 
     | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
         let id_map = analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate in
@@ -729,7 +724,7 @@ let make_results_table get_proc_desc file_env =
       let has_lock = false in
       let return_attrs = AttributeSetDomain.empty in
       let empty =
-        has_lock, PathDomain.empty, ConditionalWritesDomain.empty, PathDomain.empty, return_attrs in
+        has_lock, PathDomain.empty, AccessDomain.empty, return_attrs in
       (* convert the abstract state to a summary by dropping the id map *)
       let compute_post ({ ProcData.pdesc; tenv; extras; } as proc_data) =
         if should_analyze_proc pdesc tenv
@@ -752,7 +747,7 @@ let make_results_table get_proc_desc file_env =
               else
                 ThreadSafetyDomain.empty in
             match Analyzer.compute_post proc_data ~initial with
-            | Some { locks; reads; conditional_writes; unconditional_writes; attribute_map; } ->
+            | Some { locks; reads; writes; attribute_map; } ->
                 let return_var_ap =
                   AccessPath.of_pvar
                     (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
@@ -760,7 +755,7 @@ let make_results_table get_proc_desc file_env =
                 let return_attributes =
                   try AttributeMapDomain.find return_var_ap attribute_map
                   with Not_found -> AttributeSetDomain.empty in
-                Some (locks, reads, conditional_writes, unconditional_writes, return_attributes)
+                Some (locks, reads, writes, return_attributes)
             | None ->
                 None
           end
@@ -802,16 +797,16 @@ let calculate_addendum_message tenv pname =
       else ""
   | _ -> ""
 
-
-let combine_conditional_unconditional_writes conditional_writes unconditional_writes =
+let get_possibly_unsafe_writes writes =
   let open ThreadSafetyDomain in
-  ConditionalWritesDomain.fold
-    (fun _ writes acc -> PathDomain.join writes acc)
-    conditional_writes
-    unconditional_writes
+  AccessDomain.fold
+    (fun attribute accesses acc -> match attribute with
+       | ProtectedIf _ -> PathDomain.join accesses acc
+       | Protected -> acc)
+    writes
+    PathDomain.empty
 
-let equal_locs (sink1 : ThreadSafetyDomain.TraceElem.t)
-    (sink2 : ThreadSafetyDomain.TraceElem.t) =
+let equal_locs (sink1 : ThreadSafetyDomain.TraceElem.t) (sink2 : ThreadSafetyDomain.TraceElem.t) =
   Location.equal
     (CallSite.loc (ThreadSafetyDomain.TraceElem.call_site sink1))
     (CallSite.loc (ThreadSafetyDomain.TraceElem.call_site sink2))
@@ -844,10 +839,9 @@ let filter_conflicting_sinks sink trace =
 let collect_conflicting_writes sink tab =
   let procs_and_writes =
     List.map
-      ~f:(fun (key,(_, _, conditional_writes, unconditional_writes, _)) ->
+      ~f:(fun (key,(_, _, writes, _)) ->
           let conflicting_writes =
-            combine_conditional_unconditional_writes
-              conditional_writes unconditional_writes
+            get_possibly_unsafe_writes writes
             |> filter_conflicting_sinks sink in
           key, conflicting_writes
         )
@@ -907,8 +901,8 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
-    | Some (_, _, conditional_writes, unconditional_writes, _) ->
-        combine_conditional_unconditional_writes conditional_writes unconditional_writes
+    | Some (_, _, writes, _) ->
+        get_possibly_unsafe_writes writes
     | _ ->
         PathDomain.empty in
   let report_one_path ((_, sinks) as path) =
@@ -1024,14 +1018,12 @@ let process_results_table file_env tab =
     (should_report_on_all_procs || is_thread_safe_method pdesc tenv)
     && should_report_on_proc proc_env in
   ResultsTableType.iter (* report errors for each method *)
-    (fun proc_env (_, reads, conditional_writes, unconditional_writes, _) ->
+    (fun proc_env (_, reads, writes, _) ->
        if should_report proc_env then
-         let writes = combine_conditional_unconditional_writes
-             conditional_writes unconditional_writes in
          begin
            report_thread_safety_violations
-             proc_env make_unprotected_write_description writes tab
-         ; report_reads proc_env reads tab
+             proc_env make_unprotected_write_description (get_possibly_unsafe_writes writes) tab;
+           report_reads proc_env reads tab
          end
     )
     tab

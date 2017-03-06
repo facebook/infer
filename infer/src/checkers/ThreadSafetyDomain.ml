@@ -47,10 +47,6 @@ module LocksDomain = AbstractDomain.BooleanAnd
 
 module PathDomain = SinkTrace.Make(TraceElem)
 
-module IntMap = PrettyPrintable.MakePPMap(Int)
-
-module ConditionalWritesDomain = AbstractDomain.Map (IntMap) (PathDomain)
-
 module Attribute = struct
   type t =
     | OwnedIf of int option
@@ -91,31 +87,60 @@ module AttributeMapDomain = struct
     add access_path attribute_set t
 end
 
+module AccessPrecondition = struct
+  type t =
+    | Protected
+    | ProtectedIf of int option
+  [@@deriving compare]
+
+  let unprotected = ProtectedIf None
+
+  let pp fmt = function
+    | Protected -> F.fprintf fmt "Protected"
+    | ProtectedIf (Some index) -> F.fprintf fmt "ProtectedIf %d" index
+    | ProtectedIf None -> F.fprintf fmt "Unprotected"
+
+  module Map = PrettyPrintable.MakePPMap(struct
+      type nonrec t = t
+      let compare = compare
+      let pp = pp
+    end)
+end
+
+module AccessDomain = struct
+  include AbstractDomain.Map (AccessPrecondition.Map) (PathDomain)
+
+  let add_access precondition access_path t =
+    let precondition_accesses =
+      try find precondition t
+      with Not_found -> PathDomain.empty in
+    let precondition_accesses' = PathDomain.add_sink access_path precondition_accesses in
+    add precondition precondition_accesses' t
+
+  let get_accesses precondition t =
+    try find precondition t
+    with Not_found -> PathDomain.empty
+end
+
 type astate =
   {
     locks : LocksDomain.astate;
     reads : PathDomain.astate;
-    conditional_writes : ConditionalWritesDomain.astate;
-    unconditional_writes : PathDomain.astate;
+    writes : AccessDomain.astate;
     id_map : IdAccessPathMapDomain.astate;
     attribute_map : AttributeMapDomain.astate;
   }
 
 type summary =
-  LocksDomain.astate *
-  PathDomain.astate *
-  ConditionalWritesDomain.astate *
-  PathDomain.astate *
-  AttributeSetDomain.astate
+  LocksDomain.astate * PathDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
 
 let empty =
   let locks = false in
   let reads = PathDomain.empty in
-  let conditional_writes = ConditionalWritesDomain.empty in
-  let unconditional_writes = PathDomain.empty in
+  let writes = AccessDomain.empty in
   let id_map = IdAccessPathMapDomain.empty in
   let attribute_map = AccessPath.UntypedRawMap.empty in
-  { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; }
+  { locks; reads; writes; id_map; attribute_map; }
 
 let (<=) ~lhs ~rhs =
   if phys_equal lhs rhs
@@ -123,8 +148,7 @@ let (<=) ~lhs ~rhs =
   else
     LocksDomain.(<=) ~lhs:lhs.locks ~rhs:rhs.locks &&
     PathDomain.(<=) ~lhs:lhs.reads ~rhs:rhs.reads &&
-    ConditionalWritesDomain.(<=) ~lhs:lhs.conditional_writes ~rhs:rhs.conditional_writes &&
-    PathDomain.(<=) ~lhs:lhs.unconditional_writes ~rhs:rhs.unconditional_writes &&
+    AccessDomain.(<=) ~lhs:lhs.writes ~rhs:rhs.writes &&
     IdAccessPathMapDomain.(<=) ~lhs:lhs.id_map ~rhs:rhs.id_map &&
     AttributeMapDomain.(<=) ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
 
@@ -135,13 +159,10 @@ let join astate1 astate2 =
   else
     let locks = LocksDomain.join astate1.locks astate2.locks in
     let reads = PathDomain.join astate1.reads astate2.reads in
-    let conditional_writes =
-      ConditionalWritesDomain.join astate1.conditional_writes astate2.conditional_writes in
-    let unconditional_writes =
-      PathDomain.join astate1.unconditional_writes astate2.unconditional_writes in
+    let writes = AccessDomain.join astate1.writes astate2.writes in
     let id_map = IdAccessPathMapDomain.join astate1.id_map astate2.id_map in
     let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
-    { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; }
+    { locks; reads; writes; id_map; attribute_map; }
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next
@@ -150,34 +171,28 @@ let widen ~prev ~next ~num_iters =
   else
     let locks = LocksDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
     let reads = PathDomain.widen ~prev:prev.reads ~next:next.reads ~num_iters in
-    let conditional_writes =
-      ConditionalWritesDomain.widen
-        ~prev:prev.conditional_writes ~next:next.conditional_writes ~num_iters in
-    let unconditional_writes =
-      PathDomain.widen ~prev:prev.unconditional_writes ~next:next.unconditional_writes ~num_iters in
+    let writes = AccessDomain.widen ~prev:prev.writes ~next:next.writes ~num_iters in
     let id_map = IdAccessPathMapDomain.widen ~prev:prev.id_map ~next:next.id_map ~num_iters in
     let attribute_map =
       AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters in
-    { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; }
+    { locks; reads; writes; id_map; attribute_map; }
 
-let pp_summary fmt (locks, reads, conditional_writes, unconditional_writes, return_attributes) =
+let pp_summary fmt (locks, reads, writes, return_attributes) =
   F.fprintf
     fmt
-    "Locks: %a Reads: %a Conditional Writes: %a Unconditional Writes: %a Return Attributes: %a"
+    "Locks: %a Reads: %a Writes: %a Return Attributes: %a"
     LocksDomain.pp locks
     PathDomain.pp reads
-    ConditionalWritesDomain.pp conditional_writes
-    PathDomain.pp unconditional_writes
+    AccessDomain.pp writes
     AttributeSetDomain.pp return_attributes
 
-let pp fmt { locks; reads; conditional_writes; unconditional_writes; id_map; attribute_map; } =
+let pp fmt { locks; reads; writes; id_map; attribute_map; } =
   F.fprintf
     fmt
-    "Locks: %a Reads: %a Conditional Writes: %a Unconditional Writes: %a Id Map: %a Attribute Map:\
+    "Locks: %a Reads: %a Writes: %a Id Map: %a Attribute Map:\
      %a"
     LocksDomain.pp locks
     PathDomain.pp reads
-    ConditionalWritesDomain.pp conditional_writes
-    PathDomain.pp unconditional_writes
+    AccessDomain.pp writes
     IdAccessPathMapDomain.pp id_map
     AttributeMapDomain.pp attribute_map

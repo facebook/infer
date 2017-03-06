@@ -24,10 +24,6 @@ module LocksDomain : AbstractDomain.S with type astate = bool
 
 module PathDomain : module type of SinkTrace.Make(TraceElem)
 
-module IntMap : PrettyPrintable.PPMap with type key = int
-
-module ConditionalWritesDomain : module type of (AbstractDomain.Map (IntMap) (PathDomain))
-
 module Attribute : sig
   type t =
     | OwnedIf of int option
@@ -54,31 +50,43 @@ module AttributeMapDomain : sig
   val add_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> astate
 end
 
-(** the primary role of this domain is tracking *conditional* and *unconditional* writes.
-    conditional writes are writes that are rooted in a formal of the current procedure, and they
-    are safe only if the actual bound to that formal is owned at the call site (as in the foo
-    example below). Unconditional writes are rooted in a local, and they are only safe if a lock is
-    held in the caller.
-    To demonstrate what conditional writes buy us, consider the following example:
+module AccessPrecondition : sig
+  type t =
+    | Protected
+    (** access safe due to held lock (i.e., pre is true *)
+    | ProtectedIf of int option
+    (** access safe if the formal at index i is owned (i.e., pre is owned(i)).
+        ProtectedIf None means unsafe (i.e., pre is false) *)
+  [@@deriving compare]
 
-    foo() {
-      Object local = new Object();
-      iWriteToAField(local);
-    }
+  (** type of an unprotected access *)
+  val unprotected : t
 
-    We don't want to warn on this example because the object pointed to by local is owned by the
-    caller foo, then ownership is transferred to the callee iWriteToAField. *)
+  val pp : F.formatter -> t -> unit
+
+  module Map : PrettyPrintable.PPMap with type key = t
+end
+
+(** map of access precondition |-> set of accesses. the map should hold all accesses to a
+    possibly-unowned access path *)
+module AccessDomain : sig
+  include module type of AbstractDomain.Map (AccessPrecondition.Map) (PathDomain)
+
+  (* add the given (access, precondition) pair to the map *)
+  val add_access : AccessPrecondition.t -> TraceElem.t -> astate -> astate
+
+  (* get all accesses with the given precondition *)
+  val get_accesses : AccessPrecondition.t -> astate -> PathDomain.astate
+end
+
 type astate =
   {
     locks : LocksDomain.astate;
     (** boolean that is true if a lock must currently be held *)
     reads : PathDomain.astate;
     (** access paths read outside of synchronization *)
-    conditional_writes : ConditionalWritesDomain.astate;
-    (** map of (formal index) -> set of access paths rooted in the formal index that are read
-        outside of synrchonization if the formal is not owned by the caller *)
-    unconditional_writes : PathDomain.astate;
-    (** access paths written outside of synchronization *)
+    writes : AccessDomain.astate;
+    (** access paths written without ownership permissions *)
     id_map : IdAccessPathMapDomain.astate;
     (** map used to decompile temporary variables into access paths *)
     attribute_map : AttributeMapDomain.astate;
@@ -88,11 +96,7 @@ type astate =
 (** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of the
     attributes associated with the return value *)
 type summary =
-  LocksDomain.astate *
-  PathDomain.astate *
-  ConditionalWritesDomain.astate *
-  PathDomain.astate *
-  AttributeSetDomain.astate
+  LocksDomain.astate * PathDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
 
 include AbstractDomain.WithBottom with type astate := astate
 
