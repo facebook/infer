@@ -117,7 +117,8 @@ clang_setup:
 	@export CC="$(CC)" CFLAGS="$(CFLAGS)"; \
 	export CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS)"; \
 	export CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)"; \
-	$(FCP_DIR)/clang/setup.sh $(INFER_FCP_SETUP_OPTS) > /dev/null
+	$(FCP_DIR)/clang/setup.sh --only-check-install || \
+	$(FCP_DIR)/clang/setup.sh $(INFER_FCP_SETUP_OPTS)
 
 .PHONY: clang_plugin
 clang_plugin: clang_setup
