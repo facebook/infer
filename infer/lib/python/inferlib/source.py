@@ -13,14 +13,14 @@ from __future__ import unicode_literals
 import codecs
 import os
 
-from . import colorize, config
+from . import colorize, config, utils
 
 BASE_INDENT = 2
 # how many lines of context around each report
 SOURCE_CONTEXT = 2
 
 
-class Indenter(str):
+class Indenter(unicode):
     def __init__(self):
         super(Indenter, self).__init__()
         self.text = ''
@@ -46,7 +46,7 @@ class Indenter(str):
 
     def add(self, x):
         if type(x) != unicode:
-            x = x.decode(config.CODESET)
+            x = utils.decode(x)
         lines = x.splitlines()
         indent = self.indent_get()
         lines = [indent + l for l in lines]
@@ -57,7 +57,7 @@ class Indenter(str):
         return self.text
 
     def __str__(self):
-        return unicode(self).encode(config.CODESET)
+        return utils.encode(unicode(self))
 
 
 def build_source_context(source_name, mode, report_line):

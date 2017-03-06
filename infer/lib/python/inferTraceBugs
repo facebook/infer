@@ -123,6 +123,9 @@ class Tracer(object):
     def build_report(self, report):
         self.build_trace(report[issues.JSON_INDEX_TRACE])
 
+    def __unicode__(self):
+        return unicode(self.indenter)
+
     def __str__(self):
         return str(self.indenter)
 
@@ -278,7 +281,7 @@ def html_bug_trace(args, report, bug_id):
     bug_trace += '%s\n' % issues.text_of_report(report)
     tracer = Tracer(args)
     tracer.build_report(report)
-    bug_trace += str(tracer)
+    bug_trace += unicode(tracer)
     return bug_trace
 
 
@@ -389,7 +392,7 @@ def main():
 
     tracer = Tracer(args, max_level)
     tracer.build_report(report)
-    utils.stdout(str(tracer))
+    utils.stdout(unicode(tracer))
 
 
 if __name__ == '__main__':

@@ -17,11 +17,16 @@ SOURCES = ../codetoanalyze/make/utf8_in_function_names.c
 
 include $(TESTS_DIR)/clang.make
 
-infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
+infer-out/report.json: $(CLANG_DEPS) $(INFERTRACEBUGS_BIN) $(SOURCES) $(HEADERS) $(MAKEFILE_LIST)
 #	set non-utf8-supporting locale
 	LC_ALL=C; \
 	$(call silent_on_success,\
 	  $(INFER_BIN) --check-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(SOURCES) 2>duplicates.txt)
+	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+#	make sure inferTraceBugs is immune to UTF-8
+	$(call silent_on_success, $(INFERTRACEBUGS_BIN) --max-level max --select 0)
+	$(call silent_on_success, $(INFERTRACEBUGS_BIN) --html)
+	[ -f infer-out/report.html/index.html ]
 #	run again to check that infer manages to delete the results directory
 	LC_ALL=C; \
 	$(call silent_on_success,\
