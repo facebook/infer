@@ -30,31 +30,6 @@ NSString* createURLQueryStringBodyEscaping(NSDictionary* parameters,
   return resultString;
 }
 
-+ (NSData*)randomBytes:(NSUInteger)numOfBytes {
-  uint8_t* buffer = malloc(numOfBytes);
-  NSData* data = [NSData dataWithBytesNoCopy:buffer length:numOfBytes];
-  if (data) {
-    return data;
-  } else {
-    free(buffer);
-    return nil;
-  }
-}
-
-- (NSData*)readDataOfLength:(NSUInteger)length {
-  size_t bytesLength = length;
-  void* bytes = malloc(bytesLength);
-  if (bytes == NULL) {
-    return nil;
-  }
-  return [[NSData alloc] initWithBytesNoCopy:bytes length:5 freeWhenDone:YES];
-}
-
-- (NSData*)macForIV:(NSData*)IV {
-  uint8_t* result = malloc(10);
-  return [NSData dataWithBytesNoCopy:result length:10];
-}
-
 - (NSString*)hexStringValue {
   size_t hexLen = 2 * 10 * sizeof(char);
   char* outString = (char*)malloc(hexLen + 1);

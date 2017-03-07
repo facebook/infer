@@ -40,6 +40,10 @@ NSData* __objc_alloc(NSData*);
     return nil;
 }
 
+- (instancetype)initWithBytesNoCopy:(void*)bytes length:(NSUInteger)length {
+  return [self initWithBytesNoCopy:bytes length:length freeWhenDone:YES];
+}
+
 - (instancetype)initWithBytesNoCopy:(void*)bytes
                              length:(NSUInteger)length
                        freeWhenDone:(BOOL)flag {
