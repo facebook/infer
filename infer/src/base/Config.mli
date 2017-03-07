@@ -322,6 +322,7 @@ val test : bool
 val test_filtering : bool
 val testing_mode : bool
 val threadsafety : bool
+val threadsafe_aliases : Yojson.Basic.json
 val trace_error : bool
 val trace_ondemand : bool
 val trace_join : bool

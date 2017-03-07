@@ -1,0 +1,3 @@
+{
+  "threadsafe-aliases": ["MyThreadSafeAlias1", "codetoanalyze.java.checkers.MyThreadSafeAlias2"]
+}

@@ -1297,6 +1297,11 @@ and testing_mode =
   CLOpt.mk_bool ~deprecated:["testing_mode"; "-testing_mode"] ~long:"testing-mode" ~short:"tm"
     "Mode for testing, where no headers are translated, and dot files are created (clang only)"
 
+and threadsafe_aliases =
+  CLOpt.mk_json ~long:"threadsafe-aliases"
+    ~parse_mode:CLOpt.(Infer [Checkers])
+    "Specify custom annotations that should be considered aliases of @ThreadSafe"
+
 and trace_join =
   CLOpt.mk_bool ~deprecated:["trace_join"] ~long:"trace-join"
     "Detailed tracing information during prop join operations"
@@ -1656,6 +1661,7 @@ and test = !test
 and test_filtering = !test_filtering
 and testing_mode = !testing_mode
 and threadsafety = !threadsafety
+and threadsafe_aliases = !threadsafe_aliases
 and trace_error = !trace_error
 and trace_ondemand = !trace_ondemand
 and trace_join = !trace_join

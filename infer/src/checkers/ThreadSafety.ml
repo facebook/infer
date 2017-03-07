@@ -679,11 +679,19 @@ let runs_on_ui_thread proc_desc =
                   Annotations.ia_is_on_unbind annot ||
                   Annotations.ia_is_on_unmount annot)
 
+let threadsafe_annotations =
+  Annotations.thread_safe ::
+  (ThreadSafetyConfig.AnnotationAliases.of_json Config.threadsafe_aliases)
 
-(* returns true if the annotation is @ThreadSafe or @ThreadSafe(enableChecks = true) *)
+(* returns true if the annotation is @ThreadSafe, @ThreadSafe(enableChecks = true), or is defined
+   as an alias of @ThreadSafe in a .inferconfig file. *)
 let is_thread_safe item_annot =
-  let f (annot, _) =
-    Annotations.annot_ends_with annot Annotations.thread_safe &&
+  let f ((annot : Annot.t), _) =
+    List.exists
+      ~f:(fun annot_string ->
+          Annotations.annot_ends_with annot annot_string ||
+          String.equal annot.class_name annot_string)
+      threadsafe_annotations &&
     match annot.Annot.parameters with
     | ["false"] -> false
     | _ -> true in

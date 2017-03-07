@@ -48,6 +48,16 @@ import com.facebook.infer.annotation.ReturnsOwnership;
 @interface OnUnmount {
 }
 
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+@interface MyThreadSafeAlias1 {
+}
+
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+@interface MyThreadSafeAlias2 {
+}
+
 interface Interface {
 
   @Functional Object functionalMethod();
@@ -60,6 +70,21 @@ class AssumedThreadSafe {
   Object field;
 
   public void writeOk() {
+    this.field = new Object();
+  }
+}
+
+// this annotation is defined as an alias for @ThreadSafe in .inferconfig
+class ThreadSafeAlias {
+  Object field;
+
+  @MyThreadSafeAlias1
+  void threadSafeAliasBad1() {
+    this.field = new Object();
+  }
+
+  @MyThreadSafeAlias2
+  void threadSafeAliasBad2() {
     this.field = new Object();
   }
 }
