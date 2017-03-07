@@ -40,4 +40,24 @@ Integer racy;
    racy = 99;
   }
 
+  // need to report races involving safe writes in order to get this one
+  public synchronized void FN_syncWrite1() {
+    racy = 42;
+  }
+
+  public void FN_syncWrite2() {
+    synchronized(this) {
+      racy = 43;
+    }
+  }
+
+  private synchronized void syncWrite3() {
+    racy = 44;
+  }
+
+  public void FN_callSyncWrite3() {
+    syncWrite3();
+  }
+
+
 }

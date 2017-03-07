@@ -160,7 +160,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         attribute_map
 
   let add_path_to_state exp typ loc path_state id_map attribute_map tenv =
-
     (* we don't want to warn on writes to the field if it is (a) thread-confined, or (b) volatile *)
     let is_safe_write access_path tenv =
       let is_thread_safe_write accesses tenv =
@@ -371,11 +370,22 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       callee_reads,
                       callee_writes,
                       return_attributes) ->
+                  let call_site = CallSite.make callee_pname loc in
+                  let combine_accesses_for_pre pre ~caller_accesses ~callee_accesses =
+                    let combined_accesses =
+                      PathDomain.with_callsite
+                        (AccessDomain.get_accesses pre callee_accesses) call_site
+                      |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses) in
+                    AccessDomain.add pre combined_accesses caller_accesses in
+                  let combined_safe_writes =
+                    combine_accesses_for_pre
+                      AccessPrecondition.Protected
+                      ~caller_accesses:astate.writes
+                      ~callee_accesses:callee_writes in
                   let locks' = callee_locks || astate.locks in
                   let astate' =
                     if is_unprotected locks'
                     then
-                      let call_site = CallSite.make callee_pname loc in
                       let add_conditional_writes index writes_acc (actual_exp, actual_typ) =
                         if is_constant actual_exp
                         then
@@ -424,26 +434,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       let reads =
                         PathDomain.with_callsite callee_reads call_site
                         |> PathDomain.join astate.reads in
-                      let combined_unsafe_writes =
-                        PathDomain.with_callsite
-                          (AccessDomain.get_accesses AccessPrecondition.unprotected callee_writes)
-                          call_site
-                        |> PathDomain.join
-                          (AccessDomain.get_accesses
-                             AccessPrecondition.unprotected astate.writes) in
-                      let writes_with_unsafe =
-                        AccessDomain.add
+                      let unsafe_writes =
+                        combine_accesses_for_pre
                           AccessPrecondition.unprotected
-                          combined_unsafe_writes
-                          astate.writes in
+                          ~caller_accesses:combined_safe_writes
+                          ~callee_accesses:callee_writes in
                       let writes =
-                        List.foldi
-                          ~f:add_conditional_writes
-                          ~init:writes_with_unsafe
-                          actuals in
+                        List.foldi ~f:add_conditional_writes ~init:unsafe_writes actuals in
                       { astate with reads; writes; }
                     else
-                      astate in
+                      { astate with writes = combined_safe_writes; } in
                   let attribute_map =
                     propagate_return_attributes
                       ret_opt
@@ -528,10 +528,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               false in
         let writes =
           match lhs_exp with
-          | Lfield (base_exp, _, typ)
-            when is_unprotected astate.locks (* abstracts no lock being held *) &&
-                 not (is_marked_functional rhs_exp lhs_typ astate.attribute_map) ->
-              begin
+          | Lfield (base_exp, _, typ) ->
+              if is_unprotected astate.locks (* abstracts no lock being held *) &&
+                 not (is_marked_functional rhs_exp lhs_typ astate.attribute_map)
+              then
                 match get_formal_index base_exp typ with
                 | Some formal_index ->
                     let pre = AccessPrecondition.ProtectedIf (Some formal_index) in
@@ -560,7 +560,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         astate.attribute_map
                         tenv in
                     AccessDomain.add AccessPrecondition.unprotected unsafe_writes' astate.writes
-              end
+              else
+                let safe_writes = AccessDomain.get_accesses Protected astate.writes in
+                let safe_writes' =
+                  add_path_to_state
+                    lhs_exp
+                    typ
+                    loc
+                    safe_writes
+                    astate.id_map
+                    astate.attribute_map
+                    tenv in
+                AccessDomain.add Protected safe_writes' astate.writes
           | _ ->
               astate.writes in
         let attribute_map =
