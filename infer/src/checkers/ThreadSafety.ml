@@ -708,6 +708,61 @@ let should_report_on_proc (_, _, proc_name, proc_desc) =
   Procdesc.get_access proc_desc <> PredSymb.Private &&
   not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
 
+let analyze_procedure callback =
+  let is_initializer tenv proc_name =
+    Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
+  let open ThreadSafetyDomain in
+  let has_lock = false in
+  let return_attrs = AttributeSetDomain.empty in
+  let empty =
+    has_lock, PathDomain.empty, AccessDomain.empty, return_attrs in
+  (* convert the abstract state to a summary by dropping the id map *)
+  let compute_post ({ ProcData.pdesc; tenv; extras; } as proc_data) =
+    if should_analyze_proc pdesc tenv
+    then
+      begin
+        if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
+        let initial =
+          if is_initializer tenv (Procdesc.get_proc_name pdesc)
+          then
+            (* express that the constructor owns [this] *)
+            match FormalMap.get_formal_base 0 extras with
+            | Some base ->
+                let attribute_map =
+                  AttributeMapDomain.add_attribute
+                    (base, [])
+                    Attribute.unconditionally_owned
+                    ThreadSafetyDomain.empty.attribute_map in
+                { ThreadSafetyDomain.empty with attribute_map; }
+            | None -> ThreadSafetyDomain.empty
+          else
+            ThreadSafetyDomain.empty in
+        match Analyzer.compute_post proc_data ~initial with
+        | Some { locks; reads; writes; attribute_map; } ->
+            let return_var_ap =
+              AccessPath.of_pvar
+                (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
+                (Procdesc.get_ret_type pdesc) in
+            let return_attributes =
+              try AttributeMapDomain.find return_var_ap attribute_map
+              with Not_found -> AttributeSetDomain.empty in
+            Some (locks, reads, writes, return_attributes)
+        | None ->
+            None
+      end
+    else
+      Some empty in
+  match
+    Interprocedural.compute_and_store_post
+      ~compute_post
+      ~make_extras:FormalMap.make
+      callback with
+  | Some post -> post
+  | None -> empty
+
+let checker callback =
+  ignore (analyze_procedure callback)
+
 (* creates a map from proc_envs to postconditions *)
 let make_results_table get_proc_desc file_env =
   (* make a Map sending each element e of list l to (f e) *)
@@ -716,62 +771,12 @@ let make_results_table get_proc_desc file_env =
       ~f:(fun m p -> ResultsTableType.add p (f p) m)
       ~init:ResultsTableType.empty
       l in
-  let is_initializer tenv proc_name =
-    Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
   let compute_post_for_procedure = (* takes proc_env as arg *)
     fun (idenv, tenv, proc_name, proc_desc) ->
-      let open ThreadSafetyDomain in
-      let has_lock = false in
-      let return_attrs = AttributeSetDomain.empty in
-      let empty =
-        has_lock, PathDomain.empty, AccessDomain.empty, return_attrs in
-      (* convert the abstract state to a summary by dropping the id map *)
-      let compute_post ({ ProcData.pdesc; tenv; extras; } as proc_data) =
-        if should_analyze_proc pdesc tenv
-        then
-          begin
-            if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
-            let initial =
-              if is_initializer tenv (Procdesc.get_proc_name pdesc)
-              then
-                (* express that the constructor owns [this] *)
-                match FormalMap.get_formal_base 0 extras with
-                | Some base ->
-                    let attribute_map =
-                      AttributeMapDomain.add_attribute
-                        (base, [])
-                        Attribute.unconditionally_owned
-                        ThreadSafetyDomain.empty.attribute_map in
-                    { ThreadSafetyDomain.empty with attribute_map; }
-                | None -> ThreadSafetyDomain.empty
-              else
-                ThreadSafetyDomain.empty in
-            match Analyzer.compute_post proc_data ~initial with
-            | Some { locks; reads; writes; attribute_map; } ->
-                let return_var_ap =
-                  AccessPath.of_pvar
-                    (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
-                    (Procdesc.get_ret_type pdesc) in
-                let return_attributes =
-                  try AttributeMapDomain.find return_var_ap attribute_map
-                  with Not_found -> AttributeSetDomain.empty in
-                Some (locks, reads, writes, return_attributes)
-            | None ->
-                None
-          end
-        else
-          Some empty in
       let callback_arg =
         let get_procs_in_file _ = [] in
         { Callbacks.get_proc_desc; get_procs_in_file; idenv; tenv; proc_name; proc_desc } in
-      match
-        Interprocedural.compute_and_store_post
-          ~compute_post
-          ~make_extras:FormalMap.make
-          callback_arg with
-      | Some post -> post
-      | None -> empty
-  in
+      analyze_procedure callback_arg in
   map_post_computation_over_procs compute_post_for_procedure file_env
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
@@ -1029,9 +1034,7 @@ let process_results_table file_env tab =
     tab
 
 
-(*This is a "cluster checker" *)
-(*Gathers results by analyzing all the methods in a file, then post-processes
-  the results to check (approximation of) thread safety *)
-(* file_env: (Idenv.t * Tenv.t * Procname.t * Procdesc.t) list *)
+(* Gathers results by analyzing all the methods in a file, then post-processes the results to check
+   an (approximation of) thread safety *)
 let file_analysis _ _ get_procdesc file_env =
   process_results_table file_env (make_results_table get_procdesc file_env)
