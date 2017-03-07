@@ -18,10 +18,10 @@ import java.lang.annotation.Target;
   * overrides of methods.
   *
   * This annotation is used to suppress benign race warnings on fields assigned to methods annotated
-  * with @Functional in the thread-safety analysis. For example:
+  * with {@literal @Functional} in the thread-safety analysis. For example:
   *
   * T mField;
-  * @Functional T someMethod();
+  * {@literal @Functional} T someMethod();
   * public void getField() {
   *   if (mField == null) {
   *     mField = someMethod();
@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
   * }
   *
   * Normally, we'd report that the access to mField is unsafe, but we won't report here because of
-  * the @Functional annotation.
+  * the {@literal @Functional} annotation.
   *
   * If the return value of the annotated function is a double or long, the annotation will be
   * ignored because writes to doubles/longs are not guaranteed to be atomic. That is, if type T was
