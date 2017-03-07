@@ -18,7 +18,7 @@ is required to be able to [use the
 release](http://fbinfer.com/docs/getting-started.html) (faster), or to
 compile everything from source (see the end of this document).
 
-- opam >= 1.2.0 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
+- opam 1.2.2 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - Python 2.7
 - pkg-config
 - libffi >= 3.0
@@ -46,7 +46,7 @@ is required to be able to [use the
 release](http://fbinfer.com/docs/getting-started.html) (faster), or to
 compile everything from source (see the end of this document).
 
-- opam >= 1.2.0
+- opam 1.2.2
 - Python 2.7
 - pkg-config
 - libffi >= 3.0
