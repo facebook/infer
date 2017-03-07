@@ -63,7 +63,8 @@ let equal_section = [%compare.equal : section ]
 let all_sections =
   [ Analysis; BufferOverrun; Checkers; Clang; Crashcontext; Driver; Java; Print; Quandary ]
 
-type 'a parse = Infer of 'a | Javac | NoParse [@@deriving compare]
+(* NOTE: All variants must be also added to `all_parse_tags` below *)
+type 'a parse = Differential | Infer of 'a | Javac | NoParse [@@deriving compare]
 
 type parse_mode = section list parse [@@deriving compare]
 
@@ -74,14 +75,20 @@ let equal_parse_action = [%compare.equal : parse_action ]
 type parse_tag = unit parse [@@deriving compare]
 
 let equal_parse_tag = [%compare.equal : parse_tag ]
-let all_parse_tags = [ Infer (); Javac; NoParse ]
+let all_parse_tags = [ Differential; Infer (); Javac; NoParse ]
 
-let to_parse_tag = function | Infer _ -> Infer () | Javac -> Javac | NoParse -> NoParse
+(* NOTE: All variants must be also added to `all_parse_tags` below *)
+let to_parse_tag tag =
+  match tag with
+  | Differential -> Differential
+  | Infer _ -> Infer ()
+  | Javac -> Javac
+  | NoParse -> NoParse
 
 let accept_unknown_args = function
   | Infer Print | Javac | NoParse -> true
-  | Infer (Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Quandary) ->
-      false
+  | Infer (Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Quandary)
+  | Differential -> false
 
 type desc = {
   long: string; short: string; meta: string; doc: string; spec: spec;
@@ -240,7 +247,7 @@ let add parse_mode desc =
   let full_desc_list = List.Assoc.find_exn parse_tag_desc_lists tag in
   full_desc_list := desc :: !full_desc_list ;
   match parse_mode with
-  | Javac | NoParse -> ()
+  | Differential | Javac | NoParse -> ()
   | Infer sections ->
       List.iter infer_section_desc_lists ~f:(fun (section, desc_list) ->
           let desc = if List.mem ~equal:equal_section sections section then
@@ -252,7 +259,7 @@ let add parse_mode desc =
 let deprecate_desc parse_mode ~long ~short ~deprecated desc =
   let warn () = match parse_mode with
     | Javac | NoParse -> ()
-    | Infer _ ->
+    | Differential | Infer _ ->
         warnf "WARNING: '-%s' is deprecated. Use '--%s'%s instead.@."
           deprecated long (if short = "" then "" else Printf.sprintf " or '-%s'" short) in
   let warn_then_f f x = warn (); f x in
@@ -287,7 +294,7 @@ let mk ?(deprecated=[]) ?(parse_mode=Infer [])
   (* add desc for short option only for parsing, without documentation *)
   let parse_mode_no_sections = match parse_mode with
     | Infer _ -> Infer []
-    | Javac | NoParse -> parse_mode in
+    | Differential | Javac | NoParse -> parse_mode in
   if short <> "" then
     add parse_mode_no_sections {desc with long = ""; meta = ""; doc = ""} ;
   (* add desc for deprecated options only for parsing, without documentation *)
@@ -617,7 +624,7 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
       match parse_action with
       | Infer section ->
           List.Assoc.find_exn ~equal:equal_section infer_section_desc_lists section
-      | Javac | NoParse ->
+      | Differential | Javac | NoParse ->
           to_parse_tag parse_action
           |> List.Assoc.find_exn ~equal:equal_parse_tag parse_tag_desc_lists in
     let (exe_speclist, widths) = normalize !exe_descs in
@@ -676,6 +683,16 @@ let mk_rest_actions ?(parse_mode=Infer []) doc ~usage decode_action =
   add parse_mode {long = "--"; short = ""; meta = ""; doc; spec; decode_json = fun _ -> []} ;
   rest
 
+let mk_switch_parse_action
+    parse_action ~usage ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="") doc =
+  let switch () =
+    select_parse_action ~incomplete:false ~usage parse_action |> ignore in
+  ignore(
+    mk ~deprecated ~long ?short ~default:() ?parse_mode ~meta doc
+      ~default_to_string:(fun () -> "")
+      ~decode_json:(string_json_decoder ~long)
+      ~mk_setter:(fun _ _ -> switch ())
+      ~mk_spec:(fun _ -> Unit switch))
 
 let decode_inferconfig_to_argv path =
   let json = match Utils.read_optional_json_file path with

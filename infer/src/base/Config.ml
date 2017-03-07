@@ -92,6 +92,7 @@ let issues_fields_symbols = [
   ("key", `Issue_field_key);
   ("hash", `Issue_field_hash);
   ("line_offset", `Issue_field_line_offset);
+  ("procedure_id_without_crc", `Issue_field_procedure_id_without_crc);
 ]
 
 type os_type = Unix | Win32 | Cygwin
@@ -431,6 +432,10 @@ let inferconfig_path =
    different examples. *)
 
 let anon_args = CLOpt.mk_anon ()
+
+and () =
+  CLOpt.mk_switch_parse_action CLOpt.Differential ~usage:"infer --diff [options]"
+    ~long:"diff" "[experimental] compute differential report"
 
 and abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1
@@ -893,6 +898,11 @@ and fcp_syntax_only =
   CLOpt.mk_bool ~long:"fcp-syntax-only"
     "Skip creation of object files"
 
+and file_renamings =
+  CLOpt.mk_path_opt
+    ~long:"file-renamings" ~parse_mode:CLOpt.Differential
+    "JSON with a list of file renamings to use while computing differential reports"
+
 and filter_paths =
   CLOpt.mk_bool ~long:"filter-paths" ~default:true
     "Filters specified in .inferconfig"
@@ -1139,6 +1149,10 @@ and report =
   CLOpt.mk_path_opt ~deprecated:["report"] ~long:"report"
     ~meta:"file" "Write a report of the analysis results to a file"
 
+and report_current =
+  CLOpt.mk_path_opt ~long:"report-current" ~parse_mode:CLOpt.Differential
+    "report of the latest revision"
+
 and report_custom_error =
   CLOpt.mk_bool ~long:"report-custom-error"
     ""
@@ -1150,6 +1164,15 @@ and report_hook =
     "Specify a script to be executed after the analysis results are written.  This script will be \
      passed --issues-csv, --issues-json, --issues-txt, --issues-xml, --project-root, and \
      --results-dir."
+
+and report_previous =
+  CLOpt.mk_path_opt ~long:"report-previous"  ~parse_mode:CLOpt.Differential
+    "report of the base revision to use for comparison"
+
+and resolve_infer_eradicate_conflict =
+  CLOpt.mk_bool ~long:"resolve-infer-eradicate-conflict"
+    ~default:false ~parse_mode:CLOpt.Differential
+    "Filter out Null Dereferences reported by Infer if Eradicate is enabled"
 
 and rest =
   CLOpt.mk_rest_actions
@@ -1188,6 +1211,10 @@ and skip_analysis_in_path =
     ~parse_mode:CLOpt.(Infer [Driver])
     ~meta:"path prefix OCaml regex"
     "Ignore files whose path matches the given prefix (can be specified multiple times)"
+
+and skip_duplicated_types =
+  CLOpt.mk_bool ~long:"skip-duplicated-types" ~default:true ~parse_mode:CLOpt.Differential
+    "Skip fixed-then-introduced duplicated types while computing differential reports"
 
 and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
@@ -1544,8 +1571,10 @@ and fail_on_bug = !fail_on_bug
 and failures_allowed = !failures_allowed
 and fcp_apple_clang = !fcp_apple_clang
 and fcp_syntax_only = !fcp_syntax_only
+and file_renamings = !file_renamings
 and filter_paths = !filter_paths
 and filtering = !filtering
+and final_parse_action = parse_action
 and flavors = !flavors
 and from_json_report = !from_json_report
 and frontend_debug = !frontend_debug
@@ -1598,10 +1627,13 @@ and quiet = !quiet
 and reactive_mode = !reactive
 and reactive_capture = !reactive_capture
 and report = !report
+and report_current = !report_current
 and report_custom_error = !report_custom_error
 and report_hook = !report_hook
+and report_previous = !report_previous
 and report_runtime_exceptions = !tracing
 and reports_include_ml_loc = !reports_include_ml_loc
+and resolve_infer_eradicate_conflict = !resolve_infer_eradicate_conflict
 and results_dir = !results_dir
 and save_analysis_results = !save_results
 and seconds_per_iteration = !seconds_per_iteration
@@ -1609,6 +1641,7 @@ and show_buckets = !print_buckets
 and show_progress_bar = !progress_bar
 and siof_safe_methods = !siof_safe_methods
 and skip_analysis_in_path = !skip_analysis_in_path
+and skip_duplicated_types = !skip_duplicated_types
 and skip_translation_headers = !skip_translation_headers
 and sources = !sources
 and sourcepath = !sourcepath

@@ -545,7 +545,7 @@ let to_simplified_string withclass::withclass=false p =>
 
 /** Convert a proc name to a filename */
 let to_filename proc_name =>
-  Escape.escape_filename @@ Utils.string_append_crc_cutoff @@ to_unique_id proc_name;
+  Escape.escape_filename @@ SourceFile.append_crc_cutoff @@ to_unique_id proc_name;
 
 
 /** Pretty print a proc name */

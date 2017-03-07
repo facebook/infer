@@ -22,6 +22,10 @@ BUILD_SYSTEMS_TESTS += \
   clang_translation \
   clang_unknown_ext \
   delete_results_dir \
+	differential_resolve_infer_eradicate_conflict \
+	differential_skip_anonymous_class_renamings \
+	differential_skip_duplicated_types_on_filenames \
+	differential_skip_duplicated_types_on_filenames_with_renamings \
   fail_on_issue \
   j1 \
   linters \

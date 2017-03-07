@@ -18,7 +18,7 @@ type section =
 
 val all_sections : section list
 
-type 'a parse = Infer of 'a | Javac | NoParse
+type 'a parse = Differential | Infer of 'a | Javac | NoParse
 
 type parse_mode = section list parse [@@deriving compare]
 
@@ -139,6 +139,11 @@ val mk_rest_actions :
   ?parse_mode:parse_mode -> string ->
   usage:string -> (string -> parse_action)
   -> string list ref
+
+
+(** when the option is found on the command line, the current parse action is discarded and the
+    following arguments are parsed using [parse_action] *)
+val mk_switch_parse_action : parse_action -> usage:string -> unit t
 
 (** environment variable use to pass arguments from parent to child processes *)
 val args_env_var : string

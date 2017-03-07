@@ -185,18 +185,7 @@ let remove_directory_tree path =
       | _ -> Unix.remove (Fts.FTSENT.name ent)
     )
 
-
 let string_crc_hex32 s = Digest.to_hex (Digest.string s)
-
-let string_append_crc_cutoff ?(cutoff=100) ?(key="") name =
-  let name_up_to_cutoff =
-    if String.length name <= cutoff
-    then name
-    else String.sub name ~pos:0 ~len:cutoff in
-  let crc_str =
-    let name_for_crc = name ^ key in
-    string_crc_hex32 name_for_crc in
-  name_up_to_cutoff ^ "." ^ crc_str
 
 let read_optional_json_file path =
   if Sys.file_exists path = `Yes then

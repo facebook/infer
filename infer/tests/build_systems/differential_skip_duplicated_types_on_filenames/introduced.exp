@@ -1,0 +1,2 @@
+RESOURCE_LEAK, src/DiffExample.java, void DiffExample.openResource(), 5, DiffExample.openResource():void.c57b56c0042a220d7416e229c4e61b99, DiffExample.openResource():void
+NULL_DEREFERENCE, src/DiffExampleTwo.java, void DiffExampleTwo.doSomethingTwo(), 1, DiffExampleTwo.doSomethingTwo():void.d8149869686ac2ef26a75ac4829094a7, DiffExampleTwo.doSomethingTwo():void

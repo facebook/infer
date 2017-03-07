@@ -548,6 +548,8 @@ let pp_custom_of_report fmt report fields => {
       | `Issue_field_hash => Format.fprintf fmt "%s%d" (comma_separator index) issue.hash
       | `Issue_field_line_offset =>
         Format.fprintf fmt "%s%d" (comma_separator index) (issue.line - issue.procedure_start_line)
+      | `Issue_field_procedure_id_without_crc =>
+        Format.fprintf fmt "%s%s" (comma_separator index) (SourceFile.strip_crc issue.procedure_id)
       };
     List.iteri f::pp_field fields;
     Format.fprintf fmt "@."

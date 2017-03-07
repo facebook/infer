@@ -1,0 +1,5 @@
+{
+  "eradicate-whitelist-path-regex": [
+    "src/com"
+  ]
+}

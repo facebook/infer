@@ -31,6 +31,7 @@ let dup_formatter fmt1 fmt2 =
 (** Name of dir for logging the output in the specific executable *)
 let log_dir_of_action (action : CLOpt.parse_action) = match action with
   | Infer (Analysis | BufferOverrun | Checkers | Crashcontext | Quandary) -> "analyze"
+  | Differential -> "differential"
   | Infer Driver -> "driver"
   | Infer Clang
   | Infer Java

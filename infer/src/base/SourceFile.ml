@@ -77,6 +77,23 @@ let to_rel_path fname =
   | RelativeProjectRoot path -> path
   | _ -> to_abs_path fname
 
+let cutoff_length = 100
+let crc_token = '.'
+
+let append_crc_cutoff ?(key="") name =
+  let name_up_to_cutoff =
+    if String.length name <= cutoff_length
+    then name
+    else String.sub name ~pos:0 ~len:cutoff_length in
+  let crc_str =
+    let name_for_crc = name ^ key in
+    Utils.string_crc_hex32 name_for_crc in
+  name_up_to_cutoff ^ Char.to_string crc_token ^ crc_str
+
+let strip_crc str =
+  (* Strip 32 characters of digest, plus 1 character of crc_token *)
+  String.sub ~pos:0 ~len:(String.length str - 33) str
+
 (** string encoding of a source file (including path) as a single filename *)
 let encoding source_file =
   let prefix = match source_file with
@@ -92,7 +109,7 @@ let encoding source_file =
   | `Enc_crc ->
       let base = Filename.basename source_file_s in
       let dir = prefix ^ Filename.dirname source_file_s in
-      Utils.string_append_crc_cutoff ~key:dir base
+      append_crc_cutoff ~key:dir base
 
 let empty = Absolute ""
 
@@ -153,3 +170,11 @@ let changed_files_set =
         )
       ~init:Set.empty
   )
+
+module UNSAFE = struct
+  let from_string str =
+    if Filename.is_relative str then
+      RelativeProjectRoot str
+    else
+      Absolute str
+end

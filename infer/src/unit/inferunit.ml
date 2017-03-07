@@ -20,6 +20,8 @@ let () =
     AddressTakenTests.tests;
     BoundedCallTreeTests.tests;
     CopyPropagationTests.tests;
+    DifferentialTests.tests;
+    DifferentialFiltersTests.tests;
     ProcCfgTests.tests;
     LivenessTests.tests;
     SchedulerTests.tests;

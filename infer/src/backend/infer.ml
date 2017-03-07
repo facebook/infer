@@ -434,7 +434,7 @@ let get_driver_mode () =
   | None ->
       driver_mode_of_build_cmd (List.rev Config.rest)
 
-let () =
+let infer_mode () =
   let driver_mode = get_driver_mode () in
   if not (equal_driver_mode driver_mode Analyze ||
           Config.(buck || continue_capture || maven || reactive_mode)) then
@@ -466,3 +466,28 @@ let () =
   );
   if Config.buck_cache_mode then
     clean_results_dir ()
+
+let differential_mode () =
+  let arg_or_fail arg_name arg_opt =
+    match arg_opt with
+    | Some arg -> arg
+    | None -> failwithf "Expected '%s' argument not found" arg_name in
+  let load_report filename : Jsonbug_t.report =
+    Jsonbug_j.report_of_string (In_channel.read_all filename) in
+  let current_report = load_report (arg_or_fail "report-current" Config.report_current) in
+  let previous_report = load_report (arg_or_fail "report-previous" Config.report_previous) in
+  let file_renamings = match Config.file_renamings with
+    | Some f -> DifferentialFilters.FileRenamings.from_json_file f
+    | None -> DifferentialFilters.FileRenamings.empty in
+  let diff = DifferentialFilters.do_filter
+      (Differential.of_reports ~current_report ~previous_report)
+      file_renamings
+      ~skip_duplicated_types:Config.skip_duplicated_types in
+  let out_path = Config.results_dir ^/ "differential" in
+  Unix.mkdir_p out_path;
+  Differential.to_files diff out_path
+
+let () =
+  match Config.final_parse_action with
+  | Differential -> differential_mode ()
+  | _ -> infer_mode ()

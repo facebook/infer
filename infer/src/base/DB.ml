@@ -27,7 +27,7 @@ let source_dir_to_string source_dir = source_dir
 (** get the path to an internal file with the given extention (.cfg, .cg, .tenv) *)
 let source_dir_get_internal_file source_dir extension =
   let source_dir_name =
-    Utils.string_append_crc_cutoff (Filename.chop_extension (Filename.basename source_dir)) in
+    SourceFile.append_crc_cutoff (Filename.chop_extension (Filename.basename source_dir)) in
   let fname = source_dir_name ^ extension in
   Filename.concat source_dir fname
 
