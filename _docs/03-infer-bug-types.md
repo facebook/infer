@@ -13,11 +13,14 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK)
   - [Tainted value reaching sensitive function](/docs/infer-bug-types.html#TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION)
 
-- Bugs reported in C and Objective-C
+- Bugs reported in C, C++, and Objective-C
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
   - [Memory leak](/docs/infer-bug-types.html#MEMORY_LEAK)
   - [Premature nil termination argument](/docs/infer-bug-types.html#PREMATURE_NIL_TERMINATION_ARGUMENT)
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK)
+
+- Bugs reported only in C++
+  - [Empty Vector Access](/docs/infer-bug-types.html#EMPTY_VECTOR_ACCESS)
 
 - Bugs reported only in Objective-C
   - [Ivar not null checked](/docs/infer-bug-types.html#IVAR_NOT_NULL_CHECKED)
@@ -421,6 +424,18 @@ The call checkNotNull(foo()) will never return null; in case foo()  returns null
 
 <b> If you are absolutely sure that foo() will not be null </b>, then if you land your diff this case will no longer be reported after your diff makes it to master.  In the future we might include analysis directives (hey, analyzer, p is not null!) like in Hack that tell the analyzer
 the information that you know, but that is for later.
+
+## <a name="EMPTY_VECTOR_ACCESS"></a> Empty vector access
+
+This error type is reported only in C++. The code is trying to access an element of a vector that Infer believes to be empty. Such an access will cause undefined behavior at runtime.
+
+```c++
+#include <vector>
+int foo(){
+  const std::vector<int> vec;
+  return vec[0]; // Empty vector access reported here
+}
+```
 
 ## <a name="PARAMETER_NOT_NULL_CHECKED"></a> Parameter not null checked
 
