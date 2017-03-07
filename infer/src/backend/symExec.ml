@@ -670,7 +670,7 @@ let call_constructor_url_update_args pname actual_params =
   let url_pname =
     Procname.Java
       (Procname.java
-         ((Some "java.net"), "URL") None "<init>"
+         (Typename.Java.from_string "java.net.URL") None "<init>"
          [(Some "java.lang"), "String"] Procname.Non_Static) in
   if (Procname.equal url_pname pname) then
     (match actual_params with

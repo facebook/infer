@@ -264,7 +264,7 @@ let functions_with_tainted_params = [
 let java_method_to_procname java_method =
   Procname.Java
     (Procname.java
-       (Procname.split_classname java_method.classname)
+       (Typename.Java.from_string java_method.classname)
        (Some (Procname.split_classname java_method.ret_type))
        java_method.method_name
        (List.map ~f:Procname.split_classname java_method.params)

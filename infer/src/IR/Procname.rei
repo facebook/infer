@@ -92,7 +92,7 @@ let hash_pname: t => int;
 
 
 /** Check if a class string is an anoynmous inner class name. */
-let is_anonymous_inner_class_name: string => bool;
+let is_anonymous_inner_class_name: Typename.t => bool;
 
 
 /** Check if this is an Objective-C/C++ method name. */
@@ -125,7 +125,7 @@ let is_destructor: t => bool;
 
 /** Create a Java procedure name from its
     class_name method_name args_type_name return_type_name method_kind. */
-let java: java_type => option java_type => string => list java_type => method_kind => java;
+let java: Typename.t => option java_type => string => list java_type => method_kind => java;
 
 
 /** Replace the parameters of a java procname. */

@@ -53,7 +53,7 @@ let create_harness cfg cg tenv =
                 let pname =
                   Procname.Java
                     (Procname.java
-                       (None, harness_cls_name) None
+                       (Typename.Java.from_string harness_cls_name) None
                        "InferGeneratedHarness" [] Procname.Static) in
                 match pname with
                 | Procname.Java harness_procname -> harness_procname

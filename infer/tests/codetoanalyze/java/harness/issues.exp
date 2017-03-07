@@ -1,1 +1,1 @@
-codetoanalyze/java/harness/BasicHarnessActivity.java, codetoanalyze.java.harness.BasicHarnessActivity.InferGeneratedHarness(), -1, NULL_DEREFERENCE
+codetoanalyze/java/harness/BasicHarnessActivity.java, BasicHarnessActivity.InferGeneratedHarness(), -1, NULL_DEREFERENCE

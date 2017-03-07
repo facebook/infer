@@ -35,7 +35,7 @@ let equal_method_kind = [%compare.equal : method_kind];
 type java = {
   method_name: string,
   parameters: list java_type,
-  class_name: java_type,
+  class_name: Typename.t,
   return_type: option java_type, /* option because constructors have no return type */
   kind: method_kind
 }
@@ -137,6 +137,8 @@ let split_classname package_classname =>
   | None => (None, package_classname)
   };
 
+let split_typename typename => split_classname (Typename.name typename);
+
 let from_string_c_fun (s: string) => C (s, None);
 
 let c (plain: string) (mangled: string) => (plain, Some mangled);
@@ -182,7 +184,7 @@ let is_constexpr =
     In case of Java, replace package and class name. */
 let replace_class t new_class =>
   switch t {
-  | Java j => Java {...j, class_name: split_classname new_class}
+  | Java j => Java {...j, class_name: Typename.Java.from_string new_class}
   | ObjC_Cpp osig => ObjC_Cpp {...osig, class_name: new_class}
   | C _
   | Block _
@@ -195,21 +197,19 @@ let objc_cpp_get_class_name objc_cpp => objc_cpp.class_name;
 
 
 /** Return the package.classname of a java procname. */
-let java_get_class_name (j: java) => java_type_to_string j.class_name;
+let java_get_class_name (j: java) => Typename.name j.class_name;
 
 
 /** Return the package.classname as a typename of a java procname. */
-let java_get_class_type_name (j: java) => Typename.Java.from_string (
-  java_type_to_string j.class_name
-);
+let java_get_class_type_name (j: java) => j.class_name;
 
 
 /** Return the class name of a java procedure name. */
-let java_get_simple_class_name (j: java) => snd j.class_name;
+let java_get_simple_class_name (j: java) => snd (split_classname (java_get_class_name j));
 
 
 /** Return the package of a java procname. */
-let java_get_package (j: java) => fst j.class_name;
+let java_get_package (j: java) => fst (split_classname (java_get_class_name j));
 
 
 /** Return the method of a java procname. */
@@ -278,7 +278,7 @@ let java_to_string withclass::withclass=false (j: java) verbosity =>
        verbose is used for example to create unique filenames, non_verbose to create reports */
     let return_type = java_return_type_to_string j verbosity;
     let params = java_param_list_to_string j.parameters verbosity;
-    let class_name = java_type_to_string_verbosity j.class_name verbosity;
+    let class_name = java_type_to_string_verbosity (split_typename j.class_name) verbosity;
     let separator =
       switch (j.return_type, verbosity) {
       | (None, _) => ""
@@ -295,7 +295,7 @@ let java_to_string withclass::withclass=false (j: java) verbosity =>
     /* methodname(...) or without ... if there are no parameters */
     let cls_prefix =
       if withclass {
-        java_type_to_string_verbosity j.class_name verbosity ^ "."
+        java_type_to_string_verbosity (split_typename j.class_name) verbosity ^ "."
       } else {
         ""
       };
@@ -315,8 +315,9 @@ let java_to_string withclass::withclass=false (j: java) verbosity =>
 
 
 /** Check if the class name is for an anonymous inner class. */
-let is_anonymous_inner_class_name class_name =>
-  switch (String.rsplit2 class_name on::'$') {
+let is_anonymous_inner_class_name class_name => {
+  let class_name_no_package = snd (split_typename class_name);
+  switch (String.rsplit2 class_name_no_package on::'$') {
   | Some (_, s) =>
     let is_int =
       try {
@@ -327,13 +328,14 @@ let is_anonymous_inner_class_name class_name =>
       };
     is_int
   | None => false
-  };
+  }
+};
 
 
 /** Check if the procedure belongs to an anonymous inner class. */
 let java_is_anonymous_inner_class =
   fun
-  | Java j => is_anonymous_inner_class_name (snd j.class_name)
+  | Java j => is_anonymous_inner_class_name j.class_name
   | _ => false;
 
 
@@ -345,7 +347,7 @@ let java_remove_hidden_inner_class_parameter =
   | Java js =>
     switch (List.rev js.parameters) {
     | [(_, s), ...par'] =>
-      if (is_anonymous_inner_class_name s) {
+      if (is_anonymous_inner_class_name (Typename.Java.from_string s)) {
         Some (Java {...js, parameters: List.rev par'})
       } else {
         None
@@ -358,10 +360,7 @@ let java_remove_hidden_inner_class_parameter =
 /** Check if the procedure name is an anonymous inner class constructor. */
 let java_is_anonymous_inner_class_constructor =
   fun
-  | Java js => {
-      let (_, name) = js.class_name;
-      is_anonymous_inner_class_name name
-    }
+  | Java js => is_anonymous_inner_class_name js.class_name
   | _ => false;
 
 

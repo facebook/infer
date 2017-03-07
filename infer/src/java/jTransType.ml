@@ -193,7 +193,7 @@ let get_method_kind m =
 
 let get_method_procname cn ms method_kind =
   let return_type_name, method_name, args_type_name = method_signature_names ms in
-  let class_name = cn_to_java_type cn in
+  let class_name = Typename.Java.from_string (JBasics.cn_name cn) in
   let proc_name_java =
     Procname.java class_name return_type_name method_name args_type_name method_kind in
   Procname.Java proc_name_java
