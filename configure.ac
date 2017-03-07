@@ -18,10 +18,6 @@ AC_INIT([Infer],
         [0.10.0],
         [https://github.com/facebook/infer/issues/])
 
-# this has to happen just after AC_INIT() because later macros may mess with the arguments passed to
-# this script
-config_flags="$*"
-
 AC_CONFIG_SRCDIR([infer/src/IR/Sil.re])
 
 # WARNING: keep in sync with above
@@ -276,6 +272,8 @@ fi
 AC_ARG_VAR([MVN], [command to execute Maven when running tests])
 AS_IF([test "x$MVN" = "x"], [
   AC_CHECK_TOOL([MVN], [mvn], [no])
+], [
+  AC_MSG_RESULT([checking for mvn... $MVN])
 ])
 AC_CHECK_TOOL([NDKBUILD], [ndk-build], [no])
 if test x"$NDKBUILD" = x"no"; then
@@ -317,8 +315,5 @@ fi
 AC_CONFIG_FILES([
   Makefile.autoconf
 ])
-
-AC_MSG_NOTICE([saving configure flags to ./config.flags])
-echo $config_flags > config.flags
 
 AC_OUTPUT

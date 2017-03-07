@@ -46,7 +46,6 @@ infer/tests/build_systems/differential_*/infer-previous
 /aclocal.m4
 /autom4te.cache
 /config.status
-/config.flags
 /configure
 /Makefile.autoconf
 /.buckversion

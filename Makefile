@@ -88,7 +88,7 @@ configure: configure.ac $(wildcard m4/*.m4)
 
 Makefile.autoconf: configure
 #	rerun ./configure with the flags that were used last time it was run (if available)
-	./configure $(shell cat config.flags 2> /dev/null || true)
+	./configure $(shell ./config.status --config || true)
 
 .PHONY: src_build
 src_build: $(MAKEFILE_LIST)
