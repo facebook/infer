@@ -96,22 +96,22 @@ let test_fuzzy_match =
       false
     );
     (
-      "test_std_fuzzy_match1",
+      "test_std_no_fuzzy_match1",
       ["std::foo"],
       ["std"; "__1"; "foo"],
-      true
+      false
     );
     (
-      "test_std_fuzzy_match2",
+      "test_std_no_fuzzy_match2",
       ["std::foo"],
       ["std"; "goo<int>"; "foo"],
-      true
+      false
     );
     (
-      "test_std_fuzzy_match3",
+      "test_std_no_fuzzy_match3",
       ["std::foo"],
       ["std"; "goo<int>"; "foo<const X&>"],
-      true
+      false
     );
     (
       "test_std_fuzzy_no_match1",

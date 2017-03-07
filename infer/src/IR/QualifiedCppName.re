@@ -10,17 +10,7 @@ open! IStd;
 
 type quals_matcher = Str.regexp;
 
-let regexp_string_of_qualifiers quals => {
-  let is_std_qual = String.equal "std";
-  let qualifiers_simple_matcher quals => Str.quote (String.concat sep::"::" quals) ^ "$";
-  switch quals {
-  | [first, ...[_, ..._] as rest] when is_std_qual first =>
-    /* add special handling for std:: namespace to avoid problems with inconsistent
-       inline namespaces (such as __1 in libc++) */
-    Str.quote first ^ "\\(::[^:]*\\)?::" ^ qualifiers_simple_matcher rest
-  | _ => qualifiers_simple_matcher quals
-  }
-};
+let regexp_string_of_qualifiers quals => Str.quote (String.concat sep::"::" quals) ^ "$";
 
 let qualifiers_list_matcher quals_list =>
   (
