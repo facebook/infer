@@ -529,8 +529,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let writes =
           match lhs_exp with
           | Lfield (base_exp, _, typ) ->
-              if is_unprotected astate.locks (* abstracts no lock being held *) &&
-                 not (is_marked_functional rhs_exp lhs_typ astate.attribute_map)
+              if is_marked_functional rhs_exp lhs_typ astate.attribute_map
+              then
+                (* we want to forget about writes to @Functional fields altogether, otherwise we'll
+                   report spurious read/write races *)
+                astate.writes
+              else if is_unprotected astate.locks
               then
                 match get_formal_index base_exp typ with
                 | Some formal_index ->
@@ -853,11 +857,13 @@ let filter_conflicting_sinks sink trace =
    access-astate is a non-empty collection of conflicting
    write accesses*)
 let collect_conflicting_writes sink tab =
+  let open ThreadSafetyDomain in
   let procs_and_writes =
     List.map
       ~f:(fun (key,(_, _, writes, _)) ->
           let conflicting_writes =
-            get_possibly_unsafe_writes writes
+            AccessDomain.fold
+              (fun _ accesses acc -> PathDomain.join accesses acc) writes PathDomain.empty
             |> filter_conflicting_sinks sink in
           key, conflicting_writes
         )

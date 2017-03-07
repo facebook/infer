@@ -14,8 +14,9 @@ import javax.annotation.concurrent.ThreadSafe;
 @ThreadSafe
 class ReadWriteRaces{
 
-Integer safe_read;
-Integer racy;
+  // read and write outside of sync races
+  Integer safe_read;
+  Integer racy;
 
   void m0_OK(){
    Integer local;
@@ -40,24 +41,40 @@ Integer racy;
    racy = 99;
   }
 
+  // write inside sync, read outside of sync races
+  Object field1;
+  Object field2;
+  Object field3;
+
   // need to report races involving safe writes in order to get this one
-  public synchronized void FN_syncWrite1() {
-    racy = 42;
+  public synchronized void syncWrite1() {
+    field1 = new Object();
   }
 
-  public void FN_syncWrite2() {
+  public Object unprotectedRead1() {
+    return field1;
+  }
+
+  public void syncWrite2() {
     synchronized(this) {
-      racy = 43;
+      field2 = new Object();
     }
   }
 
-  private synchronized void syncWrite3() {
-    racy = 44;
+  public Object unprotectedRead2() {
+    return field2;
   }
 
-  public void FN_callSyncWrite3() {
+  private synchronized void syncWrite3() {
+    field3 = new Object();
+  }
+
+  public void callSyncWrite3() {
     syncWrite3();
   }
 
+  public Object unprotectedRead3() {
+    return field3;
+  }
 
 }
