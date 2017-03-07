@@ -296,7 +296,13 @@ let java_proc_return_typ pname_java =>
   | typ => typ
   };
 
-type typ = t;
+type typ = t [@@deriving compare];
+
+/* template instantiation arguments */
+type template_spec_info =
+  | NoTemplate
+  | Template (string, list (option t))
+[@@deriving compare];
 
 let module Struct = {
   type field = (Ident.fieldname, T.t, Annot.Item.t) [@@deriving compare];
@@ -308,7 +314,8 @@ let module Struct = {
     statics: fields, /** static fields */
     supers: list Typename.t, /** superclasses */
     methods: list Procname.t, /** methods defined */
-    annots: Annot.Item.t /** annotations */
+    annots: Annot.Item.t, /** annotations */
+    specialization: template_spec_info /** template specialization */
   };
   type lookup = Typename.t => option t;
   let pp pe name f {fields, supers, methods, annots} =>
@@ -342,21 +349,31 @@ let module Struct = {
       methods::methods=?
       supers::supers=?
       annots::annots=?
+      specialization::specialization=?
       () => {
     let mk_struct_
         default::
-          default={fields: [], statics: [], methods: [], supers: [], annots: Annot.Item.empty}
+          default={
+            fields: [],
+            statics: [],
+            methods: [],
+            supers: [],
+            annots: Annot.Item.empty,
+            specialization: NoTemplate
+          }
         fields::fields=default.fields
         statics::statics=default.statics
         methods::methods=default.methods
         supers::supers=default.supers
         annots::annots=default.annots
+        specialization::specialization=default.specialization
         () => {
       fields,
       statics,
       methods,
       supers,
-      annots
+      annots,
+      specialization
     };
     mk_struct_
       default::?default
@@ -365,6 +382,7 @@ let module Struct = {
       methods::?methods
       supers::?supers
       annots::?annots
+      specialization::?specialization
       ()
   };
 

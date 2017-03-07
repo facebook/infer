@@ -78,6 +78,10 @@ let get_record_name_csu decl =
 
 let get_record_name decl = snd (get_record_name_csu decl)
 
+let get_class_template_name = function
+  | Clang_ast_t.ClassTemplateDecl (_, name_info, _ ) -> CAst_utils.get_qualified_name name_info
+  | _ -> assert false
+
 let get_superclass_decls decl =
   let open Clang_ast_t in
   match decl with
@@ -164,6 +168,17 @@ and get_record_custom_type tenv definition_decl =
       Option.map ~f:(type_ptr_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
   | _ -> None
 
+and get_template_specialization tenv = function
+  | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, spec_info) ->
+      let tname = match CAst_utils.get_decl spec_info.tsi_template_decl with
+        | Some decl -> get_class_template_name decl
+        | None -> assert false in
+      let args_in_sil = List.map spec_info.tsi_specialization_args ~f:(function
+          | `Type t_ptr -> Some (type_ptr_to_sil_type tenv t_ptr)
+          | _ -> None) in
+      Typ.Template (tname, args_in_sil)
+  | _ -> Typ.NoTemplate
+
 and get_record_struct_type tenv definition_decl =
   let open Clang_ast_t in
   match definition_decl with
@@ -190,7 +205,9 @@ and get_record_struct_type tenv definition_decl =
              let statics = [] in (* Note: We treat static field same as global variables *)
              let methods = [] in (* C++ methods are not put into tenv (info isn't used) *)
              let supers = get_superclass_list_cpp definition_decl in
-             ignore (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename);
+             let specialization = get_template_specialization tenv definition_decl in
+             Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~specialization
+               sil_typename |> ignore;
              let sil_type = Typ.Tstruct sil_typename in
              CAst_utils.update_sil_types_map type_ptr sil_type;
              sil_type

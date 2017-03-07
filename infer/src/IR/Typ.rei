@@ -154,6 +154,12 @@ let java_proc_return_typ: Procname.java => t;
 
 type typ = t;
 
+/* template instantiation arguments */
+type template_spec_info =
+  | NoTemplate
+  | Template (string, list (option t))
+[@@deriving compare];
+
 let module Struct: {
   type field = (Ident.fieldname, typ, Annot.Item.t) [@@deriving compare];
   type fields = list field;
@@ -164,7 +170,8 @@ let module Struct: {
     statics: fields, /** static fields */
     supers: list Typename.t, /** supers */
     methods: list Procname.t, /** methods defined */
-    annots: Annot.Item.t /** annotations */
+    annots: Annot.Item.t, /** annotations */
+    specialization: template_spec_info /** template specialization */
   };
   type lookup = Typename.t => option t;
 
@@ -179,6 +186,7 @@ let module Struct: {
     methods::list Procname.t? =>
     supers::list Typename.t? =>
     annots::Annot.Item.t? =>
+    specialization::template_spec_info? =>
     unit =>
     t;
 

@@ -48,6 +48,7 @@ let mk_struct
     methods::methods=?
     supers::supers=?
     annots::annots=?
+    specialization::specialization=?
     name => {
   let struct_typ =
     Typ.Struct.internal_mk_struct
@@ -57,6 +58,7 @@ let mk_struct
       methods::?methods
       supers::?supers
       annots::?annots
+      specialization::?specialization
       ();
   TypenameHash.replace tenv name struct_typ;
   struct_typ
