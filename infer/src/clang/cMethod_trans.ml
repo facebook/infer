@@ -227,25 +227,31 @@ let get_method_name_from_clang tenv ms_opt =
   | None -> None
 
 let get_superclass_curr_class_objc context =
-  let retrive_super cname super_opt =
-    let iname = Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string cname) in
-    Logging.out_debug "Checking for superclass = '%s'\n\n%!" (Typename.to_string iname);
-    match Tenv.lookup (CContext.get_tenv context) iname with
-    | Some { supers = super_name :: _ } ->
-        Typename.name super_name
-    | _ ->
-        Logging.err_debug "NOT FOUND superclass = '%s'\n\n%!" (Typename.to_string iname);
-        (match super_opt with
-         | Some super -> super
-         | _ -> assert false) in
+  let open Clang_ast_t in
+  let super_of_decl_ref_opt decl_ref =
+    match decl_ref
+          |> Option.value_map ~f:(fun dr -> dr.dr_name) ~default:None
+          |> Option.map ~f:CAst_utils.get_qualified_name with
+    | Some name -> name
+    | None -> assert false
+  in
+  let retreive_super_name ptr = match CAst_utils.get_decl ptr with
+    | Some ObjCInterfaceDecl (_, _, _, _, otdi) -> super_of_decl_ref_opt otdi.otdi_super
+    | Some ObjCImplementationDecl (_, _, _, _, oi) -> (
+        match oi.Clang_ast_t.oidi_class_interface
+              |> Option.map ~f:(fun dr -> dr.dr_decl_pointer)
+              |> Option.value_map ~f:CAst_utils.get_decl ~default:None with
+        | Some ObjCInterfaceDecl (_, _, _, _, otdi) -> super_of_decl_ref_opt otdi.otdi_super
+        | _ -> assert false
+      )
+    | Some ObjCCategoryDecl (_, _, _, _, ocdi) ->
+        super_of_decl_ref_opt ocdi.odi_class_interface
+    | Some ObjCCategoryImplDecl (_, _, _, _, ocidi) ->
+        super_of_decl_ref_opt ocidi.ocidi_class_interface
+    | _ -> assert false in
   match CContext.get_curr_class context with
-  | CContext.ContextCls (cname, super_opt, _) ->
-      retrive_super cname super_opt
-  | CContext.ContextCategory (_, cls) ->
-      retrive_super cls None
-  | CContext.ContextNoCls
-  | CContext.ContextClsDeclPtr _
-  | CContext.ContextProtocol _ -> assert false
+  | CContext.ContextClsDeclPtr ptr -> retreive_super_name ptr
+  | CContext.ContextNoCls -> assert false
 
 (* Gets the class name from a method signature found by clang, if search is successful *)
 let get_class_name_method_call_from_clang trans_unit_ctx tenv obj_c_message_expr_info =

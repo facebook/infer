@@ -13,8 +13,8 @@ open! IStd
 
 type field_type = Ident.fieldname * Typ.t * (Annot.t * bool) list
 
-val get_fields : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> CContext.curr_class ->
-  Clang_ast_t.decl list -> field_type list
+val get_fields : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl list ->
+  field_type list
 
 val fields_superclass :
   Tenv.t -> Clang_ast_t.obj_c_interface_decl_info -> Csu.class_kind -> field_type list

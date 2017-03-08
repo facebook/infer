@@ -171,38 +171,35 @@ struct
     Ident.NameGenerator.reset ();
     let translate = translate_one_declaration trans_unit_ctx tenv cg cfg decl_trans_context in
     (if should_translate_decl trans_unit_ctx dec decl_trans_context then
+       let dec_ptr = (Clang_ast_proj.get_decl_tuple dec).di_pointer in
        match dec with
        | FunctionDecl(_, _, _, _) ->
            function_decl trans_unit_ctx tenv cfg cg dec None
 
-       | ObjCInterfaceDecl(_, name_info, decl_list, _, oi_decl_info) ->
-           let name = CAst_utils.get_qualified_name name_info in
-           let curr_class = ObjcInterface_decl.get_curr_class name oi_decl_info in
+       | ObjCInterfaceDecl(_, _, decl_list, _, _) ->
+           let curr_class = CContext.ContextClsDeclPtr dec_ptr in
            ignore
              (ObjcInterface_decl.interface_declaration CType_decl.type_ptr_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
 
-       | ObjCProtocolDecl(_, name_info, decl_list, _, _) ->
-           let name = CAst_utils.get_qualified_name name_info in
-           let curr_class = CContext.ContextProtocol name in
+       | ObjCProtocolDecl(_, _, decl_list, _, _) ->
+           let curr_class = CContext.ContextClsDeclPtr dec_ptr in
            ignore (ObjcProtocol_decl.protocol_decl CType_decl.type_ptr_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
 
-       | ObjCCategoryDecl(_, name_info, decl_list, _, ocdi) ->
-           let name = CAst_utils.get_qualified_name name_info in
-           let curr_class = ObjcCategory_decl.get_curr_class_from_category_decl name ocdi in
+       | ObjCCategoryDecl(_, _, decl_list, _, _) ->
+           let curr_class =  CContext.ContextClsDeclPtr dec_ptr in
            ignore (ObjcCategory_decl.category_decl CType_decl.type_ptr_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
 
-       | ObjCCategoryImplDecl(_, name_info, decl_list, _, ocidi) ->
-           let name = CAst_utils.get_qualified_name name_info in
-           let curr_class = ObjcCategory_decl.get_curr_class_from_category_impl name ocidi in
+       | ObjCCategoryImplDecl(_, _, decl_list, _, _) ->
+           let curr_class = CContext.ContextClsDeclPtr dec_ptr in
            ignore (ObjcCategory_decl.category_impl_decl CType_decl.type_ptr_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list;
 
-       | ObjCImplementationDecl(decl_info, _, decl_list, _, idi) ->
-           let curr_class = ObjcInterface_decl.get_curr_class_impl idi in
-           let class_name = CContext.get_curr_class_name curr_class in
+       | ObjCImplementationDecl(decl_info, name_info, decl_list, _, _) ->
+           let curr_class = CContext.ContextClsDeclPtr dec_ptr in
+           let class_name = CAst_utils.get_qualified_name name_info in
            let type_ptr_to_sil_type = CType_decl.type_ptr_to_sil_type in
            ignore (ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv dec);
            CMethod_trans.add_default_method_for_class trans_unit_ctx class_name decl_info;

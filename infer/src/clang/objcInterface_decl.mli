@@ -19,7 +19,3 @@ val interface_impl_declaration : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Cl
   Typ.t
 
 val is_pointer_to_objc_class : Typ.t -> bool
-
-val get_curr_class : string -> Clang_ast_t.obj_c_interface_decl_info -> CContext.curr_class
-
-val get_curr_class_impl : Clang_ast_t.obj_c_implementation_decl_info -> CContext.curr_class

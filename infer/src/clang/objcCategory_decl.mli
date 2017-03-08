@@ -18,10 +18,4 @@ val category_impl_decl : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_
 
 val noname_category : string -> string
 
-val get_curr_class_from_category_decl : string -> Clang_ast_t.obj_c_category_decl_info ->
-  CContext.curr_class
-
-val get_curr_class_from_category_impl : string -> Clang_ast_t.obj_c_category_impl_decl_info ->
-  CContext.curr_class
-
 val get_base_class_name_from_category : Clang_ast_t.decl -> string option

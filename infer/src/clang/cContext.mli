@@ -13,10 +13,6 @@ open! IStd
 (** and the cg, cfg, and tenv corresponding to the current file. *)
 
 type curr_class =
-  | ContextCls of string * string option * string list
-  (*class name and name of (optional) super class , and a list of protocols *)
-  | ContextCategory of string * string (* category name and corresponding class *)
-  | ContextProtocol of string  (* category name and corresponding class *)
   | ContextClsDeclPtr of int
   | ContextNoCls
 [@@deriving compare]
@@ -61,8 +57,6 @@ val get_tenv : t -> Tenv.t
 
 val create_context : CFrontend_config.translation_unit_context -> Tenv.t -> Cg.t -> Cfg.cfg ->
   Procdesc.t -> curr_class -> Typ.t option -> bool -> t option -> t
-
-val create_curr_class : Tenv.t -> string -> Csu.class_kind -> curr_class
 
 val add_block_static_var : t -> Procname.t -> (Pvar.t * Typ.t) -> unit
 

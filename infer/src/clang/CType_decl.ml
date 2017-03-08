@@ -256,6 +256,6 @@ let get_class_type_np tenv expr_info obj_c_message_expr_info =
     | _ -> expr_info.Clang_ast_t.ei_type_ptr in
   type_ptr_to_sil_type tenv tp
 
-let get_type_curr_class_objc curr_class_opt =
-  let name = CContext.get_curr_class_name curr_class_opt in
+let get_type_curr_class_objc curr_class =
+  let name = CContext.get_curr_class_name curr_class in
   Typ.Tstruct (TN_csu (Class Objc, (Mangled.from_string name)))
