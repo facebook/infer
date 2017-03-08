@@ -574,14 +574,7 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
     let mk_spec ~long ?(short="") spec doc =
       pad_and_xform doc_width left_width { long; short; meta=""; spec; doc;
                                            decode_json=fun _ -> raise (Arg.Bad long)} in
-    if not (equal_parse_tag parse_tag (Infer ())) then
-      let skip opt =
-        (opt, Unit (fun () -> ()), "") in
-      speclist @ [
-        (skip "--help") ;
-        (skip "-help")
-      ]
-    else if incomplete then
+    if incomplete then
       speclist @ [
         (unknown "--help") ;
         (unknown "-help")
