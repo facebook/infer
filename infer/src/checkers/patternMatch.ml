@@ -334,7 +334,7 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
 let override_exists f tenv proc_name =
   let rec super_type_exists tenv super_class_name =
     let super_proc_name =
-      Procname.replace_class proc_name (Typename.name super_class_name) in
+      Procname.replace_class proc_name super_class_name in
     match Tenv.lookup tenv super_class_name with
     | Some ({ methods; supers; }) ->
         let is_override pname =

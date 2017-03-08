@@ -217,9 +217,9 @@ let get_method_name_from_clang tenv ms_opt =
            else
              (ignore (CType_decl.add_types_from_decl_to_tenv tenv decl);
               match ObjcCategory_decl.get_base_class_name_from_category decl with
-              | Some class_name ->
+              | Some class_typename ->
                   let procname = CMethod_signature.ms_get_name ms in
-                  let new_procname = Procname.replace_class procname class_name in
+                  let new_procname = Procname.replace_class procname class_typename in
                   CMethod_signature.ms_set_name ms new_procname;
                   Some ms
               | None -> Some ms)
@@ -250,7 +250,7 @@ let get_superclass_curr_class_objc context =
         super_of_decl_ref_opt ocidi.ocidi_class_interface
     | _ -> assert false in
   match CContext.get_curr_class context with
-  | CContext.ContextClsDeclPtr ptr -> retreive_super_name ptr
+  | CContext.ContextClsDeclPtr ptr -> CType.mk_classname (retreive_super_name ptr) Csu.Objc
   | CContext.ContextNoCls -> assert false
 
 (* Gets the class name from a method signature found by clang, if search is successful *)
@@ -262,7 +262,7 @@ let get_class_name_method_call_from_clang trans_unit_ctx tenv obj_c_message_expr
            begin
              match CMethod_signature.ms_get_name ms with
              | Procname.ObjC_Cpp objc_cpp ->
-                 Some (Procname.objc_cpp_get_class_name objc_cpp)
+                 Some (Procname.objc_cpp_get_class_type_name objc_cpp)
              | _ ->
                  None
            end
@@ -274,11 +274,11 @@ let get_class_name_method_call_from_receiver_kind context obj_c_message_expr_inf
   match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
   | `Class tp ->
       let sil_type = CType_decl.type_ptr_to_sil_type context.CContext.tenv tp in
-      (CType.classname_of_type sil_type)
+      (CType.objc_classname_of_type sil_type)
   | `Instance ->
       (match act_params with
        | (_, Typ.Tptr(t, _)):: _
-       | (_, t):: _ -> CType.classname_of_type t
+       | (_, t):: _ -> CType.objc_classname_of_type t
        | _ -> assert false)
   | `SuperInstance ->get_superclass_curr_class_objc context
   | `SuperClass -> get_superclass_curr_class_objc context

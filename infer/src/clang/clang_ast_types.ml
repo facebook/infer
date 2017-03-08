@@ -17,15 +17,14 @@ open! IStd
 (* Type pointers *)
 
 exception Not_Clang_Pointer
-type class_info = string * [`CPP | `OBJC] [@@deriving compare]
 
 type t_ptr = [
   | `TPtr of int
   | `Prebuilt of int
   | `PointerOf of t_ptr
   | `ReferenceOf of t_ptr
-  | `ClassType of class_info
-  | `StructType of string
+  | `ClassType of Typename.t
+  | `StructType of Typename.t
   | `DeclPtr of int
   | `ErrorType
 ] [@@deriving compare]
@@ -41,8 +40,8 @@ let rec type_ptr_to_string type_ptr = match type_ptr with
   | `Prebuilt raw -> "prebuilt_" ^ (string_of_int raw)
   | `PointerOf typ -> "pointer_of_" ^ type_ptr_to_string typ
   | `ReferenceOf typ -> "reference_of_" ^ type_ptr_to_string typ
-  | `ClassType (name, _) -> "class_name_" ^ name
-  | `StructType name -> "struct_name_" ^ name
+  | `ClassType name -> "class_name_" ^ Typename.name name
+  | `StructType name -> "struct_name_" ^ Typename.name name
   | `DeclPtr raw -> "decl_ptr_" ^ (string_of_int raw)
   | `ErrorType -> "error_type"
 

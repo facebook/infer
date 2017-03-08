@@ -106,9 +106,12 @@ let create_void_unsigned_long_type =
 let create_void_void_type =
   new_constant_type_ptr ()
 
-let create_class_type class_info = `ClassType class_info
-let create_class_qual_type ?(is_const=false) class_info =
-  create_qual_type ~is_const @@ create_class_type class_info
+let create_class_type typename = `ClassType typename
+let create_class_qual_type ?(is_const=false) typename =
+  create_qual_type ~is_const @@ create_class_type typename
+
+let make_objc_class_type class_name =
+  create_class_type (Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string class_name))
 
 let create_struct_type struct_name = `StructType struct_name
 
@@ -204,7 +207,7 @@ let make_obj_c_message_expr_info_instance sel = {
 
 let make_obj_c_message_expr_info_class selector tp pointer = {
   Clang_ast_t.omei_selector = selector;
-  omei_receiver_kind = `Class (create_class_type (tp, `OBJC));
+  omei_receiver_kind = `Class (create_class_type tp);
   omei_is_definition_found = false;
   omei_decl_pointer = pointer
 }
@@ -331,7 +334,7 @@ let build_OpaqueValueExpr si source_expr ei =
   let opaque_value_expr_info = { Clang_ast_t.ovei_source_expr = Some source_expr } in
   Clang_ast_t.OpaqueValueExpr (si, [], ei, opaque_value_expr_info)
 
-let pseudo_object_tp () = create_class_type (CFrontend_config.pseudo_object_type, `OBJC)
+let pseudo_object_tp () = make_objc_class_type CFrontend_config.pseudo_object_type
 
 (* Create expression PseudoObjectExpr for 'o.m' *)
 let build_PseudoObjectExpr tp_m o_cast_decl_ref_exp mname =
@@ -515,8 +518,8 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   (* NSArray *objects = a *)
   let objects_array_DeclStmt init =
     let di = { empty_decl_info with Clang_ast_t.di_pointer = CAst_utils.get_fresh_pointer () } in
-    let tp = create_qual_type @@ create_pointer_type @@ create_class_type
-        (CFrontend_config.nsarray_cl, `OBJC) in
+    let tp = create_qual_type @@ create_pointer_type @@
+      make_objc_class_type CFrontend_config.nsarray_cl in
     (* init should be ImplicitCastExpr of array a *)
     let vdi = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = Some (init) } in
     let objects_name = CAst_utils.make_name_decl CFrontend_config.objects in

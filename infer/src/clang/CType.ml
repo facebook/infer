@@ -21,22 +21,22 @@ let remove_pointer_to_typ typ =
   | Typ.Tptr(typ, Typ.Pk_pointer) -> typ
   | _ -> typ
 
-let classname_of_type typ =
-  match typ with
-  | Typ.Tstruct name -> Typename.name name
-  | Typ.Tfun _ -> CFrontend_config.objc_object
-  | _ ->
-      Logging.out_debug
-        "Classname of type cannot be extracted in type %s" (Typ.to_string typ);
-      "undefined"
-
 let mk_classname n ck = Typename.TN_csu (Csu.Class ck, Mangled.from_string n)
 
 let mk_structname n = Typename.TN_csu (Csu.Struct, Mangled.from_string n)
 
+let objc_classname_of_type typ =
+  match typ with
+  | Typ.Tstruct name -> name
+  | Typ.Tfun _ -> mk_classname CFrontend_config.objc_object Csu.Objc
+  | _ ->
+      Logging.out_debug
+        "Classname of type cannot be extracted in type %s" (Typ.to_string typ);
+      mk_classname "undefined" Csu.Objc
+
 let is_class typ =
   match typ with
-  | Typ.Tptr (Tstruct ((TN_csu _) as name), _) ->
+  | Typ.Tptr (Tstruct name, _) ->
       String.equal (Typename.name name) CFrontend_config.objc_class
   | _ -> false
 

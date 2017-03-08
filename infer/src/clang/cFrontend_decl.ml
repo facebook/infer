@@ -197,12 +197,12 @@ struct
            ignore (ObjcCategory_decl.category_impl_decl CType_decl.type_ptr_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list;
 
-       | ObjCImplementationDecl(decl_info, name_info, decl_list, _, _) ->
+       | ObjCImplementationDecl(decl_info, _, decl_list, _, _) ->
            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-           let class_name = CAst_utils.get_qualified_name name_info in
+           let class_typename = CType_decl.get_record_typename dec in
            let type_ptr_to_sil_type = CType_decl.type_ptr_to_sil_type in
            ignore (ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv dec);
-           CMethod_trans.add_default_method_for_class trans_unit_ctx class_name decl_info;
+           CMethod_trans.add_default_method_for_class trans_unit_ctx class_typename decl_info;
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list;
 
        | CXXMethodDecl (decl_info, _, _, _, _)

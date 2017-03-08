@@ -1650,7 +1650,7 @@ let get_overrides_of tenv supertype pname =
     if not (Typ.equal typ supertype) && Subtyping_check.check_subtype tenv typ supertype then
       (* only select the ones that implement [pname] as overrides *)
       let resolved_pname =
-        Procname.replace_class pname (Typename.name tname) in
+        Procname.replace_class pname tname in
       if typ_has_method resolved_pname typ then (typ, resolved_pname) :: overrides_acc
       else overrides_acc
     else overrides_acc in

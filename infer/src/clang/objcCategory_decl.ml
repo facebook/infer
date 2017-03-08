@@ -59,7 +59,7 @@ let get_base_class_name_from_category decl =
   | Some decl_ref ->
       (match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
        | Some ObjCInterfaceDecl (_, name_info, _, _, _) ->
-           Some (CAst_utils.get_qualified_name name_info)
+           Some (CType.mk_classname (CAst_utils.get_qualified_name name_info) Csu.Objc)
        | _ -> None)
   | None -> None
 

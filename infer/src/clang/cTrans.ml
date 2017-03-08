@@ -46,7 +46,7 @@ struct
           CProcname.NoAstDecl.objc_method_of_string_kind class_name selector method_kind in
     let predefined_ms_opt = match proc_name with
       | Procname.ObjC_Cpp objc_cpp ->
-          let class_name = Procname.objc_cpp_get_class_name objc_cpp in
+          let class_name = Procname.objc_cpp_get_class_type_name objc_cpp in
           CTrans_models.get_predefined_model_method_signature class_name selector
             CProcname.NoAstDecl.objc_method_of_string_kind CFrontend_config.ObjC
       | _ ->
@@ -207,8 +207,7 @@ struct
     try
       f trans_state stmt
     with Self.SelfClassException class_name ->
-      let typ =
-        CType_decl.objc_class_name_to_sil_type trans_state.context.CContext.tenv class_name in
+      let typ = Typ.Tstruct class_name in
       { empty_res_trans with
         exps = [(Exp.Sizeof (typ, None, Subtype.exact), Tint IULong)] }
 
@@ -527,7 +526,6 @@ struct
     let decl_opt = CAst_utils.get_function_decl_with_body decl_ptr in
     Option.iter ~f:(call_translation context) decl_opt;
     let method_name = CAst_utils.get_unqualified_name name_info in
-    let class_name = CAst_utils.get_class_name_from_member name_info in
     Logging.out_debug "!!!!! Dealing with method '%s' @." method_name;
     let method_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let ms_opt = CMethod_trans.method_signature_of_pointer
@@ -568,7 +566,9 @@ struct
               type_ptr with
       | Some builtin_pname -> builtin_pname
       | None ->
-          CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_name)
+          let class_typename = CType.mk_classname
+              (CAst_utils.get_class_name_from_member name_info) Csu.CPP in
+          CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_typename)
             method_name in
     let method_exp = (Exp.Const (Const.Cfun pname), method_typ) in
     { pre_trans_result with
@@ -657,10 +657,11 @@ struct
       else empty_res_trans in
     let exps = if Self.is_var_self pvar (CContext.is_objc_method context) then
         let curr_class = CContext.get_curr_class context in
+        let class_typename = CContext.get_curr_class_typename curr_class in
         if (CType.is_class typ) then
-          raise (Self.SelfClassException (CContext.get_curr_class_name curr_class))
+          raise (Self.SelfClassException class_typename)
         else
-          let typ = CType.add_pointer_to_typ (CType_decl.get_type_curr_class_objc curr_class) in
+          let typ = CType.add_pointer_to_typ (Typ.Tstruct class_typename) in
           [(var_exp, typ)]
       else [(var_exp, typ)] in
     Logging.out_debug "\n\n PVAR ='%s'\n\n" (Pvar.to_string pvar);
@@ -1056,11 +1057,11 @@ struct
           try
             let fst_res_trans = instruction trans_state_param stmt in
             obj_c_message_expr_info, fst_res_trans
-          with Self.SelfClassException class_name ->
+          with Self.SelfClassException class_typename ->
             let pointer = obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer in
             let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
             let obj_c_message_expr_info =
-              Ast_expressions.make_obj_c_message_expr_info_class selector class_name pointer in
+              Ast_expressions.make_obj_c_message_expr_info_class selector class_typename pointer in
             obj_c_message_expr_info, empty_res_trans in
         let instruction' =
           exec_with_self_exception (exec_with_glvalue_as_reference instruction) in

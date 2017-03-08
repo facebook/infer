@@ -72,11 +72,22 @@ let get_record_name_csu decl =
         (* we use Csu.Class for C++ because we expect Csu.Class csu from *)
         (* types that have methods. And in C++ struct/class/union can have methods *)
         name_info, Csu.Class Csu.CPP
-    | _-> assert false in
+    | ObjCInterfaceDecl (_, name_info, _, _, _)
+    | ObjCImplementationDecl (_, name_info, _, _, _)
+    | ObjCProtocolDecl (_, name_info, _, _, _)
+    | ObjCCategoryDecl (_, name_info, _, _, _)
+    | ObjCCategoryImplDecl (_, name_info, _, _, _) ->
+        name_info, Csu.Class Csu.Objc
+    | _ -> assert false in
   let name = CAst_utils.get_qualified_name name_info in
   csu, name
 
 let get_record_name decl = snd (get_record_name_csu decl)
+
+let get_record_typename decl =
+  let csu, name = get_record_name_csu decl in
+  let mangled_name = Mangled.from_string name in
+  Typename.TN_csu (csu, mangled_name)
 
 let get_class_template_name = function
   | Clang_ast_t.ClassTemplateDecl (_, name_info, _ ) -> CAst_utils.get_qualified_name name_info
@@ -185,9 +196,8 @@ and get_record_struct_type tenv definition_decl =
   | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, record_decl_info, _, _)
   | CXXRecordDecl (_, _, _, type_ptr, _, _, record_decl_info, _)
   | RecordDecl (_, _, _, type_ptr, _, _, record_decl_info) ->
+      let sil_typename = get_record_typename definition_decl in
       let csu, name = get_record_name_csu definition_decl in
-      let mangled_name = Mangled.from_string name in
-      let sil_typename = Typename.TN_csu (csu, mangled_name) in
       (match Tenv.lookup tenv sil_typename with
        | Some _ -> Typ.Tstruct sil_typename (* just reuse what is already in tenv *)
        | None ->
@@ -237,16 +247,13 @@ and add_types_from_decl_to_tenv tenv decl =
 and type_ptr_to_sil_type tenv tp =
   CType_to_sil_type.type_ptr_to_sil_type add_types_from_decl_to_tenv tenv tp
 
-let objc_class_name_to_sil_type tenv name =
-  type_ptr_to_sil_type tenv (Ast_expressions.create_class_type (name, `OBJC))
-
 let get_type_from_expr_info ei tenv =
   let tp = ei.Clang_ast_t.ei_type_ptr in
   type_ptr_to_sil_type tenv tp
 
 let class_from_pointer_type tenv type_ptr =
   match type_ptr_to_sil_type tenv type_ptr with
-  | Typ.Tptr( Typ.Tstruct (Typename.TN_csu (_, name)), _) -> Mangled.to_string name
+  | Typ.Tptr(Typ.Tstruct typename, _) -> typename
   | _ -> assert false
 
 let get_class_type_np tenv expr_info obj_c_message_expr_info =
@@ -255,7 +262,3 @@ let get_class_type_np tenv expr_info obj_c_message_expr_info =
     | `Class tp -> tp
     | _ -> expr_info.Clang_ast_t.ei_type_ptr in
   type_ptr_to_sil_type tenv tp
-
-let get_type_curr_class_objc curr_class =
-  let name = CContext.get_curr_class_name curr_class in
-  Typ.Tstruct (TN_csu (Class Objc, (Mangled.from_string name)))

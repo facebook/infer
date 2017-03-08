@@ -141,13 +141,15 @@ let mangled_objc_block: string => t;
 
 
 /** Create an objc procedure name from a class_name and method_name. */
-let objc_cpp: string => string => objc_cpp_method_kind => objc_cpp;
+let objc_cpp: Typename.t => string => objc_cpp_method_kind => objc_cpp;
 
-let get_default_objc_class_method: string => t;
+let get_default_objc_class_method: Typename.t => t;
 
 
 /** Get the class name of a Objective-C/C++ procedure name. */
 let objc_cpp_get_class_name: objc_cpp => string;
+
+let objc_cpp_get_class_type_name: objc_cpp => Typename.t;
 
 
 /** Create ObjC method type from a bool is_instance. */
@@ -253,7 +255,7 @@ let pp_set: Format.formatter => Set.t => unit;
 
 /** Replace the class name component of a procedure name.
     In case of Java, replace package and class name. */
-let replace_class: t => string => t;
+let replace_class: t => Typename.t => t;
 
 
 /** Given a package.class_name string, look for the latest dot and split the string

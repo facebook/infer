@@ -13,7 +13,7 @@ open! IStd
 
 val add_pointer_to_typ : Typ.t -> Typ.t
 
-val classname_of_type : Typ.t -> string
+val objc_classname_of_type : Typ.t -> Typename.t
 
 val mk_classname : string -> Csu.class_kind -> Typename.t
 

@@ -18,9 +18,10 @@ val from_decl : CFrontend_config.translation_unit_context -> Clang_ast_t.decl ->
 module NoAstDecl : sig
   val c_function_of_string : CFrontend_config.translation_unit_context -> string -> Procname.t
 
-  val cpp_method_of_string : string -> string -> Procname.t
+  val cpp_method_of_string : Typename.t -> string -> Procname.t
 
-  val objc_method_of_string_kind : string -> string -> Procname.objc_cpp_method_kind -> Procname.t
+  val objc_method_of_string_kind : Typename.t -> string -> Procname.objc_cpp_method_kind ->
+    Procname.t
 
 end
 

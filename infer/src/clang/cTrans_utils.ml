@@ -355,7 +355,7 @@ let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selecto
   let class_name =
     match class_name_opt with
     | Some class_name -> class_name
-    | None -> CType.classname_of_type function_type in
+    | None -> CType.objc_classname_of_type function_type in
   if String.equal selector CFrontend_config.alloc then
     alloc_trans trans_state loc stmt_info function_type true None
   else if String.equal selector CFrontend_config.new_str then
@@ -579,14 +579,14 @@ let rec get_type_from_exp_stmt stmt =
 module Self =
 struct
 
-  exception SelfClassException of string
+  exception SelfClassException of Typename.t
 
   let add_self_parameter_for_super_instance context procname loc mei =
     if is_superinstance mei then
       let typ, self_expr, ins =
         let t' =
           CType.add_pointer_to_typ
-            (CType_decl.get_type_curr_class_objc context.CContext.curr_class) in
+            (Typ.Tstruct (CContext.get_curr_class_typename context.CContext.curr_class)) in
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
         t', Exp.Var id, [Sil.Load (id, e, t', loc)] in

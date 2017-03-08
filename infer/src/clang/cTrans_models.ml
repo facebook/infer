@@ -11,6 +11,8 @@ open! IStd
 
 open Objc_models
 
+let class_equal class_typename class_name = String.equal (Typename.name class_typename) class_name
+
 let is_cf_non_null_alloc pname =
   String.equal (Procname.to_string pname) CFrontend_config.cf_non_null_alloc
 
@@ -143,7 +145,7 @@ let get_predefined_ms_method condition class_name method_name method_kind mk_pro
 
 let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname lang =
   let condition =
-    String.equal class_name CFrontend_config.nsstring_cl &&
+    class_equal class_name CFrontend_config.nsstring_cl &&
     String.equal method_name CFrontend_config.string_with_utf8_m in
   let id_type = Ast_expressions.create_id_type in
   let args = [(Mangled.from_string "x",
@@ -156,17 +158,17 @@ let get_predefined_ms_retain_release method_name mk_procname lang =
   let return_type =
     if is_retain_method method_name || is_autorelease_method method_name
     then Ast_expressions.create_id_type else Ast_expressions.create_void_type in
-  let class_name = CFrontend_config.nsobject_cl in
-  let class_type = Ast_expressions.create_class_qual_type (class_name, `OBJC) in
+  let class_typename = CType.mk_classname CFrontend_config.nsobject_cl Csu.Objc in
+  let class_type = Ast_expressions.create_class_qual_type class_typename in
   let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
-  get_predefined_ms_method condition class_name method_name Procname.ObjCInstanceMethod
+  get_predefined_ms_method condition class_typename method_name Procname.ObjCInstanceMethod
     mk_procname lang args return_type [] (get_builtinname method_name)
 
 let get_predefined_ms_autoreleasepool_init class_name method_name mk_procname lang =
   let condition =
     String.equal method_name CFrontend_config.init &&
-    String.equal class_name CFrontend_config.nsautorelease_pool_cl in
-  let class_type = Ast_expressions.create_class_qual_type (class_name, `OBJC) in
+    class_equal class_name CFrontend_config.nsautorelease_pool_cl in
+  let class_type = Ast_expressions.create_class_qual_type class_name in
   get_predefined_ms_method condition class_name method_name Procname.ObjCInstanceMethod
     mk_procname lang [(Mangled.from_string CFrontend_config.self, class_type)]
     Ast_expressions.create_void_type [] None
@@ -176,8 +178,8 @@ let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procna
     (String.equal method_name CFrontend_config.release ||
      String.equal method_name CFrontend_config.drain)
     &&
-    String.equal class_name CFrontend_config.nsautorelease_pool_cl in
-  let class_type = Ast_expressions.create_class_qual_type (class_name, `OBJC) in
+    class_equal class_name CFrontend_config.nsautorelease_pool_cl in
+  let class_type = Ast_expressions.create_class_qual_type class_name in
   let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
   get_predefined_ms_method condition class_name method_name Procname.ObjCInstanceMethod
     mk_procname lang args Ast_expressions.create_void_type
@@ -185,7 +187,7 @@ let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procna
 
 let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
   let condition = String.equal method_name CFrontend_config.is_kind_of_class in
-  let class_type = Ast_expressions.create_class_qual_type (class_name, `OBJC) in
+  let class_type = Ast_expressions.create_class_qual_type class_name in
   let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
   get_predefined_ms_method condition class_name method_name Procname.ObjCInstanceMethod
     mk_procname lang args Ast_expressions.create_BOOL_type

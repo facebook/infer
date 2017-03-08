@@ -44,10 +44,10 @@ val create_void_unsigned_long_type : type_ptr
 
 val create_void_void_type : type_ptr
 
-val create_class_type : Clang_ast_types.class_info -> type_ptr
-val create_class_qual_type : ?is_const:bool -> Clang_ast_types.class_info -> qual_type
+val create_class_type : Typename.t -> type_ptr
+val create_class_qual_type : ?is_const:bool -> Typename.t -> qual_type
 
-val create_struct_type : string -> type_ptr
+val create_struct_type : Typename.t -> type_ptr
 
 val create_pointer_type : type_ptr -> type_ptr
 val create_pointer_qual_type : is_const:bool -> type_ptr -> qual_type
@@ -79,7 +79,7 @@ val make_message_expr : type_ptr -> string -> stmt -> stmt_info -> bool -> stmt
 
 val make_binary_stmt : stmt -> stmt -> stmt_info -> expr_info -> binary_operator_info -> stmt
 
-val make_obj_c_message_expr_info_class : string -> string -> pointer option ->
+val make_obj_c_message_expr_info_class : string -> Typename.t -> pointer option ->
   obj_c_message_expr_info
 
 val make_obj_c_message_expr_info_instance : string -> obj_c_message_expr_info

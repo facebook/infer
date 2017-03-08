@@ -396,8 +396,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
         let redirected_typename = Option.value_exn (redirect_typename id);
         let redirected_typ = mk_ptr_typ redirected_typename;
         let redirected_pname =
-          Procname.replace_class
-            (Procname.Java callee_pname_java) (Typename.name redirected_typename);
+          Procname.replace_class (Procname.Java callee_pname_java) redirected_typename;
         let args = {
           let other_args = List.map f::(fun (exp, typ) => (convert_exp exp, typ)) origin_args;
           [(Exp.Var id, redirected_typ), ...other_args]

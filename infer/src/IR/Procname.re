@@ -55,7 +55,7 @@ type objc_cpp_method_kind =
 
 
 /** Type of Objective C and C++ procedure names: method signatures. */
-type objc_cpp = {method_name: string, class_name: string, kind: objc_cpp_method_kind}
+type objc_cpp = {method_name: string, class_name: Typename.t, kind: objc_cpp_method_kind}
 [@@deriving compare];
 
 
@@ -182,9 +182,9 @@ let is_constexpr =
 
 /** Replace the class name component of a procedure name.
     In case of Java, replace package and class name. */
-let replace_class t new_class =>
+let replace_class t (new_class: Typename.t) =>
   switch t {
-  | Java j => Java {...j, class_name: Typename.Java.from_string new_class}
+  | Java j => Java {...j, class_name: new_class}
   | ObjC_Cpp osig => ObjC_Cpp {...osig, class_name: new_class}
   | C _
   | Block _
@@ -193,7 +193,9 @@ let replace_class t new_class =>
 
 
 /** Get the class name of a Objective-C/C++ procedure name. */
-let objc_cpp_get_class_name objc_cpp => objc_cpp.class_name;
+let objc_cpp_get_class_name objc_cpp => Typename.name objc_cpp.class_name;
+
+let objc_cpp_get_class_type_name objc_cpp => objc_cpp.class_name;
 
 
 /** Return the package.classname of a java procname. */
@@ -480,7 +482,7 @@ let to_readable_string (c1, c2) verbose => {
 let c_method_to_string osig detail_level =>
   switch detail_level {
   | Simple => osig.method_name
-  | Non_verbose => osig.class_name ^ "_" ^ osig.method_name
+  | Non_verbose => Typename.name osig.class_name ^ "_" ^ osig.method_name
   | Verbose =>
     let m_str =
       switch osig.kind {
@@ -505,7 +507,7 @@ let c_method_to_string osig detail_level =>
       | ObjCInstanceMethod => "instance"
       | ObjCInternalMethod => "internal"
       };
-    osig.class_name ^ "_" ^ osig.method_name ^ m_str
+    Typename.name osig.class_name ^ "_" ^ osig.method_name ^ m_str
   };
 
 
@@ -579,6 +581,7 @@ let get_qualifiers pname =>
   | C c => fst c |> QualifiedCppName.qualifiers_of_qual_name
   | ObjC_Cpp objc_cpp =>
     List.append
-      (QualifiedCppName.qualifiers_of_qual_name objc_cpp.class_name) [objc_cpp.method_name]
+      (QualifiedCppName.qualifiers_of_qual_name (Typename.name objc_cpp.class_name))
+      [objc_cpp.method_name]
   | _ => []
   };

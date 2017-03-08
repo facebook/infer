@@ -178,9 +178,8 @@ and type_ptr_to_sil_type translate_decl tenv type_ptr =
   | `ReferenceOf typ ->
       let sil_typ = type_ptr_to_sil_type translate_decl tenv typ in
       Typ.Tptr (sil_typ, Typ.Pk_reference)
-  | `ClassType (name, lang) ->
-      let kind = match lang with `OBJC -> Csu.Objc | `CPP -> Csu.CPP in
-      Typ.Tstruct (CType.mk_classname name kind)
-  | `StructType name -> Typ.Tstruct (CType.mk_structname name)
+  | `ClassType typename ->
+      Typ.Tstruct typename
+  | `StructType typename -> Typ.Tstruct typename
   | `DeclPtr ptr -> decl_ptr_to_sil_type translate_decl tenv ptr
   | `ErrorType -> Typ.Tvoid

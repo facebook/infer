@@ -60,6 +60,10 @@ let mk_cpp_method class_name method_name ?meth_decl mangled =
   Procname.ObjC_Cpp
     (Procname.objc_cpp class_name method_name method_kind)
 
+let mk_objc_method class_typename method_name method_kind =
+  Procname.ObjC_Cpp
+    (Procname.objc_cpp class_typename method_name method_kind)
+
 let block_procname_with_index defining_proc i =
   Config.anonymous_block_prefix ^
   (Procname.to_string defining_proc) ^
@@ -85,6 +89,12 @@ let mk_fresh_block_procname defining_proc =
   Procname.mangled_objc_block name
 
 
+let get_class_typename method_decl_info =
+  let class_ptr = Option.value_exn method_decl_info.Clang_ast_t.di_parent_pointer in
+  match CAst_utils.get_decl class_ptr with
+  | Some class_decl -> CType_decl.get_record_typename class_decl
+  | None -> assert false
+
 module NoAstDecl = struct
   let c_function_of_string translation_unit_context name =
     mk_c_function translation_unit_context name None
@@ -93,9 +103,9 @@ module NoAstDecl = struct
     mk_cpp_method class_name method_name None
 
   let objc_method_of_string_kind class_name method_name method_kind =
-    Procname.ObjC_Cpp
-      (Procname.objc_cpp class_name method_name method_kind)
+    mk_objc_method class_name method_name method_kind
 end
+
 
 let from_decl translation_unit_context meth_decl =
   let open Clang_ast_t in
@@ -104,20 +114,20 @@ let from_decl translation_unit_context meth_decl =
       let name = CAst_utils.get_qualified_name name_info in
       let function_info = Some (decl_info, fdi) in
       mk_c_function translation_unit_context name function_info
-  | CXXMethodDecl (_, name_info, _, fdi, mdi)
-  | CXXConstructorDecl (_, name_info, _, fdi, mdi)
-  | CXXConversionDecl (_, name_info, _, fdi, mdi)
-  | CXXDestructorDecl (_, name_info, _, fdi, mdi) ->
+  | CXXMethodDecl (decl_info, name_info, _, fdi, mdi)
+  | CXXConstructorDecl (decl_info, name_info, _, fdi, mdi)
+  | CXXConversionDecl (decl_info, name_info, _, fdi, mdi)
+  | CXXDestructorDecl (decl_info, name_info, _, fdi, mdi) ->
       let mangled = get_mangled_method_name fdi mdi in
       let method_name = CAst_utils.get_unqualified_name name_info in
-      let class_name = CAst_utils.get_class_name_from_member name_info in
-      mk_cpp_method class_name method_name ~meth_decl mangled
-  | ObjCMethodDecl (_, name_info, mdi) ->
-      let class_name = CAst_utils.get_class_name_from_member name_info in
+      let class_typename = get_class_typename decl_info in
+      mk_cpp_method class_typename method_name ~meth_decl mangled
+  | ObjCMethodDecl (decl_info, name_info, mdi) ->
+      let class_typename = get_class_typename decl_info in
       let method_name = name_info.Clang_ast_t.ni_name in
       let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
       let method_kind = Procname.objc_method_kind_of_bool is_instance in
-      NoAstDecl.objc_method_of_string_kind class_name method_name method_kind
+      mk_objc_method class_typename method_name method_kind
   | BlockDecl _ ->
       let name = Config.anonymous_block_prefix ^ Config.anonymous_block_num_sep ^
                  (string_of_int (get_fresh_block_index ())) in

@@ -13,6 +13,8 @@ open! IStd
 
 val get_record_name : Clang_ast_t.decl -> string
 
+val get_record_typename : Clang_ast_t.decl -> Typename.t
+
 val add_types_from_decl_to_tenv : Tenv.t -> Clang_ast_t.decl -> Typ.t
 
 (* Adds the predefined types objc_class which is a struct, *)
@@ -21,13 +23,9 @@ val add_predefined_types : Tenv.t -> unit
 
 val type_ptr_to_sil_type : Tenv.t -> Clang_ast_t.type_ptr -> Typ.t
 
-val class_from_pointer_type : Tenv.t -> Clang_ast_t.type_ptr -> string
+val class_from_pointer_type : Tenv.t -> Clang_ast_t.type_ptr -> Typename.t
 
 val get_class_type_np : Tenv.t -> Clang_ast_t.expr_info ->
   Clang_ast_t.obj_c_message_expr_info -> Typ.t
 
-val get_type_curr_class_objc : CContext.curr_class -> Typ.t
-
 val get_type_from_expr_info : Clang_ast_t.expr_info -> Tenv.t -> Typ.t
-
-val objc_class_name_to_sil_type : Tenv.t -> string -> Typ.t
