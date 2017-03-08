@@ -250,10 +250,10 @@ rei:
 
 # convert to reason
 %.re : %.ml
-	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.re
+	$(SCRIPT_DIR)/refmt.sh -parse ml -print re $< > $*.re
 
 %.rei : %.mli
-	refmt -assume-explicit-arity -heuristics-file unary.txt -parse ml -print re $< > $*.rei
+	$(SCRIPT_DIR)/refmt.sh -parse ml -print re $< > $*.rei
 
 roots:=Infer InferAnalyzeExe InferClang InferPrintExe StatsAggregator
 clusters:=base clang java IR

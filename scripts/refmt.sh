@@ -8,15 +8,15 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 
-# re-format reason code
+# refmt with infer options
 
 set -e
 set -o pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-base=`basename $0`
-tmpfile=`mktemp -t "${base}.XXXX"`
-
-"$SCRIPT_DIR/refmt.sh" -parse re -print re "$@" > "$tmpfile"
-mv "$tmpfile" "${@: -1}"
+refmt \
+  -assume-explicit-arity \
+  -print-width 100 \
+  -heuristics-file "$SCRIPT_DIR/unary.txt" \
+  "$@"
