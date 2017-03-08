@@ -816,6 +816,11 @@ and (
     write_html,
     write_dotty
   )
+
+and default_linters =
+  CLOpt.mk_bool ~long:"default-linters" ~parse_mode:CLOpt.(Infer [Clang]) ~default:true
+    "Use the default linters for the analysis."
+
 and dependencies =
   CLOpt.mk_bool ~deprecated:["dependencies"] ~long:"dependencies"
     ~parse_mode:CLOpt.(Infer [Java])
@@ -998,9 +1003,14 @@ and latex =
     "Write a latex report of the analysis results to a file"
 
 and linters_def_file =
-  CLOpt.mk_path_list ~default:[linters_def_default_file]
+  CLOpt.mk_path_list ~default:[]
     ~long:"linters-def-file" ~parse_mode:CLOpt.(Infer [Clang])
     ~meta:"file" "Specify the file containing linters definition (e.g. 'linters.al')"
+
+and linters_developer_mode =
+  CLOpt.mk_bool ~long:"linters-developer-mode" ~parse_mode:CLOpt.(Infer [Clang])
+    "Debug mode for developing new linters. Sets the linters analyzer, disables other \
+     default linters and also sets --print-logs, --debug and --no-allowed-failures."
 
 and load_average =
   CLOpt.mk_float_opt ~long:"load-average" ~short:"l"
@@ -1481,6 +1491,17 @@ let post_parsing_initialization () =
   clang_compilation_dbs :=
     List.rev_map ~f:(fun x -> `Raw x) !compilation_database
     |> List.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped;
+
+  (* set linters developer flags *)
+  if !linters_developer_mode then (
+    debug := true;
+    failures_allowed := false;
+    print_logs := true;
+    analyzer := Some Linters;
+    default_linters := false
+  );
+  if !default_linters then
+    linters_def_file := linters_def_default_file :: !linters_def_file;
 
   match !analyzer with
   | Some Checkers -> checkers := true
