@@ -26,7 +26,7 @@ type proc_origin =
 
 type t =
   | Const of Location.t
-  | Field of Ident.fieldname * Location.t
+  | Field of t * Ident.fieldname * Location.t
   | Formal of Mangled.t
   | Proc of proc_origin
   | New
@@ -36,17 +36,23 @@ type t =
 
 let equal = [%compare.equal : t]
 
-let to_string = function
-  | Const _ -> "Const"
-  | Field (fn, _) -> "Field " ^ Ident.fieldname_to_simplified_string fn
-  | Formal s -> "Formal " ^ Mangled.to_string s
+let rec to_string = function
+  | Const _ ->
+      "Const"
+  | Field (o, fn, _) ->
+      "Field " ^ Ident.fieldname_to_simplified_string fn ^ (" (inner: " ^ to_string o ^ ")")
+  | Formal s ->
+      "Formal " ^ Mangled.to_string s
   | Proc po ->
       Printf.sprintf
         "Fun %s"
         (Procname.to_simplified_string po.pname)
-  | New -> "New"
-  | ONone -> "ONone"
-  | Undef -> "Undef"
+  | New ->
+      "New"
+  | ONone ->
+      "ONone"
+  | Undef ->
+      "Undef"
 
 let get_description tenv origin =
   let atline loc =
@@ -54,7 +60,7 @@ let get_description tenv origin =
   match origin with
   | Const loc ->
       Some ("null constant" ^ atline loc, Some loc, None)
-  | Field (fn, loc) ->
+  | Field (_, fn, loc) ->
       Some ("field " ^ Ident.fieldname_to_simplified_string fn ^ atline loc, Some loc, None)
   | Formal s ->
       Some ("method parameter " ^ Mangled.to_string s, None, None)

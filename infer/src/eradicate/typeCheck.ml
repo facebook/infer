@@ -187,13 +187,16 @@ let rec typecheck_expr
       let (_, ta, locs') =
         typecheck_expr
           find_canonical_duplicate visited checks tenv node instr_ref curr_pdesc typestate exp
-          (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, locs) loc
-      in
+          (typ,
+           TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone,
+           locs)
+          loc in
+      let exp_origin = TypeAnnotation.get_origin ta in
       let tr_new = match EradicateChecks.get_field_annotation tenv fn typ with
         | Some (t, ia) ->
             (
               t,
-              TypeAnnotation.from_item_annotation ia (TypeOrigin.Field (fn, loc)),
+              TypeAnnotation.from_item_annotation ia (TypeOrigin.Field (exp_origin, fn, loc)),
               locs'
             )
         | None -> tr_default in
@@ -283,7 +286,7 @@ let typecheck_instr
     let default = exp, typestate in
 
     (* If this is an assignment, update the typestate for a field access pvar. *)
-    let update_typestate_fld pvar fn typ =
+    let update_typestate_fld pvar origin fn typ =
       match TypeState.lookup_pvar pvar typestate with
       | Some _ when not is_assignment -> typestate
       | _ ->
@@ -292,7 +295,8 @@ let typecheck_instr
                let range =
                  (
                    t,
-                   TypeAnnotation.from_item_annotation ia (TypeOrigin.Field (fn, loc)),
+                   TypeAnnotation.from_item_annotation
+                     ia (TypeOrigin.Field (origin, fn, loc)),
                    [loc]
                  ) in
                TypeState.add pvar range typestate
@@ -340,8 +344,17 @@ let typecheck_instr
 
     | Exp.Lvar _ ->
         default
-    | Exp.Lfield (_exp, fn, typ) when ComplexExpressions.parameter_and_static_field () ->
-        let exp' = Idenv.expand_expr_temps idenv node _exp in
+    | Exp.Lfield (exp_, fn, typ) when ComplexExpressions.parameter_and_static_field () ->
+        let inner_origin =
+          (match exp_ with
+           | Exp.Lvar pvar -> TypeState.lookup_pvar pvar typestate
+           | Exp.Var id -> TypeState.lookup_id id typestate
+           | _ -> None)
+          |>
+          Option.value_map
+            ~f:(fun (_, ta, _) -> TypeAnnotation.get_origin ta)
+            ~default:TypeOrigin.ONone in
+        let exp' = Idenv.expand_expr_temps idenv node exp_ in
 
         let is_parameter_field pvar = (* parameter.field *)
           let name = Pvar.get_name pvar in
@@ -359,13 +372,13 @@ let typecheck_instr
           | Exp.Lvar pv when is_parameter_field pv || is_static_field pv ->
               let fld_name = pvar_to_str pv ^ Ident.fieldname_to_string fn in
               let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
-              let typestate' = update_typestate_fld pvar fn typ in
+              let typestate' = update_typestate_fld pvar inner_origin fn typ in
               (Exp.Lvar pvar, typestate')
           | Exp.Lfield (_exp', fn', _) when Ident.java_fieldname_is_outer_instance fn' ->
               (* handle double dereference when accessing a field from an outer class *)
               let fld_name = Ident.fieldname_to_string fn' ^ "_" ^ Ident.fieldname_to_string fn in
               let pvar = Pvar.mk (Mangled.from_string fld_name) curr_pname in
-              let typestate' = update_typestate_fld pvar fn typ in
+              let typestate' = update_typestate_fld pvar inner_origin fn typ in
               (Exp.Lvar pvar, typestate')
           | Exp.Lvar _ | Exp.Lfield _ when ComplexExpressions.all_nested_fields () ->
               (* treat var.field1. ... .fieldn as a constant *)
@@ -373,7 +386,7 @@ let typecheck_instr
                 match ComplexExpressions.exp_to_string tenv node' exp with
                 | Some exp_str ->
                     let pvar = Pvar.mk (Mangled.from_string exp_str) curr_pname in
-                    let typestate' = update_typestate_fld pvar fn typ in
+                    let typestate' = update_typestate_fld pvar inner_origin fn typ in
                     (Exp.Lvar pvar, typestate')
                 | None ->
                     default

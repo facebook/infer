@@ -268,10 +268,8 @@ let check_constructor_initialization tenv
                 let origin_is_initialized = function
                   | TypeOrigin.Undef ->
                       false
-                  | TypeOrigin.Field (f, _) ->
-                      (* field initialized with another field needing initialization *)
-                      let circular =
-                        List.exists ~f:(fun (f', _, _) -> Ident.equal_fieldname f f') fields in
+                  | TypeOrigin.Field (TypeOrigin.Formal name, _, _) ->
+                      let circular = String.equal (Mangled.to_string name) "this" in
                       not circular
                   | _ ->
                       true in

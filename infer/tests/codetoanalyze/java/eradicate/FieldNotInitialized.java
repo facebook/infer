@@ -138,4 +138,34 @@ public class FieldNotInitialized {
     }
   }
 
+  class InitCircular {
+    String s;
+
+    InitCircular() {
+      String tmp = s;
+      s = tmp; // s is not initialized: circular initialization
+    }
+  }
+
+  class InitWithOtherClass {
+    class OtherClass {
+      String s = "";
+    }
+
+    String s;
+
+    InitWithOtherClass(OtherClass x) {
+      s = x.s;
+    }
+  }
+
+  class InitWithThisClass {
+
+    String s;
+
+    InitWithThisClass(InitWithThisClass x) {
+      s = x.s;
+    }
+  }
+
 }
