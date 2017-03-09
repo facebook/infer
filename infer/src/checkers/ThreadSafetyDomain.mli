@@ -13,7 +13,24 @@ module F = Format
 
 module AccessPathSetDomain : module type of AbstractDomain.InvertedSet (AccessPath.UntypedRawSet)
 
-module TraceElem : TraceElem.S with module Kind = AccessPath.Raw
+module Access : sig
+  type kind =
+    | Read
+    | Write
+  [@@deriving compare]
+
+  type t = AccessPath.Raw.t * kind [@@deriving compare]
+
+  val pp : F.formatter -> t -> unit
+end
+
+module TraceElem : sig
+  include TraceElem.S with module Kind = Access
+
+  val is_write : t -> bool
+
+  val is_read : t -> bool
+end
 
 (** A bool that is true if a lock is definitely held. Note that this is unsound because it assumes
     the existence of one global lock. In the case that a lock is held on the access to a variable,
@@ -83,10 +100,8 @@ type astate =
   {
     locks : LocksDomain.astate;
     (** boolean that is true if a lock must currently be held *)
-    reads : PathDomain.astate;
-    (** access paths read outside of synchronization *)
-    writes : AccessDomain.astate;
-    (** access paths written without ownership permissions *)
+    accesses : AccessDomain.astate;
+    (** read and writes accesses performed without ownership permissions *)
     id_map : IdAccessPathMapDomain.astate;
     (** map used to decompile temporary variables into access paths *)
     attribute_map : AttributeMapDomain.astate;
@@ -95,11 +110,10 @@ type astate =
 
 (** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of the
     attributes associated with the return value *)
-type summary =
-  LocksDomain.astate * PathDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
+type summary = LocksDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
 
 include AbstractDomain.WithBottom with type astate := astate
 
-val make_access : AccessPath.Raw.t -> Location.t -> TraceElem.t
+val make_access : AccessPath.Raw.t -> Access.kind -> Location.t -> TraceElem.t
 
 val pp_summary : F.formatter -> summary -> unit

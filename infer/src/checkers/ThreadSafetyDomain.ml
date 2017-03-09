@@ -13,13 +13,36 @@ module F = Format
 
 module AccessPathSetDomain = AbstractDomain.InvertedSet(AccessPath.UntypedRawSet)
 
+module Access = struct
+  type kind =
+    | Read
+    | Write
+  [@@deriving compare]
+
+  type t = AccessPath.Raw.t * kind [@@deriving compare]
+
+  let pp fmt (access_path, access_kind) = match access_kind with
+    | Read -> F.fprintf fmt "Read of %a" AccessPath.Raw.pp access_path
+    | Write -> F.fprintf fmt "Write of %a" AccessPath.Raw.pp access_path
+end
+
 module TraceElem = struct
-  module Kind = AccessPath.Raw
+  module Kind = Access
 
   type t = {
     site : CallSite.t;
     kind : Kind.t;
   } [@@deriving compare]
+
+  let is_read { kind; } =
+    match snd kind with
+    | Read -> true
+    | Write -> false
+
+  let is_write { kind; } =
+    match snd kind with
+    | Read -> false
+    | Write -> true
 
   let call_site { site; } = site
 
@@ -30,7 +53,7 @@ module TraceElem = struct
   let with_callsite t site = { t with site; }
 
   let pp fmt { site; kind; } =
-    F.fprintf fmt "Unprotected access to %a at %a" Kind.pp kind CallSite.pp site
+    F.fprintf fmt "%a at %a" Access.pp kind CallSite.pp site
 
   module Set = PrettyPrintable.MakePPSet (struct
       type nonrec t = t
@@ -39,9 +62,9 @@ module TraceElem = struct
     end)
 end
 
-let make_access kind loc =
+let make_access access_path access_kind loc =
   let site = CallSite.make Typ.Procname.empty_block loc in
-  TraceElem.make kind site
+  TraceElem.make (access_path, access_kind) site
 
 module LocksDomain = AbstractDomain.BooleanAnd
 
@@ -125,30 +148,26 @@ end
 type astate =
   {
     locks : LocksDomain.astate;
-    reads : PathDomain.astate;
-    writes : AccessDomain.astate;
+    accesses : AccessDomain.astate;
     id_map : IdAccessPathMapDomain.astate;
     attribute_map : AttributeMapDomain.astate;
   }
 
-type summary =
-  LocksDomain.astate * PathDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
+type summary = LocksDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
 
 let empty =
   let locks = false in
-  let reads = PathDomain.empty in
-  let writes = AccessDomain.empty in
+  let accesses = AccessDomain.empty in
   let id_map = IdAccessPathMapDomain.empty in
   let attribute_map = AccessPath.UntypedRawMap.empty in
-  { locks; reads; writes; id_map; attribute_map; }
+  { locks; accesses; id_map; attribute_map; }
 
 let (<=) ~lhs ~rhs =
   if phys_equal lhs rhs
   then true
   else
     LocksDomain.(<=) ~lhs:lhs.locks ~rhs:rhs.locks &&
-    PathDomain.(<=) ~lhs:lhs.reads ~rhs:rhs.reads &&
-    AccessDomain.(<=) ~lhs:lhs.writes ~rhs:rhs.writes &&
+    AccessDomain.(<=) ~lhs:lhs.accesses ~rhs:rhs.accesses &&
     IdAccessPathMapDomain.(<=) ~lhs:lhs.id_map ~rhs:rhs.id_map &&
     AttributeMapDomain.(<=) ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
 
@@ -158,11 +177,10 @@ let join astate1 astate2 =
     astate1
   else
     let locks = LocksDomain.join astate1.locks astate2.locks in
-    let reads = PathDomain.join astate1.reads astate2.reads in
-    let writes = AccessDomain.join astate1.writes astate2.writes in
+    let accesses = AccessDomain.join astate1.accesses astate2.accesses in
     let id_map = IdAccessPathMapDomain.join astate1.id_map astate2.id_map in
     let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
-    { locks; reads; writes; id_map; attribute_map; }
+    { locks; accesses; id_map; attribute_map; }
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next
@@ -170,29 +188,26 @@ let widen ~prev ~next ~num_iters =
     prev
   else
     let locks = LocksDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
-    let reads = PathDomain.widen ~prev:prev.reads ~next:next.reads ~num_iters in
-    let writes = AccessDomain.widen ~prev:prev.writes ~next:next.writes ~num_iters in
+    let accesses = AccessDomain.widen ~prev:prev.accesses ~next:next.accesses ~num_iters in
     let id_map = IdAccessPathMapDomain.widen ~prev:prev.id_map ~next:next.id_map ~num_iters in
     let attribute_map =
       AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters in
-    { locks; reads; writes; id_map; attribute_map; }
+    { locks; accesses; id_map; attribute_map; }
 
-let pp_summary fmt (locks, reads, writes, return_attributes) =
+let pp_summary fmt (locks, accesses, return_attributes) =
   F.fprintf
     fmt
-    "Locks: %a Reads: %a Writes: %a Return Attributes: %a"
+    "Locks: %a Accesses %a Return Attributes: %a"
     LocksDomain.pp locks
-    PathDomain.pp reads
-    AccessDomain.pp writes
+    AccessDomain.pp accesses
     AttributeSetDomain.pp return_attributes
 
-let pp fmt { locks; reads; writes; id_map; attribute_map; } =
+let pp fmt { locks; accesses; id_map; attribute_map; } =
   F.fprintf
     fmt
-    "Locks: %a Reads: %a Writes: %a Id Map: %a Attribute Map:\
+    "Locks: %a Accesses %a Id Map: %a Attribute Map:\
      %a"
     LocksDomain.pp locks
-    PathDomain.pp reads
-    AccessDomain.pp writes
+    AccessDomain.pp accesses
     IdAccessPathMapDomain.pp id_map
     AttributeMapDomain.pp attribute_map
