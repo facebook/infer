@@ -24,7 +24,10 @@ let parse_ctl_file linters_files =
         Logging.err "%a: %s\n" print_position lexbuf msg;
         None
     | Ctl_parser.Error ->
-        Logging.err "%a: syntax error\n" print_position lexbuf;
+        Logging.err "\n#######################################################\
+                     \n\n%a: SYNTAX ERROR\n\
+                     \n########################################################\n@."
+          print_position lexbuf;
         exit (-1) in
   List.iter ~f:(fun fn ->
       Logging.out "Loading linters rules from %s\n" fn;
