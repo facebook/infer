@@ -155,7 +155,8 @@ Do not hesitate to [contact us](support.html#need-help?).
 Here are some frequently asked questions. More to come.
 
 ### How do I suppress Infer warnings on a class or method?
-In Java code, you can do this by annotating your class or method with `@SuppressWarnings("infer")`.
+In Java code, you can do this by annotating your class or method with `@SuppressLint("infer")`.
+Or `@SuppressWarnings("infer")` if your Infer is older than v0.10.0.
 
 ### Is Infer supported for Windows?
 
