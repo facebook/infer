@@ -35,11 +35,8 @@ let load_specfiles () => {
     let all_filepaths = List.map f::(fun fname => Filename.concat dir fname) all_filenames;
     List.filter f::is_specs_file all_filepaths
   };
-  let specs_dirs = {
-    let result_specs_dir = DB.filename_to_string DB.Results_dir.specs_dir;
-    [result_specs_dir, ...Config.specs_library]
-  };
-  List.concat_map f::specs_files_in_dir specs_dirs
+  let result_specs_dir = DB.filename_to_string DB.Results_dir.specs_dir;
+  specs_files_in_dir result_specs_dir
 };
 
 
