@@ -32,6 +32,7 @@ SOURCES = \
   shared/constructors/constructor_with_body.cpp \
   shared/constructors/copy_move_constructor.cpp \
   shared/constructors/temp_object.cpp \
+  shared/constructors/copy_array_field.cpp \
   shared/exceptions/Exceptions.cpp \
   $(wildcard shared/lambda/*.cpp) \
   shared/methods/conversion_operator.cpp \
