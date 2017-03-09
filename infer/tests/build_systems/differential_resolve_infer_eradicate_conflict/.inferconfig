@@ -1,5 +1,6 @@
 {
   "eradicate-whitelist-path-regex": [
     "src/com"
-  ]
+  ],
+  "resolve-infer-eradicate-conflict": true
 }

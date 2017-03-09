@@ -8,19 +8,19 @@
 # E2E test involving the resolve_infer_eradicate_conflict filter
 
 TESTS_DIR = ../..
-DIFFERENTIAL_ARGS = --resolve-infer-eradicate-conflict
+DIFFERENTIAL_ARGS =
 CLEAN_EXTRA = src/com/example/Diff*.java src/Diff*.java *.class com/
 
 include ../../differential.make
 
-$(CURRENT_REPORT):
+$(CURRENT_REPORT): .inferconfig
 	cp src/com/example/DiffExample.java.current src/com/example/DiffExample.java
 	cp src/DiffExampleTwo.java.current src/DiffExampleTwo.java
 	$(call silent_on_success,\
 	$(INFER_BIN) \
 		-o $(CURRENT_DIR) -- javac src/com/example/DiffExample.java src/DiffExampleTwo.java)
 
-$(PREVIOUS_REPORT):
+$(PREVIOUS_REPORT): .inferconfig
 	cp src/com/example/DiffExample.java.previous src/com/example/DiffExample.java
 	$(call silent_on_success,\
 	$(INFER_BIN) -o $(PREVIOUS_DIR) -- javac src/com/example/DiffExample.java)

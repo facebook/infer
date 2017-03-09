@@ -72,18 +72,20 @@ type parse_action = section parse [@@deriving compare]
 
 let equal_parse_action = [%compare.equal : parse_action ]
 
-type parse_tag = unit parse [@@deriving compare]
+(* NOTE: All variants must be also added to `all_parse_tags` below *)
+type parse_tag = AllInferTags | OneTag of unit parse [@@deriving compare]
 
 let equal_parse_tag = [%compare.equal : parse_tag ]
-let all_parse_tags = [ Differential; Infer (); Javac; NoParse ]
+let all_parse_tags = [
+  AllInferTags; OneTag Differential; OneTag (Infer ()); OneTag Javac; OneTag NoParse
+]
 
-(* NOTE: All variants must be also added to `all_parse_tags` below *)
-let to_parse_tag tag =
-  match tag with
-  | Differential -> Differential
-  | Infer _ -> Infer ()
-  | Javac -> Javac
-  | NoParse -> NoParse
+let to_parse_tag parse =
+  match parse with
+  | Differential -> OneTag Differential
+  | Infer _ -> OneTag (Infer ())
+  | Javac -> OneTag Javac
+  | NoParse -> OneTag NoParse
 
 let accept_unknown_args = function
   | Infer Print | Javac | NoParse -> true
@@ -243,9 +245,14 @@ let infer_section_desc_lists = List.map ~f:(fun section -> (section, ref [])) al
 (** add [desc] to the one relevant parse_tag_desc_lists for the purposes of parsing, and, in the
     case of Infer, include [desc] in --help only for the relevant sections. *)
 let add parse_mode desc =
-  let tag = to_parse_tag parse_mode in
-  let full_desc_list = List.Assoc.find_exn parse_tag_desc_lists tag in
-  full_desc_list := desc :: !full_desc_list ;
+  let add_to_tag tag =
+    let desc_list = List.Assoc.find_exn parse_tag_desc_lists tag in
+    desc_list := desc :: !desc_list in
+  (match parse_mode with
+   | Javac | NoParse -> ()
+   | Differential | Infer _ -> add_to_tag AllInferTags
+  );
+  add_to_tag (to_parse_tag parse_mode);
   match parse_mode with
   | Differential | Javac | NoParse -> ()
   | Infer sections ->
@@ -554,7 +561,7 @@ let mk_rest ?(parse_mode=Infer []) doc =
   add parse_mode {long = "--"; short = ""; meta = ""; doc; spec; decode_json = fun _ -> []} ;
   rest
 
-let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
+let set_curr_speclist_for_parse_action ~incomplete ~usage ?(parse_all=false) parse_action =
   let full_speclist = ref [] in
 
   let curr_usage status =
@@ -565,7 +572,6 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
     Arg.usage (to_arg_speclist !full_speclist) usage ;
     exit status
   in
-  let parse_tag = to_parse_tag parse_action in
   (* "-help" and "--help" are automatically recognized by Arg.parse, so we have to give them special
      treatment *)
   let add_or_suppress_help (speclist, (doc_width,left_width)) =
@@ -613,11 +619,12 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
   let add_to_curr_speclist ?(add_help=false) ?header parse_action =
     let mk_header_spec heading =
       ("", Unit (fun () -> ()), "\n## " ^ heading ^ "\n") in
-    let exe_descs =
-      match parse_action with
-      | Infer section ->
+    let exe_descs = match parse_all, parse_action with
+      | true, _ ->
+          List.Assoc.find_exn ~equal:equal_parse_tag parse_tag_desc_lists AllInferTags
+      | false, Infer section ->
           List.Assoc.find_exn ~equal:equal_section infer_section_desc_lists section
-      | Differential | Javac | NoParse ->
+      | false, (Differential | Javac | NoParse) ->
           to_parse_tag parse_action
           |> List.Assoc.find_exn ~equal:equal_parse_tag parse_tag_desc_lists in
     let (exe_speclist, widths) = normalize !exe_descs in
@@ -654,14 +661,16 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage parse_action =
   ;
   assert( check_no_duplicates !curr_speclist )
   ;
-  let full_desc_list = List.Assoc.find_exn ~equal:equal_parse_tag parse_tag_desc_lists parse_tag in
+  let full_desc_list =
+    let parse_tag = if parse_all then AllInferTags else to_parse_tag parse_action in
+    List.Assoc.find_exn ~equal:equal_parse_tag parse_tag_desc_lists parse_tag in
   full_speclist := add_or_suppress_help (normalize !full_desc_list)
   ;
   curr_usage
 
 
-let select_parse_action ~incomplete ~usage action =
-  let usage = set_curr_speclist_for_parse_action ~incomplete ~usage action in
+let select_parse_action ~incomplete ~usage ?parse_all action =
+  let usage = set_curr_speclist_for_parse_action ~incomplete ~usage ?parse_all action in
   unknown_args_action := if accept_unknown_args action then `Add else `Reject;
   final_parse_action := action;
   usage
@@ -694,7 +703,7 @@ let decode_inferconfig_to_argv path =
     | Error msg ->
         warnf "WARNING: Could not read or parse Infer config in %s:@\n%s@." path msg ;
         `Assoc [] in
-  let desc_list = List.Assoc.find_exn ~equal:equal_parse_tag parse_tag_desc_lists (Infer ()) in
+  let desc_list = List.Assoc.find_exn ~equal:equal_parse_tag parse_tag_desc_lists AllInferTags in
   let json_config = YBU.to_assoc json in
   let one_config_item result (key, json_val) =
     try
@@ -749,11 +758,11 @@ let extra_env_args = ref []
 let extend_env_args args =
   extra_env_args := List.rev_append args !extra_env_args
 
-let parse_args ~incomplete ~usage action args =
+let parse_args ~incomplete ~usage ?parse_all action args =
   let exe_name = Sys.executable_name in
   args_to_parse := Array.of_list (exe_name :: args);
   arg_being_parsed := 0;
-  let curr_usage = select_parse_action ~incomplete ~usage action in
+  let curr_usage = select_parse_action ~incomplete ~usage ?parse_all action in
   (* tests if msg indicates an unknown option, as opposed to a known option with bad argument *)
   let is_unknown msg = String.is_substring msg ~substring:": unknown option" in
   let rec parse_loop () =
@@ -794,10 +803,10 @@ let parse ?(incomplete=false) ?config_file ~usage action =
         else !args_to_export ^ String.of_char env_var_sep ^ encode_argv_to_env args in
       args_to_export := arg_string in
   (* read .inferconfig first, then env vars, then command-line options *)
-  parse_args ~incomplete ~usage (Infer Driver) inferconfig_args |> ignore;
+  parse_args ~incomplete ~usage ~parse_all:true (Infer Driver) inferconfig_args |> ignore;
   (* NOTE: do not add the contents of .inferconfig to INFER_ARGS. This helps avoid hitting the
      command line size limit. *)
-  parse_args ~incomplete ~usage (Infer Driver) env_args |> ignore;
+  parse_args ~incomplete ~usage ~parse_all:true (Infer Driver) env_args |> ignore;
   if not incomplete then add_parsed_args_to_args_to_export ();
   let curr_usage =
     let cl_args = match Array.to_list Sys.argv with _ :: tl -> tl | [] -> [] in
