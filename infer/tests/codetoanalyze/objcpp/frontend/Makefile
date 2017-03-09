@@ -15,6 +15,8 @@ CLANG_OPTIONS = -x objective-c++ -std=c++11 \
   -isysroot $(XCODEROOT)$(IPHONESIMULATOR_ISYSROOT_SUFFIX) \
   -mios-simulator-version-min=8.2 --target=x86_64-apple-darwin14 -c \
 
+INFER_OPTIONS = --no-failures-allowed
+
 SOURCES = \
   $(wildcard */*.mm) \
 

@@ -21,6 +21,10 @@ struct
   (* Translates the method/function's body into nodes of the cfg. *)
   let add_method trans_unit_ctx tenv cg cfg class_decl_opt procname body has_return_param
       is_objc_method outer_context_opt extra_instrs =
+    let handle_translation_failure () =
+      Cfg.remove_proc_desc cfg procname;
+      CMethod_trans.create_external_procdesc cfg procname is_objc_method None
+    in
     Logging.out_debug
       "@\n@\n>>---------- ADDING METHOD: '%s' ---------<<@\n@." (Procname.to_string procname);
     try
@@ -48,11 +52,12 @@ struct
         (* this shouldn't happen, because self or [a class] should always be arguments of
            functions. This is to make sure I'm not wrong. *)
         assert false
+    | CTrans_utils.TemplatedCodeException _ ->
+        Logging.out "Fatal error: frontend doesn't support translation of templated code\n";
+        handle_translation_failure ()
     | Assert_failure (file, line, column) when Config.failures_allowed ->
         Logging.out "Fatal error: exception Assert_failure(%s, %d, %d)\n%!" file line column;
-        Cfg.remove_proc_desc cfg procname;
-        CMethod_trans.create_external_procdesc cfg procname is_objc_method None;
-        ()
+        handle_translation_failure ()
 
   let function_decl trans_unit_ctx tenv cfg cg func_decl block_data_opt =
     let captured_vars, outer_context_opt =

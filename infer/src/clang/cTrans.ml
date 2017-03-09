@@ -2665,6 +2665,13 @@ struct
     | VAArgExpr (_, _, expr_info) ->
         trans_into_undefined_expr trans_state expr_info
 
+
+    (* Infer somehow ended up in templated non instantiated code - right now
+       it's not supported and failure in those cases is expected. *)
+    | SubstNonTypeTemplateParmExpr _
+    | SubstNonTypeTemplateParmPackExpr _
+    | CXXDependentScopeMemberExpr _ -> raise (CTrans_utils.TemplatedCodeException instr)
+
     | s -> (Logging.out
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: \
                Translation need to be defined. Statement ignored.... \n"

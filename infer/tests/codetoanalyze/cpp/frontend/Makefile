@@ -11,7 +11,7 @@ TESTS_DIR=../../..
 CLANG_OPTIONS = \
   -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ \
   -x c++ -std=c++11 -c
-INFER_OPTIONS = --headers
+INFER_OPTIONS = --headers --no-failures-allowed
 
 
 SOURCES = \

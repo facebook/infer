@@ -8,6 +8,7 @@
 TESTS_DIR=../../..
 
 CLANG_OPTIONS = -c
+INFER_OPTIONS = --no-failures-allowed
 
 SOURCES = \
   $(wildcard */*.c) \

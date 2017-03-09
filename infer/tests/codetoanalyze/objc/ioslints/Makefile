@@ -17,7 +17,7 @@ CLANG_OPTIONS = -x objective-c \
 
 ANALYZER = linters
 INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
---iphoneos-target-sdk-version 8.0
+--iphoneos-target-sdk-version 8.0 --no-failures-allowed
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
