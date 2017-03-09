@@ -230,7 +230,7 @@ let at_line tags loc =
   at_line_tag tags Tags.line loc
 
 let call_to tags proc_name =
-  let proc_name_str = Procname.to_simplified_string proc_name in
+  let proc_name_str = Typ.Procname.to_simplified_string proc_name in
   Tags.add tags Tags.call_procedure proc_name_str;
   "call to " ^ proc_name_str
 
@@ -258,10 +258,10 @@ let format_field f =
 
 let format_method pname =
   match pname with
-  | Procname.Java pname_java ->
-      Procname.java_get_method pname_java
+  | Typ.Procname.Java pname_java ->
+      Typ.Procname.java_get_method pname_java
   | _ ->
-      Procname.to_string pname
+      Typ.Procname.to_string pname
 
 let mem_dyn_allocated = "memory dynamically allocated"
 let lock_acquired = "lock acquired"
@@ -316,18 +316,18 @@ let deref_str_weak_variable_in_block proc_name_opt nullable_obj_str =
 let deref_str_nil_argument_in_variadic_method pn total_args arg_number =
   let tags = Tags.create () in
   let function_method, nil_null =
-    if Procname.is_c_method pn then ("method", "nil") else ("function", "null") in
+    if Typ.Procname.is_c_method pn then ("method", "nil") else ("function", "null") in
   let problem_str =
     Printf.sprintf
       "could be %s which results in a call to %s with %d arguments instead of %d \
        (%s indicates that the last argument of this variadic %s has been reached)"
-      nil_null (Procname.to_simplified_string pn) arg_number (total_args - 1) nil_null function_method in
+      nil_null (Typ.Procname.to_simplified_string pn) arg_number (total_args - 1) nil_null function_method in
   _deref_str_null None problem_str tags
 
 (** dereference strings for an undefined value coming from the given procedure *)
 let deref_str_undef (proc_name, loc) =
   let tags = Tags.create () in
-  let proc_name_str = Procname.to_simplified_string proc_name in
+  let proc_name_str = Typ.Procname.to_simplified_string proc_name in
   Tags.add tags Tags.call_procedure proc_name_str;
   { tags = tags;
     value_pre = Some (pointer_or_object ());
@@ -407,7 +407,7 @@ let deref_str_uninitialized alloc_att_opt =
 (** Java unchecked exceptions errors *)
 let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
   { no_desc with descriptions = [
-        Procname.to_string proc_name;
+        Typ.Procname.to_string proc_name;
         "can throw " ^ (Typename.name exn_name);
         "whenever " ^ pre_str];
   }
@@ -429,10 +429,10 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
     path_prefix ^ context_str in
   let preamble =
     let pname_str = match pname with
-      | Procname.Java pname_java ->
+      | Typ.Procname.Java pname_java ->
           Printf.sprintf "%s.%s"
-            (Procname.java_get_class_name pname_java)
-            (Procname.java_get_method pname_java)
+            (Typ.Procname.java_get_class_name pname_java)
+            (Typ.Procname.java_get_method pname_java)
       | _ ->
           "" in
     "Context " ^ context_str ^ " may leak during method " ^ pname_str ^ ":\n" in
@@ -450,7 +450,7 @@ let desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc =
       guarded_by_str
       line_info
       guarded_by_str
-      (Procname.to_string pname)
+      (Typ.Procname.to_string pname)
       annot_str in
   { no_desc with descriptions = [msg]; }
 
@@ -565,13 +565,13 @@ let desc_allocation_mismatch alloc dealloc =
     let tag_fun, tag_call, tag_line =
       if is_alloc then Tags.alloc_function, Tags.alloc_call, Tags.alloc_line
       else Tags.dealloc_function, Tags.dealloc_call, Tags.dealloc_line in
-    Tags.add tags tag_fun (Procname.to_simplified_string primitive_pname);
-    Tags.add tags tag_call (Procname.to_simplified_string called_pname);
+    Tags.add tags tag_fun (Typ.Procname.to_simplified_string primitive_pname);
+    Tags.add tags tag_call (Typ.Procname.to_simplified_string called_pname);
     Tags.add tags tag_line (string_of_int loc.Location.line);
     let by_call =
-      if Procname.equal primitive_pname called_pname then ""
-      else " by call to " ^ Procname.to_simplified_string called_pname in
-    "using " ^ Procname.to_simplified_string primitive_pname ^ by_call ^ " " ^ at_line (Tags.create ()) (* ignore the tag *) loc in
+      if Typ.Procname.equal primitive_pname called_pname then ""
+      else " by call to " ^ Typ.Procname.to_simplified_string called_pname in
+    "using " ^ Typ.Procname.to_simplified_string primitive_pname ^ by_call ^ " " ^ at_line (Tags.create ()) (* ignore the tag *) loc in
   let description = Format.sprintf
       "%s %s is deallocated %s"
       mem_dyn_allocated
@@ -823,12 +823,12 @@ let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =
 
 let desc_skip_function proc_name =
   let tags = Tags.create () in
-  let proc_name_str = Procname.to_string proc_name in
+  let proc_name_str = Typ.Procname.to_string proc_name in
   Tags.add tags Tags.value proc_name_str;
   { no_desc with descriptions = [proc_name_str]; tags = !tags }
 
 let desc_inherently_dangerous_function proc_name =
-  let proc_name_str = Procname.to_string proc_name in
+  let proc_name_str = Typ.Procname.to_string proc_name in
   let tags = Tags.create () in
   Tags.add tags Tags.value proc_name_str;
   { no_desc with descriptions = [proc_name_str]; tags = !tags }

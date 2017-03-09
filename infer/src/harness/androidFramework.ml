@@ -20,8 +20,8 @@ let on_destroy_view = "onDestroyView"
 (** return true if [pname] is a special lifecycle cleanup method *)
 let is_destroy_method pname =
   match pname with
-  | Procname.Java pname_java ->
-      let method_name = Procname.java_get_method pname_java in
+  | Typ.Procname.Java pname_java ->
+      let method_name = Typ.Procname.java_get_method pname_java in
       String.equal method_name on_destroy
       || String.equal method_name on_destroy_view
   | _ ->
@@ -90,8 +90,8 @@ let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
       let lookup_proc lifecycle_proc =
         List.find_exn ~f:(fun decl_proc ->
             match decl_proc with
-            | Procname.Java decl_proc_java ->
-                String.equal lifecycle_proc (Procname.java_get_method decl_proc_java)
+            | Typ.Procname.Java decl_proc_java ->
+                String.equal lifecycle_proc (Typ.Procname.java_get_method decl_proc_java)
             | _ ->
                 false
           ) methods in

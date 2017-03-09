@@ -43,7 +43,7 @@ let mk_struct:
   default::Typ.Struct.t? =>
   fields::Typ.Struct.fields? =>
   statics::Typ.Struct.fields? =>
-  methods::list Procname.t? =>
+  methods::list Typ.Procname.t? =>
   supers::list Typename.t? =>
   annots::Annot.Item.t? =>
   specialization::Typ.template_spec_info? =>
@@ -64,4 +64,4 @@ let store_to_file: DB.filename => t => unit;
 
 
 /** Get method that is being overriden by java_pname (if any) **/
-let get_overriden_method: t => Procname.java => option Procname.t;
+let get_overriden_method: t => Typ.Procname.java => option Typ.Procname.t;

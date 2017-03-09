@@ -19,7 +19,7 @@ let module F = Format;
 /** Constants */
 type t =
   | Cint IntLit.t /** integer constants */
-  | Cfun Procname.t /** function names */
+  | Cfun Typ.Procname.t /** function names */
   | Cstr string /** string constants */
   | Cfloat float /** float constants */
   | Cclass Ident.name /** class constant */

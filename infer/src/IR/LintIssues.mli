@@ -11,15 +11,15 @@ open! IStd
 
 (** Module to store a set of issues per procedure *)
 
-val errLogMap : Errlog.t Procname.Map.t ref
+val errLogMap : Errlog.t Typ.Procname.Map.t ref
 
 val exists_issues : unit -> bool
 
 (** Save issues to a file *)
-val get_err_log : Procname.t -> Errlog.t
+val get_err_log : Typ.Procname.t -> Errlog.t
 
 (** Load issues from the given file *)
-val store_issues : DB.filename -> Errlog.t Procname.Map.t -> unit
+val store_issues : DB.filename -> Errlog.t Typ.Procname.Map.t -> unit
 
 (** Load all the lint issues in the given dir and update the issues map *)
 val load_issues_to_errlog_map : string -> unit

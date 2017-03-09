@@ -182,7 +182,7 @@ let is_objc_constructor context =
       let method_name = (match Clang_ast_proj.get_named_decl_tuple method_decl with
           | Some (_, mnd) -> mnd.Clang_ast_t.ni_name
           | _ -> "") in
-      Procname.is_objc_constructor method_name
+      Typ.Procname.is_objc_constructor method_name
   | _ -> false
 
 
@@ -192,7 +192,7 @@ let is_objc_dealloc context =
       let method_name = (match Clang_ast_proj.get_named_decl_tuple method_decl with
           | Some (_, mnd) -> mnd.Clang_ast_t.ni_name
           | _ -> "") in
-      Procname.is_objc_dealloc method_name
+      Typ.Procname.is_objc_dealloc method_name
   | _ -> false
 
 let captures_cxx_references an =

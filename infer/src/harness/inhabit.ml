@@ -19,7 +19,7 @@ module IdSet = Ident.IdentSet
 module TypSet = Typ.Set
 module TypMap = Typ.Map
 
-type lifecycle_trace = (Procname.t * Typ.t option) list
+type lifecycle_trace = (Typ.Procname.t * Typ.t option) list
 
 (** list of instrs and temporary variables created during inhabitation and a cache of types that
  * have already been inhabited *)
@@ -28,13 +28,13 @@ type env = { instrs : Sil.instr list;
              (* set of types currently being inhabited. consult to prevent infinite recursion *)
              cur_inhabiting : TypSet.t;
              pc : Location.t;
-             harness_name : Procname.java }
+             harness_name : Typ.Procname.java }
 
 let procdesc_from_name cfg pname =
   let pdesc_ref = ref None in
   Cfg.iter_proc_desc cfg
     (fun cfg_pname pdesc ->
-       if Procname.equal cfg_pname pname then
+       if Typ.Procname.equal cfg_pname pname then
          pdesc_ref := Some pdesc
     );
   !pdesc_ref
@@ -102,7 +102,7 @@ let rec inhabit_typ tenv typ cfg env =
                     let is_suitable_constructor p =
                       let try_get_non_receiver_formals p =
                         get_non_receiver_formals (formals_from_name cfg p) in
-                      Procname.is_constructor p
+                      Typ.Procname.is_constructor p
                       && List.for_all ~f:(fun (_, typ) ->
                           not (TypSet.mem typ env.cur_inhabiting)
                         ) (try_get_non_receiver_formals p) in
@@ -121,8 +121,8 @@ let rec inhabit_typ tenv typ cfg env =
                  * we can use it as a descriptive local variable name in the harness *)
                 let typ_class_name =
                   match constructor with
-                  | Procname.Java pname_java ->
-                      Procname.java_get_simple_class_name pname_java
+                  | Typ.Procname.Java pname_java ->
+                      Typ.Procname.java_get_simple_class_name pname_java
                   | _ ->
                       create_fresh_local_name () in
                 (env, Mangled.from_string typ_class_name)
@@ -131,7 +131,7 @@ let rec inhabit_typ tenv typ cfg env =
            * both fresh. the only point of this is to add a descriptive local name that makes error
            * reports from the harness look nicer -- it's not necessary to make symbolic execution work *)
           let fresh_local_exp =
-            Exp.Lvar (Pvar.mk typ_class_name (Procname.Java env.harness_name)) in
+            Exp.Lvar (Pvar.mk typ_class_name (Typ.Procname.Java env.harness_name)) in
           let write_to_local_instr =
             Sil.Store (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
           let env' = env_add_instr write_to_local_instr env in
@@ -178,7 +178,7 @@ let inhabit_call_with_args procname procdesc args env =
   let call_instr =
     let fun_exp = fun_exp_from_name procname in
     let flags =
-      { CallFlags.default with CallFlags.cf_virtual = not (Procname.java_is_static procname); } in
+      { CallFlags.default with CallFlags.cf_virtual = not (Typ.Procname.java_is_static procname); } in
     Sil.Call (retval, fun_exp, args, env.pc, flags) in
   env_add_instr call_instr env
 
@@ -194,7 +194,7 @@ let inhabit_call tenv (procname, receiver) cfg env =
           | ([], Some _) ->
               L.err
                 "Expected at least one formal to bind receiver to in method %a@."
-                Procname.pp procname;
+                Typ.Procname.pp procname;
               assert false in
         let (args, env) = inhabit_args tenv formals cfg env in
         inhabit_call_with_args procname procdesc args env
@@ -206,8 +206,8 @@ let create_dummy_harness_filename harness_name =
   let dummy_file_dir =
     Filename.temp_dir_name in
   let file_str =
-    Procname.java_get_class_name
-      harness_name ^ "_" ^ Procname.java_get_method harness_name ^ ".java" in
+    Typ.Procname.java_get_class_name
+      harness_name ^ "_" ^ Typ.Procname.java_get_method harness_name ^ ".java" in
   Filename.concat dummy_file_dir file_str
 
 (** write the SIL for the harness to a file *)
@@ -222,9 +222,9 @@ let write_harness_to_file harness_instrs harness_file_name =
 
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
 let add_harness_to_cg harness_name harness_node cg =
-  Cg.add_defined_node cg (Procname.Java harness_name);
+  Cg.add_defined_node cg (Typ.Procname.Java harness_name);
   List.iter
-    ~f:(fun p -> Cg.add_edge cg (Procname.Java harness_name) p)
+    ~f:(fun p -> Cg.add_edge cg (Typ.Procname.Java harness_name) p)
     (Procdesc.Node.get_callees harness_node)
 
 (** create and fill the appropriate nodes and add them to the harness cfg. also add the harness
@@ -232,7 +232,7 @@ let add_harness_to_cg harness_name harness_node cg =
 let setup_harness_cfg harness_name env cg cfg =
   (* each procedure has different scope: start names from id 0 *)
   Ident.NameGenerator.reset ();
-  let procname = Procname.Java harness_name in
+  let procname = Typ.Procname.Java harness_name in
   let proc_attributes =
     { (ProcAttributes.default procname Config.Java) with
       ProcAttributes.is_defined = true;

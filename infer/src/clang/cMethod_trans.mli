@@ -30,7 +30,7 @@ val create_local_procdesc : ?set_objc_accessor_attr:bool ->
   CMethod_signature.method_signature -> Clang_ast_t.stmt list -> (Pvar.t * Typ.t) list ->
   bool -> bool
 
-val create_external_procdesc : Cfg.cfg -> Procname.t -> bool -> (Typ.t * Typ.t list) option -> unit
+val create_external_procdesc : Cfg.cfg -> Typ.Procname.t -> bool -> (Typ.t * Typ.t list) option -> unit
 
 val get_objc_method_data : Clang_ast_t.obj_c_message_expr_info ->
   (string * Clang_ast_t.pointer option * method_call_type)
@@ -52,9 +52,9 @@ val get_method_name_from_clang : Tenv.t -> CMethod_signature.method_signature op
   CMethod_signature.method_signature option
 
 val create_procdesc_with_pointer : CContext.t -> Clang_ast_t.pointer -> Typename.t option ->
-  string -> Procname.t
+  string -> Typ.Procname.t
 
 val add_default_method_for_class : CFrontend_config.translation_unit_context -> Typename.t ->
   Clang_ast_t.decl_info -> unit
 
-val get_procname_from_cpp_lambda : CContext.t -> Clang_ast_t.decl -> Procname.t
+val get_procname_from_cpp_lambda : CContext.t -> Clang_ast_t.decl -> Typ.Procname.t

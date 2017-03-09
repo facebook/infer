@@ -53,7 +53,7 @@ module type S = sig
   (** get a path for each of the reportable source -> sink flows in this trace. specifying
       [cur_site] restricts the reported paths to ones introduced by the call at [cur_site] *)
   val get_reportable_paths :
-    ?cur_site:CallSite.t -> t -> trace_of_pname:(Procname.t -> t) -> path list
+    ?cur_site:CallSite.t -> t -> trace_of_pname:(Typ.Procname.t -> t) -> path list
 
   (** create a loc_trace from a path; [source_should_nest s] should be true when we are going one
       deeper into a call-chain, ie when lt_level should be bumper in the next loc_trace_elem, and
@@ -87,7 +87,7 @@ module type S = sig
   val pp : F.formatter -> t -> unit
 
   (** pretty-print a path in the context of the given procname *)
-  val pp_path : Procname.t -> F.formatter -> path -> unit
+  val pp_path : Typ.Procname.t -> F.formatter -> path -> unit
 end
 
 (** Expand a trace element (i.e., a source or sink) into a list of trace elements bottoming out in
@@ -216,7 +216,7 @@ module Make (Spec : Spec) = struct
       Source.pp original_source
       Sink.pp final_sink
       pp_sources sources_passthroughs
-      Procname.pp cur_pname
+      Typ.Procname.pp cur_pname
       pp_passthroughs cur_passthroughs
       pp_sinks (List.rev sinks_passthroughs)
 
@@ -269,18 +269,18 @@ module Make (Spec : Spec) = struct
   let to_loc_trace
       ?(desc_of_source=fun source ->
           let callsite = Source.call_site source in
-          Format.asprintf "return from %a" Procname.pp (CallSite.pname callsite))
+          Format.asprintf "return from %a" Typ.Procname.pp (CallSite.pname callsite))
       ?(source_should_nest=(fun _ -> true))
       ?(desc_of_sink=fun sink ->
           let callsite = Sink.call_site sink in
-          Format.asprintf "call to %a" Procname.pp (CallSite.pname callsite))
+          Format.asprintf "call to %a" Typ.Procname.pp (CallSite.pname callsite))
       ?(sink_should_nest=(fun _ -> true))
       (passthroughs, sources, sinks) =
 
     let trace_elems_of_passthroughs lt_level passthroughs acc0 =
       let trace_elem_of_passthrough passthrough acc =
         let passthrough_site = Passthrough.site passthrough in
-        let desc = F.asprintf "flow through %a" Procname.pp (CallSite.pname passthrough_site) in
+        let desc = F.asprintf "flow through %a" Typ.Procname.pp (CallSite.pname passthrough_site) in
         (Errlog.make_trace_element lt_level (CallSite.loc passthrough_site) desc []) :: acc in
       (* sort passthroughs by ascending line number to create a coherent trace *)
       let sorted_passthroughs =

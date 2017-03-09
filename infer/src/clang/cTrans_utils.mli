@@ -101,14 +101,14 @@ val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 val get_decl_ref_info : Clang_ast_t.stmt -> Clang_ast_t.decl_ref
 
 val builtin_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
-  Typ.t -> trans_result list -> Procname.t -> trans_result option
+  Typ.t -> trans_result list -> Typ.Procname.t -> trans_result option
 
 val cxx_method_builtin_trans : trans_state -> Location.t -> trans_result list ->
-  Procname.t -> trans_result option
+  Typ.Procname.t -> trans_result option
 
 val alloc_trans :
   trans_state -> Location.t -> Clang_ast_t.stmt_info -> Typ.t -> bool ->
-  Procname.t option -> trans_result
+  Typ.Procname.t option -> trans_result
 
 val new_or_alloc_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
   Clang_ast_t.type_ptr -> Typename.t option -> string -> trans_result
@@ -116,7 +116,7 @@ val new_or_alloc_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
 val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> trans_result
 
 val cast_trans :
-  (Exp.t * Typ.t) list -> Location.t -> Typ.t -> Procname.t -> (Sil.instr * Exp.t) option
+  (Exp.t * Typ.t) list -> Location.t -> Typ.t -> Typ.Procname.t -> (Sil.instr * Exp.t) option
 
 val dereference_var_sil : Exp.t * Typ.t -> Location.t -> Sil.instr list * Exp.t
 
@@ -207,7 +207,7 @@ sig
   exception SelfClassException of Typename.t
 
   val add_self_parameter_for_super_instance :
-    CContext.t -> Procname.t -> Location.t -> Clang_ast_t.obj_c_message_expr_info ->
+    CContext.t -> Typ.Procname.t -> Location.t -> Clang_ast_t.obj_c_message_expr_info ->
     trans_result
 
   val is_var_self : Pvar.t -> bool -> bool

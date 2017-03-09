@@ -62,7 +62,7 @@ end
 include SinkTrace.Make(TraceElem)
 
 let make_access kind loc =
-  let site = CallSite.make Procname.empty_block loc in
+  let site = CallSite.make Typ.Procname.empty_block loc in
   { TraceElem.kind = (`Access, kind); site; }
 
 let is_intraprocedural_access { TraceElem.kind=(kind, _); } = kind = `Access
@@ -73,7 +73,7 @@ let trace_of_error loc gname path =
     if is_intraprocedural_access sink then
       Format.asprintf "%a" Sink.pp sink
     else
-      Format.asprintf "call to %a" Procname.pp (CallSite.pname callsite) in
+      Format.asprintf "call to %a" Typ.Procname.pp (CallSite.pname callsite) in
   let sink_should_nest sink = not (is_intraprocedural_access sink) in
   let trace_elem_of_global =
     Errlog.make_trace_element 0 loc

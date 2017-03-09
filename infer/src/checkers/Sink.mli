@@ -13,7 +13,7 @@ module type Kind = sig
   include TraceElem.Kind
 
   (** return the parameter index and sink kind for the given call site with the given actuals *)
-  val get : Procname.t -> (Exp.t * Typ.t) list -> Tenv.t -> (t * int * bool) list
+  val get : Typ.Procname.t -> (Exp.t * Typ.t) list -> Tenv.t -> (t * int * bool) list
 end
 
 module type S = sig

@@ -73,7 +73,7 @@ type dangling_kind =
 
 
 /** position in a path: proc name, node id */
-type path_pos = (Procname.t, int) [@@deriving compare];
+type path_pos = (Typ.Procname.t, int) [@@deriving compare];
 
 let equal_path_pos: path_pos => path_pos => bool;
 
@@ -84,14 +84,14 @@ type taint_kind =
   | Tk_integrity_annotation
   | Tk_unknown;
 
-type taint_info = {taint_source: Procname.t, taint_kind: taint_kind};
+type taint_info = {taint_source: Typ.Procname.t, taint_kind: taint_kind};
 
 
 /** acquire/release action on a resource */
 type res_action = {
   ra_kind: res_act_kind, /** kind of action */
   ra_res: resource, /** kind of resource */
-  ra_pname: Procname.t, /** name of the procedure used to acquire/release the resource */
+  ra_pname: Typ.Procname.t, /** name of the procedure used to acquire/release the resource */
   ra_loc: Location.t, /** location of the acquire/release */
   ra_vpath: DecompiledExp.vpath /** vpath of the resource value */
 };
@@ -110,7 +110,7 @@ type t =
   | Aautorelease
   | Adangling dangling_kind /** dangling pointer */
   /** undefined value obtained by calling the given procedure, plus its return value annots */
-  | Aundef Procname.t Annot.Item.t Location.t path_pos
+  | Aundef Typ.Procname.t Annot.Item.t Location.t path_pos
   | Ataint taint_info
   | Auntaint taint_info
   | Alocked
@@ -120,7 +120,7 @@ type t =
   /** attributed exp is null due to a call to a method with given path as null receiver */
   | Aobjc_null
   /** value was returned from a call to the given procedure, plus the annots of the return value */
-  | Aretval Procname.t Annot.Item.t
+  | Aretval Typ.Procname.t Annot.Item.t
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */
@@ -131,11 +131,11 @@ let equal: t => t => bool;
 
 
 /** name of the allocation function for the given memory kind */
-let mem_alloc_pname: mem_kind => Procname.t;
+let mem_alloc_pname: mem_kind => Typ.Procname.t;
 
 
 /** name of the deallocation function for the given memory kind */
-let mem_dealloc_pname: mem_kind => Procname.t;
+let mem_dealloc_pname: mem_kind => Typ.Procname.t;
 
 
 /** Categories of attributes */

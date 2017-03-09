@@ -24,7 +24,7 @@ let callback_fragment_retains_view_java
     pname_java { Callbacks.proc_desc; tenv } =
   (* TODO: complain if onDestroyView is not defined, yet the Fragment has View fields *)
   (* TODO: handle fields nullified in callees in the same file *)
-  let is_on_destroy_view = String.equal (Procname.java_get_method pname_java) "onDestroyView" in
+  let is_on_destroy_view = String.equal (Typ.Procname.java_get_method pname_java) "onDestroyView" in
   let fld_typ_is_view = function
     | Typ.Tptr (Tstruct tname, _) -> AndroidFramework.is_view tenv tname
     | _ -> false in
@@ -35,7 +35,7 @@ let callback_fragment_retains_view_java
   if is_on_destroy_view then
     begin
       let class_typename =
-        Typename.Java.from_string (Procname.java_get_class_name pname_java) in
+        Typename.Java.from_string (Typ.Procname.java_get_class_name pname_java) in
       match Tenv.lookup tenv class_typename with
       | Some { fields } when AndroidFramework.is_fragment tenv class_typename ->
           let declared_view_fields =
@@ -44,16 +44,16 @@ let callback_fragment_retains_view_java
           (* report if a field is declared by C, but not nulled out in C.onDestroyView *)
           List.iter
             ~f:(fun (fname, fld_typ, _) ->
-               if not (Ident.FieldSet.mem fname fields_nullified) then
-                 report_error
-                   (Tstruct class_typename) fname fld_typ (Procname.Java pname_java) proc_desc)
+                if not (Ident.FieldSet.mem fname fields_nullified) then
+                  report_error
+                    (Tstruct class_typename) fname fld_typ (Typ.Procname.Java pname_java) proc_desc)
             declared_view_fields
       | _ -> ()
     end
 
 let callback_fragment_retains_view ({ Callbacks.proc_name } as args) =
   match proc_name with
-  | Procname.Java pname_java ->
+  | Typ.Procname.Java pname_java ->
       callback_fragment_retains_view_java pname_java args
   | _ ->
       ()

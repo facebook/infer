@@ -55,7 +55,7 @@ let get_blocks_nullified node =
     captured variables in the block we obtain a leak. *)
 let check_block_retain_cycle tenv caller_pname prop block_nullified =
   let mblock = Pvar.get_name block_nullified in
-  let block_pname = Procname.mangled_objc_block (Mangled.to_string mblock) in
+  let block_pname = Typ.Procname.mangled_objc_block (Mangled.to_string mblock) in
   let block_captured =
     match AttributesTable.load_attributes block_pname with
     | Some attributes ->
@@ -366,10 +366,10 @@ and prune_union tenv ~positive condition1 condition2 prop =
 
 let dangerous_functions =
   let dangerous_list = ["gets"] in
-  ref ((List.map ~f:Procname.from_string_c_fun) dangerous_list)
+  ref ((List.map ~f:Typ.Procname.from_string_c_fun) dangerous_list)
 
 let check_inherently_dangerous_function caller_pname callee_pname =
-  if List.exists ~f:(Procname.equal callee_pname) !dangerous_functions then
+  if List.exists ~f:(Typ.Procname.equal callee_pname) !dangerous_functions then
     let exn =
       Exceptions.Inherently_dangerous_function
         (Localise.desc_inherently_dangerous_function callee_pname) in
@@ -472,7 +472,7 @@ let check_deallocate_static_memory prop_after =
 
 let method_exists right_proc_name methods =
   if Config.curr_language_is Config.Java then
-    List.exists ~f:(fun meth_name -> Procname.equal right_proc_name meth_name) methods
+    List.exists ~f:(fun meth_name -> Typ.Procname.equal right_proc_name meth_name) methods
   else (* ObjC/C++ case : The attribute map will only exist when we have code for the method or
           the method has been called directly somewhere. It can still be that this is not the
           case but we have a model for the method. *)
@@ -486,7 +486,7 @@ let resolve_method tenv class_name proc_name =
     let rec resolve (class_name: Typename.t) =
       visited := Typename.Set.add class_name !visited;
       let right_proc_name =
-        Procname.replace_class proc_name class_name in
+        Typ.Procname.replace_class proc_name class_name in
       match class_name, Tenv.lookup tenv class_name with
       | TN_csu (Class _, _), Some { methods; supers } ->
           if method_exists right_proc_name methods then
@@ -521,15 +521,15 @@ let resolve_typename prop receiver_exp =
 
 (** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal
     in the signature of [pname], resolve [pname] to T_actual.[pname]. *)
-let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t list =
+let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procname.t list =
   let resolve receiver_exp pname prop = match resolve_typename prop receiver_exp with
     | Some class_name -> resolve_method tenv class_name pname
     | None -> pname in
   let get_receiver_typ pname fallback_typ =
     match pname with
-    | Procname.Java pname_java ->
+    | Typ.Procname.Java pname_java ->
         begin
-          let name = Procname.java_get_class_type_name pname_java in
+          let name = Typ.Procname.java_get_class_type_name pname_java in
           match Tenv.lookup tenv name with
           | Some _ -> Typ.Tptr (Tstruct name, Pk_pointer)
           | None -> fallback_typ
@@ -568,7 +568,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
         let resolved_pname = do_resolve callee_pname receiver_exp actual_receiver_typ in
         let feasible_targets = List.filter ~f:may_dispatch_to targets in
         (* make sure [resolved_pname] is not a duplicate *)
-        if List.mem ~equal:Procname.equal feasible_targets resolved_pname
+        if List.mem ~equal:Typ.Procname.equal feasible_targets resolved_pname
         then feasible_targets
         else resolved_pname :: feasible_targets
       else
@@ -577,7 +577,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
           match call_flags.CallFlags.cf_targets with
           | target :: _ when call_flags.CallFlags.cf_interface &&
                              receiver_types_equal callee_pname actual_receiver_typ &&
-                             Procname.equal resolved_target callee_pname ->
+                             Typ.Procname.equal resolved_target callee_pname ->
               (* "production mode" of dynamic dispatch for Java: unsound, but faster. the handling
                  is restricted to interfaces: if we can't resolve an interface call, we pick the
                  first implementation of the interface and call it *)
@@ -590,9 +590,9 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Procname.t
 
 
 (** Resolve the name of the procedure to call based on the type of the arguments *)
-let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
+let resolve_java_pname tenv prop args pname_java call_flags : Typ.Procname.java =
   let resolve_from_args resolved_pname_java args =
-    let parameters = Procname.java_get_parameters resolved_pname_java in
+    let parameters = Typ.Procname.java_get_parameters resolved_pname_java in
     if List.length args <> List.length parameters then
       resolved_pname_java
     else
@@ -601,10 +601,10 @@ let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
           ~f:(fun accu (arg_exp, _) name ->
               match resolve_typename prop arg_exp with
               | Some class_name ->
-                  (Procname.split_classname (Typename.name class_name)) :: accu
+                  (Typ.Procname.split_classname (Typename.name class_name)) :: accu
               | None -> name :: accu)
-          ~init:[] args (Procname.java_get_parameters resolved_pname_java) |> List.rev in
-      Procname.java_replace_parameters resolved_pname_java resolved_params in
+          ~init:[] args (Typ.Procname.java_get_parameters resolved_pname_java) |> List.rev in
+      Typ.Procname.java_replace_parameters resolved_pname_java resolved_params in
   let resolved_pname_java, other_args =
     match args with
     | [] ->
@@ -615,8 +615,8 @@ let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
             match resolve_typename prop first_arg with
             | Some class_name ->
                 begin
-                  match resolve_method tenv class_name (Procname.Java pname_java) with
-                  | Procname.Java resolved_pname_java ->
+                  match resolve_method tenv class_name (Typ.Procname.Java pname_java) with
+                  | Typ.Procname.Java resolved_pname_java ->
                       resolved_pname_java
                   | _ ->
                       pname_java
@@ -625,7 +625,7 @@ let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
                 pname_java
           end in
         resolved, other_args
-    | _ :: other_args when Procname.is_constructor (Procname.Java pname_java) ->
+    | _ :: other_args when Typ.Procname.is_constructor (Typ.Procname.Java pname_java) ->
         pname_java, other_args
     | args ->
         pname_java, args in
@@ -635,11 +635,11 @@ let resolve_java_pname tenv prop args pname_java call_flags : Procname.java =
 (** Resolve the procedure name and run the analysis of the resolved procedure
     if not already analyzed *)
 let resolve_and_analyze
-    tenv caller_pdesc prop args callee_proc_name call_flags : Procname.t * Specs.summary option =
+    tenv caller_pdesc prop args callee_proc_name call_flags : Typ.Procname.t * Specs.summary option =
   (* TODO (#15748878): Fix conflict with method overloading by encoding in the procedure name
      whether the method is defined or generated by the specialization *)
   let analyze_ondemand resolved_pname : Specs.summary option =
-    if Procname.equal resolved_pname callee_proc_name then
+    if Typ.Procname.equal resolved_pname callee_proc_name then
       Ondemand.analyze_proc_name ~propagate_exceptions:true caller_pdesc callee_proc_name
     else
       (* Create the type sprecialized procedure description and analyze it directly *)
@@ -656,8 +656,8 @@ let resolve_and_analyze
                (Ondemand.get_proc_desc callee_proc_name)) in
       Option.bind resolved_proc_desc_option analyze in
   let resolved_pname = match callee_proc_name with
-    | Procname.Java callee_proc_name_java ->
-        Procname.Java
+    | Typ.Procname.Java callee_proc_name_java ->
+        Typ.Procname.Java
           (resolve_java_pname tenv prop args callee_proc_name_java call_flags)
     | _ ->
         callee_proc_name in
@@ -668,11 +668,11 @@ let resolve_and_analyze
     to be only the protocol.  *)
 let call_constructor_url_update_args pname actual_params =
   let url_pname =
-    Procname.Java
-      (Procname.java
+    Typ.Procname.Java
+      (Typ.Procname.java
          (Typename.Java.from_string "java.net.URL") None "<init>"
-         [(Some "java.lang"), "String"] Procname.Non_Static) in
-  if (Procname.equal url_pname pname) then
+         [(Some "java.lang"), "String"] Typ.Procname.Non_Static) in
+  if (Typ.Procname.equal url_pname pname) then
     (match actual_params with
      | [this; (Exp.Const (Const.Cstr s), atype)] ->
          let parts = Str.split (Str.regexp_string "://") s in
@@ -705,9 +705,9 @@ let receiver_self receiver prop =
    a check for null, which is considered good practice.  *)
 let force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver =
   let current_pname = Procdesc.get_proc_name pdesc in
-  if Procname.is_constructor callee_pname &&
+  if Typ.Procname.is_constructor callee_pname &&
      receiver_self receiver pre &&
-     !Config.footprint && Procname.is_constructor current_pname then
+     !Config.footprint && Typ.Procname.is_constructor current_pname then
     match ret_id with
     | Some (ret_id, _) ->
         let propset = prune_ne tenv ~positive:false (Exp.Var ret_id) Exp.zero pre in
@@ -728,7 +728,7 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
     ret_id res =
   let path_description =
     "Message " ^
-    (Procname.to_simplified_string callee_pname) ^
+    (Typ.Procname.to_simplified_string callee_pname) ^
     " with receiver nil returns nil." in
   let receiver = (match actual_pars with
       | (e, _):: _ -> e
@@ -756,7 +756,7 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
     let path = Paths.Path.add_description path path_description in
     L.d_strln
       ("Object-C method " ^
-       Procname.to_string callee_pname ^
+       Typ.Procname.to_string callee_pname ^
        " called with nil receiver. Returning 0/nil");
     (* We wish to nullify the result. However, in some cases,
        we want to add the attribute OBJC_NULL to it so that we *)
@@ -826,10 +826,10 @@ let add_struct_value_to_footprint tenv abduced_pv typ prop =
   prop', struct_strexp
 
 let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ callee_pname callee_loc=
-  if Procname.is_infer_undefined callee_pname then prop
+  if Typ.Procname.is_infer_undefined callee_pname then prop
   else
     let is_rec_call pname = (* TODO: (t7147096) extend this to detect mutual recursion *)
-      Procname.equal pname (Procdesc.get_proc_name pdesc) in
+      Typ.Procname.equal pname (Procdesc.get_proc_name pdesc) in
     let already_has_abduced_retval p abduced_ret_pv =
       List.exists
         ~f:(fun hpred -> match hpred with
@@ -1028,7 +1028,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
       Reporting.log_info current_pname exn;
       L.d_strln
-        ("Undefined function " ^ Procname.to_string callee_pname
+        ("Undefined function " ^ Typ.Procname.to_string callee_pname
          ^ ", returning undefined value.");
       (match Specs.get_summary current_pname with
        | None -> ()
@@ -1155,8 +1155,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                   let attrs_opt =
                     let attr_opt = Option.map ~f:Procdesc.get_attributes callee_pdesc_opt in
                     match attr_opt, resolved_pname with
-                    | Some attrs, Procname.ObjC_Cpp _ -> Some attrs
-                    | None, Procname.ObjC_Cpp _ -> AttributesTable.load_attributes resolved_pname
+                    | Some attrs, Typ.Procname.ObjC_Cpp _ -> Some attrs
+                    | None, Typ.Procname.ObjC_Cpp _ -> AttributesTable.load_attributes resolved_pname
                     | _ -> None in
                   let objc_property_accessor_ret_typ_opt =
                     match attrs_opt with
@@ -1203,7 +1203,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       end else begin
         L.d_str "Unknown function pointer "; Sil.d_exp fun_exp;
         L.d_strln ", returning undefined value.";
-        let callee_pname = Procname.from_string_c_fun "__function_pointer__" in
+        let callee_pname = Typ.Procname.from_string_c_fun "__function_pointer__" in
         unknown_or_scan_call ~is_scan:false None Annot.Item.empty Builtin.{
             pdesc= current_pdesc; instr; tenv; prop_= prop_r; path; ret_id; args= n_actual_params;
             proc_name= callee_pname; loc; }
@@ -1213,8 +1213,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         let eprop = Prop.expose prop_ in
         match List.partition_tf
                 ~f:(function
-                  | Sil.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar'
-                  | _ -> false) eprop.Prop.sigma with
+                    | Sil.Hpointsto (Exp.Lvar pvar', _, _) -> Pvar.equal pvar pvar'
+                    | _ -> false) eprop.Prop.sigma with
         | [Sil.Hpointsto(e, se, typ)], sigma' ->
             let sigma'' =
               let se' = execute_nullify_se se in
@@ -1439,7 +1439,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
   let pre_final =
     (* in Java, assume that skip functions close resources passed as params *)
     let pre_1 =
-      if Procname.is_java callee_pname
+      if Typ.Procname.is_java callee_pname
       then remove_file_attribute pre
       else pre in
     let pre_2 = match ret_id, ret_type_option with
@@ -1588,7 +1588,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
           L.d_str "formal parameters: "; Typ.d_list formal_types; L.d_ln ();
           actual_pars
       | [], _ ->
-          L.d_str ("**** ERROR: Procedure " ^ Procname.to_string callee_pname);
+          L.d_str ("**** ERROR: Procedure " ^ Typ.Procname.to_string callee_pname);
           L.d_strln (" mismatch in the number of parameters ****");
           L.d_str "actual parameters: "; Sil.d_exp_list (List.map ~f:fst actual_pars); L.d_ln ();
           L.d_str "formal parameters: "; Typ.d_list formal_types; L.d_ln ();

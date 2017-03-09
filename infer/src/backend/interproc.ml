@@ -223,30 +223,30 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
     let f p = Prop.prop_normal_vars_to_primed_vars tenv p in
     Propset.map tenv f pset in
 
-  L.d_strln ("#### Extracted footprint of " ^ Procname.to_string proc_name ^ ":  ####");
+  L.d_strln ("#### Extracted footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Propset.d Prop.prop_emp pset'; L.d_decrease_indent 1; L.d_ln ();
   L.d_ln ();
   let pset'' = collect_do_abstract_pre proc_name tenv pset' in
   let plist_meet = do_meet_pre tenv pset'' in
-  L.d_strln ("#### Footprint of " ^ Procname.to_string proc_name ^ " after Meet  ####");
+  L.d_strln ("#### Footprint of " ^ Typ.Procname.to_string proc_name ^ " after Meet  ####");
   L.d_increase_indent 1; Propgraph.d_proplist Prop.prop_emp plist_meet;
   L.d_decrease_indent 1; L.d_ln ();
   L.d_ln ();
   L.d_increase_indent 2; (* Indent for the join output *)
   let jplist = do_join_pre tenv plist_meet in
   L.d_decrease_indent 2; L.d_ln ();
-  L.d_strln ("#### Footprint of " ^ Procname.to_string proc_name ^ " after Join  ####");
+  L.d_strln ("#### Footprint of " ^ Typ.Procname.to_string proc_name ^ " after Join  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist; L.d_decrease_indent 1; L.d_ln ();
   let jplist' =
     List.map ~f:(Specs.Jprop.map (Prop.prop_rename_primed_footprint_vars tenv)) jplist in
-  L.d_strln ("#### Renamed footprint of " ^ Procname.to_string proc_name ^ ":  ####");
+  L.d_strln ("#### Renamed footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist'; L.d_decrease_indent 1; L.d_ln ();
   let jplist'' =
     let f p =
       Prop.prop_primed_vars_to_normal_vars tenv
         (collect_do_abstract_one proc_name tenv p) in
     List.map ~f:(Specs.Jprop.map f) jplist' in
-  L.d_strln ("#### Abstracted footprint of " ^ Procname.to_string proc_name ^ ":  ####");
+  L.d_strln ("#### Abstracted footprint of " ^ Typ.Procname.to_string proc_name ^ ":  ####");
   L.d_increase_indent 1; Specs.Jprop.d_list false jplist''; L.d_decrease_indent 1; L.d_ln();
   jplist''
 
@@ -535,10 +535,10 @@ let forward_tabulate tenv pdesc wl source =
         if Specs.equal_phase (Specs.get_phase summary) Specs.FOOTPRINT then "FP" else "RE" in
       let status = Specs.get_status summary in
       F.sprintf
-        "[%s:%s] %s" phase_string (Specs.string_of_status status) (Procname.to_string proc_name) in
+        "[%s:%s] %s" phase_string (Specs.string_of_status status) (Typ.Procname.to_string proc_name) in
     L.d_strln ("**** " ^ (log_string pname) ^ " " ^
                "Node: " ^ string_of_int (Procdesc.Node.get_id curr_node :> int) ^ ", " ^
-               "Procedure: " ^ Procname.to_string pname ^ ", " ^
+               "Procedure: " ^ Typ.Procname.to_string pname ^ ", " ^
                "Session: " ^ string_of_int session ^ ", " ^
                "Todo: " ^ string_of_int (Paths.PathSet.size pathset_todo) ^ " ****");
     L.d_increase_indent 1;
@@ -803,8 +803,8 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
 
   (* Assuming C++ developers use RAII, remove resources from the constructor posts *)
   let pathset = match pname with
-    | Procname.ObjC_Cpp _ ->
-        if (Procname.is_constructor pname) then
+    | Typ.Procname.ObjC_Cpp _ ->
+        if (Typ.Procname.is_constructor pname) then
           Paths.PathSet.map (fun prop ->
               Attribute.remove_resource tenv Racquire (Rmemory Mobjc)
                 (Attribute.remove_resource tenv Racquire (Rmemory Mmalloc)
@@ -814,7 +814,7 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
     | _ -> pathset in
 
   L.d_strln
-    ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Analysis result ####");
+    ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] Analysis result ####");
   Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv pathset);
   L.d_ln ();
   let res =
@@ -831,7 +831,7 @@ let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t 
     | exn when (match exn with Exceptions.Leak _ -> true | _ -> false) ->
         L.d_strln"Leak in post collection"; assert false in
   L.d_strln
-    ("#### [FUNCTION " ^ Procname.to_string pname ^ "] Postconditions after join ####");
+    ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] Postconditions after join ####");
   L.d_increase_indent 1;
   Propset.d Prop.prop_emp (Paths.PathSet.to_propset tenv (fst res));
   L.d_decrease_indent 1;
@@ -912,7 +912,7 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
   : Prop.normal Specs.spec option =
   let pname = Procdesc.get_proc_name pdesc in
   do_before_node source 0 init_node;
-  L.d_strln ("#### Start: RE-execution for " ^ Procname.to_string pname ^ " ####");
+  L.d_strln ("#### Start: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####");
   L.d_indent 1;
   L.d_strln "Precond:"; Specs.Jprop.d_shallow precondition;
   L.d_ln (); L.d_ln ();
@@ -930,7 +930,7 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
     forward_tabulate tenv pdesc wl source;
     do_before_node source 0 init_node;
     L.d_strln_color Green
-      ("#### Finished: RE-execution for " ^ Procname.to_string pname ^ " ####");
+      ("#### Finished: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####");
     L.d_increase_indent 1;
     L.d_strln "Precond:"; Prop.d_prop (Specs.Jprop.to_prop precondition);
     L.d_ln ();
@@ -953,7 +953,7 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
   with RE_EXE_ERROR ->
     do_before_node source 0 init_node;
     Printer.force_delayed_prints ();
-    L.d_strln_color Red ("#### [FUNCTION " ^ Procname.to_string pname ^ "] ...ERROR");
+    L.d_strln_color Red ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] ...ERROR");
     L.d_increase_indent 1;
     L.d_strln "when starting from pre:";
     Prop.d_prop (Specs.Jprop.to_prop precondition);
@@ -966,7 +966,7 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
 let get_procs_and_defined_children call_graph =
   List.map
     ~f:(fun (n, ns) ->
-        (n, Procname.Set.elements ns))
+        (n, Typ.Procname.Set.elements ns))
     (Cg.get_nodes_and_defined_children call_graph)
 
 let pp_intra_stats wl proc_desc fmt _ =
@@ -988,7 +988,7 @@ type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.p
     and [get_results ()] returns the results computed.
     This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
-let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
+let perform_analysis_phase tenv (pname : Typ.Procname.t) (pdesc : Procdesc.t) source
   : exe_phase =
   let summary = Specs.get_summary_unsafe "perform_analysis_phase" pname in
   let start_node = Procdesc.get_start_node pdesc in
@@ -1008,7 +1008,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
         let add pset prop =
           Paths.PathSet.add_renamed_prop prop (Paths.Path.start start_node) pset in
         Propset.fold add Paths.PathSet.empty init_props in
-      L.out "@.#### Start: Footprint Computation for %a ####@." Procname.pp pname;
+      L.out "@.#### Start: Footprint Computation for %a ####@." Typ.Procname.pp pname;
       L.d_increase_indent 1;
       L.d_strln "initial props =";
       Propset.d Prop.prop_emp init_props; L.d_ln (); L.d_ln();
@@ -1023,12 +1023,12 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
     let get_results (wl : Worklist.t) () =
       State.process_execution_failures Reporting.log_warning pname;
       let results = collect_analysis_result tenv wl pdesc in
-      L.out "#### [FUNCTION %a] ... OK #####@\n" Procname.pp pname;
+      L.out "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname;
       L.out "#### Finished: Footprint Computation for %a %a ####@."
-        Procname.pp pname
+        Typ.Procname.pp pname
         (pp_intra_stats wl pdesc) pname;
       L.out "#### [FUNCTION %a] Footprint Analysis result ####@\n%a@."
-        Procname.pp pname
+        Typ.Procname.pp pname
         (Paths.PathSet.pp Pp.text) results;
       let specs = try extract_specs tenv pdesc results with
         | Exceptions.Leak _ ->
@@ -1048,7 +1048,7 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
         (Specs.get_specs pname) in
     let valid_specs = ref [] in
     let go () =
-      L.out "@.#### Start: Re-Execution for %a ####@." Procname.pp pname;
+      L.out "@.#### Start: Re-Execution for %a ####@." Typ.Procname.pp pname;
       let filter p =
         let wl = path_set_create_worklist pdesc in
         let speco = execute_filter_prop wl tenv pdesc start_node p source in
@@ -1069,22 +1069,22 @@ let perform_analysis_phase tenv (pname : Procname.t) (pdesc : Procdesc.t) source
         ignore (List.map ~f:filter candidate_preconditions) in
     let get_results () =
       let specs = !valid_specs in
-      L.out "#### [FUNCTION %a] ... OK #####@\n" Procname.pp pname;
-      L.out "#### Finished: Re-Execution for %a ####@." Procname.pp pname;
+      L.out "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname;
+      L.out "#### Finished: Re-Execution for %a ####@." Typ.Procname.pp pname;
       let valid_preconditions =
         List.map ~f:(fun spec -> spec.Specs.pre) specs in
       let filename =
         DB.Results_dir.path_to_filename
           (DB.Results_dir.Abs_source_dir source)
-          [(Procname.to_filename pname)] in
+          [(Typ.Procname.to_filename pname)] in
       if Config.write_dotty then
         Dotty.pp_speclist_dotty_file filename specs;
       L.out "@.@.================================================";
-      L.out "@. *** CANDIDATE PRECONDITIONS FOR %a: " Procname.pp pname;
+      L.out "@. *** CANDIDATE PRECONDITIONS FOR %a: " Typ.Procname.pp pname;
       L.out "@.================================================@.";
       L.out "@.%a @.@." (Specs.Jprop.pp_list Pp.text false) candidate_preconditions;
       L.out "@.@.================================================";
-      L.out "@. *** VALID PRECONDITIONS FOR %a: " Procname.pp pname;
+      L.out "@. *** VALID PRECONDITIONS FOR %a: " Typ.Procname.pp pname;
       L.out "@.================================================@.";
       L.out "@.%a @.@." (Specs.Jprop.pp_list Pp.text true) valid_preconditions;
       specs, Specs.RE_EXECUTION in
@@ -1173,9 +1173,9 @@ let report_runtime_exceptions tenv pdesc summary =
     is_public_method
     &&
     (match pname with
-     | Procname.Java pname_java ->
-         Procname.java_is_static pname
-         && String.equal (Procname.java_get_method pname_java) "main"
+     | Typ.Procname.Java pname_java ->
+         Typ.Procname.java_is_static pname
+         && String.equal (Typ.Procname.java_get_method pname_java) "main"
      | _ ->
          false) in
   let is_annotated pdesc =
@@ -1324,7 +1324,7 @@ let analyze_proc source exe_env proc_desc : Specs.summary =
 
 (** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
 let transition_footprint_re_exe tenv proc_name joined_pres =
-  L.out "Transition %a from footprint to re-exe@." Procname.pp proc_name;
+  L.out "Transition %a from footprint to re-exe@." Typ.Procname.pp proc_name;
   let summary = Specs.get_summary_unsafe "transition_footprint_re_exe" proc_name in
   let summary' =
     if Config.only_footprint then
@@ -1375,7 +1375,7 @@ let perform_transition exe_env tenv proc_name source =
       with exn when SymOp.exn_not_failure exn ->
         apply_start_node (do_after_node source);
         Config.allow_leak := allow_leak;
-        L.err "Error in collect_preconditions for %a@." Procname.pp proc_name;
+        L.err "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name;
         let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let err_str = "exception raised " ^ (Localise.to_string err_name) in
         L.err "Error: %s %a@." err_str L.pp_ml_loc_opt ml_loc_opt;
@@ -1523,7 +1523,7 @@ let print_stats_cfg proc_shadowed source cfg =
     if proc_shadowed proc_desc ||
        is_none (Specs.get_summary proc_name) then
       L.out "print_stats: ignoring function %a which is also defined in another file@."
-        Procname.pp proc_name
+        Typ.Procname.pp proc_name
     else
       let summary = Specs.get_summary_unsafe "print_stats_cfg" proc_name in
       let stats = summary.Specs.stats in

@@ -24,7 +24,7 @@ module Path : sig
   type session = int
 
   (** add a call with its sub-path, the boolean indicates whether the subtrace for the procedure should be included *)
-  val add_call : bool -> t -> Procname.t -> t -> t
+  val add_call : bool -> t -> Typ.Procname.t -> t -> t
 
   (** check whether a path contains another path *)
   val contains : t -> t -> bool
@@ -84,7 +84,7 @@ end = struct
   type _stats = stats
   let compare__stats _ _ = 0
 
-  type _procname = Procname.t
+  type _procname = Typ.Procname.t
   let compare__procname _ _ = 0
 
   type _string_option = string option
@@ -434,9 +434,9 @@ end = struct
             match Procdesc.Node.get_kind curr_node with
             | Procdesc.Node.Join_node -> () (* omit join nodes from error traces *)
             | Procdesc.Node.Start_node pname ->
-                let name = Procname.to_string pname in
-                let name_id = Procname.to_filename pname in
-                let descr = "start of procedure " ^ (Procname.to_simplified_string pname) in
+                let name = Typ.Procname.to_string pname in
+                let name_id = Typ.Procname.to_filename pname in
+                let descr = "start of procedure " ^ (Typ.Procname.to_simplified_string pname) in
                 let node_tags =
                   [(Io_infer.Xml.tag_kind,"procedure_start");
                    (Io_infer.Xml.tag_name, name);
@@ -459,9 +459,9 @@ end = struct
                    (Io_infer.Xml.tag_branch, if is_true_branch then "true" else "false")] in
                 trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
             | Procdesc.Node.Exit_node pname ->
-                let descr = "return from a call to " ^ (Procname.to_string pname) in
-                let name = Procname.to_string pname in
-                let name_id = Procname.to_filename pname in
+                let descr = "return from a call to " ^ (Typ.Procname.to_string pname) in
+                let name = Typ.Procname.to_string pname in
+                let name_id = Typ.Procname.to_filename pname in
                 let node_tags =
                   [(Io_infer.Xml.tag_kind,"procedure_end");
                    (Io_infer.Xml.tag_name, name);

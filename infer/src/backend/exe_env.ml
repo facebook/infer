@@ -64,7 +64,7 @@ let create_file_data table source cg_fname =
 (** execution environment *)
 type t =
   { cg: Cg.t; (** global call graph *)
-    proc_map: file_data Procname.Hash.t; (** map from procedure name to file data *)
+    proc_map: file_data Typ.Procname.Hash.t; (** map from procedure name to file data *)
     file_map: file_data FilenameHash.t; (** map from cg fname to file data *)
     mutable source_files : SourceFile.Set.t; (** Source files in the execution environment *)
   }
@@ -78,7 +78,7 @@ let freeze exe_env = exe_env (* TODO: unclear what this function is used for *)
 (** create a new execution environment *)
 let create () =
   { cg = Cg.create None;
-    proc_map = Procname.Hash.create 17;
+    proc_map = Typ.Procname.Hash.create 17;
     file_map = FilenameHash.create 1;
     source_files = SourceFile.Set.empty;
   }
@@ -97,20 +97,20 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
 
       List.iter
         ~f:(fun pname ->
-           (match AttributesTable.find_file_capturing_procedure pname with
-            | None ->
-                ()
-            | Some (source_captured, origin) ->
-                let multiply_defined = SourceFile.compare source source_captured <> 0 in
-                if multiply_defined then Cg.remove_node_defined cg pname;
-                if Config.check_duplicate_symbols &&
-                   multiply_defined &&
-                   origin <> `Include then
-                  L.stderr "@.DUPLICATE_SYMBOLS source: %a source_captured:%a pname:%a@."
-                    SourceFile.pp source
-                    SourceFile.pp source_captured
-                    Procname.pp pname
-           ))
+            (match AttributesTable.find_file_capturing_procedure pname with
+             | None ->
+                 ()
+             | Some (source_captured, origin) ->
+                 let multiply_defined = SourceFile.compare source source_captured <> 0 in
+                 if multiply_defined then Cg.remove_node_defined cg pname;
+                 if Config.check_duplicate_symbols &&
+                    multiply_defined &&
+                    origin <> `Include then
+                   L.stderr "@.DUPLICATE_SYMBOLS source: %a source_captured:%a pname:%a@."
+                     SourceFile.pp source
+                     SourceFile.pp source_captured
+                     Typ.Procname.pp pname
+            ))
         defined_procs;
       Cg.extend exe_env.cg cg
 
@@ -120,13 +120,13 @@ let get_cg exe_env =
 
 let get_file_data exe_env pname =
   try
-    Some (Procname.Hash.find exe_env.proc_map pname)
+    Some (Typ.Procname.Hash.find exe_env.proc_map pname)
   with Not_found ->
     begin
       let source_file_opt =
         match AttributesTable.load_attributes pname with
         | None ->
-            L.err "can't find tenv_cfg_object for %a@." Procname.pp pname;
+            L.err "can't find tenv_cfg_object for %a@." Typ.Procname.pp pname;
             None
         | Some proc_attributes when Config.reactive_capture ->
             let get_captured_file {ProcAttributes.source_file_captured} = source_file_captured in
@@ -137,7 +137,7 @@ let get_file_data exe_env pname =
         let source_dir = DB.source_dir_from_source_file source_file in
         let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
         let file_data = create_file_data exe_env.file_map source_file cg_fname in
-        Procname.Hash.replace exe_env.proc_map pname file_data;
+        Typ.Procname.Hash.replace exe_env.proc_map pname file_data;
         file_data in
       Option.map ~f:get_file_data_for_source source_file_opt
     end
@@ -167,10 +167,10 @@ let get_tenv exe_env proc_name =
           tenv
       | None ->
           failwithf "get_tenv: tenv not found for %a in file %s"
-            Procname.pp proc_name (DB.filename_to_string file_data.tenv_file)
+            Typ.Procname.pp proc_name (DB.filename_to_string file_data.tenv_file)
     )
   | None ->
-      failwithf "get_tenv: file_data not found for %a" Procname.pp proc_name
+      failwithf "get_tenv: file_data not found for %a" Typ.Procname.pp proc_name
 
 (** return the cfg associated to the procedure *)
 let get_cfg exe_env pname =
@@ -201,4 +201,4 @@ let iter_files f exe_env =
         Option.iter ~f:(fun cfg -> f fname cfg) (file_data_to_cfg file_data);
         SourceFile.Set.add fname seen_files_acc
       end in
-  ignore (Procname.Hash.fold do_file exe_env.proc_map SourceFile.Set.empty)
+  ignore (Typ.Procname.Hash.fold do_file exe_env.proc_map SourceFile.Set.empty)

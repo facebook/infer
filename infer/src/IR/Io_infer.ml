@@ -185,7 +185,7 @@ struct
     F.fprintf fmt " %s" pr_str
 
   (** File name for the node, given the procedure name and node id *)
-  let node_filename pname id = (Procname.to_filename pname) ^ "_node" ^ string_of_int id
+  let node_filename pname id = (Typ.Procname.to_filename pname) ^ "_node" ^ string_of_int id
 
   (** Print an html link to the given node. *)
   let pp_node_link path_to_root pname ~description ~preds ~succs ~exn ~isvisited ~isproof fmt id =
@@ -219,7 +219,7 @@ struct
 
   (** Print an html link to the given proc *)
   let pp_proc_link path_to_root proc_name fmt text =
-    pp_link ~path: (path_to_root @ [Procname.to_filename proc_name]) fmt text
+    pp_link ~path: (path_to_root @ [Typ.Procname.to_filename proc_name]) fmt text
 
   (** Print an html link to the given line number of the current source file *)
   let pp_line_link ?(with_name = false) ?(text = None) source path_to_root fmt linenum =

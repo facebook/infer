@@ -32,12 +32,12 @@ val unknown_or_scan_call : is_scan:bool -> Typ.t option -> Annot.Item.t -> Built
 val check_variadic_sentinel : ?fails_on_nil:bool -> int -> int * int -> Builtin.t
 
 val check_untainted :
-  Tenv.t -> Exp.t -> PredSymb.taint_kind -> Procname.t -> Procname.t -> Prop.normal Prop.t ->
+  Tenv.t -> Exp.t -> PredSymb.taint_kind -> Typ.Procname.t -> Typ.Procname.t -> Prop.normal Prop.t ->
   Prop.normal Prop.t
 
 (** Check for arithmetic problems and normalize an expression. *)
 val check_arith_norm_exp :
-  Tenv.t -> Procname.t -> Exp.t -> Prop.normal Prop.t -> Exp.t * Prop.normal Prop.t
+  Tenv.t -> Typ.Procname.t -> Exp.t -> Prop.normal Prop.t -> Exp.t * Prop.normal Prop.t
 
 val prune : Tenv.t -> positive:bool -> Exp.t -> Prop.normal Prop.t -> Propset.t
 
@@ -45,4 +45,4 @@ val prune : Tenv.t -> positive:bool -> Exp.t -> Prop.normal Prop.t -> Propset.t
     the procname that the method name will actually resolve to at runtime. For example, if we have a
     procname like Foo.toString() and Foo does not override toString(), we must resolve the call to
     toString(). We will end up with Super.toString() where Super is some superclass of Foo. *)
-val resolve_method : Tenv.t -> Typename.t -> Procname.t -> Procname.t
+val resolve_method : Tenv.t -> Typename.t -> Typ.Procname.t -> Typ.Procname.t

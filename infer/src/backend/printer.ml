@@ -97,10 +97,10 @@ let is_visited node =
     when starting and finishing the processing of a node *)
 module NodesHtml : sig
   val start_node :
-    int -> Location.t -> Procname.t -> Procdesc.Node.t list ->
+    int -> Location.t -> Typ.Procname.t -> Procdesc.Node.t list ->
     Procdesc.Node.t list -> Procdesc.Node.t list ->
     SourceFile.t -> bool
-  val finish_node : Procname.t -> int -> SourceFile.t -> unit
+  val finish_node : Typ.Procname.t -> int -> SourceFile.t -> unit
 end = struct
   let log_files = Hashtbl.create 11
 
@@ -123,7 +123,7 @@ end = struct
          loc.Location.line;
        F.fprintf fmt "PROC: %a LINE:%a\n"
          (Io_infer.Html.pp_proc_link [".."] proc_name)
-         (Escape.escape_xml (Procname.to_string proc_name))
+         (Escape.escape_xml (Typ.Procname.to_string proc_name))
          (Io_infer.Html.pp_line_link source [".."]) loc.Location.line;
        F.fprintf fmt "<br>PREDS:@\n";
        List.iter ~f:(fun node ->
@@ -423,10 +423,10 @@ let write_proc_html source whole_seconds pdesc =
       let fd, fmt =
         Io_infer.Html.create
           (DB.Results_dir.Abs_source_dir source)
-          [Procname.to_filename pname] in
+          [Typ.Procname.to_filename pname] in
       F.fprintf fmt "<center><h1>Procedure %a</h1></center>@\n"
         (Io_infer.Html.pp_line_link source
-           ~text: (Some (Escape.escape_xml (Procname.to_string pname)))
+           ~text: (Some (Escape.escape_xml (Typ.Procname.to_string pname)))
            [])
         linenum;
       List.iter
@@ -556,7 +556,7 @@ let write_html_file linereader filename procs =
           | Procdesc.Node.Start_node proc_name ->
               let num_specs = List.length (Specs.get_specs proc_name) in
               let label =
-                (Escape.escape_xml (Procname.to_string proc_name)) ^
+                (Escape.escape_xml (Typ.Procname.to_string proc_name)) ^
                 ": " ^
                 (string_of_int num_specs) ^
                 " specs" in

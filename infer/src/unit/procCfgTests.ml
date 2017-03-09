@@ -18,7 +18,7 @@ module BackwardInstrCfg = ProcCfg.Backward (InstrCfg)
 let tests =
   let cfg = Cfg.create_cfg () in
   let test_pdesc =
-    Cfg.create_proc_desc cfg (ProcAttributes.default Procname.empty_block !Config.curr_language) in
+    Cfg.create_proc_desc cfg (ProcAttributes.default Typ.Procname.empty_block !Config.curr_language) in
   let dummy_instr1 = Sil.Remove_temps ([], Location.dummy) in
   let dummy_instr2 = Sil.Abstract Location.dummy in
   let dummy_instr3 = Sil.Remove_temps ([Ident.create_fresh Ident.knormal], Location.dummy) in

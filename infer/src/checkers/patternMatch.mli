@@ -39,16 +39,16 @@ val get_type_name : Typ.t -> string
 val get_vararg_type_names : Tenv.t -> Procdesc.Node.t -> Pvar.t -> string list
 
 val has_formal_method_argument_type_names :
-  Procdesc.t -> Procname.java -> string list -> bool
+  Procdesc.t -> Typ.Procname.java -> string list -> bool
 
 (** Check if the method is one of the known initializer methods. *)
 val method_is_initializer : Tenv.t -> ProcAttributes.t -> bool
 
 (** Is this a getter proc name? *)
-val is_getter : Procname.java -> bool
+val is_getter : Typ.Procname.java -> bool
 
 (** Is this a setter proc name? *)
-val is_setter : Procname.java -> bool
+val is_setter : Typ.Procname.java -> bool
 
 (** Is the type a direct subtype of the typename? *)
 val is_immediate_subtype : Tenv.t -> Typename.t -> Typename.t -> bool
@@ -73,22 +73,22 @@ val java_get_const_type_name : Const.t -> string
 (** Get the values of a vararg parameter given the pvar used to assign the elements. *)
 val java_get_vararg_values : Procdesc.Node.t -> Pvar.t -> Idenv.t -> Exp.t list
 
-val java_proc_name_with_class_method : Procname.java -> string -> string -> bool
+val java_proc_name_with_class_method : Typ.Procname.java -> string -> string -> bool
 
 (** Return the callees that satisfy [filter]. *)
 val proc_calls :
-  (Procname.t -> ProcAttributes.t option) ->
+  (Typ.Procname.t -> ProcAttributes.t option) ->
   Procdesc.t ->
-  (Procname.t -> ProcAttributes.t -> bool) ->
-  (Procname.t * ProcAttributes.t) list
+  (Typ.Procname.t -> ProcAttributes.t -> bool) ->
+  (Typ.Procname.t * ProcAttributes.t) list
 
 (** Return true if applying the given predicate to an override of [procname] or [procname] itself
     returns true. For the moment, this only works for Java *)
-val override_exists : (Procname.t -> bool) -> Tenv.t -> Procname.t -> bool
+val override_exists : (Typ.Procname.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
 
 (** Apply the given predicate to procname and each override of [procname]. For the moment, this only
     works for Java *)
-val override_iter : (Procname.t -> unit) -> Tenv.t -> Procname.t -> unit
+val override_iter : (Typ.Procname.t -> unit) -> Tenv.t -> Typ.Procname.t -> unit
 
 val type_get_annotation : Tenv.t -> Typ.t -> Annot.Item.t option
 
@@ -122,11 +122,11 @@ val is_runtime_exception : Tenv.t -> Typename.t -> bool
 
 (** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument,
      including supertypes*)
-val check_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Procname.t -> bool
+val check_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
 
 (** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument,
     for current class only*)
-val check_current_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Procname.t -> bool
+val check_current_class_attributes : (Annot.Item.t -> bool) -> Tenv.t -> Typ.Procname.t -> bool
 
 (** find superclasss with attributes (e.g., @ThreadSafe), including current class*)
 val find_superclasses_with_attributes : (Annot.Item.t -> bool) -> Tenv.t

@@ -46,14 +46,14 @@ let report_warning tenv description pn pd loc =
 module APIs = struct
   let method_match pn pkgname cname mname =
     match pn with
-    | Procname.Java pn_java ->
-        String.equal (Procname.java_get_method pn_java) mname
+    | Typ.Procname.Java pn_java ->
+        String.equal (Typ.Procname.java_get_method pn_java) mname
         &&
         (match pkgname with
          | "" ->
-             String.equal (Procname.java_get_simple_class_name pn_java) cname
+             String.equal (Typ.Procname.java_get_simple_class_name pn_java) cname
          | _ ->
-             String.equal (Procname.java_get_class_name pn_java) (pkgname ^ "." ^ cname))
+             String.equal (Typ.Procname.java_get_class_name pn_java) (pkgname ^ "." ^ cname))
     | _ ->
         false
   let is_begin pn =
@@ -184,10 +184,10 @@ module Automaton = struct
   (** Transfer function for a procedure call. *)
   let do_call tenv caller_pn caller_pd callee_pn (s : State.t) loc : State.t =
     let method_name () = match callee_pn with
-      | Procname.Java pname_java ->
-          Procname.java_get_method pname_java
+      | Typ.Procname.Java pname_java ->
+          Typ.Procname.java_get_method pname_java
       | _ ->
-          Procname.to_simplified_string callee_pn in
+          Typ.Procname.to_simplified_string callee_pn in
     if APIs.is_begin callee_pn then
       begin
         if verbose then L.stderr "  calling %s@." (method_name ());
@@ -332,7 +332,7 @@ let callback_check_trace_call_sequence { Callbacks.proc_desc; proc_name; idenv; 
 
   let do_check () =
     begin
-      if verbose then L.stderr "@.--@.PROC: %a@." Procname.pp proc_name;
+      if verbose then L.stderr "@.--@.PROC: %a@." Typ.Procname.pp proc_name;
       let transitions = DFTrace.run tenv proc_desc State.balanced in
       let exit_node = Procdesc.get_exit_node proc_desc in
       match transitions exit_node with

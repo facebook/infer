@@ -23,25 +23,25 @@ module Kind = struct
   let unknown = Unknown
 
   let get pname _ = match pname with
-    | (Procname.ObjC_Cpp cpp_pname) as pname ->
+    | (Typ.Procname.ObjC_Cpp cpp_pname) as pname ->
         begin
-          match Procname.objc_cpp_get_class_name cpp_pname, Procname.get_method pname with
+          match Typ.Procname.objc_cpp_get_class_name cpp_pname, Typ.Procname.get_method pname with
           | "InferTaint", "source" -> Some Other
           | _ -> None
         end
-    | (Procname.C _) as pname ->
+    | (Typ.Procname.C _) as pname ->
         begin
-          match Procname.to_string pname with
+          match Typ.Procname.to_string pname with
           | "getenv" -> Some EnvironmentVariable
           | "__infer_taint_source" -> Some Other
           | _ -> None
         end
-    | Procname.Block _ ->
+    | Typ.Procname.Block _ ->
         None
     | pname when BuiltinDecl.is_declared pname ->
         None
     | pname ->
-        failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
+        failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname
 
   let get_tainted_formals pdesc _ =
     Source.all_formals_untainted pdesc
@@ -67,15 +67,15 @@ module SinkKind = struct
         ~f:(fun actual_num _ -> kind, actual_num, report_reachable)
         actuals in
     match pname with
-    | (Procname.ObjC_Cpp cpp_pname) as pname ->
+    | (Typ.Procname.ObjC_Cpp cpp_pname) as pname ->
         begin
-          match Procname.objc_cpp_get_class_name cpp_pname, Procname.get_method pname with
+          match Typ.Procname.objc_cpp_get_class_name cpp_pname, Typ.Procname.get_method pname with
           | "InferTaint", "sink:" -> taint_all actuals Other ~report_reachable:true
           | _ -> []
         end
-    | Procname.C _ ->
+    | Typ.Procname.C _ ->
         begin
-          match Procname.to_string pname with
+          match Typ.Procname.to_string pname with
           | "execl" | "execlp" | "execle" | "execv" | "execvp" ->
               taint_all actuals ShellExec ~report_reachable:false
           | "__infer_taint_sink" ->
@@ -83,12 +83,12 @@ module SinkKind = struct
           | _ ->
               []
         end
-    | Procname.Block _ ->
+    | Typ.Procname.Block _ ->
         []
     | pname when BuiltinDecl.is_declared pname ->
         []
     | pname ->
-        failwithf "Non-C++ procname %a in C++ analysis@." Procname.pp pname
+        failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname
 
   let pp fmt = function
     | ShellExec -> F.fprintf fmt "ShellExec"

@@ -103,7 +103,7 @@ let callback_check_dead_code { Callbacks.proc_desc; proc_name; tenv } =
 
   let do_check () =
     begin
-      if verbose then L.stderr "@.--@.PROC: %a@." Procname.pp proc_name;
+      if verbose then L.stderr "@.--@.PROC: %a@." Typ.Procname.pp proc_name;
       let transitions = DFDead.run tenv proc_desc State.initial in
       let exit_node = Procdesc.get_exit_node proc_desc in
       match transitions exit_node with

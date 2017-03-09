@@ -19,7 +19,7 @@ module type Kind = sig
   val unknown : t
 
   (** return Some (kind) if the procedure is a taint source, None otherwise *)
-  val get : Procname.t -> Tenv.t -> t option
+  val get : Typ.Procname.t -> Tenv.t -> t option
 
   (** return each formal of the function paired with either Some(kind) if the formal is a taint
       source, or None if the formal is not a taint source *)

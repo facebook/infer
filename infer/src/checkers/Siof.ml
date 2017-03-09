@@ -16,8 +16,8 @@ module GlobalsAccesses = SiofTrace.GlobalsAccesses
 
 let methods_whitelist = QualifiedCppName.quals_matcher_of_fuzzy_qual_names Config.siof_safe_methods
 
-let is_whitelisted (pname : Procname.t) =
-  Procname.get_qualifiers pname
+let is_whitelisted (pname : Typ.Procname.t) =
+  Typ.Procname.get_qualifiers pname
   |> QualifiedCppName.match_qualifiers methods_whitelist
 
 type siof_model = {
@@ -42,7 +42,7 @@ let is_modelled =
     List.map models ~f:(fun {qual_name} -> qual_name)
     |> QualifiedCppName.quals_matcher_of_fuzzy_qual_names in
   fun pname ->
-    Procname.get_qualifiers pname
+    Typ.Procname.get_qualifiers pname
     |> QualifiedCppName.match_qualifiers models_matcher
 
 module Summary = Summary.Make (struct
@@ -129,15 +129,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             ~f:(fun {qual_name; initialized_globals} ->
                 if QualifiedCppName.quals_matcher_of_fuzzy_qual_names [qual_name]
                    |> Fn.flip QualifiedCppName.match_qualifiers
-                     (Procname.get_qualifiers callee_pname) then
+                     (Typ.Procname.get_qualifiers callee_pname) then
                   Some initialized_globals
                 else
                   None) in
         Domain.join astate (Domain.BottomSiofTrace.NonBottom SiofTrace.empty,
                             Domain.VarNames.of_list init)
     | Call (_, Const (Cfun callee_pname), _::params_without_self, loc, _)
-      when Procname.is_c_method callee_pname && Procname.is_constructor callee_pname
-           && Procname.is_constexpr callee_pname ->
+      when Typ.Procname.is_c_method callee_pname && Typ.Procname.is_constructor callee_pname
+           && Typ.Procname.is_constexpr callee_pname ->
         add_params_globals astate pdesc loc params_without_self
     | Call (_, Const (Cfun callee_pname), params, loc, _) ->
         let callsite = CallSite.make callee_pname loc in
@@ -250,7 +250,7 @@ let checker ({ Callbacks.proc_desc; } as callback) =
       ~make_extras:ProcData.make_empty_extras
       callback in
   let pname = Procdesc.get_proc_name proc_desc in
-  match Procname.get_global_name_of_initializer pname with
+  match Typ.Procname.get_global_name_of_initializer pname with
   | Some gname ->
       siof_check proc_desc gname post
   | None ->

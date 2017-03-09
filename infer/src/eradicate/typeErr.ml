@@ -59,7 +59,7 @@ type parameter_not_nullable =
   AnnotatedSignature.annotation *
   string * (* description *)
   int * (* parameter number *)
-  Procname.t *
+  Typ.Procname.t *
   Location.t * (* callee location *)
   origin_descr
 [@@deriving compare]
@@ -67,18 +67,18 @@ type parameter_not_nullable =
 (** Instance of an error *)
 type err_instance =
   | Condition_redundant of (bool * (string option) * bool)
-  | Inconsistent_subclass_return_annotation of Procname.t * Procname.t
-  | Inconsistent_subclass_parameter_annotation of string * int * Procname.t * Procname.t
-  | Field_not_initialized of Ident.fieldname * Procname.t
+  | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
+  | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
+  | Field_not_initialized of Ident.fieldname * Typ.Procname.t
   | Field_not_mutable of Ident.fieldname * origin_descr
   | Field_annotation_inconsistent of AnnotatedSignature.annotation * Ident.fieldname * origin_descr
-  | Field_over_annotated of Ident.fieldname * Procname.t
+  | Field_over_annotated of Ident.fieldname * Typ.Procname.t
   | Null_field_access of string option * Ident.fieldname * origin_descr * bool
   | Call_receiver_annotation_inconsistent
-    of AnnotatedSignature.annotation * string option * Procname.t * origin_descr
+    of AnnotatedSignature.annotation * string option * Typ.Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
-  | Return_annotation_inconsistent of AnnotatedSignature.annotation * Procname.t * origin_descr
-  | Return_over_annotated of Procname.t
+  | Return_annotation_inconsistent of AnnotatedSignature.annotation * Typ.Procname.t * origin_descr
+  | Return_over_annotated of Typ.Procname.t
 [@@deriving compare]
 
 module H = Hashtbl.Make(struct
@@ -93,28 +93,28 @@ module H = Hashtbl.Make(struct
       | Condition_redundant (b, so, nn) ->
           Hashtbl.hash (1, b, string_opt_hash so, nn)
       | Field_not_initialized (fn, pn) ->
-          Hashtbl.hash (2, string_hash ((Ident.fieldname_to_string fn) ^ (Procname.to_string pn)))
+          Hashtbl.hash (2, string_hash ((Ident.fieldname_to_string fn) ^ (Typ.Procname.to_string pn)))
       | Field_not_mutable (fn, _) ->
           Hashtbl.hash (3, string_hash (Ident.fieldname_to_string fn))
       | Field_annotation_inconsistent (ann, fn, _) ->
           Hashtbl.hash (4, ann, string_hash (Ident.fieldname_to_string fn))
       | Field_over_annotated (fn, pn) ->
-          Hashtbl.hash (5, string_hash ((Ident.fieldname_to_string fn) ^ (Procname.to_string pn)))
+          Hashtbl.hash (5, string_hash ((Ident.fieldname_to_string fn) ^ (Typ.Procname.to_string pn)))
       | Null_field_access (so, fn, _, _) ->
           Hashtbl.hash (6, string_opt_hash so, string_hash (Ident.fieldname_to_string fn))
       | Call_receiver_annotation_inconsistent (ann, so, pn, _) ->
-          Hashtbl.hash (7, ann, string_opt_hash so, Procname.hash_pname pn)
+          Hashtbl.hash (7, ann, string_opt_hash so, Typ.Procname.hash_pname pn)
       | Parameter_annotation_inconsistent (ann, s, n, pn, _, _) ->
-          Hashtbl.hash (8, ann, string_hash s, n, Procname.hash_pname pn)
+          Hashtbl.hash (8, ann, string_hash s, n, Typ.Procname.hash_pname pn)
       | Return_annotation_inconsistent (ann, pn, _) ->
-          Hashtbl.hash (9, ann, Procname.hash_pname pn)
+          Hashtbl.hash (9, ann, Typ.Procname.hash_pname pn)
       | Return_over_annotated pn ->
-          Hashtbl.hash (10, Procname.hash_pname pn)
+          Hashtbl.hash (10, Typ.Procname.hash_pname pn)
       | Inconsistent_subclass_return_annotation (pn, opn) ->
-          Hashtbl.hash (11, Procname.hash_pname pn, Procname.hash_pname opn)
+          Hashtbl.hash (11, Typ.Procname.hash_pname pn, Typ.Procname.hash_pname opn)
       | Inconsistent_subclass_parameter_annotation (param_name, pos, pn, opn) ->
           let pn_hash = string_hash param_name in
-          Hashtbl.hash (12, pn_hash, pos, Procname.hash_pname pn, Procname.hash_pname opn)
+          Hashtbl.hash (12, pn_hash, pos, Typ.Procname.hash_pname pn, Typ.Procname.hash_pname opn)
 
     let hash (err_inst, instr_ref_opt) =
       let x = match instr_ref_opt with
@@ -225,7 +225,7 @@ module Strict = struct
 end (* Strict *)
 
 type st_report_error =
-  Procname.t ->
+  Typ.Procname.t ->
   Procdesc.t ->
   string ->
   Location.t ->
@@ -244,10 +244,10 @@ let report_error_now tenv
   let do_print ew_string kind_s s =
     L.stdout "%a:%d " SourceFile.pp loc.Location.file loc.Location.line;
     let mname = match pname with
-      | Procname.Java pname_java ->
-          Procname.java_get_method pname_java
+      | Typ.Procname.Java pname_java ->
+          Typ.Procname.java_get_method pname_java
       | _ ->
-          Procname.to_simplified_string pname in
+          Typ.Procname.to_simplified_string pname in
     L.stdout "%s %s in %s %s@." ew_string kind_s mname s in
 
   let is_err, kind_s, description, advice, field_name, origin_loc = match err_instance with
@@ -267,14 +267,14 @@ let report_error_now tenv
         None
     | Field_not_initialized (fn, pn) ->
         let constructor_name =
-          if Procname.is_constructor pn
+          if Typ.Procname.is_constructor pn
           then "the constructor"
           else
             match pn with
-            | Procname.Java pn_java ->
-                Procname.java_get_method pn_java
+            | Typ.Procname.Java pn_java ->
+                Typ.Procname.java_get_method pn_java
             | _ ->
-                Procname.to_simplified_string pn in
+                Typ.Procname.to_simplified_string pn in
         true,
         "ERADICATE_FIELD_NOT_INITIALIZED",
         P.sprintf
@@ -316,14 +316,14 @@ let report_error_now tenv
         origin_loc
     | Field_over_annotated (fn, pn) ->
         let constructor_name =
-          if Procname.is_constructor pn
+          if Typ.Procname.is_constructor pn
           then "the constructor"
           else
             match pn with
-            | Procname.Java pn_java ->
-                Procname.java_get_method pn_java
+            | Typ.Procname.Java pn_java ->
+                Typ.Procname.java_get_method pn_java
             | _ ->
-                Procname.to_simplified_string pn in
+                Typ.Procname.to_simplified_string pn in
         true,
         "ERADICATE_FIELD_OVER_ANNOTATED",
         P.sprintf
@@ -353,14 +353,14 @@ let report_error_now tenv
               P.sprintf
                 "The value of `%s` in the call to `%s` could be null. %s"
                 (Option.value s_opt ~default:"")
-                (Procname.to_simplified_string pn)
+                (Typ.Procname.to_simplified_string pn)
                 origin_description
           | AnnotatedSignature.Present ->
               "ERADICATE_VALUE_NOT_PRESENT",
               P.sprintf
                 "The value of `%s` in the call to `%s` is not @Present. %s"
                 (Option.value s_opt ~default:"")
-                (Procname.to_simplified_string pn)
+                (Typ.Procname.to_simplified_string pn)
                 origin_description in
         true,
         kind_s,
@@ -374,7 +374,7 @@ let report_error_now tenv
               "ERADICATE_PARAMETER_NOT_NULLABLE",
               P.sprintf
                 "`%s` needs a non-null value in parameter %d but argument `%s` can be null. %s"
-                (Procname.to_simplified_string pn)
+                (Typ.Procname.to_simplified_string pn)
                 n
                 s
                 origin_desc
@@ -382,7 +382,7 @@ let report_error_now tenv
               "ERADICATE_PARAMETER_VALUE_ABSENT",
               P.sprintf
                 "`%s` needs a present value in parameter %d but argument `%s` can be absent. %s"
-                (Procname.to_simplified_string pn)
+                (Typ.Procname.to_simplified_string pn)
                 n
                 s
                 origin_desc in
@@ -398,13 +398,13 @@ let report_error_now tenv
               "ERADICATE_RETURN_NOT_NULLABLE",
               P.sprintf
                 "Method `%s` may return null but it is not annotated with `@Nullable`. %s"
-                (Procname.to_simplified_string pn)
+                (Typ.Procname.to_simplified_string pn)
                 origin_description
           | AnnotatedSignature.Present ->
               "ERADICATE_RETURN_VALUE_NOT_PRESENT",
               P.sprintf
                 "Method `%s` may return an absent value but it is annotated with `@Present`. %s"
-                (Procname.to_simplified_string pn)
+                (Typ.Procname.to_simplified_string pn)
                 origin_description in
         true,
         kind_s,
@@ -417,7 +417,7 @@ let report_error_now tenv
         "ERADICATE_RETURN_OVER_ANNOTATED",
         P.sprintf
           "Method `%s` is annotated with `@Nullable` but never returns null."
-          (Procname.to_simplified_string pn),
+          (Typ.Procname.to_simplified_string pn),
         None,
         None,
         None
@@ -426,8 +426,8 @@ let report_error_now tenv
         "ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION",
         P.sprintf
           "Method `%s` is annotated with `@Nullable` but overrides unannotated method `%s`."
-          (Procname.to_simplified_string ~withclass: true pn)
-          (Procname.to_simplified_string ~withclass: true opn),
+          (Typ.Procname.to_simplified_string ~withclass: true pn)
+          (Typ.Procname.to_simplified_string ~withclass: true opn),
         None,
         None,
         None
@@ -443,8 +443,8 @@ let report_error_now tenv
           "%s parameter `%s` of method `%s` is not `@Nullable` but is declared `@Nullable`\
            in the parent class method `%s`."
           (translate_position pos) param_name
-          (Procname.to_simplified_string ~withclass: true pn)
-          (Procname.to_simplified_string ~withclass: true opn),
+          (Typ.Procname.to_simplified_string ~withclass: true pn)
+          (Typ.Procname.to_simplified_string ~withclass: true opn),
         None,
         None,
         None in

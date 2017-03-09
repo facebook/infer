@@ -85,7 +85,7 @@ val mark_instr_ok : unit -> unit
 val mk_find_duplicate_nodes: Procdesc.t -> (Procdesc.Node.t -> Procdesc.NodeSet.t)
 
 type log_issue =
-  Procname.t ->
+  Typ.Procname.t ->
   ?loc: Location.t ->
   ?node_id: (int * int) ->
   ?session: int ->
@@ -94,7 +94,7 @@ type log_issue =
   unit
 
 (** Process the failures during symbolic execution of a procedure *)
-val process_execution_failures : log_issue -> Procname.t -> unit
+val process_execution_failures : log_issue -> Typ.Procname.t -> unit
 
 (** Reset all the global data. *)
 val reset : unit -> unit

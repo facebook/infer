@@ -67,7 +67,7 @@ val get_bounds : Tenv.t -> Prop.normal Prop.t -> Exp.t -> IntLit.t option * IntL
 (** {2 Abduction prover} *)
 
 (** [check_implication p1 p2] returns true if [p1|-p2] *)
-val check_implication : Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.exposed Prop.t -> bool
+val check_implication : Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.exposed Prop.t -> bool
 
 type check =
   | Bounds_check
@@ -86,7 +86,7 @@ type implication_result =
     frame)] where [sub] is a substitution which instantiates the
     primed vars of [p1] and [p2], which are assumed to be disjoint. *)
 val check_implication_for_footprint :
-  Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.exposed Prop.t -> implication_result
+  Typ.Procname.t -> Tenv.t -> Prop.normal Prop.t -> Prop.exposed Prop.t -> implication_result
 
 (** {2 Cover: miminum set of pi's whose disjunction is equivalent to true} *)
 
@@ -112,7 +112,7 @@ sig
 
 end
 
-val get_overrides_of : Tenv.t -> Typ.t -> Procname.t -> (Typ.t * Procname.t) list
+val get_overrides_of : Tenv.t -> Typ.t -> Typ.Procname.t -> (Typ.t * Typ.Procname.t) list
 
 
 

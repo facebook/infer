@@ -41,7 +41,7 @@ module ComplexExpressions = struct
 
 
   let procname_optional_isPresent = Models.is_optional_isPresent
-  let procname_instanceof = Procname.equal BuiltinDecl.__instanceof
+  let procname_instanceof = Typ.Procname.equal BuiltinDecl.__instanceof
 
   let procname_is_false_on_null pn =
     match Specs.proc_resolve_attributes pn with
@@ -97,7 +97,7 @@ module ComplexExpressions = struct
       | DExp.Dbinop (op, de1, de2) ->
           "(" ^ dexp_to_string de1 ^ (Binop.str Pp.text op) ^ dexp_to_string de2 ^ ")"
       | DExp.Dconst (Const.Cfun pn) ->
-          Procname.to_unique_id pn
+          Typ.Procname.to_unique_id pn
       | DExp.Dconst c ->
           F.asprintf "%a" (Const.pp Pp.text) c
       | DExp.Dderef de ->
@@ -142,7 +142,7 @@ module ComplexExpressions = struct
 end (* ComplexExpressions *)
 
 type check_return_type =
-  Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
+  Typ.Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
@@ -398,10 +398,10 @@ let typecheck_instr
 
   let constructor_check_calls_this calls_this pn =
     match curr_pname, pn with
-    | Procname.Java curr_pname_java, Procname.Java pn_java ->
+    | Typ.Procname.Java curr_pname_java, Typ.Procname.Java pn_java ->
         if String.equal
-            (Procname.java_get_class_name curr_pname_java)
-            (Procname.java_get_class_name pn_java)
+            (Typ.Procname.java_get_class_name curr_pname_java)
+            (Typ.Procname.java_get_class_name pn_java)
         then calls_this := true
     | _ ->
         () in
@@ -409,7 +409,7 @@ let typecheck_instr
   (* Drops hidden and synthetic parameters which we do not check in a call. *)
   let drop_unchecked_params calls_this proc_attributes params =
     let pname = proc_attributes.ProcAttributes.proc_name in
-    if Procname.is_constructor pname then
+    if Typ.Procname.is_constructor pname then
       match PatternMatch.get_this_type proc_attributes with
       | Some _ ->
           begin
@@ -438,7 +438,7 @@ let typecheck_instr
 
   (* Drop parameters from the signature which we do not check in a call. *)
   let drop_unchecked_signature_params proc_attributes annotated_signature =
-    if Procname.is_constructor (proc_attributes.ProcAttributes.proc_name) &&
+    if Typ.Procname.is_constructor (proc_attributes.ProcAttributes.proc_name) &&
        proc_attributes.ProcAttributes.is_synthetic_method then
       List.take
         annotated_signature.AnnotatedSignature.params
@@ -525,14 +525,14 @@ let typecheck_instr
       check_field_assign ();
       typestate2
   | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(_, typ)], loc, _)
-    when Procname.equal pn BuiltinDecl.__new ||
-         Procname.equal pn BuiltinDecl.__new_array ->
+    when Typ.Procname.equal pn BuiltinDecl.__new ||
+         Typ.Procname.equal pn BuiltinDecl.__new_array ->
       TypeState.add_id
         id
         (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.New, [loc])
         typestate (* new never returns null *)
   | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), (e, typ):: _, loc, _)
-    when Procname.equal pn BuiltinDecl.__cast ->
+    when Typ.Procname.equal pn BuiltinDecl.__cast ->
       typecheck_expr_for_errors typestate e loc;
       let e', typestate' =
         convert_complex_exp_to_pvar node false e typestate loc in
@@ -541,7 +541,7 @@ let typecheck_instr
         (typecheck_expr_simple typestate' e' typ TypeOrigin.ONone loc)
         typestate'
   | Sil.Call (Some (id, _), Exp.Const (Const.Cfun pn), [(array_exp, t)], loc, _)
-    when Procname.equal pn BuiltinDecl.__get_array_length ->
+    when Typ.Procname.equal pn BuiltinDecl.__get_array_length ->
       let (_, ta, _) = typecheck_expr
           find_canonical_duplicate
           calls_this
@@ -576,7 +576,7 @@ let typecheck_instr
       typestate (* skip othe builtins *)
   | Sil.Call
       (ret_id,
-       Exp.Const (Const.Cfun ((Procname.Java callee_pname_java) as callee_pname)),
+       Exp.Const (Const.Cfun ((Typ.Procname.Java callee_pname_java) as callee_pname)),
        etl_,
        loc,
        cflags)
@@ -592,7 +592,7 @@ let typecheck_instr
                 ~f:(fun i (_, typ) ->
                     let arg =
                       if Int.equal i 0 &&
-                         not (Procname.java_is_static callee_pname)
+                         not (Typ.Procname.java_is_static callee_pname)
                       then "this"
                       else Printf.sprintf "arg%d" i in
                     (Mangled.from_string arg, typ))
@@ -619,7 +619,7 @@ let typecheck_instr
         drop_unchecked_signature_params callee_attributes annotated_signature in
 
       let is_anonymous_inner_class_constructor =
-        Procname.java_is_anonymous_inner_class_constructor callee_pname in
+        Typ.Procname.java_is_anonymous_inner_class_constructor callee_pname in
 
       let do_return loc' typestate' =
         match ret_id with
@@ -763,9 +763,9 @@ let typecheck_instr
         let pname_get_from_pname_put pname_put =
           let object_t = (Some "java.lang", "Object") in
           let parameters = [object_t] in
-          Procname.java_replace_parameters
-            (Procname.java_replace_return_type
-               (Procname.java_replace_method pname_put "get")
+          Typ.Procname.java_replace_parameters
+            (Typ.Procname.java_replace_return_type
+               (Typ.Procname.java_replace_method pname_put "get")
                object_t)
             parameters in
         match call_params with
@@ -774,9 +774,9 @@ let typecheck_instr
           ((_, exp_value), typ_value) :: _ ->
             (* Convert the dexp for k to the dexp for m.get(k) *)
             let convert_dexp_key_to_dexp_get dopt = match dopt, callee_pname with
-              | Some dexp_key, Procname.Java callee_pname_java ->
+              | Some dexp_key, Typ.Procname.Java callee_pname_java ->
                   let pname_get =
-                    Procname.Java (pname_get_from_pname_put callee_pname_java) in
+                    Typ.Procname.Java (pname_get_from_pname_put callee_pname_java) in
                   let dexp_get = DExp.Dconst (Const.Cfun pname_get) in
                   let dexp_map = DExp.Dpvar pv_map in
                   let args = [dexp_map; dexp_key] in
@@ -803,7 +803,7 @@ let typecheck_instr
           begin
             if Config.eradicate_debug then
               begin
-                let unique_id = Procname.to_unique_id callee_pname in
+                let unique_id = Typ.Procname.to_unique_id callee_pname in
                 let classification =
                   EradicateChecks.classify_procedure callee_attributes in
                 L.stdout "  %s unique id: %s@." classification unique_id
@@ -841,8 +841,8 @@ let typecheck_instr
                 TypeState.set_extension typestate1 extension'
               else typestate1 in
             let has_method pn name = match pn with
-              | Procname.Java pn_java ->
-                  String.equal (Procname.java_get_method pn_java) name
+              | Typ.Procname.Java pn_java ->
+                  String.equal (Typ.Procname.java_get_method pn_java) name
               | _ ->
                   false in
             if Models.is_check_not_null callee_pname then
@@ -852,7 +852,7 @@ let typecheck_instr
                 typestate2
             else
             if has_method callee_pname "checkNotNull"
-            && Procname.java_is_vararg callee_pname
+            && Typ.Procname.java_is_vararg callee_pname
             then
               let last_parameter = List.length call_params in
               do_preconditions_check_not_null
@@ -911,13 +911,13 @@ let typecheck_instr
           let map_dexp = function
             | Some
                 (DExp.Dretcall
-                   (DExp.Dconst (Const.Cfun (Procname.Java pname_java)), args, loc, call_flags)) ->
+                   (DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java)), args, loc, call_flags)) ->
                 let pname_java' =
                   let object_t = (Some "java.lang", "Object") in
-                  Procname.java_replace_return_type
-                    (Procname.java_replace_method pname_java "get")
+                  Typ.Procname.java_replace_return_type
+                    (Typ.Procname.java_replace_method pname_java "get")
                     object_t in
-                let fun_dexp = DExp.Dconst (Const.Cfun (Procname.Java pname_java')) in
+                let fun_dexp = DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java')) in
                 Some (DExp.Dretcall (fun_dexp, args, loc, call_flags))
             | _ -> None in
           begin

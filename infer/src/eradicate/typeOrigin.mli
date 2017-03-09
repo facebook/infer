@@ -12,7 +12,7 @@ open! IStd
 (** Case Proc *)
 type proc_origin =
   {
-    pname : Procname.t;
+    pname : Typ.Procname.t;
     loc: Location.t;
     annotated_signature : AnnotatedSignature.t;
     is_library : bool;

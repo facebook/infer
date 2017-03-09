@@ -51,12 +51,12 @@ let create_harness cfg cg tenv =
               let harness_procname =
                 let harness_cls_name = Typename.name name in
                 let pname =
-                  Procname.Java
-                    (Procname.java
+                  Typ.Procname.Java
+                    (Typ.Procname.java
                        (Typename.Java.from_string harness_cls_name) None
-                       "InferGeneratedHarness" [] Procname.Static) in
+                       "InferGeneratedHarness" [] Typ.Procname.Static) in
                 match pname with
-                | Procname.Java harness_procname -> harness_procname
+                | Typ.Procname.Java harness_procname -> harness_procname
                 | _ -> assert false in
               Inhabit.inhabit_trace tenv lifecycle_trace harness_procname cg cfg
         ) tenv

@@ -18,7 +18,7 @@ module P = Printf
 
 type proc_origin =
   {
-    pname : Procname.t;
+    pname : Typ.Procname.t;
     loc: Location.t;
     annotated_signature : AnnotatedSignature.t;
     is_library : bool;
@@ -46,7 +46,7 @@ let rec to_string = function
   | Proc po ->
       Printf.sprintf
         "Fun %s"
-        (Procname.to_simplified_string po.pname)
+        (Typ.Procname.to_simplified_string po.pname)
   | New ->
       "New"
   | ONone ->
@@ -79,7 +79,7 @@ let get_description tenv origin =
       let description = Printf.sprintf
           "call to %s%s%s%s"
           strict
-          (Procname.to_simplified_string po.pname)
+          (Typ.Procname.to_simplified_string po.pname)
           modelled_in
           (atline po.loc) in
       Some (description, Some po.loc, Some po.annotated_signature)

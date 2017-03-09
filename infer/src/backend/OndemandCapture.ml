@@ -40,19 +40,19 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
           Logging.out
             "Captured file %a to get procedure %a but it wasn't found there@\n"
             SourceFile.pp definition_file
-            Procname.pp attributes.proc_name
+            Typ.Procname.pp attributes.proc_name
         )
       ) else (
         Logging.out
           "Wanted to capture file %a to get procedure %a but file was already captured@\n"
           SourceFile.pp definition_file
-          Procname.pp attributes.proc_name
+          Typ.Procname.pp attributes.proc_name
       )
     in
     match definition_file_opt with
     | None ->
         Logging.out "Couldn't find source file for %a (declared in %a)@\n"
-          Procname.pp attributes.proc_name
+          Typ.Procname.pp attributes.proc_name
           SourceFile.pp decl_file
     | Some file -> try_compile file
   );

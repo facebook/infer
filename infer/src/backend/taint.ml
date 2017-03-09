@@ -262,20 +262,20 @@ let functions_with_tainted_params = [
 
 (* turn string specificiation of Java method into a procname *)
 let java_method_to_procname java_method =
-  Procname.Java
-    (Procname.java
+  Typ.Procname.Java
+    (Typ.Procname.java
        (Typename.Java.from_string java_method.classname)
-       (Some (Procname.split_classname java_method.ret_type))
+       (Some (Typ.Procname.split_classname java_method.ret_type))
        java_method.method_name
-       (List.map ~f:Procname.split_classname java_method.params)
-       (if java_method.is_static then Procname.Static else Procname.Non_Static))
+       (List.map ~f:Typ.Procname.split_classname java_method.params)
+       (if java_method.is_static then Typ.Procname.Static else Typ.Procname.Non_Static))
 
 (* turn string specificiation of an objc method into a procname *)
 let objc_method_to_procname objc_method =
-  let method_kind = Procname.objc_method_kind_of_bool (not objc_method.is_static) in
+  let method_kind = Typ.Procname.objc_method_kind_of_bool (not objc_method.is_static) in
   let typename = Typename.Objc.from_string objc_method.classname in
-  Procname.ObjC_Cpp
-    (Procname.objc_cpp typename objc_method.method_name method_kind)
+  Typ.Procname.ObjC_Cpp
+    (Typ.Procname.objc_cpp typename objc_method.method_name method_kind)
 
 let taint_spec_to_taint_info taint_spec =
   let taint_source =
@@ -306,7 +306,7 @@ let attrs_opt_get_annots = function
 (** returns true if [callee_pname] returns a tainted value *)
 let returns_tainted callee_pname callee_attrs_opt =
   let procname_matches taint_info =
-    Procname.equal taint_info.PredSymb.taint_source callee_pname in
+    Typ.Procname.equal taint_info.PredSymb.taint_source callee_pname in
   match List.find ~f:procname_matches sources with
   | Some taint_info ->
       Some taint_info.PredSymb.taint_kind
@@ -320,7 +320,7 @@ let returns_tainted callee_pname callee_attrs_opt =
 
 let find_callee taint_infos callee_pname =
   List.find
-    ~f:(fun (taint_info, _) -> Procname.equal taint_info.PredSymb.taint_source callee_pname)
+    ~f:(fun (taint_info, _) -> Typ.Procname.equal taint_info.PredSymb.taint_source callee_pname)
     taint_infos
 
 (** returns list of zero-indexed argument numbers of [callee_pname] that may be tainted *)
@@ -328,7 +328,7 @@ let accepts_sensitive_params callee_pname callee_attrs_opt =
   match find_callee taint_sinks callee_pname with
   | None ->
       let _, param_annots = attrs_opt_get_annots callee_attrs_opt in
-      let offset = if Procname.java_is_static callee_pname then 0 else 1 in
+      let offset = if Typ.Procname.java_is_static callee_pname then 0 else 1 in
       let indices_and_annots =
         List.mapi ~f:(fun param_num attr  -> param_num + offset, attr) param_annots in
       let tag_tainted_indices acc (index, attr) =

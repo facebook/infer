@@ -225,9 +225,9 @@ let normalized_specs_to_specs =
 
 module CallStats = struct (** module for tracing stats of function calls *)
   module PnameLocHash = Hashtbl.Make (struct
-      type t = Procname.t * Location.t
-      let hash (pname, loc) = Hashtbl.hash (Procname.hash_pname pname, loc.Location.line)
-      let equal = [%compare.equal: Procname.t * Location.t]
+      type t = Typ.Procname.t * Location.t
+      let hash (pname, loc) = Hashtbl.hash (Typ.Procname.hash_pname pname, loc.Location.line)
+      let equal = [%compare.equal: Typ.Procname.t * Location.t]
     end)
 
   (** kind of result of a procedure call *)
@@ -278,14 +278,14 @@ module CallStats = struct (** module for tracing stats of function calls *)
     PnameLocHash.iter (fun x tr -> elems := (x, tr) :: !elems) t;
     let sorted_elems =
       let compare (pname_loc1, _) (pname_loc2, _) =
-        [%compare: Procname.t * Location.t] pname_loc1 pname_loc2 in
+        [%compare: Typ.Procname.t * Location.t] pname_loc1 pname_loc2 in
       List.sort ~cmp:compare !elems in
     List.iter ~f:(fun (x, tr) -> f x tr) sorted_elems
 
 (*
   let pp fmt t =
     let do_call (pname, loc) tr =
-      F.fprintf fmt "%a %a: %a@\n" Procname.pp pname Location.pp loc pp_trace tr in
+      F.fprintf fmt "%a %a: %a@\n" Typ.Procname.pp pname Location.pp loc pp_trace tr in
     iter do_call t
 *)
 end
@@ -347,11 +347,11 @@ type summary = {
   proc_desc_option : Procdesc.t option;
 }
 
-type spec_tbl = summary Procname.Hash.t
+type spec_tbl = summary Typ.Procname.Hash.t
 
-let spec_tbl: spec_tbl = Procname.Hash.create 128
+let spec_tbl: spec_tbl = Typ.Procname.Hash.create 128
 
-let clear_spec_tbl () = Procname.Hash.clear spec_tbl
+let clear_spec_tbl () = Typ.Procname.Hash.clear spec_tbl
 
 (** pretty print analysis time; if [whole_seconds] is true, only print time in seconds *)
 let pp_time whole_seconds fmt t =
@@ -430,7 +430,7 @@ let get_signature summary =
       "%a %a"
       (Typ.pp_full Pp.text)
       summary.attributes.ProcAttributes.ret_type
-      Procname.pp summary.attributes.ProcAttributes.proc_name in
+      Typ.Procname.pp summary.attributes.ProcAttributes.proc_name in
   let decl = F.asprintf "%t" pp in
   decl ^ "(" ^ !s ^ ")"
 
@@ -515,14 +515,14 @@ let summary_compact sh summary =
   { summary with payload = payload_compact sh summary.payload }
 
 (** Add the summary to the table for the given function *)
-let add_summary (proc_name : Procname.t) (summary: summary) : unit =
+let add_summary (proc_name : Typ.Procname.t) (summary: summary) : unit =
   L.out "Adding summary for %a@\n@[<v 2>  %a@]@."
-    Procname.pp proc_name
+    Typ.Procname.pp proc_name
     (pp_summary_text ~whole_seconds:false) summary;
-  Procname.Hash.replace spec_tbl proc_name summary
+  Typ.Procname.Hash.replace spec_tbl proc_name summary
 
 let specs_filename pname =
-  let pname_file = Procname.to_filename pname in
+  let pname_file = Typ.Procname.to_filename pname in
   pname_file ^ Config.specs_files_suffix
 
 (** path to the .specs file for the given procedure in the current results directory *)
@@ -582,7 +582,7 @@ let load_summary_to_spec_table proc_name =
 
 let rec get_summary proc_name =
   try
-    Some (Procname.Hash.find spec_tbl proc_name)
+    Some (Typ.Procname.Hash.find spec_tbl proc_name)
   with Not_found ->
     if load_summary_to_spec_table proc_name then
       get_summary proc_name
@@ -591,7 +591,7 @@ let rec get_summary proc_name =
 let get_summary_unsafe s proc_name =
   match get_summary proc_name with
   | None ->
-      failwithf "[%s] Specs.get_summary_unsafe: %a Not found" s Procname.pp proc_name
+      failwithf "[%s] Specs.get_summary_unsafe: %a Not found" s Typ.Procname.pp proc_name
   | Some summary -> summary
 
 (** Check if the procedure is from a library:
@@ -673,7 +673,7 @@ let get_flag summary key =
 let get_specs_formals proc_name =
   match get_summary proc_name with
   | None ->
-      raise (Failure ("Specs.get_specs_formals: " ^ (Procname.to_string proc_name) ^ "Not_found"))
+      raise (Failure ("Specs.get_specs_formals: " ^ (Typ.Procname.to_string proc_name) ^ "Not_found"))
   | Some summary ->
       let specs = get_specs_from_payload summary in
       let formals = get_formals summary in
@@ -709,7 +709,7 @@ let store_summary (summ1: summary) =
 (** Set the current status for the proc *)
 let set_status proc_name status =
   match get_summary proc_name with
-  | None -> raise (Failure ("Specs.set_status: " ^ (Procname.to_string proc_name) ^ " Not_found"))
+  | None -> raise (Failure ("Specs.set_status: " ^ (Typ.Procname.to_string proc_name) ^ " Not_found"))
   | Some summary -> add_summary proc_name { summary with status = status }
 
 let empty_payload =
@@ -745,7 +745,7 @@ let init_summary
           ProcAttributes.proc_flags = proc_flags; };
       proc_desc_option;
     } in
-  Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name summary
+  Typ.Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name summary
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 let reset_summary proc_name attributes_opt proc_desc_option =

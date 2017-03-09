@@ -94,10 +94,10 @@ module CallStats : sig
   type trace = (call_result * bool) list
 
   (** iterate over results of procedure calls *)
-  val iter : (Procname.t * Location.t -> trace -> unit) -> t -> unit
+  val iter : (Typ.Procname.t * Location.t -> trace -> unit) -> t -> unit
 
   (** trace a procedure call *)
-  val trace : t -> Procname.t -> Location.t -> call_result -> bool -> unit
+  val trace : t -> Typ.Procname.t -> Location.t -> call_result -> bool -> unit
 
   (** pretty print a call trace *)
   val pp_trace : Format.formatter -> trace -> unit
@@ -159,10 +159,10 @@ type summary = {
 }
 
 (** Add the summary to the table for the given function *)
-val add_summary : Procname.t -> summary -> unit
+val add_summary : Typ.Procname.t -> summary -> unit
 
 (** Check if a summary for a given procedure exists in the models directory *)
-val summary_exists_in_models : Procname.t -> bool
+val summary_exists_in_models : Typ.Procname.t -> bool
 
 (** remove all the elements from the spec table *)
 val clear_spec_tbl : unit -> unit
@@ -171,10 +171,10 @@ val clear_spec_tbl : unit -> unit
 val d_spec : 'a spec -> unit
 
 (** Return the summary option for the procedure name *)
-val get_summary : Procname.t -> summary option
+val get_summary : Typ.Procname.t -> summary option
 
 (** Get the procedure name *)
-val get_proc_name : summary -> Procname.t
+val get_proc_name : summary -> Typ.Procname.t
 
 (** Get the attributes of the procedure. *)
 val get_attributes : summary -> ProcAttributes.t
@@ -195,16 +195,16 @@ val get_phase : summary -> phase
 val get_signature : summary -> string
 
 (** Return the specs for the proc in the spec table *)
-val get_specs : Procname.t -> Prop.normal spec list
+val get_specs : Typ.Procname.t -> Prop.normal spec list
 
 (** Return the specs and formal parameters for the proc in the spec table *)
-val get_specs_formals : Procname.t -> Prop.normal spec list * (Mangled.t * Typ.t) list
+val get_specs_formals : Typ.Procname.t -> Prop.normal spec list * (Mangled.t * Typ.t) list
 
 (** Get the specs from the payload of the summary. *)
 val get_specs_from_payload : summary -> Prop.normal spec list
 
 (** @deprecated Return the summary for the procedure name. Raises an exception when not found. *)
-val get_summary_unsafe : string -> Procname.t -> summary
+val get_summary_unsafe : string -> Typ.Procname.t -> summary
 
 (** Return the status (active v.s. inactive) of a procedure summary *)
 val get_status : summary -> status
@@ -217,19 +217,19 @@ val is_active : summary -> bool
 val init_summary :
   ( Procdesc.Node.id list * (* nodes *)
     ProcAttributes.proc_flags * (* procedure flags *)
-    (Procname.t * Location.t) list * (* calls *)
+    (Typ.Procname.t * Location.t) list * (* calls *)
     ProcAttributes.t * (* attributes of the procedure *)
     Procdesc.t option) (* procdesc option *)
   -> unit
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-val reset_summary : Procname.t -> ProcAttributes.t option -> Procdesc.t option -> unit
+val reset_summary : Typ.Procname.t -> ProcAttributes.t option -> Procdesc.t option -> unit
 
 (** Load procedure summary from the given file *)
 val load_summary : DB.filename -> summary option
 
 (** Check if a procedure summary exists for the given procedure name *)
-val summary_exists : Procname.t -> bool
+val summary_exists : Typ.Procname.t -> bool
 
 (** Cast a list of normalized specs to a list of specs *)
 val normalized_specs_to_specs : NormSpec.t list -> Prop.normal spec list
@@ -258,20 +258,20 @@ val pdesc_resolve_attributes : Procdesc.t -> ProcAttributes.t
     then look at the attributes table.
     If no attributes can be found, return None.
 *)
-val proc_resolve_attributes : Procname.t -> ProcAttributes.t option
+val proc_resolve_attributes : Typ.Procname.t -> ProcAttributes.t option
 
 (** Check if the procedure is from a library:
     It's not defined, and there is no spec file for it. *)
 val proc_is_library : ProcAttributes.t -> bool
 
 (** Set the current status for the proc *)
-val set_status : Procname.t -> status -> unit
+val set_status : Typ.Procname.t -> status -> unit
 
 (** Convert spec into normal form w.r.t. variable renaming *)
 val spec_normalize : Tenv.t -> Prop.normal spec -> NormSpec.t
 
 (** path to the .specs file for the given procedure in the current results dir *)
-val res_dir_specs_filename : Procname.t -> DB.filename
+val res_dir_specs_filename : Typ.Procname.t -> DB.filename
 
 (** Save summary for the procedure into the spec database *)
 val store_summary : summary -> unit

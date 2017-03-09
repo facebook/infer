@@ -29,11 +29,11 @@ val is_view : Tenv.t -> Typename.t -> bool
 val is_fragment : Tenv.t -> Typename.t -> bool
 
 (** return true if [procname] is a special lifecycle cleanup method *)
-val is_destroy_method : Procname.t -> bool
+val is_destroy_method : Typ.Procname.t -> bool
 
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity)
     and a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
-val get_lifecycle_for_framework_typ_opt : Tenv.t -> Typename.t -> string list -> Procname.t list
+val get_lifecycle_for_framework_typ_opt : Tenv.t -> Typename.t -> string list -> Typ.Procname.t list
 
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
 val is_android_lib_class : Typename.t -> bool

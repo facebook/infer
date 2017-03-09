@@ -54,7 +54,7 @@ module type S = sig
   (** get a path for each of the reportable source -> sink flows in this trace. specifying
       [cur_site] restricts the reported paths to ones introduced by the call at [cur_site] *)
   val get_reportable_paths :
-    ?cur_site:CallSite.t -> t -> trace_of_pname:(Procname.t -> t) -> path list
+    ?cur_site:CallSite.t -> t -> trace_of_pname:(Typ.Procname.t -> t) -> path list
 
   (** create a loc_trace from a path; [source_should_nest s] should be true when we are going one
       deeper into a call-chain, ie when lt_level should be bumper in the next loc_trace_elem, and
@@ -89,7 +89,7 @@ module type S = sig
   val pp : F.formatter -> t -> unit
 
   (** pretty-print a path in the context of the given procname *)
-  val pp_path : Procname.t -> F.formatter -> path -> unit
+  val pp_path : Typ.Procname.t -> F.formatter -> path -> unit
 end
 
 module Make (Spec : Spec) : S with module Source = Spec.Source and module Sink = Spec.Sink

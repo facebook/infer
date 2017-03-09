@@ -42,7 +42,7 @@ val find_boolean_assignment : Procdesc.Node.t -> Pvar.t -> bool -> Procdesc.Node
 val exp_rv_dexp : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 
 (** Produce a description of a persistent reference to an Android Context *)
-val explain_context_leak : Procname.t -> Typ.t -> Ident.fieldname ->
+val explain_context_leak : Typ.Procname.t -> Typ.t -> Ident.fieldname ->
   (Ident.fieldname option * Typ.t) list -> Localise.error_desc
 
 (** Produce a description of a mismatch between an allocation function and a deallocation function *)
@@ -54,7 +54,7 @@ val explain_array_access : Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location
 
 (** explain a class cast exception *)
 val explain_class_cast_exception :
-  Tenv.t -> Procname.t option -> Exp.t -> Exp.t -> Exp.t ->
+  Tenv.t -> Typ.Procname.t option -> Exp.t -> Exp.t -> Exp.t ->
   Procdesc.Node.t -> Location.t -> Localise.error_desc
 
 (** Explain a deallocate stack variable error *)
@@ -112,7 +112,7 @@ val explain_unary_minus_applied_to_unsigned_expression :
 
 (** Explain a tainted value error *)
 val explain_tainted_value_reaching_sensitive_function :
-  Prop.normal Prop.t -> Exp.t -> PredSymb.taint_info -> Procname.t -> Location.t ->
+  Prop.normal Prop.t -> Exp.t -> PredSymb.taint_info -> Typ.Procname.t -> Location.t ->
   Localise.error_desc
 
 (** Produce a description of a leak by looking at the current state.

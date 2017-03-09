@@ -25,11 +25,11 @@ module type S = sig
   (*  type astate*)
 
   (** Write the [summary] for the procname to persistent storage. *)
-  val write_summary : Procname.t -> summary -> unit
+  val write_summary : Typ.Procname.t -> summary -> unit
 
   (** read and return the summary for [callee_pname] called from [caller_pdesc]. does the analysis
       to create the summary if needed *)
-  val read_summary : Procdesc.t -> Procname.t -> summary option
+  val read_summary : Procdesc.t -> Typ.Procname.t -> summary option
 end
 
 module Make (H : Helper) = struct
@@ -41,7 +41,7 @@ module Make (H : Helper) = struct
         let payload = H.update_payload summary global_summary.Specs.payload in
         Specs.store_summary { global_summary with payload; }
     | None ->
-        failwithf "Summary for %a should exist, but does not!@." Procname.pp pname
+        failwithf "Summary for %a should exist, but does not!@." Typ.Procname.pp pname
 
   let read_summary caller_pdesc callee_pname =
     ignore (Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc callee_pname);

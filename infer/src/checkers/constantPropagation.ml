@@ -55,13 +55,13 @@ module ConstantFlow = Dataflow.MakeDF(struct
               (ConstantMap.add key value ConstantMap.empty) in
 
           let has_class pn name = match pn with
-            | Procname.Java pn_java ->
-                String.equal (Procname.java_get_class_name pn_java) name
+            | Typ.Procname.Java pn_java ->
+                String.equal (Typ.Procname.java_get_class_name pn_java) name
             | _ ->
                 false in
           let has_method pn name = match pn with
-            | Procname.Java pn_java ->
-                String.equal (Procname.java_get_method pn_java) name
+            | Typ.Procname.Java pn_java ->
+                String.equal (Typ.Procname.java_get_method pn_java) name
             | _ ->
                 false in
 

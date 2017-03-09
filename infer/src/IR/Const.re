@@ -17,7 +17,7 @@ let module F = Format;
 
 type t =
   | Cint IntLit.t /** integer constants */
-  | Cfun Procname.t /** function names */
+  | Cfun Typ.Procname.t /** function names */
   | Cstr string /** string constants */
   | Cfloat float /** float constants */
   | Cclass Ident.name /** class constant */
@@ -43,8 +43,8 @@ let pp pe f =>
   | Cint i => IntLit.pp f i
   | Cfun fn =>
     switch pe.Pp.kind {
-    | HTML => F.fprintf f "_fun_%s" (Escape.escape_xml (Procname.to_string fn))
-    | _ => F.fprintf f "_fun_%s" (Procname.to_string fn)
+    | HTML => F.fprintf f "_fun_%s" (Escape.escape_xml (Typ.Procname.to_string fn))
+    | _ => F.fprintf f "_fun_%s" (Typ.Procname.to_string fn)
     }
   | Cstr s => F.fprintf f "\"%s\"" (String.escaped s)
   | Cfloat v => F.fprintf f "%f" v

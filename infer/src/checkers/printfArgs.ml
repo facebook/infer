@@ -45,9 +45,9 @@ let add_printf_like_function plf =
 
 
 let printf_like_function
-    (proc_name: Procname.t): printf_signature option =
+    (proc_name: Typ.Procname.t): printf_signature option =
   List.find
-    ~f:(fun printf -> String.equal printf.unique_id (Procname.to_unique_id proc_name))
+    ~f:(fun printf -> String.equal printf.unique_id (Typ.Procname.to_unique_id proc_name))
     !printf_like_functions
 
 let default_format_type_name
@@ -114,12 +114,12 @@ let printf_args_name = "CHECKERS_PRINTF_ARGS"
 let check_printf_args_ok tenv
     (node: Procdesc.Node.t)
     (instr: Sil.instr)
-    (proc_name: Procname.t)
+    (proc_name: Typ.Procname.t)
     (proc_desc: Procdesc.t): unit =
 
   (* Check if format string lines up with arguments *)
   let rec check_type_names instr_loc n_arg instr_proc_name fmt_type_names arg_type_names =
-    let instr_name = Procname.to_simplified_string instr_proc_name in
+    let instr_name = Typ.Procname.to_simplified_string instr_proc_name in
     let instr_line = Location.to_string instr_loc in
     match (fmt_type_names, arg_type_names) with
     | ft:: fs, gt:: gs ->
@@ -203,7 +203,7 @@ let check_printf_args_ok tenv
             L.stderr
               "%s Exception when analyzing %s: %s@."
               printf_args_name
-              (Procname.to_string proc_name)
+              (Typ.Procname.to_string proc_name)
               (Exn.to_string e))
       | None -> ())
   | _ -> ()

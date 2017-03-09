@@ -39,7 +39,7 @@ let attributes_filename proc_kind::proc_kind pname_file => {
 
 /** path to the .attr file for the given procedure in the current results directory */
 let res_dir_attr_filename proc_kind::proc_kind pname => {
-  let pname_file = Procname.to_filename pname;
+  let pname_file = Typ.Procname.to_filename pname;
   let attr_fname = attributes_filename proc_kind::proc_kind pname_file;
   let bucket_dir = {
     let base = pname_file;
@@ -154,19 +154,19 @@ let store_attributes (proc_attributes: ProcAttributes.t) => {
   }
 };
 
-let attr_tbl = Procname.Hash.create 16;
+let attr_tbl = Typ.Procname.Hash.create 16;
 
-let defined_attr_tbl = Procname.Hash.create 16;
+let defined_attr_tbl = Typ.Procname.Hash.create 16;
 
 let load_attributes proc_name =>
-  try (Procname.Hash.find attr_tbl proc_name) {
+  try (Typ.Procname.Hash.find attr_tbl proc_name) {
   | Not_found =>
     let proc_attributes = load_attr defined_only::false proc_name;
     switch proc_attributes {
     | Some attrs =>
-      Procname.Hash.add attr_tbl proc_name proc_attributes;
+      Typ.Procname.Hash.add attr_tbl proc_name proc_attributes;
       if attrs.is_defined {
-        Procname.Hash.add defined_attr_tbl proc_name proc_attributes
+        Typ.Procname.Hash.add defined_attr_tbl proc_name proc_attributes
       }
     | None => ()
     };
@@ -174,15 +174,15 @@ let load_attributes proc_name =>
   };
 
 let load_defined_attributes cache_none::cache_none proc_name =>
-  try (Procname.Hash.find defined_attr_tbl proc_name) {
+  try (Typ.Procname.Hash.find defined_attr_tbl proc_name) {
   | Not_found =>
     let proc_attributes = load_attr defined_only::true proc_name;
     if (proc_attributes != None) {
       /* procedure just got defined, replace attribute in attr_tbl with defined version */
-      Procname.Hash.replace attr_tbl proc_name proc_attributes;
-      Procname.Hash.add defined_attr_tbl proc_name proc_attributes
+      Typ.Procname.Hash.replace attr_tbl proc_name proc_attributes;
+      Typ.Procname.Hash.add defined_attr_tbl proc_name proc_attributes
     } else if cache_none {
-      Procname.Hash.add defined_attr_tbl proc_name proc_attributes
+      Typ.Procname.Hash.add defined_attr_tbl proc_name proc_attributes
     };
     proc_attributes
   };
@@ -193,7 +193,7 @@ let load_defined_attributes cache_none::cache_none proc_name =>
     corresponds to the class definition. */
 let get_correct_type_from_objc_class_name type_name =>
   /* ToDo: this function should return a type that includes a reference to the tenv computed by:
-     let class_method = Procname.get_default_objc_class_method (Typename.name type_name);
+     let class_method = Typ.Procname.get_default_objc_class_method (Typename.name type_name);
      switch (find_tenv_from_class_of_proc class_method) {
      | Some tenv =>
       */
@@ -246,7 +246,7 @@ let aggregate s => {
 };
 
 let stats () => {
-  let stats = Procname.Hash.stats attr_tbl;
+  let stats = Typ.Procname.Hash.stats attr_tbl;
   let {Hashtbl.num_bindings: num_bindings, num_buckets, max_bucket_length} = stats;
   let serialized_size_kb =
     Config.developer_mode ?

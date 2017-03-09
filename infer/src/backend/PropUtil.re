@@ -12,7 +12,7 @@ let get_name_of_local (curr_f: Procdesc.t) (x, _) => Pvar.mk x (Procdesc.get_pro
 
 /* returns a list of local static variables (ie local variables defined static) in a proposition */
 let get_name_of_objc_static_locals (curr_f: Procdesc.t) p => {
-  let pname = Procname.to_string (Procdesc.get_proc_name curr_f);
+  let pname = Typ.Procname.to_string (Procdesc.get_proc_name curr_f);
   let local_static e =>
     switch e {
     /* is a local static if it's a global and it has a static local name */

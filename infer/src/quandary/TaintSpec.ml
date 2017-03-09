@@ -23,7 +23,7 @@ module type S = sig
   (** return a summary for handling an unknown call at the given site with the given return type
       and actuals *)
   val handle_unknown_call :
-    Procname.t -> Typ.t option -> (Exp.t * Typ.t) list -> Tenv.t -> handle_unknown list
+    Typ.Procname.t -> Typ.t option -> (Exp.t * Typ.t) list -> Tenv.t -> handle_unknown list
 
   val to_summary_access_tree : AccessTree.t -> QuandarySummary.AccessTree.t
 

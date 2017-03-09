@@ -1638,7 +1638,7 @@ let get_overrides_of tenv supertype pname =
     | Tstruct name -> (
         match Tenv.lookup tenv name with
         | Some { methods } ->
-            List.exists ~f:(fun m -> Procname.equal pname m) methods
+            List.exists ~f:(fun m -> Typ.Procname.equal pname m) methods
         | None ->
             false
       )
@@ -1649,7 +1649,7 @@ let get_overrides_of tenv supertype pname =
     if not (Typ.equal typ supertype) && Subtyping_check.check_subtype tenv typ supertype then
       (* only select the ones that implement [pname] as overrides *)
       let resolved_pname =
-        Procname.replace_class pname tname in
+        Typ.Procname.replace_class pname tname in
       if typ_has_method resolved_pname typ then (typ, resolved_pname) :: overrides_acc
       else overrides_acc
     else overrides_acc in

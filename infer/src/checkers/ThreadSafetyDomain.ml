@@ -40,7 +40,7 @@ module TraceElem = struct
 end
 
 let make_access kind loc =
-  let site = CallSite.make Procname.empty_block loc in
+  let site = CallSite.make Typ.Procname.empty_block loc in
   TraceElem.make kind site
 
 module LocksDomain = AbstractDomain.BooleanAnd

@@ -179,7 +179,7 @@ let expand_checkers checkers =
 let get_err_log translation_unit_context method_decl_opt =
   let procname = match method_decl_opt with
     | Some method_decl -> CProcname.from_decl translation_unit_context method_decl
-    | None -> Procname.Linters_dummy_method in
+    | None -> Typ.Procname.Linters_dummy_method in
   LintIssues.get_err_log procname
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)

@@ -47,26 +47,26 @@ let mk_c_function translation_unit_context name function_decl_info_opt =
     | _ -> "" in
   let mangled = (Utils.string_crc_hex32 file) ^ mangled_name in
   if String.is_empty file && String.is_empty mangled_name then
-    Procname.from_string_c_fun name
+    Typ.Procname.from_string_c_fun name
   else
-    Procname.C (Procname.c name mangled)
+    Typ.Procname.C (Typ.Procname.c name mangled)
 
 let mk_cpp_method class_name method_name ?meth_decl mangled =
   let method_kind = match meth_decl with
     | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr})) ->
-        Procname.CPPConstructor (mangled, xmdi_is_constexpr)
+        Typ.Procname.CPPConstructor (mangled, xmdi_is_constexpr)
     | _ ->
-        Procname.CPPMethod mangled in
-  Procname.ObjC_Cpp
-    (Procname.objc_cpp class_name method_name method_kind)
+        Typ.Procname.CPPMethod mangled in
+  Typ.Procname.ObjC_Cpp
+    (Typ.Procname.objc_cpp class_name method_name method_kind)
 
 let mk_objc_method class_typename method_name method_kind =
-  Procname.ObjC_Cpp
-    (Procname.objc_cpp class_typename method_name method_kind)
+  Typ.Procname.ObjC_Cpp
+    (Typ.Procname.objc_cpp class_typename method_name method_kind)
 
 let block_procname_with_index defining_proc i =
   Config.anonymous_block_prefix ^
-  (Procname.to_string defining_proc) ^
+  (Typ.Procname.to_string defining_proc) ^
   Config.anonymous_block_num_sep ^
   (string_of_int i)
 
@@ -86,7 +86,7 @@ let get_fresh_block_index () =
 
 let mk_fresh_block_procname defining_proc =
   let name = block_procname_with_index defining_proc (get_fresh_block_index ()) in
-  Procname.mangled_objc_block name
+  Typ.Procname.mangled_objc_block name
 
 
 let get_class_typename method_decl_info =
@@ -126,10 +126,10 @@ let from_decl translation_unit_context meth_decl =
       let class_typename = get_class_typename decl_info in
       let method_name = name_info.Clang_ast_t.ni_name in
       let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
-      let method_kind = Procname.objc_method_kind_of_bool is_instance in
+      let method_kind = Typ.Procname.objc_method_kind_of_bool is_instance in
       mk_objc_method class_typename method_name method_kind
   | BlockDecl _ ->
       let name = Config.anonymous_block_prefix ^ Config.anonymous_block_num_sep ^
                  (string_of_int (get_fresh_block_index ())) in
-      Procname.mangled_objc_block name
+      Typ.Procname.mangled_objc_block name
   | _ -> assert false

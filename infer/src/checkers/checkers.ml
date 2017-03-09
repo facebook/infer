@@ -39,10 +39,10 @@ module ST = struct
     let summary = Specs.get_summary_unsafe "ST.pname_add" proc_name in
     add summary key value
 
-  let files_open = ref Procname.Set.empty
+  let files_open = ref Typ.Procname.Set.empty
 
   let pname_find proc_name key =
-    if Procname.Set.mem proc_name !files_open then
+    if Typ.Procname.Set.mem proc_name !files_open then
       let summary = Specs.get_summary_unsafe "ST.pname_find" proc_name in
       ProcAttributes.proc_flags_find summary.Specs.attributes.ProcAttributes.proc_flags key
     else begin
@@ -50,7 +50,7 @@ module ST = struct
       | None -> raise Not_found
       | Some summary ->
           begin
-            files_open := Procname.Set.add proc_name !files_open;
+            files_open := Typ.Procname.Set.add proc_name !files_open;
             ProcAttributes.proc_flags_find summary.Specs.attributes.ProcAttributes.proc_flags key
           end
     end
@@ -136,7 +136,7 @@ module ST = struct
             L.stdout "%s: %a: %s@."
               kind
               SourceFile.pp loc.Location.file
-              (Procname.to_string proc_name);
+              (Typ.Procname.to_string proc_name);
             L.stdout "%s@." description
           end;
         Reporting.log_error proc_name ~loc ~ltr:trace exn
@@ -145,7 +145,7 @@ end
 
 let report_calls_and_accesses tenv callback proc_desc instr =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let callee = Procname.to_string proc_name in
+  let callee = Typ.Procname.to_string proc_name in
   match PatternMatch.get_java_field_access_signature instr with
   | Some (bt, fn, ft) ->
       ST.report_error tenv
@@ -191,7 +191,7 @@ let callback_check_write_to_parcel_java
 
   let is_write_to_parcel this_expr this_type =
     let method_match () =
-      String.equal (Procname.java_get_method pname_java) "writeToParcel" in
+      String.equal (Typ.Procname.java_get_method pname_java) "writeToParcel" in
     let expr_match () = Exp.is_this this_expr in
     let type_match () =
       let class_name = Typename.Java.from_string "android.os.Parcelable" in
@@ -202,7 +202,7 @@ let callback_check_write_to_parcel_java
     method_match () && expr_match () && type_match () in
 
   let is_parcel_constructor proc_name =
-    Procname.is_constructor proc_name &&
+    Typ.Procname.is_constructor proc_name &&
     PatternMatch.has_formal_method_argument_type_names
       proc_desc pname_java ["android.os.Parcel"] in
 
@@ -220,9 +220,9 @@ let callback_check_write_to_parcel_java
     let is_serialization_node node =
       match Procdesc.Node.get_callees node with
       | [] -> false
-      | [Procname.Java pname_java] ->
-          let class_name = Procname.java_get_class_name pname_java in
-          let method_name = Procname.java_get_method pname_java in
+      | [Typ.Procname.Java pname_java] ->
+          let class_name = Typ.Procname.java_get_class_name pname_java in
+          let method_name = Typ.Procname.java_get_method pname_java in
           (try
              String.equal class_name "android.os.Parcel" &&
              (String.equal (String.sub method_name ~pos:0 ~len:5) "write"
@@ -232,9 +232,9 @@ let callback_check_write_to_parcel_java
       | _ -> assert false in
 
     let is_inverse rc_ wc_ = match rc_, wc_ with
-      | Procname.Java rc, Procname.Java wc ->
-          let rn = Procname.java_get_method rc in
-          let wn = Procname.java_get_method wc in
+      | Typ.Procname.Java rc, Typ.Procname.Java wc ->
+          let rn = Typ.Procname.java_get_method rc in
+          let wn = Typ.Procname.java_get_method wc in
           let postfix_length = String.length wn - 5 in (* covers writeList <-> readArrayList etc. *)
           (try
              String.equal
@@ -262,17 +262,17 @@ let callback_check_write_to_parcel_java
       | rc:: rcs, wc:: wcs ->
           if not (is_inverse rc wc) then
             L.stdout "Serialization missmatch in %a for %a and %a@."
-              Procname.pp args.Callbacks.proc_name
-              Procname.pp rc
-              Procname.pp wc
+              Typ.Procname.pp args.Callbacks.proc_name
+              Typ.Procname.pp rc
+              Typ.Procname.pp wc
           else
             check_match (rcs, wcs)
       | rc:: _, [] ->
           L.stdout "Missing write in %a: for %a@."
-            Procname.pp args.Callbacks.proc_name Procname.pp rc
+            Typ.Procname.pp args.Callbacks.proc_name Typ.Procname.pp rc
       | _, wc:: _ ->
           L.stdout "Missing read in %a: for %a@."
-            Procname.pp args.Callbacks.proc_name Procname.pp wc
+            Typ.Procname.pp args.Callbacks.proc_name Typ.Procname.pp wc
       | _ ->
           () in
 
@@ -284,7 +284,7 @@ let callback_check_write_to_parcel_java
         if is_write_to_parcel this_exp this_type then begin
           if !verbose then
             L.stdout "Serialization check for %a@."
-              Procname.pp args.Callbacks.proc_name;
+              Typ.Procname.pp args.Callbacks.proc_name;
           try
             match parcel_constructors tenv this_type with
             | x :: _ ->
@@ -293,7 +293,7 @@ let callback_check_write_to_parcel_java
                  | None -> raise Not_found)
             | _ ->
                 L.stdout "No parcel constructor found for %a@."
-                  Procname.pp args.Callbacks.proc_name
+                  Typ.Procname.pp args.Callbacks.proc_name
           with Not_found ->
             if !verbose then L.stdout "Methods not available@."
         end
@@ -303,7 +303,7 @@ let callback_check_write_to_parcel_java
 (** Looks for writeToParcel methods and checks whether read is in reverse *)
 let callback_check_write_to_parcel ({ Callbacks.proc_name } as args) =
   match proc_name with
-  | Procname.Java pname_java ->
+  | Typ.Procname.Java pname_java ->
       callback_check_write_to_parcel_java pname_java args
   | _ ->
       ()
@@ -334,7 +334,7 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
     List.exists ~f:(equal_formal_param exp) (Lazy.force class_formal_names) in
 
   let is_nullcheck pn = match pn with
-    | Procname.Java pn_java ->
+    | Typ.Procname.Java pn_java ->
         PatternMatch.java_proc_name_with_class_method
           pn_java "com.google.common.base.Preconditions" "checkNotNull"
     | _ ->
@@ -376,10 +376,10 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; proc_name } =
         if is_formal_param arg1 then handle_check_of_formal arg1;
         if !verbose then
           (match proc_name with
-           | Procname.Java pname_java ->
+           | Typ.Procname.Java pname_java ->
                L.stdout "call in %s %s: %a with first arg: %a@."
-                 (Procname.java_get_class_name pname_java)
-                 (Procname.java_get_method pname_java)
+                 (Typ.Procname.java_get_class_name pname_java)
+                 (Typ.Procname.java_get_method pname_java)
                  (Sil.pp_instr Pp.text) instr
                  Exp.pp arg1
            | _ ->
@@ -432,7 +432,7 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; p
           | _ -> false in
         (match reverse_find_instr is_return_instr (Procdesc.get_exit_node proc_desc') with
          | Some (Sil.Store (_, _, Exp.Const (Const.Cclass n), _)) -> Ident.name_to_string n
-         | _ -> "<" ^ (Procname.to_string proc_name') ^ ">")
+         | _ -> "<" ^ (Typ.Procname.to_string proc_name') ^ ">")
     | None -> "?" in
 
   let get_actual_arguments node instr = match instr with
@@ -544,12 +544,12 @@ let callback_check_field_access { Callbacks.proc_desc } =
 let callback_print_c_method_calls { Callbacks.tenv; proc_desc; proc_name } =
   let do_instr node = function
     | Sil.Call (_, Exp.Const (Const.Cfun pn), (e, _):: _, loc, _)
-      when Procname.is_c_method pn ->
+      when Typ.Procname.is_c_method pn ->
         let receiver = match Errdesc.exp_rv_dexp tenv node e with
           | Some de -> DecompiledExp.to_string de
           | None -> "?" in
         let description =
-          Printf.sprintf "['%s' %s]" receiver (Procname.to_string pn) in
+          Printf.sprintf "['%s' %s]" receiver (Typ.Procname.to_string pn) in
         ST.report_error tenv
           proc_name
           proc_desc
@@ -558,7 +558,7 @@ let callback_print_c_method_calls { Callbacks.tenv; proc_desc; proc_name } =
           description
     | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) ->
         let description =
-          Printf.sprintf "call to %s" (Procname.to_string pn) in
+          Printf.sprintf "call to %s" (Typ.Procname.to_string pn) in
         ST.report_error tenv
           proc_name
           proc_desc

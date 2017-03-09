@@ -33,13 +33,13 @@ include
         | _ ->
             false in
       match pname with
-      | (Procname.Java java_pname) as pname ->
-          let is_static = Procname.java_is_static pname in
+      | (Typ.Procname.Java java_pname) as pname ->
+          let is_static = Typ.Procname.java_is_static pname in
           begin
-            match Procname.java_get_class_name java_pname,
-                  Procname.java_get_method java_pname,
+            match Typ.Procname.java_get_class_name java_pname,
+                  Typ.Procname.java_get_method java_pname,
                   ret_typ_opt with
-            | _ when Procname.is_constructor pname ->
+            | _ when Typ.Procname.is_constructor pname ->
                 [TaintSpec.Propagate_to_receiver]
             | _, _, (Some Typ.Tvoid | None) when not is_static ->
                 (* for instance methods with no return value, propagate the taint to the receiver *)
@@ -63,5 +63,5 @@ include
       | pname when BuiltinDecl.is_declared pname ->
           []
       | pname ->
-          failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
+          failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
   end)

@@ -58,7 +58,7 @@ let pp proc_name fmt annotated_signature =
   F.fprintf fmt "%a%a %s (%a )"
     pp_ia ia
     (Typ.pp_full Pp.text) ret_type
-    (Procname.to_simplified_string proc_name)
+    (Typ.Procname.to_simplified_string proc_name)
     (Pp.comma_seq pp_annotated_param) annotated_signature.params
 
 let is_anonymous_inner_class_wrapper ann_sig proc_name =
@@ -84,7 +84,7 @@ let is_anonymous_inner_class_wrapper ann_sig proc_name =
       name_is_x_number name &&
       Annot.Item.is_empty ia &&
       PatternMatch.type_is_object t in
-  Procname.java_is_anonymous_inner_class proc_name
+  Typ.Procname.java_is_anonymous_inner_class proc_name
   && check_ret ann_sig.ret
   && List.for_all ~f:check_param ann_sig.params
   && !x_param_found
@@ -120,7 +120,7 @@ let mark proc_name ann asig (b, bs) =
     let fail () =
       L.stdout
         "INTERNAL ERROR: annotation for procedure %s has wrong number of arguments@."
-        (Procname.to_unique_id proc_name);
+        (Typ.Procname.to_unique_id proc_name);
       L.stdout "  ANNOTATED SIGNATURE: %a@." (pp proc_name) asig;
       assert false in
     let rec combine l1 l2 = match l1, l2 with

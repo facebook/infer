@@ -21,7 +21,7 @@ module type Kind = sig
 
   val unknown : t
 
-  val get : Procname.t -> Tenv.t -> t option
+  val get : Typ.Procname.t -> Tenv.t -> t option
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end

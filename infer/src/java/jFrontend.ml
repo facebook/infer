@@ -87,7 +87,7 @@ let add_cmethod source_file program linereader icfg cm proc_name =
         match JContext.get_exn_node procdesc with
         | Some node -> node
         | None ->
-            failwithf "No exn node found for %s" (Procname.to_string proc_name) in
+            failwithf "No exn node found for %s" (Typ.Procname.to_string proc_name) in
       let instrs = JBir.code jbir_code in
       let context =
         JContext.create_context icfg procdesc jbir_code cn source_file program in
@@ -138,7 +138,7 @@ let create_icfg source_file linereader program icfg cn node =
     let proc_name = JTransType.translate_method_name m in
     if JClasspath.is_model proc_name then
       (* do not translate the method if there is a model for it *)
-      L.out_debug "Skipping method with a model: %s@." (Procname.to_string proc_name)
+      L.out_debug "Skipping method with a model: %s@." (Typ.Procname.to_string proc_name)
     else
       try
         (* each procedure has different scope: start names from id 0 *)
@@ -156,7 +156,7 @@ let create_icfg source_file linereader program icfg cn node =
       with JBasics.Class_structure_error _ ->
         L.do_err
           "create_icfg raised JBasics.Class_structure_error on %a@."
-          Procname.pp proc_name in
+          Typ.Procname.pp proc_name in
   Javalib.m_iter translate node
 
 

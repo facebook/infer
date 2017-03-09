@@ -19,7 +19,7 @@ module MockTrace = Trace.Make(struct
         let unknown = CallSite.dummy
 
         let get pname _ =
-          if String.is_prefix ~prefix:"SOURCE" (Procname.to_string pname)
+          if String.is_prefix ~prefix:"SOURCE" (Typ.Procname.to_string pname)
           then Some (CallSite.make pname Location.dummy)
           else None
 
@@ -31,7 +31,7 @@ module MockTrace = Trace.Make(struct
         include MockTraceElem
 
         let get pname _ _ =
-          if String.is_prefix ~prefix:"SINK" (Procname.to_string pname)
+          if String.is_prefix ~prefix:"SINK" (Typ.Procname.to_string pname)
           then [CallSite.make pname Location.dummy, 0, false]
           else []
       end)
@@ -56,7 +56,7 @@ let tests =
   (* less verbose form of pretty-printing to make writing tests easy *)
   let pp_sparse fmt astate =
     let pp_call_site fmt call_site =
-      F.fprintf fmt "%a" Procname.pp (CallSite.pname call_site) in
+      F.fprintf fmt "%a" Typ.Procname.pp (CallSite.pname call_site) in
     let pp_sources fmt sources =
       if MockTrace.Sources.is_empty sources
       then F.fprintf fmt "?"
@@ -92,13 +92,13 @@ let tests =
         [] in
     PrettyPrintable.pp_collection ~pp_item fmt (List.rev trace_assocs) in
   let assign_to_source ret_str =
-    let procname = Procname.from_string_c_fun "SOURCE" in
+    let procname = Typ.Procname.from_string_c_fun "SOURCE" in
     make_call ~procname (Some (ident_of_str ret_str, dummy_typ)) [] in
   let assign_to_non_source ret_str =
-    let procname = Procname.from_string_c_fun "NON-SOURCE" in
+    let procname = Typ.Procname.from_string_c_fun "NON-SOURCE" in
     make_call ~procname (Some (ident_of_str ret_str, dummy_typ)) [] in
   let call_sink_with_exp exp =
-    let procname = Procname.from_string_c_fun "SINK" in
+    let procname = Typ.Procname.from_string_c_fun "SINK" in
     make_call ~procname None [(exp, dummy_typ)] in
   let call_sink actual_str =
     call_sink_with_exp (Exp.Var (ident_of_str actual_str)) in

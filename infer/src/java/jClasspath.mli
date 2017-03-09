@@ -23,7 +23,7 @@ val models_tenv : Tenv.t ref
 val add_models : string -> unit
 
 (** Check if there is a model for the given procname *)
-val is_model : Procname.t -> bool
+val is_model : Typ.Procname.t -> bool
 
 val split_classpath : string -> string list
 

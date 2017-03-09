@@ -15,7 +15,7 @@ let module L = Logging;
 
 let module F = Format;
 
-type closure = {name: Procname.t, captured_vars: list (t, Pvar.t, Typ.t)} [@@deriving compare]
+type closure = {name: Typ.Procname.t, captured_vars: list (t, Pvar.t, Typ.t)} [@@deriving compare]
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option t [@@deriving compare]
 /** Program expressions. */

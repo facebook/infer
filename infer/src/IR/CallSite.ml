@@ -13,7 +13,7 @@ module F = Format
 
 type t =
   {
-    pname : Procname.t;
+    pname : Typ.Procname.t;
     loc : Location.t;
   }
 [@@deriving compare]
@@ -30,10 +30,10 @@ let make pname loc =
   { pname; loc; }
 
 let dummy =
-  make Procname.empty_block Location.dummy
+  make Typ.Procname.empty_block Location.dummy
 
 let pp fmt t =
-  F.fprintf fmt "%a at %a" Procname.pp t.pname Location.pp t.loc
+  F.fprintf fmt "%a at %a" Typ.Procname.pp t.pname Location.pp t.loc
 
 module Set = PrettyPrintable.MakePPSet(struct
     type nonrec t = t

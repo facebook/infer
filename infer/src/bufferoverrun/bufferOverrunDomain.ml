@@ -21,13 +21,13 @@ struct
   type t =
     { idx : Itv.astate;
       size : Itv.astate;
-      proc_name : Procname.t;
+      proc_name : Typ.Procname.t;
       loc : Location.t;
       trace : trace;
       id : string }
   [@@deriving compare]
-and trace = Intra of Procname.t
-          | Inter of Procname.t * Procname.t * Location.t
+and trace = Intra of Typ.Procname.t
+          | Inter of Typ.Procname.t * Typ.Procname.t * Location.t
 [@@deriving compare]
 
 and astate = t
@@ -60,7 +60,7 @@ let pp : F.formatter -> t -> unit
     else
       match c.trace with
         Inter (_, pname, loc) ->
-          let pname = Procname.to_string pname in
+          let pname = Typ.Procname.to_string pname in
           F.fprintf fmt "%a < %a at %a by call %s() at %s"
             Itv.pp c.idx Itv.pp c.size pp_location c pname (string_of_location loc)
       | Intra _ -> F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
@@ -71,10 +71,10 @@ let get_location : t -> Location.t
 let get_trace : t -> trace
   = fun c -> c.trace
 
-let get_proc_name : t -> Procname.t
+let get_proc_name : t -> Typ.Procname.t
   = fun c -> c.proc_name
 
-let make : Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> t
+let make : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> t
   = fun proc_name loc id ~idx ~size ->
     { proc_name; idx; size; loc; id ; trace = Intra proc_name }
 
@@ -129,11 +129,11 @@ let to_string : t -> string
     ^ (match c.trace with
           Inter (_, pname, _) ->
             " by call "
-            ^ Procname.to_string pname
+            ^ Typ.Procname.to_string pname
             ^ "() "
         | Intra _ -> "")
 
-let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Procname.t -> Procname.t -> Location.t -> t
+let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> t
   = fun c subst_map caller_pname callee_pname loc ->
     if Itv.is_symbolic c.idx || Itv.is_symbolic c.size then
       { c with idx = Itv.subst c.idx subst_map;
@@ -152,11 +152,11 @@ struct
     end)
 
   let add_bo_safety
-    : Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> t -> t
+    : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> t -> t
     = fun pname loc id ~idx ~size cond ->
       add (Condition.make pname loc id ~idx ~size) cond
 
-  let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Procname.t -> Procname.t -> Location.t -> t
+  let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> t
     = fun x subst_map caller_pname callee_pname loc ->
       fold (fun e -> add (Condition.subst e subst_map caller_pname callee_pname loc)) x empty
 
@@ -270,7 +270,7 @@ struct
   let modify_itv : Itv.t -> t -> t
     = fun i x -> { x with itv = i }
 
-  let make_sym : Procname.t -> int -> t
+  let make_sym : Typ.Procname.t -> int -> t
     = fun pname i -> { bot with itv = Itv.make_sym pname i }
 
   let unknown_bit : t -> t

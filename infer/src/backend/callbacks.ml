@@ -14,11 +14,11 @@ module L = Logging
 (** Module to register and invoke callbacks *)
 
 type proc_callback_args = {
-  get_proc_desc : Procname.t -> Procdesc.t option;
-  get_procs_in_file : Procname.t -> Procname.t list;
+  get_proc_desc : Typ.Procname.t -> Procdesc.t option;
+  get_procs_in_file : Typ.Procname.t -> Typ.Procname.t list;
   idenv : Idenv.t;
   tenv : Tenv.t;
-  proc_name : Procname.t;
+  proc_name : Typ.Procname.t;
   proc_desc : Procdesc.t;
 }
 
@@ -26,9 +26,9 @@ type proc_callback_t = proc_callback_args -> unit
 
 type cluster_callback_t =
   Exe_env.t ->
-  Procname.t list ->
-  (Procname.t -> Procdesc.t option) ->
-  (Idenv.t * Tenv.t * Procname.t * Procdesc.t) list ->
+  Typ.Procname.t list ->
+  (Typ.Procname.t -> Procdesc.t option) ->
+  (Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t) list ->
   unit
 
 let procedure_callbacks = ref []
@@ -54,7 +54,7 @@ let get_procedure_definition exe_env proc_name =
         (idenv, tenv, proc_name, proc_desc, language))
     (Exe_env.get_proc_desc exe_env proc_name)
 
-let get_language proc_name = if Procname.is_java proc_name then Config.Java else Config.Clang
+let get_language proc_name = if Typ.Procname.is_java proc_name then Config.Java else Config.Clang
 
 
 let reset_summary proc_name =
@@ -163,8 +163,8 @@ let iterate_callbacks call_graph exe_env =
 
   let cluster_id proc_name =
     match proc_name with
-    | Procname.Java pname_java ->
-        Procname.java_get_class_name pname_java
+    | Typ.Procname.Java pname_java ->
+        Typ.Procname.java_get_class_name pname_java
     | _ ->
         "unknown" in
   let cluster proc_names =

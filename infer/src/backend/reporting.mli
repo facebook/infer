@@ -19,7 +19,7 @@ type log_t =
   exn ->
   unit
 
-type log_issue = Procname.t -> log_t
+type log_issue = Typ.Procname.t -> log_t
 
 type log_issue_from_errlog = Errlog.t -> log_t
 

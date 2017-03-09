@@ -15,15 +15,15 @@ open! IStd
 (** State that persists in the .specs files. *)
 module ST : sig
   (** Add a key/value pair. *)
-  val pname_add : Procname.t -> string -> string -> unit
+  val pname_add : Typ.Procname.t -> string -> string -> unit
 
   (** Find the value associated to the key. Raise Not_found if it does not exist. *)
-  val pname_find: Procname.t -> string -> string
+  val pname_find: Typ.Procname.t -> string -> string
 
   (** Report an error. *)
   val report_error:
     Tenv.t ->
-    Procname.t ->
+    Typ.Procname.t ->
     Procdesc.t ->
     string ->
     Location.t ->

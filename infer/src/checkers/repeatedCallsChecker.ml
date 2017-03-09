@@ -68,8 +68,8 @@ struct
     let node_allocates node : Location.t option =
       let found = ref None in
       let proc_is_new pn =
-        Procname.equal pn BuiltinDecl.__new ||
-        Procname.equal pn BuiltinDecl.__new_array in
+        Typ.Procname.equal pn BuiltinDecl.__new ||
+        Typ.Procname.equal pn BuiltinDecl.__new_array in
       let do_instr instr =
         match instr with
         | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) when proc_is_new pn ->
@@ -133,7 +133,7 @@ struct
                 | Some alloc_loc ->
                     let description =
                       Format.asprintf "call to %s seen before on line %d (may allocate at %a:%d)"
-                        (Procname.to_simplified_string callee_pname)
+                        (Typ.Procname.to_simplified_string callee_pname)
                         loc_old.Location.line
                         SourceFile.pp alloc_loc.Location.file
                         alloc_loc.Location.line in

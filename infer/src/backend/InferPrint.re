@@ -170,8 +170,8 @@ let summary_values summary => {
     };
   let pp_failure failure => F.asprintf "%a" SymOp.pp_failure_kind failure;
   {
-    vname: Procname.to_string proc_name,
-    vname_id: Procname.to_filename proc_name,
+    vname: Typ.Procname.to_string proc_name,
+    vname_id: Typ.Procname.to_filename proc_name,
     vspecs: List.length specs,
     vtime: Printf.sprintf "%.0f" stats.Specs.stats_time,
     vto: Option.value_map f::pp_failure default::"NONE" stats.Specs.stats_failure,
@@ -401,7 +401,7 @@ let module IssuesCsv = {
         };
         let kind = Exceptions.err_kind_string ekind;
         let type_str = Localise.to_string error_name;
-        let procedure_id = Procname.to_filename procname;
+        let procedure_id = Typ.Procname.to_filename procname;
         let filename = SourceFile.to_string source_file;
         let always_report =
           switch (Localise.error_desc_extract_tag_value error_desc "always_report") {
@@ -416,7 +416,7 @@ let module IssuesCsv = {
         pp "\"%s\"," err_desc_string;
         pp "%s," severity;
         pp "%d," loc.Location.line;
-        pp "\"%s\"," (Escape.escape_csv (Procname.to_string procname));
+        pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_string procname));
         pp "\"%s\"," (Escape.escape_csv procedure_id);
         pp "%s," filename;
         pp "\"%s\"," (Escape.escape_csv trace);
@@ -467,7 +467,7 @@ let module IssuesJson = {
       ) {
         let kind = Exceptions.err_kind_string ekind;
         let bug_type = Localise.to_string error_name;
-        let procedure_id = Procname.to_filename procname;
+        let procedure_id = Typ.Procname.to_filename procname;
         let file = SourceFile.to_string source_file;
         let json_ml_loc =
           switch ml_loc_opt {
@@ -485,7 +485,7 @@ let module IssuesJson = {
           visibility,
           line: loc.Location.line,
           column: loc.Location.col,
-          procedure: Procname.to_string procname,
+          procedure: Typ.Procname.to_string procname,
           procedure_id,
           procedure_start_line,
           file,
@@ -651,8 +651,8 @@ let module IssuesXml = {
           let attributes = [("id", string_of_int !xml_issues_id)];
           let error_class = Exceptions.err_class_string eclass;
           let error_line = string_of_int loc.Location.line;
-          let procedure_name = Procname.to_string proc_name;
-          let procedure_id = Procname.to_filename proc_name;
+          let procedure_name = Typ.Procname.to_string proc_name;
+          let procedure_id = Typ.Procname.to_filename proc_name;
           let filename = SourceFile.to_string source_file;
           let bug_hash = get_bug_hash kind type_str procedure_id filename node_key error_desc;
           let forest = [
@@ -694,10 +694,10 @@ let module CallsCsv = {
     let stats = summary.Specs.stats;
     let caller_name = Specs.get_proc_name summary;
     let do_call (callee_name, loc) trace => {
-      pp "\"%s\"," (Escape.escape_csv (Procname.to_string caller_name));
-      pp "\"%s\"," (Escape.escape_csv (Procname.to_filename caller_name));
-      pp "\"%s\"," (Escape.escape_csv (Procname.to_string callee_name));
-      pp "\"%s\"," (Escape.escape_csv (Procname.to_filename callee_name));
+      pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_string caller_name));
+      pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_filename caller_name));
+      pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_string callee_name));
+      pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_filename callee_name));
       pp "%s," (SourceFile.to_string summary.Specs.attributes.ProcAttributes.loc.Location.file);
       pp "%d," loc.Location.line;
       pp "%a@\n" Specs.CallStats.pp_trace trace
@@ -864,7 +864,7 @@ let module Summary = {
     } else {
       L.stdout
         "Procedure: %a@\n%a@."
-        Procname.pp
+        Typ.Procname.pp
         proc_name
         (Specs.pp_summary_text whole_seconds::Config.whole_seconds)
         summary
@@ -875,7 +875,7 @@ let module Summary = {
   let write_summary_latex fmt summary => {
     let proc_name = Specs.get_proc_name summary;
     Latex.pp_section
-      fmt ("Analysis of function " ^ Latex.convert_string (Procname.to_string proc_name));
+      fmt ("Analysis of function " ^ Latex.convert_string (Typ.Procname.to_string proc_name));
     F.fprintf
       fmt "@[<v>%a@]" (Specs.pp_summary_latex Black whole_seconds::Config.whole_seconds) summary
   };
@@ -942,16 +942,16 @@ let module PreconditionStats = {
     switch (Prop.CategorizePreconditions.categorize preconditions) {
     | Prop.CategorizePreconditions.Empty =>
       incr nr_empty;
-      L.stdout "Procedure: %a footprint:Empty@." Procname.pp proc_name
+      L.stdout "Procedure: %a footprint:Empty@." Typ.Procname.pp proc_name
     | Prop.CategorizePreconditions.OnlyAllocation =>
       incr nr_onlyallocation;
-      L.stdout "Procedure: %a footprint:OnlyAllocation@." Procname.pp proc_name
+      L.stdout "Procedure: %a footprint:OnlyAllocation@." Typ.Procname.pp proc_name
     | Prop.CategorizePreconditions.NoPres =>
       incr nr_nopres;
-      L.stdout "Procedure: %a footprint:NoPres@." Procname.pp proc_name
+      L.stdout "Procedure: %a footprint:NoPres@." Typ.Procname.pp proc_name
     | Prop.CategorizePreconditions.DataConstraints =>
       incr nr_dataconstraints;
-      L.stdout "Procedure: %a footprint:DataConstraints@." Procname.pp proc_name
+      L.stdout "Procedure: %a footprint:DataConstraints@." Typ.Procname.pp proc_name
     }
   };
   let pp_stats () => {
@@ -1379,7 +1379,7 @@ let pp_summary_and_issues formats_by_report_kind => {
   };
   {
     LintIssues.load_issues_to_errlog_map Config.lint_issues_dir_name;
-    Procname.Map.iter
+    Typ.Procname.Map.iter
       (pp_lint_issues filters formats_by_report_kind linereader) !LintIssues.errLogMap
   };
   finalize_and_close_files formats_by_report_kind stats pdflatex

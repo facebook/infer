@@ -19,7 +19,7 @@ type log_t =
   exn ->
   unit
 
-type log_issue = Procname.t -> log_t
+type log_issue = Typ.Procname.t -> log_t
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
@@ -64,8 +64,8 @@ let log_issue
       failwithf
         "Trying to report error on procedure %a, but cannot because no summary exists for this \
          procedure. Did you mean to log the error on the caller of %a instead?"
-        Procname.pp proc_name
-        Procname.pp proc_name
+        Typ.Procname.pp proc_name
+        Typ.Procname.pp proc_name
 
 let log_error = log_issue Exceptions.Kerror
 let log_warning = log_issue Exceptions.Kwarning

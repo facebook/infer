@@ -15,7 +15,7 @@ module L = Logging
 
 type path_filter = SourceFile.t -> bool
 type error_filter = Localise.t -> bool
-type proc_filter = Procname.t -> bool
+type proc_filter = Typ.Procname.t -> bool
 
 type filters =
   {
@@ -57,8 +57,8 @@ let is_matching patterns =
 (** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
   not (BuiltinDecl.is_declared proc_name) &&
-  Config.equal_language (Procname.get_language proc_name) language &&
-  String.equal (Procname.get_method proc_name) method_name
+  Config.equal_language (Typ.Procname.get_language proc_name) language &&
+  String.equal (Typ.Procname.get_method proc_name) method_name
 
 (* Module to create matcher based on strings present in the source file *)
 module FileContainsStringMatcher = struct
@@ -108,7 +108,7 @@ type pattern =
 (* Module to create matcher based on source file names or class names and method names *)
 module FileOrProcMatcher = struct
 
-  type matcher = SourceFile.t -> Procname.t -> bool
+  type matcher = SourceFile.t -> Typ.Procname.t -> bool
 
   let default_matcher : matcher =
     fun _ _ -> false
@@ -128,8 +128,8 @@ module FileOrProcMatcher = struct
           ~init:String.Map.empty
           m_patterns in
       let do_java pname_java =
-        let class_name = Procname.java_get_class_name pname_java
-        and method_name = Procname.java_get_method pname_java in
+        let class_name = Typ.Procname.java_get_class_name pname_java
+        and method_name = Typ.Procname.java_get_method pname_java in
         try
           let class_patterns = String.Map.find_exn pattern_map class_name in
           List.exists
@@ -142,7 +142,7 @@ module FileOrProcMatcher = struct
 
       fun _ proc_name ->
         match proc_name with
-        | Procname.Java pname_java ->
+        | Typ.Procname.Java pname_java ->
             do_java pname_java
         | _ ->
             false

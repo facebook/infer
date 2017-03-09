@@ -26,7 +26,7 @@ struct
       CMethod_trans.create_external_procdesc cfg procname is_objc_method None
     in
     Logging.out_debug
-      "@\n@\n>>---------- ADDING METHOD: '%s' ---------<<@\n@." (Procname.to_string procname);
+      "@\n@\n>>---------- ADDING METHOD: '%s' ---------<<@\n@." (Typ.Procname.to_string procname);
     try
       (match Cfg.find_proc_desc_from_name cfg procname with
        | Some procdesc ->
@@ -38,7 +38,7 @@ struct
               let exit_node = Procdesc.get_exit_node procdesc in
               Logging.out_debug
                 "\n\n>>---------- Start translating body of function: '%s' ---------<<\n@."
-                (Procname.to_string procname);
+                (Typ.Procname.to_string procname);
               let meth_body_nodes = T.instructions_trans context body extra_instrs exit_node in
               let proc_attributes = Procdesc.get_attributes procdesc in
               Procdesc.Node.add_locals_ret_declaration

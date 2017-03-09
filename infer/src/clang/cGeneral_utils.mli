@@ -53,7 +53,7 @@ val mk_sil_global_var : CFrontend_config.translation_unit_context ->
   Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info -> Clang_ast_t.qual_type -> Pvar.t
 
 val mk_sil_var : CFrontend_config.translation_unit_context -> Clang_ast_t.named_decl_info ->
-  var_info option -> Procname.t -> Procname.t -> Pvar.t
+  var_info option -> Typ.Procname.t -> Typ.Procname.t -> Pvar.t
 
 (** true if the current language is C++ or ObjC++ *)
 val is_cpp_translation : CFrontend_config.translation_unit_context -> bool

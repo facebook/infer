@@ -62,7 +62,7 @@ type t = {
   method_annotation: Annot.Method.t, /** annotations for java methods */
   objc_accessor: option objc_accessor_type, /** type of ObjC accessor, if any */
   proc_flags: proc_flags, /** flags of the procedure */
-  proc_name: Procname.t, /** name of the procedure */
+  proc_name: Typ.Procname.t, /** name of the procedure */
   ret_type: Typ.t, /** return type */
   source_file_captured: SourceFile.t /** source file where the procedure was captured */
 }
@@ -70,4 +70,4 @@ type t = {
 
 
 /** Create a proc_attributes with default values. */
-let default: Procname.t => Config.language => t;
+let default: Typ.Procname.t => Config.language => t;

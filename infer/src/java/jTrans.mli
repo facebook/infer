@@ -24,14 +24,14 @@ val is_java_native : JCode.jcode Javalib.concrete_method  -> bool
 
 (** Create the procedure description for an abstract method *)
 val create_am_procdesc :
-  JClasspath.program -> JContext.icfg -> Javalib.abstract_method -> Procname.t -> Procdesc.t
+  JClasspath.program -> JContext.icfg -> Javalib.abstract_method -> Typ.Procname.t -> Procdesc.t
 
 (** Create the procedure description for a concrete method *)
 val create_native_procdesc :
   JClasspath.program ->
   JContext.icfg ->
   JCode.jcode Javalib.concrete_method ->
-  Procname.t ->
+  Typ.Procname.t ->
   Procdesc.t
 
 (** [create_procdesc source_file program linereader icfg cm proc_name] creates
@@ -42,7 +42,7 @@ val create_cm_procdesc :
   Printer.LineReader.t ->
   JContext.icfg ->
   JCode.jcode Javalib.concrete_method ->
-  Procname.t ->
+  Typ.Procname.t ->
   (Procdesc.t * Javalib_pack.JCode.jcode * JBir.t) option
 
 (** translates an instruction into a statement node or prune nodes in the cfg *)

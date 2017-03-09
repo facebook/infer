@@ -33,7 +33,7 @@ type t =
     return_param_typ : Typ.t option;
     outer_context : t option; (** in case of objc blocks, the context of the method containing the
                                   block *)
-    mutable blocks_static_vars : ((Pvar.t * Typ.t) list) Procname.Map.t;
+    mutable blocks_static_vars : ((Pvar.t * Typ.t) list) Typ.Procname.Map.t;
     label_map : str_node_map;
   }
 
@@ -60,10 +60,10 @@ val get_tenv : t -> Tenv.t
 val create_context : CFrontend_config.translation_unit_context -> Tenv.t -> Cg.t -> Cfg.cfg ->
   Procdesc.t -> curr_class -> Typ.t option -> bool -> t option -> t
 
-val add_block_static_var : t -> Procname.t -> (Pvar.t * Typ.t) -> unit
+val add_block_static_var : t -> Typ.Procname.t -> (Pvar.t * Typ.t) -> unit
 
-val static_vars_for_block : t -> Procname.t -> (Pvar.t * Typ.t) list
+val static_vars_for_block : t -> Typ.Procname.t -> (Pvar.t * Typ.t) list
 
 val is_objc_instance : t -> bool
 
-val get_outer_procname : t -> Procname.t
+val get_outer_procname : t -> Typ.Procname.t

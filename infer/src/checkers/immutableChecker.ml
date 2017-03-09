@@ -37,7 +37,7 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
                   Format.asprintf
                     "Method %s returns %a but the return type is %a. \
                      Make sure that users of this method do not try to modify the collection."
-                    (Procname.to_simplified_string curr_pname)
+                    (Typ.Procname.to_simplified_string curr_pname)
                     Typename.pp name_given
                     Typename.pp name_expected in
                 Checkers.ST.report_error tenv

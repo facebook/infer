@@ -31,8 +31,8 @@ let type_is_object typ =
 
 let java_proc_name_with_class_method pn_java class_with_path method_name =
   (try
-     String.equal (Procname.java_get_class_name pn_java) class_with_path &&
-     String.equal (Procname.java_get_method pn_java) method_name
+     String.equal (Typ.Procname.java_get_class_name pn_java) class_with_path &&
+     String.equal (Typ.Procname.java_get_method pn_java) method_name
    with _ -> false)
 
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
@@ -161,7 +161,7 @@ let get_vararg_type_names tenv
     | Sil.Call (Some (t1, _), Exp.Const (Const.Cfun pn), _, _, _)::
       Sil.Store (Exp.Lvar iv, _, Exp.Var t2, _):: is ->
         (Pvar.equal ivar iv && Ident.equal t1 t2 &&
-         Procname.equal pn (Procname.from_string_c_fun "__new_array"))
+         Typ.Procname.equal pn (Typ.Procname.from_string_c_fun "__new_array"))
         || initializes_array is
     | _:: is -> initializes_array is
     | _ -> false in
@@ -215,13 +215,13 @@ let has_formal_proc_argument_type_names proc_desc argument_type_names =
 
 let has_formal_method_argument_type_names cfg pname_java argument_type_names =
   has_formal_proc_argument_type_names
-    cfg ((Procname.java_get_class_name pname_java):: argument_type_names)
+    cfg ((Typ.Procname.java_get_class_name pname_java):: argument_type_names)
 
 let is_getter pname_java =
-  Str.string_match (Str.regexp "get*") (Procname.java_get_method pname_java) 0
+  Str.string_match (Str.regexp "get*") (Typ.Procname.java_get_method pname_java) 0
 
 let is_setter pname_java =
-  Str.string_match (Str.regexp "set*") (Procname.java_get_method pname_java) 0
+  Str.string_match (Str.regexp "set*") (Typ.Procname.java_get_method pname_java) 0
 
 (** Returns the signature of a field access (class name, field name, field type name) *)
 let get_java_field_access_signature = function
@@ -234,10 +234,10 @@ let get_java_field_access_signature = function
 let get_java_method_call_formal_signature = function
   | Sil.Call (_, Exp.Const (Const.Cfun pn), (_, tt):: args, _, _) ->
       (match pn with
-       | Procname.Java pn_java ->
+       | Typ.Procname.Java pn_java ->
            let arg_names = List.map ~f:(function | _, t -> get_type_name t) args in
-           let rt_name = Procname.java_get_return_type pn_java in
-           let m_name = Procname.java_get_method pn_java in
+           let rt_name = Typ.Procname.java_get_return_type pn_java in
+           let m_name = Typ.Procname.java_get_method pn_java in
            Some (get_type_name tt, m_name, arg_names, rt_name)
        |  _ ->
            None)
@@ -285,8 +285,8 @@ let method_is_initializer
   | Some this_type ->
       if type_has_initializer tenv this_type then
         match proc_attributes.ProcAttributes.proc_name with
-        | Procname.Java pname_java ->
-            let mname = Procname.java_get_method pname_java in
+        | Typ.Procname.Java pname_java ->
+            let mname = Typ.Procname.java_get_method pname_java in
             List.exists ~f:(String.equal mname) initializer_methods
         | _ ->
             false
@@ -311,7 +311,7 @@ let java_get_vararg_values node pvar idenv =
     | None -> () in
   !values
 
-let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t) list =
+let proc_calls resolve_attributes pdesc filter : (Typ.Procname.t * ProcAttributes.t) list =
   let res = ref [] in
   let do_instruction _ instr = match instr with
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->
@@ -333,11 +333,11 @@ let proc_calls resolve_attributes pdesc filter : (Procname.t * ProcAttributes.t)
 let override_exists f tenv proc_name =
   let rec super_type_exists tenv super_class_name =
     let super_proc_name =
-      Procname.replace_class proc_name super_class_name in
+      Typ.Procname.replace_class proc_name super_class_name in
     match Tenv.lookup tenv super_class_name with
     | Some ({ methods; supers; }) ->
         let is_override pname =
-          Procname.equal pname super_proc_name && not (Procname.is_constructor pname) in
+          Typ.Procname.equal pname super_proc_name && not (Typ.Procname.is_constructor pname) in
         List.exists ~f:(fun pname -> is_override pname && f pname) methods ||
         List.exists ~f:(super_type_exists tenv) supers
     | _ ->
@@ -345,8 +345,8 @@ let override_exists f tenv proc_name =
 
   f proc_name ||
   match proc_name with
-  | Procname.Java proc_name_java ->
-      let type_name = Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
+  | Typ.Procname.Java proc_name_java ->
+      let type_name = Typename.Java.from_string (Typ.Procname.java_get_class_name proc_name_java) in
       List.exists
         ~f:(super_type_exists tenv)
         (type_get_direct_supertypes tenv (Typ.Tstruct type_name))
@@ -386,18 +386,18 @@ let is_throwable tenv typename =
 (** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument,
     including for supertypes*)
 let check_class_attributes check tenv = function
-  | Procname.Java java_pname ->
+  | Typ.Procname.Java java_pname ->
       let check_class_annots _ { Typ.Struct.annots; } = check annots in
       supertype_exists tenv
         check_class_annots
-        (Procname.java_get_class_type_name java_pname)
+        (Typ.Procname.java_get_class_type_name java_pname)
   | _ -> false
 
 (** tests whether any class attributes (e.g., @ThreadSafe) pass check of first argument,
     for the current class only*)
 let check_current_class_attributes check tenv = function
-  | Procname.Java java_pname ->
-      (match Tenv.lookup tenv (Procname.java_get_class_type_name java_pname) with
+  | Typ.Procname.Java java_pname ->
+      (match Tenv.lookup tenv (Typ.Procname.java_get_class_type_name java_pname) with
        | Some (struct_typ) -> check struct_typ.annots
        | _ -> false
       )

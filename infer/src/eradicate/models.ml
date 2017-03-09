@@ -33,11 +33,11 @@ module Inference = struct
     DB.read_file_with_lock dir fname <> None
 
   let proc_get_ret_dir_fname pname =
-    let fname = Procname.to_filename pname ^ "_ret" in
+    let fname = Typ.Procname.to_filename pname ^ "_ret" in
     (get_dir (), fname)
 
   let proc_get_param_dir_fname pname =
-    let fname = Procname.to_filename pname ^ "_params" in
+    let fname = Typ.Procname.to_filename pname ^ "_params" in
     (get_dir (), fname)
 
   let update_count_str s_old =
@@ -96,7 +96,7 @@ end (* Inference *)
 
 
 let table_has_procedure table proc_name =
-  let proc_id = Procname.to_unique_id proc_name in
+  let proc_id = Typ.Procname.to_unique_id proc_name in
   try ignore (Hashtbl.find table proc_id); true
   with Not_found -> false
 
@@ -104,7 +104,7 @@ let table_has_procedure table proc_name =
 let get_modelled_annotated_signature proc_attributes =
   let proc_name = proc_attributes.ProcAttributes.proc_name in
   let annotated_signature = AnnotatedSignature.get proc_attributes in
-  let proc_id = Procname.to_unique_id proc_name in
+  let proc_id = Typ.Procname.to_unique_id proc_name in
   let infer_parameters ann_sig =
     let mark_par =
       if Inference.enabled then Inference.proc_parameters_marked proc_name
@@ -148,7 +148,7 @@ let get_modelled_annotated_signature proc_attributes =
 (** Return true when the procedure has been modelled for nullable. *)
 let is_modelled_nullable proc_name =
   if use_models then
-    let proc_id = Procname.to_unique_id proc_name in
+    let proc_id = Typ.Procname.to_unique_id proc_name in
     try ignore (Hashtbl.find annotated_table_nullable proc_id ); true
     with Not_found -> false
   else false
@@ -159,7 +159,7 @@ let is_check_not_null proc_name =
 
 (** Parameter number for a procedure known to be a checkNotNull *)
 let get_check_not_null_parameter proc_name =
-  let proc_id = Procname.to_unique_id proc_name in
+  let proc_id = Typ.Procname.to_unique_id proc_name in
   try Hashtbl.find check_not_null_parameter_table proc_id
   with Not_found -> 0
 

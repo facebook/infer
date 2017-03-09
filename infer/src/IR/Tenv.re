@@ -96,20 +96,22 @@ let add tenv name struct_typ => TypenameHash.replace tenv name struct_typ;
 let get_overriden_method tenv pname_java => {
   let struct_typ_get_method_by_name (struct_typ: Typ.Struct.t) method_name =>
     List.find_exn
-      f::(fun meth => String.equal method_name (Procname.get_method meth)) struct_typ.methods;
+      f::(fun meth => String.equal method_name (Typ.Procname.get_method meth)) struct_typ.methods;
   let rec get_overriden_method_in_supers pname_java supers =>
     switch supers {
     | [superclass, ...supers_tail] =>
       switch (lookup tenv superclass) {
       | Some struct_typ =>
-        try (Some (struct_typ_get_method_by_name struct_typ (Procname.java_get_method pname_java))) {
+        try (
+          Some (struct_typ_get_method_by_name struct_typ (Typ.Procname.java_get_method pname_java))
+        ) {
         | Not_found => get_overriden_method_in_supers pname_java (supers_tail @ struct_typ.supers)
         }
       | None => get_overriden_method_in_supers pname_java supers_tail
       }
     | [] => None
     };
-  switch (lookup tenv (Procname.java_get_class_type_name pname_java)) {
+  switch (lookup tenv (Typ.Procname.java_get_class_type_name pname_java)) {
   | Some {supers} => get_overriden_method_in_supers pname_java supers
   | _ => None
   }

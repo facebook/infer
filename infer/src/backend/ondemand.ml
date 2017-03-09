@@ -29,7 +29,7 @@ let dirs_to_analyze =
 
 type analyze_ondemand = SourceFile.t -> Procdesc.t -> Specs.summary
 
-type get_proc_desc = Procname.t -> Procdesc.t option
+type get_proc_desc = Typ.Procname.t -> Procdesc.t option
 
 type callbacks =
   {
@@ -116,8 +116,8 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
   L.log_progress_procedure ();
   if Config.trace_ondemand then L.stderr "[%d] run_proc_analysis %a -> %a@."
       !nesting
-      Procname.pp curr_pname
-      Procname.pp callee_pname;
+      Typ.Procname.pp curr_pname
+      Typ.Procname.pp callee_pname;
 
   let preprocess () =
     incr nesting;
@@ -127,9 +127,9 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
       Option.value_map
         ~f:(fun (attributes : ProcAttributes.t) ->
             let attribute_pname = attributes.proc_name in
-            if not (Procname.equal callee_pname attribute_pname) then
-              failwith ("ERROR: "^(Procname.to_string callee_pname)
-                        ^" not equal to "^(Procname.to_string attribute_pname));
+            if not (Typ.Procname.equal callee_pname attribute_pname) then
+              failwith ("ERROR: "^(Typ.Procname.to_string callee_pname)
+                        ^" not equal to "^(Typ.Procname.to_string attribute_pname));
             attributes.loc.file)
         ~default:SourceFile.empty
         attributes_opt in
@@ -166,7 +166,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     summary
   with exn ->
     L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@?"
-      Procname.pp callee_pname
+      Typ.Procname.pp callee_pname
       (Exn.to_string exn)
       (Printexc.get_backtrace ());
     restore_global_state old_state;

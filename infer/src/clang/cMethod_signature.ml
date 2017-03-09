@@ -13,7 +13,7 @@ open! IStd
 (** return type, location and whether its an instance method.  *)
 
 type method_signature = {
-  mutable name : Procname.t;
+  mutable name : Typ.Procname.t;
   args : (Mangled.t * Clang_ast_t.qual_type) list;
   ret_type : Clang_ast_t.type_ptr;
   attributes : Clang_ast_t.attribute list;
@@ -97,7 +97,7 @@ let replace_name_ms ms name =
   { ms with name }
 
 let ms_to_string ms =
-  "Method " ^ (Procname.to_string ms.name) ^ " " ^
+  "Method " ^ (Typ.Procname.to_string ms.name) ^ " " ^
   IList.to_string
     (fun (s1, s2) -> (Mangled.to_string s1) ^ ", " ^ (CAst_utils.string_of_qual_type s2))
     ms.args

@@ -18,10 +18,10 @@ let module F = Format;
 
 /** Kind of global variables */
 type pvar_kind =
-  | Local_var Procname.t /** local variable belonging to a function */
-  | Callee_var Procname.t /** local variable belonging to a callee */
-  | Abduced_retvar Procname.t Location.t /** synthetic variable to represent return value */
-  | Abduced_ref_param Procname.t t Location.t
+  | Local_var Typ.Procname.t /** local variable belonging to a function */
+  | Callee_var Typ.Procname.t /** local variable belonging to a callee */
+  | Abduced_retvar Typ.Procname.t Location.t /** synthetic variable to represent return value */
+  | Abduced_ref_param Typ.Procname.t t Location.t
   /** synthetic variable to represent param passed by reference */
   | Global_var (SourceFile.t, bool, bool, bool)
   /** global variable: translation unit + is it compile constant? + is it POD? + is it a static
@@ -43,25 +43,25 @@ let rec _pp f pv => {
     if !Config.pp_simple {
       F.fprintf f "%a" Mangled.pp name
     } else {
-      F.fprintf f "%a$%a" Procname.pp n Mangled.pp name
+      F.fprintf f "%a$%a" Typ.Procname.pp n Mangled.pp name
     }
   | Callee_var n =>
     if !Config.pp_simple {
       F.fprintf f "%a|callee" Mangled.pp name
     } else {
-      F.fprintf f "%a$%a|callee" Procname.pp n Mangled.pp name
+      F.fprintf f "%a$%a|callee" Typ.Procname.pp n Mangled.pp name
     }
   | Abduced_retvar n l =>
     if !Config.pp_simple {
       F.fprintf f "%a|abducedRetvar" Mangled.pp name
     } else {
-      F.fprintf f "%a$%a%a|abducedRetvar" Procname.pp n Location.pp l Mangled.pp name
+      F.fprintf f "%a$%a%a|abducedRetvar" Typ.Procname.pp n Location.pp l Mangled.pp name
     }
   | Abduced_ref_param n pv l =>
     if !Config.pp_simple {
       F.fprintf f "%a|%a|abducedRefParam" _pp pv Mangled.pp name
     } else {
-      F.fprintf f "%a$%a%a|abducedRefParam" Procname.pp n Location.pp l Mangled.pp name
+      F.fprintf f "%a$%a%a|abducedRefParam" Typ.Procname.pp n Location.pp l Mangled.pp name
     }
   | Global_var (fname, is_const, is_pod, _) =>
     F.fprintf
@@ -256,7 +256,7 @@ let is_frontend_tmp pvar => {
   let name = to_string pvar;
   is_sil_tmp name || (
     switch pvar.pv_kind {
-    | Local_var pname => Procname.is_java pname && is_bytecode_tmp name
+    | Local_var pname => Typ.Procname.is_java pname && is_bytecode_tmp name
     | _ => false
     }
   )
@@ -282,7 +282,7 @@ let name_hash (name: Mangled.t) => Hashtbl.hash name;
 
 
 /** [mk name proc_name] creates a program var with the given function name */
-let mk (name: Mangled.t) (proc_name: Procname.t) :t => {
+let mk (name: Mangled.t) (proc_name: Typ.Procname.t) :t => {
   pv_hash: name_hash name,
   pv_name: name,
   pv_kind: Local_var proc_name
@@ -293,7 +293,7 @@ let get_ret_pvar pname => mk Ident.name_return pname;
 
 /** [mk_callee name proc_name] creates a program var
     for a callee function with the given function name */
-let mk_callee (name: Mangled.t) (proc_name: Procname.t) :t => {
+let mk_callee (name: Mangled.t) (proc_name: Typ.Procname.t) :t => {
   pv_hash: name_hash name,
   pv_name: name,
   pv_kind: Callee_var proc_name
@@ -323,13 +323,13 @@ let mk_tmp name pname => {
 
 
 /** create an abduced return variable for a call to [proc_name] at [loc] */
-let mk_abduced_ret (proc_name: Procname.t) (loc: Location.t) :t => {
-  let name = Mangled.from_string ("$RET_" ^ Procname.to_unique_id proc_name);
+let mk_abduced_ret (proc_name: Typ.Procname.t) (loc: Location.t) :t => {
+  let name = Mangled.from_string ("$RET_" ^ Typ.Procname.to_unique_id proc_name);
   {pv_hash: name_hash name, pv_name: name, pv_kind: Abduced_retvar proc_name loc}
 };
 
-let mk_abduced_ref_param (proc_name: Procname.t) (pv: t) (loc: Location.t) :t => {
-  let name = Mangled.from_string ("$REF_PARAM_" ^ Procname.to_unique_id proc_name);
+let mk_abduced_ref_param (proc_name: Typ.Procname.t) (pv: t) (loc: Location.t) :t => {
+  let name = Mangled.from_string ("$REF_PARAM_" ^ Typ.Procname.to_unique_id proc_name);
   {pv_hash: name_hash name, pv_name: name, pv_kind: Abduced_ref_param proc_name pv loc}
 };
 
@@ -355,7 +355,9 @@ let get_initializer_pname {pv_name, pv_kind} =>
   switch pv_kind {
   | Global_var _ =>
     Some (
-      Procname.from_string_c_fun (Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name)
+      Typ.Procname.from_string_c_fun (
+        Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name
+      )
     )
   | _ => None
   };

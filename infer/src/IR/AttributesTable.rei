@@ -16,11 +16,11 @@ let store_attributes: ProcAttributes.t => unit;
 
 
 /** Load the attributes for the procedure from the attributes database. */
-let load_attributes: Procname.t => option ProcAttributes.t;
+let load_attributes: Typ.Procname.t => option ProcAttributes.t;
 
 
 /** Load attrubutes for the procedure but only if is_defined is true */
-let load_defined_attributes: cache_none::bool => Procname.t => option ProcAttributes.t;
+let load_defined_attributes: cache_none::bool => Typ.Procname.t => option ProcAttributes.t;
 
 
 /** Given the name of an ObjC class, extract the type from the tenv where the class was defined. We
@@ -31,7 +31,8 @@ let get_correct_type_from_objc_class_name: Typename.t => option Typ.t;
 /* Find the file where the procedure was captured, if a cfg for that file exists.
    Return also a boolean indicating whether the procedure is defined in an
    include file. */
-let find_file_capturing_procedure: Procname.t => option (SourceFile.t, [ | `Include | `Source]);
+let find_file_capturing_procedure:
+  Typ.Procname.t => option (SourceFile.t, [ | `Include | `Source]);
 
 type t;
 

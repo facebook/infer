@@ -14,7 +14,7 @@ module L = Logging
 
 (** find transitive procedure calls for each procedure *)
 
-module ProcnameSet = PrettyPrintable.MakePPSet(Procname)
+module ProcnameSet = PrettyPrintable.MakePPSet(Typ.Procname)
 
 module Domain = AbstractDomain.FiniteSet(ProcnameSet)
 
@@ -33,7 +33,7 @@ module SpecSummary = Summary.Make (struct
   end)
 
 type extras_t = {
-  get_proc_desc : Procname.t -> Procdesc.t option;
+  get_proc_desc : Typ.Procname.t -> Procdesc.t option;
   stacktraces : Stacktrace.t list;
 }
 
@@ -59,12 +59,12 @@ let stacktree_of_pdesc
            file = SourceFile.to_string loc.Location.file;
            line = Some loc.Location.line;
            blame_range = [line_range_of_pdesc pdesc] } in
-  { Stacktree_j.method_name = Procname.to_unique_id procname;
+  { Stacktree_j.method_name = Typ.Procname.to_unique_id procname;
     location = frame_loc;
     callees = callees }
 
 let stacktree_stub_of_procname procname =
-  { Stacktree_j.method_name = Procname.to_unique_id procname;
+  { Stacktree_j.method_name = Typ.Procname.to_unique_id procname;
     location = None;
     callees = [] }
 
@@ -96,7 +96,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let dir = Filename.concat Config.results_dir "crashcontext" in
     let suffix = F.sprintf "%s_%d" location_type loc.Location.line in
     let fname = F.sprintf "%s.%s.json"
-        (Procname.to_filename caller)
+        (Typ.Procname.to_filename caller)
         suffix in
     let fpath = Filename.concat dir fname in
     Utils.create_dir dir;
@@ -109,18 +109,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let caller = Procdesc.get_proc_name proc_data.ProcData.pdesc in
         let matches_proc frame =
           let matches_class pname = match pname with
-            | Procname.Java java_proc ->
+            | Typ.Procname.Java java_proc ->
                 String.equal
                   frame.Stacktrace.class_str
-                  (Procname.java_get_class_name java_proc)
-            | Procname.ObjC_Cpp objc_cpp_prod ->
+                  (Typ.Procname.java_get_class_name java_proc)
+            | Typ.Procname.ObjC_Cpp objc_cpp_prod ->
                 String.equal
                   frame.Stacktrace.class_str
-                  (Procname.objc_cpp_get_class_name objc_cpp_prod)
-            | Procname.C _ -> true (* Needed for test code. *)
-            | Procname.Block _ | Procname.Linters_dummy_method ->
+                  (Typ.Procname.objc_cpp_get_class_name objc_cpp_prod)
+            | Typ.Procname.C _ -> true (* Needed for test code. *)
+            | Typ.Procname.Block _ | Typ.Procname.Linters_dummy_method ->
                 failwith "Proc type not supported by crashcontext: block" in
-          String.equal frame.Stacktrace.method_str (Procname.get_method caller) &&
+          String.equal frame.Stacktrace.method_str (Typ.Procname.get_method caller) &&
           matches_class caller in
         let all_frames = List.concat
             (List.map ~f:(fun trace -> trace.Stacktrace.frames) traces) in

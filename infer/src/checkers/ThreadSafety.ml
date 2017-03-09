@@ -52,9 +52,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | NoEffect
 
   let get_lock_model = function
-    | Procname.Java java_pname ->
+    | Typ.Procname.Java java_pname ->
         begin
-          match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
+          match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
           | "java.util.concurrent.locks.Lock", "lock" ->
               Lock
           | ("java.util.concurrent.locks.ReentrantLock"
@@ -71,9 +71,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | _ ->
               NoEffect
         end
-    | pname when Procname.equal pname BuiltinDecl.__set_locked_attribute ->
+    | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
         Lock
-    | pname when Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
+    | pname when Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
         Unlock
     | _ ->
         NoEffect
@@ -211,10 +211,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let is_annotated_functional =
       has_return_annot Annotations.ia_is_functional in
     let is_modeled_functional = function
-      | Procname.Java java_pname ->
+      | Typ.Procname.Java java_pname ->
           begin
-            match Procname.java_get_class_name java_pname,
-                  Procname.java_get_method java_pname with
+            match Typ.Procname.java_get_class_name java_pname,
+                  Typ.Procname.java_get_method java_pname with
             | "android.content.res.Resources", method_name ->
                 (* all methods of Resources are considered @Functional except for the ones in this
                      blacklist *)
@@ -236,13 +236,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let acquires_ownership pname tenv =
     let is_allocation pn =
-      Procname.equal pn BuiltinDecl.__new || Procname.equal pn BuiltinDecl.__new_array in
+      Typ.Procname.equal pn BuiltinDecl.__new || Typ.Procname.equal pn BuiltinDecl.__new_array in
     (* identify library functions that maintain ownership invariants behind the scenes *)
     let is_owned_in_library = function
-      | Procname.Java java_pname ->
+      | Typ.Procname.Java java_pname ->
           begin
-            match Procname.java_get_class_name java_pname,
-                  Procname.java_get_method java_pname with
+            match Typ.Procname.java_get_class_name java_pname,
+                  Typ.Procname.java_get_method java_pname with
             | "javax.inject.Provider", "get" ->
                 (* in dependency injection, the library allocates fresh values behind the scenes *)
                 true
@@ -263,10 +263,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr (astate : Domain.astate) { ProcData.pdesc; tenv; extras; } _ =
     let is_container_write pn tenv = match pn with
-      | Procname.Java java_pname ->
-          let typename = Typename.Java.from_string (Procname.java_get_class_name java_pname) in
+      | Typ.Procname.Java java_pname ->
+          let typename = Typename.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
           let is_container_write_ typename _ =
-            match Typename.name typename, Procname.java_get_method java_pname with
+            match Typename.name typename, Typ.Procname.java_get_method java_pname with
             | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") -> true
             | "java.util.Map", ("clear" | "put" | "putAll" | "remove") -> true
             | _ -> false in
@@ -286,7 +286,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let dummy_fieldname =
             Ident.create_fieldname
               (Mangled.from_string
-                 (container_write_string ^ (Procname.get_method callee_pname))) 0 in
+                 (container_write_string ^ (Typ.Procname.get_method callee_pname))) 0 in
           let dummy_access_exp = Exp.Lfield (receiver_exp, dummy_fieldname, receiver_typ) in
           let callee_writes =
             match AccessPath.of_lhs_exp dummy_access_exp receiver_typ ~f_resolve_id with
@@ -301,7 +301,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           failwithf
             "Call to %a is marked as a container write, but has no receiver"
-            Procname.pp callee_pname in
+            Typ.Procname.pp callee_pname in
     let get_summary caller_pdesc callee_pname actuals ~f_resolve_id callee_loc tenv =
       if is_container_write callee_pname tenv
       then
@@ -312,9 +312,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       not is_locked && not (Procdesc.is_java_synchronized pdesc) in
     (* return true if the given procname boxes a primitive type into a reference type *)
     let is_box = function
-      | Procname.Java java_pname ->
+      | Typ.Procname.Java java_pname ->
           begin
-            match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
+            match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
             | ("java.lang.Boolean" |
                "java.lang.Byte" |
                "java.lang.Char" |
@@ -348,7 +348,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
     | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname),
                 (target_exp, target_typ) :: (Exp.Sizeof (cast_typ, _, _), _) :: _ , _, _)
-      when Procname.equal callee_pname BuiltinDecl.__cast ->
+      when Typ.Procname.equal callee_pname BuiltinDecl.__cast ->
         let lhs_access_path = AccessPath.of_id ret_id (Typ.Tptr (cast_typ, Pk_pointer)) in
         let attribute_map =
           propagate_attributes
@@ -618,11 +618,11 @@ module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
 (* a results table is a Map where a key is an a procedure environment,
-   i.e., something of type Idenv.t * Tenv.t * Procname.t * Procdesc.t
+   i.e., something of type Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t
 *)
 module ResultsTableType = Caml.Map.Make (struct
-    type t = Idenv.t * Tenv.t * Procname.t * Procdesc.t
-    let compare (_, _, pn1, _) (_,_,pn2,_) =  Procname.compare pn1 pn2
+    type t = Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t
+    let compare (_, _, pn1, _) (_,_,pn2,_) =  Typ.Procname.compare pn1 pn2
   end)
 
 (* we want to consider Builder classes and other safe immutablility-ensuring patterns as
@@ -646,12 +646,12 @@ let is_immutable_collection_class class_name tenv =
     class_name
 
 let is_call_to_builder_class_method = function
-  | Procname.Java java_pname -> is_builder_class (Procname.java_get_class_name java_pname)
+  | Typ.Procname.Java java_pname -> is_builder_class (Typ.Procname.java_get_class_name java_pname)
   | _ -> false
 
 let is_call_to_immutable_collection_method tenv = function
-  | Procname.Java java_pname ->
-      is_immutable_collection_class (Procname.java_get_class_type_name java_pname) tenv
+  | Typ.Procname.Java java_pname ->
+      is_immutable_collection_class (Typ.Procname.java_get_class_type_name java_pname) tenv
   | _ ->
       false
 
@@ -717,7 +717,7 @@ let pdesc_is_assumed_thread_safe pdesc tenv =
    find more bugs. this is just a temporary measure to avoid obvious false positives *)
 let should_analyze_proc pdesc tenv =
   let pn = Procdesc.get_proc_name pdesc in
-  not (Procname.is_class_initializer pn) &&
+  not (Typ.Procname.is_class_initializer pn) &&
   not (FbThreadSafety.is_logging_method pn) &&
   not (is_call_to_builder_class_method pn) &&
   not (is_call_to_immutable_collection_method tenv pn) &&
@@ -727,13 +727,13 @@ let should_analyze_proc pdesc tenv =
 
 (* return true if we should report on unprotected accesses during the procedure *)
 let should_report_on_proc (_, _, proc_name, proc_desc) =
-  not (Procname.java_is_autogen_method proc_name) &&
+  not (Typ.Procname.java_is_autogen_method proc_name) &&
   Procdesc.get_access proc_desc <> PredSymb.Private &&
   not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
 
 let analyze_procedure callback =
   let is_initializer tenv proc_name =
-    Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
+    Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
   let open ThreadSafetyDomain in
   let has_lock = false in
   let return_attrs = AttributeSetDomain.empty in
@@ -807,8 +807,8 @@ let make_results_table get_proc_desc file_env =
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
   match pname with
-  | Procname.Java java_pname ->
-      let current_class = Procname.java_get_class_type_name java_pname in
+  | Typ.Procname.Java java_pname ->
+      let current_class = Typ.Procname.java_get_class_type_name java_pname in
       let thread_safe_annotated_classes =
         PatternMatch.find_superclasses_with_attributes
           is_thread_safe tenv current_class
@@ -950,7 +950,7 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
         Format.asprintf "access to %a" (pp_accesses_sink ~is_write_access:true) sink
       else
         Format.asprintf
-          "call to %a" Procname.pp (CallSite.pname (PathDomain.Sink.call_site sink)) in
+          "call to %a" Typ.Procname.pp (CallSite.pname (PathDomain.Sink.call_site sink)) in
     let loc = CallSite.loc (PathDomain.Sink.call_site initial_sink) in
     let ltr = PathDomain.to_sink_loc_trace ~desc_of_sink path in
     let msg = Localise.to_string Localise.thread_safety_violation in
@@ -968,7 +968,7 @@ let make_unprotected_write_description
     tenv pname final_sink_site initial_sink_site final_sink _ =
   Format.asprintf
     "Unprotected write. Public method %a%s %s %a outside of synchronization.%s"
-    Procname.pp pname
+    Typ.Procname.pp pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if is_container_write_sink final_sink then "mutates"  else "writes to field")
     (pp_accesses_sink ~is_write_access:true) final_sink
@@ -983,13 +983,13 @@ let make_read_write_race_description tenv pname final_sink_site initial_sink_sit
       conflicting_proc_envs in
   let pp_proc_name_list fmt proc_names =
     let pp_sep _ _ = F.fprintf fmt " , " in
-    F.pp_print_list ~pp_sep Procname.pp fmt proc_names in
+    F.pp_print_list ~pp_sep Typ.Procname.pp fmt proc_names in
   let conflicts_description =
     Format.asprintf "Potentially races with writes in method%s %a."
       (if List.length conflicting_proc_names > 1 then "s" else "")
       pp_proc_name_list conflicting_proc_names in
   Format.asprintf "Read/Write race. Public method %a%s reads from field %a. %s %s"
-    Procname.pp pname
+    Typ.Procname.pp pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (pp_accesses_sink ~is_write_access:false) final_sink
     conflicts_description

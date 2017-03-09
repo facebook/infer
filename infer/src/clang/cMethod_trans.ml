@@ -219,7 +219,7 @@ let get_method_name_from_clang tenv ms_opt =
               match ObjcCategory_decl.get_base_class_name_from_category decl with
               | Some class_typename ->
                   let procname = CMethod_signature.ms_get_name ms in
-                  let new_procname = Procname.replace_class procname class_typename in
+                  let new_procname = Typ.Procname.replace_class procname class_typename in
                   CMethod_signature.ms_set_name ms new_procname;
                   Some ms
               | None -> Some ms)
@@ -261,8 +261,8 @@ let get_class_name_method_call_from_clang trans_unit_ctx tenv obj_c_message_expr
        | Some ms ->
            begin
              match CMethod_signature.ms_get_name ms with
-             | Procname.ObjC_Cpp objc_cpp ->
-                 Some (Procname.objc_cpp_get_class_type_name objc_cpp)
+             | Typ.Procname.ObjC_Cpp objc_cpp ->
+                 Some (Typ.Procname.objc_cpp_get_class_type_name objc_cpp)
              | _ ->
                  None
            end
@@ -391,7 +391,7 @@ let create_local_procdesc ?(set_objc_accessor_attr=false) trans_unit_ctx cfg ten
     fbody captured is_objc_inst_method =
   let defined = not (Int.equal (List.length fbody) 0) in
   let proc_name = CMethod_signature.ms_get_name ms in
-  let pname = Procname.to_string proc_name in
+  let pname = Typ.Procname.to_string proc_name in
   let attributes = sil_func_attributes_of_attributes (CMethod_signature.ms_get_attributes ms) in
   let method_ret_type = CMethod_signature.ms_get_ret_type ms in
   let method_annotation =
@@ -487,7 +487,7 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
 let add_default_method_for_class trans_unit_ctx class_name decl_info =
   let loc = CLocation.get_sil_location_from_range trans_unit_ctx
       decl_info.Clang_ast_t.di_source_range true in
-  let proc_name = Procname.get_default_objc_class_method class_name in
+  let proc_name = Typ.Procname.get_default_objc_class_method class_name in
   let attrs = { (ProcAttributes.default proc_name Config.Clang) with loc = loc; } in
   AttributesTable.store_attributes attrs
 

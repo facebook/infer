@@ -30,9 +30,9 @@ module SourceKind = struct
   let external_sources = QuandaryConfig.Source.of_json Config.quandary_sources
 
   let get pname tenv = match pname with
-    | Procname.Java pname ->
+    | Typ.Procname.Java pname ->
         begin
-          match Procname.java_get_class_name pname, Procname.java_get_method pname with
+          match Typ.Procname.java_get_class_name pname, Typ.Procname.java_get_method pname with
           | "android.location.Location",
             ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ->
               Some PrivateData
@@ -76,7 +76,7 @@ module SourceKind = struct
               end
         end
     | pname when BuiltinDecl.is_declared pname -> None
-    | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
+    | pname -> failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
 
   let get_tainted_formals pdesc tenv =
     let make_untainted (name, typ) =
@@ -97,9 +97,9 @@ module SourceKind = struct
 
     let formals = Procdesc.get_formals pdesc in
     match Procdesc.get_proc_name pdesc with
-    | Procname.Java java_pname ->
+    | Typ.Procname.Java java_pname ->
         begin
-          match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
+          match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
           | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
               taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals
           | class_name, method_name ->
@@ -122,7 +122,7 @@ module SourceKind = struct
     | procname ->
         failwithf
           "Non-Java procedure %a where only Java procedures are expected"
-          Procname.pp procname
+          Typ.Procname.pp procname
 
   let pp fmt = function
     | Intent -> F.fprintf fmt "Intent"
@@ -154,7 +154,7 @@ module SinkKind = struct
        if [taint_this] is true. *)
     let taint_all ?(taint_this=false) kind ~report_reachable =
       let actuals_to_taint, offset =
-        if Procname.java_is_static pname || taint_this
+        if Typ.Procname.java_is_static pname || taint_this
         then actuals, 0
         else List.tl_exn actuals, 1 in
       List.mapi
@@ -162,12 +162,12 @@ module SinkKind = struct
         actuals_to_taint in
     (* taint the nth non-"this" parameter (0-indexed) *)
     let taint_nth n kind ~report_reachable =
-      let first_index = if Procname.java_is_static pname then n else n + 1 in
+      let first_index = if Typ.Procname.java_is_static pname then n else n + 1 in
       [kind, first_index, report_reachable] in
     match pname with
-    | Procname.Java java_pname ->
+    | Typ.Procname.Java java_pname ->
         begin
-          match Procname.java_get_class_name java_pname, Procname.java_get_method java_pname with
+          match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
           | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
               taint_all Logging ~report_reachable:true
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
@@ -247,7 +247,7 @@ module SinkKind = struct
 
         end
     | pname when BuiltinDecl.is_declared pname -> []
-    | pname -> failwithf "Non-Java procname %a in Java analysis@." Procname.pp pname
+    | pname -> failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
 
   let pp fmt = function
     | Intent -> F.fprintf fmt "Intent"

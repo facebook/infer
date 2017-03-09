@@ -43,31 +43,31 @@ type parameter_not_nullable =
   AnnotatedSignature.annotation *
   string * (* description *)
   int * (* parameter number *)
-  Procname.t *
+  Typ.Procname.t *
   Location.t * (* callee location *)
   origin_descr
 
 (** Instance of an error *)
 type err_instance =
   | Condition_redundant of (bool * (string option) * bool)
-  | Inconsistent_subclass_return_annotation of Procname.t * Procname.t
-  | Inconsistent_subclass_parameter_annotation of string * int * Procname.t * Procname.t
-  | Field_not_initialized of Ident.fieldname * Procname.t
+  | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
+  | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
+  | Field_not_initialized of Ident.fieldname * Typ.Procname.t
   | Field_not_mutable of Ident.fieldname * origin_descr
   | Field_annotation_inconsistent of AnnotatedSignature.annotation * Ident.fieldname * origin_descr
-  | Field_over_annotated of Ident.fieldname * Procname.t
+  | Field_over_annotated of Ident.fieldname * Typ.Procname.t
   | Null_field_access of string option * Ident.fieldname * origin_descr * bool
   | Call_receiver_annotation_inconsistent
-    of AnnotatedSignature.annotation * string option * Procname.t * origin_descr
+    of AnnotatedSignature.annotation * string option * Typ.Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
-  | Return_annotation_inconsistent of AnnotatedSignature.annotation * Procname.t * origin_descr
-  | Return_over_annotated of Procname.t
+  | Return_annotation_inconsistent of AnnotatedSignature.annotation * Typ.Procname.t * origin_descr
+  | Return_over_annotated of Typ.Procname.t
 
 
 val node_reset_forall : Procdesc.Node.t -> unit
 
 type st_report_error =
-  Procname.t ->
+  Typ.Procname.t ->
   Procdesc.t ->
   string ->
   Location.t ->

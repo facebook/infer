@@ -445,7 +445,7 @@ let mk_ptsto_exp_footprint
     | Config.Java -> Subtype.subtypes in
   let create_ptsto footprint_part off0 = match root, off0, typ with
     | Exp.Lvar pvar, [], Typ.Tfun _ ->
-        let fun_name = Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name pvar)) in
+        let fun_name = Typ.Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name pvar)) in
         let fun_exp = Exp.Const (Const.Cfun fun_name) in
         ([], Prop.mk_ptsto tenv root (Sil.Eexp (fun_exp, inst)) (Exp.Sizeof (typ, None, st)))
     | _, [], Typ.Tfun _ ->
@@ -651,9 +651,9 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     let dollar_normalize s = String.map s ~f:(function '$' -> '.' | c -> c) in
     String.is_suffix ~suffix:(dollar_normalize guarded_by_str) (dollar_normalize (class_str ^ ".class")) in
   let guarded_by_str_is_current_class guarded_by_str = function
-    | Procname.Java java_pname ->
+    | Typ.Procname.Java java_pname ->
         (* programmers write @GuardedBy("MyClass.class") when the field is guarded by the class *)
-        guarded_by_str_is_class guarded_by_str (Procname.java_get_class_name java_pname)
+        guarded_by_str_is_class guarded_by_str (Typ.Procname.java_get_class_name java_pname)
     | _ -> false in
 
   let guarded_by_str_is_class_this class_name guarded_by_str =
@@ -665,8 +665,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
   (* return true if [guarded_by_str] is a suffix of "<name_of_super_class>.this" *)
   let guarded_by_str_is_super_class_this guarded_by_str pname =
     match pname with
-    | Procname.Java java_pname ->
-        let current_class_type_name = (Procname.java_get_class_type_name java_pname) in
+    | Typ.Procname.Java java_pname ->
+        let current_class_type_name = (Typ.Procname.java_get_class_type_name java_pname) in
         let comparison class_type_name _ =
           guarded_by_str_is_class_this (Typename.to_string class_type_name) guarded_by_str in
         PatternMatch.supertype_exists tenv comparison current_class_type_name
@@ -675,8 +675,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
 
   (* return true if [guarded_by_str] is as suffix of "<name_of_current_class>.this" *)
   let guarded_by_str_is_current_class_this guarded_by_str = function
-    | Procname.Java java_pname ->
-        guarded_by_str_is_class_this (Procname.java_get_class_name java_pname) guarded_by_str
+    | Typ.Procname.Java java_pname ->
+        guarded_by_str_is_class_this (Typ.Procname.java_get_class_name java_pname) guarded_by_str
     | _ -> false in
 
   let extract_guarded_by_str item_annot =
@@ -804,7 +804,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       | None -> false in
     let is_synchronized_on_class guarded_by_str =
       guarded_by_str_is_current_class guarded_by_str pname &&
-      Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname in
+      Procdesc.is_java_synchronized pdesc && Typ.Procname.java_is_static pname in
     let warn accessed_fld guarded_by_str =
       let loc = State.get_loc () in
       let err_desc =
@@ -825,7 +825,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
        Procdesc.is_java_synchronized pdesc)
       ||
       (guarded_by_str_is_current_class guarded_by_str pname &&
-       Procdesc.is_java_synchronized pdesc && Procname.java_is_static pname) ||
+       Procdesc.is_java_synchronized pdesc && Typ.Procname.java_is_static pname) ||
       (* or the prop says we already have the lock *)
       List.exists
         ~f:(function
@@ -862,7 +862,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
           prop.Prop.sigma in
       Procdesc.get_access pdesc <> PredSymb.Private &&
       not (Annotations.pdesc_return_annot_ends_with pdesc Annotations.visibleForTesting) &&
-      not (Procname.java_is_access_method (Procdesc.get_proc_name pdesc)) &&
+      not (Typ.Procname.java_is_access_method (Procdesc.get_proc_name pdesc)) &&
       not (is_accessible_through_local_ref lexp) &&
       not guardedby_is_self_referential &&
       not (proc_has_suppress_guarded_by_annot pdesc)
@@ -1320,7 +1320,7 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
                   let is_nullable_attr = function
                     | Sil.Apred ((Aretval (pname, ret_attr) | Aundef (pname, ret_attr, _, _)), _)
                       when Annotations.ia_is_nullable ret_attr ->
-                        nullable_obj_str := Some (Procname.to_string pname);
+                        nullable_obj_str := Some (Typ.Procname.to_string pname);
                         true
                     | _ -> false in
                   List.exists ~f:is_nullable_attr (Attribute.get_for_exp tenv prop exp) in
@@ -1492,8 +1492,8 @@ let rearrange ?(report_deref_errors=true) pdesc tenv lexp typ prop loc
   if report_deref_errors then check_dereference_error tenv pdesc prop nlexp (State.get_loc ());
   let pname = Procdesc.get_proc_name pdesc in
   let prop' =
-    if Config.csl_analysis && !Config.footprint && Procname.is_java pname &&
-       not (Procname.is_constructor pname || Procname.is_class_initializer pname)
+    if Config.csl_analysis && !Config.footprint && Typ.Procname.is_java pname &&
+       not (Typ.Procname.is_constructor pname || Typ.Procname.is_class_initializer pname)
     then add_guarded_by_constraints tenv prop lexp pdesc
     else prop in
   match Prop.prop_iter_create prop' with

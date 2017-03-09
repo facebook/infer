@@ -113,10 +113,10 @@ let expensive_overrides_unexpensive =
 let annotation_reachability_error = "CHECKERS_ANNOTATION_REACHABILITY_ERROR"
 
 let is_modeled_expensive tenv = function
-  | Procname.Java proc_name_java as proc_name ->
+  | Typ.Procname.Java proc_name_java as proc_name ->
       not (BuiltinDecl.is_declared proc_name) &&
       let is_subclass =
-        let classname = Typename.Java.from_string (Procname.java_get_class_name proc_name_java) in
+        let classname = Typename.Java.from_string (Typ.Procname.java_get_class_name proc_name_java) in
         PatternMatch.is_subtype_of_str tenv classname in
       Inferconfig.modeled_expensive_matcher is_subclass proc_name
   | _ ->
@@ -124,12 +124,12 @@ let is_modeled_expensive tenv = function
 
 let is_allocator tenv pname =
   match pname with
-  | Procname.Java pname_java ->
+  | Typ.Procname.Java pname_java ->
       let is_throwable () =
         let class_name =
-          Typename.Java.from_string (Procname.java_get_class_name pname_java) in
+          Typename.Java.from_string (Typ.Procname.java_get_class_name pname_java) in
         PatternMatch.is_throwable tenv class_name in
-      Procname.is_constructor pname
+      Typ.Procname.is_constructor pname
       && not (BuiltinDecl.is_declared pname)
       && not (is_throwable ())
   | _ ->
@@ -171,7 +171,7 @@ let update_trace loc trace =
     Errlog.make_trace_element 0 loc "" [] :: trace
 
 let string_of_pname =
-  Procname.to_simplified_string ~withclass:true
+  Typ.Procname.to_simplified_string ~withclass:true
 
 let report_allocation_stack
     src_annot pname fst_call_loc trace stack_str constructor_pname call_loc =
@@ -180,7 +180,7 @@ let report_allocation_stack
   let description =
     Printf.sprintf
       "Method `%s` annotated with `@%s` allocates `%s` via `%s%s`"
-      (Procname.to_simplified_string pname)
+      (Typ.Procname.to_simplified_string pname)
       src_annot
       constr_str
       stack_str
@@ -198,7 +198,7 @@ let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str sn
     let description =
       Printf.sprintf
         "Method `%s` annotated with `@%s` calls `%s%s` where `%s` is annotated with `@%s`"
-        (Procname.to_simplified_string src_pname)
+        (Typ.Procname.to_simplified_string src_pname)
         src_annot
         stack_str
         exp_pname_str
@@ -232,8 +232,8 @@ let report_call_stack end_of_stack lookup_next_calls report call_site calls =
           ~f:(fun (accu, set) call_site ->
               let p = CallSite.pname call_site in
               let loc = CallSite.loc call_site in
-              if Procname.Set.mem p set then (accu, set)
-              else ((p, loc) :: accu, Procname.Set.add p set))
+              if Typ.Procname.Set.mem p set then (accu, set)
+              else ((p, loc) :: accu, Typ.Procname.Set.add p set))
           ~init:([], visited_pnames)
           next_calls in
       List.iter ~f:(loop fst_call_loc updated_visited (new_trace, new_stack_str)) unseen_pnames in
@@ -242,7 +242,7 @@ let report_call_stack end_of_stack lookup_next_calls report call_site calls =
         let fst_callee_pname = CallSite.pname fst_call_site in
         let fst_call_loc = CallSite.loc fst_call_site in
         let start_trace = update_trace (CallSite.loc call_site) [] in
-        loop fst_call_loc Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
+        loop fst_call_loc Typ.Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
     calls
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -255,8 +255,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
      rarely to not affect the performances *)
   let is_unlikely pname =
     match pname with
-    | Procname.Java java_pname ->
-        String.equal (Procname.java_get_method java_pname) "unlikely"
+    | Typ.Procname.Java java_pname ->
+        String.equal (Typ.Procname.java_get_method java_pname) "unlikely"
     | _ -> false
 
   let is_tracking_exp astate = function
@@ -356,8 +356,8 @@ module Interprocedural = struct
         let description =
           Printf.sprintf
             "Method `%s` overrides unannotated method `%s` and cannot be annotated with `@%s`"
-            (Procname.to_string proc_name)
-            (Procname.to_string overridden_pname)
+            (Typ.Procname.to_string proc_name)
+            (Typ.Procname.to_string overridden_pname)
             Annotations.expensive in
         let exn =
           Exceptions.Checkers

@@ -22,7 +22,7 @@ type t = {
   cf_interface: bool,
   cf_noreturn: bool,
   cf_is_objc_block: bool,
-  cf_targets: list Procname.t
+  cf_targets: list Typ.Procname.t
 }
 [@@deriving compare];
 

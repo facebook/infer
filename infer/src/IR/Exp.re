@@ -22,7 +22,7 @@ type _ident = Ident.t;
 
 let compare__ident x y => Ident.compare y x;
 
-type closure = {name: Procname.t, captured_vars: list (t, Pvar.t, Typ.t)} [@@deriving compare]
+type closure = {name: Typ.Procname.t, captured_vars: list (t, Pvar.t, Typ.t)} [@@deriving compare]
 /** dynamically determined length of an array value, if any */
 and dynamic_length = option t [@@deriving compare]
 /** Program expressions. */

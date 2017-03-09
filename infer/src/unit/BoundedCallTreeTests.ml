@@ -22,8 +22,8 @@ let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
   let initial = BoundedCallTree.Domain.empty in
-  let f_proc_name = Procname.from_string_c_fun "f" in
-  let g_proc_name = Procname.from_string_c_fun "g" in
+  let f_proc_name = Typ.Procname.from_string_c_fun "f" in
+  let g_proc_name = Typ.Procname.from_string_c_fun "g" in
   let g_args = [((Exp.Const (Const.Cint (IntLit.one))), (Typ.Tint IInt))] in
   let g_ret_id = Some (ident_of_str "r", Typ.Tint IInt) in
   let class_name = "com.example.SomeClass" in
@@ -39,9 +39,9 @@ let tests =
       [Stacktrace.make_frame class_name "bar" file_name (Some 20)] in
   let multi_trace_extras = { BoundedCallTree.get_proc_desc = mock_get_proc_desc;
                              stacktraces = [multi_trace_1; multi_trace_2]; } in
-  let caller_foo_name = Procname.from_string_c_fun "foo" in
-  let caller_bar_name = Procname.from_string_c_fun "bar" in
-  let caller_baz_name = Procname.from_string_c_fun "baz" in
+  let caller_foo_name = Typ.Procname.from_string_c_fun "foo" in
+  let caller_bar_name = Typ.Procname.from_string_c_fun "bar" in
+  let caller_baz_name = Typ.Procname.from_string_c_fun "baz" in
   let test_list_from_foo = [
     "on_call_add_proc_name",
     [

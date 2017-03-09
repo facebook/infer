@@ -37,7 +37,7 @@ let add_dispatch_calls pdesc cg tenv =
                 receiver_typ in
           let sorted_overrides =
             let overrides = Prover.get_overrides_of tenv receiver_typ_no_ptr callee_pname in
-            List.sort ~cmp:(fun (_, p1) (_, p2) -> Procname.compare p1 p2) overrides in
+            List.sort ~cmp:(fun (_, p1) (_, p2) -> Typ.Procname.compare p1 p2) overrides in
           (match sorted_overrides with
            | ((_, target_pname) :: _) as all_targets ->
                let targets_to_add =
@@ -192,7 +192,7 @@ let remove_dead_frontend_stores pdesc liveness_inv_map =
 
 let add_nullify_instrs pdesc tenv liveness_inv_map =
   let address_taken_vars =
-    if Procname.is_java (Procdesc.get_proc_name pdesc)
+    if Typ.Procname.is_java (Procdesc.get_proc_name pdesc)
     then AddressTaken.Domain.empty (* can't take the address of a variable in Java *)
     else
       let initial = AddressTaken.Domain.empty in
@@ -312,7 +312,7 @@ let do_abstraction pdesc =
 
 let do_dynamic_dispatch pdesc cg tenv =
   let pname = Procdesc.get_proc_name pdesc in
-  if Procname.is_java pname &&
+  if Typ.Procname.is_java pname &&
      (Config.dynamic_dispatch = `Interface || Config.dynamic_dispatch = `Sound)
   then add_dispatch_calls pdesc cg tenv;
   Procdesc.signal_did_preanalysis pdesc

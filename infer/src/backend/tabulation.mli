@@ -28,13 +28,13 @@ val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * PredSymb.
 
 (** raise a cast exception *)
 val create_cast_exception :
-  Tenv.t -> Logging.ml_loc -> Procname.t option -> Exp.t -> Exp.t -> Exp.t -> exn
+  Tenv.t -> Logging.ml_loc -> Typ.Procname.t option -> Exp.t -> Exp.t -> Exp.t -> exn
 
 (** check if a prop is an exception *)
-val prop_is_exn : Procname.t -> 'a Prop.t -> bool
+val prop_is_exn : Typ.Procname.t -> 'a Prop.t -> bool
 
 (** when prop is an exception, return the exception name *)
-val prop_get_exn_name : Procname.t -> 'a Prop.t -> Typename.t option
+val prop_get_exn_name : Typ.Procname.t -> 'a Prop.t -> Typename.t option
 
 (** search in prop contains an error state *)
 val lookup_custom_errors : 'a Prop.t -> string option
@@ -44,6 +44,6 @@ val d_splitting : splitting -> unit
 
 (** Execute the function call and return the list of results with return value *)
 val exe_function_call:
-  ProcAttributes.t -> Tenv.t -> (Ident.t * Typ.t) option -> Procdesc.t -> Procname.t ->
+  ProcAttributes.t -> Tenv.t -> (Ident.t * Typ.t) option -> Procdesc.t -> Typ.Procname.t ->
   Location.t -> (Exp.t * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t ->
   (Prop.normal Prop.t * Paths.Path.t) list

@@ -328,7 +328,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 failwithf
                   "Assignment to unexpected lhs expression %a in proc %a at loc %a"
                   Exp.pp lhs_exp
-                  Procname.pp (Procdesc.get_proc_name (proc_data.pdesc))
+                  Typ.Procname.pp (Procdesc.get_proc_name (proc_data.pdesc))
                   Location.pp loc in
           let astate' =
             analyze_assignment
@@ -350,7 +350,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           end
       | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname), args, loc, _)
         when BuiltinDecl.is_declared callee_pname ->
-          if Procname.equal callee_pname BuiltinDecl.__cast
+          if Typ.Procname.equal callee_pname BuiltinDecl.__cast
           then
             match args with
             | (cast_target, cast_typ) :: _ ->
@@ -359,7 +359,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 failwithf
                   "Unexpected cast %a in procedure %a at line %a"
                   (Sil.pp_instr Pp.text) instr
-                  Procname.pp (Procdesc.get_proc_name (proc_data.pdesc))
+                  Typ.Procname.pp (Procdesc.get_proc_name (proc_data.pdesc))
                   Location.pp loc
           else
             astate
@@ -425,7 +425,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | Some _, None ->
                   L.err
                     "Warning: %a is marked as a source, but has no return value"
-                    Procname.pp callee_pname;
+                    Typ.Procname.pp callee_pname;
                   astate_with_sink
               | None, _ ->
                   astate_with_sink in
@@ -454,7 +454,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               called_pname :: call_flags.cf_targets
             else
               begin
-                L.out "Skipping highly polymorphic call site for %a@." Procname.pp called_pname;
+                L.out "Skipping highly polymorphic call site for %a@." Typ.Procname.pp called_pname;
                 [called_pname]
               end in
           (* for each possible target of the call, apply the summary. join all results together *)

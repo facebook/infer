@@ -84,7 +84,7 @@ type dangling_kind =
 
 
 /** position in a path: proc name, node id */
-type path_pos = (Procname.t, int) [@@deriving compare];
+type path_pos = (Typ.Procname.t, int) [@@deriving compare];
 
 let equal_path_pos = [%compare.equal : path_pos];
 
@@ -96,14 +96,14 @@ type taint_kind =
   | Tk_unknown
 [@@deriving compare];
 
-type taint_info = {taint_source: Procname.t, taint_kind: taint_kind} [@@deriving compare];
+type taint_info = {taint_source: Typ.Procname.t, taint_kind: taint_kind} [@@deriving compare];
 
 
 /** acquire/release action on a resource */
 type res_action = {
   ra_kind: res_act_kind, /** kind of action */
   ra_res: resource, /** kind of resource */
-  ra_pname: Procname.t, /** name of the procedure used to acquire/release the resource */
+  ra_pname: Typ.Procname.t, /** name of the procedure used to acquire/release the resource */
   ra_loc: Location.t, /** location of the acquire/release */
   ra_vpath: DecompiledExp.vpath /** vpath of the resource value */
 };
@@ -139,7 +139,7 @@ type t =
   | Aautorelease
   | Adangling dangling_kind /** dangling pointer */
   /** undefined value obtained by calling the given procedure, plus its return value annots */
-  | Aundef Procname.t _annot_item _location _path_pos
+  | Aundef Typ.Procname.t _annot_item _location _path_pos
   | Ataint taint_info
   | Auntaint taint_info
   | Alocked
@@ -149,7 +149,7 @@ type t =
   /** attributed exp is null due to a call to a method with given path as null receiver */
   | Aobjc_null
   /** value was returned from a call to the given procedure, plus the annots of the return value */
-  | Aretval Procname.t Annot.Item.t
+  | Aretval Typ.Procname.t Annot.Item.t
   /** denotes an object registered as an observers to a notification center */
   | Aobserver
   /** denotes an object unsubscribed from observers of a notification center */
@@ -162,19 +162,19 @@ let equal = [%compare.equal : t];
 /** name of the allocation function for the given memory kind */
 let mem_alloc_pname =
   fun
-  | Mmalloc => Procname.from_string_c_fun "malloc"
-  | Mnew => Procname.from_string_c_fun "new"
-  | Mnew_array => Procname.from_string_c_fun "new[]"
-  | Mobjc => Procname.from_string_c_fun "alloc";
+  | Mmalloc => Typ.Procname.from_string_c_fun "malloc"
+  | Mnew => Typ.Procname.from_string_c_fun "new"
+  | Mnew_array => Typ.Procname.from_string_c_fun "new[]"
+  | Mobjc => Typ.Procname.from_string_c_fun "alloc";
 
 
 /** name of the deallocation function for the given memory kind */
 let mem_dealloc_pname =
   fun
-  | Mmalloc => Procname.from_string_c_fun "free"
-  | Mnew => Procname.from_string_c_fun "delete"
-  | Mnew_array => Procname.from_string_c_fun "delete[]"
-  | Mobjc => Procname.from_string_c_fun "dealloc";
+  | Mmalloc => Typ.Procname.from_string_c_fun "free"
+  | Mnew => Typ.Procname.from_string_c_fun "delete"
+  | Mnew_array => Typ.Procname.from_string_c_fun "delete[]"
+  | Mobjc => Typ.Procname.from_string_c_fun "dealloc";
 
 
 /** Categories of attributes */
@@ -244,7 +244,7 @@ let to_string pe =>
         };
       name ^
       Binop.str pe Lt ^
-      Procname.to_string ra.ra_pname ^
+      Typ.Procname.to_string ra.ra_pname ^
       ":" ^ string_of_int ra.ra_loc.Location.line ^ Binop.str pe Gt ^ str_vpath
     }
   | Aautorelease => "AUTORELEASE"
@@ -260,14 +260,14 @@ let to_string pe =>
   | Aundef pn _ loc _ =>
     "UND" ^
     Binop.str pe Lt ^
-    Procname.to_string pn ^ Binop.str pe Gt ^ ":" ^ string_of_int loc.Location.line
-  | Ataint {taint_source} => "TAINTED[" ^ Procname.to_string taint_source ^ "]"
+    Typ.Procname.to_string pn ^ Binop.str pe Gt ^ ":" ^ string_of_int loc.Location.line
+  | Ataint {taint_source} => "TAINTED[" ^ Typ.Procname.to_string taint_source ^ "]"
   | Auntaint _ => "UNTAINTED"
   | Alocked => "LOCKED"
   | Aunlocked => "UNLOCKED"
   | Adiv0 (_, _) => "DIV0"
   | Aobjc_null => "OBJC_NULL"
-  | Aretval pn _ => "RET" ^ Binop.str pe Lt ^ Procname.to_string pn ^ Binop.str pe Gt
+  | Aretval pn _ => "RET" ^ Binop.str pe Lt ^ Typ.Procname.to_string pn ^ Binop.str pe Gt
   | Aobserver => "OBSERVER"
   | Aunsubscribed_observer => "UNSUBSCRIBED_OBSERVER";
 

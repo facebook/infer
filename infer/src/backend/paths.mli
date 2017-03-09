@@ -19,7 +19,7 @@ module Path : sig
   type session = int
 
   (** add a call with its sub-path, the boolean indicates whether the subtrace for the procedure should be included *)
-  val add_call : bool -> t -> Procname.t -> t -> t
+  val add_call : bool -> t -> Typ.Procname.t -> t -> t
 
   (** check whether a path contains another path *)
   val contains : t -> t -> bool

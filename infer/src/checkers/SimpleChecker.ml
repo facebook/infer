@@ -25,12 +25,12 @@ module type Spec = sig
       input is the previous state, current instruction, current node kind, current procedure and
       type environment.
   *)
-  val exec_instr : astate -> Sil.instr -> Procdesc.Node.nodekind -> Procname.t -> Tenv.t -> astate
+  val exec_instr : astate -> Sil.instr -> Procdesc.Node.nodekind -> Typ.Procname.t -> Tenv.t -> astate
 
   (** log errors here.
       input is a state, location where the state occurs in the source, and the current procedure.
   *)
-  val report : astate -> Location.t -> Procname.t -> unit
+  val report : astate -> Location.t -> Typ.Procname.t -> unit
 
   val compare : astate -> astate -> int
 end

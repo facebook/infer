@@ -23,7 +23,7 @@ type annotation =
 (** Check if the annotated signature is for a wrapper of an anonymous inner class method.
     These wrappers have the same name as the original method, every type is Object, and the
     parameters are called x0, x1, x2. *)
-val is_anonymous_inner_class_wrapper : t -> Procname.t -> bool
+val is_anonymous_inner_class_wrapper : t -> Typ.Procname.t -> bool
 
 (** Check if the given parameter has a Nullable annotation in the given signature *)
 val param_is_nullable : Pvar.t -> t -> bool
@@ -32,7 +32,7 @@ val param_is_nullable : Pvar.t -> t -> bool
 val method_annotation_mark_return : annotation -> Annot.Method.t -> Annot.Method.t
 
 (** Mark the annotated signature with the given annotation map. *)
-val mark : Procname.t -> annotation -> t -> bool * bool list -> t
+val mark : Typ.Procname.t -> annotation -> t -> bool * bool list -> t
 
 (** Mark the return of the annotated signature with the given annotation. *)
 val mark_return : annotation -> t -> t
@@ -44,4 +44,4 @@ val get : ProcAttributes.t -> t
 val mk_ia : annotation -> Annot.Item.t -> Annot.Item.t
 
 (** Pretty print a method signature with annotations. *)
-val pp : Procname.t -> Format.formatter -> t -> unit
+val pp : Typ.Procname.t -> Format.formatter -> t -> unit

@@ -22,14 +22,14 @@ val typename_of_classname : JBasics.class_name -> Typename.t
 (** returns a name for a field based on a class name and a field name  *)
 val create_fieldname : JBasics.class_name -> JBasics.field_signature -> Ident.fieldname
 
-val get_method_kind : JCode.jcode Javalib.jmethod -> Procname.method_kind
+val get_method_kind : JCode.jcode Javalib.jmethod -> Typ.Procname.method_kind
 
 (** returns a procedure name based on the class name and the method's signature. *)
 val get_method_procname :
-  JBasics.class_name -> JBasics.method_signature -> Procname.method_kind -> Procname.t
+  JBasics.class_name -> JBasics.method_signature -> Typ.Procname.method_kind -> Typ.Procname.t
 
 (** translate the SIL procedure name of the Java method *)
-val translate_method_name : JCode.jcode Javalib.jmethod -> Procname.t
+val translate_method_name : JCode.jcode Javalib.jmethod -> Typ.Procname.t
 
 (** [get_class_struct_typ program tenv cn] returns the struct_typ representation of the class *)
 val get_class_struct_typ: JClasspath.program -> Tenv.t -> JBasics.class_name -> Typ.Struct.t
@@ -90,9 +90,9 @@ val string_of_type : JBasics.value_type -> string
 (** returns a string representation of an object Java type *)
 val object_type_to_string : JBasics.object_type -> string
 
-val vt_to_java_type : JBasics.value_type -> Procname.java_type
+val vt_to_java_type : JBasics.value_type -> Typ.Procname.java_type
 
-val cn_to_java_type : JBasics.class_name -> Procname.java_type
+val cn_to_java_type : JBasics.class_name -> Typ.Procname.java_type
 
 (** Add the types of the models to the type environment passed as parameter *)
 val add_models_types : Tenv.t -> unit

@@ -61,7 +61,7 @@ module StructuredSil = struct
 
   let dummy_typ = Typ.Tvoid
   let dummy_loc = Location.dummy
-  let dummy_procname = Procname.empty_block
+  let dummy_procname = Typ.Procname.empty_block
 
   let label_counter = ref 0
 
@@ -276,7 +276,7 @@ module Make (CFG : ProcCfg.S with type node = Procdesc.Node.t) (T : TransferFunc
           |> F.flush_str_formatter in
         OUnit2.assert_failure assert_fail_message
 
-  let create_tests ?(test_pname=Procname.empty_block) ~initial ?pp_opt extras tests =
+  let create_tests ?(test_pname=Typ.Procname.empty_block) ~initial ?pp_opt extras tests =
     let open OUnit2 in
     List.map ~f:(fun (name, test_program) ->
         name>::create_test test_program extras ~initial pp_opt test_pname) tests

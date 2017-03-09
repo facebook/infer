@@ -515,7 +515,7 @@ let pp_instr pe0 f instr => {
 let is_block_pvar pvar => Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar));
 
 /* A block pvar used to explain retain cycles */
-let block_pvar = Pvar.mk (Mangled.from_string "block") (Procname.from_string_c_fun "");
+let block_pvar = Pvar.mk (Mangled.from_string "block") (Typ.Procname.from_string_c_fun "");
 
 
 /** Dump an instruction. */

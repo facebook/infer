@@ -38,7 +38,7 @@ type t =
     return_param_typ : Typ.t option;
     outer_context : t option; (** in case of objc blocks, the context of the method containing the
                                   block *)
-    mutable blocks_static_vars : ((Pvar.t * Typ.t) list) Procname.Map.t;
+    mutable blocks_static_vars : ((Pvar.t * Typ.t) list) Typ.Procname.Map.t;
     label_map : str_node_map;
   }
 
@@ -46,7 +46,7 @@ let create_context translation_unit_context tenv cg cfg procdesc curr_class retu
     is_objc_method outer_context =
   { translation_unit_context; tenv; cg; cfg; procdesc; curr_class; return_param_typ;
     is_objc_method; outer_context;
-    blocks_static_vars = Procname.Map.empty;
+    blocks_static_vars = Typ.Procname.Map.empty;
     label_map = Hashtbl.create 17;
   }
 
@@ -118,7 +118,7 @@ let add_block_static_var context block_name static_var_typ =
   | Some outer_context, (static_var, _) when Pvar.is_global static_var ->
       (let new_static_vars, duplicate =
          try
-           let static_vars = Procname.Map.find block_name outer_context.blocks_static_vars in
+           let static_vars = Typ.Procname.Map.find block_name outer_context.blocks_static_vars in
            if List.mem ~equal:(
                fun (var1, _) (var2, _) -> Pvar.equal var1 var2
              ) static_vars static_var_typ  then
@@ -128,12 +128,12 @@ let add_block_static_var context block_name static_var_typ =
          with Not_found -> [static_var_typ], false in
        if not duplicate then
          let blocks_static_vars =
-           Procname.Map.add block_name new_static_vars outer_context.blocks_static_vars in
+           Typ.Procname.Map.add block_name new_static_vars outer_context.blocks_static_vars in
          outer_context.blocks_static_vars <- blocks_static_vars)
   | _ -> ()
 
 let static_vars_for_block context block_name =
-  try Procname.Map.find block_name context.blocks_static_vars
+  try Typ.Procname.Map.find block_name context.blocks_static_vars
   with Not_found -> []
 
 let rec get_outer_procname context =

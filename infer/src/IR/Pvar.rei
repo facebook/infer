@@ -44,7 +44,7 @@ let get_name: t => Mangled.t;
 
 
 /** [get_ret_pvar proc_name] retuns the return pvar associated with the procedure name */
-let get_ret_pvar: Procname.t => t;
+let get_ret_pvar: Typ.Procname.t => t;
 
 
 /** Get a simplified version of the name component of a program variable. */
@@ -88,20 +88,20 @@ let is_frontend_tmp: t => bool;
 
 
 /** [mk name proc_name suffix] creates a program var with the given function name and suffix */
-let mk: Mangled.t => Procname.t => t;
+let mk: Mangled.t => Typ.Procname.t => t;
 
 
 /** create an abduced variable for a parameter passed by reference */
-let mk_abduced_ref_param: Procname.t => t => Location.t => t;
+let mk_abduced_ref_param: Typ.Procname.t => t => Location.t => t;
 
 
 /** create an abduced return variable for a call to [proc_name] at [loc] */
-let mk_abduced_ret: Procname.t => Location.t => t;
+let mk_abduced_ret: Typ.Procname.t => Location.t => t;
 
 
 /** [mk_callee name proc_name] creates a program var
     for a callee function with the given function name */
-let mk_callee: Mangled.t => Procname.t => t;
+let mk_callee: Mangled.t => Typ.Procname.t => t;
 
 
 /** create a global variable with the given name */
@@ -110,7 +110,7 @@ let mk_global:
 
 
 /** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */
-let mk_tmp: string => Procname.t => t;
+let mk_tmp: string => Typ.Procname.t => t;
 
 
 /** Pretty print a program variable. */
@@ -126,7 +126,7 @@ let pp_value: Pp.env => F.formatter => t => unit;
 
 
 /** Turn an ordinary program variable into a callee program variable */
-let to_callee: Procname.t => t => t;
+let to_callee: Typ.Procname.t => t => t;
 
 
 /** Turn a pvar into a seed pvar (which stores the initial value of a stack var) */
@@ -152,6 +152,6 @@ let is_pod: t => bool;
 
 
 /** Get the procname of the initializer function for the given global variable */
-let get_initializer_pname: t => option Procname.t;
+let get_initializer_pname: t => option Typ.Procname.t;
 
 let module Set: PrettyPrintable.PPSet with type elt = t;

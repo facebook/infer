@@ -11,18 +11,18 @@
 
 open! IStd
 
-let errLogMap = ref Procname.Map.empty
+let errLogMap = ref Typ.Procname.Map.empty
 
 let exists_issues () =
-  not (Procname.Map.is_empty !errLogMap)
+  not (Typ.Procname.Map.is_empty !errLogMap)
 
 let get_err_log procname =
-  try Procname.Map.find procname !errLogMap
+  try Typ.Procname.Map.find procname !errLogMap
   with Not_found ->
     let errlog = Errlog.empty () in
-    errLogMap := Procname.Map.add procname errlog !errLogMap; errlog
+    errLogMap := Typ.Procname.Map.add procname errlog !errLogMap; errlog
 
-let lint_issues_serializer : (Errlog.t Procname.Map.t) Serialization.serializer =
+let lint_issues_serializer : (Errlog.t Typ.Procname.Map.t) Serialization.serializer =
   Serialization.create_serializer Serialization.Key.lint_issues
 
 (** Save issues to a file *)
@@ -41,7 +41,7 @@ let load_issues_to_errlog_map dir =
     let file = DB.filename_from_string (Filename.concat issues_dir issues_file) in
     match load_issues file with
     | Some map ->
-        errLogMap := Procname.Map.merge (
+        errLogMap := Typ.Procname.Map.merge (
             fun _ issues1 issues2 ->
               match issues1, issues2 with
               | Some issues1, Some issues2 ->

@@ -47,7 +47,7 @@ let rec to_string =
   fun
   | Darray de1 de2 => to_string de1 ^ "[" ^ to_string de2 ^ "]"
   | Dbinop op de1 de2 => "(" ^ to_string de1 ^ Binop.str Pp.text op ^ to_string de2 ^ ")"
-  | Dconst (Cfun pn) => Procname.to_simplified_string pn
+  | Dconst (Cfun pn) => Typ.Procname.to_simplified_string pn
   | Dconst c => Const.to_string c
   | Dderef de => "*" ^ to_string de
   | Dfcall fun_dexp args _ {cf_virtual: isvirtual} => {
@@ -65,8 +65,8 @@ let rec to_string =
         | Dconst (Cfun pname) => {
             let s =
               switch pname {
-              | Procname.Java pname_java => Procname.java_get_method pname_java
-              | _ => Procname.to_string pname
+              | Typ.Procname.Java pname_java => Typ.Procname.java_get_method pname_java
+              | _ => Typ.Procname.to_string pname
               };
             F.fprintf fmt "%s" s
           }

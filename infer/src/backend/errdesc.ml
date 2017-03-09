@@ -26,8 +26,8 @@ let is_one_of_classes class_name classes =
 
 let is_method_of_objc_cpp_class pname classes =
   match pname with
-  | Procname.ObjC_Cpp name ->
-      let class_name = Procname.objc_cpp_get_class_name name in
+  | Typ.Procname.ObjC_Cpp name ->
+      let class_name = Typ.Procname.objc_cpp_get_class_name name in
       is_one_of_classes class_name classes
   | _ -> false
 
@@ -219,7 +219,7 @@ let rec _find_normal_variable_load tenv (seen : Exp.Set.t) node id : DExp.t opti
            Sil.d_exp e; L.d_ln ());
         _exp_lv_dexp tenv seen node e
     | Sil.Call (Some (id0, _), Exp.Const (Const.Cfun pn), (e, _):: _, _, _)
-      when Ident.equal id id0 && Procname.equal pn (Procname.from_string_c_fun "__cast") ->
+      when Ident.equal id id0 && Typ.Procname.equal pn (Typ.Procname.from_string_c_fun "__cast") ->
         if verbose
         then
           (L.d_str "find_normal_variable_load cast on ";
@@ -897,7 +897,7 @@ let _explain_access tenv
         if verbose then (L.d_str "explain_dereference Binop.Leteref "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Call (_, Exp.Const (Const.Cfun fn), [(e, _)], _, _)
-      when String.equal (Procname.to_string fn) "free" ->
+      when String.equal (Typ.Procname.to_string fn) "free" ->
         if verbose then (L.d_str "explain_dereference Sil.Call "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Call (_, (Exp.Var _ as e), _, _, _) ->

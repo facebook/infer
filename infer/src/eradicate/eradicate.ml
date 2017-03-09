@@ -189,7 +189,7 @@ struct
         pname pdesc ann_sig linereader loc in
 
     let module Initializers = struct
-      type init = Procname.t * Procdesc.t
+      type init = Typ.Procname.t * Procdesc.t
 
       let equal_class_opt = [%compare.equal : string option]
 
@@ -203,8 +203,8 @@ struct
                 PredSymb.equal_access callee_attributes.ProcAttributes.access PredSymb.Private in
               let same_class =
                 let get_class_opt pn = match pn with
-                  | Procname.Java pn_java ->
-                      Some (Procname.java_get_class_name pn_java)
+                  | Typ.Procname.Java pn_java ->
+                      Some (Typ.Procname.java_get_class_name pn_java)
                   | _ ->
                       None in
                 equal_class_opt (get_class_opt init_pn) (get_class_opt callee_pn) in
@@ -226,15 +226,15 @@ struct
           let initializers_base_case = initializers_current_class in
 
           let res = ref [] in
-          let seen = ref Procname.Set.empty in
+          let seen = ref Typ.Procname.Set.empty in
           let mark_seen (initializers : init list) : unit =
-            List.iter ~f:(fun (pn, _) -> seen := Procname.Set.add pn !seen) initializers;
+            List.iter ~f:(fun (pn, _) -> seen := Typ.Procname.Set.add pn !seen) initializers;
             res := !res @ initializers in
 
           let rec fixpoint initializers_old =
             let initializers_new = get_private_called initializers_old in
             let initializers_new' =
-              List.filter ~f:(fun (pn, _) -> not (Procname.Set.mem pn !seen)) initializers_new in
+              List.filter ~f:(fun (pn, _) -> not (Typ.Procname.Set.mem pn !seen)) initializers_new in
             mark_seen initializers_new';
             if initializers_new' <> [] then fixpoint initializers_new' in
 
@@ -267,8 +267,8 @@ struct
         List.rev !res
 
       let get_class pn = match pn with
-        | Procname.Java pn_java ->
-            Some (Procname.java_get_class_name pn_java)
+        | Typ.Procname.Java pn_java ->
+            Some (Typ.Procname.java_get_class_name pn_java)
         | _ ->
             None
 
@@ -295,7 +295,7 @@ struct
           let constructors_current_class =
             pname_and_pdescs_with
               (fun (pname, _) ->
-                 Procname.is_constructor pname &&
+                 Typ.Procname.is_constructor pname &&
                  equal_class_opt (get_class pname) (get_class curr_pname)) in
           final_typestates constructors_current_class
         end
@@ -344,7 +344,7 @@ struct
     let calls_this = ref false in
 
     let filter_special_cases () =
-      if Procname.java_is_access_method proc_name ||
+      if Typ.Procname.java_is_access_method proc_name ||
          (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.is_bridge_method
       then None
       else

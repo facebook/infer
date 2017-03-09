@@ -22,8 +22,8 @@ let module Node: {
 
   /** kind of cfg node */
   type nodekind =
-    | Start_node Procname.t
-    | Exit_node Procname.t
+    | Start_node Typ.Procname.t
+    | Exit_node Typ.Procname.t
     | Stmt_node string
     | Join_node
     | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
@@ -50,13 +50,13 @@ let module Node: {
   let d_instrs: sub_instrs::bool => option Sil.instr => t => unit;
 
   /** Create a dummy node */
-  let dummy: option Procname.t => t;
+  let dummy: option Typ.Procname.t => t;
 
   /** Check if two nodes are equal */
   let equal: t => t => bool;
 
   /** Get the list of callee procnames from the node */
-  let get_callees: t => list Procname.t;
+  let get_callees: t => list Typ.Procname.t;
 
   /** Return a description of the node */
   let get_description: Pp.env => t => string;
@@ -90,7 +90,7 @@ let module Node: {
   let get_preds: t => list t;
 
   /** Get the name of the procedure the node belongs to */
-  let get_proc_name: t => Procname.t;
+  let get_proc_name: t => Typ.Procname.t;
 
   /** Get the predecessor nodes of a node where the given predicate evaluates to true */
   let get_sliced_preds: t => (t => bool) => list t;
@@ -159,7 +159,7 @@ let did_preanalysis: t => bool;
 
 
 /** fold over the calls from the procedure: (callee, location) pairs */
-let fold_calls: ('a => (Procname.t, Location.t) => 'a) => 'a => t => 'a;
+let fold_calls: ('a => (Typ.Procname.t, Location.t) => 'a) => 'a => t => 'a;
 
 
 /** fold over all nodes and their instructions */
@@ -207,7 +207,7 @@ let get_locals: t => list (Mangled.t, Typ.t);
 
 let get_nodes: t => list Node.t;
 
-let get_proc_name: t => Procname.t;
+let get_proc_name: t => Typ.Procname.t;
 
 
 /** Return the return type of the procedure and type string */
@@ -239,7 +239,7 @@ let is_java_synchronized: t => bool;
 
 
 /** iterate over the calls from the procedure: (callee, location) pairs */
-let iter_calls: ((Procname.t, Location.t) => unit) => t => unit;
+let iter_calls: ((Typ.Procname.t, Location.t) => unit) => t => unit;
 
 
 /** iterate over all nodes and their instructions */
@@ -255,7 +255,7 @@ let iter_slope: (Node.t => unit) => t => unit;
 
 
 /** iterate over all calls until we reach a branching structure */
-let iter_slope_calls: (Procname.t => unit) => t => unit;
+let iter_slope_calls: (Typ.Procname.t => unit) => t => unit;
 
 
 /** iterate between two nodes or until we reach a branching structure */

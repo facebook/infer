@@ -70,7 +70,7 @@ let add_models jar_filename =
 
 
 let is_model procname =
-  String.Set.mem !models_specs_filenames (Procname.to_filename procname)
+  String.Set.mem !models_specs_filenames (Typ.Procname.to_filename procname)
 
 
 let split_classpath cp = Str.split (Str.regexp JFile.sep) cp

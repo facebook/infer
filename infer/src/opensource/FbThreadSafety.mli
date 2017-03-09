@@ -9,8 +9,8 @@
 
 open! IStd
 
-val is_custom_init : Tenv.t -> Procname.t -> bool
+val is_custom_init : Tenv.t -> Typ.Procname.t -> bool
 
-val is_logging_method : Procname.t -> bool
+val is_logging_method : Typ.Procname.t -> bool
 
-val is_graphql_constructor : Procname.t -> bool
+val is_graphql_constructor : Typ.Procname.t -> bool

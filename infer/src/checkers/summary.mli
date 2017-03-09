@@ -22,11 +22,11 @@ module type S = sig
 
   (** Write the [summary] for the procname to persistent storage. Returns the summary actually
       written. *)
-  val write_summary : Procname.t -> summary -> unit
+  val write_summary : Typ.Procname.t -> summary -> unit
 
   (** read and return the summary for [callee_pname] called from [caller_pdesc]. does the analysis
       to create the summary if needed *)
-  val read_summary : Procdesc.t -> Procname.t -> summary option
+  val read_summary : Procdesc.t -> Typ.Procname.t -> summary option
 
 end
 

@@ -17,7 +17,7 @@ val dirs_to_analyze : String.Set.t option
 
 type analyze_ondemand = SourceFile.t -> Procdesc.t -> Specs.summary
 
-type get_proc_desc = Procname.t -> Procdesc.t option
+type get_proc_desc = Typ.Procname.t -> Procdesc.t option
 
 type callbacks =
   {
@@ -38,10 +38,10 @@ val analyze_proc_desc :
     performs an on-demand analysis of proc_name
     triggered during the analysis of curr_pdesc. *)
 val analyze_proc_name :
-  propagate_exceptions:bool -> Procdesc.t -> Procname.t -> Specs.summary option
+  propagate_exceptions:bool -> Procdesc.t -> Typ.Procname.t -> Specs.summary option
 
 (** Check if the procedure called needs to be analyzed. *)
-val procedure_should_be_analyzed : Procname.t -> bool
+val procedure_should_be_analyzed : Typ.Procname.t -> bool
 
 (** Set the callbacks used to perform on-demand analysis. *)
 val set_callbacks : callbacks -> unit

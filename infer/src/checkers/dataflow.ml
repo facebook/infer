@@ -31,7 +31,7 @@ module type DFStateType = sig
   val do_node : Tenv.t -> Procdesc.Node.t -> t -> (t list) * (t list)
 
   (** Can proc throw an exception? *)
-  val proc_throws : Procname.t -> throws
+  val proc_throws : Typ.Procname.t -> throws
 end
 
 (** Type for the dataflow API. *)
@@ -47,7 +47,7 @@ module type DF = sig
 end
 
 (** Determine if the node can throw an exception. *)
-let node_throws pdesc node (proc_throws : Procname.t -> throws) : throws =
+let node_throws pdesc node (proc_throws : Typ.Procname.t -> throws) : throws =
   let instr_throws instr =
     let is_return pvar =
       let ret_pvar = Procdesc.get_ret_var pdesc in
@@ -58,7 +58,7 @@ let node_throws pdesc node (proc_throws : Procname.t -> throws) : throws =
         Throws
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _)
       when BuiltinDecl.is_declared callee_pn ->
-        if Procname.equal callee_pn BuiltinDecl.__cast
+        if Typ.Procname.equal callee_pn BuiltinDecl.__cast
         then DontKnow
         else DoesNotThrow
     | Sil.Call (_, Exp.Const (Const.Cfun callee_pn), _, _, _) ->

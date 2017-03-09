@@ -669,7 +669,7 @@ let execute_abort { Builtin.proc_name; }
   : Builtin.ret_typ =
   raise
     (Exceptions.Precondition_not_found
-       (Localise.verbatim_desc (Procname.to_string proc_name), __POS__))
+       (Localise.verbatim_desc (Typ.Procname.to_string proc_name), __POS__))
 
 let execute_exit { Builtin.prop_; path; }
   : Builtin.ret_typ =
@@ -834,7 +834,7 @@ let execute_pthread_create ({ Builtin.tenv; prop_; path; args; } as builtin_args
            let fun_string = Mangled.to_string fun_name in
            L.d_strln ("pthread_create: calling function " ^ fun_string);
            begin
-             match Specs.get_summary (Procname.from_string_c_fun fun_string) with
+             match Specs.get_summary (Typ.Procname.from_string_c_fun fun_string) with
              | None -> assert false
              | Some callee_summary ->
                  SymExec.proc_call callee_summary

@@ -13,7 +13,7 @@ open! IStd
 (** Module type for the type checking functions. *)
 
 type check_return_type =
-  Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
+  Typ.Procname.t -> Procdesc.t -> Typ.t -> Typ.t option -> Location.t -> unit
 
 type find_canonical_duplicate = Procdesc.Node.t -> Procdesc.Node.t
 
@@ -29,6 +29,6 @@ type checks =
 val typecheck_node :
   Tenv.t -> 'a TypeState.ext ->
   bool ref -> checks -> Idenv.t ->
-  get_proc_desc -> Procname.t -> Procdesc.t ->
+  get_proc_desc -> Typ.Procname.t -> Procdesc.t ->
   find_canonical_duplicate -> AnnotatedSignature.t -> 'a TypeState.t ->
   Procdesc.Node.t -> Printer.LineReader.t -> 'a TypeState.t list * 'a TypeState.t list

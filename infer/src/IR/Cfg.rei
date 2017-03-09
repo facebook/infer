@@ -35,11 +35,11 @@ let create_proc_desc: cfg => ProcAttributes.t => Procdesc.t;
 
 
 /** Iterate over all the procdesc's */
-let iter_proc_desc: cfg => (Procname.t => Procdesc.t => unit) => unit;
+let iter_proc_desc: cfg => (Typ.Procname.t => Procdesc.t => unit) => unit;
 
 
 /** Find the procdesc given the proc name. Return None if not found. */
-let find_proc_desc_from_name: cfg => Procname.t => option Procdesc.t;
+let find_proc_desc_from_name: cfg => Typ.Procname.t => option Procdesc.t;
 
 
 /** Get all the procedures (defined and declared) */
@@ -59,13 +59,13 @@ let check_cfg_connectedness: cfg => unit;
 
 
 /** Remove the procdesc from the control flow graph. */
-let remove_proc_desc: cfg => Procname.t => unit;
+let remove_proc_desc: cfg => Typ.Procname.t => unit;
 
 
 /** Creates a copy of a procedure description and a list of type substitutions of the form
     (name, typ) where name is a parameter. The resulting procdesc is isomorphic but
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types */
-let specialize_types: Procdesc.t => Procname.t => list (Exp.t, Typ.t) => Procdesc.t;
+let specialize_types: Procdesc.t => Typ.Procname.t => list (Exp.t, Typ.t) => Procdesc.t;
 
 let pp_proc_signatures: Format.formatter => cfg => unit;

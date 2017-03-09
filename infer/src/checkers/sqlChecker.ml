@@ -29,8 +29,8 @@ let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
   (* Check for SQL string concatenations *)
   let do_instr const_map node instr =
     let do_call pn_java i1 i2 l =
-      if String.equal (Procname.java_get_class_name pn_java) "java.lang.StringBuilder"
-      && String.equal (Procname.java_get_method pn_java) "append"
+      if String.equal (Typ.Procname.java_get_class_name pn_java) "java.lang.StringBuilder"
+      && String.equal (Typ.Procname.java_get_method pn_java) "append"
       then
         begin
           let rvar1 = Exp.Var i1 in
@@ -56,7 +56,7 @@ let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
     | Sil.Call (_, Exp.Const (Const.Cfun pn), (Exp.Var i1, _):: (Exp.Var i2, _):: [], l, _) ->
         begin
           match pn with
-          | Procname.Java pn_java ->
+          | Typ.Procname.Java pn_java ->
               do_call pn_java i1 i2 l
           | _ ->
               ()
@@ -65,6 +65,6 @@ let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
 
   try
     let const_map = ConstantPropagation.build_const_map tenv proc_desc in
-    if verbose then L.stdout "Analyzing %a...\n@." Procname.pp proc_name;
+    if verbose then L.stdout "Analyzing %a...\n@." Typ.Procname.pp proc_name;
     Procdesc.iter_instrs (do_instr const_map) proc_desc
   with _ -> ()

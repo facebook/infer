@@ -20,8 +20,8 @@ let module Node = {
   type id = int [@@deriving compare];
   let equal_id = [%compare.equal : id];
   type nodekind =
-    | Start_node Procname.t
-    | Exit_node Procname.t
+    | Start_node Typ.Procname.t
+    | Exit_node Typ.Procname.t
     | Stmt_node string
     | Join_node
     | Prune_node bool Sil.if_kind string /** (true/false branch, if_kind, comment) */
@@ -46,7 +46,7 @@ let module Node = {
     /** predecessor nodes in the cfg */
     mutable preds: list t,
     /** name of the procedure the node belongs to */
-    pname_opt: option Procname.t,
+    pname_opt: option Typ.Procname.t,
     /** successor nodes in the cfg */
     mutable succs: list t
   };
@@ -580,7 +580,7 @@ let pp_objc_accessor fmt accessor =>
 let pp_signature fmt pdesc => {
   let attributes = get_attributes pdesc;
   let pname = get_proc_name pdesc;
-  let pname_string = Procname.to_string pname;
+  let pname_string = Typ.Procname.to_string pname;
   let defined_string = is_defined pdesc ? "defined" : "undefined";
   Format.fprintf
     fmt

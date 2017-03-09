@@ -275,7 +275,7 @@ let get_session () =
 let get_path_pos () =
   let pname = match get_prop_tenv_pdesc () with
     | Some (_, _, pdesc) -> Procdesc.get_proc_name pdesc
-    | None -> Procname.from_string_c_fun "unknown_procedure" in
+    | None -> Typ.Procname.from_string_c_fun "unknown_procedure" in
   let nid = get_node_id () in
   (pname, (nid :> int))
 
@@ -307,7 +307,7 @@ let mark_instr_fail exn =
   fs.instr_fail <- fs.instr_fail + 1
 
 type log_issue =
-  Procname.t ->
+  Typ.Procname.t ->
   ?loc: Location.t ->
   ?node_id: (int * int) ->
   ?session: int ->

@@ -12,9 +12,9 @@ open! IStd
 (** Process variable declarations by saving them as local or global variables.  *)
 (** Computes the local variables of a function or method to be added to the procdesc *)
 
-val sil_var_of_decl : CContext.t -> Clang_ast_t.decl -> Procname.t -> Pvar.t
+val sil_var_of_decl : CContext.t -> Clang_ast_t.decl -> Typ.Procname.t -> Pvar.t
 
-val sil_var_of_decl_ref : CContext.t -> Clang_ast_t.decl_ref -> Procname.t -> Pvar.t
+val sil_var_of_decl_ref : CContext.t -> Clang_ast_t.decl_ref -> Typ.Procname.t -> Pvar.t
 
 val add_var_to_locals : Procdesc.t -> Clang_ast_t.decl -> Typ.t -> Pvar.t -> unit
 

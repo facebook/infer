@@ -15,20 +15,20 @@ let module F = Format;
 
 
 /** data type for the control flow graph */
-type cfg = {proc_desc_table: Procname.Hash.t Procdesc.t /** Map proc name to procdesc */};
+type cfg = {proc_desc_table: Typ.Procname.Hash.t Procdesc.t /** Map proc name to procdesc */};
 
 
 /** create a new empty cfg */
-let create_cfg () => {proc_desc_table: Procname.Hash.create 16};
+let create_cfg () => {proc_desc_table: Typ.Procname.Hash.create 16};
 
-let add_proc_desc cfg pname pdesc => Procname.Hash.add cfg.proc_desc_table pname pdesc;
+let add_proc_desc cfg pname pdesc => Typ.Procname.Hash.add cfg.proc_desc_table pname pdesc;
 
-let remove_proc_desc cfg pname => Procname.Hash.remove cfg.proc_desc_table pname;
+let remove_proc_desc cfg pname => Typ.Procname.Hash.remove cfg.proc_desc_table pname;
 
-let iter_proc_desc cfg f => Procname.Hash.iter f cfg.proc_desc_table;
+let iter_proc_desc cfg f => Typ.Procname.Hash.iter f cfg.proc_desc_table;
 
 let find_proc_desc_from_name cfg pname =>
-  try (Some (Procname.Hash.find cfg.proc_desc_table pname)) {
+  try (Some (Typ.Procname.Hash.find cfg.proc_desc_table pname)) {
   | Not_found => None
   };
 
@@ -48,7 +48,7 @@ let iter_all_nodes sorted::sorted=false f cfg => {
   if (not sorted) {
     iter_proc_desc cfg do_proc_desc
   } else {
-    Procname.Hash.fold
+    Typ.Procname.Hash.fold
       (
         fun _ pdesc desc_nodes =>
           List.fold
@@ -105,7 +105,7 @@ let check_cfg_connectedness cfg => {
     }
   };
   let do_pdesc pd => {
-    let pname = Procname.to_string (Procdesc.get_proc_name pd);
+    let pname = Typ.Procname.to_string (Procdesc.get_proc_name pd);
     let nodes = Procdesc.get_nodes pd;
     let broken = List.exists f::broken_node nodes;
     if broken {
@@ -212,7 +212,7 @@ let proc_inline_synthetic_methods cfg pdesc :unit => {
     | Sil.Call ret_id (Exp.Const (Const.Cfun pn)) etl loc _ =>
       switch (find_proc_desc_from_name cfg pn) {
       | Some pd =>
-        let is_access = Procname.java_is_access_method pn;
+        let is_access = Typ.Procname.java_is_access_method pn;
         let attributes = Procdesc.get_attributes pd;
         let is_synthetic = attributes.is_synthetic_method;
         let is_bridge = attributes.is_bridge_method;
@@ -246,7 +246,7 @@ let proc_inline_synthetic_methods cfg pdesc :unit => {
 /** Inline the java synthetic methods in the cfg */
 let inline_java_synthetic_methods cfg => {
   let f pname pdesc =>
-    if (Procname.is_java pname) {
+    if (Typ.Procname.is_java pname) {
       proc_inline_synthetic_methods cfg pdesc
     };
   iter_proc_desc cfg f
@@ -310,7 +310,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
   let new_procs = cfg_new.proc_desc_table;
   let mark_pdesc_if_unchanged pname (new_pdesc: Procdesc.t) =>
     try {
-      let old_pdesc = Procname.Hash.find old_procs pname;
+      let old_pdesc = Typ.Procname.Hash.find old_procs pname;
       let changed =
         /* in continue_capture mode keep the old changed bit */
         Config.continue_capture && (Procdesc.get_attributes old_pdesc).changed ||
@@ -319,7 +319,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
     } {
     | Not_found => ()
     };
-  Procname.Hash.iter mark_pdesc_if_unchanged new_procs
+  Typ.Procname.Hash.iter mark_pdesc_if_unchanged new_procs
 };
 
 
@@ -388,7 +388,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
       }
     | Sil.Call
         return_ids
-        (Exp.Const (Const.Cfun (Procname.Java callee_pname_java)))
+        (Exp.Const (Const.Cfun (Typ.Procname.Java callee_pname_java)))
         [(Exp.Var id, _), ...origin_args]
         loc
         call_flags
@@ -396,7 +396,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
         let redirected_typename = Option.value_exn (redirect_typename id);
         let redirected_typ = mk_ptr_typ redirected_typename;
         let redirected_pname =
-          Procname.replace_class (Procname.Java callee_pname_java) redirected_typename;
+          Typ.Procname.replace_class (Typ.Procname.Java callee_pname_java) redirected_typename;
         let args = {
           let other_args = List.map f::(fun (exp, typ) => (convert_exp exp, typ)) origin_args;
           [(Exp.Var id, redirected_typ), ...other_args]

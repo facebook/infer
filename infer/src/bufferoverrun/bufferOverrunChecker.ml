@@ -33,7 +33,7 @@ struct
   module Domain = Dom.Mem
   module Sem = BufferOverrunSemantics.Make (CFG)
 
-  type extras = Procname.t -> Procdesc.t option
+  type extras = Typ.Procname.t -> Procdesc.t option
 
   (* NOTE: heuristic *)
   let get_malloc_info : Exp.t -> Typ.t * Exp.t
@@ -44,7 +44,7 @@ struct
       | x -> (Typ.Tint Typ.IChar, x)
 
   let model_malloc
-    : Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
+    : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
       -> Dom.Mem.t -> Dom.Mem.t
     = fun pname ret params node mem ->
       match ret with
@@ -56,7 +56,7 @@ struct
       | _ -> mem
 
   let model_realloc
-    : Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
+    : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
       -> Dom.Mem.t -> Dom.Mem.t
     = fun pname ret params node mem ->
       model_malloc pname ret (List.tl_exn params) node mem
@@ -87,11 +87,11 @@ struct
       | _ -> mem
 
   let handle_unknown_call
-    : Procname.t -> (Ident.t * Typ.t) option -> Procname.t
+    : Typ.Procname.t -> (Ident.t * Typ.t) option -> Typ.Procname.t
       -> (Exp.t * Typ.t) list -> CFG.node -> Dom.Mem.t -> Location.t
       -> Dom.Mem.t
     = fun pname ret callee_pname params node mem loc ->
-      match Procname.get_method callee_pname with
+      match Typ.Procname.get_method callee_pname with
       | "malloc"
       | "__new_array" -> model_malloc pname ret params node mem
       | "realloc" -> model_realloc pname ret params node mem
@@ -101,7 +101,7 @@ struct
       | _ -> model_unknown_itv ret mem
 
   let rec declare_array
-    : Procname.t -> CFG.node -> Loc.t -> Typ.t -> IntLit.t -> inst_num:int
+    : Typ.Procname.t -> CFG.node -> Loc.t -> Typ.t -> IntLit.t -> inst_num:int
     -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate
     = fun pname node loc typ len ~inst_num ~dimension mem ->
       let size = IntLit.to_int len |> Itv.of_int in
@@ -123,7 +123,7 @@ struct
       | _ -> mem
 
   let declare_symbolic_array
-    : Procname.t -> Tenv.t -> CFG.node -> Loc.t -> Typ.t -> inst_num:int
+    : Typ.Procname.t -> Tenv.t -> CFG.node -> Loc.t -> Typ.t -> inst_num:int
     -> sym_num:int -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate * int
     = fun pname tenv node loc typ ~inst_num ~sym_num ~dimension mem ->
       let offset = Itv.make_sym pname sym_num in
@@ -187,7 +187,7 @@ struct
       |> fst3
 
   let instantiate_ret
-    : Tenv.t -> Procdesc.t option -> Procname.t -> (Exp.t * Typ.t) list
+    : Tenv.t -> Procdesc.t option -> Typ.Procname.t -> (Exp.t * Typ.t) list
       -> Dom.Mem.t -> Dom.Summary.t -> Location.t -> Dom.Val.astate
     = fun tenv callee_pdesc callee_pname params caller_mem summary loc ->
       let callee_entry_mem = Dom.Summary.get_input summary in
@@ -279,10 +279,10 @@ module Sem = BufferOverrunSemantics.Make (CFG)
 
 module Report =
 struct
-  type extras = Procname.t -> Procdesc.t option
+  type extras = Typ.Procname.t -> Procdesc.t option
 
   let add_condition
-    : Procname.t -> CFG.node -> Exp.t -> Location.t -> Dom.Mem.astate
+    : Typ.Procname.t -> CFG.node -> Exp.t -> Location.t -> Dom.Mem.astate
       -> Dom.ConditionSet.t -> Dom.ConditionSet.t
     = fun pname node exp loc mem cond_set ->
       let array_access =
@@ -318,7 +318,7 @@ struct
       | None -> cond_set
 
   let instantiate_cond
-    : Tenv.t -> Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list
+    : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list
       -> Dom.Mem.t -> Summary.summary -> Location.t -> Dom.ConditionSet.t
     = fun tenv caller_pname callee_pdesc params caller_mem summary loc ->
       let callee_entry_mem = Dom.Summary.get_input summary in
@@ -402,7 +402,7 @@ struct
         in
         match alarm with
         | None -> ()
-        | Some bucket when Procname.equal pname caller_pname ->
+        | Some bucket when Typ.Procname.equal pname caller_pname ->
             let description = Dom.Condition.to_string cond in
             let error_desc = Localise.desc_buffer_overrun bucket description in
             let exn = Exceptions.Checkers (Localise.to_string Localise.buffer_overrun, error_desc) in
@@ -436,10 +436,10 @@ let compute_post
         Some (entry_mem, exit_mem, cond_set)
     | _ -> None
 
-let print_summary : Procname.t -> Dom.Summary.t -> unit
+let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit
   = fun proc_name s ->
     F.fprintf F.err_formatter "@.@[<v 2>Summary of %a :@,"
-      Procname.pp proc_name;
+      Typ.Procname.pp proc_name;
     Dom.Summary.pp_summary F.err_formatter s;
     F.fprintf F.err_formatter "@]@."
 
