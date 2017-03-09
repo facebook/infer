@@ -48,7 +48,7 @@ struct
         (* this shouldn't happen, because self or [a class] should always be arguments of
            functions. This is to make sure I'm not wrong. *)
         assert false
-    | Assert_failure (file, line, column) ->
+    | Assert_failure (file, line, column) when Config.failures_allowed ->
         Logging.out "Fatal error: exception Assert_failure(%s, %d, %d)\n%!" file line column;
         Cfg.remove_proc_desc cfg procname;
         CMethod_trans.create_external_procdesc cfg procname is_objc_method None;
