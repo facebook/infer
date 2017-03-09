@@ -307,4 +307,44 @@ public class Ownership {
     Obj notOwned = leakThenReturn();
     notOwned.f = new Object(); // should warn here
   }
+
+  private void castThenCall(Obj o) {
+    Subclass s = (Subclass) o;
+    s.doWrite();
+  }
+
+  void castThenCallOk() {
+    Obj o = new Obj();
+    castThenCall(o);
+  }
+
+  void castThenCallBad() {
+    Obj o = getMaybeUnownedObj();
+    castThenCall(o);
+  }
+
+  private Obj castThenReturn(Obj o) {
+    Subclass s = (Subclass) o;
+    return s;
+  }
+
+  void castThenReturnOk() {
+    Obj o = new Obj();
+    castThenReturn(o).f = new Object();
+  }
+
+  void castThenReturnBad() {
+    Obj o = getMaybeUnownedObj();
+    castThenReturn(o).f = new Object();
+  }
+
+}
+
+
+class Subclass extends Obj {
+
+  public void doWrite() {
+    f = new Object();
+  }
+
 }

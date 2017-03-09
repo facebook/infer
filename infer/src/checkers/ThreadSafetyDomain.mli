@@ -64,6 +64,9 @@ module AttributeMapDomain : sig
 
   val has_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> bool
 
+  (** get the formal index of the the formal that must own the given access path (if any) *)
+  val get_conditional_ownership_index : AccessPath.Raw.t -> astate -> int option
+
   val add_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> astate
 end
 

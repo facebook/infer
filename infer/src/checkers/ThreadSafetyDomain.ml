@@ -102,6 +102,17 @@ module AttributeMapDomain = struct
     with Not_found ->
       false
 
+  let get_conditional_ownership_index access_path t =
+    try
+      let attributes = find access_path t in
+      (List.find_map
+         ~f:(function
+             | Attribute.OwnedIf ((Some _) as formal_index_opt) -> formal_index_opt
+             | _ -> None)
+         (AttributeSetDomain.elements attributes))
+    with Not_found ->
+      None
+
   let add_attribute access_path attribute t =
     let attribute_set =
       (try find access_path t

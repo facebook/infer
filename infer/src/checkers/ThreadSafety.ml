@@ -456,7 +456,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                 if is_owned actual_access_path astate.attribute_map
                                 then
                                   (* the actual passed to the current callee is owned. drop all the
-                                     conditional writes for that actual, since they're all safe *)
+                                     conditional accesses for that actual, since they're all safe *)
                                   accesses_acc
                                 else
                                   let base = fst actual_access_path in
@@ -464,19 +464,36 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                     match FormalMap.get_formal_index base extras with
                                     | Some formal_index ->
                                         (* the actual passed to the current callee is rooted in a
-                                           formal. add to conditional writes *)
+                                           formal. add to conditional accesses *)
                                         PathDomain.Sinks.fold
                                           (AccessDomain.add_access
                                              (ProtectedIf (Some formal_index)))
                                           (PathDomain.sinks callee_conditional_accesses)
                                           accesses_acc
                                     | None ->
-                                        (* access path not owned and not rooted in a formal. add to
-                                           unsafe writes *)
-                                        PathDomain.Sinks.fold
-                                          (AccessDomain.add_access AccessPrecondition.unprotected)
-                                          (PathDomain.sinks callee_conditional_accesses)
-                                          accesses_acc
+                                        begin
+                                          match
+                                            AttributeMapDomain.get_conditional_ownership_index
+                                              actual_access_path
+                                              astate.attribute_map
+                                          with
+                                          |(Some formal_index) ->
+                                              (* access path conditionally owned, add to
+                                                 protected-if accesses *)
+                                              PathDomain.Sinks.fold
+                                                (AccessDomain.add_access
+                                                   (ProtectedIf (Some formal_index)))
+                                                (PathDomain.sinks callee_conditional_accesses)
+                                                accesses_acc
+                                          | None ->
+                                              (* access path not owned and not rooted in a formal.
+                                                 add to unprotected accesses *)
+                                              PathDomain.Sinks.fold
+                                                (AccessDomain.add_access
+                                                   AccessPrecondition.unprotected)
+                                                (PathDomain.sinks callee_conditional_accesses)
+                                                accesses_acc
+                                        end
                                   end
                             | None ->
                                 PathDomain.Sinks.fold
