@@ -252,7 +252,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             if Pvar.is_return pvar
             then Some (apply_return formal_ap)
             else Some formal_ap
-        | Var.LogicalVar id ->
+        | Var.LogicalVar id when Ident.is_footprint id ->
             begin
               (* summaries store the index of the formal parameter in the ident stamp *)
               match get_actual_ap (Ident.get_stamp id) with
@@ -261,7 +261,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   Some projected_ap
               | None ->
                   None
-            end in
+            end
+        | _ ->
+            None in
 
       let get_caller_ap_node ap access_tree =
         match get_caller_ap ap with
