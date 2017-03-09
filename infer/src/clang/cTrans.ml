@@ -116,16 +116,16 @@ struct
     Logging.out_debug "Block %s field:\n" block_name;
     List.iter ~f:(fun (fn, _, _) ->
         Logging.out_debug "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
-    let mblock = Mangled.from_string block_name in
-    let block_name = Typename.TN_csu (Csu.Class Csu.Objc, mblock) in
-    ignore (Tenv.mk_struct tenv ~fields block_name);
-    let block_type = Typ.Tstruct block_name in
+    let block_typename = Typename.Objc.from_string block_name in
+    ignore (Tenv.mk_struct tenv ~fields block_typename);
+    let block_type = Typ.Tstruct block_typename in
     let trans_res =
       CTrans_utils.alloc_trans
         trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true None in
     let id_block = match trans_res.exps with
       | [(Exp.Var id, _)] -> id
       | _ -> assert false in
+    let mblock = Mangled.from_string block_name in
     let block_var = Pvar.mk mblock procname in
     let declare_block_local =
       Sil.Declare_locals ([(block_var, Typ.Tptr (block_type, Typ.Pk_pointer))], loc) in
@@ -566,8 +566,8 @@ struct
               type_ptr with
       | Some builtin_pname -> builtin_pname
       | None ->
-          let class_typename = CType.mk_classname
-              (CAst_utils.get_class_name_from_member name_info) Csu.CPP in
+          let class_typename = Typename.Cpp.from_string
+              (CAst_utils.get_class_name_from_member name_info) in
           CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_typename)
             method_name in
     let method_exp = (Exp.Const (Const.Cfun pname), method_typ) in

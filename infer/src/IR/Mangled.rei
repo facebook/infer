@@ -24,10 +24,6 @@ let equal: t => t => bool;
 let from_string: string => t;
 
 
-/** Create a mangled type name from a package name and a class name */
-let from_package_class: string => string => t;
-
-
 /** Create a mangled name from a plain and mangled string */
 let mangled: string => string => t;
 

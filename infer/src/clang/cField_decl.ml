@@ -24,12 +24,12 @@ let rec get_fields_super_classes tenv super_class =
       CGeneral_utils.append_no_duplicates_fields fields sc_fields
   | Some { fields } -> fields
 
-let fields_superclass tenv interface_decl_info ck =
+let fields_superclass tenv interface_decl_info =
   match interface_decl_info.Clang_ast_t.otdi_super with
   | Some dr ->
       (match dr.Clang_ast_t.dr_name with
        | Some sc ->
-           let classname = CType.mk_classname (CAst_utils.get_qualified_name sc) ck in
+           let classname = Typename.Objc.from_string (CAst_utils.get_qualified_name sc) in
            get_fields_super_classes tenv classname
        | _ -> [])
   | _ -> []
@@ -77,9 +77,8 @@ let rec get_fields type_ptr_to_sil_type tenv decl_list =
 
 (* Add potential extra fields defined only in the implementation of the class *)
 (* to the info given in the interface. Update the tenv accordingly. *)
-let add_missing_fields tenv class_name ck missing_fields =
-  let mang_name = Mangled.from_string class_name in
-  let class_tn_name = Typename.TN_csu (Csu.Class ck, mang_name) in
+let add_missing_fields tenv class_name missing_fields =
+  let class_tn_name = Typename.Objc.from_string class_name in
   match Tenv.lookup tenv class_tn_name with
   | Some ({ fields } as struct_typ) ->
       let new_fields = CGeneral_utils.append_no_duplicates_fields fields missing_fields in

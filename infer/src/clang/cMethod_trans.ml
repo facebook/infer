@@ -250,7 +250,7 @@ let get_superclass_curr_class_objc context =
         super_of_decl_ref_opt ocidi.ocidi_class_interface
     | _ -> assert false in
   match CContext.get_curr_class context with
-  | CContext.ContextClsDeclPtr ptr -> CType.mk_classname (retreive_super_name ptr) Csu.Objc
+  | CContext.ContextClsDeclPtr ptr -> Typename.Objc.from_string (retreive_super_name ptr)
   | CContext.ContextNoCls -> assert false
 
 (* Gets the class name from a method signature found by clang, if search is successful *)

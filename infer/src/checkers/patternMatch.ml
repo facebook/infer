@@ -252,8 +252,7 @@ let type_is_class typ =
   | _ -> false
 
 let initializer_classes =
-  List.map
-    ~f:(fun name -> Typename.TN_csu (Csu.Class Csu.Java, Mangled.from_string name))
+  List.map ~f:Typename.Java.from_string
     [
       "android.app.Activity";
       "android.app.Application";

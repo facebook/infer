@@ -158,7 +158,7 @@ let get_predefined_ms_retain_release method_name mk_procname lang =
   let return_type =
     if is_retain_method method_name || is_autorelease_method method_name
     then Ast_expressions.create_id_type else Ast_expressions.create_void_type in
-  let class_typename = CType.mk_classname CFrontend_config.nsobject_cl Csu.Objc in
+  let class_typename = Typename.Objc.from_string CFrontend_config.nsobject_cl in
   let class_type = Ast_expressions.create_class_qual_type class_typename in
   let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
   get_predefined_ms_method condition class_typename method_name Procname.ObjCInstanceMethod

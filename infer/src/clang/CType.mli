@@ -15,10 +15,6 @@ val add_pointer_to_typ : Typ.t -> Typ.t
 
 val objc_classname_of_type : Typ.t -> Typename.t
 
-val mk_classname : string -> Csu.class_kind -> Typename.t
-
-val mk_structname : string -> Typename.t
-
 val remove_pointer_to_typ : Typ.t -> Typ.t
 
 val is_class : Typ.t -> bool

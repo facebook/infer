@@ -28,16 +28,42 @@ let name =
   fun
   | TN_csu _ name => Mangled.to_string name;
 
+let from_string_kind class_kind class_name_str =>
+  TN_csu (Csu.Class class_kind) (Mangled.from_string class_name_str);
+
+let is_class_kind class_kind =>
+  fun
+  | TN_csu (Class kind) _ when Csu.equal_class_kind class_kind kind => true
+  | _ => false;
+
+let module C = {
+  let from_string name_str => TN_csu Csu.Struct (Mangled.from_string name_str);
+  let union_from_string name_str => TN_csu Csu.Union (Mangled.from_string name_str);
+};
+
 let module Java = {
-  let from_string class_name_str =>
-    TN_csu (Csu.Class Csu.Java) (Mangled.from_string class_name_str);
-  let is_class =
-    fun
-    | TN_csu (Class Java) _ => true
-    | _ => false;
+  let from_string = from_string_kind Csu.Java;
+  let from_package_class package_name class_name =>
+    if (String.equal package_name "") {
+      from_string class_name
+    } else {
+      from_string (package_name ^ "." ^ class_name)
+    };
+  let is_class = is_class_kind Csu.Java;
   let java_lang_object = from_string "java.lang.Object";
   let java_io_serializable = from_string "java.io.Serializable";
   let java_lang_cloneable = from_string "java.lang.Cloneable";
+};
+
+let module Cpp = {
+  let from_string = from_string_kind Csu.CPP;
+  let is_class = is_class_kind Csu.CPP;
+};
+
+let module Objc = {
+  let from_string = from_string_kind Csu.Objc;
+  let protocol_from_string name_str => TN_csu Csu.Protocol (Mangled.from_string name_str);
+  let is_class = is_class_kind Csu.Objc;
 };
 
 let module Set = Caml.Set.Make {

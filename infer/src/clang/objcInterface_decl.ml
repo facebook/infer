@@ -60,10 +60,8 @@ let get_interface_supers super_opt protocols =
   let super_class =
     match super_opt with
     | None -> []
-    | Some super -> [Typename.TN_csu (Csu.Class Csu.Objc, Mangled.from_string super)] in
-  let protocol_names = List.map ~f:(
-      fun name -> Typename.TN_csu (Csu.Protocol, Mangled.from_string name)
-    ) protocols in
+    | Some super -> [Typename.Objc.from_string super] in
+  let protocol_names = List.map ~f:Typename.Objc.protocol_from_string protocols in
   let super_classes = super_class@protocol_names in
   super_classes
 
@@ -79,14 +77,14 @@ let create_supers_fields type_ptr_to_sil_type tenv decl_list
 let add_class_to_tenv type_ptr_to_sil_type tenv decl_info name_info decl_list ocidi =
   let class_name = CAst_utils.get_qualified_name name_info in
   Logging.out_debug "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
-  let interface_name = CType.mk_classname class_name Csu.Objc in
+  let interface_name = Typename.Objc.from_string class_name in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
   let decl_supers, decl_fields =
     create_supers_fields type_ptr_to_sil_type tenv decl_list
       ocidi.Clang_ast_t.otdi_super
       ocidi.Clang_ast_t.otdi_protocols in
-  let fields_sc = CField_decl.fields_superclass tenv ocidi Csu.Objc in
+  let fields_sc = CField_decl.fields_superclass tenv ocidi in
   List.iter ~f:(fun (fn, ft, _) ->
       Logging.out_debug "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
       Logging.out_debug "type: '%s'\n" (Typ.to_string ft)) fields_sc;
@@ -141,8 +139,8 @@ let interface_impl_declaration type_ptr_to_sil_type tenv decl =
       Logging.out_debug "ADDING: ObjCImplementationDecl for class '%s'\n" class_name;
       let _ = add_class_decl type_ptr_to_sil_type tenv idi in
       let fields = CField_decl.get_fields type_ptr_to_sil_type tenv decl_list in
-      CField_decl.add_missing_fields tenv class_name Csu.Objc fields;
-      let class_tn_name = Typename.TN_csu (Csu.Class Csu.Objc, (Mangled.from_string class_name)) in
+      CField_decl.add_missing_fields tenv class_name fields;
+      let class_tn_name = Typename.Objc.from_string class_name in
       let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
       let class_typ = Typ.Tstruct class_tn_name in
       CAst_utils.update_sil_types_map decl_key class_typ;

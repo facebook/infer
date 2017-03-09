@@ -58,7 +58,7 @@ let android_lifecycles =
 
 let is_subtype_package_class tenv tname package classname =
   PatternMatch.is_subtype tenv
-    tname (Typename.TN_csu (Class Java, Mangled.from_package_class package classname))
+    tname (Typename.Java.from_package_class package classname)
 
 let is_context tenv tname =
   is_subtype_package_class tenv tname "android.content" "Context"
