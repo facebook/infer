@@ -40,6 +40,7 @@ let active_procedure_checkers () =
         PrintfArgs.callback_printf_args, checkers_enabled;
         AnnotationReachability.checker, checkers_enabled;
         BufferOverrunChecker.checker, Config.bufferoverrun;
+        ThreadSafety.checker, Config.threadsafety;
       ] in
     (* make sure SimpleChecker.ml is not dead code *)
     if false then (let module SC = SimpleChecker.Make in ());

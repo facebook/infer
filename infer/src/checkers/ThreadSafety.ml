@@ -796,10 +796,13 @@ let make_results_table get_proc_desc file_env =
       l in
   let compute_post_for_procedure = (* takes proc_env as arg *)
     fun (idenv, tenv, proc_name, proc_desc) ->
-      let callback_arg =
-        let get_procs_in_file _ = [] in
-        { Callbacks.get_proc_desc; get_procs_in_file; idenv; tenv; proc_name; proc_desc } in
-      analyze_procedure callback_arg in
+      match Summary.read_summary proc_desc proc_name with
+      | Some summ -> summ
+      | None ->
+          let callback_arg =
+            let get_procs_in_file _ = [] in
+            { Callbacks.get_proc_desc; get_procs_in_file; idenv; tenv; proc_name; proc_desc } in
+          analyze_procedure callback_arg in
   map_post_computation_over_procs compute_post_for_procedure file_env
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
