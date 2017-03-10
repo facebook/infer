@@ -11,14 +11,15 @@ open! IStd
 
 (** Given decl, return its procname. This function should be used for all procedures
     present in original AST *)
-val from_decl : CFrontend_config.translation_unit_context -> Clang_ast_t.decl -> Typ.Procname.t
-
+val from_decl :
+  CFrontend_config.translation_unit_context -> ?tenv:Tenv.t -> Clang_ast_t.decl -> Typ.Procname.t
 
 (** WARNING: functions from this module should not be used if full decl is available in AST *)
 module NoAstDecl : sig
-  val c_function_of_string : CFrontend_config.translation_unit_context -> string -> Typ.Procname.t
+  val c_function_of_string :
+    CFrontend_config.translation_unit_context -> Tenv.t -> string -> Typ.Procname.t
 
-  val cpp_method_of_string : Typename.t -> string -> Typ.Procname.t
+  val cpp_method_of_string : Tenv.t -> Typename.t -> string -> Typ.Procname.t
 
   val objc_method_of_string_kind : Typename.t -> string -> Typ.Procname.objc_cpp_method_kind ->
     Typ.Procname.t

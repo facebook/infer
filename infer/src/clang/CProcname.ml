@@ -29,7 +29,16 @@ let rec get_mangled_method_name function_decl_info method_decl_info =
            get_mangled_method_name fdi mdi
        | _ -> assert false)
 
-let mk_c_function translation_unit_context name function_decl_info_opt =
+let get_template_info tenv (fdi : Clang_ast_t.function_decl_info) : Typ.template_spec_info =
+  match fdi.fdi_template_specialization with
+  | Some spec_info -> Typ.Template (
+      "",
+      List.map spec_info.tsi_specialization_args ~f:(function
+          | `Type type_ptr -> Some (CType_decl.type_ptr_to_sil_type tenv type_ptr)
+          | _ -> None))
+  | None -> Typ.NoTemplate
+
+let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
   let file =
     match function_decl_info_opt with
     | Some (decl_info, function_decl_info) ->
@@ -45,20 +54,34 @@ let mk_c_function translation_unit_context name function_decl_info_opt =
   let mangled_name = match mangled_opt with
     | Some m when CGeneral_utils.is_cpp_translation translation_unit_context -> m
     | _ -> "" in
+  let template_info = match function_decl_info_opt, tenv with
+    | Some (_, function_decl_info), Some t -> get_template_info t function_decl_info
+    | _ -> Typ.NoTemplate in
   let mangled = (Utils.string_crc_hex32 file) ^ mangled_name in
   if String.is_empty file && String.is_empty mangled_name then
     Typ.Procname.from_string_c_fun name
   else
-    Typ.Procname.C (Typ.Procname.c name mangled Typ.NoTemplate)
+    Typ.Procname.C (Typ.Procname.c name mangled template_info)
 
-let mk_cpp_method class_name method_name ?meth_decl mangled =
+let mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
+  let open Clang_ast_t in
   let method_kind = match meth_decl with
     | Some (Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr})) ->
         Typ.Procname.CPPConstructor (mangled, xmdi_is_constexpr)
     | _ ->
         Typ.Procname.CPPMethod mangled in
+  let template_info = match meth_decl with
+    | Some (CXXMethodDecl (_, _, _, fdi, _))
+    | Some (CXXConstructorDecl (_, _, _, fdi, _))
+    | Some (CXXConversionDecl (_, _, _, fdi, _))
+    | Some (CXXDestructorDecl (_, _, _, fdi, _)) -> (
+        match tenv with
+        | Some t -> get_template_info t fdi
+        | None -> Typ.NoTemplate
+      )
+    | _ -> Typ.NoTemplate in
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.objc_cpp class_name method_name method_kind Typ.NoTemplate)
+    (Typ.Procname.objc_cpp class_name method_name method_kind template_info)
 
 let mk_objc_method class_typename method_name method_kind =
   Typ.Procname.ObjC_Cpp
@@ -96,24 +119,23 @@ let get_class_typename method_decl_info =
   | None -> assert false
 
 module NoAstDecl = struct
-  let c_function_of_string translation_unit_context name =
-    mk_c_function translation_unit_context name None
+  let c_function_of_string translation_unit_context tenv name =
+    mk_c_function translation_unit_context ~tenv name None
 
-  let cpp_method_of_string class_name method_name =
-    mk_cpp_method class_name method_name None
+  let cpp_method_of_string tenv class_name method_name =
+    mk_cpp_method ~tenv class_name method_name None
 
   let objc_method_of_string_kind class_name method_name method_kind =
     mk_objc_method class_name method_name method_kind
 end
 
-
-let from_decl translation_unit_context meth_decl =
+let from_decl translation_unit_context ?tenv meth_decl =
   let open Clang_ast_t in
   match meth_decl with
   | FunctionDecl (decl_info, name_info, _, fdi) ->
       let name = CAst_utils.get_qualified_name name_info in
       let function_info = Some (decl_info, fdi) in
-      mk_c_function translation_unit_context name function_info
+      mk_c_function translation_unit_context ?tenv name function_info
   | CXXMethodDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConstructorDecl (decl_info, name_info, _, fdi, mdi)
   | CXXConversionDecl (decl_info, name_info, _, fdi, mdi)
@@ -121,7 +143,7 @@ let from_decl translation_unit_context meth_decl =
       let mangled = get_mangled_method_name fdi mdi in
       let method_name = CAst_utils.get_unqualified_name name_info in
       let class_typename = get_class_typename decl_info in
-      mk_cpp_method class_typename method_name ~meth_decl mangled
+      mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled
   | ObjCMethodDecl (decl_info, name_info, mdi) ->
       let class_typename = get_class_typename decl_info in
       let method_name = name_info.Clang_ast_t.ni_name in
