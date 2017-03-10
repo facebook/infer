@@ -949,7 +949,18 @@ let de_dup trace =
       equal_locs in
   ThreadSafetyDomain.PathDomain.update_sinks trace de_duped_sinks_by_locs_and_accesses
 
-
+let strip_reads_that_have_co_located_write reads writes =
+  let set_of_read_sinks = ThreadSafetyDomain.PathDomain.sinks reads in
+  let set_of_write_sinks = ThreadSafetyDomain.PathDomain.sinks writes in
+  let stripped_read_sinks =
+    ThreadSafetyDomain.PathDomain.Sinks.filter
+      (fun sink -> not (ThreadSafetyDomain.PathDomain.Sinks.exists
+                          (fun sink2 -> equal_locs sink sink2)
+                          set_of_write_sinks
+                       )
+      )
+      set_of_read_sinks in
+  ThreadSafetyDomain.PathDomain.update_sinks reads stripped_read_sinks
 
 (*A helper function used in the error reporting*)
 let pp_accesses_sink fmt ~is_write_access sink =
@@ -1096,10 +1107,14 @@ let process_results_table file_env tab =
              accesses
              (AccessDomain.empty, AccessDomain.empty) in
          begin
-           report_thread_safety_violations
-             proc_env make_unprotected_write_description (get_possibly_unsafe_writes writes) tab;
+           let unsafe_writes = get_possibly_unsafe_writes writes in
            let unsafe_reads = get_possibly_unsafe_reads reads in
-           report_reads proc_env unsafe_reads tab
+           let stripped_unsafe_reads = strip_reads_that_have_co_located_write
+               unsafe_reads
+               unsafe_writes in
+           report_thread_safety_violations
+             proc_env make_unprotected_write_description unsafe_writes tab;
+           report_reads proc_env stripped_unsafe_reads tab
          end
     )
     tab

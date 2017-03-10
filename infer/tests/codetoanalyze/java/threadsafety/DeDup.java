@@ -59,4 +59,22 @@ Integer fielda, fieldb;
     field = 33;
   }
 
+  Integer colocated_read, colocated_write;
+
+  /*Should  only report colocated write, not read, from readandwrite()*/
+  void colocated_read_write(){
+    read_and_write();
+  }
+
+  /*Should report*/
+  void separate_write_to_colocated_read(){
+    colocated_read= 88;
+  }
+
+  private void read_and_write() {
+    Integer x = colocated_read;
+    colocated_write= 99;
+   }
+
+
 }
