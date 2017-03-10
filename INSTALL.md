@@ -90,8 +90,8 @@ some means other than opam, you can still compile Infer by running:
 
 ```sh
 ./autogen.sh
-./configure
-make # or make java
+./configure # Disable Java or C/C++/ObjC analyzers with --disable-java-analyzers or --disable-c-analyzers
+make
 # Install Infer into your PATH...
 export PATH=`pwd`/infer/bin:$PATH
 # ...or, alternatively, install Infer system-wide
