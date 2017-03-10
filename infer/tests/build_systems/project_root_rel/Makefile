@@ -9,7 +9,7 @@ TESTS_DIR = ../..
 
 ANALYZER = infer
 CLANG_OPTIONS = -c
-INFER_OPTIONS =  --report-custom-error --developer-mode --project-root $(TESTS_DIR)
+INFER_OPTIONS =  --report-custom-error --developer-mode --project-root $(TESTS_DIR) --no-failures-allowed
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

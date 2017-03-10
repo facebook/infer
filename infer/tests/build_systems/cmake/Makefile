@@ -13,7 +13,7 @@ CMAKE_ANALYZE_DIR = $(CMAKE_DIR)/_build_infer
 
 ANALYZER = infer
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR) $(CMAKE_ANALYZE_DIR)
-INFER_OPTIONS = --project-root $(TESTS_DIR)
+INFER_OPTIONS = --project-root $(TESTS_DIR) --no-failures-allowed
 SOURCES = $(CMAKE_DIR)/hello.c
 OBJECTS = $(CMAKE_BUILD_DIR)/CMakeFiles/Hello.dir/hello.c.o
 INFERPRINT_OPTIONS = --issues-tests
