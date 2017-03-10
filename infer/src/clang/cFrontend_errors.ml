@@ -9,6 +9,12 @@
 
 open! IStd
 
+type linter = {
+  condition : CTL.t;
+  issue_desc : CIssue.issue_desc;
+  def_file : string option;
+}
+
 let single_to_multi checker =
   fun ctx an ->
     let condition, issue_desc_opt = checker ctx an in
@@ -35,8 +41,9 @@ let stmt_single_checkers_list =
 
 let stmt_checkers_list = List.map ~f:single_to_multi stmt_single_checkers_list
 
-(* List of checkers that will be filled after parsing them from a file *)
-let checkers_decl_stmt = ref []
+(* List of checkers that will be filled after parsing them from
+   input the linter def files *)
+let parsed_linters = ref []
 
 let evaluate_place_holder ph an =
   match ph with
@@ -92,8 +99,8 @@ let string_to_issue_mode m =
       (Logging.err "\n[ERROR] Mode %s does not exist. Please specify ON/OFF\n" s;
        assert false)
 
-(** Convert a parsed checker in a pair (condition, issue_desc) *)
-let make_condition_issue_desc_pair checkers =
+(** Convert a parsed checker in list of linters *)
+let create_parsed_linters linters_def_file checkers : linter list =
   let open CIssue in
   let open CTL in
   let open Ctl_parser_types in
@@ -107,7 +114,7 @@ let make_condition_issue_desc_pair checkers =
       severity = Exceptions.Kwarning;
       mode = CIssue.On;
     } in
-    let issue, condition = List.fold ~f:(fun (issue', cond') d  ->
+    let issue_desc, condition = List.fold ~f:(fun (issue', cond') d  ->
         match d with
         | CSet (s, phi) when String.equal s report_when_const ->
             issue', phi
@@ -124,9 +131,9 @@ let make_condition_issue_desc_pair checkers =
       Logging.out "\nMaking condition and issue desc for checker '%s'\n"
         c.name;
       Logging.out "\nCondition =\n     %a\n" CTL.Debug.pp_formula condition;
-      Logging.out "\nIssue_desc = %a\n" CIssue.pp_issue issue);
-    condition, issue in
-  checkers_decl_stmt := List.map ~f:do_one_checker checkers
+      Logging.out "\nIssue_desc = %a\n" CIssue.pp_issue issue_desc);
+    {condition; issue_desc; def_file = Some linters_def_file} in
+  List.map ~f:do_one_checker checkers
 
 
 (* expands use of let defined formula id in checkers with their definition *)
@@ -232,18 +239,18 @@ let invoke_set_of_hard_coded_checkers_an context (an : Ctl_parser_types.ast_node
     ) checkers
 
 (* Calls the set of checkers parsed from files (if any) *)
-let invoke_set_of_parsed_checkers_an context (an : Ctl_parser_types.ast_node) =
+let invoke_set_of_parsed_checkers_an parsed_linters context (an : Ctl_parser_types.ast_node) =
   let key = match an with
     | Decl dec -> CAst_utils.generate_key_decl dec
     | Stmt st -> CAst_utils.generate_key_stmt st in
-  List.iter ~f:(fun (condition, issue_desc) ->
-      if CIssue.should_run_check issue_desc.CIssue.mode &&
-         CTL.eval_formula condition an context then
+  List.iter ~f:(fun (linter : linter) ->
+      if CIssue.should_run_check linter.issue_desc.CIssue.mode &&
+         CTL.eval_formula linter.condition an context then
         let loc = CFrontend_checkers.location_from_an context an in
-        fill_issue_desc_info_and_log context an key issue_desc loc
-    ) !checkers_decl_stmt
+        fill_issue_desc_info_and_log context an key linter.issue_desc loc
+    ) parsed_linters
 
 (* We decouple the hardcoded checkers from the parsed ones *)
 let invoke_set_of_checkers_on_node context an =
-  invoke_set_of_parsed_checkers_an context an;
+  invoke_set_of_parsed_checkers_an !parsed_linters context an;
   invoke_set_of_hard_coded_checkers_an context an

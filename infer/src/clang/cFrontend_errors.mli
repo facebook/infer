@@ -9,6 +9,14 @@
 
 open! IStd
 
+type linter = {
+  condition : CTL.t;
+  issue_desc : CIssue.issue_desc;
+  def_file : string option;
+}
+
+(* List of checkers that will be filled after parsing them from a file *)
+val parsed_linters : linter list ref
 
 (* Module for warnings detected at translation time by the frontend *)
 
@@ -17,7 +25,6 @@ val invoke_set_of_checkers_on_node : CLintersContext.context -> Ctl_parser_types
 
 val expand_checkers : CTL.ctl_checker list -> CTL.ctl_checker list
 
-val make_condition_issue_desc_pair :
-  CTL.ctl_checker list -> unit
+val create_parsed_linters : string -> CTL.ctl_checker list -> linter list
 
 val remove_new_lines : string -> string

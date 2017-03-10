@@ -11,9 +11,7 @@ open! IStd
 open Lexing
 open Ctl_lexer
 
-(* Parse the file with linters definitions, and it returns a list
-   of checkers in the form of pairs (condition, issue_desc) *)
-let parse_ctl_file linters_files =
+let parse_ctl_file linters_def_file channel : CFrontend_errors.linter list =
   let print_position _ lexbuf =
     let pos = lexbuf.lex_curr_p in
     Logging.err "%s:%d:%d" pos.pos_fname
@@ -29,21 +27,26 @@ let parse_ctl_file linters_files =
                      \n########################################################\n@."
           print_position lexbuf;
         exit (-1) in
-  List.iter ~f:(fun fn ->
-      Logging.out "Loading linters rules from %s\n" fn;
-      let inx = open_in fn in
-      let lexbuf = Lexing.from_channel inx in
-      lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = fn };
-      (match parse_with_error lexbuf with
-       | Some parsed_checkers ->
-           Logging.out "#### Start Expanding checkers #####\n";
-           let exp_checkers = CFrontend_errors.expand_checkers parsed_checkers in
-           Logging.out "#### Checkers Expanded #####\n";
-           if Config.debug_mode then List.iter ~f:CTL.print_checker exp_checkers;
-           CFrontend_errors.make_condition_issue_desc_pair exp_checkers;
-       | None -> Logging.out "No linters found.\n");
-      In_channel.close inx) linters_files
+  let lexbuf = Lexing.from_channel channel in
+  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = linters_def_file };
+  match parse_with_error lexbuf with
+  | Some parsed_checkers ->
+      Logging.out "#### Start Expanding checkers #####\n";
+      let exp_checkers = CFrontend_errors.expand_checkers parsed_checkers in
+      Logging.out "#### Checkers Expanded #####\n";
+      if Config.debug_mode then List.iter ~f:CTL.print_checker exp_checkers;
+      CFrontend_errors.create_parsed_linters linters_def_file exp_checkers
+  | None -> Logging.out "No linters found.\n";[]
 
+(* Parse the files with linters definitions, and it returns a list of linters *)
+let parse_ctl_files linters_def_files : CFrontend_errors.linter list =
+  let collect_parsed_linters linters_def_file linters =
+    Logging.out "Loading linters rules from %s\n" linters_def_file;
+    let in_channel = open_in linters_def_file in
+    let parsed_linters = parse_ctl_file linters_def_file in_channel in
+    In_channel.close in_channel;
+    List.append parsed_linters linters in
+  List.fold_right ~f:collect_parsed_linters ~init:[] linters_def_files
 
 let rec get_responds_to_selector stmt =
   let open Clang_ast_t in
@@ -209,7 +212,8 @@ let store_issues source_file =
 
 let do_frontend_checks trans_unit_ctx ast =
   try
-    parse_ctl_file Config.linters_def_file;
+    let parsed_linters = parse_ctl_files Config.linters_def_file in
+    CFrontend_errors.parsed_linters := parsed_linters;
     let source_file = trans_unit_ctx.CFrontend_config.source_file in
     Logging.out "Start linting file %a@\n" SourceFile.pp source_file;
     match ast with
