@@ -49,7 +49,7 @@ let mk_c_function translation_unit_context name function_decl_info_opt =
   if String.is_empty file && String.is_empty mangled_name then
     Typ.Procname.from_string_c_fun name
   else
-    Typ.Procname.C (Typ.Procname.c name mangled)
+    Typ.Procname.C (Typ.Procname.c name mangled Typ.NoTemplate)
 
 let mk_cpp_method class_name method_name ?meth_decl mangled =
   let method_kind = match meth_decl with
@@ -58,11 +58,11 @@ let mk_cpp_method class_name method_name ?meth_decl mangled =
     | _ ->
         Typ.Procname.CPPMethod mangled in
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.objc_cpp class_name method_name method_kind)
+    (Typ.Procname.objc_cpp class_name method_name method_kind Typ.NoTemplate)
 
 let mk_objc_method class_typename method_name method_kind =
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.objc_cpp class_typename method_name method_kind)
+    (Typ.Procname.objc_cpp class_typename method_name method_kind Typ.NoTemplate)
 
 let block_procname_with_index defining_proc i =
   Config.anonymous_block_prefix ^

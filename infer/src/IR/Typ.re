@@ -319,7 +319,7 @@ let module Procname = {
   [@@deriving compare];
 
   /** Type of c procedure names. */
-  type c = (string, option string) [@@deriving compare];
+  type c = (string, option string, template_spec_info) [@@deriving compare];
   type objc_cpp_method_kind =
     | CPPMethod (option string) /** with mangling */
     | CPPConstructor (option string, bool) /** with mangling + is it constexpr? */
@@ -329,7 +329,12 @@ let module Procname = {
   [@@deriving compare];
 
   /** Type of Objective C and C++ procedure names: method signatures. */
-  type objc_cpp = {method_name: string, class_name: Typename.t, kind: objc_cpp_method_kind}
+  type objc_cpp = {
+    method_name: string,
+    class_name: Typename.t,
+    kind: objc_cpp_method_kind,
+    template_args: template_spec_info
+  }
   [@@deriving compare];
 
   /** Type of Objective C block names. */
@@ -398,8 +403,12 @@ let module Procname = {
     | None => (None, package_classname)
     };
   let split_typename typename => split_classname (Typename.name typename);
-  let from_string_c_fun (s: string) => C (s, None);
-  let c (plain: string) (mangled: string) => (plain, Some mangled);
+  let from_string_c_fun (s: string) => C (s, None, NoTemplate);
+  let c (plain: string) (mangled: string) (template_args: template_spec_info) => (
+    plain,
+    Some mangled,
+    template_args
+  );
   let java class_name return_type method_name parameters kind => {
     class_name,
     return_type,
@@ -409,9 +418,14 @@ let module Procname = {
   };
 
   /** Create an objc procedure name from a class_name and method_name. */
-  let objc_cpp class_name method_name kind => {class_name, method_name, kind};
+  let objc_cpp class_name method_name kind template_args => {
+    class_name,
+    method_name,
+    kind,
+    template_args
+  };
   let get_default_objc_class_method objc_class => {
-    let objc_cpp = objc_cpp objc_class "__find_class_" ObjCInternalMethod;
+    let objc_cpp = objc_cpp objc_class "__find_class_" ObjCInternalMethod NoTemplate;
     ObjC_Cpp objc_cpp
   };
 
@@ -473,7 +487,7 @@ let module Procname = {
   let get_method =
     fun
     | ObjC_Cpp name => name.method_name
-    | C (name, _) => name
+    | C (name, _, _) => name
     | Block name => name
     | Java j => j.method_name
     | Linters_dummy_method => "Linters_dummy_method";
@@ -676,7 +690,7 @@ let module Procname = {
     };
   let get_global_name_of_initializer =
     fun
-    | C (name, _) when String.is_prefix prefix::Config.clang_initializer_prefix name => {
+    | C (name, _, _) when String.is_prefix prefix::Config.clang_initializer_prefix name => {
         let prefix_len = String.length Config.clang_initializer_prefix;
         Some (String.sub name pos::prefix_len len::(String.length name - prefix_len))
       }
@@ -729,7 +743,7 @@ let module Procname = {
   let to_unique_id pn =>
     switch pn {
     | Java j => java_to_string j Verbose
-    | C (c1, c2) => to_readable_string (c1, c2) true
+    | C (c1, c2, _) => to_readable_string (c1, c2) true
     | ObjC_Cpp osig => c_method_to_string osig Verbose
     | Block name => name
     | Linters_dummy_method => "Linters_dummy_method"
@@ -739,7 +753,7 @@ let module Procname = {
   let to_string p =>
     switch p {
     | Java j => java_to_string j Non_verbose
-    | C (c1, c2) => to_readable_string (c1, c2) false
+    | C (c1, c2, _) => to_readable_string (c1, c2) false
     | ObjC_Cpp osig => c_method_to_string osig Non_verbose
     | Block name => name
     | Linters_dummy_method => to_unique_id p
@@ -749,7 +763,7 @@ let module Procname = {
   let to_simplified_string withclass::withclass=false p =>
     switch p {
     | Java j => java_to_string withclass::withclass j Simple
-    | C (c1, c2) => to_readable_string (c1, c2) false ^ "()"
+    | C (c1, c2, _) => to_readable_string (c1, c2) false ^ "()"
     | ObjC_Cpp osig => c_method_to_string osig Simple
     | Block _ => "block"
     | Linters_dummy_method => to_unique_id p
@@ -782,7 +796,7 @@ let module Procname = {
   let pp_set fmt set => Set.iter (fun pname => F.fprintf fmt "%a " pp pname) set;
   let get_qualifiers pname =>
     switch pname {
-    | C c => fst c |> QualifiedCppName.qualifiers_of_qual_name
+    | C c => fst3 c |> QualifiedCppName.qualifiers_of_qual_name
     | ObjC_Cpp objc_cpp =>
       List.append
         (QualifiedCppName.qualifiers_of_qual_name (Typename.name objc_cpp.class_name))

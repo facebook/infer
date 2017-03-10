@@ -204,7 +204,7 @@ let module Procname: {
   let module Set: Caml.Set.S with type elt = t;
 
   /** Create a C procedure name from plain and mangled name. */
-  let c: string => string => c;
+  let c: string => string => template_spec_info => c;
 
   /** Empty block name. */
   let empty_block: t;
@@ -259,7 +259,7 @@ let module Procname: {
   let mangled_objc_block: string => t;
 
   /** Create an objc procedure name from a class_name and method_name. */
-  let objc_cpp: Typename.t => string => objc_cpp_method_kind => objc_cpp;
+  let objc_cpp: Typename.t => string => objc_cpp_method_kind => template_spec_info => objc_cpp;
   let get_default_objc_class_method: Typename.t => t;
 
   /** Get the class name of a Objective-C/C++ procedure name. */
