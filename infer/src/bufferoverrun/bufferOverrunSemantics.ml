@@ -24,7 +24,7 @@ struct
 
   let eval_const : Const.t -> Val.t
     = function
-      | Const.Cint intlit -> Val.of_int (IntLit.to_int intlit)
+      | Const.Cint intlit -> (try Val.of_int (IntLit.to_int intlit) with _ -> Val.top_itv)
       | Const.Cfloat f -> f |> int_of_float |> Val.of_int
       | _ -> Val.bot       (* TODO *)
 
