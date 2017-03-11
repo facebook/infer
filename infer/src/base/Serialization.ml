@@ -71,16 +71,18 @@ let create_serializer (key : Key.t) : 'a serializer =
     try
       read_data (Marshal.from_string str 0) "string"
     with Sys_error _ -> None in
-  let read_from_file (fname_ : DB.filename) : 'a option =
-    let fname = DB.filename_to_string fname_ in
-    match open_in_bin fname with
+  (* The reads happen without synchronization.
+     The writes are synchronized with a .lock file. *)
+  let read_from_file (fname : DB.filename) : 'a option =
+    let fname_str = DB.filename_to_string fname in
+    match open_in_bin fname_str with
     | exception Sys_error _ ->
         None
     | inc ->
         let read () =
           try
             In_channel.seek inc 0L ;
-            read_data (Marshal.from_channel inc) fname
+            read_data (Marshal.from_channel inc) fname_str
           with
           | Sys_error _ -> None in
         let catch_exn = function
@@ -92,30 +94,43 @@ let create_serializer (key : Key.t) : 'a serializer =
         SymOp.try_finally
           (fun () -> retry_exception ~timeout:1.0 ~catch_exn ~f:read ())
           (fun () -> In_channel.close inc) in
-  let execute_write_command (fname : DB.filename) (cmd : 'a write_command) =
+  (* The .lock file is used to synchronize the writers.
+     Once a lock on `file.lock` is obtained, the new data is written into it
+     and rename is used to move it atomically to `file` *)
+  let execute_write_command_with_lock (fname : DB.filename) (cmd : 'a write_command) =
     let fname_str = DB.filename_to_string fname in
-    let file_descr = Unix.openfile ~mode:[Unix.O_WRONLY; Unix.O_CREAT] fname_str in
-    if (Unix.flock file_descr Unix.Flock_command.lock_exclusive)
-    then begin
-      let (value_to_write : 'a) = match cmd with
-        | Replace value ->
-            value
-        | Update upd ->
-            let old_value_opt =
-              let st_size = (Unix.fstat file_descr).st_size in
-              if st_size > 0L
-              then read_from_file fname
-              else None in
-            upd old_value_opt in
-      let outc = Unix.out_channel_of_descr file_descr in
-      Marshal.to_channel outc (key, version, value_to_write) [];
-      ignore (Unix.flock file_descr Unix.Flock_command.unlock);
-      Out_channel.close outc
-    end in
+    let fname_str_lock = fname_str ^ ".lock" in
+    let file_descr_lock = Unix.openfile ~mode:[Unix.O_WRONLY; Unix.O_CREAT] fname_str_lock in
+    if (Unix.flock file_descr_lock Unix.Flock_command.lock_exclusive)
+    then
+      begin
+        let (data_to_write : 'a) = match cmd with
+          | Replace data ->
+              data
+          | Update upd ->
+              let old_data_opt =
+                if DB.file_exists fname
+                then
+                  (* Because of locking, this should be the latest data written
+                     by any writer, and can be used for updating *)
+                  read_from_file fname
+                else
+                  None in
+              upd old_data_opt in
+
+        let outc_lock = Unix.out_channel_of_descr file_descr_lock in
+        Marshal.to_channel outc_lock (key, version, data_to_write) [];
+        flush outc_lock;
+        (* Rename is atomic: the readers can only see one version of this file,
+           possibly stale but not corrupted. *)
+        Unix.rename ~src:fname_str_lock ~dst:fname_str;
+        ignore (Unix.flock file_descr_lock Unix.Flock_command.unlock);
+        Out_channel.close outc_lock
+      end in
   let write_to_file ~(data : 'a) (fname : DB.filename) =
-    execute_write_command fname (Replace data) in
+    execute_write_command_with_lock fname (Replace data) in
   let update_file ~f (fname : DB.filename) =
-    execute_write_command fname (Update f) in
+    execute_write_command_with_lock fname (Update f) in
   {read_from_string; read_from_file; update_file; write_to_file; }
 
 
