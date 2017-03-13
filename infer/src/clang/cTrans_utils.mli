@@ -62,8 +62,6 @@ val extract_item_from_singleton : 'a list -> string -> 'a -> 'a
 
 val extract_exp_from_list : (Exp.t * Typ.t) list -> string -> (Exp.t * Typ.t)
 
-val fix_param_exps_mismatch : 'a list -> (Exp.t * Typ.t) list -> (Exp.t * Typ.t)list
-
 val get_selector_receiver : Clang_ast_t.obj_c_message_expr_info -> string * Clang_ast_t.receiver_kind
 
 val define_condition_side_effects :

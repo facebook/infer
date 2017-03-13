@@ -892,10 +892,9 @@ struct
           let params = List.tl_exn (collect_exprs result_trans_subexprs) in
           if Int.equal (List.length params) (List.length params_stmt) then
             params
-          else (Logging.err_debug
-                  "WARNING: stmt_list and res_trans_par.exps must have same size. \
-                   NEED TO BE FIXED\n\n";
-                fix_param_exps_mismatch params_stmt params) in
+          else
+            (Logging.out_debug "ERROR: stmt_list and res_trans_par.exps must have same size\n";
+             assert false) in
         let act_params = if is_cf_retain_release then
             (Exp.Const (Const.Cint IntLit.one), Typ.Tint Typ.IBool) :: act_params
           else act_params in

@@ -514,13 +514,6 @@ let define_condition_side_effects e_cond instrs_cond sil_loc =
       [Sil.Load (id, Exp.Lvar pvar, typ, sil_loc)]
   | _ -> [(e', typ)], instrs_cond
 
-let fix_param_exps_mismatch params_stmt exps_param =
-  let diff = List.length params_stmt - List.length exps_param in
-  let args = if diff >0 then Array.create ~len:diff dummy_exp
-    else assert false in
-  let exps'= exps_param @ (Array.to_list args) in
-  exps'
-
 let is_superinstance mei =
   match mei.Clang_ast_t.omei_receiver_kind with
   | `SuperInstance -> true
