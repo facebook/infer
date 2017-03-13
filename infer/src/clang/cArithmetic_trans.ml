@@ -135,7 +135,6 @@ let binary_operation_instruction boi e1 typ e2 loc rhs_owning_method =
       (Exp.minus_one, [])
 
 let unary_operation_instruction translation_unit_context uoi e typ loc =
-  let uok = Clang_ast_j.string_of_unary_operator_kind (uoi.Clang_ast_t.uoi_kind) in
   let un_exp op =
     Exp.UnOp(op, e, Some typ) in
   match uoi.Clang_ast_t.uoi_kind with
@@ -176,6 +175,7 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
       (e, [])
   | `AddrOf -> (e, [])
   | `Real | `Imag | `Extension | `Coawait ->
+      let uok = Clang_ast_j.string_of_unary_operator_kind (uoi.Clang_ast_t.uoi_kind) in
       Logging.out
         "\nWARNING: Missing translation for Unary Operator Kind %s. The construct has been ignored...\n" uok;
       (e, [])

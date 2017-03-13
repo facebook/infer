@@ -2587,7 +2587,7 @@ struct
     | CXXTryStmt (_, stmts) ->
         (Logging.out
            "\n!!!!WARNING: found statement %s. \nTranslation need to be improved.... \n"
-           (CAst_utils.string_of_stmt instr);
+           (Clang_ast_proj.get_stmt_kind_string instr);
          compoundStmt_trans trans_state stmts)
 
     | ObjCAtThrowStmt (stmt_info, stmts)
@@ -2674,7 +2674,7 @@ struct
     | s -> (Logging.out
               "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: \
                Translation need to be defined. Statement ignored.... \n"
-              (CAst_utils.string_of_stmt s);
+              (Clang_ast_proj.get_stmt_kind_string s);
             assert false)
 
   (* Function similar to instruction function, but it takes C++ constructor initializer as

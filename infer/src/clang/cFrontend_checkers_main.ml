@@ -156,8 +156,18 @@ let rec do_frontend_checks_stmt (context:CLintersContext.context) stmt =
       (* ...and here we analyze the stmt inside the if with the context
          extended with the condition of the if *)
       do_all_checks_on_stmts inside_if_stmt_context inside_if_stmt
+  | OpaqueValueExpr (_, lstmt, _, opaque_value_expr_info) ->
+      let stmts = (match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
+          | Some stmt -> lstmt @ [stmt]
+          | _ -> lstmt)
+      in
+      List.iter ~f:(do_all_checks_on_stmts context) stmts
+  (* given that this has not been translated, looking up for variables *)
+  (* inside leads to inconsistencies *)
+  | ObjCAtCatchStmt _ ->
+      ()
   | _ ->
-      let stmts = CAst_utils.get_stmts_from_stmt stmt in
+      let stmts = snd (Clang_ast_proj.get_stmt_tuple stmt) in
       List.iter ~f:(do_all_checks_on_stmts context) stmts
 
 and do_frontend_checks_decl (context: CLintersContext.context) decl =

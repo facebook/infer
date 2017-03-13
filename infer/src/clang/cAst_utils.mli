@@ -11,27 +11,6 @@ open! IStd
 
 (** Functions for transformations of ast nodes *)
 
-val string_of_stmt : Clang_ast_t.stmt -> string
-
-val get_stmts_from_stmt : Clang_ast_t.stmt -> Clang_ast_t.stmt list
-
-val string_of_decl : Clang_ast_t.decl -> string
-
-val string_of_unary_operator_kind : Clang_ast_t.unary_operator_kind -> string
-
-val name_opt_of_name_info_opt : Clang_ast_t.named_decl_info option -> string option
-
-val property_name : Clang_ast_t.obj_c_property_impl_decl_info -> Clang_ast_t.named_decl_info
-
-val generated_ivar_name :
-  Clang_ast_t.named_decl_info -> Clang_ast_t.named_decl_info
-
-val get_memory_management_attributes : unit -> Clang_ast_t.property_attribute list
-
-val is_retain : Clang_ast_t.property_attribute option -> bool
-
-val is_copy : Clang_ast_t.property_attribute option -> bool
-
 val is_type_nonnull : Clang_ast_t.type_ptr -> bool
 
 val get_fresh_pointer : unit -> Clang_ast_t.pointer

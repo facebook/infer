@@ -25,7 +25,7 @@ let is_pointer_to_objc_class typ =
 
 let get_super_interface_decl otdi_super =
   match otdi_super with
-  | Some dr -> CAst_utils.name_opt_of_name_info_opt dr.Clang_ast_t.dr_name
+  | Some dr -> Option.map ~f:CAst_utils.get_qualified_name dr.Clang_ast_t.dr_name
   | _ -> None
 
 let get_protocols protocols =

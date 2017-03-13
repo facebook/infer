@@ -17,45 +17,6 @@ module F = Format
 
 type type_ptr_to_sil_type = Tenv.t -> Clang_ast_t.type_ptr -> Typ.t
 
-let string_of_decl decl =
-  let name = Clang_ast_proj.get_decl_kind_string decl in
-  let info = Clang_ast_proj.get_decl_tuple decl in
-  Printf.sprintf "<\"%s\"> '%d'" name info.Clang_ast_t.di_pointer
-
-let string_of_unary_operator_kind = function
-  | `PostInc -> "PostInc"
-  | `PostDec -> "PostDec"
-  | `PreInc -> "PreInc"
-  | `PreDec -> "PreDec"
-  | `AddrOf -> "AddrOf"
-  | `Deref -> "Deref"
-  | `Plus -> "Plus"
-  | `Minus -> "Minus"
-  | `Not -> "Not"
-  | `LNot -> "LNot"
-  | `Real -> "Real"
-  | `Imag -> "Imag"
-  | `Extension -> "Extension"
-  | `Coawait -> "Coawait"
-
-let string_of_stmt stmt =
-  let name = Clang_ast_proj.get_stmt_kind_string stmt in
-  let info, _ = Clang_ast_proj.get_stmt_tuple stmt in
-  Printf.sprintf "<\"%s\"> '%d'" name info.Clang_ast_t.si_pointer
-
-let get_stmts_from_stmt stmt =
-  let open Clang_ast_t in
-  match stmt with
-  | OpaqueValueExpr (_, lstmt, _, opaque_value_expr_info) ->
-      (match opaque_value_expr_info.Clang_ast_t.ovei_source_expr with
-       | Some stmt -> lstmt @ [stmt]
-       | _ -> lstmt)
-  (* given that this has not been translated, looking up for variables *)
-  (* inside leads to inconsistencies *)
-  | ObjCAtCatchStmt _ ->
-      []
-  | _ -> snd (Clang_ast_proj.get_stmt_tuple stmt)
-
 let fold_qual_name qual_name_list =
   match qual_name_list with
   | [] -> ""
@@ -87,44 +48,6 @@ let make_qual_name_decl class_name_quals name = {
   Clang_ast_t.ni_name = name;
   ni_qual_name = name :: class_name_quals;
 }
-
-let property_name property_impl_decl_info =
-  let no_property_name = make_name_decl "WARNING_NO_PROPERTY_NAME" in
-  match property_impl_decl_info.Clang_ast_t.opidi_property_decl with
-  | Some decl_ref ->
-      (match decl_ref.Clang_ast_t.dr_name with
-       | Some n -> n
-       | _ -> no_property_name)
-  | None -> no_property_name
-
-let generated_ivar_name property_name =
-  match property_name.Clang_ast_t.ni_qual_name with
-  | [name; class_name] ->
-      let ivar_name = "_" ^ name in
-      { Clang_ast_t.ni_name = ivar_name;
-        ni_qual_name = [ivar_name; class_name]
-      }
-  | _ -> make_name_decl property_name.Clang_ast_t.ni_name
-
-let get_memory_management_attributes () =
-  [`Assign; `Retain; `Copy; `Weak; `Strong; `Unsafe_unretained]
-
-let is_retain attribute_opt =
-  match attribute_opt with
-  | Some attribute ->
-      attribute = `Retain || attribute = `Strong
-  | _ -> false
-
-let is_copy attribute_opt =
-  match attribute_opt with
-  | Some attribute ->
-      attribute = `Copy
-  | _ -> false
-
-let name_opt_of_name_info_opt name_info_opt =
-  match name_info_opt with
-  | Some name_info -> Some (get_qualified_name name_info)
-  | None -> None
 
 let pointer_counter = ref 0
 
