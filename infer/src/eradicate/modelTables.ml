@@ -181,6 +181,7 @@ let annotated_list_nullable =
     o3, "javax.lang.model.util.Types.getDeclaredType(javax.lang.model.type.DeclaredType, javax.lang.model.element.TypeElement, javax.lang.model.type.TypeMirror[]):javax.lang.model.type.DeclaredType";
     o2, "javax.lang.model.util.Types.asMemberOf(javax.lang.model.type.DeclaredType, javax.lang.model.element.Element):javax.lang.model.type.TypeMirror";
     n3, "javax.tools.JavaCompiler.getStandardFileManager(javax.tools.DiagnosticListener,java.util.Locale,java.nio.charset.Charset):javax.tools.StandardJavaFileManager";
+    ng, "javax.tools.JavaFileObject.getAccessLevel():javax.lang.model.element.Modifier";
     o2, "com.sun.source.util.SourcePositions.getStartPosition(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):long";
     o2, "com.sun.source.util.SourcePositions.getEndPosition(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):long";
     (n, [o; o]), "com.sun.source.util.TreePath.getPath(com.sun.source.tree.CompilationUnitTree, com.sun.source.tree.Tree):com.sun.source.util.TreePath";
