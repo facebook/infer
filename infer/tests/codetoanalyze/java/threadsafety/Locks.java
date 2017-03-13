@@ -76,12 +76,20 @@ public class Locks {
     mReentrantLock.unlock();
   }
 
+  public void normalLockTryLockOk() {
+    if (mLock.tryLock()) {
+      f = 42;
+      mLock.unlock();
+    }
+  }
+
   public void rReentrantLockTryLockOk() {
     if (mReentrantLock.tryLock()) {
       f = 42;
       mReentrantLock.unlock();
     }
   }
+
 
   public void reentrantLockInterruptiblyOk() throws InterruptedException {
     mReentrantLock.lockInterruptibly();

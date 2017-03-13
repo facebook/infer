@@ -55,9 +55,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Typ.Procname.Java java_pname ->
         begin
           match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
-          | "java.util.concurrent.locks.Lock", "lock" ->
-              Lock
-          | ("java.util.concurrent.locks.ReentrantLock"
+          | ("java.util.concurrent.locks.Lock"
+            | "java.util.concurrent.locks.ReentrantLock"
             | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
             | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
             ("lock" | "tryLock" | "lockInterruptibly") ->
