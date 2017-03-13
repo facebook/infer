@@ -918,6 +918,12 @@ and filter_paths =
   CLOpt.mk_bool ~long:"filter-paths" ~default:true
     "Filters specified in .inferconfig"
 
+and filter_report_paths =
+  CLOpt.mk_string_opt
+    ~long:"filter-report-paths" ~parse_mode:CLOpt.(Infer [Print])
+    "Newline-separated list of files for which to emit a report. \
+     Source files should be specified relative to project root or be absolute."
+
 and flavors =
   CLOpt.mk_bool ~deprecated:["-use-flavors"] ~long:"flavors"
     ~parse_mode:CLOpt.(Infer [Driver])
@@ -1606,6 +1612,7 @@ and fcp_apple_clang = !fcp_apple_clang
 and fcp_syntax_only = !fcp_syntax_only
 and file_renamings = !file_renamings
 and filter_paths = !filter_paths
+and filter_report_paths = !filter_report_paths
 and filtering = !filtering
 and final_parse_action = parse_action
 and flavors = !flavors

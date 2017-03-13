@@ -150,18 +150,19 @@ let of_header header_file =
     | _ -> None in
   Option.map ~f:from_abs_path file_opt
 
+let create path =
+  if Filename.is_relative path then
+    (* sources in changed-files-index may be specified relative to project root *)
+    RelativeProjectRoot path
+  else
+    from_abs_path path
+
 let changed_files_set =
-  let create_source_file path =
-    if Filename.is_relative path then
-      (* sources in changed-files-index may be specified relative to project root *)
-      RelativeProjectRoot path
-    else
-      from_abs_path path in
   Option.bind Config.changed_files_index Utils.read_file |>
   Option.map ~f:(
     List.fold
       ~f:(fun changed_files line ->
-          let source_file = create_source_file line in
+          let source_file = create line in
           let changed_files' = Set.add source_file changed_files in
           (* Add source corresponding to changed header if it exists *)
           match of_header source_file with

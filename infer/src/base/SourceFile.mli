@@ -27,6 +27,10 @@ val empty : t
 (** create source file from absolute path *)
 val from_abs_path : string -> t
 
+(* Create a SourceFile from a given path. If relative, it assumes it is w.r.t.
+   project root *)
+val create : string -> t
+
 (** string encoding of a source file (including path) as a single filename *)
 val encoding : t -> string
 

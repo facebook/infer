@@ -277,6 +277,16 @@ let module ProcsXml = {
   let pp_procs_close fmt () => Io_infer.Xml.pp_close fmt "procedures";
 };
 
+let paths_to_filter =
+  Option.bind Config.filter_report_paths (fun f => Some (In_channel.read_lines f)) |>
+  Option.map f::(List.map f::SourceFile.create);
+
+let report_filter source_file =>
+  switch paths_to_filter {
+  | Some paths => List.mem equal::SourceFile.equal paths source_file
+  | None => true
+  };
+
 let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass =>
   if (not Config.filtering || Exceptions.equal_err_class eclass Exceptions.Linters) {
     true
@@ -387,7 +397,7 @@ let module IssuesCsv = {
       if (
         in_footprint &&
         error_filter source_file error_desc error_name &&
-        should_report ekind error_name error_desc eclass
+        should_report ekind error_name error_desc eclass && report_filter source_file
       ) {
         let err_desc_string = error_desc_to_csv_string error_desc;
         let err_advice_string = error_advice_to_csv_string error_desc;
@@ -463,7 +473,8 @@ let module IssuesJson = {
       if (
         in_footprint &&
         error_filter source_file error_desc error_name &&
-        should_report_source_file && should_report ekind error_name error_desc eclass
+        should_report_source_file &&
+        should_report ekind error_name error_desc eclass && report_filter source_file
       ) {
         let kind = Exceptions.err_kind_string ekind;
         let bug_type = Localise.to_string error_name;
