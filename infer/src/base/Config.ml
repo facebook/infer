@@ -1108,6 +1108,11 @@ and patterns_skip_translation =
    CLOpt.mk_json ~deprecated:["skip_translation"] ~long
      "Matcher or list of matchers for names of files that should not be analyzed at all.")
 
+and per_procedure_parallelism =
+  CLOpt.mk_bool ~deprecated:["per-procedure-parallelism"] ~long:"per-procedure-parallelism"
+    "Perform analysis with per-procedure parallelism.\n\
+     Java is not supported."
+
 and pmd_xml =
   CLOpt.mk_bool ~long:"pmd-xml"
     ~parse_mode:CLOpt.(Infer [Driver])
@@ -1652,6 +1657,7 @@ and out_file_cmdline = !out_file
 and patterns_never_returning_null = match patterns_never_returning_null with (k,r) -> (k,!r)
 and patterns_skip_translation = match patterns_skip_translation with (k,r) -> (k,!r)
 and patterns_modeled_expensive = match patterns_modeled_expensive with (k,r) -> (k,!r)
+and per_procedure_parallelism = !per_procedure_parallelism
 and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats
 and print_logs = !print_logs

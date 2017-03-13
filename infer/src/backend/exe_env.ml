@@ -72,9 +72,6 @@ type t =
 (** initial state, used to add cg's *)
 type initial = t
 
-(** freeze the execution environment, so it can be queried *)
-let freeze exe_env = exe_env (* TODO: unclear what this function is used for *)
-
 (** create a new execution environment *)
 let create () =
   { cg = Cg.create None;
@@ -97,7 +94,7 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
 
       List.iter
         ~f:(fun pname ->
-            (match AttributesTable.find_file_capturing_procedure pname with
+            (match AttributesTable.find_file_capturing_procedure ~cache:false pname with
              | None ->
                  ()
              | Some (source_captured, origin) ->
@@ -124,7 +121,7 @@ let get_file_data exe_env pname =
   with Not_found ->
     begin
       let source_file_opt =
-        match AttributesTable.load_attributes pname with
+        match AttributesTable.load_attributes ~cache:true pname with
         | None ->
             L.err "can't find tenv_cfg_object for %a@." Typ.Procname.pp pname;
             None
@@ -187,6 +184,12 @@ let get_proc_desc exe_env pname =
       Cfg.find_proc_desc_from_name cfg pname
   | None ->
       None
+
+(** Create an exe_env from a source dir *)
+let from_cluster cluster =
+  let exe_env = create () in
+  add_cg exe_env cluster;
+  exe_env
 
 (** [iter_files f exe_env] applies [f] to the filename and tenv and cfg for each file in [exe_env] *)
 let iter_files f exe_env =

@@ -482,7 +482,7 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
   let process_proc =
     Procdesc.is_defined proc_desc &&
     SourceFile.equal proc_loc.Location.file source &&
-    match AttributesTable.find_file_capturing_procedure proc_name with
+    match AttributesTable.find_file_capturing_procedure ~cache:true proc_name with
     | None -> true
     | Some (source_captured, _) ->
         SourceFile.equal source_captured (Procdesc.get_loc proc_desc).file in
@@ -588,23 +588,26 @@ let write_html_file linereader filename procs =
      Errlog.pp_html filename [fname_encoding] fmt global_err_log;
      Io_infer.Html.close (fd, fmt))
 
-(** Create filename.ext.html for each file in the exe_env. *)
-let write_all_html_files exe_env =
-  if Config.write_html then
-    let linereader = LineReader.create () in
-    Exe_env.iter_files
-      (fun _ cfg ->
-         let source_files_in_cfg =
-           let files = ref SourceFile.Set.empty in
-           Cfg.iter_proc_desc cfg
-             (fun _ proc_desc ->
-                if Procdesc.is_defined proc_desc
-                then
-                  let file = (Procdesc.get_loc proc_desc).Location.file in
-                  files := SourceFile.Set.add file !files);
-           !files in
-         SourceFile.Set.iter
-           (fun file ->
-              write_html_file linereader file (Cfg.get_all_procs cfg))
-           source_files_in_cfg)
-      exe_env
+(** Create filename.ext.html for each file in the cluster. *)
+let write_all_html_files cluster =
+  let exe_env = Exe_env.from_cluster cluster in
+  let load_proc_desc pname = ignore (Exe_env.get_proc_desc exe_env pname) in
+  let () = List.iter ~f:load_proc_desc (Cg.get_defined_nodes (Exe_env.get_cg exe_env)) in
+
+  let linereader = LineReader.create () in
+  Exe_env.iter_files
+    (fun _ cfg ->
+       let source_files_in_cfg =
+         let files = ref SourceFile.Set.empty in
+         Cfg.iter_proc_desc cfg
+           (fun _ proc_desc ->
+              if Procdesc.is_defined proc_desc
+              then
+                let file = (Procdesc.get_loc proc_desc).Location.file in
+                files := SourceFile.Set.add file !files);
+         !files in
+       SourceFile.Set.iter
+         (fun file ->
+            write_html_file linereader file (Cfg.get_all_procs cfg))
+         source_files_in_cfg)
+    exe_env

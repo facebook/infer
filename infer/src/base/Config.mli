@@ -126,6 +126,7 @@ val os_type : os_type
 val patterns_modeled_expensive : string * Yojson.Basic.json
 val patterns_never_returning_null : string * Yojson.Basic.json
 val patterns_skip_translation : string * Yojson.Basic.json
+val per_procedure_parallelism : bool
 val perf_stats_prefix : string
 val proc_stats_filename : string
 val property_attributes : string

@@ -12,8 +12,8 @@ open! IStd
 
 (** Interprocedural Analysis *)
 
-(** Perform the analysis of an exe_env *)
-val do_analysis : Exe_env.t -> unit
+(** Create closures to perform the analysis of an exe_env *)
+val do_analysis_closures : Exe_env.t -> Tasks.closure list
 
-(** Print the stats for all the files in the exe_env *)
-val print_stats : Exe_env.t -> unit
+(** Print the stats for all the files in the cluster *)
+val print_stats : Cluster.t -> unit

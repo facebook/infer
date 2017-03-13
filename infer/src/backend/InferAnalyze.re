@@ -15,47 +15,60 @@ let module L = Logging;
 
 let module F = Format;
 
-let analyze_exe_env exe_env => {
-  let init_time = Unix.gettimeofday ();
+
+/** Create tasks to analyze an execution environment */
+let analyze_exe_env_tasks cluster exe_env :Tasks.t => {
   L.log_progress_file ();
   Specs.clear_spec_tbl ();
   Random.self_init ();
   if Config.checkers {
     /* run the checkers only */
-    let call_graph = Exe_env.get_cg exe_env;
-    Callbacks.iterate_callbacks call_graph exe_env;
-    Printer.write_all_html_files exe_env
+    Tasks.create [
+      fun () => {
+        let call_graph = Exe_env.get_cg exe_env;
+        Callbacks.iterate_callbacks call_graph exe_env;
+        if Config.write_html {
+          Printer.write_all_html_files cluster
+        }
+      }
+    ]
   } else {
     /* run the full analysis */
-    Interproc.do_analysis exe_env;
-    Printer.write_all_html_files exe_env;
-    Interproc.print_stats exe_env;
-    let elapsed = Unix.gettimeofday () -. init_time;
-    L.out "Interprocedural footprint analysis terminated in %f sec@." elapsed
+    Tasks.create
+      (Interproc.do_analysis_closures exe_env)
+      continuation::(
+        if (Config.write_html || Config.developer_mode) {
+          Some (
+            fun () => {
+              if Config.write_html {
+                Printer.write_all_html_files cluster
+              };
+              if Config.developer_mode {
+                Interproc.print_stats cluster
+              }
+            }
+          )
+        } else {
+          None
+        }
+      )
   }
 };
 
 
-/** Create an exe_env from a cluster. */
-let exe_env_from_cluster cluster => {
-  let _exe_env = Exe_env.create ();
-  Exe_env.add_cg _exe_env cluster;
-  Exe_env.freeze _exe_env
-};
-
-
-/** Analyze a cluster of files */
-let analyze_cluster cluster_num (cluster: Cluster.t) => {
-  let exe_env = exe_env_from_cluster cluster;
+/** Create tasks to analyze a cluster */
+let analyze_cluster_tasks cluster_num (cluster: Cluster.t) :Tasks.t => {
+  let exe_env = Exe_env.from_cluster cluster;
   let defined_procs = Cg.get_defined_nodes (Exe_env.get_cg exe_env);
   let num_procs = List.length defined_procs;
   L.err "@.Processing cluster #%d with %d procedures@." (cluster_num + 1) num_procs;
-  analyze_exe_env exe_env
+  analyze_exe_env_tasks cluster exe_env
 };
 
+let analyze_cluster cluster_num cluster => Tasks.run (analyze_cluster_tasks cluster_num cluster);
+
 let output_json_makefile_stats clusters => {
-  let clusters_to_analyze = List.filter f::ClusterMakefile.cluster_should_be_analyzed clusters;
-  let num_files = List.length clusters_to_analyze;
+  let num_files = List.length clusters;
   let num_procs = 0;
   /* can't compute it at this stage */
   let num_lines = 0;
@@ -93,6 +106,26 @@ let print_stdout_legend () => {
   L.stdout "@\n@?"
 };
 
+let cluster_should_be_analyzed cluster => {
+  let fname = DB.source_dir_to_string cluster;
+  let in_ondemand_config =
+    Option.map f::(fun dirs => String.Set.mem dirs fname) Ondemand.dirs_to_analyze;
+  let check_modified () => {
+    let modified = DB.file_was_updated_after_start (DB.filename_from_string fname);
+    if (modified && Config.developer_mode) {
+      L.stdout "Modified: %s@." fname
+    };
+    modified
+  };
+  switch in_ondemand_config {
+  | Some b =>
+    /* ondemand config file is specified */
+    b
+  | None when Config.reactive_mode => check_modified ()
+  | None => true
+  }
+};
+
 let main makefile => {
   BuiltinDefn.init ();
   RegisterCheckers.register ();
@@ -110,14 +143,48 @@ let main makefile => {
     if Config.merge {
       MergeCapture.merge_captured_targets ()
     };
-    let clusters = DB.find_source_dirs ();
-    L.stdout "Found %d source files in %s@." (List.length clusters) Config.results_dir;
-    if (makefile != "") {
-      ClusterMakefile.create_cluster_makefile clusters makefile
+    let all_clusters = DB.find_source_dirs ();
+    let clusters_to_analyze = List.filter f::cluster_should_be_analyzed all_clusters;
+    L.stdout
+      "Found %d (out of %d) source files to be analyzed in %s@."
+      (List.length clusters_to_analyze)
+      (List.length all_clusters)
+      Config.results_dir;
+    if (makefile != "" || Config.per_procedure_parallelism) {
+      let is_java () =>
+        List.exists
+          f::(
+            fun cl => SourceFile.string_crc_has_extension ext::"java" (DB.source_dir_to_string cl)
+          )
+          all_clusters;
+      if (not Config.per_procedure_parallelism) {
+        ClusterMakefile.create_cluster_makefile clusters_to_analyze makefile
+      } else {
+        /* per-procedure parallelism */
+        if (is_java ()) {
+          /* Java uses ZipLib which is incompatible with forking */
+          L.stderr "Error: option --per-procedure-parallelism not supported with Java@.";
+          exit 1
+        };
+        L.stdout "per-procedure parallelism jobs:%d@." Config.jobs;
+        if (makefile != "") {
+          ClusterMakefile.create_cluster_makefile [] makefile
+        };
+        /* Prepare tasks one cluster at a time while executing in parallel */
+        let runner = Tasks.Runner.create jobs::Config.jobs;
+        let cluster_start_tasks i cluster => {
+          let tasks = analyze_cluster_tasks i cluster;
+          let aggregate_tasks = Tasks.aggregate size::1 tasks;
+          Tasks.Runner.start runner tasks::aggregate_tasks
+        };
+        List.iteri f::cluster_start_tasks clusters_to_analyze;
+        Tasks.Runner.complete runner
+      }
     } else {
-      List.iteri f::(fun i cluster => analyze_cluster i cluster) clusters;
+      /* This branch is reached when -j 1 is used */
+      List.iteri f::analyze_cluster clusters_to_analyze;
       L.stdout "@\nAnalysis finished in %as@." Pp.elapsed_time ()
     };
-    output_json_makefile_stats clusters
+    output_json_makefile_stats clusters_to_analyze
   }
 };

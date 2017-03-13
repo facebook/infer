@@ -57,7 +57,7 @@ let check_block_retain_cycle tenv caller_pname prop block_nullified =
   let mblock = Pvar.get_name block_nullified in
   let block_pname = Typ.Procname.mangled_objc_block (Mangled.to_string mblock) in
   let block_captured =
-    match AttributesTable.load_attributes block_pname with
+    match AttributesTable.load_attributes ~cache:true block_pname with
     | Some attributes ->
         fst (List.unzip attributes.ProcAttributes.captured)
     | None ->
@@ -476,7 +476,7 @@ let method_exists right_proc_name methods =
   else (* ObjC/C++ case : The attribute map will only exist when we have code for the method or
           the method has been called directly somewhere. It can still be that this is not the
           case but we have a model for the method. *)
-    match AttributesTable.load_attributes right_proc_name with
+    match AttributesTable.load_attributes ~cache:true right_proc_name with
     | Some attrs -> attrs.ProcAttributes.is_defined
     | None -> Specs.summary_exists_in_models right_proc_name
 
@@ -964,7 +964,7 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
       [Prop.conjoin_eq tenv (Exp.Var id) undef prop_]
 
 let load_ret_annots pname =
-  match AttributesTable.load_attributes pname with
+  match AttributesTable.load_attributes ~cache:true pname with
   | Some attrs ->
       let ret_annots, _ = attrs.ProcAttributes.method_annotation in
       ret_annots
@@ -1155,8 +1155,10 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                   let attrs_opt =
                     let attr_opt = Option.map ~f:Procdesc.get_attributes callee_pdesc_opt in
                     match attr_opt, resolved_pname with
-                    | Some attrs, Typ.Procname.ObjC_Cpp _ -> Some attrs
-                    | None, Typ.Procname.ObjC_Cpp _ -> AttributesTable.load_attributes resolved_pname
+                    | Some attrs, Typ.Procname.ObjC_Cpp _ ->
+                        Some attrs
+                    | None, Typ.Procname.ObjC_Cpp _ ->
+                        AttributesTable.load_attributes ~cache:true resolved_pname
                     | _ -> None in
                   let objc_property_accessor_ret_typ_opt =
                     match attrs_opt with
@@ -1357,7 +1359,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     else havoc_actual_by_ref in
   let non_const_actuals_by_ref =
     let is_not_const (e, _, i) =
-      match AttributesTable.load_attributes callee_pname with
+      match AttributesTable.load_attributes ~cache:true callee_pname with
       | Some attrs ->
           let is_const = List.mem ~equal:Int.equal attrs.ProcAttributes.const_formals i in
           if is_const then (

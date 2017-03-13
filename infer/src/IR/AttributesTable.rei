@@ -15,8 +15,9 @@ open! IStd;
 let store_attributes: ProcAttributes.t => unit;
 
 
-/** Load the attributes for the procedure from the attributes database. */
-let load_attributes: Typ.Procname.t => option ProcAttributes.t;
+/** Load the attributes for the procedure from the attributes database.
+    If cache is true, add the attribute to the global cache */
+let load_attributes: cache::bool => Typ.Procname.t => option ProcAttributes.t;
 
 
 /** Load attrubutes for the procedure but only if is_defined is true */
@@ -30,9 +31,10 @@ let get_correct_type_from_objc_class_name: Typename.t => option Typ.t;
 
 /* Find the file where the procedure was captured, if a cfg for that file exists.
    Return also a boolean indicating whether the procedure is defined in an
-   include file. */
+   include file.
+   If cache is true, add the attribute to the global cache */
 let find_file_capturing_procedure:
-  Typ.Procname.t => option (SourceFile.t, [ | `Include | `Source]);
+  cache::bool? => Typ.Procname.t => option (SourceFile.t, [ | `Include | `Source]);
 
 type t;
 

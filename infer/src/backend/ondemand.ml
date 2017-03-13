@@ -63,7 +63,7 @@ let should_be_analyzed proc_name proc_attributes =
   not (already_analyzed ()) (* avoid re-analysis of the same procedure *)
 
 let procedure_should_be_analyzed proc_name =
-  match AttributesTable.load_attributes proc_name with
+  match AttributesTable.load_attributes ~cache:true proc_name with
   | Some proc_attributes when Config.reactive_capture && not proc_attributes.is_defined ->
       (* try to capture procedure first *)
       let defined_proc_attributes = OndemandCapture.try_capture proc_attributes in

@@ -962,13 +962,6 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
     do_after_node source init_node;
     None
 
-(** get all the nodes in the current call graph with their defined children *)
-let get_procs_and_defined_children call_graph =
-  List.map
-    ~f:(fun (n, ns) ->
-        (n, Typ.Procname.Set.elements ns))
-    (Cg.get_nodes_and_defined_children call_graph)
-
 let pp_intra_stats wl proc_desc fmt _ =
   let nstates = ref 0 in
   let nodes = Procdesc.get_nodes proc_desc in
@@ -1387,9 +1380,11 @@ let perform_transition exe_env tenv proc_name source =
   | _ -> ()
 
 
-let interprocedural_algorithm exe_env : unit =
+(* Create closures for the interprocedural algorithm *)
+let interprocedural_algorithm_closures ~prepare_proc exe_env : Tasks.closure list =
   let call_graph = Exe_env.get_cg exe_env in
   let process_one_proc proc_name =
+    prepare_proc proc_name;
     let analyze proc_desc =
       ignore (Ondemand.analyze_proc_desc ~propagate_exceptions:false proc_desc proc_desc) in
     match Exe_env.get_proc_desc exe_env proc_name with
@@ -1399,13 +1394,14 @@ let interprocedural_algorithm exe_env : unit =
         analyze proc_desc
     | Some proc_desc -> analyze proc_desc
     | None -> () in
-  List.iter ~f:process_one_proc (Cg.get_defined_nodes call_graph)
+  let procs_to_analyze = Cg.get_defined_nodes call_graph in
+  let create_closure proc_name =
+    fun () -> process_one_proc proc_name in
+  List.map ~f:create_closure procs_to_analyze
 
 
-(** Perform the analysis of an exe_env *)
-let do_analysis exe_env =
-  let cg = Exe_env.get_cg exe_env in
-  let procs_and_defined_children = get_procs_and_defined_children cg in
+(** Create closures to perform the analysis of an exe_env *)
+let do_analysis_closures exe_env : Tasks.closure list =
   let get_calls caller_pdesc =
     let calls = ref [] in
     let f (callee_pname, loc) = calls := (callee_pname, loc) :: !calls in
@@ -1429,15 +1425,6 @@ let do_analysis exe_env =
       then Some pdesc
       else None in
     Specs.init_summary (nodes, proc_flags, calls, attributes, proc_desc_option) in
-
-  List.iter
-    ~f:(fun (pn, _) ->
-        let should_init () =
-          Config.models_mode ||
-          is_none (Specs.get_summary pn) in
-        if should_init ()
-        then init_proc pn)
-    procs_and_defined_children;
 
   let callbacks =
     let get_proc_desc proc_name =
@@ -1474,9 +1461,20 @@ let do_analysis exe_env =
       get_proc_desc;
     } in
 
-  Ondemand.set_callbacks callbacks;
-  interprocedural_algorithm exe_env;
-  Ondemand.unset_callbacks ()
+  let prepare_proc pn =
+    let should_init =
+      Config.models_mode ||
+      is_none (Specs.get_summary pn) in
+    if should_init then init_proc pn in
+
+  let closures =
+    List.map
+      ~f:(fun closure () ->
+          Ondemand.set_callbacks callbacks;
+          closure ();
+          Ondemand.unset_callbacks ())
+      (interprocedural_algorithm_closures ~prepare_proc exe_env) in
+  closures
 
 
 let visited_and_total_nodes ~filter cfg =
@@ -1583,14 +1581,14 @@ let print_stats_cfg proc_shadowed source cfg =
   L.out "%a" print_file_stats ();
   save_file_stats ()
 
-(** Print the stats for all the files in the exe_env *)
-let print_stats exe_env =
-  if Config.developer_mode then
-    Exe_env.iter_files
-      (fun source cfg ->
-         let proc_shadowed proc_desc =
-           (* return true if a proc with the same name in another module was analyzed instead *)
-           let proc_name = Procdesc.get_proc_name proc_desc in
-           Exe_env.get_source exe_env proc_name <> Some source in
-         print_stats_cfg proc_shadowed source cfg)
-      exe_env
+(** Print the stats for all the files in the cluster *)
+let print_stats cluster =
+  let exe_env = Exe_env.from_cluster cluster in
+  Exe_env.iter_files
+    (fun source cfg ->
+       let proc_shadowed proc_desc =
+         (* return true if a proc with the same name in another module was analyzed instead *)
+         let proc_name = Procdesc.get_proc_name proc_desc in
+         Exe_env.get_source exe_env proc_name <> Some source in
+       print_stats_cfg proc_shadowed source cfg)
+    exe_env

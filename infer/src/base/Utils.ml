@@ -291,11 +291,65 @@ let activate_run_epilogues_on_signal = lazy (
   Signal.Expert.handle Signal.int run_epilogues_on_signal
 )
 
+(* Keep track of whether the current execution is in a child process *)
+let in_child = ref false
+
+module ProcessPool = struct
+  type t =
+    {
+      mutable num_processes : int;
+      jobs : int;
+    }
+  let create ~jobs =
+    {
+      num_processes = 0;
+      jobs;
+    }
+
+  let incr counter =
+    counter.num_processes <- counter.num_processes + 1
+
+  let decr counter =
+    counter.num_processes <- counter.num_processes - 1
+
+  let wait counter =
+    let _ = Unix.wait `Any in
+    decr counter
+
+  let wait_all counter =
+    for _ = 1 to counter.num_processes do
+      wait counter
+    done
+
+  let should_wait counter =
+    counter.num_processes >= counter.jobs
+
+  let start_child ~f ~pool x =
+    match Unix.fork () with
+    | `In_the_child ->
+        in_child := true;
+        f x;
+        exit 0
+    | `In_the_parent _pid ->
+        incr pool;
+        if should_wait pool
+        then wait pool
+end
+
+let iteri_parallel ~f ?(jobs=1) l =
+  let pool = ProcessPool.create ~jobs in
+  List.iteri ~f:(fun i x -> ProcessPool.start_child ~f:(f i) ~pool x) l;
+  ProcessPool.wait_all pool
+
+let iter_parallel ~f ?(jobs=1) l =
+  iteri_parallel ~f:(fun _ x -> f x) ~jobs l
+
 let register_epilogue f desc =
   let f_no_exn () =
-    try f ()
-    with exn ->
-      F.eprintf "Error while running epilogue %s:@ %a.@ Powering through...@." desc Exn.pp exn in
+    if not !in_child then
+      try f ()
+      with exn ->
+        F.eprintf "Error while running epilogue %s:@ %a.@ Powering through...@." desc Exn.pp exn in
   (* We call `exit` in a bunch of places, so register the epilogues with [at_exit]. *)
   Pervasives.at_exit f_no_exn;
   (* Register signal masking. *)

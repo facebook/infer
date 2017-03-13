@@ -90,9 +90,17 @@ let append_crc_cutoff ?(key="") name =
     Utils.string_crc_hex32 name_for_crc in
   name_up_to_cutoff ^ Char.to_string crc_token ^ crc_str
 
+(* Lengh of .crc part: 32 characters of digest, plus 1 character of crc_token *)
+let dot_crc_len = 1 + 32
+
 let strip_crc str =
-  (* Strip 32 characters of digest, plus 1 character of crc_token *)
-  String.sub ~pos:0 ~len:(String.length str - 33) str
+  Core.Std.String.slice str 0 (- dot_crc_len)
+
+let string_crc_has_extension ~ext name_crc =
+  let name = strip_crc name_crc in
+  match Filename.split_extension name with
+  | (_, Some ext') -> String.equal ext ext'
+  | (_, None) -> false
 
 (** string encoding of a source file (including path) as a single filename *)
 let encoding source_file =

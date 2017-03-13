@@ -49,5 +49,5 @@ val node_start_session : Procdesc.Node.t -> int -> SourceFile.t -> unit
     The boolean indicates whether to print whole seconds only. *)
 val write_proc_html : SourceFile.t -> bool -> Procdesc.t -> unit
 
-(** Create filename.ext.html for each file in the exe_env. *)
-val write_all_html_files : Exe_env.t -> unit
+(** Create filename.ext.html for each file in the cluster. *)
+val write_all_html_files : Cluster.t -> unit

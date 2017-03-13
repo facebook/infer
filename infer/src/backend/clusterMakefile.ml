@@ -15,27 +15,6 @@ module CLOpt = CommandLineOption
 
 (** Module to create a makefile with dependencies between clusters *)
 
-let cluster_should_be_analyzed cluster =
-  let fname = DB.source_dir_to_string cluster in
-  let in_ondemand_config =
-    Option.map ~f:(fun dirs -> String.Set.mem dirs fname) Ondemand.dirs_to_analyze in
-  let check_modified () =
-    let modified =
-      DB.file_was_updated_after_start (DB.filename_from_string fname) in
-    if modified &&
-       Config.developer_mode
-    then L.stdout "Modified: %s@." fname;
-    modified in
-  begin
-    match in_ondemand_config with
-    | Some b -> (* ondemand config file is specified *)
-        b
-    | None when Config.reactive_mode  ->
-        check_modified ()
-    | None ->
-        true
-  end
-
 
 let pp_prolog fmt clusters =
   let escape = Escape.escape_map (fun c -> if Char.equal c '#' then Some "\\#" else None) in
@@ -52,9 +31,8 @@ let pp_prolog fmt clusters =
   F.fprintf fmt "CLUSTERS=";
 
   List.iteri
-    ~f:(fun i cl ->
-        if cluster_should_be_analyzed cl
-        then F.fprintf fmt "%a " Cluster.pp_cluster_name (i+1))
+    ~f:(fun i _ ->
+        F.fprintf fmt "%a " Cluster.pp_cluster_name (i+1))
     clusters;
 
   F.fprintf fmt "@.@.default: test@.@.all: test@.@.";

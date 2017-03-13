@@ -610,7 +610,7 @@ let proc_is_library proc_attributes =
 *)
 let proc_resolve_attributes proc_name =
   let from_attributes_table () =
-    AttributesTable.load_attributes proc_name in
+    AttributesTable.load_attributes ~cache:true proc_name in
   let from_specs () = match get_summary proc_name with
     | Some summary ->
         Some summary.attributes

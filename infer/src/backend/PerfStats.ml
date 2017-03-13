@@ -147,7 +147,10 @@ let register_report_at_exit file =
         try
           Unix.mkdir_p (Filename.dirname file);
           let stats_oc = open_out file in
-          Yojson.Basic.pretty_to_channel stats_oc json_stats ;
+          let stats_fd = Unix.descr_of_out_channel stats_oc in
+          ignore (Unix.flock stats_fd Unix.Flock_command.lock_exclusive);
+          Yojson.Basic.pretty_to_channel stats_oc json_stats;
+          ignore (Unix.flock stats_fd Unix.Flock_command.unlock);
           Out_channel.close stats_oc
         with exc ->
           Format.eprintf "Info: failed to write stats to %s@\n%s@\n%s@\n%s@."

@@ -158,15 +158,17 @@ let attr_tbl = Typ.Procname.Hash.create 16;
 
 let defined_attr_tbl = Typ.Procname.Hash.create 16;
 
-let load_attributes proc_name =>
+let load_attributes cache::cache proc_name =>
   try (Typ.Procname.Hash.find attr_tbl proc_name) {
   | Not_found =>
     let proc_attributes = load_attr defined_only::false proc_name;
     switch proc_attributes {
     | Some attrs =>
-      Typ.Procname.Hash.add attr_tbl proc_name proc_attributes;
-      if attrs.is_defined {
-        Typ.Procname.Hash.add defined_attr_tbl proc_name proc_attributes
+      if cache {
+        Typ.Procname.Hash.add attr_tbl proc_name proc_attributes;
+        if attrs.is_defined {
+          Typ.Procname.Hash.add defined_attr_tbl proc_name proc_attributes
+        }
       }
     | None => ()
     };
@@ -257,8 +259,8 @@ let stats () => {
 /* Find the file where the procedure was captured, if a cfg for that file exists.
    Return also a boolean indicating whether the procedure is defined in an
    include file. */
-let find_file_capturing_procedure pname =>
-  switch (load_attributes pname) {
+let find_file_capturing_procedure cache::cache=true pname =>
+  switch (load_attributes cache::cache pname) {
   | None => None
   | Some proc_attributes =>
     let source_file = proc_attributes.ProcAttributes.source_file_captured;
