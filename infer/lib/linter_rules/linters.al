@@ -81,10 +81,10 @@ DEFINE-CHECKER BAD_POINTER_COMPARISON = {
 DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 
 	LET exists_method_calling_addObserver =
-		 call_method(addObserver:selector:name:object:) HOLDS-EVENTUALLY;
+		 call_method_strict(addObserver:selector:name:object:) HOLDS-EVENTUALLY;
 
 	LET exists_method_calling_addObserverForName =
-	   call_method(addObserverForName:object:queue:usingBlock:) HOLDS-EVENTUALLY;
+	   call_method_strict(addObserverForName:object:queue:usingBlock:) HOLDS-EVENTUALLY;
 
 	LET add_observer =
 	   exists_method_calling_addObserver OR exists_method_calling_addObserverForName;
@@ -95,10 +95,10 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 			 HOLDS-EVENTUALLY;
 
 	LET exists_method_calling_removeObserver =
-	     call_method(removeObserver:) HOLDS-EVENTUALLY;
+	     call_method_strict(removeObserver:) HOLDS-EVENTUALLY;
 
 	LET exists_method_calling_removeObserverName =
-		  call_method(removeObserver:name:object:) HOLDS-EVENTUALLY;
+		  call_method_strict(removeObserver:name:object:) HOLDS-EVENTUALLY;
 
 	LET remove_observer =
 				exists_method_calling_removeObserver OR exists_method_calling_removeObserverName;

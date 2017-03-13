@@ -412,8 +412,17 @@ let next_state_via_transition an trans =
    linter context lcxt. That is:  an, lcxt |= pred_name(params) *)
 let rec eval_Atomic pred_name args an lcxt =
   match pred_name, args, an with
-  | "call_method", [m], an -> CPredicates.call_method m an
-  | "property_name_contains_word", [word], an -> CPredicates.property_name_contains_word word an
+  | "call_method", [m], an -> CPredicates.call_method an m
+  | "call_method_strict", [m], an -> CPredicates.call_method_strict an m
+  | "call_class_method", [c; m], an -> CPredicates.call_class_method an c m
+  | "call_class_method_strict", [c; m], an ->
+      CPredicates.call_class_method_strict an c m
+  | "is_objc_interface_named", [name], an ->
+      CPredicates.is_objc_interface_named an name
+  | "is_objc_interface_named_strict", [name], an ->
+      CPredicates.is_objc_interface_named_strict an name
+  | "property_name_contains_word", [word], an ->
+      CPredicates.property_name_contains_word word an
   | "is_objc_extension", [], _ -> CPredicates.is_objc_extension lcxt
   | "is_global_var", [], an -> CPredicates.is_syntactically_global_var an
   | "is_const_var", [], an ->  CPredicates.is_const_expr_var an
@@ -421,22 +430,26 @@ let rec eval_Atomic pred_name args an lcxt =
   | "is_strong_property", [], an -> CPredicates.is_strong_property an
   | "is_assign_property", [], an -> CPredicates.is_assign_property an
   | "is_property_pointer_type", [], an -> CPredicates.is_property_pointer_type an
-  | "context_in_synchronized_block", [], _ -> CPredicates.context_in_synchronized_block lcxt
+  | "context_in_synchronized_block", [], _ ->
+      CPredicates.context_in_synchronized_block lcxt
   | "is_ivar_atomic", [], an -> CPredicates.is_ivar_atomic an
   | "is_method_property_accessor_of_ivar", [], an ->
       CPredicates.is_method_property_accessor_of_ivar an lcxt
   | "is_objc_constructor", [], _ -> CPredicates.is_objc_constructor lcxt
   | "is_objc_dealloc", [], _ -> CPredicates.is_objc_dealloc lcxt
   | "captures_cxx_references", [], _ -> CPredicates.captures_cxx_references an
-  | "is_binop_with_kind", [str_kind], an -> CPredicates.is_binop_with_kind str_kind an
-  | "is_unop_with_kind", [str_kind], an -> CPredicates.is_unop_with_kind str_kind an
+  | "is_binop_with_kind", [str_kind], an ->
+      CPredicates.is_binop_with_kind str_kind an
+  | "is_unop_with_kind", [str_kind], an ->
+      CPredicates.is_unop_with_kind str_kind an
   | "in_node", [nodename], an -> CPredicates.is_node nodename an
   | "isa", [classname], an -> CPredicates.isa classname an
   | "decl_unavailable_in_supported_ios_sdk", [], an ->
       CPredicates.decl_unavailable_in_supported_ios_sdk lcxt an
   | "within_responds_to_selector_block", [], an ->
       CPredicates.within_responds_to_selector_block lcxt an
-  | _ -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: " ^ pred_name)
+  | _ -> failwith
+           ("ERROR: Undefined Predicate or wrong set of arguments: " ^ pred_name)
 
 (* an, lcxt |= EF phi  <=>
    an, lcxt |= phi or exists an' in Successors(st): an', lcxt |= EF phi
