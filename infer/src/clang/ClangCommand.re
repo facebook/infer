@@ -53,16 +53,19 @@ let value_of_option {orig_argv} => value_of_argv_option orig_argv;
 
 let has_flag {orig_argv} flag => List.exists f::(String.equal flag) orig_argv;
 
-let can_attach_ast_exporter cmd =>
-  has_flag cmd "-cc1" && (
+let can_attach_ast_exporter cmd => {
+  let is_supported_language cmd =>
     switch (value_of_option cmd "-x") {
     | None =>
       Logging.stderr "malformed -cc1 command has no \"-x\" flag!";
       false
     | Some lang when String.is_prefix prefix::"assembler" lang => false
     | Some _ => true
-    }
-  );
+    };
+  /* -Eonly is -cc1 flag that gets produced by 'clang -M -### ...' */
+  let is_preprocessor_only cmd => has_flag cmd "-E" || has_flag cmd "-Eonly";
+  has_flag cmd "-cc1" && is_supported_language cmd && not (is_preprocessor_only cmd)
+};
 
 let argv_cons a b => [a, ...b];
 

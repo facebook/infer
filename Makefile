@@ -21,11 +21,14 @@ BUILD_SYSTEMS_TESTS += \
   clang_multiple_files \
   clang_translation \
   clang_unknown_ext \
+  clang_with_E_flag \
+  clang_with_M_flag \
+  clang_with_MD_flag \
   delete_results_dir \
-	differential_resolve_infer_eradicate_conflict \
-	differential_skip_anonymous_class_renamings \
-	differential_skip_duplicated_types_on_filenames \
-	differential_skip_duplicated_types_on_filenames_with_renamings \
+  differential_resolve_infer_eradicate_conflict \
+  differential_skip_anonymous_class_renamings \
+  differential_skip_duplicated_types_on_filenames \
+  differential_skip_duplicated_types_on_filenames_with_renamings \
   fail_on_issue \
   j1 \
   linters \

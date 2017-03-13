@@ -31,6 +31,7 @@ duplicates.txt
 /infer/tests/build_systems/codetoanalyze/path with spaces/
 /infer/tests/build_systems/clang_compilation_db_escaped/compile_commands.json
 /infer/tests/build_systems/clang_compilation_db_relpath/compile_commands.json
+/infer/tests/build_systems/clang_with_MD_flag/hello.d
 /infer/tests/build_systems/codetoanalyze/xcodebuild/simple_app/app_built
 /infer/tests/build_systems/codetoanalyze/xcodebuild/simple_app/build/
 infer/tests/build_systems/differential_*/**/*.class
