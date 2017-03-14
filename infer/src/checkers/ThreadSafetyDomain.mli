@@ -39,6 +39,8 @@ end
     and which memory locations correspond to the same lock. *)
 module LocksDomain : AbstractDomain.S with type astate = bool
 
+module ThreadsDomain : AbstractDomain.S with type astate = bool
+
 module PathDomain : module type of SinkTrace.Make(TraceElem)
 
 module Attribute : sig
@@ -101,6 +103,8 @@ end
 
 type astate =
   {
+    threads : ThreadsDomain.astate;
+    (** boolean that is true if we know we are on UI/main thread *)
     locks : LocksDomain.astate;
     (** boolean that is true if a lock must currently be held *)
     accesses : AccessDomain.astate;
@@ -113,7 +117,8 @@ type astate =
 
 (** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of the
     attributes associated with the return value *)
-type summary = LocksDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
+type summary = ThreadsDomain.astate * LocksDomain.astate
+               * AccessDomain.astate * AttributeSetDomain.astate
 
 include AbstractDomain.WithBottom with type astate := astate
 

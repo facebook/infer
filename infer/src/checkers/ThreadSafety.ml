@@ -51,25 +51,34 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Unlock
     | NoEffect
 
+
+  let is_thread_utils_method method_name_str = function
+    | Typ.Procname.Java java_pname ->
+        String.is_suffix ~suffix:"ThreadUtils" (Typ.Procname.java_get_class_name java_pname)
+        && String.equal (Typ.Procname.java_get_method java_pname) method_name_str
+    | _ -> false
+
   let get_lock_model = function
     | Typ.Procname.Java java_pname ->
-        begin
-          match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
-          | ("java.util.concurrent.locks.Lock"
-            | "java.util.concurrent.locks.ReentrantLock"
-            | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
-            | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
-            ("lock" | "tryLock" | "lockInterruptibly") ->
-              Lock
-          | ("java.util.concurrent.locks.Lock"
-            |"java.util.concurrent.locks.ReentrantLock"
-            | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
-            | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
-            "unlock" ->
-              Unlock
-          | _ ->
-              NoEffect
-        end
+        if is_thread_utils_method "assertHoldsLock" (Typ.Procname.Java java_pname) then Lock
+        else
+          begin
+            match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
+            | ("java.util.concurrent.locks.Lock"
+              | "java.util.concurrent.locks.ReentrantLock"
+              | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
+              | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
+              ("lock" | "tryLock" | "lockInterruptibly") ->
+                Lock
+            | ("java.util.concurrent.locks.Lock"
+              |"java.util.concurrent.locks.ReentrantLock"
+              | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
+              | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
+              "unlock" ->
+                Unlock
+            | _ ->
+                NoEffect
+          end
     | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
         Lock
     | pname when Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
@@ -355,7 +364,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   AccessDomain.empty
             | None ->
                 AccessDomain.empty in
-          Some (false, callee_accesses, AttributeSetDomain.empty)
+          Some (false, false, callee_accesses, AttributeSetDomain.empty)
       | _ ->
           failwithf
             "Call to %a is marked as a container write, but has no receiver"
@@ -414,147 +423,151 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Call (ret_opt, Const (Cfun callee_pname), actuals, loc, _) ->
         let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
-          match get_lock_model callee_pname with
-          | Lock ->
-              { astate with locks = true; }
-          | Unlock ->
-              { astate with locks = false; }
-          | NoEffect ->
-              match
-                get_summary pdesc callee_pname actuals ~f_resolve_id loc tenv with
-              | Some (callee_locks, callee_accesses, return_attributes) ->
-                  let call_site = CallSite.make callee_pname loc in
-                  let combine_accesses_for_pre pre ~caller_accesses ~callee_accesses =
-                    let combined_accesses =
-                      PathDomain.with_callsite
-                        (AccessDomain.get_accesses pre callee_accesses) call_site
-                      |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses) in
-                    AccessDomain.add pre combined_accesses caller_accesses in
-                  let combined_safe_accesses =
-                    combine_accesses_for_pre
-                      AccessPrecondition.Protected
-                      ~caller_accesses:astate.accesses
-                      ~callee_accesses in
-                  let locks' = callee_locks || astate.locks in
-                  let astate' =
-                    if is_unprotected locks' pdesc
+          if is_thread_utils_method "assertMainThread" callee_pname then
+            { astate with threads = true; }
+          else
+            match get_lock_model callee_pname with
+            | Lock ->
+                { astate with locks = true; }
+            | Unlock ->
+                { astate with locks = false; }
+            | NoEffect ->
+                match
+                  get_summary pdesc callee_pname actuals ~f_resolve_id loc tenv with
+                | Some ( callee_threads, callee_locks, callee_accesses, return_attributes) ->
+                    let call_site = CallSite.make callee_pname loc in
+                    let combine_accesses_for_pre pre ~caller_accesses ~callee_accesses =
+                      let combined_accesses =
+                        PathDomain.with_callsite
+                          (AccessDomain.get_accesses pre callee_accesses) call_site
+                        |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses) in
+                      AccessDomain.add pre combined_accesses caller_accesses in
+                    let combined_safe_accesses =
+                      combine_accesses_for_pre
+                        AccessPrecondition.Protected
+                        ~caller_accesses:astate.accesses
+                        ~callee_accesses in
+                    let locks' = callee_locks || astate.locks in
+                    let threads' = callee_threads || astate.threads in
+                    let astate' =
+                      if is_unprotected locks' pdesc
+                      then
+                        let add_conditional_accesses index accesses_acc (actual_exp, actual_typ) =
+                          if is_constant actual_exp
+                          then
+                            (* the actual is a constant, so it's owned in the caller. *)
+                            accesses_acc
+                          else
+                            let callee_conditional_accesses =
+                              PathDomain.with_callsite
+                                (AccessDomain.get_accesses (ProtectedIf (Some index)) callee_accesses)
+                                call_site in
+                            begin
+                              match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
+                              | Some actual_access_path ->
+                                  if is_owned actual_access_path astate.attribute_map
+                                  then
+                                    (* the actual passed to the current callee is owned. drop all the
+                                       conditional accesses for that actual, since they're all safe *)
+                                    accesses_acc
+                                  else
+                                    let base = fst actual_access_path in
+                                    begin
+                                      match FormalMap.get_formal_index base extras with
+                                      | Some formal_index ->
+                                          (* the actual passed to the current callee is rooted in a
+                                             formal. add to conditional accesses *)
+                                          PathDomain.Sinks.fold
+                                            (AccessDomain.add_access
+                                               (ProtectedIf (Some formal_index)))
+                                            (PathDomain.sinks callee_conditional_accesses)
+                                            accesses_acc
+                                      | None ->
+                                          begin
+                                            match
+                                              AttributeMapDomain.get_conditional_ownership_index
+                                                actual_access_path
+                                                astate.attribute_map
+                                            with
+                                            |(Some formal_index) ->
+                                                (* access path conditionally owned, add to
+                                                   protected-if accesses *)
+                                                PathDomain.Sinks.fold
+                                                  (AccessDomain.add_access
+                                                     (ProtectedIf (Some formal_index)))
+                                                  (PathDomain.sinks callee_conditional_accesses)
+                                                  accesses_acc
+                                            | None ->
+                                                (* access path not owned and not rooted in a formal.
+                                                   add to unprotected accesses *)
+                                                PathDomain.Sinks.fold
+                                                  (AccessDomain.add_access
+                                                     AccessPrecondition.unprotected)
+                                                  (PathDomain.sinks callee_conditional_accesses)
+                                                  accesses_acc
+                                          end
+                                    end
+                              | None ->
+                                  PathDomain.Sinks.fold
+                                    (AccessDomain.add_access AccessPrecondition.unprotected)
+                                    (PathDomain.sinks callee_conditional_accesses)
+                                    accesses_acc
+                            end in
+
+                        let unsafe_accesses =
+                          combine_accesses_for_pre
+                            AccessPrecondition.unprotected
+                            ~caller_accesses:combined_safe_accesses
+                            ~callee_accesses in
+                        let accesses =
+                          List.foldi ~f:add_conditional_accesses ~init:unsafe_accesses actuals in
+                        { astate with accesses; }
+                      else
+                        { astate with accesses = combined_safe_accesses; } in
+                    let attribute_map =
+                      propagate_return_attributes
+                        ret_opt
+                        return_attributes
+                        actuals
+                        astate.attribute_map
+                        ~f_resolve_id
+                        extras in
+                    { astate' with locks = locks'; threads = threads'; attribute_map; }
+                | None ->
+                    if is_box callee_pname
                     then
-                      let add_conditional_accesses index accesses_acc (actual_exp, actual_typ) =
-                        if is_constant actual_exp
-                        then
-                          (* the actual is a constant, so it's owned in the caller. *)
-                          accesses_acc
-                        else
-                          let callee_conditional_accesses =
-                            PathDomain.with_callsite
-                              (AccessDomain.get_accesses (ProtectedIf (Some index)) callee_accesses)
-                              call_site in
+                      match ret_opt, actuals with
+                      | Some (ret_id, ret_typ), (actual_exp, actual_typ) :: _ ->
                           begin
                             match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
-                            | Some actual_access_path ->
-                                if is_owned actual_access_path astate.attribute_map
-                                then
-                                  (* the actual passed to the current callee is owned. drop all the
-                                     conditional accesses for that actual, since they're all safe *)
-                                  accesses_acc
-                                else
-                                  let base = fst actual_access_path in
-                                  begin
-                                    match FormalMap.get_formal_index base extras with
-                                    | Some formal_index ->
-                                        (* the actual passed to the current callee is rooted in a
-                                           formal. add to conditional accesses *)
-                                        PathDomain.Sinks.fold
-                                          (AccessDomain.add_access
-                                             (ProtectedIf (Some formal_index)))
-                                          (PathDomain.sinks callee_conditional_accesses)
-                                          accesses_acc
-                                    | None ->
-                                        begin
-                                          match
-                                            AttributeMapDomain.get_conditional_ownership_index
-                                              actual_access_path
-                                              astate.attribute_map
-                                          with
-                                          |(Some formal_index) ->
-                                              (* access path conditionally owned, add to
-                                                 protected-if accesses *)
-                                              PathDomain.Sinks.fold
-                                                (AccessDomain.add_access
-                                                   (ProtectedIf (Some formal_index)))
-                                                (PathDomain.sinks callee_conditional_accesses)
-                                                accesses_acc
-                                          | None ->
-                                              (* access path not owned and not rooted in a formal.
-                                                 add to unprotected accesses *)
-                                              PathDomain.Sinks.fold
-                                                (AccessDomain.add_access
-                                                   AccessPrecondition.unprotected)
-                                                (PathDomain.sinks callee_conditional_accesses)
-                                                accesses_acc
-                                        end
-                                  end
-                            | None ->
-                                PathDomain.Sinks.fold
-                                  (AccessDomain.add_access AccessPrecondition.unprotected)
-                                  (PathDomain.sinks callee_conditional_accesses)
-                                  accesses_acc
-                          end in
-
-                      let unsafe_accesses =
-                        combine_accesses_for_pre
-                          AccessPrecondition.unprotected
-                          ~caller_accesses:combined_safe_accesses
-                          ~callee_accesses in
-                      let accesses =
-                        List.foldi ~f:add_conditional_accesses ~init:unsafe_accesses actuals in
-                      { astate with accesses; }
+                            | Some ap
+                              when AttributeMapDomain.has_attribute
+                                  ap Functional astate.attribute_map ->
+                                let attribute_map =
+                                  AttributeMapDomain.add_attribute
+                                    (AccessPath.of_id ret_id ret_typ)
+                                    Functional
+                                    astate.attribute_map in
+                                { astate with attribute_map; }
+                            | _ ->
+                                astate
+                          end
+                      | _ ->
+                          astate
+                    else if FbThreadSafety.is_graphql_constructor callee_pname
+                    then
+                      (* assume generated GraphQL code returns ownership *)
+                      match ret_opt with
+                      | Some (ret_id, ret_typ) ->
+                          let attribute_map =
+                            AttributeMapDomain.add_attribute
+                              (AccessPath.of_id ret_id ret_typ)
+                              Attribute.unconditionally_owned
+                              astate.attribute_map in
+                          { astate with attribute_map; }
+                      | None -> astate
                     else
-                      { astate with accesses = combined_safe_accesses; } in
-                  let attribute_map =
-                    propagate_return_attributes
-                      ret_opt
-                      return_attributes
-                      actuals
-                      astate.attribute_map
-                      ~f_resolve_id
-                      extras in
-                  { astate' with locks = locks'; attribute_map; }
-              | None ->
-                  if is_box callee_pname
-                  then
-                    match ret_opt, actuals with
-                    | Some (ret_id, ret_typ), (actual_exp, actual_typ) :: _ ->
-                        begin
-                          match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
-                          | Some ap
-                            when AttributeMapDomain.has_attribute
-                                ap Functional astate.attribute_map ->
-                              let attribute_map =
-                                AttributeMapDomain.add_attribute
-                                  (AccessPath.of_id ret_id ret_typ)
-                                  Functional
-                                  astate.attribute_map in
-                              { astate with attribute_map; }
-                          | _ ->
-                              astate
-                        end
-                    | _ ->
-                        astate
-                  else if FbThreadSafety.is_graphql_constructor callee_pname
-                  then
-                    (* assume generated GraphQL code returns ownership *)
-                    match ret_opt with
-                    | Some (ret_id, ret_typ) ->
-                        let attribute_map =
-                          AttributeMapDomain.add_attribute
-                            (AccessPath.of_id ret_id ret_typ)
-                            Attribute.unconditionally_owned
-                            astate.attribute_map in
-                        { astate with attribute_map; }
-                    | None -> astate
-                  else
-                    astate in
+                      astate in
         begin
           match ret_opt with
           | Some (_, (Typ.Tint ILong | Tfloat FDouble)) ->
@@ -751,8 +764,9 @@ let analyze_procedure callback =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
   let open ThreadSafetyDomain in
   let has_lock = false in
+  let known_on_ui_thread = false in
   let return_attrs = AttributeSetDomain.empty in
-  let empty = has_lock, AccessDomain.empty, return_attrs in
+  let empty =  known_on_ui_thread, has_lock, AccessDomain.empty, return_attrs in
   (* convert the abstract state to a summary by dropping the id map *)
   let compute_post ({ ProcData.pdesc; tenv; extras; } as proc_data) =
     if should_analyze_proc pdesc tenv
@@ -785,7 +799,7 @@ let analyze_procedure callback =
             ThreadSafetyDomain.empty in
 
         match Analyzer.compute_post proc_data ~initial with
-        | Some { locks; accesses; attribute_map; } ->
+        | Some { threads; locks; accesses; attribute_map; } ->
             let return_var_ap =
               AccessPath.of_pvar
                 (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
@@ -793,7 +807,7 @@ let analyze_procedure callback =
             let return_attributes =
               try AttributeMapDomain.find return_var_ap attribute_map
               with Not_found -> AttributeSetDomain.empty in
-            Some (locks, accesses, return_attributes)
+            Some (threads, locks, accesses, return_attributes)
         | None ->
             None
       end
@@ -817,7 +831,10 @@ let make_results_table get_proc_desc file_env =
   (* make a Map sending each element e of list l to (f e) *)
   let map_post_computation_over_procs f l =
     List.fold
-      ~f:(fun m p -> ResultsTableType.add p (f p) m)
+      ~f:(fun m p -> match f p with
+          | (true,_,_,_) -> m (* Don't put a post there *)
+          | _ -> ResultsTableType.add p (f p) m
+        )
       ~init:ResultsTableType.empty
       l in
   let compute_post_for_procedure = (* takes proc_env as arg *)
@@ -918,7 +935,7 @@ let filter_conflicting_sinks sink trace =
 let collect_conflicting_writes sink tab =
   let procs_and_writes =
     List.map
-      ~f:(fun (key, (_, accesses, _)) ->
+      ~f:(fun (key, (_, _, accesses, _)) ->
           let conflicting_writes =
             filter_conflicting_sinks sink (get_all_accesses Write accesses) in
           key, conflicting_writes
@@ -989,7 +1006,7 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
-    | Some (_, accesses, _) -> get_possibly_unsafe_writes accesses
+    | Some (_, _, accesses, _) -> get_possibly_unsafe_writes accesses
     | _ -> PathDomain.empty in
   let report_one_path ((_, sinks) as path) =
     let initial_sink, _ = List.last_exn sinks in
@@ -1104,7 +1121,7 @@ let process_results_table file_env tab =
     (should_report_on_all_procs || is_thread_safe_method pdesc tenv)
     && should_report_on_proc proc_env in
   ResultsTableType.iter (* report errors for each method *)
-    (fun proc_env (_, accesses, _) ->
+    (fun proc_env (_, _, accesses, _) ->
        if should_report proc_env
        then
          let open ThreadSafetyDomain in
