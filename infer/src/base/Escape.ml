@@ -44,6 +44,29 @@ let escape_xml s =
     | _ -> None in
   escape_map map s
 
+let escape_url s =
+  let map = function
+    | '!' -> Some "%21"
+    | '#' -> Some "%23"
+    | '$' -> Some "%24"
+    | '&' -> Some "%26"
+    | '\'' -> Some "%27"
+    | '(' -> Some "%28"
+    | ')' -> Some "%29"
+    | '*' -> Some "%2A"
+    | '+' -> Some "%2B"
+    | ',' -> Some "%2C"
+    | '/' -> Some "%2F"
+    | ':' -> Some "%3A"
+    | ';' -> Some "%3B"
+    | '=' -> Some "%3D"
+    | '?' -> Some "%3F"
+    | '@' -> Some "%40"
+    | '[' -> Some "%5B"
+    | ']' -> Some "%5D"
+    | _ -> None in
+  escape_map map s
+
 let escape_dotty s =
   let map = function
     | '"' -> Some "\\\""

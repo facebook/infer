@@ -174,8 +174,9 @@ struct
     let pos_str = match pos with
       | None -> ""
       | Some s -> "#" ^ s in
+    let escaped_path = List.map ~f:Escape.escape_url path in
     let link_str =
-      (DB.filename_to_string (DB.Results_dir.path_to_filename DB.Results_dir.Rel path))
+      (DB.filename_to_string (DB.Results_dir.path_to_filename DB.Results_dir.Rel escaped_path))
       ^ ".html"
       ^ pos_str in
     let name_str = match name with
