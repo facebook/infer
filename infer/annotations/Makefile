@@ -20,14 +20,14 @@ SOURCES_JAR = $(CWD)/annotations-src.jar
 all: $(ANNOTATIONS_JAR) $(SOURCES_JAR)
 
 $(ANNOTATIONS_JAR): $(ANNOT_SOURCES)
-	mkdir -p $(ANNOT_CLASSES)
-	javac -source 7 -target 7 -cp $(JSR_JAR) $(ANNOT_SOURCES) -d $(ANNOT_CLASSES)
+	$(MKDIR_P) $(ANNOT_CLASSES)
+	$(JAVAC) -source 7 -target 7 -cp $(JSR_JAR) $(ANNOT_SOURCES) -d $(ANNOT_CLASSES)
 	cd $(ANNOT_CLASSES) && jar cvf $(ANNOTATIONS_JAR) com
 
 $(SOURCES_JAR): $(ANNOT_SOURCES)
 	jar cvf $(SOURCES_JAR) $(SOURCES_DIR)/com
 
 clean:
-	@rm -rf $(ANNOT_CLASSES)
-	@rm -f $(ANNOTATIONS_JAR)
-	@rm -f $(SOURCES_JAR)
+	@$(REMOVE_DIR) $(ANNOT_CLASSES)
+	@$(REMOVE) $(ANNOTATIONS_JAR)
+	@$(REMOVE) $(SOURCES_JAR)

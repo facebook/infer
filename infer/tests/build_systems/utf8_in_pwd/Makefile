@@ -85,7 +85,7 @@ infer-out-javac/report.json: $(JAVA_DEPS) $(JAVAC_DIR)
 	cd $(JAVAC_DIR) && \
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- \
-	    javac -cp $(CLASSPATH) $(foreach source,$(JAVAC_SOURCES),$(notdir $(source))))
+	    $(JAVAC) -cp $(CLASSPATH) $(foreach source,$(JAVAC_SOURCES),$(notdir $(source))))
 
 infer-out-make/report.json: $(CLANG_DEPS) $(MAKE_DIR)
 	cd $(MAKE_DIR) && \

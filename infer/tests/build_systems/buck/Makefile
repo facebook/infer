@@ -22,7 +22,7 @@ $(OBJECTS): $(JAVA_SOURCE_FILES)
 	cd $(ROOT_DIR) && \
 	$(call silent_on_success,\
 	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
-	buck build --no-cache $(BUCK_TARGET))
+	$(BUCK) build --no-cache $(BUCK_TARGET))
 
 infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	cd $(ROOT_DIR) && \
@@ -30,4 +30,4 @@ infer-out/report.json: $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 	$(call silent_on_success,\
 	INFER_BIN=$(INFER_BIN) NO_BUCKD=1 \
 	$(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
-	  buck build --no-cache $(BUCK_TARGET))
+	  $(BUCK) build --no-cache $(BUCK_TARGET))

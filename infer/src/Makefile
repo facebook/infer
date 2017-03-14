@@ -22,7 +22,7 @@ OCAML_FATAL_WARNINGS = +3+5+6+8+10+11+12+18+19+20+23+26+29+27+33+34+35+37+38+39+
 # Notice that use-ocamlfind is used here to avoid a linker bug in ocamlbuild when using -tag thread
 OCAMLBUILD_OPTIONS = \
   -r \
-  -use-menhir -menhir 'menhir --explain --strict'\
+  -use-menhir -menhir '$(MENHIR) --explain --strict'\
   -use-ocamlfind \
   -lflags -cclib,-lffi \
   -cflags -g -lflags -g \
@@ -124,7 +124,7 @@ endif
 DEPENDENCIES = IR backend base checkers eradicate harness integration tp/fts quandary bufferoverrun $(EXTRA_DEPS)
 
 # ocamlbuild command with options common to all build targets
-OCAMLBUILD_BASE = rebuild $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES))
+OCAMLBUILD_BASE = $(REBUILD) $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES))
 
 # ocamlbuild with options necessary to build all targets at once, regardless of configure flags
 OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
@@ -166,7 +166,7 @@ OCAML_CONFIG_SOURCES += $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 endif
 OCAML_ALL_SOURCES = $(OCAML_BASE_SOURCES) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
 
-export OCAMLFIND_IGNORE_DUPS_IN=$(shell ocamlc -where)/compiler-libs
+export OCAMLFIND_IGNORE_DUPS_IN=$(shell $(OCAMLC) -where)/compiler-libs
 
 .PHONY: all
 all: infer
@@ -243,10 +243,10 @@ test_build: $(TEST_BUILD_DIR)/$(INFER_MAIN).byte
 # to generate interface file.mli from implementation file.ml execute:
 #   make M=file mli
 mli:
-	ocamlfind ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I $(INFER_BUILD_DIR),$(DEPENDENCIES)) -i $(M).ml > $(M).mli
+	$(OCAMLFIND) ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I $(INFER_BUILD_DIR),$(DEPENDENCIES)) -i $(M).ml > $(M).mli
 
 rei:
-	ocamlfind ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I $(INFER_BUILD_DIR),$(DEPENDENCIES)) -i -pp refmt -impl $(M).re > $(M).rei
+	$(OCAMLFIND) ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I $(INFER_BUILD_DIR),$(DEPENDENCIES)) -i -pp refmt -impl $(M).re > $(M).rei
 
 # convert to reason
 %.re : %.ml
@@ -313,7 +313,7 @@ toplevel: $(INFER_BUILD_DIR)/toplevel.cmo
 checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
 $(CHECKCOPYRIGHT_BIN): $(BUILD_DIR) $(CHECKCOPYRIGHT_MAIN).ml Makefile
-	rebuild -quiet -r -j $(NCPU) -build-dir $(BUILD_DIR)/checkCopyright \
+	$(REBUILD) -quiet -r -j $(NCPU) -build-dir $(BUILD_DIR)/checkCopyright \
 	  -cflags -g,-safe-string -lflags -g \
 	  -pkgs core,str -tag thread -use-ocamlfind $(CHECKCOPYRIGHT_MAIN).native
 	$(INSTALL_PROGRAM) \

@@ -20,9 +20,9 @@ include $(TESTS_DIR)/base.make
 PROJECT_ROOT ?= $(TESTS_DIR)
 
 $(OBJECTS): $(SOURCES)
-	javac -cp $(CLASSPATH) $(SOURCES)
+	$(JAVAC) -cp $(CLASSPATH) $(SOURCES)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) --inferconfig-home . --project-root $(PROJECT_ROOT) $(INFER_OPTIONS) -- \
-	    javac -cp $(CLASSPATH) $(SOURCES))
+	    $(JAVAC) -cp $(CLASSPATH) $(SOURCES))

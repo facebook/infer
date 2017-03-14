@@ -16,11 +16,11 @@ include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/base.make
 
 $(OBJECTS): $(SOURCES)
-	ant
+	$(ANT)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(call silent_on_success,\
-	  $(INFER_BIN) -a $(ANALYZER) --project-root $(TESTS_DIR) --inferconfig-home . -- ant)
+	  $(INFER_BIN) -a $(ANALYZER) --project-root $(TESTS_DIR) --inferconfig-home . -- $(ANT))
 
 clean:
-	ant clean
+	$(ANT) clean

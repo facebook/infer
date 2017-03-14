@@ -25,7 +25,7 @@ clean:
 	@rm -f $(JAVA_MODELS_JAR)
 
 compile:
-	javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) $(JAVA_SOURCES)
+	$(JAVAC) -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) $(JAVA_SOURCES)
 
 $(INFER_REPORT): $(JAVA_DEPS_NO_MODELS) $(JAVA_SOURCES)
 	@rm -fr $(MODELS_OUT)
@@ -33,7 +33,7 @@ $(INFER_REPORT): $(JAVA_DEPS_NO_MODELS) $(JAVA_SOURCES)
 	@rm -f $(JAVA_MODELS_JAR)
 	$(call silent_on_success,\
 	  $(INFER_BIN) --jobs 1 --results-dir $(INFER_RESULTS_DIR) --models-mode -- \
-	  javac -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) \
+	  $(JAVAC) -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) \
 	    $(JAVA_SOURCES))
 
 $(MODELS_JAR): $(INFER_REPORT)

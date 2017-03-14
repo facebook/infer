@@ -89,7 +89,7 @@ all: infer
 configure: configure.ac $(wildcard m4/*.m4)
 	./autogen.sh
 
-Makefile.autoconf: configure
+Makefile.autoconf: configure Makefile.autoconf.in
 #	rerun ./configure with the flags that were used last time it was run (if available)
 	./configure $(shell ./config.status --config || true)
 
@@ -233,7 +233,7 @@ endtoend_test: print_direct_tests print_build_systems_tests
 inferTraceBugs_test: infer
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(INFER_BIN) -o __test-infer-out__ -- \
-	  javac $(EXAMPLES_DIR)/Hello.java \
+	  $(JAVAC) $(EXAMPLES_DIR)/Hello.java \
 	   > /dev/null
 else
 	$(INFER_BIN) -o __test-infer-out__ -- \

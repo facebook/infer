@@ -13,6 +13,7 @@ bindir = @bindir@
 BUCK = @BUCK@
 BUILD_C_ANALYZERS = @BUILD_C_ANALYZERS@
 BUILD_JAVA_ANALYZERS = @BUILD_JAVA_ANALYZERS@
+CAML_LD_LIBRARY_PATH = @CAML_LD_LIBRARY_PATH@
 CC = @CC@
 CFLAGS = @CFLAGS@
 CLANG_INCLUDES = @CLANG_INCLUDES@
@@ -32,9 +33,11 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 IS_FACEBOOK_TREE = @IS_FACEBOOK_TREE@
 IS_RELEASE_TREE = @IS_RELEASE_TREE@
+JAVAC = @JAVAC@
 LDFLAGS = @LDFLAGS@
 libdir = @libdir@
 LIBS = @LIBS@
+MENHIR = @MENHIR@
 MKDIR_P_CMD = case "@MKDIR_P@" in \
     ./*) printf "$(ROOT_DIR)/@MKDIR_P@\n";; \
     *) printf "@MKDIR_P@\n";; \
@@ -43,8 +46,12 @@ MKDIR_P = $(shell $(MKDIR_P_CMD))
 MVN = @MVN@
 NCPU = @NCPU@
 NDKBUILD = @NDKBUILD@
+OCAMLC = @OCAMLC@
+OCAMLLEX = @OCAMLLEX@
+OCAMLOPT = @OCAMLOPT@
 prefix = @prefix@
 PYTHON_lxml = @PYTHON_lxml@
+REBUILD = @REBUILD@
 USER_JAVA_HOME = @USER_JAVA_HOME@
 XCODE_SELECT = @XCODE_SELECT@
 XCPRETTY = @XCPRETTY@
@@ -54,4 +61,11 @@ ifneq (,$(findstring s,$(MAKEFLAGS)))
 LN_S = @LN_S@
 else
 LN_S = @LN_S@ -v
+endif
+
+# Export parts of the config relevant to the compilation (taken from `opam config env`) in case the
+# user runs `./configure` in some configuration but `make` in another.
+export PATH := $(shell cd "$(dir $(REBUILD))" && pwd):$(PATH)
+ifneq ($(CAML_LD_LIBRARY_PATH),)
+export CAML_LD_LIBRARY_PATH := $(CAML_LD_LIBRARY_PATH)
 endif

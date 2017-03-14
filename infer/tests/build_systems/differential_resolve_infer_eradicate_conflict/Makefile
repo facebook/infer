@@ -18,9 +18,9 @@ $(CURRENT_REPORT): .inferconfig
 	cp src/DiffExampleTwo.java.current src/DiffExampleTwo.java
 	$(call silent_on_success,\
 	$(INFER_BIN) \
-		-o $(CURRENT_DIR) -- javac src/com/example/DiffExample.java src/DiffExampleTwo.java)
+		-o $(CURRENT_DIR) -- $(JAVAC) src/com/example/DiffExample.java src/DiffExampleTwo.java)
 
 $(PREVIOUS_REPORT): .inferconfig
 	cp src/com/example/DiffExample.java.previous src/com/example/DiffExample.java
 	$(call silent_on_success,\
-	$(INFER_BIN) -o $(PREVIOUS_DIR) -- javac src/com/example/DiffExample.java)
+	$(INFER_BIN) -o $(PREVIOUS_DIR) -- $(JAVAC) src/com/example/DiffExample.java)

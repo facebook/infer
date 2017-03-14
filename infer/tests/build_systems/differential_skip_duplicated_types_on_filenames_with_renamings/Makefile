@@ -16,9 +16,9 @@ include ../../differential.make
 $(CURRENT_REPORT):
 	cp src/DiffExampleRenamed.java.current src/DiffExampleRenamed.java
 	$(call silent_on_success,\
-	$(INFER_BIN) -o $(CURRENT_DIR) -- javac src/DiffExampleRenamed.java)
+	$(INFER_BIN) -o $(CURRENT_DIR) -- $(JAVAC) src/DiffExampleRenamed.java)
 
 $(PREVIOUS_REPORT):
 	cp src/DiffExample.java.previous src/DiffExample.java
 	$(call silent_on_success,\
-	$(INFER_BIN) -o $(PREVIOUS_DIR) -- javac src/DiffExample.java)
+	$(INFER_BIN) -o $(PREVIOUS_DIR) -- $(JAVAC) src/DiffExample.java)

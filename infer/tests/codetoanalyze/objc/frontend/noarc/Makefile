@@ -10,7 +10,7 @@ TESTS_DIR = ../../../..
 IPHONESIMULATOR_ISYSROOT_SUFFIX = \
   /Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk
 
-XCODEROOT = $(shell xcode-select -p)
+XCODEROOT = $(shell $(XCODE_SELECT) -p)
 
 CLANG_OPTIONS = -x objective-c \
   -isysroot $(XCODEROOT)$(IPHONESIMULATOR_ISYSROOT_SUFFIX) \
