@@ -921,7 +921,7 @@ and filter_paths =
 and filter_report_paths =
   CLOpt.mk_string_opt
     ~long:"filter-report-paths" ~parse_mode:CLOpt.(Infer [Print])
-    "Newline-separated list of files for which to emit a report. \
+    "Specify the file containing a newline-separated list of files for which to emit a report. \
      Source files should be specified relative to project root or be absolute."
 
 and flavors =
