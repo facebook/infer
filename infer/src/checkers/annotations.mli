@@ -63,6 +63,7 @@ val ia_is_functional : Annot.Item.t -> bool
 val ia_is_performance_critical : Annot.Item.t -> bool
 val ia_is_no_allocation : Annot.Item.t -> bool
 val ia_is_ignore_allocations : Annot.Item.t -> bool
+val ia_is_inject : Annot.Item.t -> bool
 val ia_is_suppress_lint : Annot.Item.t -> bool
 val ia_is_on_event : Annot.Item.t -> bool
 val ia_is_on_bind : Annot.Item.t -> bool

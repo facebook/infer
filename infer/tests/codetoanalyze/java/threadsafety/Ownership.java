@@ -44,6 +44,21 @@ public class Ownership {
     owned.f = new Object(); // should not report
   }
 
+  Obj mInjectedField1;
+  Obj mInjectedField2;
+
+  // because this constructor is meant to be called via DI, we assume that injectedField and other
+  // parameters passed to the constructor will always be freshly allocated
+  @Inject Ownership(Obj injectedField1, Obj injectedField2) {
+    mInjectedField1 = injectedField1;
+    mInjectedField2 = injectedField2;
+    mInjectedField1.f = new Object(); // should not warn
+    mInjectedField2.f = new Object(); // should not warn
+  }
+
+  Ownership(Obj obj, Object o) {
+    obj.f = o; // not annotated @Inject; should warn
+  }
 
   native void leakToAnotherThread(Object o);
 

@@ -762,16 +762,25 @@ let analyze_procedure callback =
         let initial =
           if is_initializer tenv (Procdesc.get_proc_name pdesc)
           then
-            (* express that the constructor owns [this] *)
-            match FormalMap.get_formal_base 0 extras with
-            | Some base ->
-                let attribute_map =
-                  AttributeMapDomain.add_attribute
-                    (base, [])
-                    Attribute.unconditionally_owned
-                    ThreadSafetyDomain.empty.attribute_map in
-                { ThreadSafetyDomain.empty with attribute_map; }
-            | None -> ThreadSafetyDomain.empty
+            let add_owned_formal acc formal_index =
+              match FormalMap.get_formal_base formal_index extras with
+              | Some base ->
+                  AttributeMapDomain.add_attribute (base, []) Attribute.unconditionally_owned acc
+              | None ->
+                  acc in
+            let owned_formals =
+              (* if a constructer is called via DI, all of its formals will be freshly allocated
+                 and therefore owned. we assume that constructors annotated with @Inject will only
+                 be called via DI or using fresh parameters. *)
+              if Annotations.pdesc_has_return_annot pdesc Annotations.ia_is_inject
+              then List.mapi ~f:(fun i _ -> i)  (Procdesc.get_formals pdesc)
+              else [0] (* express that the constructor owns [this] *) in
+            let attribute_map =
+              List.fold
+                ~f:add_owned_formal
+                owned_formals
+                ~init:ThreadSafetyDomain.empty.attribute_map in
+            { ThreadSafetyDomain.empty with attribute_map; }
           else
             ThreadSafetyDomain.empty in
 

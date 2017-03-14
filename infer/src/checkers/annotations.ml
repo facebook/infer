@@ -201,6 +201,9 @@ let ia_is_no_allocation ia =
 let ia_is_ignore_allocations ia =
   ia_ends_with ia ignore_allocations
 
+let ia_is_inject ia =
+  ia_ends_with ia inject
+
 let ia_is_suppress_lint ia =
   ia_ends_with ia suppress_lint
 
