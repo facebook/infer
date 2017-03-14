@@ -347,7 +347,8 @@ module Interprocedural = struct
   let method_is_expensive tenv pname =
     is_modeled_expensive tenv pname || is_expensive tenv pname
 
-  let check_and_report ({ Callbacks.proc_desc; proc_name; tenv; } as proc_data) =
+  let check_and_report ({ Callbacks.proc_desc; tenv; } as proc_data) : Specs.summary =
+    let proc_name = Procdesc.get_proc_name proc_desc in
     let loc = Procdesc.get_loc proc_desc in
     let expensive = is_expensive tenv proc_name in
     (* TODO: generalize so we can check subtyping on arbitrary annotations *)
@@ -397,14 +398,18 @@ module Interprocedural = struct
           (src_snk_pairs ()) in
       Domain.NonBottom
         (init_map, Domain.TrackingVar.empty) in
-    match compute_and_store_post
-            ~compute_post:(Analyzer.compute_post ~initial)
-            ~make_extras:ProcData.make_empty_extras
-            proc_data with
-    | Some Domain.NonBottom (call_map, _) ->
-        List.iter ~f:(report_src_snk_paths call_map) (src_snk_pairs ())
-    | Some Domain.Bottom | None ->
-        ()
+    begin
+      match compute_and_store_post
+              ~compute_post:(Analyzer.compute_post ~initial)
+              ~make_extras:ProcData.make_empty_extras
+              proc_data with
+      | Some Domain.NonBottom (call_map, _) ->
+          List.iter ~f:(report_src_snk_paths call_map) (src_snk_pairs ())
+      | Some Domain.Bottom | None ->
+          ()
+    end;
+    Specs.get_summary_unsafe "AnnotationReachability.checker" proc_name
+
 end
 
 let checker = Interprocedural.check_and_report

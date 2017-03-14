@@ -745,7 +745,8 @@ let init_summary
           ProcAttributes.proc_flags = proc_flags; };
       proc_desc_option;
     } in
-  Typ.Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name summary
+  Typ.Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name summary;
+  summary
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 let reset_summary proc_name attributes_opt proc_desc_option =

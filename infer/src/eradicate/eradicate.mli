@@ -23,7 +23,7 @@ type parameters = (Exp.t * Typ.t) list
 (** Type for a module that provides a main callback function *)
 module type CallBackT =
 sig
-  val callback : TypeCheck.checks -> Callbacks.proc_callback_args -> unit
+  val callback : TypeCheck.checks -> Callbacks.proc_callback_t
 end (* CallBackT *)
 
 

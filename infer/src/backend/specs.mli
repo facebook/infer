@@ -213,17 +213,17 @@ val get_status : summary -> status
 val is_active : summary -> bool
 
 (** Initialize the summary for [proc_name] given dependent procs in list [depend_list].
-    Do nothing if a summary exists already. *)
+    This also stores the new summary in the spec table. *)
 val init_summary :
   ( Procdesc.Node.id list * (* nodes *)
     ProcAttributes.proc_flags * (* procedure flags *)
     (Typ.Procname.t * Location.t) list * (* calls *)
     ProcAttributes.t * (* attributes of the procedure *)
     Procdesc.t option) (* procdesc option *)
-  -> unit
+  -> summary
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-val reset_summary : Typ.Procname.t -> ProcAttributes.t option -> Procdesc.t option -> unit
+val reset_summary : Typ.Procname.t -> ProcAttributes.t option -> Procdesc.t option -> summary
 
 (** Load procedure summary from the given file *)
 val load_summary : DB.filename -> summary option

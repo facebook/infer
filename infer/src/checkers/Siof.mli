@@ -9,4 +9,4 @@
 
 open! IStd
 
-val checker: Callbacks.proc_callback_args -> unit
+val checker: Callbacks.proc_callback_t

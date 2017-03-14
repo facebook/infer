@@ -13,7 +13,8 @@ module L = Logging
 
 
 (** Find SQL statements in string concatenations *)
-let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
+let callback_sql { Callbacks.proc_desc; tenv } : Specs.summary =
+  let proc_name = Procdesc.get_proc_name proc_desc in
   let verbose = false in
 
   (* Case insensitive SQL statement patterns *)
@@ -63,8 +64,11 @@ let callback_sql { Callbacks.proc_desc; proc_name; tenv } =
         end
     | _ -> () in
 
-  try
-    let const_map = ConstantPropagation.build_const_map tenv proc_desc in
-    if verbose then L.stdout "Analyzing %a...\n@." Typ.Procname.pp proc_name;
-    Procdesc.iter_instrs (do_instr const_map) proc_desc
-  with _ -> ()
+  begin
+    try
+      let const_map = ConstantPropagation.build_const_map tenv proc_desc in
+      if verbose then L.stdout "Analyzing %a...\n@." Typ.Procname.pp proc_name;
+      Procdesc.iter_instrs (do_instr const_map) proc_desc
+    with _ -> ()
+  end;
+  Specs.get_summary_unsafe "SqlChecker.callback_sql" proc_name

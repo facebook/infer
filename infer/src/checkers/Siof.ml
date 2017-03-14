@@ -243,15 +243,18 @@ let compute_post proc_data =
     ~initial:(SiofDomain.BottomSiofTrace.Bottom, SiofDomain.VarNames.empty)
   |> Option.map ~f:SiofDomain.normalize
 
-let checker ({ Callbacks.proc_desc; } as callback) =
+let checker ({ Callbacks.proc_desc } as callback) : Specs.summary =
   let post =
     Interprocedural.compute_and_store_post
       ~compute_post
       ~make_extras:ProcData.make_empty_extras
       callback in
   let pname = Procdesc.get_proc_name proc_desc in
-  match Typ.Procname.get_global_name_of_initializer pname with
-  | Some gname ->
-      siof_check proc_desc gname post
-  | None ->
-      ()
+  begin
+    match Typ.Procname.get_global_name_of_initializer pname with
+    | Some gname ->
+        siof_check proc_desc gname post
+    | None ->
+        ()
+  end;
+  Specs.get_summary_unsafe "SIOF checker" pname

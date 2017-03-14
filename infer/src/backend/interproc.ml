@@ -1424,7 +1424,7 @@ let do_analysis_closures exe_env : Tasks.closure list =
       if Config.dynamic_dispatch = `Lazy
       then Some pdesc
       else None in
-    Specs.init_summary (nodes, proc_flags, calls, attributes, proc_desc_option) in
+    ignore (Specs.init_summary (nodes, proc_flags, calls, attributes, proc_desc_option)) in
 
   let callbacks =
     let get_proc_desc proc_name =

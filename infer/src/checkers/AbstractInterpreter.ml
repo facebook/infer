@@ -159,7 +159,8 @@ end
 module Interprocedural (Summ : Summary.S) = struct
 
   let compute_and_store_post
-      ~compute_post ~make_extras { Callbacks.get_proc_desc; proc_desc; proc_name; tenv; } =
+      ~compute_post ~make_extras { Callbacks.get_proc_desc; proc_desc; tenv; } =
+    let proc_name = Procdesc.get_proc_name proc_desc in
     let analyze_ondemand_ _ pdesc =
       match compute_post (ProcData.make pdesc tenv (make_extras pdesc)) with
       | Some post ->

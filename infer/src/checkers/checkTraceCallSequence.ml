@@ -317,7 +317,8 @@ let check_final_state tenv proc_name proc_desc exit_node final_s =
 (** Check that the trace calls are balanced.
     This is done by using the most general control flow including exceptions.
     The begin() and end() function are assumed not to throw exceptions. *)
-let callback_check_trace_call_sequence { Callbacks.proc_desc; proc_name; idenv; tenv } : unit =
+let callback_check_trace_call_sequence { Callbacks.proc_desc; idenv; tenv } =
+  let proc_name = Procdesc.get_proc_name proc_desc in
 
   let module DFTrace = MakeDF(struct
       type t = State.t
@@ -341,4 +342,5 @@ let callback_check_trace_call_sequence { Callbacks.proc_desc; proc_name; idenv; 
       | DFTrace.Dead_state -> ()
     end in
 
-  if not (APIs.is_begin_or_end proc_name) then do_check ()
+  if not (APIs.is_begin_or_end proc_name) then do_check ();
+  Specs.get_summary_unsafe "callback_check_trace_call_sequence" proc_name

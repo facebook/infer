@@ -18,11 +18,11 @@ type proc_callback_args = {
   get_procs_in_file : Typ.Procname.t -> Typ.Procname.t list;
   idenv : Idenv.t;
   tenv : Tenv.t;
-  proc_name : Typ.Procname.t;
+  summary : Specs.summary;
   proc_desc : Procdesc.t;
 }
 
-type proc_callback_t = proc_callback_args -> unit
+type proc_callback_t = proc_callback_args -> Specs.summary
 
 type cluster_callback_t =
   Exe_env.t ->
@@ -58,13 +58,12 @@ let get_language proc_name = if Typ.Procname.is_java proc_name then Config.Java 
 
 
 let reset_summary proc_name =
-  let should_reset =
-    is_none (Specs.get_summary proc_name) in
-  if should_reset
-  then
-    let attributes_opt =
-      Specs.proc_resolve_attributes proc_name in
-    Specs.reset_summary proc_name attributes_opt None
+  match Specs.get_summary proc_name with
+  | Some summary -> summary
+  | None ->
+      let attributes_opt =
+        Specs.proc_resolve_attributes proc_name in
+      Specs.reset_summary proc_name attributes_opt None
 
 
 (** Invoke all registered procedure callbacks on the given procedure. *)
@@ -82,39 +81,41 @@ let iterate_procedure_callbacks exe_env caller_pname =
     | None ->
         [] in
 
-  let update_time proc_name elapsed =
-    match Specs.get_summary proc_name with
-    | Some prev_summary ->
-        let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
-        let stats = { prev_summary.Specs.stats with Specs.stats_time = stats_time } in
-        let summary = { prev_summary with Specs.stats = stats } in
-        Specs.add_summary proc_name summary
-    | None -> () in
+  let update_time elapsed prev_summary =
+    let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
+    let stats = { prev_summary.Specs.stats with Specs.stats_time = stats_time } in
+    let summary = { prev_summary with Specs.stats = stats } in
+    let proc_name = Specs.get_proc_name summary in
+    Specs.add_summary proc_name summary;
+    summary in
 
-  Option.iter
-    ~f:(fun (idenv, tenv, proc_name, proc_desc, _) ->
-        List.iter
-          ~f:(fun (language_opt, proc_callback) ->
-              let language_matches = match language_opt with
-                | Some language -> Config.equal_language language procedure_language
-                | None -> true in
-              if language_matches then
-                begin
-                  let init_time = Unix.gettimeofday () in
-                  proc_callback
-                    {
-                      get_proc_desc;
-                      get_procs_in_file;
-                      idenv;
-                      tenv;
-                      proc_name;
-                      proc_desc;
-                    };
-                  let elapsed = Unix.gettimeofday () -. init_time in
-                  update_time proc_name elapsed
-                end)
-          !procedure_callbacks)
-    (get_procedure_definition exe_env caller_pname)
+  match get_procedure_definition exe_env caller_pname with
+  | None -> ()
+  | Some (idenv, tenv, proc_name, proc_desc, _) ->
+      ignore
+        (List.fold
+           ~init:(reset_summary proc_name)
+           ~f:(fun summary (language_opt, proc_callback) ->
+               let language_matches = match language_opt with
+                 | Some language -> Config.equal_language language procedure_language
+                 | None -> true in
+               if language_matches then
+                 let init_time = Unix.gettimeofday () in
+                 proc_callback
+                   {
+                     get_proc_desc;
+                     get_procs_in_file;
+                     idenv;
+                     tenv;
+                     summary;
+                     proc_desc;
+                   }
+                 |> update_time (Unix.gettimeofday () -. init_time)
+               else
+                 summary)
+           !procedure_callbacks);
+      Specs.store_summary (Specs.get_summary_unsafe "iterate_procedure_callbacks" proc_name)
+
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
 let iterate_cluster_callbacks all_procs exe_env proc_names =
@@ -151,7 +152,7 @@ let iterate_callbacks call_graph exe_env =
     Cg.get_defined_nodes call_graph in
 
   (* Make sure summaries exists. *)
-  List.iter ~f:reset_summary procs_to_analyze;
+  List.iter ~f:(fun p -> ignore (reset_summary p)) procs_to_analyze;
 
   (* Invoke procedure callbacks. *)
   List.iter

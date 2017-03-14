@@ -20,6 +20,6 @@ sig
   val compare : astate -> astate -> int
 end
 
-module type S = sig val checker : Callbacks.proc_callback_args -> unit end
+module type S = sig val checker : Callbacks.proc_callback_t end
 
 module Make : functor (Spec : Spec) -> S

@@ -37,7 +37,7 @@ end
 
 module type S = sig
   (** add YourChecker.checker to registerCallbacks.ml to run your checker *)
-  val checker : Callbacks.proc_callback_args -> unit
+  val checker : Callbacks.proc_callback_t
 end
 
 module Make (Spec : Spec) : S = struct
@@ -82,7 +82,8 @@ module Make (Spec : Spec) : S = struct
 
   module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
 
-  let checker { Callbacks.proc_desc; proc_name; tenv; } =
+  let checker { Callbacks.proc_desc; tenv; } : Specs.summary =
+    let proc_name = Procdesc.get_proc_name proc_desc in
     let nodes = Procdesc.get_nodes proc_desc in
     let do_reporting node_id state =
       let astate_set = state.AbstractInterpreter.post in
@@ -99,5 +100,7 @@ module Make (Spec : Spec) : S = struct
           astate_set in
     let inv_map =
       Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv) ~initial:Domain.empty in
-    Analyzer.InvariantMap.iter do_reporting inv_map
+    Analyzer.InvariantMap.iter do_reporting inv_map;
+    Specs.get_summary_unsafe "checker" proc_name
+
 end

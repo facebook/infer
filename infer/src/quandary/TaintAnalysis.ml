@@ -495,7 +495,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
   module Interprocedural = AbstractInterpreter.Interprocedural(Summary)
 
-  let checker ({ Callbacks.tenv } as callback) =
+  let checker ({ Callbacks.tenv; summary } as callback) : Specs.summary =
+    let proc_name = Specs.get_proc_name summary in
 
     (* bind parameters to a trace with a tainted source (if applicable) *)
     let make_initial pdesc =
@@ -530,5 +531,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           then failwith "Couldn't compute post"
           else None in
     let make_extras = FormalMap.make in
-    ignore(Interprocedural.compute_and_store_post ~compute_post ~make_extras callback)
+    ignore (Interprocedural.compute_and_store_post ~compute_post ~make_extras callback);
+    Specs.get_summary_unsafe "taint analysis" proc_name
 end

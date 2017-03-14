@@ -163,20 +163,24 @@ let loaded_stacktraces =
   | None -> None
   | Some files -> Some (List.map ~f:Stacktrace.of_json_file files)
 
-let checker { Callbacks.proc_desc; tenv; get_proc_desc; } =
-  match loaded_stacktraces with
-  | None -> failwith "Missing command line option. Either \
-                      '--stacktrace stack.json' or '--stacktrace-dir ./dir' \
-                      must be used when running '-a crashcontext'. This \
-                      options expects a JSON formated stack trace or a \
-                      directory containing multiple such traces, \
-                      respectively. See \
-                      tests/codetoanalyze/java/crashcontext/*.json for \
-                      examples of the expected format."
-  | Some stacktraces -> begin
-      let extras = { get_proc_desc; stacktraces; } in
-      SpecSummary.write_summary
-        (Procdesc.get_proc_name proc_desc)
-        (Some (stacktree_of_pdesc proc_desc "proc_start"));
-      ignore(Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras) ~initial:Domain.empty)
-    end
+let checker { Callbacks.proc_desc; tenv; get_proc_desc } : Specs.summary =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  begin
+    match loaded_stacktraces with
+    | None -> failwith "Missing command line option. Either \
+                        '--stacktrace stack.json' or '--stacktrace-dir ./dir' \
+                        must be used when running '-a crashcontext'. This \
+                        options expects a JSON formated stack trace or a \
+                        directory containing multiple such traces, \
+                        respectively. See \
+                        tests/codetoanalyze/java/crashcontext/*.json for \
+                        examples of the expected format."
+    | Some stacktraces -> begin
+        let extras = { get_proc_desc; stacktraces; } in
+        SpecSummary.write_summary
+          proc_name
+          (Some (stacktree_of_pdesc proc_desc "proc_start"));
+        ignore (Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras) ~initial:Domain.empty)
+      end
+  end;
+  Specs.get_summary_unsafe "BoundedCallTree.checker" proc_name

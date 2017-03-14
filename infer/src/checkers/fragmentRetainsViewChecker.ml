@@ -51,9 +51,13 @@ let callback_fragment_retains_view_java
       | _ -> ()
     end
 
-let callback_fragment_retains_view ({ Callbacks.proc_name } as args) =
-  match proc_name with
-  | Typ.Procname.Java pname_java ->
-      callback_fragment_retains_view_java pname_java args
-  | _ ->
-      ()
+let callback_fragment_retains_view ({ Callbacks.summary } as args) : Specs.summary =
+  let proc_name = Specs.get_proc_name summary in
+  begin
+    match proc_name  with
+    | Typ.Procname.Java pname_java ->
+        callback_fragment_retains_view_java pname_java args
+    | _ ->
+        ()
+  end;
+  Specs.get_summary_unsafe "callback_fragment_retains_view" proc_name

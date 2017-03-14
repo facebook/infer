@@ -16,7 +16,7 @@ type proc_callback_args = {
   get_procs_in_file : Typ.Procname.t -> Typ.Procname.t list;
   idenv : Idenv.t;
   tenv : Tenv.t;
-  proc_name : Typ.Procname.t;
+  summary : Specs.summary;
   proc_desc : Procdesc.t;
 }
 
@@ -26,7 +26,7 @@ type proc_callback_args = {
     - Idenv to look up the definition of ids in a cfg.
     - Type environment.
     - Procedure for the callback to act on. *)
-type proc_callback_t = proc_callback_args -> unit
+type proc_callback_t = proc_callback_args -> Specs.summary
 
 type cluster_callback_t =
   Exe_env.t ->

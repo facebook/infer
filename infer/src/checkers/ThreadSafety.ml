@@ -807,8 +807,10 @@ let analyze_procedure callback =
   | Some post -> post
   | None -> empty
 
-let checker callback =
-  ignore (analyze_procedure callback)
+let checker ({ Callbacks.summary } as callback_args) : Specs.summary =
+  let proc_name = Specs.get_proc_name summary in
+  ignore (analyze_procedure callback_args);
+  Specs.get_summary_unsafe "ThreadSafety.checker" proc_name
 
 (* creates a map from proc_envs to postconditions *)
 let make_results_table get_proc_desc file_env =
@@ -824,8 +826,9 @@ let make_results_table get_proc_desc file_env =
       | Some summ -> summ
       | None ->
           let callback_arg =
+            let summary = Specs.get_summary_unsafe "compute_post_for_procedure" proc_name in
             let get_procs_in_file _ = [] in
-            { Callbacks.get_proc_desc; get_procs_in_file; idenv; tenv; proc_name; proc_desc } in
+            { Callbacks.get_proc_desc; get_procs_in_file; idenv; tenv; summary; proc_desc } in
           analyze_procedure callback_arg in
   map_post_computation_over_procs compute_post_for_procedure file_env
 
