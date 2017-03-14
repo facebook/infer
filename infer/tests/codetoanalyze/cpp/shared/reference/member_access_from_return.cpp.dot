@@ -11,58 +11,58 @@ digraph iCFG {
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
-"get_ptr#d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv.73dd86534a7412b8f3e1a36bd7d80b59_1" [label="1: Start get_ptr\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+"get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_1" [label="1: Start get_ptr\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
-	 "get_ptr#d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv.73dd86534a7412b8f3e1a36bd7d80b59_1" -> "get_ptr#d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv.73dd86534a7412b8f3e1a36bd7d80b59_3" ;
-"get_ptr#d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv.73dd86534a7412b8f3e1a36bd7d80b59_2" [label="2: Exit get_ptr \n  " color=yellow style=filled]
+	 "get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_1" -> "get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_3" ;
+"get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_2" [label="2: Exit get_ptr \n  " color=yellow style=filled]
 	
 
-"get_ptr#d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv.73dd86534a7412b8f3e1a36bd7d80b59_3" [label="3:  Return Stmt \n   *&return:class X*=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 16]\n " shape="box"]
+"get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_3" [label="3:  Return Stmt \n   *&return:class X*=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 16]\n " shape="box"]
 	
 
-	 "get_ptr#d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv.73dd86534a7412b8f3e1a36bd7d80b59_3" -> "get_ptr#d41d8cd98f00b204e9800998ecf8427e_Z7get_ptrv.73dd86534a7412b8f3e1a36bd7d80b59_2" ;
-"get_ref#d41d8cd98f00b204e9800998ecf8427e_Z7get_refv.a88c1756473f699baa2c6af499e41d69_1" [label="1: Start get_ref\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+	 "get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_3" -> "get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_2" ;
+"get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_1" [label="1: Start get_ref\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
-	 "get_ref#d41d8cd98f00b204e9800998ecf8427e_Z7get_refv.a88c1756473f699baa2c6af499e41d69_1" -> "get_ref#d41d8cd98f00b204e9800998ecf8427e_Z7get_refv.a88c1756473f699baa2c6af499e41d69_3" ;
-"get_ref#d41d8cd98f00b204e9800998ecf8427e_Z7get_refv.a88c1756473f699baa2c6af499e41d69_2" [label="2: Exit get_ref \n  " color=yellow style=filled]
+	 "get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_1" -> "get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_3" ;
+"get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_2" [label="2: Exit get_ref \n  " color=yellow style=filled]
 	
 
-"get_ref#d41d8cd98f00b204e9800998ecf8427e_Z7get_refv.a88c1756473f699baa2c6af499e41d69_3" [label="3:  Return Stmt \n   *&return:class X&=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 17]\n " shape="box"]
+"get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_3" [label="3:  Return Stmt \n   *&return:class X&=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 17]\n " shape="box"]
 	
 
-	 "get_ref#d41d8cd98f00b204e9800998ecf8427e_Z7get_refv.a88c1756473f699baa2c6af499e41d69_3" -> "get_ref#d41d8cd98f00b204e9800998ecf8427e_Z7get_refv.a88c1756473f699baa2c6af499e41d69_2" ;
-"test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_1" [label="1: Start test_ref\nFormals: \nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 19]\n " color=yellow style=filled]
+	 "get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_3" -> "get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_2" ;
+"test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_1" [label="1: Start test_ref\nFormals: \nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 19]\n " color=yellow style=filled]
 	
 
-	 "test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_1" -> "test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_4" ;
-"test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_2" [label="2: Exit test_ref \n  " color=yellow style=filled]
+	 "test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_1" -> "test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_4" ;
+"test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_2" [label="2: Exit test_ref \n  " color=yellow style=filled]
 	
 
-"test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_3" [label="3:  DeclStmt \n   n$0=_fun_get_ref() [line 21]\n  _=*n$0:class X [line 21]\n  n$2=_fun_X_call(n$0:class X&) [line 21]\n  *&c:int=n$2 [line 21]\n " shape="box"]
+"test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_3" [label="3:  DeclStmt \n   n$0=_fun_get_ref() [line 21]\n  _=*n$0:class X [line 21]\n  n$2=_fun_X_call(n$0:class X&) [line 21]\n  *&c:int=n$2 [line 21]\n " shape="box"]
 	
 
-	 "test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_3" -> "test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_2" ;
-"test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_4" [label="4:  DeclStmt \n   n$3=_fun_get_ref() [line 20]\n  n$4=*n$3.f:int [line 20]\n  *&f:int=n$4 [line 20]\n " shape="box"]
+	 "test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_3" -> "test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_2" ;
+"test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_4" [label="4:  DeclStmt \n   n$3=_fun_get_ref() [line 20]\n  n$4=*n$3.f:int [line 20]\n  *&f:int=n$4 [line 20]\n " shape="box"]
 	
 
-	 "test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_4" -> "test_ref#d41d8cd98f00b204e9800998ecf8427e_Z8test_refv.abb7e532f69038b2eb08eda8bdf591cb_3" ;
-"test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_1" [label="1: Start test_ptr\nFormals: \nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 24]\n " color=yellow style=filled]
+	 "test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_4" -> "test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_3" ;
+"test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_1" [label="1: Start test_ptr\nFormals: \nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 24]\n " color=yellow style=filled]
 	
 
-	 "test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_1" -> "test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_4" ;
-"test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_2" [label="2: Exit test_ptr \n  " color=yellow style=filled]
+	 "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_1" -> "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_4" ;
+"test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_2" [label="2: Exit test_ptr \n  " color=yellow style=filled]
 	
 
-"test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_3" [label="3:  DeclStmt \n   n$0=_fun_get_ptr() [line 26]\n  _=*n$0:class X [line 26]\n  n$2=_fun_X_call(n$0:class X*) [line 26]\n  *&c:int=n$2 [line 26]\n " shape="box"]
+"test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_3" [label="3:  DeclStmt \n   n$0=_fun_get_ptr() [line 26]\n  _=*n$0:class X [line 26]\n  n$2=_fun_X_call(n$0:class X*) [line 26]\n  *&c:int=n$2 [line 26]\n " shape="box"]
 	
 
-	 "test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_3" -> "test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_2" ;
-"test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_4" [label="4:  DeclStmt \n   n$3=_fun_get_ptr() [line 25]\n  n$4=*n$3.f:int [line 25]\n  *&f:int=n$4 [line 25]\n " shape="box"]
+	 "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_3" -> "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_2" ;
+"test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_4" [label="4:  DeclStmt \n   n$3=_fun_get_ptr() [line 25]\n  n$4=*n$3.f:int [line 25]\n  *&f:int=n$4 [line 25]\n " shape="box"]
 	
 
-	 "test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_4" -> "test_ptr#d41d8cd98f00b204e9800998ecf8427e_Z8test_ptrv.a0dccaa11e592bc1d1f7d2e3a3366d55_3" ;
+	 "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_4" -> "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_3" ;
 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 

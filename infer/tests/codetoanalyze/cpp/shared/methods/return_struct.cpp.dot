@@ -1,20 +1,20 @@
 /* @generated */
 digraph iCFG {
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_1" [label="1: Start test\nFormals:  a:class A*\nLocals:  x:class X 0$?%__sil_tmpSIL_materialize_temp__n$1:class X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 21]\n " color=yellow style=filled]
+"test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_1" [label="1: Start test\nFormals:  a:class A*\nLocals:  x:class X 0$?%__sil_tmpSIL_materialize_temp__n$1:class X \n   DECLARE_LOCALS(&return,&x,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 21]\n " color=yellow style=filled]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_1" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_4" ;
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_1" -> "test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_4" ;
+"test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 23]\n  *&return:int=(1 / n$0) [line 23]\n " shape="box"]
+"test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_3" [label="3:  Return Stmt \n   n$0=*&x.f:int [line 23]\n  *&return:int=(1 / n$0) [line 23]\n " shape="box"]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_3" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_2" ;
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_4" [label="4:  DeclStmt \n   n$2=*&a:class A* [line 22]\n  _=*n$2:class A [line 22]\n  _fun_A_get(n$2:class A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X*) [line 22]\n  _fun_X_X(&x:class X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X&) [line 22]\n " shape="box"]
+	 "test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_3" -> "test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_2" ;
+"test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_4" [label="4:  DeclStmt \n   n$2=*&a:class A* [line 22]\n  _=*n$2:class A [line 22]\n  _fun_A_get(n$2:class A*,1:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X*) [line 22]\n  _fun_X_X(&x:class X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:class X&) [line 22]\n " shape="box"]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_4" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testP1A.f72aa12ed002d9c1c5c81a766eef21ba_3" ;
+	 "test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_4" -> "test#_Z4testP1A.52540e09537d17a69592d2cebe79aa07_3" ;
 "get#A#(_ZN1A3getEi).25cca7303a0478349d0e34df20281799_1" [label="1: Start A_get\nFormals:  this:class A* p:int __return_param:class X*\nLocals:  x:class X \n   DECLARE_LOCALS(&return,&x); [line 15]\n " color=yellow style=filled]
 	
 

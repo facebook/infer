@@ -45,7 +45,8 @@ let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
         (match function_decl_info.Clang_ast_t.fdi_storage_class with
          | Some "static" ->
              let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
-             Option.value_map ~f:SourceFile.to_string ~default:"" file_opt
+             let file_to_hex src = SourceFile.to_string src |> Utils.string_crc_hex32 in
+             Option.value_map ~f:file_to_hex ~default:"" file_opt
          | _ -> "")
     | None -> "" in
   let mangled_opt = match function_decl_info_opt with
@@ -57,8 +58,8 @@ let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
   let template_info = match function_decl_info_opt, tenv with
     | Some (_, function_decl_info), Some t -> get_template_info t function_decl_info
     | _ -> Typ.NoTemplate in
-  let mangled = (Utils.string_crc_hex32 file) ^ mangled_name in
-  if String.is_empty file && String.is_empty mangled_name then
+  let mangled = file ^ mangled_name in
+  if String.is_empty mangled then
     Typ.Procname.from_string_c_fun name
   else
     Typ.Procname.C (Typ.Procname.c name mangled template_info)

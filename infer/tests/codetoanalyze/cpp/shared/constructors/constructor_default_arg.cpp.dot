@@ -1,24 +1,24 @@
 /* @generated */
 digraph iCFG {
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_1" [label="1: Start test\nFormals: \nLocals:  x3:class X x2:class X x1:class X \n   DECLARE_LOCALS(&return,&x3,&x2,&x1); [line 20]\n " color=yellow style=filled]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  x3:class X x2:class X x1:class X \n   DECLARE_LOCALS(&return,&x3,&x2,&x1); [line 20]\n " color=yellow style=filled]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_1" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_5" ;
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" ;
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_3" [label="3:  DeclStmt \n   _fun_X_X(&x3:class X*,0:int,1:int) [line 23]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  DeclStmt \n   _fun_X_X(&x3:class X*,0:int,1:int) [line 23]\n " shape="box"]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_3" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_2" ;
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_4" [label="4:  DeclStmt \n   _fun_X_X(&x2:class X*,1:int,0:int) [line 22]\n " shape="box"]
+	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" [label="4:  DeclStmt \n   _fun_X_X(&x2:class X*,1:int,0:int) [line 22]\n " shape="box"]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_4" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_3" ;
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_5" [label="5:  DeclStmt \n   _fun_X_X(&x1:class X*,0:int,0:int) [line 21]\n " shape="box"]
+	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" ;
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" [label="5:  DeclStmt \n   _fun_X_X(&x1:class X*,0:int,0:int) [line 21]\n " shape="box"]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_5" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_4" ;
+	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" ;
 "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_1" [label="1: Start X_div\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 

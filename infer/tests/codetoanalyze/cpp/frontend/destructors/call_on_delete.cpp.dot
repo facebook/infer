@@ -7,26 +7,26 @@ digraph iCFG {
 "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_2" [label="2: Exit X_~X \n  " color=yellow style=filled]
 	
 
-"deleteInt#d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi.17ed28a6874d30c539da903fa1d03551_1" [label="1: Start deleteInt\nFormals:  x:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+"deleteInt#_Z9deleteIntPi.1290a142cb905da33c4edc8a99e3d74e_1" [label="1: Start deleteInt\nFormals:  x:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
-	 "deleteInt#d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi.17ed28a6874d30c539da903fa1d03551_1" -> "deleteInt#d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi.17ed28a6874d30c539da903fa1d03551_3" ;
-"deleteInt#d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi.17ed28a6874d30c539da903fa1d03551_2" [label="2: Exit deleteInt \n  " color=yellow style=filled]
+	 "deleteInt#_Z9deleteIntPi.1290a142cb905da33c4edc8a99e3d74e_1" -> "deleteInt#_Z9deleteIntPi.1290a142cb905da33c4edc8a99e3d74e_3" ;
+"deleteInt#_Z9deleteIntPi.1290a142cb905da33c4edc8a99e3d74e_2" [label="2: Exit deleteInt \n  " color=yellow style=filled]
 	
 
-"deleteInt#d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi.17ed28a6874d30c539da903fa1d03551_3" [label="3:  Call delete \n   n$0=*&x:int* [line 16]\n  _fun___delete(n$0:int*) [line 16]\n " shape="box"]
+"deleteInt#_Z9deleteIntPi.1290a142cb905da33c4edc8a99e3d74e_3" [label="3:  Call delete \n   n$0=*&x:int* [line 16]\n  _fun___delete(n$0:int*) [line 16]\n " shape="box"]
 	
 
-	 "deleteInt#d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi.17ed28a6874d30c539da903fa1d03551_3" -> "deleteInt#d41d8cd98f00b204e9800998ecf8427e_Z9deleteIntPi.17ed28a6874d30c539da903fa1d03551_2" ;
-"deleteX#d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X.420fb4c50583b460dcda1b549c16c4cc_1" [label="1: Start deleteX\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	 "deleteInt#_Z9deleteIntPi.1290a142cb905da33c4edc8a99e3d74e_3" -> "deleteInt#_Z9deleteIntPi.1290a142cb905da33c4edc8a99e3d74e_2" ;
+"deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_1" [label="1: Start deleteX\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
-	 "deleteX#d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X.420fb4c50583b460dcda1b549c16c4cc_1" -> "deleteX#d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X.420fb4c50583b460dcda1b549c16c4cc_3" ;
-"deleteX#d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X.420fb4c50583b460dcda1b549c16c4cc_2" [label="2: Exit deleteX \n  " color=yellow style=filled]
+	 "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_1" -> "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_3" ;
+"deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_2" [label="2: Exit deleteX \n  " color=yellow style=filled]
 	
 
-"deleteX#d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X.420fb4c50583b460dcda1b549c16c4cc_3" [label="3:  Call delete \n   n$0=*&x:class X* [line 14]\n  _fun___delete(n$0:class X*) [line 14]\n " shape="box"]
+"deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_3" [label="3:  Call delete \n   n$0=*&x:class X* [line 14]\n  _fun___delete(n$0:class X*) [line 14]\n " shape="box"]
 	
 
-	 "deleteX#d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X.420fb4c50583b460dcda1b549c16c4cc_3" -> "deleteX#d41d8cd98f00b204e9800998ecf8427e_Z7deleteXP1X.420fb4c50583b460dcda1b549c16c4cc_2" ;
+	 "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_3" -> "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_2" ;
 }

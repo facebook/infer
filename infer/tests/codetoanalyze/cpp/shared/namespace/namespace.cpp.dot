@@ -1,16 +1,16 @@
 /* @generated */
 digraph iCFG {
-"value#foo#d41d8cd98f00b204e9800998ecf8427e_ZN3foo5valueEv.6c6178b9dc0d84c03cc625d85c99a3c7_1" [label="1: Start foo::value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+"value#foo#_ZN3foo5valueEv.b87bee627b7f622b353300380ece49e8_1" [label="1: Start foo::value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
-	 "value#foo#d41d8cd98f00b204e9800998ecf8427e_ZN3foo5valueEv.6c6178b9dc0d84c03cc625d85c99a3c7_1" -> "value#foo#d41d8cd98f00b204e9800998ecf8427e_ZN3foo5valueEv.6c6178b9dc0d84c03cc625d85c99a3c7_3" ;
-"value#foo#d41d8cd98f00b204e9800998ecf8427e_ZN3foo5valueEv.6c6178b9dc0d84c03cc625d85c99a3c7_2" [label="2: Exit foo::value \n  " color=yellow style=filled]
+	 "value#foo#_ZN3foo5valueEv.b87bee627b7f622b353300380ece49e8_1" -> "value#foo#_ZN3foo5valueEv.b87bee627b7f622b353300380ece49e8_3" ;
+"value#foo#_ZN3foo5valueEv.b87bee627b7f622b353300380ece49e8_2" [label="2: Exit foo::value \n  " color=yellow style=filled]
 	
 
-"value#foo#d41d8cd98f00b204e9800998ecf8427e_ZN3foo5valueEv.6c6178b9dc0d84c03cc625d85c99a3c7_3" [label="3:  Return Stmt \n   *&return:int=5 [line 17]\n " shape="box"]
+"value#foo#_ZN3foo5valueEv.b87bee627b7f622b353300380ece49e8_3" [label="3:  Return Stmt \n   *&return:int=5 [line 17]\n " shape="box"]
 	
 
-	 "value#foo#d41d8cd98f00b204e9800998ecf8427e_ZN3foo5valueEv.6c6178b9dc0d84c03cc625d85c99a3c7_3" -> "value#foo#d41d8cd98f00b204e9800998ecf8427e_ZN3foo5valueEv.6c6178b9dc0d84c03cc625d85c99a3c7_2" ;
+	 "value#foo#_ZN3foo5valueEv.b87bee627b7f622b353300380ece49e8_3" -> "value#foo#_ZN3foo5valueEv.b87bee627b7f622b353300380ece49e8_2" ;
 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_1" [label="1: Start __infer_globals_initializer_bar::pi\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
 	
 
@@ -22,17 +22,17 @@ digraph iCFG {
 	
 
 	 "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_3" -> "pi#__infer_globals_initializer_bar.1155d696836634e07d40a8f71831e209_2" ;
-"value#bar#d41d8cd98f00b204e9800998ecf8427e_ZN3bar5valueEv.12c9ccdd5ddb551f3b3293fcfb5e964e_1" [label="1: Start bar::value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
+"value#bar#_ZN3bar5valueEv.c4f3702e0a2c665b92d9ddc705c63d00_1" [label="1: Start bar::value\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
 	
 
-	 "value#bar#d41d8cd98f00b204e9800998ecf8427e_ZN3bar5valueEv.12c9ccdd5ddb551f3b3293fcfb5e964e_1" -> "value#bar#d41d8cd98f00b204e9800998ecf8427e_ZN3bar5valueEv.12c9ccdd5ddb551f3b3293fcfb5e964e_3" ;
-"value#bar#d41d8cd98f00b204e9800998ecf8427e_ZN3bar5valueEv.12c9ccdd5ddb551f3b3293fcfb5e964e_2" [label="2: Exit bar::value \n  " color=yellow style=filled]
+	 "value#bar#_ZN3bar5valueEv.c4f3702e0a2c665b92d9ddc705c63d00_1" -> "value#bar#_ZN3bar5valueEv.c4f3702e0a2c665b92d9ddc705c63d00_3" ;
+"value#bar#_ZN3bar5valueEv.c4f3702e0a2c665b92d9ddc705c63d00_2" [label="2: Exit bar::value \n  " color=yellow style=filled]
 	
 
-"value#bar#d41d8cd98f00b204e9800998ecf8427e_ZN3bar5valueEv.12c9ccdd5ddb551f3b3293fcfb5e964e_3" [label="3:  Return Stmt \n   *&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp>$bar::pi:double=3.141600 [line 30]\n  n$0=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp>$bar::pi:double [line 30]\n  *&return:double=(2 * n$0) [line 30]\n " shape="box"]
+"value#bar#_ZN3bar5valueEv.c4f3702e0a2c665b92d9ddc705c63d00_3" [label="3:  Return Stmt \n   *&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp>$bar::pi:double=3.141600 [line 30]\n  n$0=*&#GB<codetoanalyze/cpp/shared/namespace/namespace.cpp>$bar::pi:double [line 30]\n  *&return:double=(2 * n$0) [line 30]\n " shape="box"]
 	
 
-	 "value#bar#d41d8cd98f00b204e9800998ecf8427e_ZN3bar5valueEv.12c9ccdd5ddb551f3b3293fcfb5e964e_3" -> "value#bar#d41d8cd98f00b204e9800998ecf8427e_ZN3bar5valueEv.12c9ccdd5ddb551f3b3293fcfb5e964e_2" ;
+	 "value#bar#_ZN3bar5valueEv.c4f3702e0a2c665b92d9ddc705c63d00_3" -> "value#bar#_ZN3bar5valueEv.c4f3702e0a2c665b92d9ddc705c63d00_2" ;
 "rect#__infer_globals_initializer_bar.4a1fbff7dd04d46c33088cc2bed92914_1" [label="1: Start __infer_globals_initializer_bar::rect\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 

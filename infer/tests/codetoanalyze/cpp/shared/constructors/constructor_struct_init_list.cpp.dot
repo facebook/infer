@@ -1,16 +1,16 @@
 /* @generated */
 digraph iCFG {
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_1" [label="1: Start test\nFormals: \nLocals:  p:class Person 0$?%__sil_tmpSIL_init_list__n$0:class Insets \n   DECLARE_LOCALS(&return,&p,&0$?%__sil_tmpSIL_init_list__n$0); [line 17]\n " color=yellow style=filled]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  p:class Person 0$?%__sil_tmpSIL_init_list__n$0:class Insets \n   DECLARE_LOCALS(&return,&p,&0$?%__sil_tmpSIL_init_list__n$0); [line 17]\n " color=yellow style=filled]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_1" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_3" ;
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" ;
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_3" [label="3:  DeclStmt \n   *&0$?%__sil_tmpSIL_init_list__n$0.top:int=0 [line 17]\n  *&0$?%__sil_tmpSIL_init_list__n$0.left:int=0 [line 17]\n  *&0$?%__sil_tmpSIL_init_list__n$0.bottom:int=0 [line 17]\n  *&0$?%__sil_tmpSIL_init_list__n$0.right:int=0 [line 17]\n  _fun_Person_Person(&p:class Person*,&0$?%__sil_tmpSIL_init_list__n$0:class Insets) [line 17]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  DeclStmt \n   *&0$?%__sil_tmpSIL_init_list__n$0.top:int=0 [line 17]\n  *&0$?%__sil_tmpSIL_init_list__n$0.left:int=0 [line 17]\n  *&0$?%__sil_tmpSIL_init_list__n$0.bottom:int=0 [line 17]\n  *&0$?%__sil_tmpSIL_init_list__n$0.right:int=0 [line 17]\n  _fun_Person_Person(&p:class Person*,&0$?%__sil_tmpSIL_init_list__n$0:class Insets) [line 17]\n " shape="box"]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_3" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_2" ;
+	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;
 "Person#Person#{_ZN6PersonC1E6Insets}.b24b6c175679d264f58881e04318df0d_1" [label="1: Start Person_Person\nFormals:  this:class Person* l:class Insets&\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 

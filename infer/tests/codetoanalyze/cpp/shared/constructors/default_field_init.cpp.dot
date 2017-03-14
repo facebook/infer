@@ -1,16 +1,16 @@
 /* @generated */
 digraph iCFG {
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_1" [label="1: Start test\nFormals: \nLocals:  y:class Y \n   DECLARE_LOCALS(&return,&y); [line 25]\n " color=yellow style=filled]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  y:class Y \n   DECLARE_LOCALS(&return,&y); [line 25]\n " color=yellow style=filled]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_1" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_3" ;
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_2" [label="2: Exit test \n  " color=yellow style=filled]
+	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" ;
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_3" [label="3:  DeclStmt \n   _fun_Y_Y(&y:class Y*) [line 25]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  DeclStmt \n   _fun_Y_Y(&y:class Y*) [line 25]\n " shape="box"]
 	
 
-	 "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_3" -> "test#d41d8cd98f00b204e9800998ecf8427e_Z4testv.6562671166958acb2075adb7242144df_2" ;
+	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;
 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 

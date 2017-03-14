@@ -1,116 +1,116 @@
 /* @generated */
 digraph iCFG {
-"rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_1" [label="1: Start rect_area\nFormals: \nLocals:  ppoly1:class Polygon* rect:class Rectangle \n   DECLARE_LOCALS(&return,&ppoly1,&rect); [line 38]\n " color=yellow style=filled]
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_1" [label="1: Start rect_area\nFormals: \nLocals:  ppoly1:class Polygon* rect:class Rectangle \n   DECLARE_LOCALS(&return,&ppoly1,&rect); [line 38]\n " color=yellow style=filled]
 	
 
-	 "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_1" -> "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_6" ;
-"rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_2" [label="2: Exit rect_area \n  " color=yellow style=filled]
+	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_1" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_6" ;
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_2" [label="2: Exit rect_area \n  " color=yellow style=filled]
 	
 
-"rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_3" [label="3:  Return Stmt \n   n$0=*&ppoly1:class Polygon* [line 42]\n  _=*n$0:class Polygon [line 42]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) virtual [line 42]\n  *&return:int=(1 / (n$2 - 20)) [line 42]\n " shape="box"]
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_3" [label="3:  Return Stmt \n   n$0=*&ppoly1:class Polygon* [line 42]\n  _=*n$0:class Polygon [line 42]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) virtual [line 42]\n  *&return:int=(1 / (n$2 - 20)) [line 42]\n " shape="box"]
 	
 
-	 "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_3" -> "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_2" ;
-"rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly1:class Polygon* [line 41]\n  _=*n$3:class Polygon [line 41]\n  _fun_Polygon_set_values(n$3:class Polygon*,4:int,5:int) [line 41]\n " shape="box"]
+	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_3" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_2" ;
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly1:class Polygon* [line 41]\n  _=*n$3:class Polygon [line 41]\n  _fun_Polygon_set_values(n$3:class Polygon*,4:int,5:int) [line 41]\n " shape="box"]
 	
 
-	 "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_4" -> "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_3" ;
-"rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_5" [label="5:  DeclStmt \n   *&ppoly1:class Rectangle*=&rect [line 40]\n " shape="box"]
+	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_4" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_3" ;
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_5" [label="5:  DeclStmt \n   *&ppoly1:class Rectangle*=&rect [line 40]\n " shape="box"]
 	
 
-	 "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_5" -> "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_4" ;
-"rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_6" [label="6:  DeclStmt \n   _fun_Rectangle_Rectangle(&rect:class Rectangle*) [line 39]\n " shape="box"]
+	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_5" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_4" ;
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_6" [label="6:  DeclStmt \n   _fun_Rectangle_Rectangle(&rect:class Rectangle*) [line 39]\n " shape="box"]
 	
 
-	 "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_6" -> "rect_area#d41d8cd98f00b204e9800998ecf8427e_Z9rect_areav.23a9bf45223b5f85d9cf5e7de3d801bb_5" ;
-"tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_1" [label="1: Start tri_area\nFormals: \nLocals:  ppoly2:class Polygon* poly:class Polygon trgl:class Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 45]\n " color=yellow style=filled]
+	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_6" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_5" ;
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_1" [label="1: Start tri_area\nFormals: \nLocals:  ppoly2:class Polygon* poly:class Polygon trgl:class Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 45]\n " color=yellow style=filled]
 	
 
-	 "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_1" -> "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_7" ;
-"tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_2" [label="2: Exit tri_area \n  " color=yellow style=filled]
+	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_1" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_7" ;
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_2" [label="2: Exit tri_area \n  " color=yellow style=filled]
 	
 
-"tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:class Polygon* [line 50]\n  _=*n$0:class Polygon [line 50]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) virtual [line 50]\n  *&return:int=(1 / (n$2 - 10)) [line 50]\n " shape="box"]
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:class Polygon* [line 50]\n  _=*n$0:class Polygon [line 50]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) virtual [line 50]\n  *&return:int=(1 / (n$2 - 10)) [line 50]\n " shape="box"]
 	
 
-	 "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_3" -> "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_2" ;
-"tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon* [line 49]\n  _=*n$3:class Polygon [line 49]\n  _fun_Polygon_set_values(n$3:class Polygon*,4:int,5:int) [line 49]\n " shape="box"]
+	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_2" ;
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon* [line 49]\n  _=*n$3:class Polygon [line 49]\n  _fun_Polygon_set_values(n$3:class Polygon*,4:int,5:int) [line 49]\n " shape="box"]
 	
 
-	 "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_4" -> "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_3" ;
-"tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_5" [label="5:  DeclStmt \n   *&ppoly2:class Triangle*=&trgl [line 48]\n " shape="box"]
+	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" ;
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_5" [label="5:  DeclStmt \n   *&ppoly2:class Triangle*=&trgl [line 48]\n " shape="box"]
 	
 
-	 "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_5" -> "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_4" ;
-"tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_6" [label="6:  DeclStmt \n   _fun_Polygon_Polygon(&poly:class Polygon*) [line 47]\n " shape="box"]
+	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_5" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" ;
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_6" [label="6:  DeclStmt \n   _fun_Polygon_Polygon(&poly:class Polygon*) [line 47]\n " shape="box"]
 	
 
-	 "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_6" -> "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_5" ;
-"tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_7" [label="7:  DeclStmt \n   _fun_Triangle_Triangle(&trgl:class Triangle*) [line 46]\n " shape="box"]
+	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_6" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_5" ;
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_7" [label="7:  DeclStmt \n   _fun_Triangle_Triangle(&trgl:class Triangle*) [line 46]\n " shape="box"]
 	
 
-	 "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_7" -> "tri_area#d41d8cd98f00b204e9800998ecf8427e_Z8tri_areav.9179b10723e6d320a30d42c8057d162b_6" ;
-"poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_1" [label="1: Start poly_area\nFormals: \nLocals:  ppoly3:class Polygon* poly:class Polygon \n   DECLARE_LOCALS(&return,&ppoly3,&poly); [line 53]\n " color=yellow style=filled]
+	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_7" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_6" ;
+"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_1" [label="1: Start poly_area\nFormals: \nLocals:  ppoly3:class Polygon* poly:class Polygon \n   DECLARE_LOCALS(&return,&ppoly3,&poly); [line 53]\n " color=yellow style=filled]
 	
 
-	 "poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_1" -> "poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_5" ;
-"poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_2" [label="2: Exit poly_area \n  " color=yellow style=filled]
+	 "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_1" -> "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_5" ;
+"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_2" [label="2: Exit poly_area \n  " color=yellow style=filled]
 	
 
-"poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_3" [label="3:  Return Stmt \n   n$0=*&ppoly3:class Polygon* [line 56]\n  _=*n$0:class Polygon [line 56]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) virtual [line 56]\n  *&return:int=(1 / n$2) [line 56]\n " shape="box"]
+"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_3" [label="3:  Return Stmt \n   n$0=*&ppoly3:class Polygon* [line 56]\n  _=*n$0:class Polygon [line 56]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) virtual [line 56]\n  *&return:int=(1 / n$2) [line 56]\n " shape="box"]
 	
 
-	 "poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_3" -> "poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_2" ;
-"poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_4" [label="4:  DeclStmt \n   *&ppoly3:class Polygon*=&poly [line 55]\n " shape="box"]
+	 "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_3" -> "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_2" ;
+"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_4" [label="4:  DeclStmt \n   *&ppoly3:class Polygon*=&poly [line 55]\n " shape="box"]
 	
 
-	 "poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_4" -> "poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_3" ;
-"poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_5" [label="5:  DeclStmt \n   _fun_Polygon_Polygon(&poly:class Polygon*) [line 54]\n " shape="box"]
+	 "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_4" -> "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_3" ;
+"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_5" [label="5:  DeclStmt \n   _fun_Polygon_Polygon(&poly:class Polygon*) [line 54]\n " shape="box"]
 	
 
-	 "poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_5" -> "poly_area#d41d8cd98f00b204e9800998ecf8427e_Z9poly_areav.33bfdd87909264752e1fe3bbc1bc94bc_4" ;
-"tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_1" [label="1: Start tri_not_virtual_area\nFormals: \nLocals:  ppoly2:class Polygon* poly:class Polygon trgl:class Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 59]\n " color=yellow style=filled]
+	 "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_5" -> "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_4" ;
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_1" [label="1: Start tri_not_virtual_area\nFormals: \nLocals:  ppoly2:class Polygon* poly:class Polygon trgl:class Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 59]\n " color=yellow style=filled]
 	
 
-	 "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_1" -> "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_7" ;
-"tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_2" [label="2: Exit tri_not_virtual_area \n  " color=yellow style=filled]
+	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_1" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_7" ;
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_2" [label="2: Exit tri_not_virtual_area \n  " color=yellow style=filled]
 	
 
-"tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:class Polygon* [line 64]\n  _=*n$0:class Polygon [line 64]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) [line 64]\n  *&return:int=(1 / n$2) [line 64]\n " shape="box"]
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:class Polygon* [line 64]\n  _=*n$0:class Polygon [line 64]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) [line 64]\n  *&return:int=(1 / n$2) [line 64]\n " shape="box"]
 	
 
-	 "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_3" -> "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_2" ;
-"tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon* [line 63]\n  _=*n$3:class Polygon [line 63]\n  _fun_Polygon_set_values(n$3:class Polygon*,4:int,5:int) [line 63]\n " shape="box"]
+	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_2" ;
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon* [line 63]\n  _=*n$3:class Polygon [line 63]\n  _fun_Polygon_set_values(n$3:class Polygon*,4:int,5:int) [line 63]\n " shape="box"]
 	
 
-	 "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_4" -> "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_3" ;
-"tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_5" [label="5:  DeclStmt \n   *&ppoly2:class Triangle*=&trgl [line 62]\n " shape="box"]
+	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" ;
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_5" [label="5:  DeclStmt \n   *&ppoly2:class Triangle*=&trgl [line 62]\n " shape="box"]
 	
 
-	 "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_5" -> "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_4" ;
-"tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_6" [label="6:  DeclStmt \n   _fun_Polygon_Polygon(&poly:class Polygon*) [line 61]\n " shape="box"]
+	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_5" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" ;
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_6" [label="6:  DeclStmt \n   _fun_Polygon_Polygon(&poly:class Polygon*) [line 61]\n " shape="box"]
 	
 
-	 "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_6" -> "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_5" ;
-"tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_7" [label="7:  DeclStmt \n   _fun_Triangle_Triangle(&trgl:class Triangle*) [line 60]\n " shape="box"]
+	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_6" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_5" ;
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_7" [label="7:  DeclStmt \n   _fun_Triangle_Triangle(&trgl:class Triangle*) [line 60]\n " shape="box"]
 	
 
-	 "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_7" -> "tri_not_virtual_area#d41d8cd98f00b204e9800998ecf8427e_Z20tri_not_virtual_areav.5767e3534af5ee793942041d2618d5f8_6" ;
-"call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_1" [label="1: Start call_virtual_destructor\nFormals: \nLocals:  trgl:class Polygon* \n   DECLARE_LOCALS(&return,&trgl); [line 70]\n " color=yellow style=filled]
+	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_7" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_6" ;
+"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_1" [label="1: Start call_virtual_destructor\nFormals: \nLocals:  trgl:class Polygon* \n   DECLARE_LOCALS(&return,&trgl); [line 70]\n " color=yellow style=filled]
 	
 
-	 "call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_1" -> "call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_4" ;
-"call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_2" [label="2: Exit call_virtual_destructor \n  " color=yellow style=filled]
+	 "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_1" -> "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" ;
+"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_2" [label="2: Exit call_virtual_destructor \n  " color=yellow style=filled]
 	
 
-"call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_3" [label="3:  Call delete \n   n$0=*&trgl:class Polygon* [line 72]\n  _fun___delete(n$0:class Polygon*) [line 72]\n " shape="box"]
+"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_3" [label="3:  Call delete \n   n$0=*&trgl:class Polygon* [line 72]\n  _fun___delete(n$0:class Polygon*) [line 72]\n " shape="box"]
 	
 
-	 "call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_3" -> "call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_2" ;
-"call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_4" [label="4:  DeclStmt \n   n$1=_fun___new(sizeof(class Triangle):unsigned long) [line 71]\n  _fun_Triangle_Triangle(n$1:class Triangle*) [line 71]\n  *&trgl:class Triangle*=n$1 [line 71]\n " shape="box"]
+	 "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_3" -> "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_2" ;
+"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" [label="4:  DeclStmt \n   n$1=_fun___new(sizeof(class Triangle):unsigned long) [line 71]\n  _fun_Triangle_Triangle(n$1:class Triangle*) [line 71]\n  *&trgl:class Triangle*=n$1 [line 71]\n " shape="box"]
 	
 
-	 "call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_4" -> "call_virtual_destructor#d41d8cd98f00b204e9800998ecf8427e_Z23call_virtual_destructorv.94a2327720f275372f854ac8c51509df_3" ;
+	 "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" -> "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_3" ;
 "Polygon#Polygon#{_ZN7PolygonC1Ev}.421ca45184d2ec3aafd11a446e5d5d84_1" [label="1: Start Polygon_Polygon\nFormals:  this:class Polygon*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
