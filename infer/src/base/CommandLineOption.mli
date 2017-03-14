@@ -47,7 +47,7 @@ val init_work_dir : string
     - a documentation string
 *)
 type 'a t =
-  ?deprecated:string list -> long:string -> ?short:string ->
+  ?deprecated:string list -> long:string -> ?short:char ->
   ?parse_mode:parse_mode -> ?meta:string -> string ->
   'a
 
@@ -59,8 +59,8 @@ val mk_option :
   'a option ref t
 
 (** [mk_bool long short doc] defines a [bool ref] set by the command line flag [--long] (and
-    [-short]), and cleared by the flag [--no-long] (and [-nshort]).  If [long] already has a "no-",
-    or [short] nas an "n", prefix, then the existing prefixes will instead be removed. The default
+    [-s]), and cleared by the flag [--no-long] (and [-S]).  If [long] already has a "no-" prefix,
+    or [s] is capital, then the existing prefixes will instead be removed. The default
     value is [false] unless overridden by [~default:true].  The [doc] string will be prefixed with
     either "Activates:" or "Deactivates:", so should be phrased accordingly. *)
 val mk_bool : ?deprecated_no:string list ->  ?default:bool -> ?f:(bool -> bool) -> bool ref t
