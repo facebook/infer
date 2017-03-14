@@ -410,7 +410,7 @@ let module IssuesCsv = {
           Escape.escape_csv s
         };
         let kind = Exceptions.err_kind_string ekind;
-        let type_str = Localise.to_string error_name;
+        let type_str = Localise.to_issue_id error_name;
         let procedure_id = Typ.Procname.to_filename procname;
         let filename = SourceFile.to_string source_file;
         let always_report =
@@ -477,7 +477,7 @@ let module IssuesJson = {
         should_report ekind error_name error_desc eclass && report_filter source_file
       ) {
         let kind = Exceptions.err_kind_string ekind;
-        let bug_type = Localise.to_string error_name;
+        let bug_type = Localise.to_issue_id error_name;
         let procedure_id = Typ.Procname.to_filename procname;
         let file = SourceFile.to_string source_file;
         let json_ml_loc =
@@ -505,7 +505,8 @@ let module IssuesJson = {
           qualifier_tags: error_desc_to_qualifier_tags_records error_desc,
           hash: get_bug_hash kind bug_type procedure_id file node_key error_desc,
           dotty: error_desc_to_dotty_string error_desc,
-          infer_source_loc: json_ml_loc
+          infer_source_loc: json_ml_loc,
+          bug_type_hum: Localise.to_human_readable_string error_name
         };
         if (not !is_first_item) {
           pp ","
@@ -656,7 +657,7 @@ let module IssuesXml = {
         let subtree label contents =>
           Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
         let kind = Exceptions.err_kind_string ekind;
-        let type_str = Localise.to_string error_name;
+        let type_str = Localise.to_issue_id error_name;
         let tree = {
           incr xml_issues_id;
           let attributes = [("id", string_of_int !xml_issues_id)];
@@ -787,7 +788,7 @@ let module Stats = {
   let process_err_log error_filter linereader err_log stats => {
     let found_errors = ref false;
     let process_row _ loc _ ekind in_footprint error_name error_desc _ ltr _ _ => {
-      let type_str = Localise.to_string error_name;
+      let type_str = Localise.to_issue_id error_name;
       if (in_footprint && error_filter error_desc error_name) {
         switch ekind {
         | Exceptions.Kerror =>

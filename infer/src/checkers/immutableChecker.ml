@@ -43,7 +43,7 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
                 Checkers.ST.report_error tenv
                   curr_pname
                   curr_pdesc
-                  "CHECKERS_IMMUTABLE_CAST"
+                  Localise.checkers_immutable_cast
                   loc
                   description
               end

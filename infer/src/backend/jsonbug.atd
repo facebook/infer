@@ -37,6 +37,7 @@ type jsonbug = {
   hash : int;
   ?dotty : string option;
   ?infer_source_loc: loc option;
+  bug_type_hum: string;
 }
 
 type report = jsonbug list

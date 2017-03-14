@@ -1271,7 +1271,7 @@ and instrs ?(mask_errors=false) tenv pdesc instrs ppl =
           | None -> "") in
       L.d_warning
         ("Generated Instruction Failed with: " ^
-         (Localise.to_string err_name)^loc ); L.d_ln();
+         (Localise.to_issue_id err_name)^loc ); L.d_ln();
       [(p, path)] in
   let f plist instr = List.concat_map ~f:(exe_instr instr) plist in
   List.fold ~f ~init:ppl instrs

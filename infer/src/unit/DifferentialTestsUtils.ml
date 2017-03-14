@@ -47,6 +47,7 @@ let create_fake_jsonbug
     hash;
     dotty;
     infer_source_loc;
+    bug_type_hum = kind;
   }
 
 let pp_diff_of_int_list group_name fmt (expected, actual) =

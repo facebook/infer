@@ -12,8 +12,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-let checkers_repeated_calls_name = "CHECKERS_REPEATED_CALLS"
-
 
 (** Extension for the repeated calls check. *)
 module RepeatedCallsExtension : Eradicate.ExtensionT =
@@ -138,7 +136,7 @@ struct
                         SourceFile.pp alloc_loc.Location.file
                         alloc_loc.Location.line in
                     Checkers.ST.report_error tenv
-                      curr_pname curr_pdesc checkers_repeated_calls_name loc description
+                      curr_pname curr_pdesc Localise.checkers_repeated_calls loc description
                 | None -> ()
               end
           | _ -> () in

@@ -227,7 +227,7 @@ end (* Strict *)
 type st_report_error =
   Typ.Procname.t ->
   Procdesc.t ->
-  string ->
+  Localise.t ->
   Location.t ->
   ?advice: string option ->
   ?field_name: Ident.fieldname option ->
@@ -241,21 +241,21 @@ type st_report_error =
 let report_error_now tenv
     (st_report_error : st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
-  let do_print ew_string kind_s s =
+  let do_print ew_string kind s =
     L.stdout "%a:%d " SourceFile.pp loc.Location.file loc.Location.line;
     let mname = match pname with
       | Typ.Procname.Java pname_java ->
           Typ.Procname.java_get_method pname_java
       | _ ->
           Typ.Procname.to_simplified_string pname in
-    L.stdout "%s %s in %s %s@." ew_string kind_s mname s in
+    L.stdout "%s %s in %s %s@." ew_string (Localise.to_issue_id kind) mname s in
 
-  let is_err, kind_s, description, advice, field_name, origin_loc = match err_instance with
+  let is_err, kind, description, advice, field_name, origin_loc = match err_instance with
     | Condition_redundant (b, s_opt, nonnull) ->
         let name =
           if nonnull
-          then "ERADICATE_CONDITION_REDUNDANT_NONNULL"
-          else "ERADICATE_CONDITION_REDUNDANT" in
+          then Localise.eradicate_condition_redundant_nonnull
+          else Localise.eradicate_condition_redundant in
         false,
         name,
         P.sprintf
@@ -276,7 +276,7 @@ let report_error_now tenv
             | _ ->
                 Typ.Procname.to_simplified_string pn in
         true,
-        "ERADICATE_FIELD_NOT_INITIALIZED",
+        Localise.eradicate_field_not_initialized,
         P.sprintf
           "Field `%s` is not initialized in %s and is not declared `@Nullable`"
           (Ident.fieldname_to_simplified_string fn)
@@ -286,7 +286,7 @@ let report_error_now tenv
         None
     | Field_not_mutable (fn, (origin_description, origin_loc, _)) ->
         true,
-        "ERADICATE_FIELD_NOT_MUTABLE",
+        Localise.eradicate_field_not_mutable,
         P.sprintf
           "Field `%s` is modified but is not declared `@Mutable`. %s"
           (Ident.fieldname_to_simplified_string fn)
@@ -297,13 +297,13 @@ let report_error_now tenv
     | Field_annotation_inconsistent (ann, fn, (origin_description, origin_loc, _)) ->
         let kind_s, description = match ann with
           | AnnotatedSignature.Nullable ->
-              "ERADICATE_FIELD_NOT_NULLABLE",
+              Localise.eradicate_field_not_nullable,
               P.sprintf
                 "Field `%s` can be null but is not declared `@Nullable`. %s"
                 (Ident.fieldname_to_simplified_string fn)
                 origin_description
           | AnnotatedSignature.Present ->
-              "ERADICATE_FIELD_VALUE_ABSENT",
+              Localise.eradicate_field_value_absent,
               P.sprintf
                 "Field `%s` is assigned a possibly absent value but is declared `@Present`. %s"
                 (Ident.fieldname_to_simplified_string fn)
@@ -325,7 +325,7 @@ let report_error_now tenv
             | _ ->
                 Typ.Procname.to_simplified_string pn in
         true,
-        "ERADICATE_FIELD_OVER_ANNOTATED",
+        Localise.eradicate_field_over_annotated,
         P.sprintf
           "Field `%s` is always initialized in %s but is declared `@Nullable`"
           (Ident.fieldname_to_simplified_string fn)
@@ -336,7 +336,7 @@ let report_error_now tenv
     | Null_field_access (s_opt, fn, (origin_description, origin_loc, _), indexed) ->
         let at_index = if indexed then "element at index" else "field" in
         true,
-        "ERADICATE_NULL_FIELD_ACCESS",
+        Localise.eradicate_null_field_access,
         P.sprintf
           "Object `%s` could be null when accessing %s `%s`. %s"
           (Option.value s_opt ~default:"")
@@ -349,14 +349,14 @@ let report_error_now tenv
     | Call_receiver_annotation_inconsistent (ann, s_opt, pn, (origin_description, origin_loc, _)) ->
         let kind_s, description = match ann with
           | AnnotatedSignature.Nullable ->
-              "ERADICATE_NULL_METHOD_CALL",
+              Localise.eradicate_null_method_call,
               P.sprintf
                 "The value of `%s` in the call to `%s` could be null. %s"
                 (Option.value s_opt ~default:"")
                 (Typ.Procname.to_simplified_string pn)
                 origin_description
           | AnnotatedSignature.Present ->
-              "ERADICATE_VALUE_NOT_PRESENT",
+              Localise.eradicate_value_not_present,
               P.sprintf
                 "The value of `%s` in the call to `%s` is not @Present. %s"
                 (Option.value s_opt ~default:"")
@@ -371,7 +371,7 @@ let report_error_now tenv
     | Parameter_annotation_inconsistent (ann, s, n, pn, _, (origin_desc, origin_loc, _)) ->
         let kind_s, description = match ann with
           | AnnotatedSignature.Nullable ->
-              "ERADICATE_PARAMETER_NOT_NULLABLE",
+              Localise.eradicate_parameter_not_nullable,
               P.sprintf
                 "`%s` needs a non-null value in parameter %d but argument `%s` can be null. %s"
                 (Typ.Procname.to_simplified_string pn)
@@ -379,7 +379,7 @@ let report_error_now tenv
                 s
                 origin_desc
           | AnnotatedSignature.Present ->
-              "ERADICATE_PARAMETER_VALUE_ABSENT",
+              Localise.eradicate_parameter_value_absent,
               P.sprintf
                 "`%s` needs a present value in parameter %d but argument `%s` can be absent. %s"
                 (Typ.Procname.to_simplified_string pn)
@@ -395,13 +395,13 @@ let report_error_now tenv
     | Return_annotation_inconsistent (ann, pn, (origin_description, origin_loc, _)) ->
         let kind_s, description = match ann with
           | AnnotatedSignature.Nullable ->
-              "ERADICATE_RETURN_NOT_NULLABLE",
+              Localise.eradicate_return_not_nullable,
               P.sprintf
                 "Method `%s` may return null but it is not annotated with `@Nullable`. %s"
                 (Typ.Procname.to_simplified_string pn)
                 origin_description
           | AnnotatedSignature.Present ->
-              "ERADICATE_RETURN_VALUE_NOT_PRESENT",
+              Localise.eradicate_return_value_not_present,
               P.sprintf
                 "Method `%s` may return an absent value but it is annotated with `@Present`. %s"
                 (Typ.Procname.to_simplified_string pn)
@@ -414,7 +414,7 @@ let report_error_now tenv
         origin_loc
     | Return_over_annotated pn ->
         false,
-        "ERADICATE_RETURN_OVER_ANNOTATED",
+        Localise.eradicate_return_over_annotated,
         P.sprintf
           "Method `%s` is annotated with `@Nullable` but never returns null."
           (Typ.Procname.to_simplified_string pn),
@@ -423,7 +423,7 @@ let report_error_now tenv
         None
     | Inconsistent_subclass_return_annotation (pn, opn) ->
         false,
-        "ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION",
+        Localise.eradicate_inconsistent_subclass_return_annotation,
         P.sprintf
           "Method `%s` is annotated with `@Nullable` but overrides unannotated method `%s`."
           (Typ.Procname.to_simplified_string ~withclass: true pn)
@@ -438,7 +438,7 @@ let report_error_now tenv
           | 3 -> "Third"
           | n -> (string_of_int n)^"th" in
         false,
-        "ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION",
+        Localise.eradicate_inconsistent_subclass_parameter_annotation,
         P.sprintf
           "%s parameter `%s` of method `%s` is not `@Nullable` but is declared `@Nullable`\
            in the parent class method `%s`."
@@ -449,12 +449,12 @@ let report_error_now tenv
         None,
         None in
   let ew_string = if is_err then "Error" else "Warning" in
-  do_print ew_string kind_s description;
+  do_print ew_string kind description;
   let always_report = Strict.err_instance_get_strict tenv err_instance <> None in
   st_report_error
     pname
     pdesc
-    kind_s
+    kind
     loc
     ~advice
     ~field_name

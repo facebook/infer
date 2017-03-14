@@ -1370,7 +1370,7 @@ let perform_transition exe_env tenv proc_name source =
         Config.allow_leak := allow_leak;
         L.err "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name;
         let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
-        let err_str = "exception raised " ^ (Localise.to_string err_name) in
+        let err_str = "exception raised " ^ (Localise.to_issue_id err_name) in
         L.err "Error: %s %a@." err_str L.pp_ml_loc_opt ml_loc_opt;
         [] in
     transition_footprint_re_exe tenv proc_name joined_pres in

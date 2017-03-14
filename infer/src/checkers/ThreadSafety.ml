@@ -1003,7 +1003,7 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
           "call to %a" Typ.Procname.pp (CallSite.pname (PathDomain.Sink.call_site sink)) in
     let loc = CallSite.loc (PathDomain.Sink.call_site initial_sink) in
     let ltr = PathDomain.to_sink_loc_trace ~desc_of_sink path in
-    let msg = Localise.to_string Localise.thread_safety_violation in
+    let msg = Localise.to_issue_id Localise.thread_safety_violation in
     let description = make_description tenv pname final_sink_site
         initial_sink_site final_sink tab in
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in

@@ -455,7 +455,7 @@ let create_table_err_per_line err_log =
   let err_per_line = Hashtbl.create 17 in
   let add_err _ loc _ _ _ err_name desc _ _ _ _ =
     let err_str =
-      Localise.to_string err_name ^
+      Localise.to_issue_id err_name ^
       " " ^
       (F.asprintf "%a" Localise.pp_error_desc desc) in
     try

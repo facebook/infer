@@ -475,7 +475,7 @@ let test_resolve_infer_eradicate_conflict =
         }
     | _ -> failwith "This mock only supports Eradicate" in
   let create_test analyzer (exp_introduced, exp_fixed, exp_preexisting) _ =
-    let null_dereference = Localise.to_string Localise.null_dereference in
+    let null_dereference = Localise.to_issue_id Localise.null_dereference in
     let current_report = [
       create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:1 ();
       create_fake_jsonbug ~bug_type:null_dereference ~file:"file_2.java" ~hash:2 ();

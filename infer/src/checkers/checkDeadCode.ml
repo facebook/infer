@@ -63,7 +63,7 @@ let do_node _ node (s : State.t) : (State.t list) * (State.t list) =
 (** Report an error. *)
 let report_error tenv description pn pd loc =
   if verbose then L.stderr "ERROR: %s@." description;
-  Checkers.ST.report_error tenv pn pd "CHECKERS_DEAD_CODE" loc description
+  Checkers.ST.report_error tenv pn pd Localise.checkers_dead_code loc description
 
 
 (** Check the final state at the end of the analysis. *)

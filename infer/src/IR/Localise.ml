@@ -14,64 +14,121 @@ open! IStd
 
 module F = Format
 
-(** type of string used for localisation *)
-type t = string [@@deriving compare]
+type t = string * string [@@deriving compare] (* issue_id, human_readable *)
 
 let equal = [%compare.equal : t]
 
+(** create from an ordinary string *)
+let from_string ?hum s : t =
+  let prettify () =
+    String.lowercase s
+    |> String.split ~on:'_'
+    |> List.map ~f:String.capitalize
+    |> String.concat ~sep:" "
+    |> String.strip in
+  (s, match hum with Some str -> str | _ -> prettify ())
+
+(** return the id of an issue *)
+let to_issue_id (s, _) = s
+
+let to_human_readable_string (_, s) = s
+
 (** pretty print a localised string *)
-let pp fmt s = Format.fprintf fmt "%s" s
+let pp fmt t = Format.fprintf fmt "%s" (to_issue_id t)
 
-(** create a localised string from an ordinary string *)
-let from_string s = s
+let analysis_stops = from_string "ANALYSIS_STOPS"
+let array_out_of_bounds_l1 = from_string "ARRAY_OUT_OF_BOUNDS_L1"
+let array_out_of_bounds_l2 = from_string "ARRAY_OUT_OF_BOUNDS_L2"
+let array_out_of_bounds_l3 = from_string "ARRAY_OUT_OF_BOUNDS_L3"
+let buffer_overrun = from_string "BUFFER_OVERRUN"
+let checkers_access_global = from_string "CHECKERS_ACCESS_GLOBAL"
+let checkers_dead_code = from_string "CHECKERS_DEAD_CODE"
+let checkers_immutable_cast = from_string "CHECKERS_IMMUTABLE_CAST"
+let checkers_print_c_call = from_string "CHECKERS_PRINT_C_CALL"
+let checkers_print_objc_method_calls = from_string "CHECKERS_PRINT_OBJC_METHOD_CALLS"
+let checkers_printf_args = from_string "CHECKERS_PRINTF_ARGS"
+let checkers_repeated_calls = from_string "CHECKERS_REPEATED_CALLS"
+let checkers_trace_calls_sequence = from_string "CHECKERS_TRACE_CALLS_SEQUENCE"
+let class_cast_exception = from_string "CLASS_CAST_EXCEPTION"
+let cluster_callback = from_string "CLUSTER_CALLBACK"
+let comparing_floats_for_equality = from_string "COMPARING_FLOAT_FOR_EQUALITY"
+let condition_always_false = from_string "CONDITION_ALWAYS_FALSE"
+let condition_always_true = from_string "CONDITION_ALWAYS_TRUE"
+let condition_is_assignment = from_string "CONDITION_IS_ASSIGNMENT"
+let context_leak = from_string "CONTEXT_LEAK"
+let dangling_pointer_dereference = from_string "DANGLING_POINTER_DEREFERENCE"
+let deallocate_stack_variable = from_string "DEALLOCATE_STACK_VARIABLE"
+let deallocate_static_memory = from_string "DEALLOCATE_STATIC_MEMORY"
+let deallocation_mismatch = from_string "DEALLOCATION_MISMATCH"
+let divide_by_zero = from_string "DIVIDE_BY_ZERO"
+let empty_vector_access = from_string "EMPTY_VECTOR_ACCESS"
+let eradicate_condition_redundant =
+  from_string "ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant"
+let eradicate_condition_redundant_nonnull =
+  from_string "ERADICATE_CONDITION_REDUNDANT_NONNULL" ~hum:"Condition Redundant Non-Null"
+let eradicate_field_not_initialized =
+  from_string "ERADICATE_FIELD_NOT_INITIALIZED" ~hum:"Field Not Initialized"
+let eradicate_field_not_mutable =
+  from_string "ERADICATE_FIELD_NOT_MUTABLE" ~hum:"Field Not Mutable"
+let eradicate_field_not_nullable =
+  from_string "ERADICATE_FIELD_NOT_NULLABLE" ~hum:"Field Not Nullable"
+let eradicate_field_over_annotated =
+  from_string "ERADICATE_FIELD_OVER_ANNOTATED" ~hum:"Field Over Annotated"
+let eradicate_field_value_absent =
+  from_string "ERADICATE_FIELD_VALUE_ABSENT" ~hum:"Field Value Absent"
+let eradicate_inconsistent_subclass_parameter_annotation =
+  from_string "ERADICATE_INCONSISTENT_SUBCLASS_PARAMETER_ANNOTATION"
+    ~hum: "Inconsistent Subclass Parameter Annotation"
+let eradicate_inconsistent_subclass_return_annotation =
+  from_string "ERADICATE_INCONSISTENT_SUBCLASS_RETURN_ANNOTATION"
+    ~hum: "Inconsistent Subclass Return Annotation"
+let eradicate_null_field_access =
+  from_string "ERADICATE_NULL_FIELD_ACCESS" ~hum:"Null Field Access"
+let eradicate_null_method_call =
+  from_string "ERADICATE_NULL_METHOD_CALL" ~hum:"Null Method Call"
+let eradicate_parameter_not_nullable =
+  from_string "ERADICATE_PARAMETER_NOT_NULLABLE" ~hum:"Parameter Not Nullable"
+let eradicate_parameter_value_absent =
+  from_string "ERADICATE_PARAMETER_VALUE_ABSENT" ~hum:"Parameter Value Absent"
+let eradicate_return_not_nullable =
+  from_string "ERADICATE_RETURN_NOT_NULLABLE" ~hum:"Return Not Nullable"
+let eradicate_return_over_annotated =
+  from_string "ERADICATE_RETURN_OVER_ANNOTATED" ~hum:"Return Over Annotated"
+let eradicate_return_value_not_present =
+  from_string "ERADICATE_RETURN_VALUE_NOT_PRESENT" ~hum:"Return Value Not Present"
+let eradicate_value_not_present =
+  from_string "ERADICATE_VALUE_NOT_PRESENT" ~hum:"Value Not Present"
+let field_not_null_checked = from_string "IVAR_NOT_NULL_CHECKED"
+let inherently_dangerous_function = from_string "INHERENTLY_DANGEROUS_FUNCTION"
+let memory_leak = from_string "MEMORY_LEAK"
+let null_dereference = from_string "NULL_DEREFERENCE"
+let null_test_after_dereference = from_string "NULL_TEST_AFTER_DEREFERENCE"
+let parameter_not_null_checked = from_string "PARAMETER_NOT_NULL_CHECKED"
+let pointer_size_mismatch = from_string "POINTER_SIZE_MISMATCH"
+let precondition_not_found = from_string "PRECONDITION_NOT_FOUND"
+let precondition_not_met = from_string "PRECONDITION_NOT_MET"
+let premature_nil_termination = from_string "PREMATURE_NIL_TERMINATION_ARGUMENT"
+let proc_callback = from_string "PROC_CALLBACK" ~hum:"Procedure Callback"
+let quandary_taint_error = from_string "QUANDARY_TAINT_ERROR"
+let registered_observer_being_deallocated = from_string "REGISTERED_OBSERVER_BEING_DEALLOCATED"
+let resource_leak = from_string "RESOURCE_LEAK"
+let retain_cycle = from_string "RETAIN_CYCLE"
+let return_expression_required = from_string "RETURN_EXPRESSION_REQUIRED"
+let return_statement_missing = from_string "RETURN_STATEMENT_MISSING"
+let return_value_ignored = from_string "RETURN_VALUE_IGNORED"
+let skip_function = from_string "SKIP_FUNCTION"
+let skip_pointer_dereference = from_string "SKIP_POINTER_DEREFERENCE"
+let stack_variable_address_escape = from_string "STACK_VARIABLE_ADDRESS_ESCAPE"
+let static_initialization_order_fiasco = from_string "STATIC_INITIALIZATION_ORDER_FIASCO"
+let tainted_value_reaching_sensitive_function =
+  from_string "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
+let thread_safety_violation = from_string "THREAD_SAFETY_VIOLATION"
+let unary_minus_applied_to_unsigned_expression =
+  from_string "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
+let uninitialized_value = from_string "UNINITIALIZED_VALUE"
+let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
+let use_after_free = from_string "USE_AFTER_FREE"
 
-(** convert a localised string to an ordinary string *)
-let to_string s = s
-
-let analysis_stops = "ANALYSIS_STOPS"
-let array_out_of_bounds_l1 = "ARRAY_OUT_OF_BOUNDS_L1"
-let array_out_of_bounds_l2 = "ARRAY_OUT_OF_BOUNDS_L2"
-let array_out_of_bounds_l3 = "ARRAY_OUT_OF_BOUNDS_L3"
-let buffer_overrun = "BUFFER_OVERRUN"
-let class_cast_exception = "CLASS_CAST_EXCEPTION"
-let comparing_floats_for_equality = "COMPARING_FLOAT_FOR_EQUALITY"
-let condition_is_assignment = "CONDITION_IS_ASSIGNMENT"
-let condition_always_false = "CONDITION_ALWAYS_FALSE"
-let condition_always_true = "CONDITION_ALWAYS_TRUE"
-let context_leak = "CONTEXT_LEAK"
-let dangling_pointer_dereference = "DANGLING_POINTER_DEREFERENCE"
-let deallocate_stack_variable = "DEALLOCATE_STACK_VARIABLE"
-let deallocate_static_memory = "DEALLOCATE_STATIC_MEMORY"
-let deallocation_mismatch = "DEALLOCATION_MISMATCH"
-let divide_by_zero = "DIVIDE_BY_ZERO"
-let empty_vector_access = "EMPTY_VECTOR_ACCESS"
-let field_not_null_checked = "IVAR_NOT_NULL_CHECKED"
-let inherently_dangerous_function = "INHERENTLY_DANGEROUS_FUNCTION"
-let memory_leak = "MEMORY_LEAK"
-let null_dereference = "NULL_DEREFERENCE"
-let parameter_not_null_checked = "PARAMETER_NOT_NULL_CHECKED"
-let null_test_after_dereference = "NULL_TEST_AFTER_DEREFERENCE"
-let pointer_size_mismatch = "POINTER_SIZE_MISMATCH"
-let precondition_not_found = "PRECONDITION_NOT_FOUND"
-let precondition_not_met = "PRECONDITION_NOT_MET"
-let premature_nil_termination = "PREMATURE_NIL_TERMINATION_ARGUMENT"
-let quandary_taint_error = "QUANDARY_TAINT_ERROR"
-let registered_observer_being_deallocated = "REGISTERED_OBSERVER_BEING_DEALLOCATED"
-let resource_leak = "RESOURCE_LEAK"
-let retain_cycle = "RETAIN_CYCLE"
-let return_value_ignored = "RETURN_VALUE_IGNORED"
-let return_expression_required = "RETURN_EXPRESSION_REQUIRED"
-let return_statement_missing = "RETURN_STATEMENT_MISSING"
-let skip_function = "SKIP_FUNCTION"
-let skip_pointer_dereference = "SKIP_POINTER_DEREFERENCE"
-let stack_variable_address_escape = "STACK_VARIABLE_ADDRESS_ESCAPE"
-let static_initialization_order_fiasco = "STATIC_INITIALIZATION_ORDER_FIASCO"
-let tainted_value_reaching_sensitive_function = "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
-let thread_safety_violation= "THREAD_SAFETY_VIOLATION"
-let unary_minus_applied_to_unsigned_expression = "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
-let unsafe_guarded_by_access = "UNSAFE_GUARDED_BY_ACCESS"
-let uninitialized_value = "UNINITIALIZED_VALUE"
-let use_after_free = "USE_AFTER_FREE"
 
 type error_desc = {
   descriptions : string list;

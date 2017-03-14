@@ -183,7 +183,7 @@ let resolve_infer_eradicate_conflict
       let filters = filters_of_analyzer Config.Eradicate in
       filters.path_filter source_file in
     Config.equal_analyzer analyzer Config.Infer &&
-    String.equal issue.bug_type (Localise.to_string Localise.null_dereference) &&
+    String.equal issue.bug_type (Localise.to_issue_id Localise.null_dereference) &&
     file_is_whitelisted () in
   let filter issues = List.filter ~f:(Fn.non should_discard_issue) issues in
   {

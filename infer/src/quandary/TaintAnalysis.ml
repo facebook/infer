@@ -178,7 +178,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
       let report_error path =
         let caller_pname = Procdesc.get_proc_name proc_data.pdesc in
-        let msg = Localise.to_string Localise.quandary_taint_error in
+        let msg = Localise.to_issue_id Localise.quandary_taint_error in
         let trace_str = F.asprintf "%a" pp_path_short path in
         let ltr = TraceDomain.to_loc_trace path in
         let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in

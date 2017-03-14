@@ -333,7 +333,7 @@ let filters_from_inferconfig inferconfig : filters =
       not (blacklist_files_containing_filter source_file) in
   let error_filter =
     function error_name ->
-      let error_str = Localise.to_string error_name in
+      let error_str = Localise.to_issue_id error_name in
       not (List.exists ~f:(String.equal error_str) inferconfig.suppress_errors) in
   {
     path_filter = path_filter;

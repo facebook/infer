@@ -206,7 +206,8 @@ let recognize_exception exn =
          desc, None, Exn_developer, High, None, Nocat)
     | Invalid_argument s ->
         let desc = Localise.verbatim_desc s in
-        (Localise.from_string "Invalid_argument", desc, None, Exn_system, Low, None, Nocat)
+        (Localise.from_string "Invalid_argument",
+         desc, None, Exn_system, Low, None, Nocat)
     | Java_runtime_exception (exn_name, _, desc) ->
         let exn_str = Typename.name exn_name in
         (Localise.from_string exn_str, desc, None, Exn_user, High, None, Prover)
@@ -230,7 +231,8 @@ let recognize_exception exn =
          Localise.no_desc, Some ml_loc, Exn_developer, High, None, Nocat)
     | Missing_fld (fld, ml_loc) ->
         let desc = Localise.verbatim_desc (Ident.fieldname_to_string fld) in
-        (Localise.from_string "Missing_fld", desc, Some ml_loc, Exn_developer, Medium, None, Nocat)
+        (Localise.from_string "Missing_fld" ~hum:"Missing Field",
+         desc, Some ml_loc, Exn_developer, Medium, None, Nocat)
     | Premature_nil_termination (desc, ml_loc) ->
         (Localise.premature_nil_termination,
          desc, Some ml_loc, Exn_user, High, None, Prover)
@@ -273,11 +275,11 @@ let recognize_exception exn =
         (Localise.skip_pointer_dereference,
          desc, Some ml_loc, Exn_user, Medium, Some Kinfo, Nocat) (* always an info *)
     | Symexec_memory_error ml_loc ->
-        (Localise.from_string "Symexec_memory_error",
+        (Localise.from_string "Symexec_memory_error" ~hum:"Symbolic Execution Memory Error",
          Localise.no_desc, Some ml_loc, Exn_developer, Low, None, Nocat)
     | Sys_error s ->
         let desc = Localise.verbatim_desc s in
-        (Localise.from_string "Sys_error",
+        (Localise.from_string "Sys_error" ~hum:"System Error",
          desc, None, Exn_system, Low, None, Nocat)
     | Tainted_value_reaching_sensitive_function (desc, ml_loc) ->
         (Localise.tainted_value_reaching_sensitive_function,
@@ -293,7 +295,7 @@ let recognize_exception exn =
         (Localise.unary_minus_applied_to_unsigned_expression,
          desc, Some ml_loc, Exn_user, Medium, None, Nocat)
     | Unknown_proc ->
-        (Localise.from_string "Unknown_proc",
+        (Localise.from_string "Unknown_proc" ~hum:"Unknown Procedure",
          Localise.no_desc, None, Exn_developer, Low, None, Nocat)
     | Unsafe_guarded_by_access (desc, ml_loc) ->
         (Localise.unsafe_guarded_by_access,
@@ -302,7 +304,7 @@ let recognize_exception exn =
         (Localise.use_after_free,
          desc, Some ml_loc, Exn_user, High, None, Prover)
     | Wrong_argument_number ml_loc ->
-        (Localise.from_string "Wrong_argument_number",
+        (Localise.from_string "Wrong_argument_number" ~hum:"Wrong Argument Number",
          Localise.no_desc, Some ml_loc, Exn_developer, Low, None, Nocat)
     | Failure _ as f ->
         raise f
@@ -319,7 +321,7 @@ let print_exception_html s exn =
     | None -> ""
     | Some ml_loc -> " " ^ L.ml_loc_to_string ml_loc in
   let desc_str = F.asprintf "%a" Localise.pp_error_desc desc in
-  (L.d_strln_color Red) (s ^ (Localise.to_string err_name) ^ " " ^ desc_str ^ ml_loc_string)
+  (L.d_strln_color Red) (s ^ (Localise.to_issue_id err_name) ^ " " ^ desc_str ^ ml_loc_string)
 
 (** string describing an error kind *)
 let err_kind_string = function

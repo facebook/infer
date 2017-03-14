@@ -71,7 +71,7 @@ module ST = struct
         description
         (Option.value ~default:"" advice)
         [("always_report", string_of_bool always_report)] in
-    let exn = exception_kind kind localized_description in
+    let exn = exception_kind (Localise.to_issue_id kind) localized_description in
     let proc_attributes = Specs.pdesc_resolve_attributes proc_desc in
 
     (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be
@@ -90,9 +90,11 @@ module ST = struct
 
         let is_parameter_suppressed =
           String.is_suffix a.class_name ~suffix:Annotations.suppress_lint &&
-          List.mem ~equal:normalized_equal a.parameters kind in
+          List.mem ~equal:normalized_equal a.parameters (Localise.to_issue_id kind) in
         let is_annotation_suppressed =
-          String.is_suffix ~suffix:(normalize (drop_prefix kind)) (normalize a.class_name) in
+          String.is_suffix
+            ~suffix:(normalize (drop_prefix (Localise.to_issue_id kind)))
+            (normalize a.class_name) in
 
         is_parameter_suppressed || is_annotation_suppressed in
 
@@ -134,7 +136,7 @@ module ST = struct
         if !verbose then
           begin
             L.stdout "%s: %a: %s@."
-              kind
+              (Localise.to_issue_id kind)
               SourceFile.pp loc.Location.file
               (Typ.Procname.to_string proc_name);
             L.stdout "%s@." description
@@ -151,7 +153,7 @@ let report_calls_and_accesses tenv callback proc_desc instr =
       ST.report_error tenv
         proc_name
         proc_desc
-        (callback ^ "_CALLBACK")
+        callback
         (Procdesc.get_loc proc_desc)
         (Format.sprintf "field access %s.%s:%s in %s@." bt fn ft callee)
   | None ->
@@ -160,7 +162,7 @@ let report_calls_and_accesses tenv callback proc_desc instr =
           ST.report_error tenv
             proc_name
             proc_desc
-            (callback ^ "_CALLBACK")
+            callback
             (Procdesc.get_loc proc_desc)
             (Format.sprintf "method call %s.%s(%s):%s in %s@." bt fn "..." rt callee)
       | None -> ()
@@ -168,7 +170,7 @@ let report_calls_and_accesses tenv callback proc_desc instr =
 (** Report all field accesses and method calls of a procedure. *)
 let callback_check_access { Callbacks.tenv; proc_desc } =
   Procdesc.iter_instrs
-    (fun _ instr  -> report_calls_and_accesses tenv "PROC" proc_desc instr)
+    (fun _ instr  -> report_calls_and_accesses tenv Localise.proc_callback proc_desc instr)
     proc_desc
 
 (** Report all field accesses and method calls of a class. *)
@@ -178,7 +180,8 @@ let callback_check_cluster_access exe_env all_procs get_proc_desc _ =
       | Some proc_desc ->
           let tenv = Exe_env.get_tenv exe_env proc_name in
           Procdesc.iter_instrs
-            (fun _ instr -> report_calls_and_accesses tenv "CLUSTER" proc_desc instr)
+            (fun _ instr ->
+               report_calls_and_accesses tenv Localise.cluster_callback proc_desc instr)
             proc_desc
       | _ ->
           ()
@@ -553,7 +556,7 @@ let callback_print_c_method_calls { Callbacks.tenv; proc_desc; proc_name } =
         ST.report_error tenv
           proc_name
           proc_desc
-          "CHECKERS_PRINT_OBJC_METHOD_CALLS"
+          Localise.checkers_print_objc_method_calls
           loc
           description
     | Sil.Call (_, Exp.Const (Const.Cfun pn), _, loc, _) ->
@@ -562,7 +565,7 @@ let callback_print_c_method_calls { Callbacks.tenv; proc_desc; proc_name } =
         ST.report_error tenv
           proc_name
           proc_desc
-          "CHECKERS_PRINT_C_CALL"
+          Localise.checkers_print_c_call
           loc
           description
     | _ -> () in
@@ -578,7 +581,7 @@ let callback_print_access_to_globals { Callbacks.tenv; proc_desc; proc_name } =
     ST.report_error tenv
       proc_name
       proc_desc
-      "CHECKERS_ACCESS_GLOBAL"
+      Localise.checkers_access_global
       loc
       description in
   let rec get_global_var = function

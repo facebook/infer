@@ -69,7 +69,7 @@ val node_reset_forall : Procdesc.Node.t -> unit
 type st_report_error =
   Typ.Procname.t ->
   Procdesc.t ->
-  string ->
+  Localise.t ->
   Location.t ->
   ?advice: string option ->
   ?field_name: Ident.fieldname option ->

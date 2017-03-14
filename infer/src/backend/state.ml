@@ -321,7 +321,7 @@ let process_execution_failures (log_issue : log_issue) pname =
     match fs.node_ok, fs.first_failure with
     | 0, Some (loc, key, _, loc_trace, exn) when not Config.debug_exceptions ->
         let ex_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
-        let desc' = Localise.verbatim_desc ("exception: " ^ Localise.to_string ex_name) in
+        let desc' = Localise.verbatim_desc ("exception: " ^ Localise.to_issue_id ex_name) in
         let exn' = Exceptions.Analysis_stops (desc', ml_loc_opt) in
         log_issue pname ~loc ~node_id:key ~ltr:loc_trace exn'
     | _ -> () in

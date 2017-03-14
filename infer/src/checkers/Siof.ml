@@ -209,7 +209,7 @@ let report_siof trace pdesc gname loc =
           description, (passthroughs, (final_sink', pt)::rest) in
     let ltr = SiofTrace.trace_of_error loc gname sink_path' in
     let caller_pname = Procdesc.get_proc_name pdesc in
-    let msg = Localise.to_string Localise.static_initialization_order_fiasco in
+    let msg = Localise.to_issue_id Localise.static_initialization_order_fiasco in
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
     Reporting.log_error caller_pname ~loc ~ltr exn in
 

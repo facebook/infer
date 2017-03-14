@@ -39,7 +39,7 @@ let boolean_variables =
 (** Report a warning in the spec file of the procedure. *)
 let report_warning tenv description pn pd loc =
   if verbose then L.stderr "ERROR: %s@." description;
-  Checkers.ST.report_error tenv pn pd "CHECKERS_TRACE_CALLS_SEQUENCE" loc description
+  Checkers.ST.report_error tenv pn pd Localise.checkers_trace_calls_sequence loc description
 
 
 (** Tracing APIs. *)

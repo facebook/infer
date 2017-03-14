@@ -218,7 +218,7 @@ let log_issue _ekind err_log loc node_id_key session ltr exn =
         let warn_str =
           let pp fmt =
             Format.fprintf fmt "%s %a"
-              (Localise.to_string err_name)
+              (Localise.to_issue_id err_name)
               Localise.pp_error_desc desc in
           F.asprintf "%t" pp in
         let d = match ekind with
@@ -246,7 +246,7 @@ module Err_table = struct
   let pp_stats_footprint ekind fmt (err_table: err_log) =
     let err_name_map = ref String.Map.empty in (* map error name to count *)
     let count_err (err_name: Localise.t) n =
-      let err_string = Localise.to_string err_name in
+      let err_string = Localise.to_issue_id err_name in
       let count = try String.Map.find_exn !err_name_map err_string with Not_found -> 0 in
       err_name_map := String.Map.add ~key:err_string ~data:(count + n) !err_name_map in
     let count (ekind', in_footprint, err_name, _, _) eds =
