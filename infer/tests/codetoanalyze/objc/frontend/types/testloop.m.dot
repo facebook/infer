@@ -22,15 +22,15 @@ digraph iCFG {
 	
 
 	 "__infer_globals_initializer___iPhoneVideoAdLayout.b0bc97c09b8fbd16a06b17b7a5d22042_3" -> "__infer_globals_initializer___iPhoneVideoAdLayout.b0bc97c09b8fbd16a06b17b7a5d22042_2" ;
-"FBScrollViewDelegateProxy_layoutToUseclass.9bf93674d347fe5d489b97d1cb9f15c1_1" [label="1: Start FBScrollViewDelegateProxy_layoutToUse\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 44]\n " color=yellow style=filled]
+"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_1" [label="1: Start FBScrollViewDelegateProxy_layoutToUse\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 44]\n " color=yellow style=filled]
 	
 
-	 "FBScrollViewDelegateProxy_layoutToUseclass.9bf93674d347fe5d489b97d1cb9f15c1_1" -> "FBScrollViewDelegateProxy_layoutToUseclass.9bf93674d347fe5d489b97d1cb9f15c1_3" ;
-"FBScrollViewDelegateProxy_layoutToUseclass.9bf93674d347fe5d489b97d1cb9f15c1_2" [label="2: Exit FBScrollViewDelegateProxy_layoutToUse \n  " color=yellow style=filled]
+	 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_1" -> "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" ;
+"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" [label="2: Exit FBScrollViewDelegateProxy_layoutToUse \n  " color=yellow style=filled]
 	
 
-"FBScrollViewDelegateProxy_layoutToUseclass.9bf93674d347fe5d489b97d1cb9f15c1_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:struct FBVideoAdLayout [line 45]\n  *&return:struct FBVideoAdLayout=n$0 [line 45]\n " shape="box"]
+"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:struct FBVideoAdLayout [line 45]\n  *&return:struct FBVideoAdLayout=n$0 [line 45]\n " shape="box"]
 	
 
-	 "FBScrollViewDelegateProxy_layoutToUseclass.9bf93674d347fe5d489b97d1cb9f15c1_3" -> "FBScrollViewDelegateProxy_layoutToUseclass.9bf93674d347fe5d489b97d1cb9f15c1_2" ;
+	 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" -> "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" ;
 }

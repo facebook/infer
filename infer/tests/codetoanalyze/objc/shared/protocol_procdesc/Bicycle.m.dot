@@ -1,69 +1,69 @@
 /* @generated */
 digraph iCFG {
-"Bicycle_signalStopinstance.2dbd1da362e1633b6586103ba35f9890_1" [label="1: Start Bicycle_signalStop\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+"signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_1" [label="1: Start Bicycle_signalStop\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
-	 "Bicycle_signalStopinstance.2dbd1da362e1633b6586103ba35f9890_1" -> "Bicycle_signalStopinstance.2dbd1da362e1633b6586103ba35f9890_3" ;
-"Bicycle_signalStopinstance.2dbd1da362e1633b6586103ba35f9890_2" [label="2: Exit Bicycle_signalStop \n  " color=yellow style=filled]
+	 "signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_1" -> "signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_3" ;
+"signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_2" [label="2: Exit Bicycle_signalStop \n  " color=yellow style=filled]
 	
 
-"Bicycle_signalStopinstance.2dbd1da362e1633b6586103ba35f9890_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"Bending left arm downwards\":char*) [line 16]\n  _fun_NSLog(n$0:struct objc_object*) [line 16]\n " shape="box"]
+"signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"Bending left arm downwards\":char*) [line 16]\n  _fun_NSLog(n$0:struct objc_object*) [line 16]\n " shape="box"]
 	
 
-	 "Bicycle_signalStopinstance.2dbd1da362e1633b6586103ba35f9890_3" -> "Bicycle_signalStopinstance.2dbd1da362e1633b6586103ba35f9890_2" ;
-"Bicycle_signalLeftTurninstance.e9242ba98c9d9f2d087b3aa831acdeab_1" [label="1: Start Bicycle_signalLeftTurn\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	 "signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_3" -> "signalStop#Bicycle#instance.e21e040e406b062ae47420adbbba076a_2" ;
+"signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_1" [label="1: Start Bicycle_signalLeftTurn\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
-	 "Bicycle_signalLeftTurninstance.e9242ba98c9d9f2d087b3aa831acdeab_1" -> "Bicycle_signalLeftTurninstance.e9242ba98c9d9f2d087b3aa831acdeab_3" ;
-"Bicycle_signalLeftTurninstance.e9242ba98c9d9f2d087b3aa831acdeab_2" [label="2: Exit Bicycle_signalLeftTurn \n  " color=yellow style=filled]
+	 "signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_1" -> "signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_3" ;
+"signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_2" [label="2: Exit Bicycle_signalLeftTurn \n  " color=yellow style=filled]
 	
 
-"Bicycle_signalLeftTurninstance.e9242ba98c9d9f2d087b3aa831acdeab_3" [label="3:  Call _fun_NSLog \n   n$1=_fun_NSString_stringWithUTF8String:(\"Extending left arm outwards\":char*) [line 19]\n  _fun_NSLog(n$1:struct objc_object*) [line 19]\n " shape="box"]
+"signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_3" [label="3:  Call _fun_NSLog \n   n$1=_fun_NSString_stringWithUTF8String:(\"Extending left arm outwards\":char*) [line 19]\n  _fun_NSLog(n$1:struct objc_object*) [line 19]\n " shape="box"]
 	
 
-	 "Bicycle_signalLeftTurninstance.e9242ba98c9d9f2d087b3aa831acdeab_3" -> "Bicycle_signalLeftTurninstance.e9242ba98c9d9f2d087b3aa831acdeab_2" ;
-"Bicycle_signalRightTurninstance.a0c77afb45c786f76cf4fb382a69a7e9_1" [label="1: Start Bicycle_signalRightTurn\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+	 "signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_3" -> "signalLeftTurn#Bicycle#instance.a4d5c86b4aa90993e2ac30d04f01880f_2" ;
+"signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_1" [label="1: Start Bicycle_signalRightTurn\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
 	
 
-	 "Bicycle_signalRightTurninstance.a0c77afb45c786f76cf4fb382a69a7e9_1" -> "Bicycle_signalRightTurninstance.a0c77afb45c786f76cf4fb382a69a7e9_3" ;
-"Bicycle_signalRightTurninstance.a0c77afb45c786f76cf4fb382a69a7e9_2" [label="2: Exit Bicycle_signalRightTurn \n  " color=yellow style=filled]
+	 "signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_1" -> "signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_3" ;
+"signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_2" [label="2: Exit Bicycle_signalRightTurn \n  " color=yellow style=filled]
 	
 
-"Bicycle_signalRightTurninstance.a0c77afb45c786f76cf4fb382a69a7e9_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString_stringWithUTF8String:(\"Bending left arm upwards\":char*) [line 22]\n  _fun_NSLog(n$2:struct objc_object*) [line 22]\n " shape="box"]
+"signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString_stringWithUTF8String:(\"Bending left arm upwards\":char*) [line 22]\n  _fun_NSLog(n$2:struct objc_object*) [line 22]\n " shape="box"]
 	
 
-	 "Bicycle_signalRightTurninstance.a0c77afb45c786f76cf4fb382a69a7e9_3" -> "Bicycle_signalRightTurninstance.a0c77afb45c786f76cf4fb382a69a7e9_2" ;
-"Bicycle_startPedalinginstance.9cb8f466c6fdf50230f6e4c8f38872a2_1" [label="1: Start Bicycle_startPedaling\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+	 "signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_3" -> "signalRightTurn#Bicycle#instance.fadced5c56a6d988e6d72d83b6b35cbe_2" ;
+"startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_1" [label="1: Start Bicycle_startPedaling\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
 	
 
-	 "Bicycle_startPedalinginstance.9cb8f466c6fdf50230f6e4c8f38872a2_1" -> "Bicycle_startPedalinginstance.9cb8f466c6fdf50230f6e4c8f38872a2_3" ;
-"Bicycle_startPedalinginstance.9cb8f466c6fdf50230f6e4c8f38872a2_2" [label="2: Exit Bicycle_startPedaling \n  " color=yellow style=filled]
+	 "startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_1" -> "startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_3" ;
+"startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_2" [label="2: Exit Bicycle_startPedaling \n  " color=yellow style=filled]
 	
 
-"Bicycle_startPedalinginstance.9cb8f466c6fdf50230f6e4c8f38872a2_3" [label="3:  Call _fun_NSLog \n   n$3=_fun_NSString_stringWithUTF8String:(\"Here we go!\":char*) [line 25]\n  _fun_NSLog(n$3:struct objc_object*) [line 25]\n " shape="box"]
+"startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_3" [label="3:  Call _fun_NSLog \n   n$3=_fun_NSString_stringWithUTF8String:(\"Here we go!\":char*) [line 25]\n  _fun_NSLog(n$3:struct objc_object*) [line 25]\n " shape="box"]
 	
 
-	 "Bicycle_startPedalinginstance.9cb8f466c6fdf50230f6e4c8f38872a2_3" -> "Bicycle_startPedalinginstance.9cb8f466c6fdf50230f6e4c8f38872a2_2" ;
-"Bicycle_removeFrontWheelinstance.db60e526f150216e5300ced228fc38bb_1" [label="1: Start Bicycle_removeFrontWheel\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
+	 "startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_3" -> "startPedaling#Bicycle#instance.51dd675ab15335a15287fd45cbc21261_2" ;
+"removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_1" [label="1: Start Bicycle_removeFrontWheel\nFormals:  self:class Bicycle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
 	
 
-	 "Bicycle_removeFrontWheelinstance.db60e526f150216e5300ced228fc38bb_1" -> "Bicycle_removeFrontWheelinstance.db60e526f150216e5300ced228fc38bb_3" ;
-"Bicycle_removeFrontWheelinstance.db60e526f150216e5300ced228fc38bb_2" [label="2: Exit Bicycle_removeFrontWheel \n  " color=yellow style=filled]
+	 "removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_1" -> "removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_3" ;
+"removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_2" [label="2: Exit Bicycle_removeFrontWheel \n  " color=yellow style=filled]
 	
 
-"Bicycle_removeFrontWheelinstance.db60e526f150216e5300ced228fc38bb_3" [label="3:  Call _fun_NSLog \n   n$4=_fun_NSString_stringWithUTF8String:(\"Front wheel is off.Should probably replace that before pedaling...\":char*) [line 28]\n  _fun_NSLog(n$4:struct objc_object*) [line 28]\n " shape="box"]
+"removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_3" [label="3:  Call _fun_NSLog \n   n$4=_fun_NSString_stringWithUTF8String:(\"Front wheel is off.Should probably replace that before pedaling...\":char*) [line 28]\n  _fun_NSLog(n$4:struct objc_object*) [line 28]\n " shape="box"]
 	
 
-	 "Bicycle_removeFrontWheelinstance.db60e526f150216e5300ced228fc38bb_3" -> "Bicycle_removeFrontWheelinstance.db60e526f150216e5300ced228fc38bb_2" ;
-"Bicycle_lockToStructure:instance.ed953c0ed544d41443985afc91ea2e12_1" [label="1: Start Bicycle_lockToStructure:\nFormals:  self:class Bicycle* theStructure:struct objc_object*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
+	 "removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_3" -> "removeFrontWheel#Bicycle#instance.30147087e52fa1526931dfcd2d381f31_2" ;
+"lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_1" [label="1: Start Bicycle_lockToStructure:\nFormals:  self:class Bicycle* theStructure:struct objc_object*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
 	
 
-	 "Bicycle_lockToStructure:instance.ed953c0ed544d41443985afc91ea2e12_1" -> "Bicycle_lockToStructure:instance.ed953c0ed544d41443985afc91ea2e12_3" ;
-"Bicycle_lockToStructure:instance.ed953c0ed544d41443985afc91ea2e12_2" [label="2: Exit Bicycle_lockToStructure: \n  " color=yellow style=filled]
+	 "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_1" -> "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_3" ;
+"lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_2" [label="2: Exit Bicycle_lockToStructure: \n  " color=yellow style=filled]
 	
 
-"Bicycle_lockToStructure:instance.ed953c0ed544d41443985afc91ea2e12_3" [label="3:  Call _fun_NSLog \n   n$5=_fun_NSString_stringWithUTF8String:(\"Locked to structure. Don't forget the combination!\":char*) [line 32]\n  _fun_NSLog(n$5:struct objc_object*) [line 32]\n " shape="box"]
+"lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_3" [label="3:  Call _fun_NSLog \n   n$5=_fun_NSString_stringWithUTF8String:(\"Locked to structure. Don't forget the combination!\":char*) [line 32]\n  _fun_NSLog(n$5:struct objc_object*) [line 32]\n " shape="box"]
 	
 
-	 "Bicycle_lockToStructure:instance.ed953c0ed544d41443985afc91ea2e12_3" -> "Bicycle_lockToStructure:instance.ed953c0ed544d41443985afc91ea2e12_2" ;
+	 "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_3" -> "lockToStructure:#Bicycle#instance.1d748844e64f333b251ddf4475286342_2" ;
 }

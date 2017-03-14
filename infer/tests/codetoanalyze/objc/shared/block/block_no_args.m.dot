@@ -1,61 +1,61 @@
 /* @generated */
 digraph iCFG {
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_1" [label="1: Start My_manager_m\nFormals:  self:class My_manager*\nLocals:  p:int* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&p,&z,&b); [line 21]\n " color=yellow style=filled]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" [label="1: Start My_manager_m\nFormals:  self:class My_manager*\nLocals:  p:int* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&p,&z,&b); [line 21]\n " color=yellow style=filled]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_1" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_14" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_2" [label="2: Exit My_manager_m \n  " color=yellow style=filled]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_1" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" [label="2: Exit My_manager_m \n  " color=yellow style=filled]
 	
 
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_3" [label="3: + \n  " ]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_3" [label="3: + \n  " ]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_3" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_4" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_3" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_4" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_2" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 30]\n " shape="box"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_4" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 30]\n " shape="box"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_5" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_6" ;
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_5" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_7" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_6" [label="6: Prune (true branch) \n   PRUNE(((n$0 == 6) != 0), true); [line 30]\n " shape="invhouse"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" ;
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" [label="6: Prune (true branch) \n   PRUNE(((n$0 == 6) != 0), true); [line 30]\n " shape="invhouse"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_6" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_8" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_7" [label="7: Prune (false branch) \n   PRUNE(((n$0 == 6) == 0), false); [line 30]\n " shape="invhouse"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_6" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" [label="7: Prune (false branch) \n   PRUNE(((n$0 == 6) == 0), false); [line 30]\n " shape="invhouse"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_7" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_9" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 31]\n  n$2=*n$1:int [line 31]\n  *&return:int=n$2 [line 31]\n " shape="box"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_7" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" [label="8:  Return Stmt \n   n$1=*&p:int* [line 31]\n  n$2=*n$1:int [line 31]\n  *&return:int=n$2 [line 31]\n " shape="box"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_8" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_2" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 33]\n  *&return:int=n$3 [line 33]\n " shape="box"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_8" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" [label="9:  Return Stmt \n   n$3=*&z:int [line 33]\n  *&return:int=n$3 [line 33]\n " shape="box"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_9" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_2" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_10" [label="10:  DeclStmt \n   *&p:int*=0 [line 29]\n " shape="box"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_9" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_2" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" [label="10:  DeclStmt \n   *&p:int*=0 [line 29]\n " shape="box"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_10" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_5" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_11" [label="11:  Call n$4 \n   n$4=*&b:_fn_(*) [line 28]\n  n$4() [line 28]\n " shape="box"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_5" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" [label="11:  Call n$4 \n   n$4=*&b:_fn_(*) [line 28]\n  n$4() [line 28]\n " shape="box"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_11" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_10" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_12" [label="12:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_m______1):unsigned long) [line 25]\n  *&__objc_anonymous_block_My_manager_m______1:class __objc_anonymous_block_My_manager_m______1=n$7 [line 25]\n  n$8=*&z:int [line 25]\n  n$9=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 25]\n  *n$7.z:int=n$8 [line 25]\n  *n$7.g:int=n$9 [line 25]\n  n$5=*&z:int [line 25]\n  *&b:_fn_(*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25]\n " shape="box"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_m______1):unsigned long) [line 25]\n  *&__objc_anonymous_block_My_manager_m______1:class __objc_anonymous_block_My_manager_m______1=n$7 [line 25]\n  n$8=*&z:int [line 25]\n  n$9=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 25]\n  *n$7.z:int=n$8 [line 25]\n  *n$7.g:int=n$9 [line 25]\n  n$5=*&z:int [line 25]\n  *&b:_fn_(*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25]\n " shape="box"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_12" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_11" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_13" [label="13:  DeclStmt \n   *&z:int=3 [line 24]\n " shape="box"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" [label="13:  DeclStmt \n   *&z:int=3 [line 24]\n " shape="box"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_13" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_12" ;
-"My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_14" [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=7 [line 22]\n " shape="box"]
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" ;
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" [label="14:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=7 [line 22]\n " shape="box"]
 	
 
-	 "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_14" -> "My_manager_minstance.ec3b234dca60e6a1d3cb3362178416b6_13" ;
+	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" ;
 "__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_1" [label="1: Start __objc_anonymous_block_My_manager_m______1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 

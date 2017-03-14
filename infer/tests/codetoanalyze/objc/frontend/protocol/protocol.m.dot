@@ -1,35 +1,35 @@
 /* @generated */
 digraph iCFG {
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_1" [label="1: Start Bla_fooMethod\nFormals:  self:class Bla*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla_fooMethod\nFormals:  self:class Bla*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
 	
 
-	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_1" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_5" ;
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_2" [label="2: Exit Bla_fooMethod \n  " color=yellow style=filled]
+	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" ;
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" [label="2: Exit Bla_fooMethod \n  " color=yellow style=filled]
 	
 
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_3" [label="3: + \n  " ]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" [label="3: + \n  " ]
 	
 
-	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_3" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_4" ;
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" ;
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_4" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_2" ;
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla* [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla*,\"Foo\":class Protocol*) virtual [line 25]\n " shape="box"]
+	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" ;
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla* [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla*,\"Foo\":class Protocol*) virtual [line 25]\n " shape="box"]
 	
 
-	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_5" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_6" ;
-	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_5" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_7" ;
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_6" [label="6: Prune (true branch) \n   PRUNE((n$1 != 0), true); [line 25]\n " shape="invhouse"]
+	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" ;
+	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" ;
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" [label="6: Prune (true branch) \n   PRUNE((n$1 != 0), true); [line 25]\n " shape="invhouse"]
 	
 
-	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_6" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_8" ;
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_7" [label="7: Prune (false branch) \n   PRUNE((n$1 == 0), false); [line 25]\n " shape="invhouse"]
+	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" ;
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" [label="7: Prune (false branch) \n   PRUNE((n$1 == 0), false); [line 25]\n " shape="invhouse"]
 	
 
-	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_7" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_3" ;
-"Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_8" [label="8:  Return Stmt \n  " shape="box"]
+	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_7" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_3" ;
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" [label="8:  Return Stmt \n  " shape="box"]
 	
 
-	 "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_8" -> "Bla_fooMethodinstance.a3ea1f9816e73c7a67ffd790a34046a6_2" ;
+	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_8" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" ;
 }

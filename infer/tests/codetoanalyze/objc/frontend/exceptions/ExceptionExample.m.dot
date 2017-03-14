@@ -1,50 +1,50 @@
 /* @generated */
 digraph iCFG {
-"ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_1" [label="1: Start ExceptionExample_test\nFormals:  self:class ExceptionExample*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 18]\n " color=yellow style=filled]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" [label="1: Start ExceptionExample_test\nFormals:  self:class ExceptionExample*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 18]\n " color=yellow style=filled]
 	
 
-	 "ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_1" -> "ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_4" ;
-"ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_2" [label="2: Exit ExceptionExample_test \n  " color=yellow style=filled]
+	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_1" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" ;
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" [label="2: Exit ExceptionExample_test \n  " color=yellow style=filled]
 	
 
-"ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_3" [label="3:  Message Call: description \n   n$0=*&self:class ExceptionExample* [line 23]\n  n$1=_fun_ExceptionExample_description(n$0:class ExceptionExample*) [line 23]\n " shape="box"]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" [label="3:  Message Call: description \n   n$0=*&self:class ExceptionExample* [line 23]\n  n$1=_fun_ExceptionExample_description(n$0:class ExceptionExample*) [line 23]\n " shape="box"]
 	
 
-	 "ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_3" -> "ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_2" ;
-"ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 20]\n  *&s:class NSString*=n$2 [line 20]\n " shape="box"]
+	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" ;
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 20]\n  *&s:class NSString*=n$2 [line 20]\n " shape="box"]
 	
 
-	 "ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_4" -> "ExceptionExample_testinstance.73eacc9b33bf2e48d174650df16040f3_3" ;
-"ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_1" [label="1: Start ExceptionExample_test1\nFormals:  self:class ExceptionExample*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 27]\n " color=yellow style=filled]
+	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" ;
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_1" [label="1: Start ExceptionExample_test1\nFormals:  self:class ExceptionExample*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 27]\n " color=yellow style=filled]
 	
 
-	 "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_1" -> "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_8" ;
-"ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_2" [label="2: Exit ExceptionExample_test1 \n  " color=yellow style=filled]
+	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_1" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" ;
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_2" [label="2: Exit ExceptionExample_test1 \n  " color=yellow style=filled]
 	
 
-"ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_3" [label="3: + \n  " ]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" [label="3: + \n  " ]
 	
 
-	 "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_3" -> "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_4" ;
-"ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_4" ;
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_4" -> "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_2" ;
-"ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_5" [label="5: Prune (true branch) \n   n$3=*&s:class NSString* [line 29]\n  PRUNE((n$3 != 0), true); [line 29]\n " shape="invhouse"]
+	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_4" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_2" ;
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" [label="5: Prune (true branch) \n   n$3=*&s:class NSString* [line 29]\n  PRUNE((n$3 != 0), true); [line 29]\n " shape="invhouse"]
 	
 
-	 "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_5" -> "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_7" ;
-"ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_6" [label="6: Prune (false branch) \n   n$3=*&s:class NSString* [line 29]\n  PRUNE((n$3 == 0), false); [line 29]\n " shape="invhouse"]
+	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" ;
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_6" [label="6: Prune (false branch) \n   n$3=*&s:class NSString* [line 29]\n  PRUNE((n$3 == 0), false); [line 29]\n " shape="invhouse"]
 	
 
-	 "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_6" -> "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_3" ;
-"ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_7" [label="7:  ObjCCPPThrow \n   n$4=_fun_NSString_stringWithUTF8String:(\"Something is not right exception\":char*) [line 31]\n  n$5=_fun_NSString_stringWithUTF8String:(\"Can't perform this operation because of this or that\":char*) [line 33]\n  n$6=_fun_NSException_exceptionWithName:reason:userInfo:(n$4:class NSString*,n$5:class NSString*,0:class NSDictionary*) [line 30]\n  _fun___infer_objc_cpp_throw(n$6:class NSException*) [line 30]\n " shape="box"]
+	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_6" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" [label="7:  ObjCCPPThrow \n   n$4=_fun_NSString_stringWithUTF8String:(\"Something is not right exception\":char*) [line 31]\n  n$5=_fun_NSString_stringWithUTF8String:(\"Can't perform this operation because of this or that\":char*) [line 33]\n  n$6=_fun_NSException_exceptionWithName:reason:userInfo:(n$4:class NSString*,n$5:class NSString*,0:class NSDictionary*) [line 30]\n  _fun___infer_objc_cpp_throw(n$6:class NSException*) [line 30]\n " shape="box"]
 	
 
-	 "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_7" -> "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_3" ;
-"ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_8" [label="8:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 28]\n  *&s:class NSString*=n$7 [line 28]\n " shape="box"]
+	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" [label="8:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 28]\n  *&s:class NSString*=n$7 [line 28]\n " shape="box"]
 	
 
-	 "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_8" -> "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_5" ;
-	 "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_8" -> "ExceptionExample_test1instance.59e4aab0262ce59f2d651672b2a3d139_6" ;
+	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" ;
+	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_6" ;
 }

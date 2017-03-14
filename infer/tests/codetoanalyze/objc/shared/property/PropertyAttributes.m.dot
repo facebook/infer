@@ -23,55 +23,55 @@ digraph iCFG {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
-"PropertyA_initinstance.9b28e66362f961678aea671a06eab800_1" [label="1: Start PropertyA_init\nFormals:  self:class PropertyA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" [label="1: Start PropertyA_init\nFormals:  self:class PropertyA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
-	 "PropertyA_initinstance.9b28e66362f961678aea671a06eab800_1" -> "PropertyA_initinstance.9b28e66362f961678aea671a06eab800_3" ;
-"PropertyA_initinstance.9b28e66362f961678aea671a06eab800_2" [label="2: Exit PropertyA_init \n  " color=yellow style=filled]
+	 "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_1" -> "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_3" ;
+"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_2" [label="2: Exit PropertyA_init \n  " color=yellow style=filled]
 	
 
-"PropertyA_initinstance.9b28e66362f961678aea671a06eab800_3" [label="3:  Return Stmt \n   n$0=*&self:class PropertyA* [line 27]\n  *&return:struct objc_object*=n$0 [line 27]\n " shape="box"]
+"init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_3" [label="3:  Return Stmt \n   n$0=*&self:class PropertyA* [line 27]\n  *&return:struct objc_object*=n$0 [line 27]\n " shape="box"]
 	
 
-	 "PropertyA_initinstance.9b28e66362f961678aea671a06eab800_3" -> "PropertyA_initinstance.9b28e66362f961678aea671a06eab800_2" ;
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_1" [label="1: Start PropertyA_copy\nFormals:  self:class PropertyA*\nLocals:  other:class PropertyA* \n   DECLARE_LOCALS(&return,&other); [line 30]\n " color=yellow style=filled]
+	 "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_3" -> "init#PropertyA#instance.a50cf011b0759e26f65bb059fbc6d60c_2" ;
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_1" [label="1: Start PropertyA_copy\nFormals:  self:class PropertyA*\nLocals:  other:class PropertyA* \n   DECLARE_LOCALS(&return,&other); [line 30]\n " color=yellow style=filled]
 	
 
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_1" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_10" ;
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_2" [label="2: Exit PropertyA_copy \n  " color=yellow style=filled]
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_1" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" ;
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" [label="2: Exit PropertyA_copy \n  " color=yellow style=filled]
 	
 
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_3" [label="3:  Return Stmt \n   n$1=*&other:class PropertyA* [line 37]\n  *&return:class PropertyA*=n$1 [line 37]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" [label="3:  Return Stmt \n   n$1=*&other:class PropertyA* [line 37]\n  *&return:class PropertyA*=n$1 [line 37]\n " shape="box"]
 	
 
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_3" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_2" ;
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_4" [label="4: + \n  " ]
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_2" ;
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_4" [label="4: + \n  " ]
 	
 
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_4" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_3" ;
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_5" [label="5: Prune (true branch) \n   n$2=*&other:class PropertyA* [line 32]\n  PRUNE((n$2 != 0), true); [line 32]\n " shape="invhouse"]
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_4" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_3" ;
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" [label="5: Prune (true branch) \n   n$2=*&other:class PropertyA* [line 32]\n  PRUNE((n$2 != 0), true); [line 32]\n " shape="invhouse"]
 	
 
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_5" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_9" ;
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_6" [label="6: Prune (false branch) \n   n$2=*&other:class PropertyA* [line 32]\n  PRUNE((n$2 == 0), false); [line 32]\n " shape="invhouse"]
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" ;
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" [label="6: Prune (false branch) \n   n$2=*&other:class PropertyA* [line 32]\n  PRUNE((n$2 == 0), false); [line 32]\n " shape="invhouse"]
 	
 
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_6" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_4" ;
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_7" [label="7:  BinaryOperatorStmt: Assign \n   n$3=*&other:class PropertyA* [line 35]\n  n$4=*&self:class PropertyA* [line 35]\n  n$5=*n$4._child:class PropertyA* [line 35]\n  *n$3._child:class PropertyA*=n$5 [line 35]\n " shape="box"]
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_4" ;
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" [label="7:  BinaryOperatorStmt: Assign \n   n$3=*&other:class PropertyA* [line 35]\n  n$4=*&self:class PropertyA* [line 35]\n  n$5=*n$4._child:class PropertyA* [line 35]\n  *n$3._child:class PropertyA*=n$5 [line 35]\n " shape="box"]
 	
 
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_7" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_4" ;
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_8" [label="8:  BinaryOperatorStmt: Assign \n   n$6=*&other:class PropertyA* [line 34]\n  n$7=*&self:class PropertyA* [line 34]\n  n$8=*n$7._last_name:class PropertyA* [line 34]\n  *n$6._last_name:class PropertyA*=n$8 [line 34]\n " shape="box"]
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_4" ;
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" [label="8:  BinaryOperatorStmt: Assign \n   n$6=*&other:class PropertyA* [line 34]\n  n$7=*&self:class PropertyA* [line 34]\n  n$8=*n$7._last_name:class PropertyA* [line 34]\n  *n$6._last_name:class PropertyA*=n$8 [line 34]\n " shape="box"]
 	
 
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_8" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_7" ;
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&other:class PropertyA* [line 33]\n  n$10=*&self:class PropertyA* [line 33]\n  n$11=*n$10._name:class PropertyA* [line 33]\n  *n$9._name:class PropertyA*=n$11 [line 33]\n " shape="box"]
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_7" ;
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" [label="9:  BinaryOperatorStmt: Assign \n   n$9=*&other:class PropertyA* [line 33]\n  n$10=*&self:class PropertyA* [line 33]\n  n$11=*n$10._name:class PropertyA* [line 33]\n  *n$9._name:class PropertyA*=n$11 [line 33]\n " shape="box"]
 	
 
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_9" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_8" ;
-"PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_10" [label="10:  DeclStmt \n   n$12=_fun___objc_alloc_no_fail(sizeof(class PropertyA):unsigned long) [line 31]\n  n$13=_fun_PropertyA_init(n$12:class PropertyA*) virtual [line 31]\n  *&other:class PropertyA*=n$13 [line 31]\n " shape="box"]
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" ;
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   n$12=_fun___objc_alloc_no_fail(sizeof(class PropertyA):unsigned long) [line 31]\n  n$13=_fun_PropertyA_init(n$12:class PropertyA*) virtual [line 31]\n  *&other:class PropertyA*=n$13 [line 31]\n " shape="box"]
 	
 
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_10" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_5" ;
-	 "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_10" -> "PropertyA_copyinstance.cf8327e46bc4510f4fc48a55be2364d2_6" ;
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" ;
+	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_6" ;
 }

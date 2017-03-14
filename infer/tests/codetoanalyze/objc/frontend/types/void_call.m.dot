@@ -70,26 +70,26 @@ digraph iCFG {
 	
 
 	 "bar1.fa85cca91963d8f301e34247048fca39_3" -> "bar1.fa85cca91963d8f301e34247048fca39_2" ;
-"AClass_foo:instance.896f528c929776a3e0b8259a820e267b_1" [label="1: Start AClass_foo:\nFormals:  self:class AClass* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+"foo:#AClass#instance.85442408d439a21334483f95effd3023_1" [label="1: Start AClass_foo:\nFormals:  self:class AClass* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-	 "AClass_foo:instance.896f528c929776a3e0b8259a820e267b_1" -> "AClass_foo:instance.896f528c929776a3e0b8259a820e267b_3" ;
-"AClass_foo:instance.896f528c929776a3e0b8259a820e267b_2" [label="2: Exit AClass_foo: \n  " color=yellow style=filled]
+	 "foo:#AClass#instance.85442408d439a21334483f95effd3023_1" -> "foo:#AClass#instance.85442408d439a21334483f95effd3023_3" ;
+"foo:#AClass#instance.85442408d439a21334483f95effd3023_2" [label="2: Exit AClass_foo: \n  " color=yellow style=filled]
 	
 
-"AClass_foo:instance.896f528c929776a3e0b8259a820e267b_3" [label="3:  UnaryOperator \n   n$0=*&a:int [line 21]\n  *&a:int=(n$0 + 1) [line 21]\n " shape="box"]
+"foo:#AClass#instance.85442408d439a21334483f95effd3023_3" [label="3:  UnaryOperator \n   n$0=*&a:int [line 21]\n  *&a:int=(n$0 + 1) [line 21]\n " shape="box"]
 	
 
-	 "AClass_foo:instance.896f528c929776a3e0b8259a820e267b_3" -> "AClass_foo:instance.896f528c929776a3e0b8259a820e267b_2" ;
-"AClass_bar:instance.b560cb8f357f11243e4c518fa6059230_1" [label="1: Start AClass_bar:\nFormals:  self:class AClass* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+	 "foo:#AClass#instance.85442408d439a21334483f95effd3023_3" -> "foo:#AClass#instance.85442408d439a21334483f95effd3023_2" ;
+"bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_1" [label="1: Start AClass_bar:\nFormals:  self:class AClass* a:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
 	
 
-	 "AClass_bar:instance.b560cb8f357f11243e4c518fa6059230_1" -> "AClass_bar:instance.b560cb8f357f11243e4c518fa6059230_3" ;
-"AClass_bar:instance.b560cb8f357f11243e4c518fa6059230_2" [label="2: Exit AClass_bar: \n  " color=yellow style=filled]
+	 "bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_1" -> "bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_3" ;
+"bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_2" [label="2: Exit AClass_bar: \n  " color=yellow style=filled]
 	
 
-"AClass_bar:instance.b560cb8f357f11243e4c518fa6059230_3" [label="3:  Return Stmt \n   n$1=*&a:int [line 24]\n  *&a:int=(n$1 + 1) [line 24]\n  *&return:int=n$1 [line 24]\n " shape="box"]
+"bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_3" [label="3:  Return Stmt \n   n$1=*&a:int [line 24]\n  *&a:int=(n$1 + 1) [line 24]\n  *&return:int=n$1 [line 24]\n " shape="box"]
 	
 
-	 "AClass_bar:instance.b560cb8f357f11243e4c518fa6059230_3" -> "AClass_bar:instance.b560cb8f357f11243e4c518fa6059230_2" ;
+	 "bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_3" -> "bar:#AClass#instance.c024d9849ec28286083491e7c46a4982_2" ;
 }

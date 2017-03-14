@@ -34,32 +34,32 @@ digraph iCFG {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_5" -> "main.fad58de7366495db4650cfefac2fcd61_4" ;
-"A_captureinstance.78144fd72a742a61b200205aeb8e703f_1" [label="1: Start A_capture\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 45]\n " color=yellow style=filled]
+"capture#A#instance.d411336575e4bf632a1828f5f5979726_1" [label="1: Start A_capture\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 45]\n " color=yellow style=filled]
 	
 
-	 "A_captureinstance.78144fd72a742a61b200205aeb8e703f_1" -> "A_captureinstance.78144fd72a742a61b200205aeb8e703f_4" ;
-"A_captureinstance.78144fd72a742a61b200205aeb8e703f_2" [label="2: Exit A_capture \n  " color=yellow style=filled]
+	 "capture#A#instance.d411336575e4bf632a1828f5f5979726_1" -> "capture#A#instance.d411336575e4bf632a1828f5f5979726_4" ;
+"capture#A#instance.d411336575e4bf632a1828f5f5979726_2" [label="2: Exit A_capture \n  " color=yellow style=filled]
 	
 
-"A_captureinstance.78144fd72a742a61b200205aeb8e703f_3" [label="3:  Message Call: sHandler: \n   n$0=*&self:class A* [line 47]\n  n$1=*n$0._b:class B* [line 47]\n  DECLARE_LOCALS(&__objc_anonymous_block_A_capture______1); [line 47]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_capture______1):unsigned long) [line 47]\n  *&__objc_anonymous_block_A_capture______1:class __objc_anonymous_block_A_capture______1=n$5 [line 47]\n  n$6=*&self:class A* [line 47]\n  *n$5.self:class A*=n$6 [line 47]\n  n$2=*&self:class A* [line 47]\n  n$7=*&__objc_anonymous_block_A_capture______1:_fn_(*) [line 47]\n  _fun_B_sHandler:(n$1:class B*,n$7:_fn_(*),n$2:_fn_(*)) virtual [line 47]\n " shape="box"]
+"capture#A#instance.d411336575e4bf632a1828f5f5979726_3" [label="3:  Message Call: sHandler: \n   n$0=*&self:class A* [line 47]\n  n$1=*n$0._b:class B* [line 47]\n  DECLARE_LOCALS(&__objc_anonymous_block_A_capture______1); [line 47]\n  n$5=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_capture______1):unsigned long) [line 47]\n  *&__objc_anonymous_block_A_capture______1:class __objc_anonymous_block_A_capture______1=n$5 [line 47]\n  n$6=*&self:class A* [line 47]\n  *n$5.self:class A*=n$6 [line 47]\n  n$2=*&self:class A* [line 47]\n  n$7=*&__objc_anonymous_block_A_capture______1:_fn_(*) [line 47]\n  _fun_B_sHandler:(n$1:class B*,n$7:_fn_(*),n$2:_fn_(*)) virtual [line 47]\n " shape="box"]
 	
 
-	 "A_captureinstance.78144fd72a742a61b200205aeb8e703f_3" -> "A_captureinstance.78144fd72a742a61b200205aeb8e703f_2" ;
-"A_captureinstance.78144fd72a742a61b200205aeb8e703f_4" [label="4:  BinaryOperatorStmt: Assign \n   n$8=*&self:class A* [line 46]\n  n$9=_fun___objc_alloc_no_fail(sizeof(class B):unsigned long) [line 46]\n  *n$8._b:class B*=n$9 [line 46]\n " shape="box"]
+	 "capture#A#instance.d411336575e4bf632a1828f5f5979726_3" -> "capture#A#instance.d411336575e4bf632a1828f5f5979726_2" ;
+"capture#A#instance.d411336575e4bf632a1828f5f5979726_4" [label="4:  BinaryOperatorStmt: Assign \n   n$8=*&self:class A* [line 46]\n  n$9=_fun___objc_alloc_no_fail(sizeof(class B):unsigned long) [line 46]\n  *n$8._b:class B*=n$9 [line 46]\n " shape="box"]
 	
 
-	 "A_captureinstance.78144fd72a742a61b200205aeb8e703f_4" -> "A_captureinstance.78144fd72a742a61b200205aeb8e703f_3" ;
-"B_sHandler:instance.fa51c4ce9300778ce59ef012df56a622_1" [label="1: Start B_sHandler:\nFormals:  self:class B* h:_fn_(*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
+	 "capture#A#instance.d411336575e4bf632a1828f5f5979726_4" -> "capture#A#instance.d411336575e4bf632a1828f5f5979726_3" ;
+"sHandler:#B#instance.590685250eb38eaab242405cd45c572b_1" [label="1: Start B_sHandler:\nFormals:  self:class B* h:_fn_(*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
 	
 
-	 "B_sHandler:instance.fa51c4ce9300778ce59ef012df56a622_1" -> "B_sHandler:instance.fa51c4ce9300778ce59ef012df56a622_3" ;
-"B_sHandler:instance.fa51c4ce9300778ce59ef012df56a622_2" [label="2: Exit B_sHandler: \n  " color=yellow style=filled]
+	 "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_1" -> "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_3" ;
+"sHandler:#B#instance.590685250eb38eaab242405cd45c572b_2" [label="2: Exit B_sHandler: \n  " color=yellow style=filled]
 	
 
-"B_sHandler:instance.fa51c4ce9300778ce59ef012df56a622_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:class B* [line 30]\n  n$1=*&h:_fn_(*) [line 30]\n  *n$0._h:_fn_(*)=n$1 [line 30]\n " shape="box"]
+"sHandler:#B#instance.590685250eb38eaab242405cd45c572b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&self:class B* [line 30]\n  n$1=*&h:_fn_(*) [line 30]\n  *n$0._h:_fn_(*)=n$1 [line 30]\n " shape="box"]
 	
 
-	 "B_sHandler:instance.fa51c4ce9300778ce59ef012df56a622_3" -> "B_sHandler:instance.fa51c4ce9300778ce59ef012df56a622_2" ;
+	 "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_3" -> "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_2" ;
 "__objc_anonymous_block_A_capture______1.d90c81461d9f2b21a67db8a7dea413da_1" [label="1: Start __objc_anonymous_block_A_capture______1\nFormals:  self:class A* d:class D*\nLocals: \nCaptured:  self:class A* \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
 	
 

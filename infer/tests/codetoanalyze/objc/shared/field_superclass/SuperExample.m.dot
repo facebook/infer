@@ -15,34 +15,34 @@ digraph iCFG {
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_4" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" ;
-"ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_1" [label="1: Start ASuper_init\nFormals:  self:class ASuper*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
+"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_1" [label="1: Start ASuper_init\nFormals:  self:class ASuper*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32]\n " color=yellow style=filled]
 	
 
-	 "ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_1" -> "ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_5" ;
-"ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_2" [label="2: Exit ASuper_init \n  " color=yellow style=filled]
+	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_1" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_5" ;
+"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_2" [label="2: Exit ASuper_init \n  " color=yellow style=filled]
 	
 
-"ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_3" [label="3:  Return Stmt \n   n$0=*&self:class ASuper* [line 35]\n  *&return:struct objc_object*=n$0 [line 35]\n " shape="box"]
+"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_3" [label="3:  Return Stmt \n   n$0=*&self:class ASuper* [line 35]\n  *&return:struct objc_object*=n$0 [line 35]\n " shape="box"]
 	
 
-	 "ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_3" -> "ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_2" ;
-"ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&self:class ASuper* [line 34]\n  *n$1.a:int=4 [line 34]\n " shape="box"]
+	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_3" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_2" ;
+"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&self:class ASuper* [line 34]\n  *n$1.a:int=4 [line 34]\n " shape="box"]
 	
 
-	 "ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_4" -> "ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_3" ;
-"ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&self:class ASuper* [line 33]\n  n$3=_fun_BSuper_init(n$2:class ASuper*) [line 33]\n  *&self:class ASuper*=n$3 [line 33]\n " shape="box"]
+	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_4" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_3" ;
+"init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&self:class ASuper* [line 33]\n  n$3=_fun_BSuper_init(n$2:class ASuper*) [line 33]\n  *&self:class ASuper*=n$3 [line 33]\n " shape="box"]
 	
 
-	 "ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_5" -> "ASuper_initinstance.6f3b40ea0d3fb45d9abe23de189cdfd4_4" ;
-"BSuper_initinstance.5856b96401dc01871bc74560e82e3fc4_1" [label="1: Start BSuper_init\nFormals:  self:class BSuper*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_5" -> "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_4" ;
+"init#BSuper#instance.6678b088cbd2579c21b766781beb8030_1" [label="1: Start BSuper_init\nFormals:  self:class BSuper*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
-	 "BSuper_initinstance.5856b96401dc01871bc74560e82e3fc4_1" -> "BSuper_initinstance.5856b96401dc01871bc74560e82e3fc4_3" ;
-"BSuper_initinstance.5856b96401dc01871bc74560e82e3fc4_2" [label="2: Exit BSuper_init \n  " color=yellow style=filled]
+	 "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_1" -> "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_3" ;
+"init#BSuper#instance.6678b088cbd2579c21b766781beb8030_2" [label="2: Exit BSuper_init \n  " color=yellow style=filled]
 	
 
-"BSuper_initinstance.5856b96401dc01871bc74560e82e3fc4_3" [label="3:  Return Stmt \n   *&return:struct objc_object*=0 [line 19]\n " shape="box"]
+"init#BSuper#instance.6678b088cbd2579c21b766781beb8030_3" [label="3:  Return Stmt \n   *&return:struct objc_object*=0 [line 19]\n " shape="box"]
 	
 
-	 "BSuper_initinstance.5856b96401dc01871bc74560e82e3fc4_3" -> "BSuper_initinstance.5856b96401dc01871bc74560e82e3fc4_2" ;
+	 "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_3" -> "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_2" ;
 }

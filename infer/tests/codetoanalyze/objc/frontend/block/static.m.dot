@@ -1,20 +1,20 @@
 /* @generated */
 digraph iCFG {
-"A_testclass.2696a565613292a22badab2bea8401ba_1" [label="1: Start A_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_1" [label="1: Start A_test\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
-	 "A_testclass.2696a565613292a22badab2bea8401ba_1" -> "A_testclass.2696a565613292a22badab2bea8401ba_4" ;
-"A_testclass.2696a565613292a22badab2bea8401ba_2" [label="2: Exit A_test \n  " color=yellow style=filled]
+	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_1" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_4" ;
+"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_2" [label="2: Exit A_test \n  " color=yellow style=filled]
 	
 
-"A_testclass.2696a565613292a22badab2bea8401ba_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_sharedInstance:struct objc_object* [line 25]\n  *&return:struct objc_object*=n$0 [line 25]\n " shape="box"]
+"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_sharedInstance:struct objc_object* [line 25]\n  *&return:struct objc_object*=n$0 [line 25]\n " shape="box"]
 	
 
-	 "A_testclass.2696a565613292a22badab2bea8401ba_3" -> "A_testclass.2696a565613292a22badab2bea8401ba_2" ;
-"A_testclass.2696a565613292a22badab2bea8401ba_4" [label="4:  Call (_fun___objc_anonymous_block_A_test______1) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test______1); [line 20]\n  n$3=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test______1):unsigned long) [line 20]\n  *&__objc_anonymous_block_A_test______1:class __objc_anonymous_block_A_test______1=n$3 [line 20]\n  n$4=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_sharedInstance:struct objc_object* [line 20]\n  *n$3.A_test_sharedInstance:struct objc_object*=n$4 [line 20]\n  (_fun___objc_anonymous_block_A_test______1)() [line 20]\n " shape="box"]
+	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_2" ;
+"test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_4" [label="4:  Call (_fun___objc_anonymous_block_A_test______1) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test______1); [line 20]\n  n$3=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test______1):unsigned long) [line 20]\n  *&__objc_anonymous_block_A_test______1:class __objc_anonymous_block_A_test______1=n$3 [line 20]\n  n$4=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_sharedInstance:struct objc_object* [line 20]\n  *n$3.A_test_sharedInstance:struct objc_object*=n$4 [line 20]\n  (_fun___objc_anonymous_block_A_test______1)() [line 20]\n " shape="box"]
 	
 
-	 "A_testclass.2696a565613292a22badab2bea8401ba_4" -> "A_testclass.2696a565613292a22badab2bea8401ba_3" ;
+	 "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_4" -> "test#A#class.c69ae9e6be36a2eeb5dcbaa1187c354d_3" ;
 "__objc_anonymous_block_A_test______1.4b4d782fad0701e8da5729a89669e579_1" [label="1: Start __objc_anonymous_block_A_test______1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
@@ -26,17 +26,17 @@ digraph iCFG {
 	
 
 	 "__objc_anonymous_block_A_test______1.4b4d782fad0701e8da5729a89669e579_3" -> "__objc_anonymous_block_A_test______1.4b4d782fad0701e8da5729a89669e579_2" ;
-"A_test_leakclass.0ff539b09a2928944b8132d565942f5b_1" [label="1: Start A_test_leak\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
+"test_leak#A#class.8240788aa53244827857be0e92d27671_1" [label="1: Start A_test_leak\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
 	
 
-	 "A_test_leakclass.0ff539b09a2928944b8132d565942f5b_1" -> "A_test_leakclass.0ff539b09a2928944b8132d565942f5b_3" ;
-"A_test_leakclass.0ff539b09a2928944b8132d565942f5b_2" [label="2: Exit A_test_leak \n  " color=yellow style=filled]
+	 "test_leak#A#class.8240788aa53244827857be0e92d27671_1" -> "test_leak#A#class.8240788aa53244827857be0e92d27671_3" ;
+"test_leak#A#class.8240788aa53244827857be0e92d27671_2" [label="2: Exit A_test_leak \n  " color=yellow style=filled]
 	
 
-"A_test_leakclass.0ff539b09a2928944b8132d565942f5b_3" [label="3:  Call (_fun___objc_anonymous_block_A_test_leak______2) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test_leak______2); [line 30]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test_leak______2):unsigned long) [line 30]\n  *&__objc_anonymous_block_A_test_leak______2:class __objc_anonymous_block_A_test_leak______2=n$7 [line 30]\n  n$8=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_leak_sharedInstance:struct objc_object* [line 30]\n  *n$7.A_test_leak_sharedInstance:struct objc_object*=n$8 [line 30]\n  (_fun___objc_anonymous_block_A_test_leak______2)() [line 30]\n " shape="box"]
+"test_leak#A#class.8240788aa53244827857be0e92d27671_3" [label="3:  Call (_fun___objc_anonymous_block_A_test_leak______2) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test_leak______2); [line 30]\n  n$7=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test_leak______2):unsigned long) [line 30]\n  *&__objc_anonymous_block_A_test_leak______2:class __objc_anonymous_block_A_test_leak______2=n$7 [line 30]\n  n$8=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test_leak_sharedInstance:struct objc_object* [line 30]\n  *n$7.A_test_leak_sharedInstance:struct objc_object*=n$8 [line 30]\n  (_fun___objc_anonymous_block_A_test_leak______2)() [line 30]\n " shape="box"]
 	
 
-	 "A_test_leakclass.0ff539b09a2928944b8132d565942f5b_3" -> "A_test_leakclass.0ff539b09a2928944b8132d565942f5b_2" ;
+	 "test_leak#A#class.8240788aa53244827857be0e92d27671_3" -> "test_leak#A#class.8240788aa53244827857be0e92d27671_2" ;
 "__objc_anonymous_block_A_test_leak______2.c5d678f27e9d82d9f4d1cf0324051fa7_1" [label="1: Start __objc_anonymous_block_A_test_leak______2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
 	
 
@@ -48,25 +48,25 @@ digraph iCFG {
 	
 
 	 "__objc_anonymous_block_A_test_leak______2.c5d678f27e9d82d9f4d1cf0324051fa7_3" -> "__objc_anonymous_block_A_test_leak______2.c5d678f27e9d82d9f4d1cf0324051fa7_2" ;
-"A_test2class.05060cb35af728ef51a7bfeccc0b6d94_1" [label="1: Start A_test2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 36]\n " color=yellow style=filled]
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_1" [label="1: Start A_test2\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 36]\n " color=yellow style=filled]
 	
 
-	 "A_test2class.05060cb35af728ef51a7bfeccc0b6d94_1" -> "A_test2class.05060cb35af728ef51a7bfeccc0b6d94_5" ;
-"A_test2class.05060cb35af728ef51a7bfeccc0b6d94_2" [label="2: Exit A_test2 \n  " color=yellow style=filled]
+	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_1" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" ;
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_2" [label="2: Exit A_test2 \n  " color=yellow style=filled]
 	
 
-"A_test2class.05060cb35af728ef51a7bfeccc0b6d94_3" [label="3:  Return Stmt \n   n$9=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2_sharedInstance:struct objc_object* [line 44]\n  *&return:struct objc_object*=n$9 [line 44]\n " shape="box"]
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" [label="3:  Return Stmt \n   n$9=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2_sharedInstance:struct objc_object* [line 44]\n  *&return:struct objc_object*=n$9 [line 44]\n " shape="box"]
 	
 
-	 "A_test2class.05060cb35af728ef51a7bfeccc0b6d94_3" -> "A_test2class.05060cb35af728ef51a7bfeccc0b6d94_2" ;
-"A_test2class.05060cb35af728ef51a7bfeccc0b6d94_4" [label="4:  Call (_fun___objc_anonymous_block_A_test2______3) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test2______3); [line 39]\n  n$11=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test2______3):unsigned long) [line 39]\n  *&__objc_anonymous_block_A_test2______3:class __objc_anonymous_block_A_test2______3=n$11 [line 39]\n  n$12=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2_sharedInstance:struct objc_object* [line 39]\n  *n$11.A_test2_sharedInstance:struct objc_object*=n$12 [line 39]\n  (_fun___objc_anonymous_block_A_test2______3)() [line 39]\n " shape="box"]
+	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_2" ;
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" [label="4:  Call (_fun___objc_anonymous_block_A_test2______3) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test2______3); [line 39]\n  n$11=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test2______3):unsigned long) [line 39]\n  *&__objc_anonymous_block_A_test2______3:class __objc_anonymous_block_A_test2______3=n$11 [line 39]\n  n$12=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2_sharedInstance:struct objc_object* [line 39]\n  *n$11.A_test2_sharedInstance:struct objc_object*=n$12 [line 39]\n  (_fun___objc_anonymous_block_A_test2______3)() [line 39]\n " shape="box"]
 	
 
-	 "A_test2class.05060cb35af728ef51a7bfeccc0b6d94_4" -> "A_test2class.05060cb35af728ef51a7bfeccc0b6d94_3" ;
-"A_test2class.05060cb35af728ef51a7bfeccc0b6d94_5" [label="5:  BinaryOperatorStmt: Assign \n   n$13=_fun___objc_alloc_no_fail(sizeof(class A):unsigned long) [line 38]\n  n$14=_fun_A_init(n$13:class A*) virtual [line 38]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2_sharedInstance:struct objc_object*=n$14 [line 38]\n " shape="box"]
+	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_3" ;
+"test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" [label="5:  BinaryOperatorStmt: Assign \n   n$13=_fun___objc_alloc_no_fail(sizeof(class A):unsigned long) [line 38]\n  n$14=_fun_A_init(n$13:class A*) virtual [line 38]\n  *&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test2_sharedInstance:struct objc_object*=n$14 [line 38]\n " shape="box"]
 	
 
-	 "A_test2class.05060cb35af728ef51a7bfeccc0b6d94_5" -> "A_test2class.05060cb35af728ef51a7bfeccc0b6d94_4" ;
+	 "test2#A#class.ce50cb13c3345decc567dd4eb6124604_5" -> "test2#A#class.ce50cb13c3345decc567dd4eb6124604_4" ;
 "__objc_anonymous_block_A_test2______3.0e953887bdb7a25b2d68b61a14972fb5_1" [label="1: Start __objc_anonymous_block_A_test2______3\nFormals: \nLocals:  p:struct objc_object* \n   DECLARE_LOCALS(&return,&p); [line 39]\n " color=yellow style=filled]
 	
 
@@ -78,21 +78,21 @@ digraph iCFG {
 	
 
 	 "__objc_anonymous_block_A_test2______3.0e953887bdb7a25b2d68b61a14972fb5_3" -> "__objc_anonymous_block_A_test2______3.0e953887bdb7a25b2d68b61a14972fb5_2" ;
-"A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_1" [label="1: Start A_test3\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
+"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_1" [label="1: Start A_test3\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
 	
 
-	 "A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_1" -> "A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_4" ;
-"A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_2" [label="2: Exit A_test3 \n  " color=yellow style=filled]
+	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_1" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_4" ;
+"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_2" [label="2: Exit A_test3 \n  " color=yellow style=filled]
 	
 
-"A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_3" [label="3:  Return Stmt \n   n$15=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3_i:int [line 55]\n  *&return:int=n$15 [line 55]\n " shape="box"]
+"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" [label="3:  Return Stmt \n   n$15=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3_i:int [line 55]\n  *&return:int=n$15 [line 55]\n " shape="box"]
 	
 
-	 "A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_3" -> "A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_2" ;
-"A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_4" [label="4:  Call (_fun___objc_anonymous_block_A_test3______4) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test3______4); [line 50]\n  n$17=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test3______4):unsigned long) [line 50]\n  *&__objc_anonymous_block_A_test3______4:class __objc_anonymous_block_A_test3______4=n$17 [line 50]\n  n$18=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3_i:int [line 50]\n  *n$17.A_test3_i:int=n$18 [line 50]\n  (_fun___objc_anonymous_block_A_test3______4)() [line 50]\n " shape="box"]
+	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_2" ;
+"test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_4" [label="4:  Call (_fun___objc_anonymous_block_A_test3______4) \n   DECLARE_LOCALS(&__objc_anonymous_block_A_test3______4); [line 50]\n  n$17=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_A_test3______4):unsigned long) [line 50]\n  *&__objc_anonymous_block_A_test3______4:class __objc_anonymous_block_A_test3______4=n$17 [line 50]\n  n$18=*&#GB<codetoanalyze/objc/frontend/block/static.m>$A_test3_i:int [line 50]\n  *n$17.A_test3_i:int=n$18 [line 50]\n  (_fun___objc_anonymous_block_A_test3______4)() [line 50]\n " shape="box"]
 	
 
-	 "A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_4" -> "A_test3class.3d5cf1a8c66c09ea9b5fe59824ce8642_3" ;
+	 "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_4" -> "test3#A#class.041e0eaf033ae8cfa2af48253dfb07ee_3" ;
 "__objc_anonymous_block_A_test3______4.aa5c8617f08575eee528c8138958fcd7_1" [label="1: Start __objc_anonymous_block_A_test3______4\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 50]\n " color=yellow style=filled]
 	
 

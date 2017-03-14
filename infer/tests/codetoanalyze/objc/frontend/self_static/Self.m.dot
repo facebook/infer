@@ -1,196 +1,196 @@
 /* @generated */
 digraph iCFG {
-"B_b_mclass.c3449641bf98c64c953a9b66ea8c8546_1" [label="1: Start B_b_m\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+"b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_1" [label="1: Start B_b_m\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-	 "B_b_mclass.c3449641bf98c64c953a9b66ea8c8546_1" -> "B_b_mclass.c3449641bf98c64c953a9b66ea8c8546_2" ;
-"B_b_mclass.c3449641bf98c64c953a9b66ea8c8546_2" [label="2: Exit B_b_m \n  " color=yellow style=filled]
+	 "b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_1" -> "b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_2" ;
+"b_m#B#class.82af96ad418803b2f96fc1bfa1572c10_2" [label="2: Exit B_b_m \n  " color=yellow style=filled]
 	
 
-"A_test_classclass.da15cfbbe4272c36c44523c2463d809f_1" [label="1: Start A_test_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 50]\n " color=yellow style=filled]
+"test_class#A#class.97324b18f626e66a3c32cec03286eb8d_1" [label="1: Start A_test_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 50]\n " color=yellow style=filled]
 	
 
-	 "A_test_classclass.da15cfbbe4272c36c44523c2463d809f_1" -> "A_test_classclass.da15cfbbe4272c36c44523c2463d809f_2" ;
-"A_test_classclass.da15cfbbe4272c36c44523c2463d809f_2" [label="2: Exit A_test_class \n  " color=yellow style=filled]
+	 "test_class#A#class.97324b18f626e66a3c32cec03286eb8d_1" -> "test_class#A#class.97324b18f626e66a3c32cec03286eb8d_2" ;
+"test_class#A#class.97324b18f626e66a3c32cec03286eb8d_2" [label="2: Exit A_test_class \n  " color=yellow style=filled]
 	
 
-"A_call_test_classclass.8e4305845f9142896eb41f5b6c9dcf7c_1" [label="1: Start A_call_test_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 53]\n " color=yellow style=filled]
+"call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_1" [label="1: Start A_call_test_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 53]\n " color=yellow style=filled]
 	
 
-	 "A_call_test_classclass.8e4305845f9142896eb41f5b6c9dcf7c_1" -> "A_call_test_classclass.8e4305845f9142896eb41f5b6c9dcf7c_3" ;
-"A_call_test_classclass.8e4305845f9142896eb41f5b6c9dcf7c_2" [label="2: Exit A_call_test_class \n  " color=yellow style=filled]
+	 "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_1" -> "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" ;
+"call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_2" [label="2: Exit A_call_test_class \n  " color=yellow style=filled]
 	
 
-"A_call_test_classclass.8e4305845f9142896eb41f5b6c9dcf7c_3" [label="3:  Message Call: test_class \n   _fun_A_test_class() [line 54]\n " shape="box"]
+"call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" [label="3:  Message Call: test_class \n   _fun_A_test_class() [line 54]\n " shape="box"]
 	
 
-	 "A_call_test_classclass.8e4305845f9142896eb41f5b6c9dcf7c_3" -> "A_call_test_classclass.8e4305845f9142896eb41f5b6c9dcf7c_2" ;
-"A_call_alloc_classclass.fa1b4b0eb0e3f1a75227443a6e9df2de_1" [label="1: Start A_call_alloc_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 57]\n " color=yellow style=filled]
+	 "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" -> "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_2" ;
+"call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_1" [label="1: Start A_call_alloc_class\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 57]\n " color=yellow style=filled]
 	
 
-	 "A_call_alloc_classclass.fa1b4b0eb0e3f1a75227443a6e9df2de_1" -> "A_call_alloc_classclass.fa1b4b0eb0e3f1a75227443a6e9df2de_3" ;
-"A_call_alloc_classclass.fa1b4b0eb0e3f1a75227443a6e9df2de_2" [label="2: Exit A_call_alloc_class \n  " color=yellow style=filled]
+	 "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_1" -> "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" ;
+"call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_2" [label="2: Exit A_call_alloc_class \n  " color=yellow style=filled]
 	
 
-"A_call_alloc_classclass.fa1b4b0eb0e3f1a75227443a6e9df2de_3" [label="3:  Call alloc \n   n$1=_fun___objc_alloc_no_fail(sizeof(class A):unsigned long) [line 58]\n " shape="box"]
+"call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" [label="3:  Call alloc \n   n$1=_fun___objc_alloc_no_fail(sizeof(class A):unsigned long) [line 58]\n " shape="box"]
 	
 
-	 "A_call_alloc_classclass.fa1b4b0eb0e3f1a75227443a6e9df2de_3" -> "A_call_alloc_classclass.fa1b4b0eb0e3f1a75227443a6e9df2de_2" ;
-"A_calling_superclass.e618d5cc8fee243f21e2b36705e481da_1" [label="1: Start A_calling_super\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 82]\n " color=yellow style=filled]
+	 "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" -> "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_2" ;
+"calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_1" [label="1: Start A_calling_super\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 82]\n " color=yellow style=filled]
 	
 
-	 "A_calling_superclass.e618d5cc8fee243f21e2b36705e481da_1" -> "A_calling_superclass.e618d5cc8fee243f21e2b36705e481da_3" ;
-"A_calling_superclass.e618d5cc8fee243f21e2b36705e481da_2" [label="2: Exit A_calling_super \n  " color=yellow style=filled]
+	 "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_1" -> "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" ;
+"calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_2" [label="2: Exit A_calling_super \n  " color=yellow style=filled]
 	
 
-"A_calling_superclass.e618d5cc8fee243f21e2b36705e481da_3" [label="3:  Message Call: test_class \n   _fun_C_test_class() [line 83]\n " shape="box"]
+"calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" [label="3:  Message Call: test_class \n   _fun_C_test_class() [line 83]\n " shape="box"]
 	
 
-	 "A_calling_superclass.e618d5cc8fee243f21e2b36705e481da_3" -> "A_calling_superclass.e618d5cc8fee243f21e2b36705e481da_2" ;
-"A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_1" [label="1: Start A_used_in_binary_op:\nFormals:  c:struct objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 94]\n " color=yellow style=filled]
+	 "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_3" -> "calling_super#A#class.0edc1d1d1c4ade7cd9adaa77e7322ad1_2" ;
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_1" [label="1: Start A_used_in_binary_op:\nFormals:  c:struct objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 94]\n " color=yellow style=filled]
 	
 
-	 "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_1" -> "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_5" ;
-"A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_2" [label="2: Exit A_used_in_binary_op: \n  " color=yellow style=filled]
+	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_1" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" ;
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_2" [label="2: Exit A_used_in_binary_op: \n  " color=yellow style=filled]
 	
 
-"A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_3" [label="3: + \n  " ]
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_3" [label="3: + \n  " ]
 	
 
-	 "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_3" -> "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_4" ;
-"A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_4" [label="4:  between_join_and_exit \n  " shape="box"]
+	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_3" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_4" ;
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_4" [label="4:  between_join_and_exit \n  " shape="box"]
 	
 
-	 "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_4" -> "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_2" ;
-"A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_5" [label="5:  BinaryOperatorStmt: NE \n   n$15=*&c:struct objc_class* [line 95]\n " shape="box"]
+	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_4" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_2" ;
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" [label="5:  BinaryOperatorStmt: NE \n   n$15=*&c:struct objc_class* [line 95]\n " shape="box"]
 	
 
-	 "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_5" -> "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_6" ;
-	 "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_5" -> "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_7" ;
-"A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_6" [label="6: Prune (true branch) \n   PRUNE(((sizeof(class A) != n$15) != 0), true); [line 95]\n " shape="invhouse"]
+	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" ;
+	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" ;
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" [label="6: Prune (true branch) \n   PRUNE(((sizeof(class A) != n$15) != 0), true); [line 95]\n " shape="invhouse"]
 	
 
-	 "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_6" -> "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_8" ;
-"A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_7" [label="7: Prune (false branch) \n   PRUNE(((sizeof(class A) != n$15) == 0), false); [line 95]\n " shape="invhouse"]
+	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_8" ;
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" [label="7: Prune (false branch) \n   PRUNE(((sizeof(class A) != n$15) == 0), false); [line 95]\n " shape="invhouse"]
 	
 
-	 "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_7" -> "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_9" ;
-"A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_8" [label="8:  Return Stmt \n   *&return:int=1 [line 96]\n " shape="box"]
+	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_9" ;
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_8" [label="8:  Return Stmt \n   *&return:int=1 [line 96]\n " shape="box"]
 	
 
-	 "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_8" -> "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_2" ;
-"A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_9" [label="9:  Return Stmt \n   *&return:int=0 [line 98]\n " shape="box"]
+	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_8" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_2" ;
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_9" [label="9:  Return Stmt \n   *&return:int=0 [line 98]\n " shape="box"]
 	
 
-	 "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_9" -> "A_used_in_binary_op:class.70964bf8a81ca7d128fea2df97c0c9f9_2" ;
-"A_testinstance.9c07ab3564e397c493a761ff7a89496e_1" [label="1: Start A_test\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n " color=yellow style=filled]
+	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_9" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_2" ;
+"test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_1" [label="1: Start A_test\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n " color=yellow style=filled]
 	
 
-	 "A_testinstance.9c07ab3564e397c493a761ff7a89496e_1" -> "A_testinstance.9c07ab3564e397c493a761ff7a89496e_2" ;
-"A_testinstance.9c07ab3564e397c493a761ff7a89496e_2" [label="2: Exit A_test \n  " color=yellow style=filled]
+	 "test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_1" -> "test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_2" ;
+"test#A#instance.561395dd5ffb844cbbb6c52cf21ce047_2" [label="2: Exit A_test \n  " color=yellow style=filled]
 	
 
-"A_call_testinstance.2d429081f525fd635756831117de1a90_1" [label="1: Start A_call_test\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 46]\n " color=yellow style=filled]
+"call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_1" [label="1: Start A_call_test\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 46]\n " color=yellow style=filled]
 	
 
-	 "A_call_testinstance.2d429081f525fd635756831117de1a90_1" -> "A_call_testinstance.2d429081f525fd635756831117de1a90_3" ;
-"A_call_testinstance.2d429081f525fd635756831117de1a90_2" [label="2: Exit A_call_test \n  " color=yellow style=filled]
+	 "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_1" -> "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_3" ;
+"call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_2" [label="2: Exit A_call_test \n  " color=yellow style=filled]
 	
 
-"A_call_testinstance.2d429081f525fd635756831117de1a90_3" [label="3:  Message Call: test \n   n$0=*&self:class A* [line 47]\n  _fun_A_test(n$0:class A*) virtual [line 47]\n " shape="box"]
+"call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_3" [label="3:  Message Call: test \n   n$0=*&self:class A* [line 47]\n  _fun_A_test(n$0:class A*) virtual [line 47]\n " shape="box"]
 	
 
-	 "A_call_testinstance.2d429081f525fd635756831117de1a90_3" -> "A_call_testinstance.2d429081f525fd635756831117de1a90_2" ;
-"A_call_alloc_instanceinstance.2e2b9c41e6b23b874e5935dc39466ba6_1" [label="1: Start A_call_alloc_instance\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 61]\n " color=yellow style=filled]
+	 "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_3" -> "call_test#A#instance.41031d78ab8c6914ebc9851c442cbd4e_2" ;
+"call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_1" [label="1: Start A_call_alloc_instance\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 61]\n " color=yellow style=filled]
 	
 
-	 "A_call_alloc_instanceinstance.2e2b9c41e6b23b874e5935dc39466ba6_1" -> "A_call_alloc_instanceinstance.2e2b9c41e6b23b874e5935dc39466ba6_3" ;
-"A_call_alloc_instanceinstance.2e2b9c41e6b23b874e5935dc39466ba6_2" [label="2: Exit A_call_alloc_instance \n  " color=yellow style=filled]
+	 "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_1" -> "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" ;
+"call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_2" [label="2: Exit A_call_alloc_instance \n  " color=yellow style=filled]
 	
 
-"A_call_alloc_instanceinstance.2e2b9c41e6b23b874e5935dc39466ba6_3" [label="3:  Call alloc \n   n$3=_fun___objc_alloc_no_fail(sizeof(class A):unsigned long) [line 62]\n " shape="box"]
+"call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" [label="3:  Call alloc \n   n$3=_fun___objc_alloc_no_fail(sizeof(class A):unsigned long) [line 62]\n " shape="box"]
 	
 
-	 "A_call_alloc_instanceinstance.2e2b9c41e6b23b874e5935dc39466ba6_3" -> "A_call_alloc_instanceinstance.2e2b9c41e6b23b874e5935dc39466ba6_2" ;
-"A_call_class_instanceinstance.11c6fd868283486d619926be2c4ed116_1" [label="1: Start A_call_class_instance\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 65]\n " color=yellow style=filled]
+	 "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" -> "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_2" ;
+"call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_1" [label="1: Start A_call_class_instance\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 65]\n " color=yellow style=filled]
 	
 
-	 "A_call_class_instanceinstance.11c6fd868283486d619926be2c4ed116_1" -> "A_call_class_instanceinstance.11c6fd868283486d619926be2c4ed116_3" ;
-"A_call_class_instanceinstance.11c6fd868283486d619926be2c4ed116_2" [label="2: Exit A_call_class_instance \n  " color=yellow style=filled]
+	 "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_1" -> "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" ;
+"call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_2" [label="2: Exit A_call_class_instance \n  " color=yellow style=filled]
 	
 
-"A_call_class_instanceinstance.11c6fd868283486d619926be2c4ed116_3" [label="3:  Message Call: test_class \n   _fun_A_test_class() [line 66]\n " shape="box"]
+"call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" [label="3:  Message Call: test_class \n   _fun_A_test_class() [line 66]\n " shape="box"]
 	
 
-	 "A_call_class_instanceinstance.11c6fd868283486d619926be2c4ed116_3" -> "A_call_class_instanceinstance.11c6fd868283486d619926be2c4ed116_2" ;
-"A_call_class_instance_with_class_nameinstance.14f29f885d58f795beb4b1aaa7906d07_1" [label="1: Start A_call_class_instance_with_class_name\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 69]\n " color=yellow style=filled]
+	 "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" -> "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_2" ;
+"call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_1" [label="1: Start A_call_class_instance_with_class_name\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 69]\n " color=yellow style=filled]
 	
 
-	 "A_call_class_instance_with_class_nameinstance.14f29f885d58f795beb4b1aaa7906d07_1" -> "A_call_class_instance_with_class_nameinstance.14f29f885d58f795beb4b1aaa7906d07_3" ;
-"A_call_class_instance_with_class_nameinstance.14f29f885d58f795beb4b1aaa7906d07_2" [label="2: Exit A_call_class_instance_with_class_name \n  " color=yellow style=filled]
+	 "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_1" -> "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_3" ;
+"call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_2" [label="2: Exit A_call_class_instance_with_class_name \n  " color=yellow style=filled]
 	
 
-"A_call_class_instance_with_class_nameinstance.14f29f885d58f795beb4b1aaa7906d07_3" [label="3:  Message Call: test_class \n   _fun_A_test_class() [line 70]\n " shape="box"]
+"call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_3" [label="3:  Message Call: test_class \n   _fun_A_test_class() [line 70]\n " shape="box"]
 	
 
-	 "A_call_class_instance_with_class_nameinstance.14f29f885d58f795beb4b1aaa7906d07_3" -> "A_call_class_instance_with_class_nameinstance.14f29f885d58f795beb4b1aaa7906d07_2" ;
-"A_tinstance.e26e083185bf06fd235c1ceac935f1fa_1" [label="1: Start A_t\nFormals:  self:class A*\nLocals:  b:class B* \n   DECLARE_LOCALS(&return,&b); [line 73]\n " color=yellow style=filled]
+	 "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_3" -> "call_class_instance_with_class_name#A#instance.1baf88c0fb5549c04909fab0bed63c39_2" ;
+"t#A#instance.e31b9a7bced712626784e2860af1a31b_1" [label="1: Start A_t\nFormals:  self:class A*\nLocals:  b:class B* \n   DECLARE_LOCALS(&return,&b); [line 73]\n " color=yellow style=filled]
 	
 
-	 "A_tinstance.e26e083185bf06fd235c1ceac935f1fa_1" -> "A_tinstance.e26e083185bf06fd235c1ceac935f1fa_4" ;
-"A_tinstance.e26e083185bf06fd235c1ceac935f1fa_2" [label="2: Exit A_t \n  " color=yellow style=filled]
+	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_1" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_4" ;
+"t#A#instance.e31b9a7bced712626784e2860af1a31b_2" [label="2: Exit A_t \n  " color=yellow style=filled]
 	
 
-"A_tinstance.e26e083185bf06fd235c1ceac935f1fa_3" [label="3:  Message Call: b_m \n   _fun_B_b_m() [line 75]\n " shape="box"]
+"t#A#instance.e31b9a7bced712626784e2860af1a31b_3" [label="3:  Message Call: b_m \n   _fun_B_b_m() [line 75]\n " shape="box"]
 	
 
-	 "A_tinstance.e26e083185bf06fd235c1ceac935f1fa_3" -> "A_tinstance.e26e083185bf06fd235c1ceac935f1fa_2" ;
-"A_tinstance.e26e083185bf06fd235c1ceac935f1fa_4" [label="4:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class B):unsigned long) [line 74]\n  n$7=_fun_NSObject_init(n$6:class B*) virtual [line 74]\n  *&b:class B*=n$7 [line 74]\n " shape="box"]
+	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_3" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_2" ;
+"t#A#instance.e31b9a7bced712626784e2860af1a31b_4" [label="4:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(class B):unsigned long) [line 74]\n  n$7=_fun_NSObject_init(n$6:class B*) virtual [line 74]\n  *&b:class B*=n$7 [line 74]\n " shape="box"]
 	
 
-	 "A_tinstance.e26e083185bf06fd235c1ceac935f1fa_4" -> "A_tinstance.e26e083185bf06fd235c1ceac935f1fa_3" ;
-"A_initinstance.0eaafe8d41de0b5cab8d4476439af05d_1" [label="1: Start A_init\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 86]\n " color=yellow style=filled]
+	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_4" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_3" ;
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" [label="1: Start A_init\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 86]\n " color=yellow style=filled]
 	
 
-	 "A_initinstance.0eaafe8d41de0b5cab8d4476439af05d_1" -> "A_initinstance.0eaafe8d41de0b5cab8d4476439af05d_3" ;
-"A_initinstance.0eaafe8d41de0b5cab8d4476439af05d_2" [label="2: Exit A_init \n  " color=yellow style=filled]
+	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" ;
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" [label="2: Exit A_init \n  " color=yellow style=filled]
 	
 
-"A_initinstance.0eaafe8d41de0b5cab8d4476439af05d_3" [label="3:  Message Call: init \n   n$11=*&self:class A* [line 87]\n  n$12=_fun_NSObject_init(n$11:class A*) [line 87]\n " shape="box"]
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" [label="3:  Message Call: init \n   n$11=*&self:class A* [line 87]\n  n$12=_fun_NSObject_init(n$11:class A*) [line 87]\n " shape="box"]
 	
 
-	 "A_initinstance.0eaafe8d41de0b5cab8d4476439af05d_3" -> "A_initinstance.0eaafe8d41de0b5cab8d4476439af05d_2" ;
-"A_loggerNameinstance.dbe7038f327a3dcb1f8c0f718498ccc9_1" [label="1: Start A_loggerName\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 90]\n " color=yellow style=filled]
+	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" ;
+"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_1" [label="1: Start A_loggerName\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 90]\n " color=yellow style=filled]
 	
 
-	 "A_loggerNameinstance.dbe7038f327a3dcb1f8c0f718498ccc9_1" -> "A_loggerNameinstance.dbe7038f327a3dcb1f8c0f718498ccc9_3" ;
-"A_loggerNameinstance.dbe7038f327a3dcb1f8c0f718498ccc9_2" [label="2: Exit A_loggerName \n  " color=yellow style=filled]
+	 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_1" -> "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" ;
+"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_2" [label="2: Exit A_loggerName \n  " color=yellow style=filled]
 	
 
-"A_loggerNameinstance.dbe7038f327a3dcb1f8c0f718498ccc9_3" [label="3:  Return Stmt \n   n$14=_fun_NSStringFromClass(sizeof(class A):unsigned long) [line 91]\n  *&return:class NSString*=n$14 [line 91]\n " shape="box"]
+"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" [label="3:  Return Stmt \n   n$14=_fun_NSStringFromClass(sizeof(class A):unsigned long) [line 91]\n  *&return:class NSString*=n$14 [line 91]\n " shape="box"]
 	
 
-	 "A_loggerNameinstance.dbe7038f327a3dcb1f8c0f718498ccc9_3" -> "A_loggerNameinstance.dbe7038f327a3dcb1f8c0f718498ccc9_2" ;
-"A_use_class_in_other_ways:instance.fddf6dc4997c3780ef4f234353d8e4e5_1" [label="1: Start A_use_class_in_other_ways:\nFormals:  self:class A* object:class B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 78]\n " color=yellow style=filled]
+	 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" -> "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_2" ;
+"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_1" [label="1: Start A_use_class_in_other_ways:\nFormals:  self:class A* object:class B*\nLocals:  \n   DECLARE_LOCALS(&return); [line 78]\n " color=yellow style=filled]
 	
 
-	 "A_use_class_in_other_ways:instance.fddf6dc4997c3780ef4f234353d8e4e5_1" -> "A_use_class_in_other_ways:instance.fddf6dc4997c3780ef4f234353d8e4e5_3" ;
-"A_use_class_in_other_ways:instance.fddf6dc4997c3780ef4f234353d8e4e5_2" [label="2: Exit A_use_class_in_other_ways: \n  " color=yellow style=filled]
+	 "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_1" -> "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" ;
+"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_2" [label="2: Exit A_use_class_in_other_ways: \n  " color=yellow style=filled]
 	
 
-"A_use_class_in_other_ways:instance.fddf6dc4997c3780ef4f234353d8e4e5_3" [label="3:  Return Stmt \n   n$8=*&object:class B* [line 79]\n  n$10=_fun_B_isC:(n$8:class B*,sizeof(class A):unsigned long) virtual [line 79]\n  *&return:_Bool=n$10 [line 79]\n " shape="box"]
+"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" [label="3:  Return Stmt \n   n$8=*&object:class B* [line 79]\n  n$10=_fun_B_isC:(n$8:class B*,sizeof(class A):unsigned long) virtual [line 79]\n  *&return:_Bool=n$10 [line 79]\n " shape="box"]
 	
 
-	 "A_use_class_in_other_ways:instance.fddf6dc4997c3780ef4f234353d8e4e5_3" -> "A_use_class_in_other_ways:instance.fddf6dc4997c3780ef4f234353d8e4e5_2" ;
-"B_isC:instance.f4a43e72d7f1cf69316b3a3975cceb26_1" [label="1: Start B_isC:\nFormals:  self:class B* aClass:struct objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+	 "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" -> "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_2" ;
+"isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_1" [label="1: Start B_isC:\nFormals:  self:class B* aClass:struct objc_class*\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
 	
 
-	 "B_isC:instance.f4a43e72d7f1cf69316b3a3975cceb26_1" -> "B_isC:instance.f4a43e72d7f1cf69316b3a3975cceb26_3" ;
-"B_isC:instance.f4a43e72d7f1cf69316b3a3975cceb26_2" [label="2: Exit B_isC: \n  " color=yellow style=filled]
+	 "isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_1" -> "isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_3" ;
+"isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_2" [label="2: Exit B_isC: \n  " color=yellow style=filled]
 	
 
-"B_isC:instance.f4a43e72d7f1cf69316b3a3975cceb26_3" [label="3:  Return Stmt \n   *&return:_Bool=1 [line 24]\n " shape="box"]
+"isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_3" [label="3:  Return Stmt \n   *&return:_Bool=1 [line 24]\n " shape="box"]
 	
 
-	 "B_isC:instance.f4a43e72d7f1cf69316b3a3975cceb26_3" -> "B_isC:instance.f4a43e72d7f1cf69316b3a3975cceb26_2" ;
+	 "isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_3" -> "isC:#B#instance.d3c47b42de9626ee49d20d57a1f26839_2" ;
 }

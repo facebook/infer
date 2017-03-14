@@ -120,19 +120,19 @@ digraph iCFG {
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_6" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" ;
-"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_1" [label="1: Start Auto_autorelease_main\nFormals:  self:class Auto*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 22]\n " color=yellow style=filled]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" [label="1: Start Auto_autorelease_main\nFormals:  self:class Auto*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 22]\n " color=yellow style=filled]
 	
 
-	 "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_1" -> "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_4" ;
-"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_2" [label="2: Exit Auto_autorelease_main \n  " color=yellow style=filled]
+	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_1" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" ;
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" [label="2: Exit Auto_autorelease_main \n  " color=yellow style=filled]
 	
 
-"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_3" [label="3:  Return Stmt \n   n$0=*&s:class NSString* [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString*) [line 24]\n  *&return:class NSString*=n$1 [line 24]\n " shape="box"]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:class NSString* [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString*) [line 24]\n  *&return:class NSString*=n$1 [line 24]\n " shape="box"]
 	
 
-	 "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_3" -> "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_2" ;
-"Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 23]\n  *&s:class NSString*=n$2 [line 23]\n " shape="box"]
+	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" ;
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 23]\n  *&s:class NSString*=n$2 [line 23]\n " shape="box"]
 	
 
-	 "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_4" -> "Auto_autorelease_maininstance.7b1ecc8f9179fd9fe1a9c5ff9a45bcac_3" ;
+	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_4" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" ;
 }

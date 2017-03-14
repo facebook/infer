@@ -1,14 +1,14 @@
 /* @generated */
 digraph iCFG {
-"A_addTarget:instance.f9b8c27fb4040686b1f4039aeb1814e4_1" [label="1: Start A_addTarget:\nFormals:  self:class A* target:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+"addTarget:#A#instance.c7aa036c11ea8510fec5cb7bd35bee01_1" [label="1: Start A_addTarget:\nFormals:  self:class A* target:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
-	 "A_addTarget:instance.f9b8c27fb4040686b1f4039aeb1814e4_1" -> "A_addTarget:instance.f9b8c27fb4040686b1f4039aeb1814e4_3" ;
-"A_addTarget:instance.f9b8c27fb4040686b1f4039aeb1814e4_2" [label="2: Exit A_addTarget: \n  " color=yellow style=filled]
+	 "addTarget:#A#instance.c7aa036c11ea8510fec5cb7bd35bee01_1" -> "addTarget:#A#instance.c7aa036c11ea8510fec5cb7bd35bee01_3" ;
+"addTarget:#A#instance.c7aa036c11ea8510fec5cb7bd35bee01_2" [label="2: Exit A_addTarget: \n  " color=yellow style=filled]
 	
 
-"A_addTarget:instance.f9b8c27fb4040686b1f4039aeb1814e4_3" [label="3:  Return Stmt \n   n$0=*&target:class A* [line 19]\n  n$1=_fun_A_x(n$0:class A*) [line 19]\n  *&return:int=n$1 [line 19]\n " shape="box"]
+"addTarget:#A#instance.c7aa036c11ea8510fec5cb7bd35bee01_3" [label="3:  Return Stmt \n   n$0=*&target:class A* [line 19]\n  n$1=_fun_A_x(n$0:class A*) [line 19]\n  *&return:int=n$1 [line 19]\n " shape="box"]
 	
 
-	 "A_addTarget:instance.f9b8c27fb4040686b1f4039aeb1814e4_3" -> "A_addTarget:instance.f9b8c27fb4040686b1f4039aeb1814e4_2" ;
+	 "addTarget:#A#instance.c7aa036c11ea8510fec5cb7bd35bee01_3" -> "addTarget:#A#instance.c7aa036c11ea8510fec5cb7bd35bee01_2" ;
 }

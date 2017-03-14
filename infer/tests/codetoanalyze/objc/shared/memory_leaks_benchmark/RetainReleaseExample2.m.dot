@@ -126,15 +126,15 @@ digraph iCFG {
 	
 
 	 "test7.b04083e53e242626595e2b8ea327e525_7" -> "test7.b04083e53e242626595e2b8ea327e525_3" ;
-"RR2_initinstance.afac9743e105c15219e4726c1deef8be_1" [label="1: Start RR2_init\nFormals:  self:class RR2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+"init#RR2#instance.e62b6145f1458c552bb2d81e46e17a03_1" [label="1: Start RR2_init\nFormals:  self:class RR2*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
-	 "RR2_initinstance.afac9743e105c15219e4726c1deef8be_1" -> "RR2_initinstance.afac9743e105c15219e4726c1deef8be_3" ;
-"RR2_initinstance.afac9743e105c15219e4726c1deef8be_2" [label="2: Exit RR2_init \n  " color=yellow style=filled]
+	 "init#RR2#instance.e62b6145f1458c552bb2d81e46e17a03_1" -> "init#RR2#instance.e62b6145f1458c552bb2d81e46e17a03_3" ;
+"init#RR2#instance.e62b6145f1458c552bb2d81e46e17a03_2" [label="2: Exit RR2_init \n  " color=yellow style=filled]
 	
 
-"RR2_initinstance.afac9743e105c15219e4726c1deef8be_3" [label="3:  Return Stmt \n   n$0=*&self:class RR2* [line 19]\n  *&return:struct objc_object*=n$0 [line 19]\n " shape="box"]
+"init#RR2#instance.e62b6145f1458c552bb2d81e46e17a03_3" [label="3:  Return Stmt \n   n$0=*&self:class RR2* [line 19]\n  *&return:struct objc_object*=n$0 [line 19]\n " shape="box"]
 	
 
-	 "RR2_initinstance.afac9743e105c15219e4726c1deef8be_3" -> "RR2_initinstance.afac9743e105c15219e4726c1deef8be_2" ;
+	 "init#RR2#instance.e62b6145f1458c552bb2d81e46e17a03_3" -> "init#RR2#instance.e62b6145f1458c552bb2d81e46e17a03_2" ;
 }

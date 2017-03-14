@@ -1,22 +1,22 @@
 /* @generated */
 digraph iCFG {
-"NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_1" [label="1: Start NpeMallocC_test\nFormals:  self:class NpeMallocC*\nLocals:  person:struct Person* \n   DECLARE_LOCALS(&return,&person); [line 24]\n " color=yellow style=filled]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_1" [label="1: Start NpeMallocC_test\nFormals:  self:class NpeMallocC*\nLocals:  person:struct Person* \n   DECLARE_LOCALS(&return,&person); [line 24]\n " color=yellow style=filled]
 	
 
-	 "NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_1" -> "NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_5" ;
-"NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_2" [label="2: Exit NpeMallocC_test \n  " color=yellow style=filled]
+	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_1" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" ;
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_2" [label="2: Exit NpeMallocC_test \n  " color=yellow style=filled]
 	
 
-"NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_3" [label="3:  Return Stmt \n   n$0=*&person:struct Person* [line 27]\n  *&return:struct Person*=n$0 [line 27]\n " shape="box"]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" [label="3:  Return Stmt \n   n$0=*&person:struct Person* [line 27]\n  *&return:struct Person*=n$0 [line 27]\n " shape="box"]
 	
 
-	 "NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_3" -> "NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_2" ;
-"NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&person:struct Person* [line 26]\n  *n$1.x:int=10 [line 26]\n " shape="box"]
+	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_2" ;
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&person:struct Person* [line 26]\n  *n$1.x:int=10 [line 26]\n " shape="box"]
 	
 
-	 "NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_4" -> "NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_3" ;
-"NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_5" [label="5:  DeclStmt \n   n$2=_fun_malloc_no_fail(sizeof(struct Person):struct Person) [line 25]\n  *&person:struct Person*=n$2 [line 25]\n " shape="box"]
+	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" ;
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" [label="5:  DeclStmt \n   n$2=_fun_malloc_no_fail(sizeof(struct Person):struct Person) [line 25]\n  *&person:struct Person*=n$2 [line 25]\n " shape="box"]
 	
 
-	 "NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_5" -> "NpeMallocC_testinstance.50525c03b73391bbe8cbb6e50459dc8c_4" ;
+	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" ;
 }

@@ -1,53 +1,53 @@
 /* @generated */
 digraph iCFG {
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_1" [label="1: Start My_manager_blockReleaseTODO\nFormals:  self:class My_manager*\nLocals:  newImage:struct CGImage* context:struct CGContext* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&newImage,&context,&z,&b); [line 20]\n " color=yellow style=filled]
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_1" [label="1: Start My_manager_blockReleaseTODO\nFormals:  self:class My_manager*\nLocals:  newImage:struct CGImage* context:struct CGContext* z:int b:_fn_(*) \n   DECLARE_LOCALS(&return,&newImage,&context,&z,&b); [line 20]\n " color=yellow style=filled]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_1" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_12" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_2" [label="2: Exit My_manager_blockReleaseTODO \n  " color=yellow style=filled]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_1" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_12" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_2" [label="2: Exit My_manager_blockReleaseTODO \n  " color=yellow style=filled]
 	
 
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_3" [label="3:  Return Stmt \n   n$0=*&z:int [line 32]\n  *&return:int=n$0 [line 32]\n " shape="box"]
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_3" [label="3:  Return Stmt \n   n$0=*&z:int [line 32]\n  *&return:int=n$0 [line 32]\n " shape="box"]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_3" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_2" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_4" [label="4: + \n  " ]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_3" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_2" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_4" [label="4: + \n  " ]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_4" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_3" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_5" [label="5: Prune (true branch) \n   n$1=*&context:struct CGContext* [line 30]\n  PRUNE((n$1 != 0), true); [line 30]\n " shape="invhouse"]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_4" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_3" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_5" [label="5: Prune (true branch) \n   n$1=*&context:struct CGContext* [line 30]\n  PRUNE((n$1 != 0), true); [line 30]\n " shape="invhouse"]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_5" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_7" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_6" [label="6: Prune (false branch) \n   n$1=*&context:struct CGContext* [line 30]\n  PRUNE((n$1 == 0), false); [line 30]\n " shape="invhouse"]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_5" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_7" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_6" [label="6: Prune (false branch) \n   n$1=*&context:struct CGContext* [line 30]\n  PRUNE((n$1 == 0), false); [line 30]\n " shape="invhouse"]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_6" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_4" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_7" [label="7:  Call _fun_CGContextRelease \n   n$2=*&context:struct CGContext* [line 31]\n  _fun_CGContextRelease(n$2:struct CGContext*) [line 31]\n " shape="box"]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_6" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_4" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_7" [label="7:  Call _fun_CGContextRelease \n   n$2=*&context:struct CGContext* [line 31]\n  _fun_CGContextRelease(n$2:struct CGContext*) [line 31]\n " shape="box"]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_7" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_4" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_8" [label="8:  Call n$3 \n   n$3=*&b:_fn_(*) [line 29]\n  n$4=*&z:int [line 29]\n  n$3(n$4:int) [line 29]\n " shape="box"]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_7" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_4" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" [label="8:  Call n$3 \n   n$3=*&b:_fn_(*) [line 29]\n  n$4=*&z:int [line 29]\n  n$3(n$4:int) [line 29]\n " shape="box"]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_8" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_5" ;
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_8" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_6" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_9" [label="9:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_blockReleaseTODO______1); [line 25]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_blockReleaseTODO______1):unsigned long) [line 25]\n  *&__objc_anonymous_block_My_manager_blockReleaseTODO______1:class __objc_anonymous_block_My_manager_blockReleaseTODO______1=n$8 [line 25]\n  n$9=*&newImage:struct CGImage* [line 25]\n  *n$8.newImage:struct CGImage*=n$9 [line 25]\n  n$5=*&newImage:struct CGImage* [line 25]\n  *&b:_fn_(*)=(_fun___objc_anonymous_block_My_manager_blockReleaseTODO______1,n$5) [line 25]\n " shape="box"]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_5" ;
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_6" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" [label="9:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_blockReleaseTODO______1); [line 25]\n  n$8=_fun___objc_alloc_no_fail(sizeof(class __objc_anonymous_block_My_manager_blockReleaseTODO______1):unsigned long) [line 25]\n  *&__objc_anonymous_block_My_manager_blockReleaseTODO______1:class __objc_anonymous_block_My_manager_blockReleaseTODO______1=n$8 [line 25]\n  n$9=*&newImage:struct CGImage* [line 25]\n  *n$8.newImage:struct CGImage*=n$9 [line 25]\n  n$5=*&newImage:struct CGImage* [line 25]\n  *&b:_fn_(*)=(_fun___objc_anonymous_block_My_manager_blockReleaseTODO______1,n$5) [line 25]\n " shape="box"]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_9" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_8" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_10" [label="10:  DeclStmt \n   n$10=*&context:struct CGContext* [line 24]\n  n$11=_fun_CGBitmapContextCreateImage(n$10:struct CGContext*) [line 24]\n  *&newImage:struct CGImage*=n$11 [line 24]\n " shape="box"]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_10" [label="10:  DeclStmt \n   n$10=*&context:struct CGContext* [line 24]\n  n$11=_fun_CGBitmapContextCreateImage(n$10:struct CGContext*) [line 24]\n  *&newImage:struct CGImage*=n$11 [line 24]\n " shape="box"]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_10" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_9" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_11" [label="11:  DeclStmt \n   n$12=_fun_CGBitmapContextCreate(0:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,0:struct CGColorSpace*,0:unsigned int) [line 23]\n  *&context:struct CGContext*=n$12 [line 23]\n " shape="box"]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_10" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_11" [label="11:  DeclStmt \n   n$12=_fun_CGBitmapContextCreate(0:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,0:struct CGColorSpace*,0:unsigned int) [line 23]\n  *&context:struct CGContext*=n$12 [line 23]\n " shape="box"]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_11" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_10" ;
-"My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_12" [label="12:  DeclStmt \n   *&z:int=3 [line 22]\n " shape="box"]
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_11" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_10" ;
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_12" [label="12:  DeclStmt \n   *&z:int=3 [line 22]\n " shape="box"]
 	
 
-	 "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_12" -> "My_manager_blockReleaseTODOinstance.25cc26e33153817800aea82970c4a4c4_11" ;
+	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_12" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_11" ;
 "__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_1" [label="1: Start __objc_anonymous_block_My_manager_blockReleaseTODO______1\nFormals:  newImage:struct CGImage* a:int\nLocals: \nCaptured:  newImage:struct CGImage* \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 

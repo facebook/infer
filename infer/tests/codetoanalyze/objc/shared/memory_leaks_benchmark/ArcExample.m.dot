@@ -1,33 +1,33 @@
 /* @generated */
 digraph iCFG {
-"ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_1" [label="1: Start ArcA_getS\nFormals:  self:class ArcA*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 22]\n " color=yellow style=filled]
+"getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_1" [label="1: Start ArcA_getS\nFormals:  self:class ArcA*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 22]\n " color=yellow style=filled]
 	
 
-	 "ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_1" -> "ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_4" ;
-"ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_2" [label="2: Exit ArcA_getS \n  " color=yellow style=filled]
+	 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_1" -> "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_4" ;
+"getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_2" [label="2: Exit ArcA_getS \n  " color=yellow style=filled]
 	
 
-"ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_3" [label="3:  Return Stmt \n   n$0=*&s:class NSString* [line 24]\n  *&return:class NSString*=n$0 [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString*) [line 24]\n " shape="box"]
+"getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_3" [label="3:  Return Stmt \n   n$0=*&s:class NSString* [line 24]\n  *&return:class NSString*=n$0 [line 24]\n  n$1=_fun___set_autorelease_attribute(n$0:class NSString*) [line 24]\n " shape="box"]
 	
 
-	 "ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_3" -> "ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_2" ;
-"ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 23]\n  *&s:class NSString*=n$2 [line 23]\n " shape="box"]
+	 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_3" -> "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_2" ;
+"getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 23]\n  *&s:class NSString*=n$2 [line 23]\n " shape="box"]
 	
 
-	 "ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_4" -> "ArcA_getSinstance.bd6a147882bb9156025cb893e4689bcd_3" ;
-"ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_1" [label="1: Start ArcA_newS\nFormals:  self:class ArcA*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 28]\n " color=yellow style=filled]
+	 "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_4" -> "getS#ArcA#instance.a6d142da8215d5903690f8a054289ac7_3" ;
+"newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_1" [label="1: Start ArcA_newS\nFormals:  self:class ArcA*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 28]\n " color=yellow style=filled]
 	
 
-	 "ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_1" -> "ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_4" ;
-"ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_2" [label="2: Exit ArcA_newS \n  " color=yellow style=filled]
+	 "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_1" -> "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_4" ;
+"newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_2" [label="2: Exit ArcA_newS \n  " color=yellow style=filled]
 	
 
-"ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_3" [label="3:  Return Stmt \n   n$3=*&s:class NSString* [line 30]\n  *&return:class NSString*=n$3 [line 30]\n " shape="box"]
+"newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_3" [label="3:  Return Stmt \n   n$3=*&s:class NSString* [line 30]\n  *&return:class NSString*=n$3 [line 30]\n " shape="box"]
 	
 
-	 "ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_3" -> "ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_2" ;
-"ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_4" [label="4:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 29]\n  *&s:class NSString*=n$4 [line 29]\n " shape="box"]
+	 "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_3" -> "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_2" ;
+"newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_4" [label="4:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(class NSString):unsigned long) [line 29]\n  *&s:class NSString*=n$4 [line 29]\n " shape="box"]
 	
 
-	 "ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_4" -> "ArcA_newSinstance.57ab6fa22eb9aa3ffe3437f16c887440_3" ;
+	 "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_4" -> "newS#ArcA#instance.9d1f2aa4ea1ccfd32c1438724cfc19ba_3" ;
 }

@@ -1,101 +1,101 @@
 /* @generated */
 digraph iCFG {
-"Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_1" [label="1: Start Boxing_getIntExp\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* y:int x:int \n   DECLARE_LOCALS(&return,&n,&y,&x); [line 14]\n " color=yellow style=filled]
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_1" [label="1: Start Boxing_getIntExp\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* y:int x:int \n   DECLARE_LOCALS(&return,&n,&y,&x); [line 14]\n " color=yellow style=filled]
 	
 
-	 "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_1" -> "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_6" ;
-"Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_2" [label="2: Exit Boxing_getIntExp \n  " color=yellow style=filled]
+	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_1" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" ;
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_2" [label="2: Exit Boxing_getIntExp \n  " color=yellow style=filled]
 	
 
-"Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 18]\n  n$1=*&y:int [line 18]\n  n$2=_fun_NSNumber_numberWithInt:((n$0 + n$1):int) [line 18]\n  *&return:class NSNumber*=n$2 [line 18]\n " shape="box"]
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 18]\n  n$1=*&y:int [line 18]\n  n$2=_fun_NSNumber_numberWithInt:((n$0 + n$1):int) [line 18]\n  *&return:class NSNumber*=n$2 [line 18]\n " shape="box"]
 	
 
-	 "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_3" -> "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_2" ;
-"Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_4" [label="4:  DeclStmt \n   n$3=*&x:int [line 17]\n  n$4=*&y:int [line 17]\n  n$5=_fun_NSNumber_numberWithInt:((n$3 + n$4):int) [line 17]\n  *&n:class NSNumber*=n$5 [line 17]\n " shape="box"]
+	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_2" ;
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" [label="4:  DeclStmt \n   n$3=*&x:int [line 17]\n  n$4=*&y:int [line 17]\n  n$5=_fun_NSNumber_numberWithInt:((n$3 + n$4):int) [line 17]\n  *&n:class NSNumber*=n$5 [line 17]\n " shape="box"]
 	
 
-	 "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_4" -> "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_3" ;
-"Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_5" [label="5:  DeclStmt \n   *&y:int=5 [line 16]\n " shape="box"]
+	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_3" ;
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" [label="5:  DeclStmt \n   *&y:int=5 [line 16]\n " shape="box"]
 	
 
-	 "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_5" -> "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_4" ;
-"Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_6" [label="6:  DeclStmt \n   *&x:int=4 [line 15]\n " shape="box"]
+	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_4" ;
+"getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" [label="6:  DeclStmt \n   *&x:int=4 [line 15]\n " shape="box"]
 	
 
-	 "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_6" -> "Boxing_getIntExpinstance.bb83f57596e81eac5ccad95241feeafd_5" ;
-"Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_1" [label="1: Start Boxing_getInt\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 21]\n " color=yellow style=filled]
+	 "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_6" -> "getIntExp#Boxing#instance.1230c4f8d594629f186c72bd450c75b1_5" ;
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" [label="1: Start Boxing_getInt\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 21]\n " color=yellow style=filled]
 	
 
-	 "Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_1" -> "Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_4" ;
-"Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_2" [label="2: Exit Boxing_getInt \n  " color=yellow style=filled]
+	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_1" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" ;
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" [label="2: Exit Boxing_getInt \n  " color=yellow style=filled]
 	
 
-"Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_3" [label="3:  Return Stmt \n   n$6=_fun_NSNumber_numberWithInt:(5:int) [line 23]\n  *&return:class NSNumber*=n$6 [line 23]\n " shape="box"]
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" [label="3:  Return Stmt \n   n$6=_fun_NSNumber_numberWithInt:(5:int) [line 23]\n  *&return:class NSNumber*=n$6 [line 23]\n " shape="box"]
 	
 
-	 "Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_3" -> "Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_2" ;
-"Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_4" [label="4:  DeclStmt \n   n$7=_fun_NSNumber_numberWithInt:(5:int) [line 22]\n  *&n:class NSNumber*=n$7 [line 22]\n " shape="box"]
+	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_2" ;
+"getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" [label="4:  DeclStmt \n   n$7=_fun_NSNumber_numberWithInt:(5:int) [line 22]\n  *&n:class NSNumber*=n$7 [line 22]\n " shape="box"]
 	
 
-	 "Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_4" -> "Boxing_getIntinstance.94b1fc7f41aa34c6dab602c1e54b19f3_3" ;
-"Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_1" [label="1: Start Boxing_getFloat\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 26]\n " color=yellow style=filled]
+	 "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_4" -> "getInt#Boxing#instance.6b1205ea87bb285944ca74c0597dcf85_3" ;
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" [label="1: Start Boxing_getFloat\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 26]\n " color=yellow style=filled]
 	
 
-	 "Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_1" -> "Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_4" ;
-"Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_2" [label="2: Exit Boxing_getFloat \n  " color=yellow style=filled]
+	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_1" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" ;
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" [label="2: Exit Boxing_getFloat \n  " color=yellow style=filled]
 	
 
-"Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_3" [label="3:  Return Stmt \n   n$8=_fun_NSNumber_numberWithFloat:(1.500000:float) [line 28]\n  *&return:class NSNumber*=n$8 [line 28]\n " shape="box"]
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" [label="3:  Return Stmt \n   n$8=_fun_NSNumber_numberWithFloat:(1.500000:float) [line 28]\n  *&return:class NSNumber*=n$8 [line 28]\n " shape="box"]
 	
 
-	 "Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_3" -> "Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_2" ;
-"Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_4" [label="4:  DeclStmt \n   n$9=_fun_NSNumber_numberWithFloat:(1.500000:float) [line 27]\n  *&n:class NSNumber*=n$9 [line 27]\n " shape="box"]
+	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_2" ;
+"getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" [label="4:  DeclStmt \n   n$9=_fun_NSNumber_numberWithFloat:(1.500000:float) [line 27]\n  *&n:class NSNumber*=n$9 [line 27]\n " shape="box"]
 	
 
-	 "Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_4" -> "Boxing_getFloatinstance.f1bd66972c92d48ce9f7e18d0db69811_3" ;
-"Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_1" [label="1: Start Boxing_getDouble\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 31]\n " color=yellow style=filled]
+	 "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_4" -> "getFloat#Boxing#instance.3de027274316c0cdfd230c6dbd0333a0_3" ;
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" [label="1: Start Boxing_getDouble\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 31]\n " color=yellow style=filled]
 	
 
-	 "Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_1" -> "Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_4" ;
-"Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_2" [label="2: Exit Boxing_getDouble \n  " color=yellow style=filled]
+	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_1" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" ;
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" [label="2: Exit Boxing_getDouble \n  " color=yellow style=filled]
 	
 
-"Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_3" [label="3:  Return Stmt \n   n$10=_fun_NSNumber_numberWithDouble:(1.500000:double) [line 33]\n  *&return:class NSNumber*=n$10 [line 33]\n " shape="box"]
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" [label="3:  Return Stmt \n   n$10=_fun_NSNumber_numberWithDouble:(1.500000:double) [line 33]\n  *&return:class NSNumber*=n$10 [line 33]\n " shape="box"]
 	
 
-	 "Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_3" -> "Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_2" ;
-"Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_4" [label="4:  DeclStmt \n   n$11=_fun_NSNumber_numberWithDouble:(1.500000:double) [line 32]\n  *&n:class NSNumber*=n$11 [line 32]\n " shape="box"]
+	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_2" ;
+"getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" [label="4:  DeclStmt \n   n$11=_fun_NSNumber_numberWithDouble:(1.500000:double) [line 32]\n  *&n:class NSNumber*=n$11 [line 32]\n " shape="box"]
 	
 
-	 "Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_4" -> "Boxing_getDoubleinstance.1b549ee506e250741a74bf7a757e01dd_3" ;
-"Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_1" [label="1: Start Boxing_getBool\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 36]\n " color=yellow style=filled]
+	 "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_4" -> "getDouble#Boxing#instance.d2ccf367cc9eb4c0b5e345694f262070_3" ;
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" [label="1: Start Boxing_getBool\nFormals:  self:class Boxing*\nLocals:  n:class NSNumber* \n   DECLARE_LOCALS(&return,&n); [line 36]\n " color=yellow style=filled]
 	
 
-	 "Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_1" -> "Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_4" ;
-"Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_2" [label="2: Exit Boxing_getBool \n  " color=yellow style=filled]
+	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_1" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" ;
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" [label="2: Exit Boxing_getBool \n  " color=yellow style=filled]
 	
 
-"Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_3" [label="3:  Return Stmt \n   n$12=_fun_NSNumber_numberWithBool:(1:_Bool) [line 38]\n  *&return:class NSNumber*=n$12 [line 38]\n " shape="box"]
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" [label="3:  Return Stmt \n   n$12=_fun_NSNumber_numberWithBool:(1:_Bool) [line 38]\n  *&return:class NSNumber*=n$12 [line 38]\n " shape="box"]
 	
 
-	 "Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_3" -> "Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_2" ;
-"Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_4" [label="4:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:_Bool) [line 37]\n  *&n:class NSNumber*=n$13 [line 37]\n " shape="box"]
+	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_2" ;
+"getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" [label="4:  DeclStmt \n   n$13=_fun_NSNumber_numberWithBool:(1:_Bool) [line 37]\n  *&n:class NSNumber*=n$13 [line 37]\n " shape="box"]
 	
 
-	 "Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_4" -> "Boxing_getBoolinstance.af49a1592c0af0ea1cf2977cfd38e3ca_3" ;
-"Boxing_getSinstance.f47558930175c641209d620f6b5d4997_1" [label="1: Start Boxing_getS\nFormals:  self:class Boxing*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 41]\n " color=yellow style=filled]
+	 "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_4" -> "getBool#Boxing#instance.3315ec58788820860ec4adc889dd7197_3" ;
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_1" [label="1: Start Boxing_getS\nFormals:  self:class Boxing*\nLocals:  s:class NSString* \n   DECLARE_LOCALS(&return,&s); [line 41]\n " color=yellow style=filled]
 	
 
-	 "Boxing_getSinstance.f47558930175c641209d620f6b5d4997_1" -> "Boxing_getSinstance.f47558930175c641209d620f6b5d4997_4" ;
-"Boxing_getSinstance.f47558930175c641209d620f6b5d4997_2" [label="2: Exit Boxing_getS \n  " color=yellow style=filled]
+	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_1" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" ;
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" [label="2: Exit Boxing_getS \n  " color=yellow style=filled]
 	
 
-"Boxing_getSinstance.f47558930175c641209d620f6b5d4997_3" [label="3:  Return Stmt \n   n$14=_fun_NSString_stringWithUTF8String:(\"hello world\":char*) [line 43]\n  *&return:class NSString*=n$14 [line 43]\n " shape="box"]
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" [label="3:  Return Stmt \n   n$14=_fun_NSString_stringWithUTF8String:(\"hello world\":char*) [line 43]\n  *&return:class NSString*=n$14 [line 43]\n " shape="box"]
 	
 
-	 "Boxing_getSinstance.f47558930175c641209d620f6b5d4997_3" -> "Boxing_getSinstance.f47558930175c641209d620f6b5d4997_2" ;
-"Boxing_getSinstance.f47558930175c641209d620f6b5d4997_4" [label="4:  DeclStmt \n   n$15=_fun_strdup(\"hello world\":char*) [line 42]\n  n$16=_fun_NSString_stringWithUTF8String:(n$15:char*) [line 42]\n  *&s:class NSString*=n$16 [line 42]\n " shape="box"]
+	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_2" ;
+"getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" [label="4:  DeclStmt \n   n$15=_fun_strdup(\"hello world\":char*) [line 42]\n  n$16=_fun_NSString_stringWithUTF8String:(n$15:char*) [line 42]\n  *&s:class NSString*=n$16 [line 42]\n " shape="box"]
 	
 
-	 "Boxing_getSinstance.f47558930175c641209d620f6b5d4997_4" -> "Boxing_getSinstance.f47558930175c641209d620f6b5d4997_3" ;
+	 "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_4" -> "getS#Boxing#instance.97ccd331527b54376eb9b2b822cb25a3_3" ;
 }

@@ -19,15 +19,15 @@ digraph iCFG {
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" ;
-"RRA_initinstance.66e1f6eb6cd09718ac8102ab817e4893_1" [label="1: Start RRA_init\nFormals:  self:class RRA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_1" [label="1: Start RRA_init\nFormals:  self:class RRA*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
-	 "RRA_initinstance.66e1f6eb6cd09718ac8102ab817e4893_1" -> "RRA_initinstance.66e1f6eb6cd09718ac8102ab817e4893_3" ;
-"RRA_initinstance.66e1f6eb6cd09718ac8102ab817e4893_2" [label="2: Exit RRA_init \n  " color=yellow style=filled]
+	 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_1" -> "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" ;
+"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_2" [label="2: Exit RRA_init \n  " color=yellow style=filled]
 	
 
-"RRA_initinstance.66e1f6eb6cd09718ac8102ab817e4893_3" [label="3:  Return Stmt \n   n$0=*&self:class RRA* [line 19]\n  *&return:struct objc_object*=n$0 [line 19]\n " shape="box"]
+"init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" [label="3:  Return Stmt \n   n$0=*&self:class RRA* [line 19]\n  *&return:struct objc_object*=n$0 [line 19]\n " shape="box"]
 	
 
-	 "RRA_initinstance.66e1f6eb6cd09718ac8102ab817e4893_3" -> "RRA_initinstance.66e1f6eb6cd09718ac8102ab817e4893_2" ;
+	 "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_3" -> "init#RRA#instance.dca8e0cb72bcdfba262607a28c07b04b_2" ;
 }

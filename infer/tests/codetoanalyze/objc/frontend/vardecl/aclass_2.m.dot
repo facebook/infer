@@ -1,14 +1,14 @@
 /* @generated */
 digraph iCFG {
-"AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_1" [label="1: Start AClass_sharedInstance\nFormals:  self:class AClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_1" [label="1: Start AClass_sharedInstance\nFormals:  self:class AClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
-	 "AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_1" -> "AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_3" ;
-"AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_2" [label="2: Exit AClass_sharedInstance \n  " color=yellow style=filled]
+	 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_1" -> "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" ;
+"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_2" [label="2: Exit AClass_sharedInstance \n  " color=yellow style=filled]
 	
 
-"AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/vardecl/aclass_2.m>$aVariable:class NSObject* [line 21]\n  *&return:class NSObject*=n$0 [line 21]\n " shape="box"]
+"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/vardecl/aclass_2.m>$aVariable:class NSObject* [line 21]\n  *&return:class NSObject*=n$0 [line 21]\n " shape="box"]
 	
 
-	 "AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_3" -> "AClass_sharedInstanceinstance.8119c64d9e8ea5cab9416c2c3ff21dc7_2" ;
+	 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" -> "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_2" ;
 }

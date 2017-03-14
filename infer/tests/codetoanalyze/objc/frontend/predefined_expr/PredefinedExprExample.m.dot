@@ -1,36 +1,36 @@
 /* @generated */
 digraph iCFG {
-"A_testPrettyFunctioninstance.2af470245f00e6a4d1ba9b96fbc5511e_1" [label="1: Start A_testPrettyFunction\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_1" [label="1: Start A_testPrettyFunction\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
-	 "A_testPrettyFunctioninstance.2af470245f00e6a4d1ba9b96fbc5511e_1" -> "A_testPrettyFunctioninstance.2af470245f00e6a4d1ba9b96fbc5511e_3" ;
-"A_testPrettyFunctioninstance.2af470245f00e6a4d1ba9b96fbc5511e_2" [label="2: Exit A_testPrettyFunction \n  " color=yellow style=filled]
+	 "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_1" -> "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_3" ;
+"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_2" [label="2: Exit A_testPrettyFunction \n  " color=yellow style=filled]
 	
 
-"A_testPrettyFunctioninstance.2af470245f00e6a4d1ba9b96fbc5511e_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"%s\":char*) [line 19]\n  _fun_NSLog(n$0:struct objc_object*,\"\":char*) [line 19]\n " shape="box"]
+"testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_3" [label="3:  Call _fun_NSLog \n   n$0=_fun_NSString_stringWithUTF8String:(\"%s\":char*) [line 19]\n  _fun_NSLog(n$0:struct objc_object*,\"\":char*) [line 19]\n " shape="box"]
 	
 
-	 "A_testPrettyFunctioninstance.2af470245f00e6a4d1ba9b96fbc5511e_3" -> "A_testPrettyFunctioninstance.2af470245f00e6a4d1ba9b96fbc5511e_2" ;
-"A_testFunctioninstance.c637d535cd6c0cc64d0ae1e43c7132cd_1" [label="1: Start A_testFunction\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+	 "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_3" -> "testPrettyFunction#A#instance.bc1e07c1ab96ad96f484a179734bc12e_2" ;
+"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_1" [label="1: Start A_testFunction\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
 	
 
-	 "A_testFunctioninstance.c637d535cd6c0cc64d0ae1e43c7132cd_1" -> "A_testFunctioninstance.c637d535cd6c0cc64d0ae1e43c7132cd_3" ;
-"A_testFunctioninstance.c637d535cd6c0cc64d0ae1e43c7132cd_2" [label="2: Exit A_testFunction \n  " color=yellow style=filled]
+	 "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_1" -> "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_3" ;
+"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_2" [label="2: Exit A_testFunction \n  " color=yellow style=filled]
 	
 
-"A_testFunctioninstance.c637d535cd6c0cc64d0ae1e43c7132cd_3" [label="3:  Call _fun_NSLog \n   n$1=_fun_NSString_stringWithUTF8String:(\"%s\":char*) [line 23]\n  _fun_NSLog(n$1:struct objc_object*,\"\":char*) [line 23]\n " shape="box"]
+"testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_3" [label="3:  Call _fun_NSLog \n   n$1=_fun_NSString_stringWithUTF8String:(\"%s\":char*) [line 23]\n  _fun_NSLog(n$1:struct objc_object*,\"\":char*) [line 23]\n " shape="box"]
 	
 
-	 "A_testFunctioninstance.c637d535cd6c0cc64d0ae1e43c7132cd_3" -> "A_testFunctioninstance.c637d535cd6c0cc64d0ae1e43c7132cd_2" ;
-"A_testFunctinstance.b2e6c7bb726b210a492f7752cc497b8b_1" [label="1: Start A_testFunct\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+	 "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_3" -> "testFunction#A#instance.871d68aca55491a71407a8a7ce232a40_2" ;
+"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_1" [label="1: Start A_testFunct\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
-	 "A_testFunctinstance.b2e6c7bb726b210a492f7752cc497b8b_1" -> "A_testFunctinstance.b2e6c7bb726b210a492f7752cc497b8b_3" ;
-"A_testFunctinstance.b2e6c7bb726b210a492f7752cc497b8b_2" [label="2: Exit A_testFunct \n  " color=yellow style=filled]
+	 "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_1" -> "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_3" ;
+"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_2" [label="2: Exit A_testFunct \n  " color=yellow style=filled]
 	
 
-"A_testFunctinstance.b2e6c7bb726b210a492f7752cc497b8b_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString_stringWithUTF8String:(\"%s\":char*) [line 27]\n  _fun_NSLog(n$2:struct objc_object*,\"\":char*) [line 27]\n " shape="box"]
+"testFunct#A#instance.b6c9dae744220d93a4466679814728c1_3" [label="3:  Call _fun_NSLog \n   n$2=_fun_NSString_stringWithUTF8String:(\"%s\":char*) [line 27]\n  _fun_NSLog(n$2:struct objc_object*,\"\":char*) [line 27]\n " shape="box"]
 	
 
-	 "A_testFunctinstance.b2e6c7bb726b210a492f7752cc497b8b_3" -> "A_testFunctinstance.b2e6c7bb726b210a492f7752cc497b8b_2" ;
+	 "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_3" -> "testFunct#A#instance.b6c9dae744220d93a4466679814728c1_2" ;
 }

@@ -708,34 +708,35 @@ let module Procname = {
       plain
     }
   };
+  let c_method_kind_verbose_str kind =>
+    switch kind {
+    | CPPMethod m =>
+      "(" ^
+      (
+        switch m {
+        | None => ""
+        | Some s => s
+        }
+      ) ^ ")"
+    | CPPConstructor (m, is_constexpr) =>
+      "{" ^
+      (
+        switch m {
+        | None => ""
+        | Some s => s
+        }
+      ) ^
+      (if is_constexpr {"|constexpr"} else {""}) ^ "}"
+    | ObjCClassMethod => "class"
+    | ObjCInstanceMethod => "instance"
+    | ObjCInternalMethod => "internal"
+    };
   let c_method_to_string osig detail_level =>
     switch detail_level {
     | Simple => osig.method_name
     | Non_verbose => Typename.name osig.class_name ^ "_" ^ osig.method_name
     | Verbose =>
-      let m_str =
-        switch osig.kind {
-        | CPPMethod m =>
-          "(" ^
-          (
-            switch m {
-            | None => ""
-            | Some s => s
-            }
-          ) ^ ")"
-        | CPPConstructor (m, is_constexpr) =>
-          "{" ^
-          (
-            switch m {
-            | None => ""
-            | Some s => s
-            }
-          ) ^
-          (if is_constexpr {"|constexpr"} else {""}) ^ "}"
-        | ObjCClassMethod => "class"
-        | ObjCInstanceMethod => "instance"
-        | ObjCInternalMethod => "internal"
-        };
+      let m_str = c_method_kind_verbose_str osig.kind;
       Typename.name osig.class_name ^ "_" ^ osig.method_name ^ m_str
     };
 
@@ -769,10 +770,6 @@ let module Procname = {
     | Linters_dummy_method => to_unique_id p
     };
 
-  /** Convert a proc name to a filename */
-  let to_filename proc_name =>
-    Escape.escape_filename @@ SourceFile.append_crc_cutoff @@ to_unique_id proc_name;
-
   /** Pretty print a proc name */
   let pp f pn => F.fprintf f "%s" (to_string pn);
 
@@ -803,6 +800,20 @@ let module Procname = {
         [objc_cpp.method_name]
     | _ => []
     };
+
+  /** Convert a proc name to a filename */
+  let to_filename pname => {
+    /* filenames for clang procs are REVERSED qualifiers with '#' as separator */
+    let get_qual_name_str pname => get_qualifiers pname |> List.rev |> String.concat sep::"#";
+    let proc_id =
+      switch pname {
+      | C (_, c2, _) => [get_qual_name_str pname, ...Option.to_list c2] |> String.concat sep::"#"
+      | ObjC_Cpp objc_cpp =>
+        get_qual_name_str pname ^ "#" ^ c_method_kind_verbose_str objc_cpp.kind
+      | _ => to_unique_id pname
+      };
+    Escape.escape_filename @@ SourceFile.append_crc_cutoff proc_id
+  };
 };
 
 
