@@ -38,10 +38,6 @@ base_group.add_argument('--debug-exceptions', action='store_true',
                         just print the internal exceptions during analysis''')
 base_group.add_argument('-g', '--debug', action='store_true',
                         help='Generate all debugging information')
-base_group.add_argument('--disable-bug-list', action='store_true',
-                        help='''Disable the creation of the human readable list
-                        of issues found. Useful for CI integration when only
-                        the JSON report is used''')
 base_group.add_argument('-a', '--analyzer',
                         help='Select the analyzer within: {0}'.format(
                             ', '.join(config.ANALYZERS)),

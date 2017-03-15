@@ -163,12 +163,11 @@ def collect_results(args, start_time, targets):
         report.write(json_string)
         report.flush()
 
-    if not args.disable_bug_list:
-        bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
-        issues.print_and_save_errors(args.infer_out, args.project_root,
-                                     json_report, bugs_out, args.pmd_xml)
-        shutil.copy(bugs_out, os.path.join(args.infer_out,
-                                           ANALYSIS_SUMMARY_OUTPUT))
+    bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
+    issues.print_and_save_errors(args.infer_out, args.project_root,
+                                 json_report, bugs_out, args.pmd_xml)
+    shutil.copy(bugs_out, os.path.join(args.infer_out,
+                                       ANALYSIS_SUMMARY_OUTPUT))
 
 
 def cleanup(temp_files):

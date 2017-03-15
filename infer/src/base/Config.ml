@@ -827,12 +827,6 @@ and dependencies =
     "Translate all the dependencies during the capture. The classes in the given jar file will be \
      translated. No sources needed."
 
-and disable_bug_list =
-  CLOpt.mk_bool ~long:"disable-bug-list"
-    ~parse_mode:CLOpt.(Infer [Driver])
-    "Disable the creation of the human readable list of issues found. \
-     Useful for CI integration when only the JSON report is used"
-
 and disable_checks =
   CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error name"
     ~parse_mode:CLOpt.(Infer [Driver;Print])
@@ -1599,7 +1593,6 @@ and debug_mode = !debug
 and debug_exceptions = !debug_exceptions
 and dependency_mode = !dependencies
 and developer_mode = !developer_mode
-and disable_bug_list = !disable_bug_list
 and disable_checks = !disable_checks
 and dotty_cfg_libs = !dotty_cfg_libs
 and enable_checks = !enable_checks

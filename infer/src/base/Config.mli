@@ -208,7 +208,6 @@ val debug_mode : bool
 val debug_exceptions : bool
 val dependency_mode : bool
 val developer_mode : bool
-val disable_bug_list : bool
 val disable_checks : string list
 val dotty_cfg_libs : bool
 val dynamic_dispatch : [ `None | `Interface | `Sound | `Lazy ]

@@ -242,8 +242,6 @@ let capture = function
              ["--debug"]) @
           (if not Config.debug_exceptions then [] else
              ["--debug-exceptions"]) @
-          (if not Config.disable_bug_list then [] else
-             ["--disable-bug-list"]) @
           (if Config.filtering then [] else
              ["--no-filtering"]) @
           (if not Config.flavors || not in_buck_mode then [] else
