@@ -388,7 +388,7 @@ let module IssuesCsv = {
   /** Write bug report in csv format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
     let pp x => F.fprintf fmt x;
-    let pp_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr eclass _ => {
+    let pp_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr eclass _ _ => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -461,7 +461,8 @@ let module IssuesJson = {
         severity
         ltr
         eclass
-        visibility => {
+        visibility
+        linters_def_file => {
       let (source_file, procedure_start_line) =
         switch proc_loc_opt {
         | Some proc_loc => (proc_loc.Location.file, proc_loc.Location.line)
@@ -506,7 +507,8 @@ let module IssuesJson = {
           hash: get_bug_hash kind bug_type procedure_id file node_key error_desc,
           dotty: error_desc_to_dotty_string error_desc,
           infer_source_loc: json_ml_loc,
-          bug_type_hum: Localise.to_human_readable_string error_name
+          bug_type_hum: Localise.to_human_readable_string error_name,
+          linters_def_file
         };
         if (not !is_first_item) {
           pp ","
@@ -577,7 +579,7 @@ let module IssuesTxt = {
 
   /** Write bug report in text format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log => {
-    let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ => {
+    let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ _ => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -646,7 +648,7 @@ let module IssuesXml = {
 
   /** print issues from summary in xml */
   let pp_issues_of_error_log fmt error_filter linereader proc_loc_opt proc_name err_log => {
-    let do_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr eclass _ => {
+    let do_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr eclass _ _ => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
@@ -787,7 +789,7 @@ let module Stats = {
   };
   let process_err_log error_filter linereader err_log stats => {
     let found_errors = ref false;
-    let process_row _ loc _ ekind in_footprint error_name error_desc _ ltr _ _ => {
+    let process_row _ loc _ ekind in_footprint error_name error_desc _ ltr _ _ _ => {
       let type_str = Localise.to_issue_id error_name;
       if (in_footprint && error_filter error_desc error_name) {
         switch ekind {

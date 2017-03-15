@@ -190,7 +190,7 @@ let get_err_log translation_unit_context method_decl_opt =
   LintIssues.get_err_log procname
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue translation_unit_context method_decl_opt key issue_desc =
+let log_frontend_issue translation_unit_context method_decl_opt key issue_desc linters_def_file =
   let name = issue_desc.CIssue.name in
   let loc = issue_desc.CIssue.loc in
   let errlog = get_err_log translation_unit_context method_decl_opt in
@@ -202,7 +202,7 @@ let log_frontend_issue translation_unit_context method_decl_opt key issue_desc =
   let method_name = CAst_utils.full_name_of_decl_opt method_decl_opt in
   let key = Hashtbl.hash (key ^ method_name) in
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace
-    ~node_id:(0, key)
+    ~node_id:(0, key) ?linters_def_file
 
 let get_current_method context (an : Ctl_parser_types.ast_node) =
   match an with
@@ -215,13 +215,13 @@ let get_current_method context (an : Ctl_parser_types.ast_node) =
   | Decl (BlockDecl _ as d) -> Some d
   | _ -> context.CLintersContext.current_method
 
-let fill_issue_desc_info_and_log context an key issue_desc loc =
+let fill_issue_desc_info_and_log context an key issue_desc linters_def_file loc =
   let desc = remove_new_lines
       (expand_message_string issue_desc.CIssue.description an) in
   let issue_desc' =
     {issue_desc with CIssue.description = desc; CIssue.loc = loc } in
   log_frontend_issue context.CLintersContext.translation_unit_context
-    (get_current_method context an) key issue_desc'
+    (get_current_method context an) key issue_desc' linters_def_file
 
 (* Calls the set of hard coded checkers (if any) *)
 let invoke_set_of_hard_coded_checkers_an context (an : Ctl_parser_types.ast_node) =
@@ -234,7 +234,7 @@ let invoke_set_of_hard_coded_checkers_an context (an : Ctl_parser_types.ast_node
         List.iter ~f:(fun issue_desc ->
             if CIssue.should_run_check issue_desc.CIssue.mode then
               let loc = issue_desc.CIssue.loc in
-              fill_issue_desc_info_and_log context an key issue_desc loc
+              fill_issue_desc_info_and_log context an key issue_desc None loc
           ) issue_desc_list
     ) checkers
 
@@ -247,7 +247,7 @@ let invoke_set_of_parsed_checkers_an parsed_linters context (an : Ctl_parser_typ
       if CIssue.should_run_check linter.issue_desc.CIssue.mode &&
          CTL.eval_formula linter.condition an context then
         let loc = CFrontend_checkers.location_from_an context an in
-        fill_issue_desc_info_and_log context an key linter.issue_desc loc
+        fill_issue_desc_info_and_log context an key linter.issue_desc linter.def_file loc
     ) parsed_linters
 
 (* We decouple the hardcoded checkers from the parsed ones *)

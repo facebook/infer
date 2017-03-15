@@ -42,6 +42,7 @@ type iter_fun =
   loc_trace ->
   Exceptions.err_class ->
   Exceptions.visibility ->
+  string option ->
   unit
 
 (** Apply f to nodes and error names *)
@@ -63,7 +64,8 @@ val size : (Exceptions.err_kind -> bool -> bool) -> t -> int
 val update : t -> t -> unit
 
 val log_issue :
-  Exceptions.err_kind -> t -> Location.t -> (int * int) -> int -> loc_trace -> exn -> unit
+  Exceptions.err_kind -> t -> Location.t -> (int * int) -> int -> loc_trace ->
+  ?linters_def_file:string -> exn -> unit
 
 (** {2 Functions for manipulating per-file error tables} *)
 

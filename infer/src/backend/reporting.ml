@@ -16,6 +16,7 @@ type log_t =
   ?node_id: (int * int) ->
   ?session: int ->
   ?ltr: Errlog.loc_trace ->
+  ?linters_def_file:string ->
   exn ->
   unit
 
@@ -23,7 +24,7 @@ type log_issue = Typ.Procname.t -> log_t
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
-let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr exn =
+let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file exn =
   let loc = match loc with
     | None -> State.get_loc ()
     | Some loc -> loc in
@@ -41,7 +42,7 @@ let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr exn =
     | _ -> let err_name, _, _, _, _, _, _ =  Exceptions.recognize_exception exn in
         (Localise.to_issue_id err_name) in
   if (Inferconfig.is_checker_enabled err_name) then
-    Errlog.log_issue err_kind err_log loc node_id session ltr exn
+    Errlog.log_issue err_kind err_log loc node_id session ltr ?linters_def_file exn
 
 
 let log_issue
@@ -51,6 +52,7 @@ let log_issue
     ?node_id
     ?session
     ?ltr
+    ?linters_def_file
     exn =
   let should_suppress_lint (summary : Specs.summary) =
     Config.curr_language_is Config.Java &&
@@ -59,7 +61,7 @@ let log_issue
   | Some summary when should_suppress_lint summary -> ()
   | Some summary ->
       let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-      log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr exn
+      log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file exn
   | None ->
       failwithf
         "Trying to report error on procedure %a, but cannot because no summary exists for this \

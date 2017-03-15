@@ -16,6 +16,7 @@ type log_t =
   ?node_id: (int * int) ->
   ?session: int ->
   ?ltr: Errlog.loc_trace ->
+  ?linters_def_file:string ->
   exn ->
   unit
 

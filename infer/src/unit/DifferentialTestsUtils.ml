@@ -27,7 +27,8 @@ let create_fake_jsonbug
     ?(qualifier_tags=[])
     ?(hash=1)
     ?(dotty=None)
-    ?(infer_source_loc=None) () : Jsonbug_t.jsonbug =
+    ?(infer_source_loc=None)
+    ?(linters_def_file=Some "file/at/certain/path.al") () : Jsonbug_t.jsonbug =
   {
     bug_class;
     kind;
@@ -48,6 +49,7 @@ let create_fake_jsonbug
     dotty;
     infer_source_loc;
     bug_type_hum = kind;
+    linters_def_file
   }
 
 let pp_diff_of_int_list group_name fmt (expected, actual) =

@@ -38,6 +38,7 @@ type jsonbug = {
   ?dotty : string option;
   ?infer_source_loc: loc option;
   bug_type_hum: string;
+  ?linters_def_file: string option;
 }
 
 type report = jsonbug list
