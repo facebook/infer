@@ -177,14 +177,6 @@ let directory_iter f path =
     f path
 
 
-let remove_directory_tree path =
-  Stream.from (fun _ -> Fts.fts_read (Fts.fts_open ?compar:None ~path_argv:[path] ~options:[]))
-  |> Stream.iter (fun ent ->
-      match Fts.FTSENT.info ent with
-      | FTS_D | FTS_DOT -> ()
-      | _ -> Unix.remove (Fts.FTSENT.name ent)
-    )
-
 let string_crc_hex32 s = Digest.to_hex (Digest.string s)
 
 let read_optional_json_file path =
