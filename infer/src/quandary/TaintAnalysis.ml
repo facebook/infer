@@ -158,14 +158,19 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     (** log any new reportable source-sink flows in [trace] *)
     let report_trace trace cur_site (proc_data : FormalMap.t ProcData.t) =
       let trace_of_pname pname =
-        match Summary.read_summary proc_data.pdesc pname with
-        | Some summary ->
-            TaintDomain.fold
-              (fun acc _ trace -> TraceDomain.join trace acc)
-              (TaintSpecification.of_summary_access_tree summary)
-              TraceDomain.empty
-        | None ->
-            TraceDomain.empty in
+        if Typ.Procname.equal pname (Procdesc.get_proc_name proc_data.pdesc)
+        then
+          (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
+          TraceDomain.empty
+        else
+          match Summary.read_summary proc_data.pdesc pname with
+          | Some summary ->
+              TaintDomain.fold
+                (fun acc _ trace -> TraceDomain.join trace acc)
+                (TaintSpecification.of_summary_access_tree summary)
+                TraceDomain.empty
+          | None ->
+              TraceDomain.empty in
 
       let pp_path_short fmt (_, sources_passthroughs, sinks_passthroughs) =
         let original_source = fst (List.hd_exn sources_passthroughs) in
