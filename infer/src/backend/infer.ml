@@ -303,9 +303,13 @@ let report () =
   let report_csv = Some (Config.results_dir ^/ "report.csv") in
   let report_json = Some (Config.results_dir ^/ "report.json") in
   InferPrint.main ~report_csv ~report_json ;
-  match Config.report_hook with
-  | None -> ()
-  | Some prog ->
+  (* Post-process the report according to the user config. By default, calls report.py to create a
+     human-readable report. *)
+  match Config.buck, Config.report_hook with
+  | true, _ (* do not bother calling the report hook when called from within Buck *)
+  | false, None ->
+      ()
+  | false, Some prog ->
       let if_some key opt args = match opt with None -> args | Some arg -> key :: arg :: args in
       let if_true key opt args = if not opt then args else key :: args in
       let args =

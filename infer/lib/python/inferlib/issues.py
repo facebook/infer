@@ -88,9 +88,17 @@ def text_of_report(report):
 
 def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
                          formatter=colorize.TERMINAL_FORMATTER):
+    n_issues = len(reports)
+    if n_issues == 0:
+        if formatter == colorize.TERMINAL_FORMATTER:
+            out = colorize.color('  No issues found  ',
+                                 colorize.SUCCESS, formatter)
+            return out + '\n'
+        else:
+            return 'No issues found'
+
     text_errors_list = []
-    error_types_count = {}
-    for report in reports:
+    for report in reports[:limit]:
         filename = report[JSON_INDEX_FILENAME]
         line = report[JSON_INDEX_LINE]
 
@@ -115,6 +123,8 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
         text = '%s%s' % (msg, source_context)
         text_errors_list.append(text)
 
+    error_types_count = {}
+    for report in reports:
         t = report[JSON_INDEX_TYPE]
         # assert failures are not very informative without knowing
         # which assertion failed
@@ -125,15 +135,6 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
         else:
             error_types_count[t] += 1
 
-    n_issues = len(text_errors_list)
-    if n_issues == 0:
-        if formatter == colorize.TERMINAL_FORMATTER:
-            out = colorize.color('  No issues found  ',
-                                 colorize.SUCCESS, formatter)
-            return out + '\n'
-        else:
-            return 'No issues found'
-
     max_type_length = max(map(len, error_types_count.keys())) + 2
     sorted_error_types = error_types_count.items()
     sorted_error_types.sort(key=operator.itemgetter(1), reverse=True)
@@ -142,7 +143,7 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
         count,
     ), sorted_error_types)
 
-    text_errors = '\n\n'.join(text_errors_list[:limit])
+    text_errors = '\n\n'.join(text_errors_list)
     if limit >= 0 and n_issues > limit:
         text_errors += colorize.color(
             ('\n\n...too many issues to display (limit=%d exceeded), please ' +
