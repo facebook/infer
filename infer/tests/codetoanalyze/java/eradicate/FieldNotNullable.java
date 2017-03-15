@@ -11,9 +11,7 @@ package codetoanalyze.java.eradicate;
 
 import com.facebook.infer.annotation.Assertions;
 import com.facebook.infer.annotation.Initializer;
-import com.facebook.infer.annotation.Present;
 import com.facebook.infer.annotation.SuppressFieldNotInitialized;
-import com.google.common.base.Optional;
 
 import javax.annotation.Nullable;
 
@@ -217,65 +215,6 @@ class NestedFieldAccess {
       } else {
         int n = ccc.cc.c.s.length();
       }
-    }
-  }
-
-  class TestPresentAnnotationBasic {
-    void testBasicConditional(Optional<String> o) {
-      if (o.isPresent()) {
-        o.get();
-      }
-    }
-
-    Optional<String> absent = Optional.absent();
-    @Present Optional<String> present = Optional.of("abc");
-
-    @Present Optional<String> returnPresent() {
-      if (absent.isPresent()) {
-        return absent;
-      }
-      else return Optional.of("abc");
-    }
-
-    void expectPresent(@Present Optional<String> x) {
-    }
-
-    void bar() {
-      expectPresent(present);
-      String s;
-      s = returnPresent().get();
-      s = present.get();
-
-      Assertions.assertCondition(absent.isPresent());
-      expectPresent(absent);
-    }
-  }
-
-  class TestPresentFieldOfInnerClass {
-    class D {
-      @SuppressFieldNotInitialized Optional<String> s;
-    }
-
-    class D1 {
-      // Different bytecode generated when the field is private
-      @SuppressFieldNotInitialized private Optional<String> s;
-    }
-
-    void testD(D d) {
-      if (d.s.isPresent()) {
-        d.s.get();
-      }
-    }
-
-    void testD1(D1 d1) {
-      if (d1.s.isPresent()) {
-        d1.s.get();
-      }
-    }
-
-    void testD1Condition(D1 d1) {
-      Assertions.assertCondition(d1.s.isPresent());
-      d1.s.get();
     }
   }
 

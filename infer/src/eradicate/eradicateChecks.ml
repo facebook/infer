@@ -162,10 +162,12 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
       loc curr_pdesc
 
 (** Check an "is zero" condition. *)
-let check_zero tenv find_canonical_duplicate = check_condition tenv true find_canonical_duplicate
+let check_zero tenv find_canonical_duplicate =
+  check_condition tenv true find_canonical_duplicate
 
 (** Check an "is not zero" condition. *)
-let check_nonzero tenv find_canonical_duplicate = check_condition tenv false find_canonical_duplicate
+let check_nonzero tenv find_canonical_duplicate =
+  check_condition tenv false find_canonical_duplicate
 
 (** Check an assignment to a field. *)
 let check_field_assignment tenv
@@ -440,71 +442,72 @@ let check_call_receiver tenv
         end
   | [] -> ()
 
+type param = {
+  formal : Mangled.t * TypeAnnotation.t * Typ.t;
+  actual : Exp.t * TypeAnnotation.t;
+}
+
 (** Check the parameters of a call. *)
 let check_call_parameters tenv
-    find_canonical_duplicate curr_pdesc node typestate callee_attributes
-    sig_params call_params loc instr_ref typecheck_expr : unit =
+    find_canonical_duplicate curr_pdesc node callee_attributes
+    params loc instr_ref : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
-  let has_this = is_virtual sig_params in
-  let tot_param_num = List.length sig_params - (if has_this then 1 else 0) in
-  let rec check sparams cparams = match sparams, cparams with
-    | (s1, ia1, t1) :: sparams', ((orig_e2, e2), t2) :: cparams' ->
-        let param_is_this = String.equal (Mangled.to_string s1) "this" in
-        let formal_is_nullable = Annotations.ia_is_nullable ia1 in
-        let formal_is_present = Annotations.ia_is_present ia1 in
-        let (_, ta2, _) =
-          typecheck_expr node instr_ref curr_pdesc typestate e2
-            (t2, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, []) loc in
-        let parameter_not_nullable =
-          not param_is_this &&
-          PatternMatch.type_is_class t1 &&
-          not formal_is_nullable &&
-          TypeAnnotation.get_value AnnotatedSignature.Nullable ta2 in
-        let parameter_absent =
-          Config.eradicate_optional_present &&
-          not param_is_this &&
-          PatternMatch.type_is_class t1 &&
-          formal_is_present &&
-          not (TypeAnnotation.get_value AnnotatedSignature.Present ta2) in
-        if parameter_not_nullable || parameter_absent then
-          begin
-            let ann =
-              if parameter_not_nullable
-              then AnnotatedSignature.Nullable
-              else AnnotatedSignature.Present in
-            let description =
-              match explain_expr tenv node orig_e2 with
-              | Some descr -> descr
-              | None -> "formal parameter " ^ (Mangled.to_string s1) in
-            let origin_descr = TypeAnnotation.descr_origin tenv ta2 in
 
-            let param_num = List.length sparams' + (if has_this then 0 else 1) in
-            let callee_loc = callee_attributes.ProcAttributes.loc in
-            report_error tenv
-              find_canonical_duplicate
-              (TypeErr.Parameter_annotation_inconsistent (
-                  ann,
-                  description,
-                  param_num,
-                  callee_pname,
-                  callee_loc,
-                  origin_descr))
-              (Some instr_ref)
-              loc curr_pdesc;
-            if Models.Inference.enabled then
-              Models.Inference.proc_add_parameter_nullable callee_pname param_num tot_param_num
-          end;
-        check sparams' cparams'
-    | _ -> () in
+  let tot_param_num = List.length params in
+
+  let check i = function
+    | {formal = (s1, ta1, t1); actual = (orig_e2, ta2)} ->
+        let param_num = i + 1 in
+
+        let report ann =
+          let description =
+            match explain_expr tenv node orig_e2 with
+            | Some descr -> descr
+            | None -> "formal parameter " ^ (Mangled.to_string s1) in
+          let origin_descr = TypeAnnotation.descr_origin tenv ta2 in
+
+          let callee_loc = callee_attributes.ProcAttributes.loc in
+          report_error tenv
+            find_canonical_duplicate
+            (TypeErr.Parameter_annotation_inconsistent (
+                ann,
+                description,
+                param_num,
+                callee_pname,
+                callee_loc,
+                origin_descr))
+            (Some instr_ref)
+            loc curr_pdesc in
+
+        let check_ann ann =
+          let b1 = TypeAnnotation.get_value ann ta1 in
+          let b2 = TypeAnnotation.get_value ann ta2 in
+          match ann, b1, b2 with
+          | AnnotatedSignature.Nullable, false, true ->
+              report ann;
+              if Models.Inference.enabled then
+                Models.Inference.proc_add_parameter_nullable callee_pname param_num tot_param_num
+          | AnnotatedSignature.Present, true, false ->
+              report ann
+          | _ ->
+              () in
+
+        if PatternMatch.type_is_class t1
+        then begin
+          check_ann AnnotatedSignature.Nullable;
+          if Config.eradicate_optional_present
+          then check_ann AnnotatedSignature.Present;
+        end in
   let should_check_parameters =
     if check_library_calls then true
     else
       Models.is_modelled_nullable callee_pname ||
       callee_attributes.ProcAttributes.is_defined ||
       Specs.get_summary callee_pname <> None in
+
   if should_check_parameters then
     (* left to right to avoid guessing the different lengths *)
-    check (List.rev sig_params) (List.rev call_params)
+    List.iteri ~f:check params
 
 (** Checks if the annotations are consistent with the inherited class or with the
     implemented interfaces *)

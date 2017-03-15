@@ -622,29 +622,33 @@ let typecheck_instr
         Typ.Procname.java_is_anonymous_inner_class_constructor callee_pname in
 
       let do_return loc' typestate' =
+        let mk_return_range () =
+          let (ia, ret_typ) = annotated_signature.AnnotatedSignature.ret in
+          let is_library = Specs.proc_is_library callee_attributes in
+          let origin = TypeOrigin.Proc
+              {
+                TypeOrigin.pname = callee_pname;
+                loc = loc';
+                annotated_signature;
+                is_library;
+              } in
+          (
+            ret_typ,
+            TypeAnnotation.from_item_annotation ia origin,
+            [loc']
+          ) in
+
         match ret_id with
-        | None -> typestate'
+        | None ->
+            typestate'
         | Some (id, _) ->
-            let (ia, ret_typ) = annotated_signature.AnnotatedSignature.ret in
-            let is_library = Specs.proc_is_library callee_attributes in
-            let origin = TypeOrigin.Proc
-                {
-                  TypeOrigin.pname = callee_pname;
-                  loc = loc';
-                  annotated_signature;
-                  is_library;
-                } in
             TypeState.add_id
               id
-              (
-                ret_typ,
-                TypeAnnotation.from_item_annotation ia origin,
-                [loc']
-              )
+              (mk_return_range ())
               typestate' in
 
       (* Handle Preconditions.checkNotNull. *)
-      let do_preconditions_check_not_null parameter_num is_vararg typestate' =
+      let do_preconditions_check_not_null parameter_num ~is_vararg typestate' =
         (* clear the nullable flag of the first parameter of the procedure *)
         let clear_nullable_flag typestate'' pvar =
           (* remove the nullable flag for the given pvar *)
@@ -799,6 +803,34 @@ let typecheck_instr
             typestate' in
 
       let typestate2 =
+        let prepare_params sig_params call_params =
+          let rec f acc sparams cparams = match sparams, cparams with
+            | (s1, ia1, t1) :: sparams', ((orig_e2, e2), t2) :: cparams' ->
+                let param_is_this = String.equal (Mangled.to_string s1) "this" in
+                let acc' =
+                  if param_is_this
+                  then acc
+                  else begin
+                    let ta1 = TypeAnnotation.from_item_annotation ia1 (TypeOrigin.Formal s1) in
+                    let (_, ta2, _) =
+                      typecheck_expr
+                        find_canonical_duplicate calls_this checks
+                        tenv node instr_ref curr_pdesc typestate e2
+                        (t2,
+                         TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone,
+                         [])
+                        loc in
+
+                    EradicateChecks.{
+                      formal = (s1, ta1, t1);
+                      actual = (orig_e2, ta2)}
+                    :: acc
+                  end in
+                f acc' sparams' cparams'
+            | _ ->
+                acc in
+          f [] (List.rev sig_params) (List.rev call_params) in
+
         if not is_anonymous_inner_class_constructor then
           begin
             if Config.eradicate_debug then
@@ -824,13 +856,10 @@ let typecheck_instr
                 find_canonical_duplicate
                 curr_pdesc
                 node
-                typestate1
                 callee_attributes
-                signature_params
-                call_params
+                (prepare_params signature_params call_params)
                 loc
-                instr_ref
-                (typecheck_expr find_canonical_duplicate calls_this checks tenv);
+                instr_ref;
             let typestate2 =
               if checks.check_extension then
                 let etl' = List.map ~f:(fun ((_, e), t) -> (e, t)) call_params in
@@ -848,7 +877,7 @@ let typecheck_instr
             if Models.is_check_not_null callee_pname then
               do_preconditions_check_not_null
                 (Models.get_check_not_null_parameter callee_pname)
-                false (* is_vararg *)
+                ~is_vararg:false
                 typestate2
             else
             if has_method callee_pname "checkNotNull"
@@ -857,7 +886,7 @@ let typecheck_instr
               let last_parameter = List.length call_params in
               do_preconditions_check_not_null
                 last_parameter
-                true (* is_vararg *)
+                ~is_vararg:true
                 typestate2
             else if Models.is_check_state callee_pname ||
                     Models.is_check_argument callee_pname then
@@ -911,7 +940,8 @@ let typecheck_instr
           let map_dexp = function
             | Some
                 (DExp.Dretcall
-                   (DExp.Dconst (Const.Cfun (Typ.Procname.Java pname_java)), args, loc, call_flags)) ->
+                   (DExp.Dconst
+                      (Const.Cfun (Typ.Procname.Java pname_java)), args, loc, call_flags)) ->
                 let pname_java' =
                   let object_t = (Some "java.lang", "Object") in
                   Typ.Procname.java_replace_return_type

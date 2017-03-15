@@ -235,7 +235,9 @@ struct
           let rec fixpoint initializers_old =
             let initializers_new = get_private_called initializers_old in
             let initializers_new' =
-              List.filter ~f:(fun (pn, _) -> not (Typ.Procname.Set.mem pn !seen)) initializers_new in
+              List.filter
+                ~f:(fun (pn, _) -> not (Typ.Procname.Set.mem pn !seen))
+                initializers_new in
             mark_seen initializers_new';
             if initializers_new' <> [] then fixpoint initializers_new' in
 
