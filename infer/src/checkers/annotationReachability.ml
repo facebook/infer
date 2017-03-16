@@ -153,8 +153,8 @@ let method_has_annot annot tenv pname =
 let method_overrides_annot annot tenv pname =
   method_overrides (method_has_annot annot) tenv pname
 
-let lookup_annotation_calls annot pname : CallSite.t list =
-  match Specs.get_summary pname with
+let lookup_annotation_calls caller_pdesc annot pname : CallSite.t list =
+  match Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc pname with
   | Some { Specs.payload = { Specs.calls = Some call_map; }; } ->
       begin
         try
@@ -381,7 +381,7 @@ module Interprocedural = struct
             report_annotation_stack src_annot.class_name snk_annot.class_name in
           report_call_stack
             (method_has_annot snk_annot tenv)
-            (lookup_annotation_calls snk_annot)
+            (lookup_annotation_calls proc_desc snk_annot)
             f_report
             (CallSite.make proc_name loc)
             calls in

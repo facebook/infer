@@ -36,10 +36,11 @@ public class Recursion {
     safeRecursionCallSink(5, InferTaint.inferSecretSource());
   }
 
-  public static void recursionBad(int i, Object param) {
+  // TODO (#16595757): Requires support for recursion in Ondemand
+  public static void FN_recursionBad(int i, Object param) {
     if (i == 0) return;
     InferTaint.inferSensitiveSink(param);
-    recursionBad(i - 1, InferTaint.inferSecretSource());
+    FN_recursionBad(i - 1, InferTaint.inferSecretSource());
   }
 
 }

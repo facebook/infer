@@ -159,35 +159,14 @@ end
 module Interprocedural (Summ : Summary.S) = struct
 
   let compute_and_store_post
-      ~compute_post ~make_extras { Callbacks.get_proc_desc; proc_desc; tenv; } =
-    let proc_name = Procdesc.get_proc_name proc_desc in
-    let analyze_ondemand_ _ pdesc =
-      match compute_post (ProcData.make pdesc tenv (make_extras pdesc)) with
-      | Some post ->
-          Summ.write_summary (Procdesc.get_proc_name pdesc) post;
-          Some post
-      | None ->
-          None in
-    let analyze_ondemand source pdesc =
-      ignore (analyze_ondemand_ source pdesc);
-      Specs.get_summary_unsafe
-        "Inferprocedural.compute_and_store_post"
-        (Procdesc.get_proc_name pdesc) in
-    let callbacks =
-      {
-        Ondemand.analyze_ondemand;
-        get_proc_desc;
-      } in
-    if Ondemand.procedure_should_be_analyzed proc_name
-    then
-      begin
-        Ondemand.set_callbacks callbacks;
-        let post_opt = analyze_ondemand_ SourceFile.empty proc_desc in
-        Ondemand.unset_callbacks ();
-        post_opt
-      end
-    else
-      Summ.read_summary proc_desc proc_name
+      ~compute_post ~make_extras { Callbacks.proc_desc; tenv; } =
+    match compute_post (ProcData.make proc_desc tenv (make_extras proc_desc)) with
+    | Some post ->
+        Summ.write_summary (Procdesc.get_proc_name proc_desc) post;
+        Some post
+    | None ->
+        None
+
 end
 
 module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.Make) =

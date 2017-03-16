@@ -23,7 +23,7 @@ codetoanalyze/java/checkers/ExpensiveInheritanceExample.java, void ExpensiveInhe
 codetoanalyze/java/checkers/ExpensiveInheritanceExample.java, void ExpensiveInheritanceExample.reportsAssumingObjectOfTypeA(), 2, CHECKERS_CALLS_EXPENSIVE_METHOD, []
 codetoanalyze/java/checkers/ExpensiveInheritanceExample.java, void ExpensiveInheritanceExample.reportsBecauseFooIsExpensiveInA(A), 1, CHECKERS_CALLS_EXPENSIVE_METHOD, []
 codetoanalyze/java/checkers/ExpensiveInterfaceExample.java, void ExpensiveInterfaceExample$ImplementsInterface.m1(), 1, CHECKERS_CALLS_EXPENSIVE_METHOD, []
-codetoanalyze/java/checkers/ExpensiveSubtypingExample.java, void ExpensiveSubtypingExample.m3(), 0, CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED, [return from a call to void ExpensiveSubtypingExample.m4()]
+codetoanalyze/java/checkers/ExpensiveSubtypingExample.java, void ExpensiveSubtypingExample.m3(), 0, CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED, []
 codetoanalyze/java/checkers/FragmentRetainsViewExample.java, void FragmentRetainsViewExample.onDestroyView(), 0, CHECKERS_FRAGMENT_RETAINS_VIEW, [return from a call to void FragmentRetainsViewExample.onDestroyView()]
 codetoanalyze/java/checkers/FragmentRetainsViewExample.java, void FragmentRetainsViewExample.onDestroyView(), 0, CHECKERS_FRAGMENT_RETAINS_VIEW, [return from a call to void FragmentRetainsViewExample.onDestroyView()]
 codetoanalyze/java/checkers/FragmentRetainsViewExample.java, void FragmentRetainsViewExample.onDestroyView(), 0, CHECKERS_FRAGMENT_RETAINS_VIEW, [return from a call to void FragmentRetainsViewExample.onDestroyView()]

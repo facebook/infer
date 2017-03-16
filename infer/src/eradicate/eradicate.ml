@@ -405,39 +405,14 @@ module Main =
   Build(EmptyExtension)
 
 (** Eradicate checker for Java @Nullable annotations. *)
-let callback_eradicate
-    ({ Callbacks.get_proc_desc; summary } as callback_args) =
+let callback_eradicate =
   let checks =
     {
       TypeCheck.eradicate = true;
       check_extension = false;
       check_ret_type = [];
     } in
-  let callbacks =
-    let analyze_ondemand _ pdesc =
-      let idenv_pname = Idenv.create pdesc in
-      let proc_name = Procdesc.get_proc_name pdesc in
-      let summary = Specs.get_summary_unsafe "Eradicate.analyze_ondemand" proc_name in
-      Main.callback checks
-        { callback_args with
-          Callbacks.idenv = idenv_pname;
-          summary;
-          proc_desc = pdesc; } in
-    {
-      Ondemand.analyze_ondemand;
-      get_proc_desc;
-    } in
-
-  if Ondemand.procedure_should_be_analyzed (Specs.get_proc_name summary)
-  then
-    begin
-      Ondemand.set_callbacks callbacks;
-      let final_summary = Main.callback checks callback_args in
-      Ondemand.unset_callbacks ();
-      final_summary
-    end
-  else
-    summary
+  Main.callback checks
 
 (** Call the given check_return_type at the end of every procedure. *)
 let callback_check_return_type check_return_type callback_args =
