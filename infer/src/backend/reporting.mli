@@ -20,18 +20,16 @@ type log_t =
   exn ->
   unit
 
-type log_issue = Typ.Procname.t -> log_t
-
 type log_issue_from_errlog = Errlog.t -> log_t
 
 (** Report an error in the given procedure. *)
-val log_error : log_issue
+val log_error : Typ.Procname.t -> log_t
 
 (** Report a warning in the given procedure. *)
-val log_warning : log_issue
+val log_warning : Typ.Procname.t -> log_t
 
 (** Report an info in the given procedure. *)
-val log_info : log_issue
+val log_info : Typ.Procname.t -> log_t
 
 (** Report an issue of a given kind  in the given error log. *)
 val log_issue_from_errlog : Exceptions.err_kind -> log_issue_from_errlog
@@ -44,3 +42,12 @@ val log_warning_from_errlog : log_issue_from_errlog
 
 (** Report an info in the given error log. *)
 val log_info_from_errlog : log_issue_from_errlog
+
+(** Add an error to the given summary. *)
+val log_error_from_summary : Specs.summary -> log_t
+
+(** Add an warning to the given summary. *)
+val log_warning_from_summary : Specs.summary -> log_t
+
+(** Add an info to the given summary. *)
+val log_info_from_summary : Specs.summary -> log_t
