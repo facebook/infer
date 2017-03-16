@@ -1089,11 +1089,12 @@ let pp_accesses_sink fmt ~is_write_access sink =
      else snd access_path)
 
 (* trace is really a set of accesses*)
-let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description trace threaded tab =
+let report_thread_safety_violations
+    ( _, tenv, pname, pdesc) ~get_unsafe_accesses make_description trace threaded tab =
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
-    | Some (_, _, accesses, _) -> get_possibly_unsafe_writes accesses
+    | Some (_, _, accesses, _) -> get_unsafe_accesses accesses
     | _ -> PathDomain.empty in
   let report_one_path ((_, sinks) as path) =
     let initial_sink, _ = List.last_exn sinks in
@@ -1168,7 +1169,9 @@ let report_reads proc_env reads threaded tab =
   let racy_reads =
     ThreadSafetyDomain.PathDomain.update_sinks reads racy_read_sinks
   in
-  report_thread_safety_violations proc_env
+  report_thread_safety_violations
+    proc_env
+    ~get_unsafe_accesses:get_possibly_unsafe_reads
     make_read_write_race_description
     racy_reads
     threaded
@@ -1254,10 +1257,15 @@ let process_results_table file_env tab =
            let stripped_unsafe_reads = strip_reads_that_have_co_located_write
                unsafe_reads
                unsafe_writes in
-           (if not threaded then (*don't report writes for threaded; TODO to extend this*)
-              report_thread_safety_violations
-                proc_env make_unprotected_write_description unsafe_writes threaded tab
-           );
+           if not threaded
+           then (*don't report writes for threaded; TODO to extend this*)
+             report_thread_safety_violations
+               proc_env
+               ~get_unsafe_accesses:get_possibly_unsafe_writes
+               make_unprotected_write_description
+               unsafe_writes
+               threaded
+               tab;
            report_reads proc_env stripped_unsafe_reads threaded tab
          end
     )

@@ -55,6 +55,14 @@ class ReadWriteRaces{
     return field1;
   }
 
+  private Object unprotectedReadInCallee() {
+    return field1;
+  }
+
+  public Object callUnprotecteReadInCallee() {
+    return unprotectedReadInCallee();
+  }
+
   public void syncWrite2() {
     synchronized(this) {
       field2 = new Object();
