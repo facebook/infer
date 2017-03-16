@@ -298,12 +298,13 @@ let execute_analyze () =
     run_parallel_analysis ()
 
 let report () =
-  let report_csv = Some (Config.results_dir ^/ "report.csv") in
+  let report_csv =
+    if Config.buck_cache_mode then None else Some (Config.results_dir ^/ "report.csv") in
   let report_json = Some (Config.results_dir ^/ "report.json") in
   InferPrint.main ~report_csv ~report_json ;
   (* Post-process the report according to the user config. By default, calls report.py to create a
      human-readable report. *)
-  match Config.buck, Config.report_hook with
+  match Config.buck_cache_mode, Config.report_hook with
   | true, _ (* do not bother calling the report hook when called from within Buck *)
   | false, None ->
       ()
