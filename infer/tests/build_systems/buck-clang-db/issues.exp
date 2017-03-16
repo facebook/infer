@@ -1,0 +1,4 @@
+clang_compilation_database/hello.cpp, test0, 2, NULL_DEREFERENCE, [start of procedure test0()]
+clang_compilation_database/hello.cpp, test1, 2, NULL_DEREFERENCE, [start of procedure test1(),start of procedure deref1()]
+clang_compilation_database/hello.cpp, test2, 2, NULL_DEREFERENCE, [start of procedure test2(),start of procedure deref2()]
+clang_compilation_database/lib3.h, test, 1, NULL_DEREFERENCE, [start of procedure test(),start of procedure deref3()]

@@ -27,23 +27,6 @@ let should_capture_file_from_index () =
   | Some files_set ->
       function source_file -> SourceFile.Set.mem source_file files_set
 
-(** The buck targets are assumed to start with //, aliases are not supported. *)
-let check_args_for_targets args =
-  if not (List.exists ~f:Buck.is_target_string args) then
-    Buck.no_targets_found_error_and_exit args
-
-let add_flavor_to_targets args =
-  let flavor =
-    match Config.buck_compilation_database with
-    | Some `Deps -> "#uber-compilation-database"
-    | Some `NoDeps -> "#compilation-database"
-    | _ -> assert false (* cannot happen *) in
-  let process_arg arg =
-    (* Targets are assumed to start with //, aliases are not allowed *)
-    if String.is_prefix ~prefix:"//" arg then arg ^ flavor
-    else arg in
-  List.map ~f:process_arg args
-
 let create_files_stack compilation_database should_capture_file =
   let stack = Stack.create () in
   let add_to_stack file _ = if should_capture_file file then
@@ -98,27 +81,35 @@ let run_compilation_database compilation_database should_capture_file =
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck () =
   let cmd = List.rev_append Config.rest (List.rev Config.buck_build_args) in
-  match cmd with
-  | buck :: build :: args ->
-      (check_args_for_targets args;
-       let args_with_flavor = add_flavor_to_targets args in
-       let args = build :: "--config" :: "*//cxx.pch_enabled=false" :: args_with_flavor in
-       Process.create_process_and_wait ~prog:buck ~args;
-       let buck_targets_list = buck :: "targets" :: "--show-output" :: args_with_flavor in
-       let buck_targets = String.concat ~sep:" " buck_targets_list in
-       try
-         match fst @@ Utils.with_process_in buck_targets In_channel.input_lines with
-         | [] -> Logging.stdout "There are no files to process, exiting."; exit 0
-         | lines ->
-             Logging.out "Reading compilation database from:@\n%s@\n"
-               (String.concat ~sep:"\n" lines);
-             let scan_output compilation_database_files chan =
-               Scanf.sscanf chan "%s %s" (fun _ file -> `Raw file::compilation_database_files) in
-             List.fold ~f:scan_output ~init:[] lines
-       with Unix.Unix_error (err, _, _) ->
-         Process.print_error_and_exit
-           "Cannot execute %s\n%!"
-           (buck_targets ^ " " ^ (Unix.error_message err)))
+  match Buck.add_flavors_to_buck_command cmd with
+  | buck :: build :: args_with_flavor -> (
+      let build_args = build :: "--config" :: "*//cxx.pch_enabled=false" :: args_with_flavor in
+      Process.create_process_and_wait ~prog:buck ~args:build_args;
+      let buck_targets_shell =
+        buck :: "targets" :: "--show-output" :: args_with_flavor
+        |> List.map ~f:(Printf.sprintf "'%s'")
+        |> String.concat ~sep:" " in
+      try
+        match fst @@ Utils.with_process_in buck_targets_shell In_channel.input_lines with
+        | [] -> Logging.stdout "There are no files to process, exiting."; exit 0
+        | lines ->
+            Logging.out "Reading compilation database from:@\n%s@\n"
+              (String.concat ~sep:"\n" lines);
+            (* this assumes that flavors do not contain spaces *)
+            let split_regex = Str.regexp "#[^ ]* " in
+            let scan_output compilation_database_files line =
+              match Str.bounded_split split_regex line 2 with
+              | _::filename::[] ->
+                  `Raw filename::compilation_database_files
+              | _ ->
+                  failwithf
+                    "Failed to parse `buck targets --show-output ...` line of output:@\n%s" line in
+            List.fold ~f:scan_output ~init:[] lines
+      with Unix.Unix_error (err, _, _) ->
+        Process.print_error_and_exit
+          "Cannot execute %s\n%!"
+          (buck_targets_shell ^ " " ^ (Unix.error_message err))
+    )
   | _ ->
       let cmd = String.concat ~sep:" " cmd in
       Process.print_error_and_exit "Incorrect buck command: %s. Please use buck build <targets>" cmd

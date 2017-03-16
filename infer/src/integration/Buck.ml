@@ -36,23 +36,26 @@ let no_targets_found_error_and_exit buck_cmd =
     (String.concat ~sep:" " buck_cmd)
 
 let add_flavor_to_target target =
-  let infer_flavor =
-    match Config.analyzer with
-    | Compile ->
-        None
-    | Linters | Capture ->
-        Some "infer-capture-all"
-    | Checkers | Infer ->
-        Some "infer"
-    | Eradicate | Tracing | Crashcontext | Quandary | Threadsafety | Bufferoverrun ->
-        failwithf "Unsupported infer analyzer with Buck flavors: %s"
-          (Config.string_of_analyzer Config.analyzer) in
-  if List.exists ~f:(String.is_prefix ~prefix:"infer") target.flavors then
-    (* there's already an infer flavor associated to the target, do nothing *)
-    target
-  else
-    { target with flavors = (Option.to_list infer_flavor) @ target.flavors }
-
+  let add flavor =
+    if List.mem ~equal:String.equal target.flavors flavor then
+      (* there's already an infer flavor associated to the target, do nothing *)
+      target
+    else
+      { target with flavors = flavor::target.flavors } in
+  match Config.buck_compilation_database, Config.analyzer with
+  | Some `Deps, _ ->
+      add "uber-compilation-database"
+  | Some `NoDeps, _ ->
+      add "compilation-database"
+  | None, Compile ->
+      target
+  | None, (Linters | Capture) ->
+      add "infer-capture-all"
+  | None, (Checkers | Infer) ->
+      add "infer"
+  | None, (Eradicate | Tracing | Crashcontext | Quandary | Threadsafety | Bufferoverrun) ->
+      failwithf "Unsupported infer analyzer with Buck flavors: %s"
+        (Config.string_of_analyzer Config.analyzer)
 
 let add_flavors_to_buck_command build_cmd =
   let add_infer_if_target s (cmd, found_one_target) =

@@ -39,6 +39,9 @@ BUILD_SYSTEMS_TESTS += \
   utf8_in_procname \
   waf \
 
+ifneq ($(BUCK),no)
+BUILD_SYSTEMS_TESTS += buck-clang-db
+endif
 ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake
 endif

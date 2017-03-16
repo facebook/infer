@@ -20,7 +20,7 @@ int test1() {
   return deref1(s); // should be nullderef
 }
 
-void test2() {
+int test2() {
   int* s = nullptr;
   return deref2(s); // should be nullderef, but will be skipped
   //  because of --changed-files-index option

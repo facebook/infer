@@ -572,6 +572,7 @@ and buck_build_args =
 
 and buck_compilation_database =
   CLOpt.mk_symbol_opt ~long:"buck-compilation-database" ~deprecated:["-use-compilation-database"]
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Buck integration using the compilation database, with or without dependencies."
     ~symbols:[("deps", `Deps); ("no-deps", `NoDeps)]
 
