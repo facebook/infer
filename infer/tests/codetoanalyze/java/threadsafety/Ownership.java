@@ -9,6 +9,10 @@
 
 package codetoanalyze.java.checkers;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
+
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -351,6 +355,20 @@ public class Ownership {
   void castThenReturnBad() {
     Obj o = getMaybeUnownedObj();
     castThenReturn(o).f = new Object();
+  }
+
+  void ownViaReflectionOk1() throws InstantiationException, IllegalAccessException {
+    Class<Obj> oClass = Obj.class;
+    Obj o = oClass.newInstance();
+    o.f = new Object();
+  }
+
+  void ownViaReflectionOk2()
+    throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException {
+    Class<Obj> oClass = Obj.class;
+    Constructor<Obj> oConstructor = oClass.getConstructor();
+    Obj o = oConstructor.newInstance();
+    o.f = new Object();
   }
 
 }

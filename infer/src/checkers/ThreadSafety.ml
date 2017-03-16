@@ -320,6 +320,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | "javax.inject.Provider", "get" ->
                 (* in dependency injection, the library allocates fresh values behind the scenes *)
                 true
+            | ("java.lang.Class" | "java.lang.reflect.Constructor"), "newInstance" ->
+                (* reflection can perform allocations *)
+                true
             | "java.lang.ThreadLocal", "get" ->
                 (* ThreadLocal prevents sharing between threads behind the scenes *)
                 true
