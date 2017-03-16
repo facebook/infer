@@ -49,6 +49,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type lock_model =
     | Lock
     | Unlock
+    | LockedIfTrue
     | NoEffect
 
 
@@ -68,7 +69,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | "java.util.concurrent.locks.ReentrantLock"
               | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
               | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
-              ("lock" | "tryLock" | "lockInterruptibly") ->
+              ("lock" | "lockInterruptibly") ->
                 Lock
             | ("java.util.concurrent.locks.Lock"
               |"java.util.concurrent.locks.ReentrantLock"
@@ -76,6 +77,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
               "unlock" ->
                 Unlock
+            | ("java.util.concurrent.locks.Lock"
+              | "java.util.concurrent.locks.ReentrantLock"
+              | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
+              | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
+              "tryLock" ->
+                LockedIfTrue
             | _ ->
                 NoEffect
           end
@@ -431,6 +438,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 { astate with locks = true; }
             | Unlock ->
                 { astate with locks = false; }
+            | LockedIfTrue ->
+                begin
+                  match ret_opt with
+                  | Some (ret_id, ret_typ) ->
+                      let attribute_map =
+                        AttributeMapDomain.add_attribute
+                          (AccessPath.of_id ret_id ret_typ)
+                          (Choice Choice.LockHeld)
+                          astate.attribute_map in
+                      { astate with attribute_map; }
+                  | None ->
+                      failwithf
+                        "Procedure %a specified as returning boolean, but returns nothing"
+                        Typ.Procname.pp callee_pname
+                end
             | NoEffect ->
                 match
                   get_summary pdesc callee_pname actuals ~f_resolve_id loc tenv with
@@ -629,6 +651,61 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             lhs_access_path rhs_exp rhs_typ ~f_resolve_id astate.attribute_map extras in
         { astate with accesses; id_map; attribute_map; }
 
+    | Sil.Prune (prune_exp, _, _, _) ->
+        let rec eval_binop op var e1 e2 =
+          match eval_bexp var e1, eval_bexp var e2 with
+          | Some b1, Some b2 -> Some (op b1 b2)
+          | _ -> None
+        (* return Some bool_value if the given boolean expression evaluates to bool_value when [var]
+           is set to true. return None if it has free variables that stop us from evaluating it *)
+        and eval_bexp var = function
+          | Exp.Var id ->
+              begin
+                match f_resolve_id (Var.of_id id) with
+                | Some ap when AccessPath.Raw.equal ap var -> Some true
+                | _ -> None
+              end
+          | (Exp.Const _) as e ->
+              Some (not (Exp.is_zero e))
+          | Exp.UnOp (Unop.LNot, e, _) ->
+              let b_opt = eval_bexp var e in
+              Option.map ~f:not b_opt
+          | Exp.BinOp (Binop.LAnd, e1, e2) ->
+              eval_binop (&&) var e1 e2
+          | Exp.BinOp (Binop.LOr, e1, e2) ->
+              eval_binop (||) var e1 e2
+          | Exp.BinOp (Binop.Eq, e1, e2) ->
+              eval_binop Bool.equal var e1 e2
+          | Exp.BinOp (Binop.Ne, e1, e2) ->
+              eval_binop (<>) var e1 e2
+          | _ ->
+              (* non-boolean expression; can't evaluate it *)
+              None in
+        let add_choice bool_value acc = function
+          | Choice.LockHeld ->
+              let locks = bool_value in
+              { acc with locks; }
+          | Choice.OnMainThread ->
+              let threads = bool_value in
+              { acc with threads; } in
+
+        begin
+          match AccessPath.of_lhs_exp prune_exp (Typ.Tint IBool) ~f_resolve_id with
+          | Some access_path ->
+              let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
+              begin
+                match eval_bexp access_path prune_exp with
+                | Some bool_value ->
+                    (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
+                       add the constraint that the the choice must be [bool_value] to the state *)
+                    List.fold ~f:(add_choice bool_value) ~init:astate choices
+                | None ->
+                    astate
+              end
+          | _ ->
+              astate
+        end
+
     | Sil.Remove_temps (ids, _) ->
         let id_map =
           List.fold
@@ -637,7 +714,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             ids in
         { astate with id_map; }
 
-    |  _  ->
+    | _ ->
         astate
 end
 

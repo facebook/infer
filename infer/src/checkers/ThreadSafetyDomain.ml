@@ -74,16 +74,29 @@ module ThreadsDomain = AbstractDomain.BooleanAnd
 
 module PathDomain = SinkTrace.Make(TraceElem)
 
+module Choice = struct
+  type t =
+    | OnMainThread
+    | LockHeld
+  [@@deriving compare]
+
+  let pp fmt = function
+    | OnMainThread -> F.fprintf fmt "OnMainThread"
+    | LockHeld -> F.fprintf fmt "LockHeld"
+end
+
 module Attribute = struct
   type t =
     | OwnedIf of int option
     | Functional
+    | Choice of Choice.t
   [@@deriving compare]
 
   let pp fmt = function
     | OwnedIf None -> F.fprintf fmt "Owned"
     | OwnedIf (Some formal_index) -> F.fprintf fmt "Owned if formal %d is owned" formal_index
     | Functional -> F.fprintf fmt "Functional"
+    | Choice choice -> Choice.pp fmt choice
 
   let unconditionally_owned = OwnedIf None
 
@@ -116,6 +129,17 @@ module AttributeMapDomain = struct
          (AttributeSetDomain.elements attributes))
     with Not_found ->
       None
+
+  let get_choices access_path t =
+    try
+      let attributes = find access_path t in
+      (List.filter_map
+         ~f:(function
+             | Attribute.Choice c -> Some c
+             | _ -> None)
+         (AttributeSetDomain.elements attributes))
+    with Not_found ->
+      []
 
   let add_attribute access_path attribute t =
     let attribute_set =

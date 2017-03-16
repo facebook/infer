@@ -43,12 +43,24 @@ module ThreadsDomain : AbstractDomain.S with type astate = bool
 
 module PathDomain : module type of SinkTrace.Make(TraceElem)
 
+(** attribute attached to a boolean variable specifying what it means when the boolean is true *)
+module Choice : sig
+  type t =
+    | OnMainThread (** the current procedure is running on the main thread *)
+    | LockHeld (** a lock is currently held *)
+  [@@deriving compare]
+
+  val pp : F.formatter -> t -> unit
+end
+
 module Attribute : sig
   type t =
     | OwnedIf of int option
     (** owned unconditionally if OwnedIf None, owned when formal at index i is owned otherwise *)
     | Functional
     (** holds a value returned from a callee marked @Functional *)
+    | Choice of Choice.t
+    (** holds a boolean choice variable *)
   [@@deriving compare]
 
   (** alias for OwnedIf None *)
@@ -68,6 +80,9 @@ module AttributeMapDomain : sig
 
   (** get the formal index of the the formal that must own the given access path (if any) *)
   val get_conditional_ownership_index : AccessPath.Raw.t -> astate -> int option
+
+  (** get the choice attributes associated with the given access path *)
+  val get_choices : AccessPath.Raw.t -> astate -> Choice.t list
 
   val add_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> astate
 end
