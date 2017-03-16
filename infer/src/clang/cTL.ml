@@ -366,12 +366,21 @@ let transition_decl_to_stmt d trs =
   | _ -> None
 
 let transition_decl_to_decl_via_super d =
-  match CAst_utils.get_impl_decl_info d with
-  | Some idi ->
-      (match CAst_utils.get_super_ObjCImplementationDecl idi with
-       | Some d -> Some (Decl d)
-       | _ -> None)
-  | None -> None
+  let decl_opt_to_ast_node_opt d_opt =
+    match d_opt with
+    | Some d' -> Some (Decl d')
+    | None -> None in
+  let do_ObjCImplementationDecl d =
+    match CAst_utils.get_impl_decl_info d with
+    | Some idi ->
+        decl_opt_to_ast_node_opt (CAst_utils.get_super_ObjCImplementationDecl idi)
+    | None -> None in
+  match d with
+  | Clang_ast_t.ObjCImplementationDecl _ ->
+      do_ObjCImplementationDecl d
+  | Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, idi) ->
+      decl_opt_to_ast_node_opt (CAst_utils.get_decl_opt_with_decl_ref idi.otdi_super)
+  | _ -> None
 
 let transition_stmt_to_stmt_via_condition st =
   let open Clang_ast_t in
@@ -442,8 +451,14 @@ let rec eval_Atomic pred_name args an lcxt =
       CPredicates.is_binop_with_kind str_kind an
   | "is_unop_with_kind", [str_kind], an ->
       CPredicates.is_unop_with_kind str_kind an
-  | "in_node", [nodename], an -> CPredicates.is_node nodename an
+  | "is_node", [nodename], an -> CPredicates.is_node nodename an
   | "isa", [classname], an -> CPredicates.isa classname an
+  | "declaration_has_name", [decl_name], an ->
+      CPredicates.declaration_has_name an decl_name
+  | "declaration_has_name_strict", [decl_name], an ->
+      CPredicates.declaration_has_name_strict an decl_name
+  | "is_class", [cname], an -> CPredicates.is_class an cname
+  | "is_class_strict", [cname], an -> CPredicates.is_class_strict an cname
   | "decl_unavailable_in_supported_ios_sdk", [], an ->
       CPredicates.decl_unavailable_in_supported_ios_sdk lcxt an
   | "within_responds_to_selector_block", [], an ->
@@ -527,7 +542,7 @@ and in_node node_type_list phi an lctx =
    such that d,lcxt |= phi *)
 and eval_EH classes phi an lcxt =
   (* Define EH[Classes] phi = ET[Classes](EF[->Super] phi) *)
-  let f = ET (classes, None, EF (Some Super, phi)) in
+  let f = ET (classes, None, EX (Some Super, EF (Some Super, phi))) in
   eval_formula f an lcxt
 
 (* an, lcxt |= ET[T][->l]phi <=>

@@ -61,6 +61,14 @@ val isa : string -> Ctl_parser_types.ast_node -> bool
 
 val is_node : string -> Ctl_parser_types.ast_node -> bool
 
+val declaration_has_name : Ctl_parser_types.ast_node -> string -> bool
+
+val declaration_has_name_strict : Ctl_parser_types.ast_node -> string -> bool
+
+val is_class : Ctl_parser_types.ast_node -> string -> bool
+
+val is_class_strict : Ctl_parser_types.ast_node -> string -> bool
+
 val pp_predicate : Format.formatter -> t -> unit
 
 val decl_unavailable_in_supported_ios_sdk : CLintersContext.context -> Ctl_parser_types.ast_node

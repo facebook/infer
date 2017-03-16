@@ -1,0 +1,4 @@
+codetoanalyze/objc/linters-for-test-only/subclassing.m, Linters_dummy_method, 26, SUBCLASSING_TEST_EXAMPLE, []
+codetoanalyze/objc/linters-for-test-only/subclassing.m, Linters_dummy_method, 41, SUBCLASSING_TEST_EXAMPLE, []
+codetoanalyze/objc/linters-for-test-only/subclassing.m, Linters_dummy_method, 47, SUBCLASSING_TEST_EXAMPLE, []
+codetoanalyze/objc/linters-for-test-only/subclassing.m, Linters_dummy_method, 53, SUBCLASSING_TEST_EXAMPLE, []

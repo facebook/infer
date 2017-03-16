@@ -252,5 +252,10 @@ let invoke_set_of_parsed_checkers_an parsed_linters context (an : Ctl_parser_typ
 
 (* We decouple the hardcoded checkers from the parsed ones *)
 let invoke_set_of_checkers_on_node context an =
-  invoke_set_of_parsed_checkers_an !parsed_linters context an;
+  (match an with
+   | Ctl_parser_types.Decl (Clang_ast_t.TranslationUnitDecl _) ->
+       (* Don't run parsed linters on TranslationUnitDecl node.
+          Because depending on the formula it may give an error at line -1 *)
+       ()
+   | _ -> invoke_set_of_parsed_checkers_an !parsed_linters context an);
   invoke_set_of_hard_coded_checkers_an context an

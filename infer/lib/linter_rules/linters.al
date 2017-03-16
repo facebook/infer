@@ -40,13 +40,13 @@ DEFINE-CHECKER ASSIGN_POINTER_WARNING = {
 // Fires whenever a NSNumber is dangerously coerced to a boolean in a comparison
 DEFINE-CHECKER BAD_POINTER_COMPARISON = {
 
-	LET is_binop = in_node(BinaryOperator);
+	LET is_binop = is_node(BinaryOperator);
 	LET is_binop_eq = is_binop_with_kind(EQ);
 	LET is_binop_ne = is_binop_with_kind(NE);
 	LET is_binop_neq = is_binop_eq OR is_binop_ne;
 	LET is_unop_lnot = is_unop_with_kind(LNot);
-	LET is_implicit_cast_expr = in_node(ImplicitCastExpr);
-	LET is_expr_with_cleanups = in_node(ExprWithCleanups);
+	LET is_implicit_cast_expr = is_node(ImplicitCastExpr);
+	LET is_expr_with_cleanups = is_node(ExprWithCleanups);
 	LET is_nsnumber = isa(NSNumber);
 
   LET eu =(
@@ -119,7 +119,7 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
  	LET eventually_removeObserver =
 		IN-NODE ObjCImplementationDecl, ObjCProtocolDecl WITH-TRANSITION _
 		 		(remove_observer_in_method  OR
-					remove_observer_in_method INSTANCEOF ObjCImplementationDecl, ObjCProtocolDecl)
+					remove_observer_in_method HOLDS-IN-SOME-SUPERCLASS-OF ObjCImplementationDecl)
   	HOLDS-EVENTUALLY;
 
   SET report_when =
@@ -157,11 +157,11 @@ DEFINE-CHECKER GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL = {
      is_objc_extension() AND is_global_var() AND (NOT is_const_var());
 
 	LET makes_an_expensive_call =
-	 (in_node(CallExpr) AND NOT call_function_named(CGPointMake))
-		OR in_node(CXXTemporaryObjectExpr)
-    OR in_node(CXXMemberCallExpr)
-    OR in_node(CXXOperatorCallExpr)
-    OR in_node(ObjCMessageExpr);
+	 (is_node(CallExpr) AND NOT call_function_named(CGPointMake))
+		OR is_node(CXXTemporaryObjectExpr)
+    OR is_node(CXXMemberCallExpr)
+    OR is_node(CXXOperatorCallExpr)
+    OR is_node(ObjCMessageExpr);
 
   LET is_initialized_with_expensive_call  =
     IN-NODE VarDecl WITH-TRANSITION InitExpr
@@ -183,7 +183,7 @@ DEFINE-CHECKER GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL = {
 DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 	  SET report_when =
 		     WHEN
-				   ((in_node(BlockDecl) AND captures_cxx_references())
+				   ((is_node(BlockDecl) AND captures_cxx_references())
 					 HOLDS-NEXT)
          HOLDS-IN-NODE BlockExpr;
 
@@ -194,7 +194,7 @@ DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 //				 		 HOLDS-IN-NODE BlockDecl;
 //
 //		SET report_when =
-//		in_node(BlockDecl) AND captures_cxx_references();
+//		is_node(BlockDecl) AND captures_cxx_references();
 
 	  SET message =
 	        "C++ Reference variable(s) %cxx_ref_captured_in_block% captured by Objective-C block";

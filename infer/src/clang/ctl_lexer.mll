@@ -38,7 +38,7 @@ rule token = parse
   | "HOLDS-EVERYWHERE-NEXT" { AX }
   | "ALWAYS-HOLDS" { EG }
   | "ALSWAYS-HOLDS-EVERYWHERE" { AG }
-  | "INSTANCEOF" { EH }
+  | "HOLDS-IN-SOME-SUPERCLASS-OF" { EH }
   | "IN-NODE" { ET }
   | "IN-EXCLUSIVE-NODE" { ETX }
   | "WHEN" { WHEN }

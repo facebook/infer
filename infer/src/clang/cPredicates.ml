@@ -285,6 +285,7 @@ let is_node nodename an =
     | Ctl_parser_types.Decl d -> Clang_ast_proj.get_decl_kind_string d in
   String.equal nodename an_str
 
+(*  node an is of class classname *)
 let isa classname an =
   match an with
   | Ctl_parser_types.Stmt stmt ->
@@ -295,6 +296,34 @@ let isa classname an =
        | _ -> false)
   | _ -> false
 
+let _declaration_has_name comp an name =
+  match an with
+  | Ctl_parser_types.Decl d ->
+      (match Clang_ast_proj.get_named_decl_tuple d with
+       | Some (_, ndi) -> comp ndi.ni_name name
+       | _ -> false)
+  | _ -> false
+
+(* an is a declaration whose name contains a regexp defined by re *)
+let declaration_has_name an re =
+  _declaration_has_name (str_contains) an re
+
+(* an is a declaration called precisely name *)
+let declaration_has_name_strict an name =
+  _declaration_has_name (String.equal) an name
+
+let _is_class comp an re =
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCInterfaceDecl _)
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl _) ->
+      _declaration_has_name comp an re
+  | _ -> false
+
+let is_class an re =
+  _is_class (str_contains) an re
+
+let is_class_strict an name =
+  _is_class (String.equal) an name
 
 let decl_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
   let allowed_os_versions =

@@ -80,7 +80,7 @@ DIRECT_TESTS += \
 endif
 ifneq ($(XCODE_SELECT),no)
 DIRECT_TESTS += \
-  objc_frontend objc_errors objc_linters objc_ioslints objcpp_frontend objcpp_linters
+  objc_frontend objc_errors objc_linters objc_ioslints objcpp_frontend objcpp_linters objc_linters-for-test-only
 endif
 
 .PHONY: all
