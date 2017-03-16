@@ -929,8 +929,9 @@ and from_json_report =
 
 and frontend_debug =
   CLOpt.mk_bool ~deprecated:["fd"] ~deprecated_no:["nfd"] ~long:"frontend-debug"
+    ~parse_mode:CLOpt.(Infer [Clang])
     "Emit debug info to *.o.astlog and a script *.o.sh that replays the command used to run clang \
-     with the plugin attached, piped to the InferClang frontend command (clang only)"
+     with the plugin attached, piped to the InferClang frontend command"
 
 and frontend_stats =
   CLOpt.mk_bool ~deprecated:["fs"] ~deprecated_no:["nfs"] ~long:"frontend-stats"
@@ -1157,6 +1158,7 @@ and quiet =
 
 and reactive =
   CLOpt.mk_bool ~deprecated:["reactive"] ~long:"reactive" ~short:'r'
+    ~parse_mode:CLOpt.(Infer [Driver])
     "Reactive mode: the analysis starts from the files captured since the `infer` command started"
 
 and reactive_capture =
