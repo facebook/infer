@@ -9,6 +9,24 @@
 
 (** bindings to ioctl(2) that only capture what we need *)
 
-open! IStd
 
-val terminal_width : (int, int) Result.t lazy_t
+open! IStd
+open Ctypes
+
+type winsize
+val winsize : winsize structure typ
+val ws_col : (Unsigned.ushort, winsize structure) field
+val ws_row : (Unsigned.ushort, winsize structure) field
+val ws_xpixel : (Unsigned.ushort, winsize structure) field
+val ws_ypixel : (Unsigned.ushort, winsize structure) field
+
+module Types : functor (F : Cstubs.Types.TYPE) -> sig
+  module Request : sig val request_TIOCGWINSZ : Unsigned.ulong F.const end
+end
+
+module Bindings : functor (F : Cstubs.FOREIGN) -> sig
+  val ioctl_winsize :
+    (int ->
+     Unsigned.ulong -> winsize structure Ctypes_static.ptr -> int F.return)
+      F.result
+end

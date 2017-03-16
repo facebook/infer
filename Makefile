@@ -155,11 +155,12 @@ test_build: clang_plugin
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	@$(MAKE) -C facebook setup
 endif
-	@$(MAKE) -C $(SRC_DIR) test_build
+	@$(MAKE) -C $(SRC_DIR) TEST=1 byte
+	@$(MAKE) -C $(SRC_DIR) TEST=1 toplevel
 
 .PHONY: ocaml_unit_test
 ocaml_unit_test: test_build
-	$(call silent_on_success,$(TEST_BUILD_DIR)/unit/inferunit.byte)
+	$(call silent_on_success,$(BUILD_DIR)/test/infer/unit/inferunit.byte)
 
 DIRECT_TESTS_REPLACE = $(patsubst %_frontend,%_frontend_replace,$(filter %_frontend,$(DIRECT_TESTS)))
 

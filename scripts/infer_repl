@@ -6,7 +6,12 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # toplevel (`make toplevel`) they get the expected version of infer. The _build/test toplevel is
 # built during `make test` which is probably run less often, hence why it doesn't take
 # precedence. Of course this cannot be perfect so caution is advised.
-TOPLEVEL_INCLUDES="-I $SCRIPT_DIR/../infer/_build/infer -I $SCRIPT_DIR/../infer/_build/test"
+TOPLEVEL_INCLUDES=(
+    -I "$SCRIPT_DIR"/../infer/_build/infer
+    -I "$SCRIPT_DIR"/../infer/_build/infer/ffi/gen
+    -I "$SCRIPT_DIR"/../infer/_build/test/infer
+    -I "$SCRIPT_DIR"/../infer/_build/test/infer/ffi/gen
+)
 
 # to build new toplevel, run `make toplevel`
 # -init option is used only in interactive mode
@@ -22,4 +27,4 @@ TOPLEVEL_INCLUDES="-I $SCRIPT_DIR/../infer/_build/infer -I $SCRIPT_DIR/../infer/
 if [ -z "$INFER_REPL_BINARY" ]; then
   INFER_REPL_BINARY="utop"
 fi
-$INFER_REPL_BINARY -init $SCRIPT_DIR/toplevel_init $TOPLEVEL_INCLUDES -I $SCRIPT_DIR $@
+$INFER_REPL_BINARY -init $SCRIPT_DIR/toplevel_init ${TOPLEVEL_INCLUDES[@]} -I $SCRIPT_DIR $@

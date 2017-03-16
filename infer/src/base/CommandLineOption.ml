@@ -16,6 +16,19 @@ module YBU = Yojson.Basic.Util
 
 let (=) = String.equal
 
+let terminal_width = lazy (
+  let open Ctypes in
+  let module T = IOCtl.Types(IOCtl_types) in
+  let winsize = make IOCtl.winsize in
+  let return =
+    ExternStubs.ioctl_stub_1_ioctl 0 T.Request.request_TIOCGWINSZ
+      (ExternStubs.CI.cptr (addr winsize)) in
+  if return >= 0 then
+    Ok (Unsigned.UShort.to_int (getf winsize IOCtl.ws_col))
+  else
+    Error return
+)
+
 (** This is the subset of Arg.spec that we actually use. What's important is that all these specs
     call back functions. We use this to mark deprecated arguments. What's not important is that, eg,
     Arg.Float is missing. *)
@@ -200,7 +213,7 @@ let pad_and_xform doc_width left_width desc =
 let align desc_list =
   let min_term_width = 80 in
   let cur_term_width =
-    match Lazy.force IOCtl.terminal_width with
+    match Lazy.force terminal_width with
     | Ok width -> width
     | Error _ -> min_term_width in
   (* 2 blank columns before option + 2 columns of gap between flag and doc *)

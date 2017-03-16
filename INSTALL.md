@@ -21,7 +21,6 @@ compile everything from source (see the end of this document).
 - opam 1.2.2 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - Python 2.7
 - pkg-config
-- libffi >= 3.0
 - Java (only needed for the Java analysis)
 - cmake (only needed for the C/Objective-C analysis)
 - clang in Xcode command line tools. You can install them with the command
@@ -33,7 +32,7 @@ You can install some of these dependencies using
 [Homebrew](http://brew.sh/):
 
 ```sh
-brew install autoconf automake cmake libffi opam pkg-config
+brew install autoconf automake cmake opam pkg-config
 brew install caskroom/cask/brew-cask
 brew cask install java
 ```
@@ -49,7 +48,6 @@ compile everything from source (see the end of this document).
 - opam 1.2.2
 - Python 2.7
 - pkg-config
-- libffi >= 3.0
 - Java (only needed for the Java analysis)
 - gcc >= 4.7.2 or clang >= 3.1 (only needed for the C/Objective-C analysis)
 - autoconf >= 2.63 and automake >= 1.11.1 (if building from git)
@@ -114,7 +112,6 @@ sudo apt-get install -y \
   automake \
   build-essential \
   git \
-  libffi-dev \
   libgmp-dev \
   libmpc-dev \
   libmpfr-dev \
@@ -134,7 +131,6 @@ sudo apt install -y \
   automake \
   build-essential \
   git \
-  libffi-dev \
   libgmp-dev \
   libmpc-dev \
   libmpfr-dev \
@@ -163,7 +159,6 @@ sudo apt-get install -y \
   g++-4.8 \
   gcc-4.8 \
   git \
-  libffi-dev \
   libgmp-dev \
   libmpc-dev \
   libmpfr-dev \
