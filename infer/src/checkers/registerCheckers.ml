@@ -16,7 +16,6 @@ module F = Format
 
 (** Flags to activate checkers. *)
 let active_procedure_checkers () =
-  let checkers_enabled = Config.checkers_enabled in
 
   let java_checkers =
     let l =
@@ -29,18 +28,18 @@ let active_procedure_checkers () =
         Checkers.callback_find_deserialization, false;
         CheckTraceCallSequence.callback_check_trace_call_sequence, false;
         Dataflow.callback_test_dataflow, false;
-        FragmentRetainsViewChecker.callback_fragment_retains_view, checkers_enabled;
+        FragmentRetainsViewChecker.callback_fragment_retains_view, Config.checkers_enabled;
         SqlChecker.callback_sql, false;
         Eradicate.callback_eradicate, Config.eradicate;
         BoundedCallTree.checker, Config.crashcontext;
         JavaTaintAnalysis.checker, Config.quandary;
         Checkers.callback_check_field_access, false;
-        ImmutableChecker.callback_check_immutable_cast, checkers_enabled;
-        RepeatedCallsChecker.callback_check_repeated_calls, checkers_enabled;
-        PrintfArgs.callback_printf_args, checkers_enabled;
-        AnnotationReachability.checker, checkers_enabled;
+        ImmutableChecker.callback_check_immutable_cast, Config.checkers_enabled;
+        RepeatedCallsChecker.callback_check_repeated_calls, Config.checkers_enabled;
+        PrintfArgs.callback_printf_args, Config.checkers_enabled;
+        AnnotationReachability.checker, Config.checkers_enabled;
         BufferOverrunChecker.checker, Config.bufferoverrun;
-        ThreadSafety.checker, Config.threadsafety;
+        ThreadSafety.checker, Config.threadsafety || Config.checkers_enabled;
       ] in
     (* make sure SimpleChecker.ml is not dead code *)
     if false then (let module SC = SimpleChecker.Make in ());
@@ -52,7 +51,7 @@ let active_procedure_checkers () =
         CheckDeadCode.callback_check_dead_code, false;
         Checkers.callback_print_access_to_globals, false;
         ClangTaintAnalysis.checker, Config.quandary;
-        Siof.checker, checkers_enabled;
+        Siof.checker, Config.checkers_enabled;
         BufferOverrunChecker.checker, Config.bufferoverrun;
       ] in
     List.map ~f:(fun (x, y) -> (x, y, Some Config.Clang)) l in
@@ -61,7 +60,7 @@ let active_procedure_checkers () =
 
 let active_cluster_checkers () =
   [(Checkers.callback_check_cluster_access, false, Some Config.Java);
-   (ThreadSafety.file_analysis, Config.threadsafety, Some Config.Java)
+   (ThreadSafety.file_analysis, Config.threadsafety || Config.checkers_enabled, Some Config.Java)
   ]
 
 let register () =
