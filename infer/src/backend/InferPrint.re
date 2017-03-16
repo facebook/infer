@@ -124,7 +124,6 @@ type summary_val = {
   vname: string,
   vname_id: string,
   vspecs: int,
-  vtime: string,
   vto: string,
   vsymop: int,
   verr: int,
@@ -173,7 +172,6 @@ let summary_values summary => {
     vname: Typ.Procname.to_string proc_name,
     vname_id: Typ.Procname.to_filename proc_name,
     vspecs: List.length specs,
-    vtime: Printf.sprintf "%.0f" stats.Specs.stats_time,
     vto: Option.value_map f::pp_failure default::"NONE" stats.Specs.stats_failure,
     vsymop: stats.Specs.symops,
     verr:
@@ -226,7 +224,6 @@ let module ProcsCsv = {
     pp "\"%s\"," (Escape.escape_csv sv.vname);
     pp "\"%s\"," (Escape.escape_csv sv.vname_id);
     pp "%d," sv.vspecs;
-    pp "%s," sv.vtime;
     pp "%s," sv.vto;
     pp "%d," sv.vsymop;
     pp "%d," sv.verr;
@@ -253,7 +250,6 @@ let module ProcsXml = {
         subtree Io_infer.Xml.tag_name (Escape.escape_xml sv.vname),
         subtree Io_infer.Xml.tag_name_id (Escape.escape_xml sv.vname_id),
         subtree Io_infer.Xml.tag_specs (string_of_int sv.vspecs),
-        subtree Io_infer.Xml.tag_time sv.vtime,
         subtree Io_infer.Xml.tag_to sv.vto,
         subtree Io_infer.Xml.tag_symop (string_of_int sv.vsymop),
         subtree Io_infer.Xml.tag_err (string_of_int sv.verr),
@@ -876,12 +872,7 @@ let module Summary = {
     if Config.quiet {
       ()
     } else {
-      L.stdout
-        "Procedure: %a@\n%a@."
-        Typ.Procname.pp
-        proc_name
-        (Specs.pp_summary_text whole_seconds::Config.whole_seconds)
-        summary
+      L.stdout "Procedure: %a@\n%a@." Typ.Procname.pp proc_name Specs.pp_summary_text summary
     }
   };
 
@@ -890,8 +881,7 @@ let module Summary = {
     let proc_name = Specs.get_proc_name summary;
     Latex.pp_section
       fmt ("Analysis of function " ^ Latex.convert_string (Typ.Procname.to_string proc_name));
-    F.fprintf
-      fmt "@[<v>%a@]" (Specs.pp_summary_latex Black whole_seconds::Config.whole_seconds) summary
+    F.fprintf fmt "@[<v>%a@]" (Specs.pp_summary_latex Black) summary
   };
   let pp_summary_xml summary fname =>
     if Config.xml_specs {

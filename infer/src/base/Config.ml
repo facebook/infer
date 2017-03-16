@@ -210,10 +210,6 @@ let reporting_stats_dir_name = "reporting_stats"
 (** If true, compact summaries before saving *)
 let save_compact_summaries = true
 
-(** If true, save the execution time in summaries.  This makes the analysis
-    nondeterministic. *)
-let save_time_in_summaries = false
-
 (** If true enables printing proposition compatible for the SMT project *)
 let smt_output = false
 

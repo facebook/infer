@@ -295,8 +295,7 @@ type call_stats = CallStats.t
 
 (** Execution statistics *)
 type stats =
-  { stats_time: float; (** Analysis time for the procedure *)
-    stats_failure:
+  { stats_failure:
       SymOp.failure_kind option; (** what type of failure stopped the analysis (if any) *)
     symops: int; (** Number of SymOp's throughout the whole analysis of the function *)
     mutable nodes_visited_fp : IntSet.t; (** Nodes visited during the footprint phase *)
@@ -366,9 +365,8 @@ let pp_errlog fmt err_log =
   F.fprintf fmt "ERRORS: @[<h>%a@]@." Errlog.pp_errors err_log;
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
 
-let pp_stats whole_seconds fmt stats =
-  F.fprintf fmt "TIME:%a FAILURE:%a SYMOPS:%d@\n" (pp_time whole_seconds)
-    stats.stats_time pp_failure_kind_opt stats.stats_failure stats.symops
+let pp_stats fmt stats =
+  F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt stats.stats_failure stats.symops
 
 
 (** Print the spec *)
@@ -460,32 +458,32 @@ let pp_payload pe fmt { preposts; typestate; crashcontext_frame; quandary; siof;
     (pp_opt BufferOverrunDomain.Summary.pp) buffer_overrun
 
 
-let pp_summary_text ~whole_seconds fmt summary =
+let pp_summary_text fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
   let pe = Pp.text in
   pp_summary_no_stats_specs fmt summary;
   F.fprintf fmt "%a@\n%a%a"
     pp_errlog err_log
-    (pp_stats whole_seconds) summary.stats
+    pp_stats summary.stats
     (pp_payload pe) summary.payload
 
-let pp_summary_latex ~whole_seconds color fmt summary =
+let pp_summary_latex color fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
   let pe = Pp.latex color in
   F.fprintf fmt "\\begin{verbatim}@\n";
   pp_summary_no_stats_specs fmt summary;
   F.fprintf fmt "%a@\n" pp_errlog err_log;
-  F.fprintf fmt "%a@\n" (pp_stats whole_seconds) summary.stats;
+  F.fprintf fmt "%a@\n" pp_stats summary.stats;
   F.fprintf fmt "\\end{verbatim}@\n";
   F.fprintf fmt "%a@\n" (pp_specs pe) (get_specs_from_payload summary)
 
-let pp_summary_html ~whole_seconds source color fmt summary =
+let pp_summary_html source color fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
   let pe = Pp.html color in
   Io_infer.Html.pp_start_color fmt Black;
   F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary;
   Io_infer.Html.pp_end_color fmt ();
-  F.fprintf fmt "<br />%a<br />@\n" (pp_stats whole_seconds) summary.stats;
+  F.fprintf fmt "<br />%a<br />@\n" pp_stats summary.stats;
   Errlog.pp_html source [] fmt err_log;
   Io_infer.Html.pp_hline fmt ();
   F.fprintf fmt "<LISTING>@\n";
@@ -493,8 +491,7 @@ let pp_summary_html ~whole_seconds source color fmt summary =
   F.fprintf fmt "</LISTING>@\n"
 
 let empty_stats calls =
-  { stats_time = 0.0;
-    stats_failure = None;
+  { stats_failure = None;
     symops = 0;
     nodes_visited_fp = IntSet.empty;
     nodes_visited_re = IntSet.empty;
@@ -518,7 +515,7 @@ let summary_compact sh summary =
 let add_summary (proc_name : Typ.Procname.t) (summary: summary) : unit =
   L.out "Adding summary for %a@\n@[<v 2>  %a@]@."
     Typ.Procname.pp proc_name
-    (pp_summary_text ~whole_seconds:false) summary;
+    pp_summary_text summary;
   Typ.Procname.Hash.replace spec_tbl proc_name summary
 
 let specs_filename pname =
@@ -692,12 +689,7 @@ let store_summary (summ1: summary) =
   let summ2 = if Config.save_compact_summaries
     then summary_compact (Sil.create_sharing_env ()) summ1
     else summ1 in
-  let summ3 = if Config.save_time_in_summaries
-    then summ2
-    else
-      { summ2 with
-        stats = { summ1.stats with stats_time = 0.0} } in
-  let final_summary = { summ3 with status = Analyzed } in
+  let final_summary = { summ2 with status = Analyzed } in
   let proc_name = get_proc_name final_summary in
   (* Make sure the summary in memory is identical to the saved one *)
   add_summary proc_name final_summary;

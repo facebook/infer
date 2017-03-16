@@ -414,7 +414,7 @@ let node_finish_session node source =
 
 (** Write html file for the procedure.
     The boolean indicates whether to print whole seconds only *)
-let write_proc_html source whole_seconds pdesc =
+let write_proc_html source pdesc =
   if Config.write_html then
     begin
       let pname = Procdesc.get_proc_name pdesc in
@@ -446,7 +446,7 @@ let write_proc_html source whole_seconds pdesc =
        | None ->
            ()
        | Some summary ->
-           Specs.pp_summary_html source Black ~whole_seconds fmt summary;
+           Specs.pp_summary_html source Black fmt summary;
            Io_infer.Html.close (fd, fmt))
     end
 

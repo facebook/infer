@@ -81,14 +81,6 @@ let iterate_procedure_callbacks exe_env caller_pname =
     | None ->
         [] in
 
-  let update_time elapsed prev_summary =
-    let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
-    let stats = { prev_summary.Specs.stats with Specs.stats_time = stats_time } in
-    let summary = { prev_summary with Specs.stats = stats } in
-    let proc_name = Specs.get_proc_name summary in
-    Specs.add_summary proc_name summary;
-    summary in
-
   let initial_summary = reset_summary caller_pname in
   match get_procedure_definition exe_env caller_pname with
   | None -> initial_summary
@@ -100,7 +92,6 @@ let iterate_procedure_callbacks exe_env caller_pname =
               | Some language -> Config.equal_language language procedure_language
               | None -> true in
             if language_matches then
-              let init_time = Unix.gettimeofday () in
               proc_callback
                 {
                   get_proc_desc;
@@ -110,7 +101,6 @@ let iterate_procedure_callbacks exe_env caller_pname =
                   summary;
                   proc_desc;
                 }
-              |> update_time (Unix.gettimeofday () -. init_time)
             else
               summary)
         !procedure_callbacks

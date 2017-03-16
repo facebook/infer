@@ -1268,17 +1268,15 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
   !res,!changed
 
 (** update a summary after analysing a procedure *)
-let update_summary tenv prev_summary specs phase proc_name elapsed res =
+let update_summary tenv prev_summary specs phase proc_name res =
   let normal_specs = List.map ~f:(Specs.spec_normalize tenv) specs in
   let new_specs, _ = update_specs tenv proc_name phase normal_specs in
-  let stats_time = prev_summary.Specs.stats.Specs.stats_time +. elapsed in
   let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
   let stats_failure = match res with
     | None -> prev_summary.Specs.stats.Specs.stats_failure
     | Some _ -> res in
   let stats =
     { prev_summary.Specs.stats with
-      Specs.stats_time;
       symops;
       stats_failure;
     } in
@@ -1299,16 +1297,14 @@ let update_summary tenv prev_summary specs phase proc_name elapsed res =
 (** Analyze the procedure and return the resulting summary. *)
 let analyze_proc source exe_env proc_desc : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let init_time = Unix.gettimeofday () in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   reset_global_values proc_desc;
   let go, get_results = perform_analysis_phase tenv proc_name proc_desc source in
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
-  let elapsed = Unix.gettimeofday () -. init_time in
   let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let updated_summary =
-    update_summary tenv prev_summary specs phase proc_name elapsed res in
+    update_summary tenv prev_summary specs phase proc_name res in
   if Config.curr_language_is Config.Clang && Config.report_custom_error then
     report_custom_errors tenv updated_summary;
   if Config.curr_language_is Config.Java && Config.report_runtime_exceptions then

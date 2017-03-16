@@ -45,9 +45,8 @@ val node_is_visited : Procdesc.Node.t -> bool * bool
 (** Start a session, and create a new html fine for the node if it does not exist yet *)
 val node_start_session : Procdesc.Node.t -> int -> SourceFile.t -> unit
 
-(** Write html file for the procedure.
-    The boolean indicates whether to print whole seconds only. *)
-val write_proc_html : SourceFile.t -> bool -> Procdesc.t -> unit
+(** Write html file for the procedure. *)
+val write_proc_html : SourceFile.t -> Procdesc.t -> unit
 
 (** Create filename.ext.html for each file in the cluster. *)
 val write_all_html_files : Cluster.t -> unit

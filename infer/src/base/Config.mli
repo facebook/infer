@@ -135,7 +135,6 @@ val report_custom_error : bool
 val report_nullable_inconsistency : bool
 val reporting_stats_dir_name : string
 val save_compact_summaries : bool
-val save_time_in_summaries : bool
 val smt_output : bool
 val source_file_extentions : string list
 val sources : string list
