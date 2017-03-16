@@ -26,9 +26,6 @@ import zipfile
 
 from inferlib import config, issues, utils
 
-
-ANALYSIS_SUMMARY_OUTPUT = 'analysis_summary.txt'
-
 DEFAULT_BUCK_OUT = os.path.join(utils.decode(os.getcwd()), 'buck-out')
 DEFAULT_BUCK_OUT_GEN = os.path.join(DEFAULT_BUCK_OUT, 'gen')
 
@@ -166,8 +163,6 @@ def collect_results(args, start_time, targets):
     bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
     issues.print_and_save_errors(args.infer_out, args.project_root,
                                  json_report, bugs_out, args.pmd_xml)
-    shutil.copy(bugs_out, os.path.join(args.infer_out,
-                                       ANALYSIS_SUMMARY_OUTPUT))
 
 
 def cleanup(temp_files):
