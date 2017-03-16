@@ -114,7 +114,11 @@ let tests =
     let append_ _ =
       let call_site = CallSite.dummy in
       let footprint_ap = AccessPath.Exact (AccessPath.of_id (Ident.create_none ()) Typ.Tvoid) in
-      let footprint_source = MockSource.make_footprint footprint_ap call_site in
+      let dummy_pdesc =
+        Cfg.create_proc_desc
+          (Cfg.create_cfg ())
+          (ProcAttributes.default Typ.Procname.empty_block !Config.curr_language) in
+      let footprint_source = MockSource.make_footprint footprint_ap dummy_pdesc in
       let source_trace =
         MockTrace.of_source source1 in
       let footprint_trace =

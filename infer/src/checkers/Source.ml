@@ -31,7 +31,7 @@ module type S = sig
 
   val is_footprint : t -> bool
 
-  val make_footprint : AccessPath.t -> CallSite.t -> t
+  val make_footprint : AccessPath.t -> Procdesc.t -> t
 
   val get_footprint_access_path: t -> AccessPath.t option
 
@@ -76,8 +76,9 @@ module Make (Kind : Kind) = struct
   let make kind site =
     { site; kind = Normal kind; }
 
-  let make_footprint ap site =
+  let make_footprint ap pdesc =
     let kind = Footprint ap in
+    let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
     { site; kind; }
 
   let get site tenv = match Kind.get (CallSite.pname site) tenv with
@@ -91,11 +92,13 @@ module Make (Kind : Kind) = struct
           name, typ, Option.map kind_opt ~f:(fun kind -> make kind site))
       (Kind.get_tainted_formals pdesc tenv)
 
-  let with_callsite t callee_site =
-    { t with site = callee_site; }
-
   let pp fmt s =
     F.fprintf fmt "%a(%a)" pp_kind s.kind CallSite.pp s.site
+
+  let with_callsite t callee_site =
+    if is_footprint t
+    then failwithf "Can't change the call site of footprint source %a" pp t;
+    { t with site = callee_site; }
 
   module Set = PrettyPrintable.MakePPSet(struct
       type nonrec t = t

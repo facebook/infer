@@ -33,7 +33,7 @@ module type S = sig
   val is_footprint : t -> bool
 
   (** create a footprint source for the value read from the given access path. *)
-  val make_footprint : AccessPath.t -> CallSite.t -> t
+  val make_footprint : AccessPath.t -> Procdesc.t -> t
 
   (** return Some(access path) if the current source is a footprint source, None otherwise *)
   val get_footprint_access_path: t -> AccessPath.t option
