@@ -38,7 +38,7 @@ let attributes_filename proc_kind::proc_kind pname_file => {
 
 
 /** path to the .attr file for the given procedure in the current results directory */
-let res_dir_attr_filename proc_kind::proc_kind pname => {
+let res_dir_attr_filename create_dir::create_dir proc_kind::proc_kind pname => {
   let pname_file = Typ.Procname.to_filename pname;
   let attr_fname = attributes_filename proc_kind::proc_kind pname_file;
   let bucket_dir = {
@@ -53,7 +53,9 @@ let res_dir_attr_filename proc_kind::proc_kind pname => {
   let filename =
     DB.Results_dir.path_to_filename
       DB.Results_dir.Abs_root [Config.attributes_dir_name, bucket_dir, attr_fname];
-  DB.filename_create_dir filename;
+  if create_dir {
+    DB.filename_create_dir filename
+  };
   filename
 };
 
@@ -61,7 +63,7 @@ let res_dir_attr_filename proc_kind::proc_kind pname => {
    otherwise try to load the declared filename. */
 let load_attr defined_only::defined_only proc_name => {
   let attributes_file proc_kind::proc_kind proc_name => Multilinks.resolve (
-    res_dir_attr_filename proc_kind::proc_kind proc_name
+    res_dir_attr_filename create_dir::false proc_kind::proc_kind proc_name
   );
   let attr =
     Serialization.read_from_file serializer (attributes_file proc_kind::ProcDefined proc_name);
@@ -102,7 +104,8 @@ let less_relevant_proc_kinds proc_kind =>
    If defined, delete the declared file if it exists. */
 let write_and_delete proc_name (proc_attributes: ProcAttributes.t) => {
   let proc_kind = create_proc_kind proc_attributes;
-  let attributes_file proc_kind => res_dir_attr_filename proc_kind::proc_kind proc_name;
+  let attributes_file proc_kind =>
+    res_dir_attr_filename create_dir::true proc_kind::proc_kind proc_name;
   Serialization.write_to_file serializer (attributes_file proc_kind) data::proc_attributes;
   let upgrade_relevance less_relevant_proc_kind => {
     let fname_declared = DB.filename_to_string (attributes_file less_relevant_proc_kind);

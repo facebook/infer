@@ -108,6 +108,17 @@ let tests =
   let read_field_to_id lhs_id_str root_str fld_str =
     make_load_fld ~rhs_typ:Typ.Tvoid lhs_id_str fld_str (Exp.Var (ident_of_str root_str)) in
   let assert_empty = invariant "{  }" in
+  (* hack: register an empty analyze_ondemand to prevent a crash because the callback is unset *)
+  let analyze_ondemand _ proc_desc =
+    let proc_name = Procdesc.get_proc_name proc_desc in
+    Specs.reset_summary proc_name None None in
+  let get_proc_desc _ = None in
+  let callbacks =
+    {
+      Ondemand.analyze_ondemand;
+      get_proc_desc;
+    } in
+  Ondemand.set_callbacks callbacks;
   let test_list = [
     "source recorded",
     [

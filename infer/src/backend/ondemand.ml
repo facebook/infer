@@ -188,16 +188,17 @@ let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc : Specs.summ
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let proc_attributes = Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
+  | None ->
+      failwithf
+        "No callbacks registered to analyze proc desc %a when analyzing %a@."
+        Typ.Procname.pp callee_pname
+        Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
   | Some callbacks ->
       if should_be_analyzed callee_pname proc_attributes then
-        let summary =
-          run_proc_analysis
-            ~propagate_exceptions callbacks.analyze_ondemand curr_pdesc callee_pdesc in
-        Some summary
+        Some (run_proc_analysis
+                ~propagate_exceptions callbacks.analyze_ondemand curr_pdesc callee_pdesc)
       else
         Specs.get_summary callee_pname
-  | None -> None
-
 
 
 (** analyze_proc_name curr_pdesc proc_name
@@ -205,6 +206,11 @@ let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc : Specs.summ
     triggered during the analysis of curr_pname. *)
 let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname : Specs.summary option =
   match !callbacks_ref with
+  | None ->
+      failwithf
+        "No callbacks registered to analyze proc name %a when analyzing %a@."
+        Typ.Procname.pp callee_pname
+        Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
   | Some callbacks ->
       if procedure_should_be_analyzed callee_pname then
         begin
@@ -215,7 +221,6 @@ let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname : Specs.summ
         end
       else
         Specs.get_summary callee_pname
-  | None -> None
 
 
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
