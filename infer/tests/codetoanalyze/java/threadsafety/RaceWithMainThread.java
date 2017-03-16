@@ -32,13 +32,35 @@ class RaceWithMainThread{
      f = 77;
    }
 
+  void read_from_main_thread_OK(){
+    Integer x;
+    o.assertMainThread();
+    x = f;
+  }
+
+  void read_unprotected_unthreaded_Bad(){
+    Integer x;
+    x = f;
+  }
+
+  /*TODO: There should be a warning either here or in main_thread_OK()
+   or maybe even in both.*/
+  void read_protected_unthreaded_Bad_FN(){
+    Integer x;
+    synchronized (this){
+      x = f;
+    }
+   }
+
+  Integer g;
+
   void holds_lock_OK(){
       o.assertHoldsLock(this);
-      f = 88;
+      g = 88;
    }
 
    void holds_lock_indirect_OK() {
      holds_lock_OK();
-     f = 77;
+     g = 77;
    }
 }

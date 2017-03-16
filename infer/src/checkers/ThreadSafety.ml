@@ -908,10 +908,7 @@ let make_results_table get_proc_desc file_env =
   (* make a Map sending each element e of list l to (f e) *)
   let map_post_computation_over_procs f l =
     List.fold
-      ~f:(fun m p -> match f p with
-          | (true,_,_,_) -> m (* Don't put a post there *)
-          | _ -> ResultsTableType.add p (f p) m
-        )
+      ~f:(fun m p -> ResultsTableType.add p (f p) m)
       ~init:ResultsTableType.empty
       l in
   let compute_post_for_procedure = (* takes proc_env as arg *)
@@ -1005,16 +1002,24 @@ let filter_conflicting_sinks sink trace =
       (ThreadSafetyDomain.PathDomain.sinks trace) in
   ThreadSafetyDomain.PathDomain.update_sinks trace conflicts
 
-(* Given a sink representing a read access,
+(* Given a sink representing an access of kind (read or write),
    return a list of (proc_env,access-astate) pairs where
-   access-astate is a non-empty collection of conflicting
-   write accesses*)
-let collect_conflicting_writes sink tab =
-  let procs_and_writes =
+   access-astate is a collection of conflicting
+   accesses. If kind is READ, we look for conflicting writes,
+   and if threaded is TRUE we only take those accesses that are not known to be
+   threaded. If kind is WRITE we take all accesses, except again if threaded is true we keep only
+   those accesses that are unthreaded.
+   NOTE: as of now this is only used for conflicts with reads. TODO: do this for writes
+*)
+
+let collect_conflicts sink (*kind*) threaded tab = (*kind implicitly Read for now*)
+  let procs_and_accesses =
     List.map
-      ~f:(fun (key, (_, _, accesses, _)) ->
+      ~f:(fun (key, (other_access_threaded, _, accesses, _)) ->
           let conflicting_writes =
-            filter_conflicting_sinks sink (get_all_accesses Write accesses) in
+            if threaded && other_access_threaded then ThreadSafetyDomain.PathDomain.empty
+            else
+              filter_conflicting_sinks sink (get_all_accesses Write accesses) in
           key, conflicting_writes
         )
       (ResultsTableType.bindings tab) in
@@ -1024,7 +1029,9 @@ let collect_conflicting_writes sink tab =
         && not (ThreadSafetyDomain.PathDomain.Sinks.is_empty
                   (ThreadSafetyDomain.PathDomain.sinks writes))
       )
-    procs_and_writes
+    procs_and_accesses
+
+
 
 (* keep only the first copy of an access per procedure,
    and keep at most one warning per line (they are usually interprocedural accesses
@@ -1079,7 +1086,7 @@ let pp_accesses_sink fmt ~is_write_access sink =
      else snd access_path)
 
 (* trace is really a set of accesses*)
-let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description trace tab =
+let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description trace threaded tab =
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
@@ -1102,7 +1109,7 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
     let ltr = PathDomain.to_sink_loc_trace ~desc_of_sink path in
     let msg = Localise.to_issue_id Localise.thread_safety_violation in
     let description = make_description tenv pname final_sink_site
-        initial_sink_site final_sink tab in
+        initial_sink_site final_sink threaded tab in
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
     Reporting.log_error pname ~loc ~ltr exn in
 
@@ -1112,7 +1119,7 @@ let report_thread_safety_violations ( _, tenv, pname, pdesc) make_description tr
 
 
 let make_unprotected_write_description
-    tenv pname final_sink_site initial_sink_site final_sink _ =
+    tenv pname final_sink_site initial_sink_site final_sink _ _ =
   Format.asprintf
     "Unprotected write. Public method %a%s %s %a outside of synchronization.%s"
     Typ.Procname.pp pname
@@ -1121,10 +1128,11 @@ let make_unprotected_write_description
     (pp_accesses_sink ~is_write_access:true) final_sink
     (calculate_addendum_message tenv pname)
 
-let make_read_write_race_description tenv pname final_sink_site initial_sink_site final_sink tab =
+let make_read_write_race_description
+    tenv pname final_sink_site initial_sink_site final_sink threaded tab =
   let conflicting_proc_envs = List.map
       ~f:fst
-      (collect_conflicting_writes final_sink tab) in
+      (collect_conflicts final_sink threaded tab) in
   let conflicting_proc_names = List.map
       ~f:(fun (_,_,proc_name,_) -> proc_name)
       conflicting_proc_envs in
@@ -1144,13 +1152,13 @@ let make_read_write_race_description tenv pname final_sink_site initial_sink_sit
 
 (* find those elements of reads which have conflicts
         somewhere else, and report them *)
-let report_reads proc_env reads tab =
+let report_reads proc_env reads threaded tab =
   let racy_read_sinks =
     ThreadSafetyDomain.PathDomain.Sinks.filter
       (fun sink ->
          (* there exists a postcondition whose write set conflicts with
             sink*)
-         not (List.is_empty (collect_conflicting_writes sink tab))
+         not (List.is_empty (collect_conflicts sink threaded tab))
       )
       (ThreadSafetyDomain.PathDomain.sinks reads)
   in
@@ -1160,6 +1168,7 @@ let report_reads proc_env reads tab =
   report_thread_safety_violations proc_env
     make_read_write_race_description
     racy_reads
+    threaded
     tab
 
 (* Currently we analyze if there is an @ThreadSafe annotation on at least one of
@@ -1180,8 +1189,33 @@ let should_report_on_file file_env =
   not (List.exists ~f:current_class_marked_not_threadsafe file_env) &&
   List.exists ~f:current_class_or_super_marked_threadsafe file_env
 
-(* For now, just checks if there is one active element amongst the posts of the analyzed methods.
-   This indicates that the method races with itself. To be refined later. *)
+
+(**
+   Principles for race reporting.
+   Two accesses are excluded if they are both protetected by the same lock or
+   are known to be on the same thread. Otherwise they are in conflict. We want to report
+   conflicting accesses one of which is a write.
+
+   To cut down on duplication noise we don't always report at both sites (line numbers)
+   involved in a race.
+   -- If a protected access races with an unprotected one, we don't
+   report the protected but we do report the unprotected one (and we
+   point to the protected from the unprotected one).
+   This way the report is at the line number ina race-pair where the programmer should take action.
+   -- Similarly, if a threaded and unthreaded (not known to be threaded) access race,
+   we report at the unthreaded site.
+
+   Also, we avoid reporting multiple races at the same line (which can happen a lot in
+   an interprocedural scenario) or multiple accesses to the same field in a single method,
+   expecting that the programmer already gets signal from one report. To report all the races
+   with separate warnings leads to a lot of noise.  But note, we never suppress
+   all the potential issues in a class: if we don't report any races, it means we didn't
+   find any.
+
+   The above is tempered at the moment by abstractions of "same lock" and "same thread":
+   we are currently not distinguishing different locks, and are treating "known to be
+   confined to a thread" as if "known to be confined to UI thread".
+*)
 let process_results_table file_env tab =
   let should_report_on_all_procs = should_report_on_file file_env in
   (* TODO (t15588153): clean this up *)
@@ -1198,7 +1232,7 @@ let process_results_table file_env tab =
     (should_report_on_all_procs || is_thread_safe_method pdesc tenv)
     && should_report_on_proc proc_env in
   ResultsTableType.iter (* report errors for each method *)
-    (fun proc_env (_, _, accesses, _) ->
+    (fun proc_env (threaded, _, accesses, _) ->
        if should_report proc_env
        then
          let open ThreadSafetyDomain in
@@ -1217,9 +1251,11 @@ let process_results_table file_env tab =
            let stripped_unsafe_reads = strip_reads_that_have_co_located_write
                unsafe_reads
                unsafe_writes in
-           report_thread_safety_violations
-             proc_env make_unprotected_write_description unsafe_writes tab;
-           report_reads proc_env stripped_unsafe_reads tab
+           (if not threaded then (*don't report writes for threaded; TODO to extend this*)
+              report_thread_safety_violations
+                proc_env make_unprotected_write_description unsafe_writes threaded tab
+           );
+           report_reads proc_env stripped_unsafe_reads threaded tab
          end
     )
     tab
