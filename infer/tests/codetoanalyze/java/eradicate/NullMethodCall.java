@@ -9,14 +9,11 @@
 
 package codetoanalyze.java.eradicate;
 
-import android.text.TextUtils;
 import com.google.common.base.Preconditions;
 
 import java.lang.System;
 import javax.annotation.Nullable;
 import com.facebook.infer.annotation.Assertions;
-import com.facebook.infer.annotation.FalseOnNull;
-import com.facebook.infer.annotation.TrueOnNull;
 
 
 public class NullMethodCall {
@@ -240,57 +237,6 @@ public class NullMethodCall {
   public void testSystemGetPropertyReturn() {
     String s = System.getProperty("");
     int n = s.length();
-  }
-
-
-  static class MyTextUtils {
-
-    @TrueOnNull
-    static boolean isEmpty(@Nullable java.lang.CharSequence s) {
-      return s == null || s.equals("");
-    }
-
-    @FalseOnNull
-    static boolean isNotEmpty(@Nullable java.lang.CharSequence s) {
-      return s != null && s.length() > 0;
-    }
-  }
-
-  class TestTextUtilsIsEmpty {
-    void textUtilsNotIsEmpty(@Nullable CharSequence s) {
-      if (!TextUtils.isEmpty(s)) {
-        s.toString(); // OK
-      }
-    }
-
-    void textUtilsIsEmpty(@Nullable CharSequence s) {
-      if (TextUtils.isEmpty(s)) {
-        s.toString(); // BAD
-      }
-    }
-
-    void myTextUtilsNotIsEmpty(@Nullable CharSequence s) {
-      if (!MyTextUtils.isEmpty(s)) {
-        s.toString(); // OK
-      }
-    }
-
-    void myTextUtilsIsEmpty(@Nullable CharSequence s) {
-      if (MyTextUtils.isEmpty(s)) {
-        s.toString(); // BAD
-      }
-    }
-    void myTextUtilsIsNotEmpty(@Nullable CharSequence s) {
-      if (MyTextUtils.isNotEmpty(s)) {
-        s.toString(); // OK
-      }
-    }
-
-    void myTextUtilsNotIsNotEmpty(@Nullable CharSequence s) {
-      if (!MyTextUtils.isNotEmpty(s)) {
-        s.toString(); // BAD
-      }
-    }
   }
 
   class SystemExitDoesNotReturn {

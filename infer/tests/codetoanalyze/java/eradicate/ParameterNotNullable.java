@@ -85,4 +85,17 @@ public class ParameterNotNullable {
     threeParameters(s, null, s);
     threeParameters(s, s, null);
   }
+
+  class ConstructorCall {
+    ConstructorCall(int x, String s) {
+    }
+
+    ConstructorCall() {
+      this(3, ""); // OK
+    }
+
+    ConstructorCall(int x) {
+      this(3, null); // NPE
+    }
+  }
 }

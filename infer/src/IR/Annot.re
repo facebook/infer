@@ -15,11 +15,13 @@ let module L = Logging;
 
 let module F = Format;
 
+type parameters = list string [@@deriving compare];
+
 
 /** Type to represent one @Annotation. */
 type t = {
   class_name: string, /** name of the annotation */
-  parameters: list string /** currently only one string parameter */
+  parameters: parameters /** currently only one string parameter */
 }
 [@@deriving compare];
 

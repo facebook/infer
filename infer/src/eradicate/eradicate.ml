@@ -84,7 +84,9 @@ struct
         annotated_signature.AnnotatedSignature.params in
 
     (* Check the nullable flag computed for the return value and report inconsistencies. *)
-    let check_return find_canonical_duplicate exit_node final_typestate ret_ia ret_type loc : unit =
+    let check_return
+        find_canonical_duplicate exit_node final_typestate annotated_signature loc : unit =
+      let _, ret_type = annotated_signature.AnnotatedSignature.ret in
       let ret_pvar = Procdesc.get_ret_var curr_pdesc in
       let ret_range = TypeState.lookup_pvar ret_pvar final_typestate in
       let typ_found_opt = match ret_range with
@@ -101,7 +103,7 @@ struct
       if checks.TypeCheck.eradicate then
         EradicateChecks.check_return_annotation tenv
           find_canonical_duplicate curr_pdesc ret_range
-          ret_ia ret_implicitly_nullable loc in
+          annotated_signature ret_implicitly_nullable loc in
 
     let do_before_dataflow initial_typestate =
       if Config.eradicate_verbose then
@@ -110,8 +112,8 @@ struct
 
     let do_after_dataflow find_canonical_duplicate final_typestate =
       let exit_node = Procdesc.get_exit_node curr_pdesc in
-      let ia, ret_type = annotated_signature.AnnotatedSignature.ret in
-      check_return find_canonical_duplicate exit_node final_typestate ia ret_type proc_loc in
+      check_return
+        find_canonical_duplicate exit_node final_typestate annotated_signature proc_loc in
 
     let module DFTypeCheck = MakeDF(struct
         type t = Extension.extension TypeState.t

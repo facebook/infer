@@ -16,11 +16,10 @@ open Javalib_pack
 (** Translate an annotation. *)
 let translate a : Annot.t =
   let class_name = JBasics.cn_name a.JBasics.kind in
-  let translate_value_pair acc (_, value) =
+  let rec translate_value_pair acc (x, value) =
     match value with
-    | JBasics.EVArray [JBasics.EVCstString s] ->
-        (* TODO (t16352423) see if this case is used *)
-        s :: acc
+    | JBasics.EVArray (JBasics.EVCstString s :: l) ->
+        translate_value_pair (s::acc) (x, JBasics.EVArray l)
     | JBasics.EVCstString s ->
         s :: acc
     | JBasics.EVCstBoolean 0 ->

@@ -49,6 +49,7 @@ let performance_critical = "PerformanceCritical"
 let present = "Present"
 let privacy_source = "PrivacySource"
 let privacy_sink = "PrivacySink"
+let propagates_nullable = "PropagatesNullable"
 let strict = "com.facebook.infer.annotation.Strict"
 let returns_ownership = "ReturnsOwnership"
 let suppress_lint = "SuppressLint"
@@ -120,8 +121,12 @@ let struct_typ_has_annot (struct_typ : Typ.Struct.t) predicate =
 let ia_is_not_thread_safe ia =
   ia_ends_with ia not_thread_safe
 
+let ia_is_propagates_nullable ia =
+  ia_ends_with ia propagates_nullable
+
 let ia_is_nullable ia =
-  ia_ends_with ia nullable
+  ia_ends_with ia nullable ||
+  ia_is_propagates_nullable ia
 
 let ia_is_present ia =
   ia_ends_with ia present
