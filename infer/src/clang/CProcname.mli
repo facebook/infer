@@ -19,9 +19,9 @@ module NoAstDecl : sig
   val c_function_of_string :
     CFrontend_config.translation_unit_context -> Tenv.t -> string -> Typ.Procname.t
 
-  val cpp_method_of_string : Tenv.t -> Typename.t -> string -> Typ.Procname.t
+  val cpp_method_of_string : Tenv.t -> Typ.Name.t -> string -> Typ.Procname.t
 
-  val objc_method_of_string_kind : Typename.t -> string -> Typ.Procname.objc_cpp_method_kind ->
+  val objc_method_of_string_kind : Typ.Name.t -> string -> Typ.Procname.objc_cpp_method_kind ->
     Typ.Procname.t
 
 end

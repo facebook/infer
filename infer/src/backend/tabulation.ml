@@ -471,7 +471,7 @@ let texp_star tenv texp1 texp2 =
           | _ -> ftal_sub ftal1 ftal2' end in
   let typ_star (t1: Typ.t) (t2: Typ.t) =
     match t1, t2 with
-    | Tstruct (TN_csu (csu1, _) as name1), Tstruct (TN_csu (csu2, _) as name2)
+    | Tstruct (TN_csu (csu1, _, _) as name1), Tstruct (TN_csu (csu2, _, _) as name2)
       when Csu.equal csu1 csu2 -> (
         match Tenv.lookup tenv name1, Tenv.lookup tenv name2 with
         | Some { fields = fields1 }, Some { fields = fields2 } when ftal_sub fields1 fields2 ->

@@ -116,7 +116,7 @@ struct
     Logging.out_debug "Block %s field:\n" block_name;
     List.iter ~f:(fun (fn, _, _) ->
         Logging.out_debug "-----> field: '%s'\n" (Ident.fieldname_to_string fn)) fields;
-    let block_typename = Typename.Objc.from_string block_name in
+    let block_typename = Typ.Name.Objc.from_string block_name in
     ignore (Tenv.mk_struct tenv ~fields block_typename);
     let block_type = Typ.Tstruct block_typename in
     let trans_res =
@@ -566,7 +566,7 @@ struct
               type_ptr with
       | Some builtin_pname -> builtin_pname
       | None ->
-          let class_typename = Typename.Cpp.from_string
+          let class_typename = Typ.Name.Cpp.from_string
               (CAst_utils.get_class_name_from_member name_info) in
           CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_typename)
             method_name in
@@ -656,8 +656,7 @@ struct
         init_expr_trans trans_state (var_exp, typ) stmt_info init_expr
       else empty_res_trans in
     let exps = if Self.is_var_self pvar (CContext.is_objc_method context) then
-        let curr_class = CContext.get_curr_class context in
-        let class_typename = CContext.get_curr_class_typename curr_class in
+        let class_typename = CContext.get_curr_class_typename context in
         if (CType.is_class typ) then
           raise (Self.SelfClassException class_typename)
         else

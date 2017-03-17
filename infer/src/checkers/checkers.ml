@@ -200,7 +200,7 @@ let callback_check_write_to_parcel_java
       String.equal (Typ.Procname.java_get_method pname_java) "writeToParcel" in
     let expr_match () = Exp.is_this this_expr in
     let type_match () =
-      let class_name = Typename.Java.from_string "android.os.Parcelable" in
+      let class_name = Typ.Name.Java.from_string "android.os.Parcelable" in
       match this_type with
       | Typ.Tptr (Tstruct name, _) | Tstruct name ->
           PatternMatch.is_immediate_subtype tenv name class_name

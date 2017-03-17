@@ -58,7 +58,7 @@ let android_lifecycles =
 
 let is_subtype_package_class tenv tname package classname =
   PatternMatch.is_subtype tenv
-    tname (Typename.Java.from_package_class package classname)
+    tname (Typ.Name.Java.from_package_class package classname)
 
 let is_context tenv tname =
   is_subtype_package_class tenv tname "android.content" "Context"
@@ -78,7 +78,7 @@ let is_fragment tenv tname =
 
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
 let is_android_lib_class class_name =
-  let class_str = Typename.name class_name in
+  let class_str = Typ.Name.name class_name in
   String.is_prefix ~prefix:"android" class_str || String.is_prefix ~prefix:"com.android" class_str
 
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity) and

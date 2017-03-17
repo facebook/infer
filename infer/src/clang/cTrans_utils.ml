@@ -574,14 +574,14 @@ let rec get_type_from_exp_stmt stmt =
 module Self =
 struct
 
-  exception SelfClassException of Typename.t
+  exception SelfClassException of Typ.Name.t
 
   let add_self_parameter_for_super_instance context procname loc mei =
     if is_superinstance mei then
       let typ, self_expr, ins =
         let t' =
           CType.add_pointer_to_typ
-            (Typ.Tstruct (CContext.get_curr_class_typename context.CContext.curr_class)) in
+            (Typ.Tstruct (CContext.get_curr_class_typename context)) in
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
         t', Exp.Var id, [Sil.Load (id, e, t', loc)] in

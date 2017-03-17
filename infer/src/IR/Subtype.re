@@ -19,12 +19,12 @@ let list_to_string list =>
   if (Int.equal (List.length list) 0) {
     "( sub )"
   } else {
-    "- {" ^ String.concat sep::", " (List.map f::Typename.name list) ^ "}"
+    "- {" ^ String.concat sep::", " (List.map f::Typ.Name.name list) ^ "}"
   };
 
 type t' =
   | Exact /** denotes the current type only */
-  | Subtypes (list Typename.t)
+  | Subtypes (list Typ.Name.t)
 [@@deriving compare];
 
 let equal_modulo_flag (st1, _) (st2, _) => [%compare.equal : t'] st1 st2;
@@ -56,17 +56,16 @@ let max_result res1 res2 =>
     res1
   };
 
-let is_interface tenv (class_name: Typename.t) =>
+let is_interface tenv (class_name: Typ.Name.t) =>
   switch (class_name, Tenv.lookup tenv class_name) {
-  | (TN_csu (Class Java) _, Some {fields: [], methods: []}) => true
+  | (TN_csu (Class Java) _ _, Some {fields: [], methods: []}) => true
   | _ => false
   };
 
 let is_root_class class_name =>
   switch class_name {
-  | Typename.TN_csu (Csu.Class Csu.Java) _ =>
-    Typename.equal class_name Typename.Java.java_lang_object
-  | Typename.TN_csu (Csu.Class Csu.CPP) _ => false
+  | Typ.TN_csu (Csu.Class Csu.Java) _ _ => Typ.Name.equal class_name Typ.Name.Java.java_lang_object
+  | Typ.TN_csu (Csu.Class Csu.CPP) _ _ => false
   | _ => false
   };
 
@@ -85,7 +84,7 @@ let check_subclass_tenv tenv c1 c2 :result => {
       }
     }
   and check cn :result =>
-    if (Typename.equal cn c2) {
+    if (Typ.Name.equal cn c2) {
       Yes
     } else {
       switch (Tenv.lookup tenv cn) {
@@ -103,7 +102,7 @@ let check_subclass_tenv tenv c1 c2 :result => {
 
 let module SubtypesMap = Caml.Map.Make {
   /* pair of subtypes */
-  type t = (Typename.t, Typename.t) [@@deriving compare];
+  type t = (Typ.Name.t, Typ.Name.t) [@@deriving compare];
 };
 
 let check_subtype = {
@@ -168,7 +167,7 @@ let join (s1, flag1) (s2, flag2) => {
     switch (s1, s2) {
     | (Exact, _) => s2
     | (_, Exact) => s1
-    | (Subtypes l1, Subtypes l2) => Subtypes (list_intersect Typename.equal l1 l2)
+    | (Subtypes l1, Subtypes l2) => Subtypes (list_intersect Typ.Name.equal l1 l2)
     };
   let flag = join_flag flag1 flag2;
   (s, flag)
@@ -177,7 +176,7 @@ let join (s1, flag1) (s2, flag2) => {
 let update_flag c1 c2 flag flag' =>
   switch flag {
   | INSTOF =>
-    if (Typename.equal c1 c2) {
+    if (Typ.Name.equal c1 c2) {
       flag
     } else {
       flag'
@@ -205,7 +204,7 @@ let normalize_subtypes t_opt c1 c2 flag1 flag2 => {
   | Some t =>
     switch t {
     | Exact => Some (t, new_flag)
-    | Subtypes l => Some (Subtypes (List.sort cmp::Typename.compare l), new_flag)
+    | Subtypes l => Some (Subtypes (List.sort cmp::Typ.Name.compare l), new_flag)
     }
   | None => None
   }
@@ -220,7 +219,7 @@ let subtypes_to_string t =>
 /* c is a subtype when it does not appear in the list l of no-subtypes */
 let no_subtype_in_list tenv c l => not (List.exists f::(is_known_subtype tenv c) l);
 
-let is_strict_subtype tenv c1 c2 => is_known_subtype tenv c1 c2 && not (Typename.equal c1 c2);
+let is_strict_subtype tenv c1 c2 => is_known_subtype tenv c1 c2 && not (Typ.Name.equal c1 c2);
 
 /* checks for redundancies when adding c to l
    Xi in A - { X1,..., Xn } is redundant in two cases:
@@ -329,13 +328,13 @@ let case_analysis_basic tenv (c1, st) (c2, (_, flag2)) => {
     } else if (is_known_subtype tenv c2 c1) {
       switch st {
       | (Exact, _) =>
-        if (Typename.equal c1 c2) {
+        if (Typ.Name.equal c1 c2) {
           (Some st, None)
         } else {
           (None, Some st)
         }
       | (Subtypes _, _) =>
-        if (Typename.equal c1 c2) {
+        if (Typ.Name.equal c1 c2) {
           (Some st, None)
         } else {
           (Some st, Some st)

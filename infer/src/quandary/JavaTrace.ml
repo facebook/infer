@@ -47,7 +47,7 @@ module SourceKind = struct
               Some Other
           | class_name, method_name ->
               let taint_matching_supertype typename _ =
-                match Typename.name typename, method_name with
+                match Typ.Name.name typename, method_name with
                 | "android.app.Activity", "getIntent" ->
                     Some Intent
                 | "android.content.Intent", "getStringExtra" ->
@@ -60,7 +60,7 @@ module SourceKind = struct
                 PatternMatch.supertype_find_map_opt
                   tenv
                   taint_matching_supertype
-                  (Typename.Java.from_string class_name) in
+                  (Typ.Name.Java.from_string class_name) in
               begin
                 match kind_opt with
                 | Some _ -> kind_opt
@@ -85,7 +85,7 @@ module SourceKind = struct
       let taint_formal_with_types ((formal_name, formal_typ) as formal) =
         let matches_classname = match formal_typ with
           | Typ.Tptr (Tstruct typename, _) ->
-              List.mem ~equal:String.equal type_strs (Typename.name typename)
+              List.mem ~equal:String.equal type_strs (Typ.Name.name typename)
           | _ ->
               false in
         if matches_classname
@@ -104,7 +104,7 @@ module SourceKind = struct
               taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals
           | class_name, method_name ->
               let taint_matching_supertype typename _ =
-                match Typename.name typename, method_name with
+                match Typ.Name.name typename, method_name with
                 | "android.app.Activity", ("onActivityResult" | "onNewIntent") ->
                     Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
                 | _ ->
@@ -114,7 +114,7 @@ module SourceKind = struct
                   PatternMatch.supertype_find_map_opt
                     tenv
                     taint_matching_supertype
-                    (Typename.Java.from_string class_name) with
+                    (Typ.Name.Java.from_string class_name) with
                 | Some tainted_formals -> tainted_formals
                 | None -> Source.all_formals_untainted pdesc
               end
@@ -174,7 +174,7 @@ module SinkKind = struct
               [Other, 0, false]
           | class_name, method_name ->
               let taint_matching_supertype typename _ =
-                match Typename.name typename, method_name with
+                match Typ.Name.name typename, method_name with
                 | "android.app.Activity",
                   ("startActivityFromChild" | "startActivityFromFragment") ->
                     Some (taint_nth 1 Intent ~report_reachable:true)
@@ -240,7 +240,7 @@ module SinkKind = struct
                   PatternMatch.supertype_find_map_opt
                     tenv
                     taint_matching_supertype
-                    (Typename.Java.from_string class_name) with
+                    (Typ.Name.Java.from_string class_name) with
                 | Some sinks -> sinks
                 | None -> []
               end

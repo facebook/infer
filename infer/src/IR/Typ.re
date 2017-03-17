@@ -131,14 +131,72 @@ let module T = {
     | Tvoid /** void type */
     | Tfun bool /** function type with noreturn attribute */
     | Tptr t ptr_kind /** pointer type */
-    | Tstruct Typename.t /** structured value type name */
+    | Tstruct name /** structured value type name */
     | Tarray t static_length /** array type with statically fixed length */
+  [@@deriving compare]
+  and name =
+    | TN_csu Csu.t Mangled.t template_spec_info
+  [@@deriving compare]
+  and template_spec_info =
+    | NoTemplate
+    | Template (string, list (option t))
   [@@deriving compare];
   let equal = [%compare.equal : t];
   let hash = Hashtbl.hash;
 };
 
 include T;
+
+let module Name = {
+  type t = name [@@deriving compare];
+  let equal = [%compare.equal : t];
+  let to_string =
+    fun
+    | TN_csu csu name _ => Csu.name csu ^ " " ^ Mangled.to_string name;
+  let pp f typename => F.fprintf f "%s" (to_string typename);
+  let name =
+    fun
+    | TN_csu _ name _ => Mangled.to_string name;
+  let from_string_kind class_kind class_name_str =>
+    TN_csu (Csu.Class class_kind) (Mangled.from_string class_name_str) NoTemplate;
+  let is_class_kind class_kind =>
+    fun
+    | TN_csu (Class kind) _ _ when Csu.equal_class_kind class_kind kind => true
+    | _ => false;
+  let module C = {
+    let from_string name_str => TN_csu Csu.Struct (Mangled.from_string name_str) NoTemplate;
+    let union_from_string name_str => TN_csu Csu.Union (Mangled.from_string name_str) NoTemplate;
+  };
+  let module Java = {
+    let from_string = from_string_kind Csu.Java;
+    let from_package_class package_name class_name =>
+      if (String.equal package_name "") {
+        from_string class_name
+      } else {
+        from_string (package_name ^ "." ^ class_name)
+      };
+    let is_class = is_class_kind Csu.Java;
+    let java_lang_object = from_string "java.lang.Object";
+    let java_io_serializable = from_string "java.io.Serializable";
+    let java_lang_cloneable = from_string "java.lang.Cloneable";
+  };
+  let module Cpp = {
+    let from_string = from_string_kind Csu.CPP;
+    let from_template_string template_spec_info name =>
+      TN_csu (Csu.Class Csu.CPP) (Mangled.from_string name) template_spec_info;
+    let is_class = is_class_kind Csu.CPP;
+  };
+  let module Objc = {
+    let from_string = from_string_kind Csu.Objc;
+    let protocol_from_string name_str =>
+      TN_csu Csu.Protocol (Mangled.from_string name_str) NoTemplate;
+    let is_class = is_class_kind Csu.Objc;
+  };
+  let module Set = Caml.Set.Make {
+    type nonrec t = t;
+    let compare = compare;
+  };
+};
 
 
 /** {2 Sets and maps of types} */
@@ -163,9 +221,9 @@ let rec pp_full pe f =>
   fun
   | Tstruct tname =>
     if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
-      F.fprintf f "%s" (Typename.to_string tname |> Escape.escape_xml)
+      F.fprintf f "%s" (Name.to_string tname |> Escape.escape_xml)
     } else {
-      F.fprintf f "%s" (Typename.to_string tname)
+      F.fprintf f "%s" (Name.to_string tname)
     }
   | Tint ik => F.fprintf f "%s" (ikind_to_string ik)
   | Tfloat fk => F.fprintf f "%s" (fkind_to_string fk)
@@ -236,7 +294,7 @@ let array_elem default_opt =>
 
 let is_class_of_kind typ ck =>
   switch typ {
-  | Tstruct (TN_csu (Class ck') _) => Csu.equal_class_kind ck ck'
+  | Tstruct (TN_csu (Class ck') _ _) => Csu.equal_class_kind ck ck'
   | _ => false
   };
 
@@ -286,15 +344,9 @@ let rec java_from_string =
       let stripped_typ = String.sub typ_str pos::0 len::(String.length typ_str - 2);
       Tptr (Tarray (java_from_string stripped_typ) None) Pk_pointer
     }
-  | typ_str => Tstruct (Typename.Java.from_string typ_str);
+  | typ_str => Tstruct (Name.Java.from_string typ_str);
 
 type typ = t [@@deriving compare];
-
-/* template instantiation arguments */
-type template_spec_info =
-  | NoTemplate
-  | Template (string, list (option t))
-[@@deriving compare];
 
 let module Procname = {
   /* e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects */
@@ -312,7 +364,7 @@ let module Procname = {
   type java = {
     method_name: string,
     parameters: list java_type,
-    class_name: Typename.t,
+    class_name: Name.t,
     return_type: option java_type, /* option because constructors have no return type */
     kind: method_kind
   }
@@ -332,7 +384,7 @@ let module Procname = {
   /** Type of Objective C and C++ procedure names: method signatures. */
   type objc_cpp = {
     method_name: string,
-    class_name: Typename.t,
+    class_name: Name.t,
     kind: objc_cpp_method_kind,
     template_args: template_spec_info
   }
@@ -403,7 +455,7 @@ let module Procname = {
     | Some (x, y) => (Some x, y)
     | None => (None, package_classname)
     };
-  let split_typename typename => split_classname (Typename.name typename);
+  let split_typename typename => split_classname (Name.name typename);
   let c (name: string) (mangled: string) (template_args: template_spec_info) => {
     name,
     mangled: Some mangled,
@@ -447,7 +499,7 @@ let module Procname = {
 
   /** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. */
-  let replace_class t (new_class: Typename.t) =>
+  let replace_class t (new_class: Name.t) =>
     switch t {
     | Java j => Java {...j, class_name: new_class}
     | ObjC_Cpp osig => ObjC_Cpp {...osig, class_name: new_class}
@@ -457,11 +509,11 @@ let module Procname = {
     };
 
   /** Get the class name of a Objective-C/C++ procedure name. */
-  let objc_cpp_get_class_name objc_cpp => Typename.name objc_cpp.class_name;
+  let objc_cpp_get_class_name objc_cpp => Name.name objc_cpp.class_name;
   let objc_cpp_get_class_type_name objc_cpp => objc_cpp.class_name;
 
   /** Return the package.classname of a java procname. */
-  let java_get_class_name (j: java) => Typename.name j.class_name;
+  let java_get_class_name (j: java) => Name.name j.class_name;
 
   /** Return the package.classname as a typename of a java procname. */
   let java_get_class_type_name (j: java) => j.class_name;
@@ -594,7 +646,7 @@ let module Procname = {
     | Java js =>
       switch (List.rev js.parameters) {
       | [(_, s), ...par'] =>
-        if (is_anonymous_inner_class_name (Typename.Java.from_string s)) {
+        if (is_anonymous_inner_class_name (Name.Java.from_string s)) {
           Some (Java {...js, parameters: List.rev par'})
         } else {
           None
@@ -735,10 +787,10 @@ let module Procname = {
   let c_method_to_string osig detail_level =>
     switch detail_level {
     | Simple => osig.method_name
-    | Non_verbose => Typename.name osig.class_name ^ "_" ^ osig.method_name
+    | Non_verbose => Name.name osig.class_name ^ "_" ^ osig.method_name
     | Verbose =>
       let m_str = c_method_kind_verbose_str osig.kind;
-      Typename.name osig.class_name ^ "_" ^ osig.method_name ^ m_str
+      Name.name osig.class_name ^ "_" ^ osig.method_name ^ m_str
     };
 
   /** Very verbose representation of an existing Procname.t */
@@ -797,7 +849,7 @@ let module Procname = {
     | C {name} => QualifiedCppName.qualifiers_of_qual_name name
     | ObjC_Cpp objc_cpp =>
       List.append
-        (QualifiedCppName.qualifiers_of_qual_name (Typename.name objc_cpp.class_name))
+        (QualifiedCppName.qualifiers_of_qual_name (Name.name objc_cpp.class_name))
         [objc_cpp.method_name]
     | _ => []
     };
@@ -834,19 +886,19 @@ let module Struct = {
   type t = {
     fields: fields, /** non-static fields */
     statics: fields, /** static fields */
-    supers: list Typename.t, /** superclasses */
+    supers: list Name.t, /** superclasses */
     methods: list Procname.t, /** methods defined */
     annots: Annot.Item.t, /** annotations */
     specialization: template_spec_info /** template specialization */
   };
-  type lookup = Typename.t => option t;
+  type lookup = Name.t => option t;
   let pp pe name f {fields, supers, methods, annots} =>
     if Config.debug_mode {
       /* change false to true to print the details of struct */
       F.fprintf
         f
         "%a \n\tfields: {%a\n\t}\n\tsupers: {%a\n\t}\n\tmethods: {%a\n\t}\n\tannots: {%a\n\t}"
-        Typename.pp
+        Name.pp
         name
         (
           Pp.seq (
@@ -855,14 +907,14 @@ let module Struct = {
           )
         )
         fields
-        (Pp.seq (fun f n => F.fprintf f "\n\t\t%a" Typename.pp n))
+        (Pp.seq (fun f n => F.fprintf f "\n\t\t%a" Name.pp n))
         supers
         (Pp.seq (fun f m => F.fprintf f "\n\t\t%a" Procname.pp m))
         methods
         Annot.Item.pp
         annots
     } else {
-      F.fprintf f "%a" Typename.pp name
+      F.fprintf f "%a" Name.pp name
     };
   let internal_mk_struct
       default::default=?

@@ -103,9 +103,11 @@ let get_curr_class_name curr_class =
   | None -> assert false in
   CAst_utils.get_qualified_name name_info
 
-let get_curr_class_typename curr_class =
+let get_curr_class_typename context =
+  let tenv = context.tenv in
+  let curr_class = get_curr_class context in
   match get_curr_class_ptr curr_class |> CAst_utils.get_decl with
-  | Some decl -> CType_decl.get_record_typename decl
+  | Some decl -> CType_decl.get_record_typename ~tenv decl
   | None -> assert false
 
 let curr_class_to_string curr_class =

@@ -18,4 +18,4 @@ val category_impl_decl : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_
 
 val noname_category : string -> string
 
-val get_base_class_name_from_category : Clang_ast_t.decl -> Typename.t option
+val get_base_class_name_from_category : Clang_ast_t.decl -> Typ.Name.t option

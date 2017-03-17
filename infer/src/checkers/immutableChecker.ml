@@ -25,8 +25,8 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
           ] in
         let in_casts expected given =
           List.exists ~f:(fun (x, y) ->
-              String.equal (Typename.name expected) x
-              && String.equal (Typename.name given) y
+              String.equal (Typ.Name.name expected) x
+              && String.equal (Typ.Name.name given) y
             ) casts in
         match PatternMatch.type_get_class_name typ_expected,
               PatternMatch.type_get_class_name typ_found with
@@ -38,8 +38,8 @@ let check_immutable_cast tenv curr_pname curr_pdesc typ_expected typ_found_opt l
                     "Method %s returns %a but the return type is %a. \
                      Make sure that users of this method do not try to modify the collection."
                     (Typ.Procname.to_simplified_string curr_pname)
-                    Typename.pp name_given
-                    Typename.pp name_expected in
+                    Typ.Name.pp name_given
+                    Typ.Name.pp name_expected in
                 Checkers.ST.report_error tenv
                   curr_pname
                   curr_pdesc

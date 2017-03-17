@@ -35,21 +35,21 @@ let join: t => t => t;
     [case_analysis] returns a pair:
     - whether [st1] and [st2] admit [c1 <: c2], and in case returns the updated subtype [st1]
     - whether [st1] and [st2] admit [not(c1 <: c2)], and in case returns the updated subtype [st1] */
-let case_analysis: Tenv.t => (Typename.t, t) => (Typename.t, t) => (option t, option t);
+let case_analysis: Tenv.t => (Typ.Name.t, t) => (Typ.Name.t, t) => (option t, option t);
 
 
 /** [is_known_subtype tenv c1 c2] returns true if there is enough information in [tenv] to prove
     that [c1] is a subtype of [c2].
     Note that [not (is_known_subtype tenv c1 c2) == true] does not imply
     that [is_known_not_subtype tenv c1 c2 == true] */
-let is_known_subtype: Tenv.t => Typename.t => Typename.t => bool;
+let is_known_subtype: Tenv.t => Typ.Name.t => Typ.Name.t => bool;
 
 
 /** [is_known_not_subtype tenv c1 c2] returns true if there is enough information in [tenv] to prove
     that [c1] is not a subtype of [c2].
     Note that [not (is_known_not_subtype tenv c1 c2) == true] does not imply
     that [is_known_subtype tenv c1 c2 == true] */
-let is_known_not_subtype: Tenv.t => Typename.t => Typename.t => bool;
+let is_known_not_subtype: Tenv.t => Typ.Name.t => Typ.Name.t => bool;
 
 let subtypes_to_string: t => string;
 

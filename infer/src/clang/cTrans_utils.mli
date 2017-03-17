@@ -109,7 +109,7 @@ val alloc_trans :
   Typ.Procname.t option -> trans_result
 
 val new_or_alloc_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
-  Clang_ast_t.type_ptr -> Typename.t option -> string -> trans_result
+  Clang_ast_t.type_ptr -> Typ.Name.t option -> string -> trans_result
 
 val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> trans_result
 
@@ -202,7 +202,7 @@ end
 module Self :
 sig
 
-  exception SelfClassException of Typename.t
+  exception SelfClassException of Typ.Name.t
 
   val add_self_parameter_for_super_instance :
     CContext.t -> Typ.Procname.t -> Location.t -> Clang_ast_t.obj_c_message_expr_info ->

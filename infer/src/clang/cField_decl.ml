@@ -16,7 +16,7 @@ module L = Logging
 type field_type = Ident.fieldname * Typ.t * (Annot.t * bool) list
 
 let rec get_fields_super_classes tenv super_class =
-  Logging.out_debug "   ... Getting fields of superclass '%s'\n" (Typename.to_string super_class);
+  Logging.out_debug "   ... Getting fields of superclass '%s'\n" (Typ.Name.to_string super_class);
   match Tenv.lookup tenv super_class with
   | None -> []
   | Some { fields; supers = super_class :: _ } ->
@@ -29,7 +29,7 @@ let fields_superclass tenv interface_decl_info =
   | Some dr ->
       (match dr.Clang_ast_t.dr_name with
        | Some sc ->
-           let classname = Typename.Objc.from_string (CAst_utils.get_qualified_name sc) in
+           let classname = Typ.Name.Objc.from_string (CAst_utils.get_qualified_name sc) in
            get_fields_super_classes tenv classname
        | _ -> [])
   | _ -> []
@@ -78,7 +78,7 @@ let rec get_fields type_ptr_to_sil_type tenv decl_list =
 (* Add potential extra fields defined only in the implementation of the class *)
 (* to the info given in the interface. Update the tenv accordingly. *)
 let add_missing_fields tenv class_name missing_fields =
-  let class_tn_name = Typename.Objc.from_string class_name in
+  let class_tn_name = Typ.Name.Objc.from_string class_name in
   match Tenv.lookup tenv class_tn_name with
   | Some ({ fields } as struct_typ) ->
       let new_fields = CGeneral_utils.append_no_duplicates_fields fields missing_fields in

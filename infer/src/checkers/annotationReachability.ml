@@ -116,7 +116,7 @@ let is_modeled_expensive tenv = function
   | Typ.Procname.Java proc_name_java as proc_name ->
       not (BuiltinDecl.is_declared proc_name) &&
       let is_subclass =
-        let classname = Typename.Java.from_string (Typ.Procname.java_get_class_name proc_name_java) in
+        let classname = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name proc_name_java) in
         PatternMatch.is_subtype_of_str tenv classname in
       Inferconfig.modeled_expensive_matcher is_subclass proc_name
   | _ ->
@@ -127,7 +127,7 @@ let is_allocator tenv pname =
   | Typ.Procname.Java pname_java ->
       let is_throwable () =
         let class_name =
-          Typename.Java.from_string (Typ.Procname.java_get_class_name pname_java) in
+          Typ.Name.Java.from_string (Typ.Procname.java_get_class_name pname_java) in
         PatternMatch.is_throwable tenv class_name in
       Typ.Procname.is_constructor pname
       && not (BuiltinDecl.is_declared pname)

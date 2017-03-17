@@ -40,7 +40,7 @@ module Path : sig
   val d_stats : t -> unit
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
-  val extend : Procdesc.Node.t -> Typename.t option -> session -> t -> t
+  val extend : Procdesc.Node.t -> Typ.Name.t option -> session -> t -> t
 
   val add_description : t -> string -> t
 
@@ -53,7 +53,7 @@ module Path : sig
       [f level path session exn_opt] is passed the current nesting [level] and [path]
       and previous [session] and possible exception [exn_opt] *)
   val iter_shortest_sequence :
-    (int -> t -> int -> Typename.t option -> unit) -> PredSymb.path_pos option -> t -> unit
+    (int -> t -> int -> Typ.Name.t option -> unit) -> PredSymb.path_pos option -> t -> unit
 
   (** join two paths *)
   val join : t -> t -> t

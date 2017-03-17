@@ -28,7 +28,7 @@ include
         | Typ.Tptr (Tstruct original_typename, _) ->
             PatternMatch.supertype_exists
               tenv
-              (fun typename _ -> String.equal (Typename.name typename) class_string)
+              (fun typename _ -> String.equal (Typ.Name.name typename) class_string)
               original_typename
         | _ ->
             false in

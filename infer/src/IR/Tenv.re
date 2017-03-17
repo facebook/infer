@@ -15,8 +15,8 @@ let module Hashtbl = Caml.Hashtbl;
 
 /** Hash tables on strings. */
 let module TypenameHash = Hashtbl.Make {
-  type t = Typename.t;
-  let equal tn1 tn2 => Typename.equal tn1 tn2;
+  type t = Typ.Name.t;
+  let equal tn1 tn2 => Typ.Name.equal tn1 tn2;
   let hash = Hashtbl.hash;
 };
 
@@ -28,7 +28,7 @@ let pp fmt (tenv: t) =>
   TypenameHash.iter
     (
       fun name typ => {
-        Format.fprintf fmt "@[<6>NAME: %s@." (Typename.to_string name);
+        Format.fprintf fmt "@[<6>NAME: %s@." (Typ.Name.to_string name);
         Format.fprintf fmt "@[<6>TYPE: %a@." (Typ.Struct.pp Pp.text name) typ
       }
     )
@@ -74,13 +74,13 @@ let lookup tenv name :option Typ.Struct.t =>
   try (Some (TypenameHash.find tenv name)) {
   | Not_found =>
     /* ToDo: remove the following additional lookups once C/C++ interop is resolved */
-    switch (name: Typename.t) {
-    | TN_csu Struct m =>
-      try (Some (TypenameHash.find tenv (TN_csu (Class CPP) m))) {
+    switch (name: Typ.Name.t) {
+    | TN_csu Struct m templ =>
+      try (Some (TypenameHash.find tenv (TN_csu (Class CPP) m templ))) {
       | Not_found => None
       }
-    | TN_csu (Class CPP) m =>
-      try (Some (TypenameHash.find tenv (TN_csu Struct m))) {
+    | TN_csu (Class CPP) m templ =>
+      try (Some (TypenameHash.find tenv (TN_csu Struct m templ))) {
       | Not_found => None
       }
     | _ => None

@@ -11,8 +11,8 @@ open! IStd
 
 let get_builtin_objc_typename builtin_type =
   match builtin_type with
-  | `ObjCId -> Typename.C.from_string CFrontend_config.objc_object
-  | `ObjCClass -> Typename.C.from_string CFrontend_config.objc_class
+  | `ObjCId -> Typ.Name.C.from_string CFrontend_config.objc_object
+  | `ObjCClass -> Typ.Name.C.from_string CFrontend_config.objc_class
 
 let get_builtin_objc_type builtin_type =
   let typ = Typ.Tstruct (get_builtin_objc_typename builtin_type) in

@@ -111,7 +111,7 @@ let create_class_qual_type ?(is_const=false) typename =
   create_qual_type ~is_const @@ create_class_type typename
 
 let make_objc_class_type class_name =
-  create_class_type (Typename.Objc.from_string class_name)
+  create_class_type (Typ.Name.Objc.from_string class_name)
 
 let create_struct_type struct_name = `StructType struct_name
 

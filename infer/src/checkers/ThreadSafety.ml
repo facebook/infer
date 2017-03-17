@@ -341,13 +341,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr (astate : Domain.astate) ({ ProcData.pdesc; tenv; extras; } as proc_data) _ =
     let is_container_write pn tenv = match pn with
       | Typ.Procname.Java java_pname ->
-          let typename = Typename.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
+          let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
           let is_container_write_ typename _ =
-            match Typename.name typename, Typ.Procname.java_get_method java_pname with
+            match Typ.Name.name typename, Typ.Procname.java_get_method java_pname with
             | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") -> true
             | "java.util.Map", ("clear" | "put" | "putAll" | "remove") -> true
             | _ -> false in
-          let is_threadsafe_collection typename _ = match Typename.name typename with
+          let is_threadsafe_collection typename _ = match Typ.Name.name typename with
             | "java.util.concurrent.ConcurrentMap" | "java.util.concurrent.CopyOnWriteArrayList" ->
                 true
             | _ ->
@@ -750,7 +750,7 @@ let is_immutable_collection_class class_name tenv =
   PatternMatch.supertype_exists
     tenv
     (fun typename _ ->
-       List.mem ~equal:String.equal immutable_collections (Typename.name typename))
+       List.mem ~equal:String.equal immutable_collections (Typ.Name.name typename))
     class_name
 
 let is_call_to_builder_class_method = function
@@ -942,9 +942,9 @@ let get_current_class_and_threadsafe_superclasses tenv pname =
 let calculate_addendum_message tenv pname =
   match get_current_class_and_threadsafe_superclasses tenv pname with
   | Some (current_class,thread_safe_annotated_classes) ->
-      if not (List.mem ~equal:Typename.equal thread_safe_annotated_classes current_class) then
+      if not (List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class) then
         match thread_safe_annotated_classes with
-        | hd::_ -> F.asprintf "\n Note: Superclass %a is marked @ThreadSafe." Typename.pp hd
+        | hd::_ -> F.asprintf "\n Note: Superclass %a is marked @ThreadSafe." Typ.Name.pp hd
         | [] -> ""
       else ""
   | _ -> ""

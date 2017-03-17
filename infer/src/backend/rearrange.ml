@@ -668,7 +668,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     | Typ.Procname.Java java_pname ->
         let current_class_type_name = (Typ.Procname.java_get_class_type_name java_pname) in
         let comparison class_type_name _ =
-          guarded_by_str_is_class_this (Typename.to_string class_type_name) guarded_by_str in
+          guarded_by_str_is_class_this (Typ.Name.to_string class_type_name) guarded_by_str in
         PatternMatch.supertype_exists tenv comparison current_class_type_name
     | _ -> false in
 
@@ -815,7 +815,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       let str_is_read_write_lock str = String.is_suffix ~suffix:"ReadWriteUpdateLock" str ||
                                        String.is_suffix ~suffix:"ReadWriteLock" str  in
       match typ with
-      | Typ.Tstruct name -> str_is_read_write_lock (Typename.name name)
+      | Typ.Tstruct name -> str_is_read_write_lock (Typ.Name.name name)
       | Typ.Tptr (typ, _) -> is_read_write_lock typ
       | _ -> false in
     let has_lock guarded_by_exp =

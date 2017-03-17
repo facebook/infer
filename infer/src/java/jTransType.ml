@@ -58,7 +58,7 @@ let const_type const =
 
 
 let typename_of_classname cn =
-  Typename.Java.from_string (JBasics.cn_name cn)
+  Typ.Name.Java.from_string (JBasics.cn_name cn)
 
 
 let rec get_named_type vt =
@@ -88,8 +88,8 @@ let rec create_array_type typ dim =
 
 let extract_cn_no_obj typ =
   match typ with
-  | Typ.Tptr (Tstruct (TN_csu (Class _, _) as name), Pk_pointer) ->
-      let class_name = JBasics.make_cn (Typename.name name) in
+  | Typ.Tptr (Tstruct (TN_csu (Class _, _, _) as name), Pk_pointer) ->
+      let class_name = JBasics.make_cn (Typ.Name.name name) in
       if JBasics.cn_equal class_name JBasics.java_lang_object then None
       else
         let jbir_class_name = class_name in
@@ -193,7 +193,7 @@ let get_method_kind m =
 
 let get_method_procname cn ms method_kind =
   let return_type_name, method_name, args_type_name = method_signature_names ms in
-  let class_name = Typename.Java.from_string (JBasics.cn_name cn) in
+  let class_name = Typ.Name.Java.from_string (JBasics.cn_name cn) in
   let proc_name_java =
     Typ.Procname.java class_name return_type_name method_name args_type_name method_kind in
   Typ.Procname.Java proc_name_java

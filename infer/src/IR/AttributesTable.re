@@ -198,7 +198,7 @@ let load_defined_attributes cache_none::cache_none proc_name =>
     corresponds to the class definition. */
 let get_correct_type_from_objc_class_name type_name =>
   /* ToDo: this function should return a type that includes a reference to the tenv computed by:
-     let class_method = Typ.Procname.get_default_objc_class_method (Typename.name type_name);
+     let class_method = Typ.Procname.get_default_objc_class_method (Typ.Name.name type_name);
      switch (find_tenv_from_class_of_proc class_method) {
      | Some tenv =>
       */

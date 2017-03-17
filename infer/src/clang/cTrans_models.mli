@@ -39,8 +39,8 @@ val is_toll_free_bridging : Typ.Procname.t -> bool
 
 val is_cf_retain_release : Typ.Procname.t -> bool
 
-val get_predefined_model_method_signature : Typename.t -> string ->
-  (Typename.t -> string -> Typ.Procname.objc_cpp_method_kind -> Typ.Procname.t) ->
+val get_predefined_model_method_signature : Typ.Name.t -> string ->
+  (Typ.Name.t -> string -> Typ.Procname.objc_cpp_method_kind -> Typ.Procname.t) ->
   CFrontend_config.clang_lang -> CMethod_signature.method_signature option
 
 val is_dispatch_function_name : string -> (string * int) option

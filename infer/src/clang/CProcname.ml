@@ -113,10 +113,10 @@ let mk_fresh_block_procname defining_proc =
   Typ.Procname.mangled_objc_block name
 
 
-let get_class_typename method_decl_info =
+let get_class_typename ?tenv method_decl_info =
   let class_ptr = Option.value_exn method_decl_info.Clang_ast_t.di_parent_pointer in
   match CAst_utils.get_decl class_ptr with
-  | Some class_decl -> CType_decl.get_record_typename class_decl
+  | Some class_decl -> CType_decl.get_record_typename ?tenv class_decl
   | None -> assert false
 
 module NoAstDecl = struct
@@ -143,10 +143,10 @@ let from_decl translation_unit_context ?tenv meth_decl =
   | CXXDestructorDecl (decl_info, name_info, _, fdi, mdi) ->
       let mangled = get_mangled_method_name fdi mdi in
       let method_name = CAst_utils.get_unqualified_name name_info in
-      let class_typename = get_class_typename decl_info in
+      let class_typename = get_class_typename ?tenv decl_info in
       mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled
   | ObjCMethodDecl (decl_info, name_info, mdi) ->
-      let class_typename = get_class_typename decl_info in
+      let class_typename = get_class_typename ?tenv decl_info in
       let method_name = name_info.Clang_ast_t.ni_name in
       let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
       let method_kind = Typ.Procname.objc_method_kind_of_bool is_instance in

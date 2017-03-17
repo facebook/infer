@@ -60,8 +60,8 @@ let get_interface_supers super_opt protocols =
   let super_class =
     match super_opt with
     | None -> []
-    | Some super -> [Typename.Objc.from_string super] in
-  let protocol_names = List.map ~f:Typename.Objc.protocol_from_string protocols in
+    | Some super -> [Typ.Name.Objc.from_string super] in
+  let protocol_names = List.map ~f:Typ.Name.Objc.protocol_from_string protocols in
   let super_classes = super_class@protocol_names in
   super_classes
 
@@ -77,7 +77,7 @@ let create_supers_fields type_ptr_to_sil_type tenv decl_list
 let add_class_to_tenv type_ptr_to_sil_type tenv decl_info name_info decl_list ocidi =
   let class_name = CAst_utils.get_qualified_name name_info in
   Logging.out_debug "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
-  let interface_name = Typename.Objc.from_string class_name in
+  let interface_name = Typ.Name.Objc.from_string class_name in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
   let decl_supers, decl_fields =
@@ -89,7 +89,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv decl_info name_info decl_list oc
       Logging.out_debug "----->SuperClass field: '%s' " (Ident.fieldname_to_string fn);
       Logging.out_debug "type: '%s'\n" (Typ.to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
-  let fields, (supers : Typename.t list) =
+  let fields, (supers : Typ.Name.t list) =
     match Tenv.lookup tenv interface_name with
     | Some { fields; supers} ->
         CGeneral_utils.append_no_duplicates_fields decl_fields fields,
@@ -107,7 +107,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv decl_info name_info decl_list oc
     Tenv.mk_struct tenv
       ~fields: all_fields ~supers ~methods:[] ~annots:Annot.Class.objc interface_name );
   Logging.out_debug
-    "  >>>Verifying that Typename '%s' is in tenv\n" (Typename.to_string interface_name);
+    "  >>>Verifying that Typename '%s' is in tenv\n" (Typ.Name.to_string interface_name);
   (match Tenv.lookup tenv interface_name with
    | Some st ->
        Logging.out_debug "  >>>OK. Found typ='%a'\n"
@@ -140,7 +140,7 @@ let interface_impl_declaration type_ptr_to_sil_type tenv decl =
       let _ = add_class_decl type_ptr_to_sil_type tenv idi in
       let fields = CField_decl.get_fields type_ptr_to_sil_type tenv decl_list in
       CField_decl.add_missing_fields tenv class_name fields;
-      let class_tn_name = Typename.Objc.from_string class_name in
+      let class_tn_name = Typ.Name.Objc.from_string class_name in
       let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
       let class_typ = Typ.Tstruct class_tn_name in
       CAst_utils.update_sil_types_map decl_key class_typ;

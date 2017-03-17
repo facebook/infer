@@ -482,19 +482,19 @@ let method_exists right_proc_name methods =
 
 let resolve_method tenv class_name proc_name =
   let found_class =
-    let visited = ref Typename.Set.empty in
-    let rec resolve (class_name: Typename.t) =
-      visited := Typename.Set.add class_name !visited;
+    let visited = ref Typ.Name.Set.empty in
+    let rec resolve (class_name: Typ.Name.t) =
+      visited := Typ.Name.Set.add class_name !visited;
       let right_proc_name =
         Typ.Procname.replace_class proc_name class_name in
       match class_name, Tenv.lookup tenv class_name with
-      | TN_csu (Class _, _), Some { methods; supers } ->
+      | TN_csu (Class _, _, _), Some { methods; supers } ->
           if method_exists right_proc_name methods then
             Some right_proc_name
           else
             (match supers with
              | super_classname:: _ ->
-                 if not (Typename.Set.mem super_classname !visited)
+                 if not (Typ.Name.Set.mem super_classname !visited)
                  then resolve super_classname
                  else None
              | _ -> None)
@@ -503,7 +503,7 @@ let resolve_method tenv class_name proc_name =
   match found_class with
   | None ->
       Logging.d_strln
-        ("Couldn't find method in the hierarchy of type "^(Typename.name class_name));
+        ("Couldn't find method in the hierarchy of type "^(Typ.Name.name class_name));
       proc_name
   | Some proc_name ->
       proc_name
@@ -601,7 +601,7 @@ let resolve_java_pname tenv prop args pname_java call_flags : Typ.Procname.java 
           ~f:(fun accu (arg_exp, _) name ->
               match resolve_typename prop arg_exp with
               | Some class_name ->
-                  (Typ.Procname.split_classname (Typename.name class_name)) :: accu
+                  (Typ.Procname.split_classname (Typ.Name.name class_name)) :: accu
               | None -> name :: accu)
           ~init:[] args (Typ.Procname.java_get_parameters resolved_pname_java) |> List.rev in
       Typ.Procname.java_replace_parameters resolved_pname_java resolved_params in
@@ -670,7 +670,7 @@ let call_constructor_url_update_args pname actual_params =
   let url_pname =
     Typ.Procname.Java
       (Typ.Procname.java
-         (Typename.Java.from_string "java.net.URL") None "<init>"
+         (Typ.Name.Java.from_string "java.net.URL") None "<init>"
          [(Some "java.lang"), "String"] Typ.Procname.Non_Static) in
   if (Typ.Procname.equal url_pname pname) then
     (match actual_params with

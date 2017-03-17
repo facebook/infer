@@ -38,7 +38,7 @@ let rec append_no_duplicates eq list1 list2 =
   | [] -> list1
 
 let append_no_duplicates_csu list1 list2 =
-  append_no_duplicates Typename.equal list1 list2
+  append_no_duplicates Typ.Name.equal list1 list2
 
 let append_no_duplicates_annotations list1 list2 =
   let eq (annot1, _) (annot2, _) = String.equal annot1.Annot.class_name annot2.Annot.class_name in

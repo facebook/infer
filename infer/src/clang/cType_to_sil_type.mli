@@ -9,7 +9,7 @@
 
 open! IStd
 
-val get_builtin_objc_typename :  [< `ObjCClass | `ObjCId ] -> Typename.t
+val get_builtin_objc_typename :  [< `ObjCClass | `ObjCId ] -> Typ.Name.t
 
 val get_builtin_objc_type : [< `ObjCClass | `ObjCId ] -> Typ.t
 

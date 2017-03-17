@@ -23,7 +23,7 @@ let create_procname name =
 
 let create_objc_class_method class_name method_name =
   let method_kind = Typ.Procname.ObjCClassMethod in
-  let tname = Typename.Objc.from_string class_name in
+  let tname = Typ.Name.Objc.from_string class_name in
   let pname = Typ.Procname.ObjC_Cpp
       (Typ.Procname.objc_cpp tname method_name method_kind Typ.NoTemplate) in
   register pname;

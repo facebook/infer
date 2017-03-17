@@ -38,7 +38,7 @@ let rec remove_redundancy have_same_key acc = function
 
 let rec is_java_class tenv (typ: Typ.t) =
   match typ with
-  | Tstruct name -> Typename.Java.is_class name
+  | Tstruct name -> Typ.Name.Java.is_class name
   | Tarray (inner_typ, _) | Tptr (inner_typ, _) -> is_java_class tenv inner_typ
   | _ -> false
 
@@ -1506,7 +1506,7 @@ let expand_hpred_pointer =
                 | Sizeof (cnt_typ, len, st) ->
                     (* type of struct at adr_base is unknown (typically Tvoid), but
                        type of contents is known, so construct struct type for single fld:cnt_typ *)
-                    let name = Typename.C.from_string ("counterfeit" ^ string_of_int !count) in
+                    let name = Typ.Name.C.from_string ("counterfeit" ^ string_of_int !count) in
                     incr count ;
                     let fields = [(fld, cnt_typ, Annot.Item.empty)] in
                     ignore (Tenv.mk_struct tenv ~fields name) ;
@@ -1549,16 +1549,16 @@ struct
   (** check if t1 is a subtype of t2, in Java *)
   let rec check_subtype_java tenv (t1: Typ.t) (t2: Typ.t) =
     match t1, t2 with
-    | Tstruct (TN_csu (Class Java, _) as cn1), Tstruct (TN_csu (Class Java, _) as cn2) ->
+    | Tstruct (TN_csu (Class Java, _, _) as cn1), Tstruct (TN_csu (Class Java, _, _) as cn2) ->
         Subtype.is_known_subtype tenv cn1 cn2
     | Tarray (dom_type1, _), Tarray (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
     | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
-    | Tarray _, Tstruct (TN_csu (Class Java, _) as cn2) ->
-        Typename.equal cn2 Typename.Java.java_io_serializable
-        || Typename.equal cn2 Typename.Java.java_lang_cloneable
-        || Typename.equal cn2 Typename.Java.java_lang_object
+    | Tarray _, Tstruct (TN_csu (Class Java, _, _) as cn2) ->
+        Typ.Name.equal cn2 Typ.Name.Java.java_io_serializable
+        || Typ.Name.equal cn2 Typ.Name.Java.java_lang_cloneable
+        || Typ.Name.equal cn2 Typ.Name.Java.java_lang_object
     | _ -> check_subtype_basic_type t1 t2
 
   (** check if t1 is a subtype of t2 *)
@@ -1573,12 +1573,12 @@ struct
 
   let rec case_analysis_type tenv ((t1: Typ.t), st1) ((t2: Typ.t), st2) =
     match t1, t2 with
-    | Tstruct (TN_csu (Class Java, _) as cn1), Tstruct (TN_csu (Class Java, _) as cn2) ->
+    | Tstruct (TN_csu (Class Java, _, _) as cn1), Tstruct (TN_csu (Class Java, _, _) as cn2) ->
         Subtype.case_analysis tenv (cn1, st1) (cn2, st2)
-    | Tstruct (TN_csu (Class Java, _) as cn1), Tarray _
-      when (Typename.equal cn1 Typename.Java.java_io_serializable
-            || Typename.equal cn1 Typename.Java.java_lang_cloneable
-            || Typename.equal cn1 Typename.Java.java_lang_object) &&
+    | Tstruct (TN_csu (Class Java, _, _) as cn1), Tarray _
+      when (Typ.Name.equal cn1 Typ.Name.Java.java_io_serializable
+            || Typ.Name.equal cn1 Typ.Name.Java.java_lang_cloneable
+            || Typ.Name.equal cn1 Typ.Name.Java.java_lang_object) &&
            st1 <> Subtype.exact ->
         Some st1, None
     | Tstruct cn1, Tstruct cn2
@@ -1982,7 +1982,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
       | Config.Clang ->
           Exp.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, Some len), None, Subtype.exact)
       | Config.Java ->
-          let object_type = Typename.Java.from_string "java.lang.String" in
+          let object_type = Typ.Name.Java.from_string "java.lang.String" in
           Exp.Sizeof (Tstruct object_type, None, Subtype.exact) in
     Sil.Hpointsto (root, sexp, const_string_texp) in
   let mk_constant_class_hpred s = (* creat an hpred from a constant class *)
@@ -1992,7 +1992,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
         ([(Ident.create_fieldname (Mangled.from_string "java.lang.Class.name") 0,
            Sil.Eexp ((Exp.Const (Const.Cstr s), Sil.Inone)))], Sil.inst_none) in
     let class_texp =
-      let class_type = Typename.Java.from_string "java.lang.Class" in
+      let class_type = Typ.Name.Java.from_string "java.lang.Class" in
       Exp.Sizeof (Tstruct class_type, None, Subtype.exact) in
     Sil.Hpointsto (root, sexp, class_texp) in
   try

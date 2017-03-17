@@ -264,7 +264,7 @@ let functions_with_tainted_params = [
 let java_method_to_procname java_method =
   Typ.Procname.Java
     (Typ.Procname.java
-       (Typename.Java.from_string java_method.classname)
+       (Typ.Name.Java.from_string java_method.classname)
        (Some (Typ.Procname.split_classname java_method.ret_type))
        java_method.method_name
        (List.map ~f:Typ.Procname.split_classname java_method.params)
@@ -273,7 +273,7 @@ let java_method_to_procname java_method =
 (* turn string specificiation of an objc method into a procname *)
 let objc_method_to_procname objc_method =
   let method_kind = Typ.Procname.objc_method_kind_of_bool (not objc_method.is_static) in
-  let typename = Typename.Objc.from_string objc_method.classname in
+  let typename = Typ.Name.Objc.from_string objc_method.classname in
   Typ.Procname.ObjC_Cpp
     (Typ.Procname.objc_cpp typename objc_method.method_name method_kind Typ.NoTemplate)
 

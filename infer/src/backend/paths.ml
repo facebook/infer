@@ -45,7 +45,7 @@ module Path : sig
   val d_stats : t -> unit
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
-  val extend : Procdesc.Node.t -> Typename.t option -> session -> t -> t
+  val extend : Procdesc.Node.t -> Typ.Name.t option -> session -> t -> t
 
   (** extend a path with a new node reached from the given session, with an optional string for exceptions *)
   val add_description : t -> string -> t
@@ -54,7 +54,7 @@ module Path : sig
   val iter_all_nodes_nocalls : (Procdesc.Node.t -> unit) -> t -> unit
 
   val iter_shortest_sequence :
-    (int -> t -> int -> Typename.t option -> unit) -> PredSymb.path_pos option -> t -> unit
+    (int -> t -> int -> Typ.Name.t option -> unit) -> PredSymb.path_pos option -> t -> unit
 
   (** join two paths *)
   val join : t -> t -> t
@@ -94,7 +94,7 @@ end = struct
     (* INVARIANT: stats are always set to dummy_stats unless we are in the middle of a traversal *)
     (* in particular: a new traversal cannot be initiated during an existing traversal *)
     | Pstart of Procdesc.Node.t * _stats (** start node *)
-    | Pnode of Procdesc.Node.t * Typename.t option * session * t * _stats * _string_option
+    | Pnode of Procdesc.Node.t * Typ.Name.t option * session * t * _stats * _string_option
     (** we got to [node] from last [session] perhaps propagating exception [exn_opt],
         and continue with [path].  *)
     | Pjoin of t * t * _stats (** join of two paths *)
@@ -267,7 +267,7 @@ end = struct
       If a node is reached via an exception,
       pass the exception information to [f] on the previous node *)
   let iter_shortest_sequence_filter
-      (f : int -> t -> int -> Typename.t option -> unit)
+      (f : int -> t -> int -> Typ.Name.t option -> unit)
       (filter: Procdesc.Node.t -> bool) (path: t) : unit =
     let rec doit level session path prev_exn_opt = match path with
       | Pstart _ -> f level path session prev_exn_opt
@@ -295,7 +295,7 @@ end = struct
       [f level path session exn_opt] is passed the current nesting [level] and [path]
       and previous [session] and possible exception [exn_opt] *)
   let iter_shortest_sequence
-      (f : int -> t -> int -> Typename.t option -> unit)
+      (f : int -> t -> int -> Typ.Name.t option -> unit)
       (pos_opt : PredSymb.path_pos option) (path: t) : unit =
     let filter node = match pos_opt with
       | None -> true
@@ -472,7 +472,7 @@ end = struct
                   match exn_opt with
                   | None -> "", []
                   | Some exn_name ->
-                      let exn_str = Typename.name exn_name in
+                      let exn_str = Typ.Name.name exn_name in
                       if String.equal exn_str ""
                       then "exception", [(Io_infer.Xml.tag_kind,"exception")]
                       else

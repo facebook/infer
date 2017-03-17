@@ -32,7 +32,7 @@ let add_predefined_basic_types () =
     CAst_utils.update_sil_types_map tp return_type in
   let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
   let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
-  let sil_nsarray_type = Typ.Tstruct (Typename.Objc.from_string CFrontend_config.nsarray_cl) in
+  let sil_nsarray_type = Typ.Tstruct (Typ.Name.Objc.from_string CFrontend_config.nsarray_cl) in
   let sil_id_type = CType_to_sil_type.get_builtin_objc_type `ObjCId in
   add_basic_type create_int_type `Int;
   add_basic_type create_void_type `Void;
@@ -55,32 +55,11 @@ let create_c_record_typename opt_type =
   | `Type s ->
       (let buf = Str.split (Str.regexp "[ \t]+") s in
        match buf with
-       | "struct":: _ -> Typename.C.from_string
-       | "class":: _ -> Typename.Cpp.from_string
-       | "union":: _ -> Typename.C.union_from_string
-       | _ -> Typename.C.from_string)
+       | "struct":: _ -> Typ.Name.C.from_string
+       | "class":: _ -> Typ.Name.Cpp.from_string
+       | "union":: _ -> Typ.Name.C.union_from_string
+       | _ -> Typ.Name.C.from_string)
   | _ -> assert false
-
-(* We need to take the name out of the type as the struct can be anonymous*)
-let get_record_typename decl =
-  let open Clang_ast_t in
-  match decl with
-  | RecordDecl (_, name_info, opt_type, _, _, _, _) ->
-      CAst_utils.get_qualified_name name_info |> create_c_record_typename opt_type
-  | CXXRecordDecl (_, name_info, _, _, _, _, _, _)
-  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _) ->
-      (* we use Csu.Class for C++ because we expect Csu.Class csu from *)
-      (* types that have methods. And in C++ struct/class/union can have methods *)
-      CAst_utils.get_qualified_name name_info |> Typename.Cpp.from_string
-  | ObjCInterfaceDecl (_, name_info, _, _, _)
-  | ObjCImplementationDecl (_, name_info, _, _, _)
-  | ObjCProtocolDecl (_, name_info, _, _, _)
-  | ObjCCategoryDecl (_, name_info, _, _, _)
-  | ObjCCategoryImplDecl (_, name_info, _, _, _) ->
-      CAst_utils.get_qualified_name name_info |> Typename.Objc.from_string
-  | _ -> assert false
-
-let get_record_name decl = get_record_typename decl |> Typename.name
 
 let get_class_template_name = function
   | Clang_ast_t.ClassTemplateDecl (_, name_info, _ ) -> CAst_utils.get_qualified_name name_info
@@ -98,12 +77,6 @@ let get_superclass_decls decl =
         | None -> assert false in
       List.map ~f:get_decl_or_fail base_ptr
   | _ -> []
-
-(** fetches list of superclasses for C++ classes *)
-let get_superclass_list_cpp decl =
-  let base_decls = get_superclass_decls decl in
-  let get_super_field super_decl = Typename.Cpp.from_string (get_record_name super_decl) in
-  List.map ~f:get_super_field base_decls
 
 let get_translate_as_friend_decl decl_list =
   let is_translate_as_friend_name (_, name_info) =
@@ -181,23 +154,54 @@ and get_template_specialization tenv = function
       Typ.Template (tname, args_in_sil)
   | _ -> Typ.NoTemplate
 
+(* We need to take the name out of the type as the struct can be anonymous
+   If tenv is not passed, then template instantiaion information may be incorrect,
+   as it defaults to Typ.NoTemplate *)
+and get_record_typename ?tenv decl =
+  let open Clang_ast_t in
+  match decl with
+  | RecordDecl (_, name_info, opt_type, _, _, _, _) ->
+      CAst_utils.get_qualified_name name_info |> create_c_record_typename opt_type
+  | CXXRecordDecl (_, name_info, _, _, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _) ->
+      (* we use Csu.Class for C++ because we expect Csu.Class csu from *)
+      (* types that have methods. And in C++ struct/class/union can have methods *)
+      let name_str = CAst_utils.get_qualified_name name_info in
+      let templ_info = match tenv with
+        | Some t -> get_template_specialization t decl
+        | None -> Typ.NoTemplate in
+      Typ.Name.Cpp.from_template_string templ_info name_str
+  | ObjCInterfaceDecl (_, name_info, _, _, _)
+  | ObjCImplementationDecl (_, name_info, _, _, _)
+  | ObjCProtocolDecl (_, name_info, _, _, _)
+  | ObjCCategoryDecl (_, name_info, _, _, _)
+  | ObjCCategoryImplDecl (_, name_info, _, _, _) ->
+      CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.from_string
+  | _ -> assert false
+
+(** fetches list of superclasses for C++ classes *)
+and get_superclass_list_cpp tenv decl =
+  let base_decls = get_superclass_decls decl in
+  let get_super_field super_decl = get_record_typename ~tenv super_decl in
+  List.map ~f:get_super_field base_decls
+
 and get_record_struct_type tenv definition_decl =
   let open Clang_ast_t in
   match definition_decl with
   | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, record_decl_info, _, _)
   | CXXRecordDecl (_, _, _, type_ptr, _, _, record_decl_info, _)
   | RecordDecl (_, _, _, type_ptr, _, _, record_decl_info) ->
-      let sil_typename = get_record_typename definition_decl in
+      let sil_typename = get_record_typename ~tenv definition_decl in
       (match Tenv.lookup tenv sil_typename with
        | Some _ -> Typ.Tstruct sil_typename (* just reuse what is already in tenv *)
        | None ->
            let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
            let extra_fields =
-             if CTrans_models.is_objc_memory_model_controlled (Typename.name sil_typename) then
+             if CTrans_models.is_objc_memory_model_controlled (Typ.Name.name sil_typename) then
                [Typ.Struct.objc_ref_counter_field]
              else [] in
            let annots =
-             if Typename.Cpp.is_class sil_typename then Annot.Class.cpp
+             if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
              else Annot.Item.empty (* No annotations for structs *) in
            if is_complete_definition then (
              CAst_utils.update_sil_types_map type_ptr (Typ.Tstruct sil_typename);
@@ -205,7 +209,7 @@ and get_record_struct_type tenv definition_decl =
              let fields = CGeneral_utils.append_no_duplicates_fields non_statics extra_fields in
              let statics = [] in (* Note: We treat static field same as global variables *)
              let methods = [] in (* C++ methods are not put into tenv (info isn't used) *)
-             let supers = get_superclass_list_cpp definition_decl in
+             let supers = get_superclass_list_cpp tenv definition_decl in
              let specialization = get_template_specialization tenv definition_decl in
              Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~specialization
                sil_typename |> ignore;

@@ -249,7 +249,7 @@ val desc_buffer_overrun : string -> string -> error_desc
 
 val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
 
-val java_unchecked_exn_desc : Typ.Procname.t -> Typename.t -> string -> error_desc
+val java_unchecked_exn_desc : Typ.Procname.t -> Typ.Name.t -> string -> error_desc
 
 val desc_context_leak :
   Typ.Procname.t -> Typ.t -> Ident.fieldname ->

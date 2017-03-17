@@ -18,7 +18,7 @@ module F = Format
     constituting a lifecycle trace *)
 let try_create_lifecycle_trace name lifecycle_name lifecycle_procs tenv =
   match name with
-  | Typename.TN_csu (Class Java, _) ->
+  | Typ.TN_csu (Class Java, _, _) ->
       if PatternMatch.is_subtype tenv name lifecycle_name &&
          not (AndroidFramework.is_android_lib_class name) then
         let ptr_to_struct_typ = Some (Typ.Tptr (Tstruct name, Pk_pointer)) in
@@ -37,7 +37,7 @@ let try_create_lifecycle_trace name lifecycle_name lifecycle_procs tenv =
 (** generate a harness for a lifecycle type in an Android application *)
 let create_harness cfg cg tenv =
   List.iter ~f:(fun (pkg, clazz, lifecycle_methods) ->
-      let typname = Typename.Java.from_package_class pkg clazz in
+      let typname = Typ.Name.Java.from_package_class pkg clazz in
       let framework_procs =
         AndroidFramework.get_lifecycle_for_framework_typ_opt tenv typname lifecycle_methods in
       (* iterate through the type environment and generate a lifecycle harness for each
@@ -49,11 +49,11 @@ let create_harness cfg cg tenv =
           | [] -> ()
           | lifecycle_trace ->
               let harness_procname =
-                let harness_cls_name = Typename.name name in
+                let harness_cls_name = Typ.Name.name name in
                 let pname =
                   Typ.Procname.Java
                     (Typ.Procname.java
-                       (Typename.Java.from_string harness_cls_name) None
+                       (Typ.Name.Java.from_string harness_cls_name) None
                        "InferGeneratedHarness" [] Typ.Procname.Static) in
                 match pname with
                 | Typ.Procname.Java harness_procname -> harness_procname

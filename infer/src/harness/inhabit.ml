@@ -98,7 +98,7 @@ let rec inhabit_typ tenv typ cfg env =
             match typ with
             | Tstruct name -> (
                 match name, Tenv.lookup tenv name with
-                | TN_csu (Class _, _), Some { methods } ->
+                | TN_csu (Class _, _, _), Some { methods } ->
                     let is_suitable_constructor p =
                       let try_get_non_receiver_formals p =
                         get_non_receiver_formals (formals_from_name cfg p) in

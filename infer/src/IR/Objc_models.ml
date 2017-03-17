@@ -210,7 +210,7 @@ struct
         is_core_lib lib styp
     | Typ.Tstruct name ->
         let core_lib_types = core_lib_to_type_list lib in
-        List.mem ~equal:String.equal core_lib_types (Typename.name name)
+        List.mem ~equal:String.equal core_lib_types (Typ.Name.name name)
     | _ -> false
 
   let is_core_foundation_type typ =

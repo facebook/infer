@@ -24,16 +24,16 @@ let remove_pointer_to_typ typ =
 let objc_classname_of_type typ =
   match typ with
   | Typ.Tstruct name -> name
-  | Typ.Tfun _ -> Typename.Objc.from_string CFrontend_config.objc_object
+  | Typ.Tfun _ -> Typ.Name.Objc.from_string CFrontend_config.objc_object
   | _ ->
       Logging.out_debug
         "Classname of type cannot be extracted in type %s" (Typ.to_string typ);
-      Typename.Objc.from_string "undefined"
+      Typ.Name.Objc.from_string "undefined"
 
 let is_class typ =
   match typ with
   | Typ.Tptr (Tstruct name, _) ->
-      String.equal (Typename.name name) CFrontend_config.objc_class
+      String.equal (Typ.Name.name name) CFrontend_config.objc_class
   | _ -> false
 
 let rec return_type_of_function_type_ptr type_ptr =

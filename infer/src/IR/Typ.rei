@@ -77,9 +77,66 @@ type t =
   | Tvoid /** void type */
   | Tfun bool /** function type with noreturn attribute */
   | Tptr t ptr_kind /** pointer type */
-  | Tstruct Typename.t /** structured value type name */
+  | Tstruct name /** structured value type name */
   | Tarray t static_length /** array type with statically fixed length */
+[@@deriving compare]
+and name =
+  | TN_csu Csu.t Mangled.t template_spec_info
+[@@deriving compare]
+and template_spec_info =
+  | NoTemplate
+  | Template (string, list (option t))
 [@@deriving compare];
+
+let module Name: {
+
+  /** Named types. */
+  type t = name [@@deriving compare];
+
+  /** Equality for typenames */
+  let equal: t => t => bool;
+
+  /** convert the typename to a string */
+  let to_string: t => string;
+  let pp: Format.formatter => t => unit;
+
+  /** name of the typename without qualifier */
+  let name: t => string;
+  let module C: {let from_string: string => t; let union_from_string: string => t;};
+  let module Java: {
+
+    /** Create a typename from a Java classname in the form "package.class" */
+    let from_string: string => t;
+
+    /** Create a typename from a package name and a class name */
+    let from_package_class: string => string => t;
+
+    /** [is_class name] holds if [name] names a Java class */
+    let is_class: t => bool;
+    let java_lang_object: t;
+    let java_io_serializable: t;
+    let java_lang_cloneable: t;
+  };
+  let module Cpp: {
+
+    /** Create a typename from a C++ classname */
+    let from_string: string => t;
+    let from_template_string: template_spec_info => string => t;
+
+    /** [is_class name] holds if [name] names a C++ class */
+    let is_class: t => bool;
+  };
+  let module Objc: {
+
+    /** Create a typename from a Objc classname */
+    let from_string: string => t;
+    let protocol_from_string: string => t;
+
+    /** [is_class name] holds if [name] names a Objc class */
+    let is_class: t => bool;
+  };
+  let module Set: Caml.Set.S with type elt = t;
+};
 
 
 /** Equality for types. */
@@ -119,7 +176,7 @@ let d_list: list t => unit;
 
 
 /** The name of a type */
-let name: t => option Typename.t;
+let name: t => option Name.t;
 
 
 /** turn a *T into a T. fails if [t] is not a pointer type */
@@ -149,12 +206,6 @@ let is_block_type: t => bool;
 let unsome: string => option t => t;
 
 type typ = t;
-
-/* template instantiation arguments */
-type template_spec_info =
-  | NoTemplate
-  | Template (string, list (option t))
-[@@deriving compare];
 
 let module Procname: {
 
@@ -222,7 +273,7 @@ let module Procname: {
   let hash_pname: t => int;
 
   /** Check if a class string is an anoynmous inner class name. */
-  let is_anonymous_inner_class_name: Typename.t => bool;
+  let is_anonymous_inner_class_name: Name.t => bool;
 
   /** Check if this is an Objective-C/C++ method name. */
   let is_c_method: t => bool;
@@ -247,7 +298,7 @@ let module Procname: {
 
   /** Create a Java procedure name from its
       class_name method_name args_type_name return_type_name method_kind. */
-  let java: Typename.t => option java_type => string => list java_type => method_kind => java;
+  let java: Name.t => option java_type => string => list java_type => method_kind => java;
 
   /** Replace the parameters of a java procname. */
   let java_replace_parameters: java => list java_type => java;
@@ -259,12 +310,12 @@ let module Procname: {
   let mangled_objc_block: string => t;
 
   /** Create an objc procedure name from a class_name and method_name. */
-  let objc_cpp: Typename.t => string => objc_cpp_method_kind => template_spec_info => objc_cpp;
-  let get_default_objc_class_method: Typename.t => t;
+  let objc_cpp: Name.t => string => objc_cpp_method_kind => template_spec_info => objc_cpp;
+  let get_default_objc_class_method: Name.t => t;
 
   /** Get the class name of a Objective-C/C++ procedure name. */
   let objc_cpp_get_class_name: objc_cpp => string;
-  let objc_cpp_get_class_type_name: objc_cpp => Typename.t;
+  let objc_cpp_get_class_type_name: objc_cpp => Name.t;
 
   /** Create ObjC method type from a bool is_instance. */
   let objc_method_kind_of_bool: bool => objc_cpp_method_kind;
@@ -273,7 +324,7 @@ let module Procname: {
   let java_get_class_name: java => string;
 
   /** Return the class name as a typename of a java procedure name. */
-  let java_get_class_type_name: java => Typename.t;
+  let java_get_class_type_name: java => Name.t;
 
   /** Return the simple class name of a java procedure name. */
   let java_get_simple_class_name: java => string;
@@ -345,7 +396,7 @@ let module Procname: {
 
   /** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. */
-  let replace_class: t => Typename.t => t;
+  let replace_class: t => Name.t => t;
 
   /** Given a package.class_name string, look for the latest dot and split the string
       in two (package, class_name). */
@@ -377,15 +428,15 @@ let module Struct: {
   type t = private {
     fields: fields, /** non-static fields */
     statics: fields, /** static fields */
-    supers: list Typename.t, /** supers */
+    supers: list Name.t, /** supers */
     methods: list Procname.t, /** methods defined */
     annots: Annot.Item.t, /** annotations */
     specialization: template_spec_info /** template specialization */
   };
-  type lookup = Typename.t => option t;
+  type lookup = Name.t => option t;
 
   /** Pretty print a struct type. */
-  let pp: Pp.env => Typename.t => F.formatter => t => unit;
+  let pp: Pp.env => Name.t => F.formatter => t => unit;
 
   /** Construct a struct_typ, normalizing field types */
   let internal_mk_struct:
@@ -393,7 +444,7 @@ let module Struct: {
     fields::fields? =>
     statics::fields? =>
     methods::list Procname.t? =>
-    supers::list Typename.t? =>
+    supers::list Name.t? =>
     annots::Annot.Item.t? =>
     specialization::template_spec_info? =>
     unit =>

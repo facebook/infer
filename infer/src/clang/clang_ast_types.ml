@@ -23,8 +23,8 @@ type t_ptr = [
   | `Prebuilt of int
   | `PointerOf of t_ptr
   | `ReferenceOf of t_ptr
-  | `ClassType of Typename.t
-  | `StructType of Typename.t
+  | `ClassType of Typ.Name.t
+  | `StructType of Typ.Name.t
   | `DeclPtr of int
   | `ErrorType
 ] [@@deriving compare]
@@ -40,8 +40,8 @@ let rec type_ptr_to_string type_ptr = match type_ptr with
   | `Prebuilt raw -> "prebuilt_" ^ (string_of_int raw)
   | `PointerOf typ -> "pointer_of_" ^ type_ptr_to_string typ
   | `ReferenceOf typ -> "reference_of_" ^ type_ptr_to_string typ
-  | `ClassType name -> "class_name_" ^ Typename.name name
-  | `StructType name -> "struct_name_" ^ Typename.name name
+  | `ClassType name -> "class_name_" ^ Typ.Name.name name
+  | `StructType name -> "struct_name_" ^ Typ.Name.name name
   | `DeclPtr raw -> "decl_ptr_" ^ (string_of_int raw)
   | `ErrorType -> "error_type"
 

@@ -304,7 +304,7 @@ let rec format_typ = function
   | Typ.Tptr (typ, _) when Config.curr_language_is Config.Java ->
       format_typ typ
   | Typ.Tstruct name ->
-      Typename.name name
+      Typ.Name.name name
   | typ ->
       Typ.to_string typ
 
@@ -465,7 +465,7 @@ let deref_str_uninitialized alloc_att_opt =
 let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
   { no_desc with descriptions = [
         Typ.Procname.to_string proc_name;
-        "can throw " ^ (Typename.name exn_name);
+        "can throw " ^ (Typ.Name.name exn_name);
         "whenever " ^ pre_str];
   }
 
@@ -744,8 +744,8 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Exp.Sizeof (Tstruct (TN_csu (Class _, _) as name), _, _)) ->
-          " of type " ^ Typename.name name ^ " "
+      | Some (Exp.Sizeof (Tstruct (TN_csu (Class _, _, _) as name), _, _)) ->
+          " of type " ^ Typ.Name.name name ^ " "
       | _ -> " " in
     let desc_str =
       match resource_opt with

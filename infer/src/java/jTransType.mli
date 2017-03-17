@@ -17,7 +17,7 @@ open Sawja_pack
 val get_named_type : JBasics.value_type -> Typ.t
 
 (** transforms a Java class name into a Sil class name *)
-val typename_of_classname : JBasics.class_name -> Typename.t
+val typename_of_classname : JBasics.class_name -> Typ.Name.t
 
 (** returns a name for a field based on a class name and a field name  *)
 val create_fieldname : JBasics.class_name -> JBasics.field_signature -> Ident.fieldname

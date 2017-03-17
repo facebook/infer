@@ -27,7 +27,7 @@ let load_defined_attributes: cache_none::bool => Typ.Procname.t => option ProcAt
 /** Given the name of an ObjC class, extract the type from the tenv where the class was defined. We
     do this by adding a method that is unique to each class, and then finding the tenv that
     corresponds to the class definition. */
-let get_correct_type_from_objc_class_name: Typename.t => option Typ.t;
+let get_correct_type_from_objc_class_name: Typ.Name.t => option Typ.t;
 
 /* Find the file where the procedure was captured, if a cfg for that file exists.
    Return also a boolean indicating whether the procedure is defined in an

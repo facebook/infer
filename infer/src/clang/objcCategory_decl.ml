@@ -59,7 +59,7 @@ let get_base_class_name_from_category decl =
   | Some decl_ref ->
       (match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
        | Some ObjCInterfaceDecl (_, name_info, _, _, _) ->
-           Some (Typename.Objc.from_string (CAst_utils.get_qualified_name name_info))
+           Some (Typ.Name.Objc.from_string (CAst_utils.get_qualified_name name_info))
        | _ -> None)
   | None -> None
 
@@ -67,7 +67,7 @@ let get_base_class_name_from_category decl =
 (* to the corresponding class. Update the tenv accordingly.*)
 let process_category type_ptr_to_sil_type tenv class_name decl_info decl_list =
   let decl_fields = CField_decl.get_fields type_ptr_to_sil_type tenv decl_list in
-  let class_tn_name = Typename.Objc.from_string class_name in
+  let class_tn_name = Typ.Name.Objc.from_string class_name in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
   (match Tenv.lookup tenv class_tn_name with

@@ -67,7 +67,7 @@ exception Checkers of string * Localise.error_desc
 exception Frontend_warning of string * Localise.error_desc * Logging.ml_loc
 exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
-exception Java_runtime_exception of Typename.t * string * Localise.error_desc
+exception Java_runtime_exception of Typ.Name.t * string * Localise.error_desc
 exception Leak of
     bool * Sil.hpred * (visibility * Localise.error_desc)
     * bool * PredSymb.resource * Logging.ml_loc
