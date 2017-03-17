@@ -258,6 +258,7 @@ class Wrapper:
                 self.timer.start('Running Buck ...')
                 javac_config = [
                     '--config', 'tools.javac=' + infer_script,
+                    '--config', 'client.id=infer.java',
                     '--config', 'java.abi_generation_mode=class']
                 buck_cmd = self.buck_cmd + javac_config
                 subprocess.check_call(buck_cmd)
