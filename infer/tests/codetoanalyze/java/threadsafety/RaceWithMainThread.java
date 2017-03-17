@@ -43,6 +43,34 @@ class RaceWithMainThread{
     x = f;
   }
 
+  /*There is a particularly subtle idiom which avoids races, where a
+    variable can be read without protection on the main thread, if
+    it is written with protection on the main thread and read with
+    protection off. The next three methods do this safely, and the fourth
+    unsafely.
+  */
+  Integer i;
+
+  void protected_write_on_main_thread_OK() {
+    o.assertMainThread();
+    synchronized (this) {
+      i = 99;
+    }
+  }
+
+  void unprotected_read_on_main_thread_OK() {
+    Integer x;
+    o.assertMainThread();
+    x = i;
+  }
+
+  void protected_read_off_main_thread_OK() {
+    Integer x;
+    synchronized (this) {
+      x = i;
+    }
+  }
+
   /*TODO: There should be a warning either here or in main_thread_OK()
    or maybe even in both.*/
   void read_protected_unthreaded_Bad_FN(){
