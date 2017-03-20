@@ -83,7 +83,7 @@ let tests =
       F.fprintf fmt "%a => %a" AccessPath.pp ap pp_trace trace in
     (* flatten access tree into list of access paths with associated traces *)
     let trace_assocs =
-      MockTaintAnalysis.TaintDomain.fold
+      MockTaintAnalysis.TaintDomain.trace_fold
         (fun acc ap t ->
            if not (MockTrace.is_empty t)
            then (ap, t) :: acc

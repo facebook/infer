@@ -163,7 +163,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         else
           match Summary.read_summary proc_data.pdesc pname with
           | Some summary ->
-              TaintDomain.fold
+              TaintDomain.trace_fold
                 (fun acc _ trace -> TraceDomain.join trace acc)
                 (TaintSpecification.of_summary_access_tree summary)
                 TraceDomain.empty
@@ -296,7 +296,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         TaintDomain.add_node caller_ap (appended_trace, caller_tree) access_tree_acc in
 
       let access_tree =
-        TaintDomain.fold
+        TaintDomain.trace_fold
           add_to_caller_tree
           (TaintSpecification.of_summary_access_tree summary)
           caller_access_tree in

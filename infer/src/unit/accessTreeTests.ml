@@ -439,7 +439,7 @@ let tests =
     let fold_test_ _ =
       let collect_ap_traces acc ap trace =
         (ap, trace) :: acc in
-      let ap_traces = Domain.fold collect_ap_traces tree [] in
+      let ap_traces = Domain.trace_fold collect_ap_traces tree [] in
       let has_ap_trace_pair ap_in trace_in =
         List.exists
           ~f:(fun (ap, trace) -> AccessPath.equal ap ap_in && MockTraceDomain.equal trace trace_in)

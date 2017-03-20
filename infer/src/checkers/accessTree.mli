@@ -61,8 +61,13 @@ module type S = sig
       with with empty traces associated with each of the inner nodes. *)
   val add_trace : AccessPath.t -> TraceDomain.astate -> t -> t
 
+  (** join two nodes *)
+  val node_join : node -> node -> node
+
   (** apply a function to each (access path, node) pair in the tree. *)
-  val fold : ('a -> AccessPath.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
+  val fold : ('a -> AccessPath.t -> node -> 'a) -> t -> 'a -> 'a
+
+  val trace_fold : ('a -> AccessPath.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
 
   val pp_node : Format.formatter -> node -> unit
 end
