@@ -66,6 +66,7 @@ codetoanalyze/java/threadsafety/ReadWriteRaces.java, Object ReadWriteRaces.unpro
 codetoanalyze/java/threadsafety/ReadWriteRaces.java, void ReadWriteRaces.m1(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ReadWriteRaces.racy]
 codetoanalyze/java/threadsafety/ReadWriteRaces.java, void ReadWriteRaces.m2(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ReadWriteRaces.racy]
 codetoanalyze/java/threadsafety/ReadWriteRaces.java, void ReadWriteRaces.m3(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ReadWriteRaces.racy]
+codetoanalyze/java/threadsafety/ReadWriteRaces.java, void ReadWriteRaces.readInCalleeOutsideSyncBad(int), 1, THREAD_SAFETY_VIOLATION, [call to int C.get(),access to codetoanalyze.java.checkers.C.x]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ExtendsThreadSafeExample.newmethodBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ExtendsThreadSafeExample.field]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ExtendsThreadSafeExample.tsOK(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ExtendsThreadSafeExample.field]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void NonThreadSafeClass.threadSafeMethod(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.NonThreadSafeClass.field]

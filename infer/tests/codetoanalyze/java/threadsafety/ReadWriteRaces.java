@@ -9,10 +9,23 @@
 
 package codetoanalyze.java.checkers;
 
+import java.util.concurrent.locks.ReentrantLock;
 import javax.annotation.concurrent.ThreadSafe;
 
+class C {
+  private int x = 0;
+
+  public int get() {
+    return x;
+  }
+
+  public void set(int v) {
+    x = v;
+  }
+}
+
 @ThreadSafe
-class ReadWriteRaces{
+class ReadWriteRaces {
 
   // read and write outside of sync races
   Integer safe_read;
@@ -83,6 +96,17 @@ class ReadWriteRaces{
 
   public Object unprotectedRead3() {
     return field3;
+  }
+
+  private final C c = new C();
+  private final ReentrantLock lock = new ReentrantLock();
+
+  public void readInCalleeOutsideSyncBad(int i) {
+    if (c.get() > i) { // should report read/write race here
+      lock.lock();
+      c.set(i);
+      lock.unlock();
+    }
   }
 
 }
