@@ -81,7 +81,12 @@ type t =
   | Tarray t static_length /** array type with statically fixed length */
 [@@deriving compare]
 and name =
-  | TN_csu Csu.t Mangled.t template_spec_info
+  | CStruct Mangled.t
+  | CUnion Mangled.t
+  | CppClass Mangled.t template_spec_info
+  | JavaClass Mangled.t
+  | ObjcClass Mangled.t
+  | ObjcProtocol Mangled.t
 [@@deriving compare]
 and template_spec_info =
   | NoTemplate
@@ -99,6 +104,12 @@ let module Name: {
   /** convert the typename to a string */
   let to_string: t => string;
   let pp: Format.formatter => t => unit;
+
+  /** [is_class name] holds if [name] names CPP/Objc/Java class */
+  let is_class: t => bool;
+
+  /** [is_class name1 name2] holds if [name1] and [name2] name same kind of type */
+  let is_same_type: t => t => bool;
 
   /** name of the typename without qualifier */
   let name: t => string;

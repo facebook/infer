@@ -75,12 +75,12 @@ let lookup tenv name :option Typ.Struct.t =>
   | Not_found =>
     /* ToDo: remove the following additional lookups once C/C++ interop is resolved */
     switch (name: Typ.Name.t) {
-    | TN_csu Struct m templ =>
-      try (Some (TypenameHash.find tenv (TN_csu (Class CPP) m templ))) {
+    | CStruct m =>
+      try (Some (TypenameHash.find tenv (CppClass m NoTemplate))) {
       | Not_found => None
       }
-    | TN_csu (Class CPP) m templ =>
-      try (Some (TypenameHash.find tenv (TN_csu Struct m templ))) {
+    | CppClass m NoTemplate =>
+      try (Some (TypenameHash.find tenv (CStruct m))) {
       | Not_found => None
       }
     | _ => None

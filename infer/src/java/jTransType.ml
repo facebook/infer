@@ -88,7 +88,7 @@ let rec create_array_type typ dim =
 
 let extract_cn_no_obj typ =
   match typ with
-  | Typ.Tptr (Tstruct (TN_csu (Class _, _, _) as name), Pk_pointer) ->
+  | Typ.Tptr (Tstruct (JavaClass _ as name), Pk_pointer) ->
       let class_name = JBasics.make_cn (Typ.Name.name name) in
       if JBasics.cn_equal class_name JBasics.java_lang_object then None
       else

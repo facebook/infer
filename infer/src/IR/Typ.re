@@ -135,7 +135,12 @@ let module T = {
     | Tarray t static_length /** array type with statically fixed length */
   [@@deriving compare]
   and name =
-    | TN_csu Csu.t Mangled.t template_spec_info
+    | CStruct Mangled.t
+    | CUnion Mangled.t
+    | CppClass Mangled.t template_spec_info
+    | JavaClass Mangled.t
+    | ObjcClass Mangled.t
+    | ObjcProtocol Mangled.t
   [@@deriving compare]
   and template_spec_info =
     | NoTemplate
@@ -150,47 +155,78 @@ include T;
 let module Name = {
   type t = name [@@deriving compare];
   let equal = [%compare.equal : t];
-  let to_string =
-    fun
-    | TN_csu csu name _ => Csu.name csu ^ " " ^ Mangled.to_string name;
-  let pp f typename => F.fprintf f "%s" (to_string typename);
   let name =
     fun
-    | TN_csu _ name _ => Mangled.to_string name;
-  let from_string_kind class_kind class_name_str =>
-    TN_csu (Csu.Class class_kind) (Mangled.from_string class_name_str) NoTemplate;
-  let is_class_kind class_kind =>
+    | CStruct name
+    | CUnion name
+    | CppClass name _
+    | JavaClass name
+    | ObjcClass name
+    | ObjcProtocol name => Mangled.to_string name;
+  let to_string tname => {
+    let prefix =
+      fun
+      | CStruct _ => "struct"
+      | CUnion _ => "union"
+      | CppClass _ _
+      | JavaClass _
+      | ObjcClass _ => "class"
+      | ObjcProtocol _ => "protocol";
+    prefix tname ^ " " ^ name tname
+  };
+  let pp f typename => F.fprintf f "%s" (to_string typename);
+  let is_class =
     fun
-    | TN_csu (Class kind) _ _ when Csu.equal_class_kind class_kind kind => true
+    | CppClass _ _
+    | JavaClass _
+    | ObjcClass _ => true
     | _ => false;
+  let is_same_type t1 t2 =>
+    switch (t1, t2) {
+    | (CStruct _, CStruct _)
+    | (CUnion _, CUnion _)
+    | (CppClass _ _, CppClass _ _)
+    | (JavaClass _, JavaClass _)
+    | (ObjcClass _, ObjcClass _)
+    | (ObjcProtocol _, ObjcProtocol _) => true
+    | _ => false
+    };
   let module C = {
-    let from_string name_str => TN_csu Csu.Struct (Mangled.from_string name_str) NoTemplate;
-    let union_from_string name_str => TN_csu Csu.Union (Mangled.from_string name_str) NoTemplate;
+    let from_string name_str => CStruct (Mangled.from_string name_str);
+    let union_from_string name_str => CUnion (Mangled.from_string name_str);
   };
   let module Java = {
-    let from_string = from_string_kind Csu.Java;
+    let from_string name_str => JavaClass (Mangled.from_string name_str);
     let from_package_class package_name class_name =>
       if (String.equal package_name "") {
         from_string class_name
       } else {
         from_string (package_name ^ "." ^ class_name)
       };
-    let is_class = is_class_kind Csu.Java;
+    let is_class =
+      fun
+      | JavaClass _ => true
+      | _ => false;
     let java_lang_object = from_string "java.lang.Object";
     let java_io_serializable = from_string "java.io.Serializable";
     let java_lang_cloneable = from_string "java.lang.Cloneable";
   };
   let module Cpp = {
-    let from_string = from_string_kind Csu.CPP;
+    let from_string name_str => CppClass (Mangled.from_string name_str) NoTemplate;
     let from_template_string template_spec_info name =>
-      TN_csu (Csu.Class Csu.CPP) (Mangled.from_string name) template_spec_info;
-    let is_class = is_class_kind Csu.CPP;
+      CppClass (Mangled.from_string name) template_spec_info;
+    let is_class =
+      fun
+      | CppClass _ => true
+      | _ => false;
   };
   let module Objc = {
-    let from_string = from_string_kind Csu.Objc;
-    let protocol_from_string name_str =>
-      TN_csu Csu.Protocol (Mangled.from_string name_str) NoTemplate;
-    let is_class = is_class_kind Csu.Objc;
+    let from_string name_str => ObjcClass (Mangled.from_string name_str);
+    let protocol_from_string name_str => ObjcProtocol (Mangled.from_string name_str);
+    let is_class =
+      fun
+      | ObjcClass _ => true
+      | _ => false;
   };
   let module Set = Caml.Set.Make {
     type nonrec t = t;
@@ -292,17 +328,17 @@ let array_elem default_opt =>
   | Tarray t_el _ => t_el
   | _ => unsome "array_elem" default_opt;
 
-let is_class_of_kind typ ck =>
+let is_class_of_kind check_fun typ =>
   switch typ {
-  | Tstruct (TN_csu (Class ck') _ _) => Csu.equal_class_kind ck ck'
+  | Tstruct tname => check_fun tname
   | _ => false
   };
 
-let is_objc_class typ => is_class_of_kind typ Csu.Objc;
+let is_objc_class = is_class_of_kind Name.Objc.is_class;
 
-let is_cpp_class typ => is_class_of_kind typ Csu.CPP;
+let is_cpp_class = is_class_of_kind Name.Cpp.is_class;
 
-let is_java_class typ => is_class_of_kind typ Csu.Java;
+let is_java_class = is_class_of_kind Name.Java.is_class;
 
 let rec is_array_of_cpp_class typ =>
   switch typ {

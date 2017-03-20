@@ -164,7 +164,7 @@ and get_record_typename ?tenv decl =
       CAst_utils.get_qualified_name name_info |> create_c_record_typename opt_type
   | CXXRecordDecl (_, name_info, _, _, _, _, _, _)
   | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _) ->
-      (* we use Csu.Class for C++ because we expect Csu.Class csu from *)
+      (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
       let name_str = CAst_utils.get_qualified_name name_info in
       let templ_info = match tenv with

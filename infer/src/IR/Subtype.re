@@ -58,14 +58,13 @@ let max_result res1 res2 =>
 
 let is_interface tenv (class_name: Typ.Name.t) =>
   switch (class_name, Tenv.lookup tenv class_name) {
-  | (TN_csu (Class Java) _ _, Some {fields: [], methods: []}) => true
+  | (JavaClass _, Some {fields: [], methods: []}) => true
   | _ => false
   };
 
 let is_root_class class_name =>
   switch class_name {
-  | Typ.TN_csu (Csu.Class Csu.Java) _ _ => Typ.Name.equal class_name Typ.Name.Java.java_lang_object
-  | Typ.TN_csu (Csu.Class Csu.CPP) _ _ => false
+  | Typ.JavaClass _ => Typ.Name.equal class_name Typ.Name.Java.java_lang_object
   | _ => false
   };
 

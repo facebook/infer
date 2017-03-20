@@ -118,7 +118,7 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
     let loc = Procdesc.Node.get_loc node in
     let throwable_found = ref false in
     let typ_is_throwable = function
-      | Typ.Tstruct (TN_csu (Class Java, _, _) as name) ->
+      | Typ.Tstruct (Typ.JavaClass _ as name) ->
           String.equal (Typ.Name.name name) "java.lang.Throwable"
       | _ -> false in
     let do_instr = function

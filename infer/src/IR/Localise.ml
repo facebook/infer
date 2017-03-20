@@ -755,7 +755,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           MF.monospaced_to_string s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Exp.Sizeof (Tstruct (TN_csu (Class _, _, _) as name), _, _)) ->
+      | Some (Exp.Sizeof (Tstruct name, _, _)) when Typ.Name.is_class name ->
           " of type " ^ MF.monospaced_to_string (Typ.Name.name name) ^ " "
       | _ -> " " in
     let desc_str =

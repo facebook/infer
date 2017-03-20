@@ -487,8 +487,8 @@ let resolve_method tenv class_name proc_name =
       visited := Typ.Name.Set.add class_name !visited;
       let right_proc_name =
         Typ.Procname.replace_class proc_name class_name in
-      match class_name, Tenv.lookup tenv class_name with
-      | TN_csu (Class _, _, _), Some { methods; supers } ->
+      match Tenv.lookup tenv class_name with
+      | Some { methods; supers } when Typ.Name.is_class class_name ->
           if method_exists right_proc_name methods then
             Some right_proc_name
           else
