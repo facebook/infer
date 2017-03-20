@@ -9,6 +9,8 @@
 
 open! IStd
 
+module MF = MarkupFormatter
+
 type linter = {
   condition : CTL.t;
   issue_desc : CIssue.issue_desc;
@@ -47,15 +49,15 @@ let parsed_linters = ref []
 
 let evaluate_place_holder ph an =
   match ph with
-  | "%ivar_name%" -> CFrontend_checkers.ivar_name an
-  | "%decl_name%" -> CFrontend_checkers.decl_name an
+  | "%ivar_name%" -> MF.monospaced_to_string (CFrontend_checkers.ivar_name an)
+  | "%decl_name%" -> MF.monospaced_to_string (CFrontend_checkers.decl_name an)
   | "%cxx_ref_captured_in_block%" ->
-      CFrontend_checkers.cxx_ref_captured_in_block an
+      MF.monospaced_to_string (CFrontend_checkers.cxx_ref_captured_in_block an)
   | "%decl_ref_or_selector_name%" ->
-      CFrontend_checkers.decl_ref_or_selector_name an
+      MF.monospaced_to_string (CFrontend_checkers.decl_ref_or_selector_name an)
   | "%iphoneos_target_sdk_version%" ->
-      CFrontend_checkers.iphoneos_target_sdk_version an
-  | "%available_ios_sdk%" -> CFrontend_checkers.available_ios_sdk an
+      MF.monospaced_to_string (CFrontend_checkers.iphoneos_target_sdk_version an)
+  | "%available_ios_sdk%" -> MF.monospaced_to_string (CFrontend_checkers.available_ios_sdk an)
   | _ -> (Logging.err "ERROR: helper function %s is unknown. Stop.\n" ph;
           assert false)
 

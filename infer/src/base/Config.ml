@@ -1178,6 +1178,16 @@ and report_custom_error =
   CLOpt.mk_bool ~long:"report-custom-error"
     ""
 
+and report_formatter =
+  CLOpt.mk_symbol ~long:"report-formatter"
+    ~parse_mode:CLOpt.(Infer [Driver; Print])
+    ~default:`Phabricator_formatter
+    ~symbols:[
+      ("none", `No_formatter);
+      ("phabricator", `Phabricator_formatter);
+    ] ~eq:PVariant.(=)
+    "Which formatter to use when emitting the report"
+
 and report_hook =
   CLOpt.mk_string_opt ~long:"report-hook"
     ~default:(lib_dir ^/ "python" ^/ "report.py")
@@ -1669,6 +1679,7 @@ and reactive_capture = !reactive_capture
 and report = !report
 and report_current = !report_current
 and report_custom_error = !report_custom_error
+and report_formatter = !report_formatter
 and report_hook = !report_hook
 and report_previous = !report_previous
 and report_runtime_exceptions = !tracing

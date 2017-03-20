@@ -15,6 +15,7 @@ open AbsLoc
 
 module F = Format
 module L = Logging
+module MF = MarkupFormatter
 
 module Condition =
 struct
@@ -129,8 +130,7 @@ let to_string : t -> string
     ^ (match c.trace with
           Inter (_, pname, _) ->
             " by call "
-            ^ Typ.Procname.to_string pname
-            ^ "() "
+            ^ MF.monospaced_to_string (Typ.Procname.to_string pname ^ "()") ^ " "
         | Intra _ -> "")
 
 let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> t

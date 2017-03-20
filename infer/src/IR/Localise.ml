@@ -13,6 +13,7 @@ open! IStd
 (** Support for localisation *)
 
 module F = Format
+module MF = MarkupFormatter
 
 type t = string * string [@@deriving compare] (* issue_id, human_readable *)
 
@@ -289,7 +290,7 @@ let at_line tags loc =
 let call_to tags proc_name =
   let proc_name_str = Typ.Procname.to_simplified_string proc_name in
   Tags.add tags Tags.call_procedure proc_name_str;
-  "call to " ^ proc_name_str
+  "call to " ^ MF.monospaced_to_string proc_name_str
 
 let call_to_at_line tags proc_name loc =
   (call_to tags proc_name) ^ " " ^ at_line_tag tags Tags.call_line loc
@@ -464,51 +465,54 @@ let deref_str_uninitialized alloc_att_opt =
 (** Java unchecked exceptions errors *)
 let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
   { no_desc with descriptions = [
-        Typ.Procname.to_string proc_name;
-        "can throw " ^ (Typ.Name.name exn_name);
+        MF.monospaced_to_string (Typ.Procname.to_string proc_name);
+        "can throw " ^ MF.monospaced_to_string (Typ.Name.name exn_name);
         "whenever " ^ pre_str];
   }
 
 let desc_context_leak pname context_typ fieldname leak_path : error_desc =
   let fld_str = Ident.fieldname_to_string fieldname in
-  let leak_root = " Static field " ^ fld_str ^ " |->\n " in
+  let leak_root = "Static field " ^ fld_str ^ " |->\n" in
   let leak_path_entry_to_str acc entry =
     let entry_str = match entry with
       | (Some fld, _) -> Ident.fieldname_to_string fld
       | (None, typ) -> Typ.to_string typ in
     (* intentionally omit space; [typ_to_string] adds an extra space *)
-    acc ^ entry_str ^ " |->\n " in
+    acc ^ entry_str ^ " |->\n" in
   let context_str = Typ.to_string context_typ in
   let path_str =
     let path_prefix =
       if List.is_empty leak_path then "Leaked "
-      else (List.fold ~f:leak_path_entry_to_str ~init:"" leak_path) ^ " Leaked " in
+      else (List.fold ~f:leak_path_entry_to_str ~init:"" leak_path) ^ "Leaked " in
     path_prefix ^ context_str in
   let preamble =
     let pname_str = match pname with
       | Typ.Procname.Java pname_java ->
-          Printf.sprintf "%s.%s"
-            (Typ.Procname.java_get_class_name pname_java)
-            (Typ.Procname.java_get_method pname_java)
+          MF.monospaced_to_string
+            (Printf.sprintf "%s.%s"
+               (Typ.Procname.java_get_class_name pname_java)
+               (Typ.Procname.java_get_method pname_java))
       | _ ->
           "" in
     "Context " ^ context_str ^ " may leak during method " ^ pname_str ^ ":\n" in
-  { no_desc with descriptions = [preamble; leak_root; path_str] }
+  { no_desc with descriptions = [preamble ^ MF.code_to_string (leak_root ^ path_str)] }
 
 let desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc =
   let line_info = at_line (Tags.create ()) loc in
   let accessed_fld_str = Ident.fieldname_to_string accessed_fld in
-  let annot_str = Printf.sprintf "`@GuardedBy(\"%s\")`" guarded_by_str in
+  let annot_str = Printf.sprintf "@GuardedBy(\"%s\")" guarded_by_str in
+  let syncronized_str =
+    MF.monospaced_to_string (Printf.sprintf "synchronized(%s)" guarded_by_str) in
   let msg =
-    Printf.sprintf
-      "The field `%s` is annotated with %s, but the lock `%s` is not held during the access to the field `%s`. Consider wrapping the access in a `synchronized(%s)` block or annotating %s with %s"
-      accessed_fld_str
-      annot_str
-      guarded_by_str
+    Format.asprintf
+      "The field %a is annotated with %a, but the lock %a is not held during the access to the field %s. Consider wrapping the access in a %s block or annotating %s with %a"
+      MF.pp_monospaced accessed_fld_str
+      MF.pp_monospaced annot_str
+      MF.pp_monospaced guarded_by_str
       line_info
-      guarded_by_str
+      syncronized_str
       (Typ.Procname.to_string pname)
-      annot_str in
+      MF.pp_monospaced annot_str in
   { no_desc with descriptions = [msg]; }
 
 
@@ -546,8 +550,8 @@ let dereference_string deref_str value_str access_opt loc =
     String.concat ~sep:"" [
       (match deref_str.value_pre with Some s -> s ^ " " | _ -> "");
       (if is_call_access then "returned by " else "");
-      value_str;
-      (match deref_str.value_post with Some s -> " " ^ s | _ -> "")] in
+      MF.monospaced_to_string value_str;
+      (match deref_str.value_post with Some s -> " " ^ (MF.monospaced_to_string s) | _ -> "")] in
   let access_desc = match access_opt with
     | None ->
         []
@@ -564,19 +568,22 @@ let dereference_string deref_str value_str access_opt loc =
         ["initialized automatically"] in
   let problem_desc =
     let nullable_text =
-      if Config.curr_language_is Config.Java
-      then "@Nullable"
-      else "__nullable" in
+      MF.monospaced_to_string
+        (if Config.curr_language_is Config.Java
+         then "@Nullable"
+         else "__nullable") in
     let problem_str =
       match Tags.get !tags Tags.nullable_src, Tags.get !tags Tags.weak_captured_var_src with
       | Some nullable_src, _ ->
           if String.equal nullable_src value_str
           then "is annotated with " ^ nullable_text ^ " and is dereferenced without a null check"
-          else "is indirectly marked " ^ nullable_text ^ " (source: " ^ nullable_src ^ ") and is dereferenced without a null check"
+          else "is indirectly marked " ^ nullable_text ^
+               " (source: " ^ MF.monospaced_to_string nullable_src ^
+               ") and is dereferenced without a null check"
       | None, Some weak_var_str ->
           if String.equal weak_var_str value_str then
             "is a weak pointer captured in the block and is dereferenced without a null check"
-          else "is equal to the variable " ^ weak_var_str ^
+          else "is equal to the variable " ^ (MF.monospaced_to_string weak_var_str) ^
                ", a weak pointer captured in the block, and is dereferenced without a null check"
       | None, None -> deref_str.problem_str in
     [(problem_str ^ " " ^ at_line tags loc)] in
@@ -586,7 +593,8 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   let parameter_not_nullable_desc var =
     let var_s = Pvar.to_string var in
     let param_not_null_desc =
-      "Parameter "^var_s^" is not checked for null, there could be a null pointer dereference:" in
+      "Parameter " ^ (MF.monospaced_to_string var_s) ^
+      " is not checked for null, there could be a null pointer dereference:" in
     { desc with descriptions = param_not_null_desc :: desc.descriptions;
                 tags = (Tags.parameter_not_null_checked, var_s) :: desc.tags; } in
   let field_not_nullable_desc exp =
@@ -597,7 +605,8 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
       | _ -> "" in
     let var_s = exp_to_string exp in
     let field_not_null_desc =
-      "Instance variable "^var_s^" is not checked for null, there could be a null pointer dereference:" in
+      "Instance variable " ^ (MF.monospaced_to_string var_s) ^
+      " is not checked for null, there could be a null pointer dereference:" in
     { desc with descriptions = field_not_null_desc :: desc.descriptions;
                 tags = (Tags.field_not_null_checked, var_s) :: desc.tags; } in
   match exp with
@@ -627,8 +636,10 @@ let desc_allocation_mismatch alloc dealloc =
     Tags.add tags tag_line (string_of_int loc.Location.line);
     let by_call =
       if Typ.Procname.equal primitive_pname called_pname then ""
-      else " by call to " ^ Typ.Procname.to_simplified_string called_pname in
-    "using " ^ Typ.Procname.to_simplified_string primitive_pname ^ by_call ^ " " ^ at_line (Tags.create ()) (* ignore the tag *) loc in
+      else " by call to " ^
+           (MF.monospaced_to_string (Typ.Procname.to_simplified_string called_pname)) in
+    "using " ^ (MF.monospaced_to_string (Typ.Procname.to_simplified_string primitive_pname)) ^
+    by_call ^ " " ^ at_line (Tags.create ()) (* ignore the tag *) loc in
   let description = Format.sprintf
       "%s %s is deallocated %s"
       mem_dyn_allocated
@@ -655,7 +666,7 @@ let desc_condition_always_true_false i cond_str_opt loc =
   Tags.add tags Tags.value value;
   let description = Format.sprintf
       "Boolean condition %s is always %s %s"
-      (if String.equal value "" then "" else " " ^ value)
+      (if String.equal value "" then "" else " " ^ (MF.monospaced_to_string value))
       tt_ff
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
@@ -663,18 +674,18 @@ let desc_condition_always_true_false i cond_str_opt loc =
 let desc_deallocate_stack_variable var_str proc_name loc =
   let tags = Tags.create () in
   Tags.add tags Tags.value var_str;
-  let description = Format.sprintf
-      "Stack variable %s is freed by a %s"
-      var_str
+  let description = Format.asprintf
+      "Stack variable %a is freed by a %s"
+      MF.pp_monospaced var_str
       (call_to_at_line tags proc_name loc) in
   { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_deallocate_static_memory const_str proc_name loc =
   let tags = Tags.create () in
   Tags.add tags Tags.value const_str;
-  let description = Format.sprintf
-      "Constant string %s is freed by a %s"
-      const_str
+  let description = Format.asprintf
+      "Constant string %a is freed by a %s"
+      MF.pp_monospaced const_str
       (call_to_at_line tags proc_name loc) in
   { no_desc with descriptions = [description]; tags = !tags }
 
@@ -685,15 +696,15 @@ let desc_class_cast_exception pname_opt typ_str1 typ_str2 exp_str_opt loc =
   let in_expression = match exp_str_opt with
     | Some exp_str ->
         Tags.add tags Tags.value exp_str;
-        " in expression " ^ exp_str ^ " "
+        " in expression " ^ (MF.monospaced_to_string exp_str) ^ " "
     | None -> " " in
   let at_line' () = match pname_opt with
     | Some proc_name -> "in " ^ call_to_at_line tags proc_name loc
     | None -> at_line tags loc in
-  let description = Format.sprintf
-      "%s cannot be cast to %s %s %s"
-      typ_str1
-      typ_str2
+  let description = Format.asprintf
+      "%a cannot be cast to %a %s %s"
+      MF.pp_monospaced typ_str1
+      MF.pp_monospaced typ_str2
       in_expression
       (at_line' ()) in
   { no_desc with descriptions = [description]; tags = !tags }
@@ -701,14 +712,14 @@ let desc_class_cast_exception pname_opt typ_str1 typ_str2 exp_str_opt loc =
 let desc_divide_by_zero expr_str loc =
   let tags = Tags.create () in
   Tags.add tags Tags.value expr_str;
-  let description = Format.sprintf
-      "Expression %s could be zero %s"
-      expr_str
+  let description = Format.asprintf
+      "Expression %a could be zero %s"
+      MF.pp_monospaced expr_str
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
 
 let desc_empty_vector_access pname_opt object_str loc =
-  let vector_str = Format.sprintf "Vector %s" object_str in
+  let vector_str = Format.asprintf "Vector %a" MF.pp_monospaced object_str in
   let desc = access_str_empty pname_opt in
   let tags = desc.tags in
   Tags.add tags Tags.empty_vector_access object_str;
@@ -741,11 +752,11 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
       | None -> "", "", ""
       | Some s ->
           Tags.add tags Tags.value s;
-          s, " to ", " on " in
+          MF.monospaced_to_string s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
       | Some (Exp.Sizeof (Tstruct (TN_csu (Class _, _, _) as name), _, _)) ->
-          " of type " ^ Typ.Name.name name ^ " "
+          " of type " ^ MF.monospaced_to_string (Typ.Name.name name) ^ " "
       | _ -> " " in
     let desc_str =
       match resource_opt with
@@ -795,9 +806,9 @@ let desc_null_test_after_dereference expr_str line loc =
   let tags = Tags.create () in
   Tags.add tags Tags.dereferenced_line (string_of_int line);
   Tags.add tags Tags.value expr_str;
-  let description = Format.sprintf
-      "Pointer %s was dereferenced at line %d and is tested for null %s"
-      expr_str
+  let description = Format.asprintf
+      "Pointer %a was dereferenced at line %d and is tested for null %s"
+      MF.pp_monospaced expr_str
       line
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
@@ -823,20 +834,23 @@ let desc_retain_cycle cycle loc cycle_dotty =
   let do_edge ((se, _), f, _) =
     match se with
     | Sil.Eexp(Exp.Lvar pvar, _) when Pvar.equal pvar Sil.block_pvar ->
-        str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") a block capturing "^(Ident.fieldname_to_string f)^"; ";
+        str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") a block capturing " ^
+                   MF.monospaced_to_string (Ident.fieldname_to_string f)^"; ";
         ct:=!ct +1;
     | Sil.Eexp(Exp.Lvar pvar as e, _) ->
         let e_str = Exp.to_string e in
         let e_str = if Pvar.is_seed pvar then
             remove_old e_str
           else e_str in
-        str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") object "^e_str^" retaining "^e_str^"."^(Ident.fieldname_to_string f)^", ";
+        str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") object "^e_str^" retaining " ^
+                   MF.monospaced_to_string (e_str^"."^(Ident.fieldname_to_string f))^", ";
         ct:=!ct +1
     | Sil.Eexp (Exp.Sizeof (typ, _, _), _) ->
         let step =
-          " (" ^ (string_of_int !ct) ^ ") an object of "
-          ^ (Typ.to_string typ) ^ " retaining another object via instance variable "
-          ^ (Ident.fieldname_to_string f) ^ ", " in
+          " (" ^ (string_of_int !ct) ^ ") an object of " ^
+          MF.monospaced_to_string (Typ.to_string typ) ^
+          " retaining another object via instance variable " ^
+          MF.monospaced_to_string (Ident.fieldname_to_string f) ^ ", " in
         str_cycle := !str_cycle ^ step;
         ct:=!ct +1
     | _ -> () in
@@ -850,7 +864,7 @@ let registered_observer_being_deallocated_str obj_str =
 
 let desc_registered_observer_being_deallocated pvar loc =
   let tags = Tags.create () in
-  let obj_str = Pvar.to_string pvar in
+  let obj_str = MF.monospaced_to_string (Pvar.to_string pvar) in
   { no_desc with descriptions = [ registered_observer_being_deallocated_str obj_str ^ at_line tags loc ^
                                   ". Being still registered as observer of the notification " ^
                                   "center, the deallocated object "
@@ -871,9 +885,9 @@ let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =
         Tags.add tags Tags.value s;
         "expression " ^ s
     | None -> "an expression" in
-  let description = Format.sprintf
-      "A unary minus is applied to %s of type %s %s"
-      expression
+  let description = Format.asprintf
+      "A unary minus is applied to %a of type %s %s"
+      MF.pp_monospaced expression
       typ_str
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
@@ -888,7 +902,7 @@ let desc_inherently_dangerous_function proc_name =
   let proc_name_str = Typ.Procname.to_string proc_name in
   let tags = Tags.create () in
   Tags.add tags Tags.value proc_name_str;
-  { no_desc with descriptions = [proc_name_str]; tags = !tags }
+  { no_desc with descriptions = [MF.monospaced_to_string proc_name_str]; tags = !tags }
 
 let desc_stack_variable_address_escape expr_str addr_dexp_str loc =
   let tags = Tags.create () in
@@ -898,9 +912,9 @@ let desc_stack_variable_address_escape expr_str addr_dexp_str loc =
         Tags.add tags Tags.escape_to s;
         "to " ^ s ^ " "
     | None -> "" in
-  let description = Format.sprintf
-      "Address of stack variable %s escapes %s%s"
-      expr_str
+  let description = Format.asprintf
+      "Address of stack variable %a escapes %s%s"
+      MF.pp_monospaced expr_str
       escape_to_str
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
@@ -912,37 +926,37 @@ let desc_tainted_value_reaching_sensitive_function
   let description =
     match taint_kind with
     | PredSymb.Tk_unverified_SSL_socket ->
-        F.sprintf
-          "The hostname of SSL socket `%s` (returned from %s) has not been verified! Reading from the socket via the call to %s %s is dangerous. You should verify the hostname of the socket using a HostnameVerifier before reading; otherwise, you may be vulnerable to a man-in-the-middle attack."
-          expr_str
+        F.asprintf
+          "The hostname of SSL socket %a (returned from %s) has not been verified! Reading from the socket via the call to %s %s is dangerous. You should verify the hostname of the socket using a HostnameVerifier before reading; otherwise, you may be vulnerable to a man-in-the-middle attack."
+          MF.pp_monospaced expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
     | PredSymb.Tk_shared_preferences_data ->
-        F.sprintf
-          "`%s` holds sensitive data read from a SharedPreferences object (via call to %s). This data may leak via the call to %s %s."
-          expr_str
+        F.asprintf
+          "%a holds sensitive data read from a SharedPreferences object (via call to %s). This data may leak via the call to %s %s."
+          MF.pp_monospaced expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
     | PredSymb.Tk_privacy_annotation ->
-        F.sprintf
-          "`%s` holds privacy-sensitive data (source: call to %s). This data may leak via the call to %s %s."
-          expr_str
+        F.asprintf
+          "%a holds privacy-sensitive data (source: call to %s). This data may leak via the call to %s %s."
+          MF.pp_monospaced expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
     | PredSymb.Tk_integrity_annotation ->
-        F.sprintf
-          "`%s` holds untrusted user-controlled data (source: call to %s). This data may flow into a security-sensitive sink via the call to %s %s."
-          expr_str
+        F.asprintf
+          "%a holds untrusted user-controlled data (source: call to %s). This data may flow into a security-sensitive sink via the call to %s %s."
+          MF.pp_monospaced expr_str
           (format_method tainting_fun)
           (format_method sensitive_fun)
           (at_line tags loc)
     | PredSymb.Tk_unknown ->
-        F.sprintf
-          "Value `%s` could be insecure (tainted) due to call to function %s %s %s %s. Function %s %s"
-          expr_str
+        F.asprintf
+          "Value %a could be insecure (tainted) due to call to function %s %s %s %s. Function %s %s"
+          MF.pp_monospaced expr_str
           (format_method tainting_fun)
           "and is reaching sensitive function"
           (format_method sensitive_fun)
@@ -958,10 +972,10 @@ let desc_uninitialized_dangling_pointer_deref deref expr_str loc =
     | Some s -> s
     | _ -> "" in
   let description =
-    Format.sprintf
-      "%s %s %s %s"
+    Format.asprintf
+      "%s %a %s %s"
       prefix
-      expr_str
+      MF.pp_monospaced expr_str
       deref.problem_str
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }

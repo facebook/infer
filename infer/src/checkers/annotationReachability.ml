@@ -11,6 +11,7 @@ open! IStd
 
 module F = Format
 module L = Logging
+module MF = MarkupFormatter
 
 module CallSiteSet = AbstractDomain.FiniteSet (CallSite.Set)
 module CallsDomain = AbstractDomain.Map (Annot.Map) (CallSiteSet)
@@ -178,13 +179,12 @@ let report_allocation_stack
   let final_trace = List.rev (update_trace call_loc trace) in
   let constr_str = string_of_pname constructor_pname in
   let description =
-    Printf.sprintf
-      "Method `%s` annotated with `@%s` allocates `%s` via `%s%s`"
-      (Typ.Procname.to_simplified_string pname)
-      src_annot
-      constr_str
-      stack_str
-      ("new "^constr_str) in
+    Format.asprintf
+      "Method %a annotated with %a allocates %a via %a"
+      MF.pp_monospaced (Typ.Procname.to_simplified_string pname)
+      MF.pp_monospaced ("@" ^ src_annot)
+      MF.pp_monospaced constr_str
+      MF.pp_monospaced (stack_str ^ ("new "^constr_str)) in
   let exn =
     Exceptions.Checkers (allocates_memory, Localise.verbatim_desc description) in
   Reporting.log_error pname ~loc:fst_call_loc ~ltr:final_trace exn
@@ -196,14 +196,13 @@ let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str sn
     let final_trace = List.rev (update_trace call_loc trace) in
     let exp_pname_str = string_of_pname snk_pname in
     let description =
-      Printf.sprintf
-        "Method `%s` annotated with `@%s` calls `%s%s` where `%s` is annotated with `@%s`"
-        (Typ.Procname.to_simplified_string src_pname)
-        src_annot
-        stack_str
-        exp_pname_str
-        exp_pname_str
-        snk_annot in
+      Format.asprintf
+        "Method %a annotated with %a calls %a where %a is annotated with %a"
+        MF.pp_monospaced (Typ.Procname.to_simplified_string src_pname)
+        MF.pp_monospaced ("@" ^ src_annot)
+        MF.pp_monospaced (stack_str ^ exp_pname_str)
+        MF.pp_monospaced exp_pname_str
+        MF.pp_monospaced ("@" ^ snk_annot) in
     let msg =
       if String.equal src_annot Annotations.performance_critical
       then calls_expensive_method
@@ -355,11 +354,11 @@ module Interprocedural = struct
     let check_expensive_subtyping_rules overridden_pname =
       if not (method_is_expensive tenv overridden_pname) then
         let description =
-          Printf.sprintf
-            "Method `%s` overrides unannotated method `%s` and cannot be annotated with `@%s`"
-            (Typ.Procname.to_string proc_name)
-            (Typ.Procname.to_string overridden_pname)
-            Annotations.expensive in
+          Format.asprintf
+            "Method %a overrides unannotated method %a and cannot be annotated with %a"
+            MF.pp_monospaced (Typ.Procname.to_string proc_name)
+            MF.pp_monospaced (Typ.Procname.to_string overridden_pname)
+            MF.pp_monospaced ("@" ^ Annotations.expensive) in
         let exn =
           Exceptions.Checkers
             (expensive_overrides_unexpensive, Localise.verbatim_desc description) in

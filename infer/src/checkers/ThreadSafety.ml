@@ -11,7 +11,7 @@ open! IStd
 
 module F = Format
 module L = Logging
-
+module MF = MarkupFormatter
 
 module Summary = Summary.Make (struct
     type summary = ThreadSafetyDomain.summary
@@ -944,7 +944,10 @@ let calculate_addendum_message tenv pname =
   | Some (current_class,thread_safe_annotated_classes) ->
       if not (List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class) then
         match thread_safe_annotated_classes with
-        | hd::_ -> F.asprintf "\n Note: Superclass %a is marked @ThreadSafe." Typ.Name.pp hd
+        | hd::_ ->
+            F.asprintf "\n Note: Superclass %a is marked %a."
+              (MF.wrap_monospaced Typ.Name.pp) hd
+              MF.pp_monospaced "@ThreadSafe"
         | [] -> ""
       else ""
   | _ -> ""
@@ -1126,10 +1129,10 @@ let make_unprotected_write_description
     tenv pname final_sink_site initial_sink_site final_sink _ _ =
   Format.asprintf
     "Unprotected write. Public method %a%s %s %a outside of synchronization.%s"
-    Typ.Procname.pp pname
+    (MF.wrap_monospaced Typ.Procname.pp) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if is_container_write_sink final_sink then "mutates"  else "writes to field")
-    (pp_accesses_sink ~is_write_access:true) final_sink
+    (MF.wrap_monospaced (pp_accesses_sink ~is_write_access:true)) final_sink
     (calculate_addendum_message tenv pname)
 
 let make_read_write_race_description
@@ -1146,11 +1149,11 @@ let make_read_write_race_description
   let conflicts_description =
     Format.asprintf "Potentially races with writes in method%s %a."
       (if List.length conflicting_proc_names > 1 then "s" else "")
-      pp_proc_name_list conflicting_proc_names in
+      (MF.wrap_monospaced pp_proc_name_list) conflicting_proc_names in
   Format.asprintf "Read/Write race. Public method %a%s reads from field %a. %s %s"
-    Typ.Procname.pp pname
+    (MF.wrap_monospaced Typ.Procname.pp) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
-    (pp_accesses_sink ~is_write_access:false) final_sink
+    (MF.wrap_monospaced (pp_accesses_sink ~is_write_access:false)) final_sink
     conflicts_description
     (calculate_addendum_message tenv pname)
 

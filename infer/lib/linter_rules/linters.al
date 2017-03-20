@@ -31,7 +31,7 @@ DEFINE-CHECKER ASSIGN_POINTER_WARNING = {
 	  		is_assign_property() AND is_property_pointer_type()
       HOLDS-IN-NODE ObjCPropertyDecl;
 
-	 SET message = "Property `%decl_name%` is a pointer type marked with the `assign` attribute";
+	 SET message = "Property %decl_name% is a pointer type marked with the `assign` attribute";
 	 SET suggestion = "Use a different attribute like `strong` or `weak`.";
 	 SET severity = "WARNING";
 };

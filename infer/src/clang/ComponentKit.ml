@@ -10,6 +10,8 @@
 open! IStd
 open! PVariant
 
+module MF = MarkupFormatter
+
 let get_source_range an =
   match an with
   | Ctl_parser_types.Decl decl ->
@@ -119,8 +121,9 @@ let mutable_local_vars_advice context an =
           CIssue.name = "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE";
           severity = Exceptions.Kadvice;
           mode = CIssue.On;
-          description = "Local variable '" ^ named_decl_info.ni_name
-                        ^ "' should be const to avoid reassignment";
+          description =
+            "Local variable " ^ MF.monospaced_to_string named_decl_info.ni_name ^
+            " should be const to avoid reassignment";
           suggestion = Some "Add a const (after the asterisk for pointer types).";
           loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
