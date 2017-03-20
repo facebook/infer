@@ -9,9 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = infer
 
-# Use the system headers of our own clang. This way, we always use the same system headers
-# regardless of the libraries installed on the machine.
-CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
+CLANG_OPTIONS = -x c++ -std=c++11 -isystem$(ROOT_DIR) -c
 INFER_OPTIONS = --ml-buckets cpp --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-failures-allowed
 INFERPRINT_OPTIONS = --issues-tests
 
