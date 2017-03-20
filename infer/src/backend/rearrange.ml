@@ -1281,74 +1281,89 @@ let rec iter_rearrange
   end;
   res
 
-let is_weak_captured_var pdesc pvar =
+let is_weak_captured_var pdesc var_name =
   let pname = Procdesc.get_proc_name pdesc in
   match pname with
   | Block _ ->
       let is_weak_captured (var, typ) =
         match typ with
         | Typ.Tptr (_, Pk_objc_weak) ->
-            Mangled.equal (Pvar.get_name pvar) var
+            String.equal var_name (Mangled.to_string var)
         | _ -> false in
       List.exists ~f:is_weak_captured (Procdesc.get_captured pdesc)
   | _ -> false
 
+let var_has_annotation ?(check_weak_captured_var=false) pdesc is_annotation pvar =
+  let is_weak_captured_var = is_weak_captured_var pdesc (Pvar.to_string pvar) in
+  let ann_sig = Models.get_modelled_annotated_signature (Specs.pdesc_resolve_attributes pdesc) in
+  AnnotatedSignature.param_has_annot is_annotation pvar ann_sig ||
+  (check_weak_captured_var && is_weak_captured_var)
+
+let attr_has_annot is_annotation tenv prop exp =
+  let attr_has_annot = function
+    | Sil.Apred ((Aretval (pname, ret_attr) | Aundef (pname, ret_attr, _, _)), _)
+      when is_annotation ret_attr ->
+        Some (Typ.Procname.to_string pname)
+    | _ -> None in
+  try List.find_map ~f:attr_has_annot (Attribute.get_for_exp tenv prop exp)
+  with Not_found -> None
+
+let is_strexp_pt_fld_with_annot tenv obj_str is_annotation typ deref_exp  (fld, strexp) =
+  let lookup = Tenv.lookup tenv in
+  let fld_has_annot fld =
+    match Typ.Struct.get_field_type_and_annotation ~lookup fld typ with
+    | Some (_, annot) -> is_annotation annot
+    | _ -> false in
+  match strexp with
+  | Sil.Eexp (Exp.Var _ as exp, _) when Exp.equal exp deref_exp ->
+      let has_annot = fld_has_annot fld in
+      if has_annot then
+        obj_str := Some (Ident.fieldname_to_simplified_string fld);
+      has_annot
+  | _ -> true
+
+(* This returns true if the exp is pointed to only by fields or parameters with a given
+   annotation. In that case it also returns a string representation of the annotation
+   recipient. *)
+let is_only_pt_by_fld_or_param_with_annot
+    ?(check_weak_captured_var=false) pdesc tenv prop deref_exp is_annotation =
+  let obj_str = ref None in
+  let is_pt_by_fld_or_param_with_annot hpred =
+    match hpred with
+    | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var _ as exp, _), _)
+      when Exp.equal exp deref_exp ->
+        let var_has_annotation =
+          var_has_annotation ~check_weak_captured_var pdesc is_annotation pvar in
+        if var_has_annotation then obj_str := Some (Pvar.to_string pvar);
+        let procname_str_opt = attr_has_annot is_annotation tenv prop exp in
+        if Option.is_some procname_str_opt then obj_str := procname_str_opt;
+        (* it's ok for a local with no annotation to point to deref_exp *)
+        var_has_annotation || Option.is_some procname_str_opt || Pvar.is_local pvar
+    | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
+        List.for_all ~f:(is_strexp_pt_fld_with_annot tenv obj_str is_annotation typ deref_exp) flds
+    | _ -> true in
+  if List.for_all ~f:is_pt_by_fld_or_param_with_annot prop.Prop.sigma && !obj_str <> None
+  then !obj_str
+  else None
+
+let is_only_pt_by_fld_or_param_nullable pdesc tenv prop deref_exp =
+  is_only_pt_by_fld_or_param_with_annot ~check_weak_captured_var:true
+    pdesc tenv prop deref_exp Annotations.ia_is_nullable
+
+let is_only_pt_by_fld_or_param_nonnull pdesc tenv prop deref_exp =
+  Option.is_some
+    (is_only_pt_by_fld_or_param_with_annot pdesc tenv prop deref_exp Annotations.ia_is_nonnull)
 
 (** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
-  let lookup = Tenv.lookup tenv in
-  let nullable_obj_str = ref None in
-  let nullable_str_is_weak_captured_var = ref false in
-  (* return true if deref_exp is only pointed to by fields/params with @Nullable annotations *)
-  let is_only_pt_by_nullable_fld_or_param deref_exp =
-    let ann_sig = Models.get_modelled_annotated_signature (Specs.pdesc_resolve_attributes pdesc) in
-    List.for_all
-      ~f:(fun hpred ->
-          match hpred with
-          | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (Exp.Var _ as exp, _), _)
-            when Exp.equal exp deref_exp ->
-              let is_weak_captured_var = is_weak_captured_var pdesc pvar in
-              let is_nullable =
-                if AnnotatedSignature.param_is_nullable pvar ann_sig || is_weak_captured_var
-                then
-                  begin
-                    nullable_obj_str := Some (Pvar.to_string pvar);
-                    nullable_str_is_weak_captured_var := is_weak_captured_var;
-                    true
-                  end
-                else
-                  let is_nullable_attr = function
-                    | Sil.Apred ((Aretval (pname, ret_attr) | Aundef (pname, ret_attr, _, _)), _)
-                      when Annotations.ia_is_nullable ret_attr ->
-                        nullable_obj_str := Some (Typ.Procname.to_string pname);
-                        true
-                    | _ -> false in
-                  List.exists ~f:is_nullable_attr (Attribute.get_for_exp tenv prop exp) in
-              (* it's ok for a non-nullable local to point to deref_exp *)
-              is_nullable || Pvar.is_local pvar
-          | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
-              let fld_is_nullable fld =
-                match Typ.Struct.get_field_type_and_annotation ~lookup fld typ with
-                | Some (_, annot) -> Annotations.ia_is_nullable annot
-                | _ -> false in
-              let is_strexp_pt_by_nullable_fld (fld, strexp) =
-                match strexp with
-                | Sil.Eexp (Exp.Var _ as exp, _) when Exp.equal exp deref_exp ->
-                    let is_nullable = fld_is_nullable fld in
-                    if is_nullable then
-                      nullable_obj_str := Some (Ident.fieldname_to_simplified_string fld);
-                    is_nullable
-                | _ -> true in
-              List.for_all ~f:is_strexp_pt_by_nullable_fld flds
-          | _ -> true)
-      prop.Prop.sigma &&
-    !nullable_obj_str <> None in
   let root = Exp.root_of_lexp lexp in
+  let nullable_var_opt =
+    is_only_pt_by_fld_or_param_nullable pdesc tenv prop root in
   let is_deref_of_nullable =
     let is_definitely_non_null exp prop =
       Prover.check_disequal tenv prop exp Exp.zero in
     Config.report_nullable_inconsistency && not (is_definitely_non_null root prop)
-    && is_only_pt_by_nullable_fld_or_param root in
+    && Option.is_some nullable_var_opt in
   let relevant_attributes_getters = [
     Attribute.get_resource tenv;
     Attribute.get_undef tenv;
@@ -1371,9 +1386,9 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
     begin
       let deref_str =
         if is_deref_of_nullable then
-          match !nullable_obj_str with
+          match nullable_var_opt with
           | Some str ->
-              if !nullable_str_is_weak_captured_var then
+              if is_weak_captured_var pdesc str then
                 Localise.deref_str_weak_variable_in_block None str
               else Localise.deref_str_nullable None str
           | None -> Localise.deref_str_nullable None ""

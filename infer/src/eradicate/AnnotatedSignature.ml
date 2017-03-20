@@ -50,6 +50,12 @@ let param_is_nullable pvar ann_sig =
         Mangled.equal param (Pvar.get_name pvar) && Annotations.ia_is_nullable annot)
     ann_sig.params
 
+let param_has_annot predicate pvar ann_sig =
+  List.exists
+    ~f:(fun (param, param_annot, _) ->
+        Mangled.equal param (Pvar.get_name pvar) && predicate param_annot)
+    ann_sig.params
+
 let pp proc_name fmt annotated_signature =
   let pp_ia fmt ia = if ia <> [] then F.fprintf fmt "%a " Annot.Item.pp ia in
   let pp_annotated_param fmt (p, ia, t) =

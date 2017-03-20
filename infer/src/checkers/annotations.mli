@@ -15,6 +15,7 @@ val any_thread : string
 val expensive : string
 val no_allocation : string
 val nullable : string
+val nonnull : string
 val on_bind : string
 val performance_critical : string
 val present : string

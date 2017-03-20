@@ -67,5 +67,6 @@ SOURCES = \
   ../vardecl/aclass_2.m \
   ../vardecl/last_af.m \
 	../shared/annotations/nullable_annotations.m \
+	../shared/annotations/nonnull_annotations.m \
 
 include $(TESTS_DIR)/clang-frontend.make

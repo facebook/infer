@@ -1,0 +1,74 @@
+/* @generated */
+digraph iCFG {
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" [label="1: Start A_init\nFormals:  self:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+	
+
+	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_1" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" ;
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" [label="2: Exit A_init \n  " color=yellow style=filled]
+	
+
+"init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" [label="3:  Return Stmt \n   n$0=*&self:class A* [line 22]\n  *&return:struct objc_object*=n$0 [line 22]\n " shape="box"]
+	
+
+	 "init#A#instance.eee79aaaddd644404e17691a7e7d809a_3" -> "init#A#instance.eee79aaaddd644404e17691a7e7d809a_2" ;
+"test1:#A#instance.ebd5eea0b404af619c50927f18bab354_1" [label="1: Start A_test1:\nFormals:  self:class A* a:class A*\nLocals:  aa:class A* \n   DECLARE_LOCALS(&return,&aa); [line 25]\n " color=yellow style=filled]
+	
+
+	 "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_1" -> "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_4" ;
+"test1:#A#instance.ebd5eea0b404af619c50927f18bab354_2" [label="2: Exit A_test1: \n  " color=yellow style=filled]
+	
+
+"test1:#A#instance.ebd5eea0b404af619c50927f18bab354_3" [label="3:  Return Stmt \n   n$1=*&aa:class A* [line 27]\n  n$2=*n$1.x:int [line 27]\n  *&return:int=n$2 [line 27]\n " shape="box"]
+	
+
+	 "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_3" -> "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_2" ;
+"test1:#A#instance.ebd5eea0b404af619c50927f18bab354_4" [label="4:  DeclStmt \n   n$3=*&a:class A* [line 26]\n  n$4=_fun_A_child(n$3:class A*) [line 26]\n  *&aa:class A*=n$4 [line 26]\n " shape="box"]
+	
+
+	 "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_4" -> "test1:#A#instance.ebd5eea0b404af619c50927f18bab354_3" ;
+"test2:#A#instance.da747e16db8f3c52e20363adcaf73615_1" [label="1: Start A_test2:\nFormals:  self:class A* a:class A*\nLocals:  aa:class A*\nAnnotation: <> A_test2:(<> <_Nonnull>) \n   DECLARE_LOCALS(&return,&aa); [line 30]\n " color=yellow style=filled]
+	
+
+	 "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_1" -> "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_4" ;
+"test2:#A#instance.da747e16db8f3c52e20363adcaf73615_2" [label="2: Exit A_test2: \n  " color=yellow style=filled]
+	
+
+"test2:#A#instance.da747e16db8f3c52e20363adcaf73615_3" [label="3:  Return Stmt \n   n$5=*&aa:class A* [line 32]\n  n$6=*n$5.x:int [line 32]\n  *&return:int=n$6 [line 32]\n " shape="box"]
+	
+
+	 "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_3" -> "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_2" ;
+"test2:#A#instance.da747e16db8f3c52e20363adcaf73615_4" [label="4:  DeclStmt \n   n$7=*&a:class A* [line 31]\n  n$8=_fun_A_child(n$7:class A*) [line 31]\n  *&aa:class A*=n$8 [line 31]\n " shape="box"]
+	
+
+	 "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_4" -> "test2:#A#instance.da747e16db8f3c52e20363adcaf73615_3" ;
+"test3:#A#instance.28bc2df8df797b21818dc2037239f326_1" [label="1: Start A_test3:\nFormals:  self:class A* successBlock:_fn_(*)\nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n " color=yellow style=filled]
+	
+
+	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_1" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" ;
+"test3:#A#instance.28bc2df8df797b21818dc2037239f326_2" [label="2: Exit A_test3: \n  " color=yellow style=filled]
+	
+
+"test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" [label="3:  Return Stmt \n   *&return:int=0 [line 37]\n " shape="box"]
+	
+
+	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_2" ;
+"test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" [label="4:  Call n$9 \n   n$9=*&successBlock:_fn_(*) [line 36]\n  n$10=_fun_NSString_stringWithUTF8String:(\"Yay\":char*) [line 36]\n  n$9(n$10:class NSString*) [line 36]\n " shape="box"]
+	
+
+	 "test3:#A#instance.28bc2df8df797b21818dc2037239f326_4" -> "test3:#A#instance.28bc2df8df797b21818dc2037239f326_3" ;
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" [label="1: Start A_test4:\nFormals:  self:class A* successBlock:_fn_(*)\nLocals: \nAnnotation: <> A_test4:(<> <_Nonnull>) \n   DECLARE_LOCALS(&return); [line 40]\n " color=yellow style=filled]
+	
+
+	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_1" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" ;
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" [label="2: Exit A_test4: \n  " color=yellow style=filled]
+	
+
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" [label="3:  Return Stmt \n   *&return:int=0 [line 42]\n " shape="box"]
+	
+
+	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_2" ;
+"test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" [label="4:  Call n$11 \n   n$11=*&successBlock:_fn_(*) [line 41]\n  n$12=_fun_NSString_stringWithUTF8String:(\"Yay\":char*) [line 41]\n  n$11(n$12:class NSString*) [line 41]\n " shape="box"]
+	
+
+	 "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_4" -> "test4:#A#instance.718a300d6fa63609a70f22221a548ee5_3" ;
+}

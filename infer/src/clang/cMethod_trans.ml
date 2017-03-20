@@ -143,16 +143,6 @@ let build_method_signature trans_unit_ctx tenv decl_info procname function_metho
     procname parameters tp attributes source_range is_instance_method ~is_cpp_virtual:is_cpp_virtual
     lang parent_pointer pointer_to_property_opt return_param_type_opt
 
-let get_assume_not_null_calls param_decls =
-  let do_one_param decl = match decl with
-    | Clang_ast_t.ParmVarDecl (decl_info, name, qt, _)
-      when CAst_utils.is_type_nonnull qt.Clang_ast_t.qt_type_ptr ->
-        let assume_call = Ast_expressions.create_assume_not_null_call
-            decl_info name qt.Clang_ast_t.qt_type_ptr in
-        [(`ClangStmt assume_call)]
-    | _ -> [] in
-  List.concat_map ~f:do_one_param param_decls
-
 let get_init_list_instrs method_decl_info =
   let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
   List.map ~f:create_custom_instr method_decl_info.Clang_ast_t.xmdi_cxx_ctor_initializers
@@ -164,8 +154,7 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
       let func_decl = Func_decl_info (fdi, qt.Clang_ast_t.qt_type_ptr) in
       let procname = CProcname.from_decl trans_unit_ctx ~tenv meth_decl in
       let ms = build_method_signature trans_unit_ctx tenv decl_info procname func_decl None None in
-      let extra_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
-      ms, fdi.Clang_ast_t.fdi_body, extra_instrs
+      ms, fdi.Clang_ast_t.fdi_body, []
   | CXXMethodDecl (decl_info, _, qt, fdi, mdi), _
   | CXXConstructorDecl (decl_info, _, qt, fdi, mdi), _
   | CXXConversionDecl (decl_info, _, qt, fdi, mdi), _
@@ -176,9 +165,8 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
       let parent_pointer = decl_info.Clang_ast_t.di_parent_pointer in
       let ms = build_method_signature
           trans_unit_ctx tenv decl_info procname method_decl parent_pointer None in
-      let non_null_instrs = get_assume_not_null_calls fdi.Clang_ast_t.fdi_parameters in
       let init_list_instrs = get_init_list_instrs mdi in (* it will be empty for methods *)
-      ms, fdi.Clang_ast_t.fdi_body, (init_list_instrs @ non_null_instrs)
+      ms, fdi.Clang_ast_t.fdi_body, init_list_instrs
   | ObjCMethodDecl (decl_info, _, mdi), _ ->
       let procname = CProcname.from_decl trans_unit_ctx ~tenv meth_decl in
       let parent_ptr = Option.value_exn decl_info.di_parent_pointer in
@@ -190,13 +178,11 @@ let method_signature_of_decl trans_unit_ctx tenv meth_decl block_data_opt =
         | None -> None in
       let ms = build_method_signature trans_unit_ctx tenv decl_info procname method_decl
           parent_pointer pointer_to_property_opt in
-      let extra_instrs = get_assume_not_null_calls mdi.omdi_parameters in
-      ms, mdi.omdi_body, extra_instrs
+      ms, mdi.omdi_body, []
   | BlockDecl (decl_info, bdi), Some (outer_context, tp, procname, _) ->
       let func_decl = Block_decl_info (bdi, tp, outer_context) in
       let ms = build_method_signature trans_unit_ctx tenv decl_info procname func_decl None None in
-      let extra_instrs = get_assume_not_null_calls bdi.bdi_parameters in
-      ms, bdi.bdi_body, extra_instrs
+      ms, bdi.bdi_body, []
   | _ -> raise Invalid_declaration
 
 let method_signature_of_pointer trans_unit_ctx tenv pointer =

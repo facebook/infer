@@ -166,6 +166,7 @@ let sil_annot_of_type type_ptr =
     match get_type type_ptr with
     | Some AttributedType (_, attr_info) ->
         if attr_info.ati_attr_kind = `Nullable then Some Annotations.nullable
+        else if attr_info.ati_attr_kind = `Nonnull then Some Annotations.nonnull
         (* other annotations go here *)
         else None
     | _ -> None in

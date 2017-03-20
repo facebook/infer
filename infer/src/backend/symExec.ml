@@ -766,7 +766,8 @@ let handle_objc_instance_method_call_or_skip pdesc tenv actual_pars path callee_
   else
     match force_objc_init_return_nil pdesc callee_pname tenv ret_id pre path receiver with
     | [] ->
-        if !Config.footprint && Option.is_none (Attribute.get_undef tenv pre receiver) then
+        if !Config.footprint && Option.is_none (Attribute.get_undef tenv pre receiver) &&
+           not (Rearrange.is_only_pt_by_fld_or_param_nonnull pdesc tenv pre receiver) then
           let res_null = (* returns: (objc_null(res) /\ receiver=0) or an empty list of results *)
             let pre_with_attr_or_null = add_objc_null_attribute_or_nullify_result pre in
             let propset = prune_ne tenv ~positive:false receiver Exp.zero pre_with_attr_or_null in
@@ -1195,7 +1196,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
     )
   | Sil.Call (ret_id, fun_exp, actual_params, loc, call_flags) -> (* Call via function pointer *)
       let (prop_r, n_actual_params) = normalize_params tenv current_pname prop_ actual_params in
-      if call_flags.CallFlags.cf_is_objc_block then
+      if call_flags.CallFlags.cf_is_objc_block &&
+         not (Rearrange.is_only_pt_by_fld_or_param_nonnull current_pdesc tenv prop_r fun_exp) then
         Rearrange.check_call_to_objc_block_error tenv current_pdesc prop_r fun_exp loc;
       Rearrange.check_dereference_error tenv current_pdesc prop_r fun_exp loc;
       if call_flags.CallFlags.cf_noreturn then begin

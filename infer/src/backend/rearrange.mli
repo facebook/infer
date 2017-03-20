@@ -14,6 +14,13 @@ open! IStd
 
 exception ARRAY_ACCESS
 
+val is_only_pt_by_fld_or_param_with_annot :
+  ?check_weak_captured_var:bool -> Procdesc.t -> Tenv.t -> Prop.normal Prop.t ->
+  Exp.t -> (Annot.Item.t -> bool) -> string option
+
+val is_only_pt_by_fld_or_param_nonnull : Procdesc.t -> Tenv.t -> Prop.normal Prop.t ->
+  Exp.t -> bool
+
 (** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 val check_dereference_error :
   Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Exp.t -> Location.t -> unit

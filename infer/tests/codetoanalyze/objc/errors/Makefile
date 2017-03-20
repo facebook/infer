@@ -53,6 +53,7 @@ SOURCES_DEFAULT = \
   shared/protocol_procdesc/main.c \
 	shared/annotations/nullable_annotations.m \
 	shared/annotations/nullable_annotations_fields.m \
+	shared/annotations/nonnull_annotations.m \
   taint/sources.m \
   taint/viewController.m \
 

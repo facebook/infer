@@ -28,6 +28,9 @@ val is_anonymous_inner_class_wrapper : t -> Typ.Procname.t -> bool
 (** Check if the given parameter has a Nullable annotation in the given signature *)
 val param_is_nullable : Pvar.t -> t -> bool
 
+(** Check if the given parameter has an annotation in the given signature *)
+val param_has_annot : (Annot.Item.t -> bool) -> Pvar.t -> t -> bool
+
 (** Mark the return of the method_annotation with the given annotation. *)
 val method_annotation_mark_return : annotation -> Annot.Method.t -> Annot.Method.t
 
