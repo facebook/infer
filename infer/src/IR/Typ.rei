@@ -424,7 +424,7 @@ let module Procname: {
 
   /** Convert a proc name to a filename. */
   let to_filename: t => string;
-  let get_qualifiers: t => list string;
+  let get_qualifiers: t => QualifiedCppName.t;
 };
 
 

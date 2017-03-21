@@ -136,16 +136,18 @@ struct
       whether method should be translated based on method and class whitelists *)
   let is_whitelisted_cpp_method =
     let method_matcher =
-      QualifiedCppName.quals_matcher_of_fuzzy_qual_names Config.whitelisted_cpp_methods in
+      QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_methods in
     let class_matcher =
-      QualifiedCppName.quals_matcher_of_fuzzy_qual_names Config.whitelisted_cpp_classes in
+      QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_classes in
     fun qual_method_rev ->
       (* either the method is explictely whitelisted, or the whole class is whitelisted *)
-      QualifiedCppName.match_qualifiers method_matcher (List.rev qual_method_rev) ||
+      QualifiedCppName.Match.match_qualifiers method_matcher
+        (List.rev qual_method_rev |> QualifiedCppName.of_list) ||
       match qual_method_rev with
       | _::(_::_ as class_name_rev) ->
           (* make sure the class name is not empty; in particular, it cannot be a C function *)
-          QualifiedCppName.match_qualifiers class_matcher (List.rev class_name_rev)
+          QualifiedCppName.Match.match_qualifiers class_matcher
+            (List.rev class_name_rev |> QualifiedCppName.of_list)
       | _ ->
           false
 

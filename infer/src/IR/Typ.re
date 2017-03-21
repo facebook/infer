@@ -882,18 +882,18 @@ let module Procname = {
   let pp_set fmt set => Set.iter (fun pname => F.fprintf fmt "%a " pp pname) set;
   let get_qualifiers pname =>
     switch pname {
-    | C {name} => QualifiedCppName.qualifiers_of_qual_name name
+    | C {name} => QualifiedCppName.of_qual_string name
     | ObjC_Cpp objc_cpp =>
-      List.append
-        (QualifiedCppName.qualifiers_of_qual_name (Name.name objc_cpp.class_name))
-        [objc_cpp.method_name]
-    | _ => []
+      QualifiedCppName.of_qual_string (Name.name objc_cpp.class_name) |>
+      QualifiedCppName.append_qualifier qual::objc_cpp.method_name
+    | _ => QualifiedCppName.empty
     };
 
   /** Convert a proc name to a filename */
   let to_filename pname => {
     /* filenames for clang procs are REVERSED qualifiers with '#' as separator */
-    let get_qual_name_str pname => get_qualifiers pname |> List.rev |> String.concat sep::"#";
+    let get_qual_name_str pname =>
+      get_qualifiers pname |> QualifiedCppName.to_list |> List.rev |> String.concat sep::"#";
     let proc_id =
       switch pname {
       | C {mangled} =>

@@ -8,6 +8,32 @@
  */
 open! IStd;
 
+type t;
+
+
+/** empty qualified name */
+let empty: t;
+
+
+/** attempts to parse the argument into a list::of::possibly::templated<T>::qualifiers */
+let of_qual_string: string => t;
+
+
+/** returns qualified name as a string with "::" as a separator between qualifiers */
+let to_qual_string: t => string;
+
+
+/** append qualifier to the end (innermost scope) of the qualified name */
+let append_qualifier: t => qual::string => t;
+
+
+/** returns list of qualifers */
+let to_list: t => list string;
+
+
+/** given list of qualifiers in normal order produce qualified name ["std", "move"] */
+let of_list: list string => t;
+
 /* Module to match qualified C++ procnames "fuzzily", that is up to namescapes and templating. In
     particular, this deals with the following issues:
 
@@ -35,12 +61,8 @@ open! IStd;
                                                           qualifiers to match
        does not match: ["folly","someFunction<int>", "BAD"] - same as previous example
    */
-type quals_matcher;
-
-let quals_matcher_of_fuzzy_qual_names: list string => quals_matcher;
-
-let match_qualifiers: quals_matcher => list string => bool;
-
-
-/** attempts to parse the argument into a list::of::possibly::templated<T>::qualifiers */
-let qualifiers_of_qual_name: string => list string;
+let module Match: {
+  type quals_matcher;
+  let of_fuzzy_qual_names: list string => quals_matcher;
+  let match_qualifiers: quals_matcher => t => bool;
+};

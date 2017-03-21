@@ -14,11 +14,11 @@ module L = Logging
 
 module GlobalsAccesses = SiofTrace.GlobalsAccesses
 
-let methods_whitelist = QualifiedCppName.quals_matcher_of_fuzzy_qual_names Config.siof_safe_methods
+let methods_whitelist = QualifiedCppName.Match.of_fuzzy_qual_names Config.siof_safe_methods
 
 let is_whitelisted (pname : Typ.Procname.t) =
   Typ.Procname.get_qualifiers pname
-  |> QualifiedCppName.match_qualifiers methods_whitelist
+  |> QualifiedCppName.Match.match_qualifiers methods_whitelist
 
 type siof_model = {
   qual_name : string; (** (fuzzy) name of the method, eg "std::ios_base::Init::Init" *)
@@ -40,10 +40,10 @@ let models = List.map ~f:parse_siof_model [
 let is_modelled =
   let models_matcher =
     List.map models ~f:(fun {qual_name} -> qual_name)
-    |> QualifiedCppName.quals_matcher_of_fuzzy_qual_names in
+    |> QualifiedCppName.Match.of_fuzzy_qual_names in
   fun pname ->
     Typ.Procname.get_qualifiers pname
-    |> QualifiedCppName.match_qualifiers models_matcher
+    |> QualifiedCppName.Match.match_qualifiers models_matcher
 
 module Summary = Summary.Make (struct
     type summary = SiofDomain.astate
@@ -85,11 +85,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let filter_global_accesses initialized globals =
     let initialized_matcher =
       Domain.VarNames.elements initialized
-      |> QualifiedCppName.quals_matcher_of_fuzzy_qual_names in
+      |> QualifiedCppName.Match.of_fuzzy_qual_names in
     (* gvar \notin initialized, up to some fuzzing *)
     let f (gvar, _) =
-      QualifiedCppName.qualifiers_of_qual_name (Pvar.to_string gvar)
-      |> Fn.non (QualifiedCppName.match_qualifiers initialized_matcher) in
+      QualifiedCppName.of_qual_string (Pvar.to_string gvar)
+      |> Fn.non (QualifiedCppName.Match.match_qualifiers initialized_matcher) in
     GlobalsAccesses.filter f globals
 
   let add_globals astate outer_loc globals =
@@ -127,8 +127,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Const (Cfun callee_pname), _, _, _) when is_modelled callee_pname ->
         let init = List.find_map_exn models
             ~f:(fun {qual_name; initialized_globals} ->
-                if QualifiedCppName.quals_matcher_of_fuzzy_qual_names [qual_name]
-                   |> Fn.flip QualifiedCppName.match_qualifiers
+                if QualifiedCppName.Match.of_fuzzy_qual_names [qual_name]
+                   |> Fn.flip QualifiedCppName.Match.match_qualifiers
                      (Typ.Procname.get_qualifiers callee_pname) then
                   Some initialized_globals
                 else

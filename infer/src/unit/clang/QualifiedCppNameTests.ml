@@ -13,8 +13,9 @@ open OUnit2
 let test_fuzzy_match =
   let create_test fuzzy_qual_names qualifiers expected_match _ =
     let output =
-      let matcher = QualifiedCppName.quals_matcher_of_fuzzy_qual_names fuzzy_qual_names in
-      QualifiedCppName.match_qualifiers matcher qualifiers in
+      let qualified_name = QualifiedCppName.of_list qualifiers in
+      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names fuzzy_qual_names in
+      QualifiedCppName.Match.match_qualifiers matcher qualified_name in
     assert_equal ~cmp:Bool.equal expected_match output in
   [
     (
