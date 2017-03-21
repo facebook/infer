@@ -605,6 +605,10 @@ let module Procname = {
     fun
     | Java j => equal_method_kind j.kind Static
     | _ => false;
+  let java_is_lambda =
+    fun
+    | Java j => String.is_prefix prefix::"lambda$" j.method_name
+    | _ => false;
 
   /** Prints a string of a java procname with the given level of verbosity */
   let java_to_string withclass::withclass=false (j: java) verbosity =>

@@ -360,6 +360,8 @@ let check_return_annotation tenv
   let ret_annotated_nonnull =
     Annotations.ia_is_nonnull ret_ia in
   match ret_range with
+  (* Disables the warnings since it is not clear how to annotate the return value of lambdas *)
+  | Some _ when Typ.Procname.java_is_lambda curr_pname -> ()
   | Some (_, final_ta, _) ->
       let final_nullable = TypeAnnotation.get_value AnnotatedSignature.Nullable final_ta in
       let final_present = TypeAnnotation.get_value AnnotatedSignature.Present final_ta in
