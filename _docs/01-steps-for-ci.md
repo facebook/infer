@@ -17,9 +17,9 @@ git diff --name-only origin/<FEATURE_BRANCH>..origin/<MASTER_BRANCH> > index.txt
 
 infer -a capture -- ./gradlew --offline assembleDebug
 
-infer --fail-on-issue -a infer --changed-files-index ./index.txt -- analyze -- ./gradlew --offline assembleDebug
+infer --fail-on-issue -a infer --changed-files-index ./index.txt -- analyze
 
-infer --fail-on-issue -a eradicate --changed-files-index ./index.txt -- analyze -- ./gradlew --offline assembleDebug
+infer --fail-on-issue -a eradicate --changed-files-index ./index.txt -- analyze
 
 ```
 
