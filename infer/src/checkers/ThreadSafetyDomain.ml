@@ -152,15 +152,15 @@ end
 module AccessPrecondition = struct
   type t =
     | Protected
-    | ProtectedIf of int option
+    | Unprotected of int option
   [@@deriving compare]
 
-  let unprotected = ProtectedIf None
+  let unprotected = Unprotected None
 
   let pp fmt = function
     | Protected -> F.fprintf fmt "Protected"
-    | ProtectedIf (Some index) -> F.fprintf fmt "ProtectedIf %d" index
-    | ProtectedIf None -> F.fprintf fmt "Unprotected"
+    | Unprotected (Some index) -> F.fprintf fmt "Unproctected(%d)" index
+    | Unprotected None -> F.fprintf fmt "Unprotected"
 
   module Map = PrettyPrintable.MakePPMap(struct
       type nonrec t = t

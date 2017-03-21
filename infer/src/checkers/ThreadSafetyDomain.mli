@@ -91,9 +91,10 @@ module AccessPrecondition : sig
   type t =
     | Protected
     (** access safe due to held lock (i.e., pre is true *)
-    | ProtectedIf of int option
-    (** access safe if the formal at index i is owned (i.e., pre is owned(i)).
-        ProtectedIf None means unsafe (i.e., pre is false) *)
+    | Unprotected of int option
+    (** access rooted in formal at index i. Safe if actual passed at index is owned (i.e.,
+        !owned(i) implies an unsafe access). Unprotected None means the access is unsafe unless a
+        lock is held in the caller *)
   [@@deriving compare]
 
   (** type of an unprotected access *)

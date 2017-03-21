@@ -230,7 +230,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         then
           match get_formal_index base_exp typ with
           | Some formal_index ->
-              let pre = AccessPrecondition.ProtectedIf (Some formal_index) in
+              let pre = AccessPrecondition.Unprotected (Some formal_index) in
               let conditional_accesses_for_pre =
                 add_path_to_state
                   access_kind
@@ -369,7 +369,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             match AccessPath.of_lhs_exp dummy_access_exp receiver_typ ~f_resolve_id with
             | Some container_ap ->
                 AccessDomain.add_access
-                  (ProtectedIf (Some 0))
+                  (Unprotected (Some 0))
                   (make_access container_ap Write callee_loc)
                   AccessDomain.empty
             | None ->
@@ -491,7 +491,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                   | Some formal_index ->
                                       (* the actual passed to the current callee is rooted in a
                                          formal *)
-                                      AccessPrecondition.ProtectedIf (Some formal_index)
+                                      AccessPrecondition.Unprotected (Some formal_index)
                                   | None ->
                                       match
                                         AttributeMapDomain.get_conditional_ownership_index
@@ -501,7 +501,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                       | Some formal_index ->
                                           (* access path conditionally owned if [formal_index] is
                                              owned *)
-                                          AccessPrecondition.ProtectedIf (Some formal_index)
+                                          AccessPrecondition.Unprotected (Some formal_index)
                                       | None ->
                                           (* access path not rooted in a formal and not
                                              conditionally owned *)
@@ -518,13 +518,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       let update_accesses pre callee_accesses accesses_acc = match pre with
                         | AccessPrecondition.Protected ->
                             update_caller_accesses pre callee_accesses accesses_acc
-                        | AccessPrecondition.ProtectedIf None ->
+                        | AccessPrecondition.Unprotected None ->
                             let pre' =
                               if unprotected
                               then pre
                               else AccessPrecondition.Protected in
                             update_caller_accesses pre' callee_accesses accesses_acc
-                        | AccessPrecondition.ProtectedIf (Some index) ->
+                        | AccessPrecondition.Unprotected (Some index) ->
                             add_ownership_access
                               callee_accesses (List.nth_exn actuals index) accesses_acc in
                       AccessDomain.fold update_accesses callee_accesses astate.accesses in
@@ -944,7 +944,7 @@ let get_possibly_unsafe_accesses access_kind accesses =
   let open ThreadSafetyDomain in
   AccessDomain.fold
     (fun pre trace acc -> match pre with
-       | ProtectedIf _ -> PathDomain.join (filter_by_kind access_kind trace) acc
+       | Unprotected _ -> PathDomain.join (filter_by_kind access_kind trace) acc
        | Protected -> acc)
     accesses
     PathDomain.empty
