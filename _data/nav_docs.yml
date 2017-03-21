@@ -6,6 +6,7 @@
   items:
   - id: infer-workflow
   - id: analyzing-apps-or-projects
+  - id: steps-for-ci
   - id: eradicate
   - id: checkers
   - id: linters
