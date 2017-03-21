@@ -62,6 +62,7 @@ let deallocate_stack_variable = from_string "DEALLOCATE_STACK_VARIABLE"
 let deallocate_static_memory = from_string "DEALLOCATE_STATIC_MEMORY"
 let deallocation_mismatch = from_string "DEALLOCATION_MISMATCH"
 let divide_by_zero = from_string "DIVIDE_BY_ZERO"
+let double_lock = from_string "DOUBLE_LOCK"
 let empty_vector_access = from_string "EMPTY_VECTOR_ACCESS"
 let eradicate_condition_redundant =
   from_string "ERADICATE_CONDITION_REDUNDANT" ~hum:"Condition Redundant"
@@ -194,6 +195,7 @@ module Tags = struct
   let field_not_null_checked = "field_not_null_checked" (* describes a NPE that comes from field not nullable *)
   let nullable_src = "nullable_src" (* @Nullable-annoted field/param/retval that causes a warning *)
   let weak_captured_var_src = "weak_captured_var_src" (* Weak variable captured in a block that causes a warning *)
+  let double_lock = "double_lock"
   let empty_vector_access = "empty_vector_access"
   let create () = ref []
   let add tags tag value = tags := (tag, value) :: !tags
@@ -301,6 +303,12 @@ let by_call_to tags proc_name =
 let by_call_to_ra tags ra =
   "by " ^ call_to_at_line tags ra.PredSymb.ra_pname ra.PredSymb.ra_loc
 
+let add_by_call_to_opt problem_str tags proc_name_opt =
+  match proc_name_opt with
+  | Some proc_name ->
+      problem_str ^ " " ^ by_call_to tags proc_name
+  | None -> problem_str
+
 let rec format_typ = function
   | Typ.Tptr (typ, _) when Config.curr_language_is Config.Java ->
       format_typ typ
@@ -337,10 +345,7 @@ let pointer_or_object () =
   if Config.curr_language_is Config.Java then "object" else "pointer"
 
 let _deref_str_null proc_name_opt _problem_str tags =
-  let problem_str = match proc_name_opt with
-    | Some proc_name ->
-        _problem_str ^ " " ^ by_call_to tags proc_name
-    | None -> _problem_str in
+  let problem_str = add_by_call_to_opt _problem_str tags proc_name_opt in
   { tags = tags;
     value_pre = Some (pointer_or_object ());
     value_post = None;
@@ -497,6 +502,15 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
     "Context " ^ context_str ^ " may leak during method " ^ pname_str ^ ":\n" in
   { no_desc with descriptions = [preamble ^ MF.code_to_string (leak_root ^ path_str)] }
 
+let desc_double_lock pname_opt object_str loc =
+  let mutex_str = Format.sprintf "Mutex %s" object_str in
+  let tags = Tags.create () in
+  let msg = "could be locked and is locked again" in
+  let msg = add_by_call_to_opt msg tags pname_opt in
+  Tags.add tags Tags.double_lock object_str;
+  let descriptions = [mutex_str; msg; at_line tags loc] in
+  { no_desc with descriptions; tags = !tags }
+
 let desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc =
   let line_info = at_line (Tags.create ()) loc in
   let accessed_fld_str = Fieldname.to_string accessed_fld in
@@ -624,6 +638,8 @@ let is_field_not_null_checked_desc desc = has_tag desc Tags.field_not_null_check
 let is_parameter_field_not_null_checked_desc desc =
   is_parameter_not_null_checked_desc desc ||
   is_field_not_null_checked_desc desc
+
+let is_double_lock_desc desc = has_tag desc Tags.double_lock
 
 let desc_allocation_mismatch alloc dealloc =
   let tags = Tags.create () in

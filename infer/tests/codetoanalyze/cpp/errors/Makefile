@@ -19,6 +19,7 @@ SOURCES = \
   include_header/include_templ.cpp \
   $(wildcard memory_leaks/*.cpp) \
   $(wildcard models/*.cpp) \
+  $(wildcard mutex/*.cpp) \
   $(wildcard npe/*.cpp) \
   $(wildcard numeric/*.cpp) \
   $(wildcard overwrite_attribute/*.cpp) \

@@ -340,6 +340,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
               Localise.[
                 Localise.from_string Config.default_failure_name,
                 context_leak,
+                double_lock,
                 empty_vector_access,
                 memory_leak,
                 quandary_taint_error,

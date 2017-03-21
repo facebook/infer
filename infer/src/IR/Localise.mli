@@ -54,6 +54,7 @@ val deallocate_stack_variable : t
 val deallocate_static_memory : t
 val deallocation_mismatch : t
 val divide_by_zero : t
+val double_lock : t
 val empty_vector_access : t
 val eradicate_condition_redundant : t
 val eradicate_condition_redundant_nonnull : t
@@ -234,6 +235,10 @@ val desc_deallocate_stack_variable : string -> Typ.Procname.t -> Location.t -> e
 val desc_deallocate_static_memory : string -> Typ.Procname.t -> Location.t -> error_desc
 
 val desc_divide_by_zero : string -> Location.t -> error_desc
+
+val desc_double_lock : Typ.Procname.t option -> string -> Location.t -> error_desc
+
+val is_double_lock_desc : error_desc -> bool
 
 val desc_empty_vector_access : Typ.Procname.t option -> string -> Location.t -> error_desc
 

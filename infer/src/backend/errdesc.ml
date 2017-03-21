@@ -16,6 +16,7 @@ module L = Logging
 module F = Format
 module DExp = DecompiledExp
 
+let mutex_class = ["std"; "mutex"]
 let vector_class = ["std"; "vector"]
 
 let is_one_of_classes class_name classes =
@@ -30,6 +31,9 @@ let is_method_of_objc_cpp_class pname classes =
       let class_name = Typ.Procname.objc_cpp_get_class_name name in
       is_one_of_classes class_name classes
   | _ -> false
+
+let is_mutex_method pname =
+  is_method_of_objc_cpp_class pname [mutex_class]
 
 let is_vector_method pname =
   is_method_of_objc_cpp_class pname [vector_class]
@@ -830,12 +834,20 @@ let create_dereference_desc tenv
                Localise.parameter_field_not_null_checked_desc desc vfs
            | _ ->
                desc)
-      | Some (DExp.Dretcall (Dconst (Cfun pname), this_dexp :: _, loc, _ ))
-        when is_vector_method pname ->
-          Localise.desc_empty_vector_access (Some pname) (DExp.to_string this_dexp) loc
-      | Some (DExp.Darrow (dexp, fieldname))
-        when is_special_field [vector_class] (Some "beginPtr") fieldname ->
-          Localise.desc_empty_vector_access None (DExp.to_string dexp) loc
+      | Some (DExp.Dretcall (Dconst (Cfun pname), this_dexp :: _, loc, _ )) ->
+          if is_mutex_method pname then
+            Localise.desc_double_lock (Some pname) (DExp.to_string this_dexp) loc
+          else if is_vector_method pname then
+            Localise.desc_empty_vector_access (Some pname) (DExp.to_string this_dexp) loc
+          else
+            desc
+      | Some (DExp.Darrow (dexp, fieldname)) ->
+          if is_special_field [mutex_class] (Some "null_if_locked") fieldname then
+            Localise.desc_double_lock None (DExp.to_string dexp) loc
+          else if is_special_field [vector_class] (Some "beginPtr") fieldname then
+            Localise.desc_empty_vector_access None (DExp.to_string dexp) loc
+          else
+            desc
       | _ -> desc
     else desc in
   if use_buckets then Buckets.classify_access desc access_opt' de_opt is_nullable
