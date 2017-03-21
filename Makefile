@@ -412,10 +412,10 @@ endif
 	$(INSTALL_PROGRAM) -C $(INFERPRINT_BIN) $(DESTDIR)$(libdir)/infer/infer/bin/
 	(cd $(DESTDIR)$(bindir)/ && \
 	 $(REMOVE) infer && \
-	 $(LN_S) $(libdir)/infer/infer/bin/infer infer)
+	 $(LN_S) $(libdir_relative_to_bindir)/infer/infer/bin/infer infer)
 	(cd $(DESTDIR)$(bindir)/ && \
 	 $(REMOVE) inferTraceBugs && \
-	 $(LN_S) $(libdir)/infer/infer/lib/python/inferTraceBugs inferTraceBugs)
+	 $(LN_S) $(libdir_relative_to_bindir)/infer/infer/lib/python/inferTraceBugs inferTraceBugs)
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	@$(MAKE) -C facebook install

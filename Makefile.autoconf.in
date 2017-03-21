@@ -36,6 +36,8 @@ IS_RELEASE_TREE = @IS_RELEASE_TREE@
 JAVAC = @JAVAC@
 LDFLAGS = @LDFLAGS@
 libdir = @libdir@
+# override in your `make` command to make the install relocatable
+libdir_relative_to_bindir = $(libdir)
 LIBS = @LIBS@
 MENHIR = @MENHIR@
 MKDIR_P_CMD = case "@MKDIR_P@" in \
