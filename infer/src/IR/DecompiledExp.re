@@ -24,8 +24,8 @@ type t =
   | Dsizeof Typ.t (option t) Subtype.t
   | Dderef t
   | Dfcall t (list t) Location.t CallFlags.t
-  | Darrow t Ident.fieldname
-  | Ddot t Ident.fieldname
+  | Darrow t Fieldname.t
+  | Ddot t Fieldname.t
   | Dpvar Pvar.t
   | Dpvaraddr Pvar.t
   | Dunop Unop.t t
@@ -90,25 +90,25 @@ let rec to_string =
     }
   | Darrow (Dpvar pv) f when Pvar.is_this pv =>
     /* this->fieldname */
-    Ident.fieldname_to_simplified_string f
+    Fieldname.to_simplified_string f
   | Darrow de f =>
-    if (Ident.fieldname_is_hidden f) {
+    if (Fieldname.is_hidden f) {
       to_string de
     } else if (java ()) {
-      to_string de ^ "." ^ Ident.fieldname_to_flat_string f
+      to_string de ^ "." ^ Fieldname.to_flat_string f
     } else {
-      to_string de ^ "->" ^ Ident.fieldname_to_string f
+      to_string de ^ "->" ^ Fieldname.to_string f
     }
   | Ddot (Dpvar _) fe when eradicate_java () =>
     /* static field access */
-    Ident.fieldname_to_simplified_string fe
+    Fieldname.to_simplified_string fe
   | Ddot de f =>
-    if (Ident.fieldname_is_hidden f) {
+    if (Fieldname.is_hidden f) {
       "&" ^ to_string de
     } else if (java ()) {
-      to_string de ^ "." ^ Ident.fieldname_to_flat_string f
+      to_string de ^ "." ^ Fieldname.to_flat_string f
     } else {
-      to_string de ^ "." ^ Ident.fieldname_to_string f
+      to_string de ^ "." ^ Fieldname.to_string f
     }
   | Dpvar pv => Mangled.to_string (Pvar.get_name pv)
   | Dpvaraddr pv => {

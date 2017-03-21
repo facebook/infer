@@ -70,11 +70,11 @@ type err_instance =
   | Condition_redundant of (bool * (string option) * bool)
   | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
   | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
-  | Field_not_initialized of Ident.fieldname * Typ.Procname.t
-  | Field_not_mutable of Ident.fieldname * origin_descr
-  | Field_annotation_inconsistent of AnnotatedSignature.annotation * Ident.fieldname * origin_descr
-  | Field_over_annotated of Ident.fieldname * Typ.Procname.t
-  | Null_field_access of string option * Ident.fieldname * origin_descr * bool
+  | Field_not_initialized of Fieldname.t * Typ.Procname.t
+  | Field_not_mutable of Fieldname.t * origin_descr
+  | Field_annotation_inconsistent of AnnotatedSignature.annotation * Fieldname.t * origin_descr
+  | Field_over_annotated of Fieldname.t * Typ.Procname.t
+  | Null_field_access of string option * Fieldname.t * origin_descr * bool
   | Call_receiver_annotation_inconsistent
     of AnnotatedSignature.annotation * string option * Typ.Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
@@ -94,15 +94,15 @@ module H = Hashtbl.Make(struct
       | Condition_redundant (b, so, nn) ->
           Hashtbl.hash (1, b, string_opt_hash so, nn)
       | Field_not_initialized (fn, pn) ->
-          Hashtbl.hash (2, string_hash ((Ident.fieldname_to_string fn) ^ (Typ.Procname.to_string pn)))
+          Hashtbl.hash (2, string_hash ((Fieldname.to_string fn) ^ (Typ.Procname.to_string pn)))
       | Field_not_mutable (fn, _) ->
-          Hashtbl.hash (3, string_hash (Ident.fieldname_to_string fn))
+          Hashtbl.hash (3, string_hash (Fieldname.to_string fn))
       | Field_annotation_inconsistent (ann, fn, _) ->
-          Hashtbl.hash (4, ann, string_hash (Ident.fieldname_to_string fn))
+          Hashtbl.hash (4, ann, string_hash (Fieldname.to_string fn))
       | Field_over_annotated (fn, pn) ->
-          Hashtbl.hash (5, string_hash ((Ident.fieldname_to_string fn) ^ (Typ.Procname.to_string pn)))
+          Hashtbl.hash (5, string_hash ((Fieldname.to_string fn) ^ (Typ.Procname.to_string pn)))
       | Null_field_access (so, fn, _, _) ->
-          Hashtbl.hash (6, string_opt_hash so, string_hash (Ident.fieldname_to_string fn))
+          Hashtbl.hash (6, string_opt_hash so, string_hash (Fieldname.to_string fn))
       | Call_receiver_annotation_inconsistent (ann, so, pn, _) ->
           Hashtbl.hash (7, ann, string_opt_hash so, Typ.Procname.hash_pname pn)
       | Parameter_annotation_inconsistent (ann, s, n, pn, _, _) ->
@@ -231,7 +231,7 @@ type st_report_error =
   Localise.t ->
   Location.t ->
   ?advice: string option ->
-  ?field_name: Ident.fieldname option ->
+  ?field_name: Fieldname.t option ->
   ?origin_loc: Location.t option ->
   ?exception_kind: (string -> Localise.error_desc -> exn) ->
   ?always_report: bool ->
@@ -282,7 +282,7 @@ let report_error_now tenv
         Localise.eradicate_field_not_initialized,
         Format.asprintf
           "Field %a is not initialized in %s and is not declared %a"
-          MF.pp_monospaced (Ident.fieldname_to_simplified_string fn)
+          MF.pp_monospaced (Fieldname.to_simplified_string fn)
           constructor_name
           MF.pp_monospaced "@Nullable",
         None,
@@ -293,7 +293,7 @@ let report_error_now tenv
         Localise.eradicate_field_not_mutable,
         Format.asprintf
           "Field %a is modified but is not declared %a. %s"
-          MF.pp_monospaced (Ident.fieldname_to_simplified_string fn)
+          MF.pp_monospaced (Fieldname.to_simplified_string fn)
           MF.pp_monospaced "@Mutable"
           origin_description,
         None,
@@ -305,14 +305,14 @@ let report_error_now tenv
               Localise.eradicate_field_not_nullable,
               Format.asprintf
                 "Field %a can be null but is not declared %a. %s"
-                MF.pp_monospaced (Ident.fieldname_to_simplified_string fn)
+                MF.pp_monospaced (Fieldname.to_simplified_string fn)
                 MF.pp_monospaced "@Nullable"
                 origin_description
           | AnnotatedSignature.Present ->
               Localise.eradicate_field_value_absent,
               Format.asprintf
                 "Field %a is assigned a possibly absent value but is declared %a. %s"
-                MF.pp_monospaced (Ident.fieldname_to_simplified_string fn)
+                MF.pp_monospaced (Fieldname.to_simplified_string fn)
                 MF.pp_monospaced "@Present"
                 origin_description in
         true,
@@ -335,7 +335,7 @@ let report_error_now tenv
         Localise.eradicate_field_over_annotated,
         Format.asprintf
           "Field %a is always initialized in %s but is declared %a"
-          MF.pp_monospaced (Ident.fieldname_to_simplified_string fn)
+          MF.pp_monospaced (Fieldname.to_simplified_string fn)
           constructor_name
           MF.pp_monospaced "@Nullable",
         None,
@@ -349,7 +349,7 @@ let report_error_now tenv
           "Object %a could be null when accessing %s %a. %s"
           MF.pp_monospaced (Option.value s_opt ~default:"")
           at_index
-          MF.pp_monospaced (Ident.fieldname_to_simplified_string fn)
+          MF.pp_monospaced (Fieldname.to_simplified_string fn)
           origin_description,
         None,
         None,

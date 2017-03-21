@@ -58,7 +58,7 @@ module StrexpMatch : sig
 end = struct
 
   (** syntactic offset *)
-  type syn_offset = Field of Ident.fieldname * Typ.t | Index of Exp.t
+  type syn_offset = Field of Fieldname.t * Typ.t | Index of Exp.t
 
   (** path through an Estruct *)
   type path = Exp.t * (syn_offset list)
@@ -77,9 +77,9 @@ end = struct
         match Tenv.lookup tenv name with
         | Some { fields } ->
             let se' =
-              snd (List.find_exn ~f:(fun (f', _) -> Ident.equal_fieldname f' fld) fsel) in
+              snd (List.find_exn ~f:(fun (f', _) -> Fieldname.equal f' fld) fsel) in
             let t' =
-              snd3 (List.find_exn ~f:(fun (f', _, _) -> Ident.equal_fieldname f' fld) fields) in
+              snd3 (List.find_exn ~f:(fun (f', _, _) -> Fieldname.equal f' fld) fields) in
             get_strexp_at_syn_offsets tenv se' t' syn_offs'
         | None ->
             fail ()
@@ -98,14 +98,14 @@ end = struct
     | Sil.Estruct (fsel, inst), Tstruct name, Field (fld, _) :: syn_offs' -> (
         match Tenv.lookup tenv name with
         | Some { fields } ->
-            let se' = snd (List.find_exn ~f:(fun (f', _) -> Ident.equal_fieldname f' fld) fsel) in
+            let se' = snd (List.find_exn ~f:(fun (f', _) -> Fieldname.equal f' fld) fsel) in
             let t' = (fun (_,y,_) -> y)
                 (List.find_exn ~f:(fun (f', _, _) ->
-                     Ident.equal_fieldname f' fld) fields) in
+                     Fieldname.equal f' fld) fields) in
             let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
             let fsel' =
               List.map ~f:(fun (f'', se'') ->
-                  if Ident.equal_fieldname f'' fld then (fld, se_mod) else (f'', se'')
+                  if Fieldname.equal f'' fld then (fld, se_mod) else (f'', se'')
                 ) fsel in
             Sil.Estruct (fsel', inst)
         | None ->
@@ -179,12 +179,12 @@ end = struct
       | [] -> ()
       | (f, se) :: fsel' ->
           begin
-            match List.find ~f:(fun (f', _, _) -> Ident.equal_fieldname f' f) ftal with
+            match List.find ~f:(fun (f', _, _) -> Fieldname.equal f' f) ftal with
             | Some (_, t, _) ->
                 find_offset_sexp sigma_other hpred root ((Field (f, typ)) :: offs) se t
             | None ->
                 L.d_strln
-                  ("Can't find field " ^ (Ident.fieldname_to_string f) ^ " in StrexpMatch.find")
+                  ("Can't find field " ^ (Fieldname.to_string f) ^ " in StrexpMatch.find")
           end;
           find_offset_fsel sigma_other hpred root offs fsel' ftal typ
     and find_offset_esel sigma_other hpred root offs esel t = match esel with

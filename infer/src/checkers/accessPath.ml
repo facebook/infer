@@ -26,7 +26,7 @@ let compare_base_untyped (base_var1, _) (base_var2, _) =
 
 type access =
   | ArrayAccess of Typ.t
-  | FieldAccess of Ident.fieldname
+  | FieldAccess of Fieldname.t
 [@@deriving compare]
 
 let equal_access = [%compare.equal : access]
@@ -38,7 +38,7 @@ let pp_base fmt (pvar, _) =
   Var.pp fmt pvar
 
 let pp_access fmt = function
-  | FieldAccess field_name -> Ident.pp_fieldname fmt field_name
+  | FieldAccess field_name -> Fieldname.pp fmt field_name
   | ArrayAccess _ -> F.fprintf fmt "[_]"
 
 let pp_access_list fmt accesses =

@@ -23,7 +23,7 @@ type kind_of_dotty_prop =
 val reset_proposition_counter : unit -> unit
 
 val pp_dotty : Format.formatter -> kind_of_dotty_prop -> Prop.normal Prop.t ->
-  ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list option -> unit
+  ((Sil.strexp * Typ.t) * Fieldname.t * Sil.strexp) list option -> unit
 
 (** {2 Sets and lists of propositions} *)
 
@@ -44,10 +44,10 @@ val pp_speclist_dotty_file : DB.filename -> Prop.normal Specs.spec list -> unit
 
 (* create a dotty file with a single proposition *)
 val dotty_prop_to_dotty_file : string -> Prop.normal Prop.t ->
-  ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list -> unit
+  ((Sil.strexp * Typ.t) * Fieldname.t * Sil.strexp) list -> unit
 
 val dotty_prop_to_str : Prop.normal Prop.t ->
-  ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list -> string option
+  ((Sil.strexp * Typ.t) * Fieldname.t * Sil.strexp) list -> string option
 
 (** reset the counter used for node and heap identifiers *)
 val reset_node_counter : unit -> unit

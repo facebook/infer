@@ -42,8 +42,8 @@ val find_boolean_assignment : Procdesc.Node.t -> Pvar.t -> bool -> Procdesc.Node
 val exp_rv_dexp : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
 
 (** Produce a description of a persistent reference to an Android Context *)
-val explain_context_leak : Typ.Procname.t -> Typ.t -> Ident.fieldname ->
-  (Ident.fieldname option * Typ.t) list -> Localise.error_desc
+val explain_context_leak : Typ.Procname.t -> Typ.t -> Fieldname.t ->
+  (Fieldname.t option * Typ.t) list -> Localise.error_desc
 
 (** Produce a description of a mismatch between an allocation function and a deallocation function *)
 val explain_allocation_mismatch :
@@ -103,7 +103,7 @@ val explain_return_statement_missing : Location.t -> Localise.error_desc
 
 (** explain a retain cycle *)
 val explain_retain_cycle :
-  ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list ->
+  ((Sil.strexp * Typ.t) * Fieldname.t * Sil.strexp) list ->
   Location.t -> string option -> Localise.error_desc
 
 (** explain unary minus applied to unsigned expression *)
@@ -136,7 +136,7 @@ val warning_err : Location.t -> ('a, Format.formatter, unit) format -> 'a
 (* offset of an expression found following a program variable *)
 type pvar_off =
   | Fpvar  (* value of a pvar *)
-  | Fstruct of Ident.fieldname list (* value obtained by dereferencing the pvar and following a sequence of fields *)
+  | Fstruct of Fieldname.t list (* value obtained by dereferencing the pvar and following a sequence of fields *)
 
 (** Find a program variable whose value is [exp] or pointing to a struct containing [exp] *)
 val find_with_exp : 'a Prop.t -> Exp.t -> (Pvar.t * pvar_off) option

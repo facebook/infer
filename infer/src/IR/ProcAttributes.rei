@@ -33,8 +33,8 @@ let proc_flags_add: proc_flags => string => string => unit;
 let proc_flags_find: proc_flags => string => string;
 
 type objc_accessor_type =
-  | Objc_getter Ident.fieldname
-  | Objc_setter Ident.fieldname
+  | Objc_getter Fieldname.t
+  | Objc_setter Fieldname.t
 [@@deriving compare];
 
 type t = {

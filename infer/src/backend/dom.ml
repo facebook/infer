@@ -953,7 +953,7 @@ let rec exp_partial_join (e1: Exp.t) (e2: Exp.t) : Exp.t =
       if not (Pvar.equal pvar1 pvar2) then (L.d_strln "failure reason 25"; raise Sil.JoinFail)
       else e1
   | Exp.Lfield(e1, f1, t1), Exp.Lfield(e2, f2, _) ->
-      if not (Ident.equal_fieldname f1 f2) then (L.d_strln "failure reason 26"; raise Sil.JoinFail)
+      if not (Fieldname.equal f1 f2) then (L.d_strln "failure reason 26"; raise Sil.JoinFail)
       else Exp.Lfield(exp_partial_join e1 e2, f1, t1) (* should be t1 = t2 *)
   | Exp.Lindex(e1, e1'), Exp.Lindex(e2, e2') ->
       let e1'' = exp_partial_join e1 e2 in
@@ -1036,7 +1036,7 @@ let rec exp_partial_meet (e1: Exp.t) (e2: Exp.t) : Exp.t =
       if not (Pvar.equal pvar1 pvar2) then (L.d_strln "failure reason 35"; raise Sil.JoinFail)
       else e1
   | Exp.Lfield(e1, f1, t1), Exp.Lfield(e2, f2, _) ->
-      if not (Ident.equal_fieldname f1 f2) then (L.d_strln "failure reason 36"; raise Sil.JoinFail)
+      if not (Fieldname.equal f1 f2) then (L.d_strln "failure reason 36"; raise Sil.JoinFail)
       else Exp.Lfield(exp_partial_meet e1 e2, f1, t1) (* should be t1 = t2 *)
   | Exp.Lindex(e1, e1'), Exp.Lindex(e2, e2') ->
       let e1'' = exp_partial_meet e1 e2 in
@@ -1063,7 +1063,7 @@ let rec strexp_partial_join mode (strexp1: Sil.strexp) (strexp2: Sil.strexp) : S
           | JoinState.Post -> Sil.Estruct (List.rev acc, inst)
         end
     | (fld1, se1):: fld_se_list1', (fld2, se2):: fld_se_list2' ->
-        let comparison = Ident.compare_fieldname fld1 fld2 in
+        let comparison = Fieldname.compare fld1 fld2 in
         if Int.equal comparison 0 then
           let strexp' = strexp_partial_join mode se1 se2 in
           let fld_se_list_new = (fld1, strexp') :: acc in
@@ -1127,7 +1127,7 @@ let rec strexp_partial_meet (strexp1: Sil.strexp) (strexp2: Sil.strexp) : Sil.st
     | _, [] ->
         Sil.Estruct (construct Lhs acc fld_se_list1, inst)
     | (fld1, se1):: fld_se_list1', (fld2, se2):: fld_se_list2' ->
-        let comparison = Ident.compare_fieldname fld1 fld2 in
+        let comparison = Fieldname.compare fld1 fld2 in
         if comparison < 0 then
           let se' = strexp_construct_fresh Lhs se1 in
           let acc_new = (fld1, se'):: acc in

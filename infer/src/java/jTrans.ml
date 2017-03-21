@@ -96,7 +96,7 @@ let get_undefined_method_call ovt =
 
 let retrieve_fieldname fieldname =
   try
-    let subs = Str.split (Str.regexp (Str.quote ".")) (Ident.fieldname_to_string fieldname) in
+    let subs = Str.split (Str.regexp (Str.quote ".")) (Fieldname.to_string fieldname) in
     if Int.equal (List.length subs) 0 then
       assert false
     else

@@ -26,7 +26,7 @@ type proc_origin =
 
 type t =
   | Const of Location.t
-  | Field of t * Ident.fieldname * Location.t
+  | Field of t * Fieldname.t * Location.t
   | Formal of Mangled.t
   | Proc of proc_origin
   | New
@@ -40,7 +40,7 @@ let rec to_string = function
   | Const _ ->
       "Const"
   | Field (o, fn, _) ->
-      "Field " ^ Ident.fieldname_to_simplified_string fn ^ (" (inner: " ^ to_string o ^ ")")
+      "Field " ^ Fieldname.to_simplified_string fn ^ (" (inner: " ^ to_string o ^ ")")
   | Formal s ->
       "Formal " ^ Mangled.to_string s
   | Proc po ->
@@ -61,7 +61,7 @@ let get_description tenv origin =
   | Const loc ->
       Some ("null constant" ^ atline loc, Some loc, None)
   | Field (_, fn, loc) ->
-      Some ("field " ^ Ident.fieldname_to_simplified_string fn ^ atline loc, Some loc, None)
+      Some ("field " ^ Fieldname.to_simplified_string fn ^ atline loc, Some loc, None)
   | Formal s ->
       Some ("method parameter " ^ Mangled.to_string s, None, None)
   | Proc po ->

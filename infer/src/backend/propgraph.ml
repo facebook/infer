@@ -143,7 +143,7 @@ let rec compute_sexp_diff (se1: Sil.strexp) (se2: Sil.strexp) : Obj.t list = mat
 
 and compute_fsel_diff fsel1 fsel2 : Obj.t list = match fsel1, fsel2 with
   | ((f1, se1):: fsel1'), (((f2, se2) as x):: fsel2') ->
-      (match Ident.compare_fieldname f1 f2 with
+      (match Fieldname.compare f1 f2 with
        | n when n < 0 -> compute_fsel_diff fsel1' fsel2
        | 0 -> compute_sexp_diff se1 se2 @ compute_fsel_diff fsel1' fsel2'
        | _ -> (Obj.repr x) :: compute_fsel_diff fsel1 fsel2')

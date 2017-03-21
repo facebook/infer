@@ -1250,7 +1250,7 @@ module Normalize = struct
           (* n1-e1 == n2 -> e1==n1-n2 *)
           (e1, Exp.int (n1 -- n2))
       | Lfield (e1', fld1, _), Lfield (e2', fld2, _) ->
-          if Ident.equal_fieldname fld1 fld2
+          if Fieldname.equal fld1 fld2
           then normalize_eq (e1', e2')
           else eq
       | Lindex (e1', idx1), Lindex (e2', idx2) ->
@@ -1318,7 +1318,7 @@ module Normalize = struct
               let fld_cnts' =
                 List.map ~f:(fun (fld, cnt) ->
                     fld, strexp_normalize tenv sub cnt) fld_cnts in
-              let fld_cnts'' = List.sort ~cmp:[%compare: Ident.fieldname * Sil.strexp] fld_cnts' in
+              let fld_cnts'' = List.sort ~cmp:[%compare: Fieldname.t * Sil.strexp] fld_cnts' in
               Estruct (fld_cnts'', inst)
         end
     | Earray (len, idx_cnts, inst) ->
@@ -2438,7 +2438,7 @@ let rec strexp_gc_fields (fav: Sil.fav) (se : Sil.strexp) =
       let fsel' =
         let fselo' = List.filter ~f:(function | (_, Some _) -> true | _ -> false) fselo in
         List.map ~f:(function (f, seo) -> (f, unSome seo)) fselo' in
-      if [%compare.equal: (Ident.fieldname * Sil.strexp) list] fsel fsel' then Some se
+      if [%compare.equal: (Fieldname.t * Sil.strexp) list] fsel fsel' then Some se
       else Some (Sil.Estruct (fsel', inst))
   | Earray _ ->
       Some se

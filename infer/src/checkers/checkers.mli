@@ -28,7 +28,7 @@ module ST : sig
     Localise.t ->
     Location.t ->
     ?advice: string option ->
-    ?field_name: Ident.fieldname option ->
+    ?field_name: Fieldname.t option ->
     ?origin_loc: Location.t option ->
     ?exception_kind: (string -> Localise.error_desc -> exn) ->
     ?always_report: bool ->

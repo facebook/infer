@@ -52,11 +52,11 @@ type err_instance =
   | Condition_redundant of (bool * (string option) * bool)
   | Inconsistent_subclass_return_annotation of Typ.Procname.t * Typ.Procname.t
   | Inconsistent_subclass_parameter_annotation of string * int * Typ.Procname.t * Typ.Procname.t
-  | Field_not_initialized of Ident.fieldname * Typ.Procname.t
-  | Field_not_mutable of Ident.fieldname * origin_descr
-  | Field_annotation_inconsistent of AnnotatedSignature.annotation * Ident.fieldname * origin_descr
-  | Field_over_annotated of Ident.fieldname * Typ.Procname.t
-  | Null_field_access of string option * Ident.fieldname * origin_descr * bool
+  | Field_not_initialized of Fieldname.t * Typ.Procname.t
+  | Field_not_mutable of Fieldname.t * origin_descr
+  | Field_annotation_inconsistent of AnnotatedSignature.annotation * Fieldname.t * origin_descr
+  | Field_over_annotated of Fieldname.t * Typ.Procname.t
+  | Null_field_access of string option * Fieldname.t * origin_descr * bool
   | Call_receiver_annotation_inconsistent
     of AnnotatedSignature.annotation * string option * Typ.Procname.t * origin_descr
   | Parameter_annotation_inconsistent of parameter_not_nullable
@@ -72,7 +72,7 @@ type st_report_error =
   Localise.t ->
   Location.t ->
   ?advice: string option ->
-  ?field_name: Ident.fieldname option ->
+  ?field_name: Fieldname.t option ->
   ?origin_loc: Location.t option ->
   ?exception_kind: (string -> Localise.error_desc -> exn) ->
   ?always_report: bool ->

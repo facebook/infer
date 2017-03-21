@@ -38,7 +38,7 @@ let strip_container_write str =
 let is_container_write_sink sink =
   let _, access_list = fst (ThreadSafetyDomain.TraceElem.kind sink) in
   match List.rev access_list with
-  |  FieldAccess (fn) :: _  -> is_container_write_str (Ident.fieldname_to_string fn)
+  |  FieldAccess (fn) :: _  -> is_container_write_str (Fieldname.to_string fn)
   | _ -> false
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -361,7 +361,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* create a dummy write that represents mutating the contents of the container *)
           let open Domain in
           let dummy_fieldname =
-            Ident.create_fieldname
+            Fieldname.create
               (Mangled.from_string
                  (container_write_string ^ (Typ.Procname.get_method callee_pname))) 0 in
           let dummy_access_exp = Exp.Lfield (receiver_exp, dummy_fieldname, receiver_typ) in

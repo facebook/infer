@@ -35,7 +35,7 @@ let is_vector_method pname =
   is_method_of_objc_cpp_class pname [vector_class]
 
 let is_special_field class_names field_name_opt field =
-  let complete_fieldname = Ident.fieldname_to_complete_string field in
+  let complete_fieldname = Fieldname.to_complete_string field in
   let field_ok =
     match field_name_opt with
     | Some field_name -> String.is_substring ~substring:field_name complete_fieldname
@@ -315,7 +315,7 @@ and _exp_lv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
           begin
             L.d_str "exp_lv_dexp: Lfield with var ";
             Sil.d_exp (Exp.Var id);
-            L.d_str (" " ^ Ident.fieldname_to_string f);
+            L.d_str (" " ^ Fieldname.to_string f);
             L.d_ln ()
           end;
         (match _find_normal_variable_load tenv seen node id with
@@ -326,7 +326,7 @@ and _exp_lv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
           begin
             L.d_str "exp_lv_dexp: Lfield ";
             Sil.d_exp e1;
-            L.d_str (" " ^ Ident.fieldname_to_string f);
+            L.d_str (" " ^ Fieldname.to_string f);
             L.d_ln ()
           end;
         (match _exp_lv_dexp tenv seen node e1 with
@@ -374,7 +374,7 @@ and _exp_rv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
           begin
             L.d_str "exp_rv_dexp: Lfield ";
             Sil.d_exp e1;
-            L.d_str (" " ^ Ident.fieldname_to_string f);
+            L.d_str (" " ^ Fieldname.to_string f);
             L.d_ln ()
           end;
         (match _exp_rv_dexp tenv seen node e1 with
@@ -582,7 +582,7 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
                  | Exp.Sizeof (Tstruct name, _, _) -> (
                      match Tenv.lookup tenv name with
                      | Some {fields} ->
-                         List.find ~f:(fun (f', _, _) -> Ident.equal_fieldname f' f) fields |>
+                         List.find ~f:(fun (f', _, _) -> Fieldname.equal f' f) fields |>
                          Option.map ~f:snd3
                      | _ ->
                          None
@@ -679,10 +679,10 @@ let explain_dexp_access prop dexp is_nullable =
     | [] ->
         if verbose
         then
-          (L.d_strln ("lookup_fld: can't find field " ^ Ident.fieldname_to_string f));
+          (L.d_strln ("lookup_fld: can't find field " ^ Fieldname.to_string f));
         None
     | (f1, se):: fsel' ->
-        if Ident.equal_fieldname f1 f then Some se
+        if Fieldname.equal f1 f then Some se
         else lookup_fld fsel' f in
   let rec lookup_esel esel e = match esel with
     | [] ->
@@ -944,7 +944,7 @@ type pvar_off =
   | Fpvar
 
   (* value obtained by dereferencing the pvar and following a sequence of fields *)
-  | Fstruct of Ident.fieldname list
+  | Fstruct of Fieldname.t list
 
 let dexp_apply_pvar_off dexp pvar_off =
   let rec add_ddot de = function

@@ -18,7 +18,7 @@ module F = Format
 
 let rec fldlist_assoc fld = function
   | [] -> raise Not_found
-  | (fld', x, _):: l -> if Ident.equal_fieldname fld fld' then x else fldlist_assoc fld l
+  | (fld', x, _):: l -> if Fieldname.equal fld fld' then x else fldlist_assoc fld l
 
 let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
   let fail fld_to_string fld =
@@ -32,10 +32,10 @@ let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
       match Tenv.lookup tenv name with
       | Some { fields; statics } -> (
           try fldlist_assoc fld (fields @ statics)
-          with Not_found -> fail Ident.fieldname_to_string fld
+          with Not_found -> fail Fieldname.to_string fld
         )
       | None ->
-          fail Ident.fieldname_to_string fld
+          fail Fieldname.to_string fld
     )
   | Tarray (typ', _), Off_index _ ->
       typ'
@@ -102,7 +102,7 @@ let rec apply_offlist
       let is_hidden_field () =
         match State.get_instr () with
         | Some (Sil.Load (_, Exp.Lfield (_, fieldname, _), _, _)) ->
-            Ident.fieldname_is_hidden fieldname
+            Fieldname.is_hidden fieldname
         | _ -> false in
       let inst_new = match inst with
         | Sil.Ilookup when inst_is_uninitialized inst_curr && not (is_hidden_field()) ->
@@ -142,17 +142,17 @@ let rec apply_offlist
       match Tenv.lookup tenv name with
       | Some ({fields} as struct_typ) -> (
           let t' = unroll_type tenv typ (Sil.Off_fld (fld, fld_typ)) in
-          match List.find ~f:(fun fse -> Ident.equal_fieldname fld (fst fse)) fsel with
+          match List.find ~f:(fun fse -> Fieldname.equal fld (fst fse)) fsel with
           | Some (_, se') ->
               let res_e', res_se', res_t', res_pred_insts_op' =
                 apply_offlist
                   pdesc tenv p fp_root nullify_struct
                   (root_lexp, se', t') offlist' f inst lookup_inst in
               let replace_fse fse =
-                if Ident.equal_fieldname fld (fst fse) then (fld, res_se') else fse in
+                if Fieldname.equal fld (fst fse) then (fld, res_se') else fse in
               let res_se = Sil.Estruct (List.map ~f:replace_fse fsel, inst') in
               let replace_fta (f, t, a) =
-                if Ident.equal_fieldname fld f then (fld, res_t', a) else (f, t, a) in
+                if Fieldname.equal fld f then (fld, res_t', a) else (f, t, a) in
               let fields' = List.map ~f:replace_fta fields in
               ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
               (res_e', res_se, typ, res_pred_insts_op')
@@ -1524,7 +1524,7 @@ and check_variadic_sentinel_if_present
 
 and sym_exec_objc_getter field_name ret_typ tenv ret_id pdesc pname loc args prop =
   L.d_strln ("No custom getter found. Executing the ObjC builtin getter with ivar "^
-             (Ident.fieldname_to_string field_name)^".");
+             (Fieldname.to_string field_name)^".");
   let ret_id =
     match ret_id with
     | Some (ret_id, _) -> ret_id
@@ -1538,7 +1538,7 @@ and sym_exec_objc_getter field_name ret_typ tenv ret_id pdesc pname loc args pro
 
 and sym_exec_objc_setter field_name _ tenv _ pdesc pname loc args prop =
   L.d_strln ("No custom setter found. Executing the ObjC builtin setter with ivar "^
-             (Ident.fieldname_to_string field_name)^".");
+             (Fieldname.to_string field_name)^".");
   match args with
   | (lexp1, (Typ.Tstruct _ as typ1 | Tptr (typ1, _))) :: (lexp2, typ2) :: _ ->
       let field_access_exp = Exp.Lfield (lexp1, field_name, typ1) in

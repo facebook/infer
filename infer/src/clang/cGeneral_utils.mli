@@ -16,16 +16,16 @@ type var_info = Clang_ast_t.decl_info * Clang_ast_t.qual_type * Clang_ast_t.var_
 
 val string_from_list : string list -> string
 
-val append_no_duplicates_fields : (Ident.fieldname * Typ.t * Annot.Item.t) list ->
-  (Ident.fieldname * Typ.t * Annot.Item.t) list ->
-  (Ident.fieldname * Typ.t * Annot.Item.t) list
+val append_no_duplicates_fields : (Fieldname.t * Typ.t * Annot.Item.t) list ->
+  (Fieldname.t * Typ.t * Annot.Item.t) list ->
+  (Fieldname.t * Typ.t * Annot.Item.t) list
 
 val append_no_duplicates_csu :
   Typ.Name.t list -> Typ.Name.t list -> Typ.Name.t list
 
 val sort_fields :
-  (Ident.fieldname * Typ.t * Annot.Item.t) list ->
-  (Ident.fieldname * Typ.t * Annot.Item.t) list
+  (Fieldname.t * Typ.t * Annot.Item.t) list ->
+  (Fieldname.t * Typ.t * Annot.Item.t) list
 
 val sort_fields_tenv : Tenv.t -> unit
 
@@ -43,7 +43,7 @@ val list_range: int -> int -> int list
 
 val replicate: int -> 'a -> 'a list
 
-val mk_class_field_name : Clang_ast_t.named_decl_info -> Ident.fieldname
+val mk_class_field_name : Clang_ast_t.named_decl_info -> Fieldname.t
 
 val get_var_name_mangled : Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info ->
   (string * Mangled.t)

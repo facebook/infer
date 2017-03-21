@@ -15,7 +15,7 @@ type base = Var.t * Typ.t [@@deriving compare]
 
 type access =
   | ArrayAccess of Typ.t (* array element type. index is unknown *)
-  | FieldAccess of Ident.fieldname (* field name *)
+  | FieldAccess of Fieldname.t (* field name *)
 [@@deriving compare]
 
 module Raw : sig

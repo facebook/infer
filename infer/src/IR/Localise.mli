@@ -252,11 +252,11 @@ val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
 val java_unchecked_exn_desc : Typ.Procname.t -> Typ.Name.t -> string -> error_desc
 
 val desc_context_leak :
-  Typ.Procname.t -> Typ.t -> Ident.fieldname ->
-  (Ident.fieldname option * Typ.t) list -> error_desc
+  Typ.Procname.t -> Typ.t -> Fieldname.t ->
+  (Fieldname.t option * Typ.t) list -> error_desc
 
 val desc_fragment_retains_view :
-  Typ.t -> Ident.fieldname -> Typ.t -> Typ.Procname.t -> error_desc
+  Typ.t -> Fieldname.t -> Typ.t -> Typ.Procname.t -> error_desc
 
 (* Create human-readable error description for assertion failures *)
 val desc_custom_error : Location.t -> error_desc
@@ -271,7 +271,7 @@ val desc_precondition_not_met : pnm_kind option -> Typ.Procname.t -> Location.t 
 val desc_return_expression_required : string -> Location.t -> error_desc
 
 val desc_retain_cycle :
-  ((Sil.strexp * Typ.t) * Ident.fieldname * Sil.strexp) list ->
+  ((Sil.strexp * Typ.t) * Fieldname.t * Sil.strexp) list ->
   Location.t -> string option -> error_desc
 
 val registered_observer_being_deallocated_str : string -> string
@@ -292,7 +292,7 @@ val desc_unary_minus_applied_to_unsigned_expression :
   string option -> string -> Location.t -> error_desc
 
 val desc_unsafe_guarded_by_access :
-  Typ.Procname.t -> Ident.fieldname -> string -> Location.t -> error_desc
+  Typ.Procname.t -> Fieldname.t -> string -> Location.t -> error_desc
 
 val desc_tainted_value_reaching_sensitive_function :
   PredSymb.taint_kind -> string -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> error_desc

@@ -44,7 +44,7 @@ and t =
   /** The address of a program variable */
   | Lvar Pvar.t
   /** A field offset, the type is the surrounding struct type */
-  | Lfield t Ident.fieldname Typ.t
+  | Lfield t Fieldname.t Typ.t
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex t t
   /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]
@@ -233,7 +233,7 @@ let rec pp_ pe pp_t f e => {
     let id_exps = List.map f::(fun (id_exp, _, _) => id_exp) captured_vars;
     F.fprintf f "(%a)" (Pp.comma_seq pp_exp) [Const (Cfun name), ...id_exps]
   | Lvar pv => Pvar.pp pe f pv
-  | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Ident.pp_fieldname fld
+  | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Fieldname.pp fld
   | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
   | Sizeof t l s =>
     let pp_len f l => Option.iter f::(F.fprintf f "[%a]" pp_exp) l;

@@ -432,7 +432,7 @@ let module Procname: {
 let java_proc_return_typ: Procname.java => t;
 
 let module Struct: {
-  type field = (Ident.fieldname, typ, Annot.Item.t) [@@deriving compare];
+  type field = (Fieldname.t, typ, Annot.Item.t) [@@deriving compare];
   type fields = list field;
 
   /** Type for a structured value. */
@@ -466,13 +466,13 @@ let module Struct: {
 
   /** If a struct type with field f, return the type of f.
       If not, return the default type if given, otherwise raise an exception */
-  let fld_typ: lookup::lookup => default::typ => Ident.fieldname => typ => typ;
+  let fld_typ: lookup::lookup => default::typ => Fieldname.t => typ => typ;
 
   /** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] */
   let get_field_type_and_annotation:
-    lookup::lookup => Ident.fieldname => typ => option (typ, Annot.Item.t);
+    lookup::lookup => Fieldname.t => typ => option (typ, Annot.Item.t);
 
   /** Field used for objective-c reference counting */
-  let objc_ref_counter_field: (Ident.fieldname, typ, Annot.Item.t);
-  let is_objc_ref_counter_field: (Ident.fieldname, typ, Annot.Item.t) => bool;
+  let objc_ref_counter_field: (Fieldname.t, typ, Annot.Item.t);
+  let is_objc_ref_counter_field: (Fieldname.t, typ, Annot.Item.t) => bool;
 };

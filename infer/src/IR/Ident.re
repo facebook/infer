@@ -48,10 +48,6 @@ let name_primed = Name.Primed;
 
 let equal_name = [%compare.equal : name];
 
-type fieldname = {fpos: int, fname: Mangled.t} [@@deriving compare];
-
-let equal_fieldname = [%compare.equal : fieldname];
-
 type kind =
   | KNone
   /** special kind of "null ident" (basically, a more compact way of implementing an ident option).
@@ -96,14 +92,6 @@ let module IdentHash = Hashtbl.Make {
   let hash (id: t) => Hashtbl.hash id;
 };
 
-let module FieldSet = Caml.Set.Make {
-  type t = fieldname [@@deriving compare];
-};
-
-let module FieldMap = Caml.Map.Make {
-  type t = fieldname [@@deriving compare];
-};
-
 let idlist_to_idset ids =>
   List.fold f::(fun set id => IdentSet.add id set) init::IdentSet.empty ids;
 
@@ -120,84 +108,8 @@ let module NameHash = Hashtbl.Make {
 let string_to_name = Name.from_string;
 
 
-/** Create a field name with the given position (field number in the CSU) */
-let create_fieldname (n: Mangled.t) (position: int) => {fpos: position, fname: n};
-
-
 /** Convert a name to a string. */
 let name_to_string = Name.to_string;
-
-
-/** Convert a fieldname to a string. */
-let fieldname_to_string fn => Mangled.to_string fn.fname;
-
-
-/** Convert a fieldname to a string, including the mangled part. */
-let fieldname_to_complete_string fn => Mangled.to_string_full fn.fname;
-
-
-/** Convert a fieldname to a simplified string with at most one-level path. */
-let fieldname_to_simplified_string fn => {
-  let s = Mangled.to_string fn.fname;
-  switch (String.rsplit2 s on::'.') {
-  | Some (s1, s2) =>
-    switch (String.rsplit2 s1 on::'.') {
-    | Some (_, s4) => s4 ^ "." ^ s2
-    | _ => s
-    }
-  | _ => s
-  }
-};
-
-
-/** Convert a fieldname to a flat string without path. */
-let fieldname_to_flat_string fn => {
-  let s = Mangled.to_string fn.fname;
-  switch (String.rsplit2 s on::'.') {
-  | Some (_, s2) => s2
-  | _ => s
-  }
-};
-
-
-/** Returns the class part of the fieldname */
-let java_fieldname_get_class fn => {
-  let fn = fieldname_to_string fn;
-  let ri = String.rindex_exn fn '.';
-  String.slice fn 0 ri
-};
-
-
-/** Returns the last component of the fieldname */
-let java_fieldname_get_field fn => {
-  let fn = fieldname_to_string fn;
-  let ri = 1 + String.rindex_exn fn '.';
-  String.slice fn ri 0
-};
-
-
-/** Check if the field is the synthetic this$n of a nested class, used to access the n-th outher instance. */
-let java_fieldname_is_outer_instance fn => {
-  let fn = fieldname_to_string fn;
-  let fn_len = String.length fn;
-  fn_len != 0 && {
-    let this = ".this$";
-    let last_char = fn.[fn_len - 1];
-    (last_char >= '0' && last_char <= '9') &&
-    String.is_suffix fn suffix::(this ^ String.of_char last_char)
-  }
-};
-
-let fieldname_offset fn => fn.fpos;
-
-
-/** hidded fieldname constant */
-let fieldname_hidden = create_fieldname (Mangled.from_string ".hidden") 0;
-
-
-/** hidded fieldname constant */
-let fieldname_is_hidden fn => equal_fieldname fn fieldname_hidden;
-
 
 /** {2 Functions and Hash Tables for Managing Stamps} */
 
@@ -356,15 +268,9 @@ let to_string id =>
 /** Pretty print a name. */
 let pp_name f name => F.fprintf f "%s" (name_to_string name);
 
-let pp_fieldname f fn =>
-  /* only use for debug F.fprintf f "%a#%d" pp_name fn.fname fn.fpos */
-  Mangled.pp f fn.fname;
-
 
 /** Pretty print a name in latex. */
 let pp_name_latex style f (name: name) => Latex.pp_string style f (name_to_string name);
-
-let pp_fieldname_latex style f fn => Latex.pp_string style f (Mangled.to_string fn.fname);
 
 
 /** Pretty print an identifier. */

@@ -37,7 +37,7 @@ and t =
   /** The address of a program variable */
   | Lvar Pvar.t
   /** A field offset, the type is the surrounding struct type */
-  | Lfield t Ident.fieldname Typ.t
+  | Lfield t Fieldname.t Typ.t
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex t t
   /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]

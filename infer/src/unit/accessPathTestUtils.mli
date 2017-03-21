@@ -9,7 +9,7 @@
 
 val make_var : string -> Pvar.t
 
-val make_fieldname : string -> Ident.fieldname
+val make_fieldname : string -> Fieldname.t
 
 val make_base : ?typ:Typ.t -> string -> AccessPath.base
 

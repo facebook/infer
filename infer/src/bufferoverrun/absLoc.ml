@@ -24,7 +24,7 @@ struct
   type t =
     | Var of Var.t
     | Allocsite of Allocsite.t
-    | Field of t * Ident.fieldname
+    | Field of t * Fieldname.t
   [@@deriving compare]
 
   let rec pp fmt = function
@@ -35,7 +35,7 @@ struct
           F.fprintf fmt "%s" (String.sub s 1 (String.length s - 1))
         else F.fprintf fmt "%s" s
     | Allocsite a -> Allocsite.pp fmt a
-    | Field (l, f) -> F.fprintf fmt "%a.%a" pp l Ident.pp_fieldname f
+    | Field (l, f) -> F.fprintf fmt "%a.%a" pp l Fieldname.pp f
   let is_var = function Var _ -> true | _ -> false
   let is_pvar_in_reg v =
     Var.pp F.str_formatter v;

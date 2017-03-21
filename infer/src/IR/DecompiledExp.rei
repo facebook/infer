@@ -24,8 +24,8 @@ type t =
   | Dsizeof Typ.t (option t) Subtype.t
   | Dderef t
   | Dfcall t (list t) Location.t CallFlags.t
-  | Darrow t Ident.fieldname
-  | Ddot t Ident.fieldname
+  | Darrow t Fieldname.t
+  | Ddot t Fieldname.t
   | Dpvar Pvar.t
   | Dpvaraddr Pvar.t
   | Dunop Unop.t t

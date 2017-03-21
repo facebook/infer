@@ -108,7 +108,7 @@ val pdesc_return_annot_ends_with : Procdesc.t -> string -> bool
 
 val ma_has_annotation_with : Annot.Method.t -> (Annot.t -> bool) -> bool
 
-val field_has_annot : Ident.fieldname -> Typ.Struct.t -> (Annot.Item.t -> bool) -> bool
+val field_has_annot : Fieldname.t -> Typ.Struct.t -> (Annot.Item.t -> bool) -> bool
 
 (** return true if the given predicate evaluates to true on some annotation of [struct_typ] *)
 val struct_typ_has_annot : Typ.Struct.t -> (Annot.Item.t -> bool) -> bool

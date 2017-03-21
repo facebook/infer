@@ -570,10 +570,8 @@ let pp_variable_list fmt etl =>
 
 let pp_objc_accessor fmt accessor =>
   switch accessor {
-  | Some (ProcAttributes.Objc_getter name) =>
-    Format.fprintf fmt "Getter of %a, " Ident.pp_fieldname name
-  | Some (ProcAttributes.Objc_setter name) =>
-    Format.fprintf fmt "Setter of %a, " Ident.pp_fieldname name
+  | Some (ProcAttributes.Objc_getter name) => Format.fprintf fmt "Getter of %a, " Fieldname.pp name
+  | Some (ProcAttributes.Objc_setter name) => Format.fprintf fmt "Setter of %a, " Fieldname.pp name
   | None => ()
   };
 

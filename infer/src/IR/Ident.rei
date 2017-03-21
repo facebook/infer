@@ -28,14 +28,6 @@ type name [@@deriving compare];
 let equal_name: name => name => bool;
 
 
-/** Names for fields of class/struct/union */
-type fieldname [@@deriving compare];
-
-
-/** Equality for field names. */
-let equal_fieldname: fieldname => fieldname => bool;
-
-
 /** Kind of identifiers. */
 type kind [@@deriving compare];
 
@@ -54,14 +46,6 @@ let module IdentHash: Caml.Hashtbl.S with type key = t;
 
 /** Map with ident as key. */
 let module IdentMap: Caml.Map.S with type key = t;
-
-
-/** Set for fieldnames */
-let module FieldSet: Caml.Set.S with type elt = fieldname;
-
-
-/** Map for fieldnames */
-let module FieldMap: Caml.Map.S with type key = fieldname;
 
 let module NameGenerator: {
   type t;
@@ -107,52 +91,8 @@ let name_return: Mangled.t;
 let string_to_name: string => name;
 
 
-/** Create a field name at the given position */
-let create_fieldname: Mangled.t => int => fieldname;
-
-
 /** Convert a name to a string. */
 let name_to_string: name => string;
-
-
-/** Convert a field name to a string. */
-let fieldname_to_string: fieldname => string;
-
-
-/** Convert a fieldname to a string, including the mangled part. */
-let fieldname_to_complete_string: fieldname => string;
-
-
-/** Convert a fieldname to a simplified string with at most one-level path. */
-let fieldname_to_simplified_string: fieldname => string;
-
-
-/** Convert a fieldname to a flat string without path. */
-let fieldname_to_flat_string: fieldname => string;
-
-
-/** The class part of the fieldname */
-let java_fieldname_get_class: fieldname => string;
-
-
-/** The last component of the fieldname */
-let java_fieldname_get_field: fieldname => string;
-
-
-/** Check if the field is the synthetic this$n of a nested class, used to access the n-th outher instance. */
-let java_fieldname_is_outer_instance: fieldname => bool;
-
-
-/** get the offset of a fieldname */
-let fieldname_offset: fieldname => int;
-
-
-/** hidded fieldname constant */
-let fieldname_hidden: fieldname;
-
-
-/** hidded fieldname constant */
-let fieldname_is_hidden: fieldname => bool;
 
 
 /** Name of the identifier. */
@@ -229,16 +169,8 @@ let set_stamp: t => int => t;
 let pp_name: Format.formatter => name => unit;
 
 
-/** Pretty print a field name. */
-let pp_fieldname: Format.formatter => fieldname => unit;
-
-
 /** Pretty print a name in latex. */
 let pp_name_latex: Latex.style => Format.formatter => name => unit;
-
-
-/** Pretty print a field name in latex. */
-let pp_fieldname_latex: Latex.style => Format.formatter => fieldname => unit;
 
 
 /** Pretty print an identifier. */

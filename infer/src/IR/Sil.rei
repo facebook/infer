@@ -77,7 +77,7 @@ let instr_is_auxiliary: instr => bool;
 
 /** Offset for an lvalue. */
 type offset =
-  | Off_fld Ident.fieldname Typ.t
+  | Off_fld Fieldname.t Typ.t
   | Off_index Exp.t;
 
 
@@ -183,7 +183,7 @@ let inst_partial_meet: inst => inst => inst;
 /** structured expressions represent a value of structured type, such as an array or a struct. */
 type strexp0 'inst =
   | Eexp Exp.t 'inst /** Base case: expression with instrumentation */
-  | Estruct (list (Ident.fieldname, strexp0 'inst)) 'inst /** C structure */
+  | Estruct (list (Fieldname.t, strexp0 'inst)) 'inst /** C structure */
   /** Array of given length
       There are two conditions imposed / used in the array case.
       First, if some index and value pair appears inside an array

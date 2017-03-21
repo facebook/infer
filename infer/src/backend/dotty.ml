@@ -66,7 +66,7 @@ type dotty_node =
   (* Dotpointsto(coo,e,c): basic memory cell box for expression e at coordinate coo and color c *)
   | Dotpointsto of coordinate * Exp.t * string
   (* Dotstruct(coo,e,l,c): struct box for expression e  with field list l at coordinate coo and color c *)
-  | Dotstruct of coordinate * Exp.t * (Ident.fieldname * Sil.strexp) list * string * Exp.t
+  | Dotstruct of coordinate * Exp.t * (Fieldname.t * Sil.strexp) list * string * Exp.t
   (* Dotarray(coo,e1,e2,l,t,c): array box for expression e1  with field list l at coordinate coo and color c*)
   (* e2 is the len and t is the type *)
   | Dotarray of coordinate * Exp.t * Exp.t * (Exp.t * Sil.strexp) list * Typ.t * string
@@ -145,8 +145,8 @@ let rec strexp_to_string pe coo f se =
 and struct_to_dotty_str pe coo f ls : unit =
   match ls with
   | [] -> ()
-  | (fn, se)::[]-> F.fprintf f "{ <%s%iL%i> %s: %a } " (Ident.fieldname_to_string fn) coo.id coo.lambda (Ident.fieldname_to_string fn) (strexp_to_string pe coo) se
-  | (fn, se):: ls'-> F.fprintf f " { <%s%iL%i> %s: %a } | %a" (Ident.fieldname_to_string fn) coo.id coo.lambda (Ident.fieldname_to_string fn) (strexp_to_string pe coo) se (struct_to_dotty_str pe coo) ls'
+  | (fn, se)::[]-> F.fprintf f "{ <%s%iL%i> %s: %a } " (Fieldname.to_string fn) coo.id coo.lambda (Fieldname.to_string fn) (strexp_to_string pe coo) se
+  | (fn, se):: ls'-> F.fprintf f " { <%s%iL%i> %s: %a } | %a" (Fieldname.to_string fn) coo.id coo.lambda (Fieldname.to_string fn) (strexp_to_string pe coo) se (struct_to_dotty_str pe coo) ls'
 
 and get_contents_sexp pe coo f se =
   match se with
@@ -387,7 +387,7 @@ let in_cycle cycle edge =
   | Some cycle' ->
       let (fn, se) = edge in
       List.exists
-        ~f:(fun (_,fn',se') -> Ident.equal_fieldname fn fn' && Sil.equal_strexp se se')
+        ~f:(fun (_,fn',se') -> Fieldname.equal fn fn' && Sil.equal_strexp se se')
         cycle'
   | _ -> false
 
@@ -406,7 +406,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
         if is_nil e p then begin
           let n'= make_nil_node lambda in
           if !print_full_prop then
-            [(LinkStructToExp, Ident.fieldname_to_string fn, n',"")]
+            [(LinkStructToExp, Fieldname.to_string fn, n',"")]
           else []
         end else
           let nodes_e = select_nodes_exp_lambda dotnodes e lambda in
@@ -414,7 +414,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
            | [] ->
                (match box_dangling e with
                 | None -> []
-                | Some n' -> [(LinkStructToExp, Ident.fieldname_to_string fn, n',"")]
+                | Some n' -> [(LinkStructToExp, Fieldname.to_string fn, n',"")]
                )
            | [node] | [Dotpointsto _ ; node] | [node; Dotpointsto _] ->
                let n = get_coordinate_id node in
@@ -423,9 +423,9 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
                  let link_kind = if (in_cycle cycle (fn, se)) && (not !print_full_prop) then
                      LinkRetainCycle
                    else LinkStructToStruct in
-                 [(link_kind, Ident.fieldname_to_string fn, n, e_no_special_char)]
+                 [(link_kind, Fieldname.to_string fn, n, e_no_special_char)]
                end else
-                 [(LinkStructToExp, Ident.fieldname_to_string fn, n,"")]
+                 [(LinkStructToExp, Fieldname.to_string fn, n,"")]
            | _ -> (* by construction there must be at most 2 nodes for an expression*)
                L.out "@\n Too many nodes! Error! @\n@.@."; assert false)
     | Sil.Estruct (_, _) -> [] (* inner struct are printed by print_struc function *)
@@ -1244,7 +1244,7 @@ let rec compute_target_nodes_from_sexp nodes se prop field_lab =
       (match lfld with
        | [] -> []
        | (fn, se2):: l' ->
-           compute_target_nodes_from_sexp nodes se2 prop (Ident.fieldname_to_string fn) @
+           compute_target_nodes_from_sexp nodes se2 prop (Fieldname.to_string fn) @
            compute_target_nodes_from_sexp nodes (Sil.Estruct (l', inst)) prop ""
       )
   | Sil.Earray (len, lie, inst) ->
@@ -1315,7 +1315,7 @@ let rec pointsto_contents_to_xml (co: Sil.strexp) : Io_infer.Xml.node =
   | Sil.Eexp (e, _) ->
       Io_infer.Xml.create_tree "cell" [("content-value", exp_to_xml_string e)] []
   | Sil.Estruct (fel, _) ->
-      let f (fld, exp) = Io_infer.Xml.create_tree "struct-field" [("id", Ident.fieldname_to_string fld)] [(pointsto_contents_to_xml exp)] in
+      let f (fld, exp) = Io_infer.Xml.create_tree "struct-field" [("id", Fieldname.to_string fld)] [(pointsto_contents_to_xml exp)] in
       Io_infer.Xml.create_tree "struct" [] (List.map ~f fel)
   | Sil.Earray (len, nel, _) ->
       let f (e, se) = Io_infer.Xml.create_tree "array-element" [("index", exp_to_xml_string e)] [pointsto_contents_to_xml se] in

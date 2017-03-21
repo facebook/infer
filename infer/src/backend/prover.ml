@@ -1224,7 +1224,7 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
         raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
     | e1, Exp.Const _ ->
         raise (IMPL_EXC ("lhs not constant", subs, (EXC_FALSE_EXPS (e1, e2))))
-    | Exp.Lfield(e1, fd1, _), Exp.Lfield(e2, fd2, _) when Ident.equal_fieldname fd1 fd2 ->
+    | Exp.Lfield(e1, fd1, _), Exp.Lfield(e2, fd2, _) when Fieldname.equal fd1 fd2 ->
         do_imply subs e1 e2
     | Exp.Lindex(e1, f1), Exp.Lindex(e2, f2) ->
         do_imply (do_imply subs e1 e2) f1 f2
@@ -1245,7 +1245,7 @@ let path_to_id path =
     | Exp.Lfield (e, fld, _) ->
         (match f e with
          | None -> None
-         | Some s -> Some (s ^ "_" ^ (Ident.fieldname_to_string fld)))
+         | Some s -> Some (s ^ "_" ^ (Fieldname.to_string fld)))
     | Exp.Lindex (e, ind) ->
         (match f e with
          | None -> None
@@ -1341,13 +1341,13 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
       d_impl_err ("sexp_imply not implemented", subs, (EXC_FALSE_SEXPS (se1, se2)));
       raise (Exceptions.Abduction_case_not_implemented __POS__)
 
-and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Ident.fieldname * Sil.strexp) list) * ((Ident.fieldname * Sil.strexp) list) =
+and struct_imply tenv source calc_missing subs fsel1 fsel2 typ2 : subst2 * ((Fieldname.t * Sil.strexp) list) * ((Fieldname.t * Sil.strexp) list) =
   let lookup = Tenv.lookup tenv in
   match fsel1, fsel2 with
   | _, [] -> subs, fsel1, []
   | (f1, se1) :: fsel1', (f2, se2) :: fsel2' ->
       begin
-        match Ident.compare_fieldname f1 f2 with
+        match Fieldname.compare f1 f2 with
         | 0 ->
             let typ' = Typ.Struct.fld_typ ~lookup ~default:Typ.Tvoid f2 typ2 in
             let subs', se_frame, se_missing =
@@ -1972,7 +1972,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
             (Exp.int len, [(index, Sil.Eexp (Exp.zero, Sil.inst_none))], Sil.inst_none)
       | Config.Java ->
           let mk_fld_sexp s =
-            let fld = Ident.create_fieldname (Mangled.from_string s) 0 in
+            let fld = Fieldname.create (Mangled.from_string s) 0 in
             let se = Sil.Eexp (Exp.Var (Ident.create_fresh Ident.kprimed), Sil.Inone) in
             (fld, se) in
           let fields = ["java.lang.String.count"; "java.lang.String.hash"; "java.lang.String.offset"; "java.lang.String.value"] in
@@ -1989,7 +1989,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let root = Exp.Const (Const.Cclass (Ident.string_to_name s)) in
     let sexp = (* TODO: add appropriate fields *)
       Sil.Estruct
-        ([(Ident.create_fieldname (Mangled.from_string "java.lang.Class.name") 0,
+        ([(Fieldname.create (Mangled.from_string "java.lang.Class.name") 0,
            Sil.Eexp ((Exp.Const (Const.Cstr s), Sil.Inone)))], Sil.inst_none) in
     let class_texp =
       let class_type = Typ.Name.Java.from_string "java.lang.Class" in

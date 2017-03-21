@@ -388,7 +388,7 @@ let execute___get_hidden_field { Builtin.tenv; pdesc; prop_; path; ret_id; args;
         | Some e -> return_result tenv e p ret_id
         | None -> p in
       let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
-      let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
+      let filter_fld_hidden (f, _ ) = Fieldname.is_hidden f in
       let has_fld_hidden fsel = List.exists ~f:filter_fld_hidden fsel in
       let do_hpred in_foot hpred = match hpred with
         | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp)
@@ -396,7 +396,7 @@ let execute___get_hidden_field { Builtin.tenv; pdesc; prop_; path; ret_id; args;
             let foot_e = Lazy.force foot_var in
             ret_val := Some foot_e;
             let se = Sil.Eexp(foot_e, Sil.inst_none) in
-            let fsel' = (Ident.fieldname_hidden, se) :: fsel in
+            let fsel' = (Fieldname.hidden, se) :: fsel in
             Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
         | Sil.Hpointsto(e, Sil.Estruct (fsel, _), _)
           when Exp.equal e n_lexp && not in_foot && has_fld_hidden fsel ->
@@ -426,21 +426,21 @@ let execute___set_hidden_field { Builtin.tenv; pdesc; prop_; path; args; }
       let n_lexp1, prop__ = check_arith_norm_exp tenv pname lexp1 prop_ in
       let n_lexp2, prop = check_arith_norm_exp tenv pname lexp2 prop__ in
       let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
-      let filter_fld_hidden (f, _ ) = Ident.fieldname_is_hidden f in
+      let filter_fld_hidden (f, _ ) = Fieldname.is_hidden f in
       let has_fld_hidden fsel = List.exists ~f:filter_fld_hidden fsel in
       let do_hpred in_foot hpred = match hpred with
         | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp)
           when Exp.equal e n_lexp1 && not in_foot ->
             let se = Sil.Eexp(n_lexp2, Sil.inst_none) in
             let fsel' =
-              (Ident.fieldname_hidden, se) ::
+              (Fieldname.hidden, se) ::
               (List.filter ~f:(fun x -> not (filter_fld_hidden x)) fsel) in
             Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
         | Sil.Hpointsto(e, Sil.Estruct (fsel, inst), texp)
           when Exp.equal e n_lexp1 && in_foot && not (has_fld_hidden fsel) ->
             let foot_e = Lazy.force foot_var in
             let se = Sil.Eexp(foot_e, Sil.inst_none) in
-            let fsel' = (Ident.fieldname_hidden, se) :: fsel in
+            let fsel' = (Fieldname.hidden, se) :: fsel in
             Sil.Hpointsto(e, Sil.Estruct (fsel', inst), texp)
         | _ -> hpred in
       let sigma' = List.map ~f:(do_hpred false) prop.Prop.sigma in
@@ -462,7 +462,7 @@ let execute___objc_counter_update
       (* This is the case as a call f(o) it's translates as n$1=*&o; f(n$1) *)
       (* n$2 = *n$1.hidden *)
       let tmp = Ident.create_fresh Ident.knormal in
-      let hidden_field = Exp.Lfield (lexp, Ident.fieldname_hidden, typ) in
+      let hidden_field = Exp.Lfield (lexp, Fieldname.hidden, typ) in
       let counter_to_tmp = Sil.Load (tmp, hidden_field, typ, loc) in
       (* *n$1.hidden = (n$2 +/- delta) *)
       let update_counter =

@@ -13,7 +13,7 @@ open! IStd
 
 module L = Logging
 
-type field_type = Ident.fieldname * Typ.t * (Annot.t * bool) list
+type field_type = Fieldname.t * Typ.t * (Annot.t * bool) list
 
 let rec get_fields_super_classes tenv super_class =
   Logging.out_debug "   ... Getting fields of superclass '%s'\n" (Typ.Name.to_string super_class);

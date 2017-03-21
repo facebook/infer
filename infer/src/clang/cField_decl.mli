@@ -11,7 +11,7 @@ open! IStd
 
 (** Utility module to retrieve fields of structs of classes *)
 
-type field_type = Ident.fieldname * Typ.t * (Annot.t * bool) list
+type field_type = Fieldname.t * Typ.t * (Annot.t * bool) list
 
 val get_fields : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.decl list ->
   field_type list

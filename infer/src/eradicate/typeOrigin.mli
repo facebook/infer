@@ -20,7 +20,7 @@ type proc_origin =
 
 type t =
   | Const of Location.t (** A constant in the source *)
-  | Field of t * Ident.fieldname * Location.t (** A field access *)
+  | Field of t * Fieldname.t * Location.t (** A field access *)
   | Formal of Mangled.t (** A formal parameter *)
   | Proc of proc_origin (** A procedure call *)
   | New (** A new object creation *)

@@ -311,8 +311,8 @@ let rec format_typ = function
 
 let format_field f =
   if Config.curr_language_is Config.Java
-  then Ident.java_fieldname_get_field f
-  else Ident.fieldname_to_string f
+  then Fieldname.java_get_field f
+  else Fieldname.to_string f
 
 let format_method pname =
   match pname with
@@ -471,11 +471,11 @@ let java_unchecked_exn_desc proc_name exn_name pre_str : error_desc =
   }
 
 let desc_context_leak pname context_typ fieldname leak_path : error_desc =
-  let fld_str = Ident.fieldname_to_string fieldname in
+  let fld_str = Fieldname.to_string fieldname in
   let leak_root = "Static field " ^ fld_str ^ " |->\n" in
   let leak_path_entry_to_str acc entry =
     let entry_str = match entry with
-      | (Some fld, _) -> Ident.fieldname_to_string fld
+      | (Some fld, _) -> Fieldname.to_string fld
       | (None, typ) -> Typ.to_string typ in
     (* intentionally omit space; [typ_to_string] adds an extra space *)
     acc ^ entry_str ^ " |->\n" in
@@ -499,7 +499,7 @@ let desc_context_leak pname context_typ fieldname leak_path : error_desc =
 
 let desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc =
   let line_info = at_line (Tags.create ()) loc in
-  let accessed_fld_str = Ident.fieldname_to_string accessed_fld in
+  let accessed_fld_str = Fieldname.to_string accessed_fld in
   let annot_str = Printf.sprintf "@GuardedBy(\"%s\")" guarded_by_str in
   let syncronized_str =
     MF.monospaced_to_string (Printf.sprintf "synchronized(%s)" guarded_by_str) in
@@ -600,7 +600,7 @@ let parameter_field_not_null_checked_desc (desc : error_desc) exp =
   let field_not_nullable_desc exp =
     let rec exp_to_string exp =
       match exp with
-      | Exp.Lfield (exp', field, _) -> (exp_to_string exp')^" -> "^(Ident.fieldname_to_string field)
+      | Exp.Lfield (exp', field, _) -> (exp_to_string exp')^" -> "^(Fieldname.to_string field)
       | Exp.Lvar pvar -> Mangled.to_string (Pvar.get_name pvar)
       | _ -> "" in
     let var_s = exp_to_string exp in
@@ -835,7 +835,7 @@ let desc_retain_cycle cycle loc cycle_dotty =
     match se with
     | Sil.Eexp(Exp.Lvar pvar, _) when Pvar.equal pvar Sil.block_pvar ->
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") a block capturing " ^
-                   MF.monospaced_to_string (Ident.fieldname_to_string f)^"; ";
+                   MF.monospaced_to_string (Fieldname.to_string f)^"; ";
         ct:=!ct +1;
     | Sil.Eexp(Exp.Lvar pvar as e, _) ->
         let e_str = Exp.to_string e in
@@ -843,14 +843,14 @@ let desc_retain_cycle cycle loc cycle_dotty =
             remove_old e_str
           else e_str in
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") object "^e_str^" retaining " ^
-                   MF.monospaced_to_string (e_str^"."^(Ident.fieldname_to_string f))^", ";
+                   MF.monospaced_to_string (e_str^"."^(Fieldname.to_string f))^", ";
         ct:=!ct +1
     | Sil.Eexp (Exp.Sizeof (typ, _, _), _) ->
         let step =
           " (" ^ (string_of_int !ct) ^ ") an object of " ^
           MF.monospaced_to_string (Typ.to_string typ) ^
           " retaining another object via instance variable " ^
-          MF.monospaced_to_string (Ident.fieldname_to_string f) ^ ", " in
+          MF.monospaced_to_string (Fieldname.to_string f) ^ ", " in
         str_cycle := !str_cycle ^ step;
         ct:=!ct +1
     | _ -> () in

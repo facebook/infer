@@ -528,8 +528,8 @@ let callback_check_field_access { Callbacks.proc_desc; summary } =
         do_exp is_read e
     | Exp.Lvar _ -> ()
     | Exp.Lfield (e, fn, _) ->
-        if not (Ident.java_fieldname_is_outer_instance fn) then
-          L.stdout "field %s %s@." (Ident.fieldname_to_string fn) (if is_read then "reading" else "writing");
+        if not (Fieldname.java_is_outer_instance fn) then
+          L.stdout "field %s %s@." (Fieldname.to_string fn) (if is_read then "reading" else "writing");
         do_exp is_read e
     | Exp.Lindex (e1, e2) ->
         do_exp is_read e1;

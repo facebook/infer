@@ -915,7 +915,7 @@ let java_proc_return_typ pname_java =>
   };
 
 let module Struct = {
-  type field = (Ident.fieldname, T.t, Annot.Item.t) [@@deriving compare];
+  type field = (Fieldname.t, T.t, Annot.Item.t) [@@deriving compare];
   type fields = list field;
 
   /** Type for a structured value. */
@@ -939,7 +939,7 @@ let module Struct = {
         (
           Pp.seq (
             fun f (fld, t, a) =>
-              F.fprintf f "\n\t\t%a %a %a" (pp_full pe) t Ident.pp_fieldname fld Annot.Item.pp a
+              F.fprintf f "\n\t\t%a %a %a" (pp_full pe) t Fieldname.pp fld Annot.Item.pp a
           )
         )
         fields
@@ -1018,7 +1018,7 @@ let module Struct = {
     | Tstruct name =>
       switch (lookup name) {
       | Some {fields} =>
-        List.find f::(fun (f, _, _) => Ident.equal_fieldname f fn) fields |>
+        List.find f::(fun (f, _, _) => Fieldname.equal f fn) fields |>
         Option.value_map f::snd3 default::default
       | None => default
       }
@@ -1031,7 +1031,7 @@ let module Struct = {
       switch (lookup name) {
       | Some {fields, statics} =>
         List.find_map
-          f::(fun (f, t, a) => Ident.equal_fieldname f fn ? Some (t, a) : None) (fields @ statics)
+          f::(fun (f, t, a) => Fieldname.equal f fn ? Some (t, a) : None) (fields @ statics)
       | None => None
       }
     | _ => None
@@ -1039,7 +1039,7 @@ let module Struct = {
   let objc_ref_counter_annot = [({Annot.class_name: "ref_counter", parameters: []}, false)];
 
   /** Field used for objective-c reference counting */
-  let objc_ref_counter_field = (Ident.fieldname_hidden, T.Tint IInt, objc_ref_counter_annot);
+  let objc_ref_counter_field = (Fieldname.hidden, T.Tint IInt, objc_ref_counter_annot);
   let is_objc_ref_counter_field (fld, _, a) =>
-    Ident.fieldname_is_hidden fld && Annot.Item.equal a objc_ref_counter_annot;
+    Fieldname.is_hidden fld && Annot.Item.equal a objc_ref_counter_annot;
 };

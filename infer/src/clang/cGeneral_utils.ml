@@ -49,7 +49,7 @@ let add_no_duplicates_fields field_tuple l =
     match field_tuple, l with
     | (field, typ, annot), ((old_field, old_typ, old_annot) as old_field_tuple :: rest) ->
         let ret_list, ret_found = replace_field field_tuple rest found in
-        if Ident.equal_fieldname field old_field && Typ.equal typ old_typ then
+        if Fieldname.equal field old_field && Typ.equal typ old_typ then
           let annotations = append_no_duplicates_annotations annot old_annot in
           (field, typ, annotations) :: ret_list, true
         else old_field_tuple :: ret_list, ret_found
@@ -67,7 +67,7 @@ let rec append_no_duplicates_fields list1 list2 =
 
 let sort_fields fields =
   let compare (name1, _, _) (name2, _, _) =
-    Ident.compare_fieldname name1 name2 in
+    Fieldname.compare name1 name2 in
   List.sort ~cmp:compare fields
 
 
@@ -102,7 +102,7 @@ let replicate n el = List.map ~f:(fun _ -> el) (list_range 0 (n -1))
 let mk_class_field_name field_qual_name =
   let field_name = field_qual_name.Clang_ast_t.ni_name in
   let class_name = CAst_utils.get_class_name_from_member field_qual_name in
-  Ident.create_fieldname (Mangled.mangled field_name class_name) 0
+  Fieldname.create (Mangled.mangled field_name class_name) 0
 
 let is_cpp_translation translation_unit_context =
   let lang = translation_unit_context.CFrontend_config.lang in

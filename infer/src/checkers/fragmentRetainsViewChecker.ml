@@ -31,7 +31,7 @@ let callback_fragment_retains_view_java
     | _ -> false in
   (* is [fldname] a View type declared by [class_typename]? *)
   let is_declared_view_typ class_typename (fldname, fld_typ, _) =
-    let fld_classname = Typ.Name.Java.from_string (Ident.java_fieldname_get_class fldname) in
+    let fld_classname = Typ.Name.Java.from_string (Fieldname.java_get_class fldname) in
     Typ.Name.equal fld_classname class_typename && fld_typ_is_view fld_typ in
   if is_on_destroy_view then
     begin
@@ -45,7 +45,7 @@ let callback_fragment_retains_view_java
           (* report if a field is declared by C, but not nulled out in C.onDestroyView *)
           List.iter
             ~f:(fun (fname, fld_typ, _) ->
-                if not (Ident.FieldSet.mem fname fields_nullified) then
+                if not (Fieldname.Set.mem fname fields_nullified) then
                   report_error
                     (Tstruct class_typename) fname fld_typ summary proc_desc)
             declared_view_fields
