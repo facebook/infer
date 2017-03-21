@@ -5,12 +5,11 @@ layout: docs
 permalink: /docs/steps-for-ci.html
 ---
 
-When you would like to run more then one analyzer, its better to separate analyze and capture phase, so that output of capture phase can be shared.
-
-Below is an example for CI script which runs both infer and eradicate analyzer by sharing the capture phase on an android project.
+The recommended flow for CI integration is to determine the modified files, and run the analysis in reactive mode starting from those files. If you would like to run more then one analyzer, it is more efficient to separate the capture phase, so that the result can be used by all the analyzers.
 
 
 ### Android Gradle
+The following CI script runs the `infer` and `eradicate` analyzers.
 
 ```bash
 
@@ -24,8 +23,7 @@ infer --fail-on-issue -a eradicate --changed-files-index ./index.txt -- analyze 
 
 ```
 
-In the above example,
-
-  - We are using git to find the changed files `git diff --name-only`
-  - Run capture phase, output of capture phase will be shared by subsequent analyse phases
-  - Run analyze phase only for the changed files `-a infer --changed-files-index ./index.txt -- analyze`
+Notice that
+  - We use git to find the changed files `git diff --name-only`
+  - We run capture only once, and the output is kept for the subsequent analyses
+  - We run the analyses only for the changed files `--changed-files-index ./index.txt`
