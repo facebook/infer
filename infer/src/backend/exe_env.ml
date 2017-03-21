@@ -15,6 +15,7 @@ module Hashtbl = Caml.Hashtbl
 (** Support for Execution environments *)
 
 module L = Logging
+module F = Format
 
 (** per-file data: type environment and cfg *)
 type file_data =
@@ -91,24 +92,29 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
       let source = Cg.get_source cg in
       exe_env.source_files <- SourceFile.Set.add source exe_env.source_files;
       let defined_procs = Cg.get_defined_nodes cg in
-
-      List.iter
-        ~f:(fun pname ->
-            (match AttributesTable.find_file_capturing_procedure ~cache:false pname with
-             | None ->
-                 ()
-             | Some (source_captured, origin) ->
-                 let multiply_defined = SourceFile.compare source source_captured <> 0 in
-                 if multiply_defined then Cg.remove_node_defined cg pname;
-                 if Config.check_duplicate_symbols &&
-                    multiply_defined &&
-                    origin <> `Include then
-                   L.stderr "@.DUPLICATE_SYMBOLS source: %a source_captured:%a pname:%a@."
+      let duplicate_procs_to_print = List.filter_map defined_procs
+          ~f:(fun pname ->
+              (match AttributesTable.find_file_capturing_procedure ~cache:false pname with
+               | None -> None
+               | Some (source_captured, origin) ->
+                   let multiply_defined = SourceFile.compare source source_captured <> 0 in
+                   if multiply_defined then Cg.remove_node_defined cg pname;
+                   if multiply_defined && origin <> `Include then
+                     Some (pname, source_captured)
+                   else None
+              )) in
+      (if Config.dump_duplicate_symbols then
+         Out_channel.with_file (Config.results_dir ^/ Config.duplicates_filename)
+           ~append:true ~perm:0o666 ~f:(fun outc ->
+               let fmt = F.formatter_of_out_channel outc in
+               List.iter duplicate_procs_to_print ~f:(fun (pname, source_captured) ->
+                   F.fprintf fmt "@.DUPLICATE_SYMBOLS source: %a source_captured:%a pname:%a@."
                      SourceFile.pp source
                      SourceFile.pp source_captured
                      Typ.Procname.pp pname
-            ))
-        defined_procs;
+                 );
+             )
+      );
       Cg.extend exe_env.cg cg
 
 (** get the global call graph *)

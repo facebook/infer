@@ -11,17 +11,17 @@
 
 extern SomeTemplatedNonPODObject<int> extern_global_object;
 
-SomeTemplatedNonPODObject<int> global_object;
+SomeTemplatedNonPODObject<int> global_template_object;
 
 template <typename T>
 struct SomeOtherTemplatedNonPODObject {
   SomeOtherTemplatedNonPODObject() {
-    global_object.some_method(); // OK, same translation unit
+    global_template_object.some_method(); // OK, same translation unit
     extern_global_object.some_method(); // bad, different translation unit
   };
 
   SomeOtherTemplatedNonPODObject(int i) {
-    global_object.some_method(); // OK, same translation unit
+    global_template_object.some_method(); // OK, same translation unit
   };
 };
 

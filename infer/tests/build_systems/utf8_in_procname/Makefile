@@ -21,8 +21,8 @@ infer-out/report.json: $(CLANG_DEPS) $(INFERTRACEBUGS_BIN) $(SOURCES) $(HEADERS)
 #	set non-utf8-supporting locale
 	LC_ALL=C; \
 	$(call silent_on_success,\
-	  $(INFER_BIN) --check-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(SOURCES) 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(SOURCES))
+	grep "DUPLICATE_SYMBOLS" infer-out/duplicates.txt; test $$? -ne 0
 #	make sure inferTraceBugs is immune to UTF-8
 	$(call silent_on_success, $(INFERTRACEBUGS_BIN) --max-level max --select 0)
 	$(call silent_on_success, $(INFERTRACEBUGS_BIN) --html)
@@ -30,5 +30,5 @@ infer-out/report.json: $(CLANG_DEPS) $(INFERTRACEBUGS_BIN) $(SOURCES) $(HEADERS)
 #	run again to check that infer manages to delete the results directory
 	LC_ALL=C; \
 	$(call silent_on_success,\
-	  $(INFER_BIN) --check-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(SOURCES) 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(SOURCES))
+	grep "DUPLICATE_SYMBOLS" infer-out/duplicates.txt; test $$? -ne 0

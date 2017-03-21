@@ -144,6 +144,8 @@ let default_in_zip_results_dir = "infer"
 (** Dotty output filename **)
 let dotty_output = "icfg.dot"
 
+let duplicates_filename = "duplicates.txt"
+
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
 
@@ -619,11 +621,6 @@ and changed_files_index =
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
 
-and check_duplicate_symbols =
-  CLOpt.mk_bool ~long:"check-duplicate-symbols"
-    ~parse_mode:CLOpt.(Infer [Clang])
-    "Check if a symbol with the same name is defined in more than one file."
-
 and checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun =
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
@@ -832,6 +829,10 @@ and disable_checks =
 and dotty_cfg_libs =
   CLOpt.mk_bool ~deprecated:["dotty_no_cfg_libs"] ~long:"dotty-cfg-libs" ~default:true
     "Print the cfg of the code coming from the libraries"
+
+and dump_duplicate_symbols =
+  CLOpt.mk_bool ~long:"dump-duplicate-symbols" ~parse_mode:CLOpt.(Infer [Clang])
+    "Dump all symbols with the same name that are defined in more than one file."
 
 and dynamic_dispatch =
   CLOpt.mk_symbol_opt ~long:"dynamic-dispatch"
@@ -1584,7 +1585,7 @@ and bugs_txt = !bugs_txt
 and bugs_xml = !bugs_xml
 and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
-and check_duplicate_symbols = !check_duplicate_symbols
+and dump_duplicate_symbols = !dump_duplicate_symbols
 and checkers = !checkers
 and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file

@@ -16,8 +16,7 @@ include $(TESTS_DIR)/clang-base.make
 
 infer-out$(TEST_SUFFIX)/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS) $(TESTS_DIR)/.inferconfig
 	$(call silent_on_success,\
-	  $(INFER_BIN) --results-dir $(@D) --check-duplicate-symbols \
+	  $(INFER_BIN) --results-dir $(@D) --dump-duplicate-symbols \
 	    $(INFER_OPTIONS) -a $(ANALYZER) -- \
-	    clang $(CLANG_OPTIONS) $(SOURCES) 2> \
-	    >(tee duplicates.txt))
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	    clang $(CLANG_OPTIONS) $(SOURCES))
+	grep "DUPLICATE_SYMBOLS" infer-out$(TEST_SUFFIX)/duplicates.txt; test $$? -ne 0

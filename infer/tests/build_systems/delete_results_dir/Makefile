@@ -24,8 +24,8 @@ include $(TESTS_DIR)/clang.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	$(call silent_on_success,\
-	  $(INFER_BIN) --check-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(CODETOANALYZE_DIR)/hello.c 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(CODETOANALYZE_DIR)/hello.c)
+	grep "DUPLICATE_SYMBOLS" infer-out/duplicates.txt; test $$? -ne 0
 	$(call silent_on_success,\
-	  $(INFER_BIN) --check-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(CODETOANALYZE_DIR)/hello2.c 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- clang $(CLANG_OPTIONS) $(CODETOANALYZE_DIR)/hello2.c)
+	grep "DUPLICATE_SYMBOLS" infer-out/duplicates.txt; test $$? -ne 0

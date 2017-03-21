@@ -88,6 +88,7 @@ val checks_disabled_by_default : string list
 val clang_initializer_prefix : string
 val classpath : string option
 val cpp_extra_include_dir : string
+val duplicates_filename : string
 val relative_cpp_models_dir : string
 val csl_analysis : bool
 val default_failure_name : string
@@ -186,7 +187,6 @@ val bugs_txt : string option
 val bugs_xml : string option
 val changed_files_index : string option
 val calls_csv : string option
-val check_duplicate_symbols : bool
 val checkers : bool
 val checkers_enabled : bool
 val checkers_repeated_calls : bool
@@ -209,6 +209,7 @@ val dependency_mode : bool
 val developer_mode : bool
 val disable_checks : string list
 val dotty_cfg_libs : bool
+val dump_duplicate_symbols : bool
 val dynamic_dispatch : [ `None | `Interface | `Sound | `Lazy ]
 val enable_checks : string list
 val eradicate : bool

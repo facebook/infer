@@ -21,5 +21,5 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	$(MAKE) -C ../codetoanalyze/make clean
 	cd ../codetoanalyze/make && \
 	$(call silent_on_success,\
-	  $(INFER_BIN) --check-duplicate-symbols --results-dir $(CUR_DIR)/$(@D) -a $(ANALYZER) -- \
+	  $(INFER_BIN) --dump-duplicate-symbols --results-dir $(CUR_DIR)/$(@D) -a $(ANALYZER) -- \
 	    ./waf)

@@ -18,7 +18,7 @@ CLANG_OPTIONS = -x objective-c \
 
 CLEAN_EXTRA = infer-out-arc infer-out-all infer-out-all infer-out-arc \
               issues.exp.test.all issues.exp.test.arc issues.exp.test.default
-INFER_OPTIONS = --check-duplicate-symbols --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-failures-allowed
+INFER_OPTIONS = --dump-duplicate-symbols --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-failures-allowed
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES_DEFAULT = \
@@ -117,20 +117,20 @@ $(OBJECTS_BASE) $(OBJECTS_BUCKETS_ALL): $(SOURCES_BASE) $(SOURCES_BUCKET_ALL)
 infer-out-all/report.json: $(CLANG_DEPS) $(SOURCES_BUCKET_ALL)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets all -o infer-out-all -- \
-	  clang $(CLANG_OPTIONS) $(SOURCES_BUCKET_ALL) 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	  clang $(CLANG_OPTIONS) $(SOURCES_BUCKET_ALL))
+	grep "DUPLICATE_SYMBOLS" infer-out-all/duplicates.txt; test $$? -ne 0
 
 infer-out-arc/report.json: $(CLANG_DEPS) $(SOURCES_ARC)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets cf -o infer-out-arc -- \
-	  clang $(CLANG_OPTIONS) -fobjc-arc $(SOURCES_ARC) 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	  clang $(CLANG_OPTIONS) -fobjc-arc $(SOURCES_ARC))
+	grep "DUPLICATE_SYMBOLS" infer-out-arc/duplicates.txt; test $$? -ne 0
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES_DEFAULT)
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets cf -o infer-out -- \
-	  clang $(CLANG_OPTIONS) $(SOURCES_DEFAULT) 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	  clang $(CLANG_OPTIONS) $(SOURCES_DEFAULT))
+	grep "DUPLICATE_SYMBOLS" infer-out/duplicates.txt; test $$? -ne 0
 
 issues.exp.test: infer-out-all/report.json infer-out-arc/report.json infer-out/report.json
 	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.all \

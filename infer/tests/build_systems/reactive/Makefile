@@ -31,5 +31,5 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	  $(INFER_BIN) $(INFER_OPTIONS) -a capture --reactive --continue -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES3))
 	$(call silent_on_success,\
-	  $(INFER_BIN) --check-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- analyze 2>duplicates.txt)
-	grep "DUPLICATE_SYMBOLS" duplicates.txt; test $$? -ne 0
+	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- analyze)
+	grep "DUPLICATE_SYMBOLS" infer-out/duplicates.txt; test $$? -ne 0
