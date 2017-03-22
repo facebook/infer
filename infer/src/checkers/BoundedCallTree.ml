@@ -177,9 +177,6 @@ let checker { Callbacks.proc_desc; tenv; get_proc_desc } : Specs.summary =
                         examples of the expected format."
     | Some stacktraces -> begin
         let extras = { get_proc_desc; stacktraces; } in
-        SpecSummary.write_summary
-          proc_name
-          (Some (stacktree_of_pdesc proc_desc "proc_start"));
         ignore (Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras) ~initial:Domain.empty)
       end
   end;
