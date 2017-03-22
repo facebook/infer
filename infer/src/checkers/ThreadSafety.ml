@@ -174,7 +174,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | None ->
         attribute_map
 
-  let add_path_to_state access_kind exp typ loc path_state id_map attribute_map tenv =
+  let is_unprotected is_locked pdesc =
+    not is_locked && not (Procdesc.is_java_synchronized pdesc)
+
+  let add_access
+      exp
+      loc
+      access_kind
+      (astate : Domain.astate)
+      ~f_resolve_id
+      (proc_data : FormalMap.t ProcData.t) =
+    let get_formal_index exp typ = match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
+      | Some (base, _) -> FormalMap.get_formal_index base proc_data.extras
+      | None -> None in
     (* we don't want to warn on writes to the field if it is (a) thread-confined, or (b) volatile *)
     let is_safe_write access_path tenv =
       let is_thread_safe_write accesses tenv =
@@ -195,77 +207,28 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | _ ->
             false in
       is_thread_safe_write (snd access_path) tenv in
-    let f_resolve_id = resolve_id id_map in
 
-    if is_constant exp
-    then
-      path_state
-    else
-      List.fold
-        ~f:(fun acc rawpath ->
-            if not (is_owned (AccessPath.Raw.truncate rawpath) attribute_map) &&
-               not (is_safe_write rawpath tenv)
-            then Domain.PathDomain.add_sink (Domain.make_access rawpath access_kind loc) acc
-            else acc)
-        ~init:path_state
-        (AccessPath.of_exp exp typ ~f_resolve_id)
-
-  let is_unprotected is_locked pdesc =
-    not is_locked && not (Procdesc.is_java_synchronized pdesc)
-
-  let add_access
-      exp
-      loc
-      access_kind
-      (astate : Domain.astate)
-      ~f_resolve_id
-      (proc_data : FormalMap.t ProcData.t) =
-    let get_formal_index exp typ = match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
-      | Some (base, _) -> FormalMap.get_formal_index base proc_data.extras
-      | None -> None in
     match exp with
     | Exp.Lfield (base_exp, _, typ) ->
         let open Domain in
-        if is_unprotected astate.locks proc_data.pdesc
-        then
-          match get_formal_index base_exp typ with
-          | Some formal_index ->
-              let pre = AccessPrecondition.Unprotected (Some formal_index) in
-              let conditional_accesses_for_pre =
-                add_path_to_state
-                  access_kind
-                  exp
-                  typ
-                  loc
-                  (AccessDomain.get_accesses pre astate.accesses)
-                  astate.id_map
-                  astate.attribute_map
-                  proc_data.tenv in
-              AccessDomain.add pre conditional_accesses_for_pre astate.accesses
-          | None ->
-              let unsafe_accesses =
-                add_path_to_state
-                  access_kind
-                  exp
-                  typ
-                  loc
-                  (AccessDomain.get_accesses AccessPrecondition.unprotected astate.accesses)
-                  astate.id_map
-                  astate.attribute_map
-                  proc_data.tenv in
-              AccessDomain.add AccessPrecondition.unprotected unsafe_accesses astate.accesses
-        else
-          let safe_accesses =
-            add_path_to_state
-              access_kind
-              exp
-              typ
-              loc
-              (AccessDomain.get_accesses Protected astate.accesses)
-              astate.id_map
-              astate.attribute_map
-              proc_data.tenv in
-          AccessDomain.add Protected safe_accesses astate.accesses
+        let pre =
+          if is_unprotected astate.locks proc_data.pdesc
+          then
+            match get_formal_index base_exp typ with
+            | Some formal_index -> AccessPrecondition.Unprotected (Some formal_index)
+            | None -> AccessPrecondition.unprotected
+          else
+            AccessPrecondition.Protected in
+        let accesses =
+          List.fold
+            ~f:(fun acc rawpath ->
+                if not (is_owned (AccessPath.Raw.truncate rawpath) astate.attribute_map) &&
+                   not (is_safe_write rawpath proc_data.tenv)
+                then PathDomain.add_sink (make_access rawpath access_kind loc) acc
+                else acc)
+            ~init:(AccessDomain.get_accesses pre astate.accesses)
+            (AccessPath.of_exp exp typ ~f_resolve_id) in
+        AccessDomain.add pre accesses astate.accesses
     | _ ->
         astate.accesses
 
