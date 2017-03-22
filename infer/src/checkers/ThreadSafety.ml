@@ -770,8 +770,6 @@ let should_analyze_proc pdesc tenv =
   not (FbThreadSafety.is_logging_method pn) &&
   not (is_call_to_builder_class_method pn) &&
   not (is_call_to_immutable_collection_method tenv pn) &&
-  not (runs_on_ui_thread pdesc) &&
-  not (is_thread_confined_method tenv pdesc) &&
   not (pdesc_is_assumed_thread_safe pdesc tenv)
 
 let is_thread_safe_method pdesc tenv =
@@ -796,9 +794,9 @@ let analyze_procedure callback =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
   let open ThreadSafetyDomain in
   let has_lock = false in
-  let known_on_ui_thread = false in
+  let initial_known_on_ui_thread = false in
   let return_attrs = AttributeSetDomain.empty in
-  let empty =  known_on_ui_thread, has_lock, AccessDomain.empty, return_attrs in
+  let empty =  initial_known_on_ui_thread, has_lock, AccessDomain.empty, return_attrs in
   (* convert the abstract state to a summary by dropping the id map *)
   let compute_post ({ ProcData.pdesc; tenv; extras; } as proc_data) =
     if should_analyze_proc pdesc tenv
@@ -806,6 +804,7 @@ let analyze_procedure callback =
       begin
         if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
         let initial =
+          let threads = runs_on_ui_thread pdesc || is_thread_confined_method tenv pdesc in
           if is_initializer tenv (Procdesc.get_proc_name pdesc)
           then
             let add_owned_formal acc formal_index =
@@ -826,9 +825,9 @@ let analyze_procedure callback =
                 ~f:add_owned_formal
                 owned_formals
                 ~init:ThreadSafetyDomain.empty.attribute_map in
-            { ThreadSafetyDomain.empty with attribute_map; }
+            { ThreadSafetyDomain.empty with attribute_map; threads; }
           else
-            ThreadSafetyDomain.empty in
+            { ThreadSafetyDomain.empty with threads; } in
 
         match Analyzer.compute_post proc_data ~initial with
         | Some { threads; locks; accesses; attribute_map; } ->
@@ -971,23 +970,23 @@ let filter_conflicting_sinks sink trace =
 *)
 
 let collect_conflicts sink (*kind*) threaded tab = (*kind implicitly Read for now*)
-  let procs_and_accesses =
+  let procs_and_threaded_and_accesses =
     List.map
       ~f:(fun (key, (other_access_threaded, _, accesses, _)) ->
           let conflicting_writes =
             if threaded && other_access_threaded then ThreadSafetyDomain.PathDomain.empty
             else
               filter_conflicting_sinks sink (get_all_accesses Write accesses) in
-          key, conflicting_writes
+          key, other_access_threaded, conflicting_writes
         )
       (ResultsTableType.bindings tab) in
   List.filter
-    ~f:(fun (proc_env,writes) ->
+    ~f:(fun (proc_env,_,writes) ->
         (should_report_on_proc proc_env)
         && not (ThreadSafetyDomain.PathDomain.Sinks.is_empty
                   (ThreadSafetyDomain.PathDomain.sinks writes))
       )
-    procs_and_accesses
+    procs_and_threaded_and_accesses
 
 
 
@@ -1089,9 +1088,13 @@ let make_unprotected_write_description
 
 let make_read_write_race_description
     tenv pname final_sink_site initial_sink_site final_sink threaded tab =
+  let conflicts = collect_conflicts final_sink threaded tab in
+  let race_with_main_thread = List.exists
+      ~f:(fun (_,threaded,_) -> threaded)
+      conflicts in
   let conflicting_proc_envs = List.map
-      ~f:fst
-      (collect_conflicts final_sink threaded tab) in
+      ~f:(fun (proc_env,_,_) -> proc_env)
+      conflicts in
   let conflicting_proc_names = List.map
       ~f:(fun (_,_,proc_name,_) -> proc_name)
       conflicting_proc_envs in
@@ -1099,9 +1102,14 @@ let make_read_write_race_description
     let pp_sep _ _ = F.fprintf fmt " , " in
     F.pp_print_list ~pp_sep Typ.Procname.pp fmt proc_names in
   let conflicts_description =
-    Format.asprintf "Potentially races with writes in method%s %a."
+    Format.asprintf "Potentially races with writes in method%s %a. %s"
       (if List.length conflicting_proc_names > 1 then "s" else "")
-      (MF.wrap_monospaced pp_proc_name_list) conflicting_proc_names in
+      (MF.wrap_monospaced pp_proc_name_list) conflicting_proc_names
+      (if race_with_main_thread then
+         "\n Note: some of these write conflicts are confined to the UI or another thread, \
+          but the current method is not specified to be. Consider adding synchronization \
+          or a @ThreadConfined annotation to the current method."
+       else "") in
   Format.asprintf "Read/Write race. Public method %a%s reads from field %a. %s %s"
     (MF.wrap_monospaced Typ.Procname.pp) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")

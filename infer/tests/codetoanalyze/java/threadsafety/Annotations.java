@@ -146,14 +146,26 @@ class Annotations implements Interface {
     this.encapsulatedField.f = new Object();
   }
 
+  Integer zz;
+
   @ThreadConfined("some_custom_string")
   public void threadConfinedMethodOk() {
     this.f = new Object();
+    zz = 22;
+  }
+
+  public void read_from_non_confined_method_Bad(){
+    Integer i;
+    i = zz;
   }
 
   @OnBind
   public void onBindMethodOk() {
     this.f = new Object();
+  }
+
+  public void read_off_UI_thread_Bad(){
+    Object o = f;
   }
 
   @OnMount

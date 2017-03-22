@@ -7,6 +7,8 @@ codetoanalyze/java/threadsafety/Annotations.java, long Annotations.functionaLong
 codetoanalyze/java/threadsafety/Annotations.java, void Annotations.functionalAndNonfunctionalBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.mInt]
 codetoanalyze/java/threadsafety/Annotations.java, void Annotations.mutateOffUiThreadBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.f]
 codetoanalyze/java/threadsafety/Annotations.java, void Annotations.mutateSubfieldOfConfinedBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.encapsulatedField.codetoanalyze.java.checkers.Obj.f]
+codetoanalyze/java/threadsafety/Annotations.java, void Annotations.read_from_non_confined_method_Bad(), 2, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.zz]
+codetoanalyze/java/threadsafety/Annotations.java, void Annotations.read_off_UI_thread_Bad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Annotations.f]
 codetoanalyze/java/threadsafety/Annotations.java, void ThreadSafeAlias.threadSafeAliasBad1(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ThreadSafeAlias.field]
 codetoanalyze/java/threadsafety/Annotations.java, void ThreadSafeAlias.threadSafeAliasBad2(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ThreadSafeAlias.field]
 codetoanalyze/java/threadsafety/Builders.java, Builders$Obj Builders.buildThenMutateBad(Builders$Obj), 3, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.Builders$Obj.g]
