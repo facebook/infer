@@ -78,10 +78,13 @@ let get_superclass_decls decl =
       List.map ~f:get_decl_or_fail base_ptr
   | _ -> []
 
+let translate_as_type_ptr_matcher =
+  QualifiedCppName.Match.of_fuzzy_qual_names ["infer_traits::TranslateAsType"]
+
 let get_translate_as_friend_decl decl_list =
   let is_translate_as_friend_name (_, name_info) =
-    let translate_as_str = "infer_traits::TranslateAsType" in
-    String.is_substring ~substring:translate_as_str (CAst_utils.get_qualified_name name_info) in
+    let qual_name = QualifiedCppName.of_qual_string (CAst_utils.get_qualified_name name_info) in
+    QualifiedCppName.Match.match_qualifiers translate_as_type_ptr_matcher qual_name in
   let get_friend_decl_opt (decl : Clang_ast_t.decl) = match decl with
     | FriendDecl (_, `Type type_ptr) -> CAst_utils.get_decl_from_typ_ptr type_ptr
     | _ -> None in
