@@ -16,35 +16,33 @@ module L = Logging
 module F = Format
 module DExp = DecompiledExp
 
-let mutex_class = ["std"; "mutex"]
-let vector_class = ["std"; "vector"]
+let vector_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::vector"]
+let mutex_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex"]
 
-let is_one_of_classes class_name classes =
-  List.exists ~f:(fun wrapper_class ->
-      List.for_all ~f:(fun wrapper_class_substring ->
-          String.is_substring ~substring:wrapper_class_substring class_name) wrapper_class)
-    classes
+let is_one_of_classes = QualifiedCppName.Match.match_qualifiers
 
-let is_method_of_objc_cpp_class pname classes =
+
+let is_method_of_objc_cpp_class pname matcher =
   match pname with
-  | Typ.Procname.ObjC_Cpp name ->
-      let class_name = Typ.Procname.objc_cpp_get_class_name name in
-      is_one_of_classes class_name classes
+  | Typ.Procname.ObjC_Cpp objc_cpp ->
+      let class_qual_opt = Typ.Procname.objc_cpp_get_class_qualifiers objc_cpp in
+      is_one_of_classes matcher class_qual_opt
   | _ -> false
 
 let is_mutex_method pname =
-  is_method_of_objc_cpp_class pname [mutex_class]
+  is_method_of_objc_cpp_class pname mutex_matcher
 
 let is_vector_method pname =
-  is_method_of_objc_cpp_class pname [vector_class]
+  is_method_of_objc_cpp_class pname vector_matcher
 
-let is_special_field class_names field_name_opt field =
-  let complete_fieldname = Fieldname.to_complete_string field in
+let is_special_field matcher field_name_opt field =
+  let field_name = Fieldname.to_flat_string field in
+  let class_qual_opt = Fieldname.clang_get_qual_class field in
   let field_ok =
     match field_name_opt with
-    | Some field_name -> String.is_substring ~substring:field_name complete_fieldname
+    | Some field_name' -> String.equal field_name' field_name
     | None -> true in
-  is_one_of_classes complete_fieldname class_names && field_ok
+  field_ok && Option.value_map ~f:(is_one_of_classes matcher) ~default:false class_qual_opt
 
 (** Check whether the hpred is a |-> representing a resource in the Racquire state *)
 let hpred_is_open_resource tenv prop = function
@@ -842,9 +840,9 @@ let create_dereference_desc tenv
           else
             desc
       | Some (DExp.Darrow (dexp, fieldname)) ->
-          if is_special_field [mutex_class] (Some "null_if_locked") fieldname then
+          if is_special_field mutex_matcher (Some "null_if_locked") fieldname then
             Localise.desc_double_lock None (DExp.to_string dexp) loc
-          else if is_special_field [vector_class] (Some "beginPtr") fieldname then
+          else if is_special_field vector_matcher (Some "beginPtr") fieldname then
             Localise.desc_empty_vector_access None (DExp.to_string dexp) loc
           else
             desc

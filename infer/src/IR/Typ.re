@@ -884,11 +884,14 @@ let module Procname = {
 
   /** Pretty print a set of proc names */
   let pp_set fmt set => Set.iter (fun pname => F.fprintf fmt "%a " pp pname) set;
+  let objc_cpp_get_class_qualifiers objc_cpp => QualifiedCppName.of_qual_string (
+    Name.name objc_cpp.class_name
+  );
   let get_qualifiers pname =>
     switch pname {
     | C {name} => QualifiedCppName.of_qual_string name
     | ObjC_Cpp objc_cpp =>
-      QualifiedCppName.of_qual_string (Name.name objc_cpp.class_name) |>
+      objc_cpp_get_class_qualifiers objc_cpp |>
       QualifiedCppName.append_qualifier qual::objc_cpp.method_name
     | _ => QualifiedCppName.empty
     };

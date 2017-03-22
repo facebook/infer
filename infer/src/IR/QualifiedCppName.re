@@ -8,7 +8,9 @@
  */
 open! IStd;
 
-type t = list string;
+type t = list string [@@deriving compare];
+
+let equal = [%compare.equal : t];
 
 let empty = [];
 

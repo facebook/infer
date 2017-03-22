@@ -10,9 +10,11 @@ open! IStd;
 
 let module Hashtbl = Caml.Hashtbl;
 
+type clang_field_info = {qual_class: QualifiedCppName.t, field_name: string} [@@deriving compare];
+
 type t =
   | Hidden /* Backend relies that Hidden is the smallest (first) field in Abs.should_raise_objc_leak */
-  | Clang Mangled.t
+  | Clang clang_field_info
   | Java string
 [@@deriving compare];
 
@@ -31,14 +33,10 @@ let module Map = Caml.Map.Make {
 };
 
 let module Clang = {
-
-  /** Create a field name with the given position (field number in the CSU) */
-  let create (n: Mangled.t) => Clang n;
+  let from_qualified qual_class field_name => Clang {qual_class, field_name};
 };
 
 let module Java = {
-
-  /** Create a field name with the given position (field number in the CSU) */
   let from_string n => Java n;
 };
 
@@ -48,15 +46,7 @@ let to_string =
   fun
   | Hidden => hidden_str
   | Java fname => fname
-  | Clang fname => Mangled.to_string fname;
-
-
-/** Convert a fieldname to a string, including the mangled part. */
-let to_complete_string =
-  fun
-  | Hidden => hidden_str
-  | Java fname => fname
-  | Clang fname => Mangled.to_string_full fname;
+  | Clang {field_name} => field_name;
 
 
 /** Convert a fieldname to a simplified string with at most one-level path. */
@@ -85,8 +75,8 @@ let to_flat_string fn => {
 let pp f =>
   fun
   | Hidden => Format.fprintf f "%s" hidden_str
-  | Java fname => Format.fprintf f "%s" fname
-  | Clang fname => Mangled.pp f fname;
+  | Java field_name
+  | Clang {field_name} => Format.fprintf f "%s" field_name;
 
 let pp_latex style f fn => Latex.pp_string style f (to_string fn);
 
@@ -118,6 +108,11 @@ let java_is_outer_instance fn => {
     String.is_suffix fn suffix::(this ^ String.of_char last_char)
   }
 };
+
+let clang_get_qual_class =
+  fun
+  | Clang {qual_class} => Some qual_class
+  | _ => None;
 
 
 /** hidded fieldname constant */

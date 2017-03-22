@@ -8,12 +8,13 @@
  */
 open! IStd;
 
-type t;
+type t [@@deriving compare];
 
 
 /** empty qualified name */
 let empty: t;
 
+let equal: t => t => bool;
 
 /** attempts to parse the argument into a list::of::possibly::templated<T>::qualifiers */
 let of_qual_string: string => t;
@@ -25,7 +26,6 @@ let to_qual_string: t => string;
 
 /** append qualifier to the end (innermost scope) of the qualified name */
 let append_qualifier: t => qual::string => t;
-
 
 /** returns list of qualifers */
 let to_list: t => list string;

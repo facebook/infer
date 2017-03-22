@@ -427,7 +427,12 @@ let module Procname: {
 
   /** Convert a proc name to a filename. */
   let to_filename: t => string;
+
+  /** get qualifiers of C/objc/C++ method/function */
   let get_qualifiers: t => QualifiedCppName.t;
+
+  /** get qualifiers of a class owning objc/C++ method */
+  let objc_cpp_get_class_qualifiers: objc_cpp => QualifiedCppName.t;
 };
 
 
