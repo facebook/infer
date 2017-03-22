@@ -482,11 +482,22 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let access_tree' =
       AccessPath.BaseMap.fold
         (fun base node acc ->
-           let base' =
-             match FormalMap.get_formal_index base formal_map with
-             | Some formal_index -> make_footprint_var formal_index, snd base
-             | None -> base in
-           AccessPath.BaseMap.add base' node acc)
+           match FormalMap.get_formal_index base formal_map with
+           | Some formal_index ->
+               let base' = make_footprint_var formal_index, snd base in
+               let joined_node =
+                 try TaintDomain.node_join (AccessPath.BaseMap.find base' acc) node
+                 with Not_found -> node in
+               let node' =
+                 if TraceDomain.Sinks.is_empty (TraceDomain.sinks (fst joined_node))
+                 then
+                   (* Java is call-by-value; we can't update a formal in the callee. so drop the
+                      trace associated with the formal unless it contains sinks *)
+                   TraceDomain.empty, snd joined_node
+                 else
+                   joined_node in
+               AccessPath.BaseMap.add base' node' acc
+           | None -> AccessPath.BaseMap.add base node acc)
         access_tree
         TaintDomain.empty in
 

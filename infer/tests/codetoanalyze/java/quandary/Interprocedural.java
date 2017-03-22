@@ -415,16 +415,14 @@ class Interprocedural {
     o = InferTaint.inferSecretSource();
   }
 
-  // need to understand that Java is call-by-value for this...
-  public static void FP_swapParamsOk() {
+  public static void swapParamsOk() {
     Object notASource = null;
     Object source = InferTaint.inferSecretSource();
     swapParams(notASource, source);
     InferTaint.inferSensitiveSink(notASource);
   }
 
-  // ...and this
-  public static void FP_assignSourceToParamOk() {
+  public static void assignSourceToParamOk() {
     Object o = null;
     assignSourceToParam(o);
     InferTaint.inferSensitiveSink(o);
