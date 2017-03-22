@@ -774,11 +774,22 @@ let should_analyze_proc pdesc tenv =
   not (is_thread_confined_method tenv pdesc) &&
   not (pdesc_is_assumed_thread_safe pdesc tenv)
 
+let is_thread_safe_method pdesc tenv =
+  PatternMatch.override_exists
+    (fun pn ->
+       Annotations.pname_has_return_annot
+         pn
+         ~attrs_of_pname:Specs.proc_resolve_attributes
+         is_thread_safe)
+    tenv
+    (Procdesc.get_proc_name pdesc)
+
 (* return true if we should report on unprotected accesses during the procedure *)
-let should_report_on_proc (_, _, proc_name, proc_desc) =
-  not (Typ.Procname.java_is_autogen_method proc_name) &&
-  Procdesc.get_access proc_desc <> PredSymb.Private &&
-  not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
+let should_report_on_proc (_, tenv, proc_name, proc_desc) =
+  is_thread_safe_method proc_desc tenv ||
+  (not (Typ.Procname.java_is_autogen_method proc_name) &&
+   Procdesc.get_access proc_desc <> PredSymb.Private &&
+   not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting))
 
 let analyze_procedure callback =
   let is_initializer tenv proc_name =
@@ -1168,19 +1179,9 @@ let should_report_on_file file_env =
 *)
 let process_results_table file_env tab =
   let should_report_on_all_procs = should_report_on_file file_env in
-  (* TODO (t15588153): clean this up *)
-  let is_thread_safe_method pdesc tenv =
-    PatternMatch.override_exists
-      (fun pn ->
-         Annotations.pname_has_return_annot
-           pn
-           ~attrs_of_pname:Specs.proc_resolve_attributes
-           is_thread_safe)
-      tenv
-      (Procdesc.get_proc_name pdesc) in
   let should_report ((_, tenv, _, pdesc) as proc_env) =
-    (should_report_on_all_procs || is_thread_safe_method pdesc tenv)
-    && should_report_on_proc proc_env in
+    (should_report_on_all_procs && should_report_on_proc proc_env) ||
+    is_thread_safe_method pdesc tenv in
   ResultsTableType.iter (* report errors for each method *)
     (fun proc_env (threaded, _, accesses, _) ->
        if should_report proc_env

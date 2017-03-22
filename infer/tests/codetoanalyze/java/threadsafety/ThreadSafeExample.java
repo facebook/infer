@@ -166,6 +166,17 @@ class NonThreadSafeClass {
   }
 
   @ThreadSafe
+  private void threadSafePrivateMethod() {
+    this.field = new Object(); // should warn
+  }
+
+  @ThreadSafe
+  @VisibleForTesting
+  public void threadSafeVisibleForTestingMethod() {
+    this.field = new Object(); // should warn
+  }
+
+  @ThreadSafe
   public void safeMethod() {
   }
 

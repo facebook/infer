@@ -70,6 +70,8 @@ codetoanalyze/java/threadsafety/ReadWriteRaces.java, void ReadWriteRaces.readInC
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ExtendsThreadSafeExample.newmethodBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ExtendsThreadSafeExample.field]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ExtendsThreadSafeExample.tsOK(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ExtendsThreadSafeExample.field]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void NonThreadSafeClass.threadSafeMethod(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.NonThreadSafeClass.field]
+codetoanalyze/java/threadsafety/ThreadSafeExample.java, void NonThreadSafeClass.threadSafePrivateMethod(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.NonThreadSafeClass.field]
+codetoanalyze/java/threadsafety/ThreadSafeExample.java, void NonThreadSafeClass.threadSafeVisibleForTestingMethod(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.NonThreadSafeClass.field]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void NonThreadSafeSubclass.safeMethod(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.NonThreadSafeClass.field]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.callPublicMethodBad(), 1, THREAD_SAFETY_VIOLATION, [call to void ThreadSafeExample.assignInPrivateMethodOk(),access to codetoanalyze.java.checkers.ThreadSafeExample.f]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.callVisibleForTestingBad(), 1, THREAD_SAFETY_VIOLATION, [call to void ThreadSafeExample.visibleForTestingNotPublicOk(),access to codetoanalyze.java.checkers.ThreadSafeExample.f]
