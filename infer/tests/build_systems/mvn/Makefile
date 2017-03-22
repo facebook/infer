@@ -49,7 +49,3 @@ issues.exp.test: $(foreach mvndir,$(MVN_DIRS),issues-$(mvndir).exp.test)
 	  echo "-- $$mvndir" >> $@; \
 	  cat issues-$$mvndir.exp.test >> $@; \
 	done
-
-prout:
-	@echo "prout: $(MVN_DIRS)"
-	@echo "clean extra: $(CLEAN_EXTRA)"
