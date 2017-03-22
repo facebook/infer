@@ -414,10 +414,10 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
   let (exp, typ) = extract_exp_from_list exps "" in
   let is_objc_bridged = Option.is_some trans_state.obj_bridged_cast_typ || is_objc_bridged in
   match cast_kind with
+  | `NoOp
   | `DerivedToBase
   | `UncheckedDerivedToBase ->  (* These casts ignore change of type *)
       ([], (exp, typ))
-  | `NoOp
   | `BitCast
   | `IntegralCast
   | `IntegralToBoolean -> (* This is treated as a nop by returning the same expressions exps*)
