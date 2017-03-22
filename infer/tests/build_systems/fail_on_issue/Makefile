@@ -43,6 +43,10 @@ test: issues.exp.test
 	@cd $(TESTS_DIR) && \
 	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test
 
+.PHONY: replace
+replace: issues.exp.test
+	cp $< issues.exp
+
 .PHONY: clean
 clean:
 	rm -rf issues.exp.test infer-out $(OBJECTS)

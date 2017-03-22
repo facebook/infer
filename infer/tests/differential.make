@@ -59,6 +59,12 @@ test: print
 	diff -u fixed.exp fixed.exp.test
 	diff -u preexisting.exp preexisting.exp.test
 
+.PHONY: replace
+replace: $(EXPECTED_TEST_OUTPUT)
+	cp introduced.exp.test introduced.exp
+	cp fixed.exp.test fixed.exp
+	cp preexisting.exp.test preexisting.exp
+
 .PHONY: clean
 clean:
 	$(REMOVE_DIR) *.exp.test $(INFER_OUT) $(CURRENT_DIR) $(PREVIOUS_DIR) \

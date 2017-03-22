@@ -15,14 +15,14 @@ ANALYZER = crashcontext
 
 SOURCES = $(wildcard *.java)
 OBJECTS = $(patsubst %.java,%.class,$(SOURCES))
-EXP_TESTs = $(sort $(patsubst %.java,%.exp.test.noreplace,$(SOURCES)))
+EXP_TESTs = $(sort $(patsubst %.java,issues-%.exp.test,$(SOURCES)))
 INFER_OUTs = $(patsubst %.java,infer-out-%,$(SOURCES))
 
 $(OBJECTS): $(SOURCES)
 	$(JAVAC) -cp $(CLASSPATH) $(SOURCES)
 
 # analyze a single source file and generate the test results for it
-%.exp.test.noreplace: $(JAVA_DEPS) %.stacktrace.json %.java
+issues-%.exp.test: $(JAVA_DEPS) %.stacktrace.json %.java
 	$(call silent_on_success,\
 	  $(INFER_BIN) -a $(ANALYZER) -o infer-out-$* --stacktrace $*.stacktrace.json \
 	  -- $(JAVAC) -cp $(CLASSPATH) $*.java)
@@ -31,7 +31,7 @@ $(OBJECTS): $(SOURCES)
 
 # combine the test results for all the source files
 issues.exp.test: $(EXP_TESTs)
-	cat $(EXP_TESTs) > issues.exp.test
+	cat $^ > issues.exp.test
 
 default: compile
 
@@ -48,6 +48,10 @@ print: issues.exp.test
 test: issues.exp.test
 	@cd $(TESTS_DIR) && \
 	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test
+
+.PHONY: replace
+replace: issues.exp.test
+	cp $< issues.exp
 
 .PHONY: clean
 clean:

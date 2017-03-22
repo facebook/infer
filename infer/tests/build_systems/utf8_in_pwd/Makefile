@@ -93,11 +93,11 @@ infer-out-make/report.json: $(CLANG_DEPS) $(MAKE_DIR)
 	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- \
 	    make clean all)
 
-issues-%.exp.test.noreplace: infer-out-%/report.json $(INFERPRINT_BIN)
+issues-%.exp.test: infer-out-%/report.json $(INFERPRINT_BIN)
 	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ --from-json-report $<
 
-issues.exp.test: issues-cmake.exp.test.noreplace issues-gradle.exp.test.noreplace \
-                 issues-javac.exp.test.noreplace issues-make.exp.test.noreplace
+issues.exp.test: issues-cmake.exp.test issues-gradle.exp.test issues-javac.exp.test \
+                 issues-make.exp.test
 	cat $^ > $@
 
 .PHONY: print
@@ -108,6 +108,10 @@ test: issues.exp.test
 	@cd $(TESTS_DIR) && \
 	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test
 
+.PHONY: replace
+replace: issues.exp.test
+	cp $< issues.exp
+
 .PHONY: clean
 clean:
-	rm -rf $(UTF8_DIR) issues.exp.test* infer-out-*
+	rm -rf $(UTF8_DIR) issues*.exp.test* infer-out-*

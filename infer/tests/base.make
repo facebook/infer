@@ -33,6 +33,10 @@ test: issues.exp.test$(TEST_SUFFIX)
 	@cd $(TESTS_DIR) && \
 	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX)
 
+.PHONY: print
+replace: issues.exp.test$(TEST_SUFFIX)
+	cp $< issues.exp
+
 .PHONY: clean
 clean:
 	$(REMOVE_DIR) codetoanalyze com issues.exp.test$(TEST_SUFFIX) infer-out$(TEST_SUFFIX) \

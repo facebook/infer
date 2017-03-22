@@ -7,6 +7,6 @@
 
 default: compile
 
-.PHONY: print test clean
-print test clean:
+.PHONY: print replace test clean
+print replace test clean:
 	INFER_ARGS=-j^1 $(MAKE) -C ../../codetoanalyze/cpp/checkers TEST_SUFFIX=-j1 $@

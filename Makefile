@@ -165,15 +165,10 @@ endif
 ocaml_unit_test: test_build
 	$(call silent_on_success,$(BUILD_DIR)/test/infer/unit/inferunit.byte)
 
-DIRECT_TESTS_REPLACE = $(patsubst %_frontend,%_frontend_replace,$(filter %_frontend,$(DIRECT_TESTS)))
-
 define silence_make
   ($(1) 2> >(grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target") \
   ; exit $${PIPESTATUS[0]})
 endef
-
-.PHONY: frontend_replace
-frontend_replace: $(DIRECT_TESTS_REPLACE)
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_test)
 $(DIRECT_TESTS:%=direct_%_test): infer
@@ -196,6 +191,13 @@ $(DIRECT_TESTS:%=direct_%_clean):
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
 	  clean)
 
+.PHONY: $(DIRECT_TESTS:%=direct_%_replace)
+$(DIRECT_TESTS:%=direct_%_replace): infer
+	@$(call silence_make,\
+	$(MAKE) -C \
+	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
+	  replace)
+
 .PHONY: direct_tests
 direct_tests: $(DIRECT_TESTS:%=direct_%_test)
 
@@ -206,9 +208,6 @@ build_genrule_print: build_buck_print
 # the waf test and the make test run the same `make` command
 build_waf_test: build_make_test
 build_waf_print: build_make_print
-
-.PHONY: print_direct_tests
-print_direct_tests: $(DIRECT_TESTS:%=direct_%_print)
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 $(BUILD_SYSTEMS_TESTS:%=build_%_test): infer
@@ -225,14 +224,16 @@ $(BUILD_SYSTEMS_TESTS:%=build_%_clean):
 	@$(call silence_make,\
 	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_clean,%,$@) clean)
 
+.PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_replace)
+$(BUILD_SYSTEMS_TESTS:%=build_%_replace): infer
+	@$(call silence_make,\
+	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_replace,%,$@) replace)
+
 .PHONY: build_systems_tests
 build_systems_tests: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 
-.PHONY: print_build_systems_tests
-print_build_systems_tests: $(BUILD_SYSTEMS_TESTS:%=build_%_print)
-
 .PHONY: endtoend_test
-endtoend_test: print_direct_tests print_build_systems_tests
+endtoend_test: $(BUILD_SYSTEMS_TESTS:%=build_%_print) $(DIRECT_TESTS:%=direct_%_print)
 # pre-compute all the results first so that the test failures show up near the end of the output
 	$(MAKE) direct_tests build_systems_tests
 
@@ -295,12 +296,7 @@ endif
 quick-test: test_build ocaml_unit_test
 
 .PHONY: test-replace
-test-replace:
-	@$(MAKE) -k endtoend_test || true
-	@for file in $$(find $(INFER_DIR)/tests -name "*.exp.test"); do \
-	    mv -f $$file $$(dirname $$file)/$$(basename -s .exp.test $$file).exp; done
-	@for file in $$(find $(INFER_DIR)/tests -name "*.test.dot"); do \
-	    mv -f $$file $$(dirname $$file)/$$(basename -s .test.dot $$file).dot; done
+test-replace: $(BUILD_SYSTEMS_TESTS:%=build_%_replace) $(DIRECT_TESTS:%=direct_%_replace)
 
 .PHONY: uninstall
 uninstall:
