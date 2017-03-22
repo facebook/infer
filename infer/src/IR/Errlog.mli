@@ -25,25 +25,39 @@ val make_trace_element : int -> Location.t -> string -> (string * string) list -
 (** Trace of locations *)
 type loc_trace = loc_trace_elem list
 
+type node_id_key = private {
+  node_id : int;
+  node_key : int
+}
+
+type err_key = private {
+  err_kind : Exceptions.err_kind;
+  in_footprint : bool;
+  err_name : Localise.t;
+  err_desc : Localise.error_desc;
+  severity : string
+}[@@deriving compare]
+
+(** Data associated to a specific error *)
+type err_data = private {
+  node_id_key : node_id_key;
+  session : int;
+  loc : Location.t;
+  loc_in_ml_source : Logging.ml_loc option;
+  loc_trace : loc_trace;
+  err_class : Exceptions.err_class;
+  visibility : Exceptions.visibility;
+  linters_def_file : string option
+}
+
 (** Type of the error log *)
-type t [@@deriving compare]
+type t[@@deriving compare]
 
 (** Empty error log *)
 val empty : unit -> t
 
 (** type of the function to be passed to iter *)
-type iter_fun =
-  (int * int) ->
-  Location.t ->
-  Logging.ml_loc option ->
-  Exceptions.err_kind ->
-  bool ->
-  Localise.t -> Localise.error_desc -> string ->
-  loc_trace ->
-  Exceptions.err_class ->
-  Exceptions.visibility ->
-  string option ->
-  unit
+type iter_fun = err_key -> err_data -> unit
 
 (** Apply f to nodes and error names *)
 val iter : iter_fun -> t -> unit

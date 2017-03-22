@@ -453,16 +453,16 @@ let write_proc_html source pdesc =
 (** Creare a hash table mapping line numbers to the set of errors occurring on that line *)
 let create_table_err_per_line err_log =
   let err_per_line = Hashtbl.create 17 in
-  let add_err _ loc _ _ _ err_name desc _ _ _ _ _ =
+  let add_err (key : Errlog.err_key) (err_data : Errlog.err_data) =
     let err_str =
-      Localise.to_issue_id err_name ^
+      Localise.to_issue_id key.err_name ^
       " " ^
-      (F.asprintf "%a" Localise.pp_error_desc desc) in
+      (F.asprintf "%a" Localise.pp_error_desc key.err_desc) in
     try
-      let set = Hashtbl.find err_per_line loc.Location.line in
-      Hashtbl.replace err_per_line loc.Location.line (String.Set.add set err_str)
+      let set = Hashtbl.find err_per_line err_data.loc.Location.line in
+      Hashtbl.replace err_per_line err_data.loc.Location.line (String.Set.add set err_str)
     with Not_found ->
-      Hashtbl.add err_per_line loc.Location.line (String.Set.singleton err_str) in
+      Hashtbl.add err_per_line err_data.loc.Location.line (String.Set.singleton err_str) in
   Errlog.iter add_err err_log;
   err_per_line
 

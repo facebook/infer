@@ -385,51 +385,59 @@ let module IssuesCsv = {
   /** Write bug report in csv format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
     let pp x => F.fprintf fmt x;
-    let pp_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr eclass _ _ => {
+    let pp_row (key: Errlog.err_key) (err_data: Errlog.err_data) => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
-        | None => loc.Location.file
+        | None => err_data.loc.Location.file
         };
       if (
-        in_footprint &&
-        error_filter source_file error_desc error_name &&
-        should_report ekind error_name error_desc eclass && report_filter source_file
+        key.in_footprint &&
+        error_filter source_file key.err_desc key.err_name &&
+        should_report key.err_kind key.err_name key.err_desc err_data.err_class &&
+        report_filter source_file
       ) {
-        let err_desc_string = error_desc_to_csv_string error_desc;
-        let err_advice_string = error_advice_to_csv_string error_desc;
+        let err_desc_string = error_desc_to_csv_string key.err_desc;
+        let err_advice_string = error_advice_to_csv_string key.err_desc;
         let qualifier_tag_xml = {
           let xml_node =
             Io_infer.Xml.create_tree
-              Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc);
+              Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags key.err_desc);
           let p fmt => F.fprintf fmt "%a" (Io_infer.Xml.pp_document false) xml_node;
           let s = F.asprintf "%t" p;
           Escape.escape_csv s
         };
-        let kind = Exceptions.err_kind_string ekind;
-        let type_str = Localise.to_issue_id error_name;
+        let kind = Exceptions.err_kind_string key.err_kind;
+        let type_str = Localise.to_issue_id key.err_name;
         let procedure_id = Typ.Procname.to_filename procname;
         let filename = SourceFile.to_string source_file;
         let always_report =
-          switch (Localise.error_desc_extract_tag_value error_desc "always_report") {
+          switch (Localise.error_desc_extract_tag_value key.err_desc "always_report") {
           | "" => "false"
           | v => v
           };
-        let trace = Jsonbug_j.string_of_json_trace {trace: loc_trace_to_jsonbug_record ltr ekind};
+        let trace = Jsonbug_j.string_of_json_trace {
+          trace: loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
+        };
         incr csv_issues_id;
-        pp "%s," (Exceptions.err_class_string eclass);
+        pp "%s," (Exceptions.err_class_string err_data.err_class);
         pp "%s," kind;
         pp "%s," type_str;
         pp "\"%s\"," err_desc_string;
-        pp "%s," severity;
-        pp "%d," loc.Location.line;
+        pp "%s," key.severity;
+        pp "%d," err_data.loc.Location.line;
         pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_string procname));
         pp "\"%s\"," (Escape.escape_csv procedure_id);
         pp "%s," filename;
         pp "\"%s\"," (Escape.escape_csv trace);
-        pp "\"%d\"," node_key;
+        pp "\"%d\"," err_data.node_id_key.node_key;
         pp "\"%s\"," qualifier_tag_xml;
-        pp "\"%d\"," (get_bug_hash kind type_str procedure_id filename node_key error_desc);
+        pp
+          "\"%d\","
+          (
+            get_bug_hash
+              kind type_str procedure_id filename err_data.node_id_key.node_key key.err_desc
+          );
         pp "\"%d\"," !csv_issues_id; /* bug id */
         pp "\"%s\"," always_report;
         pp "\"%s\"@\n" err_advice_string
@@ -447,65 +455,55 @@ let module IssuesJson = {
   /** Write bug report in JSON format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
     let pp x => F.fprintf fmt x;
-    let pp_row
-        (_, node_key)
-        loc
-        ml_loc_opt
-        ekind
-        in_footprint
-        error_name
-        error_desc
-        severity
-        ltr
-        eclass
-        visibility
-        linters_def_file => {
+    let pp_row (key: Errlog.err_key) (err_data: Errlog.err_data) => {
       let (source_file, procedure_start_line) =
         switch proc_loc_opt {
         | Some proc_loc => (proc_loc.Location.file, proc_loc.Location.line)
-        | None => (loc.Location.file, 0)
+        | None => (err_data.loc.Location.file, 0)
         };
       let should_report_source_file =
         not (SourceFile.is_infer_model source_file) ||
         Config.debug_mode || Config.debug_exceptions;
       if (
-        in_footprint &&
-        error_filter source_file error_desc error_name &&
+        key.in_footprint &&
+        error_filter source_file key.err_desc key.err_name &&
         should_report_source_file &&
-        should_report ekind error_name error_desc eclass && report_filter source_file
+        should_report key.err_kind key.err_name key.err_desc err_data.err_class &&
+        report_filter source_file
       ) {
-        let kind = Exceptions.err_kind_string ekind;
-        let bug_type = Localise.to_issue_id error_name;
+        let kind = Exceptions.err_kind_string key.err_kind;
+        let bug_type = Localise.to_issue_id key.err_name;
         let procedure_id = Typ.Procname.to_filename procname;
         let file = SourceFile.to_string source_file;
         let json_ml_loc =
-          switch ml_loc_opt {
+          switch err_data.loc_in_ml_source {
           | Some (file, lnum, cnum, enum) when Config.reports_include_ml_loc =>
             Some Jsonbug_j.{file, lnum, cnum, enum}
           | _ => None
           };
-        let visibility = Exceptions.string_of_visibility visibility;
+        let visibility = Exceptions.string_of_visibility err_data.visibility;
         let bug = {
-          Jsonbug_j.bug_class: Exceptions.err_class_string eclass,
+          Jsonbug_j.bug_class: Exceptions.err_class_string err_data.err_class,
           kind,
           bug_type,
-          qualifier: error_desc_to_plain_string error_desc,
-          severity,
+          qualifier: error_desc_to_plain_string key.err_desc,
+          severity: key.severity,
           visibility,
-          line: loc.Location.line,
-          column: loc.Location.col,
+          line: err_data.loc.Location.line,
+          column: err_data.loc.Location.col,
           procedure: Typ.Procname.to_string procname,
           procedure_id,
           procedure_start_line,
           file,
-          bug_trace: loc_trace_to_jsonbug_record ltr ekind,
-          key: node_key,
-          qualifier_tags: error_desc_to_qualifier_tags_records error_desc,
-          hash: get_bug_hash kind bug_type procedure_id file node_key error_desc,
-          dotty: error_desc_to_dotty_string error_desc,
+          bug_trace: loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind,
+          key: err_data.node_id_key.node_key,
+          qualifier_tags: error_desc_to_qualifier_tags_records key.err_desc,
+          hash:
+            get_bug_hash kind bug_type procedure_id file err_data.node_id_key.node_key key.err_desc,
+          dotty: error_desc_to_dotty_string key.err_desc,
           infer_source_loc: json_ml_loc,
-          bug_type_hum: Localise.to_human_readable_string error_name,
-          linters_def_file
+          bug_type_hum: Localise.to_human_readable_string key.err_name,
+          linters_def_file: err_data.linters_def_file
         };
         if (not !is_first_item) {
           pp ","
@@ -576,14 +574,22 @@ let module IssuesTxt = {
 
   /** Write bug report in text format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log => {
-    let pp_row (node_id, node_key) loc _ ekind in_footprint error_name error_desc _ _ _ _ _ => {
+    let pp_row (key: Errlog.err_key) (err_data: Errlog.err_data) => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
-        | None => loc.Location.file
+        | None => err_data.loc.Location.file
         };
-      if (in_footprint && error_filter source_file error_desc error_name) {
-        Exceptions.pp_err (node_id, node_key) loc ekind error_name error_desc None fmt ()
+      if (key.in_footprint && error_filter source_file key.err_desc key.err_name) {
+        Exceptions.pp_err
+          node_key::err_data.node_id_key.node_key
+          err_data.loc
+          key.err_kind
+          key.err_name
+          key.err_desc
+          None
+          fmt
+          ()
       }
     };
     Errlog.iter pp_row err_log
@@ -645,41 +651,44 @@ let module IssuesXml = {
 
   /** print issues from summary in xml */
   let pp_issues_of_error_log fmt error_filter linereader proc_loc_opt proc_name err_log => {
-    let do_row (_, node_key) loc _ ekind in_footprint error_name error_desc severity ltr eclass _ _ => {
+    let do_row (key: Errlog.err_key) (err_data: Errlog.err_data) => {
       let source_file =
         switch proc_loc_opt {
         | Some proc_loc => proc_loc.Location.file
-        | None => loc.Location.file
+        | None => err_data.loc.Location.file
         };
-      if (in_footprint && error_filter source_file error_desc error_name) {
-        let err_desc_string = error_desc_to_xml_string error_desc;
+      if (key.in_footprint && error_filter source_file key.err_desc key.err_name) {
+        let err_desc_string = error_desc_to_xml_string key.err_desc;
         let subtree label contents =>
           Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
-        let kind = Exceptions.err_kind_string ekind;
-        let type_str = Localise.to_issue_id error_name;
+        let kind = Exceptions.err_kind_string key.err_kind;
+        let type_str = Localise.to_issue_id key.err_name;
         let tree = {
           incr xml_issues_id;
           let attributes = [("id", string_of_int !xml_issues_id)];
-          let error_class = Exceptions.err_class_string eclass;
-          let error_line = string_of_int loc.Location.line;
+          let error_class = Exceptions.err_class_string err_data.err_class;
+          let error_line = string_of_int err_data.loc.Location.line;
           let procedure_name = Typ.Procname.to_string proc_name;
           let procedure_id = Typ.Procname.to_filename proc_name;
           let filename = SourceFile.to_string source_file;
-          let bug_hash = get_bug_hash kind type_str procedure_id filename node_key error_desc;
+          let bug_hash =
+            get_bug_hash
+              kind type_str procedure_id filename err_data.node_id_key.node_key key.err_desc;
           let forest = [
             subtree Io_infer.Xml.tag_class error_class,
             subtree Io_infer.Xml.tag_kind kind,
             subtree Io_infer.Xml.tag_type type_str,
             subtree Io_infer.Xml.tag_qualifier err_desc_string,
-            subtree Io_infer.Xml.tag_severity severity,
+            subtree Io_infer.Xml.tag_severity key.severity,
             subtree Io_infer.Xml.tag_line error_line,
             subtree Io_infer.Xml.tag_procedure (Escape.escape_xml procedure_name),
             subtree Io_infer.Xml.tag_procedure_id (Escape.escape_xml procedure_id),
             subtree Io_infer.Xml.tag_file filename,
-            Io_infer.Xml.create_tree Io_infer.Xml.tag_trace [] (loc_trace_to_xml linereader ltr),
-            subtree Io_infer.Xml.tag_key (string_of_int node_key),
             Io_infer.Xml.create_tree
-              Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags error_desc),
+              Io_infer.Xml.tag_trace [] (loc_trace_to_xml linereader err_data.loc_trace),
+            subtree Io_infer.Xml.tag_key (string_of_int err_data.node_id_key.node_key),
+            Io_infer.Xml.create_tree
+              Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags key.err_desc),
             subtree Io_infer.Xml.tag_hash (string_of_int bug_hash)
           ];
           Io_infer.Xml.create_tree "bug" attributes forest
@@ -786,21 +795,22 @@ let module Stats = {
   };
   let process_err_log error_filter linereader err_log stats => {
     let found_errors = ref false;
-    let process_row _ loc _ ekind in_footprint error_name error_desc _ ltr _ _ _ => {
-      let type_str = Localise.to_issue_id error_name;
-      if (in_footprint && error_filter error_desc error_name) {
-        switch ekind {
+    let process_row (key: Errlog.err_key) (err_data: Errlog.err_data) => {
+      let type_str = Localise.to_issue_id key.err_name;
+      if (key.in_footprint && error_filter key.err_desc key.err_name) {
+        switch key.err_kind {
         | Exceptions.Kerror =>
           found_errors := true;
           stats.nerrors = stats.nerrors + 1;
           let error_strs = {
             let pp1 fmt => F.fprintf fmt "%d: %s" stats.nerrors type_str;
             let pp2 fmt =>
-              F.fprintf fmt "  %a:%d" SourceFile.pp loc.Location.file loc.Location.line;
-            let pp3 fmt => F.fprintf fmt "  (%a)" Localise.pp_error_desc error_desc;
+              F.fprintf
+                fmt "  %a:%d" SourceFile.pp err_data.loc.Location.file err_data.loc.Location.line;
+            let pp3 fmt => F.fprintf fmt "  (%a)" Localise.pp_error_desc key.err_desc;
             [F.asprintf "%t" pp1, F.asprintf "%t" pp2, F.asprintf "%t" pp3]
           };
-          let trace = loc_trace_to_string_list linereader 1 ltr;
+          let trace = loc_trace_to_string_list linereader 1 err_data.loc_trace;
           stats.saved_errors = List.rev_append (error_strs @ trace @ [""]) stats.saved_errors
         | Exceptions.Kwarning => stats.nwarnings = stats.nwarnings + 1
         | Exceptions.Kinfo => stats.ninfos = stats.ninfos + 1
