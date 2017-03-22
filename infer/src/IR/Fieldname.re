@@ -10,7 +10,13 @@ open! IStd;
 
 let module Hashtbl = Caml.Hashtbl;
 
-type t = {fpos: int, fname: Mangled.t} [@@deriving compare];
+type t =
+  | Hidden /* Backend relies that Hidden is the smallest (first) field in Abs.should_raise_objc_leak */
+  | Clang Mangled.t
+  | Java string
+[@@deriving compare];
+
+let hidden_str = ".hidden";
 
 let equal = [%compare.equal : t];
 
@@ -24,22 +30,38 @@ let module Map = Caml.Map.Make {
   let compare = compare;
 };
 
+let module Clang = {
 
-/** Create a field name with the given position (field number in the CSU) */
-let create (n: Mangled.t) (position: int) => {fpos: position, fname: n};
+  /** Create a field name with the given position (field number in the CSU) */
+  let create (n: Mangled.t) => Clang n;
+};
+
+let module Java = {
+
+  /** Create a field name with the given position (field number in the CSU) */
+  let from_string n => Java n;
+};
 
 
 /** Convert a fieldname to a string. */
-let to_string fn => Mangled.to_string fn.fname;
+let to_string =
+  fun
+  | Hidden => hidden_str
+  | Java fname => fname
+  | Clang fname => Mangled.to_string fname;
 
 
 /** Convert a fieldname to a string, including the mangled part. */
-let to_complete_string fn => Mangled.to_string_full fn.fname;
+let to_complete_string =
+  fun
+  | Hidden => hidden_str
+  | Java fname => fname
+  | Clang fname => Mangled.to_string_full fname;
 
 
 /** Convert a fieldname to a simplified string with at most one-level path. */
 let to_simplified_string fn => {
-  let s = Mangled.to_string fn.fname;
+  let s = to_string fn;
   switch (String.rsplit2 s on::'.') {
   | Some (s1, s2) =>
     switch (String.rsplit2 s1 on::'.') {
@@ -53,18 +75,20 @@ let to_simplified_string fn => {
 
 /** Convert a fieldname to a flat string without path. */
 let to_flat_string fn => {
-  let s = Mangled.to_string fn.fname;
+  let s = to_string fn;
   switch (String.rsplit2 s on::'.') {
   | Some (_, s2) => s2
   | _ => s
   }
 };
 
-let pp f fn =>
-  /* only use for debug F.fprintf f "%a#%d" pp_name fn.fname fn.fpos */
-  Mangled.pp f fn.fname;
+let pp f =>
+  fun
+  | Hidden => Format.fprintf f "%s" hidden_str
+  | Java fname => Format.fprintf f "%s" fname
+  | Clang fname => Mangled.pp f fname;
 
-let pp_latex style f fn => Latex.pp_string style f (Mangled.to_string fn.fname);
+let pp_latex style f fn => Latex.pp_string style f (to_string fn);
 
 
 /** Returns the class part of the fieldname */
@@ -95,11 +119,9 @@ let java_is_outer_instance fn => {
   }
 };
 
-let fieldname_offset fn => fn.fpos;
-
 
 /** hidded fieldname constant */
-let hidden = create (Mangled.from_string ".hidden") 0;
+let hidden = Hidden;
 
 
 /** hidded fieldname constant */

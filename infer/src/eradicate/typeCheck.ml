@@ -221,9 +221,7 @@ let rec typecheck_expr
         match EradicateChecks.explain_expr tenv node index_exp with
         | Some s -> s
         | None -> "?" in
-      let fname = Fieldname.create
-          (Mangled.from_string index)
-          0 in
+      let fname = Fieldname.Java.from_string index in
       if checks.eradicate then
         EradicateChecks.check_array_access tenv
           find_canonical_duplicate
@@ -560,7 +558,7 @@ let typecheck_instr
           node
           instr_ref
           array_exp
-          (Fieldname.create (Mangled.from_string "length") 0)
+          (Fieldname.Java.from_string "length")
           ta
           loc
           false;

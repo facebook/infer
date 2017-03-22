@@ -15,8 +15,7 @@ let make_var var_str =
 let make_base ?(typ=Typ.Tvoid) base_str =
   AccessPath.base_of_pvar (make_var base_str) typ
 
-let make_fieldname fld_str =
-  Fieldname.create (Mangled.from_string fld_str) 0
+let make_fieldname = Fieldname.Java.from_string
 
 let make_field_access access_str =
   AccessPath.FieldAccess (make_fieldname access_str)

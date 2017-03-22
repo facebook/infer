@@ -24,9 +24,17 @@ let module Set: Caml.Set.S with type elt = t;
 /** Map for fieldnames */
 let module Map: Caml.Map.S with type key = t;
 
+let module Clang: {
 
-/** Create a field name at the given position */
-let create: Mangled.t => int => t;
+  /** Create a clang field name */
+  let create: Mangled.t => t;
+};
+
+let module Java: {
+
+  /** Create a java field name */
+  let from_string: string => t;
+};
 
 
 /** Convert a field name to a string. */

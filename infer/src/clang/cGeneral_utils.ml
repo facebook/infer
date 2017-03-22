@@ -102,7 +102,7 @@ let replicate n el = List.map ~f:(fun _ -> el) (list_range 0 (n -1))
 let mk_class_field_name field_qual_name =
   let field_name = field_qual_name.Clang_ast_t.ni_name in
   let class_name = CAst_utils.get_class_name_from_member field_qual_name in
-  Fieldname.create (Mangled.mangled field_name class_name) 0
+  Fieldname.Clang.create (Mangled.mangled field_name class_name)
 
 let is_cpp_translation translation_unit_context =
   let lang = translation_unit_context.CFrontend_config.lang in

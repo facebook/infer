@@ -1972,7 +1972,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
             (Exp.int len, [(index, Sil.Eexp (Exp.zero, Sil.inst_none))], Sil.inst_none)
       | Config.Java ->
           let mk_fld_sexp s =
-            let fld = Fieldname.create (Mangled.from_string s) 0 in
+            let fld = Fieldname.Java.from_string s in
             let se = Sil.Eexp (Exp.Var (Ident.create_fresh Ident.kprimed), Sil.Inone) in
             (fld, se) in
           let fields = ["java.lang.String.count"; "java.lang.String.hash"; "java.lang.String.offset"; "java.lang.String.value"] in
@@ -1989,7 +1989,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let root = Exp.Const (Const.Cclass (Ident.string_to_name s)) in
     let sexp = (* TODO: add appropriate fields *)
       Sil.Estruct
-        ([(Fieldname.create (Mangled.from_string "java.lang.Class.name") 0,
+        ([(Fieldname.Java.from_string "java.lang.Class.name",
            Sil.Eexp ((Exp.Const (Const.Cstr s), Sil.Inone)))], Sil.inst_none) in
     let class_texp =
       let class_type = Typ.Name.Java.from_string "java.lang.Class" in

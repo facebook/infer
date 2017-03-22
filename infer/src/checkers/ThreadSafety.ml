@@ -324,9 +324,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (* create a dummy write that represents mutating the contents of the container *)
           let open Domain in
           let dummy_fieldname =
-            Fieldname.create
-              (Mangled.from_string
-                 (container_write_string ^ (Typ.Procname.get_method callee_pname))) 0 in
+            Fieldname.Java.from_string
+              (container_write_string ^ (Typ.Procname.get_method callee_pname)) in
           let dummy_access_exp = Exp.Lfield (receiver_exp, dummy_fieldname, receiver_typ) in
           let callee_accesses =
             match AccessPath.of_lhs_exp dummy_access_exp receiver_typ ~f_resolve_id with

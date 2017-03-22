@@ -205,11 +205,9 @@ let translate_method_name m =
 
 
 let fieldname_create cn fs =
-  let fieldname cn fs =
-    let fieldname = (JBasics.fs_name fs) in
-    let classname = (JBasics.cn_name cn) in
-    Mangled.from_string (classname^"."^fieldname) in
-  Fieldname.create (fieldname cn fs) 0
+  let fieldname = (JBasics.fs_name fs) in
+  let classname = (JBasics.cn_name cn) in
+  Fieldname.Java.from_string (classname^"."^fieldname)
 
 let create_sil_class_field cn cf =
   let fs = cf.Javalib.cf_signature in
