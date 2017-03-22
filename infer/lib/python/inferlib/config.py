@@ -17,7 +17,7 @@ import os
 try:
     locale.setlocale(locale.LC_ALL, '')
     CODESET = locale.getlocale(locale.LC_CTYPE)[1]
-except locale.Error:
+except:
     CODESET = None
 if CODESET is None:
     CODESET = 'ascii'
