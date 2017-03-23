@@ -82,7 +82,10 @@ clause:
   | SET identifier ASSIGNMENT STRING
     { Logging.out "\tParsed desc clause\n"; CTL.CDesc ($2, $4) }
   | LET identifier ASSIGNMENT formula
-    { Logging.out "\tParsed let clause\n"; CTL.CLet ($2, $4) }
+    { Logging.out "\tParsed let clause\n"; CTL.CLet ($2, [], $4) }
+  | LET identifier LEFT_PAREN params RIGHT_PAREN ASSIGNMENT formula
+               { Logging.out "\tParsed let clause with formula identifier '%s(....)' \n" $2;
+                                   CTL.CLet($2, $4, $7) }
 ;
 
 atomic_formula:
@@ -93,7 +96,7 @@ atomic_formula:
   ;
 
  formula_id:
-  | identifier { Logging.out "\tParsed formula identifier '%s' \n" $1;
+ | identifier { Logging.out "\tParsed formula identifier '%s' \n" $1;
                  CTL.Atomic($1, [formula_id_const]) }
   ;
 

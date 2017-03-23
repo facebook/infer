@@ -137,49 +137,107 @@ let create_parsed_linters linters_def_file checkers : linter list =
     {condition; issue_desc; def_file = Some linters_def_file} in
   List.map ~f:do_one_checker checkers
 
+let rec apply_substitution f sub =
+  let sub_param p = try
+      snd (List.find_exn sub ~f:(fun (a,_) -> String.equal p a))
+    with Not_found -> p in
+  let sub_list_param ps =
+    List.map ps ~f:sub_param in
+  let open CTL in
+  match f with
+  | True
+  | False -> f
+  | Atomic (name, ps) -> Atomic (name, sub_list_param ps)
+  | Not f1 -> Not (apply_substitution f1 sub)
+  | And (f1, f2) -> And (apply_substitution f1 sub, apply_substitution f2 sub)
+  | Or (f1, f2) -> Or (apply_substitution f1 sub, apply_substitution f2 sub)
+  | Implies (f1, f2) -> Implies (apply_substitution f1 sub, apply_substitution f2 sub)
+  | InNode (node_type_list, f1) ->
+      InNode (sub_list_param node_type_list, apply_substitution f1 sub)
+  | AU (f1, f2) -> AU (apply_substitution f1 sub, apply_substitution f2 sub)
+  | EU (trans, f1, f2) ->
+      EU (trans, apply_substitution f1 sub, apply_substitution f2 sub)
+  | EF (trans, f1) -> EF (trans, apply_substitution f1 sub)
+  | AF f1 -> AF (apply_substitution f1 sub)
+  | AG f1 -> AG (apply_substitution f1 sub)
+  | EX (trans, f1) -> EX (trans, apply_substitution f1 sub)
+  | AX f1 -> AX (apply_substitution f1 sub)
+  | EH (cl, f1) -> EH (sub_list_param cl, apply_substitution f1 sub)
+  | EG (trans, f1) -> EG (trans, apply_substitution f1 sub)
+  | ET (ntl, sw, f1) ->
+      ET (sub_list_param ntl, sw, apply_substitution f1 sub)
+  | ETX (ntl, sw, f1) ->
+      ETX (sub_list_param ntl, sw, apply_substitution f1 sub)
 
 (* expands use of let defined formula id in checkers with their definition *)
 let expand_checkers checkers =
+  let fail_with_circular_macro_definition name error_msg =
+    Logging.out
+      "[ERROR]: Macro '%s' has a circular definition.\n Cycle:\n%s"
+      name error_msg;
+    failwith ("Cannot expand....\n") in
   let open CTL in
   let open Ctl_parser_types in
-  let rec expand acc map =
+  let rec expand acc map error_msg =
     match acc with
     | True
     | False -> acc
     | Atomic (name, [p]) when String.equal formula_id_const p ->
-        Logging.out "  -Expanding formula identifier '%s'\n" name;
+        (* constant case, macro with no params *)
+        let error_msg' = error_msg ^ "  -Expanding formula identifier '" ^ name ^"'\n" in
         (match Core.Std.String.Map.find map name with
-         | Some f1 -> expand f1 map
+         | Some (true, _, _) ->
+             fail_with_circular_macro_definition name error_msg'
+         | Some (false, params, f1) ->
+             let map' = Core.Std.String.Map.add map ~key:name ~data:(true, params, f1) in
+             expand f1 map' error_msg'
          | None -> failwith
-                     ("[ERROR]: Formula identifier '" ^ name ^ "' is undefined. Cannot expand."));
-    | Atomic _ -> acc
-    | Not f1 -> Not (expand f1 map)
-    | And (f1, f2) -> And (expand f1 map, expand f2 map)
-    | Or (f1, f2) -> Or (expand f1 map, expand f2 map)
-    | Implies (f1, f2) -> Implies (expand f1 map, expand f2 map)
-    | InNode (node_type_list, f1) -> InNode (node_type_list, expand f1 map)
-    | AU (f1, f2) -> AU (expand f1 map, expand f2 map)
-    | EU (trans, f1, f2) -> EU (trans, expand f1 map, expand f2 map)
-    | EF (trans, f1) -> EF (trans, expand f1 map)
-    | AF f1 -> AF (expand f1 map)
-    | AG f1 -> AG (expand f1 map)
-    | EX (trans, f1) -> EX (trans, expand f1 map)
-    | AX f1 -> AX (expand f1 map)
-    | EH (cl, f1) -> EH (cl, expand f1 map)
-    | EG (trans, f1) -> EG (trans, expand f1 map)
-    | ET (tl, sw, f1) -> ET (tl, sw, expand f1 map)
-    | ETX (tl, sw, f1) -> ETX (tl, sw, expand f1 map) in
+                     ("[ERROR]: Formula identifier '" ^ name ^ "' is undefined. Cannot expand."))
+    | Atomic (name, actual_param) -> (* it may be a macro *)
+        let error_msg' = error_msg ^ "  -Expanding formula identifier '" ^ name ^"'\n" in
+        (match Core.Std.String.Map.find map name with
+         | Some (true, _, _) ->
+             fail_with_circular_macro_definition name error_msg'
+         | Some (false, formal_params, f1) -> (* in this case it should be a defined macro *)
+             (match List.zip formal_params actual_param with
+              | Some sub ->
+                  let f1_sub = apply_substitution f1 sub in
+                  let map' = Core.Std.String.Map.add map
+                      ~key:name ~data:(true, formal_params, f1) in
+                  expand f1_sub map' error_msg'
+              | None -> failwith ("[ERROR]: Formula identifier '" ^ name ^
+                                  "' is no called with the right number of parameters"))
+         | None -> acc) (* in this case it should be a predicate *)
+    | Not f1 -> Not (expand f1 map error_msg)
+    | And (f1, f2) -> And (expand f1 map error_msg, expand f2 map error_msg)
+    | Or (f1, f2) -> Or (expand f1 map error_msg, expand f2 map error_msg)
+    | Implies (f1, f2) -> Implies (expand f1 map error_msg, expand f2 map error_msg)
+    | InNode (node_type_list, f1) -> InNode (node_type_list, expand f1 map error_msg)
+    | AU (f1, f2) -> AU (expand f1 map error_msg, expand f2 map error_msg)
+    | EU (trans, f1, f2) -> EU (trans, expand f1 map error_msg, expand f2 map error_msg)
+    | EF (trans, f1) -> EF (trans, expand f1 map error_msg)
+    | AF f1 -> AF (expand f1 map error_msg)
+    | AG f1 -> AG (expand f1 map error_msg)
+    | EX (trans, f1) -> EX (trans, expand f1 map error_msg)
+    | AX f1 -> AX (expand f1 map error_msg)
+    | EH (cl, f1) -> EH (cl, expand f1 map error_msg)
+    | EG (trans, f1) -> EG (trans, expand f1 map error_msg)
+    | ET (tl, sw, f1) -> ET (tl, sw, expand f1 map error_msg)
+    | ETX (tl, sw, f1) -> ETX (tl, sw, expand f1 map error_msg) in
   let expand_one_checker c =
     Logging.out " +Start expanding %s\n" c.name;
-    let map : CTL.t Core.Std.String.Map.t = Core.Std.String.Map.empty in
+    (* Map a formula id to a triple (visited, parameters, definition).
+       Visited is used during the expansion phase to understand if the
+       formula was already expanded and, if yes we have a cyclic definifion *)
+    let map : (bool * string list * CTL.t) Core.Std.String.Map.t = Core.Std.String.Map.empty in
     let map = List.fold ~f:(fun map' d -> match d with
-        | CLet (k,formula) -> Core.Std.Map.add map' ~key:k ~data:formula
+        | CLet (k, params, formula) -> Core.Std.Map.add map' ~key:k ~data:(false, params, formula)
         | _ -> map') ~init:map c.definitions in
     let exp_defs = List.fold ~f:(fun defs clause ->
         match clause with
         | CSet (report_when_const, phi) ->
             Logging.out "  -Expanding report_when\n";
-            CSet (report_when_const, expand phi map) :: defs
+            CSet (report_when_const, expand phi map "") :: defs
         | cl -> cl :: defs) ~init:[] c.definitions in
     { c with definitions = exp_defs} in
   let expanded_checkers = List.map ~f:expand_one_checker checkers in

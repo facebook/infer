@@ -76,7 +76,7 @@ type t =
 *)
 
 type clause =
-  | CLet  of string * t (* Let clause: let id = definifion;  *)
+  | CLet  of string * string list * t (* Let clause: let id = definifion;  *)
   | CSet of string * t (* Set clause: set id = definition *)
   | CDesc of string * string (* Description clause eg: set message = "..." *)
 

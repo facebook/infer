@@ -65,7 +65,7 @@ type t = (* A ctl formula *)
 
 *)
 type clause =
-  | CLet  of string * t (* Let clause: let id = definifion;  *)
+  | CLet  of string * string list * t (* Let clause: let id = definifion;  *)
   | CSet of string * t (* Set clause: set id = definition *)
   | CDesc of string * string (* Description clause eg: set message = "..." *)
 
@@ -257,7 +257,7 @@ let print_checker c =
   Logging.out "\nChecker name: %s\n" c.name;
   List.iter ~f:(fun d -> (match d with
       | CSet (clause_name, phi)
-      | CLet (clause_name, phi) ->
+      | CLet (clause_name, _, phi) ->
           Logging.out "    %s=  \n    %a\n\n"
             clause_name Debug.pp_formula phi
       | CDesc (clause_name, s) ->

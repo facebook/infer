@@ -153,7 +153,7 @@ DEFINE-CHECKER STRONG_DELEGATE_WARNING = {
 
 DEFINE-CHECKER GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL = {
 
-  LET is_global_var =
+  LET is_global_variable =
      is_objc_extension() AND is_global_var() AND (NOT is_const_var());
 
 	LET makes_an_expensive_call =
@@ -170,7 +170,7 @@ DEFINE-CHECKER GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL = {
 
   SET report_when =
 	   WHEN
-     		(is_global_var AND is_initialized_with_expensive_call)
+     		(is_global_variable AND is_initialized_with_expensive_call)
 		 HOLDS-IN-NODE VarDecl;
 
   SET message =

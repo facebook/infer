@@ -33,7 +33,7 @@
 
 - (void)bar {
   A* a = [[A alloc] init];
-  [a foo:5];
+  [a foo:5]; // Error: report MACRO_TEST1, MACRO_TEST2, MACRO_TEST3
 }
 
 @end
