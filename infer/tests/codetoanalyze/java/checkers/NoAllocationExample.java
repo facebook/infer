@@ -75,4 +75,15 @@ public class NoAllocationExample {
     }
   }
 
+  native boolean anotherRareCase();
+
+  @NoAllocation
+  void nestedUnlikely() {
+    if (Branch.unlikely(rareCase())) {
+      if (!Branch.unlikely(anotherRareCase())) {
+        allocates();
+      }
+    }
+  }
+
 }
