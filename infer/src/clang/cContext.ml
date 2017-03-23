@@ -94,15 +94,6 @@ let get_curr_class_ptr curr_class =
       get_ptr_from_decl_ref ocidi.ocidi_class_interface
   | _ -> decl_ptr
 
-let get_curr_class_name curr_class =
-  let class_decl_ptr = get_curr_class_ptr curr_class in
-  let _, name_info = match Option.bind
-                             (CAst_utils.get_decl class_decl_ptr)
-                             Clang_ast_proj.get_named_decl_tuple with
-  | Some result -> result
-  | None -> assert false in
-  CAst_utils.get_qualified_name name_info
-
 let get_curr_class_typename context =
   let tenv = context.tenv in
   let curr_class = get_curr_class context in

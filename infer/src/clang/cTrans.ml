@@ -437,7 +437,7 @@ struct
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
-  let get_builtin_pname_opt trans_unit_ctx name decl_opt type_ptr =
+  let get_builtin_pname_opt trans_unit_ctx qual_name decl_opt type_ptr =
     let get_deprecated_attr_arg decl =
       let open Clang_ast_t in
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
@@ -451,6 +451,7 @@ struct
                   coming from ASTExporter.h in facebook-clang-plugins *)
                assert false)
       | None -> None in
+    let name = QualifiedCppName.to_qual_string qual_name in
     let function_attr_opt = Option.bind decl_opt get_deprecated_attr_arg in
     match function_attr_opt with
     | Some attr when CTrans_models.is_modeled_attribute attr ->
@@ -473,12 +474,14 @@ struct
     let name_info, decl_ptr, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
     let decl_opt = CAst_utils.get_function_decl_with_body decl_ptr in
     Option.iter ~f:(call_translation context) decl_opt;
-    let name = CAst_utils.get_qualified_name name_info in
+    let qual_name = CAst_utils.get_qualified_name name_info in
     let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
     let pname =
-      match get_builtin_pname_opt context.translation_unit_context name decl_opt type_ptr with
+      match get_builtin_pname_opt context.translation_unit_context qual_name decl_opt type_ptr with
       | Some builtin_pname -> builtin_pname
-      | None -> CMethod_trans.create_procdesc_with_pointer context decl_ptr None name in
+      | None ->
+          let name = QualifiedCppName.to_qual_string qual_name in
+          CMethod_trans.create_procdesc_with_pointer context decl_ptr None name in
     { empty_res_trans with exps = [(Exp.Const (Const.Cfun pname), typ)] }
 
   let field_deref_trans trans_state stmt_info pre_trans_result decl_ref ~is_constructor_init =
@@ -566,7 +569,7 @@ struct
               type_ptr with
       | Some builtin_pname -> builtin_pname
       | None ->
-          let class_typename = Typ.Name.Cpp.from_string
+          let class_typename = Typ.Name.Cpp.from_qual_name Typ.NoTemplate
               (CAst_utils.get_class_name_from_member name_info) in
           CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_typename)
             method_name in

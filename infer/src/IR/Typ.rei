@@ -81,16 +81,16 @@ type t =
   | Tarray t static_length /** array type with statically fixed length */
 [@@deriving compare]
 and name =
-  | CStruct Mangled.t
-  | CUnion Mangled.t
-  | CppClass Mangled.t template_spec_info
+  | CStruct QualifiedCppName.t
+  | CUnion QualifiedCppName.t
+  | CppClass QualifiedCppName.t template_spec_info
   | JavaClass Mangled.t
-  | ObjcClass Mangled.t
-  | ObjcProtocol Mangled.t
+  | ObjcClass QualifiedCppName.t
+  | ObjcProtocol QualifiedCppName.t
 [@@deriving compare]
 and template_spec_info =
   | NoTemplate
-  | Template (string, list (option t))
+  | Template (QualifiedCppName.t, list (option t))
 [@@deriving compare];
 
 let module Name: {
@@ -113,7 +113,14 @@ let module Name: {
 
   /** name of the typename without qualifier */
   let name: t => string;
-  let module C: {let from_string: string => t; let union_from_string: string => t;};
+
+  /** qualified name of the type, may return nonsense for Java classes */
+  let qual_name: t => QualifiedCppName.t;
+  let module C: {
+    let from_string: string => t;
+    let from_qual_name: QualifiedCppName.t => t;
+    let union_from_qual_name: QualifiedCppName.t => t;
+  };
   let module Java: {
 
     /** Create a typename from a Java classname in the form "package.class" */
@@ -131,8 +138,7 @@ let module Name: {
   let module Cpp: {
 
     /** Create a typename from a C++ classname */
-    let from_string: string => t;
-    let from_template_string: template_spec_info => string => t;
+    let from_qual_name: template_spec_info => QualifiedCppName.t => t;
 
     /** [is_class name] holds if [name] names a C++ class */
     let is_class: t => bool;
@@ -141,7 +147,8 @@ let module Name: {
 
     /** Create a typename from a Objc classname */
     let from_string: string => t;
-    let protocol_from_string: string => t;
+    let from_qual_name: QualifiedCppName.t => t;
+    let protocol_from_qual_name: QualifiedCppName.t => t;
 
     /** [is_class name] holds if [name] names a Objc class */
     let is_class: t => bool;
@@ -266,7 +273,7 @@ let module Procname: {
   let module Set: Caml.Set.S with type elt = t;
 
   /** Create a C procedure name from plain and mangled name. */
-  let c: string => string => template_spec_info => c;
+  let c: QualifiedCppName.t => string => template_spec_info => c;
 
   /** Empty block name. */
   let empty_block: t;

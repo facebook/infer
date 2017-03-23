@@ -60,8 +60,8 @@ let get_interface_supers super_opt protocols =
   let super_class =
     match super_opt with
     | None -> []
-    | Some super -> [Typ.Name.Objc.from_string super] in
-  let protocol_names = List.map ~f:Typ.Name.Objc.protocol_from_string protocols in
+    | Some super -> [Typ.Name.Objc.from_qual_name super] in
+  let protocol_names = List.map ~f:Typ.Name.Objc.protocol_from_qual_name protocols in
   let super_classes = super_class@protocol_names in
   super_classes
 
@@ -76,8 +76,8 @@ let create_supers_fields type_ptr_to_sil_type tenv decl_list
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv type_ptr_to_sil_type tenv decl_info name_info decl_list ocidi =
   let class_name = CAst_utils.get_qualified_name name_info in
-  Logging.out_debug "ADDING: ObjCInterfaceDecl for '%s'\n" class_name;
-  let interface_name = Typ.Name.Objc.from_string class_name in
+  Logging.out_debug "ADDING: ObjCInterfaceDecl for '%a'\n" QualifiedCppName.pp class_name;
+  let interface_name = Typ.Name.Objc.from_qual_name class_name in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
   let decl_supers, decl_fields =
@@ -100,7 +100,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv decl_info name_info decl_list oc
   (* We add the special hidden counter_field for implementing reference counting *)
   let modelled_fields = Typ.Struct.objc_ref_counter_field :: CField_decl.modelled_field name_info in
   let all_fields = CGeneral_utils.append_no_duplicates_fields modelled_fields fields in
-  Logging.out_debug "Class %s field:\n" class_name;
+  Logging.out_debug "Class %a field:\n" QualifiedCppName.pp class_name;
   List.iter ~f:(fun (fn, _, _) ->
       Logging.out_debug "-----> field: '%s'\n" (Fieldname.to_string fn)) all_fields;
   ignore(
@@ -136,11 +136,12 @@ let interface_impl_declaration type_ptr_to_sil_type tenv decl =
   match decl with
   | ObjCImplementationDecl (decl_info, name_info, decl_list, _, idi) ->
       let class_name = CAst_utils.get_qualified_name name_info in
-      Logging.out_debug "ADDING: ObjCImplementationDecl for class '%s'\n" class_name;
+      Logging.out_debug
+        "ADDING: ObjCImplementationDecl for class '%a'\n" QualifiedCppName.pp class_name;
       let _ = add_class_decl type_ptr_to_sil_type tenv idi in
       let fields = CField_decl.get_fields type_ptr_to_sil_type tenv decl_list in
       CField_decl.add_missing_fields tenv class_name fields;
-      let class_tn_name = Typ.Name.Objc.from_string class_name in
+      let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
       let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
       let class_typ = Typ.Tstruct class_tn_name in
       CAst_utils.update_sil_types_map decl_key class_typ;

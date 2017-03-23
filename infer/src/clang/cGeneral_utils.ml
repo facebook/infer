@@ -102,8 +102,7 @@ let replicate n el = List.map ~f:(fun _ -> el) (list_range 0 (n -1))
 let mk_class_field_name field_qual_name =
   let field_name = field_qual_name.Clang_ast_t.ni_name in
   let class_name = CAst_utils.get_class_name_from_member field_qual_name in
-  let qual_class_name = QualifiedCppName.of_qual_string class_name in
-  Fieldname.Clang.from_qualified qual_class_name field_name
+  Fieldname.Clang.from_qualified class_name field_name
 
 let is_cpp_translation translation_unit_context =
   let lang = translation_unit_context.CFrontend_config.lang in
@@ -116,7 +115,7 @@ let is_objc_extension translation_unit_context =
   CFrontend_config.equal_clang_lang lang CFrontend_config.ObjCPP
 
 let get_var_name_mangled name_info var_decl_info =
-  let clang_name = CAst_utils.get_qualified_name name_info in
+  let clang_name = CAst_utils.get_qualified_name name_info |> QualifiedCppName.to_qual_string in
   let param_idx_opt = var_decl_info.Clang_ast_t.vdi_parm_index_in_function in
   let name_string =
     match clang_name, param_idx_opt with
@@ -175,5 +174,6 @@ let mk_sil_var trans_unit_ctx named_decl_info decl_info_type_ptr_opt procname ou
         let mangled_name = Mangled.mangled name_string mangled in
         Pvar.mk mangled_name procname
   | None ->
-      let name_string = CAst_utils.get_qualified_name named_decl_info in
+      let name_string = CAst_utils.get_qualified_name named_decl_info
+                        |> QualifiedCppName.to_qual_string in
       Pvar.mk (Mangled.from_string name_string) procname

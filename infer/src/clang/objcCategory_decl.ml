@@ -59,7 +59,7 @@ let get_base_class_name_from_category decl =
   | Some decl_ref ->
       (match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
        | Some ObjCInterfaceDecl (_, name_info, _, _, _) ->
-           Some (Typ.Name.Objc.from_string (CAst_utils.get_qualified_name name_info))
+           Some (Typ.Name.Objc.from_qual_name (CAst_utils.get_qualified_name name_info))
        | _ -> None)
   | None -> None
 
@@ -67,7 +67,7 @@ let get_base_class_name_from_category decl =
 (* to the corresponding class. Update the tenv accordingly.*)
 let process_category type_ptr_to_sil_type tenv class_name decl_info decl_list =
   let decl_fields = CField_decl.get_fields type_ptr_to_sil_type tenv decl_list in
-  let class_tn_name = Typ.Name.Objc.from_string class_name in
+  let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
   let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
   (match Tenv.lookup tenv class_tn_name with
@@ -76,7 +76,7 @@ let process_category type_ptr_to_sil_type tenv class_name decl_info decl_list =
        ignore(
          Tenv.mk_struct tenv
            ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:[] class_tn_name );
-       Logging.out_debug " Updating info for class '%s' in tenv\n" class_name
+       Logging.out_debug " Updating info for class '%a' in tenv\n" QualifiedCppName.pp class_name
    | _ -> ());
   Typ.Tstruct class_tn_name
 
@@ -86,7 +86,7 @@ let category_decl type_ptr_to_sil_type tenv decl =
   | ObjCCategoryDecl (decl_info, name_info, decl_list, _, cdi) ->
       let name = CAst_utils.get_qualified_name name_info in
       let class_name = get_classname_from_category_decl cdi in
-      Logging.out_debug "ADDING: ObjCCategoryDecl for '%s'\n" name;
+      Logging.out_debug "ADDING: ObjCCategoryDecl for '%a'\n" QualifiedCppName.pp name;
       let _ = add_class_decl type_ptr_to_sil_type tenv cdi in
       let typ = process_category type_ptr_to_sil_type tenv class_name decl_info decl_list in
       let _ = add_category_implementation type_ptr_to_sil_type tenv cdi in
@@ -99,7 +99,7 @@ let category_impl_decl type_ptr_to_sil_type tenv decl =
   | ObjCCategoryImplDecl (decl_info, name_info, decl_list, _, cii) ->
       let name = CAst_utils.get_qualified_name name_info in
       let class_name = get_classname_from_category_impl cii in
-      Logging.out_debug "ADDING: ObjCCategoryImplDecl for '%s'\n" name;
+      Logging.out_debug "ADDING: ObjCCategoryImplDecl for '%a'\n" QualifiedCppName.pp name;
       let _ = add_category_decl type_ptr_to_sil_type tenv cii in
       let typ = process_category type_ptr_to_sil_type tenv class_name decl_info decl_list in
       typ

@@ -32,6 +32,8 @@ let of_qual_string = {
 
 let to_qual_string = String.concat sep::"::";
 
+let pp fmt quals => Format.fprintf fmt "%s" (to_qual_string quals);
+
 let module Match = {
   type quals_matcher = Str.regexp;
   let regexp_string_of_qualifiers quals => Str.quote (String.concat sep::"::" quals) ^ "$";

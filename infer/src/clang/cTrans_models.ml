@@ -74,6 +74,7 @@ let get_first_param_typedef_string_opt type_ptr =
   match CAst_utils.get_desugared_type type_ptr with
   | Some Clang_ast_t.FunctionProtoType (_, _, {pti_params_type = [param_ptr]}) ->
       CAst_utils.name_opt_of_typedef_type_ptr param_ptr
+      |> Option.map ~f:QualifiedCppName.to_qual_string
   | _ -> None
 
 let is_release_builtin funct fun_type =

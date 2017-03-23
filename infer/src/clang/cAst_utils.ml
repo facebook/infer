@@ -17,26 +17,22 @@ module F = Format
 
 type type_ptr_to_sil_type = Tenv.t -> Clang_ast_t.type_ptr -> Typ.t
 
-let fold_qual_name qual_name_list =
-  match qual_name_list with
-  | [] -> ""
-  | name :: quals ->
-      let s = (List.fold_right ~f:(fun el res -> res ^ el ^ "::") quals ~init:"") ^ name in
-      let no_slash_space = Str.global_replace (Str.regexp "[/ ]") "_" s in
-      no_slash_space
+let sanitize_name = Str.global_replace (Str.regexp "[/ ]") "_"
+let get_qual_name qual_name_list =
+  List.rev_map ~f:sanitize_name qual_name_list |> QualifiedCppName.of_list
 
 let get_qualified_name name_info =
-  fold_qual_name name_info.Clang_ast_t.ni_qual_name
+  get_qual_name name_info.Clang_ast_t.ni_qual_name
 
 let get_unqualified_name name_info =
   let name = match name_info.Clang_ast_t.ni_qual_name with
     | name :: _ -> name
     | [] -> name_info.Clang_ast_t.ni_name in
-  fold_qual_name [name]
+  sanitize_name name
 
 let get_class_name_from_member member_name_info =
   match member_name_info.Clang_ast_t.ni_qual_name with
-  | _ :: class_qual_list -> fold_qual_name class_qual_list
+  | _ :: class_qual_list -> get_qual_name class_qual_list
   | [] -> assert false
 
 let make_name_decl name = {
@@ -178,7 +174,7 @@ let name_of_typedef_type_info {Clang_ast_t.tti_decl_ptr} =
   match get_decl tti_decl_ptr with
   | Some TypedefDecl (_, name_decl_info, _, _, _) ->
       get_qualified_name name_decl_info
-  | _ -> ""
+  | _ -> QualifiedCppName.empty
 
 let name_opt_of_typedef_type_ptr type_ptr =
   match get_type type_ptr with
@@ -255,8 +251,8 @@ let full_name_of_decl_opt decl_opt =
   | Some decl ->
       (match Clang_ast_proj.get_named_decl_tuple decl with
        | Some (_, name_info) -> get_qualified_name name_info
-       | None -> "")
-  | None -> ""
+       | None -> QualifiedCppName.empty)
+  | None -> QualifiedCppName.empty
 
 (* Generates a unique number for each variant of a type. *)
 let get_tag ast_item =
@@ -280,7 +276,7 @@ let generate_key_decl decl =
   let buffer = Buffer.create 16 in
   let name = full_name_of_decl_opt (Some decl) in
   Buffer.add_string buffer (string_of_int (get_tag decl));
-  Buffer.add_string buffer name;
+  Buffer.add_string buffer (QualifiedCppName.to_qual_string name);
   Buffer.contents buffer
 
 let rec get_super_if decl =
@@ -386,7 +382,7 @@ let if_decl_to_di_pointer_opt if_decl =
 
 let is_instance_type type_ptr =
   match name_opt_of_typedef_type_ptr type_ptr with
-  | Some name -> String.equal name "instancetype"
+  | Some name -> String.equal (QualifiedCppName.to_qual_string name) "instancetype"
   | None -> false
 
 let return_type_matches_class_type rtp type_decl_pointer =

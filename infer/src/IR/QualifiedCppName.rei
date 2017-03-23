@@ -16,6 +16,7 @@ let empty: t;
 
 let equal: t => t => bool;
 
+
 /** attempts to parse the argument into a list::of::possibly::templated<T>::qualifiers */
 let of_qual_string: string => t;
 
@@ -27,12 +28,15 @@ let to_qual_string: t => string;
 /** append qualifier to the end (innermost scope) of the qualified name */
 let append_qualifier: t => qual::string => t;
 
+
 /** returns list of qualifers */
 let to_list: t => list string;
 
 
 /** given list of qualifiers in normal order produce qualified name ["std", "move"] */
 let of_list: list string => t;
+
+let pp: Format.formatter => t => unit;
 
 /* Module to match qualified C++ procnames "fuzzily", that is up to namescapes and templating. In
     particular, this deals with the following issues:

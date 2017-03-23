@@ -32,7 +32,7 @@ let rec get_mangled_method_name function_decl_info method_decl_info =
 let get_template_info tenv (fdi : Clang_ast_t.function_decl_info) : Typ.template_spec_info =
   match fdi.fdi_template_specialization with
   | Some spec_info -> Typ.Template (
-      "",
+      QualifiedCppName.empty,
       List.map spec_info.tsi_specialization_args ~f:(function
           | `Type type_ptr -> Some (CType_decl.type_ptr_to_sil_type tenv type_ptr)
           | _ -> None))
@@ -60,7 +60,7 @@ let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
     | _ -> Typ.NoTemplate in
   let mangled = file ^ mangled_name in
   if String.is_empty mangled then
-    Typ.Procname.from_string_c_fun name
+    Typ.Procname.from_string_c_fun (QualifiedCppName.to_qual_string name)
   else
     Typ.Procname.C (Typ.Procname.c name mangled template_info)
 
@@ -121,7 +121,8 @@ let get_class_typename ?tenv method_decl_info =
 
 module NoAstDecl = struct
   let c_function_of_string translation_unit_context tenv name =
-    mk_c_function translation_unit_context ~tenv name None
+    let qual_name = QualifiedCppName.of_qual_string name in
+    mk_c_function translation_unit_context ~tenv qual_name None
 
   let cpp_method_of_string tenv class_name method_name =
     mk_cpp_method ~tenv class_name method_name None

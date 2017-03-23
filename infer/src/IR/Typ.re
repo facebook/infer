@@ -135,16 +135,16 @@ let module T = {
     | Tarray t static_length /** array type with statically fixed length */
   [@@deriving compare]
   and name =
-    | CStruct Mangled.t
-    | CUnion Mangled.t
-    | CppClass Mangled.t template_spec_info
+    | CStruct QualifiedCppName.t
+    | CUnion QualifiedCppName.t
+    | CppClass QualifiedCppName.t template_spec_info
     | JavaClass Mangled.t
-    | ObjcClass Mangled.t
-    | ObjcProtocol Mangled.t
+    | ObjcClass QualifiedCppName.t
+    | ObjcProtocol QualifiedCppName.t
   [@@deriving compare]
   and template_spec_info =
     | NoTemplate
-    | Template (string, list (option t))
+    | Template (QualifiedCppName.t, list (option t))
   [@@deriving compare];
   let equal = [%compare.equal : t];
   let hash = Hashtbl.hash;
@@ -160,9 +160,17 @@ let module Name = {
     | CStruct name
     | CUnion name
     | CppClass name _
-    | JavaClass name
     | ObjcClass name
-    | ObjcProtocol name => Mangled.to_string name;
+    | ObjcProtocol name => QualifiedCppName.to_qual_string name
+    | JavaClass name => Mangled.to_string name;
+  let qual_name =
+    fun
+    | CStruct name
+    | CUnion name
+    | CppClass name _
+    | ObjcClass name
+    | ObjcProtocol name => name
+    | JavaClass _ => QualifiedCppName.empty;
   let to_string tname => {
     let prefix =
       fun
@@ -192,8 +200,9 @@ let module Name = {
     | _ => false
     };
   let module C = {
-    let from_string name_str => CStruct (Mangled.from_string name_str);
-    let union_from_string name_str => CUnion (Mangled.from_string name_str);
+    let from_qual_name qual_name => CStruct qual_name;
+    let from_string name_str => QualifiedCppName.of_qual_string name_str |> from_qual_name;
+    let union_from_qual_name qual_name => CUnion qual_name;
   };
   let module Java = {
     let from_string name_str => JavaClass (Mangled.from_string name_str);
@@ -212,17 +221,16 @@ let module Name = {
     let java_lang_cloneable = from_string "java.lang.Cloneable";
   };
   let module Cpp = {
-    let from_string name_str => CppClass (Mangled.from_string name_str) NoTemplate;
-    let from_template_string template_spec_info name =>
-      CppClass (Mangled.from_string name) template_spec_info;
+    let from_qual_name template_spec_info qual_name => CppClass qual_name template_spec_info;
     let is_class =
       fun
       | CppClass _ => true
       | _ => false;
   };
   let module Objc = {
-    let from_string name_str => ObjcClass (Mangled.from_string name_str);
-    let protocol_from_string name_str => ObjcProtocol (Mangled.from_string name_str);
+    let from_qual_name qual_name => ObjcClass qual_name;
+    let from_string name_str => QualifiedCppName.of_qual_string name_str |> from_qual_name;
+    let protocol_from_qual_name qual_name => ObjcProtocol qual_name;
     let is_class =
       fun
       | ObjcClass _ => true
@@ -407,7 +415,7 @@ let module Procname = {
   [@@deriving compare];
 
   /** Type of c procedure names. */
-  type c = {name: string, mangled: option string, template_args: template_spec_info}
+  type c = {name: QualifiedCppName.t, mangled: option string, template_args: template_spec_info}
   [@@deriving compare];
   type objc_cpp_method_kind =
     | CPPMethod (option string) /** with mangling */
@@ -492,12 +500,13 @@ let module Procname = {
     | None => (None, package_classname)
     };
   let split_typename typename => split_classname (Name.name typename);
-  let c (name: string) (mangled: string) (template_args: template_spec_info) => {
+  let c (name: QualifiedCppName.t) (mangled: string) (template_args: template_spec_info) => {
     name,
     mangled: Some mangled,
     template_args
   };
-  let from_string_c_fun (name: string) => C {name, mangled: None, template_args: NoTemplate};
+  let from_string_c_fun (name: string) =>
+    C {name: QualifiedCppName.of_qual_string name, mangled: None, template_args: NoTemplate};
   let java class_name return_type method_name parameters kind => {
     class_name,
     return_type,
@@ -576,7 +585,7 @@ let module Procname = {
   let get_method =
     fun
     | ObjC_Cpp name => name.method_name
-    | C {name} => name
+    | C {name} => QualifiedCppName.to_qual_string name
     | Block name => name
     | Java j => j.method_name
     | Linters_dummy_method => "Linters_dummy_method";
@@ -783,15 +792,19 @@ let module Procname = {
     };
   let get_global_name_of_initializer =
     fun
-    | C {name} when String.is_prefix prefix::Config.clang_initializer_prefix name => {
+    | C {name}
+        when
+          String.is_prefix
+            prefix::Config.clang_initializer_prefix (QualifiedCppName.to_qual_string name) => {
+        let name_str = QualifiedCppName.to_qual_string name;
         let prefix_len = String.length Config.clang_initializer_prefix;
-        Some (String.sub name pos::prefix_len len::(String.length name - prefix_len))
+        Some (String.sub name_str pos::prefix_len len::(String.length name_str - prefix_len))
       }
     | _ => None;
 
   /** to_string for C_function type */
   let to_readable_string (c1, c2) verbose => {
-    let plain = c1;
+    let plain = QualifiedCppName.to_qual_string c1;
     if verbose {
       switch c2 {
       | None => plain
@@ -884,12 +897,10 @@ let module Procname = {
 
   /** Pretty print a set of proc names */
   let pp_set fmt set => Set.iter (fun pname => F.fprintf fmt "%a " pp pname) set;
-  let objc_cpp_get_class_qualifiers objc_cpp => QualifiedCppName.of_qual_string (
-    Name.name objc_cpp.class_name
-  );
+  let objc_cpp_get_class_qualifiers objc_cpp => Name.qual_name objc_cpp.class_name;
   let get_qualifiers pname =>
     switch pname {
-    | C {name} => QualifiedCppName.of_qual_string name
+    | C {name} => name
     | ObjC_Cpp objc_cpp =>
       objc_cpp_get_class_qualifiers objc_cpp |>
       QualifiedCppName.append_qualifier qual::objc_cpp.method_name

@@ -198,7 +198,9 @@ let is_property_pointer_type an =
        | Some ObjCObjectPointerType _
        | Some BlockPointerType _ -> true
        | Some TypedefType (_, tti) ->
-           String.equal (CAst_utils.name_of_typedef_type_info tti) CFrontend_config.id_cl
+           let typedef_str = CAst_utils.name_of_typedef_type_info tti
+                             |> QualifiedCppName.to_qual_string in
+           String.equal typedef_str CFrontend_config.id_cl
        | exception Not_found -> false
        | _ -> false)
   | _ -> false

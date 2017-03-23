@@ -29,7 +29,7 @@ let fields_superclass tenv interface_decl_info =
   | Some dr ->
       (match dr.Clang_ast_t.dr_name with
        | Some sc ->
-           let classname = Typ.Name.Objc.from_string (CAst_utils.get_qualified_name sc) in
+           let classname = Typ.Name.Objc.from_qual_name (CAst_utils.get_qualified_name sc) in
            get_fields_super_classes tenv classname
        | _ -> [])
   | _ -> []
@@ -78,12 +78,12 @@ let rec get_fields type_ptr_to_sil_type tenv decl_list =
 (* Add potential extra fields defined only in the implementation of the class *)
 (* to the info given in the interface. Update the tenv accordingly. *)
 let add_missing_fields tenv class_name missing_fields =
-  let class_tn_name = Typ.Name.Objc.from_string class_name in
+  let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
   match Tenv.lookup tenv class_tn_name with
   | Some ({ fields } as struct_typ) ->
       let new_fields = CGeneral_utils.append_no_duplicates_fields fields missing_fields in
       ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name);
-      Logging.out_debug " Updating info for class '%s' in tenv\n" class_name
+      Logging.out_debug " Updating info for class '%a' in tenv\n" QualifiedCppName.pp class_name
   | _ -> ()
 
 let modelled_fields_in_classes =

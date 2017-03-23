@@ -45,8 +45,6 @@ val get_cg : t -> Cg.t
 
 val get_curr_class : t -> curr_class
 
-val get_curr_class_name : curr_class -> string
-
 val get_curr_class_typename : t -> Typ.Name.t
 
 val get_curr_class_decl_ptr : curr_class -> Clang_ast_t.pointer

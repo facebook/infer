@@ -41,13 +41,13 @@ val add_enum_constant : Clang_ast_t.pointer -> Clang_ast_t.pointer option -> uni
 val get_enum_constant_exp : Clang_ast_t.pointer -> Clang_ast_t.pointer option * Exp.t option
 
 (** returns sanitized, fully qualified name given name info *)
-val get_qualified_name : Clang_ast_t.named_decl_info -> string
+val get_qualified_name : Clang_ast_t.named_decl_info -> QualifiedCppName.t
 
 (** returns sanitized unqualified name given name info *)
 val get_unqualified_name : Clang_ast_t.named_decl_info -> string
 
 (** returns qualified class name given member name info *)
-val get_class_name_from_member : Clang_ast_t.named_decl_info -> string
+val get_class_name_from_member : Clang_ast_t.named_decl_info -> QualifiedCppName.t
 
 (** looks up clang pointer to type and returns c_type. It requires type_ptr to be `TPtr. *)
 val get_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
@@ -64,10 +64,10 @@ val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl option
     NOTE: this doesn't expand type, it only converts type_ptr to string *)
 val string_of_type_ptr : Clang_ast_t.type_ptr -> string
 
-val name_of_typedef_type_info : Clang_ast_t.typedef_type_info -> string
+val name_of_typedef_type_info : Clang_ast_t.typedef_type_info -> QualifiedCppName.t
 
 (** returns name of typedef if type_ptr points to Typedef, None otherwise *)
-val name_opt_of_typedef_type_ptr : Clang_ast_t.type_ptr -> string option
+val name_opt_of_typedef_type_ptr : Clang_ast_t.type_ptr -> QualifiedCppName.t option
 
 val string_of_qual_type : Clang_ast_t.qual_type -> string
 
@@ -98,7 +98,7 @@ val is_const_expr_var : Clang_ast_t.decl -> bool
 
 val is_ptr_to_objc_class : Clang_ast_t.c_type option -> string -> bool
 
-val full_name_of_decl_opt : Clang_ast_t.decl option -> string
+val full_name_of_decl_opt : Clang_ast_t.decl option -> QualifiedCppName.t
 
 (** Generates a key for a statement based on its sub-statements and the statement tag. *)
 val generate_key_stmt : Clang_ast_t.stmt -> string

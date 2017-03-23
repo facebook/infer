@@ -24,8 +24,8 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
       (* Protocol_type_info contains the methods composing the protocol. *)
       (* Here we are giving a similar treatment as interfaces (see above)*)
       (* It may turn out that we need a more specific treatment for protocols*)
-      Logging.out_debug "ADDING: ObjCProtocolDecl for '%s'\n" name;
-      let protocol_name = Typ.Name.Objc.protocol_from_string name in
+      Logging.out_debug "ADDING: ObjCProtocolDecl for '%a'\n" QualifiedCppName.pp name;
+      let protocol_name = Typ.Name.Objc.protocol_from_qual_name name in
       let decl_key = `DeclPtr decl_info.Clang_ast_t.di_pointer in
       CAst_utils.update_sil_types_map decl_key (Typ.Tstruct protocol_name);
       ignore( Tenv.mk_struct tenv ~methods:[] protocol_name );

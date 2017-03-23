@@ -55,10 +55,10 @@ let create_c_record_typename opt_type =
   | `Type s ->
       (let buf = Str.split (Str.regexp "[ \t]+") s in
        match buf with
-       | "struct":: _ -> Typ.Name.C.from_string
-       | "class":: _ -> Typ.Name.Cpp.from_string
-       | "union":: _ -> Typ.Name.C.union_from_string
-       | _ -> Typ.Name.C.from_string)
+       | "struct":: _ -> Typ.Name.C.from_qual_name
+       | "class":: _ -> Typ.Name.Cpp.from_qual_name Typ.NoTemplate
+       | "union":: _ -> Typ.Name.C.union_from_qual_name
+       | _ -> Typ.Name.C.from_qual_name)
   | _ -> assert false
 
 let get_class_template_name = function
@@ -83,7 +83,7 @@ let translate_as_type_ptr_matcher =
 
 let get_translate_as_friend_decl decl_list =
   let is_translate_as_friend_name (_, name_info) =
-    let qual_name = QualifiedCppName.of_qual_string (CAst_utils.get_qualified_name name_info) in
+    let qual_name = CAst_utils.get_qualified_name name_info in
     QualifiedCppName.Match.match_qualifiers translate_as_type_ptr_matcher qual_name in
   let get_friend_decl_opt (decl : Clang_ast_t.decl) = match decl with
     | FriendDecl (_, `Type type_ptr) -> CAst_utils.get_decl_from_typ_ptr type_ptr
@@ -169,17 +169,17 @@ and get_record_typename ?tenv decl =
   | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _) ->
       (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
-      let name_str = CAst_utils.get_qualified_name name_info in
+      let qual_name = CAst_utils.get_qualified_name name_info in
       let templ_info = match tenv with
         | Some t -> get_template_specialization t decl
         | None -> Typ.NoTemplate in
-      Typ.Name.Cpp.from_template_string templ_info name_str
+      Typ.Name.Cpp.from_qual_name templ_info qual_name
   | ObjCInterfaceDecl (_, name_info, _, _, _)
   | ObjCImplementationDecl (_, name_info, _, _, _)
   | ObjCProtocolDecl (_, name_info, _, _, _)
   | ObjCCategoryDecl (_, name_info, _, _, _)
   | ObjCCategoryImplDecl (_, name_info, _, _, _) ->
-      CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.from_string
+      CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.from_qual_name
   | _ -> assert false
 
 (** fetches list of superclasses for C++ classes *)

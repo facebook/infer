@@ -21,6 +21,6 @@ val fields_superclass : Tenv.t -> Clang_ast_t.obj_c_interface_decl_info -> field
 val build_sil_field : CAst_utils.type_ptr_to_sil_type -> Tenv.t -> Clang_ast_t.named_decl_info ->
   Clang_ast_t.type_ptr -> Clang_ast_t.property_attribute list -> field_type
 
-val add_missing_fields : Tenv.t -> string -> field_type list -> unit
+val add_missing_fields : Tenv.t -> QualifiedCppName.t -> field_type list -> unit
 
 val modelled_field : Clang_ast_t.named_decl_info -> field_type list
