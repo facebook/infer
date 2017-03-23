@@ -1,14 +1,22 @@
-(*
- * Copyright (c) 2016 - present Facebook, Inc.
+/*
+ * Copyright (c) 2015 - present Facebook, Inc.
  * All rights reserved.
  *
  * This source code is licensed under the BSD style license found in the
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
- *)
+ */
 
-open! IStd
+// _SHOULD_BE_SKIPPED_
 
-let is_custom_init _ _  = false
+package codetoanalyze.java.checkers;
 
-let is_logging_method _ = false
+public class SkippedClass {
+
+  Object f;
+
+  public static SkippedClass returnOwned() {
+    return new SkippedClass();
+  }
+
+}

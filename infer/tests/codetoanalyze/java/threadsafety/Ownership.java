@@ -371,6 +371,11 @@ public class Ownership {
     o.f = new Object();
   }
 
+  void ownInSkippedCodeOk() {
+    SkippedClass c = SkippedClass.returnOwned();
+    c.f = new Object();
+  }
+
 }
 
 

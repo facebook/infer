@@ -1,3 +1,9 @@
 {
-  "threadsafe-aliases": ["MyThreadSafeAlias1", "codetoanalyze.java.checkers.MyThreadSafeAlias2"]
+  "threadsafe-aliases": ["MyThreadSafeAlias1", "codetoanalyze.java.checkers.MyThreadSafeAlias2"],
+  "skip-translation": [
+    {
+      "language": "Java",
+      "source_contains": "_SHOULD_BE_SKIPPED_"
+    }
+  ]
 }

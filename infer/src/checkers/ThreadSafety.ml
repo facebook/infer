@@ -392,7 +392,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             lhs_access_path target_exp target_typ ~f_resolve_id astate.attribute_map extras in
         { astate with attribute_map; }
 
-    | Sil.Call (ret_opt, Const (Cfun callee_pname), actuals, loc, _) ->
+    | Sil.Call (ret_opt, Const (Cfun callee_pname), actuals, loc, call_flags) ->
         let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
           if is_thread_utils_method "assertMainThread" callee_pname then
@@ -500,6 +500,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         extras in
                     { astate with locks; threads; accesses; attribute_map; }
                 | None ->
+                    let should_assume_returns_ownership (call_flags : CallFlags.t) actuals =
+                      (* assume non-interface methods with no summary and no parameters return
+                         ownership *)
+                      not (call_flags.cf_interface) && List.is_empty actuals in
                     if is_box callee_pname
                     then
                       match ret_opt, actuals with
@@ -520,9 +524,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                           end
                       | _ ->
                           astate
-                    else if FbThreadSafety.is_graphql_constructor callee_pname
+                    else if should_assume_returns_ownership call_flags actuals
                     then
-                      (* assume generated GraphQL code returns ownership *)
                       match ret_opt with
                       | Some (ret_id, ret_typ) ->
                           let attribute_map =
