@@ -20,23 +20,26 @@ let to_list quals => quals;
 
 let of_list quals => quals;
 
+let cpp_separator = "::";
+
 /* This is simplistic and will give the wrong answer in some cases, eg
    "foo<bar::baz<goo>>::someMethod" will get parsed as ["foo<bar", "baz<goo>>",
-   "someMethod"]. Ideally, we would keep the list of qualifiers in the procname, which would save us
-   from having to properly parse them. */
+   "someMethod"]. Avoid using it if possible */
 let of_qual_string = {
-  let class_sep_regex = Str.regexp_string "::";
+  let class_sep_regex = Str.regexp_string cpp_separator;
   /* wait until here to define the function so that [class_sep_regex] is only computed once */
   Str.split class_sep_regex
 };
 
-let to_qual_string = String.concat sep::"::";
+let to_qual_string = String.concat sep::cpp_separator;
 
 let pp fmt quals => Format.fprintf fmt "%s" (to_qual_string quals);
 
 let module Match = {
   type quals_matcher = Str.regexp;
-  let regexp_string_of_qualifiers quals => Str.quote (String.concat sep::"::" quals) ^ "$";
+  let matching_separator = "#";
+  let regexp_string_of_qualifiers quals =>
+    Str.quote (String.concat sep::matching_separator quals) ^ "$";
   let qualifiers_list_matcher quals_list =>
     (
       if (List.is_empty quals_list) {
@@ -63,6 +66,6 @@ let module Match = {
       let no_template_name s => List.hd_exn (String.split on::'<' s);
       List.map f::no_template_name quals
     };
-    Str.string_match matcher (String.concat sep::"::" normalized_qualifiers) 0
+    Str.string_match matcher (String.concat sep::matching_separator normalized_qualifiers) 0
   };
 };

@@ -24,7 +24,6 @@ int possible_npe(std::vector<X> in) {
   return 1;
 }
 
-/* FIXME: this test doesn't work with stdlibc++ headers
 int impossible_npe(std::vector<X> in) {
   int* x = nullptr;
   for (auto iter = in.begin(); iter != in.end(); ++iter) {
@@ -34,5 +33,4 @@ int impossible_npe(std::vector<X> in) {
   }
   return 1;
 }
-*/
 }

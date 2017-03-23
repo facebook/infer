@@ -249,7 +249,7 @@ let whitelisted_cpp_methods = [
 let whitelisted_cpp_classes = [
   "std::__less";
   "std::__wrap_iter"; (* libc++ internal name of vector iterator *)
-  "std::__normal_iterator"; (* libstdc++ internal name of vector iterator *)
+  "__gnu_cxx::__normal_iterator"; (* libstdc++ internal name of vector iterator *)
 ]
 
 type dynamic_dispatch_policy = [
