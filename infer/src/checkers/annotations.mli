@@ -78,9 +78,10 @@ val ia_is_integrity_source : Annot.Item.t -> bool
 val ia_is_integrity_sink : Annot.Item.t -> bool
 val ia_is_guarded_by : Annot.Item.t -> bool
 val ia_is_not_thread_safe : Annot.Item.t -> bool
-val ia_is_ui_thread : Annot.Item.t -> bool
-val ia_is_thread_confined : Annot.Item.t -> bool
 val ia_is_returns_ownership : Annot.Item.t -> bool
+val ia_is_synchronized_collection : Annot.Item.t -> bool
+val ia_is_thread_confined : Annot.Item.t -> bool
+val ia_is_ui_thread : Annot.Item.t -> bool
 val ia_is_volatile : Annot.Item.t -> bool
 
 (** return true if the given predicate evaluates to true on an annotation of one of [pdesc]'s

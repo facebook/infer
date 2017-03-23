@@ -13,13 +13,17 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import android.support.annotation.UiThread;
 
-import com.facebook.infer.annotation.ThreadSafe;
 import com.facebook.infer.annotation.Functional;
-import com.facebook.infer.annotation.ThreadConfined;
 import com.facebook.infer.annotation.ReturnsOwnership;
+import com.facebook.infer.annotation.SynchronizedCollection;
+import com.facebook.infer.annotation.ThreadConfined;
+import com.facebook.infer.annotation.ThreadSafe;
 
 /** tests for classes and method annotations that are meaningful w.r.t thread-safety */
 
@@ -340,6 +344,17 @@ class Annotations implements Interface {
 
   public void writeToAssumedThreadSafeClassOk(AssumedThreadSafe c) {
     c.writeOk();
+  }
+
+  @SynchronizedCollection
+  private final Map<Object,Object> mSynchronizedMap = Collections.synchronizedMap(new HashMap());
+
+  public void synchronizedMapOk1() {
+    mSynchronizedMap.put(new Object(), new Object());
+  }
+
+  public void synchronizedMapOk2(Annotations a) {
+    a.mSynchronizedMap.put(new Object(), new Object());
   }
 
 }

@@ -318,9 +318,36 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           PatternMatch.supertype_exists tenv is_container_write_ typename &&
           not (PatternMatch.supertype_exists tenv is_threadsafe_collection typename)
       | _ -> false in
-    let add_container_write callee_pname actuals ~f_resolve_id callee_loc =
+    let add_container_write callee_pname actuals ~f_resolve_id callee_loc tenv =
       match actuals with
       | (receiver_exp, receiver_typ) :: _ ->
+          (* return true if field pointing to container is marked @SyncrhonizedContainer *)
+          let is_synchronized_container ((_, base_typ), accesses) =
+            let is_annotated_synchronized base_typename container_field tenv =
+              match Tenv.lookup tenv base_typename with
+              | Some base_typ ->
+                  Annotations.field_has_annot
+                    container_field
+                    base_typ Annotations.ia_is_synchronized_collection
+              | None ->
+                  false in
+            match List.rev accesses with
+            | AccessPath.FieldAccess base_field ::
+              AccessPath.FieldAccess container_field :: _->
+                let base_typename =
+                  Typ.Name.Java.from_string (Fieldname.java_get_class base_field) in
+                is_annotated_synchronized base_typename container_field tenv
+            | [AccessPath.FieldAccess container_field] ->
+                begin
+                  match base_typ with
+                  | Typ.Tstruct base_typename | Tptr (Tstruct base_typename, _) ->
+                      is_annotated_synchronized base_typename container_field tenv
+                  | _ ->
+                      false
+                end
+            | _ ->
+                false in
+
           (* create a dummy write that represents mutating the contents of the container *)
           let open Domain in
           let dummy_fieldname =
@@ -329,12 +356,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let dummy_access_exp = Exp.Lfield (receiver_exp, dummy_fieldname, receiver_typ) in
           let callee_accesses =
             match AccessPath.of_lhs_exp dummy_access_exp receiver_typ ~f_resolve_id with
-            | Some container_ap ->
+            | Some container_ap
+              when not (is_synchronized_container (AccessPath.Raw.truncate container_ap)) ->
                 AccessDomain.add_access
                   (Unprotected (Some 0))
                   (make_access container_ap Write callee_loc)
                   AccessDomain.empty
-            | None ->
+            | _ ->
                 AccessDomain.empty in
           Some (false, false, callee_accesses, AttributeSetDomain.empty)
       | _ ->
@@ -344,7 +372,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let get_summary caller_pdesc callee_pname actuals ~f_resolve_id callee_loc tenv =
       if is_container_write callee_pname tenv
       then
-        add_container_write callee_pname actuals ~f_resolve_id callee_loc
+        add_container_write callee_pname actuals ~f_resolve_id callee_loc tenv
       else
         Summary.read_summary caller_pdesc callee_pname in
     (* return true if the given procname boxes a primitive type into a reference type *)
