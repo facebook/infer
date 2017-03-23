@@ -419,7 +419,6 @@ let compute_post
   = fun { pdesc; tenv; extras = get_pdesc } ->
     let cfg = CFG.from_pdesc pdesc in
     let pdata = ProcData.make pdesc tenv get_pdesc in
-    let pname = Procdesc.get_proc_name pdesc in
     let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.bot pdata in
     let entry_mem =
       let entry_id = CFG.id (CFG.start_node cfg) in
@@ -433,7 +432,6 @@ let compute_post
     Report.report_error pdesc cond_set;
     match entry_mem, exit_mem with
     | Some entry_mem, Some exit_mem ->
-        Summary.write_summary pname (entry_mem, exit_mem, cond_set);
         Some (entry_mem, exit_mem, cond_set)
     | _ -> None
 
