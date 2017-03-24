@@ -26,9 +26,9 @@ let src_snk_pairs () =
   let parse_user_defined_specs = function
     | `List user_specs ->
         let parse_user_spec json =
-          let open Yojson.Basic.Util in
-          let sources = member "sources" json |> to_list |> List.map ~f:to_string in
-          let sinks = member "sink" json |> to_string in
+          let open Yojson.Basic in
+          let sources = Util.member "sources" json |> Util.to_list |> List.map ~f:Util.to_string in
+          let sinks = Util.member "sink" json |> Util.to_string in
           sources, sinks in
         List.map ~f:parse_user_spec user_specs
     | _ ->
