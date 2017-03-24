@@ -701,8 +701,11 @@ module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
    i.e., something of type Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t
 *)
 module ResultsTableType = Caml.Map.Make (struct
-    type t = Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t
-    let compare (_, _, pn1, _) (_,_,pn2,_) =  Typ.Procname.compare pn1 pn2
+    type t = Tenv.t * Procdesc.t
+    let compare (_, pd1) (_, pd2) =
+      let pn1 = Procdesc.get_proc_name pd1
+      and pn2 = Procdesc.get_proc_name pd2 in
+      Typ.Procname.compare pn1 pn2
   end)
 
 (* we want to consider Builder classes and other safe immutablility-ensuring patterns as
@@ -814,20 +817,23 @@ let is_thread_safe_method pdesc tenv =
     (Procdesc.get_proc_name pdesc)
 
 (* return true if we should report on unprotected accesses during the procedure *)
-let should_report_on_proc (_, tenv, proc_name, proc_desc) =
+let should_report_on_proc (tenv, proc_desc) =
+  let proc_name = Procdesc.get_proc_name proc_desc in
   is_thread_safe_method proc_desc tenv ||
   (not (Typ.Procname.java_is_autogen_method proc_name) &&
    Procdesc.get_access proc_desc <> PredSymb.Private &&
    not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting))
 
+let empty_post =
+  let initial_known_on_ui_thread = false
+  and has_lock = false
+  and return_attrs = ThreadSafetyDomain.AttributeSetDomain.empty in
+  (initial_known_on_ui_thread, has_lock, ThreadSafetyDomain.AccessDomain.empty, return_attrs)
+
 let analyze_procedure callback =
   let is_initializer tenv proc_name =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
   let open ThreadSafetyDomain in
-  let has_lock = false in
-  let initial_known_on_ui_thread = false in
-  let return_attrs = AttributeSetDomain.empty in
-  let empty =  initial_known_on_ui_thread, has_lock, AccessDomain.empty, return_attrs in
   (* convert the abstract state to a summary by dropping the id map *)
   let compute_post ({ ProcData.pdesc; tenv; extras; } as proc_data) =
     if should_analyze_proc pdesc tenv
@@ -874,14 +880,14 @@ let analyze_procedure callback =
             None
       end
     else
-      Some empty in
+      Some empty_post in
   match
     Interprocedural.compute_and_store_post
       ~compute_post
       ~make_extras:FormalMap.make
       callback with
   | Some post -> post
-  | None -> empty
+  | None -> empty_post
 
 let checker ({ Callbacks.summary } as callback_args) : Specs.summary =
   let proc_name = Specs.get_proc_name summary in
@@ -889,23 +895,20 @@ let checker ({ Callbacks.summary } as callback_args) : Specs.summary =
   Specs.get_summary_unsafe "ThreadSafety.checker" proc_name
 
 (* creates a map from proc_envs to postconditions *)
-let make_results_table get_proc_desc file_env =
+let make_results_table file_env =
   (* make a Map sending each element e of list l to (f e) *)
   let map_post_computation_over_procs f l =
     List.fold
-      ~f:(fun m p -> ResultsTableType.add p (f p) m)
+      ~f:(fun m ((_, tenv, _, proc_desc) as p) ->
+          let key = (tenv, proc_desc) in
+          ResultsTableType.add key (f p) m)
       ~init:ResultsTableType.empty
       l in
   let compute_post_for_procedure = (* takes proc_env as arg *)
-    fun (idenv, tenv, proc_name, proc_desc) ->
+    fun (_, _, proc_name, proc_desc) ->
       match Summary.read_summary proc_desc proc_name with
       | Some summ -> summ
-      | None ->
-          let callback_arg =
-            let summary = Specs.get_summary_unsafe "compute_post_for_procedure" proc_name in
-            let get_procs_in_file _ = [] in
-            { Callbacks.get_proc_desc; get_procs_in_file; idenv; tenv; summary; proc_desc } in
-          analyze_procedure callback_arg in
+      | None -> empty_post in
   map_post_computation_over_procs compute_post_for_procedure file_env
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
@@ -916,14 +919,14 @@ let get_current_class_and_threadsafe_superclasses tenv pname =
         PatternMatch.find_superclasses_with_attributes
           is_thread_safe tenv current_class
       in
-      Some (current_class,thread_safe_annotated_classes)
+      Some (current_class, thread_safe_annotated_classes)
   | _ -> None  (*shouldn't happen*)
 
 (** The addendum message says that a superclass is marked @ThreadSafe,
     when the current class is not so marked*)
 let calculate_addendum_message tenv pname =
   match get_current_class_and_threadsafe_superclasses tenv pname with
-  | Some (current_class,thread_safe_annotated_classes) ->
+  | Some (current_class, thread_safe_annotated_classes) ->
       if not (List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class) then
         match thread_safe_annotated_classes with
         | hd::_ ->
@@ -1012,7 +1015,7 @@ let collect_conflicts sink (*kind*) threaded tab = (*kind implicitly Read for no
         )
       (ResultsTableType.bindings tab) in
   List.filter
-    ~f:(fun (proc_env,_,writes) ->
+    ~f:(fun (proc_env, _, writes) ->
         (should_report_on_proc proc_env)
         && not (ThreadSafetyDomain.PathDomain.Sinks.is_empty
                   (ThreadSafetyDomain.PathDomain.sinks writes))
@@ -1075,7 +1078,8 @@ let pp_accesses_sink fmt ~is_write_access sink =
 
 (* trace is really a set of accesses*)
 let report_thread_safety_violations
-    ( _, tenv, pname, pdesc) ~get_unsafe_accesses make_description trace threaded tab =
+    (tenv, pdesc) ~get_unsafe_accesses make_description trace threaded tab =
+  let pname = Procdesc.get_proc_name pdesc in
   let open ThreadSafetyDomain in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
@@ -1121,13 +1125,13 @@ let make_read_write_race_description
     tenv pname final_sink_site initial_sink_site final_sink threaded tab =
   let conflicts = collect_conflicts final_sink threaded tab in
   let race_with_main_thread = List.exists
-      ~f:(fun (_,threaded,_) -> threaded)
+      ~f:(fun (_, threaded, _) -> threaded)
       conflicts in
   let conflicting_proc_envs = List.map
-      ~f:(fun (proc_env,_,_) -> proc_env)
+      ~f:(fun (proc_env, _, _) -> proc_env)
       conflicts in
   let conflicting_proc_names = List.map
-      ~f:(fun (_,_,proc_name,_) -> proc_name)
+      ~f:(fun (_, proc_desc) -> Procdesc.get_proc_name proc_desc)
       conflicting_proc_envs in
   let pp_proc_name_list fmt proc_names =
     let pp_sep _ _ = F.fprintf fmt " , " in
@@ -1218,7 +1222,7 @@ let should_report_on_file file_env =
 *)
 let process_results_table file_env tab =
   let should_report_on_all_procs = should_report_on_file file_env in
-  let should_report ((_, tenv, _, pdesc) as proc_env) =
+  let should_report ((tenv, pdesc) as proc_env) =
     (should_report_on_all_procs && should_report_on_proc proc_env) ||
     is_thread_safe_method pdesc tenv in
   ResultsTableType.iter (* report errors for each method *)
@@ -1258,5 +1262,5 @@ let process_results_table file_env tab =
 
 (* Gathers results by analyzing all the methods in a file, then post-processes the results to check
    an (approximation of) thread safety *)
-let file_analysis _ _ get_procdesc file_env =
-  process_results_table file_env (make_results_table get_procdesc file_env)
+let file_analysis _ _ _ file_env =
+  process_results_table file_env (make_results_table file_env)
