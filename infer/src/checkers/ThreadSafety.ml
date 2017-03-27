@@ -1026,20 +1026,53 @@ let make_read_write_race_description
     conflicts_description
     (calculate_addendum_message tenv pname)
 
+(** type for remembering what we have already reported to avoid duplicates. our policy is to report
+    each kind of access (read/write) to the same field reachable from the same procedure only once.
+    in addition, if a call to a procedure (transitively) accesses multiple fields, we will only
+    report one of each kind of access *)
+type reported =
+  {
+    reported_sites : CallSite.Set.t;
+    reported_writes : Typ.Procname.Set.t;
+    reported_reads : Typ.Procname.Set.t;
+  }
+
+let empty_reported =
+  let reported_sites = CallSite.Set.empty in
+  let reported_writes = Typ.Procname.Set.empty in
+  let reported_reads = Typ.Procname.Set.empty in
+  { reported_sites; reported_reads; reported_writes; }
+
 (* report accesses that may race with each other *)
 let report_unsafe_accesses ~should_report aggregated_access_map =
-  let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_sites =
-    let open ThreadSafetyDomain in
-    let call_site = TraceElem.call_site access in
-    if CallSite.Set.mem call_site reported_sites || not (should_report pdesc tenv)
+  let open ThreadSafetyDomain in
+  let is_duplicate_report access pname { reported_sites; reported_writes; reported_reads; } =
+    CallSite.Set.mem (TraceElem.call_site access) reported_sites ||
+    Typ.Procname.Set.mem
+      pname
+      (match snd (TraceElem.kind access) with
+       | Access.Write -> reported_writes
+       | Access.Read -> reported_reads) in
+  let update_reported access pname reported =
+    let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
+    match snd (TraceElem.kind access) with
+    | Access.Write ->
+        let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
+        { reported with reported_writes; reported_sites; }
+    | Access.Read ->
+        let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
+        { reported with reported_reads; reported_sites; } in
+  let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_acc =
+    let pname = Procdesc.get_proc_name pdesc in
+    if is_duplicate_report access pname reported_acc || not (should_report pdesc tenv)
     then
-      (* already reported a warning originating at this call site; don't double-report *)
-      reported_sites
+      reported_acc
     else
       match snd (TraceElem.kind access), pre with
       | Access.Write, AccessPrecondition.Unprotected _ ->
           if threaded
-          then reported_sites
+          then
+            reported_acc
           else
             begin
               (* unprotected write. warn. *)
@@ -1049,11 +1082,11 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
                 ~get_unsafe_accesses:get_possibly_unsafe_writes
                 ~make_description:make_unprotected_write_description
                 (PathDomain.of_sink access);
-              CallSite.Set.add call_site reported_sites
+              update_reported access pname reported_acc
             end
       | Access.Write, AccessPrecondition.Protected ->
           (* protected write, do nothing *)
-          reported_sites
+          reported_acc
       | Access.Read, AccessPrecondition.Unprotected _ ->
           (* unprotected read. report all writes as conflicts *)
           let all_writes =
@@ -1063,7 +1096,7 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
               accesses in
           if List.is_empty all_writes
           then
-            reported_sites
+            reported_acc
           else
             begin
               report_thread_safety_violations
@@ -1072,8 +1105,8 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
                 ~get_unsafe_accesses:get_possibly_unsafe_reads
                 ~make_description:(make_read_write_race_description all_writes)
                 (PathDomain.of_sink access);
-              CallSite.Set.add call_site reported_sites
-            end;
+              update_reported access pname reported_acc
+            end
       | Access.Read, AccessPrecondition.Protected ->
           (* protected read. report unprotected writes as conflicts *)
           let unprotected_writes =
@@ -1084,7 +1117,8 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
                   | _ -> false)
               accesses in
           if List.is_empty unprotected_writes
-          then reported_sites
+          then
+            reported_acc
           else
             begin
               (* protected read with conflicting unprotected write(s). warn. *)
@@ -1094,16 +1128,20 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
                 ~get_unsafe_accesses:(get_all_accesses Read)
                 ~make_description:(make_read_write_race_description unprotected_writes)
                 (PathDomain.of_sink access);
-              CallSite.Set.add call_site reported_sites
+              update_reported access pname reported_acc
             end in
   AccessListMap.fold
-    (fun _ grouped_accesses acc ->
+    (fun _ grouped_accesses reported_acc ->
+       (* reset the reported reads and writes for each memory location *)
+       let reported =
+         { reported_acc with reported_writes = Typ.Procname.Set.empty;
+                             reported_reads = Typ.Procname.Set.empty; } in
        List.fold
          ~f:(fun acc access -> report_unsafe_access access grouped_accesses acc)
          grouped_accesses
-         ~init:acc)
+         ~init:reported)
     aggregated_access_map
-    CallSite.Set.empty
+    empty_reported
   |> ignore
 
 (* Currently we analyze if there is an @ThreadSafe annotation on at least one of
