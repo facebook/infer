@@ -109,4 +109,17 @@ class ReadWriteRaces {
     }
   }
 
+  // write outside sync, read inside of sync races
+
+  Object field4;
+
+  public void unprotectedWrite4Bad() {
+    this.field4 = new Object();
+  }
+
+  public synchronized Object protectedRead4Bad() {
+    return this.field4;
+  }
+
+
 }

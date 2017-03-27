@@ -25,6 +25,8 @@ module type S = sig
   (** update sink with the given call site *)
   val with_callsite : t -> CallSite.t -> t
 
+  val of_sink : Sink.t -> t
+
   val to_sink_loc_trace :
     ?desc_of_sink:(Sink.t -> string) -> ?sink_should_nest:(Sink.t -> bool) ->
     sink_path -> Errlog.loc_trace_elem list
@@ -65,6 +67,10 @@ module Make (TraceElem : TraceElem.S) = struct
           add_sink callee_sink t_acc)
       ~init:empty
       (Sinks.elements (sinks t))
+
+  let of_sink sink =
+    let sinks = Sinks.add sink Sinks.empty in
+    update_sinks empty sinks
 
   let pp fmt t =
     let pp_passthroughs_if_not_empty fmt p =

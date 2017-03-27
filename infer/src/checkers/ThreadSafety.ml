@@ -945,27 +945,26 @@ let filter_by_kind access_kind trace =
     (PathDomain.sinks trace)
   |> PathDomain.update_sinks trace
 
+let get_all_accesses_with_pre pre_filter access_kind accesses =
+  let open ThreadSafetyDomain in
+  AccessDomain.fold
+    (fun pre trace acc ->
+       if pre_filter pre
+       then PathDomain.join (filter_by_kind access_kind trace) acc
+       else acc)
+    accesses
+    PathDomain.empty
+
 (* get all of the unprotected accesses of the given kind *)
-let get_possibly_unsafe_accesses access_kind accesses =
-  let open ThreadSafetyDomain in
-  AccessDomain.fold
-    (fun pre trace acc -> match pre with
-       | Unprotected _ -> PathDomain.join (filter_by_kind access_kind trace) acc
-       | Protected -> acc)
-    accesses
-    PathDomain.empty
+let get_unprotected_accesses =
+  get_all_accesses_with_pre
+    (function ThreadSafetyDomain.AccessPrecondition.Unprotected _ -> true | Protected -> false)
 
-let get_possibly_unsafe_reads = get_possibly_unsafe_accesses Read
+let get_all_accesses = get_all_accesses_with_pre (fun _ -> true)
 
-let get_possibly_unsafe_writes = get_possibly_unsafe_accesses Write
+let get_possibly_unsafe_reads = get_unprotected_accesses Read
 
-(* get all accesses of the given kind *)
-let get_all_accesses access_kind accesses =
-  let open ThreadSafetyDomain in
-  AccessDomain.fold
-    (fun _ trace acc ->  PathDomain.join (filter_by_kind access_kind trace) acc)
-    accesses
-    PathDomain.empty
+let get_possibly_unsafe_writes = get_unprotected_accesses Write
 
 let equal_locs (sink1 : ThreadSafetyDomain.TraceElem.t) (sink2 : ThreadSafetyDomain.TraceElem.t) =
   Location.equal
@@ -984,6 +983,15 @@ let equal_accesses (sink1 : ThreadSafetyDomain.TraceElem.t)
 let conflicting_accesses (sink1 : ThreadSafetyDomain.TraceElem.t)
     (sink2 : ThreadSafetyDomain.TraceElem.t) =
   equal_accesses sink1 sink2
+
+(* we assume two access paths can alias if their access parts are equal (we ignore the base). *)
+let can_alias access_path1 access_path2 =
+  List.compare AccessPath.compare_access (snd access_path1) (snd access_path2)
+
+module AccessListMap = Caml.Map.Make(struct
+    type t = AccessPath.Raw.t [@@deriving compare]
+    let compare = can_alias
+  end)
 
 (* trace is really reads or writes set. Fix terminology later *)
 let filter_conflicting_sinks sink trace =
@@ -1078,9 +1086,9 @@ let pp_accesses_sink fmt ~is_write_access sink =
 
 (* trace is really a set of accesses*)
 let report_thread_safety_violations
-    (tenv, pdesc) ~get_unsafe_accesses make_description trace threaded tab =
-  let pname = Procdesc.get_proc_name pdesc in
+    tenv pdesc ~get_unsafe_accesses make_description trace threaded tab =
   let open ThreadSafetyDomain in
+  let pname = Procdesc.get_proc_name pdesc in
   let trace_of_pname callee_pname =
     match Summary.read_summary pdesc callee_pname with
     | Some (_, _, accesses, _) -> get_unsafe_accesses accesses
@@ -1109,7 +1117,6 @@ let report_thread_safety_violations
   List.iter
     ~f:report_one_path
     (PathDomain.get_reportable_sink_paths (de_dup trace) ~trace_of_pname)
-
 
 let make_unprotected_write_description
     tenv pname final_sink_site initial_sink_site final_sink _ _ =
@@ -1152,9 +1159,88 @@ let make_read_write_race_description
     conflicts_description
     (calculate_addendum_message tenv pname)
 
+(* report accesses that may race with each other *)
+let report_unsafe_accesses tab aggregated_access_map =
+  let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_sites =
+    let open ThreadSafetyDomain in
+    let call_site = TraceElem.call_site access in
+    if CallSite.Set.mem call_site reported_sites
+    then
+      (* already reported a warning originating at this call site; don't double-report *)
+      reported_sites
+    else
+      match snd (TraceElem.kind access), pre with
+      | Access.Write, AccessPrecondition.Unprotected _ ->
+          (* unprotected write. TODO: warn. *)
+          reported_sites
+      | Access.Write, AccessPrecondition.Protected ->
+          (* protected write, do nothing *)
+          reported_sites
+      | Access.Read, AccessPrecondition.Unprotected _ ->
+          (* unprotected read. TODO: report all writes as conflicts *)
+          reported_sites
+      | Access.Read, AccessPrecondition.Protected ->
+          (* protected read. report unprotected writes as conflicts *)
+          let unprotected_writes =
+            List.filter
+              ~f:(fun (access, pre, _, _, _) ->
+                  match pre with
+                  | AccessPrecondition.Unprotected _ -> TraceElem.is_write access
+                  | _ -> false)
+              accesses in
+          if List.is_empty unprotected_writes
+          then reported_sites
+          else
+            begin
+              (* protected read with conflicting unprotected write(s). warn. *)
+              report_thread_safety_violations
+                tenv
+                pdesc
+                ~get_unsafe_accesses:(get_all_accesses Read)
+                make_read_write_race_description
+                (PathDomain.of_sink access)
+                threaded
+                tab;
+              CallSite.Set.add call_site reported_sites
+            end in
+  AccessListMap.fold
+    (fun _ grouped_accesses acc ->
+       List.fold
+         ~f:(fun acc access -> report_unsafe_access access grouped_accesses acc)
+         grouped_accesses
+         ~init:acc)
+    aggregated_access_map
+    CallSite.Set.empty
+  |> ignore
+
+(* group accesses that may touch the same memory *)
+let aggregate_accesses tab =
+  let open ThreadSafetyDomain in
+  let aggregate (threaded, _, accesses, _) tenv pdesc acc =
+    AccessDomain.fold
+      (fun pre accesses acc ->
+         PathDomain.Sinks.fold
+           (fun access acc ->
+              let access_path, _ = TraceElem.kind access in
+              let grouped_accesses =
+                try AccessListMap.find access_path acc
+                with Not_found -> [] in
+              AccessListMap.add
+                access_path
+                ((access, pre, threaded, tenv, pdesc) :: grouped_accesses)
+                acc)
+           (PathDomain.sinks accesses)
+           acc)
+      accesses
+      acc in
+  ResultsTableType.fold
+    (fun (tenv, pdesc) summary acc -> aggregate summary tenv pdesc acc)
+    tab
+    AccessListMap.empty
+
 (* find those elements of reads which have conflicts
         somewhere else, and report them *)
-let report_reads proc_env reads threaded tab =
+let report_reads (tenv, pdesc) reads threaded tab =
   let racy_read_sinks =
     ThreadSafetyDomain.PathDomain.Sinks.filter
       (fun sink ->
@@ -1168,7 +1254,8 @@ let report_reads proc_env reads threaded tab =
     ThreadSafetyDomain.PathDomain.update_sinks reads racy_read_sinks
   in
   report_thread_safety_violations
-    proc_env
+    tenv
+    pdesc
     ~get_unsafe_accesses:get_possibly_unsafe_reads
     make_read_write_race_description
     racy_reads
@@ -1225,8 +1312,12 @@ let process_results_table file_env tab =
   let should_report ((tenv, pdesc) as proc_env) =
     (should_report_on_all_procs && should_report_on_proc proc_env) ||
     is_thread_safe_method pdesc tenv in
+
+  aggregate_accesses tab
+  |> report_unsafe_accesses tab;
+
   ResultsTableType.iter (* report errors for each method *)
-    (fun proc_env (threaded, _, accesses, _) ->
+    (fun ((tenv, pdesc) as proc_env) (threaded, _, accesses, _) ->
        if should_report proc_env
        then
          let open ThreadSafetyDomain in
@@ -1248,7 +1339,8 @@ let process_results_table file_env tab =
            if not threaded
            then (*don't report writes for threaded; TODO to extend this*)
              report_thread_safety_violations
-               proc_env
+               tenv
+               pdesc
                ~get_unsafe_accesses:get_possibly_unsafe_writes
                make_unprotected_write_description
                unsafe_writes

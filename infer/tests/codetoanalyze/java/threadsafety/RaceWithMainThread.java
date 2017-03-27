@@ -71,14 +71,12 @@ class RaceWithMainThread{
     }
   }
 
-  /*TODO: There should be a warning either here or in main_thread_OK()
-   or maybe even in both.*/
-  void read_protected_unthreaded_Bad_FN(){
+  void readProtectedUnthreadedBad(){
     Integer x;
     synchronized (this){
       x = f;
     }
-   }
+  }
 
   Integer g;
 

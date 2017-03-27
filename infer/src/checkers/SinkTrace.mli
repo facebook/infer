@@ -23,6 +23,8 @@ module type S = sig
   (** update sink with the given call site *)
   val with_callsite : t -> CallSite.t -> t
 
+  val of_sink : Sink.t -> t
+
   val to_sink_loc_trace :
     ?desc_of_sink:(Sink.t -> string) -> ?sink_should_nest:(Sink.t -> bool) ->
     sink_path -> Errlog.loc_trace_elem list
