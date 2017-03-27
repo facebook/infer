@@ -817,7 +817,7 @@ let is_thread_safe_method pdesc tenv =
     (Procdesc.get_proc_name pdesc)
 
 (* return true if we should report on unprotected accesses during the procedure *)
-let should_report_on_proc (tenv, proc_desc) =
+let should_report_on_proc proc_desc tenv =
   let proc_name = Procdesc.get_proc_name proc_desc in
   is_thread_safe_method proc_desc tenv ||
   (not (Typ.Procname.java_is_autogen_method proc_name) &&
@@ -1023,8 +1023,8 @@ let collect_conflicts sink (*kind*) threaded tab = (*kind implicitly Read for no
         )
       (ResultsTableType.bindings tab) in
   List.filter
-    ~f:(fun (proc_env, _, writes) ->
-        (should_report_on_proc proc_env)
+    ~f:(fun ((tenv, pdesc), _, writes) ->
+        (should_report_on_proc pdesc tenv)
         && not (ThreadSafetyDomain.PathDomain.Sinks.is_empty
                   (ThreadSafetyDomain.PathDomain.sinks writes))
       )
@@ -1160,19 +1160,32 @@ let make_read_write_race_description
     (calculate_addendum_message tenv pname)
 
 (* report accesses that may race with each other *)
-let report_unsafe_accesses tab aggregated_access_map =
+let report_unsafe_accesses tab ~should_report aggregated_access_map =
   let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_sites =
     let open ThreadSafetyDomain in
     let call_site = TraceElem.call_site access in
-    if CallSite.Set.mem call_site reported_sites
+    if CallSite.Set.mem call_site reported_sites || not (should_report pdesc tenv)
     then
       (* already reported a warning originating at this call site; don't double-report *)
       reported_sites
     else
       match snd (TraceElem.kind access), pre with
       | Access.Write, AccessPrecondition.Unprotected _ ->
-          (* unprotected write. TODO: warn. *)
-          reported_sites
+          if threaded
+          then reported_sites
+          else
+            begin
+              (* unprotected write. warn. *)
+              report_thread_safety_violations
+                tenv
+                pdesc
+                ~get_unsafe_accesses:get_possibly_unsafe_writes
+                make_unprotected_write_description
+                (PathDomain.of_sink access)
+                threaded
+                tab;
+              CallSite.Set.add call_site reported_sites
+            end
       | Access.Write, AccessPrecondition.Protected ->
           (* protected write, do nothing *)
           reported_sites
@@ -1309,16 +1322,16 @@ let should_report_on_file file_env =
 *)
 let process_results_table file_env tab =
   let should_report_on_all_procs = should_report_on_file file_env in
-  let should_report ((tenv, pdesc) as proc_env) =
-    (should_report_on_all_procs && should_report_on_proc proc_env) ||
+  let should_report pdesc tenv =
+    (should_report_on_all_procs && should_report_on_proc pdesc tenv) ||
     is_thread_safe_method pdesc tenv in
 
   aggregate_accesses tab
-  |> report_unsafe_accesses tab;
+  |> report_unsafe_accesses tab ~should_report;
 
   ResultsTableType.iter (* report errors for each method *)
     (fun ((tenv, pdesc) as proc_env) (threaded, _, accesses, _) ->
-       if should_report proc_env
+       if should_report pdesc tenv
        then
          let open ThreadSafetyDomain in
          let reads, writes =
@@ -1336,16 +1349,6 @@ let process_results_table file_env tab =
            let stripped_unsafe_reads = strip_reads_that_have_co_located_write
                unsafe_reads
                unsafe_writes in
-           if not threaded
-           then (*don't report writes for threaded; TODO to extend this*)
-             report_thread_safety_violations
-               tenv
-               pdesc
-               ~get_unsafe_accesses:get_possibly_unsafe_writes
-               make_unprotected_write_description
-               unsafe_writes
-               threaded
-               tab;
            report_reads proc_env stripped_unsafe_reads threaded tab
          end
     )
