@@ -697,17 +697,6 @@ module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 
 module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
-(* a results table is a Map where a key is an a procedure environment,
-   i.e., something of type Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t
-*)
-module ResultsTableType = Caml.Map.Make (struct
-    type t = Tenv.t * Procdesc.t
-    let compare (_, pd1) (_, pd2) =
-      let pn1 = Procdesc.get_proc_name pd1
-      and pn2 = Procdesc.get_proc_name pd2 in
-      Typ.Procname.compare pn1 pn2
-  end)
-
 (* we want to consider Builder classes and other safe immutablility-ensuring patterns as
    thread-safe. we are overly friendly about this for now; any class whose name ends with `Builder`
    is assumed to be thread-safe. in the future, we can ask for builder classes to be annotated with
@@ -894,22 +883,14 @@ let checker ({ Callbacks.summary } as callback_args) : Specs.summary =
   ignore (analyze_procedure callback_args);
   Specs.get_summary_unsafe "ThreadSafety.checker" proc_name
 
-(* creates a map from proc_envs to postconditions *)
-let make_results_table file_env =
-  (* make a Map sending each element e of list l to (f e) *)
-  let map_post_computation_over_procs f l =
-    List.fold
-      ~f:(fun m ((_, tenv, _, proc_desc) as p) ->
-          let key = (tenv, proc_desc) in
-          ResultsTableType.add key (f p) m)
-      ~init:ResultsTableType.empty
-      l in
-  let compute_post_for_procedure = (* takes proc_env as arg *)
-    fun (_, _, proc_name, proc_desc) ->
-      match Summary.read_summary proc_desc proc_name with
-      | Some summ -> summ
-      | None -> empty_post in
-  map_post_computation_over_procs compute_post_for_procedure file_env
+(* we assume two access paths can alias if their access parts are equal (we ignore the base). *)
+let can_alias access_path1 access_path2 =
+  List.compare AccessPath.compare_access (snd access_path1) (snd access_path2)
+
+module AccessListMap = Caml.Map.Make(struct
+    type t = AccessPath.Raw.t [@@deriving compare]
+    let compare = can_alias
+  end)
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
   match pname with
@@ -965,15 +946,6 @@ let get_all_accesses = get_all_accesses_with_pre (fun _ -> true)
 let get_possibly_unsafe_reads = get_unprotected_accesses Read
 
 let get_possibly_unsafe_writes = get_unprotected_accesses Write
-
-(* we assume two access paths can alias if their access parts are equal (we ignore the base). *)
-let can_alias access_path1 access_path2 =
-  List.compare AccessPath.compare_access (snd access_path1) (snd access_path2)
-
-module AccessListMap = Caml.Map.Make(struct
-    type t = AccessPath.Raw.t [@@deriving compare]
-    let compare = can_alias
-  end)
 
 (*A helper function used in the error reporting*)
 let pp_accesses_sink fmt ~is_write_access sink =
@@ -1134,31 +1106,6 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
     CallSite.Set.empty
   |> ignore
 
-(* group accesses that may touch the same memory *)
-let aggregate_accesses tab =
-  let open ThreadSafetyDomain in
-  let aggregate (threaded, _, accesses, _) tenv pdesc acc =
-    AccessDomain.fold
-      (fun pre accesses acc ->
-         PathDomain.Sinks.fold
-           (fun access acc ->
-              let access_path, _ = TraceElem.kind access in
-              let grouped_accesses =
-                try AccessListMap.find access_path acc
-                with Not_found -> [] in
-              AccessListMap.add
-                access_path
-                ((access, pre, threaded, tenv, pdesc) :: grouped_accesses)
-                acc)
-           (PathDomain.sinks accesses)
-           acc)
-      accesses
-      acc in
-  ResultsTableType.fold
-    (fun (tenv, pdesc) summary acc -> aggregate summary tenv pdesc acc)
-    tab
-    AccessListMap.empty
-
 (* Currently we analyze if there is an @ThreadSafe annotation on at least one of
    the classes in a file. This might be tightened in future or even broadened in future
    based on other criteria *)
@@ -1176,6 +1123,34 @@ let should_report_on_file file_env =
   in
   not (List.exists ~f:current_class_marked_not_threadsafe file_env) &&
   List.exists ~f:current_class_or_super_marked_threadsafe file_env
+
+(* create a map from [abstraction of a memory loc] -> accesses that may touch that memory loc. for
+   now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
+   that x.f.g may point to during execution *)
+let make_results_table file_env =
+  let aggregate_post (threaded, _, accesses, _) tenv pdesc acc =
+    let open ThreadSafetyDomain in
+    AccessDomain.fold
+      (fun pre accesses acc ->
+         PathDomain.Sinks.fold
+           (fun access acc ->
+              let access_path, _ = TraceElem.kind access in
+              let grouped_accesses =
+                try AccessListMap.find access_path acc
+                with Not_found -> [] in
+              AccessListMap.add
+                access_path
+                ((access, pre, threaded, tenv, pdesc) :: grouped_accesses)
+                acc)
+           (PathDomain.sinks accesses)
+           acc)
+      accesses
+      acc in
+  let aggregate_posts acc (_, tenv, proc_name, proc_desc) =
+    match Summary.read_summary proc_desc proc_name with
+    | Some summary -> aggregate_post summary tenv proc_desc acc
+    | None -> acc in
+  List.fold ~f:aggregate_posts file_env ~init:AccessListMap.empty
 
 (**
    Principles for race reporting.
@@ -1208,9 +1183,7 @@ let process_results_table file_env tab =
   let should_report pdesc tenv =
     (should_report_on_all_procs && should_report_on_proc pdesc tenv) ||
     is_thread_safe_method pdesc tenv in
-
-  aggregate_accesses tab
-  |> report_unsafe_accesses ~should_report
+  report_unsafe_accesses ~should_report tab
 
 (* Gathers results by analyzing all the methods in a file, then post-processes the results to check
    an (approximation of) thread safety *)
