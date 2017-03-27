@@ -966,24 +966,6 @@ let get_possibly_unsafe_reads = get_unprotected_accesses Read
 
 let get_possibly_unsafe_writes = get_unprotected_accesses Write
 
-let equal_locs (sink1 : ThreadSafetyDomain.TraceElem.t) (sink2 : ThreadSafetyDomain.TraceElem.t) =
-  Location.equal
-    (CallSite.loc (ThreadSafetyDomain.TraceElem.call_site sink1))
-    (CallSite.loc (ThreadSafetyDomain.TraceElem.call_site sink2))
-
-let equal_accesses (sink1 : ThreadSafetyDomain.TraceElem.t)
-    (sink2 : ThreadSafetyDomain.TraceElem.t) =
-  AccessPath.equal_access_list
-    (snd (fst (ThreadSafetyDomain.TraceElem.kind sink1)))
-    (snd (fst (ThreadSafetyDomain.TraceElem.kind sink2)))
-
-(* For now equal-access and conflicting-access are equivalent.
-   But that will change when we (soon) consider conficting accesses
-   that are not via assignment, such as add and get for containers*)
-let conflicting_accesses (sink1 : ThreadSafetyDomain.TraceElem.t)
-    (sink2 : ThreadSafetyDomain.TraceElem.t) =
-  equal_accesses sink1 sink2
-
 (* we assume two access paths can alias if their access parts are equal (we ignore the base). *)
 let can_alias access_path1 access_path2 =
   List.compare AccessPath.compare_access (snd access_path1) (snd access_path2)
@@ -992,43 +974,6 @@ module AccessListMap = Caml.Map.Make(struct
     type t = AccessPath.Raw.t [@@deriving compare]
     let compare = can_alias
   end)
-
-(* trace is really reads or writes set. Fix terminology later *)
-let filter_conflicting_sinks sink trace =
-  let conflicts =
-    ThreadSafetyDomain.PathDomain.Sinks.filter
-      (fun sink2 -> conflicting_accesses sink sink2)
-      (ThreadSafetyDomain.PathDomain.sinks trace) in
-  ThreadSafetyDomain.PathDomain.update_sinks trace conflicts
-
-(* Given a sink representing an access of kind (read or write),
-   return a list of (proc_env,access-astate) pairs where
-   access-astate is a collection of conflicting
-   accesses. If kind is READ, we look for conflicting writes,
-   and if threaded is TRUE we only take those accesses that are not known to be
-   threaded. If kind is WRITE we take all accesses, except again if threaded is true we keep only
-   those accesses that are unthreaded.
-   NOTE: as of now this is only used for conflicts with reads. TODO: do this for writes
-*)
-
-let collect_conflicts sink (*kind*) threaded tab = (*kind implicitly Read for now*)
-  let procs_and_threaded_and_accesses =
-    List.map
-      ~f:(fun (key, (other_access_threaded, _, accesses, _)) ->
-          let conflicting_writes =
-            if threaded && other_access_threaded then ThreadSafetyDomain.PathDomain.empty
-            else
-              filter_conflicting_sinks sink (get_all_accesses Write accesses) in
-          key, other_access_threaded, conflicting_writes
-        )
-      (ResultsTableType.bindings tab) in
-  List.filter
-    ~f:(fun ((tenv, pdesc), _, writes) ->
-        (should_report_on_proc pdesc tenv)
-        && not (ThreadSafetyDomain.PathDomain.Sinks.is_empty
-                  (ThreadSafetyDomain.PathDomain.sinks writes))
-      )
-    procs_and_threaded_and_accesses
 
 (*A helper function used in the error reporting*)
 let pp_accesses_sink fmt ~is_write_access sink =
@@ -1042,8 +987,7 @@ let pp_accesses_sink fmt ~is_write_access sink =
      else snd access_path)
 
 (* trace is really a set of accesses*)
-let report_thread_safety_violations
-    tenv pdesc ~get_unsafe_accesses make_description trace threaded tab =
+let report_thread_safety_violations tenv pdesc ~get_unsafe_accesses ~make_description trace =
   let open ThreadSafetyDomain in
   let pname = Procdesc.get_proc_name pdesc in
   let trace_of_pname callee_pname =
@@ -1066,8 +1010,7 @@ let report_thread_safety_violations
     let loc = CallSite.loc (PathDomain.Sink.call_site initial_sink) in
     let ltr = PathDomain.to_sink_loc_trace ~desc_of_sink path in
     let msg = Localise.to_issue_id Localise.thread_safety_violation in
-    let description = make_description tenv pname final_sink_site
-        initial_sink_site final_sink threaded tab in
+    let description = make_description tenv pname final_sink_site initial_sink_site final_sink in
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
     Reporting.log_error pname ~loc ~ltr exn in
 
@@ -1075,8 +1018,7 @@ let report_thread_safety_violations
     ~f:report_one_path
     (PathDomain.get_reportable_sink_paths trace ~trace_of_pname)
 
-let make_unprotected_write_description
-    tenv pname final_sink_site initial_sink_site final_sink _ _ =
+let make_unprotected_write_description tenv pname final_sink_site initial_sink_site final_sink =
   Format.asprintf
     "Unprotected write. Public method %a%s %s %a outside of synchronization.%s"
     (MF.wrap_monospaced Typ.Procname.pp) pname
@@ -1086,17 +1028,13 @@ let make_unprotected_write_description
     (calculate_addendum_message tenv pname)
 
 let make_read_write_race_description
-    tenv pname final_sink_site initial_sink_site final_sink threaded tab =
-  let conflicts = collect_conflicts final_sink threaded tab in
+    conflicts tenv pname final_sink_site initial_sink_site final_sink =
   let race_with_main_thread = List.exists
-      ~f:(fun (_, threaded, _) -> threaded)
-      conflicts in
-  let conflicting_proc_envs = List.map
-      ~f:(fun (proc_env, _, _) -> proc_env)
+      ~f:(fun (_, _, threaded, _, _) -> threaded)
       conflicts in
   let conflicting_proc_names = List.map
-      ~f:(fun (_, proc_desc) -> Procdesc.get_proc_name proc_desc)
-      conflicting_proc_envs in
+      ~f:(fun (_, _, _, _, pdesc) -> Procdesc.get_proc_name pdesc)
+      conflicts in
   let pp_proc_name_list fmt proc_names =
     let pp_sep _ _ = F.fprintf fmt " , " in
     F.pp_print_list ~pp_sep Typ.Procname.pp fmt proc_names in
@@ -1117,7 +1055,7 @@ let make_read_write_race_description
     (calculate_addendum_message tenv pname)
 
 (* report accesses that may race with each other *)
-let report_unsafe_accesses tab ~should_report aggregated_access_map =
+let report_unsafe_accesses ~should_report aggregated_access_map =
   let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_sites =
     let open ThreadSafetyDomain in
     let call_site = TraceElem.call_site access in
@@ -1137,10 +1075,8 @@ let report_unsafe_accesses tab ~should_report aggregated_access_map =
                 tenv
                 pdesc
                 ~get_unsafe_accesses:get_possibly_unsafe_writes
-                make_unprotected_write_description
-                (PathDomain.of_sink access)
-                threaded
-                tab;
+                ~make_description:make_unprotected_write_description
+                (PathDomain.of_sink access);
               CallSite.Set.add call_site reported_sites
             end
       | Access.Write, AccessPrecondition.Protected ->
@@ -1162,10 +1098,8 @@ let report_unsafe_accesses tab ~should_report aggregated_access_map =
                 tenv
                 pdesc
                 ~get_unsafe_accesses:get_possibly_unsafe_reads
-                make_read_write_race_description
-                (PathDomain.of_sink access)
-                threaded
-                tab;
+                ~make_description:(make_read_write_race_description all_writes)
+                (PathDomain.of_sink access);
               CallSite.Set.add call_site reported_sites
             end;
       | Access.Read, AccessPrecondition.Protected ->
@@ -1186,10 +1120,8 @@ let report_unsafe_accesses tab ~should_report aggregated_access_map =
                 tenv
                 pdesc
                 ~get_unsafe_accesses:(get_all_accesses Read)
-                make_read_write_race_description
-                (PathDomain.of_sink access)
-                threaded
-                tab;
+                ~make_description:(make_read_write_race_description unprotected_writes)
+                (PathDomain.of_sink access);
               CallSite.Set.add call_site reported_sites
             end in
   AccessListMap.fold
@@ -1278,7 +1210,7 @@ let process_results_table file_env tab =
     is_thread_safe_method pdesc tenv in
 
   aggregate_accesses tab
-  |> report_unsafe_accesses tab ~should_report
+  |> report_unsafe_accesses ~should_report
 
 (* Gathers results by analyzing all the methods in a file, then post-processes the results to check
    an (approximation of) thread safety *)
