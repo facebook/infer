@@ -120,9 +120,6 @@ infer: src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(QUIET)$(MAKE) -C $(ANNOTATIONS_DIR)
 endif
-#	Delete existing specs so that they are not used during the analysis of models. Infer may
-#	segfault in some cases otherwise.
-	$(QUIET)$(MAKE) -C $(MODELS_DIR) clean_specs
 	$(QUIET)$(MAKE) -C $(MODELS_DIR) all
 
 .PHONY: clang_setup

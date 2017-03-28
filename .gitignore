@@ -98,6 +98,7 @@ buck-out/
 /infer/models/cpp/out/
 /infer/models/objc/out/
 /infer/lib/specs/c_models
+/infer/lib/specs/clang_models
 /infer/lib/specs/cpp_models
 /infer/lib/specs/objc_models
 /infer/lib/specs/clean_models
