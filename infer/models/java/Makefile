@@ -20,17 +20,17 @@ MODELS_CLASSPATH = $(ANDROID_JAR):$(GUAVA_JAR):$(JACKSON_JAR):$(JSR_305_JAR):$(I
 all: $(MODELS_JAR)
 
 clean:
-	@rm -fr $(MODELS_OUT)
-	@rm -f $(MODELS_JAR)
-	@rm -f $(JAVA_MODELS_JAR)
+	$(QUIET)rm -fr $(MODELS_OUT)
+	$(QUIET)rm -f $(MODELS_JAR)
+	$(QUIET)rm -f $(JAVA_MODELS_JAR)
 
 compile:
 	$(JAVAC) -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) $(JAVA_SOURCES)
 
 $(INFER_REPORT): $(JAVA_DEPS_NO_MODELS) $(JAVA_SOURCES)
-	@rm -fr $(MODELS_OUT)
+	$(QUIET)rm -fr $(MODELS_OUT)
 	mkdir -p $(MODELS_OUT)
-	@rm -f $(JAVA_MODELS_JAR)
+	$(QUIET)rm -f $(JAVA_MODELS_JAR)
 	$(call silent_on_success,\
 	  $(INFER_BIN) --jobs 1 --results-dir $(INFER_RESULTS_DIR) --models-mode -- \
 	  $(JAVAC) -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) \

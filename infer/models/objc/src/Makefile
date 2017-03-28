@@ -19,7 +19,7 @@ CFLAGS=--target=x86_64-apple-darwin14 -x objective-c -c -mios-simulator-version-
 all: $(OBJECTS)
 
 clean:
-	@rm -rf $(OBJECTS)
+	$(QUIET)rm -rf $(OBJECTS)
 
 %.o: %.m
 	$(CC) $(CFLAGS) $< -o $@

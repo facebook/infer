@@ -32,17 +32,17 @@ clean_specs:
 	$(REMOVE) $(SPECS_LIB_DIR)/*.specs
 
 $(CLANG_SUBDIRS):
-	@$(MAKE) -C $@ install
+	$(QUIET)$(MAKE) -C $@ install
 
 clang: $(CLANG_SUBDIRS)
 
 java:
-	@$(MAKE) -C $@ install
+	$(QUIET)$(MAKE) -C $@ install
 
 clean: clean_specs
-	@$(MAKE) -C $(JAVA_MODELS_DIR) clean
-	@$(MAKE) -C $(C_MODELS_DIR) clean
-	@$(MAKE) -C $(CPP_MODELS_DIR) clean
+	$(QUIET)$(MAKE) -C $(JAVA_MODELS_DIR) clean
+	$(QUIET)$(MAKE) -C $(C_MODELS_DIR) clean
+	$(QUIET)$(MAKE) -C $(CPP_MODELS_DIR) clean
 ifneq (no, $(XCODE_SELECT))
-	@$(MAKE) -C $(OBJC_MODELS_DIR) clean
+	$(QUIET)$(MAKE) -C $(OBJC_MODELS_DIR) clean
 endif

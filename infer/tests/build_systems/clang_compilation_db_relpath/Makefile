@@ -21,8 +21,8 @@ include $(TESTS_DIR)/base.make
 ../codetoanalyze/path\ with\ spaces/hel\ lo.c: ../codetoanalyze/path_with_spaces/hel_lo.c
 #	make does not want to interpret "$(@D)" in the right way here...
 	$(MKDIR_P) ../codetoanalyze/path\ with\ spaces/
-	@cp "$<" "$@"
-	@touch "$@"
+	$(QUIET)cp "$<" "$@"
+	$(QUIET)touch "$@"
 
 compile_commands.json: compile_commands.json.in
 	sed -e 's#%pwd%#$(CURDIR)#g' $< > $@ || $(REMOVE) $@

@@ -8,35 +8,35 @@
 
 .PHONY: arc.clean
 arc.clean:
-	@$(MAKE) -C arc clean
+	$(QUIET)$(MAKE) -C arc clean
 
 .PHONY: noarc.clean
 noarc.clean:
-	@$(MAKE) -C noarc clean
+	$(QUIET)$(MAKE) -C noarc clean
 
 .PHONY: arc.print
 arc.print:
-	@$(MAKE) -C arc print
+	$(QUIET)$(MAKE) -C arc print
 
 .PHONY: noarc.print
 noarc.print:
-	@$(MAKE) -C noarc print
+	$(QUIET)$(MAKE) -C noarc print
 
 .PHONY: arc.test
 arc.test:
-	@$(MAKE) -C arc test
+	$(QUIET)$(MAKE) -C arc test
 
 .PHONY: noarc.test
 noarc.test:
-	@$(MAKE) -C noarc test
+	$(QUIET)$(MAKE) -C noarc test
 
 .PHONY: arc.replace
 arc.replace:
-	@$(MAKE) -C arc replace
+	$(QUIET)$(MAKE) -C arc replace
 
 .PHONY: noarc.replace
 noarc.replace:
-	@$(MAKE) -C noarc replace
+	$(QUIET)$(MAKE) -C noarc replace
 
 .PHONY: clean
 clean: arc.clean noarc.clean

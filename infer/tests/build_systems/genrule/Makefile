@@ -41,4 +41,4 @@ $(JSON_REPORT): $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
 infer-out/report.json: $(JSON_REPORT)
 	$(MKDIR_P) infer-out
 #	the report contains absolute paths
-	@sed -e 's#$(abspath $(TESTS_DIR))/##g' $< > $@
+	$(QUIET)sed -e 's#$(abspath $(TESTS_DIR))/##g' $< > $@

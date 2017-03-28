@@ -7,4 +7,4 @@ all: $(OBJECTS)
 	$(CC) -c $<
 
 clean:
-	@rm -rf $(OBJECTS)
+	$(QUIET)rm -rf $(OBJECTS)

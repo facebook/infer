@@ -30,7 +30,7 @@ print: issues.exp.test$(TEST_SUFFIX)
 
 .PHONY: test
 test: issues.exp.test$(TEST_SUFFIX)
-	@cd $(TESTS_DIR) && \
+	$(QUIET)cd $(TESTS_DIR) && \
 	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test$(TEST_SUFFIX)
 
 .PHONY: print

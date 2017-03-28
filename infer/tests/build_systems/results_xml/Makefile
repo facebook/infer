@@ -21,4 +21,4 @@ include $(TESTS_DIR)/clang.make
 
 issues.exp.test: infer-out/report.json
 #	grab only a few interesting fields from the xml to prevent flakiness
-	@grep --only-matching -e ' \(name\|method\|rule\)="[^"]*"' infer-out/report.xml > $@
+	$(QUIET)grep --only-matching -e ' \(name\|method\|rule\)="[^"]*"' infer-out/report.xml > $@

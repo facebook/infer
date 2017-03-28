@@ -7,7 +7,7 @@ CXXFLAGS=-c -w -std=c++11 -isystem../include
 all: $(OBJECTS)
 
 clean:
-	@rm -rf $(OBJECTS)
+	$(QUIET)rm -rf $(OBJECTS)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@

@@ -31,14 +31,14 @@ print: capture
 
 .PHONY: test
 test: capture
-	@for file in $(SOURCES) ; do \
+	$(QUIET)for file in $(SOURCES) ; do \
 	  diff -u $$file.dot $$file.test.dot || error=1 ; \
 	done ; \
 	if [ 0$$error -eq 1 ]; then exit 1; fi
 
 .PHONY: replace
 replace: capture
-	@for file in $(SOURCES) ; do \
+	$(QUIET)for file in $(SOURCES) ; do \
 	  mv $$file.test.dot $$file.dot ; \
 	done
 

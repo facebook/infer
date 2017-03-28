@@ -20,14 +20,14 @@ $(INFER_RESULTS): $(CPP_MODELS_SOURCES) $(C_MODELS_SOURCES) $(CLANG_DEPS_NO_MODE
 	  $(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src clean all)
 
 $(CPP_MODELS_FILE): $(INFER_RESULTS)
-	@$(INSTALL_DATA) $(dir $(INFER_RESULTS))/specs/*.specs $(SPECS_LIB_DIR)
-	@touch $@
+	$(QUIET)$(INSTALL_DATA) $(dir $(INFER_RESULTS))/specs/*.specs $(SPECS_LIB_DIR)
+	$(QUIET)touch $@
 
 install: $(CPP_MODELS_FILE)
 
 clean:
 	$(REMOVE) $(CPP_MODELS_FILE)
 	$(REMOVE_DIR) $(dir $(INFER_RESULTS))
-	@$(MAKE) -C src clean
+	$(QUIET)$(MAKE) -C src clean
 
 .PHONY: all clean install

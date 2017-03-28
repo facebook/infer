@@ -204,7 +204,7 @@ $(STUBS_HAVE_BEEN_BUILT): $(wildcard ffi/*.ml) $(MAKEFILE_LIST)
 	$(STUBS_BUILD_DIR)/ffi/GenerateML.native > ffi/gen/ExternStubs.ml
 	$(STUBS_BUILD_DIR)/ffi/GenerateC.native > $(@D)/extern_stubs.c
 	$(STUBS_BUILD_DIR)/ffi/GenerateCGenerator.native > $(@D)/generate_caml_types.c
-	@touch $@
+	$(QUIET)touch $@
 
 $(STUBS_HAVE_RUN): $(STUBS_HAVE_BEEN_BUILT) $(MAKEFILE_LIST)
 #	create .o file using the right flags, which ocamlfind knows about
@@ -214,11 +214,11 @@ $(STUBS_HAVE_RUN): $(STUBS_HAVE_BEEN_BUILT) $(MAKEFILE_LIST)
 	cd $(INFER_BUILD_DIR)/$(@D) && \
 	$(CC) generate_caml_types.o -o generate_caml_types
 	$(INFER_BUILD_DIR)/$(@D)/generate_caml_types > $@
-	@touch $@
+	$(QUIET)touch $@
 
 $(INFER_BUILD_DIR)/ffi/gen/extern_stubs.o: $(STUBS_HAVE_BEEN_BUILT)
 	cd $(@D) && $(OCAMLFIND) ocamlc -package ctypes.stubs extern_stubs.c
-	@touch $@
+	$(QUIET)touch $@
 
 # single out infer.native as the source of truth for make, knowing that in fact several targets are
 # produced by the build
@@ -228,11 +228,11 @@ $(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(OCAML_CONFIG_SOURCES)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_EXTRA_NATIVE) \
 	  $(INFER_CONFIG_TARGETS)
 # let make know that the target is up-to-date even if ocamlbuild cached it
-	@touch $@
+	$(QUIET)touch $@
 
 $(BIN_DIR): Makefile
 	$(MKDIR_P) $@
-	@touch $@
+	$(QUIET)touch $@
 
 $(INFER_BIN).native: $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(BIN_DIR)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
@@ -254,7 +254,7 @@ $(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(STUBS_DEPS) $(OCAML_CON
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_EXTRA_BYTE) \
 	  $(INFER_CONFIG_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte
-	@touch $@
+	$(QUIET)touch $@
 
 $(INFER_BIN).byte: $(INFER_BUILD_DIR)/$(INFER_MAIN).byte $(BIN_DIR)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).byte $(INFERANALYZE_BIN)
@@ -320,7 +320,7 @@ mod_dep.pdf: mod_dep.dot
 
 .PHONY: dsort
 dsort:
-	@ocamldep.opt -sort $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files) -pp refmt $(re_src_files)
+	$(QUIET)ocamldep.opt -sort $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files) -pp refmt $(re_src_files)
 
 define to_ocaml_module
 $(shell \
@@ -350,7 +350,7 @@ $(INFER_BUILD_DIR)/toplevel.cmo: toplevel.mlpack
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_EXTRA_BYTE) toplevel.cmo
 	cd $(INFER_BUILD_DIR)/ffi/gen && \
 	ocamlmklib -o externstubslib ExternStubs.cmo extern_stubs.o
-	@touch $@
+	$(QUIET)touch $@
 
 .PHONY: toplevel
 toplevel: $(INFER_BUILD_DIR)/toplevel.cmo

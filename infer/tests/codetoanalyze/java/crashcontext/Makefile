@@ -46,7 +46,7 @@ print: issues.exp.test
 
 .PHONY: test
 test: issues.exp.test
-	@cd $(TESTS_DIR) && \
+	$(QUIET)cd $(TESTS_DIR) && \
 	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test
 
 .PHONY: replace
