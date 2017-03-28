@@ -13,7 +13,7 @@ SOURCES = $(wildcard $(APP_DIR)/simple_app/*.m)
 OBJECTS = $(APP_DIR)/app_built
 INFERPRINT_OPTIONS = --issues-tests
 
-include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/infer.make
 
 XCODEBUILD = xcodebuild -verbose -target simple_app -configuration Release -sdk iphonesimulator
 
@@ -23,10 +23,11 @@ $(OBJECTS): $(SOURCES)
 	touch app_built
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
-	cd $(APP_DIR) && \
+	$(QUIET)cd $(APP_DIR) && \
 	$(XCODEBUILD) clean && \
-	$(call silent_on_success,\
-	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --project-root $(TESTS_DIR) --results-dir $(CURDIR)/$(@D) -- $(XCODEBUILD))
+	$(call silent_on_success,Testing xcodebuild default integration,\
+	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --project-root $(TESTS_DIR) \
+	    --results-dir $(CURDIR)/$(@D) -- $(XCODEBUILD))
 
 clean:
 	cd $(APP_DIR) && \

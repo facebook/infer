@@ -90,37 +90,60 @@ endif
 all: infer
 
 configure: configure.ac $(wildcard m4/*.m4)
+#	rerun ./autogen.sh in case of failure as the failure may be due to needing to rerun
+#	./configure
+	$(QUIET)($(call silent_on_success,Generate ./configure,./autogen.sh)) || \
 	./autogen.sh
 
 Makefile.autoconf: configure Makefile.autoconf.in
 #	rerun ./configure with the flags that were used last time it was run (if available)
+#	retry in case of failure as the failure may be due to needing to rerun ./configure
+	$(QUIET)($(call silent_on_success,Running\
+	./configure $(shell ./config.status --config || true),\
+	./configure $(shell ./config.status --config || true))) || \
 	./configure $(shell ./config.status --config || true)
 
+.PHONY: fb-setup
+fb-setup:
+	$(QUIET)$(call silent_on_success,Facebook setup,\
+	$(MAKE) -C facebook setup)
+
 .PHONY: src_build
-src_build: $(MAKEFILE_LIST)
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(QUIET)$(MAKE) -C facebook setup
-endif
-	$(QUIET)$(MAKE) -C $(SRC_DIR) infer
+src_build:
+	$(QUIET)$(call silent_on_success,Building native Infer,\
+	$(MAKE) -C $(SRC_DIR) infer)
 
 .PHONY: byte
 byte:
+	$(QUIET)$(call silent_on_success,Building byte Infer,\
+	$(MAKE) -C $(SRC_DIR) byte)
+
+.PHONY: test_build
+test_build:
+	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
+	$(MAKE) -C $(SRC_DIR) TEST=1 byte_no_install)
+#	byte_no_install builds most of what toplevel needs, so it's more efficient to run the
+#	toplevel build straight after it rather than in parallel. Note that both targets build files
+#	that the other doesn't.
+	$(QUIET)$(call silent_on_success,Testing Infer toplevel builds,\
+	$(MAKE) -C $(SRC_DIR) TEST=1 toplevel)
+
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(QUIET)$(MAKE) -C facebook setup
+byte src_build test_build: fb-setup
 endif
-	$(QUIET)$(MAKE) -C $(SRC_DIR) byte
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
-src_build: clang_plugin
-byte: clang_plugin
+byte src_build test_build: clang_plugin
 endif
 
 .PHONY: infer
 infer: src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-	$(QUIET)$(MAKE) -C $(ANNOTATIONS_DIR)
+	$(QUIET)$(call silent_on_success,Building Java annotations,\
+	$(MAKE) -C $(ANNOTATIONS_DIR))
 endif
-	$(QUIET)$(MAKE) -C $(MODELS_DIR) all
+	$(QUIET)$(call silent_on_success,Building Infer models,\
+	$(MAKE) -C $(MODELS_DIR) all)
 
 .PHONY: clang_setup
 clang_setup:
@@ -133,37 +156,29 @@ clang_setup:
 .PHONY: clang_plugin
 clang_plugin: clang_setup
 ifeq ($(IS_RELEASE_TREE),no)
-	$(QUIET)$(MAKE) -C $(FCP_DIR)/libtooling all \
+	$(QUIET)$(call silent_on_success,Building clang plugin,\
+	$(MAKE) -C $(FCP_DIR)/libtooling all \
 	  CC=$(CC) CXX=$(CXX) \
 	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
 	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
 	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES)
-	$(QUIET)$(MAKE) -C $(FCP_DIR)/clang-ocaml all \
+	  CLANG_INCLUDES=$(CLANG_INCLUDES))
+	$(QUIET)$(call silent_on_success,Building clang plugin OCaml interface,\
+	$(MAKE) -C $(FCP_DIR)/clang-ocaml all \
           build/clang_ast_proj.ml build/clang_ast_proj.mli \
 	  CC=$(CC) CXX=$(CXX) \
 	  CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" \
 	  CPP="$(CPP)" LDFLAGS="$(LDFLAGS)" LIBS="$(LIBS)" \
 	  LOCAL_CLANG=$(CLANG_PREFIX)/bin/clang \
 	  CLANG_PREFIX=$(CLANG_PREFIX) \
-	  CLANG_INCLUDES=$(CLANG_INCLUDES)
+	  CLANG_INCLUDES=$(CLANG_INCLUDES))
 endif
-
-.PHONY: test_build
-test_build: clang_plugin
-ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(QUIET)$(MAKE) -C facebook setup
-endif
-	$(QUIET)$(MAKE) -C $(SRC_DIR) TEST=1 byte_no_install
-#	byte_no_install builds most of what toplevel needs, so it's more efficient to run the
-#	toplevel build straight after it rather than in parallel. Note that both targets build files
-#	that the other doesn't.
-	$(QUIET)$(MAKE) -C $(SRC_DIR) TEST=1 toplevel
 
 .PHONY: ocaml_unit_test
 ocaml_unit_test: test_build
-	$(call silent_on_success,$(BUILD_DIR)/test/infer/unit/inferunit.byte)
+	$(QUIET)$(call silent_on_success,Running OCaml unit tests,\
+	$(BUILD_DIR)/test/infer/unit/inferunit.byte)
 
 define silence_make
   ($(1) 2> >(grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target") \
@@ -172,10 +187,11 @@ endef
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_test)
 $(DIRECT_TESTS:%=direct_%_test): infer
-	$(QUIET)$(call silence_make,\
+	$(QUIET)$(call silent_on_success,Running $(subst _, ,$@),\
+	$(call silence_make,\
 	$(MAKE) -C \
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
-	  test)
+	  test))
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_print)
 $(DIRECT_TESTS:%=direct_%_print): infer
@@ -211,8 +227,9 @@ build_waf_print: build_make_print
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 $(BUILD_SYSTEMS_TESTS:%=build_%_test): infer
-	$(QUIET)$(call silence_make,\
-	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_test,%,$@) test)
+	$(QUIET)$(call silent_on_success,Running $(subst _, ,$@),\
+	$(call silence_make,\
+	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_test,%,$@) test))
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_print)
 $(BUILD_SYSTEMS_TESTS:%=build_%_print): infer
@@ -233,31 +250,33 @@ $(BUILD_SYSTEMS_TESTS:%=build_%_replace): infer
 build_systems_tests: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 
 .PHONY: endtoend_test
-endtoend_test: $(BUILD_SYSTEMS_TESTS:%=build_%_print) $(DIRECT_TESTS:%=direct_%_print)
-# pre-compute all the results first so that the test failures show up near the end of the output
-	$(MAKE) direct_tests build_systems_tests
+endtoend_test: $(BUILD_SYSTEMS_TESTS:%=build_%_test) $(DIRECT_TESTS:%=direct_%_test)
 
 .PHONY: inferTraceBugs_test
 inferTraceBugs_test: infer
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: running infer,\
 	$(INFER_BIN) -o __test-infer-out__ -- \
-	  $(JAVAC) $(EXAMPLES_DIR)/Hello.java \
-	   > /dev/null
+	  $(JAVAC) $(EXAMPLES_DIR)/Hello.java)
 else
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: running infer,\
 	$(INFER_BIN) -o __test-infer-out__ -- \
-	  clang -c $(EXAMPLES_DIR)/hello.c \
-	   > /dev/null
+	  clang -c $(EXAMPLES_DIR)/hello.c)
 endif
-	$(QUIET)rm -f Hello.class
+	$(QUIET)$(REMOVE) Hello.class
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=max,\
 	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
-	  --select 0 --max-level max > /dev/null
+	  --select 0 --max-level max)
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=0,\
 	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
-	  --select 0 --max-level 0 > /dev/null
+	  --select 0 --max-level 0)
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=max --no-source,\
 	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
-	  --select 0 --max-level max --no-source > /dev/null
+	  --select 0 --max-level max --no-source)
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --only-show,\
 	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
-	  --only-show > /dev/null
-	$(QUIET)rm -fr __test-infer-out__
+	  --only-show)
+	$(QUIET)$(REMOVE_DIR) __test-infer-out__
 
 .PHONY: check_missing_mli
 check_missing_mli:
@@ -270,26 +289,29 @@ toplevel: clang_plugin
 
 .PHONY: inferScriptMode_test
 inferScriptMode_test: test_build
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing infer OCaml REPL,\
 	 INFER_REPL_BINARY=ocaml $(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.ml)
 
 .PHONY: checkCopyright
 checkCopyright:
-	$(QUIET)$(MAKE) -C $(SRC_DIR) checkCopyright
+	$(QUIET)$(call silent_on_success,Building checkCopyright,\
+	$(MAKE) -C $(SRC_DIR) checkCopyright)
 
 .PHONY: validate-skel
 validate-skel:
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(QUIET)$(MAKE) -C facebook validate
+	$(QUIET)$(call silent_on_success,Validating facebook/,\
+	$(MAKE) -C facebook validate)
 endif
 
 
 .PHONY: test
 test: test_build ocaml_unit_test endtoend_test inferTraceBugs_test inferScriptMode_test \
       checkCopyright validate-skel
-	$(QUIET)$(MAKE) -C $(SRC_DIR) mod_dep.dot
+	$(QUIET)$(call silent_on_success,Building Infer source dependency graph,\
+	$(MAKE) -C $(SRC_DIR) mod_dep.dot)
 ifeq (,$(findstring s,$(MAKEFLAGS)))
-	$(QUIET)echo "ALL TESTS PASSED"
+	$(QUIET)echo "$(TERM_INFO)ALL TESTS PASSED$(TERM_RESET)"
 endif
 
 .PHONY: quick-test
@@ -432,7 +454,8 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(QUIET)$(MAKE) -C facebook clean
 endif
 	$(QUIET)$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
-	find $(INFER_DIR)/tests -name '*.o' -or -name '*.o.sh' -delete
+	find $(INFER_DIR)/tests \( -name '*.o' -o -name '*.o.sh' \) -delete
+	$(REMOVE_DIR) _build_logs
 
 .PHONY: conf-clean
 conf-clean: clean

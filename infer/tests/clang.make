@@ -11,12 +11,12 @@ CLEAN_EXTRA += duplicates.txt
 
 OBJECTS = $(foreach source,$(SOURCES),$(basename $(source)).o)
 
-include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/clang-base.make
 
 infer-out$(TEST_SUFFIX)/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS) $(TESTS_DIR)/.inferconfig
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing infer/clang$(ANALYZER_STRING) in $(TEST_REL_DIR),\
 	  $(INFER_BIN) --results-dir $(@D) --dump-duplicate-symbols \
 	    $(INFER_OPTIONS) -a $(ANALYZER) -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES))
-	grep "DUPLICATE_SYMBOLS" infer-out$(TEST_SUFFIX)/duplicates.txt; test $$? -ne 0
+	$(QUIET)$(call check_no_duplicates,infer-out$(TEST_SUFFIX)/duplicates.txt)

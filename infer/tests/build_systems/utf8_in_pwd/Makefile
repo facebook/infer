@@ -10,13 +10,9 @@
 # or 'analyze' target.
 
 TESTS_DIR = ../..
-ROOT_DIR = $(TESTS_DIR)/../..
 
 include $(TESTS_DIR)/java.make
-include $(ROOT_DIR)/Makefile.config
-
-# see base.make
-TEST_REL_DIR = $(patsubst $(abspath $(TESTS_DIR))/%,%,$(abspath $(CURDIR)))
+include $(TESTS_DIR)/base.make
 
 UTF8_DIR = $(shell printf '../codetoanalyze/utf8_\u03B9n_pwd')
 
@@ -44,61 +40,63 @@ INFERPRINT_OPTIONS = --issues-tests
 default: print
 
 $(UTF8_DIR):
-	$(MKDIR_P) $@
+	$(QUIET)$(MKDIR_P) $@
 
 $(CMAKE_DIR): $(CMAKE_SOURCES) $(UTF8_DIR)
-	rsync -aL --exclude='_build*' $(CMAKE_SOURCES_DIR)/ $@/
-	touch $@
+	$(QUIET)rsync -aL --exclude='_build*' $(CMAKE_SOURCES_DIR)/ $@/
+	$(QUIET)touch $@
 
 $(GRADLE_DIR): $(GRADLE_SOURCES) $(UTF8_DIR)
-	rsync -a $(GRADLE_SOURCES_DIR)/ $@/
-	touch $@
+	$(QUIET)rsync -a $(GRADLE_SOURCES_DIR)/ $@/
+	$(QUIET)touch $@
 
 $(JAVAC_DIR): $(JAVAC_SOURCES) $(UTF8_DIR)
-	$(MKDIR_P) $(JAVAC_DIR)
-	rsync -a $(JAVAC_SOURCES) $@
-	touch $@
+	$(QUIET)$(MKDIR_P) $(JAVAC_DIR)
+	$(QUIET)rsync -a $(JAVAC_SOURCES) $@
+	$(QUIET)touch $@
 
 $(MAKE_DIR): $(MAKE_SOURCES) $(UTF8_DIR)
-	rsync -a $(MAKE_SOURCES_DIR)/ $@/
-	touch $@
+	$(QUIET)rsync -a $(MAKE_SOURCES_DIR)/ $@/
+	$(QUIET)touch $@
 
 infer-out-cmake/report.json: $(CMAKE_DIR) $(CMAKE_SOURCES_DIR)/CMakeLists.txt $(CLANG_DEPS)
-	$(REMOVE_DIR) $(CMAKE_ANALYZE_DIR) && \
-	$(MKDIR_P) $(CMAKE_ANALYZE_DIR) && \
-	cd $(CMAKE_ANALYZE_DIR) && \
-	$(call silent_on_success,\
+	$(QUIET)$(REMOVE_DIR) $(CMAKE_ANALYZE_DIR)
+	$(QUIET)$(MKDIR_P) $(CMAKE_ANALYZE_DIR)
+	$(QUIET)cd $(CMAKE_ANALYZE_DIR) && \
+	$(call silent_on_success,Testing\
+	  Infer/CMake is immune to UTF-8 in PWD: Makefile generation,\
 	  $(INFER_BIN) -a compile --project-root $(CMAKE_DIR) --results-dir $(CURDIR)/$(@D) -- cmake ..)
-	cd $(CMAKE_ANALYZE_DIR) && \
-	$(call silent_on_success,\
-	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- $(MAKE))
-	sed -i -e 's#$(abspath $(CMAKE_DIR))/##g' $@
+	$(QUIET)cd $(CMAKE_ANALYZE_DIR) && \
+	$(call silent_on_success,Testing\
+	  Infer/CMake is immune to UTF-8 in PWD: Makefile execution,\
+	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- make)
+	$(QUIET)sed -i -e 's#$(abspath $(CMAKE_DIR))/##g' $@
 
 infer-out-gradle/report.json: $(JAVA_DEPS) $(GRADLE_DIR)
 #	mock version of gradle
-	PATH=$(CURDIR)/../mock:"$$PATH"; \
+	$(QUIET)PATH=$(CURDIR)/../mock:"$$PATH"; \
 	cd $(GRADLE_DIR) && \
-	$(call silent_on_success,\
+	$(call silent_on_success,Testing Infer/gradle is immune to UTF-8 in PWD,\
 	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- gradle build)
 
 infer-out-javac/report.json: $(JAVA_DEPS) $(JAVAC_DIR)
-	cd $(JAVAC_DIR) && \
-	$(call silent_on_success,\
+	$(QUIET)cd $(JAVAC_DIR) && \
+	$(call silent_on_success,Testing Infer/javac is immune to UTF-8 in PWD,\
 	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- \
 	    $(JAVAC) -cp $(CLASSPATH) $(foreach source,$(JAVAC_SOURCES),$(notdir $(source))))
 
 infer-out-make/report.json: $(CLANG_DEPS) $(MAKE_DIR)
-	cd $(MAKE_DIR) && \
-	$(call silent_on_success,\
+	$(QUIET)cd $(MAKE_DIR) && \
+	$(call silent_on_success,Testing Infer/make is immune to UTF-8 in PWD,\
 	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/$(@D) -- \
 	    make clean all)
 
 issues-%.exp.test: infer-out-%/report.json $(INFERPRINT_BIN)
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ --from-json-report $<
+	$(QUIET)$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@ --from-json-report $<
 
 issues.exp.test: issues-cmake.exp.test issues-gradle.exp.test issues-javac.exp.test \
                  issues-make.exp.test
-	cat $^ > $@
+	$(QUIET)cat $^ > $@
 
 .PHONY: print
 print: issues.exp.test
@@ -106,7 +104,7 @@ print: issues.exp.test
 .PHONY: test
 test: issues.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
-	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test
+	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp,$(TEST_REL_DIR)/issues.exp.test)
 
 .PHONY: replace
 replace: issues.exp.test

@@ -7,6 +7,8 @@
 
 TESTS_DIR = ../..
 
+include $(TESTS_DIR)/base.make
+
 ANALYZER = infer
 
 CODETOANALYZE_DIR = ../codetoanalyze
@@ -18,17 +20,10 @@ INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(CODETOANALYZE_DIR)/hello.c
 OBJECTS = $(foreach source,$(SOURCES),$(basename $(source)).o)
 
-ROOT_DIR = $(TESTS_DIR)/../..
-
-include $(ROOT_DIR)/Makefile.config
-
-# see base.make
-TEST_REL_DIR = $(patsubst $(abspath $(TESTS_DIR))/%,%,$(abspath $(CURDIR)))
-
 default: compile
 
 issues.exp.test: $(CLANG_DEPS) $(SOURCES)
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing Infer fails on issue,\
 	  ($(INFER_BIN) --fail-on-issue -- clang $(CLANG_OPTIONS) $(SOURCES); \
 	   echo "infer exit code: $$?" > $@))
 
@@ -41,7 +36,7 @@ print: issues.exp.test
 .PHONY: test
 test: issues.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
-	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test
+	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp,$(TEST_REL_DIR)/issues.exp.test)
 
 .PHONY: replace
 replace: issues.exp.test

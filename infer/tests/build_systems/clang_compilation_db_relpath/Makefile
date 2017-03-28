@@ -16,19 +16,19 @@ OBJECTS = $(SOURCES:.c=.o)
 CLEAN_EXTRA = compile_commands.json ../codetoanalyze/path\ with\ spaces
 INFERPRINT_OPTIONS = --issues-tests
 
-include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/infer.make
 
 ../codetoanalyze/path\ with\ spaces/hel\ lo.c: ../codetoanalyze/path_with_spaces/hel_lo.c
 #	make does not want to interpret "$(@D)" in the right way here...
-	$(MKDIR_P) ../codetoanalyze/path\ with\ spaces/
+	$(QUIET)$(MKDIR_P) ../codetoanalyze/path\ with\ spaces/
 	$(QUIET)cp "$<" "$@"
 	$(QUIET)touch "$@"
 
 compile_commands.json: compile_commands.json.in
-	sed -e 's#%pwd%#$(CURDIR)#g' $< > $@ || $(REMOVE) $@
+	$(QUIET)sed -e 's#%pwd%#$(CURDIR)#g' $< > $@ || $(REMOVE) $@
 
 infer-out/report.json: compile_commands.json $(SOURCES) Makefile \
                        ../codetoanalyze/path\ with\ spaces/hel\ lo.c
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Clang compilation database with relative paths integration,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --project-root $(TESTS_DIR) \
-      --compilation-database $<)
+	  --compilation-database $<)

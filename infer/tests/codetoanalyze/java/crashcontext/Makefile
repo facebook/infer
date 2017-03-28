@@ -7,9 +7,7 @@
 
 TESTS_DIR = ../../..
 include $(TESTS_DIR)/java.make
-
-# see base.make
-TEST_REL_DIR = $(patsubst $(abspath $(TESTS_DIR))/%,%,$(abspath $(CURDIR)))
+include $(TESTS_DIR)/base.make
 
 ANALYZER = crashcontext
 
@@ -23,15 +21,15 @@ $(OBJECTS): $(SOURCES)
 
 # analyze a single source file and generate the test results for it
 issues-%.exp.test: $(JAVA_DEPS) %.stacktrace.json %.java
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing crashcontext: $*,\
 	  $(INFER_BIN) -a $(ANALYZER) -o infer-out-$* --stacktrace $*.stacktrace.json \
 	  -- $(JAVAC) -cp $(CLASSPATH) $*.java)
 #	add a newline at the end of the json when creating the exp.test
-	$(COPY) infer-out-$*/crashcontext/crashcontext.json $@ && echo >> $@
+	$(QUIET)$(COPY) infer-out-$*/crashcontext/crashcontext.json $@ && echo >> $@
 
 # combine the test results for all the source files
 issues.exp.test: $(EXP_TESTs)
-	cat $^ > issues.exp.test
+	$(QUIET)cat $^ > $@
 
 default: compile
 
@@ -47,7 +45,7 @@ print: issues.exp.test
 .PHONY: test
 test: issues.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
-	diff -u $(TEST_REL_DIR)/issues.exp $(TEST_REL_DIR)/issues.exp.test
+	$(call check_no_diff,$(TEST_REL_DIR)/issues.exp,$(TEST_REL_DIR)/issues.exp.test)
 
 .PHONY: replace
 replace: issues.exp.test

@@ -15,7 +15,7 @@ all: install
 
 $(INFER_RESULTS): $(OBJC_MODELS_SOURCES) $(CLANG_DEPS_NO_MODELS)
 # make clean in src/ to recompile all the models
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Building Objective-C models,\
 	  $(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src clean all)
 
 $(OBJC_MODELS_FILE): $(INFER_RESULTS)

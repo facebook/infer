@@ -16,11 +16,11 @@ OBJECTS =
 INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/java.make
-include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/infer.make
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 #	mock version of gradle
-	PATH=$(CURDIR)/../mock:"$$PATH"; \
+	$(QUIET)PATH=$(CURDIR)/../mock:"$$PATH"; \
 	cd $(SOURCES_DIR) && \
-	$(call silent_on_success,\
+	$(call silent_on_success,Testing gradle Java integration,\
 	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- gradle build)

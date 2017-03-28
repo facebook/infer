@@ -15,14 +15,14 @@ OBJECTS = $(PROJECT_ROOT)/hello.o
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = libs obj
 
-include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/infer.make
 
 $(OBJECTS): $(SOURCES)
 	cd $(PROJECT_ROOT) && \
 	$(NDKBUILD) -B NDK_LIBS_OUT=./libs NDK_OUT=./obj
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
-	cd $(PROJECT_ROOT) && \
-	$(call silent_on_success,\
+	$(QUIET)cd $(PROJECT_ROOT) && \
+	$(call silent_on_success,Testing ndk-build clang integration,\
 	  $(INFER_BIN) -a $(ANALYZER) --results-dir $(CURDIR)/infer-out -- \
 	    $(NDKBUILD) -B NDK_LIBS_OUT=./libs NDK_OUT=./obj)

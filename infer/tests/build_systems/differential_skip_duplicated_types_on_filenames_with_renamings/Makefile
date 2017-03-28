@@ -14,11 +14,13 @@ CLEAN_EXTRA = src/Diff*.java *.class
 include ../../differential.make
 
 $(CURRENT_REPORT):
-	cp src/DiffExampleRenamed.java.current src/DiffExampleRenamed.java
-	$(call silent_on_success,\
+	$(QUIET)$(COPY) src/DiffExampleRenamed.java.current src/DiffExampleRenamed.java
+	$(QUIET)$(call silent_on_success,Testing\
+	Differential skips duplicated types on renamed files: current,\
 	$(INFER_BIN) -o $(CURRENT_DIR) -- $(JAVAC) src/DiffExampleRenamed.java)
 
 $(PREVIOUS_REPORT):
-	cp src/DiffExample.java.previous src/DiffExample.java
-	$(call silent_on_success,\
+	$(QUIET)$(COPY) src/DiffExample.java.previous src/DiffExample.java
+	$(QUIET)$(call silent_on_success,Testing\
+	Differential skips duplicated types on renamed files: previous,\
 	$(INFER_BIN) -o $(PREVIOUS_DIR) -- $(JAVAC) src/DiffExample.java)

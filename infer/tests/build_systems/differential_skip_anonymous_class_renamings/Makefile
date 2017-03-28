@@ -13,9 +13,11 @@ CLEAN_EXTRA = src/Diff*.java *.class
 include ../../differential.make
 
 $(CURRENT_REPORT):
-	cp src/DiffExample.java.current src/DiffExample.java
-	$(call silent_on_success, $(INFER_BIN) -o $(CURRENT_DIR) -- $(JAVAC) src/*.java)
+	$(QUIET)$(COPY) src/DiffExample.java.current src/DiffExample.java
+	$(QUIET)$(call silent_on_success,Testing Differential skips anon class renamings: current,\
+	$(INFER_BIN) -o $(CURRENT_DIR) -- $(JAVAC) src/*.java)
 
 $(PREVIOUS_REPORT):
-	cp src/DiffExample.java.previous src/DiffExample.java
-	$(call silent_on_success, $(INFER_BIN) -o $(PREVIOUS_DIR) -- $(JAVAC) src/*.java)
+	$(QUIET)$(COPY) src/DiffExample.java.previous src/DiffExample.java
+	$(QUIET)$(call silent_on_success,Testing Differential skips anon class renamings: previous,\
+	$(INFER_BIN) -o $(PREVIOUS_DIR) -- $(JAVAC) src/*.java)

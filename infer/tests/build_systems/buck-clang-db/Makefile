@@ -16,11 +16,11 @@ OBJECTS = '$(SOURCE_DIR)/buck-out/gen/clang_compilation_database/__Hel lo\#compi
 INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = $(SOURCE_DIR)/buck-out
 
-include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/infer.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
-	cd $(SOURCE_DIR) && \
-	$(call silent_on_success,\
+	$(QUIET)cd $(SOURCE_DIR) && \
+	$(call silent_on_success,Testing Buck Clang compilation database integration,\
 	  NO_BUCKD=1 \
 	  $(INFER_BIN) -a $(ANALYZER) --stats $(INFER_OPTIONS) -o $(CURDIR)/$(@D) \
 	  --buck-compilation-database no-deps \

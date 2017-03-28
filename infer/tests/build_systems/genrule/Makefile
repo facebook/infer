@@ -19,11 +19,11 @@ INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
 CLEAN_EXTRA = $(ROOT_DIR)/buck-out/genruletest
 
 include $(TESTS_DIR)/java.make
-include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/infer.make
 
 $(OBJECTS): $(JAVA_SOURCE_FILES)
-	cd $(ROOT_DIR) && \
-	$(call silent_on_success,\
+	$(QUIET)cd $(ROOT_DIR) && \
+	$(call silent_on_success,Compiling Buck genrule for Java sources,\
 	NO_BUCKD=1 $(BUCK) build --no-cache $(BUCK_TARGET))
 
 .PHONY: genrule
@@ -31,14 +31,14 @@ genrule: $(JSON_REPORT)
 
 
 $(JSON_REPORT): $(JAVA_DEPS) $(JAVA_SOURCE_FILES)
-	cd $(ROOT_DIR) && \
+	$(QUIET)cd $(ROOT_DIR) && \
 	$(REMOVE_DIR) buck-out && \
-	$(call silent_on_success,\
+	$(call silent_on_success,Testing Buck genrule for Java integration,\
 	INFER_BIN="$(INFER_BIN)" NO_BUCKD=1 GENERATE_INFER_GENRULES=1 \
 	$(BUCK) build --no-cache $(INFER_TARGET))
-	touch $@
+	$(QUIET)touch $@
 
 infer-out/report.json: $(JSON_REPORT)
-	$(MKDIR_P) infer-out
+	$(QUIET)$(MKDIR_P) infer-out
 #	the report contains absolute paths
 	$(QUIET)sed -e 's#$(abspath $(TESTS_DIR))/##g' $< > $@

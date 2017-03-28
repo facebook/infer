@@ -5,11 +5,9 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
-ROOT_DIR = $(TESTS_DIR)/../..
-include $(ROOT_DIR)/Makefile.config
-
 OBJECTS = $(foreach source,$(SOURCES),$(basename $(source)).o)
 
+include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/clang-base.make
 
 ONE_SOURCE = $(lastword $(SOURCES))
@@ -19,7 +17,7 @@ default: compile
 compile: $(OBJECTS)
 
 $(ONE_SOURCE).test.dot: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
-	$(call silent_on_success, \
+	$(QUIET)$(call silent_on_success,Testing the infer/clang frontend in $(TEST_REL_DIR),\
 	  $(INFER_BIN) -a capture --frontend-tests --project-root $(TESTS_DIR) $(INFER_OPTIONS) -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES))
 

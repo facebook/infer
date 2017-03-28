@@ -21,15 +21,15 @@ SOURCES = $(SOURCES1) $(SOURCES2) $(SOURCES3)
 include $(TESTS_DIR)/clang.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing reactive mode: capture 1/3,\
 	  $(INFER_BIN) $(INFER_OPTIONS) -a capture -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES1))
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing reactive mode: capture 2/3,\
 	  $(INFER_BIN) $(INFER_OPTIONS) -a capture --reactive --continue -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES2))
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing reactive mode: capture 3/3,\
 	  $(INFER_BIN) $(INFER_OPTIONS) -a capture --reactive --continue -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES3))
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing reactive mode: analysis,\
 	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- analyze)
-	grep "DUPLICATE_SYMBOLS" infer-out/duplicates.txt; test $$? -ne 0
+	$(QUIET)$(call check_no_duplicates,infer-out/duplicates.txt)

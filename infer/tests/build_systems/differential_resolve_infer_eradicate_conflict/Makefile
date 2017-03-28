@@ -14,13 +14,13 @@ CLEAN_EXTRA = src/com/example/Diff*.java src/Diff*.java *.class com/
 include ../../differential.make
 
 $(CURRENT_REPORT): .inferconfig
-	cp src/com/example/DiffExample.java.current src/com/example/DiffExample.java
-	cp src/DiffExampleTwo.java.current src/DiffExampleTwo.java
-	$(call silent_on_success,\
+	$(QUIET)$(COPY) src/com/example/DiffExample.java.current src/com/example/DiffExample.java
+	$(QUIET)$(COPY) src/DiffExampleTwo.java.current src/DiffExampleTwo.java
+	$(QUIET)$(call silent_on_success,Testing Differential resolves Infer/Eradicate conflicts: current,\
 	$(INFER_BIN) \
 		-o $(CURRENT_DIR) -- $(JAVAC) src/com/example/DiffExample.java src/DiffExampleTwo.java)
 
 $(PREVIOUS_REPORT): .inferconfig
-	cp src/com/example/DiffExample.java.previous src/com/example/DiffExample.java
-	$(call silent_on_success,\
+	$(QUIET)$(COPY) src/com/example/DiffExample.java.previous src/com/example/DiffExample.java
+	$(QUIET)$(call silent_on_success,Testing Differential resolves Infer/Eradicate conflicts: previous,\
 	$(INFER_BIN) -o $(PREVIOUS_DIR) -- $(JAVAC) src/com/example/DiffExample.java)

@@ -14,8 +14,8 @@ INFER_RESULTS = out/report.json
 all: install
 
 $(INFER_RESULTS): $(C_MODELS_SOURCES) $(CLANG_DEPS_NO_MODELS)
-# make clean in src/ to recompile all the models
-	$(call silent_on_success,\
+#	make clean in src/ to recompile all the models
+	$(QUIET)$(call silent_on_success,Building C models,\
 	  $(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src clean all)
 
 $(C_MODELS_FILE): $(INFER_RESULTS)

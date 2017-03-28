@@ -29,9 +29,9 @@ compile:
 
 $(INFER_REPORT): $(JAVA_DEPS_NO_MODELS) $(JAVA_SOURCES)
 	$(QUIET)rm -fr $(MODELS_OUT)
-	mkdir -p $(MODELS_OUT)
+	$(QUIET)$(MKDIR_P) $(MODELS_OUT)
 	$(QUIET)rm -f $(JAVA_MODELS_JAR)
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Building Java models,\
 	  $(INFER_BIN) --jobs 1 --results-dir $(INFER_RESULTS_DIR) --models-mode -- \
 	  $(JAVAC) -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) \
 	    $(JAVA_SOURCES))

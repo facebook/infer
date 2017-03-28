@@ -115,28 +115,28 @@ $(OBJECTS_BASE) $(OBJECTS_BUCKETS_ALL): $(SOURCES_BASE) $(SOURCES_BUCKET_ALL)
 	clang $(CLANG_OPTIONS) $*
 
 infer-out-all/report.json: $(CLANG_DEPS) $(SOURCES_BUCKET_ALL)
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing infer/Objective-C with all memleak buckets,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets all -o infer-out-all -- \
 	  clang $(CLANG_OPTIONS) $(SOURCES_BUCKET_ALL))
-	grep "DUPLICATE_SYMBOLS" infer-out-all/duplicates.txt; test $$? -ne 0
+	$(QUIET)$(call check_no_duplicates,infer-out-all/duplicates.txt)
 
 infer-out-arc/report.json: $(CLANG_DEPS) $(SOURCES_ARC)
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing infer/Objective-C with arc memleak buckets,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets cf -o infer-out-arc -- \
 	  clang $(CLANG_OPTIONS) -fobjc-arc $(SOURCES_ARC))
-	grep "DUPLICATE_SYMBOLS" infer-out-arc/duplicates.txt; test $$? -ne 0
+	$(QUIET)$(call check_no_duplicates,infer-out-arc/duplicates.txt)
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES_DEFAULT)
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing infer/Objective-C with CF memleak buckets,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --ml-buckets cf -o infer-out -- \
 	  clang $(CLANG_OPTIONS) $(SOURCES_DEFAULT))
-	grep "DUPLICATE_SYMBOLS" infer-out/duplicates.txt; test $$? -ne 0
+	$(QUIET)$(call check_no_duplicates,infer-out/duplicates.txt)
 
 issues.exp.test: infer-out-all/report.json infer-out-arc/report.json infer-out/report.json
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.all \
+	$(QUIET)$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.all \
 	  --from-json-report infer-out-all/report.json
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.arc \
+	$(QUIET)$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.arc \
 	  --from-json-report infer-out-arc/report.json
-	$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.default \
+	$(QUIET)$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.default \
 	  --from-json-report infer-out/report.json
-	cat $@.all $@.arc $@.default > $@
+	$(QUIET)cat $@.all $@.arc $@.default > $@

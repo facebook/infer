@@ -13,13 +13,13 @@ OBJECTS = $(patsubst %.java,ant_out/%.class,$(SOURCES))
 INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/java.make
-include $(TESTS_DIR)/base.make
+include $(TESTS_DIR)/infer.make
 
 $(OBJECTS): $(SOURCES)
 	$(ANT)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing ant integration,\
 	  $(INFER_BIN) -a $(ANALYZER) --project-root $(TESTS_DIR) --inferconfig-home . -- $(ANT))
 
 clean:

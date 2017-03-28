@@ -29,15 +29,15 @@ INFER_OPTIONS = -a capture --frontend-tests --skip-translation-headers exclude_d
 capture: $(DOT_FILES)
 
 $(ROOT)/main.cpp.test.dot $(SYM_ROOT)/main_symlink.cpp.test.dot: $(SOURCES) $(CLANG_DEPS)
-	$(call silent_on_success,\
+	$(QUIET)$(call silent_on_success,Testing clang translation with symlinks with project root,\
 	$(INFER_BIN) $(INFER_OPTIONS) --results-dir infer-out-$(basename $(@F:.test.dot=)) \
 	  --project-root $(ROOT) --icfg-dotty-outfile $@ -- \
 	  clang $(CLANG_OPTIONS) $(@:.test.dot=))
 
 $(ROOT)/main_default_root.cpp.test.dot $(SYM_ROOT)/main_default_symlink.cpp.test.dot: \
   $(CLANG_DEPS) $(SOURCES)
-	cd $(@D) && \
-	$(call silent_on_success,\
+	$(QUIET)cd $(@D) && \
+	$(call silent_on_success,Testing clang translation with symlinks with CWD=project root,\
 	$(INFER_BIN) $(INFER_OPTIONS) --results-dir $(CURDIR)/infer-out-$(basename $(@F:.test.dot=)) \
 	  --icfg-dotty-outfile $(@F) -- \
 	  clang $(CLANG_OPTIONS) $(@F:.test.dot=))
@@ -48,6 +48,9 @@ test: test_extra
 
 # all dot files should be exactly the same - if they aren't there is something wrong
 test_extra: $(DOT_FILES)
-	diff -u $(ROOT)/main.cpp.test.dot $(SYM_ROOT)/main_symlink.cpp.test.dot
-	diff -u $(ROOT)/main.cpp.test.dot $(ROOT)/main_default_root.cpp.test.dot
-	diff -u $(ROOT)/main.cpp.test.dot $(SYM_ROOT)/main_default_symlink.cpp.test.dot
+	$(QUIET)$(call check_no_diff,$(ROOT)/main.cpp.test.dot,\
+	                         $(SYM_ROOT)/main_symlink.cpp.test.dot)
+	$(QUIET)$(call check_no_diff,$(ROOT)/main.cpp.test.dot,\
+	                             $(ROOT)/main_default_root.cpp.test.dot)
+	$(QUIET)$(call check_no_diff,$(ROOT)/main.cpp.test.dot,\
+	                         $(SYM_ROOT)/main_default_symlink.cpp.test.dot)

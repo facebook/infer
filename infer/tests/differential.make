@@ -8,8 +8,7 @@
 # Targets that must be defined: CURRENT_REPORT and PREVIOUS_REPORT
 # Optional variables: DIFFERENTIAL_ARGS, CLEAN_EXTRA
 
-ROOT_DIR = $(TESTS_DIR)/../..
-include $(ROOT_DIR)/Makefile.config
+include $(TESTS_DIR)/base.make
 
 INFER_OUT = infer-out
 DIFFERENTIAL_REPORT = $(INFER_OUT)/differential/introduced.json
@@ -32,20 +31,21 @@ $(PREVIOUS_REPORT): $(CURRENT_REPORT)
 analyze: $(CURRENT_REPORT) $(PREVIOUS_REPORT)
 
 $(DIFFERENTIAL_REPORT): $(CURRENT_REPORT) $(PREVIOUS_REPORT)
-	$(INFER_BIN) -o $(INFER_OUT) --project-root $(CURDIR) --diff \
+	$(QUIET)$(call silent_on_success,Computing results difference in $(TEST_REL_DIR),\
+	  $(INFER_BIN) -o $(INFER_OUT) --project-root $(CURDIR) --diff \
 		--report-current $(CURRENT_REPORT) --report-previous $(PREVIOUS_REPORT) \
-		$(DIFFERENTIAL_ARGS)
+		$(DIFFERENTIAL_ARGS))
 
 $(EXPECTED_TEST_OUTPUT): $(DIFFERENTIAL_REPORT) $(INFERPRINT_BIN)
-	$(INFERPRINT_BIN) \
+	$(QUIET)$(INFERPRINT_BIN) \
 		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(INFER_OUT)/differential/introduced.json \
 		--issues-tests introduced.exp.test
-	$(INFERPRINT_BIN) \
+	$(QUIET)$(INFERPRINT_BIN) \
 		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(INFER_OUT)/differential/fixed.json \
 		--issues-tests fixed.exp.test
-	$(INFERPRINT_BIN) \
+	$(QUIET)$(INFERPRINT_BIN) \
 		--issues-fields $(INFERPRINT_ISSUES_FIELDS) \
 		--from-json-report $(INFER_OUT)/differential/preexisting.json \
 		--issues-tests preexisting.exp.test
@@ -55,9 +55,9 @@ print: $(EXPECTED_TEST_OUTPUT)
 
 .PHONY: test
 test: print
-	diff -u introduced.exp introduced.exp.test
-	diff -u fixed.exp fixed.exp.test
-	diff -u preexisting.exp preexisting.exp.test
+	$(QUIET)$(call check_no_diff,introduced.exp,introduced.exp.test)
+	$(QUIET)$(call check_no_diff,fixed.exp,fixed.exp.test)
+	$(QUIET)$(call check_no_diff,preexisting.exp,preexisting.exp.test)
 
 .PHONY: replace
 replace: $(EXPECTED_TEST_OUTPUT)
