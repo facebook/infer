@@ -18,7 +18,7 @@ digraph iCFG {
 "fields#_Z6fieldsv.9f46b295429b26ed77896571ab767beb_2" [label="2: Exit fields \n  " color=yellow style=filled]
 	
 
-"fields#_Z6fieldsv.9f46b295429b26ed77896571ab767beb_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class Fields* [line 20]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field1:float=1 [line 16]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field2:float=2 [line 16]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field3:float=3 [line 16]\n  _fun_Fields_(n$0:class Fields*,&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields:class Fields&) [line 20]\n " shape="box"]
+"fields#_Z6fieldsv.9f46b295429b26ed77896571ab767beb_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class Fields* [line 20]\n  _fun_Fields_(n$0:class Fields*,&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields:class Fields&) [line 20]\n " shape="box"]
 	
 
 	 "fields#_Z6fieldsv.9f46b295429b26ed77896571ab767beb_3" -> "fields#_Z6fieldsv.9f46b295429b26ed77896571ab767beb_2" ;

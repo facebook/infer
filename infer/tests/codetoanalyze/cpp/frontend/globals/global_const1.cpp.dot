@@ -29,11 +29,11 @@ digraph iCFG {
 "test2#_Z5test2v.51af7cbda728abeafa25300302478ca4_2" [label="2: Exit test2 \n  " color=yellow style=filled]
 	
 
-"test2#_Z5test2v.51af7cbda728abeafa25300302478ca4_3" [label="3:  Return Stmt \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int=2 [line 21]\n  n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 21]\n  *&return:int=n$0 [line 21]\n " shape="box"]
+"test2#_Z5test2v.51af7cbda728abeafa25300302478ca4_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 21]\n  *&return:int=n$0 [line 21]\n " shape="box"]
 	
 
 	 "test2#_Z5test2v.51af7cbda728abeafa25300302478ca4_3" -> "test2#_Z5test2v.51af7cbda728abeafa25300302478ca4_2" ;
-"test2#_Z5test2v.51af7cbda728abeafa25300302478ca4_4" [label="4:  DeclStmt \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int=2 [line 20]\n  n$1=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 20]\n  *&local:int=n$1 [line 20]\n " shape="box"]
+"test2#_Z5test2v.51af7cbda728abeafa25300302478ca4_4" [label="4:  DeclStmt \n   n$1=*&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int [line 20]\n  *&local:int=n$1 [line 20]\n " shape="box"]
 	
 
 	 "test2#_Z5test2v.51af7cbda728abeafa25300302478ca4_4" -> "test2#_Z5test2v.51af7cbda728abeafa25300302478ca4_3" ;
@@ -44,7 +44,7 @@ digraph iCFG {
 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class X* [line 15]\n  _fun_X_X(&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:class X*) [line 13]\n  _fun_X_X(n$0:class X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:class X&) [line 15]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  Return Stmt \n   n$0=*&__return_param:class X* [line 15]\n  _fun_X_X(n$0:class X*,&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp|!pod>$global:class X&) [line 15]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;

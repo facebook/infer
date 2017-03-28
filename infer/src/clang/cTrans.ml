@@ -636,28 +636,6 @@ struct
     let pvar = CVar_decl.sil_var_of_decl_ref context decl_ref procname in
     CContext.add_block_static_var context procname (pvar, typ);
     let var_exp = Exp.Lvar pvar in
-    (* handle references to global const *)
-    (* if there's a reference to a global const, add a fake instruction that *)
-    (* assigns the global again to its initialization value right before the *)
-    (* place where it is used *)
-    let trans_result' =
-      let is_global_const, init_expr =
-        match CAst_utils.get_decl decl_ref.dr_decl_pointer with
-        | Some VarDecl (_, _, qual_type, vdi) -> (
-            match ast_typ with
-            | Tstruct _
-              when not (CGeneral_utils.is_cpp_translation context.translation_unit_context) ->
-                (* Do not convert a global struct to a local because SIL
-                   values do not include structs, they must all be heap-allocated  *)
-                (false, None)
-            | _ ->
-                (vdi.vdi_is_global && (vdi.vdi_is_const_expr || qual_type.qt_is_const),
-                 vdi.vdi_init_expr)
-          )
-        | _ -> false, None in
-      if is_global_const then
-        init_expr_trans trans_state (var_exp, typ) stmt_info init_expr
-      else empty_res_trans in
     let exps = if Self.is_var_self pvar (CContext.is_objc_method context) then
         let class_typename = CContext.get_curr_class_typename context in
         if (CType.is_class typ) then
@@ -667,7 +645,7 @@ struct
           [(var_exp, typ)]
       else [(var_exp, typ)] in
     Logging.out_debug "\n\n PVAR ='%s'\n\n" (Pvar.to_string pvar);
-    let res_trans = { trans_result' with exps } in
+    let res_trans = { empty_res_trans with exps } in
     match typ with
     | Tptr (_, Pk_reference) ->
         (* dereference pvar due to the behavior of reference types in clang's AST *)
