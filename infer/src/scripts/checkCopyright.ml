@@ -15,19 +15,22 @@ let copyright_modified_exit_code = 1
 let copyright_malformed_exit_code = 3 (* error code 2 is for OCaml uncaught exceptions *)
 
 type comment_style =
-  | Line of string (** line comments, eg "#" for shell *)
+  | Line of string * bool (** line comments, eg "#" for shell, and whether there should be a
+                              newline before the copyright notice *)
   | Block of string * string * string (** block comments, eg ("(*", "*", "*)") for ocaml *)
 
 let comment_style_ocaml = Block ("(*", "*", "*)")
 let comment_style_c = Block ("/*", "*", "*/")
-let comment_style_shell = Line "#"
-let comment_style_llvm = Line ";"
+let comment_style_shell = Line ("#", true)
+let comment_style_make = Line ("#", false)
+let comment_style_llvm = Line (";", true)
 
 let comment_styles = [
   comment_style_ocaml;
   comment_style_c;
   comment_style_shell;
   comment_style_llvm;
+  comment_style_make;
 ]
 
 let lang_of_com_style style =
@@ -35,10 +38,13 @@ let lang_of_com_style style =
   else if style = comment_style_c then "c"
   else if style = comment_style_shell then "shell"
   else if style = comment_style_llvm then "llvm"
+  else if style = comment_style_make then "make"
   else "??unknown??"
 
-let default_start_line_of_com_style style = match style with
-  | Line _ -> 2
+let default_start_line_of_com_style style =
+  match style with
+  | Line (_, true) -> 2
+  | Line (_, false) -> 0
   | Block _ -> 0
 
 let prefix_of_comment_style = function
@@ -61,19 +67,21 @@ let find_comment_start_and_style lines_arr n =
   (* are we in a line comment? *)
   let cur_line_comment =
     List.find comment_styles ~f:(function
-        | Line (s) when String.is_prefix ~prefix:s lines_arr.(n) -> true
+        | Line (s, starts_with_newline) when String.is_prefix ~prefix:s lines_arr.(n) ->
+            if starts_with_newline then n <> 0 else true
         | _ -> false
       ) in
   let is_start line = match cur_line_comment with
-    | Some (Line (s)) -> if String.is_prefix ~prefix:s line then None else Some (Line (s))
+    | Some (Line _) ->
+        cur_line_comment
     | _ ->
         List.find comment_styles ~f:(function
             | Block(s, _, _) -> String.is_substring ~substring:s line
             | _ -> false
           ) in
-  let i = ref (n - 1) in
+  let i = ref (max (n - 1) 0) in
   (* hacky fake line comment to avoid an option type *)
-  let found = ref (-1, Line(">>>>>>>>>>>")) in
+  let found = ref (-1, Line(">>>>>>>>>>>", false)) in
   while !i >= 0 && fst (!found) = -1 do
     match is_start lines_arr.(!i) with
     | Some style -> found := (!i, style);
@@ -83,7 +91,7 @@ let find_comment_start_and_style lines_arr n =
 
 let find_comment_end lines_arr n com_style =
   let is_end line = match com_style with
-    | Line s -> not (String.is_prefix ~prefix:s line)
+    | Line (s, _) -> not (String.is_prefix ~prefix:s line)
     | Block (_, _, s) -> String.is_substring ~substring:s line in
   let i = ref (n + 1) in
   let len = Array.length lines_arr in
@@ -134,11 +142,11 @@ let get_fb_year cstart cend lines_arr =
   !found
 
 let pp_copyright mono fb_year com_style fmt _prefix =
-  let running_comment = match com_style with | Line s | Block (_, s, _) -> s in
+  let running_comment = match com_style with | Line (s, _) | Block (_, s, _) -> s in
   let prefix = _prefix ^ running_comment in
   let pp_line str = F.fprintf fmt "%s%s@\n" prefix str in
   let pp_start () = match com_style with
-    | Line _ -> F.fprintf fmt "@\n";
+    | Line (_, starts_with_newline) -> if starts_with_newline then F.fprintf fmt "@\n";
     | Block (start, _, _) -> F.fprintf fmt "%s@\n" start in
   let pp_end () = match com_style with
     | Line _ -> F.fprintf fmt "@\n";
@@ -197,6 +205,8 @@ let com_style_of_lang = [
   (".java", comment_style_c);
   (".sh", comment_style_shell);
   (".py", comment_style_shell);
+  ("Makefile", comment_style_make);
+  (".make", comment_style_make);
 ]
 
 let file_should_have_copyright fname =
@@ -217,22 +227,21 @@ let output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix 
 
 let check_copyright fname =
   let lines = In_channel.with_file fname ~f:In_channel.input_lines in
+  let lines_arr = Array.of_list lines in
   match find_copyright_line lines 0 with
   | None ->
       if file_should_have_copyright fname then
         begin
           let year = 1900 + (Unix.localtime (Unix.time ())).Unix.tm_year in
-          let ext = "." ^ Option.value (snd (Filename.split_extension fname)) ~default:"" in
-          let com_style = List.Assoc.find_exn com_style_of_lang ~equal:String.equal ext in
+          let com_style =
+            List.Assoc.find_exn com_style_of_lang ~equal:Filename.check_suffix fname in
           let prefix = prefix_of_comment_style com_style in
           let start = default_start_line_of_com_style com_style in
-          output_diff fname (Array.of_list []) start (-1) (-1) 0 false year com_style prefix;
+          output_diff fname lines_arr start (-1) (-1) 0 false year com_style prefix;
           exit copyright_modified_exit_code
         end
   | Some n ->
-      let lines_arr = Array.of_list lines in
       let line = lines_arr.(n) in
-      let len = String.length line in
       let (cstart, com_style) = find_comment_start_and_style lines_arr n in
       let cend = find_comment_end lines_arr n com_style in
       if looks_like_copyright_message cstart cend lines_arr then
@@ -246,6 +255,7 @@ let check_copyright fname =
               let prefix = prefix_of_comment_style com_style in
               if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then
                 begin
+                  let len = String.length line in
                   output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix;
                   exit copyright_modified_exit_code
                 end
