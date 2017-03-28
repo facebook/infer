@@ -1470,7 +1470,9 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       let path_pos = State.get_path_pos () in
       Attribute.mark_vars_as_undefined tenv
         pre_final exps_to_mark callee_pname ret_annots loc path_pos in
-    [(prop_with_undef_attr, path)]
+    let reason = "function or method not found" in
+    let skip_path = Paths.Path.add_skipped_call path callee_pname reason in
+    [(prop_with_undef_attr, skip_path)]
 
 and check_variadic_sentinel
     ?(fails_on_nil = false) n_formals  (sentinel, null_pos)

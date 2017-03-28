@@ -26,6 +26,9 @@ module Path : sig
   (** add a call with its sub-path, the boolean indicates whether the subtrace for the procedure should be included *)
   val add_call : bool -> t -> Typ.Procname.t -> t -> t
 
+  (** add a call to a procname that's had to be skipped, along with the reason *)
+  val add_skipped_call : t -> Typ.Procname.t -> string -> t
+
   (** check whether a path contains another path *)
   val contains : t -> t -> bool
 
@@ -90,7 +93,11 @@ end = struct
   type _string_option = string option
   let compare__string_option _ _ = 0
 
-  type t =
+  type _path_exec =
+    | ExecSkipped of string (** call was skipped with a reason *)
+    | ExecCompleted of t (** call was completed *)
+
+  and t =
     (* INVARIANT: stats are always set to dummy_stats unless we are in the middle of a traversal *)
     (* in particular: a new traversal cannot be initiated during an existing traversal *)
     | Pstart of Procdesc.Node.t * _stats (** start node *)
@@ -98,7 +105,7 @@ end = struct
     (** we got to [node] from last [session] perhaps propagating exception [exn_opt],
         and continue with [path].  *)
     | Pjoin of t * t * _stats (** join of two paths *)
-    | Pcall of t * _procname * t * _stats (** add a sub-path originating from a call *)
+    | Pcall of t * _procname * _path_exec * _stats (** add a sub-path originating from a call *)
   [@@deriving compare]
 
   let get_dummy_stats () =
@@ -129,7 +136,7 @@ end = struct
   let rec curr_node = function
     | Pstart (node, _) -> Some node
     | Pnode (node, _, _, _, _, _) -> Some node
-    | Pcall(p1, _, _, _) -> curr_node p1
+    | Pcall(path, _, _, _) -> curr_node path
     | Pjoin _ ->
         None
 
@@ -142,8 +149,11 @@ end = struct
     Pjoin (p1, p2, get_dummy_stats ())
 
   let add_call include_subtrace p pname p_sub =
-    if include_subtrace then Pcall(p, pname, p_sub, get_dummy_stats ())
+    if include_subtrace then Pcall(p, pname, ExecCompleted p_sub, get_dummy_stats ())
     else p
+
+  let add_skipped_call p pname reason =
+    Pcall (p, pname, ExecSkipped reason, get_dummy_stats ())
 
   (** functions in this module either do not assume, or do not re-establish, the invariant on dummy
       stats *)
@@ -165,7 +175,8 @@ end = struct
     let rec reset_stats = function
       | Pstart (_, stats) ->
           if not (stats_is_dummy stats) then set_dummy_stats stats
-      | Pnode (_, _, _, path, stats, _) ->
+      | Pnode (_, _, _, path, stats, _)
+      | Pcall (path, _, ExecSkipped _, stats) ->
           if not (stats_is_dummy stats) then
             begin
               reset_stats path;
@@ -178,7 +189,7 @@ end = struct
               reset_stats path2;
               set_dummy_stats stats
             end
-      | Pcall (path1, _, path2, stats) ->
+      | Pcall (path1, _, ExecCompleted path2, stats) ->
           if not (stats_is_dummy stats) then
             begin
               reset_stats path1;
@@ -221,7 +232,7 @@ end = struct
               stats.max_length <- max stats1.max_length stats2.max_length;
               stats.linear_num <- stats1.linear_num +. stats2.linear_num
             end
-      | Pcall (path1, _, path2, stats) ->
+      | Pcall (path1, _, ExecCompleted path2, stats) ->
           if stats_is_dummy stats then
             begin
               let stats2 = match do_calls with
@@ -239,6 +250,15 @@ end = struct
                 compute_stats do_calls f' path1;
                 get_stats path1 in
               stats.max_length <- stats1.max_length + stats2.max_length;
+              stats.linear_num <- stats1.linear_num;
+            end
+      | Pcall (path, _, ExecSkipped _, stats)  ->
+          if stats_is_dummy stats then
+            begin
+              let stats1 =
+                compute_stats do_calls f path;
+                get_stats path in
+              stats.max_length <- stats1.max_length;
               stats.linear_num <- stats1.linear_num;
             end
   end (* End of module Invariant *)
@@ -281,10 +301,14 @@ end = struct
             doit level session p1 prev_exn_opt
           else
             doit level session p2 prev_exn_opt
-      | Pcall (p1, _, p2, _) ->
+      | Pcall (p1, _, ExecCompleted p2, _) ->
           let next_exn_opt = None in (* exn must already be inside the call *)
           doit level session p1 next_exn_opt;
-          doit (level +1) session p2 next_exn_opt in
+          doit (level +1) session p2 next_exn_opt
+      | Pcall (p, _, ExecSkipped _, _) ->
+          let next_exn_opt = None in
+          doit level session p next_exn_opt;
+          f level path session prev_exn_opt in
     Invariant.compute_stats true filter path;
     doit 0 0 path None;
     Invariant.reset_stats path
@@ -385,8 +409,9 @@ end = struct
       if not (path_seen path) (* avoid exponential blowup *)
       then match path with (* build a map from delayed paths to a unique number *)
         | Pstart _ -> ()
-        | Pnode (_, _, _, p, _, _) -> add_delayed p
-        | Pjoin (p1, p2, _) | Pcall(p1, _, p2, _) -> (* delay paths occurring in a join *)
+        | Pnode (_, _, _, p, _, _) | Pcall(p, _, ExecSkipped _, _) -> add_delayed p
+        | Pjoin (p1, p2, _) | Pcall(p1, _, ExecCompleted p2, _) ->
+            (* delay paths occurring in a join *)
             add_delayed p1;
             add_delayed p2;
             add_path p1;
@@ -404,8 +429,10 @@ end = struct
           F.fprintf fmt "%a(s%d).n%a" (doit (n - 1)) path (session :> int) Procdesc.Node.pp node
       | Pjoin (path1, path2, _) ->
           F.fprintf fmt "(%a + %a)" (doit (n - 1)) path1 (doit (n - 1)) path2
-      | Pcall (path1, _, path2, _) ->
-          F.fprintf fmt "(%a{%a})" (doit (n - 1)) path1 (doit (n - 1)) path2 in
+      | Pcall (path1, _, ExecCompleted path2, _) ->
+          F.fprintf fmt "(%a{%a})" (doit (n - 1)) path1 (doit (n - 1)) path2
+      | Pcall (path, _, ExecSkipped reason, _) ->
+          F.fprintf fmt "(%a: %s)" (doit (n - 1)) path reason in
     let print_delayed () =
       if not (PathMap.is_empty !delayed) then begin
         let f path num = F.fprintf fmt "P%d = %a@\n" num (doit 1) path in
@@ -427,8 +454,13 @@ end = struct
   let create_loc_trace path pos_opt : Errlog.loc_trace =
     let trace = ref [] in
     let g level path _ exn_opt =
-      match curr_node path with
-      | Some curr_node ->
+      match path, curr_node path with
+      | Pcall (_, _, ExecSkipped reason, _), Some curr_node ->
+          let curr_loc = Procdesc.Node.get_loc curr_node in
+          let descr = "Skipped call: " ^ reason in
+          let node_tags = [] in
+          trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
+      | _, Some curr_node ->
           begin
             let curr_loc = Procdesc.Node.get_loc curr_node in
             match Procdesc.Node.get_kind curr_node with
@@ -486,7 +518,7 @@ end = struct
                   | None -> descr in
                 trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
           end
-      | None ->
+      | _, None ->
           () in
     iter_shortest_sequence g pos_opt path;
     let compare lt1 lt2 =
