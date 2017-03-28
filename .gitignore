@@ -17,6 +17,7 @@
 /_build
 /infer/_build
 /infer/tests/codetoanalyze/java/*/codetoanalyze
+/infer-deps-*
 _build_infer
 *.exp.test*
 *.test.dot
