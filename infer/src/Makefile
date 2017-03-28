@@ -269,6 +269,9 @@ endif
 .PHONY: byte
 byte: $(INFER_BIN).byte
 
+.PHONY: byte_no_install
+byte_no_install: $(INFER_BUILD_DIR)/$(INFER_MAIN).byte
+
 # to build only the single module <Module> (and its dependencies) with extra flags execute:
 #   make MFLAGS=<flags> M=<Module>.cm{o,x} module
 # for example, to build the assembly for the Ident module, execute

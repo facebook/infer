@@ -158,7 +158,10 @@ test_build: clang_plugin
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(QUIET)$(MAKE) -C facebook setup
 endif
-	$(QUIET)$(MAKE) -C $(SRC_DIR) TEST=1 byte
+	$(QUIET)$(MAKE) -C $(SRC_DIR) TEST=1 byte_no_install
+#	byte_no_install builds most of what toplevel needs, so it's more efficient to run the
+#	toplevel build straight after it rather than in parallel. Note that both targets build files
+#	that the other doesn't.
 	$(QUIET)$(MAKE) -C $(SRC_DIR) TEST=1 toplevel
 
 .PHONY: ocaml_unit_test
