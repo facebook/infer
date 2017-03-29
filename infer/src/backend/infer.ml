@@ -42,7 +42,8 @@ let rec rmtree name =
 
 
 type build_system =
-  | BAnalyze | BAnt | BBuck | BGradle | BJava | BJavac | BMake | BMvn | BNdk | BXcode
+  | BAnalyze | BAnt | BBuck | BClang | BGradle | BJava | BJavac | BMake | BMvn
+  | BNdk | BXcode
 [@@deriving compare]
 
 let equal_build_system = [%compare.equal : build_system]
@@ -53,10 +54,8 @@ let equal_build_system = [%compare.equal : build_system]
 let build_system_exe_assoc = [
   BAnalyze, "analyze"; BAnt, "ant"; BBuck, "buck"; BGradle, "gradle"; BGradle, "gradlew";
   BJava, "java"; BJavac, "javac";
-  (* NOTE: "make/cc" is not a valid exe name and thus will never be matched, we only use it for
-     printing *)
-  BMake, "make/cc"; BMake, "cc"; BMake, "clang"; BMake, "clang++"; BMake, "cmake";
-  BMake, "configure"; BMake, "g++"; BMake, "gcc"; BMake, "make"; BMake, "waf";
+  BClang, "cc"; BClang, "clang"; BClang, "gcc"; BClang, "clang++"; BClang, "c++"; BClang, "g++";
+  BMake, "make"; BMake, "configure"; BMake, "cmake"; BMake, "waf";
   BMvn, "mvn"; BMvn, "mvnw"; BNdk, "ndk-build"; BXcode, "xcodebuild";
 ]
 
@@ -74,6 +73,7 @@ type driver_mode =
   | Analyze
   | BuckGenrule of string
   | BuckCompilationDB
+  | Clang of Clang.compiler * string * string list
   | ClangCompilationDB of [ `Escaped of string | `Raw of string ] list
   | Javac of Javac.compiler * string * string list
   | Maven of string * string list
@@ -110,6 +110,9 @@ let pp_driver_mode fmt driver_mode =
       List.iter ~f:log_arg args
   | Maven (prog, args) ->
       F.fprintf fmt "Maven driver mode:@\nprog = %s@\n" prog;
+      List.iter ~f:(F.fprintf fmt "Arg: %s@\n") args
+  | Clang (_, prog, args) ->
+      F.fprintf fmt "Clang driver mode:@\nprog = %s@\n" prog;
       List.iter ~f:(F.fprintf fmt "Arg: %s@\n") args
 
 let remove_results_dir () =
@@ -216,6 +219,9 @@ let capture = function
   | BuckGenrule path ->
       L.stdout "Capturing for Buck genrule compatibility...@\n";
       JMain.from_arguments path
+  | Clang (compiler, prog, args) ->
+      L.stdout "Capturing in make/cc mode...@\n";
+      Clang.capture compiler ~prog ~args
   | ClangCompilationDB db_files ->
       L.stdout "Capturing using compilation database...@\n";
       capture_with_compilation_database db_files
@@ -392,7 +398,7 @@ let assert_supported_build_system build_system = match build_system with
   | BAnt | BGradle | BJava | BJavac | BMvn ->
       string_of_build_system build_system
       |> assert_supported_mode `Java
-  | BMake | BNdk ->
+  | BClang | BMake | BNdk ->
       string_of_build_system build_system
       |> assert_supported_mode `Clang
   | BXcode ->
@@ -423,6 +429,10 @@ let driver_mode_of_build_cmd build_cmd =
           Analyze
       | BBuck when Option.is_some Config.buck_compilation_database ->
           BuckCompilationDB
+      | BClang ->
+          Clang (Clang.Clang, prog, args)
+      | BMake ->
+          Clang (Clang.Make, prog, args)
       | BJava ->
           Javac (Javac.Java, prog, args)
       | BJavac ->
@@ -431,7 +441,7 @@ let driver_mode_of_build_cmd build_cmd =
           Maven (prog, args)
       | BXcode when Config.xcpretty ->
           XcodeXcpretty
-      | BAnt | BBuck | BGradle | BMake | BNdk | BXcode as build_system ->
+      | BAnt | BBuck | BGradle | BNdk | BXcode as build_system ->
           PythonCapture (build_system, build_cmd)
 
 let get_driver_mode () =
