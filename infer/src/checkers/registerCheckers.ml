@@ -35,7 +35,7 @@ let active_procedure_checkers () =
         JavaTaintAnalysis.checker, Config.quandary;
         Checkers.callback_check_field_access, false;
         ImmutableChecker.callback_check_immutable_cast, Config.checkers_enabled;
-        RepeatedCallsChecker.callback_check_repeated_calls, Config.checkers_enabled;
+        RepeatedCallsChecker.callback_check_repeated_calls, Config.checkers_repeated_calls;
         PrintfArgs.callback_printf_args, Config.checkers_enabled;
         AnnotationReachability.checker, Config.checkers_enabled;
         BufferOverrunChecker.checker, Config.bufferoverrun;
