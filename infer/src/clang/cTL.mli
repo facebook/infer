@@ -36,7 +36,7 @@ type t =
   | And of t * t
   | Or of t * t
   | Implies of t * t
-  | InNode of string list * t
+  | InNode of ALVar.alexp list * t
   | AX of t (** AX phi <=> for all children of the current node phi holds *)
   | EX of transitions option * t (** EX phi <=> exist a child of the current node such that phi holds *)
   | AF of t (** AF phi <=> for all path from the current node there is a descendant where phi holds *)
@@ -48,13 +48,13 @@ type t =
                     for all paths from the current node phi1 holds in every node until ph2 holds *)
   | EU of transitions option * t * t (** EU(phi1, phi2) <=>
                                          there exists a path from the current node such that phi1 holds until phi2 holds *)
-  | EH of string list * t (** EH[classes]phi <=>
-                              there exists a node defining a super class in the hierarchy of the class
-                              defined by the current node (if any) where  phi holds *)
-  | ET of string list * transitions option * t (** ET[T][l] phi <=>
+  | EH of ALVar.alexp list * t (** EH[classes]phi <=>
+                                   there exists a node defining a super class in the hierarchy of the class
+                                   defined by the current node (if any) where  phi holds *)
+  | ET of ALVar.alexp list * transitions option * t (** ET[T][l] phi <=>
                                                                there exists a descentant an of the current node such that an is of type in set T
                                                                making a transition to a node an' via label l, such that in an phi holds. *)
-  | ETX of string list * transitions option * t (** ET[T][l] phi <=>
+  | ETX of ALVar.alexp list * transitions option * t (** ET[T][l] phi <=>
                                                                there exists a descentant an of the current node such that an is of type in set T
                                                                making a transition to a node an' via label l, such that in an phi holds. *)
 
@@ -76,9 +76,9 @@ type t =
 *)
 
 type clause =
-  | CLet  of string * string list * t (* Let clause: let id = definifion;  *)
-  | CSet of string * t (* Set clause: set id = definition *)
-  | CDesc of string * string (* Description clause eg: set message = "..." *)
+  | CLet  of ALVar.formula_id * ALVar.t list * t (* Let clause: let id = definifion;  *)
+  | CSet of ALVar.keyword * t (* Set clause: set id = definition *)
+  | CDesc of ALVar.keyword * string (* Description clause eg: set message = "..." *)
 
 type ctl_checker = {
   name : string; (* Checker's name *)

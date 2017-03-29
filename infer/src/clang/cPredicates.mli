@@ -9,7 +9,7 @@
 
 open! IStd
 
-type t = string * string list (* (name, [param1,...,paramK]) *)
+type t = ALVar.formula_id * ALVar.alexp list (* (name, [param1,...,paramK]) *)
 
 val captured_variables_cxx_ref : Ctl_parser_types.ast_node -> Clang_ast_t.named_decl_info list
 

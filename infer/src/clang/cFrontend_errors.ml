@@ -105,7 +105,6 @@ let string_to_issue_mode m =
 let create_parsed_linters linters_def_file checkers : linter list =
   let open CIssue in
   let open CTL in
-  let open Ctl_parser_types in
   Logging.out "\n Converting checkers in (condition, issue) pairs\n";
   let do_one_checker c =
     let dummy_issue = {
@@ -118,15 +117,15 @@ let create_parsed_linters linters_def_file checkers : linter list =
     } in
     let issue_desc, condition = List.fold ~f:(fun (issue', cond') d  ->
         match d with
-        | CSet (s, phi) when String.equal s report_when_const ->
+        | CSet (av, phi) when ALVar.is_report_when_keyword av ->
             issue', phi
-        | CDesc (s, msg) when String.equal s message_const ->
+        | CDesc (av, msg) when ALVar.is_message_keyword  av ->
             {issue' with description = msg}, cond'
-        | CDesc (s, sugg) when String.equal s suggestion_const ->
+        | CDesc (av, sugg) when ALVar.is_suggestion_keyword  av ->
             {issue' with suggestion = Some sugg}, cond'
-        | CDesc (s, sev) when String.equal s severity_const ->
+        | CDesc (av, sev) when ALVar.is_severity_keyword  av ->
             {issue' with severity = string_to_err_kind sev}, cond'
-        | CDesc (s, m) when String.equal s mode_const ->
+        | CDesc (av, m) when ALVar.is_mode_keyword  av ->
             {issue' with mode = string_to_issue_mode m }, cond'
         | _ -> issue', cond') ~init:(dummy_issue, CTL.False) c.definitions in
     if Config.debug_mode then (
@@ -137,9 +136,62 @@ let create_parsed_linters linters_def_file checkers : linter list =
     {condition; issue_desc; def_file = Some linters_def_file} in
   List.map ~f:do_one_checker checkers
 
+let check_def_well_expanded vars expanded_formula =
+  let open CTL in
+  let check_const c =
+    match c with
+    | ALVar.Const c when List.mem vars (ALVar.Var c) ->
+        failwith ("[ERROR]: Const '" ^ c ^
+                  "' is used as formal parameter of some LET definition.")
+    | ALVar.Const _ -> ()
+    | ALVar.Var v
+    | ALVar.FId (Formula_id v) ->
+        failwith ("[ERROR]: Variable '" ^ v ^
+                  "' could not be substituted and cannot be evaluated") in
+  let rec check_expansion exp_f =
+    match exp_f with
+    | True
+    | False -> ()
+    | Atomic (_, ps) -> List.iter ~f: check_const ps
+    | Not f1 -> check_expansion f1
+    | And (f1, f2) ->
+        check_expansion f1;
+        check_expansion f2
+    | Or (f1, f2) ->
+        check_expansion f1;
+        check_expansion f2
+    | Implies (f1, f2) ->
+        check_expansion f1;
+        check_expansion f2
+    | InNode (node_type_list, f1) ->
+        List.iter ~f:check_const node_type_list;
+        check_expansion f1
+    | AU (f1, f2) ->
+        check_expansion f1;
+        check_expansion f2
+    | EU (_, f1, f2) ->
+        check_expansion f1;
+        check_expansion f2
+    | EF (_, f1) -> check_expansion f1
+    | AF f1 -> check_expansion f1
+    | AG f1 -> check_expansion f1
+    | EX (_, f1) -> check_expansion f1
+    | AX f1 -> check_expansion f1
+    | EH (cl, f1) ->
+        List.iter ~f:check_const cl;
+        check_expansion f1
+    | EG (_, f1) -> check_expansion f1
+    | ET (ntl, _, f1) ->
+        List.iter ~f: check_const ntl;
+        check_expansion f1
+    | ETX (ntl, _, f1) ->
+        List.iter ~f: check_const ntl;
+        check_expansion f1 in
+  check_expansion expanded_formula
+
 let rec apply_substitution f sub =
   let sub_param p = try
-      snd (List.find_exn sub ~f:(fun (a,_) -> String.equal p a))
+      snd (List.find_exn sub ~f:(fun (a,_) -> ALVar.equal p a))
     with Not_found -> p in
   let sub_list_param ps =
     List.map ps ~f:sub_param in
@@ -177,37 +229,26 @@ let expand_checkers checkers =
       name error_msg;
     failwith ("Cannot expand....\n") in
   let open CTL in
-  let open Ctl_parser_types in
   let rec expand acc map error_msg =
     match acc with
     | True
     | False -> acc
-    | Atomic (name, [p]) when String.equal formula_id_const p ->
-        (* constant case, macro with no params *)
-        let error_msg' = error_msg ^ "  -Expanding formula identifier '" ^ name ^"'\n" in
-        (match Core.Std.String.Map.find map name with
-         | Some (true, _, _) ->
-             fail_with_circular_macro_definition name error_msg'
-         | Some (false, params, f1) ->
-             let map' = Core.Std.String.Map.add map ~key:name ~data:(true, params, f1) in
-             expand f1 map' error_msg'
-         | None -> failwith
-                     ("[ERROR]: Formula identifier '" ^ name ^ "' is undefined. Cannot expand."))
-    | Atomic (name, actual_param) -> (* it may be a macro *)
-        let error_msg' = error_msg ^ "  -Expanding formula identifier '" ^ name ^"'\n" in
-        (match Core.Std.String.Map.find map name with
-         | Some (true, _, _) ->
-             fail_with_circular_macro_definition name error_msg'
-         | Some (false, formal_params, f1) -> (* in this case it should be a defined macro *)
-             (match List.zip formal_params actual_param with
-              | Some sub ->
-                  let f1_sub = apply_substitution f1 sub in
-                  let map' = Core.Std.String.Map.add map
-                      ~key:name ~data:(true, formal_params, f1) in
-                  expand f1_sub map' error_msg'
-              | None -> failwith ("[ERROR]: Formula identifier '" ^ name ^
-                                  "' is no called with the right number of parameters"))
-         | None -> acc) (* in this case it should be a predicate *)
+    | Atomic (ALVar.Formula_id (name) as av, actual_param) -> (* it may be a macro *)
+        (let error_msg' =
+           error_msg ^ "  -Expanding formula identifier '" ^ name ^"'\n" in
+         (try
+            match ALVar.FormulaIdMap.find av map with
+            | (true, _, _) ->
+                fail_with_circular_macro_definition name error_msg'
+            | (false, fparams, f1) -> (* in this case it should be a defined macro *)
+                (match List.zip fparams actual_param with
+                 | Some sub ->
+                     let f1_sub = apply_substitution f1 sub in
+                     let map' = ALVar.FormulaIdMap.add av (true, fparams, f1) map in
+                     expand f1_sub map' error_msg'
+                 | None -> failwith ("[ERROR]: Formula identifier '" ^ name ^
+                                     "' is not called with the right number of parameters"))
+          with Not_found -> acc)) (* in this case it should be a predicate *)
     | Not f1 -> Not (expand f1 map error_msg)
     | And (f1, f2) -> And (expand f1 map error_msg, expand f2 map error_msg)
     | Or (f1, f2) -> Or (expand f1 map error_msg, expand f2 map error_msg)
@@ -224,22 +265,26 @@ let expand_checkers checkers =
     | EG (trans, f1) -> EG (trans, expand f1 map error_msg)
     | ET (tl, sw, f1) -> ET (tl, sw, expand f1 map error_msg)
     | ETX (tl, sw, f1) -> ETX (tl, sw, expand f1 map error_msg) in
-  let expand_one_checker c =
-    Logging.out " +Start expanding %s\n" c.name;
+  let expand_one_checker checker =
+    Logging.out " +Start expanding %s\n" checker.name;
     (* Map a formula id to a triple (visited, parameters, definition).
        Visited is used during the expansion phase to understand if the
        formula was already expanded and, if yes we have a cyclic definifion *)
-    let map : (bool * string list * CTL.t) Core.Std.String.Map.t = Core.Std.String.Map.empty in
-    let map = List.fold ~f:(fun map' d -> match d with
-        | CLet (k, params, formula) -> Core.Std.Map.add map' ~key:k ~data:(false, params, formula)
-        | _ -> map') ~init:map c.definitions in
+    let map : (bool * ALVar.t list * CTL.t) ALVar.FormulaIdMap.t = ALVar.FormulaIdMap.empty in
+    let map, vars = List.fold ~f:(fun (map', vars') definition ->
+        match definition with
+        | CLet (key, params, formula) ->
+            ALVar.FormulaIdMap.add key (false, params, formula) map', List.append vars' params
+        | _ -> map', vars') ~init:(map, []) checker.definitions in
     let exp_defs = List.fold ~f:(fun defs clause ->
         match clause with
         | CSet (report_when_const, phi) ->
             Logging.out "  -Expanding report_when\n";
-            CSet (report_when_const, expand phi map "") :: defs
-        | cl -> cl :: defs) ~init:[] c.definitions in
-    { c with definitions = exp_defs} in
+            let exp_report_when = expand phi map "" in
+            check_def_well_expanded vars exp_report_when;
+            CSet (report_when_const, exp_report_when) :: defs
+        | cl -> cl :: defs) ~init:[] checker.definitions in
+    { checker with definitions = exp_defs} in
   let expanded_checkers = List.map ~f:expand_one_checker checkers in
   expanded_checkers
 

@@ -8,8 +8,7 @@
  */
 
 %{
-  open Ctl_parser_types
-
+  let formal_params : (ALVar.t list) ref = ref []
 %}
 
 %token EU
@@ -56,6 +55,16 @@
 %start <CTL.ctl_checker list> checkers_list
 
 %%
+
+var_list:
+  | identifier { [ALVar.Var $1] }
+  | identifier COMMA var_list { ALVar.Var($1) :: $3 }
+;
+
+formal_params:
+  | var_list { formal_params := $1; $1}
+
+
 checkers_list:
   | EOF { [] }
   | checker SEMICOLON checkers_list { $1::$3 }
@@ -78,32 +87,64 @@ clause_list:
 
 clause:
   | SET identifier ASSIGNMENT formula
-    { Logging.out "\tParsed set clause\n"; CTL.CSet ($2, $4) }
+    { Logging.out "\tParsed SET clause\n";
+    let alvar = match $2 with
+      | "report_when" -> ALVar.Report_when
+      | _ -> failwith ("[ERROR] string '%s' cannot be set to a variable. " ^
+                      "Use the reserverd variable 'report_when'\n") in
+      CTL.CSet (alvar, $4) }
   | SET identifier ASSIGNMENT STRING
-    { Logging.out "\tParsed desc clause\n"; CTL.CDesc ($2, $4) }
-  | LET identifier ASSIGNMENT formula
-    { Logging.out "\tParsed let clause\n"; CTL.CLet ($2, [], $4) }
-  | LET identifier LEFT_PAREN params RIGHT_PAREN ASSIGNMENT formula
-               { Logging.out "\tParsed let clause with formula identifier '%s(....)' \n" $2;
-                                   CTL.CLet($2, $4, $7) }
+    { Logging.out "\tParsed SET clause\n";
+      let alvar = match $2 with
+      | "message" -> ALVar.Message
+      | "suggestion" -> ALVar.Suggestion
+      | "severity" -> ALVar.Severity
+      | "mode" -> ALVar.Mode
+      | _ -> failwith ("[ERROR] string '%s' cannot be set in a SET clause. " ^
+                        "Use either of: 'message', 'suggestion', 'severity', or 'mode'\n") in
+      CTL.CDesc (alvar, $4) }
+  | LET formula_id_def ASSIGNMENT formula
+    { Logging.out "\tParsed LET clause\n"; CTL.CLet ($2, [], $4) }
+  | LET formula_id_def LEFT_PAREN formal_params RIGHT_PAREN ASSIGNMENT formula
+               { Logging.out "\tParsed let clause with formula identifier '%s(....)' \n"
+                  (ALVar.formula_id_to_string $2);
+                 CTL.CLet ($2, $4, $7) }
 ;
 
 atomic_formula:
   | TRUE { Logging.out "\tParsed True\n"; CTL.True }
   | FALSE { Logging.out "\tParsed False\n"; CTL.False }
-  | identifier LEFT_PAREN params RIGHT_PAREN
-    { Logging.out "\tParsed predicate\n"; CTL.Atomic($1, $3) }
+  | identifier LEFT_PAREN actual_params RIGHT_PAREN
+    { Logging.out "\tParsed predicate\n"; CTL.Atomic(ALVar.Formula_id $1, $3) }
   ;
+
+  formula_id_def:
+  | identifier { Logging.out "\tParsed formula identifier '%s' \n" $1;
+                  formal_params := [];
+                  ALVar.Formula_id $1 }
+   ;
 
  formula_id:
  | identifier { Logging.out "\tParsed formula identifier '%s' \n" $1;
-                 CTL.Atomic($1, [formula_id_const]) }
+                 ALVar.Formula_id $1 }
   ;
 
-params:
+actual_params:
   | {[]}
-  | identifier { [$1] }
-  | identifier COMMA params { $1 :: $3 }
+  | identifier { if (List.mem (ALVar.Var $1) !formal_params) then
+                      (Logging.out "\tParsed exp '%s' as variable \n" $1;
+                      [ALVar.Var $1])
+                  else
+                  (Logging.out "\tParsed exp '%s' as constant \n" $1;
+                  [ALVar.Const $1])
+                }
+  | identifier COMMA actual_params {
+        (if (List.mem (ALVar.Var $1) !formal_params) then
+                  (Logging.out "\tParsed exp '%s' as variable \n" $1;
+                    ALVar.Var $1)
+         else (Logging.out "\tParsed exp '%s' as constant \n" $1;
+              ALVar.Const $1)
+        ) :: $3 }
   ;
 
 transition_label:
@@ -125,7 +166,7 @@ formula_with_paren:
 
 formula:
   | formula_with_paren { $1 }
-  | formula_id { $1 }
+  | formula_id { CTL.Atomic($1, []) }
   | atomic_formula { Logging.out "\tParsed atomic formula\n"; $1 }
   | formula EU formula { Logging.out "\tParsed EU\n"; CTL.EU (None, $1, $3) }
   | formula AU formula { Logging.out "\tParsed AU\n"; CTL.AU ($1, $3) }
@@ -134,13 +175,13 @@ formula:
   | formula AX { Logging.out "\tParsed AX\n"; CTL.AX ($1) }
   | formula EG { Logging.out "\tParsed EG\n"; CTL.EG (None, $1) }
   | formula AG { Logging.out "\tParsed AG\n"; CTL.AG ($1) }
-  | formula EH params { Logging.out "\tParsed EH\n"; CTL.EH ($3, $1) }
+  | formula EH actual_params { Logging.out "\tParsed EH\n"; CTL.EH ($3, $1) }
   | formula EF { Logging.out "\tParsed EF\n"; CTL.EF (None, $1) }
-  | WHEN formula HOLDS_IN_NODE params
+  | WHEN formula HOLDS_IN_NODE actual_params
      { Logging.out "\tParsed InNode\n"; CTL.InNode ($4, $2)}
-  | ET params WITH_TRANSITION transition_label formula_EF
+  | ET actual_params WITH_TRANSITION transition_label formula_EF
      { Logging.out "\tParsed ET\n"; CTL.ET ($2, $4, $5)}
-  | ETX params WITH_TRANSITION transition_label formula_EF
+  | ETX actual_params WITH_TRANSITION transition_label formula_EF
         { Logging.out "\tParsed ETX\n"; CTL.ETX ($2, $4, $5)}
   | EX WITH_TRANSITION transition_label formula_with_paren
     { Logging.out "\tParsed EX\n"; CTL.EX ($3, $4)}

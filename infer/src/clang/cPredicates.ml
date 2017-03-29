@@ -59,7 +59,7 @@ let captured_variables_cxx_ref an =
 
 
 
-type t = string * string list (* (name, [param1,...,paramK]) *)
+type t = ALVar.formula_id * ALVar.alexp list(* (name, [param1,...,paramK]) *)
 
 (* true if and only if string contained occurs in container *)
 let str_contains container contained =
@@ -68,7 +68,9 @@ let str_contains container contained =
     Str.search_forward rexp container 0 >= 0
   with Not_found -> false
 
-let pp_predicate fmt (name, arglist) =
+let pp_predicate fmt (_name, _arglist) =
+  let name = ALVar.formula_id_to_string _name in
+  let arglist = List.map ~f:ALVar.alexp_to_string _arglist in
   Format.fprintf fmt "%s(%a)" name (Pp.comma_seq Format.pp_print_string) arglist
 
 let is_declaration_kind decl s =
@@ -122,7 +124,6 @@ let call_method an m =
   _call_method (str_contains) an m
 
 let _call_class_method comp an cname mname =
-  Logging.out "...Evaluating call_class_method\n";
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, receiver :: _, _, omei)) ->
       is_object_of_class_named receiver cname &&

@@ -35,7 +35,7 @@ type t = (* A ctl formula *)
   | And of t * t
   | Or of t * t
   | Implies of t * t
-  | InNode of string list * t
+  | InNode of ALVar.alexp list * t
   | AX of t
   | EX of transitions option * t
   | AF of t
@@ -44,9 +44,9 @@ type t = (* A ctl formula *)
   | EG of transitions option * t
   | AU of t * t
   | EU of transitions option * t * t
-  | EH of string list * t
-  | ET of string list * transitions option * t
-  | ETX of string list * transitions option * t
+  | EH of ALVar.alexp list * t
+  | ET of ALVar.alexp list * transitions option * t
+  | ETX of ALVar.alexp list * transitions option * t
 
 (* "set" clauses are used for defining mandatory variables that will be used
    by when reporting issues: eg for defining the condition.
@@ -65,9 +65,9 @@ type t = (* A ctl formula *)
 
 *)
 type clause =
-  | CLet  of string * string list * t (* Let clause: let id = definifion;  *)
-  | CSet of string * t (* Set clause: set id = definition *)
-  | CDesc of string * string (* Description clause eg: set message = "..." *)
+  | CLet of ALVar.formula_id * ALVar.t list * t (* Let clause: let id = definifion;  *)
+  | CSet of ALVar.keyword * t (* Set clause: set id = definition *)
+  | CDesc of ALVar.keyword * string (* Description clause eg: set message = "..." *)
 
 type ctl_checker = {
   name : string; (* Checker's name *)
@@ -92,6 +92,8 @@ module Debug = struct
   let full_print = true
 
   let rec pp_formula fmt phi =
+    let nodes_to_string nl =
+      List.map ~f:ALVar.alexp_to_string nl in
     match phi with
     | True -> Format.fprintf fmt "True"
     | False -> Format.fprintf fmt "False"
@@ -106,7 +108,8 @@ module Debug = struct
         else Format.fprintf fmt "(... OR ...)"
     | Implies (phi1, phi2) -> Format.fprintf fmt "(%a ==> %a)" pp_formula phi1 pp_formula phi2
     | InNode (nl, phi) -> Format.fprintf fmt "IN-NODE %a: (%a)"
-                            (Pp.comma_seq Format.pp_print_string) nl
+                            (Pp.comma_seq Format.pp_print_string)
+                            (nodes_to_string nl)
                             pp_formula phi
     | AX phi -> Format.fprintf fmt "AX(%a)" pp_formula phi
     | EX (trs, phi) -> Format.fprintf fmt "EX[->%a](%a)" pp_transition trs pp_formula phi
@@ -118,14 +121,17 @@ module Debug = struct
     | EU (trs, phi1, phi2) -> Format.fprintf fmt "E[->%a][%a UNTIL %a]"
                                 pp_transition trs pp_formula phi1 pp_formula phi2
     | EH (arglist, phi) -> Format.fprintf fmt "EH[%a](%a)"
-                             (Pp.comma_seq Format.pp_print_string) arglist
+                             (Pp.comma_seq Format.pp_print_string)
+                             (nodes_to_string arglist)
                              pp_formula phi
     | ET (arglist, trans, phi) ->   Format.fprintf fmt "ET[%a][%a](%a)"
-                                      (Pp.comma_seq Format.pp_print_string) arglist
+                                      (Pp.comma_seq Format.pp_print_string)
+                                      (nodes_to_string arglist)
                                       pp_transition trans
                                       pp_formula phi
     | ETX (arglist, trans, phi)  -> Format.fprintf fmt "ETX[%a][%a](%a)"
-                                      (Pp.comma_seq Format.pp_print_string) arglist
+                                      (Pp.comma_seq Format.pp_print_string)
+                                      (nodes_to_string arglist)
                                       pp_transition trans
                                       pp_formula phi
 
@@ -154,7 +160,8 @@ module Debug = struct
       forest: tree list;
     }
 
-    let create_content ast_node phi lcxt = {ast_node; phi; eval_result = Eval_undefined; lcxt = lcxt; }
+    let create_content ast_node phi lcxt =
+      {ast_node; phi; eval_result = Eval_undefined; lcxt = lcxt; }
 
     let create () = {next_id = 0; eval_stack = Stack.create(); forest = [] }
 
@@ -256,12 +263,17 @@ let print_checker c =
   Logging.out "\n-------------------- \n";
   Logging.out "\nChecker name: %s\n" c.name;
   List.iter ~f:(fun d -> (match d with
-      | CSet (clause_name, phi)
-      | CLet (clause_name, _, phi) ->
+      | CSet (keyword, phi) ->
+          let cn_str = ALVar.keyword_to_string keyword in
           Logging.out "    %s=  \n    %a\n\n"
-            clause_name Debug.pp_formula phi
-      | CDesc (clause_name, s) ->
-          Logging.out "    %s=  \n    %s\n\n" clause_name s)
+            cn_str Debug.pp_formula phi
+      | CLet (exp, _, phi) ->
+          let cn_str = ALVar.formula_id_to_string exp in
+          Logging.out "    %s=  \n    %a\n\n"
+            cn_str Debug.pp_formula phi
+      | CDesc (keyword, s) ->
+          let cn_str = ALVar.keyword_to_string keyword in
+          Logging.out "    %s=  \n    %s\n\n" cn_str s)
     ) c.definitions;
   Logging.out "\n-------------------- \n"
 
@@ -335,8 +347,8 @@ let node_to_unique_string_id an =
 
 (* true iff an ast node is a node of type among the list tl *)
 let node_has_type tl an =
-  let an_str = node_to_string an in
-  List.mem ~equal:String.equal tl an_str
+  let an_alexp = ALVar.Const (node_to_string an) in
+  List.mem ~equal:ALVar.equal tl an_alexp
 
 (* given a decl returns a stmt such that decl--->stmt via label trs *)
 let transition_decl_to_stmt d trs =
@@ -419,7 +431,9 @@ let next_state_via_transition an trans =
 
 (* evaluate an atomic formula (i.e. a predicate) on a ast node an and a
    linter context lcxt. That is:  an, lcxt |= pred_name(params) *)
-let rec eval_Atomic pred_name args an lcxt =
+let rec eval_Atomic _pred_name _args an lcxt =
+  let pred_name = ALVar.formula_id_to_string _pred_name in
+  let args = List.map ~f:ALVar.alexp_to_string _args in
   match pred_name, args, an with
   | "call_method", [m], an -> CPredicates.call_method an m
   | "call_method_strict", [m], an -> CPredicates.call_method_strict an m
@@ -564,8 +578,8 @@ and eval_ET tl trs phi an lcxt =
 and eval_ETX tl trs phi an lcxt =
   let lcxt', tl' = match lcxt.CLintersContext.et_evaluation_node, node_has_type tl an with
     | None, true ->
-        let an_str = node_to_string an in
-        {lcxt with CLintersContext.et_evaluation_node = Some (node_to_unique_string_id an) }, [an_str]
+        let an_alexp = ALVar.Const (node_to_string an) in
+        {lcxt with CLintersContext.et_evaluation_node = Some (node_to_unique_string_id an) }, [an_alexp]
     | _, _ -> lcxt, tl in
   let f = match trs with
     | Some _ -> EF (None, (InNode (tl', EX (trs, phi))))

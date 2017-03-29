@@ -19,7 +19,6 @@ type ast_node =
 
 
 let infer_prefix = "__infer_ctl_"
-let formula_id_const = infer_prefix ^ "formula_id__"
 let report_when_const = "report_when"
 let message_const = "message"
 let suggestion_const = "suggestion"
