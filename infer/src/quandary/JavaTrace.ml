@@ -202,7 +202,18 @@ module SinkKind = struct
                     Some (taint_nth 0 Intent ~report_reachable:true)
                 | "android.content.Context", "startIntentSender" ->
                     Some (taint_nth 1 Intent ~report_reachable:true)
-                | "android.content.Intent", ("fillIn" | "parseIntent" | "parseUri") ->
+                | "android.content.Intent",
+                  ("parseUri" |
+                   "getIntent" |
+                   "getIntentOld" |
+                   "setComponent" |
+                   "setData" |
+                   "setDataAndNormalize" |
+                   "setDataAndType" |
+                   "setDataAndTypeAndNormalize" |
+                   "setPackage") ->
+                    Some (taint_nth 0 Intent ~report_reachable:true)
+                | "android.content.Intent", "setClassName" ->
                     Some (taint_all Intent ~report_reachable:true)
                 | "android.webkit.WebChromeClient",
                   ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ->

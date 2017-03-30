@@ -75,17 +75,20 @@ public class Intents {
     activity.stopService(intent); // 20 sinks, 20 expected reports
   }
 
-  public void callAllIntentSinksBad(Intent cleanIntent) throws
-    IOException, URISyntaxException, XmlPullParserException {
-    String taintedString = cleanIntent.getStringExtra("");
-    Intent taintedIntent = (Intent) InferTaint.inferSecretSource();
-    Resources taintedResources = (Resources) ((Object) taintedString);
-    Uri taintedUri = taintedIntent.getData();
+  public void callAllIntentSinks() throws IOException, URISyntaxException, XmlPullParserException {
+    String taintedString = (String) InferTaint.inferSecretSource();
+    Intent.parseUri(taintedString, 0);
+    Intent.getIntent(taintedString);
+    Intent.getIntentOld(taintedString);
 
-    Intent intent = new Intent();
-    intent.fillIn(taintedIntent, 0);
-    intent.makeMainSelectorActivity(taintedString, null);
-    intent.parseIntent(taintedResources, null, null); // 3 sinks, 3 expected results
+    Uri taintedUri = (Uri) InferTaint.inferSecretSource();
+    Intent i = new Intent();
+    i.setClassName(taintedString, "");
+    i.setData(taintedUri);
+    i.setDataAndNormalize(taintedUri);
+    i.setDataAndType(taintedUri, "");
+    i.setDataAndTypeAndNormalize(taintedUri, "");
+    i.setPackage(taintedString); // 9 sinks, 9 expected reports
   }
 
   // make sure the rules apply to subclasses of Intent and Context too
