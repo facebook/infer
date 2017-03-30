@@ -27,7 +27,7 @@ let is_owned access_path attribute_map =
   ThreadSafetyDomain.AttributeMapDomain.has_attribute
     access_path ThreadSafetyDomain.Attribute.unconditionally_owned attribute_map
 
-let container_write_string = "__CONTAINERWRITE__"
+let container_write_string = "infer.dummy.__CONTAINERWRITE__"
 
 let is_container_write_str str =
   String.is_substring ~substring:container_write_string str
