@@ -20,15 +20,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module IdMapDomain = IdAccessPathMapDomain
 
   module Summary = Summary.Make(struct
-      type summary = QuandarySummary.t
+      type payload = QuandarySummary.t
 
-      let update_payload summary payload =
-        { payload with Specs.quandary = Some summary; }
+      let update_payload quandary_payload (summary : Specs.summary) =
+        { summary with payload = { summary.payload with quandary = Some quandary_payload }}
 
-      let read_from_payload payload =
-        match payload.Specs.quandary with
-        | None -> Some (TaintSpecification.to_summary_access_tree TaintDomain.empty)
-        | summary_opt -> summary_opt
+      let read_payload (summary : Specs.summary) =
+        summary.payload.quandary
     end)
 
   module Domain = struct
@@ -505,8 +503,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
   module Interprocedural = AbstractInterpreter.Interprocedural(Summary)
 
-  let checker ({ Callbacks.tenv; summary } as callback) : Specs.summary =
-    let proc_name = Specs.get_proc_name summary in
+  let checker ({ Callbacks.tenv; } as callback) : Specs.summary =
 
     (* bind parameters to a trace with a tainted source (if applicable) *)
     let make_initial pdesc =
@@ -541,6 +538,5 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           then failwith "Couldn't compute post"
           else None in
     let make_extras = FormalMap.make in
-    ignore (Interprocedural.compute_and_store_post ~compute_post ~make_extras callback);
-    Specs.get_summary_unsafe "taint analysis" proc_name
+    Interprocedural.compute_and_store_post ~compute_post ~make_extras callback
 end

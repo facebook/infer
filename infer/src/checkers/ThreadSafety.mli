@@ -9,4 +9,4 @@
 
 val file_analysis : Callbacks.cluster_callback_t
 
-val checker : Callbacks.proc_callback_t
+val analyze_procedure : Callbacks.proc_callback_t

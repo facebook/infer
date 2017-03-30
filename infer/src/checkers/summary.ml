@@ -9,42 +9,34 @@
 
 open! IStd
 
-module type Helper = sig
-  type summary
-  (*  type astate*)
+module type Payload = sig
+  type payload
 
-  (** update the specs payload with [summary] *)
-  val update_payload : summary -> Specs.payload -> Specs.payload
+  val update_payload : payload -> Specs.summary -> Specs.summary
 
-  (** extract [summmary] from the specs payload *)
-  val read_from_payload : Specs.payload -> summary option
+  val read_payload : Specs.summary -> payload option
+
 end
 
 module type S = sig
-  type summary
-  (*  type astate*)
+  type payload
 
-  (** Write the [summary] for the procname to persistent storage. *)
-  val write_summary : Typ.Procname.t -> summary -> unit
+  val update_summary : payload -> Specs.summary -> Specs.summary
 
-  (** read and return the summary for [callee_pname] called from [caller_pdesc]. does the analysis
-      to create the summary if needed *)
-  val read_summary : Procdesc.t -> Typ.Procname.t -> summary option
+  val read_summary : Procdesc.t -> Typ.Procname.t -> payload option
+
 end
 
-module Make (H : Helper) = struct
-  type summary = H.summary
+module Make (P : Payload) : S with type payload = P.payload = struct
 
-  let write_summary pname summary =
-    match Specs.get_summary pname with
-    | Some global_summary ->
-        let payload = H.update_payload summary global_summary.Specs.payload in
-        Specs.add_summary pname { global_summary with payload; }
-    | None ->
-        failwithf "Summary for %a should exist, but does not!@." Typ.Procname.pp pname
+  type payload = P.payload
+
+  let update_summary payload summary =
+    P.update_payload payload summary
 
   let read_summary caller_pdesc callee_pname =
     match Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc callee_pname with
     | None -> None
-    | Some summary -> H.read_from_payload summary.Specs.payload
+    | Some summary -> P.read_payload summary
+
 end

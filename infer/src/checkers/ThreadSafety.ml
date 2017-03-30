@@ -14,13 +14,13 @@ module L = Logging
 module MF = MarkupFormatter
 
 module Summary = Summary.Make (struct
-    type summary = ThreadSafetyDomain.summary
+    type payload = ThreadSafetyDomain.summary
 
-    let update_payload summary payload =
-      { payload with Specs.threadsafety = Some summary }
+    let update_payload post (summary : Specs.summary) =
+      { summary with payload = { summary.payload with threadsafety = Some post }}
 
-    let read_from_payload payload =
-      payload.Specs.threadsafety
+    let read_payload (summary : Specs.summary) =
+      summary.payload.threadsafety
   end)
 
 let is_owned access_path attribute_map =
@@ -870,18 +870,10 @@ let analyze_procedure callback =
       end
     else
       Some empty_post in
-  match
-    Interprocedural.compute_and_store_post
-      ~compute_post
-      ~make_extras:FormalMap.make
-      callback with
-  | Some post -> post
-  | None -> empty_post
-
-let checker ({ Callbacks.summary } as callback_args) : Specs.summary =
-  let proc_name = Specs.get_proc_name summary in
-  ignore (analyze_procedure callback_args);
-  Specs.get_summary_unsafe "ThreadSafety.checker" proc_name
+  Interprocedural.compute_and_store_post
+    ~compute_post
+    ~make_extras:FormalMap.make
+    callback
 
 (* we assume two access paths can alias if their access parts are equal (we ignore the base). *)
 let can_alias access_path1 access_path2 =

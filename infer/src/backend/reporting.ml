@@ -56,7 +56,10 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
 let log_issue err_kind proc_name ?loc ?node_id ?session ?ltr ?linters_def_file exn =
   match Specs.get_summary proc_name with
   | Some summary ->
-      log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file  exn
+      log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file exn;
+      if Config.checkers then
+        (* TODO (#16348004): Remove this once Specs.get_summary_unsafe is entirely removed *)
+        Specs.store_summary summary
   | None ->
       failwithf
         "Trying to report error on procedure %a, but cannot because no summary exists for this \

@@ -23,13 +23,16 @@ module Domain = AbstractDomain.FiniteSet(ProcnameSet)
    in the output directory as JSON files and *only* for those methods that
    will be part of the final crashcontext.json. *)
 module SpecSummary = Summary.Make (struct
-    type summary = Stacktree_j.stacktree option
+    type payload = Stacktree_j.stacktree
 
-    let update_payload frame payload =
-      { payload with Specs.crashcontext_frame = frame }
+    let update_payload frame (summary : Specs.summary) =
+      let payload =
+        { summary.payload with Specs.crashcontext_frame = Some frame } in
+      { summary with payload = payload }
 
-    let read_from_payload payload =
-      Some payload.Specs.crashcontext_frame
+    let read_payload (summary : Specs.summary) =
+      summary.payload.crashcontext_frame
+
   end)
 
 type extras_t = {
@@ -78,15 +81,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let callees = List.map
         ~f:(fun pn ->
             match SpecSummary.read_summary pdesc pn with
-            | None | Some None -> (match get_proc_desc pn with
-                | None -> stacktree_stub_of_procname pn
-                (* This can happen when the callee is in the same cluster/ buck
-                   target, but it hasn't been checked yet. So we need both the
-                   inter-target lookup (SpecSummary) and the intra-target
-                   lookup (using get_proc_desc). *)
-                | Some callee_pdesc ->
-                    stacktree_of_pdesc callee_pdesc "proc_start")
-            | Some (Some stracktree) -> stracktree )
+            | None ->
+                (match get_proc_desc pn with
+                 | None -> stacktree_stub_of_procname pn
+                 (* This can happen when the callee is in the same cluster/ buck
+                    target, but it hasn't been checked yet. So we need both the
+                    inter-target lookup (SpecSummary) and the intra-target
+                    lookup (using get_proc_desc). *)
+                 | Some callee_pdesc ->
+                     stacktree_of_pdesc callee_pdesc "proc_start")
+            | Some stracktree -> stracktree )
         procs in
     stacktree_of_pdesc pdesc ~loc ~callees location_type
 
@@ -163,8 +167,7 @@ let loaded_stacktraces =
   | None -> None
   | Some files -> Some (List.map ~f:Stacktrace.of_json_file files)
 
-let checker { Callbacks.proc_desc; tenv; get_proc_desc } : Specs.summary =
-  let proc_name = Procdesc.get_proc_name proc_desc in
+let checker { Callbacks.proc_desc; tenv; get_proc_desc; summary } : Specs.summary =
   begin
     match loaded_stacktraces with
     | None -> failwith "Missing command line option. Either \
@@ -180,4 +183,4 @@ let checker { Callbacks.proc_desc; tenv; get_proc_desc } : Specs.summary =
         ignore (Analyzer.exec_pdesc (ProcData.make proc_desc tenv extras) ~initial:Domain.empty)
       end
   end;
-  Specs.get_summary_unsafe "BoundedCallTree.checker" proc_name
+  summary

@@ -168,11 +168,11 @@ let report_calls_and_accesses tenv callback proc_desc instr =
       | None -> ()
 
 (** Report all field accesses and method calls of a procedure. *)
-let callback_check_access { Callbacks.tenv; proc_desc; } =
+let callback_check_access { Callbacks.tenv; proc_desc; summary } =
   Procdesc.iter_instrs
     (fun _ instr  -> report_calls_and_accesses tenv Localise.proc_callback proc_desc instr)
     proc_desc;
-  Specs.get_summary_unsafe "callback_check_access" (Procdesc.get_proc_name proc_desc)
+  summary
 
 
 (** Report all field accesses and method calls of a class. *)
@@ -317,7 +317,7 @@ let callback_check_write_to_parcel ({ Callbacks.summary } as args) =
   summary
 
 (** Monitor calls to Preconditions.checkNotNull and detect inconsistent uses. *)
-let callback_monitor_nullcheck { Callbacks.proc_desc; idenv } =
+let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; summary } =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let verbose = ref false in
 
@@ -396,13 +396,13 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv } =
     | _ -> () in
   Procdesc.iter_instrs do_instr proc_desc;
   summary_checks_of_formals ();
-  Specs.get_summary_unsafe "callback_monitor_nullcheck" proc_name
+  summary
 
 (** Test persistent state. *)
 let callback_test_state { Callbacks.summary } =
   let proc_name = Specs.get_proc_name summary in
   ST.pname_add proc_name "somekey" "somevalue";
-  Specs.get_summary_unsafe "callback_test_state" proc_name
+  summary
 
 (** Check the uses of VisibleForTesting *)
 let callback_checkVisibleForTesting { Callbacks.proc_desc; summary } =
@@ -415,7 +415,7 @@ let callback_checkVisibleForTesting { Callbacks.proc_desc; summary } =
   summary
 
 (** Check for readValue and readValueAs json deserialization *)
-let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; } =
+let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; summary } =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let verbose = true in
 
@@ -510,7 +510,7 @@ let callback_find_deserialization { Callbacks.proc_desc; get_proc_desc; idenv; }
 
   store_return ();
   Procdesc.iter_instrs do_instr proc_desc;
-  Specs.get_summary_unsafe "callback_find_deserialization" proc_name
+  summary
 
 (** Check field accesses. *)
 let callback_check_field_access { Callbacks.proc_desc; summary } =
@@ -557,7 +557,7 @@ let callback_check_field_access { Callbacks.proc_desc; summary } =
   summary
 
 (** Print c method calls. *)
-let callback_print_c_method_calls { Callbacks.tenv; proc_desc } =
+let callback_print_c_method_calls { Callbacks.tenv; proc_desc; summary } =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let do_instr node = function
     | Sil.Call (_, Exp.Const (Const.Cfun pn), (e, _):: _, loc, _)
@@ -584,10 +584,10 @@ let callback_print_c_method_calls { Callbacks.tenv; proc_desc } =
           description
     | _ -> () in
   Procdesc.iter_instrs do_instr proc_desc;
-  Specs.get_summary_unsafe "callback_print_c_method_calls" proc_name
+  summary
 
 (** Print access to globals. *)
-let callback_print_access_to_globals { Callbacks.tenv; proc_desc } =
+let callback_print_access_to_globals { Callbacks.tenv; proc_desc; summary } =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let do_pvar is_read pvar loc =
     let description =
@@ -614,4 +614,4 @@ let callback_print_access_to_globals { Callbacks.tenv; proc_desc } =
         Option.iter ~f:(fun pvar -> do_pvar false pvar loc) (get_global_var e)
     | _ -> () in
   Procdesc.iter_instrs do_instr proc_desc;
-  Specs.get_summary_unsafe "callback_print_access_to_globals" proc_name
+  summary

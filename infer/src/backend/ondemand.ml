@@ -27,7 +27,7 @@ let dirs_to_analyze =
       changed_files String.Set.empty in
   Option.map ~f:process_changed_files SourceFile.changed_files_set
 
-type analyze_ondemand = SourceFile.t -> Procdesc.t -> Specs.summary
+type analyze_ondemand = SourceFile.t -> Specs.summary -> Procdesc.t -> Specs.summary
 
 type get_proc_desc = Typ.Procname.t -> Procdesc.t option
 
@@ -145,9 +145,9 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
       if Config.dynamic_dispatch = `Lazy
       then Some callee_pdesc
       else None in
-    ignore (Specs.reset_summary callee_pname attributes_opt callee_pdesc_option);
+    let initial_summary = Specs.reset_summary callee_pname attributes_opt callee_pdesc_option in
     Specs.set_status callee_pname Specs.Active;
-    source in
+    source, initial_summary in
 
   let postprocess source summary =
     decr nesting;
@@ -156,22 +156,22 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     log_elapsed_time ();
     summary in
 
-  let log_error_and_continue exn kind =
-    Reporting.log_error callee_pname exn;
-    let prev_summary = Specs.get_summary_unsafe "Ondemand.do_analysis" callee_pname in
-    let stats = { prev_summary.Specs.stats with Specs.stats_failure = Some kind } in
+  let log_error_and_continue exn summary kind =
+    Reporting.log_error_from_summary summary exn;
+    let stats = { summary.Specs.stats with Specs.stats_failure = Some kind } in
     let payload =
-      { prev_summary.Specs.payload with Specs.preposts = Some []; } in
-    let new_summary = { prev_summary with Specs.stats; payload } in
+      { summary.Specs.payload with Specs.preposts = Some []; } in
+    let new_summary = { summary with Specs.stats; payload } in
     Specs.store_summary new_summary;
     log_elapsed_time ();
     new_summary in
 
   let old_state = save_global_state () in
-  let source = preprocess () in
+  let source, initial_summary = preprocess () in
   try
     let summary =
-      analyze_proc source callee_pdesc |> postprocess source in
+      analyze_proc source initial_summary callee_pdesc
+      |> postprocess source in
     restore_global_state old_state;
     summary
   with exn ->
@@ -188,10 +188,10 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
       | SymOp.Analysis_failure_exe kind ->
           (* in production mode, log the timeout/crash and continue with the summary we had before
              the failure occurred *)
-          log_error_and_continue exn kind
+          log_error_and_continue exn initial_summary kind
       | _ ->
           (* this happens with assert false or some other unrecognized exception *)
-          log_error_and_continue exn (FKcrash (Exn.to_string exn))
+          log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn))
 
 
 let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc : Specs.summary option =

@@ -7,27 +7,27 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-module type Helper = sig
-  type summary
+module type Payload = sig
+  type payload
 
-  (** update the specs payload with [summary] *)
-  val update_payload : summary -> Specs.payload -> Specs.payload
+  (** Uptade the corresponding part of the payload in the procedure summary *)
+  val update_payload : payload -> Specs.summary -> Specs.summary
 
-  (** extract [summmary] from the specs payload *)
-  val read_from_payload : Specs.payload -> summary option
+  (** Read the corresponding part of the payload from the procedure summary *)
+  val read_payload : Specs.summary -> payload option
+
 end
 
 module type S = sig
-  type summary
+  type payload
 
-  (** Write the [summary] for the procname to persistent storage. Returns the summary actually
-      written. *)
-  val write_summary : Typ.Procname.t -> summary -> unit
+  (** Uptade the corresponding part of the payload in the procedure summary *)
+  val update_summary : payload -> Specs.summary -> Specs.summary
 
-  (** read and return the summary for [callee_pname] called from [caller_pdesc]. does the analysis
-      to create the summary if needed *)
-  val read_summary : Procdesc.t -> Typ.Procname.t -> summary option
+  (** Return the payload for the given procedure.
+      Runs the analysis on-demand if necessary *)
+  val read_summary : Procdesc.t -> Typ.Procname.t -> payload option
 
 end
 
-module Make (H : Helper) : S with type summary = H.summary
+module Make (P : Payload) : S with type payload = P.payload

@@ -18,13 +18,13 @@ module L = Logging
 module Dom = BufferOverrunDomain
 
 module Summary = Summary.Make (struct
-    type summary = Dom.Summary.t
+    type payload = Dom.Summary.t
 
-    let update_payload astate payload =
-      { payload with Specs.buffer_overrun = Some astate }
+    let update_payload astate (summary : Specs.summary) =
+      { summary with payload = { summary.payload with buffer_overrun = Some astate }}
 
-    let read_from_payload payload =
-      payload.Specs.buffer_overrun
+    let read_payload (summary : Specs.summary) =
+      summary.payload.buffer_overrun
   end)
 
 module TransferFunctions (CFG : ProcCfg.S) =
@@ -319,7 +319,7 @@ struct
 
   let instantiate_cond
     : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list
-      -> Dom.Mem.t -> Summary.summary -> Location.t -> Dom.ConditionSet.t
+      -> Dom.Mem.t -> Summary.payload -> Location.t -> Dom.ConditionSet.t
     = fun tenv caller_pname callee_pdesc params caller_mem summary loc ->
       let callee_entry_mem = Dom.Summary.get_input summary in
       let callee_cond = Dom.Summary.get_cond_set summary in
@@ -415,7 +415,7 @@ struct
 end
 
 let compute_post
-  : Analyzer.TransferFunctions.extras ProcData.t -> Summary.summary option
+  : Analyzer.TransferFunctions.extras ProcData.t -> Summary.payload option
   = fun { pdesc; tenv; extras = get_pdesc } ->
     let cfg = CFG.from_pdesc pdesc in
     let pdata = ProcData.make pdesc tenv get_pdesc in
@@ -446,15 +446,16 @@ let checker : Callbacks.proc_callback_args -> Specs.summary
   = fun ({ summary } as callback) ->
     let proc_name = Specs.get_proc_name summary in
     let make_extras _ = callback.get_proc_desc in
-    let post =
+    let updated_summary : Specs.summary =
       Interprocedural.compute_and_store_post
         ~compute_post
         ~make_extras
-        callback
-    in
+        callback in
+    let post =
+      updated_summary.payload.buffer_overrun in
     begin
       match post with
       | Some s when Config.bo_debug >= 1 -> print_summary proc_name s
       | _ -> ()
     end;
-    Specs.get_summary_unsafe "bufferOverrunChecker.checker" proc_name
+    updated_summary

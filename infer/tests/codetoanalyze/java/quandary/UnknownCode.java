@@ -79,13 +79,13 @@ public abstract class UnknownCode {
     InferTaint.inferSensitiveSink(launderedSource);
   }
 
-  void FN_propagateViaUnknownNativeCodeBad() {
+  void propagateViaUnknownNativeCodeBad() {
     Object source = InferTaint.inferSecretSource();
     Object launderedSource = nativeMethod(source);
     InferTaint.inferSensitiveSink(launderedSource);
   }
 
-  static void FN_propagateViaUnknownAbstractCodeBad() {
+  static void propagateViaUnknownAbstractCodeBad() {
     Object source = InferTaint.inferSecretSource();
     Object launderedSource = nativeMethod(source);
     InferTaint.inferSensitiveSink(launderedSource);

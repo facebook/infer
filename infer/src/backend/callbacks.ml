@@ -57,17 +57,8 @@ let get_procedure_definition exe_env proc_name =
 let get_language proc_name = if Typ.Procname.is_java proc_name then Config.Java else Config.Clang
 
 
-let reset_summary proc_name =
-  match Specs.get_summary proc_name with
-  | Some summary -> summary
-  | None ->
-      let attributes_opt =
-        Specs.proc_resolve_attributes proc_name in
-      Specs.reset_summary proc_name attributes_opt None
-
-
 (** Invoke all registered procedure callbacks on the given procedure. *)
-let iterate_procedure_callbacks exe_env caller_pname =
+let iterate_procedure_callbacks exe_env summary caller_pname =
   let procedure_language = get_language caller_pname in
   Config.curr_language := procedure_language;
 
@@ -81,12 +72,11 @@ let iterate_procedure_callbacks exe_env caller_pname =
     | None ->
         [] in
 
-  let initial_summary = reset_summary caller_pname in
   match get_procedure_definition exe_env caller_pname with
-  | None -> initial_summary
+  | None -> summary
   | Some (idenv, tenv, _, proc_desc, _) ->
       List.fold
-        ~init:initial_summary
+        ~init:summary
         ~f:(fun summary (language_opt, proc_callback) ->
             let language_matches = match language_opt with
               | Some language -> Config.equal_language language procedure_language
@@ -140,12 +130,9 @@ let iterate_callbacks call_graph exe_env =
     (* analyze all the currently defined procedures *)
     Cg.get_defined_nodes call_graph in
 
-  (* Make sure summaries exists. *)
-  List.iter ~f:(fun p -> ignore (reset_summary p)) procs_to_analyze;
-
-  let analyze_ondemand _ proc_desc =
+  let analyze_ondemand _ summary proc_desc =
     let proc_name = Procdesc.get_proc_name proc_desc in
-    iterate_procedure_callbacks exe_env proc_name in
+    iterate_procedure_callbacks exe_env summary proc_name in
 
   let callbacks = {
     Ondemand.analyze_ondemand;
@@ -192,11 +179,5 @@ let iterate_callbacks call_graph exe_env =
 
   (* Unregister callbacks *)
   Ondemand.unset_callbacks ();
-
-  (* Store all the summaries to disk *)
-  List.iter
-    ~f:(fun pname ->
-        Specs.store_summary (Specs.get_summary_unsafe "Checkers: store summaries" pname))
-    procs_to_analyze;
 
   Config.curr_language := saved_language

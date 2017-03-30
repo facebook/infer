@@ -206,10 +206,10 @@ let check_printf_args_ok tenv
       | None -> ())
   | _ -> ()
 
-let callback_printf_args { Callbacks.tenv; proc_desc } : Specs.summary =
+let callback_printf_args { Callbacks.tenv; proc_desc; summary } : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   Procdesc.iter_instrs (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc) proc_desc;
-  Specs.get_summary_unsafe "Callbacks.proc_callback_t" proc_name
+  summary
 
 (*
 let printf_signature_to_string

@@ -91,7 +91,7 @@ let check_final_state tenv proc_name proc_desc final_s =
     end
 
 (** Simple check for dead code. *)
-let callback_check_dead_code { Callbacks.proc_desc; tenv } =
+let callback_check_dead_code { Callbacks.proc_desc; tenv; summary } =
   let proc_name = Procdesc.get_proc_name proc_desc in
 
   let module DFDead = MakeDF(struct
@@ -115,4 +115,4 @@ let callback_check_dead_code { Callbacks.proc_desc; tenv } =
     end in
 
   do_check ();
-  Specs.get_summary_unsafe "callback_check_dead_code" proc_name
+  summary

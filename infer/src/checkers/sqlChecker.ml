@@ -13,7 +13,7 @@ module L = Logging
 
 
 (** Find SQL statements in string concatenations *)
-let callback_sql { Callbacks.proc_desc; tenv } : Specs.summary =
+let callback_sql { Callbacks.proc_desc; tenv; summary } : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let verbose = false in
 
@@ -71,4 +71,4 @@ let callback_sql { Callbacks.proc_desc; tenv } : Specs.summary =
       Procdesc.iter_instrs (do_instr const_map) proc_desc
     with _ -> ()
   end;
-  Specs.get_summary_unsafe "SqlChecker.callback_sql" proc_name
+  summary

@@ -159,13 +159,12 @@ end
 module Interprocedural (Summ : Summary.S) = struct
 
   let compute_and_store_post
-      ~compute_post ~make_extras { Callbacks.proc_desc; tenv; } =
+      ~compute_post ~make_extras { Callbacks.proc_desc; summary; tenv; } : Specs.summary  =
     match compute_post (ProcData.make proc_desc tenv (make_extras proc_desc)) with
     | Some post ->
-        Summ.write_summary (Procdesc.get_proc_name proc_desc) post;
-        Some post
+        Summ.update_summary post summary
     | None ->
-        None
+        summary
 
 end
 

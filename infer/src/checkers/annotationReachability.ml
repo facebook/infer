@@ -73,13 +73,13 @@ module Domain = struct
 end
 
 module Summary = Summary.Make (struct
-    type summary = CallsDomain.astate
+    type payload = CallsDomain.astate
 
-    let update_payload call_map payload =
-      { payload with Specs.calls = Some call_map }
+    let update_payload call_map (summary : Specs.summary) =
+      { summary with payload = { summary.payload with calls = Some call_map }}
 
-    let read_from_payload payload =
-      payload.Specs.calls
+    let read_payload (summary : Specs.summary) =
+      summary.payload.calls
   end)
 
 (* Warning name when a performance critical method directly or indirectly
@@ -161,7 +161,8 @@ let string_of_pname =
   Typ.Procname.to_simplified_string ~withclass:true
 
 let report_allocation_stack
-    src_annot pname fst_call_loc trace stack_str constructor_pname call_loc =
+    src_annot summary fst_call_loc trace stack_str constructor_pname call_loc =
+  let pname = Specs.get_proc_name summary in
   let final_trace = List.rev (update_trace call_loc trace) in
   let constr_str = string_of_pname constructor_pname in
   let description =
@@ -173,11 +174,12 @@ let report_allocation_stack
       MF.pp_monospaced (stack_str ^ ("new "^constr_str)) in
   let exn =
     Exceptions.Checkers (allocates_memory, Localise.verbatim_desc description) in
-  Reporting.log_error pname ~loc:fst_call_loc ~ltr:final_trace exn
+  Reporting.log_error_from_summary summary ~loc:fst_call_loc ~ltr:final_trace exn
 
-let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str snk_pname call_loc =
+let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str snk_pname call_loc =
+  let src_pname = Specs.get_proc_name src_summary in
   if String.equal snk_annot dummy_constructor_annot
-  then report_allocation_stack src_annot src_pname loc trace stack_str snk_pname call_loc
+  then report_allocation_stack src_annot src_summary loc trace stack_str snk_pname call_loc
   else
     let final_trace = List.rev (update_trace call_loc trace) in
     let exp_pname_str = string_of_pname snk_pname in
@@ -195,9 +197,9 @@ let report_annotation_stack src_annot snk_annot src_pname loc trace stack_str sn
       else annotation_reachability_error in
     let exn =
       Exceptions.Checkers (msg, Localise.verbatim_desc description) in
-    Reporting.log_error src_pname ~loc ~ltr:final_trace exn
+    Reporting.log_error_from_summary src_summary ~loc ~ltr:final_trace exn
 
-let report_call_stack end_of_stack lookup_next_calls report call_site calls =
+let report_call_stack summary end_of_stack lookup_next_calls report call_site calls =
   (* TODO: stop using this; we can use the call site instead *)
   let lookup_location pname =
     match Specs.get_summary pname with
@@ -205,7 +207,7 @@ let report_call_stack end_of_stack lookup_next_calls report call_site calls =
     | Some summary -> summary.Specs.attributes.ProcAttributes.loc in
   let rec loop fst_call_loc visited_pnames (trace, stack_str) (callee_pname, call_loc) =
     if end_of_stack callee_pname then
-      report (CallSite.pname call_site) fst_call_loc trace stack_str callee_pname call_loc
+      report summary fst_call_loc trace stack_str callee_pname call_loc
     else
       let callee_def_loc = lookup_location callee_pname in
       let next_calls = lookup_next_calls callee_pname in
@@ -328,7 +330,7 @@ module Interprocedural = struct
   let method_is_expensive tenv pname =
     is_modeled_expensive tenv pname || is_expensive tenv pname
 
-  let check_and_report ({ Callbacks.proc_desc; tenv; } as proc_data) : Specs.summary =
+  let check_and_report ({ Callbacks.proc_desc; tenv; summary } as proc_data) : Specs.summary =
     let proc_name = Procdesc.get_proc_name proc_desc in
     let loc = Procdesc.get_loc proc_desc in
     let expensive = is_expensive tenv proc_name in
@@ -344,7 +346,7 @@ module Interprocedural = struct
         let exn =
           Exceptions.Checkers
             (expensive_overrides_unexpensive, Localise.verbatim_desc description) in
-        Reporting.log_error proc_name ~loc exn in
+        Reporting.log_error_from_summary summary ~loc exn in
 
     if expensive then
       PatternMatch.override_iter check_expensive_subtyping_rules tenv proc_name;
@@ -361,6 +363,7 @@ module Interprocedural = struct
           let f_report =
             report_annotation_stack src_annot.class_name snk_annot.class_name in
           report_call_stack
+            summary
             (method_has_annot snk_annot tenv)
             (lookup_annotation_calls proc_desc snk_annot)
             f_report
@@ -380,17 +383,19 @@ module Interprocedural = struct
       (init_map, Domain.TrackingVar.empty) in
     let compute_post proc_data =
       Option.map ~f:fst (Analyzer.compute_post ~initial proc_data) in
+    let updated_summary : Specs.summary =
+      compute_and_store_post
+        ~compute_post:compute_post
+        ~make_extras:ProcData.make_empty_extras
+        proc_data in
     begin
-      match compute_and_store_post
-              ~compute_post:compute_post
-              ~make_extras:ProcData.make_empty_extras
-              proc_data with
+      match updated_summary.payload.calls with
       | Some call_map ->
           List.iter ~f:(report_src_snk_paths call_map) (src_snk_pairs ())
       | None ->
           ()
     end;
-    Specs.get_summary_unsafe "AnnotationReachability.checker" proc_name
+    updated_summary
 
 end
 

@@ -46,13 +46,13 @@ let is_modelled =
     |> QualifiedCppName.Match.match_qualifiers models_matcher
 
 module Summary = Summary.Make (struct
-    type summary = SiofDomain.astate
+    type payload = SiofDomain.astate
 
-    let update_payload astate payload =
-      { payload with Specs.siof = Some astate }
+    let update_payload astate (summary : Specs.summary) =
+      { summary with payload = { summary.payload with siof = Some astate }}
 
-    let read_from_payload payload =
-      payload.Specs.siof
+    let read_payload (summary : Specs.summary) =
+      summary.payload.siof
   end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -183,7 +183,7 @@ let is_foreign tu_opt (v, _) =
     | None -> assert false in
   Option.value_map ~f:(fun f -> not (is_orig_file f)) ~default:false (Pvar.get_source_file v)
 
-let report_siof trace pdesc gname loc =
+let report_siof summary trace pdesc gname loc =
   let tu_opt =
     let attrs = Procdesc.get_attributes pdesc in
     attrs.ProcAttributes.translation_unit in
@@ -208,10 +208,9 @@ let report_siof trace pdesc gname loc =
               GlobalsAccesses.pp foreign_globals in
           description, (passthroughs, (final_sink', pt)::rest) in
     let ltr = SiofTrace.trace_of_error loc gname sink_path' in
-    let caller_pname = Procdesc.get_proc_name pdesc in
     let msg = Localise.to_issue_id Localise.static_initialization_order_fiasco in
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
-    Reporting.log_error caller_pname ~loc ~ltr exn in
+    Reporting.log_error_from_summary summary ~loc ~ltr exn in
 
   let has_foreign_sink (_, path) =
     List.exists
@@ -224,7 +223,8 @@ let report_siof trace pdesc gname loc =
   |> List.filter ~f:has_foreign_sink
   |> List.iter ~f:report_one_path
 
-let siof_check pdesc gname = function
+let siof_check pdesc gname (summary : Specs.summary) =
+  match summary.payload.siof with
   | Some ((SiofDomain.BottomSiofTrace.NonBottom post, _)) ->
       let attrs = Procdesc.get_attributes pdesc in
       let all_globals = SiofTrace.Sinks.fold
@@ -234,7 +234,7 @@ let siof_check pdesc gname = function
         let attrs = Procdesc.get_attributes pdesc in
         attrs.ProcAttributes.translation_unit in
       if GlobalsAccesses.exists (is_foreign tu_opt) all_globals then
-        report_siof post pdesc gname attrs.ProcAttributes.loc;
+        report_siof summary post pdesc gname attrs.ProcAttributes.loc;
   | Some (SiofDomain.BottomSiofTrace.Bottom, _) | None ->
       ()
 
@@ -244,7 +244,7 @@ let compute_post proc_data =
   |> Option.map ~f:SiofDomain.normalize
 
 let checker ({ Callbacks.proc_desc } as callback) : Specs.summary =
-  let post =
+  let updated_summary =
     Interprocedural.compute_and_store_post
       ~compute_post
       ~make_extras:ProcData.make_empty_extras
@@ -253,8 +253,8 @@ let checker ({ Callbacks.proc_desc } as callback) : Specs.summary =
   begin
     match Typ.Procname.get_global_name_of_initializer pname with
     | Some gname ->
-        siof_check proc_desc gname post
+        siof_check proc_desc gname updated_summary
     | None ->
         ()
   end;
-  Specs.get_summary_unsafe "SIOF checker" pname
+  updated_summary

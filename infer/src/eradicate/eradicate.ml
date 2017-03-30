@@ -345,7 +345,7 @@ struct
     update_summary curr_pname curr_pdesc final_typestate_opt
 
   (** Entry point for the eradicate-based checker infrastructure. *)
-  let callback checks ({ Callbacks.proc_desc } as callback_args) : Specs.summary =
+  let callback checks ({ Callbacks.proc_desc; summary } as callback_args) : Specs.summary =
     let proc_name = Procdesc.get_proc_name proc_desc in
     let calls_this = ref false in
 
@@ -371,7 +371,7 @@ struct
           callback2
             calls_this checks callback_args annotated_signature linereader loc
     end;
-    Specs.get_summary_unsafe "callback" proc_name
+    summary
 
 end (* MkCallback *)
 
