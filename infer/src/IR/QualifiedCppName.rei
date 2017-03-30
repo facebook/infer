@@ -29,12 +29,24 @@ let to_qual_string: t => string;
 let append_qualifier: t => qual::string => t;
 
 
+/** returns last (innermost scope) qualifier and qualified name without last qualifier */
+let extract_last: t => option (string, t);
+
+
 /** returns list of qualifers */
 let to_list: t => list string;
 
 
+/** returns reversed list of qualifiers, ie innermost scope is the first element */
+let to_rev_list: t => list string;
+
+
 /** given list of qualifiers in normal order produce qualified name ["std", "move"] */
 let of_list: list string => t;
+
+
+/** given reversed list of qualifiers, produce qualified name (ie. ["move", "std"] for std::move )*/
+let of_rev_list: list string => t;
 
 let pp: Format.formatter => t => unit;
 

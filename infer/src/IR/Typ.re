@@ -911,7 +911,7 @@ let module Procname = {
   let to_filename pname => {
     /* filenames for clang procs are REVERSED qualifiers with '#' as separator */
     let get_qual_name_str pname =>
-      get_qualifiers pname |> QualifiedCppName.to_list |> List.rev |> String.concat sep::"#";
+      get_qualifiers pname |> QualifiedCppName.to_rev_list |> String.concat sep::"#";
     let proc_id =
       switch pname {
       | C {mangled} =>

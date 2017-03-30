@@ -139,16 +139,14 @@ struct
       QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_methods in
     let class_matcher =
       QualifiedCppName.Match.of_fuzzy_qual_names Config.whitelisted_cpp_classes in
-    fun qual_method_rev ->
+    fun qual_name ->
       (* either the method is explictely whitelisted, or the whole class is whitelisted *)
-      QualifiedCppName.Match.match_qualifiers method_matcher
-        (List.rev qual_method_rev |> QualifiedCppName.of_list) ||
-      match qual_method_rev with
-      | _::(_::_ as class_name_rev) ->
+      QualifiedCppName.Match.match_qualifiers method_matcher qual_name ||
+      match QualifiedCppName.extract_last qual_name with
+      | Some (_, class_qual_name) ->
           (* make sure the class name is not empty; in particular, it cannot be a C function *)
-          QualifiedCppName.Match.match_qualifiers class_matcher
-            (List.rev class_name_rev |> QualifiedCppName.of_list)
-      | _ ->
+          QualifiedCppName.Match.match_qualifiers class_matcher class_qual_name
+      | None ->
           false
 
   let should_translate_decl trans_unit_ctx dec decl_trans_context =
@@ -157,7 +155,7 @@ struct
     let translate_when_used = match dec with
       | Clang_ast_t.FunctionDecl (_, name_info, _, _)
       | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _) ->
-          is_whitelisted_cpp_method name_info.Clang_ast_t.ni_qual_name
+          is_whitelisted_cpp_method (CAst_utils.get_qualified_name name_info)
       | _ -> false in
     let translate_location =
       CLocation.should_translate_lib trans_unit_ctx source_range decl_trans_context

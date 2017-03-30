@@ -19,7 +19,7 @@ type type_ptr_to_sil_type = Tenv.t -> Clang_ast_t.type_ptr -> Typ.t
 
 let sanitize_name = Str.global_replace (Str.regexp "[/ ]") "_"
 let get_qual_name qual_name_list =
-  List.rev_map ~f:sanitize_name qual_name_list |> QualifiedCppName.of_list
+  List.map ~f:sanitize_name qual_name_list |> QualifiedCppName.of_rev_list
 
 let get_qualified_name name_info =
   get_qual_name name_info.Clang_ast_t.ni_qual_name
