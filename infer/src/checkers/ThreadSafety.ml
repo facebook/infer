@@ -1056,7 +1056,7 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
         { reported with reported_reads; reported_sites; } in
   let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_acc =
     let pname = Procdesc.get_proc_name pdesc in
-    if is_duplicate_report access pname reported_acc || not (should_report pdesc tenv)
+    if is_duplicate_report access pname reported_acc
     then
       reported_acc
     else
@@ -1128,9 +1128,11 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
        let reported =
          { reported_acc with reported_writes = Typ.Procname.Set.empty;
                              reported_reads = Typ.Procname.Set.empty; } in
+       let reportable_accesses =
+         List.filter ~f:(fun (_, _, _, tenv, pdesc) -> should_report pdesc tenv) grouped_accesses in
        List.fold
-         ~f:(fun acc access -> report_unsafe_access access grouped_accesses acc)
-         grouped_accesses
+         ~f:(fun acc access -> report_unsafe_access access reportable_accesses acc)
+         reportable_accesses
          ~init:reported)
     aggregated_access_map
     empty_reported

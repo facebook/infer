@@ -81,7 +81,6 @@ codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.o
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.recursiveBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ThreadSafeExample.f]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void ThreadSafeExample.tsBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ThreadSafeExample.f]
 codetoanalyze/java/threadsafety/ThreadSafeExample.java, void YesThreadSafeExtendsNotThreadSafeExample.subsubmethodBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.YesThreadSafeExtendsNotThreadSafeExample.subsubfield]
-codetoanalyze/java/threadsafety/ThreadSafeMethods.java, Object ThreadSafeMethods.synchronizedReadOk(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ThreadSafeMethods.field5]
 codetoanalyze/java/threadsafety/ThreadSafeMethods.java, Object ThreadSafeMethods.threadSafeMethodReadBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ThreadSafeMethods.field2]
 codetoanalyze/java/threadsafety/ThreadSafeMethods.java, void ThreadSafeMethods.threadSafeMethodWriteBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ThreadSafeMethods.field1]
 codetoanalyze/java/threadsafety/ThreadSafeMethods.java, void ThreadSafeMethods.threadSafePrivateMethodBad(), 1, THREAD_SAFETY_VIOLATION, [access to codetoanalyze.java.checkers.ThreadSafeMethods.field2]

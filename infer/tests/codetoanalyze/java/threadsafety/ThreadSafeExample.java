@@ -113,6 +113,16 @@ public class ThreadSafeExample{
     visibleForTestingNotPublicOk();
   }
 
+  Object sharedField;
+
+  private void writePrivateSharedFieldOk() {
+    this.sharedField = new Object();
+  }
+
+  public Object returnSharedFieldOk() {
+    return this.sharedField; // ok because it only races with a private method
+  }
+
 }
 
 class ExtendsThreadSafeExample extends ThreadSafeExample{
