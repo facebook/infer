@@ -886,13 +886,15 @@ let module Procname = {
     let equal = equal;
     let hash = hash_pname;
   };
-  let module Map = Caml.Map.Make {
+  let module Map = PrettyPrintable.MakePPMap {
     type nonrec t = t;
     let compare = compare;
+    let pp = pp;
   };
-  let module Set = Caml.Set.Make {
+  let module Set = PrettyPrintable.MakePPSet {
     type nonrec t = t;
     let compare = compare;
+    let pp = pp;
   };
 
   /** Pretty print a set of proc names */

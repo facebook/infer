@@ -267,10 +267,10 @@ let module Procname: {
   let module Hash: Caml.Hashtbl.S with type key = t;
 
   /** Maps from proc names. */
-  let module Map: Caml.Map.S with type key = t;
+  let module Map: PrettyPrintable.PPMap with type key = t;
 
   /** Sets of proc names. */
-  let module Set: Caml.Set.S with type elt = t;
+  let module Set: PrettyPrintable.PPSet with type elt = t;
 
   /** Create a C procedure name from plain and mangled name. */
   let c: QualifiedCppName.t => string => template_spec_info => c;

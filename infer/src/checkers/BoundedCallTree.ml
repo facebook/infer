@@ -14,9 +14,7 @@ module L = Logging
 
 (** find transitive procedure calls for each procedure *)
 
-module ProcnameSet = PrettyPrintable.MakePPSet(Typ.Procname)
-
-module Domain = AbstractDomain.FiniteSet(ProcnameSet)
+module Domain = AbstractDomain.FiniteSet(Typ.Procname.Set)
 
 (* Store a single stacktree frame per method. That is, callees is
    always []. Instead, the expanded per-method summaries are directly stored
