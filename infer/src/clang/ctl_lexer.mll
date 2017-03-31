@@ -25,6 +25,7 @@
 let comment = "//" [^'\n']*
 let whitespace = [' ' '\t']
 let id = ['a'-'z' 'A'-'Z' '_'] ['a'-'z' 'A'-'Z' '0'-'9' '_' ':']*
+let file_id = ['a'-'z' 'A'-'Z' '_' '~' '/' '.'] ['a'-'z' 'A'-'Z' '0'-'9' '_' ':' '.' '/' '-']*
 
 rule token = parse
   | whitespace+ { token lexbuf }
@@ -45,6 +46,8 @@ rule token = parse
   | "HOLDS-IN-NODE" { HOLDS_IN_NODE }
   | "WITH-TRANSITION" {WITH_TRANSITION}
   | "DEFINE-CHECKER" { DEFINE_CHECKER }
+  | "GLOBAL-MACROS" { GLOBAL_MACROS }
+  | "#IMPORT" { HASHIMPORT }
   | "SET" { SET }
   | "LET" { LET }
   | "TRUE" { TRUE }
@@ -53,6 +56,8 @@ rule token = parse
   | "}" { RIGHT_BRACE }
   | "(" { LEFT_PAREN }
   | ")" { RIGHT_PAREN }
+  | "<" { LESS_THAN }
+  | ">" { GREATER_THAN }
   | "=" { ASSIGNMENT }
   | ";" { SEMICOLON }
   | "," { COMMA }
@@ -61,6 +66,7 @@ rule token = parse
   | "NOT" { NOT }
   | "IMPLIES" { IMPLIES }
   | id { IDENTIFIER (Lexing.lexeme lexbuf) }
+  | file_id { FILE_IDENTIFIER (Lexing.lexeme lexbuf) }
   | '"' { read_string (Buffer.create 80) lexbuf }
   | _ { raise (SyntaxError ("Unexpected char: '" ^ (Lexing.lexeme lexbuf) ^"'")) }
   | eof { EOF }

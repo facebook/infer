@@ -85,6 +85,12 @@ type ctl_checker = {
   definitions : clause list (* A list of let/set definitions *)
 }
 
+type al_file = {
+  import_files : string list;
+  global_macros : clause list;
+  checkers : ctl_checker list
+}
+
 val print_checker : ctl_checker -> unit
 
 val eval_formula : t -> ast_node -> CLintersContext.context -> bool

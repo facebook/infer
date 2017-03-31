@@ -74,6 +74,12 @@ type ctl_checker = {
   definitions : clause list (* A list of let/set definitions *)
 }
 
+type al_file = {
+  import_files : string list;
+  global_macros : clause list;
+  checkers : ctl_checker list
+}
+
 let equal_ast_node = Poly.(=)
 
 module Debug = struct

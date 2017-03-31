@@ -9,6 +9,14 @@
 
 %{
   let formal_params : (ALVar.t list) ref = ref []
+
+  let is_not_infer_reserved_id id =
+    if Str.string_match (Str.regexp_string Ctl_parser_types.infer_prefix) id 0 then
+        failwith
+          ("ERROR: " ^ id ^ " contains __infer_ctl_ that is a reserved keyword "
+            ^ "which cannot be used in identifiers.")
+     else id
+
 %}
 
 %token EU
@@ -21,6 +29,10 @@
 %token AG
 %token EH
 %token DEFINE_CHECKER
+%token GLOBAL_MACROS
+%token HASHIMPORT
+%token LESS_THAN
+%token GREATER_THAN
 %token ET
 %token ETX
 %token WITH_TRANSITION
@@ -42,6 +54,7 @@
 %token NOT
 %token IMPLIES
 %token <string> IDENTIFIER
+%token <string> FILE_IDENTIFIER
 %token <string> STRING
 %token EOF
 
@@ -52,8 +65,7 @@
 %left AU, EU
 %right NOT, AX, EX, AF, EF, EG, AG, EH
 
-%start <CTL.ctl_checker list> checkers_list
-
+%start <CTL.al_file> al_file
 %%
 
 var_list:
@@ -64,6 +76,22 @@ var_list:
 formal_params:
   | var_list { formal_params := $1; $1}
 
+al_file:
+  | import_files global_macros checkers_list {
+      { CTL.import_files = $1; CTL.global_macros = $2; CTL.checkers = $3 }
+    }
+  ;
+
+import_files:
+  | { [] }
+  | HASHIMPORT LESS_THAN file_identifier GREATER_THAN import_files
+    { $3 :: $5 }
+  ;
+
+global_macros:
+  | { [] }
+  | GLOBAL_MACROS LEFT_BRACE let_clause_list RIGHT_BRACE SEMICOLON { $3 }
+  ;
 
 checkers_list:
   | EOF { [] }
@@ -85,6 +113,11 @@ clause_list:
  | clause SEMICOLON clause_list { $1 :: $3 }
 ;
 
+let_clause_list:
+ | let_clause SEMICOLON { [$1] }
+ | let_clause SEMICOLON let_clause_list { $1 :: $3 }
+;
+
 clause:
   | SET identifier ASSIGNMENT formula
     { Logging.out "\tParsed SET clause\n";
@@ -103,13 +136,17 @@ clause:
       | _ -> failwith ("[ERROR] string '%s' cannot be set in a SET clause. " ^
                         "Use either of: 'message', 'suggestion', 'severity', or 'mode'\n") in
       CTL.CDesc (alvar, $4) }
+    | let_clause { $1 }
+    ;
+
+let_clause:
   | LET formula_id_def ASSIGNMENT formula
     { Logging.out "\tParsed LET clause\n"; CTL.CLet ($2, [], $4) }
   | LET formula_id_def LEFT_PAREN formal_params RIGHT_PAREN ASSIGNMENT formula
                { Logging.out "\tParsed let clause with formula identifier '%s(....)' \n"
                   (ALVar.formula_id_to_string $2);
                  CTL.CLet ($2, $4, $7) }
-;
+  ;
 
 atomic_formula:
   | TRUE { Logging.out "\tParsed True\n"; CTL.True }
@@ -192,12 +229,10 @@ formula:
 ;
 
 identifier:
- | IDENTIFIER { if Str.string_match (Str.regexp_string Ctl_parser_types.infer_prefix) $1 0 then (
-                      Logging.err
-                      "ERROR: %s contains __infer_ctl_ that is a reserved keyword which cannot be used in identifiers." $1;
-                      assert false)
-                else $1
-              }
-              ;
+ | IDENTIFIER { is_not_infer_reserved_id $1 }
+ ;
 
+file_identifier:
+  | FILE_IDENTIFIER { is_not_infer_reserved_id $1 }
+  ;
 %%

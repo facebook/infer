@@ -1,3 +1,12 @@
+#IMPORT <library.al>
+
+GLOBAL-MACROS {
+
+  LET global_is_subclass_of(x) =
+        is_class(x) HOLDS-IN-SOME-SUPERCLASS-OF ObjCInterfaceDecl;
+
+};
+
 
 // Check that class A is not subclassed.
 DEFINE-CHECKER SUBCLASSING_TEST_EXAMPLE = {
@@ -19,10 +28,10 @@ DEFINE-CHECKER MACRO_TEST1 = {
 
 };
 
-  // Test reverse parameter of macro
+// Test reverse parameter of macro
 DEFINE-CHECKER MACRO_TEST2 = {
 
-  LET my_macro_to_call_method_of_class(x,y) = call_class_method(y,x);
+   LET my_macro_to_call_method_of_class(x,y) = call_class_method(y,x);
 
   SET report_when = my_macro_to_call_method_of_class(foo, A);
 
@@ -44,11 +53,27 @@ DEFINE-CHECKER MACRO_TEST3 = {
 };
 
 
-DEFINE-CHECKER MACRO_SUBCLASS = {
+DEFINE-CHECKER LOCAL_MACRO_SUBCLASS = {
   LET is_subclass_of(x) =
           is_class(x) HOLDS-IN-SOME-SUPERCLASS-OF ObjCInterfaceDecl;
 
    SET report_when = is_subclass_of(A);
+
+   SET message = "This is subclassing A. Class A should not be subclassed.";
+
+};
+
+DEFINE-CHECKER GLOBAL_MACRO_SUBCLASS = {
+
+   SET report_when = global_is_subclass_of(A);
+
+   SET message = "This is subclassing A. Class A should not be subclassed.";
+
+};
+
+DEFINE-CHECKER IMPORTED_MACRO_SUBCLASS = {
+
+   SET report_when = imported_is_subclass_of(A);
 
    SET message = "This is subclassing A. Class A should not be subclassed.";
 

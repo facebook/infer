@@ -15,6 +15,12 @@ type linter = {
   def_file : string option;
 }
 
+(* map used to expand macro. It maps a formula id to a triple
+   (visited, parameters, definition).
+   Visited is used during the expansion phase to understand if the
+   formula was already expanded and, if yes we have a cyclic definifion *)
+type macros_map = (bool * ALVar.t list * CTL.t) ALVar.FormulaIdMap.t
+
 (* List of checkers that will be filled after parsing them from a file *)
 val parsed_linters : linter list ref
 
@@ -23,7 +29,9 @@ val parsed_linters : linter list ref
 (* Run frontend checkers on an AST node *)
 val invoke_set_of_checkers_on_node : CLintersContext.context -> Ctl_parser_types.ast_node -> unit
 
-val expand_checkers : CTL.ctl_checker list -> CTL.ctl_checker list
+val build_macros_map : CTL.clause list -> macros_map
+
+val expand_checkers : macros_map -> CTL.ctl_checker list -> CTL.ctl_checker list
 
 val create_parsed_linters : string -> CTL.ctl_checker list -> linter list
 

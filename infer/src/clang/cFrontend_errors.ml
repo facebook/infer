@@ -17,6 +17,11 @@ type linter = {
   def_file : string option;
 }
 
+(* Map a formula id to a triple (visited, parameters, definition).
+   Visited is used during the expansion phase to understand if the
+   formula was already expanded and, if yes we have a cyclic definifion *)
+type macros_map = (bool * ALVar.t list * CTL.t) ALVar.FormulaIdMap.t
+
 let single_to_multi checker =
   fun ctx an ->
     let condition, issue_desc_opt = checker ctx an in
@@ -221,8 +226,7 @@ let rec apply_substitution f sub =
   | ETX (ntl, sw, f1) ->
       ETX (sub_list_param ntl, sw, apply_substitution f1 sub)
 
-(* expands use of let defined formula id in checkers with their definition *)
-let expand_checkers checkers =
+let expand_formula phi _map _error_msg =
   let fail_with_circular_macro_definition name error_msg =
     Logging.out
       "[ERROR]: Macro '%s' has a circular definition.\n Cycle:\n%s"
@@ -265,28 +269,36 @@ let expand_checkers checkers =
     | EG (trans, f1) -> EG (trans, expand f1 map error_msg)
     | ET (tl, sw, f1) -> ET (tl, sw, expand f1 map error_msg)
     | ETX (tl, sw, f1) -> ETX (tl, sw, expand f1 map error_msg) in
-  let expand_one_checker checker =
-    Logging.out " +Start expanding %s\n" checker.name;
-    (* Map a formula id to a triple (visited, parameters, definition).
-       Visited is used during the expansion phase to understand if the
-       formula was already expanded and, if yes we have a cyclic definifion *)
-    let map : (bool * ALVar.t list * CTL.t) ALVar.FormulaIdMap.t = ALVar.FormulaIdMap.empty in
-    let map, vars = List.fold ~f:(fun (map', vars') definition ->
-        match definition with
-        | CLet (key, params, formula) ->
-            ALVar.FormulaIdMap.add key (false, params, formula) map', List.append vars' params
-        | _ -> map', vars') ~init:(map, []) checker.definitions in
+  expand phi _map _error_msg
+
+let _build_macros_map macros init_map =
+  let macros_map = List.fold ~f:(fun map' data -> match data with
+      | CTL.CLet (key, params, formula) ->
+          if ALVar.FormulaIdMap.mem key map' then
+            failwith ("[ERROR] Macro '" ^ (ALVar.formula_id_to_string key) ^
+                      "' has more than one definition.")
+          else ALVar.FormulaIdMap.add key (false, params, formula) map'
+      | _ -> map') ~init:init_map macros in
+  macros_map
+
+let build_macros_map macros =
+  let init_map : macros_map = ALVar.FormulaIdMap.empty in
+  _build_macros_map macros init_map
+
+(* expands use of let defined formula id in checkers with their definition *)
+let expand_checkers macro_map checkers =
+  let open CTL in
+  let expand_one_checker c =
+    Logging.out " +Start expanding %s\n" c.name;
+    let map = _build_macros_map c.definitions macro_map in
     let exp_defs = List.fold ~f:(fun defs clause ->
         match clause with
         | CSet (report_when_const, phi) ->
             Logging.out "  -Expanding report_when\n";
-            let exp_report_when = expand phi map "" in
-            check_def_well_expanded vars exp_report_when;
-            CSet (report_when_const, exp_report_when) :: defs
-        | cl -> cl :: defs) ~init:[] checker.definitions in
-    { checker with definitions = exp_defs} in
-  let expanded_checkers = List.map ~f:expand_one_checker checkers in
-  expanded_checkers
+            CSet (report_when_const, expand_formula phi map "") :: defs
+        | cl -> cl :: defs) ~init:[] c.definitions in
+    { c with definitions = exp_defs} in
+  List.map ~f:expand_one_checker checkers
 
 let get_err_log translation_unit_context method_decl_opt =
   let procname = match method_decl_opt with
