@@ -13,8 +13,7 @@
     },
     {
       "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink2",
-      "kind": "Logging",
-      "index": "all"
+      "kind": "Logging"
     }
   ]
 }

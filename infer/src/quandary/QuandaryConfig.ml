@@ -19,9 +19,9 @@ module Source = struct
   let of_json = function
     | `List sources ->
         let parse_source json =
-          let open Yojson.Basic.Util in
-          let procedure = json |> member "procedure" |> to_string |> Str.regexp in
-          let kind = json |> member "kind" |> to_string in
+          let open Yojson.Basic in
+          let procedure = Util.member "procedure" json |> Util.to_string |> Str.regexp in
+          let kind = Util.member "kind" json |> Util.to_string in
           { procedure; kind; } in
         List.map ~f:parse_source sources
     | _ ->
@@ -34,10 +34,11 @@ module Sink = struct
   let of_json = function
     | `List sinks ->
         let parse_sink json =
-          let open Yojson.Basic.Util in
-          let procedure = json |> member "procedure" |> to_string |> Str.regexp in
-          let kind = json |> member "kind" |> to_string in
-          let index = json |> member "index" |> to_string in
+          let open Yojson.Basic in
+          let procedure = Util.member "procedure" json |> Util.to_string |> Str.regexp in
+          let kind = Util.member "kind" json |> Util.to_string in
+          let index =
+            Util.member "index" json |> Util.to_string_option |> Option.value ~default:"all" in
           { procedure; kind; index; } in
         List.map ~f:parse_sink sinks
     | _ ->
