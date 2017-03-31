@@ -287,6 +287,7 @@ val print_logs : bool
 val print_builtins : bool
 val print_types : bool
 val print_using_diff : bool
+val procedures_per_process : int
 val procs_csv : string option
 val procs_xml : string option
 val project_root : string

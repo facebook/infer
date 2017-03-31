@@ -150,36 +150,30 @@ let main makefile => {
       (List.length clusters_to_analyze)
       (List.length all_clusters)
       Config.results_dir;
-    if (makefile != "" || Config.per_procedure_parallelism) {
-      let is_java () =>
-        List.exists
-          f::(
-            fun cl => SourceFile.string_crc_has_extension ext::"java" (DB.source_dir_to_string cl)
-          )
-          all_clusters;
-      if (not Config.per_procedure_parallelism) {
-        ClusterMakefile.create_cluster_makefile clusters_to_analyze makefile
-      } else {
-        /* per-procedure parallelism */
-        if (is_java ()) {
-          /* Java uses ZipLib which is incompatible with forking */
-          L.stderr "Error: option --per-procedure-parallelism not supported with Java@.";
-          exit 1
-        };
-        L.stdout "per-procedure parallelism jobs:%d@." Config.jobs;
-        if (makefile != "") {
-          ClusterMakefile.create_cluster_makefile [] makefile
-        };
-        /* Prepare tasks one cluster at a time while executing in parallel */
-        let runner = Tasks.Runner.create jobs::Config.jobs;
-        let cluster_start_tasks i cluster => {
-          let tasks = analyze_cluster_tasks i cluster;
-          let aggregate_tasks = Tasks.aggregate size::1 tasks;
-          Tasks.Runner.start runner tasks::aggregate_tasks
-        };
-        List.iteri f::cluster_start_tasks clusters_to_analyze;
-        Tasks.Runner.complete runner
-      }
+    let is_java () =>
+      List.exists
+        f::(fun cl => SourceFile.string_crc_has_extension ext::"java" (DB.source_dir_to_string cl))
+        all_clusters;
+    if (Config.per_procedure_parallelism && not (is_java ())) {
+      /* Java uses ZipLib which is incompatible with forking */
+      /* per-procedure parallelism */
+      L.stdout "per-procedure parallelism jobs:%d@." Config.jobs;
+      if (makefile != "") {
+        ClusterMakefile.create_cluster_makefile [] makefile
+      };
+      /* Prepare tasks one cluster at a time while executing in parallel */
+      let runner = Tasks.Runner.create jobs::Config.jobs;
+      let cluster_start_tasks i cluster => {
+        let tasks = analyze_cluster_tasks i cluster;
+        let aggregate_tasks = Tasks.aggregate size::Config.procedures_per_process tasks;
+        Tasks.Runner.start runner tasks::aggregate_tasks
+      };
+      List.iteri f::cluster_start_tasks clusters_to_analyze;
+      Tasks.Runner.complete runner
+    } else if (
+      makefile != ""
+    ) {
+      ClusterMakefile.create_cluster_makefile clusters_to_analyze makefile
     } else {
       /* This branch is reached when -j 1 is used */
       List.iteri f::analyze_cluster clusters_to_analyze;

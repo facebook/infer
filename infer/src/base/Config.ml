@@ -1105,7 +1105,7 @@ and patterns_skip_translation =
      "Matcher or list of matchers for names of files that should not be analyzed at all.")
 
 and per_procedure_parallelism =
-  CLOpt.mk_bool ~deprecated:["per-procedure-parallelism"] ~long:"per-procedure-parallelism"
+  CLOpt.mk_bool ~long:"per-procedure-parallelism" ~default:true
     "Perform analysis with per-procedure parallelism.\n\
      Java is not supported."
 
@@ -1129,6 +1129,12 @@ and print_builtins =
 and print_using_diff =
   CLOpt.mk_bool ~deprecated_no:["noprintdiff"] ~long:"print-using-diff" ~default:true
     "Highlight the difference w.r.t. the previous prop when printing symbolic execution debug info"
+
+and procedures_per_process =
+  CLOpt.mk_int ~long:"procedures-per-process" ~default:1000 ~meta:"int"
+    "Specify the number of procedures to analyze per process when using \
+     --per-procedure-parallelism.  If 0 is specified, each file is divided into --jobs groups of \
+     procedures."
 
 and procs_csv =
   CLOpt.mk_path_opt ~deprecated:["procs"] ~long:"procs-csv"
@@ -1672,6 +1678,7 @@ and print_logs = !print_logs
 and print_builtins = !print_builtins
 and print_types = !print_types
 and print_using_diff = !print_using_diff
+and procedures_per_process = !procedures_per_process
 and procs_csv = !procs_csv
 and procs_xml = !procs_xml
 and quandary = !quandary

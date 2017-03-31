@@ -35,9 +35,10 @@ let empty = { closures = []; continuations = Queue.create () }
 let aggregate ~size t =
   let group_to_closure group =
     fun () -> List.iter ~f:(fun closure -> closure ()) group in
-  if size > 1
+  let group_size = if size > 0 then size else (List.length t.closures) / Config.jobs in
+  if group_size > 1
   then
-    let groups = List.groupi ~break:(fun n _ _ -> Int.equal (n mod size) 0) t.closures in
+    let groups = List.groupi ~break:(fun n _ _ -> Int.equal (n mod group_size) 0) t.closures in
     let closures = List.map ~f:group_to_closure groups in
     { t with closures }
   else
