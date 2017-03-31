@@ -1100,13 +1100,15 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
               update_reported access pname reported_acc
             end
       | Access.Read, AccessPrecondition.Protected ->
-          (* protected read. report unprotected writes as conflicts *)
+          (* protected read. report unprotected, threaded writes as conflicts *)
           let unprotected_writes =
             List.filter
-              ~f:(fun (access, pre, _, _, _) ->
+              ~f:(fun (access, pre, other_threaded, _, _) ->
                   match pre with
-                  | AccessPrecondition.Unprotected _ -> TraceElem.is_write access
-                  | _ -> false)
+                  | AccessPrecondition.Unprotected _ ->
+                      TraceElem.is_write access && (other_threaded && not threaded)
+                  | _ ->
+                      false)
               accesses in
           if List.is_empty unprotected_writes
           then
