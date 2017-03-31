@@ -49,14 +49,6 @@ if 'check_output' not in dir(subprocess):
     subprocess.check_output = f
 
 
-# csv.reader() doesn't support utf-8. Do not use csv.reader(). Use
-# this instead.
-def locale_csv_reader(iterable, dialect='excel', **kwargs):
-    rows = csv.reader(iterable, dialect=dialect, **kwargs)
-    for row in rows:
-        yield [unicode(cell, config.CODESET) for cell in row]
-
-
 def configure_logging(args):
     """Configures the default logger. This can be called only once and has to
     be called before any logging is done.
@@ -108,79 +100,6 @@ def dump_json_to_path(
                   default=default, sort_keys=sort_keys, **kw)
 
 
-def infer_version():
-    version = json.loads(subprocess.check_output([
-        get_cmd_in_bin_dir('InferAnalyze'),
-        '--version-json',
-    ]).decode())
-    return version['commit']
-
-
-def infer_branch():
-    version = json.loads(subprocess.check_output([
-        get_cmd_in_bin_dir('InferAnalyze'),
-        '--version-json',
-    ]).decode())
-    return version['branch']
-
-
-def infer_key(analyzer):
-    return '/'.join([analyzer, infer_version()])
-
-
-def vcs_branch(dir='.'):
-    cwd = os.getcwd()
-    devnull = open(os.devnull, 'w')
-    try:
-        os.chdir(dir)
-
-        branch = subprocess.check_output(
-            ['git',
-             'rev-parse',
-             '--abbrev-ref',
-             'HEAD'],
-            stderr=devnull).decode().strip()
-    except subprocess.CalledProcessError:
-        try:
-            branch = subprocess.check_output(
-                ['hg',
-                 'id',
-                 '-B'],
-                stderr=devnull).decode().strip()
-        except subprocess.CalledProcessError:
-            branch = 'not-versioned'
-    finally:
-        devnull.close()
-        os.chdir(cwd)
-    return branch
-
-
-def vcs_revision(dir='.'):
-    cwd = os.getcwd()
-    devnull = open(os.devnull, 'w')
-    try:
-        os.chdir(dir)
-
-        revision = subprocess.check_output(
-            ['git',
-             'rev-parse',
-             'HEAD'],
-            stderr=devnull).decode().strip()
-    except subprocess.CalledProcessError:
-        try:
-            revision = subprocess.check_output(
-                ['hg',
-                 'id',
-                 '-i'],
-                stderr=devnull).decode().strip()
-        except subprocess.CalledProcessError:
-            revision = 'not-versioned'
-    finally:
-        devnull.close()
-        os.chdir(cwd)
-    return revision
-
-
 class Timer:
     """Simple logging timer. Initialize with a printf like logging function."""
     def __init__(self, logger=lambda x: None):
@@ -200,68 +119,11 @@ class Timer:
         return self._dt
 
 
-def interact():
-    """Start interactive mode. Useful for debugging.
-    """
-    import code
-    code.interact(local=locals())
-
-
 def mkdir_if_not_exists(path):
     try:
         os.mkdir(path)
     except OSError:
         pass
-
-
-def search_files(root_dir, extension):
-    # Input:
-    #   - root directory where to start a recursive search of yjson files
-    #   - file extension to search from the root
-    # Output:
-    #   - list of absolute filepaths
-    files = []
-    if not os.path.isabs(root_dir):
-        root_dir = os.path.abspath(root_dir)
-    for dirpath, _, filenames in os.walk(root_dir):
-        for filename in fnmatch.filter(filenames, '*' + extension):
-            files.append(os.path.join(dirpath, filename))
-    return files
-
-
-def uncompress_gzip_file(gzip_file, out_dir):
-    # This is python2.6 compliant, gzip.open doesn't support 'with' statement
-    # Input:
-    #    - gzip file path
-    #    - output directory where uncompress the file
-    # Output:
-    #    - path of the uncompressed file
-    #    NOTE: the file is permanently created, is responsibility of the
-    #    caller to delete it
-    uncompressed_path = None
-    uncompressed_fd = None
-    compressed_fd = None
-    try:
-        # the uncompressed filename loses its final extension
-        # (for example abc.gz -> abc)
-        uncompressed_path = os.path.join(
-            out_dir,
-            os.path.splitext(gzip_file)[0],
-        )
-        uncompressed_fd = open(uncompressed_path, 'wb')
-        compressed_fd = gzip.open(gzip_file, 'rb')
-        uncompressed_fd.write(compressed_fd.read())
-        return uncompressed_path
-    except IOError as exc:
-        # delete the uncompressed file (if exists)
-        if uncompressed_path is not None and os.path.exists(uncompressed_path):
-            os.remove(uncompressed_path)
-        raise exc
-    finally:
-        if compressed_fd is not None:
-            compressed_fd.close()
-        if uncompressed_fd is not None:
-            uncompressed_fd.close()
 
 
 def invoke_function_with_callbacks(
