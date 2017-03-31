@@ -220,10 +220,10 @@ let capture = function
       L.stdout "Capturing for Buck genrule compatibility...@\n";
       JMain.from_arguments path
   | Clang (compiler, prog, args) ->
-      L.stdout "Capturing in make/cc mode...@\n";
+      L.stdout "Capturing in make/cc mode...@.";
       Clang.capture compiler ~prog ~args
   | ClangCompilationDB db_files ->
-      L.stdout "Capturing using compilation database...@\n";
+      L.stdout "Capturing using compilation database...@.";
       capture_with_compilation_database db_files
   | Javac (compiler, prog, args) ->
       L.stdout "Capturing in javac mode...@.";

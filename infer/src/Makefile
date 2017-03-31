@@ -168,7 +168,7 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native
 DEPENDENCIES += clang unit/clang
 else
-DEPENDENCIES += unit/clang_stubs
+DEPENDENCIES += clang_stubs unit/clang_stubs
 endif
 ifeq ($(TEST),1)
 INFER_CONFIG_TARGETS += $(INFERUNIT_MAIN).native

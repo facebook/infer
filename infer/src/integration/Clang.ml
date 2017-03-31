@@ -29,21 +29,22 @@ let env_to_string ?exclude_var env =
         String.concat [elt; acc] ~sep:"\n" in
   Array.fold_right ~init:"" ~f:env_element_to_string env
 
-
-(* TODO(t16929015): make the clang/clang++ integration just a function call. *)
-let capture _ ~prog ~args =
-  let path_var = "PATH" in
-  let new_path = Config.wrappers_dir ^ ":" ^ (Sys.getenv_exn path_var) in
-  let extended_env = `Extend [path_var, new_path] in
-  Logging.out "Running command %s with env:\n%s %s\n@."
-    prog
-    (env_to_string ~exclude_var:path_var (Unix.environment ()))
-    (extended_env_to_string extended_env);
-  Unix.fork_exec ~prog:prog ~args:(prog::args) ~env:extended_env ()
-  |> Unix.waitpid
-  |> function
-  | Ok () -> ()
-  | Error _ as status ->
-      failwithf "*** ERROR: capture command failed:@*** %s@*** %s@"
-        (String.concat ~sep:" " (prog::args))
-        (Unix.Exit_or_signal.to_string_hum status)
+let capture compiler ~prog ~args =
+  match compiler with
+  | Clang -> ClangWrapper.exe ~prog ~args
+  | Make ->
+      let path_var = "PATH" in
+      let new_path = Config.wrappers_dir ^ ":" ^ (Sys.getenv_exn path_var) in
+      let extended_env = `Extend [path_var, new_path] in
+      Logging.out "Running command %s with env:\n%s %s\n@."
+        prog
+        (env_to_string ~exclude_var:path_var (Unix.environment ()))
+        (extended_env_to_string extended_env);
+      Unix.fork_exec ~prog:prog ~args:(prog::args) ~env:extended_env ()
+      |> Unix.waitpid
+      |> function
+      | Ok () -> ()
+      | Error _ as status ->
+          failwithf "*** ERROR: capture command failed:@*** %s@*** %s@"
+            (String.concat ~sep:" " (prog::args))
+            (Unix.Exit_or_signal.to_string_hum status)

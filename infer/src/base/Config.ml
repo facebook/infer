@@ -732,6 +732,7 @@ and (
   debug,
   debug_exceptions,
   filtering,
+  frontend_tests,
   print_buckets,
   print_types,
   reports_include_ml_loc,
@@ -756,8 +757,7 @@ and (
       "Show the internal bucket of Infer reports in their textual description"
 
   and print_types =
-    CLOpt.mk_bool ~long:"print-types"
-      ~default:(equal_exe current_exe Clang)
+    CLOpt.mk_bool ~long:"print-types" ~default:false
       "Print types in symbolic heaps"
 
   and reports_include_ml_loc =
@@ -797,11 +797,19 @@ and (
        --reports-include-ml-loc)"
       [developer_mode; print_buckets; reports_include_ml_loc]
       [filtering]
+
+  and frontend_tests =
+    CLOpt.mk_bool_group ~long:"frontend-tests"
+      ~parse_mode:CLOpt.(Infer [Clang])
+      "Save filename.ext.test.dot with the cfg in dotty format for frontend tests (also sets \
+       --print-types)"
+      [print_types] []
   in (
     developer_mode,
     debug,
     debug_exceptions,
     filtering,
+    frontend_tests,
     print_buckets,
     print_types,
     reports_include_ml_loc,
@@ -938,11 +946,6 @@ and frontend_debug =
 and frontend_stats =
   CLOpt.mk_bool ~deprecated:["fs"] ~deprecated_no:["nfs"] ~long:"frontend-stats"
     "Output statistics about the capture phase to *.o.astlog (clang only)"
-
-and frontend_tests =
-  CLOpt.mk_bool ~long:"frontend-tests"
-    ~parse_mode:CLOpt.(Infer [Clang])
-    "Save filename.ext.test.dot with the cfg in dotty format for frontend tests"
 
 and generated_classes =
   CLOpt.mk_path_opt ~long:"generated-classes"
