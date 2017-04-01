@@ -319,14 +319,12 @@ type phase = FOOTPRINT | RE_EXECUTION [@@deriving compare]
 
 let equal_phase = [%compare.equal : phase]
 
-type call_summary = CallSite.Set.t Annot.Map.t
-
 (** Payload: results of some analysis *)
 type payload =
   {
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
-    calls: call_summary option;
+    calls: AnnotReachabilityDomain.astate option;
     crashcontext_frame: Stacktree_t.stacktree option;
     (** Proc location and blame_range info for crashcontext analysis *)
     quandary : QuandarySummary.t option;
@@ -444,18 +442,21 @@ let pp_summary_no_stats_specs fmt summary =
   F.fprintf fmt "%a@\n" pp_status summary.status;
   F.fprintf fmt "%a@\n" pp_pair (describe_phase summary)
 
-let pp_payload pe fmt { preposts; typestate; crashcontext_frame; quandary; siof; threadsafety; buffer_overrun } =
-  let pp_opt pp fmt = function
-    | Some x -> pp fmt x
+let pp_payload pe fmt
+    { preposts; typestate; crashcontext_frame;
+      quandary; siof; threadsafety; buffer_overrun; calls } =
+  let pp_opt prefix pp fmt = function
+    | Some x -> F.fprintf fmt "%s: %a\n" prefix pp x
     | None -> () in
-  F.fprintf fmt "%a%a%a%a%a%a%a@\n"
-    (pp_specs pe) (get_specs_from_preposts preposts)
-    (pp_opt (TypeState.pp TypeState.unit_ext)) typestate
-    (pp_opt Crashcontext.pp_stacktree) crashcontext_frame
-    (pp_opt QuandarySummary.pp) quandary
-    (pp_opt SiofDomain.pp) siof
-    (pp_opt ThreadSafetyDomain.pp_summary) threadsafety
-    (pp_opt BufferOverrunDomain.Summary.pp) buffer_overrun
+  F.fprintf fmt "%a%a%a%a%a%a%a%a@\n"
+    (pp_opt "PrePosts" (pp_specs pe)) (Option.map ~f:NormSpec.tospecs preposts)
+    (pp_opt "TypeState" (TypeState.pp TypeState.unit_ext)) typestate
+    (pp_opt "CrashContext" Crashcontext.pp_stacktree) crashcontext_frame
+    (pp_opt "Quandary" QuandarySummary.pp) quandary
+    (pp_opt "Siof" SiofDomain.pp) siof
+    (pp_opt "ThreadSafety" ThreadSafetyDomain.pp_summary) threadsafety
+    (pp_opt "BufferOverrun" BufferOverrunDomain.Summary.pp) buffer_overrun
+    (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp) calls
 
 
 let pp_summary_text fmt summary =

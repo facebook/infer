@@ -13,9 +13,6 @@ module F = Format
 module L = Logging
 module MF = MarkupFormatter
 
-module CallSiteSet = AbstractDomain.FiniteSet (CallSite.Set)
-module CallsDomain = AbstractDomain.Map (Annot.Map) (CallSiteSet)
-
 let dummy_constructor_annot = "__infer_is_constructor"
 
 let annotation_of_str annot_str =
@@ -46,21 +43,21 @@ let src_snk_pairs () =
 
 module Domain = struct
   module TrackingVar = AbstractDomain.FiniteSet (Var.Set)
-  module TrackingDomain = AbstractDomain.Pair (CallsDomain) (TrackingVar)
+  module TrackingDomain = AbstractDomain.Pair (AnnotReachabilityDomain) (TrackingVar)
   include TrackingDomain
 
   let add_call key call ((call_map, vars) as astate) =
     let call_set =
-      try CallsDomain.find key call_map
-      with Not_found -> CallSiteSet.empty in
-    let call_set' = CallSiteSet.add call call_set in
+      try AnnotReachabilityDomain.find key call_map
+      with Not_found -> CallSite.SetDomain.empty in
+    let call_set' = CallSite.SetDomain.add call call_set in
     if phys_equal call_set' call_set
     then astate
-    else (CallsDomain.add key call_set' call_map, vars)
+    else (AnnotReachabilityDomain.add key call_set' call_map, vars)
 
   let stop_tracking (_ : astate) =
     (* The empty call map here prevents any subsequent calls to be added *)
-    (CallsDomain.empty, TrackingVar.empty)
+    (AnnotReachabilityDomain.empty, TrackingVar.empty)
 
   let add_tracking_var var (calls, previous_vars) =
     (calls, TrackingVar.add var previous_vars)
@@ -73,7 +70,7 @@ module Domain = struct
 end
 
 module Summary = Summary.Make (struct
-    type payload = CallsDomain.astate
+    type payload = AnnotReachabilityDomain.astate
 
     let update_payload call_map (summary : Specs.summary) =
       { summary with payload = { summary.payload with calls = Some call_map }}
@@ -146,7 +143,7 @@ let lookup_annotation_calls caller_pdesc annot pname : CallSite.t list =
       begin
         try
           Annot.Map.find annot call_map
-          |> CallSiteSet.elements
+          |> CallSite.SetDomain.elements
         with Not_found ->
           []
       end
@@ -276,8 +273,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let add_call_for_annot annot _ astate =
       let calls =
         try Annot.Map.find annot callee_call_map
-        with Not_found -> CallSiteSet.empty in
-      if (not (CallSiteSet.is_empty calls) || method_has_annot annot tenv callee_pname) &&
+        with Not_found -> CallSite.SetDomain.empty in
+      if (not (CallSite.SetDomain.is_empty calls) || method_has_annot annot tenv callee_pname) &&
          (not (method_is_sanitizer annot tenv caller_pname))
       then
         Domain.add_call annot call_site astate
@@ -355,7 +352,7 @@ module Interprocedural = struct
       let extract_calls_with_annot annot call_map =
         try
           Annot.Map.find annot call_map
-          |> CallSiteSet.elements
+          |> CallSite.SetDomain.elements
         with Not_found -> [] in
       let report_src_snk_path (calls : CallSite.t list) (src_annot: Annot.t) =
         if method_overrides_annot src_annot tenv proc_name
@@ -377,8 +374,8 @@ module Interprocedural = struct
       let init_map =
         List.fold
           ~f:(fun astate_acc (_, snk_annot) ->
-              CallsDomain.add snk_annot CallSiteSet.empty astate_acc)
-          ~init:CallsDomain.empty
+              AnnotReachabilityDomain.add snk_annot CallSite.SetDomain.empty astate_acc)
+          ~init:AnnotReachabilityDomain.empty
           (src_snk_pairs ()) in
       (init_map, Domain.TrackingVar.empty) in
     let compute_post proc_data =

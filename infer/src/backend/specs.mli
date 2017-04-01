@@ -129,14 +129,12 @@ type phase = FOOTPRINT | RE_EXECUTION
 
 val equal_phase : phase -> phase -> bool
 
-type call_summary = CallSite.Set.t Annot.Map.t
-
 (** Payload: results of some analysis *)
 type payload =
   {
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
-    calls:  call_summary option; (** list of calls of the form (call, loc) *)
+    calls: AnnotReachabilityDomain.astate option; (** list of calls of the form (call, loc) *)
     crashcontext_frame: Stacktree_j.stacktree option;
     (** Procedure location and blame_range info for crashcontext analysis *)
     quandary : QuandarySummary.t option;
