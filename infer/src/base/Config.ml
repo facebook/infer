@@ -621,10 +621,21 @@ and changed_files_index =
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
 
-and checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun =
+and bufferoverrun, checkers, checkers_repeated_calls,
+    crashcontext, eradicate, quandary, threadsafety =
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
       "Activate the checkers instead of the full analysis"
+  in
+  let bufferoverrun =
+    CLOpt.mk_bool_group ~long:"bufferoverrun"
+      "Activate the buffer overrun analysis"
+      [checkers] []
+  in
+  let checkers_repeated_calls =
+    CLOpt.mk_bool_group ~long:"checkers-repeated-calls"
+      "Check for repeated calls"
+      [checkers] []
   in
   let crashcontext =
     CLOpt.mk_bool_group ~deprecated:["crashcontext"] ~long:"crashcontext"
@@ -646,16 +657,8 @@ and checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun =
       "Activate the thread safety analysis"
       [checkers] []
   in
-  let bufferoverrun =
-    CLOpt.mk_bool_group ~long:"bufferoverrun"
-      "Activate the buffer overrun analysis"
-      [checkers] []
-  in
-  (checkers, crashcontext, eradicate, quandary, threadsafety, bufferoverrun)
-
-and checkers_repeated_calls =
-  CLOpt.mk_bool ~long:"checkers-repeated-calls"
-    "Check for repeated calls"
+  (bufferoverrun, checkers, checkers_repeated_calls,
+   crashcontext, eradicate, quandary, threadsafety)
 
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file" ~parse_mode:CLOpt.(Infer [Clang]) ~meta:"file"
@@ -1596,7 +1599,7 @@ and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
 and dump_duplicate_symbols = !dump_duplicate_symbols
 and checkers = !checkers
-and checkers_repeated_calls = !checkers && !checkers_repeated_calls
+and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
 and clang_include_to_override = !clang_include_to_override
 and classpath = !classpath
@@ -1745,7 +1748,8 @@ and analysis_blacklist_files_containing analyzer =
 and analysis_suppress_errors analyzer =
   List.Assoc.find_exn ~equal:equal_analyzer analysis_suppress_errors_options analyzer
 
-let checkers_enabled = not (eradicate || crashcontext || quandary || threadsafety)
+let checkers_enabled =
+  not (eradicate || crashcontext || quandary || threadsafety || checkers_repeated_calls)
 
 let clang_frontend_do_capture, clang_frontend_do_lint =
   match !clang_frontend_action with
