@@ -23,4 +23,5 @@ val get_compilation_database_files_buck : unit -> [> `Raw of string ] list
 
 (** Get the compilation database files that contain the compilation given by the
     xcodebuild command, using xcpretty. *)
-val get_compilation_database_files_xcodebuild : unit -> [> `Escaped of string ] list
+val get_compilation_database_files_xcodebuild : prog:string -> args:string list ->
+  [> `Escaped of string ] list

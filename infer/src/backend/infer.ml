@@ -78,7 +78,7 @@ type driver_mode =
   | Javac of Javac.compiler * string * string list
   | Maven of string * string list
   | PythonCapture of build_system * string list
-  | XcodeXcpretty
+  | XcodeXcpretty of string * string list
 [@@deriving compare]
 
 let equal_driver_mode = [%compare.equal : driver_mode]
@@ -93,7 +93,7 @@ let pp_driver_mode fmt driver_mode =
       F.fprintf fmt "  Error reading file '%s':@\n  %a@." fname Exn.pp exn in
   match driver_mode with
   | Analyze | BuckGenrule _ | BuckCompilationDB | ClangCompilationDB _  | PythonCapture (_,_)
-  | XcodeXcpretty ->
+  | XcodeXcpretty _ ->
       (* these are pretty boring, do not log anything *)
       ()
   | Javac (_, prog, args) ->
@@ -121,6 +121,8 @@ let clean_compilation_command driver_mode =
   match driver_mode with
   | Clang (_, prog, _) ->
       Some (prog ^ " clean")
+  | XcodeXcpretty (prog, args) ->
+      Some (String.concat ~sep:" " (List.append (prog::args) ["clean"]))
   | _ -> None
 
 let remove_results_dir () =
@@ -308,10 +310,11 @@ let capture = function
           | _ ->
               ()
         )
-  | XcodeXcpretty ->
-      L.stdout "Capturing using xcpretty...@\n";
+  | XcodeXcpretty (prog, args) ->
+      L.stdout "Capturing using xcodebuild and xcpretty...@\n";
       check_xcpretty ();
-      let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_xcodebuild () in
+      let json_cdb =
+        CaptureCompilationDatabase.get_compilation_database_files_xcodebuild ~prog ~args in
       capture_with_compilation_database json_cdb
 
 let run_parallel_analysis () =
@@ -462,7 +465,7 @@ let driver_mode_of_build_cmd build_cmd =
       | BMvn ->
           Maven (prog, args)
       | BXcode when Config.xcpretty ->
-          XcodeXcpretty
+          XcodeXcpretty (prog, args)
       | BAnt | BBuck | BGradle | BNdk | BXcode as build_system ->
           PythonCapture (build_system, build_cmd)
 

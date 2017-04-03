@@ -115,15 +115,11 @@ let get_compilation_database_files_buck () =
       Process.print_error_and_exit "Incorrect buck command: %s. Please use buck build <targets>" cmd
 
 (** Compute the compilation database files. *)
-let get_compilation_database_files_xcodebuild () =
-  let prog_args = List.rev Config.rest in
+let get_compilation_database_files_xcodebuild ~prog ~args =
   let temp_dir = Config.results_dir ^/ "clang" in
   Utils.create_dir temp_dir;
   let tmp_file = Filename.temp_file ~in_dir:temp_dir "cdb" ".json" in
-  let xcodebuild_prog, xcodebuild_args =
-    match prog_args with
-    | prog :: _ -> (prog, prog_args)
-    | [] -> failwith("Build command cannot be empty") in
+  let xcodebuild_prog, xcodebuild_args = prog, prog::args in
   let xcpretty_prog = "xcpretty" in
   let xcpretty_args =
     [xcpretty_prog; "--report"; "json-compilation-database"; "--output"; tmp_file] in
