@@ -187,6 +187,10 @@ val bugs_txt : string option
 val bugs_xml : string option
 val changed_files_index : string option
 val calls_csv : string option
+
+(** directory where the results of the capture phase are stored *)
+val captured_dir : string
+
 val checkers : bool
 val checkers_enabled : bool
 val checkers_repeated_calls : bool

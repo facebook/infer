@@ -115,6 +115,14 @@ let pp_driver_mode fmt driver_mode =
       F.fprintf fmt "Clang driver mode:@\nprog = %s@\n" prog;
       List.iter ~f:(F.fprintf fmt "Arg: %s@\n") args
 
+(* A clean command for each driver mode to be suggested to the user
+   in case nothing got captured. *)
+let clean_compilation_command driver_mode =
+  match driver_mode with
+  | Clang (_, prog, _) ->
+      Some (prog ^ " clean")
+  | _ -> None
+
 let remove_results_dir () =
   rmtree Config.results_dir
 
@@ -156,6 +164,20 @@ let clean_results_dir () =
         () in
   clean Config.results_dir
 
+let check_captured_empty driver_mode =
+  let clean_command_opt = clean_compilation_command driver_mode in
+  (* if merge is passed, the captured folder will be empty at this point,
+     but will be filled later on. *)
+  if Utils.dir_is_empty Config.captured_dir && not Config.merge then ((
+      match clean_command_opt with
+      | Some clean_command ->
+          Logging.stderr "@\nNothing to compile. Try running `%s` first.@." clean_command
+      | None ->
+          Logging.stderr "@\nNothing to compile. Try cleaning the build first.@."
+    );
+     true
+    ) else
+    false
 
 let register_perf_stats_report () =
   let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name in
@@ -355,11 +377,11 @@ let analyze driver_mode =
     | _, Linters ->
         false, true in
   if (should_analyze || should_report) &&
-     (Sys.file_exists Config.(results_dir ^/ captured_dir_name)) <> `Yes then (
-    L.stderr "There was nothing to analyze, exiting@." ;
-    exit 1
-  );
-  if should_analyze then execute_analyze ();
+     (((Sys.file_exists Config.captured_dir) <> `Yes) ||
+      check_captured_empty driver_mode) then (
+    L.stderr "There was nothing to analyze.@\n@." ;
+  ) else if should_analyze then
+    execute_analyze ();
   if should_report then report ()
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)

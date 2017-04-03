@@ -85,9 +85,6 @@ val source_dir_get_internal_file : source_dir -> string -> filename
 (** get the source directory corresponding to a source file *)
 val source_dir_from_source_file : SourceFile.t -> source_dir
 
-(** directory where the results of the capture phase are stored *)
-val captured_dir : filename
-
 (** create the directory containing the file bane *)
 val filename_create_dir : filename -> unit
 

@@ -31,17 +31,14 @@ let source_dir_get_internal_file source_dir extension =
   let fname = source_dir_name ^ extension in
   Filename.concat source_dir fname
 
-let captured_dir =
-  Filename.concat Config.results_dir Config.captured_dir_name
-
 (** get the source directory corresponding to a source file *)
 let source_dir_from_source_file source_file =
-  Filename.concat captured_dir (SourceFile.encoding source_file)
+  Filename.concat Config.captured_dir (SourceFile.encoding source_file)
 
 (** Find the source directories in the results dir *)
 let find_source_dirs () =
   let source_dirs = ref [] in
-  let files_in_results_dir = Array.to_list (Sys.readdir captured_dir) in
+  let files_in_results_dir = Array.to_list (Sys.readdir Config.captured_dir) in
   let add_cg_files_from_dir dir =
     let files = Array.to_list (Sys.readdir dir) in
     List.iter ~f:(fun fname ->
@@ -49,7 +46,7 @@ let find_source_dirs () =
         if Filename.check_suffix path ".cg" then source_dirs := dir :: !source_dirs)
       files in
   List.iter ~f:(fun fname ->
-      let dir = Filename.concat captured_dir fname in
+      let dir = Filename.concat Config.captured_dir fname in
       if Sys.is_directory dir = `Yes then add_cg_files_from_dir dir)
     files_in_results_dir;
   List.rev !source_dirs
@@ -214,7 +211,7 @@ end
 
 let global_tenv_fname =
   let basename = Config.global_tenv_filename in
-  filename_concat captured_dir basename
+  filename_concat Config.captured_dir basename
 
 let is_source_file path =
   List.exists

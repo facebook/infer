@@ -1751,6 +1751,8 @@ and analysis_suppress_errors analyzer =
 let checkers_enabled =
   not (eradicate || crashcontext || quandary || threadsafety || checkers_repeated_calls)
 
+let captured_dir = results_dir ^/ captured_dir_name
+
 let clang_frontend_do_capture, clang_frontend_do_lint =
   match !clang_frontend_action with
   | Some `Lint -> false, true (* no capture, lint *)

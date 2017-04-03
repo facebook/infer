@@ -52,6 +52,9 @@ val directory_fold : ('a -> string -> 'a) -> 'a -> string -> 'a
 (** Functional iter function over all the file of a directory *)
 val directory_iter : (string -> unit) -> string -> unit
 
+(** Returns true if a given directory is empty. The directory is assumed to exist. *)
+val dir_is_empty : string -> bool
+
 val read_optional_json_file : string -> (Yojson.Basic.json, string) Result.t
 
 val with_file : string -> f:(out_channel -> 'a) -> 'a
