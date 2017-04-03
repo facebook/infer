@@ -438,21 +438,21 @@ struct
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
   let get_builtin_pname_opt trans_unit_ctx qual_name decl_opt type_ptr =
-    let get_deprecated_attr_arg decl =
+    let get_annotate_attr_arg decl =
       let open Clang_ast_t in
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
-      let get_attr_opt = function DeprecatedAttr a -> Some a | _ -> None in
+      let get_attr_opt = function AnnotateAttr a -> Some a | _ -> None in
       match List.find_map ~f:get_attr_opt decl_info.di_attributes with
       | Some attribute_info ->
           (match attribute_info.ai_parameters with
-           | [_; arg; _; _; _; _] -> Some arg
+           | [_; arg; _] -> Some arg
            | _ ->
                (* it's not supposed to happen due to hardcoded exporting logic
                   coming from ASTExporter.h in facebook-clang-plugins *)
                assert false)
       | None -> None in
     let name = QualifiedCppName.to_qual_string qual_name in
-    let function_attr_opt = Option.bind decl_opt get_deprecated_attr_arg in
+    let function_attr_opt = Option.bind decl_opt get_annotate_attr_arg in
     match function_attr_opt with
     | Some attr when CTrans_models.is_modeled_attribute attr ->
         Some (Typ.Procname.from_string_c_fun attr)

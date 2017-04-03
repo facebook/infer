@@ -13,22 +13,22 @@
 // compilation problem
 #include <infer/models/cpp/include/infer_model/infer_traits.h>
 
-/* Test for passing function attributes to infer via __deprecated__ attribute */
+/* Test for passing function attributes to infer via annotate attribute */
 
 // basic test of C function with __infer_replace_with_deref_first_arg attribute
 int derefFirstArg(int* a, int* b) INFER_MODEL_AS_DEREF_FIRST_ARG;
 
-// test directly with deprecated attribute
+// test directly with annotate attribute
 int derefFirstArg2(int* a, int* b)
-    __attribute__((deprecated("__infer_replace_with_deref_first_arg"))) {
+    __attribute__((annotate("__infer_replace_with_deref_first_arg"))) {
   /* equivalent in real code:
   return *a; */
   return *b; // body is in conflict with the attribute, attribute semantics
   // should be used
 }
 
-// test with wrong deprecated attribute
-int derefFirstArg3(int* a, int* b) __attribute__((deprecated("__infer_typo"))) {
+// test with wrong annotate attribute
+int derefFirstArg3(int* a, int* b) __attribute__((annotate("__infer_typo"))) {
   /* equivalent in real code: */
   return *b; // there isn't any known attribute with this name, use semantics
   // from the body
