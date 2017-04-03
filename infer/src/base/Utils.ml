@@ -205,14 +205,20 @@ let do_finally f g =
   let res' = g () in
   (res, res')
 
-let with_file file ~f =
-  let oc = open_out file in
+let with_file_in file ~f =
+  let ic = In_channel.create file in
+  let f () = f ic in
+  let g () =  In_channel.close ic in
+  do_finally f g |> fst
+
+let with_file_out file ~f =
+  let oc = Out_channel.create file in
   let f () = f oc in
-  let g () = Out_channel.close oc in
+  let g () =  Out_channel.close oc in
   do_finally f g |> fst
 
 let write_json_to_file destfile json =
-  with_file destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
+  with_file_out destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
 
 let consume_in chan_in =
   try
@@ -226,6 +232,18 @@ let with_process_in command read =
     consume_in chan;
     Unix.close_process_in chan in
   do_finally f g
+
+let shell_escape_command cmd =
+  let escape arg =
+    (* ends on-going single quote, output single quote inside double quotes, then open a new single
+       quote *)
+    Escape.escape_map (function | '\'' -> Some "'\"'\"'" | _ -> None) arg
+    |> Printf.sprintf "'%s'" in
+  List.map ~f:escape cmd |> String.concat ~sep:" "
+
+let run_command_and_get_output cmd =
+  let shell_escaped_cmd = shell_escape_command cmd in
+  with_process_in (Printf.sprintf "%s 2>&1" shell_escaped_cmd) In_channel.input_lines
 
 (** Create a directory if it does not exist already. *)
 let create_dir dir =

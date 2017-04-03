@@ -1499,7 +1499,16 @@ let post_parsing_initialization () =
   );
   if !version <> `None then exit 0;
 
-  if !developer_mode then Printexc.record_backtrace true ;
+  (* Core sets a verbose exception handler by default, with backtrace. This is good for developers
+     but in user-mode we want something lighter weight. *)
+  if not !developer_mode then
+    Caml.Printexc.set_uncaught_exception_handler
+      (fun exn _ ->
+         let exn_msg = match exn with
+           | Failure msg -> msg
+           | _ -> "ERROR: " ^ Caml.Printexc.to_string exn in
+         Format.eprintf "%s@?" exn_msg
+      );
 
   F.set_margin !margin ;
 

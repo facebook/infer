@@ -87,8 +87,7 @@ let get_compilation_database_files_buck () =
       Process.create_process_and_wait ~prog:buck ~args:build_args;
       let buck_targets_shell =
         buck :: "targets" :: "--show-output" :: args_with_flavor
-        |> List.map ~f:(Printf.sprintf "'%s'")
-        |> String.concat ~sep:" " in
+        |> Utils.shell_escape_command in
       try
         match fst @@ Utils.with_process_in buck_targets_shell In_channel.input_lines with
         | [] -> Logging.stdout "There are no files to process, exiting."; exit 0
@@ -107,8 +106,7 @@ let get_compilation_database_files_buck () =
             List.fold ~f:scan_output ~init:[] lines
       with Unix.Unix_error (err, _, _) ->
         Process.print_error_and_exit
-          "Cannot execute %s\n%!"
-          (buck_targets_shell ^ " " ^ (Unix.error_message err))
+          "Cannot execute %s: %s\n%!" buck_targets_shell (Unix.error_message err)
     )
   | _ ->
       let cmd = String.concat ~sep:" " cmd in

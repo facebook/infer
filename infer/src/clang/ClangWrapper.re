@@ -87,12 +87,12 @@ let normalize prog::prog args::args :list action_item => {
 
 let exec_action_item =
   fun
-  | ClangError error => {
-      /* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
-         `clang -###` pretty much never fails, but warns of failures on stderr instead. */
-      Logging.stderr "%s@." error;
-      exit 1
-    }
+  | ClangError error =>
+    /* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
+       `clang -###` pretty much never fails, but warns of failures on stderr instead. */
+    failwithf
+      "@\n*** ERROR: Failed to execute compilation command. Output:@\n%s@\n*** Infer needs a working compilation command to run.@."
+      error
   | ClangWarning warning => Logging.stderr "%s@\n" warning
   | Command clang_cmd => Capture.capture clang_cmd;
 
