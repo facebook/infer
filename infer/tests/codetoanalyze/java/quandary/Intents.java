@@ -102,4 +102,26 @@ public class Intents {
     activity.startActivity(activity.getIntent());
   }
 
+  Activity mActivity;
+
+  void extraToDataBad() {
+    Intent taintedIntent = (Intent) InferTaint.inferSecretSource();
+    String extra = taintedIntent.getStringExtra("foo");
+
+    Intent newIntent1 = new Intent();
+    mActivity.startActivity(newIntent1.setData(Uri.parse(extra))); // should report
+    Intent newIntent2 = new Intent();
+    newIntent2.setData(Uri.parse(extra));
+    mActivity.startActivity(newIntent2); // should report
+  }
+
+  void extraToExtraOk() {
+    Intent taintedIntent = (Intent) InferTaint.inferSecretSource();
+    String extra = taintedIntent.getStringExtra("foo");
+
+    Intent newIntent = new Intent();
+    newIntent.putExtra("foo", extra);
+    mActivity.startActivity(newIntent);
+  }
+
 }

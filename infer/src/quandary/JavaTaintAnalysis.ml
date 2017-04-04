@@ -39,6 +39,10 @@ include
             match Typ.Procname.java_get_class_name java_pname,
                   Typ.Procname.java_get_method java_pname,
                   ret_typ_opt with
+            | "android.content.Intent", ("putExtra" | "putExtras"), _ ->
+                (* don't care about tainted extras. instead. we'll check that result of getExtra is
+                   always used safely *)
+                []
             | _ when Typ.Procname.is_constructor pname ->
                 [TaintSpec.Propagate_to_receiver]
             | _, _, (Some Typ.Tvoid | None) when not is_static ->
