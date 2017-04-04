@@ -14,17 +14,19 @@ module L = Logging
 
 module SourceKind = struct
   type t =
-    | PrivateData (** private user or device-specific data *)
-    | Intent
+    | Intent (** external Intent or a value read from one *)
     | Other (** for testing or uncategorized sources *)
+    | PrivateData (** private user or device-specific data *)
+    | WebviewUrl (** external URL passed to a WebView *)
     | Unknown
   [@@deriving compare]
 
   let unknown = Unknown
 
   let of_string = function
-    | "PrivateData" -> PrivateData
     | "Intent" -> Intent
+    | "PrivateData" -> PrivateData
+    | "WebviewUrl" -> WebviewUrl
     | _ -> Other
 
   let external_sources = QuandaryConfig.Source.of_json Config.quandary_sources
@@ -113,11 +115,11 @@ module SourceKind = struct
                     Some
                       (taint_formals_with_types
                          ["android.webkit.WebResourceRequest"; "java.lang.String"]
-                         Intent
+                         WebviewUrl
                          formals)
                 | "android.webkit.WebChromeClient",
                   ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ->
-                    Some (taint_formals_with_types ["java.lang.String"] Intent formals)
+                    Some (taint_formals_with_types ["java.lang.String"] WebviewUrl formals)
                 | _ ->
                     None in
               begin
@@ -135,27 +137,31 @@ module SourceKind = struct
           "Non-Java procedure %a where only Java procedures are expected"
           Typ.Procname.pp procname
 
-  let pp fmt = function
-    | Intent -> F.fprintf fmt "Intent"
-    | PrivateData -> F.fprintf fmt "PrivateData"
-    | Other -> F.fprintf fmt "Other"
-    | Unknown -> F.fprintf fmt "Unknown"
+  let pp fmt kind =
+    F.fprintf fmt
+      (match kind with
+       | Intent -> "Intent"
+       | WebviewUrl -> "WebviewUrl"
+       | PrivateData -> "PrivateData"
+       | Other -> "Other"
+       | Unknown -> "Unknown")
 end
 
 module JavaSource = Source.Make(SourceKind)
 
 module SinkKind = struct
   type t =
-    | Intent (** sink that trusts an Intent *)
+    | CreateIntent (** sink that creates an Intent *)
     | JavaScript (** sink that passes its arguments to untrusted JS code *)
     | Logging (** sink that logs one or more of its arguments *)
+    | StartComponent (** sink that launches an Activity, Service, etc. *)
     | Other (** for testing or uncategorized sinks *)
   [@@deriving compare]
 
   let of_string = function
-    | "Intent" -> Intent
     | "JavaScript" -> JavaScript
     | "Logging" -> Logging
+    | "StartComponent" -> StartComponent
     | _ -> Other
 
   let external_sinks = QuandaryConfig.Sink.of_json Config.quandary_sinks
@@ -188,11 +194,11 @@ module SinkKind = struct
                 match Typ.Name.name typename, method_name with
                 | "android.app.Activity",
                   ("startActivityFromChild" | "startActivityFromFragment") ->
-                    Some (taint_nth 1 Intent ~report_reachable:true)
+                    Some (taint_nth 1 StartComponent ~report_reachable:true)
                 | "android.app.Activity", "startIntentSenderForResult"  ->
-                    Some (taint_nth 2 Intent ~report_reachable:true)
+                    Some (taint_nth 2 StartComponent ~report_reachable:true)
                 | "android.app.Activity", "startIntentSenderFromChild"  ->
-                    Some (taint_nth 3 Intent ~report_reachable:true)
+                    Some (taint_nth 3 StartComponent ~report_reachable:true)
                 | "android.content.Context",
                   ("bindService" |
                    "sendBroadcast" |
@@ -210,9 +216,9 @@ module SinkKind = struct
                    "startNextMatchingActivity" |
                    "startService" |
                    "stopService") ->
-                    Some (taint_nth 0 Intent ~report_reachable:true)
+                    Some (taint_nth 0 StartComponent ~report_reachable:true)
                 | "android.content.Context", "startIntentSender" ->
-                    Some (taint_nth 1 Intent ~report_reachable:true)
+                    Some (taint_nth 1 StartComponent ~report_reachable:true)
                 | "android.content.Intent",
                   ("parseUri" |
                    "getIntent" |
@@ -223,9 +229,9 @@ module SinkKind = struct
                    "setDataAndType" |
                    "setDataAndTypeAndNormalize" |
                    "setPackage") ->
-                    Some (taint_nth 0 Intent ~report_reachable:true)
+                    Some (taint_nth 0 CreateIntent ~report_reachable:true)
                 | "android.content.Intent", "setClassName" ->
-                    Some (taint_all Intent ~report_reachable:true)
+                    Some (taint_all CreateIntent ~report_reachable:true)
                 | "android.webkit.WebView",
                   ("evaluateJavascript" |
                    "loadData" |
@@ -264,11 +270,14 @@ module SinkKind = struct
     | pname when BuiltinDecl.is_declared pname -> []
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
 
-  let pp fmt = function
-    | Intent -> F.fprintf fmt "Intent"
-    | JavaScript -> F.fprintf fmt "JavaScript"
-    | Logging -> F.fprintf fmt "Logging"
-    | Other -> F.fprintf fmt "Other"
+  let pp fmt kind =
+    F.fprintf fmt
+      (match kind with
+       | CreateIntent -> "CreateIntent"
+       | JavaScript -> "JavaScript"
+       | Logging -> "Logging"
+       | StartComponent -> "StartComponent"
+       | Other -> "Other")
 end
 
 module JavaSink = Sink.Make(SinkKind)
@@ -280,10 +289,14 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | PrivateData, Logging
-      | Intent, Intent
-      | (Intent | PrivateData), JavaScript
-      | Other, _ | _, Other ->
+      | PrivateData, Logging (* logging private data issue *)
+      | Intent, StartComponent (* intent reuse issue *)
+      | Intent, CreateIntent (* intent configured with external values issue *)
+      | Intent, JavaScript (* external data flows into JS: remote code execution risk *)
+      | WebviewUrl, (CreateIntent | StartComponent)
+      (* create intent/launch component from external URL *)
+      | PrivateData, JavaScript (* leaking private data into JS *)
+      | Other, _ | _, Other -> (* for testing purposes, Other matches everything *)
           true
       | _ ->
           false
