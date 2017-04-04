@@ -48,20 +48,21 @@ class ThreadSafeMethods {
 
   // won't report this now, but should in the future. if a method annotated with @ThreadSafe
   // in class C touches field f, then all other accesses to f in C must also be thread-safe
-  public void FN_writeSameFieldAsThreadSafeMethod1Bad() {
+  public void writeSameFieldAsThreadSafeMethod1Bad() {
     this.field1 = new Object();
   }
 
   // reads a field that is written in a method marked thread-safe
-  public Object FN_readSameFieldAsThreadSafeMethod1Bad() {
+  public Object readSameFieldAsThreadSafeMethod1Bad() {
     return this.field1;
   }
 
+  // TODO: should we report this or not?
   public synchronized void safelyWriteSameFieldAsThreadSafeMethod1Ok() {
     this.field1 = new Object();
   }
 
-  public synchronized Object safelyReadSameFieldAsThreadSafeMethod1Ok() {
+  public synchronized Object readSameFieldAsThreadSafeMethod1Ok() {
     return this.field1;
   }
 
@@ -71,12 +72,12 @@ class ThreadSafeMethods {
   }
 
   // unprotected write to a field that is written safely in a method marked thread-safe
-  public void FN_writeSameFieldAsThreadSafeMethod2Bad() {
+  public void writeSameFieldAsThreadSafeMethod2Bad() {
     this.field4 = new Object();
   }
 
   // unprotected read of a field that is written safely in a method marked thread-safe
-  public Object FN_readSameFieldAsThreadSafeMethod2Bad() {
+  public Object readSameFieldAsThreadSafeMethod2Bad() {
     return this.field4;
   }
 
@@ -85,13 +86,17 @@ class ThreadSafeMethods {
     return this.field5;
   }
 
+  private void privateAccessOk() {
+    this.field5 = new Object();
+  }
+
   // unprotected write to a field that is read safely in a method marked thread-safe
-  public void FN_writeSameFieldAsThreadSafeMethod3Bad() {
+  public void writeSameFieldAsThreadSafeMethod3Bad() {
     this.field5 = new Object();
   }
 
   // unprotected read of a field that is read safely in a method marked thread-safe
-  public Object FN_readSameFieldAsThreadSafeMethod3Bad() {
+  public Object readSameFieldAsThreadSafeMethod3Bad() {
     return this.field5;
   }
 
@@ -114,11 +119,11 @@ class ThreadSafeMethodsSubclass extends ThreadSafeMethods {
     return this.field1;
   }
 
-  public void FN_writeThreadSafeFieldOfOverrideBad() {
+  public void writeThreadSafeFieldOfOverrideBad() {
     this.subclassField = new Object();
   }
 
-  public Object FN_readThreadSafeFieldOfOverrideBad() {
+  public Object readThreadSafeFieldOfOverrideBad() {
     return this.subclassField;
   }
 

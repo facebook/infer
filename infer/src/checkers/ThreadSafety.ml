@@ -805,14 +805,6 @@ let is_thread_safe_method pdesc tenv =
     tenv
     (Procdesc.get_proc_name pdesc)
 
-(* return true if we should report on unprotected accesses during the procedure *)
-let should_report_on_proc proc_desc tenv =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  is_thread_safe_method proc_desc tenv ||
-  (not (Typ.Procname.java_is_autogen_method proc_name) &&
-   Procdesc.get_access proc_desc <> PredSymb.Private &&
-   not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting))
-
 let empty_post =
   let initial_known_on_ui_thread = false
   and has_lock = false
@@ -1035,8 +1027,17 @@ let empty_reported =
   let reported_reads = Typ.Procname.Set.empty in
   { reported_sites; reported_reads; reported_writes; }
 
+(* return true if procedure is at an abstraction boundary or reporting has been explicitly
+   requested via @ThreadSafe *)
+let should_report_on_proc proc_desc tenv =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  is_thread_safe_method proc_desc tenv ||
+  (not (Typ.Procname.java_is_autogen_method proc_name) &&
+   Procdesc.get_access proc_desc <> PredSymb.Private &&
+   not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting))
+
 (* report accesses that may race with each other *)
-let report_unsafe_accesses ~should_report aggregated_access_map =
+let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
   let open ThreadSafetyDomain in
   let is_duplicate_report access pname { reported_sites; reported_writes; reported_reads; } =
     CallSite.Set.mem (TraceElem.call_site access) reported_sites ||
@@ -1054,7 +1055,8 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
     | Access.Read ->
         let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
         { reported with reported_reads; reported_sites; } in
-  let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_acc =
+  let report_unsafe_access
+      ~should_report (access, pre, threaded, tenv, pdesc) accesses reported_acc =
     let pname = Procdesc.get_proc_name pdesc in
     if is_duplicate_report access pname reported_acc
     then
@@ -1130,33 +1132,25 @@ let report_unsafe_accesses ~should_report aggregated_access_map =
        let reported =
          { reported_acc with reported_writes = Typ.Procname.Set.empty;
                              reported_reads = Typ.Procname.Set.empty; } in
+       let accessed_by_threadsafe_method =
+         List.exists
+           ~f:(fun (_, _, _, tenv, pdesc) -> is_thread_safe_method pdesc tenv)
+           grouped_accesses in
+       (* report if
+          - the method/class of the access is thread-safe (or an override or superclass is), or
+          - any access is in a field marked thread-safe (or an override) *)
+       let should_report pdesc tenv =
+         ((is_file_threadsafe || accessed_by_threadsafe_method) && should_report_on_proc pdesc tenv)
+         || is_thread_safe_method pdesc tenv in
        let reportable_accesses =
          List.filter ~f:(fun (_, _, _, tenv, pdesc) -> should_report pdesc tenv) grouped_accesses in
        List.fold
-         ~f:(fun acc access -> report_unsafe_access access reportable_accesses acc)
+         ~f:(fun acc access -> report_unsafe_access ~should_report access reportable_accesses acc)
          reportable_accesses
          ~init:reported)
     aggregated_access_map
     empty_reported
   |> ignore
-
-(* Currently we analyze if there is an @ThreadSafe annotation on at least one of
-   the classes in a file. This might be tightened in future or even broadened in future
-   based on other criteria *)
-let should_report_on_file file_env =
-  let current_class_or_super_marked_threadsafe =
-    fun (_, tenv, pname, _) ->
-      match get_current_class_and_threadsafe_superclasses tenv pname with
-      | Some (_, thread_safe_annotated_classes) ->
-          not (List.is_empty thread_safe_annotated_classes)
-      | _ -> false
-  in
-  let current_class_marked_not_threadsafe =
-    fun (_, tenv, pname, _) ->
-      PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname
-  in
-  not (List.exists ~f:current_class_marked_not_threadsafe file_env) &&
-  List.exists ~f:current_class_or_super_marked_threadsafe file_env
 
 (* create a map from [abstraction of a memory loc] -> accesses that may touch that memory loc. for
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
@@ -1213,11 +1207,21 @@ let make_results_table file_env =
    confined to a thread" as if "known to be confined to UI thread".
 *)
 let process_results_table file_env tab =
-  let should_report_on_all_procs = should_report_on_file file_env in
-  let should_report pdesc tenv =
-    (should_report_on_all_procs && should_report_on_proc pdesc tenv) ||
-    is_thread_safe_method pdesc tenv in
-  report_unsafe_accesses ~should_report tab
+  (* Currently we analyze if there is an @ThreadSafe annotation on at least one of the classes in a
+     file. This might be tightened in future or even broadened in future based on other criteria *)
+  let is_file_threadsafe =
+    let current_class_or_super_marked_threadsafe (_, tenv, pname, _) =
+      match get_current_class_and_threadsafe_superclasses tenv pname with
+      | Some (_, thread_safe_annotated_classes) ->
+          not (List.is_empty thread_safe_annotated_classes)
+      | _ ->
+          false in
+    let current_class_marked_not_threadsafe (_, tenv, pname, _) =
+      PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname in
+    not (List.exists ~f:current_class_marked_not_threadsafe file_env) &&
+    List.exists ~f:current_class_or_super_marked_threadsafe file_env in
+
+  report_unsafe_accesses ~is_file_threadsafe tab
 
 (* Gathers results by analyzing all the methods in a file, then post-processes the results to check
    an (approximation of) thread safety *)
