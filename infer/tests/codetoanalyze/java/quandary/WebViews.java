@@ -9,16 +9,22 @@
 
 package codetoanalyze.java.quandary;
 
-import android.content.Context;
+import java.net.URISyntaxException;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsPromptResult;
+import android.webkit.JsResult;
 import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebMessage;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.webkit.WebChromeClient;
 
 import com.facebook.infer.builtins.InferTaint;
 
@@ -27,29 +33,11 @@ public class WebViews {
   void callWebviewSinks(WebView webview) {
     String stringSource = (String) InferTaint.inferSecretSource();
 
-    webview.addJavascriptInterface(new Object(), stringSource);
     webview.evaluateJavascript(stringSource, null);
     webview.loadData(stringSource, "", "");
     webview.loadDataWithBaseURL("", stringSource, "", "", "");
     webview.loadUrl(stringSource); // should have 5 reports
     webview.postWebMessage(null, (Uri) InferTaint.inferSecretSource());
-  }
-
-  void callWebviewClientSinks(WebView webview, WebViewClient client) {
-    String stringSource = (String) InferTaint.inferSecretSource();
-
-    client.onLoadResource(webview, stringSource);
-    client.shouldInterceptRequest(webview, stringSource);
-    client.shouldOverrideUrlLoading(webview, stringSource); // should have 3 reports
-  }
-
-  void callWebviewChromeClientSinks(WebView webview, WebChromeClient client) {
-    String stringSource = (String) InferTaint.inferSecretSource();
-
-    client.onJsAlert(webview, stringSource, "", null);
-    client.onJsBeforeUnload(webview, stringSource, "", null);
-    client.onJsConfirm(webview, stringSource, "", null);
-    client.onJsPrompt(webview, stringSource, "", "", null); // should have 4 reports
   }
 
   // make sure all of the rules apply to subclasses as well
@@ -59,19 +47,76 @@ public class WebViews {
     }
   }
 
+  Activity mActivity;
+
   class MyWebViewClient extends WebViewClient {
+
+    @Override
+    public void onLoadResource(WebView w, String url) {
+      try {
+        Intent.parseUri(url, 0); // should report
+      } catch (URISyntaxException e) {
+      }
+    }
+
+    @Override
+    public WebResourceResponse shouldInterceptRequest(WebView w, WebResourceRequest request) {
+      mActivity.startActivity(new Intent("action", request.getUrl())); // should report
+      return null;
+    }
+
+    @Override
+    public boolean shouldOverrideUrlLoading(WebView w, String url) {
+      try {
+        Intent.parseUri(url, 0); // should report
+      } catch (URISyntaxException e) {
+      }
+      return false;
+    }
   }
 
   class MyWebChromeClient extends WebChromeClient {
+
+    @Override
+    public boolean onJsAlert(WebView w, String url, String message, JsResult result) {
+      try {
+        Intent.parseUri(url, 0); // should report
+      } catch (URISyntaxException e) {
+      }
+      return false;
+    }
+
+    @Override
+    public boolean onJsBeforeUnload(WebView w, String url, String m, JsResult result) {
+      try {
+        Intent.parseUri(url, 0); // should report
+      } catch (URISyntaxException e) {
+      }
+      return false;
+    }
+
+    @Override
+    public boolean onJsConfirm(WebView w, String url, String m, JsResult result) {
+      try {
+        Intent.parseUri(url, 0); // should report
+      } catch (URISyntaxException e) {
+      }
+      return false;
+    }
+
+    @Override
+    public boolean onJsPrompt(WebView w, String url, String m, String s, JsPromptResult result) {
+      try {
+        Intent.parseUri(url, 0); // should report
+      } catch (URISyntaxException e) {
+      }
+      return false;
+    }
   }
 
-  void callWebviewSubclassSinks(
-    MyWebView webview, MyWebViewClient client, MyWebChromeClient chromeClient) {
-
+  void callWebviewSubclassSink(MyWebView webview) {
     String stringSource = (String) InferTaint.inferSecretSource();
     webview.evaluateJavascript(stringSource, null);
-    client.onLoadResource(webview, stringSource);
-    chromeClient.onJsAlert(webview, stringSource, "", null); // should have 3 reports
   }
 
   class JsObject {

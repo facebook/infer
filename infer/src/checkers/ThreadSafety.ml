@@ -1055,8 +1055,7 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
     | Access.Read ->
         let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
         { reported with reported_reads; reported_sites; } in
-  let report_unsafe_access
-      ~should_report (access, pre, threaded, tenv, pdesc) accesses reported_acc =
+  let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_acc =
     let pname = Procdesc.get_proc_name pdesc in
     if is_duplicate_report access pname reported_acc
     then
@@ -1145,7 +1144,7 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
        let reportable_accesses =
          List.filter ~f:(fun (_, _, _, tenv, pdesc) -> should_report pdesc tenv) grouped_accesses in
        List.fold
-         ~f:(fun acc access -> report_unsafe_access ~should_report access reportable_accesses acc)
+         ~f:(fun acc access -> report_unsafe_access access reportable_accesses acc)
          reportable_accesses
          ~init:reported)
     aggregated_access_map

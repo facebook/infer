@@ -99,7 +99,8 @@ module SourceKind = struct
     match Procdesc.get_proc_name pdesc with
     | Typ.Procname.Java java_pname ->
         begin
-          match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
+          match Typ.Procname.java_get_class_name java_pname,
+                Typ.Procname.java_get_method java_pname with
           | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad" ->
               taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals
           | class_name, method_name ->
@@ -107,6 +108,16 @@ module SourceKind = struct
                 match Typ.Name.name typename, method_name with
                 | "android.app.Activity", ("onActivityResult" | "onNewIntent") ->
                     Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
+                | "android.webkit.WebViewClient",
+                  ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ->
+                    Some
+                      (taint_formals_with_types
+                         ["android.webkit.WebResourceRequest"; "java.lang.String"]
+                         Intent
+                         formals)
+                | "android.webkit.WebChromeClient",
+                  ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ->
+                    Some (taint_formals_with_types ["java.lang.String"] Intent formals)
                 | _ ->
                     None in
               begin
@@ -215,19 +226,12 @@ module SinkKind = struct
                     Some (taint_nth 0 Intent ~report_reachable:true)
                 | "android.content.Intent", "setClassName" ->
                     Some (taint_all Intent ~report_reachable:true)
-                | "android.webkit.WebChromeClient",
-                  ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ->
-                    Some (taint_all JavaScript ~report_reachable:true)
                 | "android.webkit.WebView",
-                  ("addJavascriptInterface" |
-                   "evaluateJavascript" |
+                  ("evaluateJavascript" |
                    "loadData" |
                    "loadDataWithBaseURL" |
                    "loadUrl" |
                    "postWebMessage") ->
-                    Some (taint_all JavaScript ~report_reachable:true)
-                | "android.webkit.WebViewClient",
-                  ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ->
                     Some (taint_all JavaScript ~report_reachable:true)
                 | class_name, method_name ->
                     (* check the list of externally specified sinks *)
