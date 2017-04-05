@@ -202,6 +202,7 @@ val clang_include_to_override : string option
 val cluster_cmdline : string option
 val compute_analytics : bool
 val continue_capture : bool
+val default_linters : bool
 val linters_ignore_clang_failures : bool
 val copy_propagation : bool
 val crashcontext : bool
