@@ -24,8 +24,8 @@ type macros_map = (bool * ALVar.t list * CTL.t) ALVar.FormulaIdMap.t
 
 let single_to_multi checker =
   fun ctx an ->
-    let condition, issue_desc_opt = checker ctx an in
-    (condition, Option.to_list issue_desc_opt)
+    let issue_desc_opt = checker ctx an in
+    Option.to_list issue_desc_opt
 
 (* List of checkers on decls *that return 0 or 1 issue* *)
 let decl_single_checkers_list =
@@ -347,13 +347,11 @@ let invoke_set_of_hard_coded_checkers_an context (an : Ctl_parser_types.ast_node
     | Decl dec -> decl_checkers_list, CAst_utils.generate_key_decl dec
     | Stmt st -> stmt_checkers_list, CAst_utils.generate_key_stmt st in
   List.iter ~f:(fun checker ->
-      let condition, issue_desc_list = checker context an in
-      if CTL.eval_formula condition an context then
-        List.iter ~f:(fun issue_desc ->
-            if CIssue.should_run_check issue_desc.CIssue.mode then
-              let loc = issue_desc.CIssue.loc in
-              fill_issue_desc_info_and_log context an key issue_desc None loc
-          ) issue_desc_list
+      let issue_desc_list = checker context an in
+      List.iter ~f:(fun issue_desc ->
+          if CIssue.should_run_check issue_desc.CIssue.mode then
+            fill_issue_desc_info_and_log context an key issue_desc None issue_desc.CIssue.loc
+        ) issue_desc_list
     ) checkers
 
 (* Calls the set of checkers parsed from files (if any) *)

@@ -117,7 +117,7 @@ let mutable_local_vars_advice context an =
                       && not (is_of_whitelisted_type qual_type)
                       && not decl_info.di_is_implicit in
       if condition then
-        CTL.True, Some {
+        Some {
           CIssue.name = "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE";
           severity = Exceptions.Kadvice;
           mode = CIssue.On;
@@ -127,8 +127,8 @@ let mutable_local_vars_advice context an =
           suggestion = Some "Add a const (after the asterisk for pointer types).";
           loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
-      else CTL.False, None
-  | _ -> CTL.False, None (* Should only be called with a VarDecl *)
+      else None
+  | _ -> None (* Should only be called with a VarDecl *)
 
 
 (** Catches functions that should be composite components.
@@ -146,7 +146,7 @@ let component_factory_function_advice context an =
       let condition =
         is_ck_context context an && is_component_if objc_interface in
       if condition then
-        CTL.True, Some {
+        Some {
           CIssue.name = "COMPONENT_FACTORY_FUNCTION";
           severity = Exceptions.Kadvice;
           mode = CIssue.On;
@@ -157,8 +157,8 @@ let component_factory_function_advice context an =
             );
           loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
-      else CTL.False, None
-  | _ -> CTL.False, None (* Should only be called with FunctionDecl *)
+      else None
+  | _ -> None (* Should only be called with FunctionDecl *)
 
 (** Components should not inherit from each other. They should instead
     inherit from CKComponent, CKCompositeComponent, or
@@ -190,7 +190,7 @@ let component_with_unconventional_superclass_advice context an =
             is_component_or_controller_if (Some if_decl)
             && not has_conventional_superclass in
           if condition then
-            CTL.True, Some {
+            Some {
               CIssue.name = "COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS";
               severity = Exceptions.Kadvice;
               mode = CIssue.On;
@@ -201,9 +201,9 @@ let component_with_unconventional_superclass_advice context an =
               loc = CFrontend_checkers.location_from_decl context if_decl
             }
           else
-            CTL.False, None
+            None
         else
-          CTL.False, None
+          None
     | _ -> assert false in
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl (_, _, _, _, impl_decl_info)) ->
@@ -212,8 +212,8 @@ let component_with_unconventional_superclass_advice context an =
       if Option.is_some if_decl_opt && is_ck_context context an then
         check_interface (Option.value_exn if_decl_opt)
       else
-        CTL.False, None
-  | _ -> CTL.False, None
+        None
+  | _ -> None
 
 (** Components should only have one factory method.
 
@@ -244,7 +244,7 @@ let component_with_multiple_factory_methods_advice context an =
     match if_decl with
     | Clang_ast_t.ObjCInterfaceDecl (_, _, decls, _, _) ->
         let factory_methods = List.filter ~f:(is_available_factory_method if_decl) decls in
-        CTL.True, List.map ~f:(fun meth_decl -> {
+        List.map ~f:(fun meth_decl -> {
               CIssue.name = "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS";
               severity = Exceptions.Kadvice;
               mode = CIssue.On;
@@ -261,8 +261,8 @@ let component_with_multiple_factory_methods_advice context an =
         CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface in
       (match if_decl_opt with
        | Some d when is_ck_context context an -> check_interface d
-       | _ -> CTL.False, [])
-  | _ -> CTL.False, []
+       | _ -> [])
+  | _ -> []
 
 let in_ck_class (context: CLintersContext.context) =
   Option.value_map ~f:is_component_or_controller_descendant_impl ~default:false
@@ -297,7 +297,7 @@ let rec _component_initializer_with_side_effects_advice
          | Some "dispatch_after"
          | Some "dispatch_async"
          | Some "dispatch_sync" ->
-             CTL.True, Some {
+             Some {
                CIssue.name = "COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS";
                severity = Exceptions.Kadvice;
                mode = CIssue.On;
@@ -307,18 +307,18 @@ let rec _component_initializer_with_side_effects_advice
                loc = CFrontend_checkers.location_from_stmt context call_stmt
              }
          | _ ->
-             CTL.False, None)
+             None)
     | _->
-        CTL.False, None
+        None
   else
-    CTL.False, None
+    None
 
 let component_initializer_with_side_effects_advice
     (context: CLintersContext.context) an =
   match an with
   | Ctl_parser_types.Stmt (CallExpr (_, called_func_stmt :: _, _))  ->
       _component_initializer_with_side_effects_advice context called_func_stmt
-  | _ -> CTL.False, None (* only to be called in CallExpr *)
+  | _ -> None (* only to be called in CallExpr *)
 
 (** Returns one issue per line of code, with the column set to 0.
 
@@ -331,7 +331,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
       let source_file =
         context.translation_unit_context.CFrontend_config.source_file in
       let line_count = SourceFile.line_count source_file in
-      CTL.True, List.map ~f:(fun i -> {
+      List.map ~f:(fun i -> {
             CIssue.name = "COMPONENT_FILE_LINE_COUNT";
             severity = Exceptions.Kinfo;
             mode = CIssue.Off;
@@ -344,7 +344,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
             }
           }
         ) (List.range 1 line_count ~start:`inclusive ~stop:`inclusive)
-  | _ -> CTL.False, []
+  | _ -> []
 
 (** Computes a component file's cyclomatic complexity.
 
@@ -377,7 +377,7 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
     | _ -> None in
   match cyclo_loc_opt an with
   | Some loc ->
-      CTL.True, Some {
+      Some {
         CIssue.name = "COMPONENT_FILE_CYCLOMATIC_COMPLEXITY";
         severity = Exceptions.Kinfo;
         mode = CIssue.Off;
@@ -385,4 +385,4 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
         suggestion = None;
         loc = loc
       }
-  | _ -> CTL.False, None
+  | _ -> None
