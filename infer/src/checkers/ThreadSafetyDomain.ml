@@ -11,7 +11,7 @@ open! IStd
 
 module F = Format
 
-module AccessPathSetDomain = AbstractDomain.InvertedSet(AccessPath.UntypedRawSet)
+module AccessPathSetDomain = AbstractDomain.InvertedSet(AccessPath.RawSet)
 
 module Access = struct
   type kind =
@@ -110,7 +110,7 @@ end
 module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute.Set)
 
 module AttributeMapDomain = struct
-  include AbstractDomain.InvertedMap (AccessPath.UntypedRawMap) (AttributeSetDomain)
+  include AbstractDomain.InvertedMap (AccessPath.RawMap) (AttributeSetDomain)
 
   let has_attribute access_path attribute t =
     try
@@ -201,7 +201,7 @@ let empty =
   let locks = false in
   let accesses = AccessDomain.empty in
   let id_map = IdAccessPathMapDomain.empty in
-  let attribute_map = AccessPath.UntypedRawMap.empty in
+  let attribute_map = AccessPath.RawMap.empty in
   { threads; locks; accesses; id_map; attribute_map; }
 
 let (<=) ~lhs ~rhs =

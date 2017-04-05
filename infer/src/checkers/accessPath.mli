@@ -102,7 +102,3 @@ module AccessMap : PrettyPrintable.PPMap with type key = access
 module RawSet : PrettyPrintable.PPSet with type elt = Raw.t
 
 module RawMap : PrettyPrintable.PPMap with type key = Raw.t
-
-module UntypedRawSet : PrettyPrintable.PPSet with type elt = Raw.t
-
-module UntypedRawMap : PrettyPrintable.PPMap with type key = Raw.t

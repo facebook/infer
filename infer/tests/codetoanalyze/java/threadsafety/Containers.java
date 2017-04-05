@@ -187,4 +187,17 @@ class Containers {
     obj.f = new Object(); // should flag
   }
 
+  private static List addOrCreateList(List list) {
+    if (list == null) {
+      list = new ArrayList<>();
+    }
+    list.add(new Object());
+    return list;
+  }
+
+  public void addToNullListOk() {
+    List list = null;
+    addOrCreateList(list);
+  }
+
 }

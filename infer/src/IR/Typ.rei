@@ -171,10 +171,6 @@ let module Map: Caml.Map.S with type key = t;
 let module Tbl: Caml.Hashtbl.S with type key = t;
 
 
-/** type comparison that treats T* [] and T** as the same type. Needed for C/C++ */
-let array_sensitive_compare: t => t => int;
-
-
 /** Pretty print a type with all the details. */
 let pp_full: Pp.env => F.formatter => t => unit;
 
