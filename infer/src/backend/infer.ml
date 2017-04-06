@@ -431,8 +431,11 @@ let assert_supported_build_system build_system = match build_system with
       string_of_build_system build_system
       |> assert_supported_mode `Xcode
   | BBuck ->
-      let (analyzer, build_string) = if Config.flavors then
+      let (analyzer, build_string) =
+        if Config.flavors then
           (`Clang, "buck with flavors")
+        else if Option.is_some Config.buck_compilation_database then
+          (`Clang, "buck compilation database")
         else
           (`Java, string_of_build_system build_system) in
       assert_supported_mode analyzer build_string

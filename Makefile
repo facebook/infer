@@ -25,10 +25,6 @@ BUILD_SYSTEMS_TESTS += \
   clang_with_M_flag \
   clang_with_MD_flag \
   delete_results_dir \
-  differential_resolve_infer_eradicate_conflict \
-  differential_skip_anonymous_class_renamings \
-  differential_skip_duplicated_types_on_filenames \
-  differential_skip_duplicated_types_on_filenames_with_renamings \
   fail_on_issue \
   j1 \
   linters \
@@ -39,6 +35,8 @@ BUILD_SYSTEMS_TESTS += \
   utf8_in_procname \
   waf \
 
+DIRECT_TESTS += \
+  c_errors c_frontend c_bufferoverrun cpp_checkers cpp_errors cpp_frontend cpp_quandary
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck-clang-db
 endif
@@ -53,6 +51,8 @@ BUILD_SYSTEMS_TESTS += results_xml
 endif
 ifneq ($(XCODE_SELECT),no)
 BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
+DIRECT_TESTS += \
+  objc_frontend objc_errors objc_linters objc_ioslints objcpp_frontend objcpp_linters objc_linters-for-test-only
 ifneq ($(XCPRETTY),no)
 BUILD_SYSTEMS_TESTS += xcodebuild
 endif
@@ -60,7 +60,17 @@ endif # XCODE_SELECT
 endif # BUILD_C_ANALYZERS
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-BUILD_SYSTEMS_TESTS += gradle javac utf8_in_pwd
+BUILD_SYSTEMS_TESTS += \
+  differential_resolve_infer_eradicate_conflict \
+  differential_skip_anonymous_class_renamings \
+  differential_skip_duplicated_types_on_filenames \
+  differential_skip_duplicated_types_on_filenames_with_renamings \
+  gradle \
+  javac \
+
+DIRECT_TESTS += \
+  java_checkers java_eradicate java_infer java_tracing java_quandary java_threadsafety \
+  java_crashcontext java_harness
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
@@ -72,18 +82,8 @@ BUILD_SYSTEMS_TESTS += mvn
 endif
 endif
 
-ifeq ($(BUILD_C_ANALYZERS),yes)
-DIRECT_TESTS += \
-  c_errors c_frontend c_bufferoverrun cpp_checkers cpp_errors cpp_frontend cpp_quandary
-endif
-ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-DIRECT_TESTS += \
-  java_checkers java_eradicate java_infer java_tracing java_quandary java_threadsafety \
-  java_crashcontext java_harness
-endif
-ifneq ($(XCODE_SELECT),no)
-DIRECT_TESTS += \
-  objc_frontend objc_errors objc_linters objc_ioslints objcpp_frontend objcpp_linters objc_linters-for-test-only
+ifeq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
+BUILD_SYSTEMS_TESTS += utf8_in_pwd
 endif
 
 .PHONY: all
@@ -304,12 +304,37 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(MAKE) -C facebook validate)
 endif
 
+.PHONY: crash_if_not_all_analyzers_enabled
+crash_if_not_all_analyzers_enabled:
+ifneq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
+ifneq ($(BUILD_C_ANALYZERS),yes)
+	@echo '*** ERROR: Cannot run the full tests: the Clang analyzers are disabled.'
+	@echo '*** ERROR: You can run clang-only tests with:'
+	@echo '*** ERROR:'
+	@echo '*** ERROR:   make config_tests'
+	@echo '*** ERROR:'
+endif
+ifneq ($(BUILD_JAVA_ANALYZERS),yes)
+	@echo '*** ERROR: Cannot run the full tests: the Java analyzers are disabled.'
+	@echo '*** ERROR: You can run Java-only tests with:'
+	@echo '*** ERROR:'
+	@echo '*** ERROR:   make config_tests'
+	@echo '*** ERROR:'
+endif
+	@echo '*** ERROR: To run the full set of tests, please enable all the analyzers.'
+	@exit 1
+else
+	@:
+endif
 
-.PHONY: test
-test: test_build ocaml_unit_test endtoend_test inferTraceBugs_test inferScriptMode_test \
+.PHONY: config_tests
+config_tests: test_build ocaml_unit_test endtoend_test inferTraceBugs_test inferScriptMode_test \
       checkCopyright validate-skel
 	$(QUIET)$(call silent_on_success,Building Infer source dependency graph,\
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot)
+
+.PHONY: test
+test: crash_if_not_all_analyzers_enabled config_tests
 ifeq (,$(findstring s,$(MAKEFLAGS)))
 	$(QUIET)echo "$(TERM_INFO)ALL TESTS PASSED$(TERM_RESET)"
 endif
