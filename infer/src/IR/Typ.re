@@ -901,7 +901,7 @@ let module Procname = {
     };
 
   /** Convert a proc name to a filename */
-  let to_filename pname => {
+  let to_concrete_filename pname => {
     /* filenames for clang procs are REVERSED qualifiers with '#' as separator */
     let get_qual_name_str pname =>
       get_qualifiers pname |> QualifiedCppName.to_rev_list |> String.concat sep::"#";
@@ -915,6 +915,13 @@ let module Procname = {
       };
     Escape.escape_filename @@ SourceFile.append_crc_cutoff proc_id
   };
+  let to_generic_filename pname => {
+    let proc_id =
+      get_qualifiers pname |> QualifiedCppName.strip_template_args |> QualifiedCppName.to_rev_list |>
+      String.concat sep::"#";
+    Escape.escape_filename @@ SourceFile.append_crc_cutoff proc_id
+  };
+  let to_filename = to_concrete_filename;
 };
 
 

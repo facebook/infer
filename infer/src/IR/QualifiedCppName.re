@@ -22,6 +22,11 @@ let extract_last =
   | [last, ...rest] => Some (last, rest)
   | [] => None;
 
+let strip_template_args quals => {
+  let no_template_name s => List.hd_exn (String.split on::'<' s);
+  List.map f::no_template_name quals
+};
+
 let to_list = List.rev;
 
 let to_rev_list = ident;
@@ -72,12 +77,9 @@ let module Match = {
   let of_fuzzy_qual_names fuzzy_qual_names =>
     List.map fuzzy_qual_names f::qualifiers_of_fuzzy_qual_name |> qualifiers_list_matcher;
   let match_qualifiers matcher quals => {
-    let normalized_qualifiers = {
-      /* qual_name may have qualifiers with template parameters - drop them to whitelist all
-         instantiations */
-      let no_template_name s => List.hd_exn (String.split on::'<' s);
-      List.map f::no_template_name quals
-    };
+    /* qual_name may have qualifiers with template parameters - drop them to whitelist all
+       instantiations */
+    let normalized_qualifiers = strip_template_args quals;
     Str.string_match matcher (to_separated_string sep::matching_separator normalized_qualifiers) 0
   };
 };

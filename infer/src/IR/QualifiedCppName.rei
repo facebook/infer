@@ -33,6 +33,12 @@ let append_qualifier: t => qual::string => t;
 let extract_last: t => option (string, t);
 
 
+/** returns qualified name without template arguments. For example:
+    input: std::shared_ptr<int>::shared_ptr<long>
+    output: std::shared_ptr::shared_ptr */
+let strip_template_args: t => t;
+
+
 /** returns list of qualifers */
 let to_list: t => list string;
 
