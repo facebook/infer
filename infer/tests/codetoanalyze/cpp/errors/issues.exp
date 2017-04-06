@@ -7,6 +7,8 @@ codetoanalyze/cpp/errors/c_tests/c_bugs.cpp, malloc_memory_leak_is_reported, 0, 
 codetoanalyze/cpp/errors/c_tests/c_bugs.cpp, memcpy_spec_is_found, 3, NULL_DEREFERENCE, [start of procedure memcpy_spec_is_found()]
 codetoanalyze/cpp/errors/c_tests/c_bugs.cpp, resource_leak_is_reported, 0, RESOURCE_LEAK, [start of procedure resource_leak_is_reported()]
 codetoanalyze/cpp/errors/c_tests/c_bugs.cpp, resource_leak_is_reported, 0, RETURN_VALUE_IGNORED, [start of procedure resource_leak_is_reported()]
+codetoanalyze/cpp/errors/generic_models/generic_model_test.cpp, genericModelFunctionNPE, 2, NULL_DEREFERENCE, [start of procedure genericModelFunctionNPE(),start of procedure genericModelFunction<long_long>(),return from a call to genericModelFunction<long_long>]
+codetoanalyze/cpp/errors/generic_models/generic_model_test.cpp, genericModelNPE, 3, NULL_DEREFERENCE, [start of procedure genericModelNPE(),start of procedure GenericModelClass,return from a call to GenericModelClass<int>_GenericModelClass,start of procedure get,return from a call to GenericModelClass<long_long>_get]
 codetoanalyze/cpp/errors/include_header/header.h, header::A_div0, 0, DIVIDE_BY_ZERO, [start of procedure div0]
 codetoanalyze/cpp/errors/include_header/header.h, header::div0_fun, 0, DIVIDE_BY_ZERO, [start of procedure header::div0_fun()]
 codetoanalyze/cpp/errors/include_header/header2.h, header2::B<A>_div0, 0, DIVIDE_BY_ZERO, [start of procedure div0]

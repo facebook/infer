@@ -275,7 +275,8 @@ let objc_method_to_procname objc_method =
   let method_kind = Typ.Procname.objc_method_kind_of_bool (not objc_method.is_static) in
   let typename = Typ.Name.Objc.from_string objc_method.classname in
   Typ.Procname.ObjC_Cpp
-    (Typ.Procname.objc_cpp typename objc_method.method_name method_kind Typ.NoTemplate)
+    (Typ.Procname.objc_cpp typename objc_method.method_name method_kind
+      Typ.NoTemplate ~is_generic_model:false)
 
 let taint_spec_to_taint_info taint_spec =
   let taint_source =

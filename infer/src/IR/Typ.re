@@ -406,7 +406,12 @@ let module Procname = {
   [@@deriving compare];
 
   /** Type of c procedure names. */
-  type c = {name: QualifiedCppName.t, mangled: option string, template_args: template_spec_info}
+  type c = {
+    name: QualifiedCppName.t,
+    mangled: option string,
+    template_args: template_spec_info,
+    is_generic_model: bool
+  }
   [@@deriving compare];
   type objc_cpp_method_kind =
     | CPPMethod (option string) /** with mangling */
@@ -421,7 +426,8 @@ let module Procname = {
     method_name: string,
     class_name: Name.t,
     kind: objc_cpp_method_kind,
-    template_args: template_spec_info
+    template_args: template_spec_info,
+    is_generic_model: bool
   }
   [@@deriving compare];
 
@@ -491,13 +497,19 @@ let module Procname = {
     | None => (None, package_classname)
     };
   let split_typename typename => split_classname (Name.name typename);
-  let c (name: QualifiedCppName.t) (mangled: string) (template_args: template_spec_info) => {
+  let c name mangled template_args is_generic_model::is_generic_model => {
     name,
     mangled: Some mangled,
-    template_args
+    template_args,
+    is_generic_model
   };
   let from_string_c_fun (name: string) =>
-    C {name: QualifiedCppName.of_qual_string name, mangled: None, template_args: NoTemplate};
+    C {
+      name: QualifiedCppName.of_qual_string name,
+      mangled: None,
+      template_args: NoTemplate,
+      is_generic_model: false
+    };
   let java class_name return_type method_name parameters kind => {
     class_name,
     return_type,
@@ -507,14 +519,16 @@ let module Procname = {
   };
 
   /** Create an objc procedure name from a class_name and method_name. */
-  let objc_cpp class_name method_name kind template_args => {
+  let objc_cpp class_name method_name kind template_args is_generic_model::is_generic_model => {
     class_name,
     method_name,
     kind,
-    template_args
+    template_args,
+    is_generic_model
   };
   let get_default_objc_class_method objc_class => {
-    let objc_cpp = objc_cpp objc_class "__find_class_" ObjCInternalMethod NoTemplate;
+    let objc_cpp =
+      objc_cpp objc_class "__find_class_" ObjCInternalMethod NoTemplate is_generic_model::false;
     ObjC_Cpp objc_cpp
   };
 
@@ -921,7 +935,13 @@ let module Procname = {
       String.concat sep::"#";
     Escape.escape_filename @@ SourceFile.append_crc_cutoff proc_id
   };
-  let to_filename = to_concrete_filename;
+  let to_filename pname =>
+    switch pname {
+    | C {is_generic_model}
+    | ObjC_Cpp {is_generic_model} when Bool.equal is_generic_model true =>
+      to_generic_filename pname
+    | _ => to_concrete_filename pname
+    };
 };
 
 

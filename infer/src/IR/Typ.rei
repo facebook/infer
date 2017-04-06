@@ -269,7 +269,7 @@ let module Procname: {
   let module Set: PrettyPrintable.PPSet with type elt = t;
 
   /** Create a C procedure name from plain and mangled name. */
-  let c: QualifiedCppName.t => string => template_spec_info => c;
+  let c: QualifiedCppName.t => string => template_spec_info => is_generic_model::bool => c;
 
   /** Empty block name. */
   let empty_block: t;
@@ -324,7 +324,13 @@ let module Procname: {
   let mangled_objc_block: string => t;
 
   /** Create an objc procedure name from a class_name and method_name. */
-  let objc_cpp: Name.t => string => objc_cpp_method_kind => template_spec_info => objc_cpp;
+  let objc_cpp:
+    Name.t =>
+    string =>
+    objc_cpp_method_kind =>
+    template_spec_info =>
+    is_generic_model::bool =>
+    objc_cpp;
   let get_default_objc_class_method: Name.t => t;
 
   /** Get the class name of a Objective-C/C++ procedure name. */
