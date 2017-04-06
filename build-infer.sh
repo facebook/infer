@@ -15,6 +15,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INFER_ROOT="$SCRIPT_DIR/../"
 PLATFORM="$(uname)"
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
+OCAML_VERSION="4.02.3"
 
 function usage() {
   echo "Usage: $0 [-y] [targets]"
@@ -35,9 +36,11 @@ function usage() {
 }
 
 # arguments
-BUILD_CLANG=no
-BUILD_JAVA=no
-INTERACTIVE=yes
+BUILD_CLANG=${BUILD_CLANG:-no}
+BUILD_JAVA=${BUILD_JAVA:-no}
+INTERACTIVE=${INTERACTIVE:-yes}
+ONLY_SETUP_OPAM=${ONLY_SETUP_OPAM:-no}
+# do not set INFER_OPAM_SWITCH by default
 ORIG_ARGS="$*"
 
 while [[ $# > 0 ]]; do
@@ -62,6 +65,18 @@ while [[ $# > 0 ]]; do
     -h|--help)
       usage
       exit 0
+     ;;
+    --opam-switch)
+      shift
+      [[ $# > 0 ]] || (usage; exit 1)
+      INFER_OPAM_SWITCH="$1"
+      shift
+      continue
+     ;;
+    --only-setup-opam)
+      ONLY_SETUP_OPAM=yes
+      shift
+      continue
      ;;
     -y|--yes)
       INTERACTIVE=no
@@ -96,12 +111,8 @@ check_installed () {
 }
 
 setup_opam () {
-    OCAML_VERSION="4.02.3"
-
     opam init --compiler=$OCAML_VERSION -j $NCPU --no-setup --yes
-
-    OPAMSWITCH=infer-$OCAML_VERSION
-    opam switch set -j $NCPU $OPAMSWITCH --alias-of $OCAML_VERSION
+    opam switch set -j $NCPU $INFER_OPAM_SWITCH --alias-of $OCAML_VERSION
 }
 
 add_opam_git_pin () {
@@ -128,10 +139,18 @@ install_opam_deps () {
 
 echo "initializing opam... "
 check_installed opam
-setup_opam
-eval $(SHELL=bash opam config env --switch=$OPAMSWITCH)
+if [ -z $INFER_OPAM_SWITCH ]; then
+    # the user didn't pass an opam switch explicitly, set up a custom switch for infer
+    INFER_OPAM_SWITCH=infer-"$OCAML_VERSION"
+    setup_opam
+fi
+eval $(SHELL=bash opam config env --switch=$INFER_OPAM_SWITCH)
 echo "installing infer dependencies... "
 install_opam_deps
+
+if [ "$ONLY_SETUP_OPAM" = "yes" ]; then
+  exit 0
+fi
 
 echo "preparing build... "
 if [ ! -f .release ]; then

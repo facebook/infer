@@ -8,11 +8,6 @@
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
-ifeq ($(IS_FACEBOOK_TREE),yes)
-# With this makefile, all targets will default to have right env variables pointing to the sandbox
-  include $(ROOT_DIR)/facebook/Makefile.env
-endif
-
 ifeq ($(BUILD_C_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   assembly \

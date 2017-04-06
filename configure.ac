@@ -39,6 +39,8 @@ AC_CHECK_FILE([.facebook], [is_facebook_tree=yes], [is_facebook_tree=no])
 IS_FACEBOOK_TREE=$is_facebook_tree
 AC_SUBST([IS_FACEBOOK_TREE])
 
+AC_ARG_VAR([PATH], [the shell's $PATH list of directories to search for executables])
+
 # to compile the facebook-clang-plugins
 AC_ARG_VAR([CLANG_PREFIX], [directory where clang is installed (defaults=$PWD/facebook-clang-plugins/clang/install)])
 AS_IF([test "x$CLANG_PREFIX" = "x"], [
@@ -290,10 +292,7 @@ AC_CHECK_PYTHON_MODULE([$PYTHON27], [lxml])
 
 AC_PATH_TOOL([XCPRETTY], [xcpretty], [no])
 
-BREW=no
-if which brew > /dev/null; then
-  BREW="$(which brew)"
-fi
+AC_PATH_TOOL([BREW], [brew], [no])
 
 # warn about broken pkg-config version for brew users
 if test "$BREW" != "no"; then
