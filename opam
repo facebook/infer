@@ -26,6 +26,7 @@ remove: [
 ]
 ocaml-version: [ >= "4.02.1" ]
 depends: [
+  "ANSITerminal" {>="0.7"}
   "atdgen" {>="1.6.0"}
   "core" {>="113.33.03"}
   "conf-autoconf"

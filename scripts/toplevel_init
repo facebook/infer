@@ -7,6 +7,7 @@
 #require "sawja";;
 #require "atdgen";;
 #require "xmlm";;
+#require "ANSITerminal";;
 
 (* load infer code *)
 #load "externstubslib.cma";;
