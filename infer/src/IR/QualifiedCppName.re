@@ -37,14 +37,13 @@ let of_rev_list = ident;
 
 let cpp_separator = "::";
 
+/* define [cpp_separator_regex] here to compute it once */
+let cpp_separator_regex = Str.regexp_string cpp_separator;
+
 /* This is simplistic and will give the wrong answer in some cases, eg
    "foo<bar::baz<goo>>::someMethod" will get parsed as ["foo<bar", "baz<goo>>",
    "someMethod"]. Avoid using it if possible */
-let of_qual_string str => {
-  let class_sep_regex = Str.regexp_string cpp_separator;
-  /* wait until here to define the function so that [class_sep_regex] is only computed once */
-  Str.split class_sep_regex str |> List.rev
-};
+let of_qual_string str => Str.split cpp_separator_regex str |> List.rev;
 
 let to_separated_string quals sep::sep => List.rev quals |> String.concat sep::sep;
 
