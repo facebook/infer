@@ -11,22 +11,18 @@ open! IStd
 open Lexing
 open Ctl_lexer
 
+exception ALParsingException of string
+
 let parse_al_file fname channel : CTL.al_file option =
-  let print_position _ lexbuf =
+  let pos_str lexbuf =
     let pos = lexbuf.lex_curr_p in
-    Logging.stderr "%s:%d:%d" pos.pos_fname
-      pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1) in
+    pos.pos_fname ^ ":" ^ (string_of_int pos.pos_lnum) ^ ":" ^
+    (string_of_int  (pos.pos_cnum - pos.pos_bol + 1)) in
   let parse_with_error lexbuf =
     try Some (Ctl_parser.al_file token lexbuf) with
-    | SyntaxError msg ->
-        Logging.err "%a: %s\n" print_position lexbuf msg;
-        None
-    | Ctl_parser.Error as e ->
-        Logging.stderr "\n#######################################################\
-                        \n\n%a: SYNTAX ERROR\n\
-                        \n########################################################\n@."
-          print_position lexbuf;
-        raise e in
+    | SyntaxError _
+    | Ctl_parser.Error ->
+        raise (ALParsingException ( "SYNTAX ERROR at " ^ (pos_str lexbuf))) in
   let lexbuf = Lexing.from_channel channel in
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = fname };
   parse_with_error lexbuf
