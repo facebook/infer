@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "div0_fun#_Z8div0_funv.21f70fd09b44530e062738afd1eab5d6_3" -> "div0_fun#_Z8div0_funv.21f70fd09b44530e062738afd1eab5d6_2" ;
-"div0#A#(_ZN1A4div0Ev).1a6f91584aabeebe049737afeb476378_1" [label="1: Start A_div0\nFormals:  this:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+"div0#A#(_ZN1A4div0Ev).1a6f91584aabeebe049737afeb476378_1" [label="1: Start A_div0\nFormals:  this:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
 	 "div0#A#(_ZN1A4div0Ev).1a6f91584aabeebe049737afeb476378_1" -> "div0#A#(_ZN1A4div0Ev).1a6f91584aabeebe049737afeb476378_3" ;

@@ -7,7 +7,7 @@ digraph iCFG {
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global:class X*) [line 29]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global:X*) [line 29]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -18,7 +18,7 @@ digraph iCFG {
 "get_global_ptr#_Z14get_global_ptrv.af67a5fffdc0d043d3f1daec187ebdad_2" [label="2: Exit get_global_ptr \n  " color=yellow style=filled]
 	
 
-"get_global_ptr#_Z14get_global_ptrv.af67a5fffdc0d043d3f1daec187ebdad_3" [label="3:  Return Stmt \n   *&return:class X*=&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global [line 30]\n " shape="box"]
+"get_global_ptr#_Z14get_global_ptrv.af67a5fffdc0d043d3f1daec187ebdad_3" [label="3:  Return Stmt \n   *&return:X*=&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global [line 30]\n " shape="box"]
 	
 
 	 "get_global_ptr#_Z14get_global_ptrv.af67a5fffdc0d043d3f1daec187ebdad_3" -> "get_global_ptr#_Z14get_global_ptrv.af67a5fffdc0d043d3f1daec187ebdad_2" ;
@@ -29,7 +29,7 @@ digraph iCFG {
 "get_global_ref#_Z14get_global_refv.e28b13b14f5a363fb6e4c61e8a46cf30_2" [label="2: Exit get_global_ref \n  " color=yellow style=filled]
 	
 
-"get_global_ref#_Z14get_global_refv.e28b13b14f5a363fb6e4c61e8a46cf30_3" [label="3:  Return Stmt \n   *&return:class X&=&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global [line 31]\n " shape="box"]
+"get_global_ref#_Z14get_global_refv.e28b13b14f5a363fb6e4c61e8a46cf30_3" [label="3:  Return Stmt \n   *&return:X&=&#GB<codetoanalyze/cpp/shared/reference/reference_struct_e2e.cpp>$global [line 31]\n " shape="box"]
 	
 
 	 "get_global_ref#_Z14get_global_refv.e28b13b14f5a363fb6e4c61e8a46cf30_3" -> "get_global_ref#_Z14get_global_refv.e28b13b14f5a363fb6e4c61e8a46cf30_2" ;
@@ -40,11 +40,11 @@ digraph iCFG {
 "get_global_ptr_div0_method#_Z26get_global_ptr_div0_methodv.95d3179a9b64c498a3bac615a33812e3_2" [label="2: Exit get_global_ptr_div0_method \n  " color=yellow style=filled]
 	
 
-"get_global_ptr_div0_method#_Z26get_global_ptr_div0_methodv.95d3179a9b64c498a3bac615a33812e3_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 64]\n  _=*n$0:class X [line 64]\n  n$2=_fun_X_div(n$0:class X*) [line 64]\n " shape="box"]
+"get_global_ptr_div0_method#_Z26get_global_ptr_div0_methodv.95d3179a9b64c498a3bac615a33812e3_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 64]\n  _=*n$0:X [line 64]\n  n$2=_fun_X_div(n$0:X*) [line 64]\n " shape="box"]
 	
 
 	 "get_global_ptr_div0_method#_Z26get_global_ptr_div0_methodv.95d3179a9b64c498a3bac615a33812e3_3" -> "get_global_ptr_div0_method#_Z26get_global_ptr_div0_methodv.95d3179a9b64c498a3bac615a33812e3_2" ;
-"get_global_ptr_div0_method#_Z26get_global_ptr_div0_methodv.95d3179a9b64c498a3bac615a33812e3_4" [label="4:  Call _fun_X_zero \n   n$3=_fun_get_global_ptr() [line 63]\n  _=*n$3:class X [line 63]\n  _fun_X_zero(n$3:class X*) [line 63]\n " shape="box"]
+"get_global_ptr_div0_method#_Z26get_global_ptr_div0_methodv.95d3179a9b64c498a3bac615a33812e3_4" [label="4:  Call _fun_X_zero \n   n$3=_fun_get_global_ptr() [line 63]\n  _=*n$3:X [line 63]\n  _fun_X_zero(n$3:X*) [line 63]\n " shape="box"]
 	
 
 	 "get_global_ptr_div0_method#_Z26get_global_ptr_div0_methodv.95d3179a9b64c498a3bac615a33812e3_4" -> "get_global_ptr_div0_method#_Z26get_global_ptr_div0_methodv.95d3179a9b64c498a3bac615a33812e3_3" ;
@@ -59,11 +59,11 @@ digraph iCFG {
 "get_global_ptr_div1_method#_Z26get_global_ptr_div1_methodv.c04836cdbf088561a60f52cb43699a10_2" [label="2: Exit get_global_ptr_div1_method \n  " color=yellow style=filled]
 	
 
-"get_global_ptr_div1_method#_Z26get_global_ptr_div1_methodv.c04836cdbf088561a60f52cb43699a10_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 70]\n  _=*n$0:class X [line 70]\n  n$2=_fun_X_div(n$0:class X*) [line 70]\n " shape="box"]
+"get_global_ptr_div1_method#_Z26get_global_ptr_div1_methodv.c04836cdbf088561a60f52cb43699a10_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 70]\n  _=*n$0:X [line 70]\n  n$2=_fun_X_div(n$0:X*) [line 70]\n " shape="box"]
 	
 
 	 "get_global_ptr_div1_method#_Z26get_global_ptr_div1_methodv.c04836cdbf088561a60f52cb43699a10_3" -> "get_global_ptr_div1_method#_Z26get_global_ptr_div1_methodv.c04836cdbf088561a60f52cb43699a10_2" ;
-"get_global_ptr_div1_method#_Z26get_global_ptr_div1_methodv.c04836cdbf088561a60f52cb43699a10_4" [label="4:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ptr() [line 69]\n  _=*n$3:class X [line 69]\n  _fun_X_nonzero(n$3:class X*) [line 69]\n " shape="box"]
+"get_global_ptr_div1_method#_Z26get_global_ptr_div1_methodv.c04836cdbf088561a60f52cb43699a10_4" [label="4:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ptr() [line 69]\n  _=*n$3:X [line 69]\n  _fun_X_nonzero(n$3:X*) [line 69]\n " shape="box"]
 	
 
 	 "get_global_ptr_div1_method#_Z26get_global_ptr_div1_methodv.c04836cdbf088561a60f52cb43699a10_4" -> "get_global_ptr_div1_method#_Z26get_global_ptr_div1_methodv.c04836cdbf088561a60f52cb43699a10_3" ;
@@ -78,7 +78,7 @@ digraph iCFG {
 "get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_2" [label="2: Exit get_global_ptr_div0_field \n  " color=yellow style=filled]
 	
 
-"get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 76]\n  _=*n$0:class X [line 76]\n  n$2=_fun_X_div(n$0:class X*) [line 76]\n " shape="box"]
+"get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 76]\n  _=*n$0:X [line 76]\n  n$2=_fun_X_div(n$0:X*) [line 76]\n " shape="box"]
 	
 
 	 "get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_3" -> "get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_2" ;
@@ -86,7 +86,7 @@ digraph iCFG {
 	
 
 	 "get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_4" -> "get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_3" ;
-"get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_5" [label="5:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ptr() [line 74]\n  _=*n$4:class X [line 74]\n  _fun_X_nonzero(n$4:class X*) [line 74]\n " shape="box"]
+"get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_5" [label="5:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ptr() [line 74]\n  _=*n$4:X [line 74]\n  _fun_X_nonzero(n$4:X*) [line 74]\n " shape="box"]
 	
 
 	 "get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_5" -> "get_global_ptr_div0_field#_Z25get_global_ptr_div0_fieldv.3d8e9cae71416e440467f0b580fa5ad1_4" ;
@@ -97,7 +97,7 @@ digraph iCFG {
 "get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_2" [label="2: Exit get_global_ptr_div1_field \n  " color=yellow style=filled]
 	
 
-"get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 82]\n  _=*n$0:class X [line 82]\n  n$2=_fun_X_div(n$0:class X*) [line 82]\n " shape="box"]
+"get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ptr() [line 82]\n  _=*n$0:X [line 82]\n  n$2=_fun_X_div(n$0:X*) [line 82]\n " shape="box"]
 	
 
 	 "get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_3" -> "get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_2" ;
@@ -105,7 +105,7 @@ digraph iCFG {
 	
 
 	 "get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_4" -> "get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_3" ;
-"get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_5" [label="5:  Call _fun_X_zero \n   n$4=_fun_get_global_ptr() [line 80]\n  _=*n$4:class X [line 80]\n  _fun_X_zero(n$4:class X*) [line 80]\n " shape="box"]
+"get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_5" [label="5:  Call _fun_X_zero \n   n$4=_fun_get_global_ptr() [line 80]\n  _=*n$4:X [line 80]\n  _fun_X_zero(n$4:X*) [line 80]\n " shape="box"]
 	
 
 	 "get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_5" -> "get_global_ptr_div1_field#_Z25get_global_ptr_div1_fieldv.a36e91dd937ac2e5f09dccb3793a9639_4" ;
@@ -116,11 +116,11 @@ digraph iCFG {
 "get_global_ref_div0_method#_Z26get_global_ref_div0_methodv.684bb34ad780aac398e997746ff34f96_2" [label="2: Exit get_global_ref_div0_method \n  " color=yellow style=filled]
 	
 
-"get_global_ref_div0_method#_Z26get_global_ref_div0_methodv.684bb34ad780aac398e997746ff34f96_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 108]\n  _=*n$0:class X [line 108]\n  n$2=_fun_X_div(n$0:class X&) [line 108]\n " shape="box"]
+"get_global_ref_div0_method#_Z26get_global_ref_div0_methodv.684bb34ad780aac398e997746ff34f96_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 108]\n  _=*n$0:X [line 108]\n  n$2=_fun_X_div(n$0:X&) [line 108]\n " shape="box"]
 	
 
 	 "get_global_ref_div0_method#_Z26get_global_ref_div0_methodv.684bb34ad780aac398e997746ff34f96_3" -> "get_global_ref_div0_method#_Z26get_global_ref_div0_methodv.684bb34ad780aac398e997746ff34f96_2" ;
-"get_global_ref_div0_method#_Z26get_global_ref_div0_methodv.684bb34ad780aac398e997746ff34f96_4" [label="4:  Call _fun_X_zero \n   n$3=_fun_get_global_ref() [line 107]\n  _=*n$3:class X [line 107]\n  _fun_X_zero(n$3:class X&) [line 107]\n " shape="box"]
+"get_global_ref_div0_method#_Z26get_global_ref_div0_methodv.684bb34ad780aac398e997746ff34f96_4" [label="4:  Call _fun_X_zero \n   n$3=_fun_get_global_ref() [line 107]\n  _=*n$3:X [line 107]\n  _fun_X_zero(n$3:X&) [line 107]\n " shape="box"]
 	
 
 	 "get_global_ref_div0_method#_Z26get_global_ref_div0_methodv.684bb34ad780aac398e997746ff34f96_4" -> "get_global_ref_div0_method#_Z26get_global_ref_div0_methodv.684bb34ad780aac398e997746ff34f96_3" ;
@@ -135,11 +135,11 @@ digraph iCFG {
 "get_global_ref_div1_method#_Z26get_global_ref_div1_methodv.b216385e5ab0459b7fc63fae401cb6dd_2" [label="2: Exit get_global_ref_div1_method \n  " color=yellow style=filled]
 	
 
-"get_global_ref_div1_method#_Z26get_global_ref_div1_methodv.b216385e5ab0459b7fc63fae401cb6dd_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 114]\n  _=*n$0:class X [line 114]\n  n$2=_fun_X_div(n$0:class X&) [line 114]\n " shape="box"]
+"get_global_ref_div1_method#_Z26get_global_ref_div1_methodv.b216385e5ab0459b7fc63fae401cb6dd_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 114]\n  _=*n$0:X [line 114]\n  n$2=_fun_X_div(n$0:X&) [line 114]\n " shape="box"]
 	
 
 	 "get_global_ref_div1_method#_Z26get_global_ref_div1_methodv.b216385e5ab0459b7fc63fae401cb6dd_3" -> "get_global_ref_div1_method#_Z26get_global_ref_div1_methodv.b216385e5ab0459b7fc63fae401cb6dd_2" ;
-"get_global_ref_div1_method#_Z26get_global_ref_div1_methodv.b216385e5ab0459b7fc63fae401cb6dd_4" [label="4:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ref() [line 113]\n  _=*n$3:class X [line 113]\n  _fun_X_nonzero(n$3:class X&) [line 113]\n " shape="box"]
+"get_global_ref_div1_method#_Z26get_global_ref_div1_methodv.b216385e5ab0459b7fc63fae401cb6dd_4" [label="4:  Call _fun_X_nonzero \n   n$3=_fun_get_global_ref() [line 113]\n  _=*n$3:X [line 113]\n  _fun_X_nonzero(n$3:X&) [line 113]\n " shape="box"]
 	
 
 	 "get_global_ref_div1_method#_Z26get_global_ref_div1_methodv.b216385e5ab0459b7fc63fae401cb6dd_4" -> "get_global_ref_div1_method#_Z26get_global_ref_div1_methodv.b216385e5ab0459b7fc63fae401cb6dd_3" ;
@@ -154,7 +154,7 @@ digraph iCFG {
 "get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_2" [label="2: Exit get_global_ref_div0_field \n  " color=yellow style=filled]
 	
 
-"get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 120]\n  _=*n$0:class X [line 120]\n  n$2=_fun_X_div(n$0:class X&) [line 120]\n " shape="box"]
+"get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 120]\n  _=*n$0:X [line 120]\n  n$2=_fun_X_div(n$0:X&) [line 120]\n " shape="box"]
 	
 
 	 "get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_3" -> "get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_2" ;
@@ -162,7 +162,7 @@ digraph iCFG {
 	
 
 	 "get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_4" -> "get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_3" ;
-"get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_5" [label="5:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ref() [line 118]\n  _=*n$4:class X [line 118]\n  _fun_X_nonzero(n$4:class X&) [line 118]\n " shape="box"]
+"get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_5" [label="5:  Call _fun_X_nonzero \n   n$4=_fun_get_global_ref() [line 118]\n  _=*n$4:X [line 118]\n  _fun_X_nonzero(n$4:X&) [line 118]\n " shape="box"]
 	
 
 	 "get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_5" -> "get_global_ref_div0_field#_Z25get_global_ref_div0_fieldv.fb336a8d7a964aa668069054ac80f248_4" ;
@@ -173,7 +173,7 @@ digraph iCFG {
 "get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_2" [label="2: Exit get_global_ref_div1_field \n  " color=yellow style=filled]
 	
 
-"get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 126]\n  _=*n$0:class X [line 126]\n  n$2=_fun_X_div(n$0:class X&) [line 126]\n " shape="box"]
+"get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_3" [label="3:  Call _fun_X_div \n   n$0=_fun_get_global_ref() [line 126]\n  _=*n$0:X [line 126]\n  n$2=_fun_X_div(n$0:X&) [line 126]\n " shape="box"]
 	
 
 	 "get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_3" -> "get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_2" ;
@@ -181,73 +181,73 @@ digraph iCFG {
 	
 
 	 "get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_4" -> "get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_3" ;
-"get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_5" [label="5:  Call _fun_X_zero \n   n$4=_fun_get_global_ref() [line 124]\n  _=*n$4:class X [line 124]\n  _fun_X_zero(n$4:class X&) [line 124]\n " shape="box"]
+"get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_5" [label="5:  Call _fun_X_zero \n   n$4=_fun_get_global_ref() [line 124]\n  _=*n$4:X [line 124]\n  _fun_X_zero(n$4:X&) [line 124]\n " shape="box"]
 	
 
 	 "get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_5" -> "get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_4" ;
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" ;
 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_1" [label="1: Start X_nonzero\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_1" [label="1: Start X_nonzero\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_1" -> "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" ;
 "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_2" [label="2: Exit X_nonzero \n  " color=yellow style=filled]
 	
 
-"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X* [line 12]\n  *n$0.f:int=1 [line 12]\n " shape="box"]
+"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 12]\n  *n$0.f:int=1 [line 12]\n " shape="box"]
 	
 
 	 "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" -> "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_2" ;
-"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_1" [label="1: Start X_zero\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
+"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_1" [label="1: Start X_zero\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
 	 "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_1" -> "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" ;
 "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_2" [label="2: Exit X_zero \n  " color=yellow style=filled]
 	
 
-"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class X* [line 13]\n  *n$0.f:int=0 [line 13]\n " shape="box"]
+"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 13]\n  *n$0.f:int=0 [line 13]\n " shape="box"]
 	
 
 	 "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" -> "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_2" ;
-"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_1" [label="1: Start X_div\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_1" [label="1: Start X_div\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
 	 "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_1" -> "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" ;
 "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_2" [label="2: Exit X_div \n  " color=yellow style=filled]
 	
 
-"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" [label="3:  Return Stmt \n   n$0=*&this:class X* [line 14]\n  n$1=*n$0.f:int [line 14]\n  *&return:int=(1 / n$1) [line 14]\n " shape="box"]
+"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 14]\n  n$1=*n$0.f:int [line 14]\n  *&return:int=(1 / n$1) [line 14]\n " shape="box"]
 	
 
 	 "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" -> "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_2" ;
-"zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_1" [label="1: Start zero_ptr\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+"zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_1" [label="1: Start zero_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
 	 "zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_1" -> "zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_3" ;
 "zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_2" [label="2: Exit zero_ptr \n  " color=yellow style=filled]
 	
 
-"zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_3" [label="3:  Call _fun_X_zero \n   n$0=*&x:class X* [line 17]\n  _=*n$0:class X [line 17]\n  _fun_X_zero(n$0:class X*) [line 17]\n " shape="box"]
+"zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_3" [label="3:  Call _fun_X_zero \n   n$0=*&x:X* [line 17]\n  _=*n$0:X [line 17]\n  _fun_X_zero(n$0:X*) [line 17]\n " shape="box"]
 	
 
 	 "zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_3" -> "zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_2" ;
-"nonzero_ptr#_Z11nonzero_ptrP1X.c3cdb6c53c9a4b1c0acd4ddb69db5a37_1" [label="1: Start nonzero_ptr\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+"nonzero_ptr#_Z11nonzero_ptrP1X.c3cdb6c53c9a4b1c0acd4ddb69db5a37_1" [label="1: Start nonzero_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
 	
 
 	 "nonzero_ptr#_Z11nonzero_ptrP1X.c3cdb6c53c9a4b1c0acd4ddb69db5a37_1" -> "nonzero_ptr#_Z11nonzero_ptrP1X.c3cdb6c53c9a4b1c0acd4ddb69db5a37_3" ;
 "nonzero_ptr#_Z11nonzero_ptrP1X.c3cdb6c53c9a4b1c0acd4ddb69db5a37_2" [label="2: Exit nonzero_ptr \n  " color=yellow style=filled]
 	
 
-"nonzero_ptr#_Z11nonzero_ptrP1X.c3cdb6c53c9a4b1c0acd4ddb69db5a37_3" [label="3:  Call _fun_X_nonzero \n   n$0=*&x:class X* [line 19]\n  _=*n$0:class X [line 19]\n  _fun_X_nonzero(n$0:class X*) [line 19]\n " shape="box"]
+"nonzero_ptr#_Z11nonzero_ptrP1X.c3cdb6c53c9a4b1c0acd4ddb69db5a37_3" [label="3:  Call _fun_X_nonzero \n   n$0=*&x:X* [line 19]\n  _=*n$0:X [line 19]\n  _fun_X_nonzero(n$0:X*) [line 19]\n " shape="box"]
 	
 
 	 "nonzero_ptr#_Z11nonzero_ptrP1X.c3cdb6c53c9a4b1c0acd4ddb69db5a37_3" -> "nonzero_ptr#_Z11nonzero_ptrP1X.c3cdb6c53c9a4b1c0acd4ddb69db5a37_2" ;
-"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_1" [label="1: Start method_div0_ptr\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 33]\n " color=yellow style=filled]
+"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_1" [label="1: Start method_div0_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 33]\n " color=yellow style=filled]
 	
 
 	 "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_1" -> "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_5" ;
@@ -263,23 +263,23 @@ digraph iCFG {
 	
 
 	 "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_4" -> "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_2" ;
-"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_5" [label="5: Prune (true branch) \n   n$0=*&x:class X* [line 34]\n  PRUNE((n$0 != 0), true); [line 34]\n " shape="invhouse"]
+"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 34]\n  PRUNE((n$0 != 0), true); [line 34]\n " shape="invhouse"]
 	
 
 	 "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_5" -> "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_8" ;
-"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_6" [label="6: Prune (false branch) \n   n$0=*&x:class X* [line 34]\n  PRUNE((n$0 == 0), false); [line 34]\n " shape="invhouse"]
+"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 34]\n  PRUNE((n$0 == 0), false); [line 34]\n " shape="invhouse"]
 	
 
 	 "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_6" -> "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_3" ;
-"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_7" [label="7:  Return Stmt \n   n$1=*&x:class X* [line 36]\n  _=*n$1:class X [line 36]\n  n$3=_fun_X_div(n$1:class X*) [line 36]\n  *&return:int=n$3 [line 36]\n " shape="box"]
+"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_7" [label="7:  Return Stmt \n   n$1=*&x:X* [line 36]\n  _=*n$1:X [line 36]\n  n$3=_fun_X_div(n$1:X*) [line 36]\n  *&return:int=n$3 [line 36]\n " shape="box"]
 	
 
 	 "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_7" -> "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_2" ;
-"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_8" [label="8:  Call _fun_zero_ptr \n   n$4=*&x:class X* [line 35]\n  _fun_zero_ptr(n$4:class X*) [line 35]\n " shape="box"]
+"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_8" [label="8:  Call _fun_zero_ptr \n   n$4=*&x:X* [line 35]\n  _fun_zero_ptr(n$4:X*) [line 35]\n " shape="box"]
 	
 
 	 "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_8" -> "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_7" ;
-"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_1" [label="1: Start method_div1_ptr\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 40]\n " color=yellow style=filled]
+"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_1" [label="1: Start method_div1_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 40]\n " color=yellow style=filled]
 	
 
 	 "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_1" -> "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_5" ;
@@ -295,23 +295,23 @@ digraph iCFG {
 	
 
 	 "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_4" -> "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_2" ;
-"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_5" [label="5: Prune (true branch) \n   n$0=*&x:class X* [line 41]\n  PRUNE((n$0 != 0), true); [line 41]\n " shape="invhouse"]
+"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 41]\n  PRUNE((n$0 != 0), true); [line 41]\n " shape="invhouse"]
 	
 
 	 "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_5" -> "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_8" ;
-"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_6" [label="6: Prune (false branch) \n   n$0=*&x:class X* [line 41]\n  PRUNE((n$0 == 0), false); [line 41]\n " shape="invhouse"]
+"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 41]\n  PRUNE((n$0 == 0), false); [line 41]\n " shape="invhouse"]
 	
 
 	 "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_6" -> "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_3" ;
-"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_7" [label="7:  Return Stmt \n   n$1=*&x:class X* [line 43]\n  _=*n$1:class X [line 43]\n  n$3=_fun_X_div(n$1:class X*) [line 43]\n  *&return:int=n$3 [line 43]\n " shape="box"]
+"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_7" [label="7:  Return Stmt \n   n$1=*&x:X* [line 43]\n  _=*n$1:X [line 43]\n  n$3=_fun_X_div(n$1:X*) [line 43]\n  *&return:int=n$3 [line 43]\n " shape="box"]
 	
 
 	 "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_7" -> "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_2" ;
-"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_8" [label="8:  Call _fun_nonzero_ptr \n   n$4=*&x:class X* [line 42]\n  _fun_nonzero_ptr(n$4:class X*) [line 42]\n " shape="box"]
+"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_8" [label="8:  Call _fun_nonzero_ptr \n   n$4=*&x:X* [line 42]\n  _fun_nonzero_ptr(n$4:X*) [line 42]\n " shape="box"]
 	
 
 	 "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_8" -> "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_7" ;
-"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_1" [label="1: Start field_div0_ptr\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
+"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_1" [label="1: Start field_div0_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 47]\n " color=yellow style=filled]
 	
 
 	 "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_1" -> "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_5" ;
@@ -327,23 +327,23 @@ digraph iCFG {
 	
 
 	 "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_4" -> "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_2" ;
-"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_5" [label="5: Prune (true branch) \n   n$0=*&x:class X* [line 48]\n  PRUNE((n$0 != 0), true); [line 48]\n " shape="invhouse"]
+"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 48]\n  PRUNE((n$0 != 0), true); [line 48]\n " shape="invhouse"]
 	
 
 	 "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_5" -> "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_8" ;
-"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_6" [label="6: Prune (false branch) \n   n$0=*&x:class X* [line 48]\n  PRUNE((n$0 == 0), false); [line 48]\n " shape="invhouse"]
+"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 48]\n  PRUNE((n$0 == 0), false); [line 48]\n " shape="invhouse"]
 	
 
 	 "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_6" -> "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_3" ;
-"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_7" [label="7:  Return Stmt \n   n$1=*&x:class X* [line 50]\n  _=*n$1:class X [line 50]\n  n$3=_fun_X_div(n$1:class X*) [line 50]\n  *&return:int=n$3 [line 50]\n " shape="box"]
+"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_7" [label="7:  Return Stmt \n   n$1=*&x:X* [line 50]\n  _=*n$1:X [line 50]\n  n$3=_fun_X_div(n$1:X*) [line 50]\n  *&return:int=n$3 [line 50]\n " shape="box"]
 	
 
 	 "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_7" -> "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_2" ;
-"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_8" [label="8:  Call _fun_set_field_ptr \n   n$4=*&x:class X* [line 49]\n  _fun_set_field_ptr(n$4:class X*,0:int) [line 49]\n " shape="box"]
+"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_8" [label="8:  Call _fun_set_field_ptr \n   n$4=*&x:X* [line 49]\n  _fun_set_field_ptr(n$4:X*,0:int) [line 49]\n " shape="box"]
 	
 
 	 "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_8" -> "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_7" ;
-"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_1" [label="1: Start field_div1_ptr\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 54]\n " color=yellow style=filled]
+"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_1" [label="1: Start field_div1_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 54]\n " color=yellow style=filled]
 	
 
 	 "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_1" -> "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_5" ;
@@ -359,123 +359,123 @@ digraph iCFG {
 	
 
 	 "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_4" -> "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_2" ;
-"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_5" [label="5: Prune (true branch) \n   n$0=*&x:class X* [line 55]\n  PRUNE((n$0 != 0), true); [line 55]\n " shape="invhouse"]
+"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 55]\n  PRUNE((n$0 != 0), true); [line 55]\n " shape="invhouse"]
 	
 
 	 "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_5" -> "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_8" ;
-"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_6" [label="6: Prune (false branch) \n   n$0=*&x:class X* [line 55]\n  PRUNE((n$0 == 0), false); [line 55]\n " shape="invhouse"]
+"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 55]\n  PRUNE((n$0 == 0), false); [line 55]\n " shape="invhouse"]
 	
 
 	 "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_6" -> "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_3" ;
-"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_7" [label="7:  Return Stmt \n   n$1=*&x:class X* [line 57]\n  _=*n$1:class X [line 57]\n  n$3=_fun_X_div(n$1:class X*) [line 57]\n  *&return:int=n$3 [line 57]\n " shape="box"]
+"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_7" [label="7:  Return Stmt \n   n$1=*&x:X* [line 57]\n  _=*n$1:X [line 57]\n  n$3=_fun_X_div(n$1:X*) [line 57]\n  *&return:int=n$3 [line 57]\n " shape="box"]
 	
 
 	 "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_7" -> "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_2" ;
-"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_8" [label="8:  Call _fun_set_field_ptr \n   n$4=*&x:class X* [line 56]\n  _fun_set_field_ptr(n$4:class X*,1:int) [line 56]\n " shape="box"]
+"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_8" [label="8:  Call _fun_set_field_ptr \n   n$4=*&x:X* [line 56]\n  _fun_set_field_ptr(n$4:X*,1:int) [line 56]\n " shape="box"]
 	
 
 	 "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_8" -> "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_7" ;
-"set_field_ptr#_Z13set_field_ptrP1Xi.8c536badb4e0c86a919cf49aba686452_1" [label="1: Start set_field_ptr\nFormals:  x:class X* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+"set_field_ptr#_Z13set_field_ptrP1Xi.8c536badb4e0c86a919cf49aba686452_1" [label="1: Start set_field_ptr\nFormals:  x:X* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
 	
 
 	 "set_field_ptr#_Z13set_field_ptrP1Xi.8c536badb4e0c86a919cf49aba686452_1" -> "set_field_ptr#_Z13set_field_ptrP1Xi.8c536badb4e0c86a919cf49aba686452_3" ;
 "set_field_ptr#_Z13set_field_ptrP1Xi.8c536badb4e0c86a919cf49aba686452_2" [label="2: Exit set_field_ptr \n  " color=yellow style=filled]
 	
 
-"set_field_ptr#_Z13set_field_ptrP1Xi.8c536badb4e0c86a919cf49aba686452_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&x:class X* [line 21]\n  n$1=*&val:int [line 21]\n  *n$0.f:int=n$1 [line 21]\n " shape="box"]
+"set_field_ptr#_Z13set_field_ptrP1Xi.8c536badb4e0c86a919cf49aba686452_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&x:X* [line 21]\n  n$1=*&val:int [line 21]\n  *n$0.f:int=n$1 [line 21]\n " shape="box"]
 	
 
 	 "set_field_ptr#_Z13set_field_ptrP1Xi.8c536badb4e0c86a919cf49aba686452_3" -> "set_field_ptr#_Z13set_field_ptrP1Xi.8c536badb4e0c86a919cf49aba686452_2" ;
-"zero_ref#_Z8zero_refR1X.0a5427d25f306d5f6b69814ca9bf9af3_1" [label="1: Start zero_ref\nFormals:  x:class X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+"zero_ref#_Z8zero_refR1X.0a5427d25f306d5f6b69814ca9bf9af3_1" [label="1: Start zero_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
 	
 
 	 "zero_ref#_Z8zero_refR1X.0a5427d25f306d5f6b69814ca9bf9af3_1" -> "zero_ref#_Z8zero_refR1X.0a5427d25f306d5f6b69814ca9bf9af3_3" ;
 "zero_ref#_Z8zero_refR1X.0a5427d25f306d5f6b69814ca9bf9af3_2" [label="2: Exit zero_ref \n  " color=yellow style=filled]
 	
 
-"zero_ref#_Z8zero_refR1X.0a5427d25f306d5f6b69814ca9bf9af3_3" [label="3:  Call _fun_X_zero \n   n$0=*&x:class X& [line 23]\n  _=*n$0:class X [line 23]\n  _fun_X_zero(n$0:class X&) [line 23]\n " shape="box"]
+"zero_ref#_Z8zero_refR1X.0a5427d25f306d5f6b69814ca9bf9af3_3" [label="3:  Call _fun_X_zero \n   n$0=*&x:X& [line 23]\n  _=*n$0:X [line 23]\n  _fun_X_zero(n$0:X&) [line 23]\n " shape="box"]
 	
 
 	 "zero_ref#_Z8zero_refR1X.0a5427d25f306d5f6b69814ca9bf9af3_3" -> "zero_ref#_Z8zero_refR1X.0a5427d25f306d5f6b69814ca9bf9af3_2" ;
-"nonzero_ref#_Z11nonzero_refR1X.1902c42313fd460262d4050f1262b76c_1" [label="1: Start nonzero_ref\nFormals:  x:class X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+"nonzero_ref#_Z11nonzero_refR1X.1902c42313fd460262d4050f1262b76c_1" [label="1: Start nonzero_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
 	
 
 	 "nonzero_ref#_Z11nonzero_refR1X.1902c42313fd460262d4050f1262b76c_1" -> "nonzero_ref#_Z11nonzero_refR1X.1902c42313fd460262d4050f1262b76c_3" ;
 "nonzero_ref#_Z11nonzero_refR1X.1902c42313fd460262d4050f1262b76c_2" [label="2: Exit nonzero_ref \n  " color=yellow style=filled]
 	
 
-"nonzero_ref#_Z11nonzero_refR1X.1902c42313fd460262d4050f1262b76c_3" [label="3:  Call _fun_X_nonzero \n   n$0=*&x:class X& [line 25]\n  _=*n$0:class X [line 25]\n  _fun_X_nonzero(n$0:class X&) [line 25]\n " shape="box"]
+"nonzero_ref#_Z11nonzero_refR1X.1902c42313fd460262d4050f1262b76c_3" [label="3:  Call _fun_X_nonzero \n   n$0=*&x:X& [line 25]\n  _=*n$0:X [line 25]\n  _fun_X_nonzero(n$0:X&) [line 25]\n " shape="box"]
 	
 
 	 "nonzero_ref#_Z11nonzero_refR1X.1902c42313fd460262d4050f1262b76c_3" -> "nonzero_ref#_Z11nonzero_refR1X.1902c42313fd460262d4050f1262b76c_2" ;
-"method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_1" [label="1: Start method_div0_ref\nFormals:  x:class X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 85]\n " color=yellow style=filled]
+"method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_1" [label="1: Start method_div0_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 85]\n " color=yellow style=filled]
 	
 
 	 "method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_1" -> "method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_4" ;
 "method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_2" [label="2: Exit method_div0_ref \n  " color=yellow style=filled]
 	
 
-"method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_3" [label="3:  Return Stmt \n   n$0=*&x:class X& [line 87]\n  _=*n$0:class X [line 87]\n  n$2=_fun_X_div(n$0:class X&) [line 87]\n  *&return:int=n$2 [line 87]\n " shape="box"]
+"method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 87]\n  _=*n$0:X [line 87]\n  n$2=_fun_X_div(n$0:X&) [line 87]\n  *&return:int=n$2 [line 87]\n " shape="box"]
 	
 
 	 "method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_3" -> "method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_2" ;
-"method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_4" [label="4:  Call _fun_zero_ref \n   n$3=*&x:class X& [line 86]\n  _fun_zero_ref(n$3:class X&) [line 86]\n " shape="box"]
+"method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_4" [label="4:  Call _fun_zero_ref \n   n$3=*&x:X& [line 86]\n  _fun_zero_ref(n$3:X&) [line 86]\n " shape="box"]
 	
 
 	 "method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_4" -> "method_div0_ref#_Z15method_div0_refR1X.1bb655e06dd728080f6fee4d301fb52f_3" ;
-"method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_1" [label="1: Start method_div1_ref\nFormals:  x:class X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 90]\n " color=yellow style=filled]
+"method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_1" [label="1: Start method_div1_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 90]\n " color=yellow style=filled]
 	
 
 	 "method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_1" -> "method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_4" ;
 "method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_2" [label="2: Exit method_div1_ref \n  " color=yellow style=filled]
 	
 
-"method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_3" [label="3:  Return Stmt \n   n$0=*&x:class X& [line 92]\n  _=*n$0:class X [line 92]\n  n$2=_fun_X_div(n$0:class X&) [line 92]\n  *&return:int=n$2 [line 92]\n " shape="box"]
+"method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 92]\n  _=*n$0:X [line 92]\n  n$2=_fun_X_div(n$0:X&) [line 92]\n  *&return:int=n$2 [line 92]\n " shape="box"]
 	
 
 	 "method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_3" -> "method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_2" ;
-"method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_4" [label="4:  Call _fun_nonzero_ref \n   n$3=*&x:class X& [line 91]\n  _fun_nonzero_ref(n$3:class X&) [line 91]\n " shape="box"]
+"method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_4" [label="4:  Call _fun_nonzero_ref \n   n$3=*&x:X& [line 91]\n  _fun_nonzero_ref(n$3:X&) [line 91]\n " shape="box"]
 	
 
 	 "method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_4" -> "method_div1_ref#_Z15method_div1_refR1X.daf6ae1a4983a7a4bac8877140436ff5_3" ;
-"field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_1" [label="1: Start field_div0_ref\nFormals:  x:class X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 95]\n " color=yellow style=filled]
+"field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_1" [label="1: Start field_div0_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 95]\n " color=yellow style=filled]
 	
 
 	 "field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_1" -> "field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_4" ;
 "field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_2" [label="2: Exit field_div0_ref \n  " color=yellow style=filled]
 	
 
-"field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_3" [label="3:  Return Stmt \n   n$0=*&x:class X& [line 97]\n  _=*n$0:class X [line 97]\n  n$2=_fun_X_div(n$0:class X&) [line 97]\n  *&return:int=n$2 [line 97]\n " shape="box"]
+"field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 97]\n  _=*n$0:X [line 97]\n  n$2=_fun_X_div(n$0:X&) [line 97]\n  *&return:int=n$2 [line 97]\n " shape="box"]
 	
 
 	 "field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_3" -> "field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_2" ;
-"field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_4" [label="4:  Call _fun_set_field_ref \n   n$3=*&x:class X& [line 96]\n  _fun_set_field_ref(n$3:class X&,0:int) [line 96]\n " shape="box"]
+"field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_4" [label="4:  Call _fun_set_field_ref \n   n$3=*&x:X& [line 96]\n  _fun_set_field_ref(n$3:X&,0:int) [line 96]\n " shape="box"]
 	
 
 	 "field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_4" -> "field_div0_ref#_Z14field_div0_refR1X.e9709515a31582ef46b6997717b6c9db_3" ;
-"field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_1" [label="1: Start field_div1_ref\nFormals:  x:class X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 100]\n " color=yellow style=filled]
+"field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_1" [label="1: Start field_div1_ref\nFormals:  x:X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 100]\n " color=yellow style=filled]
 	
 
 	 "field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_1" -> "field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_4" ;
 "field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_2" [label="2: Exit field_div1_ref \n  " color=yellow style=filled]
 	
 
-"field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_3" [label="3:  Return Stmt \n   n$0=*&x:class X& [line 102]\n  _=*n$0:class X [line 102]\n  n$2=_fun_X_div(n$0:class X&) [line 102]\n  *&return:int=n$2 [line 102]\n " shape="box"]
+"field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 102]\n  _=*n$0:X [line 102]\n  n$2=_fun_X_div(n$0:X&) [line 102]\n  *&return:int=n$2 [line 102]\n " shape="box"]
 	
 
 	 "field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_3" -> "field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_2" ;
-"field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_4" [label="4:  Call _fun_set_field_ref \n   n$3=*&x:class X& [line 101]\n  _fun_set_field_ref(n$3:class X&,1:int) [line 101]\n " shape="box"]
+"field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_4" [label="4:  Call _fun_set_field_ref \n   n$3=*&x:X& [line 101]\n  _fun_set_field_ref(n$3:X&,1:int) [line 101]\n " shape="box"]
 	
 
 	 "field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_4" -> "field_div1_ref#_Z14field_div1_refR1X.6dd1733293f8a4795c3423cdf157589b_3" ;
-"set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_1" [label="1: Start set_field_ref\nFormals:  x:class X& val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
+"set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_1" [label="1: Start set_field_ref\nFormals:  x:X& val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 27]\n " color=yellow style=filled]
 	
 
 	 "set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_1" -> "set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_3" ;
 "set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_2" [label="2: Exit set_field_ref \n  " color=yellow style=filled]
 	
 
-"set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&x:class X& [line 27]\n  n$1=*&val:int [line 27]\n  *n$0.f:int=n$1 [line 27]\n " shape="box"]
+"set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&x:X& [line 27]\n  n$1=*&val:int [line 27]\n  *n$0.f:int=n$1 [line 27]\n " shape="box"]
 	
 
 	 "set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_3" -> "set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_2" ;

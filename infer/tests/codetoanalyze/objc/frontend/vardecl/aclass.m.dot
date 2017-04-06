@@ -1,13 +1,13 @@
 /* @generated */
 digraph iCFG {
-"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_1" [label="1: Start AClass_sharedInstance\nFormals:  self:class AClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_1" [label="1: Start AClass_sharedInstance\nFormals:  self:AClass*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
 	 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_1" -> "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" ;
 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_2" [label="2: Exit AClass_sharedInstance \n  " color=yellow style=filled]
 	
 
-"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/vardecl/aclass.m>$aVariable:class NSObject* [line 21]\n  *&return:class NSObject*=n$0 [line 21]\n " shape="box"]
+"sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/vardecl/aclass.m>$aVariable:NSObject* [line 21]\n  *&return:NSObject*=n$0 [line 21]\n " shape="box"]
 	
 
 	 "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_3" -> "sharedInstance#AClass#instance.07ceaad875949bf6aaa9dc5e3605f563_2" ;

@@ -1,21 +1,21 @@
 /* @generated */
 digraph iCFG {
-"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_1" [label="1: Start should_have_div0\nFormals: \nLocals:  a:class GetterExample* \n   DECLARE_LOCALS(&return,&a); [line 14]\n " color=yellow style=filled]
+"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_1" [label="1: Start should_have_div0\nFormals: \nLocals:  a:GetterExample* \n   DECLARE_LOCALS(&return,&a); [line 14]\n " color=yellow style=filled]
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_1" -> "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_5" ;
 "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_2" [label="2: Exit should_have_div0 \n  " color=yellow style=filled]
 	
 
-"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_3" [label="3:  Return Stmt \n   n$0=*&a:class GetterExample* [line 17]\n  n$1=_fun_GetterExample_name(n$0:class GetterExample*) [line 17]\n  *&return:int=(1 / (n$1 - 5)) [line 17]\n " shape="box"]
+"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_3" [label="3:  Return Stmt \n   n$0=*&a:GetterExample* [line 17]\n  n$1=_fun_GetterExample_name(n$0:GetterExample*) [line 17]\n  *&return:int=(1 / (n$1 - 5)) [line 17]\n " shape="box"]
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_3" -> "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_2" ;
-"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_4" [label="4:  Message Call: setName: \n   n$2=*&a:class GetterExample* [line 16]\n  _fun_GetterExample_setName:(n$2:class GetterExample*,5:int) [line 16]\n " shape="box"]
+"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_4" [label="4:  Message Call: setName: \n   n$2=*&a:GetterExample* [line 16]\n  _fun_GetterExample_setName:(n$2:GetterExample*,5:int) [line 16]\n " shape="box"]
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_4" -> "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_3" ;
-"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_5" [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(class GetterExample):unsigned long) [line 15]\n  n$4=_fun_NSObject_init(n$3:class GetterExample*) virtual [line 15]\n  *&a:class GetterExample*=n$4 [line 15]\n " shape="box"]
+"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_5" [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(GetterExample):unsigned long) [line 15]\n  n$4=_fun_NSObject_init(n$3:GetterExample*) virtual [line 15]\n  *&a:GetterExample*=n$4 [line 15]\n " shape="box"]
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_5" -> "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_4" ;

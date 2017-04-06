@@ -1,124 +1,124 @@
 /* @generated */
 digraph iCFG {
-"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_1" [label="1: Start rect_area\nFormals: \nLocals:  ppoly1:class Polygon* rect:class Rectangle \n   DECLARE_LOCALS(&return,&ppoly1,&rect); [line 38]\n " color=yellow style=filled]
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_1" [label="1: Start rect_area\nFormals: \nLocals:  ppoly1:Polygon* rect:Rectangle \n   DECLARE_LOCALS(&return,&ppoly1,&rect); [line 38]\n " color=yellow style=filled]
 	
 
 	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_1" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_6" ;
 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_2" [label="2: Exit rect_area \n  " color=yellow style=filled]
 	
 
-"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_3" [label="3:  Return Stmt \n   n$0=*&ppoly1:class Polygon* [line 42]\n  _=*n$0:class Polygon [line 42]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) virtual [line 42]\n  *&return:int=(1 / (n$2 - 20)) [line 42]\n " shape="box"]
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_3" [label="3:  Return Stmt \n   n$0=*&ppoly1:Polygon* [line 42]\n  _=*n$0:Polygon [line 42]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 42]\n  *&return:int=(1 / (n$2 - 20)) [line 42]\n " shape="box"]
 	
 
 	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_3" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_2" ;
-"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly1:class Polygon* [line 41]\n  _=*n$3:class Polygon [line 41]\n  _fun_Polygon_set_values(n$3:class Polygon*,4:int,5:int) [line 41]\n " shape="box"]
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly1:Polygon* [line 41]\n  _=*n$3:Polygon [line 41]\n  _fun_Polygon_set_values(n$3:Polygon*,4:int,5:int) [line 41]\n " shape="box"]
 	
 
 	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_4" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_3" ;
-"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_5" [label="5:  DeclStmt \n   *&ppoly1:class Rectangle*=&rect [line 40]\n " shape="box"]
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_5" [label="5:  DeclStmt \n   *&ppoly1:Rectangle*=&rect [line 40]\n " shape="box"]
 	
 
 	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_5" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_4" ;
-"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_6" [label="6:  DeclStmt \n   _fun_Rectangle_Rectangle(&rect:class Rectangle*) [line 39]\n " shape="box"]
+"rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_6" [label="6:  DeclStmt \n   _fun_Rectangle_Rectangle(&rect:Rectangle*) [line 39]\n " shape="box"]
 	
 
 	 "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_6" -> "rect_area#_Z9rect_areav.bf55da8ee96103f5cb32d860c4d713b7_5" ;
-"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_1" [label="1: Start tri_area\nFormals: \nLocals:  ppoly2:class Polygon* poly:class Polygon trgl:class Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 45]\n " color=yellow style=filled]
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_1" [label="1: Start tri_area\nFormals: \nLocals:  ppoly2:Polygon* poly:Polygon trgl:Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 45]\n " color=yellow style=filled]
 	
 
 	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_1" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_7" ;
 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_2" [label="2: Exit tri_area \n  " color=yellow style=filled]
 	
 
-"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:class Polygon* [line 50]\n  _=*n$0:class Polygon [line 50]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) virtual [line 50]\n  *&return:int=(1 / (n$2 - 10)) [line 50]\n " shape="box"]
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 50]\n  _=*n$0:Polygon [line 50]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 50]\n  *&return:int=(1 / (n$2 - 10)) [line 50]\n " shape="box"]
 	
 
 	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_2" ;
-"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon* [line 49]\n  _=*n$3:class Polygon [line 49]\n  _fun_Polygon_set_values(n$3:class Polygon*,4:int,5:int) [line 49]\n " shape="box"]
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:Polygon* [line 49]\n  _=*n$3:Polygon [line 49]\n  _fun_Polygon_set_values(n$3:Polygon*,4:int,5:int) [line 49]\n " shape="box"]
 	
 
 	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" ;
-"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_5" [label="5:  DeclStmt \n   *&ppoly2:class Triangle*=&trgl [line 48]\n " shape="box"]
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_5" [label="5:  DeclStmt \n   *&ppoly2:Triangle*=&trgl [line 48]\n " shape="box"]
 	
 
 	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_5" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" ;
-"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_6" [label="6:  DeclStmt \n   _fun_Polygon_Polygon(&poly:class Polygon*) [line 47]\n " shape="box"]
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_6" [label="6:  DeclStmt \n   _fun_Polygon_Polygon(&poly:Polygon*) [line 47]\n " shape="box"]
 	
 
 	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_6" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_5" ;
-"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_7" [label="7:  DeclStmt \n   _fun_Triangle_Triangle(&trgl:class Triangle*) [line 46]\n " shape="box"]
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_7" [label="7:  DeclStmt \n   _fun_Triangle_Triangle(&trgl:Triangle*) [line 46]\n " shape="box"]
 	
 
 	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_7" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_6" ;
-"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_1" [label="1: Start poly_area\nFormals: \nLocals:  ppoly3:class Polygon* poly:class Polygon \n   DECLARE_LOCALS(&return,&ppoly3,&poly); [line 53]\n " color=yellow style=filled]
+"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_1" [label="1: Start poly_area\nFormals: \nLocals:  ppoly3:Polygon* poly:Polygon \n   DECLARE_LOCALS(&return,&ppoly3,&poly); [line 53]\n " color=yellow style=filled]
 	
 
 	 "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_1" -> "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_5" ;
 "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_2" [label="2: Exit poly_area \n  " color=yellow style=filled]
 	
 
-"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_3" [label="3:  Return Stmt \n   n$0=*&ppoly3:class Polygon* [line 56]\n  _=*n$0:class Polygon [line 56]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) virtual [line 56]\n  *&return:int=(1 / n$2) [line 56]\n " shape="box"]
+"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_3" [label="3:  Return Stmt \n   n$0=*&ppoly3:Polygon* [line 56]\n  _=*n$0:Polygon [line 56]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 56]\n  *&return:int=(1 / n$2) [line 56]\n " shape="box"]
 	
 
 	 "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_3" -> "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_2" ;
-"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_4" [label="4:  DeclStmt \n   *&ppoly3:class Polygon*=&poly [line 55]\n " shape="box"]
+"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_4" [label="4:  DeclStmt \n   *&ppoly3:Polygon*=&poly [line 55]\n " shape="box"]
 	
 
 	 "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_4" -> "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_3" ;
-"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_5" [label="5:  DeclStmt \n   _fun_Polygon_Polygon(&poly:class Polygon*) [line 54]\n " shape="box"]
+"poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_5" [label="5:  DeclStmt \n   _fun_Polygon_Polygon(&poly:Polygon*) [line 54]\n " shape="box"]
 	
 
 	 "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_5" -> "poly_area#_Z9poly_areav.cffcc4a1029e6a1c3f5c281b6368ebdb_4" ;
-"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_1" [label="1: Start tri_not_virtual_area\nFormals: \nLocals:  ppoly2:class Polygon* poly:class Polygon trgl:class Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 59]\n " color=yellow style=filled]
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_1" [label="1: Start tri_not_virtual_area\nFormals: \nLocals:  ppoly2:Polygon* poly:Polygon trgl:Triangle \n   DECLARE_LOCALS(&return,&ppoly2,&poly,&trgl); [line 59]\n " color=yellow style=filled]
 	
 
 	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_1" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_7" ;
 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_2" [label="2: Exit tri_not_virtual_area \n  " color=yellow style=filled]
 	
 
-"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:class Polygon* [line 64]\n  _=*n$0:class Polygon [line 64]\n  n$2=_fun_Polygon_area(n$0:class Polygon*) [line 64]\n  *&return:int=(1 / n$2) [line 64]\n " shape="box"]
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 64]\n  _=*n$0:Polygon [line 64]\n  n$2=_fun_Polygon_area(n$0:Polygon*) [line 64]\n  *&return:int=(1 / n$2) [line 64]\n " shape="box"]
 	
 
 	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_2" ;
-"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:class Polygon* [line 63]\n  _=*n$3:class Polygon [line 63]\n  _fun_Polygon_set_values(n$3:class Polygon*,4:int,5:int) [line 63]\n " shape="box"]
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:Polygon* [line 63]\n  _=*n$3:Polygon [line 63]\n  _fun_Polygon_set_values(n$3:Polygon*,4:int,5:int) [line 63]\n " shape="box"]
 	
 
 	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" ;
-"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_5" [label="5:  DeclStmt \n   *&ppoly2:class Triangle*=&trgl [line 62]\n " shape="box"]
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_5" [label="5:  DeclStmt \n   *&ppoly2:Triangle*=&trgl [line 62]\n " shape="box"]
 	
 
 	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_5" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" ;
-"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_6" [label="6:  DeclStmt \n   _fun_Polygon_Polygon(&poly:class Polygon*) [line 61]\n " shape="box"]
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_6" [label="6:  DeclStmt \n   _fun_Polygon_Polygon(&poly:Polygon*) [line 61]\n " shape="box"]
 	
 
 	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_6" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_5" ;
-"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_7" [label="7:  DeclStmt \n   _fun_Triangle_Triangle(&trgl:class Triangle*) [line 60]\n " shape="box"]
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_7" [label="7:  DeclStmt \n   _fun_Triangle_Triangle(&trgl:Triangle*) [line 60]\n " shape="box"]
 	
 
 	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_7" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_6" ;
-"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_1" [label="1: Start call_virtual_destructor\nFormals: \nLocals:  trgl:class Polygon* \n   DECLARE_LOCALS(&return,&trgl); [line 70]\n " color=yellow style=filled]
+"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_1" [label="1: Start call_virtual_destructor\nFormals: \nLocals:  trgl:Polygon* \n   DECLARE_LOCALS(&return,&trgl); [line 70]\n " color=yellow style=filled]
 	
 
 	 "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_1" -> "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" ;
 "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_2" [label="2: Exit call_virtual_destructor \n  " color=yellow style=filled]
 	
 
-"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_3" [label="3:  Call delete \n   n$0=*&trgl:class Polygon* [line 72]\n  _fun___delete(n$0:class Polygon*) [line 72]\n " shape="box"]
+"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_3" [label="3:  Call delete \n   n$0=*&trgl:Polygon* [line 72]\n  _fun___delete(n$0:Polygon*) [line 72]\n " shape="box"]
 	
 
 	 "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_3" -> "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_2" ;
-"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" [label="4:  DeclStmt \n   n$1=_fun___new(sizeof(class Triangle):unsigned long) [line 71]\n  _fun_Triangle_Triangle(n$1:class Triangle*) [line 71]\n  *&trgl:class Triangle*=n$1 [line 71]\n " shape="box"]
+"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" [label="4:  DeclStmt \n   n$1=_fun___new(sizeof(Triangle):unsigned long) [line 71]\n  _fun_Triangle_Triangle(n$1:Triangle*) [line 71]\n  *&trgl:Triangle*=n$1 [line 71]\n " shape="box"]
 	
 
 	 "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" -> "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_3" ;
-"Polygon#Polygon#{_ZN7PolygonC1Ev}.421ca45184d2ec3aafd11a446e5d5d84_1" [label="1: Start Polygon_Polygon\nFormals:  this:class Polygon*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+"Polygon#Polygon#{_ZN7PolygonC1Ev}.421ca45184d2ec3aafd11a446e5d5d84_1" [label="1: Start Polygon_Polygon\nFormals:  this:Polygon*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 "Polygon#Polygon#{_ZN7PolygonC1Ev}.421ca45184d2ec3aafd11a446e5d5d84_1" -> "Polygon#Polygon#{_ZN7PolygonC1Ev}.421ca45184d2ec3aafd11a446e5d5d84_2" ;
 "Polygon#Polygon#{_ZN7PolygonC1Ev}.421ca45184d2ec3aafd11a446e5d5d84_2" [label="2: Exit Polygon_Polygon \n  " color=yellow style=filled]
 	
 
-"area#Polygon#(_ZN7Polygon4areaEv).dfba58af1eaf2d4698f598fd9ad814a5_1" [label="1: Start Polygon_area\nFormals:  this:class Polygon*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
+"area#Polygon#(_ZN7Polygon4areaEv).dfba58af1eaf2d4698f598fd9ad814a5_1" [label="1: Start Polygon_area\nFormals:  this:Polygon*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20]\n " color=yellow style=filled]
 	
 
 	 "area#Polygon#(_ZN7Polygon4areaEv).dfba58af1eaf2d4698f598fd9ad814a5_1" -> "area#Polygon#(_ZN7Polygon4areaEv).dfba58af1eaf2d4698f598fd9ad814a5_3" ;
@@ -129,62 +129,62 @@ digraph iCFG {
 	
 
 	 "area#Polygon#(_ZN7Polygon4areaEv).dfba58af1eaf2d4698f598fd9ad814a5_3" -> "area#Polygon#(_ZN7Polygon4areaEv).dfba58af1eaf2d4698f598fd9ad814a5_2" ;
-"set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_1" [label="1: Start Polygon_set_values\nFormals:  this:class Polygon* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+"set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_1" [label="1: Start Polygon_set_values\nFormals:  this:Polygon* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
 	 "set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_1" -> "set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_4" ;
 "set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_2" [label="2: Exit Polygon_set_values \n  " color=yellow style=filled]
 	
 
-"set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class Polygon* [line 18]\n  n$1=*&b:int [line 18]\n  *n$0.height:int=n$1 [line 18]\n " shape="box"]
+"set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:Polygon* [line 18]\n  n$1=*&b:int [line 18]\n  *n$0.height:int=n$1 [line 18]\n " shape="box"]
 	
 
 	 "set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_3" -> "set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_2" ;
-"set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:class Polygon* [line 17]\n  n$3=*&a:int [line 17]\n  *n$2.width:int=n$3 [line 17]\n " shape="box"]
+"set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:Polygon* [line 17]\n  n$3=*&a:int [line 17]\n  *n$2.width:int=n$3 [line 17]\n " shape="box"]
 	
 
 	 "set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_4" -> "set_values#Polygon#(_ZN7Polygon10set_valuesEii).c6db3996e5f613cd775c9a0b4dd3d608_3" ;
-"Rectangle#Rectangle#{_ZN9RectangleC1Ev}.42e4720a0546b7f8766a90ba8bf749ed_1" [label="1: Start Rectangle_Rectangle\nFormals:  this:class Rectangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+"Rectangle#Rectangle#{_ZN9RectangleC1Ev}.42e4720a0546b7f8766a90ba8bf749ed_1" [label="1: Start Rectangle_Rectangle\nFormals:  this:Rectangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
 	
 
 	 "Rectangle#Rectangle#{_ZN9RectangleC1Ev}.42e4720a0546b7f8766a90ba8bf749ed_1" -> "Rectangle#Rectangle#{_ZN9RectangleC1Ev}.42e4720a0546b7f8766a90ba8bf749ed_3" ;
 "Rectangle#Rectangle#{_ZN9RectangleC1Ev}.42e4720a0546b7f8766a90ba8bf749ed_2" [label="2: Exit Rectangle_Rectangle \n  " color=yellow style=filled]
 	
 
-"Rectangle#Rectangle#{_ZN9RectangleC1Ev}.42e4720a0546b7f8766a90ba8bf749ed_3" [label="3:  Constructor Init \n   n$0=*&this:class Rectangle* [line 23]\n  _fun_Polygon_Polygon(n$0:class Rectangle*) [line 23]\n " shape="box"]
+"Rectangle#Rectangle#{_ZN9RectangleC1Ev}.42e4720a0546b7f8766a90ba8bf749ed_3" [label="3:  Constructor Init \n   n$0=*&this:Rectangle* [line 23]\n  _fun_Polygon_Polygon(n$0:Rectangle*) [line 23]\n " shape="box"]
 	
 
 	 "Rectangle#Rectangle#{_ZN9RectangleC1Ev}.42e4720a0546b7f8766a90ba8bf749ed_3" -> "Rectangle#Rectangle#{_ZN9RectangleC1Ev}.42e4720a0546b7f8766a90ba8bf749ed_2" ;
-"area#Rectangle#(_ZN7Polygon4areaEv).fc221a4ddc1d5709875f329895d807ea_1" [label="1: Start Rectangle_area\nFormals:  this:class Rectangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+"area#Rectangle#(_ZN7Polygon4areaEv).fc221a4ddc1d5709875f329895d807ea_1" [label="1: Start Rectangle_area\nFormals:  this:Rectangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
 	 "area#Rectangle#(_ZN7Polygon4areaEv).fc221a4ddc1d5709875f329895d807ea_1" -> "area#Rectangle#(_ZN7Polygon4areaEv).fc221a4ddc1d5709875f329895d807ea_3" ;
 "area#Rectangle#(_ZN7Polygon4areaEv).fc221a4ddc1d5709875f329895d807ea_2" [label="2: Exit Rectangle_area \n  " color=yellow style=filled]
 	
 
-"area#Rectangle#(_ZN7Polygon4areaEv).fc221a4ddc1d5709875f329895d807ea_3" [label="3:  Return Stmt \n   n$0=*&this:class Rectangle* [line 26]\n  n$1=*n$0.width:int [line 26]\n  n$2=*&this:class Rectangle* [line 26]\n  n$3=*n$2.height:int [line 26]\n  *&return:int=(n$1 * n$3) [line 26]\n " shape="box"]
+"area#Rectangle#(_ZN7Polygon4areaEv).fc221a4ddc1d5709875f329895d807ea_3" [label="3:  Return Stmt \n   n$0=*&this:Rectangle* [line 26]\n  n$1=*n$0.width:int [line 26]\n  n$2=*&this:Rectangle* [line 26]\n  n$3=*n$2.height:int [line 26]\n  *&return:int=(n$1 * n$3) [line 26]\n " shape="box"]
 	
 
 	 "area#Rectangle#(_ZN7Polygon4areaEv).fc221a4ddc1d5709875f329895d807ea_3" -> "area#Rectangle#(_ZN7Polygon4areaEv).fc221a4ddc1d5709875f329895d807ea_2" ;
-"Triangle#Triangle#{_ZN8TriangleC1Ev}.aa76cc2cdb1a882a316a78e630da4121_1" [label="1: Start Triangle_Triangle\nFormals:  this:class Triangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
+"Triangle#Triangle#{_ZN8TriangleC1Ev}.aa76cc2cdb1a882a316a78e630da4121_1" [label="1: Start Triangle_Triangle\nFormals:  this:Triangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 29]\n " color=yellow style=filled]
 	
 
 	 "Triangle#Triangle#{_ZN8TriangleC1Ev}.aa76cc2cdb1a882a316a78e630da4121_1" -> "Triangle#Triangle#{_ZN8TriangleC1Ev}.aa76cc2cdb1a882a316a78e630da4121_3" ;
 "Triangle#Triangle#{_ZN8TriangleC1Ev}.aa76cc2cdb1a882a316a78e630da4121_2" [label="2: Exit Triangle_Triangle \n  " color=yellow style=filled]
 	
 
-"Triangle#Triangle#{_ZN8TriangleC1Ev}.aa76cc2cdb1a882a316a78e630da4121_3" [label="3:  Constructor Init \n   n$0=*&this:class Triangle* [line 29]\n  _fun_Polygon_Polygon(n$0:class Triangle*) [line 29]\n " shape="box"]
+"Triangle#Triangle#{_ZN8TriangleC1Ev}.aa76cc2cdb1a882a316a78e630da4121_3" [label="3:  Constructor Init \n   n$0=*&this:Triangle* [line 29]\n  _fun_Polygon_Polygon(n$0:Triangle*) [line 29]\n " shape="box"]
 	
 
 	 "Triangle#Triangle#{_ZN8TriangleC1Ev}.aa76cc2cdb1a882a316a78e630da4121_3" -> "Triangle#Triangle#{_ZN8TriangleC1Ev}.aa76cc2cdb1a882a316a78e630da4121_2" ;
-"~Triangle#Triangle#(_ZN7PolygonD0Ev).a5b74549c8daf4ed9f14d2f3048b49ad_1" [label="1: Start Triangle_~Triangle\nFormals:  this:class Triangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
+"~Triangle#Triangle#(_ZN7PolygonD0Ev).a5b74549c8daf4ed9f14d2f3048b49ad_1" [label="1: Start Triangle_~Triangle\nFormals:  this:Triangle*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
 	
 
 	 "~Triangle#Triangle#(_ZN7PolygonD0Ev).a5b74549c8daf4ed9f14d2f3048b49ad_1" -> "~Triangle#Triangle#(_ZN7PolygonD0Ev).a5b74549c8daf4ed9f14d2f3048b49ad_2" ;
 "~Triangle#Triangle#(_ZN7PolygonD0Ev).a5b74549c8daf4ed9f14d2f3048b49ad_2" [label="2: Exit Triangle_~Triangle \n  " color=yellow style=filled]
 	
 
-"area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_1" [label="1: Start Triangle_area\nFormals:  this:class Triangle*\nLocals:  x:int \n   DECLARE_LOCALS(&return,&x); [line 32]\n " color=yellow style=filled]
+"area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_1" [label="1: Start Triangle_area\nFormals:  this:Triangle*\nLocals:  x:int \n   DECLARE_LOCALS(&return,&x); [line 32]\n " color=yellow style=filled]
 	
 
 	 "area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_1" -> "area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_4" ;
@@ -195,7 +195,7 @@ digraph iCFG {
 	
 
 	 "area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_3" -> "area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_2" ;
-"area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_4" [label="4:  DeclStmt \n   n$1=*&this:class Triangle* [line 33]\n  n$2=*n$1.width:int [line 33]\n  n$3=*&this:class Triangle* [line 33]\n  n$4=*n$3.height:int [line 33]\n  *&x:int=(n$2 * n$4) [line 33]\n " shape="box"]
+"area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_4" [label="4:  DeclStmt \n   n$1=*&this:Triangle* [line 33]\n  n$2=*n$1.width:int [line 33]\n  n$3=*&this:Triangle* [line 33]\n  n$4=*n$3.height:int [line 33]\n  *&x:int=(n$2 * n$4) [line 33]\n " shape="box"]
 	
 
 	 "area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_4" -> "area#Triangle#(_ZN7Polygon4areaEv).cad7cc6f329686733353990ac33203ad_3" ;

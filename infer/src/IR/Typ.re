@@ -256,9 +256,9 @@ let rec pp_full pe f =>
   fun
   | Tstruct tname =>
     if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
-      F.fprintf f "%s" (Name.to_string tname |> Escape.escape_xml)
+      F.fprintf f "%s" (Name.name tname |> Escape.escape_xml)
     } else {
-      F.fprintf f "%s" (Name.to_string tname)
+      F.fprintf f "%s" (Name.name tname)
     }
   | Tint ik => F.fprintf f "%s" (ikind_to_string ik)
   | Tfloat fk => F.fprintf f "%s" (fkind_to_string fk)

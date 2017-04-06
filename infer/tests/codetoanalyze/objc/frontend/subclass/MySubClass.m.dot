@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_1" [label="1: Start MySubclass_myNumber\nFormals:  self:class MySubclass*\nLocals:  subclassNumber:int \n   DECLARE_LOCALS(&return,&subclassNumber); [line 15]\n " color=yellow style=filled]
+"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_1" [label="1: Start MySubclass_myNumber\nFormals:  self:MySubclass*\nLocals:  subclassNumber:int \n   DECLARE_LOCALS(&return,&subclassNumber); [line 15]\n " color=yellow style=filled]
 	
 
 	 "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_1" -> "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_4" ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_3" -> "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_2" ;
-"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_4" [label="4:  DeclStmt \n   n$1=*&self:class MySubclass* [line 17]\n  n$2=_fun_MyClass_myNumber(n$1:class MySubclass*) [line 17]\n  *&subclassNumber:int=(n$2 + 1) [line 17]\n " shape="box"]
+"myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_4" [label="4:  DeclStmt \n   n$1=*&self:MySubclass* [line 17]\n  n$2=_fun_MyClass_myNumber(n$1:MySubclass*) [line 17]\n  *&subclassNumber:int=(n$2 + 1) [line 17]\n " shape="box"]
 	
 
 	 "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_4" -> "myNumber#MySubclass#instance.8e9ae0ac35cf895ff25e7570cdce81aa_3" ;

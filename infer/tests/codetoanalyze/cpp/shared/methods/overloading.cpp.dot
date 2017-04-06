@@ -1,21 +1,21 @@
 /* @generated */
 digraph iCFG {
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  a_ptr:class A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 20]\n " color=yellow style=filled]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  a_ptr:A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 20]\n " color=yellow style=filled]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" ;
 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  Call _fun_A_fun \n   n$0=*&a_ptr:class A* [line 24]\n  _=*n$0:class A [line 24]\n  n$2=_fun_A_fun(n$0:class A*,1:int,2:int,3:int) [line 24]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  Call _fun_A_fun \n   n$0=*&a_ptr:A* [line 24]\n  _=*n$0:A [line 24]\n  n$2=_fun_A_fun(n$0:A*,1:int,2:int,3:int) [line 24]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" [label="4:  Call _fun_A_fun \n   n$3=*&a_ptr:class A* [line 23]\n  _=*n$3:class A [line 23]\n  n$5=_fun_A_fun(n$3:class A*,1:int,2:int) [line 23]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" [label="4:  Call _fun_A_fun \n   n$3=*&a_ptr:A* [line 23]\n  _=*n$3:A [line 23]\n  n$5=_fun_A_fun(n$3:A*,1:int,2:int) [line 23]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" ;
-"fun#A#(_ZN1A3funEii).50fc6384ea44570716e095dac8c2e08e_1" [label="1: Start A_fun\nFormals:  this:class A* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+"fun#A#(_ZN1A3funEii).50fc6384ea44570716e095dac8c2e08e_1" [label="1: Start A_fun\nFormals:  this:A* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 "fun#A#(_ZN1A3funEii).50fc6384ea44570716e095dac8c2e08e_1" -> "fun#A#(_ZN1A3funEii).50fc6384ea44570716e095dac8c2e08e_3" ;
@@ -26,7 +26,7 @@ digraph iCFG {
 	
 
 	 "fun#A#(_ZN1A3funEii).50fc6384ea44570716e095dac8c2e08e_3" -> "fun#A#(_ZN1A3funEii).50fc6384ea44570716e095dac8c2e08e_2" ;
-"fun#A#(_ZN1A3funEiii).fd571858806362479f9333ab7f83f22d_1" [label="1: Start A_fun\nFormals:  this:class A* a:int b:int c:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+"fun#A#(_ZN1A3funEiii).fd571858806362479f9333ab7f83f22d_1" [label="1: Start A_fun\nFormals:  this:A* a:int b:int c:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
 	 "fun#A#(_ZN1A3funEiii).fd571858806362479f9333ab7f83f22d_1" -> "fun#A#(_ZN1A3funEiii).fd571858806362479f9333ab7f83f22d_3" ;

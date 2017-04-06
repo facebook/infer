@@ -7,7 +7,7 @@ digraph iCFG {
 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" [label="2: Exit __infer_globals_initializer_global \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global:class X*) [line 15]\n " shape="box"]
+"__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" [label="3:  DeclStmt \n   _fun_X_X(&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global:X*) [line 15]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
@@ -18,7 +18,7 @@ digraph iCFG {
 "get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_2" [label="2: Exit get_ptr \n  " color=yellow style=filled]
 	
 
-"get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_3" [label="3:  Return Stmt \n   *&return:class X*=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 16]\n " shape="box"]
+"get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_3" [label="3:  Return Stmt \n   *&return:X*=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 16]\n " shape="box"]
 	
 
 	 "get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_3" -> "get_ptr#_Z7get_ptrv.c666d84ceda5774e37973f9b5eb5f9dc_2" ;
@@ -29,7 +29,7 @@ digraph iCFG {
 "get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_2" [label="2: Exit get_ref \n  " color=yellow style=filled]
 	
 
-"get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_3" [label="3:  Return Stmt \n   *&return:class X&=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 17]\n " shape="box"]
+"get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_3" [label="3:  Return Stmt \n   *&return:X&=&#GB<codetoanalyze/cpp/shared/reference/member_access_from_return.cpp>$global [line 17]\n " shape="box"]
 	
 
 	 "get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_3" -> "get_ref#_Z7get_refv.18a1c6f6ff8f44de514adaebcdd993e3_2" ;
@@ -40,7 +40,7 @@ digraph iCFG {
 "test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_2" [label="2: Exit test_ref \n  " color=yellow style=filled]
 	
 
-"test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_3" [label="3:  DeclStmt \n   n$0=_fun_get_ref() [line 21]\n  _=*n$0:class X [line 21]\n  n$2=_fun_X_call(n$0:class X&) [line 21]\n  *&c:int=n$2 [line 21]\n " shape="box"]
+"test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_3" [label="3:  DeclStmt \n   n$0=_fun_get_ref() [line 21]\n  _=*n$0:X [line 21]\n  n$2=_fun_X_call(n$0:X&) [line 21]\n  *&c:int=n$2 [line 21]\n " shape="box"]
 	
 
 	 "test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_3" -> "test_ref#_Z8test_refv.1afc11e036fdb103a653a26b25d469d6_2" ;
@@ -55,7 +55,7 @@ digraph iCFG {
 "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_2" [label="2: Exit test_ptr \n  " color=yellow style=filled]
 	
 
-"test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_3" [label="3:  DeclStmt \n   n$0=_fun_get_ptr() [line 26]\n  _=*n$0:class X [line 26]\n  n$2=_fun_X_call(n$0:class X*) [line 26]\n  *&c:int=n$2 [line 26]\n " shape="box"]
+"test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_3" [label="3:  DeclStmt \n   n$0=_fun_get_ptr() [line 26]\n  _=*n$0:X [line 26]\n  n$2=_fun_X_call(n$0:X*) [line 26]\n  *&c:int=n$2 [line 26]\n " shape="box"]
 	
 
 	 "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_3" -> "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_2" ;
@@ -63,21 +63,21 @@ digraph iCFG {
 	
 
 	 "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_4" -> "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_3" ;
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" ;
 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" ;
 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" [label="2: Exit X_call \n  " color=yellow style=filled]
 	
 
-"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" [label="3:  Return Stmt \n   n$0=*&this:class X* [line 12]\n  n$1=*n$0.f:int [line 12]\n  *&return:int=n$1 [line 12]\n " shape="box"]
+"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 12]\n  n$1=*n$0.f:int [line 12]\n  *&return:int=n$1 [line 12]\n " shape="box"]
 	
 
 	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" ;

@@ -1,70 +1,70 @@
 /* @generated */
 digraph iCFG {
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  y:class Y \n   DECLARE_LOCALS(&return,&y); [line 25]\n " color=yellow style=filled]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  y:Y \n   DECLARE_LOCALS(&return,&y); [line 25]\n " color=yellow style=filled]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" ;
 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  DeclStmt \n   _fun_Y_Y(&y:class Y*) [line 25]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  DeclStmt \n   _fun_Y_Y(&y:Y*) [line 25]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
 	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_5" ;
 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_3" [label="3:  Constructor Init \n   n$0=*&this:class X* [line 13]\n  *n$0.c:int=0 [line 13]\n " shape="box"]
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_3" [label="3:  Constructor Init \n   n$0=*&this:X* [line 13]\n  *n$0.c:int=0 [line 13]\n " shape="box"]
 	
 
 	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_3" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" ;
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_4" [label="4:  Constructor Init \n   n$1=*&this:class X* [line 12]\n  *n$1.b:int=-2 [line 12]\n " shape="box"]
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_4" [label="4:  Constructor Init \n   n$1=*&this:X* [line 12]\n  *n$1.b:int=-2 [line 12]\n " shape="box"]
 	
 
 	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_4" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_3" ;
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_5" [label="5:  Constructor Init \n   n$2=*&this:class X* [line 11]\n  *n$2.a:int=-1 [line 11]\n " shape="box"]
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_5" [label="5:  Constructor Init \n   n$2=*&this:X* [line 11]\n  *n$2.a:int=-1 [line 11]\n " shape="box"]
 	
 
 	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_5" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_4" ;
-"X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_1" [label="1: Start X_X\nFormals:  this:class X* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+"X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_1" [label="1: Start X_X\nFormals:  this:X* a:int b:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
 	 "X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_1" -> "X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_5" ;
 "X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_2" [label="2: Exit X_X \n  " color=yellow style=filled]
 	
 
-"X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_3" [label="3:  Constructor Init \n   n$0=*&this:class X* [line 13]\n  *n$0.c:int=0 [line 13]\n " shape="box"]
+"X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_3" [label="3:  Constructor Init \n   n$0=*&this:X* [line 13]\n  *n$0.c:int=0 [line 13]\n " shape="box"]
 	
 
 	 "X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_3" -> "X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_2" ;
-"X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_4" [label="4:  Constructor Init \n   n$1=*&this:class X* [line 12]\n  *n$1.b:int=-2 [line 12]\n " shape="box"]
+"X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_4" [label="4:  Constructor Init \n   n$1=*&this:X* [line 12]\n  *n$1.b:int=-2 [line 12]\n " shape="box"]
 	
 
 	 "X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_4" -> "X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_3" ;
-"X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_5" [label="5:  Constructor Init \n   n$2=*&this:class X* [line 16]\n  n$3=*&a:int [line 16]\n  n$4=*&b:int [line 16]\n  *n$2.a:int=(n$3 + n$4) [line 16]\n " shape="box"]
+"X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_5" [label="5:  Constructor Init \n   n$2=*&this:X* [line 16]\n  n$3=*&a:int [line 16]\n  n$4=*&b:int [line 16]\n  *n$2.a:int=(n$3 + n$4) [line 16]\n " shape="box"]
 	
 
 	 "X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_5" -> "X#X#{_ZN1XC1Eii}.e2853ee6cf74c8d545057ea8727411b1_4" ;
-"Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_1" [label="1: Start Y_Y\nFormals:  this:class Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+"Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_1" [label="1: Start Y_Y\nFormals:  this:Y*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
 	
 
 	 "Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_1" -> "Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_5" ;
 "Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_2" [label="2: Exit Y_Y \n  " color=yellow style=filled]
 	
 
-"Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_3" [label="3:  Constructor Init \n   n$0=*&this:class Y* [line 19]\n  _fun_X_X(n$0.x3:class X*) [line 19]\n " shape="box"]
+"Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_3" [label="3:  Constructor Init \n   n$0=*&this:Y* [line 19]\n  _fun_X_X(n$0.x3:X*) [line 19]\n " shape="box"]
 	
 
 	 "Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_3" -> "Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_2" ;
-"Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_4" [label="4:  Constructor Init \n   n$1=*&this:class Y* [line 21]\n  _fun_X_X(n$1.x2:class X*) [line 21]\n " shape="box"]
+"Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_4" [label="4:  Constructor Init \n   n$1=*&this:Y* [line 21]\n  _fun_X_X(n$1.x2:X*) [line 21]\n " shape="box"]
 	
 
 	 "Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_4" -> "Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_3" ;
-"Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_5" [label="5:  Constructor Init \n   n$2=*&this:class Y* [line 20]\n  _fun_X_X(n$2.x1:class X*,1:int,2:int) [line 20]\n " shape="box"]
+"Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_5" [label="5:  Constructor Init \n   n$2=*&this:Y* [line 20]\n  _fun_X_X(n$2.x1:X*,1:int,2:int) [line 20]\n " shape="box"]
 	
 
 	 "Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_5" -> "Y#Y#{_ZN1YC1Ev}.8153e7504f9d06ae076740de3711efca_4" ;

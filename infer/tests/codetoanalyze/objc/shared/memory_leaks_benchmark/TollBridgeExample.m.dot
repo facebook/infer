@@ -7,82 +7,82 @@ digraph iCFG {
 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_2" [label="2: Exit cfautorelease_test \n  " color=yellow style=filled]
 	
 
-"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" [label="3:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char*) [line 41]\n  n$1=_fun_CTFontCreateWithName(n$0:struct __CFString*,17.000000:double,0:struct CGAffineTransform*) [line 41]\n  n$2=_fun___objc_cast(n$1:void*,sizeof(void):unsigned long) [line 41]\n  *&return:struct __CTFont*=n$2 [line 41]\n " shape="box"]
+"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" [label="3:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char*) [line 41]\n  n$1=_fun_CTFontCreateWithName(n$0:__CFString*,17.000000:double,0:CGAffineTransform*) [line 41]\n  n$2=_fun___objc_cast(n$1:void*,sizeof(void):unsigned long) [line 41]\n  *&return:__CTFont*=n$2 [line 41]\n " shape="box"]
 	
 
 	 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" -> "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_2" ;
-"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_1" [label="1: Start bridgeDictionaryNoLeak\nFormals: \nLocals:  dict:struct __CFDictionary* bufferAttributes:class NSDictionary* \n   DECLARE_LOCALS(&return,&dict,&bufferAttributes); [line 44]\n " color=yellow style=filled]
+"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_1" [label="1: Start bridgeDictionaryNoLeak\nFormals: \nLocals:  dict:__CFDictionary* bufferAttributes:NSDictionary* \n   DECLARE_LOCALS(&return,&dict,&bufferAttributes); [line 44]\n " color=yellow style=filled]
 	
 
 	 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_1" -> "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" ;
 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_2" [label="2: Exit bridgeDictionaryNoLeak \n  " color=yellow style=filled]
 	
 
-"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" [label="3:  DeclStmt \n   n$0=*&bufferAttributes:class NSDictionary* [line 46]\n  *&dict:struct __CFDictionary*=n$0 [line 46]\n " shape="box"]
+"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" [label="3:  DeclStmt \n   n$0=*&bufferAttributes:NSDictionary* [line 46]\n  *&dict:__CFDictionary*=n$0 [line 46]\n " shape="box"]
 	
 
 	 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" -> "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_2" ;
-"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" [label="4:  DeclStmt \n   n$1=_fun_NSDictionary_dictionaryWithObjects:forKeys:count:(0:struct objc_object*) [line 45]\n  n$2=_fun_NSString_stringWithUTF8String:(\"key\":char*) [line 45]\n  n$3=_fun_NSDictionary_dictionaryWithObjects:forKeys:count:(n$1:struct objc_object*,n$2:struct objc_object*,0:struct objc_object*) [line 45]\n  *&bufferAttributes:class NSDictionary*=n$3 [line 45]\n " shape="box"]
+"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" [label="4:  DeclStmt \n   n$1=_fun_NSDictionary_dictionaryWithObjects:forKeys:count:(0:objc_object*) [line 45]\n  n$2=_fun_NSString_stringWithUTF8String:(\"key\":char*) [line 45]\n  n$3=_fun_NSDictionary_dictionaryWithObjects:forKeys:count:(n$1:objc_object*,n$2:objc_object*,0:objc_object*) [line 45]\n  *&bufferAttributes:NSDictionary*=n$3 [line 45]\n " shape="box"]
 	
 
 	 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" -> "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" ;
-"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_1" [label="1: Start TollBridgeExample_bridgeTransfer\nFormals:  self:class TollBridgeExample*\nLocals:  a:class NSLocale* nameRef:struct __CFLocale* \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 19]\n " color=yellow style=filled]
+"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_1" [label="1: Start TollBridgeExample_bridgeTransfer\nFormals:  self:TollBridgeExample*\nLocals:  a:NSLocale* nameRef:__CFLocale* \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 19]\n " color=yellow style=filled]
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_1" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" ;
 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_2" [label="2: Exit TollBridgeExample_bridgeTransfer \n  " color=yellow style=filled]
 	
 
-"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" [label="3:  DeclStmt \n   n$0=*&nameRef:struct __CFLocale* [line 21]\n  *&a:class NSLocale*=n$0 [line 21]\n " shape="box"]
+"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" [label="3:  DeclStmt \n   n$0=*&nameRef:__CFLocale* [line 21]\n  *&a:NSLocale*=n$0 [line 21]\n " shape="box"]
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_2" ;
-"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" [label="4:  DeclStmt \n   n$1=_fun_CFLocaleCreate(0:struct __CFAllocator*,0:struct __CFString*) [line 20]\n  *&nameRef:struct __CFLocale*=n$1 [line 20]\n " shape="box"]
+"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" [label="4:  DeclStmt \n   n$1=_fun_CFLocaleCreate(0:__CFAllocator*,0:__CFString*) [line 20]\n  *&nameRef:__CFLocale*=n$1 [line 20]\n " shape="box"]
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" ;
-"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_1" [label="1: Start TollBridgeExample_bridge\nFormals:  self:class TollBridgeExample*\nLocals:  a:class NSLocale* nameRef:struct __CFLocale* \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 24]\n " color=yellow style=filled]
+"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_1" [label="1: Start TollBridgeExample_bridge\nFormals:  self:TollBridgeExample*\nLocals:  a:NSLocale* nameRef:__CFLocale* \n   DECLARE_LOCALS(&return,&a,&nameRef); [line 24]\n " color=yellow style=filled]
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_1" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" ;
 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_2" [label="2: Exit TollBridgeExample_bridge \n  " color=yellow style=filled]
 	
 
-"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" [label="3:  DeclStmt \n   n$2=*&nameRef:struct __CFLocale* [line 26]\n  *&a:class NSLocale*=n$2 [line 26]\n " shape="box"]
+"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" [label="3:  DeclStmt \n   n$2=*&nameRef:__CFLocale* [line 26]\n  *&a:NSLocale*=n$2 [line 26]\n " shape="box"]
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_2" ;
-"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" [label="4:  DeclStmt \n   n$3=_fun_CFLocaleCreate(0:struct __CFAllocator*,0:struct __CFString*) [line 25]\n  *&nameRef:struct __CFLocale*=n$3 [line 25]\n " shape="box"]
+"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" [label="4:  DeclStmt \n   n$3=_fun_CFLocaleCreate(0:__CFAllocator*,0:__CFString*) [line 25]\n  *&nameRef:__CFLocale*=n$3 [line 25]\n " shape="box"]
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" ;
-"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_1" [label="1: Start TollBridgeExample_brideRetained\nFormals:  self:class TollBridgeExample*\nLocals:  a:struct __CFLocale* observer:struct objc_object* \n   DECLARE_LOCALS(&return,&a,&observer); [line 29]\n " color=yellow style=filled]
+"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_1" [label="1: Start TollBridgeExample_brideRetained\nFormals:  self:TollBridgeExample*\nLocals:  a:__CFLocale* observer:objc_object* \n   DECLARE_LOCALS(&return,&a,&observer); [line 29]\n " color=yellow style=filled]
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_1" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" ;
 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_2" [label="2: Exit TollBridgeExample_brideRetained \n  " color=yellow style=filled]
 	
 
-"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" [label="3:  DeclStmt \n   n$4=*&observer:struct objc_object* [line 31]\n  *&a:struct __CFLocale*=n$4 [line 31]\n " shape="box"]
+"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" [label="3:  DeclStmt \n   n$4=*&observer:objc_object* [line 31]\n  *&a:__CFLocale*=n$4 [line 31]\n " shape="box"]
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_2" ;
-"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" [label="4:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(class NSLocale):unsigned long) [line 30]\n  *&observer:struct objc_object*=n$5 [line 30]\n " shape="box"]
+"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" [label="4:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(NSLocale):unsigned long) [line 30]\n  *&observer:objc_object*=n$5 [line 30]\n " shape="box"]
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" ;
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_1" [label="1: Start TollBridgeExample__readHTTPHeader\nFormals:  self:class TollBridgeExample*\nLocals:  ref:struct __CFDictionary* \n   DECLARE_LOCALS(&return,&ref); [line 34]\n " color=yellow style=filled]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_1" [label="1: Start TollBridgeExample__readHTTPHeader\nFormals:  self:TollBridgeExample*\nLocals:  ref:__CFDictionary* \n   DECLARE_LOCALS(&return,&ref); [line 34]\n " color=yellow style=filled]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_1" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" ;
 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_2" [label="2: Exit TollBridgeExample__readHTTPHeader \n  " color=yellow style=filled]
 	
 
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" [label="3:  Call _fun_CFBridgingRelease \n   n$6=*&ref:struct __CFDictionary* [line 37]\n  n$7=_fun___objc_cast(n$6:void*,sizeof(struct objc_object):unsigned long) [line 37]\n " shape="box"]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" [label="3:  Call _fun_CFBridgingRelease \n   n$6=*&ref:__CFDictionary* [line 37]\n  n$7=_fun___objc_cast(n$6:void*,sizeof(objc_object):unsigned long) [line 37]\n " shape="box"]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_2" ;
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" [label="4:  DeclStmt \n   n$8=_fun_CFHTTPMessageCopyAllHeaderFields(0:struct __CFHTTPMessage*) [line 36]\n  *&ref:struct __CFDictionary*=n$8 [line 36]\n " shape="box"]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" [label="4:  DeclStmt \n   n$8=_fun_CFHTTPMessageCopyAllHeaderFields(0:__CFHTTPMessage*) [line 36]\n  *&ref:__CFDictionary*=n$8 [line 36]\n " shape="box"]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" ;

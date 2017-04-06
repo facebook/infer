@@ -29,7 +29,7 @@ digraph iCFG {
 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" [label="2: Exit FBScrollViewDelegateProxy_layoutToUse \n  " color=yellow style=filled]
 	
 
-"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:struct FBVideoAdLayout [line 45]\n  *&return:struct FBVideoAdLayout=n$0 [line 45]\n " shape="box"]
+"layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/objc/frontend/types/testloop.m>$__iPhoneVideoAdLayout:FBVideoAdLayout [line 45]\n  *&return:FBVideoAdLayout=n$0 [line 45]\n " shape="box"]
 	
 
 	 "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_3" -> "layoutToUse#FBScrollViewDelegateProxy#class.0fb14252876875c85e9253ab00bfb755_2" ;

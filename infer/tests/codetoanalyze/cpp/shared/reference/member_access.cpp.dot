@@ -1,43 +1,43 @@
 /* @generated */
 digraph iCFG {
-"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" ;
 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" [label="2: Exit X_call \n  " color=yellow style=filled]
 	
 
-"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" [label="3:  Return Stmt \n   n$0=*&this:class X* [line 12]\n  n$1=*n$0.f:int [line 12]\n  *&return:int=n$1 [line 12]\n " shape="box"]
+"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 12]\n  n$1=*n$0.f:int [line 12]\n  *&return:int=n$1 [line 12]\n " shape="box"]
 	
 
 	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" ;
-"access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_1" [label="1: Start access_ptr\nFormals:  x:class X*\nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 20]\n " color=yellow style=filled]
+"access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_1" [label="1: Start access_ptr\nFormals:  x:X*\nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 20]\n " color=yellow style=filled]
 	
 
 	 "access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_1" -> "access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_4" ;
 "access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_2" [label="2: Exit access_ptr \n  " color=yellow style=filled]
 	
 
-"access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_3" [label="3:  DeclStmt \n   n$0=*&x:class X* [line 22]\n  _=*n$0:class X [line 22]\n  n$2=_fun_X_call(n$0:class X*) [line 22]\n  *&c:int=n$2 [line 22]\n " shape="box"]
+"access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_3" [label="3:  DeclStmt \n   n$0=*&x:X* [line 22]\n  _=*n$0:X [line 22]\n  n$2=_fun_X_call(n$0:X*) [line 22]\n  *&c:int=n$2 [line 22]\n " shape="box"]
 	
 
 	 "access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_3" -> "access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_2" ;
-"access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_4" [label="4:  DeclStmt \n   n$3=*&x:class X* [line 21]\n  n$4=*n$3.f:int [line 21]\n  *&f:int=n$4 [line 21]\n " shape="box"]
+"access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_4" [label="4:  DeclStmt \n   n$3=*&x:X* [line 21]\n  n$4=*n$3.f:int [line 21]\n  *&f:int=n$4 [line 21]\n " shape="box"]
 	
 
 	 "access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_4" -> "access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_3" ;
-"access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_1" [label="1: Start access_ref\nFormals:  x:class X&\nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 15]\n " color=yellow style=filled]
+"access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_1" [label="1: Start access_ref\nFormals:  x:X&\nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 15]\n " color=yellow style=filled]
 	
 
 	 "access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_1" -> "access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_4" ;
 "access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_2" [label="2: Exit access_ref \n  " color=yellow style=filled]
 	
 
-"access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_3" [label="3:  DeclStmt \n   n$0=*&x:class X& [line 17]\n  _=*n$0:class X [line 17]\n  n$2=_fun_X_call(n$0:class X&) [line 17]\n  *&c:int=n$2 [line 17]\n " shape="box"]
+"access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_3" [label="3:  DeclStmt \n   n$0=*&x:X& [line 17]\n  _=*n$0:X [line 17]\n  n$2=_fun_X_call(n$0:X&) [line 17]\n  *&c:int=n$2 [line 17]\n " shape="box"]
 	
 
 	 "access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_3" -> "access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_2" ;
-"access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_4" [label="4:  DeclStmt \n   n$3=*&x:class X& [line 16]\n  n$4=*n$3.f:int [line 16]\n  *&f:int=n$4 [line 16]\n " shape="box"]
+"access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_4" [label="4:  DeclStmt \n   n$3=*&x:X& [line 16]\n  n$4=*n$3.f:int [line 16]\n  *&f:int=n$4 [line 16]\n " shape="box"]
 	
 
 	 "access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_4" -> "access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_3" ;

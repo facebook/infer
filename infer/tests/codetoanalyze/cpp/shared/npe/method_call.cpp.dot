@@ -1,17 +1,17 @@
 /* @generated */
 digraph iCFG {
-"npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_1" [label="1: Start npe_call\nFormals: \nLocals:  x:class X* \n   DECLARE_LOCALS(&return,&x); [line 15]\n " color=yellow style=filled]
+"npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_1" [label="1: Start npe_call\nFormals: \nLocals:  x:X* \n   DECLARE_LOCALS(&return,&x); [line 15]\n " color=yellow style=filled]
 	
 
 	 "npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_1" -> "npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_4" ;
 "npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_2" [label="2: Exit npe_call \n  " color=yellow style=filled]
 	
 
-"npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_3" [label="3:  Return Stmt \n   n$0=*&x:class X* [line 17]\n  _=*n$0:class X [line 17]\n  n$2=_fun_X_call(n$0:class X*) [line 17]\n  *&return:int=n$2 [line 17]\n " shape="box"]
+"npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_3" [label="3:  Return Stmt \n   n$0=*&x:X* [line 17]\n  _=*n$0:X [line 17]\n  n$2=_fun_X_call(n$0:X*) [line 17]\n  *&return:int=n$2 [line 17]\n " shape="box"]
 	
 
 	 "npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_3" -> "npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_2" ;
-"npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_4" [label="4:  DeclStmt \n   *&x:class X*=null [line 16]\n " shape="box"]
+"npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_4" [label="4:  DeclStmt \n   *&x:X*=null [line 16]\n " shape="box"]
 	
 
 	 "npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_4" -> "npe_call#_Z8npe_callv.c5c3f14507536c77f803767444640f5c_3" ;
@@ -22,7 +22,7 @@ digraph iCFG {
 "getX#_Z4getXv.a6ee30e498cf416c2acc473c01ff034d_2" [label="2: Exit getX \n  " color=yellow style=filled]
 	
 
-"getX#_Z4getXv.a6ee30e498cf416c2acc473c01ff034d_3" [label="3:  Return Stmt \n   *&return:class X*=null [line 20]\n " shape="box"]
+"getX#_Z4getXv.a6ee30e498cf416c2acc473c01ff034d_3" [label="3:  Return Stmt \n   *&return:X*=null [line 20]\n " shape="box"]
 	
 
 	 "getX#_Z4getXv.a6ee30e498cf416c2acc473c01ff034d_3" -> "getX#_Z4getXv.a6ee30e498cf416c2acc473c01ff034d_2" ;
@@ -33,7 +33,7 @@ digraph iCFG {
 "npe_call_after_call#_Z19npe_call_after_callv.59d639f8fb23a9eb8d1ff9ef012488ea_2" [label="2: Exit npe_call_after_call \n  " color=yellow style=filled]
 	
 
-"npe_call_after_call#_Z19npe_call_after_callv.59d639f8fb23a9eb8d1ff9ef012488ea_3" [label="3:  Call _fun_X_call \n   n$0=_fun_getX() [line 22]\n  _=*n$0:class X [line 22]\n  n$2=_fun_X_call(n$0:class X*) [line 22]\n " shape="box"]
+"npe_call_after_call#_Z19npe_call_after_callv.59d639f8fb23a9eb8d1ff9ef012488ea_3" [label="3:  Call _fun_X_call \n   n$0=_fun_getX() [line 22]\n  _=*n$0:X [line 22]\n  n$2=_fun_X_call(n$0:X*) [line 22]\n " shape="box"]
 	
 
 	 "npe_call_after_call#_Z19npe_call_after_callv.59d639f8fb23a9eb8d1ff9ef012488ea_3" -> "npe_call_after_call#_Z19npe_call_after_callv.59d639f8fb23a9eb8d1ff9ef012488ea_2" ;
@@ -44,11 +44,11 @@ digraph iCFG {
 "npe_call_with_forward_declaration#_Z33npe_call_with_forward_declarationv.ad7fd394481920cd97c78fc355441a32_2" [label="2: Exit npe_call_with_forward_declaration \n  " color=yellow style=filled]
 	
 
-"npe_call_with_forward_declaration#_Z33npe_call_with_forward_declarationv.ad7fd394481920cd97c78fc355441a32_3" [label="3:  Call _fun_call_with_forward_declaration \n   _fun_call_with_forward_declaration(null:class XForward*) [line 38]\n " shape="box"]
+"npe_call_with_forward_declaration#_Z33npe_call_with_forward_declarationv.ad7fd394481920cd97c78fc355441a32_3" [label="3:  Call _fun_call_with_forward_declaration \n   _fun_call_with_forward_declaration(null:XForward*) [line 38]\n " shape="box"]
 	
 
 	 "npe_call_with_forward_declaration#_Z33npe_call_with_forward_declarationv.ad7fd394481920cd97c78fc355441a32_3" -> "npe_call_with_forward_declaration#_Z33npe_call_with_forward_declarationv.ad7fd394481920cd97c78fc355441a32_2" ;
-"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
 	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" ;
@@ -59,7 +59,7 @@ digraph iCFG {
 	
 
 	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" ;
-"call#XForward#(_ZN8XForward4callEv).6e2d73601523a55b813cc82c5e49ca70_1" [label="1: Start XForward_call\nFormals:  this:class XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
+"call#XForward#(_ZN8XForward4callEv).6e2d73601523a55b813cc82c5e49ca70_1" [label="1: Start XForward_call\nFormals:  this:XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
 	
 
 	 "call#XForward#(_ZN8XForward4callEv).6e2d73601523a55b813cc82c5e49ca70_1" -> "call#XForward#(_ZN8XForward4callEv).6e2d73601523a55b813cc82c5e49ca70_3" ;
@@ -70,14 +70,14 @@ digraph iCFG {
 	
 
 	 "call#XForward#(_ZN8XForward4callEv).6e2d73601523a55b813cc82c5e49ca70_3" -> "call#XForward#(_ZN8XForward4callEv).6e2d73601523a55b813cc82c5e49ca70_2" ;
-"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_1" [label="1: Start call_with_forward_declaration\nFormals:  x:class XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n " color=yellow style=filled]
+"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_1" [label="1: Start call_with_forward_declaration\nFormals:  x:XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n " color=yellow style=filled]
 	
 
 	 "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_1" -> "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" ;
 "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
 	
 
-"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" [label="3:  Call _fun_XForward_call \n   n$0=*&x:class XForward* [line 35]\n  _=*n$0:class XForward [line 35]\n  n$2=_fun_XForward_call(n$0:class XForward*) [line 35]\n " shape="box"]
+"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" [label="3:  Call _fun_XForward_call \n   n$0=*&x:XForward* [line 35]\n  _=*n$0:XForward [line 35]\n  n$2=_fun_XForward_call(n$0:XForward*) [line 35]\n " shape="box"]
 	
 
 	 "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" -> "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_2" ;

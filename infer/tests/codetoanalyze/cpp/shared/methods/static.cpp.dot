@@ -22,14 +22,14 @@ digraph iCFG {
 	
 
 	 "fun#A#(_ZN1A3funEi).1217ae18adb247c2e3f6f070a6805a4b_3" -> "fun#A#(_ZN1A3funEi).1217ae18adb247c2e3f6f070a6805a4b_2" ;
-"div0_instance#_Z13div0_instanceP1A.2638ef2378ffe4d2937fb96f33a5a0b4_1" [label="1: Start div0_instance\nFormals:  a:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+"div0_instance#_Z13div0_instanceP1A.2638ef2378ffe4d2937fb96f33a5a0b4_1" [label="1: Start div0_instance\nFormals:  a:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
 	
 
 	 "div0_instance#_Z13div0_instanceP1A.2638ef2378ffe4d2937fb96f33a5a0b4_1" -> "div0_instance#_Z13div0_instanceP1A.2638ef2378ffe4d2937fb96f33a5a0b4_3" ;
 "div0_instance#_Z13div0_instanceP1A.2638ef2378ffe4d2937fb96f33a5a0b4_2" [label="2: Exit div0_instance \n  " color=yellow style=filled]
 	
 
-"div0_instance#_Z13div0_instanceP1A.2638ef2378ffe4d2937fb96f33a5a0b4_3" [label="3:  Call _fun_A_fun \n   n$0=*&a:class A* [line 21]\n  n$1=_fun_A_fun(0:int) [line 21]\n " shape="box"]
+"div0_instance#_Z13div0_instanceP1A.2638ef2378ffe4d2937fb96f33a5a0b4_3" [label="3:  Call _fun_A_fun \n   n$0=*&a:A* [line 21]\n  n$1=_fun_A_fun(0:int) [line 21]\n " shape="box"]
 	
 
 	 "div0_instance#_Z13div0_instanceP1A.2638ef2378ffe4d2937fb96f33a5a0b4_3" -> "div0_instance#_Z13div0_instanceP1A.2638ef2378ffe4d2937fb96f33a5a0b4_2" ;

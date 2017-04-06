@@ -1,25 +1,25 @@
 /* @generated */
 digraph iCFG {
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  xc:class X_class* xs:class X_struct* \n   DECLARE_LOCALS(&return,&xc,&xs); [line 21]\n " color=yellow style=filled]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  xc:X_class* xs:X_struct* \n   DECLARE_LOCALS(&return,&xc,&xs); [line 21]\n " color=yellow style=filled]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_6" ;
 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&xc:class X_class* [line 29]\n  *n$0.b:int=20 [line 29]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&xc:X_class* [line 29]\n  *n$0.b:int=20 [line 29]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&xc:class X_class* [line 28]\n  *n$1.a:int=10 [line 28]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" [label="4:  BinaryOperatorStmt: Assign \n   n$1=*&xc:X_class* [line 28]\n  *n$1.a:int=10 [line 28]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" ;
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&xs:class X_struct* [line 25]\n  *n$2.b:int=20 [line 25]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" [label="5:  BinaryOperatorStmt: Assign \n   n$2=*&xs:X_struct* [line 25]\n  *n$2.b:int=20 [line 25]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" ;
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&xs:class X_struct* [line 24]\n  *n$3.a:int=10 [line 24]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_6" [label="6:  BinaryOperatorStmt: Assign \n   n$3=*&xs:X_struct* [line 24]\n  *n$3.a:int=10 [line 24]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_6" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" ;

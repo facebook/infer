@@ -64,7 +64,7 @@ digraph iCFG {
 	
 
 	 "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_8" -> "access_field_in_ife_branch.09235b723e846eb21b7cc76cb004f032_2" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" [label="1: Start ife_then_access_field\nFormals:  p:struct s* q:struct s*\nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:struct s* \n   DECLARE_LOCALS(&return,&z,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 16]\n " color=yellow style=filled]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" [label="1: Start ife_then_access_field\nFormals:  p:s* q:s*\nLocals:  z:int 0$?%__sil_tmpSIL_temp_conditional___n$0:s* \n   DECLARE_LOCALS(&return,&z,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 16]\n " color=yellow style=filled]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_1" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_4" ;
@@ -84,15 +84,15 @@ digraph iCFG {
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_5" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_6" [label="6:  ConditinalStmt Branch \n   n$1=*&p:struct s* [line 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:struct s*=n$1 [line 17]\n " shape="box"]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_6" [label="6:  ConditinalStmt Branch \n   n$1=*&p:s* [line 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:s*=n$1 [line 17]\n " shape="box"]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_6" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" [label="7:  ConditinalStmt Branch \n   n$2=*&q:struct s* [line 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:struct s*=n$2 [line 17]\n " shape="box"]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" [label="7:  ConditinalStmt Branch \n   n$2=*&q:s* [line 17]\n  *&0$?%__sil_tmpSIL_temp_conditional___n$0:s*=n$2 [line 17]\n " shape="box"]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_7" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_3" ;
-"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" [label="8:  DeclStmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:struct s* [line 17]\n  n$4=*n$3.field:int [line 17]\n  *&z:int=n$4 [line 17]\n " shape="box"]
+"ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" [label="8:  DeclStmt \n   n$3=*&0$?%__sil_tmpSIL_temp_conditional___n$0:s* [line 17]\n  n$4=*n$3.field:int [line 17]\n  *&z:int=n$4 [line 17]\n " shape="box"]
 	
 
 	 "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_8" -> "ife_then_access_field.314daa5b993f0f569c257230f350e2e2_2" ;

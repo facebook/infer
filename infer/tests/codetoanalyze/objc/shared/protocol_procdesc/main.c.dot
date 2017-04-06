@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_1" [label="1: Start ProtocolProcdescMain\nFormals: \nLocals:  bike:class Bicycle* \n   DECLARE_LOCALS(&return,&bike); [line 12]\n " color=yellow style=filled]
+"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_1" [label="1: Start ProtocolProcdescMain\nFormals: \nLocals:  bike:Bicycle* \n   DECLARE_LOCALS(&return,&bike); [line 12]\n " color=yellow style=filled]
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_1" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" ;
@@ -11,11 +11,11 @@ digraph iCFG {
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_3" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_2" ;
-"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" [label="4:  Message Call: signalStop \n   n$0=*&bike:class Bicycle* [line 16]\n  _fun_Bicycle_signalStop(n$0:class Bicycle*) virtual [line 16]\n " shape="box"]
+"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" [label="4:  Message Call: signalStop \n   n$0=*&bike:Bicycle* [line 16]\n  _fun_Bicycle_signalStop(n$0:Bicycle*) virtual [line 16]\n " shape="box"]
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_3" ;
-"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" [label="5:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(class Bicycle):unsigned long) [line 14]\n  *&bike:class Bicycle*=n$1 [line 14]\n " shape="box"]
+"ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" [label="5:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(Bicycle):unsigned long) [line 14]\n  *&bike:Bicycle*=n$1 [line 14]\n " shape="box"]
 	
 
 	 "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_5" -> "ProtocolProcdescMain.84e7d2448aa904c965bf225f17cfb503_4" ;

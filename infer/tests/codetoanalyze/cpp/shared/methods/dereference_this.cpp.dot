@@ -1,39 +1,39 @@
 /* @generated */
 digraph iCFG {
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  a_ptr:class A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 23]\n " color=yellow style=filled]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" [label="1: Start test\nFormals: \nLocals:  a_ptr:A* \n   DECLARE_LOCALS(&return,&a_ptr); [line 23]\n " color=yellow style=filled]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_1" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" ;
 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" [label="2: Exit test \n  " color=yellow style=filled]
 	
 
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  Call _fun_A_method \n   n$0=*&a_ptr:class A* [line 25]\n  _=*n$0:class A [line 25]\n  n$2=_fun_A_method(n$0:class A*) [line 25]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" [label="3:  Call _fun_A_method \n   n$0=*&a_ptr:A* [line 25]\n  _=*n$0:A [line 25]\n  n$2=_fun_A_method(n$0:A*) [line 25]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;
-"method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_1" [label="1: Start A_method\nFormals:  this:class A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+"method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_1" [label="1: Start A_method\nFormals:  this:A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 "method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_1" -> "method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_4" ;
 "method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_2" [label="2: Exit A_method \n  " color=yellow style=filled]
 	
 
-"method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_3" [label="3:  Return Stmt \n   n$0=*&this:class A* [line 20]\n  n$1=*n$0.field:int [line 20]\n  *&return:int=n$1 [line 20]\n " shape="box"]
+"method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_3" [label="3:  Return Stmt \n   n$0=*&this:A* [line 20]\n  n$1=*n$0.field:int [line 20]\n  *&return:int=n$1 [line 20]\n " shape="box"]
 	
 
 	 "method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_3" -> "method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_2" ;
-"method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_4" [label="4:  Call _fun_A_init \n   n$2=*&this:class A* [line 19]\n  _=*n$2:class A [line 19]\n  _fun_A_init(n$2:class A*,10:int) [line 19]\n " shape="box"]
+"method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_4" [label="4:  Call _fun_A_init \n   n$2=*&this:A* [line 19]\n  _=*n$2:A [line 19]\n  _fun_A_init(n$2:A*,10:int) [line 19]\n " shape="box"]
 	
 
 	 "method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_4" -> "method#A#(_ZN1A6methodEv).e05b037d7831e52a327226af5de86c9f_3" ;
-"init#A#(_ZN1A4initEi).585b071c95fbd4d20c829c87048f63ed_1" [label="1: Start A_init\nFormals:  this:class A* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+"init#A#(_ZN1A4initEi).585b071c95fbd4d20c829c87048f63ed_1" [label="1: Start A_init\nFormals:  this:A* val:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
 	 "init#A#(_ZN1A4initEi).585b071c95fbd4d20c829c87048f63ed_1" -> "init#A#(_ZN1A4initEi).585b071c95fbd4d20c829c87048f63ed_3" ;
 "init#A#(_ZN1A4initEi).585b071c95fbd4d20c829c87048f63ed_2" [label="2: Exit A_init \n  " color=yellow style=filled]
 	
 
-"init#A#(_ZN1A4initEi).585b071c95fbd4d20c829c87048f63ed_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class A* [line 14]\n  n$1=*&val:int [line 14]\n  *n$0.field:int=n$1 [line 14]\n " shape="box"]
+"init#A#(_ZN1A4initEi).585b071c95fbd4d20c829c87048f63ed_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:A* [line 14]\n  n$1=*&val:int [line 14]\n  *n$0.field:int=n$1 [line 14]\n " shape="box"]
 	
 
 	 "init#A#(_ZN1A4initEi).585b071c95fbd4d20c829c87048f63ed_3" -> "init#A#(_ZN1A4initEi).585b071c95fbd4d20c829c87048f63ed_2" ;

@@ -7,7 +7,7 @@ digraph iCFG {
 "__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_2" [label="2: Exit __infer_globals_initializer_lastName \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_3" [label="3:  DeclStmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Rodriguez\":char*) [line 12]\n  *&#GB<codetoanalyze/objc/frontend/strings/global_string_literal.m>$lastName:class NSString*=n$0 [line 12]\n " shape="box"]
+"__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_3" [label="3:  DeclStmt \n   n$0=_fun_NSString_stringWithUTF8String:(\"Rodriguez\":char*) [line 12]\n  *&#GB<codetoanalyze/objc/frontend/strings/global_string_literal.m>$lastName:NSString*=n$0 [line 12]\n " shape="box"]
 	
 
 	 "__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_3" -> "__infer_globals_initializer_lastName.ab5584b9c7a64c926bfb635dcb73a207_2" ;

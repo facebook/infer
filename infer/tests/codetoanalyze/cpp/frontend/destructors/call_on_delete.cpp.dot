@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_1" [label="1: Start X_~X\nFormals:  this:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+"~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_1" [label="1: Start X_~X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
 	 "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_1" -> "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_2" ;
@@ -18,14 +18,14 @@ digraph iCFG {
 	
 
 	 "deleteInt#_Z9deleteIntPi.1290a142cb905da33c4edc8a99e3d74e_3" -> "deleteInt#_Z9deleteIntPi.1290a142cb905da33c4edc8a99e3d74e_2" ;
-"deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_1" [label="1: Start deleteX\nFormals:  x:class X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+"deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_1" [label="1: Start deleteX\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
 	 "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_1" -> "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_3" ;
 "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_2" [label="2: Exit deleteX \n  " color=yellow style=filled]
 	
 
-"deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_3" [label="3:  Call delete \n   n$0=*&x:class X* [line 14]\n  _fun___delete(n$0:class X*) [line 14]\n " shape="box"]
+"deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_3" [label="3:  Call delete \n   n$0=*&x:X* [line 14]\n  _fun___delete(n$0:X*) [line 14]\n " shape="box"]
 	
 
 	 "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_3" -> "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_2" ;

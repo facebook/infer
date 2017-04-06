@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"compound_literal_expr.137fbe19f590ba2423c07134917ec888_1" [label="1: Start compound_literal_expr\nFormals: \nLocals:  0$?%__sil_tmpSIL_compound_literal__n$0:struct point \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_compound_literal__n$0); [line 15]\n " color=yellow style=filled]
+"compound_literal_expr.137fbe19f590ba2423c07134917ec888_1" [label="1: Start compound_literal_expr\nFormals: \nLocals:  0$?%__sil_tmpSIL_compound_literal__n$0:point \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_compound_literal__n$0); [line 15]\n " color=yellow style=filled]
 	
 
 	 "compound_literal_expr.137fbe19f590ba2423c07134917ec888_1" -> "compound_literal_expr.137fbe19f590ba2423c07134917ec888_3" ;
@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "compound_literal_expr.137fbe19f590ba2423c07134917ec888_3" -> "compound_literal_expr.137fbe19f590ba2423c07134917ec888_2" ;
-"init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_1" [label="1: Start init_with_compound_literal\nFormals: \nLocals:  p:struct point \n   DECLARE_LOCALS(&return,&p); [line 17]\n " color=yellow style=filled]
+"init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_1" [label="1: Start init_with_compound_literal\nFormals: \nLocals:  p:point \n   DECLARE_LOCALS(&return,&p); [line 17]\n " color=yellow style=filled]
 	
 
 	 "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_1" -> "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_4" ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_3" -> "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_2" ;
-"init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_4" [label="4:  DeclStmt \n   *&p.x:int=32 [line 18]\n  *&p.y:int=52 [line 18]\n  n$1=*&p:struct point [line 18]\n " shape="box"]
+"init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_4" [label="4:  DeclStmt \n   *&p.x:int=32 [line 18]\n  *&p.y:int=52 [line 18]\n  n$1=*&p:point [line 18]\n " shape="box"]
 	
 
 	 "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_4" -> "init_with_compound_literal.745ef6cf3c32f7f18974c2c4fc6a8c9c_3" ;

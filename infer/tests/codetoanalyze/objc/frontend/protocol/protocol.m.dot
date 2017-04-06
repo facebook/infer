@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla_fooMethod\nFormals:  self:class Bla*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" [label="1: Start Bla_fooMethod\nFormals:  self:Bla*\nLocals:  \n   DECLARE_LOCALS(&return); [line 24]\n " color=yellow style=filled]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_1" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" ;
@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:class Bla* [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:class Bla*,\"Foo\":class Protocol*) virtual [line 25]\n " shape="box"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 25]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 25]\n " shape="box"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" ;
