@@ -79,14 +79,13 @@ let run_compilation_database compilation_database should_capture_file =
     (run_compilation_file compilation_database) job_to_string
 
 (** Computes the compilation database files. *)
-let get_compilation_database_files_buck () =
-  let cmd = List.rev_append Config.rest (List.rev Config.buck_build_args) in
-  match Buck.add_flavors_to_buck_command cmd with
-  | buck :: build :: args_with_flavor -> (
+let get_compilation_database_files_buck ~prog ~args =
+  match Buck.add_flavors_to_buck_command args with
+  | build :: args_with_flavor -> (
       let build_args = build :: "--config" :: "*//cxx.pch_enabled=false" :: args_with_flavor in
-      Process.create_process_and_wait ~prog:buck ~args:build_args;
+      Process.create_process_and_wait ~prog ~args:build_args;
       let buck_targets_shell =
-        buck :: "targets" :: "--show-output" :: args_with_flavor
+        prog :: "targets" :: "--show-output" :: args_with_flavor
         |> Utils.shell_escape_command in
       try
         match fst @@ Utils.with_process_in buck_targets_shell In_channel.input_lines with
@@ -109,7 +108,7 @@ let get_compilation_database_files_buck () =
           "Cannot execute %s: %s\n%!" buck_targets_shell (Unix.error_message err)
     )
   | _ ->
-      let cmd = String.concat ~sep:" " cmd in
+      let cmd = String.concat ~sep:" " (prog :: args) in
       Process.print_error_and_exit "Incorrect buck command: %s. Please use buck build <targets>" cmd
 
 (** Compute the compilation database files. *)

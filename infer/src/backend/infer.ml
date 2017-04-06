@@ -72,7 +72,7 @@ let string_of_build_system build_system =
 type driver_mode =
   | Analyze
   | BuckGenrule of string
-  | BuckCompilationDB
+  | BuckCompilationDB of string * string list
   | Clang of Clang.compiler * string * string list
   | ClangCompilationDB of [ `Escaped of string | `Raw of string ] list
   | Javac of Javac.compiler * string * string list
@@ -92,7 +92,7 @@ let pp_driver_mode fmt driver_mode =
     with exn ->
       F.fprintf fmt "  Error reading file '%s':@\n  %a@." fname Exn.pp exn in
   match driver_mode with
-  | Analyze | BuckGenrule _ | BuckCompilationDB | ClangCompilationDB _  | PythonCapture (_,_)
+  | Analyze | BuckGenrule _ | BuckCompilationDB _ | ClangCompilationDB _  | PythonCapture (_,_)
   | XcodeXcpretty _ ->
       (* these are pretty boring, do not log anything *)
       ()
@@ -119,6 +119,7 @@ let pp_driver_mode fmt driver_mode =
    in case nothing got captured. *)
 let clean_compilation_command driver_mode =
   match driver_mode with
+  | BuckCompilationDB (prog, _)
   | Clang (_, prog, _) ->
       Some (prog ^ " clean")
   | XcodeXcpretty (prog, args) ->
@@ -236,9 +237,9 @@ let capture_with_compilation_database db_files =
 let capture = function
   | Analyze->
       ()
-  | BuckCompilationDB ->
+  | BuckCompilationDB (prog, args) ->
       L.stdout "Capturing using Buck's compilation database...@\n";
-      let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck () in
+      let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck ~prog ~args in
       capture_with_compilation_database json_cdb
   | BuckGenrule path ->
       L.stdout "Capturing for Buck genrule compatibility...@\n";
@@ -453,7 +454,7 @@ let driver_mode_of_build_cmd build_cmd =
       | BAnalyze ->
           Analyze
       | BBuck when Option.is_some Config.buck_compilation_database ->
-          BuckCompilationDB
+          BuckCompilationDB (prog, List.append args (List.rev Config.buck_build_args))
       | BClang ->
           Clang (Clang.Clang, prog, args)
       | BMake ->

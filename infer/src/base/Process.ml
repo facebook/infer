@@ -31,7 +31,7 @@ let create_process_and_wait ~prog ~args =
   |> function
   | Ok () -> ()
   | Error err as status ->
-      L.do_err "Executing: %s@\n%s@\n"
+      L.stderr "Executing: %s@\n%s@\n"
         (String.concat ~sep:" " (prog :: args)) (Unix.Exit_or_signal.to_string_hum status) ;
       exit (match err with `Exit_non_zero i -> i | `Signal _ -> 1)
 
