@@ -502,7 +502,7 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
 
 (** Create filename.ext.html. *)
 let write_html_file linereader filename procs =
-  let fname_encoding = SourceFile.encoding filename in
+  let fname_encoding = DB.source_file_encoding filename in
   let (fd, fmt) =
     Io_infer.Html.create
       (DB.Results_dir.Abs_source_dir filename)

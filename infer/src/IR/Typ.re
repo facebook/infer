@@ -927,13 +927,13 @@ let module Procname = {
         get_qual_name_str pname ^ "#" ^ c_method_kind_verbose_str objc_cpp.kind
       | _ => to_unique_id pname
       };
-    Escape.escape_filename @@ SourceFile.append_crc_cutoff proc_id
+    Escape.escape_filename @@ DB.append_crc_cutoff proc_id
   };
   let to_generic_filename pname => {
     let proc_id =
       get_qualifiers pname |> QualifiedCppName.strip_template_args |> QualifiedCppName.to_rev_list |>
       String.concat sep::"#";
-    Escape.escape_filename @@ SourceFile.append_crc_cutoff proc_id
+    Escape.escape_filename @@ DB.append_crc_cutoff proc_id
   };
   let to_filename pname =>
     switch pname {

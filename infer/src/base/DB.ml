@@ -16,6 +16,49 @@ open! PVariant
 module F = Format
 module L = Logging
 
+
+
+let cutoff_length = 100
+let crc_token = '.'
+
+let append_crc_cutoff ?(key="") name =
+  let name_up_to_cutoff =
+    if String.length name <= cutoff_length
+    then name
+    else String.sub name ~pos:0 ~len:cutoff_length in
+  let crc_str =
+    let name_for_crc = name ^ key in
+    Utils.string_crc_hex32 name_for_crc in
+  name_up_to_cutoff ^ Char.to_string crc_token ^ crc_str
+
+(* Lengh of .crc part: 32 characters of digest, plus 1 character of crc_token *)
+let dot_crc_len = 1 + 32
+
+let strip_crc str =
+  Core.Std.String.slice str 0 (- dot_crc_len)
+
+let string_crc_has_extension ~ext name_crc =
+  let name = strip_crc name_crc in
+  match Filename.split_extension name with
+  | (_, Some ext') -> String.equal ext ext'
+  | (_, None) -> false
+
+let curr_source_file_encoding = `Enc_crc
+
+(** string encoding of a source file (including path) as a single filename *)
+let source_file_encoding source_file =
+  let source_file_s = SourceFile.to_string source_file in
+  match curr_source_file_encoding with
+  | `Enc_base ->
+      Filename.basename source_file_s
+  | `Enc_path_with_underscores ->
+      Escape.escape_path source_file_s
+  | `Enc_crc ->
+      let base = Filename.basename source_file_s in
+      let dir = Filename.dirname source_file_s in
+      append_crc_cutoff ~key:dir base
+
+
 (** {2 Source Dirs} *)
 
 (** source directory: the directory inside the results dir corresponding to a source file *)
@@ -27,13 +70,13 @@ let source_dir_to_string source_dir = source_dir
 (** get the path to an internal file with the given extention (.cfg, .cg, .tenv) *)
 let source_dir_get_internal_file source_dir extension =
   let source_dir_name =
-    SourceFile.append_crc_cutoff (Filename.chop_extension (Filename.basename source_dir)) in
+    append_crc_cutoff (Filename.chop_extension (Filename.basename source_dir)) in
   let fname = source_dir_name ^ extension in
   Filename.concat source_dir fname
 
 (** get the source directory corresponding to a source file *)
 let source_dir_from_source_file source_file =
-  Filename.concat Config.captured_dir (SourceFile.encoding source_file)
+  Filename.concat Config.captured_dir (source_file_encoding source_file)
 
 (** Find the source directories in the results dir *)
 let find_source_dirs () =

@@ -152,7 +152,7 @@ let main makefile => {
       Config.results_dir;
     let is_java () =>
       List.exists
-        f::(fun cl => SourceFile.string_crc_has_extension ext::"java" (DB.source_dir_to_string cl))
+        f::(fun cl => DB.string_crc_has_extension ext::"java" (DB.source_dir_to_string cl))
         all_clusters;
     if (Config.per_procedure_parallelism && not (is_java ())) {
       /* Java uses ZipLib which is incompatible with forking */

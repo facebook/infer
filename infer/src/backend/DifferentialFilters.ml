@@ -144,7 +144,7 @@ let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
    *  2) their weak hashes match
    *  3) their anonymous procedure ids match
    *)
-  let string_of_procedure_id issue = SourceFile.strip_crc issue.Jsonbug_t.procedure_id in
+  let string_of_procedure_id issue = DB.strip_crc issue.Jsonbug_t.procedure_id in
   let extension fname = snd (Filename.split_extension fname) in
   let cmp (i1:Jsonbug_t.jsonbug) (i2:Jsonbug_t.jsonbug) =
     [%compare :

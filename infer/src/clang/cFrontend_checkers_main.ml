@@ -243,7 +243,7 @@ let context_with_ck_set context decl_list =
     context
 
 let store_issues source_file =
-  let abbrev_source_file = SourceFile.encoding source_file in
+  let abbrev_source_file = DB.source_file_encoding source_file in
   let lint_issues_dir = Config.results_dir ^/ Config.lint_issues_dir_name in
   Utils.create_dir lint_issues_dir;
   let lint_issues_file =
