@@ -45,6 +45,6 @@ let capture compiler ~prog ~args =
       |> function
       | Ok () -> ()
       | Error _ as status ->
-          failwithf "*** ERROR: capture command failed:@*** %s@*** %s@"
+          failwithf "*** ERROR: capture command failed:@\n*** %s@\n*** %s@."
             (String.concat ~sep:" " (prog::args))
             (Unix.Exit_or_signal.to_string_hum status)

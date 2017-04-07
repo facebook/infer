@@ -235,14 +235,14 @@ let capture_with_compilation_database db_files =
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
 let capture = function
-  | Analyze->
+  | Analyze ->
       ()
   | BuckCompilationDB (prog, args) ->
-      L.stdout "Capturing using Buck's compilation database...@\n";
+      L.stdout "Capturing using Buck's compilation database...@.";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck ~prog ~args in
       capture_with_compilation_database json_cdb
   | BuckGenrule path ->
-      L.stdout "Capturing for Buck genrule compatibility...@\n";
+      L.stdout "Capturing for Buck genrule compatibility...@.";
       JMain.from_arguments path
   | Clang (compiler, prog, args) ->
       L.stdout "Capturing in make/cc mode...@.";
@@ -312,7 +312,7 @@ let capture = function
               ()
         )
   | XcodeXcpretty (prog, args) ->
-      L.stdout "Capturing using xcodebuild and xcpretty...@\n";
+      L.stdout "Capturing using xcodebuild and xcpretty...@.";
       check_xcpretty ();
       let json_cdb =
         CaptureCompilationDatabase.get_compilation_database_files_xcodebuild ~prog ~args in

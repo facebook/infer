@@ -87,25 +87,30 @@ let get_compilation_database_files_buck ~prog ~args =
       let buck_targets_shell =
         prog :: "targets" :: "--show-output" :: args_with_flavor
         |> Utils.shell_escape_command in
-      try
-        match fst @@ Utils.with_process_in buck_targets_shell In_channel.input_lines with
-        | [] -> Logging.stdout "There are no files to process, exiting."; exit 0
-        | lines ->
-            Logging.out "Reading compilation database from:@\n%s@\n"
-              (String.concat ~sep:"\n" lines);
-            (* this assumes that flavors do not contain spaces *)
-            let split_regex = Str.regexp "#[^ ]* " in
-            let scan_output compilation_database_files line =
-              match Str.bounded_split split_regex line 2 with
-              | _::filename::[] ->
-                  `Raw filename::compilation_database_files
-              | _ ->
-                  failwithf
-                    "Failed to parse `buck targets --show-output ...` line of output:@\n%s" line in
-            List.fold ~f:scan_output ~init:[] lines
-      with Unix.Unix_error (err, _, _) ->
-        Process.print_error_and_exit
-          "Cannot execute %s: %s\n%!" buck_targets_shell (Unix.error_message err)
+      let (output, exit_or_signal) =
+        Utils.with_process_in buck_targets_shell In_channel.input_lines in
+      match exit_or_signal with
+      | Error _ as status ->
+          failwithf "*** ERROR: command failed:@\n*** %s@\n*** %s@."
+            buck_targets_shell
+            (Unix.Exit_or_signal.to_string_hum status)
+      | Ok () ->
+          match output with
+          | [] -> Logging.stderr "There are no files to process, exiting@."; exit 0
+          | lines ->
+              Logging.out "Reading compilation database from:@\n%s@\n"
+                (String.concat ~sep:"\n" lines);
+              (* this assumes that flavors do not contain spaces *)
+              let split_regex = Str.regexp "#[^ ]* " in
+              let scan_output compilation_database_files line =
+                match Str.bounded_split split_regex line 2 with
+                | _::filename::[] ->
+                    `Raw filename::compilation_database_files
+                | _ ->
+                    failwithf
+                      "Failed to parse `buck targets --show-output ...` line of output:@\n%s"
+                      line in
+              List.fold ~f:scan_output ~init:[] lines
     )
   | _ ->
       let cmd = String.concat ~sep:" " (prog :: args) in
