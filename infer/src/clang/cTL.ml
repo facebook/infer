@@ -576,9 +576,14 @@ let rec eval_Atomic _pred_name _args an lcxt =
   match pred_name, args, an with
   | "call_method", [m], an -> CPredicates.call_method an m
   | "call_method_strict", [m], an -> CPredicates.call_method_strict an m
-  | "call_class_method", [c; m], an -> CPredicates.call_class_method an c m
+  | "call_class_method", [c; m], an ->
+      CPredicates.call_class_method an c m
   | "call_class_method_strict", [c; m], an ->
       CPredicates.call_class_method_strict an c m
+  | "call_instance_method", [c; m], an ->
+      CPredicates.call_instance_method an c m
+  | "call_instance_method_strict", [c; m], an ->
+      CPredicates.call_instance_method_strict an c m
   | "is_objc_interface_named", [name], an ->
       CPredicates.is_objc_interface_named an name
   | "is_objc_interface_named_strict", [name], an ->
@@ -617,7 +622,8 @@ let rec eval_Atomic _pred_name _args an lcxt =
   | "within_responds_to_selector_block", [], an ->
       CPredicates.within_responds_to_selector_block lcxt an
   | _ -> failwith
-           ("ERROR: Undefined Predicate or wrong set of arguments: " ^ pred_name)
+           ("\nERROR: Undefined Predicate or wrong set of arguments: '"
+            ^ pred_name ^ "'\n")
 
 (* an, lcxt |= EF phi  <=>
    an, lcxt |= phi or exists an' in Successors(st): an', lcxt |= EF phi

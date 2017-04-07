@@ -20,6 +20,7 @@ type formula_id = Formula_id of string[@@deriving compare]
 
 type alexp =
   | Const of string
+  | Regexp of string
   | Var of string
   | FId of formula_id
 [@@deriving compare]
@@ -35,6 +36,7 @@ let formula_id_to_string fid =
 let alexp_to_string e =
   match e with
   | Const s
+  | Regexp s
   | Var s
   | FId (Formula_id s) -> s
 

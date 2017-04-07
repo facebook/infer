@@ -65,6 +65,7 @@ rule token = parse
   | "OR" { OR }
   | "NOT" { NOT }
   | "IMPLIES" { IMPLIES }
+  | "REGEXP" { REGEXP }
   | id { IDENTIFIER (Lexing.lexeme lexbuf) }
   | file_id { FILE_IDENTIFIER (Lexing.lexeme lexbuf) }
   | '"' { read_string (Buffer.create 80) lexbuf }

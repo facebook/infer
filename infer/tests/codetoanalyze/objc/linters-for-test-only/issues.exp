@@ -1,3 +1,4 @@
+codetoanalyze/objc/linters-for-test-only/subclassing.m, B_bar, 35, TEST_ALL_METHODS, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, B_bar, 36, MACRO_TEST1, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, B_bar, 36, MACRO_TEST2, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, B_bar, 36, MACRO_TEST3, []

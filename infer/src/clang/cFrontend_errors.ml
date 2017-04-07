@@ -145,10 +145,12 @@ let check_def_well_expanded vars expanded_formula =
   let open CTL in
   let check_const c =
     match c with
+    | ALVar.Regexp c
     | ALVar.Const c when List.mem vars (ALVar.Var c) ->
-        failwith ("[ERROR]: Const '" ^ c ^
+        failwith ("[ERROR]: Const/Regexp '" ^ c ^
                   "' is used as formal parameter of some LET definition.")
-    | ALVar.Const _ -> ()
+    | ALVar.Const _
+    | ALVar.Regexp _ -> ()
     | ALVar.Var v
     | ALVar.FId (Formula_id v) ->
         failwith ("[ERROR]: Variable '" ^ v ^

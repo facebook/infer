@@ -24,3 +24,5 @@ let message_const = "message"
 let suggestion_const = "suggestion"
 let severity_const = "severity"
 let mode_const = "mode"
+
+exception ALParsingException of string

@@ -40,14 +40,14 @@ DEFINE-CHECKER ASSIGN_POINTER_WARNING = {
 // Fires whenever a NSNumber is dangerously coerced to a boolean in a comparison
 DEFINE-CHECKER BAD_POINTER_COMPARISON = {
 
-	LET is_binop = is_node(BinaryOperator);
-	LET is_binop_eq = is_binop_with_kind(EQ);
-	LET is_binop_ne = is_binop_with_kind(NE);
+	LET is_binop = is_node("BinaryOperator");
+	LET is_binop_eq = is_binop_with_kind("EQ");
+	LET is_binop_ne = is_binop_with_kind("NE");
 	LET is_binop_neq = is_binop_eq OR is_binop_ne;
-	LET is_unop_lnot = is_unop_with_kind(LNot);
-	LET is_implicit_cast_expr = is_node(ImplicitCastExpr);
-	LET is_expr_with_cleanups = is_node(ExprWithCleanups);
-	LET is_nsnumber = isa(NSNumber);
+	LET is_unop_lnot = is_unop_with_kind("LNot");
+	LET is_implicit_cast_expr = is_node("ImplicitCastExpr");
+	LET is_expr_with_cleanups = is_node("ExprWithCleanups");
+	LET is_nsnumber = isa("NSNumber");
 
   LET eu =(
 	 					(NOT is_binop_neq)
@@ -81,10 +81,10 @@ DEFINE-CHECKER BAD_POINTER_COMPARISON = {
 DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 
 	LET exists_method_calling_addObserver =
-		 call_method_strict(addObserver:selector:name:object:) HOLDS-EVENTUALLY;
+		 call_method_strict("addObserver:selector:name:object:") HOLDS-EVENTUALLY;
 
 	LET exists_method_calling_addObserverForName =
-	   call_method_strict(addObserverForName:object:queue:usingBlock:) HOLDS-EVENTUALLY;
+	   call_method_strict("addObserverForName:object:queue:usingBlock:") HOLDS-EVENTUALLY;
 
 	LET add_observer =
 	   exists_method_calling_addObserver OR exists_method_calling_addObserverForName;
@@ -95,10 +95,10 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 			 HOLDS-EVENTUALLY;
 
 	LET exists_method_calling_removeObserver =
-	     call_method_strict(removeObserver:) HOLDS-EVENTUALLY;
+	     call_method_strict("removeObserver:") HOLDS-EVENTUALLY;
 
 	LET exists_method_calling_removeObserverName =
-		  call_method_strict(removeObserver:name:object:) HOLDS-EVENTUALLY;
+		  call_method_strict("removeObserver:name:object:") HOLDS-EVENTUALLY;
 
 	LET remove_observer =
 				exists_method_calling_removeObserver OR exists_method_calling_removeObserverName;
@@ -137,9 +137,11 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 
 DEFINE-CHECKER STRONG_DELEGATE_WARNING = {
 
-  LET name_contains_delegate = property_name_contains_word(delegate);
-  LET name_does_not_contain_delegates = NOT property_name_contains_word(delegates);
-  LET name_does_not_contains_queue = NOT property_name_contains_word(queue);
+  LET name_contains_delegate = property_name_contains_word(REGEXP("[dD]elegate"));
+  LET name_does_not_contain_delegates =
+					NOT property_name_contains_word(REGEXP("[dD]elegates"));
+  LET name_does_not_contains_queue =
+					NOT property_name_contains_word(REGEXP("[qQ]ueue"));
 
   SET report_when =
 	    WHEN
@@ -157,11 +159,11 @@ DEFINE-CHECKER GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL = {
      is_objc_extension() AND is_global_var() AND (NOT is_const_var());
 
 	LET makes_an_expensive_call =
-	 (is_node(CallExpr) AND NOT call_function_named(CGPointMake))
-		OR is_node(CXXTemporaryObjectExpr)
-    OR is_node(CXXMemberCallExpr)
-    OR is_node(CXXOperatorCallExpr)
-    OR is_node(ObjCMessageExpr);
+	 (is_node("CallExpr") AND NOT call_function_named("CGPointMake"))
+		OR is_node("CXXTemporaryObjectExpr")
+    OR is_node("CXXMemberCallExpr")
+    OR is_node("CXXOperatorCallExpr")
+    OR is_node("ObjCMessageExpr");
 
   LET is_initialized_with_expensive_call  =
     IN-NODE VarDecl WITH-TRANSITION InitExpr
@@ -183,7 +185,7 @@ DEFINE-CHECKER GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL = {
 DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 	  SET report_when =
 		     WHEN
-				   ((is_node(BlockDecl) AND captures_cxx_references())
+				   ((is_node("BlockDecl") AND captures_cxx_references())
 					 HOLDS-NEXT)
          HOLDS-IN-NODE BlockExpr;
 

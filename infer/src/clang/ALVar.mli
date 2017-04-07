@@ -19,6 +19,7 @@ type formula_id = Formula_id of string
 
 type alexp =
   | Const of string
+  | Regexp of string
   | Var of string
   | FId of formula_id
 

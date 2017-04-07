@@ -8,14 +8,22 @@
  */
 
 %{
+
   let formal_params : (ALVar.t list) ref = ref []
 
   let is_not_infer_reserved_id id =
     if Str.string_match (Str.regexp_string Ctl_parser_types.infer_prefix) id 0 then
-        failwith
-          ("ERROR: " ^ id ^ " contains __infer_ctl_ that is a reserved keyword "
-            ^ "which cannot be used in identifiers.")
-     else id
+      raise (Ctl_parser_types.ALParsingException
+               ("ERROR: " ^ id ^ " contains __infer_ctl_ that is a reserved keyword "
+            ^ "which cannot be used in identifiers:"))
+     else ()
+
+  let is_defined_identifier id =
+     if (List.mem (ALVar.Var id) !formal_params) then
+              Logging.out "\tParsed exp '%s' as variable" id
+     else
+      raise (Ctl_parser_types.ALParsingException
+        ("ERROR: Variable '" ^ id ^ "' is undefined"))
 
 %}
 
@@ -53,6 +61,7 @@
 %token OR
 %token NOT
 %token IMPLIES
+%token REGEXP
 %token <string> IDENTIFIER
 %token <string> FILE_IDENTIFIER
 %token <string> STRING
@@ -73,6 +82,11 @@ var_list:
   | identifier COMMA var_list { ALVar.Var($1) :: $3 }
 ;
 
+node_list:
+  | identifier { [ALVar.Const $1] }
+  | identifier COMMA node_list { ALVar.Const($1) :: $3 }
+;
+
 formal_params:
   | var_list { formal_params := $1; $1}
 
@@ -85,12 +99,13 @@ al_file:
 import_files:
   | { [] }
   | HASHIMPORT LESS_THAN file_identifier GREATER_THAN import_files
-    { $3 :: $5 }
+    { Logging.out "Parsed import clauses...\n\n"; $3 :: $5 }
   ;
 
 global_macros:
   | { [] }
-  | GLOBAL_MACROS LEFT_BRACE let_clause_list RIGHT_BRACE SEMICOLON { $3 }
+  | GLOBAL_MACROS LEFT_BRACE let_clause_list RIGHT_BRACE SEMICOLON
+    { Logging.out "Parsed global macro definitions...\n\n"; $3 }
   ;
 
 checkers_list:
@@ -101,7 +116,7 @@ checkers_list:
 checker:
  DEFINE_CHECKER identifier ASSIGNMENT LEFT_BRACE clause_list RIGHT_BRACE
   {
-    Logging.out "\nParsed checker definition";
+    Logging.out "\nParsed checker definition\n";
     let c = { CTL.name = $2; CTL.definitions = $5 } in
     CTL.print_checker c;
     c
@@ -168,20 +183,8 @@ atomic_formula:
 
 actual_params:
   | {[]}
-  | identifier { if (List.mem (ALVar.Var $1) !formal_params) then
-                      (Logging.out "\tParsed exp '%s' as variable \n" $1;
-                      [ALVar.Var $1])
-                  else
-                  (Logging.out "\tParsed exp '%s' as constant \n" $1;
-                  [ALVar.Const $1])
-                }
-  | identifier COMMA actual_params {
-        (if (List.mem (ALVar.Var $1) !formal_params) then
-                  (Logging.out "\tParsed exp '%s' as variable \n" $1;
-                    ALVar.Var $1)
-         else (Logging.out "\tParsed exp '%s' as constant \n" $1;
-              ALVar.Const $1)
-        ) :: $3 }
+  | alexp { [$1] }
+  | alexp COMMA actual_params { $1 :: $3 }
   ;
 
 transition_label:
@@ -212,13 +215,13 @@ formula:
   | formula AX { Logging.out "\tParsed AX\n"; CTL.AX ($1) }
   | formula EG { Logging.out "\tParsed EG\n"; CTL.EG (None, $1) }
   | formula AG { Logging.out "\tParsed AG\n"; CTL.AG ($1) }
-  | formula EH actual_params { Logging.out "\tParsed EH\n"; CTL.EH ($3, $1) }
+  | formula EH node_list { Logging.out "\tParsed EH\n"; CTL.EH ($3, $1) }
   | formula EF { Logging.out "\tParsed EF\n"; CTL.EF (None, $1) }
-  | WHEN formula HOLDS_IN_NODE actual_params
+  | WHEN formula HOLDS_IN_NODE node_list
      { Logging.out "\tParsed InNode\n"; CTL.InNode ($4, $2)}
-  | ET actual_params WITH_TRANSITION transition_label formula_EF
+  | ET node_list WITH_TRANSITION transition_label formula_EF
      { Logging.out "\tParsed ET\n"; CTL.ET ($2, $4, $5)}
-  | ETX actual_params WITH_TRANSITION transition_label formula_EF
+  | ETX node_list WITH_TRANSITION transition_label formula_EF
         { Logging.out "\tParsed ETX\n"; CTL.ETX ($2, $4, $5)}
   | EX WITH_TRANSITION transition_label formula_with_paren
     { Logging.out "\tParsed EX\n"; CTL.EX ($3, $4)}
@@ -228,11 +231,24 @@ formula:
   | NOT formula { Logging.out "\tParsed NOT\n"; CTL.Not ($2) }
 ;
 
-identifier:
- | IDENTIFIER { is_not_infer_reserved_id $1 }
+
+alexp:
+ | STRING { is_not_infer_reserved_id $1;
+            Logging.out "\tParsed string constant '%s' \n" $1;
+            ALVar.Const $1 }
+ | REGEXP LEFT_PAREN STRING RIGHT_PAREN
+          { Logging.out "\tParsed regular expression '%s' \n" $3;
+            ALVar.Regexp $3 }
+ | identifier { is_defined_identifier $1; ALVar.Var $1 }
  ;
 
+ identifier:
+  | IDENTIFIER { is_not_infer_reserved_id $1;
+                 Logging.out "\tParsed identifier '%s' \n" $1; $1 }
+  ;
+
 file_identifier:
-  | FILE_IDENTIFIER { is_not_infer_reserved_id $1 }
+  | FILE_IDENTIFIER { is_not_infer_reserved_id $1;
+                      Logging.out "\tParsed file identifier '%s' \n" $1; $1 }
   ;
 %%

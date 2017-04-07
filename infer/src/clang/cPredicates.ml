@@ -56,14 +56,13 @@ let captured_variables_cxx_ref an =
       List.fold ~f:capture_var_is_cxx_ref ~init:[] bdi.bdi_captured_variables
   | _ -> []
 
-
-
-
 type t = ALVar.formula_id * ALVar.alexp list(* (name, [param1,...,paramK]) *)
 
-(* true if and only if string contained occurs in container *)
-let str_contains container contained =
-  let rexp = Str.regexp_string_case_fold contained in
+(* true if and only if a substring of container matches the regular
+   expression defined by contained
+*)
+let str_match_regex container contained =
+  let rexp = Str.regexp contained in
   try
     Str.search_forward rexp container 0 >= 0
   with Not_found -> false
@@ -88,7 +87,7 @@ let is_objc_interface_named_strict an expected_name =
 
 (* is an objc interface with name expected_name *)
 let is_objc_interface_named an expected_name =
-  _is_objc_interface_named (str_contains) an expected_name
+  _is_objc_interface_named (str_match_regex) an expected_name
 
 let _is_object_of_class_named comp receiver cname =
   let open Clang_ast_t in
@@ -121,9 +120,35 @@ let call_method_strict an m =
 
 (* an |= call_method(m) where we check is the name contains m *)
 let call_method an m =
-  _call_method (str_contains) an m
+  _call_method (str_match_regex) an m
+
+let is_receiver_kind_class comp omei cname =
+  let open Clang_ast_t in
+  match omei.omei_receiver_kind  with
+  | `Class ptr ->
+      (match CAst_utils.get_desugared_type ptr with
+       | Some ObjCInterfaceType (_, ptr) ->
+           (match CAst_utils.get_decl ptr with
+            | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
+                comp ndi.ni_name cname
+            | _ -> false)
+       | _ -> false)
+  | _ -> false
 
 let _call_class_method comp an cname mname =
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) ->
+      is_receiver_kind_class comp omei cname &&
+      comp omei.omei_selector mname
+  | _ -> false
+
+let call_class_method_strict an cname mname =
+  _call_class_method (String.equal) an cname mname
+
+let call_class_method an cname mname =
+  _call_class_method (str_match_regex) an cname mname
+
+let _call_instance_method comp an cname mname =
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, receiver :: _, _, omei)) ->
       is_object_of_class_named receiver cname &&
@@ -133,20 +158,20 @@ let _call_class_method comp an cname mname =
 (* an is a node calling method mname of class cname.
    The equality is strict.
 *)
-let call_class_method_strict an cname mname =
-  _call_class_method (String.equal) an cname mname
+let call_instance_method_strict an cname mname =
+  _call_instance_method (String.equal) an cname mname
 
 (* an is a node calling method whose name contains mname of a
    class whose name contains cname.
 *)
-let call_class_method an cname mname =
-  _call_class_method (str_contains) an cname mname
+let call_instance_method an cname mname =
+  _call_instance_method (str_match_regex) an cname mname
 
 let property_name_contains_word word an =
   match an with
   | Ctl_parser_types.Decl decl ->
       (match Clang_ast_proj.get_named_decl_tuple decl with
-       | Some (_, n) -> str_contains n.Clang_ast_t.ni_name word
+       | Some (_, n) -> str_match_regex n.Clang_ast_t.ni_name word
        | _ -> false)
   | _ -> false
 
@@ -309,7 +334,7 @@ let _declaration_has_name comp an name =
 
 (* an is a declaration whose name contains a regexp defined by re *)
 let declaration_has_name an re =
-  _declaration_has_name (str_contains) an re
+  _declaration_has_name (str_match_regex) an re
 
 (* an is a declaration called precisely name *)
 let declaration_has_name_strict an name =
@@ -323,7 +348,7 @@ let _is_class comp an re =
   | _ -> false
 
 let is_class an re =
-  _is_class (str_contains) an re
+  _is_class (str_match_regex) an re
 
 let is_class_strict an name =
   _is_class (String.equal) an name

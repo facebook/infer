@@ -21,6 +21,10 @@ val call_class_method : Ctl_parser_types.ast_node  -> string -> string -> bool
 
 val call_class_method_strict : Ctl_parser_types.ast_node  -> string -> string -> bool
 
+val call_instance_method : Ctl_parser_types.ast_node  -> string -> string -> bool
+
+val call_instance_method_strict : Ctl_parser_types.ast_node  -> string -> string -> bool
+
 val is_objc_interface_named_strict : Ctl_parser_types.ast_node -> string -> bool
 
 val is_objc_interface_named : Ctl_parser_types.ast_node -> string -> bool
