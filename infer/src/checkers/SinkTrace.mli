@@ -20,6 +20,9 @@ module type S = sig
   (** get a path for each of the reportable flows to a sink in this trace *)
   val get_reportable_sink_paths : t -> trace_of_pname:(Typ.Procname.t -> t) -> sink_path list
 
+  (** get a report for a single sink *)
+  val get_reportable_sink_path : Sink.t -> trace_of_pname:(Typ.Procname.t -> t) -> sink_path option
+
   (** update sink with the given call site *)
   val with_callsite : t -> CallSite.t -> t
 

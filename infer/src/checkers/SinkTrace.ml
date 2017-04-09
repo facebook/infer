@@ -15,14 +15,12 @@ module L = Logging
 module type S = sig
   include Trace.S
 
-  (** a path from some procedure via the given passthroughs to the given call stack, with
-      passthroughs for each callee *)
   type sink_path = Passthroughs.t * (Sink.t * Passthroughs.t) list
 
-  (** get a path for each of the reportable flows to a sink in this trace *)
   val get_reportable_sink_paths : t -> trace_of_pname:(Typ.Procname.t -> t) -> sink_path list
 
-  (** update sink with the given call site *)
+  val get_reportable_sink_path : Sink.t -> trace_of_pname:(Typ.Procname.t -> t) -> sink_path option
+
   val with_callsite : t -> CallSite.t -> t
 
   val of_sink : Sink.t -> t
@@ -71,6 +69,12 @@ module Make (TraceElem : TraceElem.S) = struct
   let of_sink sink =
     let sinks = Sinks.add sink Sinks.empty in
     update_sinks empty sinks
+
+  let get_reportable_sink_path sink ~trace_of_pname =
+    match get_reportable_sink_paths (of_sink sink) ~trace_of_pname with
+    | [] -> None
+    | [report] -> Some report
+    | _ -> failwithf "Should not get >1 report for 1 sink"
 
   let pp fmt t =
     let pp_passthroughs_if_not_empty fmt p =
