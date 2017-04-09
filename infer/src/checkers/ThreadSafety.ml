@@ -957,14 +957,33 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
   | _ ->
       PathDomain.empty
 
-let make_trace ((_, sinks) as path) =
+let make_trace_with_conflicts conflicts original_path pdesc =
   let open ThreadSafetyDomain in
-  let final_sink, _ = List.hd_exn sinks in
-  PathDomain.to_sink_loc_trace
-    ~desc_of_sink:(desc_of_sink (PathDomain.Sink.call_site final_sink))
-    path
+  let loc_trace_of_path ((_, sinks) as path) =
+    let final_sink, _ = List.hd_exn sinks in
+    PathDomain.to_sink_loc_trace
+      ~desc_of_sink:(desc_of_sink (PathDomain.Sink.call_site final_sink))
+      path in
+  let make_trace_for_sink sink =
+    let trace_of_pname = trace_of_pname sink pdesc in
+    match PathDomain.get_reportable_sink_path sink ~trace_of_pname with
+    | Some path -> loc_trace_of_path path
+    | None -> [] in
 
-let report_thread_safety_violation tenv pdesc ~make_description access =
+  let original_trace = loc_trace_of_path original_path in
+  match conflicts with
+  | conflict_sink :: _ ->
+      (* create a trace for one of the conflicts and append it to the trace for the original sink *)
+      let conflict_trace = make_trace_for_sink conflict_sink in
+      let first_trace_spacer =
+        Errlog.make_trace_element 0 Location.dummy "<Beginning of read trace>" [] in
+      let second_trace_spacer =
+        Errlog.make_trace_element 0 Location.dummy "<Beginning of write trace>" [] in
+      (first_trace_spacer :: original_trace) @ (second_trace_spacer :: conflict_trace)
+  | [] ->
+      original_trace
+
+let report_thread_safety_violation tenv pdesc ~make_description ?(conflicts=[]) access =
   let open ThreadSafetyDomain in
   let pname = Procdesc.get_proc_name pdesc in
   let report_one_path ((_, sinks) as path) =
@@ -973,7 +992,7 @@ let report_thread_safety_violation tenv pdesc ~make_description access =
     let initial_sink_site = PathDomain.Sink.call_site initial_sink in
     let final_sink_site = PathDomain.Sink.call_site final_sink in
     let loc = CallSite.loc initial_sink_site in
-    let ltr = make_trace path in
+    let ltr = make_trace_with_conflicts conflicts path pdesc in
     let msg = Localise.to_issue_id Localise.thread_safety_violation in
     let description = make_description tenv pname final_sink_site initial_sink_site final_sink in
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
@@ -1103,6 +1122,7 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
                 tenv
                 pdesc
                 ~make_description:(make_read_write_race_description all_writes)
+                ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) all_writes)
                 access;
               update_reported access pname reported_acc
             end
