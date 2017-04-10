@@ -26,8 +26,10 @@ module type S = sig
     initial:TransferFunctions.Domain.astate ->
     TransferFunctions.Domain.astate option
 
-  (** compute and return invariant map for the given CFG/procedure starting from [initial] *)
+  (** compute and return invariant map for the given CFG/procedure starting from [initial]. if
+      [debug] is true, print html debugging output. *)
   val exec_cfg :
+    ?debug:bool ->
     TransferFunctions.CFG.t ->
     TransferFunctions.extras ProcData.t ->
     initial:TransferFunctions.Domain.astate ->

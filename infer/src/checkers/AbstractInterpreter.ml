@@ -26,6 +26,7 @@ module type S = sig
     TransferFunctions.Domain.astate option
 
   val exec_cfg :
+    ?debug:bool ->
     TransferFunctions.CFG.t ->
     TransferFunctions.extras ProcData.t ->
     initial:TransferFunctions.Domain.astate ->
@@ -69,7 +70,7 @@ module MakeNoCFG
     | Some state -> Some state.pre
     | None -> None
 
-  let exec_node node astate_pre work_queue inv_map ({ ProcData.pdesc; } as proc_data) =
+  let exec_node node astate_pre work_queue inv_map ({ ProcData.pdesc; } as proc_data) ~debug =
     let node_id = CFG.id node in
     let update_inv_map pre visit_count =
       let compute_post (pre, inv_map) (instr, id_opt) =
@@ -81,20 +82,18 @@ module MakeNoCFG
       let instr_ids = match CFG.instr_ids node with
         | [] -> [Sil.skip_instr, None]
         | l -> l in
-      let underlying_node = CFG.underlying_node node in
-      NodePrinter.start_session underlying_node;
+      if debug then NodePrinter.start_session (CFG.underlying_node node);
       let astate_post, inv_map_post =
         List.fold ~f:compute_post ~init:(pre, inv_map) instr_ids in
-      if Config.write_html
+      if debug
       then
         begin
-          let str =
-            let instrs = List.map ~f:fst instr_ids in
-            Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@."
-              Domain.pp pre (Sil.pp_instr_list Pp.text) instrs Domain.pp astate_post in
-          L.d_strln str
+          let instrs = List.map ~f:fst instr_ids in
+          L.d_strln
+            (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@."
+               Domain.pp pre (Sil.pp_instr_list Pp.text) instrs Domain.pp astate_post);
+          NodePrinter.finish_session (CFG.underlying_node node);
         end;
-      NodePrinter.finish_session underlying_node;
       let inv_map'' =
         InvariantMap.add node_id { pre; post=astate_post; visit_count; } inv_map_post in
       inv_map'', Scheduler.schedule_succs work_queue node in
@@ -114,7 +113,7 @@ module MakeNoCFG
       let visit_count = 1 in
       update_inv_map astate_pre visit_count
 
-  let rec exec_worklist cfg work_queue inv_map proc_data =
+  let rec exec_worklist cfg work_queue inv_map proc_data ~debug =
     let compute_pre node inv_map =
       (* if the [pred] -> [node] transition was normal, use post([pred]) *)
       let extract_post_ pred = extract_post (CFG.id pred) inv_map in
@@ -128,21 +127,21 @@ module MakeNoCFG
       | [] -> None in
     match Scheduler.pop work_queue with
     | Some (_, [], work_queue') ->
-        exec_worklist cfg work_queue' inv_map proc_data
+        exec_worklist cfg work_queue' inv_map proc_data ~debug
     | Some (node, _, work_queue') ->
         let inv_map_post, work_queue_post = match compute_pre node inv_map with
-          | Some astate_pre -> exec_node node astate_pre work_queue' inv_map proc_data
+          | Some astate_pre -> exec_node node astate_pre work_queue' inv_map proc_data ~debug
           | None -> inv_map, work_queue' in
-        exec_worklist cfg work_queue_post inv_map_post proc_data
+        exec_worklist cfg work_queue_post inv_map_post proc_data ~debug
     | None ->
         inv_map
 
   (* compute and return an invariant map for [cfg] *)
-  let exec_cfg cfg proc_data ~initial =
+  let exec_cfg ?(debug=Config.write_html) cfg proc_data ~initial =
     let start_node = CFG.start_node cfg in
     let inv_map', work_queue' =
-      exec_node start_node initial (Scheduler.empty cfg) InvariantMap.empty proc_data in
-    exec_worklist cfg work_queue' inv_map' proc_data
+      exec_node start_node initial (Scheduler.empty cfg) InvariantMap.empty proc_data ~debug in
+    exec_worklist cfg work_queue' inv_map' proc_data ~debug
 
   (* compute and return an invariant map for [pdesc] *)
   let exec_pdesc ({ ProcData.pdesc; } as proc_data) =
