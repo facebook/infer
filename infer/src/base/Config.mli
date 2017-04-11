@@ -101,7 +101,6 @@ val global_tenv_filename : string
 val idempotent_getters : bool
 val incremental_procs : bool
 val infer_py_argparse_error_exit_code : int
-val inferconfig_file : string
 val initial_analysis_time : float
 val ivar_attributes : string
 val lib_dir : string

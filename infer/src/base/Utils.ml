@@ -192,13 +192,11 @@ let dir_is_empty path =
 
 let string_crc_hex32 s = Digest.to_hex (Digest.string s)
 
-let read_optional_json_file path =
-  if Sys.file_exists path = `Yes then
-    try
-      Ok (Yojson.Basic.from_file path)
-    with Sys_error msg | Yojson.Json_error msg ->
-      Error msg
-  else Ok (`Assoc [])
+let read_json_file path =
+  try
+    Ok (Yojson.Basic.from_file path)
+  with Sys_error msg | Yojson.Json_error msg ->
+    Error msg
 
 let do_finally f g =
   let res = try f () with exc -> g () |> ignore; raise exc in

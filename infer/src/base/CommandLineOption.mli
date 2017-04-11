@@ -11,6 +11,9 @@
 
 open! IStd
 
+(** Print to stderr in case of error, fails in strict mode *)
+val warnf : ('a, Format.formatter, unit) format -> 'a
+
 (** a section is a part of infer that can be affected by an infer option *)
 type section =
     Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Print | Quandary
@@ -164,13 +167,10 @@ val extend_env_args : string list -> unit
     specified in the environment variable, which themselves supersede those passed via the config
     file.
 
-    If [incomplete] is set, unknown options are ignored, and [args_env_var] is not set.
-
     WARNING: An argument will be interpreted as many times as it appears in all of the config file,
     the environment variable, and the command line. The [args_env_var] is set to the set of options
     parsed in [args_env_var] and on the command line. *)
-val parse : ?incomplete:bool -> ?config_file:string ->
-  usage:Arg.usage_msg -> parse_action -> parse_action * (int -> 'a)
+val parse : ?config_file:string -> usage:Arg.usage_msg -> parse_action -> parse_action * (int -> 'a)
 
 (** [is_env_var_set var] is true if $[var]=1 *)
 val is_env_var_set : string -> bool

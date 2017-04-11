@@ -16,6 +16,27 @@ module YBU = Yojson.Basic.Util
 
 let (=) = String.equal
 
+let is_env_var_set v =
+  Option.value (Option.map (Sys.getenv v) ~f:((=) "1")) ~default:false
+
+(** The working directory of the initial invocation of infer, to which paths passed as command line
+    options are relative. *)
+let init_work_dir, is_originator =
+  match Sys.getenv "INFER_CWD" with
+  | Some dir ->
+      (dir, false)
+  | None ->
+      let real_cwd = Utils.realpath (Sys.getcwd ()) in
+      Unix.putenv ~key:"INFER_CWD" ~data:real_cwd;
+      (real_cwd, true)
+
+let strict_mode = is_env_var_set "INFER_STRICT_MODE"
+
+let warnf =
+  if strict_mode then failwithf
+  else if not is_originator then fun fmt -> F.ifprintf F.err_formatter fmt
+  else F.eprintf
+
 let terminal_width = lazy (
   let open Ctypes in
   let module T = IOCtl.Types(IOCtl_types) in
@@ -46,27 +67,6 @@ let to_arg_spec = function
 
 let to_arg_spec_triple (x, spec, y) = (x, to_arg_spec spec, y)
 let to_arg_speclist = List.map ~f:to_arg_spec_triple
-
-let is_env_var_set v =
-  Option.value (Option.map (Sys.getenv v) ~f:((=) "1")) ~default:false
-
-(** The working directory of the initial invocation of infer, to which paths passed as command line
-    options are relative. *)
-let init_work_dir, is_originator =
-  match Sys.getenv "INFER_CWD" with
-  | Some dir ->
-      (dir, false)
-  | None ->
-      let real_cwd = Utils.realpath (Sys.getcwd ()) in
-      Unix.putenv ~key:"INFER_CWD" ~data:real_cwd;
-      (real_cwd, true)
-
-let strict_mode = is_env_var_set "INFER_STRICT_MODE"
-
-let warnf =
-  if strict_mode then failwithf
-  else if not is_originator then fun fmt -> F.ifprintf F.err_formatter fmt
-  else F.eprintf
 
 type section =
     Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Print | Quandary
@@ -108,7 +108,7 @@ let accept_unknown_args = function
 type desc = {
   long: string; short: string; meta: string; doc: string; spec: spec;
   (** how to go from an option in the json config file to a list of command-line options *)
-  decode_json: Yojson.Basic.json -> string list ;
+  decode_json: inferconfig_dir:string -> Yojson.Basic.json -> string list ;
 }
 
 let dashdash long =
@@ -288,9 +288,9 @@ let deprecate_desc parse_mode ~long ~short ~deprecated desc =
     | String f -> String (warn_then_f f)
     | Symbol (symbols, f) -> Symbol (symbols, warn_then_f f)
     | Rest _ as spec -> spec in
-  let deprecated_decode_json j =
+  let deprecated_decode_json ~inferconfig_dir j =
     warnf "WARNING: in .inferconfig: '%s' is deprecated. Use '%s' instead.@." deprecated long;
-    desc.decode_json j in
+    desc.decode_json ~inferconfig_dir j in
   { long = ""; short = deprecated; meta = ""; doc = "";
     spec = deprecated_spec; decode_json = deprecated_decode_json }
 
@@ -356,9 +356,18 @@ type 'a t =
   ?parse_mode:parse_mode -> ?meta:string -> Arg.doc ->
   'a
 
-let string_json_decoder ~long json = [dashdash long; YBU.to_string json]
+let string_json_decoder ~long ~inferconfig_dir:_ json =
+  [dashdash long; YBU.to_string json]
 
-let list_json_decoder json_decoder json = List.concat (YBU.convert_each json_decoder json)
+let path_json_decoder ~long ~inferconfig_dir json =
+  let abs_path =
+    let path = YBU.to_string json in
+    if Filename.is_relative path then inferconfig_dir ^/ path
+    else path in
+  [dashdash long; abs_path]
+
+let list_json_decoder json_decoder ~inferconfig_dir json =
+  List.concat (YBU.convert_each (json_decoder ~inferconfig_dir) json)
 
 let mk_set var value ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="") doc =
   let setter () = var := value in
@@ -406,13 +415,13 @@ let mk_bool ?(deprecated_no=[]) ?(default=false) ?(f=fun b -> b)
   let var =
     mk ~long ?short ~deprecated ~default ?parse_mode
       ~meta doc ~default_to_string ~mk_setter:(fun var _ -> var := f true)
-      ~decode_json:(fun json ->
+      ~decode_json:(fun ~inferconfig_dir:_ json ->
           [dashdash (if YBU.to_bool json then long else nolong)])
       ~mk_spec in
   ignore(
     mk ~long:nolong ?short:noshort ~deprecated:deprecated_no ~default:(not default) ?parse_mode
       ~meta nodoc ~default_to_string ~mk_setter:(fun _ _ -> var := f false)
-      ~decode_json:(fun json ->
+      ~decode_json:(fun ~inferconfig_dir:_ json ->
           [dashdash (if YBU.to_bool json then nolong else long)])
       ~mk_spec );
   var
@@ -495,21 +504,21 @@ let mk_path_helper ~setter ~default_to_string
 let mk_path ~default ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="path") =
   mk_path_helper
     ~setter:(fun var x -> var := x)
-    ~decode_json:(string_json_decoder ~long)
+    ~decode_json:(path_json_decoder ~long)
     ~default_to_string:(fun s -> s)
     ~default ~deprecated ~long ~short ~parse_mode ~meta
 
 let mk_path_opt ?default ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="path") =
   mk_path_helper
     ~setter:(fun var x -> var := Some x)
-    ~decode_json:(string_json_decoder ~long)
+    ~decode_json:(path_json_decoder ~long)
     ~default_to_string:(function Some s -> s | None -> "")
     ~default ~deprecated ~long ~short ~parse_mode ~meta
 
 let mk_path_list ?(default=[]) ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="path") =
   mk_path_helper
     ~setter:(fun var x -> var := x :: !var)
-    ~decode_json:(list_json_decoder (string_json_decoder ~long))
+    ~decode_json:(list_json_decoder (path_json_decoder ~long))
     ~default_to_string:(String.concat ~sep:", ")
     ~default ~deprecated ~long ~short ~parse_mode ~meta
 
@@ -542,7 +551,7 @@ let mk_symbol_seq ?(default=[]) ~symbols ~eq ?(deprecated=[]) ~long ?short ?pars
     ~default_to_string:(fun syms -> String.concat ~sep:" " (List.map ~f:to_string syms))
     ~mk_setter:(fun var str_seq ->
         var := List.map ~f:of_string (Str.split (Str.regexp_string ",") str_seq))
-    ~decode_json:(fun json ->
+    ~decode_json:(fun ~inferconfig_dir:_ json ->
         [dashdash long;
          String.concat ~sep:"," (YBU.convert_each YBU.to_string json)])
     ~mk_spec:(fun set -> String set)
@@ -552,14 +561,14 @@ let mk_set_from_json ~default ~default_to_string ~f
   mk ~deprecated ~long ?short ?parse_mode ~meta doc
     ~default ~default_to_string
     ~mk_setter:(fun var json -> var := f (Yojson.Basic.from_string json))
-    ~decode_json:(fun json -> [dashdash long; Yojson.Basic.to_string json])
+    ~decode_json:(fun ~inferconfig_dir:_ json -> [dashdash long; Yojson.Basic.to_string json])
     ~mk_spec:(fun set -> String set)
 
 let mk_json ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="json") doc =
   mk ~deprecated ~long ?short ?parse_mode ~meta doc
     ~default:(`List []) ~default_to_string:Yojson.Basic.to_string
     ~mk_setter:(fun var json -> var := Yojson.Basic.from_string json)
-    ~decode_json:(fun json -> [dashdash long; Yojson.Basic.to_string json])
+    ~decode_json:(fun ~inferconfig_dir:_ json -> [dashdash long; Yojson.Basic.to_string json])
     ~mk_spec:(fun set -> String set)
 
 (** [mk_anon] always return the same ref. Anonymous arguments are only accepted if
@@ -569,10 +578,11 @@ let mk_anon () = rev_anon_args
 let mk_rest ?(parse_mode=Infer []) doc =
   let rest = ref [] in
   let spec = Rest (fun arg -> rest := arg :: !rest) in
-  add parse_mode {long = "--"; short = ""; meta = ""; doc; spec; decode_json = fun _ -> []} ;
+  add parse_mode {long = "--"; short = ""; meta = ""; doc; spec;
+                  decode_json = fun ~inferconfig_dir:_ _ -> []} ;
   rest
 
-let set_curr_speclist_for_parse_action ~incomplete ~usage ?(parse_all=false) parse_action =
+let set_curr_speclist_for_parse_action ~usage ?(parse_all=false) parse_action =
   let full_speclist = ref [] in
 
   let curr_usage status =
@@ -589,23 +599,19 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage ?(parse_all=false) par
     let unknown opt =
       (opt, Unit (fun () -> raise (Arg.Bad ("unknown option '" ^ opt ^ "'"))), "") in
     let mk_spec ~long ?(short="") spec doc =
-      pad_and_xform doc_width left_width { long; short; meta=""; spec; doc;
-                                           decode_json=fun _ -> raise (Arg.Bad long)} in
-    if incomplete then
-      speclist @ [
-        (unknown "--help") ;
-        (unknown "-help")
-      ]
-    else
-      speclist @ [
-        mk_spec ~long:"help" ~short:"h"
-          (Unit (fun () -> curr_usage 0))
-          "Display this list of options";
-        mk_spec ~long:"help-full"
-          (Unit (fun () -> full_usage 0))
-          "Display the full list of options, including internal and experimental options";
-        (unknown "-help")
-      ]
+      pad_and_xform doc_width left_width {
+        long; short; meta=""; spec; doc;
+        decode_json=fun ~inferconfig_dir:_ _ -> raise (Arg.Bad long);
+      } in
+    speclist @ [
+      mk_spec ~long:"help" ~short:"h"
+        (Unit (fun () -> curr_usage 0))
+        "Display this list of options";
+      mk_spec ~long:"help-full"
+        (Unit (fun () -> full_usage 0))
+        "Display the full list of options, including internal and experimental options";
+      (unknown "-help")
+    ]
   in
   let normalize speclist =
     let norm k =
@@ -680,8 +686,8 @@ let set_curr_speclist_for_parse_action ~incomplete ~usage ?(parse_all=false) par
   curr_usage
 
 
-let select_parse_action ~incomplete ~usage ?parse_all action =
-  let usage = set_curr_speclist_for_parse_action ~incomplete ~usage ?parse_all action in
+let select_parse_action ~usage ?parse_all action =
+  let usage = set_curr_speclist_for_parse_action ~usage ?parse_all action in
   unknown_args_action := if accept_unknown_args action then `Add else `Reject;
   final_parse_action := action;
   usage
@@ -690,16 +696,17 @@ let mk_rest_actions ?(parse_mode=Infer []) doc ~usage decode_action =
   let rest = ref [] in
   let spec = String (fun arg ->
       rest := List.rev (Array.to_list (Array.slice !args_to_parse (!arg_being_parsed + 1) 0)) ;
-      select_parse_action ~incomplete:false ~usage (decode_action arg) |> ignore;
+      select_parse_action ~usage (decode_action arg) |> ignore;
       (* stop accepting new anonymous arguments *)
       unknown_args_action := `Skip) in
-  add parse_mode {long = "--"; short = ""; meta = ""; doc; spec; decode_json = fun _ -> []} ;
+  add parse_mode {long = "--"; short = ""; meta = ""; doc; spec;
+                  decode_json = fun ~inferconfig_dir:_ _ -> []} ;
   rest
 
 let mk_switch_parse_action
     parse_action ~usage ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="") doc =
   let switch () =
-    select_parse_action ~incomplete:false ~usage parse_action |> ignore in
+    select_parse_action ~usage parse_action |> ignore in
   ignore(
     mk ~deprecated ~long ?short ~default:() ?parse_mode ~meta doc
       ~default_to_string:(fun () -> "")
@@ -708,7 +715,7 @@ let mk_switch_parse_action
       ~mk_spec:(fun _ -> Unit switch))
 
 let decode_inferconfig_to_argv path =
-  let json = match Utils.read_optional_json_file path with
+  let json = match Utils.read_json_file path with
     | Ok json ->
         json
     | Error msg ->
@@ -716,6 +723,7 @@ let decode_inferconfig_to_argv path =
         `Assoc [] in
   let desc_list = List.Assoc.find_exn ~equal:equal_parse_tag parse_tag_desc_lists AllInferTags in
   let json_config = YBU.to_assoc json in
+  let inferconfig_dir = Filename.dirname path in
   let one_config_item result (key, json_val) =
     try
       let {decode_json} =
@@ -724,7 +732,7 @@ let decode_inferconfig_to_argv path =
               String.equal key long
               || (* for deprecated options *) String.equal key short)
           !desc_list in
-      decode_json json_val @ result
+      decode_json ~inferconfig_dir json_val @ result
     with
     | Not_found ->
         warnf "WARNING: while reading config file %s:@\nUnknown option %s@." path key ;
@@ -769,11 +777,11 @@ let extra_env_args = ref []
 let extend_env_args args =
   extra_env_args := List.rev_append args !extra_env_args
 
-let parse_args ~incomplete ~usage ?parse_all action args =
+let parse_args ~usage ?parse_all action args =
   let exe_name = Sys.executable_name in
   args_to_parse := Array.of_list (exe_name :: args);
   arg_being_parsed := 0;
-  let curr_usage = select_parse_action ~incomplete ~usage ?parse_all action in
+  let curr_usage = select_parse_action ~usage ?parse_all action in
   (* tests if msg indicates an unknown option, as opposed to a known option with bad argument *)
   let is_unknown msg = String.is_substring msg ~substring:": unknown option" in
   let rec parse_loop () =
@@ -781,7 +789,6 @@ let parse_args ~incomplete ~usage ?parse_all action args =
       Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse curr_speclist
         anon_fun usage
     with
-    | Arg.Bad _ when incomplete -> parse_loop ()
     | Arg.Bad usage_msg ->
         if !unknown_args_action <> `Reject && is_unknown usage_msg then (
           anon_fun !args_to_parse.(!arg_being_parsed);
@@ -795,7 +802,7 @@ let parse_args ~incomplete ~usage ?parse_all action args =
   parse_loop ();
   curr_usage
 
-let parse ?(incomplete=false) ?config_file ~usage action =
+let parse ?config_file ~usage action =
   let env_args = decode_env_to_argv (Option.value (Sys.getenv args_env_var) ~default:"") in
   let inferconfig_args =
     Option.map ~f:decode_inferconfig_to_argv config_file |> Option.value ~default:[] in
@@ -814,15 +821,15 @@ let parse ?(incomplete=false) ?config_file ~usage action =
         else !args_to_export ^ String.of_char env_var_sep ^ encode_argv_to_env args in
       args_to_export := arg_string in
   (* read .inferconfig first, then env vars, then command-line options *)
-  parse_args ~incomplete ~usage ~parse_all:true (Infer Driver) inferconfig_args |> ignore;
+  parse_args ~usage ~parse_all:true (Infer Driver) inferconfig_args |> ignore;
   (* NOTE: do not add the contents of .inferconfig to INFER_ARGS. This helps avoid hitting the
      command line size limit. *)
-  parse_args ~incomplete ~usage ~parse_all:true (Infer Driver) env_args |> ignore;
-  if not incomplete then add_parsed_args_to_args_to_export ();
+  parse_args ~usage ~parse_all:true (Infer Driver) env_args |> ignore;
+  add_parsed_args_to_args_to_export ();
   let curr_usage =
     let cl_args = match Array.to_list Sys.argv with _ :: tl -> tl | [] -> [] in
-    let curr_usage = parse_args ~incomplete ~usage action cl_args in
-    if not incomplete then add_parsed_args_to_args_to_export ();
+    let curr_usage = parse_args ~usage action cl_args in
+    add_parsed_args_to_args_to_export ();
     curr_usage in
-  if not incomplete then Unix.putenv ~key:args_env_var ~data:!args_to_export;
+  Unix.putenv ~key:args_env_var ~data:!args_to_export;
   !final_parse_action, curr_usage

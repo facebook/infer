@@ -55,7 +55,7 @@ val directory_iter : (string -> unit) -> string -> unit
 (** Returns true if a given directory is empty. The directory is assumed to exist. *)
 val dir_is_empty : string -> bool
 
-val read_optional_json_file : string -> (Yojson.Basic.json, string) Result.t
+val read_json_file : string -> (Yojson.Basic.json, string) Result.t
 
 val with_file_in : string -> f:(In_channel.t -> 'a) -> 'a
 val with_file_out : string -> f:(Out_channel.t -> 'a) -> 'a

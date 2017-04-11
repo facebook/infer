@@ -217,11 +217,11 @@ let patterns_of_json_with_key (json_key, json) =
     | "Java" ->
         Ok Config.Java
     | l ->
-        Error ("Inferconfig JSON key " ^ json_key ^ " not supported for language " ^ l) in
+        Error ("JSON key " ^ json_key ^ " not supported for language " ^ l) in
 
   let rec detect_language = function
     | [] ->
-        Error ("No language found for " ^ json_key ^ " in " ^ Config.inferconfig_file)
+        Error ("No language found for " ^ json_key)
     | ("language", `String s) :: _ ->
         language_of_string s
     | _:: tl ->
@@ -237,7 +237,7 @@ let patterns_of_json_with_key (json_key, json) =
         and is_source_contains key = List.exists ~f:(String.equal key) ["source_contains"] in
         let rec loop = function
           | [] ->
-              Error ("Unknown pattern for " ^ json_key ^ " in " ^ Config.inferconfig_file)
+              Error ("Unknown pattern for " ^ json_key)
           | (key, _) :: _ when is_method_pattern key ->
               Ok (Method_pattern (language, default_method_pattern))
           | (key, _) :: _ when is_source_contains key ->
@@ -280,8 +280,7 @@ let patterns_of_json_with_key (json_key, json) =
         error in
 
   let warn_user msg =
-    F.eprintf "WARNING: in file %s: error parsing option %s@\n%s@."
-      Config.inferconfig_file json_key msg in
+    CLOpt.warnf "WARNING: error parsing option %s@\n%s@." json_key msg in
 
   (* Translate all the JSON entries into matching patterns *)
   let rec translate accu = function
@@ -358,7 +357,8 @@ let is_checker_enabled checker_name =
   | false, true -> (* if it is not blacklisted and it is whitelisted then it should be enabled *)
       true
   | true, true -> (* if it's both blacklisted and whitelisted then we flag error *)
-      failwith ("Inconsistent setting in .inferconfig: checker" ^ checker_name ^ " is both blacklisted and whitelisted.")
+      failwithf "Inconsistent settings: checker %s is both blacklisted and whitelisted."
+        checker_name
 
 (* This function loads and list the path that are being filtered by the analyzer. The results *)
 (* are of the form: path/to/file.java -> {infer, eradicate} meaning that analysis results will *)

@@ -163,9 +163,6 @@ let incremental_procs = true
 (** Our Python script does its own argument parsing and will fail with this error on failure *)
 let infer_py_argparse_error_exit_code = 22
 
-(** Name of the infer configuration file *)
-let inferconfig_file = ".inferconfig"
-
 let ivar_attributes = "ivar_attributes"
 
 let lint_dotty_dir_name = "lint_dotty"
@@ -374,34 +371,6 @@ let exe_usage = match current_exe with
       version_string
 
 (** Command Line options *)
-
-(* Declare the phase 1 options *)
-
-let inferconfig_home =
-  CLOpt.mk_path_opt ~long:"inferconfig-home"
-    ~parse_mode:CLOpt.(Infer all_sections) ~meta:"dir" "Path to the .inferconfig file"
-
-and project_root =
-  CLOpt.mk_path ~deprecated:["project_root"; "-project_root"; "pr"] ~long:"project-root" ~short:'C'
-    ~default:CLOpt.init_work_dir
-    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Driver;Print])
-    ~meta:"dir" "Specify the root directory of the project"
-
-(* Parse the phase 1 options, ignoring the rest *)
-
-let _ : CLOpt.parse_action * (int -> 'a) = CLOpt.parse ~incomplete:true startup_action ~usage:""
-
-(* Define the values that depend on phase 1 options *)
-
-let inferconfig_home = !inferconfig_home
-and project_root = !project_root
-
-let inferconfig_path =
-  match inferconfig_home with
-  | Some dir -> dir ^/ inferconfig_file
-  | None -> project_root ^/ inferconfig_file
-
-(* Proceed to declare and parse the remaining options *)
 
 (* HOWTO define a new command line and config file option.
 
@@ -1171,6 +1140,12 @@ and progress_bar =
     ~parse_mode:CLOpt.(Infer [Driver])
     "Show a progress bar"
 
+and project_root =
+  CLOpt.mk_path ~deprecated:["project_root"; "-project_root"; "pr"] ~long:"project-root" ~short:'C'
+    ~default:CLOpt.init_work_dir
+    ~parse_mode:CLOpt.(Infer [Analysis;Clang;Driver;Print])
+    ~meta:"dir" "Specify the root directory of the project"
+
 and quandary_sources =
   CLOpt.mk_json ~long:"quandary-sources"
     ~parse_mode:CLOpt.(Infer [Quandary])
@@ -1570,9 +1545,37 @@ let post_parsing_initialization () =
   | Some (Capture | Compile | Infer | Linters) | None -> ()
 
 
+let inferconfig_env_var = "INFERCONFIG"
+
+(** Name of the infer configuration file *)
+let inferconfig_file = ".inferconfig"
+
+let inferconfig_path () =
+  let rec find dir =
+    match Sys.file_exists ~follow_symlinks:false (dir ^/ inferconfig_file) with
+    | `Yes ->
+        Some dir
+    | `No | `Unknown ->
+        let parent = Filename.dirname dir in
+        let is_root = String.equal dir parent in
+        if is_root then None
+        else find parent in
+  match Sys.getenv "INFERCONFIG" with
+  | Some env_path ->
+      (* make sure the path makes sense in children infer processes *)
+      Some (
+        if Filename.is_relative env_path then
+          Utils.filename_to_absolute ~root:CLOpt.init_work_dir env_path
+        else
+          env_path
+      )
+  | None ->
+      find (Sys.getcwd ())
+      |> Option.map ~f:(fun dir -> dir ^/ inferconfig_file)
+
 let parse_action, parse_args_and_return_usage_exit =
-  let parse_action, usage_exit =
-    CLOpt.parse ~config_file:inferconfig_path ~usage:exe_usage startup_action in
+  let config_file = inferconfig_path () in
+  let parse_action, usage_exit = CLOpt.parse ?config_file ~usage:exe_usage startup_action in
   post_parsing_initialization () ;
   parse_action, usage_exit
 
@@ -1708,6 +1711,7 @@ and print_using_diff = !print_using_diff
 and procedures_per_process = !procedures_per_process
 and procs_csv = !procs_csv
 and procs_xml = !procs_xml
+and project_root = !project_root
 and quandary = !quandary
 and quandary_sources = !quandary_sources
 and quandary_sinks = !quandary_sinks

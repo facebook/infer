@@ -36,7 +36,7 @@ ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck-clang-db
 endif
 ifneq ($(CMAKE),no)
-BUILD_SYSTEMS_TESTS += clang_compilation_db cmake
+BUILD_SYSTEMS_TESTS += clang_compilation_db cmake inferconfig
 endif
 ifneq ($(NDKBUILD),no)
 BUILD_SYSTEMS_TESTS += ndk_build

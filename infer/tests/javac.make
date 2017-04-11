@@ -24,5 +24,5 @@ $(OBJECTS): $(SOURCES)
 
 infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
 	$(QUIET)$(call silent_on_success,Testing infer/java$(ANALYZER_STRING) in $(TEST_REL_DIR),\
-	  $(INFER_BIN) -a $(ANALYZER) --inferconfig-home . --project-root $(PROJECT_ROOT) $(INFER_OPTIONS) -- \
+	  $(INFER_BIN) -a $(ANALYZER) --project-root $(PROJECT_ROOT) $(INFER_OPTIONS) -- \
 	    $(JAVAC) -cp $(CLASSPATH) $(SOURCES))
