@@ -74,7 +74,7 @@ public class Strings {
     InferTaint.inferSensitiveSink(tainted);
   }
 
-  void FN_viaStringFormatVarArgsIndirectBad() {
+  void viaStringFormatVarArgsIndirectBad() {
     viaStringFormatVarArgsIndirect(InferTaint.inferSecretSource());
   }
 

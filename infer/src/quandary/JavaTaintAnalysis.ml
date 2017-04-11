@@ -69,7 +69,8 @@ include
       | pname ->
           failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
 
-    let is_taintable_type = function
+    let is_taintable_type typ=
+      match typ with
       | Typ.Tptr (Tstruct (JavaClass typename), _) | Tstruct (JavaClass typename) ->
           begin
             match Mangled.to_string_full typename with

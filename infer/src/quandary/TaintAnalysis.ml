@@ -73,6 +73,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     | Var.ProgramVar pvar -> Pvar.is_global pvar
     | Var.LogicalVar _ -> false
 
+  let is_return (var, _) = match var with
+    | Var.ProgramVar pvar -> Pvar.is_return pvar
+    | Var.LogicalVar _ -> false
+
+  let is_footprint (var, _) = match var with
+    | Var.ProgramVar _ -> false
+    | Var.LogicalVar id -> Ident.is_footprint id
+
   let make_footprint_var formal_index =
     Var.of_id (Ident.create_footprint Ident.name_spec formal_index)
 
@@ -264,34 +272,41 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         | _ ->
             None in
 
-      let get_caller_ap_node ap access_tree =
-        match get_caller_ap ap with
-        | Some caller_ap ->
-            let caller_node_opt = access_path_get_node caller_ap access_tree proc_data in
-            let caller_node = match caller_node_opt with
-              | Some caller_node -> caller_node | None -> TaintDomain.empty_node in
-            caller_ap, caller_node
-        | None ->
-            ap, TaintDomain.empty_node in
+      let get_caller_ap_node_opt ap access_tree =
+        let get_caller_node caller_ap =
+          let caller_node_opt = access_path_get_node caller_ap access_tree proc_data in
+          let caller_node = Option.value ~default:TaintDomain.empty_node caller_node_opt in
+          caller_ap, caller_node in
+        Option.map (get_caller_ap ap) ~f:get_caller_node in
 
       let replace_footprint_sources callee_trace caller_trace access_tree =
         let replace_footprint_source source acc =
           match TraceDomain.Source.get_footprint_access_path source with
           | Some footprint_access_path ->
-              let _, (caller_ap_trace, _) = get_caller_ap_node footprint_access_path access_tree in
-              TraceDomain.join caller_ap_trace acc
+              begin
+                match get_caller_ap_node_opt footprint_access_path access_tree with
+                | Some (_, (caller_ap_trace, _)) -> TraceDomain.join caller_ap_trace acc
+                | None -> acc
+              end
           | None ->
               acc in
         TraceDomain.Sources.fold
           replace_footprint_source (TraceDomain.sources callee_trace) caller_trace in
 
-      let add_to_caller_tree access_tree_acc callee_ap callee_trace =
-        let caller_ap, (caller_trace, caller_tree) = get_caller_ap_node callee_ap access_tree_acc in
-        let caller_trace' = replace_footprint_sources callee_trace caller_trace access_tree_acc in
-        let appended_trace =
-          TraceDomain.append caller_trace' callee_trace callee_site in
+      let instantiate_and_report callee_trace caller_trace access_tree =
+        let caller_trace' = replace_footprint_sources callee_trace caller_trace access_tree in
+        let appended_trace = TraceDomain.append caller_trace' callee_trace callee_site in
         report_trace appended_trace callee_site proc_data;
-        TaintDomain.add_node caller_ap (appended_trace, caller_tree) access_tree_acc in
+        appended_trace in
+
+      let add_to_caller_tree access_tree_acc callee_ap callee_trace =
+        match get_caller_ap_node_opt callee_ap access_tree_acc with
+        | Some (caller_ap, (caller_trace, caller_tree)) ->
+            let trace = instantiate_and_report callee_trace caller_trace access_tree_acc in
+            TaintDomain.add_node caller_ap (trace, caller_tree) access_tree_acc
+        | None ->
+            ignore (instantiate_and_report callee_trace TraceDomain.empty access_tree_acc);
+            access_tree_acc in
 
       let access_tree =
         TaintDomain.trace_fold
@@ -365,7 +380,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             astate
 
       | Sil.Call (ret, Const (Cfun called_pname), actuals, callee_loc, call_flags) ->
-
           let handle_unknown_call callee_pname astate =
             let is_variadic = match callee_pname with
               | Typ.Procname.Java pname ->
@@ -391,7 +405,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                         Option.exists
                           (AccessPath.Raw.get_typ (AccessPath.extract access_path) proc_data.tenv)
                           ~f:should_taint_typ
-                    | None -> true)
+                    | None ->
+                        true)
                   (TraceDomain.sources trace_with_propagation) in
               if TraceDomain.Sources.is_empty filtered_sources
               then
@@ -500,29 +515,75 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
 
   let make_summary formal_map access_tree =
+    (* if a trace has footprint sources, attach them to the appropriate footprint var *)
     let access_tree' =
-      AccessPath.BaseMap.fold
-        (fun base node acc ->
-           match FormalMap.get_formal_index base formal_map with
-           | Some formal_index ->
-               let base' = make_footprint_var formal_index, snd base in
-               let joined_node =
-                 try TaintDomain.node_join (AccessPath.BaseMap.find base' acc) node
-                 with Not_found -> node in
-               let node' =
-                 if TraceDomain.Sinks.is_empty (TraceDomain.sinks (fst joined_node))
-                 then
-                   (* Java is call-by-value; we can't update a formal in the callee. so drop the
-                      trace associated with the formal unless it contains sinks *)
-                   TraceDomain.empty, snd joined_node
-                 else
-                   joined_node in
-               AccessPath.BaseMap.add base' node' acc
-           | None -> AccessPath.BaseMap.add base node acc)
+      TaintDomain.fold
+        (fun access_tree_acc _ ((trace, _) as node) ->
+           if TraceDomain.Sinks.is_empty (TraceDomain.sinks trace)
+           then
+             (* if this trace has no sinks, we don't need to attach it to anything *)
+             access_tree_acc
+           else
+             TraceDomain.Sources.fold
+               (fun source acc ->
+                  match TraceDomain.Source.get_footprint_access_path source with
+                  | Some footprint_access_path ->
+                      let node' =
+                        match TaintDomain.get_node footprint_access_path acc with
+                        | Some n -> TaintDomain.node_join node n
+                        | None -> node in
+                      TaintDomain.add_node footprint_access_path node' acc
+                  | None ->
+                      acc)
+               (TraceDomain.sources trace)
+               access_tree_acc)
         access_tree
+        access_tree in
+
+    (* should only be used on nodes associated with a footprint base *)
+    let is_empty_node (trace, tree) =
+      TraceDomain.Sinks.is_empty (TraceDomain.sinks trace) &&
+      match tree with
+      | TaintDomain.Subtree subtree -> TaintDomain.AccessMap.is_empty subtree
+      | TaintDomain.Star -> true in
+
+    (* replace formal names with footprint vars for their indices. For example, for `foo(o)`, we'll
+       replace `o` with FP(1) *)
+    let with_footprint_vars =
+      AccessPath.BaseMap.fold
+        (fun base ((trace, subtree) as node) acc ->
+           if is_global base || is_return base
+           then AccessPath.BaseMap.add base node acc
+           else if is_footprint base
+           then
+             if is_empty_node node
+             then
+               acc
+             else
+               let node' =
+                 if TraceDomain.Sinks.is_empty (TraceDomain.sinks trace)
+                 then TraceDomain.empty, subtree
+                 else node in
+               AccessPath.BaseMap.add base node' acc
+           else
+             match FormalMap.get_formal_index base formal_map with
+             | Some formal_index ->
+                 let base' = make_footprint_var formal_index, snd base in
+                 let joined_node =
+                   try TaintDomain.node_join (AccessPath.BaseMap.find base' acc) node
+                   with Not_found -> node in
+                 if is_empty_node joined_node
+                 then
+                   acc
+                 else
+                   AccessPath.BaseMap.add base' joined_node acc
+             | None ->
+                 (* base is a local var *)
+                 acc)
+        access_tree'
         TaintDomain.empty in
 
-    TaintSpecification.to_summary_access_tree access_tree'
+    TaintSpecification.to_summary_access_tree with_footprint_vars
 
   module Interprocedural = AbstractInterpreter.Interprocedural(Summary)
 
