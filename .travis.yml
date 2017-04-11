@@ -9,7 +9,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install opam; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam init; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam switch 4.02.3; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam switch 4.04.0; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then eval `opam config env`; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then opam install -y depext; fi

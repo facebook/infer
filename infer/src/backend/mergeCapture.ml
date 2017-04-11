@@ -84,7 +84,7 @@ let add_multilink_attr ~stats src dst =
 
 let create_link ~stats src dst =
   if link_exists dst then Unix.unlink dst;
-  Unix.symlink ~src ~dst;
+  Unix_.symlink ~src ~dst;
   (* Set the accessed and modified time of the original file slightly in the past.  Due to
      the coarse precision of the timestamps, it is possible for the source and destination of a
      link to have the same modification time. When this happens, the files will be considered to
