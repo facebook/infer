@@ -46,6 +46,7 @@ module MockTaintAnalysis = TaintAnalysis.Make(struct
     let of_summary_access_tree _ = assert false
     let to_summary_access_tree _ = assert false
     let handle_unknown_call _ _ _ _ = []
+    let is_taintable_type _ = true
   end)
 
 module TestInterpreter = AnalyzerTester.Make (ProcCfg.Normal) (MockTaintAnalysis.TransferFunctions)

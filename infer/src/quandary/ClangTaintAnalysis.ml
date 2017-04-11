@@ -25,4 +25,6 @@ include
 
     let handle_unknown_call _ _ _ _ =
       []
+
+    let is_taintable_type _ = true
   end)

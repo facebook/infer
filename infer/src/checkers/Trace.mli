@@ -73,6 +73,8 @@ module type S = sig
   (** add a sink to the current trace. *)
   val add_sink : Sink.t -> t -> t
 
+  val update_sources : t -> Sources.t -> t
+
   (** replace sinks with new ones *)
   val update_sinks : t -> Sinks.t -> t
 

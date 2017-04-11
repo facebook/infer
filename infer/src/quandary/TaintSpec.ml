@@ -25,6 +25,9 @@ module type S = sig
   val handle_unknown_call :
     Typ.Procname.t -> Typ.t option -> (Exp.t * Typ.t) list -> Tenv.t -> handle_unknown list
 
+  (** return true if the given typ can be tainted *)
+  val is_taintable_type : Typ.t -> bool
+
   val to_summary_access_tree : AccessTree.t -> QuandarySummary.AccessTree.t
 
   val of_summary_access_tree : QuandarySummary.AccessTree.t -> AccessTree.t

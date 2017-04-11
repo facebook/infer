@@ -68,4 +68,19 @@ include
           []
       | pname ->
           failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
+
+    let is_taintable_type = function
+      | Typ.Tptr (Tstruct (JavaClass typename), _) | Tstruct (JavaClass typename) ->
+          begin
+            match Mangled.to_string_full typename with
+            | "android.content.Intent"
+            | "android.net.Uri"
+            | "java.lang.String"
+            | "java.net.URI" ->
+                true
+            | _ ->
+                false
+          end
+      | _ ->
+          false
   end)

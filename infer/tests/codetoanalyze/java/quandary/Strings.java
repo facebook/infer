@@ -63,4 +63,19 @@ public class Strings {
     InferTaint.inferSensitiveSink(formatter.toString());
   }
 
+  void viaStringFormatVarArgsDirectBad() {
+    Object source = InferTaint.inferSecretSource();
+    String tainted = String.format("%s%s", "hi", source);
+    InferTaint.inferSensitiveSink(tainted);
+  }
+
+  void viaStringFormatVarArgsIndirect(Object param) {
+    String tainted = String.format("%s%s", "hi", param);
+    InferTaint.inferSensitiveSink(tainted);
+  }
+
+  void FN_viaStringFormatVarArgsIndirectBad() {
+    viaStringFormatVarArgsIndirect(InferTaint.inferSecretSource());
+  }
+
 }

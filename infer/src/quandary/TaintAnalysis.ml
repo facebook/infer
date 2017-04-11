@@ -367,6 +367,15 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       | Sil.Call (ret, Const (Cfun called_pname), actuals, callee_loc, call_flags) ->
 
           let handle_unknown_call callee_pname astate =
+            let is_variadic = match callee_pname with
+              | Typ.Procname.Java pname ->
+                  begin
+                    match List.rev (Typ.Procname.java_get_parameters pname) with
+                    | (_, "java.lang.Object[]") :: _ -> true
+                    | _ -> false
+                  end
+              | _ -> false in
+            let should_taint_typ typ = is_variadic || TaintSpecification.is_taintable_type typ in
             let exp_join_traces trace_acc (exp, typ) =
               match exp_get_node ~abstracted:true exp typ astate proc_data with
               | Some (trace, _) -> TraceDomain.join trace trace_acc
@@ -375,9 +384,23 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               let initial_trace = access_path_get_trace access_path astate.access_tree proc_data in
               let trace_with_propagation =
                 List.fold ~f:exp_join_traces ~init:initial_trace actuals in
-              let access_tree =
-                TaintDomain.add_trace access_path trace_with_propagation astate.access_tree in
-              { astate with access_tree; } in
+              let filtered_sources =
+                TraceDomain.Sources.filter (fun source ->
+                    match TraceDomain.Source.get_footprint_access_path source with
+                    | Some access_path ->
+                        Option.exists
+                          (AccessPath.Raw.get_typ (AccessPath.extract access_path) proc_data.tenv)
+                          ~f:should_taint_typ
+                    | None -> true)
+                  (TraceDomain.sources trace_with_propagation) in
+              if TraceDomain.Sources.is_empty filtered_sources
+              then
+                astate
+              else
+                let trace' = TraceDomain.update_sources trace_with_propagation filtered_sources in
+                let access_tree =
+                  TaintDomain.add_trace access_path trace' astate.access_tree in
+                { astate with Domain.access_tree; } in
             let handle_unknown_call_ astate_acc propagation =
               match propagation, actuals, ret with
               | _, [], _ ->
