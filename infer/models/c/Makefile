@@ -8,7 +8,7 @@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
-C_MODELS_SOURCES = $(shell find src/ -name "*.c")
+C_MODELS_SOURCES = $(shell find src/ -name "*.[ch]")
 INFER_RESULTS = out/report.json
 
 all: install

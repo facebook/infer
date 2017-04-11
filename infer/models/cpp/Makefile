@@ -8,13 +8,14 @@
 ROOT_DIR = ../../..
 include $(ROOT_DIR)/Makefile.config
 
-CPP_MODELS_SOURCES = $(shell find src/ -name "*.cpp")
-C_MODELS_SOURCES = $(shell find src/c_src/ -name "*.c")
+MODELS_SOURCES = $(shell find src/ -name "*.cpp") \
+                 $(shell find src/c_src/ -name "*.[ch]") \
+                 $(shell find include -type f)
 INFER_RESULTS = out/report.json
 
 all: install
 
-$(INFER_RESULTS): $(CPP_MODELS_SOURCES) $(C_MODELS_SOURCES) $(CLANG_DEPS_NO_MODELS)
+$(INFER_RESULTS): $(MODELS_SOURCES) $(CLANG_DEPS_NO_MODELS)
 #	make clean in src/ to recompile all the models
 	$(QUIET)$(call silent_on_success,Building C++ models,\
 	  $(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src clean all)
