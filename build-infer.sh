@@ -12,7 +12,8 @@
 set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-INFER_ROOT="$SCRIPT_DIR/../"
+INFER_ROOT="$SCRIPT_DIR"
+INFER_DEPS_DIR="$INFER_ROOT/dependencies/infer-deps"
 PLATFORM="$(uname)"
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
 OCAML_VERSION="4.02.3"
@@ -101,6 +102,8 @@ YES=
 if [ "$INTERACTIVE" = "no" ]; then
   YES=--yes
 fi
+# --yes by default for opam commands
+export OPAMYES=1
 
 check_installed () {
   local cmd=$1
@@ -121,20 +124,27 @@ add_opam_git_pin () {
     PIN_HASH=$3
 
     if [ "$(opam show -f pinned "$PACKAGE_NAME")" != "git ($PIN_HASH)" ]; then
-        opam pin add --yes --no-action "$PACKAGE_NAME" "$REPO_URL"
+        opam pin add --no-action "$PACKAGE_NAME" "$REPO_URL"
     fi
 }
 
+# Install and record the infer dependencies in opam. The main trick is to install the
+# $INFER_DEPS_DIR directory instead of the much larger infer repository. That directory contains
+# just enough to pretend it installs infer.
 install_opam_deps () {
-    # trick to avoid rsync'inc the whole directory to opam since we are only interested in
-    # installing the dependencies
-    INFER_DEPS_DIR=$(mktemp -d infer-deps-XXXX)
-    cp opam "$INFER_DEPS_DIR"
+    # remove previous infer-deps pin, which might have conflicting dependencies
+    opam pin remove infer-deps --no-action
+    INFER_TMP_DEPS_DIR=$(mktemp -d "$INFER_ROOT"/dependencies/infer-deps-XXXX)
+    INFER_TMP_PACKAGE_NAME="$(basename "$INFER_TMP_DEPS_DIR")"
+    cp -a "$INFER_DEPS_DIR"/* "$INFER_TMP_DEPS_DIR"
     # give unique name to the package to force opam to recheck the dependencies are all installed
-    opam pin add --yes --no-action "$INFER_DEPS_DIR" "$INFER_DEPS_DIR"
-    opam install -j $NCPU --yes --deps-only "$INFER_DEPS_DIR"
-    opam pin remove "$INFER_DEPS_DIR"
-    rm -fr "$INFER_DEPS_DIR"
+    opam pin add --no-action "$INFER_TMP_PACKAGE_NAME" "$INFER_TMP_DEPS_DIR"
+    opam install -j $NCPU --deps-only "$INFER_TMP_PACKAGE_NAME"
+    opam pin remove "$INFER_TMP_PACKAGE_NAME"
+    rm -fr "$INFER_TMP_DEPS_DIR"
+    # pin infer so that opam doesn't violate its package constraints when the user does
+    # "opam upgrade"
+    opam pin add infer-deps "$INFER_DEPS_DIR"
 }
 
 echo "initializing opam... "
