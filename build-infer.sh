@@ -17,6 +17,7 @@ INFER_DEPS_DIR="$INFER_ROOT/dependencies/infer-deps"
 PLATFORM="$(uname)"
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
 OCAML_VERSION="4.02.3"
+INFER_OPAM_SWITCH_DEFAULT=infer-"$OCAML_VERSION"
 
 function usage() {
   echo "Usage: $0 [-y] [targets]"
@@ -27,8 +28,10 @@ function usage() {
   echo "   java     build Java analyzer"
   echo
   echo " options:"
-  echo "   -h,--help   show this message"
-  echo "   -y,--yes    automatically agree to everything"
+  echo "   -h,--help             show this message"
+  echo "   --only-install-opam   install the opam dependencies of infer and exists"
+  echo "   --opam-switch         specify the opam switch where to install infer (default: $INFER_OPAM_SWITCH_DEFAULT)"
+  echo "   -y,--yes              automatically agree to everything"
   echo
   echo " examples:"
   echo "    $0               # build Java and C/Objective-C analyzers"
@@ -151,12 +154,18 @@ echo "initializing opam... "
 check_installed opam
 if [ -z $INFER_OPAM_SWITCH ]; then
     # the user didn't pass an opam switch explicitly, set up a custom switch for infer
-    INFER_OPAM_SWITCH=infer-"$OCAML_VERSION"
+    INFER_OPAM_SWITCH=$INFER_OPAM_SWITCH_DEFAULT
     setup_opam
 fi
 eval $(SHELL=bash opam config env --switch=$INFER_OPAM_SWITCH)
 echo "installing infer dependencies... "
-install_opam_deps
+install_opam_deps || ( \
+  echo; \
+  echo '*** Failed to install opam dependencies'; \
+  echo '*** Updating opam then retrying'; \
+  opam update && \
+  install_opam_deps \
+)
 
 if [ "$ONLY_SETUP_OPAM" = "yes" ]; then
   exit 0
