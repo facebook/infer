@@ -15,11 +15,17 @@
   "generic_model.cpp". If generic model is truly generic, then infer will pick
   up specs for those and use them
 */
-int genericModelNPE() {
-  GenericModelClass<int> x;
-  auto ptr = x.get();
-  return *ptr;
-}
+/* FIXME(t17253769): flaky because OnDemand doesn't know that
+ * `genericModelFunction<int>()` and `genericModelFunction<long long>()` are
+ * meant to be the same function. These two procedures have the same specs
+ * filename, so depending on which gets analyzed first the spec may already be
+ * there or not, but if it's the latter then OnDemand will not know to schedule
+ * the analysis of `genericModelFunction<long long>()` */
+// int genericModelNPE() {
+//   GenericModelClass<int> x;
+//   auto ptr = x.get();
+//   return *ptr;
+// }
 
 int nonGenericModelNoNPE() {
   NonGenericModelClass<int> x;
@@ -27,11 +33,13 @@ int nonGenericModelNoNPE() {
   return *ptr;
 }
 
-int genericModelFunctionNPE() {
-  auto ptr = genericModelFunction<int>();
-  return *ptr;
-}
-int nonGenericModelFunctionNPE() {
+/* FIXME(t17253769) commented out for flakiness (see above) */
+// int genericModelFunctionNPE() {
+//   auto ptr = genericModelFunction<int>();
+//   return *ptr;
+// }
+
+int nonGenericModelFunctionNoNPE() {
   auto ptr = nonGenericModelFunction<int>(); // this will be skip function
   return *ptr;
 }
