@@ -11,5 +11,5 @@ module DeprecatedAPIUsage :
 sig
   val checker :
     CLintersContext.context -> Ctl_parser_types.ast_node ->
-    CTL.t * CIssue.issue_desc option
+    CIssue.issue_desc option
 end

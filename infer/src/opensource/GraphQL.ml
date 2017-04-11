@@ -8,5 +8,5 @@
  *)
 
 module DeprecatedAPIUsage = struct
-  let checker context an = CTL.False, None
+  let checker _ _ = None
 end
