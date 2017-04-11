@@ -75,7 +75,7 @@ type initial = t
 
 (** create a new execution environment *)
 let create () =
-  { cg = Cg.create None;
+  { cg = Cg.create SourceFile.invalid;
     proc_map = Typ.Procname.Hash.create 17;
     file_map = FilenameHash.create 1;
     source_files = SourceFile.Set.empty;

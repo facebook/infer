@@ -13,6 +13,11 @@ open! IStd;
 /** Program variables. */
 module F = Format;
 
+type translation_unit =
+  | TUFile SourceFile.t
+  | TUExtern
+[@@deriving compare];
+
 
 /** Type for program variables. There are 4 kinds of variables:
         1) local variables, used for local variables and formal parameters
@@ -106,7 +111,12 @@ let mk_callee: Mangled.t => Typ.Procname.t => t;
 
 /** create a global variable with the given name */
 let mk_global:
-  is_constexpr::bool? => is_pod::bool? => is_static_local::bool? => Mangled.t => SourceFile.t => t;
+  is_constexpr::bool? =>
+  is_pod::bool? =>
+  is_static_local::bool? =>
+  Mangled.t =>
+  translation_unit =>
+  t;
 
 
 /** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! */
@@ -124,6 +134,8 @@ let pp_list: Pp.env => F.formatter => list t => unit;
 /** Pretty print a pvar which denotes a value, not an address */
 let pp_value: Pp.env => F.formatter => t => unit;
 
+let pp_translation_unit: F.formatter => translation_unit => unit;
+
 
 /** Turn an ordinary program variable into a callee program variable */
 let to_callee: Typ.Procname.t => t => t;
@@ -137,8 +149,8 @@ let to_seed: t => t;
 let to_string: t => string;
 
 
-/** Get the source file corresponding to a global, if known. Returns [None] if not a global. */
-let get_source_file: t => option SourceFile.t;
+/** Get the translation unit corresponding to a global. Raises Invalid_arg if not a global. */
+let get_translation_unit: t => translation_unit;
 
 
 /** Is the variable's value a compile-time constant? Always (potentially incorrectly) returns

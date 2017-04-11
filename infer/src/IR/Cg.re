@@ -46,14 +46,7 @@ type t = {
   node_map: Typ.Procname.Hash.t node_info /** map from node to node_info */
 };
 
-let create source_opt => {
-  let source =
-    switch source_opt {
-    | None => SourceFile.empty
-    | Some source => source
-    };
-  {source, node_map: Typ.Procname.Hash.create 3}
-};
+let create source => {source, node_map: Typ.Procname.Hash.create 3};
 
 let add_node g n ::defined =>
   try {
@@ -360,7 +353,7 @@ let load_from_file (filename: DB.filename) :option t =>
   switch (Serialization.read_from_file callgraph_serializer filename) {
   | None => None
   | Some (source, (nodes, edges)) =>
-    let g = create (Some source);
+    let g = create source;
     List.iter
       f::(
         fun (node, defined) =>

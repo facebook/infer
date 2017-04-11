@@ -43,8 +43,10 @@ let make_frame class_str method_str file_str line_num =
   { class_str; method_str; file_str; line_num; }
 
 let frame_matches_location frame_obj loc =
-  let lfname = SourceFile.to_string loc.Location.file in
-  let matches_file = String.is_suffix ~suffix:frame_obj.file_str lfname in
+  let lfname = if SourceFile.is_invalid loc.Location.file then None
+    else Some (SourceFile.to_string loc.Location.file) in
+  let matches_file = Option.value_map lfname ~default:false
+      ~f:(String.is_suffix ~suffix:frame_obj.file_str) in
   let matches_line = match frame_obj.line_num with
     | None -> false
     | Some line -> Int.equal line loc.Location.line in

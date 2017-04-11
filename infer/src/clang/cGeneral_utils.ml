@@ -136,9 +136,9 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name=fun _ x -> x)
     | Some "extern", None ->
         (* some compilers simply disregard "extern" when the global is given some initialisation
            code, which is why we make sure that [vdi_init_expr] is None here... *)
-        SourceFile.empty
+        Pvar.TUExtern
     | _ ->
-        source_file in
+        Pvar.TUFile source_file in
   let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
   let is_pod =
     CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr

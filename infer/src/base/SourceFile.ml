@@ -15,6 +15,7 @@ let count_newlines (path: string): int =
   In_channel.with_file path ~f
 
 type t =
+  | Invalid
   | Absolute of string
   | RelativeProjectRoot of string (* relative to project root *)
   | RelativeInferModel of string (* relative to infer models *)
@@ -53,6 +54,7 @@ let from_abs_path fname =
 
 let to_string fname =
   match fname with
+  | Invalid -> "DUMMY"
   | RelativeInferModel path -> "INFER_MODEL/" ^ path
   | RelativeProjectRoot path
   | Absolute path -> path
@@ -63,6 +65,7 @@ let pp fmt fname =
 (* Checking if the path exists may be needed only in some cases, hence the flag check_exists *)
 let to_abs_path fname =
   match fname with
+  | Invalid -> invalid_arg "cannot be called with Invalid source file"
   | RelativeProjectRoot path -> Filename.concat Config.project_root path
   | RelativeInferModel path -> Filename.concat Config.models_src_dir path
   | Absolute path -> path
@@ -75,9 +78,13 @@ let to_rel_path fname =
   match fname with
   | RelativeProjectRoot path -> path
   | _ -> to_abs_path fname
-let empty = Absolute ""
+
+let invalid = Invalid
+
+let is_invalid = equal Invalid
 
 let is_infer_model source_file = match source_file with
+  | Invalid -> invalid_arg "cannot be called with Invalid source file"
   | RelativeProjectRoot _ | Absolute _ -> false
   | RelativeInferModel _ -> true
 
@@ -89,6 +96,7 @@ let is_cpp_model file =
   | _ -> false
 
 let is_under_project_root = function
+  | Invalid -> invalid_arg "cannot be called with Invalid source file"
   | RelativeProjectRoot _ -> true
   | Absolute _ | RelativeInferModel _ -> false
 

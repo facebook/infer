@@ -190,7 +190,7 @@ let compute_source_icfg
     linereader classes program tenv
     source_basename package_opt source_file =
   let icfg =
-    { JContext.cg = Cg.create (Some source_file);
+    { JContext.cg = Cg.create source_file;
       JContext.cfg = Cfg.create_cfg ();
       JContext.tenv = tenv } in
   let select test procedure cn node =
@@ -210,7 +210,7 @@ let compute_source_icfg
 
 let compute_class_icfg source_file linereader program tenv node =
   let icfg =
-    { JContext.cg = Cg.create (Some source_file);
+    { JContext.cg = Cg.create source_file;
       JContext.cfg = Cfg.create_cfg ();
       JContext.tenv = tenv } in
   begin

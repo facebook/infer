@@ -611,7 +611,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       then
         begin
           Preanal.do_liveness proc_data.pdesc proc_data.tenv;
-          Preanal.do_dynamic_dispatch proc_data.pdesc (Cg.create None) proc_data.tenv;
+          Preanal.do_dynamic_dispatch proc_data.pdesc (Cg.create SourceFile.invalid) proc_data.tenv;
         end;
       let initial = make_initial proc_data.pdesc in
       match Analyzer.compute_post proc_data ~initial with

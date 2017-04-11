@@ -23,7 +23,7 @@ let compute_icfg trans_unit_ctx tenv ast =
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       CFrontend_config.global_translation_unit_decls := decl_list;
       Logging.out_debug "@\n Start creating icfg@\n";
-      let cg = Cg.create (Some trans_unit_ctx.CFrontend_config.source_file) in
+      let cg = Cg.create trans_unit_ctx.CFrontend_config.source_file in
       let cfg = Cfg.create_cfg () in
       List.iter
         ~f:(CFrontend_declImpl.translate_one_declaration trans_unit_ctx tenv cg cfg `DeclTraversal)

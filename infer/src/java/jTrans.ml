@@ -490,7 +490,7 @@ let rec expression (context : JContext.t) pc expr =
   | JBir.StaticField (cn, fs) ->
       let class_exp =
         let classname = Mangled.from_string (JBasics.cn_name cn) in
-        let var_name = Pvar.mk_global classname file in
+        let var_name = Pvar.mk_global classname (Pvar.TUFile file) in
         Exp.Lvar var_name in
       let (instrs, sil_expr) = [], class_exp in
       let field_name = get_field_name program true tenv cn fs in
@@ -768,7 +768,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
     | JBir.AffectStaticField (cn, fs, e_rhs) ->
         let class_exp =
           let classname = Mangled.from_string (JBasics.cn_name cn) in
-          let var_name = Pvar.mk_global classname file in
+          let var_name = Pvar.mk_global classname (Pvar.TUFile file) in
           Exp.Lvar var_name in
         let (stml1, sil_expr_lhs) = [], class_exp in
         let (stml2, sil_expr_rhs, _) = expression context pc e_rhs in

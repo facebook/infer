@@ -100,5 +100,5 @@ let default proc_name language => {
   proc_flags: proc_flags_empty (),
   proc_name,
   ret_type: Typ.Tvoid,
-  source_file_captured: SourceFile.empty
+  source_file_captured: SourceFile.invalid
 };

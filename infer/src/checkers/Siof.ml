@@ -176,12 +176,13 @@ module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
 
 let is_foreign tu_opt (v, _) =
-  let is_orig_file f = match tu_opt with
-    | Some orig_file ->
-        let orig_path = SourceFile.to_abs_path orig_file in
-        String.equal orig_path (SourceFile.to_abs_path f)
-    | None -> assert false in
-  Option.value_map ~f:(fun f -> not (is_orig_file f)) ~default:false (Pvar.get_source_file v)
+  match Pvar.get_translation_unit v, tu_opt with
+  | TUFile v_tu, Some current_tu ->
+      not (SourceFile.equal current_tu v_tu)
+  | TUExtern, Some _ ->
+      true
+  | _, None ->
+      invalid_arg "cannot be called with translation unit set to None"
 
 let report_siof summary trace pdesc gname loc =
   let tu_opt =

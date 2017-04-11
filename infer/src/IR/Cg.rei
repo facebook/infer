@@ -40,7 +40,7 @@ let calls_recursively: t => Typ.Procname.t => Typ.Procname.t => bool;
 
 
 /** Create an empty call graph */
-let create: option SourceFile.t => t;
+let create: SourceFile.t => t;
 
 
 /** [extend cg1 gc2] extends [cg1] in place with nodes and edges from [gc2];

@@ -29,7 +29,7 @@ let d (loc: t) => L.add_print_action (L.PTloc, Obj.repr loc);
 
 
 /** Dummy location */
-let dummy = {line: (-1), col: (-1), file: SourceFile.empty};
+let dummy = {line: (-1), col: (-1), file: SourceFile.invalid};
 
 
 /** Pretty print a location */

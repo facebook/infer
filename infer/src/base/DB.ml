@@ -222,12 +222,13 @@ module Results_dir = struct
 
   (** initialize the results directory *)
   let init source =
+    if SourceFile.is_invalid source then
+      invalid_arg "Invalid source file passed";
     Utils.create_dir Config.results_dir;
     Utils.create_dir specs_dir;
     Utils.create_dir (path_to_filename Abs_root [Config.attributes_dir_name]);
     Utils.create_dir (path_to_filename Abs_root [Config.captured_dir_name]);
-    if not (SourceFile.equal source SourceFile.empty) then
-      Utils.create_dir (path_to_filename (Abs_source_dir source) [])
+    Utils.create_dir (path_to_filename (Abs_source_dir source) [])
 
   let clean_specs_dir () =
     Utils.create_dir specs_dir; (* create dir just in case it doesn't exist to avoid errors *)

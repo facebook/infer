@@ -15,6 +15,11 @@ module L = Logging;
 
 module F = Format;
 
+type translation_unit =
+  | TUFile SourceFile.t
+  | TUExtern
+[@@deriving compare];
+
 
 /** Kind of global variables */
 type pvar_kind =
@@ -23,7 +28,7 @@ type pvar_kind =
   | Abduced_retvar Typ.Procname.t Location.t /** synthetic variable to represent return value */
   | Abduced_ref_param Typ.Procname.t t Location.t
   /** synthetic variable to represent param passed by reference */
-  | Global_var (SourceFile.t, bool, bool, bool)
+  | Global_var (translation_unit, bool, bool, bool)
   /** global variable: translation unit + is it compile constant? + is it POD? + is it a static
       local? */
   | Seed_var /** variable used to store the initial value of formal parameters */
@@ -35,6 +40,11 @@ let compare_alpha pv1 pv2 =>
   [%compare : (Mangled.t, pvar_kind)] (pv1.pv_name, pv1.pv_kind) (pv2.pv_name, pv2.pv_kind);
 
 let equal = [%compare.equal : t];
+
+let pp_translation_unit fmt =>
+  fun
+  | TUFile fname => SourceFile.pp fmt fname
+  | TUExtern => Format.fprintf fmt "EXTERN";
 
 let rec _pp f pv => {
   let name = pv.pv_name;
@@ -63,12 +73,12 @@ let rec _pp f pv => {
     } else {
       F.fprintf f "%a$%a%a|abducedRefParam" Typ.Procname.pp n Location.pp l Mangled.pp name
     }
-  | Global_var (fname, is_const, is_pod, _) =>
+  | Global_var (translation_unit, is_const, is_pod, _) =>
     F.fprintf
       f
       "#GB<%a%s%s>$%a"
-      SourceFile.pp
-      fname
+      pp_translation_unit
+      translation_unit
       (if is_const {"|const"} else {""})
       (
         if (not is_pod) {
@@ -301,10 +311,16 @@ let mk_callee (name: Mangled.t) (proc_name: Typ.Procname.t) :t => {
 
 
 /** create a global variable with the given name */
-let mk_global ::is_constexpr=false ::is_pod=true ::is_static_local=false (name: Mangled.t) fname :t => {
+let mk_global
+    ::is_constexpr=false
+    ::is_pod=true
+    ::is_static_local=false
+    (name: Mangled.t)
+    translation_unit
+    :t => {
   pv_hash: name_hash name,
   pv_name: name,
-  pv_kind: Global_var (fname, is_constexpr, is_pod, is_static_local)
+  pv_kind: Global_var (translation_unit, is_constexpr, is_pod, is_static_local)
 };
 
 
@@ -327,10 +343,10 @@ let mk_abduced_ref_param (proc_name: Typ.Procname.t) (pv: t) (loc: Location.t) :
   {pv_hash: name_hash name, pv_name: name, pv_kind: Abduced_ref_param proc_name pv loc}
 };
 
-let get_source_file pvar =>
+let get_translation_unit pvar =>
   switch pvar.pv_kind {
-  | Global_var (f, _, _, _) => Some f
-  | _ => None
+  | Global_var (tu, _, _, _) => tu
+  | _ => invalid_argf "Expected a global variable"
   };
 
 let is_compile_constant pvar =>

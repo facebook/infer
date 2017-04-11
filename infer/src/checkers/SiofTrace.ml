@@ -19,10 +19,8 @@ module GlobalsAccesses = PrettyPrintable.MakePPSet (struct
       (* compare by loc first to present reports in the right order *)
       [%compare : (Location.t * Pvar.t)] (l1, v1) (l2, v2)
     let pp fmt (v, _) =
-      F.fprintf fmt "%a" Mangled.pp (Pvar.get_name v);
-      match Pvar.get_source_file v with
-      | Some fname -> F.fprintf fmt "%a" SourceFile.pp fname
-      | None -> ()
+      F.fprintf fmt "%a|%a" Mangled.pp (Pvar.get_name v)
+        Pvar.pp_translation_unit (Pvar.get_translation_unit v)
   end)
 
 module TraceElem = struct

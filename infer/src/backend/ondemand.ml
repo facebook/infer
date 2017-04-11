@@ -139,7 +139,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
               failwith ("ERROR: "^(Typ.Procname.to_string callee_pname)
                         ^" not equal to "^(Typ.Procname.to_string attribute_pname));
             attributes.loc.file)
-        ~default:SourceFile.empty
+        ~default:SourceFile.invalid
         attributes_opt in
     let callee_pdesc_option =
       if Config.dynamic_dispatch = `Lazy
