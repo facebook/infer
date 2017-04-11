@@ -762,7 +762,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
           None in
 
     List.find_map
-      ~f:(function
+      ~f:(function [@warning "-57"] (* FIXME: silenced warning may be legit *)
           | Sil.Hpointsto ((Const (Cclass clazz) as lhs_exp), _, Exp.Sizeof (typ, _, _))
           | Sil.Hpointsto (_, Sil.Eexp (Const (Cclass clazz) as lhs_exp, _), Exp.Sizeof (typ, _, _))
             when guarded_by_str_is_class guarded_by_str0 (Ident.name_to_string clazz) ->

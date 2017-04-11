@@ -17,11 +17,16 @@ let debug_mode = Config.debug_mode || Config.frontend_stats || Config.frontend_d
 let buffer_len = 262143;
 
 let catch_biniou_buffer_errors f x =>
-  try (f x) {
-  | Invalid_argument "Bi_inbuf.refill_from_channel" =>
-    Logging.err "WARNING: biniou buffer too short, skipping the file@\n";
-    assert false
-  };
+  (
+    try (f x) {
+    /* suppress warning: allow this one case because we're just reraising the error with another
+       error message so it doesn't really matter if this eventually fails */
+    | Invalid_argument "Bi_inbuf.refill_from_channel" =>
+      Logging.err "WARNING: biniou buffer too short, skipping the file@\n";
+      assert false
+    }
+  )
+  [@warning "-52"];
 
 /* This function reads the json file in fname, validates it, and encoded in the AST data structure
    defined in Clang_ast_t.  */

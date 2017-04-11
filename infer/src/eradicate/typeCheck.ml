@@ -701,18 +701,18 @@ let typecheck_instr
           res_typestate := pvar_apply loc (handle_pvar ann b) !res_typestate pvar in
 
         let handle_negated_condition cond_node =
-          let do_instr = function
-            | Sil.Prune (Exp.BinOp (Binop.Eq, _cond_e, Exp.Const (Const.Cint i)), _, _, _)
-            | Sil.Prune (Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), _cond_e), _, _, _)
-              when IntLit.iszero i ->
-                let cond_e = Idenv.expand_expr_temps idenv cond_node _cond_e in
-                begin
-                  match convert_complex_exp_to_pvar cond_node false cond_e typestate' loc with
-                  | Exp.Lvar pvar', _ ->
-                      set_flag pvar' AnnotatedSignature.Nullable false
-                  | _ -> ()
-                end
-            | _ -> () in
+          let do_instr = (function
+              | Sil.Prune (Exp.BinOp (Binop.Eq, _cond_e, Exp.Const (Const.Cint i)), _, _, _)
+              | Sil.Prune (Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), _cond_e), _, _, _)
+                when IntLit.iszero i ->
+                  let cond_e = Idenv.expand_expr_temps idenv cond_node _cond_e in
+                  begin
+                    match convert_complex_exp_to_pvar cond_node false cond_e typestate' loc with
+                    | Exp.Lvar pvar', _ ->
+                        set_flag pvar' AnnotatedSignature.Nullable false
+                    | _ -> ()
+                  end
+              | _ -> ()) [@warning "-57"] (* FIXME: silenced warning may be legit *) in
           List.iter ~f:do_instr (Procdesc.Node.get_instrs cond_node) in
         let handle_optional_isPresent node' e =
           match convert_complex_exp_to_pvar node' false e typestate' loc with
@@ -1028,91 +1028,92 @@ let typecheck_instr
               pvar_apply loc handle_pvar typestate2 pvar
           | _ -> typestate2 in
 
-        match c with
-        | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
-        | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
-            typecheck_expr_for_errors typestate e loc;
-            let typestate1, e1, from_call = match from_is_true_on_null e with
-              | Some e1 ->
-                  typestate, e1, EradicateChecks.From_is_true_on_null
-              | None ->
-                  typestate, e, EradicateChecks.From_condition in
-            let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
-            let (typ, ta, _) =
-              typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
+        begin match c with
+          | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
+          | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
+              typecheck_expr_for_errors typestate e loc;
+              let typestate1, e1, from_call = match from_is_true_on_null e with
+                | Some e1 ->
+                    typestate, e1, EradicateChecks.From_is_true_on_null
+                | None ->
+                    typestate, e, EradicateChecks.From_condition in
+              let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
+              let (typ, ta, _) =
+                typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
 
-            if checks.eradicate then
-              EradicateChecks.check_zero tenv
-                find_canonical_duplicate curr_pdesc
-                node' e' typ
-                ta true_branch EradicateChecks.From_condition
-                idenv linereader loc instr_ref;
-            begin
-              match from_call with
-              | EradicateChecks.From_is_true_on_null ->
-                  (* if f returns true on null, then false branch implies != null *)
-                  if TypeAnnotation.get_value AnnotatedSignature.Nullable ta
-                  then set_flag e' AnnotatedSignature.Nullable false typestate2
-                  else typestate2
-              | _ ->
-                  typestate2
-            end
+              if checks.eradicate then
+                EradicateChecks.check_zero tenv
+                  find_canonical_duplicate curr_pdesc
+                  node' e' typ
+                  ta true_branch EradicateChecks.From_condition
+                  idenv linereader loc instr_ref;
+              begin
+                match from_call with
+                | EradicateChecks.From_is_true_on_null ->
+                    (* if f returns true on null, then false branch implies != null *)
+                    if TypeAnnotation.get_value AnnotatedSignature.Nullable ta
+                    then set_flag e' AnnotatedSignature.Nullable false typestate2
+                    else typestate2
+                | _ ->
+                    typestate2
+              end
 
-        | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
-        | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
-            typecheck_expr_for_errors typestate e loc;
-            let typestate1, e1, from_call = match from_instanceof e with
-              | Some e1 -> (* (e1 instanceof C) implies (e1 != null) *)
-                  typestate, e1, EradicateChecks.From_instanceof
-              | None ->
-                  begin
-                    match from_optional_isPresent e with
-                    | Some e1 ->
-                        typestate, e1, EradicateChecks.From_optional_isPresent
-                    | None ->
-                        begin
-                          match from_is_false_on_null e with
-                          | Some e1 ->
-                              typestate, e1, EradicateChecks.From_is_false_on_null
-                          | None ->
-                              begin
-                                match from_containsKey e with
-                                | Some _ when ComplexExpressions.functions_idempotent () ->
-                                    handle_containsKey e
-                                | _ ->
-                                    typestate, e, EradicateChecks.From_condition
-                              end
-                        end
-                  end in
-            let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
-            let (typ, ta, _) =
-              typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
+          | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
+          | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
+              typecheck_expr_for_errors typestate e loc;
+              let typestate1, e1, from_call = match from_instanceof e with
+                | Some e1 -> (* (e1 instanceof C) implies (e1 != null) *)
+                    typestate, e1, EradicateChecks.From_instanceof
+                | None ->
+                    begin
+                      match from_optional_isPresent e with
+                      | Some e1 ->
+                          typestate, e1, EradicateChecks.From_optional_isPresent
+                      | None ->
+                          begin
+                            match from_is_false_on_null e with
+                            | Some e1 ->
+                                typestate, e1, EradicateChecks.From_is_false_on_null
+                            | None ->
+                                begin
+                                  match from_containsKey e with
+                                  | Some _ when ComplexExpressions.functions_idempotent () ->
+                                      handle_containsKey e
+                                  | _ ->
+                                      typestate, e, EradicateChecks.From_condition
+                                end
+                          end
+                    end in
+              let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
+              let (typ, ta, _) =
+                typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
 
-            if checks.eradicate then
-              EradicateChecks.check_nonzero tenv find_canonical_duplicate curr_pdesc
-                node e' typ ta true_branch from_call idenv linereader loc instr_ref;
-            begin
-              match from_call with
-              | EradicateChecks.From_optional_isPresent ->
-                  if not (TypeAnnotation.get_value AnnotatedSignature.Present ta)
-                  then set_flag e' AnnotatedSignature.Present true typestate2
-                  else typestate2
-              | EradicateChecks.From_is_true_on_null ->
-                  typestate2
-              | EradicateChecks.From_condition
-              | EradicateChecks.From_containsKey
-              | EradicateChecks.From_instanceof
-              | EradicateChecks.From_is_false_on_null ->
-                  if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
-                    set_flag e' AnnotatedSignature.Nullable false typestate2
-                  else typestate2
-            end
+              if checks.eradicate then
+                EradicateChecks.check_nonzero tenv find_canonical_duplicate curr_pdesc
+                  node e' typ ta true_branch from_call idenv linereader loc instr_ref;
+              begin
+                match from_call with
+                | EradicateChecks.From_optional_isPresent ->
+                    if not (TypeAnnotation.get_value AnnotatedSignature.Present ta)
+                    then set_flag e' AnnotatedSignature.Present true typestate2
+                    else typestate2
+                | EradicateChecks.From_is_true_on_null ->
+                    typestate2
+                | EradicateChecks.From_condition
+                | EradicateChecks.From_containsKey
+                | EradicateChecks.From_instanceof
+                | EradicateChecks.From_is_false_on_null ->
+                    if TypeAnnotation.get_value AnnotatedSignature.Nullable ta then
+                      set_flag e' AnnotatedSignature.Nullable false typestate2
+                    else typestate2
+              end
 
-        | Exp.UnOp (Unop.LNot, (Exp.BinOp (Binop.Eq, e1, e2)), _) ->
-            check_condition node' (Exp.BinOp (Binop.Ne, e1, e2))
-        | Exp.UnOp (Unop.LNot, (Exp.BinOp (Binop.Ne, e1, e2)), _) ->
-            check_condition node' (Exp.BinOp (Binop.Eq, e1, e2))
-        | _ -> typestate in
+          | Exp.UnOp (Unop.LNot, (Exp.BinOp (Binop.Eq, e1, e2)), _) ->
+              check_condition node' (Exp.BinOp (Binop.Ne, e1, e2))
+          | Exp.UnOp (Unop.LNot, (Exp.BinOp (Binop.Ne, e1, e2)), _) ->
+              check_condition node' (Exp.BinOp (Binop.Eq, e1, e2))
+          | _ -> typestate
+        end [@warning "-57"] (* FIXME: silenced warning may be legit *) in
 
       (* Handle assigment fron a temp pvar in a condition.
          This recognizes the handling of temp variables in ((x = ...) != null) *)

@@ -323,12 +323,16 @@ let rec prune tenv ~positive condition prop =
   | Exp.UnOp _ ->
       assert false
   | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i))
+    when IntLit.iszero i && not (IntLit.isnull i) ->
+      prune tenv ~positive:(not positive) e prop
   | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
     when IntLit.iszero i && not (IntLit.isnull i) ->
       prune tenv ~positive:(not positive) e prop
   | Exp.BinOp (Binop.Eq, e1, e2) ->
       prune_ne tenv ~positive:(not positive) e1 e2 prop
   | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i))
+    when IntLit.iszero i && not (IntLit.isnull i) ->
+      prune tenv ~positive e prop
   | Exp.BinOp (Binop.Ne, Exp.Const (Const.Cint i), e)
     when IntLit.iszero i && not (IntLit.isnull i) ->
       prune tenv ~positive e prop

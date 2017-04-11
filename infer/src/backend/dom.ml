@@ -710,7 +710,13 @@ end = struct
     else
       begin
         match atom_in with
-        | Sil.Aneq((Exp.Var id as e), e') | Sil.Aneq(e', (Exp.Var id as e))
+        | Sil.Aneq((Exp.Var id as e), e')
+          when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
+            (* e' cannot also be a normal id according to the guard so we can consider the two cases
+               separately (this case and the next) *)
+            build_other_atoms (fun e0 -> Prop.mk_neq tenv e0 e') side e
+
+        | Sil.Aneq(e', (Exp.Var id as e))
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
             build_other_atoms (fun e0 -> Prop.mk_neq tenv e0 e') side e
 
@@ -722,7 +728,13 @@ end = struct
           when not (Ident.is_normal id) && List.for_all ~f:exp_contains_only_normal_ids es ->
             build_other_atoms (fun e0 -> Prop.mk_npred tenv a (e0 :: es)) side e
 
-        | Sil.Aeq((Exp.Var id as e), e') | Sil.Aeq(e', (Exp.Var id as e))
+        | Sil.Aeq((Exp.Var id as e), e')
+          when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
+            (* e' cannot also be a normal id according to the guard so we can consider the two cases
+               separately (this case and the next) *)
+            build_other_atoms (fun e0 -> Prop.mk_eq tenv e0 e') side e
+
+        | Sil.Aeq(e', (Exp.Var id as e))
           when (exp_contains_only_normal_ids e' && not (Ident.is_normal id)) ->
             build_other_atoms (fun e0 -> Prop.mk_eq tenv e0 e') side e
 

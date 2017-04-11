@@ -1377,21 +1377,25 @@ module Normalize = struct
                  into a strexp of the given type *)
               let hpred' = mk_ptsto_exp tenv Fld_init (root, size, None) inst in
               replace_hpred hpred'
-          | (Earray (BinOp (Mult, Sizeof (t, None, st1), x), esel, inst)
-            | Earray (BinOp (Mult, x, Sizeof (t, None, st1)), esel, inst)),
-            Sizeof (Tarray (elt, _) as arr, _, _)
-            when Typ.equal t elt ->
+          | Earray (BinOp (Mult, Sizeof (t, None, st1), x), esel, inst),
+            Sizeof (Tarray (elt, _) as arr, _, _) when Typ.equal t elt ->
               let len = Some x in
-              let hpred' =
-                mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
+              let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
               replace_hpred (replace_array_contents hpred' esel)
-          | ( Earray (BinOp (Mult, Sizeof (t, Some len, st1), x), esel, inst)
-            | Earray (BinOp (Mult, x, Sizeof (t, Some len, st1)), esel, inst)),
-            Sizeof (Tarray (elt, _) as arr, _, _)
-            when Typ.equal t elt ->
+          | Earray (BinOp (Mult, x, Sizeof (t, None, st1)), esel, inst),
+            Sizeof (Tarray (elt, _) as arr, _, _) when Typ.equal t elt ->
+              let len = Some x in
+              let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
+              replace_hpred (replace_array_contents hpred' esel)
+          | Earray (BinOp (Mult, Sizeof (t, Some len, st1), x), esel, inst),
+            Sizeof (Tarray (elt, _) as arr, _, _) when Typ.equal t elt ->
               let len = Some (Exp.BinOp(Mult, x, len)) in
-              let hpred' =
-                mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
+              let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
+              replace_hpred (replace_array_contents hpred' esel)
+          | Earray (BinOp (Mult, x, Sizeof (t, Some len, st1)), esel, inst),
+            Sizeof (Tarray (elt, _) as arr, _, _) when Typ.equal t elt ->
+              let len = Some (Exp.BinOp(Mult, x, len)) in
+              let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
               replace_hpred (replace_array_contents hpred' esel)
           | _ ->
               Hpointsto (normalized_root, normalized_cnt, normalized_te)

@@ -318,7 +318,7 @@ let ncpu =
   try
     Utils.with_process_in
       "getconf _NPROCESSORS_ONLN 2>/dev/null"
-      (fun chan -> Scanf.fscanf chan "%d" (fun n -> n))
+      (fun chan -> Scanf.bscanf (Scanf.Scanning.from_channel chan) "%d" (fun n -> n))
     |> fst
   with _ ->
     1

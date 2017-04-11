@@ -1183,11 +1183,17 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
           (fst subs, sub2')
         else
           raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
-    | e1, Exp.BinOp (Binop.PlusA, Exp.Var v2, e2)
-    | e1, Exp.BinOp (Binop.PlusA, e2, Exp.Var v2)
+    | e1, Exp.BinOp (Binop.PlusA, (Exp.Var v2 as e2), e2')
       when Ident.is_primed v2 || Ident.is_footprint v2 ->
-        let e' = Exp.BinOp (Binop.MinusA, e1, e2) in
-        do_imply subs (Prop.exp_normalize_noabs tenv Sil.sub_empty e') (Exp.Var v2)
+        (* here e2' could also be a variable that we could try to substitute (as in the next match
+           case), but we ignore that to avoid backtracking *)
+        let e' = Exp.BinOp (Binop.MinusA, e1, e2') in
+        do_imply subs (Prop.exp_normalize_noabs tenv Sil.sub_empty e') e2
+    | e1, Exp.BinOp (Binop.PlusA, e2, (Exp.Var v2 as e2'))
+      when Ident.is_primed v2 || Ident.is_footprint v2 ->
+        (* symmetric of above case *)
+        let e' = Exp.BinOp (Binop.MinusA, e1, e2') in
+        do_imply subs (Prop.exp_normalize_noabs tenv Sil.sub_empty e') e2
     | Exp.Var _, e2 ->
         if calc_missing then
           let () = ProverState.add_missing_pi (Sil.Aeq (e1_in, e2_in)) in
@@ -1219,6 +1225,8 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
     | Exp.Sizeof (t1, Some d1, st1), Exp.Sizeof (t2, Some d2, st2)
       when Typ.equal t1 t2 && Exp.equal d1 d2 && Subtype.equal_modulo_flag st1 st2 -> subs
     | e', Exp.Const (Const.Cint n)
+      when IntLit.iszero n && check_disequal tenv Prop.prop_emp e' Exp.zero ->
+        raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
     | Exp.Const (Const.Cint n), e'
       when IntLit.iszero n && check_disequal tenv Prop.prop_emp e' Exp.zero ->
         raise (IMPL_EXC ("expressions not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
