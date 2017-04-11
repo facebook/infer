@@ -11,7 +11,7 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Types */
-let module F = Format;
+module F = Format;
 
 
 /** Kinds of integers */
@@ -93,7 +93,7 @@ and template_spec_info =
   | Template (QualifiedCppName.t, list (option t))
 [@@deriving compare];
 
-let module Name: {
+module Name: {
 
   /** Named types. */
   type t = name [@@deriving compare];
@@ -116,12 +116,12 @@ let module Name: {
 
   /** qualified name of the type, may return nonsense for Java classes */
   let qual_name: t => QualifiedCppName.t;
-  let module C: {
+  module C: {
     let from_string: string => t;
     let from_qual_name: QualifiedCppName.t => t;
     let union_from_qual_name: QualifiedCppName.t => t;
   };
-  let module Java: {
+  module Java: {
 
     /** Create a typename from a Java classname in the form "package.class" */
     let from_string: string => t;
@@ -135,7 +135,7 @@ let module Name: {
     let java_io_serializable: t;
     let java_lang_cloneable: t;
   };
-  let module Cpp: {
+  module Cpp: {
 
     /** Create a typename from a C++ classname */
     let from_qual_name: template_spec_info => QualifiedCppName.t => t;
@@ -143,7 +143,7 @@ let module Name: {
     /** [is_class name] holds if [name] names a C++ class */
     let is_class: t => bool;
   };
-  let module Objc: {
+  module Objc: {
 
     /** Create a typename from a Objc classname */
     let from_string: string => t;
@@ -153,7 +153,7 @@ let module Name: {
     /** [is_class name] holds if [name] names a Objc class */
     let is_class: t => bool;
   };
-  let module Set: Caml.Set.S with type elt = t;
+  module Set: Caml.Set.S with type elt = t;
 };
 
 
@@ -162,13 +162,13 @@ let equal: t => t => bool;
 
 
 /** Sets of types. */
-let module Set: Caml.Set.S with type elt = t;
+module Set: Caml.Set.S with type elt = t;
 
 
 /** Maps with type keys. */
-let module Map: Caml.Map.S with type key = t;
+module Map: Caml.Map.S with type key = t;
 
-let module Tbl: Caml.Hashtbl.S with type key = t;
+module Tbl: Caml.Hashtbl.S with type key = t;
 
 
 /** Pretty print a type with all the details. */
@@ -221,7 +221,7 @@ let unsome: string => option t => t;
 
 type typ = t;
 
-let module Procname: {
+module Procname: {
 
   /** Module for Procedure Names. */
 
@@ -260,13 +260,13 @@ let module Procname: {
     | ObjCInternalMethod;
 
   /** Hash tables with proc names as keys. */
-  let module Hash: Caml.Hashtbl.S with type key = t;
+  module Hash: Caml.Hashtbl.S with type key = t;
 
   /** Maps from proc names. */
-  let module Map: PrettyPrintable.PPMap with type key = t;
+  module Map: PrettyPrintable.PPMap with type key = t;
 
   /** Sets of proc names. */
-  let module Set: PrettyPrintable.PPSet with type elt = t;
+  module Set: PrettyPrintable.PPSet with type elt = t;
 
   /** Create a C procedure name from plain and mangled name. */
   let c: QualifiedCppName.t => string => template_spec_info => is_generic_model::bool => c;
@@ -448,19 +448,20 @@ let module Procname: {
 /** Return the return type of [pname_java]. */
 let java_proc_return_typ: Procname.java => t;
 
-let module Struct: {
+module Struct: {
   type field = (Fieldname.t, typ, Annot.Item.t) [@@deriving compare];
   type fields = list field;
 
   /** Type for a structured value. */
-  type t = private {
-    fields: fields, /** non-static fields */
-    statics: fields, /** static fields */
-    supers: list Name.t, /** supers */
-    methods: list Procname.t, /** methods defined */
-    annots: Annot.Item.t, /** annotations */
-    specialization: template_spec_info /** template specialization */
-  };
+  type t =
+    pri {
+      fields, /** non-static fields */
+      statics: fields, /** static fields */
+      supers: list Name.t, /** supers */
+      methods: list Procname.t, /** methods defined */
+      annots: Annot.Item.t, /** annotations */
+      specialization: template_spec_info /** template specialization */
+    };
   type lookup = Name.t => option t;
 
   /** Pretty print a struct type. */

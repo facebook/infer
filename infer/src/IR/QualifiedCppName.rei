@@ -83,7 +83,7 @@ let pp: Format.formatter => t => unit;
                                                           qualifiers to match
        does not match: ["folly","someFunction<int>", "BAD"] - same as previous example
    */
-let module Match: {
+module Match: {
   type quals_matcher;
   let of_fuzzy_qual_names: list string => quals_matcher;
   let match_qualifiers: quals_matcher => t => bool;

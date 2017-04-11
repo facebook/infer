@@ -183,9 +183,8 @@ let remove_ret tenv (curr_f: Procdesc.t) (p: Prop.t Prop.normal) => {
 
 
 /** remove locals and return variable from the prop */
-let remove_locals_ret tenv (curr_f: Procdesc.t) p => snd (
-  remove_locals tenv curr_f (remove_ret tenv curr_f p)
-);
+let remove_locals_ret tenv (curr_f: Procdesc.t) p =>
+  snd (remove_locals tenv curr_f (remove_ret tenv curr_f p));
 
 
 /** Remove locals and formal parameters from the prop.

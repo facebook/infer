@@ -11,9 +11,9 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Expressions */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 type closure = {name: Typ.Procname.t, captured_vars: list (t, Pvar.t, Typ.t)} [@@deriving compare]
 /** dynamically determined length of an array value, if any */
@@ -58,15 +58,15 @@ let hash: t => int;
 
 
 /** Set of expressions. */
-let module Set: Caml.Set.S with type elt = t;
+module Set: Caml.Set.S with type elt = t;
 
 
 /** Map with expression keys. */
-let module Map: Caml.Map.S with type key = t;
+module Map: Caml.Map.S with type key = t;
 
 
 /** Hashtable with expression keys. */
-let module Hash: Caml.Hashtbl.S with type key = t;
+module Hash: Caml.Hashtbl.S with type key = t;
 
 
 /** returns true is index is an array index of arr. */

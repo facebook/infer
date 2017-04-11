@@ -37,17 +37,17 @@ let equal_kind: kind => kind => bool;
 
 
 /** Set for identifiers. */
-let module IdentSet: Caml.Set.S with type elt = t;
+module IdentSet: Caml.Set.S with type elt = t;
 
 
 /** Hash table with ident as key. */
-let module IdentHash: Caml.Hashtbl.S with type key = t;
+module IdentHash: Caml.Hashtbl.S with type key = t;
 
 
 /** Map with ident as key. */
-let module IdentMap: Caml.Map.S with type key = t;
+module IdentMap: Caml.Map.S with type key = t;
 
-let module NameGenerator: {
+module NameGenerator: {
   type t;
 
   /** Get the current name generator. */
@@ -72,7 +72,7 @@ let kfootprint: kind;
 
 
 /** hash table with names as keys */
-let module NameHash: Caml.Hashtbl.S with type key = name;
+module NameHash: Caml.Hashtbl.S with type key = name;
 
 
 /** Name used for primed tmp variables */

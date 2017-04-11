@@ -8,13 +8,13 @@
  */
 open! IStd;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
 
 /** Attributes of a procedure. */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 
 /** flags for a procedure */
@@ -66,7 +66,7 @@ type t = {
   mutable locals: list (Mangled.t, Typ.t), /** name and type of local variables */
   method_annotation: Annot.Method.t, /** annotations for java methods */
   objc_accessor: option objc_accessor_type, /** type of ObjC accessor, if any */
-  proc_flags: proc_flags, /** flags of the procedure */
+  proc_flags, /** flags of the procedure */
   proc_name: Typ.Procname.t, /** name of the procedure */
   ret_type: Typ.t, /** return type */
   source_file_captured: SourceFile.t /** source file where the procedure was captured */

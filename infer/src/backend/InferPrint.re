@@ -9,13 +9,13 @@
  */
 open! IStd;
 
-let module CLOpt = CommandLineOption;
+module CLOpt = CommandLineOption;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 let print_usage_exit err_s => {
   L.stderr "Load Error: %s@.@." err_s;
@@ -191,7 +191,7 @@ let summary_values summary => {
   }
 };
 
-let module ProcsCsv = {
+module ProcsCsv = {
 
   /** Print the header of the procedures csv file, with column names */
   let pp_header fmt () =>
@@ -236,7 +236,7 @@ let module ProcsCsv = {
   };
 };
 
-let module ProcsXml = {
+module ProcsXml = {
   let xml_procs_id = ref 0;
 
   /** print proc in xml */
@@ -359,7 +359,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
     }
   };
 
-let module IssuesCsv = {
+module IssuesCsv = {
   let csv_issues_id = ref 0;
   let pp_header fmt () =>
     Format.fprintf
@@ -416,9 +416,10 @@ let module IssuesCsv = {
           | "" => "false"
           | v => v
           };
-        let trace = Jsonbug_j.string_of_json_trace {
-          trace: loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
-        };
+        let trace =
+          Jsonbug_j.string_of_json_trace {
+            trace: loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
+          };
         incr csv_issues_id;
         pp "%s," (Exceptions.err_class_string err_data.err_class);
         pp "%s," kind;
@@ -447,7 +448,7 @@ let module IssuesCsv = {
   };
 };
 
-let module IssuesJson = {
+module IssuesJson = {
   let is_first_item = ref true;
   let pp_json_open fmt () => F.fprintf fmt "[@?";
   let pp_json_close fmt () => F.fprintf fmt "]\n@?";
@@ -570,7 +571,7 @@ let tests_jsonbug_compare bug1 bug2 =>
       (bug2.file, bug2.procedure, bug2.line - bug2.procedure_start_line, bug2.bug_type, bug2.hash)
   );
 
-let module IssuesTxt = {
+module IssuesTxt = {
 
   /** Write bug report in text format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt _ err_log => {
@@ -611,7 +612,7 @@ let pp_text_of_report fmt report => {
   List.iter f::pp_row report
 };
 
-let module IssuesXml = {
+module IssuesXml = {
   let xml_issues_id = ref 0;
   let loc_trace_to_xml linereader ltr => {
     let subtree label contents => Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
@@ -706,7 +707,7 @@ let module IssuesXml = {
   let pp_issues_close fmt () => Io_infer.Xml.pp_close fmt "bugs";
 };
 
-let module CallsCsv = {
+module CallsCsv = {
 
   /** Write proc summary stats in csv format */
   let pp_calls fmt summary => {
@@ -726,7 +727,7 @@ let module CallsCsv = {
   };
 };
 
-let module Stats = {
+module Stats = {
   type t = {
     files: Hashtbl.t SourceFile.t unit,
     mutable nchecked: int,
@@ -869,7 +870,7 @@ let module Stats = {
   };
 };
 
-let module Report = {
+module Report = {
   let pp_header fmt () => {
     F.fprintf fmt "Infer Analysis Results -- generated %a@\n@\n" Pp.current_time ();
     F.fprintf fmt "Summary Report@\n@\n"
@@ -877,7 +878,7 @@ let module Report = {
   let pp_stats fmt stats => Stats.pp fmt stats;
 };
 
-let module Summary = {
+module Summary = {
   let pp_summary_out summary => {
     let proc_name = Specs.get_proc_name summary;
     if Config.quiet {
@@ -946,7 +947,7 @@ let module Summary = {
 
 
 /** Categorize the preconditions of specs and print stats */
-let module PreconditionStats = {
+module PreconditionStats = {
   let nr_nopres = ref 0;
   let nr_empty = ref 0;
   let nr_onlyallocation = ref 0;
@@ -1182,7 +1183,7 @@ let process_summary filters formats_by_report_kind linereader stats (fname, summ
   Config.pp_simple := pp_simple_saved
 };
 
-let module AnalysisResults = {
+module AnalysisResults = {
   type t = list (string, Specs.summary);
   let spec_files_from_cmdline () =>
     if CLOpt.is_originator {
@@ -1261,7 +1262,8 @@ let module AnalysisResults = {
   };
 
   /** Serializer for analysis results */
-  let analysis_results_serializer: Serialization.serializer t = Serialization.create_serializer Serialization.Key.analysis_results;
+  let analysis_results_serializer: Serialization.serializer t =
+    Serialization.create_serializer Serialization.Key.analysis_results;
 
   /** Load analysis_results from a file */
   let load_analysis_results_from_file (filename: DB.filename) :option t =>
@@ -1275,7 +1277,7 @@ let module AnalysisResults = {
       If options - load_results or - save_results are used,
       all the summaries are loaded in memory */
   let get_summary_iterator () => {
-    let iterator_of_summary_list r f => List.iter f::f r;
+    let iterator_of_summary_list r f => List.iter ::f r;
     switch Config.load_analysis_results {
     | None =>
       switch Config.save_analysis_results {
@@ -1408,7 +1410,7 @@ let print_issues formats_by_report_kind => {
   }
 };
 
-let main report_csv::report_csv report_json::report_json => {
+let main ::report_csv ::report_json => {
   let formats_by_report_kind = [
     (Issues, init_issues_format_list report_csv report_json),
     (Procs, init_procs_format_list ()),

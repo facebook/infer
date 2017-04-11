@@ -10,11 +10,11 @@ open! IStd;
 
 open! PVariant;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
-let module F = Format;
+module F = Format;
 
-let module L = Logging;
+module L = Logging;
 
 type attr_kind =
   | ProcDefined
@@ -24,9 +24,10 @@ type attr_kind =
 
 
 /** Module to manage the table of attributes. */
-let serializer: Serialization.serializer ProcAttributes.t = Serialization.create_serializer Serialization.Key.attributes;
+let serializer: Serialization.serializer ProcAttributes.t =
+  Serialization.create_serializer Serialization.Key.attributes;
 
-let attributes_filename proc_kind::proc_kind pname_file => {
+let attributes_filename ::proc_kind pname_file => {
   let file_suffix =
     switch proc_kind {
     | ProcDefined => ".attr"
@@ -38,9 +39,9 @@ let attributes_filename proc_kind::proc_kind pname_file => {
 
 
 /** path to the .attr file for the given procedure in the current results directory */
-let res_dir_attr_filename create_dir::create_dir proc_kind::proc_kind pname => {
+let res_dir_attr_filename ::create_dir ::proc_kind pname => {
   let pname_file = Typ.Procname.to_filename pname;
-  let attr_fname = attributes_filename proc_kind::proc_kind pname_file;
+  let attr_fname = attributes_filename ::proc_kind pname_file;
   let bucket_dir = {
     let base = pname_file;
     let len = String.length base;
@@ -61,10 +62,9 @@ let res_dir_attr_filename create_dir::create_dir proc_kind::proc_kind pname => {
 
 /* Load the proc attribute for the defined filename if it exists,
    otherwise try to load the declared filename. */
-let load_attr defined_only::defined_only proc_name => {
-  let attributes_file proc_kind::proc_kind proc_name => Multilinks.resolve (
-    res_dir_attr_filename create_dir::false proc_kind::proc_kind proc_name
-  );
+let load_attr ::defined_only proc_name => {
+  let attributes_file ::proc_kind proc_name =>
+    Multilinks.resolve (res_dir_attr_filename create_dir::false ::proc_kind proc_name);
   let attr =
     Serialization.read_from_file serializer (attributes_file proc_kind::ProcDefined proc_name);
   if (is_none attr && not defined_only) {
@@ -104,8 +104,7 @@ let less_relevant_proc_kinds proc_kind =>
    If defined, delete the declared file if it exists. */
 let write_and_delete proc_name (proc_attributes: ProcAttributes.t) => {
   let proc_kind = create_proc_kind proc_attributes;
-  let attributes_file proc_kind =>
-    res_dir_attr_filename create_dir::true proc_kind::proc_kind proc_name;
+  let attributes_file proc_kind => res_dir_attr_filename create_dir::true ::proc_kind proc_name;
   Serialization.write_to_file serializer (attributes_file proc_kind) data::proc_attributes;
   let upgrade_relevance less_relevant_proc_kind => {
     let fname_declared = DB.filename_to_string (attributes_file less_relevant_proc_kind);
@@ -161,7 +160,7 @@ let attr_tbl = Typ.Procname.Hash.create 16;
 
 let defined_attr_tbl = Typ.Procname.Hash.create 16;
 
-let load_attributes cache::cache proc_name =>
+let load_attributes ::cache proc_name =>
   try (Typ.Procname.Hash.find attr_tbl proc_name) {
   | Not_found =>
     let proc_attributes = load_attr defined_only::false proc_name;
@@ -178,7 +177,7 @@ let load_attributes cache::cache proc_name =>
     proc_attributes
   };
 
-let load_defined_attributes cache_none::cache_none proc_name =>
+let load_defined_attributes ::cache_none proc_name =>
   try (Typ.Procname.Hash.find defined_attr_tbl proc_name) {
   | Not_found =>
     let proc_attributes = load_attr defined_only::true proc_name;
@@ -262,8 +261,8 @@ let stats () => {
 /* Find the file where the procedure was captured, if a cfg for that file exists.
    Return also a boolean indicating whether the procedure is defined in an
    include file. */
-let find_file_capturing_procedure cache::cache=true pname =>
-  switch (load_attributes cache::cache pname) {
+let find_file_capturing_procedure ::cache=true pname =>
+  switch (load_attributes ::cache pname) {
   | None => None
   | Some proc_attributes =>
     let source_file = proc_attributes.ProcAttributes.source_file_captured;

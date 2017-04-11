@@ -11,7 +11,7 @@ open! IStd;
 
 
 /** Module for Mangled Names */
-let module F = Format;
+module F = Format;
 
 type t = {plain: string, mangled: option string} [@@deriving compare];
 
@@ -52,12 +52,14 @@ let get_mangled pn =>
 /** Pretty print a mangled name */
 let pp f pn => F.fprintf f "%s" (to_string pn);
 
-let module Set = Caml.Set.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
+module Set =
+  Caml.Set.Make {
+    type nonrec t = t;
+    let compare = compare;
+  };
 
-let module Map = Caml.Map.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
+module Map =
+  Caml.Map.Make {
+    type nonrec t = t;
+    let compare = compare;
+  };

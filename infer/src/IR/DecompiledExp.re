@@ -11,9 +11,9 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Decompiled Expressions */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 
 /** expression representing the result of decompilation */

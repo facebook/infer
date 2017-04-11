@@ -11,9 +11,9 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Binary Operators */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 
 /** Binary operations */

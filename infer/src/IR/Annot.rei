@@ -11,7 +11,7 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Annotations */
-let module F = Format;
+module F = Format;
 
 type parameters = list string;
 
@@ -19,7 +19,7 @@ type parameters = list string;
 /** Type to represent one @Annotation. */
 type t = {
   class_name: string, /** name of the annotation */
-  parameters: parameters /** currently only one string parameter */
+  parameters /** currently only one string parameter */
 }
 [@@deriving compare];
 
@@ -31,9 +31,9 @@ let volatile: t;
 /** Pretty print an annotation. */
 let pp: F.formatter => t => unit;
 
-let module Map: PrettyPrintable.PPMap with type key = t;
+module Map: PrettyPrintable.PPMap with type key = t;
 
-let module Item: {
+module Item: {
 
   /** Annotation for one item: a list of annotations with visibility. */
   type nonrec t = list (t, bool) [@@deriving compare];
@@ -50,9 +50,9 @@ let module Item: {
   let is_empty: t => bool;
 };
 
-let module Class: {let objc: Item.t; let cpp: Item.t;};
+module Class: {let objc: Item.t; let cpp: Item.t;};
 
-let module Method: {
+module Method: {
 
   /** Annotation for a method: return value and list of parameters. */
   type t = (Item.t, list Item.t) [@@deriving compare];

@@ -10,6 +10,6 @@ open! IStd;
 
 let () =
   switch (Array.to_list Sys.argv) {
-  | [prog, ...args] => ClangWrapper.exe prog::prog args::args
+  | [prog, ...args] => ClangWrapper.exe ::prog ::args
   | [] => assert false /* Sys.argv is never empty */
   };

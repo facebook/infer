@@ -8,17 +8,18 @@
  */
 open! IStd;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
 
 /** Module for Type Environments. */
 
 /** Hash tables on strings. */
-let module TypenameHash = Hashtbl.Make {
-  type t = Typ.Name.t;
-  let equal tn1 tn2 => Typ.Name.equal tn1 tn2;
-  let hash = Hashtbl.hash;
-};
+module TypenameHash =
+  Hashtbl.Make {
+    type t = Typ.Name.t;
+    let equal tn1 tn2 => Typ.Name.equal tn1 tn2;
+    let hash = Hashtbl.hash;
+  };
 
 
 /** Type for type environment. */
@@ -42,24 +43,17 @@ let create () => TypenameHash.create 1000;
 /** Construct a struct type in a type environment */
 let mk_struct
     tenv
-    default::default=?
-    fields::fields=?
-    statics::statics=?
-    methods::methods=?
-    supers::supers=?
-    annots::annots=?
-    specialization::specialization=?
+    ::default=?
+    ::fields=?
+    ::statics=?
+    ::methods=?
+    ::supers=?
+    ::annots=?
+    ::specialization=?
     name => {
   let struct_typ =
     Typ.Struct.internal_mk_struct
-      default::?default
-      fields::?fields
-      statics::?statics
-      methods::?methods
-      supers::?supers
-      annots::?annots
-      specialization::?specialization
-      ();
+      ::?default ::?fields ::?statics ::?methods ::?supers ::?annots ::?specialization ();
   TypenameHash.replace tenv name struct_typ;
   struct_typ
 };
@@ -119,7 +113,8 @@ let get_overriden_method tenv pname_java => {
 
 
 /** Serializer for type environments */
-let tenv_serializer: Serialization.serializer t = Serialization.create_serializer Serialization.Key.tenv;
+let tenv_serializer: Serialization.serializer t =
+  Serialization.create_serializer Serialization.Key.tenv;
 
 let global_tenv: ref (option t) = ref None;
 

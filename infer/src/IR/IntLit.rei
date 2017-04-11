@@ -9,7 +9,7 @@
  */
 open! IStd;
 
-let module F = Format;
+module F = Format;
 
 
 /** signed and unsigned integer literals */

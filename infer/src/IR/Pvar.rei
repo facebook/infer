@@ -11,7 +11,7 @@ open! IStd;
 
 
 /** Program variables. */
-let module F = Format;
+module F = Format;
 
 
 /** Type for program variables. There are 4 kinds of variables:
@@ -154,4 +154,4 @@ let is_pod: t => bool;
 /** Get the procname of the initializer function for the given global variable */
 let get_initializer_pname: t => option Typ.Procname.t;
 
-let module Set: PrettyPrintable.PPSet with type elt = t;
+module Set: PrettyPrintable.PPSet with type elt = t;

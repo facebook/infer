@@ -11,9 +11,9 @@ open! IStd;
 
 
 /** Main module for the analysis after the capture phase */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 
 /** Create tasks to analyze an execution environment */

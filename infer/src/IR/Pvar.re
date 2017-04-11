@@ -11,9 +11,9 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 
 /** Kind of global variables */
@@ -301,13 +301,7 @@ let mk_callee (name: Mangled.t) (proc_name: Typ.Procname.t) :t => {
 
 
 /** create a global variable with the given name */
-let mk_global
-    is_constexpr::is_constexpr=false
-    is_pod::is_pod=true
-    is_static_local::is_static_local=false
-    (name: Mangled.t)
-    fname
-    :t => {
+let mk_global ::is_constexpr=false ::is_pod=true ::is_static_local=false (name: Mangled.t) fname :t => {
   pv_hash: name_hash name,
   pv_name: name,
   pv_kind: Global_var (fname, is_constexpr, is_pod, is_static_local)
@@ -362,9 +356,10 @@ let get_initializer_pname {pv_name, pv_kind} =>
   | _ => None
   };
 
-let module Set = PrettyPrintable.MakePPCompareSet {
-  type nonrec t = t;
-  let compare = compare;
-  let compare_pp = compare_alpha;
-  let pp = pp Pp.text;
-};
+module Set =
+  PrettyPrintable.MakePPCompareSet {
+    type nonrec t = t;
+    let compare = compare;
+    let compare_pp = compare_alpha;
+    let pp = pp Pp.text;
+  };

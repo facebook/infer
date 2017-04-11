@@ -9,15 +9,15 @@
  */
 open! IStd;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
 
 /** Module for Names and Identifiers */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
-let module Name = {
+module Name = {
   type t =
     | Primed
     | Normal
@@ -68,7 +68,7 @@ let equal_kind = [%compare.equal : kind];
 /* timestamp for a path identifier */
 let path_ident_stamp = (-3);
 
-type t = {kind: kind, name: Name.t, stamp: int} [@@deriving compare];
+type t = {kind, name: Name.t, stamp: int} [@@deriving compare];
 
 /* most unlikely first */
 let equal i1 i2 =>
@@ -76,32 +76,36 @@ let equal i1 i2 =>
 
 
 /** {2 Set for identifiers} */
-let module IdentSet = Caml.Set.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
+module IdentSet =
+  Caml.Set.Make {
+    type nonrec t = t;
+    let compare = compare;
+  };
 
-let module IdentMap = Caml.Map.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
+module IdentMap =
+  Caml.Map.Make {
+    type nonrec t = t;
+    let compare = compare;
+  };
 
-let module IdentHash = Hashtbl.Make {
-  type nonrec t = t;
-  let equal = equal;
-  let hash (id: t) => Hashtbl.hash id;
-};
+module IdentHash =
+  Hashtbl.Make {
+    type nonrec t = t;
+    let equal = equal;
+    let hash (id: t) => Hashtbl.hash id;
+  };
 
 let idlist_to_idset ids =>
   List.fold f::(fun set id => IdentSet.add id set) init::IdentSet.empty ids;
 
 
 /** {2 Conversion between Names and Strings} */
-let module NameHash = Hashtbl.Make {
-  type t = name;
-  let equal = equal_name;
-  let hash = Hashtbl.hash;
-};
+module NameHash =
+  Hashtbl.Make {
+    type t = name;
+    let equal = equal_name;
+    let hash = Hashtbl.hash;
+  };
 
 
 /** Convert a string to a name */
@@ -110,6 +114,7 @@ let string_to_name = Name.from_string;
 
 /** Convert a name to a string. */
 let name_to_string = Name.to_string;
+
 
 /** {2 Functions and Hash Tables for Managing Stamps} */
 
@@ -120,7 +125,7 @@ let set_stamp i stamp => {...i, stamp};
 /** Get the stamp of the identifier */
 let get_stamp i => i.stamp;
 
-let module NameGenerator = {
+module NameGenerator = {
   type t = NameHash.t int;
   let create () :t => NameHash.create 17;
 

@@ -11,13 +11,13 @@ open! IStd;
 
 
 /** node of the control flow graph */
-let module Node: {
+module Node: {
 
   /** type of nodes */
   type t [@@deriving compare];
 
   /** node id */
-  type id = private int [@@deriving compare];
+  type id = pri int [@@deriving compare];
   let equal_id: id => id => bool;
 
   /** kind of cfg node */
@@ -120,19 +120,19 @@ let module Node: {
 
 
 /** Map with node id keys. */
-let module IdMap: Caml.Map.S with type key = Node.id;
+module IdMap: Caml.Map.S with type key = Node.id;
 
 
 /** Hash table with nodes as keys. */
-let module NodeHash: Caml.Hashtbl.S with type key = Node.t;
+module NodeHash: Caml.Hashtbl.S with type key = Node.t;
 
 
 /** Map over nodes. */
-let module NodeMap: Caml.Map.S with type key = Node.t;
+module NodeMap: Caml.Map.S with type key = Node.t;
 
 
 /** Set of nodes. */
-let module NodeSet: Caml.Set.S with type elt = Node.t;
+module NodeSet: Caml.Set.S with type elt = Node.t;
 
 
 /** procedure descriptions */

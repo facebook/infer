@@ -8,7 +8,7 @@
  */
 open! IStd;
 
-let module CLOpt = CommandLineOption;
+module CLOpt = CommandLineOption;
 
 
 /** enable debug mode (to get more data saved to disk for future inspections) */
@@ -86,7 +86,8 @@ let run_clang_frontend ast_source => {
     | `Pipe _ =>
       Format.fprintf fmt "stdin of %a" SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
     };
-  let (decl_index, stmt_index, type_index, ivar_to_property_index) = Clang_ast_main.index_node_pointers ast_decl;
+  let (decl_index, stmt_index, type_index, ivar_to_property_index) =
+    Clang_ast_main.index_node_pointers ast_decl;
   CFrontend_config.pointer_decl_index := decl_index;
   CFrontend_config.pointer_stmt_index := stmt_index;
   CFrontend_config.pointer_type_index := type_index;
@@ -155,7 +156,7 @@ let cc1_capture clang_cmd => {
     let root = Unix.getcwd ();
     let orig_argv = ClangCommand.get_orig_argv clang_cmd;
     /* the source file is always the last argument of the original -cc1 clang command */
-    Utils.filename_to_absolute root::root orig_argv.(Array.length orig_argv - 1)
+    Utils.filename_to_absolute ::root orig_argv.(Array.length orig_argv - 1)
   };
   Logging.out "@\n*** Beginning capture of file %s ***@\n" source_path;
   if (

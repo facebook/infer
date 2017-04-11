@@ -11,9 +11,9 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Annotations */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 type parameters = list string [@@deriving compare];
 
@@ -21,7 +21,7 @@ type parameters = list string [@@deriving compare];
 /** Type to represent one @Annotation. */
 type t = {
   class_name: string, /** name of the annotation */
-  parameters: parameters /** currently only one string parameter */
+  parameters /** currently only one string parameter */
 }
 [@@deriving compare];
 
@@ -33,13 +33,14 @@ let prefix = Config.curr_language_is Config.Java ? "@" : "_";
 
 let pp fmt annotation => F.fprintf fmt "%s%s" prefix annotation.class_name;
 
-let module Map = PrettyPrintable.MakePPMap {
-  type nonrec t = t;
-  let compare = compare;
-  let pp = pp;
-};
+module Map =
+  PrettyPrintable.MakePPMap {
+    type nonrec t = t;
+    let compare = compare;
+    let pp = pp;
+  };
 
-let module Item = {
+module Item = {
 
   /** Annotation for one item: a list of annotations with visibility. */
   /* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 */
@@ -65,7 +66,7 @@ let module Item = {
   let is_empty ia => List.is_empty ia;
 };
 
-let module Class = {
+module Class = {
   let objc_str = "ObjC-Class";
   let cpp_str = "Cpp-Class";
   let of_string class_string => [({class_name: class_string, parameters: []}, true)];
@@ -73,7 +74,7 @@ let module Class = {
   let cpp = of_string cpp_str;
 };
 
-let module Method = {
+module Method = {
 
   /** Annotation for a method: return value and list of parameters. */
   type t = (Item.t, list Item.t) [@@deriving compare];

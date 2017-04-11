@@ -11,9 +11,9 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Predicate Symbols */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 
 /** {2 Programs and Types} */
@@ -84,7 +84,7 @@ type taint_kind =
   | Tk_integrity_annotation
   | Tk_unknown;
 
-type taint_info = {taint_source: Typ.Procname.t, taint_kind: taint_kind};
+type taint_info = {taint_source: Typ.Procname.t, taint_kind};
 
 
 /** acquire/release action on a resource */

@@ -15,7 +15,7 @@ let equal = [%compare.equal : t];
 
 let empty = [];
 
-let append_qualifier quals qual::qual => List.cons qual quals;
+let append_qualifier quals ::qual => List.cons qual quals;
 
 let extract_last =
   fun
@@ -45,13 +45,13 @@ let cpp_separator_regex = Str.regexp_string cpp_separator;
    "someMethod"]. Avoid using it if possible */
 let of_qual_string str => Str.split cpp_separator_regex str |> List.rev;
 
-let to_separated_string quals sep::sep => List.rev quals |> String.concat sep::sep;
+let to_separated_string quals ::sep => List.rev quals |> String.concat ::sep;
 
 let to_qual_string = to_separated_string sep::cpp_separator;
 
 let pp fmt quals => Format.fprintf fmt "%s" (to_qual_string quals);
 
-let module Match = {
+module Match = {
   type quals_matcher = Str.regexp;
   let matching_separator = "#";
   let regexp_string_of_qualifiers quals =>

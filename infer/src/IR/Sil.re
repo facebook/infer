@@ -9,13 +9,13 @@
  */
 open! IStd;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
 
 /** The Smallfoot Intermediate Language */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 
 /** {2 Programs and Types} */
@@ -149,10 +149,10 @@ type strexp0 'inst =
 
 type strexp = strexp0 inst;
 
-let compare_strexp inst::inst=false se1 se2 =>
+let compare_strexp ::inst=false se1 se2 =>
   compare_strexp0 (inst ? compare_inst : (fun _ _ => 0)) se1 se2;
 
-let equal_strexp inst::inst=false se1 se2 => Int.equal (compare_strexp inst::inst se1 se2) 0;
+let equal_strexp ::inst=false se1 se2 => Int.equal (compare_strexp ::inst se1 se2) 0;
 
 
 /** an atomic heap predicate */
@@ -199,11 +199,10 @@ type hpred = hpred0 inst;
 
 
 /** Comparsion between heap predicates. Reverse natural order, and order first by anchor exp. */
-let compare_hpred inst::inst=false hpred1 hpred2 =>
+let compare_hpred ::inst=false hpred1 hpred2 =>
   compare_hpred0 (inst ? compare_inst : (fun _ _ => 0)) hpred1 hpred2;
 
-let equal_hpred inst::inst=false hpred1 hpred2 =>
-  Int.equal (compare_hpred inst::inst hpred1 hpred2) 0;
+let equal_hpred ::inst=false hpred1 hpred2 => Int.equal (compare_hpred ::inst hpred1 hpred2) 0;
 
 type hpara = hpara0 inst;
 
@@ -273,10 +272,11 @@ let elist_to_eset es => List.fold f::(fun set e => Exp.Set.add e set) init::Exp.
 
 
 /** {2 Sets of heap predicates} */
-let module HpredSet = Caml.Set.Make {
-  type t = hpred;
-  let compare = compare_hpred inst::false;
-};
+module HpredSet =
+  Caml.Set.Make {
+    type t = hpred;
+    let compare = compare_hpred inst::false;
+  };
 
 
 /** {2 Pretty Printing} */
@@ -582,7 +582,7 @@ let rec pp_star_seq pp f =>
 /** Module Predicates records the occurrences of predicates as parameters
     of (doubly -)linked lists and Epara. Provides unique numbering
     for predicates and an iterator. */
-let module Predicates: {
+module Predicates: {
 
   /** predicate environment */
   type env;
@@ -608,18 +608,20 @@ let module Predicates: {
 } = {
 
   /** hash tables for hpara */
-  let module HparaHash = Hashtbl.Make {
-    type t = hpara;
-    let equal = equal_hpara;
-    let hash = Hashtbl.hash;
-  };
+  module HparaHash =
+    Hashtbl.Make {
+      type t = hpara;
+      let equal = equal_hpara;
+      let hash = Hashtbl.hash;
+    };
 
   /** hash tables for hpara_dll */
-  let module HparaDllHash = Hashtbl.Make {
-    type t = hpara_dll;
-    let equal = equal_hpara_dll;
-    let hash = Hashtbl.hash;
-  };
+  module HparaDllHash =
+    Hashtbl.Make {
+      type t = hpara_dll;
+      let equal = equal_hpara_dll;
+      let hash = Hashtbl.hash;
+    };
 
   /** Map each visited hpara to a unique number and a boolean denoting whether it has been emitted,
       also keep a list of hparas still to be emitted. Same for hpara_dll. */
@@ -1211,8 +1213,8 @@ let atom_expmap (f: Exp.t => Exp.t) =>
   fun
   | Aeq e1 e2 => Aeq (f e1) (f e2)
   | Aneq e1 e2 => Aneq (f e1) (f e2)
-  | Apred a es => Apred a (List.map f::f es)
-  | Anpred a es => Anpred a (List.map f::f es);
+  | Apred a es => Apred a (List.map ::f es)
+  | Anpred a es => Anpred a (List.map ::f es);
 
 let atom_list_expmap (f: Exp.t => Exp.t) (alist: list atom) => List.map f::(atom_expmap f) alist;
 
@@ -1263,12 +1265,12 @@ let rec strexp_fpv =
   | Eexp e _ => exp_fpv e
   | Estruct fld_se_list _ => {
       let f (_, se) => strexp_fpv se;
-      List.concat_map f::f fld_se_list
+      List.concat_map ::f fld_se_list
     }
   | Earray len idx_se_list _ => {
       let fpv_in_len = exp_fpv len;
       let f (idx, se) => exp_fpv idx @ strexp_fpv se;
-      fpv_in_len @ List.concat_map f::f idx_se_list
+      fpv_in_len @ List.concat_map ::f idx_se_list
     };
 
 let rec hpred_fpv =
@@ -1900,7 +1902,7 @@ let exp_sub (subst: subst) e => exp_sub_ids (apply_sub subst) e;
 
 
 /** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's */
-let instr_sub_ids sub_id_binders::sub_id_binders (f: Ident.t => Exp.t) instr => {
+let instr_sub_ids ::sub_id_binders (f: Ident.t => Exp.t) instr => {
   let sub_id id =>
     switch (exp_sub_ids f (Var id)) {
     | Var id' when not (Ident.equal id id') => id'
@@ -2247,7 +2249,7 @@ let rec strexp_replace_exp epairs =>
   | Eexp e inst => Eexp (exp_replace_exp epairs e) inst
   | Estruct fsel inst => {
       let f (fld, se) => (fld, strexp_replace_exp epairs se);
-      Estruct (List.map f::f fsel) inst
+      Estruct (List.map ::f fsel) inst
     }
   | Earray len isel inst => {
       let len' = exp_replace_exp epairs len;
@@ -2255,7 +2257,7 @@ let rec strexp_replace_exp epairs =>
         let idx' = exp_replace_exp epairs idx;
         (idx', strexp_replace_exp epairs se)
       };
-      Earray len' (List.map f::f isel) inst
+      Earray len' (List.map ::f isel) inst
     };
 
 let hpred_replace_exp epairs =>
@@ -2283,11 +2285,12 @@ let hpred_replace_exp epairs =>
 
 
 /** {2 Compaction} */
-let module HpredInstHash = Hashtbl.Make {
-  type t = hpred;
-  let equal = equal_hpred inst::true;
-  let hash = Hashtbl.hash;
-};
+module HpredInstHash =
+  Hashtbl.Make {
+    type t = hpred;
+    let equal = equal_hpred inst::true;
+    let hash = Hashtbl.hash;
+  };
 
 type sharing_env = {exph: Exp.Hash.t Exp.t, hpredh: HpredInstHash.t hpred};
 
@@ -2388,7 +2391,7 @@ let sigma_to_sigma_ne sigma :list (list atom, list hpred) =>
         ];
         List.concat_map f::g eqs_sigma_list
       };
-    List.fold f::f init::[([], [])] sigma
+    List.fold ::f init::[([], [])] sigma
   } else {
     [([], sigma)]
   };
@@ -2415,9 +2418,8 @@ let hpara_instantiate para e1 e2 elist => {
     | Invalid_argument _ => assert false
     }
   };
-  let subst = sub_of_list (
-    [(para.root, e1), (para.next, e2), ...subst_for_svars] @ subst_for_evars
-  );
+  let subst =
+    sub_of_list ([(para.root, e1), (para.next, e2), ...subst_for_svars] @ subst_for_evars);
   (ids_evars, List.map f::(hpred_sub subst) para.body)
 };
 
@@ -2444,9 +2446,10 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist => {
     | Invalid_argument _ => assert false
     }
   };
-  let subst = sub_of_list (
-    [(para.cell, cell), (para.blink, blink), (para.flink, flink), ...subst_for_svars] @ subst_for_evars
-  );
+  let subst =
+    sub_of_list (
+      [(para.cell, cell), (para.blink, blink), (para.flink, flink), ...subst_for_svars] @ subst_for_evars
+    );
   (ids_evars, List.map f::(hpred_sub subst) para.body_dll)
 };
 

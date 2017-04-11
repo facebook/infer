@@ -14,11 +14,12 @@ let aggregated_stats_filename = "aggregated_stats.json";
 
 let aggregated_stats_by_target_filename = "aggregated_stats_by_target.json";
 
-let json_files_to_ignore_regex = Str.regexp (
-  ".*\\(" ^
-  Str.quote aggregated_stats_filename ^
-  "\\|" ^ Str.quote aggregated_stats_by_target_filename ^ "\\)$"
-);
+let json_files_to_ignore_regex =
+  Str.regexp (
+    ".*\\(" ^
+    Str.quote aggregated_stats_filename ^
+    "\\|" ^ Str.quote aggregated_stats_by_target_filename ^ "\\)$"
+  );
 
 let dir_exists dir => Sys.is_directory dir == `Yes;
 
@@ -51,9 +52,8 @@ type origin =
 let find_stats_files_in_dir dir => {
   let frontend_paths = find_json_files_in_dir (Filename.concat dir Config.frontend_stats_dir_name);
   let backend_paths = find_json_files_in_dir (Filename.concat dir Config.backend_stats_dir_name);
-  let reporting_paths = find_json_files_in_dir (
-    Filename.concat dir Config.reporting_stats_dir_name
-  );
+  let reporting_paths =
+    find_json_files_in_dir (Filename.concat dir Config.reporting_stats_dir_name);
   {frontend_paths, backend_paths, reporting_paths}
 };
 
@@ -90,9 +90,8 @@ let collect_all_stats_files () => {
   switch Config.buck_out {
   | Some p =>
     if (dir_exists p) {
-      let data = load_data_from_infer_deps (
-        Filename.concat infer_out Config.buck_infer_deps_file_name
-      );
+      let data =
+        load_data_from_infer_deps (Filename.concat infer_out Config.buck_infer_deps_file_name);
       switch data {
       | Ok r =>
         let buck_out_parent = Filename.concat p Filename.parent_dir_name;

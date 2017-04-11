@@ -45,8 +45,8 @@ let pp: Format.formatter => t => unit;
 
 
 /** Set of Mangled. */
-let module Set: Caml.Set.S with type elt = t;
+module Set: Caml.Set.S with type elt = t;
 
 
 /** Map with Mangled as key */
-let module Map: Caml.Map.S with type key = t;
+module Map: Caml.Map.S with type key = t;

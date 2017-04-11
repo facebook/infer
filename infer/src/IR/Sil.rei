@@ -11,7 +11,7 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language */
-let module F = Format;
+module F = Format;
 
 
 /** {2 Programs and Types} */
@@ -269,7 +269,7 @@ let equal_hpred: inst::bool? => hpred => hpred => bool;
 
 
 /** Sets of heap predicates */
-let module HpredSet: Caml.Set.S with type elt = hpred;
+module HpredSet: Caml.Set.S with type elt = hpred;
 
 
 /** {2 Compaction} */
@@ -460,7 +460,7 @@ let pp_hpara_dll_list: Pp.env => F.formatter => list hpara_dll => unit;
 /** Module Predicates records the occurrences of predicates as parameters
     of (doubly -)linked lists and Epara.
     Provides unique numbering for predicates and an iterator. */
-let module Predicates: {
+module Predicates: {
 
   /** predicate environment */
   type env;

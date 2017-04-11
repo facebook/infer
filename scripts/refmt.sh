@@ -16,7 +16,7 @@ set -o pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 refmt \
-  -assume-explicit-arity \
-  -print-width 100 \
-  -heuristics-file "$SCRIPT_DIR/unary.txt" \
+  --assume-explicit-arity \
+  --print-width 100 \
+  --heuristics-file "$SCRIPT_DIR/unary.txt" \
   "$@"

@@ -18,5 +18,5 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 base=`basename $0`
 tmpfile=`mktemp -t "${base}.XXXX"`
 
-"$SCRIPT_DIR/refmt.sh" -parse re -print re "$@" > "$tmpfile"
+"$SCRIPT_DIR/refmt.sh" --parse re --print re "$@" > "$tmpfile"
 mv "$tmpfile" "${@: -1}"

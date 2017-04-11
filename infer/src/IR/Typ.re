@@ -9,13 +9,13 @@
  */
 open! IStd;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
 
 /** The Smallfoot Intermediate Language: Types */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 
 /** Kinds of integers */
@@ -122,7 +122,7 @@ let ptr_kind_string =
 /** statically determined length of an array type, if any */
 type static_length = option IntLit.t [@@deriving compare];
 
-let module T = {
+module T = {
 
   /** types for sil (structured) expressions */
   type t =
@@ -152,7 +152,7 @@ let module T = {
 
 include T;
 
-let module Name = {
+module Name = {
   type t = name [@@deriving compare];
   let equal = [%compare.equal : t];
   let name =
@@ -199,12 +199,12 @@ let module Name = {
     | (ObjcProtocol _, ObjcProtocol _) => true
     | _ => false
     };
-  let module C = {
+  module C = {
     let from_qual_name qual_name => CStruct qual_name;
     let from_string name_str => QualifiedCppName.of_qual_string name_str |> from_qual_name;
     let union_from_qual_name qual_name => CUnion qual_name;
   };
-  let module Java = {
+  module Java = {
     let from_string name_str => JavaClass (Mangled.from_string name_str);
     let from_package_class package_name class_name =>
       if (String.equal package_name "") {
@@ -220,14 +220,14 @@ let module Name = {
     let java_io_serializable = from_string "java.io.Serializable";
     let java_lang_cloneable = from_string "java.lang.Cloneable";
   };
-  let module Cpp = {
+  module Cpp = {
     let from_qual_name template_spec_info qual_name => CppClass qual_name template_spec_info;
     let is_class =
       fun
       | CppClass _ => true
       | _ => false;
   };
-  let module Objc = {
+  module Objc = {
     let from_qual_name qual_name => ObjcClass qual_name;
     let from_string name_str => QualifiedCppName.of_qual_string name_str |> from_qual_name;
     let protocol_from_qual_name qual_name => ObjcProtocol qual_name;
@@ -236,19 +236,20 @@ let module Name = {
       | ObjcClass _ => true
       | _ => false;
   };
-  let module Set = Caml.Set.Make {
-    type nonrec t = t;
-    let compare = compare;
-  };
+  module Set =
+    Caml.Set.Make {
+      type nonrec t = t;
+      let compare = compare;
+    };
 };
 
 
 /** {2 Sets and maps of types} */
-let module Set = Caml.Set.Make T;
+module Set = Caml.Set.Make T;
 
-let module Map = Caml.Map.Make T;
+module Map = Caml.Map.Make T;
 
-let module Tbl = Hashtbl.Make T;
+module Tbl = Hashtbl.Make T;
 
 
 /** Pretty print a type with all the details, using the C syntax. */
@@ -383,7 +384,7 @@ let rec java_from_string =
 
 type typ = t [@@deriving compare];
 
-let module Procname = {
+module Procname = {
   /* e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects */
   type java_type = (option string, string);
   /* compare in inverse order */
@@ -497,7 +498,7 @@ let module Procname = {
     | None => (None, package_classname)
     };
   let split_typename typename => split_classname (Name.name typename);
-  let c name mangled template_args is_generic_model::is_generic_model => {
+  let c name mangled template_args ::is_generic_model => {
     name,
     mangled: Some mangled,
     template_args,
@@ -519,7 +520,7 @@ let module Procname = {
   };
 
   /** Create an objc procedure name from a class_name and method_name. */
-  let objc_cpp class_name method_name kind template_args is_generic_model::is_generic_model => {
+  let objc_cpp class_name method_name kind template_args ::is_generic_model => {
     class_name,
     method_name,
     kind,
@@ -625,7 +626,7 @@ let module Procname = {
     | _ => false;
 
   /** Prints a string of a java procname with the given level of verbosity */
-  let java_to_string withclass::withclass=false (j: java) verbosity =>
+  let java_to_string ::withclass=false (j: java) verbosity =>
     switch verbosity {
     | Verbose
     | Non_verbose =>
@@ -872,9 +873,9 @@ let module Procname = {
     };
 
   /** Convenient representation of a procname for external tools (e.g. eclipse plugin) */
-  let to_simplified_string withclass::withclass=false p =>
+  let to_simplified_string ::withclass=false p =>
     switch p {
-    | Java j => java_to_string withclass::withclass j Simple
+    | Java j => java_to_string ::withclass j Simple
     | C {name, mangled} => to_readable_string (name, mangled) false ^ "()"
     | ObjC_Cpp osig => c_method_to_string osig Simple
     | Block _ => "block"
@@ -886,21 +887,24 @@ let module Procname = {
 
   /** hash function for procname */
   let hash_pname = Hashtbl.hash;
-  let module Hash = Hashtbl.Make {
-    type nonrec t = t;
-    let equal = equal;
-    let hash = hash_pname;
-  };
-  let module Map = PrettyPrintable.MakePPMap {
-    type nonrec t = t;
-    let compare = compare;
-    let pp = pp;
-  };
-  let module Set = PrettyPrintable.MakePPSet {
-    type nonrec t = t;
-    let compare = compare;
-    let pp = pp;
-  };
+  module Hash =
+    Hashtbl.Make {
+      type nonrec t = t;
+      let equal = equal;
+      let hash = hash_pname;
+    };
+  module Map =
+    PrettyPrintable.MakePPMap {
+      type nonrec t = t;
+      let compare = compare;
+      let pp = pp;
+    };
+  module Set =
+    PrettyPrintable.MakePPSet {
+      type nonrec t = t;
+      let compare = compare;
+      let pp = pp;
+    };
 
   /** Pretty print a set of proc names */
   let pp_set fmt set => Set.iter (fun pname => F.fprintf fmt "%a " pp pname) set;
@@ -952,13 +956,13 @@ let java_proc_return_typ pname_java =>
   | typ => typ
   };
 
-let module Struct = {
+module Struct = {
   type field = (Fieldname.t, T.t, Annot.Item.t) [@@deriving compare];
   type fields = list field;
 
   /** Type for a structured value. */
   type t = {
-    fields: fields, /** non-static fields */
+    fields, /** non-static fields */
     statics: fields, /** static fields */
     supers: list Name.t, /** superclasses */
     methods: list Procname.t, /** methods defined */
@@ -991,30 +995,30 @@ let module Struct = {
       F.fprintf f "%a" Name.pp name
     };
   let internal_mk_struct
-      default::default=?
-      fields::fields=?
-      statics::statics=?
-      methods::methods=?
-      supers::supers=?
-      annots::annots=?
-      specialization::specialization=?
+      ::default=?
+      ::fields=?
+      ::statics=?
+      ::methods=?
+      ::supers=?
+      ::annots=?
+      ::specialization=?
       () => {
+    let default_ = {
+      fields: [],
+      statics: [],
+      methods: [],
+      supers: [],
+      annots: Annot.Item.empty,
+      specialization: NoTemplate
+    };
     let mk_struct_
-        default::
-          default={
-            fields: [],
-            statics: [],
-            methods: [],
-            supers: [],
-            annots: Annot.Item.empty,
-            specialization: NoTemplate
-          }
-        fields::fields=default.fields
-        statics::statics=default.statics
-        methods::methods=default.methods
-        supers::supers=default.supers
-        annots::annots=default.annots
-        specialization::specialization=default.specialization
+        ::default=default_
+        ::fields=default.fields
+        ::statics=default.statics
+        ::methods=default.methods
+        ::supers=default.supers
+        ::annots=default.annots
+        ::specialization=default.specialization
         () => {
       fields,
       statics,
@@ -1023,26 +1027,18 @@ let module Struct = {
       annots,
       specialization
     };
-    mk_struct_
-      default::?default
-      fields::?fields
-      statics::?statics
-      methods::?methods
-      supers::?supers
-      annots::?annots
-      specialization::?specialization
-      ()
+    mk_struct_ ::?default ::?fields ::?statics ::?methods ::?supers ::?annots ::?specialization ()
   };
 
   /** the element typ of the final extensible array in the given typ, if any */
-  let rec get_extensible_array_element_typ lookup::lookup (typ: T.t) =>
+  let rec get_extensible_array_element_typ ::lookup (typ: T.t) =>
     switch typ {
     | Tarray typ _ => Some typ
     | Tstruct name =>
       switch (lookup name) {
       | Some {fields} =>
         switch (List.last fields) {
-        | Some (_, fld_typ, _) => get_extensible_array_element_typ lookup::lookup fld_typ
+        | Some (_, fld_typ, _) => get_extensible_array_element_typ ::lookup fld_typ
         | None => None
         }
       | None => None
@@ -1051,18 +1047,18 @@ let module Struct = {
     };
 
   /** If a struct type with field f, return the type of f. If not, return the default */
-  let fld_typ lookup::lookup default::default fn (typ: T.t) =>
+  let fld_typ ::lookup ::default fn (typ: T.t) =>
     switch typ {
     | Tstruct name =>
       switch (lookup name) {
       | Some {fields} =>
         List.find f::(fun (f, _, _) => Fieldname.equal f fn) fields |>
-        Option.value_map f::snd3 default::default
+        Option.value_map f::snd3 ::default
       | None => default
       }
     | _ => default
     };
-  let get_field_type_and_annotation lookup::lookup fn (typ: T.t) =>
+  let get_field_type_and_annotation ::lookup fn (typ: T.t) =>
     switch typ {
     | Tstruct name
     | Tptr (Tstruct name) _ =>

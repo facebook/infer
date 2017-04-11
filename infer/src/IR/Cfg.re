@@ -9,9 +9,9 @@
  */
 open! IStd;
 
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 
 /** data type for the control flow graph */
@@ -42,7 +42,7 @@ let create_proc_desc cfg (proc_attributes: ProcAttributes.t) => {
 
 
 /** Iterate over all the nodes in the cfg */
-let iter_all_nodes sorted::sorted=false f cfg => {
+let iter_all_nodes ::sorted=false f cfg => {
   let do_proc_desc _ (pdesc: Procdesc.t) =>
     List.iter f::(fun node => f pdesc node) (Procdesc.get_nodes pdesc);
   if (not sorted) {
@@ -120,7 +120,8 @@ let check_cfg_connectedness cfg => {
 
 
 /** Serializer for control flow graphs */
-let cfg_serializer: Serialization.serializer cfg = Serialization.create_serializer Serialization.Key.cfg;
+let cfg_serializer: Serialization.serializer cfg =
+  Serialization.create_serializer Serialization.Key.cfg;
 
 
 /** Load a cfg from a file */
@@ -324,7 +325,7 @@ let mark_unchanged_pdescs cfg_new cfg_old => {
 
 
 /** Save a cfg into a file */
-let store_cfg_to_file source_file::source_file (filename: DB.filename) (cfg: cfg) => {
+let store_cfg_to_file ::source_file (filename: DB.filename) (cfg: cfg) => {
   inline_java_synthetic_methods cfg;
   if Config.incremental_procs {
     switch (load_cfg_from_file filename) {

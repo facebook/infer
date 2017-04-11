@@ -11,9 +11,9 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Subtypes */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 type t [@@deriving compare];
 

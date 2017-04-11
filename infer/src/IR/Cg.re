@@ -9,13 +9,13 @@
  */
 open! IStd;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
 
 /** Module for call graphs */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 type node = Typ.Procname.t;
 
@@ -55,7 +55,7 @@ let create source_opt => {
   {source, node_map: Typ.Procname.Hash.create 3}
 };
 
-let add_node g n defined::defined =>
+let add_node g n ::defined =>
   try {
     let info = Typ.Procname.Hash.find g.node_map n;
     /* defined and disabled only go from false to true
@@ -190,7 +190,7 @@ let node_map_iter f g => {
   let table = ref [];
   Typ.Procname.Hash.iter (fun node info => table := [(node, info), ...!table]) g.node_map;
   let cmp (n1: Typ.Procname.t, _) (n2: Typ.Procname.t, _) => Typ.Procname.compare n1 n2;
-  List.iter f::(fun (n, info) => f n info) (List.sort cmp::cmp !table)
+  List.iter f::(fun (n, info) => f n info) (List.sort ::cmp !table)
 };
 
 let get_nodes (g: t) => {
@@ -345,13 +345,14 @@ let get_source (g: t) => g.source;
     undefined nodes become defined if at least one side is. */
 let extend cg_old cg_new => {
   let (nodes, edges) = get_nodes_and_edges cg_new;
-  List.iter f::(fun (node, defined) => add_node cg_old node defined::defined) nodes;
+  List.iter f::(fun (node, defined) => add_node cg_old node ::defined) nodes;
   List.iter f::(fun (nfrom, nto) => add_edge cg_old nfrom nto) edges
 };
 
 
 /** Begin support for serialization */
-let callgraph_serializer: Serialization.serializer (SourceFile.t, nodes_and_edges) = Serialization.create_serializer Serialization.Key.cg;
+let callgraph_serializer: Serialization.serializer (SourceFile.t, nodes_and_edges) =
+  Serialization.create_serializer Serialization.Key.cg;
 
 
 /** Load a call graph from a file */

@@ -10,9 +10,9 @@ open! IStd;
 
 open! PVariant;
 
-let module F = Format;
+module F = Format;
 
-let module L = Logging;
+module L = Logging;
 
 let multilink_file_name = "multilink.txt";
 
@@ -27,7 +27,7 @@ let multilink_files_cache = String.Table.create size::1 ();
 
 let reset_cache () => String.Table.clear multilink_files_cache;
 
-let read dir::dir :option t => {
+let read ::dir :option t => {
   let multilink_fname = Filename.concat dir multilink_file_name;
   switch (Utils.read_file multilink_fname) {
   | None => None
@@ -41,16 +41,16 @@ let read dir::dir :option t => {
 };
 
 /* Write a multilink file in the given directory */
-let write multilinks dir::dir => {
+let write multilinks ::dir => {
   let fname = Filename.concat dir multilink_file_name;
   let outc = open_out fname;
   String.Table.iteri f::(fun key::_ data::src => output_string outc (src ^ "\n")) multilinks;
   Out_channel.close outc
 };
 
-let lookup dir::dir =>
+let lookup ::dir =>
   try (Some (String.Table.find_exn multilink_files_cache dir)) {
-  | Not_found => read dir::dir
+  | Not_found => read ::dir
   };
 
 let resolve fname => {
@@ -60,7 +60,7 @@ let resolve fname => {
   } else {
     let base = Filename.basename fname_s;
     let dir = Filename.dirname fname_s;
-    switch (lookup dir::dir) {
+    switch (lookup ::dir) {
     | None => fname
     | Some links =>
       try (DB.filename_from_string (String.Table.find_exn links base)) {

@@ -10,7 +10,7 @@ open! IStd;
 
 
 /** Main module for the analysis after the capture phase */
-let module L = Logging;
+module L = Logging;
 
 let register_perf_stats_report () => {
   let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name;

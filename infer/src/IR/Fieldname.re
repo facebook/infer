@@ -8,7 +8,7 @@
  */
 open! IStd;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
 type clang_field_info = {qual_class: QualifiedCppName.t, field_name: string} [@@deriving compare];
 
@@ -22,21 +22,23 @@ let hidden_str = ".hidden";
 
 let equal = [%compare.equal : t];
 
-let module Set = Caml.Set.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
+module Set =
+  Caml.Set.Make {
+    type nonrec t = t;
+    let compare = compare;
+  };
 
-let module Map = Caml.Map.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
+module Map =
+  Caml.Map.Make {
+    type nonrec t = t;
+    let compare = compare;
+  };
 
-let module Clang = {
+module Clang = {
   let from_qualified qual_class field_name => Clang {qual_class, field_name};
 };
 
-let module Java = {
+module Java = {
   let from_string n => Java n;
 };
 

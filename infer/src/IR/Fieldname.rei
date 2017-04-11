@@ -18,19 +18,19 @@ let equal: t => t => bool;
 
 
 /** Set for fieldnames */
-let module Set: Caml.Set.S with type elt = t;
+module Set: Caml.Set.S with type elt = t;
 
 
 /** Map for fieldnames */
-let module Map: Caml.Map.S with type key = t;
+module Map: Caml.Map.S with type key = t;
 
-let module Clang: {
+module Clang: {
 
   /** Create a clang field name from qualified c++ name */
   let from_qualified: QualifiedCppName.t => string => t;
 };
 
-let module Java: {
+module Java: {
 
   /** Create a java field name from string */
   let from_string: string => t;

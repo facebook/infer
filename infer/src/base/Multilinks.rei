@@ -8,9 +8,9 @@
  */
 open! IStd;
 
-let module F = Format;
+module F = Format;
 
-let module L = Logging;
+module L = Logging;
 
 
 /** In-memory representation of multilink files. */

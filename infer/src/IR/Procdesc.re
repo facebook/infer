@@ -9,14 +9,14 @@
  */
 open! IStd;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 /* =============== START of module Node =============== */
-let module Node = {
+module Node = {
   type id = int [@@deriving compare];
   let equal_id = [%compare.equal : id];
   type nodekind =
@@ -32,7 +32,7 @@ let module Node = {
   /** a node */
   type t = {
     /** unique id of the node */
-    id: id,
+    id,
     /** distance to the exit node */
     mutable dist_exit: option int,
     /** exception nodes in the cfg */
@@ -72,14 +72,16 @@ let module Node = {
   let get_id node => node.id;
   let get_succs node => node.succs;
   type node = t;
-  let module NodeSet = Caml.Set.Make {
-    type t = node;
-    let compare = compare;
-  };
-  let module IdMap = Caml.Map.Make {
-    type t = id;
-    let compare = compare_id;
-  };
+  module NodeSet =
+    Caml.Set.Make {
+      type t = node;
+      let compare = compare;
+    };
+  module IdMap =
+    Caml.Map.Make {
+      type t = id;
+      let compare = compare_id;
+    };
   let get_sliced_succs node f => {
     let visited = ref NodeSet.empty;
     let rec slice_nodes nodes :NodeSet.t => {
@@ -199,7 +201,7 @@ let module Node = {
 
   /** Print extended instructions for the node,
       highlighting the given subinstruction if present */
-  let pp_instrs pe0 sub_instrs::sub_instrs instro fmt node => {
+  let pp_instrs pe0 ::sub_instrs instro fmt node => {
     let pe =
       switch instro {
       | None => pe0
@@ -249,10 +251,8 @@ let module Node = {
   };
 
   /** Dump extended instructions for the node */
-  let d_instrs sub_instrs::(sub_instrs: bool) (curr_instr: option Sil.instr) (node: t) => L.add_print_action (
-    L.PTnode_instrs,
-    Obj.repr (sub_instrs, curr_instr, node)
-  );
+  let d_instrs sub_instrs::(sub_instrs: bool) (curr_instr: option Sil.instr) (node: t) =>
+    L.add_print_action (L.PTnode_instrs, Obj.repr (sub_instrs, curr_instr, node));
 
   /** Return a description of the cfg node */
   let get_description pe node => {
@@ -273,19 +273,19 @@ let module Node = {
 /* =============== END of module Node =============== */
 
 /** Map over nodes */
-let module NodeMap = Caml.Map.Make Node;
+module NodeMap = Caml.Map.Make Node;
 
 
 /** Hash table with nodes as keys. */
-let module NodeHash = Hashtbl.Make Node;
+module NodeHash = Hashtbl.Make Node;
 
 
 /** Set of nodes. */
-let module NodeSet = Node.NodeSet;
+module NodeSet = Node.NodeSet;
 
 
 /** Map with node id keys. */
-let module IdMap = Node.IdMap;
+module IdMap = Node.IdMap;
 
 
 /** procedure description */
@@ -301,7 +301,7 @@ type t = {
 
 
 /** Only call from Cfg */
-let from_proc_attributes called_from_cfg::called_from_cfg attributes => {
+let from_proc_attributes ::called_from_cfg attributes => {
   if (not called_from_cfg) {
     assert false
   };
@@ -395,7 +395,7 @@ let is_body_empty pdesc => List.is_empty (Node.get_succs (get_start_node pdesc))
 
 let is_java_synchronized pdesc => pdesc.attributes.is_java_synchronized_method;
 
-let iter_nodes f pdesc => List.iter f::f (List.rev (get_nodes pdesc));
+let iter_nodes f pdesc => List.iter ::f (List.rev (get_nodes pdesc));
 
 let fold_calls f acc pdesc => {
   let do_node a node =>
@@ -415,7 +415,7 @@ let iter_instrs f pdesc => {
   iter_nodes do_node pdesc
 };
 
-let fold_nodes f acc pdesc => List.fold f::f init::acc (List.rev (get_nodes pdesc));
+let fold_nodes f acc pdesc => List.fold ::f init::acc (List.rev (get_nodes pdesc));
 
 let fold_instrs f acc pdesc => {
   let fold_node acc node =>

@@ -11,9 +11,9 @@ open! IStd;
 
 
 /** The Smallfoot Intermediate Language: Subtypes */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 let list_to_string list =>
   if (Int.equal (List.length list) 0) {
@@ -99,10 +99,11 @@ let check_subclass_tenv tenv c1 c2 :result => {
   }
 };
 
-let module SubtypesMap = Caml.Map.Make {
-  /* pair of subtypes */
-  type t = (Typ.Name.t, Typ.Name.t) [@@deriving compare];
-};
+module SubtypesMap =
+  Caml.Map.Make {
+    /* pair of subtypes */
+    type t = (Typ.Name.t, Typ.Name.t) [@@deriving compare];
+  };
 
 let check_subtype = {
   let subtMap = ref SubtypesMap.empty;
@@ -150,7 +151,7 @@ let is_cast t => equal_kind (snd t) CAST;
 let is_instof t => equal_kind (snd t) INSTOF;
 
 let list_intersect equal l1 l2 => {
-  let in_l2 a => List.mem equal::equal l2 a;
+  let in_l2 a => List.mem ::equal l2 a;
   List.filter f::in_l2 l1
 };
 

@@ -135,12 +135,7 @@ let clang_cc1_cmd_sanitizer cmd => {
   file_arg_cmd_sanitizer {...cmd, argv: clang_arguments}
 };
 
-let mk quoting_style prog::prog args::args => {
-  exec: prog,
-  orig_argv: args,
-  argv: args,
-  quoting_style
-};
+let mk quoting_style ::prog ::args => {exec: prog, orig_argv: args, argv: args, quoting_style};
 
 let command_to_run cmd => {
   let mk_cmd normalizer => {

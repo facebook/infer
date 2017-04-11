@@ -9,13 +9,13 @@
  */
 open! IStd;
 
-let module Hashtbl = Caml.Hashtbl;
+module Hashtbl = Caml.Hashtbl;
 
 
 /** The Smallfoot Intermediate Language: Expressions */
-let module L = Logging;
+module L = Logging;
 
-let module F = Format;
+module F = Format;
 
 /* reverse the natural order on Var */
 type _ident = Ident.t;
@@ -58,21 +58,24 @@ let equal = [%compare.equal : t];
 
 let hash = Hashtbl.hash;
 
-let module Set = Caml.Set.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
+module Set =
+  Caml.Set.Make {
+    type nonrec t = t;
+    let compare = compare;
+  };
 
-let module Map = Caml.Map.Make {
-  type nonrec t = t;
-  let compare = compare;
-};
+module Map =
+  Caml.Map.Make {
+    type nonrec t = t;
+    let compare = compare;
+  };
 
-let module Hash = Hashtbl.Make {
-  type nonrec t = t;
-  let equal = equal;
-  let hash = hash;
-};
+module Hash =
+  Hashtbl.Make {
+    type nonrec t = t;
+    let equal = equal;
+    let hash = hash;
+  };
 
 let rec is_array_index_of exp1 exp2 =>
   switch exp1 {
