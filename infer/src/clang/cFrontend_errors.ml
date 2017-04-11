@@ -17,6 +17,25 @@ type linter = {
   def_file : string option;
 }
 
+(* If in linter developer mode and if current linter was passed, filter it out *)
+let filter_parsed_linters parsed_linters =
+  if List.length parsed_linters > 1 && Config.linters_developer_mode then
+    match Config.linter with
+    | None ->
+        failwith ("ERROR: In linters developer mode you should debug only one linter at a time. \
+                   This is important for debugging the rule. Pass the flag \
+                   --linter <name> to specify the linter you want to debug.");
+    | Some lint ->
+        List.filter ~f:(
+          fun (rule : linter) -> String.equal rule.issue_desc.name lint
+        ) parsed_linters
+  else parsed_linters
+
+let linters_to_string linters =
+  let linter_to_string linters =
+    List.map ~f:(fun (rule : linter) -> rule.issue_desc.name) linters  in
+  String.concat ~sep:"\n" (linter_to_string linters)
+
 (* Map a formula id to a triple (visited, parameters, definition).
    Visited is used during the expansion phase to understand if the
    formula was already expanded and, if yes we have a cyclic definifion *)

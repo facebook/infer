@@ -15,6 +15,10 @@ type linter = {
   def_file : string option;
 }
 
+val filter_parsed_linters : linter list -> linter list
+
+val linters_to_string : linter list -> string
+
 (* map used to expand macro. It maps a formula id to a triple
    (visited, parameters, definition).
    Visited is used during the expansion phase to understand if the

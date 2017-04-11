@@ -714,12 +714,6 @@ and continue =
     "Continue the capture for the reactive analysis, increasing the changed files/procedures. (If \
      a procedure was changed beforehand, keep the changed marking.)"
 
-and linters_ignore_clang_failures =
-  CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
-    ~parse_mode:CLOpt.(Infer [Clang])
-    ~default:false
-    "Continue linting files even if some compilation fails."
-
 and copy_propagation =
   CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
     "Perform copy-propagation on the IR"
@@ -734,9 +728,13 @@ and (
   developer_mode,
   debug,
   debug_exceptions,
+  default_linters,
+  failures_allowed,
   filtering,
   frontend_tests,
+  linters_developer_mode,
   print_buckets,
+  print_logs,
   print_types,
   reports_include_ml_loc,
   test,
@@ -744,7 +742,11 @@ and (
   write_html,
   write_dotty
 ) =
-  let developer_mode =
+  let failures_allowed =
+    CLOpt.mk_bool ~deprecated_no:["-no_failures_allowed"] ~long:"failures-allowed" ~default:true
+      "Fail if at least one of the translations fails (clang only)"
+
+  and developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
       ~default:(equal_exe current_exe Print)
       "Show internal exceptions"
@@ -801,19 +803,39 @@ and (
       [developer_mode; print_buckets; reports_include_ml_loc]
       [filtering]
 
+  and default_linters =
+    CLOpt.mk_bool ~long:"default-linters" ~parse_mode:CLOpt.(Infer [Clang]) ~default:true
+      "Use the default linters for the analysis."
+
   and frontend_tests =
     CLOpt.mk_bool_group ~long:"frontend-tests"
       ~parse_mode:CLOpt.(Infer [Clang])
       "Save filename.ext.test.dot with the cfg in dotty format for frontend tests (also sets \
        --print-types)"
       [print_types] []
+
+  and print_logs =
+    CLOpt.mk_bool ~long:"print-logs" ~parse_mode:CLOpt.(Infer [Driver])
+      "Also log messages to stdout and stderr"
+  in
+  let linters_developer_mode =
+    CLOpt.mk_bool_group ~long:"linters-developer-mode" ~parse_mode:CLOpt.(Infer [Clang])
+      "Debug mode for developing new linters. (Sets the analyzer to \"linters\"; also sets \
+       --debug, --developer-mode, --print-logs, and \
+       unsets --allowed-failures and --default-linters."
+      [debug; developer_mode; print_logs] [failures_allowed; default_linters]
+
   in (
     developer_mode,
     debug,
     debug_exceptions,
+    default_linters,
+    failures_allowed,
     filtering,
     frontend_tests,
+    linters_developer_mode,
     print_buckets,
+    print_logs,
     print_types,
     reports_include_ml_loc,
     test,
@@ -821,10 +843,6 @@ and (
     write_html,
     write_dotty
   )
-
-and default_linters =
-  CLOpt.mk_bool ~long:"default-linters" ~parse_mode:CLOpt.(Infer [Clang]) ~default:true
-    "Use the default linters for the analysis."
 
 and dependencies =
   CLOpt.mk_bool ~deprecated:["dependencies"] ~long:"dependencies"
@@ -899,10 +917,6 @@ and fail_on_bug =
     ~parse_mode:CLOpt.(Infer [Driver])
     (Printf.sprintf "Exit with error code %d if Infer found something to report"
        fail_on_issue_exit_code)
-
-and failures_allowed =
-  CLOpt.mk_bool ~deprecated_no:["-no_failures_allowed"] ~long:"failures-allowed" ~default:true
-    "Fail if at least one of the translations fails (clang only)"
 
 and fcp_apple_clang =
   CLOpt.mk_path_opt ~long:"fcp-apple-clang"
@@ -1013,15 +1027,21 @@ and latex =
     ~meta:"file"
     "Write a latex report of the analysis results to a file"
 
+and linter =
+  CLOpt.mk_string_opt ~long:"linter" ~parse_mode:CLOpt.(Infer [Clang])
+    "From the linters available, only run this one linter. \
+     (Useful together with --linters-developer-mode)"
+
 and linters_def_file =
   CLOpt.mk_path_list ~default:[]
     ~long:"linters-def-file" ~parse_mode:CLOpt.(Infer [Clang])
     ~meta:"file" "Specify the file containing linters definition (e.g. 'linters.al')"
 
-and linters_developer_mode =
-  CLOpt.mk_bool ~long:"linters-developer-mode" ~parse_mode:CLOpt.(Infer [Clang])
-    "Debug mode for developing new linters. Sets the linters analyzer, disables other \
-     default linters and also sets --print-logs, --debug and --no-allowed-failures."
+and linters_ignore_clang_failures =
+  CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
+    ~parse_mode:CLOpt.(Infer [Clang])
+    ~default:false
+    "Continue linting files even if some compilation fails."
 
 and load_average =
   CLOpt.mk_float_opt ~long:"load-average" ~short:'l'
@@ -1120,10 +1140,6 @@ and pmd_xml =
 and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
     "Print stats about preconditions to standard output"
-
-and print_logs =
-  CLOpt.mk_bool ~long:"print-logs" ~parse_mode:CLOpt.(Infer [Driver])
-    "Also log messages to stdout and stderr"
 
 and print_builtins =
   CLOpt.mk_bool ~deprecated:["print_builtins"] ~long:"print-builtins"
@@ -1536,13 +1552,9 @@ let post_parsing_initialization () =
     List.rev_map ~f:(fun x -> `Raw x) !compilation_database
     |> List.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped;
 
-  (* set linters developer flags *)
+  (* set analyzer mode to linters in linters developer mode *)
   if !linters_developer_mode then (
-    debug := true;
-    failures_allowed := false;
-    print_logs := true;
     analyzer := Some Linters;
-    default_linters := false
   );
   if !default_linters then
     linters_def_file := linters_def_default_file :: !linters_def_file;
@@ -1615,6 +1627,7 @@ and classpath = !classpath
 and cluster_cmdline = !cluster
 and compute_analytics = !compute_analytics
 and continue_capture = !continue
+and linter = !linter
 and default_linters = !default_linters
 and linters_ignore_clang_failures = !linters_ignore_clang_failures
 and copy_propagation = !copy_propagation
@@ -1664,6 +1677,7 @@ and jobs = !jobs
 and join_cond = !join_cond
 and latex = !latex
 and linters_def_file = !linters_def_file
+and linters_developer_mode = !linters_developer_mode
 and load_average = match !load_average with
   | None when !buck ->
       Some (float_of_int ncpu)

@@ -254,9 +254,12 @@ let store_issues source_file =
 let do_frontend_checks trans_unit_ctx ast =
   try
     let parsed_linters = parse_ctl_files Config.linters_def_file in
-    CFrontend_errors.parsed_linters := parsed_linters;
+    let filtered_parsed_linters = CFrontend_errors.filter_parsed_linters parsed_linters in
+    CFrontend_errors.parsed_linters := filtered_parsed_linters;
     let source_file = trans_unit_ctx.CFrontend_config.source_file in
-    Logging.out "Start linting file %a@\n" SourceFile.pp source_file;
+    Logging.out "Start linting file %a with rules: @\n%s@\n"
+      SourceFile.pp source_file
+      (CFrontend_errors.linters_to_string filtered_parsed_linters);
     match ast with
     | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
         let context =
