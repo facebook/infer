@@ -162,16 +162,17 @@ let xdesc {long; short; spec; doc} =
 
 let wrap_line indent_string wrap_length line =
   let indent_length = String.length indent_string in
-  let word_sep = " " in
-  let words = Str.split (Str.regexp_string word_sep) line in
+  let word_sep = ' ' in
+  let words = String.split ~on:word_sep line in
+  let word_sep_str = String.of_char word_sep in
   let add_word_to_paragraph (rev_lines, non_empty, line, line_length) word =
     let word_length = String.length word in
-    let new_length = line_length + (String.length word_sep) + word_length in
+    let new_length = line_length + (String.length word_sep_str) + word_length in
     let new_non_empty = non_empty || word <> "" in
     if new_length > wrap_length && non_empty then
       (line::rev_lines, true, indent_string ^ word, indent_length + word_length)
     else
-      let sep = if Int.equal line_length indent_length then "" else word_sep in
+      let sep = if Int.equal line_length indent_length then "" else word_sep_str in
       let new_line = line ^ sep ^ word in
       if new_length > wrap_length && new_non_empty then
         (new_line::rev_lines, false, indent_string, indent_length)
@@ -189,9 +190,11 @@ let pad_and_xform doc_width left_width desc =
       let indent_doc doc =
         (* 2 blank columns before option + 2 columns of gap between flag and doc *)
         let left_indent = 4 + left_width in
+        let newline_padding = "\n" ^ String.make left_indent ' ' in
         (* align every line after the first one of [doc] *)
-        let doc = Str.global_replace (Str.regexp_string "\n")
-            ("\n" ^ String.make left_indent ' ') doc in
+        let doc = String.concat_map doc ~f:(function
+            | '\n' -> newline_padding
+            | c -> String.of_char c) in
         (* align the first line of [doc] *)
         let short_meta = short_meta desc in
         let gap = left_width - (left_length long short_meta) in
@@ -201,7 +204,7 @@ let pad_and_xform doc_width left_width desc =
           short_meta ^ (String.make (gap + 1) ' ') ^ doc
       in
       let wrapped_lines =
-        let lines = Str.split (Str.regexp_string "\n") doc in
+        let lines = String.split ~on:'\n' doc in
         let wrap_line s =
           if String.length s > doc_width then
             wrap_line "" doc_width s
@@ -550,7 +553,7 @@ let mk_symbol_seq ?(default=[]) ~symbols ~eq ?(deprecated=[]) ~long ?short ?pars
   mk ~deprecated ~long ?short ~default ?parse_mode ~meta:(",-separated sequence" ^ meta) doc
     ~default_to_string:(fun syms -> String.concat ~sep:" " (List.map ~f:to_string syms))
     ~mk_setter:(fun var str_seq ->
-        var := List.map ~f:of_string (Str.split (Str.regexp_string ",") str_seq))
+        var := List.map ~f:of_string (String.split ~on:',' str_seq))
     ~decode_json:(fun ~inferconfig_dir:_ json ->
         [dashdash long;
          String.concat ~sep:"," (YBU.convert_each YBU.to_string json)])
@@ -620,7 +623,10 @@ let set_curr_speclist_for_parse_action ~usage ?(parse_all=false) parse_action =
         if len > 3 && String.sub s ~pos:0 ~len:3 = "no-"
         then String.sub s ~pos:3 ~len:(len - 3)
         else s in
-      let remove_weird_chars = Str.global_replace (Str.regexp "[^a-z0-9-]") "" in
+      let remove_weird_chars =
+        String.filter ~f:(function
+            | 'a'..'z' | '0'..'9' | '-' -> true
+            | _ -> false) in
       remove_weird_chars @@ String.lowercase @@ remove_no k in
     let compare_specs {long = x} {long = y} =
       match x, y with
@@ -759,7 +765,7 @@ let encode_argv_to_env argv =
        ) argv)
 
 let decode_env_to_argv env =
-  Str.split (Str.regexp_string (String.make 1 env_var_sep)) env
+  String.split ~on:env_var_sep env |> List.filter ~f:(Fn.non String.is_empty)
 
 (** [prefix_before_rest (prefix @ ["--" :: rest])] is [prefix] where "--" is not in [prefix]. *)
 let rev_prefix_before_rest args =
