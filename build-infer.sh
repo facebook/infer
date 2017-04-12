@@ -44,7 +44,7 @@ BUILD_CLANG=${BUILD_CLANG:-no}
 BUILD_JAVA=${BUILD_JAVA:-no}
 INTERACTIVE=${INTERACTIVE:-yes}
 ONLY_SETUP_OPAM=${ONLY_SETUP_OPAM:-no}
-# do not set INFER_OPAM_SWITCH by default
+INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_SWITCH_DEFAULT}
 ORIG_ARGS="$*"
 
 while [[ $# > 0 ]]; do
@@ -152,10 +152,11 @@ install_opam_deps () {
 
 echo "initializing opam... "
 check_installed opam
-if [ -z $INFER_OPAM_SWITCH ]; then
-    # the user didn't pass an opam switch explicitly, set up a custom switch for infer
-    INFER_OPAM_SWITCH=$INFER_OPAM_SWITCH_DEFAULT
+if [ "$INFER_OPAM_SWITCH" = "$INFER_OPAM_SWITCH_DEFAULT" ]; then
+    # set up the custom infer switch
     setup_opam
+else
+    opam switch set -j $NCPU $INFER_OPAM_SWITCH
 fi
 eval $(SHELL=bash opam config env --switch=$INFER_OPAM_SWITCH)
 echo "installing infer dependencies... "
