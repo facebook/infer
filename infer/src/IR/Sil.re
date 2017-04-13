@@ -1808,7 +1808,11 @@ let sub_av_add = sub_fav_add;
 
 let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
   switch (exp: Exp.t) {
-  | Var id => f id
+  | Var id =>
+    switch (f id) {
+    | Var id' when Ident.equal id id' => exp
+    | exp' => exp'
+    }
   | Lvar _ => exp
   | Exn e =>
     let e' = exp_sub_ids f e;
