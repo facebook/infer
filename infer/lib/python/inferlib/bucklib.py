@@ -230,7 +230,11 @@ class Wrapper:
         self.buck_args = buck_args
         self.normalized_targets = get_normalized_targets(
             buck_args.targets)
-        self.buck_cmd = base_cmd + self.normalized_targets
+        # write targets to file to avoid passing too many command line args
+        with tempfile.NamedTemporaryFile(delete=False,
+                                         prefix='targets_') as targets_file:
+            targets_file.write('\n'.join(self.normalized_targets))
+            self.buck_cmd = base_cmd + ['@%s' % targets_file.name]
         self.timer.stop('%d targets computed', len(self.normalized_targets))
 
     def _collect_results(self, start_time):
