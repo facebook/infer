@@ -46,8 +46,6 @@ module Unix_ = struct
 
 end
 
-let ( @ ) = Caml.List.append
-
 (* Use Caml.Set since they are serialized using Marshal, and Core.Std.Set includes the comparison
    function in its representation, which Marshal cannot (de)serialize. *)
 module IntSet = Caml.Set.Make(Int)
