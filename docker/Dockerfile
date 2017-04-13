@@ -30,8 +30,6 @@ RUN apt-get update && \
             zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
 
-RUN opam init -y --comp=4.02.3
-
 # Download the latest Infer release
 RUN INFER_VERSION=v0.11.0; \
     cd /opt && \
