@@ -10,6 +10,15 @@
 set -x
 set -e
 
+VERSION=$1
+
+if [ "$#" != "1" ]; then
+  echo "Usage: $0 version_tag"
+  echo
+  echo "Example: $0 v0.11.0"
+  exit 1
+fi
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 ROOT_INFER_DIR="$SCRIPT_DIR"/..
@@ -18,20 +27,6 @@ CLANG_PREFIX="$CLANG_PLUGIN_DIR"/clang/install
 PLATFORM=`uname`
 INFER_SOURCE="$ROOT_INFER_DIR"/infer-source
 
-# Build infer and facebook-clang-plugins
-cd "$ROOT_INFER_DIR"
-# This assumes the current commit is the one with the release bump
-./build-infer.sh
-find "$CLANG_PREFIX"/{bin,lib} -type f -print0 | xargs -0 strip -x || true
-
-# Get a copy of the github repo
-if ! git -C "$INFER_SOURCE" status > /dev/null; then
-  git clone https://github.com/facebook/infer.git "$INFER_SOURCE"
-fi
-git -C "$INFER_SOURCE" fetch origin master
-pushd "$INFER_SOURCE"
-# Name of the release package
-VERSION=`git describe --abbrev=0 --tags`
 if [ "$PLATFORM" == 'Darwin' ]; then
     RELEASE_NAME=infer-osx-"$VERSION"
 else
@@ -42,7 +37,23 @@ PKG_DIR="$ROOT_INFER_DIR"/"$RELEASE_NAME"
 PKG_PLUGIN_DIR="$PKG_DIR"/facebook-clang-plugins
 PKG_CLANG_PREFIX="$PKG_PLUGIN_DIR"/clang/install
 
-git checkout "$VERSION"
+
+# Build infer and facebook-clang-plugins
+cd "$ROOT_INFER_DIR"
+# This assumes the current commit is the one with the release bump
+./build-infer.sh --yes
+find "$CLANG_PREFIX"/{bin,lib} -type f -print0 | xargs -0 strip -x || true
+
+# Get a copy of the github repo
+if ! git -C "$INFER_SOURCE" status > /dev/null; then
+  git clone https://github.com/facebook/infer.git "$INFER_SOURCE"
+fi
+pushd "$INFER_SOURCE"
+# fetch new tags
+git tag -d "$VERSION" || true
+git fetch origin
+# update master
+git checkout "$VERSION" || exit 1
 git submodule update --init
 git clean -xfd
 popd
