@@ -66,11 +66,23 @@ let make_access access_path access_kind loc =
   let site = CallSite.make Typ.Procname.empty_block loc in
   TraceElem.make (access_path, access_kind) site
 
+(* In this domain true<=false. The intended denotations [[.]] are
+    [[true]] = the set of all states where we know according, to annotations
+               or assertions or lock instructions, that some lock is held.
+    [[false]] = the empty set
+   The use of && for join in this domain enforces that, to know a lock is held, one must hold in
+   all branches.
+*)
 module LocksDomain = AbstractDomain.BooleanAnd
 
-(*At first we are modelling the distinction "true, known to be UI thread"
-  and "false, don't know definitley to be main tread". Can refine later *)
-module ThreadsDomain = AbstractDomain.BooleanAnd
+(* In this domain false<=true. The intended denotations [[.]] are
+   [[true]] = the set of all states where we know according, to annotations
+             or assertions, that we are on the UI thread (or some oter specific thread).
+   [[false]] = the set of all states
+   The use of || for join in this domain enforces that, to not know for sure you are threaded,
+   it is enough to be unthreaded in one branch. (See RaceWithMainThread.java for  examples)
+*)
+module ThreadsDomain = AbstractDomain.BooleanOr
 
 module PathDomain = SinkTrace.Make(TraceElem)
 

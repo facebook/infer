@@ -163,6 +163,32 @@ class Annotations implements Interface {
     i = zz;
   }
 
+  /* Like in RaceWithMainThread.java with assertMainThread() */
+  void conditional_Ok(boolean b){
+   if (b) {
+     write_on_main_thread_Ok();
+   } /* BooleanAnd for threaded would hose you here and lead to a report */
+  }
+
+  Integer ii;
+
+  @ThreadConfined(ThreadConfined.UI)
+  void write_on_main_thread_Ok(){
+     ii = 22;
+  }
+
+/*
+fix with a more refined abstract domain (without going all the way to disjuntions) */
+ void FN_conditional_Bad(boolean b){
+   if (b)
+   {
+     write_on_main_thread_Ok();
+   } else {
+     ii = 99; // Using || for threaded hoses this; no report
+   }
+ }
+
+
   @OnBind
   public void onBindMethodOk() {
     this.f = new Object();

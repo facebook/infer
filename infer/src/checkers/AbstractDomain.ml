@@ -222,3 +222,17 @@ module BooleanAnd = struct
   let pp fmt astate =
     F.fprintf fmt "%b" astate
 end
+
+module BooleanOr = struct
+  type astate = bool
+
+  let (<=) ~lhs ~rhs = not lhs || rhs
+
+  let join = (||)
+
+  let widen ~prev ~next ~num_iters:_ =
+    join prev next
+
+  let pp fmt astate =
+    F.fprintf fmt "%b" astate
+end

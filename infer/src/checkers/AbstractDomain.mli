@@ -76,5 +76,9 @@ module InvertedMap (Map : PrettyPrintable.PPMap) (ValueDomain : S) : sig
 end
 
 (** Boolean domain ordered by p || ~q. Useful when you want a boolean that's true only when it's
-    true in both branches. *)
+    true in both conditional branches. *)
 module BooleanAnd : S with type astate = bool
+
+(** Boolean domain ordered by ~p || q. Useful when you want a boolean that's true only when it's
+    true in one conditional branch. *)
+module BooleanOr : S with type astate = bool
