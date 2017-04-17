@@ -320,7 +320,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       match instr with
       | Sil.Load (lhs_id, rhs_exp, rhs_typ, _) ->
           analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate
-      | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _) when Pvar.is_frontend_tmp lhs_pvar ->
+      | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _) when Pvar.is_ssa_frontend_tmp lhs_pvar ->
           analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate
       | Sil.Store (Exp.Lvar lhs_pvar, _, Exp.Exn _, _) when Pvar.is_return lhs_pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit

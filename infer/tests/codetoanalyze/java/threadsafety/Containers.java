@@ -169,6 +169,22 @@ class Containers {
     obj.f = new Object();
   }
 
+  static boolean sUsePooling;
+
+  private Obj poolWrapper() {
+    Obj obj = sUsePooling ? sPool.acquire() : null;
+    if (obj == null) {
+      obj = new Obj();
+    }
+
+    return obj;
+  }
+
+  void poolWrapperOk() {
+    Obj obj = poolWrapper();
+    obj.f = new Object();
+  }
+
   // need to understand semantics of release to get this one
   void FN_poolReleaseThenWriteBad() {
     Obj obj = sPool.acquire();

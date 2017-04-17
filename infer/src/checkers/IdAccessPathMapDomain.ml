@@ -19,9 +19,8 @@ let pp fmt astate =
   IdMap.pp ~pp_value:AccessPath.Raw.pp fmt astate
 
 let check_invariant ap1 ap2 = function
-  | Var.ProgramVar pvar when Pvar.is_frontend_tmp pvar ->
+  | Var.ProgramVar pvar when Pvar.is_ssa_frontend_tmp pvar ->
       (* Sawja reuses temporary variables which sometimes breaks this invariant *)
-      (* TODO: fix (13370224) *)
       ()
   | id ->
       if not (AccessPath.Raw.equal ap1 ap2)

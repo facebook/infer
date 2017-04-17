@@ -99,7 +99,7 @@ let of_exp exp0 typ0 ~(f_resolve_id : Var.t -> Raw.t option) =
           | Some (base, base_accesses) -> (base, base_accesses @ accesses) :: acc
           | None -> (base_of_id id typ, accesses) :: acc
         end
-    | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar ->
+    | Exp.Lvar pvar when Pvar.is_ssa_frontend_tmp pvar ->
         begin
           match f_resolve_id (Var.of_pvar pvar) with
           | Some (base, base_accesses) -> (base, base_accesses @ accesses) :: acc

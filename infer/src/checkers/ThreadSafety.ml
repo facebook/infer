@@ -596,7 +596,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         end
 
     | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _)
-      when Pvar.is_frontend_tmp lhs_pvar && not (is_constant rhs_exp) ->
+      when Pvar.is_ssa_frontend_tmp lhs_pvar && not (is_constant rhs_exp) ->
         let id_map' = analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate in
         { astate with id_map = id_map'; }
 
