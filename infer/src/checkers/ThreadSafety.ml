@@ -29,17 +29,24 @@ let is_owned access_path attribute_map =
 
 let container_write_string = "infer.dummy.__CONTAINERWRITE__"
 
-let is_container_write_str str =
-  String.is_substring ~substring:container_write_string str
+(* return (name of container, name of mutating function call) pair *)
+let get_container_write_desc sink =
+  let (base_var, _), access_list = fst (ThreadSafetyDomain.TraceElem.kind sink) in
+  let get_container_write_desc_ call_name container_name =
+    match String.chop_prefix (Fieldname.to_string call_name) ~prefix:container_write_string with
+    | Some call_name -> Some (container_name, call_name)
+    | None -> None in
 
-let strip_container_write str =
-  String.substr_replace_first str ~pattern:container_write_string ~with_:""
+  match List.rev access_list with
+  |  FieldAccess call_name :: FieldAccess container_name :: _ ->
+      get_container_write_desc_ call_name (Fieldname.to_string container_name)
+  | [FieldAccess call_name] ->
+      get_container_write_desc_ call_name (F.asprintf "%a" Var.pp base_var)
+  | _ ->
+      None
 
 let is_container_write_sink sink =
-  let _, access_list = fst (ThreadSafetyDomain.TraceElem.kind sink) in
-  match List.rev access_list with
-  |  FieldAccess (fn) :: _  -> is_container_write_str (Fieldname.to_string fn)
-  | _ -> false
+  Option.is_some (get_container_write_desc sink)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
@@ -925,25 +932,30 @@ let get_all_accesses_with_pre pre_filter access_filter accesses =
 
 let get_all_accesses = get_all_accesses_with_pre (fun _ -> true)
 
-let pp_sink fmt sink =
-  let sink_pname = CallSite.pname (ThreadSafetyDomain.PathDomain.Sink.call_site sink) in
-  if Typ.Procname.equal sink_pname Typ.Procname.empty_block
-  then
-    let access_path, _ = ThreadSafetyDomain.PathDomain.Sink.kind sink in
-    F.fprintf fmt "access to %a" AccessPath.pp_access_list (snd access_path)
-  else
-    F.fprintf fmt "call to %a" Typ.Procname.pp sink_pname
+let pp_container_access fmt (container_name, function_name) =
+  F.fprintf
+    fmt
+    "container %s via call to %s"
+    (MF.monospaced_to_string container_name)
+    (MF.monospaced_to_string function_name)
 
-let desc_of_sink final_sink_site sink =
-  if CallSite.equal (ThreadSafetyDomain.PathDomain.Sink.call_site sink) final_sink_site &&
-     is_container_write_sink sink
-  then
-    let access_path, _ = ThreadSafetyDomain.PathDomain.Sink.kind sink in
-    F.asprintf
-      "access to container %a"
-      AccessPath.pp_access_list (snd (AccessPath.Raw.truncate access_path))
-  else
-    F.asprintf "%a" pp_sink sink
+let pp_access fmt sink =
+  match get_container_write_desc sink with
+  | Some container_write_desc ->
+      pp_container_access fmt container_write_desc
+  | None ->
+      let access_path, _ = ThreadSafetyDomain.PathDomain.Sink.kind sink in
+      F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp_access_list) (snd access_path)
+
+let desc_of_sink sink =
+  match get_container_write_desc sink with
+  | Some container_write_desc ->
+      F.asprintf "%a" pp_container_access container_write_desc
+  | None ->
+      let sink_pname = CallSite.pname (ThreadSafetyDomain.PathDomain.Sink.call_site sink) in
+      if Typ.Procname.equal sink_pname Typ.Procname.empty_block
+      then F.asprintf "access to %a" pp_access sink
+      else F.asprintf "call to %a" Typ.Procname.pp sink_pname
 
 let trace_of_pname orig_sink orig_pdesc callee_pname =
   let open ThreadSafetyDomain in
@@ -959,11 +971,8 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
 
 let make_trace_with_conflicts conflicts original_path pdesc =
   let open ThreadSafetyDomain in
-  let loc_trace_of_path ((_, sinks) as path) =
-    let final_sink, _ = List.hd_exn sinks in
-    PathDomain.to_sink_loc_trace
-      ~desc_of_sink:(desc_of_sink (PathDomain.Sink.call_site final_sink))
-      path in
+  let loc_trace_of_path path =
+    PathDomain.to_sink_loc_trace ~desc_of_sink path in
   let make_trace_for_sink sink =
     let trace_of_pname = trace_of_pname sink pdesc in
     match PathDomain.get_reportable_sink_path sink ~trace_of_pname with
@@ -1007,7 +1016,7 @@ let make_unprotected_write_description tenv pname final_sink_site initial_sink_s
     (MF.wrap_monospaced Typ.Procname.pp) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if is_container_write_sink final_sink then "mutates" else "writes to field")
-    (MF.wrap_monospaced pp_sink) final_sink
+    pp_access final_sink
     (calculate_addendum_message tenv pname)
 
 let make_read_write_race_description
@@ -1015,16 +1024,19 @@ let make_read_write_race_description
   let race_with_main_thread = List.exists
       ~f:(fun (_, _, threaded, _, _) -> threaded)
       conflicts in
-  let conflicting_proc_names = List.map
+  let conflicting_proc_names =
+    List.map
       ~f:(fun (_, _, _, _, pdesc) -> Procdesc.get_proc_name pdesc)
-      conflicts in
-  let pp_proc_name_list fmt proc_names =
-    let pp_sep _ _ = F.fprintf fmt " , " in
-    F.pp_print_list ~pp_sep Typ.Procname.pp fmt proc_names in
+      conflicts
+    |> Typ.Procname.Set.of_list in
+  let pp_conflicts fmt conflicts =
+    if Int.equal (Typ.Procname.Set.cardinal conflicts) 1
+    then Typ.Procname.pp fmt (Typ.Procname.Set.choose conflicts)
+    else Typ.Procname.Set.pp fmt conflicts in
   let conflicts_description =
     Format.asprintf "Potentially races with writes in method%s %a. %s"
-      (if List.length conflicting_proc_names > 1 then "s" else "")
-      (MF.wrap_monospaced pp_proc_name_list) conflicting_proc_names
+      (if Typ.Procname.Set.cardinal conflicting_proc_names > 1 then "s" else "")
+      (MF.wrap_monospaced pp_conflicts) conflicting_proc_names
       (if race_with_main_thread then
          "\n Note: some of these write conflicts are confined to the UI or another thread, \
           but the current method is not specified to be. Consider adding synchronization \
@@ -1033,7 +1045,7 @@ let make_read_write_race_description
   Format.asprintf "Read/Write race. Public method %a%s reads from field %a. %s %s"
     (MF.wrap_monospaced Typ.Procname.pp) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
-    (MF.wrap_monospaced pp_sink) final_sink
+    pp_access final_sink
     conflicts_description
     (calculate_addendum_message tenv pname)
 
