@@ -987,10 +987,15 @@ let make_trace_with_conflicts conflicts original_path pdesc =
   | conflict_sink :: _ ->
       (* create a trace for one of the conflicts and append it to the trace for the original sink *)
       let conflict_trace = make_trace_for_sink conflict_sink in
+      let get_start_loc = function
+        | head :: _ -> head.Errlog.lt_loc
+        | [] -> Location.dummy in
       let first_trace_spacer =
-        Errlog.make_trace_element 0 Location.dummy "<Beginning of read trace>" [] in
+        Errlog.make_trace_element
+          0 (get_start_loc original_trace) "<Beginning of read trace>" [] in
       let second_trace_spacer =
-        Errlog.make_trace_element 0 Location.dummy "<Beginning of write trace>" [] in
+        Errlog.make_trace_element
+          0 (get_start_loc conflict_trace) "<Beginning of write trace>" [] in
       (first_trace_spacer :: original_trace) @ (second_trace_spacer :: conflict_trace)
   | [] ->
       original_trace
