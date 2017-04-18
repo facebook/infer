@@ -201,7 +201,7 @@ def merge_reports_from_paths(report_paths):
 
 def _pmd_xml_of_issues(issues):
     if etree is None:
-        print('ERROR: "etree" Python package not found.')
+        print('ERROR: "lxml" Python package not found.')
         print('ERROR: You need to install it to use Infer with --pmd-xml')
         sys.exit(1)
     root = etree.Element('pmd')
