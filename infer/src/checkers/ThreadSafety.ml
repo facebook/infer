@@ -296,6 +296,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | "java.lang.ThreadLocal", "get" ->
                 (* ThreadLocal prevents sharing between threads behind the scenes *)
                 true
+            | ("android.app.Activity" | "android.view.View"), "findViewById" ->
+                (* assume findViewById creates fresh View's (note: not always true) *)
+                true
             | "android.support.v4.util.Pools$SynchronizedPool", "acquire" ->
                 (* a pool should own all of its objects *)
                 true

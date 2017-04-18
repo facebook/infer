@@ -11,15 +11,32 @@ package codetoanalyze.java.checkers;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import android.app.Activity;
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.view.View;
 import android.util.DisplayMetrics;
+
+class MyActivity extends Activity {
+
+}
 
 class MyResources extends Resources {
 
   public MyResources(AssetManager assets, DisplayMetrics metrics, Configuration config) {
     super(assets, metrics, config);
+  }
+
+}
+
+class MyView extends View {
+
+  boolean mField;
+
+  public MyView(Context c) {
+    super(c);
   }
 
 }
@@ -46,6 +63,16 @@ public class AndroidModels {
   public void someResourceMethodsNotFunctionalBad() {
     // configuration can change whenever the device rotates
     mField = mResources.getConfiguration();
+  }
+
+  public void findViewByIdOk1(MyView view) {
+    MyView subview = (MyView) view.findViewById(-1);
+    subview.mField = true; // ok;
+  }
+
+  public void findViewByIdOk2(MyActivity activity) {
+    MyView view = (MyView) activity.findViewById(-1);
+    view.mField = true; // ok;
   }
 
 }
