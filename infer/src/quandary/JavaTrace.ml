@@ -237,6 +237,7 @@ module SinkKind = struct
                    "loadData" |
                    "loadDataWithBaseURL" |
                    "loadUrl" |
+                   "postUrl" |
                    "postWebMessage") ->
                     Some (taint_all JavaScript ~report_reachable:true)
                 | class_name, method_name ->

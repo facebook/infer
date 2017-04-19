@@ -37,6 +37,7 @@ public class WebViews {
     webview.loadData(stringSource, "", "");
     webview.loadDataWithBaseURL("", stringSource, "", "", "");
     webview.loadUrl(stringSource); // should have 5 reports
+    webview.postUrl(stringSource, null);
     webview.postWebMessage(null, (Uri) InferTaint.inferSecretSource());
   }
 
