@@ -48,4 +48,8 @@ fi
 NAME="infer"
 
 docker build -t $NAME . && \
+echo "*************************************************************" && \
+echo "To build the Android example, you must accept the Android SDK" && \
+echo "licenses by running 'sdkmanager --licenses' first."            && \
+echo "*************************************************************" && \
 docker run -it $NAME /bin/bash -c 'cd /infer/examples/; exec /bin/bash'

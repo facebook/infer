@@ -29,6 +29,7 @@ Infer.
 ./run.sh
 # you should now be inside the docker container with a shell prompt, e.g.
 # "root@5c3b9af90d59:/infer/examples# "
+sdkmanager --licenses
 cd android_hello/
 infer -- ./gradlew build
 ```
