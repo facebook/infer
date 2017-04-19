@@ -176,12 +176,17 @@ module Debug = struct
       let next_level = level + 1 in
       Format.fprintf fmt "%s%s%s %a@\n" spaces prefix node_name pp_node_info root;
       (match root with
-       | Stmt (DeclStmt (_, _, decls)) -> pp_decls fmt next_level decls
+       | Stmt (DeclStmt (_, stmts, ([(VarDecl _)] as var_decl))) ->
+           (* handling special case of DeclStmt with VarDecl: emit the VarDecl node
+              then emit the statements in DeclStmt as children of VarDecl. This is
+              because despite being equal, the statements inside VarDecl and those
+              inside DeclStmt belong to different instances, hence they fail the
+              phys_equal check that should colour them *)
+           pp_children pp_ast_aux (fun n -> Decl n) fmt next_level var_decl;
+           pp_stmts fmt (next_level+1) stmts
        | Stmt stmt ->
            let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
            pp_stmts fmt next_level stmts
-       | Decl (VarDecl (_, _, _, {vdi_init_expr})) ->
-           pp_stmts fmt next_level (Option.to_list vdi_init_expr)
        | Decl decl ->
            let decls =
              Clang_ast_proj.get_decl_context_tuple decl |>
