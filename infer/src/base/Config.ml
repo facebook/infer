@@ -641,11 +641,13 @@ and clang_frontend_action =
     "Specify whether the clang frontend should capture or lint or both."
     ~symbols:clang_frontend_action_symbols
 
-and clang_include_to_override =
-  CLOpt.mk_string_opt ~long:"clang-include-to-override" ~meta:"dir"
+and clang_include_to_override_regex =
+  CLOpt.mk_string_opt ~long:"clang-include-to-override-regex"
+    ~deprecated:["-clang-include-to-override"]
+    ~meta:"dir OCaml regex"
     "Use this option in the uncommon case where the normal compilation process overrides the \
-     location of internal compiler headers. This option should specify the path to those headers \
-     so that infer can use its own clang internal headers instead."
+     location of internal compiler headers. This option should specify regular expression with \
+     the path to those headers so that infer can use its own clang internal headers instead."
 
 and classpath =
   CLOpt.mk_string_opt ~long:"classpath"
@@ -1625,7 +1627,7 @@ and dump_duplicate_symbols = !dump_duplicate_symbols
 and checkers = !checkers
 and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
-and clang_include_to_override = !clang_include_to_override
+and clang_include_to_override_regex = !clang_include_to_override_regex
 and classpath = !classpath
 and cluster_cmdline = !cluster
 and compute_analytics = !compute_analytics

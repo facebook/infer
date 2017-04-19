@@ -81,6 +81,8 @@ let file_arg_cmd_sanitizer cmd => {
   {...cmd, argv: [Format.sprintf "@%s" file]}
 };
 
+let include_override_regex = Option.map f::Str.regexp Config.clang_include_to_override_regex;
+
 /* Work around various path or library issues occurring when one tries to substitute Apple's version
    of clang with a different version. Also mitigate version discrepancies in clang's
    fatal warnings. */
@@ -105,8 +107,8 @@ let clang_cc1_cmd_sanitizer cmd => {
     } else if (
       String.equal option "-isystem"
     ) {
-      switch Config.clang_include_to_override {
-      | Some to_replace when String.equal arg to_replace =>
+      switch include_override_regex {
+      | Some regexp when Str.string_match regexp arg 0 =>
         fcp_dir ^\/ "clang" ^\/ "install" ^\/ "lib" ^\/ "clang" ^\/ "4.0.0" ^\/ "include"
       | _ => arg
       }
