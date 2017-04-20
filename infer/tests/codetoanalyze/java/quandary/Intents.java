@@ -13,12 +13,15 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 
 import android.app.Activity;
+import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
 import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 
 import com.facebook.infer.builtins.InferTaint;
 
@@ -43,6 +46,90 @@ class MyActivity extends Activity {
   public void onNewIntent(Intent intent) {
     startService(intent);
   }
+
+  private BroadcastReceiver mReceiver;
+  private Uri mUri;
+
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    mReceiver = new BroadcastReceiver() {
+        @Override
+        // intent is modeled as tainted
+        public void onReceive(Context context, Intent intent) {
+          mUri = intent.getData();
+        }
+      };
+    registerReceiver(mReceiver, null);
+  }
+
+
+  @Override
+  public void onResume() {
+    FN_startServiceWithTaintedIntent();
+  }
+
+  // need to understand the lifecycle to get this
+  void FN_startServiceWithTaintedIntent() {
+    Intent taintedIntent = new Intent("", mUri);
+    startService(taintedIntent);
+  }
+}
+
+class MyBroadcastReceiver extends BroadcastReceiver {
+
+  Activity mActivity;
+
+  @Override
+  // intent is modeled as tainted
+  public void onReceive(Context context, Intent intent) {
+    mActivity.startService(intent);
+  }
+
+}
+
+class MyService extends Service {
+
+  Activity mActivity;
+
+  @Override
+  // intent is modeled as tainted
+  public IBinder onBind(Intent intent) {
+    mActivity.startService(intent);
+    return null;
+  }
+
+  @Override
+  // intent is modeled as tainted
+  public void onRebind(Intent intent) {
+    mActivity.startService(intent);
+  }
+
+  @Override
+  // intent is modeled as tainted
+  public void onStart(Intent intent, int startId) {
+    mActivity.startService(intent);
+  }
+
+  @Override
+  // intent is modeled as tainted
+  public int onStartCommand(Intent intent, int flags, int startId) {
+    mActivity.startService(intent);
+    return 0;
+  }
+
+  @Override
+  // intent is modeled as tainted
+  public void onTaskRemoved(Intent intent) {
+    mActivity.startService(intent);
+  }
+
+  @Override
+  // intent is modeled as tainted
+  public boolean onUnbind(Intent intent) {
+    mActivity.startService(intent);
+    return false;
+  }
+
 }
 
 public class Intents {

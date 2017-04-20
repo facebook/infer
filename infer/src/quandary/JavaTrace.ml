@@ -110,6 +110,16 @@ module SourceKind = struct
                 match Typ.Name.name typename, method_name with
                 | "android.app.Activity", ("onActivityResult" | "onNewIntent") ->
                     Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
+                | "android.app.Service",
+                  ("onBind" |
+                   "onRebind" |
+                   "onStart" |
+                   "onStartCommand" |
+                   "onTaskRemoved" |
+                   "onUnbind") ->
+                    Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
+                | "android.content.BroadcastReceiver", "onReceive" ->
+                    Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
                 | "android.webkit.WebViewClient",
                   ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ->
                     Some
