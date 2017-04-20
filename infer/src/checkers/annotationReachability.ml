@@ -137,17 +137,16 @@ let method_has_annot annot tenv pname =
 let method_overrides_annot annot tenv pname =
   method_overrides (method_has_annot annot) tenv pname
 
-let lookup_annotation_calls caller_pdesc annot pname : CallSite.t list =
+let lookup_annotation_calls caller_pdesc annot pname : CallSite.SetDomain.t =
   match Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc pname with
   | Some { Specs.payload = { Specs.calls = Some call_map; }; } ->
       begin
         try
           Annot.Map.find annot call_map
-          |> CallSite.SetDomain.elements
         with Not_found ->
-          []
+          CallSite.SetDomain.empty
       end
-  | _ -> []
+  | _ -> CallSite.SetDomain.empty
 
 let update_trace loc trace =
   if Location.equal loc Location.dummy then trace
@@ -212,21 +211,21 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site ca
       let new_stack_str = stack_str ^ callee_pname_str ^ " -> " in
       let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
       let unseen_pnames, updated_visited =
-        List.fold
-          ~f:(fun (accu, set) call_site ->
-              let p = CallSite.pname call_site in
-              let loc = CallSite.loc call_site in
-              if Typ.Procname.Set.mem p set then (accu, set)
-              else ((p, loc) :: accu, Typ.Procname.Set.add p set))
-          ~init:([], visited_pnames)
-          next_calls in
+        CallSite.SetDomain.fold
+          (fun call_site ((unseen, visited) as accu) ->
+             let p = CallSite.pname call_site in
+             let loc = CallSite.loc call_site in
+             if Typ.Procname.Set.mem p visited then accu
+             else ((p, loc) :: unseen, Typ.Procname.Set.add p visited))
+          next_calls
+          ([], visited_pnames) in
       List.iter ~f:(loop fst_call_loc updated_visited (new_trace, new_stack_str)) unseen_pnames in
-  List.iter
-    ~f:(fun fst_call_site ->
-        let fst_callee_pname = CallSite.pname fst_call_site in
-        let fst_call_loc = CallSite.loc fst_call_site in
-        let start_trace = update_trace (CallSite.loc call_site) [] in
-        loop fst_call_loc Typ.Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
+  CallSite.SetDomain.iter
+    (fun fst_call_site ->
+       let fst_callee_pname = CallSite.pname fst_call_site in
+       let fst_call_loc = CallSite.loc fst_call_site in
+       let start_trace = update_trace (CallSite.loc call_site) [] in
+       loop fst_call_loc Typ.Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
     calls
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -352,9 +351,8 @@ module Interprocedural = struct
       let extract_calls_with_annot annot call_map =
         try
           Annot.Map.find annot call_map
-          |> CallSite.SetDomain.elements
-        with Not_found -> [] in
-      let report_src_snk_path (calls : CallSite.t list) (src_annot: Annot.t) =
+        with Not_found -> CallSite.SetDomain.empty in
+      let report_src_snk_path (calls : CallSite.SetDomain.t) (src_annot: Annot.t) =
         if method_overrides_annot src_annot tenv proc_name
         then
           let f_report =
@@ -367,7 +365,7 @@ module Interprocedural = struct
             (CallSite.make proc_name loc)
             calls in
       let calls = extract_calls_with_annot snk_annot call_map in
-      if not (Int.equal (List.length calls) 0)
+      if not (CallSite.SetDomain.is_empty calls)
       then List.iter ~f:(report_src_snk_path calls) src_annot_list in
 
     let initial =
