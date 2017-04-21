@@ -23,6 +23,7 @@ SOURCES = \
   siof/siof_templated.cpp \
   siof/siof_different_tu.cpp \
   siof/std_ios_base_init.cpp \
+  bufferoverrun/vector.cpp \
 
 HEADERS = siof/siof_types.h
 
