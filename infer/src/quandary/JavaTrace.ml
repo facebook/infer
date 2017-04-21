@@ -17,7 +17,7 @@ module SourceKind = struct
     | Intent (** external Intent or a value read from one *)
     | Other (** for testing or uncategorized sources *)
     | PrivateData (** private user or device-specific data *)
-    | WebviewUrl (** external URL passed to a WebView *)
+    | UserControlledURI (** resource locator controller by user *)
     | Unknown
   [@@deriving compare]
 
@@ -26,7 +26,7 @@ module SourceKind = struct
   let of_string = function
     | "Intent" -> Intent
     | "PrivateData" -> PrivateData
-    | "WebviewUrl" -> WebviewUrl
+    | "UserControlledURI" -> UserControlledURI
     | _ -> Other
 
   let external_sources = QuandaryConfig.Source.of_json Config.quandary_sources
@@ -120,16 +120,28 @@ module SourceKind = struct
                     Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
                 | "android.content.BroadcastReceiver", "onReceive" ->
                     Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
+                | "android.content.ContentProvider",
+                  ("bulkInsert" |
+                   "delete" |
+                   "insert" |
+                   "openAssetFile" |
+                   "openFile" |
+                   "openPipeHelper" |
+                   "openTypedAssetFile" |
+                   "query" |
+                   "refresh" |
+                   "update") ->
+                    Some (taint_formals_with_types ["android.net.Uri"] UserControlledURI formals)
                 | "android.webkit.WebViewClient",
                   ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ->
                     Some
                       (taint_formals_with_types
                          ["android.webkit.WebResourceRequest"; "java.lang.String"]
-                         WebviewUrl
+                         UserControlledURI
                          formals)
                 | "android.webkit.WebChromeClient",
                   ("onJsAlert" | "onJsBeforeUnload" | "onJsConfirm" | "onJsPrompt") ->
-                    Some (taint_formals_with_types ["java.lang.String"] WebviewUrl formals)
+                    Some (taint_formals_with_types ["java.lang.String"] UserControlledURI formals)
                 | _ ->
                     None in
               begin
@@ -151,7 +163,7 @@ module SourceKind = struct
     F.fprintf fmt
       (match kind with
        | Intent -> "Intent"
-       | WebviewUrl -> "WebviewUrl"
+       | UserControlledURI -> "UserControlledURI"
        | PrivateData -> "PrivateData"
        | Other -> "Other"
        | Unknown -> "Unknown")
@@ -161,6 +173,7 @@ module JavaSource = Source.Make(SourceKind)
 
 module SinkKind = struct
   type t =
+    | CreateFile (** sink that creates a file *)
     | CreateIntent (** sink that creates an Intent *)
     | JavaScript (** sink that passes its arguments to untrusted JS code *)
     | Logging (** sink that logs one or more of its arguments *)
@@ -169,6 +182,8 @@ module SinkKind = struct
   [@@deriving compare]
 
   let of_string = function
+    | "CreateFile" -> CreateFile
+    | "CreateIntent" -> CreateIntent
     | "JavaScript" -> JavaScript
     | "Logging" -> Logging
     | "StartComponent" -> StartComponent
@@ -194,9 +209,14 @@ module SinkKind = struct
     match pname with
     | Typ.Procname.Java java_pname ->
         begin
-          match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
+          match Typ.Procname.java_get_class_name java_pname,
+                Typ.Procname.java_get_method java_pname with
           | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
               taint_all Logging ~report_reachable:true
+          | "java.io.File", "<init>"
+          | "java.nio.file.FileSystem", "getPath"
+          | "java.nio.file.Paths", "get" ->
+              taint_all CreateFile ~report_reachable:true
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
               [Other, 0, false]
           | class_name, method_name ->
@@ -284,6 +304,7 @@ module SinkKind = struct
   let pp fmt kind =
     F.fprintf fmt
       (match kind with
+       | CreateFile -> "CreateFile"
        | CreateIntent -> "CreateIntent"
        | JavaScript -> "JavaScript"
        | Logging -> "Logging"
@@ -304,9 +325,12 @@ include
       | Intent, StartComponent (* intent reuse issue *)
       | Intent, CreateIntent (* intent configured with external values issue *)
       | Intent, JavaScript (* external data flows into JS: remote code execution risk *)
-      | WebviewUrl, (CreateIntent | StartComponent)
-      (* create intent/launch component from external URL *)
       | PrivateData, JavaScript (* leaking private data into JS *)
+      | UserControlledURI, (CreateIntent | StartComponent)
+      (* create intent/launch component from user-controlled URI *)
+      | UserControlledURI, CreateFile ->
+          (* create file from user-controller URI; potential path-traversal vulnerability *)
+          true
       | Other, _ | _, Other -> (* for testing purposes, Other matches everything *)
           true
       | _ ->

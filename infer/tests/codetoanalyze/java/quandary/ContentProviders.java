@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2017 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ */
+
+package codetoanalyze.java.quandary;
+
+import java.io.File;
+
+import android.content.ContentProvider;
+import android.content.ContentValues;
+import android.content.res.AssetFileDescriptor;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.ParcelFileDescriptor;
+
+public abstract class ContentProviders extends ContentProvider {
+
+  File mFile;
+
+  @Override
+  public int bulkInsert(Uri uri, ContentValues[] values) {
+    mFile = new File(uri.toString());
+    return 0;
+  }
+
+  @Override
+  public int delete(Uri uri, String selection, String[] selectionArgs) {
+    mFile = new File(uri.toString());
+    return 0;
+  }
+
+  @Override
+  public Uri insert(Uri uri, ContentValues values) {
+    mFile = new File(uri.toString());
+    return null;
+  }
+
+  @Override
+  public AssetFileDescriptor openAssetFile(Uri uri, String mode, CancellationSignal signal) {
+    mFile = new File(uri.toString());
+    return null;
+  }
+
+  @Override
+  public ParcelFileDescriptor openFile(Uri uri, String mode, CancellationSignal signal) {
+     mFile = new File(uri.toString());
+     return null;
+  }
+
+   @Override
+   public AssetFileDescriptor openTypedAssetFile(
+       Uri uri, String mimeTypeFilter, Bundle opts, CancellationSignal signal) {
+     mFile = new File(uri.toString());
+     return null;
+  }
+
+  @Override
+  public Cursor query(
+      Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    mFile = new File(uri.toString());
+    return null;
+  }
+
+  @Override
+  public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+    mFile = new File(uri.toString());
+    return 0;
+  }
+
+}
