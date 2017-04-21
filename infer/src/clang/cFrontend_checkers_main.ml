@@ -251,7 +251,8 @@ let store_issues source_file =
     DB.filename_from_string (Filename.concat lint_issues_dir (abbrev_source_file ^ ".issue")) in
   LintIssues.store_issues lint_issues_file !LintIssues.errLogMap
 
-let do_frontend_checks trans_unit_ctx ast =
+let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_context) ast =
+  CTL.create_ctl_evaluation_tracker trans_unit_ctx.source_file;
   try
     let parsed_linters = parse_ctl_files Config.linters_def_file in
     let filtered_parsed_linters = CFrontend_errors.filter_parsed_linters parsed_linters in

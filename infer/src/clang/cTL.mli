@@ -99,6 +99,8 @@ val save_dotty_when_in_debug_mode : SourceFile.t -> unit
 
 val next_state_via_transition : ast_node -> transitions option -> ast_node option
 
+val create_ctl_evaluation_tracker : SourceFile.t -> unit
+
 module Debug : sig
   val pp_formula : Format.formatter -> t -> unit
 end

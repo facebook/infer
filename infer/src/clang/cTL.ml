@@ -228,32 +228,40 @@ module Debug = struct
       next_id: int;
       eval_stack: (tree * ast_node_to_display) Stack.t;
       forest: tree list;
+      breakpoint_line: int option;
       debugger_active: bool;
     }
 
     let create_content ast_node phi lcxt =
       {ast_node; phi; eval_result = Eval_undefined; lcxt = lcxt; }
 
-    let create () = {
-      next_id = 0;
-      eval_stack = Stack.create();
-      forest = [];
-      debugger_active = false;
-    }
+    let create source_file =
+      let breakpoint_token = "INFER_BREAKPOINT" in
+      let breakpoint_line =
+        In_channel.read_lines (SourceFile.to_abs_path source_file)
+        |> List.findi ~f:(fun _ line -> String.is_substring line ~substring:breakpoint_token)
+        |> Option.map ~f:(fun (i, _) -> i + 1) in
+      {
+        next_id = 0;
+        eval_stack = Stack.create();
+        forest = [];
+        breakpoint_line;
+        debugger_active = false;
+      }
 
     let explain t ~eval_node ~ast_node_to_display =
-      if t.debugger_active then
-        let line_number an =
-          let line_of_source_range (sr: Clang_ast_t.source_range) =
-            let loc_info, _ = sr in
-            loc_info.sl_line in
-          match an with
-          | Stmt stmt ->
-              let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
-              line_of_source_range stmt_info.si_source_range
-          | Decl decl ->
-              let decl_info = Clang_ast_proj.get_decl_tuple decl in
-              line_of_source_range decl_info.di_source_range in
+      let line_number an =
+        let line_of_source_range (sr: Clang_ast_t.source_range) =
+          let loc_info, _ = sr in
+          loc_info.sl_line in
+        match an with
+        | Stmt stmt ->
+            let stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
+            line_of_source_range stmt_info.si_source_range
+        | Decl decl ->
+            let decl_info = Clang_ast_proj.get_decl_tuple decl in
+            line_of_source_range decl_info.di_source_range in
+      let stop_and_explain_step () =
         let highlight_style = match eval_node.content.eval_result with
           | Eval_undefined -> ANSITerminal.[Bold]
           | Eval_true -> ANSITerminal.[Bold; green]
@@ -264,7 +272,8 @@ module Debug = struct
           | Last_occurrence n -> n, true in
         let ast_str =
           Format.asprintf "%a"
-            (pp_ast ~ast_node_to_highlight ~prettifier:(ANSITerminal.sprintf highlight_style "%s"))
+            (pp_ast
+               ~ast_node_to_highlight ~prettifier:(ANSITerminal.sprintf highlight_style "%s"))
             ast_root in
         Logging.out "\nNode ID: %d\tEvaluation stack level: %d\tSource line-number: %s\n"
           eval_node.id
@@ -275,7 +284,8 @@ module Debug = struct
           | Eval_undefined -> true
           | _ -> false in
         if is_last_occurrence && is_eval_result_undefined then
-          Logging.out "From this step, a transition to a different part of the AST may follow.\n";
+          Logging.out
+            "From this step, a transition to a different part of the AST may follow.\n";
         let phi_str = Format.asprintf "%a" pp_formula eval_node.content.phi in
         Logging.out "CTL Formula: %s\n\n" phi_str;
         Logging.out "%s\n" ast_str;
@@ -290,7 +300,16 @@ module Debug = struct
               move_cursor 0 (-1);
               move_bol (); (* move to the beginning of the line *)
               erase Below; (* erase what follows the cursor's position *)
-            )
+            ) in
+      match t.debugger_active, t.breakpoint_line, line_number eval_node.content.ast_node with
+      | false, Some break_point_ln, Some ln when ln >= break_point_ln ->
+          Logging.out "Attaching debugger at line %d" ln;
+          stop_and_explain_step ();
+          {t with debugger_active = true}
+      | true, _, _ ->
+          stop_and_explain_step ();
+          t
+      | _ -> t
 
     let eval_begin t content =
       let node = {id = t.next_id; content} in
@@ -305,10 +324,8 @@ module Debug = struct
         if has_transition content.phi then Last_occurrence ast_node_from_previous_call
         else Carry_forward ast_node_from_previous_call in
       Stack.push t.eval_stack (subtree', ast_node_to_display);
-      explain t
-        ~eval_node:node
-        ~ast_node_to_display;
-      {t with next_id = t.next_id + 1}
+      let t' = explain t ~eval_node:node ~ast_node_to_display in
+      {t' with next_id = t.next_id + 1}
 
     let eval_end t result =
       let eval_result_of_bool = function
@@ -323,17 +340,15 @@ module Debug = struct
             Tree (eval_node', children),
             eval_node',
             ast_node_to_display in
-      explain t
-        ~eval_node
-        ~ast_node_to_display;
+      let t' = explain t ~eval_node ~ast_node_to_display in
       let forest' =
-        if Stack.is_empty t.eval_stack then evaluated_tree :: t.forest
+        if Stack.is_empty t'.eval_stack then evaluated_tree :: t'.forest
         else
-          let parent = match Stack.pop_exn t.eval_stack with
+          let parent = match Stack.pop_exn t'.eval_stack with
               Tree (node, children), ntd -> Tree (node, evaluated_tree :: children), ntd in
-          Stack.push t.eval_stack parent;
-          t.forest in
-      {t with forest = forest'}
+          Stack.push t'.eval_stack parent;
+          t'.forest in
+      {t' with forest = forest'}
 
     module DottyPrinter = struct
       let dotty_of_ctl_evaluation t =
@@ -422,35 +437,39 @@ let print_checker c =
   Logging.out "\n-------------------- \n"
 
 
-let ctl_evaluation_tracker = match Config.debug_mode with
-  | true -> Some (ref (Debug.EvaluationTracker.create ()))
-  | false -> None
+let ctl_evaluation_tracker = ref None
+
+let create_ctl_evaluation_tracker source_file =
+  match Config.linters_developer_mode, !ctl_evaluation_tracker with
+  | true, None -> ctl_evaluation_tracker := Some (Debug.EvaluationTracker.create source_file)
+  | true, _ -> failwith "A CTL evaluation tracker has already been created"
+  | _ -> ()
 
 let debug_create_payload ast_node phi lcxt =
-  match ctl_evaluation_tracker with
+  match !ctl_evaluation_tracker with
   | Some _ -> Some (Debug.EvaluationTracker.create_content ast_node phi lcxt)
   | None -> None
 
 let debug_eval_begin payload =
-  match ctl_evaluation_tracker, payload with
+  match !ctl_evaluation_tracker, payload with
   | Some tracker, Some payload ->
-      tracker := Debug.EvaluationTracker.eval_begin !tracker payload
+      ctl_evaluation_tracker := Some (Debug.EvaluationTracker.eval_begin tracker payload)
   | _ -> ()
 
 let debug_eval_end result =
-  match ctl_evaluation_tracker with
+  match !ctl_evaluation_tracker with
   | Some tracker ->
-      tracker := Debug.EvaluationTracker.eval_end !tracker result
+      ctl_evaluation_tracker := Some (Debug.EvaluationTracker.eval_end tracker result)
   | None -> ()
 
 let save_dotty_when_in_debug_mode source_file =
-  match ctl_evaluation_tracker with
+  match !ctl_evaluation_tracker with
   | Some tracker ->
       let dotty_dir = Config.results_dir ^/ Config.lint_dotty_dir_name in
       Utils.create_dir dotty_dir;
       let source_file_basename = Filename.basename (SourceFile.to_abs_path source_file) in
       let file = dotty_dir ^/ (source_file_basename ^ ".dot") in
-      let dotty = Debug.EvaluationTracker.DottyPrinter.dotty_of_ctl_evaluation !tracker in
+      let dotty = Debug.EvaluationTracker.DottyPrinter.dotty_of_ctl_evaluation tracker in
       Utils.with_file_out file ~f:(fun oc -> output_string oc dotty)
   | _ -> ()
 
