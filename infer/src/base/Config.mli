@@ -183,7 +183,6 @@ val bugs_csv : string option
 val bugs_json : string option
 val bugs_tests : string option
 val bugs_txt : string option
-val bugs_xml : string option
 val changed_files_index : string option
 val calls_csv : string option
 

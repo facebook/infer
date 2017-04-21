@@ -65,11 +65,6 @@ let error_desc_to_plain_string error_desc => {
 
 let error_desc_to_dotty_string error_desc => Localise.error_desc_get_dotty error_desc;
 
-let error_desc_to_xml_string error_desc => {
-  let pp fmt => F.fprintf fmt "%a" Localise.pp_error_desc error_desc;
-  Escape.escape_xml (F.asprintf "%t" pp)
-};
-
 let error_desc_to_xml_tags error_desc => {
   let tags = Localise.error_desc_get_tags error_desc;
   let subtree label contents => Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
@@ -137,7 +132,7 @@ type summary_val = {
 };
 
 
-/** compute values from summary data to export to csv and xml format */
+/** compute values from summary data to export to csv format */
 let summary_values summary => {
   let stats = summary.Specs.stats;
   let attributes = summary.Specs.attributes;
@@ -234,43 +229,6 @@ module ProcsCsv = {
     pp "%s," sv.vproof_coverage;
     pp "%s@\n" sv.vproof_trace
   };
-};
-
-module ProcsXml = {
-  let xml_procs_id = ref 0;
-
-  /** print proc in xml */
-  let pp_proc fmt summary => {
-    let sv = summary_values summary;
-    let subtree label contents => Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
-    let tree = {
-      incr xml_procs_id;
-      let attributes = [("id", string_of_int !xml_procs_id)];
-      let forest = [
-        subtree Io_infer.Xml.tag_name (Escape.escape_xml sv.vname),
-        subtree Io_infer.Xml.tag_name_id (Escape.escape_xml sv.vname_id),
-        subtree Io_infer.Xml.tag_specs (string_of_int sv.vspecs),
-        subtree Io_infer.Xml.tag_to sv.vto,
-        subtree Io_infer.Xml.tag_symop (string_of_int sv.vsymop),
-        subtree Io_infer.Xml.tag_err (string_of_int sv.verr),
-        subtree Io_infer.Xml.tag_file sv.vfile,
-        subtree Io_infer.Xml.tag_line (string_of_int sv.vline),
-        subtree Io_infer.Xml.tag_signature (Escape.escape_xml sv.vsignature),
-        subtree Io_infer.Xml.tag_weight (string_of_int sv.vweight),
-        subtree Io_infer.Xml.tag_proof_coverage sv.vproof_coverage,
-        subtree Io_infer.Xml.tag_proof_trace sv.vproof_trace,
-        subtree Io_infer.Xml.tag_flags (string_of_int (Hashtbl.length sv.vflags))
-      ];
-      Io_infer.Xml.create_tree "procedure" attributes forest
-    };
-    Io_infer.Xml.pp_inner_node fmt tree
-  };
-
-  /** print the opening of the procedures xml file */
-  let pp_procs_open fmt () => Io_infer.Xml.pp_open fmt "procedures";
-
-  /** print the closing of the procedures xml file */
-  let pp_procs_close fmt () => Io_infer.Xml.pp_close fmt "procedures";
 };
 
 let paths_to_filter =
@@ -612,101 +570,6 @@ let pp_text_of_report fmt report => {
   List.iter f::pp_row report
 };
 
-module IssuesXml = {
-  let xml_issues_id = ref 0;
-  let loc_trace_to_xml linereader ltr => {
-    let subtree label contents => Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
-    let level_to_xml level => subtree Io_infer.Xml.tag_level (string_of_int level);
-    let line_to_xml line => subtree Io_infer.Xml.tag_line (string_of_int line);
-    let file_to_xml file => subtree Io_infer.Xml.tag_file file;
-    let code_to_xml code => subtree Io_infer.Xml.tag_code code;
-    let description_to_xml descr => subtree Io_infer.Xml.tag_description (Escape.escape_xml descr);
-    let node_tags_to_xml node_tags => {
-      let escaped_tags =
-        List.map f::(fun (tag, value) => (tag, Escape.escape_xml value)) node_tags;
-      Io_infer.Xml.create_tree Io_infer.Xml.tag_node escaped_tags []
-    };
-    let num = ref 0;
-    let loc_to_xml lt => {
-      incr num;
-      let loc = lt.Errlog.lt_loc;
-      let code =
-        switch (Printer.LineReader.from_loc linereader loc) {
-        | Some s => Escape.escape_xml s
-        | None => ""
-        };
-      Io_infer.Xml.create_tree
-        Io_infer.Xml.tag_loc
-        [("num", string_of_int !num)]
-        [
-          level_to_xml lt.Errlog.lt_level,
-          file_to_xml (SourceFile.to_string loc.Location.file),
-          line_to_xml loc.Location.line,
-          code_to_xml code,
-          description_to_xml lt.Errlog.lt_description,
-          node_tags_to_xml lt.Errlog.lt_node_tags
-        ]
-    };
-    List.rev (List.rev_map f::loc_to_xml ltr)
-  };
-
-  /** print issues from summary in xml */
-  let pp_issues_of_error_log fmt error_filter linereader proc_loc_opt proc_name err_log => {
-    let do_row (key: Errlog.err_key) (err_data: Errlog.err_data) => {
-      let source_file =
-        switch proc_loc_opt {
-        | Some proc_loc => proc_loc.Location.file
-        | None => err_data.loc.Location.file
-        };
-      if (key.in_footprint && error_filter source_file key.err_desc key.err_name) {
-        let err_desc_string = error_desc_to_xml_string key.err_desc;
-        let subtree label contents =>
-          Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents];
-        let kind = Exceptions.err_kind_string key.err_kind;
-        let type_str = Localise.to_issue_id key.err_name;
-        let tree = {
-          incr xml_issues_id;
-          let attributes = [("id", string_of_int !xml_issues_id)];
-          let error_class = Exceptions.err_class_string err_data.err_class;
-          let error_line = string_of_int err_data.loc.Location.line;
-          let procedure_name = Typ.Procname.to_string proc_name;
-          let procedure_id = Typ.Procname.to_filename proc_name;
-          let filename = SourceFile.to_string source_file;
-          let bug_hash =
-            get_bug_hash
-              kind type_str procedure_id filename err_data.node_id_key.node_key key.err_desc;
-          let forest = [
-            subtree Io_infer.Xml.tag_class error_class,
-            subtree Io_infer.Xml.tag_kind kind,
-            subtree Io_infer.Xml.tag_type type_str,
-            subtree Io_infer.Xml.tag_qualifier err_desc_string,
-            subtree Io_infer.Xml.tag_severity key.severity,
-            subtree Io_infer.Xml.tag_line error_line,
-            subtree Io_infer.Xml.tag_procedure (Escape.escape_xml procedure_name),
-            subtree Io_infer.Xml.tag_procedure_id (Escape.escape_xml procedure_id),
-            subtree Io_infer.Xml.tag_file filename,
-            Io_infer.Xml.create_tree
-              Io_infer.Xml.tag_trace [] (loc_trace_to_xml linereader err_data.loc_trace),
-            subtree Io_infer.Xml.tag_key (string_of_int err_data.node_id_key.node_key),
-            Io_infer.Xml.create_tree
-              Io_infer.Xml.tag_qualifier_tags [] (error_desc_to_xml_tags key.err_desc),
-            subtree Io_infer.Xml.tag_hash (string_of_int bug_hash)
-          ];
-          Io_infer.Xml.create_tree "bug" attributes forest
-        };
-        Io_infer.Xml.pp_inner_node fmt tree
-      }
-    };
-    Errlog.iter do_row err_log
-  };
-
-  /** print the opening of the issues xml file */
-  let pp_issues_open fmt () => Io_infer.Xml.pp_open fmt "bugs";
-
-  /** print the closing of the issues xml file */
-  let pp_issues_close fmt () => Io_infer.Xml.pp_close fmt "bugs";
-};
-
 module CallsCsv = {
 
   /** Write proc summary stats in csv format */
@@ -1000,7 +863,6 @@ type bug_format_kind =
   | Csv
   | Tests
   | Text
-  | Xml
   | Latex
 [@@deriving compare];
 
@@ -1010,14 +872,12 @@ let pp_issues_in_format (format_kind, outf: Utils.outfile) =>
   | Csv => IssuesCsv.pp_issues_of_error_log outf.fmt
   | Tests => failwith "Print issues as tests is not implemented"
   | Text => IssuesTxt.pp_issues_of_error_log outf.fmt
-  | Xml => IssuesXml.pp_issues_of_error_log outf.fmt
   | Latex => failwith "Printing issues in latex is not implemented"
   };
 
 let pp_procs_in_format (format_kind, outf: Utils.outfile) =>
   switch format_kind {
   | Csv => ProcsCsv.pp_summary outf.fmt
-  | Xml => ProcsXml.pp_proc outf.fmt
   | Json
   | Latex
   | Tests
@@ -1030,8 +890,7 @@ let pp_calls_in_format (format_kind, outf: Utils.outfile) =>
   | Json
   | Tests
   | Text
-  | Xml
-  | Latex => failwith "Printing calls in json/tests/text/xml/latex is not implemented"
+  | Latex => failwith "Printing calls in json/tests/text/latex is not implemented"
   };
 
 let pp_stats_in_format (format_kind, _) =>
@@ -1040,8 +899,7 @@ let pp_stats_in_format (format_kind, _) =>
   | Json
   | Tests
   | Text
-  | Xml
-  | Latex => failwith "Printing stats in json/tests/text/xml/latex is not implemented"
+  | Latex => failwith "Printing stats in json/tests/text/latex is not implemented"
   };
 
 let pp_summary_in_format (format_kind, outf: Utils.outfile) =>
@@ -1050,8 +908,7 @@ let pp_summary_in_format (format_kind, outf: Utils.outfile) =>
   | Json
   | Csv
   | Tests
-  | Text
-  | Xml => failwith "Printing summary in json/csv/tests/text/xml is not implemented"
+  | Text => failwith "Printing summary in json/csv/tests/text is not implemented"
   };
 
 let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list => {
@@ -1132,7 +989,6 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =>
         | Text => pp_text_of_report outf.fmt report
         | Json => failwith "Printing issues from json does not support json output"
         | Csv => failwith "Printing issues from json does not support csv output"
-        | Xml => failwith "Printing issues from json does not support xml output"
         | Latex => failwith "Printing issues from json does not support latex output"
         };
       List.iter f::pp_json_issue format_list
@@ -1313,15 +1169,10 @@ let init_issues_format_list report_csv report_json => {
   let json_format = Option.value_map f::(mk_format Json) default::[] report_json;
   let tests_format = Option.value_map f::(mk_format Tests) default::[] Config.bugs_tests;
   let txt_format = Option.value_map f::(mk_format Text) default::[] Config.bugs_txt;
-  let xml_format = Option.value_map f::(mk_format Xml) default::[] Config.bugs_xml;
-  csv_format @ json_format @ tests_format @ txt_format @ xml_format
+  csv_format @ json_format @ tests_format @ txt_format
 };
 
-let init_procs_format_list () => {
-  let csv_format = Option.value_map f::(mk_format Csv) default::[] Config.procs_csv;
-  let xml_format = Option.value_map f::(mk_format Xml) default::[] Config.procs_xml;
-  csv_format @ xml_format
-};
+let init_procs_format_list () => Option.value_map f::(mk_format Csv) default::[] Config.procs_csv;
 
 let init_calls_format_list () => {
   let csv_format = Option.value_map f::(mk_format Csv) default::[] Config.calls_csv;
@@ -1346,10 +1197,8 @@ let init_files format_list_by_kind => {
       | (Csv, Procs) => ProcsCsv.pp_header outfile.fmt ()
       | (Csv, Stats) => Report.pp_header outfile.fmt ()
       | (Json, Issues) => IssuesJson.pp_json_open outfile.fmt ()
-      | (Xml, Issues) => IssuesXml.pp_issues_open outfile.fmt ()
-      | (Xml, Procs) => ProcsXml.pp_procs_open outfile.fmt ()
       | (Latex, Summary) => begin_latex_file outfile.fmt
-      | (Csv | Json | Latex | Tests | Text | Xml, _) => ()
+      | (Csv | Json | Latex | Tests | Text, _) => ()
       };
     List.iter f::init_files_of_format format_list
   };
@@ -1362,10 +1211,8 @@ let finalize_and_close_files format_list_by_kind stats pdflatex => {
       switch (format_kind, report_kind) {
       | (Csv, Stats) => F.fprintf outfile.fmt "%a@?" Report.pp_stats stats
       | (Json, Issues) => IssuesJson.pp_json_close outfile.fmt ()
-      | (Xml, Issues) => IssuesXml.pp_issues_close outfile.fmt ()
-      | (Xml, Procs) => ProcsXml.pp_procs_close outfile.fmt ()
       | (Latex, Summary) => Latex.pp_end outfile.fmt ()
-      | (Csv | Latex | Tests | Text | Xml | Json, _) => ()
+      | (Csv | Latex | Tests | Text | Json, _) => ()
       };
       Utils.close_outf outfile;
       /* bug_format_kind report_kind */

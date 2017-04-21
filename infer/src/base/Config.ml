@@ -573,12 +573,6 @@ and bugs_txt =
     ~meta:"file"
     "Write a list of issues in TXT format to a file"
 
-and bugs_xml =
-  CLOpt.mk_path_opt ~deprecated:["bugs_xml"] ~long:"issues-xml"
-    ~parse_mode:CLOpt.(Infer [Driver;Print])
-    ~meta:"file"
-    "Write a list of issues in XML format to a file"
-
 and calls_csv =
   CLOpt.mk_path_opt ~deprecated:["calls"] ~long:"calls-csv"
     ~parse_mode:CLOpt.(Infer [Driver;Print])
@@ -1620,7 +1614,6 @@ and frontend_tests = !frontend_tests
 and generated_classes = !generated_classes
 and bugs_tests = !bugs_tests
 and bugs_txt = !bugs_txt
-and bugs_xml = !bugs_xml
 and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
 and dump_duplicate_symbols = !dump_duplicate_symbols

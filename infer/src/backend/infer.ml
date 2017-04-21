@@ -356,7 +356,6 @@ let report () =
         if_some "--issues-csv" report_csv @@
         if_some "--issues-json" report_json @@
         if_some "--issues-txt" Config.bugs_txt @@
-        if_some "--issues-xml" Config.bugs_xml @@
         if_true "--pmd-xml" Config.pmd_xml [
           "--project-root"; Config.project_root;
           "--results-dir"; Config.results_dir
