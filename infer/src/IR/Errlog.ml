@@ -13,12 +13,18 @@ module Hashtbl = Caml.Hashtbl
 module L = Logging
 module F = Format
 
+type node_tag =
+  | Condition of bool
+  | Exception of Typ.name
+  | Procedure_start of Typ.Procname.t
+  | Procedure_end of Typ.Procname.t
+
 (** Element of a loc trace *)
 type loc_trace_elem = {
   lt_level : int; (** nesting level of procedure calls *)
   lt_loc : Location.t; (** source location at the current step in the trace *)
   lt_description : string; (** description of the current step in the trace *)
-  lt_node_tags : (string * string) list (** tags describing the node at the current location *)
+  lt_node_tags : node_tag list (** tags describing the node at the current location *)
 }
 
 let make_trace_element lt_level lt_loc lt_description lt_node_tags =

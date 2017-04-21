@@ -95,15 +95,37 @@ let loc_trace_to_jsonbug_record trace_list ekind =>
   switch ekind {
   | Exceptions.Kinfo => []
   | _ =>
-    /* writes a trace as a record for atdgen conversion */
-    let node_tags_to_records tags_list =>
-      List.map f::(fun tag => {Jsonbug_j.tag: fst tag, value: snd tag}) tags_list;
+    let tag_value_records_of_node_tag nt =>
+      switch nt {
+      | Errlog.Condition cond => [
+          {Jsonbug_j.tag: Io_infer.Xml.tag_kind, value: "condition"},
+          {Jsonbug_j.tag: Io_infer.Xml.tag_branch, value: Printf.sprintf "%B" cond}
+        ]
+      | Errlog.Exception exn_name =>
+        let res = [{Jsonbug_j.tag: Io_infer.Xml.tag_kind, value: "exception"}];
+        let exn_str = Typ.Name.name exn_name;
+        if (String.is_empty exn_str) {
+          res
+        } else {
+          [{Jsonbug_j.tag: Io_infer.Xml.tag_name, value: exn_str}, ...res]
+        }
+      | Errlog.Procedure_start pname => [
+          {Jsonbug_j.tag: Io_infer.Xml.tag_kind, value: "procedure_start"},
+          {Jsonbug_j.tag: Io_infer.Xml.tag_name, value: Typ.Procname.to_string pname},
+          {Jsonbug_j.tag: Io_infer.Xml.tag_name_id, value: Typ.Procname.to_filename pname}
+        ]
+      | Errlog.Procedure_end pname => [
+          {Jsonbug_j.tag: Io_infer.Xml.tag_kind, value: "procedure_end"},
+          {Jsonbug_j.tag: Io_infer.Xml.tag_name, value: Typ.Procname.to_string pname},
+          {Jsonbug_j.tag: Io_infer.Xml.tag_name_id, value: Typ.Procname.to_filename pname}
+        ]
+      };
     let trace_item_to_record trace_item => {
       Jsonbug_j.level: trace_item.Errlog.lt_level,
       filename: SourceFile.to_string trace_item.Errlog.lt_loc.Location.file,
       line_number: trace_item.Errlog.lt_loc.Location.line,
       description: trace_item.Errlog.lt_description,
-      node_tags: node_tags_to_records trace_item.Errlog.lt_node_tags
+      node_tags: List.concat_map f::tag_value_records_of_node_tag trace_item.Errlog.lt_node_tags
     };
     let record_list = List.rev (List.rev_map f::trace_item_to_record trace_list);
     record_list

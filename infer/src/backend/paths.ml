@@ -466,13 +466,9 @@ end = struct
             match Procdesc.Node.get_kind curr_node with
             | Procdesc.Node.Join_node -> () (* omit join nodes from error traces *)
             | Procdesc.Node.Start_node pname ->
-                let name = Typ.Procname.to_string pname in
-                let name_id = Typ.Procname.to_filename pname in
                 let descr = "start of procedure " ^ (Typ.Procname.to_simplified_string pname) in
                 let node_tags =
-                  [(Io_infer.Xml.tag_kind,"procedure_start");
-                   (Io_infer.Xml.tag_name, name);
-                   (Io_infer.Xml.tag_name_id, name_id)] in
+                  [Errlog.Procedure_start pname] in
                 trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
             | Procdesc.Node.Prune_node (is_true_branch, if_kind, _) ->
                 let descr = match is_true_branch, if_kind with
@@ -486,18 +482,11 @@ end = struct
                   | false, Sil.Ik_switch -> "Switch condition is false. Skipping switch case"
                   | true, (Sil.Ik_bexp | Sil.Ik_land_lor) -> "Condition is true"
                   | false, (Sil.Ik_bexp | Sil.Ik_land_lor) -> "Condition is false" in
-                let node_tags =
-                  [(Io_infer.Xml.tag_kind,"condition");
-                   (Io_infer.Xml.tag_branch, if is_true_branch then "true" else "false")] in
+                let node_tags = [Errlog.Condition is_true_branch] in
                 trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
             | Procdesc.Node.Exit_node pname ->
                 let descr = "return from a call to " ^ (Typ.Procname.to_string pname) in
-                let name = Typ.Procname.to_string pname in
-                let name_id = Typ.Procname.to_filename pname in
-                let node_tags =
-                  [(Io_infer.Xml.tag_kind,"procedure_end");
-                   (Io_infer.Xml.tag_name, name);
-                   (Io_infer.Xml.tag_name_id, name_id)] in
+                let node_tags = [Errlog.Procedure_end pname] in
                 trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
             | _ ->
                 let descr, node_tags =
@@ -505,12 +494,9 @@ end = struct
                   | None -> "", []
                   | Some exn_name ->
                       let exn_str = Typ.Name.name exn_name in
-                      if String.equal exn_str ""
-                      then "exception", [(Io_infer.Xml.tag_kind,"exception")]
-                      else
-                        "exception " ^ exn_str,
-                        [(Io_infer.Xml.tag_kind,"exception");
-                         (Io_infer.Xml.tag_name, exn_str)] in
+                      let desc =
+                        if String.is_empty exn_str then "exception" else "exception " ^ exn_str in
+                      desc, [Errlog.Exception exn_name] in
                 let descr =
                   match get_description path with
                   | Some path_descr ->
