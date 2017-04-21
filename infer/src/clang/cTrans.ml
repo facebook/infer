@@ -2675,7 +2675,7 @@ struct
     let child_stmt_info =
       { (Ast_expressions.dummy_stmt_info ()) with Clang_ast_t.si_source_range = source_range } in
     let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
-    let class_type_ptr = Ast_expressions.create_pointer_type (`DeclPtr class_ptr) in
+    let class_type_ptr = Ast_expressions.create_pointer_type (Clang_ast_extend.DeclPtr class_ptr) in
     let this_res_trans = this_expr_trans trans_state' sil_loc class_type_ptr in
     let var_res_trans = match ctor_init.Clang_ast_t.xci_subject with
       | `Delegating _ | `BaseClass _ ->

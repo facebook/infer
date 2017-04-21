@@ -127,8 +127,8 @@ and sil_type_of_c_type translate_decl tenv c_type =
 
 and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
   let open Clang_ast_t in
-  let typ = `DeclPtr decl_ptr in
-  try Clang_ast_types.TypePointerMap.find typ !CFrontend_config.sil_types_map
+  let typ = Clang_ast_extend.DeclPtr decl_ptr in
+  try Clang_ast_extend.TypePointerMap.find typ !CFrontend_config.sil_types_map
   with Not_found ->
   match CAst_utils.get_decl decl_ptr with
   | Some (CXXRecordDecl _ as d)
@@ -151,7 +151,7 @@ and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
 
 and clang_type_ptr_to_sil_type translate_decl tenv type_ptr =
   try
-    Clang_ast_types.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
+    Clang_ast_extend.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
   with Not_found ->
     (match CAst_utils.get_type type_ptr with
      | Some c_type ->
@@ -162,24 +162,24 @@ and clang_type_ptr_to_sil_type translate_decl tenv type_ptr =
 
 and prebuilt_type_to_sil_type type_ptr =
   try
-    Clang_ast_types.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
+    Clang_ast_extend.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
   with Not_found ->
     Logging.out "Prebuilt type %s not found\n"
-      (Clang_ast_types.type_ptr_to_string type_ptr);
+      (Clang_ast_extend.type_ptr_to_string type_ptr);
     assert false
 
 and type_ptr_to_sil_type translate_decl tenv type_ptr =
   match type_ptr with
-  | `TPtr _ -> clang_type_ptr_to_sil_type translate_decl tenv type_ptr
-  | `Prebuilt _ -> prebuilt_type_to_sil_type type_ptr
-  | `PointerOf typ ->
+  | Clang_ast_types.TypePtr.Ptr _ -> clang_type_ptr_to_sil_type translate_decl tenv type_ptr
+  | Clang_ast_extend.Prebuilt _ -> prebuilt_type_to_sil_type type_ptr
+  | Clang_ast_extend.PointerOf typ ->
       let sil_typ = type_ptr_to_sil_type translate_decl tenv typ in
       Typ.Tptr (sil_typ, Typ.Pk_pointer)
-  | `ReferenceOf typ ->
+  | Clang_ast_extend.ReferenceOf typ ->
       let sil_typ = type_ptr_to_sil_type translate_decl tenv typ in
       Typ.Tptr (sil_typ, Typ.Pk_reference)
-  | `ClassType typename ->
+  | Clang_ast_extend.ClassType typename ->
       Typ.Tstruct typename
-  | `StructType typename -> Typ.Tstruct typename
-  | `DeclPtr ptr -> decl_ptr_to_sil_type translate_decl tenv ptr
-  | `ErrorType -> Typ.Tvoid
+  | Clang_ast_extend.DeclPtr ptr -> decl_ptr_to_sil_type translate_decl tenv ptr
+  | Clang_ast_extend.ErrorType -> Typ.Tvoid
+  | _ -> raise (invalid_arg "unknown variant for type_ptr")

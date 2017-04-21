@@ -46,12 +46,12 @@ let rec return_type_of_function_type_ptr type_ptr =
       return_type_of_function_type_ptr in_type_ptr
   | Some _ ->
       Logging.err_debug "Warning: Type pointer %s is not a function type."
-        (Clang_ast_types.type_ptr_to_string type_ptr);
-      `ErrorType
+        (Clang_ast_extend.type_ptr_to_string type_ptr);
+      Clang_ast_extend.ErrorType
   | None ->
       Logging.err_debug "Warning: Type pointer %s not found."
-        (Clang_ast_types.type_ptr_to_string type_ptr);
-      `ErrorType
+        (Clang_ast_extend.type_ptr_to_string type_ptr);
+      Clang_ast_extend.ErrorType
 
 let return_type_of_function_type tp =
   return_type_of_function_type_ptr tp

@@ -52,10 +52,10 @@ let get_class_param function_method_decl_info =
   if (is_instance_method function_method_decl_info) then
     match function_method_decl_info with
     | Cpp_Meth_decl_info (_, _, class_decl_ptr, _) ->
-        let class_type = Ast_expressions.create_qual_type (`DeclPtr class_decl_ptr) in
+        let class_type = Ast_expressions.create_qual_type (Clang_ast_extend.DeclPtr class_decl_ptr) in
         [(Mangled.from_string CFrontend_config.this, class_type)]
     | ObjC_Meth_decl_info (_, class_decl_ptr) ->
-        let class_type = Ast_expressions.create_qual_type (`DeclPtr class_decl_ptr) in
+        let class_type = Ast_expressions.create_qual_type (Clang_ast_extend.DeclPtr class_decl_ptr) in
         [(Mangled.from_string CFrontend_config.self, class_type)]
     | _ -> []
   else []

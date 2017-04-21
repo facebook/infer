@@ -68,7 +68,7 @@ let create_qual_type ?(is_const=false) qt_type_ptr =
 
 let new_constant_type_ptr () =
   let pointer = CAst_utils.get_fresh_pointer () in
-  `Prebuilt pointer
+  Clang_ast_extend.Prebuilt pointer
 
 (* Whenever new type are added manually to the translation here, *)
 (* they should be added to the map in cTypes_decl too!! *)
@@ -106,19 +106,17 @@ let create_void_unsigned_long_type =
 let create_void_void_type =
   new_constant_type_ptr ()
 
-let create_class_type typename = `ClassType typename
+let create_class_type typename = Clang_ast_extend.ClassType typename
 let create_class_qual_type ?(is_const=false) typename =
   create_qual_type ~is_const @@ create_class_type typename
 
 let make_objc_class_type class_name =
   create_class_type (Typ.Name.Objc.from_string class_name)
 
-let create_struct_type struct_name = `StructType struct_name
-
-let create_pointer_type typ = `PointerOf typ
+let create_pointer_type typ = Clang_ast_extend.PointerOf typ
 let create_pointer_qual_type ~is_const typ = create_qual_type ~is_const @@ create_pointer_type typ
 
-let create_reference_type typ = `ReferenceOf typ
+let create_reference_type typ = Clang_ast_extend.ReferenceOf typ
 
 let create_integer_literal n =
   let stmt_info = dummy_stmt_info () in

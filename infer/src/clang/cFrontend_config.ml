@@ -100,7 +100,7 @@ let log_out = ref Format.std_formatter
 let pointer_decl_index = ref Clang_ast_main.PointerMap.empty
 let pointer_stmt_index = ref Clang_ast_main.PointerMap.empty
 let pointer_type_index = ref Clang_ast_main.PointerMap.empty
-let sil_types_map = ref Clang_ast_types.TypePointerMap.empty
+let sil_types_map = ref Clang_ast_extend.TypePointerMap.empty
 
 let reset_global_state () =
   enum_map := Clang_ast_main.PointerMap.empty;
@@ -110,4 +110,4 @@ let reset_global_state () =
   pointer_decl_index := Clang_ast_main.PointerMap.empty;
   pointer_stmt_index := Clang_ast_main.PointerMap.empty;
   pointer_type_index := Clang_ast_main.PointerMap.empty;
-  sil_types_map := Clang_ast_types.TypePointerMap.empty;
+  sil_types_map := Clang_ast_extend.TypePointerMap.empty;

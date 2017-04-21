@@ -101,5 +101,5 @@ let ms_to_string ms =
   IList.to_string
     (fun (s1, s2) -> (Mangled.to_string s1) ^ ", " ^ (CAst_utils.string_of_qual_type s2))
     ms.args
-  ^ "->" ^ (CAst_utils.string_of_type_ptr ms.ret_type) ^ " " ^
+  ^ "->" ^ (Clang_ast_extend.type_ptr_to_string ms.ret_type) ^ " " ^
   Clang_ast_j.string_of_source_range ms.loc

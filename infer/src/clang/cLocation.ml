@@ -16,8 +16,8 @@ let clang_to_sil_location trans_unit_ctx clang_loc =
   let line = Option.value ~default:(-1) clang_loc.Clang_ast_t.sl_line in
   let col = Option.value ~default:(-1) clang_loc.Clang_ast_t.sl_column in
   let file =
-    Option.value ~default:trans_unit_ctx.CFrontend_config.source_file
-      clang_loc.Clang_ast_t.sl_file in
+    Option.value_map ~default:trans_unit_ctx.CFrontend_config.source_file
+      ~f:SourceFile.from_abs_path clang_loc.Clang_ast_t.sl_file in
   Location.{line; col; file}
 
 let source_file_in_project source_file =
@@ -30,7 +30,7 @@ let source_file_in_project source_file =
   file_in_project && not (file_should_be_skipped)
 
 let should_do_frontend_check trans_unit_ctx (loc_start, _) =
-  match loc_start.Clang_ast_t.sl_file with
+  match Option.map ~f:SourceFile.from_abs_path loc_start.Clang_ast_t.sl_file with
   | Some source_file ->
       SourceFile.equal source_file trans_unit_ctx.CFrontend_config.source_file ||
       (source_file_in_project source_file && not Config.testing_mode)
@@ -42,7 +42,7 @@ let should_do_frontend_check trans_unit_ctx (loc_start, _) =
     than the source file to avoid conflicts between different versions of the libraries. *)
 let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~translate_when_used =
   let map_file_of pred loc =
-    match loc.Clang_ast_t.sl_file with
+    match Option.map ~f:SourceFile.from_abs_path loc.Clang_ast_t.sl_file with
     | Some f -> pred f
     | None -> false
   in

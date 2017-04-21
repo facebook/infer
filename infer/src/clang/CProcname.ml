@@ -40,9 +40,9 @@ let get_template_info tenv (fdi : Clang_ast_t.function_decl_info) : Typ.template
 
 let is_decl_info_generic_model {Clang_ast_t.di_attributes} =
   let f = function
-  | Clang_ast_t.AnnotateAttr {ai_parameters=[_; name; _]}
-    when String.equal name "__infer_generic_model" -> true
-  | _ -> false in
+    | Clang_ast_t.AnnotateAttr {ai_parameters=[_; name; _]}
+      when String.equal name "__infer_generic_model" -> true
+    | _ -> false in
   List.exists ~f di_attributes
 
 let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
@@ -51,7 +51,7 @@ let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
     | Some (decl_info, function_decl_info) ->
         (match function_decl_info.Clang_ast_t.fdi_storage_class with
          | Some "static" ->
-             let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file in
+             let file_opt = (fst decl_info.Clang_ast_t.di_source_range).Clang_ast_t.sl_file |> Option.map ~f:SourceFile.from_abs_path in
              let file_to_hex src = SourceFile.to_string src |> Utils.string_crc_hex32 in
              Option.value_map ~f:file_to_hex ~default:"" file_opt
          | _ -> "")
@@ -64,7 +64,7 @@ let mk_c_function translation_unit_context ?tenv name function_decl_info_opt =
     | _ -> "" in
   let template_info, is_generic_model = match function_decl_info_opt, tenv with
     | Some (decl_info, function_decl_info), Some t ->
-      get_template_info t function_decl_info, is_decl_info_generic_model decl_info
+        get_template_info t function_decl_info, is_decl_info_generic_model decl_info
     | _ -> Typ.NoTemplate, false in
   let mangled = file ^ mangled_name in
   if String.is_empty mangled then
@@ -85,14 +85,14 @@ let mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
     | Some (CXXConversionDecl (di, _, _, fdi, _))
     | Some (CXXDestructorDecl (di, _, _, fdi, _)) -> (
         let templ_info = match tenv with
-        | Some t -> get_template_info t fdi
-        | None -> Typ.NoTemplate in
+          | Some t -> get_template_info t fdi
+          | None -> Typ.NoTemplate in
         let is_gen_model = is_decl_info_generic_model di ||
-          (* read whether parent class is annoatated as generic model *)
-          di.di_parent_pointer
-          |> Option.value_map ~f:CAst_utils.get_decl ~default:None
-          |> Option.map ~f:Clang_ast_proj.get_decl_tuple
-          |> Option.value_map ~f:is_decl_info_generic_model ~default:false in
+                           (* read whether parent class is annoatated as generic model *)
+                           di.di_parent_pointer
+                           |> Option.value_map ~f:CAst_utils.get_decl ~default:None
+                           |> Option.map ~f:Clang_ast_proj.get_decl_tuple
+                           |> Option.value_map ~f:is_decl_info_generic_model ~default:false in
         templ_info, is_gen_model
       )
     | _ -> Typ.NoTemplate, false in
@@ -102,7 +102,7 @@ let mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
 let mk_objc_method class_typename method_name method_kind =
   Typ.Procname.ObjC_Cpp
     (Typ.Procname.objc_cpp class_typename method_name method_kind Typ.NoTemplate
-      ~is_generic_model:false)
+       ~is_generic_model:false)
 
 let block_procname_with_index defining_proc i =
   Config.anonymous_block_prefix ^

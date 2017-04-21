@@ -92,7 +92,7 @@ let get_property_of_ivar decl_ptr =
 
 let update_sil_types_map type_ptr sil_type =
   CFrontend_config.sil_types_map :=
-    Clang_ast_types.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
+    Clang_ast_extend.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
 
 let update_enum_map enum_constant_pointer sil_exp =
   let open Clang_ast_main in
@@ -112,17 +112,20 @@ let get_enum_constant_exp enum_constant_pointer =
   Clang_ast_main.PointerMap.find enum_constant_pointer !CFrontend_config.enum_map
 
 let get_type type_ptr =
-  try
-    (* There is chance for success only if type_ptr is in fact clang pointer *)
-    (let raw_ptr = Clang_ast_types.type_ptr_to_clang_pointer type_ptr in
-     try
-       Some (Clang_ast_main.PointerMap.find raw_ptr !CFrontend_config.pointer_type_index)
-     with Not_found -> Logging.out "type with pointer %d not found\n" raw_ptr; None)
-  with Clang_ast_types.Not_Clang_Pointer ->
-    (* otherwise, function fails *)
-    let type_str = Clang_ast_types.type_ptr_to_string type_ptr in
-    Logging.out "type %s is not clang pointer\n" type_str;
-    None
+  (* There is chance for success only if type_ptr is in fact clang pointer *)
+  match type_ptr with
+  | Clang_ast_types.TypePtr.Ptr raw_ptr ->
+      (try
+         Some (Clang_ast_main.PointerMap.find raw_ptr !CFrontend_config.pointer_type_index)
+       with Not_found ->
+         Logging.out "type with pointer %d not found\n" raw_ptr;
+         None
+      )
+  | _ ->
+      (* otherwise, function fails *)
+      let type_str = Clang_ast_extend.type_ptr_to_string type_ptr in
+      Logging.out "type %s is not clang pointer\n" type_str;
+      None
 
 let get_desugared_type type_ptr =
   let typ_opt = get_type type_ptr in
@@ -168,8 +171,6 @@ let sil_annot_of_type type_ptr =
     | _ -> None in
   mk_annot annot_name_opt
 
-let string_of_type_ptr type_ptr = Clang_ast_j.string_of_type_ptr type_ptr
-
 let name_of_typedef_type_info {Clang_ast_t.tti_decl_ptr} =
   match get_decl tti_decl_ptr with
   | Some TypedefDecl (_, name_decl_info, _, _, _) ->
@@ -183,17 +184,19 @@ let name_opt_of_typedef_type_ptr type_ptr =
   | _ -> None
 
 let string_of_qual_type {Clang_ast_t.qt_type_ptr; qt_is_const} =
-  Printf.sprintf "%s%s" (if qt_is_const then "is_const " else "") (string_of_type_ptr qt_type_ptr)
+  Printf.sprintf "%s%s"
+    (if qt_is_const then "is_const " else "")
+    (Clang_ast_extend.type_ptr_to_string qt_type_ptr)
 
 let add_type_from_decl_ref type_ptr_to_sil_type tenv decl_ref_opt fail_if_not_found =
   match decl_ref_opt with (* translate interface first if found *)
   | Some dr ->
-      ignore (type_ptr_to_sil_type tenv (`DeclPtr dr.Clang_ast_t.dr_decl_pointer));
+      ignore (type_ptr_to_sil_type tenv (Clang_ast_extend.DeclPtr dr.Clang_ast_t.dr_decl_pointer));
   | _ -> if fail_if_not_found then assert false else ()
 
 let add_type_from_decl_ref_list type_ptr_to_sil_type tenv decl_ref_list =
   let add_elem dr =
-    ignore (type_ptr_to_sil_type tenv (`DeclPtr dr.Clang_ast_t.dr_decl_pointer)) in
+    ignore (type_ptr_to_sil_type tenv (Clang_ast_extend.DeclPtr dr.Clang_ast_t.dr_decl_pointer)) in
   List.iter ~f:add_elem decl_ref_list
 
 let get_function_decl_with_body decl_ptr =

@@ -47,8 +47,6 @@ val create_void_void_type : type_ptr
 val create_class_type : Typ.Name.t -> type_ptr
 val create_class_qual_type : ?is_const:bool -> Typ.Name.t -> qual_type
 
-val create_struct_type : Typ.Name.t -> type_ptr
-
 val create_pointer_type : type_ptr -> type_ptr
 val create_pointer_qual_type : is_const:bool -> type_ptr -> qual_type
 

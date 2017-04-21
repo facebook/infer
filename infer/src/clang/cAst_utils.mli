@@ -60,10 +60,6 @@ val get_desugared_type : Clang_ast_t.type_ptr -> Clang_ast_t.c_type option
     (RecordType, ObjCInterfaceType and None for others *)
 val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl option
 
-(** returns string representation of type_ptr
-    NOTE: this doesn't expand type, it only converts type_ptr to string *)
-val string_of_type_ptr : Clang_ast_t.type_ptr -> string
-
 val name_of_typedef_type_info : Clang_ast_t.typedef_type_info -> QualifiedCppName.t
 
 (** returns name of typedef if type_ptr points to Typedef, None otherwise *)
@@ -135,13 +131,13 @@ val get_super_ObjCImplementationDecl :
 val is_objc_if_descendant :
   ?blacklist:string list -> Clang_ast_t.decl option -> string list -> bool
 
-val type_ptr_to_objc_interface : Clang_ast_types.t_ptr -> Clang_ast_t.decl option
+val type_ptr_to_objc_interface : Clang_ast_t.type_ptr -> Clang_ast_t.decl option
 
-val type_ptr_is_typedef_named : Clang_ast_types.t_ptr -> string -> bool
+val type_ptr_is_typedef_named : Clang_ast_t.type_ptr -> string -> bool
 
 (** A class method that returns an instance of the class is a factory method. *)
 val is_objc_factory_method : Clang_ast_t.decl -> Clang_ast_t.decl -> bool
 
 val name_of_decl_ref_opt : Clang_ast_t.decl_ref option -> string option
 
-val sil_annot_of_type : Clang_ast_types.t_ptr -> Annot.Item.t
+val sil_annot_of_type : Clang_ast_t.type_ptr -> Annot.Item.t
