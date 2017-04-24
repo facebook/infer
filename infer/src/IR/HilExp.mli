@@ -34,7 +34,7 @@ type t =
 val pp : F.formatter -> t -> unit
 
 (** Convert SIL expression to HIL expression *)
-val of_sil : lookup_id:(Var.t -> AccessPath.Raw.t option) -> Exp.t -> Typ.t -> t
+val of_sil : f_resolve_id:(Var.t -> AccessPath.Raw.t option) -> Exp.t -> Typ.t -> t
 
 (** Get all the access paths used in the given HIL expression, including duplicates if a path is
     used more than once. *)

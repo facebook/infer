@@ -56,37 +56,37 @@ let get_access_paths exp0 =
         acc in
   get_access_paths_ exp0 []
 
-(* convert an SIL expression into an HIL expression. the [lookup_id] function should map an SSA
+(* convert an SIL expression into an HIL expression. the [f_resolve_id] function should map an SSA
    temporary variable to the access path it represents. evaluating the HIL expression should
    produce the same result as evaluating the SIL expression and replacing the temporary variables
-   using [lookup_id] *)
-let rec of_sil ~lookup_id (exp : Exp.t) typ = match exp with
+   using [f_resolve_id] *)
+let rec of_sil ~f_resolve_id (exp : Exp.t) typ = match exp with
   | Var id ->
-      let ap = match lookup_id (Var.of_id id) with
+      let ap = match f_resolve_id (Var.of_id id) with
         | Some access_path -> access_path
         | None -> AccessPath.of_id id typ in
       AccessPath ap
   | UnOp (op, e, typ_opt) ->
-      UnaryOperator (op, of_sil ~lookup_id e typ, typ_opt)
+      UnaryOperator (op, of_sil ~f_resolve_id e typ, typ_opt)
   | BinOp (op, e0, e1) ->
-      BinaryOperator (op, of_sil ~lookup_id e0 typ, of_sil ~lookup_id e1 typ)
+      BinaryOperator (op, of_sil ~f_resolve_id e0 typ, of_sil ~f_resolve_id e1 typ)
   | Exn e ->
-      Exception (of_sil ~lookup_id e typ)
+      Exception (of_sil ~f_resolve_id e typ)
   | Const c ->
       Constant c
   | Cast (cast_typ, e) ->
-      Cast (cast_typ, of_sil ~lookup_id e typ)
+      Cast (cast_typ, of_sil ~f_resolve_id e typ)
   | Sizeof (sizeof_typ, dynamic_length, _) ->
-      Sizeof (sizeof_typ, Option.map ~f:(fun e -> of_sil ~lookup_id e typ) dynamic_length)
+      Sizeof (sizeof_typ, Option.map ~f:(fun e -> of_sil ~f_resolve_id e typ) dynamic_length)
   | Closure closure ->
       let environment =
         List.map
           ~f:(fun (value, pvar, typ) ->
-              AccessPath.base_of_pvar pvar typ, of_sil ~lookup_id value typ)
+              AccessPath.base_of_pvar pvar typ, of_sil ~f_resolve_id value typ)
           closure.captured_vars in
       Closure (closure.name, environment)
   | Lvar _ | Lfield _ | Lindex _ ->
-      match AccessPath.of_lhs_exp exp typ ~f_resolve_id:lookup_id with
+      match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
       | Some access_path ->
           AccessPath access_path
       | None ->
