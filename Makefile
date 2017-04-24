@@ -31,7 +31,9 @@ BUILD_SYSTEMS_TESTS += \
   waf \
 
 DIRECT_TESTS += \
-  c_errors c_frontend c_bufferoverrun cpp_checkers cpp_errors cpp_frontend cpp_quandary
+  c_bufferoverrun c_errors c_frontend \
+	cpp_bufferoverrun cpp_checkers cpp_errors cpp_frontend cpp_quandary \
+
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck-clang-db
 endif
