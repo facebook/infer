@@ -160,18 +160,10 @@ and clang_type_ptr_to_sil_type translate_decl tenv type_ptr =
          sil_type
      | _ -> Typ.Tvoid)
 
-and prebuilt_type_to_sil_type type_ptr =
-  try
-    Clang_ast_extend.TypePointerMap.find type_ptr !CFrontend_config.sil_types_map
-  with Not_found ->
-    Logging.out "Prebuilt type %s not found\n"
-      (Clang_ast_extend.type_ptr_to_string type_ptr);
-    assert false
-
 and type_ptr_to_sil_type translate_decl tenv type_ptr =
   match type_ptr with
   | Clang_ast_types.TypePtr.Ptr _ -> clang_type_ptr_to_sil_type translate_decl tenv type_ptr
-  | Clang_ast_extend.Prebuilt _ -> prebuilt_type_to_sil_type type_ptr
+  | Clang_ast_extend.Builtin kind -> sil_type_of_builtin_type_kind kind
   | Clang_ast_extend.PointerOf typ ->
       let sil_typ = type_ptr_to_sil_type translate_decl tenv typ in
       Typ.Tptr (sil_typ, Typ.Pk_pointer)

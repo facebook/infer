@@ -21,28 +21,16 @@ val dummy_stmt_info : unit -> stmt_info
 
 val create_qual_type : ?is_const:bool -> type_ptr -> qual_type
 
-val create_char_type : type_ptr
-
 val create_char_star_type : type_ptr
 val create_char_star_qual_type : is_const:bool -> qual_type
 
 val create_id_type : type_ptr
 
-val create_nsarray_star_type : type_ptr
-
 val create_void_type : type_ptr
 
 val create_int_type : type_ptr
 
-val create_void_star_type : type_ptr
-
 val create_BOOL_type : type_ptr
-
-val create_unsigned_long_type : type_ptr
-
-val create_void_unsigned_long_type : type_ptr
-
-val create_void_void_type : type_ptr
 
 val create_class_type : Typ.Name.t -> type_ptr
 val create_class_qual_type : ?is_const:bool -> Typ.Name.t -> qual_type

@@ -66,45 +66,32 @@ let stmt_info_with_fresh_pointer stmt_info = {
 let create_qual_type ?(is_const=false) qt_type_ptr =
   { Clang_ast_t.qt_type_ptr; qt_is_const=is_const }
 
-let new_constant_type_ptr () =
-  let pointer = CAst_utils.get_fresh_pointer () in
-  Clang_ast_extend.Prebuilt pointer
+let builtin_to_type_ptr kind = Clang_ast_extend.Builtin kind
 
-(* Whenever new type are added manually to the translation here, *)
-(* they should be added to the map in cTypes_decl too!! *)
-let create_int_type =
-  new_constant_type_ptr ()
+let pointerof_type_ptr type_ptr = Clang_ast_extend.PointerOf type_ptr
 
-let create_void_type =
-  new_constant_type_ptr ()
+(* We translate function types as the return type of the function *)
+let function_type_ptr return_type = return_type
 
-let create_void_star_type =
-  new_constant_type_ptr ()
+let create_int_type = builtin_to_type_ptr `Int
 
-let create_id_type =
-  new_constant_type_ptr ()
+let create_void_type = builtin_to_type_ptr `Void
 
-let create_nsarray_star_type =
-  new_constant_type_ptr ()
+let create_void_star_type = pointerof_type_ptr create_void_type
 
-let create_char_type =
-  new_constant_type_ptr ()
+let create_id_type = pointerof_type_ptr (builtin_to_type_ptr `ObjCId)
 
-let create_char_star_type =
-  new_constant_type_ptr ()
+let create_char_type = builtin_to_type_ptr `Char_S
+let create_char_star_type = pointerof_type_ptr create_char_type
 let create_char_star_qual_type ~is_const = create_qual_type ~is_const create_char_star_type
 
-let create_BOOL_type =
-  new_constant_type_ptr ()
+let create_BOOL_type = builtin_to_type_ptr `SChar
 
-let create_unsigned_long_type =
-  new_constant_type_ptr ()
+let create_unsigned_long_type = builtin_to_type_ptr `ULong
 
-let create_void_unsigned_long_type =
-  new_constant_type_ptr ()
+let create_void_unsigned_long_type = function_type_ptr create_void_type
 
-let create_void_void_type =
-  new_constant_type_ptr ()
+let create_void_void_type = function_type_ptr create_void_type
 
 let create_class_type typename = Clang_ast_extend.ClassType typename
 let create_class_qual_type ?(is_const=false) typename =

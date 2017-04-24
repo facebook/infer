@@ -17,38 +17,8 @@ let add_predefined_objc_types tenv =
   ignore (Tenv.mk_struct tenv (CType_to_sil_type.get_builtin_objc_typename `ObjCClass));
   ignore (Tenv.mk_struct tenv (CType_to_sil_type.get_builtin_objc_typename `ObjCId))
 
-(* Whenever new type are added manually to the translation in ast_expressions, *)
-(* they should be added here too!! *)
-let add_predefined_basic_types () =
-  let open Ast_expressions in
-  let add_basic_type tp basic_type_kind =
-    let sil_type = CType_to_sil_type.sil_type_of_builtin_type_kind basic_type_kind in
-    CAst_utils.update_sil_types_map tp sil_type in
-  let add_pointer_type tp sil_type =
-    let pointer_type = CType.add_pointer_to_typ sil_type in
-    CAst_utils.update_sil_types_map tp pointer_type in
-  let add_function_type tp return_type =
-    (* We translate function types as the return type of the function *)
-    CAst_utils.update_sil_types_map tp return_type in
-  let sil_void_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Void in
-  let sil_char_type = CType_to_sil_type.sil_type_of_builtin_type_kind `Char_S in
-  let sil_nsarray_type = Typ.Tstruct (Typ.Name.Objc.from_string CFrontend_config.nsarray_cl) in
-  let sil_id_type = CType_to_sil_type.get_builtin_objc_type `ObjCId in
-  add_basic_type create_int_type `Int;
-  add_basic_type create_void_type `Void;
-  add_basic_type create_char_type `Char_S;
-  add_basic_type create_BOOL_type `SChar;
-  add_basic_type create_unsigned_long_type `ULong;
-  add_pointer_type create_void_star_type sil_void_type;
-  add_pointer_type create_char_star_type sil_char_type;
-  add_pointer_type create_nsarray_star_type sil_nsarray_type;
-  add_pointer_type create_id_type sil_id_type;
-  add_function_type create_void_unsigned_long_type sil_void_type;
-  add_function_type create_void_void_type sil_void_type
-
 let add_predefined_types tenv =
-  add_predefined_objc_types tenv;
-  add_predefined_basic_types ()
+  add_predefined_objc_types tenv
 
 let create_c_record_typename opt_type =
   match opt_type with

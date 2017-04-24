@@ -16,7 +16,7 @@ open! IStd
 
 (* Type pointers *)
 type Clang_ast_types.TypePtr.t +=
-  | Prebuilt of int
+  | Builtin of Clang_ast_t.builtin_type_kind
   | PointerOf of Clang_ast_types.TypePtr.t
   | ReferenceOf of Clang_ast_types.TypePtr.t
   | ClassType of Typ.Name.t
@@ -30,9 +30,9 @@ module TypePointerOrd = struct
     | Clang_ast_types.TypePtr.Ptr a, Clang_ast_types.TypePtr.Ptr b -> Int.compare a b
     | Clang_ast_types.TypePtr.Ptr _, _ -> 1
     | _, Clang_ast_types.TypePtr.Ptr _ -> -1
-    | Prebuilt a, Prebuilt b -> Int.compare a b
-    | Prebuilt _, _ -> 1
-    | _, Prebuilt _ -> -1
+    | Builtin a, Builtin b -> Polymorphic_compare.compare a b
+    | Builtin _, _ -> 1
+    | _, Builtin _ -> -1
     | PointerOf a, PointerOf b -> compare a b
     | PointerOf _, _ -> 1
     | _, PointerOf _ -> -1
@@ -54,7 +54,7 @@ module TypePointerMap = Caml.Map.Make(TypePointerOrd)
 
 let rec type_ptr_to_string = function
   | Clang_ast_types.TypePtr.Ptr raw -> "clang_ptr_" ^ (string_of_int raw)
-  | Prebuilt raw -> "prebuilt_" ^ (string_of_int raw)
+  | Builtin t -> "sil_" ^ (Clang_ast_j.string_of_builtin_type_kind t)
   | PointerOf typ ->  "pointer_of_" ^ type_ptr_to_string typ
   | ReferenceOf typ -> "reference_of_" ^ type_ptr_to_string typ
   | ClassType name -> "class_name_" ^ Typ.Name.name name
