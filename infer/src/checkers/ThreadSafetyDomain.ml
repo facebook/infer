@@ -171,7 +171,7 @@ module AccessPrecondition = struct
 
   let pp fmt = function
     | Protected -> F.fprintf fmt "Protected"
-    | Unprotected (Some index) -> F.fprintf fmt "Unproctected(%d)" index
+    | Unprotected (Some index) -> F.fprintf fmt "Unprotected(%d)" index
     | Unprotected None -> F.fprintf fmt "Unprotected"
 
   module Map = PrettyPrintable.MakePPMap(struct
