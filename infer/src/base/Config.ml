@@ -402,8 +402,9 @@ let exe_usage = match current_exe with
 let anon_args = CLOpt.mk_anon ()
 
 and () =
-  CLOpt.mk_switch_parse_action CLOpt.Differential ~usage:"infer --diff [options]"
-    ~long:"diff" "[experimental] compute differential report"
+  CLOpt.mk_switch_parse_action CLOpt.Differential ~usage:"infer reportdiff [options]"
+    ~deprecated:["-diff"] ~long:"reportdiff"
+    "difference (preexisting/introduced/fixed) between two infer reports"
 
 and abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1

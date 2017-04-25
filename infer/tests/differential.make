@@ -32,7 +32,7 @@ analyze: $(CURRENT_REPORT) $(PREVIOUS_REPORT)
 
 $(DIFFERENTIAL_REPORT): $(CURRENT_REPORT) $(PREVIOUS_REPORT)
 	$(QUIET)$(call silent_on_success,Computing results difference in $(TEST_REL_DIR),\
-	  $(INFER_BIN) -o $(INFER_OUT) --project-root $(CURDIR) --diff \
+	  $(INFER_BIN) -o $(INFER_OUT) --project-root $(CURDIR) reportdiff \
 		--report-current $(CURRENT_REPORT) --report-previous $(PREVIOUS_REPORT) \
 		$(DIFFERENTIAL_ARGS))
 

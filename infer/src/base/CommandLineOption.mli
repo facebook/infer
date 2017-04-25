@@ -144,9 +144,11 @@ val mk_rest_actions :
   -> string list ref
 
 
-(** when the option is found on the command line, the current parse action is discarded and the
-    following arguments are parsed using [parse_action] *)
-val mk_switch_parse_action : parse_action -> usage:string -> unit t
+(** When the option is found on the command line, either as [--long] or [name], the current parse
+    action is discarded and the following arguments are parsed using [parse_action]. [name] defaults
+    to [long]. *)
+val mk_switch_parse_action : parse_action -> usage:string -> ?deprecated:string list ->
+  long:string -> ?name:string -> ?parse_mode:section list parse -> ?meta:string -> string -> unit
 
 (** environment variable use to pass arguments from parent to child processes *)
 val args_env_var : string

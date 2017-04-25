@@ -340,14 +340,9 @@ let curr_speclist : (Arg.key * Arg.spec * Arg.doc) list ref = ref []
 
 let unknown_args_action = ref `Reject
 
+let subcommand_actions = ref []
+
 let rev_anon_args = ref []
-let anon_fun arg = match !unknown_args_action with
-  | `Skip ->
-      ()
-  | `Add ->
-      rev_anon_args := arg::!rev_anon_args
-  | `Reject ->
-      raise (Arg.Bad ("unexpected anonymous argument: " ^ arg))
 
 (* keep track of the final parse action to drive the remainder of the program *)
 let final_parse_action = ref (Infer Driver)
@@ -698,6 +693,20 @@ let select_parse_action ~usage ?parse_all action =
   final_parse_action := action;
   usage
 
+let anon_fun arg =
+  match List.Assoc.find !subcommand_actions ~equal:String.equal arg with
+  | Some switch ->
+      switch ()
+  | None ->
+      match !unknown_args_action with
+      | `Skip ->
+          ()
+      | `Add ->
+          rev_anon_args := arg::!rev_anon_args
+      | `Reject ->
+          raise (Arg.Bad ("unexpected anonymous argument: " ^ arg))
+
+
 let mk_rest_actions ?(parse_mode=Infer []) doc ~usage decode_action =
   let rest = ref [] in
   let spec = String (fun arg ->
@@ -710,15 +719,19 @@ let mk_rest_actions ?(parse_mode=Infer []) doc ~usage decode_action =
   rest
 
 let mk_switch_parse_action
-    parse_action ~usage ?(deprecated=[]) ~long ?short ?parse_mode ?(meta="") doc =
+    parse_action ~usage ?(deprecated=[]) ~long ?(name=long) ?parse_mode ?(meta="") doc =
   let switch () =
     select_parse_action ~usage parse_action |> ignore in
   ignore(
-    mk ~deprecated ~long ?short ~default:() ?parse_mode ~meta doc
+    mk ~deprecated ~long ~default:() ?parse_mode ~meta doc
       ~default_to_string:(fun () -> "")
       ~decode_json:(string_json_decoder ~long)
       ~mk_setter:(fun _ _ -> switch ())
-      ~mk_spec:(fun _ -> Unit switch))
+      ~mk_spec:(fun _ -> Unit switch));
+  let add_action opt =
+    let sub = (opt, switch) in
+    subcommand_actions := sub::!subcommand_actions in
+  add_action name
 
 let decode_inferconfig_to_argv path =
   let json = match Utils.read_json_file path with
