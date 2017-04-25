@@ -122,8 +122,10 @@ module SourceKind = struct
                     Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
                 | "android.content.ContentProvider",
                   ("bulkInsert" |
+                   "call" |
                    "delete" |
                    "insert" |
+                   "getType" |
                    "openAssetFile" |
                    "openFile" |
                    "openPipeHelper" |
@@ -131,7 +133,9 @@ module SourceKind = struct
                    "query" |
                    "refresh" |
                    "update") ->
-                    Some (taint_formals_with_types ["android.net.Uri"] UserControlledURI formals)
+                    Some
+                      (taint_formals_with_types
+                         ["android.net.Uri"; "java.lang.String"] UserControlledURI formals)
                 | "android.webkit.WebViewClient",
                   ("onLoadResource" | "shouldInterceptRequest" | "shouldOverrideUrlLoading") ->
                     Some

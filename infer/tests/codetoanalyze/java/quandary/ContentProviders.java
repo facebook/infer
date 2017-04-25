@@ -31,6 +31,12 @@ public abstract class ContentProviders extends ContentProvider {
   }
 
   @Override
+  public Bundle call(String method, String args, Bundle extras) {
+    mFile = new File(method);
+    return extras;
+  }
+
+  @Override
   public int delete(Uri uri, String selection, String[] selectionArgs) {
     mFile = new File(uri.toString());
     return 0;
@@ -38,6 +44,12 @@ public abstract class ContentProviders extends ContentProvider {
 
   @Override
   public Uri insert(Uri uri, ContentValues values) {
+    mFile = new File(uri.toString());
+    return null;
+  }
+
+  @Override
+  public String getType(Uri uri) {
     mFile = new File(uri.toString());
     return null;
   }
