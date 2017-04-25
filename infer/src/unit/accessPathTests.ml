@@ -115,8 +115,7 @@ let tests =
           assert_equal ~cmp:AccessPath.Raw.equal ap1 xFG;
           assert_equal ~cmp:AccessPath.Raw.equal ap2 xF;
       | _ ->
-          assert false;
-          () in
+          assert false in
     "of_exp">::of_exp_test_ in
 
   let abstraction_test =
