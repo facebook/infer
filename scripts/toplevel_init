@@ -10,6 +10,5 @@
 #require "ANSITerminal";;
 
 (* load infer code *)
-#load "externstubslib.cma";;
 #load_rec "toplevel.cmo";;
 open Toplevel;;

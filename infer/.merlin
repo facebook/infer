@@ -3,7 +3,6 @@ B _build/infer/**
 PKG ANSITerminal
 PKG atdgen
 PKG core
-PKG ctypes
 PKG javalib
 PKG oUnit
 PKG ppx_compare

@@ -16,7 +16,6 @@ BASE_BUILD_DIR = $(BUILD_DIR)/test
 else
 BASE_BUILD_DIR = $(BUILD_DIR)
 endif
-STUBS_BUILD_DIR = $(BASE_BUILD_DIR)/stubs
 INFER_BUILD_DIR = $(BASE_BUILD_DIR)/infer
 
 ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
@@ -38,10 +37,10 @@ OCAMLBUILD_OPTIONS = \
   -cflags -strict-formats \
   -cflags -strict-sequence \
   -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-32-40-41-42-45-48 \
-  -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*,ffi/gen/*}>: warn(-27-32-34-35-39)" \
+  -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-34-35-39)" \
   -tag-line "<*/{,*/}*.{ml,re}{,i}>: package(ppx_compare)" \
   -tag thread \
-  -pkgs ANSITerminal,atdgen,core,ctypes.stubs,extlib,oUnit,str,unix,xmlm,yojson,zip
+  -pkgs ANSITerminal,atdgen,core,extlib,oUnit,str,unix,xmlm,yojson,zip
 
 ifeq ($(ENABLE_OCAML_BINANNOT),yes)
 OCAMLBUILD_OPTIONS += -cflags -bin-annot
@@ -132,15 +131,12 @@ EXTRA_DEPS = opensource
 endif
 
 DEPENDENCIES = \
-  IR backend base checkers eradicate ffi ffi/gen harness integration quandary bufferoverrun \
+  IR backend base checkers eradicate harness integration quandary bufferoverrun \
   $(EXTRA_DEPS)
 
 # ocamlbuild command with options common to all build targets
 OCAMLBUILD_BASE = \
   $(REBUILD) $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES)) \
-
-OCAMLBUILD_EXTRA_BYTE = -lflags -custom,$(INFER_BUILD_DIR)/ffi/gen/extern_stubs.o
-OCAMLBUILD_EXTRA_NATIVE = -lflag $(INFER_BUILD_DIR)/ffi/gen/extern_stubs.o
 
 # ocamlbuild with options necessary to build all targets at once, regardless of configure flags
 OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
@@ -190,42 +186,12 @@ export OCAMLFIND_IGNORE_DUPS_IN=$(shell $(OCAMLC) -where)/compiler-libs
 .PHONY: all
 all: infer
 
-# witness that generators have been built
-STUBS_HAVE_BEEN_BUILT = $(INFER_BUILD_DIR)/ffi/gen/generate_caml_types.c
-# witness that generators have been run
-STUBS_HAVE_RUN = ffi/gen/IOCtl_types.ml
-# to make sure everything Cstubs-related has been done
-STUBS_DEPS = $(STUBS_HAVE_RUN) $(INFER_BUILD_DIR)/ffi/gen/extern_stubs.o
-
-$(STUBS_HAVE_BEEN_BUILT): $(wildcard ffi/*.ml) $(MAKEFILE_LIST)
-	$(MKDIR_P) $(BASE_BUILD_DIR) $(@D)
-	$(OCAMLBUILD_CONFIG) -build-dir $(STUBS_BUILD_DIR) \
-	  ffi/GenerateML.native ffi/GenerateC.native ffi/GenerateCGenerator.native
-	$(STUBS_BUILD_DIR)/ffi/GenerateML.native > ffi/gen/ExternStubs.ml
-	$(STUBS_BUILD_DIR)/ffi/GenerateC.native > $(@D)/extern_stubs.c
-	$(STUBS_BUILD_DIR)/ffi/GenerateCGenerator.native > $(@D)/generate_caml_types.c
-	$(QUIET)touch $@
-
-$(STUBS_HAVE_RUN): $(STUBS_HAVE_BEEN_BUILT) $(MAKEFILE_LIST)
-#	create .o file using the right flags, which ocamlfind knows about
-	cd $(INFER_BUILD_DIR)/$(@D) && \
-	$(OCAMLFIND) ocamlc -package ctypes.stubs generate_caml_types.c
-#	link the executable by calling CC directly (no idea how to do it with ocaml*)
-	cd $(INFER_BUILD_DIR)/$(@D) && \
-	$(CC) generate_caml_types.o -o generate_caml_types
-	$(INFER_BUILD_DIR)/$(@D)/generate_caml_types > $@
-	$(QUIET)touch $@
-
-$(INFER_BUILD_DIR)/ffi/gen/extern_stubs.o: $(STUBS_HAVE_BEEN_BUILT)
-	cd $(@D) && $(OCAMLFIND) ocamlc -package ctypes.stubs extern_stubs.c
-	$(QUIET)touch $@
-
 # single out infer.native as the source of truth for make, knowing that in fact several targets are
 # produced by the build
 $(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(OCAML_CONFIG_SOURCES) \
-                                         $(STUBS_DEPS) $(MAKEFILE_LIST)
+                                         $(MAKEFILE_LIST)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
-	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_EXTRA_NATIVE) \
+	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_CONFIG_TARGETS)
 # let make know that the target is up-to-date even if ocamlbuild cached it
 	$(QUIET)touch $@
@@ -251,9 +217,9 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 infer: $(CLANG_BINIOU_DICT)
 endif
 
-$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(STUBS_DEPS) $(OCAML_CONFIG_SOURCES)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(OCAML_CONFIG_SOURCES)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
-	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_EXTRA_BYTE) \
+	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_CONFIG_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte
 	$(QUIET)touch $@
 
@@ -284,7 +250,7 @@ MFLAGS=
 .PHONY: module
 module: base/Version.ml $(OCAML_ALL_SOURCES)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
-	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_EXTRA_BYTE) \
+	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
           $(MFLAGS) \
 	  $(M)
 
@@ -333,7 +299,7 @@ $(shell \
   | awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}')
 endef
 
-toplevel.mlpack: base/Version.ml $(STUBS_DEPS) $(OCAML_CONFIG_SOURCES) $(MAKEFILE_LIST)
+toplevel.mlpack: base/Version.ml $(OCAML_CONFIG_SOURCES) $(MAKEFILE_LIST)
 #	We need to pack all the infer modules into another module to avoid name clashes with some
 #	of them coming from ocaml libraries (Ident for example).  To do that, we generate a .mlpack
 #	file containing namespaced modules.
@@ -345,16 +311,14 @@ toplevel.mlpack: base/Version.ml $(STUBS_DEPS) $(OCAML_CONFIG_SOURCES) $(MAKEFIL
 	$(foreach module,\
 	  $(filter-out $(foreach root,$(roots),%/$(root)),\
 	  $(foreach source,\
-	    $(filter-out unit/% ffi/%,$(OCAML_CONFIG_SOURCES)),\
+	    $(filter-out unit/%,$(OCAML_CONFIG_SOURCES)),\
 	    $(call to_ocaml_module,$(source)))),\
 	  $(shell echo $(module) >> $($@_tmp)))
 	mv $($@_tmp) $@
 
 $(INFER_BUILD_DIR)/toplevel.cmo: toplevel.mlpack
 	$(MKDIR_P) $(BASE_BUILD_DIR)
-	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) $(OCAMLBUILD_EXTRA_BYTE) toplevel.cmo
-	cd $(INFER_BUILD_DIR)/ffi/gen && \
-	ocamlmklib -o externstubslib ExternStubs.cmo extern_stubs.o
+	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) toplevel.cmo
 	$(QUIET)touch $@
 
 .PHONY: toplevel
@@ -451,4 +415,3 @@ clean:
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(REMOVE) mod_dep.dot
 	$(REMOVE) mod_dep.pdf
-	$(REMOVE) ffi/gen/*

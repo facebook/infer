@@ -106,7 +106,6 @@ buck-out/
 /scripts/checkCopyright
 /infer/etc/clang_ast.dict
 /infer/src/toplevel.mlpack
-/infer/src/ffi/gen/*.ml
 
 #atdgen stubs
 /infer/src/backend/jsonbug_*

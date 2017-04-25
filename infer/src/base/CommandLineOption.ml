@@ -37,19 +37,6 @@ let warnf =
   else if not is_originator then fun fmt -> F.ifprintf F.err_formatter fmt
   else F.eprintf
 
-let terminal_width = lazy (
-  let open Ctypes in
-  let module T = IOCtl.Types(IOCtl_types) in
-  let winsize = make IOCtl.winsize in
-  let return =
-    ExternStubs.ioctl_stub_1_ioctl 0 T.Request.request_TIOCGWINSZ
-      (ExternStubs.CI.cptr (addr winsize)) in
-  if return >= 0 then
-    Ok (Unsigned.UShort.to_int (getf winsize IOCtl.ws_col))
-  else
-    Error return
-)
-
 (** This is the subset of Arg.spec that we actually use. What's important is that all these specs
     call back functions. We use this to mark deprecated arguments. What's not important is that, eg,
     Arg.Float is missing. *)
@@ -215,10 +202,7 @@ let pad_and_xform doc_width left_width desc =
 
 let align desc_list =
   let min_term_width = 80 in
-  let cur_term_width =
-    match Lazy.force terminal_width with
-    | Ok width -> width
-    | Error _ -> min_term_width in
+  let terminal_width = min_term_width in
   (* 2 blank columns before option + 2 columns of gap between flag and doc *)
   let extra_space = 4 in
   let min_left_width = 15 in
@@ -234,11 +218,11 @@ let align desc_list =
     let opt_left_width =
       List.fold ~f:(max_left_length max_left_width) ~init:0 desc_list in
     let (--) a b = float_of_int a -. float_of_int b in
-    let multiplier = (max_left_width -- min_left_width) /. (max_term_width -- min_term_width) in
+    let multiplier = (max_left_width -- min_left_width) /. (max_term_width -- terminal_width) in
     (* at 80 columns use min_left_width then use extra columns until opt_left_width *)
-    let cols_after_min_width = float_of_int (max 0 (cur_term_width - min_term_width)) in
+    let cols_after_min_width = float_of_int (max 0 (terminal_width - min_term_width)) in
     min (int_of_float (cols_after_min_width *. multiplier) + min_left_width) opt_left_width in
-  let doc_width = min max_doc_width (doc_width cur_term_width left_width) in
+  let doc_width = min max_doc_width (doc_width terminal_width left_width) in
   (List.map ~f:(pad_and_xform doc_width left_width) desc_list, (doc_width, left_width))
 
 
