@@ -303,7 +303,6 @@ val quandary_sinks : Yojson.Basic.json
 val quiet : bool
 val reactive_mode : bool
 val reactive_capture : bool
-val report : string option
 val report_current : string option
 val report_formatter : [`No_formatter | `Phabricator_formatter]
 val report_hook : string option
@@ -326,6 +325,7 @@ val specs_library : string list
 val stacktrace : string option
 val stacktraces_dir : string option
 val stats_mode : bool
+val stats_report : string option
 val subtype_multirange : bool
 val svg : bool
 val symops_per_iteration : int option

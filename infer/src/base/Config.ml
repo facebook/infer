@@ -1174,10 +1174,6 @@ and reactive_capture =
   CLOpt.mk_bool ~long:"reactive-capture"
     "Compile source files only when required by analyzer (clang only)"
 
-and report =
-  CLOpt.mk_path_opt ~deprecated:["report"] ~long:"report"
-    ~meta:"file" "Write a report of the analysis results to a file"
-
 and report_current =
   CLOpt.mk_path_opt ~long:"report-current" ~parse_mode:CLOpt.Differential
     "report of the latest revision"
@@ -1315,6 +1311,10 @@ and stacktraces_dir =
 
 and stats =
   CLOpt.mk_bool ~deprecated:["stats"] ~long:"stats" "Stats mode (debugging)"
+
+and stats_report =
+  CLOpt.mk_path_opt ~long:"stats-report"
+    ~meta:"file" "Write a report of the analysis results to a file"
 
 and subtype_multirange =
   CLOpt.mk_bool ~deprecated:["subtype_multirange"] ~long:"subtype-multirange" ~default:true
@@ -1722,7 +1722,6 @@ and quandary_sinks = !quandary_sinks
 and quiet = !quiet
 and reactive_mode = !reactive
 and reactive_capture = !reactive_capture
-and report = !report
 and report_current = !report_current
 and report_custom_error = !report_custom_error
 and report_formatter = !report_formatter
@@ -1747,6 +1746,7 @@ and spec_abs_level = !spec_abs_level
 and stacktrace = !stacktrace
 and stacktraces_dir = !stacktraces_dir
 and stats_mode = !stats
+and stats_report = !stats_report
 and subtype_multirange = !subtype_multirange
 and svg = !svg
 and symops_per_iteration = !symops_per_iteration
