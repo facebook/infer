@@ -314,6 +314,8 @@ if test "$BREW" != "no"; then
   fi
 fi
 
+AC_CHECK_INFER_MAN_LAST_MODIFIED()
+
 AC_CONFIG_FILES([
   Makefile.autoconf
 ])

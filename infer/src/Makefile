@@ -394,6 +394,7 @@ base/Version.ml: base/Version.ml.in $(MAKEFILE_LIST)
 	  -e "s|@BUILD_C_ANALYZERS[@]|$(BUILD_C_ANALYZERS)|g" \
 	  -e "s|@BUILD_JAVA_ANALYZERS[@]|$(BUILD_JAVA_ANALYZERS)|g" \
 	  -e "s|@XCODE_SELECT[@]|$(XCODE_SELECT)|g" \
+	  -e "s|@INFER_MAN_LAST_MODIFIED[@]|$(INFER_MAN_LAST_MODIFIED)|g" \
 	  $< > "$$TMPFILE"; \
 	cat "$$TMPFILE" > $@; \
 	$(REMOVE) "$$TMPFILE"

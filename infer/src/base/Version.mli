@@ -16,3 +16,5 @@ val versionJson : string
 val clang_enabled : bool
 val java_enabled : bool
 val xcode_enabled : bool
+
+val man_pages_last_modify_date : string

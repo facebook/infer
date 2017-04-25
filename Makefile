@@ -86,6 +86,7 @@ endif
 .PHONY: all
 all: infer
 
+ifeq ($(IS_INFER_RELEASE),no)
 configure: configure.ac $(wildcard m4/*.m4)
 #	rerun ./autogen.sh in case of failure as the failure may be due to needing to rerun
 #	./configure
@@ -99,6 +100,7 @@ Makefile.autoconf: configure Makefile.autoconf.in
 	./configure $(shell ./config.status --config || true),\
 	./configure $(shell ./config.status --config || true))) || \
 	./configure $(shell ./config.status --config || true)
+endif
 
 .PHONY: fb-setup
 fb-setup:

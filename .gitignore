@@ -50,6 +50,7 @@ duplicates.txt
 /aclocal.m4
 /autom4te.cache
 /config.status
+/m4/__GENERATED__*.m4
 /configure
 /Makefile.autoconf
 /.buckversion
