@@ -488,7 +488,7 @@ let pp_summary_html source color fmt summary =
   Errlog.pp_html source [] fmt err_log;
   Io_infer.Html.pp_hline fmt ();
   F.fprintf fmt "<LISTING>@\n";
-  pp_specs pe fmt (get_specs_from_payload summary);
+  pp_payload pe fmt summary.payload;
   F.fprintf fmt "</LISTING>@\n"
 
 let empty_stats calls =
