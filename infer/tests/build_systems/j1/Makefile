@@ -12,4 +12,4 @@ default: compile
 
 .PHONY: print replace test clean
 print replace test clean:
-	$(QUIET)INFER_ARGS=-j^1 $(MAKE) -C ../../codetoanalyze/cpp/checkers TEST_SUFFIX=-j1 $@
+	$(QUIET)INFER_ARGS=-j^1 $(MAKE) -C ../../codetoanalyze/cpp/siof TEST_SUFFIX=-j1 $@

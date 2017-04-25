@@ -19,8 +19,9 @@ val exe_name : exe -> string
 
 (** Various kind of analyzers *)
 type analyzer =
-    Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
-  | Threadsafety | Bufferoverrun [@@deriving compare]
+  | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
+  | Siof | Threadsafety | Bufferoverrun
+[@@deriving compare]
 
 val equal_analyzer : analyzer -> analyzer -> bool
 
@@ -315,6 +316,7 @@ val save_analysis_results : string option
 val seconds_per_iteration : float option
 val show_buckets : bool
 val show_progress_bar : bool
+val siof : bool
 val siof_safe_methods : string list
 val skip_analysis_in_path : string list
 val skip_duplicated_types : bool

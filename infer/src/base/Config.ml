@@ -36,8 +36,9 @@ let exe_name =
 let frontend_parse_modes = CLOpt.(Infer [Clang])
 
 type analyzer =
-    Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
-  | Threadsafety | Bufferoverrun [@@deriving compare]
+  | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
+  | Siof | Threadsafety | Bufferoverrun
+[@@deriving compare]
 
 let equal_analyzer = [%compare.equal : analyzer]
 
@@ -45,7 +46,7 @@ let string_to_analyzer =
   [("capture", Capture); ("compile", Compile);
    ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers);
    ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters);
-   ("quandary", Quandary); ("threadsafety", Threadsafety);
+   ("quandary", Quandary); ("siof", Siof); ("threadsafety", Threadsafety);
    ("bufferoverrun", Bufferoverrun)]
 
 let string_of_analyzer a =
@@ -479,7 +480,7 @@ and analyzer =
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
     | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
-    | Quandary | Threadsafety | Bufferoverrun -> () in
+    | Quandary | Siof | Threadsafety | Bufferoverrun -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
     ~parse_mode:CLOpt.(Infer [Driver])
     "Specify which analyzer to run (only one at a time is supported):\n\
@@ -487,7 +488,8 @@ and analyzer =
      - capture: run capture phase only (no analysis)\n\
      - compile: run compilation command without interfering (not supported by all frontends)\n\
      - crashcontext, tracing: experimental (see --crashcontext and --tracing)\n\
-     - linters: run linters based on the ast only (Objective-C and Objective-C++ only)"
+     - linters: run linters based on the ast only (Objective-C and Objective-C++ only)\n\
+     - siof: check for Static Initialization Order Fiasco (C++ only)"
     ~symbols:string_to_analyzer
 
 and android_harness =
@@ -585,7 +587,7 @@ and changed_files_index =
      start. Source files should be specified relative to project root or be absolute"
 
 and bufferoverrun, checkers, checkers_repeated_calls,
-    crashcontext, eradicate, quandary, threadsafety =
+    crashcontext, eradicate, quandary, siof, threadsafety =
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
       "Activate the checkers instead of the full analysis"
@@ -615,13 +617,18 @@ and bufferoverrun, checkers, checkers_repeated_calls,
       "Activate the quandary taint analysis"
       [checkers] []
   in
+  let siof =
+    CLOpt.mk_bool_group ~long:"siof"
+      "Activate the Static Initialization Order Fiasco analysis"
+      [checkers] []
+  in
   let threadsafety =
     CLOpt.mk_bool_group ~deprecated:["threadsafety"] ~long:"threadsafety"
       "Activate the thread safety analysis"
       [checkers] []
   in
   (bufferoverrun, checkers, checkers_repeated_calls,
-   crashcontext, eradicate, quandary, threadsafety)
+   crashcontext, eradicate, quandary, siof, threadsafety)
 
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file" ~parse_mode:CLOpt.(Infer [Clang]) ~meta:"file"
@@ -1537,6 +1544,7 @@ let post_parsing_initialization () =
   | Some Quandary -> checkers := true; quandary := true
   | Some Threadsafety -> checkers := true; threadsafety := true
   | Some Bufferoverrun -> checkers := true; bufferoverrun := true
+  | Some Siof -> checkers := true; siof := true
   | Some Tracing -> tracing := true
   | Some (Capture | Compile | Infer | Linters) | None -> ()
 
@@ -1727,6 +1735,7 @@ and save_analysis_results = !save_results
 and seconds_per_iteration = !seconds_per_iteration
 and show_buckets = !print_buckets
 and show_progress_bar = !progress_bar
+and siof = !siof
 and siof_safe_methods = !siof_safe_methods
 and skip_analysis_in_path = !skip_analysis_in_path
 and skip_duplicated_types = !skip_duplicated_types

@@ -53,7 +53,7 @@ let add_flavor_to_target target =
       add "infer-capture-all"
   | None, (Checkers | Infer) ->
       add "infer"
-  | None, (Eradicate | Tracing | Crashcontext | Quandary | Threadsafety | Bufferoverrun) ->
+  | None, (Eradicate | Tracing | Crashcontext | Quandary | Siof | Threadsafety | Bufferoverrun) ->
       failwithf "Unsupported infer analyzer with Buck flavors: %s"
         (Config.string_of_analyzer Config.analyzer)
 

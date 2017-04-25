@@ -51,7 +51,7 @@ let active_procedure_checkers () =
         CheckDeadCode.callback_check_dead_code, false;
         Checkers.callback_print_access_to_globals, false;
         ClangTaintAnalysis.checker, Config.quandary;
-        Siof.checker, Config.checkers_enabled;
+        Siof.checker, Config.siof;
         BufferOverrunChecker.checker, Config.bufferoverrun;
       ] in
     List.map ~f:(fun (x, y) -> (x, y, Some Config.Clang)) l in
