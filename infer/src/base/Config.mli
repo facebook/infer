@@ -197,6 +197,7 @@ val clang_biniou_file : string option
 val clang_frontend_action_string : string
 val clang_frontend_do_capture : bool
 val clang_frontend_do_lint : bool
+val clang_ignore_regex : string option
 val clang_include_to_override_regex : string option
 val cluster_cmdline : string option
 val compute_analytics : bool

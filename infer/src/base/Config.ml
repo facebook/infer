@@ -651,6 +651,13 @@ and clang_include_to_override_regex =
      location of internal compiler headers. This option should specify regular expression with \
      the path to those headers so that infer can use its own clang internal headers instead."
 
+and clang_ignore_regex =
+  CLOpt.mk_string_opt ~long:"clang-ignore-regex"
+    ~meta:"dir OCaml regex"
+    "The files in this regex will be ignored in the compilation process and \
+     an empty file will be passed to clang instead. This is to be used with the buck flavour \
+     infer-capture-all to work around missing generated files."
+
 and classpath =
   CLOpt.mk_string_opt ~long:"classpath"
     "Specify the Java classpath"
@@ -1629,6 +1636,7 @@ and dump_duplicate_symbols = !dump_duplicate_symbols
 and checkers = !checkers
 and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
+and clang_ignore_regex = !clang_ignore_regex
 and clang_include_to_override_regex = !clang_include_to_override_regex
 and classpath = !classpath
 and cluster_cmdline = !cluster
