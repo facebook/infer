@@ -184,6 +184,63 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_unprotected is_locked pdesc =
     not is_locked && not (Procdesc.is_java_synchronized pdesc)
 
+  let add_hil_access
+      exp loc access_kind accesses locks attribute_map (proc_data : FormalMap.t ProcData.t) =
+    let open Domain in
+    (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
+       (b) volatile *)
+    let is_safe_access access prefix_path tenv =
+      match access, AccessPath.Raw.get_typ prefix_path tenv with
+      | AccessPath.FieldAccess fieldname,
+        Some (Typ.Tstruct typename | Tptr (Tstruct typename, _)) ->
+          begin
+            match Tenv.lookup tenv typename with
+            | Some struct_typ ->
+                Annotations.struct_typ_has_annot struct_typ Annotations.ia_is_thread_confined ||
+                Annotations.field_has_annot
+                  fieldname struct_typ Annotations.ia_is_thread_confined ||
+                Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
+            | None ->
+                false
+          end
+      | _ ->
+          false in
+    let rec add_field_accesses pre prefix_path access_acc = function
+      | [] ->
+          access_acc
+      | access :: access_list' ->
+          let kind =
+            if List.is_empty access_list'
+            then access_kind
+            else ThreadSafetyDomain.Access.Read in
+          let access_path = fst prefix_path, (snd prefix_path) @ [access] in
+          let access_acc' =
+            if is_owned prefix_path attribute_map ||
+               is_safe_access access prefix_path proc_data.tenv
+            then
+              access_acc
+            else
+              (* TODO: I think there's a utility function for this somewhere *)
+              let accesses = AccessDomain.get_accesses pre access_acc in
+              let accesses' = PathDomain.add_sink (make_access access_path kind loc) accesses in
+              AccessDomain.add pre accesses' access_acc in
+          add_field_accesses pre access_path access_acc' access_list' in
+    let add_access_ acc (base, accesses) =
+      if List.is_empty accesses
+      then acc
+      else
+        let pre =
+          if is_unprotected locks proc_data.pdesc
+          then
+            match FormalMap.get_formal_index base proc_data.extras with
+            | Some formal_index -> AccessPrecondition.Unprotected (Some formal_index)
+            | None -> AccessPrecondition.unprotected
+          else
+            AccessPrecondition.Protected in
+        add_field_accesses pre (base, []) acc accesses in
+
+    List.fold ~f:add_access_ ~init:accesses (HilExp.get_access_paths exp)
+
   let add_access
       exp
       loc
@@ -311,7 +368,83 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     is_owned_in_library pname ||
     PatternMatch.override_exists is_owned_in_library tenv pname
 
-  let exec_instr (astate : Domain.astate) ({ ProcData.pdesc; tenv; extras; } as proc_data) _ =
+
+  let exec_hil_instr
+      (astate : Domain.astate) proc_data instr =
+    let open ThreadSafetyDomain in
+
+    let exec_hil_instr_ = function
+      | HilInstr.Assume (assume_exp, _, _, loc) ->
+          let rec eval_binop op var e1 e2 =
+            match eval_bexp var e1, eval_bexp var e2 with
+            | Some b1, Some b2 -> Some (op b1 b2)
+            | _ -> None
+          (* return Some bool_value if the given boolean expression evaluates to bool_value when
+             [var] is set to true. return None if it has free variables that stop us from
+             evaluating it *)
+          and eval_bexp var = function
+            | HilExp.AccessPath ap when AccessPath.Raw.equal ap var ->
+                Some true
+            | HilExp.Constant c ->
+                Some (not (Const.iszero_int_float c))
+            | HilExp.UnaryOperator (Unop.LNot, e, _) ->
+                let b_opt = eval_bexp var e in
+                Option.map ~f:not b_opt
+            | HilExp.BinaryOperator (Binop.LAnd, e1, e2) ->
+                eval_binop (&&) var e1 e2
+            | HilExp.BinaryOperator (Binop.LOr, e1, e2) ->
+                eval_binop (||) var e1 e2
+            | HilExp.BinaryOperator (Binop.Eq, e1, e2) ->
+                eval_binop Bool.equal var e1 e2
+            | HilExp.BinaryOperator (Binop.Ne, e1, e2) ->
+                eval_binop (<>) var e1 e2
+            | _ ->
+                (* non-boolean expression; can't evaluate it *)
+                None in
+          let add_choice bool_value acc = function
+            | Choice.LockHeld ->
+                let locks = bool_value in
+                { acc with locks; }
+            | Choice.OnMainThread ->
+                let threads = bool_value in
+                { acc with threads; } in
+
+          let accesses =
+            add_hil_access
+              assume_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
+          let astate' =
+            match HilExp.get_access_paths assume_exp with
+            | [access_path] ->
+                let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
+                begin
+                  match eval_bexp access_path assume_exp with
+                  | Some bool_value ->
+                      (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
+                         add the constraint that the the choice must be [bool_value] to the state *)
+                      List.fold ~f:(add_choice bool_value) ~init:astate choices
+                  | None ->
+                      astate
+                end
+            | _ ->
+                astate in
+          { astate' with accesses; }
+      | _ ->
+          (* still handled by SIL, shouldn't happen *)
+          assert false in
+
+    let f_resolve_id id =
+      try Some (IdAccessPathMapDomain.find id astate.id_map)
+      with Not_found -> None in
+    match HilInstr.of_sil ~f_resolve_id instr with
+    | Update (id, access_path) ->
+        let id_map = IdAccessPathMapDomain.add id access_path astate.id_map in
+        { astate with id_map; }
+    | Instr hil_instr ->
+        exec_hil_instr_ hil_instr
+    | Ignore ->
+        astate
+
+  let exec_instr (astate : Domain.astate) ({ ProcData.pdesc; tenv; extras; } as proc_data) _ instr =
     let is_container_write pn tenv = match pn with
       | Typ.Procname.Java java_pname ->
           let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
@@ -406,7 +539,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let f_resolve_id = resolve_id astate.id_map in
 
     let open Domain in
-    function
+    match instr with
     | Sil.Call (Some (lhs_id, lhs_typ), Const (Cfun pn), _, _, _) when acquires_ownership pn tenv ->
         begin
           match AccessPath.of_lhs_exp (Exp.Var lhs_id) lhs_typ ~f_resolve_id with
@@ -636,60 +769,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             lhs_access_path rhs_exp rhs_typ ~f_resolve_id astate.attribute_map extras in
         { astate with accesses; id_map; attribute_map; }
 
-    | Sil.Prune (prune_exp, _, _, _) ->
-        let rec eval_binop op var e1 e2 =
-          match eval_bexp var e1, eval_bexp var e2 with
-          | Some b1, Some b2 -> Some (op b1 b2)
-          | _ -> None
-        (* return Some bool_value if the given boolean expression evaluates to bool_value when [var]
-           is set to true. return None if it has free variables that stop us from evaluating it *)
-        and eval_bexp var = function
-          | Exp.Var id ->
-              begin
-                match f_resolve_id (Var.of_id id) with
-                | Some ap when AccessPath.Raw.equal ap var -> Some true
-                | _ -> None
-              end
-          | (Exp.Const _) as e ->
-              Some (not (Exp.is_zero e))
-          | Exp.UnOp (Unop.LNot, e, _) ->
-              let b_opt = eval_bexp var e in
-              Option.map ~f:not b_opt
-          | Exp.BinOp (Binop.LAnd, e1, e2) ->
-              eval_binop (&&) var e1 e2
-          | Exp.BinOp (Binop.LOr, e1, e2) ->
-              eval_binop (||) var e1 e2
-          | Exp.BinOp (Binop.Eq, e1, e2) ->
-              eval_binop Bool.equal var e1 e2
-          | Exp.BinOp (Binop.Ne, e1, e2) ->
-              eval_binop (<>) var e1 e2
-          | _ ->
-              (* non-boolean expression; can't evaluate it *)
-              None in
-        let add_choice bool_value acc = function
-          | Choice.LockHeld ->
-              let locks = bool_value in
-              { acc with locks; }
-          | Choice.OnMainThread ->
-              let threads = bool_value in
-              { acc with threads; } in
-
-        begin
-          match AccessPath.of_lhs_exp prune_exp (Typ.Tint IBool) ~f_resolve_id with
-          | Some access_path ->
-              let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
-              begin
-                match eval_bexp access_path prune_exp with
-                | Some bool_value ->
-                    (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
-                       add the constraint that the the choice must be [bool_value] to the state *)
-                    List.fold ~f:(add_choice bool_value) ~init:astate choices
-                | None ->
-                    astate
-              end
-          | _ ->
-              astate
-        end
+    | Sil.Prune _ ->
+        exec_hil_instr astate proc_data instr
 
     | Sil.Remove_temps (ids, _) ->
         let id_map =
