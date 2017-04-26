@@ -243,8 +243,11 @@ struct
   let get_array_blk : t -> ArrayBlk.astate
     = fun x -> x.arrayblk
 
+  let get_array_locs : t -> PowLoc.t
+    = fun x -> ArrayBlk.get_pow_loc x.arrayblk
+
   let get_all_locs : t -> PowLoc.t
-    = fun x -> ArrayBlk.get_pow_loc x.arrayblk |> PowLoc.join x.powloc
+    = fun x -> PowLoc.join x.powloc (get_array_locs x)
 
   let top_itv : t
     = { bot with itv = Itv.top }

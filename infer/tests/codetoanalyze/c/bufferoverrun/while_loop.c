@@ -10,11 +10,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-char* safealloc(int n);
-
 void while_loop() {
   int i = 0;
-  char* a = safealloc(10);
+  char* a = malloc(10);
   while (*(a + i) && i < 10) /* BUG */
     a[i++] = 1; /* SAFE */
 }

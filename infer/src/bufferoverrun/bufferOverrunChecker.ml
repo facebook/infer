@@ -49,10 +49,19 @@ struct
     = fun pname ret params node mem ->
       match ret with
       | Some (id, _) ->
+          let set_uninitialized typ loc mem =
+            match typ with
+            | Typ.Tint _
+            | Typ.Tfloat _ ->
+                Dom.Mem.weak_update_heap loc Dom.Val.top_itv mem
+            | _ -> mem
+          in
           let (typ, size) = get_malloc_info (List.hd_exn params |> fst) in
           let size = Sem.eval size mem (CFG.loc node) |> Dom.Val.get_itv in
           let v = Sem.eval_array_alloc pname node typ Itv.zero size 0 1 in
-          Dom.Mem.add_stack (Loc.of_id id) v mem
+          mem
+          |> Dom.Mem.add_stack (Loc.of_id id) v
+          |> set_uninitialized typ (Dom.Val.get_array_locs v)
       | _ -> mem
 
   let model_realloc
