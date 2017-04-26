@@ -133,6 +133,9 @@ include AbstractDomain.Map (PPMap) (ArrInfo)
 let bot : astate
   = empty
 
+let is_bot : astate -> bool
+  = is_empty
+
 let make : Allocsite.t -> Itv.t -> Itv.t -> Itv.t -> astate
   = fun a o sz st -> add a (ArrInfo.make (o, sz, st)) bot
 

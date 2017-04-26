@@ -53,33 +53,119 @@ struct
       | Typ.Tarray (typ, Some ilit) -> sizeof typ * IntLit.to_int ilit
       | _ -> 4
 
+  let rec must_alias : Exp.t -> Exp.t -> Mem.astate -> bool
+    = fun e1 e2 m ->
+      match e1, e2 with
+      | Exp.Var x1, Exp.Var x2 ->
+          (match Mem.find_alias x1 m, Mem.find_alias x2 m with
+           | Some x1', Some x2' -> Pvar.equal x1' x2'
+           | _, _ -> false)
+      | Exp.UnOp (uop1, e1', _), Exp.UnOp (uop2, e2', _) ->
+          Unop.equal uop1 uop2 && must_alias e1' e2' m
+      | Exp.BinOp (bop1, e11, e12), Exp.BinOp (bop2, e21, e22) ->
+          Binop.equal bop1 bop2
+          && must_alias e11 e21 m
+          && must_alias e12 e22 m
+      | Exp.Exn t1, Exp.Exn t2 -> must_alias t1 t2 m
+      | Exp.Const c1, Exp.Const c2 -> Const.equal c1 c2
+      | Exp.Cast (t1, e1'), Exp.Cast (t2, e2') ->
+          Typ.equal t1 t2 && must_alias e1' e2' m
+      | Exp.Lvar x1, Exp.Lvar x2 ->
+          Pvar.equal x1 x2
+      | Exp.Lfield (e1, fld1, _), Exp.Lfield (e2, fld2, _) ->
+          must_alias e1 e2 m && Fieldname.equal fld1 fld2
+      | Exp.Lindex (e11, e12), Exp.Lindex (e21, e22) ->
+          must_alias e11 e21 m && must_alias e12 e22 m
+      | Exp.Sizeof (t1, dynlen1, subt1), Exp.Sizeof (t2, dynlen2, subt2) ->
+          Typ.equal t1 t2
+          && must_alias_opt dynlen1 dynlen2 m
+          && Int.equal (Subtype.compare subt1 subt2) 0
+      | _, _ -> false
+
+  and must_alias_opt : Exp.dynamic_length -> Exp.dynamic_length -> Mem.astate -> bool
+    = fun dynlen1 dynlen2 m ->
+      match dynlen1, dynlen2 with
+      | Some e1, Some e2 -> must_alias e1 e2 m
+      | None, None -> true
+      | _, _ -> false
+
+  let comp_rev : Binop.t -> Binop.t
+    = function
+      | Binop.Lt -> Binop.Gt
+      | Binop.Gt -> Binop.Lt
+      | Binop.Le -> Binop.Ge
+      | Binop.Ge -> Binop.Le
+      | Binop.Eq -> Binop.Eq
+      | Binop.Ne -> Binop.Ne
+      | _ -> assert (false)
+
+  let comp_not : Binop.t -> Binop.t
+    = function
+      | Binop.Lt -> Binop.Ge
+      | Binop.Gt -> Binop.Le
+      | Binop.Le -> Binop.Gt
+      | Binop.Ge -> Binop.Lt
+      | Binop.Eq -> Binop.Ne
+      | Binop.Ne -> Binop.Eq
+      | _ -> assert (false)
+
+  let rec must_alias_cmp : Exp.t -> Mem.astate -> bool
+    = fun e m ->
+      match e with
+      | Exp.BinOp (Binop.Lt, e1, e2)
+      | Exp.BinOp (Binop.Gt, e1, e2)
+      | Exp.BinOp (Binop.Ne, e1, e2) -> must_alias e1 e2 m
+      | Exp.BinOp (Binop.LAnd, e1, e2) ->
+          must_alias_cmp e1 m || must_alias_cmp e2 m
+      | Exp.BinOp (Binop.LOr, e1, e2) ->
+          must_alias_cmp e1 m && must_alias_cmp e2 m
+      | Exp.UnOp (Unop.LNot, Exp.UnOp (Unop.LNot, e1, _), _) ->
+          must_alias_cmp e1 m
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Lt as c, e1, e2), _)
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Gt as c, e1, e2), _)
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Le as c, e1, e2), _)
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Ge as c, e1, e2), _)
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Eq as c, e1, e2), _)
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Ne as c, e1, e2), _) ->
+          must_alias_cmp (Exp.BinOp (comp_not c, e1, e2)) m
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.LOr, e1, e2), t) ->
+          let e1' = Exp.UnOp (Unop.LNot, e1, t) in
+          let e2' = Exp.UnOp (Unop.LNot, e2, t) in
+          must_alias_cmp (Exp.BinOp (Binop.LAnd, e1', e2')) m
+      | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.LAnd, e1, e2), t) ->
+          let e1' = Exp.UnOp (Unop.LNot, e1, t) in
+          let e2' = Exp.UnOp (Unop.LNot, e2, t) in
+          must_alias_cmp (Exp.BinOp (Binop.LOr, e1', e2')) m
+      | _ -> false
+
   let rec eval : Exp.t -> Mem.astate -> Location.t -> Val.t
     = fun exp mem loc ->
-      match exp with
-      | Exp.Var id -> Mem.find_stack (Var.of_id id |> Loc.of_var) mem
-      | Exp.Lvar pvar ->
-          let ploc = pvar |> Loc.of_pvar |> PowLoc.singleton in
-          let arr = Mem.find_stack_set ploc mem in
-          ploc |> Val.of_pow_loc |> Val.join arr
-      | Exp.UnOp (uop, e, _) -> eval_unop uop e mem loc
-      | Exp.BinOp (bop, e1, e2) -> eval_binop bop e1 e2 mem loc
-      | Exp.Const c -> eval_const c
-      | Exp.Cast (_, e) -> eval e mem loc
-      | Exp.Lfield (e, fn, _) ->
-          eval e mem loc
-          |> Val.get_all_locs
-          |> Fn.flip PowLoc.append_field fn
-          |> Val.of_pow_loc
-      | Exp.Lindex (e1, _) ->
-          let arr = eval e1 mem loc in (* must have array blk *)
-          (* let idx = eval e2 mem loc in *)
-          let ploc = arr |> Val.get_array_blk |> ArrayBlk.get_pow_loc in
-          (* if nested array, add the array blk *)
-          let arr = Mem.find_heap_set ploc mem in
-          Val.join (Val.of_pow_loc ploc) arr
-      | Exp.Sizeof (typ, _, _) -> Val.of_int (sizeof typ)
-      | Exp.Exn _
-      | Exp.Closure _ -> Val.bot
+      if must_alias_cmp exp mem then Val.of_int 0 else
+        match exp with
+        | Exp.Var id -> Mem.find_stack (Var.of_id id |> Loc.of_var) mem
+        | Exp.Lvar pvar ->
+            let ploc = pvar |> Loc.of_pvar |> PowLoc.singleton in
+            let arr = Mem.find_stack_set ploc mem in
+            ploc |> Val.of_pow_loc |> Val.join arr
+        | Exp.UnOp (uop, e, _) -> eval_unop uop e mem loc
+        | Exp.BinOp (bop, e1, e2) -> eval_binop bop e1 e2 mem loc
+        | Exp.Const c -> eval_const c
+        | Exp.Cast (_, e) -> eval e mem loc
+        | Exp.Lfield (e, fn, _) ->
+            eval e mem loc
+            |> Val.get_all_locs
+            |> Fn.flip PowLoc.append_field fn
+            |> Val.of_pow_loc
+        | Exp.Lindex (e1, _) ->
+            let arr = eval e1 mem loc in (* must have array blk *)
+            (* let idx = eval e2 mem loc in *)
+            let ploc = arr |> Val.get_array_blk |> ArrayBlk.get_pow_loc in
+            (* if nested array, add the array blk *)
+            let arr = Mem.find_heap_set ploc mem in
+            Val.join (Val.of_pow_loc ploc) arr
+        | Exp.Sizeof (typ, _, _) -> Val.of_int (sizeof typ)
+        | Exp.Exn _
+        | Exp.Closure _ -> Val.bot
 
   and eval_unop : Unop.t -> Exp.t -> Mem.astate -> Location.t -> Val.t
     = fun unop e mem loc ->
@@ -197,26 +283,6 @@ struct
            | None -> mem)
       | _ -> mem
 
-  let comp_rev : Binop.t -> Binop.t
-    = function
-      | Binop.Lt -> Binop.Gt
-      | Binop.Gt -> Binop.Lt
-      | Binop.Le -> Binop.Ge
-      | Binop.Ge -> Binop.Le
-      | Binop.Eq -> Binop.Eq
-      | Binop.Ne -> Binop.Ne
-      | _ -> assert (false)
-
-  let comp_not : Binop.t -> Binop.t
-    = function
-      | Binop.Lt -> Binop.Ge
-      | Binop.Gt -> Binop.Le
-      | Binop.Le -> Binop.Gt
-      | Binop.Ge -> Binop.Lt
-      | Binop.Eq -> Binop.Ne
-      | Binop.Ne -> Binop.Eq
-      | _ -> assert (false)
-
   let prune_binop_right : Exp.t -> Location.t -> Mem.astate -> Mem.astate
     = fun e loc mem ->
       match e with
@@ -229,10 +295,22 @@ struct
           prune_binop_left (Exp.BinOp (comp_rev c, Exp.Var x, e')) loc mem
       | _ -> mem
 
+  let is_unreachable_constant : Exp.t -> Location.t -> Mem.astate -> bool
+    = fun e loc m ->
+      Val.(<=) ~lhs:(eval e m loc) ~rhs:(Val.of_int 0)
+
+  let prune_unreachable : Exp.t -> Location.t -> Mem.astate -> Mem.astate
+    = fun e loc mem ->
+      if is_unreachable_constant e loc mem then Mem.bot else mem
+
   let rec prune : Exp.t -> Location.t -> Mem.astate -> Mem.astate
     = fun e loc mem ->
       let mem =
-        mem |> prune_unop e |> prune_binop_left e loc |> prune_binop_right e loc
+        mem
+        |> prune_unreachable e loc
+        |> prune_unop e
+        |> prune_binop_left e loc
+        |> prune_binop_right e loc
       in
       match e with
       | Exp.BinOp (Binop.Ne, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->

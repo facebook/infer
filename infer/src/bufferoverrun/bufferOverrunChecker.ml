@@ -428,7 +428,7 @@ let compute_post
   = fun { pdesc; tenv; extras = get_pdesc } ->
     let cfg = CFG.from_pdesc pdesc in
     let pdata = ProcData.make pdesc tenv get_pdesc in
-    let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.bot pdata in
+    let inv_map = Analyzer.exec_pdesc ~initial:Dom.Mem.init pdata in
     let entry_mem =
       let entry_id = CFG.id (CFG.start_node cfg) in
       Analyzer.extract_post entry_id inv_map

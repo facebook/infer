@@ -876,6 +876,9 @@ let pos : t
 let nat : t
   = NonBottom ItvPure.nat
 
+let unknown_bool : t
+  = NonBottom ItvPure.unknown_bool
+
 let make : Bound.t -> Bound.t -> t
   = fun l u -> if Bound.lt u l then Bottom else NonBottom (ItvPure.make l u)
 

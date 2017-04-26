@@ -288,6 +288,16 @@ struct
   let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t
     = fun f x y -> { bot with itv = f x.itv y.itv }
 
+  let has_pointer : t -> bool
+    = fun x ->
+      not (PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk)
+
+  let lift_cmp_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t
+    = fun f x y ->
+      if has_pointer x || has_pointer y then
+        {bot with itv = Itv.unknown_bool}
+      else lift_itv f x y
+
   let plus : t -> t -> t
     = fun x y ->
       { x with itv = Itv.plus x.itv y.itv; arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv }
@@ -314,22 +324,22 @@ struct
     = lift_itv Itv.shiftrt
 
   let lt_sem : t -> t -> t
-    = lift_itv Itv.lt_sem
+    = lift_cmp_itv Itv.lt_sem
 
   let gt_sem : t -> t -> t
-    = lift_itv Itv.gt_sem
+    = lift_cmp_itv Itv.gt_sem
 
   let le_sem : t -> t -> t
-    = lift_itv Itv.le_sem
+    = lift_cmp_itv Itv.le_sem
 
   let ge_sem : t -> t -> t
-    = lift_itv Itv.ge_sem
+    = lift_cmp_itv Itv.ge_sem
 
   let eq_sem : t -> t -> t
-    = lift_itv Itv.eq_sem
+    = lift_cmp_itv Itv.eq_sem
 
   let ne_sem : t -> t -> t
-    = lift_itv Itv.ne_sem
+    = lift_cmp_itv Itv.ne_sem
 
   let land_sem : t -> t -> t
     = lift_itv Itv.land_sem
@@ -564,7 +574,7 @@ struct
     = fun k m -> try Some (M.find k m) with Not_found -> None
 end
 
-module Mem =
+module MemReach =
 struct
   type astate = { stack : Stack.astate; heap : Heap.astate; alias : Alias.astate }
   type t = astate
@@ -659,6 +669,97 @@ struct
       if can_strong_update ploc
       then strong_update_heap ploc v s
       else weak_update_heap ploc v s
+end
+
+module Mem = struct
+  include AbstractDomain.BottomLifted (MemReach)
+
+  type t = astate
+
+  let bot : t = Bottom
+
+  let init : t = NonBottom (MemReach.bot)
+
+  let f_lift_default : 'a -> (MemReach.t -> 'a) -> t -> 'a =
+    fun default f m ->
+      match m with
+      | Bottom -> default
+      | NonBottom m' -> f m'
+
+  let f_lift : (MemReach.t -> MemReach.t) -> t -> t =
+    fun f ->
+      f_lift_default Bottom (fun m' -> NonBottom (f m'))
+
+  let pp_summary : F.formatter -> t -> unit
+    = fun fmt m ->
+      match m with
+      | Bottom -> F.fprintf fmt "unreachable"
+      | NonBottom m' -> MemReach.pp_summary fmt m'
+
+  let find_stack : Loc.t -> t -> Val.t
+    = fun k ->
+      f_lift_default Val.bot (MemReach.find_stack k)
+
+  let find_stack_set : PowLoc.t -> t -> Val.t
+    = fun k ->
+      f_lift_default Val.bot (MemReach.find_stack_set k)
+
+  let find_heap : Loc.t -> t -> Val.t
+    = fun k ->
+      f_lift_default Val.bot (MemReach.find_heap k)
+
+  let find_heap_set : PowLoc.t -> t -> Val.t
+    = fun k ->
+      f_lift_default Val.bot (MemReach.find_heap_set k)
+
+  let find_alias : Ident.t -> t -> Pvar.t option
+    = fun k ->
+      f_lift_default None (MemReach.find_alias k)
+
+  let load_alias : Ident.t -> Exp.t -> t -> t
+    = fun id e ->
+      f_lift (MemReach.load_alias id e)
+
+  let store_alias : Exp.t -> Exp.t -> t -> t
+    = fun e1 e2 ->
+      f_lift (MemReach.store_alias e1 e2)
+
+  let add_stack : Loc.t -> Val.t -> t -> t
+    = fun k v ->
+      f_lift (MemReach.add_stack k v)
+
+  let add_heap : Loc.t -> Val.t -> t -> t
+    = fun k v ->
+      f_lift (MemReach.add_heap k v)
+
+  let strong_update_stack : PowLoc.t -> Val.t -> t -> t
+    = fun p v ->
+      f_lift (MemReach.strong_update_stack p v)
+
+  let strong_update_heap : PowLoc.t -> Val.t -> t -> t
+    = fun p v ->
+      f_lift (MemReach.strong_update_heap p v)
+
+  let weak_update_stack : PowLoc.t -> Val.t -> t -> t
+    = fun p v ->
+      f_lift (MemReach.weak_update_stack p v)
+
+  let weak_update_heap : PowLoc.t -> Val.t -> t -> t
+    = fun p v ->
+      f_lift (MemReach.weak_update_heap p v)
+
+  let get_heap_symbols : t -> Itv.Symbol.t list
+    = f_lift_default [] MemReach.get_heap_symbols
+
+  let get_return : t -> Val.t
+    = f_lift_default Val.bot MemReach.get_return
+
+  let can_strong_update : PowLoc.t -> bool
+    = MemReach.can_strong_update
+
+  let update_mem : PowLoc.t -> Val.t -> t -> t
+    = fun ploc v ->
+      f_lift (MemReach.update_mem ploc v)
 end
 
 module Summary =

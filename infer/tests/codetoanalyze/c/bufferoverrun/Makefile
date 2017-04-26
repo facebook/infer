@@ -25,6 +25,8 @@ SOURCES = \
   nested_loop_with_label.c \
   break_continue_return.c \
   goto_loop.c \
-  inf_loop.c
+  inf_loop.c \
+  prune_constant.c \
+  prune_alias.c \
 
 include $(TESTS_DIR)/clang.make
