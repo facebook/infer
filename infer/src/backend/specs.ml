@@ -324,7 +324,7 @@ type payload =
   {
     preposts : NormSpec.t list option; (** list of specs *)
     typestate : unit TypeState.t option; (** final typestate *)
-    calls: AnnotReachabilityDomain.astate option;
+    annot_map : AnnotReachabilityDomain.astate option;
     crashcontext_frame: Stacktree_t.stacktree option;
     (** Proc location and blame_range info for crashcontext analysis *)
     quandary : QuandarySummary.t option;
@@ -444,7 +444,7 @@ let pp_summary_no_stats_specs fmt summary =
 
 let pp_payload pe fmt
     { preposts; typestate; crashcontext_frame;
-      quandary; siof; threadsafety; buffer_overrun; calls } =
+      quandary; siof; threadsafety; buffer_overrun; annot_map } =
   let pp_opt prefix pp fmt = function
     | Some x -> F.fprintf fmt "%s: %a\n" prefix pp x
     | None -> () in
@@ -456,7 +456,7 @@ let pp_payload pe fmt
     (pp_opt "Siof" SiofDomain.pp) siof
     (pp_opt "ThreadSafety" ThreadSafetyDomain.pp_summary) threadsafety
     (pp_opt "BufferOverrun" BufferOverrunDomain.Summary.pp) buffer_overrun
-    (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp) calls
+    (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp) annot_map
 
 
 let pp_summary_text fmt summary =
@@ -709,7 +709,7 @@ let empty_payload =
   {
     preposts = None;
     typestate = None;
-    calls = None;
+    annot_map = None;
     crashcontext_frame = None;
     quandary = None;
     siof = None;
