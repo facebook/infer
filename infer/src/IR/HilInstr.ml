@@ -73,14 +73,14 @@ let of_sil ~f_resolve_id (instr : Sil.instr) =
   | Call (ret_opt, call_exp, formals, loc, call_flags) ->
       let hil_ret = Option.map ~f:(fun (ret_id, ret_typ) -> Var.of_id ret_id, ret_typ) ret_opt in
       let hil_call =
-        match HilExp.of_sil ~f_resolve_id call_exp Typ.Tvoid with
+        match HilExp.of_sil ~f_resolve_id call_exp (Typ.mk Tvoid) with
         | Constant (Cfun procname) -> Direct procname
         | AccessPath access_path -> Indirect access_path
         | call_exp -> invalid_argf "Unexpected call expression %a" HilExp.pp call_exp in
       let formals = List.map ~f:(fun (exp, typ) -> HilExp.of_sil ~f_resolve_id exp typ) formals in
       Instr (Call (hil_ret, hil_call, formals, call_flags, loc))
   | Prune (exp, loc, true_branch, if_kind) ->
-      let hil_exp = HilExp.of_sil ~f_resolve_id exp (Typ.Tint Typ.IBool) in
+      let hil_exp = HilExp.of_sil ~f_resolve_id exp (Typ.mk (Tint IBool)) in
       let branch = if true_branch then `Then else `Else in
       Instr (Assume (hil_exp, branch, if_kind, loc))
   | Nullify _ | Remove_temps _

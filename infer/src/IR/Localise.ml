@@ -309,12 +309,12 @@ let add_by_call_to_opt problem_str tags proc_name_opt =
       problem_str ^ " " ^ by_call_to tags proc_name
   | None -> problem_str
 
-let rec format_typ = function
-  | Typ.Tptr (typ, _) when Config.curr_language_is Config.Java ->
-      format_typ typ
+let rec format_typ typ = match typ.Typ.desc with
+  | Typ.Tptr (t, _) when Config.curr_language_is Config.Java ->
+      format_typ t
   | Typ.Tstruct name ->
       Typ.Name.name name
-  | typ ->
+  | _ ->
       Typ.to_string typ
 
 let format_field f =
@@ -771,7 +771,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           MF.monospaced_to_string s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Exp.Sizeof (Tstruct name, _, _)) when Typ.Name.is_class name ->
+      | Some (Exp.Sizeof ({desc=Tstruct name}, _, _)) when Typ.Name.is_class name ->
           " of type " ^ MF.monospaced_to_string (Typ.Name.name name) ^ " "
       | _ -> " " in
     let desc_str =

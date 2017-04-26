@@ -158,15 +158,16 @@ and get_superclass_list_cpp tenv decl =
   let get_super_field super_decl = get_record_typename ~tenv super_decl in
   List.map ~f:get_super_field base_decls
 
-and get_record_struct_type tenv definition_decl =
+and get_record_struct_type tenv definition_decl : Typ.t =
   let open Clang_ast_t in
   match definition_decl with
   | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, record_decl_info, _, _)
   | CXXRecordDecl (_, _, _, type_ptr, _, _, record_decl_info, _)
   | RecordDecl (_, _, _, type_ptr, _, _, record_decl_info) ->
       let sil_typename = get_record_typename ~tenv definition_decl in
+      let sil_type = Typ.mk (Tstruct sil_typename) in
       (match Tenv.lookup tenv sil_typename with
-       | Some _ -> Typ.Tstruct sil_typename (* just reuse what is already in tenv *)
+       | Some _ -> sil_type (* just reuse what is already in tenv *)
        | None ->
            let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
            let extra_fields =
@@ -177,7 +178,7 @@ and get_record_struct_type tenv definition_decl =
              if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
              else Annot.Item.empty (* No annotations for structs *) in
            if is_complete_definition then (
-             CAst_utils.update_sil_types_map type_ptr (Typ.Tstruct sil_typename);
+             CAst_utils.update_sil_types_map type_ptr sil_type;
              let non_statics = get_struct_fields tenv definition_decl in
              let fields = CGeneral_utils.append_no_duplicates_fields non_statics extra_fields in
              let statics = [] in (* Note: We treat static field same as global variables *)
@@ -186,16 +187,14 @@ and get_record_struct_type tenv definition_decl =
              let specialization = get_template_specialization tenv definition_decl in
              Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~specialization
                sil_typename |> ignore;
-             let sil_type = Typ.Tstruct sil_typename in
              CAst_utils.update_sil_types_map type_ptr sil_type;
              sil_type
            ) else (
              (* There is no definition for that struct in whole translation unit.
                 Put empty struct into tenv to prevent backend problems *)
              ignore (Tenv.mk_struct tenv ~fields:extra_fields sil_typename);
-             let tvar_type = Typ.Tstruct sil_typename in
-             CAst_utils.update_sil_types_map type_ptr tvar_type;
-             tvar_type))
+             CAst_utils.update_sil_types_map type_ptr sil_type;
+             sil_type))
   | _ -> assert false
 
 and add_types_from_decl_to_tenv tenv decl =
@@ -220,8 +219,8 @@ let get_type_from_expr_info ei tenv =
   type_ptr_to_sil_type tenv tp
 
 let class_from_pointer_type tenv type_ptr =
-  match type_ptr_to_sil_type tenv type_ptr with
-  | Typ.Tptr(Typ.Tstruct typename, _) -> typename
+  match (type_ptr_to_sil_type tenv type_ptr).Typ.desc with
+  | Tptr({desc=Tstruct typename}, _) -> typename
   | _ -> assert false
 
 let get_class_type_np tenv expr_info obj_c_message_expr_info =

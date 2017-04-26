@@ -99,7 +99,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let kill_ret_id (id,_) =
           Domain.kill_copies_with_var (Var.of_id id) astate in
         let kill_actuals_by_ref astate_acc = function
-          | (Exp.Lvar pvar, Typ.Tptr _) -> Domain.kill_copies_with_var (Var.of_pvar pvar) astate_acc
+          | (Exp.Lvar pvar, {Typ.desc=Tptr _}) -> Domain.kill_copies_with_var (Var.of_pvar pvar) astate_acc
           | _ -> astate_acc in
         let astate' = Option.value_map ~f:kill_ret_id ~default:astate ret_id in
         if Config.curr_language_is Config.Java

@@ -25,7 +25,7 @@ let extract_item_from_singleton l warning_string failure_val =
   | [item] -> item
   | _ -> Logging.err_debug "%s" warning_string; failure_val
 
-let dummy_exp = (Exp.minus_one, Typ.Tint Typ.IInt)
+let dummy_exp = (Exp.minus_one, Typ.mk (Tint Typ.IInt))
 
 (* Extract the element of a singleton list. If the list is not a singleton *)
 (* Gives a warning and return -1 as standard value indicating something    *)
@@ -294,20 +294,20 @@ end
 (** This function handles ObjC new/alloc and C++ new calls *)
 let create_alloc_instrs sil_loc function_type fname size_exp_opt procname_opt =
   let function_type, function_type_np =
-    match function_type with
-    | Typ.Tptr (styp, Typ.Pk_pointer)
-    | Typ.Tptr (styp, Typ.Pk_objc_weak)
-    | Typ.Tptr (styp, Typ.Pk_objc_unsafe_unretained)
-    | Typ.Tptr (styp, Typ.Pk_objc_autoreleasing) ->
+    match function_type.Typ.desc with
+    | Tptr (styp, Typ.Pk_pointer)
+    | Tptr (styp, Typ.Pk_objc_weak)
+    | Tptr (styp, Typ.Pk_objc_unsafe_unretained)
+    | Tptr (styp, Typ.Pk_objc_autoreleasing) ->
         function_type, styp
-    | _ -> Typ.Tptr (function_type, Typ.Pk_pointer), function_type in
+    | _ -> CType.add_pointer_to_typ function_type, function_type in
   let sizeof_exp_ = Exp.Sizeof (function_type_np, None, Subtype.exact) in
   let sizeof_exp = match size_exp_opt with
     | Some exp -> Exp.BinOp (Binop.Mult, sizeof_exp_, exp)
     | None -> sizeof_exp_ in
-  let exp = (sizeof_exp, Typ.Tint Typ.IULong) in
+  let exp = (sizeof_exp, Typ.mk (Tint Typ.IULong)) in
   let procname_arg = match procname_opt with
-    | Some procname -> [Exp.Const (Const.Cfun (procname)), Typ.Tvoid]
+    | Some procname -> [Exp.Const (Const.Cfun (procname)), Typ.mk Tvoid]
     | None -> [] in
   let args = exp :: procname_arg in
   let ret_id = Ident.create_fresh Ident.knormal in
@@ -379,7 +379,7 @@ let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
   let typ = CType.remove_pointer_to_typ cast_to_typ in
   let sizeof_exp = Exp.Sizeof (typ, None, Subtype.exact) in
   let pname = BuiltinDecl.__objc_cast in
-  let args = [(exp, cast_from_typ); (sizeof_exp, Typ.Tint Typ.IULong)] in
+  let args = [(exp, cast_from_typ); (sizeof_exp, Typ.mk (Tint Typ.IULong))] in
   let stmt_call =
     Sil.Call (ret_id_typ, Exp.Const (Const.Cfun pname), args, sil_loc, CallFlags.default) in
   (stmt_call, Exp.Var ret_id)
@@ -401,7 +401,7 @@ let dereference_var_sil (exp, typ) sil_loc =
     assigned to it *)
 let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   let (obj_sil, class_typ) = extract_exp_from_list trans_result.exps "" in
-  let typ_no_ptr = match class_typ with | Typ.Tptr (typ, _) -> typ | _ -> assert false in
+  let typ_no_ptr = match class_typ.Typ.desc with | Tptr (typ, _) -> typ | _ -> assert false in
   let cast_typ = if strip_pointer then typ_no_ptr else class_typ in
   let cast_inst, cast_exp = dereference_var_sil (obj_sil, cast_typ) sil_loc in
   { trans_result with
@@ -445,7 +445,7 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
 
 let trans_assertion_failure sil_loc (context : CContext.t) =
   let assert_fail_builtin = Exp.Const (Const.Cfun BuiltinDecl.__infer_fail) in
-  let args = [Exp.Const (Const.Cstr Config.default_failure_name), Typ.Tvoid] in
+  let args = [Exp.Const (Const.Cstr Config.default_failure_name), Typ.mk Tvoid] in
   let call_instr = Sil.Call (None, assert_fail_builtin, args, sil_loc, CallFlags.default) in
   let exit_node = Procdesc.get_exit_node (CContext.get_procdesc context)
   and failure_node =
@@ -581,7 +581,7 @@ struct
       let typ, self_expr, ins =
         let t' =
           CType.add_pointer_to_typ
-            (Typ.Tstruct (CContext.get_curr_class_typename context)) in
+            (Typ.mk (Tstruct (CContext.get_curr_class_typename context))) in
         let e = Exp.Lvar (Pvar.mk (Mangled.from_string CFrontend_config.self) procname) in
         let id = Ident.create_fresh Ident.knormal in
         t', Exp.Var id, [Sil.Load (id, e, t', loc)] in
@@ -658,7 +658,8 @@ let rec contains_opaque_value_expr s =
 
 (* checks if a unary operator is a logic negation applied to integers*)
 let is_logical_negation_of_int tenv ei uoi =
-  match CType_decl.type_ptr_to_sil_type tenv ei.Clang_ast_t.ei_type_ptr, uoi.Clang_ast_t.uoi_kind with
+  match (CType_decl.type_ptr_to_sil_type tenv ei.Clang_ast_t.ei_type_ptr).desc,
+        uoi.Clang_ast_t.uoi_kind with
   | Typ.Tint _,`LNot -> true
   | _, _ -> false
 
@@ -710,8 +711,8 @@ let is_block_enumerate_function mei =
 let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
   let rec var_or_zero_in_init_list' e typ tns =
     let open CGeneral_utils in
-    match typ with
-    | Typ.Tstruct tn -> (
+    match typ.Typ.desc with
+    | Tstruct tn -> (
         match Tenv.lookup tenv tn with
         | Some { fields } ->
             let lh_exprs =
@@ -722,7 +723,7 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         | None ->
             assert false
       )
-    | Typ.Tarray (arrtyp, Some n) ->
+    | Tarray (arrtyp, Some n) ->
         let size = IntLit.to_int n in
         let indices = list_range 0 (size - 1) in
         let index_constants =
@@ -733,10 +734,10 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         let exp_types = zip lh_exprs lh_types in
         List.map ~f:(fun (e, t) ->
             List.concat (var_or_zero_in_init_list' e t tns)) exp_types
-    | Typ.Tint _ | Typ.Tfloat _  | Typ.Tptr _ ->
+    | Tint _ | Tfloat _  | Tptr _ ->
         let exp = if return_zero then Sil.zero_value_of_numerical_type typ else e in
         [ [(exp, typ)] ]
-    | Typ.Tfun _ | Typ.Tvoid | Typ.Tarray _ -> assert false in
+    | Tfun _ | Tvoid | Tarray _ -> assert false in
   List.concat (var_or_zero_in_init_list' e typ String.Set.empty)
 
 (*

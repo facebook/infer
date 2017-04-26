@@ -511,9 +511,9 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     (Pvar.is_local pvar || Pvar.is_global pvar) &&
     not (Pvar.is_frontend_tmp pvar) &&
     match hpred_typ_opt, find_typ_without_ptr prop pvar with
-    | Some (Exp.Sizeof (t1, _, _)), Some (Exp.Sizeof (Typ.Tptr (t2, _), _, _)) ->
+    | Some (Exp.Sizeof (t1, _, _)), Some (Exp.Sizeof ({Typ.desc=Tptr (t2, _)}, _, _)) ->
         Typ.equal t1 t2
-    | Some (Exp.Sizeof (Typ.Tint _, _, _)), Some (Exp.Sizeof (Typ.Tint _, _, _))
+    | Some (Exp.Sizeof ({Typ.desc=Tint _}, _, _)), Some (Exp.Sizeof ({Typ.desc=Tint _}, _, _))
       when is_file -> (* must be a file opened with "open" *)
         true
     | _ -> false in
@@ -581,7 +581,7 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
           (match lexp with
            | Exp.Lvar pv ->
                let typo = match texp with
-                 | Exp.Sizeof (Tstruct name, _, _) -> (
+                 | Exp.Sizeof ({Typ.desc=Tstruct name}, _, _) -> (
                      match Tenv.lookup tenv name with
                      | Some {fields} ->
                          List.find ~f:(fun (f', _, _) -> Fieldname.equal f' f) fields |>

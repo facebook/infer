@@ -175,7 +175,7 @@ let translate_locals program tenv formals bytecode jbir_code =
     Array.fold
       ~f:(fun accu jbir_var ->
           let var = Mangled.from_string (JBir.var_name_g jbir_var) in
-          collect accu (var, Typ.Tvoid))
+          collect accu (var, Typ.mk Tvoid))
       ~init:with_bytecode_vars
       (JBir.vars jbir_code) in
   snd with_jbir_vars
@@ -426,13 +426,13 @@ let rec expression (context : JContext.t) pc expr =
         | JBir.Neg _ -> (instrs, Exp.UnOp (Unop.Neg, sil_ex, Some type_of_expr), type_of_expr)
         | JBir.ArrayLength ->
             let array_typ_no_ptr =
-              match type_of_ex with
+              match type_of_ex.Typ.desc with
               | Typ.Tptr (typ, _) -> typ
               | _ -> type_of_ex in
             let deref = create_sil_deref sil_ex array_typ_no_ptr loc in
             let args = [(sil_ex, type_of_ex)] in
             let ret_id = Ident.create_fresh Ident.knormal in
-            let ret_typ = Typ.Tint IInt in
+            let ret_typ = Typ.mk (Tint IInt) in
             let call_instr =
               Sil.Call
                 (Some (ret_id, ret_typ), builtin_get_array_length, args, loc, CallFlags.default) in
@@ -453,10 +453,10 @@ let rec expression (context : JContext.t) pc expr =
                | JBir.InstanceOf _ -> Exp.Const (Const.Cfun BuiltinDecl.__instanceof)
                | JBir.Cast _ -> Exp.Const (Const.Cfun BuiltinDecl.__cast)
                | _ -> assert false) in
-            let args = [(sil_ex, type_of_ex); (sizeof_expr, Typ.Tvoid)] in
+            let args = [(sil_ex, type_of_ex); (sizeof_expr, Typ.mk Tvoid)] in
             let ret_id = Ident.create_fresh Ident.knormal in
             let call =
-              Sil.Call (Some (ret_id, Tint IBool), builtin, args, loc, CallFlags.default) in
+              Sil.Call (Some (ret_id, Typ.mk (Tint IBool)), builtin, args, loc, CallFlags.default) in
             let res_ex = Exp.Var ret_id in
             (instrs @ [call], res_ex, type_of_expr)
       end
@@ -467,7 +467,7 @@ let rec expression (context : JContext.t) pc expr =
         match binop with
         | JBir.ArrayLoad _ ->
             (* add an instruction that dereferences the array *)
-            let array_typ = Typ.Tarray (type_of_expr, None) in
+            let array_typ = Typ.mk (Tarray (type_of_expr, None)) in
             let deref_array_instr = create_sil_deref sil_ex1 array_typ loc in
             let id = Ident.create_fresh Ident.knormal in
             let load_instr =
@@ -548,7 +548,7 @@ let method_invocation
           match sil_obj_expr with
           | Exp.Var _ when is_non_constructor_call && not Config.report_runtime_exceptions ->
               let obj_typ_no_ptr =
-                match sil_obj_type with
+                match sil_obj_type.Typ.desc with
                 | Typ.Tptr (typ, _) -> typ
                 | _ -> sil_obj_type in
               [create_sil_deref sil_obj_expr obj_typ_no_ptr loc]
@@ -571,7 +571,7 @@ let method_invocation
     let callee_fun = Exp.Const (Const.Cfun callee_procname) in
     let return_type =
       match JBasics.ms_rtype ms with
-      | None -> Typ.Tvoid
+      | None -> Typ.mk Tvoid
       | Some vt -> JTransType.value_type program tenv vt in
     let call_ret_instrs sil_var =
       let ret_id = Ident.create_fresh Ident.knormal in
@@ -621,7 +621,7 @@ let get_array_length context pc expr_list content_type =
         (instrs @ other_instrs, sil_len_expr :: other_exprs) in
   let (instrs, sil_len_exprs) = List.fold_right ~f:get_expr_instr expr_list ~init:([],[]) in
   let get_array_type_len sil_len_expr (content_type, _) =
-    (Typ.Tarray (content_type, None), Some sil_len_expr) in
+    (Typ.mk (Tarray (content_type, None)), Some sil_len_expr) in
   let array_type, array_len =
     List.fold_right ~f:get_array_type_len sil_len_exprs ~init:(content_type, None) in
   let array_size = Exp.Sizeof (array_type, array_len, Subtype.exact) in
@@ -689,7 +689,7 @@ let assume_not_null loc sil_expr =
   let not_null_expr =
     Exp.BinOp (Binop.Ne, sil_expr, Exp.null) in
   let assume_call_flag = { CallFlags.default with CallFlags.cf_noreturn = true; } in
-  let call_args = [(not_null_expr, Typ.Tint Typ.IBool)] in
+  let call_args = [(not_null_expr, Typ.mk (Tint Typ.IBool))] in
   Sil.Call (None, builtin_infer_assume, call_args, loc, assume_call_flag)
 
 
@@ -711,7 +711,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
     let instrs, sil_expr, sil_type = expression context pc expr in
     let builtin_const = Exp.Const (Const.Cfun builtin) in
     let instr = Sil.Call (None, builtin_const, [(sil_expr, sil_type)], loc, CallFlags.default) in
-    let typ_no_ptr = match sil_type with
+    let typ_no_ptr = match sil_type.Typ.desc with
       | Typ.Tptr (typ, _) -> typ
       | _ -> sil_type in
     let deref_instr = create_sil_deref sil_expr typ_no_ptr loc in
@@ -1009,7 +1009,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
         and sizeof_expr =
           JTransType.sizeof_of_object_type program tenv object_type Subtype.subtypes_instof in
         let check_cast = Exp.Const (Const.Cfun BuiltinDecl.__instanceof) in
-        let args = [(sil_expr, sil_type); (sizeof_expr, Typ.Tvoid)] in
+        let args = [(sil_expr, sil_type); (sizeof_expr, Typ.mk Tvoid)] in
         let call = Sil.Call (Some (ret_id, ret_type), check_cast, args, loc, CallFlags.default) in
         let res_ex = Exp.Var ret_id in
         let is_instance_node =

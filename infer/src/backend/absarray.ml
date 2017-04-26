@@ -71,7 +71,7 @@ end = struct
       L.d_str "t: "; Typ.d_full t; L.d_ln ();
       assert false
     in
-    match se, t, syn_offs with
+    match se, t.desc, syn_offs with
     | _, _, [] -> (se, t)
     | Sil.Estruct (fsel, _), Tstruct name, Field (fld, _) :: syn_offs' -> (
         match Tenv.lookup tenv name with
@@ -92,7 +92,7 @@ end = struct
 
   (** Replace a strexp at the given syntactic offset list *)
   let rec replace_strexp_at_syn_offsets tenv se (t: Typ.t) syn_offs update =
-    match se, t, syn_offs with
+    match se, t.desc, syn_offs with
     | _, _, [] ->
         update se
     | Sil.Estruct (fsel, inst), Tstruct name, Field (fld, _) :: syn_offs' -> (
@@ -163,7 +163,7 @@ end = struct
       let path = (root, offs') in
       if pred (path, se, typ) then found := (sigma, hpred, offs') :: !found
       else begin
-        match se, typ with
+        match se, typ.desc with
         | Sil.Estruct (fsel, _), Tstruct name -> (
             match Tenv.lookup tenv name with
             | Some { fields } ->
@@ -442,8 +442,8 @@ let keep_only_indices tenv
 
 
 (** If the type is array, check whether we should do abstraction *)
-let array_typ_can_abstract = function
-  | Typ.Tarray (Typ.Tptr (Typ.Tfun _, _), _) -> false (* don't abstract arrays of pointers *)
+let array_typ_can_abstract {Typ.desc} = match desc with
+  | Tarray ({desc=Tptr ({desc=Tfun _}, _)}, _) -> false (* don't abstract arrays of pointers *)
   | _ -> true
 
 (** This function checks whether we can apply an abstraction to a strexp *)
@@ -540,7 +540,7 @@ let check_after_array_abstraction tenv prop =
   let rec check_se root offs typ = function
     | Sil.Eexp _ -> ()
     | Sil.Earray (_, esel, _) -> (* check that no more than 2 elements are in the array *)
-        let typ_elem = Typ.array_elem (Some Typ.Tvoid) typ in
+        let typ_elem = Typ.array_elem (Some (Typ.mk Tvoid)) typ in
         if List.length esel > 2 && array_typ_can_abstract typ then
           if List.for_all ~f:(check_index root offs) esel then ()
           else report_error prop
@@ -549,11 +549,11 @@ let check_after_array_abstraction tenv prop =
             esel
     | Sil.Estruct (fsel, _) ->
         List.iter ~f:(fun (f, se) ->
-            let typ_f = Typ.Struct.fld_typ ~lookup ~default:Tvoid f typ in
+            let typ_f = Typ.Struct.fld_typ ~lookup ~default:(Typ.mk Tvoid) f typ in
             check_se root (offs @ [Sil.Off_fld (f, typ)]) typ_f se) fsel in
   let check_hpred = function
     | Sil.Hpointsto (root, se, texp) ->
-        let typ = Exp.texp_to_typ (Some Typ.Tvoid) texp in
+        let typ = Exp.texp_to_typ (Some (Typ.mk Tvoid)) texp in
         check_se root [] typ se
     | Sil.Hlseg _ | Sil.Hdllseg _ -> () in
   let check_sigma sigma = List.iter ~f:check_hpred sigma in

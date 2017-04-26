@@ -228,8 +228,8 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
   let rec walk = function
     | Exp.Var _ -> ()
     | Exp.UnOp (Unop.Neg, e, Some (
-        (Typ.Tint
-           (Typ.IUChar | Typ.IUInt | Typ.IUShort | Typ.IULong | Typ.IULongLong) as typ))) ->
+        ({Typ.desc=Tint
+              (Typ.IUChar | Typ.IUInt | Typ.IUShort | Typ.IULong | Typ.IULongLong)} as typ))) ->
         uminus_unsigned := (e, typ) :: !uminus_unsigned
     | Exp.UnOp(_, e, _) -> walk e
     | Exp.BinOp(op, e1, e2) ->
@@ -319,7 +319,7 @@ let find_equal_formal_path tenv e prop =
                           match strexp with
                           | Sil.Eexp (exp2, _) when Exp.equal exp2 e ->
                               (match find_in_sigma exp1 seen_hpreds with
-                               | Some vfs -> Some (Exp.Lfield (vfs, field, Typ.Tvoid))
+                               | Some vfs -> Some (Exp.Lfield (vfs, field, Typ.mk Tvoid))
                                | None -> None)
                           | _ -> None) fields ~init:None
               | _ -> None) prop.Prop.sigma ~init:None in

@@ -99,6 +99,6 @@ let default proc_name language => {
   objc_accessor: None,
   proc_flags: proc_flags_empty (),
   proc_name,
-  ret_type: Typ.Tvoid,
+  ret_type: Typ.mk Typ.Tvoid,
   source_file_captured: SourceFile.invalid
 };

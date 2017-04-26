@@ -27,7 +27,7 @@ let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
     L.d_str "Type : "; Typ.d_full typ; L.d_ln ();
     raise (Exceptions.Bad_footprint __POS__)
   in
-  match (typ, off) with
+  match (typ.desc, off) with
   | Tstruct name, Off_fld (fld, _) -> (
       match Tenv.lookup tenv name with
       | Some { fields; statics } -> (
@@ -91,7 +91,7 @@ let rec apply_offlist
     L.d_str "offlist : "; Sil.d_offset_list offlist; L.d_ln ();
     L.d_str "type : "; Typ.d_full typ; L.d_ln ();
     L.d_str "prop : "; Prop.d_prop p; L.d_ln (); L.d_ln () in
-  match offlist, strexp, typ with
+  match offlist, strexp, typ.Typ.desc with
   | [], Sil.Eexp (e, inst_curr), _ ->
       let inst_is_uninitialized = function
         | Sil.Ialloc ->
@@ -183,7 +183,7 @@ let rec apply_offlist
             then (idx_ese', res_se')
             else ese in
           let res_se = Sil.Earray (len, List.map ~f:replace_ese esel, inst1) in
-          let res_t = Typ.Tarray (res_t', len') in
+          let res_t = Typ.mk ~default:typ (Tarray (res_t', len')) in
           (res_e', res_se, res_t, res_pred_insts_op')
       | None ->
           (* return a nondeterministic value if the index is not found after rearrangement *)
@@ -520,7 +520,7 @@ let resolve_typename prop receiver_exp =
       | _ :: hpreds -> loop hpreds in
     loop prop.Prop.sigma in
   match typexp_opt with
-  | Some (Exp.Sizeof (Tstruct name, _, _)) -> Some name
+  | Some (Exp.Sizeof ({desc=Tstruct name}, _, _)) -> Some name
   | _ -> None
 
 (** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal
@@ -535,7 +535,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procna
         begin
           let name = Typ.Procname.java_get_class_type_name pname_java in
           match Tenv.lookup tenv name with
-          | Some _ -> Typ.Tptr (Tstruct name, Pk_pointer)
+          | Some _ -> Typ.mk (Typ.Tptr (Typ.mk (Tstruct name), Pk_pointer))
           | None -> fallback_typ
         end
     | _ ->
@@ -855,7 +855,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
       then
         prop (* don't assume nonnull if the procedure is annotated with @Nullable *)
       else
-        match typ with
+        match typ.Typ.desc with
         | Typ.Tptr _ -> Prop.conjoin_neq tenv exp Exp.zero prop
         | _ -> prop in
     let add_tainted_post ret_exp callee_pname prop =
@@ -892,7 +892,7 @@ let add_taint prop lhs_id rhs_exp pname tenv  =
     else
       prop in
   match rhs_exp with
-  | Exp.Lfield (_, fieldname, (Tstruct typname | Tptr (Tstruct typname, _))) ->
+  | Exp.Lfield (_, fieldname, ({desc=Tstruct typname} | {desc=Tptr ({desc=Tstruct typname}, _)})) ->
       begin
         match Tenv.lookup tenv typname with
         | Some struct_typ -> add_attribute_if_field_tainted prop fieldname struct_typ
@@ -1309,8 +1309,8 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
         else
         if !Config.footprint then
           let prop', abduced_strexp =
-            match actual_typ with
-            | Typ.Tptr ((Tstruct _) as typ, _) ->
+            match actual_typ.Typ.desc with
+            | Typ.Tptr ({desc=Tstruct _} as typ, _) ->
                 (* for struct types passed by reference, do abduction on the fields of the
                    struct *)
                 add_struct_value_to_footprint tenv abduced_ref_pv typ prop
@@ -1319,10 +1319,10 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
                 let (prop', fresh_fp_var) =
                   add_to_footprint tenv abduced_ref_pv typ prop in
                 prop', Sil.Eexp (fresh_fp_var, Sil.Inone)
-            | typ ->
+            | _ ->
                 failwith
                   ("No need for abduction on non-pointer type " ^
-                   (Typ.to_string typ)) in
+                   (Typ.to_string actual_typ)) in
           (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
           let filtered_sigma =
             List.map
@@ -1440,7 +1440,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
   let actuals_by_ref =
     List.filter_mapi
       ~f:(fun i actual -> match actual with
-          | (Exp.Lvar _ as e, (Typ.Tptr _ as t)) -> Some (e, t, i)
+          | (Exp.Lvar _ as e, ({Typ.desc=Tptr _} as t)) -> Some (e, t, i)
           | _ -> None)
       args in
   let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
@@ -1536,7 +1536,7 @@ and sym_exec_objc_getter field_name ret_typ tenv ret_id pdesc pname loc args pro
     | Some (ret_id, _) -> ret_id
     | None -> assert false in
   match args with
-  | [(lexp, (Typ.Tstruct _ as typ | Tptr (Tstruct _ as typ, _)))] ->
+  | [(lexp, ({Typ.desc=Tstruct _} as typ | {desc=Tptr ({desc=Tstruct _} as typ, _)}))] ->
       let field_access_exp = Exp.Lfield (lexp, field_name, typ) in
       execute_load
         ~report_deref_errors:false pname pdesc tenv ret_id field_access_exp ret_typ loc prop
@@ -1546,7 +1546,7 @@ and sym_exec_objc_setter field_name _ tenv _ pdesc pname loc args prop =
   L.d_strln ("No custom setter found. Executing the ObjC builtin setter with ivar "^
              (Fieldname.to_string field_name)^".");
   match args with
-  | (lexp1, (Typ.Tstruct _ as typ1 | Tptr (typ1, _))) :: (lexp2, typ2) :: _ ->
+  | (lexp1, ({Typ.desc=Tstruct _} as typ1 | {Typ.desc=Tptr (typ1, _)})) :: (lexp2, typ2) :: _ ->
       let field_access_exp = Exp.Lfield (lexp1, field_name, typ1) in
       execute_store ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc prop
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -1570,7 +1570,7 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
   let ret_typ = Specs.get_ret_type summary in
   let check_return_value_ignored () =
     (* check if the return value of the call is ignored, and issue a warning *)
-    let is_ignored = match ret_typ, ret_id with
+    let is_ignored = match ret_typ.Typ.desc, ret_id with
       | Typ.Tvoid, _ -> false
       | _, None -> true
       | _, Some (id, _) -> Errdesc.id_is_assigned_then_dead (State.get_node ()) id in

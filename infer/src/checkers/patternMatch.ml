@@ -25,8 +25,8 @@ type taint_spec = {
 }
 
 let type_is_object typ =
-  match typ with
-  | Typ.Tptr (Tstruct name, _) -> Typ.Name.equal name Typ.Name.Java.java_lang_object
+  match typ.Typ.desc with
+  | Tptr ({desc=Tstruct name}, _) -> Typ.Name.equal name Typ.Name.Java.java_lang_object
   | _ -> false
 
 let java_proc_name_with_class_method pn_java class_with_path method_name =
@@ -74,8 +74,8 @@ let get_this_type proc_attributes = match proc_attributes.ProcAttributes.formals
   | _ -> None
 
 let type_get_direct_supertypes tenv (typ: Typ.t) =
-  match typ with
-  | Tptr (Tstruct name, _)
+  match typ.desc with
+  | Tptr ({desc=Tstruct name}, _)
   | Tstruct name -> (
       match Tenv.lookup tenv name with
       | Some { supers } -> supers
@@ -84,13 +84,13 @@ let type_get_direct_supertypes tenv (typ: Typ.t) =
   | _ ->
       []
 
-let type_get_class_name = function
+let type_get_class_name {Typ.desc} = match desc with
   | Typ.Tptr (typ, _) -> Typ.name typ
   | _ -> None
 
 let type_get_annotation tenv (typ: Typ.t): Annot.Item.t option =
-  match typ with
-  | Tptr (Tstruct name, _)
+  match typ.desc with
+  | Tptr ({desc=Tstruct name}, _)
   | Tstruct name -> (
       match Tenv.lookup tenv name with
       | Some { annots } -> Some annots
@@ -112,7 +112,7 @@ let type_has_supertype
       let supers = type_get_direct_supertypes tenv typ in
       let match_supertype cn =
         let match_name () = Typ.Name.equal cn class_name in
-        let has_indirect_supertype () = has_supertype (Typ.Tstruct cn) (Typ.Set.add typ visited) in
+        let has_indirect_supertype () = has_supertype (Typ.mk (Tstruct cn)) (Typ.Set.add typ visited) in
         (match_name () || has_indirect_supertype ()) in
       List.exists ~f:match_supertype supers in
   has_supertype typ Typ.Set.empty
@@ -121,7 +121,8 @@ let type_is_nested_in_direct_supertype tenv t n =
   let is_nested_in cn1 cn2 = String.is_prefix ~prefix:(Typ.Name.name cn1 ^ "$") (Typ.Name.name cn2) in
   List.exists ~f:(is_nested_in n) (type_get_direct_supertypes tenv t)
 
-let rec get_type_name = function
+let rec get_type_name {Typ.desc} =
+  match desc with
   | Typ.Tstruct name ->
       Typ.Name.name name
   | Typ.Tptr (t, _) -> get_type_name t
@@ -130,8 +131,8 @@ let rec get_type_name = function
 let get_field_type_name tenv
     (typ: Typ.t)
     (fieldname: Fieldname.t): string option =
-  match typ with
-  | Tstruct name | Tptr (Tstruct name, _) -> (
+  match typ.desc with
+  | Tstruct name | Tptr ({desc=Tstruct name}, _) -> (
       match Tenv.lookup tenv name with
       | Some { fields } -> (
           match List.find
@@ -245,10 +246,10 @@ let get_java_method_call_formal_signature = function
 
 
 let type_is_class typ =
-  match typ with
-  | Typ.Tptr (Typ.Tstruct _, _) -> true
-  | Typ.Tptr (Typ.Tarray _, _) -> true
-  | Typ.Tstruct _ -> true
+  match typ.Typ.desc with
+  | Tptr ({desc=Tstruct _}, _) -> true
+  | Tptr ({desc=Tarray _}, _) -> true
+  | Tstruct _ -> true
   | _ -> false
 
 let initializer_classes =
@@ -349,7 +350,7 @@ let override_exists f tenv proc_name =
       let type_name = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name proc_name_java) in
       List.exists
         ~f:(super_type_exists tenv)
-        (type_get_direct_supertypes tenv (Typ.Tstruct type_name))
+        (type_get_direct_supertypes tenv (Typ.mk (Tstruct type_name)))
   | _ ->
       false (* Only java supported at the moment *)
 

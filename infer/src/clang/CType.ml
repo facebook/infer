@@ -14,15 +14,15 @@ open! IStd
 module L = Logging
 
 let add_pointer_to_typ typ =
-  Typ.Tptr(typ, Typ.Pk_pointer)
+  Typ.mk (Tptr(typ, Typ.Pk_pointer))
 
 let remove_pointer_to_typ typ =
-  match typ with
+  match typ.Typ.desc with
   | Typ.Tptr(typ, Typ.Pk_pointer) -> typ
   | _ -> typ
 
 let objc_classname_of_type typ =
-  match typ with
+  match typ.Typ.desc with
   | Typ.Tstruct name -> name
   | Typ.Tfun _ -> Typ.Name.Objc.from_string CFrontend_config.objc_object
   | _ ->
@@ -31,8 +31,8 @@ let objc_classname_of_type typ =
       Typ.Name.Objc.from_string "undefined"
 
 let is_class typ =
-  match typ with
-  | Typ.Tptr (Tstruct name, _) ->
+  match typ.Typ.desc with
+  | Typ.Tptr ({desc=Tstruct name}, _) ->
       String.equal (Typ.Name.name name) CFrontend_config.objc_class
   | _ -> false
 

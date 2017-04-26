@@ -201,8 +201,8 @@ let callback_check_write_to_parcel_java
     let expr_match () = Exp.is_this this_expr in
     let type_match () =
       let class_name = Typ.Name.Java.from_string "android.os.Parcelable" in
-      match this_type with
-      | Typ.Tptr (Tstruct name, _) | Tstruct name ->
+      match this_type.Typ.desc with
+      | Typ.Tptr ({desc=Tstruct name}, _) | Tstruct name ->
           PatternMatch.is_immediate_subtype tenv name class_name
       | _ -> false in
     method_match () && expr_match () && type_match () in
@@ -213,8 +213,8 @@ let callback_check_write_to_parcel_java
       proc_desc pname_java ["android.os.Parcel"] in
 
   let parcel_constructors tenv typ =
-    match typ with
-    | Typ.Tptr (Tstruct name, _) -> (
+    match typ.Typ.desc with
+    | Typ.Tptr ({desc=Tstruct name}, _) -> (
         match Tenv.lookup tenv name with
         | Some { methods } -> List.filter ~f:is_parcel_constructor methods
         | None -> []
@@ -325,11 +325,11 @@ let callback_monitor_nullcheck { Callbacks.proc_desc; idenv; summary } =
     let formals = Procdesc.get_formals proc_desc in
     let class_formals =
       let is_class_type (p, typ) =
-        match typ with
+        match typ.Typ.desc with
         | Typ.Tptr _ when String.equal (Mangled.to_string p) "this" ->
             false (* no need to null check 'this' *)
         | Typ.Tstruct _ -> true
-        | Typ.Tptr (Typ.Tstruct _, _) -> true
+        | Typ.Tptr ({desc=Tstruct _}, _) -> true
         | _ -> false in
       List.filter ~f:is_class_type formals in
     List.map ~f:fst class_formals) in

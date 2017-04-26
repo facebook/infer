@@ -470,7 +470,7 @@ let texp_star tenv texp1 texp2 =
           | 0 -> ftal_sub ftal1' ftal2'
           | _ -> ftal_sub ftal1 ftal2' end in
   let typ_star (t1: Typ.t) (t2: Typ.t) =
-    match t1, t2 with
+    match t1.desc, t2.desc with
     | Tstruct name1, Tstruct name2
       when Typ.Name.is_same_type name1 name2 -> (
         match Tenv.lookup tenv name1, Tenv.lookup tenv name2 with
@@ -634,7 +634,7 @@ let prop_get_exn_name pname prop =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let rec search_exn e = function
     | [] -> None
-    | Sil.Hpointsto (e1, _, Sizeof (Tstruct name, _, _)) :: _
+    | Sil.Hpointsto (e1, _, Sizeof ({desc=Tstruct name}, _, _)) :: _
       when Exp.equal e1 e ->
         Some name
     | _ :: tl -> search_exn e tl in

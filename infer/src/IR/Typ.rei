@@ -69,9 +69,21 @@ let equal_ptr_kind: ptr_kind => ptr_kind => bool;
 /** statically determined length of an array type, if any */
 type static_length = option IntLit.t [@@deriving compare];
 
+type type_quals [@@deriving compare];
+
+let mk_type_quals:
+  default::type_quals? => is_const::bool? => is_volatile::bool? => unit => type_quals;
+
+let is_const: type_quals => bool;
+
+let is_volatile: type_quals => bool;
+
 
 /** types for sil (structured) expressions */
-type t =
+
+/** types for sil (structured) expressions */
+type t = {desc, quals: type_quals} [@@deriving compare]
+and desc =
   | Tint ikind /** integer type */
   | Tfloat fkind /** float type */
   | Tvoid /** void type */
@@ -92,6 +104,10 @@ and template_spec_info =
   | NoTemplate
   | Template (QualifiedCppName.t, list (option t))
 [@@deriving compare];
+
+
+/** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such as quals */
+let mk: default::t? => quals::type_quals? => desc => t;
 
 module Name: {
 
@@ -159,6 +175,10 @@ module Name: {
 
 /** Equality for types. */
 let equal: t => t => bool;
+
+let equal_desc: desc => desc => bool;
+
+let equal_quals: type_quals => type_quals => bool;
 
 
 /** Sets of types. */

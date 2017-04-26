@@ -31,11 +31,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
 
   let exec_instr astate _ _ = function
-    | Sil.Store (_, Tptr _, rhs_exp, _) ->
+    | Sil.Store (_, {desc=Tptr _}, rhs_exp, _) ->
         add_address_taken_pvars rhs_exp astate
     | Sil.Call (_, _, actuals, _, _) ->
         let add_actual_by_ref astate_acc = function
-          | actual_exp, Typ.Tptr _ -> add_address_taken_pvars actual_exp astate_acc
+          | actual_exp, {Typ.desc=Tptr _} -> add_address_taken_pvars actual_exp astate_acc
           | _ -> astate_acc in
         List.fold ~f:add_actual_by_ref ~init:astate actuals
     | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _

@@ -229,7 +229,7 @@ let hpred_get_lhs h =>
 /** {2 Comparision and Inspection Functions} */
 let has_objc_ref_counter tenv hpred =>
   switch hpred {
-  | Hpointsto _ _ (Sizeof (Tstruct name) _ _) =>
+  | Hpointsto _ _ (Sizeof {desc: Tstruct name} _ _) =>
     switch (Tenv.lookup tenv name) {
     | Some {fields} => List.exists f::Typ.Struct.is_objc_ref_counter_field fields
     | _ => false
@@ -240,7 +240,7 @@ let has_objc_ref_counter tenv hpred =>
 
 /** Returns the zero value of a type, for int, float and ptr types, None othwewise */
 let zero_value_of_numerical_type_option typ =>
-  switch typ {
+  switch typ.Typ.desc {
   | Typ.Tint _ => Some (Exp.Const (Cint IntLit.zero))
   | Typ.Tfloat _ => Some (Exp.Const (Cfloat 0.0))
   | Typ.Tptr _ => Some (Exp.Const (Cint IntLit.null))

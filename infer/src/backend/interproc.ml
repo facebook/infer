@@ -664,7 +664,7 @@ let report_context_leaks pname sigma tenv =
               | Some path -> path
               | None -> assert false (* a path must exist in order for a leak to be reported *) in
             let err_desc =
-              Errdesc.explain_context_leak pname (Typ.Tstruct name) fld_name leak_path in
+              Errdesc.explain_context_leak pname (Typ.mk (Tstruct name)) fld_name leak_path in
             let exn = Exceptions.Context_leak (err_desc, __POS__) in
             Reporting.log_error pname exn)
       context_exps in
@@ -672,7 +672,7 @@ let report_context_leaks pname sigma tenv =
   let context_exps =
     List.fold
       ~f:(fun exps hpred -> match hpred with
-          | Sil.Hpointsto (_, Eexp (exp, _), Sizeof (Tptr (Tstruct name, _), _, _))
+          | Sil.Hpointsto (_, Eexp (exp, _), Sizeof ({desc=Tptr ({desc=Tstruct name}, _)}, _, _))
             when not (Exp.is_null_literal exp)
               && AndroidFramework.is_context tenv name
               && not (AndroidFramework.is_application tenv name) ->

@@ -65,16 +65,16 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
             | Some cn -> cn in
           match JTransType.get_class_type
                   context.program (JContext.get_tenv context) class_name with
-          | Typ.Tptr (typ, _) -> typ
+          | {Typ.desc=Tptr (typ, _)} -> typ
           | _ -> assert false in
         let id_instanceof = Ident.create_fresh Ident.knormal in
         let instr_call_instanceof =
           let instanceof_builtin = Exp.Const (Const.Cfun BuiltinDecl.__instanceof) in
           let args = [
-            (Exp.Var id_exn_val, Typ.Tptr(exn_type, Typ.Pk_pointer));
-            (Exp.Sizeof (exn_type, None, Subtype.exact), Typ.Tvoid)] in
+            (Exp.Var id_exn_val, Typ.mk (Tptr(exn_type, Typ.Pk_pointer)));
+            (Exp.Sizeof (exn_type, None, Subtype.exact), Typ.mk Tvoid)] in
           Sil.Call
-            (Some (id_instanceof, Tint IBool), instanceof_builtin, args, loc, CallFlags.default) in
+            (Some (id_instanceof, Typ.mk (Tint IBool)), instanceof_builtin, args, loc, CallFlags.default) in
         let if_kind = Sil.Ik_switch in
         let instr_prune_true = Sil.Prune (Exp.Var id_instanceof, loc, true, if_kind) in
         let instr_prune_false =

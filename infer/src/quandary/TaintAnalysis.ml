@@ -203,9 +203,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
         | Some actual_ap_raw ->
             let actual_ap =
-              let is_array_typ = match actual_typ with
-                | Typ.Tptr (Tarray _, _) (* T* [] (Java-style) *)
-                | Tptr (Tptr _, _) (* T** (C/C++ style 1) *)
+              let is_array_typ = match actual_typ.Typ.desc with
+                | Typ.Tptr ({desc=Tarray _}, _) (* T* [] (Java-style) *)
+                | Tptr ({desc=Tptr _}, _) (* T** (C/C++ style 1) *)
                 | Tarray _ (* T[] C/C++ style 2 *) ->
                     true
                 | _ ->
@@ -330,7 +330,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           astate
       | Sil.Store (Exp.Lvar lhs_pvar, _, rhs_exp, _)
         when Pvar.is_return lhs_pvar && Exp.is_null_literal rhs_exp &&
-             Typ.equal Tvoid (Procdesc.get_ret_type proc_data.pdesc) ->
+             Typ.equal_desc Tvoid (Procdesc.get_ret_type proc_data.pdesc).desc ->
           (* similar to the case above; the Java frontend translates "return no exception" as
              `return null` in a void function *)
           astate

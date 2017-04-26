@@ -24,8 +24,8 @@ include
       | _ -> assert false
 
     let handle_unknown_call pname ret_typ_opt actuals tenv =
-      let types_match typ class_string tenv = match typ with
-        | Typ.Tptr (Tstruct original_typename, _) ->
+      let types_match typ class_string tenv = match typ.Typ.desc with
+        | Typ.Tptr ({desc=Tstruct original_typename}, _) ->
             PatternMatch.supertype_exists
               tenv
               (fun typename _ -> String.equal (Typ.Name.name typename) class_string)
@@ -45,10 +45,10 @@ include
                 []
             | _ when Typ.Procname.is_constructor pname ->
                 [TaintSpec.Propagate_to_receiver]
-            | _, _, (Some Typ.Tvoid | None) when not is_static ->
+            | _, _, (Some {Typ.desc=Tvoid} | None) when not is_static ->
                 (* for instance methods with no return value, propagate the taint to the receiver *)
                 [TaintSpec.Propagate_to_receiver]
-            | classname, _, Some (Typ.Tptr _ | Tstruct _) ->
+            | classname, _, Some ({Typ.desc=Tptr _ | Tstruct _}) ->
                 begin
                   match actuals with
                   | (_, receiver_typ) :: _
@@ -70,8 +70,8 @@ include
           failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
 
     let is_taintable_type typ=
-      match typ with
-      | Typ.Tptr (Tstruct (JavaClass typename), _) | Tstruct (JavaClass typename) ->
+      match typ.Typ.desc with
+      | Typ.Tptr ({desc=Tstruct (JavaClass typename)}, _) | Tstruct (JavaClass typename) ->
           begin
             match Mangled.to_string_full typename with
             | "android.content.Intent"

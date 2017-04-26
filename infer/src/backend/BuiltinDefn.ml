@@ -41,13 +41,13 @@ let mk_empty_array_rearranged len =
 
 let extract_array_type typ =
   if (Config.curr_language_is Config.Java) then
-    match typ with
-    | Typ.Tptr (Typ.Tarray _ as arr, _) -> Some arr
+    match typ.Typ.desc with
+    | Typ.Tptr ({Typ.desc=Tarray _} as arr, _) -> Some arr
     | _ -> None
   else
-    match typ with
-    | Typ.Tarray _ as arr -> Some arr
-    | Typ.Tptr (elt, _) -> Some (Typ.Tarray (elt, None))
+    match typ.Typ.desc with
+    | Typ.Tarray _ -> Some typ
+    | Typ.Tptr (elt, _) -> Some (Typ.mk ~default:typ (Tarray (elt, None)))
     | _ -> None
 
 (** Return a result from a procedure call. *)
@@ -155,7 +155,7 @@ let create_type tenv n_lexp typ prop =
         prop
     | None ->
         let mhpred =
-          match typ with
+          match typ.Typ.desc with
           | Typ.Tptr (typ', _) ->
               let sexp = Sil.Estruct ([], Sil.inst_none) in
               let texp = Exp.Sizeof (typ', None, Subtype.subtypes) in
@@ -237,7 +237,7 @@ let execute___instanceof_cast ~instof
       let val1, prop__ = check_arith_norm_exp tenv pname val1_ prop_ in
       let texp2, prop = check_arith_norm_exp tenv pname texp2_ prop__ in
       let is_cast_to_reference =
-        match typ1 with
+        match typ1.desc with
         | Typ.Tptr (_, Typ.Pk_reference) -> true
         | _ -> false in
       (* In Java, we throw an exception, in C++ we return 0 in case of a cast to a pointer, *)
@@ -457,7 +457,7 @@ let execute___objc_counter_update
     { Builtin.pdesc; tenv; prop_; path; args; loc; }
   : Builtin.ret_typ =
   match args with
-  | [(lexp, (Typ.Tstruct _ as typ | Tptr (Tstruct _ as typ, _)))] ->
+  | [(lexp, ({Typ.desc=Tstruct _} as typ | {desc=Tptr ({desc=Tstruct _} as typ, _)}))] ->
       (* Assumes that lexp is a temp n$1 that has the value of the object. *)
       (* This is the case as a call f(o) it's translates as n$1=*&o; f(n$1) *)
       (* n$2 = *n$1.hidden *)
@@ -480,7 +480,7 @@ let execute___objc_counter_update
    removed from the list of args. *)
 let get_suppress_npe_flag args =
   match args with
-  | (Exp.Const (Const.Cint i), Typ.Tint Typ.IBool):: args' when IntLit.isone i ->
+  | (Exp.Const (Const.Cint i), {Typ.desc=Tint Typ.IBool}):: args' when IntLit.isone i ->
       false, args' (* this is a CFRelease/CFRetain *)
   | _ -> true, args
 
@@ -750,13 +750,13 @@ let execute_alloc mk can_return_null
         Exp.BinOp (bop, evaluate_char_sizeof e1', evaluate_char_sizeof e2')
     | Exp.Exn _ | Exp.Closure _ | Exp.Const _ | Exp.Cast _ | Exp.Lvar _ | Exp.Lfield _
     | Exp.Lindex _ -> e
-    | Exp.Sizeof (Typ.Tarray (Typ.Tint ik, _), Some len, _) when Typ.ikind_is_char ik ->
+    | Exp.Sizeof ({Typ.desc=Tarray ({Typ.desc=Tint ik}, _)}, Some len, _) when Typ.ikind_is_char ik ->
         evaluate_char_sizeof len
-    | Exp.Sizeof (Typ.Tarray (Typ.Tint ik, Some len), None, _) when Typ.ikind_is_char ik ->
+    | Exp.Sizeof ({Typ.desc=Tarray ({Typ.desc=Tint ik}, Some len)}, None, _) when Typ.ikind_is_char ik ->
         evaluate_char_sizeof (Exp.Const (Const.Cint len))
     | Exp.Sizeof _ -> e in
   let size_exp, procname = match args with
-    | [(Exp.Sizeof (Tstruct (ObjcClass _ as name) as s, len, subt), _)] ->
+    | [(Exp.Sizeof ({Typ.desc=Tstruct (ObjcClass _ as name)} as s, len, subt), _)] ->
         let struct_type =
           match AttributesTable.get_correct_type_from_objc_class_name name with
           | Some struct_type -> struct_type
@@ -776,7 +776,7 @@ let execute_alloc mk can_return_null
     let n_size_exp' = evaluate_char_sizeof n_size_exp in
     Prop.exp_normalize_prop tenv prop n_size_exp', prop in
   let cnt_te =
-    Exp.Sizeof (Typ.Tarray (Typ.Tint Typ.IChar, None), Some size_exp', Subtype.exact) in
+    Exp.Sizeof (Typ.mk (Tarray (Typ.mk (Tint Typ.IChar), None)), Some size_exp', Subtype.exact) in
   let id_new = Ident.create_fresh Ident.kprimed in
   let exp_new = Exp.Var id_new in
   let ptsto_new =
@@ -817,7 +817,7 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
                ~default:typ_ in
            let typ_string = Typ.to_string typ in
            let set_instr =
-             Sil.Store (field_exp, Typ.Tvoid, Exp.Const (Const.Cstr typ_string), loc) in
+             Sil.Store (field_exp, Typ.mk Tvoid, Exp.Const (Const.Cstr typ_string), loc) in
            SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] res
        | _ -> res)
   | _ -> raise (Exceptions.Wrong_argument_number __POS__)
@@ -933,7 +933,7 @@ let execute___infer_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
-    Sil.Store (Exp.Lvar Sil.custom_error, Typ.Tvoid, Exp.Const (Const.Cstr error_str), loc) in
+    Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc) in
   SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 (* translate builtin assertion failure *)
@@ -946,18 +946,18 @@ let execute___assert_fail { Builtin.pdesc; tenv; prop_; path; args; loc; }
     | _ ->
         raise (Exceptions.Wrong_argument_number __POS__) in
   let set_instr =
-    Sil.Store (Exp.Lvar Sil.custom_error, Typ.Tvoid, Exp.Const (Const.Cstr error_str), loc) in
+    Sil.Store (Exp.Lvar Sil.custom_error, Typ.mk Tvoid, Exp.Const (Const.Cstr error_str), loc) in
   SymExec.instrs ~mask_errors:true tenv pdesc [set_instr] [(prop_, path)]
 
 let execute_objc_alloc_no_fail
     symb_state typ alloc_fun_opt
     { Builtin.pdesc; tenv; ret_id; loc; } =
   let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.__objc_alloc_no_fail) in
-  let ptr_typ = Typ.Tptr (typ, Typ.Pk_pointer) in
+  let ptr_typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
   let sizeof_typ = Exp.Sizeof (typ, None, Subtype.exact) in
   let alloc_fun_exp =
     match alloc_fun_opt with
-    | Some pname -> [Exp.Const (Const.Cfun pname), Typ.Tvoid]
+    | Some pname -> [Exp.Const (Const.Cfun pname), Typ.mk Tvoid]
     | None -> [] in
   let alloc_instr =
     Sil.Call
@@ -969,7 +969,7 @@ let execute_objc_NSArray_alloc_no_fail builtin_args symb_state pname =
   let ret_typ =
     match builtin_args.Builtin.ret_id with
     | Some (_, typ) -> typ
-    | None -> Typ.Tptr (Tvoid, Pk_pointer) in
+    | None -> Typ.mk (Tptr (Typ.mk Tvoid, Pk_pointer)) in
   execute_objc_alloc_no_fail symb_state ret_typ (Some pname) builtin_args
 
 let execute_NSArray_arrayWithObjects_count builtin_args =
@@ -988,7 +988,7 @@ let execute_objc_NSDictionary_alloc_no_fail symb_state pname builtin_args =
   let ret_typ =
     match builtin_args.Builtin.ret_id with
     | Some (_, typ) -> typ
-    | None -> Typ.Tptr (Tvoid, Pk_pointer) in
+    | None -> Typ.mk (Tptr (Typ.mk Tvoid, Pk_pointer)) in
   execute_objc_alloc_no_fail symb_state ret_typ (Some pname) builtin_args
 
 let execute___objc_dictionary_literal builtin_args =

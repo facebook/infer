@@ -68,8 +68,9 @@ let get_base_class_name_from_category decl =
 let process_category type_ptr_to_sil_type tenv class_name decl_info decl_list =
   let decl_fields = CField_decl.get_fields type_ptr_to_sil_type tenv decl_list in
   let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
+  let class_tn_type = Typ.mk (Typ.Tstruct class_tn_name) in
   let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
-  CAst_utils.update_sil_types_map decl_key (Typ.Tstruct class_tn_name);
+  CAst_utils.update_sil_types_map decl_key class_tn_type;
   (match Tenv.lookup tenv class_tn_name with
    | Some ({ fields } as struct_typ) ->
        let new_fields = CGeneral_utils.append_no_duplicates_fields decl_fields fields in
@@ -78,7 +79,7 @@ let process_category type_ptr_to_sil_type tenv class_name decl_info decl_list =
            ~default:struct_typ ~fields:new_fields ~statics:[] ~methods:[] class_tn_name );
        Logging.out_debug " Updating info for class '%a' in tenv\n" QualifiedCppName.pp class_name
    | _ -> ());
-  Typ.Tstruct class_tn_name
+  class_tn_type
 
 let category_decl type_ptr_to_sil_type tenv decl =
   let open Clang_ast_t in

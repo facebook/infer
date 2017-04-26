@@ -192,7 +192,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let is_safe_access access prefix_path tenv =
       match access, AccessPath.Raw.get_typ prefix_path tenv with
       | AccessPath.FieldAccess fieldname,
-        Some (Typ.Tstruct typename | Tptr (Tstruct typename, _)) ->
+        Some ({Typ.desc=Tstruct typename} | {desc=Tptr ({desc=Tstruct typename}, _)}) ->
           begin
             match Tenv.lookup tenv typename with
             | Some struct_typ ->
@@ -257,7 +257,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match List.rev accesses,
               AccessPath.Raw.get_typ (AccessPath.Raw.truncate access_path) tenv with
         | AccessPath.FieldAccess fieldname :: _,
-          Some (Typ.Tstruct typename | Tptr (Tstruct typename, _)) ->
+          Some {Typ.desc=Tstruct typename | Tptr ({Typ.desc=Tstruct typename}, _)} ->
             begin
               match Tenv.lookup tenv typename with
               | Some struct_typ ->
@@ -482,8 +482,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 is_annotated_synchronized base_typename container_field tenv
             | [AccessPath.FieldAccess container_field] ->
                 begin
-                  match base_typ with
-                  | Typ.Tstruct base_typename | Tptr (Tstruct base_typename, _) ->
+                  match base_typ.Typ.desc with
+                  | Typ.Tstruct base_typename | Tptr ({Typ.desc=Tstruct base_typename}, _) ->
                       is_annotated_synchronized base_typename container_field tenv
                   | _ ->
                       false
@@ -557,7 +557,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname),
                 (target_exp, target_typ) :: (Exp.Sizeof (cast_typ, _, _), _) :: _ , _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.__cast ->
-        let lhs_access_path = AccessPath.of_id ret_id (Typ.Tptr (cast_typ, Pk_pointer)) in
+        let lhs_access_path = AccessPath.of_id ret_id (Typ.mk (Tptr (cast_typ, Pk_pointer))) in
         let attribute_map =
           propagate_attributes
             lhs_access_path target_exp target_typ ~f_resolve_id astate.attribute_map extras in
@@ -710,7 +710,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       astate in
         begin
           match ret_opt with
-          | Some (_, (Typ.Tint ILong | Tfloat FDouble)) ->
+          | Some (_, {Typ.desc=Tint ILong | Tfloat FDouble}) ->
               (* writes to longs and doubles are not guaranteed to be atomic in Java, so don't
                  bother tracking whether a returned long or float value is functional *)
               astate_callee

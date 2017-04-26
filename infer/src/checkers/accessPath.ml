@@ -112,7 +112,7 @@ let of_exp exp0 typ0 ~(f_resolve_id : Var.t -> Raw.t option) =
         of_exp_ root_exp root_exp_typ (field_access :: accesses) acc
     | Exp.Lindex (root_exp, _) ->
         let array_access = ArrayAccess typ in
-        let array_typ = Typ.Tarray (typ, None) in
+        let array_typ = Typ.mk (Tarray (typ, None)) in
         of_exp_ root_exp array_typ (array_access :: accesses) acc
     | Exp.Cast (cast_typ, cast_exp) ->
         of_exp_ cast_exp cast_typ [] acc

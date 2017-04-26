@@ -479,7 +479,7 @@ let typecheck_instr
 
   (* check if there are errors in exp1 *)
   let typecheck_expr_for_errors typestate1 exp1 loc1 : unit =
-    ignore (typecheck_expr_simple typestate1 exp1 Typ.Tvoid TypeOrigin.Undef loc1) in
+    ignore (typecheck_expr_simple typestate1 exp1 (Typ.mk Tvoid) TypeOrigin.Undef loc1) in
 
   match instr with
   | Sil.Remove_temps (idl, _) ->
@@ -565,7 +565,7 @@ let typecheck_instr
       TypeState.add_id
         id
         (
-          Typ.Tint (Typ.IInt),
+          Typ.mk (Tint (Typ.IInt)),
           TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.New,
           [loc]
         )
@@ -1006,7 +1006,7 @@ let typecheck_instr
                   Pvar.mk (Mangled.from_string e_str) curr_pname in
                 let e1 = Exp.Lvar pvar in
                 let (typ, ta, _) =
-                  typecheck_expr_simple typestate e1 Typ.Tvoid TypeOrigin.ONone loc in
+                  typecheck_expr_simple typestate e1 (Typ.mk Tvoid) TypeOrigin.ONone loc in
                 let range = (typ, ta, [loc]) in
                 let typestate1 = TypeState.add pvar range typestate in
                 typestate1, e1, EradicateChecks.From_containsKey
@@ -1027,7 +1027,6 @@ let typecheck_instr
           | Exp.Lvar pvar ->
               pvar_apply loc handle_pvar typestate2 pvar
           | _ -> typestate2 in
-
         begin match c with
           | Exp.BinOp (Binop.Eq, Exp.Const (Const.Cint i), e)
           | Exp.BinOp (Binop.Eq, e, Exp.Const (Const.Cint i)) when IntLit.iszero i ->
@@ -1039,7 +1038,7 @@ let typecheck_instr
                     typestate, e, EradicateChecks.From_condition in
               let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
               let (typ, ta, _) =
-                typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
+                typecheck_expr_simple typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone loc in
 
               if checks.eradicate then
                 EradicateChecks.check_zero tenv
@@ -1086,7 +1085,7 @@ let typecheck_instr
                     end in
               let e', typestate2 = convert_complex_exp_to_pvar node' false e1 typestate1 loc in
               let (typ, ta, _) =
-                typecheck_expr_simple typestate2 e' Typ.Tvoid TypeOrigin.ONone loc in
+                typecheck_expr_simple typestate2 e' (Typ.mk Tvoid) TypeOrigin.ONone loc in
 
               if checks.eradicate then
                 EradicateChecks.check_nonzero tenv find_canonical_duplicate curr_pdesc

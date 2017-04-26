@@ -30,7 +30,7 @@ let add_dispatch_calls pdesc cg tenv =
         when call_flags_is_dispatch call_flags ->
           (* the frontend should not populate the list of targets *)
           assert (List.is_empty call_flags.CallFlags.cf_targets);
-          let receiver_typ_no_ptr = match receiver_typ with
+          let receiver_typ_no_ptr = match receiver_typ.Typ.desc with
             | Typ.Tptr (typ', _) ->
                 typ'
             | _ ->

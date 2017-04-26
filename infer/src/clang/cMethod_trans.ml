@@ -62,8 +62,8 @@ let get_class_param function_method_decl_info =
 
 
 let should_add_return_param return_type ~is_objc_method =
-  match return_type with
-  | Typ.Tstruct _ -> not is_objc_method
+  match return_type.Typ.desc with
+  | Tstruct _ -> not is_objc_method
   | _ -> false
 
 let is_objc_method function_method_decl_info =
@@ -112,8 +112,8 @@ let get_parameters trans_unit_ctx tenv function_method_decl_info =
         let _, mangled = CGeneral_utils.get_var_name_mangled name_info var_decl_info in
         let param_typ = CType_decl.type_ptr_to_sil_type tenv qt.Clang_ast_t.qt_type_ptr in
         let qt_type_ptr =
-          match param_typ with
-          | Typ.Tstruct _ when CGeneral_utils.is_cpp_translation trans_unit_ctx ->
+          match param_typ.Typ.desc with
+          | Tstruct _ when CGeneral_utils.is_cpp_translation trans_unit_ctx ->
               Ast_expressions.create_reference_type qt.Clang_ast_t.qt_type_ptr
           | _ -> qt.Clang_ast_t.qt_type_ptr in
         (mangled, {qt with qt_type_ptr})
@@ -127,7 +127,7 @@ let get_return_val_and_param_types tenv function_method_decl_info =
   let return_typ = CType_decl.type_ptr_to_sil_type tenv return_type_ptr in
   let is_objc_method = is_objc_method function_method_decl_info in
   if should_add_return_param return_typ ~is_objc_method then
-    Ast_expressions.create_void_type, Some (Typ.Tptr (return_typ, Typ.Pk_pointer))
+    Ast_expressions.create_void_type, Some (CType.add_pointer_to_typ return_typ)
   else return_type_ptr, None
 
 let build_method_signature trans_unit_ctx tenv decl_info procname function_method_decl_info
@@ -263,7 +263,7 @@ let get_class_name_method_call_from_receiver_kind context obj_c_message_expr_inf
       (CType.objc_classname_of_type sil_type)
   | `Instance ->
       (match act_params with
-       | (_, Typ.Tptr(t, _)):: _
+       | (_, {Typ.desc=Tptr(t, _)}):: _
        | (_, t):: _ -> CType.objc_classname_of_type t
        | _ -> assert false)
   | `SuperInstance ->get_superclass_curr_class_objc context
@@ -442,7 +442,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
         (match type_opt with
          | Some (ret_type, arg_types) ->
              ret_type, List.map ~f:(fun typ -> (Mangled.from_string "x", typ)) arg_types
-         | None -> Typ.Tvoid, []) in
+         | None -> Typ.mk Typ.Tvoid, []) in
       let loc = Location.dummy in
       let proc_attributes =
         { (ProcAttributes.default proc_name Config.Clang) with

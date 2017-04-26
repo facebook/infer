@@ -15,42 +15,42 @@ let get_builtin_objc_typename builtin_type =
   | `ObjCClass -> Typ.Name.C.from_string CFrontend_config.objc_class
 
 let get_builtin_objc_type builtin_type =
-  let typ = Typ.Tstruct (get_builtin_objc_typename builtin_type) in
+  let typ = Typ.mk (Tstruct (get_builtin_objc_typename builtin_type)) in
   match builtin_type with
   | `ObjCId -> typ
-  | `ObjCClass -> Typ.Tptr (typ, Typ.Pk_pointer)
+  | `ObjCClass -> Typ.mk (Tptr (typ, Typ.Pk_pointer))
 
 
 let sil_type_of_builtin_type_kind builtin_type_kind =
   match builtin_type_kind with
-  | `Void -> Typ.Tvoid
-  | `Bool -> Typ.Tint Typ.IBool
-  | `Char_U -> Typ.Tint Typ.IUChar
-  | `UChar -> Typ.Tint Typ.IUChar
-  | `WChar_U -> Typ.Tint Typ.IUChar
-  | `Char_S -> Typ.Tint Typ.IChar
-  | `SChar -> Typ.Tint Typ.ISChar
+  | `Void -> Typ.mk Tvoid
+  | `Bool -> Typ.mk (Tint IBool)
+  | `Char_U -> Typ.mk (Tint IUChar)
+  | `UChar -> Typ.mk (Tint IUChar)
+  | `WChar_U -> Typ.mk (Tint IUChar)
+  | `Char_S -> Typ.mk (Tint IChar)
+  | `SChar -> Typ.mk (Tint ISChar)
   | `WChar_S
   | `Char16
-  | `Char32 -> Typ.Tint Typ.IChar
+  | `Char32 -> Typ.mk (Tint IChar)
   | `UShort
-  | `Short -> Typ.Tint Typ.IShort
+  | `Short -> Typ.mk (Tint IShort)
   | `UInt
-  | `UInt128 -> Typ.Tint Typ.IUInt
-  | `ULong -> Typ.Tint Typ.IULong
-  | `ULongLong -> Typ.Tint Typ.IULongLong
+  | `UInt128 -> Typ.mk (Tint IUInt)
+  | `ULong -> Typ.mk (Tint IULong)
+  | `ULongLong -> Typ.mk (Tint IULongLong)
   | `Int
-  | `Int128 -> Typ.Tint Typ.IInt
-  | `Long -> Typ.Tint Typ.ILong
-  | `LongLong -> Typ.Tint Typ.ILongLong
-  | `Half -> Typ.Tint Typ.IShort (*?*)
-  | `Float -> Typ.Tfloat Typ.FFloat
-  | `Double -> Typ.Tfloat Typ.FDouble
-  | `LongDouble -> Typ.Tfloat Typ.FLongDouble
-  | `NullPtr -> Typ.Tint Typ.IInt
+  | `Int128 -> Typ.mk (Tint IInt)
+  | `Long -> Typ.mk (Tint ILong)
+  | `LongLong -> Typ.mk (Tint ILongLong)
+  | `Half -> Typ.mk (Tint IShort) (*?*)
+  | `Float -> Typ.mk (Tfloat FFloat)
+  | `Double -> Typ.mk (Tfloat FDouble)
+  | `LongDouble -> Typ.mk (Tfloat FLongDouble)
+  | `NullPtr -> Typ.mk (Tint IInt)
   | `ObjCId -> get_builtin_objc_type `ObjCId
   | `ObjCClass -> get_builtin_objc_type `ObjCClass
-  | _ -> Typ.Tvoid
+  | _ -> Typ.mk Tvoid
 
 let pointer_attribute_of_objc_attribute attr_info =
   match attr_info.Clang_ast_t.ati_lifetime with
@@ -62,7 +62,7 @@ let pointer_attribute_of_objc_attribute attr_info =
 let rec build_array_type translate_decl tenv type_ptr n_opt =
   let array_type = type_ptr_to_sil_type translate_decl tenv type_ptr in
   let len = Option.map ~f:(fun n -> IntLit.of_int64 (Int64.of_int n)) n_opt in
-  Typ.Tarray (array_type, len)
+  Typ.mk (Tarray (array_type, len))
 
 and sil_type_of_attr_type translate_decl tenv type_info attr_info =
   match type_info.Clang_ast_t.ti_desugared_type with
@@ -70,14 +70,14 @@ and sil_type_of_attr_type translate_decl tenv type_info attr_info =
       (match CAst_utils.get_type type_ptr with
        | Some Clang_ast_t.ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr}) ->
            let typ = type_ptr_to_sil_type translate_decl tenv qt_type_ptr in
-           Typ.Tptr (typ, pointer_attribute_of_objc_attribute attr_info)
+           Typ.mk (Tptr (typ, pointer_attribute_of_objc_attribute attr_info))
        | _ -> type_ptr_to_sil_type translate_decl tenv type_ptr)
-  | None -> Typ.Tvoid
+  | None -> Typ.mk Tvoid
 
-and sil_type_of_c_type translate_decl tenv c_type =
+and sil_type_of_c_type translate_decl tenv c_type : Typ.t =
   let open Clang_ast_t in
   match c_type with
-  | NoneType _ -> Typ.Tvoid
+  | NoneType _ -> Typ.mk Tvoid
   | BuiltinType (_, builtin_type_kind) ->
       sil_type_of_builtin_type_kind builtin_type_kind
   | PointerType (_, {Clang_ast_t.qt_type_ptr})
@@ -85,12 +85,12 @@ and sil_type_of_c_type translate_decl tenv c_type =
       let typ = type_ptr_to_sil_type translate_decl tenv qt_type_ptr in
       if Typ.equal typ (get_builtin_objc_type `ObjCClass) then
         typ
-      else Typ.Tptr (typ, Typ.Pk_pointer)
+      else Typ.mk (Tptr (typ, Typ.Pk_pointer))
   | ObjCObjectType (_, objc_object_type_info) ->
       type_ptr_to_sil_type translate_decl tenv objc_object_type_info.Clang_ast_t.base_type
   | BlockPointerType (_, type_ptr) ->
       let typ = type_ptr_to_sil_type translate_decl tenv type_ptr in
-      Typ.Tptr (typ, Typ.Pk_pointer)
+      Typ.mk (Tptr (typ, Typ.Pk_pointer))
   | IncompleteArrayType (_, type_ptr)
   | DependentSizedArrayType (_, type_ptr)
   | VariableArrayType (_, type_ptr) ->
@@ -99,7 +99,7 @@ and sil_type_of_c_type translate_decl tenv c_type =
       build_array_type translate_decl tenv type_ptr (Some n)
   | FunctionProtoType _
   | FunctionNoProtoType _ ->
-      Typ.Tfun false
+      Typ.mk (Tfun false)
   | ParenType (_, type_ptr) ->
       type_ptr_to_sil_type translate_decl tenv type_ptr
   | DecayedType (_, type_ptr) ->
@@ -110,20 +110,20 @@ and sil_type_of_c_type translate_decl tenv c_type =
   | ElaboratedType (type_info) ->
       (match type_info.Clang_ast_t.ti_desugared_type with
          Some type_ptr -> type_ptr_to_sil_type translate_decl tenv type_ptr
-       | None -> Typ.Tvoid)
+       | None -> Typ.mk Tvoid)
   | ObjCInterfaceType (_, pointer) ->
       decl_ptr_to_sil_type translate_decl tenv pointer
   | RValueReferenceType (_, {Clang_ast_t.qt_type_ptr})
   | LValueReferenceType (_, {Clang_ast_t.qt_type_ptr}) ->
       let typ = type_ptr_to_sil_type translate_decl tenv qt_type_ptr in
-      Typ.Tptr (typ, Typ.Pk_reference)
+      Typ.mk (Tptr (typ, Typ.Pk_reference))
   | AttributedType (type_info, attr_info) ->
       sil_type_of_attr_type translate_decl tenv type_info attr_info
   | _ -> (* TypedefType, etc *)
       let type_info = Clang_ast_proj.get_type_tuple c_type in
       match type_info.Clang_ast_t.ti_desugared_type with
       | Some typ -> type_ptr_to_sil_type translate_decl tenv typ
-      | None -> Typ.Tvoid
+      | None -> Typ.mk Tvoid
 
 and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
   let open Clang_ast_t in
@@ -143,11 +143,11 @@ and decl_ptr_to_sil_type translate_decl tenv decl_ptr =
   | Some _ ->
       Logging.err_debug "Warning: Wrong decl found for  pointer %s "
         (Clang_ast_j.string_of_pointer decl_ptr);
-      Typ.Tvoid
+      Typ.mk Tvoid
   | None ->
       Logging.err_debug "Warning: Decl pointer %s not found."
         (Clang_ast_j.string_of_pointer decl_ptr);
-      Typ.Tvoid
+      Typ.mk Tvoid
 
 and clang_type_ptr_to_sil_type translate_decl tenv type_ptr =
   try
@@ -158,7 +158,7 @@ and clang_type_ptr_to_sil_type translate_decl tenv type_ptr =
          let sil_type = sil_type_of_c_type translate_decl tenv c_type in
          CAst_utils.update_sil_types_map type_ptr sil_type;
          sil_type
-     | _ -> Typ.Tvoid)
+     | _ -> Typ.mk Tvoid)
 
 and type_ptr_to_sil_type translate_decl tenv type_ptr =
   match type_ptr with
@@ -166,12 +166,12 @@ and type_ptr_to_sil_type translate_decl tenv type_ptr =
   | Clang_ast_extend.Builtin kind -> sil_type_of_builtin_type_kind kind
   | Clang_ast_extend.PointerOf typ ->
       let sil_typ = type_ptr_to_sil_type translate_decl tenv typ in
-      Typ.Tptr (sil_typ, Typ.Pk_pointer)
+      Typ.mk (Tptr (sil_typ, Pk_pointer))
   | Clang_ast_extend.ReferenceOf typ ->
       let sil_typ = type_ptr_to_sil_type translate_decl tenv typ in
-      Typ.Tptr (sil_typ, Typ.Pk_reference)
+      Typ.mk (Tptr (sil_typ, Pk_reference))
   | Clang_ast_extend.ClassType typename ->
-      Typ.Tstruct typename
+      Typ.mk (Tstruct typename)
   | Clang_ast_extend.DeclPtr ptr -> decl_ptr_to_sil_type translate_decl tenv ptr
-  | Clang_ast_extend.ErrorType -> Typ.Tvoid
+  | Clang_ast_extend.ErrorType -> Typ.mk Tvoid
   | _ -> raise (invalid_arg "unknown variant for type_ptr")

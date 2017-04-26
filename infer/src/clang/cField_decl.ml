@@ -37,7 +37,7 @@ let fields_superclass tenv interface_decl_info =
 let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attributes =
   let prop_atts = List.map ~f:Clang_ast_j.string_of_property_attribute prop_attributes in
   let annotation_from_type t =
-    match t with
+    match t.Typ.desc with
     | Typ.Tptr (_, Typ.Pk_objc_weak) -> [Config.weak]
     | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) -> [Config.unsafe_unret]
     | _ -> [] in
@@ -87,8 +87,8 @@ let add_missing_fields tenv class_name missing_fields =
   | _ -> ()
 
 let modelled_fields_in_classes =
-  [("NSData", "_bytes", Typ.Tptr (Typ.Tvoid, Typ.Pk_pointer));
-   ("NSArray", "elementData", Typ.Tint Typ.IInt)]
+  [("NSData", "_bytes", Typ.mk (Tptr (Typ.mk Tvoid, Typ.Pk_pointer)));
+   ("NSArray", "elementData", Typ.mk (Tint Typ.IInt))]
 
 let modelled_field class_name_info =
   let modelled_field_in_class res (class_name, field_name, typ) =

@@ -205,7 +205,7 @@ struct
     List.mem ~equal:String.equal core_graphics_types o
 
   let rec is_core_lib lib typ =
-    match typ with
+    match typ.Typ.desc with
     | Typ.Tptr (styp, _ ) ->
         is_core_lib lib styp
     | Typ.Tstruct name ->

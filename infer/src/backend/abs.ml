@@ -407,17 +407,17 @@ let mk_rules_for_dll tenv (para : Sil.hpara_dll) : rule list =
 (******************  Start of Predicate Discovery  ******************)
 let typ_get_recursive_flds tenv typ_exp =
   let filter typ (_, (t: Typ.t), _) =
-    match t with
+    match t.desc with
     | Tstruct _ | Tint _ | Tfloat _ | Tvoid | Tfun _ ->
         false
-    | Tptr (Tstruct _ as typ', _) ->
+    | Tptr ({desc=Tstruct _} as typ', _) ->
         Typ.equal typ' typ
     | Tptr _ | Tarray _ ->
         false
   in
   match typ_exp with
   | Exp.Sizeof (typ, _, _) -> (
-      match typ with
+      match typ.desc with
       | Tstruct name -> (
           match Tenv.lookup tenv name with
           | Some { fields } -> List.map ~f:fst3 (List.filter ~f:(filter typ) fields)
@@ -988,7 +988,7 @@ let remove_opt _prop =
 let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation (t: Typ.t) fn =
-    match t with
+    match t.desc with
     | Tstruct name -> (
         let equal_fn (fn', _, _) = Fieldname.equal fn fn' in
         match Tenv.lookup tenv name with

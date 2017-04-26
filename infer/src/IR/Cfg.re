@@ -350,7 +350,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
   let convert_pvar pvar => Pvar.mk (Pvar.get_name pvar) resolved_pname;
   let mk_ptr_typ typename =>
     /* Only consider pointers from Java objects for now */
-    Typ.Tptr (Typ.Tstruct typename) Typ.Pk_pointer;
+    Typ.mk (Tptr (Typ.mk (Tstruct typename)) Typ.Pk_pointer);
   let convert_exp =
     fun
     | Exp.Lvar origin_pvar => Exp.Lvar (convert_pvar origin_pvar)
@@ -363,7 +363,10 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
   let convert_instr instrs =>
     fun
     | Sil.Load
-        id (Exp.Lvar origin_pvar as origin_exp) (Typ.Tptr (Tstruct origin_typename) Pk_pointer) loc => {
+        id
+        (Exp.Lvar origin_pvar as origin_exp)
+        {Typ.desc: Tptr {desc: Tstruct origin_typename} Pk_pointer}
+        loc => {
         let specialized_typname =
           try (Mangled.Map.find (Pvar.get_name origin_pvar) substitutions) {
           | Not_found => origin_typename
@@ -371,9 +374,9 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions => {
         subst_map := Ident.IdentMap.add id specialized_typname !subst_map;
         [Sil.Load id (convert_exp origin_exp) (mk_ptr_typ specialized_typname) loc, ...instrs]
       }
-    | Sil.Load id (Exp.Var origin_id as origin_exp) (Typ.Tstruct _ as origin_typ) loc => {
-        let updated_typ =
-          try (Typ.Tstruct (Ident.IdentMap.find origin_id !subst_map)) {
+    | Sil.Load id (Exp.Var origin_id as origin_exp) ({Typ.desc: Tstruct _} as origin_typ) loc => {
+        let updated_typ: Typ.t =
+          try (Typ.mk default::origin_typ (Tstruct (Ident.IdentMap.find origin_id !subst_map))) {
           | Not_found => origin_typ
           };
         [Sil.Load id (convert_exp origin_exp) updated_typ loc, ...instrs]
@@ -474,8 +477,8 @@ let specialize_types callee_pdesc resolved_pname args => {
     List.fold2_exn
       f::(
         fun (params, subts) (param_name, param_typ) (_, arg_typ) =>
-          switch arg_typ {
-          | Typ.Tptr (Tstruct typename) Pk_pointer =>
+          switch arg_typ.Typ.desc {
+          | Tptr {desc: Tstruct typename} Pk_pointer =>
             /* Replace the type of the parameter by the type of the argument */
             ([(param_name, arg_typ), ...params], Mangled.Map.add param_name typename subts)
           | _ => ([(param_name, param_typ), ...params], subts)

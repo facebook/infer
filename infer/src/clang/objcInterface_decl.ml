@@ -19,8 +19,8 @@ open! IStd
 module L = Logging
 
 let is_pointer_to_objc_class typ =
-  match typ with
-  | Typ.Tptr (typ, _) when Typ.is_objc_class typ -> true
+  match typ.Typ.desc with
+  | Tptr (typ, _) when Typ.is_objc_class typ -> true
   | _ -> false
 
 let get_super_interface_decl otdi_super =
@@ -78,8 +78,9 @@ let add_class_to_tenv type_ptr_to_sil_type tenv decl_info name_info decl_list oc
   let class_name = CAst_utils.get_qualified_name name_info in
   Logging.out_debug "ADDING: ObjCInterfaceDecl for '%a'\n" QualifiedCppName.pp class_name;
   let interface_name = Typ.Name.Objc.from_qual_name class_name in
+  let interface_type = Typ.mk (Tstruct interface_name) in
   let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
-  CAst_utils.update_sil_types_map decl_key (Typ.Tstruct interface_name);
+  CAst_utils.update_sil_types_map decl_key interface_type;
   let decl_supers, decl_fields =
     create_supers_fields type_ptr_to_sil_type tenv decl_list
       ocidi.Clang_ast_t.otdi_super
@@ -113,7 +114,7 @@ let add_class_to_tenv type_ptr_to_sil_type tenv decl_info name_info decl_list oc
        Logging.out_debug "  >>>OK. Found typ='%a'\n"
          (Typ.Struct.pp Pp.text interface_name) st
    | None -> Logging.out_debug "  >>>NOT Found!!\n");
-  Typ.Tstruct interface_name
+  interface_type
 
 (* Interface_type_info has the name of instance variables and the name of methods. *)
 let interface_declaration type_ptr_to_sil_type tenv decl =
@@ -143,7 +144,7 @@ let interface_impl_declaration type_ptr_to_sil_type tenv decl =
       CField_decl.add_missing_fields tenv class_name fields;
       let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
       let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
-      let class_typ = Typ.Tstruct class_tn_name in
+      let class_typ = Typ.mk (Tstruct class_tn_name) in
       CAst_utils.update_sil_types_map decl_key class_typ;
       class_typ
   | _ -> assert false

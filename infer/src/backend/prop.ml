@@ -466,12 +466,12 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
     if Config.curr_language_is Config.Java &&
        Sil.equal_inst inst Sil.Ialloc
     then
-      match typ with
+      match typ.desc with
       | Tfloat _ -> Exp.Const (Cfloat 0.0)
       | _ -> Exp.zero
     else
       create_fresh_var () in
-  match typ, len with
+  match typ.desc, len with
   | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), None ->
       Eexp (init_value (), inst)
   | Tstruct name, _ -> (
@@ -529,7 +529,7 @@ let rec pi_sorted_remove_redundant (pi : pi) = match pi with
 let sigma_get_unsigned_exps sigma =
   let uexps = ref [] in
   let do_hpred (hpred : Sil.hpred) = match hpred with
-    | Hpointsto (_, Eexp (e, _), Sizeof (Tint ik, _, _))
+    | Hpointsto (_, Eexp (e, _), Sizeof ({desc=Tint ik}, _, _))
       when Typ.ikind_is_unsigned ik ->
         uexps := e :: !uexps
     | _ -> () in
@@ -541,13 +541,13 @@ let sigma_get_unsigned_exps sigma =
     to ensure the soundness of this collapsing. *)
 let exp_collapse_consecutive_indices_prop (typ : Typ.t) exp =
   let typ_is_base (typ1 : Typ.t) =
-    match typ1 with
+    match typ1.desc with
     | Tint _ | Tfloat _ | Tstruct _ | Tvoid | Tfun _ ->
         true
     | _ ->
         false in
   let typ_is_one_step_from_base =
-    match typ with
+    match typ.desc with
     | Tptr (t, _) | Tarray (t, _) ->
         typ_is_base t
     | _ ->
@@ -712,10 +712,10 @@ module Normalize = struct
           Closure { c with captured_vars; }
       | Const _ ->
           e
-      | Sizeof (Tarray (Tint ik, _), Some l, _)
+      | Sizeof ({desc=Tarray ({desc=Tint ik}, _)}, Some l, _)
         when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
           eval l
-      | Sizeof (Tarray (Tint ik, Some l), _, _)
+      | Sizeof ({desc=Tarray ({desc=Tint ik}, Some l)}, _, _)
         when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
           Const (Cint l)
       | Sizeof _ ->
@@ -991,11 +991,11 @@ module Normalize = struct
                 Exp.int (IntLit.div n m)
             | Const (Cfloat v), Const (Cfloat w) ->
                 Exp.float (v /.w)
-            | Sizeof (Tarray (elt, _), Some len, _), Sizeof (elt2, None, _)
+            | Sizeof ({desc=Tarray (elt, _)}, Some len, _), Sizeof (elt2, None, _)
               (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
               when Typ.equal elt elt2 ->
                 len
-            | Sizeof (Tarray (elt, Some len), None, _), Sizeof (elt2, None, _)
+            | Sizeof ({desc=Tarray (elt, Some len)}, None, _), Sizeof (elt2, None, _)
               (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
               when Typ.equal elt elt2 ->
                 Const (Cint len)
@@ -1372,28 +1372,28 @@ module Normalize = struct
         let normalized_cnt = strexp_normalize tenv sub cnt in
         let normalized_te = texp_normalize tenv sub te in
         begin match normalized_cnt, normalized_te with
-          | Earray (Exp.Sizeof _ as size, [], inst), Sizeof (Tarray _, _, _) ->
+          | Earray (Exp.Sizeof _ as size, [], inst), Sizeof ({desc=Tarray _}, _, _) ->
               (* check for an empty array whose size expression is (Sizeof type), and turn the array
                  into a strexp of the given type *)
               let hpred' = mk_ptsto_exp tenv Fld_init (root, size, None) inst in
               replace_hpred hpred'
           | Earray (BinOp (Mult, Sizeof (t, None, st1), x), esel, inst),
-            Sizeof (Tarray (elt, _) as arr, _, _) when Typ.equal t elt ->
+            Sizeof ({desc=Tarray (elt, _)} as arr, _, _) when Typ.equal t elt ->
               let len = Some x in
               let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
               replace_hpred (replace_array_contents hpred' esel)
           | Earray (BinOp (Mult, x, Sizeof (t, None, st1)), esel, inst),
-            Sizeof (Tarray (elt, _) as arr, _, _) when Typ.equal t elt ->
+            Sizeof ({desc=Tarray (elt, _)} as arr, _, _) when Typ.equal t elt ->
               let len = Some x in
               let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
               replace_hpred (replace_array_contents hpred' esel)
           | Earray (BinOp (Mult, Sizeof (t, Some len, st1), x), esel, inst),
-            Sizeof (Tarray (elt, _) as arr, _, _) when Typ.equal t elt ->
+            Sizeof ({desc=Tarray (elt, _)} as arr, _, _) when Typ.equal t elt ->
               let len = Some (Exp.BinOp(Mult, x, len)) in
               let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
               replace_hpred (replace_array_contents hpred' esel)
           | Earray (BinOp (Mult, x, Sizeof (t, Some len, st1)), esel, inst),
-            Sizeof (Tarray (elt, _) as arr, _, _) when Typ.equal t elt ->
+            Sizeof ({desc=Tarray (elt, _)} as arr, _, _) when Typ.equal t elt ->
               let len = Some (Exp.BinOp(Mult, x, len)) in
               let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
               replace_hpred (replace_array_contents hpred' esel)

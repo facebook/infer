@@ -123,9 +123,11 @@ let ptr_kind_string =
 type static_length = option IntLit.t [@@deriving compare];
 
 module T = {
+  type type_quals = {is_const: bool, is_volatile: bool} [@@deriving compare];
 
   /** types for sil (structured) expressions */
-  type t =
+  type t = {desc, quals: type_quals} [@@deriving compare]
+  and desc =
     | Tint ikind /** integer type */
     | Tfloat fkind /** float type */
     | Tvoid /** void type */
@@ -146,11 +148,32 @@ module T = {
     | NoTemplate
     | Template (QualifiedCppName.t, list (option t))
   [@@deriving compare];
+  let equal_desc = [%compare.equal : desc];
+  let equal_quals = [%compare.equal : type_quals];
   let equal = [%compare.equal : t];
   let hash = Hashtbl.hash;
 };
 
 include T;
+
+let mk_type_quals ::default=? ::is_const=? ::is_volatile=? () => {
+  let default_ = {is_const: false, is_volatile: false};
+  let mk_aux ::default=default_ ::is_const=default.is_const ::is_volatile=default.is_volatile () => {
+    is_const,
+    is_volatile
+  };
+  mk_aux ::?default ::?is_const ::?is_volatile ()
+};
+
+let is_const {is_const} => is_const;
+
+let is_volatile {is_volatile} => is_volatile;
+
+let mk ::default=? ::quals=? desc :t => {
+  let default_ = {desc, quals: mk_type_quals ()};
+  let mk_aux ::default=default_ ::quals=default.quals desc => {desc, quals};
+  mk_aux ::?default ::?quals desc
+};
 
 module Name = {
   type t = name [@@deriving compare];
@@ -253,8 +276,8 @@ module Tbl = Hashtbl.Make T;
 
 
 /** Pretty print a type with all the details, using the C syntax. */
-let rec pp_full pe f =>
-  fun
+let rec pp_full pe f {desc} =>
+  switch desc {
   | Tstruct tname =>
     if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
       F.fprintf f "%s" (Name.name tname |> Escape.escape_xml)
@@ -266,17 +289,17 @@ let rec pp_full pe f =>
   | Tvoid => F.fprintf f "void"
   | Tfun false => F.fprintf f "_fn_"
   | Tfun true => F.fprintf f "_fn_noreturn_"
-  | Tptr ((Tarray _ | Tfun _) as typ) pk =>
+  | Tptr ({desc: Tarray _ | Tfun _} as typ) pk =>
     F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk)
   | Tptr typ pk => F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk)
-  | Tarray typ static_len => {
-      let pp_array_static_len fmt => (
-        fun
-        | Some static_len => IntLit.pp fmt static_len
-        | None => F.fprintf fmt "_"
-      );
-      F.fprintf f "%a[%a]" (pp_full pe) typ pp_array_static_len static_len
-    };
+  | Tarray typ static_len =>
+    let pp_array_static_len fmt => (
+      fun
+      | Some static_len => IntLit.pp fmt static_len
+      | None => F.fprintf fmt "_"
+    );
+    F.fprintf f "%a[%a]" (pp_full pe) typ pp_array_static_len static_len
+  };
 
 
 /** Pretty print a type. Do nothing by default. */
@@ -300,10 +323,11 @@ let d_full (t: t) => L.add_print_action (L.PTtyp_full, Obj.repr t);
 /** dump a list of types. */
 let d_list (tl: list t) => L.add_print_action (L.PTtyp_list, Obj.repr tl);
 
-let name =
-  fun
+let name typ =>
+  switch typ.desc {
   | Tstruct name => Some name
-  | _ => None;
+  | _ => None
+  };
 
 let unsome s =>
   fun
@@ -315,21 +339,23 @@ let unsome s =>
 
 
 /** turn a *T into a T. fails if [typ] is not a pointer type */
-let strip_ptr =
-  fun
+let strip_ptr typ =>
+  switch typ.desc {
   | Tptr t _ => t
-  | _ => assert false;
+  | _ => assert false
+  };
 
 
 /** If an array type, return the type of the element.
     If not, return the default type if given, otherwise raise an exception */
-let array_elem default_opt =>
-  fun
+let array_elem default_opt typ =>
+  switch typ.desc {
   | Tarray t_el _ => t_el
-  | _ => unsome "array_elem" default_opt;
+  | _ => unsome "array_elem" default_opt
+  };
 
 let is_class_of_kind check_fun typ =>
-  switch typ {
+  switch typ.desc {
   | Tstruct tname => check_fun tname
   | _ => false
   };
@@ -341,13 +367,13 @@ let is_cpp_class = is_class_of_kind Name.Cpp.is_class;
 let is_java_class = is_class_of_kind Name.Java.is_class;
 
 let rec is_array_of_cpp_class typ =>
-  switch typ {
+  switch typ.desc {
   | Tarray typ _ => is_array_of_cpp_class typ
   | _ => is_cpp_class typ
   };
 
 let is_pointer_to_cpp_class typ =>
-  switch typ {
+  switch typ.desc {
   | Tptr t _ => is_cpp_class t
   | _ => false
   };
@@ -364,23 +390,23 @@ let is_block_type typ => has_block_prefix (to_string typ);
 
 
 /** Java types by name */
-let rec java_from_string =
+let rec java_from_string: string => t =
   fun
   | ""
-  | "void" => Tvoid
-  | "int" => Tint IInt
-  | "byte" => Tint IShort
-  | "short" => Tint IShort
-  | "boolean" => Tint IBool
-  | "char" => Tint IChar
-  | "long" => Tint ILong
-  | "float" => Tfloat FFloat
-  | "double" => Tfloat FDouble
+  | "void" => mk Tvoid
+  | "int" => mk (Tint IInt)
+  | "byte" => mk (Tint IShort)
+  | "short" => mk (Tint IShort)
+  | "boolean" => mk (Tint IBool)
+  | "char" => mk (Tint IChar)
+  | "long" => mk (Tint ILong)
+  | "float" => mk (Tfloat FFloat)
+  | "double" => mk (Tfloat FDouble)
   | typ_str when String.contains typ_str '[' => {
       let stripped_typ = String.sub typ_str pos::0 len::(String.length typ_str - 2);
-      Tptr (Tarray (java_from_string stripped_typ) None) Pk_pointer
+      mk (Tptr (mk (Tarray (java_from_string stripped_typ) None)) Pk_pointer)
     }
-  | typ_str => Tstruct (Name.Java.from_string typ_str);
+  | typ_str => mk (Tstruct (Name.Java.from_string typ_str));
 
 type typ = t [@@deriving compare];
 
@@ -950,11 +976,13 @@ module Procname = {
 
 
 /** Return the return type of [pname_java]. */
-let java_proc_return_typ pname_java =>
-  switch (java_from_string (Procname.java_get_return_type pname_java)) {
-  | Tstruct _ as typ => Tptr typ Pk_pointer
-  | typ => typ
-  };
+let java_proc_return_typ pname_java :t => {
+  let typ = java_from_string (Procname.java_get_return_type pname_java);
+  switch typ.desc {
+  | Tstruct _ => mk (Tptr typ Pk_pointer)
+  | _ => typ
+  }
+};
 
 module Struct = {
   type field = (Fieldname.t, T.t, Annot.Item.t) [@@deriving compare];
@@ -1032,7 +1060,7 @@ module Struct = {
 
   /** the element typ of the final extensible array in the given typ, if any */
   let rec get_extensible_array_element_typ ::lookup (typ: T.t) =>
-    switch typ {
+    switch typ.desc {
     | Tarray typ _ => Some typ
     | Tstruct name =>
       switch (lookup name) {
@@ -1048,7 +1076,7 @@ module Struct = {
 
   /** If a struct type with field f, return the type of f. If not, return the default */
   let fld_typ ::lookup ::default fn (typ: T.t) =>
-    switch typ {
+    switch typ.desc {
     | Tstruct name =>
       switch (lookup name) {
       | Some {fields} =>
@@ -1059,9 +1087,9 @@ module Struct = {
     | _ => default
     };
   let get_field_type_and_annotation ::lookup fn (typ: T.t) =>
-    switch typ {
+    switch typ.desc {
     | Tstruct name
-    | Tptr (Tstruct name) _ =>
+    | Tptr {desc: Tstruct name} _ =>
       switch (lookup name) {
       | Some {fields, statics} =>
         List.find_map
@@ -1073,7 +1101,7 @@ module Struct = {
   let objc_ref_counter_annot = [({Annot.class_name: "ref_counter", parameters: []}, false)];
 
   /** Field used for objective-c reference counting */
-  let objc_ref_counter_field = (Fieldname.hidden, T.Tint IInt, objc_ref_counter_annot);
+  let objc_ref_counter_field = (Fieldname.hidden, mk (T.Tint IInt), objc_ref_counter_annot);
   let is_objc_ref_counter_field (fld, _, a) =>
     Fieldname.is_hidden fld && Annot.Item.equal a objc_ref_counter_annot;
 };

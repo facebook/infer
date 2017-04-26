@@ -74,7 +74,7 @@ let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
   let call_instr =
     let fun_new = fun_exp_from_name alloc_kind in
     let sizeof_exp = Exp.Sizeof (sizeof_typ, sizeof_len, Subtype.exact) in
-    let args = [(sizeof_exp, Typ.Tptr (ret_typ, Typ.Pk_pointer))] in
+    let args = [(sizeof_exp, Typ.mk (Tptr (ret_typ, Typ.Pk_pointer)))] in
     Sil.Call (Some (retval, ret_typ), fun_new, args, env.pc, cf_alloc) in
   (inhabited_exp, env_add_instr call_instr env)
 
@@ -83,19 +83,19 @@ let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
 let rec inhabit_typ tenv typ cfg env =
   try (TypMap.find typ env.cache, env)
   with Not_found ->
-    let inhabit_internal typ env = match typ with
-      | Typ.Tptr (Typ.Tarray (inner_typ, Some _), Typ.Pk_pointer) ->
+    let inhabit_internal typ env = match typ.Typ.desc with
+      | Typ.Tptr ({desc=Tarray (inner_typ, Some _)}, Typ.Pk_pointer) ->
           let len = Exp.Const (Const.Cint (IntLit.one)) in
-          let arr_typ = Typ.Tarray (inner_typ, Some IntLit.one) in
+          let arr_typ = Typ.mk (Tarray (inner_typ, Some IntLit.one)) in
           inhabit_alloc arr_typ (Some len) typ BuiltinDecl.__new_array env
-      | Typ.Tptr (typ, Typ.Pk_pointer) as ptr_to_typ ->
+      | Typ.Tptr (typ, Typ.Pk_pointer) ->
           (* TODO (t4575417): this case does not work correctly for enums, but they are currently
            * broken in Infer anyway (see t4592290) *)
           let (allocated_obj_exp, env) = inhabit_alloc typ None typ BuiltinDecl.__new env in
           (* select methods that are constructors and won't force us into infinite recursion because
            * we are already inhabiting one of their argument types *)
           let get_all_suitable_constructors (typ: Typ.t) =
-            match typ with
+            match typ.desc with
             | Tstruct name when Typ.Name.is_class name -> (
                 match Tenv.lookup tenv name with
                 | Some { methods } ->
@@ -116,7 +116,7 @@ let rec inhabit_typ tenv typ cfg env =
                 (* arbitrarily choose a constructor for typ and invoke it. eventually, we may want to
                  * nondeterministically call all possible constructors instead *)
                 let env =
-                  inhabit_constructor tenv constructor (allocated_obj_exp, ptr_to_typ) cfg env in
+                  inhabit_constructor tenv constructor (allocated_obj_exp, typ) cfg env in
                 (* try to get the unqualified name as a class (e.g., Object for java.lang.Object so we
                  * we can use it as a descriptive local variable name in the harness *)
                 let typ_class_name =
@@ -133,14 +133,14 @@ let rec inhabit_typ tenv typ cfg env =
           let fresh_local_exp =
             Exp.Lvar (Pvar.mk typ_class_name (Typ.Procname.Java env.harness_name)) in
           let write_to_local_instr =
-            Sil.Store (fresh_local_exp, ptr_to_typ, allocated_obj_exp, env.pc) in
+            Sil.Store (fresh_local_exp, typ, allocated_obj_exp, env.pc) in
           let env' = env_add_instr write_to_local_instr env in
           let fresh_id = Ident.create_fresh Ident.knormal in
-          let read_from_local_instr = Sil.Load (fresh_id, fresh_local_exp, ptr_to_typ, env'.pc) in
+          let read_from_local_instr = Sil.Load (fresh_id, fresh_local_exp, typ, env'.pc) in
           (Exp.Var fresh_id, env_add_instr read_from_local_instr env')
       | Typ.Tint (_) -> (Exp.Const (Const.Cint (IntLit.zero)), env)
       | Typ.Tfloat (_) -> (Exp.Const (Const.Cfloat 0.0), env)
-      | typ ->
+      | _ ->
           L.err "Couldn't inhabit typ: %a@." (Typ.pp Pp.text) typ;
           assert false in
     let (inhabited_exp, env') =
@@ -173,7 +173,7 @@ and inhabit_constructor tenv constr_name (allocated_obj, obj_type) cfg env =
 let inhabit_call_with_args procname procdesc args env =
   let retval =
     let ret_typ = Procdesc.get_ret_type procdesc in
-    let is_void = Typ.equal ret_typ Typ.Tvoid in
+    let is_void = Typ.equal_desc ret_typ.Typ.desc Typ.Tvoid in
     if is_void then None else Some (Ident.create_fresh Ident.knormal, ret_typ) in
   let call_instr =
     let fun_exp = fun_exp_from_name procname in

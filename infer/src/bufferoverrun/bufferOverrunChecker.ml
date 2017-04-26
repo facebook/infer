@@ -41,7 +41,7 @@ struct
       | Exp.BinOp (Binop.Mult, Exp.Sizeof (typ, _, _), size)
       | Exp.BinOp (Binop.Mult, size, Exp.Sizeof (typ, _, _)) -> (typ, size)
       | Exp.Sizeof (typ, _, _) -> (typ, Exp.one)
-      | x -> (Typ.Tint Typ.IChar, x)
+      | x -> (Typ.mk (Tint Typ.IChar), x)
 
   let model_malloc
     : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
@@ -50,7 +50,7 @@ struct
       match ret with
       | Some (id, _) ->
           let set_uninitialized typ loc mem =
-            match typ with
+            match typ.Typ.desc with
             | Typ.Tint _
             | Typ.Tfloat _ ->
                 Dom.Mem.weak_update_heap loc Dom.Val.top_itv mem
@@ -125,7 +125,7 @@ struct
       let loc =
         Loc.of_allocsite (Sem.get_allocsite pname node inst_num dimension)
       in
-      match typ with
+      match typ.Typ.desc with
       | Typ.Tarray (typ, Some len) ->
           declare_array pname node loc typ len ~inst_num
             ~dimension:(dimension + 1) mem
@@ -152,7 +152,7 @@ struct
           mem |> Dom.Mem.find_heap loc |> Dom.Val.get_all_locs |> PowLoc.choose
         in
         let field = Loc.append_field loc fn in
-        match typ with
+        match typ.Typ.desc with
         | Typ.Tint _
         | Typ.Tfloat _ ->
             let v = Dom.Val.make_sym pname sym_num in
@@ -166,7 +166,7 @@ struct
             (Dom.Mem.add_heap field v mem, sym_num + 4)
         | _ -> (mem, sym_num)
       in
-      match typ with
+      match typ.Typ.desc with
       | Typ.Tstruct typename ->
           (match Tenv.lookup tenv typename with
            | Some str ->
@@ -179,7 +179,7 @@ struct
     = fun pdesc tenv node inst_num mem ->
       let pname = Procdesc.get_proc_name pdesc in
       let add_formal (mem, inst_num, sym_num) (pvar, typ) =
-        match typ with
+        match typ.Typ.desc with
         | Typ.Tint _ ->
             let v = Dom.Val.make_sym pname sym_num in
             let mem = Dom.Mem.add_heap (Loc.of_pvar pvar) v mem in
@@ -233,7 +233,7 @@ struct
     = fun mem { pdesc; tenv; extras } node instr ->
       let pname = Procdesc.get_proc_name pdesc in
       let try_decl_arr (mem, inst_num) (pvar, typ) =
-        match typ with
+        match typ.Typ.desc with
         | Typ.Tarray (typ, Some len) ->
             let loc = Loc.of_var (Var.of_pvar pvar) in
             let mem =

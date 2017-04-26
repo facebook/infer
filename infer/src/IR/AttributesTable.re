@@ -201,7 +201,7 @@ let get_correct_type_from_objc_class_name type_name =>
      switch (find_tenv_from_class_of_proc class_method) {
      | Some tenv =>
       */
-  Some (Typ.Tstruct type_name);
+  Some (Typ.mk (Tstruct type_name));
 
 type t = {
   num_bindings: int,

@@ -43,15 +43,15 @@ struct
       | Typ.FDouble | Typ.FLongDouble -> 8
 
   (* NOTE: assume 32bit machine *)
-  let rec sizeof : Typ.t -> int
-    = function
-      | Typ.Tint ikind -> sizeof_ikind ikind
-      | Typ.Tfloat fkind -> sizeof_fkind fkind
-      | Typ.Tvoid -> 1
-      | Typ.Tptr (_, _) -> 4
-      | Typ.Tstruct _ -> 4        (* TODO *)
-      | Typ.Tarray (typ, Some ilit) -> sizeof typ * IntLit.to_int ilit
-      | _ -> 4
+  let rec sizeof (typ : Typ.t) : int =
+    match typ.desc with
+    | Typ.Tint ikind -> sizeof_ikind ikind
+    | Typ.Tfloat fkind -> sizeof_fkind fkind
+    | Typ.Tvoid -> 1
+    | Typ.Tptr (_, _) -> 4
+    | Typ.Tstruct _ -> 4        (* TODO *)
+    | Typ.Tarray (typ, Some ilit) -> sizeof typ * IntLit.to_int ilit
+    | _ -> 4
 
   let rec must_alias : Exp.t -> Exp.t -> Mem.astate -> bool
     = fun e1 e2 m ->
@@ -372,8 +372,8 @@ struct
         add_pair_val v1' v2' pairs
       in
       let add_pair_ptr typ v1 v2 pairs =
-        match typ with
-        | Typ.Tptr (Typ.Tstruct typename, _) ->
+        match typ.Typ.desc with
+        | Typ.Tptr ({desc=Tstruct typename}, _) ->
             (match Tenv.lookup tenv typename with
              | Some str ->
                  let fns = List.map ~f:get_field_name str.Typ.Struct.fields in

@@ -105,9 +105,9 @@ let tests =
     call_sink_with_exp (Exp.Var (ident_of_str actual_str)) in
   let assign_id_to_field root_str fld_str rhs_id_str =
     let rhs_exp = Exp.Var (ident_of_str rhs_id_str) in
-    make_store ~rhs_typ:Typ.Tvoid (Exp.Var (ident_of_str root_str)) fld_str ~rhs_exp in
+    make_store ~rhs_typ:(Typ.mk Tvoid) (Exp.Var (ident_of_str root_str)) fld_str ~rhs_exp in
   let read_field_to_id lhs_id_str root_str fld_str =
-    make_load_fld ~rhs_typ:Typ.Tvoid lhs_id_str fld_str (Exp.Var (ident_of_str root_str)) in
+    make_load_fld ~rhs_typ:(Typ.mk Tvoid) lhs_id_str fld_str (Exp.Var (ident_of_str root_str)) in
   let assert_empty = invariant "{  }" in
   (* hack: register an empty analyze_ondemand to prevent a crash because the callback is unset *)
   let analyze_ondemand _ summary _ = summary in
@@ -257,7 +257,7 @@ let tests =
     "source -> sink via cast",
     [
       assign_to_source "ret_id";
-      cast_id_to_id "cast_id" Typ.Tvoid "ret_id";
+      cast_id_to_id "cast_id" (Typ.mk Tvoid) "ret_id";
       call_sink "cast_id";
       invariant "{ ret_id$0 => (SOURCE -> SINK) }";
     ];
