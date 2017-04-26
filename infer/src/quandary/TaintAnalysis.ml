@@ -159,6 +159,15 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let id_ap = AccessPath.Exact (AccessPath.of_id ret_id ret_typ) in
       TaintDomain.add_trace id_ap trace access_tree
 
+    let endpoints = String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)
+
+    let is_endpoint source =
+      match CallSite.pname (TraceDomain.Source.call_site source) with
+      | Typ.Procname.Java java_pname ->
+          String.Set.mem endpoints (Typ.Procname.java_get_class_name java_pname)
+      | _ ->
+          false
+
     (** log any new reportable source-sink flows in [trace] *)
     let report_trace trace cur_site (proc_data : FormalMap.t ProcData.t) =
       let trace_of_pname pname =
@@ -181,9 +190,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let final_sink = fst (List.hd_exn sinks_passthroughs) in
         F.fprintf
           fmt
-          "%a -> %a"
+          "%a -> %a%s"
           TraceDomain.Source.pp original_source
-          TraceDomain.Sink.pp final_sink in
+          TraceDomain.Sink.pp final_sink
+          (if is_endpoint original_source then ". Note: source is an endpoint." else "") in
 
       let report_error path =
         let caller_pname = Procdesc.get_proc_name proc_data.pdesc in

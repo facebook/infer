@@ -1157,6 +1157,11 @@ and project_root =
     ~parse_mode:CLOpt.(Infer [Analysis;Clang;Driver;Print])
     ~meta:"dir" "Specify the root directory of the project"
 
+and quandary_endpoints =
+  CLOpt.mk_json ~long:"quandary-endpoints"
+    ~parse_mode:CLOpt.(Infer [Quandary])
+    "Specify endpoint classes for Quandary"
+
 and quandary_sources =
   CLOpt.mk_json ~long:"quandary-sources"
     ~parse_mode:CLOpt.(Infer [Quandary])
@@ -1725,6 +1730,7 @@ and procs_csv = !procs_csv
 and procs_xml = !procs_xml
 and project_root = !project_root
 and quandary = !quandary
+and quandary_endpoints = !quandary_endpoints
 and quandary_sources = !quandary_sources
 and quandary_sinks = !quandary_sinks
 and quiet = !quiet

@@ -299,6 +299,7 @@ val procs_csv : string option
 val procs_xml : string option
 val project_root : string
 val quandary : bool
+val quandary_endpoints : Yojson.Basic.json
 val quandary_sources : Yojson.Basic.json
 val quandary_sinks : Yojson.Basic.json
 val quiet : bool

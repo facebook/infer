@@ -15,5 +15,8 @@
       "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink2",
       "kind": "Logging"
     }
+  ],
+  "quandary-endpoints": [
+    "codetoanalyze.java.quandary.MyService"
   ]
 }

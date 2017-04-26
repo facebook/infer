@@ -44,3 +44,14 @@ module Sink = struct
     | _ ->
         []
 end
+
+module Endpoint = struct
+  type t = string
+
+  let of_json = function
+    | `List endpoints ->
+        let parse_endpoint = Yojson.Basic.Util.to_string in
+        List.map ~f:parse_endpoint endpoints
+    | _ ->
+        []
+end
