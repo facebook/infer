@@ -1,1 +1,1 @@
-codetoanalyze/cpp/bufferoverrun/trivial.cpp, trivial, 2, BUFFER_OVERRUN, [Offset : [10, 10] Size : [10, 10] @ codetoanalyze/cpp/bufferoverrun/trivial.cpp:15:3]
+codetoanalyze/cpp/bufferoverrun/trivial.cpp, trivial, 2, BUFFER_OVERRUN, [Offset: [10, 10] Size: [10, 10] @ codetoanalyze/cpp/bufferoverrun/trivial.cpp:15:3]

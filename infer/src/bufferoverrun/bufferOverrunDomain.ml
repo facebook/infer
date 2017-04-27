@@ -125,7 +125,7 @@ let invalid : t -> bool
 let to_string : t -> string
   = fun c ->
     let c = set_size_pos c in
-    "Offset : " ^ Itv.to_string c.idx ^ " Size : " ^ Itv.to_string c.size
+    "Offset: " ^ Itv.to_string c.idx ^ " Size: " ^ Itv.to_string c.size
     ^ " @ " ^ string_of_location c.loc
     ^ (match c.trace with
           Inter (_, pname, _) ->
@@ -604,14 +604,14 @@ struct
 
   let pp : F.formatter -> t -> unit
     = fun fmt x ->
-      F.fprintf fmt "Stack :@,";
-      F.fprintf fmt "%a@," Stack.pp x.stack;
-      F.fprintf fmt "Heap :@,";
+      F.fprintf fmt "Stack:@;";
+      F.fprintf fmt "%a@;" Stack.pp x.stack;
+      F.fprintf fmt "Heap:@;";
       F.fprintf fmt "%a" Heap.pp x.heap
 
   let pp_summary : F.formatter -> t -> unit
     = fun fmt x ->
-      F.fprintf fmt "@[<v 0>Parameters :@,";
+      F.fprintf fmt "@[<v 0>Parameters:@,";
       F.fprintf fmt "%a" Heap.pp_summary x.heap ;
       F.fprintf fmt "@]"
 
@@ -668,7 +668,12 @@ struct
     = fun ploc v s ->
       if can_strong_update ploc
       then strong_update_heap ploc v s
-      else weak_update_heap ploc v s
+      else
+        let () =
+          if Config.bo_debug >= 3 then
+            L.err "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
+        in
+        weak_update_heap ploc v s
 end
 
 module Mem = struct

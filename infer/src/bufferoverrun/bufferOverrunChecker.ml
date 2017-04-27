@@ -87,11 +87,10 @@ struct
     = fun params mem loc ->
       match params with
       | (e, _) :: _ ->
-          (* TODO: only print when debug mode? *)
-          F.fprintf F.err_formatter "@[<v>=== Infer Print === at %a@,"
-            Location.pp loc;
-          Dom.Val.pp F.err_formatter (Sem.eval e mem loc);
-          F.fprintf F.err_formatter "@]";
+          if Config.bo_debug >= 1 then
+            L.err "@[<v>=== Infer Print === at %a@,%a@]%!"
+              Location.pp loc
+              Dom.Val.pp (Sem.eval e mem loc);
           mem
       | _ -> mem
 
@@ -164,7 +163,10 @@ struct
               Sem.eval_array_alloc pname node typ offset size inst_num dimension
             in
             (Dom.Mem.add_heap field v mem, sym_num + 4)
-        | _ -> (mem, sym_num)
+        | _ ->
+            if Config.bo_debug >= 3 then
+              L.err "decl_fld of unhandled type: %a@." (Typ.pp Pp.text) typ;
+            (mem, sym_num)
       in
       match typ.Typ.desc with
       | Typ.Tstruct typename ->
@@ -190,7 +192,10 @@ struct
                 ~inst_num ~sym_num ~dimension:1 mem
             in
             (mem, inst_num + 1, sym_num)
-        | _ -> (mem, inst_num, sym_num) (* TODO: add other cases if necessary *)
+        | _ ->
+            if Config.bo_debug >= 3 then
+              L.err "declare_symbolic_parameter of unhandled type: %a@." (Typ.pp Pp.text) typ;
+            (mem, inst_num, sym_num) (* TODO: add other cases if necessary *)
       in
       List.fold ~f:add_formal ~init:(mem, inst_num, 0) (Sem.get_formals pdesc)
       |> fst3
@@ -216,16 +221,13 @@ struct
     = fun instr pre post ->
       if Config.bo_debug >= 2 then
         begin
-          F.fprintf F.err_formatter "@.@.================================@.";
-          F.fprintf F.err_formatter "@[<v 2>Pre-state : @,";
-          Dom.Mem.pp F.err_formatter pre;
-          F.fprintf F.err_formatter "@]@.@.";
-          Sil.pp_instr Pp.text F.err_formatter instr;
-          F.fprintf F.err_formatter "@.@.";
-          F.fprintf F.err_formatter "@[<v 2>Post-state : @,";
-          Dom.Mem.pp F.err_formatter post;
-          F.fprintf F.err_formatter "@]@.";
-          F.fprintf F.err_formatter "================================@.@."
+          L.err "@\n@\n================================@\n";
+          L.err "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre;
+          L.err "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr;
+          L.err "@\n@\n";
+          L.err "@[<v 2>Post-state : @,%a" Dom.Mem.pp post;
+          L.err "@]@\n";
+          L.err "================================@\n@."
         end
 
   let exec_instr
@@ -317,10 +319,10 @@ struct
           let offset = ArrayBlk.offsetof arr in
           let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
           (if Config.bo_debug >= 2 then
-             (F.fprintf F.err_formatter "@[<v 2>Add condition :@,";
-              F.fprintf F.err_formatter "array: %a@," ArrayBlk.pp arr;
-              F.fprintf F.err_formatter "  idx: %a@," Itv.pp idx;
-              F.fprintf F.err_formatter "@]@."));
+             (L.err "@[<v 2>Add condition :@,";
+              L.err "array: %a@," ArrayBlk.pp arr;
+              L.err "  idx: %a@," Itv.pp idx;
+              L.err "@]@."));
           if size <> Itv.bot && idx <> Itv.bot then
             Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx cond_set
           else cond_set
@@ -344,15 +346,12 @@ struct
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.ConditionSet.t -> unit
     = fun instr pre cond_set ->
       if Config.bo_debug >= 2 then
-        (F.fprintf F.err_formatter "@.@.================================@.";
-         F.fprintf F.err_formatter "@[<v 2>Pre-state : @,";
-         Dom.Mem.pp F.err_formatter pre;
-         F.fprintf F.err_formatter "@]@.@.";
-         Sil.pp_instr Pp.text F.err_formatter instr;
-         F.fprintf F.err_formatter "@[<v 2>@.@.";
-         Dom.ConditionSet.pp F.err_formatter cond_set;
-         F.fprintf F.err_formatter "@]@.";
-         F.fprintf F.err_formatter "================================@.@.")
+        (L.err "@\n@\n================================@\n";
+         L.err "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre;
+         L.err "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr;
+         L.err "@[<v 2>@\n@\n%a" Dom.ConditionSet.pp cond_set;
+         L.err "@]@\n";
+         L.err "================================@\n@.")
 
   let collect_instr
     : extras ProcData.t -> CFG.node -> Dom.ConditionSet.t * Dom.Mem.astate
@@ -446,10 +445,9 @@ let compute_post
 
 let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit
   = fun proc_name s ->
-    F.fprintf F.err_formatter "@.@[<v 2>Summary of %a :@,"
-      Typ.Procname.pp proc_name;
-    Dom.Summary.pp_summary F.err_formatter s;
-    F.fprintf F.err_formatter "@]@."
+    L.err "@\n@[<v 2>Summary of %a :@,%a@]@."
+      Typ.Procname.pp proc_name
+      Dom.Summary.pp_summary s
 
 let checker : Callbacks.proc_callback_args -> Specs.summary
   = fun ({ summary } as callback) ->
