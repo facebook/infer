@@ -95,14 +95,8 @@ val type_get_annotation : Tenv.t -> Typ.t -> Annot.Item.t option
 (** Get the class name of the type *)
 val type_get_class_name : Typ.t -> Typ.Name.t option
 
-val type_get_direct_supertypes : Tenv.t -> Typ.t -> Typ.Name.t list
-
-val type_has_direct_supertype : Tenv.t -> Typ.t -> Typ.Name.t -> bool
-
 (** Is the type a class type *)
 val type_is_class : Typ.t -> bool
-
-val type_is_nested_in_direct_supertype : Tenv.t -> Typ.t -> Typ.Name.t -> bool
 
 (** Is the type java.lang.Object *)
 val type_is_object : Typ.t -> bool
