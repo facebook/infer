@@ -40,7 +40,7 @@ module BottomLifted (Domain : S) : sig
     | Bottom
     | NonBottom of Domain.astate
 
-  include S with type astate := astate
+  include WithBottom with type astate := astate
 end
 
 (** Cartesian product of two domains. *)
