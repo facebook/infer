@@ -88,8 +88,8 @@ let filter1 : t -> bool
 
 let filter2 : t -> bool
   = fun c ->
-    (not (Itv.is_finite c.idx) || not (Itv.is_finite c.size)) (* basically, alarms involving infinify are filtered *)
-    &&                                                        (* except the following cases :                      *)
+    (not (Itv.is_finite c.idx) || not (Itv.is_finite c.size)) (* basically, alarms involving infinity are filtered *)
+    &&                                                        (* except the following cases:                       *)
     not ((Itv.Bound.is_not_infty (Itv.lb c.idx) &&            (* idx non-infty lb < 0 *)
           Itv.Bound.lt (Itv.lb c.idx) Itv.Bound.zero)
          ||

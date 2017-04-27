@@ -419,7 +419,7 @@ struct
         let new_matching =
           get_matching_pairs tenv formal actual typ caller_mem callee_entry_mem
         in
-        List.append new_matching l
+        List.rev_append new_matching l
       in
       let formals = get_formals callee_pdesc in
       let actuals = List.map ~f:(fun (a, _) -> eval a caller_mem loc) params in

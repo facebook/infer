@@ -45,7 +45,7 @@ struct
 
   let model_malloc
     : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
-      -> Dom.Mem.t -> Dom.Mem.t
+      -> Dom.Mem.astate -> Dom.Mem.astate
     = fun pname ret params node mem ->
       match ret with
       | Some (id, _) ->
@@ -66,24 +66,24 @@ struct
 
   let model_realloc
     : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
-      -> Dom.Mem.t -> Dom.Mem.t
+      -> Dom.Mem.astate -> Dom.Mem.astate
     = fun pname ret params node mem ->
       model_malloc pname ret (List.tl_exn params) node mem
 
-  let model_natual_itv : (Ident.t * Typ.t) option -> Dom.Mem.t -> Dom.Mem.t
+  let model_natual_itv : (Ident.t * Typ.t) option -> Dom.Mem.astate -> Dom.Mem.astate
     = fun ret mem ->
       match ret with
       | Some (id, _) -> Dom.Mem.add_stack (Loc.of_id id) Dom.Val.nat_itv mem
       | _ -> mem
 
-  let model_unknown_itv : (Ident.t * Typ.t) option -> Dom.Mem.t -> Dom.Mem.t
+  let model_unknown_itv : (Ident.t * Typ.t) option -> Dom.Mem.astate -> Dom.Mem.astate
     = fun ret mem ->
       match ret with
         Some (id, _) -> Dom.Mem.add_stack (Loc.of_id id) Dom.Val.top_itv mem
       | None -> mem
 
   let model_infer_print
-    : (Exp.t * Typ.t) list -> Dom.Mem.t -> Location.t -> Dom.Mem.t
+    : (Exp.t * Typ.t) list -> Dom.Mem.astate -> Location.t -> Dom.Mem.astate
     = fun params mem loc ->
       match params with
       | (e, _) :: _ ->
@@ -97,8 +97,8 @@ struct
 
   let handle_unknown_call
     : Typ.Procname.t -> (Ident.t * Typ.t) option -> Typ.Procname.t
-      -> (Exp.t * Typ.t) list -> CFG.node -> Dom.Mem.t -> Location.t
-      -> Dom.Mem.t
+      -> (Exp.t * Typ.t) list -> CFG.node -> Dom.Mem.astate -> Location.t
+      -> Dom.Mem.astate
     = fun pname ret callee_pname params node mem loc ->
       match Typ.Procname.get_method callee_pname with
       | "malloc"
@@ -175,7 +175,7 @@ struct
       | _ -> (mem, sym_num + 6)
 
   let declare_symbolic_parameter
-    : Procdesc.t -> Tenv.t -> CFG.node -> int -> Dom.Mem.t -> Dom.Mem.t
+    : Procdesc.t -> Tenv.t -> CFG.node -> int -> Dom.Mem.astate -> Dom.Mem.astate
     = fun pdesc tenv node inst_num mem ->
       let pname = Procdesc.get_proc_name pdesc in
       let add_formal (mem, inst_num, sym_num) (pvar, typ) =
@@ -197,7 +197,7 @@ struct
 
   let instantiate_ret
     : Tenv.t -> Procdesc.t option -> Typ.Procname.t -> (Exp.t * Typ.t) list
-      -> Dom.Mem.t -> Dom.Summary.t -> Location.t -> Dom.Val.astate
+      -> Dom.Mem.astate -> Dom.Summary.t -> Location.t -> Dom.Val.astate
     = fun tenv callee_pdesc callee_pname params caller_mem summary loc ->
       let callee_entry_mem = Dom.Summary.get_input summary in
       let callee_exit_mem = Dom.Summary.get_output summary in
@@ -212,7 +212,7 @@ struct
           |> Dom.Val.normalize    (* normalize bottom *)
       | _ -> Dom.Val.bot
 
-  let print_debug_info : Sil.instr -> Dom.Mem.t -> Dom.Mem.t -> unit
+  let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit
     = fun instr pre post ->
       if Config.bo_debug >= 2 then
         begin
@@ -229,13 +229,13 @@ struct
         end
 
   let exec_instr
-    : Dom.Mem.t -> extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate
+    : Dom.Mem.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate
     = fun mem { pdesc; tenv; extras } node instr ->
       let pname = Procdesc.get_proc_name pdesc in
       let try_decl_arr (mem, inst_num) (pvar, typ) =
         match typ.Typ.desc with
         | Typ.Tarray (typ, Some len) ->
-            let loc = Loc.of_var (Var.of_pvar pvar) in
+            let loc = Loc.of_pvar pvar in
             let mem =
               declare_array pname node loc typ len ~inst_num ~dimension:1 mem
             in
@@ -328,7 +328,7 @@ struct
 
   let instantiate_cond
     : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list
-      -> Dom.Mem.t -> Summary.payload -> Location.t -> Dom.ConditionSet.t
+      -> Dom.Mem.astate -> Summary.payload -> Location.t -> Dom.ConditionSet.t
     = fun tenv caller_pname callee_pdesc params caller_mem summary loc ->
       let callee_entry_mem = Dom.Summary.get_input summary in
       let callee_cond = Dom.Summary.get_cond_set summary in
@@ -341,7 +341,7 @@ struct
           Dom.ConditionSet.subst callee_cond subst_map caller_pname pname loc
       | _ -> callee_cond
 
-  let print_debug_info : Sil.instr -> Dom.Mem.t -> Dom.ConditionSet.t -> unit
+  let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.ConditionSet.t -> unit
     = fun instr pre cond_set ->
       if Config.bo_debug >= 2 then
         (F.fprintf F.err_formatter "@.@.================================@.";
@@ -355,8 +355,8 @@ struct
          F.fprintf F.err_formatter "================================@.@.")
 
   let collect_instr
-    : extras ProcData.t -> CFG.node -> Dom.ConditionSet.t * Dom.Mem.t
-      -> Sil.instr -> Dom.ConditionSet.t * Dom.Mem.t
+    : extras ProcData.t -> CFG.node -> Dom.ConditionSet.t * Dom.Mem.astate
+      -> Sil.instr -> Dom.ConditionSet.t * Dom.Mem.astate
     = fun ({ pdesc; tenv; extras } as pdata) node (cond_set, mem) instr ->
       let pname = Procdesc.get_proc_name pdesc in
       let cond_set =
@@ -379,7 +379,7 @@ struct
       (cond_set, mem)
 
   let collect_instrs
-    : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.t
+    : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate
       -> Dom.ConditionSet.t -> Dom.ConditionSet.t
     = fun pdata node instrs mem cond_set ->
       List.fold ~f:(collect_instr pdata node) ~init:(cond_set, mem) instrs

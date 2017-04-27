@@ -37,10 +37,6 @@ struct
     | Allocsite a -> Allocsite.pp fmt a
     | Field (l, f) -> F.fprintf fmt "%a.%a" pp l Fieldname.pp f
   let is_var = function Var _ -> true | _ -> false
-  let is_pvar_in_reg v =
-    Var.pp F.str_formatter v;
-    let s = F.flush_str_formatter () in
-    s.[0] = '&'
   let is_logical_var = function
     | Var (Var.LogicalVar _) -> true
     | _ -> false
@@ -58,15 +54,7 @@ end
 
 module PowLoc =
 struct
-  include AbstractDomain.FiniteSet
-      (struct
-        include Set.Make (struct type t = Loc.t [@@deriving compare] end)
-        let pp_element fmt e = Loc.pp fmt e
-        let pp fmt s =
-          Format.fprintf fmt "{";
-          iter (fun e -> Format.fprintf fmt "%a," pp_element e) s;
-          Format.fprintf fmt "}"
-      end)
+  include AbstractDomain.FiniteSet(PrettyPrintable.MakePPSet(Loc))
 
   let bot = empty
   let is_bot = is_empty
