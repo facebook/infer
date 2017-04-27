@@ -350,6 +350,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | ("java.lang.Class" | "java.lang.reflect.Constructor"), "newInstance" ->
                 (* reflection can perform allocations *)
                 true
+            | "java.lang.Object" , "clone" ->
+                (* cloning is like allocation *)
+                true
             | "java.lang.ThreadLocal", "get" ->
                 (* ThreadLocal prevents sharing between threads behind the scenes *)
                 true

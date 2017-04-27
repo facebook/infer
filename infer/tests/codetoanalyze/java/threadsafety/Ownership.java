@@ -376,6 +376,15 @@ public class Ownership {
     c.f = new Object();
   }
 
+  void cloningAquiresOwnershipOk(){
+   Ownership ow;
+   try {
+     ow = (Ownership) this.clone();
+     ow.field = null;
+   }
+   catch (CloneNotSupportedException e) {}
+  }
+
 }
 
 
