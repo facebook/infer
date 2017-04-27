@@ -94,6 +94,8 @@ let issues_fields_symbols = [
   ("hash", `Issue_field_hash);
   ("line_offset", `Issue_field_line_offset);
   ("procedure_id_without_crc", `Issue_field_procedure_id_without_crc);
+  ("qualifier_contains_potential_exception_note",
+   `Issue_field_qualifier_contains_potential_exception_note);
 ]
 
 type os_type = Unix | Win32 | Cygwin

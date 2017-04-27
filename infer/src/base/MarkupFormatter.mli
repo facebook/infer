@@ -24,3 +24,12 @@ val pp_code : Format.formatter -> string -> unit
 
 (* wrap into a code block *)
 val code_to_string : string -> string
+
+(** used to combine pp together, wrap content into a bold block  *)
+val wrap_bold : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
+
+(** pp to wrap into a bold block  *)
+val pp_bold : Format.formatter -> string -> unit
+
+(* wrap into a bold block *)
+val bold_to_string : string -> string

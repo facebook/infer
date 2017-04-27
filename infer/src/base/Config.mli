@@ -58,7 +58,8 @@ val issues_fields_symbols :
             | `Issue_field_key
             | `Issue_field_hash
             | `Issue_field_line_offset
-            | `Issue_field_procedure_id_without_crc]) list
+            | `Issue_field_procedure_id_without_crc
+            | `Issue_field_qualifier_contains_potential_exception_note]) list
 
 
 type os_type = Unix | Win32 | Cygwin
@@ -262,7 +263,8 @@ val issues_fields : [`Issue_field_bug_class
                     | `Issue_field_key
                     | `Issue_field_hash
                     | `Issue_field_line_offset
-                    | `Issue_field_procedure_id_without_crc] list
+                    | `Issue_field_procedure_id_without_crc
+                    | `Issue_field_qualifier_contains_potential_exception_note] list
 val iterations : int
 val java_jar_compiler : string option
 val javac_classes_out : string

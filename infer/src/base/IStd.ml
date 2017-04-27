@@ -46,6 +46,14 @@ module Unix_ = struct
 
 end
 
+module List_ = struct
+  let rec fold_until ~init ~f l =
+    match l, init with
+    | _, `Stop init'
+    | [], `Continue init' -> init'
+    | h :: t, `Continue _ -> fold_until ~init:(f init h) ~f t
+end
+
 (* Use Caml.Set since they are serialized using Marshal, and Core.Std.Set includes the comparison
    function in its representation, which Marshal cannot (de)serialize. *)
 module IntSet = Caml.Set.Make(Int)

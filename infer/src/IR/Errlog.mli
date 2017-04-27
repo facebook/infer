@@ -31,6 +31,12 @@ val make_trace_element : int -> Location.t -> string -> node_tag list -> loc_tra
 (** Trace of locations *)
 type loc_trace = loc_trace_elem list
 
+(** Look at all the trace steps and find those that are arising any exception,
+    then bind them to the closest step at level 0.
+    This extra information adds value to the report itself, and may avoid
+    digging into the trace to understand the cause of the report. *)
+val compute_local_exception_line : loc_trace -> int option
+
 type node_id_key = private {
   node_id : int;
   node_key : int

@@ -1,0 +1,3 @@
+false, RESOURCE_LEAK, SimpleLeak.java, void SimpleLeak.method(boolean), 2
+false, NULL_DEREFERENCE, SimpleLeak.java, void SimpleLeak.method(boolean), 8
+true, RESOURCE_LEAK, SimpleLeak.java, void SimpleLeak.method(boolean), 9

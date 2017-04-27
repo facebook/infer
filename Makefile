@@ -64,6 +64,7 @@ BUILD_SYSTEMS_TESTS += \
   differential_skip_duplicated_types_on_filenames_with_renamings \
   gradle \
   javac \
+  resource_leak_exception_lines \
 
 DIRECT_TESTS += \
   java_checkers java_eradicate java_infer java_tracing java_quandary java_threadsafety \

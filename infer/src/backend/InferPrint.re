@@ -429,6 +429,8 @@ module IssuesCsv = {
   };
 };
 
+let potential_exception_message = "potential exception at line";
+
 module IssuesJson = {
   let is_first_item = ref true;
   let pp_json_open fmt () => F.fprintf fmt "[@?";
@@ -464,11 +466,26 @@ module IssuesJson = {
           | _ => None
           };
         let visibility = Exceptions.string_of_visibility err_data.visibility;
+        let qualifier = {
+          let base_qualifier = error_desc_to_plain_string key.err_desc;
+          if (Localise.equal key.err_name Localise.resource_leak) {
+            switch (Errlog.compute_local_exception_line err_data.loc_trace) {
+            | None => base_qualifier
+            | Some line =>
+              let potential_exception_message =
+                Format.asprintf
+                  "%a: %s %d" MarkupFormatter.pp_bold "Note" potential_exception_message line;
+              Format.sprintf "%s\n%s" base_qualifier potential_exception_message
+            }
+          } else {
+            base_qualifier
+          }
+        };
         let bug = {
           Jsonbug_j.bug_class: Exceptions.err_class_string err_data.err_class,
           kind,
           bug_type,
-          qualifier: error_desc_to_plain_string key.err_desc,
+          qualifier,
           severity: key.severity,
           visibility,
           line: err_data.loc.Location.line,
@@ -538,6 +555,9 @@ let pp_custom_of_report fmt report fields => {
         Format.fprintf fmt "%s%d" (comma_separator index) (issue.line - issue.procedure_start_line)
       | `Issue_field_procedure_id_without_crc =>
         Format.fprintf fmt "%s%s" (comma_separator index) (DB.strip_crc issue.procedure_id)
+      | `Issue_field_qualifier_contains_potential_exception_note =>
+        Format.fprintf
+          fmt "%B" (String.is_substring issue.qualifier substring::potential_exception_message)
       };
     List.iteri f::pp_field fields;
     Format.fprintf fmt "@."
