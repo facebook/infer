@@ -289,7 +289,8 @@ toplevel: clang_plugin
 .PHONY: inferScriptMode_test
 inferScriptMode_test: test_build
 	$(QUIET)$(call silent_on_success,Testing infer OCaml REPL,\
-	 INFER_REPL_BINARY=ocaml $(SCRIPT_DIR)/infer_repl $(INFER_DIR)/tests/repl/infer_batch_script.ml)
+	INFER_REPL_BINARY=ocaml TOPLEVEL_DIR=$(BUILD_DIR)/test/infer $(SCRIPT_DIR)/infer_repl \
+	  $(INFER_DIR)/tests/repl/infer_batch_script.ml)
 
 .PHONY: checkCopyright
 checkCopyright:
