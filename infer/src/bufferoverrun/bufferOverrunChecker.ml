@@ -215,7 +215,7 @@ struct
           let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
           Dom.Val.subst ret_val subst_map
           |> Dom.Val.normalize    (* normalize bottom *)
-      | _ -> Dom.Val.bot
+      | _ -> Dom.Val.top_itv
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit
     = fun instr pre post ->

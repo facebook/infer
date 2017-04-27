@@ -26,7 +26,7 @@ struct
     = function
       | Const.Cint intlit -> (try Val.of_int (IntLit.to_int intlit) with _ -> Val.top_itv)
       | Const.Cfloat f -> f |> int_of_float |> Val.of_int
-      | _ -> Val.bot       (* TODO *)
+      | _ -> Val.top_itv       (* TODO *)
 
   let sizeof_ikind : Typ.ikind -> int
     = function
@@ -165,7 +165,7 @@ struct
             Val.join (Val.of_pow_loc ploc) arr
         | Exp.Sizeof (typ, _, _) -> Val.of_int (sizeof typ)
         | Exp.Exn _
-        | Exp.Closure _ -> Val.bot
+        | Exp.Closure _ -> Val.top_itv
 
   and eval_unop : Unop.t -> Exp.t -> Mem.astate -> Location.t -> Val.t
     = fun unop e mem loc ->
@@ -402,13 +402,13 @@ struct
       List.fold ~f:add_pair ~init:Itv.SubstMap.empty pairs
 
   let rec list_fold2_def
-    : Val.t -> ('a -> Val.t -> 'b -> 'b) -> 'a list -> Val.t list -> 'b -> 'b
-    = fun default f xs ys acc ->
+    : default:Val.t -> f:('a -> Val.t -> 'b -> 'b) -> 'a list -> Val.t list -> init:'b -> 'b
+    = fun ~default ~f xs ys ~init:acc ->
       match xs, ys with
-      | [x], _ -> f x (List.fold ~f:Val.join ~init:Val.bot ys) acc
       | [], _ -> acc
-      | x :: xs', [] -> list_fold2_def default f xs' ys (f x default acc)
-      | x :: xs', y :: ys' -> list_fold2_def default f xs' ys' (f x y acc)
+      | x :: xs', [] -> list_fold2_def ~default ~f xs' ys ~init:(f x default acc)
+      | [x], _ :: _ -> f x (List.fold ~f:Val.join ~init:Val.bot ys) acc
+      | x :: xs', y :: ys' -> list_fold2_def ~default ~f xs' ys' ~init:(f x y acc)
 
   let get_subst_map
     : Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Mem.astate
@@ -423,6 +423,6 @@ struct
       in
       let formals = get_formals callee_pdesc in
       let actuals = List.map ~f:(fun (a, _) -> eval a caller_mem loc) params in
-      list_fold2_def Val.bot add_pair formals actuals []
+      list_fold2_def ~default:Val.top_itv ~f:add_pair formals actuals ~init:[]
       |> subst_map_of_pairs
 end
