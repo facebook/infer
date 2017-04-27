@@ -40,5 +40,3 @@ module Set = PrettyPrintable.MakePPSet(struct
     let compare = compare
     let pp = pp
   end)
-
-module SetDomain = AbstractDomain.FiniteSet (Set)

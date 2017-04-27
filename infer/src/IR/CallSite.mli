@@ -26,5 +26,3 @@ val dummy : t
 val pp : F.formatter -> t -> unit
 
 module Set : PrettyPrintable.PPSet with type elt = t
-
-module SetDomain : module type of AbstractDomain.FiniteSet (Set)

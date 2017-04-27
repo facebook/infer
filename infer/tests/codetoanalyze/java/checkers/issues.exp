@@ -1,3 +1,5 @@
+codetoanalyze/java/checkers/AnnotationReachabilityDuplicatesExample.java, void AnnotationReachabilityDuplicatesExample.perfCriticalBad1(), 1, CHECKERS_CALLS_EXPENSIVE_METHOD, []
+codetoanalyze/java/checkers/AnnotationReachabilityDuplicatesExample.java, void AnnotationReachabilityDuplicatesExample.perfCriticalBad2(), 1, CHECKERS_CALLS_EXPENSIVE_METHOD, []
 codetoanalyze/java/checkers/CustomAnnotations.java, void CustomAnnotations.source1Bad(), 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, []
 codetoanalyze/java/checkers/CustomAnnotations.java, void CustomAnnotations.source2Bad(), 1, CHECKERS_ANNOTATION_REACHABILITY_ERROR, []
 codetoanalyze/java/checkers/ExpensiveCallExample.java, View ExpensiveCallExample.callsFindViewByIdFromActivity(FragmentActivity,int), 1, CHECKERS_CALLS_EXPENSIVE_METHOD, []

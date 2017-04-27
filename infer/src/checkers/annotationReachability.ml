@@ -46,17 +46,22 @@ module Domain = struct
   module TrackingDomain = AbstractDomain.BottomLifted (TrackingVar)
   include AbstractDomain.Pair (AnnotReachabilityDomain) (TrackingDomain)
 
-  let add_call_site annot call_site ((annot_map, previous_vstate) as astate) =
+  let add_call_site annot sink call_site ((annot_map, previous_vstate) as astate) =
     match previous_vstate with
     | TrackingDomain.Bottom -> astate
     | TrackingDomain.NonBottom _ ->
-        let call_set =
+        let sink_map =
           try AnnotReachabilityDomain.find annot annot_map
-          with Not_found -> CallSite.SetDomain.empty in
-        let call_set' = CallSite.SetDomain.add call_site call_set in
-        if phys_equal call_set' call_set
+          with Not_found -> AnnotReachabilityDomain.SinkMap.empty in
+        let sink_map' =
+          if AnnotReachabilityDomain.SinkMap.mem sink sink_map
+          then sink_map
+          else
+            let singleton = AnnotReachabilityDomain.CallSites.singleton call_site in
+            AnnotReachabilityDomain.SinkMap.singleton sink singleton in
+        if phys_equal sink_map' sink_map
         then astate
-        else (AnnotReachabilityDomain.add annot call_set' annot_map, previous_vstate)
+        else (AnnotReachabilityDomain.add annot sink_map' annot_map, previous_vstate)
 
   let stop_tracking (annot_map, _ : astate) =
     (annot_map, TrackingDomain.Bottom)
@@ -149,16 +154,17 @@ let method_has_annot annot tenv pname =
 let method_overrides_annot annot tenv pname =
   method_overrides (method_has_annot annot) tenv pname
 
-let lookup_annotation_calls caller_pdesc annot pname : CallSite.SetDomain.t =
+let lookup_annotation_calls caller_pdesc annot pname =
   match Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc pname with
   | Some { Specs.payload = { Specs.annot_map = Some annot_map; }; } ->
       begin
         try
           Annot.Map.find annot annot_map
         with Not_found ->
-          CallSite.SetDomain.empty
+          AnnotReachabilityDomain.SinkMap.empty
       end
-  | _ -> CallSite.SetDomain.empty
+  | _ ->
+      AnnotReachabilityDomain.SinkMap.empty
 
 let update_trace loc trace =
   if Location.equal loc Location.dummy then trace
@@ -207,7 +213,7 @@ let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str 
       Exceptions.Checkers (msg, Localise.verbatim_desc description) in
     Reporting.log_error_from_summary src_summary ~loc ~ltr:final_trace exn
 
-let report_call_stack summary end_of_stack lookup_next_calls report call_site calls =
+let report_call_stack summary end_of_stack lookup_next_calls report call_site sink_map =
   (* TODO: stop using this; we can use the call site instead *)
   let lookup_location pname =
     match Specs.get_summary pname with
@@ -222,23 +228,29 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site ca
       let callee_pname_str = string_of_pname callee_pname in
       let new_stack_str = stack_str ^ callee_pname_str ^ " -> " in
       let new_trace = update_trace call_loc trace |> update_trace callee_def_loc in
-      let unseen_callees, visited_callees =
-        CallSite.SetDomain.fold
-          (fun call_site ((unseen, visited) as accu) ->
-             let p = CallSite.pname call_site in
-             let loc = CallSite.loc call_site in
-             if Typ.Procname.Set.mem p visited then accu
-             else ((p, loc) :: unseen, Typ.Procname.Set.add p visited))
+      let unseen_callees, updated_callees =
+        AnnotReachabilityDomain.SinkMap.fold
+          (fun _ call_sites ((unseen, visited) as accu) ->
+             try
+               let call_site = AnnotReachabilityDomain.CallSites.choose call_sites in
+               let p = CallSite.pname call_site in
+               let loc = CallSite.loc call_site in
+               if Typ.Procname.Set.mem p visited then accu
+               else ((p, loc) :: unseen, Typ.Procname.Set.add p visited)
+             with Not_found -> accu)
           next_calls
           ([], visited_pnames) in
-      List.iter ~f:(loop fst_call_loc visited_callees (new_trace, new_stack_str)) unseen_callees in
-  CallSite.SetDomain.iter
-    (fun fst_call_site ->
-       let fst_callee_pname = CallSite.pname fst_call_site in
-       let fst_call_loc = CallSite.loc fst_call_site in
-       let start_trace = update_trace (CallSite.loc call_site) [] in
-       loop fst_call_loc Typ.Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc))
-    calls
+      List.iter ~f:(loop fst_call_loc updated_callees (new_trace, new_stack_str)) unseen_callees in
+  AnnotReachabilityDomain.SinkMap.iter
+    (fun _ call_sites ->
+       try
+         let fst_call_site = AnnotReachabilityDomain.CallSites.choose call_sites in
+         let fst_callee_pname = CallSite.pname fst_call_site in
+         let fst_call_loc = CallSite.loc fst_call_site in
+         let start_trace = update_trace (CallSite.loc call_site) [] in
+         loop fst_call_loc Typ.Procname.Set.empty (start_trace, "") (fst_callee_pname, fst_call_loc)
+       with Not_found -> ())
+    sink_map
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
@@ -285,7 +297,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~f:(fun astate (_, annot) ->
           if method_has_annot annot tenv callee_pname &&
              not (method_is_sanitizer annot tenv caller_pname)
-          then Domain.add_call_site annot call_site astate
+          then Domain.add_call_site annot callee_pname call_site astate
           else astate)
       src_snk_pairs
 
@@ -293,11 +305,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match Summary.read_summary pdesc callee_pname with
     | None -> astate
     | Some callee_call_map ->
+        let add_call_site annot sink calls astate =
+          if AnnotReachabilityDomain.CallSites.is_empty calls
+          then astate
+          else Domain.add_call_site annot sink call_site astate in
         Annot.Map.fold
-          (fun annot calls astate ->
-             if CallSite.SetDomain.is_empty calls
-             then astate
-             else Domain.add_call_site annot call_site astate)
+          (fun annot sink_map astate ->
+             AnnotReachabilityDomain.SinkMap.fold
+               (add_call_site annot)
+               sink_map
+               astate)
           callee_call_map
           astate
 
@@ -359,7 +376,7 @@ module Interprocedural = struct
       PatternMatch.override_iter check_expensive_subtyping_rules tenv proc_name;
 
     let report_src_snk_paths annot_map (src_annot_list, (snk_annot: Annot.t)) =
-      let report_src_snk_path (calls : CallSite.SetDomain.t) (src_annot: Annot.t) =
+      let report_src_snk_path sink_map (src_annot: Annot.t) =
         if method_overrides_annot src_annot tenv proc_name
         then
           let f_report =
@@ -370,7 +387,7 @@ module Interprocedural = struct
             (lookup_annotation_calls proc_desc snk_annot)
             f_report
             (CallSite.make proc_name loc)
-            calls in
+            sink_map in
       try
         let sink_map = Annot.Map.find snk_annot annot_map in
         List.iter ~f:(report_src_snk_path sink_map) src_annot_list
