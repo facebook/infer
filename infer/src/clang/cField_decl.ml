@@ -34,7 +34,7 @@ let fields_superclass tenv interface_decl_info =
        | _ -> [])
   | _ -> []
 
-let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attributes =
+let build_sil_field qual_type_to_sil_type tenv field_name qual_type prop_attributes =
   let prop_atts = List.map ~f:Clang_ast_j.string_of_property_attribute prop_attributes in
   let annotation_from_type t =
     match t.Typ.desc with
@@ -42,7 +42,7 @@ let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attribute
     | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) -> [Config.unsafe_unret]
     | _ -> [] in
   let fname = CGeneral_utils.mk_class_field_name field_name in
-  let typ = type_ptr_to_sil_type tenv type_ptr in
+  let typ = qual_type_to_sil_type tenv qual_type in
   let item_annotations = match prop_atts with
     | [] ->
         ({ Annot.class_name = Config.ivar_attributes; parameters = annotation_from_type typ },
@@ -50,30 +50,30 @@ let build_sil_field type_ptr_to_sil_type tenv field_name type_ptr prop_attribute
     | _ ->
         ({ Annot.class_name = Config.property_attributes; parameters = prop_atts },
          true) in
-  let item_annotations = item_annotations :: (CAst_utils.sil_annot_of_type type_ptr) in
+  let item_annotations = item_annotations :: (CAst_utils.sil_annot_of_type qual_type) in
   fname, typ, item_annotations
 
 (* Given a list of declarations in an interface returns a list of fields  *)
-let rec get_fields type_ptr_to_sil_type tenv decl_list =
+let rec get_fields qual_type_to_sil_type tenv decl_list =
   let open Clang_ast_t in
-  let add_field name_info qt attributes decl_list' =
-    let fields = get_fields type_ptr_to_sil_type tenv decl_list' in
-    let field_tuple = build_sil_field type_ptr_to_sil_type tenv
-        name_info qt.Clang_ast_t.qt_type_ptr attributes in
+  let add_field name_info (qt : qual_type) attributes decl_list' =
+    let fields = get_fields qual_type_to_sil_type tenv decl_list' in
+    let field_tuple = build_sil_field qual_type_to_sil_type tenv
+        name_info qt attributes in
     CGeneral_utils.append_no_duplicates_fields [field_tuple] fields in
   match decl_list with
   | [] -> []
   | ObjCPropertyDecl (_, _, obj_c_property_decl_info) :: decl_list' ->
       (let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
        match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
-       | Some (ObjCIvarDecl (_, name_info, type_ptr, _, _)) ->
+       | Some (ObjCIvarDecl (_, name_info, qual_type, _, _)) ->
            let attributes = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
-           add_field name_info type_ptr attributes decl_list'
-       | _ -> get_fields type_ptr_to_sil_type tenv decl_list')
-  | ObjCIvarDecl (_, name_info, type_ptr, _, _) :: decl_list' ->
-      add_field name_info type_ptr [] decl_list'
+           add_field name_info qual_type attributes decl_list'
+       | _ -> get_fields qual_type_to_sil_type tenv decl_list')
+  | ObjCIvarDecl (_, name_info, qual_type, _, _) :: decl_list' ->
+      add_field name_info qual_type [] decl_list'
   | _ :: decl_list' ->
-      get_fields type_ptr_to_sil_type tenv decl_list'
+      get_fields qual_type_to_sil_type tenv decl_list'
 
 (* Add potential extra fields defined only in the implementation of the class *)
 (* to the info given in the interface. Update the tenv accordingly. *)

@@ -15,7 +15,7 @@ open! IStd
 type method_signature = {
   mutable name : Typ.Procname.t;
   args : (Mangled.t * Clang_ast_t.qual_type) list;
-  ret_type : Clang_ast_t.type_ptr;
+  ret_type : Clang_ast_t.qual_type;
   attributes : Clang_ast_t.attribute list;
   loc : Clang_ast_t.source_range;
   is_instance : bool;
@@ -101,5 +101,5 @@ let ms_to_string ms =
   IList.to_string
     (fun (s1, s2) -> (Mangled.to_string s1) ^ ", " ^ (CAst_utils.string_of_qual_type s2))
     ms.args
-  ^ "->" ^ (Clang_ast_extend.type_ptr_to_string ms.ret_type) ^ " " ^
+  ^ "->" ^ (Clang_ast_extend.type_ptr_to_string ms.ret_type.Clang_ast_t.qt_type_ptr) ^ " " ^
   Clang_ast_j.string_of_source_range ms.loc

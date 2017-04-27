@@ -36,34 +36,35 @@ let is_class typ =
       String.equal (Typ.Name.name name) CFrontend_config.objc_class
   | _ -> false
 
-let rec return_type_of_function_type_ptr type_ptr =
+let rec return_type_of_function_qual_type (qual_type : Clang_ast_t.qual_type) =
   let open Clang_ast_t in
-  match CAst_utils.get_type type_ptr with
+  match CAst_utils.get_type qual_type.qt_type_ptr with
   | Some FunctionProtoType (_, function_type_info, _)
   | Some FunctionNoProtoType (_, function_type_info) ->
       function_type_info.Clang_ast_t.fti_return_type
-  | Some BlockPointerType (_, in_type_ptr) ->
-      return_type_of_function_type_ptr in_type_ptr
+  | Some BlockPointerType (_, in_qual) ->
+      return_type_of_function_qual_type in_qual
   | Some _ ->
       Logging.err_debug "Warning: Type pointer %s is not a function type."
-        (Clang_ast_extend.type_ptr_to_string type_ptr);
-      Clang_ast_extend.ErrorType
+        (Clang_ast_extend.type_ptr_to_string qual_type.qt_type_ptr);
+      {qual_type with qt_type_ptr=Clang_ast_extend.ErrorType}
   | None ->
       Logging.err_debug "Warning: Type pointer %s not found."
-        (Clang_ast_extend.type_ptr_to_string type_ptr);
-      Clang_ast_extend.ErrorType
+        (Clang_ast_extend.type_ptr_to_string qual_type.qt_type_ptr);
+      {qual_type with qt_type_ptr=Clang_ast_extend.ErrorType}
 
-let return_type_of_function_type tp =
-  return_type_of_function_type_ptr tp
+let return_type_of_function_type qual_type =
+  return_type_of_function_qual_type qual_type
 
-let is_block_type tp =
+
+let is_block_type {Clang_ast_t.qt_type_ptr} =
   let open Clang_ast_t in
-  match CAst_utils.get_desugared_type tp with
+  match CAst_utils.get_desugared_type qt_type_ptr with
   | Some BlockPointerType _ -> true
   | _ -> false
 
-let is_reference_type tp =
-  match CAst_utils.get_desugared_type tp with
+let is_reference_type {Clang_ast_t.qt_type_ptr} =
+  match CAst_utils.get_desugared_type qt_type_ptr with
   | Some Clang_ast_t.LValueReferenceType _ -> true
   | Some Clang_ast_t.RValueReferenceType _ -> true
   | _ -> false

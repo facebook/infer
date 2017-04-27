@@ -154,8 +154,8 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name=fun _ x -> x)
     ~is_static_local:(var_decl_info.Clang_ast_t.vdi_is_static_local)
     (mk_name name_string simple_name) translation_unit
 
-let mk_sil_var trans_unit_ctx named_decl_info decl_info_type_ptr_opt procname outer_procname =
-  match decl_info_type_ptr_opt with
+let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname outer_procname =
+  match decl_info_qual_type_opt with
   | Some (decl_info, qt, var_decl_info, should_be_mangled) ->
       let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
       if var_decl_info.Clang_ast_t.vdi_is_global then

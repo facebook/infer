@@ -95,7 +95,7 @@ let _is_object_of_class_named comp receiver cname =
   | PseudoObjectExpr (_, _, ei)
   | ImplicitCastExpr (_, _, ei, _)
   | ParenExpr (_, _, ei) ->
-      (match CAst_utils.type_ptr_to_objc_interface ei.ei_type_ptr with
+      (match CAst_utils.qual_type_to_objc_interface ei.ei_qual_type with
        | Some interface -> comp (Ctl_parser_types.Decl interface) cname
        | _ -> false)
   | _ -> false
@@ -126,7 +126,7 @@ let is_receiver_kind_class comp omei cname =
   let open Clang_ast_t in
   match omei.omei_receiver_kind  with
   | `Class ptr ->
-      (match CAst_utils.get_desugared_type ptr with
+      (match CAst_utils.get_desugared_type ptr.Clang_ast_t.qt_type_ptr with
        | Some ObjCInterfaceType (_, ptr) ->
            (match CAst_utils.get_decl ptr with
             | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
@@ -219,7 +219,7 @@ let is_property_pointer_type an =
   let open Clang_ast_t in
   match an with
   | Ctl_parser_types.Decl (ObjCPropertyDecl (_, _, pdi)) ->
-      (match CAst_utils.get_desugared_type pdi.opdi_type_ptr with
+      (match CAst_utils.get_desugared_type pdi.opdi_qual_type.Clang_ast_t.qt_type_ptr with
        | Some MemberPointerType _
        | Some ObjCObjectPointerType _
        | Some BlockPointerType _ -> true
@@ -319,7 +319,7 @@ let isa classname an =
   | Ctl_parser_types.Stmt stmt ->
       (match Clang_ast_proj.get_expr_tuple stmt with
        | Some (_, _, expr_info) ->
-           let typ = CAst_utils.get_desugared_type expr_info.ei_type_ptr in
+           let typ = CAst_utils.get_desugared_type expr_info.ei_qual_type.qt_type_ptr in
            CAst_utils.is_ptr_to_objc_class typ classname
        | _ -> false)
   | _ -> false

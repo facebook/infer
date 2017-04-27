@@ -34,7 +34,7 @@ let get_template_info tenv (fdi : Clang_ast_t.function_decl_info) : Typ.template
   | Some spec_info -> Typ.Template (
       QualifiedCppName.empty,
       List.map spec_info.tsi_specialization_args ~f:(function
-          | `Type type_ptr -> Some (CType_decl.type_ptr_to_sil_type tenv type_ptr)
+          | `Type qual_type -> Some (CType_decl.qual_type_to_sil_type tenv qual_type)
           | _ -> None))
   | None -> Typ.NoTemplate
 

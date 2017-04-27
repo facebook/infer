@@ -93,7 +93,7 @@ let rec get_struct_fields tenv decl =
   let do_one_decl decl = match decl with
     | FieldDecl (_, name_info, qt, _) ->
         let id = CGeneral_utils.mk_class_field_name name_info in
-        let typ = type_ptr_to_sil_type tenv qt.Clang_ast_t.qt_type_ptr in
+        let typ = qual_type_to_sil_type tenv qt in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
     | _ -> [] in
@@ -113,7 +113,7 @@ and get_record_custom_type tenv definition_decl =
   match definition_decl with
   | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _) ->
-      Option.map ~f:(type_ptr_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
+      Option.map ~f:(qual_type_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
   | _ -> None
 
 and get_template_specialization tenv = function
@@ -122,7 +122,7 @@ and get_template_specialization tenv = function
         | Some decl -> get_class_template_name decl
         | None -> assert false in
       let args_in_sil = List.map spec_info.tsi_specialization_args ~f:(function
-          | `Type t_ptr -> Some (type_ptr_to_sil_type tenv t_ptr)
+          | `Type qual_type -> Some (qual_type_to_sil_type tenv qual_type)
           | _ -> None) in
       Typ.Template (tname, args_in_sil)
   | _ -> Typ.NoTemplate
@@ -202,30 +202,30 @@ and add_types_from_decl_to_tenv tenv decl =
   match decl with
   | ClassTemplateSpecializationDecl _ | CXXRecordDecl _ | RecordDecl _ ->
       get_record_declaration_type tenv decl
-  | ObjCInterfaceDecl _ -> ObjcInterface_decl.interface_declaration type_ptr_to_sil_type tenv decl
+  | ObjCInterfaceDecl _ -> ObjcInterface_decl.interface_declaration qual_type_to_sil_type tenv decl
   | ObjCImplementationDecl _ ->
-      ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv decl
-  | ObjCProtocolDecl _ -> ObjcProtocol_decl.protocol_decl type_ptr_to_sil_type tenv decl
-  | ObjCCategoryDecl _ -> ObjcCategory_decl.category_decl type_ptr_to_sil_type tenv decl
-  | ObjCCategoryImplDecl _ -> ObjcCategory_decl.category_impl_decl type_ptr_to_sil_type tenv decl
+      ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type tenv decl
+  | ObjCProtocolDecl _ -> ObjcProtocol_decl.protocol_decl qual_type_to_sil_type tenv decl
+  | ObjCCategoryDecl _ -> ObjcCategory_decl.category_decl qual_type_to_sil_type tenv decl
+  | ObjCCategoryImplDecl _ -> ObjcCategory_decl.category_impl_decl qual_type_to_sil_type tenv decl
   | EnumDecl _ -> CEnum_decl.enum_decl decl
   | _ -> assert false
 
-and type_ptr_to_sil_type tenv tp =
-  CType_to_sil_type.type_ptr_to_sil_type add_types_from_decl_to_tenv tenv tp
+and qual_type_to_sil_type tenv qual_type =
+  CType_to_sil_type.qual_type_to_sil_type add_types_from_decl_to_tenv tenv qual_type
 
 let get_type_from_expr_info ei tenv =
-  let tp = ei.Clang_ast_t.ei_type_ptr in
-  type_ptr_to_sil_type tenv tp
+  let qt = ei.Clang_ast_t.ei_qual_type in
+  qual_type_to_sil_type tenv qt
 
-let class_from_pointer_type tenv type_ptr =
-  match (type_ptr_to_sil_type tenv type_ptr).Typ.desc with
+let class_from_pointer_type tenv qual_type =
+  match (qual_type_to_sil_type tenv qual_type).Typ.desc with
   | Tptr({desc=Tstruct typename}, _) -> typename
   | _ -> assert false
 
 let get_class_type_np tenv expr_info obj_c_message_expr_info =
-  let tp =
+  let qt =
     match obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind with
-    | `Class tp -> tp
-    | _ -> expr_info.Clang_ast_t.ei_type_ptr in
-  type_ptr_to_sil_type tenv tp
+    | `Class qt -> qt
+    | _ -> expr_info.Clang_ast_t.ei_qual_type in
+  qual_type_to_sil_type tenv qt

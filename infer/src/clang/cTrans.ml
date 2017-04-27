@@ -93,7 +93,7 @@ struct
   let objc_exp_of_type_block fun_exp_stmt =
     match fun_exp_stmt with
     | Clang_ast_t.ImplicitCastExpr(_, _, ei, _)
-      when CType.is_block_type ei.Clang_ast_t.ei_type_ptr -> true
+      when CType.is_block_type ei.Clang_ast_t.ei_qual_type -> true
     | _ -> false
 
   (* This function add in tenv a class representing an objc block. *)
@@ -261,8 +261,8 @@ struct
     Pvar.mk_tmp var_name_suffix procname
 
   let mk_temp_sil_var_for_expr tenv procdesc var_name_prefix expr_info =
-    let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
-    let typ = CType_decl.type_ptr_to_sil_type tenv type_ptr in
+    let qual_type = expr_info.Clang_ast_t.ei_qual_type in
+    let typ = CType_decl.qual_type_to_sil_type tenv qual_type in
     (mk_temp_sil_var procdesc var_name_prefix, typ)
 
   let create_var_exp_tmp_var trans_state expr_info var_name =
@@ -412,15 +412,15 @@ struct
   (* The stmt seems to be always empty *)
   let unaryExprOrTypeTraitExpr_trans trans_state expr_info unary_expr_or_type_trait_expr_info =
     let tenv = trans_state.context.CContext.tenv in
-    let typ = CType_decl.type_ptr_to_sil_type tenv expr_info.Clang_ast_t.ei_type_ptr in
+    let typ = CType_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
     match unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_kind with
     | `SizeOf ->
-        let tp =
+        let qt_opt =
           CAst_utils.type_from_unary_expr_or_type_trait_expr_info
             unary_expr_or_type_trait_expr_info in
         let sizeof_typ =
-          match tp with
-          | Some tp -> CType_decl.type_ptr_to_sil_type tenv tp
+          match qt_opt with
+          | Some qt -> CType_decl.qual_type_to_sil_type tenv qt
           | None -> typ (* Some default type since the type is missing *) in
         { empty_res_trans with
           exps = [(Exp.Sizeof (sizeof_typ, None, Subtype.exact), sizeof_typ)] }
@@ -437,7 +437,7 @@ struct
     let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
     { empty_res_trans with root_nodes = [root_node']; leaf_nodes = trans_state.succ_nodes }
 
-  let get_builtin_pname_opt trans_unit_ctx qual_name decl_opt type_ptr =
+  let get_builtin_pname_opt trans_unit_ctx qual_name decl_opt (qual_type : Clang_ast_t.qual_type) =
     let get_annotate_attr_arg decl =
       let open Clang_ast_t in
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
@@ -458,9 +458,9 @@ struct
         Some (Typ.Procname.from_string_c_fun attr)
     | _ when CTrans_models.is_modeled_builtin name ->
         Some (Typ.Procname.from_string_c_fun (CFrontend_config.infer ^ name))
-    | _ when CTrans_models.is_release_builtin name type_ptr ->
+    | _ when CTrans_models.is_release_builtin name qual_type.qt_type_ptr ->
         Some BuiltinDecl.__objc_release_cf
-    | _ when CTrans_models.is_retain_builtin name type_ptr ->
+    | _ when CTrans_models.is_retain_builtin name qual_type.qt_type_ptr ->
         Some BuiltinDecl.__objc_retain_cf
     | _ when String.equal name CFrontend_config.malloc &&
              CGeneral_utils.is_objc_extension trans_unit_ctx ->
@@ -471,13 +471,13 @@ struct
   let function_deref_trans trans_state decl_ref =
     let open CContext in
     let context = trans_state.context in
-    let name_info, decl_ptr, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
+    let name_info, decl_ptr, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
     let decl_opt = CAst_utils.get_function_decl_with_body decl_ptr in
     Option.iter ~f:(call_translation context) decl_opt;
     let qual_name = CAst_utils.get_qualified_name name_info in
-    let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let pname =
-      match get_builtin_pname_opt context.translation_unit_context qual_name decl_opt type_ptr with
+      match get_builtin_pname_opt context.translation_unit_context qual_name decl_opt qual_type with
       | Some builtin_pname -> builtin_pname
       | None ->
           let name = QualifiedCppName.to_qual_string qual_name in
@@ -488,9 +488,9 @@ struct
     let open CContext in
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let name_info, _, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
+    let name_info, _, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
     Logging.out_debug "!!!!! Dealing with field '%s' @." name_info.Clang_ast_t.ni_name;
-    let field_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
         "WARNING: in Field dereference we expect to know the object\n" in
     let is_pointer_typ = match class_typ.desc with
@@ -511,7 +511,7 @@ struct
     (*    it's done in var_deref_trans. The only exception is during field initialization in*)
     (*    constructor's initializer list (when reference itself is initialized) *)
     let should_add_deref = (not is_pointer_typ) ||
-                           (not is_constructor_init && CType.is_reference_type type_ptr) in
+                           (not is_constructor_init && CType.is_reference_type qual_type) in
     let exp, deref_instrs = if should_add_deref then
         let id = Ident.create_fresh Ident.knormal in
         let deref_instr = Sil.Load (id, field_exp, field_typ, sil_loc) in
@@ -525,12 +525,12 @@ struct
     let open CContext in
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let name_info, decl_ptr, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
+    let name_info, decl_ptr, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
     let decl_opt = CAst_utils.get_function_decl_with_body decl_ptr in
     Option.iter ~f:(call_translation context) decl_opt;
     let method_name = CAst_utils.get_unqualified_name name_info in
     Logging.out_debug "!!!!! Dealing with method '%s' @." method_name;
-    let method_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let method_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let ms_opt = CMethod_trans.method_signature_of_pointer
         context.translation_unit_context context.tenv decl_ptr in
     let is_instance_method = match ms_opt with
@@ -566,7 +566,7 @@ struct
     let qual_method_name = CAst_utils.get_qualified_name name_info in
     let pname =
       match get_builtin_pname_opt context.translation_unit_context qual_method_name decl_opt
-              type_ptr with
+              qual_type with
       | Some builtin_pname -> builtin_pname
       | None ->
           let class_typename = Typ.Name.Cpp.from_qual_name Typ.NoTemplate
@@ -580,9 +580,10 @@ struct
       instrs = pre_trans_result.instrs @ extra_instrs;
     }
 
-  let destructor_deref_trans trans_state pvar_trans_result class_type_ptr si =
+  let destructor_deref_trans trans_state pvar_trans_result class_qual_type si =
     let open Clang_ast_t in
-    let destruct_decl_ref_opt = match CAst_utils.get_decl_from_typ_ptr class_type_ptr with
+    let destruct_decl_ref_opt =
+      match CAst_utils.get_decl_from_typ_ptr class_qual_type.Clang_ast_t.qt_type_ptr with
       | Some CXXRecordDecl (_, _, _ , _, _, _, _, cxx_record_info)
       | Some ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _) ->
           cxx_record_info.xrdi_destructor
@@ -592,20 +593,20 @@ struct
         method_deref_trans trans_state pvar_trans_result decl_ref si `CXXDestructor
     | None -> empty_res_trans
 
-  let this_expr_trans trans_state sil_loc class_type_ptr =
+  let this_expr_trans trans_state sil_loc class_qual_type =
     let context = trans_state.context in
     let procname = Procdesc.get_proc_name context.CContext.procdesc in
     let name = CFrontend_config.this in
     let pvar = Pvar.mk (Mangled.from_string name) procname in
     let exp = Exp.Lvar pvar in
-    let typ = CType_decl.type_ptr_to_sil_type context.CContext.tenv class_type_ptr in
+    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv class_qual_type in
     let exps =  [(exp, typ)] in
     (* there is no cast operation in AST, but backend needs it *)
     dereference_value_from_result sil_loc { empty_res_trans with exps = exps } ~strip_pointer:false
 
   let cxxThisExpr_trans trans_state stmt_info expr_info =
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
-    this_expr_trans trans_state sil_loc expr_info.Clang_ast_t.ei_type_ptr
+    this_expr_trans trans_state sil_loc expr_info.Clang_ast_t.ei_qual_type
 
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     let context = trans_state.context in
@@ -622,8 +623,8 @@ struct
 
   and var_deref_trans trans_state stmt_info (decl_ref : Clang_ast_t.decl_ref) =
     let context = trans_state.context in
-    let _, _, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
-    let ast_typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let _, _, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
+    let ast_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let typ =
       match ast_typ.Typ.desc with
       | Tstruct _ when decl_ref.dr_kind = `ParmVar ->
@@ -713,8 +714,8 @@ struct
 
   and enum_constant_trans trans_state decl_ref =
     let context = trans_state.context in
-    let _, _, type_ptr = CAst_utils.get_info_from_decl_ref decl_ref in
-    let typ = CType_decl.type_ptr_to_sil_type context.CContext.tenv type_ptr in
+    let _, _, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
+    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
     let const_exp = get_enum_constant_expr context decl_ref.Clang_ast_t.dr_decl_pointer in
     { empty_res_trans with exps = [(const_exp, typ)] }
 
@@ -770,7 +771,7 @@ struct
     let trans_state' = { trans_state_pri with succ_nodes = [] } in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let typ =
-      CType_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+      CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
     match stmt_list with
     | [s1; s2] -> (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
         let rhs_owning_method = CTrans_utils.is_owning_method s2 in
@@ -992,9 +993,9 @@ struct
         params_stmt si (Typ.mk Tvoid) false extra_res_trans in
     { res_trans with exps=extra_res_trans.exps }
 
-  and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr =
+  and cxx_destructor_call_trans trans_state si this_res_trans class_qual_type =
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
-    let res_trans_callee = destructor_deref_trans trans_state this_res_trans class_type_ptr si in
+    let res_trans_callee = destructor_deref_trans trans_state this_res_trans class_qual_type si in
     let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
     if res_trans_callee.exps <> [] then
       cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si (Typ.mk Tvoid)
@@ -1015,11 +1016,11 @@ struct
     else if String.equal selector CFrontend_config.alloc ||
             String.equal selector CFrontend_config.new_str then
       match receiver_kind with
-      | `Class type_ptr ->
+      | `Class qual_type ->
           let class_opt =
             CMethod_trans.get_class_name_method_call_from_clang
               context.translation_unit_context context.CContext.tenv obj_c_message_expr_info in
-          Some (new_or_alloc_trans trans_state_pri sil_loc si type_ptr class_opt selector)
+          Some (new_or_alloc_trans trans_state_pri sil_loc si qual_type class_opt selector)
       | _ -> None
       (* assertions *)
     else if CTrans_models.is_handleFailureInMethod selector then
@@ -1135,8 +1136,8 @@ struct
     (match stmt_list with
      | [cond; exp1; exp2] ->
          let typ =
-           CType_decl.type_ptr_to_sil_type
-             context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+           CType_decl.qual_type_to_sil_type
+             context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
          let var_typ = add_reference_if_glvalue typ expr_info in
          let join_node = create_node (Procdesc.Node.Join_node) [] sil_loc context in
          Procdesc.node_set_succs_exn context.procdesc join_node succ_nodes [];
@@ -1622,7 +1623,7 @@ struct
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let var_type =
-      CType_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+      CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
     let lh = var_or_zero_in_init_list tenv var_exp var_type ~return_zero:false in
     let res_trans_subexpr_list =
       initListExpr_initializers_trans trans_state var_exp 0 stmts typ false stmt_info in
@@ -1722,19 +1723,17 @@ struct
     let do_var_dec (di, var_name, qual_type, vdi) next_node =
       let var_decl = VarDecl (di, var_name, qual_type, vdi) in
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
-      let typ = CType_decl.type_ptr_to_sil_type
-          context.CContext.tenv
-          qual_type.Clang_ast_t.qt_type_ptr in
+      let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar;
       let trans_state' = { trans_state with succ_nodes = next_node } in
       init_expr_trans trans_state' (Exp.Lvar pvar, typ) stmt_info vdi.Clang_ast_t.vdi_init_expr in
 
     match var_decls with
     | [] -> { empty_res_trans with root_nodes = next_nodes }
-    | VarDecl (di, n, tp, vdi) :: var_decls' ->
+    | VarDecl (di, n, qt, vdi) :: var_decls' ->
         (* Var are defined when procdesc is created, here we only take care of initialization*)
         let res_trans_vd = collect_all_decl trans_state var_decls' next_nodes stmt_info in
-        let res_trans_tmp = do_var_dec (di, n, tp, vdi) res_trans_vd.root_nodes in
+        let res_trans_tmp = do_var_dec (di, n, qt, vdi) res_trans_vd.root_nodes in
         { empty_res_trans with
           root_nodes = res_trans_tmp.root_nodes; leaf_nodes = [];
           instrs = res_trans_tmp.instrs @ res_trans_vd.instrs;
@@ -1824,7 +1823,7 @@ struct
         "WARNING: In CastExpr There must be only one stmt defining the expression to be cast.\n" in
     let res_trans_stmt = instruction trans_state stmt in
     let typ =
-      CType_decl.type_ptr_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+      CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
     let cast_kind = cast_expr_info.Clang_ast_t.cei_cast_kind in
     (* This gives the differnece among cast operations kind*)
     let is_objc_bridged_cast_expr _ stmt =
@@ -1872,8 +1871,8 @@ struct
       extract_exp_from_list res_trans_stmt.exps
         "\nWARNING: Missing operand in unary operator. NEED FIXING.\n" in
     let ret_typ =
-      CType_decl.type_ptr_to_sil_type
-        context.CContext.tenv expr_info.Clang_ast_t.ei_type_ptr in
+      CType_decl.qual_type_to_sil_type
+        context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
     let exp_op, instr_op =
       CArithmetic_trans.unary_operation_instruction
         context.translation_unit_context unary_operator_info sil_e' ret_typ sil_loc in
@@ -1954,7 +1953,7 @@ struct
   and objCBoxedExpr_trans trans_state info sel stmt_info stmts =
     let typ =
       CType_decl.class_from_pointer_type
-        trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
+        trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
     let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class sel typ None in
     let message_stmt =
       Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info) in
@@ -1963,7 +1962,7 @@ struct
   and objCArrayLiteral_trans trans_state info stmt_info stmts =
     let typ =
       CType_decl.class_from_pointer_type
-        trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
+        trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
     let meth = CFrontend_config.array_with_objects_count_m in
     let obj_c_mes_expr_info = Ast_expressions.make_obj_c_message_expr_info_class meth typ None in
     let stmts = stmts @ [Ast_expressions.create_nil stmt_info] in
@@ -1973,7 +1972,7 @@ struct
   and objCDictionaryLiteral_trans trans_state info stmt_info stmts =
     let typ =
       CType_decl.class_from_pointer_type
-        trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
+        trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
     let dictionary_literal_pname = BuiltinDecl.__objc_dictionary_literal in
     let dictionary_literal_s = Typ.Procname.get_method dictionary_literal_pname in
     let obj_c_message_expr_info =
@@ -1987,10 +1986,10 @@ struct
 
   and objCStringLiteral_trans trans_state stmt_info stmts info =
     let stmts = [Ast_expressions.create_implicit_cast_expr stmt_info stmts
-                   Ast_expressions.create_char_star_type `ArrayToPointerDecay] in
+                   (Ast_expressions.create_char_star_type ~is_const:true) `ArrayToPointerDecay] in
     let typ =
       CType_decl.class_from_pointer_type
-        trans_state.context.CContext.tenv info.Clang_ast_t.ei_type_ptr in
+        trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
     let meth = CFrontend_config.string_with_utf8_m in
     let obj_c_mess_expr_info = Ast_expressions.make_obj_c_message_expr_info_class meth typ None in
     let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_mess_expr_info) in
@@ -2040,9 +2039,9 @@ struct
     match decl with
     | Clang_ast_t.BlockDecl (_, block_decl_info) ->
         let open CContext in
-        let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
+        let qual_type = expr_info.Clang_ast_t.ei_qual_type in
         let block_pname = CProcname.mk_fresh_block_procname procname in
-        let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
+        let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
         (* We need to set the explicit dependency between the newly created block and the *)
         (* defining procedure. We add an edge in the call graph.*)
         Cg.add_edge context.cg procname block_pname;
@@ -2050,7 +2049,7 @@ struct
         let captureds = CVar_decl.captured_vars_from_block_info context captured_block_vars in
         let ids_instrs = List.map ~f:assign_captured_var captureds in
         let ids, instrs = List.unzip ids_instrs in
-        let block_data = (context, type_ptr, block_pname, captureds) in
+        let block_data = (context, qual_type, block_pname, captureds) in
         F.function_decl context.translation_unit_context context.tenv context.cfg context.cg decl
           (Some block_data);
         let captured_vars =
@@ -2095,12 +2094,12 @@ struct
 
   and lambdaExpr_trans trans_state expr_info decl =
     let open CContext in
-    let type_ptr = expr_info.Clang_ast_t.ei_type_ptr in
+    let qual_type = expr_info.Clang_ast_t.ei_qual_type in
     let context = trans_state.context in
     call_translation context decl;
     let procname = Procdesc.get_proc_name context.procdesc in
     let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context decl in
-    let typ = CType_decl.type_ptr_to_sil_type context.tenv type_ptr in
+    let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     (* We need to set the explicit dependency between the newly created lambda and the *)
     (* defining procedure. We add an edge in the call graph.*)
     Cg.add_edge context.cg procname lambda_pname;
@@ -2216,14 +2215,14 @@ struct
     let trans_state' = { trans_state with var_exp_typ = var_exp_typ } in
     instruction trans_state' stmt
 
-  and cxxDynamicCastExpr_trans trans_state stmt_info stmts cast_type_ptr =
+  and cxxDynamicCastExpr_trans trans_state stmt_info stmts cast_qual_type =
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state' = { trans_state_pri with succ_nodes = [] } in
     let context = trans_state.context in
     let subtypes = Subtype.subtypes_cast in
     let tenv = context.CContext.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let cast_type = CType_decl.type_ptr_to_sil_type tenv cast_type_ptr in
+    let cast_type = CType_decl.qual_type_to_sil_type tenv cast_qual_type in
     let sizeof_expr = match cast_type.desc with
       | Typ.Tptr (typ, _) -> Exp.Sizeof (typ, None, subtypes)
       | _ -> assert false in
@@ -2308,8 +2307,7 @@ struct
     let context = trans_state.context in
     let tenv = context.CContext.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
-    let type_pointer = expr_info.Clang_ast_t.ei_type_ptr in
-    let typ = CType_decl.type_ptr_to_sil_type tenv type_pointer in
+    let typ = CType_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
     let fun_name = Typ.Procname.from_string_c_fun CFrontend_config.infer_skip_fun in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
@@ -2606,8 +2604,8 @@ struct
         (* right now we ignore this expression and try to translate the child node *)
         parenExpr_trans trans_state stmt_list
 
-    | CXXDynamicCastExpr (stmt_info, stmts, _, _, type_ptr, _) ->
-        cxxDynamicCastExpr_trans trans_state stmt_info stmts type_ptr
+    | CXXDynamicCastExpr (stmt_info, stmts, _, _, qual_type, _) ->
+        cxxDynamicCastExpr_trans trans_state stmt_info stmts qual_type
 
     | CXXDefaultArgExpr (_, _, _, default_expr_info)
     | CXXDefaultInitExpr (_, _, _, default_expr_info) ->
@@ -2676,8 +2674,9 @@ struct
     let child_stmt_info =
       { (Ast_expressions.dummy_stmt_info ()) with Clang_ast_t.si_source_range = source_range } in
     let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
-    let class_type_ptr = Ast_expressions.create_pointer_type (Clang_ast_extend.DeclPtr class_ptr) in
-    let this_res_trans = this_expr_trans trans_state' sil_loc class_type_ptr in
+    let class_qual_type = Ast_expressions.create_pointer_qual_type ~is_const:false
+        (CAst_utils.qual_type_of_decl_ptr class_ptr) in
+    let this_res_trans = this_expr_trans trans_state' sil_loc class_qual_type in
     let var_res_trans = match ctor_init.Clang_ast_t.xci_subject with
       | `Delegating _ | `BaseClass _ ->
           let this_exp, this_typ = extract_exp_from_list this_res_trans.exps

@@ -184,29 +184,29 @@ struct
        | ObjCInterfaceDecl(_, _, decl_list, _, _) ->
            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
            ignore
-             (ObjcInterface_decl.interface_declaration CType_decl.type_ptr_to_sil_type tenv dec);
+             (ObjcInterface_decl.interface_declaration CType_decl.qual_type_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
 
        | ObjCProtocolDecl(_, _, decl_list, _, _) ->
            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-           ignore (ObjcProtocol_decl.protocol_decl CType_decl.type_ptr_to_sil_type tenv dec);
+           ignore (ObjcProtocol_decl.protocol_decl CType_decl.qual_type_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
 
        | ObjCCategoryDecl(_, _, decl_list, _, _) ->
            let curr_class =  CContext.ContextClsDeclPtr dec_ptr in
-           ignore (ObjcCategory_decl.category_decl CType_decl.type_ptr_to_sil_type tenv dec);
+           ignore (ObjcCategory_decl.category_decl CType_decl.qual_type_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
 
        | ObjCCategoryImplDecl(_, _, decl_list, _, _) ->
            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-           ignore (ObjcCategory_decl.category_impl_decl CType_decl.type_ptr_to_sil_type tenv dec);
+           ignore (ObjcCategory_decl.category_impl_decl CType_decl.qual_type_to_sil_type tenv dec);
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list;
 
        | ObjCImplementationDecl(decl_info, _, decl_list, _, _) ->
            let curr_class = CContext.ContextClsDeclPtr dec_ptr in
            let class_typename = CType_decl.get_record_typename ~tenv dec in
-           let type_ptr_to_sil_type = CType_decl.type_ptr_to_sil_type in
-           ignore (ObjcInterface_decl.interface_impl_declaration type_ptr_to_sil_type tenv dec);
+           let qual_type_to_sil_type = CType_decl.qual_type_to_sil_type in
+           ignore (ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type tenv dec);
            CMethod_trans.add_default_method_for_class trans_unit_ctx class_typename decl_info;
            process_methods trans_unit_ctx tenv cg cfg curr_class decl_list;
 

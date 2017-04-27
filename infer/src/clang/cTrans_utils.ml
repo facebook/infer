@@ -351,9 +351,9 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
     PriorityNode.compute_results_to_parent trans_state loc nname stmt_info [res_trans_tmp] in
   { res_trans with exps = [(Exp.Var init_ret_id, alloc_ret_type)]}
 
-let new_or_alloc_trans trans_state loc stmt_info type_ptr class_name_opt selector =
+let new_or_alloc_trans trans_state loc stmt_info qual_type class_name_opt selector =
   let tenv = trans_state.context.CContext.tenv in
-  let function_type = CType_decl.type_ptr_to_sil_type tenv type_ptr in
+  let function_type = CType_decl.qual_type_to_sil_type tenv qual_type in
   let class_name =
     match class_name_opt with
     | Some class_name -> class_name
@@ -548,20 +548,20 @@ let extract_stmt_from_singleton stmt_list warning_string =
 let rec get_type_from_exp_stmt stmt =
   let do_decl_ref_exp i =
     match i.Clang_ast_t.drti_decl_ref with
-    | Some d -> (match d.Clang_ast_t.dr_type_ptr with
+    | Some d -> (match d.Clang_ast_t.dr_qual_type with
         | Some n -> n
         | _ -> assert false )
     | _ -> assert false in
   let open Clang_ast_t in
   match stmt with
   | CXXOperatorCallExpr(_, _, ei)
-  | CallExpr(_, _, ei) -> ei.Clang_ast_t.ei_type_ptr
-  | MemberExpr (_, _, ei, _) -> ei.Clang_ast_t.ei_type_ptr
-  | ParenExpr (_, _, ei) -> ei.Clang_ast_t.ei_type_ptr
-  | ArraySubscriptExpr(_, _, ei) -> ei.Clang_ast_t.ei_type_ptr
-  | ObjCIvarRefExpr (_, _, ei, _) -> ei.Clang_ast_t.ei_type_ptr
-  | ObjCMessageExpr (_, _, ei, _ ) -> ei.Clang_ast_t.ei_type_ptr
-  | PseudoObjectExpr(_, _, ei) -> ei.Clang_ast_t.ei_type_ptr
+  | CallExpr(_, _, ei) -> ei.Clang_ast_t.ei_qual_type
+  | MemberExpr (_, _, ei, _) -> ei.Clang_ast_t.ei_qual_type
+  | ParenExpr (_, _, ei) -> ei.Clang_ast_t.ei_qual_type
+  | ArraySubscriptExpr(_, _, ei) -> ei.Clang_ast_t.ei_qual_type
+  | ObjCIvarRefExpr (_, _, ei, _) -> ei.Clang_ast_t.ei_qual_type
+  | ObjCMessageExpr (_, _, ei, _ ) -> ei.Clang_ast_t.ei_qual_type
+  | PseudoObjectExpr(_, _, ei) -> ei.Clang_ast_t.ei_qual_type
   | CStyleCastExpr(_, stmt_list, _, _, _)
   | UnaryOperator(_, stmt_list, _, _)
   | ImplicitCastExpr(_, stmt_list, _, _) ->
@@ -658,7 +658,7 @@ let rec contains_opaque_value_expr s =
 
 (* checks if a unary operator is a logic negation applied to integers*)
 let is_logical_negation_of_int tenv ei uoi =
-  match (CType_decl.type_ptr_to_sil_type tenv ei.Clang_ast_t.ei_type_ptr).desc,
+  match (CType_decl.qual_type_to_sil_type tenv ei.Clang_ast_t.ei_qual_type).desc,
         uoi.Clang_ast_t.uoi_kind with
   | Typ.Tint _,`LNot -> true
   | _, _ -> false
@@ -668,8 +668,8 @@ let rec is_block_stmt stmt =
   match stmt with
   | BlockExpr _ -> true
   | DeclRefExpr (_, _, expr_info, _) ->
-      let tp = expr_info.Clang_ast_t.ei_type_ptr in
-      CType.is_block_type tp
+      let qt = expr_info.Clang_ast_t.ei_qual_type in
+      CType.is_block_type qt
   | _ -> (match snd (Clang_ast_proj.get_stmt_tuple stmt) with
       | [sub_stmt] -> is_block_stmt sub_stmt
       | _ -> false)

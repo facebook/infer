@@ -76,7 +76,7 @@ val is_enumeration_constant : Clang_ast_t.stmt -> bool
 
 val is_member_exp : Clang_ast_t.stmt -> bool
 
-val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.type_ptr
+val get_type_from_exp_stmt : Clang_ast_t.stmt -> Clang_ast_t.qual_type
 
 (** Given trans_result with ONE expression, create temporary variable with dereferenced value of an
     expression assigned to it *)
@@ -109,7 +109,7 @@ val alloc_trans :
   Typ.Procname.t option -> trans_result
 
 val new_or_alloc_trans : trans_state -> Location.t -> Clang_ast_t.stmt_info ->
-  Clang_ast_t.type_ptr -> Typ.Name.t option -> string -> trans_result
+  Clang_ast_t.qual_type -> Typ.Name.t option -> string -> trans_result
 
 val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> trans_result
 

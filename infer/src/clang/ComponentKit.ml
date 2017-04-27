@@ -143,7 +143,7 @@ let component_factory_function_advice context an =
   match an with
   | Ctl_parser_types.Decl (Clang_ast_t.FunctionDecl (decl_info, _, (qual_type: Clang_ast_t.qual_type), _)) ->
       let objc_interface =
-        CAst_utils.type_ptr_to_objc_interface qual_type.qt_type_ptr in
+        CAst_utils.qual_type_to_objc_interface qual_type in
       let condition =
         is_ck_context context an && is_component_if objc_interface in
       if condition then

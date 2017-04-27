@@ -73,7 +73,7 @@ let is_modeled_attribute attr_name =
 let get_first_param_typedef_string_opt type_ptr =
   match CAst_utils.get_desugared_type type_ptr with
   | Some Clang_ast_t.FunctionProtoType (_, _, {pti_params_type = [param_ptr]}) ->
-      CAst_utils.name_opt_of_typedef_type_ptr param_ptr
+      CAst_utils.name_opt_of_typedef_qual_type param_ptr
       |> Option.map ~f:QualifiedCppName.to_qual_string
   | _ -> None
 
@@ -150,7 +150,7 @@ let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname la
     String.equal method_name CFrontend_config.string_with_utf8_m in
   let id_type = Ast_expressions.create_id_type in
   let args = [(Mangled.from_string "x",
-               Ast_expressions.create_char_star_qual_type ~is_const:true)] in
+               Ast_expressions.create_char_star_type ~is_const:true)] in
   get_predefined_ms_method condition class_name method_name Typ.Procname.ObjCClassMethod
     mk_procname lang args id_type [] None
 

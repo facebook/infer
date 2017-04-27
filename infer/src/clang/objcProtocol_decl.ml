@@ -11,11 +11,11 @@ open! IStd
 
 module L = Logging
 
-let add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info =
+let add_protocol_super qual_type_to_sil_type tenv obj_c_protocol_decl_info =
   let protocols = obj_c_protocol_decl_info.Clang_ast_t.opcdi_protocols in
-  CAst_utils.add_type_from_decl_ref_list type_ptr_to_sil_type tenv protocols
+  CAst_utils.add_type_from_decl_ref_list qual_type_to_sil_type tenv protocols
 
-let protocol_decl type_ptr_to_sil_type tenv decl =
+let protocol_decl qual_type_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
   | ObjCProtocolDecl(decl_info, name_info, _, _, obj_c_protocol_decl_info) ->
@@ -30,7 +30,7 @@ let protocol_decl type_ptr_to_sil_type tenv decl =
       let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
       CAst_utils.update_sil_types_map decl_key protocol_type;
       ignore( Tenv.mk_struct tenv ~methods:[] protocol_name );
-      add_protocol_super type_ptr_to_sil_type tenv obj_c_protocol_decl_info;
+      add_protocol_super qual_type_to_sil_type tenv obj_c_protocol_decl_info;
       protocol_type
   | _ -> assert false
 

@@ -19,10 +19,10 @@ val remove_pointer_to_typ : Typ.t -> Typ.t
 
 val is_class : Typ.t -> bool
 
-val return_type_of_function_type : Clang_ast_t.type_ptr -> Clang_ast_t.type_ptr
+val return_type_of_function_type : Clang_ast_t.qual_type -> Clang_ast_t.qual_type
 
-val is_block_type : Clang_ast_t.type_ptr -> bool
+val is_block_type : Clang_ast_t.qual_type -> bool
 
-val is_reference_type : Clang_ast_t.type_ptr -> bool
+val is_reference_type : Clang_ast_t.qual_type -> bool
 
 val get_name_from_type_pointer : string -> string * string
