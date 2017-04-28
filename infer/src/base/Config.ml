@@ -1436,8 +1436,6 @@ and xml_specs =
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
    are allowed to refer to the other arg variables. *)
 
-(* BUG: these arguments will not be detected if put inside @argfiles, as supported by javac. See
-   Infer.run_javac for a version that looks inside argfiles, and discussion in D4397716. *)
 let javac_classes_out =
   CLOpt.mk_string ~parse_mode:CLOpt.Javac
     ~deprecated:["classes_out"] ~long:"" ~short:'d' ~default:CLOpt.init_work_dir

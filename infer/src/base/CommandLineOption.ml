@@ -780,7 +780,45 @@ let extra_env_args = ref []
 let extend_env_args args =
   extra_env_args := List.rev_append args !extra_env_args
 
-let parse_args ~usage ?parse_all action args =
+let extend_env_args args =
+  extra_env_args := List.rev_append args !extra_env_args
+
+let parse_args ~usage ?parse_all action args0 =
+  (* look inside argfiles so we can move select arguments into the top line CLI and parse them into
+     Config vars. note that we don't actually delete the arguments to the file, we just duplicate
+     them on the CLI. javac is ok with this.  *)
+  let expand_argfiles acc arg =
+    if String.is_prefix arg ~prefix:"@"
+    then
+      (* for now, we only need to parse -d. we could parse more if we wanted to, but we would risk
+         incurring the wrath of ARGUMENT_LIST_TOO_LONG *)
+      let should_parse =
+        String.is_prefix ~prefix:"-d" in
+      let fname = String.slice arg 1 (String.length arg) in
+      match In_channel.read_lines fname with
+      | lines ->
+          (* crude but we only care about simple cases that will not involve trickiness, eg
+             unbalanced or escaped quotes such as "ending in\"" *)
+          let strip =
+            String.strip ~drop:(function '"' | '\'' -> true | _ -> false) in
+          let rec parse_argfile_args acc = function
+            | flag :: ((value :: args) as rest) ->
+                let stripped_flag = strip flag in
+                if should_parse stripped_flag
+                then parse_argfile_args (stripped_flag :: strip value :: acc) args
+                else parse_argfile_args acc rest
+            | _ ->
+                acc in
+          parse_argfile_args (arg :: acc) lines
+      | exception _ ->
+          acc
+    else
+      arg :: acc in
+
+  let args =
+    if Option.is_none parse_all
+    then List.fold ~f:expand_argfiles ~init:[] (List.rev args0)
+    else args0 in
   let exe_name = Sys.executable_name in
   args_to_parse := Array.of_list (exe_name :: args);
   arg_being_parsed := 0;
