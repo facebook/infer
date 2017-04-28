@@ -408,10 +408,11 @@ let strexp_extend_values
     let check_not_inconsistent (atoms, _, _) = not (List.exists ~f:check_neg_atom atoms) in
     List.filter ~f:check_not_inconsistent atoms_se_typ_list in
   if Config.trace_rearrange then L.d_strln "exiting strexp_extend_values";
-  let len, st = match te with
-    | Exp.Sizeof(_, len, st) -> (len, st)
-    | _ -> None, Subtype.exact in
-  List.map ~f:(fun (atoms', se', typ') -> (laundry_atoms @ atoms', se', Exp.Sizeof (typ', len, st)))
+  let sizeof_data = match te with
+    | Exp.Sizeof sizeof_data -> sizeof_data
+    | _ -> {Exp.typ=Typ.mk Typ.Tvoid; nbytes=None; dynamic_length=None; subtype=Subtype.exact} in
+  List.map ~f:(fun (atoms', se', typ') ->
+      (laundry_atoms @ atoms', se', Exp.Sizeof { sizeof_data with typ=typ'}))
     atoms_se_typ_list_filtered
 
 let collect_root_offset exp =
@@ -440,24 +441,27 @@ let mk_ptsto_exp_footprint
       end
   end;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
-  let st = match !Config.curr_language with
+  let subtype = match !Config.curr_language with
     | Config.Clang -> Subtype.exact
     | Config.Java -> Subtype.subtypes in
   let create_ptsto footprint_part off0 = match root, off0, typ.Typ.desc with
     | Exp.Lvar pvar, [], Typ.Tfun _ ->
         let fun_name = Typ.Procname.from_string_c_fun (Mangled.to_string (Pvar.get_name pvar)) in
         let fun_exp = Exp.Const (Const.Cfun fun_name) in
-        ([], Prop.mk_ptsto tenv root (Sil.Eexp (fun_exp, inst)) (Exp.Sizeof (typ, None, st)))
+        ([], Prop.mk_ptsto tenv root (Sil.Eexp (fun_exp, inst))
+           (Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype}))
     | _, [], Typ.Tfun _ ->
-        let atoms, se, t =
+        let atoms, se, typ =
           create_struct_values
             pname tenv orig_prop footprint_part Ident.kfootprint max_stamp typ off0 inst in
-        (atoms, Prop.mk_ptsto tenv root se (Exp.Sizeof (t, None, st)))
+        (atoms, Prop.mk_ptsto tenv root se
+           (Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype}))
     | _ ->
-        let atoms, se, t =
+        let atoms, se, typ =
           create_struct_values
             pname tenv orig_prop footprint_part Ident.kfootprint max_stamp typ off0 inst in
-        (atoms, Prop.mk_ptsto tenv root se (Exp.Sizeof (t, None, st))) in
+        (atoms, Prop.mk_ptsto tenv root se
+           (Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype})) in
   let atoms, ptsto_foot = create_ptsto true off_foot in
   let sub = Sil.sub_of_list eqs in
   let ptsto = Sil.hpred_sub sub ptsto_foot in
@@ -748,7 +752,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
             | Some (Sil.Eexp (matching_exp, _), _) ->
                 List.find_map
                   ~f:(function
-                      | Sil.Hpointsto (lhs_exp, Estruct (matching_flds, _), Sizeof (fld_typ, _, _))
+                      | Sil.Hpointsto (lhs_exp, Estruct (matching_flds, _),
+                                       Sizeof {typ=fld_typ})
                         when Exp.equal lhs_exp matching_exp ->
                           get_fld_strexp_and_typ
                             fld_typ (is_guarded_by_fld field_part) matching_flds
@@ -761,37 +766,38 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
       | _ ->
           None in
 
-    List.find_map
-      ~f:(function [@warning "-57"] (* FIXME: silenced warning may be legit *)
-                 | Sil.Hpointsto ((Const (Cclass clazz) as lhs_exp), _, Exp.Sizeof (typ, _, _))
-                 | Sil.Hpointsto (_, Sil.Eexp (Const (Cclass clazz) as lhs_exp, _), Exp.Sizeof (typ, _, _))
+    List.find_map ~f:(fun hpred -> (match hpred with
+        | Sil.Hpointsto ((Const (Cclass clazz) as lhs_exp), _,
+                         Exp.Sizeof {typ})
+        | Sil.Hpointsto (_, Sil.Eexp (Const (Cclass clazz) as lhs_exp, _),
+                         Exp.Sizeof {typ})
           when guarded_by_str_is_class guarded_by_str0 (Ident.name_to_string clazz) ->
             Some (Sil.Eexp (lhs_exp, Sil.inst_none), typ)
-                 | Sil.Hpointsto (_, Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
-                     begin
-                       (* first, try to find a field that exactly matches the guarded-by string *)
-                       match get_fld_strexp_and_typ typ (is_guarded_by_fld guarded_by_str0) flds with
-                       | None when guarded_by_str_is_this guarded_by_str0 ->
-                           (* if the guarded-by string is "OuterClass.this", look for "this$n" for some n.
-                              note that this is a bit sketchy when there are mutliple this$n's, but there's
-                              nothing we can do to disambiguate them. *)
-                           get_fld_strexp_and_typ
-                             typ
-                             (fun f _ -> Fieldname.java_is_outer_instance f)
-                             flds
-                       | None ->
-                           (* can't find an exact match. try a different convention. *)
-                           match_on_field_type typ flds
-                       | Some _ as res_opt ->
-                           res_opt
-                     end
-                 | Sil.Hpointsto (Lvar pvar, rhs_exp, Exp.Sizeof (typ, _, _))
-                   when (guarded_by_str_is_current_class_this guarded_by_str0 pname ||
-                         guarded_by_str_is_super_class_this guarded_by_str0 pname
-                        ) && Pvar.is_this pvar ->
-                     Some (rhs_exp, typ)
-                 | _ ->
-                     None)
+        | Sil.Hpointsto (_, Estruct (flds, _), Exp.Sizeof {typ}) ->
+            begin
+              (* first, try to find a field that exactly matches the guarded-by string *)
+              match get_fld_strexp_and_typ typ (is_guarded_by_fld guarded_by_str0) flds with
+              | None when guarded_by_str_is_this guarded_by_str0 ->
+                  (* if the guarded-by string is "OuterClass.this", look for "this$n" for some n.
+                     note that this is a bit sketchy when there are mutliple this$n's, but there's
+                     nothing we can do to disambiguate them. *)
+                  get_fld_strexp_and_typ
+                    typ
+                    (fun f _ -> Fieldname.java_is_outer_instance f)
+                    flds
+              | None ->
+                  (* can't find an exact match. try a different convention. *)
+                  match_on_field_type typ flds
+              | Some _ as res_opt ->
+                  res_opt
+            end
+        | Sil.Hpointsto (Lvar pvar, rhs_exp, Exp.Sizeof {typ})
+          when (guarded_by_str_is_current_class_this guarded_by_str0 pname ||
+                guarded_by_str_is_super_class_this guarded_by_str0 pname
+               ) && Pvar.is_this pvar ->
+            Some (rhs_exp, typ)
+        | _ ->
+            None) [@warning "-57"] (* FIXME: silenced warning may be legit *))
       sigma in
   (* warn if the access to [lexp] is not protected by the [guarded_by_fld_str] lock *)
   let enforce_guarded_access_ accessed_fld guarded_by_str prop =
@@ -910,7 +916,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     | Sil.Eexp (exp, _) when Exp.equal exp lexp -> enforce_guarded_access fld typ prop_acc
     | _ -> prop_acc in
   let hpred_check_flds prop_acc = function
-    | Sil.Hpointsto (_, Estruct (flds, _), Sizeof (typ, _, _)) ->
+    | Sil.Hpointsto (_, Estruct (flds, _), Sizeof {typ}) ->
         List.fold ~f:(check_fld_locks typ) ~init:prop_acc flds
     | _ ->
         prop_acc in
@@ -1144,8 +1150,7 @@ let type_at_offset tenv texp off =
         strip_offset off' typ'
     | _ -> None in
   match texp with
-  | Exp.Sizeof(typ, _, _) ->
-      strip_offset off typ
+  | Exp.Sizeof {typ} -> strip_offset off typ
   | _ -> None
 
 (** Check that the size of a type coming from an instruction does not exceed the size of the type from the pointsto predicate
@@ -1339,7 +1344,7 @@ let is_only_pt_by_fld_or_param_with_annot
         if Option.is_some procname_str_opt then obj_str := procname_str_opt;
         (* it's ok for a local with no annotation to point to deref_exp *)
         var_has_annotation || Option.is_some procname_str_opt || Pvar.is_local pvar
-    | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
+    | Sil.Hpointsto (_, Sil.Estruct (flds, _), Exp.Sizeof {typ}) ->
         List.for_all ~f:(is_strexp_pt_fld_with_annot tenv obj_str is_annotation typ deref_exp) flds
     | _ -> true in
   if List.for_all ~f:is_pt_by_fld_or_param_with_annot prop.Prop.sigma && !obj_str <> None

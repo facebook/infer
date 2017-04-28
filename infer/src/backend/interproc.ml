@@ -621,13 +621,13 @@ let get_fld_typ_path_opt src_exps sink_exp_ reachable_hpreds_ =
     | Sil.Eexp (e, _) -> Exp.equal target_exp e
     | _ -> false in
   let extend_path hpred (sink_exp, path, reachable_hpreds) = match hpred with
-    | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Exp.Sizeof (typ, _, _)) ->
+    | Sil.Hpointsto (lhs, Sil.Estruct (flds, _), Exp.Sizeof {typ}) ->
         List.find ~f:(function _, se -> strexp_matches sink_exp se) flds |>
         Option.value_map ~f:(function fld, _ ->
             let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
             (lhs, (Some fld, typ) :: path, reachable_hpreds'))
           ~default:(sink_exp, path, reachable_hpreds)
-    | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Exp.Sizeof (typ, _, _)) ->
+    | Sil.Hpointsto (lhs, Sil.Earray (_, elems, _), Exp.Sizeof {typ}) ->
         if List.exists ~f:(function _, se -> strexp_matches sink_exp se) elems
         then
           let reachable_hpreds' = Sil.HpredSet.remove hpred reachable_hpreds in
@@ -672,7 +672,7 @@ let report_context_leaks pname sigma tenv =
   let context_exps =
     List.fold
       ~f:(fun exps hpred -> match hpred with
-          | Sil.Hpointsto (_, Eexp (exp, _), Sizeof ({desc=Tptr ({desc=Tstruct name}, _)}, _, _))
+          | Sil.Hpointsto (_, Eexp (exp, _), Sizeof {typ={desc=Tptr ({desc=Tstruct name}, _)}})
             when not (Exp.is_null_literal exp)
               && AndroidFramework.is_context tenv name
               && not (AndroidFramework.is_application tenv name) ->
@@ -853,8 +853,10 @@ let prop_init_formals_seed tenv new_formals (prop : 'a Prop.t) : Prop.exposed Pr
   let sigma_new_formals =
     let do_formal (pv, typ) =
       let texp = match !Config.curr_language with
-        | Config.Clang -> Exp.Sizeof (typ, None, Subtype.exact)
-        | Config.Java -> Exp.Sizeof (typ, None, Subtype.subtypes) in
+        | Config.Clang ->
+            Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype=Subtype.exact}
+        | Config.Java ->
+            Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype=Subtype.subtypes} in
       Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_formal (pv, texp, None) in
     List.map ~f:do_formal new_formals in
   let sigma_seed =

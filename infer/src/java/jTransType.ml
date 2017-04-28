@@ -374,10 +374,10 @@ and value_type program tenv vt =
 
 
 (**  Translate object types into Exp.Sizeof expressions *)
-let sizeof_of_object_type program tenv ot subtypes =
+let sizeof_of_object_type program tenv ot subtype =
   match (object_type program tenv ot).Typ.desc with
   | Typ.Tptr (typ, _) ->
-      Exp.Sizeof (typ, None, subtypes)
+      Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype}
   | _ ->
       raise (Type_tranlsation_error "Pointer or array type expected in tenv")
 

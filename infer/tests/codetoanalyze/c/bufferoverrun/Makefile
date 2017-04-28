@@ -15,18 +15,6 @@ CLANG_OPTIONS = -c
 INFER_OPTIONS = -F --project-root $(TESTS_DIR) --no-failures-allowed
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = \
-  trivial.c \
-  function_call.c \
-  for_loop.c \
-  while_loop.c \
-  do_while.c \
-  nested_loop.c \
-  nested_loop_with_label.c \
-  break_continue_return.c \
-  goto_loop.c \
-  inf_loop.c \
-  prune_constant.c \
-  prune_alias.c \
+SOURCES = $(wildcard *.c)
 
 include $(TESTS_DIR)/clang.make

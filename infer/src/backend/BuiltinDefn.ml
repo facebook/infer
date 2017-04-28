@@ -79,7 +79,8 @@ let add_array_to_prop tenv pdesc prop_ lexp typ =
           let len = Exp.Var (Ident.create_fresh Ident.kfootprint) in
           let s = mk_empty_array_rearranged len in
           let hpred =
-            Prop.mk_ptsto tenv n_lexp s (Exp.Sizeof (arr_typ, Some len, Subtype.exact)) in
+            Prop.mk_ptsto tenv n_lexp s (Exp.Sizeof {typ=arr_typ; nbytes=None;
+                                                     dynamic_length=None; subtype=Subtype.exact}) in
           let sigma = prop.Prop.sigma in
           let sigma_fp = prop.Prop.sigma_fp in
           let prop'= Prop.set prop ~sigma:(hpred:: sigma) in
@@ -158,13 +159,15 @@ let create_type tenv n_lexp typ prop =
           match typ.Typ.desc with
           | Typ.Tptr (typ', _) ->
               let sexp = Sil.Estruct ([], Sil.inst_none) in
-              let texp = Exp.Sizeof (typ', None, Subtype.subtypes) in
+              let texp = Exp.Sizeof {typ=typ'; nbytes=None;
+                                     dynamic_length=None; subtype=Subtype.subtypes} in
               let hpred = Prop.mk_ptsto tenv n_lexp sexp texp in
               Some hpred
           | Typ.Tarray _ ->
               let len = Exp.Var (Ident.create_fresh Ident.kfootprint) in
               let sexp = mk_empty_array len in
-              let texp = Exp.Sizeof (typ, None, Subtype.subtypes) in
+              let texp = Exp.Sizeof {typ; nbytes=None;
+                                     dynamic_length=None; subtype=Subtype.subtypes} in
               let hpred = Prop.mk_ptsto tenv n_lexp sexp texp in
               Some hpred
           | _ -> None in
@@ -553,7 +556,7 @@ let execute___release_autorelease_pool
               | Sil.Hpointsto(e1, _, _) -> Exp.equal e1 exp
               | _ -> false) prop_.Prop.sigma |>
           Option.value_map ~f:(function
-              | Sil.Hpointsto (_, _, Exp.Sizeof (typ, _, _)) ->
+              | Sil.Hpointsto (_, _, Exp.Sizeof {typ}) ->
                   let res1 =
                     execute___objc_release
                       { builtin_args with
@@ -750,18 +753,19 @@ let execute_alloc mk can_return_null
         Exp.BinOp (bop, evaluate_char_sizeof e1', evaluate_char_sizeof e2')
     | Exp.Exn _ | Exp.Closure _ | Exp.Const _ | Exp.Cast _ | Exp.Lvar _ | Exp.Lfield _
     | Exp.Lindex _ -> e
-    | Exp.Sizeof ({Typ.desc=Tarray ({Typ.desc=Tint ik}, _)}, Some len, _) when Typ.ikind_is_char ik ->
+    | Exp.Sizeof {typ={Typ.desc=Tarray ({Typ.desc=Tint ik}, _)}; dynamic_length=Some len}
+      when Typ.ikind_is_char ik ->
         evaluate_char_sizeof len
-    | Exp.Sizeof ({Typ.desc=Tarray ({Typ.desc=Tint ik}, Some len)}, None, _) when Typ.ikind_is_char ik ->
+    | Exp.Sizeof {typ={Typ.desc=Tarray ({Typ.desc=Tint ik}, Some len)}; dynamic_length=None}
+      when Typ.ikind_is_char ik ->
         evaluate_char_sizeof (Exp.Const (Const.Cint len))
     | Exp.Sizeof _ -> e in
   let size_exp, procname = match args with
-    | [(Exp.Sizeof ({Typ.desc=Tstruct (ObjcClass _ as name)} as s, len, subt), _)] ->
-        let struct_type =
-          match AttributesTable.get_correct_type_from_objc_class_name name with
-          | Some struct_type -> struct_type
-          | None -> s in
-        Exp.Sizeof (struct_type, len, subt), pname
+    | [(Exp.Sizeof ({typ={Typ.desc=Tstruct (ObjcClass _ as name)}} as sizeof_data) as e, _)] ->
+        let e' = match AttributesTable.get_correct_type_from_objc_class_name name with
+          | Some struct_type -> Exp.Sizeof {sizeof_data with typ=struct_type}
+          | None -> e in
+        e', pname
     | [(size_exp, _)] -> (* for malloc and __new *)
         size_exp, PredSymb.mem_alloc_pname mk
     | [(size_exp, _); (Exp.Const (Const.Cfun pname), _)] ->
@@ -776,7 +780,8 @@ let execute_alloc mk can_return_null
     let n_size_exp' = evaluate_char_sizeof n_size_exp in
     Prop.exp_normalize_prop tenv prop n_size_exp', prop in
   let cnt_te =
-    Exp.Sizeof (Typ.mk (Tarray (Typ.mk (Tint Typ.IChar), None)), Some size_exp', Subtype.exact) in
+    Exp.Sizeof {typ=Typ.mk (Tarray (Typ.mk (Tint Typ.IChar), None));
+                nbytes=None; dynamic_length=Some size_exp'; subtype=Subtype.exact} in
   let id_new = Ident.create_fresh Ident.kprimed in
   let exp_new = Exp.Var id_new in
   let ptsto_new =
@@ -811,7 +816,7 @@ let execute___cxx_typeid ({ Builtin.pdesc; tenv; prop_; args; loc} as r)
                  | Sil.Hpointsto (e, _, _) -> Exp.equal e n_lexp
                  | _ -> false) prop.Prop.sigma |>
              Option.value_map ~f:(function
-                 | Sil.Hpointsto (_, _, Exp.Sizeof (dynamic_type, _, _)) -> dynamic_type
+                 | Sil.Hpointsto (_, _, Exp.Sizeof {typ}) -> typ
                  | _ -> typ_
                )
                ~default:typ_ in
@@ -954,7 +959,7 @@ let execute_objc_alloc_no_fail
     { Builtin.pdesc; tenv; ret_id; loc; } =
   let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.__objc_alloc_no_fail) in
   let ptr_typ = Typ.mk (Tptr (typ, Typ.Pk_pointer)) in
-  let sizeof_typ = Exp.Sizeof (typ, None, Subtype.exact) in
+  let sizeof_typ = Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype=Subtype.exact} in
   let alloc_fun_exp =
     match alloc_fun_opt with
     | Some pname -> [Exp.Const (Const.Cfun pname), Typ.mk Tvoid]

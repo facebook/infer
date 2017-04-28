@@ -558,7 +558,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         end
 
     | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname),
-                (target_exp, target_typ) :: (Exp.Sizeof (cast_typ, _, _), _) :: _ , _, _)
+                (target_exp, target_typ) :: (Exp.Sizeof {typ=cast_typ}, _) :: _ , _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.__cast ->
         let lhs_access_path = AccessPath.of_id ret_id (Typ.mk (Tptr (cast_typ, Pk_pointer))) in
         let attribute_map =

@@ -209,7 +209,7 @@ let rec apply_offlist
     Finally, before running this function, the tool should run strexp_extend_value
     in rearrange.ml for the same se and offlist, so that all the necessary
     extensions of se are done before this function. *)
-let ptsto_lookup pdesc tenv p (lexp, se, typ, len, st) offlist id =
+let ptsto_lookup pdesc tenv p (lexp, se, sizeof) offlist id =
   let f =
     function Some exp -> exp | None -> Exp.Var id in
   let fp_root =
@@ -217,12 +217,12 @@ let ptsto_lookup pdesc tenv p (lexp, se, typ, len, st) offlist id =
   let lookup_inst = ref None in
   let e', se', typ', pred_insts_op' =
     apply_offlist
-      pdesc tenv p fp_root false (lexp, se, typ) offlist f Sil.inst_lookup lookup_inst in
+      pdesc tenv p fp_root false (lexp, se, sizeof.Exp.typ) offlist f Sil.inst_lookup lookup_inst in
   let lookup_uninitialized = (* true if we have looked up an uninitialized value *)
     match !lookup_inst with
     | Some (Sil.Iinitial | Sil.Ialloc | Sil.Ilookup) -> true
     | _ -> false in
-  let ptsto' = Prop.mk_ptsto tenv lexp se' (Exp.Sizeof (typ', len, st)) in
+  let ptsto' = Prop.mk_ptsto tenv lexp se' (Exp.Sizeof {sizeof with typ=typ'}) in
   (e', ptsto', pred_insts_op', lookup_uninitialized)
 
 (** [ptsto_update p (lexp,se,typ) offlist exp] takes
@@ -236,7 +236,7 @@ let ptsto_lookup pdesc tenv p (lexp, se, typ, len, st) offlist id =
     the tool should run strexp_extend_value in rearrange.ml for the same
     se and offlist, so that all the necessary extensions of se are done
     before this function. *)
-let ptsto_update pdesc tenv p (lexp, se, typ, len, st) offlist exp =
+let ptsto_update pdesc tenv p (lexp, se, sizeof) offlist exp =
   let f _ = exp in
   let fp_root =
     match lexp with Exp.Var id -> Ident.is_footprint id | _ -> false in
@@ -244,8 +244,9 @@ let ptsto_update pdesc tenv p (lexp, se, typ, len, st) offlist exp =
   let _, se', typ', pred_insts_op' =
     let pos = State.get_path_pos () in
     apply_offlist
-      pdesc tenv p fp_root true (lexp, se, typ) offlist f (State.get_inst_update pos) lookup_inst in
-  let ptsto' = Prop.mk_ptsto tenv lexp se' (Exp.Sizeof (typ', len, st)) in
+      pdesc tenv p fp_root true (lexp, se, sizeof.Exp.typ) offlist f
+      (State.get_inst_update pos) lookup_inst in
+  let ptsto' = Prop.mk_ptsto tenv lexp se' (Exp.Sizeof {sizeof with typ=typ'}) in
   (ptsto', pred_insts_op')
 
 let update_iter iter pi sigma =
@@ -520,7 +521,7 @@ let resolve_typename prop receiver_exp =
       | _ :: hpreds -> loop hpreds in
     loop prop.Prop.sigma in
   match typexp_opt with
-  | Some (Exp.Sizeof ({desc=Tstruct name}, _, _)) -> Some name
+  | Some (Exp.Sizeof {typ={desc=Tstruct name}}) -> Some name
   | _ -> None
 
 (** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal
@@ -809,7 +810,7 @@ let do_error_checks tenv node_opt instr pname pdesc = match node_opt with
 let add_strexp_to_footprint tenv strexp abduced_pv typ prop =
   let abduced_lvar = Exp.Lvar abduced_pv in
   let lvar_pt_fpvar =
-    let sizeof_exp = Exp.Sizeof (typ, None, Subtype.subtypes) in
+    let sizeof_exp = Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype=Subtype.subtypes} in
     Prop.mk_ptsto tenv abduced_lvar strexp sizeof_exp in
   let sigma_fp = prop.Prop.sigma_fp in
   Prop.normalize tenv (Prop.set prop ~sigma_fp:(lvar_pt_fpvar :: sigma_fp))
@@ -905,9 +906,9 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
     let iter_ren = Prop.prop_iter_make_id_primed tenv id iter in
     let prop_ren = Prop.prop_iter_to_prop tenv iter_ren in
     match Prop.prop_iter_current tenv iter_ren with
-    | (Sil.Hpointsto(lexp, strexp, Exp.Sizeof (typ, len, st)), offlist) ->
+    | (Sil.Hpointsto(lexp, strexp, Exp.Sizeof sizeof_data), offlist) ->
         let contents, new_ptsto, pred_insts_op, lookup_uninitialized =
-          ptsto_lookup pdesc tenv prop_ren (lexp, strexp, typ, len, st) offlist id in
+          ptsto_lookup pdesc tenv prop_ren (lexp, strexp, sizeof_data) offlist id in
         let update acc (pi, sigma) =
           let pi' = Sil.Aeq (Exp.Var(id), contents):: pi in
           let sigma' = new_ptsto:: sigma in
@@ -978,14 +979,14 @@ let load_ret_annots pname =
 
 let execute_store ?(report_deref_errors=true) pname pdesc tenv lhs_exp typ rhs_exp loc prop_ =
   let execute_store_ pdesc tenv rhs_exp acc_in iter =
-    let (lexp, strexp, typ, len, st, offlist) =
+    let (lexp, strexp, sizeof, offlist) =
       match Prop.prop_iter_current tenv iter with
-      | (Sil.Hpointsto(lexp, strexp, Exp.Sizeof (typ, len, st)), offlist) ->
-          (lexp, strexp, typ, len, st, offlist)
+      | (Sil.Hpointsto(lexp, strexp, Exp.Sizeof sizeof), offlist) ->
+          (lexp, strexp, sizeof, offlist)
       | _ -> assert false in
     let p = Prop.prop_iter_to_prop tenv iter in
     let new_ptsto, pred_insts_op =
-      ptsto_update pdesc tenv p (lexp, strexp, typ, len, st) offlist rhs_exp in
+      ptsto_update pdesc tenv p (lexp, strexp, sizeof) offlist rhs_exp in
     let update acc (pi, sigma) =
       let sigma' = new_ptsto:: sigma in
       let iter' = update_iter iter pi sigma' in
@@ -1250,7 +1251,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       ret_old_path [Prop.exist_quantify tenv (Sil.fav_from_list temps) prop_]
   | Sil.Declare_locals (ptl, _) ->
       let sigma_locals =
-        let add_None (x, y) = (x, Exp.Sizeof (y, None, Subtype.exact), None) in
+        let add_None (x, typ) =
+          (x, Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype=Subtype.exact}, None) in
         let sigma_locals () =
           List.map
             ~f:(Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_initial)
@@ -1357,7 +1359,8 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
   let havoc_actual_by_ref prop (actual, actual_typ, _) =
     let actual_pt_havocd_var =
       let havocd_var = Exp.Var (Ident.create_fresh Ident.kprimed) in
-      let sizeof_exp = Exp.Sizeof (Typ.strip_ptr actual_typ, None, Subtype.subtypes) in
+      let sizeof_exp = Exp.Sizeof {typ=Typ.strip_ptr actual_typ; nbytes=None;
+                                   dynamic_length=None; subtype=Subtype.subtypes} in
       Prop.mk_ptsto tenv actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp in
     replace_actual_hpred actual actual_pt_havocd_var prop in
   let do_actual_by_ref =

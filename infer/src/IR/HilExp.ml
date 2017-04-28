@@ -76,8 +76,8 @@ let rec of_sil ~f_resolve_id (exp : Exp.t) typ = match exp with
       Constant c
   | Cast (cast_typ, e) ->
       Cast (cast_typ, of_sil ~f_resolve_id e typ)
-  | Sizeof (sizeof_typ, dynamic_length, _) ->
-      Sizeof (sizeof_typ, Option.map ~f:(fun e -> of_sil ~f_resolve_id e typ) dynamic_length)
+  | Sizeof {typ; dynamic_length} ->
+      Sizeof (typ, Option.map ~f:(fun e -> of_sil ~f_resolve_id e typ) dynamic_length)
   | Closure closure ->
       let environment =
         List.map

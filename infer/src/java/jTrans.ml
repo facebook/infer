@@ -624,7 +624,8 @@ let get_array_length context pc expr_list content_type =
     (Typ.mk (Tarray (content_type, None)), Some sil_len_expr) in
   let array_type, array_len =
     List.fold_right ~f:get_array_type_len sil_len_exprs ~init:(content_type, None) in
-  let array_size = Exp.Sizeof (array_type, array_len, Subtype.exact) in
+  let array_size = Exp.Sizeof {typ=array_type; nbytes=None;
+                               dynamic_length=array_len; subtype=Subtype.exact} in
   (instrs, array_size)
 
 let detect_loop entry_pc impl =
@@ -816,7 +817,8 @@ let rec instruction (context : JContext.t) pc instr : translation =
         let builtin_new = Exp.Const (Const.Cfun BuiltinDecl.__new) in
         let class_type = JTransType.get_class_type program tenv cn in
         let class_type_np = JTransType.get_class_type_no_pointer program tenv cn in
-        let sizeof_exp = Exp.Sizeof (class_type_np, None, Subtype.exact) in
+        let sizeof_exp = Exp.Sizeof {typ=class_type_np; nbytes=None;
+                                     dynamic_length=None; subtype=Subtype.exact} in
         let args = [(sizeof_exp, class_type)] in
         let ret_id = Ident.create_fresh Ident.knormal in
         let new_instr =
@@ -930,7 +932,8 @@ let rec instruction (context : JContext.t) pc instr : translation =
           and npe_cn = JBasics.make_cn JConfig.npe_cl in
           let class_type = JTransType.get_class_type program tenv npe_cn
           and class_type_np = JTransType.get_class_type_no_pointer program tenv npe_cn in
-          let sizeof_exp = Exp.Sizeof (class_type_np, None, Subtype.exact) in
+          let sizeof_exp = Exp.Sizeof {typ=class_type_np; nbytes=None;
+                                       dynamic_length=None; subtype=Subtype.exact} in
           let args = [(sizeof_exp, class_type)] in
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr =
@@ -984,7 +987,8 @@ let rec instruction (context : JContext.t) pc instr : translation =
           let out_of_bound_cn = JBasics.make_cn JConfig.out_of_bound_cl in
           let class_type = JTransType.get_class_type program tenv out_of_bound_cn
           and class_type_np = JTransType.get_class_type_no_pointer program tenv out_of_bound_cn in
-          let sizeof_exp = Exp.Sizeof (class_type_np, None, Subtype.exact) in
+          let sizeof_exp = Exp.Sizeof {typ=class_type_np; nbytes=None;
+                                       dynamic_length=None; subtype=Subtype.exact} in
           let args = [(sizeof_exp, class_type)] in
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr =
@@ -1024,7 +1028,8 @@ let rec instruction (context : JContext.t) pc instr : translation =
           and cce_cn = JBasics.make_cn JConfig.cce_cl in
           let class_type = JTransType.get_class_type program tenv cce_cn
           and class_type_np = JTransType.get_class_type_no_pointer program tenv cce_cn in
-          let sizeof_exp = Exp.Sizeof (class_type_np, None, Subtype.exact) in
+          let sizeof_exp = Exp.Sizeof {typ=class_type_np; nbytes=None;
+                                       dynamic_length=None; subtype=Subtype.exact} in
           let args = [(sizeof_exp, class_type)] in
           let ret_id = Ident.create_fresh Ident.knormal in
           let new_instr =

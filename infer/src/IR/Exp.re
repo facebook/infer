@@ -22,9 +22,18 @@ type _ident = Ident.t;
 
 let compare__ident x y => Ident.compare y x;
 
-type closure = {name: Typ.Procname.t, captured_vars: list (t, Pvar.t, Typ.t)} [@@deriving compare]
-/** dynamically determined length of an array value, if any */
-and dynamic_length = option t [@@deriving compare]
+type closure = {name: Typ.Procname.t, captured_vars: list (t, Pvar.t, Typ.t)}
+/** This records information about a [sizeof(typ)] expression.
+
+    [nbytes] represents the result of the evaluation of [sizeof(typ)] if it is statically known.
+
+    If [typ] is of the form [Tarray elt (Some static_length)], then [dynamic_length] is the number
+    of elements of type [elt] in the array. The [dynamic_length], tracked by symbolic execution, may
+    differ from the [static_length] obtained from the type definition, e.g. when an array is
+    over-allocated.
+
+    If [typ] is a struct type, the [dynamic_length] is that of the final extensible array, if any.*/
+and sizeof_data = {typ: Typ.t, nbytes: option int, dynamic_length: option t, subtype: Subtype.t}
 /** Program expressions. */
 and t =
   /** Pure variable: it is not an lvalue */
@@ -47,12 +56,8 @@ and t =
   | Lfield t Fieldname.t Typ.t
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex t t
-  /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]
-      represents the size of an array value consisting of [dynamic_length] elements of type [elt].
-      The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
-      obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
-      the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof Typ.t dynamic_length Subtype.t;
+  | Sizeof sizeof_data
+[@@deriving compare];
 
 let equal = [%compare.equal : t];
 
@@ -105,7 +110,7 @@ let is_zero =
     If not a sizeof, return the default type if given, otherwise raise an exception */
 let texp_to_typ default_opt =>
   fun
-  | Sizeof t _ _ => t
+  | Sizeof {typ} => typ
   | _ => Typ.unsome "texp_to_typ" default_opt;
 
 
@@ -200,10 +205,8 @@ let get_vars exp => {
         init::vars
         captured_vars
     | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => vars
-    /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
-    /* | Sizeof _ None _ => vars */
-    /* | Sizeof _ (Some l) _ => get_vars_ l vars */
-    | Sizeof _ _ _ => vars
+    /* TODO: Sizeof dynamic length expressions may contain variables, do not ignore them. */
+    | Sizeof _ => vars
     };
   get_vars_ exp ([], [])
 };
@@ -238,9 +241,10 @@ let rec pp_ pe pp_t f e => {
   | Lvar pv => Pvar.pp pe f pv
   | Lfield e fld _ => F.fprintf f "%a.%a" pp_exp e Fieldname.pp fld
   | Lindex e1 e2 => F.fprintf f "%a[%a]" pp_exp e1 pp_exp e2
-  | Sizeof t l s =>
+  | Sizeof {typ, nbytes, dynamic_length, subtype} =>
     let pp_len f l => Option.iter f::(F.fprintf f "[%a]" pp_exp) l;
-    F.fprintf f "sizeof(%a%a%a)" pp_t t pp_len l Subtype.pp s
+    let pp_size f size => Option.iter f::(Int.pp f) size;
+    F.fprintf f "sizeof(%a%a%a%a)" pp_t typ pp_size nbytes pp_len dynamic_length Subtype.pp subtype
   }
 };
 

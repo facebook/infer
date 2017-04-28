@@ -401,7 +401,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         let parameter = Clang_ast_t.UnaryExprOrTypeTraitExpr
             ((fresh_stmt_info stmt_info), [],
              make_general_expr_info create_unsigned_long_type `RValue `Ordinary,
-             { Clang_ast_t.uttei_kind = `SizeOf; Clang_ast_t.uttei_qual_type = type_opt}) in
+             { Clang_ast_t.uttei_kind = `SizeOf 1; Clang_ast_t.uttei_qual_type = type_opt}) in
         let pointer = di.Clang_ast_t.di_pointer in
         let stmt_info = fresh_stmt_info stmt_info in
         let malloc_name = CAst_utils.make_name_decl CFrontend_config.malloc in

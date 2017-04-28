@@ -529,7 +529,7 @@ let rec pi_sorted_remove_redundant (pi : pi) = match pi with
 let sigma_get_unsigned_exps sigma =
   let uexps = ref [] in
   let do_hpred (hpred : Sil.hpred) = match hpred with
-    | Hpointsto (_, Eexp (e, _), Sizeof ({desc=Tint ik}, _, _))
+    | Hpointsto (_, Eexp (e, _), Sizeof {typ={desc=Tint ik}})
       when Typ.ikind_is_unsigned ik ->
         uexps := e :: !uexps
     | _ -> () in
@@ -712,10 +712,10 @@ module Normalize = struct
           Closure { c with captured_vars; }
       | Const _ ->
           e
-      | Sizeof ({desc=Tarray ({desc=Tint ik}, _)}, Some l, _)
+      | Sizeof {typ={desc=Tarray ({desc=Tint ik}, _)}; dynamic_length=Some l}
         when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
           eval l
-      | Sizeof ({desc=Tarray ({desc=Tint ik}, Some l)}, _, _)
+      | Sizeof {typ={desc=Tarray ({desc=Tint ik}, Some l)}}
         when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
           Const (Cint l)
       | Sizeof _ ->
@@ -876,11 +876,11 @@ module Normalize = struct
             match e1', e2' with
             (* pattern for arrays and extensible structs:
                sizeof(struct s {... t[l]}) + k * sizeof(t)) = sizeof(struct s {... t[l + k]}) *)
-            | Sizeof (typ, len1_opt, st),
-              BinOp (Mult, len2, Sizeof (elt, None, _))
+            | Sizeof ({typ; dynamic_length=len1_opt} as sizeof_data),
+              BinOp (Mult, len2, Sizeof {typ=elt; dynamic_length=None})
               when isPlusA && (extensible_array_element_typ_equal elt typ) ->
                 let len = match len1_opt with Some len1 -> len1 +++ len2 | None -> len2 in
-                Sizeof (typ, Some len, st)
+                Sizeof {sizeof_data with dynamic_length=Some len}
             | Const c, _ when Const.iszero_int_float c ->
                 e2'
             | _, Const c when Const.iszero_int_float c ->
@@ -991,11 +991,13 @@ module Normalize = struct
                 Exp.int (IntLit.div n m)
             | Const (Cfloat v), Const (Cfloat w) ->
                 Exp.float (v /.w)
-            | Sizeof ({desc=Tarray (elt, _)}, Some len, _), Sizeof (elt2, None, _)
+            | Sizeof {typ={desc=Tarray (elt, _)}; dynamic_length=Some len},
+              Sizeof {typ=elt2; dynamic_length=None}
               (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
               when Typ.equal elt elt2 ->
                 len
-            | Sizeof ({desc=Tarray (elt, Some len)}, None, _), Sizeof (elt2, None, _)
+            | Sizeof {typ={desc=Tarray (elt, Some len)}; dynamic_length=None},
+              Sizeof {typ=elt2; dynamic_length=None}
               (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
               when Typ.equal elt elt2 ->
                 Const (Cint len)
@@ -1101,8 +1103,9 @@ module Normalize = struct
     else sym_eval tenv false exp'
 
   let texp_normalize tenv sub (exp : Exp.t) : Exp.t = match exp with
-    | Sizeof (typ, len, st) ->
-        Sizeof (typ, Option.map ~f:(exp_normalize tenv sub) len, st)
+    | Sizeof ({dynamic_length} as sizeof_data) ->
+        Sizeof {sizeof_data with
+                dynamic_length=Option.map ~f:(exp_normalize tenv sub) dynamic_length}
     | _ ->
         exp_normalize tenv sub exp
 
@@ -1348,8 +1351,8 @@ module Normalize = struct
       initialize the fields of structs with fresh variables. *)
   let mk_ptsto_exp tenv struct_init_mode (exp, (te : Exp.t), expo) inst : Sil.hpred =
     let default_strexp () : Sil.strexp = match te with
-      | Sizeof (typ, len, _) ->
-          create_strexp_of_type tenv struct_init_mode typ len inst
+      | Sizeof {typ; dynamic_length} ->
+          create_strexp_of_type tenv struct_init_mode typ dynamic_length inst
       | Var _ ->
           Estruct ([], inst)
       | te ->
@@ -1372,30 +1375,37 @@ module Normalize = struct
         let normalized_cnt = strexp_normalize tenv sub cnt in
         let normalized_te = texp_normalize tenv sub te in
         begin match normalized_cnt, normalized_te with
-          | Earray (Exp.Sizeof _ as size, [], inst), Sizeof ({desc=Tarray _}, _, _) ->
+          | Earray (Exp.Sizeof _ as size, [], inst), Sizeof {typ={desc=Tarray _}} ->
               (* check for an empty array whose size expression is (Sizeof type), and turn the array
                  into a strexp of the given type *)
               let hpred' = mk_ptsto_exp tenv Fld_init (root, size, None) inst in
               replace_hpred hpred'
-          | Earray (BinOp (Mult, Sizeof (t, None, st1), x), esel, inst),
-            Sizeof ({desc=Tarray (elt, _)} as arr, _, _) when Typ.equal t elt ->
-              let len = Some x in
-              let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
+          | Earray (BinOp (Mult, Sizeof {typ=t; dynamic_length=None; subtype=st1}, x), esel, inst),
+            Sizeof {typ={desc=Tarray (elt, _)} as arr} when Typ.equal t elt ->
+              let dynamic_length = Some x in
+              let sizeof_data = {Exp.typ=arr; nbytes=None; dynamic_length; subtype=st1} in
+              let hpred' =
+                mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
               replace_hpred (replace_array_contents hpred' esel)
-          | Earray (BinOp (Mult, x, Sizeof (t, None, st1)), esel, inst),
-            Sizeof ({desc=Tarray (elt, _)} as arr, _, _) when Typ.equal t elt ->
-              let len = Some x in
-              let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
+          | Earray (BinOp (Mult, x, Sizeof {typ; dynamic_length=None; subtype}), esel, inst),
+            Sizeof {typ={desc=Tarray (elt, _)} as arr} when Typ.equal typ elt ->
+              let sizeof_data = {Exp.typ=arr; nbytes=None; dynamic_length=Some x; subtype} in
+              let hpred' =
+                mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
               replace_hpred (replace_array_contents hpred' esel)
-          | Earray (BinOp (Mult, Sizeof (t, Some len, st1), x), esel, inst),
-            Sizeof ({desc=Tarray (elt, _)} as arr, _, _) when Typ.equal t elt ->
-              let len = Some (Exp.BinOp(Mult, x, len)) in
-              let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
+          | Earray (BinOp (Mult, Sizeof {typ; dynamic_length=Some len; subtype}, x), esel, inst),
+            Sizeof {typ={desc=Tarray (elt, _)} as arr} when Typ.equal typ elt ->
+              let sizeof_data = {Exp.typ=arr; nbytes=None;
+                                 dynamic_length=Some (Exp.BinOp(Mult, x, len)); subtype} in
+              let hpred' =
+                mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
               replace_hpred (replace_array_contents hpred' esel)
-          | Earray (BinOp (Mult, x, Sizeof (t, Some len, st1)), esel, inst),
-            Sizeof ({desc=Tarray (elt, _)} as arr, _, _) when Typ.equal t elt ->
-              let len = Some (Exp.BinOp(Mult, x, len)) in
-              let hpred' = mk_ptsto_exp tenv Fld_init (root, Sizeof (arr, len, st1), None) inst in
+          | Earray (BinOp (Mult, x, Sizeof {typ; dynamic_length=Some len; subtype}), esel, inst),
+            Sizeof {typ={desc=Tarray (elt, _)} as arr} when Typ.equal typ elt ->
+              let sizeof_data = {Exp.typ=arr; nbytes=None;
+                                 dynamic_length=Some (Exp.BinOp(Mult, x, len)); subtype} in
+              let hpred' =
+                mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
               replace_hpred (replace_array_contents hpred' esel)
           | _ ->
               Hpointsto (normalized_root, normalized_cnt, normalized_te)
@@ -1986,8 +1996,8 @@ let rec exp_captured_ren ren (e : Exp.t) : Exp.t = match e with
       e (* TODO: why captured vars not renamed? *)
   | Const _ ->
       e
-  | Sizeof (t, len, st) ->
-      Sizeof (t, Option.map ~f:(exp_captured_ren ren) len, st)
+  | Sizeof ({dynamic_length} as sizeof_data) ->
+      Sizeof {sizeof_data with dynamic_length=Option.map ~f:(exp_captured_ren ren) dynamic_length}
   | Cast (t, e) ->
       Cast (t, exp_captured_ren ren e)
   | UnOp (op, e, topt) ->

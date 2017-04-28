@@ -407,9 +407,9 @@ and _exp_rv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
     | Exp.Cast (_, e1) ->
         if verbose then (L.d_str "exp_rv_dexp: Cast "; Sil.d_exp e; L.d_ln ());
         _exp_rv_dexp tenv seen node e1
-    | Exp.Sizeof (typ, len, sub) ->
+    | Exp.Sizeof {typ; dynamic_length; subtype} ->
         if verbose then (L.d_str "exp_rv_dexp: type "; Sil.d_exp e; L.d_ln ());
-        Some (DExp.Dsizeof (typ, Option.bind len (_exp_rv_dexp tenv seen node), sub))
+        Some (DExp.Dsizeof (typ, Option.bind dynamic_length (_exp_rv_dexp tenv seen node), subtype))
     | _ ->
         if verbose then (L.d_str "exp_rv_dexp: no match for  "; Sil.d_exp e; L.d_ln ());
         None
@@ -511,9 +511,9 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
     (Pvar.is_local pvar || Pvar.is_global pvar) &&
     not (Pvar.is_frontend_tmp pvar) &&
     match hpred_typ_opt, find_typ_without_ptr prop pvar with
-    | Some (Exp.Sizeof (t1, _, _)), Some (Exp.Sizeof ({Typ.desc=Tptr (t2, _)}, _, _)) ->
+    | Some (Exp.Sizeof {typ=t1}), Some (Exp.Sizeof {typ={Typ.desc=Tptr (t2, _)}}) ->
         Typ.equal t1 t2
-    | Some (Exp.Sizeof ({Typ.desc=Tint _}, _, _)), Some (Exp.Sizeof ({Typ.desc=Tint _}, _, _))
+    | Some (Exp.Sizeof {typ={Typ.desc=Tint _}}), Some (Exp.Sizeof {typ={Typ.desc=Tint _}})
       when is_file -> (* must be a file opened with "open" *)
         true
     | _ -> false in
@@ -581,7 +581,7 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
           (match lexp with
            | Exp.Lvar pv ->
                let typo = match texp with
-                 | Exp.Sizeof ({Typ.desc=Tstruct name}, _, _) -> (
+                 | Exp.Sizeof {typ={Typ.desc=Tstruct name}} -> (
                      match Tenv.lookup tenv name with
                      | Some {fields} ->
                          List.find ~f:(fun (f', _, _) -> Fieldname.equal f' f) fields |>
@@ -607,7 +607,7 @@ let vpath_find tenv prop _exp : DExp.t option * Typ.t option =
           (match lexp with
            | Exp.Lvar pv when not (Pvar.is_frontend_tmp pv) ->
                let typo = match texp with
-                 | Exp.Sizeof (typ, _, _) -> Some typ
+                 | Exp.Sizeof {typ} -> Some typ
                  | _ -> None in
                Some (DExp.Dpvar pv), typo
            | Exp.Var id ->

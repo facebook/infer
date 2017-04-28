@@ -36,12 +36,12 @@ struct
   type extras = Typ.Procname.t -> Procdesc.t option
 
   (* NOTE: heuristic *)
-  let get_malloc_info : Exp.t -> Typ.t * Exp.t
+  let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t
     = function
-      | Exp.BinOp (Binop.Mult, Exp.Sizeof (typ, _, _), size)
-      | Exp.BinOp (Binop.Mult, size, Exp.Sizeof (typ, _, _)) -> (typ, size)
-      | Exp.Sizeof (typ, _, _) -> (typ, Exp.one)
-      | x -> (Typ.mk (Tint Typ.IChar), x)
+      | Exp.BinOp (Binop.Mult, Exp.Sizeof {typ; nbytes}, length)
+      | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes}) -> (typ, nbytes, length)
+      | Exp.Sizeof {typ; nbytes} -> (typ, nbytes, Exp.one)
+      | x -> (Typ.mk (Typ.Tint Typ.IChar), Some 1, x)
 
   let model_malloc
     : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
@@ -56,9 +56,9 @@ struct
                 Dom.Mem.weak_update_heap loc Dom.Val.top_itv mem
             | _ -> mem
           in
-          let (typ, size) = get_malloc_info (List.hd_exn params |> fst) in
-          let size = Sem.eval size mem (CFG.loc node) |> Dom.Val.get_itv in
-          let v = Sem.eval_array_alloc pname node typ Itv.zero size 0 1 in
+          let (typ, stride, length0) = get_malloc_info (List.hd_exn params |> fst) in
+          let length = Sem.eval length0 mem (CFG.loc node) |> Dom.Val.get_itv in
+          let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero length 0 1 in
           mem
           |> Dom.Mem.add_stack (Loc.of_id id) v
           |> set_uninitialized typ (Dom.Val.get_array_locs v)

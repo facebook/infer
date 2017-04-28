@@ -122,8 +122,8 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc
           String.equal (Typ.Name.name name) "java.lang.Throwable"
       | _ -> false in
     let do_instr = function
-      | Sil.Call (_, Exp.Const (Const.Cfun pn), [_; (Exp.Sizeof(t, _, _), _)], _, _) when
-          Typ.Procname.equal pn BuiltinDecl.__instanceof && typ_is_throwable t ->
+      | Sil.Call (_, Exp.Const (Const.Cfun pn), [_; (Exp.Sizeof {typ}, _)], _, _) when
+          Typ.Procname.equal pn BuiltinDecl.__instanceof && typ_is_throwable typ ->
           throwable_found := true
       | _ -> () in
     let do_node n =

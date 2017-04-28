@@ -15,9 +15,18 @@ module L = Logging;
 
 module F = Format;
 
-type closure = {name: Typ.Procname.t, captured_vars: list (t, Pvar.t, Typ.t)} [@@deriving compare]
-/** dynamically determined length of an array value, if any */
-and dynamic_length = option t [@@deriving compare]
+type closure = {name: Typ.Procname.t, captured_vars: list (t, Pvar.t, Typ.t)}
+/** This records information about a [sizeof(typ)] expression.
+
+    [nbytes] represents the result of the evaluation of [sizeof(typ)] if it is statically known.
+
+    If [typ] is of the form [Tarray elt (Some static_length)], then [dynamic_length] is the number
+    of elements of type [elt] in the array. The [dynamic_length], tracked by symbolic execution, may
+    differ from the [static_length] obtained from the type definition, e.g. when an array is
+    over-allocated.
+
+    If [typ] is a struct type, the [dynamic_length] is that of the final extensible array, if any.*/
+and sizeof_data = {typ: Typ.t, nbytes: option int, dynamic_length: option t, subtype: Subtype.t}
 /** Program expressions. */
 and t =
   /** Pure variable: it is not an lvalue */
@@ -40,12 +49,7 @@ and t =
   | Lfield t Fieldname.t Typ.t
   /** An array index offset: [exp1\[exp2\]] */
   | Lindex t t
-  /** A sizeof expression. [Sizeof (Tarray elt (Some static_length)) (Some dynamic_length)]
-      represents the size of an array value consisting of [dynamic_length] elements of type [elt].
-      The [dynamic_length], tracked by symbolic execution, may differ from the [static_length]
-      obtained from the type definition, e.g. when an array is over-allocated.  For struct types,
-      the [dynamic_length] is that of the final extensible array, if any. */
-  | Sizeof Typ.t dynamic_length Subtype.t
+  | Sizeof sizeof_data
 [@@deriving compare];
 
 

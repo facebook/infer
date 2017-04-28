@@ -61,7 +61,7 @@ let of_sil ~f_resolve_id (instr : Sil.instr) =
     when Pvar.is_ssa_frontend_tmp lhs_pvar ->
       analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ loc
   | Call (Some (ret_id, _), Const (Cfun callee_pname),
-          (target_exp, _) :: (Sizeof (cast_typ, _, _), _) :: _ , loc, _)
+          (target_exp, _) :: (Sizeof {typ=cast_typ}, _) :: _ , loc, _)
     when Typ.Procname.equal callee_pname BuiltinDecl.__cast ->
       analyze_id_assignment (Var.of_id ret_id) target_exp cast_typ loc
   | Store (lhs_exp, typ, rhs_exp, loc) ->

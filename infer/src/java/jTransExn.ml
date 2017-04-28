@@ -72,7 +72,8 @@ let translate_exceptions (context : JContext.t) exit_nodes get_body_nodes handle
           let instanceof_builtin = Exp.Const (Const.Cfun BuiltinDecl.__instanceof) in
           let args = [
             (Exp.Var id_exn_val, Typ.mk (Tptr(exn_type, Typ.Pk_pointer)));
-            (Exp.Sizeof (exn_type, None, Subtype.exact), Typ.mk Tvoid)] in
+            (Exp.Sizeof {typ=exn_type; nbytes=None; dynamic_length=None; subtype=Subtype.exact},
+             Typ.mk Tvoid)] in
           Sil.Call
             (Some (id_instanceof, Typ.mk (Tint IBool)), instanceof_builtin, args, loc, CallFlags.default) in
         let if_kind = Sil.Ik_switch in

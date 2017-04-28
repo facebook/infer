@@ -301,7 +301,8 @@ let create_alloc_instrs sil_loc function_type fname size_exp_opt procname_opt =
     | Tptr (styp, Typ.Pk_objc_autoreleasing) ->
         function_type, styp
     | _ -> CType.add_pointer_to_typ function_type, function_type in
-  let sizeof_exp_ = Exp.Sizeof (function_type_np, None, Subtype.exact) in
+  let sizeof_exp_ = Exp.Sizeof {typ=function_type_np; nbytes=None;
+                                dynamic_length=None; subtype=Subtype.exact} in
   let sizeof_exp = match size_exp_opt with
     | Some exp -> Exp.BinOp (Binop.Mult, sizeof_exp_, exp)
     | None -> sizeof_exp_ in
@@ -377,7 +378,7 @@ let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
   let ret_id_typ = Some (ret_id, cast_to_typ) in
   let typ = CType.remove_pointer_to_typ cast_to_typ in
-  let sizeof_exp = Exp.Sizeof (typ, None, Subtype.exact) in
+  let sizeof_exp = Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype=Subtype.exact} in
   let pname = BuiltinDecl.__objc_cast in
   let args = [(exp, cast_from_typ); (sizeof_exp, Typ.mk (Tint Typ.IULong))] in
   let stmt_call =

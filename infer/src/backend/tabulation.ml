@@ -482,8 +482,8 @@ let texp_star tenv texp1 texp2 =
     | _ ->
         t1 in
   match texp1, texp2 with
-  | Exp.Sizeof (t1, len1, st1), Exp.Sizeof (t2, _, st2) ->
-      Exp.Sizeof (typ_star t1 t2, len1, Subtype.join st1 st2)
+  | Exp.Sizeof ({typ=t1; subtype=st1} as sizeof1), Exp.Sizeof {typ=t2; subtype=st2} ->
+      Exp.Sizeof {sizeof1 with typ=typ_star t1 t2; subtype=Subtype.join st1 st2}
   | _ ->
       texp1
 
@@ -634,7 +634,7 @@ let prop_get_exn_name pname prop =
   let ret_pvar = Exp.Lvar (Pvar.get_ret_pvar pname) in
   let rec search_exn e = function
     | [] -> None
-    | Sil.Hpointsto (e1, _, Sizeof ({desc=Tstruct name}, _, _)) :: _
+    | Sil.Hpointsto (e1, _, Sizeof {typ={desc=Tstruct name}}) :: _
       when Exp.equal e1 e ->
         Some name
     | _ :: tl -> search_exn e tl in
@@ -882,7 +882,7 @@ let mk_actual_precondition tenv prop actual_params formal_params =
     Prop.mk_ptsto tenv
       (Exp.Lvar formal_var)
       (Sil.Eexp (actual_e, Sil.inst_actual_precondition))
-      (Exp.Sizeof (actual_t, None, Subtype.exact)) in
+      (Exp.Sizeof {typ=actual_t; nbytes=None; dynamic_length=None; subtype=Subtype.exact}) in
   let instantiated_formals = List.map ~f:mk_instantiation formals_actuals in
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
   Prop.normalize tenv actual_pre

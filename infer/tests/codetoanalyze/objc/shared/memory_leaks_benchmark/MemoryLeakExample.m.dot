@@ -173,7 +173,7 @@ digraph iCFG {
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_4" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_3" ;
-"regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" [label="5:  DeclStmt \n   n$39=_fun_malloc_no_fail(sizeof(int):int) [line 88]\n  *&x:int*=n$39 [line 88]\n " shape="box"]
+"regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" [label="5:  DeclStmt \n   n$39=_fun_malloc_no_fail(sizeof(int32):int) [line 88]\n  *&x:int*=n$39 [line 88]\n " shape="box"]
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_4" ;
@@ -196,7 +196,7 @@ digraph iCFG {
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" [label="6:  DeclStmt \n   n$48=_fun_malloc_no_fail(sizeof(int):int) [line 94]\n  *&x:int*=n$48 [line 94]\n " shape="box"]
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" [label="6:  DeclStmt \n   n$48=_fun_malloc_no_fail(sizeof(int32):int) [line 94]\n  *&x:int*=n$48 [line 94]\n " shape="box"]
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" ;
@@ -219,7 +219,7 @@ digraph iCFG {
 	
 
 	 "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_5" -> "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_4" ;
-"blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_6" [label="6:  DeclStmt \n   n$59=_fun_malloc_no_fail(sizeof(int):int) [line 103]\n  *&x:int*=n$59 [line 103]\n " shape="box"]
+"blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_6" [label="6:  DeclStmt \n   n$59=_fun_malloc_no_fail(sizeof(int32):int) [line 103]\n  *&x:int*=n$59 [line 103]\n " shape="box"]
 	
 
 	 "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_6" -> "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_5" ;

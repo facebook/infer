@@ -229,7 +229,7 @@ let hpred_get_lhs h =>
 /** {2 Comparision and Inspection Functions} */
 let has_objc_ref_counter tenv hpred =>
   switch hpred {
-  | Hpointsto _ _ (Sizeof {desc: Tstruct name} _ _) =>
+  | Hpointsto _ _ (Sizeof {typ: {desc: Tstruct name}}) =>
     switch (Tenv.lookup tenv name) {
     | Some {fields} => List.exists f::Typ.Struct.is_objc_ref_counter_field fields
     | _ => false
@@ -383,9 +383,11 @@ let d_exp_list (el: list Exp.t) => L.add_print_action (L.PTexp_list, Obj.repr el
 
 let pp_texp pe f =>
   fun
-  | Exp.Sizeof t l s => {
+  | Exp.Sizeof {typ, nbytes, dynamic_length, subtype} => {
       let pp_len f l => Option.iter f::(F.fprintf f "[%a]" (pp_exp_printenv pe)) l;
-      F.fprintf f "%a%a%a" (Typ.pp pe) t pp_len l Subtype.pp s
+      let pp_size f size => Option.iter f::(Int.pp f) size;
+      F.fprintf
+        f "%a%a%a%a" (Typ.pp pe) typ pp_size nbytes pp_len dynamic_length Subtype.pp subtype
     }
   | e => (pp_exp_printenv pe) f e;
 
@@ -393,9 +395,11 @@ let pp_texp pe f =>
 /** Pretty print a type with all the details. */
 let pp_texp_full pe f =>
   fun
-  | Exp.Sizeof t l s => {
+  | Exp.Sizeof {typ, nbytes, dynamic_length, subtype} => {
       let pp_len f l => Option.iter f::(F.fprintf f "[%a]" (pp_exp_printenv pe)) l;
-      F.fprintf f "%a%a%a" (Typ.pp_full pe) t pp_len l Subtype.pp s
+      let pp_size f size => Option.iter f::(Int.pp f) size;
+      F.fprintf
+        f "%a%a%a%a" (Typ.pp_full pe) typ pp_size nbytes pp_len dynamic_length Subtype.pp subtype
     }
   | e => Exp.pp_printenv pe Typ.pp_full f e;
 
@@ -1246,9 +1250,7 @@ let rec exp_fpv e =>
   | Lfield e _ _ => exp_fpv e
   | Lindex e1 e2 => exp_fpv e1 @ exp_fpv e2
   /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
-  /* | Sizeof _ None _ => [] */
-  /* | Sizeof _ (Some l) _ => exp_fpv l */
-  | Sizeof _ _ _ => []
+  | Sizeof _ => []
   };
 
 let exp_list_fpv el => List.concat_map f::exp_fpv el;
@@ -1443,9 +1445,7 @@ let rec exp_fav_add fav e =>
     exp_fav_add fav e1;
     exp_fav_add fav e2
   /* TODO: Sizeof length expressions may contain variables, do not ignore them. */
-  /* | Sizeof _ None _ => () */
-  /* | Sizeof _ (Some l) _ => exp_fav_add fav l; */
-  | Sizeof _ _ _ => ()
+  | Sizeof _ => ()
   };
 
 let exp_fav = fav_imperative_to_functional exp_fav_add;
@@ -1878,17 +1878,14 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
     } else {
       Exp.Lindex e1' e2'
     }
-  | Sizeof t l_opt s =>
-    switch l_opt {
-    | Some l =>
-      let l' = exp_sub_ids f l;
-      if (phys_equal l' l) {
-        exp
-      } else {
-        Exp.Sizeof t (Some l') s
-      }
-    | None => exp
+  | Sizeof ({dynamic_length: Some l} as sizeof_data) =>
+    let l' = exp_sub_ids f l;
+    if (phys_equal l' l) {
+      exp
+    } else {
+      Exp.Sizeof {...sizeof_data, dynamic_length: Some l'}
     }
+  | Sizeof {dynamic_length: None} => exp
   };
 
 let rec apply_sub subst id =>
@@ -2353,8 +2350,8 @@ let exp_get_offsets exp => {
     | Exn _
     | Closure _
     | Lvar _
-    | Sizeof _ None _ => offlist_past
-    | Sizeof _ (Some l) _ => f offlist_past l
+    | Sizeof {dynamic_length: None} => offlist_past
+    | Sizeof {dynamic_length: Some l} => f offlist_past l
     | Cast _ sub_exp => f offlist_past sub_exp
     | Lfield sub_exp fldname typ => f [Off_fld fldname typ, ...offlist_past] sub_exp
     | Lindex sub_exp e => f [Off_index e, ...offlist_past] sub_exp

@@ -76,15 +76,18 @@ struct
           must_alias e1 e2 m && Fieldname.equal fld1 fld2
       | Exp.Lindex (e11, e12), Exp.Lindex (e21, e22) ->
           must_alias e11 e21 m && must_alias e12 e22 m
-      | Exp.Sizeof (t1, dynlen1, subt1), Exp.Sizeof (t2, dynlen2, subt2) ->
+      | Exp.Sizeof {nbytes=Some nbytes1}, Exp.Sizeof {nbytes=Some nbytes2} ->
+          Int.equal nbytes1 nbytes2
+      | Exp.Sizeof {typ=t1; dynamic_length=dynlen1; subtype=subt1},
+        Exp.Sizeof {typ=t2; dynamic_length=dynlen2; subtype=subt2} ->
           Typ.equal t1 t2
           && must_alias_opt dynlen1 dynlen2 m
           && Int.equal (Subtype.compare subt1 subt2) 0
       | _, _ -> false
 
-  and must_alias_opt : Exp.dynamic_length -> Exp.dynamic_length -> Mem.astate -> bool
-    = fun dynlen1 dynlen2 m ->
-      match dynlen1, dynlen2 with
+  and must_alias_opt : Exp.t option -> Exp.t option -> Mem.astate -> bool
+    = fun e1_opt e2_opt m ->
+      match e1_opt, e2_opt with
       | Some e1, Some e2 -> must_alias e1 e2 m
       | None, None -> true
       | _, _ -> false
@@ -163,7 +166,8 @@ struct
             (* if nested array, add the array blk *)
             let arr = Mem.find_heap_set ploc mem in
             Val.join (Val.of_pow_loc ploc) arr
-        | Exp.Sizeof (typ, _, _) -> Val.of_int (sizeof typ)
+        | Exp.Sizeof {nbytes=Some size} -> Val.of_int size
+        | Exp.Sizeof {typ; nbytes=None} -> Val.of_int (sizeof typ)
         | Exp.Exn _
         | Exp.Closure _ -> Val.top_itv
 
@@ -219,10 +223,13 @@ struct
       |> Allocsite.make
 
   let eval_array_alloc
-    : Typ.Procname.t -> CFG.node -> Typ.t -> Itv.t -> Itv.t -> int -> int -> Val.t
-    = fun pdesc node typ offset size inst_num dimension ->
+    : Typ.Procname.t -> CFG.node -> Typ.t -> ?stride:int -> Itv.t -> Itv.t -> int -> int -> Val.t
+    = fun pdesc node typ ?stride:stride0 offset size inst_num dimension ->
       let allocsite = get_allocsite pdesc node inst_num dimension in
-      let stride = sizeof typ |> Itv.of_int in
+      let int_stride = match stride0 with
+        | None -> sizeof typ
+        | Some stride -> stride in
+      let stride = Itv.of_int int_stride in
       ArrayBlk.make allocsite offset size stride
       |> Val.of_array_blk
 

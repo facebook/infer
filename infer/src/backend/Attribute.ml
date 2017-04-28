@@ -243,8 +243,8 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
     | Exp.Lvar _ -> ()
     | Exp.Lfield (e, _, _) -> walk e
     | Exp.Lindex (e1, e2) -> walk e1; walk e2
-    | Exp.Sizeof (_, None, _) -> ()
-    | Exp.Sizeof (_, Some len, _) -> walk len in
+    | Exp.Sizeof {dynamic_length=None} -> ()
+    | Exp.Sizeof {dynamic_length=Some len} -> walk len in
   walk exp;
   let problem_opt =
     match (List.find ~f:check_zero !exps_divided, !uminus_unsigned) with

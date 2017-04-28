@@ -834,10 +834,10 @@ let rec exp_construct_fresh side e =
       let e1' = exp_construct_fresh side e1 in
       let e2' = exp_construct_fresh side e2 in
       Exp.Lindex(e1', e2')
-  | Exp.Sizeof (_, None, _) ->
+  | Exp.Sizeof {dynamic_length=None} ->
       e
-  | Exp.Sizeof (typ, Some len, st) ->
-      Exp.Sizeof (typ, Some (exp_construct_fresh side len), st)
+  | Exp.Sizeof ({dynamic_length=Some len} as sizeof) ->
+      Exp.Sizeof {sizeof with dynamic_length=Some (exp_construct_fresh side len)}
 
 let strexp_construct_fresh side =
   let f (e, inst_opt) = (exp_construct_fresh side e, inst_opt) in
@@ -971,9 +971,16 @@ let rec exp_partial_join (e1: Exp.t) (e2: Exp.t) : Exp.t =
       let e1'' = exp_partial_join e1 e2 in
       let e2'' = exp_partial_join e1' e2' in
       Exp.Lindex(e1'', e2'')
-  | Exp.Sizeof (t1, len1, st1), Exp.Sizeof (t2, len2, st2) ->
-      Exp.Sizeof
-        (typ_partial_join t1 t2, dynamic_length_partial_join len1 len2, Subtype.join st1 st2)
+  | Exp.Sizeof {typ=t1; nbytes=nbytes1; dynamic_length=len1; subtype=st1},
+    Exp.Sizeof {typ=t2; nbytes=nbytes2; dynamic_length=len2; subtype=st2} ->
+      (* forget the static sizes if they differ *)
+      let nbytes_join i1 i2 = if Int.equal i1 i2 then Some i1 else None in
+      Exp.Sizeof {
+        typ=typ_partial_join t1 t2;
+        nbytes=option_partial_join nbytes_join nbytes1 nbytes2;
+        dynamic_length=dynamic_length_partial_join len1 len2;
+        subtype=Subtype.join st1 st2;
+      }
   | _ ->
       L.d_str "exp_partial_join no match "; Sil.d_exp e1; L.d_str " "; Sil.d_exp e2; L.d_ln ();
       raise Sil.JoinFail

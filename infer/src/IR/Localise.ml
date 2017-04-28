@@ -771,7 +771,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
           MF.monospaced_to_string s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
-      | Some (Exp.Sizeof ({desc=Tstruct name}, _, _)) when Typ.Name.is_class name ->
+      | Some (Exp.Sizeof {typ={desc=Tstruct name}}) when Typ.Name.is_class name ->
           " of type " ^ MF.monospaced_to_string (Typ.Name.name name) ^ " "
       | _ -> " " in
     let desc_str =
@@ -861,7 +861,7 @@ let desc_retain_cycle cycle loc cycle_dotty =
         str_cycle:=!str_cycle^" ("^(string_of_int !ct)^") object "^e_str^" retaining " ^
                    MF.monospaced_to_string (e_str^"."^(Fieldname.to_string f))^", ";
         ct:=!ct +1
-    | Sil.Eexp (Exp.Sizeof (typ, _, _), _) ->
+    | Sil.Eexp (Exp.Sizeof {typ}, _) ->
         let step =
           " (" ^ (string_of_int !ct) ^ ") an object of " ^
           MF.monospaced_to_string (Typ.to_string typ) ^

@@ -416,7 +416,7 @@ let typ_get_recursive_flds tenv typ_exp =
         false
   in
   match typ_exp with
-  | Exp.Sizeof (typ, _, _) -> (
+  | Exp.Sizeof {typ} -> (
       match typ.desc with
       | Tstruct name -> (
           match Tenv.lookup tenv name with
@@ -900,14 +900,14 @@ let get_cycle root prop =
           let visited' = (fst et_src):: visited in
           let res = (match get_points_to e with
               | None -> path, false
-              | Some (Sil.Hpointsto (_, Sil.Estruct (fl, _), Exp.Sizeof (te, _, _))) ->
+              | Some (Sil.Hpointsto (_, Sil.Estruct (fl, _), Exp.Sizeof {typ=te})) ->
                   dfs e_root (e, te) ((et_src, f, e):: path) fl visited'
               | _ -> path, false (* check for lists *)) in
           if snd res then res
           else dfs e_root et_src path el' visited') in
   L.d_strln "Looking for cycle with root expression: "; Sil.d_hpred root; L.d_strln "";
   match root with
-  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof (te, _, _)) ->
+  | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof {typ=te}) ->
       let se_root = Sil.Eexp(e_root, Sil.Inone) in
       (* start dfs with empty path and expr pointing to root *)
       let (pot_cycle, res) = dfs se_root (se_root, te) [] fl [] in
@@ -926,7 +926,7 @@ let get_cycle root prop =
 let should_raise_objc_leak hpred =
   match hpred with
   | Sil.Hpointsto(_, Sil.Estruct((fn, Sil.Eexp( (Exp.Const (Const.Cint i)), _)):: _, _),
-                  Exp.Sizeof (typ, _, _))
+                  Exp.Sizeof {typ})
     when Fieldname.is_hidden fn && IntLit.gt i IntLit.zero (* counter > 0 *) ->
       Mleak_buckets.should_raise_objc_leak typ
   | _ -> None
@@ -946,7 +946,7 @@ let get_var_retain_cycle prop_ =
     | _ -> false in
   let is_hpred_block v h =
     match h, v with
-    | Sil.Hpointsto (e, _, Exp.Sizeof (typ, _, _)), Sil.Eexp (e', _)
+    | Sil.Hpointsto (e, _, Exp.Sizeof {typ}), Sil.Eexp (e', _)
       when Exp.equal e e' && Typ.is_block_type typ -> true
     | _, _ -> false in
   let find v =
@@ -962,7 +962,9 @@ let get_var_retain_cycle prop_ =
     | Some pvar -> [((sexp pvar, t), f, e')]
     | _ -> (match find_block e with
         | Some blk -> [((sexp blk, t), f, e')]
-        | _ -> [((sexp (Exp.Sizeof (t, None, Subtype.exact)), t), f, e')]) in
+        | _ ->
+            let sizeof = {Exp.typ=t; nbytes=None; dynamic_length=None; subtype=Subtype.exact} in
+            [((sexp (Exp.Sizeof sizeof), t), f, e')]) in
   (* returns the pvars of the first cycle we find in sigma.
      This is an heuristic that works if there is one cycle.
      In case there are more than one cycle we may return not necessarily

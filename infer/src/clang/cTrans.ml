@@ -209,7 +209,8 @@ struct
     with Self.SelfClassException class_name ->
       let typ = Typ.mk (Tstruct class_name) in
       { empty_res_trans with
-        exps = [Exp.Sizeof (typ, None, Subtype.exact), Typ.mk (Tint IULong)] }
+        exps = [Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype=Subtype.exact},
+                Typ.mk (Tint IULong)] }
 
   let add_reference_if_glvalue (typ : Typ.t) expr_info =
     (* glvalue definition per C++11:*)
@@ -414,7 +415,7 @@ struct
     let tenv = trans_state.context.CContext.tenv in
     let typ = CType_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
     match unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_kind with
-    | `SizeOf ->
+    | `SizeOf nbytes0 ->
         let qt_opt =
           CAst_utils.type_from_unary_expr_or_type_trait_expr_info
             unary_expr_or_type_trait_expr_info in
@@ -422,8 +423,14 @@ struct
           match qt_opt with
           | Some qt -> CType_decl.qual_type_to_sil_type tenv qt
           | None -> typ (* Some default type since the type is missing *) in
-        { empty_res_trans with
-          exps = [(Exp.Sizeof (sizeof_typ, None, Subtype.exact), sizeof_typ)] }
+        let nbytes = if nbytes0 < 0 then
+            (* nbytes < 0 when the sizeof cannot be statically determined *)
+            None
+          else
+            Some nbytes0 in
+        let sizeof_data =
+          {Exp.typ=sizeof_typ; nbytes; dynamic_length=None; subtype=Subtype.exact} in
+        { empty_res_trans with exps = [(Exp.Sizeof sizeof_data, sizeof_typ)] }
     | k -> Logging.out
              "\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: \
               %s . Expression ignored, returned -1... \n"
@@ -2219,12 +2226,12 @@ struct
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let trans_state' = { trans_state_pri with succ_nodes = [] } in
     let context = trans_state.context in
-    let subtypes = Subtype.subtypes_cast in
+    let subtype = Subtype.subtypes_cast in
     let tenv = context.CContext.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let cast_type = CType_decl.qual_type_to_sil_type tenv cast_qual_type in
     let sizeof_expr = match cast_type.desc with
-      | Typ.Tptr (typ, _) -> Exp.Sizeof (typ, None, subtypes)
+      | Typ.Tptr (typ, _) -> Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype}
       | _ -> assert false in
     let builtin = Exp.Const (Const.Cfun BuiltinDecl.__cast) in
     let stmt = match stmts with [stmt] -> stmt | _ -> assert false in
@@ -2288,7 +2295,8 @@ struct
     let sil_fun = Exp.Const (Const.Cfun fun_name) in
     let ret_id = Ident.create_fresh Ident.knormal in
     let void_typ = Typ.mk Tvoid in
-    let type_info_objc = (Exp.Sizeof (typ, None, Subtype.exact), void_typ) in
+    let type_info_objc = (Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype=Subtype.exact},
+                          void_typ) in
     let field_name_decl = CAst_utils.make_qual_name_decl ["type_info"; "std"] "__type_name" in
     let field_name = CGeneral_utils.mk_class_field_name field_name_decl in
     let ret_exp = Exp.Var ret_id in

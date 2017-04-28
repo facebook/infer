@@ -298,11 +298,13 @@ let rec dotty_mk_node pe sigma =
   let n = !dotty_state_count in
   incr dotty_state_count;
   let do_hpred_lambda exp_color = function
-    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Exp.Sizeof ({Typ.desc=Tarray (t, _)}, _, _)), lambda) ->
+    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Exp.Sizeof {typ={Typ.desc=Tarray (t, _)}}),
+       lambda) ->
         incr dotty_state_count;  (* increment once more n+1 is the box for the array *)
         let e_color_str = color_to_str (exp_color e) in
         let e_color_str'= color_to_str (exp_color e') in
-        [Dotpointsto((mk_coordinate n lambda), e, e_color_str); Dotarray((mk_coordinate (n + 1) lambda), e, e', l, t, e_color_str')]
+        [Dotpointsto((mk_coordinate n lambda), e, e_color_str);
+         Dotarray((mk_coordinate (n + 1) lambda), e, e', l, t, e_color_str')]
     | (Sil.Hpointsto (e, Sil.Estruct (l, _), te), lambda) ->
         incr dotty_state_count;  (* increment once more n+1 is the box for the struct *)
         let e_color_str = color_to_str (exp_color e) in
@@ -692,8 +694,8 @@ let filter_useless_spec_dollar_box (nodes: dotty_node list) (links: link list) =
 (* print a struct node *)
 let rec print_struct f pe e te l coo c =
   let print_type = match te with
-    | Exp.Sizeof (t, _, _) ->
-        let str_t = Typ.to_string t in
+    | Exp.Sizeof {typ} ->
+        let str_t = Typ.to_string typ in
         (match Str.split_delim (Str.regexp_string Config.anonymous_block_prefix) str_t with
          | [_; _] -> "BLOCK object"
          | _ -> str_t)
