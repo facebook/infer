@@ -119,14 +119,14 @@ digraph iCFG {
 	
 
 	 "div#X#return_struct#(_ZN13return_struct1X3divEv).3b462e45075b7f3251ac015f1e6bb047_3" -> "div#X#return_struct#(_ZN13return_struct1X3divEv).3b462e45075b7f3251ac015f1e6bb047_2" ;
-"X#X#return_struct#{_ZN13return_struct1XC1ERKS0_}.ada5a829e644543d37b04423b7e20560_1" [label="1: Start return_struct::X_X\nFormals:  this:return_struct::X* x:return_struct::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+"X#X#return_struct#{_ZN13return_struct1XC1ERKS0_}.ada5a829e644543d37b04423b7e20560_1" [label="1: Start return_struct::X_X\nFormals:  this:return_struct::X* x:return_struct::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
 	 "X#X#return_struct#{_ZN13return_struct1XC1ERKS0_}.ada5a829e644543d37b04423b7e20560_1" -> "X#X#return_struct#{_ZN13return_struct1XC1ERKS0_}.ada5a829e644543d37b04423b7e20560_3" ;
 "X#X#return_struct#{_ZN13return_struct1XC1ERKS0_}.ada5a829e644543d37b04423b7e20560_2" [label="2: Exit return_struct::X_X \n  " color=yellow style=filled]
 	
 
-"X#X#return_struct#{_ZN13return_struct1XC1ERKS0_}.ada5a829e644543d37b04423b7e20560_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:return_struct::X* [line 15]\n  n$1=*&x:return_struct::X& [line 15]\n  n$2=*n$1.f:int [line 15]\n  *n$0.f:int=n$2 [line 15]\n " shape="box"]
+"X#X#return_struct#{_ZN13return_struct1XC1ERKS0_}.ada5a829e644543d37b04423b7e20560_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:return_struct::X* [line 15]\n  n$1=*&x:return_struct::X const & [line 15]\n  n$2=*n$1.f:int [line 15]\n  *n$0.f:int=n$2 [line 15]\n " shape="box"]
 	
 
 	 "X#X#return_struct#{_ZN13return_struct1XC1ERKS0_}.ada5a829e644543d37b04423b7e20560_3" -> "X#X#return_struct#{_ZN13return_struct1XC1ERKS0_}.ada5a829e644543d37b04423b7e20560_2" ;

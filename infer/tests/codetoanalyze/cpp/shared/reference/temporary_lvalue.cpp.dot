@@ -1,13 +1,13 @@
 /* @generated */
 digraph iCFG {
-"div0_init_expr#_Z14div0_init_exprv.f02884e3d864f79f1dffe6e22020bca4_1" [label="1: Start div0_init_expr\nFormals: \nLocals:  a:int& 0$?%__sil_tmpSIL_materialize_temp__n$2:int \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 12]\n " color=yellow style=filled]
+"div0_init_expr#_Z14div0_init_exprv.f02884e3d864f79f1dffe6e22020bca4_1" [label="1: Start div0_init_expr\nFormals: \nLocals:  a:int const & 0$?%__sil_tmpSIL_materialize_temp__n$2:int \n   DECLARE_LOCALS(&return,&a,&0$?%__sil_tmpSIL_materialize_temp__n$2); [line 12]\n " color=yellow style=filled]
 	
 
 	 "div0_init_expr#_Z14div0_init_exprv.f02884e3d864f79f1dffe6e22020bca4_1" -> "div0_init_expr#_Z14div0_init_exprv.f02884e3d864f79f1dffe6e22020bca4_4" ;
 "div0_init_expr#_Z14div0_init_exprv.f02884e3d864f79f1dffe6e22020bca4_2" [label="2: Exit div0_init_expr \n  " color=yellow style=filled]
 	
 
-"div0_init_expr#_Z14div0_init_exprv.f02884e3d864f79f1dffe6e22020bca4_3" [label="3:  Return Stmt \n   n$0=*&a:int& [line 14]\n  n$1=_fun_div(n$0:int&) [line 14]\n  *&return:int=n$1 [line 14]\n " shape="box"]
+"div0_init_expr#_Z14div0_init_exprv.f02884e3d864f79f1dffe6e22020bca4_3" [label="3:  Return Stmt \n   n$0=*&a:int const & [line 14]\n  n$1=_fun_div(n$0:int const &) [line 14]\n  *&return:int=n$1 [line 14]\n " shape="box"]
 	
 
 	 "div0_init_expr#_Z14div0_init_exprv.f02884e3d864f79f1dffe6e22020bca4_3" -> "div0_init_expr#_Z14div0_init_exprv.f02884e3d864f79f1dffe6e22020bca4_2" ;
@@ -41,14 +41,14 @@ digraph iCFG {
 	
 
 	 "div0_no_const_ref#_Z17div0_no_const_refv.94b3f1810be763a76ad9d340476db03b_4" -> "div0_no_const_ref#_Z17div0_no_const_refv.94b3f1810be763a76ad9d340476db03b_3" ;
-"div#_Z3divRKi.fa811012e173ad886b0a43872b005b64_1" [label="1: Start div\nFormals:  v:int&\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+"div#_Z3divRKi.fa811012e173ad886b0a43872b005b64_1" [label="1: Start div\nFormals:  v:int const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
 	 "div#_Z3divRKi.fa811012e173ad886b0a43872b005b64_1" -> "div#_Z3divRKi.fa811012e173ad886b0a43872b005b64_3" ;
 "div#_Z3divRKi.fa811012e173ad886b0a43872b005b64_2" [label="2: Exit div \n  " color=yellow style=filled]
 	
 
-"div#_Z3divRKi.fa811012e173ad886b0a43872b005b64_3" [label="3:  Return Stmt \n   n$0=*&v:int& [line 10]\n  n$1=*n$0:int [line 10]\n  *&return:int=(1 / n$1) [line 10]\n " shape="box"]
+"div#_Z3divRKi.fa811012e173ad886b0a43872b005b64_3" [label="3:  Return Stmt \n   n$0=*&v:int const & [line 10]\n  n$1=*n$0:int [line 10]\n  *&return:int=(1 / n$1) [line 10]\n " shape="box"]
 	
 
 	 "div#_Z3divRKi.fa811012e173ad886b0a43872b005b64_3" -> "div#_Z3divRKi.fa811012e173ad886b0a43872b005b64_2" ;

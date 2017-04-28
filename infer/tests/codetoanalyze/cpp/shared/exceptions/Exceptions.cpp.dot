@@ -50,7 +50,7 @@ digraph iCFG {
 	
 
 	 "deref#_Z5derefPi.4795e142c647658d2d19ca83904cd96e_7" -> "deref#_Z5derefPi.4795e142c647658d2d19ca83904cd96e_4" ;
-"deref#_Z5derefPi.4795e142c647658d2d19ca83904cd96e_8" [label="8:  ObjCCPPThrow \n   _fun___infer_objc_cpp_throw(\"Null pointer!\":char*) [line 12]\n " shape="box"]
+"deref#_Z5derefPi.4795e142c647658d2d19ca83904cd96e_8" [label="8:  ObjCCPPThrow \n   _fun___infer_objc_cpp_throw(\"Null pointer!\":char const *) [line 12]\n " shape="box"]
 	
 
 	 "deref#_Z5derefPi.4795e142c647658d2d19ca83904cd96e_8" -> "deref#_Z5derefPi.4795e142c647658d2d19ca83904cd96e_4" ;

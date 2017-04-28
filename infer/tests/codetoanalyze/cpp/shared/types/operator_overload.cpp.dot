@@ -78,7 +78,7 @@ digraph iCFG {
 	
 
 	 "div1_method_op#_Z14div1_method_opR1X.7053001fe61eccdd1f65b78ae215a859_3" -> "div1_method_op#_Z14div1_method_opR1X.7053001fe61eccdd1f65b78ae215a859_2" ;
-"operator*#_ZmlRK1Xi.54e2e35c1d826de55cde853ec4c8dc66_1" [label="1: Start operator*\nFormals:  x1:X& v:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+"operator*#_ZmlRK1Xi.54e2e35c1d826de55cde853ec4c8dc66_1" [label="1: Start operator*\nFormals:  x1:X const & v:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
 	 "operator*#_ZmlRK1Xi.54e2e35c1d826de55cde853ec4c8dc66_1" -> "operator*#_ZmlRK1Xi.54e2e35c1d826de55cde853ec4c8dc66_3" ;

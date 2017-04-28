@@ -276,30 +276,41 @@ module Tbl = Hashtbl.Make T;
 
 
 /** Pretty print a type with all the details, using the C syntax. */
-let rec pp_full pe f {desc} =>
-  switch desc {
-  | Tstruct tname =>
-    if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
-      F.fprintf f "%s" (Name.name tname |> Escape.escape_xml)
-    } else {
-      F.fprintf f "%s" (Name.name tname)
+let rec pp_full pe f typ => {
+  let pp_quals f {quals} => {
+    if (is_const quals) {
+      F.fprintf f " const "
+    };
+    if (is_volatile quals) {
+      F.fprintf f " volatile "
     }
-  | Tint ik => F.fprintf f "%s" (ikind_to_string ik)
-  | Tfloat fk => F.fprintf f "%s" (fkind_to_string fk)
-  | Tvoid => F.fprintf f "void"
-  | Tfun false => F.fprintf f "_fn_"
-  | Tfun true => F.fprintf f "_fn_noreturn_"
-  | Tptr ({desc: Tarray _ | Tfun _} as typ) pk =>
-    F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk)
-  | Tptr typ pk => F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk)
-  | Tarray typ static_len =>
-    let pp_array_static_len fmt => (
-      fun
-      | Some static_len => IntLit.pp fmt static_len
-      | None => F.fprintf fmt "_"
-    );
-    F.fprintf f "%a[%a]" (pp_full pe) typ pp_array_static_len static_len
   };
+  let pp_desc f {desc} =>
+    switch desc {
+    | Tstruct tname =>
+      if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
+        F.fprintf f "%s" (Name.name tname |> Escape.escape_xml)
+      } else {
+        F.fprintf f "%s" (Name.name tname)
+      }
+    | Tint ik => F.fprintf f "%s" (ikind_to_string ik)
+    | Tfloat fk => F.fprintf f "%s" (fkind_to_string fk)
+    | Tvoid => F.fprintf f "void"
+    | Tfun false => F.fprintf f "_fn_"
+    | Tfun true => F.fprintf f "_fn_noreturn_"
+    | Tptr ({desc: Tarray _ | Tfun _} as typ) pk =>
+      F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk)
+    | Tptr typ pk => F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk)
+    | Tarray typ static_len =>
+      let pp_array_static_len fmt => (
+        fun
+        | Some static_len => IntLit.pp fmt static_len
+        | None => F.fprintf fmt "_"
+      );
+      F.fprintf f "%a[%a]" (pp_full pe) typ pp_array_static_len static_len
+    };
+  F.fprintf f "%a%a" pp_desc typ pp_quals typ
+};
 
 
 /** Pretty print a type. Do nothing by default. */

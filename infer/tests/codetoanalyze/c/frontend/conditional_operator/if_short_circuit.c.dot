@@ -46,7 +46,7 @@ digraph iCFG {
 
 	 "test_loop.254a9d372f8f45542e409771135b9322_11" -> "test_loop.254a9d372f8f45542e409771135b9322_17" ;
 	 "test_loop.254a9d372f8f45542e409771135b9322_11" -> "test_loop.254a9d372f8f45542e409771135b9322_18" ;
-"test_loop.254a9d372f8f45542e409771135b9322_12" [label="12:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK_SIZE\":char*) [line 36]\n  *&spec:char*=n$4 [line 36]\n  n$5=*&spec:char* [line 36]\n " shape="box"]
+"test_loop.254a9d372f8f45542e409771135b9322_12" [label="12:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK_SIZE\":char const *) [line 36]\n  *&spec:char*=n$4 [line 36]\n  n$5=*&spec:char* [line 36]\n " shape="box"]
 	
 
 	 "test_loop.254a9d372f8f45542e409771135b9322_12" -> "test_loop.254a9d372f8f45542e409771135b9322_13" ;
@@ -80,7 +80,7 @@ digraph iCFG {
 
 	 "test_loop.254a9d372f8f45542e409771135b9322_19" -> "test_loop.254a9d372f8f45542e409771135b9322_25" ;
 	 "test_loop.254a9d372f8f45542e409771135b9322_19" -> "test_loop.254a9d372f8f45542e409771135b9322_26" ;
-"test_loop.254a9d372f8f45542e409771135b9322_20" [label="20:  BinaryOperatorStmt: Assign \n   n$8=_fun_getenv(\"BLOCKSIZE\":char*) [line 37]\n  *&spec:char*=n$8 [line 37]\n  n$9=*&spec:char* [line 37]\n " shape="box"]
+"test_loop.254a9d372f8f45542e409771135b9322_20" [label="20:  BinaryOperatorStmt: Assign \n   n$8=_fun_getenv(\"BLOCKSIZE\":char const *) [line 37]\n  *&spec:char*=n$8 [line 37]\n  n$9=*&spec:char* [line 37]\n " shape="box"]
 	
 
 	 "test_loop.254a9d372f8f45542e409771135b9322_20" -> "test_loop.254a9d372f8f45542e409771135b9322_21" ;
@@ -113,7 +113,7 @@ digraph iCFG {
 	
 
 	 "test_loop.254a9d372f8f45542e409771135b9322_27" -> "test_loop.254a9d372f8f45542e409771135b9322_3" ;
-"test_loop.254a9d372f8f45542e409771135b9322_28" [label="28:  BinaryOperatorStmt: Assign \n   n$11=_fun_getenv(\"BLOCK\":char*) [line 34]\n  *&spec:char*=n$11 [line 34]\n " shape="box"]
+"test_loop.254a9d372f8f45542e409771135b9322_28" [label="28:  BinaryOperatorStmt: Assign \n   n$11=_fun_getenv(\"BLOCK\":char const *) [line 34]\n  *&spec:char*=n$11 [line 34]\n " shape="box"]
 	
 
 	 "test_loop.254a9d372f8f45542e409771135b9322_28" -> "test_loop.254a9d372f8f45542e409771135b9322_3" ;
@@ -166,7 +166,7 @@ digraph iCFG {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_18" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_19" ;
-"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK_SIZE\":char*) [line 49]\n  *&spec:char*=n$4 [line 49]\n  n$5=*&spec:char* [line 49]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK_SIZE\":char const *) [line 49]\n  *&spec:char*=n$4 [line 49]\n  n$5=*&spec:char* [line 49]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_14" ;
@@ -200,7 +200,7 @@ digraph iCFG {
 
 	 "main.fad58de7366495db4650cfefac2fcd61_20" -> "main.fad58de7366495db4650cfefac2fcd61_26" ;
 	 "main.fad58de7366495db4650cfefac2fcd61_20" -> "main.fad58de7366495db4650cfefac2fcd61_27" ;
-"main.fad58de7366495db4650cfefac2fcd61_21" [label="21:  BinaryOperatorStmt: Assign \n   n$8=_fun_getenv(\"BLOCKSIZE\":char*) [line 49]\n  *&spec:char*=n$8 [line 49]\n  n$9=*&spec:char* [line 49]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_21" [label="21:  BinaryOperatorStmt: Assign \n   n$8=_fun_getenv(\"BLOCKSIZE\":char const *) [line 49]\n  *&spec:char*=n$8 [line 49]\n  n$9=*&spec:char* [line 49]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_21" -> "main.fad58de7366495db4650cfefac2fcd61_22" ;
@@ -254,7 +254,7 @@ digraph iCFG {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_33" -> "main.fad58de7366495db4650cfefac2fcd61_29" ;
-"main.fad58de7366495db4650cfefac2fcd61_34" [label="34:  BinaryOperatorStmt: Assign \n   n$13=_fun_getenv(\"BLOCK\":char*) [line 47]\n  *&spec:char*=n$13 [line 47]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_34" [label="34:  BinaryOperatorStmt: Assign \n   n$13=_fun_getenv(\"BLOCK\":char const *) [line 47]\n  *&spec:char*=n$13 [line 47]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_34" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
@@ -358,7 +358,7 @@ digraph iCFG {
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_12" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_18" ;
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_12" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_19" ;
-"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_13" [label="13:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK\":char*) [line 22]\n  *&x:int*=n$4 [line 22]\n  n$5=*&x:int* [line 22]\n " shape="box"]
+"shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_13" [label="13:  BinaryOperatorStmt: Assign \n   n$4=_fun_getenv(\"BLOCK\":char const *) [line 22]\n  *&x:int*=n$4 [line 22]\n  n$5=*&x:int* [line 22]\n " shape="box"]
 	
 
 	 "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_13" -> "shortcircuit_and.10f9635d805ff3bd29dfc80b8f8d12da_14" ;

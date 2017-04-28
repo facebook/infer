@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 "foo.acbd18db4cc2f85cedef654fccc4a4d8_4" -> "foo.acbd18db4cc2f85cedef654fccc4a4d8_3" ;
-"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals:  argc:int argv:char**\nLocals:  a:A* \n   DECLARE_LOCALS(&return,&a); [line 61]\n " color=yellow style=filled]
+"main.fad58de7366495db4650cfefac2fcd61_1" [label="1: Start main\nFormals:  argc:int argv:char const **\nLocals:  a:A* \n   DECLARE_LOCALS(&return,&a); [line 61]\n " color=yellow style=filled]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_1" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;

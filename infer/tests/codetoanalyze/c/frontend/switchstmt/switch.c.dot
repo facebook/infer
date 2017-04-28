@@ -28,7 +28,7 @@ digraph iCFG {
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_7" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_3" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_8" [label="8:  Call _fun_printf \n   n$1=_fun_printf(\"(after_switch)HELLO WORLD!\":char*) [line 30]\n " shape="box"]
+"m1.ae7be26cdaa742ca148068d5ac90eaca_8" [label="8:  Call _fun_printf \n   n$1=_fun_printf(\"(after_switch)HELLO WORLD!\":char const *) [line 30]\n " shape="box"]
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_8" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_4" ;
@@ -41,7 +41,7 @@ digraph iCFG {
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_10" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_11" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_11" [label="11:  Call _fun_printf \n   n$3=_fun_printf(\"(2/def)HELLO WORLD!\":char*) [line 27]\n " shape="box"]
+"m1.ae7be26cdaa742ca148068d5ac90eaca_11" [label="11:  Call _fun_printf \n   n$3=_fun_printf(\"(2/def)HELLO WORLD!\":char const *) [line 27]\n " shape="box"]
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_11" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_4" ;
@@ -53,7 +53,7 @@ digraph iCFG {
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_13" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_10" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_14" [label="14:  Call _fun_printf \n   n$4=_fun_printf(\"(1)HELLO WORLD!\":char*) [line 23]\n " shape="box"]
+"m1.ae7be26cdaa742ca148068d5ac90eaca_14" [label="14:  Call _fun_printf \n   n$4=_fun_printf(\"(1)HELLO WORLD!\":char const *) [line 23]\n " shape="box"]
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_14" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_4" ;
@@ -66,7 +66,7 @@ digraph iCFG {
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_16" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_12" ;
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_16" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_13" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_17" [label="17:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 20]\n " shape="box"]
+"m1.ae7be26cdaa742ca148068d5ac90eaca_17" [label="17:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 20]\n " shape="box"]
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_17" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_8" ;
@@ -83,7 +83,7 @@ digraph iCFG {
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_20" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_17" ;
-"m1.ae7be26cdaa742ca148068d5ac90eaca_21" [label="21:  Call _fun_printf \n   n$7=_fun_printf(\"(out)HELLO WORLD!\":char*) [line 17]\n " shape="box"]
+"m1.ae7be26cdaa742ca148068d5ac90eaca_21" [label="21:  Call _fun_printf \n   n$7=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 17]\n " shape="box"]
 	
 
 	 "m1.ae7be26cdaa742ca148068d5ac90eaca_21" -> "m1.ae7be26cdaa742ca148068d5ac90eaca_20" ;
@@ -157,7 +157,7 @@ digraph iCFG {
 	
 
 	 "m2.aaf2f89992379705dac844c0a2a1d45f_15" -> "m2.aaf2f89992379705dac844c0a2a1d45f_12" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_16" [label="16:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 42]\n " shape="box"]
+"m2.aaf2f89992379705dac844c0a2a1d45f_16" [label="16:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 42]\n " shape="box"]
 	
 
 	 "m2.aaf2f89992379705dac844c0a2a1d45f_16" -> "m2.aaf2f89992379705dac844c0a2a1d45f_3" ;
@@ -174,7 +174,7 @@ digraph iCFG {
 	
 
 	 "m2.aaf2f89992379705dac844c0a2a1d45f_19" -> "m2.aaf2f89992379705dac844c0a2a1d45f_16" ;
-"m2.aaf2f89992379705dac844c0a2a1d45f_20" [label="20:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char*) [line 39]\n " shape="box"]
+"m2.aaf2f89992379705dac844c0a2a1d45f_20" [label="20:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 39]\n " shape="box"]
 	
 
 	 "m2.aaf2f89992379705dac844c0a2a1d45f_20" -> "m2.aaf2f89992379705dac844c0a2a1d45f_19" ;
@@ -240,7 +240,7 @@ digraph iCFG {
 
 	 "m3.9678f7a7939f457fa0d9353761e189c7_13" -> "m3.9678f7a7939f457fa0d9353761e189c7_7" ;
 	 "m3.9678f7a7939f457fa0d9353761e189c7_13" -> "m3.9678f7a7939f457fa0d9353761e189c7_8" ;
-"m3.9678f7a7939f457fa0d9353761e189c7_14" [label="14:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 64]\n " shape="box"]
+"m3.9678f7a7939f457fa0d9353761e189c7_14" [label="14:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 64]\n " shape="box"]
 	
 
 	 "m3.9678f7a7939f457fa0d9353761e189c7_14" -> "m3.9678f7a7939f457fa0d9353761e189c7_3" ;
@@ -319,7 +319,7 @@ digraph iCFG {
 	
 
 	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_15" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_12" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_16" [label="16:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 85]\n " shape="box"]
+"m4.fd6b6fc9220b72d21683ae8e4f50a210_16" [label="16:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 85]\n " shape="box"]
 	
 
 	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_16" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_3" ;
@@ -336,7 +336,7 @@ digraph iCFG {
 	
 
 	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_19" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_16" ;
-"m4.fd6b6fc9220b72d21683ae8e4f50a210_20" [label="20:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char*) [line 82]\n " shape="box"]
+"m4.fd6b6fc9220b72d21683ae8e4f50a210_20" [label="20:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 82]\n " shape="box"]
 	
 
 	 "m4.fd6b6fc9220b72d21683ae8e4f50a210_20" -> "m4.fd6b6fc9220b72d21683ae8e4f50a210_19" ;
@@ -381,7 +381,7 @@ digraph iCFG {
 
 	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_8" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_10" ;
 	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_8" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_11" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_9" [label="9:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 112]\n " shape="box"]
+"m5.7b1f6dff14d8c2dfeb7da9487be0612d_9" [label="9:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 112]\n " shape="box"]
 	
 
 	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_9" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_4" ;
@@ -397,7 +397,7 @@ digraph iCFG {
 	
 
 	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_12" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_4" ;
-"m5.7b1f6dff14d8c2dfeb7da9487be0612d_13" [label="13:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char*) [line 108]\n " shape="box"]
+"m5.7b1f6dff14d8c2dfeb7da9487be0612d_13" [label="13:  Call _fun_printf \n   n$4=_fun_printf(\"(out)HELLO WORLD!\":char const *) [line 108]\n " shape="box"]
 	
 
 	 "m5.7b1f6dff14d8c2dfeb7da9487be0612d_13" -> "m5.7b1f6dff14d8c2dfeb7da9487be0612d_12" ;
@@ -488,7 +488,7 @@ digraph iCFG {
 
 	 "m6.36604411a85db2bd9e97e22bfb5b692d_19" -> "m6.36604411a85db2bd9e97e22bfb5b692d_13" ;
 	 "m6.36604411a85db2bd9e97e22bfb5b692d_19" -> "m6.36604411a85db2bd9e97e22bfb5b692d_14" ;
-"m6.36604411a85db2bd9e97e22bfb5b692d_20" [label="20:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 123]\n " shape="box"]
+"m6.36604411a85db2bd9e97e22bfb5b692d_20" [label="20:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 123]\n " shape="box"]
 	
 
 	 "m6.36604411a85db2bd9e97e22bfb5b692d_20" -> "m6.36604411a85db2bd9e97e22bfb5b692d_3" ;
@@ -570,7 +570,7 @@ digraph iCFG {
 
 	 "m7.0449904fbf32607bf8ce5c26823dbc29_13" -> "m7.0449904fbf32607bf8ce5c26823dbc29_7" ;
 	 "m7.0449904fbf32607bf8ce5c26823dbc29_13" -> "m7.0449904fbf32607bf8ce5c26823dbc29_8" ;
-"m7.0449904fbf32607bf8ce5c26823dbc29_14" [label="14:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 143]\n " shape="box"]
+"m7.0449904fbf32607bf8ce5c26823dbc29_14" [label="14:  Call _fun_printf \n   n$2=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 143]\n " shape="box"]
 	
 
 	 "m7.0449904fbf32607bf8ce5c26823dbc29_14" -> "m7.0449904fbf32607bf8ce5c26823dbc29_3" ;
@@ -691,7 +691,7 @@ digraph iCFG {
 	
 
 	 "m8.980b79c2a71b9bcc117e08a990b5b332_25" -> "m8.980b79c2a71b9bcc117e08a990b5b332_2" ;
-"m8.980b79c2a71b9bcc117e08a990b5b332_26" [label="26:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 162]\n " shape="box"]
+"m8.980b79c2a71b9bcc117e08a990b5b332_26" [label="26:  Call _fun_printf \n   n$5=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 162]\n " shape="box"]
 	
 
 	 "m8.980b79c2a71b9bcc117e08a990b5b332_26" -> "m8.980b79c2a71b9bcc117e08a990b5b332_25" ;
@@ -787,7 +787,7 @@ digraph iCFG {
 
 	 "m11.c4534fe0ca256b331e9a3f14fe17229d_10" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_12" ;
 	 "m11.c4534fe0ca256b331e9a3f14fe17229d_10" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_13" ;
-"m11.c4534fe0ca256b331e9a3f14fe17229d_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char*) [line 195]\n " shape="box"]
+"m11.c4534fe0ca256b331e9a3f14fe17229d_11" [label="11:  Call _fun_printf \n   n$4=_fun_printf(\"(0)HELLO WORLD!\":char const *) [line 195]\n " shape="box"]
 	
 
 	 "m11.c4534fe0ca256b331e9a3f14fe17229d_11" -> "m11.c4534fe0ca256b331e9a3f14fe17229d_3" ;
