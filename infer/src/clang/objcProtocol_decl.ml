@@ -26,12 +26,12 @@ let protocol_decl qual_type_to_sil_type tenv decl =
       (* It may turn out that we need a more specific treatment for protocols*)
       Logging.out_debug "ADDING: ObjCProtocolDecl for '%a'\n" QualifiedCppName.pp name;
       let protocol_name = Typ.Name.Objc.protocol_from_qual_name name in
-      let protocol_type = Typ.mk (Tstruct protocol_name) in
+      let protocol_desc = Typ.Tstruct protocol_name in
       let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
-      CAst_utils.update_sil_types_map decl_key protocol_type;
+      CAst_utils.update_sil_types_map decl_key protocol_desc;
       ignore( Tenv.mk_struct tenv ~methods:[] protocol_name );
       add_protocol_super qual_type_to_sil_type tenv obj_c_protocol_decl_info;
-      protocol_type
+      protocol_desc
   | _ -> assert false
 
 let is_protocol decl =

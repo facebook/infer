@@ -105,7 +105,7 @@ let rec get_struct_fields tenv decl =
 and get_record_declaration_type tenv decl =
   let definition_decl = get_record_definition decl in
   match get_record_custom_type tenv definition_decl with
-  | Some t -> t
+  | Some t -> t.Typ.desc
   | None -> get_record_struct_type tenv definition_decl
 
 and get_record_custom_type tenv definition_decl =
@@ -158,16 +158,16 @@ and get_superclass_list_cpp tenv decl =
   let get_super_field super_decl = get_record_typename ~tenv super_decl in
   List.map ~f:get_super_field base_decls
 
-and get_record_struct_type tenv definition_decl : Typ.t =
+and get_record_struct_type tenv definition_decl : Typ.desc =
   let open Clang_ast_t in
   match definition_decl with
   | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, record_decl_info, _, _)
   | CXXRecordDecl (_, _, _, type_ptr, _, _, record_decl_info, _)
   | RecordDecl (_, _, _, type_ptr, _, _, record_decl_info) ->
       let sil_typename = get_record_typename ~tenv definition_decl in
-      let sil_type = Typ.mk (Tstruct sil_typename) in
+      let sil_desc = Typ.Tstruct sil_typename in
       (match Tenv.lookup tenv sil_typename with
-       | Some _ -> sil_type (* just reuse what is already in tenv *)
+       | Some _ -> sil_desc (* just reuse what is already in tenv *)
        | None ->
            let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
            let extra_fields =
@@ -178,7 +178,7 @@ and get_record_struct_type tenv definition_decl : Typ.t =
              if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
              else Annot.Item.empty (* No annotations for structs *) in
            if is_complete_definition then (
-             CAst_utils.update_sil_types_map type_ptr sil_type;
+             CAst_utils.update_sil_types_map type_ptr sil_desc;
              let non_statics = get_struct_fields tenv definition_decl in
              let fields = CGeneral_utils.append_no_duplicates_fields non_statics extra_fields in
              let statics = [] in (* Note: We treat static field same as global variables *)
@@ -187,14 +187,14 @@ and get_record_struct_type tenv definition_decl : Typ.t =
              let specialization = get_template_specialization tenv definition_decl in
              Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~specialization
                sil_typename |> ignore;
-             CAst_utils.update_sil_types_map type_ptr sil_type;
-             sil_type
+             CAst_utils.update_sil_types_map type_ptr sil_desc;
+             sil_desc
            ) else (
              (* There is no definition for that struct in whole translation unit.
                 Put empty struct into tenv to prevent backend problems *)
              ignore (Tenv.mk_struct tenv ~fields:extra_fields sil_typename);
-             CAst_utils.update_sil_types_map type_ptr sil_type;
-             sil_type))
+             CAst_utils.update_sil_types_map type_ptr sil_desc;
+             sil_desc))
   | _ -> assert false
 
 and add_types_from_decl_to_tenv tenv decl =

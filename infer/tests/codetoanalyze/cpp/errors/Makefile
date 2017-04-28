@@ -50,6 +50,7 @@ SOURCES = \
   shared/templates/function.cpp \
   shared/templates/function_pack.cpp \
   shared/templates/method.cpp \
+  shared/types/const.cpp \
   shared/types/inheritance_casts.cpp \
   shared/types/inheritance_field.cpp \
   shared/types/operator_overload.cpp \

@@ -30,7 +30,7 @@ val get_decl_opt_with_decl_ref : Clang_ast_t.decl_ref option -> Clang_ast_t.decl
 
 val get_property_of_ivar : Clang_ast_t.pointer -> Clang_ast_t.decl option
 
-val update_sil_types_map : Clang_ast_t.type_ptr -> Typ.t -> unit
+val update_sil_types_map : Clang_ast_t.type_ptr -> Typ.desc -> unit
 
 val update_enum_map : Clang_ast_t.pointer -> Exp.t -> unit
 

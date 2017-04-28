@@ -11,12 +11,5 @@ open! IStd
 
 val get_builtin_objc_typename :  [< `ObjCClass | `ObjCId ] -> Typ.Name.t
 
-val get_builtin_objc_type : [< `ObjCClass | `ObjCId ] -> Typ.t
-
-val sil_type_of_builtin_type_kind : Clang_ast_t.builtin_type_kind -> Typ.t
-
-val type_ptr_to_sil_type : (Tenv.t -> Clang_ast_t.decl -> Typ.t) ->
-  Tenv.t -> Clang_ast_t.type_ptr -> Typ.t
-
-val qual_type_to_sil_type : (Tenv.t -> Clang_ast_t.decl -> Typ.t) ->
+val qual_type_to_sil_type : (Tenv.t -> Clang_ast_t.decl -> Typ.desc) ->
   Tenv.t -> Clang_ast_t.qual_type -> Typ.t
