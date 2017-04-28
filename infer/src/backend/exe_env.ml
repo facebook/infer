@@ -161,19 +161,34 @@ let file_data_to_cfg file_data =
   then file_data.cfg <- Cfg.load_cfg_from_file file_data.cfg_file;
   file_data.cfg
 
+let java_global_tenv =
+  lazy
+    (match Tenv.load_from_file DB.global_tenv_fname with
+     | None ->
+         failwithf
+           "Could not load the global tenv at path %s@."
+           (DB.filename_to_string DB.global_tenv_fname)
+     | Some tenv -> tenv)
+
 (** return the type environment associated to the procedure *)
 let get_tenv exe_env proc_name =
-  match get_file_data exe_env proc_name with
-  | Some file_data -> (
-      match file_data_to_tenv file_data with
-      | Some tenv ->
-          tenv
-      | None ->
-          failwithf "get_tenv: tenv not found for %a in file %s"
-            Typ.Procname.pp proc_name (DB.filename_to_string file_data.tenv_file)
-    )
-  | None ->
-      failwithf "get_tenv: file_data not found for %a" Typ.Procname.pp proc_name
+  match proc_name with
+  | Typ.Procname.Java _ ->
+      Lazy.force java_global_tenv
+  | _ ->
+      begin
+        match get_file_data exe_env proc_name with
+        | Some file_data -> (
+            match file_data_to_tenv file_data with
+            | Some tenv ->
+                tenv
+            | None ->
+                failwithf "get_tenv: tenv not found for %a in file %s"
+                  Typ.Procname.pp proc_name (DB.filename_to_string file_data.tenv_file)
+          )
+        | None ->
+            failwithf "get_tenv: file_data not found for %a" Typ.Procname.pp proc_name
+      end
 
 (** return the cfg associated to the procedure *)
 let get_cfg exe_env pname =
