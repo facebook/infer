@@ -39,7 +39,8 @@ let pp fmt = function
 
 type translation =
   | Instr of t
-  | Update of Var.t * AccessPath.Raw.t
+  | Bind of Var.t * AccessPath.Raw.t
+  | Unbind of Var.t list
   | Ignore
 
 (* convert an SIL instruction into an HIL instruction. the [f_resolve_id] function should map an SSA
@@ -51,7 +52,7 @@ let of_sil ~f_resolve_id (instr : Sil.instr) =
     let rhs_hil_exp = HilExp.of_sil ~f_resolve_id rhs_exp rhs_typ in
     match HilExp.get_access_paths rhs_hil_exp with
     | [rhs_access_path] ->
-        Update (lhs_id, rhs_access_path)
+        Bind (lhs_id, rhs_access_path)
     | _ ->
         Instr (Write (((lhs_id, rhs_typ), []), rhs_hil_exp, loc)) in
   match instr with
@@ -83,7 +84,10 @@ let of_sil ~f_resolve_id (instr : Sil.instr) =
       let hil_exp = HilExp.of_sil ~f_resolve_id exp (Typ.mk (Tint IBool)) in
       let branch = if true_branch then `Then else `Else in
       Instr (Assume (hil_exp, branch, if_kind, loc))
-  | Nullify _ | Remove_temps _
+  | Nullify (pvar, _) ->
+      Unbind [Var.of_pvar pvar]
+  | Remove_temps (ids, _) ->
+      Unbind (List.map ~f:Var.of_id ids)
   (* ignoring for now; will translate as builtin function call if needed *)
   | Abstract _ | Declare_locals _ ->
       (* these don't seem useful for most analyses. can translate them later if we want to *)

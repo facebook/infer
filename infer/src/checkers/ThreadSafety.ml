@@ -439,8 +439,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       try Some (IdAccessPathMapDomain.find id astate.id_map)
       with Not_found -> None in
     match HilInstr.of_sil ~f_resolve_id instr with
-    | Update (id, access_path) ->
+    | Bind (id, access_path) ->
         let id_map = IdAccessPathMapDomain.add id access_path astate.id_map in
+        { astate with id_map; }
+    | Unbind ids ->
+        let id_map =
+          List.fold
+            ~f:(fun acc id -> IdAccessPathMapDomain.remove id acc) ~init:astate.id_map ids in
         { astate with id_map; }
     | Instr hil_instr ->
         exec_hil_instr_ hil_instr

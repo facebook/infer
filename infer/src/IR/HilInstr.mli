@@ -30,12 +30,12 @@ type t =
 
 val pp : F.formatter -> t -> unit
 
-(** The result of translating an SIL instruction can either be a new HIL instruction or an update to
-    the identifier map (in the case that the SIL instructions writes to a temporary) *)
+(** Result of translating an SIL instruction *)
 type translation =
-  | Instr of t
-  | Update of Var.t * AccessPath.Raw.t
-  | Ignore
+  | Instr of t (** HIL instruction to execute *)
+  | Bind of Var.t * AccessPath.Raw.t (** add binding to identifier map *)
+  | Unbind of Var.t list (** remove binding from identifier map *)
+  | Ignore (** no-op *)
 
 (** Convert an SIL instruction to an HIL instruction *)
 val of_sil : f_resolve_id:(Var.t -> AccessPath.Raw.t option) -> Sil.instr -> translation
