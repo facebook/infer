@@ -1567,10 +1567,11 @@ and sym_exec_objc_accessor property_accesor ret_typ tenv ret_id pdesc _ loc args
   |> List.map ~f:(fun p -> (p, path))
 
 (** Perform symbolic execution for a function call *)
-and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actual_pars; loc; } =
+and proc_call
+    callee_summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actual_pars; loc; } =
   let caller_pname = Procdesc.get_proc_name pdesc in
-  let callee_pname = Specs.get_proc_name summary in
-  let ret_typ = Specs.get_ret_type summary in
+  let callee_pname = Specs.get_proc_name callee_summary in
+  let ret_typ = Specs.get_ret_type callee_summary in
   let check_return_value_ignored () =
     (* check if the return value of the call is ignored, and issue a warning *)
     let is_ignored = match ret_typ.Typ.desc, ret_id with
@@ -1578,13 +1579,13 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
       | _, None -> true
       | _, Some (id, _) -> Errdesc.id_is_assigned_then_dead (State.get_node ()) id in
     if is_ignored
-    && is_none (Specs.get_flag summary ProcAttributes.proc_flag_ignore_return) then
+    && is_none (Specs.get_flag callee_summary ProcAttributes.proc_flag_ignore_return) then
       let err_desc = Localise.desc_return_value_ignored callee_pname loc in
       let exn = (Exceptions.Return_value_ignored (err_desc, __POS__)) in
       Reporting.log_warning caller_pname exn in
   check_inherently_dangerous_function caller_pname callee_pname;
   begin
-    let formal_types = List.map ~f:(fun (_, typ) -> typ) (Specs.get_formals summary) in
+    let formal_types = List.map ~f:snd (Specs.get_formals callee_summary) in
     let rec comb actual_pars formal_types =
       match actual_pars, formal_types with
       | [], [] -> actual_pars
@@ -1614,14 +1615,14 @@ and proc_call summary {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actu
     check_return_value_ignored ();
     (* In case we call an objc instance method we add and extra spec *)
     (* were the receiver is null and the semantics of the call is nop*)
-    let callee_attrs = Specs.get_attributes summary in
+    (* let callee_attrs = Specs.get_attributes callee_summary in *)
     if (!Config.curr_language <> Config.Java)  &&
-       (Specs.get_attributes summary).ProcAttributes.is_objc_instance_method then
+       (Specs.get_attributes callee_summary).ProcAttributes.is_objc_instance_method then
       handle_objc_instance_method_call actual_pars actual_params pre tenv ret_id pdesc
-        callee_pname loc path (Tabulation.exe_function_call callee_attrs)
+        callee_pname loc path (Tabulation.exe_function_call callee_summary)
     else  (* non-objective-c method call. Standard tabulation *)
       Tabulation.exe_function_call
-        callee_attrs tenv ret_id pdesc callee_pname loc actual_params pre path
+        callee_summary tenv ret_id pdesc callee_pname loc actual_params pre path
   end
 
 (** perform symbolic execution for a single prop, and check for junk *)

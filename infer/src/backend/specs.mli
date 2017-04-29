@@ -194,9 +194,6 @@ val get_signature : summary -> string
 (** Return the specs for the proc in the spec table *)
 val get_specs : Typ.Procname.t -> Prop.normal spec list
 
-(** Return the specs and formal parameters for the proc in the spec table *)
-val get_specs_formals : Typ.Procname.t -> Prop.normal spec list * (Mangled.t * Typ.t) list
-
 (** Get the specs from the payload of the summary. *)
 val get_specs_from_payload : summary -> Prop.normal spec list
 

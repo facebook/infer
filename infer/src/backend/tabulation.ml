@@ -116,13 +116,15 @@ let spec_rename_vars pname spec =
 
 (** Find and number the specs for [proc_name],
     after renaming their vars, and also return the parameters *)
-let spec_find_rename trace_call (proc_name : Typ.Procname.t)
+let spec_find_rename trace_call summary
   : (int * Prop.exposed Specs.spec) list * Pvar.t list =
+  let proc_name = Specs.get_proc_name summary in
   try
     let count = ref 0 in
     let f spec =
       incr count; (!count, spec_rename_vars proc_name spec) in
-    let specs, formals = Specs.get_specs_formals proc_name in
+    let specs = Specs.get_specs proc_name in
+    let formals = Specs.get_formals summary in
     if List.is_empty specs then
       begin
         trace_call Specs.CallStats.CR_not_found;
@@ -1286,15 +1288,14 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
 
 (** Execute the function call and return the list of results with return value *)
 let exe_function_call
-    callee_attrs tenv ret_id caller_pdesc callee_pname loc actual_params prop path =
+    callee_summary tenv ret_id caller_pdesc callee_pname loc actual_params prop path =
+  let callee_attrs = Specs.get_attributes callee_summary in
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
+  let caller_summary = Specs.get_summary_unsafe "exe_function_call" caller_pname in
   let trace_call res =
-    match Specs.get_summary caller_pname with
-    | None -> ()
-    | Some summary ->
-        Specs.CallStats.trace
-          summary.Specs.stats.Specs.call_stats callee_pname loc res !Config.footprint in
-  let spec_list, formal_params = spec_find_rename trace_call callee_pname in
+    Specs.CallStats.trace
+      caller_summary.Specs.stats.Specs.call_stats callee_pname loc res !Config.footprint in
+  let spec_list, formal_params = spec_find_rename trace_call callee_summary in
   let nspecs = List.length spec_list in
   L.d_strln
     ("Found " ^

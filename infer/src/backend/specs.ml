@@ -667,19 +667,13 @@ let get_flag summary key =
     Some (Hashtbl.find proc_flags key)
   with Not_found -> None
 
-(** Return the specs and parameters for the proc in the spec table *)
-let get_specs_formals proc_name =
-  match get_summary proc_name with
-  | None ->
-      raise (Failure ("Specs.get_specs_formals: " ^ (Typ.Procname.to_string proc_name) ^ "Not_found"))
-  | Some summary ->
-      let specs = get_specs_from_payload summary in
-      let formals = get_formals summary in
-      (specs, formals)
-
 (** Return the specs for the proc in the spec table *)
 let get_specs proc_name =
-  fst (get_specs_formals proc_name)
+  match get_summary proc_name with
+  | None ->
+      failwithf "Specs.get_specs: %a not found" Typ.Procname.pp proc_name
+  | Some summary ->
+      get_specs_from_payload summary
 
 (** Return the current phase for the proc *)
 let get_phase summary =
