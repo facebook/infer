@@ -1435,10 +1435,8 @@ let do_analysis_closures exe_env : Tasks.closure list =
     let analyze_ondemand source _ proc_desc =
       let proc_name = Procdesc.get_proc_name proc_desc in
       let tenv = Exe_env.get_tenv exe_env proc_name in
-      if not (Config.eradicate || Config.checkers) && not (Procdesc.did_preanalysis proc_desc)
+      if not (Procdesc.did_preanalysis proc_desc)
       then
-        (* Eradicate and the checkers don't need the Nullify/Remove_temps/Abstract instructions that
-           the preanalysis inserts. *)
         begin
           Preanal.do_liveness proc_desc tenv;
           Preanal.do_abstraction proc_desc;
