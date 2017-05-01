@@ -325,13 +325,34 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           caller_access_tree in
       { astate_in with access_tree; }
 
+
+    let exec_hil_instr (astate : Domain.astate) _ instr =
+      let exec_instr_ _ = astate in
+
+      let f_resolve_id id =
+        try Some (IdAccessPathMapDomain.find id astate.id_map)
+        with Not_found -> None in
+      match HilInstr.of_sil ~f_resolve_id instr with
+      | Bind (id, access_path) ->
+          let id_map = IdAccessPathMapDomain.add id access_path astate.id_map in
+          { astate with id_map; }
+      | Unbind ids ->
+          let id_map =
+            List.fold
+              ~f:(fun acc id -> IdAccessPathMapDomain.remove id acc) ~init:astate.id_map ids in
+          { astate with id_map; }
+      | Instr hil_instr ->
+          exec_instr_ hil_instr
+      | Ignore ->
+          astate
+
     let exec_instr (astate : Domain.astate) (proc_data : FormalMap.t ProcData.t) _ instr =
       let f_resolve_id = resolve_id astate.id_map in
       match instr with
-      | Sil.Load (lhs_id, rhs_exp, rhs_typ, _) ->
-          analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate
-      | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _) when Pvar.is_ssa_frontend_tmp lhs_pvar ->
-          analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate
+
+      | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) when Pvar.is_ssa_frontend_tmp lhs_pvar ->
+          exec_hil_instr astate proc_data instr
+
       | Sil.Store (Exp.Lvar lhs_pvar, _, Exp.Exn _, _) when Pvar.is_return lhs_pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
              wonky. this translation causes problems for us in computing a summary when an
@@ -508,18 +529,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           List.fold ~f:analyze_call ~init:Domain.empty targets
       | Sil.Call _ ->
           failwith "Unimp: non-pname call expressions"
-      | Sil.Nullify (pvar, _) ->
-          let id_map = IdMapDomain.remove (Var.of_pvar pvar) astate.id_map in
-          { astate with id_map; }
-      | Sil.Remove_temps (ids, _) ->
-          let id_map =
-            List.fold
-              ~f:(fun acc id -> IdMapDomain.remove (Var.of_id id) acc)
-              ~init:astate.id_map
-              ids in
-          { astate with id_map; }
-      | Sil.Prune _ | Abstract _ | Declare_locals _ ->
-          astate
+      | _ ->
+          exec_hil_instr astate proc_data instr
   end
 
   module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
