@@ -676,13 +676,6 @@ module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 
 module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
-(* we want to consider Builder classes and other safe immutablility-ensuring patterns as
-   thread-safe. we are overly friendly about this for now; any class whose name ends with `Builder`
-   is assumed to be thread-safe. in the future, we can ask for builder classes to be annotated with
-   @Builder and verify that annotated classes satisfy the expected invariants. *)
-let is_builder_class class_name =
-  String.is_suffix ~suffix:"Builder" class_name
-
 (* similarly, we assume that immutable classes safely encapsulate their state *)
 let is_immutable_collection_class class_name tenv =
   let immutable_collections = [
@@ -695,10 +688,6 @@ let is_immutable_collection_class class_name tenv =
     (fun typename _ ->
        List.mem ~equal:String.equal immutable_collections (Typ.Name.name typename))
     class_name
-
-let is_call_to_builder_class_method = function
-  | Typ.Procname.Java java_pname -> is_builder_class (Typ.Procname.java_get_class_name java_pname)
-  | _ -> false
 
 let is_call_to_immutable_collection_method tenv = function
   | Typ.Procname.Java java_pname ->
@@ -770,7 +759,6 @@ let should_analyze_proc pdesc tenv =
   let pn = Procdesc.get_proc_name pdesc in
   not (Typ.Procname.is_class_initializer pn) &&
   not (FbThreadSafety.is_logging_method pn) &&
-  not (is_call_to_builder_class_method pn) &&
   not (is_call_to_immutable_collection_method tenv pn) &&
   not (pdesc_is_assumed_thread_safe pdesc tenv)
 

@@ -9,13 +9,12 @@
 
 package codetoanalyze.java.checkers;
 
-import javax.annotation.concurrent.ThreadSafe;
+import com.facebook.infer.annotation.ThreadSafe;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.MyImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
-@ThreadSafe
 public class Builders {
 
   static class Obj {
@@ -53,35 +52,46 @@ public class Builders {
     }
   }
 
-  public void guavaBuilderOk(ImmutableList.Builder<String> builder) {
+  @ThreadSafe
+  public void guavaBuilderOk() {
+    ImmutableList.Builder<String> builder = new ImmutableList.Builder();
     builder.add("foo");
     builder.build();
   }
 
-  public Obj customBuilderOk1(Obj.Builder builder) {
+  @ThreadSafe
+  public Obj customBuilderOk1() {
+    Obj.Builder builder = new Obj.Builder();
     builder.setF("f");
     builder.setG("g");
     return builder.build();
   }
 
-  public Obj customBuilderOk2(Obj.Builder builder) {
+  @ThreadSafe
+  public Obj customBuilderOk2() {
+    Obj.Builder builder = new Obj.Builder();
     return builder.setF("f").setG("g").build();
   }
 
-  public Obj customBuilderOk3(Obj input) {
+  @ThreadSafe
+  public Obj customBuilderOk3() {
+    Obj obj = new Obj("a", "b");
     Obj.Builder builder = new Obj.Builder();
-    return builder.setFromObj(input).build();
+    return builder.setFromObj(obj).build();
   }
 
+  @ThreadSafe
   public void writeImmutableListFieldOk(MyImmutableList<Object> list) {
     list.writeFld();
   }
 
+  @ThreadSafe
   public Obj mutateBad(Obj o) {
     o.g = "";
     return o;
   }
 
+  @ThreadSafe
   public Obj buildThenMutateBad(Obj input) {
     Obj.Builder builder = new Obj.Builder();
     Obj output = builder.setFromObj(input).build();
