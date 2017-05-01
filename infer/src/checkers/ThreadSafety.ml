@@ -59,7 +59,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | LockedIfTrue
     | NoEffect
 
-
   let is_thread_utils_method method_name_str = function
     | Typ.Procname.Java java_pname ->
         String.is_suffix ~suffix:"ThreadUtils" (Typ.Procname.java_get_class_name java_pname)
@@ -137,6 +136,39 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let propagate_attributes lhs_access_path rhs_exp rhs_typ ~f_resolve_id attribute_map formal_map =
     let rhs_access_paths = AccessPath.of_exp rhs_exp rhs_typ ~f_resolve_id in
     propagate_attributes_ lhs_access_path rhs_access_paths attribute_map formal_map
+
+  let propagate_return_attributes_hil ret_opt ret_attributes actuals attribute_map formal_map =
+    let open Domain in
+    match ret_opt with
+    | None ->
+        attribute_map
+    | Some ret ->
+        let ownership_attributes, other_attributes =
+          AttributeSetDomain.partition (function | OwnedIf _ -> true | _ -> false) ret_attributes in
+        let caller_return_attributes =
+          match AttributeSetDomain.elements ownership_attributes with
+          | [] -> other_attributes
+          | [(OwnedIf None) as unconditionally_owned] ->
+              AttributeSetDomain.add unconditionally_owned other_attributes
+          | [OwnedIf (Some formal_index)] ->
+              begin
+                match List.nth actuals formal_index with
+                | Some (HilExp.AccessPath actual_ap) ->
+                    if is_owned actual_ap attribute_map
+                    then
+                      AttributeSetDomain.add Attribute.unconditionally_owned other_attributes
+                    else
+                      add_conditional_ownership_attribute
+                        actual_ap formal_map attribute_map other_attributes
+                | Some (HilExp.Constant _) ->
+                    AttributeSetDomain.add Attribute.unconditionally_owned other_attributes
+                | _ ->
+                    other_attributes
+              end
+          | _multiple_ownership_attributes ->
+              (* TODO: handle multiple ownership attributes *)
+              other_attributes in
+        AttributeMapDomain.add (ret, []) caller_return_attributes attribute_map
 
   let propagate_return_attributes
       ret_opt ret_attributes actuals attribute_map ~f_resolve_id formal_map =
@@ -374,11 +406,307 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     is_owned_in_library pname ||
     PatternMatch.override_exists is_owned_in_library tenv pname
 
+  let is_container_write pn tenv = match pn with
+    | Typ.Procname.Java java_pname ->
+        let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
+        let is_container_write_ typename _ =
+          match Typ.Name.name typename, Typ.Procname.java_get_method java_pname with
+          | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") -> true
+          | "java.util.Map", ("clear" | "put" | "putAll" | "remove") -> true
+          | _ -> false in
+        let is_threadsafe_collection typename _ = match Typ.Name.name typename with
+          | "java.util.concurrent.ConcurrentMap" | "java.util.concurrent.CopyOnWriteArrayList" ->
+              true
+          | _ ->
+              false in
+        PatternMatch.supertype_exists tenv is_container_write_ typename &&
+        not (PatternMatch.supertype_exists tenv is_threadsafe_collection typename)
+    | _ ->
+        false
+
+  let is_synchronized_container ((_, (base_typ : Typ.t)), accesses) tenv =
+    let is_annotated_synchronized base_typename container_field tenv =
+      match Tenv.lookup tenv base_typename with
+      | Some base_typ ->
+          Annotations.field_has_annot
+            container_field
+            base_typ Annotations.ia_is_synchronized_collection
+      | None ->
+          false in
+    match List.rev accesses with
+    | AccessPath.FieldAccess base_field ::
+      AccessPath.FieldAccess container_field :: _->
+        let base_typename =
+          Typ.Name.Java.from_string (Fieldname.java_get_class base_field) in
+        is_annotated_synchronized base_typename container_field tenv
+    | [AccessPath.FieldAccess container_field] ->
+        begin
+          match base_typ.desc with
+          | Typ.Tstruct base_typename | Tptr ({Typ.desc=Tstruct base_typename}, _) ->
+              is_annotated_synchronized base_typename container_field tenv
+          | _ ->
+              false
+        end
+    | _ ->
+        false
+
+  let get_receiver_ap callee_pname ~f_resolve_id = function
+    | (receiver_exp, receiver_typ) :: _ ->
+        begin match AccessPath.of_lhs_exp receiver_exp receiver_typ ~f_resolve_id with
+          | Some ap -> ap
+          | None -> assert false
+        end
+    | _ ->
+        failwithf
+          "Call to %a is marked as a container write, but has no receiver"
+          Typ.Procname.pp callee_pname
+
+  let add_container_write callee_pname receiver_ap callee_loc tenv =
+    (* return true if field pointing to container is marked @SyncrhonizedContainer *)
+    (* create a dummy write that represents mutating the contents of the container *)
+    let open Domain in
+    let callee_accesses =
+      if is_synchronized_container receiver_ap tenv
+      then
+        AccessDomain.empty
+      else
+        let dummy_fieldname =
+          Fieldname.Java.from_string
+            (container_write_string ^ (Typ.Procname.get_method callee_pname)) in
+        let dummy_access_ap =
+          fst receiver_ap, (snd receiver_ap) @ [AccessPath.FieldAccess dummy_fieldname] in
+        AccessDomain.add_access
+          (Unprotected (Some 0))
+          (make_access dummy_access_ap Write callee_loc)
+          AccessDomain.empty in
+    Some (false, false, callee_accesses, AttributeSetDomain.empty)
+
+  let get_summary caller_pdesc callee_pname actuals ~f_resolve_id callee_loc tenv =
+    if is_container_write callee_pname tenv
+    then
+      let receiver_ap = get_receiver_ap callee_pname actuals ~f_resolve_id in
+      add_container_write callee_pname receiver_ap callee_loc tenv
+    else
+      Summary.read_summary caller_pdesc callee_pname
+
+  let get_summary_hil caller_pdesc callee_pname actuals callee_loc tenv =
+    if is_container_write callee_pname tenv
+    then
+      let receiver_ap = match List.hd actuals with
+        | Some (HilExp.AccessPath receiver_ap) -> receiver_ap
+        | _ ->
+            failwithf
+              "Call to %a is marked as a container write, but has no receiver"
+              Typ.Procname.pp callee_pname in
+      add_container_write callee_pname receiver_ap callee_loc tenv
+    else
+      Summary.read_summary caller_pdesc callee_pname
+
+  (* return true if the given procname boxes a primitive type into a reference type *)
+  let is_box = function
+    | Typ.Procname.Java java_pname ->
+        begin
+          match Typ.Procname.java_get_class_name java_pname,
+                Typ.Procname.java_get_method java_pname with
+          | ("java.lang.Boolean" |
+             "java.lang.Byte" |
+             "java.lang.Char" |
+             "java.lang.Double" |
+             "java.lang.Float" |
+             "java.lang.Integer" |
+             "java.lang.Long" |
+             "java.lang.Short"),
+            "valueOf" -> true
+          | _ -> false
+        end
+    | _ ->
+        false
+
   let exec_hil_instr
-      (astate : Domain.astate) ({ ProcData.extras; } as proc_data) instr =
+      (astate : Domain.astate) ({ ProcData.extras; tenv; pdesc; } as proc_data) instr =
     let open ThreadSafetyDomain in
 
+    let add_reads exps loc accesses locks attribute_map proc_data =
+      List.fold
+        ~f:(fun acc exp -> add_hil_access exp loc Read acc locks attribute_map proc_data)
+        exps
+        ~init:accesses in
     let exec_hil_instr_ = function
+      | HilInstr.Call (Some ret_base, Direct procname, actuals, _, loc)
+        when acquires_ownership procname tenv ->
+          let accesses =
+            add_reads actuals loc astate.accesses astate.locks astate.attribute_map proc_data in
+          let attribute_map =
+            AttributeMapDomain.add_attribute
+              (ret_base, []) Attribute.unconditionally_owned astate.attribute_map in
+          { astate with accesses; attribute_map; }
+
+      | HilInstr.Call (ret_opt, Direct callee_pname, actuals, call_flags, loc) ->
+          let accesses =
+            add_reads actuals loc astate.accesses astate.locks astate.attribute_map proc_data in
+          let astate = { astate with accesses; } in
+
+          let astate_callee =
+            (* assuming that modeled procedures do not have useful summaries *)
+            if is_thread_utils_method "assertMainThread" callee_pname
+            then
+              { astate with threads = true; }
+            else
+              match get_lock_model callee_pname with
+              | Lock ->
+                  { astate with locks = true; }
+              | Unlock ->
+                  { astate with locks = false; }
+              | LockedIfTrue ->
+                  begin
+                    match ret_opt with
+                    | Some ret_access_path ->
+                        let attribute_map =
+                          AttributeMapDomain.add_attribute
+                            (ret_access_path, [])
+                            (Choice Choice.LockHeld)
+                            astate.attribute_map in
+                        { astate with attribute_map; }
+                    | None ->
+                        failwithf
+                          "Procedure %a specified as returning boolean, but returns nothing"
+                          Typ.Procname.pp callee_pname
+                  end
+              | NoEffect ->
+                  match get_summary_hil pdesc callee_pname actuals loc tenv with
+                  | Some (callee_threads, callee_locks, callee_accesses, return_attributes) ->
+                      let update_caller_accesses pre callee_accesses caller_accesses =
+                        let combined_accesses =
+                          PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
+                          |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses) in
+                        AccessDomain.add pre combined_accesses caller_accesses in
+                      let locks = callee_locks || astate.locks in
+                      let threads = callee_threads || astate.threads in
+                      let unprotected = is_unprotected locks pdesc in
+                      (* add [ownership_accesses] to the [accesses_acc] with a protected pre if
+                         [exp] is owned, and an appropriate unprotected pre otherwise *)
+                      let add_ownership_access ownership_accesses actual_exp accesses_acc =
+                        match actual_exp with
+                        | HilExp.Constant _ ->
+                            (* the actual is a constant, so it's owned in the caller. *)
+                            accesses_acc
+                        | HilExp.AccessPath actual_access_path ->
+                            if is_owned actual_access_path astate.attribute_map
+                            then
+                              (* the actual passed to the current callee is owned. drop all the
+                                   conditional accesses for that actual, since they're all safe *)
+                              accesses_acc
+                            else
+                              let pre =
+                                if unprotected
+                                then
+                                  let base = fst actual_access_path in
+                                  match FormalMap.get_formal_index base extras with
+                                  | Some formal_index ->
+                                      (* the actual passed to the current callee is rooted in a
+                                           formal *)
+                                      AccessPrecondition.Unprotected (Some formal_index)
+                                  | None ->
+                                      match
+                                        AttributeMapDomain.get_conditional_ownership_index
+                                          actual_access_path
+                                          astate.attribute_map
+                                      with
+                                      | Some formal_index ->
+                                          (* access path conditionally owned if [formal_index] is
+                                               owned *)
+                                          AccessPrecondition.Unprotected (Some formal_index)
+                                      | None ->
+                                          (* access path not rooted in a formal and not
+                                               conditionally owned *)
+                                          AccessPrecondition.unprotected
+                                else
+                                  (* access protected by held lock *)
+                                  AccessPrecondition.Protected in
+                              update_caller_accesses pre ownership_accesses accesses_acc
+                        | _ ->
+                            (* couldn't find access path, don't know if it's owned *)
+                            update_caller_accesses
+                              AccessPrecondition.unprotected ownership_accesses accesses_acc in
+                      let accesses =
+                        let update_accesses pre callee_accesses accesses_acc = match pre with
+                          | AccessPrecondition.Protected ->
+                              update_caller_accesses pre callee_accesses accesses_acc
+                          | AccessPrecondition.Unprotected None ->
+                              let pre' =
+                                if unprotected
+                                then pre
+                                else AccessPrecondition.Protected in
+                              update_caller_accesses pre' callee_accesses accesses_acc
+                          | AccessPrecondition.Unprotected (Some index) ->
+                              add_ownership_access
+                                callee_accesses (List.nth_exn actuals index) accesses_acc in
+                        AccessDomain.fold update_accesses callee_accesses astate.accesses in
+                      let attribute_map =
+                        propagate_return_attributes_hil
+                          ret_opt
+                          return_attributes
+                          actuals
+                          astate.attribute_map
+                          extras in
+                      { astate with locks; threads; accesses; attribute_map; }
+                  | None ->
+                      let should_assume_returns_ownership (call_flags : CallFlags.t) actuals =
+                        (* assume non-interface methods with no summary and no parameters return
+                           ownership *)
+                        not (call_flags.cf_interface) && List.is_empty actuals in
+                      if is_box callee_pname
+                      then
+                        match ret_opt, actuals with
+                        | Some ret, HilExp.AccessPath actual_ap :: _
+                          when AttributeMapDomain.has_attribute
+                              actual_ap Functional astate.attribute_map ->
+                            (* TODO: check for constants, which are functional? *)
+                            let attribute_map =
+                              AttributeMapDomain.add_attribute
+                                (ret, [])
+                                Functional
+                                astate.attribute_map in
+                            { astate with attribute_map; }
+                        | _ ->
+                            astate
+                      else if should_assume_returns_ownership call_flags actuals
+                      then
+                        match ret_opt with
+                        | Some ret ->
+                            let attribute_map =
+                              AttributeMapDomain.add_attribute
+                                (ret, [])
+                                Attribute.unconditionally_owned
+                                astate.attribute_map in
+                            { astate with attribute_map; }
+                        | None ->
+                            astate
+                      else
+                        astate in
+          begin
+            match ret_opt with
+            | Some (_, { Typ.desc=Typ.Tint ILong | Tfloat FDouble }) ->
+                (* writes to longs and doubles are not guaranteed to be atomic in Java, so don't
+                   bother tracking whether a returned long or float value is functional *)
+                astate_callee
+            | Some ret ->
+                let add_if_annotated predicate attribute attribute_map =
+                  if PatternMatch.override_exists predicate tenv callee_pname
+                  then
+                    AttributeMapDomain.add_attribute (ret, []) attribute attribute_map
+                  else
+                    attribute_map in
+                let attribute_map =
+                  add_if_annotated is_functional Functional astate_callee.attribute_map
+                  |> add_if_annotated
+                    (has_return_annot Annotations.ia_is_returns_ownership)
+                    Domain.Attribute.unconditionally_owned in
+                { astate_callee with attribute_map; }
+            | _ ->
+                astate_callee
+          end
+
       | HilInstr.Write (lhs_access_path, rhs_exp, loc) ->
           let rhs_accesses =
             add_hil_access
