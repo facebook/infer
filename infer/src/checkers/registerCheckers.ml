@@ -52,6 +52,7 @@ let active_procedure_checkers () =
         Checkers.callback_print_access_to_globals, false;
         ClangTaintAnalysis.checker, Config.quandary;
         Siof.checker, Config.siof;
+        ThreadSafety.analyze_procedure, Config.threadsafety;
         BufferOverrunChecker.checker, Config.bufferoverrun;
       ] in
     List.map ~f:(fun (x, y) -> (x, y, Some Config.Clang)) l in

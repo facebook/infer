@@ -51,10 +51,10 @@ let add_flavor_to_target target =
       target
   | None, (Linters | Capture) ->
       add "infer-capture-all"
-  | None, (Checkers | Infer) ->
+  | None, (Bufferoverrun | Checkers | Infer | Quandary | Siof | Threadsafety) ->
       add "infer"
-  | None, (Eradicate | Tracing | Crashcontext | Quandary | Siof | Threadsafety | Bufferoverrun) ->
-      failwithf "Unsupported infer analyzer with Buck flavors: %s"
+  | None, (Eradicate | Tracing | Crashcontext) ->
+      failwithf "Analyzer %s is Java-only; not supported with Buck flavors"
         (Config.string_of_analyzer Config.analyzer)
 
 let add_flavors_to_buck_command build_cmd =
