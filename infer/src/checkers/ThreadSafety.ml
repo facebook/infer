@@ -70,7 +70,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         if is_thread_utils_method "assertHoldsLock" (Typ.Procname.Java java_pname) then Lock
         else
           begin
-            match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
+            match Typ.Procname.java_get_class_name java_pname,
+                  Typ.Procname.java_get_method java_pname with
             | ("java.util.concurrent.locks.Lock"
               | "java.util.concurrent.locks.ReentrantLock"
               | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
@@ -99,14 +100,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         NoEffect
 
-  let resolve_id (id_map : IdAccessPathMapDomain.astate) id =
-    try Some (IdAccessPathMapDomain.find id id_map)
-    with Not_found -> None
-
-  let is_constant = function
-    | Exp.Const _ -> true
-    | _ -> false
-
   let add_conditional_ownership_attribute access_path formal_map attribute_map attributes =
     match FormalMap.get_formal_index (fst access_path) formal_map with
     | Some formal_index when not (is_owned access_path attribute_map) ->
@@ -114,7 +107,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         attributes
 
-  let propagate_attributes_ lhs_access_path rhs_access_paths attribute_map formal_map =
+  let propagate_attributes lhs_access_path rhs_access_paths attribute_map formal_map =
     let rhs_attributes =
       if List.is_empty rhs_access_paths (* only happens when rhs is a constant *)
       then
@@ -132,12 +125,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           rhs_access_paths in
     Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
 
-  (* if rhs has associated attributes, propagate them to the lhs *)
-  let propagate_attributes lhs_access_path rhs_exp rhs_typ ~f_resolve_id attribute_map formal_map =
-    let rhs_access_paths = AccessPath.of_exp rhs_exp rhs_typ ~f_resolve_id in
-    propagate_attributes_ lhs_access_path rhs_access_paths attribute_map formal_map
-
-  let propagate_return_attributes_hil ret_opt ret_attributes actuals attribute_map formal_map =
+  let propagate_return_attributes ret_opt ret_attributes actuals attribute_map formal_map =
     let open Domain in
     match ret_opt with
     | None ->
@@ -170,56 +158,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               other_attributes in
         AttributeMapDomain.add (ret, []) caller_return_attributes attribute_map
 
-  let propagate_return_attributes
-      ret_opt ret_attributes actuals attribute_map ~f_resolve_id formal_map =
-    match ret_opt with
-    | Some (ret_id, ret_typ) ->
-        let ownership_attributes, other_attributes =
-          Domain.AttributeSetDomain.partition
-            (function
-              | OwnedIf _ -> true
-              | _ -> false)
-            ret_attributes in
-        let caller_return_attributes =
-          match Domain.AttributeSetDomain.elements ownership_attributes with
-          | [] -> other_attributes
-          | [(OwnedIf None) as unconditionally_owned] ->
-              Domain.AttributeSetDomain.add unconditionally_owned other_attributes
-          | [OwnedIf (Some formal_index)] ->
-              begin
-                match List.nth actuals formal_index with
-                | Some (actual_exp, actual_typ) ->
-                    begin
-                      match
-                        AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
-                      | Some actual_ap ->
-                          if is_owned actual_ap attribute_map
-                          then
-                            Domain.AttributeSetDomain.add
-                              Domain.Attribute.unconditionally_owned other_attributes
-                          else
-                            add_conditional_ownership_attribute
-                              actual_ap formal_map attribute_map  other_attributes
-                      | None ->
-                          other_attributes
-                    end
-                | None ->
-                    other_attributes
-              end
-          | _multiple_ownership_attributes ->
-              (* TODO: handle multiple ownership attributes *)
-              other_attributes in
-        Domain.AttributeMapDomain.add
-          (AccessPath.of_id ret_id ret_typ)
-          caller_return_attributes
-          attribute_map
-    | None ->
-        attribute_map
-
   let is_unprotected is_locked pdesc =
     not is_locked && not (Procdesc.is_java_synchronized pdesc)
 
-  let add_hil_access
+  let add_access
       exp loc access_kind accesses locks attribute_map (proc_data : FormalMap.t ProcData.t) =
     let open Domain in
     (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
@@ -275,67 +217,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_field_accesses pre (base, []) acc accesses in
 
     List.fold ~f:add_access_ ~init:accesses (HilExp.get_access_paths exp)
-
-  let add_access
-      exp
-      loc
-      access_kind
-      (astate : Domain.astate)
-      ~f_resolve_id
-      (proc_data : FormalMap.t ProcData.t) =
-    let get_formal_index exp typ = match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
-      | Some (base, _) -> FormalMap.get_formal_index base proc_data.extras
-      | None -> None in
-    (* we don't want to warn on writes to the field if it is (a) thread-confined, or (b) volatile *)
-    let is_safe_write access_path tenv =
-      let is_thread_safe_write accesses tenv =
-        match List.rev accesses,
-              AccessPath.Raw.get_typ (AccessPath.Raw.truncate access_path) tenv with
-        | AccessPath.FieldAccess fieldname :: _,
-          Some {Typ.desc=Tstruct typename | Tptr ({Typ.desc=Tstruct typename}, _)} ->
-            begin
-              match Tenv.lookup tenv typename with
-              | Some struct_typ ->
-                  Annotations.struct_typ_has_annot struct_typ Annotations.ia_is_thread_confined ||
-                  Annotations.field_has_annot
-                    fieldname struct_typ Annotations.ia_is_thread_confined ||
-                  Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
-              | None ->
-                  false
-            end
-        | _ ->
-            false in
-      is_thread_safe_write (snd access_path) tenv in
-
-    match exp with
-    | Exp.Lfield (base_exp, _, typ) ->
-        let open Domain in
-        let pre =
-          if is_unprotected astate.locks proc_data.pdesc
-          then
-            match get_formal_index base_exp typ with
-            | Some formal_index -> AccessPrecondition.Unprotected (Some formal_index)
-            | None -> AccessPrecondition.unprotected
-          else
-            AccessPrecondition.Protected in
-        let accesses =
-          List.fold
-            ~f:(fun acc rawpath ->
-                if not (is_owned (AccessPath.Raw.truncate rawpath) astate.attribute_map) &&
-                   not (is_safe_write rawpath proc_data.tenv)
-                then PathDomain.add_sink (make_access rawpath access_kind loc) acc
-                else acc)
-            ~init:(AccessDomain.get_accesses pre astate.accesses)
-            (AccessPath.of_exp exp typ ~f_resolve_id) in
-        AccessDomain.add pre accesses astate.accesses
-    | _ ->
-        astate.accesses
-
-  let analyze_id_assignment lhs_id rhs_exp rhs_typ { Domain.id_map; } =
-    let f_resolve_id = resolve_id id_map in
-    match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
-    | Some rhs_access_path -> IdAccessPathMapDomain.add lhs_id rhs_access_path id_map
-    | None -> id_map
 
   let has_return_annot predicate pn =
     Annotations.pname_has_return_annot
@@ -450,17 +331,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         false
 
-  let get_receiver_ap callee_pname ~f_resolve_id = function
-    | (receiver_exp, receiver_typ) :: _ ->
-        begin match AccessPath.of_lhs_exp receiver_exp receiver_typ ~f_resolve_id with
-          | Some ap -> ap
-          | None -> assert false
-        end
-    | _ ->
-        failwithf
-          "Call to %a is marked as a container write, but has no receiver"
-          Typ.Procname.pp callee_pname
-
   let add_container_write callee_pname receiver_ap callee_loc tenv =
     (* return true if field pointing to container is marked @SyncrhonizedContainer *)
     (* create a dummy write that represents mutating the contents of the container *)
@@ -481,15 +351,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           AccessDomain.empty in
     Some (false, false, callee_accesses, AttributeSetDomain.empty)
 
-  let get_summary caller_pdesc callee_pname actuals ~f_resolve_id callee_loc tenv =
-    if is_container_write callee_pname tenv
-    then
-      let receiver_ap = get_receiver_ap callee_pname actuals ~f_resolve_id in
-      add_container_write callee_pname receiver_ap callee_loc tenv
-    else
-      Summary.read_summary caller_pdesc callee_pname
-
-  let get_summary_hil caller_pdesc callee_pname actuals callee_loc tenv =
+  let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
     if is_container_write callee_pname tenv
     then
       let receiver_ap = match List.hd actuals with
@@ -522,16 +384,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         false
 
-  let exec_hil_instr
-      (astate : Domain.astate) ({ ProcData.extras; tenv; pdesc; } as proc_data) instr =
-    let open ThreadSafetyDomain in
-
+  let exec_instr (astate : Domain.astate) ({ ProcData.extras; tenv; pdesc; } as proc_data) _ instr =
+    let open Domain in
     let add_reads exps loc accesses locks attribute_map proc_data =
       List.fold
-        ~f:(fun acc exp -> add_hil_access exp loc Read acc locks attribute_map proc_data)
+        ~f:(fun acc exp -> add_access exp loc Read acc locks attribute_map proc_data)
         exps
         ~init:accesses in
-    let exec_hil_instr_ = function
+    let exec_instr_ = function
       | HilInstr.Call (Some ret_base, Direct procname, actuals, _, loc)
         when acquires_ownership procname tenv ->
           let accesses =
@@ -545,7 +405,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           let accesses =
             add_reads actuals loc astate.accesses astate.locks astate.attribute_map proc_data in
           let astate = { astate with accesses; } in
-
           let astate_callee =
             (* assuming that modeled procedures do not have useful summaries *)
             if is_thread_utils_method "assertMainThread" callee_pname
@@ -573,7 +432,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                           Typ.Procname.pp callee_pname
                   end
               | NoEffect ->
-                  match get_summary_hil pdesc callee_pname actuals loc tenv with
+                  match get_summary pdesc callee_pname actuals loc tenv with
                   | Some (callee_threads, callee_locks, callee_accesses, return_attributes) ->
                       let update_caller_accesses pre callee_accesses caller_accesses =
                         let combined_accesses =
@@ -643,7 +502,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                 callee_accesses (List.nth_exn actuals index) accesses_acc in
                         AccessDomain.fold update_accesses callee_accesses astate.accesses in
                       let attribute_map =
-                        propagate_return_attributes_hil
+                        propagate_return_attributes
                           ret_opt
                           return_attributes
                           actuals
@@ -709,7 +568,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
       | HilInstr.Write (lhs_access_path, rhs_exp, loc) ->
           let rhs_accesses =
-            add_hil_access
+            add_access
               rhs_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
           let rhs_access_paths = HilExp.get_access_paths rhs_exp in
           let is_functional =
@@ -725,7 +584,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                  report spurious read/write races *)
               rhs_accesses
             else
-              add_hil_access
+              add_access
                 (AccessPath lhs_access_path)
                 loc
                 Write
@@ -734,9 +593,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 astate.attribute_map
                 proc_data in
           let attribute_map =
-            propagate_attributes_
+            propagate_attributes
               lhs_access_path (HilExp.get_access_paths rhs_exp) astate.attribute_map extras in
           { astate with accesses; attribute_map; }
+
       | HilInstr.Assume (assume_exp, _, _, loc) ->
           let rec eval_binop op var e1 e2 =
             match eval_bexp var e1, eval_bexp var e2 with
@@ -773,7 +633,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 { acc with threads; } in
 
           let accesses =
-            add_hil_access
+            add_access
               assume_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
           let astate' =
             match HilExp.get_access_paths assume_exp with
@@ -791,9 +651,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | _ ->
                 astate in
           { astate' with accesses; }
-      | _ ->
-          (* still handled by SIL, shouldn't happen *)
-          assert false in
+      | (HilInstr.Call (_, Indirect _, _, _, _) as hil_instr) ->
+          failwithf "Unexpected indirect call instruction %a" HilInstr.pp hil_instr in
 
     let f_resolve_id id =
       try Some (IdAccessPathMapDomain.find id astate.id_map)
@@ -808,321 +667,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             ~f:(fun acc id -> IdAccessPathMapDomain.remove id acc) ~init:astate.id_map ids in
         { astate with id_map; }
     | Instr hil_instr ->
-        exec_hil_instr_ hil_instr
+        exec_instr_ hil_instr
     | Ignore ->
-        astate
-
-  let exec_instr (astate : Domain.astate) ({ ProcData.pdesc; tenv; extras; } as proc_data) _ instr =
-    let is_container_write pn tenv = match pn with
-      | Typ.Procname.Java java_pname ->
-          let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
-          let is_container_write_ typename _ =
-            match Typ.Name.name typename, Typ.Procname.java_get_method java_pname with
-            | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") -> true
-            | "java.util.Map", ("clear" | "put" | "putAll" | "remove") -> true
-            | _ -> false in
-          let is_threadsafe_collection typename _ = match Typ.Name.name typename with
-            | "java.util.concurrent.ConcurrentMap" | "java.util.concurrent.CopyOnWriteArrayList" ->
-                true
-            | _ ->
-                false in
-          PatternMatch.supertype_exists tenv is_container_write_ typename &&
-          not (PatternMatch.supertype_exists tenv is_threadsafe_collection typename)
-      | _ -> false in
-    let add_container_write callee_pname actuals ~f_resolve_id callee_loc tenv =
-      match actuals with
-      | (receiver_exp, receiver_typ) :: _ ->
-          (* return true if field pointing to container is marked @SyncrhonizedContainer *)
-          let is_synchronized_container ((_, base_typ), accesses) =
-            let is_annotated_synchronized base_typename container_field tenv =
-              match Tenv.lookup tenv base_typename with
-              | Some base_typ ->
-                  Annotations.field_has_annot
-                    container_field
-                    base_typ Annotations.ia_is_synchronized_collection
-              | None ->
-                  false in
-            match List.rev accesses with
-            | AccessPath.FieldAccess base_field ::
-              AccessPath.FieldAccess container_field :: _->
-                let base_typename =
-                  Typ.Name.Java.from_string (Fieldname.java_get_class base_field) in
-                is_annotated_synchronized base_typename container_field tenv
-            | [AccessPath.FieldAccess container_field] ->
-                begin
-                  match base_typ.Typ.desc with
-                  | Typ.Tstruct base_typename | Tptr ({Typ.desc=Tstruct base_typename}, _) ->
-                      is_annotated_synchronized base_typename container_field tenv
-                  | _ ->
-                      false
-                end
-            | _ ->
-                false in
-
-          (* create a dummy write that represents mutating the contents of the container *)
-          let open Domain in
-          let dummy_fieldname =
-            Fieldname.Java.from_string
-              (container_write_string ^ (Typ.Procname.get_method callee_pname)) in
-          let dummy_access_exp = Exp.Lfield (receiver_exp, dummy_fieldname, receiver_typ) in
-          let callee_accesses =
-            match AccessPath.of_lhs_exp dummy_access_exp receiver_typ ~f_resolve_id with
-            | Some container_ap
-              when not (is_synchronized_container (AccessPath.Raw.truncate container_ap)) ->
-                AccessDomain.add_access
-                  (Unprotected (Some 0))
-                  (make_access container_ap Write callee_loc)
-                  AccessDomain.empty
-            | _ ->
-                AccessDomain.empty in
-          Some (false, false, callee_accesses, AttributeSetDomain.empty)
-      | _ ->
-          failwithf
-            "Call to %a is marked as a container write, but has no receiver"
-            Typ.Procname.pp callee_pname in
-    let get_summary caller_pdesc callee_pname actuals ~f_resolve_id callee_loc tenv =
-      if is_container_write callee_pname tenv
-      then
-        add_container_write callee_pname actuals ~f_resolve_id callee_loc tenv
-      else
-        Summary.read_summary caller_pdesc callee_pname in
-    (* return true if the given procname boxes a primitive type into a reference type *)
-    let is_box = function
-      | Typ.Procname.Java java_pname ->
-          begin
-            match Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname with
-            | ("java.lang.Boolean" |
-               "java.lang.Byte" |
-               "java.lang.Char" |
-               "java.lang.Double" |
-               "java.lang.Float" |
-               "java.lang.Integer" |
-               "java.lang.Long" |
-               "java.lang.Short"),
-              "valueOf" -> true
-            | _ -> false
-          end
-      | _ ->
-          false in
-    let f_resolve_id = resolve_id astate.id_map in
-
-    let open Domain in
-    match instr with
-    | Sil.Call (Some (lhs_id, lhs_typ), Const (Cfun pn), _, _, _) when acquires_ownership pn tenv ->
-        begin
-          match AccessPath.of_lhs_exp (Exp.Var lhs_id) lhs_typ ~f_resolve_id with
-          | Some lhs_access_path ->
-              let attribute_map =
-                AttributeMapDomain.add_attribute
-                  lhs_access_path
-                  Attribute.unconditionally_owned
-                  astate.attribute_map in
-              { astate with attribute_map; }
-          | None ->
-              astate
-        end
-
-    | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname),
-                (target_exp, target_typ) :: (Exp.Sizeof {typ=cast_typ}, _) :: _ , _, _)
-      when Typ.Procname.equal callee_pname BuiltinDecl.__cast ->
-        let lhs_access_path = AccessPath.of_id ret_id (Typ.mk (Tptr (cast_typ, Pk_pointer))) in
-        let attribute_map =
-          propagate_attributes
-            lhs_access_path target_exp target_typ ~f_resolve_id astate.attribute_map extras in
-        { astate with attribute_map; }
-
-    | Sil.Call (ret_opt, Const (Cfun callee_pname), actuals, loc, call_flags) ->
-        let astate_callee =
-          (* assuming that modeled procedures do not have useful summaries *)
-          if is_thread_utils_method "assertMainThread" callee_pname then
-            { astate with threads = true; }
-          else
-            match get_lock_model callee_pname with
-            | Lock ->
-                { astate with locks = true; }
-            | Unlock ->
-                { astate with locks = false; }
-            | LockedIfTrue ->
-                begin
-                  match ret_opt with
-                  | Some (ret_id, ret_typ) ->
-                      let attribute_map =
-                        AttributeMapDomain.add_attribute
-                          (AccessPath.of_id ret_id ret_typ)
-                          (Choice Choice.LockHeld)
-                          astate.attribute_map in
-                      { astate with attribute_map; }
-                  | None ->
-                      failwithf
-                        "Procedure %a specified as returning boolean, but returns nothing"
-                        Typ.Procname.pp callee_pname
-                end
-            | NoEffect ->
-                match get_summary pdesc callee_pname actuals ~f_resolve_id loc tenv with
-                | Some (callee_threads, callee_locks, callee_accesses, return_attributes) ->
-                    let update_caller_accesses pre callee_accesses caller_accesses =
-                      let combined_accesses =
-                        PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
-                        |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses) in
-                      AccessDomain.add pre combined_accesses caller_accesses in
-                    let locks = callee_locks || astate.locks in
-                    let threads = callee_threads || astate.threads in
-                    let unprotected = is_unprotected locks pdesc in
-                    (* add [ownership_accesses] to the [accesses_acc] with a protected pre if [exp]
-                       is owned, and an appropriate unprotected pre otherwise *)
-                    let add_ownership_access ownership_accesses (actual_exp, typ) accesses_acc =
-                      if is_constant actual_exp
-                      then
-                        (* the actual is a constant, so it's owned in the caller. *)
-                        accesses_acc
-                      else
-                        match AccessPath.of_lhs_exp actual_exp typ ~f_resolve_id with
-                        | Some actual_access_path ->
-                            if is_owned actual_access_path astate.attribute_map
-                            then
-                              (* the actual passed to the current callee is owned. drop all the
-                                 conditional accesses for that actual, since they're all safe *)
-                              accesses_acc
-                            else
-                              let pre =
-                                if unprotected
-                                then
-                                  let base = fst actual_access_path in
-                                  match FormalMap.get_formal_index base extras with
-                                  | Some formal_index ->
-                                      (* the actual passed to the current callee is rooted in a
-                                         formal *)
-                                      AccessPrecondition.Unprotected (Some formal_index)
-                                  | None ->
-                                      match
-                                        AttributeMapDomain.get_conditional_ownership_index
-                                          actual_access_path
-                                          astate.attribute_map
-                                      with
-                                      | Some formal_index ->
-                                          (* access path conditionally owned if [formal_index] is
-                                             owned *)
-                                          AccessPrecondition.Unprotected (Some formal_index)
-                                      | None ->
-                                          (* access path not rooted in a formal and not
-                                             conditionally owned *)
-                                          AccessPrecondition.unprotected
-                                else
-                                  (* access protected by held lock *)
-                                  AccessPrecondition.Protected in
-                              update_caller_accesses pre ownership_accesses accesses_acc
-                        | None ->
-                            (* couldn't find access path, don't know if it's owned *)
-                            update_caller_accesses
-                              AccessPrecondition.unprotected ownership_accesses accesses_acc in
-                    let accesses =
-                      let update_accesses pre callee_accesses accesses_acc = match pre with
-                        | AccessPrecondition.Protected ->
-                            update_caller_accesses pre callee_accesses accesses_acc
-                        | AccessPrecondition.Unprotected None ->
-                            let pre' =
-                              if unprotected
-                              then pre
-                              else AccessPrecondition.Protected in
-                            update_caller_accesses pre' callee_accesses accesses_acc
-                        | AccessPrecondition.Unprotected (Some index) ->
-                            add_ownership_access
-                              callee_accesses (List.nth_exn actuals index) accesses_acc in
-                      AccessDomain.fold update_accesses callee_accesses astate.accesses in
-                    let attribute_map =
-                      propagate_return_attributes
-                        ret_opt
-                        return_attributes
-                        actuals
-                        astate.attribute_map
-                        ~f_resolve_id
-                        extras in
-                    { astate with locks; threads; accesses; attribute_map; }
-                | None ->
-                    let should_assume_returns_ownership (call_flags : CallFlags.t) actuals =
-                      (* assume non-interface methods with no summary and no parameters return
-                         ownership *)
-                      not (call_flags.cf_interface) && List.is_empty actuals in
-                    if is_box callee_pname
-                    then
-                      match ret_opt, actuals with
-                      | Some (ret_id, ret_typ), (actual_exp, actual_typ) :: _ ->
-                          begin
-                            match AccessPath.of_lhs_exp actual_exp actual_typ ~f_resolve_id with
-                            | Some ap
-                              when AttributeMapDomain.has_attribute
-                                  ap Functional astate.attribute_map ->
-                                let attribute_map =
-                                  AttributeMapDomain.add_attribute
-                                    (AccessPath.of_id ret_id ret_typ)
-                                    Functional
-                                    astate.attribute_map in
-                                { astate with attribute_map; }
-                            | _ ->
-                                astate
-                          end
-                      | _ ->
-                          astate
-                    else if should_assume_returns_ownership call_flags actuals
-                    then
-                      match ret_opt with
-                      | Some (ret_id, ret_typ) ->
-                          let attribute_map =
-                            AttributeMapDomain.add_attribute
-                              (AccessPath.of_id ret_id ret_typ)
-                              Attribute.unconditionally_owned
-                              astate.attribute_map in
-                          { astate with attribute_map; }
-                      | None -> astate
-                    else
-                      astate in
-        begin
-          match ret_opt with
-          | Some (_, {Typ.desc=Tint ILong | Tfloat FDouble}) ->
-              (* writes to longs and doubles are not guaranteed to be atomic in Java, so don't
-                 bother tracking whether a returned long or float value is functional *)
-              astate_callee
-          | Some (ret_id, ret_typ) ->
-              let add_if_annotated predicate attribute attribute_map =
-                if PatternMatch.override_exists predicate tenv callee_pname
-                then
-                  AttributeMapDomain.add_attribute
-                    (AccessPath.of_id ret_id ret_typ) attribute attribute_map
-                else attribute_map in
-              let attribute_map =
-                add_if_annotated is_functional Functional astate_callee.attribute_map
-                |> add_if_annotated
-                  (has_return_annot Annotations.ia_is_returns_ownership)
-                  Domain.Attribute.unconditionally_owned in
-              { astate_callee with attribute_map; }
-          | _ ->
-              astate_callee
-        end
-
-    | Sil.Store _ ->
-        exec_hil_instr astate proc_data instr
-
-    | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
-        let id_map = analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate in
-        let accesses = add_access rhs_exp loc Read astate ~f_resolve_id proc_data in
-        let lhs_access_path = AccessPath.of_id lhs_id rhs_typ in
-        let attribute_map =
-          propagate_attributes
-            lhs_access_path rhs_exp rhs_typ ~f_resolve_id astate.attribute_map extras in
-        { astate with accesses; id_map; attribute_map; }
-
-    | Sil.Prune _ ->
-        exec_hil_instr astate proc_data instr
-
-    | Sil.Remove_temps (ids, _) ->
-        let id_map =
-          List.fold
-            ~f:(fun acc id -> IdAccessPathMapDomain.remove (Var.of_id id) acc)
-            ~init:astate.id_map
-            ids in
-        { astate with id_map; }
-
-    | _ ->
         astate
 end
 
