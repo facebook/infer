@@ -123,7 +123,7 @@ let spec_find_rename trace_call summary
     let count = ref 0 in
     let f spec =
       incr count; (!count, spec_rename_vars proc_name spec) in
-    let specs = Specs.get_specs proc_name in
+    let specs = Specs.get_specs_from_payload summary in
     let formals = Specs.get_formals summary in
     if List.is_empty specs then
       begin

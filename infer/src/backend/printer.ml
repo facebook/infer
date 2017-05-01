@@ -554,7 +554,10 @@ let write_html_file linereader filename procs =
       ~f:(fun n ->
           match Procdesc.Node.get_kind n with
           | Procdesc.Node.Start_node proc_name ->
-              let num_specs = List.length (Specs.get_specs proc_name) in
+              let num_specs =
+                match Specs.get_summary proc_name with
+                | None -> 0
+                | Some summary -> List.length (Specs.get_specs_from_payload summary) in
               let label =
                 (Escape.escape_xml (Typ.Procname.to_string proc_name)) ^
                 ": " ^

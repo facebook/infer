@@ -191,9 +191,6 @@ val get_phase : summary -> phase
 (** Return the signature of a procedure declaration as a string *)
 val get_signature : summary -> string
 
-(** Return the specs for the proc in the spec table *)
-val get_specs : Typ.Procname.t -> Prop.normal spec list
-
 (** Get the specs from the payload of the summary. *)
 val get_specs_from_payload : summary -> Prop.normal spec list
 

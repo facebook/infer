@@ -205,7 +205,8 @@ let do_meet_pre tenv pset =
 
 (** Find the preconditions in the current spec table,
     apply meet then join, and return the joined preconditions *)
-let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
+let collect_preconditions tenv summary : Prop.normal Specs.Jprop.t list =
+  let proc_name = Specs.get_proc_name summary in
   let collect_do_abstract_one tenv prop =
     if !Config.footprint
     then
@@ -217,7 +218,7 @@ let collect_preconditions tenv proc_name : Prop.normal Specs.Jprop.t list =
   let pres =
     List.map
       ~f:(fun spec -> Specs.Jprop.to_prop spec.Specs.pre)
-      (Specs.get_specs proc_name) in
+      (Specs.get_specs_from_payload summary) in
   let pset = Propset.from_proplist tenv pres in
   let pset' =
     let f p = Prop.prop_normal_vars_to_primed_vars tenv p in
@@ -983,9 +984,9 @@ type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.p
     and [get_results ()] returns the results computed.
     This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
-let perform_analysis_phase tenv (pname : Typ.Procname.t) (pdesc : Procdesc.t) source
+let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t) source
   : exe_phase =
-  let summary = Specs.get_summary_unsafe "perform_analysis_phase" pname in
+  let pname = Specs.get_proc_name summary in
   let start_node = Procdesc.get_start_node pdesc in
 
   let compute_footprint () : exe_phase =
@@ -993,7 +994,7 @@ let perform_analysis_phase tenv (pname : Typ.Procname.t) (pdesc : Procdesc.t) so
       let init_prop = initial_prop_from_emp tenv pdesc in
       (* use existing pre's (in recursion some might exist) as starting points *)
       let init_props_from_pres =
-        let specs = Specs.get_specs pname in
+        let specs = Specs.get_specs_from_payload summary in
         (* rename spec vars to footrpint vars, and copy current to footprint *)
         let mk_init precondition =
           initial_prop_from_pre tenv pdesc (Specs.Jprop.to_prop precondition) in
@@ -1040,7 +1041,7 @@ let perform_analysis_phase tenv (pname : Typ.Procname.t) (pdesc : Procdesc.t) so
     let candidate_preconditions =
       List.map
         ~f:(fun spec -> spec.Specs.pre)
-        (Specs.get_specs pname) in
+        (Specs.get_specs_from_payload summary) in
     let valid_specs = ref [] in
     let go () =
       L.out "@.#### Start: Re-Execution for %a ####@." Typ.Procname.pp pname;
@@ -1207,10 +1208,10 @@ module SpecMap = Caml.Map.Make (struct
   end)
 
 (** Update the specs of the current proc after the execution of one phase *)
-let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
+let update_specs tenv prev_summary phase (new_specs : Specs.NormSpec.t list)
   : Specs.NormSpec.t list * bool =
   let new_specs = Specs.normalized_specs_to_specs new_specs in
-  let old_specs = Specs.get_specs proc_name in
+  let old_specs = Specs.get_specs_from_payload prev_summary in
   let changed = ref false in
   let current_specs =
     ref
@@ -1270,9 +1271,9 @@ let update_specs tenv proc_name phase (new_specs : Specs.NormSpec.t list)
   !res,!changed
 
 (** update a summary after analysing a procedure *)
-let update_summary tenv prev_summary specs phase proc_name res =
+let update_summary tenv prev_summary specs phase res =
   let normal_specs = List.map ~f:(Specs.spec_normalize tenv) specs in
-  let new_specs, _ = update_specs tenv proc_name phase normal_specs in
+  let new_specs, _ = update_specs tenv prev_summary phase normal_specs in
   let symops = prev_summary.Specs.stats.Specs.symops + SymOp.get_total () in
   let stats_failure = match res with
     | None -> prev_summary.Specs.stats.Specs.stats_failure
@@ -1301,12 +1302,12 @@ let analyze_proc source exe_env proc_desc : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   reset_global_values proc_desc;
-  let go, get_results = perform_analysis_phase tenv proc_name proc_desc source in
+  let summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
+  let go, get_results = perform_analysis_phase tenv summary proc_desc source in
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
-  let prev_summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let updated_summary =
-    update_summary tenv prev_summary specs phase proc_name res in
+    update_summary tenv summary specs phase res in
   if Config.curr_language_is Config.Clang && Config.report_custom_error then
     report_custom_errors tenv updated_summary;
   if Config.curr_language_is Config.Java && Config.report_runtime_exceptions then
@@ -1343,7 +1344,7 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
 (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
     the procedures enabled after the analysis of [proc_name] *)
 let perform_transition exe_env tenv proc_name source =
-  let transition () =
+  let transition summary =
     (* disable exceptions for leaks and protect against any other errors *)
     let joined_pres =
       let allow_leak = !Config.allow_leak in
@@ -1359,7 +1360,7 @@ let perform_transition exe_env tenv proc_name source =
       apply_start_node (do_before_node source 0);
       try
         Config.allow_leak := true;
-        let res = collect_preconditions tenv proc_name in
+        let res = collect_preconditions tenv summary in
         Config.allow_leak := allow_leak;
         apply_start_node (do_after_node source);
         res
@@ -1374,7 +1375,7 @@ let perform_transition exe_env tenv proc_name source =
     transition_footprint_re_exe tenv proc_name joined_pres in
   match Specs.get_summary proc_name with
   | Some summary when Specs.equal_phase (Specs.get_phase summary) Specs.FOOTPRINT ->
-      transition ()
+      transition summary
   | _ -> ()
 
 
@@ -1501,8 +1502,9 @@ let visited_and_total_nodes ~filter cfg =
 let print_stats_cfg proc_shadowed source cfg =
   let err_table = Errlog.create_err_table () in
   let filter pdesc =
-    let pname = Procdesc.get_proc_name pdesc in
-    Specs.summary_exists pname && Specs.get_specs pname <> [] in
+    match Specs.get_summary (Procdesc.get_proc_name pdesc) with
+    | None -> false
+    | Some summary -> Specs.get_specs_from_payload summary <> [] in
   let nodes_visited, nodes_total = visited_and_total_nodes ~filter cfg in
   let num_proc = ref 0 in
   let num_nospec_noerror_proc = ref 0 in
