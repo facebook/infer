@@ -115,9 +115,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         attributes
 
-  (* if rhs has associated attributes, propagate them to the lhs *)
-  let propagate_attributes lhs_access_path rhs_exp rhs_typ ~f_resolve_id attribute_map formal_map =
-    let rhs_access_paths = AccessPath.of_exp rhs_exp rhs_typ ~f_resolve_id in
+  let propagate_attributes_ lhs_access_path rhs_access_paths attribute_map formal_map =
     let rhs_attributes =
       if List.is_empty rhs_access_paths (* only happens when rhs is a constant *)
       then
@@ -134,6 +132,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           ~init:Domain.AttributeSetDomain.empty
           rhs_access_paths in
     Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
+
+  (* if rhs has associated attributes, propagate them to the lhs *)
+  let propagate_attributes lhs_access_path rhs_exp rhs_typ ~f_resolve_id attribute_map formal_map =
+    let rhs_access_paths = AccessPath.of_exp rhs_exp rhs_typ ~f_resolve_id in
+    propagate_attributes_ lhs_access_path rhs_access_paths attribute_map formal_map
 
   let propagate_return_attributes
       ret_opt ret_attributes actuals attribute_map ~f_resolve_id formal_map =
@@ -371,12 +374,41 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     is_owned_in_library pname ||
     PatternMatch.override_exists is_owned_in_library tenv pname
 
-
   let exec_hil_instr
-      (astate : Domain.astate) proc_data instr =
+      (astate : Domain.astate) ({ ProcData.extras; } as proc_data) instr =
     let open ThreadSafetyDomain in
 
     let exec_hil_instr_ = function
+      | HilInstr.Write (lhs_access_path, rhs_exp, loc) ->
+          let rhs_accesses =
+            add_hil_access
+              rhs_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
+          let rhs_access_paths = HilExp.get_access_paths rhs_exp in
+          let is_functional =
+            not (List.is_empty rhs_access_paths) &&
+            List.for_all
+              ~f:(fun access_path ->
+                  AttributeMapDomain.has_attribute access_path Functional astate.attribute_map)
+              rhs_access_paths in
+          let accesses =
+            if is_functional
+            then
+              (* we want to forget about writes to @Functional fields altogether, otherwise we'll
+                 report spurious read/write races *)
+              rhs_accesses
+            else
+              add_hil_access
+                (AccessPath lhs_access_path)
+                loc
+                Write
+                rhs_accesses
+                astate.locks
+                astate.attribute_map
+                proc_data in
+          let attribute_map =
+            propagate_attributes_
+              lhs_access_path (HilExp.get_access_paths rhs_exp) astate.attribute_map extras in
+          { astate with accesses; attribute_map; }
       | HilInstr.Assume (assume_exp, _, _, loc) ->
           let rec eval_binop op var e1 e2 =
             match eval_bexp var e1, eval_bexp var e2 with
@@ -739,34 +771,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               astate_callee
         end
 
-    | Sil.Store (Exp.Lvar lhs_pvar, lhs_typ, rhs_exp, _)
-      when Pvar.is_ssa_frontend_tmp lhs_pvar && not (is_constant rhs_exp) ->
-        let id_map' = analyze_id_assignment (Var.of_pvar lhs_pvar) rhs_exp lhs_typ astate in
-        { astate with id_map = id_map'; }
-
-    | Sil.Store (lhs_exp, lhs_typ, rhs_exp, loc) ->
-        let is_marked_functional exp typ attribute_map =
-          match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
-          | Some access_path ->
-              AttributeMapDomain.has_attribute access_path Functional attribute_map
-          | None ->
-              false in
-        let accesses =
-          if is_marked_functional rhs_exp lhs_typ astate.attribute_map
-          then
-            (* we want to forget about writes to @Functional fields altogether, otherwise we'll
-               report spurious read/write races *)
-            astate.accesses
-          else
-            add_access lhs_exp loc Write astate ~f_resolve_id proc_data in
-        let attribute_map =
-          match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id with
-          | Some lhs_access_path ->
-              propagate_attributes
-                lhs_access_path rhs_exp lhs_typ ~f_resolve_id astate.attribute_map extras
-          | None ->
-              astate.attribute_map in
-        { astate with accesses; attribute_map; }
+    | Sil.Store _ ->
+        exec_hil_instr astate proc_data instr
 
     | Sil.Load (lhs_id, rhs_exp, rhs_typ, loc) ->
         let id_map = analyze_id_assignment (Var.of_id lhs_id) rhs_exp rhs_typ astate in
