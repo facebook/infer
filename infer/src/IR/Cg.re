@@ -372,18 +372,8 @@ let store_to_file (filename: DB.filename) (call_graph: t) =>
   Serialization.write_to_file
     callgraph_serializer filename data::(call_graph.source, get_nodes_and_edges call_graph);
 
-let pp_graph_dotty get_specs (g: t) fmt => {
+let pp_graph_dotty (g: t) fmt => {
   let nodes_with_calls = get_all_nodes g;
-  let num_specs n =>
-    try (List.length (get_specs n)) {
-    | exn when SymOp.exn_not_failure exn => (-1)
-    };
-  let get_color (n, _) =>
-    if (num_specs n != 0) {
-      "green"
-    } else {
-      "red"
-    };
   let get_shape (n, _) =>
     if (node_defined g n) {
       "box"
@@ -392,14 +382,7 @@ let pp_graph_dotty get_specs (g: t) fmt => {
     };
   let pp_node fmt (n, _) => F.fprintf fmt "\"%s\"" (Typ.Procname.to_filename n);
   let pp_node_label fmt (n, calls) =>
-    F.fprintf
-      fmt
-      "\"%a | calls=%d %d | specs=%d)\""
-      Typ.Procname.pp
-      n
-      calls.in_calls
-      calls.out_calls
-      (num_specs n);
+    F.fprintf fmt "\"%a | calls=%d %d)\"" Typ.Procname.pp n calls.in_calls calls.out_calls;
   F.fprintf fmt "digraph {@\n";
   List.iter
     f::(
@@ -411,7 +394,7 @@ let pp_graph_dotty get_specs (g: t) fmt => {
           nc
           pp_node_label
           nc
-          (get_color nc)
+          "red"
           (get_shape nc)
     )
     nodes_with_calls;
@@ -421,11 +404,11 @@ let pp_graph_dotty get_specs (g: t) fmt => {
 
 
 /** Print the call graph as a dotty file. */
-let save_call_graph_dotty source get_specs (g: t) => {
+let save_call_graph_dotty source (g: t) => {
   let fname_dot =
     DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source) ["call_graph.dot"];
   let outc = open_out (DB.filename_to_string fname_dot);
   let fmt = F.formatter_of_out_channel outc;
-  pp_graph_dotty get_specs g fmt;
+  pp_graph_dotty g fmt;
   Out_channel.close outc
 };

@@ -43,7 +43,7 @@ let store_icfg source_file tenv cg cfg =
   if Config.debug_mode || Config.frontend_tests then
     begin
       Dotty.print_icfg_dotty source_file cfg;
-      Cg.save_call_graph_dotty source_file Specs.get_specs cg
+      Cg.save_call_graph_dotty source_file cg
     end;
   (* NOTE: nothing should be written to source_dir after this *)
   DB.mark_file_updated (DB.source_dir_to_string source_dir)

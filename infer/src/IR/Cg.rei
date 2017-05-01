@@ -117,7 +117,7 @@ let remove_node_defined: t => Typ.Procname.t => unit;
 
 
 /** Print the call graph as a dotty file. */
-let save_call_graph_dotty: SourceFile.t => (Typ.Procname.t => list 'a) => t => unit;
+let save_call_graph_dotty: SourceFile.t => t => unit;
 
 
 /** Save a call graph into a file */
