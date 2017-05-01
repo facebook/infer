@@ -123,7 +123,7 @@ let ptr_kind_string =
 type static_length = option IntLit.t [@@deriving compare];
 
 module T = {
-  type type_quals = {is_const: bool, is_volatile: bool} [@@deriving compare];
+  type type_quals = {is_const: bool, is_restrict: bool, is_volatile: bool} [@@deriving compare];
 
   /** types for sil (structured) expressions */
   type t = {desc, quals: type_quals} [@@deriving compare]
@@ -156,16 +156,24 @@ module T = {
 
 include T;
 
-let mk_type_quals ::default=? ::is_const=? ::is_volatile=? () => {
-  let default_ = {is_const: false, is_volatile: false};
-  let mk_aux ::default=default_ ::is_const=default.is_const ::is_volatile=default.is_volatile () => {
+let mk_type_quals ::default=? ::is_const=? ::is_restrict=? ::is_volatile=? () => {
+  let default_ = {is_const: false, is_restrict: false, is_volatile: false};
+  let mk_aux
+      ::default=default_
+      ::is_const=default.is_const
+      ::is_restrict=default.is_restrict
+      ::is_volatile=default.is_volatile
+      () => {
     is_const,
+    is_restrict,
     is_volatile
   };
-  mk_aux ::?default ::?is_const ::?is_volatile ()
+  mk_aux ::?default ::?is_const ::?is_restrict ::?is_volatile ()
 };
 
 let is_const {is_const} => is_const;
+
+let is_restrict {is_restrict} => is_restrict;
 
 let is_volatile {is_volatile} => is_volatile;
 
@@ -280,6 +288,9 @@ let rec pp_full pe f typ => {
   let pp_quals f {quals} => {
     if (is_const quals) {
       F.fprintf f " const "
+    };
+    if (is_restrict quals) {
+      F.fprintf f " __restrict "
     };
     if (is_volatile quals) {
       F.fprintf f " volatile "

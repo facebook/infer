@@ -77,7 +77,7 @@ let get_return_param tenv function_method_decl_info =
   let return_typ = CType_decl.qual_type_to_sil_type tenv return_qual_type in
   if should_add_return_param return_typ ~is_objc_method then
     [(Mangled.from_string CFrontend_config.return_param,
-      Ast_expressions.create_pointer_qual_type ~is_const:false return_qual_type)]
+      Ast_expressions.create_pointer_qual_type return_qual_type)]
   else
     []
 
@@ -114,7 +114,7 @@ let get_parameters trans_unit_ctx tenv function_method_decl_info =
         let new_qt =
           match param_typ.Typ.desc with
           | Tstruct _ when CGeneral_utils.is_cpp_translation trans_unit_ctx ->
-              Ast_expressions.create_reference_qual_type ~is_const:false qt
+              Ast_expressions.create_reference_qual_type qt
           | _ -> qt in
         (mangled, new_qt)
     | _ -> assert false in
@@ -294,7 +294,7 @@ let get_formal_parameters tenv ms =
               (CMethod_signature.ms_get_lang ms) CFrontend_config.CPP in
           (is_objc_self && CMethod_signature.ms_is_instance ms) || is_cxx_this in
         let qt = if should_add_pointer (Mangled.to_string mangled) ms then
-            (Ast_expressions.create_pointer_qual_type ~is_const:false qual_type)
+            (Ast_expressions.create_pointer_qual_type qual_type)
           else qual_type in
         let typ = CType_decl.qual_type_to_sil_type tenv qt in
         (mangled, typ):: defined_parameters pl' in

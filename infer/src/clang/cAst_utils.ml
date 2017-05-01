@@ -183,7 +183,9 @@ let qual_type_of_decl_ptr decl_ptr = {
   (* This function needs to be in this module - CAst_utils can't depend on
      Ast_expressions *)
   Clang_ast_t.qt_type_ptr=Clang_ast_extend.DeclPtr decl_ptr;
-  qt_is_const=false
+  qt_is_const=false;
+  qt_is_volatile=false;
+  qt_is_restrict=false;
 }
 
 let add_type_from_decl_ref qual_type_to_sil_type tenv dr =

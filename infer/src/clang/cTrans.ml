@@ -1992,8 +1992,10 @@ struct
     instruction trans_state message_stmt
 
   and objCStringLiteral_trans trans_state stmt_info stmts info =
-    let stmts = [Ast_expressions.create_implicit_cast_expr stmt_info stmts
-                   (Ast_expressions.create_char_star_type ~is_const:true) `ArrayToPointerDecay] in
+    let char_star_typ =
+      Ast_expressions.create_char_star_type ~quals:(Typ.mk_type_quals ~is_const:true ()) () in
+    let stmts = [Ast_expressions.create_implicit_cast_expr stmt_info stmts char_star_typ
+                   `ArrayToPointerDecay] in
     let typ =
       CType_decl.class_from_pointer_type
         trans_state.context.CContext.tenv info.Clang_ast_t.ei_qual_type in
@@ -2682,8 +2684,8 @@ struct
     let child_stmt_info =
       { (Ast_expressions.dummy_stmt_info ()) with Clang_ast_t.si_source_range = source_range } in
     let trans_state' = PriorityNode.try_claim_priority_node trans_state this_stmt_info in
-    let class_qual_type = Ast_expressions.create_pointer_qual_type ~is_const:false
-        (CAst_utils.qual_type_of_decl_ptr class_ptr) in
+    let class_qual_type =
+      Ast_expressions.create_pointer_qual_type (CAst_utils.qual_type_of_decl_ptr class_ptr) in
     let this_res_trans = this_expr_trans trans_state' sil_loc class_qual_type in
     let var_res_trans = match ctor_init.Clang_ast_t.xci_subject with
       | `Delegating _ | `BaseClass _ ->

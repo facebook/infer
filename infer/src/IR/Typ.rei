@@ -72,12 +72,18 @@ type static_length = option IntLit.t [@@deriving compare];
 type type_quals [@@deriving compare];
 
 let mk_type_quals:
-  default::type_quals? => is_const::bool? => is_volatile::bool? => unit => type_quals;
+  default::type_quals? =>
+  is_const::bool? =>
+  is_restrict::bool? =>
+  is_volatile::bool? =>
+  unit =>
+  type_quals;
 
 let is_const: type_quals => bool;
 
-let is_volatile: type_quals => bool;
+let is_restrict: type_quals => bool;
 
+let is_volatile: type_quals => bool;
 
 /** types for sil (structured) expressions */
 

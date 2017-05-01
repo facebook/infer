@@ -19,13 +19,13 @@ val dummy_source_range : unit -> source_range
 
 val dummy_stmt_info : unit -> stmt_info
 
-val create_class_qual_type : ?is_const:bool -> Typ.Name.t -> qual_type
+val create_class_qual_type : ?quals:Typ.type_quals -> Typ.Name.t -> qual_type
 
-val create_pointer_qual_type : is_const:bool -> qual_type -> qual_type
+val create_pointer_qual_type : ?quals:Typ.type_quals -> qual_type -> qual_type
 
-val create_reference_qual_type : is_const:bool -> qual_type -> qual_type
+val create_reference_qual_type : ?quals:Typ.type_quals -> qual_type -> qual_type
 
-val create_char_star_type : is_const:bool -> qual_type
+val create_char_star_type : ?quals:Typ.type_quals -> unit -> qual_type
 
 val create_id_type : qual_type
 

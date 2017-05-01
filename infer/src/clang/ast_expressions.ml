@@ -63,17 +63,21 @@ let stmt_info_with_fresh_pointer stmt_info = {
   si_source_range = stmt_info.Clang_ast_t.si_source_range;
 }
 
-let create_qual_type ?(is_const=false) qt_type_ptr =
-  { Clang_ast_t.qt_type_ptr; qt_is_const=is_const }
+let create_qual_type ?(quals=Typ.mk_type_quals ()) qt_type_ptr =
+  { Clang_ast_t.qt_type_ptr;
+    qt_is_const=Typ.is_const quals;
+    qt_is_volatile=Typ.is_volatile quals;
+    qt_is_restrict=Typ.is_restrict quals;
+  }
 
 let builtin_to_qual_type kind = create_qual_type (Clang_ast_extend.Builtin kind)
 
 
-let create_pointer_qual_type ~is_const typ =
-  create_qual_type ~is_const (Clang_ast_extend.PointerOf typ)
+let create_pointer_qual_type ?quals typ =
+  create_qual_type ?quals (Clang_ast_extend.PointerOf typ)
 
-let create_reference_qual_type ~is_const typ =
-  create_qual_type ~is_const (Clang_ast_extend.ReferenceOf typ)
+let create_reference_qual_type ?quals typ =
+  create_qual_type ?quals (Clang_ast_extend.ReferenceOf typ)
 
 (* We translate function types as the return type of the function *)
 let function_type_ptr return_type = return_type
@@ -82,12 +86,12 @@ let create_int_type = builtin_to_qual_type `Int
 
 let create_void_type = builtin_to_qual_type `Void
 
-let create_void_star_type = create_pointer_qual_type ~is_const:false create_void_type
+let create_void_star_type = create_pointer_qual_type create_void_type
 
-let create_id_type = create_pointer_qual_type ~is_const:false (builtin_to_qual_type `ObjCId)
+let create_id_type = create_pointer_qual_type (builtin_to_qual_type `ObjCId)
 
 let create_char_type = builtin_to_qual_type `Char_S
-let create_char_star_type ~is_const = create_pointer_qual_type ~is_const create_char_type
+let create_char_star_type ?quals () = create_pointer_qual_type ?quals create_char_type
 
 let create_BOOL_type = builtin_to_qual_type `SChar
 
@@ -97,8 +101,8 @@ let create_void_unsigned_long_type = function_type_ptr create_void_type
 
 let create_void_void_type = function_type_ptr create_void_type
 
-let create_class_qual_type ?(is_const=false) typename =
-  create_qual_type ~is_const (Clang_ast_extend.ClassType typename)
+let create_class_qual_type ?quals typename =
+  create_qual_type ?quals (Clang_ast_extend.ClassType typename)
 
 let make_objc_class_qual_type class_name =
   create_class_qual_type (Typ.Name.Objc.from_string class_name)
@@ -480,8 +484,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
   (* NSArray *objects = a *)
   let objects_array_DeclStmt init =
     let di = { empty_decl_info with Clang_ast_t.di_pointer = CAst_utils.get_fresh_pointer () } in
-    let qt = create_pointer_qual_type ~is_const:false @@
-      make_objc_class_qual_type CFrontend_config.nsarray_cl in
+    let qt = create_pointer_qual_type (make_objc_class_qual_type CFrontend_config.nsarray_cl) in
     (* init should be ImplicitCastExpr of array a *)
     let vdi = { empty_var_decl_info with Clang_ast_t.vdi_init_expr = Some (init) } in
     let objects_name = CAst_utils.make_name_decl CFrontend_config.objects in

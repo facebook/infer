@@ -48,10 +48,25 @@ module TypePointerOrd = struct
     | ErrorType, ErrorType -> 0
     | _ -> raise (invalid_arg ("unexpected type_ptr variants: "))
   and compare_qual_type (qt1 : Clang_ast_t.qual_type) (qt2 : Clang_ast_t.qual_type) =
-    let (<>) = Int.(<>) in
-    let qt_cmp = compare qt1.qt_type_ptr qt2.qt_type_ptr in
-    if qt_cmp <> 0 then qt_cmp else
-      Bool.compare qt1.qt_is_const qt2.qt_is_const
+    if phys_equal qt1 qt2 then 0 else
+      (* enable warning here to warn and update comparison funtion when new field is added *)
+      let [@warning "+9"] {
+          Clang_ast_t.qt_type_ptr = t1;
+          qt_is_const = c1;
+          qt_is_restrict = r1;
+          qt_is_volatile = v1} = qt1 in
+      let [@warning "+9"] {
+          Clang_ast_t.qt_type_ptr = t2;
+          qt_is_const = c2;
+          qt_is_restrict = r2;
+          qt_is_volatile = v2} = qt2 in
+      let qt_cmp = compare t1 t2 in
+      if qt_cmp <> 0 then qt_cmp else
+        let const_cmp = Bool.compare c1 c2 in
+        if const_cmp <> 0 then const_cmp else
+          let restrict_cmp = Bool.compare r1 r2 in
+          if restrict_cmp <> 0 then restrict_cmp else
+            Bool.compare v1 v2
 end
 
 module TypePointerMap = Caml.Map.Make(TypePointerOrd)

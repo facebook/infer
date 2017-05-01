@@ -149,8 +149,9 @@ let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname la
     class_equal class_name CFrontend_config.nsstring_cl &&
     String.equal method_name CFrontend_config.string_with_utf8_m in
   let id_type = Ast_expressions.create_id_type in
-  let args = [(Mangled.from_string "x",
-               Ast_expressions.create_char_star_type ~is_const:true)] in
+  let char_star_type =
+    Ast_expressions.create_char_star_type ~quals:(Typ.mk_type_quals ~is_const:true ()) () in
+  let args = [(Mangled.from_string "x", char_star_type)] in
   get_predefined_ms_method condition class_name method_name Typ.Procname.ObjCClassMethod
     mk_procname lang args id_type [] None
 
