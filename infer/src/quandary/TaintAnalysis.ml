@@ -123,27 +123,25 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       | Some (trace, _) -> trace
       | None -> TraceDomain.empty
 
+    let exp_get_node_ ~abstracted raw_access_path access_tree proc_data =
+      let access_path =
+        if abstracted
+        then AccessPath.Abstracted raw_access_path
+        else AccessPath.Exact raw_access_path in
+      access_path_get_node access_path access_tree proc_data
+
     (* get the node associated with [exp] in [access_tree] *)
     let exp_get_node ?(abstracted=false) exp typ { Domain.access_tree; id_map; } proc_data =
       let f_resolve_id = resolve_id id_map in
       match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
-      | Some raw_access_path ->
-          let access_path =
-            if abstracted
-            then AccessPath.Abstracted raw_access_path
-            else AccessPath.Exact raw_access_path in
-          access_path_get_node access_path access_tree proc_data
-      | None ->
-          (* can't make an access path from [exp] *)
-          None
+      | Some raw_access_path -> exp_get_node_ ~abstracted raw_access_path access_tree proc_data
+      | None -> None
 
-    let analyze_assignment lhs_access_path rhs_exp rhs_typ astate proc_data =
-      let rhs_node =
-        match exp_get_node rhs_exp rhs_typ astate proc_data with
-        | Some node -> node
-        | None -> TaintDomain.empty_node in
-      let access_tree = TaintDomain.add_node lhs_access_path rhs_node astate.Domain.access_tree in
-      { astate with Domain.access_tree; }
+    (* get the node associated with [exp] in [access_tree] *)
+    let hil_exp_get_node ?(abstracted=false) (exp : HilExp.t) access_tree proc_data =
+      match exp with
+      | AccessPath access_path -> exp_get_node_ ~abstracted access_path access_tree proc_data
+      | _ -> None
 
     let add_source source ret_id ret_typ access_tree =
       let trace = TraceDomain.of_source source in
@@ -316,8 +314,32 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           caller_access_tree in
       { astate_in with access_tree; }
 
-    let exec_hil_instr (astate : Domain.astate) _ instr =
-      let exec_instr_ _ = astate in
+    let exec_hil_instr (astate : Domain.astate) (proc_data : FormalMap.t ProcData.t) instr =
+      let exec_instr_ (instr : HilInstr.t) = match instr with
+        | Write (((Var.ProgramVar pvar, _), []), HilExp.Exception _, _) when Pvar.is_return pvar ->
+            (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
+               wonky. this translation causes problems for us in computing a summary when an
+               exception is "returned" from a void function. skip code like this for now, fix via
+               t14159157 later *)
+            astate
+
+        | Write (((Var.ProgramVar pvar, _), []), rhs_exp, _)
+          when Pvar.is_return pvar && HilExp.is_null_literal rhs_exp &&
+               Typ.equal_desc Tvoid (Procdesc.get_ret_type proc_data.pdesc).desc ->
+            (* similar to the case above; the Java frontend translates "return no exception" as
+               `return null` in a void function *)
+            astate
+
+        | Write (lhs_access_path, rhs_exp, _) ->
+            let access_tree =
+              let rhs_node =
+                Option.value
+                  (hil_exp_get_node rhs_exp astate.access_tree proc_data)
+                  ~default:TaintDomain.empty_node in
+              TaintDomain.add_node (AccessPath.Exact lhs_access_path) rhs_node astate.access_tree in
+            { astate with access_tree; }
+        | _ ->
+            astate in
 
       let f_resolve_id id =
         try Some (IdAccessPathMapDomain.find id astate.id_map)
@@ -339,57 +361,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let exec_instr (astate : Domain.astate) (proc_data : FormalMap.t ProcData.t) _ instr =
       let f_resolve_id = resolve_id astate.id_map in
       match instr with
-
-      | Sil.Store (Exp.Lvar lhs_pvar, _, _, _) when Pvar.is_ssa_frontend_tmp lhs_pvar ->
+      | Sil.Store _ ->
           exec_hil_instr astate proc_data instr
-
-      | Sil.Store (Exp.Lvar lhs_pvar, _, Exp.Exn _, _) when Pvar.is_return lhs_pvar ->
-          (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
-             wonky. this translation causes problems for us in computing a summary when an
-             exception is "returned" from a void function. skip code like this for now
-             (fix via t14159157 later *)
-          astate
-      | Sil.Store (Exp.Lvar lhs_pvar, _, rhs_exp, _)
-        when Pvar.is_return lhs_pvar && Exp.is_null_literal rhs_exp &&
-             Typ.equal_desc Tvoid (Procdesc.get_ret_type proc_data.pdesc).desc ->
-          (* similar to the case above; the Java frontend translates "return no exception" as
-             `return null` in a void function *)
-          astate
-      | Sil.Store (lhs_exp, lhs_typ, rhs_exp, loc) ->
-          let lhs_access_path =
-            match AccessPath.of_lhs_exp lhs_exp lhs_typ ~f_resolve_id with
-            | Some access_path ->
-                access_path
-            | None ->
-                failwithf
-                  "Assignment to unexpected lhs expression %a in proc %a at loc %a"
-                  Exp.pp lhs_exp
-                  Typ.Procname.pp (Procdesc.get_proc_name (proc_data.pdesc))
-                  Location.pp loc in
-          let astate' =
-            analyze_assignment
-              (AccessPath.Exact lhs_access_path) rhs_exp lhs_typ astate proc_data in
-          begin
-            (* direct `exp = id` assignments are treated specially; we update the id map too. this
-               is so future reads of `exp` will get the subtree associated with `id` (needed to
-               handle the `id = foo(); exp = id case` and similar). *)
-            match rhs_exp with
-            | Exp.Var rhs_id ->
-                let existing_accesses =
-                  try snd (IdMapDomain.find (Var.of_id rhs_id) astate'.Domain.id_map)
-                  with Not_found -> [] in
-                let lhs_ap' = AccessPath.append lhs_access_path existing_accesses in
-                let id_map' = IdMapDomain.add (Var.of_id rhs_id) lhs_ap' astate'.Domain.id_map in
-                { astate' with Domain.id_map = id_map'; }
-            | _ ->
-                astate'
-          end
       | Sil.Call (Some _, Const (Cfun callee_pname), _, _, _)
         when BuiltinDecl.is_declared callee_pname ->
           if Typ.Procname.equal callee_pname BuiltinDecl.__cast
           then exec_hil_instr astate proc_data instr
           else astate
-
       | Sil.Call (ret, Const (Cfun called_pname), actuals, callee_loc, call_flags) ->
           let handle_unknown_call callee_pname astate =
             let is_variadic = match callee_pname with

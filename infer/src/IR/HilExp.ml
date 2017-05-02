@@ -91,3 +91,7 @@ let rec of_sil ~f_resolve_id (exp : Exp.t) typ = match exp with
           AccessPath access_path
       | None ->
           failwithf "Couldn't convert var/field/index expression %a to access path" Exp.pp exp
+
+let is_null_literal = function
+  | Constant (Cint n) -> IntLit.isnull n
+  | _ -> false

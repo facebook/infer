@@ -168,46 +168,6 @@ let tests =
       assign_id_to_field "base_id" "f" "non_source_id";
       invariant "{ ret_id$0 => (SOURCE -> ?) }";
     ];
-    "var id alias test",
-    [
-      assign_to_non_source "ret_id";
-      var_assign_id "var1" "ret_id";
-      assign_to_source "source_id";
-      assign_id_to_field "ret_id" "f" "source_id";
-      invariant "{ source_id$0 => (SOURCE -> ?), &var1.f => (SOURCE -> ?) }";
-      read_field_to_id "read_id" "ret_id" "f";
-      invariant "{ source_id$0 => (SOURCE -> ?), &var1.f => (SOURCE -> ?) }";
-      var_assign_id "var2" "read_id";
-      invariant
-        "{ source_id$0 => (SOURCE -> ?), &var1.f => (SOURCE -> ?), &var2 => (SOURCE -> ?) }";
-    ];
-    "field id alias test1",
-    [
-      assign_to_non_source "ret_id";
-      assign_to_source "source_id";
-      assign_id_to_field "ret_id" "g" "source_id";
-      assign_to_non_source "var_id";
-      var_assign_id "var" "var_id";
-      assign_id_to_field "var_id" "f" "ret_id";
-      invariant
-        "{ ret_id$0.g => (SOURCE -> ?), source_id$0 => (SOURCE -> ?), &var.f.g => (SOURCE -> ?) }";
-    ];
-    "field id alias test2",
-    [
-      assign_to_non_source "ret_id";
-      read_field_to_id "g_id" "ret_id" "g";
-      var_assign_id "var1" "g_id";
-      assign_to_source "source_id";
-      invariant "{ source_id$0 => (SOURCE -> ?) }";
-      assign_id_to_field "g_id" "f" "source_id";
-      invariant "{ source_id$0 => (SOURCE -> ?), &var1.g.f => (SOURCE -> ?) }";
-      id_assign_var "var_id" "var1";
-      read_field_to_id "var_g_id" "var_id" "g";
-      read_field_to_id "var_g_f_id" "var_g_id" "f";
-      var_assign_id "var2" "var_g_f_id";
-      invariant
-        "{ source_id$0 => (SOURCE -> ?), &var1.g.f => (SOURCE -> ?), &var2 => (SOURCE -> ?) }";
-    ];
     "sink without source not tracked",
     [
       assign_to_non_source "ret_id";
