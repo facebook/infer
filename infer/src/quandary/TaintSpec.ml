@@ -23,7 +23,7 @@ module type S = sig
   (** return a summary for handling an unknown call at the given site with the given return type
       and actuals *)
   val handle_unknown_call :
-    Typ.Procname.t -> Typ.t option -> (Exp.t * Typ.t) list -> Tenv.t -> handle_unknown list
+    Typ.Procname.t -> Typ.t option -> HilExp.t list -> Tenv.t -> handle_unknown list
 
   (** return true if the given typ can be tainted *)
   val is_taintable_type : Typ.t -> bool

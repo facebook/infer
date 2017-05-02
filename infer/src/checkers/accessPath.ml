@@ -136,9 +136,9 @@ let of_lhs_exp lhs_exp typ ~(f_resolve_id : Var.t -> Raw.t option) =
 let append (base, old_accesses) new_accesses =
   base, old_accesses @ new_accesses
 
-let with_base_var var = function
-  | Exact ((_, base_typ), accesses) -> Exact ((var, base_typ), accesses)
-  | Abstracted ((_, base_typ), accesses) -> Abstracted ((var, base_typ), accesses)
+let with_base base = function
+  | Exact (_, accesses) -> Exact (base, accesses)
+  | Abstracted (_, accesses) -> Abstracted (base, accesses)
 
 let rec is_prefix_path path1 path2 =
   if phys_equal path1 path2

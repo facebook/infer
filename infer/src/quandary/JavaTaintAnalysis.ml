@@ -24,8 +24,12 @@ include
       | _ -> assert false
 
     let handle_unknown_call pname ret_typ_opt actuals tenv =
-      let types_match typ class_string tenv = match typ.Typ.desc with
-        | Typ.Tptr ({desc=Tstruct original_typename}, _) ->
+      let get_receiver_typ tenv = function
+        | HilExp.AccessPath access_path -> AccessPath.Raw.get_typ access_path tenv
+        | _ -> None in
+      let types_match typ class_string tenv =
+        match typ with
+        | Some ({ Typ.desc=Typ.Tptr ({desc=Tstruct original_typename}, _) }) ->
             PatternMatch.supertype_exists
               tenv
               (fun typename _ -> String.equal (Typ.Name.name typename) class_string)
@@ -51,8 +55,9 @@ include
             | classname, _, Some ({Typ.desc=Tptr _ | Tstruct _}) ->
                 begin
                   match actuals with
-                  | (_, receiver_typ) :: _
-                    when not is_static && types_match receiver_typ classname tenv ->
+                  | receiver_exp :: _
+                    when not is_static &&
+                         types_match (get_receiver_typ tenv receiver_exp) classname tenv ->
                       (* if the receiver and return type are the same, propagate to both. we're
                          assuming the call is one of the common "builder-style" methods that both
                          updates and returns the receiver *)

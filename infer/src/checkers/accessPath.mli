@@ -73,7 +73,7 @@ val append : Raw.t -> access list -> Raw.t
 
 (** swap base of existing access path for [base_var] (e.g., `with_base_bvar x y.f.g` produces
     `x.f.g` *)
-val with_base_var : Var.t -> t -> t
+val with_base : base -> t -> t
 
 (** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
 val is_prefix : Raw.t -> Raw.t -> bool
