@@ -13,9 +13,7 @@ CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(MODELS_DIR)/cpp/include 
 INFER_OPTIONS = --ml-buckets cpp --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-failures-allowed
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = \
-	trivial.cpp \
-  vector.cpp \
+SOURCES = $(wildcard *.cpp)
 
 HEADERS =
 
