@@ -145,15 +145,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let access_tree = TaintDomain.add_node lhs_access_path rhs_node astate.Domain.access_tree in
       { astate with Domain.access_tree; }
 
-    let analyze_id_assignment lhs_id rhs_exp rhs_typ ({ Domain.id_map; } as astate) =
-      let f_resolve_id = resolve_id id_map in
-      match AccessPath.of_lhs_exp rhs_exp rhs_typ ~f_resolve_id with
-      | Some rhs_access_path ->
-          let id_map' = IdMapDomain.add lhs_id rhs_access_path id_map in
-          { astate with Domain.id_map = id_map'; }
-      | None ->
-          astate
-
     let add_source source ret_id ret_typ access_tree =
       let trace = TraceDomain.of_source source in
       let id_ap = AccessPath.Exact (AccessPath.of_id ret_id ret_typ) in
@@ -325,7 +316,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           caller_access_tree in
       { astate_in with access_tree; }
 
-
     let exec_hil_instr (astate : Domain.astate) _ instr =
       let exec_instr_ _ = astate in
 
@@ -394,21 +384,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             | _ ->
                 astate'
           end
-      | Sil.Call (Some (ret_id, _), Const (Cfun callee_pname), args, loc, _)
+      | Sil.Call (Some _, Const (Cfun callee_pname), _, _, _)
         when BuiltinDecl.is_declared callee_pname ->
           if Typ.Procname.equal callee_pname BuiltinDecl.__cast
-          then
-            match args with
-            | (cast_target, cast_typ) :: _ ->
-                analyze_id_assignment (Var.of_id ret_id) cast_target cast_typ astate
-            | _ ->
-                failwithf
-                  "Unexpected cast %a in procedure %a at line %a"
-                  (Sil.pp_instr Pp.text) instr
-                  Typ.Procname.pp (Procdesc.get_proc_name (proc_data.pdesc))
-                  Location.pp loc
-          else
-            astate
+          then exec_hil_instr astate proc_data instr
+          else astate
 
       | Sil.Call (ret, Const (Cfun called_pname), actuals, callee_loc, call_flags) ->
           let handle_unknown_call callee_pname astate =
