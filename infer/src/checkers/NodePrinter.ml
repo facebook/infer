@@ -31,13 +31,11 @@ let start_session node =
   if Config.write_html then
     begin
       let session = new_session node in
-      let source = (Procdesc.Node.get_loc node).file in
-      Printer.node_start_session node session source
+      Printer.node_start_session node session
     end
 
 let finish_session node =
   if Config.write_html then
     begin
-      let source = (Procdesc.Node.get_loc node).file in
-      Printer.node_finish_session node source
+      Printer.node_finish_session node
     end

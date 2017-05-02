@@ -337,14 +337,14 @@ let reset_prop_metrics () =
 
 exception RE_EXE_ERROR
 
-let do_before_node source session node =
+let do_before_node session node =
   State.set_node node;
   State.set_session session;
   L.reset_delayed_prints ();
-  Printer.node_start_session node (session :> int) source
+  Printer.node_start_session node (session :> int)
 
-let do_after_node source node =
-  Printer.node_finish_session node source
+let do_after_node node =
+  Printer.node_finish_session node
 
 (** Return the list of normal ids occurring in the instructions *)
 let instrs_get_normal_vars instrs =
@@ -505,7 +505,7 @@ let add_taint_attrs tenv proc_name proc_desc prop =
             Taint.add_tainting_attribute tenv attr param prop_acc)
         ~init:prop
 
-let forward_tabulate tenv pdesc wl source =
+let forward_tabulate tenv pdesc wl =
   let pname = Procdesc.get_proc_name pdesc in
   let handle_exn_node curr_node exn =
     Exceptions.print_exception_html "Failure of symbolic execution: " exn;
@@ -593,13 +593,13 @@ let forward_tabulate tenv pdesc wl source =
           handle_exn_node curr_node exn in
         do_node curr_node pathset_todo session handle_exn;
         if !handle_exn_called then Printer.force_delayed_prints ();
-        do_after_node source curr_node
+        do_after_node curr_node
       end
     with
     | exn when Exceptions.handle_exception exn ->
         handle_exn_node curr_node exn;
         Printer.force_delayed_prints ();
-        do_after_node source curr_node;
+        do_after_node curr_node;
         if not !Config.footprint then raise RE_EXE_ERROR in
 
   while not (Worklist.is_empty wl) do
@@ -609,7 +609,7 @@ let forward_tabulate tenv pdesc wl source =
     let session =
       incr summary.Specs.sessions;
       !(summary.Specs.sessions) in
-    do_before_node source session curr_node;
+    do_before_node session curr_node;
     do_node_and_handle curr_node session
   done;
   L.d_strln ".... Work list empty. Stop ...."; L.d_ln ()
@@ -911,10 +911,10 @@ let initial_prop_from_pre tenv curr_f pre =
     initial_prop tenv curr_f pre false
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
-let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Specs.Jprop.t) source
+let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Specs.Jprop.t)
   : Prop.normal Specs.spec option =
   let pname = Procdesc.get_proc_name pdesc in
-  do_before_node source 0 init_node;
+  do_before_node 0 init_node;
   L.d_strln ("#### Start: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####");
   L.d_indent 1;
   L.d_strln "Precond:"; Specs.Jprop.d_shallow precondition;
@@ -926,12 +926,12 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
       init_prop
       (Paths.Path.start init_node)
       Paths.PathSet.empty in
-  do_after_node source init_node;
+  do_after_node init_node;
   try
     Worklist.add wl init_node;
     ignore (path_set_put_todo wl init_node init_edgeset);
-    forward_tabulate tenv pdesc wl source;
-    do_before_node source 0 init_node;
+    forward_tabulate tenv pdesc wl;
+    do_before_node 0 init_node;
     L.d_strln_color Green
       ("#### Finished: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####");
     L.d_increase_indent 1;
@@ -951,10 +951,10 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
       | Specs.Jprop.Joined (n, _, jp1, jp2) -> Specs.Jprop.Joined (n, p, jp1, jp2) in
     let spec = { Specs.pre = pre; Specs.posts = posts; Specs.visited = visited } in
     L.d_decrease_indent 1;
-    do_after_node source init_node;
+    do_after_node init_node;
     Some spec
   with RE_EXE_ERROR ->
-    do_before_node source 0 init_node;
+    do_before_node 0 init_node;
     Printer.force_delayed_prints ();
     L.d_strln_color Red ("#### [FUNCTION " ^ Typ.Procname.to_string pname ^ "] ...ERROR");
     L.d_increase_indent 1;
@@ -962,7 +962,7 @@ let execute_filter_prop wl tenv pdesc init_node (precondition : Prop.normal Spec
     Prop.d_prop (Specs.Jprop.to_prop precondition);
     L.d_strln "This precondition is filtered out.";
     L.d_decrease_indent 1;
-    do_after_node source init_node;
+    do_after_node init_node;
     None
 
 let pp_intra_stats wl proc_desc fmt _ =
@@ -984,7 +984,7 @@ type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.p
     and [get_results ()] returns the results computed.
     This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
-let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t) source
+let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t)
   : exe_phase =
   let pname = Specs.get_proc_name summary in
   let start_node = Procdesc.get_start_node pdesc in
@@ -1015,7 +1015,7 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t) s
           (Procdesc.get_flags pdesc)
           Mleak_buckets.objc_arc_flag;
       ignore (path_set_put_todo wl start_node init_edgeset);
-      forward_tabulate tenv pdesc wl source in
+      forward_tabulate tenv pdesc wl in
     let get_results (wl : Worklist.t) () =
       State.process_execution_failures Reporting.log_warning pname;
       let results = collect_analysis_result tenv wl pdesc in
@@ -1047,7 +1047,7 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t) s
       L.out "@.#### Start: Re-Execution for %a ####@." Typ.Procname.pp pname;
       let filter p =
         let wl = path_set_create_worklist pdesc in
-        let speco = execute_filter_prop wl tenv pdesc start_node p source in
+        let speco = execute_filter_prop wl tenv pdesc start_node p in
         let is_valid = match speco with
           | None -> false
           | Some spec ->
@@ -1069,6 +1069,7 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t) s
       L.out "#### Finished: Re-Execution for %a ####@." Typ.Procname.pp pname;
       let valid_preconditions =
         List.map ~f:(fun spec -> spec.Specs.pre) specs in
+      let source = (Procdesc.get_loc pdesc).file in
       let filename =
         DB.Results_dir.path_to_filename
           (DB.Results_dir.Abs_source_dir source)
@@ -1298,12 +1299,12 @@ let update_summary tenv prev_summary specs phase res =
 
 
 (** Analyze the procedure and return the resulting summary. *)
-let analyze_proc source exe_env proc_desc : Specs.summary =
+let analyze_proc exe_env proc_desc : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   reset_global_values proc_desc;
   let summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
-  let go, get_results = perform_analysis_phase tenv summary proc_desc source in
+  let go, get_results = perform_analysis_phase tenv summary proc_desc in
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
   let updated_summary =
@@ -1343,7 +1344,7 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
 
 (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
     the procedures enabled after the analysis of [proc_name] *)
-let perform_transition exe_env tenv proc_name source =
+let perform_transition exe_env tenv proc_name =
   let transition summary =
     (* disable exceptions for leaks and protect against any other errors *)
     let joined_pres =
@@ -1357,15 +1358,15 @@ let perform_transition exe_env tenv proc_name source =
               f start_node
           | None -> ()
         with exn when SymOp.exn_not_failure exn -> () in
-      apply_start_node (do_before_node source 0);
+      apply_start_node (do_before_node 0);
       try
         Config.allow_leak := true;
         let res = collect_preconditions tenv summary in
         Config.allow_leak := allow_leak;
-        apply_start_node (do_after_node source);
+        apply_start_node do_after_node;
         res
       with exn when SymOp.exn_not_failure exn ->
-        apply_start_node (do_after_node source);
+        apply_start_node do_after_node;
         Config.allow_leak := allow_leak;
         L.err "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name;
         let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
@@ -1433,7 +1434,7 @@ let do_analysis_closures exe_env : Tasks.closure list =
           Option.bind (Specs.get_summary proc_name)
             (fun summary -> summary.Specs.proc_desc_option)
       | None -> None in
-    let analyze_ondemand source _ proc_desc =
+    let analyze_ondemand _ _ proc_desc =
       let proc_name = Procdesc.get_proc_name proc_desc in
       let tenv = Exe_env.get_tenv exe_env proc_name in
       if not (Procdesc.did_preanalysis proc_desc)
@@ -1444,13 +1445,13 @@ let do_analysis_closures exe_env : Tasks.closure list =
           Preanal.do_dynamic_dispatch proc_desc (Exe_env.get_cg exe_env) tenv
         end;
       let summaryfp =
-        Config.run_in_footprint_mode (analyze_proc source exe_env) proc_desc in
+        Config.run_in_footprint_mode (analyze_proc exe_env) proc_desc in
       Specs.add_summary proc_name summaryfp;
 
-      perform_transition exe_env tenv proc_name source;
+      perform_transition exe_env tenv proc_name;
 
       let summaryre =
-        Config.run_in_re_execution_mode (analyze_proc source exe_env) proc_desc in
+        Config.run_in_re_execution_mode (analyze_proc exe_env) proc_desc in
       Specs.add_summary proc_name summaryre;
       summaryre in
     {

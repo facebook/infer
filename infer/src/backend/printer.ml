@@ -393,19 +393,21 @@ let start_session node (loc: Location.t) proc_name session source =
   F.fprintf !curr_html_formatter "<LISTING>%a"
     Io_infer.Html.pp_start_color Pp.Black
 
-let node_start_session node session source =
+let node_start_session node session =
   if Config.write_html then
     let loc = Procdesc.Node.get_loc node in
+    let source = loc.Location.file in
     let pname = Procdesc.Node.get_proc_name node in
     start_session node loc pname session source
 
 (** Finish a session, and perform delayed print actions if required *)
-let node_finish_session node source =
+let node_finish_session node =
   if not Config.test then force_delayed_prints ()
   else L.reset_delayed_prints ();
   if Config.write_html then begin
     F.fprintf !curr_html_formatter "</LISTING>%a"
       Io_infer.Html.pp_end_color ();
+    let source = (Procdesc.Node.get_loc node).file in
     NodesHtml.finish_node
       (Procdesc.Node.get_proc_name node)
       (Procdesc.Node.get_id node :> int)
