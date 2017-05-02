@@ -85,6 +85,7 @@ let is_restrict: type_quals => bool;
 
 let is_volatile: type_quals => bool;
 
+
 /** types for sil (structured) expressions */
 
 /** types for sil (structured) expressions */
@@ -101,6 +102,9 @@ and desc =
 and name =
   | CStruct QualifiedCppName.t
   | CUnion QualifiedCppName.t
+  /* qualified name does NOT contain template arguments of the class. It will contain template
+     args of its parent classes, for example: MyClass<int>::InnerClass<int> will store
+     "MyClass<int>", "InnerClass" */
   | CppClass QualifiedCppName.t template_spec_info
   | JavaClass Mangled.t
   | ObjcClass QualifiedCppName.t
@@ -108,7 +112,7 @@ and name =
 [@@deriving compare]
 and template_spec_info =
   | NoTemplate
-  | Template (QualifiedCppName.t, list (option t))
+  | Template (list (option t))
 [@@deriving compare];
 
 
@@ -485,8 +489,7 @@ module Struct: {
       statics: fields, /** static fields */
       supers: list Name.t, /** supers */
       methods: list Procname.t, /** methods defined */
-      annots: Annot.Item.t, /** annotations */
-      specialization: template_spec_info /** template specialization */
+      annots: Annot.Item.t /** annotations */
     };
   type lookup = Name.t => option t;
 
@@ -501,7 +504,6 @@ module Struct: {
     methods::list Procname.t? =>
     supers::list Name.t? =>
     annots::Annot.Item.t? =>
-    specialization::template_spec_info? =>
     unit =>
     t;
 

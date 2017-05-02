@@ -46,7 +46,6 @@ let mk_struct:
   methods::list Typ.Procname.t? =>
   supers::list Typ.Name.t? =>
   annots::Annot.Item.t? =>
-  specialization::Typ.template_spec_info? =>
   Typ.Name.t =>
   Typ.Struct.t;
 

@@ -39,6 +39,11 @@ let extract_last: t => option (string, t);
 let strip_template_args: t => t;
 
 
+/** append template arguments to the last qualifier. Fails if qualified name is empty or it already has
+    template args */
+let append_template_args_to_last: t => args::string => t;
+
+
 /** returns list of qualifers */
 let to_list: t => list string;
 

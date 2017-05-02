@@ -116,39 +116,33 @@ and get_record_custom_type tenv definition_decl =
       Option.map ~f:(qual_type_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
   | _ -> None
 
-and get_template_specialization tenv = function
-  | Clang_ast_t.ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, spec_info) ->
-      let tname = match CAst_utils.get_decl spec_info.tsi_template_decl with
-        | Some decl -> get_class_template_name decl
-        | None -> assert false in
-      let args_in_sil = List.map spec_info.tsi_specialization_args ~f:(function
-          | `Type qual_type -> Some (qual_type_to_sil_type tenv qual_type)
-          | _ -> None) in
-      Typ.Template (tname, args_in_sil)
-  | _ -> Typ.NoTemplate
-
 (* We need to take the name out of the type as the struct can be anonymous
    If tenv is not passed, then template instantiaion information may be incorrect,
    as it defaults to Typ.NoTemplate *)
 and get_record_typename ?tenv decl =
   let open Clang_ast_t in
-  match decl with
-  | RecordDecl (_, name_info, opt_type, _, _, _, _) ->
+  match decl, tenv with
+  | RecordDecl (_, name_info, opt_type, _, _, _, _), _ ->
       CAst_utils.get_qualified_name name_info |> create_c_record_typename opt_type
-  | CXXRecordDecl (_, name_info, _, _, _, _, _, _)
-  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _) ->
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, spec_info), Some tenv ->
+      let tname = match CAst_utils.get_decl spec_info.tsi_template_decl with
+        | Some dec -> get_class_template_name dec
+        | None -> assert false in
+      let args_in_sil = List.map spec_info.tsi_specialization_args ~f:(function
+          | `Type qual_type -> Some (qual_type_to_sil_type tenv qual_type)
+          | _ -> None) in
+      Typ.Name.Cpp.from_qual_name (Typ.Template args_in_sil) tname
+  | CXXRecordDecl (_, name_info, _, _, _, _, _, _), _
+  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _), _ ->
       (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
-      let qual_name = CAst_utils.get_qualified_name name_info in
-      let templ_info = match tenv with
-        | Some t -> get_template_specialization t decl
-        | None -> Typ.NoTemplate in
-      Typ.Name.Cpp.from_qual_name templ_info qual_name
-  | ObjCInterfaceDecl (_, name_info, _, _, _)
-  | ObjCImplementationDecl (_, name_info, _, _, _)
-  | ObjCProtocolDecl (_, name_info, _, _, _)
-  | ObjCCategoryDecl (_, name_info, _, _, _)
-  | ObjCCategoryImplDecl (_, name_info, _, _, _) ->
+      Typ.Name.Cpp.from_qual_name Typ.NoTemplate (CAst_utils.get_qualified_name name_info)
+
+  | ObjCInterfaceDecl (_, name_info, _, _, _), _
+  | ObjCImplementationDecl (_, name_info, _, _, _), _
+  | ObjCProtocolDecl (_, name_info, _, _, _), _
+  | ObjCCategoryDecl (_, name_info, _, _, _), _
+  | ObjCCategoryImplDecl (_, name_info, _, _, _), _ ->
       CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.from_qual_name
   | _ -> assert false
 
@@ -184,8 +178,7 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
              let statics = [] in (* Note: We treat static field same as global variables *)
              let methods = [] in (* C++ methods are not put into tenv (info isn't used) *)
              let supers = get_superclass_list_cpp tenv definition_decl in
-             let specialization = get_template_specialization tenv definition_decl in
-             Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots ~specialization
+             Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots
                sil_typename |> ignore;
              CAst_utils.update_sil_types_map type_ptr sil_desc;
              sil_desc

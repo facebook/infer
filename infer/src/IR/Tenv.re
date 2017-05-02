@@ -41,19 +41,10 @@ let create () => TypenameHash.create 1000;
 
 
 /** Construct a struct type in a type environment */
-let mk_struct
-    tenv
-    ::default=?
-    ::fields=?
-    ::statics=?
-    ::methods=?
-    ::supers=?
-    ::annots=?
-    ::specialization=?
-    name => {
+let mk_struct tenv ::default=? ::fields=? ::statics=? ::methods=? ::supers=? ::annots=? name => {
   let struct_typ =
     Typ.Struct.internal_mk_struct
-      ::?default ::?fields ::?statics ::?methods ::?supers ::?annots ::?specialization ();
+      ::?default ::?fields ::?statics ::?methods ::?supers ::?annots ();
   TypenameHash.replace tenv name struct_typ;
   struct_typ
 };

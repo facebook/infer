@@ -146,7 +146,7 @@ module T = {
   [@@deriving compare]
   and template_spec_info =
     | NoTemplate
-    | Template (QualifiedCppName.t, list (option t))
+    | Template (list (option t))
   [@@deriving compare];
   let equal_desc = [%compare.equal : desc];
   let equal_quals = [%compare.equal : type_quals];
@@ -183,26 +183,107 @@ let mk ::default=? ::quals=? desc :t => {
   mk_aux ::?default ::?quals desc
 };
 
+let escape pe =>
+  if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
+    Escape.escape_xml
+  } else {
+    ident
+  };
+
+
+/** Pretty print a type with all the details, using the C syntax. */
+let rec pp_full pe f typ => {
+  let pp_quals f {quals} => {
+    if (is_const quals) {
+      F.fprintf f " const "
+    };
+    if (is_restrict quals) {
+      F.fprintf f " __restrict "
+    };
+    if (is_volatile quals) {
+      F.fprintf f " volatile "
+    }
+  };
+  let pp_desc f {desc} =>
+    switch desc {
+    | Tstruct tname => F.fprintf f "%a" (pp_name_c_syntax pe) tname
+    | Tint ik => F.fprintf f "%s" (ikind_to_string ik)
+    | Tfloat fk => F.fprintf f "%s" (fkind_to_string fk)
+    | Tvoid => F.fprintf f "void"
+    | Tfun false => F.fprintf f "_fn_"
+    | Tfun true => F.fprintf f "_fn_noreturn_"
+    | Tptr ({desc: Tarray _ | Tfun _} as typ) pk =>
+      F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
+    | Tptr typ pk => F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
+    | Tarray typ static_len =>
+      let pp_array_static_len fmt => (
+        fun
+        | Some static_len => IntLit.pp fmt static_len
+        | None => F.fprintf fmt "_"
+      );
+      F.fprintf f "%a[%a]" (pp_full pe) typ pp_array_static_len static_len
+    };
+  F.fprintf f "%a%a" pp_desc typ pp_quals typ
+}
+and pp_name_c_syntax pe f =>
+  fun
+  | CStruct name
+  | CUnion name
+  | ObjcClass name
+  | ObjcProtocol name => F.fprintf f "%a" QualifiedCppName.pp name
+  | CppClass name template_spec =>
+    F.fprintf f "%a%a" QualifiedCppName.pp name (pp_template_spec_info pe) template_spec
+  | JavaClass name => F.fprintf f "%a" Mangled.pp name
+and pp_template_spec_info pe f =>
+  fun
+  | NoTemplate => ()
+  | Template args => {
+      let pp_arg_opt f => (
+        fun
+        | Some typ => F.fprintf f "%a" (pp_full pe) typ
+        | None => F.fprintf f "_"
+      );
+      F.fprintf f "%s%a%s" (escape pe "<") (Pp.comma_seq pp_arg_opt) args (escape pe ">")
+    };
+
+
+/** Pretty print a type. Do nothing by default. */
+let pp pe f te =>
+  if Config.print_types {
+    pp_full pe f te
+  } else {
+    ()
+  };
+
+let to_string typ => {
+  let pp fmt => pp_full Pp.text fmt typ;
+  F.asprintf "%t" pp
+};
+
 module Name = {
   type t = name [@@deriving compare];
   let equal = [%compare.equal : t];
-  let name =
-    fun
-    | CStruct name
-    | CUnion name
-    | CppClass name _
-    | ObjcClass name
-    | ObjcProtocol name => QualifiedCppName.to_qual_string name
-    | JavaClass name => Mangled.to_string name;
   let qual_name =
     fun
     | CStruct name
     | CUnion name
-    | CppClass name _
     | ObjcClass name
     | ObjcProtocol name => name
+    | CppClass name templ_args => {
+        let template_suffix = F.asprintf "%a" (pp_template_spec_info Pp.text) templ_args;
+        QualifiedCppName.append_template_args_to_last name args::template_suffix
+      }
     | JavaClass _ => QualifiedCppName.empty;
-  let to_string tname => {
+  let name n =>
+    switch n {
+    | CStruct _
+    | CUnion _
+    | CppClass _ _
+    | ObjcClass _
+    | ObjcProtocol _ => qual_name n |> QualifiedCppName.to_qual_string
+    | JavaClass name => Mangled.to_string name
+    };
+  let pp fmt tname => {
     let prefix =
       fun
       | CStruct _ => "struct"
@@ -211,9 +292,9 @@ module Name = {
       | JavaClass _
       | ObjcClass _ => "class"
       | ObjcProtocol _ => "protocol";
-    prefix tname ^ " " ^ name tname
+    F.fprintf fmt "%s %a" (prefix tname) (pp_name_c_syntax Pp.text) tname
   };
-  let pp f typename => F.fprintf f "%s" (to_string typename);
+  let to_string = F.asprintf "%a" pp;
   let is_class =
     fun
     | CppClass _ _
@@ -281,61 +362,6 @@ module Set = Caml.Set.Make T;
 module Map = Caml.Map.Make T;
 
 module Tbl = Hashtbl.Make T;
-
-
-/** Pretty print a type with all the details, using the C syntax. */
-let rec pp_full pe f typ => {
-  let pp_quals f {quals} => {
-    if (is_const quals) {
-      F.fprintf f " const "
-    };
-    if (is_restrict quals) {
-      F.fprintf f " __restrict "
-    };
-    if (is_volatile quals) {
-      F.fprintf f " volatile "
-    }
-  };
-  let pp_desc f {desc} =>
-    switch desc {
-    | Tstruct tname =>
-      if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
-        F.fprintf f "%s" (Name.name tname |> Escape.escape_xml)
-      } else {
-        F.fprintf f "%s" (Name.name tname)
-      }
-    | Tint ik => F.fprintf f "%s" (ikind_to_string ik)
-    | Tfloat fk => F.fprintf f "%s" (fkind_to_string fk)
-    | Tvoid => F.fprintf f "void"
-    | Tfun false => F.fprintf f "_fn_"
-    | Tfun true => F.fprintf f "_fn_noreturn_"
-    | Tptr ({desc: Tarray _ | Tfun _} as typ) pk =>
-      F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk)
-    | Tptr typ pk => F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk)
-    | Tarray typ static_len =>
-      let pp_array_static_len fmt => (
-        fun
-        | Some static_len => IntLit.pp fmt static_len
-        | None => F.fprintf fmt "_"
-      );
-      F.fprintf f "%a[%a]" (pp_full pe) typ pp_array_static_len static_len
-    };
-  F.fprintf f "%a%a" pp_desc typ pp_quals typ
-};
-
-
-/** Pretty print a type. Do nothing by default. */
-let pp pe f te =>
-  if Config.print_types {
-    pp_full pe f te
-  } else {
-    ()
-  };
-
-let to_string typ => {
-  let pp fmt => pp_full Pp.text fmt typ;
-  F.asprintf "%t" pp
-};
 
 
 /** dump a type with all the details. */
@@ -1016,8 +1042,7 @@ module Struct = {
     statics: fields, /** static fields */
     supers: list Name.t, /** superclasses */
     methods: list Procname.t, /** methods defined */
-    annots: Annot.Item.t, /** annotations */
-    specialization: template_spec_info /** template specialization */
+    annots: Annot.Item.t /** annotations */
   };
   type lookup = Name.t => option t;
   let pp pe name f {fields, supers, methods, annots} =>
@@ -1044,23 +1069,8 @@ module Struct = {
     } else {
       F.fprintf f "%a" Name.pp name
     };
-  let internal_mk_struct
-      ::default=?
-      ::fields=?
-      ::statics=?
-      ::methods=?
-      ::supers=?
-      ::annots=?
-      ::specialization=?
-      () => {
-    let default_ = {
-      fields: [],
-      statics: [],
-      methods: [],
-      supers: [],
-      annots: Annot.Item.empty,
-      specialization: NoTemplate
-    };
+  let internal_mk_struct ::default=? ::fields=? ::statics=? ::methods=? ::supers=? ::annots=? () => {
+    let default_ = {fields: [], statics: [], methods: [], supers: [], annots: Annot.Item.empty};
     let mk_struct_
         ::default=default_
         ::fields=default.fields
@@ -1068,16 +1078,14 @@ module Struct = {
         ::methods=default.methods
         ::supers=default.supers
         ::annots=default.annots
-        ::specialization=default.specialization
         () => {
       fields,
       statics,
       methods,
       supers,
-      annots,
-      specialization
+      annots
     };
-    mk_struct_ ::?default ::?fields ::?statics ::?methods ::?supers ::?annots ::?specialization ()
+    mk_struct_ ::?default ::?fields ::?statics ::?methods ::?supers ::?annots ()
   };
 
   /** the element typ of the final extensible array in the given typ, if any */

@@ -32,7 +32,6 @@ let rec get_mangled_method_name function_decl_info method_decl_info =
 let get_template_info tenv (fdi : Clang_ast_t.function_decl_info) : Typ.template_spec_info =
   match fdi.fdi_template_specialization with
   | Some spec_info -> Typ.Template (
-      QualifiedCppName.empty,
       List.map spec_info.tsi_specialization_args ~f:(function
           | `Type qual_type -> Some (CType_decl.qual_type_to_sil_type tenv qual_type)
           | _ -> None))
