@@ -1434,7 +1434,7 @@ let do_analysis_closures exe_env : Tasks.closure list =
           Option.bind (Specs.get_summary proc_name)
             (fun summary -> summary.Specs.proc_desc_option)
       | None -> None in
-    let analyze_ondemand _ _ proc_desc =
+    let analyze_ondemand _ proc_desc =
       let proc_name = Procdesc.get_proc_name proc_desc in
       let tenv = Exe_env.get_tenv exe_env proc_name in
       if not (Procdesc.did_preanalysis proc_desc)

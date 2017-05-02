@@ -15,7 +15,7 @@ open! IStd
     will be analyzed *)
 val dirs_to_analyze : String.Set.t option
 
-type analyze_ondemand = SourceFile.t -> Specs.summary -> Procdesc.t -> Specs.summary
+type analyze_ondemand = Specs.summary -> Procdesc.t -> Specs.summary
 
 type get_proc_desc = Typ.Procname.t -> Procdesc.t option
 

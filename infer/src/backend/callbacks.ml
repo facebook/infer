@@ -130,7 +130,7 @@ let iterate_callbacks call_graph exe_env =
     (* analyze all the currently defined procedures *)
     Cg.get_defined_nodes call_graph in
 
-  let analyze_ondemand _ summary proc_desc =
+  let analyze_ondemand summary proc_desc =
     let proc_name = Procdesc.get_proc_name proc_desc in
     iterate_procedure_callbacks exe_env summary proc_name in
 

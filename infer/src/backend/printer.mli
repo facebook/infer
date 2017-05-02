@@ -46,7 +46,7 @@ val node_is_visited : Procdesc.Node.t -> bool * bool
 val node_start_session : Procdesc.Node.t -> int -> unit
 
 (** Write html file for the procedure. *)
-val write_proc_html : SourceFile.t -> Procdesc.t -> unit
+val write_proc_html : Procdesc.t -> unit
 
 (** Create filename.ext.html for each file in the cluster. *)
 val write_all_html_files : Cluster.t -> unit

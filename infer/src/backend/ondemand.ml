@@ -27,7 +27,7 @@ let dirs_to_analyze =
       changed_files String.Set.empty in
   Option.map ~f:process_changed_files SourceFile.changed_files_set
 
-type analyze_ondemand = SourceFile.t -> Specs.summary -> Procdesc.t -> Specs.summary
+type analyze_ondemand = Specs.summary -> Procdesc.t -> Specs.summary
 
 type get_proc_desc = Typ.Procname.t -> Procdesc.t option
 
@@ -131,28 +131,18 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     incr nesting;
     let attributes_opt =
       Specs.proc_resolve_attributes callee_pname in
-    let source =
-      Option.value_map
-        ~f:(fun (attributes : ProcAttributes.t) ->
-            let attribute_pname = attributes.proc_name in
-            if not (Typ.Procname.equal callee_pname attribute_pname) then
-              failwith ("ERROR: "^(Typ.Procname.to_string callee_pname)
-                        ^" not equal to "^(Typ.Procname.to_string attribute_pname));
-            attributes.loc.file)
-        ~default:SourceFile.invalid
-        attributes_opt in
     let callee_pdesc_option =
       if Config.dynamic_dispatch = `Lazy
       then Some callee_pdesc
       else None in
     let initial_summary = Specs.reset_summary callee_pname attributes_opt callee_pdesc_option in
     Specs.set_status callee_pname Specs.Active;
-    source, initial_summary in
+    initial_summary in
 
-  let postprocess source summary =
+  let postprocess summary =
     decr nesting;
     Specs.store_summary summary;
-    Printer.write_proc_html source callee_pdesc;
+    Printer.write_proc_html callee_pdesc;
     log_elapsed_time ();
     summary in
 
@@ -167,11 +157,11 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     new_summary in
 
   let old_state = save_global_state () in
-  let source, initial_summary = preprocess () in
+  let initial_summary = preprocess () in
   try
     let summary =
-      analyze_proc source initial_summary callee_pdesc
-      |> postprocess source in
+      analyze_proc initial_summary callee_pdesc
+      |> postprocess in
     restore_global_state old_state;
     summary
   with exn ->

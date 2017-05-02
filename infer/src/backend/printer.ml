@@ -416,10 +416,11 @@ let node_finish_session node =
 
 (** Write html file for the procedure.
     The boolean indicates whether to print whole seconds only *)
-let write_proc_html source pdesc =
+let write_proc_html pdesc =
   if Config.write_html then
     begin
       let pname = Procdesc.get_proc_name pdesc in
+      let source = (Procdesc.get_loc pdesc).file in
       let nodes = List.sort ~cmp:Procdesc.Node.compare (Procdesc.get_nodes pdesc) in
       let linenum = (Procdesc.Node.get_loc (List.hd_exn nodes)).Location.line in
       let fd, fmt =
