@@ -1299,9 +1299,8 @@ let update_summary tenv prev_summary specs phase res =
 
 
 (** Analyze the procedure and return the resulting summary. *)
-let analyze_proc exe_env proc_desc : Specs.summary =
+let analyze_proc tenv proc_desc : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  let tenv = Exe_env.get_tenv exe_env proc_name in
   reset_global_values proc_desc;
   let summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
   let go, get_results = perform_analysis_phase tenv summary proc_desc in
@@ -1344,7 +1343,7 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
 
 (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
     the procedures enabled after the analysis of [proc_name] *)
-let perform_transition exe_env tenv proc_name =
+let perform_transition proc_desc tenv proc_name =
   let transition summary =
     (* disable exceptions for leaks and protect against any other errors *)
     let joined_pres =
@@ -1352,11 +1351,7 @@ let perform_transition exe_env tenv proc_name =
       (* apply the start node to f, and do nothing in case of exception *)
       let apply_start_node f =
         try
-          match Exe_env.get_proc_desc exe_env proc_name with
-          | Some pdesc ->
-              let start_node = Procdesc.get_start_node pdesc in
-              f start_node
-          | None -> ()
+          f (Procdesc.get_start_node proc_desc)
         with exn when SymOp.exn_not_failure exn -> () in
       apply_start_node (do_before_node 0);
       try
@@ -1445,13 +1440,13 @@ let do_analysis_closures exe_env : Tasks.closure list =
           Preanal.do_dynamic_dispatch proc_desc (Exe_env.get_cg exe_env) tenv
         end;
       let summaryfp =
-        Config.run_in_footprint_mode (analyze_proc exe_env) proc_desc in
+        Config.run_in_footprint_mode (analyze_proc tenv) proc_desc in
       Specs.add_summary proc_name summaryfp;
 
-      perform_transition exe_env tenv proc_name;
+      perform_transition proc_desc tenv proc_name;
 
       let summaryre =
-        Config.run_in_re_execution_mode (analyze_proc exe_env) proc_desc in
+        Config.run_in_re_execution_mode (analyze_proc tenv) proc_desc in
       Specs.add_summary proc_name summaryre;
       summaryre in
     {
@@ -1517,30 +1512,30 @@ let print_stats_cfg proc_shadowed source cfg =
   let num_timeout = ref 0 in
   let compute_stats_proc proc_desc =
     let proc_name = Procdesc.get_proc_name proc_desc in
-    if proc_shadowed proc_desc ||
-       is_none (Specs.get_summary proc_name) then
-      L.out "print_stats: ignoring function %a which is also defined in another file@."
-        Typ.Procname.pp proc_name
-    else
-      let summary = Specs.get_summary_unsafe "print_stats_cfg" proc_name in
-      let stats = summary.Specs.stats in
-      let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-      incr num_proc;
-      let specs = Specs.get_specs_from_payload summary in
-      tot_specs := (List.length specs) + !tot_specs;
-      let () =
-        match specs,
-              Errlog.size
-                (fun ekind in_footprint ->
-                   Exceptions.equal_err_kind ekind Exceptions.Kerror && in_footprint)
-                err_log with
-        | [], 0 -> incr num_nospec_noerror_proc
-        | _, 0 -> incr num_spec_noerror_proc
-        | [], _ -> incr num_nospec_error_proc
-        | _, _ -> incr num_spec_error_proc in
-      tot_symops := !tot_symops + stats.Specs.symops;
-      if Option.is_some stats.Specs.stats_failure then incr num_timeout;
-      Errlog.extend_table err_table err_log in
+    match Specs.get_summary proc_name with
+    | None -> ()
+    | Some _ when proc_shadowed proc_desc ->
+        L.out "print_stats: ignoring function %a which is also defined in another file@."
+          Typ.Procname.pp proc_name
+    | Some summary ->
+        let stats = summary.Specs.stats in
+        let err_log = summary.Specs.attributes.ProcAttributes.err_log in
+        incr num_proc;
+        let specs = Specs.get_specs_from_payload summary in
+        tot_specs := (List.length specs) + !tot_specs;
+        let () =
+          match specs,
+                Errlog.size
+                  (fun ekind in_footprint ->
+                     Exceptions.equal_err_kind ekind Exceptions.Kerror && in_footprint)
+                  err_log with
+          | [], 0 -> incr num_nospec_noerror_proc
+          | _, 0 -> incr num_spec_noerror_proc
+          | [], _ -> incr num_nospec_error_proc
+          | _, _ -> incr num_spec_error_proc in
+        tot_symops := !tot_symops + stats.Specs.symops;
+        if Option.is_some stats.Specs.stats_failure then incr num_timeout;
+        Errlog.extend_table err_table err_log in
   let print_file_stats fmt () =
     let num_errors = Errlog.err_table_size_footprint Exceptions.Kerror err_table in
     let num_warnings = Errlog.err_table_size_footprint Exceptions.Kwarning err_table in
