@@ -1,3 +1,7 @@
+codetoanalyze/objc/linters-for-test-only/subclassing.m, A_foo:, 13, TEST_RETURN_METHOD, []
+codetoanalyze/objc/linters-for-test-only/subclassing.m, A_foo:, 19, TEST_RETURN_METHOD, []
+codetoanalyze/objc/linters-for-test-only/subclassing.m, B_bar, 28, TEST_RETURN_METHOD, []
+codetoanalyze/objc/linters-for-test-only/subclassing.m, B_bar, 34, TEST_RETURN_METHOD, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, B_bar, 35, TEST_ALL_METHODS, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, B_bar, 36, MACRO_TEST1, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, B_bar, 36, MACRO_TEST2, []

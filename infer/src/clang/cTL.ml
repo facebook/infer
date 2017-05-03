@@ -645,9 +645,11 @@ let rec eval_Atomic _pred_name _args an lcxt =
       CPredicates.decl_unavailable_in_supported_ios_sdk lcxt an
   | "within_responds_to_selector_block", [], an ->
       CPredicates.within_responds_to_selector_block lcxt an
+  | "method_return_type", [typ], an ->
+      CPredicates.method_return_type an typ
   | _ -> failwith
-           ("\nERROR: Undefined Predicate or wrong set of arguments: '"
-            ^ pred_name ^ "'\n")
+           ("ERROR: Undefined Predicate or wrong set of arguments: '"
+            ^ pred_name ^ "'")
 
 (* an, lcxt |= EF phi  <=>
    an, lcxt |= phi or exists an' in Successors(st): an', lcxt |= EF phi

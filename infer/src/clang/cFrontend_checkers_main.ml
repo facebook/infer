@@ -23,7 +23,8 @@ let parse_al_file fname channel : CTL.al_file option =
                  (s ^ " at " ^  (pos_str lexbuf)))
     | SyntaxError _
     | Ctl_parser.Error ->
-        raise (Ctl_parser_types.ALParsingException ( "SYNTAX ERROR at " ^ (pos_str lexbuf))) in
+        raise (Ctl_parser_types.ALParsingException
+                 ("SYNTAX ERROR at " ^ (pos_str lexbuf))) in
   let lexbuf = Lexing.from_channel channel in
   lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = fname };
   parse_with_error lexbuf

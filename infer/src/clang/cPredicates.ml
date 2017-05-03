@@ -8,6 +8,8 @@
  *)
 
 open! IStd
+open Lexing
+open Types_lexer
 
 let get_available_attr_ios_sdk an =
   let open Clang_ast_t in
@@ -368,6 +370,59 @@ let decl_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
       (Utils.compare_versions available_attr_ios_sdk max_allowed_version) > 0
   | _ -> false
 
+
+(* Temporary, partial equality function. Cover only what's covered
+   by the types_parser. It needs to be replaced by a real
+   comparison function for Clang_ast_t.c_type *)
+let tmp_c_type_equal t1 t2 =
+  let open Clang_ast_t in
+  match t1, t2 with
+  | BuiltinType(_ , `Char_U), BuiltinType(_ , `Char_U)
+  | BuiltinType(_, `Char16), BuiltinType(_, `Char16)
+  | BuiltinType(_, `Char32), BuiltinType(_, `Char32)
+  | BuiltinType(_, `WChar_U), BuiltinType(_, `WChar_U)
+  | BuiltinType(_, `Bool), BuiltinType(_, `Bool)
+  | BuiltinType(_, `Short), BuiltinType(_, `Short)
+  | BuiltinType(_, `Int), BuiltinType(_, `Int)
+  | BuiltinType(_, `Long), BuiltinType(_, `Long)
+  | BuiltinType(_, `Float), BuiltinType(_, `Float)
+  | BuiltinType(_, `Double), BuiltinType(_, `Double)
+  | BuiltinType(_, `Void), BuiltinType(_, `Void) -> true
+  | BuiltinType(_, _), BuiltinType(_, _) -> false
+  | _, _ -> failwith ("[ERROR]: Cannot compare types. Cannot continue...")
+
+
+
+(* Check whether a type_ptr and a string denote the same type *)
+let type_ptr_equal_type type_ptr type_str =
+  let pos_str lexbuf =
+    let pos = lexbuf.lex_curr_p in
+    pos.pos_fname ^ ":" ^ (string_of_int pos.pos_lnum) ^ ":" ^
+    (string_of_int  (pos.pos_cnum - pos.pos_bol + 1)) in
+  let lexbuf = Lexing.from_string type_str in
+  let c_type = try
+      (Types_parser.ctype_specifier token lexbuf)
+    with
+    | Ctl_parser_types.ALParsingException s ->
+        raise (Ctl_parser_types.ALParsingException
+                 ("Syntax Error when defining type" ^ s ))
+    | SyntaxError _
+    | Types_parser.Error ->
+        raise (Ctl_parser_types.ALParsingException
+                 ("SYNTAX ERROR at " ^ (pos_str lexbuf)))  in
+  match CAst_utils.get_type type_ptr with
+  | Some c_type' -> tmp_c_type_equal c_type  c_type'
+  | _ -> Logging.out "Couldn't find type....\n"; false
+
+
+let method_return_type an typ =
+  Logging.out "\n Executing method_return_type...";
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl (_, _, mdi)) ->
+      Logging.out "\n with parameter `%s`...." typ;
+      let qual_type = mdi.Clang_ast_t.omdi_result_type in
+      type_ptr_equal_type qual_type.Clang_ast_t.qt_type_ptr typ
+  | _ -> false
 
 let within_responds_to_selector_block (cxt:CLintersContext.context) an =
   let open Clang_ast_t in

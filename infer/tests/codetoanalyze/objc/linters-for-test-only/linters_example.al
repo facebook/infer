@@ -71,18 +71,29 @@ DEFINE-CHECKER GLOBAL_MACRO_SUBCLASS = {
 
 };
 
-DEFINE-CHECKER IMPORTED_MACRO_SUBCLASS = {
+ DEFINE-CHECKER IMPORTED_MACRO_SUBCLASS = {
 
-   SET report_when = imported_is_subclass_of("A");
+    SET report_when = imported_is_subclass_of("A");
 
-   SET message = "This is subclassing A. Class A should not be subclassed.";
+    SET message = "This is subclassing A. Class A should not be subclassed.";
 
-};
+ };
 
 DEFINE-CHECKER TEST_ALL_METHODS = {
 
   SET report_when = call_class_method(REGEXP(".*"), REGEXP(".*"));
 
   SET message = "Method call...";
+
+};
+
+DEFINE-CHECKER TEST_RETURN_METHOD = {
+
+  SET report_when =
+        WHEN
+            method_return_type("int")
+        HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET message = "Method return int";
 
 };
