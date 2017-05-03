@@ -29,7 +29,10 @@ module SourceKind = struct
     | "UserControlledURI" -> UserControlledURI
     | _ -> Other
 
-  let external_sources = QuandaryConfig.Source.of_json Config.quandary_sources
+  let external_sources =
+    List.map
+      ~f:(fun { QuandaryConfig.Source.procedure; kind; } -> Str.regexp procedure, kind)
+      (QuandaryConfig.Source.of_json Config.quandary_sources)
 
   let get pname tenv = match pname with
     | Typ.Procname.Java pname ->
@@ -70,9 +73,9 @@ module SourceKind = struct
                     (* check the list of externally specified sources *)
                     let procedure = class_name ^ "." ^ method_name in
                     List.find_map
-                      ~f:(fun (source_spec : QuandaryConfig.Source.t) ->
-                          if Str.string_match source_spec.procedure procedure 0
-                          then Some (of_string source_spec.kind)
+                      ~f:(fun (procedure_regex, kind) ->
+                          if Str.string_match procedure_regex procedure 0
+                          then Some (of_string kind)
                           else None)
                       external_sources
               end
@@ -193,7 +196,11 @@ module SinkKind = struct
     | "StartComponent" -> StartComponent
     | _ -> Other
 
-  let external_sinks = QuandaryConfig.Sink.of_json Config.quandary_sinks
+  let external_sinks =
+    List.map
+      ~f:(fun { QuandaryConfig.Sink.procedure; kind; index; } ->
+          Str.regexp procedure, kind, index)
+      (QuandaryConfig.Sink.of_json Config.quandary_sinks)
 
   let get pname actuals tenv =
     (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter only
@@ -278,12 +285,12 @@ module SinkKind = struct
                     (* check the list of externally specified sinks *)
                     let procedure = class_name ^ "." ^ method_name in
                     List.find_map
-                      ~f:(fun (sink_spec : QuandaryConfig.Sink.t) ->
-                          if Str.string_match sink_spec.procedure procedure 0
+                      ~f:(fun (procedure_regex, kind, index) ->
+                          if Str.string_match procedure_regex procedure 0
                           then
-                            let kind = of_string sink_spec.kind in
+                            let kind = of_string kind in
                             try
-                              let n = int_of_string sink_spec.index in
+                              let n = int_of_string index in
                               Some (taint_nth n kind ~report_reachable:true)
                             with Failure _ ->
                               (* couldn't parse the index, just taint everything *)

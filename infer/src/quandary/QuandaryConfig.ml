@@ -14,13 +14,13 @@ module F = Format
 (** utilities for importing JSON specifications of sources/sinks into Quandary *)
 
 module Source = struct
-  type t = { procedure : Str.regexp; kind : string; }
+  type t = { procedure : string; kind : string; }
 
   let of_json = function
     | `List sources ->
         let parse_source json =
           let open Yojson.Basic in
-          let procedure = Util.member "procedure" json |> Util.to_string |> Str.regexp in
+          let procedure = Util.member "procedure" json |> Util.to_string in
           let kind = Util.member "kind" json |> Util.to_string in
           { procedure; kind; } in
         List.map ~f:parse_source sources
@@ -29,13 +29,13 @@ module Source = struct
 end
 
 module Sink = struct
-  type t = { procedure : Str.regexp; kind : string; index : string}
+  type t = { procedure : string; kind : string; index : string}
 
   let of_json = function
     | `List sinks ->
         let parse_sink json =
           let open Yojson.Basic in
-          let procedure = Util.member "procedure" json |> Util.to_string |> Str.regexp in
+          let procedure = Util.member "procedure" json |> Util.to_string in
           let kind = Util.member "kind" json |> Util.to_string in
           let index =
             Util.member "index" json |> Util.to_string_option |> Option.value ~default:"all" in

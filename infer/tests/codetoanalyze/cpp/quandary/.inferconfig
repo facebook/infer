@@ -1,0 +1,37 @@
+{
+  "quandary-sources": [
+    {
+      "procedure": "__infer_taint_source",
+      "kind": "Other"
+    },
+    {
+      "procedure": "basics::Obj::method_source",
+      "kind": "Other"
+    },
+    {
+      "procedure": "basics::Obj::static_source",
+      "kind": "Other"
+    },
+    {
+      "procedure": "basics::template_source",
+      "kind": "Other"
+    }
+  ],
+  "quandary-sinks": [
+    {
+      "procedure": "__infer_taint_sink",
+      "kind": "Other",
+      "index": "0"
+    },
+    {
+      "procedure": "basics::Obj::method_sink",
+      "kind": "Other",
+      "index": "1"
+    },
+    {
+      "procedure": "basics::Obj::static_sink",
+      "kind": "Other",
+      "index": "0"
+    }
+  ]
+}

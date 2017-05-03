@@ -14,7 +14,10 @@ namespace basics {
 
 class Obj {
  public:
-  int field;
+  void* method_source() { return (void*)0; }
+  void method_sink(void*) {}
+  static void* static_source() { return (void*)0; }
+  static void static_sink(void*) {}
 };
 
 void* returnSource() { return __infer_taint_source(); }
@@ -42,5 +45,27 @@ void propagateBad() {
   void* source = __infer_taint_source();
   void* launderedSource = id(source);
   callSink(launderedSource);
+}
+
+// make sure specifying external sources/sinks as instance methods works
+void object_source_sink_bad(Obj obj) {
+  void* source = obj.method_source();
+  obj.method_sink(source);
+}
+
+// make sure specifying external sources/sinks as static methods works
+void static_source_sink_bad(Obj obj) {
+  void* source = Obj::static_source();
+  Obj::static_sink(source);
+}
+
+template <class T>
+T* template_source() {
+  return nullptr;
+}
+
+void template_source_bad() {
+  void* source = template_source<void*>();
+  __infer_taint_sink(source);
 }
 }
