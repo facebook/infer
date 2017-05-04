@@ -39,6 +39,7 @@ SOURCES_DEFAULT = \
   procdescs/MethodCall.m \
   property/main.c \
   resource_leaks/ResourceLeakExample.m \
+	resource_leaks/Dispatch_sources.m \
   shared/block/block-it.m \
   shared/block/dispatch.m \
   shared/category_procdesc/EOCPerson.m \

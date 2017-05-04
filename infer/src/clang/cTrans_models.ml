@@ -214,6 +214,8 @@ let dispatch_functions = [
   ("dispatch_group_notify", 2);
   ("dispatch_group_wait", 2);
   ("dispatch_barrier_async", 1);
+  ("dispatch_source_set_cancel_handler", 1);
+  ("dispatch_source_set_event_handler", 1);
 ]
 
 let is_dispatch_function_name function_name =
