@@ -96,7 +96,12 @@ let mutable_local_vars_advice context an =
     | _ -> None in
 
   let is_of_whitelisted_type qual_type =
-    let cpp_whitelist = ["CKComponentScope"; "FBTrackingNodeScope"; "FBTrackingCodeScope"] in
+    let cpp_whitelist = [
+      "CKComponentScope";
+      "FBTrackingNodeScope";
+      "FBTrackingCodeScope";
+      "CKComponentContext"
+    ] in
     let objc_whitelist = ["NSError"] in
     match get_referenced_type qual_type with
     | Some CXXRecordDecl (_, ndi, _, _, _, _, _, _) ->
