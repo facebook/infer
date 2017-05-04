@@ -54,6 +54,7 @@ let active_procedure_checkers () =
         Siof.checker, Config.siof;
         ThreadSafety.analyze_procedure, Config.threadsafety;
         BufferOverrunChecker.checker, Config.bufferoverrun;
+        Interproc.analyze_procedure, Config.biabduction;
       ] in
     List.map ~f:(fun (x, y) -> (x, y, Some Config.Clang)) l in
 

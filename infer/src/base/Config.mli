@@ -172,6 +172,7 @@ val angelic_execution : bool
 val annotation_reachability : Yojson.Basic.json
 val array_level : int
 val ast_file : string option
+val biabduction : bool
 val blacklist : string option
 val bootclasspath : string option
 val bo_debug : int

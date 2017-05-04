@@ -1394,6 +1394,29 @@ let interprocedural_algorithm_closures ~prepare_proc exe_env : Tasks.closure lis
     fun () -> process_one_proc proc_name in
   List.map ~f:create_closure procs_to_analyze
 
+let analyze_procedure_aux cg_opt tenv proc_desc =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  if not (Procdesc.did_preanalysis proc_desc)
+  then
+    begin
+      Preanal.do_liveness proc_desc tenv;
+      Preanal.do_abstraction proc_desc;
+      Option.iter cg_opt ~f:(fun cg -> Preanal.do_dynamic_dispatch proc_desc cg tenv);
+    end;
+  let summaryfp =
+    Config.run_in_footprint_mode (analyze_proc tenv) proc_desc in
+  Specs.add_summary proc_name summaryfp;
+  perform_transition proc_desc tenv proc_name;
+  let summaryre =
+    Config.run_in_re_execution_mode (analyze_proc tenv) proc_desc in
+  Specs.add_summary proc_name summaryre;
+  summaryre
+
+let analyze_procedure { Callbacks.summary; proc_desc; tenv } : Specs.summary =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  Specs.add_summary proc_name summary;
+  ignore (analyze_procedure_aux None tenv proc_desc);
+  Specs.get_summary_unsafe __FILE__ proc_name
 
 (** Create closures to perform the analysis of an exe_env *)
 let do_analysis_closures exe_env : Tasks.closure list =
@@ -1432,23 +1455,8 @@ let do_analysis_closures exe_env : Tasks.closure list =
     let analyze_ondemand _ proc_desc =
       let proc_name = Procdesc.get_proc_name proc_desc in
       let tenv = Exe_env.get_tenv exe_env proc_name in
-      if not (Procdesc.did_preanalysis proc_desc)
-      then
-        begin
-          Preanal.do_liveness proc_desc tenv;
-          Preanal.do_abstraction proc_desc;
-          Preanal.do_dynamic_dispatch proc_desc (Exe_env.get_cg exe_env) tenv
-        end;
-      let summaryfp =
-        Config.run_in_footprint_mode (analyze_proc tenv) proc_desc in
-      Specs.add_summary proc_name summaryfp;
-
-      perform_transition proc_desc tenv proc_name;
-
-      let summaryre =
-        Config.run_in_re_execution_mode (analyze_proc tenv) proc_desc in
-      Specs.add_summary proc_name summaryre;
-      summaryre in
+      let cg = Exe_env.get_cg exe_env in
+      analyze_procedure_aux (Some cg) tenv proc_desc in
     {
       Ondemand.analyze_ondemand;
       get_proc_desc;

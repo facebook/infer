@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! PVariant
 
 module L = Logging
 
@@ -134,9 +135,17 @@ let iterate_callbacks call_graph exe_env =
     let proc_name = Procdesc.get_proc_name proc_desc in
     iterate_procedure_callbacks exe_env summary proc_name in
 
+  let get_proc_desc proc_name =
+    match Exe_env.get_proc_desc exe_env proc_name with
+    | Some pdesc -> Some pdesc
+    | None when Config.dynamic_dispatch = `Lazy ->
+        Option.bind (Specs.get_summary proc_name)
+          (fun summary -> summary.Specs.proc_desc_option)
+    | None -> None in
+
   let callbacks = {
     Ondemand.analyze_ondemand;
-    get_proc_desc = Exe_env.get_proc_desc exe_env
+    get_proc_desc;
   } in
 
   (* Create and register on-demand analysis callback *)

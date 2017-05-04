@@ -589,6 +589,10 @@ and changed_files_index =
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
 
+let biabduction =
+  CLOpt.mk_bool ~long:"biabduction"
+    "Activate the separation logic based bi-abduction analysis using the checkers framework"
+
 and bufferoverrun, checkers, checkers_repeated_calls,
     crashcontext, eradicate, quandary, siof, threadsafety =
   let checkers =
@@ -1620,6 +1624,7 @@ and angelic_execution = !angelic_execution
 and annotation_reachability = !annotation_reachability
 and array_level = !array_level
 and ast_file = !ast_file
+and biabduction = !biabduction
 and blacklist = !blacklist
 and bootclasspath = !bootclasspath
 and bo_debug = !bo_debug

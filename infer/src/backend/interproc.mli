@@ -12,6 +12,9 @@ open! IStd
 
 (** Interprocedural Analysis *)
 
+(** Run the biabduction analysis on the given procedure *)
+val analyze_procedure : Callbacks.proc_callback_t
+
 (** Create closures to perform the analysis of an exe_env *)
 val do_analysis_closures : Exe_env.t -> Tasks.closure list
 

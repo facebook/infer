@@ -1,0 +1,1 @@
+codetoanalyze/c/biabduction/example.c, foo, 2, NULL_DEREFERENCE, [start of procedure foo()]
