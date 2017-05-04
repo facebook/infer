@@ -100,7 +100,8 @@ let mutable_local_vars_advice context an =
       "CKComponentScope";
       "FBTrackingNodeScope";
       "FBTrackingCodeScope";
-      "CKComponentContext"
+      "CKComponentContext";
+      "CKComponentKey"
     ] in
     let objc_whitelist = ["NSError"] in
     match get_referenced_type qual_type with
