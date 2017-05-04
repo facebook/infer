@@ -17,6 +17,8 @@ module F = Format
 module L = Logging
 module MF = MarkupFormatter
 
+let always_strong_update = true (* unsound but ok for bug catching *)
+
 module Condition =
 struct
   type t =
@@ -662,6 +664,7 @@ struct
 
   let can_strong_update : PowLoc.t -> bool
     = fun ploc ->
+      if always_strong_update then true else
       if Int.equal (PowLoc.cardinal ploc) 1 then Loc.is_var (PowLoc.choose ploc) else false
 
   let update_mem : PowLoc.t -> Val.t -> t -> t
