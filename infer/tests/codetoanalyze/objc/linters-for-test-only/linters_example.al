@@ -8,7 +8,7 @@ GLOBAL-MACROS {
 };
 
 
-// Check that class A is not subclassed.
+//Check that class A is not subclassed.
 DEFINE-CHECKER SUBCLASSING_TEST_EXAMPLE = {
 
    SET report_when =
@@ -22,7 +22,7 @@ DEFINE-CHECKER MACRO_TEST1 = {
 
   LET call_two_methods(x,y) = call_method(x) OR call_method(y);
 
-  SET report_when = call_two_methods("foo", "bar");
+  SET report_when = call_two_methods("foo:", "bar");
 
   SET message = "Error message here";
 
@@ -31,9 +31,9 @@ DEFINE-CHECKER MACRO_TEST1 = {
 // Test reverse parameter of macro
 DEFINE-CHECKER MACRO_TEST2 = {
 
-   LET my_macro_to_call_method_of_class(x,y) = call_instance_method(y,x);
+  LET my_macro_to_call_method_of_class(x,y) = call_instance_method(y,x);
 
-  SET report_when = my_macro_to_call_method_of_class("foo", "A");
+  SET report_when = my_macro_to_call_method_of_class("foo:", "A");
 
   SET message = "Error message here";
 
@@ -46,7 +46,7 @@ DEFINE-CHECKER MACRO_TEST3 = {
 
   LET call_my_macro(t,v) = my_macro_to_call_method_of_class(t,v);
 
-  SET report_when = call_my_macro("foo", "A");
+  SET report_when = call_my_macro("foo:", "A");
 
   SET message = "Error message here";
 

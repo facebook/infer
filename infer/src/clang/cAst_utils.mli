@@ -92,8 +92,6 @@ val is_syntactically_global_var : Clang_ast_t.decl -> bool
 (** true if a declaration is a constexpr variable *)
 val is_const_expr_var : Clang_ast_t.decl -> bool
 
-val is_ptr_to_objc_class : Clang_ast_t.c_type option -> string -> bool
-
 val full_name_of_decl_opt : Clang_ast_t.decl option -> QualifiedCppName.t
 
 (** Generates a key for a statement based on its sub-statements and the statement tag. *)

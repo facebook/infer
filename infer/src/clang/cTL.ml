@@ -594,30 +594,22 @@ let next_state_via_transition an trans =
 
 (* evaluate an atomic formula (i.e. a predicate) on a ast node an and a
    linter context lcxt. That is:  an, lcxt |= pred_name(params) *)
-let rec eval_Atomic _pred_name _args an lcxt =
+let rec eval_Atomic _pred_name args an lcxt =
   let pred_name = ALVar.formula_id_to_string _pred_name in
-  let args = List.map ~f:ALVar.alexp_to_string _args in
   match pred_name, args, an with
   | "call_method", [m], an -> CPredicates.call_method an m
-  | "call_method_strict", [m], an -> CPredicates.call_method_strict an m
   | "call_class_method", [c; m], an ->
       CPredicates.call_class_method an c m
-  | "call_class_method_strict", [c; m], an ->
-      CPredicates.call_class_method_strict an c m
   | "call_instance_method", [c; m], an ->
       CPredicates.call_instance_method an c m
-  | "call_instance_method_strict", [c; m], an ->
-      CPredicates.call_instance_method_strict an c m
   | "is_objc_interface_named", [name], an ->
       CPredicates.is_objc_interface_named an name
-  | "is_objc_interface_named_strict", [name], an ->
-      CPredicates.is_objc_interface_named_strict an name
-  | "property_name_contains_word", [word], an ->
-      CPredicates.property_name_contains_word word an
+  | "property_named", [word], an ->
+      CPredicates.property_named an word
   | "is_objc_extension", [], _ -> CPredicates.is_objc_extension lcxt
   | "is_global_var", [], an -> CPredicates.is_syntactically_global_var an
   | "is_const_var", [], an ->  CPredicates.is_const_expr_var an
-  | "call_function_named", args, an -> CPredicates.call_function_named args an
+  | "call_function_named", args, an -> CPredicates.call_function_named an args
   | "is_strong_property", [], an -> CPredicates.is_strong_property an
   | "is_assign_property", [], an -> CPredicates.is_assign_property an
   | "is_property_pointer_type", [], an -> CPredicates.is_property_pointer_type an
@@ -629,18 +621,15 @@ let rec eval_Atomic _pred_name _args an lcxt =
   | "is_objc_constructor", [], _ -> CPredicates.is_objc_constructor lcxt
   | "is_objc_dealloc", [], _ -> CPredicates.is_objc_dealloc lcxt
   | "captures_cxx_references", [], _ -> CPredicates.captures_cxx_references an
-  | "is_binop_with_kind", [str_kind], an ->
-      CPredicates.is_binop_with_kind str_kind an
-  | "is_unop_with_kind", [str_kind], an ->
-      CPredicates.is_unop_with_kind str_kind an
-  | "is_node", [nodename], an -> CPredicates.is_node nodename an
-  | "isa", [classname], an -> CPredicates.isa classname an
+  | "is_binop_with_kind", [kind], an ->
+      CPredicates.is_binop_with_kind an kind
+  | "is_unop_with_kind", [kind], an ->
+      CPredicates.is_unop_with_kind an kind
+  | "is_node", [nodename], an -> CPredicates.is_node an nodename
+  | "isa", [classname], an -> CPredicates.isa an classname
   | "declaration_has_name", [decl_name], an ->
       CPredicates.declaration_has_name an decl_name
-  | "declaration_has_name_strict", [decl_name], an ->
-      CPredicates.declaration_has_name_strict an decl_name
   | "is_class", [cname], an -> CPredicates.is_class an cname
-  | "is_class_strict", [cname], an -> CPredicates.is_class_strict an cname
   | "decl_unavailable_in_supported_ios_sdk", [], an ->
       CPredicates.decl_unavailable_in_supported_ios_sdk lcxt an
   | "within_responds_to_selector_block", [], an ->

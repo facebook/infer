@@ -63,11 +63,21 @@ type t = ALVar.formula_id * ALVar.alexp list(* (name, [param1,...,paramK]) *)
 (* true if and only if a substring of container matches the regular
    expression defined by contained
 *)
-let str_match_regex container contained =
-  let rexp = Str.regexp contained in
+let str_match_regex container re =
+  let rexp = Str.regexp re in
   try
     Str.search_forward rexp container 0 >= 0
   with Not_found -> false
+
+let compare_str_with_alexp s ae =
+  match ae with
+  | ALVar.Const s' ->
+      String.equal s s'
+  | ALVar.Regexp re -> str_match_regex s re
+  | _ ->
+      Logging.out "[WARNING]: ALVAR expression '%s' is not a constant or regexp\n"
+        (ALVar.alexp_to_string ae);
+      false
 
 let pp_predicate fmt (_name, _arglist) =
   let name = ALVar.formula_id_to_string _name in
@@ -77,54 +87,34 @@ let pp_predicate fmt (_name, _arglist) =
 let is_declaration_kind decl s =
   String.equal (Clang_ast_proj.get_decl_kind_string decl) s
 
-let _is_objc_interface_named comp an expected_name =
-  match an with
-  | Ctl_parser_types.Decl Clang_ast_t.ObjCInterfaceDecl(_, ni, _, _, _) ->
-      comp ni.ni_name expected_name
-  | _ -> false
-
-(* is an objc interface with name expected_name *)
-let is_objc_interface_named_strict an expected_name =
-  _is_objc_interface_named (String.equal) an expected_name
-
 (* is an objc interface with name expected_name *)
 let is_objc_interface_named an expected_name =
-  _is_objc_interface_named (str_match_regex) an expected_name
+  match an with
+  | Ctl_parser_types.Decl Clang_ast_t.ObjCInterfaceDecl(_, ni, _, _, _) ->
+      compare_str_with_alexp ni.ni_name expected_name
+  | _ -> false
 
-let _is_object_of_class_named comp receiver cname =
+(* checkes whether an object is of a certain class *)
+let is_object_of_class_named receiver cname =
   let open Clang_ast_t in
   match receiver with
   | PseudoObjectExpr (_, _, ei)
   | ImplicitCastExpr (_, _, ei, _)
   | ParenExpr (_, _, ei) ->
       (match CAst_utils.qual_type_to_objc_interface ei.ei_qual_type with
-       | Some interface -> comp (Ctl_parser_types.Decl interface) cname
+       | Some interface ->
+           is_objc_interface_named (Ctl_parser_types.Decl interface) cname
        | _ -> false)
   | _ -> false
 
-(* checkes whether an object is of a certain class *)
-let is_object_of_class_named_strict receiver cname =
-  _is_object_of_class_named (is_objc_interface_named_strict) receiver cname
-
-(* checkes whether an object is of a certain class *)
-let is_object_of_class_named receiver cname =
-  _is_object_of_class_named (is_objc_interface_named) receiver cname
-
-let _call_method comp an m =
+(* an |= call_method(m) where the name must be exactly m *)
+let call_method an m =
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) ->
-      comp omei.omei_selector m
+      compare_str_with_alexp omei.omei_selector m
   | _ -> false
 
-(* an |= call_method(m) where the name must be exactly m *)
-let call_method_strict an m =
-  _call_method (String.equal) an m
-
-(* an |= call_method(m) where we check is the name contains m *)
-let call_method an m =
-  _call_method (str_match_regex) an m
-
-let is_receiver_kind_class comp omei cname =
+let is_receiver_kind_class omei cname =
   let open Clang_ast_t in
   match omei.omei_receiver_kind  with
   | `Class ptr ->
@@ -132,48 +122,34 @@ let is_receiver_kind_class comp omei cname =
        | Some ObjCInterfaceType (_, ptr) ->
            (match CAst_utils.get_decl ptr with
             | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
-                comp ndi.ni_name cname
+                compare_str_with_alexp ndi.ni_name cname
             | _ -> false)
        | _ -> false)
   | _ -> false
 
-let _call_class_method comp an cname mname =
+let call_class_method an cname mname =
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) ->
-      is_receiver_kind_class comp omei cname &&
-      comp omei.omei_selector mname
+      is_receiver_kind_class omei cname &&
+      compare_str_with_alexp omei.omei_selector mname
   | _ -> false
-
-let call_class_method_strict an cname mname =
-  _call_class_method (String.equal) an cname mname
-
-let call_class_method an cname mname =
-  _call_class_method (str_match_regex) an cname mname
-
-let _call_instance_method comp an cname mname =
-  match an with
-  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, receiver :: _, _, omei)) ->
-      is_object_of_class_named receiver cname &&
-      comp omei.omei_selector mname
-  | _ -> false
-
-(* an is a node calling method mname of class cname.
-   The equality is strict.
-*)
-let call_instance_method_strict an cname mname =
-  _call_instance_method (String.equal) an cname mname
 
 (* an is a node calling method whose name contains mname of a
    class whose name contains cname.
 *)
 let call_instance_method an cname mname =
-  _call_instance_method (str_match_regex) an cname mname
+  match an with
+  | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, receiver :: _, _, omei)) ->
+      is_object_of_class_named receiver cname &&
+      compare_str_with_alexp omei.omei_selector mname
+  | _ -> false
 
-let property_name_contains_word word an =
+let property_named an name =
   match an with
   | Ctl_parser_types.Decl decl ->
       (match Clang_ast_proj.get_named_decl_tuple decl with
-       | Some (_, n) -> str_match_regex n.Clang_ast_t.ni_name word
+       | Some (_, n) ->
+           compare_str_with_alexp n.Clang_ast_t.ni_name name
        | _ -> false)
   | _ -> false
 
@@ -195,11 +171,11 @@ let decl_ref_is_in names st =
   | Clang_ast_t.DeclRefExpr (_, _, _, drti) ->
       (match drti.drti_decl_ref with
        | Some dr -> let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
-           List.exists ~f:(String.equal ndi.ni_name) names
+           List.exists ~f:(compare_str_with_alexp ndi.ni_name) names
        | _ -> false)
   | _ -> false
 
-let call_function_named names an =
+let call_function_named an names =
   match an with
   | Ctl_parser_types.Stmt st ->
       CAst_utils.exists_eventually_st decl_ref_is_in names st
@@ -291,69 +267,71 @@ let is_objc_dealloc context =
 let captures_cxx_references an =
   List.length (captured_variables_cxx_ref an) > 0
 
-let is_binop_with_kind str_kind an =
+let is_binop_with_kind an alexp_kind =
+  let str_kind = ALVar.alexp_to_string alexp_kind in
   if not (Clang_ast_proj.is_valid_binop_kind_name str_kind) then
     failwith ("Binary operator kind " ^ str_kind ^ " is not valid");
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.BinaryOperator (_, _, _, boi)) ->
-      String.equal (Clang_ast_proj.string_of_binop_kind boi.boi_kind) str_kind
+      compare_str_with_alexp (Clang_ast_proj.string_of_binop_kind boi.boi_kind) alexp_kind
   | _ -> false
 
-let is_unop_with_kind str_kind an =
+let is_unop_with_kind an alexp_kind =
+  let str_kind = ALVar.alexp_to_string alexp_kind in
   if not (Clang_ast_proj.is_valid_unop_kind_name str_kind) then
     failwith ("Unary operator kind " ^ str_kind ^ " is not valid");
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.UnaryOperator (_, _, _, uoi)) ->
-      String.equal (Clang_ast_proj.string_of_unop_kind uoi.uoi_kind) str_kind
+      compare_str_with_alexp (Clang_ast_proj.string_of_unop_kind uoi.uoi_kind) alexp_kind
   | _ -> false
 
-let is_node nodename an =
-  if not (Clang_ast_proj.is_valid_astnode_kind nodename) then
-    failwith ("Node " ^ nodename ^ " is not a valid AST node");
+let is_node an nodename =
+  let nodename_str = ALVar.alexp_to_string nodename in
+  if not (Clang_ast_proj.is_valid_astnode_kind nodename_str) then
+    failwith ("Node " ^ nodename_str ^ " is not a valid AST node");
   let an_str = match an with
     | Ctl_parser_types.Stmt s -> Clang_ast_proj.get_stmt_kind_string s
     | Ctl_parser_types.Decl d -> Clang_ast_proj.get_decl_kind_string d in
-  String.equal nodename an_str
+  compare_str_with_alexp an_str nodename
+
+let is_ptr_to_objc_class typ class_name =
+  match typ with
+  | Some Clang_ast_t.ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr}) ->
+      (match CAst_utils.get_desugared_type qt_type_ptr with
+       | Some ObjCInterfaceType (_, ptr) ->
+           (match CAst_utils.get_decl ptr with
+            | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
+                compare_str_with_alexp ndi.ni_name class_name
+            | _ -> false)
+       | _ -> false)
+  | _ -> false
 
 (*  node an is of class classname *)
-let isa classname an =
+let isa an classname =
   match an with
   | Ctl_parser_types.Stmt stmt ->
       (match Clang_ast_proj.get_expr_tuple stmt with
        | Some (_, _, expr_info) ->
            let typ = CAst_utils.get_desugared_type expr_info.ei_qual_type.qt_type_ptr in
-           CAst_utils.is_ptr_to_objc_class typ classname
-       | _ -> false)
-  | _ -> false
-
-let _declaration_has_name comp an name =
-  match an with
-  | Ctl_parser_types.Decl d ->
-      (match Clang_ast_proj.get_named_decl_tuple d with
-       | Some (_, ndi) -> comp ndi.ni_name name
+           is_ptr_to_objc_class typ classname
        | _ -> false)
   | _ -> false
 
 (* an is a declaration whose name contains a regexp defined by re *)
-let declaration_has_name an re =
-  _declaration_has_name (str_match_regex) an re
-
-(* an is a declaration called precisely name *)
-let declaration_has_name_strict an name =
-  _declaration_has_name (String.equal) an name
-
-let _is_class comp an re =
+let declaration_has_name an name =
   match an with
-  | Ctl_parser_types.Decl (Clang_ast_t.ObjCInterfaceDecl _)
-  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl _) ->
-      _declaration_has_name comp an re
+  | Ctl_parser_types.Decl d ->
+      (match Clang_ast_proj.get_named_decl_tuple d with
+       | Some (_, ndi) -> compare_str_with_alexp ndi.ni_name name
+       | _ -> false)
   | _ -> false
 
 let is_class an re =
-  _is_class (str_match_regex) an re
-
-let is_class_strict an name =
-  _is_class (String.equal) an name
+  match an with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCInterfaceDecl _)
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCImplementationDecl _) ->
+      declaration_has_name an re
+  | _ -> false
 
 let decl_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
   let allowed_os_versions =
@@ -415,10 +393,10 @@ let type_ptr_equal_type type_ptr type_str =
   | _ -> Logging.out "Couldn't find type....\n"; false
 
 
-let method_return_type an typ =
+let method_return_type an _typ =
   Logging.out "\n Executing method_return_type...";
-  match an with
-  | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl (_, _, mdi)) ->
+  match an, _typ with
+  | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl (_, _, mdi)), ALVar.Const typ ->
       Logging.out "\n with parameter `%s`...." typ;
       let qual_type = mdi.Clang_ast_t.omdi_result_type in
       type_ptr_equal_type qual_type.Clang_ast_t.qt_type_ptr typ

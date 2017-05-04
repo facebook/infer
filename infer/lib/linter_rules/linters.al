@@ -81,10 +81,10 @@ DEFINE-CHECKER BAD_POINTER_COMPARISON = {
 DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 
 	LET exists_method_calling_addObserver =
-		 call_method_strict("addObserver:selector:name:object:") HOLDS-EVENTUALLY;
+		 call_method("addObserver:selector:name:object:") HOLDS-EVENTUALLY;
 
 	LET exists_method_calling_addObserverForName =
-	   call_method_strict("addObserverForName:object:queue:usingBlock:") HOLDS-EVENTUALLY;
+	   call_method("addObserverForName:object:queue:usingBlock:") HOLDS-EVENTUALLY;
 
 	LET add_observer =
 	   exists_method_calling_addObserver OR exists_method_calling_addObserverForName;
@@ -95,10 +95,10 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 			 HOLDS-EVENTUALLY;
 
 	LET exists_method_calling_removeObserver =
-	     call_method_strict("removeObserver:") HOLDS-EVENTUALLY;
+	     call_method("removeObserver:") HOLDS-EVENTUALLY;
 
 	LET exists_method_calling_removeObserverName =
-		  call_method_strict("removeObserver:name:object:") HOLDS-EVENTUALLY;
+		  call_method("removeObserver:name:object:") HOLDS-EVENTUALLY;
 
 	LET remove_observer =
 				exists_method_calling_removeObserver OR exists_method_calling_removeObserverName;
@@ -137,11 +137,11 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 
 DEFINE-CHECKER STRONG_DELEGATE_WARNING = {
 
-  LET name_contains_delegate = property_name_contains_word(REGEXP("[dD]elegate"));
+  LET name_contains_delegate = property_named(REGEXP("[dD]elegate"));
   LET name_does_not_contain_delegates =
-					NOT property_name_contains_word(REGEXP("[dD]elegates"));
+					NOT property_named(REGEXP("[dD]elegates"));
   LET name_does_not_contains_queue =
-					NOT property_name_contains_word(REGEXP("[qQ]ueue"));
+					NOT property_named(REGEXP("[qQ]ueue"));
 
   SET report_when =
 	    WHEN

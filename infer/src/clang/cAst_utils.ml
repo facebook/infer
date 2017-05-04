@@ -238,18 +238,6 @@ let is_const_expr_var decl =
   | Clang_ast_t.VarDecl (_, _ ,_, vdi) -> vdi.vdi_is_const_expr
   | _ -> false
 
-let is_ptr_to_objc_class typ class_name =
-  match typ with
-  | Some Clang_ast_t.ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr}) ->
-      (match get_desugared_type qt_type_ptr with
-       | Some ObjCInterfaceType (_, ptr) ->
-           (match get_decl ptr with
-            | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
-                String.equal ndi.ni_name class_name
-            | _ -> false)
-       | _ -> false)
-  | _ -> false
-
 let full_name_of_decl_opt decl_opt =
   match decl_opt with
   | Some decl ->
