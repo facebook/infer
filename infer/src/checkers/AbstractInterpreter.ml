@@ -14,7 +14,7 @@ module L = Logging
 type 'a state = { pre: 'a; post: 'a; visit_count: int; }
 
 module type S = sig
-  module TransferFunctions : TransferFunctions.S
+  module TransferFunctions : TransferFunctions.SIL
 
   module InvariantMap : Caml.Map.S with type key = TransferFunctions.CFG.id
 
@@ -44,7 +44,7 @@ end
 
 module MakeNoCFG
     (Scheduler : Scheduler.S)
-    (TransferFunctions : TransferFunctions.S with module CFG = Scheduler.CFG) = struct
+    (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) = struct
 
   module CFG = Scheduler.CFG
   module InvariantMap = ProcCfg.NodeIdMap (CFG)
@@ -167,8 +167,8 @@ module Interprocedural (Summ : Summary.S) = struct
 
 end
 
-module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.Make) =
+module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.MakeSIL) =
   MakeNoCFG (S (C)) (T (C))
 
-module Make (C : ProcCfg.S) (T : TransferFunctions.Make) =
+module Make (C : ProcCfg.S) (T : TransferFunctions.MakeSIL) =
   MakeWithScheduler (C) (Scheduler.ReversePostorder) (T)

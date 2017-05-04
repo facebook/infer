@@ -49,7 +49,8 @@ module MockTaintAnalysis = TaintAnalysis.Make(struct
     let is_taintable_type _ = true
   end)
 
-module TestInterpreter = AnalyzerTester.Make (ProcCfg.Normal) (MockTaintAnalysis.TransferFunctions)
+module TestInterpreter =
+  AnalyzerTester.Make (ProcCfg.Normal) (LowerHil.Make (MockTaintAnalysis.TransferFunctions))
 
 let tests =
   let open OUnit2 in
@@ -89,7 +90,7 @@ let tests =
            if not (MockTrace.is_empty t)
            then (ap, t) :: acc
            else acc)
-        astate.MockTaintAnalysis.Domain.access_tree
+        (fst astate)
         [] in
     PrettyPrintable.pp_collection ~pp_item fmt (List.rev trace_assocs) in
   let assign_to_source ret_str =
@@ -225,5 +226,5 @@ let tests =
   ] |> TestInterpreter.create_tests
       ~pp_opt:pp_sparse
       FormalMap.empty
-      ~initial:MockTaintAnalysis.Domain.empty in
+      ~initial:(MockTaintAnalysis.Domain.empty, IdAccessPathMapDomain.empty) in
   "taint_test_suite">:::test_list

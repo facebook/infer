@@ -384,295 +384,283 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         false
 
-  let exec_instr (astate : Domain.astate) ({ ProcData.extras; tenv; pdesc; } as proc_data) _ instr =
+  let add_reads exps loc accesses locks attribute_map proc_data =
+    List.fold
+      ~f:(fun acc exp -> add_access exp loc Read acc locks attribute_map proc_data)
+      exps
+      ~init:accesses
+
+  let exec_instr
+      (astate : Domain.astate)
+      ({ ProcData.extras; tenv; pdesc; } as proc_data)
+      _
+      (instr : HilInstr.t) =
     let open Domain in
-    let add_reads exps loc accesses locks attribute_map proc_data =
-      List.fold
-        ~f:(fun acc exp -> add_access exp loc Read acc locks attribute_map proc_data)
-        exps
-        ~init:accesses in
-    let exec_instr_ = function
-      | HilInstr.Call (Some ret_base, Direct procname, actuals, _, loc)
-        when acquires_ownership procname tenv ->
-          let accesses =
-            add_reads actuals loc astate.accesses astate.locks astate.attribute_map proc_data in
-          let attribute_map =
-            AttributeMapDomain.add_attribute
-              (ret_base, []) Attribute.unconditionally_owned astate.attribute_map in
-          { astate with accesses; attribute_map; }
+    match instr with
+    | Call (Some ret_base, Direct procname, actuals, _, loc)
+      when acquires_ownership procname tenv ->
+        let accesses =
+          add_reads actuals loc astate.accesses astate.locks astate.attribute_map proc_data in
+        let attribute_map =
+          AttributeMapDomain.add_attribute
+            (ret_base, []) Attribute.unconditionally_owned astate.attribute_map in
+        { astate with accesses; attribute_map; }
 
-      | HilInstr.Call (ret_opt, Direct callee_pname, actuals, call_flags, loc) ->
-          let accesses =
-            add_reads actuals loc astate.accesses astate.locks astate.attribute_map proc_data in
-          let astate = { astate with accesses; } in
-          let astate_callee =
-            (* assuming that modeled procedures do not have useful summaries *)
-            if is_thread_utils_method "assertMainThread" callee_pname
-            then
-              { astate with threads = true; }
-            else
-              match get_lock_model callee_pname with
-              | Lock ->
-                  { astate with locks = true; }
-              | Unlock ->
-                  { astate with locks = false; }
-              | LockedIfTrue ->
-                  begin
-                    match ret_opt with
-                    | Some ret_access_path ->
-                        let attribute_map =
-                          AttributeMapDomain.add_attribute
-                            (ret_access_path, [])
-                            (Choice Choice.LockHeld)
-                            astate.attribute_map in
-                        { astate with attribute_map; }
-                    | None ->
-                        failwithf
-                          "Procedure %a specified as returning boolean, but returns nothing"
-                          Typ.Procname.pp callee_pname
-                  end
-              | NoEffect ->
-                  match get_summary pdesc callee_pname actuals loc tenv with
-                  | Some (callee_threads, callee_locks, callee_accesses, return_attributes) ->
-                      let update_caller_accesses pre callee_accesses caller_accesses =
-                        let combined_accesses =
-                          PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
-                          |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses) in
-                        AccessDomain.add pre combined_accesses caller_accesses in
-                      let locks = callee_locks || astate.locks in
-                      let threads = callee_threads || astate.threads in
-                      let unprotected = is_unprotected locks pdesc in
-                      (* add [ownership_accesses] to the [accesses_acc] with a protected pre if
-                         [exp] is owned, and an appropriate unprotected pre otherwise *)
-                      let add_ownership_access ownership_accesses actual_exp accesses_acc =
-                        match actual_exp with
-                        | HilExp.Constant _ ->
-                            (* the actual is a constant, so it's owned in the caller. *)
-                            accesses_acc
-                        | HilExp.AccessPath actual_access_path ->
-                            if is_owned actual_access_path astate.attribute_map
-                            then
-                              (* the actual passed to the current callee is owned. drop all the
-                                   conditional accesses for that actual, since they're all safe *)
-                              accesses_acc
-                            else
-                              let pre =
-                                if unprotected
-                                then
-                                  let base = fst actual_access_path in
-                                  match FormalMap.get_formal_index base extras with
-                                  | Some formal_index ->
-                                      (* the actual passed to the current callee is rooted in a
-                                           formal *)
-                                      AccessPrecondition.Unprotected (Some formal_index)
-                                  | None ->
-                                      match
-                                        AttributeMapDomain.get_conditional_ownership_index
-                                          actual_access_path
-                                          astate.attribute_map
-                                      with
-                                      | Some formal_index ->
-                                          (* access path conditionally owned if [formal_index] is
-                                               owned *)
-                                          AccessPrecondition.Unprotected (Some formal_index)
-                                      | None ->
-                                          (* access path not rooted in a formal and not
-                                               conditionally owned *)
-                                          AccessPrecondition.unprotected
-                                else
-                                  (* access protected by held lock *)
-                                  AccessPrecondition.Protected in
-                              update_caller_accesses pre ownership_accesses accesses_acc
-                        | _ ->
-                            (* couldn't find access path, don't know if it's owned *)
-                            update_caller_accesses
-                              AccessPrecondition.unprotected ownership_accesses accesses_acc in
-                      let accesses =
-                        let update_accesses pre callee_accesses accesses_acc = match pre with
-                          | AccessPrecondition.Protected ->
-                              update_caller_accesses pre callee_accesses accesses_acc
-                          | AccessPrecondition.Unprotected None ->
-                              let pre' =
-                                if unprotected
-                                then pre
-                                else AccessPrecondition.Protected in
-                              update_caller_accesses pre' callee_accesses accesses_acc
-                          | AccessPrecondition.Unprotected (Some index) ->
-                              add_ownership_access
-                                callee_accesses (List.nth_exn actuals index) accesses_acc in
-                        AccessDomain.fold update_accesses callee_accesses astate.accesses in
-                      let attribute_map =
-                        propagate_return_attributes
-                          ret_opt
-                          return_attributes
-                          actuals
-                          astate.attribute_map
-                          extras in
-                      { astate with locks; threads; accesses; attribute_map; }
-                  | None ->
-                      let should_assume_returns_ownership (call_flags : CallFlags.t) actuals =
-                        (* assume non-interface methods with no summary and no parameters return
-                           ownership *)
-                        not (call_flags.cf_interface) && List.is_empty actuals in
-                      if is_box callee_pname
-                      then
-                        match ret_opt, actuals with
-                        | Some ret, HilExp.AccessPath actual_ap :: _
-                          when AttributeMapDomain.has_attribute
-                              actual_ap Functional astate.attribute_map ->
-                            (* TODO: check for constants, which are functional? *)
-                            let attribute_map =
-                              AttributeMapDomain.add_attribute
-                                (ret, [])
-                                Functional
-                                astate.attribute_map in
-                            { astate with attribute_map; }
-                        | _ ->
-                            astate
-                      else if should_assume_returns_ownership call_flags actuals
-                      then
-                        match ret_opt with
-                        | Some ret ->
-                            let attribute_map =
-                              AttributeMapDomain.add_attribute
-                                (ret, [])
-                                Attribute.unconditionally_owned
-                                astate.attribute_map in
-                            { astate with attribute_map; }
-                        | None ->
-                            astate
-                      else
-                        astate in
-          begin
-            match ret_opt with
-            | Some (_, { Typ.desc=Typ.Tint ILong | Tfloat FDouble }) ->
-                (* writes to longs and doubles are not guaranteed to be atomic in Java, so don't
-                   bother tracking whether a returned long or float value is functional *)
-                astate_callee
-            | Some ret ->
-                let add_if_annotated predicate attribute attribute_map =
-                  if PatternMatch.override_exists predicate tenv callee_pname
-                  then
-                    AttributeMapDomain.add_attribute (ret, []) attribute attribute_map
-                  else
-                    attribute_map in
-                let attribute_map =
-                  add_if_annotated is_functional Functional astate_callee.attribute_map
-                  |> add_if_annotated
-                    (has_return_annot Annotations.ia_is_returns_ownership)
-                    Domain.Attribute.unconditionally_owned in
-                { astate_callee with attribute_map; }
-            | _ ->
-                astate_callee
-          end
-
-      | HilInstr.Write (lhs_access_path, rhs_exp, loc) ->
-          let rhs_accesses =
-            add_access
-              rhs_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
-          let rhs_access_paths = HilExp.get_access_paths rhs_exp in
-          let is_functional =
-            not (List.is_empty rhs_access_paths) &&
-            List.for_all
-              ~f:(fun access_path ->
-                  AttributeMapDomain.has_attribute access_path Functional astate.attribute_map)
-              rhs_access_paths in
-          let accesses =
-            if is_functional
-            then
-              (* we want to forget about writes to @Functional fields altogether, otherwise we'll
-                 report spurious read/write races *)
-              rhs_accesses
-            else
-              add_access
-                (AccessPath lhs_access_path)
-                loc
-                Write
-                rhs_accesses
-                astate.locks
-                astate.attribute_map
-                proc_data in
-          let attribute_map =
-            propagate_attributes
-              lhs_access_path (HilExp.get_access_paths rhs_exp) astate.attribute_map extras in
-          { astate with accesses; attribute_map; }
-
-      | HilInstr.Assume (assume_exp, _, _, loc) ->
-          let rec eval_binop op var e1 e2 =
-            match eval_bexp var e1, eval_bexp var e2 with
-            | Some b1, Some b2 -> Some (op b1 b2)
-            | _ -> None
-          (* return Some bool_value if the given boolean expression evaluates to bool_value when
-             [var] is set to true. return None if it has free variables that stop us from
-             evaluating it *)
-          and eval_bexp var = function
-            | HilExp.AccessPath ap when AccessPath.Raw.equal ap var ->
-                Some true
-            | HilExp.Constant c ->
-                Some (not (Const.iszero_int_float c))
-            | HilExp.UnaryOperator (Unop.LNot, e, _) ->
-                let b_opt = eval_bexp var e in
-                Option.map ~f:not b_opt
-            | HilExp.BinaryOperator (Binop.LAnd, e1, e2) ->
-                eval_binop (&&) var e1 e2
-            | HilExp.BinaryOperator (Binop.LOr, e1, e2) ->
-                eval_binop (||) var e1 e2
-            | HilExp.BinaryOperator (Binop.Eq, e1, e2) ->
-                eval_binop Bool.equal var e1 e2
-            | HilExp.BinaryOperator (Binop.Ne, e1, e2) ->
-                eval_binop (<>) var e1 e2
-            | _ ->
-                (* non-boolean expression; can't evaluate it *)
-                None in
-          let add_choice bool_value acc = function
-            | Choice.LockHeld ->
-                let locks = bool_value in
-                { acc with locks; }
-            | Choice.OnMainThread ->
-                let threads = bool_value in
-                { acc with threads; } in
-
-          let accesses =
-            add_access
-              assume_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
-          let astate' =
-            match HilExp.get_access_paths assume_exp with
-            | [access_path] ->
-                let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
+    | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc) ->
+        let accesses =
+          add_reads actuals loc astate.accesses astate.locks astate.attribute_map proc_data in
+        let astate = { astate with accesses; } in
+        let astate_callee =
+          (* assuming that modeled procedures do not have useful summaries *)
+          if is_thread_utils_method "assertMainThread" callee_pname
+          then
+            { astate with threads = true; }
+          else
+            match get_lock_model callee_pname with
+            | Lock ->
+                { astate with locks = true; }
+            | Unlock ->
+                { astate with locks = false; }
+            | LockedIfTrue ->
                 begin
-                  match eval_bexp access_path assume_exp with
-                  | Some bool_value ->
-                      (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
-                         add the constraint that the the choice must be [bool_value] to the state *)
-                      List.fold ~f:(add_choice bool_value) ~init:astate choices
+                  match ret_opt with
+                  | Some ret_access_path ->
+                      let attribute_map =
+                        AttributeMapDomain.add_attribute
+                          (ret_access_path, [])
+                          (Choice Choice.LockHeld)
+                          astate.attribute_map in
+                      { astate with attribute_map; }
                   | None ->
-                      astate
+                      failwithf
+                        "Procedure %a specified as returning boolean, but returns nothing"
+                        Typ.Procname.pp callee_pname
                 end
-            | _ ->
-                astate in
-          { astate' with accesses; }
-      | (HilInstr.Call (_, Indirect _, _, _, _) as hil_instr) ->
-          failwithf "Unexpected indirect call instruction %a" HilInstr.pp hil_instr in
+            | NoEffect ->
+                match get_summary pdesc callee_pname actuals loc tenv with
+                | Some (callee_threads, callee_locks, callee_accesses, return_attributes) ->
+                    let update_caller_accesses pre callee_accesses caller_accesses =
+                      let combined_accesses =
+                        PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
+                        |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses) in
+                      AccessDomain.add pre combined_accesses caller_accesses in
+                    let locks = callee_locks || astate.locks in
+                    let threads = callee_threads || astate.threads in
+                    let unprotected = is_unprotected locks pdesc in
+                    (* add [ownership_accesses] to the [accesses_acc] with a protected pre if
+                       [exp] is owned, and an appropriate unprotected pre otherwise *)
+                    let add_ownership_access ownership_accesses actual_exp accesses_acc =
+                      match actual_exp with
+                      | HilExp.Constant _ ->
+                          (* the actual is a constant, so it's owned in the caller. *)
+                          accesses_acc
+                      | HilExp.AccessPath actual_access_path ->
+                          if is_owned actual_access_path astate.attribute_map
+                          then
+                            (* the actual passed to the current callee is owned. drop all the
+                                 conditional accesses for that actual, since they're all safe *)
+                            accesses_acc
+                          else
+                            let pre =
+                              if unprotected
+                              then
+                                let base = fst actual_access_path in
+                                match FormalMap.get_formal_index base extras with
+                                | Some formal_index ->
+                                    (* the actual passed to the current callee is rooted in a
+                                         formal *)
+                                    AccessPrecondition.Unprotected (Some formal_index)
+                                | None ->
+                                    match
+                                      AttributeMapDomain.get_conditional_ownership_index
+                                        actual_access_path
+                                        astate.attribute_map
+                                    with
+                                    | Some formal_index ->
+                                        (* access path conditionally owned if [formal_index] is
+                                             owned *)
+                                        AccessPrecondition.Unprotected (Some formal_index)
+                                    | None ->
+                                        (* access path not rooted in a formal and not
+                                             conditionally owned *)
+                                        AccessPrecondition.unprotected
+                              else
+                                (* access protected by held lock *)
+                                AccessPrecondition.Protected in
+                            update_caller_accesses pre ownership_accesses accesses_acc
+                      | _ ->
+                          (* couldn't find access path, don't know if it's owned *)
+                          update_caller_accesses
+                            AccessPrecondition.unprotected ownership_accesses accesses_acc in
+                    let accesses =
+                      let update_accesses pre callee_accesses accesses_acc = match pre with
+                        | AccessPrecondition.Protected ->
+                            update_caller_accesses pre callee_accesses accesses_acc
+                        | AccessPrecondition.Unprotected None ->
+                            let pre' =
+                              if unprotected
+                              then pre
+                              else AccessPrecondition.Protected in
+                            update_caller_accesses pre' callee_accesses accesses_acc
+                        | AccessPrecondition.Unprotected (Some index) ->
+                            add_ownership_access
+                              callee_accesses (List.nth_exn actuals index) accesses_acc in
+                      AccessDomain.fold update_accesses callee_accesses astate.accesses in
+                    let attribute_map =
+                      propagate_return_attributes
+                        ret_opt
+                        return_attributes
+                        actuals
+                        astate.attribute_map
+                        extras in
+                    { locks; threads; accesses; attribute_map; }
+                | None ->
+                    let should_assume_returns_ownership (call_flags : CallFlags.t) actuals =
+                      (* assume non-interface methods with no summary and no parameters return
+                         ownership *)
+                      not (call_flags.cf_interface) && List.is_empty actuals in
+                    if is_box callee_pname
+                    then
+                      match ret_opt, actuals with
+                      | Some ret, HilExp.AccessPath actual_ap :: _
+                        when AttributeMapDomain.has_attribute
+                            actual_ap Functional astate.attribute_map ->
+                          (* TODO: check for constants, which are functional? *)
+                          let attribute_map =
+                            AttributeMapDomain.add_attribute
+                              (ret, [])
+                              Functional
+                              astate.attribute_map in
+                          { astate with attribute_map; }
+                      | _ ->
+                          astate
+                    else if should_assume_returns_ownership call_flags actuals
+                    then
+                      match ret_opt with
+                      | Some ret ->
+                          let attribute_map =
+                            AttributeMapDomain.add_attribute
+                              (ret, [])
+                              Attribute.unconditionally_owned
+                              astate.attribute_map in
+                          { astate with attribute_map; }
+                      | None ->
+                          astate
+                    else
+                      astate in
+        begin
+          match ret_opt with
+          | Some (_, { Typ.desc=Typ.Tint ILong | Tfloat FDouble }) ->
+              (* writes to longs and doubles are not guaranteed to be atomic in Java, so don't
+                 bother tracking whether a returned long or float value is functional *)
+              astate_callee
+          | Some ret ->
+              let add_if_annotated predicate attribute attribute_map =
+                if PatternMatch.override_exists predicate tenv callee_pname
+                then
+                  AttributeMapDomain.add_attribute (ret, []) attribute attribute_map
+                else
+                  attribute_map in
+              let attribute_map =
+                add_if_annotated is_functional Functional astate_callee.attribute_map
+                |> add_if_annotated
+                  (has_return_annot Annotations.ia_is_returns_ownership)
+                  Domain.Attribute.unconditionally_owned in
+              { astate_callee with attribute_map; }
+          | _ ->
+              astate_callee
+        end
 
-    let f_resolve_id id =
-      try Some (IdAccessPathMapDomain.find id astate.id_map)
-      with Not_found -> None in
-    match HilInstr.of_sil ~f_resolve_id instr with
-    | Bind (id, access_path) ->
-        let id_map = IdAccessPathMapDomain.add id access_path astate.id_map in
-        { astate with id_map; }
-    | Unbind ids ->
-        let id_map =
-          List.fold
-            ~f:(fun acc id -> IdAccessPathMapDomain.remove id acc) ~init:astate.id_map ids in
-        { astate with id_map; }
-    | Instr hil_instr ->
-        exec_instr_ hil_instr
-    | Ignore ->
-        astate
+    | Write (lhs_access_path, rhs_exp, loc) ->
+        let rhs_accesses =
+          add_access
+            rhs_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
+        let rhs_access_paths = HilExp.get_access_paths rhs_exp in
+        let is_functional =
+          not (List.is_empty rhs_access_paths) &&
+          List.for_all
+            ~f:(fun access_path ->
+                AttributeMapDomain.has_attribute access_path Functional astate.attribute_map)
+            rhs_access_paths in
+        let accesses =
+          if is_functional
+          then
+            (* we want to forget about writes to @Functional fields altogether, otherwise we'll
+               report spurious read/write races *)
+            rhs_accesses
+          else
+            add_access
+              (AccessPath lhs_access_path)
+              loc
+              Write
+              rhs_accesses
+              astate.locks
+              astate.attribute_map
+              proc_data in
+        let attribute_map =
+          propagate_attributes
+            lhs_access_path (HilExp.get_access_paths rhs_exp) astate.attribute_map extras in
+        { astate with accesses; attribute_map; }
+
+    | Assume (assume_exp, _, _, loc) ->
+        let rec eval_binop op var e1 e2 =
+          match eval_bexp var e1, eval_bexp var e2 with
+          | Some b1, Some b2 -> Some (op b1 b2)
+          | _ -> None
+        (* return Some bool_value if the given boolean expression evaluates to bool_value when
+           [var] is set to true. return None if it has free variables that stop us from
+           evaluating it *)
+        and eval_bexp var = function
+          | HilExp.AccessPath ap when AccessPath.Raw.equal ap var ->
+              Some true
+          | HilExp.Constant c ->
+              Some (not (Const.iszero_int_float c))
+          | HilExp.UnaryOperator (Unop.LNot, e, _) ->
+              let b_opt = eval_bexp var e in
+              Option.map ~f:not b_opt
+          | HilExp.BinaryOperator (Binop.LAnd, e1, e2) ->
+              eval_binop (&&) var e1 e2
+          | HilExp.BinaryOperator (Binop.LOr, e1, e2) ->
+              eval_binop (||) var e1 e2
+          | HilExp.BinaryOperator (Binop.Eq, e1, e2) ->
+              eval_binop Bool.equal var e1 e2
+          | HilExp.BinaryOperator (Binop.Ne, e1, e2) ->
+              eval_binop (<>) var e1 e2
+          | _ ->
+              (* non-boolean expression; can't evaluate it *)
+              None in
+        let add_choice bool_value acc = function
+          | Choice.LockHeld ->
+              let locks = bool_value in
+              { acc with locks; }
+          | Choice.OnMainThread ->
+              let threads = bool_value in
+              { acc with threads; } in
+
+        let accesses =
+          add_access
+            assume_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
+        let astate' =
+          match HilExp.get_access_paths assume_exp with
+          | [access_path] ->
+              let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
+              begin
+                match eval_bexp access_path assume_exp with
+                | Some bool_value ->
+                    (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
+                       add the constraint that the the choice must be [bool_value] to the state *)
+                    List.fold ~f:(add_choice bool_value) ~init:astate choices
+                | None ->
+                    astate
+              end
+          | _ ->
+              astate in
+        { astate' with accesses; }
+    | Call (_, Indirect _, _, _, _) ->
+        failwithf "Unexpected indirect call instruction %a" HilInstr.pp instr
 end
 
-module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
+module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (LowerHil.Make(TransferFunctions))
 
 module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
@@ -810,12 +798,12 @@ let analyze_procedure callback =
                 ~f:add_owned_formal
                 owned_formals
                 ~init:ThreadSafetyDomain.empty.attribute_map in
-            { ThreadSafetyDomain.empty with attribute_map; threads; }
+            { ThreadSafetyDomain.empty with attribute_map; threads; }, IdAccessPathMapDomain.empty
           else
-            { ThreadSafetyDomain.empty with threads; } in
+            { ThreadSafetyDomain.empty with threads; }, IdAccessPathMapDomain.empty in
 
         match Analyzer.compute_post proc_data ~initial with
-        | Some { threads; locks; accesses; attribute_map; } ->
+        | Some ({ threads; locks; accesses; attribute_map; }, _) ->
             let return_var_ap =
               AccessPath.of_pvar
                 (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))

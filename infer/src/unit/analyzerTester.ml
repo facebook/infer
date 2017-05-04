@@ -158,7 +158,8 @@ module StructuredSil = struct
     call_unknown None arg_strs
 end
 
-module Make (CFG : ProcCfg.S with type node = Procdesc.Node.t) (T : TransferFunctions.Make) = struct
+module Make
+    (CFG : ProcCfg.S with type node = Procdesc.Node.t) (T : TransferFunctions.MakeSIL) = struct
 
   open StructuredSil
 

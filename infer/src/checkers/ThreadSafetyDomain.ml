@@ -201,20 +201,18 @@ type astate =
     threads: ThreadsDomain.astate;
     locks : LocksDomain.astate;
     accesses : AccessDomain.astate;
-    id_map : IdAccessPathMapDomain.astate;
     attribute_map : AttributeMapDomain.astate;
   }
 
-type summary = ThreadsDomain.astate * LocksDomain.astate
-               * AccessDomain.astate * AttributeSetDomain.astate
+type summary =
+  ThreadsDomain.astate * LocksDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
 
 let empty =
   let threads = false in
   let locks = false in
   let accesses = AccessDomain.empty in
-  let id_map = IdAccessPathMapDomain.empty in
   let attribute_map = AccessPath.RawMap.empty in
-  { threads; locks; accesses; id_map; attribute_map; }
+  { threads; locks; accesses; attribute_map; }
 
 let (<=) ~lhs ~rhs =
   if phys_equal lhs rhs
@@ -223,7 +221,6 @@ let (<=) ~lhs ~rhs =
     ThreadsDomain.(<=) ~lhs:lhs.threads ~rhs:rhs.threads &&
     LocksDomain.(<=) ~lhs:lhs.locks ~rhs:rhs.locks &&
     AccessDomain.(<=) ~lhs:lhs.accesses ~rhs:rhs.accesses &&
-    IdAccessPathMapDomain.(<=) ~lhs:lhs.id_map ~rhs:rhs.id_map &&
     AttributeMapDomain.(<=) ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
 
 let join astate1 astate2 =
@@ -234,9 +231,8 @@ let join astate1 astate2 =
     let threads = ThreadsDomain.join astate1.threads astate2.threads in
     let locks = LocksDomain.join astate1.locks astate2.locks in
     let accesses = AccessDomain.join astate1.accesses astate2.accesses in
-    let id_map = IdAccessPathMapDomain.join astate1.id_map astate2.id_map in
     let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
-    { threads; locks; accesses; id_map; attribute_map; }
+    { threads; locks; accesses; attribute_map; }
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next
@@ -246,10 +242,9 @@ let widen ~prev ~next ~num_iters =
     let threads = ThreadsDomain.widen ~prev:prev.threads ~next:next.threads ~num_iters in
     let locks = LocksDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
     let accesses = AccessDomain.widen ~prev:prev.accesses ~next:next.accesses ~num_iters in
-    let id_map = IdAccessPathMapDomain.widen ~prev:prev.id_map ~next:next.id_map ~num_iters in
     let attribute_map =
       AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters in
-    { threads; locks; accesses; id_map; attribute_map; }
+    { threads; locks; accesses; attribute_map; }
 
 let pp_summary fmt (threads, locks, accesses, return_attributes) =
   F.fprintf
@@ -260,13 +255,11 @@ let pp_summary fmt (threads, locks, accesses, return_attributes) =
     AccessDomain.pp accesses
     AttributeSetDomain.pp return_attributes
 
-let pp fmt { threads; locks; accesses; id_map; attribute_map; } =
+let pp fmt { threads; locks; accesses; attribute_map; } =
   F.fprintf
     fmt
-    "Threads: %a Locks: %a Accesses %a Id Map: %a Attribute Map:\
-     %a"
+    "Threads: %a Locks: %a Accesses: %a Attribute Map: %a"
     ThreadsDomain.pp threads
     LocksDomain.pp locks
     AccessDomain.pp accesses
-    IdAccessPathMapDomain.pp id_map
     AttributeMapDomain.pp attribute_map

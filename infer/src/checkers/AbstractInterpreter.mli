@@ -13,7 +13,7 @@ type 'a state = { pre: 'a; post: 'a; visit_count: int; }
 
 (** type of an intraprocedural abstract interpreter *)
 module type S = sig
-  module TransferFunctions : TransferFunctions.S
+  module TransferFunctions : TransferFunctions.SIL
 
   module InvariantMap : Caml.Map.S with type key = TransferFunctions.CFG.id
 
@@ -52,14 +52,14 @@ end
 (** create an intraprocedural abstract interpreter from a scheduler and transfer functions *)
 module MakeNoCFG
     (Scheduler : Scheduler.S)
-    (TransferFunctions : TransferFunctions.S with module CFG = Scheduler.CFG) :
+    (TransferFunctions : TransferFunctions.SIL with module CFG = Scheduler.CFG) :
   S with module TransferFunctions = TransferFunctions
 
 (** create an intraprocedural abstract interpreter from a CFG and functors for creating a scheduler/
     transfer functions from a CFG *)
 module Make
     (CFG : ProcCfg.S)
-    (MakeTransferFunctions : TransferFunctions.Make) :
+    (MakeTransferFunctions : TransferFunctions.MakeSIL) :
   S with module TransferFunctions = MakeTransferFunctions(CFG)
 
 (** create an interprocedural abstract interpreter given logic for handling summaries *)
