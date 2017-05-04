@@ -23,7 +23,7 @@ digraph iCFG {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_6" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;
-"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  BinaryOperatorStmt: Assign \n   _fun___objc_retain(0:A*) [line 33]\n  n$6=*&aStrongRef:A* [line 33]\n  *&aStrongRef:A*=0 [line 33]\n  _fun___objc_release(n$6:A*) [line 33]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_7" [label="7:  BinaryOperatorStmt: Assign \n   _fun___objc_retain(null:A*) [line 33]\n  n$6=*&aStrongRef:A* [line 33]\n  *&aStrongRef:A*=null [line 33]\n  _fun___objc_release(n$6:A*) [line 33]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_7" -> "main.fad58de7366495db4650cfefac2fcd61_6" ;
@@ -35,23 +35,23 @@ digraph iCFG {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_8" ;
-"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  DeclStmt \n   _fun___objc_retain(0:A*) [line 26]\n  *&aStdRef:A*=0 [line 26]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_10" [label="10:  DeclStmt \n   _fun___objc_retain(null:A*) [line 26]\n  *&aStdRef:A*=null [line 26]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_10" -> "main.fad58de7366495db4650cfefac2fcd61_9" ;
-"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   _fun___objc_retain(0:A__autoreleasing *) [line 25]\n  _fun___set_autorelease_attribute(0:A__autoreleasing *) [line 25]\n  *&anAutoRelRef:A__autoreleasing *=0 [line 25]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_11" [label="11:  DeclStmt \n   _fun___objc_retain(null:A__autoreleasing *) [line 25]\n  _fun___set_autorelease_attribute(null:A__autoreleasing *) [line 25]\n  *&anAutoRelRef:A__autoreleasing *=null [line 25]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_11" -> "main.fad58de7366495db4650cfefac2fcd61_10" ;
-"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   *&anUnsafeUnretRef:A__unsafe_unretained *=0 [line 24]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_12" [label="12:  DeclStmt \n   *&anUnsafeUnretRef:A__unsafe_unretained *=null [line 24]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_12" -> "main.fad58de7366495db4650cfefac2fcd61_11" ;
-"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  DeclStmt \n   _fun___objc_retain(0:A*) [line 23]\n  *&aStrongRef:A*=0 [line 23]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_13" [label="13:  DeclStmt \n   _fun___objc_retain(null:A*) [line 23]\n  *&aStrongRef:A*=null [line 23]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_13" -> "main.fad58de7366495db4650cfefac2fcd61_12" ;
-"main.fad58de7366495db4650cfefac2fcd61_14" [label="14:  DeclStmt \n   *&aWeakRef:A__weak *=0 [line 22]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_14" [label="14:  DeclStmt \n   *&aWeakRef:A__weak *=null [line 22]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_14" -> "main.fad58de7366495db4650cfefac2fcd61_13" ;

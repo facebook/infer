@@ -108,6 +108,7 @@ codetoanalyze/objc/errors/npe/block.m, BlockA_foo, 5, NULL_DEREFERENCE, [start o
 codetoanalyze/objc/errors/npe/block.m, BlockA_foo3:, 3, NULL_DEREFERENCE, [start of procedure foo3:]
 codetoanalyze/objc/errors/npe/block.m, BlockA_foo4:, 6, NULL_DEREFERENCE, [start of procedure foo4:]
 codetoanalyze/objc/errors/npe/block.m, BlockA_foo7, 2, IVAR_NOT_NULL_CHECKED, [start of procedure foo7]
+codetoanalyze/objc/errors/npe/ivar_blocks.m, MyClass_ivar_npe, 1, IVAR_NOT_NULL_CHECKED, [start of procedure ivar_npe]
 codetoanalyze/objc/errors/npe/skip_method_with_nil_object.m, SkipMethodNilA_testBug:, 6, PARAMETER_NOT_NULL_CHECKED, [start of procedure testBug:,Message get_a with receiver nil returns nil.,Message skip_method with receiver nil returns nil.,Condition is false]
 codetoanalyze/objc/errors/property/main.c, property_main, 3, MEMORY_LEAK, [start of procedure property_main(),Skipped call: function or method not found]
 codetoanalyze/objc/errors/taint/sources.m, testNSHTTPCookie1, 5, TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION, [start of procedure testNSHTTPCookie1()]

@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" [label="4:  DeclStmt \n   *&t:int*=0 [line 24]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" [label="4:  DeclStmt \n   *&t:int*=null [line 24]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" ;

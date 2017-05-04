@@ -55,6 +55,7 @@ let do_source_file translation_unit_context ast =
      changes here, it should be changed there as well*)
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
+  NullabilityPreanalysis.analysis cfg tenv;
   Cg.store_to_file cg_file call_graph;
   Cfg.store_cfg_to_file ~source_file cfg_file cfg;
   CGeneral_utils.sort_fields_tenv tenv;

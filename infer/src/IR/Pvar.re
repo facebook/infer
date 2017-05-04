@@ -248,6 +248,10 @@ let is_static_local pv =>
 let is_this pvar => Mangled.equal (get_name pvar) (Mangled.from_string "this");
 
 
+/** Check if a pvar is the special "self" var */
+let is_self pvar => Mangled.equal (get_name pvar) (Mangled.from_string "self");
+
+
 /** Check if the pvar is a return var */
 let is_return pv => Mangled.equal (get_name pv) Ident.name_return;
 

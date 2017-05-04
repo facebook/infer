@@ -46,15 +46,15 @@ digraph iCFG {
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" [label="9:  DeclStmt \n   *&s3:Auto*=0 [line 37]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" [label="9:  DeclStmt \n   *&s3:Auto*=null [line 37]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" [label="10:  DeclStmt \n   *&s2:Auto*=0 [line 36]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" [label="10:  DeclStmt \n   *&s2:Auto*=null [line 36]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" [label="11:  DeclStmt \n   *&s1:Auto*=0 [line 35]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" [label="11:  DeclStmt \n   *&s1:Auto*=null [line 35]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" ;
@@ -85,15 +85,15 @@ digraph iCFG {
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" [label="8:  DeclStmt \n   *&s3:Auto*=0 [line 50]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" [label="8:  DeclStmt \n   *&s3:Auto*=null [line 50]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" [label="9:  DeclStmt \n   *&s2:Auto*=0 [line 49]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" [label="9:  DeclStmt \n   *&s2:Auto*=null [line 49]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" [label="10:  DeclStmt \n   *&s1:Auto*=0 [line 48]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" [label="10:  DeclStmt \n   *&s1:Auto*=null [line 48]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" ;

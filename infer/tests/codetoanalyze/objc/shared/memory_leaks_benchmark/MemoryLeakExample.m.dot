@@ -37,7 +37,7 @@ digraph iCFG {
 	
 
 	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_2" ;
-"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" [label="4:  DeclStmt \n   n$20=_fun_CTFramesetterCreateWithAttributedString(0:__CFAttributedString const *) [line 49]\n  *&framesetter:__CTFramesetter const *=n$20 [line 49]\n " shape="box"]
+"test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" [label="4:  DeclStmt \n   n$20=_fun_CTFramesetterCreateWithAttributedString(null:__CFAttributedString const *) [line 49]\n  *&framesetter:__CTFramesetter const *=n$20 [line 49]\n " shape="box"]
 	
 
 	 "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_4" -> "test1NoLeak#MemoryLeakExample#class.7e0d9640dbd86a21622e801793707bd9_3" ;
@@ -52,7 +52,7 @@ digraph iCFG {
 	
 
 	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_3" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_2" ;
-"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" [label="4:  DeclStmt \n   n$31=_fun_SecTrustCopyPublicKey(0:__SecTrust*) [line 71]\n  *&allowedPublicKey:__SecKey*=n$31 [line 71]\n " shape="box"]
+"test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" [label="4:  DeclStmt \n   n$31=_fun_SecTrustCopyPublicKey(null:__SecTrust*) [line 71]\n  *&allowedPublicKey:__SecKey*=n$31 [line 71]\n " shape="box"]
 	
 
 	 "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_4" -> "test2NoLeak#MemoryLeakExample#class.69cf0c35f7df26deefa723cac655894d_3" ;
@@ -67,7 +67,7 @@ digraph iCFG {
 	
 
 	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_2" ;
-"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" [label="4:  DeclStmt \n   n$33=_fun_CGBitmapContextCreateImage(0:CGContext*) [line 76]\n  *&newImage:CGImage*=n$33 [line 76]\n " shape="box"]
+"testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" [label="4:  DeclStmt \n   n$33=_fun_CGBitmapContextCreateImage(null:CGContext*) [line 76]\n  *&newImage:CGImage*=n$33 [line 76]\n " shape="box"]
 	
 
 	 "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_4" -> "testImageRefRelease#MemoryLeakExample#class.fa3cf5eac6a14b14c5050c7d62d2a79f_3" ;

@@ -20,11 +20,11 @@ digraph iCFG {
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_5" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_6" ;
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_5" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_7" ;
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_6" [label="6: Prune (true branch) \n   PRUNE(((n$1 != 0) != 0), true); [line 19]\n " shape="invhouse"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_6" [label="6: Prune (true branch) \n   PRUNE(((n$1 != null) != 0), true); [line 19]\n " shape="invhouse"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_6" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_9" ;
-"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_7" [label="7: Prune (false branch) \n   PRUNE(((n$1 != 0) == 0), false); [line 19]\n " shape="invhouse"]
+"fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_7" [label="7: Prune (false branch) \n   PRUNE(((n$1 != null) == 0), false); [line 19]\n " shape="invhouse"]
 	
 
 	 "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_7" -> "fast_loop:#A#instance.9cd800cb29c7a698fe4cc371a7448f6e_3" ;
@@ -76,7 +76,7 @@ digraph iCFG {
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_8" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_4" ;
-"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_9" [label="9:  DeclStmt \n   *&item:NSArray*=0 [line 27]\n " shape="box"]
+"while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_9" [label="9:  DeclStmt \n   *&item:NSArray*=null [line 27]\n " shape="box"]
 	
 
 	 "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_9" -> "while_loop:#A#instance.30e9692b3abdc47bcb262e353f292a28_4" ;

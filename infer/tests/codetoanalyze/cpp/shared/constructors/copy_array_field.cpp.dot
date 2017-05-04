@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 "npe#copy_array_field#_ZN16copy_array_field3npeEv.58bc386c3b842b7b8d6ccc067d94bb03_4" -> "npe#copy_array_field#_ZN16copy_array_field3npeEv.58bc386c3b842b7b8d6ccc067d94bb03_3" ;
-"npe#copy_array_field#_ZN16copy_array_field3npeEv.58bc386c3b842b7b8d6ccc067d94bb03_5" [label="5:  BinaryOperatorStmt: Assign \n   *&x1.p:int*=0 [line 17]\n " shape="box"]
+"npe#copy_array_field#_ZN16copy_array_field3npeEv.58bc386c3b842b7b8d6ccc067d94bb03_5" [label="5:  BinaryOperatorStmt: Assign \n   *&x1.p:int*=null [line 17]\n " shape="box"]
 	
 
 	 "npe#copy_array_field#_ZN16copy_array_field3npeEv.58bc386c3b842b7b8d6ccc067d94bb03_5" -> "npe#copy_array_field#_ZN16copy_array_field3npeEv.58bc386c3b842b7b8d6ccc067d94bb03_4" ;

@@ -40,7 +40,7 @@ digraph iCFG {
 	
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_10" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" ;
-"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_11" [label="11:  DeclStmt \n   n$12=_fun_CGBitmapContextCreate(0:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,0:CGColorSpace*,0:unsigned int) [line 23]\n  *&context:CGContext*=n$12 [line 23]\n " shape="box"]
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_11" [label="11:  DeclStmt \n   n$12=_fun_CGBitmapContextCreate(null:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,null:CGColorSpace*,0:unsigned int) [line 23]\n  *&context:CGContext*=n$12 [line 23]\n " shape="box"]
 	
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_11" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_10" ;

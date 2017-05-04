@@ -32,6 +32,7 @@ SOURCES_DEFAULT = \
   npe/NPD_core_foundation.m \
   npe/Npe_with_equal_names.m \
   npe/block.m \
+	npe/ivar_blocks.m \
   npe/skip_method_with_nil_object.m \
 	npe/Nsstring_length_no_npe.m \
 	npe/No_null_from_array.m \

@@ -41,7 +41,7 @@ digraph iCFG {
 "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_2" [label="2: Exit BSuper_init \n  " color=yellow style=filled]
 	
 
-"init#BSuper#instance.6678b088cbd2579c21b766781beb8030_3" [label="3:  Return Stmt \n   *&return:objc_object*=0 [line 19]\n " shape="box"]
+"init#BSuper#instance.6678b088cbd2579c21b766781beb8030_3" [label="3:  Return Stmt \n   *&return:objc_object*=null [line 19]\n " shape="box"]
 	
 
 	 "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_3" -> "init#BSuper#instance.6678b088cbd2579c21b766781beb8030_2" ;

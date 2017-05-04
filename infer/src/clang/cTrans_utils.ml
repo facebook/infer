@@ -438,6 +438,9 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
       (* So we assign the LValue to a temp and we pass it to the parent.*)
       let instrs, deref_exp = dereference_var_sil (exp, cast_typ) sil_loc in
       instrs, (deref_exp, cast_typ)
+  | `NullToPointer ->
+      if Exp.is_zero exp then ([], (Exp.null, cast_typ))
+      else ([], (exp, cast_typ))
   | _ ->
       Logging.err_debug
         "\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"

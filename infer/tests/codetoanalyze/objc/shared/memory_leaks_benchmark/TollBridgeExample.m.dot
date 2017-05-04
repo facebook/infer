@@ -7,7 +7,7 @@ digraph iCFG {
 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_2" [label="2: Exit cfautorelease_test \n  " color=yellow style=filled]
 	
 
-"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" [label="3:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char const *) [line 41]\n  n$1=_fun_CTFontCreateWithName(n$0:__CFString const *,17.000000:double,0:CGAffineTransform const *) [line 41]\n  n$2=_fun___objc_cast(n$1:void const *,sizeof(void const ):unsigned long) [line 41]\n  *&return:__CTFont const *=n$2 [line 41]\n " shape="box"]
+"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" [label="3:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char const *) [line 41]\n  n$1=_fun_CTFontCreateWithName(n$0:__CFString const *,17.000000:double,null:CGAffineTransform const *) [line 41]\n  n$2=_fun___objc_cast(n$1:void const *,sizeof(void const ):unsigned long) [line 41]\n  *&return:__CTFont const *=n$2 [line 41]\n " shape="box"]
 	
 
 	 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" -> "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_2" ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" -> "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_2" ;
-"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" [label="4:  DeclStmt \n   n$1=_fun_NSDictionary_dictionaryWithObjects:forKeys:count:(0:objc_object*) [line 45]\n  n$2=_fun_NSString_stringWithUTF8String:(\"key\":char* const ) [line 45]\n  n$3=_fun_NSDictionary_dictionaryWithObjects:forKeys:count:(n$1:objc_object*,n$2:objc_object*,0:objc_object*) [line 45]\n  *&bufferAttributes:NSDictionary*=n$3 [line 45]\n " shape="box"]
+"bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" [label="4:  DeclStmt \n   n$1=_fun_NSDictionary_dictionaryWithObjects:forKeys:count:(null:objc_object*) [line 45]\n  n$2=_fun_NSString_stringWithUTF8String:(\"key\":char* const ) [line 45]\n  n$3=_fun_NSDictionary_dictionaryWithObjects:forKeys:count:(n$1:objc_object*,n$2:objc_object*,null:objc_object*) [line 45]\n  *&bufferAttributes:NSDictionary*=n$3 [line 45]\n " shape="box"]
 	
 
 	 "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_4" -> "bridgeDictionaryNoLeak.a9b55a0c8751bf95138aeb6870d0dec1_3" ;
@@ -37,7 +37,7 @@ digraph iCFG {
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_2" ;
-"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" [label="4:  DeclStmt \n   n$1=_fun_CFLocaleCreate(0:__CFAllocator const *,0:__CFString const *) [line 20]\n  *&nameRef:__CFLocale const *=n$1 [line 20]\n " shape="box"]
+"bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" [label="4:  DeclStmt \n   n$1=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 20]\n  *&nameRef:__CFLocale const *=n$1 [line 20]\n " shape="box"]
 	
 
 	 "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_4" -> "bridgeTransfer#TollBridgeExample#instance.d0065913beb197e891ef0d8a0bb81b38_3" ;
@@ -52,7 +52,7 @@ digraph iCFG {
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_2" ;
-"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" [label="4:  DeclStmt \n   n$3=_fun_CFLocaleCreate(0:__CFAllocator const *,0:__CFString const *) [line 25]\n  *&nameRef:__CFLocale const *=n$3 [line 25]\n " shape="box"]
+"bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" [label="4:  DeclStmt \n   n$3=_fun_CFLocaleCreate(null:__CFAllocator const *,null:__CFString const *) [line 25]\n  *&nameRef:__CFLocale const *=n$3 [line 25]\n " shape="box"]
 	
 
 	 "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_4" -> "bridge#TollBridgeExample#instance.fadd5a014118113c960fa1a6e3ff27ba_3" ;
@@ -82,7 +82,7 @@ digraph iCFG {
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_2" ;
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" [label="4:  DeclStmt \n   n$8=_fun_CFHTTPMessageCopyAllHeaderFields(0:__CFHTTPMessage*) [line 36]\n  *&ref:__CFDictionary const *=n$8 [line 36]\n " shape="box"]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" [label="4:  DeclStmt \n   n$8=_fun_CFHTTPMessageCopyAllHeaderFields(null:__CFHTTPMessage*) [line 36]\n  *&ref:__CFDictionary const *=n$8 [line 36]\n " shape="box"]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_4" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" ;
