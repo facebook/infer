@@ -444,12 +444,10 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
          | Some (ret_type, arg_types) ->
              ret_type, List.map ~f:(fun typ -> (Mangled.from_string "x", typ)) arg_types
          | None -> Typ.mk Typ.Tvoid, []) in
-      let loc = Location.dummy in
       let proc_attributes =
         { (ProcAttributes.default proc_name Config.Clang) with
           ProcAttributes.formals;
           is_objc_instance_method = is_objc_inst_method;
-          loc;
           ret_type;
         } in
       ignore (Cfg.create_proc_desc cfg proc_attributes)
@@ -476,7 +474,7 @@ let add_default_method_for_class trans_unit_ctx class_name decl_info =
   let loc = CLocation.get_sil_location_from_range trans_unit_ctx
       decl_info.Clang_ast_t.di_source_range true in
   let proc_name = Typ.Procname.get_default_objc_class_method class_name in
-  let attrs = { (ProcAttributes.default proc_name Config.Clang) with loc = loc; } in
+  let attrs = { (ProcAttributes.default proc_name Config.Clang) with loc; } in
   AttributesTable.store_attributes attrs
 
 let get_procname_from_cpp_lambda context dec =

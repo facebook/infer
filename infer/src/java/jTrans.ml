@@ -273,7 +273,7 @@ let trans_access = function
   | `Private -> PredSymb.Private
   | `Protected -> PredSymb.Protected
 
-let create_am_procdesc program icfg am proc_name : Procdesc.t =
+let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let m = Javalib.AbstractMethod am in
@@ -295,18 +295,19 @@ let create_am_procdesc program icfg am proc_name : Procdesc.t =
         is_synthetic_method = am.Javalib.am_synthetic;
         method_annotation;
         ret_type = JTransType.return_type program tenv ms;
+        loc = Location.none source_file;
       } in
     Cfg.create_proc_desc cfg proc_attributes in
   let start_kind = Procdesc.Node.Start_node proc_name in
-  let start_node = Procdesc.create_node procdesc Location.dummy start_kind [] in
+  let start_node = Procdesc.create_node procdesc (Location.none source_file) start_kind [] in
   let exit_kind = (Procdesc.Node.Exit_node proc_name) in
-  let exit_node = Procdesc.create_node procdesc Location.dummy exit_kind [] in
+  let exit_node = Procdesc.create_node procdesc (Location.none source_file) exit_kind [] in
   Procdesc.node_set_succs_exn procdesc start_node [exit_node] [exit_node];
   Procdesc.set_start_node procdesc start_node;
   Procdesc.set_exit_node procdesc exit_node;
   procdesc
 
-let create_native_procdesc program icfg cm proc_name =
+let create_native_procdesc source_file program icfg cm proc_name =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let m = Javalib.ConcreteMethod cm in
@@ -325,6 +326,7 @@ let create_native_procdesc program icfg cm proc_name =
       is_synthetic_method = cm.Javalib.cm_synthetic;
       method_annotation;
       ret_type = JTransType.return_type program tenv ms;
+      loc = Location.none source_file;
     } in
   Cfg.create_proc_desc cfg proc_attributes
 

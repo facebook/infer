@@ -24,7 +24,11 @@ let equal: t => t => bool;
 let d: t => unit;
 
 
-/** Dummy location */
+/** Dummy source location for the given file */
+let none: SourceFile.t => t;
+
+
+/** Dummy location with no source file */
 let dummy: t;
 
 

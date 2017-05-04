@@ -153,9 +153,9 @@ let create_icfg source_file linereader program icfg cn node =
         begin
           match m with
           | Javalib.AbstractMethod am ->
-              ignore (JTrans.create_am_procdesc program icfg am proc_name)
+              ignore (JTrans.create_am_procdesc source_file program icfg am proc_name)
           | Javalib.ConcreteMethod cm when JTrans.is_java_native cm ->
-              ignore (JTrans.create_native_procdesc program icfg cm proc_name)
+              ignore (JTrans.create_native_procdesc source_file program icfg cm proc_name)
           | Javalib.ConcreteMethod cm ->
               add_cmethod source_file program linereader icfg cm proc_name
         end;

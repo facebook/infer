@@ -24,10 +24,16 @@ val is_java_native : JCode.jcode Javalib.concrete_method  -> bool
 
 (** Create the procedure description for an abstract method *)
 val create_am_procdesc :
-  JClasspath.program -> JContext.icfg -> Javalib.abstract_method -> Typ.Procname.t -> Procdesc.t
+  SourceFile.t ->
+  JClasspath.program ->
+  JContext.icfg ->
+  Javalib.abstract_method ->
+  Typ.Procname.t ->
+  Procdesc.t
 
 (** Create the procedure description for a concrete method *)
 val create_native_procdesc :
+  SourceFile.t ->
   JClasspath.program ->
   JContext.icfg ->
   JCode.jcode Javalib.concrete_method ->

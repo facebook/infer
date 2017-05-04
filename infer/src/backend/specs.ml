@@ -733,7 +733,11 @@ let reset_summary proc_name attributes_opt proc_desc_option =
     | Some attributes ->
         attributes
     | None ->
-        ProcAttributes.default proc_name !Config.curr_language in
+        begin
+          match proc_desc_option with
+          | Some proc_desc -> Procdesc.get_attributes proc_desc
+          | None -> ProcAttributes.default proc_name !Config.curr_language
+        end in
   init_summary (
     [],
     ProcAttributes.proc_flags_empty (),
