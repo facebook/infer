@@ -793,7 +793,7 @@ let parse_args ~usage ?parse_all action args0 =
       (* for now, we only need to parse -d. we could parse more if we wanted to, but we would risk
          incurring the wrath of ARGUMENT_LIST_TOO_LONG *)
       let should_parse =
-        String.is_prefix ~prefix:"-d" in
+        String.is_prefix ~prefix:"-" in
       let fname = String.slice arg 1 (String.length arg) in
       match In_channel.read_lines fname with
       | lines ->
