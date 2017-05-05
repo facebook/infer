@@ -115,8 +115,15 @@ let clang_cc1_cmd_sanitizer cmd => {
     } else {
       arg
     };
+  let args_defines =
+    if (Config.bufferoverrun || Config.equal_analyzer Config.analyzer Config.Bufferoverrun) {
+      ["-D__INFER_BUFFEROVERRUN"]
+    } else {
+      []
+    };
   let post_args_rev =
     [] |> List.rev_append ["-include", Config.lib_dir ^\/ "clang_wrappers" ^\/ "global_defines.h"] |>
+    List.rev_append args_defines |>
     /* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
        are appended at the end to override previous opposite settings.  How it's done: suppress
        all the warnings, since there are no warnings, compiler can't elevate them to error
@@ -126,7 +133,7 @@ let clang_cc1_cmd_sanitizer cmd => {
     fun
     | [] =>
       /* return non-reversed list */
-      List.rev (post_args_rev @ res_rev)
+      List.rev_append res_rev (List.rev post_args_rev)
     | [flag, ...tl] when List.mem equal::String.equal flags_blacklist flag =>
       filter_unsupported_args_and_swap_includes (flag, res_rev) tl
     | [arg, ...tl] => {

@@ -1,9 +1,16 @@
 #include <infer_model/portability.h>
 
 #ifdef INFER_CPP11_ON
-#include<infer_model/vector.h>
 
-#else 
+#ifdef __INFER_BUFFEROVERRUN
+// Separate model for bufferoverrun checker
+// TODO t17807570: move to a separate directory
+#include<infer_model/vector_bufferoverrun.h>
+#else
+#include<infer_model/vector.h>
+#endif
+
+#else
 // don't model std::vector pre-c++11 to
 // simplify implementation
 #include_next <vector>
