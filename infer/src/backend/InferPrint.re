@@ -279,8 +279,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
       | Crashcontext
       | Infer
       | Linters
-      | Quandary
-      | Threadsafety => false
+      | Quandary => false
       };
     if analyzer_is_whitelisted {
       true

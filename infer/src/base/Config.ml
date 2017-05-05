@@ -37,7 +37,7 @@ let frontend_parse_modes = CLOpt.(Infer [Clang])
 
 type analyzer =
   | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
-  | Siof | Threadsafety | Bufferoverrun
+  | Siof | Bufferoverrun
 [@@deriving compare]
 
 let equal_analyzer = [%compare.equal : analyzer]
@@ -46,8 +46,7 @@ let string_to_analyzer =
   [("capture", Capture); ("compile", Compile);
    ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers);
    ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters);
-   ("quandary", Quandary); ("siof", Siof); ("threadsafety", Threadsafety);
-   ("bufferoverrun", Bufferoverrun)]
+   ("quandary", Quandary); ("siof", Siof); ("bufferoverrun", Bufferoverrun)]
 
 let string_of_analyzer a =
   List.find_exn ~f:(fun (_, a') -> equal_analyzer a a') string_to_analyzer |> fst
@@ -483,11 +482,11 @@ and analyzer =
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
     | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
-    | Quandary | Siof | Threadsafety | Bufferoverrun -> () in
+    | Quandary | Siof | Bufferoverrun -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
     ~parse_mode:CLOpt.(Infer [Driver])
     "Specify which analyzer to run (only one at a time is supported):\n\
-     - infer, eradicate, checkers, quandary, threadsafety, bufferoverrun: run the specified analysis\n\
+     - infer, eradicate, checkers, quandary, bufferoverrun: run the specified analysis\n\
      - capture: run capture phase only (no analysis)\n\
      - compile: run compilation command without interfering (not supported by all frontends)\n\
      - crashcontext, tracing: experimental (see --crashcontext and --tracing)\n\
@@ -520,6 +519,10 @@ and array_level =
 and ast_file =
   CLOpt.mk_path_opt ~deprecated:["ast"] ~long:"ast-file"
     ~meta:"file" "AST file for the translation"
+
+and biabduction =
+  CLOpt.mk_bool ~long:"biabduction" ~parse_mode:CLOpt.(Infer [Checkers])
+    "Activate the separation logic based bi-abduction analysis using the checkers framework"
 
 and blacklist =
   CLOpt.mk_string_opt ~deprecated:["-blacklist-regex";"-blacklist"] ~long:"buck-blacklist"
@@ -589,12 +592,8 @@ and changed_files_index =
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
 
-let biabduction =
-  CLOpt.mk_bool ~long:"biabduction"
-    "Activate the separation logic based bi-abduction analysis using the checkers framework"
-
 and bufferoverrun, checkers, checkers_repeated_calls,
-    crashcontext, eradicate, quandary, siof, threadsafety =
+    eradicate, quandary, siof =
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
       "Activate the checkers instead of the full analysis"
@@ -607,11 +606,6 @@ and bufferoverrun, checkers, checkers_repeated_calls,
   let checkers_repeated_calls =
     CLOpt.mk_bool_group ~long:"checkers-repeated-calls"
       "Check for repeated calls"
-      [checkers] []
-  in
-  let crashcontext =
-    CLOpt.mk_bool_group ~deprecated:["crashcontext"] ~long:"crashcontext"
-      "Activate the crashcontext checker for Java stack trace context reconstruction"
       [checkers] []
   in
   let eradicate =
@@ -629,13 +623,8 @@ and bufferoverrun, checkers, checkers_repeated_calls,
       "Activate the Static Initialization Order Fiasco analysis"
       [checkers] []
   in
-  let threadsafety =
-    CLOpt.mk_bool_group ~deprecated:["threadsafety"] ~long:"threadsafety"
-      "Activate the thread safety analysis"
-      [checkers] []
-  in
   (bufferoverrun, checkers, checkers_repeated_calls,
-   crashcontext, eradicate, quandary, siof, threadsafety)
+   eradicate, quandary, siof)
 
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file" ~parse_mode:CLOpt.(Infer [Clang]) ~meta:"file"
@@ -703,6 +692,10 @@ and continue =
 and copy_propagation =
   CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
     "Perform copy-propagation on the IR"
+
+and crashcontext =
+  CLOpt.mk_bool ~long:"crashcontext" ~parse_mode:CLOpt.(Infer [Checkers])
+    "Activate the crashcontext checker for Java stack trace context reconstruction"
 
 and cxx =
   CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx"
@@ -1360,6 +1353,10 @@ and threadsafe_aliases =
     ~parse_mode:CLOpt.(Infer [Checkers])
     "Specify custom annotations that should be considered aliases of @ThreadSafe"
 
+and threadsafety =
+  CLOpt.mk_bool ~long:"threadsafety" ~parse_mode:CLOpt.(Infer [Checkers])
+    "Activate the thread safety analysis"
+
 and trace_join =
   CLOpt.mk_bool ~deprecated:["trace_join"] ~long:"trace-join"
     "Detailed tracing information during prop join operations"
@@ -1559,7 +1556,6 @@ let post_parsing_initialization () =
   | Some Crashcontext -> checkers := true; crashcontext := true
   | Some Eradicate -> checkers := true; eradicate := true
   | Some Quandary -> checkers := true; quandary := true
-  | Some Threadsafety -> checkers := true; threadsafety := true
   | Some Bufferoverrun -> checkers := true; bufferoverrun := true
   | Some Siof -> checkers := true; siof := true
   | Some Tracing -> tracing := true
@@ -1799,9 +1795,6 @@ and analysis_blacklist_files_containing analyzer =
   List.Assoc.find_exn ~equal:equal_analyzer analysis_blacklist_files_containing_options analyzer
 and analysis_suppress_errors analyzer =
   List.Assoc.find_exn ~equal:equal_analyzer analysis_suppress_errors_options analyzer
-
-let checkers_enabled =
-  not (eradicate || crashcontext || quandary || threadsafety || checkers_repeated_calls)
 
 let captured_dir = results_dir ^/ captured_dir_name
 

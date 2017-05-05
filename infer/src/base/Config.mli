@@ -20,7 +20,7 @@ val exe_name : exe -> string
 (** Various kind of analyzers *)
 type analyzer =
   | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
-  | Siof | Threadsafety | Bufferoverrun
+  | Siof | Bufferoverrun
 [@@deriving compare]
 
 val equal_analyzer : analyzer -> analyzer -> bool
@@ -193,7 +193,6 @@ val calls_csv : string option
 val captured_dir : string
 
 val checkers : bool
-val checkers_enabled : bool
 val checkers_repeated_calls : bool
 val clang_biniou_file : string option
 val clang_frontend_action_string : string

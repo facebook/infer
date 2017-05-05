@@ -14,22 +14,28 @@ open! IStd
 module L = Logging
 module F = Format
 
+let enabled_by_default =
+  (* True when no checker is explicitely enabled from the command line *)
+  let open Config in
+  not (bufferoverrun || checkers_repeated_calls || crashcontext
+       || eradicate || quandary || siof || threadsafety)
+
 (** Flags to activate checkers. *)
 let active_procedure_checkers () =
 
   let java_checkers =
     let l =
       [
-        FragmentRetainsViewChecker.callback_fragment_retains_view, Config.checkers_enabled;
+        FragmentRetainsViewChecker.callback_fragment_retains_view, enabled_by_default;
         Eradicate.callback_eradicate, Config.eradicate;
         BoundedCallTree.checker, Config.crashcontext;
         JavaTaintAnalysis.checker, Config.quandary;
-        ImmutableChecker.callback_check_immutable_cast, Config.checkers_enabled;
+        ImmutableChecker.callback_check_immutable_cast, enabled_by_default;
         RepeatedCallsChecker.callback_check_repeated_calls, Config.checkers_repeated_calls;
-        PrintfArgs.callback_printf_args, Config.checkers_enabled;
-        AnnotationReachability.checker, Config.checkers_enabled;
+        PrintfArgs.callback_printf_args, enabled_by_default;
+        AnnotationReachability.checker, enabled_by_default;
         BufferOverrunChecker.checker, Config.bufferoverrun;
-        ThreadSafety.analyze_procedure, Config.threadsafety || Config.checkers_enabled;
+        ThreadSafety.analyze_procedure, enabled_by_default || Config.threadsafety;
       ] in
     (* make sure SimpleChecker.ml is not dead code *)
     if false then (let module SC = SimpleChecker.Make in ());
@@ -48,7 +54,7 @@ let active_procedure_checkers () =
   java_checkers @ c_cpp_checkers
 
 let active_cluster_checkers () =
-  [(ThreadSafety.file_analysis, Config.threadsafety || Config.checkers_enabled, Some Config.Java)]
+  [(ThreadSafety.file_analysis, enabled_by_default || Config.threadsafety, Some Config.Java)]
 
 let register () =
   let register registry (callback, active, language_opt) =
