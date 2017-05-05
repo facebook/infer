@@ -90,6 +90,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
               "tryLock" ->
                 LockedIfTrue
+            | "com.facebook.buck.util.concurrent.AutoCloseableReadWriteUpdateLock",
+              ("readLock" | "updateLock" | "writeLock") ->
+                Lock
             | _ ->
                 NoEffect
           end
