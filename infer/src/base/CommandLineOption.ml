@@ -780,9 +780,6 @@ let extra_env_args = ref []
 let extend_env_args args =
   extra_env_args := List.rev_append args !extra_env_args
 
-let extend_env_args args =
-  extra_env_args := List.rev_append args !extra_env_args
-
 let parse_args ~usage ?parse_all action args0 =
   (* look inside argfiles so we can move select arguments into the top line CLI and parse them into
      Config vars. note that we don't actually delete the arguments to the file, we just duplicate
@@ -792,8 +789,9 @@ let parse_args ~usage ?parse_all action args0 =
     then
       (* for now, we only need to parse -d. we could parse more if we wanted to, but we would risk
          incurring the wrath of ARGUMENT_LIST_TOO_LONG *)
-      let should_parse =
-        String.is_prefix ~prefix:"-" in
+      let should_parse = function
+        | "-d" | "-cp" | "-classpath" -> true
+        | _ -> false in
       let fname = String.slice arg 1 (String.length arg) in
       match In_channel.read_lines fname with
       | lines ->
