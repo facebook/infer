@@ -269,10 +269,10 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
   } else {
     let analyzer_is_whitelisted =
       switch Config.analyzer {
-      | Checkers
       | Eradicate
       | Tracing => true
       | Capture
+      | Checkers
       | Compile
       | Crashcontext
       | Infer

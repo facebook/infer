@@ -6,7 +6,13 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+
 void foo() {
   int* p = 0;
   *p = 42;
+}
+
+int bar() {
+  /* The division by zero should be found but filtered out by default */
+  return 1 / 0;
 }

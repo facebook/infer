@@ -17,7 +17,7 @@ module F = Format
 let enabled_by_default =
   (* True when no checker is explicitely enabled from the command line *)
   let open Config in
-  not (bufferoverrun || checkers_repeated_calls || crashcontext
+  not (biabduction || bufferoverrun || checkers_repeated_calls || crashcontext
        || eradicate || quandary || siof || threadsafety)
 
 (** Flags to activate checkers. *)
