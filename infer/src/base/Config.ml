@@ -37,7 +37,6 @@ let frontend_parse_modes = CLOpt.(Infer [Clang])
 
 type analyzer =
   | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
-  | Bufferoverrun
 [@@deriving compare]
 
 let equal_analyzer = [%compare.equal : analyzer]
@@ -46,7 +45,7 @@ let string_to_analyzer =
   [("capture", Capture); ("compile", Compile);
    ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers);
    ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters);
-   ("quandary", Quandary); ("bufferoverrun", Bufferoverrun)]
+   ("quandary", Quandary)]
 
 let string_of_analyzer a =
   List.find_exn ~f:(fun (_, a') -> equal_analyzer a a') string_to_analyzer |> fst
@@ -482,11 +481,11 @@ and analyzer =
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
     | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
-    | Quandary | Bufferoverrun -> () in
+    | Quandary -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
     ~parse_mode:CLOpt.(Infer [Driver])
     "Specify which analyzer to run (only one at a time is supported):\n\
-     - infer, eradicate, checkers, quandary, bufferoverrun: run the specified analysis\n\
+     - infer, eradicate, checkers, quandary: run the specified analysis\n\
      - capture: run capture phase only (no analysis)\n\
      - compile: run compilation command without interfering (not supported by all frontends)\n\
      - crashcontext, tracing: experimental (see --crashcontext and --tracing)\n\
@@ -558,6 +557,10 @@ and buck_out =
   CLOpt.mk_path_opt ~long:"buck-out"
     ~parse_mode:CLOpt.(Infer [Driver]) ~meta:"dir" "Specify the root directory of buck-out"
 
+and bufferoverrun =
+  CLOpt.mk_bool ~long:"bufferoverrun" ~parse_mode:CLOpt.(Infer [Checkers])
+    "Activate the buffer overrun analysis"
+
 and bugs_csv =
   CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
     ~parse_mode:CLOpt.(Infer [Driver;Print])
@@ -591,16 +594,11 @@ and changed_files_index =
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
 
-and bufferoverrun, checkers, checkers_repeated_calls,
+and checkers, checkers_repeated_calls,
     eradicate, quandary =
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
       "Activate the checkers instead of the full analysis"
-  in
-  let bufferoverrun =
-    CLOpt.mk_bool_group ~long:"bufferoverrun"
-      "Activate the buffer overrun analysis"
-      [checkers] []
   in
   let checkers_repeated_calls =
     CLOpt.mk_bool_group ~long:"checkers-repeated-calls"
@@ -617,7 +615,7 @@ and bufferoverrun, checkers, checkers_repeated_calls,
       "Activate the quandary taint analysis"
       [checkers] []
   in
-  (bufferoverrun, checkers, checkers_repeated_calls,
+  (checkers, checkers_repeated_calls,
    eradicate, quandary)
 
 and clang_biniou_file =
@@ -1554,7 +1552,6 @@ let post_parsing_initialization () =
   | Some Crashcontext -> checkers := true; crashcontext := true
   | Some Eradicate -> checkers := true; eradicate := true
   | Some Quandary -> checkers := true; quandary := true
-  | Some Bufferoverrun -> checkers := true; bufferoverrun := true
   | Some Tracing -> tracing := true
   | Some (Capture | Compile | Infer | Linters) | None -> ()
 

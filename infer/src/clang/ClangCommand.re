@@ -116,7 +116,7 @@ let clang_cc1_cmd_sanitizer cmd => {
       arg
     };
   let args_defines =
-    if (Config.bufferoverrun || Config.equal_analyzer Config.analyzer Config.Bufferoverrun) {
+    if (Config.bufferoverrun) {
       ["-D__INFER_BUFFEROVERRUN"]
     } else {
       []

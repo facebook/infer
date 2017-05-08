@@ -20,7 +20,6 @@ val exe_name : exe -> string
 (** Various kind of analyzers *)
 type analyzer =
   | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
-  | Bufferoverrun
 [@@deriving compare]
 
 val equal_analyzer : analyzer -> analyzer -> bool
