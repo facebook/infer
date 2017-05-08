@@ -30,14 +30,14 @@ public:
   }
 };
 
-void FN_my_vector_oob_Bad(int_vector& v) {
+void my_vector_oob_Bad(int_vector& v) {
   unsigned int n = v.size();
   v.access_at(n);
 }
 
-// We expect the error to be throw in FN_my_vector_oob_Bad already
-void FN_instantiate_my_vector_oob_Ok() {
+// We expect the error to be throw in my_vector_oob_Bad already
+void instantiate_my_vector_oob_Ok() {
   int_vector v;
   v.resize(42);
-  FN_my_vector_oob_Bad(v);
+  my_vector_oob_Bad(v);
 }

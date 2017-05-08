@@ -8,7 +8,7 @@
  */
 #include <vector>
 
-void FN_out_of_bound_Bad(std::vector<int> v) {
+void out_of_bound_Bad(std::vector<int> v) {
   unsigned int n = v.size();
   v[n] = 1;
 }

@@ -37,12 +37,9 @@ and astate = t
 
 let set_size_pos : t -> t
   = fun c ->
-    let size =
-      if Itv.Bound.le (Itv.lb c.size) Itv.Bound.zero
-      then Itv.make Itv.Bound.zero (Itv.ub c.size)
-      else c.size
-    in
-    { c with size }
+    if Itv.Bound.lt (Itv.lb c.size) Itv.Bound.zero
+    then { c with size = Itv.make Itv.Bound.zero (Itv.ub c.size) }
+    else c
 
 let string_of_location : Location.t -> string
   = fun loc ->
@@ -84,8 +81,8 @@ let make : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> 
 let filter1 : t -> bool
   = fun c ->
     Itv.eq c.idx Itv.top || Itv.eq c.size Itv.top
-    || (try Itv.Bound.eq (Itv.lb c.idx) Itv.Bound.MInf with _ -> false)
-    || (try Itv.Bound.eq (Itv.lb c.size) Itv.Bound.MInf with _ -> false)
+    || Itv.Bound.eq (Itv.lb c.idx) Itv.Bound.MInf
+    || Itv.Bound.eq (Itv.lb c.size) Itv.Bound.MInf
     || (Itv.eq c.idx Itv.nat && Itv.eq c.size Itv.nat)
 
 let filter2 : t -> bool
@@ -110,16 +107,33 @@ let filter2 : t -> bool
 (* check buffer overrun and return its confidence *)
 let check : t -> string option
   = fun c ->
-    if Config.bo_debug <= 1 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size)
-    then None
-    else if filter1 c then Some Localise.BucketLevel.b5
-    else if filter2 c then Some Localise.BucketLevel.b3
+    (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
+    let c' = set_size_pos c in (* if sl < 0, use sl' = 0 *)
+    let not_overrun = Itv.lt_sem c'.idx c'.size in
+    let not_underrun = Itv.le_sem Itv.zero c'.idx in
+    (* il >= 0 and iu < sl, definitely not an error *)
+    if Itv.eq not_overrun Itv.one && Itv.eq not_underrun Itv.one then
+      None
+      (* iu < 0 or il >= su, definitely an error *)
+    else if Itv.eq not_overrun Itv.zero || Itv.eq not_underrun Itv.zero then
+      Some Localise.BucketLevel.b1
+      (* su <= iu < +oo, most probably an error *)
+    else if Itv.Bound.is_not_infty (Itv.ub c.idx)
+         && Itv.Bound.le (Itv.ub c.size) (Itv.ub c.idx) then
+      Some Localise.BucketLevel.b2
+      (* symbolic il >= sl, probably an error *)
+    else if Itv.Bound.is_symbolic (Itv.lb c.idx)
+         && Itv.Bound.le (Itv.lb c'.size) (Itv.lb c.idx) then
+      Some Localise.BucketLevel.b3
+      (* other symbolic bounds are probably too noisy *)
+    else if Config.bo_debug <= 1 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size) then
+      None
+    else if filter1 c then
+      Some Localise.BucketLevel.b5
+    else if filter2 c then
+      Some Localise.BucketLevel.b3
     else
-      let c = set_size_pos c in
-      let not_overrun = Itv.lt_sem c.idx c.size in
-      let not_underrun = Itv.le_sem Itv.zero c.idx in
-      if (Itv.eq not_overrun Itv.one) && (Itv.eq not_underrun Itv.one) then None
-      else Some Localise.BucketLevel.b1
+      Some Localise.BucketLevel.b2
 
 let invalid : t -> bool
   = fun x -> Itv.invalid x.idx || Itv.invalid x.size

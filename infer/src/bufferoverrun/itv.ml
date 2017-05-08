@@ -50,6 +50,9 @@ struct
   let empty : t
     = M.empty
 
+  let is_empty : t -> bool
+    = M.is_empty
+
   let add : Symbol.t -> int -> t -> t
     = M.add
 
@@ -210,7 +213,7 @@ let of_sym : SymLinear.t -> t
 let is_symbolic : t -> bool
   = function
     | MInf | PInf | Bot -> false
-    | Linear (_, se) -> SymLinear.cardinal se > 0
+    | Linear (_, se) -> not (SymLinear.is_empty se)
     | MinMax _ -> true
 
 let opt_lift : ('a -> 'b -> bool) -> 'a option -> 'b option -> bool
