@@ -265,6 +265,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     let exec_instr
         (astate : Domain.astate) (proc_data : FormalMap.t ProcData.t) _ (instr : HilInstr.t) =
+      let exec_write lhs_access_path rhs_exp astate=
+        let rhs_node =
+          Option.value
+            (hil_exp_get_node rhs_exp astate proc_data)
+            ~default:TaintDomain.empty_node in
+        TaintDomain.add_node (AccessPath.Exact lhs_access_path) rhs_node astate in
+
       match instr with
       | Write (((Var.ProgramVar pvar, _), []), HilExp.Exception _, _) when Pvar.is_return pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
@@ -281,11 +288,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           astate
 
       | Write (lhs_access_path, rhs_exp, _) ->
-          let rhs_node =
-            Option.value
-              (hil_exp_get_node rhs_exp astate proc_data)
-              ~default:TaintDomain.empty_node in
-          TaintDomain.add_node (AccessPath.Exact lhs_access_path) rhs_node astate
+          exec_write lhs_access_path rhs_exp astate
 
       | Call (ret_opt, Direct called_pname, actuals, call_flags, callee_loc) ->
           let handle_unknown_call callee_pname access_tree =
@@ -336,13 +339,24 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | _ ->
                   astate_acc in
 
-            let propagations =
-              TaintSpecification.handle_unknown_call
-                callee_pname
-                (Option.map ~f:snd ret_opt)
-                actuals
-                proc_data.tenv in
-            List.fold ~f:handle_unknown_call_ ~init:access_tree propagations in
+            match Typ.Procname.get_method callee_pname with
+            | "operator=" when Typ.Procname.is_c_method callee_pname ->
+                (* treat unknown calls to C++ operator= as assignment *)
+                begin
+                  match actuals with
+                  | [AccessPath lhs_access_path; rhs_exp] ->
+                      exec_write lhs_access_path rhs_exp access_tree
+                  | _ ->
+                      failwithf "Unexpected call to operator= %a" HilInstr.pp instr
+                end
+            | _ ->
+                let propagations =
+                  TaintSpecification.handle_unknown_call
+                    callee_pname
+                    (Option.map ~f:snd ret_opt)
+                    actuals
+                    proc_data.tenv in
+                List.fold ~f:handle_unknown_call_ ~init:access_tree propagations in
 
           let analyze_call astate_acc callee_pname =
             let call_site = CallSite.make callee_pname callee_loc in

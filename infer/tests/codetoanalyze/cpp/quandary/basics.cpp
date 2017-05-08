@@ -22,6 +22,8 @@ class Obj {
   static void static_sink(void*) {}
   std::string string_source(int i) { return ""; }
   void string_sink(std::string) {}
+  std::string field1;
+  std::string field2;
 };
 
 void* returnSource() { return __infer_taint_source(); }
@@ -68,6 +70,9 @@ T* template_source() {
   return nullptr;
 }
 
+template <class T>
+void template_sink(T) {}
+
 void template_source_bad() {
   void* source = template_source<void*>();
   __infer_taint_sink(source);
@@ -76,5 +81,29 @@ void template_source_bad() {
 void string_source_bad(Obj obj) {
   std::string source = obj.string_source(5);
   obj.string_sink(source);
+}
+
+void via_field_bad1() {
+  Obj* obj = new Obj();
+  obj->field1 = *template_source<std::string>();
+  template_sink<std::string>(obj->field1);
+}
+
+void via_field_bad2(Obj* obj) {
+  obj->field1 = *template_source<std::string>();
+  template_sink<std::string>(obj->field1);
+}
+
+void via_field_ok1() {
+  Obj* obj = new Obj();
+  obj->field1 = *template_source<std::string>();
+  obj->field1 = nullptr;
+  template_sink<std::string>(obj->field1);
+}
+
+void via_field_ok2() {
+  Obj* obj = new Obj();
+  obj->field1 = *template_source<std::string>();
+  template_sink<std::string>(obj->field2);
 }
 }

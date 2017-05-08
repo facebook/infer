@@ -38,6 +38,11 @@
       "index": "0"
     },
     {
+      "procedure": "basics::template_sink",
+      "kind": "Other",
+      "index": "0"
+    },
+    {
       "procedure": "basics::Obj::string_sink",
       "kind": "Other",
       "index": "1"
