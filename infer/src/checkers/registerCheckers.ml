@@ -44,7 +44,7 @@ let active_procedure_checkers () =
     let l =
       [
         ClangTaintAnalysis.checker, Config.quandary;
-        Siof.checker, Config.siof;
+        Siof.checker, enabled_by_default || Config.siof;
         ThreadSafety.analyze_procedure, Config.threadsafety;
         BufferOverrunChecker.checker, Config.bufferoverrun;
         Interproc.analyze_procedure, Config.biabduction;
