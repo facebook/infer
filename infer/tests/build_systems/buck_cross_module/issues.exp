@@ -1,0 +1,2 @@
+infer/tests/build_systems/buck_cross_module/module2/Class2.java, void Class2.crossModuleNPE1(), 1, NULL_DEREFERENCE, [start of procedure crossModuleNPE1(),start of procedure returnsNull(),return from a call to String Class1.returnsNull()]
+infer/tests/build_systems/buck_cross_module/module2/Class2.java, void Class2.crossModuleNPE2(Class1), 1, NULL_DEREFERENCE, [start of procedure crossModuleNPE2(...)]
