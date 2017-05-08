@@ -15,6 +15,10 @@
     {
       "procedure": "basics::template_source",
       "kind": "Other"
+    },
+    {
+      "procedure": "basics::Obj::string_source",
+      "kind": "Other"
     }
   ],
   "quandary-sinks": [
@@ -32,6 +36,11 @@
       "procedure": "basics::Obj::static_sink",
       "kind": "Other",
       "index": "0"
+    },
+    {
+      "procedure": "basics::Obj::string_sink",
+      "kind": "Other",
+      "index": "1"
     }
   ]
 }

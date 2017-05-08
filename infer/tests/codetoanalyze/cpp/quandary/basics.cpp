@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <string>
+
 extern void* __infer_taint_source();
 extern void __infer_taint_sink(void*);
 
@@ -18,6 +20,8 @@ class Obj {
   void method_sink(void*) {}
   static void* static_source() { return (void*)0; }
   static void static_sink(void*) {}
+  std::string string_source(int i) { return ""; }
+  void string_sink(std::string) {}
 };
 
 void* returnSource() { return __infer_taint_source(); }
@@ -67,5 +71,10 @@ T* template_source() {
 void template_source_bad() {
   void* source = template_source<void*>();
   __infer_taint_sink(source);
+}
+
+void string_source_bad(Obj obj) {
+  std::string source = obj.string_source(5);
+  obj.string_sink(source);
 }
 }

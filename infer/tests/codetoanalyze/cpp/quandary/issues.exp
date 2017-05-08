@@ -4,6 +4,7 @@ codetoanalyze/cpp/quandary/basics.cpp, basics::returnSourceToSinkBad, 2, QUANDAR
 codetoanalyze/cpp/quandary/basics.cpp, basics::sourceThenCallSinkBad, 2, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,call to basics::callSink,call to __infer_taint_sink]
 codetoanalyze/cpp/quandary/basics.cpp, basics::sourceToSinkDirectBad, 2, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,call to __infer_taint_sink]
 codetoanalyze/cpp/quandary/basics.cpp, basics::static_source_sink_bad, 2, QUANDARY_TAINT_ERROR, [return from basics::Obj_static_source,call to basics::Obj_static_sink]
+codetoanalyze/cpp/quandary/basics.cpp, basics::string_source_bad, 2, QUANDARY_TAINT_ERROR, [return from basics::Obj_string_source,call to basics::Obj_string_sink]
 codetoanalyze/cpp/quandary/basics.cpp, basics::template_source_bad, 2, QUANDARY_TAINT_ERROR, [return from basics::template_source<void_*>,call to __infer_taint_sink]
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 6, QUANDARY_TAINT_ERROR, [return from getenv,call to execl]
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 8, QUANDARY_TAINT_ERROR, [return from getenv,call to execl]

@@ -23,8 +23,14 @@ include
       | QuandarySummary.AccessTree.Clang tree -> tree
       | _ -> assert false
 
-    let handle_unknown_call _ _ _ _ =
-      []
+    let handle_unknown_call _ ret_typ_opt actuals _ = match ret_typ_opt, actuals with
+      | Some _, _ ->
+          (* propagate taint from actuals to return value *)
+          [TaintSpec.Propagate_to_return]
+      | None, [] -> []
+      | None, _ ->
+          (* no return value; propagate taint from actuals to receiver *)
+          [TaintSpec.Propagate_to_receiver]
 
     let is_taintable_type _ = true
   end)

@@ -355,13 +355,27 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let source = TraceDomain.Source.get call_site proc_data.tenv in
             let astate_with_source =
               match source, ret_opt with
-              | Some source, Some ret_exp ->
-                  add_source source ret_exp astate_with_sink
-              | Some _, None ->
-                  L.err
-                    "Warning: %a is marked as a source, but has no return value"
-                    Typ.Procname.pp callee_pname;
-                  astate_with_sink
+              | Some source, Some ret_base ->
+                  add_source source ret_base astate_with_sink
+              | Some source, None ->
+                  let warn_invalid_source () =
+                    L.stderr
+                      "Warning: %a is marked as a source, but has no return value"
+                      Typ.Procname.pp callee_pname;
+                    astate_with_sink in
+                  if Typ.Procname.is_c_method called_pname
+                  then
+                    (* the C++ frontend handles returns of non-pointers by adding a dummy
+                       pass-by-reference variable as the last actual, then returning the value
+                       by assigning to it. make sure we understand this pattern *)
+                    match List.last actuals with
+                    | Some (HilExp.AccessPath ((Var.ProgramVar pvar, _) as ret_base, []))
+                      when Pvar.is_frontend_tmp pvar ->
+                        add_source source ret_base astate_with_sink
+                    | _ ->
+                        warn_invalid_source ()
+                  else
+                    warn_invalid_source ()
               | None, _ ->
                   astate_with_sink in
 
