@@ -79,19 +79,6 @@ type fkind =
   | FLongDouble /** [long double] */
 [@@deriving compare];
 
-
-/** comparison for fkind */
-let fkind_compare k1 k2 =>
-  switch (k1, k2) {
-  | (FFloat, FFloat) => 0
-  | (FFloat, _) => (-1)
-  | (_, FFloat) => 1
-  | (FDouble, FDouble) => 0
-  | (FDouble, _) => (-1)
-  | (_, FDouble) => 1
-  | (FLongDouble, FLongDouble) => 0
-  };
-
 let fkind_to_string =
   fun
   | FFloat => "float"
@@ -456,7 +443,7 @@ let rec java_from_string: string => t =
     }
   | typ_str => mk (Tstruct (Name.Java.from_string typ_str));
 
-type typ = t [@@deriving compare];
+type typ = t;
 
 module Procname = {
   /* e.g. ("", "int") for primitive types or ("java.io", "PrintWriter") for objects */

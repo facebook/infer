@@ -37,7 +37,6 @@ module Name = {
     | Footprint => footprint
     | Spec => spec
     | FromString s => s;
-  let equal = [%compare.equal : t];
 };
 
 type name = Name.t [@@deriving compare];

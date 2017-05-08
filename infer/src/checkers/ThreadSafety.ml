@@ -865,12 +865,6 @@ let filter_by_access access_filter trace =
   PathDomain.Sinks.filter access_filter (PathDomain.sinks trace)
   |> PathDomain.update_sinks trace
 
-(* keep only the accesses of the given kind *)
-let filter_by_kind access_kind trace =
-  filter_by_access
-    (fun sink -> phys_equal access_kind (snd (ThreadSafetyDomain.TraceElem.kind sink)))
-    trace
-
 let get_all_accesses_with_pre pre_filter access_filter accesses =
   let open ThreadSafetyDomain in
   AccessDomain.fold

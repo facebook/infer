@@ -129,11 +129,6 @@ let iter (f: iter_fun) (err_log: t) =
       ErrDataSet.iter (fun err_data -> f err_key err_data) set)
     err_log
 
-let iter_filter (f: iter_fun) (err_log: t) =
-  ErrLogHash.iter (fun err_key set ->
-      ErrDataSet.iter (fun err_data -> f err_key err_data) set)
-    err_log
-
 (** Return the number of elements in the error log which satisfy [filter] *)
 let size filter (err_log: t) =
   let count = ref 0 in

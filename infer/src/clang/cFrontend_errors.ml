@@ -160,61 +160,6 @@ let create_parsed_linters linters_def_file checkers : linter list =
     {condition; issue_desc; def_file = Some linters_def_file} in
   List.map ~f:do_one_checker checkers
 
-let check_def_well_expanded vars expanded_formula =
-  let open CTL in
-  let check_const c =
-    match c with
-    | ALVar.Regexp c
-    | ALVar.Const c when List.mem vars (ALVar.Var c) ->
-        failwith ("[ERROR]: Const/Regexp '" ^ c ^
-                  "' is used as formal parameter of some LET definition.")
-    | ALVar.Const _
-    | ALVar.Regexp _ -> ()
-    | ALVar.Var v
-    | ALVar.FId (Formula_id v) ->
-        failwith ("[ERROR]: Variable '" ^ v ^
-                  "' could not be substituted and cannot be evaluated") in
-  let rec check_expansion exp_f =
-    match exp_f with
-    | True
-    | False -> ()
-    | Atomic (_, ps) -> List.iter ~f: check_const ps
-    | Not f1 -> check_expansion f1
-    | And (f1, f2) ->
-        check_expansion f1;
-        check_expansion f2
-    | Or (f1, f2) ->
-        check_expansion f1;
-        check_expansion f2
-    | Implies (f1, f2) ->
-        check_expansion f1;
-        check_expansion f2
-    | InNode (node_type_list, f1) ->
-        List.iter ~f:check_const node_type_list;
-        check_expansion f1
-    | AU (f1, f2) ->
-        check_expansion f1;
-        check_expansion f2
-    | EU (_, f1, f2) ->
-        check_expansion f1;
-        check_expansion f2
-    | EF (_, f1) -> check_expansion f1
-    | AF f1 -> check_expansion f1
-    | AG f1 -> check_expansion f1
-    | EX (_, f1) -> check_expansion f1
-    | AX f1 -> check_expansion f1
-    | EH (cl, f1) ->
-        List.iter ~f:check_const cl;
-        check_expansion f1
-    | EG (_, f1) -> check_expansion f1
-    | ET (ntl, _, f1) ->
-        List.iter ~f: check_const ntl;
-        check_expansion f1
-    | ETX (ntl, _, f1) ->
-        List.iter ~f: check_const ntl;
-        check_expansion f1 in
-  check_expansion expanded_formula
-
 let rec apply_substitution f sub =
   let sub_param p = try
       snd (List.find_exn sub ~f:(fun (a,_) -> ALVar.equal p a))

@@ -57,8 +57,6 @@ module Make (Kind : Kind) = struct
           if false, report only if the value passed to the sink is itself a source *)
     }
 
-  let equal = [%compare.equal : t]
-
   let kind t =
     t.kind
 

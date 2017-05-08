@@ -14,7 +14,6 @@ type keyword =
   | Suggestion
   | Severity
   | Mode
-[@@deriving compare]
 
 type formula_id = Formula_id of string[@@deriving compare]
 

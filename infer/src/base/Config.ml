@@ -33,8 +33,6 @@ let exe_name =
   let exe_to_name = List.map ~f:(fun (n,a) -> (a,n)) exes in
   fun exe -> List.Assoc.find_exn ~equal:equal_exe exe_to_name exe
 
-let frontend_parse_modes = CLOpt.(Infer [Clang])
-
 type analyzer =
   | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
 [@@deriving compare]
@@ -1446,7 +1444,7 @@ let javac_classes_out =
         classes_out)
     ""
 
-and java_classpath =
+and _ =
   CLOpt.mk_string_opt ~parse_mode:CLOpt.Javac
     ~deprecated:["classpath";"cp"] ~long:""
     ~f:(fun classpath ->
@@ -1571,7 +1569,7 @@ let inferconfig_path () =
         let is_root = String.equal dir parent in
         if is_root then None
         else find parent in
-  match Sys.getenv "INFERCONFIG" with
+  match Sys.getenv inferconfig_env_var with
   | Some env_path ->
       (* make sure the path makes sense in children infer processes *)
       Some (

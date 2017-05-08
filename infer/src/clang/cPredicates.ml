@@ -84,9 +84,6 @@ let pp_predicate fmt (_name, _arglist) =
   let arglist = List.map ~f:ALVar.alexp_to_string _arglist in
   Format.fprintf fmt "%s(%a)" name (Pp.comma_seq Format.pp_print_string) arglist
 
-let is_declaration_kind decl s =
-  String.equal (Clang_ast_proj.get_decl_kind_string decl) s
-
 (* is an objc interface with name expected_name *)
 let is_objc_interface_named an expected_name =
   match an with

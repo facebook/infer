@@ -118,10 +118,7 @@ end
 
 module PPMap =
 struct
-  include PrettyPrintable.MakePPMap (struct
-      include Allocsite
-      let pp_key f k = pp f k
-    end)
+  include PrettyPrintable.MakePPMap (Allocsite)
 
   let pp ~pp_value fmt m =
     let pp_item fmt (k, v) = F.fprintf fmt "(%a, %a)" pp_key k pp_value v in

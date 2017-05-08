@@ -350,11 +350,6 @@ let spec_tbl: spec_tbl = Typ.Procname.Hash.create 128
 
 let clear_spec_tbl () = Typ.Procname.Hash.clear spec_tbl
 
-(** pretty print analysis time; if [whole_seconds] is true, only print time in seconds *)
-let pp_time whole_seconds fmt t =
-  if whole_seconds then F.fprintf fmt "%3.0f s" t
-  else F.fprintf fmt "%f s" t
-
 let pp_failure_kind_opt fmt failure_kind_opt = match failure_kind_opt with
   | Some failure_kind -> SymOp.pp_failure_kind fmt failure_kind
   | None -> F.fprintf fmt "NONE"

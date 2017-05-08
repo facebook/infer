@@ -19,8 +19,7 @@ module L = Logging;
 type attr_kind =
   | ProcDefined
   | ProcObjCAccessor
-  | ProcUndefined
-[@@deriving compare];
+  | ProcUndefined;
 
 
 /** Module to manage the table of attributes. */

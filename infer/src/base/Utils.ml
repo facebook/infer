@@ -239,10 +239,6 @@ let shell_escape_command cmd =
     |> Printf.sprintf "'%s'" in
   List.map ~f:escape cmd |> String.concat ~sep:" "
 
-let run_command_and_get_output cmd =
-  let shell_escaped_cmd = shell_escape_command cmd in
-  with_process_in (Printf.sprintf "%s 2>&1" shell_escaped_cmd) In_channel.input_lines
-
 (** Create a directory if it does not exist already. *)
 let create_dir dir =
   try

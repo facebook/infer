@@ -105,12 +105,6 @@ let mk_ia ann ia =
 let mark_ia ann ia x =
   if x then mk_ia ann ia else ia
 
-let mk_ia_strict ia =
-  if Annotations.ia_get_strict ia <> None then ia
-  else (mk_ann_str Annotations.strict, true) :: ia
-let mark_ia_strict ia x =
-  if x then mk_ia_strict ia else ia
-
 let method_annotation_mark_return ann method_annotation =
   let ia_ret, params = method_annotation in
   let ia_ret' = mark_ia ann ia_ret true in

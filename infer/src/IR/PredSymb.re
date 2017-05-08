@@ -45,13 +45,6 @@ type mem_kind =
   | Mobjc /** memory allocated with objective-c alloc */
 [@@deriving compare];
 
-let mem_kind_to_num =
-  fun
-  | Mmalloc => 0
-  | Mnew => 1
-  | Mnew_array => 2
-  | Mobjc => 3;
-
 
 /** resource that can be allocated */
 type resource =
