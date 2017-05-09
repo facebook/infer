@@ -47,11 +47,17 @@ let unset_callbacks () =
 
 let nesting = ref 0
 
+let is_active, add_active, remove_active =
+  let currently_analyzed = ref Typ.Procname.Set.empty in
+  let is_active proc_name =
+    Typ.Procname.Set.mem proc_name !currently_analyzed
+  and add_active proc_name =
+    currently_analyzed := Typ.Procname.Set.add proc_name !currently_analyzed
+  and remove_active proc_name =
+    currently_analyzed := Typ.Procname.Set.remove proc_name !currently_analyzed in
+  (is_active, add_active, remove_active)
+
 let should_be_analyzed proc_name proc_attributes =
-  let currently_analyzed () =
-    match Specs.get_summary proc_name with
-    | None -> false
-    | Some summary -> Specs.is_active summary in
   let already_analyzed () =
     match Specs.get_summary proc_name with
     | Some summary ->
@@ -59,7 +65,7 @@ let should_be_analyzed proc_name proc_attributes =
     | None ->
         false in
   proc_attributes.ProcAttributes.is_defined && (* we have the implementation *)
-  not (currently_analyzed ()) && (* avoid infinite loops *)
+  not (is_active proc_name) && (* avoid infinite loops *)
   not (already_analyzed ()) (* avoid re-analysis of the same procedure *)
 
 let procedure_should_be_analyzed proc_name =
@@ -136,12 +142,13 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
       then Some callee_pdesc
       else None in
     let initial_summary = Specs.reset_summary callee_pname attributes_opt callee_pdesc_option in
-    Specs.set_status callee_pname Specs.Active;
+    add_active callee_pname;
     initial_summary in
 
   let postprocess summary =
     decr nesting;
     Specs.store_summary summary;
+    remove_active callee_pname;
     Printer.write_proc_html callee_pdesc;
     log_elapsed_time ();
     summary in
@@ -153,6 +160,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
       { summary.Specs.payload with Specs.preposts = Some []; } in
     let new_summary = { summary with Specs.stats; payload } in
     Specs.store_summary new_summary;
+    remove_active callee_pname;
     log_elapsed_time ();
     new_summary in
 

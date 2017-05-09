@@ -303,11 +303,10 @@ type stats =
     call_stats : call_stats;
   }
 
-type status = Initialized | Active | Analyzed [@@deriving compare]
+type status = Pending | Analyzed [@@deriving compare]
 
 let string_of_status = function
-  | Initialized -> "Initialized"
-  | Active -> "Active"
+  | Pending -> "Pending"
   | Analyzed -> "Analyzed"
 
 let pp_status fmt status =
@@ -640,9 +639,6 @@ let summary_exists proc_name =
 let get_status summary =
   summary.status
 
-let is_active summary =
-  equal_status (get_status summary) Active
-
 let get_proc_name summary =
   summary.attributes.ProcAttributes.proc_name
 
@@ -680,12 +676,6 @@ let store_summary (summ1: summary) =
     (res_dir_specs_filename proc_name)
     ~data:final_summary
 
-(** Set the current status for the proc *)
-let set_status proc_name status =
-  match get_summary proc_name with
-  | None -> raise (Failure ("Specs.set_status: " ^ (Typ.Procname.to_string proc_name) ^ " Not_found"))
-  | Some summary -> add_summary proc_name { summary with status = status }
-
 let empty_payload =
   {
     preposts = None;
@@ -713,7 +703,7 @@ let init_summary
       sessions = ref 0;
       payload = empty_payload;
       stats = empty_stats calls;
-      status = Initialized;
+      status = Pending;
       attributes =
         { proc_attributes with
           ProcAttributes.proc_flags = proc_flags; };
