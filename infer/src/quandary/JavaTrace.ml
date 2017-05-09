@@ -34,31 +34,33 @@ module SourceKind = struct
       ~f:(fun { QuandaryConfig.Source.procedure; kind; } -> Str.regexp procedure, kind)
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
-  let get pname tenv = match pname with
+  let get pname tenv =
+    let return = None in
+    match pname with
     | Typ.Procname.Java pname ->
         begin
           match Typ.Procname.java_get_class_name pname, Typ.Procname.java_get_method pname with
           | "android.location.Location",
             ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ->
-              Some PrivateData
+              Some (PrivateData, return)
           | "android.telephony.TelephonyManager",
             ("getDeviceId" |
              "getLine1Number" |
              "getSimSerialNumber" |
              "getSubscriberId" |
              "getVoiceMailNumber") ->
-              Some PrivateData
+              Some (PrivateData, return)
           | "com.facebook.infer.builtins.InferTaint", "inferSecretSource" ->
-              Some Other
+              Some (Other, return)
           | class_name, method_name ->
               let taint_matching_supertype typename _ =
                 match Typ.Name.name typename, method_name with
                 | "android.app.Activity", "getIntent" ->
-                    Some Intent
+                    Some (Intent, return)
                 | "android.content.Intent", "getStringExtra" ->
-                    Some Intent
+                    Some (Intent, return)
                 | "android.content.SharedPreferences", "getString" ->
-                    Some PrivateData
+                    Some (PrivateData, return)
                 | _ ->
                     None in
               let kind_opt =
@@ -75,7 +77,7 @@ module SourceKind = struct
                     List.find_map
                       ~f:(fun (procedure_regex, kind) ->
                           if Str.string_match procedure_regex procedure 0
-                          then Some (of_string kind)
+                          then Some (of_string kind, return)
                           else None)
                       external_sources
               end

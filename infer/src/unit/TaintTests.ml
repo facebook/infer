@@ -20,7 +20,7 @@ module MockTrace = Trace.Make(struct
 
         let get pname _ =
           if String.is_prefix ~prefix:"SOURCE" (Typ.Procname.to_string pname)
-          then Some (CallSite.make pname Location.dummy)
+          then Some (CallSite.make pname Location.dummy, None)
           else None
 
         let get_tainted_formals _ _ =

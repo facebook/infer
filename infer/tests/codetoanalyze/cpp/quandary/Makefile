@@ -13,8 +13,6 @@ CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLAN
 INFER_OPTIONS = --ml-buckets cpp --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-failures-allowed
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = \
-  basics.cpp \
-  execs.cpp \
+SOURCES = $(wildcard *.cpp)
 
 include $(TESTS_DIR)/clang.make

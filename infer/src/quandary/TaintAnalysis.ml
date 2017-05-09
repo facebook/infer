@@ -96,10 +96,21 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       | AccessPath access_path -> exp_get_node_ ~abstracted access_path access_tree proc_data
       | _ -> None
 
-    let add_source source ret_base access_tree =
+    let add_return_source source ret_base access_tree =
       let trace = TraceDomain.of_source source in
       let id_ap = AccessPath.Exact (ret_base, []) in
       TaintDomain.add_trace id_ap trace access_tree
+
+    let add_actual_source source index actuals access_tree proc_data =
+      match List.nth_exn actuals index with
+      | HilExp.AccessPath actual_ap_raw ->
+          let actual_ap = AccessPath.Exact actual_ap_raw in
+          let trace = access_path_get_trace actual_ap access_tree proc_data in
+          TaintDomain.add_trace actual_ap (TraceDomain.add_source source trace) access_tree
+      | _ ->
+          access_tree
+      | exception (Failure _) ->
+          failwithf "Bad source specification: index %d out of bounds" index
 
     let endpoints = String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)
 
@@ -368,9 +379,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let source = TraceDomain.Source.get call_site proc_data.tenv in
             let astate_with_source =
               match source, ret_opt with
-              | Some source, Some ret_base ->
-                  add_source source ret_base astate_with_sink
-              | Some source, None ->
+              | Some { TraceDomain.Source.source; index=None; }, Some ret_base ->
+                  add_return_source source ret_base astate_with_sink
+              | Some { TraceDomain.Source.source; index=Some index; }, _ ->
+                  add_actual_source source index actuals astate_with_sink proc_data
+              | Some { TraceDomain.Source.source; index=None; }, None ->
                   let warn_invalid_source () =
                     L.stderr
                       "Warning: %a is marked as a source, but has no return value"
@@ -384,7 +397,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                     match List.last actuals with
                     | Some (HilExp.AccessPath ((Var.ProgramVar pvar, _) as ret_base, []))
                       when Pvar.is_frontend_tmp pvar ->
-                        add_source source ret_base astate_with_sink
+                        add_return_source source ret_base astate_with_sink
                     | _ ->
                         warn_invalid_source ()
                   else

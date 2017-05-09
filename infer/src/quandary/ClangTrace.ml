@@ -15,6 +15,7 @@ module L = Logging
 module SourceKind = struct
   type t =
     | EnvironmentVariable (** source that was read from an environment variable *)
+    | File (** source that was read from a file *)
     | Other (** for testing or uncategorized sources *)
     | Unknown
   [@@deriving compare]
@@ -23,6 +24,7 @@ module SourceKind = struct
 
   let of_string = function
     | "EnvironmentVariable" -> EnvironmentVariable
+    | "File" -> File
     | _ -> Other
 
   let external_sources =
@@ -32,23 +34,38 @@ module SourceKind = struct
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
   (* return Some(source kind) if [procedure_name] is in the list of externally specified sources *)
-  let get_external_source pname =
-    let qualified_pname = Typ.Procname.get_qualifiers pname in
+  let get_external_source qualified_pname =
+    let return = None in
     List.find_map
       ~f:(fun (qualifiers, kind) ->
           if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname
-          then Some (of_string kind)
+          then Some (of_string kind, return)
           else None)
       external_sources
 
-  let get pname _ = match pname with
-    | Typ.Procname.ObjC_Cpp _ ->
-        get_external_source pname
+  let get pname _ =
+    let return = None in
+    match pname with
+    | Typ.Procname.ObjC_Cpp cpp_name ->
+        let qualified_pname = Typ.Procname.get_qualifiers pname in
+        begin
+          match
+            (QualifiedCppName.to_list
+               (Typ.Name.unqualified_name (Typ.Procname.objc_cpp_get_class_type_name cpp_name))),
+            Typ.Procname.get_method pname with
+          | ["std"; ("basic_istream" | "basic_iostream")],
+            ("getline" | "read" | "readsome" | "operator>>") ->
+              Some (File, Some 1)
+          | _ ->
+              get_external_source qualified_pname
+        end
     | Typ.Procname.C _ ->
         begin
           match Typ.Procname.to_string pname with
-          | "getenv" -> Some EnvironmentVariable
-          | _ -> get_external_source pname
+          | "getenv" ->
+              Some (EnvironmentVariable, return)
+          | _ ->
+              get_external_source (Typ.Procname.get_qualifiers pname)
         end
     | Typ.Procname.Block _ ->
         None
@@ -60,10 +77,13 @@ module SourceKind = struct
   let get_tainted_formals pdesc _ =
     Source.all_formals_untainted pdesc
 
-  let pp fmt = function
-    | EnvironmentVariable -> F.fprintf fmt "EnvironmentVariable"
-    | Other -> F.fprintf fmt "Other"
-    | Unknown -> F.fprintf fmt "Unknown"
+  let pp fmt kind =
+    F.fprintf fmt
+      (match kind with
+       | EnvironmentVariable -> "EnvironmentVariable"
+       | File -> "File"
+       | Other -> "Other"
+       | Unknown -> "Unknown")
 end
 
 module CppSource = Source.Make(SourceKind)
@@ -145,7 +165,9 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | EnvironmentVariable, ShellExec ->
+      | EnvironmentVariable, ShellExec
+      | File, ShellExec ->
+          (* untrusted data flowing to exec *)
           true
       | Other, Other ->
           true

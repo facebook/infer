@@ -261,6 +261,14 @@ module Name = {
         QualifiedCppName.append_template_args_to_last name args::template_suffix
       }
     | JavaClass _ => QualifiedCppName.empty;
+  let unqualified_name =
+    fun
+    | CStruct name
+    | CUnion name
+    | ObjcClass name
+    | ObjcProtocol name => name
+    | CppClass name _ => name
+    | JavaClass _ => QualifiedCppName.empty;
   let name n =>
     switch n {
     | CStruct _

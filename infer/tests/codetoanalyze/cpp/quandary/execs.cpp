@@ -78,7 +78,6 @@ int callExecBad() {
 extern char* getenv(const char* var);
 
 void execConstantStringOk() { callAllSinks("something.sh", NULL); }
-
 void customGetEnvOk() {
   const char* source = execs::getenv("ENV_VAR");
   return execl(NULL, source);

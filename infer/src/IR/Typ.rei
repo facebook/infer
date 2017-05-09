@@ -142,6 +142,7 @@ module Name: {
 
   /** qualified name of the type, may return nonsense for Java classes */
   let qual_name: t => QualifiedCppName.t;
+  let unqualified_name: t => QualifiedCppName.t;
   module C: {
     let from_string: string => t;
     let from_qual_name: QualifiedCppName.t => t;

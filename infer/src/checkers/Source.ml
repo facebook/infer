@@ -21,7 +21,7 @@ module type Kind = sig
 
   val unknown : t
 
-  val get : Typ.Procname.t -> Tenv.t -> t option
+  val get : Typ.Procname.t -> Tenv.t -> (t * int option) option
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
@@ -29,13 +29,19 @@ end
 module type S = sig
   include TraceElem.S
 
+  type spec =
+    {
+      source : t;
+      index : int option;
+    }
+
   val is_footprint : t -> bool
 
   val make_footprint : AccessPath.t -> Procdesc.t -> t
 
   val get_footprint_access_path: t -> AccessPath.t option
 
-  val get : CallSite.t -> Tenv.t -> t option
+  val get : CallSite.t -> Tenv.t -> spec option
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
@@ -57,6 +63,12 @@ module Make (Kind : Kind) = struct
       kind : kind;
       site : CallSite.t;
     } [@@deriving compare]
+
+  type spec =
+    {
+      source : t;
+      index : int option;
+    }
 
   let is_footprint t = match t.kind with
     | Footprint _ -> true
@@ -82,8 +94,11 @@ module Make (Kind : Kind) = struct
     { site; kind; }
 
   let get site tenv = match Kind.get (CallSite.pname site) tenv with
-    | Some kind -> Some (make kind site)
-    | None -> None
+    | Some (kind, index) ->
+        let source = make kind site in
+        Some { source; index; }
+    | None ->
+        None
 
   let get_tainted_formals pdesc tenv =
     let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
@@ -109,6 +124,12 @@ end
 
 module Dummy = struct
   type t = unit [@@deriving compare]
+
+  type spec =
+    {
+      source : t;
+      index : int option;
+    }
 
   let call_site _ = CallSite.dummy
 

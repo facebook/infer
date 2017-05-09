@@ -20,3 +20,7 @@ codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 21, QUANDARY_TAINT_ERR
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 23, QUANDARY_TAINT_ERROR, [return from getenv,call to execvp]
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 25, QUANDARY_TAINT_ERROR, [return from getenv,call to execv]
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 27, QUANDARY_TAINT_ERROR, [return from getenv,call to execvp]
+codetoanalyze/cpp/quandary/files.cpp, files::read_file_call_exec_bad1, 5, QUANDARY_TAINT_ERROR, [return from std::basic_istream<char,std::char_traits<char>>_read,call to execle]
+codetoanalyze/cpp/quandary/files.cpp, files::read_file_call_exec_bad2, 5, QUANDARY_TAINT_ERROR, [return from std::basic_istream<char,std::char_traits<char>>_readsome,call to execle]
+codetoanalyze/cpp/quandary/files.cpp, files::read_file_call_exec_bad3, 5, QUANDARY_TAINT_ERROR, [return from std::basic_istream<char,std::char_traits<char>>_getline,call to execle]
+codetoanalyze/cpp/quandary/files.cpp, files::read_file_call_exec_bad5, 4, QUANDARY_TAINT_ERROR, [return from std::basic_istream<char,std::char_traits<char>>_getline,call to execle]

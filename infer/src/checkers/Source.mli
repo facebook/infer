@@ -19,7 +19,7 @@ module type Kind = sig
   val unknown : t
 
   (** return Some (kind) if the procedure is a taint source, None otherwise *)
-  val get : Typ.Procname.t -> Tenv.t -> t option
+  val get : Typ.Procname.t -> Tenv.t -> (t * int option) option
 
   (** return each formal of the function paired with either Some(kind) if the formal is a taint
       source, or None if the formal is not a taint source *)
@@ -28,6 +28,14 @@ end
 
 module type S = sig
   include TraceElem.S
+
+  type spec =
+    {
+      source : t;
+      (** type of the returned source *)
+      index : int option;
+      (** index of the returned source if Some; return value if None *)
+    }
 
   (** return true if the current source is a footprint source *)
   val is_footprint : t -> bool
@@ -38,8 +46,8 @@ module type S = sig
   (** return Some(access path) if the current source is a footprint source, None otherwise *)
   val get_footprint_access_path: t -> AccessPath.t option
 
-  (** return Some (source) if the call site is a taint source, None otherwise *)
-  val get : CallSite.t -> Tenv.t -> t option
+  (** return Some (taint spec) if the call site is a taint source, None otherwise *)
+  val get : CallSite.t -> Tenv.t -> spec option
 
   (** return each formal of the function paired with either Some(source) if the formal is a taint
       source, or None if the formal is not a taint source *)
