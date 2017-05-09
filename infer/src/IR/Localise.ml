@@ -131,11 +131,45 @@ let uninitialized_value = from_string "UNINITIALIZED_VALUE"
 let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
 let use_after_free = from_string "USE_AFTER_FREE"
 
+module Tags = struct
+  type t = (string * string) list [@@deriving compare]
+  let accessed_line = "accessed_line" (* line where value was last accessed *)
+  let alloc_function = "alloc_function" (* allocation function used *)
+  let alloc_call = "alloc_call" (* call in the current procedure which triggers the allocation *)
+  let alloc_line = "alloc_line" (* line of alloc_call *)
+  let array_index = "array_index" (* index of the array *)
+  let array_size = "array_size" (* size of the array *)
+  let assigned_line = "assigned_line" (* line where value was last assigned *)
+  let bucket = "bucket" (* bucket to classify likelyhood of real bug *)
+  let call_procedure = "call_procedure" (* name of the procedure called *)
+  let call_line = "call_line" (* line of call_procedure *)
+  let dealloc_function = "dealloc_function" (* deallocation function used *)
+  let dealloc_call = "dealloc_call" (* call in the current procedure which triggers the deallocation *)
+  let dealloc_line = "dealloc_line" (* line of dealloc_call *)
+  let dereferenced_line = "dereferenced_line" (* line where value was dereferenced *)
+  let escape_to = "escape_to" (* expression wher a value escapes to *)
+  let line = "line" (* line of the error *)
+  let type1 = "type1" (* 1st Java type *)
+  let type2 = "type2" (* 2nd Java type *)
+  let value = "value" (* string describing a C value, e.g. "x.date" *)
+  let parameter_not_null_checked = "parameter_not_null_checked" (* describes a NPE that comes from parameter not nullable *)
+  let field_not_null_checked = "field_not_null_checked" (* describes a NPE that comes from field not nullable *)
+  let nullable_src = "nullable_src" (* @Nullable-annoted field/param/retval that causes a warning *)
+  let weak_captured_var_src = "weak_captured_var_src" (* Weak variable captured in a block that causes a warning *)
+  let double_lock = "double_lock"
+  let empty_vector_access = "empty_vector_access"
+  let create () = ref []
+  let add tags tag value = List.Assoc.add ~equal:String.equal tags tag value
+  let update tags tag value = tags := add !tags tag value
+  let get tags tag = List.Assoc.find ~equal:String.equal tags tag
+  let tag_value_records_of_tags tags =
+    List.map ~f:(fun (tag, value) -> {Jsonbug_t.tag; value}) tags
+end
 
 type error_desc = {
   descriptions : string list;
   advice : string option;
-  tags : (string * string) list;
+  tags : Tags.t;
   dotty : string option;
 } [@@deriving compare]
 
@@ -171,42 +205,6 @@ let error_desc_get_tags err_desc = err_desc.tags
 
 let error_desc_get_dotty err_desc = err_desc.dotty
 
-module Tags = struct
-  let accessed_line = "accessed_line" (* line where value was last accessed *)
-  let alloc_function = "alloc_function" (* allocation function used *)
-  let alloc_call = "alloc_call" (* call in the current procedure which triggers the allocation *)
-  let alloc_line = "alloc_line" (* line of alloc_call *)
-  let array_index = "array_index" (* index of the array *)
-  let array_size = "array_size" (* size of the array *)
-  let assigned_line = "assigned_line" (* line where value was last assigned *)
-  let bucket = "bucket" (* bucket to classify likelyhood of real bug *)
-  let call_procedure = "call_procedure" (* name of the procedure called *)
-  let call_line = "call_line" (* line of call_procedure *)
-  let dealloc_function = "dealloc_function" (* deallocation function used *)
-  let dealloc_call = "dealloc_call" (* call in the current procedure which triggers the deallocation *)
-  let dealloc_line = "dealloc_line" (* line of dealloc_call *)
-  let dereferenced_line = "dereferenced_line" (* line where value was dereferenced *)
-  let escape_to = "escape_to" (* expression wher a value escapes to *)
-  let line = "line" (* line of the error *)
-  let type1 = "type1" (* 1st Java type *)
-  let type2 = "type2" (* 2nd Java type *)
-  let value = "value" (* string describing a C value, e.g. "x.date" *)
-  let parameter_not_null_checked = "parameter_not_null_checked" (* describes a NPE that comes from parameter not nullable *)
-  let field_not_null_checked = "field_not_null_checked" (* describes a NPE that comes from field not nullable *)
-  let nullable_src = "nullable_src" (* @Nullable-annoted field/param/retval that causes a warning *)
-  let weak_captured_var_src = "weak_captured_var_src" (* Weak variable captured in a block that causes a warning *)
-  let double_lock = "double_lock"
-  let empty_vector_access = "empty_vector_access"
-  let create () = ref []
-  let add tags tag value = tags := (tag, value) :: !tags
-  let update tags tag value =
-    let tags' = List.filter ~f:(fun (t, _) -> t <> tag) tags in
-    (tag, value) :: tags'
-  let get tags tag =
-    List.find ~f:(fun (t, _) -> String.equal t tag) tags |>
-    Option.map ~f:snd
-end
-
 module BucketLevel = struct
   let b1 = "B1" (* highest likelyhood *)
   let b2 = "B2"
@@ -240,7 +238,7 @@ let error_desc_get_bucket err_desc =
 
 (** set the bucket value of an error_desc; the boolean indicates where the bucket should be shown in the message *)
 let error_desc_set_bucket err_desc bucket show_in_message =
-  let tags' = Tags.update err_desc.tags Tags.bucket bucket in
+  let tags' = Tags.add err_desc.tags Tags.bucket bucket in
   let l = err_desc.descriptions in
   let l' =
     if not show_in_message then l
@@ -273,7 +271,7 @@ let error_desc_equal desc1 desc2 =
 
 let _line_tag tags tag loc =
   let line_str = string_of_int loc.Location.line in
-  Tags.add tags tag line_str;
+  Tags.update tags tag line_str;
   let s = "line " ^ line_str in
   if (loc.Location.col <> -1) then
     let col_str = string_of_int loc.Location.col in
@@ -291,7 +289,7 @@ let at_line tags loc =
 
 let call_to tags proc_name =
   let proc_name_str = Typ.Procname.to_simplified_string proc_name in
-  Tags.add tags Tags.call_procedure proc_name_str;
+  Tags.update tags Tags.call_procedure proc_name_str;
   "call to " ^ MF.monospaced_to_string proc_name_str
 
 let call_to_at_line tags proc_name loc =
@@ -363,7 +361,7 @@ let access_str_empty proc_name_opt =
 (** dereference strings for null dereference due to Nullable annotation *)
 let deref_str_nullable proc_name_opt nullable_obj_str =
   let tags = Tags.create () in
-  Tags.add tags Tags.nullable_src nullable_obj_str;
+  Tags.update tags Tags.nullable_src nullable_obj_str;
   (* to be completed once we know if the deref'd expression is directly or transitively @Nullable*)
   let problem_str = "" in
   _deref_str_null proc_name_opt problem_str tags
@@ -371,7 +369,7 @@ let deref_str_nullable proc_name_opt nullable_obj_str =
 (** dereference strings for null dereference due to weak captured variable in block *)
 let deref_str_weak_variable_in_block proc_name_opt nullable_obj_str =
   let tags = Tags.create () in
-  Tags.add tags Tags.weak_captured_var_src nullable_obj_str;
+  Tags.update tags Tags.weak_captured_var_src nullable_obj_str;
   let problem_str = "" in
   _deref_str_null proc_name_opt problem_str tags
 
@@ -391,7 +389,7 @@ let deref_str_nil_argument_in_variadic_method pn total_args arg_number =
 let deref_str_undef (proc_name, loc) =
   let tags = Tags.create () in
   let proc_name_str = Typ.Procname.to_simplified_string proc_name in
-  Tags.add tags Tags.call_procedure proc_name_str;
+  Tags.update tags Tags.call_procedure proc_name_str;
   { tags = tags;
     value_pre = Some (pointer_or_object ());
     value_post = None;
@@ -441,13 +439,13 @@ let deref_str_array_bound size_opt index_opt =
   let size_str_opt = match size_opt with
     | Some n ->
         let n_str = IntLit.to_string n in
-        Tags.add tags Tags.array_size n_str;
+        Tags.update tags Tags.array_size n_str;
         Some ("of size " ^ n_str)
     | None -> None in
   let index_str = match index_opt with
     | Some n ->
         let n_str = IntLit.to_string n in
-        Tags.add tags Tags.array_index n_str;
+        Tags.update tags Tags.array_index n_str;
         "index " ^ n_str
     | None -> "an index" in
   { tags = tags;
@@ -507,7 +505,7 @@ let desc_double_lock pname_opt object_str loc =
   let tags = Tags.create () in
   let msg = "could be locked and is locked again" in
   let msg = add_by_call_to_opt msg tags pname_opt in
-  Tags.add tags Tags.double_lock object_str;
+  Tags.update tags Tags.double_lock object_str;
   let descriptions = [mutex_str; msg; at_line tags loc] in
   { no_desc with descriptions; tags = !tags }
 
@@ -556,7 +554,7 @@ type access =
 
 let dereference_string deref_str value_str access_opt loc =
   let tags = deref_str.tags in
-  Tags.add tags Tags.value value_str;
+  Tags.update tags Tags.value value_str;
   let is_call_access = match access_opt with
     | Some (Returned_from_call _) -> true
     | _ -> false in
@@ -571,11 +569,11 @@ let dereference_string deref_str value_str access_opt loc =
         []
     | Some (Last_accessed (n, _)) ->
         let line_str = string_of_int n in
-        Tags.add tags Tags.accessed_line line_str;
+        Tags.update tags Tags.accessed_line line_str;
         ["last accessed on line " ^ line_str]
     | Some (Last_assigned (n, _)) ->
         let line_str = string_of_int n in
-        Tags.add tags Tags.assigned_line line_str;
+        Tags.update tags Tags.assigned_line line_str;
         ["last assigned on line " ^ line_str]
     | Some (Returned_from_call _) -> []
     | Some Initialized_automatically ->
@@ -647,9 +645,9 @@ let desc_allocation_mismatch alloc dealloc =
     let tag_fun, tag_call, tag_line =
       if is_alloc then Tags.alloc_function, Tags.alloc_call, Tags.alloc_line
       else Tags.dealloc_function, Tags.dealloc_call, Tags.dealloc_line in
-    Tags.add tags tag_fun (Typ.Procname.to_simplified_string primitive_pname);
-    Tags.add tags tag_call (Typ.Procname.to_simplified_string called_pname);
-    Tags.add tags tag_line (string_of_int loc.Location.line);
+    Tags.update tags tag_fun (Typ.Procname.to_simplified_string primitive_pname);
+    Tags.update tags tag_call (Typ.Procname.to_simplified_string called_pname);
+    Tags.update tags tag_line (string_of_int loc.Location.line);
     let by_call =
       if Typ.Procname.equal primitive_pname called_pname then ""
       else " by call to " ^
@@ -679,7 +677,7 @@ let desc_condition_always_true_false i cond_str_opt loc =
     | None -> ""
     | Some s -> s in
   let tt_ff = if IntLit.iszero i then "false" else "true" in
-  Tags.add tags Tags.value value;
+  Tags.update tags Tags.value value;
   let description = Format.sprintf
       "Boolean condition %s is always %s %s"
       (if String.equal value "" then "" else " " ^ (MF.monospaced_to_string value))
@@ -689,7 +687,7 @@ let desc_condition_always_true_false i cond_str_opt loc =
 
 let desc_deallocate_stack_variable var_str proc_name loc =
   let tags = Tags.create () in
-  Tags.add tags Tags.value var_str;
+  Tags.update tags Tags.value var_str;
   let description = Format.asprintf
       "Stack variable %a is freed by a %s"
       MF.pp_monospaced var_str
@@ -698,7 +696,7 @@ let desc_deallocate_stack_variable var_str proc_name loc =
 
 let desc_deallocate_static_memory const_str proc_name loc =
   let tags = Tags.create () in
-  Tags.add tags Tags.value const_str;
+  Tags.update tags Tags.value const_str;
   let description = Format.asprintf
       "Constant string %a is freed by a %s"
       MF.pp_monospaced const_str
@@ -707,11 +705,11 @@ let desc_deallocate_static_memory const_str proc_name loc =
 
 let desc_class_cast_exception pname_opt typ_str1 typ_str2 exp_str_opt loc =
   let tags = Tags.create () in
-  Tags.add tags Tags.type1 typ_str1;
-  Tags.add tags Tags.type2 typ_str2;
+  Tags.update tags Tags.type1 typ_str1;
+  Tags.update tags Tags.type2 typ_str2;
   let in_expression = match exp_str_opt with
     | Some exp_str ->
-        Tags.add tags Tags.value exp_str;
+        Tags.update tags Tags.value exp_str;
         " in expression " ^ (MF.monospaced_to_string exp_str) ^ " "
     | None -> " " in
   let at_line' () = match pname_opt with
@@ -727,7 +725,7 @@ let desc_class_cast_exception pname_opt typ_str1 typ_str2 exp_str_opt loc =
 
 let desc_divide_by_zero expr_str loc =
   let tags = Tags.create () in
-  Tags.add tags Tags.value expr_str;
+  Tags.update tags Tags.value expr_str;
   let description = Format.asprintf
       "Expression %a could be zero %s"
       MF.pp_monospaced expr_str
@@ -738,7 +736,7 @@ let desc_empty_vector_access pname_opt object_str loc =
   let vector_str = Format.asprintf "Vector %a" MF.pp_monospaced object_str in
   let desc = access_str_empty pname_opt in
   let tags = desc.tags in
-  Tags.add tags Tags.empty_vector_access object_str;
+  Tags.update tags Tags.empty_vector_access object_str;
   let descriptions = [vector_str; desc.problem_str; (at_line tags loc)] in
   { no_desc with descriptions; tags = !tags }
 
@@ -760,14 +758,14 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
   let tags = Tags.create () in
   let () = match bucket_opt with
     | Some bucket ->
-        Tags.add tags Tags.bucket bucket;
+        Tags.update tags Tags.bucket bucket;
     | None -> () in
   let xxx_allocated_to =
     let value_str, _to, _on =
       match value_str_opt with
       | None -> "", "", ""
       | Some s ->
-          Tags.add tags Tags.value s;
+          Tags.update tags Tags.value s;
           MF.monospaced_to_string s, " to ", " on " in
     let typ_str =
       match hpred_type_opt with
@@ -820,8 +818,8 @@ let desc_precondition_not_met kind proc_name loc =
 
 let desc_null_test_after_dereference expr_str line loc =
   let tags = Tags.create () in
-  Tags.add tags Tags.dereferenced_line (string_of_int line);
-  Tags.add tags Tags.value expr_str;
+  Tags.update tags Tags.dereferenced_line (string_of_int line);
+  Tags.update tags Tags.value expr_str;
   let description = Format.asprintf
       "Pointer %a was dereferenced at line %d and is tested for null %s"
       MF.pp_monospaced expr_str
@@ -831,7 +829,7 @@ let desc_null_test_after_dereference expr_str line loc =
 
 let desc_return_expression_required typ_str loc =
   let tags = Tags.create () in
-  Tags.add tags Tags.value typ_str;
+  Tags.update tags Tags.value typ_str;
   let description = Format.sprintf
       "Return statement requires an expression of type %s %s"
       typ_str
@@ -898,7 +896,7 @@ let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =
   let tags = Tags.create () in
   let expression = match expr_str_opt with
     | Some s ->
-        Tags.add tags Tags.value s;
+        Tags.update tags Tags.value s;
         "expression " ^ s
     | None -> "an expression" in
   let description = Format.asprintf
@@ -911,21 +909,21 @@ let desc_unary_minus_applied_to_unsigned_expression expr_str_opt typ_str loc =
 let desc_skip_function proc_name =
   let tags = Tags.create () in
   let proc_name_str = Typ.Procname.to_string proc_name in
-  Tags.add tags Tags.value proc_name_str;
+  Tags.update tags Tags.value proc_name_str;
   { no_desc with descriptions = [proc_name_str]; tags = !tags }
 
 let desc_inherently_dangerous_function proc_name =
   let proc_name_str = Typ.Procname.to_string proc_name in
   let tags = Tags.create () in
-  Tags.add tags Tags.value proc_name_str;
+  Tags.update tags Tags.value proc_name_str;
   { no_desc with descriptions = [MF.monospaced_to_string proc_name_str]; tags = !tags }
 
 let desc_stack_variable_address_escape expr_str addr_dexp_str loc =
   let tags = Tags.create () in
-  Tags.add tags Tags.value expr_str;
+  Tags.update tags Tags.value expr_str;
   let escape_to_str = match addr_dexp_str with
     | Some s ->
-        Tags.add tags Tags.escape_to s;
+        Tags.update tags Tags.escape_to s;
         "to " ^ s ^ " "
     | None -> "" in
   let description = Format.asprintf
@@ -938,7 +936,7 @@ let desc_stack_variable_address_escape expr_str addr_dexp_str loc =
 let desc_tainted_value_reaching_sensitive_function
     taint_kind expr_str tainting_fun sensitive_fun loc =
   let tags = Tags.create () in
-  Tags.add tags Tags.value expr_str;
+  Tags.update tags Tags.value expr_str;
   let description =
     match taint_kind with
     | PredSymb.Tk_unverified_SSL_socket ->
@@ -983,7 +981,7 @@ let desc_tainted_value_reaching_sensitive_function
 
 let desc_uninitialized_dangling_pointer_deref deref expr_str loc =
   let tags = Tags.create () in
-  Tags.add tags Tags.value expr_str;
+  Tags.update tags Tags.value expr_str;
   let prefix = match deref.value_pre with
     | Some s -> s
     | _ -> "" in

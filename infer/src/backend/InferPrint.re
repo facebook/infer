@@ -131,12 +131,6 @@ let loc_trace_to_jsonbug_record trace_list ekind =>
     record_list
   };
 
-let error_desc_to_qualifier_tags_records error_desc => {
-  let tag_value_pairs = Localise.error_desc_to_tag_value_pairs error_desc;
-  let tag_value_to_record (tag, value) => {Jsonbug_j.tag: tag, value};
-  List.map f::(fun tag_value => tag_value_to_record tag_value) tag_value_pairs
-};
-
 type summary_val = {
   vname: string,
   vname_id: string,
@@ -502,7 +496,7 @@ module IssuesJson = {
           file,
           bug_trace: loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind,
           key: err_data.node_id_key.node_key,
-          qualifier_tags: error_desc_to_qualifier_tags_records key.err_desc,
+          qualifier_tags: Localise.Tags.tag_value_records_of_tags key.err_desc.tags,
           hash:
             get_bug_hash kind bug_type procedure_id file err_data.node_id_key.node_key key.err_desc,
           dotty: error_desc_to_dotty_string key.err_desc,

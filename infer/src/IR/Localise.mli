@@ -102,11 +102,18 @@ val uninitialized_value : t
 val unsafe_guarded_by_access : t
 val use_after_free : t
 
+module Tags : sig
+  type t
+
+  (** convert error description's tags to atd-serializable format *)
+  val tag_value_records_of_tags: t -> Jsonbug_t.tag_value_record list
+end
+
 (** description field of error messages *)
 type error_desc = {
   descriptions : string list;
   advice : string option;
-  tags : (string * string) list;
+  tags : Tags.t;
   dotty : string option;
 } [@@deriving compare]
 
