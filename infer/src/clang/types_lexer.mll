@@ -42,4 +42,16 @@ rule token = parse
   | "float" { FLOAT }
   | "double" { DOUBLE }
   | "void" { VOID }
+  | "signed" { SIGNED }
+  | "unsigned" { UNSIGNED }
+  | "__int128" { INT128 }
+  | "__float128" { FLOAT128 }
+  | "__wchar_t" { UNDUNDWCHAR_T }
+  | "half" { HALF }
+  | "__fp16" { UNDUNDFP16 }
+  | "nullptr_t" { NULLPTR }
+  | "id" { OBJCID }
+  | "Class" { OBJCCLASS }
+  | "SEL" { OBJCSEL }
   | _ { raise (SyntaxError ("Unexpected char: '" ^ (Lexing.lexeme lexbuf) ^"'")) }
+  | eof { EOF }

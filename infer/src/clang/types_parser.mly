@@ -8,9 +8,25 @@
  */
 
 %{
+  open Ctl_parser_types
 
-  let dummy_ptr = { Clang_ast_t.ti_pointer = 0;
-                    Clang_ast_t.ti_desugared_type = None }
+(* See StringRef BuiltinType::getName in
+  https://clang.llvm.org/doxygen/Type_8cpp_source.html *)
+  let tokens_to_abs_types l =
+    match l with
+    | [t] -> BuiltIn t
+    | [Int; Char_U] -> BuiltIn SChar
+    | [Long; Long] -> BuiltIn LongLong
+    | [UInt; Char_U] -> BuiltIn UChar
+    | [UInt; Short] -> BuiltIn UShort
+    | [UInt; Int] -> BuiltIn UInt
+    | [UInt; Long] -> BuiltIn ULong
+    | [UInt; Long; Long] -> BuiltIn ULongLong
+    | [Long; Double] -> BuiltIn LongDouble
+    | [UInt; Int128] -> BuiltIn UInt128
+    | _ -> raise (Ctl_parser_types.ALParsingException
+      ("ERROR: syntax error on types"))
+
 
 %}
 
@@ -18,6 +34,7 @@
 %token CHAR16_T
 %token CHAR32_T
 %token WCHAR_T
+%token UNDUNDWCHAR_T
 %token BOOL
 %token SHORT
 %token INT
@@ -25,25 +42,61 @@
 %token FLOAT
 %token DOUBLE
 %token VOID
+%token SIGNED
+%token UNSIGNED
+%token INT128
+%token FLOAT128
+%token HALF
+%token UNDUNDFP16
+%token NULLPTR
+%token OBJCID
+%token OBJCCLASS
+%token OBJCSEL
+%token EOF
 
-%start <Clang_ast_t.c_type> ctype_specifier
+
+%start <Ctl_parser_types.abs_ctype> ctype_specifier_seq
 %%
 
-ctype_specifier:
+ctype_specifier_seq:
+  | trailing_type_specifier_seq EOF
+    { let atyp = tokens_to_abs_types $1 in
+      Logging.out "\tParsed `%s`\n" (Ctl_parser_types.abs_ctype_to_string atyp);
+      atyp
+     }
+
+trailing_type_specifier:
  | simple_type_specifier { $1 }
 
+
+trailing_type_specifier_seq:
+  | trailing_type_specifier { [$1] }
+  | simple_type_specifier trailing_type_specifier_seq { $1 :: $2 }
+
+
 simple_type_specifier:
-  | CHAR { Clang_ast_t.BuiltinType(dummy_ptr, `Char_U) }
-  | CHAR16_T { Clang_ast_t.BuiltinType(dummy_ptr, `Char16) }
-  | CHAR32_T { Clang_ast_t.BuiltinType(dummy_ptr, `Char32) }
-  | WCHAR_T { Clang_ast_t.BuiltinType(dummy_ptr, `WChar_U) }
-  | BOOL { Clang_ast_t.BuiltinType(dummy_ptr, `Bool) }
-  | SHORT { Clang_ast_t.BuiltinType(dummy_ptr, `Short) }
-  | INT { Clang_ast_t.BuiltinType(dummy_ptr, `Int) }
-  | LONG { Clang_ast_t.BuiltinType(dummy_ptr, `Long) }
-  | FLOAT { Clang_ast_t.BuiltinType(dummy_ptr, `Float) }
-  | DOUBLE { Clang_ast_t.BuiltinType(dummy_ptr, `Double) }
-  | VOID { Clang_ast_t.BuiltinType(dummy_ptr, `Void) }
+  | CHAR { Char_U }
+  | CHAR16_T { Char16 }
+  | CHAR32_T { Char32 }
+  | WCHAR_T { WChar_U }
+  | UNDUNDWCHAR_T { WChar_U }
+  | BOOL { Bool }
+  | SHORT { Short }
+  | INT { Int }
+  | LONG { Long }
+  | FLOAT { Float }
+  | DOUBLE { Double }
+  | VOID { Void }
+  | SIGNED { Int }
+  | UNSIGNED { UInt }
+  | INT128 { Int128 }
+  | FLOAT128 { Float128 }
+  | HALF { Half }
+  | UNDUNDFP16 { Half }
+  | NULLPTR { NullPtr }
+  | OBJCID { ObjCId }
+  | OBJCCLASS { ObjCClass }
+  | OBJCSEL { ObjCSel }
   ;
 
 %%

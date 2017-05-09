@@ -97,3 +97,35 @@ DEFINE-CHECKER TEST_RETURN_METHOD = {
   SET message = "Method return int";
 
 };
+
+DEFINE-CHECKER TEST_BUILTIN_TYPE = {
+
+  SET report_when =
+        WHEN
+          method_return_type("void")
+          OR method_return_type("bool")
+          OR method_return_type("char")
+          OR method_return_type("unsigned char")
+          OR method_return_type("wchar_t")
+          OR method_return_type("unsigned short")
+          OR method_return_type("unsigned int")
+          OR method_return_type("unsigned long")
+          OR method_return_type("unsigned long long")
+          OR method_return_type("__int128")
+          OR method_return_type("unsigned __int128")
+          OR method_return_type("signed char")
+          OR method_return_type("short")
+          OR method_return_type("int")
+          OR method_return_type("long")
+          OR method_return_type("long long")
+          OR method_return_type("float")
+          OR method_return_type("double")
+          OR method_return_type("long double")
+          OR method_return_type("id")
+          OR method_return_type("Class")
+          OR method_return_type("SEL")
+        HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET message = "Method return.....";
+
+};
