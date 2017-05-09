@@ -154,6 +154,9 @@ type summary = {
   proc_desc_option : Procdesc.t option;
 }
 
+(** dummy summary for testing *)
+val dummy : summary
+
 (** Add the summary to the table for the given function *)
 val add_summary : Typ.Procname.t -> summary -> unit
 

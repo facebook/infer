@@ -712,6 +712,15 @@ let init_summary
   Typ.Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name summary;
   summary
 
+let dummy =
+  init_summary (
+    [],
+    ProcAttributes.proc_flags_empty (),
+    [],
+    ProcAttributes.default Typ.Procname.empty_block Config.Java,
+    None
+  )
+
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 let reset_summary proc_name attributes_opt proc_desc_option =
   let proc_attributes = match attributes_opt with

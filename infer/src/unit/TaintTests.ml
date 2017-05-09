@@ -225,6 +225,6 @@ let tests =
 
   ] |> TestInterpreter.create_tests
       ~pp_opt:pp_sparse
-      FormalMap.empty
+      { formal_map=FormalMap.empty; summary=Specs.dummy; }
       ~initial:(MockTaintAnalysis.Domain.empty, IdAccessPathMapDomain.empty) in
   "taint_test_suite">:::test_list

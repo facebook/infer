@@ -50,14 +50,15 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let _, base_typ = fst (AccessPath.extract access_path) in
     AccessPath.with_base (make_footprint_var formal_index, base_typ) access_path
 
+  type extras = { formal_map : FormalMap.t; summary : Specs.summary; }
+
   module TransferFunctions (CFG : ProcCfg.S) = struct
     module CFG = CFG
     module Domain = Domain
-
-    type extras = FormalMap.t
+    type nonrec extras = extras
 
     (* get the node associated with [access_path] in [access_tree] *)
-    let access_path_get_node access_path access_tree (proc_data : FormalMap.t ProcData.t) =
+    let access_path_get_node access_path access_tree (proc_data : extras ProcData.t) =
       match TaintDomain.get_node access_path access_tree with
       | Some _ as node_opt ->
           node_opt
@@ -68,7 +69,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 (TraceDomain.Source.make_footprint footprint_ap proc_data.pdesc) in
             Some (TaintDomain.make_normal_leaf trace) in
           let root, _ = AccessPath.extract access_path in
-          match FormalMap.get_formal_index root proc_data.extras with
+          match FormalMap.get_formal_index root proc_data.extras.formal_map with
           | Some formal_index ->
               make_footprint_trace (make_footprint_access_path formal_index access_path)
           | None ->
@@ -110,7 +111,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           false
 
     (** log any new reportable source-sink flows in [trace] *)
-    let report_trace trace cur_site (proc_data : FormalMap.t ProcData.t) =
+    let report_trace trace cur_site (proc_data : extras ProcData.t) =
       let trace_of_pname pname =
         if Typ.Procname.equal pname (Procdesc.get_proc_name proc_data.pdesc)
         then
@@ -137,12 +138,12 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           (if is_endpoint original_source then ". Note: source is an endpoint." else "") in
 
       let report_error path =
-        let caller_pname = Procdesc.get_proc_name proc_data.pdesc in
         let msg = Localise.to_issue_id Localise.quandary_taint_error in
         let trace_str = F.asprintf "%a" pp_path_short path in
         let ltr = TraceDomain.to_loc_trace path in
         let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
-        Reporting.log_error caller_pname ~loc:(CallSite.loc cur_site) ~ltr exn in
+        Reporting.log_error_from_summary
+          proc_data.extras.summary ~loc:(CallSite.loc cur_site) ~ltr exn in
 
       List.iter ~f:report_error (TraceDomain.get_reportable_paths ~cur_site trace ~trace_of_pname)
 
@@ -184,7 +185,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         (actuals : HilExp.t list)
         summary
         caller_access_tree
-        (proc_data : FormalMap.t ProcData.t)
+        (proc_data : extras ProcData.t)
         callee_site =
 
       let get_caller_ap formal_ap =
@@ -263,15 +264,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         (TaintSpecification.of_summary_access_tree summary)
         caller_access_tree
 
-    let exec_instr
-        (astate : Domain.astate) (proc_data : FormalMap.t ProcData.t) _ (instr : HilInstr.t) =
+    let exec_instr (astate : Domain.astate) (proc_data : extras ProcData.t) _ (instr : HilInstr.t) =
       let exec_write lhs_access_path rhs_exp astate=
         let rhs_node =
           Option.value
             (hil_exp_get_node rhs_exp astate proc_data)
             ~default:TaintDomain.empty_node in
         TaintDomain.add_node (AccessPath.Exact lhs_access_path) rhs_node astate in
-
       match instr with
       | Write (((Var.ProgramVar pvar, _), []), HilExp.Exception _, _) when Pvar.is_return pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
@@ -502,7 +501,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
   module Interprocedural = AbstractInterpreter.Interprocedural(Summary)
 
-  let checker ({ Callbacks.tenv; } as callback) : Specs.summary =
+  let checker ({ Callbacks.tenv; summary; } as callback) : Specs.summary =
 
     (* bind parameters to a trace with a tainted source (if applicable) *)
     let make_initial pdesc =
@@ -519,7 +518,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           (TraceDomain.Source.get_tainted_formals pdesc tenv) in
       access_tree, IdAccessPathMapDomain.empty in
 
-    let compute_post (proc_data : FormalMap.t ProcData.t) =
+    let compute_post (proc_data : extras ProcData.t) =
       if not (Procdesc.did_preanalysis proc_data.pdesc)
       then
         begin
@@ -529,11 +528,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let initial = make_initial proc_data.pdesc in
       match Analyzer.compute_post proc_data ~initial with
       | Some (access_tree, _) ->
-          Some (make_summary proc_data.extras access_tree)
+          Some (make_summary proc_data.extras.formal_map access_tree)
       | None ->
           if Procdesc.Node.get_succs (Procdesc.get_start_node proc_data.pdesc) <> []
           then failwith "Couldn't compute post"
           else None in
-    let make_extras = FormalMap.make in
+    let make_extras pdesc =
+      let formal_map = FormalMap.make pdesc in
+      { formal_map; summary; } in
     Interprocedural.compute_and_store_post ~compute_post ~make_extras callback
 end
