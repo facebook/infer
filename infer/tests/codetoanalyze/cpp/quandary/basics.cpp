@@ -106,4 +106,28 @@ void via_field_ok2() {
   obj->field1 = *template_source<std::string>();
   template_sink<std::string>(obj->field2);
 }
+
+template <class T>
+T* id1(T* t) {
+  return t;
+}
+
+template <class T>
+T id2(T t) {
+  return t;
+}
+
+void via_passthrough_bad1(Obj* obj) {
+  std::string source = obj->string_source(0);
+  std::string* source_ptr = &source;
+  std::string* laundered_source = id1<std::string>(source_ptr);
+  obj->string_sink(*laundered_source);
+}
+
+// the summary for id2 doesn't assign to the return value
+void FN_via_passthrough_bad2(Obj* obj) {
+  std::string source = obj->string_source(0);
+  std::string laundered_source = id2<std::string>(source);
+  obj->string_sink(laundered_source);
+}
 }

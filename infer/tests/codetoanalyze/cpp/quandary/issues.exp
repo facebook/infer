@@ -8,6 +8,7 @@ codetoanalyze/cpp/quandary/basics.cpp, basics::string_source_bad, 2, QUANDARY_TA
 codetoanalyze/cpp/quandary/basics.cpp, basics::template_source_bad, 2, QUANDARY_TAINT_ERROR, [return from basics::template_source<void_*>,call to __infer_taint_sink]
 codetoanalyze/cpp/quandary/basics.cpp, basics::via_field_bad1, 3, QUANDARY_TAINT_ERROR, [return from basics::template_source<std::basic_string<char>_>,call to basics::template_sink<std::basic_string<char>_>]
 codetoanalyze/cpp/quandary/basics.cpp, basics::via_field_bad2, 2, QUANDARY_TAINT_ERROR, [return from basics::template_source<std::basic_string<char>_>,call to basics::template_sink<std::basic_string<char>_>]
+codetoanalyze/cpp/quandary/basics.cpp, basics::via_passthrough_bad1, 4, QUANDARY_TAINT_ERROR, [return from basics::Obj_string_source,flow through basics::id1<std::basic_string<char>_>,call to basics::Obj_string_sink]
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 6, QUANDARY_TAINT_ERROR, [return from getenv,call to execl]
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 8, QUANDARY_TAINT_ERROR, [return from getenv,call to execl]
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 11, QUANDARY_TAINT_ERROR, [return from getenv,call to execl]
