@@ -15,7 +15,7 @@ let count_newlines (path: string): int =
   In_channel.with_file path ~f
 
 type t =
-  | Invalid
+  | Invalid of string (* ML function of origin *)
   | Absolute of string
   | RelativeProjectRoot of string (* relative to project root *)
   | RelativeInferModel of string (* relative to infer models *)
@@ -54,7 +54,7 @@ let from_abs_path fname =
 
 let to_string fname =
   match fname with
-  | Invalid -> "DUMMY"
+  | Invalid origin -> "DUMMY from " ^ origin
   | RelativeInferModel path -> "INFER_MODEL/" ^ path
   | RelativeProjectRoot path
   | Absolute path -> path
@@ -65,7 +65,8 @@ let pp fmt fname =
 (* Checking if the path exists may be needed only in some cases, hence the flag check_exists *)
 let to_abs_path fname =
   match fname with
-  | Invalid -> invalid_arg "cannot be called with Invalid source file"
+  | Invalid origin ->
+      invalid_arg ("cannot be called with Invalid source file originating in " ^ origin)
   | RelativeProjectRoot path -> Filename.concat Config.project_root path
   | RelativeInferModel path -> Filename.concat Config.models_src_dir path
   | Absolute path -> path
@@ -79,12 +80,15 @@ let to_rel_path fname =
   | RelativeProjectRoot path -> path
   | _ -> to_abs_path fname
 
-let invalid = Invalid
+let invalid origin = Invalid origin
 
-let is_invalid = equal Invalid
+let is_invalid = function
+  | Invalid _ -> true
+  | _ -> false
+
 
 let is_infer_model source_file = match source_file with
-  | Invalid -> invalid_arg "cannot be called with Invalid source file"
+  | Invalid origin -> invalid_arg ("cannot be called with Invalid source file from " ^ origin)
   | RelativeProjectRoot _ | Absolute _ -> false
   | RelativeInferModel _ -> true
 
@@ -96,7 +100,7 @@ let is_cpp_model file =
   | _ -> false
 
 let is_under_project_root = function
-  | Invalid -> invalid_arg "cannot be called with Invalid source file"
+  | Invalid origin -> invalid_arg ("cannot be called with Invalid source file from " ^ origin)
   | RelativeProjectRoot _ -> true
   | Absolute _ | RelativeInferModel _ -> false
 

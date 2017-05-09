@@ -31,7 +31,7 @@ val is_invalid : t -> bool
 val changed_files_set : Set.t option
 
 (** Invalid source file *)
-val invalid : t
+val invalid : string -> t
 
 (** equality of source files *)
 val equal : t -> t -> bool

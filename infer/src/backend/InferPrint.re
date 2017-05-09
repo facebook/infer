@@ -442,6 +442,16 @@ module IssuesJson = {
         | Some proc_loc => (proc_loc.Location.file, proc_loc.Location.line)
         | None => (err_data.loc.Location.file, 0)
         };
+      if (SourceFile.is_invalid source_file) {
+        failwithf
+          "Invalid source file for %a %a@.Trace: %a@."
+          Localise.pp
+          key.err_name
+          Localise.pp_error_desc
+          key.err_desc
+          Errlog.pp_loc_trace
+          err_data.loc_trace
+      };
       let should_report_source_file =
         not (SourceFile.is_infer_model source_file) ||
         Config.debug_mode || Config.debug_exceptions;

@@ -27,6 +27,12 @@ type loc_trace_elem = {
   lt_node_tags : node_tag list (** tags describing the node at the current location *)
 }
 
+let pp_loc_trace_elem fmt { lt_level; lt_loc; } =
+  F.fprintf fmt "%d %a" lt_level Location.pp lt_loc
+
+let pp_loc_trace fmt l =
+  PrettyPrintable.pp_collection ~pp_item:pp_loc_trace_elem fmt l
+
 let contains_exception loc_trace_elem =
   let pred nt =
     match nt with

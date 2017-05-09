@@ -74,6 +74,10 @@ type iter_fun = err_key -> err_data -> unit
 (** Apply f to nodes and error names *)
 val iter : iter_fun -> t -> unit
 
+val pp_loc_trace_elem : Format.formatter -> loc_trace_elem -> unit
+
+val pp_loc_trace : Format.formatter -> loc_trace -> unit
+
 (** Print errors from error log *)
 val pp_errors : Format.formatter -> t -> unit
 
