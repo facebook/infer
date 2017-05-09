@@ -56,12 +56,12 @@ let to_arg_spec_triple (x, spec, y) = (x, to_arg_spec spec, y)
 let to_arg_speclist = List.map ~f:to_arg_spec_triple
 
 type section =
-    Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Print | Quandary
+    Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Print
 [@@deriving compare]
 
 let equal_section = [%compare.equal : section ]
 let all_sections =
-  [ Analysis; BufferOverrun; Checkers; Clang; Crashcontext; Driver; Java; Print; Quandary ]
+  [ Analysis; BufferOverrun; Checkers; Clang; Crashcontext; Driver; Java; Print ]
 
 (* NOTE: All variants must be also added to `all_parse_tags` below *)
 type 'a parse = Differential | Infer of 'a | Javac | NoParse [@@deriving compare]
@@ -89,7 +89,7 @@ let to_parse_tag parse =
 
 let accept_unknown_args = function
   | Infer Print | Javac | NoParse -> true
-  | Infer (Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Quandary)
+  | Infer (Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java)
   | Differential -> false
 
 type desc = {
@@ -657,7 +657,6 @@ let set_curr_speclist_for_parse_action ~usage ?(parse_all=false) parse_action =
     add_to_curr_speclist ~header:"Checkers options" (Infer Checkers);
     add_to_curr_speclist ~header:"Clang-specific options" (Infer Clang);
     add_to_curr_speclist ~header:"Java-specific options" (Infer Java);
-    add_to_curr_speclist ~header:"Quandary checker options" (Infer Quandary)
   ) else
     add_to_curr_speclist ~add_help:true parse_action
   ;

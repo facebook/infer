@@ -51,7 +51,7 @@ let add_flavor_to_target target =
       target
   | None, (Linters | Capture) ->
       add "infer-capture-all"
-  | None, (Checkers | Infer | Quandary) ->
+  | None, (Checkers | Infer) ->
       add "infer"
   | None, (Eradicate | Tracing | Crashcontext) ->
       failwithf "Analyzer %s is Java-only; not supported with Buck flavors"

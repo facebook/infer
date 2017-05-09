@@ -34,7 +34,7 @@ let exe_name =
   fun exe -> List.Assoc.find_exn ~equal:equal_exe exe_to_name exe
 
 type analyzer =
-  | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters | Quandary
+  | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
 [@@deriving compare]
 
 let equal_analyzer = [%compare.equal : analyzer]
@@ -42,8 +42,7 @@ let equal_analyzer = [%compare.equal : analyzer]
 let string_to_analyzer =
   [("capture", Capture); ("compile", Compile);
    ("infer", Infer); ("eradicate", Eradicate); ("checkers", Checkers);
-   ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters);
-   ("quandary", Quandary)]
+   ("tracing", Tracing); ("crashcontext", Crashcontext); ("linters", Linters);]
 
 let string_of_analyzer a =
   List.find_exn ~f:(fun (_, a') -> equal_analyzer a a') string_to_analyzer |> fst
@@ -478,12 +477,11 @@ and analyzer =
   let () = match Infer with
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
-    | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
-    | Quandary -> () in
+    | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
     ~parse_mode:CLOpt.(Infer [Driver])
     "Specify which analyzer to run (only one at a time is supported):\n\
-     - infer, eradicate, checkers, quandary: run the specified analysis\n\
+     - infer, eradicate, checkers: run the specified analysis\n\
      - capture: run capture phase only (no analysis)\n\
      - compile: run compilation command without interfering (not supported by all frontends)\n\
      - crashcontext, tracing: experimental (see --crashcontext and --tracing)\n\
@@ -518,7 +516,7 @@ and ast_file =
 
 and biabduction =
   CLOpt.mk_bool ~long:"biabduction" ~parse_mode:CLOpt.(Infer [Checkers])
-    "Activate the separation logic based bi-abduction analysis using the checkers framework"
+    "the separation logic based bi-abduction analysis using the checkers framework"
 
 and blacklist =
   CLOpt.mk_string_opt ~deprecated:["-blacklist-regex";"-blacklist"] ~long:"buck-blacklist"
@@ -557,7 +555,7 @@ and buck_out =
 
 and bufferoverrun =
   CLOpt.mk_bool ~long:"bufferoverrun" ~parse_mode:CLOpt.(Infer [Checkers])
-    "Activate the buffer overrun analysis"
+    "the buffer overrun analysis"
 
 and bugs_csv =
   CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
@@ -592,29 +590,21 @@ and changed_files_index =
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
 
-and checkers, checkers_repeated_calls,
-    eradicate, quandary =
+and checkers_repeated_calls =
+  CLOpt.mk_bool ~long:"checkers-repeated-calls" ~parse_mode:CLOpt.(Infer [Checkers])
+    "check for repeated calls"
+
+and checkers, eradicate =
   let checkers =
     CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
       "Activate the checkers instead of the full analysis"
-  in
-  let checkers_repeated_calls =
-    CLOpt.mk_bool_group ~long:"checkers-repeated-calls"
-      "Check for repeated calls"
-      [checkers] []
   in
   let eradicate =
     CLOpt.mk_bool_group ~deprecated:["eradicate"] ~long:"eradicate"
       "Activate the eradicate checker for Java annotations"
       [checkers] []
   in
-  let quandary =
-    CLOpt.mk_bool_group ~deprecated:["quandary"] ~long:"quandary"
-      "Activate the quandary taint analysis"
-      [checkers] []
-  in
-  (checkers, checkers_repeated_calls,
-   eradicate, quandary)
+  (checkers, eradicate)
 
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file" ~parse_mode:CLOpt.(Infer [Clang]) ~meta:"file"
@@ -685,7 +675,7 @@ and copy_propagation =
 
 and crashcontext =
   CLOpt.mk_bool ~long:"crashcontext" ~parse_mode:CLOpt.(Infer [Checkers])
-    "Activate the crashcontext checker for Java stack trace context reconstruction"
+    "the crashcontext checker for Java stack trace context reconstruction"
 
 and cxx =
   CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx"
@@ -1146,19 +1136,23 @@ and project_root =
     ~parse_mode:CLOpt.(Infer [Analysis;Clang;Driver;Print])
     ~meta:"dir" "Specify the root directory of the project"
 
+and quandary =
+  CLOpt.mk_bool ~long:"quandary" ~parse_mode:CLOpt.(Infer [Checkers])
+    "the quandary taint analysis"
+
 and quandary_endpoints =
   CLOpt.mk_json ~long:"quandary-endpoints"
-    ~parse_mode:CLOpt.(Infer [Quandary])
+    ~parse_mode:CLOpt.(Infer [Checkers])
     "Specify endpoint classes for Quandary"
 
 and quandary_sources =
   CLOpt.mk_json ~long:"quandary-sources"
-    ~parse_mode:CLOpt.(Infer [Quandary])
+    ~parse_mode:CLOpt.(Infer [Checkers])
     "Specify custom sources for Quandary"
 
 and quandary_sinks =
   CLOpt.mk_json ~long:"quandary-sinks"
-    ~parse_mode:CLOpt.(Infer [Quandary])
+    ~parse_mode:CLOpt.(Infer [Checkers])
     "Specify custom sinks for Quandary"
 
 and quiet =
@@ -1238,7 +1232,7 @@ and seconds_per_iteration =
 
 and siof =
   CLOpt.mk_bool ~long:"siof"  ~parse_mode:CLOpt.(Infer [Checkers])
-    "Activate the Static Initialization Order Fiasco analysis (C++ only)"
+    "the Static Initialization Order Fiasco analysis (C++ only)"
 
 and siof_safe_methods =
   CLOpt.mk_string_list ~long:"siof-safe-methods"
@@ -1349,7 +1343,7 @@ and threadsafe_aliases =
 
 and threadsafety =
   CLOpt.mk_bool ~long:"threadsafety" ~parse_mode:CLOpt.(Infer [Checkers])
-    "Activate the thread safety analysis"
+    "the thread safety analysis"
 
 and trace_join =
   CLOpt.mk_bool ~deprecated:["trace_join"] ~long:"trace-join"
@@ -1549,10 +1543,8 @@ let post_parsing_initialization () =
   | Some Checkers -> checkers := true
   | Some Crashcontext -> checkers := true; crashcontext := true
   | Some Eradicate -> checkers := true; eradicate := true
-  | Some Quandary -> checkers := true; quandary := true
   | Some Tracing -> tracing := true
   | Some (Capture | Compile | Infer | Linters) | None -> ()
-
 
 let inferconfig_env_var = "INFERCONFIG"
 
@@ -1813,7 +1805,7 @@ let dynamic_dispatch =
     match analyzer with
     | Infer
     | Tracing -> `Lazy
-    | Quandary -> `Sound
+    | Checkers when quandary -> `Sound
     | _ -> `None in
   Option.value ~default:default_mode !dynamic_dispatch
 

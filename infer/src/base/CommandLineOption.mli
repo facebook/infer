@@ -16,7 +16,7 @@ val warnf : ('a, Format.formatter, unit) format -> 'a
 
 (** a section is a part of infer that can be affected by an infer option *)
 type section =
-    Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Print | Quandary
+    Analysis | BufferOverrun | Checkers | Clang | Crashcontext | Driver | Java | Print
 [@@deriving compare]
 
 val all_sections : section list
