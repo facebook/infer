@@ -69,7 +69,7 @@ let should_be_analyzed proc_name proc_attributes =
   not (already_analyzed ()) (* avoid re-analysis of the same procedure *)
 
 let procedure_should_be_analyzed proc_name =
-  match AttributesTable.load_attributes ~cache:true proc_name with
+  match Specs.proc_resolve_attributes proc_name with
   | Some proc_attributes when Config.reactive_capture && not proc_attributes.is_defined ->
       (* try to capture procedure first *)
       let defined_proc_attributes = OndemandCapture.try_capture proc_attributes in
@@ -219,7 +219,7 @@ let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname : Specs.summ
           match callbacks.get_proc_desc callee_pname with
           | Some callee_pdesc ->
               analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc
-          | None -> None
+          | None -> Specs.get_summary callee_pname
         end
       else
         Specs.get_summary callee_pname
