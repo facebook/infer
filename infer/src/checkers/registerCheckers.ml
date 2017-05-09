@@ -29,7 +29,7 @@ let active_procedure_checkers () =
         FragmentRetainsViewChecker.callback_fragment_retains_view, enabled_by_default;
         Eradicate.callback_eradicate, Config.eradicate;
         BoundedCallTree.checker, Config.crashcontext;
-        JavaTaintAnalysis.checker, Config.quandary;
+        JavaTaintAnalysis.checker, Config.quandary || enabled_by_default;
         ImmutableChecker.callback_check_immutable_cast, enabled_by_default;
         RepeatedCallsChecker.callback_check_repeated_calls, Config.checkers_repeated_calls;
         PrintfArgs.callback_printf_args, enabled_by_default;
