@@ -521,14 +521,18 @@ let infer_mode () =
     clean_results_dir ()
 
 let differential_mode () =
-  let arg_or_fail arg_name arg_opt =
-    match arg_opt with
-    | Some arg -> arg
-    | None -> failwithf "Expected '%s' argument not found" arg_name in
-  let load_report filename : Jsonbug_t.report =
-    Jsonbug_j.report_of_string (In_channel.read_all filename) in
-  let current_report = load_report (arg_or_fail "report-current" Config.report_current) in
-  let previous_report = load_report (arg_or_fail "report-previous" Config.report_previous) in
+  (* at least one report must be passed in input to compute differential *)
+  (match Config.report_current, Config.report_previous with
+   | None, None ->
+       failwith "Expected at least one argument among 'report-current' and 'report-previous'\n"
+   | _ -> ());
+  let load_report filename_opt : Jsonbug_t.report =
+    let empty_report = [] in
+    Option.value_map
+      ~f:(fun filename -> Jsonbug_j.report_of_string (In_channel.read_all filename))
+      ~default:empty_report filename_opt in
+  let current_report = load_report Config.report_current in
+  let previous_report = load_report Config.report_previous in
   let file_renamings = match Config.file_renamings with
     | Some f -> DifferentialFilters.FileRenamings.from_json_file f
     | None -> DifferentialFilters.FileRenamings.empty in
