@@ -135,13 +135,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
 
   let preprocess () =
     incr nesting;
-    let attributes_opt =
-      Specs.proc_resolve_attributes callee_pname in
-    let callee_pdesc_option =
-      if Config.dynamic_dispatch = `Lazy
-      then Some callee_pdesc
-      else None in
-    let initial_summary = Specs.reset_summary callee_pname attributes_opt callee_pdesc_option in
+    let initial_summary = Specs.reset_summary callee_pdesc in
     add_active callee_pname;
     initial_summary in
 

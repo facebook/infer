@@ -722,21 +722,16 @@ let dummy =
   )
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-let reset_summary proc_name attributes_opt proc_desc_option =
-  let proc_attributes = match attributes_opt with
-    | Some attributes ->
-        attributes
-    | None ->
-        begin
-          match proc_desc_option with
-          | Some proc_desc -> Procdesc.get_attributes proc_desc
-          | None -> ProcAttributes.default proc_name !Config.curr_language
-        end in
+let reset_summary proc_desc =
+  let proc_desc_option =
+    if Config.dynamic_dispatch = `Lazy
+    then Some proc_desc
+    else None in
   init_summary (
     [],
     ProcAttributes.proc_flags_empty (),
     [],
-    proc_attributes,
+    Procdesc.get_attributes proc_desc,
     proc_desc_option
   )
 

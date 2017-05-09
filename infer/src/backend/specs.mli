@@ -213,7 +213,7 @@ val init_summary :
   -> summary
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-val reset_summary : Typ.Procname.t -> ProcAttributes.t option -> Procdesc.t option -> summary
+val reset_summary : Procdesc.t -> summary
 
 (** Load procedure summary from the given file *)
 val load_summary : DB.filename -> summary option
