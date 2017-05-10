@@ -53,12 +53,21 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
     log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file exn
 
-let log_issue err_kind proc_name ?loc ?node_id ?session ?ltr ?linters_def_file exn =
+let log_issue
+    ?(store_summary=false)
+    err_kind
+    proc_name
+    ?loc
+    ?node_id
+    ?session
+    ?ltr
+    ?linters_def_file
+    exn =
   match Specs.get_summary proc_name with
   | Some summary ->
       log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file exn;
-      if Config.checkers then
-        (* TODO (#16348004): Remove this once Specs.get_summary_unsafe is entirely removed *)
+      if store_summary then
+        (* TODO (#16348004): This is currently needed as ThreadSafety works as a cluster checker *)
         Specs.store_summary summary
   | None ->
       failwithf
@@ -75,6 +84,6 @@ let log_error_from_summary = log_issue_from_summary Exceptions.Kerror
 let log_warning_from_summary = log_issue_from_summary Exceptions.Kwarning
 let log_info_from_summary = log_issue_from_summary Exceptions.Kwarning
 
-let log_error = log_issue Exceptions.Kerror
-let log_warning = log_issue Exceptions.Kwarning
-let log_info = log_issue Exceptions.Kinfo
+let log_error ?(store_summary=false) = log_issue ~store_summary Exceptions.Kerror
+let log_warning ?(store_summary=false) = log_issue ~store_summary Exceptions.Kwarning
+let log_info ?(store_summary=false) = log_issue ~store_summary Exceptions.Kinfo

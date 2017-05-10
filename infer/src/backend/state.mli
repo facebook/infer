@@ -85,6 +85,7 @@ val mark_instr_ok : unit -> unit
 val mk_find_duplicate_nodes: Procdesc.t -> (Procdesc.Node.t -> Procdesc.NodeSet.t)
 
 type log_issue =
+  ?store_summary: bool ->
   Typ.Procname.t ->
   ?loc: Location.t ->
   ?node_id: (int * int) ->

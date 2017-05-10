@@ -955,7 +955,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ?(conflicts=[]) 
     let msg = Localise.to_issue_id Localise.thread_safety_violation in
     let description = make_description tenv pname final_sink_site initial_sink_site final_sink in
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
-    Reporting.log_error pname ~loc ~ltr exn in
+    Reporting.log_error ~store_summary:true pname ~loc ~ltr exn in
 
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)

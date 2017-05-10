@@ -307,6 +307,7 @@ let mark_instr_fail exn =
   fs.instr_fail <- fs.instr_fail + 1
 
 type log_issue =
+  ?store_summary: bool ->
   Typ.Procname.t ->
   ?loc: Location.t ->
   ?node_id: (int * int) ->

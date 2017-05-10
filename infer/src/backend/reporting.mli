@@ -23,13 +23,13 @@ type log_t =
 type log_issue_from_errlog = Errlog.t -> log_t
 
 (** Report an error in the given procedure. *)
-val log_error : Typ.Procname.t -> log_t
+val log_error : ?store_summary:bool -> Typ.Procname.t -> log_t
 
 (** Report a warning in the given procedure. *)
-val log_warning : Typ.Procname.t -> log_t
+val log_warning : ?store_summary:bool -> Typ.Procname.t -> log_t
 
 (** Report an info in the given procedure. *)
-val log_info : Typ.Procname.t -> log_t
+val log_info : ?store_summary:bool -> Typ.Procname.t -> log_t
 
 (** Report an issue of a given kind  in the given error log. *)
 val log_issue_from_errlog : Exceptions.err_kind -> log_issue_from_errlog
