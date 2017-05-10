@@ -21,8 +21,6 @@ val call_instance_method : Ctl_parser_types.ast_node  -> ALVar.alexp -> ALVar.al
 
 val is_objc_interface_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
-val property_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
-
 val is_objc_extension : CLintersContext.context -> bool
 
 val is_syntactically_global_var : Ctl_parser_types.ast_node -> bool

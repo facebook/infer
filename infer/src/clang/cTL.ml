@@ -626,7 +626,6 @@ let rec eval_Atomic _pred_name args an lcxt =
   | "is_strong_property", [], an -> CPredicates.is_strong_property an
   | "is_unop_with_kind", [kind], an -> CPredicates.is_unop_with_kind an kind
   | "method_return_type", [typ], an -> CPredicates.method_return_type an typ
-  | "property_named", [word], an -> CPredicates.property_named an word
   | "within_responds_to_selector_block", [], an ->
       CPredicates.within_responds_to_selector_block lcxt an
   | _ -> failwith

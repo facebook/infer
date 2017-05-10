@@ -141,15 +141,6 @@ let call_instance_method an cname mname =
       compare_str_with_alexp omei.omei_selector mname
   | _ -> false
 
-let property_named an name =
-  match an with
-  | Ctl_parser_types.Decl decl ->
-      (match Clang_ast_proj.get_named_decl_tuple decl with
-       | Some (_, n) ->
-           compare_str_with_alexp n.Clang_ast_t.ni_name name
-       | _ -> false)
-  | _ -> false
-
 let is_objc_extension lcxt =
   CGeneral_utils.is_objc_extension lcxt.CLintersContext.translation_unit_context
 

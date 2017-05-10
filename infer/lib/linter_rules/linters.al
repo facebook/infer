@@ -137,11 +137,11 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 
 DEFINE-CHECKER STRONG_DELEGATE_WARNING = {
 
-  LET name_contains_delegate = property_named(REGEXP("[dD]elegate"));
+  LET name_contains_delegate = declaration_has_name(REGEXP("[dD]elegate"));
   LET name_does_not_contain_delegates =
-					NOT property_named(REGEXP("[dD]elegates"));
+					NOT declaration_has_name(REGEXP("[dD]elegates"));
   LET name_does_not_contains_queue =
-					NOT property_named(REGEXP("[qQ]ueue"));
+					NOT declaration_has_name(REGEXP("[qQ]ueue"));
 
   SET report_when =
 	    WHEN
