@@ -36,6 +36,7 @@ let active_procedure_checkers () =
         AnnotationReachability.checker, enabled_by_default;
         BufferOverrunChecker.checker, Config.bufferoverrun;
         ThreadSafety.analyze_procedure, enabled_by_default || Config.threadsafety;
+        Interproc.analyze_procedure, Config.biabduction;
       ] in
     (* make sure SimpleChecker.ml is not dead code *)
     if false then (let module SC = SimpleChecker.Make in ());
