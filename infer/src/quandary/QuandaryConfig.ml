@@ -14,7 +14,7 @@ module F = Format
 (** utilities for importing JSON specifications of sources/sinks into Quandary *)
 
 module Source = struct
-  type t = { procedure : string; kind : string; }
+  type t = { procedure : string; kind : string; index : string; }
 
   let of_json = function
     | `List sources ->
@@ -22,7 +22,9 @@ module Source = struct
           let open Yojson.Basic in
           let procedure = Util.member "procedure" json |> Util.to_string in
           let kind = Util.member "kind" json |> Util.to_string in
-          { procedure; kind; } in
+          let index =
+            Util.member "index" json |> Util.to_string_option |> Option.value ~default:"return" in
+          { procedure; kind; index; } in
         List.map ~f:parse_source sources
     | _ ->
         []

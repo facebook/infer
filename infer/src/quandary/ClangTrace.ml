@@ -29,17 +29,21 @@ module SourceKind = struct
 
   let external_sources =
     List.map
-      ~f:(fun { QuandaryConfig.Source.procedure; kind; } ->
-          QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kind)
+      ~f:(fun { QuandaryConfig.Source.procedure; kind; index; } ->
+          QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kind, index)
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
   (* return Some(source kind) if [procedure_name] is in the list of externally specified sources *)
   let get_external_source qualified_pname =
     let return = None in
     List.find_map
-      ~f:(fun (qualifiers, kind) ->
+      ~f:(fun (qualifiers, kind, index) ->
           if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname
-          then Some (of_string kind, return)
+          then
+            let source_index =
+              try Some (int_of_string index)
+              with Failure _ -> return in
+            Some (of_string kind, source_index)
           else None)
       external_sources
 

@@ -21,6 +21,7 @@ class Obj {
   static void* static_source() { return (void*)0; }
   static void static_sink(void*) {}
   std::string string_source(int i) { return ""; }
+  static int taint_arg_source(int* arg) { return 1; }
   void string_sink(std::string) {}
   std::string field1;
   std::string field2;
@@ -129,5 +130,17 @@ void FN_via_passthrough_bad2(Obj* obj) {
   std::string source = obj->string_source(0);
   std::string laundered_source = id2<std::string>(source);
   obj->string_sink(laundered_source);
+}
+
+void taint_arg_source_bad() {
+  int source;
+  Obj::taint_arg_source(&source);
+  __infer_taint_sink((void*)source);
+}
+
+void taint_arg_source_ok() {
+  int source;
+  int ret = Obj::taint_arg_source(&source);
+  __infer_taint_sink((void*)ret); // return value is not a source
 }
 }

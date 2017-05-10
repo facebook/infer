@@ -21,6 +21,11 @@
       "kind": "Other"
     },
     {
+      "procedure": "basics::Obj::taint_arg_source",
+      "kind": "Other",
+      "index": "0"
+    },
+    {
       "procedure": "allocs::allocation_source",
       "kind": "EnvironmentVariable"
     }
