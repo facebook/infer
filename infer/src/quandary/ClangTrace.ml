@@ -91,11 +91,13 @@ module CppSource = Source.Make(SourceKind)
 module SinkKind = struct
 
   type t =
+    | Allocation (** memory allocation *)
     | ShellExec (** shell exec function *)
     | Other (** for testing or uncategorized sinks *)
   [@@deriving compare]
 
   let of_string = function
+    | "Allocation" -> Allocation
     | "ShellExec" -> ShellExec
     | _ -> Other
 
@@ -141,6 +143,8 @@ module SinkKind = struct
           match Typ.Procname.to_string pname with
           | "execl" | "execlp" | "execle" | "execv" | "execvp" ->
               taint_all actuals ShellExec ~report_reachable:false
+          | "brk" | "calloc" | "malloc" | "realloc" | "sbrk" ->
+              taint_all actuals Allocation ~report_reachable:false
           | _ ->
               Option.value (get_external_sink pname actuals) ~default:[]
         end
@@ -151,9 +155,12 @@ module SinkKind = struct
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname
 
-  let pp fmt = function
-    | ShellExec -> F.fprintf fmt "ShellExec"
-    | Other -> F.fprintf fmt "Other"
+  let pp fmt kind =
+    F.fprintf fmt
+      (match kind with
+       | Allocation -> "Allocation"
+       | ShellExec -> "ShellExec"
+       | Other -> "Other")
 end
 
 module CppSink = Sink.Make(SinkKind)
@@ -165,11 +172,15 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | EnvironmentVariable, ShellExec
-      | File, ShellExec ->
+      | (EnvironmentVariable | File), ShellExec ->
           (* untrusted data flowing to exec *)
           true
-      | Other, Other ->
+      | (EnvironmentVariable | File), Allocation ->
+          (* untrusted data flowing to memory allocation *)
+          true
+      | Other, _
+      | _, Other ->
+          (* Other matches everything *)
           true
       | _ ->
           false

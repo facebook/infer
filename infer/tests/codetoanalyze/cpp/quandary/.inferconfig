@@ -19,6 +19,10 @@
     {
       "procedure": "basics::Obj::string_source",
       "kind": "Other"
+    },
+    {
+      "procedure": "allocs::allocation_source",
+      "kind": "EnvironmentVariable"
     }
   ],
   "quandary-sinks": [
