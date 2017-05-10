@@ -127,5 +127,25 @@ DEFINE-CHECKER TEST_BUILTIN_TYPE = {
         HOLDS-IN-NODE ObjCMethodDecl;
 
   SET message = "Method return.....";
+};
 
+DEFINE-CHECKER TEST_IMPLICIT_CAST_CHECK = {
+
+  LET has_type_long_expr = has_type("long") HOLDS-EVENTUALLY;
+
+  SET report_when =
+        WHEN
+            has_type("int") AND has_type_long_expr
+	    HOLDS-IN-NODE ImplicitCastExpr;
+
+  SET message = "An implicit case from long to int can cause a crash";
+};
+
+DEFINE-CHECKER TEST_VAR_TYPE_CHECK = {
+
+  SET report_when =
+        WHEN has_type("int") OR has_type("long")
+	    HOLDS-IN-NODE VarDecl;
+
+  SET message = "Var has type int or long";
 };

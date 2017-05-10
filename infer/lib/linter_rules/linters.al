@@ -159,7 +159,7 @@ DEFINE-CHECKER GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL = {
      is_objc_extension() AND is_global_var() AND (NOT is_const_var());
 
 	LET makes_an_expensive_call =
-	 (is_node("CallExpr") AND NOT call_function_named("CGPointMake"))
+	 (is_node("CallExpr") AND NOT call_function("CGPointMake"))
 		OR is_node("CXXTemporaryObjectExpr")
     OR is_node("CXXMemberCallExpr")
     OR is_node("CXXOperatorCallExpr")

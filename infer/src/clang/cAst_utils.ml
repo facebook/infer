@@ -401,3 +401,45 @@ let name_of_decl_ref_opt (decl_ref_opt: Clang_ast_t.decl_ref option) =
        | Some named_decl_info -> Some named_decl_info.ni_name
        | _ -> None)
   | _ -> None
+
+let type_of_decl decl =
+  let open Clang_ast_t in
+  match decl with
+  | ObjCMethodDecl (_, _, obj_c_method_decl_info) ->
+      Some obj_c_method_decl_info.omdi_result_type.qt_type_ptr
+  | ObjCPropertyDecl (_, _, obj_c_property_decl_info) ->
+      Some obj_c_property_decl_info.opdi_qual_type.qt_type_ptr
+  | EnumDecl (_, _, _, type_ptr, _, _, _)
+  | RecordDecl (_, _, _, type_ptr, _, _, _)
+  | CXXRecordDecl(_, _, _, type_ptr, _, _, _, _)
+  | ClassTemplateSpecializationDecl(_, _, _, type_ptr, _, _, _, _, _)
+  | ClassTemplatePartialSpecializationDecl(_, _, _, type_ptr, _, _, _, _, _)
+  | TemplateTypeParmDecl (_, _, _, type_ptr)
+  | ObjCTypeParamDecl (_, _, _, type_ptr)
+  | TypeAliasDecl (_, _, _, type_ptr)
+  | TypedefDecl (_, _, _, type_ptr, _)
+  | UnresolvedUsingTypenameDecl (_, _, _, type_ptr) -> Some type_ptr
+  | BindingDecl (_, _, qual_type)
+  | FieldDecl (_, _, qual_type, _)
+  | ObjCAtDefsFieldDecl (_, _, qual_type, _)
+  | ObjCIvarDecl (_, _, qual_type, _, _)
+  | FunctionDecl (_, _, qual_type, _)
+  | CXXMethodDecl (_, _, qual_type, _, _)
+  | CXXConstructorDecl (_, _, qual_type, _, _)
+  | CXXConversionDecl (_, _, qual_type, _, _)
+  | CXXDestructorDecl (_, _, qual_type, _, _)
+  | MSPropertyDecl (_, _, qual_type)
+  | NonTypeTemplateParmDecl (_, _, qual_type)
+  | VarDecl (_, _, qual_type, _)
+  | DecompositionDecl (_, _, qual_type, _)
+  | ImplicitParamDecl (_, _, qual_type, _)
+  | OMPCapturedExprDecl (_, _, qual_type, _)
+  | ParmVarDecl (_, _, qual_type, _)
+  | VarTemplateSpecializationDecl (_, _, qual_type, _)
+  | VarTemplatePartialSpecializationDecl (_, _, qual_type, _)
+  | EnumConstantDecl (_, _, qual_type, _)
+  | IndirectFieldDecl (_, _, qual_type, _)
+  | OMPDeclareReductionDecl (_, _, qual_type)
+  | UnresolvedUsingValueDecl (_, _, qual_type) ->
+      Some qual_type.qt_type_ptr
+  | _ -> None

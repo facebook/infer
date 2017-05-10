@@ -15,5 +15,6 @@ INFERPRINT_OPTIONS = --issues-tests
 SOURCES = \
   $(wildcard *.m) \
   $(wildcard */*.m) \
+	$(wildcard *.c) \
 
 include $(TESTS_DIR)/clang.make

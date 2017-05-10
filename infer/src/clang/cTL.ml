@@ -597,45 +597,38 @@ let next_state_via_transition an trans =
 let rec eval_Atomic _pred_name args an lcxt =
   let pred_name = ALVar.formula_id_to_string _pred_name in
   match pred_name, args, an with
+  | "call_class_method", [c; m], an -> CPredicates.call_class_method an c m
+  | "call_function", [m], an -> CPredicates.call_function an m
+  | "call_instance_method", [c; m], an -> CPredicates.call_instance_method an c m
   | "call_method", [m], an -> CPredicates.call_method an m
-  | "call_class_method", [c; m], an ->
-      CPredicates.call_class_method an c m
-  | "call_instance_method", [c; m], an ->
-      CPredicates.call_instance_method an c m
-  | "is_objc_interface_named", [name], an ->
-      CPredicates.is_objc_interface_named an name
-  | "property_named", [word], an ->
-      CPredicates.property_named an word
-  | "is_objc_extension", [], _ -> CPredicates.is_objc_extension lcxt
-  | "is_global_var", [], an -> CPredicates.is_syntactically_global_var an
-  | "is_const_var", [], an ->  CPredicates.is_const_expr_var an
-  | "call_function_named", args, an -> CPredicates.call_function_named an args
-  | "is_strong_property", [], an -> CPredicates.is_strong_property an
+  | "captures_cxx_references", [], _ -> CPredicates.captures_cxx_references an
+  | "context_in_synchronized_block", [], _ -> CPredicates.context_in_synchronized_block lcxt
+  | "declaration_has_name", [decl_name], an -> CPredicates.declaration_has_name an decl_name
+  | "declaration_ref_name", [decl_name], an -> CPredicates.declaration_ref_name an decl_name
+  | "decl_unavailable_in_supported_ios_sdk", [], an ->
+      CPredicates.decl_unavailable_in_supported_ios_sdk lcxt an
+  | "has_type", [typ], an -> CPredicates.has_type an typ
+  | "isa", [classname], an -> CPredicates.isa an classname
   | "is_assign_property", [], an -> CPredicates.is_assign_property an
-  | "is_property_pointer_type", [], an -> CPredicates.is_property_pointer_type an
-  | "context_in_synchronized_block", [], _ ->
-      CPredicates.context_in_synchronized_block lcxt
+  | "is_binop_with_kind", [kind], an -> CPredicates.is_binop_with_kind an kind
+  | "is_class", [cname], an -> CPredicates.is_class an cname
+  | "is_const_var", [], an ->  CPredicates.is_const_expr_var an
+  | "is_global_var", [], an -> CPredicates.is_syntactically_global_var an
   | "is_ivar_atomic", [], an -> CPredicates.is_ivar_atomic an
   | "is_method_property_accessor_of_ivar", [], an ->
       CPredicates.is_method_property_accessor_of_ivar an lcxt
+  | "is_node", [nodename], an -> CPredicates.is_node an nodename
   | "is_objc_constructor", [], _ -> CPredicates.is_objc_constructor lcxt
   | "is_objc_dealloc", [], _ -> CPredicates.is_objc_dealloc lcxt
-  | "captures_cxx_references", [], _ -> CPredicates.captures_cxx_references an
-  | "is_binop_with_kind", [kind], an ->
-      CPredicates.is_binop_with_kind an kind
-  | "is_unop_with_kind", [kind], an ->
-      CPredicates.is_unop_with_kind an kind
-  | "is_node", [nodename], an -> CPredicates.is_node an nodename
-  | "isa", [classname], an -> CPredicates.isa an classname
-  | "declaration_has_name", [decl_name], an ->
-      CPredicates.declaration_has_name an decl_name
-  | "is_class", [cname], an -> CPredicates.is_class an cname
-  | "decl_unavailable_in_supported_ios_sdk", [], an ->
-      CPredicates.decl_unavailable_in_supported_ios_sdk lcxt an
+  | "is_objc_extension", [], _ -> CPredicates.is_objc_extension lcxt
+  | "is_objc_interface_named", [name], an -> CPredicates.is_objc_interface_named an name
+  | "is_property_pointer_type", [], an -> CPredicates.is_property_pointer_type an
+  | "is_strong_property", [], an -> CPredicates.is_strong_property an
+  | "is_unop_with_kind", [kind], an -> CPredicates.is_unop_with_kind an kind
+  | "method_return_type", [typ], an -> CPredicates.method_return_type an typ
+  | "property_named", [word], an -> CPredicates.property_named an word
   | "within_responds_to_selector_block", [], an ->
       CPredicates.within_responds_to_selector_block lcxt an
-  | "method_return_type", [typ], an ->
-      CPredicates.method_return_type an typ
   | _ -> failwith
            ("ERROR: Undefined Predicate or wrong set of arguments: '"
             ^ pred_name ^ "'")

@@ -163,19 +163,29 @@ let is_const_expr_var an =
   | Ctl_parser_types.Decl d -> CAst_utils.is_const_expr_var d
   | _ -> false
 
-let decl_ref_is_in names st =
+let decl_ref_name ?kind name st =
   match st with
   | Clang_ast_t.DeclRefExpr (_, _, _, drti) ->
       (match drti.drti_decl_ref with
        | Some dr -> let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
-           List.exists ~f:(compare_str_with_alexp ndi.ni_name) names
+           let has_right_name = compare_str_with_alexp ndi.ni_name name in
+           (match kind with
+            | Some decl_kind ->
+                has_right_name && PVariant.(=) dr.Clang_ast_t.dr_kind decl_kind
+            | None -> has_right_name)
        | _ -> false)
   | _ -> false
 
-let call_function_named an names =
+let declaration_ref_name ?kind an name =
   match an with
   | Ctl_parser_types.Stmt st ->
-      CAst_utils.exists_eventually_st decl_ref_is_in names st
+      decl_ref_name ?kind name st
+  | _ -> false
+
+let call_function an name =
+  match an with
+  | Ctl_parser_types.Stmt st ->
+      CAst_utils.exists_eventually_st (decl_ref_name ~kind:`Function) name st
   | _ -> false
 
 let is_strong_property an =
@@ -345,7 +355,6 @@ let decl_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
       (Utils.compare_versions available_attr_ios_sdk max_allowed_version) > 0
   | _ -> false
 
-
 (* Check whether a type_ptr and a string denote the same type *)
 let type_ptr_equal_type type_ptr type_str =
   let pos_str lexbuf =
@@ -369,6 +378,19 @@ let type_ptr_equal_type type_ptr type_str =
       Ctl_parser_types.tmp_c_type_equal ~name_c_type:name c_type' abs_ctype
   | _ -> Logging.out "Couldn't find type....\n"; false
 
+let has_type an _typ =
+  match an, _typ with
+  | Ctl_parser_types.Stmt stmt, ALVar.Const typ ->
+      (match Clang_ast_proj.get_expr_tuple stmt with
+       | Some (_, _, expr_info) ->
+           type_ptr_equal_type expr_info.ei_qual_type.qt_type_ptr typ
+       | _ -> false)
+  | Ctl_parser_types.Decl decl, ALVar.Const typ ->
+      (match CAst_utils.type_of_decl decl with
+       | Some type_ptr ->
+           type_ptr_equal_type type_ptr typ
+       | _ -> false)
+  | _ -> false
 
 let method_return_type an _typ =
   Logging.out "\n Executing method_return_type...";
