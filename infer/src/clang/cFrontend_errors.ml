@@ -74,7 +74,7 @@ let parsed_linters = ref []
 let evaluate_place_holder ph an =
   match ph with
   | "%ivar_name%" -> MF.monospaced_to_string (CFrontend_checkers.ivar_name an)
-  | "%decl_name%" -> MF.monospaced_to_string (CFrontend_checkers.decl_name an)
+  | "%decl_name%" -> MF.monospaced_to_string (Ctl_parser_types.ast_node_name an)
   | "%cxx_ref_captured_in_block%" ->
       MF.monospaced_to_string (CFrontend_checkers.cxx_ref_captured_in_block an)
   | "%decl_ref_or_selector_name%" ->

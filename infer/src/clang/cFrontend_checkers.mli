@@ -21,8 +21,6 @@ val location_from_an :
 val location_from_decl :
   CLintersContext.context -> Clang_ast_t.decl -> Location.t
 
-val decl_name : Ctl_parser_types.ast_node -> string
-
 val ivar_name : Ctl_parser_types.ast_node -> string
 
 val cxx_ref_captured_in_block : Ctl_parser_types.ast_node -> string

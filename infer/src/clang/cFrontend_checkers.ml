@@ -40,14 +40,6 @@ let location_from_an lcxt an =
   | Ctl_parser_types.Stmt st -> location_from_stmt lcxt st
   | Ctl_parser_types.Decl d -> location_from_decl lcxt d
 
-let decl_name an =
-  match an with
-  | Ctl_parser_types.Decl dec ->
-      (match Clang_ast_proj.get_named_decl_tuple dec with
-       | Some (_, n) -> n.Clang_ast_t.ni_name
-       | None -> "")
-  | _ -> ""
-
 let tag_name_of_node an =
   match an with
   | Ctl_parser_types.Stmt stmt -> Clang_ast_proj.get_stmt_kind_string stmt
@@ -56,9 +48,9 @@ let tag_name_of_node an =
 let decl_ref_or_selector_name an =
   match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
   | Some (Ctl_parser_types.Decl ObjCMethodDecl _ as decl_an) ->
-      "The selector " ^ (decl_name decl_an)
+      "The selector " ^ (Ctl_parser_types.ast_node_name decl_an)
   | Some (Ctl_parser_types.Decl _ as decl_an) ->
-      "The reference " ^ (decl_name decl_an)
+      "The reference " ^ (Ctl_parser_types.ast_node_name decl_an)
   | _ -> failwith("decl_ref_or_selector_name must be called with a DeclRefExpr \
                    or an ObjCMessageExpr, but got " ^ (tag_name_of_node an))
 

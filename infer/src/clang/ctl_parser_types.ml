@@ -17,6 +17,25 @@ type ast_node =
   | Stmt of Clang_ast_t.stmt
   | Decl of Clang_ast_t.decl
 
+let ast_node_name an =
+  let open Clang_ast_t in
+  match an with
+  | Decl dec ->
+      (match Clang_ast_proj.get_named_decl_tuple dec with
+       | Some (_, n) -> n.Clang_ast_t.ni_name
+       | None -> "")
+  | Stmt (DeclRefExpr (_, _, _, drti)) ->
+      (match drti.drti_decl_ref with
+       | Some dr ->
+           let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
+           ndi.ni_name
+       | _ -> "")
+  | Stmt (ObjCIvarRefExpr(_, _, _, obj_c_ivar_ref_expr_info)) ->
+      let ndi, _, _ = CAst_utils.get_info_from_decl_ref obj_c_ivar_ref_expr_info.ovrei_decl_ref in
+      ndi.ni_name
+  | Stmt (ObjCMessageExpr (_, _, _, {omei_selector})) ->
+      omei_selector
+  | _ -> ""
 
 let infer_prefix = "__infer_ctl_"
 let report_when_const = "report_when"
@@ -26,7 +45,6 @@ let severity_const = "severity"
 let mode_const = "mode"
 
 exception ALParsingException of string
-
 
 (* Data structures for type parser.
    Correspondence with clang types inferred from
@@ -95,7 +113,6 @@ let builtin_kind_to_string t =
   | ObjCClass -> "Class"
   | ObjCSel -> "SEL"
 
-
 type abs_ctype =
   | BuiltIn of builtin_kind
 
@@ -149,3 +166,23 @@ let tmp_c_type_equal ?name_c_type c_type abs_ctype =
          Type compared: c_type = `%s`  abs_ctype =`%s`\n"
         name (abs_ctype_to_string abs_ctype);
       false
+
+(* to be extended with more types *)
+let typ_string_of_type_ptr type_ptr =
+  match CAst_utils.get_type type_ptr with
+  | Some Clang_ast_t.BuiltinType (_, bt) ->
+      Clang_ast_j.string_of_builtin_type_kind bt
+  | _ -> ""
+
+let ast_node_type an =
+  match an with
+  | Stmt stmt ->
+      (match Clang_ast_proj.get_expr_tuple stmt with
+       | Some (_, _, expr_info) ->
+           typ_string_of_type_ptr expr_info.ei_qual_type.qt_type_ptr
+       | _ -> "")
+  | Decl decl ->
+      (match CAst_utils.type_of_decl decl with
+       | Some type_ptr ->
+           typ_string_of_type_ptr type_ptr
+       | _ -> "")

@@ -150,10 +150,10 @@ module Debug = struct
                                       pp_formula phi
 
   let pp_ast ~ast_node_to_highlight ?(prettifier=Fn.id) fmt root =
-    let pp_node_info fmt an = match an with
-      | Stmt (ObjCMessageExpr (_, _, _, {omei_selector})) ->
-          Format.fprintf fmt "selector: \"%s\"" omei_selector
-      | _ -> Format.ifprintf fmt "" in
+    let pp_node_info fmt an =
+      let name = Ctl_parser_types.ast_node_name an in
+      let typ = Ctl_parser_types.ast_node_type an in
+      Format.fprintf fmt " %s %s" name typ in
     let rec pp_children pp_node wrapper fmt level nodes =
       match nodes with
       | [] -> ()
