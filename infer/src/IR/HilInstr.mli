@@ -20,7 +20,7 @@ type call =
 val pp_call : F.formatter -> call -> unit
 
 type t =
-  | Write of AccessPath.Raw.t * HilExp.t * Location.t
+  | Assign of AccessPath.Raw.t * HilExp.t * Location.t
   (** LHS access path, RHS expression *)
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
   (** Assumed expression, true_branch boolean, source of the assume (conditional, ternary, etc.) *)

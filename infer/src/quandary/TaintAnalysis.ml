@@ -283,21 +283,21 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             ~default:TaintDomain.empty_node in
         TaintDomain.add_node (AccessPath.Exact lhs_access_path) rhs_node astate in
       match instr with
-      | Write (((Var.ProgramVar pvar, _), []), HilExp.Exception _, _) when Pvar.is_return pvar ->
+      | Assign (((Var.ProgramVar pvar, _), []), HilExp.Exception _, _) when Pvar.is_return pvar ->
           (* the Java frontend translates `throw Exception` as `return Exception`, which is a bit
                wonky. this translation causes problems for us in computing a summary when an
                exception is "returned" from a void function. skip code like this for now, fix via
                t14159157 later *)
           astate
 
-      | Write (((Var.ProgramVar pvar, _), []), rhs_exp, _)
+      | Assign (((Var.ProgramVar pvar, _), []), rhs_exp, _)
         when Pvar.is_return pvar && HilExp.is_null_literal rhs_exp &&
              Typ.equal_desc Tvoid (Procdesc.get_ret_type proc_data.pdesc).desc ->
           (* similar to the case above; the Java frontend translates "return no exception" as
              `return null` in a void function *)
           astate
 
-      | Write (lhs_access_path, rhs_exp, _) ->
+      | Assign (lhs_access_path, rhs_exp, _) ->
           exec_write lhs_access_path rhs_exp astate
 
       | Call (ret_opt, Direct called_pname, actuals, call_flags, callee_loc) ->

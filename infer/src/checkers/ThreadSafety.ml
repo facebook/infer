@@ -574,7 +574,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               astate_callee
         end
 
-    | Write (lhs_access_path, rhs_exp, loc) ->
+    | Assign (lhs_access_path, rhs_exp, loc) ->
         let rhs_accesses =
           add_access
             rhs_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
