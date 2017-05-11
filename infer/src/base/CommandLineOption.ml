@@ -82,9 +82,12 @@ let all_commands = [
 
 type command_doc = {
   title : Cmdliner.Manpage.title;
-  manual_pre_options : Cmdliner.Manpage.block list;
-  manual_options : Cmdliner.Manpage.block list option;
-  manual_post_options : Cmdliner.Manpage.block list;
+  manual_before_options : Cmdliner.Manpage.block list;
+  manual_options : [
+    | `Prepend of Cmdliner.Manpage.block list
+    | `Replace of Cmdliner.Manpage.block list
+  ];
+  manual_after_options : Cmdliner.Manpage.block list;
 }
 
 type desc = {
@@ -158,6 +161,7 @@ module SectionMap = Caml.Map.Make (struct
 
 let help_sections_desc_lists =
   List.map all_commands ~f:(fun command -> (command, ref SectionMap.empty))
+let visible_descs_list = ref []
 let hidden_descs_list = ref []
 
 (** add [desc] to the one relevant parse_tag_desc_lists for the purposes of parsing, and, in the
@@ -173,7 +177,9 @@ let add parse_mode sections desc =
     sections := SectionMap.add section (desc::prev_contents) !sections in
   List.iter sections ~f:add_to_section;
   if List.is_empty sections then
-    hidden_descs_list := desc :: !hidden_descs_list;
+    hidden_descs_list := desc :: !hidden_descs_list
+  else
+    visible_descs_list := desc :: !visible_descs_list;
   ()
 
 let deprecate_desc parse_mode ~long ~short ~deprecated desc =
@@ -516,7 +522,7 @@ let mk_command_doc ~title ~section ~version ~date ~short_description ~synopsis ~
   let add_if section blocks = match blocks with
     | None -> `Blocks []
     | Some bs -> `Blocks (`S section :: bs) in
-  let manual_pre_options = [
+  let manual_before_options = [
     `S Cmdliner.Manpage.s_name;
     (* the format of the following line is mandated by man(7) *)
     `Pre (Printf.sprintf "%s - %s" command_str short_description);
@@ -525,7 +531,8 @@ let mk_command_doc ~title ~section ~version ~date ~short_description ~synopsis ~
     `S Cmdliner.Manpage.s_description;
     `Blocks description;
   ] in
-  let manual_post_options = [
+  let manual_options = Option.value ~default:(`Prepend []) options in
+  let manual_after_options = [
     add_if Cmdliner.Manpage.s_exit_status exit_status;
     add_if Cmdliner.Manpage.s_environment environment;
     add_if Cmdliner.Manpage.s_files files;
@@ -537,7 +544,7 @@ let mk_command_doc ~title ~section ~version ~date ~short_description ~synopsis ~
   ] in
   let command_doc = {
     title = command_str, section, date, version, title;
-    manual_pre_options; manual_options = options; manual_post_options;
+    manual_before_options; manual_options; manual_after_options;
   } in
   command_doc
 
@@ -845,13 +852,10 @@ let show_manual ?internal_section format default_doc command_opt =
           doc_first_line)
       :: List.concat_map (List.concat_map ~f:(wrap_line indent_string width) doc_other_lines)
         ~f:(fun s -> [`Noblank; `Pre s]) in
-  let option_blocks = match command_doc.manual_options, command_opt with
-    | None, None ->
-        failwithf "Cannot create %s section" Cmdliner.Manpage.s_options
-    | Some blocks, _ ->
+  let option_blocks = match command_doc.manual_options with
+    | `Replace blocks ->
         `S Cmdliner.Manpage.s_options :: blocks
-    | None, Some command ->
-        let sections = List.Assoc.find_exn help_sections_desc_lists command in
+    | `Prepend blocks ->
         let hidden =
           match internal_section with
           | Some section ->
@@ -859,11 +863,19 @@ let show_manual ?internal_section format default_doc command_opt =
               :: List.concat_map ~f:block_of_desc (normalize_desc_list !hidden_descs_list)
           | None ->
               [] in
-        SectionMap.fold (fun section descs result ->
-            `S section ::
-            List.concat_map ~f:block_of_desc (normalize_desc_list descs) @ result)
-          !sections hidden in
-  let blocks = [`Blocks command_doc.manual_pre_options; `Blocks option_blocks;
-                `Blocks command_doc.manual_post_options] in
+        match command_opt with
+        | Some command ->
+            let sections = List.Assoc.find_exn help_sections_desc_lists command in
+            SectionMap.fold (fun section descs result ->
+                `S section ::
+                (if String.equal section Cmdliner.Manpage.s_options then blocks else []) @
+                List.concat_map ~f:block_of_desc (normalize_desc_list descs) @ result)
+              !sections hidden
+        | None ->
+            `S Cmdliner.Manpage.s_options :: blocks @
+            List.concat_map ~f:block_of_desc (normalize_desc_list !visible_descs_list) @
+            hidden in
+  let blocks = [`Blocks command_doc.manual_before_options; `Blocks option_blocks;
+                `Blocks command_doc.manual_after_options] in
   Cmdliner.Manpage.print format Format.std_formatter (command_doc.title, blocks);
   ()

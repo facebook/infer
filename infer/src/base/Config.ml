@@ -480,8 +480,7 @@ and (
       ~suffix:"blacklist-path-regex"
       ~deprecated_suffix:["blacklist"]
       ~help:"blacklist the analysis of files whose relative path matches the specified OCaml-style \
-             regex\n\
-             (to whitelist: $(b,--<analyzer>-whitelist-path-regex))"
+             regex (to whitelist: $(b,--<analyzer>-whitelist-path-regex))"
       ~meta:"path regex",
     mk_filtering_options
       ~suffix:"whitelist-path-regex"

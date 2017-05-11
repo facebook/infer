@@ -38,7 +38,7 @@ let mk_command_doc ~see_also:see_also_commands ?and_also ?environment:environmen
     let exe_names = List.map see_also_commands ~f:(fun cmd ->
         let exe = exe_name_of_command cmd in
         Printf.sprintf "$(b,%s)(%d)" (Cmdliner.Manpage.escape exe) section) in
-    let suffix = match and_also with None -> "" | Some msg -> " " ^ msg in
+    let suffix = Option.value ~default:"" and_also in
     [`P (String.concat ~sep:", " exe_names ^ suffix)] in
   let environment = Option.value environment_opt
       ~default:[`I (Printf.sprintf "$(b,%s), $(b,%s), $(b,%s)"
@@ -94,8 +94,9 @@ let clang =
     ~synopsis:"$(b,InferClang) $(i,[clang options])"
     ~description:[`P "This is used internally by other infer commands. You shouldn't need to call \
                       this directly."]
-    ~options:[`P "Accepts the same command line options as $(b,clang)(1) (but still reads infer \
-                  options from the environment)."]
+    ~options:(`Replace
+                [`P "Accepts the same command line options as $(b,clang)(1) (but still reads infer \
+                     options from the environment)."])
     ~see_also:CLOpt.[Capture]
 
 let compile =
@@ -148,24 +149,26 @@ let infer = mk_command_doc ~title:"Infer Static Analyzer"
       `P "Infer consists of a collection of tools referenced in the $(i,SEE ALSO) section of this \
           manual. See their respective manuals for more information about each.";
     ]
-    ~options:[
-      `P "If a compilation command is specified via the $(b,--) option or one of the \
-          $(b,--clang-compilation-database[-escaped]) options, $(b,infer) behaves as \
-          $(b,infer-run)(1). Otherwise, $(b,infer) behaves as $(b,infer-analyze)(1).";
-      `P "See the manuals of individual infer commands for details about their supported options.";
-      `P "Every infer command accepts the arguments from all the other infer commands. The same \
-          option may affect and thus be list in the manual of several commands.";
-      `P (Printf.sprintf
-            "Options are read from the $(b,%s) file, then from the $(b,%s) environment variable, \
-             then from the command line. Options in $(b,%s) take precedence over options in \
-             $(b,%s), and options passed on the command line take precedence over options in \
-             $(b,%s). See the $(i,%s) and $(i,%s) sections of this manual for more information."
-            inferconfig_file CLOpt.args_env_var
-            CLOpt.args_env_var
-            inferconfig_file
-            CLOpt.args_env_var Cmdliner.Manpage.s_environment Cmdliner.Manpage.s_files
-         );
-    ]
+    ~options:(`Prepend [
+        `P "If a compilation command is specified via the $(b,--) option or one of the \
+            $(b,--clang-compilation-database[-escaped]) options, $(b,infer) behaves as \
+            $(b,infer-run)(1). Otherwise, $(b,infer) behaves as $(b,infer-analyze)(1).";
+        `P "Every infer command accepts the arguments from all the other infer commands. The same \
+            option may affect and thus be list in the manual of several commands.";
+        `P (Printf.sprintf
+              "Options are read from the $(b,%s) file, then from the $(b,%s) environment variable, \
+               then from the command line. Options in $(b,%s) take precedence over options in \
+               $(b,%s), and options passed on the command line take precedence over options in \
+               $(b,%s). See the $(i,%s) and $(i,%s) sections of this manual for more information."
+              inferconfig_file CLOpt.args_env_var
+              CLOpt.args_env_var
+              inferconfig_file
+              CLOpt.args_env_var Cmdliner.Manpage.s_environment Cmdliner.Manpage.s_files
+           );
+        `P "See the manuals of individual infer commands for details about their supported \
+            options. The following is a list of all the supported options (see also \
+            $(b,--help-full) for options reserved for internal use).";
+      ])
     ~environment:[
       `P (Printf.sprintf
             "Extra arguments may be passed to all infer commands using the $(b,%s) \

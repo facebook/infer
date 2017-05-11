@@ -167,15 +167,16 @@ type command_doc
     - [version] is the version string of the command
     - [date] is the date of the last modification of the manual
     - [short_description] is a one-line description of the command
-    - [options] if specified, will populate the OPTIONS section; otherwise, the options are taken
-    from the command's
+    - [options] can be either [`Replace blocks], which populates the OPTIONS section with [blocks],
+    or [`Prepend blocks], in which case the options from the command are used, prepended by
+    [blocks]. If unspecified it defaults to [`Prepend []].
     - All the other [section_name] options correspond to the contents of the section [section_name].
     Some are mandatory and some are not.
 *)
 val mk_command_doc : title:string -> section:int -> version:string -> date:string ->
   short_description:string -> synopsis:Cmdliner.Manpage.block list ->
   description:Cmdliner.Manpage.block list ->
-  ?options:Cmdliner.Manpage.block list ->
+  ?options:[`Prepend of Cmdliner.Manpage.block list | `Replace of Cmdliner.Manpage.block list] ->
   ?exit_status:Cmdliner.Manpage.block list ->
   ?environment:Cmdliner.Manpage.block list ->
   ?files:Cmdliner.Manpage.block list ->
