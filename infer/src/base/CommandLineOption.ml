@@ -65,9 +65,18 @@ let equal_parse_mode = [%compare.equal : parse_mode]
 
 let all_parse_modes = [InferCommand; Javac; NoParse]
 
-let accept_unknown_args = function
-  | Javac | NoParse -> true
-  | InferCommand -> false
+type anon_arg_action = {
+  parse_subcommands : bool;
+  parse_argfiles : bool;
+  on_unknown : [`Add | `Reject | `Skip];
+}
+
+let anon_arg_action_of_parse_mode parse_mode =
+  let parse_subcommands, parse_argfiles, on_unknown = match parse_mode with
+    | InferCommand -> true, true, `Reject
+    | Javac -> false, true, `Skip
+    | NoParse-> false, false, `Skip in
+  {parse_subcommands; parse_argfiles; on_unknown}
 
 (* NOTE: All variants must be also added to `all_commands` below *)
 type command =
@@ -240,7 +249,7 @@ let arg_being_parsed : int ref = ref 0
 (* list of arg specifications currently being used by Arg.parse_argv_dynamic *)
 let curr_speclist : (Arg.key * Arg.spec * Arg.doc) list ref = ref []
 
-let unknown_args_action = ref `ParseCommands
+let anon_arg_action = ref (anon_arg_action_of_parse_mode InferCommand)
 
 let subcommands = ref []
 let subcommand_actions = ref []
@@ -383,24 +392,25 @@ let mk_string_list ?(default=[]) ?(f=fun s -> s)
     ~decode_json:(list_json_decoder (string_json_decoder ~long))
     ~mk_spec:(fun set -> String set)
 
+let normalize_path_in_args_being_parsed ?(f=Fn.id) ~is_anon_arg str =
+  if Filename.is_relative str then (
+    (* Replace relative paths with absolute ones on the fly in the args being parsed. This assumes
+       that [!arg_being_parsed] points at either [str] (if [is_anon_arg]) or at the option name
+       position in [!args_to_parse], as is the case e.g. when calling
+       [Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse ...]. *)
+    let root = Unix.getcwd () in
+    let abs_path = Utils.filename_to_absolute ~root str in
+    (!args_to_parse).(!arg_being_parsed + if is_anon_arg then 0 else 1) <- f abs_path;
+    abs_path
+  ) else
+    str
+
 let mk_path_helper ~setter ~default_to_string
     ~default ~deprecated ~long ~short ~parse_mode ~in_help ~meta ~decode_json doc =
-  let normalize_path_in_args_being_parsed str =
-    if Filename.is_relative str then (
-      (* Replace relative paths with absolute ones on the fly in the args being parsed. This assumes
-         that [!arg_being_parsed] points at the option name position in [!args_to_parse], as is the
-         case e.g. when calling
-         [Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse ...]. *)
-      let root = Unix.getcwd () in
-      let abs_path = Utils.filename_to_absolute ~root str in
-      (!args_to_parse).(!arg_being_parsed + 1) <- abs_path;
-      abs_path
-    ) else
-      str in
   mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc
     ~decode_json ~default_to_string
     ~mk_setter:(fun var str ->
-        let abs_path = normalize_path_in_args_being_parsed str in
+        let abs_path = normalize_path_in_args_being_parsed ~is_anon_arg:false str in
         setter var abs_path)
     ~mk_spec:(fun set -> String set)
 
@@ -572,40 +582,20 @@ let set_curr_speclist_for_parse_mode ~usage parse_mode =
   assert( check_no_duplicates !curr_speclist );
   curr_usage
 
-
-let select_parse_mode ~usage action =
-  let usage = set_curr_speclist_for_parse_mode ~usage action in
-  unknown_args_action := if accept_unknown_args action then `Add else `ParseCommands;
-  usage
+let select_parse_mode ~usage parse_mode =
+  let print_usage = set_curr_speclist_for_parse_mode ~usage parse_mode in
+  anon_arg_action := anon_arg_action_of_parse_mode parse_mode;
+  print_usage
 
 let string_of_command command =
   let (_, s, _) = List.Assoc.find_exn !subcommands ~equal:equal_command command in
   s
 
-let anon_fun arg =
-  match !unknown_args_action with
-  | `ParseCommands -> (
-      match !curr_command, List.Assoc.find !subcommand_actions ~equal:String.equal arg with
-      | None, Some switch -> switch ()
-      | Some command, Some _ ->
-          raise (Arg.Bad
-                   ("More than one subcommand specified: " ^ string_of_command command ^ ", " ^
-                    arg))
-      | _, None ->
-          raise (Arg.Bad ("unexpected anonymous argument: " ^ arg))
-    )
-  | `Skip ->
-      ()
-  | `Add ->
-      rev_anon_args := arg::!rev_anon_args
-
 let mk_rest_actions ?(parse_mode=InferCommand) ?(in_help=[]) doc ~usage decode_action =
   let rest = ref [] in
   let spec = String (fun arg ->
       rest := List.rev (Array.to_list (Array.slice !args_to_parse (!arg_being_parsed + 1) 0)) ;
-      select_parse_mode ~usage (decode_action arg) |> ignore;
-      (* stop accepting new anonymous arguments *)
-      unknown_args_action := `Skip) in
+      select_parse_mode ~usage (decode_action arg) |> ignore) in
   add parse_mode in_help {long = "--"; short = ""; meta = ""; doc; spec;
                           decode_json = fun ~inferconfig_dir:_ _ -> []} ;
   rest
@@ -614,7 +604,8 @@ let mk_subcommand command ?(accept_unknown_args=false) ?deprecated ~long ?(name=
     ?parse_mode ?in_help command_doc =
   let switch () =
     curr_command := Some command;
-    unknown_args_action := if accept_unknown_args then `Add else `ParseCommands in
+    let on_unknown = if accept_unknown_args then `Add else `Reject in
+    anon_arg_action := {!anon_arg_action with on_unknown} in
   ignore(
     mk ?deprecated ~long ~default:() ?parse_mode ?in_help ~meta:""
       (Printf.sprintf "activates the %s subcommand (see $(i,`infer %s --help`))" long long)
@@ -624,6 +615,54 @@ let mk_subcommand command ?(accept_unknown_args=false) ?deprecated ~long ?(name=
       ~mk_spec:(fun _ -> Unit switch));
   subcommands := (command, (command_doc, name, in_help))::!subcommands;
   subcommand_actions := (name, switch)::!subcommand_actions
+
+(* drop well-balanced first and last characters in [s] that satisfy the [drop] predicate; for
+   instance, [lrstrip ~drop:(function | 'a' | 'x' -> true | _ -> false) "xaabax"] returns "ab" *)
+let rec lrstrip ~drop s =
+  let n = String.length s in
+  if n < 2 then s
+  else
+    let first = String.unsafe_get s 0 in
+    if Char.equal first (String.unsafe_get s (n-1)) && drop first then
+      lrstrip ~drop (String.slice s 1 (n-1))
+    else s
+
+let args_from_argfile arg =
+  let abs_fname =
+    let fname = String.slice arg 1 (String.length arg) in
+    normalize_path_in_args_being_parsed ~f:(fun s -> "@" ^ s) ~is_anon_arg:true fname in
+  match In_channel.read_lines abs_fname with
+  | lines ->
+      let strip = lrstrip ~drop:(function '"' | '\'' -> true | _ -> false) in
+      List.map ~f:strip lines
+  | exception e ->
+      raise (Arg.Bad ("Error reading argument file '" ^ abs_fname ^ "': " ^ Exn.to_string e))
+
+exception SubArguments of string list
+
+let anon_fun arg =
+  if !anon_arg_action.parse_argfiles
+  && String.is_prefix arg ~prefix:"@" then
+    (* stop parsing the current args and go look in that argfile *)
+    raise (SubArguments (args_from_argfile arg))
+  else if !anon_arg_action.parse_subcommands
+       && List.Assoc.mem !subcommand_actions ~equal:String.equal arg then
+    let command_switch = List.Assoc.find_exn !subcommand_actions ~equal:String.equal arg in
+    match !curr_command  with
+    | None ->
+        command_switch ()
+    | Some command ->
+        raise (Arg.Bad
+                 ("More than one subcommand specified: " ^ string_of_command command ^ ", " ^
+                  arg))
+  else match !anon_arg_action.on_unknown with
+    | `Add ->
+        rev_anon_args := arg::!rev_anon_args
+    | `Skip ->
+        ()
+    | `Reject ->
+        raise (Arg.Bad ("unexpected anonymous argument: " ^ arg))
+
 
 let decode_inferconfig_to_argv path =
   let json = match Utils.read_json_file path with
@@ -688,45 +727,7 @@ let extra_env_args = ref []
 let extend_env_args args =
   extra_env_args := List.rev_append args !extra_env_args
 
-(* TODO(t18057447) [should_expand_args] is a bogus hack to side-step a bug with expansion of
-   @argfiles *)
-let parse_args ~usage initial_action ?(should_expand_args=true) ?initial_command args0 =
-  (* look inside argfiles so we can move select arguments into the top line CLI and parse them into
-     Config vars. note that we don't actually delete the arguments to the file, we just duplicate
-     them on the CLI. javac is ok with this.  *)
-  let expand_argfiles acc arg =
-    if String.is_prefix arg ~prefix:"@"
-    then
-      (* for now, we only need to parse -d. we could parse more if we wanted to, but we would risk
-         incurring the wrath of ARGUMENT_LIST_TOO_LONG *)
-      let should_parse = function
-        | "-d" | "-cp" | "-classpath" -> true
-        | _ -> false in
-      let fname = String.slice arg 1 (String.length arg) in
-      match In_channel.read_lines fname with
-      | lines ->
-          (* crude but we only care about simple cases that will not involve trickiness, eg
-             unbalanced or escaped quotes such as "ending in\"" *)
-          let strip =
-            String.strip ~drop:(function '"' | '\'' -> true | _ -> false) in
-          let rec parse_argfile_args acc = function
-            | flag :: ((value :: args) as rest) ->
-                let stripped_flag = strip flag in
-                if should_parse stripped_flag
-                then parse_argfile_args (stripped_flag :: strip value :: acc) args
-                else parse_argfile_args acc rest
-            | _ ->
-                acc in
-          parse_argfile_args (arg :: acc) lines
-      | exception _ ->
-          acc
-    else
-      arg :: acc in
-  let args = if should_expand_args then
-      List.fold ~f:expand_argfiles ~init:[] (List.rev args0)
-    else
-      args0 in
-
+let parse_args ~usage initial_action ?initial_command args =
   let exe_name = Sys.executable_name in
   args_to_parse := Array.of_list (exe_name :: args);
   arg_being_parsed := 0;
@@ -742,8 +743,19 @@ let parse_args ~usage initial_action ?(should_expand_args=true) ?initial_command
       Arg.parse_argv_dynamic ~current:arg_being_parsed !args_to_parse curr_speclist
         anon_fun usage
     with
+    | SubArguments args ->
+        (* stop parsing the current arguments and parse [args] for a while *)
+        let saved_args = !args_to_parse in
+        let saved_current = !arg_being_parsed in
+        args_to_parse := Array.of_list (exe_name :: args);
+        arg_being_parsed := 0;
+        parse_loop ();
+        (* resume argument parsing *)
+        args_to_parse := saved_args;
+        arg_being_parsed := saved_current;
+        parse_loop ()
     | Arg.Bad usage_msg ->
-        if !unknown_args_action <> `ParseCommands && is_unknown usage_msg then (
+        if !anon_arg_action.on_unknown <> `Reject && is_unknown usage_msg then (
           anon_fun !args_to_parse.(!arg_being_parsed);
           parse_loop ()
         ) else (
@@ -753,8 +765,7 @@ let parse_args ~usage initial_action ?(should_expand_args=true) ?initial_command
     | Arg.Help _ ->
         (* we handle --help by ourselves and error on -help, so Arg has no way to raise Help
            anymore *)
-        assert false
-  in
+        assert false in
   parse_loop ();
   curr_usage
 
@@ -777,14 +788,10 @@ let parse ?config_file ~usage action initial_command =
         else !args_to_export ^ String.of_char env_var_sep ^ encode_argv_to_env args in
       args_to_export := arg_string in
   (* read .inferconfig first, then env vars, then command-line options *)
-  (* TODO(t18057447) [should_expand_args] is a bogus hack to side-step a bug with expansion of
-     @argfiles *)
-  parse_args ~usage ~should_expand_args:false InferCommand inferconfig_args |> ignore;
+  parse_args ~usage InferCommand inferconfig_args |> ignore;
   (* NOTE: do not add the contents of .inferconfig to INFER_ARGS. This helps avoid hitting the
      command line size limit. *)
-  (* TODO(t18057447) [should_expand_args] is a bogus hack to side-step a bug with expansion of
-     @argfiles *)
-  parse_args ~usage ~should_expand_args:false InferCommand env_args |> ignore;
+  parse_args ~usage InferCommand env_args |> ignore;
   add_parsed_args_to_args_to_export ();
   let curr_usage =
     let cl_args = match Array.to_list Sys.argv with _ :: tl -> tl | [] -> [] in

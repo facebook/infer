@@ -266,7 +266,7 @@ val issues_fields : [`Issue_field_bug_class
                     | `Issue_field_qualifier_contains_potential_exception_note] list
 val iterations : int
 val java_jar_compiler : string option
-val javac_classes_out : string
+val javac_classes_out : string option
 val javac_verbose_out : string
 val jobs : int
 val join_cond : int

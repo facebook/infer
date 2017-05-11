@@ -165,6 +165,9 @@ let infer = mk_command_doc ~title:"Infer Static Analyzer"
               inferconfig_file
               CLOpt.args_env_var Cmdliner.Manpage.s_environment Cmdliner.Manpage.s_files
            );
+        `P "Options can be specified inside an argument file $(i,file) by passing $(b,@)$(i,file) \
+            as argument. The format is one option per line, and enclosing single \' and double \" \
+            quotes are ignored.";
         `P "See the manuals of individual infer commands for details about their supported \
             options. The following is a list of all the supported options (see also \
             $(b,--help-full) for options reserved for internal use).";
