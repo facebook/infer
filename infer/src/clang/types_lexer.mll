@@ -53,5 +53,6 @@ rule token = parse
   | "id" { OBJCID }
   | "Class" { OBJCCLASS }
   | "SEL" { OBJCSEL }
+  | "*" { STAR }
   | _ { raise (SyntaxError ("Unexpected char: '" ^ (Lexing.lexeme lexbuf) ^"'")) }
   | eof { EOF }

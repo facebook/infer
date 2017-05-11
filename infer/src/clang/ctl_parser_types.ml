@@ -115,15 +115,23 @@ let builtin_kind_to_string t =
 
 type abs_ctype =
   | BuiltIn of builtin_kind
+  | Pointer of abs_ctype
 
-let abs_ctype_to_string t =
+
+let rec abs_ctype_to_string t =
   match t with
   | BuiltIn t' -> "BuiltIn (" ^ (builtin_kind_to_string t') ^ ")"
+  | Pointer t' -> "Pointer (" ^ (abs_ctype_to_string t') ^ ")"
 
 (* Temporary, partial equality function. Cover only what's covered
    by the types_parser. It needs to be replaced by a real
    comparison function for Clang_ast_t.c_type *)
-let tmp_c_type_equal ?name_c_type c_type abs_ctype =
+let rec tmp_c_type_equal c_type abs_ctype =
+  Logging.out
+    "Comparing c_type/abs_ctype for equality... \
+     Type compared: \nc_type = `%s`  \nabs_ctype =`%s`\n"
+    (Clang_ast_j.string_of_c_type c_type)
+    (abs_ctype_to_string abs_ctype);
   let open Clang_ast_t in
   match c_type, abs_ctype with
   | BuiltinType (_ , `Char_U), BuiltIn (Char_U)
@@ -155,16 +163,16 @@ let tmp_c_type_equal ?name_c_type c_type abs_ctype =
   | BuiltinType (_, `ObjCClass), BuiltIn (ObjCClass)
   | BuiltinType (_, `ObjCSel), BuiltIn (ObjCSel)
   | BuiltinType (_, `Half), BuiltIn (Half) -> true
+  | PointerType (_, qt), Pointer abs_ctype' ->
+      (match CAst_utils.get_type qt.qt_type_ptr with
+       | Some c_type' ->
+           tmp_c_type_equal c_type' abs_ctype'
+       | None -> false)
   | _, _ ->
-      let name = (match name_c_type with
-          | None -> ""
-          | Some n -> n) in
       Logging.out
         "[WARNING:] Type Comparison failed... \
          This might indicate that the types are different or the specified type \
-         is internally represented in a different way and therefore not recognized. \
-         Type compared: c_type = `%s`  abs_ctype =`%s`\n"
-        name (abs_ctype_to_string abs_ctype);
+         is internally represented in a different way and therefore not recognized.\n";
       false
 
 (* to be extended with more types *)

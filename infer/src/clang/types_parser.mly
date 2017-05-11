@@ -52,27 +52,45 @@
 %token OBJCID
 %token OBJCCLASS
 %token OBJCSEL
+%token STAR
 %token EOF
 
 
-%start <Ctl_parser_types.abs_ctype> ctype_specifier_seq
+%start <Ctl_parser_types.abs_ctype> abs_ctype
 %%
 
+abs_ctype:
+ | ctype_specifier_seq EOF {
+   Logging.out "\tType effectively parsed: `%s`\n"
+   (Ctl_parser_types.abs_ctype_to_string $1);
+   $1 }
+ ;
+
 ctype_specifier_seq:
-  | trailing_type_specifier_seq EOF
+| noptr_type_spec  { $1 }
+| ptr_type_spec  { $1 }
+;
+
+ptr_type_spec:
+| noptr_type_spec STAR { Pointer $1 }
+| ptr_type_spec STAR { Pointer $1 }
+;
+
+noptr_type_spec:
+  | trailing_type_specifier_seq
     { let atyp = tokens_to_abs_types $1 in
-      Logging.out "\tParsed `%s`\n" (Ctl_parser_types.abs_ctype_to_string atyp);
       atyp
      }
+  ;
 
 trailing_type_specifier:
  | simple_type_specifier { $1 }
-
+ ;
 
 trailing_type_specifier_seq:
   | trailing_type_specifier { [$1] }
-  | simple_type_specifier trailing_type_specifier_seq { $1 :: $2 }
-
+  | trailing_type_specifier trailing_type_specifier_seq { $1 :: $2 }
+  ;
 
 simple_type_specifier:
   | CHAR { Char_U }

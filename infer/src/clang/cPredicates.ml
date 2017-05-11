@@ -354,7 +354,7 @@ let type_ptr_equal_type type_ptr type_str =
     (string_of_int  (pos.pos_cnum - pos.pos_bol + 1)) in
   let lexbuf = Lexing.from_string type_str in
   let abs_ctype = try
-      (Types_parser.ctype_specifier_seq token lexbuf)
+      (Types_parser.abs_ctype token lexbuf)
     with
     | Ctl_parser_types.ALParsingException s ->
         raise (Ctl_parser_types.ALParsingException
@@ -365,8 +365,7 @@ let type_ptr_equal_type type_ptr type_str =
                  ("SYNTAX ERROR at " ^ (pos_str lexbuf)))  in
   match CAst_utils.get_type type_ptr with
   | Some c_type' ->
-      let name = Clang_ast_extend.type_ptr_to_string type_ptr in
-      Ctl_parser_types.tmp_c_type_equal ~name_c_type:name c_type' abs_ctype
+      Ctl_parser_types.tmp_c_type_equal c_type' abs_ctype
   | _ -> Logging.out "Couldn't find type....\n"; false
 
 let has_type an _typ =

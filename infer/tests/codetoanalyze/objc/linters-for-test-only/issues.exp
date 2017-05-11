@@ -43,6 +43,8 @@ codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m2, 68, TEST_BU
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m20, 85, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m21, 86, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m22, 87, TEST_BUILTIN_TYPE, []
+codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m23, 93, TEST_BUILTIN_TYPE, []
+codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m24, 94, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m3, 69, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m4, 70, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m7, 73, TEST_BUILTIN_TYPE, []

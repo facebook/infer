@@ -90,5 +90,7 @@
 //- (id) m25;
 //- (Class) m26;
 //- (SEL) m27;
+- (float*)m23;
+- (unsigned int**)m24;
 
 @end
