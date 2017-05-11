@@ -136,14 +136,28 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 byte src_build test_build: clang_plugin
 endif
 
-.PHONY: infer
-infer: src_build
+$(INFER_COMMAND_MANUALS): src_build Makefile
+	$(QUIET)$(MKDIR_P) $(@D)
+	$(QUIET)$(INFER_BIN) $(patsubst infer-%.1,%,$(@F)) --help --help-format=groff > $@
+
+$(INFER_MANUAL): src_build Makefile
+	$(QUIET)$(MKDIR_P) $(@D)
+	$(QUIET)$(INFER_BIN) --help --help-format=groff > $@
+
+$(INFER_MANUALS_GZIPPED): %.gz: %
+	$(QUIET)$(REMOVE) $@
+	gzip $<
+
+infer_models: src_build
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(QUIET)$(call silent_on_success,Building Java annotations,\
 	$(MAKE) -C $(ANNOTATIONS_DIR))
 endif
 	$(QUIET)$(call silent_on_success,Building Infer models,\
 	$(MAKE) -C $(MODELS_DIR) all)
+
+.PHONY: infer
+infer: src_build $(INFER_MANUALS) infer_models
 
 .PHONY: clang_setup
 clang_setup:
@@ -350,16 +364,20 @@ test-replace: $(BUILD_SYSTEMS_TESTS:%=build_%_replace) $(DIRECT_TESTS:%=direct_%
 uninstall:
 	$(REMOVE_DIR) $(DESTDIR)$(libdir)/infer/
 	$(REMOVE) $(DESTDIR)$(bindir)/infer
-	$(REMOVE) $(foreach alias,$(INFER_COMMANDS),$(DESTDIR)$(bindir)/$(alias))
+	$(REMOVE) $(INFER_COMMANDS:%=$(DESTDIR)$(bindir)/%)
+	$(REMOVE) $(foreach manual,$(INFER_MANUALS_GZIPPED),\
+	  $(DESTDIR)$(mandir)/man1/$(notdir $(manual)))
 
 .PHONY: test_clean
 test_clean: $(DIRECT_TESTS:%=direct_%_clean) $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
 
 .PHONY: install
-install: infer
+install: infer $(INFER_MANUALS_GZIPPED)
 # create directory structure
 	test -d      $(DESTDIR)$(bindir) || \
 	  $(MKDIR_P) $(DESTDIR)$(bindir)
+	test -d      $(DESTDIR)$(mandir)/man1 || \
+	  $(MKDIR_P) $(DESTDIR)$(mandir)/man1
 	test -d      $(DESTDIR)$(libdir)/infer/ || \
 	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -455,6 +473,9 @@ endif
 	(cd $(DESTDIR)$(bindir)/ && \
 	 $(REMOVE) inferTraceBugs && \
 	 $(LN_S) $(libdir_relative_to_bindir)/infer/infer/lib/python/inferTraceBugs inferTraceBugs)
+	$(QUIET)for i in $(MAN_DIR)/man1/*; do \
+	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(mandir)/man1/$$(basename $$i); \
+	done
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(QUIET)$(MAKE) -C facebook install
@@ -476,7 +497,7 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 endif
 	$(QUIET)$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
 	find $(INFER_DIR)/tests \( -name '*.o' -o -name '*.o.sh' \) -delete
-	$(REMOVE_DIR) _build_logs
+	$(QUIET)$(REMOVE_DIR) _build_logs $(MAN_DIR)
 
 .PHONY: conf-clean
 conf-clean: clean

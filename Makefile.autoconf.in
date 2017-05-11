@@ -22,6 +22,8 @@ CMAKE = @CMAKE@
 CPP = @CPP@
 CXX = @CXX@
 CXXFLAGS = @CXXFLAGS@
+# this is useless but autoconf is picky...
+datarootdir = @datarootdir@
 ENABLE_OCAMLOPT_CUSTOM_CC = @ENABLE_OCAMLOPT_CUSTOM_CC@
 ENABLE_OCAML_BINANNOT = @ENABLE_OCAML_BINANNOT@
 exec_prefix = @exec_prefix@
@@ -40,6 +42,7 @@ libdir = @libdir@
 # override in your `make` command to make the install relocatable
 libdir_relative_to_bindir = $(libdir)
 LIBS = @LIBS@
+mandir = @mandir@
 MENHIR = @MENHIR@
 MKDIR_P_CMD = case "@MKDIR_P@" in \
     ./*) printf "$(ROOT_DIR)/@MKDIR_P@\n";; \

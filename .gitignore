@@ -90,6 +90,7 @@ buck-out/
 
 #other
 /infer/bin
+/infer/man
 
 /infer/src/base/Version.ml
 /infer/models/java/models/
