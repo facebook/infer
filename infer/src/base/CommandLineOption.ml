@@ -816,7 +816,7 @@ let wrap_line indent_string wrap_length line0 =
     List.fold ~f:add_word_to_paragraph ~init:([], false, "", 0) words in
   List.rev (line::rev_lines)
 
-let show_manual ?internal_section default_doc command_opt =
+let show_manual ?internal_section format default_doc command_opt =
   let command_doc = match command_opt with
     | None ->
         default_doc
@@ -865,5 +865,5 @@ let show_manual ?internal_section default_doc command_opt =
           !sections hidden in
   let blocks = [`Blocks command_doc.manual_pre_options; `Blocks option_blocks;
                 `Blocks command_doc.manual_post_options] in
-  Cmdliner.Manpage.print `Auto Format.std_formatter (command_doc.title, blocks);
+  Cmdliner.Manpage.print format Format.std_formatter (command_doc.title, blocks);
   ()

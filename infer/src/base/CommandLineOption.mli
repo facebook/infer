@@ -227,6 +227,8 @@ val parse : ?config_file:string -> usage:Arg.usage_msg -> parse_mode -> command 
 (** [is_env_var_set var] is true if $[var]=1 *)
 val is_env_var_set : string -> bool
 
-(** Display the manual of [command] to the user, or [command_doc] if [command] is None. If
-    [internal_section] is true, add a section about internal (hidden) options. *)
-val show_manual : ?internal_section:string -> command_doc -> command option -> unit
+(** Display the manual of [command] to the user, or [command_doc] if [command] is None. [format] is
+    used as for [Cmdliner.Manpage.print]. If [internal_section] is specified, add a section titled
+    [internal_section] about internal (hidden) options. *)
+val show_manual : ?internal_section:string -> Cmdliner.Manpage.format -> command_doc
+  -> command option -> unit

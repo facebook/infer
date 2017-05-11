@@ -978,6 +978,14 @@ and help =
     (Printf.sprintf "Show this manual with all internal options in the %s section" manual_internal);
   var
 
+and help_format =
+  CLOpt.mk_symbol ~long:"help-format"
+    ~symbols:[("auto", `Auto); ("groff", `Groff); ("pager", `Pager); ("plain", `Plain)]
+    ~eq:PVariant.(=) ~default:`Auto
+    ~in_help:(List.map CLOpt.all_commands ~f:(fun command -> command, manual_generic))
+    "Show this help in the specified format. $(b,auto) sets the format to $(b,plain) if the \
+     environment variable $(b,TERM) is \"dumb\" or undefined, and to $(b,pager) otherwise."
+
 and icfg_dotty_outfile =
   CLOpt.mk_path_opt ~long:"icfg-dotty-outfile" ~meta:"path"
     "If set, specifies path where .dot file should be written, it overrides the path for all \
@@ -1548,9 +1556,9 @@ let post_parsing_initialization command_opt =
   );
   (match !help with
    | `Help ->
-       CLOpt.show_manual CommandDoc.infer command_opt
+       CLOpt.show_manual !help_format CommandDoc.infer command_opt
    | `HelpFull ->
-       CLOpt.show_manual ~internal_section:manual_internal CommandDoc.infer command_opt
+       CLOpt.show_manual ~internal_section:manual_internal !help_format CommandDoc.infer command_opt
    | `None ->
        ()
   );
