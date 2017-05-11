@@ -189,11 +189,12 @@ val mk_command_doc : title:string -> section:int -> version:string -> date:strin
 (** [mk_subcommand command ~long command_doc] defines the subcommand [command]. A subcommand is
     activated by passing [--long], [name], or any [-key] for [key] in [deprecated] on the command
     line. [name] defaults to [long]. A man page is automatically generated for [command] based on
-    the information in [command_doc]. [on_unknown_arg] is the action taken on unknown anonymous
-    arguments; it is `Reject by default. *)
+    the information in [command_doc], if available (otherwise the command is considered internal).
+    [on_unknown_arg] is the action taken on unknown anonymous arguments; it is `Reject by default.
+*)
 val mk_subcommand : command -> ?on_unknown_arg:[`Add | `Skip | `Reject] ->
   ?deprecated:string list -> long:string -> ?name:string ->
-  ?parse_mode:parse_mode -> ?in_help:(command * string) list -> command_doc -> unit
+  ?parse_mode:parse_mode -> ?in_help:(command * string) list -> command_doc option -> unit
 
 (** environment variable use to pass arguments from parent to child processes *)
 val args_env_var : string

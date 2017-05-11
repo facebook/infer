@@ -834,8 +834,11 @@ let show_manual ?internal_section format default_doc command_opt =
     | None ->
         default_doc
     | Some command ->
-        let (command_doc, _, _) = List.Assoc.find_exn !subcommands command in
-        command_doc in
+        match List.Assoc.find_exn !subcommands command with
+        | (Some command_doc, _, _) ->
+            command_doc
+        | (None, _, _) ->
+            invalid_argf "No manual for internal command %s" (string_of_command command) in
   let pp_meta f meta = match meta with
     | "" -> ()
     | meta -> F.fprintf f " $(i,%s)" (Cmdliner.Manpage.escape meta) in

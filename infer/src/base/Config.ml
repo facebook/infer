@@ -17,26 +17,6 @@ open! PVariant
 module CLOpt = CommandLineOption
 module F = Format
 
-type exe = Analyze | Clang | Driver | Print [@@deriving compare]
-
-let equal_exe = [%compare.equal : exe]
-
-(* TODO(16551801) better place to declare analyzers *)
-let infer_exe_name = "infer"
-let infer_analyze_exe_name = "InferAnalyze"
-
-(** Association list of executable (base)names to their [exe]s. *)
-let exes = [
-  (infer_analyze_exe_name, Analyze);
-  ("InferClang", Clang);
-  (infer_exe_name, Driver);
-  ("InferPrint", Print);
-]
-
-let exe_name =
-  let exe_to_name = List.map ~f:(fun (n,a) -> (a,n)) exes in
-  fun exe -> List.Assoc.find_exn ~equal:equal_exe exe_to_name exe
-
 type analyzer =
   | BiAbduction | CaptureOnly | CompileOnly | Eradicate | Checkers | Tracing | Crashcontext
   | Linters
@@ -288,23 +268,23 @@ let version_string =
     Unix.time *)
 let initial_analysis_time = Unix.time ()
 
-(* Resolve symlinks to get to the real executable. The real executable is located in [bin_dir]
-   below, which allows us to find [lib_dir], [models_dir], etc., relative to it. *)
-let real_exe_name =
-  Utils.realpath Sys.executable_name
+let clang_exe_aliases = [
+  (* this must be kept in sync with the clang-like symlinks in [wrappers_dir] (see below) *)
+  "c++"; "cc"; "clang"; "clang++"; "g++"; "gcc";
+]
 
-let current_exe =
-  List.Assoc.find ~equal:String.equal exes (Filename.basename real_exe_name) |>
-  Option.value ~default:Driver
-
-let initial_command = match current_exe with
-  | Analyze -> Some CLOpt.Analyze
-  | Clang -> Some CLOpt.Clang
-  | Driver -> None
-  | Print -> Some CLOpt.Report
+let initial_command =
+  (* Sys.executable_name tries to do clever things which we must avoid, use argv[0] instead *)
+  let exe_basename = Filename.basename Sys.argv.(0) in
+  let is_clang = List.mem ~equal:String.equal clang_exe_aliases in
+  match CommandDoc.command_of_exe_name exe_basename with
+  | Some _ as command -> command
+  | None when is_clang exe_basename -> Some CLOpt.Clang
+  | None -> None
 
 let bin_dir =
-  Filename.dirname real_exe_name
+  (* Resolve symlinks to get to the real executable, which is located in [bin_dir]. *)
+  Filename.dirname (Utils.realpath Sys.executable_name)
 
 let lib_dir =
   bin_dir ^/ Filename.parent_dir_name ^/ "lib"
@@ -369,20 +349,20 @@ let startup_action =
   let open CLOpt in
   if infer_is_javac then Javac
   else if !Sys.interactive then NoParse
-  else match current_exe with
-    | Analyze | Driver | Print -> InferCommand
-    | Clang -> NoParse
-
+  else match initial_command with
+    | Some Clang ->
+        NoParse
+    | None | Some (Analyze | Capture | Compile | Report | ReportDiff | Run) ->
+        InferCommand
 
 let exe_usage =
-  let exe_command = match current_exe with
-    | Analyze -> Some "analyze"
-    | Clang -> Some "clang"
-    | Print -> Some "report"
-    | Driver -> None in
+  let exe_command_name = match initial_command with
+    | Some CLOpt.Clang -> None (* users cannot see this *)
+    | Some command -> Some (CommandDoc.long_of_command command)
+    | None -> None in
   Printf.sprintf "%s\nUsage: infer %s [options]\nSee `infer%s --help` for more information."
-    version_string (Option.value ~default:"command" exe_command)
-    (Option.value_map ~default:"" ~f:((^) " ") exe_command)
+    version_string (Option.value ~default:"command" exe_command_name)
+    (Option.value_map ~default:"" ~f:((^) " ") exe_command_name)
 
 (** Command Line options *)
 
@@ -416,17 +396,21 @@ let anon_args = CLOpt.mk_anon ()
 
 let () =
   let on_unknown_arg_from_command (cmd: CLOpt.command) = match cmd with
-    | Clang -> `Skip
+    | Clang -> assert false (* filtered out *)
     | Report -> `Add
     | Analyze | Capture | Compile | ReportDiff | Run -> `Reject in
   let command_deprecated =
     List.Assoc.find ~equal:CLOpt.equal_command CLOpt.[ReportDiff, ["-diff"]] in
   (* make sure we generate doc for all the commands we know about *)
-  List.iter CLOpt.all_commands ~f:(fun cmd ->
+  List.filter ~f:(Fn.non (CLOpt.(equal_command Clang))) CLOpt.all_commands
+  |> List.iter ~f:(fun cmd ->
       let { CommandDoc.long; command_doc } = CommandDoc.data_of_command cmd in
       let on_unknown_arg = on_unknown_arg_from_command cmd in
       let deprecated = command_deprecated cmd in
-      CLOpt.mk_subcommand cmd ~long ~on_unknown_arg ?deprecated command_doc)
+      CLOpt.mk_subcommand cmd ~long ~on_unknown_arg ?deprecated (Some command_doc))
+
+let () =
+  CLOpt.mk_subcommand CLOpt.Clang ~long:"" ~on_unknown_arg:`Skip None
 
 let abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1
@@ -738,7 +722,7 @@ and (
 
   and developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
-      ~default:(equal_exe current_exe Print)
+      ~default:(Option.value_map ~default:false ~f:(CLOpt.(equal_command Report)) initial_command)
       "Show internal exceptions"
 
   and filtering =
@@ -953,7 +937,7 @@ and frontend_debug =
   CLOpt.mk_bool ~deprecated:["fd"] ~deprecated_no:["nfd"] ~long:"frontend-debug"
     ~in_help:CLOpt.[Capture, manual_clang]
     "Emit debug info to *.o.astlog and a script *.o.sh that replays the command used to run clang \
-     with the plugin attached, piped to the InferClang frontend command"
+     with the plugin attached, piped to the infer frontend"
 
 and frontend_stats =
   CLOpt.mk_bool ~deprecated:["fs"] ~deprecated_no:["nfs"] ~long:"frontend-stats"
@@ -1614,7 +1598,13 @@ let post_parsing_initialization command_opt =
    | Some Crashcontext -> checkers := true; crashcontext := true
    | Some Eradicate -> checkers := true; eradicate := true
    | Some Tracing -> tracing := true
-   | Some (CaptureOnly | CompileOnly | BiAbduction | Linters) | None -> ()
+   | Some (CaptureOnly | CompileOnly | BiAbduction | Linters) -> ()
+   | None ->
+       let open CLOpt in
+       match command_opt with
+       | Some Compile -> analyzer := Some CompileOnly
+       | Some Capture -> analyzer := Some CaptureOnly
+       | _ -> ()
   );
   Option.value ~default:CLOpt.Run command_opt
 

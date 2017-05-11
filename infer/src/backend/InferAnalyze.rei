@@ -14,3 +14,5 @@ open! IStd;
 
 /** Given a name of the Makefile to use for multicore analysis, analyze the captured code */
 let main: string => unit;
+
+let register_perf_stats_report: unit => unit;

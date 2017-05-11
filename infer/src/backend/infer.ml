@@ -546,6 +546,21 @@ let differential_mode () =
 
 let () =
   match Config.command with
+  | Analyze ->
+      Logging.set_log_file_identifier
+        CommandLineOption.Analyze (Option.map ~f:Filename.basename Config.cluster_cmdline);
+      if Config.print_builtins then Builtin.print_and_exit ();
+      if Sys.file_exists Config.results_dir <> `Yes then (
+        L.err "ERROR: results directory %s does not exist@.@." Config.results_dir;
+        Config.print_usage_exit ()
+      );
+      InferAnalyze.register_perf_stats_report ();
+      InferAnalyze.main Config.makefile_cmdline
+  | Clang ->
+      let prog, args = match Array.to_list Sys.argv with
+        | prog::args -> prog, args
+        | [] -> assert false (* Sys.argv is never empty *) in
+      ClangWrapper.exe ~prog ~args
   | Report -> InferPrint.main_from_config ()
   | ReportDiff -> differential_mode ()
-  | _ -> infer_mode ()
+  | Capture | Compile | Run  -> infer_mode ()

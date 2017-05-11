@@ -139,7 +139,7 @@ let run_plugin_and_frontend source_path frontend clang_args => {
   if debug_mode {
     /* -cc1 clang commands always set -o explicitly */
     let basename = source_path ^ ".ast";
-    /* Emit the clang command with the extra args piped to InferClang */
+    /* Emit the clang command with the extra args piped to infer-as-clang */
     let frontend_script_fname = Printf.sprintf "%s.sh" basename;
     let debug_script_out = open_out frontend_script_fname;
     let debug_script_fmt = Format.formatter_of_out_channel debug_script_out;

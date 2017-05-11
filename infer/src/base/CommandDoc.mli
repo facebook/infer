@@ -12,8 +12,13 @@ module CLOpt = CommandLineOption
 
 type data = { long: string; command_doc: CLOpt.command_doc }
 
+val infer_exe_name : string
 val inferconfig_env_var : string
 val inferconfig_file : string
+
+val long_of_command : CLOpt.command -> string
+val exe_name_of_command : CLOpt.command -> string
+val command_of_exe_name : string -> CLOpt.command option
 
 val infer : CLOpt.command_doc
 val data_of_command : CLOpt.command -> data

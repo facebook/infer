@@ -182,3 +182,17 @@ let main makefile => {
     output_json_makefile_stats clusters_to_analyze
   }
 };
+
+let register_perf_stats_report () => {
+  let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name;
+  let cluster =
+    switch Config.cluster_cmdline {
+    | Some cl => "_" ^ cl
+    | None => ""
+    };
+  let stats_base = Config.perf_stats_prefix ^ Filename.basename cluster ^ ".json";
+  let stats_file = Filename.concat stats_dir stats_base;
+  Utils.create_dir Config.results_dir;
+  Utils.create_dir stats_dir;
+  PerfStats.register_report_at_exit stats_file
+};

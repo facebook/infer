@@ -45,10 +45,10 @@ infer-out-reactive-capture/report.json: $(CMAKE_BUILD_DIR)/compile_commands.json
 	  --changed-files-index $(CMAKE_DIR)/index.txt --compilation-database $<)
 
 issues.exp.test: infer-out-with-index/report.json infer-out-no-index/report.json infer-out-reactive-capture/report.json
-	$(QUIET)$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.with-index \
+	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.with-index \
 		--from-json-report infer-out-with-index/report.json
-	$(QUIET)$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.no-index \
+	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.no-index \
 	  --from-json-report infer-out-no-index/report.json
-	$(QUIET)$(INFERPRINT_BIN) -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.reactive-capture \
+	$(QUIET)$(INFER_BIN) report -q -a $(ANALYZER) $(INFERPRINT_OPTIONS) $@.reactive-capture \
 	  --from-json-report infer-out-reactive-capture/report.json
 	$(QUIET)cat $@.with-index $@.no-index $@.reactive-capture > $@

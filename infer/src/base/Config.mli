@@ -99,8 +99,6 @@ val frontend_stats_dir_name : string
 val global_tenv_filename : string
 val idempotent_getters : bool
 val incremental_procs : bool
-val infer_exe_name : string
-val infer_analyze_exe_name : string
 val infer_py_argparse_error_exit_code : int
 val initial_analysis_time : float
 val ivar_attributes : string

@@ -14,22 +14,29 @@ type data = { long: string; command_doc: CLOpt.command_doc }
 
 let inferconfig_env_var = "INFERCONFIG"
 
+let infer_exe_name = "infer"
+
 (** Name of the infer configuration file *)
 let inferconfig_file = ".inferconfig"
 
 let command_to_long = CLOpt.[
-    Analyze, "analyze"; Capture, "capture"; Clang, "clang"; Compile, "compile"; Report, "report";
+    Analyze, "analyze"; Capture, "capture"; Compile, "compile"; Report, "report";
     ReportDiff, "reportdiff"; Run, "run";
   ]
 
 let long_of_command =
   List.Assoc.find_exn ~equal:CLOpt.equal_command command_to_long
 
+let exe_name_of_long long =
+  Printf.sprintf "%s-%s" infer_exe_name long
+
 let exe_name_of_command cmd =
-  let long = long_of_command cmd in
-  (* InferClang is special because it's not really a user-facing executable *)
-  if CLOpt.equal_command cmd CLOpt.Clang then "InferClang"
-  else "infer-" ^ long
+  long_of_command cmd |> exe_name_of_long
+
+let command_of_exe_name exe_name =
+  List.find_map command_to_long ~f:(fun (cmd, long) ->
+      if String.equal exe_name (exe_name_of_long long) then Some cmd
+      else None)
 
 let mk_command_doc ~see_also:see_also_commands ?and_also ?environment:environment_opt
     ?files:files_opt ~synopsis =
@@ -87,17 +94,6 @@ let capture =
           directory.";
     ]
     ~see_also:CLOpt.[Analyze;Compile;Run]
-
-let clang =
-  mk_command_doc ~title:"Infer Clang Capture"
-    ~short_description:"internal tool to capture clang commands"
-    ~synopsis:"$(b,InferClang) $(i,[clang options])"
-    ~description:[`P "This is used internally by other infer commands. You shouldn't need to call \
-                      this directly."]
-    ~options:(`Replace
-                [`P "Accepts the same command line options as $(b,clang)(1) (but still reads infer \
-                     options from the environment)."])
-    ~see_also:CLOpt.[Capture]
 
 let compile =
   mk_command_doc ~title:"Infer Project Compilation"
@@ -271,7 +267,7 @@ let command_to_data =
     let long = long_of_command cmd in
     let command_doc = mk_doc (exe_name_of_command cmd) in
     cmd, { long; command_doc } in
-  CLOpt.[mk Analyze analyze; mk Capture capture; mk Clang clang; mk Compile compile;
+  CLOpt.[mk Analyze analyze; mk Capture capture; mk Compile compile;
          mk Report report; mk ReportDiff reportdiff; mk Run run]
 
 let data_of_command command =

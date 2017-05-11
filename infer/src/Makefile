@@ -62,7 +62,6 @@ endif
 #### Backend declarations ####
 
 INFER_MAIN = backend/infer
-INFERANALYZE_MAIN = backend/InferAnalyzeExe
 
 #### Checkers declarations ####
 
@@ -75,8 +74,6 @@ STACKTREE_ATDGEN_STUBS = $(addprefix $(STACKTREE_ATDGEN_STUB_BASE), $(ATDGEN_SUF
 INFERPRINT_ATDGEN_STUB_BASE = backend/jsonbug
 INFERPRINT_ATDGEN_STUB_ATD = $(INFERPRINT_ATDGEN_STUB_BASE).atd
 INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(ATDGEN_SUFFIXES))
-
-INFERPRINT_MAIN = backend/InferPrintExe
 
 ### InferUnit declarations ###
 
@@ -93,7 +90,6 @@ JAVA_SOURCES = java
 #### Clang declarations ####
 
 CLANG_SOURCES = clang
-INFERCLANG_MAIN = $(CLANG_SOURCES)/InferClang
 
 FCP_CLANG_OCAML_BUILD_DIR = $(FCP_CLANG_OCAML_DIR)/build
 
@@ -141,18 +137,10 @@ OCAMLBUILD_BASE = \
 # ocamlbuild with options necessary to build all targets at once, regardless of configure flags
 OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
 
-# list of ocamlbuild targets common to all build targets -- native version
-INFER_BASE_TARGETS = \
-  $(INFER_MAIN).native \
-  $(INFERANALYZE_MAIN).native \
-  $(INFERPRINT_MAIN).native
-
-INFER_ALL_TARGETS = $(INFER_BASE_TARGETS) \
-  $(INFERCLANG_MAIN).native \
-
 # configure-aware ocamlbuild commands and targets
 OCAMLBUILD_CONFIG = $(OCAMLBUILD_BASE)
-INFER_CONFIG_TARGETS = $(INFER_BASE_TARGETS)
+# list of ocamlbuild targets common to all build targets -- native version
+INFER_CONFIG_TARGETS = $(INFER_MAIN).native
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 OCAMLBUILD_CONFIG += $(JAVA_OCAMLBUILD_OPTIONS)
@@ -161,7 +149,6 @@ else
 DEPENDENCIES += java_stubs
 endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
-INFER_CONFIG_TARGETS += $(INFERCLANG_MAIN).native
 DEPENDENCIES += clang unit/clang
 else
 DEPENDENCIES += clang_stubs unit/clang_stubs
@@ -193,20 +180,18 @@ $(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(OCAML_CONFIG_SOURCES)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_CONFIG_TARGETS)
-# let make know that the target is up-to-date even if ocamlbuild cached it
+#	let make know that the target is up-to-date even if ocamlbuild cached it
 	$(QUIET)touch $@
 
-$(BIN_DIR): Makefile
-	$(MKDIR_P) $@
+INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias))
+
+$(INFER_BIN_ALIASES): Makefile
+#	make sure the bin directory exists
+	$(QUIET)$(MKDIR_P) $(@D)
+	$(QUIET)cd $(@D) && $(LN_S) -f infer $(@F)
 	$(QUIET)touch $@
 
-$(INFER_BIN).native: $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(BIN_DIR)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).native $(INFERANALYZE_BIN)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERPRINT_MAIN).native $(INFERPRINT_BIN)
-ifeq ($(BUILD_C_ANALYZERS),yes)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANG_BIN)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).native $(INFERCLANGXX_BIN)
-endif
+$(INFER_BIN).native: $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN_ALIASES)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN).native
 
@@ -217,22 +202,19 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 infer: $(CLANG_BINIOU_DICT)
 endif
 
-$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(OCAML_CONFIG_SOURCES)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(OCAML_CONFIG_SOURCES) \
+                                       $(MAKEFILE_LIST)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
-	  $(INFER_CONFIG_TARGETS:.native=.byte) $(INFERUNIT_MAIN).byte
+	  $(INFER_CONFIG_TARGETS:.native=.byte)
 	$(QUIET)touch $@
 
-$(INFER_BIN).byte: $(INFER_BUILD_DIR)/$(INFER_MAIN).byte $(BIN_DIR)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERANALYZE_MAIN).byte $(INFERANALYZE_BIN)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERPRINT_MAIN).byte $(INFERPRINT_BIN)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).byte $(INFERUNIT_BIN)
-ifeq ($(BUILD_C_ANALYZERS),yes)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).byte $(INFERCLANG_BIN)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERCLANG_MAIN).byte $(INFERCLANGXX_BIN)
-endif
+$(INFER_BIN).byte: $(INFER_BUILD_DIR)/$(INFER_MAIN).byte $(INFER_BIN_ALIASES)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).byte $(INFER_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).byte $(INFER_BIN).byte
+ifeq ($(TEST),1)
+	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).byte $(INFERUNIT_BIN)
+endif
 
 .PHONY: byte
 byte: $(INFER_BIN).byte
@@ -269,7 +251,7 @@ rei:
 %.rei : %.mli
 	$(SCRIPT_DIR)/refmt.sh -parse ml -print re $< > $*.rei
 
-roots:=Infer InferAnalyzeExe InferClang InferPrintExe StatsAggregator
+roots:=Infer StatsAggregator
 clusters:=base clang java IR
 
 ml_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.ml\(i\)*')
@@ -401,7 +383,7 @@ base/Version.ml: base/Version.ml.in $(MAKEFILE_LIST)
 
 .PHONY: clean
 clean:
-	$(REMOVE) $(INFER_ALL_TARGETS)
+	$(REMOVE) $(INFER_TARGET)
 	$(REMOVE) toplevel.mlpack
 	$(REMOVE_DIR) $(BUILD_DIR)
 	$(REMOVE) $(ETC_DIR)/clang_ast.dict
@@ -409,8 +391,7 @@ clean:
 	$(REMOVE) base/Version.ml.tmp.*
 	$(REMOVE) backend/jsonbug_{j,t}.ml{,i}
 	$(REMOVE) checkers/stacktree_{j,t}.ml{,i}
-	$(REMOVE) $(INFER_BIN){,.byte,.native} $(INFERCLANG_BIN) $(INFERCLANGXX_BIN)
-	$(REMOVE) $(INFERANALYZE_BIN) $(INFERPRINT_BIN)
+	$(REMOVE) $(INFER_BIN){,.byte,.native} $(INFER_BIN_ALIASES)
 	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)

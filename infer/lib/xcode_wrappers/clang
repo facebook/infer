@@ -1,8 +1,0 @@
-#!/bin/bash
-
-SCRIPT_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-BIN_PATH="${SCRIPT_PATH}/../../bin"
-
-if [ "${0%++}" != "$0" ]; then XX="++"; else XX=""; fi
-
-"${BIN_PATH}/InferClang${XX}" "$@"

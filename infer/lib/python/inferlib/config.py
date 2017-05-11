@@ -35,7 +35,6 @@ BIN_DIRECTORY = os.path.join(INFER_INFER_DIRECTORY, 'bin')
 JAVA_LIB_DIRECTORY = os.path.join(LIB_DIRECTORY, 'java')
 MODELS_JAR = os.path.join(JAVA_LIB_DIRECTORY, 'models.jar')
 WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'wrappers')
-XCODE_WRAPPERS_DIRECTORY = os.path.join(LIB_DIRECTORY, 'xcode_wrappers')
 
 DEFAULT_INFER_OUT = os.path.join(os.getcwd().decode(CODESET), 'infer-out')
 
