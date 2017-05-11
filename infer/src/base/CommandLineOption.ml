@@ -600,11 +600,10 @@ let mk_rest_actions ?(parse_mode=InferCommand) ?(in_help=[]) doc ~usage decode_a
                           decode_json = fun ~inferconfig_dir:_ _ -> []} ;
   rest
 
-let mk_subcommand command ?(accept_unknown_args=false) ?deprecated ~long ?(name=long)
+let mk_subcommand command ?on_unknown_arg:(on_unknown=`Reject) ?deprecated ~long ?(name=long)
     ?parse_mode ?in_help command_doc =
   let switch () =
     curr_command := Some command;
-    let on_unknown = if accept_unknown_args then `Add else `Reject in
     anon_arg_action := {!anon_arg_action with on_unknown} in
   ignore(
     mk ?deprecated ~long ~default:() ?parse_mode ?in_help ~meta:""

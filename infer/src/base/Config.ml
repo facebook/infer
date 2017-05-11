@@ -415,16 +415,18 @@ let exe_usage =
 let anon_args = CLOpt.mk_anon ()
 
 let () =
-  let command_accepts_unknown_arg =
-    List.mem ~equal:CLOpt.equal_command CLOpt.[Clang; Report] in
+  let on_unknown_arg_from_command (cmd: CLOpt.command) = match cmd with
+    | Clang -> `Skip
+    | Report -> `Add
+    | Analyze | Capture | Compile | ReportDiff | Run -> `Reject in
   let command_deprecated =
     List.Assoc.find ~equal:CLOpt.equal_command CLOpt.[ReportDiff, ["-diff"]] in
   (* make sure we generate doc for all the commands we know about *)
   List.iter CLOpt.all_commands ~f:(fun cmd ->
       let { CommandDoc.long; command_doc } = CommandDoc.data_of_command cmd in
-      let accept_unknown_args = command_accepts_unknown_arg cmd in
+      let on_unknown_arg = on_unknown_arg_from_command cmd in
       let deprecated = command_deprecated cmd in
-      CLOpt.mk_subcommand cmd ~long ~accept_unknown_args ?deprecated command_doc)
+      CLOpt.mk_subcommand cmd ~long ~on_unknown_arg ?deprecated command_doc)
 
 let abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1
