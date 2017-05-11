@@ -36,6 +36,15 @@ codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak, 3, MEMORY_LEAK
 codetoanalyze/c/errors/memory_leaks/test.c, conditional_last_instruction, 2, MEMORY_LEAK
 codetoanalyze/c/errors/memory_leaks/test.c, simple_leak, 2, MEMORY_LEAK
 codetoanalyze/c/errors/memory_leaks/test.c, uses_allocator, 3, MEMORY_LEAK
+codetoanalyze/c/errors/mutex/pthread_mutex.c, double_init_bad, 2, PRECONDITION_NOT_MET
+codetoanalyze/c/errors/mutex/pthread_mutex.c, double_lock_bad2, 4, LOCKING_ALREADY_LOCKED_MUTEX
+codetoanalyze/c/errors/mutex/pthread_mutex.c, double_lock_bad2, 4, LOCKING_UNINITIALIZED_MUTEX
+codetoanalyze/c/errors/mutex/pthread_mutex.c, double_lock_uninit_bad, 3, LOCKING_ALREADY_LOCKED_MUTEX
+codetoanalyze/c/errors/mutex/pthread_mutex.c, double_lock_uninit_bad, 3, LOCKING_UNINITIALIZED_MUTEX
+codetoanalyze/c/errors/mutex/pthread_mutex.c, double_unlock_bad, 3, UNLOCKING_UNLOCKED_MUTEX
+codetoanalyze/c/errors/mutex/pthread_mutex.c, double_unlock_bad2, 5, UNLOCKING_UNLOCKED_MUTEX
+codetoanalyze/c/errors/mutex/pthread_spinlock.c, spinlock_double_lock_bad, 3, LOCKING_ALREADY_LOCKED_SPINLOCK
+codetoanalyze/c/errors/mutex/pthread_spinlock.c, spinlock_double_lock_bad2, 3, LOCKING_ALREADY_LOCKED_SPINLOCK
 codetoanalyze/c/errors/null_dereference/angelism.c, bake, 2, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/angelism.c, call_by_ref_actual_already_in_footprint_bad, 1, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/angelism.c, struct_value_by_ref_callee_write_no_skip, 3, NULL_DEREFERENCE

@@ -17,7 +17,11 @@ module F = Format
 module DExp = DecompiledExp
 
 let vector_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::vector"]
-let mutex_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex"]
+let mutex_matcher = QualifiedCppName.Match.of_fuzzy_qual_names [
+    "std::__infer_mutex_model";
+    "std::mutex";
+    "std::timed_mutex";
+  ]
 
 let is_one_of_classes = QualifiedCppName.Match.match_qualifiers
 
@@ -839,7 +843,8 @@ let create_dereference_desc tenv
             Localise.desc_empty_vector_access (Some pname) (DExp.to_string this_dexp) loc
           else
             desc
-      | Some (DExp.Darrow (dexp, fieldname)) ->
+      | Some (DExp.Darrow (dexp, fieldname))
+      | Some (DExp.Ddot (dexp, fieldname)) ->
           if is_special_field mutex_matcher (Some "null_if_locked") fieldname then
             Localise.desc_double_lock None (DExp.to_string dexp) loc
           else if is_special_field vector_matcher (Some "beginPtr") fieldname then

@@ -52,6 +52,7 @@
 #endif
 
 #include <dirent.h>
+#include <errno.h>
 #include <pwd.h>
 #include <pthread.h>
 #include <sys/shm.h>
@@ -87,11 +88,15 @@ struct __dirstream {
 // modelling of errno
 // errno expands to different function calls on mac or other systems
 // the function call returns the address of a global variable called "errno"
+#ifdef errno
+// errno may be defined as a macro to be a per-thread variable
+#undef errno
+#endif
 extern int errno;
 #ifdef __APPLE__
 #define __ERRNO_FUN_NAME __error
 #else
-#define __ERRNO_FUN_NAME __errno_location
+#define __ERRNO_FUN_NAME() __errno_location(void) __THROW __attribute__ ((__const__))
 #endif
 int* __ERRNO_FUN_NAME() { return &errno; }
 
@@ -1458,9 +1463,25 @@ int munmap(void* addr, size_t len) {
   return ret;
 }
 
+/*
+  pthread_mutex_t model:
+  locked = 0 if unlocked, non-zero if locked
+  initialized = 1 if initialized, non-one otherwise
+*/
+typedef struct {
+  int locked;
+  int initialized;
+} __infer_model_pthread_mutex_t;
+
 // returns a nondeterministc value
 int pthread_mutex_destroy(pthread_mutex_t* mutex) {
   INFER_EXCLUDE_CONDITION(mutex == 0);
+  __infer_model_pthread_mutex_t* model = (__infer_model_pthread_mutex_t*)mutex;
+  INFER_EXCLUDE_CONDITION_MSG(model->initialized != 1,
+                              "DESTROYING_UNINITIALIZED_MUTEX");
+  INFER_EXCLUDE_CONDITION_MSG(model->locked != 0,
+                              "DESTROYING_LOCKED_MUTEX");
+  model->initialized = -1;
   return __infer_nondet_int();
 }
 
@@ -1468,24 +1489,53 @@ int pthread_mutex_destroy(pthread_mutex_t* mutex) {
 int pthread_mutex_init(pthread_mutex_t* __restrict mutex,
                        const pthread_mutexattr_t* __restrict attr) {
   INFER_EXCLUDE_CONDITION(mutex == 0);
-  return __infer_nondet_int();
+  __infer_model_pthread_mutex_t* model = (__infer_model_pthread_mutex_t*)mutex;
+  INFER_EXCLUDE_CONDITION(model->initialized == 1);
+  int ret = __infer_nondet_int();
+  if (!ret) {
+    model->initialized = 1;
+    model->locked = 0;
+  }
+  return ret;
 }
 
 // returns a nondeterministc value
 int pthread_mutex_lock(pthread_mutex_t* mutex) {
   INFER_EXCLUDE_CONDITION(mutex == 0);
-  return __infer_nondet_int();
+  __infer_model_pthread_mutex_t* model = (__infer_model_pthread_mutex_t*)mutex;
+  INFER_EXCLUDE_CONDITION_MSG(model->initialized != 1,
+                              "LOCKING_UNINITIALIZED_MUTEX");
+  INFER_EXCLUDE_CONDITION_MSG(model->locked != 0,
+                              "LOCKING_ALREADY_LOCKED_MUTEX");
+  int ret = __infer_nondet_int();
+  if (!ret) {
+    model->locked = 1;
+  }
+  return ret;
 }
 
 // returns a nondeterministc value
 int pthread_mutex_trylock(pthread_mutex_t* mutex) {
   INFER_EXCLUDE_CONDITION(mutex == 0);
+  __infer_model_pthread_mutex_t* model = (__infer_model_pthread_mutex_t*)mutex;
+  INFER_EXCLUDE_CONDITION_MSG(model->initialized != 1,
+                              "TRYLOCKING_UNINITIALIZED_MUTEX");
+  if (model->locked) {
+    return EBUSY;
+  }
+  model->locked = 1;
   return __infer_nondet_int();
 }
 
 // returns a nondeterministc value
 int pthread_mutex_unlock(pthread_mutex_t* mutex) {
   INFER_EXCLUDE_CONDITION(mutex == 0);
+  __infer_model_pthread_mutex_t* model = (__infer_model_pthread_mutex_t*)mutex;
+  INFER_EXCLUDE_CONDITION_MSG(model->initialized != 1,
+                              "UNLOCKING_UNINITIALIZED_MUTEX");
+  INFER_EXCLUDE_CONDITION_MSG(model->locked == 0,
+                              "UNLOCKING_UNLOCKED_MUTEX");
+  model->locked = 0;
   return __infer_nondet_int();
 }
 
@@ -1513,6 +1563,54 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t* attr, int* type) {
   INFER_EXCLUDE_CONDITION(attr == 0);
   *type = __infer_nondet_int();
   return __infer_nondet_int();
+}
+
+/*
+  pthread_spinlock_t model:
+  locked: 0 if unlocked, non-zero if locked
+*/
+typedef struct {
+  int locked;
+} __infer_model_pthread_spinlock_t;
+
+#ifdef __APPLE__
+typedef __infer_model_pthread_spinlock_t pthread_spinlock_t;
+#endif
+
+int pthread_spin_destroy(pthread_spinlock_t* lock) {
+  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
+  INFER_EXCLUDE_CONDITION_MSG(model->locked != 0, "DESTROYING_LOCKED_SPINLOCK");
+  return 0;
+}
+
+int pthread_spin_init(pthread_spinlock_t* lock, int pshared) {
+  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
+  model->locked = 0;
+  return 0;
+}
+
+int pthread_spin_lock(pthread_spinlock_t* lock) {
+  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
+  INFER_EXCLUDE_CONDITION_MSG(model->locked != 0, "LOCKING_ALREADY_LOCKED_SPINLOCK");
+  model->locked = 1;
+  return 0;
+}
+
+int pthread_spin_trylock(pthread_spinlock_t* lock) {
+  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
+  if (model->locked) {
+    return EBUSY;
+  } else {
+    model->locked = 1;
+    return 0;
+  }
+}
+
+int pthread_spin_unlock(pthread_spinlock_t* lock) {
+  __infer_model_pthread_spinlock_t* model = (__infer_model_pthread_spinlock_t*)lock;
+  INFER_EXCLUDE_CONDITION_MSG(model->locked == 0, "UNLOCKING_UNLOCKED_SPINLOCK");
+  model->locked = 0;
+  return 0;
 }
 
 // return a positive non-deterministic number or -1.

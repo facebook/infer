@@ -63,6 +63,15 @@ clock_t __infer_nondet_clock_t();
   if (cond)                           \
     while (1)
 
+#ifdef NO_INFER_FAIL
+#define INFER_EXCLUDE_CONDITION_MSG(cond, msg) INFER_EXCLUDE_CONDITION(cond)
+#else
+void __infer_fail(char*);
+#define INFER_EXCLUDE_CONDITION_MSG(cond, msg) \
+  if (cond)                                    \
+    __infer_fail(msg)
+#endif
+
 // builtin: force arr to be an array
 extern void __require_allocated_array(const void* arr);
 
