@@ -6,6 +6,7 @@ biniou = 1.0.12
 camlp4 = 4.04+1
 camlzip = 1.07
 camomile = 0.8.5
+cmdliner = 1.0.0
 conf-autoconf = 0.1
 conf-m4 = 1
 conf-pkg-config = 1.0

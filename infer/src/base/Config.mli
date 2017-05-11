@@ -10,16 +10,14 @@
 
 open! IStd
 
+module CLOpt = CommandLineOption
+
 (** Configuration values: either constant, determined at compile time, or set at startup
     time by system calls, environment variables, or command line options *)
 
-type exe = Analyze | Clang | Driver | Print [@@deriving compare]
-
-val exe_name : exe -> string
-
-(** Various kind of analyzers *)
 type analyzer =
-  | Capture | Compile | Infer | Eradicate | Checkers | Tracing | Crashcontext | Linters
+  | BiAbduction | CaptureOnly | CompileOnly | Eradicate | Checkers | Tracing | Crashcontext
+  | Linters
 [@@deriving compare]
 
 val equal_analyzer : analyzer -> analyzer -> bool
@@ -101,6 +99,8 @@ val frontend_stats_dir_name : string
 val global_tenv_filename : string
 val idempotent_getters : bool
 val incremental_procs : bool
+val infer_exe_name : string
+val infer_analyze_exe_name : string
 val infer_py_argparse_error_exit_code : int
 val initial_analysis_time : float
 val ivar_attributes : string
@@ -200,6 +200,7 @@ val clang_frontend_do_lint : bool
 val clang_ignore_regex : string option
 val clang_include_to_override_regex : string option
 val cluster_cmdline : string option
+val command : CLOpt.command
 val compute_analytics : bool
 val continue_capture : bool
 val default_linters : bool
@@ -235,7 +236,6 @@ val file_renamings : string option
 val filter_paths : bool
 val filter_report_paths : string option
 val filtering : bool
-val final_parse_action : CommandLineOption.parse_action
 val flavors : bool
 val from_json_report : string option
 val frontend_debug : bool
@@ -288,7 +288,6 @@ val no_translate_libs : bool
 val objc_memory_model_on : bool
 val only_footprint : bool
 val out_file_cmdline : string
-val parse_action : CommandLineOption.parse_action
 val pmd_xml : bool
 val precondition_stats : bool
 val print_logs : bool

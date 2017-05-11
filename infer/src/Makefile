@@ -40,7 +40,7 @@ OCAMLBUILD_OPTIONS = \
   -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-34-35-39)" \
   -tag-line "<*/{,*/}*.{ml,re}{,i}>: package(ppx_compare)" \
   -tag thread \
-  -pkgs ANSITerminal,atdgen,core,extlib,oUnit,str,unix,xmlm,yojson,zip
+  -pkgs ANSITerminal,atdgen,cmdliner,core,extlib,oUnit,str,unix,xmlm,yojson,zip
 
 ifeq ($(ENABLE_OCAML_BINANNOT),yes)
 OCAMLBUILD_OPTIONS += -cflags -bin-annot

@@ -373,9 +373,9 @@ let analyze driver_mode =
     | _ when Config.maven ->
         (* Called from Maven, only do capture. *)
         false, false
-    | _, (Capture | Compile) ->
+    | _, (CaptureOnly | CompileOnly) ->
         false, false
-    | _, (Infer | Eradicate | Checkers | Tracing | Crashcontext) ->
+    | _, (BiAbduction | Checkers | Crashcontext | Eradicate | Tracing) ->
         true, true
     | _, Linters ->
         false, true in
@@ -493,7 +493,7 @@ let infer_mode () =
     remove_results_dir () ;
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)
-  if not Config.buck_cache_mode then L.set_log_file_identifier CLOpt.(Infer Driver) None;
+  if not Config.buck_cache_mode then L.set_log_file_identifier CLOpt.Run None;
   if Config.print_builtins then Builtin.print_and_exit () ;
   if CLOpt.is_originator then L.do_out "%s@\n" Config.version_string ;
   if Config.debug_mode || Config.stats_mode then log_infer_args driver_mode ;
@@ -545,6 +545,7 @@ let differential_mode () =
   Differential.to_files diff out_path
 
 let () =
-  match Config.final_parse_action with
-  | Differential -> differential_mode ()
+  match Config.command with
+  | Report -> InferPrint.main_from_config ()
+  | ReportDiff -> differential_mode ()
   | _ -> infer_mode ()

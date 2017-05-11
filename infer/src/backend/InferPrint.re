@@ -265,11 +265,11 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
       switch Config.analyzer {
       | Eradicate
       | Tracing => true
-      | Capture
+      | BiAbduction
+      | CaptureOnly
       | Checkers
-      | Compile
+      | CompileOnly
       | Crashcontext
-      | Infer
       | Linters => false
       };
     if analyzer_is_whitelisted {
@@ -787,9 +787,7 @@ module Report = {
 module Summary = {
   let pp_summary_out summary => {
     let proc_name = Specs.get_proc_name summary;
-    if Config.quiet {
-      ()
-    } else {
+    if (CLOpt.equal_command Config.command CLOpt.Report && not Config.quiet) {
       L.stdout "Procedure: %a@\n%a@." Typ.Procname.pp proc_name Specs.pp_summary_text summary
     }
   };
@@ -1313,3 +1311,5 @@ let main ::report_csv ::report_json => {
   };
   print_issues formats_by_report_kind
 };
+
+let main_from_config () => main report_csv::Config.bugs_csv report_json::Config.bugs_json;

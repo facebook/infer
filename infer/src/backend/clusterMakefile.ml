@@ -24,8 +24,8 @@ let pp_prolog fmt clusters =
   let compilation_dbs_cmd =
     List.map ~f:infer_flag_of_compilation_db !Config.clang_compilation_dbs
     |> String.concat ~sep:" " |> escape in
-  F.fprintf fmt "INFERANALYZE= %s --results-dir '%s' %s \n@."
-    (Config.bin_dir ^/ (Config.exe_name Analyze))
+  F.fprintf fmt "INFERANALYZE = '%s' --results-dir '%s' %s@\n@\n"
+    (Config.(bin_dir ^/ infer_analyze_exe_name))
     (escape Config.results_dir)
     compilation_dbs_cmd;
   F.fprintf fmt "CLUSTERS=";
@@ -35,8 +35,8 @@ let pp_prolog fmt clusters =
         F.fprintf fmt "%a " Cluster.pp_cluster_name (i+1))
     clusters;
 
-  F.fprintf fmt "@.@.default: test@.@.all: test@.@.";
-  F.fprintf fmt "test: $(CLUSTERS)@.";
+  F.fprintf fmt "@\n@\ndefault: test@\n@\nall: test@\n@\n";
+  F.fprintf fmt "test: $(CLUSTERS)@\n";
   if Config.show_progress_bar then F.fprintf fmt "\t@@echo@\n@."
 
 let pp_epilog fmt () =

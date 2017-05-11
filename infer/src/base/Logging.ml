@@ -29,15 +29,12 @@ let dup_formatter fmt1 fmt2 =
   Format.pp_set_formatter_output_functions fmt1 out_string flush
 
 (** Name of dir for logging the output in the specific executable *)
-let log_dir_of_action (action : CLOpt.parse_action) = match action with
-  | Infer (Analysis | BufferOverrun | Checkers | Crashcontext) -> "analyze"
-  | Differential -> "differential"
-  | Infer Driver -> "driver"
-  | Infer Clang
-  | Infer Java
-  | NoParse
-  | Javac -> "capture"
-  | Infer Print -> "print"
+let log_dir_of_command (command : CLOpt.command) = match command with
+  | Analyze -> "analyze"
+  | Capture | Clang | Compile -> "capture"
+  | Report -> "report"
+  | ReportDiff -> "reportdiff"
+  | Run -> "driver"
 
 let stdout_err_log_files =
   (((lazy F.std_formatter), (lazy Pervasives.stdout),
@@ -54,8 +51,8 @@ let close_log_file fmt chan file =
       Out_channel.close c
   )
 
-let create_log_file action name_prefix outerr =
-  let log_dir = Config.results_dir ^/ Config.log_dir_name ^/ log_dir_of_action action in
+let create_log_file command name_prefix outerr =
+  let log_dir = Config.results_dir ^/ Config.log_dir_name ^/ log_dir_of_command command in
   let config_name = match outerr with
     | `Out -> Config.out_file_cmdline
     | `Err -> Config.err_file_cmdline in
@@ -83,34 +80,36 @@ let create_log_file action name_prefix outerr =
     "log files flushing";
   (file_fmt, chan, file)
 
-let should_setup_log_files (action : CLOpt.parse_action) = match action with
-  | Infer Analysis
-  | Infer Clang -> Config.debug_mode || Config.stats_mode
-  | Infer Driver -> true
-  | _ -> false
+let should_setup_log_files (command : CLOpt.command) = match command with
+  | Analyze | Capture | Clang | Compile ->
+      Config.debug_mode || Config.stats_mode
+  | Run ->
+      true
+  | Report | ReportDiff ->
+      false
 
-let create_outerr_log_files exe prefix_opt =
+let create_outerr_log_files command prefix_opt =
   let lazy3 x = (lazy (fst3 (Lazy.force x)),
                  lazy (snd3 (Lazy.force x)),
                  lazy (trd3 (Lazy.force x))) in
-  if should_setup_log_files exe then
+  if should_setup_log_files command then
     let name_prefix = match prefix_opt with
       | Some name -> name ^ "-"
       | None -> "" in
-    (lazy (create_log_file exe name_prefix `Out) |> lazy3,
-     lazy (create_log_file exe name_prefix `Err) |> lazy3)
+    (lazy (create_log_file command name_prefix `Out) |> lazy3,
+     lazy (create_log_file command name_prefix `Err) |> lazy3)
   else
     stdout_err_log_files
 
 let ((out_formatter, out_chan, out_file),
      (err_formatter, err_chan, err_file)) =
   let (o_fmt, o_c, o_f), (e_fmt, e_c, e_f) =
-    create_outerr_log_files Config.parse_action None in
+    create_outerr_log_files Config.command None in
   ((ref o_fmt, ref o_c, ref o_f),
    (ref e_fmt, ref e_c, ref e_f))
 
-let set_log_file_identifier exe prefix_opt =
-  let (o_fmt, o_c, o_f), (e_fmt, e_c, e_f) = create_outerr_log_files exe prefix_opt in
+let set_log_file_identifier command prefix_opt =
+  let (o_fmt, o_c, o_f), (e_fmt, e_c, e_f) = create_outerr_log_files command prefix_opt in
   (* close previous log files *)
   close_log_file !out_formatter !out_chan !out_file;
   close_log_file !err_formatter !err_chan !err_file;

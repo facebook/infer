@@ -49,7 +49,7 @@ let register_perf_stats_report source_file => {
 
 let init_global_state_for_capture_and_linters source_file => {
   Logging.set_log_file_identifier
-    CLOpt.(Infer Clang) (Some (Filename.basename (SourceFile.to_abs_path source_file)));
+    CLOpt.Clang (Some (Filename.basename (SourceFile.to_abs_path source_file)));
   register_perf_stats_report source_file;
   Config.curr_language := Config.Clang;
   DB.Results_dir.init source_file;
@@ -165,7 +165,7 @@ let cc1_capture clang_cmd => {
   };
   Logging.out "@\n*** Beginning capture of file %s ***@\n" source_path;
   if (
-    Config.equal_analyzer Config.analyzer Config.Compile ||
+    Config.equal_analyzer Config.analyzer Config.CompileOnly ||
     CLocation.is_file_blacklisted source_path
   ) {
     Logging.out "@\n Skip the analysis of source file %s@\n@\n" source_path;
@@ -179,7 +179,7 @@ let cc1_capture clang_cmd => {
         source_path (fun chan_in => run_and_validate_clang_frontend (`Pipe chan_in)) clang_cmd
     };
     /* reset logging to stop capturing log output into the source file's log */
-    Logging.set_log_file_identifier CLOpt.(Infer Clang) None;
+    Logging.set_log_file_identifier CLOpt.Capture None;
     ()
   }
 };

@@ -33,7 +33,7 @@ let infer_profile = lazy
 \n        </plugins>\
 \n      </build>\
 \n    </profile>\
-  " infer_profile_name (Config.(bin_dir ^/ string_of_analyzer Infer)))
+  " infer_profile_name (Config.(bin_dir ^/ infer_exe_name)))
 
 let pom_worklist = ref [CLOpt.init_work_dir]
 

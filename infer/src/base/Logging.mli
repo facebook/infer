@@ -73,7 +73,7 @@ val set_delayed_prints : print_action list -> unit
 val reset_delayed_prints : unit -> unit
 
 (** Set a custom identifier to be part of the filename of the current logfiles. *)
-val set_log_file_identifier : CommandLineOption.parse_action -> string option -> unit
+val set_log_file_identifier : CommandLineOption.command -> string option -> unit
 
 (** print to the current out stream, as specified in set_log_file_identifier
     (note: only prints in debug or in stats mode) *)

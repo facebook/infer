@@ -2,6 +2,7 @@ S src/**
 B _build/infer/**
 PKG ANSITerminal
 PKG atdgen
+PKG cmdliner
 PKG core
 PKG javalib
 PKG oUnit

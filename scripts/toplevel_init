@@ -1,6 +1,7 @@
 (* load dependencies *)
 #use "topfind";;
 #thread;;
+#require "cmdliner";;
 #require "core.top";;
 #require "ctypes";;
 #require "ctypes.stubs";;

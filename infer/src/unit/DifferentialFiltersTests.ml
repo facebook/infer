@@ -502,7 +502,7 @@ let test_resolve_infer_eradicate_conflict =
   (* [(test_name, analyzer, expected_hashes); ...] *)
   [
     ("test_resolve_infer_eradicate_conflict_runs_with_infer_analyzer",
-     Config.Infer,
+     Config.BiAbduction,
      ([1], [11], [4]));
     ("test_resolve_infer_eradicate_conflict_skips_with_checkers_analyzer",
      Config.Checkers,

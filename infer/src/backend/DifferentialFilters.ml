@@ -182,7 +182,7 @@ let resolve_infer_eradicate_conflict
       let source_file = SourceFile.UNSAFE.from_string issue.file in
       let filters = filters_of_analyzer Config.Eradicate in
       filters.path_filter source_file in
-    Config.equal_analyzer analyzer Config.Infer &&
+    Config.equal_analyzer analyzer Config.BiAbduction &&
     String.equal issue.bug_type (Localise.to_issue_id Localise.null_dereference) &&
     file_is_whitelisted () in
   let filter issues = List.filter ~f:(Fn.non should_discard_issue) issues in
@@ -198,7 +198,7 @@ let do_filter
     ~(skip_duplicated_types: bool): Differential.t =
   if Config.filtering then (
     diff
-    |> (if Config.equal_analyzer Config.analyzer Config.Infer then
+    |> (if Config.equal_analyzer Config.analyzer Config.BiAbduction then
           skip_anonymous_class_renamings
         else Fn.id)
     |>  (if skip_duplicated_types then

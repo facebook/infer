@@ -47,11 +47,11 @@ let add_flavor_to_target target =
       add "uber-compilation-database"
   | Some `NoDeps, _ ->
       add "compilation-database"
-  | None, Compile ->
+  | None, CompileOnly ->
       target
-  | None, (Linters | Capture) ->
+  | None, (Linters | CaptureOnly) ->
       add "infer-capture-all"
-  | None, (Checkers | Infer) ->
+  | None, (BiAbduction | Checkers) ->
       add "infer"
   | None, (Eradicate | Tracing | Crashcontext) ->
       failwithf "Analyzer %s is Java-only; not supported with Buck flavors"

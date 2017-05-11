@@ -8,4 +8,4 @@
  */
 open! IStd;
 
-let () = InferPrint.main report_csv::Config.bugs_csv report_json::Config.bugs_json;
+let () = InferPrint.main_from_config ();
