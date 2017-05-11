@@ -441,7 +441,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module Analyzer =
     AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.Make(TransferFunctions))
 
-  let make_summary formal_map access_tree =
+  let make_summary { ProcData.pdesc; extras={ formal_map; } } access_tree =
+    let is_java = match Procdesc.get_proc_name pdesc with
+      | Java _ -> true
+      | _ -> false in
+
     (* if a trace has footprint sources, attach them to the appropriate footprint var *)
     let access_tree' =
       TaintDomain.fold
@@ -469,7 +473,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     (* should only be used on nodes associated with a footprint base *)
     let is_empty_node (trace, tree) =
-      TraceDomain.Sinks.is_empty (TraceDomain.sinks trace) &&
+      (* In C++, we can reassign the value pointed to by a pointer type formal, and we can assign
+         to a value type passed by reference. these mechanisms can be used to associate a source
+         directly with a formal. In Java this can't happen, so we only care if the formal flows to
+         a sink *)
+      (if is_java
+       then TraceDomain.Sinks.is_empty (TraceDomain.sinks trace)
+       else TraceDomain.is_empty trace) &&
       match tree with
       | TaintDomain.Subtree subtree -> TaintDomain.AccessMap.is_empty subtree
       | TaintDomain.Star -> true in
@@ -500,10 +510,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                    try TaintDomain.node_join (AccessPath.BaseMap.find base' acc) node
                    with Not_found -> node in
                  if is_empty_node joined_node
-                 then
-                   acc
-                 else
-                   AccessPath.BaseMap.add base' joined_node acc
+                 then acc
+                 else AccessPath.BaseMap.add base' joined_node acc
              | None ->
                  (* base is a local var *)
                  acc)
@@ -542,7 +550,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       let initial = make_initial proc_data.pdesc in
       match Analyzer.compute_post proc_data ~initial with
       | Some (access_tree, _) ->
-          Some (make_summary proc_data.extras.formal_map access_tree)
+          Some (make_summary proc_data access_tree)
       | None ->
           if Procdesc.Node.get_succs (Procdesc.get_start_node proc_data.pdesc) <> []
           then failwith "Couldn't compute post"
