@@ -608,17 +608,9 @@ and checkers_repeated_calls =
   CLOpt.mk_bool ~long:"checkers-repeated-calls" ~in_help:CLOpt.[Analyze, manual_generic]
     "check for repeated calls"
 
-and checkers, eradicate =
-  let checkers =
-    CLOpt.mk_bool ~deprecated:["checkers"] ~long:"checkers"
-      "Activate the checkers instead of the full analysis"
-  in
-  let eradicate =
-    CLOpt.mk_bool_group ~deprecated:["eradicate"] ~long:"eradicate"
-      "Activate the eradicate checker for Java annotations"
-      [checkers] []
-  in
-  (checkers, eradicate)
+and checkers =
+  CLOpt.mk_bool ~long:"checkers" ~in_help:CLOpt.[Analyze, manual_generic]
+    "the checkers instead of the full analysis"
 
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file"
@@ -853,6 +845,10 @@ and dynamic_dispatch =
 and enable_checks =
   CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error name"
     "Show reports coming from this type of errors"
+
+and eradicate =
+  CLOpt.mk_bool ~long:"eradicate" ~in_help:CLOpt.[Analyze, manual_generic]
+    "the eradicate checker for Java annotations"
 
 and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant"
