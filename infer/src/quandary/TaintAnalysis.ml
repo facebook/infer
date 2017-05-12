@@ -346,11 +346,19 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 AccessPath receiver_ap :: (_ :: _ as other_actuals),
                 _ ->
                   propagate_to_access_path (AccessPath.Exact receiver_ap) other_actuals astate_acc
+              | TaintSpec.Propagate_to_actual actual_index, _, _ ->
+                  begin
+                    match List.nth actuals actual_index with
+                    | Some (HilExp.AccessPath actual_ap) ->
+                        propagate_to_access_path (AccessPath.Exact actual_ap) actuals astate_acc
+                    | _ ->
+                        astate_acc
+                  end
               | _ ->
                   astate_acc in
 
             match Typ.Procname.get_method callee_pname with
-            | "operator=" when Typ.Procname.is_c_method callee_pname ->
+            | "operator=" when not (Typ.Procname.is_java callee_pname) ->
                 (* treat unknown calls to C++ operator= as assignment *)
                 begin
                   match actuals with
@@ -389,7 +397,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                       "Warning: %a is marked as a source, but has no return value"
                       Typ.Procname.pp callee_pname;
                     astate_with_sink in
-                  if Typ.Procname.is_c_method called_pname
+                  if not (Typ.Procname.is_java callee_pname)
                   then
                     (* the C++ frontend handles returns of non-pointers by adding a dummy
                        pass-by-reference variable as the last actual, then returning the value
@@ -442,10 +450,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.Make(TransferFunctions))
 
   let make_summary { ProcData.pdesc; extras={ formal_map; } } access_tree =
-    let is_java = match Procdesc.get_proc_name pdesc with
-      | Java _ -> true
-      | _ -> false in
-
+    let is_java = Typ.Procname.is_java (Procdesc.get_proc_name pdesc) in
     (* if a trace has footprint sources, attach them to the appropriate footprint var *)
     let access_tree' =
       TaintDomain.fold

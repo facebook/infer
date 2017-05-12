@@ -13,8 +13,13 @@ open! IStd
     summaries *)
 
 type handle_unknown =
-  | Propagate_to_return
+  | Propagate_to_actual of int
+  (** Propagate taint from all actuals to the actual with the given index *)
   | Propagate_to_receiver
+  (** Propagate taint from all non-receiver actuals to the receiver actual *)
+  | Propagate_to_return
+  (** Propagate taint from all actuals to the return value *)
+
 
 module type S = sig
   module Trace : Trace.S

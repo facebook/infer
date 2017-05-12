@@ -39,3 +39,7 @@ codetoanalyze/cpp/quandary/pointers.cpp, pointers::assign_pointer_pass_to_sink_b
 codetoanalyze/cpp/quandary/pointers.cpp, pointers::assign_source_by_reference_bad1, 3, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,return from pointers::assign_source_by_reference,call to __infer_taint_sink]
 codetoanalyze/cpp/quandary/pointers.cpp, pointers::assign_source_by_reference_bad2, 2, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,return from pointers::assign_source_by_reference,call to __infer_taint_sink]
 codetoanalyze/cpp/quandary/pointers.cpp, pointers::assign_source_by_reference_bad3, 3, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,return from pointers::assign_source_by_reference,return from pointers::call_assign_source_by_reference,call to __infer_taint_sink]
+codetoanalyze/cpp/quandary/unknown_code.cpp, unknown_code::direct_bad, 2, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,call to __infer_taint_sink]
+codetoanalyze/cpp/quandary/unknown_code.cpp, unknown_code::skip_indirect_bad, 3, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,flow through unknown_code::skip_indirect,call to __infer_taint_sink]
+codetoanalyze/cpp/quandary/unknown_code.cpp, unknown_code::skip_pointer_bad, 3, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,call to __infer_taint_sink]
+codetoanalyze/cpp/quandary/unknown_code.cpp, unknown_code::skip_value_bad, 3, QUANDARY_TAINT_ERROR, [return from __infer_taint_source,call to __infer_taint_sink]
