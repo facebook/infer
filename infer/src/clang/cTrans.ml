@@ -415,7 +415,8 @@ struct
     let tenv = trans_state.context.CContext.tenv in
     let typ = CType_decl.qual_type_to_sil_type tenv expr_info.Clang_ast_t.ei_qual_type in
     match unary_expr_or_type_trait_expr_info.Clang_ast_t.uttei_kind with
-    | `SizeOf nbytes0 ->
+    | `SizeOf
+    | `SizeOfWithSize _ as size ->
         let qt_opt =
           CAst_utils.type_from_unary_expr_or_type_trait_expr_info
             unary_expr_or_type_trait_expr_info in
@@ -423,11 +424,9 @@ struct
           match qt_opt with
           | Some qt -> CType_decl.qual_type_to_sil_type tenv qt
           | None -> typ (* Some default type since the type is missing *) in
-        let nbytes = if nbytes0 < 0 then
-            (* nbytes < 0 when the sizeof cannot be statically determined *)
-            None
-          else
-            Some nbytes0 in
+        let nbytes = match size with
+          | `SizeOfWithSize nbytes -> Some nbytes
+          | _ -> None in
         let sizeof_data =
           {Exp.typ=sizeof_typ; nbytes; dynamic_length=None; subtype=Subtype.exact} in
         { empty_res_trans with exps = [(Exp.Sizeof sizeof_data, sizeof_typ)] }
@@ -2077,7 +2076,7 @@ struct
 
   and initListExpr_initializers_trans trans_state var_exp n stmts typ is_dyn_array stmt_info =
     let (var_exp_inside, typ_inside) = match typ.Typ.desc with
-      | Typ.Tarray (t, _) when Typ.is_array_of_cpp_class typ ->
+      | Typ.Tarray (t, _, _) when Typ.is_array_of_cpp_class typ ->
           Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int n))), t
       | _ when is_dyn_array ->
           Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int n))), typ

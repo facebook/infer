@@ -298,7 +298,7 @@ let rec dotty_mk_node pe sigma =
   let n = !dotty_state_count in
   incr dotty_state_count;
   let do_hpred_lambda exp_color = function
-    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Exp.Sizeof {typ={Typ.desc=Tarray (t, _)}}),
+    | (Sil.Hpointsto (e, Sil.Earray (e', l, _), Exp.Sizeof {typ={Typ.desc=Tarray (t, _, _)}}),
        lambda) ->
         incr dotty_state_count;  (* increment once more n+1 is the box for the array *)
         let e_color_str = color_to_str (exp_color e) in

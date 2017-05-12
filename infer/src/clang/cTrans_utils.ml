@@ -727,7 +727,7 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
         | None ->
             assert false
       )
-    | Tarray (arrtyp, Some n) ->
+    | Tarray (arrtyp, Some n, _) ->
         let size = IntLit.to_int n in
         let indices = list_range 0 (size - 1) in
         let index_constants =

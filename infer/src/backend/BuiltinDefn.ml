@@ -47,7 +47,7 @@ let extract_array_type typ =
   else
     match typ.Typ.desc with
     | Typ.Tarray _ -> Some typ
-    | Typ.Tptr (elt, _) -> Some (Typ.mk ~default:typ (Tarray (elt, None)))
+    | Typ.Tptr (elt, _) -> Some (Typ.mk ~default:typ (Tarray (elt, None, None)))
     | _ -> None
 
 (** Return a result from a procedure call. *)
@@ -753,10 +753,10 @@ let execute_alloc mk can_return_null
         Exp.BinOp (bop, evaluate_char_sizeof e1', evaluate_char_sizeof e2')
     | Exp.Exn _ | Exp.Closure _ | Exp.Const _ | Exp.Cast _ | Exp.Lvar _ | Exp.Lfield _
     | Exp.Lindex _ -> e
-    | Exp.Sizeof {typ={Typ.desc=Tarray ({Typ.desc=Tint ik}, _)}; dynamic_length=Some len}
+    | Exp.Sizeof {typ={Typ.desc=Tarray ({Typ.desc=Tint ik}, _, _)}; dynamic_length=Some len}
       when Typ.ikind_is_char ik ->
         evaluate_char_sizeof len
-    | Exp.Sizeof {typ={Typ.desc=Tarray ({Typ.desc=Tint ik}, Some len)}; dynamic_length=None}
+    | Exp.Sizeof {typ={Typ.desc=Tarray ({Typ.desc=Tint ik}, Some len, _)}; dynamic_length=None}
       when Typ.ikind_is_char ik ->
         evaluate_char_sizeof (Exp.Const (Const.Cint len))
     | Exp.Sizeof _ -> e in
@@ -780,7 +780,7 @@ let execute_alloc mk can_return_null
     let n_size_exp' = evaluate_char_sizeof n_size_exp in
     Prop.exp_normalize_prop tenv prop n_size_exp', prop in
   let cnt_te =
-    Exp.Sizeof {typ=Typ.mk (Tarray (Typ.mk (Tint Typ.IChar), None));
+    Exp.Sizeof {typ=Typ.mk (Tarray (Typ.mk (Tint Typ.IChar), None, Some (IntLit.of_int 1)));
                 nbytes=None; dynamic_length=Some size_exp'; subtype=Subtype.exact} in
   let id_new = Ident.create_fresh Ident.kprimed in
   let exp_new = Exp.Var id_new in

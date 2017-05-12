@@ -105,10 +105,6 @@ let ptr_kind_string =
   | Pk_objc_unsafe_unretained => "__unsafe_unretained *"
   | Pk_objc_autoreleasing => "__autoreleasing *";
 
-
-/** statically determined length of an array type, if any */
-type static_length = option IntLit.t [@@deriving compare];
-
 module T = {
   type type_quals = {is_const: bool, is_restrict: bool, is_volatile: bool} [@@deriving compare];
 
@@ -121,7 +117,7 @@ module T = {
     | Tfun bool /** function type with noreturn attribute */
     | Tptr t ptr_kind /** pointer type */
     | Tstruct name /** structured value type name */
-    | Tarray t static_length /** array type with statically fixed length */
+    | Tarray t (option IntLit.t) (option IntLit.t) /** array type with statically fixed length and stride */
   [@@deriving compare]
   and name =
     | CStruct QualifiedCppName.t
@@ -202,13 +198,13 @@ let rec pp_full pe f typ => {
     | Tptr ({desc: Tarray _ | Tfun _} as typ) pk =>
       F.fprintf f "%a(%s)" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
     | Tptr typ pk => F.fprintf f "%a%s" (pp_full pe) typ (ptr_kind_string pk |> escape pe)
-    | Tarray typ static_len =>
-      let pp_array_static_len fmt => (
+    | Tarray typ static_len static_stride =>
+      let pp_int_opt fmt => (
         fun
-        | Some static_len => IntLit.pp fmt static_len
+        | Some x => IntLit.pp fmt x
         | None => F.fprintf fmt "_"
       );
-      F.fprintf f "%a[%a]" (pp_full pe) typ pp_array_static_len static_len
+      F.fprintf f "%a[%a*%a]" (pp_full pe) typ pp_int_opt static_len pp_int_opt static_stride
     };
   F.fprintf f "%a%a" pp_desc typ pp_quals typ
 }
@@ -393,7 +389,7 @@ let strip_ptr typ =>
     If not, return the default type if given, otherwise raise an exception */
 let array_elem default_opt typ =>
   switch typ.desc {
-  | Tarray t_el _ => t_el
+  | Tarray t_el _ _ => t_el
   | _ => unsome "array_elem" default_opt
   };
 
@@ -411,7 +407,7 @@ let is_java_class = is_class_of_kind Name.Java.is_class;
 
 let rec is_array_of_cpp_class typ =>
   switch typ.desc {
-  | Tarray typ _ => is_array_of_cpp_class typ
+  | Tarray typ _ _ => is_array_of_cpp_class typ
   | _ => is_cpp_class typ
   };
 
@@ -447,7 +443,7 @@ let rec java_from_string: string => t =
   | "double" => mk (Tfloat FDouble)
   | typ_str when String.contains typ_str '[' => {
       let stripped_typ = String.sub typ_str pos::0 len::(String.length typ_str - 2);
-      mk (Tptr (mk (Tarray (java_from_string stripped_typ) None)) Pk_pointer)
+      mk (Tptr (mk (Tarray (java_from_string stripped_typ) None None)) Pk_pointer)
     }
   | typ_str => mk (Tstruct (Name.Java.from_string typ_str));
 
@@ -1086,7 +1082,7 @@ module Struct = {
   /** the element typ of the final extensible array in the given typ, if any */
   let rec get_extensible_array_element_typ ::lookup (typ: T.t) =>
     switch typ.desc {
-    | Tarray typ _ => Some typ
+    | Tarray typ _ _ => Some typ
     | Tstruct name =>
       switch (lookup name) {
       | Some {fields} =>

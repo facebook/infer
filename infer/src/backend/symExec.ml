@@ -37,7 +37,7 @@ let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
       | None ->
           fail Fieldname.to_string fld
     )
-  | Tarray (typ', _), Off_index _ ->
+  | Tarray (typ', _, _), Off_index _ ->
       typ'
   | _, Off_index (Const (Cint i)) when IntLit.iszero i ->
       typ
@@ -170,7 +170,9 @@ let rec apply_offlist
       pp_error();
       assert false
 
-  | (Sil.Off_index idx) :: offlist', Sil.Earray (len, esel, inst1), Typ.Tarray (t', len') -> (
+  | (Sil.Off_index idx) :: offlist',
+    Sil.Earray (len, esel, inst1),
+    Typ.Tarray (t', len', stride') -> (
       let nidx = Prop.exp_normalize_prop tenv p idx in
       match List.find ~f:(fun ese -> Prover.check_equal tenv p nidx (fst ese)) esel with
       | Some (idx_ese', se') ->
@@ -183,7 +185,7 @@ let rec apply_offlist
             then (idx_ese', res_se')
             else ese in
           let res_se = Sil.Earray (len, List.map ~f:replace_ese esel, inst1) in
-          let res_t = Typ.mk ~default:typ (Tarray (res_t', len')) in
+          let res_t = Typ.mk ~default:typ (Tarray (res_t', len', stride')) in
           (res_e', res_se, res_t, res_pred_insts_op')
       | None ->
           (* return a nondeterministic value if the index is not found after rearrangement *)

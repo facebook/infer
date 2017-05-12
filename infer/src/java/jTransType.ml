@@ -69,7 +69,7 @@ let rec get_named_type vt : Typ.t =
         match ot with
         | JBasics.TArray vt ->
             let content_type = get_named_type vt in
-            Typ.mk (Tptr (Typ.mk (Tarray (content_type, None)), Typ.Pk_pointer))
+            Typ.mk (Tptr (Typ.mk (Tarray (content_type, None, None)), Typ.Pk_pointer))
         | JBasics.TClass cn ->
             Typ.mk (Tptr (Typ.mk (Tstruct (typename_of_classname cn)), Typ.Pk_pointer))
       end
@@ -84,7 +84,7 @@ let extract_cn_type_np typ =
 let rec create_array_type typ dim =
   if dim > 0 then
     let content_typ = create_array_type typ (dim - 1) in
-    Typ.mk (Tptr(Typ.mk (Tarray (content_typ, None)), Typ.Pk_pointer))
+    Typ.mk (Tptr(Typ.mk (Tarray (content_typ, None, None)), Typ.Pk_pointer))
   else typ
 
 let extract_cn_no_obj typ =
@@ -364,7 +364,7 @@ let rec object_type program tenv ot =
   match ot with
   | JBasics.TClass cn -> get_class_type program tenv cn
   | JBasics.TArray at ->
-      Typ.mk (Tptr (Typ.mk (Tarray (value_type program tenv at, None)), Typ.Pk_pointer))
+      Typ.mk (Tptr (Typ.mk (Tarray (value_type program tenv at, None, None)), Typ.Pk_pointer))
 
 (** translate a value type *)
 and value_type program tenv vt =
@@ -410,7 +410,7 @@ let get_var_type context var =
 
 let extract_array_type typ =
   match typ.Typ.desc with
-  | Typ.Tptr({desc=Tarray (vtyp, _)}, Typ.Pk_pointer) -> vtyp
+  | Typ.Tptr({desc=Tarray (vtyp, _, _)}, Typ.Pk_pointer) -> vtyp
   | _ -> typ
 
 

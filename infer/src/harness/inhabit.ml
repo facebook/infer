@@ -85,9 +85,9 @@ let rec inhabit_typ tenv typ cfg env =
   try (TypMap.find typ env.cache, env)
   with Not_found ->
     let inhabit_internal typ env = match typ.Typ.desc with
-      | Typ.Tptr ({desc=Tarray (inner_typ, Some _)}, Typ.Pk_pointer) ->
+      | Typ.Tptr ({desc=Tarray (inner_typ, Some _, _)}, Typ.Pk_pointer) ->
           let len = Exp.Const (Const.Cint (IntLit.one)) in
-          let arr_typ = Typ.mk (Tarray (inner_typ, Some IntLit.one)) in
+          let arr_typ = Typ.mk (Tarray (inner_typ, Some IntLit.one, None)) in
           inhabit_alloc arr_typ (Some len) typ BuiltinDecl.__new_array env
       | Typ.Tptr (typ, Typ.Pk_pointer) ->
           (* TODO (t4575417): this case does not work correctly for enums, but they are currently

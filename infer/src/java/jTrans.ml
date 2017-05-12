@@ -469,7 +469,7 @@ let rec expression (context : JContext.t) pc expr =
         match binop with
         | JBir.ArrayLoad _ ->
             (* add an instruction that dereferences the array *)
-            let array_typ = Typ.mk (Tarray (type_of_expr, None)) in
+            let array_typ = Typ.mk (Tarray (type_of_expr, None, None)) in
             let deref_array_instr = create_sil_deref sil_ex1 array_typ loc in
             let id = Ident.create_fresh Ident.knormal in
             let load_instr =
@@ -623,7 +623,7 @@ let get_array_length context pc expr_list content_type =
         (instrs @ other_instrs, sil_len_expr :: other_exprs) in
   let (instrs, sil_len_exprs) = List.fold_right ~f:get_expr_instr expr_list ~init:([],[]) in
   let get_array_type_len sil_len_expr (content_type, _) =
-    (Typ.mk (Tarray (content_type, None)), Some sil_len_expr) in
+    (Typ.mk (Tarray (content_type, None, None)), Some sil_len_expr) in
   let array_type, array_len =
     List.fold_right ~f:get_array_type_len sil_len_exprs ~init:(content_type, None) in
   let array_size = Exp.Sizeof {typ=array_type; nbytes=None;

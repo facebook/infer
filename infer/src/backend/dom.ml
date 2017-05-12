@@ -1006,10 +1006,12 @@ and typ_partial_join (t1 : Typ.t) (t2 : Typ.t) = match t1.desc, t2.desc with
   | Typ.Tptr (t1, pk1), Typ.Tptr (t2, pk2)
     when Typ.equal_ptr_kind pk1 pk2 && Typ.equal_quals t1.quals t2.quals ->
       Typ.mk ~default:t1 (Tptr (typ_partial_join t1 t2, pk1)) (* quals are the same for t1 and t2 *)
-  | Typ.Tarray (typ1, len1), Typ.Tarray (typ2, len2) when Typ.equal_quals typ1.quals typ2.quals ->
+  | Typ.Tarray (typ1, len1, stride1),
+    Typ.Tarray (typ2, len2, stride2) when Typ.equal_quals typ1.quals typ2.quals ->
       let t = typ_partial_join typ1 typ2 in
       let len = static_length_partial_join len1 len2 in
-      Typ.mk ~default:t1 (Tarray (t, len)) (* quals are the same for t1 and t2 *)
+      let stride = static_length_partial_join stride1 stride2 in
+      Typ.mk ~default:t1 (Tarray (t, len, stride)) (* quals are the same for t1 and t2 *)
   | _ when Typ.equal t1 t2 -> t1 (* common case *)
   | _ ->
       L.d_str "typ_partial_join no match ";

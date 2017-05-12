@@ -84,7 +84,7 @@ end = struct
         | None ->
             fail ()
       )
-    | Sil.Earray (_, esel, _), Typ.Tarray (t', _), Index ind :: syn_offs' ->
+    | Sil.Earray (_, esel, _), Typ.Tarray (t', _, _), Index ind :: syn_offs' ->
         let se' = snd (List.find_exn ~f:(fun (i', _) -> Exp.equal i' ind) esel) in
         get_strexp_at_syn_offsets tenv se' t' syn_offs'
     | _ ->
@@ -111,7 +111,7 @@ end = struct
         | None ->
             assert false
       )
-    | Sil.Earray (len, esel, inst), Tarray (t', _), Index idx :: syn_offs' ->
+    | Sil.Earray (len, esel, inst), Tarray (t', _, _), Index idx :: syn_offs' ->
         let se' = snd (List.find_exn ~f:(fun (i', _) -> Exp.equal i' idx) esel) in
         let se_mod = replace_strexp_at_syn_offsets tenv se' t' syn_offs' update in
         let esel' =
@@ -171,7 +171,7 @@ end = struct
             | None ->
                 ()
           )
-        | Sil.Earray (_, esel, _), Tarray (t, _) ->
+        | Sil.Earray (_, esel, _), Tarray (t, _, _) ->
             find_offset_esel sigma_other hpred root offs esel t
         | _ -> ()
       end
@@ -443,7 +443,7 @@ let keep_only_indices tenv
 
 (** If the type is array, check whether we should do abstraction *)
 let array_typ_can_abstract {Typ.desc} = match desc with
-  | Tarray ({desc=Tptr ({desc=Tfun _}, _)}, _) -> false (* don't abstract arrays of pointers *)
+  | Tarray ({desc=Tptr ({desc=Tfun _}, _)}, _, _) -> false (* don't abstract arrays of pointers *)
   | _ -> true
 
 (** This function checks whether we can apply an abstraction to a strexp *)

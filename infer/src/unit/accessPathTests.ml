@@ -22,7 +22,7 @@ let tests =
   let yF = make_access_path "y" ["f"] in
   let xArr =
     let dummy_typ = Typ.mk Tvoid in
-    let dummy_arr_typ = Typ.mk (Tarray (dummy_typ, None)) in
+    let dummy_arr_typ = Typ.mk (Tarray (dummy_typ, None, None)) in
     let base =  make_base "x" ~typ:dummy_arr_typ in
     base, [make_array_access dummy_typ] in
 

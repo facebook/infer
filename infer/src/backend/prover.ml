@@ -39,7 +39,7 @@ let rec remove_redundancy have_same_key acc = function
 let rec is_java_class tenv (typ: Typ.t) =
   match typ.desc with
   | Tstruct name -> Typ.Name.Java.is_class name
-  | Tarray (inner_typ, _) | Tptr (inner_typ, _) -> is_java_class tenv inner_typ
+  | Tarray (inner_typ, _, _) | Tptr (inner_typ, _) -> is_java_class tenv inner_typ
   | _ -> false
 
 (** Negate an atom *)
@@ -400,7 +400,7 @@ end = struct
           List.iter ~f:(fun (f, se) -> strexp_extract (se, get_field_type f)) fsel
       | Sil.Earray (len, isel, _), t ->
           let elt_t = match t with
-            | Some {Typ.desc=Tarray (t, _)} -> Some t
+            | Some {Typ.desc=Tarray (t, _, _)} -> Some t
             | _ -> None in
           add_lt_minus1_e len;
           List.iter ~f:(fun (idx, se) ->
@@ -1343,7 +1343,7 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2 :
       sexp_imply tenv source calc_index_frame calc_missing subs se1' se2 typ2
   | Sil.Earray (len, _, _), Sil.Eexp (_, inst) ->
       let se2' = Sil.Earray (len, [(Exp.zero, se2)], inst) in
-      let typ2' = Typ.mk (Tarray (typ2, None)) in
+      let typ2' = Typ.mk (Tarray (typ2, None, None)) in
       (* In the sexp_imply, struct_imply, array_imply, and sexp_imply_nolhs functions, the typ2
          argument is only used by eventually passing its value to Typ.Struct.fld, Exp.Lfield,
          Typ.Struct.fld, or Typ.array_elem.  None of these are sensitive to the length field
@@ -1533,7 +1533,7 @@ let expand_hpred_pointer =
       | Sil.Hpointsto (Exp.Lindex (e, ind), se, t) ->
           let t' = match t with
             | Exp.Sizeof ({typ=t_} as sizeof_data) ->
-                Exp.Sizeof {sizeof_data with typ=Typ.mk (Tarray (t_, None))}
+                Exp.Sizeof {sizeof_data with typ=Typ.mk (Tarray (t_, None, None))}
             | _ -> raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lindex") in
           let len = match t' with
             | Exp.Sizeof {dynamic_length=Some len} -> len
@@ -1566,7 +1566,7 @@ struct
     match t1.Typ.desc, t2.Typ.desc with
     | Tstruct (JavaClass _ as cn1), Tstruct (JavaClass _ as cn2) ->
         Subtype.is_known_subtype tenv cn1 cn2
-    | Tarray (dom_type1, _), Tarray (dom_type2, _) ->
+    | Tarray (dom_type1, _, _), Tarray (dom_type2, _, _) ->
         check_subtype_java tenv dom_type1 dom_type2
     | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
         check_subtype_java tenv dom_type1 dom_type2
@@ -1603,7 +1603,7 @@ struct
       (* and the algorithm will only work correctly if this is the case *)
       when Subtype.is_known_subtype tenv cn1 cn2 || Subtype.is_known_subtype tenv cn2 cn1 ->
         Subtype.case_analysis tenv (cn1, st1) (cn2, st2)
-    | Tarray (dom_type1, _), Tarray (dom_type2, _) ->
+    | Tarray (dom_type1, _, _), Tarray (dom_type2, _, _) ->
         case_analysis_type tenv (dom_type1, st1) (dom_type2, st2)
     | Tptr (dom_type1, _), Tptr (dom_type2, _) ->
         case_analysis_type tenv (dom_type1, st1) (dom_type2, st2)
@@ -2000,7 +2000,8 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : (subst2 *
     let const_string_texp =
       match !Config.curr_language with
       | Config.Clang ->
-          Exp.Sizeof {typ=Typ.mk (Tarray (Typ.mk (Tint Typ.IChar), Some len));
+          Exp.Sizeof {typ=Typ.mk (Tarray (Typ.mk (Tint Typ.IChar),
+                                          Some len, Some (IntLit.of_int 1)));
                       nbytes=None; dynamic_length=None; subtype=Subtype.exact}
       | Config.Java ->
           let object_type = Typ.Name.Java.from_string "java.lang.String" in

@@ -50,7 +50,8 @@ struct
     | Typ.Tvoid -> 1
     | Typ.Tptr (_, _) -> 4
     | Typ.Tstruct _ -> 4        (* TODO *)
-    | Typ.Tarray (typ, Some ilit) -> sizeof typ * IntLit.to_int ilit
+    | Typ.Tarray (_, Some length, Some stride) -> IntLit.to_int stride * IntLit.to_int length
+    | Typ.Tarray (typ, Some length, None) -> sizeof typ * IntLit.to_int length
     | _ -> 4
 
   let rec must_alias : Exp.t -> Exp.t -> Mem.astate -> bool

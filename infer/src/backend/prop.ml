@@ -489,7 +489,7 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
       | _ ->
           Estruct ([], inst)
     )
-  | Tarray (_, len_opt), None ->
+  | Tarray (_, len_opt, _), None ->
       let len = match len_opt with
         | None -> Exp.get_undefined false
         | Some len -> Exp.Const (Cint len) in
@@ -548,7 +548,7 @@ let exp_collapse_consecutive_indices_prop (typ : Typ.t) exp =
         false in
   let typ_is_one_step_from_base =
     match typ.desc with
-    | Tptr (t, _) | Tarray (t, _) ->
+    | Tptr (t, _) | Tarray (t, _, _) ->
         typ_is_base t
     | _ ->
         false in
@@ -712,10 +712,10 @@ module Normalize = struct
           Closure { c with captured_vars; }
       | Const _ ->
           e
-      | Sizeof {typ={desc=Tarray ({desc=Tint ik}, _)}; dynamic_length=Some l}
+      | Sizeof {typ={desc=Tarray ({desc=Tint ik}, _, _)}; dynamic_length=Some l}
         when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
           eval l
-      | Sizeof {typ={desc=Tarray ({desc=Tint ik}, Some l)}}
+      | Sizeof {typ={desc=Tarray ({desc=Tint ik}, Some l, _)}}
         when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang ->
           Const (Cint l)
       | Sizeof _ ->
@@ -991,12 +991,12 @@ module Normalize = struct
                 Exp.int (IntLit.div n m)
             | Const (Cfloat v), Const (Cfloat w) ->
                 Exp.float (v /.w)
-            | Sizeof {typ={desc=Tarray (elt, _)}; dynamic_length=Some len},
+            | Sizeof {typ={desc=Tarray (elt, _, _)}; dynamic_length=Some len},
               Sizeof {typ=elt2; dynamic_length=None}
               (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
               when Typ.equal elt elt2 ->
                 len
-            | Sizeof {typ={desc=Tarray (elt, Some len)}; dynamic_length=None},
+            | Sizeof {typ={desc=Tarray (elt, Some len, _)}; dynamic_length=None},
               Sizeof {typ=elt2; dynamic_length=None}
               (* pattern: sizeof(elt[len]) / sizeof(elt) = len *)
               when Typ.equal elt elt2 ->
@@ -1381,27 +1381,27 @@ module Normalize = struct
               let hpred' = mk_ptsto_exp tenv Fld_init (root, size, None) inst in
               replace_hpred hpred'
           | Earray (BinOp (Mult, Sizeof {typ=t; dynamic_length=None; subtype=st1}, x), esel, inst),
-            Sizeof {typ={desc=Tarray (elt, _)} as arr} when Typ.equal t elt ->
+            Sizeof {typ={desc=Tarray (elt, _, _)} as arr} when Typ.equal t elt ->
               let dynamic_length = Some x in
               let sizeof_data = {Exp.typ=arr; nbytes=None; dynamic_length; subtype=st1} in
               let hpred' =
                 mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
               replace_hpred (replace_array_contents hpred' esel)
           | Earray (BinOp (Mult, x, Sizeof {typ; dynamic_length=None; subtype}), esel, inst),
-            Sizeof {typ={desc=Tarray (elt, _)} as arr} when Typ.equal typ elt ->
+            Sizeof {typ={desc=Tarray (elt, _, _)} as arr} when Typ.equal typ elt ->
               let sizeof_data = {Exp.typ=arr; nbytes=None; dynamic_length=Some x; subtype} in
               let hpred' =
                 mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
               replace_hpred (replace_array_contents hpred' esel)
           | Earray (BinOp (Mult, Sizeof {typ; dynamic_length=Some len; subtype}, x), esel, inst),
-            Sizeof {typ={desc=Tarray (elt, _)} as arr} when Typ.equal typ elt ->
+            Sizeof {typ={desc=Tarray (elt, _, _)} as arr} when Typ.equal typ elt ->
               let sizeof_data = {Exp.typ=arr; nbytes=None;
                                  dynamic_length=Some (Exp.BinOp(Mult, x, len)); subtype} in
               let hpred' =
                 mk_ptsto_exp tenv Fld_init (root, Sizeof sizeof_data, None) inst in
               replace_hpred (replace_array_contents hpred' esel)
           | Earray (BinOp (Mult, x, Sizeof {typ; dynamic_length=Some len; subtype}), esel, inst),
-            Sizeof {typ={desc=Tarray (elt, _)} as arr} when Typ.equal typ elt ->
+            Sizeof {typ={desc=Tarray (elt, _, _)} as arr} when Typ.equal typ elt ->
               let sizeof_data = {Exp.typ=arr; nbytes=None;
                                  dynamic_length=Some (Exp.BinOp(Mult, x, len)); subtype} in
               let hpred' =

@@ -162,7 +162,7 @@ let diff : astate -> astate -> Itv.t
     let diff_join k a2 acc =
       match find k arr1 with
       | a1 -> Itv.join acc (ArrInfo.diff a1 a2)
-      | exception Not_found -> acc
+      | exception Not_found -> Itv.top
     in
     fold diff_join arr2 Itv.bot
 

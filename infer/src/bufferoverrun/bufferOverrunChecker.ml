@@ -109,12 +109,12 @@ struct
       | _ -> model_unknown_itv ret mem
 
   let rec declare_array
-    : Typ.Procname.t -> CFG.node -> Loc.t -> Typ.t -> IntLit.t -> inst_num:int
-    -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate
-    = fun pname node loc typ len ~inst_num ~dimension mem ->
-      let size = IntLit.to_int len |> Itv.of_int in
+    : Typ.Procname.t -> CFG.node -> Loc.t -> Typ.t -> length:IntLit.t -> ?stride:int
+    -> inst_num:int -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate
+    = fun pname node loc typ ~length ?stride ~inst_num ~dimension mem ->
+      let size = IntLit.to_int length |> Itv.of_int in
       let arr =
-        Sem.eval_array_alloc pname node typ Itv.zero size inst_num dimension
+        Sem.eval_array_alloc pname node typ Itv.zero size ?stride inst_num dimension
       in
       let mem =
         if Int.equal dimension 1
@@ -125,9 +125,9 @@ struct
         Loc.of_allocsite (Sem.get_allocsite pname node inst_num dimension)
       in
       match typ.Typ.desc with
-      | Typ.Tarray (typ, Some len) ->
-          declare_array pname node loc typ len ~inst_num
-            ~dimension:(dimension + 1) mem
+      | Typ.Tarray (typ, Some length, stride) ->
+          declare_array pname node loc typ ~length ?stride:(Option.map ~f:IntLit.to_int stride)
+            ~inst_num ~dimension:(dimension + 1) mem
       | _ -> mem
 
   let declare_symbolic_array
@@ -236,10 +236,11 @@ struct
       let pname = Procdesc.get_proc_name pdesc in
       let try_decl_arr (mem, inst_num) (pvar, typ) =
         match typ.Typ.desc with
-        | Typ.Tarray (typ, Some len) ->
+        | Typ.Tarray (typ, Some length, stride0) ->
             let loc = Loc.of_pvar pvar in
+            let stride = Option.map ~f:IntLit.to_int stride0 in
             let mem =
-              declare_array pname node loc typ len ~inst_num ~dimension:1 mem
+              declare_array pname node loc typ ~length ?stride ~inst_num ~dimension:1 mem
             in
             (mem, inst_num + 1)
         | _ -> (mem, inst_num)

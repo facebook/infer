@@ -59,10 +59,12 @@ let pointer_attribute_of_objc_attribute attr_info =
   | `OCL_Weak -> Typ.Pk_objc_weak
   | `OCL_Autoreleasing -> Typ.Pk_objc_autoreleasing
 
-let rec build_array_type translate_decl tenv (qual_type : Clang_ast_t.qual_type) n_opt =
+let rec build_array_type translate_decl tenv (qual_type : Clang_ast_t.qual_type)
+    length_opt stride_opt =
   let array_type = qual_type_to_sil_type translate_decl tenv qual_type in
-  let len = Option.map ~f:(fun n -> IntLit.of_int64 (Int64.of_int n)) n_opt in
-  Typ.Tarray (array_type, len)
+  let length = Option.map ~f:IntLit.of_int length_opt in
+  let stride = Option.map ~f:IntLit.of_int stride_opt in
+  Typ.Tarray (array_type, length, stride)
 
 and type_desc_of_attr_type translate_decl tenv type_info attr_info =
   match type_info.Clang_ast_t.ti_desugared_type with
@@ -92,12 +94,13 @@ and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
   | BlockPointerType (_, qual_type) ->
       let typ = qual_type_to_sil_type translate_decl tenv qual_type in
       Typ.Tptr (typ, Typ.Pk_pointer)
-  | IncompleteArrayType (_, qual_type)
-  | DependentSizedArrayType (_, qual_type)
-  | VariableArrayType (_, qual_type) ->
-      build_array_type translate_decl tenv qual_type None
-  | ConstantArrayType (_, qual_type, n) ->
-      build_array_type translate_decl tenv qual_type (Some n)
+  | IncompleteArrayType (_, {arti_element_type; arti_stride})
+  | DependentSizedArrayType (_, {arti_element_type; arti_stride}) ->
+      build_array_type translate_decl tenv arti_element_type None arti_stride
+  | VariableArrayType (_, {arti_element_type; arti_stride}) ->
+      build_array_type translate_decl tenv arti_element_type None arti_stride
+  | ConstantArrayType (_, {arti_element_type; arti_stride}, n) ->
+      build_array_type translate_decl tenv arti_element_type (Some n) arti_stride
   | FunctionProtoType _
   | FunctionNoProtoType _ ->
       Typ.Tfun false
