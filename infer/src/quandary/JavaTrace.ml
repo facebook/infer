@@ -14,6 +14,7 @@ module L = Logging
 
 module SourceKind = struct
   type t =
+    | Clipboard (** data read from the clipboard service *)
     | Intent (** external Intent or a value read from one *)
     | Other (** for testing or uncategorized sources *)
     | PrivateData (** private user or device-specific data *)
@@ -24,6 +25,7 @@ module SourceKind = struct
   let unknown = Unknown
 
   let of_string = function
+    | "Clipboard" -> Clipboard
     | "Intent" -> Intent
     | "PrivateData" -> PrivateData
     | "UserControlledURI" -> UserControlledURI
@@ -61,6 +63,9 @@ module SourceKind = struct
                     Some (Intent, return)
                 | "android.content.SharedPreferences", "getString" ->
                     Some (PrivateData, return)
+                | ("android.content.ClipboardManager" | "android.text.ClipboardManager"),
+                  ("getPrimaryClip" | "getText") ->
+                    Some (Clipboard, return)
                 | _ ->
                     None in
               let kind_opt =
@@ -171,6 +176,7 @@ module SourceKind = struct
   let pp fmt kind =
     F.fprintf fmt
       (match kind with
+       | Clipboard -> "Clipboard"
        | Intent -> "Intent"
        | UserControlledURI -> "UserControlledURI"
        | PrivateData -> "PrivateData"
@@ -341,8 +347,10 @@ include
       | PrivateData, JavaScript (* leaking private data into JS *)
       | UserControlledURI, (CreateIntent | StartComponent)
       (* create intent/launch component from user-controlled URI *)
-      | UserControlledURI, CreateFile ->
-          (* create file from user-controller URI; potential path-traversal vulnerability *)
+      | UserControlledURI, CreateFile
+      (* create file from user-controller URI; potential path-traversal vulnerability *)
+      | Clipboard, (StartComponent | CreateIntent | JavaScript | CreateFile) ->
+          (* do something sensitive with user-controlled data from the clipboard *)
           true
       | Other, _ | _, Other -> (* for testing purposes, Other matches everything *)
           true
