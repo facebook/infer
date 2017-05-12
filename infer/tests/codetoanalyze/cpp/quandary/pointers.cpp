@@ -64,4 +64,8 @@ void FP_reuse_pointer_as_local_ok(std::string* pointer) {
   reuse_pointer_as_local(pointer);
   __infer_taint_sink(*pointer);
 }
+
+void pointer_arithmetic_ok1(int* i) { *(i + 1) = 7; }
+
+void pointer_arithmetic_ok2(int* i) { *(2 + 7 + 5 + i + 1) = 7; }
 }
