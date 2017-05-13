@@ -38,10 +38,10 @@ struct
   (* NOTE: heuristic *)
   let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t
     = function
-      | Exp.BinOp (Binop.Mult, Exp.Sizeof {typ; nbytes}, length)
-      | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes}) -> (typ, nbytes, length)
-      | Exp.Sizeof {typ; nbytes} -> (typ, nbytes, Exp.one)
-      | x -> (Typ.mk (Typ.Tint Typ.IChar), Some 1, x)
+    | Exp.BinOp (Binop.Mult, Exp.Sizeof {typ; nbytes}, length)
+    | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes}) -> (typ, nbytes, length)
+    | Exp.Sizeof {typ; nbytes} -> (typ, nbytes, Exp.one)
+    | x -> (Typ.mk (Typ.Tint Typ.IChar), Some 1, x)
 
   let model_malloc
     : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
@@ -49,19 +49,19 @@ struct
     = fun pname ret params node mem ->
       match ret with
       | Some (id, _) ->
-          let set_uninitialized typ loc mem =
-            match typ.Typ.desc with
-            | Typ.Tint _
-            | Typ.Tfloat _ ->
-                Dom.Mem.weak_update_heap loc Dom.Val.top_itv mem
-            | _ -> mem
-          in
-          let (typ, stride, length0) = get_malloc_info (List.hd_exn params |> fst) in
-          let length = Sem.eval length0 mem (CFG.loc node) |> Dom.Val.get_itv in
-          let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero length 0 1 in
-          mem
-          |> Dom.Mem.add_stack (Loc.of_id id) v
-          |> set_uninitialized typ (Dom.Val.get_array_locs v)
+        let set_uninitialized typ loc mem =
+          match typ.Typ.desc with
+          | Typ.Tint _
+          | Typ.Tfloat _ ->
+            Dom.Mem.weak_update_heap loc Dom.Val.top_itv mem
+          | _ -> mem
+        in
+        let (typ, stride, length0) = get_malloc_info (List.hd_exn params |> fst) in
+        let length = Sem.eval length0 mem (CFG.loc node) |> Dom.Val.get_itv in
+        let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero length 0 1 in
+        mem
+        |> Dom.Mem.add_stack (Loc.of_id id) v
+        |> set_uninitialized typ (Dom.Val.get_array_locs v)
       | _ -> mem
 
   let model_realloc
@@ -69,6 +69,14 @@ struct
       -> Dom.Mem.astate -> Dom.Mem.astate
     = fun pname ret params node mem ->
       model_malloc pname ret (List.tl_exn params) node mem
+
+  let model_fgetc : (Ident.t * Typ.t) option -> Dom.Mem.astate -> Dom.Mem.astate
+    = fun ret mem ->
+      match ret with
+      | Some (id, _) ->
+        let itv = Itv.make (Itv.Bound.of_int (-1)) Itv.Bound.PInf in
+        Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.of_itv itv) mem
+      | _ -> mem
 
   let model_natual_itv : (Ident.t * Typ.t) option -> Dom.Mem.astate -> Dom.Mem.astate
     = fun ret mem ->
@@ -87,11 +95,11 @@ struct
     = fun params mem loc ->
       match params with
       | (e, _) :: _ ->
-          if Config.bo_debug >= 1 then
-            L.err "@[<v>=== Infer Print === at %a@,%a@]%!"
-              Location.pp loc
-              Dom.Val.pp (Sem.eval e mem loc);
-          mem
+        if Config.bo_debug >= 1 then
+          L.err "@[<v>=== Infer Print === at %a@,%a@]%!"
+            Location.pp loc
+            Dom.Val.pp (Sem.eval e mem loc);
+        mem
       | _ -> mem
 
   let handle_unknown_call
@@ -103,8 +111,8 @@ struct
       | "malloc"
       | "__new_array" -> model_malloc pname ret params node mem
       | "realloc" -> model_realloc pname ret params node mem
-      | "strlen"
-      | "fgetc" -> model_natual_itv ret mem
+      | "strlen" -> model_natual_itv ret mem
+      | "fgetc" -> model_fgetc ret mem
       | "infer_print" -> model_infer_print params mem loc
       | _ -> model_unknown_itv ret mem
 
@@ -148,32 +156,32 @@ struct
       in
       let decl_fld (mem, sym_num) (fn, typ, _) =
         let loc =
-          mem |> Dom.Mem.find_heap loc |> Dom.Val.get_all_locs |> PowLoc.choose
+          mem |> Dom.Mem.find_heap loc |> Dom.Val.get_array_locs |> PowLoc.choose
         in
         let field = Loc.append_field loc fn in
         match typ.Typ.desc with
         | Typ.Tint _
         | Typ.Tfloat _ ->
-            let v = Dom.Val.make_sym pname sym_num in
-            (Dom.Mem.add_heap field v mem, sym_num + 2)
+          let v = Dom.Val.make_sym pname sym_num in
+          (Dom.Mem.add_heap field v mem, sym_num + 2)
         | Typ.Tptr (typ, _) ->
-            let offset = Itv.make_sym pname sym_num in
-            let size = Itv.make_sym pname (sym_num + 2) in
-            let v =
-              Sem.eval_array_alloc pname node typ offset size inst_num dimension
-            in
-            (Dom.Mem.add_heap field v mem, sym_num + 4)
+          let offset = Itv.make_sym pname sym_num in
+          let size = Itv.make_sym pname (sym_num + 2) in
+          let v =
+            Sem.eval_array_alloc pname node typ offset size inst_num dimension
+          in
+          (Dom.Mem.add_heap field v mem, sym_num + 4)
         | _ ->
-            if Config.bo_debug >= 3 then
-              L.err "decl_fld of unhandled type: %a@." (Typ.pp Pp.text) typ;
-            (mem, sym_num)
+          if Config.bo_debug >= 3 then
+            L.err "decl_fld of unhandled type: %a@." (Typ.pp Pp.text) typ;
+          (mem, sym_num)
       in
       match typ.Typ.desc with
       | Typ.Tstruct typename ->
-          (match Tenv.lookup tenv typename with
-           | Some str ->
-               List.fold ~f:decl_fld ~init:(mem, sym_num + 6) str.Typ.Struct.fields
-           | _ -> (mem, sym_num + 6))
+        (match Tenv.lookup tenv typename with
+        | Some str ->
+          List.fold ~f:decl_fld ~init:(mem, sym_num + 6) str.Typ.Struct.fields
+        | _ -> (mem, sym_num + 6))
       | _ -> (mem, sym_num + 6)
 
   let declare_symbolic_parameter
@@ -183,19 +191,19 @@ struct
       let add_formal (mem, inst_num, sym_num) (pvar, typ) =
         match typ.Typ.desc with
         | Typ.Tint _ ->
-            let v = Dom.Val.make_sym pname sym_num in
-            let mem = Dom.Mem.add_heap (Loc.of_pvar pvar) v mem in
-            (mem, inst_num + 1, sym_num + 2)
+          let v = Dom.Val.make_sym pname sym_num in
+          let mem = Dom.Mem.add_heap (Loc.of_pvar pvar) v mem in
+          (mem, inst_num + 1, sym_num + 2)
         | Typ.Tptr (typ, _) ->
-            let (mem, sym_num) =
-              declare_symbolic_array pname tenv node (Loc.of_pvar pvar) typ
-                ~inst_num ~sym_num ~dimension:1 mem
-            in
-            (mem, inst_num + 1, sym_num)
+          let (mem, sym_num) =
+            declare_symbolic_array pname tenv node (Loc.of_pvar pvar) typ
+              ~inst_num ~sym_num ~dimension:1 mem
+          in
+          (mem, inst_num + 1, sym_num)
         | _ ->
-            if Config.bo_debug >= 3 then
-              L.err "declare_symbolic_parameter of unhandled type: %a@." (Typ.pp Pp.text) typ;
-            (mem, inst_num, sym_num) (* TODO: add other cases if necessary *)
+          if Config.bo_debug >= 3 then
+            L.err "declare_symbolic_parameter of unhandled type: %a@." (Typ.pp Pp.text) typ;
+          (mem, inst_num, sym_num) (* TODO: add other cases if necessary *)
       in
       List.fold ~f:add_formal ~init:(mem, inst_num, 0) (Sem.get_formals pdesc)
       |> fst3
@@ -208,13 +216,13 @@ struct
       let callee_exit_mem = Dom.Summary.get_output summary in
       match callee_pdesc with
       | Some pdesc ->
-          let subst_map =
-            Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc
-          in
-          let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
-          let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
-          Dom.Val.subst ret_val subst_map
-          |> Dom.Val.normalize    (* normalize bottom *)
+        let subst_map =
+          Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc
+        in
+        let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
+        let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
+        Dom.Val.subst ret_val subst_map
+        |> Dom.Val.normalize    (* normalize bottom *)
       | _ -> Dom.Val.top_itv
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit
@@ -248,32 +256,32 @@ struct
       let output_mem =
         match instr with
         | Load (id, exp, _, loc) ->
-            let locs = Sem.eval exp mem loc |> Dom.Val.get_all_locs in
-            let v = Dom.Mem.find_heap_set locs mem in
-            Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) v mem
-            |> Dom.Mem.load_alias id exp
+          let locs = Sem.eval exp mem loc |> Dom.Val.get_all_locs in
+          let v = Dom.Mem.find_heap_set locs mem in
+          Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) v mem
+          |> Dom.Mem.load_alias id exp
         | Store (exp1, _, exp2, loc) ->
-            let locs = Sem.eval exp1 mem loc |> Dom.Val.get_all_locs in
-            Dom.Mem.update_mem locs (Sem.eval exp2 mem loc) mem
-            |> Dom.Mem.store_alias exp1 exp2
+          let locs = Sem.eval exp1 mem loc |> Dom.Val.get_all_locs in
+          Dom.Mem.update_mem locs (Sem.eval exp2 mem loc) mem
+          |> Dom.Mem.store_alias exp1 exp2
         | Prune (exp, loc, _, _) -> Sem.prune exp loc mem
         | Call (ret, Const (Cfun callee_pname), params, loc, _) ->
-            (match Summary.read_summary pdesc callee_pname with
-             | Some summary ->
-                 let callee = extras callee_pname in
-                 let ret_val =
-                   instantiate_ret tenv callee callee_pname params mem summary loc
-                 in
-                 (match ret with
-                  | Some (id, _) ->
-                      Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) ret_val mem
-                  | _ -> mem)
-             | None ->
-                 handle_unknown_call pname ret callee_pname params node mem loc)
+          (match Summary.read_summary pdesc callee_pname with
+          | Some summary ->
+            let callee = extras callee_pname in
+            let ret_val =
+              instantiate_ret tenv callee callee_pname params mem summary loc
+            in
+            (match ret with
+            | Some (id, _) ->
+              Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) ret_val mem
+            | _ -> mem)
+          | None ->
+            handle_unknown_call pname ret callee_pname params node mem loc)
         | Declare_locals (locals, _) ->
-            (* array allocation in stack e.g., int arr[10] *)
-            let (mem, inst_num) = List.fold ~f:try_decl_arr ~init:(mem, 1) locals in
-            declare_symbolic_parameter pdesc tenv node inst_num mem
+          (* array allocation in stack e.g., int arr[10] *)
+          let (mem, inst_num) = List.fold ~f:try_decl_arr ~init:(mem, 1) locals in
+          declare_symbolic_parameter pdesc tenv node inst_num mem
         | Call _
         | Remove_temps _
         | Abstract _
@@ -300,33 +308,33 @@ struct
       let array_access =
         match exp with
         | Exp.Var _ ->
-            let arr = Sem.eval exp mem loc |> Dom.Val.get_array_blk in
-            Some (arr, Itv.zero, true)
+          let arr = Sem.eval exp mem loc |> Dom.Val.get_array_blk in
+          Some (arr, Itv.zero, true)
         | Exp.Lindex (e1, e2)
         | Exp.BinOp (Binop.PlusA, e1, e2) ->
-            let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
-            let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
-            Some (arr, idx, true)
+          let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
+          let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
+          Some (arr, idx, true)
         | Exp.BinOp (Binop.MinusA, e1, e2) ->
-            let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
-            let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
-            Some (arr, idx, false)
+          let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
+          let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
+          Some (arr, idx, false)
         | _ -> None
       in
       match array_access with
       | Some (arr, idx, is_plus) ->
-          let site = Sem.get_allocsite pname node 0 0 in
-          let size = ArrayBlk.sizeof arr in
-          let offset = ArrayBlk.offsetof arr in
-          let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
-          (if Config.bo_debug >= 2 then
-             (L.err "@[<v 2>Add condition :@,";
-              L.err "array: %a@," ArrayBlk.pp arr;
-              L.err "  idx: %a@," Itv.pp idx;
-              L.err "@]@."));
-          if size <> Itv.bot && idx <> Itv.bot then
-            Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx cond_set
-          else cond_set
+        let site = Sem.get_allocsite pname node 0 0 in
+        let size = ArrayBlk.sizeof arr in
+        let offset = ArrayBlk.offsetof arr in
+        let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
+        (if Config.bo_debug >= 2 then
+           (L.err "@[<v 2>Add condition :@,";
+            L.err "array: %a@," ArrayBlk.pp arr;
+            L.err "  idx: %a@," Itv.pp idx;
+            L.err "@]@."));
+        if size <> Itv.bot && idx <> Itv.bot then
+          Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx cond_set
+        else cond_set
       | None -> cond_set
 
   let instantiate_cond
@@ -337,11 +345,11 @@ struct
       let callee_cond = Dom.Summary.get_cond_set summary in
       match callee_pdesc with
       | Some pdesc ->
-          let subst_map =
-            Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc
-          in
-          let pname = Procdesc.get_proc_name pdesc in
-          Dom.ConditionSet.subst callee_cond subst_map caller_pname pname loc
+        let subst_map =
+          Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc
+        in
+        let pname = Procdesc.get_proc_name pdesc in
+        Dom.ConditionSet.subst callee_cond subst_map caller_pname pname loc
       | _ -> callee_cond
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.ConditionSet.t -> unit
@@ -363,15 +371,15 @@ struct
         match instr with
         | Sil.Load (_, exp, _, loc)
         | Sil.Store (exp, _, _, loc) ->
-            add_condition pname node exp loc mem cond_set
+          add_condition pname node exp loc mem cond_set
         | Sil.Call (_, Const (Cfun callee_pname), params, loc, _) ->
-            (match Summary.read_summary pdesc callee_pname with
-             | Some summary ->
-                 let callee = extras callee_pname in
-                 instantiate_cond tenv pname callee params mem summary loc
-                 |> Dom.ConditionSet.rm_invalid
-                 |> Dom.ConditionSet.join cond_set
-             | _ -> cond_set)
+          (match Summary.read_summary pdesc callee_pname with
+          | Some summary ->
+            let callee = extras callee_pname in
+            instantiate_cond tenv pname callee params mem summary loc
+            |> Dom.ConditionSet.rm_invalid
+            |> Dom.ConditionSet.join cond_set
+          | _ -> cond_set)
         | _ -> cond_set
       in
       let mem = Analyzer.TransferFunctions.exec_instr mem pdata node instr in
@@ -412,12 +420,12 @@ struct
         match alarm with
         | None -> ()
         | Some bucket when Typ.Procname.equal pname caller_pname ->
-            let description = Dom.Condition.to_string cond in
-            let error_desc = Localise.desc_buffer_overrun bucket description in
-            let exn =
-              Exceptions.Checkers (Localise.to_issue_id Localise.buffer_overrun, error_desc) in
-            let trace = [Errlog.make_trace_element 0 loc description []] in
-            Reporting.log_error pname ~loc ~ltr:trace exn
+          let description = Dom.Condition.to_string cond in
+          let error_desc = Localise.desc_buffer_overrun bucket description in
+          let exn =
+            Exceptions.Checkers (Localise.to_issue_id Localise.buffer_overrun, error_desc) in
+          let trace = [Errlog.make_trace_element 0 loc description []] in
+          Reporting.log_error pname ~loc ~ltr:trace exn
         | _ -> ()
       in
       Dom.ConditionSet.iter report1 conds
@@ -441,7 +449,7 @@ let compute_post
     Report.report_error pdesc cond_set;
     match entry_mem, exit_mem with
     | Some entry_mem, Some exit_mem ->
-        Some (entry_mem, exit_mem, cond_set)
+      Some (entry_mem, exit_mem, cond_set)
     | _ -> None
 
 let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit
