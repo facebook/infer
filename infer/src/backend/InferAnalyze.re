@@ -21,11 +21,19 @@ let analyze_exe_env_tasks cluster exe_env :Tasks.t => {
   L.log_progress_file ();
   Specs.clear_spec_tbl ();
   Random.self_init ();
-  let biabduction_only =
-    Config.equal_analyzer Config.analyzer Config.BiAbduction ||
-    Config.equal_analyzer Config.analyzer Config.Tracing;
-  if biabduction_only {
-    /* run the biabduction analysis only */
+  if Config.checkers {
+    /* run the checkers only */
+    Tasks.create [
+      fun () => {
+        let call_graph = Exe_env.get_cg exe_env;
+        Callbacks.iterate_callbacks call_graph exe_env;
+        if Config.write_html {
+          Printer.write_all_html_files cluster
+        }
+      }
+    ]
+  } else {
+    /* run the full analysis */
     Tasks.create
       (Interproc.do_analysis_closures exe_env)
       continuation::(
@@ -44,17 +52,6 @@ let analyze_exe_env_tasks cluster exe_env :Tasks.t => {
           None
         }
       )
-  } else {
-    /* run the registered checkers */
-    Tasks.create [
-      fun () => {
-        let call_graph = Exe_env.get_cg exe_env;
-        Callbacks.iterate_callbacks call_graph exe_env;
-        if Config.write_html {
-          Printer.write_all_html_files cluster
-        }
-      }
-    ]
   }
 };
 

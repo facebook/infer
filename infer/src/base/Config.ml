@@ -615,6 +615,10 @@ and checkers_repeated_calls =
   CLOpt.mk_bool ~long:"checkers-repeated-calls" ~in_help:CLOpt.[Analyze, manual_generic]
     "check for repeated calls"
 
+and checkers =
+  CLOpt.mk_bool ~long:"checkers" ~in_help:CLOpt.[Analyze, manual_generic]
+    "the checkers instead of the full analysis"
+
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file"
     ~in_help:CLOpt.[Capture, manual_clang] ~meta:"file"
@@ -1609,11 +1613,11 @@ let post_parsing_initialization command_opt =
     linters_def_file := linters_def_default_file :: !linters_def_file;
 
   (match !analyzer with
-   | Some BiAbduction -> biabduction := true
-   | Some Crashcontext -> crashcontext := true
-   | Some Eradicate -> eradicate := true
-   | Some Tracing -> biabduction := true; tracing := true
-   | Some (CaptureOnly | CompileOnly | Checkers | Linters) -> ()
+   | Some Checkers -> checkers := true
+   | Some Crashcontext -> checkers := true; crashcontext := true
+   | Some Eradicate -> checkers := true; eradicate := true
+   | Some Tracing -> tracing := true
+   | Some (CaptureOnly | CompileOnly | BiAbduction | Linters) -> ()
    | None ->
        let open CLOpt in
        match command_opt with
@@ -1697,6 +1701,7 @@ and bugs_txt = !bugs_txt
 and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
 and dump_duplicate_symbols = !dump_duplicate_symbols
+and checkers = !checkers
 and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
 and clang_ignore_regex = !clang_ignore_regex

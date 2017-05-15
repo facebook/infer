@@ -216,6 +216,7 @@ let rec find_boolean_assignment node pvar true_branch : Procdesc.Node.t option =
 (** Find the Load instruction used to declare normal variable [id],
     and return the expression dereferenced to initialize [id] *)
 let rec _find_normal_variable_load tenv (seen : Exp.Set.t) node id : DExp.t option =
+  let is_infer = not (Config.checkers || Config.eradicate) in
   let find_declaration node = function
     | Sil.Load (id0, e, _, _) when Ident.equal id id0 ->
         if verbose
@@ -247,7 +248,7 @@ let rec _find_normal_variable_load tenv (seen : Exp.Set.t) node id : DExp.t opti
             List.map ~f:unNone args_dexpo in
         Some (DExp.Dretcall (fun_dexp, args_dexp, loc, call_flags))
     | Sil.Store (Exp.Lvar pvar, _, Exp.Var id0, _)
-      when Config.biabduction && Ident.equal id id0 && not (Pvar.is_frontend_tmp pvar) ->
+      when is_infer && Ident.equal id id0 && not (Pvar.is_frontend_tmp pvar) ->
         (* this case is a hack to make bucketing continue to work in the presence of copy
            propagation. previously, we would have code like:
            n1 = foo(); x = n1; n2 = x; n2.toString(), but copy-propagation will optimize this to:

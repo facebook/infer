@@ -79,7 +79,7 @@ let zip_libraries =
             (* fname is a dir of specs *)
             zip_libs in
         List.fold ~f:add_zip ~init:[] Config.specs_library in
-    if not Config.biabduction then
+    if Config.checkers then
       zip_libs
     else if (Sys.file_exists Config.models_jar) = `Yes then
       (mk_zip_lib true Config.models_jar) :: zip_libs
