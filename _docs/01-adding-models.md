@@ -7,7 +7,7 @@ permalink: /docs/adding-models.html
 
 ## Why do we need models
 
-When analyzing projects with call dependencies between functions, Infer follows the call graph to decide in which order analyze these functions. The main goal is to use the analysis summary of a function wherever this function is called. On the following example:
+When analyzing projects with call dependencies between functions, Infer follows the call graph to decide in which order to analyze these functions. The main goal is to use the analysis summary of a function wherever this function is called. On the following example:
 
 ```c
 int foo(int x) {
