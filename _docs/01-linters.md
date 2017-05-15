@@ -18,7 +18,7 @@ infer -a linters -- clang -c Test.m
 
 Infer has now a DSL to specify new linters. The purpose of this language is to simplify as much as possible the process of adding new linters. By using the DSL is now possible to specify linters in a declarative way and just add it to a linters' file. The new linters will then work out of the box without the need to recompile Infer. Moreover to modify and/or debug your linters is enough to just update the linters' file.
 
-Let's start with an example. Suppose we want to write the following Objectvie-C's linter:
+Let's start with an example. Suppose we want to write the following Objective-C's linter:
 
   *"a property containing the word 'delegate', but not containing the word 'queue' should not be declared strong"*. 
 
