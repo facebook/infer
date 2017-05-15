@@ -145,7 +145,7 @@ module SinkKind = struct
     | Typ.Procname.C _ ->
         begin
           match Typ.Procname.to_string pname with
-          | "execl" | "execlp" | "execle" | "execv" | "execvp" ->
+          | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system" ->
               taint_all actuals ShellExec ~report_reachable:false
           | "brk" | "calloc" | "malloc" | "realloc" | "sbrk" ->
               taint_all actuals Allocation ~report_reachable:false
