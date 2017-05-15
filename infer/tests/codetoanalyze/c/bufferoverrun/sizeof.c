@@ -22,7 +22,7 @@ struct some_struct {
   int x1;
 };
 
-void FN_static_stride_bad() {
+void static_stride_bad() {
   struct some_struct a[10];
   struct some_struct *x, *y;
   x = &(a[5]);
