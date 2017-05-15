@@ -511,7 +511,14 @@ and angelic_execution =
     "Angelic execution, where the analysis ignores errors caused by unknown procedure calls"
 
 and annotation_reachability =
-  CLOpt.mk_json ~long:"annotation-reachability"
+  CLOpt.mk_bool ~long:"annotation-reachability" ~in_help:CLOpt.[Analyze, manual_generic]
+    "the annotation reachability checker. Given a pair of source and sink annotation, e.g. \
+     @PerformanceCritical and @Expensive, this checker will warn whenever some method annotated \
+     with @PerformanceCritical calls, directly or indirectly, another method annotated with \
+     @Expensive"
+
+and annotation_reachability_custom_pairs =
+  CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
     ~in_help:CLOpt.[Analyze, manual_java]
     "Specify custom sources/sink for the annotation reachability checker\n\
      Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}\n\
@@ -844,7 +851,7 @@ and enable_checks =
 
 and eradicate =
   CLOpt.mk_bool ~long:"eradicate" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the eradicate checker for Java annotations"
+    "the eradicate @Nullable checker for Java annotations"
 
 and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant"
@@ -971,6 +978,12 @@ and icfg_dotty_outfile =
   CLOpt.mk_path_opt ~long:"icfg-dotty-outfile" ~meta:"path"
     "If set, specifies path where .dot file should be written, it overrides the path for all \
      other options that would generate icfg file otherwise"
+
+and immutable_cast =
+  CLOpt.mk_bool ~long:"immutable-cast" ~in_help:CLOpt.[Analyze, manual_generic]
+    "the detection of object cast from immutable type to mutable type. \
+     For instance, it will detect cast from ImmutableList to List, ImmutableMap to Map, \
+     and ImmutableSet to Set."
 
 and infer_cache =
   CLOpt.mk_path_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache"
@@ -1138,6 +1151,12 @@ and precondition_stats =
 and print_builtins =
   CLOpt.mk_bool ~deprecated:["print_builtins"] ~long:"print-builtins"
     "Print the builtin functions and exit"
+
+and printf_args =
+  CLOpt.mk_bool ~long:"printf-args" ~in_help:CLOpt.[Analyze, manual_generic]
+    "the detection of mismatch between the Java printf format strings and the argument types \
+     For, example, this checker will warn about the type error in \
+     `printf(\"Hello %d\", \"world\")`"
 
 and print_using_diff =
   CLOpt.mk_bool ~deprecated_no:["noprintdiff"] ~long:"print-using-diff" ~default:true
@@ -1656,6 +1675,7 @@ and analysis_suppress_errors_options =
 and analysis_stops = !analysis_stops
 and angelic_execution = !angelic_execution
 and annotation_reachability = !annotation_reachability
+and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 and array_level = !array_level
 and ast_file = !ast_file
 and biabduction = !biabduction
@@ -1724,6 +1744,7 @@ and frontend_debug = !frontend_debug
 and frontend_stats = !frontend_stats
 and headers = !headers
 and icfg_dotty_outfile = !icfg_dotty_outfile
+and immutable_cast = !immutable_cast
 and infer_cache = !infer_cache
 and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 and issues_fields = !issues_fields
@@ -1759,6 +1780,7 @@ and patterns_modeled_expensive = match patterns_modeled_expensive with (k,r) -> 
 and per_procedure_parallelism = !per_procedure_parallelism
 and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats
+and printf_args = !printf_args
 and print_logs = !print_logs
 and print_builtins = !print_builtins
 and print_types = !print_types

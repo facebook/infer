@@ -31,10 +31,11 @@ let active_procedure_checkers () =
         Eradicate.callback_eradicate, Config.eradicate;
         BoundedCallTree.checker, Config.crashcontext;
         JavaTaintAnalysis.checker, Config.quandary || enabled_by_default;
-        ImmutableChecker.callback_check_immutable_cast, enabled_by_default;
+        ImmutableChecker.callback_check_immutable_cast, enabled_by_default
+                                                        || Config.immutable_cast;
         RepeatedCallsChecker.callback_check_repeated_calls, Config.checkers_repeated_calls;
-        PrintfArgs.callback_printf_args, enabled_by_default;
-        AnnotationReachability.checker, enabled_by_default;
+        PrintfArgs.callback_printf_args, enabled_by_default || Config.printf_args;
+        AnnotationReachability.checker, enabled_by_default || Config.annotation_reachability;
         BufferOverrunChecker.checker, Config.bufferoverrun;
         ThreadSafety.analyze_procedure, enabled_by_default || Config.threadsafety;
         Interproc.analyze_procedure, Config.biabduction;

@@ -166,7 +166,8 @@ val analysis_stops : bool
 val analysis_suppress_errors : analyzer -> string list
 val analyzer : analyzer
 val angelic_execution : bool
-val annotation_reachability : Yojson.Basic.json
+val annotation_reachability : bool
+val annotation_reachability_custom_pairs : Yojson.Basic.json
 val array_level : int
 val ast_file : string option
 val biabduction : bool
@@ -242,6 +243,7 @@ val frontend_stats : bool
 val generated_classes : string option
 val headers : bool
 val icfg_dotty_outfile : string option
+val immutable_cast : bool
 val infer_cache : string option
 val iphoneos_target_sdk_version : string option
 val issues_fields : [`Issue_field_bug_class
@@ -292,6 +294,7 @@ val print_logs : bool
 val print_builtins : bool
 val print_types : bool
 val print_using_diff : bool
+val printf_args : bool
 val procedures_per_process : int
 val procs_csv : string option
 val procs_xml : string option

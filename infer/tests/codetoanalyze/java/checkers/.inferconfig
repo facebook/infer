@@ -11,7 +11,7 @@
       "method": "findViewById"
     }
   ],
-  "annotation-reachability": [
+  "annotation-reachability-custom-pairs": [
     {
        "sources": ["UserDefinedSource1", "UserDefinedSource2"],
        "sink": "UserDefinedSink"
