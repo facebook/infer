@@ -235,6 +235,7 @@ val filter_paths : bool
 val filter_report_paths : string option
 val filtering : bool
 val flavors : bool
+val fragment_retains_view : bool
 val from_json_report : string option
 val frontend_debug : bool
 val frontend_tests : bool

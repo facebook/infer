@@ -26,7 +26,8 @@ let active_procedure_checkers () =
   let java_checkers =
     let l =
       [
-        FragmentRetainsViewChecker.callback_fragment_retains_view, enabled_by_default;
+        FragmentRetainsViewChecker.callback_fragment_retains_view, enabled_by_default
+                                                                   || Config.fragment_retains_view;
         Eradicate.callback_eradicate, Config.eradicate;
         BoundedCallTree.checker, Config.crashcontext;
         JavaTaintAnalysis.checker, Config.quandary || enabled_by_default;

@@ -922,6 +922,10 @@ and flavors =
     "Buck integration using Buck flavors (clang only), eg $(i,`infer --flavors -- buck build \
      //foo:bar#infer`)"
 
+and fragment_retains_view =
+  CLOpt.mk_bool ~long:"fragment-retains-view" ~in_help:CLOpt.[Analyze, manual_generic]
+    "detects when Android fragments are not explicitly nullified before becoming unreabable"
+
 and from_json_report =
   CLOpt.mk_path_opt ~long:"from-json-report"
     ~in_help:CLOpt.[Report, manual_generic]
@@ -1719,6 +1723,7 @@ and filter_paths = !filter_paths
 and filter_report_paths = !filter_report_paths
 and filtering = !filtering
 and flavors = !flavors
+and fragment_retains_view = !fragment_retains_view
 and from_json_report = !from_json_report
 and frontend_debug = !frontend_debug
 and frontend_stats = !frontend_stats
