@@ -15,14 +15,14 @@ AC_PREREQ([2.63])
 # - opam
 # - docker/Dockerfile
 AC_INIT([Infer],
-        [0.11.0],
+        [0.12.0],
         [https://github.com/facebook/infer/issues/])
 
 AC_CONFIG_SRCDIR([infer/src/IR/Sil.re])
 
 # WARNING: keep in sync with above
 INFER_MAJOR=0
-INFER_MINOR=11
+INFER_MINOR=12
 INFER_PATCH=0
 
 AC_SUBST([INFER_MAJOR])
