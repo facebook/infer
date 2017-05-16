@@ -136,7 +136,6 @@ let main makefile => {
   switch Config.cluster_cmdline {
   | Some fname => process_cluster_cmdline fname
   | None =>
-    print_stdout_legend ();
     if Config.allow_specs_cleanup {
       DB.Results_dir.clean_specs_dir ()
     };
@@ -145,19 +144,34 @@ let main makefile => {
     };
     let all_clusters = DB.find_source_dirs ();
     let clusters_to_analyze = List.filter f::cluster_should_be_analyzed all_clusters;
+    let n_clusters_to_analyze = List.length clusters_to_analyze;
     L.stdout
-      "Found %d (out of %d) source files to be analyzed in %s@."
-      (List.length clusters_to_analyze)
-      (List.length all_clusters)
+      "Found %d%s source file%s to analyze in %s@."
+      n_clusters_to_analyze
+      (
+        if (Config.reactive_mode || Option.is_some Ondemand.dirs_to_analyze) {
+          " (out of " ^ string_of_int (List.length all_clusters) ^ ")"
+        } else {
+          ""
+        }
+      )
+      (
+        if (Int.equal n_clusters_to_analyze 1) {
+          ""
+        } else {
+          "s"
+        }
+      )
       Config.results_dir;
     let is_java () =>
       List.exists
         f::(fun cl => DB.string_crc_has_extension ext::"java" (DB.source_dir_to_string cl))
         all_clusters;
+    print_stdout_legend ();
     if (Config.per_procedure_parallelism && not (is_java ())) {
       /* Java uses ZipLib which is incompatible with forking */
       /* per-procedure parallelism */
-      L.stdout "per-procedure parallelism jobs:%d@." Config.jobs;
+      L.out "Per-procedure parallelism jobs: %d@." Config.jobs;
       if (makefile != "") {
         ClusterMakefile.create_cluster_makefile [] makefile
       };
