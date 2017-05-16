@@ -97,7 +97,7 @@ and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
   | IncompleteArrayType (_, {arti_element_type; arti_stride})
   | DependentSizedArrayType (_, {arti_element_type; arti_stride}) ->
       build_array_type translate_decl tenv arti_element_type None arti_stride
-  | VariableArrayType (_, {arti_element_type; arti_stride}) ->
+  | VariableArrayType (_, {arti_element_type; arti_stride}, _) ->
       build_array_type translate_decl tenv arti_element_type None arti_stride
   | ConstantArrayType (_, {arti_element_type; arti_stride}, n) ->
       build_array_type translate_decl tenv arti_element_type (Some n) arti_stride

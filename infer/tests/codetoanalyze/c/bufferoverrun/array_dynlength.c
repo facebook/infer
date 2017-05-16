@@ -7,12 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-int init_const_array() {
-  int z;
-  int a[2][3] = {{z + 1, 2, 3}, {5, 6, 7}};
-}
-
 void init_variable_array(int len) {
   int x = 2 * len;
   int a[len + x + 1];
+  a[len + x + 1] = 0;
 }

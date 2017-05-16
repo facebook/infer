@@ -1676,11 +1676,37 @@ struct
         (* something's wrong *)
         { empty_res_trans with root_nodes = trans_state.succ_nodes }
 
-  and init_expr_trans trans_state var_exp_typ var_stmt_info init_expr_opt =
+  and init_dynamic_array trans_state array_exp_typ array_stmt_info dynlength_stmt_pointer =
+    let dynlength_stmt = Clang_ast_main.PointerMap.find dynlength_stmt_pointer
+        !CFrontend_config.pointer_stmt_index in
+    let dynlength_stmt_info, _ = Clang_ast_proj.get_stmt_tuple dynlength_stmt in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state array_stmt_info in
+    let dynlength_trans_result = instruction trans_state_pri dynlength_stmt in
+    let dynlength_exp_typ = extract_exp_from_list dynlength_trans_result.exps
+        "WARNING: There should be one expression.\n" in
+    let sil_loc = CLocation.get_sil_location dynlength_stmt_info trans_state_pri.context in
+    let call_instr =
+      let call_exp = Exp.Const (Const.Cfun BuiltinDecl.__set_array_length) in
+      let actuals = [array_exp_typ; dynlength_exp_typ] in
+      Sil.Call (None, call_exp, actuals, sil_loc, CallFlags.default) in
+    let call_trans_result = { empty_res_trans with instrs = [call_instr] } in
+    let res_trans = PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+        "Initialize dynamic array length" dynlength_stmt_info
+        [dynlength_trans_result; call_trans_result] in
+    { res_trans with exps = [] }
+
+  and init_expr_trans trans_state var_exp_typ ?qual_type var_stmt_info init_expr_opt =
     match init_expr_opt with
-    | None ->
-        (* Nothing to do if no init expression *)
-        { empty_res_trans with root_nodes = trans_state.succ_nodes }
+    | None -> (
+        match Option.map ~f:(fun qt -> qt.Clang_ast_t.qt_type_ptr) qual_type
+              |> Option.find_map ~f:CAst_utils.get_type with
+        | Some (Clang_ast_t.VariableArrayType (_, _, stmt_pointer)) ->
+            (* Set the dynamic length of the variable length array. Variable length array cannot
+               have an initialization expression. *)
+            init_dynamic_array trans_state var_exp_typ var_stmt_info stmt_pointer
+        | _ ->
+            (* Nothing to do if no init expression and not a variable length array *)
+            { empty_res_trans with root_nodes = trans_state.succ_nodes})
     | Some ie -> (*For init expr, translate how to compute it and assign to the var*)
         let var_exp, _ = var_exp_typ in
         let context = trans_state.context in
@@ -1732,7 +1758,8 @@ struct
       let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar;
       let trans_state' = { trans_state with succ_nodes = next_node } in
-      init_expr_trans trans_state' (Exp.Lvar pvar, typ) stmt_info vdi.Clang_ast_t.vdi_init_expr in
+      init_expr_trans trans_state' (Exp.Lvar pvar, typ) ~qual_type stmt_info
+        vdi.Clang_ast_t.vdi_init_expr in
 
     match var_decls with
     | [] -> { empty_res_trans with root_nodes = next_nodes }
