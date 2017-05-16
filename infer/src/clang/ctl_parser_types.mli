@@ -27,6 +27,44 @@ val suggestion_const : string
 val severity_const : string
 val mode_const : string
 
-type abs_ctype
+(** Data structures for type parser.
+    Correspondence with clang types inferred from
+    StringRef BuiltinType::getName in
+    https://clang.llvm.org/doxygen/Type_8cpp_source.html
+*)
+type builtin_kind =
+  | Void (** void *)
+  | Bool (** bool *)
+  | Char_U (** char *)
+  | UChar  (** unsigned char *)
+  | WChar_U (** wchar_t *)
+  | Char16  (** char16_t *)
+  | Char32  (** char32_t *)
+  | UShort (** unsigned short *)
+  | UInt  (** unsigned int *)
+  | ULong (** unsigned long *)
+  | ULongLong (** unsigned long long *)
+  | Int128 (** __int128 *)
+  | UInt128 (** unsigned __int128 *)
+  | SChar (** signed char *)
+  | Short (** short *)
+  | Int (** int *)
+  | Long (** long *)
+  | LongLong (** long long *)
+  | Half (** half of __fp16 *)
+  | Float (** float *)
+  | Double (** double *)
+  | LongDouble (** long double *)
+  | Float128 (** __float128 *)
+  | NullPtr (** nullptr_t *)
+  | ObjCId (** id *)
+  | ObjCClass (** Class *)
+  | ObjCSel (** SEL *)
 
-val tmp_c_type_equal : ?name_c_type : string -> Clang_ast_t.c_type -> abs_ctype -> bool
+type abs_ctype =
+  | BuiltIn of builtin_kind
+  | Pointer of abs_ctype
+
+val tmp_c_type_equal : Clang_ast_t.c_type -> abs_ctype -> bool
+
+val abs_ctype_to_string : abs_ctype -> string

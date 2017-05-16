@@ -46,39 +46,39 @@ let mode_const = "mode"
 
 exception ALParsingException of string
 
-(* Data structures for type parser.
-   Correspondence with clang types inferred from
-   StringRef BuiltinType::getName in
-   https://clang.llvm.org/doxygen/Type_8cpp_source.html
+(** Data structures for type parser.
+    Correspondence with clang types inferred from
+    StringRef BuiltinType::getName in
+    https://clang.llvm.org/doxygen/Type_8cpp_source.html
 *)
 type builtin_kind =
-  | Void (* void *)
-  | Bool (* bool *)
-  | Char_U (* char *)
-  | UChar  (* unsigned char *)
-  | WChar_U (* wchar_t *)
-  | Char16  (* char16_t *)
-  | Char32  (* char32_t *)
-  | UShort (* unsigned short *)
-  | UInt  (* unsigned int *)
-  | ULong (* unsigned long *)
-  | ULongLong (* unsigned long long *)
-  | Int128 (* __int128 *)
-  | UInt128 (* unsigned __int128 *)
-  | SChar (* signed char *)
-  | Short (* short *)
-  | Int (* int *)
-  | Long (* long *)
-  | LongLong (* long long *)
-  | Half (* half of __fp16 *)
-  | Float (* float *)
-  | Double (* double *)
-  | LongDouble (* long double *)
-  | Float128 (* __float128 *)
-  | NullPtr (* nullptr_t *)
-  | ObjCId (* id *)
-  | ObjCClass (* Class *)
-  | ObjCSel (* SEL *)
+  | Void (** void *)
+  | Bool (** bool *)
+  | Char_U (** char *)
+  | UChar  (** unsigned char *)
+  | WChar_U (** wchar_t *)
+  | Char16  (** char16_t *)
+  | Char32  (** char32_t *)
+  | UShort (** unsigned short *)
+  | UInt  (** unsigned int *)
+  | ULong (** unsigned long *)
+  | ULongLong (** unsigned long long *)
+  | Int128 (** __int128 *)
+  | UInt128 (** unsigned __int128 *)
+  | SChar (** signed char *)
+  | Short (** short *)
+  | Int (** int *)
+  | Long (** long *)
+  | LongLong (** long long *)
+  | Half (** half of __fp16 *)
+  | Float (** float *)
+  | Double (** double *)
+  | LongDouble (** long double *)
+  | Float128 (** __float128 *)
+  | NullPtr (** nullptr_t *)
+  | ObjCId (** id *)
+  | ObjCClass (** Class *)
+  | ObjCSel (** SEL *)
 (*  | OCLSampler | OCLEvent | OCLClkEvent | OCLQueue | OCLNDRange
     | OCLReserveID | Dependent | Overload | BoundMember | PseudoObject
     | UnknownAny | BuiltinFn | ARCUnbridgedCast | OMPArraySection *)
