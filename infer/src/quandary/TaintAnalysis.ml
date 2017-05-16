@@ -414,15 +414,23 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   astate_with_sink in
 
             let astate_with_summary =
+              (* hack for default C++ constructors, which get translated as an empty body (and
+                 will thus have an empty summary). We don't want that because we want to be able to
+                 propagate taint from comstructor parameters to the constructed object. so we treat
+                 the empty constructor as a skip function instead *)
+              let is_dummy_cpp_constructor summary pname =
+                Typ.Procname.is_c_method pname &&
+                Typ.Procname.is_constructor pname &&
+                TaintDomain.BaseMap.is_empty (TaintSpecification.of_summary_access_tree summary) in
               if sinks <> [] || Option.is_some source
               then
                 (* don't use a summary for a procedure that is a direct source or sink *)
                 astate_with_source
               else
                 match Summary.read_summary proc_data.pdesc callee_pname with
-                | Some summary ->
+                | Some summary when not (is_dummy_cpp_constructor summary callee_pname) ->
                     apply_summary ret_opt actuals summary astate_with_source proc_data call_site
-                | None ->
+                | _ ->
                     handle_unknown_call callee_pname astate_with_source in
             Domain.join astate_acc astate_with_summary in
 
