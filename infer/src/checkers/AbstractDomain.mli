@@ -30,8 +30,17 @@ end
 module type WithBottom = sig
   include S
 
-  (** The bottom value of the domain. *)
+  (** The bottom value of the domain.
+      Naming it empty instead of bottom helps to bind the empty
+      value for sets and maps to the natural definition for bottom *)
   val empty : astate
+end
+
+(** A domain with an explicit top value *)
+module type WithTop = sig
+  include S
+
+  val top : astate
 end
 
 (** Lift a pre-domain to a domain *)
@@ -42,6 +51,16 @@ module BottomLifted (Domain : S) : sig
 
   include WithBottom with type astate := astate
 end
+
+(** Create a domain with Top element from a pre-domain *)
+module TopLifted (Domain : S) : sig
+  type astate =
+    | Top
+    | NonTop of Domain.astate
+
+  include WithTop with type astate := astate
+end
+
 
 (** Cartesian product of two domains. *)
 module Pair (Domain1 : S) (Domain2 : S) : S with type astate = Domain1.astate * Domain2.astate
