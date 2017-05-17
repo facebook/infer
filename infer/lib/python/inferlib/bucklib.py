@@ -72,6 +72,10 @@ def prepare_build(args):
     logging.info('Setup Infer analysis mode for Buck: export INFER_ANALYSIS=1')
     os.environ['INFER_ANALYSIS'] = '1'
 
+    # disable the Buck daemon as changes in the Buck config
+    # may be missed otherwise
+    os.environ['NO_BUCKD'] = '1'
+
     # Create a script to be called by buck
     infer_script = None
     with tempfile.NamedTemporaryFile(delete=False,
