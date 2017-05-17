@@ -16,6 +16,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 
+import com.facebook.infer.annotation.Assertions;
+
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -603,6 +605,10 @@ public class NullPointerExceptions {
     if(!c1.equals(c2)) {
       s.toString(); // NPE
     }
+  }
+
+  String assertParameterNotNullableOk(@Nullable Object object) {
+    return Assertions.assertNotNull(object).toString();
   }
 
 }
