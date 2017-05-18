@@ -15,12 +15,18 @@ get more information about how a particular build system is supported
 by running `infer --help -- <build system>`, for instance `infer
 --help -- gradle`.
 
-### Gradle
+### Gradle / Android Studio
+
+```bash
+cd My_Android_App/Folder_that_contains_gradlew
+infer -- ./gradlew build   # Format is: infer -- ./gradlew <gradle task, e.g. "build">
+```
+or
 
 ```bash
 infer -- gradle <gradle task, e.g. "build">
-infer -- ./gradlew <gradle task, e.g. "build">
 ```
+
 
 ### Buck
 
