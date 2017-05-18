@@ -182,10 +182,23 @@ include
       | (EnvironmentVariable | File), Allocation ->
           (* untrusted data flowing to memory allocation *)
           true
-      | Other, _
-      | _, Other ->
+      | _, (Allocation | Other | ShellExec) when Source.is_footprint source ->
+          (* is this var a command line flag created by the popular gflags library? *)
+          let is_gflag pvar =
+            String.is_substring ~substring:"FLAGS_" (Pvar.get_simplified_name pvar) in
+          begin
+            match Option.map ~f:AccessPath.extract (Source.get_footprint_access_path source) with
+            | Some ((Var.ProgramVar pvar, _), _) when Pvar.is_global pvar && is_gflag pvar ->
+                (* gflags globals come from the environment; treat them as sources *)
+                true
+            | _ ->
+                false
+          end
+      | Other, _ ->
           (* Other matches everything *)
           true
-      | _ ->
+      | _, Other ->
+          true
+      | Unknown, (Allocation | ShellExec) ->
           false
   end)

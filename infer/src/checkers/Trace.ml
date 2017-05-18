@@ -189,9 +189,7 @@ module Make (Spec : Spec) = struct
           else acc in
         Sinks.fold report_one sinks acc0 in
       let report_sources source acc =
-        if Source.is_footprint source
-        then acc
-        else report_source source t.sinks acc in
+        report_source source t.sinks acc in
       Sources.fold report_sources t.sources []
 
   let pp_path cur_pname fmt (cur_passthroughs, sources_passthroughs, sinks_passthroughs) =

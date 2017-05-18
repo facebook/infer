@@ -339,21 +339,24 @@ include
     module Sink = JavaSink
 
     let should_report source sink =
-      match Source.kind source, Sink.kind sink with
-      | PrivateData, Logging (* logging private data issue *)
-      | Intent, StartComponent (* intent reuse issue *)
-      | Intent, CreateIntent (* intent configured with external values issue *)
-      | Intent, JavaScript (* external data flows into JS: remote code execution risk *)
-      | PrivateData, JavaScript (* leaking private data into JS *)
-      | UserControlledURI, (CreateIntent | StartComponent)
-      (* create intent/launch component from user-controlled URI *)
-      | UserControlledURI, CreateFile
-      (* create file from user-controller URI; potential path-traversal vulnerability *)
-      | Clipboard, (StartComponent | CreateIntent | JavaScript | CreateFile) ->
-          (* do something sensitive with user-controlled data from the clipboard *)
-          true
-      | Other, _ | _, Other -> (* for testing purposes, Other matches everything *)
-          true
-      | _ ->
-          false
+      if Source.is_footprint source
+      then false
+      else
+        match Source.kind source, Sink.kind sink with
+        | PrivateData, Logging (* logging private data issue *)
+        | Intent, StartComponent (* intent reuse issue *)
+        | Intent, CreateIntent (* intent configured with external values issue *)
+        | Intent, JavaScript (* external data flows into JS: remote code execution risk *)
+        | PrivateData, JavaScript (* leaking private data into JS *)
+        | UserControlledURI, (CreateIntent | StartComponent)
+        (* create intent/launch component from user-controlled URI *)
+        | UserControlledURI, CreateFile
+        (* create file from user-controller URI; potential path-traversal vulnerability *)
+        | Clipboard, (StartComponent | CreateIntent | JavaScript | CreateFile) ->
+            (* do something sensitive with user-controlled data from the clipboard *)
+            true
+        | Other, _ | _, Other -> (* for testing purposes, Other matches everything *)
+            true
+        | _ ->
+            false
   end)

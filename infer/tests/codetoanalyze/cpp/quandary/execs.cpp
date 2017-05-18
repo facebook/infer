@@ -12,7 +12,11 @@
 
 extern int rand();
 
+// mocking gflags-generated field
+
 namespace execs {
+
+extern char* FLAGS_cli_string;
 
 int callAllSinks(const char* stringSource, char ** arrSource) {
   switch (rand()) {
@@ -88,4 +92,6 @@ void customGetEnvOk() {
   const char* source = execs::getenv("ENV_VAR");
   return execl(NULL, source);
 }
+
+void exec_flag_bad() { execl(FLAGS_cli_string, NULL); }
 }
