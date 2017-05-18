@@ -27,6 +27,8 @@ Analysis examples:
 infer -- buck build HelloWorld'''
 LANG = ['clang', 'java']
 
+KEEP_GOING_OPTION = "--keep-going"
+
 
 def gen_instance(*args):
     return BuckAnalyzer(*args)
@@ -132,6 +134,8 @@ class BuckAnalyzer:
             'targets',
             '--show-output'
         ] + self.cmd[2:] + self.create_cxx_buck_configuration_args()
+        buck_results_cmd = \
+            [x for x in buck_results_cmd if x != KEEP_GOING_OPTION]
         proc = subprocess.Popen(buck_results_cmd, stdout=subprocess.PIPE)
         (buck_output, _) = proc.communicate()
         # remove target name prefixes from each line and split them into a list
@@ -173,8 +177,16 @@ class BuckAnalyzer:
         if self.args.load_average is not None:
             command += ['-L', str(self.args.load_average)]
         command += self.create_cxx_buck_configuration_args()
-        subprocess.check_call(command, env=env)
-        return os.EX_OK
+        try:
+            subprocess.check_call(command, env=env)
+            return os.EX_OK
+        except subprocess.CalledProcessError as e:
+            if KEEP_GOING_OPTION in self.args.Xbuck:
+                print('Buck failed, but continuing the analysis '
+                      'because --keep-going was passed')
+                return os.EX_OK
+            else:
+                raise e
 
     def capture_with_flavors(self):
         ret = self._run_buck_with_flavors()
