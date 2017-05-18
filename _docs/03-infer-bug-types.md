@@ -11,7 +11,6 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Context leak](/docs/infer-bug-types.html#CONTEXT_LEAK)
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK)
-  - [Tainted value reaching sensitive function](/docs/infer-bug-types.html#TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION)
 
 - Bugs reported in C, C++, and Objective-C
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
@@ -271,10 +270,6 @@ when you see a resource-allocation site.
 This error type is specific to Android. In Android applications, subtypes of `Context` (other than `Application`, which is a special case) are ephemeral components that can be created and destroyed at the discretion of the Android framework. Once the framework decides to destroy a `Context`, it cannot be used again and should be freed by the garbage collector. However, the programmer can create a memory leak by retaining a reference to the `Context` after it has been destroyed (thereby preventing collection).
 
 Infer decides to report a `Context` leak when it determines that a chain of references between a static field and a `Context` may exist at the end of a `public` method of a non-`Application` `Context` subtype.
-
-## <a name="TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"></a>Tainted value reaching sensitive function
-
-This error type corresponds to a security or privacy issue. A security bug is reported when unsafe data flows to sensitive function (e.g., reading from some `SSLSocket` whose hostname has not been verified). A privacy bug is report when secret data flows to a function that may leak the value to the outside world (e.g., user data from `SharedPreferences` flowing to a logging function).
 
 ## <a name="MEMORY_LEAK"></a>Memory leak
 
