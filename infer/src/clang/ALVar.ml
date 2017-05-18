@@ -72,6 +72,27 @@ let is_mode_keyword k =
   | Mode -> true
   | _ -> false
 
+(* true if and only if a substring of container matches the regular
+   expression defined by contained
+*)
+let str_match_regex container re =
+  let rexp = Str.regexp re in
+  try
+    Str.search_forward rexp container 0 >= 0
+  with Not_found -> false
+
+let compare_str_with_alexp s ae =
+  match ae with
+  | Const s'
+  | Var s' ->
+      String.equal s s'
+  | Regexp re ->
+      str_match_regex s re
+  | _ ->
+      Logging.out "[WARNING]: ALVAR expression '%s' is not a constant/var or regexp\n"
+        (alexp_to_string ae);
+      false
+
 
 module FormulaIdMap = Caml.Map.Make (
   struct

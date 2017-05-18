@@ -116,17 +116,72 @@ let builtin_kind_to_string t =
 type abs_ctype =
   | BuiltIn of builtin_kind
   | Pointer of abs_ctype
+  | TypeName of ALVar.alexp
 
+let display_equality_warning () =
+  Logging.out
+    "[WARNING:] Type Comparison failed... \
+     This might indicate that the types are different or the specified type \
+     is internally represented in a different way and therefore not recognized.\n"
 
 let rec abs_ctype_to_string t =
   match t with
   | BuiltIn t' -> "BuiltIn (" ^ (builtin_kind_to_string t') ^ ")"
   | Pointer t' -> "Pointer (" ^ (abs_ctype_to_string t') ^ ")"
+  | TypeName ae -> "TypeName (" ^ (ALVar.alexp_to_string ae) ^ ")"
+
+
+let builtin_equal bi abi =
+  match bi, abi with
+  | `Char_U, Char_U
+  | `Char_S, Char_U
+  | `Char16, Char16
+  | `Char32, Char32
+  | `WChar_U, WChar_U
+  | `WChar_S, WChar_U
+  | `Bool, Bool
+  | `Short, Short
+  | `Int, Int
+  | `Long, Long
+  | `Float, Float
+  | `Double, Double
+  | `Void, Void
+  | `SChar, SChar
+  | `LongLong, LongLong
+  | `UChar, UChar
+  | `UShort, UShort
+  | `UInt, UInt
+  | `ULong, ULong
+  | `ULongLong, ULongLong
+  | `LongDouble, LongDouble
+  | `Int128, Int128
+  | `UInt128, UInt128
+  | `Float128, Float128
+  | `NullPtr, NullPtr
+  | `ObjCId, ObjCId
+  | `ObjCClass, ObjCClass
+  | `ObjCSel, ObjCSel
+  | `Half, Half -> true
+  | _, _ -> display_equality_warning ();
+      false
+
+let rec pointer_type_equal p ap =
+  let open Clang_ast_t in
+  match p, ap with
+  | PointerType (_, qt), Pointer abs_ctype'
+  | ObjCObjectPointerType (_, qt), Pointer abs_ctype' ->
+      (match CAst_utils.get_type qt.qt_type_ptr with
+       | Some c_type' ->
+           c_type_equal c_type' abs_ctype'
+       | None -> false)
+  | _, _ -> display_equality_warning ();
+      false
+
 
 (* Temporary, partial equality function. Cover only what's covered
    by the types_parser. It needs to be replaced by a real
    comparison function for Clang_ast_t.c_type *)
-let rec tmp_c_type_equal c_type abs_ctype =
+and c_type_equal c_type abs_ctype =
   Logging.out
     "Comparing c_type/abs_ctype for equality... \
      Type compared: \nc_type = `%s`  \nabs_ctype =`%s`\n"
@@ -134,45 +189,19 @@ let rec tmp_c_type_equal c_type abs_ctype =
     (abs_ctype_to_string abs_ctype);
   let open Clang_ast_t in
   match c_type, abs_ctype with
-  | BuiltinType (_ , `Char_U), BuiltIn (Char_U)
-  | BuiltinType (_ , `Char_S), BuiltIn (Char_U)
-  | BuiltinType (_, `Char16), BuiltIn (Char16)
-  | BuiltinType (_, `Char32), BuiltIn (Char32)
-  | BuiltinType (_, `WChar_U), BuiltIn (WChar_U)
-  | BuiltinType (_, `WChar_S), BuiltIn (WChar_U)
-  | BuiltinType (_, `Bool), BuiltIn (Bool)
-  | BuiltinType (_, `Short), BuiltIn (Short)
-  | BuiltinType (_, `Int), BuiltIn (Int)
-  | BuiltinType (_, `Long), BuiltIn (Long)
-  | BuiltinType (_, `Float), BuiltIn (Float)
-  | BuiltinType (_, `Double), BuiltIn (Double)
-  | BuiltinType (_, `Void), BuiltIn (Void)
-  | BuiltinType (_, `SChar), BuiltIn (SChar)
-  | BuiltinType (_, `LongLong), BuiltIn (LongLong)
-  | BuiltinType (_, `UChar), BuiltIn (UChar)
-  | BuiltinType (_, `UShort), BuiltIn (UShort)
-  | BuiltinType (_, `UInt), BuiltIn (UInt)
-  | BuiltinType (_, `ULong), BuiltIn (ULong)
-  | BuiltinType (_, `ULongLong), BuiltIn (ULongLong)
-  | BuiltinType (_, `LongDouble), BuiltIn (LongDouble)
-  | BuiltinType (_, `Int128), BuiltIn (Int128)
-  | BuiltinType (_, `UInt128), BuiltIn (UInt128)
-  | BuiltinType (_, `Float128), BuiltIn (Float128)
-  | BuiltinType (_, `NullPtr), BuiltIn (NullPtr)
-  | BuiltinType (_, `ObjCId), BuiltIn (ObjCId)
-  | BuiltinType (_, `ObjCClass), BuiltIn (ObjCClass)
-  | BuiltinType (_, `ObjCSel), BuiltIn (ObjCSel)
-  | BuiltinType (_, `Half), BuiltIn (Half) -> true
-  | PointerType (_, qt), Pointer abs_ctype' ->
-      (match CAst_utils.get_type qt.qt_type_ptr with
-       | Some c_type' ->
-           tmp_c_type_equal c_type' abs_ctype'
-       | None -> false)
-  | _, _ ->
-      Logging.out
-        "[WARNING:] Type Comparison failed... \
-         This might indicate that the types are different or the specified type \
-         is internally represented in a different way and therefore not recognized.\n";
+  | BuiltinType (_ , bi), BuiltIn abi ->
+      builtin_equal bi abi
+  | PointerType _, Pointer _
+  | ObjCObjectPointerType _, Pointer _ ->
+      pointer_type_equal c_type abs_ctype
+  | ObjCInterfaceType (_, pointer), TypeName ae ->
+      (match CAst_utils.get_decl pointer with
+       | Some decl ->
+           (match Clang_ast_proj.get_named_decl_tuple decl with
+            | Some (_, name_decl) -> ALVar.compare_str_with_alexp name_decl.ni_name ae
+            | None -> false)
+       | _ -> false)
+  | _, _ -> display_equality_warning ();
       false
 
 (* to be extended with more types *)

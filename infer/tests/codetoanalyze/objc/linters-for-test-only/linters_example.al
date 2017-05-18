@@ -126,6 +126,8 @@ DEFINE-CHECKER TEST_BUILTIN_TYPE = {
           OR method_return_type("SEL")
           OR method_return_type("float *")
           OR method_return_type("unsigned int **")
+          OR method_return_type("A*")
+          OR method_return_type("REGEXP('This.+')*" )
         HOLDS-IN-NODE ObjCMethodDecl;
 
   SET message = "Method return.....";

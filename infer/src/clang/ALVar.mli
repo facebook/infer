@@ -43,4 +43,6 @@ val is_severity_keyword : keyword -> bool
 
 val is_mode_keyword : keyword -> bool
 
+val compare_str_with_alexp : string -> alexp -> bool
+
 module FormulaIdMap : Caml.Map.S with type key = formula_id

@@ -11,6 +11,8 @@ open! IStd
 open Lexing
 open Types_lexer
 
+let parsed_type_map : Ctl_parser_types.abs_ctype String.Map.t ref = ref String.Map.empty
+
 let get_available_attr_ios_sdk an =
   let open Clang_ast_t in
   let rec get_available_attr attrs =
@@ -60,24 +62,6 @@ let captured_variables_cxx_ref an =
 
 type t = ALVar.formula_id * ALVar.alexp list(* (name, [param1,...,paramK]) *)
 
-(* true if and only if a substring of container matches the regular
-   expression defined by contained
-*)
-let str_match_regex container re =
-  let rexp = Str.regexp re in
-  try
-    Str.search_forward rexp container 0 >= 0
-  with Not_found -> false
-
-let compare_str_with_alexp s ae =
-  match ae with
-  | ALVar.Const s' ->
-      String.equal s s'
-  | ALVar.Regexp re -> str_match_regex s re
-  | _ ->
-      Logging.out "[WARNING]: ALVAR expression '%s' is not a constant or regexp\n"
-        (ALVar.alexp_to_string ae);
-      false
 
 let pp_predicate fmt (_name, _arglist) =
   let name = ALVar.formula_id_to_string _name in
@@ -88,7 +72,7 @@ let pp_predicate fmt (_name, _arglist) =
 let is_objc_interface_named an expected_name =
   match an with
   | Ctl_parser_types.Decl Clang_ast_t.ObjCInterfaceDecl(_, ni, _, _, _) ->
-      compare_str_with_alexp ni.ni_name expected_name
+      ALVar.compare_str_with_alexp ni.ni_name expected_name
   | _ -> false
 
 (* checkes whether an object is of a certain class *)
@@ -108,7 +92,7 @@ let is_object_of_class_named receiver cname =
 let call_method an m =
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) ->
-      compare_str_with_alexp omei.omei_selector m
+      ALVar.compare_str_with_alexp omei.omei_selector m
   | _ -> false
 
 let is_receiver_kind_class omei cname =
@@ -119,7 +103,7 @@ let is_receiver_kind_class omei cname =
        | Some ObjCInterfaceType (_, ptr) ->
            (match CAst_utils.get_decl ptr with
             | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
-                compare_str_with_alexp ndi.ni_name cname
+                ALVar.compare_str_with_alexp ndi.ni_name cname
             | _ -> false)
        | _ -> false)
   | _ -> false
@@ -128,7 +112,7 @@ let call_class_method an cname mname =
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, _, _, omei)) ->
       is_receiver_kind_class omei cname &&
-      compare_str_with_alexp omei.omei_selector mname
+      ALVar.compare_str_with_alexp omei.omei_selector mname
   | _ -> false
 
 (* an is a node calling method whose name contains mname of a
@@ -138,7 +122,7 @@ let call_instance_method an cname mname =
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.ObjCMessageExpr (_, receiver :: _, _, omei)) ->
       is_object_of_class_named receiver cname &&
-      compare_str_with_alexp omei.omei_selector mname
+      ALVar.compare_str_with_alexp omei.omei_selector mname
   | _ -> false
 
 let is_objc_extension lcxt =
@@ -159,7 +143,7 @@ let decl_ref_name ?kind name st =
   | Clang_ast_t.DeclRefExpr (_, _, _, drti) ->
       (match drti.drti_decl_ref with
        | Some dr -> let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
-           let has_right_name = compare_str_with_alexp ndi.ni_name name in
+           let has_right_name = ALVar.compare_str_with_alexp ndi.ni_name name in
            (match kind with
             | Some decl_kind ->
                 has_right_name && PVariant.(=) dr.Clang_ast_t.dr_kind decl_kind
@@ -271,7 +255,7 @@ let is_binop_with_kind an alexp_kind =
     failwith ("Binary operator kind " ^ str_kind ^ " is not valid");
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.BinaryOperator (_, _, _, boi)) ->
-      compare_str_with_alexp (Clang_ast_proj.string_of_binop_kind boi.boi_kind) alexp_kind
+      ALVar.compare_str_with_alexp (Clang_ast_proj.string_of_binop_kind boi.boi_kind) alexp_kind
   | _ -> false
 
 let is_unop_with_kind an alexp_kind =
@@ -280,7 +264,7 @@ let is_unop_with_kind an alexp_kind =
     failwith ("Unary operator kind " ^ str_kind ^ " is not valid");
   match an with
   | Ctl_parser_types.Stmt (Clang_ast_t.UnaryOperator (_, _, _, uoi)) ->
-      compare_str_with_alexp (Clang_ast_proj.string_of_unop_kind uoi.uoi_kind) alexp_kind
+      ALVar.compare_str_with_alexp (Clang_ast_proj.string_of_unop_kind uoi.uoi_kind) alexp_kind
   | _ -> false
 
 let is_node an nodename =
@@ -290,7 +274,7 @@ let is_node an nodename =
   let an_str = match an with
     | Ctl_parser_types.Stmt s -> Clang_ast_proj.get_stmt_kind_string s
     | Ctl_parser_types.Decl d -> Clang_ast_proj.get_decl_kind_string d in
-  compare_str_with_alexp an_str nodename
+  ALVar.compare_str_with_alexp an_str nodename
 
 let is_ptr_to_objc_class typ class_name =
   match typ with
@@ -299,7 +283,7 @@ let is_ptr_to_objc_class typ class_name =
        | Some ObjCInterfaceType (_, ptr) ->
            (match CAst_utils.get_decl ptr with
             | Some ObjCInterfaceDecl (_, ndi, _, _, _) ->
-                compare_str_with_alexp ndi.ni_name class_name
+                ALVar.compare_str_with_alexp ndi.ni_name class_name
             | _ -> false)
        | _ -> false)
   | _ -> false
@@ -320,7 +304,7 @@ let declaration_has_name an name =
   match an with
   | Ctl_parser_types.Decl d ->
       (match Clang_ast_proj.get_named_decl_tuple d with
-       | Some (_, ndi) -> compare_str_with_alexp ndi.ni_name name
+       | Some (_, ndi) -> ALVar.compare_str_with_alexp ndi.ni_name name
        | _ -> false)
   | _ -> false
 
@@ -352,8 +336,10 @@ let type_ptr_equal_type type_ptr type_str =
     let pos = lexbuf.lex_curr_p in
     pos.pos_fname ^ ":" ^ (string_of_int pos.pos_lnum) ^ ":" ^
     (string_of_int  (pos.pos_cnum - pos.pos_bol + 1)) in
-  let lexbuf = Lexing.from_string type_str in
-  let abs_ctype = try
+
+  let parse_type_string str =
+    let lexbuf = Lexing.from_string str in
+    try
       (Types_parser.abs_ctype token lexbuf)
     with
     | Ctl_parser_types.ALParsingException s ->
@@ -362,10 +348,16 @@ let type_ptr_equal_type type_ptr type_str =
     | SyntaxError _
     | Types_parser.Error ->
         raise (Ctl_parser_types.ALParsingException
-                 ("SYNTAX ERROR at " ^ (pos_str lexbuf)))  in
+                 ("SYNTAX ERROR at " ^ (pos_str lexbuf))) in
+  let abs_ctype =
+    match String.Map.find !parsed_type_map type_str with
+    | Some abs_ctype' -> abs_ctype'
+    | None -> let abs_ctype' = parse_type_string type_str in
+        parsed_type_map := String.Map.add !parsed_type_map ~key:type_str ~data:abs_ctype';
+        abs_ctype' in
   match CAst_utils.get_type type_ptr with
   | Some c_type' ->
-      Ctl_parser_types.tmp_c_type_equal c_type' abs_ctype
+      Ctl_parser_types.c_type_equal c_type' abs_ctype
   | _ -> Logging.out "Couldn't find type....\n"; false
 
 let has_type an _typ =

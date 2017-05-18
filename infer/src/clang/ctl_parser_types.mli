@@ -64,7 +64,8 @@ type builtin_kind =
 type abs_ctype =
   | BuiltIn of builtin_kind
   | Pointer of abs_ctype
+  | TypeName of ALVar.alexp
 
-val tmp_c_type_equal : Clang_ast_t.c_type -> abs_ctype -> bool
+val c_type_equal : Clang_ast_t.c_type -> abs_ctype -> bool
 
 val abs_ctype_to_string : abs_ctype -> string

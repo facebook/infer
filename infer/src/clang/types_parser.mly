@@ -54,7 +54,12 @@
 %token OBJCSEL
 %token STAR
 %token EOF
-
+%token REGEXP
+%token LEFT_PAREN
+%token RIGHT_PAREN
+%token <string> IDENTIFIER
+%token <string> STRING
+%token <string> REARG
 
 %start <Ctl_parser_types.abs_ctype> abs_ctype
 %%
@@ -69,12 +74,17 @@ abs_ctype:
 ctype_specifier_seq:
 | noptr_type_spec  { $1 }
 | ptr_type_spec  { $1 }
+| type_name { $1 }
 ;
 
 ptr_type_spec:
 | noptr_type_spec STAR { Pointer $1 }
 | ptr_type_spec STAR { Pointer $1 }
+| type_name STAR { Pointer $1 }
 ;
+
+type_name:
+  | alexp { TypeName $1 }
 
 noptr_type_spec:
   | trailing_type_specifier_seq
@@ -116,5 +126,14 @@ simple_type_specifier:
   | OBJCCLASS { ObjCClass }
   | OBJCSEL { ObjCSel }
   ;
+
+  alexp:
+   | STRING { Logging.out "\tParsed string constant '%s' \n" $1;
+              ALVar.Const $1 }
+   | REGEXP LEFT_PAREN REARG RIGHT_PAREN
+            { Logging.out "\tParsed regular expression '%s' \n" $3;
+              ALVar.Regexp $3 }
+   | IDENTIFIER { ALVar.Var $1 }
+   ;
 
 %%

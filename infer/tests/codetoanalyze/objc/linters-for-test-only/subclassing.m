@@ -62,6 +62,12 @@
 @implementation F
 @end
 
+@interface ThisIsAVeryLongName : NSObject
+@end
+
+@implementation ThisIsAVeryLongName
+@end
+
 @interface TestType : NSObject
 
 - (void)m1;
@@ -92,5 +98,6 @@
 //- (SEL) m27;
 - (float*)m23;
 - (unsigned int**)m24;
-
+- (A*)m25;
+- (ThisIsAVeryLongName*)m26;
 @end
