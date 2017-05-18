@@ -32,10 +32,6 @@ type t [@@deriving compare];
 let equal: t => t => bool;
 
 
-/** Compare two pvar's in alphabetical order */
-let compare_alpha: t => t => int;
-
-
 /** Dump a program variable. */
 let d: t => unit;
 
@@ -174,5 +170,3 @@ let is_pod: t => bool;
 
 /** Get the procname of the initializer function for the given global variable */
 let get_initializer_pname: t => option Typ.Procname.t;
-
-module Set: PrettyPrintable.PPSet with type elt = t;

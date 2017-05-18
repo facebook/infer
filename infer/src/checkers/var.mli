@@ -27,5 +27,3 @@ val to_exp : t -> Exp.t
 val pp : Format.formatter -> t -> unit
 
 module Map : PrettyPrintable.PPMap with type key = t
-
-module Set : PrettyPrintable.PPSet with type elt = t

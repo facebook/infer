@@ -42,7 +42,7 @@ let src_snk_pairs =
     specs
 
 module Domain = struct
-  module TrackingVar = AbstractDomain.FiniteSet (Var.Set)
+  module TrackingVar = AbstractDomain.FiniteSet (Var)
   module TrackingDomain = AbstractDomain.BottomLifted (TrackingVar)
   include AbstractDomain.Pair (AnnotReachabilityDomain) (TrackingDomain)
 
@@ -159,7 +159,7 @@ let lookup_annotation_calls caller_pdesc annot pname =
   | Some { Specs.payload = { Specs.annot_map = Some annot_map; }; } ->
       begin
         try
-          Annot.Map.find annot annot_map
+          AnnotReachabilityDomain.find annot annot_map
         with Not_found ->
           AnnotReachabilityDomain.SinkMap.empty
       end
@@ -309,7 +309,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           if AnnotReachabilityDomain.CallSites.is_empty calls
           then astate
           else Domain.add_call_site annot sink call_site astate in
-        Annot.Map.fold
+        AnnotReachabilityDomain.fold
           (fun annot sink_map astate ->
              AnnotReachabilityDomain.SinkMap.fold
                (add_call_site annot)
@@ -389,7 +389,7 @@ module Interprocedural = struct
             (CallSite.make proc_name loc)
             sink_map in
       try
-        let sink_map = Annot.Map.find snk_annot annot_map in
+        let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
         List.iter ~f:(report_src_snk_path sink_map) src_annot_list
       with Not_found -> () in
 

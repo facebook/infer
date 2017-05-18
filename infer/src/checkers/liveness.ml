@@ -14,7 +14,7 @@ module L = Logging
 
 (** backward analysis for computing set of maybe-live variables at each program point *)
 
-module Domain = AbstractDomain.FiniteSet(Var.Set)
+module Domain = AbstractDomain.FiniteSet(Var)
 
 (* compilers 101-style backward transfer functions for liveness analysis. gen a variable when it is
    read, kill the variable when it is assigned *)

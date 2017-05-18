@@ -7,7 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-module VarNames : PrettyPrintable.PPSet with type elt = string
+open! IStd
+
+module VarNames : module type of AbstractDomain.FiniteSet(String)
 
 module BottomSiofTrace : module type of AbstractDomain.BottomLifted(SiofTrace)
 
@@ -28,7 +30,7 @@ module BottomSiofTrace : module type of AbstractDomain.BottomLifted(SiofTrace)
    std::ios_base::Init::Init(). *)
 include module type of AbstractDomain.Pair
     (AbstractDomain.BottomLifted(SiofTrace))
-    (AbstractDomain.FiniteSet(VarNames))
+    (VarNames)
 
 (** group together procedure-local accesses *)
 val normalize : astate -> astate

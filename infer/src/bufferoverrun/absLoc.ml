@@ -26,16 +26,16 @@ struct
     | Allocsite of Allocsite.t
     | Field of t * Fieldname.t
     | Unknown
-      [@@deriving compare]
+  [@@deriving compare]
 
   let unknown = Unknown
   let rec pp fmt = function
     | Var v ->
-      Var.pp F.str_formatter v;
-      let s = F.flush_str_formatter () in
-      if s.[0] = '&' then
-        F.fprintf fmt "%s" (String.sub s 1 (String.length s - 1))
-      else F.fprintf fmt "%s" s
+        Var.pp F.str_formatter v;
+        let s = F.flush_str_formatter () in
+        if s.[0] = '&' then
+          F.fprintf fmt "%s" (String.sub s 1 (String.length s - 1))
+        else F.fprintf fmt "%s" s
     | Allocsite a -> Allocsite.pp fmt a
     | Field (l, f) -> F.fprintf fmt "%a.%a" pp l Fieldname.pp f
     | Unknown -> F.fprintf fmt "Unknown"
@@ -51,13 +51,13 @@ struct
 
   let is_return = function
     | Var (Var.ProgramVar x) ->
-      Mangled.equal (Pvar.get_name x) Ident.name_return
+        Mangled.equal (Pvar.get_name x) Ident.name_return
     | _ -> false
 end
 
 module PowLoc =
 struct
-  include AbstractDomain.FiniteSet(PrettyPrintable.MakePPSet(Loc))
+  include AbstractDomain.FiniteSet(Loc)
 
   let bot = empty
   let is_bot = is_empty

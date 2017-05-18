@@ -9,7 +9,10 @@
 
 open! IStd
 
-module Domain = AbstractDomain.FiniteSet(Pvar.Set)
+module Domain = AbstractDomain.FiniteSet(struct
+    include Pvar
+    let pp = pp Pp.text
+  end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG

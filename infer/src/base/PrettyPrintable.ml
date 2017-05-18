@@ -48,17 +48,6 @@ module MakePPSet (Ord : PrintableOrderedType) = struct
     pp_collection ~pp_item:pp_element fmt (elements s)
 end
 
-module MakePPCompareSet
-    (Ord : sig include PrintableOrderedType val compare_pp : t -> t -> int end) = struct
-  include Caml.Set.Make(Ord)
-
-  let pp_element = Ord.pp
-
-  let pp fmt s =
-    let elements_alpha = List.sort ~cmp:Ord.compare_pp (elements s) in
-    pp_collection ~pp_item:pp_element fmt elements_alpha
-end
-
 module MakePPMap (Ord : PrintableOrderedType) = struct
   include Caml.Map.Make(Ord)
 

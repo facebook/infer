@@ -67,8 +67,8 @@ module Pair (Domain1 : S) (Domain2 : S) : S with type astate = Domain1.astate * 
 
 (** Lift a set to a powerset domain ordered by subset. The elements of the set should be drawn from
     a *finite* collection of possible values, since the widening operator here is just union. *)
-module FiniteSet (Set : PrettyPrintable.PPSet) : sig
-  include PrettyPrintable.PPSet with type t = Set.t and type elt = Set.elt
+module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) : sig
+  include (module type of PrettyPrintable.MakePPSet(Element))
   include WithBottom with type astate = t
 end
 
@@ -80,9 +80,9 @@ end
 
 (** Map domain ordered by union over the set of bindings, so the bottom element is the empty map.
     Every element implicitly maps to bottom unless it is explicitly bound to something else *)
-module Map (Map : PrettyPrintable.PPMap) (ValueDomain : S) : sig
-  include PrettyPrintable.PPMap with type 'a t = 'a Map.t and type key = Map.key
-  include WithBottom with type astate = ValueDomain.astate Map.t
+module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) : sig
+  include (module type of PrettyPrintable.MakePPMap(Key))
+  include WithBottom with type astate = ValueDomain.astate t
 end
 
 (** Map domain ordered by intersection over the set of bindings, so the top element is the empty

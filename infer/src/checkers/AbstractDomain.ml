@@ -136,8 +136,8 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
     F.fprintf fmt "(%a, %a)" Domain1.pp astate1 Domain2.pp astate2
 end
 
-module FiniteSet (S : PrettyPrintable.PPSet) = struct
-  include S
+module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) = struct
+  include PrettyPrintable.MakePPSet(Element)
   type astate = t
 
   let (<=) ~lhs ~rhs =
@@ -172,7 +172,8 @@ module InvertedSet (S : PrettyPrintable.PPSet) = struct
     join prev next
 end
 
-module Map (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
+module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = struct
+  module M = PrettyPrintable.MakePPMap(Key)
   include M
   type astate = ValueDomain.astate M.t
 

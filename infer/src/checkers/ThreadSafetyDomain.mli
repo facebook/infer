@@ -101,14 +101,12 @@ module AccessPrecondition : sig
   val unprotected : t
 
   val pp : F.formatter -> t -> unit
-
-  module Map : PrettyPrintable.PPMap with type key = t
 end
 
 (** map of access precondition |-> set of accesses. the map should hold all accesses to a
     possibly-unowned access path *)
 module AccessDomain : sig
-  include module type of AbstractDomain.Map (AccessPrecondition.Map) (PathDomain)
+  include module type of AbstractDomain.Map (AccessPrecondition) (PathDomain)
 
   (* add the given (access, precondition) pair to the map *)
   val add_access : AccessPrecondition.t -> TraceElem.t -> astate -> astate

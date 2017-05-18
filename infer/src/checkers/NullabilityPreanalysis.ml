@@ -14,19 +14,13 @@ open! IStd
 module F = Format
 module L = Logging
 
-type t = Fieldname.t * Typ.t [@@deriving compare]
+module FieldsAssignedInConstructors =
+  AbstractDomain.FiniteSet(struct
+    type t = Fieldname.t * Typ.t [@@deriving compare]
 
-let pp fmt (fieldname, typ) =
-  F.fprintf fmt "(%a, %a)" Fieldname.pp fieldname (Typ.pp_full Pp.text) typ
-
-module DomainSet =
-  PrettyPrintable.MakePPSet(struct
-    type nonrec t = t
-    let compare = compare
-    let pp = pp
+    let pp fmt (fieldname, typ) =
+      F.fprintf fmt "(%a, %a)" Fieldname.pp fieldname (Typ.pp_full Pp.text) typ
   end)
-
-module FieldsAssignedInConstructors = AbstractDomain.FiniteSet(DomainSet)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
@@ -94,7 +88,7 @@ let add_nonnull_to_fields fields tenv =
                  ~fields: fields_with_annot ~statics ~supers ~methods ~annots typ_name)
          | None -> ())
     | None -> () in
-  DomainSet.iter add_nonnull_to_field fields
+  FieldsAssignedInConstructors.iter add_nonnull_to_field fields
 
 let analysis cfg tenv =
   let initial = FieldsAssignedInConstructors.empty in

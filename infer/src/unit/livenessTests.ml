@@ -42,7 +42,7 @@ let tests =
     ];
     "iterative_live",
     [
-      invariant "{ &b, &d, &f }";
+      invariant "{ &b, &f, &d }";
       id_assign_var "e" "f";
       invariant "{ &b, &d }";
       id_assign_var "c" "d";
@@ -91,7 +91,7 @@ let tests =
     ];
     "call_params_live",
     [
-      invariant "{ &a, &b, &c }";
+      invariant "{ &b, &a, &c }";
       call_unknown_no_ret ["a"; "b"; "c";]
     ];
     "dead_after_call_with_retval",

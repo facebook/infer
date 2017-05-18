@@ -9,13 +9,13 @@
 
 open! IStd
 
-module VarNames = PrettyPrintable.MakePPSet(String)
+module VarNames = AbstractDomain.FiniteSet(String)
 
 module BottomSiofTrace = AbstractDomain.BottomLifted(SiofTrace)
 
 include AbstractDomain.Pair
     (BottomSiofTrace)
-    (AbstractDomain.FiniteSet(VarNames))
+    (VarNames)
 
 (** group together procedure-local accesses *)
 let normalize ((trace, initialized) as astate) = match trace with

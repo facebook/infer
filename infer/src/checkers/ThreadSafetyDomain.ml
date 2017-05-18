@@ -173,16 +173,10 @@ module AccessPrecondition = struct
     | Protected -> F.fprintf fmt "Protected"
     | Unprotected (Some index) -> F.fprintf fmt "Unprotected(%d)" index
     | Unprotected None -> F.fprintf fmt "Unprotected"
-
-  module Map = PrettyPrintable.MakePPMap(struct
-      type nonrec t = t
-      let compare = compare
-      let pp = pp
-    end)
 end
 
 module AccessDomain = struct
-  include AbstractDomain.Map (AccessPrecondition.Map) (PathDomain)
+  include AbstractDomain.Map (AccessPrecondition) (PathDomain)
 
   let add_access precondition access_path t =
     let precondition_accesses =

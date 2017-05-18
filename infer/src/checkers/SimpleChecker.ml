@@ -46,13 +46,12 @@ module Make (Spec : Spec) : S = struct
   module Domain = struct
     include
       AbstractDomain.FiniteSet
-        (PrettyPrintable.MakePPSet(
-          struct
-            type t = Spec.astate
-            let compare = Spec.compare
-            let pp _ _ = ()
-          end)
-        )
+        (struct
+          type t = Spec.astate
+          let compare = Spec.compare
+          let pp _ _ = ()
+        end)
+
 
     let widen ~prev ~next ~num_iters =
       let iters_befor_timeout = 1000 in

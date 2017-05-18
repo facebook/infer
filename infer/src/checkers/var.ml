@@ -28,10 +28,6 @@ let to_exp = function
   | ProgramVar pvar -> Exp.Lvar pvar
   | LogicalVar id -> Exp.Var id
 
-let compare_alpha v1 v2 = match v1, v2 with
-  | ProgramVar pv1, ProgramVar pv2 -> Pvar.compare_alpha pv1 pv2
-  | _ -> compare v1 v2
-
 let pp fmt = function
   | ProgramVar pv -> (Pvar.pp Pp.text) fmt pv
   | LogicalVar id -> (Ident.pp Pp.text) fmt id
@@ -39,12 +35,5 @@ let pp fmt = function
 module Map = PrettyPrintable.MakePPMap(struct
     type nonrec t = t
     let compare = compare
-    let pp = pp
-  end)
-
-module Set = PrettyPrintable.MakePPCompareSet(struct
-    type nonrec t = t
-    let compare = compare
-    let compare_pp = compare_alpha
     let pp = pp
   end)

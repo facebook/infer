@@ -95,7 +95,7 @@ module BackwardCfg = ProcCfg.OneInstrPerNode(ProcCfg.Backward(ProcCfg.Exceptiona
 
 module LivenessAnalysis = AbstractInterpreter.Make (BackwardCfg) (Liveness.TransferFunctions)
 
-module VarDomain = AbstractDomain.FiniteSet(Var.Set)
+module VarDomain = Liveness.Domain
 
 (** computes the non-nullified reaching definitions at the end of each node by building on the
     results of a liveness analysis to be precise, what we want to compute is:
@@ -208,7 +208,7 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
         match NullifyAnalysis.extract_post (ProcCfg.Exceptional.id node) nullify_inv_map with
         | Some (_, to_nullify) ->
             let pvars_to_nullify, ids_to_remove =
-              Var.Set.fold
+              VarDomain.fold
                 (fun var (pvars_acc, ids_acc) -> match Var.to_exp var with
                    (* we nullify all address taken variables at the end of the procedure *)
                    | Exp.Lvar pvar when not (AddressTaken.Domain.mem pvar address_taken_vars) ->

@@ -116,16 +116,7 @@ struct
     = fun arr1 arr2 -> { arr1 with offset = Itv.prune_ne arr1.offset arr2.offset }
 end
 
-module PPMap =
-struct
-  include PrettyPrintable.MakePPMap (Allocsite)
-
-  let pp ~pp_value fmt m =
-    let pp_item fmt (k, v) = F.fprintf fmt "(%a, %a)" pp_key k pp_value v in
-    PrettyPrintable.pp_collection ~pp_item fmt (bindings m)
-end
-
-include AbstractDomain.Map (PPMap) (ArrInfo)
+include AbstractDomain.Map (Allocsite) (ArrInfo)
 
 let bot : astate
   = empty

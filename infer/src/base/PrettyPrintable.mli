@@ -35,12 +35,4 @@ end
 
 module MakePPSet (Ord : PrintableOrderedType) : (PPSet with type elt = Ord.t)
 
-(** Use a comparison function to determine the order of the elements printed *)
-module MakePPCompareSet
-    (Ord : sig
-       include PrintableOrderedType
-       val compare_pp : t -> t -> int
-     end)
-  : (PPSet with type elt = Ord.t)
-
 module MakePPMap (Ord : PrintableOrderedType) : (PPMap with type key = Ord.t)
