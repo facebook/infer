@@ -190,7 +190,6 @@ val calls_csv : string option
 (** directory where the results of the capture phase are stored *)
 val captured_dir : string
 
-val checkers : bool
 val checkers_repeated_calls : bool
 val clang_biniou_file : string option
 val clang_frontend_action_string : string
