@@ -100,4 +100,8 @@
 - (unsigned int**)m24;
 - (A*)m25;
 - (ThisIsAVeryLongName*)m26;
+- (void)m26:(int)p1
+     pname2:(float)p2
+     pname3:(ThisIsAVeryLongName*)p3
+     pname4:(A*)p4;
 @end

@@ -20,6 +20,7 @@ type transitions =
   | Body (* decl to stmt *)
   | InitExpr (* decl to stmt *)
   | Super (* decl to decl *)
+  | Parameters (* decl to decl *)
   | Cond
   | PointerToDecl (* stmt to decl *)
 
@@ -97,7 +98,7 @@ val eval_formula : t -> ast_node -> CLintersContext.context -> bool
 
 val save_dotty_when_in_debug_mode : SourceFile.t -> unit
 
-val next_state_via_transition : ast_node -> transitions option -> ast_node option
+val next_state_via_transition : ast_node -> transitions option -> ast_node list
 
 val create_ctl_evaluation_tracker : SourceFile.t -> unit
 

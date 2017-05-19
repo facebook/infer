@@ -47,9 +47,9 @@ let tag_name_of_node an =
 
 let decl_ref_or_selector_name an =
   match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
-  | Some (Ctl_parser_types.Decl ObjCMethodDecl _ as decl_an) ->
+  | [Ctl_parser_types.Decl ObjCMethodDecl _ as decl_an] ->
       "The selector " ^ (Ctl_parser_types.ast_node_name decl_an)
-  | Some (Ctl_parser_types.Decl _ as decl_an) ->
+  | [Ctl_parser_types.Decl _ as decl_an] ->
       "The reference " ^ (Ctl_parser_types.ast_node_name decl_an)
   | _ -> failwith("decl_ref_or_selector_name must be called with a DeclRefExpr \
                    or an ObjCMessageExpr, but got " ^ (tag_name_of_node an))
@@ -62,7 +62,7 @@ let iphoneos_target_sdk_version _ =
 let available_ios_sdk an =
   let open Ctl_parser_types in
   match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
-  | Some Decl decl ->
+  | [Decl decl] ->
       (match CPredicates.get_available_attr_ios_sdk (Decl decl) with
        | Some version -> version
        | None -> "")

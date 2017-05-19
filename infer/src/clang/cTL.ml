@@ -20,6 +20,7 @@ type transitions =
   | Body (** decl to stmt *)
   | InitExpr (** decl to stmt *)
   | Super (** decl to decl *)
+  | Parameters (** decl to decl *)
   | Cond
   | PointerToDecl (** stmt to decl *)
 
@@ -96,6 +97,7 @@ module Debug = struct
       | Body -> Format.pp_print_string fmt "Body"
       | InitExpr -> Format.pp_print_string fmt "InitExpr"
       | Super -> Format.pp_print_string fmt "Super"
+      | Parameters -> Format.pp_print_string fmt "Parameters"
       | Cond -> Format.pp_print_string fmt "Cond"
       | PointerToDecl -> Format.pp_print_string fmt "PointerToDecl" in
     match trans_opt with
@@ -537,25 +539,25 @@ let transition_decl_to_stmt d trs =
     | Some InitExpr, EnumConstantDecl (_, _, _, ecdi) -> ecdi.ecdi_init_expr
     | _, _ -> None in
   match temp_res with
-  | Some st -> Some (Stmt st)
-  | _ -> None
+  | Some st -> [Stmt st]
+  | _ -> []
 
 let transition_decl_to_decl_via_super d =
   let decl_opt_to_ast_node_opt d_opt =
     match d_opt with
-    | Some d' -> Some (Decl d')
-    | None -> None in
+    | Some d' -> [Decl d']
+    | None -> [] in
   let do_ObjCImplementationDecl d =
     match CAst_utils.get_impl_decl_info d with
     | Some idi ->
         decl_opt_to_ast_node_opt (CAst_utils.get_super_ObjCImplementationDecl idi)
-    | None -> None in
+    | None -> [] in
   match d with
   | Clang_ast_t.ObjCImplementationDecl _ ->
       do_ObjCImplementationDecl d
   | Clang_ast_t.ObjCInterfaceDecl (_, _, _, _, idi) ->
       decl_opt_to_ast_node_opt (CAst_utils.get_decl_opt_with_decl_ref idi.otdi_super)
-  | _ -> None
+  | _ -> []
 
 let transition_stmt_to_stmt_via_condition st =
   let open Clang_ast_t in
@@ -563,32 +565,40 @@ let transition_stmt_to_stmt_via_condition st =
   | IfStmt (_, _ :: _ :: cond :: _)
   | ConditionalOperator (_, cond:: _, _)
   | ForStmt (_, [_; _; cond; _; _])
-  | WhileStmt (_, [_; cond; _]) -> Some (Stmt cond)
-  | _ -> None
+  | WhileStmt (_, [_; cond; _]) -> [Stmt cond]
+  | _ -> []
 
 let transition_stmt_to_decl_via_pointer stmt =
   let open Clang_ast_t in
   match stmt with
   | ObjCMessageExpr (_, _, _, obj_c_message_expr_info) ->
       (match CAst_utils.get_decl_opt obj_c_message_expr_info.Clang_ast_t.omei_decl_pointer with
-       | Some decl -> Some (Decl decl)
-       | None -> None)
+       | Some decl -> [Decl decl]
+       | None -> [])
   | DeclRefExpr (_, _, _, decl_ref_expr_info) ->
       (match CAst_utils.get_decl_opt_with_decl_ref decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-       | Some decl -> Some (Decl decl)
-       | None -> None)
-  | _ -> None
+       | Some decl -> [Decl decl]
+       | None -> [])
+  | _ -> []
+
+let transition_decl_to_decl_via_parameters dec =
+  let open Clang_ast_t in
+  match dec with
+  | ObjCMethodDecl (_, _, omdi) ->
+      List.map ~f:(fun d -> Decl d) omdi.omdi_parameters
+  | _ -> []
 
 (* given a node an returns the node an' such that an transition to an' via label trans *)
 let next_state_via_transition an trans =
   match an, trans with
   | Decl d, Some Super -> transition_decl_to_decl_via_super d
+  | Decl d, Some Parameters -> transition_decl_to_decl_via_parameters d
   | Decl d, Some InitExpr
   | Decl d, Some Body -> transition_decl_to_stmt d trans
   | Stmt st, Some Cond -> transition_stmt_to_stmt_via_condition st
   | Stmt st, Some PointerToDecl ->
       transition_stmt_to_decl_via_pointer st
-  | _, _ -> None
+  | _, _ -> []
 
 (* Evaluation of formulas *)
 
@@ -628,6 +638,8 @@ let rec eval_Atomic _pred_name args an lcxt =
   | "method_return_type", [typ], an -> CPredicates.method_return_type an typ
   | "within_responds_to_selector_block", [], an ->
       CPredicates.within_responds_to_selector_block lcxt an
+  | "objc_method_has_nth_parameter_of_type", [num; typ], an ->
+      CPredicates.objc_method_has_nth_parameter_of_type an num typ
   | _ -> failwith
            ("ERROR: Undefined Predicate or wrong set of arguments: '"
             ^ pred_name ^ "'")
@@ -651,9 +663,9 @@ and eval_EF phi an lcxt trans =
 
 (* Evaluate phi on node an' such that an -l-> an'. False if an' does not exists *)
 and evaluate_on_transition phi an lcxt l =
-  match next_state_via_transition an l with
-  | Some succ -> eval_formula phi succ lcxt
-  | None -> false
+  let succs = next_state_via_transition an l in
+  List.exists ~f:(fun an' -> eval_formula phi an' lcxt) succs
+
 
 (* an, lcxt |= EX phi  <=> exists an' in Successors(st): an', lcxt |= phi
 

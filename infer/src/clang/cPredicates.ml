@@ -393,3 +393,19 @@ let within_responds_to_selector_block (cxt:CLintersContext.context) an =
            List.mem ~equal:String.equal in_selector_block named_decl_info.ni_name
        | None -> false)
   | _ -> false
+
+let objc_method_has_nth_parameter_of_type an _num _typ =
+  let open Clang_ast_t in
+  let num = match _num with
+    | ALVar.Const n -> (try
+                          int_of_string n
+                        with Failure _ -> -1)
+    | _ -> -1 in
+  match num, an, _typ with
+  | -1, _, _ -> false
+  | _, Ctl_parser_types.Decl (ObjCMethodDecl (_, _, omdi)), ALVar.Const typ ->
+      (match List.nth omdi.omdi_parameters num with
+       | Some (ParmVarDecl (_, _, qt, _)) ->
+           type_ptr_equal_type qt.qt_type_ptr typ
+       | _ -> false)
+  | _, _, _ -> false

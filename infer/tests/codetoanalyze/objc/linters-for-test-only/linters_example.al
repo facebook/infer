@@ -5,7 +5,17 @@ GLOBAL-MACROS {
   LET global_is_subclass_of(x) =
         is_class(x) HOLDS-IN-SOME-SUPERCLASS-OF  ObjCInterfaceDecl;
 
-};
+  LET parameter_of_type(x) =
+        WHEN
+          has_type(x)
+        HOLDS-IN-NODE ParmVarDecl;
+
+  LET method_has_a_parameter_with_type(x) =
+        WHEN
+          HOLDS-NEXT WITH-TRANSITION Parameters
+                (has_type(x))
+        HOLDS-IN-NODE ObjCMethodDecl;
+ };
 
 
 //Check that class A is not subclassed.
@@ -152,4 +162,24 @@ DEFINE-CHECKER TEST_VAR_TYPE_CHECK = {
 	    HOLDS-IN-NODE VarDecl;
 
   SET message = "Var has type int or long";
+};
+
+DEFINE-CHECKER TEST_PARAM_TYPE_CHECK = {
+
+  SET report_when =
+           method_has_a_parameter_with_type("REGEXP('This.+')*" );
+
+  SET message = "Found a method with a parameter of type....";
+
+};
+
+DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
+
+  SET report_when =
+    WHEN
+      objc_method_has_nth_parameter_of_type("2", "REGEXP('This.+')*")
+    HOLDS-IN-NODE ObjCMethodDecl;  
+
+  SET message = "Found a method with nth parameter of type....";
+
 };

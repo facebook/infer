@@ -192,6 +192,7 @@ transition_label:
                   | "Body" | "body" -> Some CTL.Body
                   | "InitExpr" | "initexpr" -> Some CTL.InitExpr
                   | "Cond" | "cond" -> Some CTL.Cond
+                  | "Parameters" | "parameters" -> Some CTL.Parameters
                   | "PointerToDecl" | "pointertodecl" -> Some CTL.PointerToDecl
                   | _  -> None }
   ;
