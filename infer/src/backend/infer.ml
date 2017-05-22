@@ -494,7 +494,6 @@ let infer_mode () =
   create_results_dir () ;
   (* re-set log files, as default files were in results_dir removed above *)
   if not Config.buck_cache_mode then L.set_log_file_identifier CLOpt.Run None;
-  if Config.print_builtins then Builtin.print_and_exit () ;
   if CLOpt.is_originator then L.do_out "%s@\n" Config.version_string ;
   if Config.debug_mode || Config.stats_mode then log_infer_args driver_mode ;
   if Config.dump_duplicate_symbols then reset_duplicates_file ();
@@ -545,17 +544,17 @@ let differential_mode () =
   Differential.to_files diff out_path
 
 let () =
+  if Config.print_builtins then Builtin.print_and_exit ();
   match Config.command with
   | Analyze ->
       Logging.set_log_file_identifier
         CommandLineOption.Analyze (Option.map ~f:Filename.basename Config.cluster_cmdline);
-      if Config.print_builtins then Builtin.print_and_exit ();
       if Sys.file_exists Config.results_dir <> `Yes then (
         L.err "ERROR: results directory %s does not exist@.@." Config.results_dir;
         Config.print_usage_exit ()
       );
       InferAnalyze.register_perf_stats_report ();
-      InferAnalyze.main Config.makefile_cmdline
+      execute_analyze ()
   | Clang ->
       let prog, args = match Array.to_list Sys.argv with
         | prog::args -> prog, args
