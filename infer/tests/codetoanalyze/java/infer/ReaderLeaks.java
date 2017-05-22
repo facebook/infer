@@ -11,6 +11,7 @@ package codetoanalyze.java.infer;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,6 +22,7 @@ import java.io.Reader;
 
 public class ReaderLeaks {
 
+  private void ignore(Object o) {}
 
   //Reader  tests
 
@@ -52,7 +54,7 @@ public class ReaderLeaks {
     BufferedReader reader;
     try {
       reader = new BufferedReader(new FileReader("testing.txt"));
-      reader.read();
+      ignore(reader.read());
       reader.close();
     } catch (IOException e) {
     }
@@ -62,10 +64,17 @@ public class ReaderLeaks {
     BufferedReader reader = null;
     try {
       reader = new BufferedReader(new FileReader("testing.txt"));
-      reader.read();
+      ignore(reader.read());
     } catch (IOException e) {
     } finally {
       if (reader != null) reader.close();
+    }
+  }
+
+  public void noNeedToCloseBufferReaderWrapperOk(File file) throws IOException {
+    try (InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(file))) {
+      BufferedReader reader = new BufferedReader(inputStreamReader);
+      ignore(reader.readLine());
     }
   }
 
@@ -86,7 +95,7 @@ public class ReaderLeaks {
     InputStreamReader reader = null;
     try {
       reader = new InputStreamReader(new FileInputStream("testing.txt"));
-      reader.read();
+      ignore(reader.read());
     } catch (IOException e) {
     } finally {
       if (reader != null) reader.close();
