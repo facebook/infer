@@ -51,6 +51,14 @@ LOG_FILE = 'toplevel.log'
 
 BUCK_INFER_OUT = 'infer'
 
+BUCK_OUT = 'buck-out'
+
+TRASH = '.trash'
+
+BUCK_OUT_TRASH = os.path.join(BUCK_OUT, TRASH)
+
+BUCK_OUT_GEN = os.path.join(BUCK_OUT, 'gen')
+
 
 # list of possible analyzers
 ANALYZER_INFER = 'infer'

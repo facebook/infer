@@ -13,11 +13,16 @@ from __future__ import unicode_literals
 import argparse
 import logging
 import os
+import shutil
 import subprocess
+import tempfile
 import traceback
+import time
 
 from inferlib import config, issues, utils, bucklib
 from . import util
+
+import re
 
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
@@ -74,6 +79,7 @@ class BuckAnalyzer:
     def __init__(self, args, cmd):
         self.args = args
         self.cmd = cmd
+        self.keep_going = KEEP_GOING_OPTION in self.args.Xbuck
         util.log_java_version()
         logging.info(util.run_cmd_ignore_fail(['buck', '--version']))
 
@@ -159,6 +165,45 @@ class BuckAnalyzer:
         all_results = issues.merge_reports_from_paths(report_files)
         utils.dump_json_to_path(all_results, merged_out_path)
 
+    @staticmethod
+    def _find_deps_and_merge(merged_out_path):
+        """This function is used to compute the infer-deps.txt file that
+        contains the location of the infer-out folders with the captured
+        files created by buck. This is needed when keep-going is passed
+        to buck and there are compilation failures, because in that case
+        buck doesn't create this file."""
+        infer_out_folders = []
+        start_time = time.time()
+        print('finding captured files in buck-out...')
+        for root, dirs, files in os.walk(config.BUCK_OUT_GEN):
+            regex = re.compile('.*infer-out.*')
+            folders = \
+                [os.path.join(root, d) for d in dirs if re.match(regex, d)]
+            for d in folders:
+                if d not in infer_out_folders:
+                    infer_out_folders.append(d)
+        with open(merged_out_path, 'w') as fmerged_out_path:
+            for dir in infer_out_folders:
+                fmerged_out_path.write('\t' + '\t' + dir + '\n')
+        elapsed_time = time.time() - start_time
+        print('time elapsed in finding captured files in buck-out: % 6.2fs'
+              % elapsed_time)
+
+    def _move_buck_out(self):
+        """ If keep-going is passed, we may need to compute the infer-deps
+        file with the paths to the captured files. To make sure that
+        this is done in a consistent way, we need to start the analysis
+        with an empty buck-out folder."""
+        if not os.path.exists(config.BUCK_OUT_TRASH):
+            os.makedirs(config.BUCK_OUT_TRASH)
+        tmp = tempfile.mkdtemp(
+              dir=config.BUCK_OUT_TRASH,
+              prefix=config.BUCK_OUT)
+        print('moving files in ' + config.BUCK_OUT + ' to ' + tmp)
+        for filename in os.listdir(config.BUCK_OUT):
+            if filename != config.TRASH:
+                shutil.move(os.path.join(config.BUCK_OUT, filename), tmp)
+
     def _run_buck_with_flavors(self):
         # TODO: Use buck to identify the project's root folder
         if not os.path.isfile('.buckconfig'):
@@ -181,16 +226,18 @@ class BuckAnalyzer:
             subprocess.check_call(command, env=env)
             return os.EX_OK
         except subprocess.CalledProcessError as e:
-            if KEEP_GOING_OPTION in self.args.Xbuck:
+            if self.keep_going:
                 print('Buck failed, but continuing the analysis '
                       'because --keep-going was passed')
-                return os.EX_OK
+                return -1
             else:
                 raise e
 
     def capture_with_flavors(self):
+        if self.keep_going:
+            self._move_buck_out()
         ret = self._run_buck_with_flavors()
-        if not ret == os.EX_OK:
+        if not ret == os.EX_OK and not self.keep_going:
             return ret
         result_paths = self._get_analysis_result_paths()
         merged_reports_path = os.path.join(
@@ -198,7 +245,10 @@ class BuckAnalyzer:
         merged_deps_path = os.path.join(
             self.args.infer_out, config.INFER_BUCK_DEPS_FILENAME)
         self._merge_infer_report_files(result_paths, merged_reports_path)
-        self._merge_infer_dep_files(result_paths, merged_deps_path)
+        if not ret == os.EX_OK and self.keep_going:
+            self._find_deps_and_merge(merged_deps_path)
+        else:
+            self._merge_infer_dep_files(result_paths, merged_deps_path)
         infer_out = self.args.infer_out
         json_report = os.path.join(infer_out, config.JSON_REPORT_FILENAME)
         bugs_out = os.path.join(infer_out, config.BUGS_FILENAME)
