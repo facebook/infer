@@ -1,6 +1,7 @@
 codetoanalyze/objc/linters-for-test-only/implicit_cast.c, main, 10, TEST_VAR_TYPE_CHECK, []
 codetoanalyze/objc/linters-for-test-only/implicit_cast.c, main, 11, TEST_IMPLICIT_CAST_CHECK, []
 codetoanalyze/objc/linters-for-test-only/implicit_cast.c, main, 11, TEST_VAR_TYPE_CHECK, []
+codetoanalyze/objc/linters-for-test-only/namespace.mm, Linters_dummy_method, 9, TEST_NAMESPACE_NAME, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, A_foo:, 13, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, A_foo:, 13, TEST_RETURN_METHOD, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, A_foo:, 19, TEST_BUILTIN_TYPE, []

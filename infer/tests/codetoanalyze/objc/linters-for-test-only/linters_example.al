@@ -178,8 +178,19 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
   SET report_when =
     WHEN
       objc_method_has_nth_parameter_of_type("2", "REGEXP('This.+')*")
-    HOLDS-IN-NODE ObjCMethodDecl;  
+    HOLDS-IN-NODE ObjCMethodDecl;
 
   SET message = "Found a method with nth parameter of type....";
+
+};
+
+DEFINE-CHECKER TEST_NAMESPACE_NAME = {
+
+  SET report_when =
+    WHEN
+      declaration_has_name(REGEXP("FirstNam*"))
+    HOLDS-IN-NODE NamespaceDecl;
+
+  SET message = "Found a namespace with name....";
 
 };

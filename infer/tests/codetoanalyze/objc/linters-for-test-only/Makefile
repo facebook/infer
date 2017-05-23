@@ -8,13 +8,14 @@
 TESTS_DIR = ../../..
 
 ANALYZER = linters
-CLANG_OPTIONS = -x objective-c -fobjc-arc -c
-INFER_OPTIONS = --linters-def-file linters_example.al --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-failures-allowed
+CLANG_OPTIONS = -fobjc-arc -c
+INFER_OPTIONS = --cxx --linters-def-file linters_example.al --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-failures-allowed
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \
   $(wildcard *.m) \
   $(wildcard */*.m) \
+	$(wildcard *.mm) \
 	$(wildcard *.c) \
 
 include $(TESTS_DIR)/clang.make
