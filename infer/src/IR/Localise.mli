@@ -35,7 +35,6 @@ val array_out_of_bounds_l2 : t
 val array_out_of_bounds_l3 : t
 val buffer_overrun : t
 val checkers_access_global : t
-val checkers_dead_code : t
 val checkers_immutable_cast : t
 val checkers_print_c_call : t
 val checkers_print_objc_method_calls : t
