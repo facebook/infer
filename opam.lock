@@ -28,6 +28,7 @@ ocaml-migrate-parsetree = 0.7
 ocamlbuild = 0.11.0
 ocamlfind = 1.7.1
 ounit = 2.0.0
+parmap = 1.0-rc8
 ppx_assert = 113.33.00
 ppx_bench = 113.33.00+4.03
 ppx_bin_prot = 113.33.00+4.03

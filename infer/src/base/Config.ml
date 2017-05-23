@@ -1037,6 +1037,9 @@ and icfg_dotty_outfile =
     "If set, specifies path where .dot file should be written, it overrides the path for all \
      other options that would generate icfg file otherwise"
 
+and ignore_trivial_traces = CLOpt.mk_bool
+    ~long:"ignore-trivial-traces" ~default:true "Ignore traces whose length is at most 1"
+
 and infer_cache =
   CLOpt.mk_path_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache"
     ~meta:"dir" "Select a directory to contain the infer cache (Buck and Java only)"
@@ -1778,6 +1781,7 @@ and frontend_debug = !frontend_debug
 and frontend_stats = !frontend_stats
 and headers = !headers
 and icfg_dotty_outfile = !icfg_dotty_outfile
+and ignore_trivial_traces = !ignore_trivial_traces
 and immutable_cast = !immutable_cast
 and infer_cache = !infer_cache
 and iphoneos_target_sdk_version = !iphoneos_target_sdk_version

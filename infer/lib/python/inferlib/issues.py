@@ -52,6 +52,7 @@ JSON_INDEX_TRACE_LEVEL = 'level'
 JSON_INDEX_TRACE_FILENAME = 'filename'
 JSON_INDEX_TRACE_LINE = 'line_number'
 JSON_INDEX_TRACE_DESCRIPTION = 'description'
+JSON_INDEX_TRACEVIEW_ID = 'traceview_id'
 JSON_INDEX_VISIBILITY = 'visibility'
 
 

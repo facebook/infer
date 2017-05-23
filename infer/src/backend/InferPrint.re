@@ -91,6 +91,8 @@ let get_bug_hash
   )
 };
 
+let exception_value = "exception";
+
 let loc_trace_to_jsonbug_record trace_list ekind =>
   switch ekind {
   | Exceptions.Kinfo => []
@@ -102,7 +104,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =>
           {Jsonbug_j.tag: Io_infer.Xml.tag_branch, value: Printf.sprintf "%B" cond}
         ]
       | Errlog.Exception exn_name =>
-        let res = [{Jsonbug_j.tag: Io_infer.Xml.tag_kind, value: "exception"}];
+        let res = [{Jsonbug_j.tag: Io_infer.Xml.tag_kind, value: exception_value}];
         let exn_str = Typ.Name.name exn_name;
         if (String.is_empty exn_str) {
           res
@@ -500,7 +502,8 @@ module IssuesJson = {
           dotty: error_desc_to_dotty_string key.err_desc,
           infer_source_loc: json_ml_loc,
           bug_type_hum: Localise.to_human_readable_string key.err_name,
-          linters_def_file: err_data.linters_def_file
+          linters_def_file: err_data.linters_def_file,
+          traceview_id: None
         };
         if (not !is_first_item) {
           pp ","

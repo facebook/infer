@@ -40,7 +40,7 @@ OCAMLBUILD_OPTIONS = \
   -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-34-35-39)" \
   -tag-line "<*/{,*/}*.{ml,re}{,i}>: package(ppx_compare)" \
   -tag thread \
-  -pkgs ANSITerminal,atdgen,cmdliner,core,extlib,oUnit,str,unix,xmlm,yojson,zip
+  -pkgs ANSITerminal,atdgen,cmdliner,core,extlib,oUnit,parmap,str,unix,xmlm,yojson,zip
 
 ifeq ($(ENABLE_OCAML_BINANNOT),yes)
 OCAMLBUILD_OPTIONS += -cflags -bin-annot
@@ -58,7 +58,6 @@ ifeq ($(TEST),1)
 OCAMLBUILD_OPTIONS += -cflags -warn-error,$(OCAML_FATAL_WARNINGS)
 endif
 
-
 #### Backend declarations ####
 
 INFER_MAIN = backend/infer
@@ -74,6 +73,12 @@ STACKTREE_ATDGEN_STUBS = $(addprefix $(STACKTREE_ATDGEN_STUB_BASE), $(ATDGEN_SUF
 INFERPRINT_ATDGEN_STUB_BASE = backend/jsonbug
 INFERPRINT_ATDGEN_STUB_ATD = $(INFERPRINT_ATDGEN_STUB_BASE).atd
 INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(ATDGEN_SUFFIXES))
+
+#### InferCreateTraceViewLinks declarations ####
+
+FACEBOOK_DIR = facebook
+INFER_CREATE_TRACEVIEW_LINKS_MODULE = InferCreateTraceViewLinks
+INFER_CREATE_TRACEVIEW_LINKS_MAIN = $(FACEBOOK_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 
 ### InferUnit declarations ###
 
@@ -141,6 +146,9 @@ OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
 OCAMLBUILD_CONFIG = $(OCAMLBUILD_BASE)
 # list of ocamlbuild targets common to all build targets -- native version
 INFER_CONFIG_TARGETS = $(INFER_MAIN).native
+ifeq ($(IS_FACEBOOK_TREE),yes)
+INFER_CONFIG_TARGETS += $(INFER_CREATE_TRACEVIEW_LINKS_MAIN).native
+endif
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 OCAMLBUILD_CONFIG += $(JAVA_OCAMLBUILD_OPTIONS)
@@ -194,6 +202,11 @@ $(INFER_BIN_ALIASES): Makefile
 $(INFER_BIN).native: $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN_ALIASES)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).native $(INFER_BIN).native
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).native \
+		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
+endif
+
 
 .PHONY: infer
 infer: $(INFER_BIN).native
@@ -214,6 +227,10 @@ $(INFER_BIN).byte: $(INFER_BUILD_DIR)/$(INFER_MAIN).byte $(INFER_BIN_ALIASES)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).byte $(INFER_BIN).byte
 ifeq ($(TEST),1)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).byte $(INFERUNIT_BIN)
+endif
+ifeq ($(IS_FACEBOOK_TREE),yes)
+	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).byte \
+		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
 endif
 
 .PHONY: byte
@@ -252,6 +269,9 @@ rei:
 	$(SCRIPT_DIR)/refmt.sh -parse ml -print re $< > $*.rei
 
 roots:=Infer StatsAggregator
+ifeq ($(IS_FACEBOOK_TREE),yes)
+roots += $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
+endif
 clusters:=base clang java IR
 
 ml_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.ml\(i\)*')
@@ -395,5 +415,6 @@ clean:
 	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
+	$(REMOVE) $(INFER_CREATE_TRACEVIEW_LINKS_BIN)
 	$(REMOVE) mod_dep.dot
 	$(REMOVE) mod_dep.pdf

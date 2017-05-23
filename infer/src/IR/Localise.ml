@@ -164,6 +164,21 @@ module Tags = struct
   let get tags tag = List.Assoc.find ~equal:String.equal tags tag
   let tag_value_records_of_tags tags =
     List.map ~f:(fun (tag, value) -> {Jsonbug_t.tag; value}) tags
+
+  let tags_of_tag_value_records (tag_value_records: Jsonbug_t.tag_value_record list) =
+    List.map ~f:(fun {Jsonbug_t.tag; value} -> (tag, value)) tag_value_records
+
+  let lines_of_tags (tags: t) =
+    let line_tags = String.Set.of_list [
+        dereferenced_line;
+        call_line;
+        assigned_line;
+        alloc_line;
+        accessed_line;
+        dealloc_line;
+      ] in
+    List.filter_map ~f:(fun (tag, value) ->
+        if String.Set.mem line_tags tag then Some (int_of_string value) else None) tags
 end
 
 type error_desc = {

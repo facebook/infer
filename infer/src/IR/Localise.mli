@@ -107,6 +107,12 @@ module Tags : sig
 
   (** convert error description's tags to atd-serializable format *)
   val tag_value_records_of_tags: t -> Jsonbug_t.tag_value_record list
+
+  (* convert atd-serializable format to error description's tags *)
+  val tags_of_tag_value_records: Jsonbug_t.tag_value_record list -> t
+
+  (* collect all lines from tags *)
+  val lines_of_tags: t -> int list
 end
 
 (** description field of error messages *)

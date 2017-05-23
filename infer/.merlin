@@ -6,6 +6,7 @@ PKG cmdliner
 PKG core
 PKG javalib
 PKG oUnit
+PKG parmap
 PKG ppx_compare
 PKG ptrees
 PKG sawja

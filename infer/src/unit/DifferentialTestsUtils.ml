@@ -49,7 +49,8 @@ let create_fake_jsonbug
     dotty;
     infer_source_loc;
     bug_type_hum = kind;
-    linters_def_file
+    linters_def_file;
+    traceview_id = None;
   }
 
 let pp_diff_of_int_list group_name fmt (expected, actual) =

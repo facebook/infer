@@ -240,6 +240,7 @@ val frontend_stats : bool
 val generated_classes : string option
 val headers : bool
 val icfg_dotty_outfile : string option
+val ignore_trivial_traces : bool
 val immutable_cast : bool
 val infer_cache : string option
 val iphoneos_target_sdk_version : string option

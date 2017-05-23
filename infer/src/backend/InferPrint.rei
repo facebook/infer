@@ -8,6 +8,8 @@
  */
 open! IStd;
 
+let exception_value: string;
+
 let main: report_csv::option string => report_json::option string => unit;
 
 let main_from_config: unit => unit;
