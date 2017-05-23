@@ -14,6 +14,7 @@ module L = Logging
 
 module SourceKind = struct
   type t =
+    | Endpoint (** source originating from an endpoint *)
     | EnvironmentVariable (** source that was read from an environment variable *)
     | File (** source that was read from a file *)
     | Other (** for testing or uncategorized sources *)
@@ -23,6 +24,7 @@ module SourceKind = struct
   let unknown = Unknown
 
   let of_string = function
+    | "Endpoint" -> Endpoint
     | "EnvironmentVariable" -> EnvironmentVariable
     | "File" -> File
     | _ -> Other
@@ -32,6 +34,8 @@ module SourceKind = struct
       ~f:(fun { QuandaryConfig.Source.procedure; kind; index; } ->
           QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kind, index)
       (QuandaryConfig.Source.of_json Config.quandary_sources)
+
+  let endpoints = String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)
 
   (* return Some(source kind) if [procedure_name] is in the list of externally specified sources *)
   let get_external_source qualified_pname =
@@ -79,11 +83,22 @@ module SourceKind = struct
         failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname
 
   let get_tainted_formals pdesc _ =
-    Source.all_formals_untainted pdesc
+    match Procdesc.get_proc_name pdesc with
+    | (Typ.Procname.ObjC_Cpp objc) as pname ->
+        let qualified_pname =
+          F.sprintf "%s::%s"
+            (Typ.Procname.objc_cpp_get_class_name objc)
+            (Typ.Procname.get_method pname) in
+        if String.Set.mem endpoints qualified_pname
+        then List.map ~f:(fun (name, typ) -> name, typ, Some Endpoint) (Procdesc.get_formals pdesc)
+        else Source.all_formals_untainted pdesc
+    | _ ->
+        Source.all_formals_untainted pdesc
 
   let pp fmt kind =
     F.fprintf fmt
       (match kind with
+       | Endpoint -> "Endpoint"
        | EnvironmentVariable -> "EnvironmentVariable"
        | File -> "File"
        | Other -> "Other"
@@ -176,10 +191,10 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | (EnvironmentVariable | File), ShellExec ->
+      | (Endpoint | EnvironmentVariable | File), ShellExec ->
           (* untrusted data flowing to exec *)
           true
-      | (EnvironmentVariable | File), Allocation ->
+      | (Endpoint | EnvironmentVariable | File), Allocation ->
           (* untrusted data flowing to memory allocation *)
           true
       | _, (Allocation | Other | ShellExec) when Source.is_footprint source ->

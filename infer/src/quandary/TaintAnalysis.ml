@@ -112,12 +112,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       | exception (Failure _) ->
           failwithf "Bad source specification: index %d out of bounds" index
 
-    let endpoints = String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)
+    let endpoints =
+      lazy (String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints))
 
     let is_endpoint source =
       match CallSite.pname (TraceDomain.Source.call_site source) with
       | Typ.Procname.Java java_pname ->
-          String.Set.mem endpoints (Typ.Procname.java_get_class_name java_pname)
+          String.Set.mem (Lazy.force endpoints) (Typ.Procname.java_get_class_name java_pname)
       | _ ->
           false
 

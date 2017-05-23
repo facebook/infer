@@ -56,5 +56,8 @@
       "kind": "Other",
       "index": "1"
     }
+  ],
+  "quandary-endpoints": [
+    "basics::Obj::endpoint"
   ]
 }

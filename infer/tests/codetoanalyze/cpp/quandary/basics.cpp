@@ -25,6 +25,11 @@ class Obj {
   void string_sink(std::string) {}
   std::string field1;
   std::string field2;
+
+  void endpoint(std::string source1, void* source2) {
+    this->string_sink(source1);
+    __infer_taint_sink(source2);
+  }
 };
 
 void* returnSource() { return __infer_taint_source(); }
