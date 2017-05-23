@@ -375,7 +375,7 @@ let analyze driver_mode =
         false, false
     | _, (CaptureOnly | CompileOnly) ->
         false, false
-    | _, (BiAbduction | Checkers | Crashcontext | Eradicate | Tracing) ->
+    | _, (BiAbduction | Checkers | Crashcontext | Eradicate) ->
         true, true
     | _, Linters ->
         false, true in

@@ -18,8 +18,7 @@ module CLOpt = CommandLineOption
 module F = Format
 
 type analyzer =
-  | BiAbduction | CaptureOnly | CompileOnly | Eradicate | Checkers | Tracing | Crashcontext
-  | Linters
+  | BiAbduction | CaptureOnly | CompileOnly | Eradicate | Checkers | Crashcontext | Linters
 [@@deriving compare]
 
 let equal_analyzer = [%compare.equal : analyzer]
@@ -27,7 +26,6 @@ let equal_analyzer = [%compare.equal : analyzer]
 let string_to_analyzer = [
   "capture", CaptureOnly; "checkers", Checkers; "compile", CompileOnly;
   "crashcontext", Crashcontext; "eradicate", Eradicate; "infer", BiAbduction; "linters", Linters;
-  "tracing", Tracing;
 ]
 
 let string_of_analyzer a =
@@ -487,7 +485,7 @@ and analyzer =
   let () = match BiAbduction with
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
-    | BiAbduction | CaptureOnly | CompileOnly | Eradicate | Checkers | Tracing | Crashcontext
+    | BiAbduction | CaptureOnly | CompileOnly | Eradicate | Checkers | Crashcontext
     | Linters -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
     ~in_help:CLOpt.[Analyze, manual_generic; Run, manual_generic]
@@ -1416,11 +1414,10 @@ and trace_rearrange =
   CLOpt.mk_bool ~deprecated:["trace_rearrange"] ~long:"trace-rearrange"
     "Detailed tracing information during prop re-arrangement operations"
 
-(** Report error traces for runtime exceptions (Java only): generate preconditions for runtime
-    exceptions in Java and report errors for public methods which throw runtime exceptions *)
 and tracing =
   CLOpt.mk_bool ~deprecated:["tracing"] ~long:"tracing"
-    ""
+    "Report error traces for runtime exceptions (Java only): generate preconditions for runtime\
+     exceptions in Java and report errors for public methods which throw runtime exceptions"
 
 and type_size =
   CLOpt.mk_bool ~deprecated:["type_size"] ~long:"type-size"
@@ -1612,7 +1609,6 @@ let post_parsing_initialization command_opt =
    | Some BiAbduction -> biabduction := true
    | Some Crashcontext -> crashcontext := true
    | Some Eradicate -> eradicate := true
-   | Some Tracing -> biabduction := true; tracing := true
    | Some (CaptureOnly | CompileOnly | Checkers | Linters) -> ()
    | None ->
        let open CLOpt in
@@ -1878,8 +1874,7 @@ let clang_frontend_action_string =
 let dynamic_dispatch =
   let default_mode =
     match analyzer with
-    | BiAbduction
-    | Tracing -> `Lazy
+    | BiAbduction -> `Lazy
     | Checkers when quandary -> `Sound
     | _ -> `None in
   Option.value ~default:default_mode !dynamic_dispatch

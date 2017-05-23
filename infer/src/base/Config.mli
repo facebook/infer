@@ -16,8 +16,7 @@ module CLOpt = CommandLineOption
     time by system calls, environment variables, or command line options *)
 
 type analyzer =
-  | BiAbduction | CaptureOnly | CompileOnly | Eradicate | Checkers | Tracing | Crashcontext
-  | Linters
+  | BiAbduction | CaptureOnly | CompileOnly | Eradicate | Checkers | Crashcontext | Linters
 [@@deriving compare]
 
 val equal_analyzer : analyzer -> analyzer -> bool

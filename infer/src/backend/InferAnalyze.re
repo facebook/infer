@@ -21,9 +21,7 @@ let analyze_exe_env_tasks cluster exe_env :Tasks.t => {
   L.log_progress_file ();
   Specs.clear_spec_tbl ();
   Random.self_init ();
-  let biabduction_only =
-    Config.equal_analyzer Config.analyzer Config.BiAbduction ||
-    Config.equal_analyzer Config.analyzer Config.Tracing;
+  let biabduction_only = Config.equal_analyzer Config.analyzer Config.BiAbduction;
   if biabduction_only {
     /* run the biabduction analysis only */
     Tasks.create
