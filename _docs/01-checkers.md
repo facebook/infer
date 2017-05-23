@@ -16,7 +16,7 @@ project, but *intra-procedurally*, not inter-procedurally.
 The checkers can be run by adding the option `-a checkers` to the analysis command as in this example:
 
 ```bash
-infer -a checkers -- javac Test.java
+infer run -a checkers -- javac Test.java
 ```
 
 At the moment, we have the checker

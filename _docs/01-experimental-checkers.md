@@ -5,7 +5,7 @@ layout: docs
 permalink: /docs/experimental-checkers.html
 ---
 
-Infer contains a number of experimental checkers that can be run using just like the normal infer analysis `infer -a <checker name> -- <your build command>`. 
+Infer contains a number of experimental checkers that can be run using just like the normal infer analysis `infer run -a <checker name> -- <your build command>`. 
 `checker_name` can be `threadsafety`, `bufferoverrun`, or `quandary`. We'll explain the capabilities of each experimental checker, its level of maturity (on a scale including "in development", "medium", and "probably deployable"), and the language(s) it targets.
 
 # Thread-safety

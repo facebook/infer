@@ -18,20 +18,18 @@ results of the analysis. By default this directory is called
 ```
 infer-out
 ├── captured/
+├── log/
 ├── specs/
-├── ...
 ├── bugs.txt
-├── procs.csv
-├── report.csv
 ├── report.json
-├── stats.json
-└── toplevel.log
+├── toplevel.log
+└── ...
 ```
 
 - `captured/` contains information for each file analyzed by Infer. See [below](docs/advanced-features.html#captured-folder) for more information.
 - `specs/` contains the [specs](docs/advanced-features.html#print-the-specs) of each function that was analyzed, as inferred by Infer.
-- `bugs.txt`, `report.csv`, and `report.json` contain the Infer reports in three different formats.
-- `toplevel.log`, `procs.csv`, and `stats.json` contain debug information about the run.
+- `log/` and toplevel.log contains logs
+- `bugs.txt` and `report.json` contain the Infer reports in text and JSON formats
 - there are other folders reserved for Infer's internal workings
 
 ### Captured folder
@@ -48,11 +46,7 @@ The files `.cfg`, `.cg` and `.tenv` contain the intermediate representation of t
 
 ## Debug mode
 
-With the debug option enabled `infer --debug -- <build command>`, Infer outputs debug information. When using `make` or `clang`, one needs an extra debug argument for the frontend:
-
-```bash
-infer --frontend-debug --debug -- make example.c
-```
+With the debug option enabled `infer run --debug -- <build command>`, Infer outputs debug information in infer-out/log/. The option `--stats` provides only light debug information, and `--print-logs` outputs every message on the console as well as in the log files.
 
 In each captured folder, we obtain the file `icfg.dot`, which is the graphical representation of the file `.cfg` and the file
 `call_graph.dot`, that is the graphical representation of the call graph.
@@ -62,7 +56,7 @@ Moreover, we obtain an html page for each captured file inside `infer-out/captur
 
 ## Print the specs
 
-It is also possible to print the specs created by Infer using the command `InferPrint`. You can print one particular spec that corresponds to one method, or you can print all the specs in the results directory. Let us look at an example:
+It is also possible to print the specs created by Infer using the subcommand `infer report`. You can print one particular spec that corresponds to one method, or you can print all the specs in the results directory. Let us look at an example:
 
 ```java
 class Hello {
@@ -76,13 +70,13 @@ class Hello {
 We run Infer on this example with:
 
 ```bash
-	infer -- javac Hello.java
+infer run -- javac Hello.java
 ```
 
 Infer saves the spec for the method `setX` in `infer-out/specs` and we can print it with the command:
 
 ```bash
-	InferPrint infer-out/specs/Hello.setX{98B5}:void.specs
+infer report infer-out/specs/Hello.setX{98B5}:void.specs
 ```
 
 The convention for method names in Java is `<class name>.<method name>`. This outputs the following:
@@ -115,7 +109,7 @@ which expresses the fact that `this` needs to be allocated at the beginning of t
 Moreover, you can print all the specs in the results directory with the command:
 
 ```bash
-InferPrint
+infer report
 ```
 
 

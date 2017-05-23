@@ -36,12 +36,6 @@ Freenode.net.
 
 ## Troubleshooting
 
-### I downloaded the release but I get "Failed to run InferAnalyze binary, exiting" when running `infer`
-
-You need to compile Infer. Follow the instructions [here](http://fbinfer.com/docs/getting-started.html).
-
-The release only contains a pre-compiled clang and clang plugin, not a pre-compiled Infer.
-
 ### Infer cannot analyze my CocoaPods project
 
 In the presence of CocoaPods, you should use xcworkspace and not
@@ -49,10 +43,10 @@ xcodeproj in the compilation command that you supply to Infer. Here is
 an example you can adapt to your project:
 
 ```sh
-infer -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld
+infer run -- xcodebuild -workspace HelloWorld.xcworkspace -scheme HelloWorld
 ```
 
-### "infer -- \<build command\>" fails during a linking step
+### "infer [options] -- \<build command\>" fails during a linking step
 
 The linker will sometimes not work if files have been compiled using a
 different compiler, such as the one Infer uses [under the
@@ -62,7 +56,7 @@ A workaround consists in setting the `LD` environment variable to a
 dummy linker, for instance:
 
 ```
-LD=/bin/true infer -- <build command>
+LD=/bin/true infer [options] -- <build command>
 ```
 
 ### I get a compilation error involving PCH files when running Infer
@@ -103,7 +97,7 @@ See also [this GitHub issue](https://github.com/facebook/infer/issues/22).
 You need to manually disable linters to run Infer. For instance
 
 ```sh
-infer -- gradle build -x lint
+infer run -- gradle build -x lint
 ```
 
 See also [this GitHub issue](https://github.com/facebook/infer/issues/58).
@@ -116,13 +110,13 @@ your project to use Infer's version of clang whenever you want Infer
 to run:
 
 ```sh
-infer -- cmake .
-infer -- make
+infer compile -- cmake .
+infer run -- make
 ```
 
 See also [this GitHub issue](https://github.com/facebook/infer/issues/25).
 
-### Running "infer -- \<build command\>" fails with some other error
+### Running "infer [options] -- \<build command\>" fails with some other error
 
 Please make sure that:
 

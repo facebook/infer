@@ -223,7 +223,7 @@ public class Server {
 - run the analysis again:
 
     ```bash
-    infer -- javac Test.java
+    infer run -- javac Test.java
     ```
 
 Now it should no longer report a null pointer exception.

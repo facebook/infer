@@ -11,7 +11,7 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
 The linters are run by default when you run Infer. However, there is a way of running only the linters, which is faster than also running Infer. This is by adding the option `-a linters` to the analysis command as in this example:
 
 ```bash
-infer -a linters -- clang -c Test.m
+infer run -a linters -- clang -c Test.m
 ```
 
 **AL: a Domain Specific Language to write AST linters**
@@ -42,9 +42,4 @@ We can write this property in the following way:
   SET suggestion = "In general delegates should be declared weak or assign";
   
   };
-  ```
-  
-  
-  
-  
-  
+```

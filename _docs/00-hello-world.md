@@ -42,7 +42,7 @@ directory as
 [`Hello.java`](https://github.com/facebook/infer/tree/master/examples/Hello.java).
 
 ```bash
-infer -- javac Hello.java
+infer run -- javac Hello.java
 ```
 
 You should see the following error reported by Infer.
@@ -90,7 +90,7 @@ directory as
 [`Hello.m`](https://github.com/facebook/infer/tree/master/examples/Hello.m).
 
 ```bash
-infer -- clang -c Hello.m
+infer run -- clang -c Hello.m
 ```
 
 You should see the following error reported by Infer.
@@ -131,7 +131,7 @@ directory as
 [`hello.c`](https://github.com/facebook/infer/tree/master/examples/hello.c).
 
 ```bash
-infer -- gcc -c hello.c
+infer run -- gcc -c hello.c
 ```
 
 You should see the following error reported by Infer.
@@ -160,8 +160,8 @@ that differ from gcc's. So in particular, the following two commands
 are equivalent:
 
 ```bash
-infer -- gcc -c hello.c
-infer -- clang -c hello.c
+infer run -- gcc -c hello.c
+infer run -- clang -c hello.c
 ```
 
 
@@ -185,7 +185,7 @@ dependencies for you.
 After editing `local.properties`, run
 
 ```bash
-infer -- ./gradlew build
+infer run -- ./gradlew build
 ```
 
 Infer will output the list of found bugs:
@@ -221,8 +221,6 @@ app/src/main/java/infer/other/MainActivity.java:23: error: NULL_DEREFERENCE
 
 ### Differential analysis
 
-**(Note: `--incremental` is deprecated since Infer version v0.8.0).**
-
 If you run Infer again without changing any files, you will notice
 that this time nothing gets analyzed. This is because gradle is
 *incremental*: everything was compiled already so nothing gets
@@ -240,7 +238,7 @@ solutions to remedy this:
 2. Run Infer indicating that the capture of compilation commands should continue, using option `--continue` (or `-c` for short).
 
     ```bash
-    infer --continue -- ./gradlew build
+    infer run --continue -- ./gradlew build
     ```
 
   This makes Infer add the effects of the new compilation commands to the previous ones, and start a new analysis of the entire code.
@@ -248,7 +246,7 @@ solutions to remedy this:
 3. Run Infer in reactive mode after a code change, using option `--reactive` (or `-r` for short).
 
     ```bash
-    infer --reactive -- ./gradlew build
+    infer run --reactive -- ./gradlew build
     ```
 
   This makes Infer analyze the effects of the code
@@ -269,7 +267,7 @@ Go to the sample iOS app in
 and run Infer on it:
 
 ```bash
-infer -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
+infer run -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
 ```
 
 Infer will output the list of found bugs:
@@ -307,7 +305,7 @@ gets recompiled. Either add the `--reactive` (or `-r`) flag to the
 `infer` command:
 
 ```bash
-infer --reactive -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
+infer run --reactive -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator
 ```
 
 or ask the build system to reinitialize the directory
@@ -325,7 +323,7 @@ Go to the sample C project in
 and run Infer on it:
 
 ```bash
-infer -- make
+infer run -- make
 ```
 
 Infer will output the list of found bugs:
@@ -348,13 +346,13 @@ example.c:57: error: MEMORY_LEAK
 ```
 
 Similarly to the case of
-[gradle](docs/hello-world.html#incremental-analysis), running `infer
+[gradle](docs/hello-world.html#incremental-analysis), running `infer run
 -- make` a second time will yield no analysis results, as nothing gets
 recompiled. Either add the `--reactive` (or `-r`) flag to the
 `infer` command:
 
 ```bash
-infer --reactive -- make
+infer run --reactive -- make
 ```
 
 or run

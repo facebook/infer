@@ -44,7 +44,7 @@ let checker { Callbacks.proc_desc; proc_name; tenv; } =
 
 and then adding `Liveness.checker, checkers_enabled` to the list of registered checkers [here](https://github.com/facebook/infer/blob/master/infer/src/checkers/registerCheckers.ml#L42).
 
-you can then run `infer -a checkers -- <your_build_command>` to run your checker on real code. See [here](http://fbinfer.com/docs/analyzing-apps-or-projects.html) for more details on the build systems supported by Infer.
+you can then run `infer run -a checkers -- <your_build_command>` to run your checker on real code. See [here](http://fbinfer.com/docs/analyzing-apps-or-projects.html) for more details on the build systems supported by Infer.
 
 Other examples of simple intraprocedural checkers are [addressTaken.ml](https://github.com/facebook/infer/blob/master/infer/src/checkers/addressTaken.ml) and [copyPropagation.ml](https://github.com/facebook/infer/blob/master/infer/src/checkers/copyPropagation.ml).
 

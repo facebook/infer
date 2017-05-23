@@ -29,7 +29,7 @@ And wait a few minutes, and then run `brew install infer`. More info [here](http
 
 ## Install Infer on Linux
 
-The easiest way is via [Docker](https://docs.docker.com/engine/installation/):
+Follow the [install from source](docs/getting-started.html#install-from-source) instructions below to install Infer on your system. Alternatively, use our [Docker](https://docs.docker.com/engine/installation/) image:
 
 ```sh
 wget -O Dockerfile https://raw.githubusercontent.com/facebook/infer/master/docker/Dockerfile
@@ -51,5 +51,5 @@ You'll need to first install the [build dependencies](https://github.com/faceboo
 tar xf infer-<release>.tar.xz
 cd infer-<release>/
 ./build-infer.sh
-export PATH=`pwd`/infer/bin:$PATH
+make install
 ```

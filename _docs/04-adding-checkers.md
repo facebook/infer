@@ -23,13 +23,13 @@ Make sure you are able to successfully build Infer:
 Get familiar with Infer checkers and run Infer with some examples:
 
 ```
-infer -a checkers -- javac Hello.java
+infer run -a checkers -- javac Hello.java
 ```
 
 In addition, get familiar with the Control Flow Graph (CFG) that Infer generates for you:
 
 ```
-infer -g -a checkers -- javac Hello.java
+infer run -g -a checkers -- javac Hello.java
 dot -Tpdf infer-out/captured/Hello.java*/icfg.dot -o icfg.pdf
 open icfg.pdf
 ```

@@ -88,7 +88,7 @@ delegates should generally be weak, otherwise this may cause retain cycles.
 ## <a name="UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK"></a> Unavailable api in supported ios sdk
 
 This checks warns you when you are using an API (constant, method call, etc.) that is only defined in a version higher than the version 
-that you support. To enable this check, pass to Infer the option --iphoneos-target-sdk-version version. Calling an undefined API will lead to a crash in the app. To fix this, you can choose a different API or use it inside an if, as in:
+that you support. To enable this check, pass to Infer the option `--iphoneos-target-sdk-version version`. Calling an undefined API will lead to a crash in the app. To fix this, you can choose a different API or use it inside an if, as in:
 
 ```objc
 if ([UIFont respondsToSelector:@selector(systemFontOfSize:weight:)]) {

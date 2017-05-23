@@ -47,7 +47,7 @@ Local variable declarations are not annotated: their nullability is inferred.
 Eradicate can be invoked by adding the option `-a eradicate` to the analysis command as in this example:
 
 ```bash
-infer -a eradicate -- javac Test.java
+infer run -a eradicate -- javac Test.java
 ```
 
 The checker will report an error on the following program that accesses a nullable value without null check:
