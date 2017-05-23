@@ -64,7 +64,7 @@ let run_compilation_file compilation_database file =
 let run_compilation_database compilation_database should_capture_file =
   let number_of_files = CompilationDatabase.get_size compilation_database in
   Logging.out "Starting %s %d files \n%!" capture_text number_of_files;
-  Logging.stdout "Starting %s %d files \n%!" capture_text number_of_files;
+  Logging.progress "Starting %s %d files \n%!" capture_text number_of_files;
   let jobs_stack = create_files_stack compilation_database should_capture_file in
   let capture_text_upper = String.capitalize capture_text in
   let job_to_string =

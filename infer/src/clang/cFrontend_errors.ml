@@ -82,8 +82,7 @@ let evaluate_place_holder ph an =
   | "%iphoneos_target_sdk_version%" ->
       MF.monospaced_to_string (CFrontend_checkers.iphoneos_target_sdk_version an)
   | "%available_ios_sdk%" -> MF.monospaced_to_string (CFrontend_checkers.available_ios_sdk an)
-  | _ -> (Logging.err "ERROR: helper function %s is unknown. Stop.\n" ph;
-          assert false)
+  | _ -> failwithf "Helper function %s is unknown" ph
 
 (* given a message this function searches for a place-holder identifier,
    eg %id%. Then it evaluates id and replaces %id% in message
@@ -114,16 +113,13 @@ let string_to_err_kind = function
   | "ERROR" -> Exceptions.Kerror
   | "INFO" -> Exceptions.Kinfo
   | "ADVICE" -> Exceptions.Kadvice
-  | s -> (Logging.err "\n[ERROR] Severity %s does not exist. Stop.\n" s;
-          assert false)
+  | s -> failwithf "Severity %s does not exist" s
 
 let string_to_issue_mode m =
   match m with
   | "ON" -> CIssue.On
   | "OFF" -> CIssue.Off
-  | s ->
-      (Logging.err "\n[ERROR] Mode %s does not exist. Please specify ON/OFF\n" s;
-       assert false)
+  | s -> failwithf "Mode %s does not exist. Please specify ON/OFF" s
 
 (** Convert a parsed checker in list of linters *)
 let create_parsed_linters linters_def_file checkers : linter list =
@@ -194,10 +190,7 @@ let rec apply_substitution f sub =
 
 let expand_formula phi _map _error_msg =
   let fail_with_circular_macro_definition name error_msg =
-    Logging.out
-      "[ERROR]: Macro '%s' has a circular definition.\n Cycle:\n%s"
-      name error_msg;
-    failwith ("Cannot expand....\n") in
+    failwithf "Macro '%s' has a circular definition.\n Cycle:\n%s" name error_msg in
   let open CTL in
   let rec expand acc map error_msg =
     match acc with

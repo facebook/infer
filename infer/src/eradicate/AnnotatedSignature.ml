@@ -118,10 +118,10 @@ let mark proc_name ann asig (b, bs) =
     (s, ia', t) in
   let params' =
     let fail () =
-      L.stdout
+      L.stderr
         "INTERNAL ERROR: annotation for procedure %s has wrong number of arguments@."
         (Typ.Procname.to_unique_id proc_name);
-      L.stdout "  ANNOTATED SIGNATURE: %a@." (pp proc_name) asig;
+      L.stderr "  ANNOTATED SIGNATURE: %a@." (pp proc_name) asig;
       assert false in
     let rec combine l1 l2 = match l1, l2 with
       | (p, ia, t):: l1', l2' when String.equal (Mangled.to_string p) "this" ->

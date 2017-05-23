@@ -223,7 +223,6 @@ val eradicate_propagate_return_nullable : bool
 val eradicate_return_over_annotated : bool
 val eradicate_debug : bool
 val eradicate_verbose : bool
-val err_file_cmdline : string
 val fail_on_bug : bool
 val failures_allowed : bool
 val fcp_apple_clang : string option
@@ -273,6 +272,7 @@ val linter : string option
 val linters_def_file : string list
 val linters_developer_mode : bool
 val load_analysis_results : string option
+val log_file : string option
 val makefile_cmdline : string
 val maven : bool
 val merge : bool
@@ -285,7 +285,6 @@ val nelseg : bool
 val no_translate_libs : bool
 val objc_memory_model_on : bool
 val only_footprint : bool
-val out_file_cmdline : string
 val pmd_xml : bool
 val precondition_stats : bool
 val print_active_checkers : bool

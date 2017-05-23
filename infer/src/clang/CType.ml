@@ -45,11 +45,11 @@ let rec return_type_of_function_qual_type (qual_type : Clang_ast_t.qual_type) =
   | Some BlockPointerType (_, in_qual) ->
       return_type_of_function_qual_type in_qual
   | Some _ ->
-      Logging.err_debug "Warning: Type pointer %s is not a function type."
+      L.out_debug "Warning: Type pointer %s is not a function type."
         (Clang_ast_extend.type_ptr_to_string qual_type.qt_type_ptr);
       {qual_type with qt_type_ptr=Clang_ast_extend.ErrorType}
   | None ->
-      Logging.err_debug "Warning: Type pointer %s not found."
+      L.out_debug "Warning: Type pointer %s not found."
         (Clang_ast_extend.type_ptr_to_string qual_type.qt_type_ptr);
       {qual_type with qt_type_ptr=Clang_ast_extend.ErrorType}
 

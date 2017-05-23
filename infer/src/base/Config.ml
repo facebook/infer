@@ -952,11 +952,6 @@ and eradicate_verbose =
   CLOpt.mk_bool ~long:"eradicate-verbose"
     "Print initial and final typestates"
 
-(* Use file for the err channel *)
-and err_file =
-  CLOpt.mk_string ~deprecated:["err_file"] ~long:"err-file" ~default:""
-    ~meta:"file" ""
-
 and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
     ~in_help:CLOpt.[Run, manual_generic]
@@ -1091,6 +1086,10 @@ and latex =
     ~meta:"file"
     "Write a latex report of the analysis results to a file"
 
+and log_file =
+  CLOpt.mk_path_opt ~deprecated:["out_file"; "-out-file"] ~long:"log-file"
+    ~meta:"file" "Specify the file to use for logging"
+
 and linter =
   CLOpt.mk_string_opt ~long:"linter" ~in_help:CLOpt.[Capture, manual_clang_linters]
     "From the linters available, only run this one linter. \
@@ -1167,10 +1166,6 @@ and objc_memory_model =
 and only_footprint =
   CLOpt.mk_bool ~deprecated:["only_footprint"] ~long:"only-footprint"
     "Skip the re-execution phase"
-
-and out_file =
-  CLOpt.mk_path ~deprecated:["out_file"] ~long:"out-file" ~default:""
-    ~meta:"file" "Specify the file for the non-error logs of the analyzer"
 
 and patterns_modeled_expensive =
   let long = "modeled-expensive" in
@@ -1768,7 +1763,6 @@ and eradicate_propagate_return_nullable = !eradicate_propagate_return_nullable
 and eradicate_return_over_annotated = !eradicate_return_over_annotated
 and eradicate_debug = !eradicate_debug
 and eradicate_verbose = !eradicate_verbose
-and err_file_cmdline = !err_file
 and fail_on_bug = !fail_on_bug
 and failures_allowed = !failures_allowed
 and fcp_apple_clang = !fcp_apple_clang
@@ -1803,6 +1797,7 @@ and load_average = match !load_average with
   | _ ->
       !load_average
 and load_analysis_results = !load_results
+and log_file = !log_file
 and makefile_cmdline = !makefile
 and merge = !merge
 and ml_buckets = !ml_buckets
@@ -1813,7 +1808,6 @@ and nelseg = !nelseg
 and no_translate_libs = not !headers
 and objc_memory_model_on = !objc_memory_model
 and only_footprint = !only_footprint
-and out_file_cmdline = !out_file
 and patterns_never_returning_null = match patterns_never_returning_null with (k,r) -> (k,!r)
 and patterns_skip_translation = match patterns_skip_translation with (k,r) -> (k,!r)
 and patterns_modeled_expensive = match patterns_modeled_expensive with (k,r) -> (k,!r)

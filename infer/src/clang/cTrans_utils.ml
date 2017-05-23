@@ -23,7 +23,7 @@ exception TemplatedCodeException of Clang_ast_t.stmt
 let extract_item_from_singleton l warning_string failure_val =
   match l with
   | [item] -> item
-  | _ -> Logging.err_debug "%s" warning_string; failure_val
+  | _ -> L.out_debug "%s" warning_string; failure_val
 
 let dummy_exp = (Exp.minus_one, Typ.mk (Tint Typ.IInt))
 
@@ -442,7 +442,7 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
       if Exp.is_zero exp then ([], (Exp.null, cast_typ))
       else ([], (exp, cast_typ))
   | _ ->
-      Logging.err_debug
+      L.out_debug
         "\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...\n"
         (Clang_ast_j.string_of_cast_kind cast_kind);
       ([], (exp, cast_typ))
@@ -572,8 +572,7 @@ let rec get_type_from_exp_stmt stmt =
       get_type_from_exp_stmt (extract_stmt_from_singleton stmt_list "WARNING: We expect only one stmt.")
   | DeclRefExpr(_, _, _, info) -> do_decl_ref_exp info
   | _ ->
-      Logging.err_debug "Failing with: %s@\n%!" (Clang_ast_j.string_of_stmt stmt);
-      assert false
+      failwithf "Cannot get type fo stmt %s" (Clang_ast_j.string_of_stmt stmt)
 
 module Self =
 struct
@@ -749,7 +748,7 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
 let extract_item_from_option op warning_string =
   match op with
   | Some item -> item
-  | _ -> Logging.err_debug warning_string; assert false
+  | _ -> L.out_debug warning_string; assert false
 
 let extract_id_from_singleton id_list warning_string =
   extract_item_from_singleton id_list warning_string (dummy_id ())

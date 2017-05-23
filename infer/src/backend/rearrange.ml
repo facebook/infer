@@ -432,8 +432,7 @@ let mk_ptsto_exp_footprint
      * will fix them during the re - execution phase *)
     if not (Config.angelic_execution && !Config.footprint) then
       begin
-        if Config.developer_mode then
-          L.err "!!!! Footprint Error, Bad Root : %a !!!! @\n" Exp.pp lexp;
+        L.out "!!!! Footprint Error, Bad Root : %a !!!! @\n" Exp.pp lexp;
         let deref_str = Localise.deref_str_dangling None in
         let err_desc =
           Errdesc.explain_dereference tenv deref_str orig_prop (State.get_loc ()) in

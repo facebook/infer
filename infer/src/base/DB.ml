@@ -130,8 +130,7 @@ let file_modified_time ?(symlink=false) fname =
     let stat = (if symlink then Unix.lstat else Unix.stat) fname in
     stat.Unix.st_mtime
   with Unix.Unix_error _ ->
-    Logging.do_err "File %s does not exist." fname;
-    exit 1
+    failwithf "File %s does not exist." fname
 
 let filename_create_dir fname =
   let dirname = Filename.dirname fname in
@@ -165,8 +164,7 @@ let update_file_with_lock dir fname update =
     Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L;
     Unix.close fd
   ) else (
-    L.err "@.save_with_lock: fail on path: %s@." path;
-    assert false
+    failwithf "save_with_lock: fail on path: %s@." path
   )
 
 (** Read a file using a lock to allow write attempts in parallel. *)
@@ -181,8 +179,7 @@ let read_file_with_lock dir fname =
       Unix.close fd;
       Some buf
     with Unix.Unix_error _ ->
-      L.stderr "read_file_with_lock: Unix error";
-      assert false
+      failwith "read_file_with_lock: Unix error"
   with Unix.Unix_error _ -> None
 
 (** {2 Results Directory} *)

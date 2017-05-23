@@ -202,10 +202,10 @@ let process_merge_file deps_file =
     ~f:(fun lines -> List.iter ~f:process_line lines)
     (Utils.read_file deps_file);
   create_multilinks ();
-  L.stdout "Captured results merged.@.";
-  L.stdout "Targets merged: %d@." stats.targets_merged;
-  L.stdout "Files linked: %d@." stats.files_linked;
-  L.stdout "Files multilinked: %d@." stats.files_multilinked
+  L.progress "Captured results merged.@.";
+  L.progress "Targets merged: %d@." stats.targets_merged;
+  L.progress "Files linked: %d@." stats.files_linked;
+  L.progress "Files multilinked: %d@." stats.files_multilinked
 
 
 let merge_captured_targets () =

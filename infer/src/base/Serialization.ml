@@ -58,12 +58,12 @@ let create_serializer (key : Key.t) : 'a serializer =
   let read_data ((key': Key.t), (version': int), (value: 'a)) source_msg =
     if key <> key' then
       begin
-        L.err "Wrong key in when loading data from %s@\n" source_msg;
+        L.stderr "Wrong key in when loading data from %s@\n" source_msg;
         None
       end
     else if version <> version' then
       begin
-        L.err "Wrong version in when loading data from %s@\n" source_msg;
+        L.stderr "Wrong version in when loading data from %s@\n" source_msg;
         None
       end
     else Some value in

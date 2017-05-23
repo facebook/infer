@@ -161,7 +161,7 @@ let create_icfg source_file linereader program icfg cn node =
         end;
         Cg.add_defined_node icfg.JContext.cg proc_name
       with JBasics.Class_structure_error _ ->
-        L.do_err
+        L.stderr
           "create_icfg raised JBasics.Class_structure_error on %a@."
           Typ.Procname.pp proc_name in
   Javalib.m_iter translate node

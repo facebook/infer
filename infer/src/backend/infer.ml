@@ -220,7 +220,7 @@ let check_xcpretty () =
   | Ok () -> ()
   | Error _ ->
       L.stderr
-        "@.xcpretty not found in the path. Please, install xcpretty \
+        "@.xcpretty not found in the path. Please consider installing xcpretty \
          for a more robust integration with xcodebuild. Otherwise use the option \
          --no-xcpretty.@.@.";
       exit 1
@@ -238,26 +238,26 @@ let capture = function
   | Analyze ->
       ()
   | BuckCompilationDB (prog, args) ->
-      L.stdout "Capturing using Buck's compilation database...@.";
+      L.progress "Capturing using Buck's compilation database...@.";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck ~prog ~args in
       capture_with_compilation_database json_cdb
   | BuckGenrule path ->
-      L.stdout "Capturing for Buck genrule compatibility...@.";
+      L.progress "Capturing for Buck genrule compatibility...@.";
       JMain.from_arguments path
   | Clang (compiler, prog, args) ->
-      L.stdout "Capturing in make/cc mode...@.";
+      L.progress "Capturing in make/cc mode...@.";
       Clang.capture compiler ~prog ~args
   | ClangCompilationDB db_files ->
-      L.stdout "Capturing using compilation database...@.";
+      L.progress "Capturing using compilation database...@.";
       capture_with_compilation_database db_files
   | Javac (compiler, prog, args) ->
-      L.stdout "Capturing in javac mode...@.";
+      L.progress "Capturing in javac mode...@.";
       Javac.capture compiler ~prog ~args
   | Maven (prog, args) ->
-      L.stdout "Capturing in maven mode...@.";
+      L.progress "Capturing in maven mode...@.";
       Maven.capture ~prog ~args
   | PythonCapture (build_system, build_cmd) ->
-      L.stdout "Capturing in %s mode...@." (string_of_build_system build_system);
+      L.progress "Capturing in %s mode...@." (string_of_build_system build_system);
       let in_buck_mode = equal_build_system build_system BBuck in
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
       let args =
@@ -312,7 +312,7 @@ let capture = function
               ()
         )
   | XcodeXcpretty (prog, args) ->
-      L.stdout "Capturing using xcodebuild and xcpretty...@.";
+      L.progress "Capturing using xcodebuild and xcpretty...@.";
       check_xcpretty ();
       let json_cdb =
         CaptureCompilationDatabase.get_compilation_database_files_xcodebuild ~prog ~args in
@@ -344,9 +344,11 @@ let report () =
   let report_json = Some (Config.results_dir ^/ "report.json") in
   InferPrint.main ~report_csv ~report_json ;
   (* Post-process the report according to the user config. By default, calls report.py to create a
-     human-readable report. *)
-  match Config.buck_cache_mode, Config.report_hook with
-  | true, _ (* do not bother calling the report hook when called from within Buck *)
+     human-readable report.
+
+     Do not bother calling the report hook when called from within Buck or in quiet mode. *)
+  match Config.quiet || Config.buck_cache_mode, Config.report_hook with
+  | true, _
   | false, None ->
       ()
   | false, Some prog ->
@@ -550,7 +552,7 @@ let () =
       Logging.set_log_file_identifier
         CommandLineOption.Analyze (Option.map ~f:Filename.basename Config.cluster_cmdline);
       if Sys.file_exists Config.results_dir <> `Yes then (
-        L.err "ERROR: results directory %s does not exist@.@." Config.results_dir;
+        L.stderr "ERROR: results directory %s does not exist@.@." Config.results_dir;
         Config.print_usage_exit ()
       );
       InferAnalyze.register_perf_stats_report ();

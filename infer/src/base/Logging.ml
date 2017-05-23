@@ -36,11 +36,11 @@ let log_dir_of_command (command : CLOpt.command) = match command with
   | ReportDiff -> "reportdiff"
   | Run -> "driver"
 
-let stdout_err_log_files =
-  (((lazy F.std_formatter), (lazy Pervasives.stdout),
-    (lazy "out log file not initialized, stdout used instead")),
-   ((lazy F.err_formatter), (lazy Pervasives.stderr),
-    (lazy "err log file not initialized, stderr used instead")))
+let log_file = (
+  lazy F.std_formatter,
+  lazy Pervasives.stderr,
+  lazy "out log file not initialized, stderr used instead"
+)
 
 let close_log_file fmt chan file =
   (* evaluating any of the three values will evaluate the rest *)
@@ -51,18 +51,14 @@ let close_log_file fmt chan file =
       Out_channel.close c
   )
 
-let create_log_file command name_prefix outerr =
+let create_log_file command name_prefix =
   let log_dir = Config.results_dir ^/ Config.log_dir_name ^/ log_dir_of_command command in
-  let config_name = match outerr with
-    | `Out -> Config.out_file_cmdline
-    | `Err -> Config.err_file_cmdline in
-  let file =
-    (* the command-line option takes precedence if specified *)
-    if config_name <> "" then
-      config_name
-    else
-      let outerr_suffix = match outerr with `Out -> "out.log" | `Err -> "err.log" in
-      log_dir ^/ name_prefix ^ outerr_suffix in
+  let file = match Config.log_file with
+    | Some file ->
+        (* the command-line option takes precedence if specified *)
+        file
+    | None ->
+        log_dir ^/ name_prefix ^ ".log" in
   Unix.mkdir_p log_dir ;
   let chan = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 file in
   let file_fmt = F.formatter_of_out_channel chan in
@@ -70,10 +66,7 @@ let create_log_file command name_prefix outerr =
     "---- start logging from %d -------------------------------------------@."
     (Pid.to_int (Unix.getpid ()));
   if Config.print_logs then (
-    let outerr_fmt = match outerr with
-      | `Out -> Format.std_formatter
-      | `Err -> Format.err_formatter in
-    dup_formatter file_fmt outerr_fmt
+    dup_formatter file_fmt Format.err_formatter
   );
   Utils.register_epilogue
     (fun () -> close_log_file (lazy file_fmt) (lazy chan) (lazy file))
@@ -88,7 +81,7 @@ let should_setup_log_files (command : CLOpt.command) = match command with
   | Report | ReportDiff ->
       false
 
-let create_outerr_log_files command prefix_opt =
+let setup_log_file command prefix_opt =
   let lazy3 x = (lazy (fst3 (Lazy.force x)),
                  lazy (snd3 (Lazy.force x)),
                  lazy (trd3 (Lazy.force x))) in
@@ -96,27 +89,21 @@ let create_outerr_log_files command prefix_opt =
     let name_prefix = match prefix_opt with
       | Some name -> name ^ "-"
       | None -> "" in
-    (lazy (create_log_file command name_prefix `Out) |> lazy3,
-     lazy (create_log_file command name_prefix `Err) |> lazy3)
+    lazy (create_log_file command name_prefix) |> lazy3
   else
-    stdout_err_log_files
+    log_file
 
-let ((out_formatter, out_chan, out_file),
-     (err_formatter, err_chan, err_file)) =
-  let (o_fmt, o_c, o_f), (e_fmt, e_c, e_f) =
-    create_outerr_log_files Config.command None in
-  ((ref o_fmt, ref o_c, ref o_f),
-   (ref e_fmt, ref e_c, ref e_f))
+let (out_formatter, out_chan, out_file) =
+  let (o_fmt, o_c, o_f) = setup_log_file Config.command None in
+  (ref o_fmt, ref o_c, ref o_f)
 
 let set_log_file_identifier command prefix_opt =
-  let (o_fmt, o_c, o_f), (e_fmt, e_c, e_f) = create_outerr_log_files command prefix_opt in
+  let (o_fmt, o_c, o_f) = setup_log_file command prefix_opt in
   (* close previous log files *)
   close_log_file !out_formatter !out_chan !out_file;
-  close_log_file !err_formatter !err_chan !err_file;
-  out_formatter := o_fmt; out_chan := o_c; out_file := o_f;
-  err_formatter := e_fmt; err_chan := e_c; err_file := e_f
+  out_formatter := o_fmt; out_chan := o_c; out_file := o_f
 
-let log_file_names () = (Lazy.force !out_file, Lazy.force !err_file)
+let log_file_name () = Lazy.force !out_file
 
 
 (** type of printable elements *)
@@ -204,23 +191,18 @@ let out fmt_string =
   do_print_in_debug_or_stats_mode !out_formatter fmt_string
 
 let out_debug fmt_string =
-  do_print_in_debug_mode !out_formatter fmt_string
+  do_print_in_debug_mode !out_formatter ("PROUT: " ^^ fmt_string)
 
 let do_out fmt_string =
-  do_print !out_formatter fmt_string
-
-let err fmt_string =
-  do_print_in_debug_or_stats_mode !err_formatter fmt_string
-
-let do_err fmt_string =
-  do_print !err_formatter fmt_string
-
-let err_debug fmt_string =
-  do_print_in_debug_mode !err_formatter fmt_string
+  do_print !out_formatter ("CACA" ^^ fmt_string)
 
 let stderr = F.eprintf
 
-let stdout = F.printf
+let progress fmt_string =
+  if Config.quiet then F.ifprintf F.err_formatter fmt_string
+  else F.fprintf F.err_formatter fmt_string
+
+let stdout fmt_string = F.printf ("PIPI" ^^ fmt_string)
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int
@@ -247,7 +229,7 @@ let assert_false ((file, lnum, cnum, _) as ml_loc) =
 (** print a warning with information of the position in the ml source where it oririnated.
     use as: warning_position "description" (try assert false with Assert_failure x -> x); *)
 let warning_position (s: string) (ml_loc: ml_loc) =
-  err "WARNING: %s in %a@." s pp_ml_loc_opt (Some ml_loc)
+  out "WARNING: %s in %a@." s pp_ml_loc_opt (Some ml_loc)
 
 (** dump a string *)
 let d_str (s: string) = add_print_action (PTstr, Obj.repr s)
@@ -288,7 +270,7 @@ let d_decrease_indent (indent: int) =
   add_print_action (PTdecrease_indent, Obj.repr indent)
 
 let log_progress_simple text =
-  if Config.show_progress_bar then
+  if Config.show_progress_bar && not Config.quiet then
     F.fprintf F.err_formatter "%s@?" text
 
 let log_progress_file () =

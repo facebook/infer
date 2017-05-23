@@ -117,8 +117,7 @@ module Worklist = struct
         Procdesc.NodeMap.add min.node (min.visits + 1) wl.visit_map; (* increase the visits *)
       min.node
     with Not_found -> begin
-        L.out "@\n...Work list is empty! Impossible to remove edge...@\n";
-        assert false
+        failwithf "Work list is empty! Impossible to remove edge."
       end
 end
 (* =============== END of module Worklist =============== *)
@@ -162,8 +161,7 @@ let path_set_checkout_todo (wl : Worklist.t) (node: Procdesc.Node.t) : Paths.Pat
     Hashtbl.replace wl.Worklist.path_set_visited node_id new_visited;
     todo
   with Not_found ->
-    L.out "@.@.ERROR: could not find todo for node %a@.@." Procdesc.Node.pp node;
-    assert false
+    failwithf "could not find todo for node %a" Procdesc.Node.pp node
 
 (* =============== END of the edge_set object =============== *)
 
@@ -1363,10 +1361,10 @@ let perform_transition proc_desc tenv proc_name =
       with exn when SymOp.exn_not_failure exn ->
         apply_start_node do_after_node;
         Config.allow_leak := allow_leak;
-        L.err "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name;
+        L.out "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name;
         let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let err_str = "exception raised " ^ (Localise.to_issue_id err_name) in
-        L.err "Error: %s %a@." err_str L.pp_ml_loc_opt ml_loc_opt;
+        L.out "Error: %s %a@." err_str L.pp_ml_loc_opt ml_loc_opt;
         [] in
     transition_footprint_re_exe tenv proc_name joined_pres in
   match Specs.get_summary proc_name with

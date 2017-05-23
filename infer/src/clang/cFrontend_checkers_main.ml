@@ -277,8 +277,8 @@ let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_contex
           store_issues source_file;
         Logging.out "End linting file %a@\n" SourceFile.pp source_file;
         CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file;
-    | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
+    | _ -> assert false (* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *)
   with
   | Assert_failure (file, line, column) as exn ->
-      Logging.err "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column;
+      Logging.stderr "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column;
       raise exn

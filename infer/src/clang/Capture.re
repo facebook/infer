@@ -22,8 +22,7 @@ let catch_biniou_buffer_errors f x =>
     /* suppress warning: allow this one case because we're just reraising the error with another
        error message so it doesn't really matter if this eventually fails */
     | Invalid_argument "Bi_inbuf.refill_from_channel" =>
-      Logging.err "WARNING: biniou buffer too short, skipping the file@\n";
-      assert false
+      failwith "WARNING: biniou buffer too short, skipping the file"
     }
   )
   [@warning "-52"];

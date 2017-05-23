@@ -115,7 +115,7 @@ let get_field_name program static tenv cn fs =
       fieldname
   | None ->
       (* TODO: understand why fields cannot be found here *)
-      L.do_err "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);
+      L.stderr "cannot find %s.%s@." (JBasics.cn_name cn) (JBasics.fs_name fs);
       raise (Frontend_error "Cannot find fieldname")
 
 
@@ -380,7 +380,7 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
       procdesc in
     Some (procdesc, bytecode, jbir_code)
   with JBir.Subroutine  ->
-    L.do_err
+    L.stderr
       "create_procdesc raised JBir.Subroutine on %a@."
       Typ.Procname.pp proc_name;
     None
@@ -1057,5 +1057,5 @@ let rec instruction (context : JContext.t) pc instr : translation =
 
     | _ -> Skip
   with Frontend_error s ->
-    L.do_err "Skipping because of: %s@." s;
+    L.stderr "Skipping because of: %s@." s;
     Skip

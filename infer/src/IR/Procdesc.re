@@ -119,9 +119,7 @@ module Node = {
   /** Get the name of the procedure the node belongs to */
   let get_proc_name node =>
     switch node.pname_opt {
-    | None =>
-      L.out "get_proc_name: at node %d@\n" node.id;
-      assert false
+    | None => failwithf "get_proc_name: at node %d" node.id
     | Some pname => pname
     };
 

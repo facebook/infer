@@ -319,7 +319,7 @@ type log_issue =
 
 let process_execution_failures (log_issue : log_issue) pname =
   let do_failure _ fs =
-    (* L.err "Node:%a node_ok:%d node_fail:%d@." Procdesc.Node.pp node fs.node_ok fs.node_fail; *)
+    (* L.out "Node:%a node_ok:%d node_fail:%d@." Procdesc.Node.pp node fs.node_ok fs.node_fail; *)
     match fs.node_ok, fs.first_failure with
     | 0, Some (loc, key, _, loc_trace, exn) when not Config.debug_exceptions ->
         let ex_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in

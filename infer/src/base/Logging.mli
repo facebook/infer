@@ -83,22 +83,14 @@ val out : ('a, Format.formatter, unit) format -> 'a
     (note: only prints in debug mode) *)
 val out_debug : ('a, Format.formatter, unit) format -> 'a
 
-(** print to the current error stream, as specified in set_log_file_identifier
-    (note: only prints in debug or stats mode) *)
-val err : ('a, Format.formatter, unit) format -> 'a
-
-(** print to the current error stream, as specified in set_log_file_identifier
-    (note: only prints in debug mode) *)
-val err_debug : ('a, Format.formatter, unit) format -> 'a
-
 (** print to the current out stream, as specified in set_log_file_identifier  *)
 val do_out : ('a, Format.formatter, unit) format -> 'a
 
-(** print to the current err stream, as specified in set_log_file_identifier *)
-val do_err : ('a, Format.formatter, unit) format -> 'a
-
 (** print immediately to standard error *)
 val stderr : ('a, Format.formatter, unit) format -> 'a
+
+(** print immediately to standard error unless --quiet is specified *)
+val progress : ('a, Format.formatter, unit) format -> 'a
 
 (** print immediately to standard output *)
 val stdout : ('a, Format.formatter, unit) format -> 'a
@@ -161,5 +153,5 @@ val log_progress_procedure : unit -> unit
 (** Progress bar: log a timeout event if in developer mode. *)
 val log_progress_timeout_event : SymOp.failure_kind -> unit
 
-(** Names of current temporary files for logging the output in the current executable *)
-val log_file_names : unit -> string * string
+(** Name of current log file *)
+val log_file_name : unit -> string

@@ -9,6 +9,8 @@
 
 open! IStd
 
+module L = Logging
+
 let get_builtin_objc_typename builtin_type =
   match builtin_type with
   | `ObjCId -> Typ.Name.C.from_string CFrontend_config.objc_object
@@ -145,11 +147,11 @@ and decl_ptr_to_type_desc translate_decl tenv decl_ptr : Typ.desc =
   | Some (ObjCCategoryImplDecl _ as d)
   | Some (EnumDecl _ as d) -> translate_decl tenv d
   | Some _ ->
-      Logging.err_debug "Warning: Wrong decl found for  pointer %s "
+      L.out_debug "Warning: Wrong decl found for  pointer %s "
         (Clang_ast_j.string_of_pointer decl_ptr);
       Typ.Tvoid
   | None ->
-      Logging.err_debug "Warning: Decl pointer %s not found."
+      L.out_debug "Warning: Decl pointer %s not found."
         (Clang_ast_j.string_of_pointer decl_ptr);
       Typ.Tvoid
 

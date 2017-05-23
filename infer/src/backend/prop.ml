@@ -1356,8 +1356,7 @@ module Normalize = struct
       | Var _ ->
           Estruct ([], inst)
       | te ->
-          L.err "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full Pp.text) te;
-          assert false in
+          failwithf "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full Pp.text) te in
     let strexp : Sil.strexp = match expo with
       | Some e -> Eexp (e, inst)
       | None -> default_strexp () in
@@ -1853,7 +1852,7 @@ let prop_dfs_sort tenv p =
   let sigma_fp = p.sigma_fp in
   let sigma_fp' = sigma_dfs_sort tenv sigma_fp in
   let p' = set p ~sigma:sigma' ~sigma_fp:sigma_fp' in
-  (* L.err "@[<2>P SORTED:@\n%a@\n@." pp_prop p'; *)
+  (* L.out "@[<2>P SORTED:@\n%a@\n@." pp_prop p'; *)
   p'
 
 let prop_fav_add_dfs tenv fav prop =
@@ -2361,11 +2360,12 @@ let prop_iter_make_id_primed tenv id iter =
         begin
           match eq with
           | Aeq (Var id1, e1) when Sil.ident_in_exp id1 e1 ->
-              L.out "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n";
-              L.out "Broken Assumption: id notin e for all (id,e) in sub@\n";
-              L.out "(id,e) : (%a,%a)@\n" (Ident.pp Pp.text) id1 Exp.pp e1;
-              L.out "PROP : %a@\n@." (pp_prop Pp.text) (prop_iter_to_prop tenv iter);
-              assert false
+              failwithf "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n\
+                         Broken Assumption: id notin e for all (id,e) in sub@\n\
+                         (id,e) : (%a,%a)@\n\
+                         PROP : %a@\n@."
+                (Ident.pp Pp.text) id1 Exp.pp e1
+                (pp_prop Pp.text) (prop_iter_to_prop tenv iter)
           | Aeq (Var id1, e1) when Ident.equal pid id1 ->
               split pairs_unpid ((id1, e1):: pairs_pid) eqs_cur
           | Aeq (Var id1, e1) ->

@@ -110,8 +110,6 @@ let check_cfg_connectedness cfg => {
     let broken = List.exists f::broken_node nodes;
     if broken {
       L.out "\n ***BROKEN CFG: '%s'\n" pname
-    } else {
-      L.out "\n ***CONNECTED CFG: '%s'\n" pname
     }
   };
   let pdescs = get_all_procs cfg;

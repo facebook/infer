@@ -152,7 +152,7 @@ let visited_str vis =
        begin
        let ss = ref "" in
        List.iter ~f:(fun n -> ss := !ss ^ " " ^ string_of_int n) ns;
-       L.err "Node %d has lines %s@." node !ss
+       L.out "Node %d has lines %s@." node !ss
        end; *)
     List.iter ~f:(fun n -> lines := Int.Set.add !lines n) ns in
   Visitedset.iter do_one vis;

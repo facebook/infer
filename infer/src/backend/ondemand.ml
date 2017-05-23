@@ -128,7 +128,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
 
   (* Dot means start of a procedure *)
   L.log_progress_procedure ();
-  if Config.trace_ondemand then L.stderr "[%d] run_proc_analysis %a -> %a@."
+  if Config.trace_ondemand then L.progress "[%d] run_proc_analysis %a -> %a@."
       !nesting
       Typ.Procname.pp curr_pname
       Typ.Procname.pp callee_pname;

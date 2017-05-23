@@ -28,7 +28,7 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
          Cfg.store_cfg_to_file *)
       let cfg_filename = DB.source_dir_get_internal_file source_dir ".cfg" in
       if not (DB.file_exists cfg_filename) then (
-        Logging.out "Started capture of %a...@\n" SourceFile.pp definition_file;
+        Logging.out_debug "Started capture of %a...@\n" SourceFile.pp definition_file;
         Timeout.suspend_existing_timeout ~keep_symop_total:true;
         protect
           ~f:(fun () -> CaptureCompilationDatabase.capture_file_in_database cdb definition_file)
@@ -37,13 +37,13 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
            Option.is_none
              (AttributesTable.load_defined_attributes ~cache_none:false attributes.proc_name) then (
           (* peek at the results to know if capture succeeded, but only in debug mode *)
-          Logging.out
+          Logging.out_debug
             "Captured file %a to get procedure %a but it wasn't found there@\n"
             SourceFile.pp definition_file
             Typ.Procname.pp attributes.proc_name
         )
       ) else (
-        Logging.out
+        Logging.out_debug
           "Wanted to capture file %a to get procedure %a but file was already captured@\n"
           SourceFile.pp definition_file
           Typ.Procname.pp attributes.proc_name

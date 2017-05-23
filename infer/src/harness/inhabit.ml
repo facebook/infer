@@ -142,8 +142,7 @@ let rec inhabit_typ tenv typ cfg env =
       | Typ.Tint (_) -> (Exp.Const (Const.Cint (IntLit.zero)), env)
       | Typ.Tfloat (_) -> (Exp.Const (Const.Cfloat 0.0), env)
       | _ ->
-          L.err "Couldn't inhabit typ: %a@." (Typ.pp Pp.text) typ;
-          assert false in
+          failwithf "Couldn't inhabit typ: %a" (Typ.pp Pp.text) typ in
     let (inhabited_exp, env') =
       inhabit_internal typ { env with cur_inhabiting = TypSet.add typ env.cur_inhabiting } in
     (inhabited_exp, { env' with cache = TypMap.add typ inhabited_exp env.cache;
@@ -193,10 +192,9 @@ let inhabit_call tenv (procname, receiver) cfg env =
           | ((name, _) :: formals, Some receiver) -> (name, receiver) :: formals
           | (formals, None) -> formals
           | ([], Some _) ->
-              L.err
-                "Expected at least one formal to bind receiver to in method %a@."
-                Typ.Procname.pp procname;
-              assert false in
+              failwithf
+                "Expected at least one formal to bind receiver to in method %a"
+                Typ.Procname.pp procname in
         let (args, env) = inhabit_args tenv formals cfg env in
         inhabit_call_with_args procname procdesc args env
     | None -> env

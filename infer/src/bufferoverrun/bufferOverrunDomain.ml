@@ -670,7 +670,7 @@ struct
       else
         let () =
           if Config.bo_debug >= 3 then
-            L.err "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
+            L.out "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
         in
         weak_update_heap ploc v s
 end

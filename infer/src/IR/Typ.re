@@ -371,10 +371,7 @@ let name typ =>
 let unsome s =>
   fun
   | Some default_typ => default_typ
-  | None => {
-      L.err "No default typ in %s@." s;
-      assert false
-    };
+  | None => failwithf "No default typ in %s@." s;
 
 
 /** turn a *T into a T. fails if [typ] is not a pointer type */

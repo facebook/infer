@@ -87,6 +87,7 @@ def text_of_report(report):
 
 
 def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
+                         console_out=False,
                          formatter=colorize.TERMINAL_FORMATTER):
     n_issues = len(reports)
     if n_issues == 0:
@@ -153,17 +154,24 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
     issues_found = 'Found {n_issues}'.format(
         n_issues=utils.get_plural('issue', n_issues),
     )
-    msg = '{issues_found}\n\n{issues}\n\n{header}\n\n{summary}'.format(
+    bug_list = '{issues_found}\n\n{issues}\n\n'.format(
         issues_found=colorize.color(issues_found,
                                     colorize.HEADER,
                                     formatter),
         issues=text_errors,
+    )
+    summary = '{header}\n\n{summary}'.format(
         header=colorize.color('Summary of the reports',
                               colorize.HEADER, formatter),
         summary='\n'.join(types_text_list),
     )
 
-    return msg
+    if console_out:
+        utils.stderr('')
+        utils.stderr(bug_list)
+        utils.stdout(summary)
+
+    return bug_list + summary
 
 
 def _is_user_visible(project_root, report):
@@ -175,9 +183,8 @@ def print_and_save_errors(infer_out, project_root, json_report, bugs_out,
                           pmd_xml):
     errors = utils.load_json_from_path(json_report)
     errors = [e for e in errors if _is_user_visible(project_root, e)]
-    console_out = _text_of_report_list(project_root, errors, bugs_out,
-                                       limit=10)
-    utils.stdout('\n' + console_out)
+    _text_of_report_list(project_root, errors, bugs_out, console_out=True,
+                         limit=10)
     plain_out = _text_of_report_list(project_root, errors, bugs_out,
                                      formatter=colorize.PLAIN_FORMATTER)
     with codecs.open(bugs_out, 'w',
