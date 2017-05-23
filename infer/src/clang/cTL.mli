@@ -38,15 +38,15 @@ type t =
   | Or of t * t
   | Implies of t * t
   | InNode of ALVar.alexp list * t
-  | AX of t (** AX phi <=> for all children of the current node phi holds *)
+  | AX of transitions option * t (** AX phi <=> for all children of the current node phi holds *)
   | EX of transitions option * t (** EX phi <=> exist a child of the current node such that phi holds *)
-  | AF of t (** AF phi <=> for all path from the current node there is a descendant where phi holds *)
+  | AF of transitions option * t (** AF phi <=> for all path from the current node there is a descendant where phi holds *)
   | EF of transitions option * t (** EF phi <=> there exits a a path from the current node with a descendant where phi hold *)
-  | AG of t (** AG phi <=> for all discendant of the current node phi hold *)
+  | AG of transitions option * t (** AG phi <=> for all discendant of the current node phi hold *)
   | EG of transitions option * t (** EG phi <=>
                                      there exists a path (of descendants) from the current node where phi hold at each node of the path *)
-  | AU of t * t (** AU(phi1, phi2) <=>
-                    for all paths from the current node phi1 holds in every node until ph2 holds *)
+  | AU of transitions option * t * t (** AU(phi1, phi2) <=>
+                                         for all paths from the current node phi1 holds in every node until ph2 holds *)
   | EU of transitions option * t * t (** EU(phi1, phi2) <=>
                                          there exists a path from the current node such that phi1 holds until phi2 holds *)
   | EH of ALVar.alexp list * t (** EH[classes]phi <=>
@@ -98,7 +98,7 @@ val eval_formula : t -> ast_node -> CLintersContext.context -> bool
 
 val save_dotty_when_in_debug_mode : SourceFile.t -> unit
 
-val next_state_via_transition : ast_node -> transitions option -> ast_node list
+val next_state_via_transition : ast_node -> transitions -> ast_node list
 
 val create_ctl_evaluation_tracker : SourceFile.t -> unit
 

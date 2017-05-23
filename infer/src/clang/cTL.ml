@@ -37,13 +37,13 @@ type t = (* A ctl formula *)
   | Or of t * t
   | Implies of t * t
   | InNode of ALVar.alexp list * t
-  | AX of t
+  | AX of transitions option * t
   | EX of transitions option * t
-  | AF of t
+  | AF of transitions option * t
   | EF of transitions option * t
-  | AG of t
+  | AG of transitions option * t
   | EG of transitions option * t
-  | AU of t * t
+  | AU of transitions option * t * t
   | EU of transitions option * t * t
   | EH of ALVar.alexp list * t
   | ET of ALVar.alexp list * transitions option * t
@@ -52,7 +52,9 @@ type t = (* A ctl formula *)
 let has_transition phi = match phi with
   | True | False | Atomic _ | Not _ | And (_, _)
   | Or (_, _) | Implies (_, _) | InNode (_, _)
-  | AX _ | AF _ | AG _ | AU (_, _) | EH (_, _) -> false
+  | EH (_, _) -> false
+  | AX (trans_opt, _) | AF (trans_opt, _)
+  | AG (trans_opt, _) | AU (trans_opt, _, _)
   | EX (trans_opt, _) | EF (trans_opt, _)
   | EG (trans_opt, _) | EU (trans_opt, _, _)
   | ET (_, trans_opt, _) | ETX (_, trans_opt, _) -> Option.is_some trans_opt
@@ -127,13 +129,14 @@ module Debug = struct
                             (Pp.comma_seq Format.pp_print_string)
                             (nodes_to_string nl)
                             pp_formula phi
-    | AX phi -> Format.fprintf fmt "AX(%a)" pp_formula phi
+    | AX (trs, phi) -> Format.fprintf fmt "AX[->%a](%a)" pp_transition trs pp_formula phi
     | EX (trs, phi) -> Format.fprintf fmt "EX[->%a](%a)" pp_transition trs pp_formula phi
-    | AF phi -> Format.fprintf fmt "AF(%a)" pp_formula phi
+    | AF (trs, phi) -> Format.fprintf fmt "AF[->%a](%a)" pp_transition trs pp_formula phi
     | EF (trs, phi) -> Format.fprintf fmt "EF[->%a](%a)" pp_transition trs pp_formula phi
-    | AG phi -> Format.fprintf fmt "AG(%a)" pp_formula phi
+    | AG (trs, phi) -> Format.fprintf fmt "AG[->%a](%a)" pp_transition trs pp_formula phi
     | EG (trs, phi) -> Format.fprintf fmt "EG[->%a](%a)" pp_transition trs pp_formula phi
-    | AU (phi1, phi2) -> Format.fprintf fmt "A[%a UNTIL %a]" pp_formula phi1 pp_formula phi2
+    | AU (trs, phi1, phi2) -> Format.fprintf fmt "A[->%a][%a UNTIL %a]"
+                                pp_transition trs pp_formula phi1 pp_formula phi2
     | EU (trs, phi1, phi2) -> Format.fprintf fmt "E[->%a][%a UNTIL %a]"
                                 pp_transition trs pp_formula phi1 pp_formula phi2
     | EH (arglist, phi) -> Format.fprintf fmt "EH[%a](%a)"
@@ -520,23 +523,23 @@ let transition_decl_to_stmt d trs =
   let open Clang_ast_t in
   let temp_res =
     match trs, d with
-    | Some Body, ObjCMethodDecl (_, _, omdi) -> omdi.omdi_body
-    | Some Body, FunctionDecl (_, _, _, fdi)
-    | Some Body, CXXMethodDecl (_, _, _, fdi,_ )
-    | Some Body, CXXConstructorDecl (_, _, _, fdi, _)
-    | Some Body, CXXConversionDecl (_, _, _, fdi, _)
-    | Some Body, CXXDestructorDecl (_, _, _, fdi, _) -> fdi.fdi_body
-    | Some Body, BlockDecl (_, bdi) -> bdi.bdi_body
-    | Some InitExpr, VarDecl (_, _ ,_, vdi) -> vdi.vdi_init_expr
-    | Some InitExpr, ObjCIvarDecl (_, _, _, fldi, _)
-    | Some InitExpr, FieldDecl (_, _, _, fldi)
-    | Some InitExpr, ObjCAtDefsFieldDecl (_, _, _, fldi)-> fldi.fldi_init_expr
-    | Some InitExpr, CXXMethodDecl _
-    | Some InitExpr, CXXConstructorDecl _
-    | Some InitExpr, CXXConversionDecl _
-    | Some InitExpr, CXXDestructorDecl _ ->
+    | Body, ObjCMethodDecl (_, _, omdi) -> omdi.omdi_body
+    | Body, FunctionDecl (_, _, _, fdi)
+    | Body, CXXMethodDecl (_, _, _, fdi,_ )
+    | Body, CXXConstructorDecl (_, _, _, fdi, _)
+    | Body, CXXConversionDecl (_, _, _, fdi, _)
+    | Body, CXXDestructorDecl (_, _, _, fdi, _) -> fdi.fdi_body
+    | Body, BlockDecl (_, bdi) -> bdi.bdi_body
+    | InitExpr, VarDecl (_, _ ,_, vdi) -> vdi.vdi_init_expr
+    | InitExpr, ObjCIvarDecl (_, _, _, fldi, _)
+    | InitExpr, FieldDecl (_, _, _, fldi)
+    | InitExpr, ObjCAtDefsFieldDecl (_, _, _, fldi)-> fldi.fldi_init_expr
+    | InitExpr, CXXMethodDecl _
+    | InitExpr, CXXConstructorDecl _
+    | InitExpr, CXXConversionDecl _
+    | InitExpr, CXXDestructorDecl _ ->
         assert false (* to be done. Requires extending to lists *)
-    | Some InitExpr, EnumConstantDecl (_, _, _, ecdi) -> ecdi.ecdi_init_expr
+    | InitExpr, EnumConstantDecl (_, _, _, ecdi) -> ecdi.ecdi_init_expr
     | _, _ -> None in
   match temp_res with
   | Some st -> [Stmt st]
@@ -588,16 +591,15 @@ let transition_decl_to_decl_via_parameters dec =
       List.map ~f:(fun d -> Decl d) omdi.omdi_parameters
   | _ -> []
 
-(* given a node an returns the node an' such that an transition to an' via label trans *)
+(* given a node an returns a list of nodes an' such that an transition to an' via label trans *)
 let next_state_via_transition an trans =
   match an, trans with
-  | Decl d, Some Super -> transition_decl_to_decl_via_super d
-  | Decl d, Some Parameters -> transition_decl_to_decl_via_parameters d
-  | Decl d, Some InitExpr
-  | Decl d, Some Body -> transition_decl_to_stmt d trans
-  | Stmt st, Some Cond -> transition_stmt_to_stmt_via_condition st
-  | Stmt st, Some PointerToDecl ->
-      transition_stmt_to_decl_via_pointer st
+  | Decl d, Super -> transition_decl_to_decl_via_super d
+  | Decl d, Parameters -> transition_decl_to_decl_via_parameters d
+  | Decl d, InitExpr
+  | Decl d, Body -> transition_decl_to_stmt d trans
+  | Stmt st, Cond -> transition_stmt_to_stmt_via_condition st
+  | Stmt st, PointerToDecl -> transition_stmt_to_decl_via_pointer st
   | _, _ -> []
 
 (* Evaluation of formulas *)
@@ -661,12 +663,6 @@ and eval_EF phi an lcxt trans =
       eval_formula phi an lcxt
       || List.exists ~f:(fun an' -> eval_EF phi an' lcxt trans) (get_successor_nodes an)
 
-(* Evaluate phi on node an' such that an -l-> an'. False if an' does not exists *)
-and evaluate_on_transition phi an lcxt l =
-  let succs = next_state_via_transition an l in
-  List.exists ~f:(fun an' -> eval_formula phi an' lcxt) succs
-
-
 (* an, lcxt |= EX phi  <=> exists an' in Successors(st): an', lcxt |= phi
 
    That is: a (an, lcxt) satifies EX phi if and only if
@@ -674,10 +670,10 @@ and evaluate_on_transition phi an lcxt l =
    such that (an', lcxt) satifies phi
 *)
 and eval_EX phi an lcxt trans =
-  match trans, an with
-  | Some _, _ -> evaluate_on_transition phi an lcxt trans
-  | None, _ ->
-      List.exists ~f:(fun an' -> eval_formula phi an' lcxt) (get_successor_nodes an)
+  let succs = match trans with
+    | Some l -> next_state_via_transition an l
+    | None  -> get_successor_nodes an in
+  List.exists ~f:(fun an' -> eval_formula phi an' lcxt) succs
 
 (* an, lcxt |= E(phi1 U phi2) evaluated using the equivalence
    an, lcxt |= E(phi1 U phi2) <=> an, lcxt |= phi2 or (phi1 and EX(E(phi1 U phi2)))
@@ -694,8 +690,8 @@ and eval_EU phi1 phi2 an lcxt trans =
 
    Same as EU but for the all path quantifier A
 *)
-and eval_AU phi1 phi2 an lcxt =
-  let f = Or (phi2, And (phi1, AX (AU (phi1, phi2)))) in
+and eval_AU phi1 phi2 an lcxt  trans =
+  let f = Or (phi2, And (phi1, AX (trans, AU (trans, phi1, phi2)))) in
   eval_formula f an lcxt
 
 (* an, lcxt |= InNode[node_type_list] phi <=>
@@ -764,13 +760,13 @@ and eval_formula f an lcxt =
         not (eval_formula f1 an lcxt) || (eval_formula f2 an lcxt)
     | InNode (node_type_list, f1) ->
         in_node node_type_list f1 an lcxt
-    | AU (f1, f2) -> eval_AU f1 f2 an lcxt
+    | AU (trans, f1, f2) -> eval_AU f1 f2 an lcxt trans
     | EU (trans, f1, f2) -> eval_EU f1 f2 an lcxt trans
     | EF (trans, f1) -> eval_EF f1 an lcxt trans
-    | AF f1 -> eval_formula (AU (True, f1)) an lcxt
-    | AG f1 -> eval_formula (Not (EF (None, (Not f1)))) an lcxt
+    | AF (trans, f1) -> eval_formula (AU (trans, True, f1)) an lcxt
+    | AG (trans, f1) -> eval_formula (Not (EF (trans, (Not f1)))) an lcxt
     | EX (trans, f1) -> eval_EX f1 an lcxt trans
-    | AX f1 -> eval_formula (Not (EX (None, (Not f1)))) an lcxt
+    | AX (trans, f1) -> eval_formula (Not (EX (trans, (Not f1)))) an lcxt
     | EH (cl, phi) -> eval_EH cl phi an lcxt
     | EG (trans, f1) -> (* st |= EG f1 <=> st |= f1 /\ EX EG f1 *)
         eval_formula (And (f1, EX (trans, (EG (trans, f1))))) an lcxt

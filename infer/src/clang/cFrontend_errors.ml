@@ -166,23 +166,36 @@ let rec apply_substitution f sub =
   match f with
   | True
   | False -> f
-  | Atomic (name, ps) -> Atomic (name, sub_list_param ps)
-  | Not f1 -> Not (apply_substitution f1 sub)
-  | And (f1, f2) -> And (apply_substitution f1 sub, apply_substitution f2 sub)
-  | Or (f1, f2) -> Or (apply_substitution f1 sub, apply_substitution f2 sub)
-  | Implies (f1, f2) -> Implies (apply_substitution f1 sub, apply_substitution f2 sub)
+  | Atomic (name, ps) ->
+      Atomic (name, sub_list_param ps)
+  | Not f1 ->
+      Not (apply_substitution f1 sub)
+  | And (f1, f2) ->
+      And (apply_substitution f1 sub, apply_substitution f2 sub)
+  | Or (f1, f2) ->
+      Or (apply_substitution f1 sub, apply_substitution f2 sub)
+  | Implies (f1, f2) ->
+      Implies (apply_substitution f1 sub, apply_substitution f2 sub)
   | InNode (node_type_list, f1) ->
       InNode (sub_list_param node_type_list, apply_substitution f1 sub)
-  | AU (f1, f2) -> AU (apply_substitution f1 sub, apply_substitution f2 sub)
+  | AU (trans, f1, f2) ->
+      AU (trans, apply_substitution f1 sub, apply_substitution f2 sub)
   | EU (trans, f1, f2) ->
       EU (trans, apply_substitution f1 sub, apply_substitution f2 sub)
-  | EF (trans, f1) -> EF (trans, apply_substitution f1 sub)
-  | AF f1 -> AF (apply_substitution f1 sub)
-  | AG f1 -> AG (apply_substitution f1 sub)
-  | EX (trans, f1) -> EX (trans, apply_substitution f1 sub)
-  | AX f1 -> AX (apply_substitution f1 sub)
-  | EH (cl, f1) -> EH (sub_list_param cl, apply_substitution f1 sub)
-  | EG (trans, f1) -> EG (trans, apply_substitution f1 sub)
+  | EF (trans, f1) ->
+      EF (trans, apply_substitution f1 sub)
+  | AF (trans, f1) ->
+      AF (trans, apply_substitution f1 sub)
+  | AG (trans, f1) ->
+      AG (trans, apply_substitution f1 sub)
+  | EX (trans, f1) ->
+      EX (trans, apply_substitution f1 sub)
+  | AX (trans, f1) ->
+      AX (trans, apply_substitution f1 sub)
+  | EH (cl, f1) ->
+      EH (sub_list_param cl, apply_substitution f1 sub)
+  | EG (trans, f1) ->
+      EG (trans, apply_substitution f1 sub)
   | ET (ntl, sw, f1) ->
       ET (sub_list_param ntl, sw, apply_substitution f1 sub)
   | ETX (ntl, sw, f1) ->
@@ -217,13 +230,13 @@ let expand_formula phi _map _error_msg =
     | Or (f1, f2) -> Or (expand f1 map error_msg, expand f2 map error_msg)
     | Implies (f1, f2) -> Implies (expand f1 map error_msg, expand f2 map error_msg)
     | InNode (node_type_list, f1) -> InNode (node_type_list, expand f1 map error_msg)
-    | AU (f1, f2) -> AU (expand f1 map error_msg, expand f2 map error_msg)
+    | AU (trans, f1, f2) -> AU (trans, expand f1 map error_msg, expand f2 map error_msg)
     | EU (trans, f1, f2) -> EU (trans, expand f1 map error_msg, expand f2 map error_msg)
     | EF (trans, f1) -> EF (trans, expand f1 map error_msg)
-    | AF f1 -> AF (expand f1 map error_msg)
-    | AG f1 -> AG (expand f1 map error_msg)
+    | AF (trans, f1) -> AF (trans, expand f1 map error_msg)
+    | AG (trans, f1) -> AG (trans, expand f1 map error_msg)
     | EX (trans, f1) -> EX (trans, expand f1 map error_msg)
-    | AX f1 -> AX (expand f1 map error_msg)
+    | AX (trans, f1) -> AX (trans, expand f1 map error_msg)
     | EH (cl, f1) -> EH (cl, expand f1 map error_msg)
     | EG (trans, f1) -> EG (trans, expand f1 map error_msg)
     | ET (tl, sw, f1) -> ET (tl, sw, expand f1 map error_msg)

@@ -15,6 +15,18 @@ GLOBAL-MACROS {
           HOLDS-NEXT WITH-TRANSITION Parameters
                 (has_type(x))
         HOLDS-IN-NODE ObjCMethodDecl;
+
+  LET method_has_at_least_a_parameter =
+      WHEN
+         HOLDS-NEXT WITH-TRANSITION Parameters
+               (TRUE)
+       HOLDS-IN-NODE ObjCMethodDecl;
+
+   LET method_has_all_parameter_with_type(x) =
+        WHEN
+          HOLDS-EVERYWHERE-NEXT WITH-TRANSITION Parameters
+           (has_type(x))
+        HOLDS-IN-NODE ObjCMethodDecl;
  };
 
 
@@ -168,6 +180,15 @@ DEFINE-CHECKER TEST_PARAM_TYPE_CHECK = {
 
   SET report_when =
            method_has_a_parameter_with_type("REGEXP('This.+')*" );
+
+  SET message = "Found a method with a parameter of type....";
+
+};
+
+DEFINE-CHECKER TEST_PARAM_TYPE_CHECK2 = {
+
+  SET report_when = method_has_at_least_a_parameter AND
+                    method_has_all_parameter_with_type("int");
 
   SET message = "Found a method with a parameter of type....";
 

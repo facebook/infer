@@ -189,12 +189,12 @@ actual_params:
 
 transition_label:
   | identifier { match $1 with
-                  | "Body" | "body" -> Some CTL.Body
-                  | "InitExpr" | "initexpr" -> Some CTL.InitExpr
-                  | "Cond" | "cond" -> Some CTL.Cond
-                  | "Parameters" | "parameters" -> Some CTL.Parameters
-                  | "PointerToDecl" | "pointertodecl" -> Some CTL.PointerToDecl
-                  | _  -> None }
+                  | "Body" | "body" -> "Body", Some CTL.Body
+                  | "InitExpr" | "initexpr" -> "InitExpr", Some CTL.InitExpr
+                  | "Cond" | "cond" -> "Cond", Some CTL.Cond
+                  | "Parameters" | "parameters" -> "Parameters", Some CTL.Parameters
+                  | "PointerToDecl" | "pointertodecl" -> "PointerToDecl", Some CTL.PointerToDecl
+                  | _  -> "None", None }
   ;
 
 formula_EF:
@@ -210,22 +210,28 @@ formula:
   | formula_id { CTL.Atomic($1, []) }
   | atomic_formula { Logging.out "\tParsed atomic formula\n"; $1 }
   | formula EU formula { Logging.out "\tParsed EU\n"; CTL.EU (None, $1, $3) }
-  | formula AU formula { Logging.out "\tParsed AU\n"; CTL.AU ($1, $3) }
-  | formula AF { Logging.out "\tParsed AF\n"; CTL.AF ($1) }
+  | formula AU formula { Logging.out "\tParsed AU\n"; CTL.AU (None,$1, $3) }
+  | formula AF { Logging.out "\tParsed AF\n"; CTL.AF (None,$1) }
   | formula EX { Logging.out "\tParsed EX\n"; CTL.EX (None, $1) }
-  | formula AX { Logging.out "\tParsed AX\n"; CTL.AX ($1) }
+  | formula AX { Logging.out "\tParsed AX\n"; CTL.AX (None, $1) }
   | formula EG { Logging.out "\tParsed EG\n"; CTL.EG (None, $1) }
-  | formula AG { Logging.out "\tParsed AG\n"; CTL.AG ($1) }
+  | formula AG { Logging.out "\tParsed AG\n"; CTL.AG (None, $1) }
   | formula EH node_list { Logging.out "\tParsed EH\n"; CTL.EH ($3, $1) }
   | formula EF { Logging.out "\tParsed EF\n"; CTL.EF (None, $1) }
   | WHEN formula HOLDS_IN_NODE node_list
      { Logging.out "\tParsed InNode\n"; CTL.InNode ($4, $2)}
   | ET node_list WITH_TRANSITION transition_label formula_EF
-     { Logging.out "\tParsed ET\n"; CTL.ET ($2, $4, $5)}
+     { Logging.out "\tParsed ET with transition '%s'\n" (fst $4);
+       CTL.ET ($2, snd $4, $5)}
   | ETX node_list WITH_TRANSITION transition_label formula_EF
-        { Logging.out "\tParsed ETX\n"; CTL.ETX ($2, $4, $5)}
+     { Logging.out "\tParsed ETX ith transition '%s'\n" (fst $4);
+       CTL.ETX ($2, snd $4, $5)}
   | EX WITH_TRANSITION transition_label formula_with_paren
-    { Logging.out "\tParsed EX\n"; CTL.EX ($3, $4)}
+    { Logging.out "\tParsed EX with transition '%s'\n" (fst $3);
+      CTL.EX (snd $3, $4)}
+  | AX WITH_TRANSITION transition_label formula_with_paren
+      { Logging.out "\tParsed AX with transition '%s'\n" (fst $3);
+        CTL.AX (snd $3, $4)}
   | formula AND formula { Logging.out "\tParsed AND\n"; CTL.And ($1, $3) }
   | formula OR formula { Logging.out "\tParsed OR\n"; CTL.Or ($1, $3) }
   | formula IMPLIES formula { Logging.out "\tParsed IMPLIES\n"; CTL.Implies ($1, $3) }

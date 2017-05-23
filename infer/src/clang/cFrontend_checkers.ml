@@ -46,7 +46,7 @@ let tag_name_of_node an =
   | Ctl_parser_types.Decl decl -> Clang_ast_proj.get_decl_kind_string decl
 
 let decl_ref_or_selector_name an =
-  match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
+  match CTL.next_state_via_transition an (CTL.PointerToDecl) with
   | [Ctl_parser_types.Decl ObjCMethodDecl _ as decl_an] ->
       "The selector " ^ (Ctl_parser_types.ast_node_name decl_an)
   | [Ctl_parser_types.Decl _ as decl_an] ->
@@ -61,7 +61,7 @@ let iphoneos_target_sdk_version _ =
 
 let available_ios_sdk an =
   let open Ctl_parser_types in
-  match CTL.next_state_via_transition an (Some CTL.PointerToDecl) with
+  match CTL.next_state_via_transition an (CTL.PointerToDecl) with
   | [Decl decl] ->
       (match CPredicates.get_available_attr_ios_sdk (Decl decl) with
        | Some version -> version
