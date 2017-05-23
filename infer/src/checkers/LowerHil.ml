@@ -9,6 +9,8 @@
 
 open! IStd
 
+module L = Logging
+
 module Make (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S) = struct
   module TransferFunctions = MakeTransferFunctions (CFG)
   module CFG = TransferFunctions.CFG
@@ -16,6 +18,7 @@ module Make (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S
   type extras = TransferFunctions.extras
 
   let exec_instr ((actual_state, id_map) as astate) extras node instr =
+
     let f_resolve_id id =
       try Some (IdAccessPathMapDomain.find id id_map)
       with Not_found -> None in
@@ -34,6 +37,20 @@ module Make (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S
         else actual_state, id_map'
     | Instr hil_instr ->
         let actual_state' = TransferFunctions.exec_instr actual_state extras node hil_instr in
+        if Config.write_html
+        then
+          begin
+            let underyling_node = CFG.underlying_node node in
+            NodePrinter.start_session underyling_node;
+            L.d_strln
+              (Format.asprintf
+                 "PRE: %a@.INSTR: %a@.POST: %a@."
+                 TransferFunctions.Domain.pp (fst astate)
+                 HilInstr.pp hil_instr
+                 TransferFunctions.Domain.pp actual_state');
+            NodePrinter.finish_session underyling_node;
+          end;
+
         if phys_equal actual_state actual_state'
         then astate
         else actual_state', id_map

@@ -21,15 +21,16 @@ module type S = sig
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
 
   val compute_post :
+    ?debug:bool ->
     TransferFunctions.extras ProcData.t ->
     initial:TransferFunctions.Domain.astate ->
     TransferFunctions.Domain.astate option
 
   val exec_cfg :
-    ?debug:bool ->
     TransferFunctions.CFG.t ->
     TransferFunctions.extras ProcData.t ->
     initial:TransferFunctions.Domain.astate ->
+    debug:bool ->
     invariant_map
 
   val exec_pdesc :
@@ -137,7 +138,7 @@ module MakeNoCFG
         inv_map
 
   (* compute and return an invariant map for [cfg] *)
-  let exec_cfg ?(debug=Config.write_html) cfg proc_data ~initial =
+  let exec_cfg cfg proc_data ~initial ~debug =
     let start_node = CFG.start_node cfg in
     let inv_map', work_queue' =
       exec_node start_node initial (Scheduler.empty cfg) InvariantMap.empty proc_data ~debug in
@@ -145,14 +146,13 @@ module MakeNoCFG
 
   (* compute and return an invariant map for [pdesc] *)
   let exec_pdesc ({ ProcData.pdesc; } as proc_data) =
-    exec_cfg (CFG.from_pdesc pdesc) proc_data
+    exec_cfg (CFG.from_pdesc pdesc) proc_data ~debug:Config.write_html
 
   (* compute and return the postcondition of [pdesc] *)
-  let compute_post ({ ProcData.pdesc; } as proc_data) ~initial =
+  let compute_post ?(debug=Config.write_html) ({ ProcData.pdesc; } as proc_data) ~initial =
     let cfg = CFG.from_pdesc pdesc in
-    let inv_map = exec_cfg cfg proc_data ~initial in
+    let inv_map = exec_cfg cfg proc_data ~initial ~debug in
     extract_post (CFG.id (CFG.exit_node cfg)) inv_map
-
 end
 
 module Interprocedural (Summ : Summary.S) = struct

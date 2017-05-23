@@ -562,7 +562,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             proc_data.pdesc (Cg.create (SourceFile.invalid __FILE__)) proc_data.tenv;
         end;
       let initial = make_initial proc_data.pdesc in
-      match Analyzer.compute_post proc_data ~initial with
+      match Analyzer.compute_post proc_data ~initial ~debug:false with
       | Some (access_tree, _) ->
           Some (make_summary proc_data access_tree)
       | None ->

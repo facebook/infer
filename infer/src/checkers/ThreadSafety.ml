@@ -805,7 +805,7 @@ let analyze_procedure callback =
           else
             { ThreadSafetyDomain.empty with threads; }, IdAccessPathMapDomain.empty in
 
-        match Analyzer.compute_post proc_data ~initial with
+        match Analyzer.compute_post proc_data ~initial ~debug:false with
         | Some ({ threads; locks; accesses; attribute_map; }, _) ->
             let return_var_ap =
               AccessPath.of_pvar

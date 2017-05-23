@@ -20,8 +20,10 @@ module type S = sig
   (** invariant map from node id -> state representing postcondition for node id *)
   type invariant_map = TransferFunctions.Domain.astate state InvariantMap.t
 
-  (** compute and return the postcondition for the given procedure starting from [initial] *)
+  (** compute and return the postcondition for the given procedure starting from [initial]. If
+      [debug] is true, print html debugging output. *)
   val compute_post :
+    ?debug:bool ->
     TransferFunctions.extras ProcData.t ->
     initial:TransferFunctions.Domain.astate ->
     TransferFunctions.Domain.astate option
@@ -29,10 +31,10 @@ module type S = sig
   (** compute and return invariant map for the given CFG/procedure starting from [initial]. if
       [debug] is true, print html debugging output. *)
   val exec_cfg :
-    ?debug:bool ->
     TransferFunctions.CFG.t ->
     TransferFunctions.extras ProcData.t ->
     initial:TransferFunctions.Domain.astate ->
+    debug:bool ->
     invariant_map
 
   (** compute and return invariant map for the given procedure starting from [initial] *)
