@@ -548,7 +548,7 @@ let method_invocation
             | I_Special -> false
             | _ -> true in
           match sil_obj_expr with
-          | Exp.Var _ when is_non_constructor_call && not Config.report_runtime_exceptions ->
+          | Exp.Var _ when is_non_constructor_call && not Config.tracing ->
               let obj_typ_no_ptr =
                 match sil_obj_type.Typ.desc with
                 | Typ.Tptr (typ, _) -> typ
@@ -912,7 +912,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
         Instr call_node
 
     | JBir.Check (JBir.CheckNullPointer expr)
-      when Config.report_runtime_exceptions && is_this expr ->
+      when Config.tracing && is_this expr ->
         (* TODO #6509339: refactor the boilerplate code in the translation of JVM checks *)
         let (instrs, sil_expr, _) = expression context pc expr in
         let this_not_null_node =
@@ -920,7 +920,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
             (Procdesc.Node.Stmt_node "this not null") (instrs @ [assume_not_null loc sil_expr]) in
         Instr this_not_null_node
 
-    | JBir.Check (JBir.CheckNullPointer expr) when Config.report_runtime_exceptions ->
+    | JBir.Check (JBir.CheckNullPointer expr) when Config.tracing ->
         let (instrs, sil_expr, _) = expression context pc expr in
         let not_null_node =
           let sil_not_null = Exp.BinOp (Binop.Ne, sil_expr, Exp.null) in
@@ -951,7 +951,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
         Prune (not_null_node, throw_npe_node)
 
     | JBir.Check (JBir.CheckArrayBound (array_expr, index_expr))
-      when Config.report_runtime_exceptions ->
+      when Config.tracing ->
         let instrs, _, sil_length_expr, sil_index_expr =
           let array_instrs, sil_array_expr, _ =
             expression context pc array_expr
@@ -1008,7 +1008,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
 
         Prune (in_bound_node, throw_out_of_bound_node)
 
-    | JBir.Check (JBir.CheckCast (expr, object_type)) when Config.report_runtime_exceptions ->
+    | JBir.Check (JBir.CheckCast (expr, object_type)) when Config.tracing ->
         let sil_type = JTransType.expr_type context expr
         and instrs, sil_expr, _ = expression context pc expr
         and ret_id = Ident.create_fresh Ident.knormal

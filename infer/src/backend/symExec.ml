@@ -1083,7 +1083,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                 Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__) in
               Reporting.log_warning current_pname exn
           | _ -> () in
-      if not Config.report_runtime_exceptions then
+      if not Config.tracing then
         check_already_dereferenced tenv current_pname cond prop__;
       check_condition_always_true_false ();
       let n_cond, prop = check_arith_norm_exp tenv current_pname cond prop__ in

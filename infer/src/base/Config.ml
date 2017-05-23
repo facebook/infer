@@ -495,7 +495,7 @@ and analyzer =
      - $(b,checkers), $(b,eradicate): run the specified analysis\n\
      - $(b,capture): similar to specifying the $(b,capture) subcommand (DEPRECATED)\n\
      - $(b,compile): similar to specifying the $(b,compile) subcommand (DEPRECATED)\n\
-     - $(b,crashcontext), $(b,tracing): experimental (see $(b,--crashcontext) and $(b,--tracing))\n\
+     - $(b,crashcontext): experimental (see $(b,--crashcontext))\n\
      - $(b,linters): run linters based on the ast only (Objective-C and Objective-C++ only, \
      activated by default)"
     ~symbols:string_to_analyzer
@@ -1841,7 +1841,6 @@ and report_custom_error = !report_custom_error
 and report_formatter = !report_formatter
 and report_hook = !report_hook
 and report_previous = !report_previous
-and report_runtime_exceptions = !tracing
 and reports_include_ml_loc = !reports_include_ml_loc
 and resolve_infer_eradicate_conflict = !resolve_infer_eradicate_conflict
 and results_dir = !results_dir
@@ -1873,6 +1872,7 @@ and trace_error = !trace_error
 and trace_ondemand = !trace_ondemand
 and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
+and tracing = !tracing
 and type_size = !type_size
 and unsafe_malloc = !unsafe_malloc
 and whole_seconds = !whole_seconds

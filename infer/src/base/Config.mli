@@ -310,7 +310,7 @@ val report_current : string option
 val report_formatter : [`No_formatter | `Phabricator_formatter]
 val report_hook : string option
 val report_previous : string option
-val report_runtime_exceptions : bool
+val tracing : bool
 val reports_include_ml_loc : bool
 val resolve_infer_eradicate_conflict : bool
 val results_dir : string

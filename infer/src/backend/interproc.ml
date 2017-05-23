@@ -1308,7 +1308,7 @@ let analyze_proc tenv proc_desc : Specs.summary =
     update_summary tenv summary specs phase res in
   if Config.curr_language_is Config.Clang && Config.report_custom_error then
     report_custom_errors tenv updated_summary;
-  if Config.curr_language_is Config.Java && Config.report_runtime_exceptions then
+  if Config.curr_language_is Config.Java && Config.tracing then
     report_runtime_exceptions tenv proc_desc updated_summary;
   updated_summary
 
