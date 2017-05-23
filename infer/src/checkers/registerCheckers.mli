@@ -10,3 +10,5 @@
 open! IStd
 
 val register : unit -> unit
+
+val pp_active_checkers : Format.formatter -> unit -> unit

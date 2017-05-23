@@ -189,7 +189,6 @@ val calls_csv : string option
 (** directory where the results of the capture phase are stored *)
 val captured_dir : string
 
-val checkers_repeated_calls : bool
 val clang_biniou_file : string option
 val clang_frontend_action_string : string
 val clang_frontend_do_capture : bool
@@ -289,8 +288,9 @@ val only_footprint : bool
 val out_file_cmdline : string
 val pmd_xml : bool
 val precondition_stats : bool
-val print_logs : bool
+val print_active_checkers : bool
 val print_builtins : bool
+val print_logs : bool
 val print_types : bool
 val print_using_diff : bool
 val printf_args : bool
@@ -305,6 +305,7 @@ val quandary_sinks : Yojson.Basic.json
 val quiet : bool
 val reactive_mode : bool
 val reactive_capture : bool
+val repeated_calls : bool
 val report_current : string option
 val report_formatter : [`No_formatter | `Phabricator_formatter]
 val report_hook : string option

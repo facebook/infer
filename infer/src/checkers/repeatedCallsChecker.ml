@@ -167,7 +167,7 @@ let callback_check_repeated_calls callback_args =
   let checks =
     {
       TypeCheck.eradicate = false;
-      check_extension = Config.checkers_repeated_calls;
+      check_extension = Config.repeated_calls;
       check_ret_type = [];
     } in
   MainRepeatedCalls.callback checks callback_args

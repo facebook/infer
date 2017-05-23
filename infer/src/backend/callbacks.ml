@@ -41,10 +41,6 @@ let register_procedure_callback language_opt (callback: proc_callback_t) =
 let register_cluster_callback language_opt (callback: cluster_callback_t) =
   cluster_callbacks := (language_opt, callback):: !cluster_callbacks
 
-let unregister_all_callbacks () =
-  procedure_callbacks := [];
-  cluster_callbacks := []
-
 (** Collect what we need to know about a procedure for the analysis. *)
 let get_procedure_definition exe_env proc_name =
   let tenv = Exe_env.get_tenv exe_env proc_name in

@@ -41,8 +41,5 @@ val register_procedure_callback : Config.language option -> proc_callback_t -> u
 (** register a cluster callback *)
 val register_cluster_callback : Config.language option -> cluster_callback_t -> unit
 
-(** un-register all the procedure callbacks currently registered *)
-val unregister_all_callbacks : unit -> unit
-
 (** Invoke all the registered callbacks. *)
 val iterate_callbacks : Cg.t -> Exe_env.t -> unit

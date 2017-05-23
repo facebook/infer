@@ -14,53 +14,55 @@ open! IStd
 module L = Logging
 module F = Format
 
-let enabled_by_default =
-  (* True when no checker is explicitely enabled from the command line *)
-  let open Config in
-  not (biabduction || bufferoverrun || checkers_repeated_calls || crashcontext
-       || eradicate || quandary || siof || threadsafety)
+(* make sure SimpleChecker.ml is not dead code *)
+let () = if false then (let module SC = SimpleChecker.Make in ())
 
-(** Flags to activate checkers. *)
-let active_procedure_checkers () =
+type callback =
+  | Procedure of Callbacks.proc_callback_t
+  | Cluster of Callbacks.cluster_callback_t
 
-  let java_checkers =
-    let l =
-      [
-        FragmentRetainsViewChecker.callback_fragment_retains_view, enabled_by_default
-                                                                   || Config.fragment_retains_view;
-        Eradicate.callback_eradicate, Config.eradicate;
-        BoundedCallTree.checker, Config.crashcontext;
-        JavaTaintAnalysis.checker, Config.quandary || enabled_by_default;
-        ImmutableChecker.callback_check_immutable_cast, enabled_by_default
-                                                        || Config.immutable_cast;
-        RepeatedCallsChecker.callback_check_repeated_calls, Config.checkers_repeated_calls;
-        PrintfArgs.callback_printf_args, enabled_by_default || Config.printf_args;
-        AnnotationReachability.checker, enabled_by_default || Config.annotation_reachability;
-        BufferOverrunChecker.checker, Config.bufferoverrun;
-        ThreadSafety.analyze_procedure, enabled_by_default || Config.threadsafety;
-        Interproc.analyze_procedure, Config.biabduction;
-      ] in
-    (* make sure SimpleChecker.ml is not dead code *)
-    if false then (let module SC = SimpleChecker.Make in ());
-    List.map ~f:(fun (x, y) -> (x, y, Some Config.Java)) l in
-  let c_cpp_checkers =
-    let l =
-      [
-        ClangTaintAnalysis.checker, Config.quandary;
-        Siof.checker, enabled_by_default || Config.siof;
-        ThreadSafety.analyze_procedure, Config.threadsafety;
-        BufferOverrunChecker.checker, Config.bufferoverrun;
-        Interproc.analyze_procedure, Config.biabduction;
-      ] in
-    List.map ~f:(fun (x, y) -> (x, y, Some Config.Clang)) l in
-
-  java_checkers @ c_cpp_checkers
-
-let active_cluster_checkers () =
-  [(ThreadSafety.file_analysis, enabled_by_default || Config.threadsafety, Some Config.Java)]
+let checkers = [
+  "annotation reachability", Config.annotation_reachability,
+  [Procedure AnnotationReachability.checker, Config.Java];
+  "biabduction", Config.biabduction,
+  [Procedure Interproc.analyze_procedure, Config.Clang;
+   Procedure Interproc.analyze_procedure, Config.Java];
+  "buffer overrun", Config.bufferoverrun,
+  [Procedure BufferOverrunChecker.checker, Config.Clang;
+   Procedure BufferOverrunChecker.checker, Config.Java];
+  "crashcontext", Config.crashcontext, [Procedure BoundedCallTree.checker, Config.Java];
+  "eradicate", Config.eradicate, [Procedure Eradicate.callback_eradicate, Config.Java];
+  "fragment retains view", Config.fragment_retains_view,
+  [Procedure FragmentRetainsViewChecker.callback_fragment_retains_view, Config.Java];
+  "immutable cast", Config.immutable_cast,
+  [Procedure ImmutableChecker.callback_check_immutable_cast, Config.Java];
+  "printf args", Config.printf_args, [Procedure PrintfArgs.callback_printf_args, Config.Java];
+  "quandary", Config.quandary,
+  [Procedure JavaTaintAnalysis.checker, Config.Java;
+   Procedure ClangTaintAnalysis.checker, Config.Clang];
+  "repeated calls", Config.repeated_calls,
+  [Procedure RepeatedCallsChecker.callback_check_repeated_calls, Config.Java];
+  "SIOF", Config.siof, [Procedure Siof.checker, Config.Clang];
+  "thread safety", Config.threadsafety,
+  [Procedure ThreadSafety.analyze_procedure, Config.Clang;
+   Procedure ThreadSafety.analyze_procedure, Config.Java;
+   Cluster ThreadSafety.file_analysis, Config.Java]
+]
 
 let register () =
-  let register registry (callback, active, language_opt) =
-    if active then registry language_opt callback in
-  List.iter ~f:(register Callbacks.register_procedure_callback) (active_procedure_checkers ());
-  List.iter ~f:(register Callbacks.register_cluster_callback) (active_cluster_checkers ())
+  let register_one (_, active, callbacks) =
+    let register_callback (callback, language) = match callback with
+      | Procedure procedure_cb ->
+          Callbacks.register_procedure_callback (Some language) procedure_cb
+      | Cluster cluster_cb ->
+          Callbacks.register_cluster_callback (Some language) cluster_cb in
+    if active then List.iter ~f:register_callback callbacks in
+  List.iter ~f:register_one checkers
+
+let pp_active_checkers fmt () =
+  let has_active = ref false in
+  List.iter checkers ~f:(fun (name, active, _) -> if active then (
+      Format.fprintf fmt "%s%s" (if !has_active then ", " else "") name;
+      has_active := true
+    ));
+  if not !has_active then Format.fprintf fmt "none"

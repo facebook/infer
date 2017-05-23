@@ -508,12 +508,101 @@ and angelic_execution =
   CLOpt.mk_bool ~deprecated:["angelic_execution"] ~long:"angelic-execution" ~default:true
     "Angelic execution, where the analysis ignores errors caused by unknown procedure calls"
 
-and annotation_reachability =
-  CLOpt.mk_bool ~long:"annotation-reachability" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the annotation reachability checker. Given a pair of source and sink annotation, e.g. \
-     @PerformanceCritical and @Expensive, this checker will warn whenever some method annotated \
-     with @PerformanceCritical calls, directly or indirectly, another method annotated with \
-     @Expensive"
+and (annotation_reachability,
+     biabduction,
+     bufferoverrun,
+     crashcontext,
+     default_checkers,
+     eradicate,
+     fragment_retains_view,
+     immutable_cast,
+     printf_args,
+     quandary,
+     repeated_calls,
+     siof,
+     threadsafety) =
+  let annotation_reachability =
+    CLOpt.mk_bool ~long:"annotation-reachability" ~in_help:CLOpt.[Analyze, manual_generic]
+      ~default:true
+      "the annotation reachability checker. Given a pair of source and sink annotation, e.g. \
+       @PerformanceCritical and @Expensive, this checker will warn whenever some method annotated \
+       with @PerformanceCritical calls, directly or indirectly, another method annotated with \
+       @Expensive"
+
+  and biabduction =
+    CLOpt.mk_bool ~long:"biabduction" ~in_help:CLOpt.[Analyze, manual_generic]
+      "the separation logic based bi-abduction analysis using the checkers framework"
+
+  and bufferoverrun =
+    CLOpt.mk_bool ~long:"bufferoverrun" ~in_help:CLOpt.[Analyze, manual_generic]
+      "the buffer overrun analysis"
+
+  and crashcontext =
+    CLOpt.mk_bool ~long:"crashcontext" ~in_help:CLOpt.[Analyze, manual_generic]
+      "the crashcontext checker for Java stack trace context reconstruction"
+
+  and eradicate =
+    CLOpt.mk_bool ~long:"eradicate" ~in_help:CLOpt.[Analyze, manual_generic]
+      "the eradicate @Nullable checker for Java annotations"
+
+  and fragment_retains_view =
+    CLOpt.mk_bool ~long:"fragment-retains-view" ~in_help:CLOpt.[Analyze, manual_generic]
+      ~default:true
+      "detects when Android fragments are not explicitly nullified before becoming unreabable"
+
+  and immutable_cast =
+    CLOpt.mk_bool ~long:"immutable-cast" ~in_help:CLOpt.[Analyze, manual_generic]
+      ~default:true
+      "the detection of object cast from immutable type to mutable type. \
+       For instance, it will detect cast from ImmutableList to List, ImmutableMap to Map, \
+       and ImmutableSet to Set."
+
+  and printf_args =
+    CLOpt.mk_bool ~long:"printf-args" ~in_help:CLOpt.[Analyze, manual_generic]
+      ~default:true
+      "the detection of mismatch between the Java printf format strings and the argument types \
+       For, example, this checker will warn about the type error in \
+       `printf(\"Hello %d\", \"world\")`"
+
+  and repeated_calls =
+    CLOpt.mk_bool ~long:"repeated-calls" ~in_help:CLOpt.[Analyze, manual_generic]
+      "check for repeated calls"
+
+  and quandary =
+    CLOpt.mk_bool ~long:"quandary" ~in_help:CLOpt.[Analyze, manual_generic] ~default:true
+      "the quandary taint analysis"
+
+  and siof =
+    CLOpt.mk_bool ~long:"siof" ~in_help:CLOpt.[Analyze, manual_generic] ~default:true
+      "the Static Initialization Order Fiasco analysis (C++ only)"
+
+  and threadsafety =
+    CLOpt.mk_bool ~long:"threadsafety" ~in_help:CLOpt.[Analyze, manual_generic] ~default:true
+      "the thread safety analysis" in
+
+  (* IMPORTANT: keep in sync with the checkers that have ~default:true above *)
+  let default_checkers =
+    CLOpt.mk_bool_group ~long:"default-checkers" ~in_help:CLOpt.[Analyze, manual_generic]
+      ~default:true
+      "Default checkers: $(b,--annotation-reachability), $(b,--fragments-retains-view), \
+       $(b,--immutable-cast), $(b,--printf-args), $(b,--quandary), $(b,--siof), $(b,--threadsafety)"
+      [annotation_reachability; fragment_retains_view; immutable_cast; printf_args; quandary;
+       siof; threadsafety]
+      [] in
+
+  (annotation_reachability,
+   biabduction,
+   bufferoverrun,
+   crashcontext,
+   default_checkers,
+   eradicate,
+   fragment_retains_view,
+   immutable_cast,
+   printf_args,
+   quandary,
+   repeated_calls,
+   siof,
+   threadsafety)
 
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
@@ -532,10 +621,6 @@ and array_level =
 and ast_file =
   CLOpt.mk_path_opt ~deprecated:["ast"] ~long:"ast-file"
     ~meta:"file" "AST file for the translation"
-
-and biabduction =
-  CLOpt.mk_bool ~long:"biabduction" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the separation logic based bi-abduction analysis using the checkers framework"
 
 and blacklist =
   CLOpt.mk_string_opt ~deprecated:["-blacklist-regex";"-blacklist"] ~long:"buck-blacklist"
@@ -571,10 +656,6 @@ and buck_out =
   CLOpt.mk_path_opt ~long:"buck-out"
     ~in_help:CLOpt.[Capture, manual_buck_java] ~meta:"dir" "Specify the root directory of buck-out"
 
-and bufferoverrun =
-  CLOpt.mk_bool ~long:"bufferoverrun" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the buffer overrun analysis"
-
 and bugs_csv =
   CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
     ~in_help:CLOpt.[Report, manual_generic]
@@ -608,10 +689,6 @@ and changed_files_index =
     ~meta:"file"
     "Specify the file containing the list of source files from which reactive analysis should \
      start. Source files should be specified relative to project root or be absolute"
-
-and checkers_repeated_calls =
-  CLOpt.mk_bool ~long:"checkers-repeated-calls" ~in_help:CLOpt.[Analyze, manual_generic]
-    "check for repeated calls"
 
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file"
@@ -680,10 +757,6 @@ and continue =
 and copy_propagation =
   CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
     "Perform copy-propagation on the IR"
-
-and crashcontext =
-  CLOpt.mk_bool ~long:"crashcontext" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the crashcontext checker for Java stack trace context reconstruction"
 
 and cxx =
   CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx"
@@ -847,10 +920,6 @@ and enable_checks =
   CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error name"
     "Show reports coming from this type of errors"
 
-and eradicate =
-  CLOpt.mk_bool ~long:"eradicate" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the eradicate @Nullable checker for Java annotations"
-
 and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant"
     "Condition redundant warnings"
@@ -923,10 +992,6 @@ and flavors =
     "Buck integration using Buck flavors (clang only), eg $(i,`infer --flavors -- buck build \
      //foo:bar#infer`)"
 
-and fragment_retains_view =
-  CLOpt.mk_bool ~long:"fragment-retains-view" ~in_help:CLOpt.[Analyze, manual_generic]
-    "detects when Android fragments are not explicitly nullified before becoming unreabable"
-
 and from_json_report =
   CLOpt.mk_path_opt ~long:"from-json-report"
     ~in_help:CLOpt.[Report, manual_generic]
@@ -976,12 +1041,6 @@ and icfg_dotty_outfile =
   CLOpt.mk_path_opt ~long:"icfg-dotty-outfile" ~meta:"path"
     "If set, specifies path where .dot file should be written, it overrides the path for all \
      other options that would generate icfg file otherwise"
-
-and immutable_cast =
-  CLOpt.mk_bool ~long:"immutable-cast" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the detection of object cast from immutable type to mutable type. \
-     For instance, it will detect cast from ImmutableList to List, ImmutableMap to Map, \
-     and ImmutableSet to Set."
 
 and infer_cache =
   CLOpt.mk_path_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache"
@@ -1146,15 +1205,13 @@ and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
     "Print stats about preconditions to standard output"
 
+and print_active_checkers =
+  CLOpt.mk_bool ~long:"print-active-checkers" ~in_help:CLOpt.[Analyze, manual_generic]
+    "Print the active checkers before starting the analysis"
+
 and print_builtins =
   CLOpt.mk_bool ~deprecated:["print_builtins"] ~long:"print-builtins"
     "Print the builtin functions and exit"
-
-and printf_args =
-  CLOpt.mk_bool ~long:"printf-args" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the detection of mismatch between the Java printf format strings and the argument types \
-     For, example, this checker will warn about the type error in \
-     `printf(\"Hello %d\", \"world\")`"
 
 and print_using_diff =
   CLOpt.mk_bool ~deprecated_no:["noprintdiff"] ~long:"print-using-diff" ~default:true
@@ -1188,10 +1245,6 @@ and project_root =
     ~in_help:CLOpt.[Analyze, manual_generic; Capture, manual_generic; Run, manual_generic;
                     Report, manual_generic]
     ~meta:"dir" "Specify the root directory of the project"
-
-and quandary =
-  CLOpt.mk_bool ~long:"quandary" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the quandary taint analysis"
 
 and quandary_endpoints =
   CLOpt.mk_json ~long:"quandary-endpoints"
@@ -1284,10 +1337,6 @@ and save_results =
 and seconds_per_iteration =
   CLOpt.mk_float_opt ~deprecated:["seconds_per_iteration"] ~long:"seconds-per-iteration"
     ~meta:"float" "Set the number of seconds per iteration (see $(b,--iterations))"
-
-and siof =
-  CLOpt.mk_bool ~long:"siof" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the Static Initialization Order Fiasco analysis (C++ only)"
 
 and siof_safe_methods =
   CLOpt.mk_string_list ~long:"siof-safe-methods"
@@ -1398,10 +1447,6 @@ and threadsafe_aliases =
   CLOpt.mk_json ~long:"threadsafe-aliases"
     ~in_help:CLOpt.[Analyze, manual_threadsafety]
     "Specify custom annotations that should be considered aliases of @ThreadSafe"
-
-and threadsafety =
-  CLOpt.mk_bool ~long:"threadsafety" ~in_help:CLOpt.[Analyze, manual_generic]
-    "the thread safety analysis"
 
 and trace_join =
   CLOpt.mk_bool ~deprecated:["trace_join"] ~long:"trace-join"
@@ -1693,7 +1738,6 @@ and bugs_txt = !bugs_txt
 and changed_files_index = !changed_files_index
 and calls_csv = !calls_csv
 and dump_duplicate_symbols = !dump_duplicate_symbols
-and checkers_repeated_calls = !checkers_repeated_calls
 and clang_biniou_file = !clang_biniou_file
 and clang_ignore_regex = !clang_ignore_regex
 and clang_include_to_override_regex = !clang_include_to_override_regex
@@ -1777,8 +1821,9 @@ and per_procedure_parallelism = !per_procedure_parallelism
 and pmd_xml = !pmd_xml
 and precondition_stats = !precondition_stats
 and printf_args = !printf_args
-and print_logs = !print_logs
+and print_active_checkers = !print_active_checkers
 and print_builtins = !print_builtins
+and print_logs = !print_logs
 and print_types = !print_types
 and print_using_diff = !print_using_diff
 and procedures_per_process = !procedures_per_process
@@ -1792,6 +1837,7 @@ and quandary_sinks = !quandary_sinks
 and quiet = !quiet
 and reactive_mode = !reactive
 and reactive_capture = !reactive_capture
+and repeated_calls = !repeated_calls
 and report_current = !report_current
 and report_custom_error = !report_custom_error
 and report_formatter = !report_formatter

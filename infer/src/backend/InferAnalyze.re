@@ -168,6 +168,9 @@ let main makefile => {
       List.exists
         f::(fun cl => DB.string_crc_has_extension ext::"java" (DB.source_dir_to_string cl))
         all_clusters;
+    if Config.print_active_checkers {
+      L.stderr "Active checkers: %a@." RegisterCheckers.pp_active_checkers ()
+    };
     print_stdout_legend ();
     if (Config.per_procedure_parallelism && not (is_java ())) {
       /* Java uses ZipLib which is incompatible with forking */

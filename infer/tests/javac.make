@@ -22,7 +22,8 @@ PROJECT_ROOT ?= $(TESTS_DIR)
 $(OBJECTS): $(SOURCES)
 	$(JAVAC) -cp $(CLASSPATH) $(SOURCES)
 
-infer-out/report.json: $(JAVA_DEPS) $(SOURCES)
+infer-out/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/java$(ANALYZER_STRING) in $(TEST_REL_DIR),\
-	  $(INFER_BIN) -a $(ANALYZER) --project-root $(PROJECT_ROOT) $(INFER_OPTIONS) -- \
+	  $(INFER_BIN) -a $(ANALYZER) --no-default-checkers --project-root $(PROJECT_ROOT) \
+	    $(INFER_OPTIONS) -- \
 	    $(JAVAC) -cp $(CLASSPATH) $(SOURCES))
