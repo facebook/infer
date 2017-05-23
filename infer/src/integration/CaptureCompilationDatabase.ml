@@ -84,8 +84,11 @@ let get_compilation_database_files_buck ~prog ~args =
   | build :: args_with_flavor -> (
       let build_args = build :: "--config" :: "*//cxx.pch_enabled=false" :: args_with_flavor in
       Process.create_process_and_wait ~prog ~args:build_args;
+      (* The option --keep-going is not accepted in the command buck targets *)
+      let args_with_flavor_no_keep_going =
+        List.filter ~f:(fun s -> not (String.equal s "--keep-going")) args_with_flavor in
       let buck_targets_shell =
-        prog :: "targets" :: "--show-output" :: args_with_flavor
+        prog :: "targets" :: "--show-output" :: args_with_flavor_no_keep_going
         |> Utils.shell_escape_command in
       let (output, exit_or_signal) =
         Utils.with_process_in buck_targets_shell In_channel.input_lines in
