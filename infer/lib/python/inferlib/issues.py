@@ -52,6 +52,7 @@ JSON_INDEX_TRACE = 'bug_trace'
 JSON_INDEX_TRACE_LEVEL = 'level'
 JSON_INDEX_TRACE_FILENAME = 'filename'
 JSON_INDEX_TRACE_LINE = 'line_number'
+JSON_INDEX_TRACE_COLUMN = 'column_number'
 JSON_INDEX_TRACE_DESCRIPTION = 'description'
 JSON_INDEX_TRACEVIEW_ID = 'traceview_id'
 JSON_INDEX_VISIBILITY = 'visibility'
@@ -110,6 +111,8 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
             os.path.join(project_root, filename),
             formatter,
             line,
+            1,
+            True
         )
         indenter = source.Indenter() \
                          .indent_push() \

@@ -126,6 +126,7 @@ let loc_trace_to_jsonbug_record trace_list ekind =>
       Jsonbug_j.level: trace_item.Errlog.lt_level,
       filename: SourceFile.to_string trace_item.Errlog.lt_loc.Location.file,
       line_number: trace_item.Errlog.lt_loc.Location.line,
+      column_number: trace_item.Errlog.lt_loc.Location.col,
       description: trace_item.Errlog.lt_description,
       node_tags: List.concat_map f::tag_value_records_of_node_tag trace_item.Errlog.lt_node_tags
     };

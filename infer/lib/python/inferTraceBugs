@@ -81,12 +81,14 @@ class Tracer(object):
             return
 
         report_line = node[issues.JSON_INDEX_TRACE_LINE]
+        report_col = node[issues.JSON_INDEX_TRACE_COLUMN]
         fname = node[issues.JSON_INDEX_TRACE_FILENAME]
 
         self.indenter.newline()
-        self.indenter.add('%s:%d: %s' % (
+        self.indenter.add('%s:%d:%d: %s' % (
             fname,
             report_line,
+            report_col,
             node[issues.JSON_INDEX_TRACE_DESCRIPTION],
         ))
         self.indenter.newline()
@@ -96,9 +98,13 @@ class Tracer(object):
             mode = colorize.TERMINAL_FORMATTER
             if self.args.html:
                 mode = colorize.PLAIN_FORMATTER
+            empty_desc = len(node[issues.JSON_INDEX_TRACE_DESCRIPTION]) == 0
             self.indenter.add(source.build_source_context(fname,
                                                           mode,
-                                                          report_line))
+                                                          report_line,
+                                                          report_col,
+                                                          empty_desc
+                                                          ))
             self.indenter.indent_pop()
             self.indenter.newline()
 

@@ -60,8 +60,10 @@ class Indenter(unicode):
         return utils.encode(unicode(self))
 
 
-def build_source_context(source_name, mode, report_line):
+def build_source_context(source_name, mode, report_line,
+                         report_col, empty_desc):
     start_line = max(1, report_line - SOURCE_CONTEXT)
+    start_col = max(0, report_col)
     # could go beyond last line, checked in the loop
     end_line = report_line + SOURCE_CONTEXT
 
@@ -91,10 +93,20 @@ def build_source_context(source_name, mode, report_line):
         num = colorize.color((str(line_number) + '.').zfill(n_length),
                              colorize.DIM, mode)
         caret = '  '
-        if line_number == report_line:
+        do_mark_column = (line_number == report_line and
+                          start_col > 1 and not empty_desc)
+
+        # mark the line if we are not also marking the column
+        if line_number == report_line and not do_mark_column:
             caret = colorize.color('> ',
-                                   colorize.HEADER, mode)
+                                   colorize.BLUE + colorize.BRIGHT, mode)
         s += '%s %s%s\n' % (num, caret, line)
+        # mark the column position
+        if do_mark_column:
+            pad = ' ' * (3 + n_length + start_col)
+            s += pad + colorize.color('^',
+                                      colorize.BLUE + colorize.BRIGHT,
+                                      mode) + '\n'
         line_number += 1
 
     return s

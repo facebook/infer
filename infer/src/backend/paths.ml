@@ -472,16 +472,20 @@ end = struct
                 trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
             | Procdesc.Node.Prune_node (is_true_branch, if_kind, _) ->
                 let descr = match is_true_branch, if_kind with
-                  | true, Sil.Ik_if -> "Taking true branch"
-                  | false, Sil.Ik_if -> "Taking false branch"
+                  | true, Sil.Ik_if ->
+                      "Taking true branch"
+                  | false, Sil.Ik_if ->
+                      "Taking false branch"
                   | true, (Sil.Ik_for | Sil.Ik_while | Sil.Ik_dowhile) ->
                       "Loop condition is true. Entering loop body"
                   | false, (Sil.Ik_for | Sil.Ik_while | Sil.Ik_dowhile) ->
                       "Loop condition is false. Leaving loop"
                   | true, Sil.Ik_switch -> "Switch condition is true. Entering switch case"
                   | false, Sil.Ik_switch -> "Switch condition is false. Skipping switch case"
-                  | true, (Sil.Ik_bexp | Sil.Ik_land_lor) -> "Condition is true"
-                  | false, (Sil.Ik_bexp | Sil.Ik_land_lor) -> "Condition is false" in
+                  | true, (Sil.Ik_bexp | Sil.Ik_land_lor)  ->
+                      "Condition is true"
+                  | false, (Sil.Ik_bexp | Sil.Ik_land_lor) ->
+                      "Condition is false" in
                 let node_tags = [Errlog.Condition is_true_branch] in
                 trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
             | Procdesc.Node.Exit_node pname ->
