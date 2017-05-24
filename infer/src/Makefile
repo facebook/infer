@@ -411,8 +411,10 @@ clean:
 	$(REMOVE) base/Version.ml.tmp.*
 	$(REMOVE) backend/jsonbug_{j,t}.ml{,i}
 	$(REMOVE) checkers/stacktree_{j,t}.ml{,i}
-	$(REMOVE) $(INFER_BIN){,.byte,.native} $(INFER_BIN_ALIASES)
-	$(REMOVE) $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
+#	be a bit more aggressive than needed with what we remove here so that stale binaries that
+#	only existed in previous versions get removed as well
+	$(REMOVE) $(BIN_DIR)/Infer* $(BIN_DIR)/infer-* $(INFER_BIN){,.byte,.native} $(INFER_BIN_ALIASES) \
+	  $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(CLANG_ATDGEN_STUBS)
 	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(REMOVE) $(INFER_CREATE_TRACEVIEW_LINKS_BIN)

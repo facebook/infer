@@ -89,7 +89,15 @@ buck-out/
 .buckd/
 
 #other
-/infer/bin
+/infer/bin/infer
+/infer/bin/infer.byte
+/infer/bin/infer.native
+/infer/bin/infer-analyze
+/infer/bin/infer-capture
+/infer/bin/infer-compile
+/infer/bin/infer-report
+/infer/bin/infer-reportdiff
+/infer/bin/infer-run
 /infer/man
 
 /infer/src/base/Version.ml
