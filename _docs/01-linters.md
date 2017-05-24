@@ -42,8 +42,6 @@ infer --stats -- clang -c Test.m
 
 where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.o.sh in the current directory that has instructions to call the command InferClang with the ast of the file. This is the command that performs both the translation of the source file into the intermediate language and also performs the lint checks. Run this script with bash Test.o.sh and a file Test.o.bdump will be generated, that contains the ast of the program in a readable biniou format.
 
-For more info, here is an introduction to the clang ast.
-
 
 **Using AL to write linters**
 
