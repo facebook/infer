@@ -82,7 +82,8 @@ let evaluate_place_holder ph an =
   | "%iphoneos_target_sdk_version%" ->
       MF.monospaced_to_string (CFrontend_checkers.iphoneos_target_sdk_version an)
   | "%available_ios_sdk%" -> MF.monospaced_to_string (CFrontend_checkers.available_ios_sdk an)
-  | _ -> failwithf "Helper function %s is unknown" ph
+  | _ -> (Logging.out "ERROR: helper function %s is unknown. Stop.\n" ph;
+          assert false)
 
 (* given a message this function searches for a place-holder identifier,
    eg %id%. Then it evaluates id and replaces %id% in message
@@ -113,13 +114,16 @@ let string_to_err_kind = function
   | "ERROR" -> Exceptions.Kerror
   | "INFO" -> Exceptions.Kinfo
   | "ADVICE" -> Exceptions.Kadvice
-  | s -> failwithf "Severity %s does not exist" s
+  | s -> (Logging.out "\n[ERROR] Severity %s does not exist. Stop.\n" s;
+          assert false)
 
 let string_to_issue_mode m =
   match m with
   | "ON" -> CIssue.On
   | "OFF" -> CIssue.Off
-  | s -> failwithf "Mode %s does not exist. Please specify ON/OFF" s
+  | s ->
+      (Logging.out "\n[ERROR] Mode %s does not exist. Please specify ON/OFF\n" s;
+       assert false)
 
 (** Convert a parsed checker in list of linters *)
 let create_parsed_linters linters_def_file checkers : linter list =

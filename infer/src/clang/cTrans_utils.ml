@@ -572,7 +572,8 @@ let rec get_type_from_exp_stmt stmt =
       get_type_from_exp_stmt (extract_stmt_from_singleton stmt_list "WARNING: We expect only one stmt.")
   | DeclRefExpr(_, _, _, info) -> do_decl_ref_exp info
   | _ ->
-      failwithf "Cannot get type fo stmt %s" (Clang_ast_j.string_of_stmt stmt)
+      Logging.out "Failing with: %s@\n%!" (Clang_ast_j.string_of_stmt stmt);
+      assert false
 
 module Self =
 struct

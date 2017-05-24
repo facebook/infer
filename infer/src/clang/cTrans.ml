@@ -880,7 +880,8 @@ struct
           if Int.equal (List.length params) (List.length params_stmt) then
             params
           else
-            failwith "ERROR: stmt_list and res_trans_par.exps must have same size" in
+            (Logging.out "ERROR: stmt_list and res_trans_par.exps must have same size\n";
+             assert false) in
         let act_params = if is_cf_retain_release then
             (Exp.Const (Const.Cint IntLit.one), Typ.mk (Tint Typ.IBool)) :: act_params
           else act_params in

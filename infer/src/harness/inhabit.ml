@@ -142,7 +142,8 @@ let rec inhabit_typ tenv typ cfg env =
       | Typ.Tint (_) -> (Exp.Const (Const.Cint (IntLit.zero)), env)
       | Typ.Tfloat (_) -> (Exp.Const (Const.Cfloat 0.0), env)
       | _ ->
-          failwithf "Couldn't inhabit typ: %a" (Typ.pp Pp.text) typ in
+          L.out "Couldn't inhabit typ: %a@." (Typ.pp Pp.text) typ;
+          assert false in
     let (inhabited_exp, env') =
       inhabit_internal typ { env with cur_inhabiting = TypSet.add typ env.cur_inhabiting } in
     (inhabited_exp, { env' with cache = TypMap.add typ inhabited_exp env.cache;

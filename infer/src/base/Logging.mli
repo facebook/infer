@@ -108,7 +108,7 @@ val pp_ml_loc_opt : Format.formatter -> ml_loc option -> unit
 val assert_false : ml_loc -> 'a
 
 (** print a warning with information of the position in the ml source where it oririnated.
-    use as: warning_position "description" (try assert false with Assert_failure x -> x); *)
+    use as: warning_position "description" __POS__; *)
 val warning_position: string -> ml_loc -> unit
 
 (** dump a string *)

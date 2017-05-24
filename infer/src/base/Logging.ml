@@ -227,7 +227,7 @@ let assert_false ((file, lnum, cnum, _) as ml_loc) =
   raise (Assert_failure (file, lnum, cnum))
 
 (** print a warning with information of the position in the ml source where it oririnated.
-    use as: warning_position "description" (try assert false with Assert_failure x -> x); *)
+    use as: warning_position "description" __POS__; *)
 let warning_position (s: string) (ml_loc: ml_loc) =
   out "WARNING: %s in %a@." s pp_ml_loc_opt (Some ml_loc)
 

@@ -117,7 +117,8 @@ module Worklist = struct
         Procdesc.NodeMap.add min.node (min.visits + 1) wl.visit_map; (* increase the visits *)
       min.node
     with Not_found -> begin
-        failwithf "Work list is empty! Impossible to remove edge."
+        L.out "@\n...Work list is empty! Impossible to remove edge...@\n";
+        assert false
       end
 end
 (* =============== END of module Worklist =============== *)
@@ -161,7 +162,8 @@ let path_set_checkout_todo (wl : Worklist.t) (node: Procdesc.Node.t) : Paths.Pat
     Hashtbl.replace wl.Worklist.path_set_visited node_id new_visited;
     todo
   with Not_found ->
-    failwithf "could not find todo for node %a" Procdesc.Node.pp node
+    L.out "@.@.ERROR: could not find todo for node %a@.@." Procdesc.Node.pp node;
+    assert false
 
 (* =============== END of the edge_set object =============== *)
 

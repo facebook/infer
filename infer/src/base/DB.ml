@@ -164,7 +164,8 @@ let update_file_with_lock dir fname update =
     Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L;
     Unix.close fd
   ) else (
-    failwithf "save_with_lock: fail on path: %s@." path
+    L.out "@.save_with_lock: fail on path: %s@." path;
+    assert false
   )
 
 (** Read a file using a lock to allow write attempts in parallel. *)

@@ -113,8 +113,10 @@ let strip_special_chars b =
   let replace st c c' =
     if String.contains st c then begin
       let idx = String.index_exn st c in
-      String.set st idx c';
-      st
+      try
+        String.set st idx c';
+        st
+      with Invalid_argument _ -> L.out "@\n@\n Invalid argument!!! @\n @.@.@."; assert false
     end else st in
   let s0 = replace b '(' 'B' in
   let s1 = replace s0 '$' 'D' in
@@ -427,7 +429,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
                end else
                  [(LinkStructToExp, Fieldname.to_string fn, n,"")]
            | _ -> (* by construction there must be at most 2 nodes for an expression*)
-               failwithf "Got more than 2 nodes, this should never happen!")
+               L.out "@\n Too many nodes! Error! @\n@.@."; assert false)
     | Sil.Estruct (_, _) -> [] (* inner struct are printed by print_struc function *)
     | Sil.Earray _ -> [] (* inner arrays are printed by print_array function *) in
   match list_fld with
@@ -460,7 +462,7 @@ let rec compute_target_array_elements dotnodes list_elements p f lambda =
                end else
                  [(LinkArrayToExp, Exp.to_string idx, n,"")]
            | _ -> (* by construction there must be at most 2 nodes for an expression*)
-               failwithf "Got more than 2 nodes, this should never happen!"
+               L.out "@\n Too many nodes! Error! @\n@.@."; assert false
           )
     | Sil.Estruct (_, _) -> [] (* inner struct are printed by print_struc function *)
     | Sil.Earray _ ->[] (* inner arrays are printed by print_array function *)

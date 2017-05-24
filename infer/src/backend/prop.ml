@@ -1356,7 +1356,8 @@ module Normalize = struct
       | Var _ ->
           Estruct ([], inst)
       | te ->
-          failwithf "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full Pp.text) te in
+          L.out "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full Pp.text) te;
+          assert false in
     let strexp : Sil.strexp = match expo with
       | Some e -> Eexp (e, inst)
       | None -> default_strexp () in
@@ -2360,12 +2361,11 @@ let prop_iter_make_id_primed tenv id iter =
         begin
           match eq with
           | Aeq (Var id1, e1) when Sil.ident_in_exp id1 e1 ->
-              failwithf "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n\
-                         Broken Assumption: id notin e for all (id,e) in sub@\n\
-                         (id,e) : (%a,%a)@\n\
-                         PROP : %a@\n@."
-                (Ident.pp Pp.text) id1 Exp.pp e1
-                (pp_prop Pp.text) (prop_iter_to_prop tenv iter)
+              L.out "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n";
+              L.out "Broken Assumption: id notin e for all (id,e) in sub@\n";
+              L.out "(id,e) : (%a,%a)@\n" (Ident.pp Pp.text) id1 Exp.pp e1;
+              L.out "PROP : %a@\n@." (pp_prop Pp.text) (prop_iter_to_prop tenv iter);
+              assert false
           | Aeq (Var id1, e1) when Ident.equal pid id1 ->
               split pairs_unpid ((id1, e1):: pairs_pid) eqs_cur
           | Aeq (Var id1, e1) ->
