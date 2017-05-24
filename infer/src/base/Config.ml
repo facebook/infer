@@ -1348,6 +1348,12 @@ and skip_analysis_in_path =
     ~meta:"path prefix OCaml regex"
     "Ignore files whose path matches the given prefix (can be specified multiple times)"
 
+and skip_analysis_in_path_skips_compilation =
+  CLOpt.mk_bool ~long:"skip-analysis-in-path-skips-compilation"
+    ~in_help:CLOpt.[Report, manual_generic]
+    ~default:false
+    "Whether paths in --skip-analysis-in-path should be compiled or not"
+
 and skip_duplicated_types =
   CLOpt.mk_bool ~long:"skip-duplicated-types" ~default:true
     ~in_help:CLOpt.[ReportDiff, manual_generic]
@@ -1851,6 +1857,7 @@ and show_progress_bar = !progress_bar
 and siof = !siof
 and siof_safe_methods = !siof_safe_methods
 and skip_analysis_in_path = !skip_analysis_in_path
+and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compilation
 and skip_duplicated_types = !skip_duplicated_types
 and skip_translation_headers = !skip_translation_headers
 and sources = !sources

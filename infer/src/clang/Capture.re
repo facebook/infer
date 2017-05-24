@@ -166,11 +166,16 @@ let cc1_capture clang_cmd => {
   Logging.out "@\n*** Beginning capture of file %s ***@\n" source_path;
   if (
     Config.equal_analyzer Config.analyzer Config.CompileOnly ||
-    CLocation.is_file_blacklisted source_path
+    not Config.skip_analysis_in_path_skips_compilation && CLocation.is_file_blacklisted source_path
   ) {
     Logging.out "@\n Skip the analysis of source file %s@\n@\n" source_path;
     /* We still need to run clang, but we don't have to attach the plugin. */
     run_clang (ClangCommand.command_to_run clang_cmd) Utils.consume_in
+  } else if (
+    Config.skip_analysis_in_path_skips_compilation && CLocation.is_file_blacklisted source_path
+  ) {
+    Logging.out "@\n Skip compilation and analysis of source file %s@\n@\n" source_path;
+    ()
   } else {
     switch Config.clang_biniou_file {
     | Some fname => run_and_validate_clang_frontend (`File fname)

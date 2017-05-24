@@ -321,6 +321,7 @@ val show_progress_bar : bool
 val siof : bool
 val siof_safe_methods : string list
 val skip_analysis_in_path : string list
+val skip_analysis_in_path_skips_compilation : bool
 val skip_duplicated_types : bool
 val skip_translation_headers : string list
 val spec_abs_level : int
