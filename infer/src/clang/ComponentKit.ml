@@ -156,7 +156,7 @@ let component_factory_function_advice context an =
         Some {
           CIssue.name = "COMPONENT_FACTORY_FUNCTION";
           severity = Exceptions.Kadvice;
-          mode = CIssue.On;
+          mode = CIssue.Off;
           description = "Break out composite components";
           suggestion = Some (
               "Prefer subclassing CKCompositeComponent to static helper functions \
