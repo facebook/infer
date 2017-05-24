@@ -90,26 +90,24 @@ class RaceWithMainThread{
      g = 77;
    }
 
-/* This was a source of false positives until we interpreted join of threaded
-by || instead of &&; see BooleanOr in ThreadSafetyDomain.ml */
+Integer ff;
+
  void conditional_Ok(boolean b){
    if (b)
    { /*People not literally putting this assert inside if's,
        but implicitly by method calls */
      o. assertMainThread();
-     f = 88;
-   } /* BooleanAnd for threaded would hose you here and lead to a report */
+     ff = 88;
+   }
  }
 
-/* On the other hand, BooleanOr leads to false negatives, which we should
-fix with a more refined abstract domain (without going all the way to disjuntions) */
- void FN_conditional_Bad(boolean b){
+ void conditional_Bad(boolean b){
    if (b)
    {
      o.assertMainThread();
-     f = 88;
+     ff = 88;
    } else {
-     f = 99; // Using || hoses this; no report
+     ff = 99;
    }
  }
 }

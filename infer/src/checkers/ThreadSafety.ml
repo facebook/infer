@@ -48,6 +48,13 @@ let get_container_write_desc sink =
 let is_container_write_sink sink =
   Option.is_some (get_container_write_desc sink)
 
+(*Bit of redundancy with code in is_unprotected, might alter later *)
+let make_excluder locks threads =
+  if locks && not threads then ThreadSafetyDomain.Excluder.Lock
+  else if not locks && threads then ThreadSafetyDomain.Excluder.Thread
+  else if locks && threads then ThreadSafetyDomain.Excluder.Both
+  else failwithf "called when neither lock nor thread known"
+
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ThreadSafetyDomain
@@ -161,11 +168,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               other_attributes in
         AttributeMapDomain.add (ret, []) caller_return_attributes attribute_map
 
-  let is_unprotected is_locked pdesc =
-    not is_locked && not (Procdesc.is_java_synchronized pdesc)
+  let is_unprotected is_locked is_threaded pdesc =
+    not is_locked && not is_threaded
+    && not (Procdesc.is_java_synchronized pdesc)
+
 
   let add_access
-      exp loc access_kind accesses locks attribute_map (proc_data : FormalMap.t ProcData.t) =
+      exp loc access_kind accesses locks threads
+      attribute_map (proc_data : FormalMap.t ProcData.t) =
     let open Domain in
     (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
        (b) volatile *)
@@ -210,13 +220,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       then acc
       else
         let pre =
-          if is_unprotected locks proc_data.pdesc
+          if is_unprotected locks threads proc_data.pdesc
           then
             match FormalMap.get_formal_index base proc_data.extras with
             | Some formal_index -> AccessPrecondition.Unprotected (Some formal_index)
             | None -> AccessPrecondition.unprotected
           else
-            AccessPrecondition.Protected in
+            AccessPrecondition.Protected
+              (make_excluder (locks || Procdesc.is_java_synchronized proc_data.pdesc)
+                 threads) in
         add_field_accesses pre (base, []) acc accesses in
 
     List.fold ~f:add_access_ ~init:accesses (HilExp.get_access_paths exp)
@@ -387,9 +399,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         false
 
-  let add_reads exps loc accesses locks attribute_map proc_data =
+  let add_reads exps loc accesses locks threads attribute_map proc_data =
     List.fold
-      ~f:(fun acc exp -> add_access exp loc Read acc locks attribute_map proc_data)
+      ~f:(fun acc exp -> add_access exp loc Read acc locks threads attribute_map proc_data)
       exps
       ~init:accesses
 
@@ -403,7 +415,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (Some ret_base, Direct procname, actuals, _, loc)
       when acquires_ownership procname tenv ->
         let accesses =
-          add_reads actuals loc astate.accesses astate.locks astate.attribute_map proc_data in
+          add_reads actuals loc astate.accesses astate.locks
+            astate.threads astate.attribute_map proc_data in
         let attribute_map =
           AttributeMapDomain.add_attribute
             (ret_base, []) Attribute.unconditionally_owned astate.attribute_map in
@@ -411,7 +424,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
     | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc) ->
         let accesses =
-          add_reads actuals loc astate.accesses astate.locks astate.attribute_map proc_data in
+          add_reads actuals loc astate.accesses astate.locks
+            astate.threads astate.attribute_map proc_data in
         let astate = { astate with accesses; } in
         let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
@@ -449,7 +463,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       AccessDomain.add pre combined_accesses caller_accesses in
                     let locks = callee_locks || astate.locks in
                     let threads = callee_threads || astate.threads in
-                    let unprotected = is_unprotected locks pdesc in
+                    let unprotected = is_unprotected locks threads pdesc in
                     (* add [ownership_accesses] to the [accesses_acc] with a protected pre if
                        [exp] is owned, and an appropriate unprotected pre otherwise *)
                     let add_ownership_access ownership_accesses actual_exp accesses_acc =
@@ -489,7 +503,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                         AccessPrecondition.unprotected
                               else
                                 (* access protected by held lock *)
-                                AccessPrecondition.Protected in
+                                AccessPrecondition.Protected (make_excluder true threads) in
                             update_caller_accesses pre ownership_accesses accesses_acc
                       | _ ->
                           (* couldn't find access path, don't know if it's owned *)
@@ -497,13 +511,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                             AccessPrecondition.unprotected ownership_accesses accesses_acc in
                     let accesses =
                       let update_accesses pre callee_accesses accesses_acc = match pre with
-                        | AccessPrecondition.Protected ->
+                        | AccessPrecondition.Protected _ ->
                             update_caller_accesses pre callee_accesses accesses_acc
                         | AccessPrecondition.Unprotected None ->
                             let pre' =
                               if unprotected
                               then pre
-                              else AccessPrecondition.Protected in
+                              else AccessPrecondition.Protected (make_excluder true threads) in
                             update_caller_accesses pre' callee_accesses accesses_acc
                         | AccessPrecondition.Unprotected (Some index) ->
                             add_ownership_access
@@ -577,7 +591,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Assign (lhs_access_path, rhs_exp, loc) ->
         let rhs_accesses =
           add_access
-            rhs_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
+            rhs_exp loc Read astate.accesses astate.locks
+            astate.threads astate.attribute_map proc_data in
         let rhs_access_paths = HilExp.get_access_paths rhs_exp in
         let is_functional =
           not (List.is_empty rhs_access_paths) &&
@@ -598,6 +613,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               Write
               rhs_accesses
               astate.locks
+              astate.threads
               astate.attribute_map
               proc_data in
         let attribute_map =
@@ -642,7 +658,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
         let accesses =
           add_access
-            assume_exp loc Read astate.accesses astate.locks astate.attribute_map proc_data in
+            assume_exp loc Read astate.accesses astate.locks
+            astate.threads astate.attribute_map proc_data in
         let astate' =
           match HilExp.get_access_paths assume_exp with
           | [access_path] ->
@@ -1065,7 +1082,7 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
                 access;
               update_reported access pname reported_acc
             end
-      | Access.Write, AccessPrecondition.Protected ->
+      | Access.Write, AccessPrecondition.Protected _ ->
           (* protected write, do nothing *)
           reported_acc
       | Access.Read, AccessPrecondition.Unprotected _ ->
@@ -1088,18 +1105,30 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
                 access;
               update_reported access pname reported_acc
             end
-      | Access.Read, AccessPrecondition.Protected ->
-          (* protected read. report unprotected, threaded writes as conflicts *)
-          let unprotected_writes =
+      | Access.Read, AccessPrecondition.Protected excl ->
+          (* protected read.
+             report unprotected writes and opposite protected writes as conflicts
+             Thread and Lock are opposites of one another, and
+             Both has no opposite*)
+          let is_opposite  = function
+            | Excluder.Lock , Excluder.Thread
+              -> true
+            | Excluder.Thread , Excluder.Lock
+              -> true
+            | _ , _ -> false in
+          let conflicting_writes =
             List.filter
-              ~f:(fun (access, pre, other_threaded, _, _) ->
+              ~f:(fun (access, pre, _, _, _) ->
                   match pre with
                   | AccessPrecondition.Unprotected _ ->
-                      TraceElem.is_write access && (other_threaded && not threaded)
+                      TraceElem.is_write access
+                  | AccessPrecondition.Protected other_excl
+                    when is_opposite (excl , other_excl) ->
+                      TraceElem.is_write access
                   | _ ->
                       false)
               accesses in
-          if List.is_empty unprotected_writes
+          if List.is_empty conflicting_writes
           then
             reported_acc
           else
@@ -1108,7 +1137,7 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
               report_thread_safety_violation
                 tenv
                 pdesc
-                ~make_description:(make_read_write_race_description unprotected_writes)
+                ~make_description:(make_read_write_race_description conflicting_writes)
                 access;
               update_reported access pname reported_acc
             end in

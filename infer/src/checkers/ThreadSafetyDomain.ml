@@ -82,7 +82,7 @@ module LocksDomain = AbstractDomain.BooleanAnd
    The use of || for join in this domain enforces that, to not know for sure you are threaded,
    it is enough to be unthreaded in one branch. (See RaceWithMainThread.java for  examples)
 *)
-module ThreadsDomain = AbstractDomain.BooleanOr
+module ThreadsDomain = AbstractDomain.BooleanAnd
 
 module PathDomain = SinkTrace.Make(TraceElem)
 
@@ -161,16 +161,29 @@ module AttributeMapDomain = struct
     add access_path attribute_set t
 end
 
+module Excluder = struct
+  type t =
+    | Thread
+    | Lock
+    | Both
+  [@@deriving compare]
+
+  let pp fmt = function
+    | Thread -> F.fprintf fmt "Thread"
+    | Lock -> F.fprintf fmt "Lock"
+    | Both -> F.fprintf fmt "both Thread and Lock"
+end
+
 module AccessPrecondition = struct
   type t =
-    | Protected
+    | Protected of Excluder.t
     | Unprotected of int option
   [@@deriving compare]
 
   let unprotected = Unprotected None
 
   let pp fmt = function
-    | Protected -> F.fprintf fmt "Protected"
+    | Protected excl -> F.fprintf fmt "ProtectedBy(%a)" Excluder.pp excl
     | Unprotected (Some index) -> F.fprintf fmt "Unprotected(%d)" index
     | Unprotected None -> F.fprintf fmt "Unprotected"
 end

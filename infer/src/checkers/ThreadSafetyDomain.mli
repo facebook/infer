@@ -87,10 +87,31 @@ module AttributeMapDomain : sig
   val add_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> astate
 end
 
+
+(** Excluders: Two things can provide for mutual exclusion: holding a lock,
+    and knowing that you are on a particular thread. Here, we
+    abstract it to "some" lock and "any particular" thread (typically, UI thread)
+    For a more precide semantics we would replace Thread by representatives of
+    thread id's and Lock by multiple differnet lock id's.
+    Both indicates that you both know the thread and hold a lock.
+    There is no need for a lattice relation between Thread, Lock and Both:
+    you don't ever join Thread and Lock, rather, they are treated pointwise.
+ **)
+module Excluder: sig
+  type t =
+    | Thread
+    | Lock
+    | Both
+  [@@deriving compare]
+
+  val pp : F.formatter -> t -> unit
+end
+
 module AccessPrecondition : sig
   type t =
-    | Protected
-    (** access safe due to held lock (i.e., pre is true *)
+    | Protected of Excluder.t
+    (** access potentially protected for mutual exclusion by
+        lock or thread or both *)
     | Unprotected of int option
     (** access rooted in formal at index i. Safe if actual passed at index is owned (i.e.,
         !owned(i) implies an unsafe access). Unprotected None means the access is unsafe unless a

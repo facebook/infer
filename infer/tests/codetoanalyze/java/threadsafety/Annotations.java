@@ -177,9 +177,7 @@ class Annotations implements Interface {
      ii = 22;
   }
 
-/*
-fix with a more refined abstract domain (without going all the way to disjuntions) */
- void FN_conditional_Bad(boolean b){
+ void conditional_Bad(boolean b){
    if (b)
    {
      write_on_main_thread_Ok();

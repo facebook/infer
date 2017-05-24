@@ -62,7 +62,7 @@ class ThreadSafeMethods {
     this.field1 = new Object();
   }
 
-  public synchronized Object readSameFieldAsThreadSafeMethod1Ok() {
+  public synchronized Object readSameFieldAsThreadSafeMethodWhileSynchronized1Bad() {
     return this.field1;
   }
 
@@ -82,7 +82,7 @@ class ThreadSafeMethods {
   }
 
   @ThreadSafe
-  public synchronized Object synchronizedReadOk() {
+  public synchronized Object synchronizedReadBad() {
     return this.field5;
   }
 
