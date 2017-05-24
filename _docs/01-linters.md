@@ -126,7 +126,7 @@ context_in_synchronized_block ()
 declaration_has_name ("decl_name")
 declaration_ref_name ("decl_ref_name")
 decl_unavailable_in_supported_ios_sdk ()
-has_type ("type") // only builtin types and pointers available at the moment
+has_type ("type") // only builtin types, pointers and Objective-C classes available at the moment
 isa ("class_name")
 is_assign_property ()
 is_binop_with_kind ("kind")
@@ -143,7 +143,7 @@ is_objc_interface_named ("name")
 is_property_pointer_type ()
 is_strong_property ()
 is_unop_with_kind ("kind")
-method_return_type ("type") // only builtin type, pointers, and classes available at the moment
+method_return_type ("type") // only builtin type, pointers, and Objective-C classes available at the moment
 within_responds_to_selector_block ()
 ```
 
