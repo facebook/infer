@@ -102,11 +102,11 @@ formula ::= predicate
           | formula1 HOLDS-UNTIL formula2                                                                         
           | formula1 HOLDS-EVERYWHERE-UNTIL formula2                                                 
           | formula HOLDS-EVENTUALLY                                                                                
-          | formula HOLDS-EVENTUALLY-EVERYWHERE                                                       
+          | formula HOLDS-EVERYWHERE-EVENTUALLY                                                       
           | formula HOLDS-NEXT                                                                                             
           | formula HOLDS-EVERYWHERE-NEXT                                                                    
-          | formula ALWAYS-HOLDS                                                                                        
-          | formula ALWAYS-HOLDS-EVERYWHERE                                                             
+          | formula HOLDS-ALWAYS                                                                                        
+          | formula HOLDS-EVERYWHERE-ALWAYS                                                             
           | WHEN formula HOLDS-IN-NODE node-name-list                                                    
           | IN-NODE node-name-list WITH-TRANSITION transition-name                            
                formula HOLDS-EVENTUALLY
