@@ -1,6 +1,6 @@
 ---
 docid: linters
-title: "Infer : Linters"
+title: "Infer : AL"
 layout: docs
 permalink: /docs/linters.html
 ---
@@ -325,6 +325,3 @@ Moreover, the bug can be found in the file `infer-out/report.json` where `infer-
 
 If there are syntax errors or other parsing errors with your al file, you will get an error message when testing the rule, remember to use `linters-developer-mode` when you are developing a rule. If the rule gets parsed but still doesn't behave as you expect, you can debug it, by adding the following line to a test source file in the line where yo want to debug the rule: `//INFER_BREAKPOINT`. Then run infer again in linters developer mode, and it will stop the execution of the linter in the line of the breakpoint. Then you can follow the execution step by step. It shows the current formula that is being evaluated, and the current part of the AST that is being checked. A red node means that the formula failed, a green node means that it succeeded.
 
-**Where to store the new .al file with your rule?** 
-
-There is a folder in fbobjc, Tools/AL where the .al rules are stored. Soon we will run the rules defined there in the diff analysis.
