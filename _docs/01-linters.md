@@ -277,7 +277,7 @@ It is possible to define macros that can be used in several checkers. This is do
 GLOBAL-MACROS {
 
   LET is_subclass_of(x) =
-        is_class(x) HOLDS-IN-SOME-SUPERCLASS-OF  ObjCInterfaceDecl;
+        is_class(x) HOLDS-IN-SOME-SUPERCLASS-OF ObjCInterfaceDecl;
 
  };
 ```
@@ -289,6 +289,9 @@ GLOBAL-MACROS {
 ```
 
 In an AL file, the command above import and make available all the macros defined in the `library.al` file.
+
+**Hint**
+A good way to learn how to write checkers is looking at existing checkers in the file `linters.al`.
 
 
 **Testing your rule**
