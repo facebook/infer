@@ -239,15 +239,15 @@ In the tree below `F HOLDS-ALWAYS` holds in `n1`, `n2`, `n8` because for each of
 
 ![](static/images/AL/holds_in_node.jpeg)
 
-Let's consider an example of checker using formula `WHEN F HOLDS-IN-NODE node1,…,nodeK` for checking that a property with a pointer type should not be declared *"assign"*:
+Let's consider an example of checker using formula `WHEN F HOLDS-IN-NODE node1,…,nodeK` for checking that a property with pointer type should not be declared *"assign"*:
 
 ```
 DEFINE-CHECKER ASSIGN_POINTER_WARNING = {
 
       SET report_when =
-   WHEN
-      is_assign_property() AND is_property_pointer_type()
-         HOLDS-IN-NODE ObjCPropertyDecl;
+          WHEN
+            is_assign_property() AND is_property_pointer_type()
+          HOLDS-IN-NODE ObjCPropertyDecl;
 
       SET message = "Property `%decl_name%` is a pointer type marked with the `assign` attribute"; 
       SET suggestion = "Use a different attribute like `strong` or `weak`.";
