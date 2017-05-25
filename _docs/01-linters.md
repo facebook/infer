@@ -211,9 +211,9 @@ In the tree below, the formula `F HOLDS-EVERYWHERE-NEXT` it is true in n1 as it'
 
 | Formula | Semantic meaning |
 | ------- |:----------------:|
-| F ALWAYS-HOLDS  | from the current node there exists a path where F holds at every node |
+| F HOLDS-ALWAYS  | from the current node there exists a path where F holds at every node |
 
-In the tree below `F ALWAYS-HOLDS` holds in `n1`, `n2`, `n8` because for each of these nodes there exists a path where `F` holds at each node in the path.
+In the tree below `F HOLDS-ALWAYS` holds in `n1`, `n2`, `n8` because for each of these nodes there exists a path where `F` holds at each node in the path.
 
 
 ![](static/images/AL/always_holds.jpeg)
@@ -222,9 +222,9 @@ In the tree below `F ALWAYS-HOLDS` holds in `n1`, `n2`, `n8` because for each of
 
 | Formula | Semantic meaning |
 | ------- |:----------------:|
-| F ALWAYS-HOLDS-EVERYWHERE | from the current node, in every path F holds at every node |
+| F HOLDS-EVERYWHERE-ALWAYS | from the current node, in every path F holds at every node |
 
-`F ALWAYS-HOLDS-EVERYWHERE` holds in `n2`, `n4`, `n5`, and `n8` because when we visit those nodes in every path that start from them `F` holds in every node.
+`F HOLDS-EVERYWHERE-ALWAYS` holds in `n2`, `n4`, `n5`, and `n8` because when we visit those nodes in every path that start from them `F` holds in every node.
 
 
 ![](static/images/AL/always_holds_everywhere.jpeg)
