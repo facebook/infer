@@ -281,7 +281,8 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
         | Kinfo => true
         | Kerror
         | Kwarning
-        | Kadvice => false
+        | Kadvice
+        | Klike => false
         };
       if issue_kind_is_blacklisted {
         false
@@ -642,6 +643,7 @@ module Stats = {
     mutable nerrors: int,
     mutable ninfos: int,
     mutable nadvice: int,
+    mutable nlikes: int,
     mutable nprocs: int,
     mutable nspecs: int,
     mutable ntimeouts: int,
@@ -656,6 +658,7 @@ module Stats = {
     nerrors: 0,
     ninfos: 0,
     nadvice: 0,
+    nlikes: 0,
     nprocs: 0,
     nspecs: 0,
     ntimeouts: 0,
@@ -723,6 +726,7 @@ module Stats = {
         | Exceptions.Kwarning => stats.nwarnings = stats.nwarnings + 1
         | Exceptions.Kinfo => stats.ninfos = stats.ninfos + 1
         | Exceptions.Kadvice => stats.nadvice = stats.nadvice + 1
+        | Exceptions.Klike => stats.nlikes = stats.nlikes + 1
         }
       }
     };

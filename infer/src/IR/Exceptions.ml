@@ -40,7 +40,7 @@ type err_class = Checker | Prover | Nocat | Linters [@@deriving compare]
 let equal_err_class = [%compare.equal : err_class]
 
 (** kind of error/warning *)
-type err_kind = Kwarning | Kerror | Kinfo | Kadvice [@@deriving compare]
+type err_kind = Kwarning | Kerror | Kinfo | Kadvice | Klike [@@deriving compare]
 
 let equal_err_kind = [%compare.equal : err_kind]
 
@@ -333,6 +333,7 @@ let err_kind_string = function
   | Kerror -> "ERROR"
   | Kinfo -> "INFO"
   | Kadvice -> "ADVICE"
+  | Klike -> "LIKE"
 
 (** string describing an error class *)
 let err_class_string = function

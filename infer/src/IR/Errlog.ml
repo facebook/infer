@@ -274,7 +274,9 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
         let d = match err_kind with
           | Exceptions.Kerror -> L.d_error
           | Exceptions.Kwarning -> L.d_warning
-          | Exceptions.Kinfo | Exceptions.Kadvice -> L.d_info in
+          | Exceptions.Kinfo
+          | Exceptions.Kadvice
+          | Exceptions.Klike -> L.d_info in
         d warn_str; L.d_ln();
       end in
     if should_print_now then print_now ()
@@ -319,6 +321,7 @@ module Err_table = struct
     let map_warn_re = ref LocMap.empty in
     let map_info = ref LocMap.empty in
     let map_advice = ref LocMap.empty in
+    let map_likes = ref LocMap.empty in
     let add_err nslm key =
       let map = match key.in_footprint, key.err_kind with
         | true, Exceptions.Kerror -> map_err_fp
@@ -326,7 +329,8 @@ module Err_table = struct
         | true, Exceptions.Kwarning -> map_warn_fp
         | false, Exceptions.Kwarning -> map_warn_re
         | _, Exceptions.Kinfo -> map_info
-        | _, Exceptions.Kadvice -> map_advice in
+        | _, Exceptions.Kadvice -> map_advice
+        | _, Exceptions.Klike -> map_likes in
       try
         let err_list = LocMap.find nslm !map in
         map := LocMap.add nslm ((key.err_name, key.err_desc) :: err_list) !map

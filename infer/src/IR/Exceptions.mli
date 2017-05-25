@@ -30,7 +30,7 @@ type severity =
   | Low (** low severity bug *)
 
 (** kind of error/warning *)
-type err_kind = Kwarning | Kerror | Kinfo | Kadvice [@@deriving compare]
+type err_kind = Kwarning | Kerror | Kinfo | Kadvice | Klike [@@deriving compare]
 
 val equal_err_kind : err_kind -> err_kind -> bool
 

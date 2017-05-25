@@ -46,6 +46,7 @@ HEADER = BRIGHT
 SUCCESS = BLUE_BG + WHITE + BRIGHT
 WARNING = ''
 ADVICE = ''
+LIKE = ''
 
 
 class Invalid_mode(Exception):

@@ -30,6 +30,7 @@ ISSUE_KIND_ERROR = 'ERROR'
 ISSUE_KIND_WARNING = 'WARNING'
 ISSUE_KIND_INFO = 'INFO'
 ISSUE_KIND_ADVICE = 'ADVICE'
+ISSUE_KIND_LIKE = 'LIKE'
 
 # field names in rows of json reports
 JSON_INDEX_DOTTY = 'dotty'
@@ -122,6 +123,8 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
             msg = colorize.color(msg, colorize.WARNING, formatter)
         elif report[JSON_INDEX_KIND] == ISSUE_KIND_ADVICE:
             msg = colorize.color(msg, colorize.ADVICE, formatter)
+        elif report[JSON_INDEX_KIND] == ISSUE_KIND_LIKE:
+            msg = colorize.color(msg, colorize.LIKE, formatter)
         text = '%s%s' % (msg, source_context)
         text_errors_list.append(text)
 
@@ -177,7 +180,11 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
 
 def _is_user_visible(project_root, report):
     kind = report[JSON_INDEX_KIND]
-    return kind in [ISSUE_KIND_ERROR, ISSUE_KIND_WARNING, ISSUE_KIND_ADVICE]
+    return kind in [
+        ISSUE_KIND_ERROR,
+        ISSUE_KIND_WARNING,
+        ISSUE_KIND_ADVICE,
+        ISSUE_KIND_LIKE]
 
 
 def print_and_save_errors(infer_out, project_root, json_report, bugs_out,

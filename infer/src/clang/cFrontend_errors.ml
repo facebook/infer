@@ -114,6 +114,7 @@ let string_to_err_kind = function
   | "ERROR" -> Exceptions.Kerror
   | "INFO" -> Exceptions.Kinfo
   | "ADVICE" -> Exceptions.Kadvice
+  | "LIKE" -> Exceptions.Klike
   | s -> (Logging.out "\n[ERROR] Severity %s does not exist. Stop.\n" s;
           assert false)
 

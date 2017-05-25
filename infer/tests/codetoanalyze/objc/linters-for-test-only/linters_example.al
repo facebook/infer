@@ -202,7 +202,7 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
     HOLDS-IN-NODE ObjCMethodDecl;
 
   SET message = "Found a method with nth parameter of type....";
-
+  SET severity = "LIKE";
 };
 
 DEFINE-CHECKER TEST_NAMESPACE_NAME = {
