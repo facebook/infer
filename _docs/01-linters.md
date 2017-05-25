@@ -16,7 +16,7 @@ infer run -a linters -- clang -c Test.m
 
 **AL: A declarative language for writing linters in Infer**
 
-Historically one of the major advantage of Infer when compared with other static analyzers is the fact it performs sophisticated inter-procedural/inter-file analysis. That is, Infer can detect bugs which involve tracking values through many procedure calls and the procedures may live in different files. These may be very subtle bugs and designing static analyses to do that is quite involved and normally requires deep static analysis expertise.
+One of the major advantage of Infer when compared with other static analyzers is the fact it performs sophisticated inter-procedural/inter-file analysis. That is, Infer can detect bugs which involve tracking values through many procedure calls and the procedures may live in different files. These may be very subtle bugs and designing static analyses to do that is quite involved and normally requires deep static analysis expertise.
 
 However, there are many important software bugs that are confined in the code of a single procedure (called intra-procedural). To detect these bugs simpler analyses may suffice which do not require deep technical expertise in static analysis. Often these bugs can be expressed by referring to the syntax of the program, or the types of certain expressions. We have defined a new language to easily design checkers which identify these kind of bugs. The language is called AL (AST Language) and its main feature is the ability to reason about the Abstract Syntax Tree of a program in a concise declarative way. AL's checkers are interpreted by Infer to analyze programs. Thus, to detect new kind of bugs in Infer one can just write a check in AL without any knowledge of the internal of Infer.
 
@@ -27,7 +27,7 @@ Once the new linter is added to the linters' file it will then work out of the b
 
 **Background on the clang AST** 
 
-First of all, get familiar with the `decl` and `stmt` data structures of the ast in infer/infer/src/clang/clang_ast_t.mli (is generated). `decl` is the type for declarations and  contains items such as `ObjCInterfaceDecl`, `ObjCPropertyDecl`, `ObjCMethodDecl`, etc. `stmt` is a type for statements and contains items such as `ObjCMessageExpr`, `IfStmt`, etc. For information on those names, you can google them, and you'll find the clang docs about them, for instance `ObjCInterfaceDecl`.
+First of all, get familiar with the `decl` and `stmt` data structures of the ast in infer/infer/src/clang/clang_ast_t.mli. This is a generated file. `decl` is the type for declarations and  contains items such as `ObjCInterfaceDecl`, `ObjCPropertyDecl`, `ObjCMethodDecl`, etc. `stmt` is a type for statements and contains items such as `ObjCMessageExpr`, `IfStmt`, etc. For information on those names, you can google them, and you'll find the clang docs.
 
 More important is to be able to map source code to its ast components. You can do this in two ways. Say your file is called Test.m. The first one is with the command
 
@@ -40,7 +40,7 @@ and the other one is using Infer. First, call Infer with
 infer --stats -- clang -c Test.m
 ```
 
-where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.o.sh in the current directory that has instructions to call the command InferClang with the ast of the file. This is the command that performs both the translation of the source file into the intermediate language and also performs the lint checks. Run this script with bash Test.o.sh and a file Test.o.bdump will be generated, that contains the ast of the program in a readable biniou format.
+where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.o.sh in the current directory. Run this script with bash Test.o.sh and a file Test.o.bdump will be generated, that contains the ast of the program in a readable format.
 
 
 **Using AL to write linters**
