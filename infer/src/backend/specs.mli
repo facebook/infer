@@ -137,6 +137,7 @@ type payload =
     crashcontext_frame: Stacktree_j.stacktree option;
     (** Procedure location and blame_range info for crashcontext analysis *)
     quandary : QuandarySummary.t option;
+    resources : ResourceLeakDomain.summary option;
     siof : SiofDomain.astate option;
     threadsafety : ThreadSafetyDomain.summary option;
     buffer_overrun : BufferOverrunDomain.Summary.t option;

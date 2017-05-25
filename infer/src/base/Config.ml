@@ -1304,6 +1304,10 @@ and report_previous =
   CLOpt.mk_path_opt ~long:"report-previous" ~in_help:CLOpt.[ReportDiff, manual_generic]
     "Report of the base revision to use for comparison"
 
+and resource_leak =
+  CLOpt.mk_bool ~long:"resource-leak" ~default:false
+    "the resource leak analysis (experimental)"
+
 and resolve_infer_eradicate_conflict =
   CLOpt.mk_bool ~long:"resolve-infer-eradicate-conflict"
     ~default:false ~in_help:CLOpt.[ReportDiff, manual_generic]
@@ -1849,6 +1853,7 @@ and report_hook = !report_hook
 and report_previous = !report_previous
 and reports_include_ml_loc = !reports_include_ml_loc
 and resolve_infer_eradicate_conflict = !resolve_infer_eradicate_conflict
+and resource_leak = !resource_leak
 and results_dir = !results_dir
 and save_analysis_results = !save_results
 and seconds_per_iteration = !seconds_per_iteration

@@ -720,6 +720,16 @@ let rec instruction (context : JContext.t) pc instr : translation =
     let deref_instr = create_sil_deref sil_expr typ_no_ptr loc in
     let node_kind = Procdesc.Node.Stmt_node node_desc in
     Instr (create_node node_kind (instrs @ [deref_instr; instr] )) in
+  let create_node_kind procname =
+    let assume_noexcept =
+      match Typ.Procname.get_method procname with
+      | "close" -> true
+      | _ -> false in
+    let desc =
+      if assume_noexcept
+      then "call_noexcept"
+      else "Call " ^ (Typ.Procname.to_string procname) in
+    Procdesc.Node.Stmt_node desc in
   try
     match instr with
     | JBir.AffectVar (var, expr) ->
@@ -833,7 +843,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
         let pvar = JContext.set_pvar context var class_type in
         let set_instr = Sil.Store (Exp.Lvar pvar, class_type, Exp.Var ret_id, loc) in
         let instrs = (new_instr :: call_instrs) @ [set_instr] in
-        let node_kind = Procdesc.Node.Stmt_node ("Call "^(Typ.Procname.to_string constr_procname)) in
+        let node_kind = create_node_kind constr_procname in
         let node = create_node node_kind instrs in
         let caller_procname = (Procdesc.get_proc_name context.procdesc) in
         Cg.add_edge cg caller_procname constr_procname;
@@ -864,7 +874,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
           | _ -> None, args, [] in
         let callee_procname, call_instrs =
           method_invocation context loc pc var_opt cn ms sil_obj_opt args I_Static Typ.Procname.Static in
-        let node_kind = Procdesc.Node.Stmt_node ("Call "^(Typ.Procname.to_string callee_procname)) in
+        let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
         let caller_procname = (Procdesc.get_proc_name context.procdesc) in
         Cg.add_edge cg caller_procname callee_procname;
@@ -877,7 +887,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
             let ret_opt = Some (sil_obj_expr, sil_obj_type) in
             method_invocation
               context loc pc var_opt cn ms ret_opt args invoke_kind Typ.Procname.Non_Static in
-          let node_kind = Procdesc.Node.Stmt_node ("Call "^(Typ.Procname.to_string callee_procname)) in
+          let node_kind = create_node_kind callee_procname in
           let call_node = create_node node_kind (instrs @ call_instrs) in
           Cg.add_edge cg caller_procname callee_procname;
           call_node in
@@ -904,7 +914,7 @@ let rec instruction (context : JContext.t) pc instr : translation =
         let (instrs, sil_obj_expr, sil_obj_type) = expression context pc obj in
         let callee_procname, call_instrs =
           method_invocation context loc pc var_opt cn ms (Some (sil_obj_expr, sil_obj_type)) args I_Special Typ.Procname.Non_Static in
-        let node_kind = Procdesc.Node.Stmt_node ("Call "^(Typ.Procname.to_string callee_procname)) in
+        let node_kind = create_node_kind callee_procname in
         let call_node = create_node node_kind (instrs @ call_instrs) in
         let procdesc = context.procdesc in
         let caller_procname = (Procdesc.get_proc_name procdesc) in

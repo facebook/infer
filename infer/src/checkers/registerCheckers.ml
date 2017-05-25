@@ -42,6 +42,8 @@ let checkers = [
    Procedure ClangTaintAnalysis.checker, Config.Clang];
   "repeated calls", Config.repeated_calls,
   [Procedure RepeatedCallsChecker.callback_check_repeated_calls, Config.Java];
+  "resource leak", Config.resource_leak,
+  [Procedure ResourceLeaks.checker, Config.Java];
   "SIOF", Config.siof, [Procedure Siof.checker, Config.Clang];
   "thread safety", Config.threadsafety,
   [Procedure ThreadSafety.analyze_procedure, Config.Clang;

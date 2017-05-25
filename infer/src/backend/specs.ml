@@ -327,6 +327,7 @@ type payload =
     crashcontext_frame: Stacktree_t.stacktree option;
     (** Proc location and blame_range info for crashcontext analysis *)
     quandary : QuandarySummary.t option;
+    resources : ResourceLeakDomain.summary option;
     siof : SiofDomain.astate option;
     threadsafety : ThreadSafetyDomain.summary option;
     buffer_overrun : BufferOverrunDomain.Summary.t option;
@@ -683,6 +684,7 @@ let empty_payload =
     annot_map = None;
     crashcontext_frame = None;
     quandary = None;
+    resources = None;
     siof = None;
     threadsafety = None;
     buffer_overrun = None;

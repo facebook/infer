@@ -143,6 +143,14 @@ module Exceptional = struct
   type t = Procdesc.t * id_node_map
   include (DefaultNode : module type of DefaultNode with type t := node)
 
+  let exceptional_succs _ n = match Procdesc.Node.get_kind n with
+    | Procdesc.Node.Stmt_node ("call_noexcept") ->
+        (* Hack: signal from the frontend that this node should be modelled as non-throwing.
+           Eventually, we'll just avoid translating the exceptional edge in the frontend instead. *)
+        []
+    | _ ->
+        Procdesc.Node.get_exn n
+
   let from_pdesc pdesc =
     (* map from a node to its exceptional predecessors *)
     let add_exn_preds exn_preds_acc n =
@@ -156,7 +164,7 @@ module Exceptional = struct
           Procdesc.IdMap.add exn_succ_node_id (n :: existing_exn_preds) exn_preds_acc
         else
           exn_preds_acc in
-      List.fold ~f:add_exn_pred ~init:exn_preds_acc (Procdesc.Node.get_exn n) in
+      List.fold ~f:add_exn_pred ~init:exn_preds_acc (exceptional_succs pdesc n) in
     let exceptional_preds =
       List.fold ~f:add_exn_preds ~init:Procdesc.IdMap.empty (Procdesc.get_nodes pdesc) in
     pdesc, exceptional_preds
@@ -170,8 +178,6 @@ module Exceptional = struct
   let normal_succs _ n = Procdesc.Node.get_succs n
 
   let normal_preds _ n = Procdesc.Node.get_preds n
-
-  let exceptional_succs _ n = Procdesc.Node.get_exn n
 
   let exceptional_preds (_, exn_pred_map) n =
     try Procdesc.IdMap.find (Procdesc.Node.get_id n) exn_pred_map
