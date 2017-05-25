@@ -296,9 +296,7 @@ A good way to learn how to write checkers is looking at existing checkers in the
 
 **Testing your rule**
 
-To test your rule you need to run it with Infer. Infer is now deployed on the laptops, it will be downloaded the first time you type infer in the fbobjc repo.
-
-If you are adding a new linter you can test it in a separate al file that you can pass to Infer with the option `--linters-def-file file.al`. Pass the option `--linters-developer-mode` to Infer that will print debug information and only take the linters from that file into account in the execution, it will ignore the default linters, so it will be faster and debug info will be only 
+To test your rule you need to run it with Infer. If you are adding a new linter you can test it in a separate al file that you can pass to Infer with the option `--linters-def-file file.al`. Pass the option `--linters-developer-mode` to Infer that will print debug information and only take the linters from that file into account in the execution, it will ignore the default linters, so it will be faster and debug info will be only 
 about your linter.
 
 To test your code, write a small example that triggers the rule. Then, run your code with
