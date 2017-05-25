@@ -149,12 +149,12 @@ method_return_type ("type") // only builtin type, pointers, and Objective-C clas
 within_responds_to_selector_block ()
 ```
 
-In general, the parameters of predicates can be constants, or variables, or regular expressions. Variables are used in macros, see below. The syntax for using regexes is `method_name(REGEX(.*))`.
+In general, the parameters of predicates can be constants, or variables, or regular expressions. Variables are used in macros, see below. The syntax for using regexes is `REGEX("your_reg_exp_here")`.
 
 
 **AL Formulas**
 
-The first four cases (`NOT`, `OR`, `AND`, `IMPLIES`) are classic boolean operators with the usual semantics. The others are temporal operators describing how the truth-value of a formula is evaluated in a tree.Let's consider case by case.
+The first four cases (`NOT`, `OR`, `AND`, `IMPLIES`) are classic boolean operators with the usual semantics. The others are temporal operators describing how the truth-value of a formula is evaluated in a tree. Let's consider case by case.
 
 
 | Formula | Semantic meaning |
