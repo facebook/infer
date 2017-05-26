@@ -189,7 +189,6 @@ let pp_min_max : F.formatter -> min_max_t -> unit
     | Min -> F.fprintf fmt "min"
     | Max -> F.fprintf fmt "max"
 
-
 let pp : F.formatter -> t -> unit
   = fun fmt -> function
     | MInf -> F.fprintf fmt "-oo"
@@ -206,6 +205,14 @@ let pp : F.formatter -> t -> unit
 
 let of_int : int -> t
   = fun n -> Linear (n, SymLinear.empty)
+
+let zero = of_int 0
+
+let one = of_int 1
+
+let minus_one = of_int ~-1
+
+let _255 = of_int 255
 
 let of_sym : SymLinear.t -> t
   = fun s -> Linear (0, s)
@@ -536,8 +543,9 @@ struct
   let pp : F.formatter -> t -> unit
     = fun fmt (l, u) -> F.fprintf fmt "[%a, %a]" Bound.pp l Bound.pp u
 
-  let of_int : int -> t
-    = fun n -> (Bound.of_int n, Bound.of_int n)
+  let of_bound bound = (bound, bound)
+
+  let of_int n = of_bound (Bound.of_int n)
 
   let get_new_sym : Typ.Procname.t -> t
     = fun pname ->
@@ -551,29 +559,23 @@ struct
       let upper = Bound.of_sym (SymLinear.make pname (i+1)) in
       (lower, upper)
 
-  let top : t
-    = (Bound.MInf, Bound.PInf)
+  let m1_255 = (Bound.minus_one, Bound._255)
 
-  let pos : t
-    = (Bound.of_int 1, Bound.PInf)
+  let nat = (Bound.zero, Bound.PInf)
 
-  let nat : t
-    = (Bound.of_int 0, Bound.PInf)
+  let one = of_bound Bound.one
 
-  let zero : t
-    = of_int 0
+  let pos = (Bound.one, Bound.PInf)
 
-  let one : t
-    = of_int 1
+  let top = (Bound.MInf, Bound.PInf)
 
-  let true_sem : t
-    = one
+  let zero = of_bound Bound.zero
 
-  let false_sem : t
-    = zero
+  let true_sem = one
 
-  let unknown_bool : t
-    = (Bound.of_int 0, Bound.of_int 1)
+  let false_sem = zero
+
+  let unknown_bool = join false_sem true_sem
 
   let is_true : t -> bool
     = fun (l, u) -> Bound.le (Bound.of_int 1) l || Bound.le u (Bound.of_int (-1))
@@ -869,20 +871,21 @@ let is_finite : t -> bool
     | NonBottom x -> ItvPure.is_finite x
     | Bottom -> false
 
-let zero : t
-  = of_int 0
+let false_sem = NonBottom ItvPure.false_sem
 
-let one : t
-  = of_int 1
+let m1_255 = NonBottom ItvPure.m1_255
 
-let pos : t
-  = NonBottom ItvPure.pos
+let nat = NonBottom ItvPure.nat
 
-let nat : t
-  = NonBottom ItvPure.nat
+let one = NonBottom ItvPure.one
 
-let unknown_bool : t
-  = NonBottom ItvPure.unknown_bool
+let pos = NonBottom ItvPure.pos
+
+let true_sem = NonBottom ItvPure.true_sem
+
+let unknown_bool = NonBottom ItvPure.unknown_bool
+
+let zero = NonBottom ItvPure.zero
 
 let make : Bound.t -> Bound.t -> t
   = fun l u -> if Bound.lt u l then Bottom else NonBottom (ItvPure.make l u)

@@ -36,7 +36,7 @@ struct
   type extras = Typ.Procname.t -> Procdesc.t option
 
   let set_uninitialized (typ : Typ.t) loc mem = match typ.desc with
-    | Tint _ | Tfloat _ -> Dom.Mem.weak_update_heap loc Dom.Val.top_itv mem
+    | Tint _ | Tfloat _ -> Dom.Mem.weak_update_heap loc Dom.Val.Itv.top mem
     | _ -> mem
 
   (* NOTE: heuristic *)
@@ -78,13 +78,13 @@ struct
   let model_natual_itv : (Ident.t * Typ.t) option -> Dom.Mem.astate -> Dom.Mem.astate
     = fun ret mem ->
       match ret with
-      | Some (id, _) -> Dom.Mem.add_stack (Loc.of_id id) Dom.Val.nat_itv mem
+      | Some (id, _) -> Dom.Mem.add_stack (Loc.of_id id) Dom.Val.Itv.nat mem
       | _ -> mem
 
   let model_unknown_itv : (Ident.t * Typ.t) option -> Dom.Mem.astate -> Dom.Mem.astate
     = fun ret mem ->
       match ret with
-        Some (id, _) -> Dom.Mem.add_stack (Loc.of_id id) Dom.Val.top_itv mem
+        Some (id, _) -> Dom.Mem.add_stack (Loc.of_id id) Dom.Val.Itv.top mem
       | None -> mem
 
   let model_infer_print
@@ -236,7 +236,7 @@ struct
           let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
           Dom.Val.subst ret_val subst_map
           |> Dom.Val.normalize    (* normalize bottom *)
-      | _ -> Dom.Val.top_itv
+      | _ -> Dom.Val.Itv.top
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit
     = fun instr pre post ->

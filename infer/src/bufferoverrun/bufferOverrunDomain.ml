@@ -265,17 +265,9 @@ struct
   let get_all_locs : t -> PowLoc.t
     = fun x -> PowLoc.join x.powloc (get_array_locs x)
 
-  let top_itv : t
-    = { bot with itv = Itv.top }
+  let of_itv itv = { bot with itv }
 
-  let pos_itv : t
-    = { bot with itv = Itv.pos }
-
-  let nat_itv : t
-    = { bot with itv = Itv.nat }
-
-  let of_int : int -> t
-    = fun n -> { bot with itv = Itv.of_int n }
+  let of_int n = of_itv (Itv.of_int n)
 
   let of_itv : Itv.t -> t
     = fun itv -> { bot with itv }
@@ -285,9 +277,6 @@ struct
 
   let of_array_blk : ArrayBlk.astate -> t
     = fun a -> { bot with arrayblk = a }
-
-  let zero : t
-    = of_int 0
 
   let modify_itv : Itv.t -> t -> t
     = fun i x -> { x with itv = i }
@@ -414,6 +403,14 @@ struct
 
   let pp_summary : F.formatter -> t -> unit
     = fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk
+
+  module Itv =
+  struct
+    let nat = of_itv Itv.nat
+    let m1_255 = of_itv Itv.m1_255
+    let pos = of_itv Itv.pos
+    let top = of_itv Itv.top
+  end
 end
 
 module Stack =
@@ -478,7 +475,7 @@ struct
   let find : Loc.t -> astate -> Val.t
     = fun l m ->
       try find l m with
-      | Not_found -> Val.top_itv
+      | Not_found -> Val.Itv.top
 
   let find_set : PowLoc.t -> astate -> Val.t
     = fun locs mem ->
