@@ -17,6 +17,7 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
   - [Testing your rule](/docs/linters.html#testing)  
   - [Debugging](/docs/linters.html#debugging) 
   - [Command line options for linters](/docs/linters.html#command_line) 
+  - [Demo](/docs/linters.html#demo) 
 
 
 <a name="al_intro">**AL: A declarative language for writing linters in Infer**</a>
@@ -348,5 +349,6 @@ There are a few other command line options that are useful for using or developi
 
 <p><img align="left" src="static/images/AL/linters_help.png"></p>
 
+<a name="demo">**Demo**</a>
 
-
+<iframe width="420" height="315" src="https://youtu.be/9t3xoZZ6hjY" frameborder="0" allowfullscreen></iframe>
