@@ -82,7 +82,7 @@ The linter definition starts with the keyword `DEFINE-CHECKER` followed by the c
 
 The `SET message` clause defines the error message that will be displayed to the user. Notice that the message can include placeholders like `%decl_name%`. Placeholders are evaluated by Infer and substituted by their current value when the error message is reported. In this case the name of the declaration. The `SET suggestion` clause define an optional hint to give to programmer on how to fix the problem. 
 
-The <a name="predicates">**general structure of a checker**</a> is the following:
+The <a name="checker_structure">**general structure of a checker**</a> is the following:
 
 ```bash
 DEFINE-CHECKER name_of_the_checker = {
