@@ -95,7 +95,8 @@ DEFINE-CHECKER name_of_the_checker = {
     
      SET message = <error message to show the user>;
      SET suggestion = <optional suggestion to the user>;
-     SET severity = <one of INFO, LIKE, ADVICE, WARNING, ERROR>;
+     SET severity = INFO | LIKE | ADVICE | WARNING | ERROR; Default is WARNING
+     SET mode = ON | OFF Default is ON. If the check is OFF it will only be available in debug mode (flags --debug or --linters-developer-mode).
   };
 ```
 
