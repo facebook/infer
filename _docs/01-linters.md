@@ -100,7 +100,7 @@ DEFINE-CHECKER name_of_the_checker = {
   };
 ```
 
-The default severity is WARNING and the default mode is ON, so these are optional. If the check is OFF it will only be available in debug mode (flags --debug or --linters-developer-mode).
+The default severity is WARNING and the default mode is ON, so these are optional. If the check is OFF it will only be available in debug mode (flags --debug or --linters-developer-mode). INFOs are generally also not reported, except with some specialzed flags.
 
 <a name="predicates">**AL Predicates**</a> 
 
