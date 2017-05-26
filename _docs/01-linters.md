@@ -5,17 +5,23 @@ layout: docs
 permalink: /docs/linters.html
 ---
 
-- [AL: A declarative language for writing linters in Infer](/docs/linters.html#al_intro)
-- [Background on the clang AST](/docs/linters.html#clang_ast)
-
 For iOS apps, we provide a linters framework. These are checks about the syntax of the program; it could be about a property, or about code inside one method, or that a class or method have certain properties. We provide [a few checks](/docs/linters-bug-types.html) and we have developed a domain specific language (DSL) to make it easier to write checks.
-
 
 The linters are run by default when you run Infer. However, there is a way of running only the linters, which is faster than also running Infer. This is by adding the option `-a linters` to the analysis command as in this example:
 
 ```bash
 infer run -a linters -- clang -c Test.m
 ```
+
+- [AL: A declarative language for writing linters in Infer](/docs/linters.html#al_intro)
+- [Background on the clang AST](/docs/linters.html#clang_ast)
+- [Using AL to write linters](/docs/linters.html#write_linters) 
+ - [AL Predicates](/docs/linters.html#predicates) 
+ - [AL Formulas](/docs/linters.html#formulas) 
+ - [Defining Macros](/docs/linters.html#macros) 
+ - [Testing your rule](/docs/linters.html#testing)  
+ - [Debugging](/docs/linters.html#debugging) 
+
 
 <a name="al_intro">**AL: A declarative language for writing linters in Infer**</a>
 
