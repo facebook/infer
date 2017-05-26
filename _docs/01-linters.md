@@ -10,6 +10,7 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
 - [AL: A declarative language for writing linters in Infer](/docs/linters.html#al_intro)
 - [Background on the clang AST](/docs/linters.html#clang_ast)
 - [Using AL to write linters](/docs/linters.html#write_linters) 
+  - [General structure of a checker](/docs/linters.html#checker_structure) 
   - [AL Predicates](/docs/linters.html#predicates) 
   - [AL Formulas](/docs/linters.html#formulas) 
   - [Defining Macros](/docs/linters.html#macros) 
@@ -81,7 +82,7 @@ The linter definition starts with the keyword `DEFINE-CHECKER` followed by the c
 
 The `SET message` clause defines the error message that will be displayed to the user. Notice that the message can include placeholders like `%decl_name%`. Placeholders are evaluated by Infer and substituted by their current value when the error message is reported. In this case the name of the declaration. The `SET suggestion` clause define an optional hint to give to programmer on how to fix the problem. 
 
-The general structure of a checker is the following:
+The <a name="predicates">**general structure of a checker**</a> is the following:
 
 ```bash
 DEFINE-CHECKER name_of_the_checker = {
