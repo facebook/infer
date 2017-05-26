@@ -1201,6 +1201,36 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
     empty_reported
   |> ignore
 
+(* equivalence relation computing whether two access paths may refer to the
+   same heap location. *)
+let may_alias p1 p2 =
+  let open AccessPath in
+  match List.last_exn (snd p1), List.last_exn (snd p2) with
+  | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _ -> false
+  (* fields in Infer contain class name *)
+  | FieldAccess f1, FieldAccess f2 ->
+      String.equal (Fieldname.java_get_field f1) (Fieldname.java_get_field f2)
+  | ArrayAccess _, ArrayAccess _ -> true (*FIXME*)
+
+(* take a results table and quotient it by the may_alias relation *)
+let quotient_access_map acc_map =
+  let rec aux acc m =
+    if AccessListMap.is_empty m then
+      acc
+    else
+      let k, _ = AccessListMap.choose m in
+      let (k_part, non_k_part) = AccessListMap.partition (fun k' _ -> may_alias k k') m in
+      let k_accesses =
+        AccessListMap.fold
+          (fun _ v acc' -> List.append v acc')
+          k_part
+          []
+      in
+      let new_acc = AccessListMap.add k k_accesses acc in
+      aux new_acc non_k_part
+  in
+  aux AccessListMap.empty acc_map
+
 (* create a map from [abstraction of a memory loc] -> accesses that may touch that memory loc. for
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
@@ -1227,7 +1257,7 @@ let make_results_table file_env =
     match Summary.read_summary proc_desc proc_name with
     | Some summary -> aggregate_post summary tenv proc_desc acc
     | None -> acc in
-  List.fold ~f:aggregate_posts file_env ~init:AccessListMap.empty
+  List.fold ~f:aggregate_posts file_env ~init:AccessListMap.empty |> quotient_access_map
 
 (**
    Principles for race reporting.

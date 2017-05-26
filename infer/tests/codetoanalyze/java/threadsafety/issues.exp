@@ -1,3 +1,5 @@
+codetoanalyze/java/threadsafety/Alias.java, void Alias.bar(A,A), 5, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `A.f`,<Beginning of write trace>,access to `Alias.a.A.f`]
+codetoanalyze/java/threadsafety/Alias.java, void Alias.foo(), 6, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `Alias.b.A.f`,<Beginning of write trace>,access to `Alias.a.A.f`]
 codetoanalyze/java/threadsafety/AndroidModels.java, void AndroidModels.someResourceMethodsNotFunctionalBad(), 2, THREAD_SAFETY_VIOLATION, [access to `codetoanalyze.java.checkers.AndroidModels.mField`]
 codetoanalyze/java/threadsafety/Annotations.java, boolean Annotations.FP_functionalAcrossUnboxingOk(), 2, THREAD_SAFETY_VIOLATION, [access to `codetoanalyze.java.checkers.Annotations.mBool2`]
 codetoanalyze/java/threadsafety/Annotations.java, double Annotations.functionalDoubleBad(), 2, THREAD_SAFETY_VIOLATION, [access to `codetoanalyze.java.checkers.Annotations.mDouble`]
