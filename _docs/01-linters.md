@@ -338,7 +338,7 @@ infer run -a linters -- clang -c Test.m
 
 There are a few other command line options that are useful for using or developing new linters in Infer. You can get those options with the command `infer-capture --help`:
 
-![](static/images/AL/linters_help.png)
+<img style="float: left;" src="static/images/AL/linters_help.png">
 
 
 
