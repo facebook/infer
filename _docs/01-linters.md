@@ -340,5 +340,5 @@ There are a few other command line options that are useful for using or developi
 
 <img style="float: left;" src="static/images/AL/linters_help.png">
 
-<br/>
+<br/><br/><br/><br/><br/><br/>
 
