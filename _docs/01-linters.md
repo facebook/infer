@@ -16,8 +16,9 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
   - [Defining Macros](/docs/linters.html#macros) 
   - [Testing your rule](/docs/linters.html#testing)  
   - [Debugging](/docs/linters.html#debugging) 
-  - [Command line options for linters](/docs/linters.html#command_line) 
   - [Demo](/docs/linters.html#demo) 
+  - [Command line options for linters](/docs/linters.html#command_line) 
+
 
 
 <a name="al_intro">**AL: A declarative language for writing linters in Infer**</a>
