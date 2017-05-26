@@ -44,6 +44,8 @@ infer --debug -- clang -c Test.m
 
 where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.m.ast.sh in the current directory. Run this script with bash Test.m.ast.sh and a file Test.m.ast.bdump will be generated, that contains the ast of the program in a readable format.
 
+For more info, [here](http://clang.llvm.org/docs/IntroductionToTheClangAST.html) is an introduction to the clang ast.
+
 
 <a name="write_linters">**Using AL to write linters**</a>
 
