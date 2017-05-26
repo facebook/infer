@@ -5,6 +5,9 @@ layout: docs
 permalink: /docs/linters.html
 ---
 
+- [AL: A declarative language for writing linters in Infer](/docs/linters.html#al_intro)
+- [Background on the clang AST](/docs/linters.html#clang_ast)
+
 For iOS apps, we provide a linters framework. These are checks about the syntax of the program; it could be about a property, or about code inside one method, or that a class or method have certain properties. We provide [a few checks](/docs/linters-bug-types.html) and we have developed a domain specific language (DSL) to make it easier to write checks.
 
 
