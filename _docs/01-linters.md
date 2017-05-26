@@ -93,34 +93,13 @@ DEFINE-CHECKER name_of_the_checker = {
     
      SET message = <error message to show the user>;
      SET suggestion = <optional suggestion to the user>;
-
+     SET severity = <one of INFO, LIKE, ADVICE, WARNING, ERROR>;
   };
-```
-
-Formulas are defined using a variation of the *CTL temporal logic*. CTL is a logic expressing properties of a tree model. In the case of AL, the tree is the AST of the program. Formulas are defined according to the following grammar:
-
-```
-formula ::= predicate 
-          | NOT formula                                                                                                                                                                 
-          | formula1 OR formula2                                                                                            
-          | formula1 AND formula2 
-          | formula1 IMPLIES formula2                                                                                       
-          | formula1 HOLDS-UNTIL formula2                                                                         
-          | formula1 HOLDS-EVERYWHERE-UNTIL formula2                                                 
-          | formula HOLDS-EVENTUALLY                                                                                
-          | formula HOLDS-EVERYWHERE-EVENTUALLY                                                       
-          | formula HOLDS-NEXT                                                                                             
-          | formula HOLDS-EVERYWHERE-NEXT                                                                    
-          | formula HOLDS-ALWAYS                                                                                        
-          | formula HOLDS-EVERYWHERE-ALWAYS                                                             
-          | WHEN formula HOLDS-IN-NODE node-name-list                                                    
-          | IN-NODE node-name-list WITH-TRANSITION transition-name                            
-               formula HOLDS-EVENTUALLY
 ```
 
 <a name="predicates">**AL Predicates**</a> 
 
-The predicates are defined inside Infer. We provide a library, and can add more as needed. Here are the currently defined predicates:
+The simplest formulas we can write are proedicates. They are defined inside Infer. We provide a library, and can add more as needed. Here are the currently defined predicates:
 
 ```
 call_class_method ("class_name", "method_name")
@@ -157,6 +136,28 @@ In general, the parameters of predicates can be constants, or variables, or regu
 
 
 <a name="formulas">**AL Formulas**</a>
+
+Formulas are defined using a variation of the *CTL temporal logic*. CTL is a logic expressing properties of a tree model. In the case of AL, the tree is the AST of the program. Formulas are defined according to the following grammar:
+
+```
+formula ::= predicate 
+          | NOT formula                                                                                                                                                                 
+          | formula1 OR formula2                                                                                            
+          | formula1 AND formula2 
+          | formula1 IMPLIES formula2                                                                                       
+          | formula1 HOLDS-UNTIL formula2                                                                         
+          | formula1 HOLDS-EVERYWHERE-UNTIL formula2                                                 
+          | formula HOLDS-EVENTUALLY                                                                                
+          | formula HOLDS-EVERYWHERE-EVENTUALLY                                                       
+          | formula HOLDS-NEXT                                                                                             
+          | formula HOLDS-EVERYWHERE-NEXT                                                                    
+          | formula HOLDS-ALWAYS                                                                                        
+          | formula HOLDS-EVERYWHERE-ALWAYS                                                             
+          | WHEN formula HOLDS-IN-NODE node-name-list                                                    
+          | IN-NODE node-name-list WITH-TRANSITION transition-name                            
+               formula HOLDS-EVENTUALLY
+```
+
 
 The first four cases (`NOT`, `OR`, `AND`, `IMPLIES`) are classic boolean operators with the usual semantics. The others are temporal operators describing how the truth-value of a formula is evaluated in a tree. Let's consider case by case.
 
