@@ -39,10 +39,10 @@ clang -Xclang -ast-dump -fsyntax-only Test.m
 and the other one is using Infer. First, call Infer with
 
 ```bash
-infer --stats -- clang -c Test.m
+infer --debug -- clang -c Test.m
 ```
 
-where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.o.sh in the current directory. Run this script with bash Test.o.sh and a file Test.o.bdump will be generated, that contains the ast of the program in a readable format.
+where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.m.ast.sh in the current directory. Run this script with bash Test.m.ast.sh and a file Test.m.ast.bdump will be generated, that contains the ast of the program in a readable format.
 
 
 <a name="write_linters">**Using AL to write linters**</a>
