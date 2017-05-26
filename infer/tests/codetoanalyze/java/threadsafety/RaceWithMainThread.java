@@ -12,6 +12,7 @@ package codetoanalyze.java.checkers;
 import javax.annotation.concurrent.ThreadSafe;
 
 class OurThreadUtils{
+  native boolean isMainThread();
   void assertMainThread(){}
   void assertHoldsLock(Object lock){}
 }
@@ -101,6 +102,8 @@ Integer ff;
    }
  }
 
+
+
  void conditional_Bad(boolean b){
    if (b)
    {
@@ -110,4 +113,41 @@ Integer ff;
      ff = 99;
    }
  }
+
+ void conditional_isMainThread_Ok(){
+   if (o.isMainThread())
+   {
+     ff = 88;
+   }
+ }
+
+ void conditional_isMainThread_ElseBranch_Bad(){
+   if (o.isMainThread())
+   {
+    synchronized(this){
+     ff = 88;
+   }
+   } else {
+     ff = 99;
+   }
+ }
+
+ void conditional_isMainThread_Negation_Bad(){
+   if (!o.isMainThread())
+   {
+     ff = 88;
+   }
+ }
+
+ void conditional_isMainThread_ElseBranch_Ok(){
+   if (!o.isMainThread())
+   {
+    synchronized(this){
+     ff = 88;
+   }
+   } else {
+     ff = 99;
+   }
+ }
+
 }

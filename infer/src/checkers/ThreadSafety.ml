@@ -66,6 +66,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | LockedIfTrue
     | NoEffect
 
+  type thread_model =
+    | Threaded
+    | Unknown
+    | ThreadedIfTrue
+
   let is_thread_utils_method method_name_str = function
     | Typ.Procname.Java java_pname ->
         String.is_suffix ~suffix:"ThreadUtils" (Typ.Procname.java_get_class_name java_pname)
@@ -109,6 +114,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Unlock
     | _ ->
         NoEffect
+
+  let get_thread_model = function
+    | Typ.Procname.Java java_pname ->
+        if is_thread_utils_method "assertMainThread" (Typ.Procname.Java java_pname) then
+          Threaded
+        else if is_thread_utils_method "isMainThread" (Typ.Procname.Java java_pname) then
+          ThreadedIfTrue
+        else Unknown
+    | _ -> Unknown
 
   let add_conditional_ownership_attribute access_path formal_map attribute_map attributes =
     match FormalMap.get_formal_index (fst access_path) formal_map with
@@ -427,6 +441,26 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           add_reads actuals loc astate.accesses astate.locks
             astate.threads astate.attribute_map proc_data in
         let astate = { astate with accesses; } in
+        let astate =
+          match get_thread_model callee_pname with
+          | Threaded ->
+              { astate with threads = true; }
+          | ThreadedIfTrue ->
+              begin
+                match ret_opt with
+                | Some ret_access_path ->
+                    let attribute_map =
+                      AttributeMapDomain.add_attribute
+                        (ret_access_path, [])
+                        (Choice Choice.OnMainThread)
+                        astate.attribute_map in
+                    { astate with attribute_map; }
+                | None ->
+                    failwithf
+                      "Procedure %a specified as returning boolean, but returns nothing"
+                      Typ.Procname.pp callee_pname
+              end
+          | Unknown -> astate in
         let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
           if is_thread_utils_method "assertMainThread" callee_pname
