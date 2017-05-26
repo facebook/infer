@@ -75,6 +75,7 @@ DEFINE-CHECKER STRONG_DELEGATE_WARNING = {
     
     SET message = "Property or ivar %decl_name% declared strong";
     SET suggestion = "In general delegates should be declared weak or assign";
+    SET severity = "WARNING"
   };
 ```
 
