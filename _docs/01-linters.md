@@ -14,7 +14,7 @@ The linters are run by default when you run Infer. However, there is a way of ru
 infer run -a linters -- clang -c Test.m
 ```
 
-**AL: A declarative language for writing linters in Infer**
+<a name="al_intro">**AL: A declarative language for writing linters in Infer**</a>
 
 One of the major advantage of Infer when compared with other static analyzers is the fact it performs sophisticated inter-procedural/inter-file analysis. That is, Infer can detect bugs which involve tracking values through many procedure calls and the procedures may live in different files. These may be very subtle bugs and designing static analyses to do that is quite involved and normally requires deep static analysis expertise.
 
@@ -23,9 +23,7 @@ However, there are many important software bugs that are confined in the code of
 Once the new linter is added to the linters' file it will then work out of the box without the need to recompile Infer. Moreover to modify and/or debug your linters is enough to just update the linters' file.
 
 
-
-
-**Background on the clang AST** 
+<a name="clang_ast">**Background on the clang AST**</a>  
 
 First of all, get familiar with the `decl` and `stmt` data structures of the ast in infer/infer/src/clang/clang_ast_t.mli. This is a generated file. `decl` is the type for declarations and  contains items such as `ObjCInterfaceDecl`, `ObjCPropertyDecl`, `ObjCMethodDecl`, etc. `stmt` is a type for statements and contains items such as `ObjCMessageExpr`, `IfStmt`, etc. For information on those names, you can google them, and you'll find the clang docs.
 
@@ -43,7 +41,7 @@ infer --stats -- clang -c Test.m
 where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.o.sh in the current directory. Run this script with bash Test.o.sh and a file Test.o.bdump will be generated, that contains the ast of the program in a readable format.
 
 
-**Using AL to write linters**
+<a name="write_linters">**Using AL to write linters**</a>
 
 Let's start with an example. Suppose we want to write the following Objective-C's linter:
 
@@ -114,7 +112,7 @@ formula ::= predicate
                formula HOLDS-EVENTUALLY
 ```
 
-**AL Predicates** 
+<a name="predicates">**AL Predicates**</a> 
 
 The predicates are defined inside Infer. We provide a library, and can add more as needed. Here are the currently defined predicates:
 
@@ -152,7 +150,7 @@ within_responds_to_selector_block ()
 In general, the parameters of predicates can be constants, or variables, or regular expressions. Variables are used in macros, see below. The syntax for using regexes is `REGEX("your_reg_exp_here")`.
 
 
-**AL Formulas**
+<a name="formulas">**AL Formulas**</a>
 
 The first four cases (`NOT`, `OR`, `AND`, `IMPLIES`) are classic boolean operators with the usual semantics. The others are temporal operators describing how the truth-value of a formula is evaluated in a tree. Let's consider case by case.
 
@@ -269,7 +267,7 @@ The following tree explain the concept:
 
 The concept of transition is needed because of the special structure of the clang AST. Certain kind of nodes, for example statements, have a list of children that are statements as well. In this case there is no special tag attached to the edge between the node and the children. Other nodes have records, where some of the fields point to other nodes. For example a node representing a function declaration will have a record where one of the fields is body. This is pointing to a statement representing the function's body. For records, sometimes we need to specify that we need a particular node reachable via a particular field (i.e., a transition).
 
-**Defining Macros**
+<a name="macros">**Defining Macros**</a> 
 
 It is possible to define macros that can be used in several checkers. This is done in the following way:
 
@@ -294,7 +292,7 @@ In an AL file, the command above import and make available all the macros define
 A good way to learn how to write checkers is looking at existing checkers in the file `linters.al`.
 
 
-**Testing your rule**
+<a name="testing">**Testing your rule**</a>
 
 To test your rule you need to run it with Infer. If you are adding a new linter you can test it in a separate al file that you can pass to Infer with the option `--linters-def-file file.al`. Pass the option `--linters-developer-mode` to Infer that will print debug information and only take the linters from that file into account in the execution, it will ignore the default linters, so it will be faster and debug info will be only 
 about your linter.
@@ -322,7 +320,7 @@ infer/tests/codetoanalyze/objcpp/linters/global-var/B.mm:34: warning: GLOBAL_VAR
 Moreover, the bug can be found in the file `infer-out/report.json` where `infer-out` is the results directory where Infer operates, that is created in the current directory. You can specify a different directory with the option `-o`.
 
 
-**Debugging**
+<a name="debugging">**Debugging**</a>
 
 If there are syntax errors or other parsing errors with your al file, you will get an error message when testing the rule, remember to use `linters-developer-mode` when you are developing a rule. If the rule gets parsed but still doesn't behave as you expect, you can debug it, by adding the following line to a test source file in the line where yo want to debug the rule: `//INFER_BREAKPOINT`. Then run infer again in linters developer mode, and it will stop the execution of the linter in the line of the breakpoint. Then you can follow the execution step by step. It shows the current formula that is being evaluated, and the current part of the AST that is being checked. A red node means that the formula failed, a green node means that it succeeded.
 
