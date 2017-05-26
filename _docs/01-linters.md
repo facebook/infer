@@ -337,6 +337,10 @@ Moreover, the bug can be found in the file `infer-out/report.json` where `infer-
 
 If there are syntax errors or other parsing errors with your al file, you will get an error message when testing the rule, remember to use `linters-developer-mode` when you are developing a rule. If the rule gets parsed but still doesn't behave as you expect, you can debug it, by adding the following line to a test source file in the line where yo want to debug the rule: `//INFER_BREAKPOINT`. Then run infer again in linters developer mode, and it will stop the execution of the linter in the line of the breakpoint. Then you can follow the execution step by step. It shows the current formula that is being evaluated, and the current part of the AST that is being checked. A red node means that the formula failed, a green node means that it succeeded.
 
+<a name="demo">**Demo**</a>
+
+<iframe width="420" height="315" src="https://youtu.be/9t3xoZZ6hjY" frameborder="0" allowfullscreen></iframe>
+
 <a name="command_line">**Command line options for linters**</a>
 
 The linters are run by default when you run Infer. However, there is a way of running only the linters, which is faster than also running Infer. This is by adding the option `-a linters` to the analysis command as in this example:
@@ -349,6 +353,4 @@ There are a few other command line options that are useful for using or developi
 
 <p><img align="left" src="static/images/AL/linters_help.png"></p>
 
-<a name="demo">**Demo**</a>
 
-<iframe width="420" height="315" src="https://youtu.be/9t3xoZZ6hjY" frameborder="0" allowfullscreen></iframe>
