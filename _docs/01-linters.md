@@ -339,7 +339,7 @@ If there are syntax errors or other parsing errors with your al file, you will g
 
 <a name="demo">**Demo**</a>
 
-<iframe width="420" height="315" src="https://youtu.be/9t3xoZZ6hjY" frameborder="0" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/9t3xoZZ6hjY?ecver=1" frameborder="0" allowfullscreen></iframe>
 
 <a name="command_line">**Command line options for linters**</a>
 
