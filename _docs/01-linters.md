@@ -29,7 +29,7 @@ Once the new linter is added to the linters' file it will then work out of the b
 
 <a name="clang_ast">**Background on the clang AST**</a>  
 
-First of all, get familiar with the `decl` and `stmt` data structures of the ast in infer/infer/src/clang/clang_ast_t.mli. This is a generated file. `decl` is the type for declarations and  contains items such as `ObjCInterfaceDecl`, `ObjCPropertyDecl`, `ObjCMethodDecl`, etc. `stmt` is a type for statements and contains items such as `ObjCMessageExpr`, `IfStmt`, etc. For information on those names, you can google them, and you'll find the clang docs.
+First of all, get familiar with the `decl` and `stmt` data structures of the ast in infer/infer/src/clang/clang_ast_t.mli. This is a generated file. `decl` is the type for declarations and  contains items such as `ObjCInterfaceDecl`, `ObjCPropertyDecl`, `ObjCMethodDecl`, etc. `stmt` is a type for statements and contains items such as `ObjCMessageExpr`, `IfStmt`, etc. For information on those names, you can google them, and you'll find the clang docs, for instance [ObjCInterfaceDecl](http://clang.llvm.org/doxygen/classclang_1_1ObjCInterfaceDecl.html).
 
 More important is to be able to map source code to its ast components. You can do this in two ways. Say your file is called Test.m. The first one is with the command
 
