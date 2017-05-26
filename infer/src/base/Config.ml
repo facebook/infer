@@ -845,7 +845,7 @@ and (
       [filtering]
 
   and default_linters =
-    CLOpt.mk_bool ~long:"default-linters" ~in_help:CLOpt.[Capture, manual_clang; Run, manual_clang]
+    CLOpt.mk_bool ~long:"default-linters" ~in_help:CLOpt.[Capture, manual_clang_linters]
       ~default:true
       "Use the default linters for the analysis."
 
@@ -864,7 +864,7 @@ and (
   in
   let linters_developer_mode =
     CLOpt.mk_bool_group ~long:"linters-developer-mode"
-      ~in_help:CLOpt.[Capture, manual_clang; Run, manual_clang]
+      ~in_help:CLOpt.[Capture, manual_clang_linters]
       "Debug mode for developing new linters. (Sets the analyzer to $(b,linters); also sets \
        $(b,--debug), $(b,--developer-mode), $(b,--print-logs), and \
        unsets $(b,--allowed-failures) and $(b,--default-linters)."
