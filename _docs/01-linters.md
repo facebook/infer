@@ -101,7 +101,7 @@ DEFINE-CHECKER name_of_the_checker = {
 
 <a name="predicates">**AL Predicates**</a> 
 
-The simplest formulas we can write are proedicates. They are defined inside Infer. We provide a library, and can add more as needed. Here are the currently defined predicates:
+The simplest formulas we can write are predicates. They are defined inside Infer. We provide a library, and can add more as needed. Here are the currently defined predicates:
 
 ```
 call_class_method ("class_name", "method_name")
