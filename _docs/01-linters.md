@@ -298,7 +298,7 @@ GLOBAL-MACROS {
 In an AL file, the command above import and make available all the macros defined in the `library.al` file.
 
 **Hint**
-A good way to learn how to write checkers is looking at existing checkers in the file `linters.al`.
+A good way to learn how to write checkers is looking at existing checkers in the file `[linters.al](https://github.com/facebook/infer/blob/master/infer/lib/linter_rules/linters.al)`.
 
 
 <a name="testing">**Testing your rule**</a>
