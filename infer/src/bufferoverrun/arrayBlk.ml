@@ -78,9 +78,7 @@ struct
 
   let diff : t -> t -> Itv.astate
     = fun arr1 arr2 ->
-      let i1 = Itv.mult arr1.offset arr1.stride in
-      let i2 = Itv.mult arr2.offset arr2.stride in
-      Itv.minus i1 i2
+      Itv.minus arr1.offset arr2.offset
 
   let subst : t -> Itv.Bound.t Itv.SubstMap.t -> t
     = fun arr subst_map ->

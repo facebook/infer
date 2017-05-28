@@ -378,15 +378,19 @@ struct
 
   let plus_pi : t -> t -> t
     = fun x y ->
-      { bot with arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv }
+      { bot with powloc = x.powloc; arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv }
 
   let minus_pi : t -> t -> t
     = fun x y ->
-      { bot with arrayblk = ArrayBlk.minus_offset x.arrayblk y.itv }
+      { bot with powloc = x.powloc; arrayblk = ArrayBlk.minus_offset x.arrayblk y.itv }
 
   let minus_pp : t -> t -> t
     = fun x y ->
-      { bot with itv = ArrayBlk.diff x.arrayblk y.arrayblk }
+      (* when we cannot precisely follow the physical memory model, return top *)
+      if (not (PowLoc.is_bot x.powloc) && ArrayBlk.is_bot x.arrayblk) ||
+         (not (PowLoc.is_bot y.powloc) && ArrayBlk.is_bot y.arrayblk)
+      then { bot with itv = Itv.top }
+      else { bot with itv = ArrayBlk.diff x.arrayblk y.arrayblk }
 
   let subst : t -> Itv.Bound.t Itv.SubstMap.t -> t
     = fun x subst_map ->
