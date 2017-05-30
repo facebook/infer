@@ -815,7 +815,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     let warn accessed_fld guarded_by_str =
       let loc = State.get_loc () in
       let err_desc =
-        Localise.desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc in
+        Localise.desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc in
       let exn = Exceptions.Unsafe_guarded_by_access (err_desc, __POS__) in
       Reporting.log_error pname exn in
     let rec is_read_write_lock typ =

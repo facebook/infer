@@ -523,7 +523,7 @@ let desc_double_lock pname_opt object_str loc =
   let descriptions = [mutex_str; msg; at_line tags loc] in
   { no_desc with descriptions; tags = !tags }
 
-let desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc =
+let desc_unsafe_guarded_by_access accessed_fld guarded_by_str loc =
   let line_info = at_line (Tags.create ()) loc in
   let accessed_fld_str = Fieldname.to_string accessed_fld in
   let annot_str = Printf.sprintf "@GuardedBy(\"%s\")" guarded_by_str in
@@ -531,14 +531,15 @@ let desc_unsafe_guarded_by_access pname accessed_fld guarded_by_str loc =
     MF.monospaced_to_string (Printf.sprintf "synchronized(%s)" guarded_by_str) in
   let msg =
     Format.asprintf
-      "The field %a is annotated with %a, but the lock %a is not held during the access to the field %s. Consider wrapping the access in a %s block or annotating %s with %a"
+      "The field %a is annotated with %a, but the lock %a is not held during the access to the \
+       field %s. Since the current method is non-private, it can be called from outside the \
+       current class without synchronization. Consider wrapping the access in a %s block or making \
+       the method private."
       MF.pp_monospaced accessed_fld_str
       MF.pp_monospaced annot_str
       MF.pp_monospaced guarded_by_str
       line_info
-      syncronized_str
-      (Typ.Procname.to_string pname)
-      MF.pp_monospaced annot_str in
+      syncronized_str in
   { no_desc with descriptions = [msg]; }
 
 

@@ -308,8 +308,7 @@ val desc_inherently_dangerous_function : Typ.Procname.t -> error_desc
 val desc_unary_minus_applied_to_unsigned_expression :
   string option -> string -> Location.t -> error_desc
 
-val desc_unsafe_guarded_by_access :
-  Typ.Procname.t -> Fieldname.t -> string -> Location.t -> error_desc
+val desc_unsafe_guarded_by_access : Fieldname.t -> string -> Location.t -> error_desc
 
 val desc_tainted_value_reaching_sensitive_function :
   PredSymb.taint_kind -> string -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> error_desc
