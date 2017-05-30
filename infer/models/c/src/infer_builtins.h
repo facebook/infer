@@ -20,6 +20,12 @@
 extern "C" {
 #endif
 
+// assert and if not, violate dereference pointer
+#define __infer_assert(E) {  \
+  int *s = NULL;             \
+  if (!(E)) *s = 0xDEADBEEF; \
+}
+
 // model returning an arbitrary (nondeterministic) short
 short __infer_nondet_short();
 
