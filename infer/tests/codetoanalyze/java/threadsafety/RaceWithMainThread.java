@@ -12,21 +12,34 @@ package codetoanalyze.java.checkers;
 import javax.annotation.concurrent.ThreadSafe;
 
 class OurThreadUtils{
-  native boolean isMainThread();
-  void assertMainThread(){}
-  void assertHoldsLock(Object lock){}
+  native static boolean isMainThread();
+  static void assertMainThread(){}
+  static void assertHoldsLock(Object lock){}
 }
+
+class OurThreadUtil{ /*This is like AndroidThreadUtil*/
+  native static boolean isUiThread();
+  static void assertOnUiThread(){}
+}
+
 
 @ThreadSafe
 class RaceWithMainThread{
 
   Integer f;
-  OurThreadUtils o;
 
   void main_thread_OK(){
-      o.assertMainThread();
+      OurThreadUtils.assertMainThread();
       f = 88;
    }
+
+  Integer f1;
+
+  void main_thread1_OK(){
+      OurThreadUtil.assertOnUiThread();
+      f1 = 88;
+   }
+
 
    void main_thread_indirect_OK() {
      main_thread_OK();
@@ -35,13 +48,18 @@ class RaceWithMainThread{
 
   void read_from_main_thread_OK(){
     Integer x;
-    o.assertMainThread();
+    OurThreadUtils.assertMainThread();
     x = f;
   }
 
   void read_unprotected_unthreaded_Bad(){
     Integer x;
     x = f;
+  }
+
+  void read_unprotected_unthreaded1_Bad(){
+    Integer x;
+    x = f1;
   }
 
   /*There is a particularly subtle idiom which avoids races, where a
@@ -53,7 +71,7 @@ class RaceWithMainThread{
   Integer i;
 
   void protected_write_on_main_thread_OK() {
-    o.assertMainThread();
+    OurThreadUtils.assertMainThread();
     synchronized (this) {
       i = 99;
     }
@@ -61,7 +79,7 @@ class RaceWithMainThread{
 
   void unprotected_read_on_main_thread_OK() {
     Integer x;
-    o.assertMainThread();
+    OurThreadUtils.assertMainThread();
     x = i;
   }
 
@@ -82,7 +100,7 @@ class RaceWithMainThread{
   Integer g;
 
   void holds_lock_OK(){
-      o.assertHoldsLock(this);
+      OurThreadUtils.assertHoldsLock(this);
       g = 88;
    }
 
@@ -97,7 +115,7 @@ Integer ff;
    if (b)
    { /*People not literally putting this assert inside if's,
        but implicitly by method calls */
-     o. assertMainThread();
+     OurThreadUtils.assertMainThread();
      ff = 88;
    }
  }
@@ -107,7 +125,7 @@ Integer ff;
  void conditional_Bad(boolean b){
    if (b)
    {
-     o.assertMainThread();
+     OurThreadUtils.assertMainThread();
      ff = 88;
    } else {
      ff = 99;
@@ -115,14 +133,22 @@ Integer ff;
  }
 
  void conditional_isMainThread_Ok(){
-   if (o.isMainThread())
+   if (OurThreadUtils.isMainThread())
    {
      ff = 88;
    }
  }
 
+ void conditional_isUiThread_Ok(){
+   if (OurThreadUtil.isUiThread())
+   {
+     ff = 88;
+   }
+ }
+
+
  void conditional_isMainThread_ElseBranch_Bad(){
-   if (o.isMainThread())
+   if (OurThreadUtils.isMainThread())
    {
     synchronized(this){
      ff = 88;
@@ -132,15 +158,27 @@ Integer ff;
    }
  }
 
+ void conditional_isUiThread_ElseBranch_Bad(){
+   if (OurThreadUtil.isUiThread())
+   {
+    synchronized(this){
+     ff = 88;
+   }
+   } else {
+     ff = 99;
+   }
+ }
+
+
  void conditional_isMainThread_Negation_Bad(){
-   if (!o.isMainThread())
+   if (!OurThreadUtils.isMainThread())
    {
      ff = 88;
    }
  }
 
  void conditional_isMainThread_ElseBranch_Ok(){
-   if (!o.isMainThread())
+   if (!OurThreadUtils.isMainThread())
    {
     synchronized(this){
      ff = 88;

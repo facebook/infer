@@ -71,9 +71,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Unknown
     | ThreadedIfTrue
 
+  let is_thread_utils_type java_pname =
+    let pn = (Typ.Procname.java_get_class_name java_pname) in
+    String.is_suffix ~suffix:"ThreadUtils" pn
+    || String.is_suffix ~suffix:"ThreadUtil" pn
+
   let is_thread_utils_method method_name_str = function
     | Typ.Procname.Java java_pname ->
-        String.is_suffix ~suffix:"ThreadUtils" (Typ.Procname.java_get_class_name java_pname)
+        is_thread_utils_type  java_pname
         && String.equal (Typ.Procname.java_get_method java_pname) method_name_str
     | _ -> false
 
@@ -117,11 +122,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let get_thread_model = function
     | Typ.Procname.Java java_pname ->
-        if is_thread_utils_method "assertMainThread" (Typ.Procname.Java java_pname) then
-          Threaded
-        else if is_thread_utils_method "isMainThread" (Typ.Procname.Java java_pname) then
-          ThreadedIfTrue
+        if is_thread_utils_type java_pname then
+          match Typ.Procname.java_get_method java_pname with
+          | "assertMainThread"
+          | "checkOnMainThread"
+          | "assertOnUiThread"   -> Threaded
+          | "isMainThread"
+          | "isUiThread"         -> ThreadedIfTrue
+          | _                    -> Unknown
         else Unknown
+    (*Note we are not modelling assertOnNonUiThread or
+      assertOnBackgroundThread. These treated as Unknown*)
     | _ -> Unknown
 
   let add_conditional_ownership_attribute access_path formal_map attribute_map attributes =
