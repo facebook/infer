@@ -324,7 +324,8 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
               dangling_pointer_dereference,
               unary_minus_applied_to_unsigned_expression,
               condition_always_true,
-              condition_always_false
+              condition_always_false,
+              retain_cycle
             ];
           not (List.mem equal::Localise.equal blacklisted_by_default issue_type)
         }
