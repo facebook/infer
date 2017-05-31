@@ -21,13 +21,14 @@ let always_strong_update = true (* unsound but ok for bug catching *)
 
 module Condition =
 struct
-  type t =
-    { idx : Itv.astate;
-      size : Itv.astate;
-      proc_name : Typ.Procname.t;
-      loc : Location.t;
-      trace : trace;
-      id : string }
+  type t = {
+    proc_name : Typ.Procname.t;
+    loc : Location.t;
+    id : string;
+    trace : trace;
+    idx : Itv.astate;
+    size : Itv.astate;
+  }
   [@@deriving compare]
 and trace = Intra of Typ.Procname.t
           | Inter of Typ.Procname.t * Typ.Procname.t * Location.t
@@ -127,7 +128,7 @@ let check : t -> string option
          && Itv.Bound.le (Itv.lb c'.size) (Itv.lb c.idx) then
       Some Localise.BucketLevel.b3
       (* other symbolic bounds are probably too noisy *)
-    else if Config.bo_debug <= 1 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size) then
+    else if Config.bo_debug <= 3 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size) then
       None
     else if filter1 c then
       Some Localise.BucketLevel.b5
