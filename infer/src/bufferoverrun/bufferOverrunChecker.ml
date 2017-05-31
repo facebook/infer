@@ -35,9 +35,14 @@ struct
 
   type extras = Typ.Procname.t -> Procdesc.t option
 
-  let set_uninitialized (typ : Typ.t) loc mem = match typ.desc with
+  let set_uninitialized node (typ : Typ.t) loc mem = match typ.desc with
     | Tint _ | Tfloat _ -> Dom.Mem.weak_update_heap loc Dom.Val.Itv.top mem
-    | _ -> mem
+    | _ ->
+        if Config.bo_debug >= 3 then
+          L.out "/!\\ Do not know how to uninitialize type %a at %a@\n"
+            (Typ.pp Pp.text) typ
+            Location.pp (CFG.loc node);
+        mem
 
   (* NOTE: heuristic *)
   let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t
@@ -58,8 +63,12 @@ struct
           let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero length 0 1 in
           mem
           |> Dom.Mem.add_stack (Loc.of_id id) v
-          |> set_uninitialized typ (Dom.Val.get_array_locs v)
-      | _ -> mem
+          |> set_uninitialized node typ (Dom.Val.get_array_locs v)
+      | _ ->
+          if Config.bo_debug >= 3 then
+            L.out "/!\\ Do not know where to model malloc at %a@\n"
+              Location.pp (CFG.loc node);
+          mem
 
   let model_realloc
     : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
@@ -72,6 +81,9 @@ struct
     | Some (id, _) ->
         Dom.Mem.add_stack (Loc.of_id id) value mem
     | None ->
+        if Config.bo_debug >= 3 then
+          L.out "/!\\ Do not know where to model value %a@\n"
+            Dom.Val.pp value;
         mem
 
   let model_infer_print
@@ -95,7 +107,7 @@ struct
         let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero length 0 1 in
         mem
         |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
-        |> set_uninitialized typ (Dom.Val.get_array_locs v)
+        |> set_uninitialized node typ (Dom.Val.get_array_locs v)
     | _ :: _ :: [] ->
         failwithf "Unexpected type of arguments for __set_array_length()"
     | _ ->
@@ -116,7 +128,11 @@ struct
       | "realloc" -> model_realloc pname ret params node mem
       | "__set_array_length" -> model_infer_set_array_length pname node params mem loc
       | "strlen" -> model_by_value Dom.Val.Itv.nat ret mem
-      | _ ->
+      | proc_name ->
+          if Config.bo_debug >= 3 then
+            L.out "/!\\ Unknown call to %s at %a@\n"
+              proc_name
+              Location.pp loc;
           model_by_value Dom.Val.Itv.top ret mem
 
   let rec declare_array
@@ -176,7 +192,9 @@ struct
             (Dom.Mem.add_heap field v mem, sym_num + 4)
         | _ ->
             if Config.bo_debug >= 3 then
-              L.out "decl_fld of unhandled type: %a@." (Typ.pp Pp.text) typ;
+              L.out "/!\\ decl_fld of unhandled type: %a at %a@."
+                (Typ.pp Pp.text) typ
+                Location.pp (CFG.loc node);
             (mem, sym_num)
       in
       match typ.Typ.desc with
@@ -285,7 +303,14 @@ struct
             (* array allocation in stack e.g., int arr[10] *)
             let (mem, inst_num) = List.fold ~f:try_decl_arr ~init:(mem, 1) locals in
             declare_symbolic_parameter pdesc tenv node inst_num mem
-        | Call _
+        | Call (_, fun_exp, _, loc, _) ->
+            let () =
+              if Config.bo_debug >= 3 then
+                L.out "/!\\ Call to non-const function %a at %a"
+                  Exp.pp fun_exp
+                  Location.pp loc
+            in
+            mem
         | Remove_temps _
         | Abstract _
         | Nullify _ -> mem
