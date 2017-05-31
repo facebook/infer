@@ -24,3 +24,21 @@ void function_call() {
   char* p = malloc(10);
   arr_access(arr, p, 20);
 }
+
+void ptr_set_to_zero(int* x) {
+  *x = 0;
+}
+
+void call_by_ptr_good_FP() {
+  int arr[10];
+  int i = 99;
+  ptr_set_to_zero(&i);
+  arr[i] = 123;
+}
+
+void call_by_ptr_bad_FN() {
+  int arr[10];
+  int i = 5;
+  ptr_set_to_zero(&i);
+  arr[i - 1] = 123;
+}
