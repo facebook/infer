@@ -72,6 +72,7 @@ val eradicate_return_not_nullable : t
 val eradicate_return_over_annotated : t
 val eradicate_return_value_not_present : t
 val eradicate_value_not_present : t
+val field_should_be_nullable : t
 val field_not_null_checked : t
 val inherently_dangerous_function : t
 val memory_leak : t

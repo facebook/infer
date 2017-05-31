@@ -520,7 +520,8 @@ and (annotation_reachability,
      quandary,
      repeated_calls,
      siof,
-     threadsafety) =
+     threadsafety,
+     suggest_nullable) =
   let annotation_reachability =
     CLOpt.mk_bool ~long:"annotation-reachability" ~in_help:CLOpt.[Analyze, manual_generic]
       ~default:true
@@ -578,7 +579,11 @@ and (annotation_reachability,
 
   and threadsafety =
     CLOpt.mk_bool ~long:"threadsafety" ~in_help:CLOpt.[Analyze, manual_generic] ~default:true
-      "the thread safety analysis" in
+      "the thread safety analysis"
+
+  and suggest_nullable =
+    CLOpt.mk_bool ~long:"suggest-nullable" ~default:false
+      "Nullable annotation sugesstions analysis (experimental)" in
 
   (* IMPORTANT: keep in sync with the checkers that have ~default:true above *)
   let default_checkers =
@@ -602,7 +607,8 @@ and (annotation_reachability,
    quandary,
    repeated_calls,
    siof,
-   threadsafety)
+   threadsafety,
+   suggest_nullable)
 
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
@@ -1819,6 +1825,7 @@ and models_mode = !models_mode
 and modified_targets = !modified_targets
 and monitor_prop_size = !monitor_prop_size
 and nelseg = !nelseg
+and suggest_nullable = !suggest_nullable
 and no_translate_libs = not !headers
 and objc_memory_model_on = !objc_memory_model
 and only_footprint = !only_footprint

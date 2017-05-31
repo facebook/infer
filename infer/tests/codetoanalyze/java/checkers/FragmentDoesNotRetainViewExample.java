@@ -16,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import javax.annotation.Nullable;
 
 public class FragmentDoesNotRetainViewExample extends Fragment {
 
@@ -27,10 +28,10 @@ public class FragmentDoesNotRetainViewExample extends Fragment {
 
   }
 
-  View mView1;
-  View mView2;
-  ViewGroup mViewSubclass;
-  CustomView mCustomView;
+  @Nullable View mView1;
+  @Nullable View mView2;
+  @Nullable ViewGroup mViewSubclass;
+  @Nullable CustomView mCustomView;
 
   boolean b;
 

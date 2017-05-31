@@ -50,20 +50,62 @@ module Raw = struct
     | base, _ :: [] -> base, []
     | base, accesses -> base, List.rev (List.tl_exn (List.rev accesses))
 
-  let get_typ ((_, base_typ), accesses) tenv =
-    let rec accesses_get_typ last_typ tenv = function
+  let lookup_field_type_annot tenv base_typ field_name =
+    let lookup = Tenv.lookup tenv in
+    Typ.Struct.get_field_type_and_annotation ~lookup field_name base_typ
+
+  (* Get the type of an access, or None if the type cannot be determined *)
+  let get_access_type tenv base_typ = function
+    | FieldAccess field_name ->
+        Option.map (lookup_field_type_annot tenv base_typ field_name) ~f:fst
+    | ArrayAccess array_typ ->
+        Some array_typ
+
+  (* For field access, get the field name and the annotation associated with it
+   * Return None if given an array access, or if the info cannot be obtained *)
+  let get_access_field_annot tenv base_typ = function
+    | FieldAccess field_name ->
+        Option.map (lookup_field_type_annot tenv base_typ field_name) ~f:(
+          fun (_, annot) -> (field_name, annot)
+        )
+    | ArrayAccess _ ->
+        None
+
+  (* Extract the last access of the given access path together with its base type.
+   * Here the base type is defined to be the declaring class of the last accessed field,
+   * or the type of base if the access list is empty.
+   * For example:
+   * - for x.f.g, the base type of the last access is typ(f);
+   * - for x.f[][], the base type of the last access is typ(x);
+   * - for x, the base type of the last access is type(x) *)
+  let last_access_info ((_, base_typ), accesses) tenv =
+    let rec last_access_info_impl tenv base_typ = function
       | [] ->
-          Some last_typ
-      | FieldAccess field_name :: accesses ->
-          let lookup = Tenv.lookup tenv in
-          begin
-            match Typ.Struct.get_field_type_and_annotation ~lookup field_name last_typ with
-            | Some (field_typ, _) -> accesses_get_typ field_typ tenv accesses
-            | None -> None
-          end
-      | ArrayAccess array_typ :: accesses ->
-          accesses_get_typ array_typ tenv accesses in
-    accesses_get_typ base_typ tenv accesses
+          Some base_typ, None
+      | [last_access] ->
+          Some base_typ, Some last_access
+      | curr_access :: rest ->
+          match get_access_type tenv base_typ curr_access with
+          | Some access_typ ->
+              last_access_info_impl tenv access_typ rest
+          | None ->
+              None, None
+    in
+    last_access_info_impl tenv base_typ accesses
+
+  let get_field_and_annotation ap tenv =
+    match last_access_info ap tenv with
+    | Some base_typ, Some access ->
+        get_access_field_annot tenv base_typ access
+    | _ -> None
+
+  let get_typ ap tenv =
+    match last_access_info ap tenv with
+    | (Some _) as typ, None -> typ
+    | Some base_typ, Some access ->
+        get_access_type tenv base_typ access
+    | _ ->
+        None
 
   let pp fmt = function
     | base, [] ->  pp_base fmt base

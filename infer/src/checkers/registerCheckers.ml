@@ -37,6 +37,8 @@ let checkers = [
   "immutable cast", Config.immutable_cast,
   [Procedure ImmutableChecker.callback_check_immutable_cast, Config.Java];
   "printf args", Config.printf_args, [Procedure PrintfArgs.callback_printf_args, Config.Java];
+  "nullable suggestion", Config.suggest_nullable,
+  [Procedure NullabilitySuggest.checker, Config.Java];
   "quandary", Config.quandary,
   [Procedure JavaTaintAnalysis.checker, Config.Java;
    Procedure ClangTaintAnalysis.checker, Config.Clang];

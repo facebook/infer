@@ -332,6 +332,7 @@ val stacktraces_dir : string option
 val stats_mode : bool
 val stats_report : string option
 val subtype_multirange : bool
+val suggest_nullable: bool
 val svg : bool
 val symops_per_iteration : int option
 val test : bool

@@ -8,7 +8,7 @@
 TESTS_DIR = ../../..
 
 ANALYZER = checkers
-INFER_OPTIONS = --no-filtering --debug-exceptions --default-checkers --resource-leak
+INFER_OPTIONS = --no-filtering --debug-exceptions --default-checkers --resource-leak --suggest-nullable
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 

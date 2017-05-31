@@ -99,6 +99,7 @@ let eradicate_return_value_not_present =
   from_string "ERADICATE_RETURN_VALUE_NOT_PRESENT" ~hum:"Return Value Not Present"
 let eradicate_value_not_present =
   from_string "ERADICATE_VALUE_NOT_PRESENT" ~hum:"Value Not Present"
+let field_should_be_nullable = from_string "FIELD_SHOULD_BE_NULLABLE"
 let field_not_null_checked = from_string "IVAR_NOT_NULL_CHECKED"
 let inherently_dangerous_function = from_string "INHERENTLY_DANGEROUS_FUNCTION"
 let memory_leak = from_string "MEMORY_LEAK"
