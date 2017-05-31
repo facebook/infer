@@ -49,7 +49,7 @@ struct
     | Typ.Tfloat fkind -> sizeof_fkind fkind
     | Typ.Tvoid -> 1
     | Typ.Tptr (_, _) -> 4
-    | Typ.Tstruct _ -> 4        (* TODO *)
+    | Typ.Tstruct _ | Typ.TVar _ -> 4        (* TODO *)
     | Typ.Tarray (_, Some length, Some stride) -> IntLit.to_int stride * IntLit.to_int length
     | Typ.Tarray (typ, Some length, None) -> sizeof typ * IntLit.to_int length
     | _ -> 4

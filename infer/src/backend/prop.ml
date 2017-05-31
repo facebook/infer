@@ -472,7 +472,7 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
     else
       create_fresh_var () in
   match typ.desc, len with
-  | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), None ->
+  | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _ | TVar _), None ->
       Eexp (init_value (), inst)
   | Tstruct name, _ -> (
       match struct_init_mode, Tenv.lookup tenv name with
@@ -496,7 +496,7 @@ let rec create_strexp_of_type tenv struct_init_mode (typ : Typ.t) len inst : Sil
       Earray (len, [], inst)
   | Tarray _, Some len ->
       Earray (len, [], inst)
-  | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), Some _ ->
+  | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _ | TVar _), Some _ ->
       assert false
 
 let replace_array_contents (hpred : Sil.hpred) esel : Sil.hpred = match hpred with

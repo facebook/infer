@@ -408,7 +408,7 @@ let mk_rules_for_dll tenv (para : Sil.hpara_dll) : rule list =
 let typ_get_recursive_flds tenv typ_exp =
   let filter typ (_, (t: Typ.t), _) =
     match t.desc with
-    | Tstruct _ | Tint _ | Tfloat _ | Tvoid | Tfun _ ->
+    | Tstruct _ | Tint _ | Tfloat _ | Tvoid | Tfun _ | TVar _ ->
         false
     | Tptr ({desc=Tstruct _} as typ', _) ->
         Typ.equal typ' typ
@@ -425,7 +425,7 @@ let typ_get_recursive_flds tenv typ_exp =
               L.out "@.typ_get_recursive: unexpected type expr: %a@." Exp.pp typ_exp;
               [] (* ToDo: assert false *)
         )
-      | Tint _ | Tvoid | Tfun _ | Tptr _ | Tfloat _ | Tarray _ -> []
+      | Tint _ | Tvoid | Tfun _ | Tptr _ | Tfloat _ | Tarray _ | TVar _ -> []
     )
   | Exp.Var _ -> [] (* type of |-> not known yet *)
   | Exp.Const _ -> []

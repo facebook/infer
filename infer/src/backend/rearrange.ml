@@ -154,10 +154,10 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
          | (Sil.Off_fld _) :: _ ->
              assert false
         )
-    | Tint _, [] | Tfloat _, [] | Tvoid, [] | Tfun _, [] | Tptr _, [] ->
+    | Tint _, [] | Tfloat _, [] | Tvoid, [] | Tfun _, [] | Tptr _, [] | TVar _, [] ->
         let id = new_id () in
         ([], Sil.Eexp (Exp.Var id, inst), t)
-    | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _), (Off_index e) :: off' ->
+    | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _ | TVar _), (Off_index e) :: off' ->
         (* In this case, we lift t to the t array. *)
         let t', mk_typ_f = match t.Typ.desc with
           | Typ.Tptr(t', _) -> t', (function desc -> Typ.mk ~default:t desc)
@@ -170,7 +170,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         let se = Sil.Earray (len, [(e', se')], inst) in
         let res_t = mk_typ_f (Tarray (res_t', None, None)) in
         (Sil.Aeq(e, e') :: atoms', se, res_t)
-    | Tint _, _ | Tfloat _, _ | Tvoid, _ | Tfun _, _ | Tptr _, _ ->
+    | Tint _, _ | Tfloat _, _ | Tvoid, _ | Tfun _, _ | Tptr _, _ | TVar _, _ ->
         fail t off __POS__
   in
   if Config.trace_rearrange then

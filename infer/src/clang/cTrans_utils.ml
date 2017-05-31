@@ -741,7 +741,7 @@ let var_or_zero_in_init_list tenv e typ ~return_zero:return_zero =
     | Tint _ | Tfloat _  | Tptr _ ->
         let exp = if return_zero then Sil.zero_value_of_numerical_type typ else e in
         [ [(exp, typ)] ]
-    | Tfun _ | Tvoid | Tarray _ -> assert false in
+    | Tfun _ | Tvoid | Tarray _ | TVar _ -> assert false in
   List.concat (var_or_zero_in_init_list' e typ String.Set.empty)
 
 (*

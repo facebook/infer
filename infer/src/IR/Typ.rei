@@ -91,6 +91,7 @@ and desc =
   | Tfun bool /** function type with noreturn attribute */
   | Tptr t ptr_kind /** pointer type */
   | Tstruct name /** structured value type name */
+  | TVar string /** type variable (ie. C++ template variables) */
   | Tarray t (option IntLit.t) (option IntLit.t) /** array type with statically fixed stride and length */
 [@@deriving compare]
 and name =

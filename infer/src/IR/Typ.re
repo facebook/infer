@@ -117,6 +117,7 @@ module T = {
     | Tfun bool /** function type with noreturn attribute */
     | Tptr t ptr_kind /** pointer type */
     | Tstruct name /** structured value type name */
+    | TVar string /** type variable (ie. C++ template variables) */
     | Tarray t (option IntLit.t) (option IntLit.t) /** array type with statically fixed length and stride */
   [@@deriving compare]
   and name =
@@ -190,6 +191,7 @@ let rec pp_full pe f typ => {
   let pp_desc f {desc} =>
     switch desc {
     | Tstruct tname => F.fprintf f "%a" (pp_name_c_syntax pe) tname
+    | TVar name => F.fprintf f "%s" name
     | Tint ik => F.fprintf f "%s" (ikind_to_string ik)
     | Tfloat fk => F.fprintf f "%s" (fkind_to_string fk)
     | Tvoid => F.fprintf f "void"
