@@ -163,9 +163,7 @@ module ConditionSet =
 struct
   include AbstractDomain.FiniteSet (Condition)
 
-  module Map = Caml.Map.Make (struct
-      type t = Location.t [@@deriving compare]
-    end)
+  module Map = Caml.Map.Make (Location)
 
   let add_bo_safety
     : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> t -> t

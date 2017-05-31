@@ -263,17 +263,6 @@ struct
     : Dom.Mem.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate
     = fun mem { pdesc; tenv; extras } node instr ->
       let pname = Procdesc.get_proc_name pdesc in
-      let try_decl_arr (mem, inst_num) (pvar, typ) =
-        match typ.Typ.desc with
-        | Typ.Tarray (typ, length, stride0) ->
-            let loc = Loc.of_pvar pvar in
-            let stride = Option.map ~f:IntLit.to_int stride0 in
-            let mem =
-              declare_array pname node loc typ ~length ?stride ~inst_num ~dimension:1 mem
-            in
-            (mem, inst_num + 1)
-        | _ -> (mem, inst_num)
-      in
       let output_mem =
         match instr with
         | Load (id, exp, _, loc) ->
@@ -301,6 +290,17 @@ struct
                  handle_unknown_call pname ret callee_pname params node mem loc)
         | Declare_locals (locals, _) ->
             (* array allocation in stack e.g., int arr[10] *)
+            let try_decl_arr (mem, inst_num) (pvar, typ) =
+              match typ.Typ.desc with
+              | Typ.Tarray (typ, length, stride0) ->
+                  let loc = Loc.of_pvar pvar in
+                  let stride = Option.map ~f:IntLit.to_int stride0 in
+                  let mem =
+                    declare_array pname node loc typ ~length ?stride ~inst_num ~dimension:1 mem
+                  in
+                  (mem, inst_num + 1)
+              | _ -> (mem, inst_num)
+            in
             let (mem, inst_num) = List.fold ~f:try_decl_arr ~init:(mem, 1) locals in
             declare_symbolic_parameter pdesc tenv node inst_num mem
         | Call (_, fun_exp, _, loc, _) ->
