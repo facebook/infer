@@ -53,31 +53,40 @@ struct unique_ptr {
   // provide overload for volatile void* to accomodate for situation when
   // T is volatile ('volatile int' for example). 'void*' and 'nullptr_t'
   // overloads are to avoid 'call to model_set is ambiguous' compilation errors
-  static void model_set(infer_unique_ptr_t self, nullptr_t value) {
+  static void model_set(infer_unique_ptr_t self, nullptr_t value) noexcept {
     *self = value;
   }
 
-  static void model_set(infer_unique_ptr_t self, const void* value) {
+  static void model_set(infer_unique_ptr_t self, const void* value) noexcept {
     *self = value;
   }
 
-  static void model_set(infer_unique_ptr_t self, volatile void* value) {
+  static void model_set(infer_unique_ptr_t self,
+                        volatile void* value) noexcept {
     *self = const_cast<const void*>(value);
   }
 
-  static void model_set(infer_unique_ptr_t self, void* value) {
+  static void model_set(infer_unique_ptr_t self, void* value) noexcept {
     *self = const_cast<const void*>(value);
   }
 
-  static void model_move(infer_unique_ptr_t self, infer_unique_ptr_t other) {
+  // in case 'pointer' type is not type pointer, enable catch all overload of
+  // `model_set` to prevent compliation issues
+  static void model_set(...) noexcept { /* no model for this overload */
+  }
+
+  static void model_move(infer_unique_ptr_t self,
+                         infer_unique_ptr_t other) noexcept {
     *self = *other;
     model_set(other, nullptr);
   }
 
-  static pointer model_get(infer_unique_ptr_t self) { return (pointer)(*self); }
+  static pointer model_get(infer_unique_ptr_t self) noexcept {
+    return (pointer)(*self);
+  }
 
   static void model_swap(infer_unique_ptr_t infer_self,
-                         infer_unique_ptr_t infer_other) {
+                         infer_unique_ptr_t infer_other) noexcept {
     const void* t = *infer_self;
     *infer_self = *infer_other;
     *infer_other = t;
@@ -95,7 +104,7 @@ struct unique_ptr {
 
   constexpr unique_ptr(nullptr_t) noexcept : unique_ptr<_Tp, _Dp>() {}
 
-  explicit unique_ptr(pointer ptr) {
+  explicit unique_ptr(pointer ptr) noexcept {
     model_set(__cast_to_infer_ptr(this), ptr);
   }
 
@@ -211,19 +220,27 @@ struct unique_ptr<_Tp[], _Dp> {
 // use it to avoid compilation errors and make infer analyzer happy
 #define __cast_to_infer_ptr(self) ((infer_unique_ptr_t)self)
 
-  static void model_set(infer_unique_ptr_t self, const void* value) {
+  static void model_set(infer_unique_ptr_t self, const void* value) noexcept {
     *self = value;
   }
 
-  static void model_move(infer_unique_ptr_t self, infer_unique_ptr_t other) {
+  // in case 'pointer' type is not type pointer, enable catch all overload of
+  // `model_set` to prevent compliation issues
+  static void model_set(...) noexcept { /* no model for this overload */
+  }
+
+  static void model_move(infer_unique_ptr_t self,
+                         infer_unique_ptr_t other) noexcept {
     *self = *other;
     model_set(other, nullptr);
   }
 
-  static pointer model_get(infer_unique_ptr_t self) { return (pointer)(*self); }
+  static pointer model_get(infer_unique_ptr_t self) noexcept {
+    return (pointer)(*self);
+  }
 
   static void model_swap(infer_unique_ptr_t infer_self,
-                         infer_unique_ptr_t infer_other) {
+                         infer_unique_ptr_t infer_other) noexcept {
     const void* t = *infer_self;
     *infer_self = *infer_other;
     *infer_other = t;
@@ -238,7 +255,7 @@ struct unique_ptr<_Tp[], _Dp> {
 
   constexpr unique_ptr(nullptr_t) noexcept : unique_ptr() {}
 
-  explicit unique_ptr(pointer ptr) {
+  explicit unique_ptr(pointer ptr) noexcept {
     model_set(__cast_to_infer_ptr(this), ptr);
   }
 
@@ -247,13 +264,15 @@ struct unique_ptr<_Tp[], _Dp> {
       typename conditional<
           is_reference<deleter_type>::value,
           deleter_type,
-          typename add_lvalue_reference<const deleter_type>::type>::type __d)
+                 typename add_lvalue_reference<const deleter_type>::type>::type
+                 __d) noexcept
       : unique_ptr(ptr) {}
 
-  unique_ptr(pointer ptr, typename remove_reference<deleter_type>::type&& __d)
+  unique_ptr(pointer ptr,
+             typename remove_reference<deleter_type>::type&& __d) noexcept
       : unique_ptr(ptr) {}
 
-  unique_ptr(unique_ptr&& u) {
+  unique_ptr(unique_ptr&& u) noexcept {
     model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&u));
   }
 
@@ -266,7 +285,7 @@ struct unique_ptr<_Tp[], _Dp> {
                 is_convertible<_Ep, deleter_type>::value &&
                 (!is_reference<deleter_type>::value ||
                  is_same<deleter_type, _Ep>::value)>::type>
-  unique_ptr(unique_ptr<_Up, _Ep>&& u) {
+  unique_ptr(unique_ptr<_Up, _Ep>&& u) noexcept {
     model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&u));
   }
 
@@ -277,7 +296,7 @@ struct unique_ptr<_Tp[], _Dp> {
 
   ~unique_ptr() { reset(); }
 
-  unique_ptr& operator=(unique_ptr&& __u) {
+  unique_ptr& operator=(unique_ptr&& __u) noexcept {
     model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&__u));
     return *this;
   }
@@ -289,12 +308,12 @@ struct unique_ptr<_Tp[], _Dp> {
                 is_convertible<typename unique_ptr<_Up, _Ep>::pointer,
                                pointer>::value &&
                 is_assignable<deleter_type&, _Ep&&>::value>::type>
-  unique_ptr& operator=(unique_ptr<_Up, _Ep>&& __u) {
+  unique_ptr& operator=(unique_ptr<_Up, _Ep>&& __u) noexcept {
     model_move(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&__u));
     return *this;
   }
 
-  unique_ptr& operator=(nullptr_t) {
+  unique_ptr& operator=(nullptr_t) noexcept {
     reset();
     return *this;
   }
