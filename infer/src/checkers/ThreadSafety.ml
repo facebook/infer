@@ -1219,8 +1219,7 @@ let may_alias p1 p2 =
   match List.last_exn (snd p1), List.last_exn (snd p2) with
   | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _ -> false
   (* fields in Infer contain class name *)
-  | FieldAccess f1, FieldAccess f2 ->
-      String.equal (Fieldname.java_get_field f1) (Fieldname.java_get_field f2)
+  | FieldAccess f1, FieldAccess f2 -> Fieldname.equal_modulo_parent f1 f2
   | ArrayAccess _, ArrayAccess _ -> true (*FIXME*)
 
 (* take a results table and quotient it by the may_alias relation *)
