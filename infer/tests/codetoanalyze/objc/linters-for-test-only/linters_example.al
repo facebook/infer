@@ -215,3 +215,26 @@ DEFINE-CHECKER TEST_NAMESPACE_NAME = {
   SET message = "Found a namespace with name....";
 
 };
+
+DEFINE-CHECKER FILTER_BY_PATH_EXAMPLE = {
+  SET report_when =
+     WHEN declaration_has_name("main")
+     HOLDS-IN-NODE FunctionDecl;
+  SET message = "Found main method";
+  SET path = "codetoanalyze/objc/linters-for-test-only/filter_by_path/.*";
+};
+
+DEFINE-CHECKER ALL_PATH_NO_FILTER_EXAMPLE = {
+  SET report_when =
+     WHEN declaration_has_name("main")
+     HOLDS-IN-NODE FunctionDecl;
+  SET message = "Found main method";
+};
+
+DEFINE-CHECKER FILTER_BY_ALL_PATH_EXAMPLE = {
+  SET report_when =
+     WHEN declaration_has_name("main")
+     HOLDS-IN-NODE FunctionDecl;
+  SET message = "Found main method";
+  SET path = ".*";
+};

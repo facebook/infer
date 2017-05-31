@@ -148,8 +148,10 @@ clause:
       | "suggestion" -> ALVar.Suggestion
       | "severity" -> ALVar.Severity
       | "mode" -> ALVar.Mode
-      | _ -> failwith ("[ERROR] string '%s' cannot be set in a SET clause. " ^
-                        "Use either of: 'message', 'suggestion', 'severity', or 'mode'\n") in
+      | "path" -> ALVar.Path
+      | _ -> IStd.failwithf "[ERROR] string '%s' cannot be set in a SET clause. \
+                        Use either of: \
+                        'message', 'mode', 'severity', 'suggestion' or 'path'" $2 in
       CTL.CDesc (alvar, $4) }
     | let_clause { $1 }
     ;

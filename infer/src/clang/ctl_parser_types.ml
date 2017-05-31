@@ -38,11 +38,6 @@ let ast_node_name an =
   | _ -> ""
 
 let infer_prefix = "__infer_ctl_"
-let report_when_const = "report_when"
-let message_const = "message"
-let suggestion_const = "suggestion"
-let severity_const = "severity"
-let mode_const = "mode"
 
 exception ALParsingException of string
 

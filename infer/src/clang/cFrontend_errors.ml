@@ -15,10 +15,11 @@ type linter = {
   condition : CTL.t;
   issue_desc : CIssue.issue_desc;
   def_file : string option;
+  path : string option;
 }
 
 (* If in linter developer mode and if current linter was passed, filter it out *)
-let filter_parsed_linters parsed_linters =
+let filter_parsed_linters_developer parsed_linters =
   if List.length parsed_linters > 1 && Config.linters_developer_mode then
     match Config.linter with
     | None ->
@@ -30,6 +31,17 @@ let filter_parsed_linters parsed_linters =
           fun (rule : linter) -> String.equal rule.issue_desc.name lint
         ) parsed_linters
   else parsed_linters
+
+let filter_parsed_linters_by_path parsed_linters source_file =
+  let filter_parsed_linter_by_path linter =
+    match linter.path with
+    | Some path -> ALVar.str_match_regex (SourceFile.to_rel_path source_file) path
+    | None -> true in
+  List.filter ~f:filter_parsed_linter_by_path parsed_linters
+
+let filter_parsed_linters parsed_linters source_file =
+  let linters = filter_parsed_linters_developer parsed_linters in
+  filter_parsed_linters_by_path linters source_file
 
 let linters_to_string linters =
   let linter_to_string linters =
@@ -126,39 +138,47 @@ let string_to_issue_mode m =
       (Logging.out "\n[ERROR] Mode %s does not exist. Please specify ON/OFF\n" s;
        assert false)
 
+let string_to_path path = Some path
+
 (** Convert a parsed checker in list of linters *)
 let create_parsed_linters linters_def_file checkers : linter list =
   let open CIssue in
   let open CTL in
   Logging.out "\n Converting checkers in (condition, issue) pairs\n";
-  let do_one_checker c =
+  let do_one_checker checker : linter =
     let dummy_issue = {
-      name = c.name;
+      name = checker.name;
       description = "";
       suggestion = None;
       loc = Location.dummy;
       severity = Exceptions.Kwarning;
       mode = CIssue.On;
     } in
-    let issue_desc, condition = List.fold ~f:(fun (issue', cond') d  ->
-        match d with
+    let issue_desc, condition, path =
+      let process_linter_definitions (issue, cond, path) description =
+        match description with
         | CSet (av, phi) when ALVar.is_report_when_keyword av ->
-            issue', phi
-        | CDesc (av, msg) when ALVar.is_message_keyword  av ->
-            {issue' with description = msg}, cond'
-        | CDesc (av, sugg) when ALVar.is_suggestion_keyword  av ->
-            {issue' with suggestion = Some sugg}, cond'
+            issue, phi, path
+        | CDesc (av, msg) when ALVar.is_message_keyword av ->
+            {issue with description = msg}, cond, path
+        | CDesc (av, sugg) when ALVar.is_suggestion_keyword av ->
+            {issue with suggestion = Some sugg}, cond, path
         | CDesc (av, sev) when ALVar.is_severity_keyword  av ->
-            {issue' with severity = string_to_err_kind sev}, cond'
+            {issue with severity = string_to_err_kind sev}, cond, path
         | CDesc (av, m) when ALVar.is_mode_keyword  av ->
-            {issue' with mode = string_to_issue_mode m }, cond'
-        | _ -> issue', cond') ~init:(dummy_issue, CTL.False) c.definitions in
-    if Config.debug_mode then (
-      Logging.out "\nMaking condition and issue desc for checker '%s'\n"
-        c.name;
-      Logging.out "\nCondition =\n     %a\n" CTL.Debug.pp_formula condition;
-      Logging.out "\nIssue_desc = %a\n" CIssue.pp_issue issue_desc);
-    {condition; issue_desc; def_file = Some linters_def_file} in
+            {issue with mode = string_to_issue_mode m }, cond, path
+        | CDesc (av, path') when ALVar.is_path_keyword av ->
+            issue, cond, string_to_path path'
+        | _ -> issue, cond, path in
+      List.fold
+        ~f:process_linter_definitions
+        ~init:(dummy_issue, CTL.False, None)
+        checker.definitions in
+    Logging.out "\nMaking condition and issue desc for checker '%s'\n"
+      checker.name;
+    Logging.out "\nCondition =\n     %a\n" CTL.Debug.pp_formula condition;
+    Logging.out "\nIssue_desc = %a\n" CIssue.pp_issue issue_desc;
+    {condition; issue_desc; def_file = Some linters_def_file; path;} in
   List.map ~f:do_one_checker checkers
 
 let rec apply_substitution f sub =

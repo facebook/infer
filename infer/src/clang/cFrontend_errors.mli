@@ -13,9 +13,10 @@ type linter = {
   condition : CTL.t;
   issue_desc : CIssue.issue_desc;
   def_file : string option;
+  path : string option;
 }
 
-val filter_parsed_linters : linter list -> linter list
+val filter_parsed_linters : linter list -> SourceFile.t -> linter list
 
 val linters_to_string : linter list -> string
 

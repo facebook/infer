@@ -256,7 +256,8 @@ let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_contex
   CTL.create_ctl_evaluation_tracker trans_unit_ctx.source_file;
   try
     let parsed_linters = parse_ctl_files Config.linters_def_file in
-    let filtered_parsed_linters = CFrontend_errors.filter_parsed_linters parsed_linters in
+    let filtered_parsed_linters =
+      CFrontend_errors.filter_parsed_linters parsed_linters trans_unit_ctx.source_file in
     CFrontend_errors.parsed_linters := filtered_parsed_linters;
     let source_file = trans_unit_ctx.CFrontend_config.source_file in
     Logging.out "Start linting file %a with rules: @\n%s@\n"

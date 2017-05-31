@@ -14,6 +14,7 @@ type keyword =
   | Suggestion
   | Severity
   | Mode
+  | Path
 
 type formula_id = Formula_id of string
 
@@ -42,6 +43,10 @@ val is_suggestion_keyword : keyword -> bool
 val is_severity_keyword : keyword -> bool
 
 val is_mode_keyword : keyword -> bool
+
+val is_path_keyword : keyword -> bool
+
+val str_match_regex : string -> string -> bool
 
 val compare_str_with_alexp : string -> alexp -> bool
 

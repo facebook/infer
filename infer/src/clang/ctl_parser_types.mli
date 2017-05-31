@@ -21,11 +21,6 @@ val ast_node_type : ast_node -> string
 exception ALParsingException of string
 
 val infer_prefix : string
-val report_when_const : string
-val message_const : string
-val suggestion_const : string
-val severity_const : string
-val mode_const : string
 
 (** Data structures for type parser.
     Correspondence with clang types inferred from
