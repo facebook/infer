@@ -38,3 +38,7 @@ let pp: Format.formatter => t => unit;
 
 /** String representation of a location. */
 let to_string: t => string;
+
+
+/** Pretty print a file-position of a location */
+let pp_file_pos: Format.formatter => t => unit;

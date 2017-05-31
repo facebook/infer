@@ -21,6 +21,10 @@ let always_strong_update = true (* unsound but ok for bug catching *)
 
 module Condition =
 struct
+  type trace = Intra of Typ.Procname.t
+             | Inter of Typ.Procname.t * Typ.Procname.t * Location.t
+  [@@deriving compare]
+
   type t = {
     proc_name : Typ.Procname.t;
     loc : Location.t;
@@ -30,134 +34,124 @@ struct
     size : Itv.astate;
   }
   [@@deriving compare]
-and trace = Intra of Typ.Procname.t
-          | Inter of Typ.Procname.t * Typ.Procname.t * Location.t
-[@@deriving compare]
 
-and astate = t
+  type astate = t
 
-let set_size_pos : t -> t
-  = fun c ->
-    if Itv.Bound.lt (Itv.lb c.size) Itv.Bound.zero
-    then { c with size = Itv.make Itv.Bound.zero (Itv.ub c.size) }
-    else c
+  let set_size_pos : t -> t
+    = fun c ->
+      if Itv.Bound.lt (Itv.lb c.size) Itv.Bound.zero
+      then { c with size = Itv.make Itv.Bound.zero (Itv.ub c.size) }
+      else c
 
-let string_of_location : Location.t -> string
-  = fun loc ->
-    let fname = SourceFile.to_string loc.Location.file in
-    let pos = Location.to_string loc in
-    F.fprintf F.str_formatter "%s:%s" fname pos;
-    F.flush_str_formatter ()
+  let pp_location : F.formatter -> t -> unit
+    = fun fmt c ->
+      Location.pp_file_pos fmt c.loc
 
-let pp_location : F.formatter -> t -> unit
-  = fun fmt c ->
-    F.fprintf fmt "%s" (string_of_location c.loc)
+  let pp : F.formatter -> t -> unit
+    = fun fmt c ->
+      let c = set_size_pos c in
+      if Config.bo_debug <= 1 then
+        F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
+      else
+        match c.trace with
+          Inter (_, pname, loc) ->
+            let pname = Typ.Procname.to_string pname in
+            F.fprintf fmt "%a < %a at %a by call %s() at %a"
+              Itv.pp c.idx Itv.pp c.size pp_location c pname Location.pp_file_pos loc
+        | Intra _ -> F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
 
-let pp : F.formatter -> t -> unit
-  = fun fmt c ->
-    let c = set_size_pos c in
-    if Config.bo_debug <= 1 then
-      F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
-    else
-      match c.trace with
-        Inter (_, pname, loc) ->
-          let pname = Typ.Procname.to_string pname in
-          F.fprintf fmt "%a < %a at %a by call %s() at %s"
-            Itv.pp c.idx Itv.pp c.size pp_location c pname (string_of_location loc)
-      | Intra _ -> F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
+  let get_location : t -> Location.t
+    = fun c -> c.loc
 
-let get_location : t -> Location.t
-  = fun c -> c.loc
+  let get_trace : t -> trace
+    = fun c -> c.trace
 
-let get_trace : t -> trace
-  = fun c -> c.trace
+  let get_proc_name : t -> Typ.Procname.t
+    = fun c -> c.proc_name
 
-let get_proc_name : t -> Typ.Procname.t
-  = fun c -> c.proc_name
+  let make : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> t
+    = fun proc_name loc id ~idx ~size ->
+      { proc_name; idx; size; loc; id ; trace = Intra proc_name }
 
-let make : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> t
-  = fun proc_name loc id ~idx ~size ->
-    { proc_name; idx; size; loc; id ; trace = Intra proc_name }
+  let filter1 : t -> bool
+    = fun c ->
+      Itv.eq c.idx Itv.top || Itv.eq c.size Itv.top
+      || Itv.Bound.eq (Itv.lb c.idx) Itv.Bound.MInf
+      || Itv.Bound.eq (Itv.lb c.size) Itv.Bound.MInf
+      || (Itv.eq c.idx Itv.nat && Itv.eq c.size Itv.nat)
 
-let filter1 : t -> bool
-  = fun c ->
-    Itv.eq c.idx Itv.top || Itv.eq c.size Itv.top
-    || Itv.Bound.eq (Itv.lb c.idx) Itv.Bound.MInf
-    || Itv.Bound.eq (Itv.lb c.size) Itv.Bound.MInf
-    || (Itv.eq c.idx Itv.nat && Itv.eq c.size Itv.nat)
+  let filter2 : t -> bool
+    = fun c ->
+      (* basically, alarms involving infinity are filtered *)
+      (not (Itv.is_finite c.idx) || not (Itv.is_finite c.size))
+      &&                                                        (* except the following cases *)
+      not ((Itv.Bound.is_not_infty (Itv.lb c.idx) &&            (* idx non-infty lb < 0 *)
+            Itv.Bound.lt (Itv.lb c.idx) Itv.Bound.zero)
+           ||
+           (Itv.Bound.is_not_infty (Itv.lb c.idx) &&            (* idx non-infty lb > size lb *)
+            (Itv.Bound.gt (Itv.lb c.idx) (Itv.lb c.size)))
+           ||
+           (Itv.Bound.is_not_infty (Itv.lb c.idx) &&            (* idx non-infty lb > size ub *)
+            (Itv.Bound.gt (Itv.lb c.idx) (Itv.ub c.size)))
+           ||
+           (Itv.Bound.is_not_infty (Itv.ub c.idx) &&            (* idx non-infty ub > size lb *)
+            (Itv.Bound.gt (Itv.ub c.idx) (Itv.lb c.size)))
+           ||
+           (Itv.Bound.is_not_infty (Itv.ub c.idx) &&            (* idx non-infty ub > size ub *)
+            (Itv.Bound.gt (Itv.ub c.idx) (Itv.ub c.size))))
 
-let filter2 : t -> bool
-  = fun c ->
-    (* basically, alarms involving infinity are filtered *)
-    (not (Itv.is_finite c.idx) || not (Itv.is_finite c.size))
-    &&                                                        (* except the following cases *)
-    not ((Itv.Bound.is_not_infty (Itv.lb c.idx) &&            (* idx non-infty lb < 0 *)
-          Itv.Bound.lt (Itv.lb c.idx) Itv.Bound.zero)
-         ||
-         (Itv.Bound.is_not_infty (Itv.lb c.idx) &&            (* idx non-infty lb > size lb *)
-          (Itv.Bound.gt (Itv.lb c.idx) (Itv.lb c.size)))
-         ||
-         (Itv.Bound.is_not_infty (Itv.lb c.idx) &&            (* idx non-infty lb > size ub *)
-          (Itv.Bound.gt (Itv.lb c.idx) (Itv.ub c.size)))
-         ||
-         (Itv.Bound.is_not_infty (Itv.ub c.idx) &&            (* idx non-infty ub > size lb *)
-          (Itv.Bound.gt (Itv.ub c.idx) (Itv.lb c.size)))
-         ||
-         (Itv.Bound.is_not_infty (Itv.ub c.idx) &&            (* idx non-infty ub > size ub *)
-          (Itv.Bound.gt (Itv.ub c.idx) (Itv.ub c.size))))
+  (* check buffer overrun and return its confidence *)
+  let check : t -> string option
+    = fun c ->
+      (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
+      let c' = set_size_pos c in (* if sl < 0, use sl' = 0 *)
+      let not_overrun = Itv.lt_sem c'.idx c'.size in
+      let not_underrun = Itv.le_sem Itv.zero c'.idx in
+      (* il >= 0 and iu < sl, definitely not an error *)
+      if Itv.eq not_overrun Itv.one && Itv.eq not_underrun Itv.one then
+        None
+        (* iu < 0 or il >= su, definitely an error *)
+      else if Itv.eq not_overrun Itv.zero || Itv.eq not_underrun Itv.zero then
+        Some Localise.BucketLevel.b1
+        (* su <= iu < +oo, most probably an error *)
+      else if Itv.Bound.is_not_infty (Itv.ub c.idx)
+           && Itv.Bound.le (Itv.ub c.size) (Itv.ub c.idx) then
+        Some Localise.BucketLevel.b2
+        (* symbolic il >= sl, probably an error *)
+      else if Itv.Bound.is_symbolic (Itv.lb c.idx)
+           && Itv.Bound.le (Itv.lb c'.size) (Itv.lb c.idx) then
+        Some Localise.BucketLevel.b3
+        (* other symbolic bounds are probably too noisy *)
+      else if Config.bo_debug <= 3 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size) then
+        None
+      else if filter1 c then
+        Some Localise.BucketLevel.b5
+      else if filter2 c then
+        Some Localise.BucketLevel.b3
+      else
+        Some Localise.BucketLevel.b2
 
-(* check buffer overrun and return its confidence *)
-let check : t -> string option
-  = fun c ->
-    (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
-    let c' = set_size_pos c in (* if sl < 0, use sl' = 0 *)
-    let not_overrun = Itv.lt_sem c'.idx c'.size in
-    let not_underrun = Itv.le_sem Itv.zero c'.idx in
-    (* il >= 0 and iu < sl, definitely not an error *)
-    if Itv.eq not_overrun Itv.one && Itv.eq not_underrun Itv.one then
-      None
-      (* iu < 0 or il >= su, definitely an error *)
-    else if Itv.eq not_overrun Itv.zero || Itv.eq not_underrun Itv.zero then
-      Some Localise.BucketLevel.b1
-      (* su <= iu < +oo, most probably an error *)
-    else if Itv.Bound.is_not_infty (Itv.ub c.idx)
-         && Itv.Bound.le (Itv.ub c.size) (Itv.ub c.idx) then
-      Some Localise.BucketLevel.b2
-      (* symbolic il >= sl, probably an error *)
-    else if Itv.Bound.is_symbolic (Itv.lb c.idx)
-         && Itv.Bound.le (Itv.lb c'.size) (Itv.lb c.idx) then
-      Some Localise.BucketLevel.b3
-      (* other symbolic bounds are probably too noisy *)
-    else if Config.bo_debug <= 3 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size) then
-      None
-    else if filter1 c then
-      Some Localise.BucketLevel.b5
-    else if filter2 c then
-      Some Localise.BucketLevel.b3
-    else
-      Some Localise.BucketLevel.b2
+  let invalid : t -> bool
+    = fun x -> Itv.invalid x.idx || Itv.invalid x.size
 
-let invalid : t -> bool
-  = fun x -> Itv.invalid x.idx || Itv.invalid x.size
+  let to_string : t -> string
+    = fun c ->
+      let c = set_size_pos c in
+      "Offset: " ^ Itv.to_string c.idx ^ " Size: " ^ Itv.to_string c.size
+      ^ (match c.trace with
+          | Inter (_, pname, _) ->
+              let loc = pp_location F.str_formatter c; F.flush_str_formatter () in
+              " @ " ^ loc ^ " by call "
+              ^ MF.monospaced_to_string (Typ.Procname.to_string pname ^ "()") ^ " "
+          | Intra _ -> "")
 
-let to_string : t -> string
-  = fun c ->
-    let c = set_size_pos c in
-    "Offset: " ^ Itv.to_string c.idx ^ " Size: " ^ Itv.to_string c.size
-    ^ " @ " ^ string_of_location c.loc
-    ^ (match c.trace with
-          Inter (_, pname, _) ->
-            " by call "
-            ^ MF.monospaced_to_string (Typ.Procname.to_string pname ^ "()") ^ " "
-        | Intra _ -> "")
-
-let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> t
-  = fun c subst_map caller_pname callee_pname loc ->
-    if Itv.is_symbolic c.idx || Itv.is_symbolic c.size then
-      { c with idx = Itv.subst c.idx subst_map;
-               size = Itv.subst c.size subst_map;
-               trace = Inter (caller_pname, callee_pname, loc) }
-    else c
+  let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> t
+    = fun c subst_map caller_pname callee_pname loc ->
+      if Itv.is_symbolic c.idx || Itv.is_symbolic c.size then
+        { c with idx = Itv.subst c.idx subst_map;
+                 size = Itv.subst c.size subst_map;
+                 trace = Inter (caller_pname, callee_pname, loc) }
+      else c
 end
 
 module ConditionSet =
