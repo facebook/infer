@@ -67,25 +67,12 @@ struct
     = fun pname ret params node mem ->
       model_malloc pname ret (List.tl_exn params) node mem
 
-  let model_fgetc : (Ident.t * Typ.t) option -> Dom.Mem.astate -> Dom.Mem.astate
-    = fun ret mem ->
-      match ret with
-      | Some (id, _) ->
-          let itv = Itv.make (Itv.Bound.of_int (-1)) Itv.Bound.PInf in
-          Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.of_itv itv) mem
-      | _ -> mem
-
-  let model_natual_itv : (Ident.t * Typ.t) option -> Dom.Mem.astate -> Dom.Mem.astate
-    = fun ret mem ->
-      match ret with
-      | Some (id, _) -> Dom.Mem.add_stack (Loc.of_id id) Dom.Val.Itv.nat mem
-      | _ -> mem
-
-  let model_unknown_itv : (Ident.t * Typ.t) option -> Dom.Mem.astate -> Dom.Mem.astate
-    = fun ret mem ->
-      match ret with
-        Some (id, _) -> Dom.Mem.add_stack (Loc.of_id id) Dom.Val.Itv.top mem
-      | None -> mem
+  let model_by_value value ret mem =
+    match ret with
+    | Some (id, _) ->
+        Dom.Mem.add_stack (Loc.of_id id) value mem
+    | None ->
+        mem
 
   let model_infer_print
     : (Exp.t * Typ.t) list -> Dom.Mem.astate -> Location.t -> Dom.Mem.astate
@@ -120,14 +107,17 @@ struct
       -> Dom.Mem.astate
     = fun pname ret callee_pname params node mem loc ->
       match Typ.Procname.get_method callee_pname with
+      | "__exit"
+      | "exit" -> Dom.Mem.Bottom
+      | "fgetc" -> model_by_value Dom.Val.Itv.m1_255 ret mem
+      | "infer_print" -> model_infer_print params mem loc
       | "malloc"
       | "__new_array" -> model_malloc pname ret params node mem
       | "realloc" -> model_realloc pname ret params node mem
-      | "strlen" -> model_natual_itv ret mem
-      | "fgetc" -> model_fgetc ret mem
-      | "infer_print" -> model_infer_print params mem loc
       | "__set_array_length" -> model_infer_set_array_length pname node params mem loc
-      | _ -> model_unknown_itv ret mem
+      | "strlen" -> model_by_value Dom.Val.Itv.nat ret mem
+      | _ ->
+          model_by_value Dom.Val.Itv.top ret mem
 
   let rec declare_array
     : Typ.Procname.t -> CFG.node -> Loc.t -> Typ.t -> length:IntLit.t option -> ?stride:int
