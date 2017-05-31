@@ -82,7 +82,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         && String.equal (Typ.Procname.java_get_method java_pname) method_name_str
     | _ -> false
 
-  let get_lock_model = function
+  let get_lock_model =
+    let is_std_mutex_lock =
+      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex::lock"] in
+      fun pname ->
+        QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+    and is_std_mutex_unlock =
+      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex::unlock"] in
+      fun pname ->
+        QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+    in
+    function
     | Typ.Procname.Java java_pname ->
         if is_thread_utils_method "assertHoldsLock" (Typ.Procname.Java java_pname) then Lock
         else
@@ -113,6 +123,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | _ ->
                 NoEffect
           end
+    | (Typ.Procname.ObjC_Cpp _ as pname) when is_std_mutex_lock pname ->
+        Lock
+    | (Typ.Procname.ObjC_Cpp _ as pname) when is_std_mutex_unlock pname ->
+        Unlock
     | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
         Lock
     | pname when Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
@@ -1200,8 +1214,16 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
           - the method/class of the access is thread-safe (or an override or superclass is), or
           - any access is in a field marked thread-safe (or an override) *)
        let should_report pdesc tenv =
-         ((is_file_threadsafe || accessed_by_threadsafe_method) && should_report_on_proc pdesc tenv)
-         || is_thread_safe_method pdesc tenv in
+         match Procdesc.get_proc_name pdesc with
+         | Java _ ->
+             ((is_file_threadsafe || accessed_by_threadsafe_method)
+              && should_report_on_proc pdesc tenv)
+             || is_thread_safe_method pdesc tenv
+         | ObjC_Cpp _ ->
+             true
+         | _ ->
+             false
+       in
        let reportable_accesses =
          List.filter ~f:(fun (_, _, _, tenv, pdesc) -> should_report pdesc tenv) grouped_accesses in
        List.fold
@@ -1271,7 +1293,7 @@ let make_results_table file_env =
 
 (**
    Principles for race reporting.
-   Two accesses are excluded if they are both protetected by the same lock or
+   Two accesses are excluded if they are both protected by the same lock or
    are known to be on the same thread. Otherwise they are in conflict. We want to report
    conflicting accesses one of which is a write.
 
@@ -1280,7 +1302,7 @@ let make_results_table file_env =
    -- If a protected access races with an unprotected one, we don't
    report the protected but we do report the unprotected one (and we
    point to the protected from the unprotected one).
-   This way the report is at the line number ina race-pair where the programmer should take action.
+   This way the report is at the line number in a race-pair where the programmer should take action.
    -- Similarly, if a threaded and unthreaded (not known to be threaded) access race,
    we report at the unthreaded site.
 

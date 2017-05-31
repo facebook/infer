@@ -23,7 +23,7 @@ module Access = struct
 
   let pp fmt (access_path, access_kind) = match access_kind with
     | Read -> F.fprintf fmt "Read of %a" AccessPath.Raw.pp access_path
-    | Write -> F.fprintf fmt "Write of %a" AccessPath.Raw.pp access_path
+    | Write -> F.fprintf fmt "Write to %a" AccessPath.Raw.pp access_path
 end
 
 module TraceElem = struct
@@ -77,10 +77,10 @@ module LocksDomain = AbstractDomain.BooleanAnd
 
 (* In this domain false<=true. The intended denotations [[.]] are
    [[true]] = the set of all states where we know according, to annotations
-             or assertions, that we are on the UI thread (or some oter specific thread).
+             or assertions, that we are on the UI thread (or some other specific thread).
    [[false]] = the set of all states
    The use of || for join in this domain enforces that, to not know for sure you are threaded,
-   it is enough to be unthreaded in one branch. (See RaceWithMainThread.java for  examples)
+   it is enough to be unthreaded in one branch. (See RaceWithMainThread.java for examples)
 *)
 module ThreadsDomain = AbstractDomain.BooleanAnd
 

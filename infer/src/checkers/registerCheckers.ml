@@ -50,6 +50,7 @@ let checkers = [
   "thread safety", Config.threadsafety,
   [Procedure ThreadSafety.analyze_procedure, Config.Clang;
    Procedure ThreadSafety.analyze_procedure, Config.Java;
+   Cluster ThreadSafety.file_analysis, Config.Clang;
    Cluster ThreadSafety.file_analysis, Config.Java]
 ]
 
