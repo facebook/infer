@@ -55,7 +55,8 @@ module Html : sig
 
   (** Print an html link given node id and session *)
   val pp_session_link :
-    ?with_name: bool -> SourceFile.t -> string list -> Format.formatter -> int * int * int -> unit
+    ?with_name: bool -> ?proc_name: Typ.Procname.t -> SourceFile.t ->
+    string list -> Format.formatter -> int * int * int -> unit
 
   (** Print start color *)
   val pp_start_color : Format.formatter -> Pp.color -> unit

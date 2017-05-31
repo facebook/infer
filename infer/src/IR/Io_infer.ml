@@ -214,9 +214,7 @@ struct
           description
           (if not isvisited then "\nNOT VISITED" else "") in
       F.asprintf "%t" pp in
-    if not isvisited
-    then F.fprintf fmt " %s" node_text
-    else pp_link ~path: (path_to_root @ ["nodes"; node_fname]) fmt node_text
+    pp_link ~path: (path_to_root @ ["nodes"; node_fname]) fmt node_text
 
   (** Print an html link to the given proc *)
   let pp_proc_link path_to_root proc_name fmt text =
@@ -235,9 +233,13 @@ struct
       (match text with Some s -> s | None -> linenum_str)
 
   (** Print an html link given node id and session *)
-  let pp_session_link ?(with_name = false) source path_to_root fmt (node_id, session, linenum) =
-    let node_name = "node" ^ (string_of_int node_id) in
-    let path_to_node = path_to_root @ ["nodes"; node_name] in
+  let pp_session_link ?(with_name = false) ?proc_name source path_to_root fmt
+      (node_id, session, linenum) =
+    let node_name = "node" ^ string_of_int node_id in
+    let node_fname = match proc_name with
+      | Some pname -> node_filename pname node_id
+      | None -> node_name in
+    let path_to_node = path_to_root @ ["nodes"; node_fname] in
     let pos = "session" ^ (string_of_int session) in
     pp_link
       ~name: (if with_name then Some pos else None)
