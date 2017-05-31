@@ -57,6 +57,14 @@
       "index": "1"
     }
   ],
+  "quandary-sanitizers": [
+    {
+      "procedure": "basics::Obj::sanitizer1"
+    },
+    {
+      "procedure": "basics::Obj::sanitizer2"
+    }
+  ],
   "quandary-endpoints": [
     "basics::Obj::endpoint"
   ]

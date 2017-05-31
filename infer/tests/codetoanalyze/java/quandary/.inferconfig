@@ -16,6 +16,11 @@
       "kind": "Logging"
     }
   ],
+  "quandary-sanitizers": [
+    {
+      "procedure": "codetoanalyze.java.quandary.ExternalSpecs.sanitizer"
+    }
+  ],
   "quandary-endpoints": [
     "codetoanalyze.java.quandary.MyService"
   ]

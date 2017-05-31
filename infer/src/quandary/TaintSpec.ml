@@ -20,6 +20,8 @@ type handle_unknown =
   | Propagate_to_return
   (** Propagate taint from all actuals to the return value *)
 
+type sanitizer =
+  | Return (** a sanitizer that removes taint from its return value *)
 
 module type S = sig
   module Trace : Trace.S
@@ -32,6 +34,9 @@ module type S = sig
 
   (** return true if the given typ can be tainted *)
   val is_taintable_type : Typ.t -> bool
+
+  (** get the sanitizer associated with the given type, if any *)
+  val get_sanitizer : Typ.Procname.t -> sanitizer option
 
   val to_summary_access_tree : AccessTree.t -> QuandarySummary.AccessTree.t
 

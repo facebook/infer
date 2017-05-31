@@ -67,4 +67,40 @@ public class ExternalSpecs {
     loggingSink2(activity.getIntent(), activity.getIntent());
   }
 
+  static Object sanitizer(Object o) {
+    return o;
+  }
+
+  void viaSanitizerOk() {
+    Object source = InferTaint.inferSecretSource();
+    Object sanitized = sanitizer(source);
+    InferTaint.inferSensitiveSink(sanitized);
+  }
+
+  void sanitizeFootprint(Object o) {
+    Object sanitized = sanitizer(o);
+    InferTaint.inferSensitiveSink(sanitized);
+  }
+
+  void callSanitizeFootprintOk() {
+    sanitizeFootprint(InferTaint.inferSecretSource());
+  }
+
+  Object returnSanitizedSource() {
+    Object source = InferTaint.inferSecretSource();
+    return sanitizer(source);
+  }
+
+  void callSinkOnSanitizedSourceOk() {
+    InferTaint.inferSensitiveSink(returnSanitizedSource());
+  }
+
+  Object missedSanitizerBad() {
+    Object source = InferTaint.inferSecretSource();
+    Object sanitized = sanitizer(source);
+    InferTaint.inferSensitiveSink(source);
+    return sanitized;
+  }
+
+
 }

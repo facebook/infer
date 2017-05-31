@@ -17,7 +17,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
   module TraceDomain = TaintSpecification.Trace
   module TaintDomain = TaintSpecification.AccessTree
-  module IdMapDomain = IdAccessPathMapDomain
 
   module Summary = Summary.Make(struct
       type payload = QuandarySummary.t
@@ -377,6 +376,21 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                     proc_data.tenv in
                 List.fold ~f:handle_unknown_call_ ~init:access_tree propagations in
 
+          let dummy_ret_opt = match ret_opt with
+            | None when not (Typ.Procname.is_java called_pname) ->
+                (* the C++ frontend handles returns of non-pointers by adding a dummy
+                   pass-by-reference variable as the last actual, then returning the value by
+                   assigning to it. understand this pattern by pretending it's the return value *)
+                begin
+                  match List.last actuals with
+                  | Some (HilExp.AccessPath ((Var.ProgramVar pvar, _) as ret_base, []))
+                    when Pvar.is_frontend_tmp pvar ->
+                      Some ret_base
+                  | _ -> None
+                end
+            | _ ->
+                ret_opt in
+
           let analyze_call astate_acc callee_pname =
             let call_site = CallSite.make callee_pname callee_loc in
 
@@ -384,34 +398,17 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             let astate_with_sink = match sinks with
               | [] -> astate
               | sinks -> add_sinks sinks actuals astate proc_data call_site in
-
             let source = TraceDomain.Source.get call_site proc_data.tenv in
             let astate_with_source =
-              match source, ret_opt with
-              | Some { TraceDomain.Source.source; index=None; }, Some ret_base ->
-                  add_return_source source ret_base astate_with_sink
-              | Some { TraceDomain.Source.source; index=Some index; }, _ ->
+              match source with
+              | Some { TraceDomain.Source.source; index=None; } ->
+                  Option.value_map
+                    ~f:(fun ret_base -> add_return_source source ret_base astate_with_sink)
+                    ~default:astate_with_sink
+                    dummy_ret_opt
+              | Some { TraceDomain.Source.source; index=Some index; } ->
                   add_actual_source source index actuals astate_with_sink proc_data
-              | Some { TraceDomain.Source.source; index=None; }, None ->
-                  let warn_invalid_source () =
-                    L.stderr
-                      "Warning: %a is marked as a source, but has no return value"
-                      Typ.Procname.pp callee_pname;
-                    astate_with_sink in
-                  if not (Typ.Procname.is_java callee_pname)
-                  then
-                    (* the C++ frontend handles returns of non-pointers by adding a dummy
-                       pass-by-reference variable as the last actual, then returning the value
-                       by assigning to it. make sure we understand this pattern *)
-                    match List.last actuals with
-                    | Some (HilExp.AccessPath ((Var.ProgramVar pvar, _) as ret_base, []))
-                      when Pvar.is_frontend_tmp pvar ->
-                        add_return_source source ret_base astate_with_sink
-                    | _ ->
-                        warn_invalid_source ()
-                  else
-                    warn_invalid_source ()
-              | None, _ ->
+              | None ->
                   astate_with_sink in
 
             let astate_with_summary =
@@ -433,7 +430,22 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                     apply_summary ret_opt actuals summary astate_with_source proc_data call_site
                 | _ ->
                     handle_unknown_call callee_pname astate_with_source in
-            Domain.join astate_acc astate_with_summary in
+
+            let astate_with_sanitizer =
+              match dummy_ret_opt with
+              | None -> astate_with_summary
+              | Some ret_base ->
+                  match TaintSpecification.get_sanitizer callee_pname with
+                  | Some Return ->
+                      (* clear the trace associated with the return value. ideally, we would
+                          associate a kind with the sanitizer and only clear the trace when its
+                          kind matches the source. but this gets complicated to do properly with
+                          footprint sources, since we don't know their kind. so do the simple
+                          thing for now. *)
+                      TaintDomain.BaseMap.remove ret_base astate_with_summary
+                  | None -> astate_with_summary in
+
+            Domain.join astate_acc astate_with_sanitizer in
 
           (* highly polymorphic call sites stress reactive mode too much by using too much memory.
              here, we choose an arbitrary call limit that allows us to finish the analysis in

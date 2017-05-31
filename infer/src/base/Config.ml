@@ -1255,6 +1255,11 @@ and quandary_endpoints =
     ~in_help:CLOpt.[Analyze, manual_quandary]
     "Specify endpoint classes for Quandary"
 
+and quandary_sanitizers =
+  CLOpt.mk_json ~long:"quandary-sanitizers"
+    ~in_help:CLOpt.[Analyze, manual_quandary]
+    "Specify custom sanitizers for Quandary"
+
 and quandary_sources =
   CLOpt.mk_json ~long:"quandary-sources"
     ~in_help:CLOpt.[Analyze, manual_quandary]
@@ -1847,6 +1852,7 @@ and procs_xml = !procs_xml
 and project_root = !project_root
 and quandary = !quandary
 and quandary_endpoints = !quandary_endpoints
+and quandary_sanitizers = !quandary_sanitizers
 and quandary_sources = !quandary_sources
 and quandary_sinks = !quandary_sinks
 and quiet = !quiet

@@ -23,6 +23,9 @@ class Obj {
   std::string string_source(int i) { return ""; }
   static int taint_arg_source(int* arg) { return 1; }
   void string_sink(std::string) {}
+  static std::string* sanitizer1(std::string* input) { return input; }
+  static std::string sanitizer2(const std::string& input) { return input; }
+
   std::string field1;
   std::string field2;
 
@@ -146,5 +149,24 @@ void taint_arg_source_ok() {
   int source;
   int ret = Obj::taint_arg_source(&source);
   __infer_taint_sink((void*)ret); // return value is not a source
+}
+
+void via_sanitizer_ok1(Obj* obj) {
+  std::string* source = &obj->string_source(0);
+  std::string* sanitized = Obj::sanitizer1(source);
+  obj->string_sink(*sanitized);
+}
+
+void via_sanitizer_ok2(Obj* obj) {
+  std::string source = obj->string_source(0);
+  std::string sanitized = obj->sanitizer2(source);
+  obj->string_sink(sanitized);
+}
+
+std::string* unsanitized_bad(Obj* obj) {
+  std::string* source = &obj->string_source(0);
+  std::string* sanitized = Obj::sanitizer1(source);
+  obj->string_sink(*source);
+  return sanitized;
 }
 }

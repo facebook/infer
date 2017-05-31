@@ -64,9 +64,23 @@ include
           [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
       | "sprintf" ->
           [TaintSpec.Propagate_to_receiver]
-      | other ->
-          L.d_strln ("generic unknown " ^ other);
+      | _ ->
           handle_generic_unknown ret_typ_opt actuals
+
+    let external_sanitizers =
+      List.map
+        ~f:(fun { QuandaryConfig.Sanitizer.procedure; } ->
+            QualifiedCppName.Match.of_fuzzy_qual_names [procedure])
+        (QuandaryConfig.Sanitizer.of_json Config.quandary_sanitizers)
+
+    let get_sanitizer pname =
+      let qualified_pname = Typ.Procname.get_qualifiers pname in
+      List.find_map
+        ~f:(fun qualifiers ->
+            if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname
+            then Some TaintSpec.Return
+            else None)
+        external_sanitizers
 
     let is_taintable_type _ = true
   end)

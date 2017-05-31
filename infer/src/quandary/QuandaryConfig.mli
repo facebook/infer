@@ -23,6 +23,12 @@ module Sink : sig
   val of_json : [> `List of Yojson.Basic.json list ] -> t list
 end
 
+module Sanitizer : sig
+  type t = { procedure : string; }
+
+  val of_json : [> `List of Yojson.Basic.json list ] -> t list
+end
+
 module Endpoint : sig
   type t = string (** name of endpoint class *)
 
