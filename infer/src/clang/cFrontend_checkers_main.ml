@@ -252,10 +252,26 @@ let store_issues source_file =
     DB.filename_from_string (Filename.concat lint_issues_dir (abbrev_source_file ^ ".issue")) in
   LintIssues.store_issues lint_issues_file !LintIssues.errLogMap
 
+let find_linters_files () =
+  let rec find_aux init dir_path =
+    let aux base_path files rel_path =
+      let full_path = Filename.concat base_path rel_path in
+      match (Unix.stat full_path).Unix.st_kind with
+      | Unix.S_REG when String.is_suffix ~suffix:".al" full_path -> full_path :: files
+      | Unix.S_DIR -> find_aux files full_path
+      | _ -> files in
+    Sys.fold_dir ~init ~f:(aux dir_path) dir_path in
+  List.concat (List.map ~f:(fun folder -> find_aux [] folder) Config.linters_def_folder)
+
+let linters_files =
+  List.dedup ~compare:String.compare (find_linters_files () @ Config.linters_def_file)
+
 let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_context) ast =
+  Logging.out "Loading the following linters files: %a\n"
+    (Pp.comma_seq Format.pp_print_string) linters_files;
   CTL.create_ctl_evaluation_tracker trans_unit_ctx.source_file;
   try
-    let parsed_linters = parse_ctl_files Config.linters_def_file in
+    let parsed_linters = parse_ctl_files linters_files in
     let filtered_parsed_linters =
       CFrontend_errors.filter_parsed_linters parsed_linters trans_unit_ctx.source_file in
     CFrontend_errors.parsed_linters := filtered_parsed_linters;

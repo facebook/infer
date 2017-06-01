@@ -1,0 +1,2 @@
+codetoanalyze/objc/linters-def-folder/file.m, Linters_dummy_method, 20, SUBCLASSING_TEST_EXAMPLE, []
+codetoanalyze/objc/linters-def-folder/file.m, Linters_dummy_method, 26, FORBIDDEN_NAME_EXAMPLE, []

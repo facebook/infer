@@ -272,6 +272,7 @@ val join_cond : int
 val latex : string option
 val linter : string option
 val linters_def_file : string list
+val linters_def_folder : string list
 val linters_developer_mode : bool
 val load_analysis_results : string option
 val log_file : string option

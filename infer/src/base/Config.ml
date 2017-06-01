@@ -1109,6 +1109,11 @@ and linters_def_file =
     ~long:"linters-def-file" ~in_help:CLOpt.[Capture, manual_clang_linters]
     ~meta:"file" "Specify the file containing linters definition (e.g. 'linters.al')"
 
+and linters_def_folder =
+  CLOpt.mk_path_list ~default:[] ~long:"linters-def-folder"
+    ~in_help:CLOpt.[Capture, manual_clang_linters]
+    ~meta:"dir" "Specify the folder containing linters files with extension .al"
+
 and linters_ignore_clang_failures =
   CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
     ~in_help:CLOpt.[Capture, manual_clang_linters]
@@ -1820,6 +1825,7 @@ and jobs = !jobs
 and join_cond = !join_cond
 and latex = !latex
 and linters_def_file = !linters_def_file
+and linters_def_folder = !linters_def_folder
 and linters_developer_mode = !linters_developer_mode
 and load_average = match !load_average with
   | None when !buck ->
