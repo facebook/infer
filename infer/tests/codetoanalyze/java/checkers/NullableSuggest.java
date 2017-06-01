@@ -44,4 +44,45 @@ public class NullableSuggest {
     OtherClass oc = new OtherClass();
     oc.obj3 = null;
   }
+
+  public void assignNullToNullableFieldTransitiveOk(boolean flag) {
+    Object origin = null;
+    Object intermediate = flag ? origin : new Object();
+    obj1 = intermediate;
+  }
+
+  public void assignNullToFieldTransitiveBad(boolean flag) {
+    Object origin = null;
+    Object intermediate = flag ? origin : new Object();
+    obj0 = intermediate;
+  }
+
+  public void assignNullToNullableFieldTransitiveLoopOk(int n) {
+    Object origin = null;
+    Object arr[] = new Object[n];
+    for (int i = 0; i < n; ++i) {
+      arr[i] = origin;
+    }
+    if (n > 0)
+      obj1 = arr[0];
+  }
+
+  public void assignNullToFieldTransitiveLoopBad(int n) {
+    Object origin = null;
+    Object arr[] = new Object[n];
+    for (int i = 0; i < n; ++i) {
+      arr[i] = origin;
+    }
+    if (n > 0)
+      obj0 = arr[0];
+  }
+
+  public void multipleChainsAlwaysSelectShortestBad(boolean flag) {
+    Object o0 = null;
+    Object o1 = null;
+    if (flag)
+      o1 = o0;
+    obj0 = o1;
+    // The analysis should report error trace o1->obj0, rather than o0->o1->obj0
+  }
 }

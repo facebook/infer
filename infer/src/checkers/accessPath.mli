@@ -27,6 +27,9 @@ module Raw : sig
       original access path if the access list is empty *)
   val truncate : t -> t
 
+  (** get the last access in the list. returns None if the list is empty *)
+  val get_last_access : t -> access option
+
   (** get the field name and the annotation of the last access in the list of accesses if
       the list is non-empty and the last access is a field access *)
   val get_field_and_annotation : t -> Tenv.t -> (Fieldname.t * Annot.Item.t) option

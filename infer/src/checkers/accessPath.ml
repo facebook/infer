@@ -93,6 +93,9 @@ module Raw = struct
     in
     last_access_info_impl tenv base_typ accesses
 
+  let get_last_access (_, accesses) =
+    List.last accesses
+
   let get_field_and_annotation ap tenv =
     match last_access_info ap tenv with
     | Some base_typ, Some access ->
