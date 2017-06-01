@@ -176,6 +176,18 @@ DEFINE-CHECKER TEST_VAR_TYPE_CHECK = {
   SET message = "Var has type int or long";
 };
 
+DEFINE-CHECKER TEST_TYPEDEF_CHECK = {
+
+  SET report_when =
+        WHEN
+        has_type("my_ulong") OR
+        has_type("my_pS") OR
+        has_type("my_listNode")
+	    HOLDS-IN-NODE VarDecl;
+
+  SET message = "Var has type....";
+};
+
 DEFINE-CHECKER TEST_PARAM_TYPE_CHECK = {
 
   SET report_when =

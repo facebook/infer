@@ -105,3 +105,19 @@
      pname3:(ThisIsAVeryLongName*)p3
      pname4:(A*)p4;
 @end
+
+typedef unsigned long my_ulong;
+
+my_ulong l;
+
+typedef struct {
+  int a;
+  int b;
+  int c;
+} S, *my_pS;
+
+my_pS p;
+
+typedef struct Node { struct my_listNode* next; } my_listNode;
+
+my_listNode ln;

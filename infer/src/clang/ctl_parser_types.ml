@@ -172,6 +172,14 @@ let rec pointer_type_equal p ap =
   | _, _ -> display_equality_warning ();
       false
 
+and typename_equal pointer typename =
+  match CAst_utils.get_decl pointer  with
+  | Some decl ->
+      (match Clang_ast_proj.get_named_decl_tuple decl with
+       | Some (_, name_decl) -> ALVar.compare_str_with_alexp name_decl.ni_name typename
+       | None -> false)
+  | _ -> false
+
 
 (* Temporary, partial equality function. Cover only what's covered
    by the types_parser. It needs to be replaced by a real
@@ -190,12 +198,9 @@ and c_type_equal c_type abs_ctype =
   | ObjCObjectPointerType _, Pointer _ ->
       pointer_type_equal c_type abs_ctype
   | ObjCInterfaceType (_, pointer), TypeName ae ->
-      (match CAst_utils.get_decl pointer with
-       | Some decl ->
-           (match Clang_ast_proj.get_named_decl_tuple decl with
-            | Some (_, name_decl) -> ALVar.compare_str_with_alexp name_decl.ni_name ae
-            | None -> false)
-       | _ -> false)
+      typename_equal pointer ae
+  | TypedefType (_, tdi), TypeName ae ->
+      typename_equal tdi.tti_decl_ptr ae
   | _, _ -> display_equality_warning ();
       false
 
