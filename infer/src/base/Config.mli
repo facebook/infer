@@ -121,6 +121,7 @@ val multicore_dir_name : string
 val ncpu : int
 val nsnotification_center_checker_backend : bool
 val os_type : os_type
+val passthroughs : bool
 val patterns_modeled_expensive : string * Yojson.Basic.json
 val patterns_never_returning_null : string * Yojson.Basic.json
 val patterns_skip_translation : string * Yojson.Basic.json

@@ -1176,6 +1176,11 @@ and only_footprint =
   CLOpt.mk_bool ~deprecated:["only_footprint"] ~long:"only-footprint"
     "Skip the re-execution phase"
 
+and passthroughs =
+  CLOpt.mk_bool ~long:"passthroughs" ~default:false
+    "In error traces, show intermediate steps that propagate data. When false, error traces are \
+     shorter and show only direct flow via souces/sinks"
+
 and patterns_modeled_expensive =
   let long = "modeled-expensive" in
   (long,
@@ -1834,6 +1839,7 @@ and suggest_nullable = !suggest_nullable
 and no_translate_libs = not !headers
 and objc_memory_model_on = !objc_memory_model
 and only_footprint = !only_footprint
+and passthroughs = !passthroughs
 and patterns_never_returning_null = match patterns_never_returning_null with (k,r) -> (k,!r)
 and patterns_skip_translation = match patterns_skip_translation with (k,r) -> (k,!r)
 and patterns_modeled_expensive = match patterns_modeled_expensive with (k,r) -> (k,!r)
