@@ -191,10 +191,10 @@ let out fmt_string =
   do_print_in_debug_or_stats_mode !out_formatter fmt_string
 
 let out_debug fmt_string =
-  do_print_in_debug_mode !out_formatter ("PROUT: " ^^ fmt_string)
+  do_print_in_debug_mode !out_formatter fmt_string
 
 let do_out fmt_string =
-  do_print !out_formatter ("CACA" ^^ fmt_string)
+  do_print !out_formatter fmt_string
 
 let stderr = F.eprintf
 
@@ -202,7 +202,7 @@ let progress fmt_string =
   if Config.quiet then F.ifprintf F.err_formatter fmt_string
   else F.fprintf F.err_formatter fmt_string
 
-let stdout fmt_string = F.printf ("PIPI" ^^ fmt_string)
+let stdout fmt_string = F.printf fmt_string
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int
