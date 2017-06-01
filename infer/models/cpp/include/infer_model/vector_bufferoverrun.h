@@ -86,9 +86,9 @@ class vector {
   void* _ignore1;
   void* _ignore2;
 
-  void access_at(size_type index) {
+  void access_at(size_type index) const {
     _Tp* dummy_array = (_Tp*) malloc(sizeof(value_type) * infer_size);
-    auto dummy_value = dummy_array[index];
+    __infer_deref_first_arg(&dummy_array[index]);
     free(dummy_array);
   }
 
@@ -106,7 +106,7 @@ class vector {
 
   template <class Iter>
   void allocate_iter(Iter begin, Iter end) {
-    allocate(end - begin);
+    allocate(distance(begin, end));
   }
 
   /* std::vector implementation */
@@ -482,14 +482,12 @@ template <class _Tp, class _Allocator>
 inline typename vector<_Tp, _Allocator>::iterator
 vector<_Tp, _Allocator>::erase(const_iterator __position) {
   infer_size--;
-  return __position;
 }
 
 template <class _Tp, class _Allocator>
 typename vector<_Tp, _Allocator>::iterator vector<_Tp, _Allocator>::erase(
     const_iterator __first, const_iterator __last) {
-  infer_size -= __last - __first;
-  return __first;
+  infer_size -= distance(__first, __last);
 }
 
 template <class _Tp, class _Allocator>
@@ -526,7 +524,7 @@ typename enable_if<is_constructible<_Tp,
 vector<_Tp, _Allocator>::insert(const_iterator __position,
                                 _ForwardIterator __first,
                                 _ForwardIterator __last) {
-  infer_size += __last - __first;
+  infer_size += distance(__first, __last);
 }
 
 template <class _Tp, class _Allocator>
