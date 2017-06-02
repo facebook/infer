@@ -1128,19 +1128,26 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
     else
       match snd (TraceElem.kind access), pre with
       | Access.Write, AccessPrecondition.Unprotected _ ->
-          if threaded
-          then
-            reported_acc
-          else
-            begin
-              (* unprotected write. warn. *)
-              report_thread_safety_violation
-                tenv
-                pdesc
-                ~make_description:make_unprotected_write_description
-                access;
-              update_reported access pname reported_acc
-            end
+          begin
+            match Procdesc.get_proc_name pdesc with
+            | Java _ ->
+                if threaded
+                then
+                  reported_acc
+                else
+                  begin
+                    (* unprotected write. warn. *)
+                    report_thread_safety_violation
+                      tenv
+                      pdesc
+                      ~make_description:make_unprotected_write_description
+                      access;
+                    update_reported access pname reported_acc
+                  end
+            | _ ->
+                (* Do not report unprotected writes for ObjC_Cpp *)
+                reported_acc
+          end
       | Access.Write, AccessPrecondition.Protected _ ->
           (* protected write, do nothing *)
           reported_acc
