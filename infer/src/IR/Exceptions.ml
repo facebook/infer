@@ -98,6 +98,7 @@ exception Tainted_value_reaching_sensitive_function of Localise.error_desc * L.m
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.ml_loc
 exception Uninitialized_value of Localise.error_desc * L.ml_loc
 exception Unknown_proc
+exception Unreachable_code_after of Localise.error_desc * L.ml_loc
 exception Unsafe_guarded_by_access of Localise.error_desc * L.ml_loc
 exception Use_after_free of Localise.error_desc * L.ml_loc
 exception Wrong_argument_number of L.ml_loc
@@ -301,6 +302,8 @@ let recognize_exception exn =
     | Unknown_proc ->
         (Localise.from_string "Unknown_proc" ~hum:"Unknown Procedure",
          Localise.no_desc, None, Exn_developer, Low, None, Nocat)
+    | Unreachable_code_after (desc, ml_loc) ->
+        (Localise.unreachable_code_after, desc, Some ml_loc, Exn_user, Medium, None, Nocat)
     | Unsafe_guarded_by_access (desc, ml_loc) ->
         (Localise.unsafe_guarded_by_access,
          desc, Some ml_loc, Exn_user, High, None, Prover)

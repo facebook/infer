@@ -99,6 +99,7 @@ val tainted_value_reaching_sensitive_function : t
 val thread_safety_violation : t
 val unary_minus_applied_to_unsigned_expression : t
 val uninitialized_value : t
+val unreachable_code_after : t
 val unsafe_guarded_by_access : t
 val use_after_free : t
 
@@ -242,6 +243,8 @@ val desc_comparing_floats_for_equality : Location.t -> error_desc
 val desc_condition_is_assignment : Location.t -> error_desc
 
 val desc_condition_always_true_false : IntLit.t -> string option -> Location.t -> error_desc
+
+val desc_unreachable_code_after : Location.t -> error_desc
 
 val desc_deallocate_stack_variable : string -> Typ.Procname.t -> Location.t -> error_desc
 

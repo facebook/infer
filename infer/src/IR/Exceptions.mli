@@ -93,6 +93,7 @@ exception Tainted_value_reaching_sensitive_function of Localise.error_desc * Log
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Logging.ml_loc
 exception Uninitialized_value of Localise.error_desc * Logging.ml_loc
 exception Unknown_proc
+exception Unreachable_code_after of Localise.error_desc * Logging.ml_loc
 exception Unsafe_guarded_by_access of Localise.error_desc * Logging.ml_loc
 exception Use_after_free of Localise.error_desc * Logging.ml_loc
 exception Wrong_argument_number of Logging.ml_loc

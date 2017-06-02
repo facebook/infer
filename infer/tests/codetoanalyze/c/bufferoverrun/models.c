@@ -9,10 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void exit_good() {
+void exit_bo_good_unreachable_bad() {
   int arr[1];
   exit(1);
-  // unreachable
+  // unreachable so no buffer overrun
   arr[42] = 42;
 }
 

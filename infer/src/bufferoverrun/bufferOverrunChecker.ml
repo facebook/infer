@@ -390,44 +390,74 @@ struct
          L.out "@]@\n";
          L.out "================================@\n@.")
 
-  let collect_instr
-    : extras ProcData.t -> CFG.node -> Dom.ConditionSet.t * Dom.Mem.astate
-      -> Sil.instr -> Dom.ConditionSet.t * Dom.Mem.astate
-    = fun ({ pdesc; tenv; extras } as pdata) node (cond_set, mem) instr ->
-      let pname = Procdesc.get_proc_name pdesc in
-      let cond_set =
-        match instr with
-        | Sil.Load (_, exp, _, loc)
-        | Sil.Store (exp, _, _, loc) ->
-            add_condition pname node exp loc mem cond_set
-        | Sil.Call (_, Const (Cfun callee_pname), params, loc, _) ->
-            (match Summary.read_summary pdesc callee_pname with
-             | Some summary ->
-                 let callee = extras callee_pname in
-                 instantiate_cond tenv pname callee params mem summary loc
-                 |> Dom.ConditionSet.rm_invalid
-                 |> Dom.ConditionSet.join cond_set
-             | _ -> cond_set)
-        | _ -> cond_set
-      in
-      let mem = Analyzer.TransferFunctions.exec_instr mem pdata node instr in
-      print_debug_info instr mem cond_set;
-      (cond_set, mem)
+  let is_last_statement_of_if_branch rem_instrs node =
+    if rem_instrs <> [] then false
+    else
+      match Procdesc.Node.get_succs node with
+      | [succ] ->
+          (match Procdesc.Node.get_preds succ with
+           | _ :: _ :: _ -> true
+           | _ -> false)
+      | _ -> false
 
-  let collect_instrs
+  let rec collect_instrs
     : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate
       -> Dom.ConditionSet.t -> Dom.ConditionSet.t
-    = fun pdata node instrs mem cond_set ->
-      List.fold ~f:(collect_instr pdata node) ~init:(cond_set, mem) instrs
-      |> fst
+    = fun ({ pdesc; tenv; extras } as pdata) node instrs mem cond_set ->
+      match instrs with
+      | [] -> cond_set
+      | instr :: rem_instrs ->
+          let pname = Procdesc.get_proc_name pdesc in
+          let cond_set =
+            match instr with
+            | Sil.Load (_, exp, _, loc)
+            | Sil.Store (exp, _, _, loc) ->
+                add_condition pname node exp loc mem cond_set
+            | Sil.Call (_, Const (Cfun callee_pname), params, loc, _) ->
+                (match Summary.read_summary pdesc callee_pname with
+                 | Some summary ->
+                     let callee = extras callee_pname in
+                     instantiate_cond tenv pname callee params mem summary loc
+                     |> Dom.ConditionSet.rm_invalid
+                     |> Dom.ConditionSet.join cond_set
+                 | _ -> cond_set)
+            | _ -> cond_set
+          in
+          let mem' = Analyzer.TransferFunctions.exec_instr mem pdata node instr in
+          let () =
+            match mem, mem' with
+            | NonBottom _, Bottom ->
+                (match instr with
+                 | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) -> ()
+                 | Sil.Prune (cond, loc, true_branch, _) ->
+                     let i = match cond with
+                       | Exp.Const (Const.Cint i) -> i
+                       | _ -> IntLit.zero in
+                     let desc = Errdesc.explain_condition_always_true_false tenv i cond node loc in
+                     let exn =
+                       Exceptions.Condition_always_true_false (desc, not true_branch, __POS__) in
+                     Reporting.log_warning pname ~loc exn
+                 | Sil.Call (_, Const (Cfun pname), _, _, _) when
+                     String.equal (Typ.Procname.get_method pname) "exit" &&
+                     is_last_statement_of_if_branch rem_instrs node -> ()
+                 | _ ->
+                     let loc = Sil.instr_get_loc instr in
+                     let desc = Errdesc.explain_unreachable_code_after loc in
+                     let exn = Exceptions.Unreachable_code_after (desc, __POS__) in
+                     Reporting.log_error pname ~loc exn)
+            | _ -> ()
+          in
+          print_debug_info instr mem' cond_set;
+          collect_instrs pdata node rem_instrs mem' cond_set
 
   let collect_node
     : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t ->
       CFG.node -> Dom.ConditionSet.t
     = fun pdata inv_map cond_set node ->
-      let instrs = CFG.instr_ids node |> List.map ~f:fst in
       match Analyzer.extract_pre (CFG.id node) inv_map with
-      | Some mem -> collect_instrs pdata node instrs mem cond_set
+      | Some mem ->
+          let instrs = CFG.instrs node in
+          collect_instrs pdata node instrs mem cond_set
       | _ -> cond_set
 
   let collect : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t

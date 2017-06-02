@@ -128,6 +128,7 @@ let thread_safety_violation = from_string "THREAD_SAFETY_VIOLATION"
 let unary_minus_applied_to_unsigned_expression =
   from_string "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
 let uninitialized_value = from_string "UNINITIALIZED_VALUE"
+let unreachable_code_after = from_string "UNREACHABLE_CODE"
 let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
 let use_after_free = from_string "USE_AFTER_FREE"
 
@@ -700,6 +701,11 @@ let desc_condition_always_true_false i cond_str_opt loc =
       tt_ff
       (at_line tags loc) in
   { no_desc with descriptions = [description]; tags = !tags }
+
+let desc_unreachable_code_after loc =
+  let tags = Tags.create () in
+  let description = "Unreachable code after statement " ^ at_line tags loc in
+  { no_desc with descriptions = [description]}
 
 let desc_deallocate_stack_variable var_str proc_name loc =
   let tags = Tags.create () in
