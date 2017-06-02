@@ -222,3 +222,11 @@ DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 		  SET suggestion = "This could cause a crash.";
 			SET severity = "ERROR";
 		};
+
+
+DEFINE-CHECKER POINTER_TO_INTEGRAL_IMPLICIT_CAST = {
+  SET report_when =
+      WHEN has_cast_kind("PointerToIntegral")
+      HOLDS-IN-NODE ImplicitCastExpr;
+  SET message = "Implicit conversion from %child_type% to %type% in usage of %eventual_child_name%";
+};

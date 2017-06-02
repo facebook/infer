@@ -9,17 +9,6 @@
 
 open! IStd
 
-(* To create a new checker you should: *)
-(* 1. Define a checker function, say my_checker, in this module. *)
-(* my_checker should define: *)
-(*   -a) a condition that determine if the checker fires *)
-(*   -b) a issue_desc that describes the warning (see warning_desc definition) *)
-(* 2. Add your checker to the CFrontend_checkers interface *)
-(* 3. Decide in which element of the AST my_checker should be evaluated. *)
-(*    - If it is a statement then you need to invoke my_checker from *)
-(*    run_frontend_checkers_on_stmt in CFrontend_error module.*)
-(*    - If it is a declaration invoke it from run_frontend_checkers_on_decl *)
-
 (* Helper functions *)
 let location_from_stmt lctx stmt =
   let info, _ = Clang_ast_proj.get_stmt_tuple stmt in

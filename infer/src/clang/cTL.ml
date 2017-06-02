@@ -158,7 +158,8 @@ module Debug = struct
     let pp_node_info fmt an =
       let name = Ctl_parser_types.ast_node_name an in
       let typ = Ctl_parser_types.ast_node_type an in
-      Format.fprintf fmt " %s %s" name typ in
+      let cast_kind = Ctl_parser_types.ast_node_cast_kind an in
+      Format.fprintf fmt " %s %s %s" name typ cast_kind in
     let rec pp_children pp_node wrapper fmt level nodes =
       match nodes with
       | [] -> ()
@@ -619,6 +620,7 @@ let rec eval_Atomic _pred_name args an lcxt =
   | "declaration_ref_name", [decl_name], an -> CPredicates.declaration_ref_name an decl_name
   | "decl_unavailable_in_supported_ios_sdk", [], an ->
       CPredicates.decl_unavailable_in_supported_ios_sdk lcxt an
+  | "has_cast_kind", [name], an -> CPredicates.has_cast_kind an name
   | "has_type", [typ], an -> CPredicates.has_type an typ
   | "isa", [classname], an -> CPredicates.isa an classname
   | "is_assign_property", [], an -> CPredicates.is_assign_property an

@@ -37,6 +37,19 @@ let ast_node_name an =
       omei_selector
   | _ -> ""
 
+let rec eventual_child_name an =
+  match an with
+  | Stmt stmt ->
+      (let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
+       match stmts with
+       | [stmt] ->
+           let name = ast_node_name (Stmt stmt) in
+           if String.length name > 0 then
+             name
+           else eventual_child_name (Stmt stmt)
+       | _ -> "")
+  | _ -> ""
+
 let infer_prefix = "__infer_ctl_"
 
 exception ALParsingException of string
@@ -160,6 +173,14 @@ let builtin_equal bi abi =
   | _, _ -> display_equality_warning ();
       false
 
+let typename_to_string pointer =
+  match CAst_utils.get_decl pointer  with
+  | Some decl ->
+      (match Clang_ast_proj.get_named_decl_tuple decl with
+       | Some (_, name_decl) -> Some name_decl.ni_name
+       | None -> None)
+  | _ -> None
+
 let rec pointer_type_equal p ap =
   let open Clang_ast_t in
   match p, ap with
@@ -173,13 +194,10 @@ let rec pointer_type_equal p ap =
       false
 
 and typename_equal pointer typename =
-  match CAst_utils.get_decl pointer  with
-  | Some decl ->
-      (match Clang_ast_proj.get_named_decl_tuple decl with
-       | Some (_, name_decl) -> ALVar.compare_str_with_alexp name_decl.ni_name typename
-       | None -> false)
-  | _ -> false
-
+  match typename_to_string pointer  with
+  | Some name ->
+      ALVar.compare_str_with_alexp name typename
+  | None -> false
 
 (* Temporary, partial equality function. Cover only what's covered
    by the types_parser. It needs to be replaced by a real
@@ -205,10 +223,18 @@ and c_type_equal c_type abs_ctype =
       false
 
 (* to be extended with more types *)
-let typ_string_of_type_ptr type_ptr =
+let rec typ_string_of_type_ptr type_ptr =
+  let open Clang_ast_t in
   match CAst_utils.get_type type_ptr with
-  | Some Clang_ast_t.BuiltinType (_, bt) ->
+  | Some BuiltinType (_, bt) ->
       Clang_ast_j.string_of_builtin_type_kind bt
+  | Some PointerType (_, qt)
+  | Some ObjCObjectPointerType (_, qt) ->
+      (typ_string_of_type_ptr qt.qt_type_ptr) ^ "*"
+  | Some ObjCInterfaceType (_, pointer) ->
+      Option.value ~default:"" (typename_to_string pointer)
+  | Some TypedefType (_, tdi) ->
+      Option.value ~default:"" (typename_to_string tdi.tti_decl_ptr)
   | _ -> ""
 
 let ast_node_type an =
@@ -223,3 +249,20 @@ let ast_node_type an =
        | Some type_ptr ->
            typ_string_of_type_ptr type_ptr
        | _ -> "")
+
+let stmt_node_child_type an =
+  match an with
+  | Stmt stmt ->
+      (let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
+       match stmts with
+       | [stmt] -> ast_node_type (Stmt stmt)
+       | _ -> "")
+  | _ -> ""
+
+let ast_node_cast_kind an =
+  match an with
+  | Decl _ -> ""
+  | Stmt stmt ->
+      match Clang_ast_proj.get_cast_kind stmt with
+      | Some cast_kind -> Clang_ast_proj.string_of_cast_kind cast_kind
+      | None -> ""

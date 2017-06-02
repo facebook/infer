@@ -52,6 +52,8 @@ val is_binop_with_kind : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val is_unop_with_kind : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
+val has_cast_kind : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+
 val isa : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val is_node : Ctl_parser_types.ast_node -> ALVar.alexp -> bool

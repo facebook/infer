@@ -267,6 +267,17 @@ let is_unop_with_kind an alexp_kind =
       ALVar.compare_str_with_alexp (Clang_ast_proj.string_of_unop_kind uoi.uoi_kind) alexp_kind
   | _ -> false
 
+let has_cast_kind an alexp_kind =
+  match an with
+  | Ctl_parser_types.Decl _ -> false
+  | Ctl_parser_types.Stmt stmt ->
+      let str_kind = ALVar.alexp_to_string alexp_kind in
+      match Clang_ast_proj.get_cast_kind stmt with
+      | Some cast_kind ->
+          let cast_kind_str = Clang_ast_proj.string_of_cast_kind cast_kind in
+          String.equal cast_kind_str str_kind
+      | None -> false
+
 let is_node an nodename =
   let nodename_str = ALVar.alexp_to_string nodename in
   if not (Clang_ast_proj.is_valid_astnode_kind nodename_str) then

@@ -94,6 +94,9 @@ let evaluate_place_holder ph an =
   | "%iphoneos_target_sdk_version%" ->
       MF.monospaced_to_string (CFrontend_checkers.iphoneos_target_sdk_version an)
   | "%available_ios_sdk%" -> MF.monospaced_to_string (CFrontend_checkers.available_ios_sdk an)
+  | "%type%" -> MF.monospaced_to_string (Ctl_parser_types.ast_node_type an)
+  | "%child_type%" -> MF.monospaced_to_string (Ctl_parser_types.stmt_node_child_type an)
+  | "%eventual_child_name%" -> MF.monospaced_to_string (Ctl_parser_types.eventual_child_name an)
   | _ -> (Logging.out "ERROR: helper function %s is unknown. Stop.\n" ph;
           assert false)
 
