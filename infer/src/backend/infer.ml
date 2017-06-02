@@ -556,7 +556,7 @@ let () =
         Config.print_usage_exit ()
       );
       InferAnalyze.register_perf_stats_report ();
-      execute_analyze ()
+      analyze Analyze
   | Clang ->
       let prog, args = match Array.to_list Sys.argv with
         | prog::args -> prog, args
