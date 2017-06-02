@@ -339,25 +339,27 @@ let mk_bool ?(deprecated_no=[]) ?(default=false) ?(f=fun b -> b)
       ~mk_spec );
   var
 
-let mk_bool_group ?(deprecated_no=[]) ?(default=false)
+let mk_bool_group ?(deprecated_no=[]) ?(default=false) ?f:(f0=Fn.id)
     ?(deprecated=[]) ~long ?short ?parse_mode ?in_help ?meta doc children no_children =
   let f b =
     List.iter ~f:(fun child -> child := b) children ;
     List.iter ~f:(fun child -> child := not b) no_children ;
-    b
+    f0 b
   in
   mk_bool ~deprecated ~deprecated_no ~default ~long ?short ~f ?parse_mode ?in_help ?meta doc
 
-let mk_int ~default ?(deprecated=[]) ~long ?short ?parse_mode ?in_help ?(meta="int") doc =
+let mk_int ~default ?(f=Fn.id)
+    ?(deprecated=[]) ~long ?short ?parse_mode ?in_help ?(meta="int") doc =
   mk ~deprecated ~long ?short ~default ?parse_mode ?in_help ~meta doc
     ~default_to_string:string_of_int
-    ~mk_setter:(fun var str -> var := (int_of_string str))
+    ~mk_setter:(fun var str -> var := f (int_of_string str))
     ~decode_json:(string_json_decoder ~long)
     ~mk_spec:(fun set -> String set)
 
-let mk_int_opt ?default ?(deprecated=[]) ~long ?short ?parse_mode ?in_help ?(meta="int") doc =
+let mk_int_opt ?default ?f:(f0=Fn.id)
+    ?(deprecated=[]) ~long ?short ?parse_mode ?in_help ?(meta="int") doc =
   let default_to_string = function Some f -> string_of_int f | None -> "" in
-  let f s = Some (int_of_string s) in
+  let f s = Some (f0 (int_of_string s)) in
   mk_option ~deprecated ~long ?short ~default ~default_to_string ~f ?parse_mode ?in_help ~meta doc
 
 let mk_float ~default ?(deprecated=[]) ~long ?short ?parse_mode ?in_help ?(meta="float") doc =

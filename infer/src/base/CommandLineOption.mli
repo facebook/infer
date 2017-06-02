@@ -84,11 +84,12 @@ val mk_bool : ?deprecated_no:string list ->  ?default:bool -> ?f:(bool -> bool) 
     [children] are also set and the [no_children] are unset. A child can be unset by including
     "--no-child" later in the arguments. *)
 val mk_bool_group :
-  ?deprecated_no:string list -> ?default:bool -> (bool ref list -> bool ref list -> bool ref) t
+  ?deprecated_no:string list -> ?default:bool -> ?f:(bool -> bool) ->
+  (bool ref list -> bool ref list -> bool ref) t
 
-val mk_int : default:int -> int ref t
+val mk_int : default:int -> ?f:(int -> int) -> int ref t
 
-val mk_int_opt : ?default:int -> int option ref t
+val mk_int_opt : ?default:int -> ?f:(int -> int) -> int option ref t
 
 val mk_float : default:float -> float ref t
 
