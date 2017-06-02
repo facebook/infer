@@ -68,8 +68,8 @@ let create_log_file command name_prefix =
   if Config.print_logs then (
     dup_formatter file_fmt Format.err_formatter
   );
-  Utils.register_epilogue
-    (fun () -> close_log_file (lazy file_fmt) (lazy chan) (lazy file))
+  Epilogues.register
+    ~f:(fun () -> close_log_file (lazy file_fmt) (lazy chan) (lazy file))
     "log files flushing";
   (file_fmt, chan, file)
 

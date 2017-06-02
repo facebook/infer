@@ -50,21 +50,21 @@ let run t =
 
 module Runner = struct
   type runner =
-    { pool : Utils.ProcessPool.t;
+    { pool : ProcessPool.t;
       all_continuations : closure Queue.t }
 
   let create ~jobs =
-    { pool = Utils.ProcessPool.create ~jobs;
+    { pool = ProcessPool.create ~jobs;
       all_continuations = Queue.create () }
 
   let start runner ~tasks =
     let pool = runner.pool in
     Queue.enqueue_all runner.all_continuations (Queue.to_list tasks.continuations);
     List.iter
-      ~f:(fun x -> Utils.ProcessPool.start_child ~f:(fun f -> f ()) ~pool x)
+      ~f:(fun x -> ProcessPool.start_child ~f:(fun f -> f ()) ~pool x)
       tasks.closures
 
   let complete runner =
-    Utils.ProcessPool.wait_all runner.pool;
+    ProcessPool.wait_all runner.pool;
     Queue.iter ~f:(fun f -> f ()) runner.all_continuations
 end

@@ -141,7 +141,7 @@ let stats () =
   }
 
 let register_report_at_exit file =
-  Utils.register_epilogue (fun () ->
+  Epilogues.register ~f:(fun () ->
       try
         let json_stats = to_json (stats ()) in
         try
