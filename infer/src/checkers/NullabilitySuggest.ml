@@ -10,24 +10,13 @@ open! IStd
 
 module F = Format
 module L = Logging
+module MF = MarkupFormatter
 
 module UseDefChain = struct
   type astate =
-    | NullDef of (Location.t * AccessPath.Raw.t)
     | DependsOn of (Location.t * AccessPath.Raw.t)
-
-  (* We explicitly write out the comparator here instead of relying on
-   * [@@deriving compare], as the alternative may not always guarantee the
-   * desirable order. *)
-  let compare_astate lhs rhs = match lhs, rhs with
-    | NullDef lorig, NullDef rorig ->
-        [%compare : Location.t * AccessPath.Raw.t] rorig lorig
-    | DependsOn ldep, DependsOn rdep ->
-        [%compare : Location.t * AccessPath.Raw.t] rdep ldep
-    | NullDef _, DependsOn _ ->
-        1
-    | DependsOn _, NullDef _ ->
-        -1
+    | NullDef of (Location.t * AccessPath.Raw.t)
+  [@@deriving compare]
 
   let (<=) ~lhs ~rhs =
     compare_astate lhs rhs <= 0
@@ -134,6 +123,19 @@ let make_error_trace astate ap ud =
   in
   error_trace_impl 0 ap ud
 
+let pretty_field_name proc_data field_name =
+  match Procdesc.get_proc_name proc_data.ProcData.pdesc with
+  | Typ.Procname.Java jproc_name ->
+      let proc_class_name = Typ.Procname.java_get_class_name jproc_name in
+      let field_class_name = Fieldname.java_get_class field_name in
+      if String.equal proc_class_name field_class_name then
+        Fieldname.to_flat_string field_name
+      else
+        Fieldname.to_simplified_string field_name
+  | _ ->
+      (* This format is subject to change once this checker gets to run on C/Cpp/ObjC *)
+      Fieldname.to_string field_name
+
 let checker callback =
   let report astate (proc_data : extras ProcData.t) =
     let report_access_path ap udchain =
@@ -142,8 +144,10 @@ let checker callback =
       match AccessPath.Raw.get_field_and_annotation ap proc_data.tenv with
       | Some (field_name, _) ->
           let message =
-            F.asprintf "Field %s should be annotated with @Nullable"
-              (Fieldname.to_string field_name) in
+            F.asprintf "Field %a should be annotated with %a"
+              MF.pp_monospaced (pretty_field_name proc_data field_name)
+              MF.pp_monospaced "@Nullable"
+          in
           let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
           begin
             match make_error_trace astate ap udchain with
