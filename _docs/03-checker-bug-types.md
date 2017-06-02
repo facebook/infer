@@ -33,7 +33,7 @@ This error type is reported in Java. It fires when a method may nullify a field 
   }
 ```
 
-This can lead to a runtime error if users of the class accidentally accesse the list (e.g. calling ` getNumberOfIds `) immediately after calling ` reset `, which nullifies the ` idList ` field. 
+This can lead to a runtime error if users of the class accidentally accesse the list (e.g. calling getNumberOfIds()) immediately after calling reset(), which nullifies the ` idList` field. 
 
 Action: add `@Nullable` annotation in the field declaration. The annotation comes with no runtime cost and it benefits [other Infer checkers](http://fbinfer.com/docs/eradicate.html) to statically detect ` NullPointerException` more effectively:
 
