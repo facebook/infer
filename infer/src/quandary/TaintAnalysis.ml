@@ -272,7 +272,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
       TaintDomain.trace_fold
         add_to_caller_tree
-        (TaintSpecification.of_summary_access_tree summary)
+        summary
         caller_access_tree
 
     let exec_instr (astate : Domain.astate) (proc_data : extras ProcData.t) _ (instr : HilInstr.t) =
@@ -301,7 +301,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           exec_write lhs_access_path rhs_exp astate
 
       | Call (ret_opt, Direct called_pname, actuals, call_flags, callee_loc) ->
-          let handle_unknown_call callee_pname access_tree =
+          let handle_model callee_pname access_tree model =
             let is_variadic = match callee_pname with
               | Typ.Procname.Java pname ->
                   begin
@@ -336,7 +336,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               else
                 let trace' = TraceDomain.update_sources trace_with_propagation filtered_sources in
                 TaintDomain.add_trace access_path trace' access_tree in
-            let handle_unknown_call_ astate_acc propagation =
+            let handle_model_ astate_acc propagation =
               match propagation, actuals, ret_opt with
               | _, [], _ ->
                   astate_acc
@@ -356,7 +356,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   end
               | _ ->
                   astate_acc in
+            List.fold ~f:handle_model_ ~init:access_tree model in
 
+          let handle_unknown_call callee_pname access_tree =
             match Typ.Procname.get_method callee_pname with
             | "operator=" when not (Typ.Procname.is_java callee_pname) ->
                 (* treat unknown calls to C++ operator= as assignment *)
@@ -368,13 +370,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                       failwithf "Unexpected call to operator= %a" HilInstr.pp instr
                 end
             | _ ->
-                let propagations =
+                let model =
                   TaintSpecification.handle_unknown_call
                     callee_pname
                     (Option.map ~f:snd ret_opt)
                     actuals
                     proc_data.tenv in
-                List.fold ~f:handle_unknown_call_ ~init:access_tree propagations in
+                handle_model callee_pname access_tree model in
 
           let dummy_ret_opt = match ret_opt with
             | None when not (Typ.Procname.is_java called_pname) ->
@@ -412,24 +414,25 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   astate_with_sink in
 
             let astate_with_summary =
-              (* hack for default C++ constructors, which get translated as an empty body (and
-                 will thus have an empty summary). We don't want that because we want to be able to
-                 propagate taint from comstructor parameters to the constructed object. so we treat
-                 the empty constructor as a skip function instead *)
-              let is_dummy_cpp_constructor summary pname =
-                Typ.Procname.is_c_method pname &&
-                Typ.Procname.is_constructor pname &&
-                TaintDomain.BaseMap.is_empty (TaintSpecification.of_summary_access_tree summary) in
               if sinks <> [] || Option.is_some source
               then
                 (* don't use a summary for a procedure that is a direct source or sink *)
                 astate_with_source
               else
                 match Summary.read_summary proc_data.pdesc callee_pname with
-                | Some summary when not (is_dummy_cpp_constructor summary callee_pname) ->
-                    apply_summary ret_opt actuals summary astate_with_source proc_data call_site
-                | _ ->
-                    handle_unknown_call callee_pname astate_with_source in
+                | None ->
+                    handle_unknown_call callee_pname astate_with_source
+                | Some summary ->
+                    let ret_typ_opt = Option.map ~f:snd ret_opt in
+                    let access_tree = TaintSpecification.of_summary_access_tree summary in
+                    match
+                      TaintSpecification.get_model
+                        callee_pname ret_typ_opt  actuals proc_data.tenv access_tree with
+                    | Some model ->
+                        handle_model callee_pname astate_with_source model
+                    | None ->
+                        apply_summary
+                          ret_opt actuals access_tree astate_with_source proc_data call_site in
 
             let astate_with_sanitizer =
               match dummy_ret_opt with

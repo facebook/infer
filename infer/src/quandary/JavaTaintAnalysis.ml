@@ -74,6 +74,8 @@ include
       | pname ->
           failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
 
+    let get_model _ _ _ _ _ = None
+
     let external_sanitizers =
       List.map
         ~f:(fun { QuandaryConfig.Sanitizer.procedure; } -> Str.regexp procedure)

@@ -67,6 +67,31 @@ include
       | _ ->
           handle_generic_unknown ret_typ_opt actuals
 
+    (* treat folly functions as unknown library code. we often specify folly functions as sinks,
+       and we don't want to double-report if these functions eventually call other sinks (e.g.,
+       when folly::Subprocess calls exec), in addition some folly functions are heavily optimized in
+       a way that obscures what they're actually doing (e.g., they use assembly code). it's better
+       to write models for these functions or treat them as unknown *)
+    let models_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["folly"]
+
+    let get_model pname ret_typ_opt actuals tenv summary =
+      (* hack for default C++ constructors, which get translated as an empty body (and will thus
+         have an empty summary). We don't want that because we want to be able to propagate taint
+         from comstructor parameters to the constructed object. so we treat the empty constructor
+         as a skip function instead *)
+      let is_default_constructor pname =
+        Typ.Procname.is_c_method pname &&
+        Typ.Procname.is_constructor pname &&
+        AccessTree.BaseMap.is_empty summary in
+      match pname with
+      | Typ.Procname.ObjC_Cpp _
+        when is_default_constructor pname ||
+             QualifiedCppName.Match.match_qualifiers
+               models_matcher (Typ.Procname.get_qualifiers pname) ->
+          Some (handle_unknown_call pname ret_typ_opt actuals tenv)
+      | _ ->
+          None
+
     let external_sanitizers =
       List.map
         ~f:(fun { QuandaryConfig.Sanitizer.procedure; } ->

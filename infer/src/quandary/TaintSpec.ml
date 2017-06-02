@@ -12,7 +12,7 @@ open! IStd
 (** combination of a trace with functions for handling unknown code and converting to and from
     summaries *)
 
-type handle_unknown =
+type action =
   | Propagate_to_actual of int
   (** Propagate taint from all actuals to the actual with the given index *)
   | Propagate_to_receiver
@@ -30,7 +30,12 @@ module type S = sig
   (** return a summary for handling an unknown call at the given site with the given return type
       and actuals *)
   val handle_unknown_call :
-    Typ.Procname.t -> Typ.t option -> HilExp.t list -> Tenv.t -> handle_unknown list
+    Typ.Procname.t -> Typ.t option -> HilExp.t list -> Tenv.t -> action list
+
+  (** returns a model that should be used for the given (procname, return type, actuals, summary)
+      instead of using the summary for the procname *)
+  val get_model :
+    Typ.Procname.t -> Typ.t option -> HilExp.t list -> Tenv.t -> AccessTree.t -> action list option
 
   (** return true if the given typ can be tainted *)
   val is_taintable_type : Typ.t -> bool
