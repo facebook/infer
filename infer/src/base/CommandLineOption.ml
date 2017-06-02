@@ -105,9 +105,11 @@ type desc = {
   decode_json: inferconfig_dir:string -> Yojson.Basic.json -> string list ;
 }
 
-let dashdash long =
-  match long with
-  | "" | "--" -> long
+let dashdash ?short long =
+  match long, short with
+  | "", (None | Some "")
+  | "--", _ -> long
+  | "", Some short -> "-" ^ short
   | _ -> "--" ^ long
 
 let xdesc {long; short; spec} =
@@ -118,7 +120,7 @@ let xdesc {long; short; spec} =
     | "", _ -> "-" ^ short
     | _ -> "--" ^ long
   in
-  let xspec long spec =
+  let xspec =
     match spec with
     (* translate Symbol to String for better formatting of --help messages *)
     | Symbol (symbols, action) ->
@@ -127,13 +129,13 @@ let xdesc {long; short; spec} =
               action arg
             else
               raise (Arg.Bad (F.sprintf "wrong argument '%s'; option '%s' expects one of: %s"
-                                arg (dashdash long) (String.concat ~sep:" | " symbols)))
+                                arg (dashdash ~short long) (String.concat ~sep:" | " symbols)))
           )
     | _ ->
         spec
   in
   (* Arg doesn't need to know anything about documentation since we generate our own *)
-  (key long short, xspec long spec, "")
+  (key long short, xspec, "")
 
 let check_no_duplicates desc_list =
   let rec check_for_duplicates_ = function
