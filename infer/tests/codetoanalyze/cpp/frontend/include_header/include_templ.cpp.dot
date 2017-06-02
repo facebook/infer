@@ -96,13 +96,6 @@ digraph iCFG {
 	
 
 	 "div0#A#(_ZN1A4div0Ev).1a6f91584aabeebe049737afeb476378_3" -> "div0#A#(_ZN1A4div0Ev).1a6f91584aabeebe049737afeb476378_2" ;
-"B#B<int>#{_ZN1BIiEC1Ev|constexpr}.0a6e40da0e7d400cfcd0dfa1df7ad995_1" [label="1: Start B<int>_B\nFormals:  this:B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
-	
-
-	 "B#B<int>#{_ZN1BIiEC1Ev|constexpr}.0a6e40da0e7d400cfcd0dfa1df7ad995_1" -> "B#B<int>#{_ZN1BIiEC1Ev|constexpr}.0a6e40da0e7d400cfcd0dfa1df7ad995_2" ;
-"B#B<int>#{_ZN1BIiEC1Ev|constexpr}.0a6e40da0e7d400cfcd0dfa1df7ad995_2" [label="2: Exit B<int>_B \n  " color=yellow style=filled]
-	
-
 "div0#B<int>#(_ZN1BIiE4div0Ev).7928d23b80a07771917a21f2f65199b6_1" [label="1: Start B<int>_div0\nFormals:  this:B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
 	
 
@@ -114,11 +107,11 @@ digraph iCFG {
 	
 
 	 "div0#B<int>#(_ZN1BIiE4div0Ev).7928d23b80a07771917a21f2f65199b6_3" -> "div0#B<int>#(_ZN1BIiE4div0Ev).7928d23b80a07771917a21f2f65199b6_2" ;
-"B#B<A>#{_ZN1BI1AEC1Ev|constexpr}.37a0dc804dbb70abe9c0cba5d0d4b75d_1" [label="1: Start B<A>_B\nFormals:  this:B<A>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+"B#B<int>#{_ZN1BIiEC1Ev|constexpr}.0a6e40da0e7d400cfcd0dfa1df7ad995_1" [label="1: Start B<int>_B\nFormals:  this:B<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
 	
 
-	 "B#B<A>#{_ZN1BI1AEC1Ev|constexpr}.37a0dc804dbb70abe9c0cba5d0d4b75d_1" -> "B#B<A>#{_ZN1BI1AEC1Ev|constexpr}.37a0dc804dbb70abe9c0cba5d0d4b75d_2" ;
-"B#B<A>#{_ZN1BI1AEC1Ev|constexpr}.37a0dc804dbb70abe9c0cba5d0d4b75d_2" [label="2: Exit B<A>_B \n  " color=yellow style=filled]
+	 "B#B<int>#{_ZN1BIiEC1Ev|constexpr}.0a6e40da0e7d400cfcd0dfa1df7ad995_1" -> "B#B<int>#{_ZN1BIiEC1Ev|constexpr}.0a6e40da0e7d400cfcd0dfa1df7ad995_2" ;
+"B#B<int>#{_ZN1BIiEC1Ev|constexpr}.0a6e40da0e7d400cfcd0dfa1df7ad995_2" [label="2: Exit B<int>_B \n  " color=yellow style=filled]
 	
 
 "div0#B<A>#(_ZN1BI1AE4div0Ev).95154c4eecaa5aa2388f6884c1f2eb1f_1" [label="1: Start B<A>_div0\nFormals:  this:B<A>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
@@ -132,4 +125,11 @@ digraph iCFG {
 	
 
 	 "div0#B<A>#(_ZN1BI1AE4div0Ev).95154c4eecaa5aa2388f6884c1f2eb1f_3" -> "div0#B<A>#(_ZN1BI1AE4div0Ev).95154c4eecaa5aa2388f6884c1f2eb1f_2" ;
+"B#B<A>#{_ZN1BI1AEC1Ev|constexpr}.37a0dc804dbb70abe9c0cba5d0d4b75d_1" [label="1: Start B<A>_B\nFormals:  this:B<A>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 15]\n " color=yellow style=filled]
+	
+
+	 "B#B<A>#{_ZN1BI1AEC1Ev|constexpr}.37a0dc804dbb70abe9c0cba5d0d4b75d_1" -> "B#B<A>#{_ZN1BI1AEC1Ev|constexpr}.37a0dc804dbb70abe9c0cba5d0d4b75d_2" ;
+"B#B<A>#{_ZN1BI1AEC1Ev|constexpr}.37a0dc804dbb70abe9c0cba5d0d4b75d_2" [label="2: Exit B<A>_B \n  " color=yellow style=filled]
+	
+
 }

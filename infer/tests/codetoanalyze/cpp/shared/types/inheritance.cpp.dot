@@ -43,13 +43,6 @@ digraph iCFG {
 	
 
 	 "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_11" -> "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_10" ;
-"Base#Base#{_ZN4BaseC1Ev|constexpr}.b40f1fff4dc6a0e6dfdca672253d3ca0_1" [label="1: Start Base_Base\nFormals:  this:Base*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
-	
-
-	 "Base#Base#{_ZN4BaseC1Ev|constexpr}.b40f1fff4dc6a0e6dfdca672253d3ca0_1" -> "Base#Base#{_ZN4BaseC1Ev|constexpr}.b40f1fff4dc6a0e6dfdca672253d3ca0_2" ;
-"Base#Base#{_ZN4BaseC1Ev|constexpr}.b40f1fff4dc6a0e6dfdca672253d3ca0_2" [label="2: Exit Base_Base \n  " color=yellow style=filled]
-	
-
 "fun#Base#(_ZN4Base3funEv).2229bfd9aa5290c00cdbb746dc981d9a_1" [label="1: Start Base_fun\nFormals:  this:Base*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
@@ -72,17 +65,13 @@ digraph iCFG {
 	
 
 	 "fun_redefine#Base#(_ZN4Base12fun_redefineEv).c2ff930198d499360a565fea1e1cc430_3" -> "fun_redefine#Base#(_ZN4Base12fun_redefineEv).c2ff930198d499360a565fea1e1cc430_2" ;
-"Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_1" [label="1: Start Sub_Sub\nFormals:  this:Sub*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+"Base#Base#{_ZN4BaseC1Ev|constexpr}.b40f1fff4dc6a0e6dfdca672253d3ca0_1" [label="1: Start Base_Base\nFormals:  this:Base*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
-	 "Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_1" -> "Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_3" ;
-"Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_2" [label="2: Exit Sub_Sub \n  " color=yellow style=filled]
+	 "Base#Base#{_ZN4BaseC1Ev|constexpr}.b40f1fff4dc6a0e6dfdca672253d3ca0_1" -> "Base#Base#{_ZN4BaseC1Ev|constexpr}.b40f1fff4dc6a0e6dfdca672253d3ca0_2" ;
+"Base#Base#{_ZN4BaseC1Ev|constexpr}.b40f1fff4dc6a0e6dfdca672253d3ca0_2" [label="2: Exit Base_Base \n  " color=yellow style=filled]
 	
 
-"Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_3" [label="3:  Constructor Init \n   n$0=*&this:Sub* [line 16]\n  _fun_Base_Base(n$0:Sub*) [line 16]\n " shape="box"]
-	
-
-	 "Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_3" -> "Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_2" ;
 "fun_redefine#Sub#(_ZN3Sub12fun_redefineEv).75c6089c3bffa929f77b6a6a9d051bd8_1" [label="1: Start Sub_fun_redefine\nFormals:  this:Sub*\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
 	
 
@@ -94,4 +83,15 @@ digraph iCFG {
 	
 
 	 "fun_redefine#Sub#(_ZN3Sub12fun_redefineEv).75c6089c3bffa929f77b6a6a9d051bd8_3" -> "fun_redefine#Sub#(_ZN3Sub12fun_redefineEv).75c6089c3bffa929f77b6a6a9d051bd8_2" ;
+"Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_1" [label="1: Start Sub_Sub\nFormals:  this:Sub*\nLocals:  \n   DECLARE_LOCALS(&return); [line 16]\n " color=yellow style=filled]
+	
+
+	 "Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_1" -> "Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_3" ;
+"Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_2" [label="2: Exit Sub_Sub \n  " color=yellow style=filled]
+	
+
+"Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_3" [label="3:  Constructor Init \n   n$0=*&this:Sub* [line 16]\n  _fun_Base_Base(n$0:Sub*) [line 16]\n " shape="box"]
+	
+
+	 "Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_3" -> "Sub#Sub#{_ZN3SubC1Ev|constexpr}.93e15d601751169652f5c2c5e08b3e98_2" ;
 }

@@ -63,13 +63,6 @@ digraph iCFG {
 	
 
 	 "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_4" -> "test_ptr#_Z8test_ptrv.febb3878182101927d1f4015691bf435_3" ;
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
-	
-
-	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" ;
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" [label="2: Exit X_X \n  " color=yellow style=filled]
-	
-
 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
@@ -81,4 +74,11 @@ digraph iCFG {
 	
 
 	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" ;
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+	
+
+	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" ;
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" [label="2: Exit X_X \n  " color=yellow style=filled]
+	
+
 }

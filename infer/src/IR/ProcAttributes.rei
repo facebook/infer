@@ -52,6 +52,7 @@ type t = {
   is_defined: bool, /** true if the procedure is defined, and not just declared */
   is_objc_instance_method: bool, /** the procedure is an objective-C instance method */
   is_cpp_instance_method: bool, /** the procedure is an C++ instance method */
+  is_cpp_noexcept_method: bool, /** the procedure is an C++ method annotated with "noexcept" */
   is_java_synchronized_method: bool, /** the procedure is a Java synchronized method */
   is_model: bool, /** the procedure is a model */
   is_synthetic_method: bool, /** the procedure is a synthetic method */

@@ -20,6 +20,7 @@ type method_signature = {
   loc : Clang_ast_t.source_range;
   is_instance : bool;
   is_cpp_virtual : bool;
+  is_cpp_nothrow : bool;
   language : CFrontend_config.clang_lang;
   pointer_to_parent : Clang_ast_t.pointer option;
   pointer_to_property_opt : Clang_ast_t.pointer option; (* If set then method is a getter/setter *)
@@ -50,6 +51,9 @@ let ms_is_instance { is_instance } =
 let ms_is_cpp_virtual { is_cpp_virtual } =
   is_cpp_virtual
 
+let ms_is_cpp_nothrow { is_cpp_nothrow } =
+  is_cpp_nothrow
+
 let ms_get_lang { language } =
   language
 
@@ -74,11 +78,13 @@ let ms_is_setter { pointer_to_property_opt; args } =
   Option.is_some pointer_to_property_opt &&
   Int.equal (List.length args) 2
 
-let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual language pointer_to_parent
-    pointer_to_property_opt return_param_typ =
-  let is_cpp_virtual = match is_cpp_virtual with
-    | Some is_cpp_virtual -> is_cpp_virtual
+let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual ?is_cpp_nothrow
+    language pointer_to_parent pointer_to_property_opt return_param_typ =
+  let booloption_to_bool = function
+    | Some b -> b
     | None -> false in
+  let is_cpp_virtual = booloption_to_bool is_cpp_virtual in
+  let is_cpp_nothrow = booloption_to_bool is_cpp_nothrow in
   {
     name;
     args;
@@ -87,6 +93,7 @@ let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual langua
     loc;
     is_instance;
     is_cpp_virtual;
+    is_cpp_nothrow;
     language;
     pointer_to_parent;
     pointer_to_property_opt;

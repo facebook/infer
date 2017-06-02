@@ -7,13 +7,6 @@ digraph iCFG {
 "throw1#_Z6throw1v.6866701d138e60b8a5c7d6f1caf824dd_2" [label="2: Exit throw1 \n  " color=yellow style=filled]
 	
 
-"no_throw#_Z8no_throwv.028c7f4498d9c0da6ccab2140f29bd28_1" [label="1: Start no_throw\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
-	
-
-	 "no_throw#_Z8no_throwv.028c7f4498d9c0da6ccab2140f29bd28_1" -> "no_throw#_Z8no_throwv.028c7f4498d9c0da6ccab2140f29bd28_2" ;
-"no_throw#_Z8no_throwv.028c7f4498d9c0da6ccab2140f29bd28_2" [label="2: Exit no_throw \n  " color=yellow style=filled]
-	
-
 "noexcept_in_no_throw_is_true#_Z28noexcept_in_no_throw_is_truev.d0ad76874499d22dfb8ba2dbcb60ecb4_1" [label="1: Start noexcept_in_no_throw_is_true\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
 	
 
@@ -36,4 +29,11 @@ digraph iCFG {
 	
 
 	 "noexcept_in_throw1_is_false#_Z27noexcept_in_throw1_is_falsev.7aad7452335d36eb8634c22fdf2750b3_3" -> "noexcept_in_throw1_is_false#_Z27noexcept_in_throw1_is_falsev.7aad7452335d36eb8634c22fdf2750b3_2" ;
+"no_throw#_Z8no_throwv.028c7f4498d9c0da6ccab2140f29bd28_1" [label="1: Start no_throw\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "no_throw#_Z8no_throwv.028c7f4498d9c0da6ccab2140f29bd28_1" -> "no_throw#_Z8no_throwv.028c7f4498d9c0da6ccab2140f29bd28_2" ;
+"no_throw#_Z8no_throwv.028c7f4498d9c0da6ccab2140f29bd28_2" [label="2: Exit no_throw \n  " color=yellow style=filled]
+	
+
 }
