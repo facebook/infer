@@ -13,7 +13,7 @@ module type Kind = sig
   include TraceElem.Kind
 
   (** return the parameter index and sink kind for the given call site with the given actuals *)
-  val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * int * bool) list
+  val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * int) list
 end
 
 module type S = sig
@@ -25,9 +25,6 @@ module type S = sig
       (** sink type of the parameter *)
       index : int;
       (** index of the parameter *)
-      report_reachable : bool;
-      (** if true, report if *any* value heap-reachable from the sink parameter is a source.
-          if false, report only if the value passed to the sink is itself a source *)
     }
 
   (** return the parameter index and sink kind for the given call site with the given actuals *)

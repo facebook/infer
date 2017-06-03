@@ -52,12 +52,6 @@ public class Arrays {
     InferTaint.inferSensitiveSink(arr[0]);
   }
 
-  void viaArrayThenFieldOk() {
-    Obj[] arr = new Obj[1];
-    arr[0].f = InferTaint.inferSecretSource();
-    InferTaint.inferSensitiveSink(arr[0]);
-  }
-
   /** false positives: an ideal analysis would not report on these, but we do */
 
   // we don't track array indices precisely

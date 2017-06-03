@@ -127,13 +127,11 @@ module SinkKind = struct
       (QuandaryConfig.Sink.of_json Config.quandary_sinks)
 
   (* taint the nth parameter (0-indexed) *)
-  let taint_nth n kind ~report_reachable =
-    [kind, n, report_reachable]
+  let taint_nth n kind =
+    [kind, n]
 
-  let taint_all actuals kind ~report_reachable =
-    List.mapi
-      ~f:(fun actual_num _ -> kind, actual_num, report_reachable)
-      actuals
+  let taint_all actuals kind =
+    List.mapi ~f:(fun actual_num _ -> kind, actual_num) actuals
 
   (* return Some(sink kind) if [procedure_name] is in the list of externally specified sinks *)
   let get_external_sink pname actuals =
@@ -145,10 +143,10 @@ module SinkKind = struct
             let kind = of_string kind in
             try
               let n = int_of_string index in
-              Some (taint_nth n kind ~report_reachable:true)
+              Some (taint_nth n kind)
             with Failure _ ->
               (* couldn't parse the index, just taint everything *)
-              Some (taint_all actuals kind ~report_reachable:true)
+              Some (taint_all actuals kind)
           else
             None)
       external_sinks
@@ -161,9 +159,9 @@ module SinkKind = struct
         begin
           match Typ.Procname.to_string pname with
           | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system" ->
-              taint_all actuals ShellExec ~report_reachable:false
+              taint_all actuals ShellExec
           | "brk" | "calloc" | "malloc" | "realloc" | "sbrk" ->
-              taint_all actuals Allocation ~report_reachable:false
+              taint_all actuals Allocation
           | _ ->
               Option.value (get_external_sink pname actuals) ~default:[]
         end

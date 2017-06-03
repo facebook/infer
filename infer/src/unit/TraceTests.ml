@@ -63,7 +63,7 @@ end
 
 module MockSink = struct
   include MockTraceElem
-  type parameter = { sink : t; index : int; report_reachable : bool; }
+  type parameter = { sink : t; index : int; }
 
   let get _ = assert false
 

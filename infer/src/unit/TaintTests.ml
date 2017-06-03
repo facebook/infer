@@ -32,7 +32,7 @@ module MockTrace = Trace.Make(struct
 
         let get pname _ _ =
           if String.is_prefix ~prefix:"SINK" (Typ.Procname.to_string pname)
-          then [CallSite.make pname Location.dummy, 0, false]
+          then [CallSite.make pname Location.dummy, 0]
           else []
       end)
 
@@ -181,14 +181,14 @@ let tests =
     [
       assign_to_source "ret_id";
       call_sink "ret_id";
-      invariant "{ ret_id$0 => (SOURCE -> SINK) }";
+      invariant "{ ret_id$0* => (SOURCE -> SINK) }";
     ];
     "source -> sink via var",
     [
       assign_to_source "ret_id";
       var_assign_id "actual" "ret_id";
       call_sink_with_exp (var_of_str "actual");
-      invariant "{ ret_id$0 => (SOURCE -> ?), &actual => (SOURCE -> SINK) }";
+      invariant "{ ret_id$0 => (SOURCE -> ?), &actual* => (SOURCE -> SINK) }";
     ];
     "source -> sink via var then ident",
     [
@@ -196,7 +196,7 @@ let tests =
       var_assign_id "x" "ret_id";
       id_assign_var "actual_id" "x";
       call_sink "actual_id";
-      invariant "{ ret_id$0 => (SOURCE -> ?), &x => (SOURCE -> SINK) }";
+      invariant "{ ret_id$0 => (SOURCE -> ?), &x* => (SOURCE -> SINK) }";
     ];
     "source -> sink via field",
     [
@@ -204,7 +204,7 @@ let tests =
       assign_id_to_field "base_id" "f" "ret_id";
       read_field_to_id "actual_id" "base_id" "f";
       call_sink "actual_id";
-      invariant "{ base_id$0.f => (SOURCE -> SINK), ret_id$0 => (SOURCE -> ?) }";
+      invariant "{ base_id$0.f* => (SOURCE -> SINK), ret_id$0 => (SOURCE -> ?) }";
     ];
     "source -> sink via field read from var",
     [
@@ -215,14 +215,14 @@ let tests =
       read_field_to_id "read_id" "var_id" "f";
       call_sink "read_id";
       invariant
-        "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?), &var.f => (SOURCE -> SINK) }";
+        "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?), &var.f* => (SOURCE -> SINK) }";
     ];
     "source -> sink via cast",
     [
       assign_to_source "ret_id";
       cast_id_to_id "cast_id" (Typ.mk Tvoid) "ret_id";
       call_sink "cast_id";
-      invariant "{ ret_id$0 => (SOURCE -> SINK) }";
+      invariant "{ ret_id$0* => (SOURCE -> SINK) }";
     ];
 
   ] |> TestInterpreter.create_tests

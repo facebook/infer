@@ -213,41 +213,41 @@ module SinkKind = struct
   let get pname actuals tenv =
     (* taint all the inputs of [pname]. for non-static procedures, taints the "this" parameter only
        if [taint_this] is true. *)
-    let taint_all ?(taint_this=false) kind ~report_reachable =
+    let taint_all ?(taint_this=false) kind =
       let actuals_to_taint, offset =
         if Typ.Procname.java_is_static pname || taint_this
         then actuals, 0
         else List.tl_exn actuals, 1 in
       List.mapi
-        ~f:(fun param_num _ -> kind, param_num + offset, report_reachable)
+        ~f:(fun param_num _ -> kind, param_num + offset)
         actuals_to_taint in
     (* taint the nth non-"this" parameter (0-indexed) *)
-    let taint_nth n kind ~report_reachable =
+    let taint_nth n kind =
       let first_index = if Typ.Procname.java_is_static pname then n else n + 1 in
-      [kind, first_index, report_reachable] in
+      [kind, first_index] in
     match pname with
     | Typ.Procname.Java java_pname ->
         begin
           match Typ.Procname.java_get_class_name java_pname,
                 Typ.Procname.java_get_method java_pname with
           | "android.util.Log", ("e" | "println" | "w" | "wtf") ->
-              taint_all Logging ~report_reachable:true
+              taint_all Logging
           | "java.io.File", "<init>"
           | "java.nio.file.FileSystem", "getPath"
           | "java.nio.file.Paths", "get" ->
-              taint_all CreateFile ~report_reachable:true
+              taint_all CreateFile
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
-              [Other, 0, false]
+              [Other, 0]
           | class_name, method_name ->
               let taint_matching_supertype typename _ =
                 match Typ.Name.name typename, method_name with
                 | "android.app.Activity",
                   ("startActivityFromChild" | "startActivityFromFragment") ->
-                    Some (taint_nth 1 StartComponent ~report_reachable:true)
+                    Some (taint_nth 1 StartComponent)
                 | "android.app.Activity", "startIntentSenderForResult"  ->
-                    Some (taint_nth 2 StartComponent ~report_reachable:true)
+                    Some (taint_nth 2 StartComponent)
                 | "android.app.Activity", "startIntentSenderFromChild"  ->
-                    Some (taint_nth 3 StartComponent ~report_reachable:true)
+                    Some (taint_nth 3 StartComponent)
                 | "android.content.Context",
                   ("bindService" |
                    "sendBroadcast" |
@@ -265,9 +265,9 @@ module SinkKind = struct
                    "startNextMatchingActivity" |
                    "startService" |
                    "stopService") ->
-                    Some (taint_nth 0 StartComponent ~report_reachable:true)
+                    Some (taint_nth 0 StartComponent)
                 | "android.content.Context", "startIntentSender" ->
-                    Some (taint_nth 1 StartComponent ~report_reachable:true)
+                    Some (taint_nth 1 StartComponent)
                 | "android.content.Intent",
                   ("parseUri" |
                    "getIntent" |
@@ -278,9 +278,9 @@ module SinkKind = struct
                    "setDataAndType" |
                    "setDataAndTypeAndNormalize" |
                    "setPackage") ->
-                    Some (taint_nth 0 CreateIntent ~report_reachable:true)
+                    Some (taint_nth 0 CreateIntent)
                 | "android.content.Intent", "setClassName" ->
-                    Some (taint_all CreateIntent ~report_reachable:true)
+                    Some (taint_all CreateIntent)
                 | "android.webkit.WebView",
                   ("evaluateJavascript" |
                    "loadData" |
@@ -288,7 +288,7 @@ module SinkKind = struct
                    "loadUrl" |
                    "postUrl" |
                    "postWebMessage") ->
-                    Some (taint_all JavaScript ~report_reachable:true)
+                    Some (taint_all JavaScript)
                 | class_name, method_name ->
                     (* check the list of externally specified sinks *)
                     let procedure = class_name ^ "." ^ method_name in
@@ -299,10 +299,10 @@ module SinkKind = struct
                             let kind = of_string kind in
                             try
                               let n = int_of_string index in
-                              Some (taint_nth n kind ~report_reachable:true)
+                              Some (taint_nth n kind)
                             with Failure _ ->
                               (* couldn't parse the index, just taint everything *)
-                              Some (taint_all kind ~report_reachable:true)
+                              Some (taint_all kind)
                           else
                             None)
                       external_sinks in

@@ -65,23 +65,7 @@ public class Fields {
 
   /** should not report on these tests */
 
-  void viaFieldOk1(Obj obj) {
-    obj.f = InferTaint.inferSecretSource();
-    InferTaint.inferSensitiveSink(obj);
-  }
-
-  void viaFieldOk2() {
-    Obj obj = new Obj();
-    obj.f = InferTaint.inferSecretSource();
-    InferTaint.inferSensitiveSink(obj);
-  }
-
-  void viaFieldOk3(Obj obj) {
-    obj.g.f = InferTaint.inferSecretSource();
-    InferTaint.inferSensitiveSink(obj.g);
-  }
-
-  void viaFieldOk3() {
+  void viaFieldOk() {
     Obj obj = new Obj();
     obj.f = InferTaint.inferSecretSource();
     obj.g = new Obj();
@@ -101,17 +85,7 @@ public class Fields {
     InferTaint.inferSensitiveSink(obj.g.f);
   }
 
-  void viaNestedFieldOK2(Obj obj) {
-    obj.g.f = InferTaint.inferSecretSource();
-    InferTaint.inferSensitiveSink(obj.g);
-  }
-
-  void viaNestedFieldOK3(Obj obj) {
-    obj.g.f = InferTaint.inferSecretSource();
-    InferTaint.inferSensitiveSink(obj);
-  }
-
-  void viaNestedFieldOK4() {
+  void viaNestedFieldOK2() {
     Obj obj = new Obj();
     obj.g = new Obj();
     obj.g.f = InferTaint.inferSecretSource();

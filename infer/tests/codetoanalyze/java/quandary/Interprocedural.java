@@ -381,7 +381,7 @@ class Interprocedural {
     callSinkIndirectOnParam(source);
   }
 
-  public void FN_callDeepSink1Bad() {
+  public void callDeepSink1Bad() {
     Obj source = propagate(InferTaint.inferSecretSource());
     callSinkA(source);
   }
