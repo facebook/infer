@@ -61,11 +61,11 @@ let is_immediate_subtype tenv this_type_name super_type_name =
 
 (** return true if [typ0] <: [typ1] *)
 let is_subtype tenv name0 name1 =
+  Typ.Name.equal name0 name1 ||
   supertype_exists tenv (fun name _ -> Typ.Name.equal name name1) name0
 
 let is_subtype_of_str tenv cn1 classname_str =
   let typename = Typ.Name.Java.from_string classname_str in
-  Typ.Name.equal cn1 typename ||
   is_subtype tenv cn1 typename
 
 (** The type the method is invoked on *)
