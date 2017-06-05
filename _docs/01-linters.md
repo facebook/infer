@@ -81,7 +81,7 @@ DEFINE-CHECKER STRONG_DELEGATE_WARNING = {
   };
 ```
 
-The linter definition starts with the keyword `DEFINE-CHECKER` followed by the checker's name. The first `LET` clause defines the *formula variable* `name_contains_delegate` using the predicate `declaration_has_name` which return true/false depending whether the property's name contains a word in the language of the regular expression `[dD]elegate`. In general a predicate is a simple atomic formula evaluated on an AST node. The list of available predicates is in the module `Predicates.mli` (this list is continuously growing and if you need a new predicate you can add it in ocaml). Formula variables can be used to simplify other definitions. The `SET report_when` is mandatory and defines a formula that, when evaluates to true, will tell Infer to report an error. In the case above, the formula is saying that we should report when visiting an `ObjCPropertyDecl` (that is the AST node declaring a property in Objective-C) where it holds that: the name contains "delegate/Delegate" (`name_contains_delegate`) and the name doesn't contain "queue/Queue" (`name_does_not_contain_queue`) and the node is defining a "strong" property (`is_strong_property()`).
+The linter definition starts with the keyword `DEFINE-CHECKER` followed by the checker's name. The first `LET` clause defines the *formula variable* `name_contains_delegate` using the predicate `declaration_has_name` which return true/false depending whether the property's name contains a word in the language of the regular expression `[dD]elegate`. In general a predicate is a simple atomic formula evaluated on an AST node. The list of available predicates is in the module [`cPredicates.mli`](https://github.com/facebook/infer/blob/master/infer/src/clang/cPredicates.mli) (this list is continuously growing and if you need a new predicate you can add it in ocaml). Formula variables can be used to simplify other definitions. The `SET report_when` is mandatory and defines a formula that, when evaluates to true, will tell Infer to report an error. In the case above, the formula is saying that we should report when visiting an `ObjCPropertyDecl` (that is the AST node declaring a property in Objective-C) where it holds that: the name contains "delegate/Delegate" (`name_contains_delegate`) and the name doesn't contain "queue/Queue" (`name_does_not_contain_queue`) and the node is defining a "strong" property (`is_strong_property()`).
 
 The `SET message` clause defines the error message that will be displayed to the user. Notice that the message can include placeholders like `%decl_name%`. Placeholders are evaluated by Infer and substituted by their current value when the error message is reported. In this case the name of the declaration. The `SET suggestion` clause define an optional hint to give to programmer on how to fix the problem. 
 
@@ -106,7 +106,7 @@ The default severity is `WARNING` and the default mode is `ON`, so these are opt
 
 <a name="predicates">**AL Predicates**</a> 
 
-The simplest formulas we can write are predicates. They are defined inside Infer. We provide a library, and can add more as needed. Here are the currently defined predicates:
+The simplest formulas we can write are predicates. They are defined inside Infer. We provide a [library](https://github.com/facebook/infer/blob/master/infer/src/clang/cPredicates.mli), and can add more as needed. Here are the currently defined predicates:
 
 ```
 call_class_method ("class_name", "method_name")
