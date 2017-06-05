@@ -273,7 +273,7 @@ The checker uses two predefined predicates `is_assign_property()` and `is_proper
 
 | Formula | Semantic meaning |
 | ------- |:----------------:|
-| IN-NODE node1,…, nodeK WITH-TRANSITION t F HOLDS-EVENTIALLY | from the current node there exists a path which eventually reaches a node among “node1,…,nodeK” with a transition t reaching a child where F holds |
+| IN-NODE node1,…, nodeK WITH-TRANSITION t F HOLDS-EVENTUALLY | from the current node there exists a path which eventually reaches a node among “node1,…,nodeK” with a transition t reaching a child where F holds |
 
 The following tree explain the concept:
 
