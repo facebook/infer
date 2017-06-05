@@ -456,6 +456,9 @@ let driver_mode_of_build_cmd build_cmd =
       assert_supported_build_system build_system;
       match build_system_of_exe_name (Filename.basename prog) with
       | BAnalyze ->
+          CLOpt.warnf
+            "WARNING: `infer -- analyze` is deprecated; \
+             use the `infer analyze` subcommand instead@.";
           Analyze
       | BBuck when Option.is_some Config.buck_compilation_database ->
           BuckCompilationDB (prog, List.append args (List.rev Config.buck_build_args))

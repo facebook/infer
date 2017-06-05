@@ -26,7 +26,7 @@ class InferJavacCapture():
         # pass --continue to prevent removing the results-dir
         cmd = [
             infer,
-            '--analyzer', 'capture',
+            'capture',
             '--continue',
             '--', 'javac'
         ] + self.javac_args

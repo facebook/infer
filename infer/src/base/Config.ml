@@ -498,6 +498,15 @@ and analyzer =
      - $(b,crashcontext): experimental (see $(b,--crashcontext))\n\
      - $(b,linters): run linters based on the ast only (Objective-C and Objective-C++ only, \
      activated by default)"
+    ~f:(function
+        | CaptureOnly | CompileOnly as x ->
+            let analyzer_str = List.find_map_exn string_to_analyzer
+                ~f:(fun (s, y) -> if equal_analyzer x y then Some s else None) in
+            CLOpt.warnf
+              "WARNING: The analyzer '%s' is deprecated, use the '%s' subcommand instead:@\n\
+               @\n  infer %s ..." analyzer_str analyzer_str analyzer_str;
+            x
+        | _ as x -> x)
     ~symbols:string_to_analyzer
 
 and android_harness =

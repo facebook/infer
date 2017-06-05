@@ -120,7 +120,7 @@ val mk_path_list : ?default:string list -> string list ref t
 val mk_symbol : default:'a -> symbols:(string * 'a) list -> eq:('a -> 'a -> bool) -> 'a ref t
 
 (** [mk_symbol_opt] is similar to [mk_symbol] but defaults to [None]. *)
-val mk_symbol_opt : symbols:(string * 'a) list -> 'a option ref t
+val mk_symbol_opt : symbols:(string * 'a) list -> ?f:('a -> 'a) -> 'a option ref t
 
 (** [mk_symbol_seq long symbols] defines a command line flag [--long <symbol sequence>] where
     [<symbol sequence>] is a comma-separated sequence of [<symbol>]s such that [(<symbol>,_)] is an

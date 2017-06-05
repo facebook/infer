@@ -18,7 +18,7 @@ compile: $(OBJECTS)
 
 $(ONE_SOURCE).test.dot: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	$(QUIET)$(call silent_on_success,Testing the infer/clang frontend in $(TEST_REL_DIR),\
-	  $(INFER_BIN) -a capture --frontend-tests --project-root $(TESTS_DIR) $(INFER_OPTIONS) -- \
+	  $(INFER_BIN) capture --frontend-tests --project-root $(TESTS_DIR) $(INFER_OPTIONS) -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES))
 
 .PHONY: capture

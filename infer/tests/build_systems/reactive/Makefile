@@ -22,14 +22,14 @@ include $(TESTS_DIR)/clang.make
 
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	$(QUIET)$(call silent_on_success,Testing reactive mode: capture 1/3,\
-	  $(INFER_BIN) $(INFER_OPTIONS) -a capture -- \
+	  $(INFER_BIN) $(INFER_OPTIONS) capture -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES1))
 	$(QUIET)$(call silent_on_success,Testing reactive mode: capture 2/3,\
-	  $(INFER_BIN) $(INFER_OPTIONS) -a capture --reactive --continue -- \
+	  $(INFER_BIN) $(INFER_OPTIONS) capture --reactive --continue -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES2))
 	$(QUIET)$(call silent_on_success,Testing reactive mode: capture 3/3,\
-	  $(INFER_BIN) $(INFER_OPTIONS) -a capture --reactive --continue -- \
+	  $(INFER_BIN) $(INFER_OPTIONS) capture --reactive --continue -- \
 	    clang $(CLANG_OPTIONS) $(SOURCES3))
 	$(QUIET)$(call silent_on_success,Testing reactive mode: analysis,\
-	  $(INFER_BIN) --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER) -- analyze)
+	  $(INFER_BIN) analyze --dump-duplicate-symbols $(INFER_OPTIONS) -a $(ANALYZER))
 	$(QUIET)$(call check_no_duplicates,infer-out/duplicates.txt)

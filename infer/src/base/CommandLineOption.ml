@@ -455,13 +455,13 @@ let mk_symbol ~default ~symbols ~eq ?(deprecated=[]) ~long ?short ?parse_mode ?i
     ~decode_json:(string_json_decoder ~long)
     ~mk_spec:(fun set -> Symbol (strings, set))
 
-let mk_symbol_opt ~symbols ?(deprecated=[]) ~long ?short ?parse_mode ?in_help ?meta doc =
+let mk_symbol_opt ~symbols ?(f=Fn.id) ?(deprecated=[]) ~long ?short ?parse_mode ?in_help ?meta doc =
   let strings = List.map ~f:fst symbols in
   let of_string str = List.Assoc.find_exn ~equal:String.equal symbols str in
   let meta = Option.value meta ~default:(mk_symbols_meta symbols) in
   mk ~deprecated ~long ?short ~default:None ?parse_mode ?in_help ~meta doc
     ~default_to_string:(fun _ -> "")
-    ~mk_setter:(fun var str -> var := Some (of_string str))
+    ~mk_setter:(fun var str -> var := Some (f (of_string str)))
     ~decode_json:(string_json_decoder ~long)
     ~mk_spec:(fun set -> Symbol (strings, set))
 
@@ -705,7 +705,7 @@ let encode_argv_to_env argv =
     (List.filter ~f:(fun arg ->
          not (String.contains arg env_var_sep)
          || (
-           warnf "Ignoring unsupported option containing '%c' character: %s@\n"
+           warnf "WARNING: Ignoring unsupported option containing '%c' character: %s@\n"
              env_var_sep arg ;
            false
          )

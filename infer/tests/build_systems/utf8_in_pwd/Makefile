@@ -65,7 +65,7 @@ infer-out-cmake/report.json: $(CMAKE_DIR) $(CMAKE_SOURCES_DIR)/CMakeLists.txt $(
 	$(QUIET)cd $(CMAKE_ANALYZE_DIR) && \
 	$(call silent_on_success,Testing\
 	  Infer/CMake is immune to UTF-8 in PWD: Makefile generation,\
-	  $(INFER_BIN) -a compile --project-root $(CMAKE_DIR) --results-dir $(CURDIR)/$(@D) -- cmake ..)
+	  $(INFER_BIN) compile --project-root $(CMAKE_DIR) --results-dir $(CURDIR)/$(@D) -- cmake ..)
 	$(QUIET)cd $(CMAKE_ANALYZE_DIR) && \
 	$(call silent_on_success,Testing\
 	  Infer/CMake is immune to UTF-8 in PWD: Makefile execution,\

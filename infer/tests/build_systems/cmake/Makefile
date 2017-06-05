@@ -35,7 +35,7 @@ infer-out/report.json: $(SOURCES) $(CMAKE_DIR)/CMakeLists.txt $(CLANG_DEPS)
 	$(QUIET)$(MKDIR_P) $(CMAKE_ANALYZE_DIR)
 	$(QUIET)cd $(CMAKE_ANALYZE_DIR) && \
 	$(call silent_on_success,Testing CMake integration: Generate Makefiles,\
-	  $(INFER_BIN) -a compile $(INFER_OPTIONS) -- cmake ..)
+	  $(INFER_BIN) compile $(INFER_OPTIONS) -- cmake ..)
 	$(QUIET)$(call silent_on_success,Testing CMake integration: Run Makefiles,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) -- $(MAKE) -C $(CMAKE_ANALYZE_DIR))
 #	cmake makes all paths absolute
