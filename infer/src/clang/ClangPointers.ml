@@ -31,7 +31,7 @@ let visit_ast
   | None ->
       ()
   | Some error ->
-      failwithf "ERROR: visiting the clang AST failed with error %s"
+      failwithf "visiting the clang AST failed with error %s"
         (Ag_util.Validation.string_of_error error)
 
 let get_ptr_from_node node =

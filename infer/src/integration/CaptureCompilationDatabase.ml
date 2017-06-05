@@ -94,7 +94,7 @@ let get_compilation_database_files_buck ~prog ~args =
         Utils.with_process_in buck_targets_shell In_channel.input_lines in
       match exit_or_signal with
       | Error _ as status ->
-          failwithf "*** ERROR: command failed:@\n*** %s@\n*** %s@."
+          failwithf "*** command failed:@\n*** %s@\n*** %s@."
             buck_targets_shell
             (Unix.Exit_or_signal.to_string_hum status)
       | Ok () ->

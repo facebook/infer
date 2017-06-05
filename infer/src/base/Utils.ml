@@ -243,7 +243,7 @@ let shell_escape_command cmd =
 let create_dir dir =
   try
     if (Unix.stat dir).Unix.st_kind <> Unix.S_DIR then
-      failwithf "@.ERROR: file %s exists and is not a directory@." dir
+      failwithf "file %s exists and is not a directory@." dir
   with Unix.Unix_error _ ->
   try Unix.mkdir dir ~perm:0o700 with
     Unix.Unix_error _ ->
@@ -251,7 +251,7 @@ let create_dir dir =
         try Polymorphic_compare.(=) ((Unix.stat dir).Unix.st_kind) Unix.S_DIR
         with Unix.Unix_error _ -> false in
       if not created_concurrently then
-        failwithf "@.ERROR: cannot create directory %s@." dir
+        failwithf "cannot create directory %s@." dir
 
 let realpath_cache = Hashtbl.create 1023
 

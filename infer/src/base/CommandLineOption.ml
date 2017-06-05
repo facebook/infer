@@ -663,15 +663,15 @@ let anon_fun arg =
         command_switch ()
     | Some command ->
         raise (Arg.Bad
-                 ("More than one subcommand specified: " ^ string_of_command command ^ ", " ^
-                  arg))
+                 (Printf.sprintf "More than one subcommand specified: '%s', '%s'"
+                    (string_of_command command) arg))
   else match !anon_arg_action.on_unknown with
     | `Add ->
         rev_anon_args := arg::!rev_anon_args
     | `Skip ->
         ()
     | `Reject ->
-        raise (Arg.Bad ("unexpected anonymous argument: " ^ arg))
+        raise (Arg.Bad (Printf.sprintf "Unexpected anonymous argument: '%s'" arg))
 
 
 let decode_inferconfig_to_argv path =

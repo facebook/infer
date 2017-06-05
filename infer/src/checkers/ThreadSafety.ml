@@ -1280,7 +1280,7 @@ let quotient_access_map acc_map =
       let (k_part, non_k_part) =
         AccessListMap.partition (fun k' _ -> may_alias tenv k k') m in
       if AccessListMap.is_empty k_part
-      then failwith "Error: may_alias is not reflexive!";
+      then failwith "may_alias is not reflexive!";
       let k_accesses =
         AccessListMap.fold
           (fun _ v acc' -> List.append v acc')

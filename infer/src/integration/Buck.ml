@@ -17,7 +17,7 @@ let target_of_string target =
       let flavors = String.split flavors_string ~on:',' in
       {name; flavors}
   | name::[] -> { name; flavors=[] }
-  | _ -> failwithf "Error: cannot parse target %s" target
+  | _ -> failwithf "cannot parse target %s" target
 
 let string_of_target { name; flavors } =
   let pp_string fmt s = Format.fprintf fmt "%s" s in

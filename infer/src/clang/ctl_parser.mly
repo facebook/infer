@@ -140,8 +140,8 @@ clause:
     { Logging.out "\tParsed SET clause\n";
     let alvar = match $2 with
       | "report_when" -> ALVar.Report_when
-      | _ -> failwith ("[ERROR] string '%s' cannot be set to a variable. " ^
-                      "Use the reserverd variable 'report_when'\n") in
+      | _ -> failwith "string '%s' cannot be set to a variable. \
+                       Use the reserverd variable 'report_when'" in
       CTL.CSet (alvar, $4) }
   | SET identifier ASSIGNMENT STRING
     { Logging.out "\tParsed SET clause\n";
@@ -151,7 +151,7 @@ clause:
       | "severity" -> ALVar.Severity
       | "mode" -> ALVar.Mode
       | "path" -> ALVar.Path
-      | _ -> failwithf "[ERROR] string '%s' cannot be set in a SET clause. \
+      | _ -> failwithf "string '%s' cannot be set in a SET clause. \
                         Use either of: \
                         'message', 'mode', 'severity', 'suggestion' or 'path'" $2 in
       CTL.CDesc (alvar, $4) }

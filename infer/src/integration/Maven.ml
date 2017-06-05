@@ -157,6 +157,6 @@ let capture ~prog ~args =
   |> function
   | Ok () -> ()
   | Error _ as status ->
-      failwithf "*** ERROR: Maven command failed:@\n*** %s@\n*** %s@\n"
+      failwithf "*** Maven command failed:@\n*** %s@\n*** %s@\n"
         (String.concat ~sep:" " (prog::capture_args))
         (Unix.Exit_or_signal.to_string_hum status)

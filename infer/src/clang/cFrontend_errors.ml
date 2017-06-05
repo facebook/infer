@@ -23,9 +23,9 @@ let filter_parsed_linters_developer parsed_linters =
   if List.length parsed_linters > 1 && Config.linters_developer_mode then
     match Config.linter with
     | None ->
-        failwith ("ERROR: In linters developer mode you should debug only one linter at a time. \
-                   This is important for debugging the rule. Pass the flag \
-                   --linter <name> to specify the linter you want to debug.");
+        failwith "In linters developer mode you should debug only one linter at a time. \
+                  This is important for debugging the rule. Pass the flag \
+                  --linter <name> to specify the linter you want to debug.";
     | Some lint ->
         List.filter ~f:(
           fun (rule : linter) -> String.equal rule.issue_desc.name lint
@@ -250,7 +250,7 @@ let expand_formula phi _map _error_msg =
                      let f1_sub = apply_substitution f1 sub in
                      let map' = ALVar.FormulaIdMap.add av (true, fparams, f1) map in
                      expand f1_sub map' error_msg'
-                 | None -> failwith ("[ERROR]: Formula identifier '" ^ name ^
+                 | None -> failwith ("Formula identifier '" ^ name ^
                                      "' is not called with the right number of parameters"))
           with Not_found -> acc)) (* in this case it should be a predicate *)
     | Not f1 -> Not (expand f1 map error_msg)
@@ -275,7 +275,7 @@ let _build_macros_map macros init_map =
   let macros_map = List.fold ~f:(fun map' data -> match data with
       | CTL.CLet (key, params, formula) ->
           if ALVar.FormulaIdMap.mem key map' then
-            failwith ("[ERROR] Macro '" ^ (ALVar.formula_id_to_string key) ^
+            failwith ("Macro '" ^ (ALVar.formula_id_to_string key) ^
                       "' has more than one definition.")
           else ALVar.FormulaIdMap.add key (false, params, formula) map'
       | _ -> map') ~init:init_map macros in

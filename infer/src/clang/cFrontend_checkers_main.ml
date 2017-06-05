@@ -33,7 +33,7 @@ let already_imported_files = ref []
 
 let rec parse_import_file import_file channel : CTL.clause list =
   if List.mem !already_imported_files import_file then
-    failwith ("[ERROR] Cyclic imports: file '" ^ import_file ^ "' was already imported.")
+    failwith ("Cyclic imports: file '" ^ import_file ^ "' was already imported.")
   else (
     match parse_al_file import_file channel with
     | Some {import_files = imports; global_macros = curr_file_macros; checkers = _} ->
