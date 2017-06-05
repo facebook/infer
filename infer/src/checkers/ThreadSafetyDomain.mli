@@ -41,6 +41,8 @@ module LocksDomain : AbstractDomain.S with type astate = bool
 
 module ThreadsDomain : AbstractDomain.S with type astate = bool
 
+module ThumbsUpDomain : AbstractDomain.S with type astate = bool
+
 module PathDomain : module type of SinkTrace.Make(TraceElem)
 
 (** attribute attached to a boolean variable specifying what it means when the boolean is true *)
@@ -138,6 +140,8 @@ end
 
 type astate =
   {
+    thumbs_up : ThreadsDomain.astate;
+    (** boolean that is true if we think we have a proof *)
     threads : ThreadsDomain.astate;
     (** boolean that is true if we know we are on UI/main thread *)
     locks : LocksDomain.astate;
@@ -151,7 +155,8 @@ type astate =
 (** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of the
     attributes associated with the return value *)
 type summary =
-  ThreadsDomain.astate * LocksDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
+  ThumbsUpDomain.astate * ThreadsDomain.astate * LocksDomain.astate
+  * AccessDomain.astate * AttributeSetDomain.astate
 
 include AbstractDomain.WithBottom with type astate := astate
 

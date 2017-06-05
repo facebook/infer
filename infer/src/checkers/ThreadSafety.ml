@@ -403,7 +403,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (Unprotected (Some 0))
           (make_access dummy_access_ap Write callee_loc)
           AccessDomain.empty in
-    Some (false, false, callee_accesses, AttributeSetDomain.empty)
+    Some (true, false, false, callee_accesses, AttributeSetDomain.empty)
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
     if is_container_write callee_pname tenv
@@ -514,12 +514,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 end
             | NoEffect ->
                 match get_summary pdesc callee_pname actuals loc tenv with
-                | Some (callee_threads, callee_locks, callee_accesses, return_attributes) ->
+                | Some (callee_thumbs_up, callee_threads, callee_locks,
+                        callee_accesses, return_attributes) ->
                     let update_caller_accesses pre callee_accesses caller_accesses =
                       let combined_accesses =
                         PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
                         |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses) in
                       AccessDomain.add pre combined_accesses caller_accesses in
+                    let thumbs_up = callee_thumbs_up && astate.thumbs_up in
                     let locks = callee_locks || astate.locks in
                     let threads = callee_threads || astate.threads in
                     let unprotected = is_unprotected locks threads pdesc in
@@ -589,7 +591,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         actuals
                         astate.attribute_map
                         extras in
-                    { locks; threads; accesses; attribute_map; }
+                    { thumbs_up; locks; threads; accesses; attribute_map; }
                 | None ->
                     let should_assume_returns_ownership (call_flags : CallFlags.t) actuals =
                       (* assume non-interface methods with no summary and no parameters return
@@ -840,10 +842,11 @@ let is_thread_safe_method pdesc tenv =
     (Procdesc.get_proc_name pdesc)
 
 let empty_post =
-  let initial_known_on_ui_thread = false
+  let initial_thumbs_up = true
+  and initial_known_on_ui_thread = false
   and has_lock = false
   and return_attrs = ThreadSafetyDomain.AttributeSetDomain.empty in
-  (initial_known_on_ui_thread, has_lock, ThreadSafetyDomain.AccessDomain.empty, return_attrs)
+  (initial_thumbs_up, initial_known_on_ui_thread, has_lock, ThreadSafetyDomain.AccessDomain.empty, return_attrs)
 
 let analyze_procedure callback =
   let is_initializer tenv proc_name =
@@ -882,7 +885,7 @@ let analyze_procedure callback =
             { ThreadSafetyDomain.empty with threads; }, IdAccessPathMapDomain.empty in
 
         match Analyzer.compute_post proc_data ~initial ~debug:false with
-        | Some ({ threads; locks; accesses; attribute_map; }, _) ->
+        | Some ({ thumbs_up; threads; locks; accesses; attribute_map; }, _) ->
             let return_var_ap =
               AccessPath.of_pvar
                 (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
@@ -890,7 +893,7 @@ let analyze_procedure callback =
             let return_attributes =
               try AttributeMapDomain.find return_var_ap attribute_map
               with Not_found -> AttributeSetDomain.empty in
-            Some (threads, locks, accesses, return_attributes)
+            Some (thumbs_up, threads, locks, accesses, return_attributes)
         | None ->
             None
       end
@@ -982,7 +985,7 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
   let open ThreadSafetyDomain in
   let orig_access = PathDomain.Sink.kind orig_sink in
   match Summary.read_summary orig_pdesc callee_pname with
-  | Some (_, _, access_map, _) ->
+  | Some (_, _, _, access_map, _) ->
       get_all_accesses
         (fun access ->
            Int.equal (Access.compare (PathDomain.Sink.kind access) orig_access) 0)
@@ -1303,7 +1306,7 @@ let should_filter_access (_, path) =
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
 let make_results_table file_env =
-  let aggregate_post (threaded, _, accesses, _) tenv pdesc acc =
+  let aggregate_post (_ , threaded, _, accesses, _) tenv pdesc acc =
     let open ThreadSafetyDomain in
     AccessDomain.fold
       (fun pre accesses acc ->

@@ -75,14 +75,9 @@ let make_access access_path access_kind loc =
 *)
 module LocksDomain = AbstractDomain.BooleanAnd
 
-(* In this domain false<=true. The intended denotations [[.]] are
-   [[true]] = the set of all states where we know according, to annotations
-             or assertions, that we are on the UI thread (or some other specific thread).
-   [[false]] = the set of all states
-   The use of || for join in this domain enforces that, to not know for sure you are threaded,
-   it is enough to be unthreaded in one branch. (See RaceWithMainThread.java for examples)
-*)
 module ThreadsDomain = AbstractDomain.BooleanAnd
+
+module ThumbsUpDomain = AbstractDomain.BooleanAnd
 
 module PathDomain = SinkTrace.Make(TraceElem)
 
@@ -205,6 +200,7 @@ end
 
 type astate =
   {
+    thumbs_up : ThumbsUpDomain.astate;
     threads: ThreadsDomain.astate;
     locks : LocksDomain.astate;
     accesses : AccessDomain.astate;
@@ -212,14 +208,16 @@ type astate =
   }
 
 type summary =
-  ThreadsDomain.astate * LocksDomain.astate * AccessDomain.astate * AttributeSetDomain.astate
+  ThumbsUpDomain.astate * ThreadsDomain.astate * LocksDomain.astate
+  * AccessDomain.astate * AttributeSetDomain.astate
 
 let empty =
+  let thumbs_up = true in
   let threads = false in
   let locks = false in
   let accesses = AccessDomain.empty in
   let attribute_map = AccessPath.RawMap.empty in
-  { threads; locks; accesses; attribute_map; }
+  { thumbs_up; threads; locks; accesses; attribute_map; }
 
 let (<=) ~lhs ~rhs =
   if phys_equal lhs rhs
@@ -235,37 +233,42 @@ let join astate1 astate2 =
   then
     astate1
   else
+    let thumbs_up = ThreadsDomain.join astate1.thumbs_up astate2.thumbs_up in
     let threads = ThreadsDomain.join astate1.threads astate2.threads in
     let locks = LocksDomain.join astate1.locks astate2.locks in
     let accesses = AccessDomain.join astate1.accesses astate2.accesses in
     let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
-    { threads; locks; accesses; attribute_map; }
+    { thumbs_up; threads; locks; accesses; attribute_map; }
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next
   then
     prev
   else
+    let thumbs_up = ThreadsDomain.widen ~prev:prev.thumbs_up ~next:next.thumbs_up ~num_iters in
     let threads = ThreadsDomain.widen ~prev:prev.threads ~next:next.threads ~num_iters in
     let locks = LocksDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
     let accesses = AccessDomain.widen ~prev:prev.accesses ~next:next.accesses ~num_iters in
     let attribute_map =
       AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters in
-    { threads; locks; accesses; attribute_map; }
+    { thumbs_up; threads; locks; accesses; attribute_map; }
 
-let pp_summary fmt (threads, locks, accesses, return_attributes) =
+let pp_summary fmt (thumbs_up, threads, locks,
+                    accesses, return_attributes) =
   F.fprintf
     fmt
-    "Threads: %a Locks: %a Accesses %a Return Attributes: %a"
+    "\nThumbsUp: %a, Threads: %a, Locks: %a \nAccesses %a \nReturn Attributes: %a\n"
+    ThumbsUpDomain.pp thumbs_up
     ThreadsDomain.pp threads
     LocksDomain.pp locks
     AccessDomain.pp accesses
     AttributeSetDomain.pp return_attributes
 
-let pp fmt { threads; locks; accesses; attribute_map; } =
+let pp fmt { thumbs_up; threads; locks; accesses; attribute_map; } =
   F.fprintf
     fmt
-    "Threads: %a Locks: %a Accesses: %a Attribute Map: %a"
+    "\nThumbsUp: %a, Threads: %a, Locks: %a \nAccesses %a \nReturn Attributes: %a\n"
+    ThumbsUpDomain.pp thumbs_up
     ThreadsDomain.pp threads
     LocksDomain.pp locks
     AccessDomain.pp accesses
