@@ -10,7 +10,7 @@ open! IStd
 
 module CLOpt = CommandLineOption
 
-type data = { long: string; command_doc: CLOpt.command_doc }
+type data = { name: string; command_doc: CLOpt.command_doc }
 
 let inferconfig_env_var = "INFERCONFIG"
 
@@ -19,23 +19,23 @@ let infer_exe_name = "infer"
 (** Name of the infer configuration file *)
 let inferconfig_file = ".inferconfig"
 
-let command_to_long = CLOpt.[
+let command_to_name = CLOpt.[
     Analyze, "analyze"; Capture, "capture"; Compile, "compile"; Report, "report";
     ReportDiff, "reportdiff"; Run, "run";
   ]
 
-let long_of_command =
-  List.Assoc.find_exn ~equal:CLOpt.equal_command command_to_long
+let name_of_command =
+  List.Assoc.find_exn ~equal:CLOpt.equal_command command_to_name
 
-let exe_name_of_long long =
-  Printf.sprintf "%s-%s" infer_exe_name long
+let exe_name_of_command_name name =
+  Printf.sprintf "%s-%s" infer_exe_name name
 
 let exe_name_of_command cmd =
-  long_of_command cmd |> exe_name_of_long
+  name_of_command cmd |> exe_name_of_command_name
 
 let command_of_exe_name exe_name =
-  List.find_map command_to_long ~f:(fun (cmd, long) ->
-      if String.equal exe_name (exe_name_of_long long) then Some cmd
+  List.find_map command_to_name ~f:(fun (cmd, name) ->
+      if String.equal exe_name (exe_name_of_command_name name) then Some cmd
       else None)
 
 let mk_command_doc ~see_also:see_also_commands ?and_also ?environment:environment_opt
@@ -264,9 +264,9 @@ let run =
 
 let command_to_data =
   let mk cmd mk_doc =
-    let long = long_of_command cmd in
+    let name = name_of_command cmd in
     let command_doc = mk_doc (exe_name_of_command cmd) in
-    cmd, { long; command_doc } in
+    cmd, { name; command_doc } in
   CLOpt.[mk Analyze analyze; mk Capture capture; mk Compile compile;
          mk Report report; mk ReportDiff reportdiff; mk Run run]
 

@@ -356,7 +356,7 @@ let startup_action =
 let exe_usage =
   let exe_command_name = match initial_command with
     | Some CLOpt.Clang -> None (* users cannot see this *)
-    | Some command -> Some (CommandDoc.long_of_command command)
+    | Some command -> Some (CommandDoc.name_of_command command)
     | None -> None in
   Printf.sprintf "%s\nUsage: infer %s [options]\nSee `infer%s --help` for more information."
     version_string (Option.value ~default:"command" exe_command_name)
@@ -397,18 +397,16 @@ let () =
     | Clang -> assert false (* filtered out *)
     | Report -> `Add
     | Analyze | Capture | Compile | ReportDiff | Run -> `Reject in
-  let command_deprecated =
-    List.Assoc.find ~equal:CLOpt.equal_command CLOpt.[ReportDiff, ["-diff"]] in
   (* make sure we generate doc for all the commands we know about *)
   List.filter ~f:(Fn.non (CLOpt.(equal_command Clang))) CLOpt.all_commands
   |> List.iter ~f:(fun cmd ->
-      let { CommandDoc.long; command_doc } = CommandDoc.data_of_command cmd in
+      let { CommandDoc.name; command_doc } = CommandDoc.data_of_command cmd in
       let on_unknown_arg = on_unknown_arg_from_command cmd in
-      let deprecated = command_deprecated cmd in
-      CLOpt.mk_subcommand cmd ~long ~on_unknown_arg ?deprecated (Some command_doc))
+      let deprecated_long = if CLOpt.(equal_command ReportDiff) cmd then Some "diff" else None in
+      CLOpt.mk_subcommand cmd ~name ?deprecated_long ~on_unknown_arg (Some command_doc))
 
 let () =
-  CLOpt.mk_subcommand CLOpt.Clang ~long:"" ~on_unknown_arg:`Skip None
+  CLOpt.mk_subcommand CLOpt.Clang ~name:"clang" ~on_unknown_arg:`Skip None
 
 let abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1

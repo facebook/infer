@@ -604,18 +604,25 @@ let mk_rest_actions ?(parse_mode=InferCommand) ?(in_help=[]) doc ~usage decode_a
                           decode_json = fun ~inferconfig_dir:_ _ -> []} ;
   rest
 
-let mk_subcommand command ?on_unknown_arg:(on_unknown=`Reject) ?deprecated ~long ?(name=long)
+let mk_subcommand command ?on_unknown_arg:(on_unknown=`Reject) ~name ?deprecated_long
     ?parse_mode ?in_help command_doc =
   let switch () =
     curr_command := Some command;
     anon_arg_action := {!anon_arg_action with on_unknown} in
-  ignore(
-    mk ?deprecated ~long ~default:() ?parse_mode ?in_help ~meta:""
-      (Printf.sprintf "activates the %s subcommand (see $(i,`infer %s --help`))" long long)
-      ~default_to_string:(fun () -> "")
-      ~decode_json:(string_json_decoder ~long)
-      ~mk_setter:(fun _ _ -> switch ())
-      ~mk_spec:(fun _ -> Unit switch));
+  (match deprecated_long with
+   | Some long ->
+       ignore(
+         mk ~long ~default:() ?parse_mode ?in_help ~meta:"" ""
+           ~default_to_string:(fun () -> "")
+           ~decode_json:(fun ~inferconfig_dir:_ _ ->
+               raise (Arg.Bad ("Bad option in config file: " ^ long)))
+           ~mk_setter:(fun _ _ ->
+               warnf "WARNING: '%s' is deprecated. Please use '%s' instead.@\n"
+                 (dashdash long) name;
+               switch ())
+           ~mk_spec:(fun set -> Unit (fun () -> set "")))
+   | None -> ()
+  );
   subcommands := (command, (command_doc, name, in_help))::!subcommands;
   subcommand_actions := (name, switch)::!subcommand_actions
 
