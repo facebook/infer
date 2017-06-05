@@ -144,7 +144,7 @@ In general, the parameters of predicates can be constants, or variables, or regu
 
 <a name="formulas">**AL Formulas**</a>
 
-Formulas are defined using a variation of the *CTL temporal logic*. CTL is a logic expressing properties of a tree model. In the case of AL, the tree is the AST of the program. Formulas are defined according to the following grammar:
+Formulas are defined using a variation of the [*CTL temporal logic*](https://en.wikipedia.org/wiki/Computation_tree_logic). CTL is a logic expressing properties of a tree model. In the case of AL, the tree is the AST of the program. Formulas are defined according to the following grammar:
 
 ```
 formula ::= predicate 
