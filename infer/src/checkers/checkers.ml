@@ -14,8 +14,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-let verbose = ref true
-
 (** Convenience functions for checkers to print information *)
 module PP = struct
   (** Print a range of lines of the source file in [loc], including [nbefore] lines before loc
@@ -111,14 +109,11 @@ module ST = struct
 
     if not suppressed then
       begin
-        if !verbose then
-          begin
-            L.stdout "%s: %a: %s@."
-              (Localise.to_issue_id kind)
-              SourceFile.pp loc.Location.file
-              (Typ.Procname.to_string proc_name);
-            L.stdout "%s@." description
-          end;
+        L.progress "%s: %a: %s@\n"
+          (Localise.to_issue_id kind)
+          SourceFile.pp loc.Location.file
+          (Typ.Procname.to_string proc_name);
+        L.progress "%s@." description;
         Reporting.log_error proc_name ~loc ~ltr:trace exn
       end
 end

@@ -18,7 +18,7 @@ module L = Logging;
 module F = Format;
 
 let print_usage_exit err_s => {
-  L.stderr "Load Error: %s@.@." err_s;
+  L.user_error "Load Error: %s@\n@." err_s;
   Config.print_usage_exit ()
 };
 
@@ -427,7 +427,7 @@ let potential_exception_message = "potential exception at line";
 module IssuesJson = {
   let is_first_item = ref true;
   let pp_json_open fmt () => F.fprintf fmt "[@?";
-  let pp_json_close fmt () => F.fprintf fmt "]\n@?";
+  let pp_json_close fmt () => F.fprintf fmt "]@\n@?";
 
   /** Write bug report in JSON format */
   let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log => {
@@ -478,7 +478,7 @@ module IssuesJson = {
               let potential_exception_message =
                 Format.asprintf
                   "%a: %s %d" MarkupFormatter.pp_bold "Note" potential_exception_message line;
-              Format.sprintf "%s\n%s" base_qualifier potential_exception_message
+              Format.sprintf "%s@\n%s" base_qualifier potential_exception_message
             }
           } else {
             base_qualifier
@@ -795,7 +795,7 @@ module Summary = {
   let pp_summary_out summary => {
     let proc_name = Specs.get_proc_name summary;
     if (CLOpt.equal_command Config.command CLOpt.Report && not Config.quiet) {
-      L.stdout "Procedure: %a@\n%a@." Typ.Procname.pp proc_name Specs.pp_summary_text summary
+      L.result "Procedure: %a@\n%a@." Typ.Procname.pp proc_name Specs.pp_summary_text summary
     }
   };
 
@@ -869,24 +869,24 @@ module PreconditionStats = {
     switch (Prop.CategorizePreconditions.categorize preconditions) {
     | Prop.CategorizePreconditions.Empty =>
       incr nr_empty;
-      L.stdout "Procedure: %a footprint:Empty@." Typ.Procname.pp proc_name
+      L.result "Procedure: %a footprint:Empty@." Typ.Procname.pp proc_name
     | Prop.CategorizePreconditions.OnlyAllocation =>
       incr nr_onlyallocation;
-      L.stdout "Procedure: %a footprint:OnlyAllocation@." Typ.Procname.pp proc_name
+      L.result "Procedure: %a footprint:OnlyAllocation@." Typ.Procname.pp proc_name
     | Prop.CategorizePreconditions.NoPres =>
       incr nr_nopres;
-      L.stdout "Procedure: %a footprint:NoPres@." Typ.Procname.pp proc_name
+      L.result "Procedure: %a footprint:NoPres@." Typ.Procname.pp proc_name
     | Prop.CategorizePreconditions.DataConstraints =>
       incr nr_dataconstraints;
-      L.stdout "Procedure: %a footprint:DataConstraints@." Typ.Procname.pp proc_name
+      L.result "Procedure: %a footprint:DataConstraints@." Typ.Procname.pp proc_name
     }
   };
   let pp_stats () => {
-    L.stdout "@.Precondition stats@.";
-    L.stdout "Procedures with no preconditions: %d@." !nr_nopres;
-    L.stdout "Procedures with empty precondition: %d@." !nr_empty;
-    L.stdout "Procedures with only allocation conditions: %d@." !nr_onlyallocation;
-    L.stdout "Procedures with data constraints: %d@." !nr_dataconstraints
+    L.result "@.Precondition stats@.";
+    L.result "Procedures with no preconditions: %d@." !nr_nopres;
+    L.result "Procedures with empty precondition: %d@." !nr_empty;
+    L.result "Procedures with only allocation conditions: %d@." !nr_onlyallocation;
+    L.result "Procedures with data constraints: %d@." !nr_dataconstraints
   };
 };
 
@@ -1130,8 +1130,8 @@ module AnalysisResults = {
     let load_file fname =>
       switch (Specs.load_summary (DB.filename_from_string fname)) {
       | None =>
-        L.stderr "Error: cannot open file %s@." fname;
-        exit 0
+        L.user_error "Error: cannot open file %s@." fname;
+        exit 1
       | Some summary => summaries := [(fname, summary), ...!summaries]
       };
     apply_without_gc (List.iter f::load_file) (spec_files_from_cmdline ());
@@ -1157,8 +1157,8 @@ module AnalysisResults = {
     let do_spec f fname =>
       switch (Specs.load_summary (DB.filename_from_string fname)) {
       | None =>
-        L.stderr "Error: cannot open file %s@." fname;
-        exit 0
+        L.user_error "Error: cannot open file %s@." fname;
+        exit 1
       | Some summary => f (fname, summary)
       };
     let iterate f => List.iter f::(do_spec f) sorted_spec_files;
@@ -1195,8 +1195,8 @@ module AnalysisResults = {
       switch (load_analysis_results_from_file (DB.filename_from_string fname)) {
       | Some r => iterator_of_summary_list r
       | None =>
-        L.stderr "Error: cannot open analysis results file %s@." fname;
-        exit 0
+        L.user_error "Error: cannot open analysis results file %s@." fname;
+        exit 1
       }
     }
   };

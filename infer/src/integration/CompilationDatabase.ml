@@ -9,6 +9,8 @@
 
 open! IStd
 
+module L = Logging
+
 type compilation_data = {
   dir : string;
   command : string;
@@ -44,7 +46,7 @@ let decode_json_file (database : t) json_format =
     | `Escaped _ ->
         Utils.with_process_in (Printf.sprintf "/bin/sh -c 'printf \"%%s\" %s'" s) input_line
         |> fst in
-  Logging.out "parsing compilation database from %s@\n" json_path;
+  L.(debug Capture Quiet) "parsing compilation database from %s@\n" json_path;
   let exit_format_error () =
     failwith ("Json file doesn't have the expected format") in
   let json = Yojson.Basic.from_file json_path in
@@ -85,5 +87,5 @@ let decode_json_file (database : t) json_format =
 let from_json_files db_json_files =
   let db = empty () in
   List.iter ~f:(decode_json_file db) db_json_files;
-  Logging.out "created database with %d entries@\n" (get_size db);
+  L.(debug Capture Quiet) "created database with %d entries@\n" (get_size db);
   db

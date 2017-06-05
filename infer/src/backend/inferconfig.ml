@@ -169,7 +169,7 @@ module FileOrProcMatcher = struct
       | None -> pp_string fmt "None"
       | Some value -> Format.fprintf fmt "%a" pp_value value in
     let pp_key_value pp_value fmt (key, value) =
-      Format.fprintf fmt "  %s: %a,\n" key (pp_option pp_value) value in
+      Format.fprintf fmt "  %s: %a,@\n" key (pp_option pp_value) value in
     let pp_method_pattern fmt mp =
       let pp_params fmt l =
         Format.fprintf fmt "[%a]"
@@ -179,13 +179,13 @@ module FileOrProcMatcher = struct
         (pp_key_value pp_string) ("method", mp.method_name)
         (pp_key_value pp_params) ("parameters", mp.parameters)
     and pp_source_contains fmt sc =
-      Format.fprintf fmt "  pattern: %s\n" sc in
+      Format.fprintf fmt "  pattern: %s@\n" sc in
     match pattern with
     | Method_pattern (language, mp) ->
-        Format.fprintf fmt "Method pattern (%s) {\n%a}\n"
+        Format.fprintf fmt "Method pattern (%s) {@\n%a}@\n"
           (Config.string_of_language language) pp_method_pattern mp
     | Source_contains (language, sc) ->
-        Format.fprintf fmt "Source contains (%s) {\n%a}\n"
+        Format.fprintf fmt "Source contains (%s) {@\n%a}@\n"
           (Config.string_of_language language) pp_source_contains sc
 
 end (* of module FileOrProcMatcher *)
@@ -380,7 +380,7 @@ let test () =
          let matching = matching_analyzers source_file in
          if matching <> [] then
            let matching_s = String.concat ~sep:", " (List.map ~f:fst matching) in
-           L.stderr "%s -> {%s}@."
+           L.result "%s -> {%s}@."
              (SourceFile.to_rel_path source_file)
              matching_s)
     (Sys.getcwd ())

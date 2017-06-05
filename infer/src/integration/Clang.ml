@@ -8,38 +8,49 @@
  *)
 open! IStd
 
+module F = Format
+
+module L = Logging
+
 type compiler =
   | Clang
   | Make [@@deriving compare]
 
-let extended_env_to_string (env : Unix.env) =
-  match env with
-  | `Replace values
-  | `Extend values ->
-      let concat_elt (el1, el2) = String.concat ~sep:"=" [el1; el2] in
-      String.concat ~sep:"\n" (List.map ~f:concat_elt values)
-  | `Replace_raw values ->
-      String.concat ~sep:"\n" values
+let rec pp_list pp fmt = function
+  | [] -> ()
+  | x::[] -> pp fmt x
+  | x::tl -> F.fprintf fmt "%a@\n%a" pp x (pp_list pp) tl
 
-let env_to_string ?exclude_var env =
-  let env_element_to_string elt acc =
-    match exclude_var with
-    | Some var when String.is_prefix ~prefix:var elt -> ""
-    | _ ->
-        String.concat [elt; acc] ~sep:"\n" in
-  Array.fold_right ~init:"" ~f:env_element_to_string env
+let pp_env fmt env =
+  pp_list (fun fmt s -> F.fprintf fmt "%s" s) fmt env
+
+let pp_extended_env fmt (env : Unix.env) =
+  let pp_pair fmt (var, value) =
+    F.fprintf fmt "%s=%s" var value in
+  let pp_pair_list = pp_list pp_pair in
+  match env with
+  | `Replace values ->
+      pp_pair_list fmt values
+  | `Extend values ->
+      let is_extended s =
+        match String.lsplit2 s ~on:'=' with
+        | Some (var, _) -> List.exists ~f:(fun (var', _) -> String.equal var var') values
+        | None -> false in
+      let env_not_extended = Unix.environment () |> Array.to_list
+                             |> List.filter ~f:(Fn.non is_extended) in
+      F.fprintf fmt "%a@\n%a" pp_env env_not_extended pp_pair_list values
+  | `Replace_raw values ->
+      pp_env fmt values
 
 let capture compiler ~prog ~args =
   match compiler with
-  | Clang -> ClangWrapper.exe ~prog ~args
+  | Clang ->
+      ClangWrapper.exe ~prog ~args
   | Make ->
       let path_var = "PATH" in
       let new_path = Config.wrappers_dir ^ ":" ^ (Sys.getenv_exn path_var) in
       let extended_env = `Extend [path_var, new_path] in
-      Logging.out "Running command %s with env:\n%s %s\n@."
-        prog
-        (env_to_string ~exclude_var:path_var (Unix.environment ()))
-        (extended_env_to_string extended_env);
+      L.environment_info "Running command %s with env:@\n%a@\n@." prog pp_extended_env extended_env;
       Unix.fork_exec ~prog:prog ~args:(prog::args) ~env:extended_env ()
       |> Unix.waitpid
       |> function

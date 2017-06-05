@@ -132,7 +132,8 @@ let remove_results_dir () =
 let create_results_dir () =
   Unix.mkdir_p (Config.results_dir ^/ Config.attributes_dir_name) ;
   Unix.mkdir_p (Config.results_dir ^/ Config.captured_dir_name) ;
-  Unix.mkdir_p (Config.results_dir ^/ Config.specs_dir_name)
+  Unix.mkdir_p (Config.results_dir ^/ Config.specs_dir_name);
+  L.setup_log_file ()
 
 let clean_results_dir () =
   let dirs = ["classnames"; "filelists"; "multicore"; "sources"; "log";
@@ -174,9 +175,9 @@ let check_captured_empty driver_mode =
   if Utils.dir_is_empty Config.captured_dir && not Config.merge then ((
       match clean_command_opt with
       | Some clean_command ->
-          Logging.stderr "@\nNothing to compile. Try running `%s` first.@." clean_command
+          L.user_warning "@\nNothing to compile. Try running `%s` first.@." clean_command
       | None ->
-          Logging.stderr "@\nNothing to compile. Try cleaning the build first.@."
+          L.user_warning "@\nNothing to compile. Try cleaning the build first.@."
     );
      true
     ) else
@@ -219,11 +220,10 @@ let check_xcpretty () =
   match Unix.system "xcpretty --version" with
   | Ok () -> ()
   | Error _ ->
-      L.stderr
-        "@.xcpretty not found in the path. Please consider installing xcpretty \
+      L.user_error
+        "@\nxcpretty not found in the path. Please consider installing xcpretty \
          for a more robust integration with xcodebuild. Otherwise use the option \
-         --no-xcpretty.@.@.";
-      exit 1
+         --no-xcpretty.@\n@."
 
 let capture_with_compilation_database db_files =
   let root = Unix.getcwd () in
@@ -363,7 +363,8 @@ let report () =
           "--results-dir"; Config.results_dir
         ] in
       if is_error (Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ())) then
-        L.stderr "** Error running the reporting script:@\n**   %s %s@\n** See error above@."
+        L.external_error
+          "** Error running the reporting script:@\n**   %s %s@\n** See error above@."
           prog (String.concat ~sep:" " args)
 
 let analyze driver_mode =
@@ -384,7 +385,7 @@ let analyze driver_mode =
   if (should_analyze || should_report) &&
      (((Sys.file_exists Config.captured_dir) <> `Yes) ||
       check_captured_empty driver_mode) then (
-    L.stderr "There was nothing to analyze.@\n@." ;
+    L.user_error "There was nothing to analyze.@\n@." ;
   ) else if should_analyze then
     execute_analyze ();
   if should_report && Config.report then report ()
@@ -399,12 +400,13 @@ let fail_on_issue_epilogue () =
   | None -> ()
 
 let log_infer_args driver_mode =
-  L.out "INFER_ARGS = %s@\n" (Option.value (Sys.getenv CLOpt.args_env_var) ~default:"<not found>");
-  List.iter ~f:(L.out "anon arg: %s@\n") Config.anon_args;
-  List.iter ~f:(L.out "rest arg: %s@\n") Config.rest;
-  L.out "Project root = %s@\n" Config.project_root;
-  L.out "CWD = %s@\n" (Sys.getcwd ());
-  L.out "Driver mode:@\n%a@." pp_driver_mode driver_mode
+  L.environment_info "INFER_ARGS = %s@\n"
+    (Option.value (Sys.getenv CLOpt.args_env_var) ~default:"<not found>");
+  List.iter ~f:(L.environment_info "anon arg: %s@\n") Config.anon_args;
+  List.iter ~f:(L.environment_info "rest arg: %s@\n") Config.rest;
+  L.environment_info "Project root = %s@\n" Config.project_root;
+  L.environment_info "CWD = %s@\n" (Sys.getcwd ());
+  L.environment_info "Driver mode:@\n%a@." pp_driver_mode driver_mode
 
 let assert_supported_mode required_analyzer requested_mode_string =
   let analyzer_enabled = match required_analyzer with
@@ -497,9 +499,7 @@ let infer_mode () =
           Config.(buck || continue_capture || maven || reactive_mode)) then
     remove_results_dir () ;
   create_results_dir () ;
-  (* re-set log files, as default files were in results_dir removed above *)
-  if not Config.buck_cache_mode then L.set_log_file_identifier CLOpt.Run None;
-  if CLOpt.is_originator then L.do_out "%s@\n" Config.version_string ;
+  if CLOpt.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
   if Config.debug_mode || Config.stats_mode then log_infer_args driver_mode ;
   if Config.dump_duplicate_symbols then reset_duplicates_file ();
   (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
@@ -528,7 +528,7 @@ let differential_mode () =
   (* at least one report must be passed in input to compute differential *)
   (match Config.report_current, Config.report_previous with
    | None, None ->
-       failwith "Expected at least one argument among 'report-current' and 'report-previous'\n"
+       failwith "Expected at least one argument among 'report-current' and 'report-previous'@\n"
    | _ -> ());
   let load_report filename_opt : Jsonbug_t.report =
     let empty_report = [] in
@@ -550,9 +550,11 @@ let differential_mode () =
 
 let assert_results_dir advice =
   if Sys.file_exists Config.results_dir <> `Yes then (
-    L.stderr "ERROR: results directory %s does not exist@\nERROR: %s@." Config.results_dir advice;
+    L.user_error "ERROR: results directory %s does not exist@\nERROR: %s@."
+      Config.results_dir advice;
     exit 1
-  )
+  );
+  L.setup_log_file ()
 
 let setup_results_dir () =
   match Config.command with
@@ -568,8 +570,10 @@ let () =
   setup_results_dir ();
   match Config.command with
   | Analyze ->
-      Logging.set_log_file_identifier
-        CommandLineOption.Analyze (Option.map ~f:Filename.basename Config.cluster_cmdline);
+      let pp_cluster_opt fmt = function
+        | None -> F.fprintf fmt "(no cluster)"
+        | Some cluster -> F.fprintf fmt "of cluster %s" (Filename.basename cluster) in
+      L.environment_info "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline;
       InferAnalyze.register_perf_stats_report ();
       analyze Analyze
   | Clang ->
@@ -577,6 +581,9 @@ let () =
         | prog::args -> prog, args
         | [] -> assert false (* Sys.argv is never empty *) in
       ClangWrapper.exe ~prog ~args
-  | Report -> InferPrint.main_from_config ()
-  | ReportDiff -> differential_mode ()
-  | Capture | Compile | Run  -> infer_mode ()
+  | Report ->
+      InferPrint.main_from_config ()
+  | ReportDiff ->
+      differential_mode ()
+  | Capture | Compile | Run  ->
+      infer_mode ()

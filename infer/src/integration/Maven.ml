@@ -87,11 +87,11 @@ let add_infer_profile_to_xml dir maven_xml infer_xml =
         Xmlm.output xml_out elt_in;
         (match tag_stack with
          | "id"::"profile"::"profiles"::_ when String.equal data infer_profile_name ->
-             L.do_out "Found infer profile, not adding one@.";
+             L.(debug Capture Quiet) "Found infer profile, not adding one@.";
              found_infer_profile := true
          | "module"::"modules"::_ ->
              let abs_data = dir ^/ data in
-             L.do_out "Adding maven module %s@." abs_data;
+             L.(debug Capture Quiet) "Adding maven module %s@." abs_data;
              pom_worklist := abs_data::!pom_worklist
          | _ -> ()
         );
@@ -149,7 +149,7 @@ let capture ~prog ~args =
   done;
   let extra_args = "-P"::infer_profile_name::[] in
   let capture_args = args @ extra_args in
-  L.do_out "Running maven capture:@\n%s %s@." prog
+  L.(debug Capture Quiet) "Running maven capture:@\n%s %s@." prog
     (String.concat ~sep:" " (List.map ~f:(Printf.sprintf "'%s'") capture_args));
   (* let children infer processes know that they are spawned by Maven *)
   Unix.fork_exec ~prog ~args:(prog::capture_args) ~env:Config.env_inside_maven ()

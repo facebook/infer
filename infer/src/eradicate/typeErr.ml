@@ -243,13 +243,13 @@ let report_error_now tenv
     (st_report_error : st_report_error) err_instance loc pdesc : unit =
   let pname = Procdesc.get_proc_name pdesc in
   let do_print ew_string kind s =
-    L.stdout "%a:%d " SourceFile.pp loc.Location.file loc.Location.line;
+    L.progress "%a:%d " SourceFile.pp loc.Location.file loc.Location.line;
     let mname = match pname with
       | Typ.Procname.Java pname_java ->
           Typ.Procname.java_get_method pname_java
       | _ ->
           Typ.Procname.to_simplified_string pname in
-    L.stdout "%s %s in %s %s@." ew_string (Localise.to_issue_id kind) mname s in
+    L.progress "%s %s in %s %s@." ew_string (Localise.to_issue_id kind) mname s in
 
   let is_err, kind, description, advice, field_name, origin_loc = match err_instance with
     | Condition_redundant (b, s_opt, nonnull) ->

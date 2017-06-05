@@ -1356,7 +1356,7 @@ module Normalize = struct
       | Var _ ->
           Estruct ([], inst)
       | te ->
-          L.out "trying to create ptsto with type: %a@\n@." (Sil.pp_texp_full Pp.text) te;
+          L.internal_error "trying to create ptsto with type: %a@." (Sil.pp_texp_full Pp.text) te;
           assert false in
     let strexp : Sil.strexp = match expo with
       | Some e -> Eexp (e, inst)
@@ -2149,10 +2149,10 @@ let exist_quantify tenv fav (prop : normal t) : normal t =
       if Sil.equal_subst sub prop.sub then prop
       else unsafe_cast_to_normal (set prop ~sub) in
     (*
-    L.out "@[<2>.... Existential Quantification ....\n";
-    L.out "SUB:%a\n" pp_sub prop'.sub;
-    L.out "PI:%a\n" pp_pi prop'.pi;
-    L.out "PROP:%a\n@." pp_prop prop';
+    L.out "@[<2>.... Existential Quantification ....@\n";
+    L.out "SUB:%a@\n" pp_sub prop'.sub;
+    L.out "PI:%a@\n" pp_pi prop'.pi;
+    L.out "PROP:%a@\n@." pp_prop prop';
     *)
     prop_ren_sub tenv ren_sub prop'
 
@@ -2361,10 +2361,10 @@ let prop_iter_make_id_primed tenv id iter =
         begin
           match eq with
           | Aeq (Var id1, e1) when Sil.ident_in_exp id1 e1 ->
-              L.out "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n";
-              L.out "Broken Assumption: id notin e for all (id,e) in sub@\n";
-              L.out "(id,e) : (%a,%a)@\n" (Ident.pp Pp.text) id1 Exp.pp e1;
-              L.out "PROP : %a@\n@." (pp_prop Pp.text) (prop_iter_to_prop tenv iter);
+              L.internal_error "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n";
+              L.internal_error "Broken Assumption: id notin e for all (id,e) in sub@\n";
+              L.internal_error "(id,e) : (%a,%a)@\n" (Ident.pp Pp.text) id1 Exp.pp e1;
+              L.internal_error "PROP : %a@\n@." (pp_prop Pp.text) (prop_iter_to_prop tenv iter);
               assert false
           | Aeq (Var id1, e1) when Ident.equal pid id1 ->
               split pairs_unpid ((id1, e1):: pairs_pid) eqs_cur

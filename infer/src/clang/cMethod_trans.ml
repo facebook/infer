@@ -404,8 +404,8 @@ let create_local_procdesc ?(set_objc_accessor_attr=false) trans_unit_ctx cfg ten
         ~shift:(List.length captured_mangled)
         (CMethod_signature.ms_get_args ms) in
     let source_range = CMethod_signature.ms_get_loc ms in
-    Logging.out_debug "\nCreating a new procdesc for function: '%s'\n@." pname;
-    Logging.out_debug "\nms = %s\n@." (CMethod_signature.ms_to_string ms);
+    L.(debug Capture Verbose) "@\nCreating a new procdesc for function: '%s'@\n@." pname;
+    L.(debug Capture Verbose) "@\nms = %s@\n@." (CMethod_signature.ms_to_string ms);
     let loc_start = CLocation.get_sil_location_from_range trans_unit_ctx source_range true in
     let loc_exit = CLocation.get_sil_location_from_range trans_unit_ctx source_range false in
     let ret_type = get_return_type tenv ms in

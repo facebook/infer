@@ -1235,7 +1235,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         | [], _ ->
             ret_old_path [prop_]
         | _ ->
-            L.out "Pvar %a appears on the LHS of >1 heap predicate!@." (Pvar.pp Pp.text) pvar;
+            L.internal_error "Pvar %a appears on the LHS of >1 heap predicate!@."
+              (Pvar.pp Pp.text) pvar;
             assert false
       end
   | Sil.Abstract _ ->

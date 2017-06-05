@@ -149,7 +149,7 @@ let update_file_with_lock dir fname update =
     let n = Unix.lseek fd 0L ~mode:Unix.SEEK_SET in
     if n <> 0L then
       begin
-        L.stderr "reset_file: lseek fail@.";
+        L.internal_error "reset_file: lseek fail@.";
         assert false
       end in
   Utils.create_dir dir;
@@ -164,7 +164,7 @@ let update_file_with_lock dir fname update =
     Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L;
     Unix.close fd
   ) else (
-    L.out "@.save_with_lock: fail on path: %s@." path;
+    L.internal_error "@\nsave_with_lock: fail on path: %s@." path;
     assert false
   )
 

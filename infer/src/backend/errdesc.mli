@@ -132,7 +132,7 @@ val explain_memory_access : Tenv.t -> Localise.deref_str -> 'a Prop.t -> Locatio
 val explain_null_test_after_dereference :
   Tenv.t -> Exp.t -> Procdesc.Node.t -> int -> Location.t -> Localise.error_desc
 
-(** Print a warning to the err stream at the given location (note: only prints in developer mode) *)
+(** warn at the given location *)
 val warning_err : Location.t -> ('a, Format.formatter, unit) format -> 'a
 
 (* offset of an expression found following a program variable *)

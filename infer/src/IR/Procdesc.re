@@ -120,7 +120,7 @@ module Node = {
   let get_proc_name node =>
     switch node.pname_opt {
     | None =>
-      L.out "get_proc_name: at node %d@\n" node.id;
+      L.internal_error "get_proc_name: at node %d@\n" node.id;
       assert false
     | Some pname => pname
     };
@@ -265,7 +265,7 @@ module Node = {
       | Start_node _ => "Start"
       | Join_node => "Join"
       };
-    let pp fmt => F.fprintf fmt "%s\n%a@?" str (pp_instrs pe None sub_instrs::true) node;
+    let pp fmt => F.fprintf fmt "%s@\n%a@?" str (pp_instrs pe None sub_instrs::true) node;
     F.asprintf "%t" pp
   };
 };

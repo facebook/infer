@@ -138,14 +138,15 @@ let is_classname_cached cn =
    In init - mode, finds out whether this class contains initializers at all,
    in this case translates it. In standard mode, all methods are translated *)
 let create_icfg source_file linereader program icfg cn node =
-  L.out_debug "\tclassname: %s@." (JBasics.cn_name cn);
+  L.(debug Capture Verbose) "\tclassname: %s@." (JBasics.cn_name cn);
   if Config.dependency_mode && not (is_classname_cached cn) then
     cache_classname cn;
   let translate m =
     let proc_name = JTransType.translate_method_name m in
     if JClasspath.is_model proc_name then
       (* do not translate the method if there is a model for it *)
-      L.out_debug "Skipping method with a model: %s@." (Typ.Procname.to_string proc_name)
+      L.(debug Capture Verbose) "Skipping method with a model: %s@."
+        (Typ.Procname.to_string proc_name)
     else
       try
         (* each procedure has different scope: start names from id 0 *)
@@ -161,7 +162,7 @@ let create_icfg source_file linereader program icfg cn node =
         end;
         Cg.add_defined_node icfg.JContext.cg proc_name
       with JBasics.Class_structure_error _ ->
-        L.stderr
+        L.internal_error
           "create_icfg raised JBasics.Class_structure_error on %a@."
           Typ.Procname.pp proc_name in
   Javalib.m_iter translate node

@@ -38,10 +38,9 @@ struct
   let set_uninitialized node (typ : Typ.t) loc mem = match typ.desc with
     | Tint _ | Tfloat _ -> Dom.Mem.weak_update_heap loc Dom.Val.Itv.top mem
     | _ ->
-        if Config.bo_debug >= 3 then
-          L.out "/!\\ Do not know how to uninitialize type %a at %a@\n"
-            (Typ.pp Pp.text) typ
-            Location.pp (CFG.loc node);
+        L.(debug BufferOverrun Verbose) "/!\\ Do not know how to uninitialize type %a at %a@\n"
+          (Typ.pp Pp.text) typ
+          Location.pp (CFG.loc node);
         mem
 
   (* NOTE: heuristic *)
@@ -65,9 +64,8 @@ struct
           |> Dom.Mem.add_stack (Loc.of_id id) v
           |> set_uninitialized node typ (Dom.Val.get_array_locs v)
       | _ ->
-          if Config.bo_debug >= 3 then
-            L.out "/!\\ Do not know where to model malloc at %a@\n"
-              Location.pp (CFG.loc node);
+          L.(debug BufferOverrun Verbose) "/!\\ Do not know where to model malloc at %a@\n"
+            Location.pp (CFG.loc node);
           mem
 
   let model_realloc
@@ -81,9 +79,8 @@ struct
     | Some (id, _) ->
         Dom.Mem.add_stack (Loc.of_id id) value mem
     | None ->
-        if Config.bo_debug >= 3 then
-          L.out "/!\\ Do not know where to model value %a@\n"
-            Dom.Val.pp value;
+        L.(debug BufferOverrun Verbose) "/!\\ Do not know where to model value %a@\n"
+          Dom.Val.pp value;
         mem
 
   let model_infer_print
@@ -91,10 +88,9 @@ struct
     = fun params mem loc ->
       match params with
       | (e, _) :: _ ->
-          if Config.bo_debug >= 1 then
-            L.out "@[<v>=== Infer Print === at %a@,%a@]%!"
-              Location.pp loc
-              Dom.Val.pp (Sem.eval e mem loc);
+          L.(debug BufferOverrun Quiet) "@[<v>=== Infer Print === at %a@,%a@]%!"
+            Location.pp loc
+            Dom.Val.pp (Sem.eval e mem loc);
           mem
       | _ -> mem
 
@@ -129,10 +125,9 @@ struct
       | "__set_array_length" -> model_infer_set_array_length pname node params mem loc
       | "strlen" -> model_by_value Dom.Val.Itv.nat ret mem
       | proc_name ->
-          if Config.bo_debug >= 3 then
-            L.out "/!\\ Unknown call to %s at %a@\n"
-              proc_name
-              Location.pp loc;
+          L.(debug BufferOverrun Verbose) "/!\\ Unknown call to %s at %a@\n"
+            proc_name
+            Location.pp loc;
           model_by_value Dom.Val.Itv.top ret mem
 
   let rec declare_array
@@ -191,10 +186,9 @@ struct
             in
             (Dom.Mem.add_heap field v mem, sym_num + 4)
         | _ ->
-            if Config.bo_debug >= 3 then
-              L.out "/!\\ decl_fld of unhandled type: %a at %a@."
-                (Typ.pp Pp.text) typ
-                Location.pp (CFG.loc node);
+            L.(debug BufferOverrun Verbose) "/!\\ decl_fld of unhandled type: %a at %a@."
+              (Typ.pp Pp.text) typ
+              Location.pp (CFG.loc node);
             (mem, sym_num)
       in
       match typ.Typ.desc with
@@ -222,8 +216,8 @@ struct
             in
             (mem, inst_num + 1, sym_num)
         | _ ->
-            if Config.bo_debug >= 3 then
-              L.out "declare_symbolic_parameter of unhandled type: %a@." (Typ.pp Pp.text) typ;
+            L.(debug BufferOverrun Verbose) "declare_symbolic_parameter of unhandled type: %a@."
+              (Typ.pp Pp.text) typ;
             (mem, inst_num, sym_num) (* TODO: add other cases if necessary *)
       in
       List.fold ~f:add_formal ~init:(mem, inst_num, 0) (Sem.get_formals pdesc)
@@ -248,16 +242,13 @@ struct
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit
     = fun instr pre post ->
-      if Config.bo_debug >= 2 then
-        begin
-          L.out "@\n@\n================================@\n";
-          L.out "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre;
-          L.out "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr;
-          L.out "@\n@\n";
-          L.out "@[<v 2>Post-state : @,%a" Dom.Mem.pp post;
-          L.out "@]@\n";
-          L.out "================================@\n@."
-        end
+      L.(debug BufferOverrun Medium) "@\n@\n================================@\n";
+      L.(debug BufferOverrun Medium) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre;
+      L.(debug BufferOverrun Medium) "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr;
+      L.(debug BufferOverrun Medium) "@\n@\n";
+      L.(debug BufferOverrun Medium) "@[<v 2>Post-state : @,%a" Dom.Mem.pp post;
+      L.(debug BufferOverrun Medium) "@]@\n";
+      L.(debug BufferOverrun Medium) "================================@\n@."
 
   let exec_instr
     : Dom.Mem.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate
@@ -305,10 +296,9 @@ struct
             declare_symbolic_parameter pdesc tenv node inst_num mem
         | Call (_, fun_exp, _, loc, _) ->
             let () =
-              if Config.bo_debug >= 3 then
-                L.out "/!\\ Call to non-const function %a at %a"
-                  Exp.pp fun_exp
-                  Location.pp loc
+              L.(debug BufferOverrun Verbose) "/!\\ Call to non-const function %a at %a"
+                Exp.pp fun_exp
+                Location.pp loc
             in
             mem
         | Remove_temps _
@@ -355,11 +345,10 @@ struct
           let size = ArrayBlk.sizeof arr in
           let offset = ArrayBlk.offsetof arr in
           let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
-          (if Config.bo_debug >= 2 then
-             (L.out "@[<v 2>Add condition :@,";
-              L.out "array: %a@," ArrayBlk.pp arr;
-              L.out "  idx: %a@," Itv.pp idx;
-              L.out "@]@."));
+          L.(debug BufferOverrun Verbose) "@[<v 2>Add condition :@,";
+          L.(debug BufferOverrun Verbose) "array: %a@," ArrayBlk.pp arr;
+          L.(debug BufferOverrun Verbose) "  idx: %a@," Itv.pp idx;
+          L.(debug BufferOverrun Verbose) "@]@.";
           if size <> Itv.bot && idx <> Itv.bot then
             Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx cond_set
           else cond_set
@@ -382,13 +371,12 @@ struct
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.ConditionSet.t -> unit
     = fun instr pre cond_set ->
-      if Config.bo_debug >= 2 then
-        (L.out "@\n@\n================================@\n";
-         L.out "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre;
-         L.out "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr;
-         L.out "@[<v 2>@\n@\n%a" Dom.ConditionSet.pp cond_set;
-         L.out "@]@\n";
-         L.out "================================@\n@.")
+      L.(debug BufferOverrun Verbose) "@\n@\n================================@\n";
+      L.(debug BufferOverrun Verbose) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre;
+      L.(debug BufferOverrun Verbose) "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr;
+      L.(debug BufferOverrun Verbose) "@[<v 2>@\n@\n%a" Dom.ConditionSet.pp cond_set;
+      L.(debug BufferOverrun Verbose) "@]@\n";
+      L.(debug BufferOverrun Verbose) "================================@\n@."
 
   let is_last_statement_of_if_branch rem_instrs node =
     if rem_instrs <> [] then false
@@ -512,7 +500,7 @@ let compute_post
 
 let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit
   = fun proc_name s ->
-    L.out "@\n@[<v 2>Summary of %a :@,%a@]@."
+    L.(debug BufferOverrun Medium) "@\n@[<v 2>Summary of %a :@,%a@]@."
       Typ.Procname.pp proc_name
       Dom.Summary.pp_summary s
 

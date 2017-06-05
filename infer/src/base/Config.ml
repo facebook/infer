@@ -254,11 +254,11 @@ type dynamic_dispatch_policy = [
 
 (** Compile time configuration values *)
 
-let version_string =
-  "Infer version "
-  ^ Version.versionString
-  ^ "\nCopyright 2009 - present Facebook. All Rights Reserved."
+let pp_version fmt () =
+  F.fprintf fmt "Infer version %s@\nCopyright 2009 - present Facebook. All Rights Reserved."
+    Version.versionString
 
+let version_string = F.asprintf "%a" pp_version ()
 
 (** System call configuration values *)
 
@@ -645,10 +645,6 @@ and bootclasspath =
     ~in_help:CLOpt.[Capture, manual_java]
     "Specify the Java bootclasspath"
 
-and bo_debug =
-  CLOpt.mk_int ~default:0 ~long:"bo-debug"
-    ~in_help:CLOpt.[Analyze, manual_buffer_overrun] "Debug mode for buffer-overrun checker"
-
 (** Automatically set when running from within Buck *)
 and buck =
   CLOpt.mk_bool ~long:"buck"
@@ -778,9 +774,13 @@ and cxx =
     "Analyze C++ methods"
 
 and (
+  bo_debug,
   developer_mode,
   debug,
   debug_exceptions,
+  debug_level_analysis,
+  debug_level_capture,
+  debug_level_linters,
   default_linters,
   failures_allowed,
   filtering,
@@ -795,14 +795,39 @@ and (
   write_html,
   write_dotty
 ) =
-  let failures_allowed =
-    CLOpt.mk_bool ~deprecated_no:["-no_failures_allowed"] ~long:"failures-allowed" ~default:true
-      "Fail if at least one of the translations fails (clang only)"
+  let all_generic_manuals =
+    List.filter_map  CLOpt.all_commands
+      ~f:(fun cmd ->
+          if CLOpt.(equal_command cmd Clang) then None
+          else Some (cmd, manual_generic)) in
+
+  let bo_debug =
+    CLOpt.mk_int ~default:0 ~long:"bo-debug"
+      ~in_help:CLOpt.[Analyze, manual_buffer_overrun] "Debug level for buffer-overrun checker (0-4)"
+
+  and debug_level_analysis =
+    CLOpt.mk_int ~long:"debug-level-analysis" ~default:0
+      ~in_help:all_generic_manuals
+      "Debug level for the analysis. See $(b,--debug-level) for accepted values."
+
+  and debug_level_capture =
+    CLOpt.mk_int ~long:"debug-level-capture" ~default:0
+      ~in_help:all_generic_manuals
+      "Debug level for the capture. See $(b,--debug-level) for accepted values."
+
+  and debug_level_linters =
+    CLOpt.mk_int ~long:"debug-level-linters" ~default:0
+      ~in_help:(CLOpt.(Capture, manual_clang_linters)::all_generic_manuals)
+      "Debug level for the linters. See $(b,--debug-level) for accepted values."
 
   and developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
       ~default:(Option.value_map ~default:false ~f:(CLOpt.(equal_command Report)) initial_command)
       "Show internal exceptions"
+
+  and failures_allowed =
+    CLOpt.mk_bool ~deprecated_no:["-no_failures_allowed"] ~long:"failures-allowed" ~default:true
+      "Fail if at least one of the translations fails (clang only)"
 
   and filtering =
     CLOpt.mk_bool ~deprecated_no:["nf"] ~long:"filtering" ~short:'f' ~default:true
@@ -839,15 +864,33 @@ and (
     CLOpt.mk_bool ~long:"write-dotty"
       "Produce dotty files for specs in the results directory"
   in
+
+  let set_debug_level level =
+    bo_debug := level;
+    debug_level_analysis := level;
+    debug_level_capture := level;
+    debug_level_linters := level in
+
   let debug =
     CLOpt.mk_bool_group ~deprecated:["debug"] ~long:"debug" ~short:'g'
-      ~in_help:CLOpt.[Capture, manual_generic; Report, manual_generic; Run, manual_generic]
-      "Debug mode (also sets $(b,--developer-mode), $(b,--no-filtering), $(b,--print-buckets), \
-       $(b,--print-types), $(b,--reports-include-ml-loc), $(b,--no-test), $(b,--trace-error), \
-       $(b,--write-dotty), $(b,--write-html))"
+      ~in_help:all_generic_manuals
+      "Debug mode (also sets $(b,--debug-level 2), $(b,--developer-mode), $(b,--no-filtering), \
+       $(b,--print-buckets), $(b,--print-types), $(b,--reports-include-ml-loc), $(b,--no-test), \
+       $(b,--trace-error), $(b,--write-dotty), $(b,--write-html))"
+      ~f:(fun debug -> if debug then set_debug_level 2 else set_debug_level 0; debug)
       [developer_mode; print_buckets; print_types; reports_include_ml_loc; trace_error; write_html;
        write_dotty]
       [filtering; test]
+
+  and _ : int option ref =
+    CLOpt.mk_int_opt ~long:"debug-level"
+      ~in_help:all_generic_manuals ~meta:"level"
+      ~f:(fun level -> set_debug_level level; level)
+      "Debug level (sets $(b,--bo-debug) $(i,level), $(b,--debug-level-analysis) $(i,level), \
+       $(b,--debug-level-capture) $(i,level), $(b,--debug-level-linters) $(i,level)):\
+       \n  - 0: only basic debugging enabled\
+       \n  - 1: verbose debugging enabled\
+       \n  - 2: very verbose debugging enabled"
 
   and debug_exceptions =
     CLOpt.mk_bool_group ~long:"debug-exceptions"
@@ -879,14 +922,19 @@ and (
     CLOpt.mk_bool_group ~long:"linters-developer-mode"
       ~in_help:CLOpt.[Capture, manual_clang_linters]
       "Debug mode for developing new linters. (Sets the analyzer to $(b,linters); also sets \
-       $(b,--debug), $(b,--developer-mode), $(b,--print-logs), and \
+       $(b,--debug), $(b,--debug-level-linters 2), $(b,--developer-mode), $(b,--print-logs), and \
        unsets $(b,--allowed-failures) and $(b,--default-linters)."
+      ~f:(fun debug -> debug_level_linters := if debug then 2 else 0; debug)
       [debug; developer_mode; print_logs] [failures_allowed; default_linters]
 
   in (
+    bo_debug,
     developer_mode,
     debug,
     debug_exceptions,
+    debug_level_analysis,
+    debug_level_capture,
+    debug_level_linters,
     default_linters,
     failures_allowed,
     filtering,
@@ -901,6 +949,7 @@ and (
     write_html,
     write_dotty
   )
+
 
 and dependencies =
   CLOpt.mk_bool ~deprecated:["dependencies"] ~long:"dependencies"
@@ -1103,8 +1152,8 @@ and latex =
     "Write a latex report of the analysis results to a file"
 
 and log_file =
-  CLOpt.mk_path_opt ~deprecated:["out_file"; "-out-file"] ~long:"log-file"
-    ~meta:"file" "Specify the file to use for logging"
+  CLOpt.mk_string ~deprecated:["out_file"; "-out-file"] ~long:"log-file"
+    ~meta:"file" ~default:"logs" "Specify the file to use for logging"
 
 and linter =
   CLOpt.mk_string_opt ~long:"linter" ~in_help:CLOpt.[Capture, manual_clang_linters]
@@ -1793,8 +1842,11 @@ and copy_propagation = !copy_propagation
 and crashcontext = !crashcontext
 and create_harness = !android_harness
 and cxx = !cxx
-and debug_mode = !debug
+and debug_level_analysis = !debug_level_analysis
+and debug_level_capture = !debug_level_capture
+and debug_level_linters = !debug_level_linters
 and debug_exceptions = !debug_exceptions
+and debug_mode = !debug
 and dependency_mode = !dependencies
 and developer_mode = !developer_mode
 and disable_checks = !disable_checks

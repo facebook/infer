@@ -37,7 +37,7 @@ let pp_prolog fmt clusters =
 
   F.fprintf fmt "@\n@\ndefault: test@\n@\nall: test@\n@\n";
   F.fprintf fmt "test: $(CLUSTERS)@\n";
-  if Config.show_progress_bar then F.fprintf fmt "\t@@echo@\n@."
+  if Config.show_progress_bar then F.fprintf fmt "\t%@echo@\n@."
 
 let pp_epilog fmt () =
   F.fprintf fmt "@.clean:@.\trm -f $(CLUSTERS)@."

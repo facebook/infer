@@ -10,6 +10,8 @@ open! IStd;
 
 module CLOpt = CommandLineOption;
 
+module L = Logging;
+
 
 /** enable debug mode (to get more data saved to disk for future inspections) */
 let debug_mode = Config.debug_mode || Config.frontend_stats || Config.frontend_debug;
@@ -22,7 +24,7 @@ let catch_biniou_buffer_errors f x =>
     /* suppress warning: allow this one case because we're just reraising the error with another
        error message so it doesn't really matter if this eventually fails */
     | Invalid_argument "Bi_inbuf.refill_from_channel" =>
-      Logging.out "WARNING: biniou buffer too short, skipping the file@\n";
+      L.external_error "WARNING: biniou buffer too short, skipping the file@\n";
       assert false
     }
   )
@@ -47,8 +49,8 @@ let register_perf_stats_report source_file => {
 };
 
 let init_global_state_for_capture_and_linters source_file => {
-  Logging.set_log_file_identifier
-    CLOpt.Clang (Some (Filename.basename (SourceFile.to_abs_path source_file)));
+  L.(debug Capture Medium)
+    "Processing %s" (Filename.basename (SourceFile.to_abs_path source_file));
   register_perf_stats_report source_file;
   Config.curr_language := Config.Clang;
   DB.Results_dir.init source_file;
@@ -59,7 +61,7 @@ let run_clang_frontend ast_source => {
   let init_time = Unix.gettimeofday ();
   let print_elapsed () => {
     let elapsed = Unix.gettimeofday () -. init_time;
-    Logging.out "Elapsed: %07.3f seconds.@\n" elapsed
+    L.(debug Capture Quiet) "Elapsed: %07.3f seconds.@\n" elapsed
   };
   let ast_decl =
     switch ast_source {
@@ -90,8 +92,8 @@ let run_clang_frontend ast_source => {
       Format.fprintf fmt "stdin of %a" SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
     };
   ClangPointers.populate_all_tables ast_decl;
-  Logging.out "Clang frontend action is  %s@\n" Config.clang_frontend_action_string;
-  Logging.out
+  L.(debug Capture Quiet) "Clang frontend action is %s@\n" Config.clang_frontend_action_string;
+  L.(debug Capture Medium)
     "Start %s of AST from %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source;
   if Config.clang_frontend_do_lint {
     CFrontend_checkers_main.do_frontend_checks trans_unit_ctx ast_decl
@@ -99,7 +101,7 @@ let run_clang_frontend ast_source => {
   if Config.clang_frontend_do_capture {
     CFrontend.do_source_file trans_unit_ctx ast_decl
   };
-  Logging.out "End translation AST file %a... OK!@\n" pp_ast_filename ast_source;
+  L.(debug Capture Medium) "End translation AST file %a... OK!@\n" pp_ast_filename ast_source;
   print_elapsed ()
 };
 
@@ -113,7 +115,7 @@ let run_and_validate_clang_frontend ast_source =>
 
 let run_clang clang_command read => {
   let exit_with_error exit_code => {
-    Logging.stderr
+    L.external_error
       "Error: the following clang command did not run successfully:@\n  %s@\n" clang_command;
     exit exit_code
   };
@@ -156,18 +158,19 @@ let cc1_capture clang_cmd => {
     /* the source file is always the last argument of the original -cc1 clang command */
     Utils.filename_to_absolute ::root orig_argv.(Array.length orig_argv - 1)
   };
-  Logging.out "@\n*** Beginning capture of file %s ***@\n" source_path;
+  L.(debug Capture Quiet) "@\n*** Beginning capture of file %s ***@\n" source_path;
   if (
     Config.equal_analyzer Config.analyzer Config.CompileOnly ||
     not Config.skip_analysis_in_path_skips_compilation && CLocation.is_file_blacklisted source_path
   ) {
-    Logging.out "@\n Skip the analysis of source file %s@\n@\n" source_path;
+    L.(debug Capture Quiet) "@\n Skip the analysis of source file %s@\n@\n" source_path;
     /* We still need to run clang, but we don't have to attach the plugin. */
     run_clang (ClangCommand.command_to_run clang_cmd) Utils.consume_in
   } else if (
     Config.skip_analysis_in_path_skips_compilation && CLocation.is_file_blacklisted source_path
   ) {
-    Logging.out "@\n Skip compilation and analysis of source file %s@\n@\n" source_path;
+    L.(debug Capture Quiet)
+      "@\n Skip compilation and analysis of source file %s@\n@\n" source_path;
     ()
   } else {
     switch Config.clang_biniou_file {
@@ -176,8 +179,6 @@ let cc1_capture clang_cmd => {
       run_plugin_and_frontend
         source_path (fun chan_in => run_and_validate_clang_frontend (`Pipe chan_in)) clang_cmd
     };
-    /* reset logging to stop capturing log output into the source file's log */
-    Logging.set_log_file_identifier CLOpt.Capture None;
     ()
   }
 };
@@ -192,6 +193,6 @@ let capture clang_cmd =>
        further since `clang -### ...` will only output commands that invoke binaries using their
        absolute paths. */
     let command_to_run = ClangCommand.command_to_run clang_cmd;
-    Logging.out "Running non-cc command without capture: %s@\n" command_to_run;
+    L.(debug Capture Quiet) "Running non-cc command without capture: %s@\n" command_to_run;
     run_clang command_to_run Utils.consume_in
   };

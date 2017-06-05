@@ -45,7 +45,7 @@ module Inference = struct
       if String.is_empty s_old then 0
       else try int_of_string s_old with
         | Failure _ ->
-            L.stderr "int_of_string %s@." s_old;
+            L.internal_error "int_of_string %s@." s_old;
             assert false in
     string_of_int (n + 1)
 
@@ -57,8 +57,8 @@ module Inference = struct
   let mark_file update_str dir fname =
     DB.update_file_with_lock dir fname update_str;
     match DB.read_file_with_lock dir fname with
-    | Some buf -> L.stderr "Read %s: %s@." fname buf
-    | None -> L.stderr "Read %s: None@." fname
+    | Some buf -> L.internal_error "Read %s: %s@." fname buf
+    | None -> L.internal_error "Read %s: None@." fname
 
   let mark_file_count = mark_file update_count_str
 

@@ -110,10 +110,10 @@ module ConstantFlow = Dataflow.MakeDF(struct
 
       if verbose then
         begin
-          L.stdout "Node %i:" (Procdesc.Node.get_id node :> int);
-          L.stdout "%a" pp constants;
+          L.(debug Analysis Verbose) "Node %i:" (Procdesc.Node.get_id node :> int);
+          L.(debug Analysis Verbose) "%a" pp constants;
           List.iter
-            ~f:(fun instr -> L.stdout "%a@." (Sil.pp_instr Pp.text) instr)
+            ~f:(fun instr -> L.(debug Analysis Verbose) "%a@." (Sil.pp_instr Pp.text) instr)
             (Procdesc.Node.get_instrs node)
         end;
       let constants =
@@ -121,7 +121,7 @@ module ConstantFlow = Dataflow.MakeDF(struct
           ~f:do_instr
           ~init:constants
           (Procdesc.Node.get_instrs node) in
-      if verbose then L.stdout "%a\n@." pp constants;
+      if verbose then L.(debug Analysis Verbose) "%a@\n@." pp constants;
       [constants], [constants]
   end)
 

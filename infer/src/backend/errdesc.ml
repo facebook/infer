@@ -1156,6 +1156,5 @@ let explain_null_test_after_dereference tenv exp node line loc =
       Localise.desc_null_test_after_dereference expr_str line loc
   | None -> Localise.no_desc
 
-(** Print a warning to the err stream at the given location (note: only prints in developer mode) *)
 let warning_err loc fmt_string =
-  L.out ("%a: Warning: " ^^ fmt_string) Location.pp loc
+  L.(debug Analysis Medium) ("%a: Warning: " ^^ fmt_string) Location.pp loc

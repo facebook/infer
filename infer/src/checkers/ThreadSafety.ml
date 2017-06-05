@@ -932,7 +932,7 @@ let calculate_addendum_message tenv pname =
       if not (List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class) then
         match thread_safe_annotated_classes with
         | hd::_ ->
-            F.asprintf "\n Note: Superclass %a is marked %a."
+            F.asprintf "@\n Note: Superclass %a is marked %a."
               (MF.wrap_monospaced Typ.Name.pp) hd
               MF.pp_monospaced "@ThreadSafe"
         | [] -> ""

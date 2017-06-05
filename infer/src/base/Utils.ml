@@ -264,7 +264,7 @@ let realpath path =
           realpath
       | exception Unix.Unix_error (code, f, arg) ->
           F.eprintf
-            "WARNING: Failed to resolve file %s with \"%s\" \n@." arg (Unix.error_message code);
+            "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg (Unix.error_message code);
           (* cache failures as well *)
           Hashtbl.add realpath_cache path (Error (code, f, arg));
           raise (Unix.Unix_error (code, f, arg))

@@ -663,8 +663,7 @@ struct
       then strong_update_heap ploc v s
       else
         let () =
-          if Config.bo_debug >= 3 then
-            L.out "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
+          L.(debug BufferOverrun Verbose) "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
         in
         weak_update_heap ploc v s
 end

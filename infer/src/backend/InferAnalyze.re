@@ -18,7 +18,7 @@ module F = Format;
 
 /** Create tasks to analyze an execution environment */
 let analyze_exe_env_tasks cluster exe_env :Tasks.t => {
-  L.log_progress_file ();
+  L.progressbar_file ();
   Specs.clear_spec_tbl ();
   Random.self_init ();
   let biabduction_only = Config.equal_analyzer Config.analyzer Config.BiAbduction;
@@ -62,7 +62,8 @@ let analyze_cluster_tasks cluster_num (cluster: Cluster.t) :Tasks.t => {
   let exe_env = Exe_env.from_cluster cluster;
   let defined_procs = Cg.get_defined_nodes (Exe_env.get_cg exe_env);
   let num_procs = List.length defined_procs;
-  L.out "@.Processing cluster #%d with %d procedures@." (cluster_num + 1) num_procs;
+  L.(debug Analysis Medium)
+    "@\nProcessing cluster #%d with %d procedures@." (cluster_num + 1) num_procs;
   analyze_exe_env_tasks cluster exe_env
 };
 
@@ -82,14 +83,14 @@ let output_json_makefile_stats clusters => {
 
 let process_cluster_cmdline fname =>
   switch (Cluster.load_from_file (DB.filename_from_string fname)) {
-  | None => L.stderr "Cannot find cluster file %s@." fname
+  | None => L.internal_error "Cannot find cluster file %s@." fname
   | Some (nr, cluster) => analyze_cluster (nr - 1) cluster
   };
 
 let print_legend () => {
   L.progress "Starting analysis...@\n";
   L.progress "@\n";
-  L.progress "legend:@\n";
+  L.progress "legend:@.";
   L.progress "  \"%s\" analyzing a file@\n" Config.log_analysis_file;
   L.progress "  \"%s\" analyzing a procedure@\n" Config.log_analysis_procedure;
   if (Config.stats_mode || Config.debug_mode) {
@@ -169,13 +170,13 @@ let main makefile => {
         f::(fun cl => DB.string_crc_has_extension ext::"java" (DB.source_dir_to_string cl))
         all_clusters;
     if Config.print_active_checkers {
-      L.stderr "Active checkers: %a@." RegisterCheckers.pp_active_checkers ()
+      L.result "Active checkers: %a@." RegisterCheckers.pp_active_checkers ()
     };
     print_legend ();
     if (Config.per_procedure_parallelism && not (is_java ())) {
       /* Java uses ZipLib which is incompatible with forking */
       /* per-procedure parallelism */
-      L.out "Per-procedure parallelism jobs: %d@." Config.jobs;
+      L.environment_info "Per-procedure parallelism jobs: %d@." Config.jobs;
       if (makefile != "") {
         ClusterMakefile.create_cluster_makefile [] makefile
       };

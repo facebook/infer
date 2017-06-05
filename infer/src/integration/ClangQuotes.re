@@ -6,9 +6,11 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+/* module for escaping clang arguments on the command line and put them into files */
 open! IStd;
 
-/* module for escaping clang arguments on the command line and put them into files */
+module L = Logging;
+
 
 /** quoting style of the arguments */
 type style =
@@ -37,6 +39,6 @@ let mk_arg_file prefix style args => {
   let write_args outc =>
     output_string outc (List.map f::(quote style) args |> String.concat sep::" ");
   Utils.with_file_out file f::write_args |> ignore;
-  Logging.out "Clang options stored in file %s@\n" file;
+  L.(debug Capture Medium) "Clang options stored in file %s@\n" file;
   file
 };

@@ -446,7 +446,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               called_pname :: call_flags.cf_targets
             else
               begin
-                L.out
+                L.(debug Analysis Medium)
                   "Skipping highly polymorphic call site for %a@." Typ.Procname.pp called_pname;
                 [called_pname]
               end in

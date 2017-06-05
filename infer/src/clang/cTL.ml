@@ -10,6 +10,8 @@
 open! IStd
 open Ctl_parser_types
 
+module L = Logging
+
 (* This module defines a language to define checkers. These checkers
    are intepreted over the AST of the program. A checker is defined by a
    CTL formula which express a condition saying when the checker should
@@ -281,7 +283,8 @@ module Debug = struct
             (pp_ast
                ~ast_node_to_highlight ~prettifier:(ANSITerminal.sprintf highlight_style "%s"))
             ast_root in
-        Logging.out "\nNode ID: %d\tEvaluation stack level: %d\tSource line-number: %s\n"
+        L.(debug Linters Medium)
+          "@\nNode ID: %d\tEvaluation stack level: %d\tSource line-number: %s@\n"
           eval_node.id
           (Stack.length t.eval_stack)
           (Option.value_map
@@ -290,13 +293,13 @@ module Debug = struct
           | Eval_undefined -> true
           | _ -> false in
         if is_last_occurrence && is_eval_result_undefined then
-          Logging.out
-            "From this step, a transition to a different part of the AST may follow.\n";
+          L.(debug Linters Medium)
+            "From this step, a transition to a different part of the AST may follow.@\n";
         let phi_str = Format.asprintf "%a" pp_formula eval_node.content.phi in
-        Logging.out "CTL Formula: %s\n\n" phi_str;
-        Logging.out "%s\n" ast_str;
+        L.(debug Linters Medium) "CTL Formula: %s@\n@\n" phi_str;
+        L.(debug Linters Medium) "%s@\n" ast_str;
         let quit_token = "q" in
-        Logging.out "Press Enter to continue or type %s to quit... @?" quit_token;
+        L.(debug Linters Medium) "Press Enter to continue or type %s to quit... @?" quit_token;
         match read_line () |> String.lowercase with
         | s when String.equal s quit_token -> exit 0
         | _ ->
@@ -309,7 +312,7 @@ module Debug = struct
             ) in
       match t.debugger_active, t.breakpoint_line, line_number eval_node.content.ast_node with
       | false, Some break_point_ln, Some ln when ln >= break_point_ln ->
-          Logging.out "Attaching debugger at line %d" ln;
+          L.(debug Linters Medium) "Attaching debugger at line %d" ln;
           stop_and_explain_step ();
           {t with debugger_active = true}
       | true, _, _ ->
@@ -425,22 +428,22 @@ module Debug = struct
 end
 
 let print_checker c =
-  Logging.out "\n-------------------- \n";
-  Logging.out "\nChecker name: %s\n" c.name;
+  L.(debug Linters Medium) "@\n-------------------- @\n";
+  L.(debug Linters Medium) "@\nChecker name: %s@\n" c.name;
   List.iter ~f:(fun d -> (match d with
       | CSet (keyword, phi) ->
           let cn_str = ALVar.keyword_to_string keyword in
-          Logging.out "    %s=  \n    %a\n\n"
+          L.(debug Linters Medium) "    %s=  @\n    %a@\n@\n"
             cn_str Debug.pp_formula phi
       | CLet (exp, _, phi) ->
           let cn_str = ALVar.formula_id_to_string exp in
-          Logging.out "    %s=  \n    %a\n\n"
+          L.(debug Linters Medium) "    %s=  @\n    %a@\n@\n"
             cn_str Debug.pp_formula phi
       | CDesc (keyword, s) ->
           let cn_str = ALVar.keyword_to_string keyword in
-          Logging.out "    %s=  \n    %s\n\n" cn_str s)
+          L.(debug Linters Medium) "    %s=  @\n    %s@\n@\n" cn_str s)
     ) c.definitions;
-  Logging.out "\n-------------------- \n"
+  L.(debug Linters Medium) "@\n-------------------- @\n"
 
 
 let ctl_evaluation_tracker = ref None

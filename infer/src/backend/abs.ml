@@ -99,7 +99,9 @@ let mk_rule_ptspts_ls tenv impl_ok1 impl_ok2 (para: Sil.hpara) =
   let (para_fst_start, para_fst_rest) =
     let mark_impl_flag hpred = { Match.hpred = hpred; Match.flag = impl_ok1 } in
     match para_fst with
-    | [] -> L.out "@.@.ERROR (Empty Para): %a @.@." (Sil.pp_hpara Pp.text) para; assert false
+    | [] ->
+        L.internal_error "@\n@\nERROR (Empty Para): %a@\n@." (Sil.pp_hpara Pp.text) para;
+        assert false
     | hpred :: hpreds ->
         let hpat = mark_impl_flag hpred in
         let hpats = List.map ~f:mark_impl_flag hpreds in
@@ -128,7 +130,9 @@ let mk_rule_ptsls_ls tenv k2 impl_ok1 impl_ok2 para =
   let (ids_exist, para_inst) = Sil.hpara_instantiate para exp_base exp_next exps_shared in
   let (para_inst_start, para_inst_rest) =
     match para_inst with
-    | [] -> L.out "@.@.ERROR (Empty Para): %a @.@." (Sil.pp_hpara Pp.text) para; assert false
+    | [] ->
+        L.internal_error "@\n@\nERROR (Empty Para): %a@\n@." (Sil.pp_hpara Pp.text) para;
+        assert false
     | hpred :: hpreds ->
         let allow_impl hpred = { Match.hpred = hpred; Match.flag = impl_ok1 } in
         (allow_impl hpred, List.map ~f:allow_impl hpreds) in
@@ -252,7 +256,9 @@ let mk_rule_ptspts_dll tenv impl_ok1 impl_ok2 para =
   let (para_fst_start, para_fst_rest) =
     let mark_impl_flag hpred = { Match.hpred = hpred; Match.flag = impl_ok1 } in
     match para_fst with
-    | [] -> L.out "@.@.ERROR (Empty DLL para): %a@.@." (Sil.pp_hpara_dll Pp.text) para; assert false
+    | [] ->
+        L.internal_error "@\n@\nERROR (Empty DLL Para): %a@\n@." (Sil.pp_hpara_dll Pp.text) para;
+        assert false
     | hpred :: hpreds ->
         let hpat = mark_impl_flag hpred in
         let hpats = List.map ~f:mark_impl_flag hpreds in
@@ -422,7 +428,8 @@ let typ_get_recursive_flds tenv typ_exp =
           match Tenv.lookup tenv name with
           | Some { fields } -> List.map ~f:fst3 (List.filter ~f:(filter typ) fields)
           | None ->
-              L.out "@.typ_get_recursive: unexpected type expr: %a@." Exp.pp typ_exp;
+              L.(debug Analysis Quiet) "@\ntyp_get_recursive: unexpected type expr: %a@."
+                Exp.pp typ_exp;
               [] (* ToDo: assert false *)
         )
       | Tint _ | Tvoid | Tfun _ | Tptr _ | Tfloat _ | Tarray _ | TVar _ -> []
@@ -430,7 +437,7 @@ let typ_get_recursive_flds tenv typ_exp =
   | Exp.Var _ -> [] (* type of |-> not known yet *)
   | Exp.Const _ -> []
   | _ ->
-      L.out "@.typ_get_recursive: unexpected type expr: %a@." Exp.pp typ_exp;
+      L.internal_error "@\ntyp_get_recursive: unexpected type expr: %a@." Exp.pp typ_exp;
       assert false
 
 let discover_para_roots tenv p root1 next1 root2 next2 : Sil.hpara option =
@@ -602,7 +609,9 @@ let eqs_solve ids_in eqs_in =
       if not (List.exists ~f:(fun id' -> Ident.equal id id') ids_in) then None
       else
         let sub' = match Sil.extend_sub sub id e with
-          | None -> L.out "@.@.ERROR : Buggy Implementation.@.@."; assert false
+          | None ->
+              L.internal_error "@\n@\nERROR : Buggy Implementation.@\n@.";
+              assert false
           | Some sub' -> sub' in
         let eqs_rest' = eqs_sub sub' eqs_rest in
         solve sub' eqs_rest' in

@@ -374,7 +374,7 @@ let unsome s =>
   fun
   | Some default_typ => default_typ
   | None => {
-      L.out "No default typ in %s@." s;
+      L.internal_error "No default typ in %s@." s;
       assert false
     };
 
@@ -1043,19 +1043,19 @@ module Struct = {
       /* change false to true to print the details of struct */
       F.fprintf
         f
-        "%a \n\tfields: {%a\n\t}\n\tsupers: {%a\n\t}\n\tmethods: {%a\n\t}\n\tannots: {%a\n\t}"
+        "%a @\n\tfields: {%a@\n\t}@\n\tsupers: {%a@\n\t}@\n\tmethods: {%a@\n\t}@\n\tannots: {%a@\n\t}"
         Name.pp
         name
         (
           Pp.seq (
             fun f (fld, t, a) =>
-              F.fprintf f "\n\t\t%a %a %a" (pp_full pe) t Fieldname.pp fld Annot.Item.pp a
+              F.fprintf f "@\n\t\t%a %a %a" (pp_full pe) t Fieldname.pp fld Annot.Item.pp a
           )
         )
         fields
-        (Pp.seq (fun f n => F.fprintf f "\n\t\t%a" Name.pp n))
+        (Pp.seq (fun f n => F.fprintf f "@\n\t\t%a" Name.pp n))
         supers
-        (Pp.seq (fun f m => F.fprintf f "\n\t\t%a" Procname.pp m))
+        (Pp.seq (fun f m => F.fprintf f "@\n\t\t%a" Procname.pp m))
         methods
         Annot.Item.pp
         annots

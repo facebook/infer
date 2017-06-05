@@ -8,8 +8,11 @@
  *)
 
 open! IStd
+
 open Lexing
 open Ctl_lexer
+
+module L = Logging
 
 let parse_al_file fname channel : CTL.al_file option =
   let pos_str lexbuf =
@@ -39,18 +42,18 @@ let rec parse_import_file import_file channel : CTL.clause list =
     | Some {import_files = imports; global_macros = curr_file_macros; checkers = _} ->
         already_imported_files := import_file :: !already_imported_files;
         collect_all_macros imports curr_file_macros
-    | None -> Logging.out "No macros found.\n";[])
+    | None -> L.(debug Linters Medium) "No macros found.@\n";[])
 
 and collect_all_macros imports curr_file_macros =
-  Logging.out "#### Start parsing import macros #####\n";
+  L.(debug Linters Medium) "#### Start parsing import macros #####@\n";
   let import_macros = parse_imports imports in
-  Logging.out "#### Add global macros to import macros #####\n";
+  L.(debug Linters Medium) "#### Add global macros to import macros #####@\n";
   List.append import_macros curr_file_macros
 
 (* Parse import files with macro definitions, and it returns a list of LET clauses *)
 and parse_imports imports_files : CTL.clause list =
   let parse_one_import_file fimport macros =
-    Logging.out "  Loading import macros from file %s\n" fimport;
+    L.(debug Linters Medium) "  Loading import macros from file %s@\n" fimport;
     let in_channel = open_in fimport in
     let parsed_macros = parse_import_file fimport in_channel in
     In_channel.close in_channel;
@@ -63,17 +66,17 @@ let parse_ctl_file linters_def_file channel : CFrontend_errors.linter list =
       already_imported_files := [linters_def_file];
       let macros = collect_all_macros imports curr_file_macros in
       let macros_map = CFrontend_errors.build_macros_map macros in
-      Logging.out "#### Start Expanding checkers #####\n";
+      L.(debug Linters Medium) "#### Start Expanding checkers #####@\n";
       let exp_checkers = CFrontend_errors.expand_checkers macros_map parsed_checkers in
-      Logging.out "#### Checkers Expanded #####\n";
+      L.(debug Linters Medium) "#### Checkers Expanded #####@\n";
       if Config.debug_mode then List.iter ~f:CTL.print_checker exp_checkers;
       CFrontend_errors.create_parsed_linters linters_def_file exp_checkers
-  | None -> Logging.out "No linters found.\n";[]
+  | None -> L.(debug Linters Medium) "No linters found.@\n";[]
 
 (* Parse the files with linters definitions, and it returns a list of linters *)
 let parse_ctl_files linters_def_files : CFrontend_errors.linter list =
   let collect_parsed_linters linters_def_file linters =
-    Logging.out "Loading linters rules from %s\n" linters_def_file;
+    L.(debug Linters Medium) "Loading linters rules from %s@\n" linters_def_file;
     let in_channel = open_in linters_def_file in
     let parsed_linters = parse_ctl_file linters_def_file in_channel in
     In_channel.close in_channel;
@@ -267,7 +270,7 @@ let linters_files =
   List.dedup ~compare:String.compare (find_linters_files () @ Config.linters_def_file)
 
 let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_context) ast =
-  Logging.out "Loading the following linters files: %a\n"
+  L.(debug Capture Quiet) "Loading the following linters files: %a@\n"
     (Pp.comma_seq Format.pp_print_string) linters_files;
   CTL.create_ctl_evaluation_tracker trans_unit_ctx.source_file;
   try
@@ -276,9 +279,9 @@ let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_contex
       CFrontend_errors.filter_parsed_linters parsed_linters trans_unit_ctx.source_file in
     CFrontend_errors.parsed_linters := filtered_parsed_linters;
     let source_file = trans_unit_ctx.CFrontend_config.source_file in
-    Logging.out "Start linting file %a with rules: @\n%s@\n"
+    L.(debug Linters Medium) "Start linting file %a with rules: @\n%a@\n"
       SourceFile.pp source_file
-      (CFrontend_errors.linters_to_string filtered_parsed_linters);
+      CFrontend_errors.pp_linters filtered_parsed_linters;
     match ast with
     | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
         let context =
@@ -292,10 +295,10 @@ let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_contex
         List.iter ~f:(do_frontend_checks_decl context) allowed_decls;
         if (LintIssues.exists_issues ()) then
           store_issues source_file;
-        Logging.out "End linting file %a@\n" SourceFile.pp source_file;
+        L.(debug Linters Medium) "End linting file %a@\n" SourceFile.pp source_file;
         CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file;
     | _ -> assert false (* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *)
   with
   | Assert_failure (file, line, column) as exn ->
-      Logging.stderr "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column;
+      L.internal_error "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column;
       raise exn

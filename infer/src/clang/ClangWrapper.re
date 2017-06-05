@@ -12,6 +12,8 @@
     commands by our own clang with our plugin attached for each source file. */
 open! IStd;
 
+module L = Logging;
+
 type action_item =
   | Command ClangCommand.t
   | ClangError string
@@ -77,7 +79,7 @@ let normalize ::prog ::args :list action_item => {
           "-Wno-ignored-optimization-argument"
         ] |> ClangCommand.command_to_run
       );
-  Logging.out "clang -### invocation: %s@\n" clang_hashhashhash;
+  L.(debug Capture Medium) "clang -### invocation: %s@\n" clang_hashhashhash;
   let normalized_commands = ref [];
   let one_line line =>
     if (String.is_prefix prefix::" \"" line) {
@@ -128,7 +130,7 @@ let exec_action_item =
     failwithf
       "@\n*** ERROR: Failed to execute compilation command. Output:@\n%s@\n*** Infer needs a working compilation command to run.@."
       error
-  | ClangWarning warning => Logging.stderr "%s@\n" warning
+  | ClangWarning warning => L.external_warning "%s@\n" warning
   | Command clang_cmd => Capture.capture clang_cmd;
 
 let exe ::prog ::args => {
@@ -143,7 +145,7 @@ let exe ::prog ::args => {
     switch Config.fcp_apple_clang {
     | Some bin =>
       let bin_xx = bin ^ xx_suffix;
-      Logging.out "Will run Apple clang %s" bin_xx;
+      L.(debug Capture Medium) "Will run Apple clang %s" bin_xx;
       (bin_xx, true)
     | None => (clang_xx, false)
     };
@@ -158,7 +160,7 @@ let exe ::prog ::args => {
          - the user tries to run `infer -- clang -c file_that_does_not_exist.c`. In this case, this
            will fail with the appropriate error message from clang instead of silently analyzing 0
            files. */
-      Logging.out
+      L.(debug Capture Quiet)
         "WARNING: `clang -### <args>` returned an empty set of commands to run and no error. Will run the original command directly:@\n  %s@\n"
         (String.concat sep::" " @@ [prog, ...args])
     };

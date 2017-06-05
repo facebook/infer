@@ -7,9 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+(** This module creates extra ast constructs that are needed for the translation *)
+
 open! IStd
 
-(** This module creates extra ast constructs that are needed for the translation *)
+module L = Logging
 
 let dummy_source_range () =
   let dummy_source_loc = {
@@ -562,7 +564,7 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
       let translated_stmt, op = translate bdi.bdi_parameters s block_decl bei.ei_qual_type in
       CompoundStmt (stmt_info, translated_stmt), vars_to_register @ op @ bv
   | _ -> (* When it is not the method we expect with only one parameter, we don't translate *)
-      Logging.out_debug "WARNING: Block Enumeration called at %s not translated."
+      L.(debug Capture Verbose) "WARNING: Block Enumeration called at %s not translated."
         (Clang_ast_j.string_of_stmt_info stmt_info);
       CompoundStmt (stmt_info, stmt_list), []
 

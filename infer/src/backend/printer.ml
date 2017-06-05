@@ -133,7 +133,7 @@ end = struct
       (F.fprintf fmt "<center><h1>Cfg Node %a</h1></center>"
          (Io_infer.Html.pp_line_link source ~text: (Some (string_of_int nodeid)) [".."])
          loc.Location.line;
-       F.fprintf fmt "PROC: %a LINE:%a\n"
+       F.fprintf fmt "PROC: %a LINE:%a@\n"
          (Io_infer.Html.pp_proc_link [".."] proc_name)
          (Escape.escape_xml (Typ.Procname.to_string proc_name))
          (Io_infer.Html.pp_line_link source [".."]) loc.Location.line;
@@ -493,7 +493,7 @@ let write_html_file linereader filename procs =
       (DB.Results_dir.Abs_source_dir filename)
       [".."; fname_encoding] in
   let pp_prelude () =
-    F.fprintf fmt "<center><h1>File %a </h1></center>\n<table class=\"code\">\n"
+    F.fprintf fmt "<center><h1>File %a </h1></center>@\n<table class=\"code\">@\n"
       SourceFile.pp filename in
   let print_one_line proof_cover table_nodes_at_linenum table_err_per_line line_number =
     let line_html =
@@ -556,7 +556,7 @@ let write_html_file linereader filename procs =
       ~f:(fun err_string ->
           F.fprintf fmt "%s" (create_err_message err_string))
       errors_at_linenum;
-    F.fprintf fmt "%s" "</td></tr>\n" in
+    F.fprintf fmt "%s" "</td></tr>@\n" in
 
   pp_prelude ();
   let global_err_log = Errlog.empty () in
@@ -572,7 +572,7 @@ let write_html_file linereader filename procs =
       print_one_line proof_cover table_nodes_at_linenum table_err_per_line !linenum
     done
   with End_of_file ->
-    (F.fprintf fmt "%s" "</table>\n";
+    (F.fprintf fmt "%s" "</table>@\n";
      Errlog.pp_html filename [fname_encoding] fmt global_err_log;
      Io_infer.Html.close (fd, fmt))
 

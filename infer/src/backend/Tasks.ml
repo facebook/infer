@@ -9,8 +9,9 @@
 
 open! IStd
 
-module L = Logging
 module F = Format
+
+module L = Logging
 
 type closure = unit -> unit
 
@@ -61,7 +62,7 @@ module Runner = struct
     let pool = runner.pool in
     Queue.enqueue_all runner.all_continuations (Queue.to_list tasks.continuations);
     List.iter
-      ~f:(fun x -> ProcessPool.start_child ~f:(fun f -> f ()) ~pool x)
+      ~f:(fun x -> ProcessPool.start_child ~f:(fun f -> L.reset_formatters (); f ()) ~pool x)
       tasks.closures
 
   let complete runner =

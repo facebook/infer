@@ -142,7 +142,7 @@ let rec inhabit_typ tenv typ cfg env =
       | Typ.Tint (_) -> (Exp.Const (Const.Cint (IntLit.zero)), env)
       | Typ.Tfloat (_) -> (Exp.Const (Const.Cfloat 0.0), env)
       | _ ->
-          L.out "Couldn't inhabit typ: %a@." (Typ.pp Pp.text) typ;
+          L.internal_error "Couldn't inhabit typ: %a@." (Typ.pp Pp.text) typ;
           assert false in
     let (inhabited_exp, env') =
       inhabit_internal typ { env with cur_inhabiting = TypSet.add typ env.cur_inhabiting } in
@@ -215,7 +215,7 @@ let create_dummy_harness_filename harness_name =
 let write_harness_to_file harness_instrs harness_file_name =
   let harness_file = Utils.create_outfile harness_file_name in
   let pp_harness fmt = List.iter ~f:(fun instr ->
-      Format.fprintf fmt "%a\n" (Sil.pp_instr Pp.text) instr) harness_instrs in
+      Format.fprintf fmt "%a@\n" (Sil.pp_instr Pp.text) instr) harness_instrs in
   Utils.do_outf harness_file (fun outf ->
       pp_harness outf.fmt;
       Utils.close_outf outf)

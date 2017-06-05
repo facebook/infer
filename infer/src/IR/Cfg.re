@@ -109,7 +109,7 @@ let check_cfg_connectedness cfg => {
     let nodes = Procdesc.get_nodes pd;
     let broken = List.exists f::broken_node nodes;
     if broken {
-      L.out "\n ***BROKEN CFG: '%s'\n" pname
+      L.internal_error "@\n ***BROKEN CFG: '%s'@\n" pname
     }
   };
   let pdescs = get_all_procs cfg;
@@ -150,13 +150,12 @@ let save_attributes source_file cfg => {
 /** Inline a synthetic (access or bridge) method. */
 let inline_synthetic_method ret_id etl pdesc loc_call :option Sil.instr => {
   let modified = ref None;
-  let debug = false;
   let found instr instr' => {
     modified := Some instr';
-    if debug {
-      L.stderr "XX inline_synthetic_method found instr: %a@." (Sil.pp_instr Pp.text) instr;
-      L.stderr "XX inline_synthetic_method instr': %a@." (Sil.pp_instr Pp.text) instr'
-    }
+    L.(debug Analysis Verbose)
+      "XX inline_synthetic_method found instr: %a@." (Sil.pp_instr Pp.text) instr;
+    L.(debug Analysis Verbose)
+      "XX inline_synthetic_method instr': %a@." (Sil.pp_instr Pp.text) instr'
   };
   let do_instr _ instr =>
     switch (instr, ret_id, etl) {
@@ -499,7 +498,7 @@ let specialize_types callee_pdesc resolved_pname args => {
 };
 
 let pp_proc_signatures fmt cfg => {
-  F.fprintf fmt "METHOD SIGNATURES\n@.";
+  F.fprintf fmt "METHOD SIGNATURES@\n@.";
   let sorted_procs = List.sort cmp::Procdesc.compare (get_all_procs cfg);
   List.iter f::(fun pdesc => F.fprintf fmt "%a@." Procdesc.pp_signature pdesc) sorted_procs
 };

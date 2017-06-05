@@ -34,8 +34,6 @@ let modified_file file =
   | None ->
       ()
 
-let debug = 0
-
 type stats =
   {
     mutable files_linked: int;
@@ -105,8 +103,7 @@ let create_multilinks () =
     Replicate the structure of the source directory in the destination,
     with files replaced by links to the source. *)
 let rec slink ~stats ~skiplevels src dst =
-  if debug >=3
-  then L.stderr "slink src:%s dst:%s skiplevels:%d@." src dst skiplevels;
+  L.(debug MergeCapture Verbose) "slink src:%s dst:%s skiplevels:%d@." src dst skiplevels;
   if Sys.is_directory src = `Yes
   then
     begin
@@ -135,9 +132,7 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
     let filename = DB.filename_from_string file in
     let time_orig = DB.file_modified_time ~symlink:false filename in
     let time_link = DB.file_modified_time ~symlink:true filename in
-    if debug >= 2 then
-      L.stderr "file:%s time_orig:%f time_link:%f@."
-        file time_orig time_link;
+    L.(debug MergeCapture Verbose) "file:%s time_orig:%f time_link:%f@." file time_orig time_link;
     time_link > time_orig in
   let symlinks_up_to_date captured_file =
     if Sys.is_directory captured_file = `Yes then
@@ -174,10 +169,9 @@ let should_link ~target ~target_results_dir ~stats infer_out_src infer_out_dst =
     was_modified () ||
     not (was_copied ()) in
   if r then stats.targets_merged <- stats.targets_merged + 1;
-  if debug >= 2
-  then L.stderr "lnk:%s:%d %s@." (if r then "T" else "F") !num_captured_files target_results_dir
-  else if debug >= 1 && r
-  then L.stderr "%s@."target_results_dir;
+  L.(debug MergeCapture Verbose) "lnk:%s:%d %s@." (if r then "T" else "F") !num_captured_files
+    target_results_dir;
+  if r then L.(debug MergeCapture Medium) "%s@."target_results_dir;
   r
 
 (** should_link needs to know whether the source file has changed,

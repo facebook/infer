@@ -15,9 +15,7 @@ module F = Format
     found in that file, and exits, with default code 1 or a given code. *)
 let print_error_and_exit ?(exit_code=1) fmt =
   F.kfprintf (fun _ ->
-      L.do_out "%s" (F.flush_str_formatter ());
-      let log_file = L.log_file_name () in
-      L.stderr "@\nAn error occured. Please find details in %s@\n@\n%!" log_file;
+      L.external_error "%s" (F.flush_str_formatter ());
       exit exit_code
     )
     F.str_formatter fmt
@@ -31,7 +29,7 @@ let create_process_and_wait ~prog ~args =
   |> function
   | Ok () -> ()
   | Error err as status ->
-      L.stderr "Error executing: %s@\n%s@\n"
+      L.external_error "Error executing: %s@\n%s@\n"
         (String.concat ~sep:" " (prog :: args)) (Unix.Exit_or_signal.to_string_hum status) ;
       exit (match err with `Exit_non_zero i -> i | `Signal _ -> 1)
 
@@ -39,7 +37,7 @@ let create_process_and_wait ~prog ~args =
     represents, prints a message explaining the command and its status, if in debug or stats mode.
     It also prints a dot to show progress of jobs being finished.  *)
 let print_status ~fail_on_failed_job f pid status =
-  L.out "%a%s@."
+  L.(debug Analysis Medium) "%a%s@."
     (fun fmt pid -> F.pp_print_string fmt (f pid)) pid
     (Unix.Exit_or_signal.to_string_hum status) ;
   L.progress ".%!";
@@ -98,7 +96,7 @@ let run_jobs_in_parallel ?(fail_on_failed_job=false) jobs_stack gen_prog prog_to
     done in
   run_job ();
   L.progress ".@.";
-  L.out "Waited for %d jobs" !waited_for_jobs
+  L.(debug Analysis Medium) "Waited for %d jobs" !waited_for_jobs
 
 let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
   let pipe_in, pipe_out = Unix.pipe () in

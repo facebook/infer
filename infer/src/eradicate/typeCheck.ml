@@ -886,7 +886,7 @@ let typecheck_instr
                   let unique_id = Typ.Procname.to_unique_id callee_pname in
                   let classification =
                     EradicateChecks.classify_procedure callee_attributes in
-                  L.stdout "  %s unique id: %s@." classification unique_id
+                  L.result "  %s unique id: %s@." classification unique_id
                 end;
               if cflags.CallFlags.cf_virtual && checks.eradicate then
                 EradicateChecks.check_call_receiver tenv

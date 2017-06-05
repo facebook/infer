@@ -26,7 +26,7 @@ let objc_classname_of_type typ =
   | Typ.Tstruct name -> name
   | Typ.Tfun _ -> Typ.Name.Objc.from_string CFrontend_config.objc_object
   | _ ->
-      Logging.out_debug
+      L.(debug Capture Verbose)
         "Classname of type cannot be extracted in type %s" (Typ.to_string typ);
       Typ.Name.Objc.from_string "undefined"
 
@@ -45,11 +45,11 @@ let rec return_type_of_function_qual_type (qual_type : Clang_ast_t.qual_type) =
   | Some BlockPointerType (_, in_qual) ->
       return_type_of_function_qual_type in_qual
   | Some _ ->
-      L.out_debug "Warning: Type pointer %s is not a function type."
+      L.(debug Capture Verbose) "Warning: Type pointer %s is not a function type."
         (Clang_ast_extend.type_ptr_to_string qual_type.qt_type_ptr);
       {qual_type with qt_type_ptr=Clang_ast_extend.ErrorType}
   | None ->
-      L.out_debug "Warning: Type pointer %s not found."
+      L.(debug Capture Verbose) "Warning: Type pointer %s not found."
         (Clang_ast_extend.type_ptr_to_string qual_type.qt_type_ptr);
       {qual_type with qt_type_ptr=Clang_ast_extend.ErrorType}
 
@@ -79,9 +79,10 @@ let get_name_from_type_pointer custom_type_pointer =
 let rec get_type_list nn ll =
   match ll with
   | [] -> []
-  | (n, t):: ll' -> (* Logging.out_debug ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
+  | (n, t):: ll' ->
+      (* L.(debug Capture Verbose) ">>>>>Searching for type '%s'. Seen '%s'.@." nn n; *)
       if n = nn then (
-        Logging.out_debug ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@."
+        L.(debug Capture Verbose) ">>>>>>>>>>>>>>>>>>>>>>>NOW Found, Its type is: '%s'@."
           (Typ.to_string t);
         [t]
       ) else get_type_list nn ll'

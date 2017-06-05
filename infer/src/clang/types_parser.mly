@@ -12,6 +12,8 @@
 
   open Ctl_parser_types
 
+  module L = Logging
+
 (* See StringRef BuiltinType::getName in
   https://clang.llvm.org/doxygen/Type_8cpp_source.html *)
   let tokens_to_abs_types l =
@@ -68,7 +70,7 @@
 
 abs_ctype:
  | ctype_specifier_seq EOF {
-   Logging.out "\tType effectively parsed: `%s`\n"
+   L.(debug Linters Verbose) "\tType effectively parsed: `%s`@\n"
    (Ctl_parser_types.abs_ctype_to_string $1);
    $1 }
  ;
@@ -130,10 +132,10 @@ simple_type_specifier:
   ;
 
   alexp:
-   | STRING { Logging.out "\tParsed string constant '%s' \n" $1;
+   | STRING { L.(debug Linters Verbose) "\tParsed string constant '%s' @\n" $1;
               ALVar.Const $1 }
    | REGEXP LEFT_PAREN REARG RIGHT_PAREN
-            { Logging.out "\tParsed regular expression '%s' \n" $3;
+            { L.(debug Linters Verbose) "\tParsed regular expression '%s' @\n" $3;
               ALVar.Regexp $3 }
    | IDENTIFIER { ALVar.Var $1 }
    ;

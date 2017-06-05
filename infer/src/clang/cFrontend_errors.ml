@@ -9,6 +9,9 @@
 
 open! IStd
 
+module F = Format
+
+module L = Logging
 module MF = MarkupFormatter
 
 type linter = {
@@ -43,10 +46,10 @@ let filter_parsed_linters parsed_linters source_file =
   let linters = filter_parsed_linters_developer parsed_linters in
   filter_parsed_linters_by_path linters source_file
 
-let linters_to_string linters =
-  let linter_to_string linters =
-    List.map ~f:(fun (rule : linter) -> rule.issue_desc.name) linters  in
-  String.concat ~sep:"\n" (linter_to_string linters)
+let pp_linters fmt linters =
+  let pp_linter fmt {issue_desc={name}} =
+    F.fprintf fmt "%s@\n" name in
+  List.iter ~f:(pp_linter fmt) linters
 
 (* Map a formula id to a triple (visited, parameters, definition).
    Visited is used during the expansion phase to understand if the
@@ -97,8 +100,9 @@ let evaluate_place_holder ph an =
   | "%type%" -> MF.monospaced_to_string (Ctl_parser_types.ast_node_type an)
   | "%child_type%" -> MF.monospaced_to_string (Ctl_parser_types.stmt_node_child_type an)
   | "%eventual_child_name%" -> MF.monospaced_to_string (Ctl_parser_types.eventual_child_name an)
-  | _ -> (Logging.out "ERROR: helper function %s is unknown. Stop.\n" ph;
-          assert false)
+  | _ ->
+      L.internal_error "ERROR: helper function %s is unknown. Stop.@\n" ph;
+      assert false
 
 (* given a message this function searches for a place-holder identifier,
    eg %id%. Then it evaluates id and replaces %id% in message
@@ -113,11 +117,11 @@ let rec expand_message_string message an =
     let _ = Str.search_forward re message 0 in
     let ms = Str.matched_string message in
     let res = evaluate_place_holder ms an in
-    Logging.out "\nMatched string '%s'\n" ms;
+    L.(debug Linters Medium) "@\nMatched string '%s'@\n" ms;
     let re_ms = Str.regexp_string ms in
     let message' = Str.replace_first re_ms res message in
-    Logging.out "Replacing %s in message: \n %s \n" ms message;
-    Logging.out "Resulting message: \n %s \n" message';
+    L.(debug Linters Medium) "Replacing %s in message: @\n %s @\n" ms message;
+    L.(debug Linters Medium) "Resulting message: @\n %s @\n" message';
     expand_message_string message' an
   with Not_found -> message
 
@@ -130,16 +134,17 @@ let string_to_err_kind = function
   | "INFO" -> Exceptions.Kinfo
   | "ADVICE" -> Exceptions.Kadvice
   | "LIKE" -> Exceptions.Klike
-  | s -> (Logging.out "\n[ERROR] Severity %s does not exist. Stop.\n" s;
-          assert false)
+  | s ->
+      L.internal_error "@\n[ERROR] Severity %s does not exist. Stop.@\n" s;
+      assert false
 
 let string_to_issue_mode m =
   match m with
   | "ON" -> CIssue.On
   | "OFF" -> CIssue.Off
   | s ->
-      (Logging.out "\n[ERROR] Mode %s does not exist. Please specify ON/OFF\n" s;
-       assert false)
+      L.internal_error "@\n[ERROR] Mode %s does not exist. Please specify ON/OFF@\n" s;
+      assert false
 
 let string_to_path path = Some path
 
@@ -147,7 +152,7 @@ let string_to_path path = Some path
 let create_parsed_linters linters_def_file checkers : linter list =
   let open CIssue in
   let open CTL in
-  Logging.out "\n Converting checkers in (condition, issue) pairs\n";
+  L.(debug Linters Medium) "@\nConverting checkers in (condition, issue) pairs@\n";
   let do_one_checker checker : linter =
     let dummy_issue = {
       name = checker.name;
@@ -177,10 +182,9 @@ let create_parsed_linters linters_def_file checkers : linter list =
         ~f:process_linter_definitions
         ~init:(dummy_issue, CTL.False, None)
         checker.definitions in
-    Logging.out "\nMaking condition and issue desc for checker '%s'\n"
-      checker.name;
-    Logging.out "\nCondition =\n     %a\n" CTL.Debug.pp_formula condition;
-    Logging.out "\nIssue_desc = %a\n" CIssue.pp_issue issue_desc;
+    L.(debug Linters Medium) "@\nMaking condition and issue desc for checker '%s'@\n" checker.name;
+    L.(debug Linters Medium) "@\nCondition =@\n    %a@\n" CTL.Debug.pp_formula condition;
+    L.(debug Linters Medium) "@\nIssue_desc = %a@\n" CIssue.pp_issue issue_desc;
     {condition; issue_desc; def_file = Some linters_def_file; path;} in
   List.map ~f:do_one_checker checkers
 
@@ -231,7 +235,7 @@ let rec apply_substitution f sub =
 
 let expand_formula phi _map _error_msg =
   let fail_with_circular_macro_definition name error_msg =
-    failwithf "Macro '%s' has a circular definition.\n Cycle:\n%s" name error_msg in
+    failwithf "Macro '%s' has a circular definition.@\n Cycle:@\n%s" name error_msg in
   let open CTL in
   let rec expand acc map error_msg =
     match acc with
@@ -239,7 +243,7 @@ let expand_formula phi _map _error_msg =
     | False -> acc
     | Atomic (ALVar.Formula_id (name) as av, actual_param) -> (* it may be a macro *)
         (let error_msg' =
-           error_msg ^ "  -Expanding formula identifier '" ^ name ^"'\n" in
+           error_msg ^ "  -Expanding formula identifier '" ^ name ^"'@\n" in
          (try
             match ALVar.FormulaIdMap.find av map with
             | (true, _, _) ->
@@ -289,12 +293,12 @@ let build_macros_map macros =
 let expand_checkers macro_map checkers =
   let open CTL in
   let expand_one_checker c =
-    Logging.out " +Start expanding %s\n" c.name;
+    L.(debug Linters Medium) " +Start expanding %s@\n" c.name;
     let map = _build_macros_map c.definitions macro_map in
     let exp_defs = List.fold ~f:(fun defs clause ->
         match clause with
         | CSet (report_when_const, phi) ->
-            Logging.out "  -Expanding report_when\n";
+            L.(debug Linters Medium) "  -Expanding report_when@\n";
             CSet (report_when_const, expand_formula phi map "") :: defs
         | cl -> cl :: defs) ~init:[] c.definitions in
     { c with definitions = exp_defs} in

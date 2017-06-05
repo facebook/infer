@@ -147,11 +147,11 @@ and decl_ptr_to_type_desc translate_decl tenv decl_ptr : Typ.desc =
   | Some (ObjCCategoryImplDecl _ as d)
   | Some (EnumDecl _ as d) -> translate_decl tenv d
   | Some _ ->
-      L.out_debug "Warning: Wrong decl found for  pointer %s "
+      L.(debug Capture Verbose) "Warning: Wrong decl found for  pointer %s "
         (Clang_ast_j.string_of_pointer decl_ptr);
       Typ.Tvoid
   | None ->
-      L.out_debug "Warning: Decl pointer %s not found."
+      L.(debug Capture Verbose) "Warning: Decl pointer %s not found."
         (Clang_ast_j.string_of_pointer decl_ptr);
       Typ.Tvoid
 

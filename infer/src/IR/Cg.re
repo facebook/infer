@@ -136,7 +136,7 @@ let get_ancestors (g: t) node => {
     info.ancestors = Some ancestors;
     let size = Typ.Procname.Set.cardinal ancestors;
     if (size > 1000) {
-      L.out "%a has %d ancestors@." Typ.Procname.pp node size
+      L.(debug Analysis Medium) "%a has %d ancestors@." Typ.Procname.pp node size
     };
     ancestors
   | Some ancestors => ancestors
@@ -153,7 +153,7 @@ let get_heirs (g: t) node => {
     info.heirs = Some heirs;
     let size = Typ.Procname.Set.cardinal heirs;
     if (size > 1000) {
-      L.out "%a has %d heirs@." Typ.Procname.pp node size
+      L.(debug Analysis Medium) "%a has %d heirs@." Typ.Procname.pp node size
     };
     heirs
   | Some heirs => heirs

@@ -25,7 +25,7 @@ struct
       Cfg.remove_proc_desc cfg procname;
       CMethod_trans.create_external_procdesc cfg procname is_objc_method None
     in
-    Logging.out_debug
+    L.(debug Capture Verbose)
       "@\n@\n>>---------- ADDING METHOD: '%s' ---------<<@\n@." (Typ.Procname.to_string procname);
     try
       (match Cfg.find_proc_desc_from_name cfg procname with
@@ -36,8 +36,8 @@ struct
                   has_return_param is_objc_method outer_context_opt in
               let start_node = Procdesc.get_start_node procdesc in
               let exit_node = Procdesc.get_exit_node procdesc in
-              Logging.out_debug
-                "\n\n>>---------- Start translating body of function: '%s' ---------<<\n@."
+              L.(debug Capture Verbose)
+                "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
                 (Typ.Procname.to_string procname);
               let meth_body_nodes = T.instructions_trans context body extra_instrs exit_node in
               let proc_attributes = Procdesc.get_attributes procdesc in
@@ -53,10 +53,10 @@ struct
            functions. This is to make sure I'm not wrong. *)
         assert false
     | CTrans_utils.TemplatedCodeException _ ->
-        Logging.out "Fatal error: frontend doesn't support translation of templated code\n";
+        L.internal_error "Fatal error: frontend doesn't support translation of templated code@\n";
         handle_translation_failure ()
     | Assert_failure (file, line, column) when Config.failures_allowed ->
-        Logging.out "Fatal error: exception Assert_failure(%s, %d, %d)\n%!" file line column;
+        L.internal_error "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column;
         handle_translation_failure ()
 
   let function_decl trans_unit_ctx tenv cfg cg func_decl block_data_opt =
@@ -124,8 +124,8 @@ struct
     | EmptyDecl _
     | ObjCIvarDecl _ | ObjCPropertyDecl _ -> ()
     | _ ->
-        Logging.out
-          "\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED\n\n"
+        L.internal_error
+          "@\nWARNING: found Method Declaration '%s' skipped. NEED TO BE FIXED@\n@\n"
           (Clang_ast_proj.get_decl_kind_string dec);
         ()
 
@@ -223,7 +223,8 @@ struct
                 let curr_class = CContext.ContextClsDeclPtr parent_ptr in
                 process_methods trans_unit_ctx tenv cg cfg curr_class [dec]
             | Some dec ->
-                Logging.out "Methods of %s skipped\n" (Clang_ast_proj.get_decl_kind_string dec)
+                L.(debug Capture Verbose) "Methods of %s skipped@\n"
+                  (Clang_ast_proj.get_decl_kind_string dec)
             | None -> ())
        | VarDecl (decl_info, named_decl_info, qt, ({ vdi_is_global; vdi_init_expr } as vdi))
          when vdi_is_global && Option.is_some vdi_init_expr ->
@@ -264,7 +265,7 @@ struct
     match dec with
     | EnumDecl _ -> ignore (CEnum_decl.enum_decl dec)
     | LinkageSpecDecl (_, decl_list, _) ->
-        Logging.out_debug "ADDING: LinkageSpecDecl decl list@\n";
+        L.(debug Capture Verbose) "ADDING: LinkageSpecDecl decl list@\n";
         List.iter ~f:translate decl_list
     | NamespaceDecl (_, _, decl_list, _, _) ->
         List.iter ~f:translate decl_list

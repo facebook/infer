@@ -76,7 +76,7 @@ let create_supers_fields qual_type_to_sil_type tenv decl_list
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list ocidi =
   let class_name = CAst_utils.get_qualified_name name_info in
-  Logging.out_debug "ADDING: ObjCInterfaceDecl for '%a'\n" QualifiedCppName.pp class_name;
+  L.(debug Capture Verbose) "ADDING: ObjCInterfaceDecl for '%a'@\n" QualifiedCppName.pp class_name;
   let interface_name = Typ.Name.Objc.from_qual_name class_name in
   let interface_desc = Typ.Tstruct interface_name in
   let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
@@ -87,8 +87,8 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
       ocidi.Clang_ast_t.otdi_protocols in
   let fields_sc = CField_decl.fields_superclass tenv ocidi in
   List.iter ~f:(fun (fn, ft, _) ->
-      Logging.out_debug "----->SuperClass field: '%s' " (Fieldname.to_string fn);
-      Logging.out_debug "type: '%s'\n" (Typ.to_string ft)) fields_sc;
+      L.(debug Capture Verbose) "----->SuperClass field: '%s' " (Fieldname.to_string fn);
+      L.(debug Capture Verbose) "type: '%s'@\n" (Typ.to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (supers : Typ.Name.t list) =
     match Tenv.lookup tenv interface_name with
@@ -101,19 +101,19 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
   (* We add the special hidden counter_field for implementing reference counting *)
   let modelled_fields = Typ.Struct.objc_ref_counter_field :: CField_decl.modelled_field name_info in
   let all_fields = CGeneral_utils.append_no_duplicates_fields modelled_fields fields in
-  Logging.out_debug "Class %a field:\n" QualifiedCppName.pp class_name;
+  L.(debug Capture Verbose) "Class %a field:@\n" QualifiedCppName.pp class_name;
   List.iter ~f:(fun (fn, _, _) ->
-      Logging.out_debug "-----> field: '%s'\n" (Fieldname.to_string fn)) all_fields;
+      L.(debug Capture Verbose) "-----> field: '%s'@\n" (Fieldname.to_string fn)) all_fields;
   ignore(
     Tenv.mk_struct tenv
       ~fields: all_fields ~supers ~methods:[] ~annots:Annot.Class.objc interface_name );
-  Logging.out_debug
-    "  >>>Verifying that Typename '%s' is in tenv\n" (Typ.Name.to_string interface_name);
+  L.(debug Capture Verbose)
+    "  >>>Verifying that Typename '%s' is in tenv@\n" (Typ.Name.to_string interface_name);
   (match Tenv.lookup tenv interface_name with
    | Some st ->
-       Logging.out_debug "  >>>OK. Found typ='%a'\n"
+       L.(debug Capture Verbose) "  >>>OK. Found typ='%a'@\n"
          (Typ.Struct.pp Pp.text interface_name) st
-   | None -> Logging.out_debug "  >>>NOT Found!!\n");
+   | None -> L.(debug Capture Verbose) "  >>>NOT Found!!@\n");
   interface_desc
 
 (* Interface_type_info has the name of instance variables and the name of methods. *)
@@ -137,8 +137,8 @@ let interface_impl_declaration qual_type_to_sil_type tenv decl =
   match decl with
   | ObjCImplementationDecl (decl_info, name_info, decl_list, _, idi) ->
       let class_name = CAst_utils.get_qualified_name name_info in
-      Logging.out_debug
-        "ADDING: ObjCImplementationDecl for class '%a'\n" QualifiedCppName.pp class_name;
+      L.(debug Capture Verbose)
+        "ADDING: ObjCImplementationDecl for class '%a'@\n" QualifiedCppName.pp class_name;
       let _ = add_class_decl qual_type_to_sil_type tenv idi in
       let fields = CField_decl.get_fields qual_type_to_sil_type tenv decl_list in
       CField_decl.add_missing_fields tenv class_name fields;

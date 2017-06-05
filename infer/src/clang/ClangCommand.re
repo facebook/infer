@@ -8,6 +8,8 @@
  */
 open! IStd;
 
+module L = Logging;
+
 type t = {
   exec: string,
   argv: list string,
@@ -57,7 +59,7 @@ let can_attach_ast_exporter cmd => {
   let is_supported_language cmd =>
     switch (value_of_option cmd "-x") {
     | None =>
-      Logging.stderr "malformed -cc1 command has no \"-x\" flag!";
+      L.external_warning "malformed -cc1 command has no \"-x\" flag!";
       false
     | Some lang when String.is_prefix prefix::"assembler" lang => false
     | Some _ => true
@@ -116,7 +118,7 @@ let clang_cc1_cmd_sanitizer cmd => {
       arg
     };
   let args_defines =
-    if (Config.bufferoverrun) {
+    if Config.bufferoverrun {
       ["-D__INFER_BUFFEROVERRUN"]
     } else {
       []

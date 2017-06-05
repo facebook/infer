@@ -8,6 +8,8 @@
  *)
 open! IStd
 
+module L = Logging
+
 type keyword =
   | Report_when
   | Message
@@ -96,7 +98,7 @@ let compare_str_with_alexp s ae =
   | Regexp re ->
       str_match_regex s re
   | _ ->
-      Logging.out "[WARNING]: ALVAR expression '%s' is not a constant/var or regexp\n"
+      L.(debug Linters Medium) "[WARNING]: ALVAR expression '%s' is not a constant/var or regexp@\n"
         (alexp_to_string ae);
       false
 

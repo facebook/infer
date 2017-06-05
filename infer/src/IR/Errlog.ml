@@ -262,7 +262,7 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
       | _ -> added in
     let print_now () =
       let ex_name, desc, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
-      L.out "@\n%a@\n@?"
+      L.(debug Analysis Medium) "@\n%a@\n@?"
         (Exceptions.pp_err ~node_key loc err_kind ex_name desc ml_loc_opt) ();
       if err_kind <> Exceptions.Kerror then begin
         let warn_str =

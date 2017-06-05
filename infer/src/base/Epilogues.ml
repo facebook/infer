@@ -27,7 +27,8 @@ let register ~f desc =
       try
         f ()
       with exn ->
-        F.eprintf "Error while running epilogue %s:@ %a.@ Powering through...@." desc Exn.pp exn in
+        F.eprintf "Error while running epilogue \"%s\":@ %a.@ Powering through...@."
+          desc Exn.pp exn in
   (* We call `exit` in a bunch of places, so register the epilogues with [at_exit]. *)
   Pervasives.at_exit f_no_exn;
   (* Register signal masking. *)

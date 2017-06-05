@@ -111,5 +111,5 @@ let of_json_file filename =
   try
     of_json filename (Yojson.Basic.from_file filename)
   with Sys_error msg | Yojson.Json_error msg ->
-    failwithf "Could not read or parse the supplied JSON stacktrace file %s :\n %s"
+    failwithf "Could not read or parse the supplied JSON stacktrace file %s :@\n %s"
       filename msg

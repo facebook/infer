@@ -116,7 +116,8 @@ let strip_special_chars b =
       try
         String.set st idx c';
         st
-      with Invalid_argument _ -> L.out "@\n@\n Invalid argument!!! @\n @.@.@."; assert false
+      with Invalid_argument _ ->
+        L.internal_error "@\n@\nstrip_special_chars: Invalid argument!@\n@."; assert false
     end else st in
   let s0 = replace b '(' 'B' in
   let s1 = replace s0 '$' 'D' in
@@ -429,7 +430,7 @@ let rec compute_target_struct_fields dotnodes list_fld p f lambda cycle =
                end else
                  [(LinkStructToExp, Fieldname.to_string fn, n,"")]
            | _ -> (* by construction there must be at most 2 nodes for an expression*)
-               L.out "@\n Too many nodes! Error! @\n@.@."; assert false)
+               L.internal_error "@\n Too many nodes! Error! @\n@."; assert false)
     | Sil.Estruct (_, _) -> [] (* inner struct are printed by print_struc function *)
     | Sil.Earray _ -> [] (* inner arrays are printed by print_array function *) in
   match list_fld with
@@ -462,7 +463,7 @@ let rec compute_target_array_elements dotnodes list_elements p f lambda =
                end else
                  [(LinkArrayToExp, Exp.to_string idx, n,"")]
            | _ -> (* by construction there must be at most 2 nodes for an expression*)
-               L.out "@\n Too many nodes! Error! @\n@.@."; assert false
+               L.internal_error "@\nToo many nodes! Error!@\n@."; assert false
           )
     | Sil.Estruct (_, _) -> [] (* inner struct are printed by print_struc function *)
     | Sil.Earray _ ->[] (* inner arrays are printed by print_array function *)
@@ -589,25 +590,34 @@ let print_kind f kind =
   | Spec_precondition ->
       incr dotty_state_count;
       current_pre:=!dotty_state_count;
-      F.fprintf f "\n PRE%iL0 [label=\"PRE %i \",  style=filled, color= yellow]\n" !dotty_state_count !spec_counter;
+      F.fprintf f "@\n PRE%iL0 [label=\"PRE %i \",  style=filled, color= yellow]@\n"
+        !dotty_state_count !spec_counter;
       print_stack_info:= true;
   | Spec_postcondition _ ->
-      F.fprintf f "\n POST%iL0 [label=\"POST %i \",  style=filled, color= yellow]\n" !dotty_state_count !post_counter;
+      F.fprintf f "@\n POST%iL0 [label=\"POST %i \",  style=filled, color= yellow]@\n"
+        !dotty_state_count !post_counter;
       print_stack_info:= true;
   | Generic_proposition ->
       if !print_full_prop then
-        F.fprintf f "\n HEAP%iL0 [label=\"HEAP %i \",  style=filled, color= yellow]\n"
+        F.fprintf f "@\n HEAP%iL0 [label=\"HEAP %i \",  style=filled, color= yellow]@\n"
           !dotty_state_count
           !proposition_counter
   | Lambda_pred (no, lev, array) ->
       match array with
       | false ->
-          F.fprintf f "style=dashed; color=blue \n state%iL%i [label=\"INTERNAL STRUCTURE %i \",  style=filled, color= lightblue]\n" !dotty_state_count !lambda_counter !lambda_counter ;
-          F.fprintf f "state%iL%i -> state%iL%i [color=\"lightblue \"  arrowhead=none] \n" !dotty_state_count !lambda_counter no lev;
+          F.fprintf f "style=dashed; color=blue \
+                       @\n state%iL%i \
+                       [label=\"INTERNAL STRUCTURE %i \",  style=filled, color= lightblue]@\n"
+            !dotty_state_count !lambda_counter !lambda_counter ;
+          F.fprintf f "state%iL%i -> state%iL%i [color=\"lightblue \"  arrowhead=none] @\n"
+            !dotty_state_count !lambda_counter no lev;
       | true ->
-          F.fprintf f "style=dashed; color=blue \n state%iL%i [label=\"INTERNAL STRUCTURE %i \",  style=filled, color= lightblue]\n" !dotty_state_count !lambda_counter !lambda_counter ;
-          (* F.fprintf f "state%iL%i -> struct%iL%i:%s [color=\"lightblue \"  arrowhead=none] \n" !dotty_state_count !lambda_counter no lev lab;*)
-
+          F.fprintf f "style=dashed; color=blue \
+                       @\n state%iL%i \
+                       [label=\"INTERNAL STRUCTURE %i \",  style=filled, color= lightblue]@\n"
+            !dotty_state_count !lambda_counter !lambda_counter ;
+          (* F.fprintf f "state%iL%i -> struct%iL%i:%s [color=\"lightblue \"  arrowhead=none] @\n"
+             !dotty_state_count !lambda_counter no lev lab;*)
           incr dotty_state_count
 
 (* print a link between two nodes in the graph *)
@@ -620,25 +630,29 @@ let dotty_pp_link f link =
   let trg_fld = link.trg_fld in
   match n2, link.kind with
   | 0, _  when !print_full_prop ->
-      F.fprintf f "state%iL%i -> state%iL%i[label=\"%s DANG\", color= red];\n" n1 lambda1 n2 lambda2 src_fld
+      F.fprintf f "state%iL%i -> state%iL%i[label=\"%s DANG\", color= red];@\n"
+        n1 lambda1 n2 lambda2 src_fld
   | _, LinkToArray when !print_full_prop ->
-      F.fprintf f "state%iL%i -> struct%iL%i:%s%iL%i[label=\"\"]\n" n1 lambda1 n2 lambda2 trg_fld n2 lambda2
+      F.fprintf f "state%iL%i -> struct%iL%i:%s%iL%i[label=\"\"]@\n"
+        n1 lambda1 n2 lambda2 trg_fld n2 lambda2
   | _, LinkExpToStruct when !print_full_prop ->
-      F.fprintf f "state%iL%i -> struct%iL%i:%s%iL%i[label=\"\"]\n" n1 lambda1 n2 lambda2 trg_fld n2 lambda2
+      F.fprintf f "state%iL%i -> struct%iL%i:%s%iL%i[label=\"\"]@\n"
+        n1 lambda1 n2 lambda2 trg_fld n2 lambda2
   | _, LinkStructToExp when !print_full_prop ->
-      F.fprintf f "struct%iL%i:%s%iL%i -> state%iL%i[label=\"\"]\n"
+      F.fprintf f "struct%iL%i:%s%iL%i -> state%iL%i[label=\"\"]@\n"
         n1 lambda1 src_fld n1 lambda1 n2 lambda2
   | _, LinkRetainCycle ->
-      F.fprintf f "struct%iL%i:%s%iL%i -> struct%iL%i:%s%iL%i[label=\"\", color= red]\n"
+      F.fprintf f "struct%iL%i:%s%iL%i -> struct%iL%i:%s%iL%i[label=\"\", color= red]@\n"
         n1 lambda1 src_fld n1 lambda1 n2 lambda2 trg_fld n2 lambda2
   | _, LinkStructToStruct when !print_full_prop ->
-      F.fprintf f "struct%iL%i:%s%iL%i -> struct%iL%i:%s%iL%i[label=\"\"]\n" n1 lambda1 src_fld n1 lambda1 n2 lambda2 trg_fld n2 lambda2
+      F.fprintf f "struct%iL%i:%s%iL%i -> struct%iL%i:%s%iL%i[label=\"\"]@\n"
+        n1 lambda1 src_fld n1 lambda1 n2 lambda2 trg_fld n2 lambda2
   | _, LinkArrayToExp when !print_full_prop ->
-      F.fprintf f "struct%iL%i:%s -> state%iL%i[label=\"\"]\n" n1 lambda1 src_fld n2 lambda2
+      F.fprintf f "struct%iL%i:%s -> state%iL%i[label=\"\"]@\n" n1 lambda1 src_fld n2 lambda2
   | _, LinkArrayToStruct when !print_full_prop ->
-      F.fprintf f "struct%iL%i:%s -> struct%iL%i[label=\"\"]\n" n1 lambda1 src_fld n2 lambda2
+      F.fprintf f "struct%iL%i:%s -> struct%iL%i[label=\"\"]@\n" n1 lambda1 src_fld n2 lambda2
   | _, _  -> if !print_full_prop then
-        F.fprintf f "state%iL%i -> state%iL%i[label=\"%s\"];\n" n1 lambda1 n2 lambda2 src_fld
+        F.fprintf f "state%iL%i -> state%iL%i[label=\"%s\"];@\n" n1 lambda1 n2 lambda2 src_fld
       else ()
 
 (* given the list of nodes and links get rid of spec nodes that are not pointed to by anybody*)
@@ -703,26 +717,29 @@ let rec print_struct f pe e te l coo c =
   let n = coo.id in
   let lambda = coo.lambda in
   let e_no_special_char = strip_special_chars (Exp.to_string e) in
-  F.fprintf f "subgraph structs_%iL%i {\n" n lambda ;
+  F.fprintf f "subgraph structs_%iL%i {@\n" n lambda ;
   if !print_full_prop then
     F.fprintf f
-      " node [shape=record]; \n struct%iL%i \
-       [label=\"{<%s%iL%i> STRUCT: %a } | %a\" ] fontcolor=%s\n"
-      n lambda e_no_special_char n lambda (Sil.pp_exp_printenv pe) e (struct_to_dotty_str pe coo) l c
+      " node [shape=record]; @\n struct%iL%i \
+       [label=\"{<%s%iL%i> STRUCT: %a } | %a\" ] fontcolor=%s@\n"
+      n lambda
+      e_no_special_char n lambda (Sil.pp_exp_printenv pe) e (struct_to_dotty_str pe coo) l c
   else
     F.fprintf f
-      " node [shape=record]; \n struct%iL%i \
-       [label=\"{<%s%iL%i> OBJECT: %s } | %a\" ] fontcolor=%s\n"
+      " node [shape=record]; @\n struct%iL%i \
+       [label=\"{<%s%iL%i> OBJECT: %s } | %a\" ] fontcolor=%s@\n"
       n lambda e_no_special_char n lambda print_type (struct_to_dotty_str pe coo) l c;
-  F.fprintf f "}\n"
+  F.fprintf f "}@\n"
 
 and print_array f pe e1 e2 l coo c =
   let n = coo.id in
   let lambda = coo.lambda in
   let e_no_special_char = strip_special_chars (Exp.to_string e1) in
-  F.fprintf f "subgraph structs_%iL%i {\n" n lambda ;
-  F.fprintf f " node [shape=record]; \n struct%iL%i [label=\"{<%s%iL%i> ARRAY| SIZE: %a } | %a\" ] fontcolor=%s\n" n lambda e_no_special_char n lambda (Sil.pp_exp_printenv pe) e2 (get_contents pe coo) l c;
-  F.fprintf f "}\n"
+  F.fprintf f "subgraph structs_%iL%i {@\n" n lambda ;
+  F.fprintf f " node [shape=record]; @\n struct%iL%i \
+               [label=\"{<%s%iL%i> ARRAY| SIZE: %a } | %a\" ] fontcolor=%s@\n"
+    n lambda e_no_special_char n lambda (Sil.pp_exp_printenv pe) e2 (get_contents pe coo) l c;
+  F.fprintf f "}@\n"
 
 and print_sll f pe nesting k e1 coo =
   let n = coo.id in
@@ -731,15 +748,21 @@ and print_sll f pe nesting k e1 coo =
   incr dotty_state_count;
   begin
     match k with
-    | Sil.Lseg_NE -> F.fprintf f "subgraph cluster_%iL%i { style=filled; color=lightgrey; node [style=filled,color=white];  label=\"list NE\";" n' lambda  (*pp_nesting nesting*)
-    | Sil.Lseg_PE -> F.fprintf f "subgraph cluster_%iL%i { style=filled; color=lightgrey; node [style=filled,color=white];  label=\"list PE\";" n' lambda (*pp_nesting nesting *)
+    | Sil.Lseg_NE ->
+        F.fprintf f "subgraph cluster_%iL%i { \
+                     style=filled; color=lightgrey; node [style=filled,color=white];  \
+                     label=\"list NE\";" n' lambda  (*pp_nesting nesting*)
+    | Sil.Lseg_PE ->
+        F.fprintf f "subgraph cluster_%iL%i { \
+                     style=filled; color=lightgrey; node [style=filled,color=white];  \
+                     label=\"list PE\";" n' lambda (*pp_nesting nesting *)
   end;
-  F.fprintf f "state%iL%i [label=\"%a\"]\n" n lambda (Sil.pp_exp_printenv pe) e1;
+  F.fprintf f "state%iL%i [label=\"%a\"]@\n" n lambda (Sil.pp_exp_printenv pe) e1;
   let n' = !dotty_state_count in
   incr dotty_state_count;
-  F.fprintf f "state%iL%i [label=\"... \" style=filled color=lightgrey] \n" n' lambda ;
-  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"] \n" n lambda n' lambda ;
-  F.fprintf f "state%iL%i [label=\" \"] \n" (n + 1) lambda ;
+  F.fprintf f "state%iL%i [label=\"... \" style=filled color=lightgrey] @\n" n' lambda ;
+  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"] @\n" n lambda n' lambda ;
+  F.fprintf f "state%iL%i [label=\" \"] @\n" (n + 1) lambda ;
   F.fprintf f "state%iL%i -> state%iL%i [label=\" \"] }" n' lambda (n + 1) lambda ;
   incr lambda_counter;
   pp_dotty f (Lambda_pred(n + 1, lambda, false))
@@ -752,18 +775,24 @@ and print_dll f pe nesting k e1 e4 coo =
   incr dotty_state_count;
   begin
     match k with
-    | Sil.Lseg_NE -> F.fprintf f "subgraph cluster_%iL%i { style=filled; color=lightgrey; node [style=filled,color=white];  label=\"doubly-linked list NE\";" n' lambda  (*pp_nesting nesting *)
-    | Sil.Lseg_PE -> F.fprintf f "subgraph cluster_%iL%i { style=filled; color=lightgrey; node [style=filled,color=white];  label=\"doubly-linked list PE\";" n' lambda (*pp_nesting nesting *)
+    | Sil.Lseg_NE ->
+        F.fprintf f "subgraph cluster_%iL%i { \
+                     style=filled; color=lightgrey; node [style=filled,color=white];  \
+                     label=\"doubly-linked list NE\";" n' lambda  (*pp_nesting nesting *)
+    | Sil.Lseg_PE ->
+        F.fprintf f "subgraph cluster_%iL%i { \
+                     style=filled; color=lightgrey; node [style=filled,color=white];  \
+                     label=\"doubly-linked list PE\";" n' lambda (*pp_nesting nesting *)
   end;
-  F.fprintf f "state%iL%i [label=\"%a\"]\n" n lambda (Sil.pp_exp_printenv pe) e1;
+  F.fprintf f "state%iL%i [label=\"%a\"]@\n" n lambda (Sil.pp_exp_printenv pe) e1;
   let n' = !dotty_state_count in
   incr dotty_state_count;
-  F.fprintf f "state%iL%i [label=\"... \" style=filled color=lightgrey] \n" n' lambda;
-  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]\n" n lambda n' lambda;
-  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]\n" n' lambda n lambda;
-  F.fprintf f "state%iL%i [label=\"%a\"]\n" (n + 1) lambda (Sil.pp_exp_printenv pe) e4;
-  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]\n" (n + 1) lambda n' lambda;
-  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]}\n" n' lambda (n + 1) lambda ;
+  F.fprintf f "state%iL%i [label=\"... \" style=filled color=lightgrey] @\n" n' lambda;
+  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]@\n" n lambda n' lambda;
+  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]@\n" n' lambda n lambda;
+  F.fprintf f "state%iL%i [label=\"%a\"]@\n" (n + 1) lambda (Sil.pp_exp_printenv pe) e4;
+  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]@\n" (n + 1) lambda n' lambda;
+  F.fprintf f "state%iL%i -> state%iL%i [label=\" \"]}@\n" n' lambda (n + 1) lambda ;
   incr lambda_counter;
   pp_dotty f (Lambda_pred(n', lambda, false))
     (Prop.normalize (Tenv.create ()) (Prop.from_sigma nesting)) None
@@ -773,12 +802,14 @@ and dotty_pp_state f pe cycle dotnode =
     let n = coo.id in
     let lambda = coo.lambda in
     if is_dangling then
-      F.fprintf f "state%iL%i [label=\"%a \", color=red, style=dashed, fontcolor=%s]\n" n lambda (Sil.pp_exp_printenv pe) e c
+      F.fprintf f "state%iL%i [label=\"%a \", color=red, style=dashed, fontcolor=%s]@\n"
+        n lambda (Sil.pp_exp_printenv pe) e c
     else
-      F.fprintf f "state%iL%i [label=\"%a\" fontcolor=%s]\n" n lambda (Sil.pp_exp_printenv pe) e c in
+      F.fprintf f "state%iL%i [label=\"%a\" fontcolor=%s]@\n"
+        n lambda (Sil.pp_exp_printenv pe) e c in
   match dotnode with
   | Dotnil coo when !print_full_prop ->
-      F.fprintf f "state%iL%i [label=\"NIL \", color=green, style=filled]\n" coo.id coo.lambda
+      F.fprintf f "state%iL%i [label=\"NIL \", color=green, style=filled]@\n" coo.id coo.lambda
   | Dotdangling(coo, e, c) when !print_full_prop -> dotty_exp coo e c true
   | Dotpointsto(coo, e1, c) when !print_full_prop -> dotty_exp coo e1 c false
   | Dotstruct(coo, e1, l, c,te) ->
@@ -816,20 +847,23 @@ and build_visual_graph f pe p cycle =
 and display_pure_info f pe prop =
   let print_invisible_objects () =
     for j = 1 to 4 do
-      F.fprintf f "  inv_%i%i [style=invis]\n" !spec_counter j;
-      F.fprintf f "  inv_%i%i%i [style=invis]\n" !spec_counter j j;
-      F.fprintf f "  inv_%i%i%i%i [style=invis]\n" !spec_counter j j j;
+      F.fprintf f "  inv_%i%i [style=invis]@\n" !spec_counter j;
+      F.fprintf f "  inv_%i%i%i [style=invis]@\n" !spec_counter j j;
+      F.fprintf f "  inv_%i%i%i%i [style=invis]@\n" !spec_counter j j j;
     done;
     for j = 1 to 4 do
-      F.fprintf f "  state_pi_%i -> inv_%i%i [style=invis]\n" !proposition_counter !spec_counter j;
-      F.fprintf f "  inv_%i%i -> inv_%i%i%i [style=invis]\n" !spec_counter j !spec_counter j j;
-      F.fprintf f "  inv_%i%i%i -> inv_%i%i%i%i [style=invis]\n" !spec_counter j j !spec_counter j j j;
+      F.fprintf f "  state_pi_%i -> inv_%i%i [style=invis]@\n" !proposition_counter !spec_counter j;
+      F.fprintf f "  inv_%i%i -> inv_%i%i%i [style=invis]@\n" !spec_counter j !spec_counter j j;
+      F.fprintf f "  inv_%i%i%i -> inv_%i%i%i%i [style=invis]@\n"
+        !spec_counter j j !spec_counter j j j;
     done in
   let pure = Prop.get_pure prop in
-  F.fprintf f "subgraph {\n";
-  F.fprintf f " node [shape=box]; \n state_pi_%i [label=\"STACK \\n\\n %a\" color=orange style=filled]\n" !proposition_counter (Prop.pp_pi pe) pure;
+  F.fprintf f "subgraph {@\n";
+  F.fprintf f " node [shape=box]; \
+               @\n state_pi_%i [label=\"STACK \\n\\n %a\" color=orange style=filled]@\n"
+    !proposition_counter (Prop.pp_pi pe) pure;
   if !invisible_arrows then print_invisible_objects ();
-  F.fprintf f "}\n"
+  F.fprintf f "}@\n"
 
 (** Pretty print a proposition in dotty format. *)
 and pp_dotty f kind (_prop: Prop.normal Prop.t) cycle =
@@ -852,13 +886,13 @@ and pp_dotty f kind (_prop: Prop.normal Prop.t) cycle =
   nil_dotboxes :=[];
   set_exps_neq_zero prop.Prop.pi;
   incr dotty_state_count;
-  F.fprintf f "\n subgraph cluster_prop_%i { color=black \n" !proposition_counter;
+  F.fprintf f "@\n subgraph cluster_prop_%i { color=black @\n" !proposition_counter;
   print_kind f kind;
   if !print_stack_info then begin
     display_pure_info f pe prop;
     print_stack_info:= false
   end;
-  (* F.fprintf f "\n subgraph cluster_%i { color=black \n" !dotty_state_count; *)
+  (* F.fprintf f "@\n subgraph cluster_%i { color=black @\n" !dotty_state_count; *)
   let (nodes, links) = build_visual_graph f pe prop cycle in
   let all_nodes = (nodes @ !dangling_dotboxes @ !nil_dotboxes) in
   if !print_full_prop then
@@ -867,24 +901,25 @@ and pp_dotty f kind (_prop: Prop.normal Prop.t) cycle =
     List.iter ~f:(fun node ->
         if node_in_cycle cycle node then (dotty_pp_state f pe) cycle node) all_nodes;
   List.iter ~f:(dotty_pp_link f) links;
-  (* F.fprintf f "\n } \n"; *)
-  F.fprintf f "\n } \n"
+  (* F.fprintf f "@\n } @\n"; *)
+  F.fprintf f "@\n } @\n"
 
 let pp_dotty_one_spec f pre posts =
   post_counter := 0;
   incr spec_counter;
   incr proposition_counter;
   incr dotty_state_count;
-  F.fprintf f "\n subgraph cluster_%i { color=blue \n" !dotty_state_count;
+  F.fprintf f "@\n subgraph cluster_%i { color=blue @\n" !dotty_state_count;
   incr dotty_state_count;
-  F.fprintf f "\n state%iL0 [label=\"SPEC %i \",  style=filled, color= lightblue]\n" !dotty_state_count !spec_counter;
+  F.fprintf f "@\n state%iL0 [label=\"SPEC %i \",  style=filled, color= lightblue]@\n"
+    !dotty_state_count !spec_counter;
   spec_id:=!dotty_state_count;
   invisible_arrows:= true;
   pp_dotty f Spec_precondition pre None;
   invisible_arrows:= false;
   List.iter ~f:(fun (po, _) -> incr post_counter ; pp_dotty f (Spec_postcondition pre) po None;
                  for j = 1 to 4 do
-                   F.fprintf f "  inv_%i%i%i%i -> state_pi_%i [style=invis]\n"
+                   F.fprintf f "  inv_%i%i%i%i -> state_pi_%i [style=invis]@\n"
                      !spec_counter
                      j
                      j
@@ -892,26 +927,27 @@ let pp_dotty_one_spec f pre posts =
                      !target_invisible_arrow_pre;
                  done
                ) posts;
-  F.fprintf f "\n } \n"
+  F.fprintf f "@\n } @\n"
 
 (* this is used to print a list of proposition when considered in a path of nodes *)
 let pp_dotty_prop_list_in_path f plist prev_n curr_n =
   try
     incr proposition_counter;
     incr dotty_state_count;
-    F.fprintf f "\n subgraph cluster_%i { color=blue \n" !dotty_state_count;
+    F.fprintf f "@\n subgraph cluster_%i { color=blue @\n" !dotty_state_count;
     incr dotty_state_count;
-    F.fprintf f "\n state%iN [label=\"NODE %i \",  style=filled, color= lightblue]\n" curr_n curr_n;
+    F.fprintf f "@\n state%iN [label=\"NODE %i \",  style=filled, color= lightblue]@\n"
+      curr_n curr_n;
     List.iter ~f:(fun po -> incr proposition_counter ;
                    pp_dotty f Generic_proposition po None) plist;
-    if prev_n <> - 1 then F.fprintf f "\n state%iN ->state%iN\n" prev_n curr_n;
-    F.fprintf f "\n } \n"
+    if prev_n <> - 1 then F.fprintf f "@\n state%iN ->state%iN@\n" prev_n curr_n;
+    F.fprintf f "@\n } @\n"
   with exn when SymOp.exn_not_failure exn ->
     ()
 
 let pp_dotty_prop fmt (prop, cycle) =
   reset_proposition_counter ();
-  Format.fprintf fmt "@\n@\n@\ndigraph main { \nnode [shape=box]; @\n";
+  Format.fprintf fmt "@\n@\n@\ndigraph main { @\nnode [shape=box]; @\n";
   Format.fprintf fmt "@\n compound = true; rankdir =LR; @\n";
   pp_dotty fmt Generic_proposition prop (Some cycle);
   Format.fprintf fmt "@\n}"
@@ -931,16 +967,17 @@ let dotty_prop_to_dotty_file fname prop cycle =
   with exn when SymOp.exn_not_failure exn ->
     ()
 
-(* this is used only to print a list of prop parsed with the external parser. Basically deprecated.*)
+(* This is used only to print a list of prop parsed with the external parser. Basically
+   deprecated.*)
 let pp_proplist_parsed2dotty_file filename plist =
   try
     let pp_list f plist =
       reset_proposition_counter ();
-      F.fprintf f "\n\n\ndigraph main { \nnode [shape=box];\n";
-      F.fprintf f "\n compound = true; \n";
-      F.fprintf f "\n /* size=\"12,7\"; ratio=fill;*/ \n";
+      F.fprintf f "@\n@\n@\ndigraph main { @\nnode [shape=box];@\n";
+      F.fprintf f "@\n compound = true; @\n";
+      F.fprintf f "@\n /* size=\"12,7\"; ratio=fill;*/ @\n";
       ignore (List.map ~f:(pp_dotty f Generic_proposition) plist);
-      F.fprintf f "\n}" in
+      F.fprintf f "@\n}" in
     let outc = open_out filename in
     let fmt = F.formatter_of_out_channel outc in
     F.fprintf fmt "#### Dotty version:  ####@.%a@.@." pp_list plist;
@@ -1007,7 +1044,7 @@ let pp_cfgnodeshape fmt (n: Procdesc.Node.t) =
 
 let pp_cfgnode pdesc fmt (n: Procdesc.Node.t) =
   let pname = Procdesc.get_proc_name pdesc in
-  F.fprintf fmt "%a [label=\"%a\" %a]\n\t\n"
+  F.fprintf fmt "%a [label=\"%a\" %a]@\n\t@\n"
     (pp_cfgnodename pname) n
     (pp_cfgnodelabel pdesc) n
     pp_cfgnodeshape n;
@@ -1018,7 +1055,7 @@ let pp_cfgnode pdesc fmt (n: Procdesc.Node.t) =
       when is_exn -> (* don't print exception edges to the exit node *)
         ()
     | _ ->
-        F.fprintf fmt "\n\t %a -> %a %s;"
+        F.fprintf fmt "@\n\t %a -> %a %s;"
           (pp_cfgnodename pname) n1
           (pp_cfgnodename pname) n2
           color in
@@ -1039,16 +1076,16 @@ let print_icfg source fmt cfg =
   let print_node pdesc node =
     let loc = Procdesc.Node.get_loc node in
     if (Config.dotty_cfg_libs || SourceFile.equal loc.Location.file source) then
-      F.fprintf fmt "%a\n" (pp_cfgnode pdesc) node in
+      F.fprintf fmt "%a@\n" (pp_cfgnode pdesc) node in
   Cfg.iter_all_nodes ~sorted:true print_node cfg
 
 let write_icfg_dotty_to_file source cfg fname =
   let chan = open_out fname in
   let fmt = Format.formatter_of_out_channel chan in
   (* avoid phabricator thinking this file was generated by substituting substring with %s *)
-  F.fprintf fmt "/* @@%s */@\ndigraph iCFG {@\n" "generated";
+  F.fprintf fmt "/* %@%s */@\ndigraph iCFG {@\n" "generated";
   print_icfg source fmt cfg;
-  F.fprintf fmt "}\n";
+  F.fprintf fmt "}@\n";
   Out_channel.close chan
 
 let print_icfg_dotty source cfg =
@@ -1072,9 +1109,9 @@ let pp_speclist_dotty f (splist: Prop.normal Specs.spec list) =
   Config.pp_simple := true;
   reset_proposition_counter ();
   reset_dotty_spec_counter ();
-  F.fprintf f "@\n@\n\ndigraph main { \nnode [shape=box]; @\n";
+  F.fprintf f "@\n@\n@\ndigraph main { @\nnode [shape=box]; @\n";
   F.fprintf f "@\n compound = true; @\n";
-  (*  F.fprintf f "\n size=\"12,7\"; ratio=fill; \n"; *)
+  (*  F.fprintf f "@\n size=\"12,7\"; ratio=fill; @\n"; *)
   List.iter
     ~f:(fun s -> pp_dotty_one_spec f (Specs.Jprop.to_prop s.Specs.pre) s.Specs.posts)
     splist;

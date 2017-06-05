@@ -13,6 +13,8 @@ open! IStd
 open Javalib_pack
 open Sawja_pack
 
+module L = Logging
+
 (** Type transformations between Javalib datatypes and sil datatypes *)
 
 exception Type_tranlsation_error of string
@@ -249,7 +251,8 @@ let collect_models_class_fields classpath_field_map cn cf fields =
     if Typ.equal classpath_ft field_type then fields
     else
       (* TODO (#6711750): fix type equality for arrays before failing here *)
-      let () = Logging.stderr "Found inconsistent types for %s\n\tclasspath: %a\n\tmodels: %a\n@."
+      let () = L.(debug Capture Quiet)
+          "Found inconsistent types for %s@\n\tclasspath: %a@\n\tmodels: %a@\n@."
           (Fieldname.to_string field_name)
           (Typ.pp_full Pp.text) classpath_ft
           (Typ.pp_full Pp.text) field_type in fields

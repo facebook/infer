@@ -62,7 +62,7 @@ let type_from_unary_expr_or_type_trait_expr_info info =
 
 let get_decl decl_ptr =
   let decl = Int.Table.find ClangPointers.pointer_decl_table decl_ptr in
-  if Option.is_none decl then Logging.out "decl with pointer %d not found\n" decl_ptr;
+  if Option.is_none decl then L.internal_error "decl with pointer %d not found@\n" decl_ptr;
   decl
 
 let get_decl_opt decl_ptr_opt =
@@ -72,7 +72,7 @@ let get_decl_opt decl_ptr_opt =
 
 let get_stmt stmt_ptr =
   let stmt = Int.Table.find ClangPointers.pointer_stmt_table stmt_ptr in
-  if Option.is_none stmt then Logging.out "stmt with pointer %d not found\n" stmt_ptr;
+  if Option.is_none stmt then L.internal_error "stmt with pointer %d not found\n" stmt_ptr;
   stmt
 
 let get_stmt_opt stmt_ptr_opt =
@@ -87,7 +87,7 @@ let get_decl_opt_with_decl_ref decl_ref_opt =
 
 let get_property_of_ivar decl_ptr =
   let decl = Int.Table.find ClangPointers.ivar_to_property_table decl_ptr in
-  if Option.is_none decl then Logging.out "property with pointer %d not found\n" decl_ptr;
+  if Option.is_none decl then L.internal_error "property with pointer %d not found\n" decl_ptr;
   decl
 
 let update_sil_types_map type_ptr sil_type =
@@ -114,12 +114,12 @@ let get_type type_ptr =
   match type_ptr with
   | Clang_ast_types.TypePtr.Ptr raw_ptr ->
       let typ = Int.Table.find ClangPointers.pointer_type_table raw_ptr in
-      if Option.is_none typ then Logging.out "type with pointer %d not found\n" raw_ptr;
+      if Option.is_none typ then L.internal_error "type with pointer %d not found\n" raw_ptr;
       typ
   | _ ->
       (* otherwise, function fails *)
       let type_str = Clang_ast_extend.type_ptr_to_string type_ptr in
-      Logging.out "type %s is not clang pointer\n" type_str;
+      L.(debug Capture Medium) "type %s is not clang pointer@\n" type_str;
       None
 
 let get_desugared_type type_ptr =

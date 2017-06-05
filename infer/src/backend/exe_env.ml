@@ -87,7 +87,7 @@ let add_cg (exe_env: t) (source_dir : DB.source_dir) =
   let cg_fname = DB.source_dir_get_internal_file source_dir ".cg" in
   match Cg.load_from_file cg_fname with
   | None ->
-      L.stderr "Error: cannot load %s@." (DB.filename_to_string cg_fname)
+      L.internal_error "Error: cannot load %s@." (DB.filename_to_string cg_fname)
   | Some cg ->
       let source = Cg.get_source cg in
       exe_env.source_files <- SourceFile.Set.add source exe_env.source_files;
@@ -129,7 +129,7 @@ let get_file_data exe_env pname =
       let source_file_opt =
         match AttributesTable.load_attributes ~cache:true pname with
         | None ->
-            L.out "can't find tenv_cfg_object for %a@." Typ.Procname.pp pname;
+            L.(debug Analysis Medium) "can't find tenv_cfg_object for %a@." Typ.Procname.pp pname;
             None
         | Some proc_attributes when Config.reactive_capture ->
             let get_captured_file {ProcAttributes.source_file_captured} = source_file_captured in

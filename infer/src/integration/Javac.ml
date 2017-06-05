@@ -46,20 +46,21 @@ let compile compiler build_prog build_args =
     file in
   let cli_file_args = cli_args @ ["@" ^ args_file] in
   let args = prog_args @ cli_file_args in
-  L.out "Current working directory: '%s'@." (Sys.getcwd ());
+  L.(debug Capture Quiet) "Current working directory: '%s'@." (Sys.getcwd ());
   let verbose_out_file = Filename.temp_file "javac_" ".out" in
   let try_run cmd error_k =
     let shell_cmd = Utils.shell_escape_command cmd in
     let shell_cmd_redirected =
       Printf.sprintf "%s 2>'%s'" shell_cmd verbose_out_file in
-    L.out "Trying to execute: %s@." shell_cmd_redirected;
+    L.(debug Capture Quiet) "Trying to execute: %s@." shell_cmd_redirected;
     let error_k_or_fail err_msg =
       match error_k, err_msg with
       | Some k, (`UnixError (err, log)) ->
-          L.out "*** Failed: %s!@\n%s@." (Unix.Exit_or_signal.to_string_hum (Error err)) log;
+          L.(debug Capture Quiet) "*** Failed: %s!@\n%s@."
+            (Unix.Exit_or_signal.to_string_hum (Error err)) log;
           k ()
       | Some k, (`ExceptionError exn) ->
-          L.out "*** Failed: %a!@\n" Exn.pp exn;
+          L.(debug Capture Quiet) "*** Failed: %a!@\n" Exn.pp exn;
           k ()
       | None, (`UnixError (err, log)) ->
           let verbose_errlog = Utils.with_file_in verbose_out_file ~f:In_channel.input_all in
@@ -74,7 +75,7 @@ let compile compiler build_prog build_args =
     | exception exn ->
         error_k_or_fail (`ExceptionError exn)
     | (log, Ok ()) ->
-        L.out "*** Success. Logs:@\n%s" log in
+        L.(debug Capture Quiet) "*** Success. Logs:@\n%s" log in
   let fallback () = try_run ("javac"::cli_file_args) None in
   try_run (prog::args) (Some fallback);
   verbose_out_file

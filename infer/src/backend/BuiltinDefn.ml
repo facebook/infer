@@ -130,13 +130,13 @@ let execute___set_array_length { Builtin.tenv; pdesc; prop_; path; ret_id; args;
 
 let execute___print_value { Builtin.tenv; pdesc; prop_; path; args; }
   : Builtin.ret_typ =
-  L.out "__print_value: ";
+  L.(debug Analysis Medium) "__print_value: ";
   let pname = Procdesc.get_proc_name pdesc in
   let do_arg (lexp, _) =
     let n_lexp, _ = check_arith_norm_exp tenv pname lexp prop_ in
-    L.out "%a " Exp.pp n_lexp in
+    L.(debug Analysis Medium) "%a " Exp.pp n_lexp in
   List.iter ~f:do_arg args;
-  L.out "@.";
+  L.(debug Analysis Medium) "@.";
   [(prop_, path)]
 
 let is_undefined_opt tenv prop n_lexp =

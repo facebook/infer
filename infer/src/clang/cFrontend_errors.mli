@@ -18,7 +18,7 @@ type linter = {
 
 val filter_parsed_linters : linter list -> SourceFile.t -> linter list
 
-val linters_to_string : linter list -> string
+val pp_linters : Format.formatter -> linter list -> unit
 
 (* map used to expand macro. It maps a formula id to a triple
    (visited, parameters, definition).

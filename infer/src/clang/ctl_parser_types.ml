@@ -7,10 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+(* Types used by the ctl parser *)
+
 open! IStd
 
-
-(* Types used by the ctl parser *)
+module L = Logging
 
 (** the kind of AST nodes where formulas are evaluated *)
 type ast_node =
@@ -127,10 +128,10 @@ type abs_ctype =
   | TypeName of ALVar.alexp
 
 let display_equality_warning () =
-  Logging.out
+  L.(debug Linters Medium)
     "[WARNING:] Type Comparison failed... \
      This might indicate that the types are different or the specified type \
-     is internally represented in a different way and therefore not recognized.\n"
+     is internally represented in a different way and therefore not recognized.@\n"
 
 let rec abs_ctype_to_string t =
   match t with
@@ -203,9 +204,9 @@ and typename_equal pointer typename =
    by the types_parser. It needs to be replaced by a real
    comparison function for Clang_ast_t.c_type *)
 and c_type_equal c_type abs_ctype =
-  Logging.out
+  L.(debug Linters Medium)
     "Comparing c_type/abs_ctype for equality... \
-     Type compared: \nc_type = `%s`  \nabs_ctype =`%s`\n"
+     Type compared: @\nc_type = `%s`  @\nabs_ctype =`%s`@\n"
     (Clang_ast_j.string_of_c_type c_type)
     (abs_ctype_to_string abs_ctype);
   let open Clang_ast_t in

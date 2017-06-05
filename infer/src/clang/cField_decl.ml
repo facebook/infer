@@ -16,7 +16,8 @@ module L = Logging
 type field_type = Fieldname.t * Typ.t * (Annot.t * bool) list
 
 let rec get_fields_super_classes tenv super_class =
-  Logging.out_debug "   ... Getting fields of superclass '%s'\n" (Typ.Name.to_string super_class);
+  L.(debug Capture Verbose) "   ... Getting fields of superclass '%s'@\n"
+    (Typ.Name.to_string super_class);
   match Tenv.lookup tenv super_class with
   | None -> []
   | Some { fields; supers = super_class :: _ } ->
@@ -83,7 +84,8 @@ let add_missing_fields tenv class_name missing_fields =
   | Some ({ fields } as struct_typ) ->
       let new_fields = CGeneral_utils.append_no_duplicates_fields fields missing_fields in
       ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name);
-      Logging.out_debug " Updating info for class '%a' in tenv\n" QualifiedCppName.pp class_name
+      L.(debug Capture Verbose) " Updating info for class '%a' in tenv@\n"
+        QualifiedCppName.pp class_name
   | _ -> ()
 
 let modelled_fields_in_classes =

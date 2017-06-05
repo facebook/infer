@@ -127,6 +127,7 @@ val patterns_never_returning_null : string * Yojson.Basic.json
 val patterns_skip_translation : string * Yojson.Basic.json
 val per_procedure_parallelism : bool
 val perf_stats_prefix : string
+val pp_version : Format.formatter -> unit -> unit
 val proc_stats_filename : string
 val property_attributes : string
 val report : bool
@@ -207,8 +208,11 @@ val copy_propagation : bool
 val crashcontext : bool
 val create_harness : bool
 val cxx : bool
-val debug_mode : bool
+val debug_level_analysis : int
+val debug_level_capture : int
+val debug_level_linters : int
 val debug_exceptions : bool
+val debug_mode : bool
 val dependency_mode : bool
 val developer_mode : bool
 val disable_checks : string list
@@ -276,7 +280,7 @@ val linters_def_file : string list
 val linters_def_folder : string list
 val linters_developer_mode : bool
 val load_analysis_results : string option
-val log_file : string option
+val log_file : string
 val makefile_cmdline : string
 val maven : bool
 val merge : bool

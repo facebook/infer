@@ -8,7 +8,7 @@
  *)
 open! IStd
 
-(* Keep track of whether the current execution is in a child process *)
+(** Keep track of whether the current execution is in a child process *)
 let in_child = ref false
 
 type t =

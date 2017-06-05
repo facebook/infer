@@ -8,6 +8,8 @@
  *)
 open! IStd
 
+module L = Logging
+
 let compilation_db = lazy (CompilationDatabase.from_json_files !Config.clang_compilation_dbs)
 
 (** Given proc_attributes try to produce proc_attributes' where proc_attributes'.is_defined = true
@@ -28,7 +30,7 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
          Cfg.store_cfg_to_file *)
       let cfg_filename = DB.source_dir_get_internal_file source_dir ".cfg" in
       if not (DB.file_exists cfg_filename) then (
-        Logging.out_debug "Started capture of %a...@\n" SourceFile.pp definition_file;
+        L.(debug Capture Verbose) "Started capture of %a...@\n" SourceFile.pp definition_file;
         Timeout.suspend_existing_timeout ~keep_symop_total:true;
         protect
           ~f:(fun () -> CaptureCompilationDatabase.capture_file_in_database cdb definition_file)
@@ -37,13 +39,13 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
            Option.is_none
              (AttributesTable.load_defined_attributes ~cache_none:false attributes.proc_name) then (
           (* peek at the results to know if capture succeeded, but only in debug mode *)
-          Logging.out_debug
+          L.(debug Capture Verbose)
             "Captured file %a to get procedure %a but it wasn't found there@\n"
             SourceFile.pp definition_file
             Typ.Procname.pp attributes.proc_name
         )
       ) else (
-        Logging.out_debug
+        L.(debug Capture Verbose)
           "Wanted to capture file %a to get procedure %a but file was already captured@\n"
           SourceFile.pp definition_file
           Typ.Procname.pp attributes.proc_name
@@ -51,7 +53,7 @@ let try_capture (attributes : ProcAttributes.t) : ProcAttributes.t option =
     in
     match definition_file_opt with
     | None ->
-        Logging.out "Couldn't find source file for %a (declared in %a)@\n"
+        L.(debug Capture Medium) "Couldn't find source file for %a (declared in %a)@\n"
           Typ.Procname.pp attributes.proc_name
           SourceFile.pp decl_file
     | Some file -> try_compile file

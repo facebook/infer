@@ -122,12 +122,11 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     let start_time = Unix.gettimeofday () in
     fun () ->
       let elapsed_time = Unix.gettimeofday () -. start_time in
-      L.out "Elapsed analysis time: %a: %f\n"
+      L.(debug Analysis Medium) "Elapsed analysis time: %a: %f@\n"
         Typ.Procname.pp callee_pname
         elapsed_time in
 
-  (* Dot means start of a procedure *)
-  L.log_progress_procedure ();
+  L.progressbar_procedure ();
   if Config.trace_ondemand then L.progress "[%d] run_proc_analysis %a -> %a@."
       !nesting
       Typ.Procname.pp curr_pname
@@ -167,7 +166,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     restore_global_state old_state;
     summary
   with exn ->
-    L.stderr "@.ONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@?"
+    L.internal_error "@\nONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@?"
       Typ.Procname.pp callee_pname
       (Exn.to_string exn)
       (Printexc.get_backtrace ());

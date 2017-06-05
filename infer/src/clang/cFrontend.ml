@@ -22,13 +22,13 @@ let compute_icfg trans_unit_ctx tenv ast =
   match ast with
   | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
       CFrontend_config.global_translation_unit_decls := decl_list;
-      Logging.out_debug "@\n Start creating icfg@\n";
+      L.(debug Capture Verbose) "@\n Start creating icfg@\n";
       let cg = Cg.create trans_unit_ctx.CFrontend_config.source_file in
       let cfg = Cfg.create_cfg () in
       List.iter
         ~f:(CFrontend_declImpl.translate_one_declaration trans_unit_ctx tenv cg cfg `DeclTraversal)
         decl_list;
-      Logging.out_debug "\n Finished creating icfg\n";
+      L.(debug Capture Verbose) "@\n Finished creating icfg@\n";
       (cg, cfg)
   | _ -> assert false (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
 
@@ -42,10 +42,10 @@ let do_source_file translation_unit_context ast =
   CType_decl.add_predefined_types tenv;
   init_global_state_capture ();
   let source_file = translation_unit_context.CFrontend_config.source_file in
-  Logging.out_debug "@\n Start building call/cfg graph for '%a'....@\n"
+  L.(debug Capture Verbose) "@\n Start building call/cfg graph for '%a'....@\n"
     SourceFile.pp source_file;
   let call_graph, cfg = compute_icfg translation_unit_context tenv ast in
-  Logging.out_debug "@\n End building call/cfg graph for '%a'.@\n"
+  L.(debug Capture Verbose) "@\n End building call/cfg graph for '%a'.@\n"
     SourceFile.pp source_file;
   (* This part below is a boilerplate in every frontends. *)
   (* This could be moved in the cfg_infer module *)
@@ -68,6 +68,6 @@ let do_source_file translation_unit_context ast =
   || Option.is_some Config.icfg_dotty_outfile then
     (Dotty.print_icfg_dotty source_file cfg;
      Cg.save_call_graph_dotty source_file call_graph);
-  Logging.out_debug "%a" Cfg.pp_proc_signatures cfg;
+  L.(debug Capture Verbose) "%a" Cfg.pp_proc_signatures cfg;
   (* NOTE: nothing should be written to source_dir after this *)
   DB.mark_file_updated (DB.source_dir_to_string source_dir)

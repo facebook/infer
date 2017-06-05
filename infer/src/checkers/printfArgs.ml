@@ -198,7 +198,7 @@ let check_printf_args_ok tenv
                   cl
                   "Format string must be string literal"
           with e ->
-            L.stderr
+            L.internal_error
               "%s Exception when analyzing %s: %s@."
               (Localise.to_issue_id Localise.checkers_printf_args)
               (Typ.Procname.to_string proc_name)

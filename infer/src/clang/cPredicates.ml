@@ -11,6 +11,8 @@ open! IStd
 open Lexing
 open Types_lexer
 
+module L = Logging
+
 let parsed_type_map : Ctl_parser_types.abs_ctype String.Map.t ref = ref String.Map.empty
 
 let get_available_attr_ios_sdk an =
@@ -369,7 +371,7 @@ let type_ptr_equal_type type_ptr type_str =
   match CAst_utils.get_type type_ptr with
   | Some c_type' ->
       Ctl_parser_types.c_type_equal c_type' abs_ctype
-  | _ -> Logging.out "Couldn't find type....\n"; false
+  | _ -> L.(debug Linters Medium) "Couldn't find type....@\n"; false
 
 let has_type an _typ =
   match an, _typ with
@@ -386,10 +388,10 @@ let has_type an _typ =
   | _ -> false
 
 let method_return_type an _typ =
-  Logging.out "\n Executing method_return_type...";
+  L.(debug Linters Verbose) "@\n Executing method_return_type...";
   match an, _typ with
   | Ctl_parser_types.Decl (Clang_ast_t.ObjCMethodDecl (_, _, mdi)), ALVar.Const typ ->
-      Logging.out "\n with parameter `%s`...." typ;
+      L.(debug Linters Verbose) "@\n with parameter `%s`...." typ;
       let qual_type = mdi.Clang_ast_t.omdi_result_type in
       type_ptr_equal_type qual_type.Clang_ast_t.qt_type_ptr typ
   | _ -> false

@@ -107,7 +107,7 @@ struct
 
     let do_before_dataflow initial_typestate =
       if Config.eradicate_verbose then
-        L.stdout "Initial Typestate@\n%a@."
+        L.result "Initial Typestate@\n%a@."
           (TypeState.pp Extension.ext) initial_typestate in
 
     let do_after_dataflow find_canonical_duplicate final_typestate =
@@ -324,7 +324,7 @@ struct
             proc_loc
         end;
         if Config.eradicate_verbose then
-          L.stdout "Final Typestate@\n%a@."
+          L.result "Final Typestate@\n%a@."
             (TypeState.pp Extension.ext) typestate in
       match typestate_opt with
       | None -> ()
@@ -366,7 +366,7 @@ struct
           let loc = Procdesc.get_loc proc_desc in
           let linereader = Printer.LineReader.create () in
           if Config.eradicate_verbose then
-            L.stdout "%a@." (AnnotatedSignature.pp proc_name) annotated_signature;
+            L.result "%a@." (AnnotatedSignature.pp proc_name) annotated_signature;
 
           callback2
             calls_this checks callback_args annotated_signature linereader loc

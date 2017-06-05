@@ -116,10 +116,9 @@ module Worklist = struct
       wl.visit_map <-
         Procdesc.NodeMap.add min.node (min.visits + 1) wl.visit_map; (* increase the visits *)
       min.node
-    with Not_found -> begin
-        L.out "@\n...Work list is empty! Impossible to remove edge...@\n";
-        assert false
-      end
+    with Not_found ->
+      L.internal_error "@\n...Work list is empty! Impossible to remove edge...@\n";
+      assert false
 end
 (* =============== END of module Worklist =============== *)
 
@@ -162,7 +161,7 @@ let path_set_checkout_todo (wl : Worklist.t) (node: Procdesc.Node.t) : Paths.Pat
     Hashtbl.replace wl.Worklist.path_set_visited node_id new_visited;
     todo
   with Not_found ->
-    L.out "@.@.ERROR: could not find todo for node %a@.@." Procdesc.Node.pp node;
+    L.internal_error "@\n@\nERROR: could not find todo for node %a@\n@." Procdesc.Node.pp node;
     assert false
 
 (* =============== END of the edge_set object =============== *)
@@ -1004,7 +1003,8 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t)
         let add pset prop =
           Paths.PathSet.add_renamed_prop prop (Paths.Path.start start_node) pset in
         Propset.fold add Paths.PathSet.empty init_props in
-      L.out "@.#### Start: Footprint Computation for %a ####@." Typ.Procname.pp pname;
+      L.(debug Analysis Medium) "@\n#### Start: Footprint Computation for %a ####@."
+        Typ.Procname.pp pname;
       L.d_increase_indent 1;
       L.d_strln "initial props =";
       Propset.d Prop.prop_emp init_props; L.d_ln (); L.d_ln();
@@ -1019,11 +1019,11 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t)
     let get_results (wl : Worklist.t) () =
       State.process_execution_failures Reporting.log_warning pname;
       let results = collect_analysis_result tenv wl pdesc in
-      L.out "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname;
-      L.out "#### Finished: Footprint Computation for %a %a ####@."
+      L.(debug Analysis Medium) "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname;
+      L.(debug Analysis Medium) "#### Finished: Footprint Computation for %a %a ####@."
         Typ.Procname.pp pname
         (pp_intra_stats wl pdesc) pname;
-      L.out "#### [FUNCTION %a] Footprint Analysis result ####@\n%a@."
+      L.(debug Analysis Medium) "#### [FUNCTION %a] Footprint Analysis result ####@\n%a@."
         Typ.Procname.pp pname
         (Paths.PathSet.pp Pp.text) results;
       let specs = try extract_specs tenv pdesc results with
@@ -1044,7 +1044,7 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t)
         (Specs.get_specs_from_payload summary) in
     let valid_specs = ref [] in
     let go () =
-      L.out "@.#### Start: Re-Execution for %a ####@." Typ.Procname.pp pname;
+      L.(debug Analysis Medium) "@.#### Start: Re-Execution for %a ####@." Typ.Procname.pp pname;
       let filter p =
         let wl = path_set_create_worklist pdesc in
         let speco = execute_filter_prop wl tenv pdesc start_node p in
@@ -1054,7 +1054,7 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t)
               valid_specs := !valid_specs @ [spec];
               true in
         let outcome = if is_valid then "pass" else "fail" in
-        L.out "Finished re-execution for precondition %d %a (%s)@."
+        L.(debug Analysis Medium) "Finished re-execution for precondition %d %a (%s)@."
           (Specs.Jprop.to_number p)
           (pp_intra_stats wl pdesc) pname
           outcome;
@@ -1065,8 +1065,8 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t)
         ignore (List.map ~f:filter candidate_preconditions) in
     let get_results () =
       let specs = !valid_specs in
-      L.out "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname;
-      L.out "#### Finished: Re-Execution for %a ####@." Typ.Procname.pp pname;
+      L.(debug Analysis Medium) "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname;
+      L.(debug Analysis Medium) "#### Finished: Re-Execution for %a ####@." Typ.Procname.pp pname;
       let valid_preconditions =
         List.map ~f:(fun spec -> spec.Specs.pre) specs in
       let source = (Procdesc.get_loc pdesc).file in
@@ -1076,14 +1076,16 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t)
           [(Typ.Procname.to_filename pname)] in
       if Config.write_dotty then
         Dotty.pp_speclist_dotty_file filename specs;
-      L.out "@.@.================================================";
-      L.out "@. *** CANDIDATE PRECONDITIONS FOR %a: " Typ.Procname.pp pname;
-      L.out "@.================================================@.";
-      L.out "@.%a @.@." (Specs.Jprop.pp_list Pp.text false) candidate_preconditions;
-      L.out "@.@.================================================";
-      L.out "@. *** VALID PRECONDITIONS FOR %a: " Typ.Procname.pp pname;
-      L.out "@.================================================@.";
-      L.out "@.%a @.@." (Specs.Jprop.pp_list Pp.text true) valid_preconditions;
+      L.(debug Analysis Medium) "@\n@\n================================================";
+      L.(debug Analysis Medium) "@\n *** CANDIDATE PRECONDITIONS FOR %a: " Typ.Procname.pp pname;
+      L.(debug Analysis Medium) "@\n================================================@\n";
+      L.(debug Analysis Medium) "@\n%a @\n@\n"
+        (Specs.Jprop.pp_list Pp.text false) candidate_preconditions;
+      L.(debug Analysis Medium) "@\n@\n================================================";
+      L.(debug Analysis Medium) "@\n *** VALID PRECONDITIONS FOR %a: " Typ.Procname.pp pname;
+      L.(debug Analysis Medium) "@\n================================================@\n";
+      L.(debug Analysis Medium) "@\n%a @\n@."
+        (Specs.Jprop.pp_list Pp.text true) valid_preconditions;
       specs, Specs.RE_EXECUTION in
     go, get_results in
 
@@ -1229,7 +1231,7 @@ let update_specs tenv prev_summary phase (new_specs : Specs.NormSpec.t list)
               new_specs)
     then begin
       changed:= true;
-      L.out "Specs changed: removing pre of spec@\n%a@."
+      L.(debug Analysis Medium) "Specs changed: removing pre of spec@\n%a@."
         (Specs.pp_spec Pp.text None) old_spec;
       current_specs := SpecMap.remove old_spec.Specs.pre !current_specs end
     else () in
@@ -1243,7 +1245,7 @@ let update_specs tenv prev_summary phase (new_specs : Specs.NormSpec.t list)
         Specs.Visitedset.union old_visited spec.Specs.visited in
       if not (Paths.PathSet.equal old_post new_post) then begin
         changed := true;
-        L.out "Specs changed: added new post@\n%a@."
+        L.(debug Analysis Medium) "Specs changed: added new post@\n%a@."
           (Propset.pp Pp.text (Specs.Jprop.to_prop spec.Specs.pre))
           (Paths.PathSet.to_propset tenv new_post);
         current_specs :=
@@ -1252,7 +1254,7 @@ let update_specs tenv prev_summary phase (new_specs : Specs.NormSpec.t list)
 
     with Not_found ->
       changed := true;
-      L.out "Specs changed: added new pre@\n%a@."
+      L.(debug Analysis Medium) "Specs changed: added new pre@\n%a@."
         (Specs.Jprop.pp_short Pp.text) spec.Specs.pre;
       current_specs :=
         SpecMap.add
@@ -1316,7 +1318,7 @@ let analyze_proc tenv proc_desc : Specs.summary =
 
 (** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
 let transition_footprint_re_exe tenv proc_name joined_pres =
-  L.out "Transition %a from footprint to re-exe@." Typ.Procname.pp proc_name;
+  L.(debug Analysis Medium) "Transition %a from footprint to re-exe@." Typ.Procname.pp proc_name;
   let summary = Specs.get_summary_unsafe "transition_footprint_re_exe" proc_name in
   let summary' =
     if Config.only_footprint then
@@ -1363,10 +1365,11 @@ let perform_transition proc_desc tenv proc_name =
       with exn when SymOp.exn_not_failure exn ->
         apply_start_node do_after_node;
         Config.allow_leak := allow_leak;
-        L.out "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name;
+        L.(debug Analysis Medium) "Error in collect_preconditions for %a@."
+          Typ.Procname.pp proc_name;
         let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
         let err_str = "exception raised " ^ (Localise.to_issue_id err_name) in
-        L.out "Error: %s %a@." err_str L.pp_ml_loc_opt ml_loc_opt;
+        L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ml_loc_opt ml_loc_opt;
         [] in
     transition_footprint_re_exe tenv proc_name joined_pres in
   match Specs.get_summary proc_name with
@@ -1523,7 +1526,8 @@ let print_stats_cfg proc_shadowed source cfg =
     match Specs.get_summary proc_name with
     | None -> ()
     | Some _ when proc_shadowed proc_desc ->
-        L.out "print_stats: ignoring function %a which is also defined in another file@."
+        L.(debug Analysis Medium)
+          "print_stats: ignoring function %a which is also defined in another file@."
           Typ.Procname.pp proc_name
     | Some summary ->
         let stats = summary.Specs.stats in
@@ -1580,7 +1584,7 @@ let print_stats_cfg proc_shadowed source cfg =
       Out_channel.close outc
     with Sys_error _ -> () in
   List.iter ~f:compute_stats_proc (Cfg.get_defined_procs cfg);
-  L.out "%a" print_file_stats ();
+  L.(debug Analysis Medium) "%a" print_file_stats ();
   save_file_stats ()
 
 (** Print the stats for all the files in the cluster *)

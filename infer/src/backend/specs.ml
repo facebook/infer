@@ -355,7 +355,7 @@ let pp_failure_kind_opt fmt failure_kind_opt = match failure_kind_opt with
   | None -> F.fprintf fmt "NONE"
 
 let pp_errlog fmt err_log =
-  F.fprintf fmt "ERRORS: @[<h>%a@]@." Errlog.pp_errors err_log;
+  F.fprintf fmt "ERRORS: @[<h>%a@]@\n%!" Errlog.pp_errors err_log;
   F.fprintf fmt "WARNINGS: @[<h>%a@]" Errlog.pp_warnings err_log
 
 let pp_stats fmt stats =
@@ -441,7 +441,7 @@ let pp_payload pe fmt
     { preposts; typestate; crashcontext_frame;
       quandary; siof; threadsafety; buffer_overrun; annot_map } =
   let pp_opt prefix pp fmt = function
-    | Some x -> F.fprintf fmt "%s: %a\n" prefix pp x
+    | Some x -> F.fprintf fmt "%s: %a@\n" prefix pp x
     | None -> () in
   F.fprintf fmt "%a%a%a%a%a%a%a%a@\n"
     (pp_opt "PrePosts" (pp_specs pe)) (Option.map ~f:NormSpec.tospecs preposts)
@@ -509,7 +509,7 @@ let summary_compact sh summary =
 
 (** Add the summary to the table for the given function *)
 let add_summary (proc_name : Typ.Procname.t) (summary: summary) : unit =
-  L.out "Adding summary for %a@\n@[<v 2>  %a@]@."
+  L.(debug Analysis Medium) "Adding summary for %a@\n@[<v 2>  %a@]@."
     Typ.Procname.pp proc_name
     pp_summary_text summary;
   Typ.Procname.Hash.replace spec_tbl proc_name summary

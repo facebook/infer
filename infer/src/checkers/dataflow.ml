@@ -82,7 +82,6 @@ let node_throws pdesc node (proc_throws : Typ.Procname.t -> throws) : throws =
 module MakeDF(St: DFStateType) : DF with type state = St.t = struct
   module S = Procdesc.NodeSet
   module H = Procdesc.NodeHash
-  module N = Procdesc.Node
 
   type worklist = S.t
   type statemap = St.t H.t
@@ -178,7 +177,8 @@ let callback_test_dataflow { Callbacks.proc_desc; tenv; summary } =
       let equal = Int.equal
       let join n m = if Int.equal n 0 then m else n
       let do_node _ n s =
-        if verbose then L.stdout "visiting node %a with state %d@." Procdesc.Node.pp n s;
+        if verbose then
+          L.(debug Analysis Verbose) "visiting node %a with state %d@." Procdesc.Node.pp n s;
         [s + 1], [s + 1]
       let proc_throws _ = DoesNotThrow
     end) in

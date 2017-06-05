@@ -21,4 +21,5 @@ val start_child : f:('a -> unit) -> pool:t -> 'a -> unit
 (** Wait until all the currently executing processes terminate *)
 val wait_all : t -> unit
 
+(** Keep track of whether the current execution is in a child process *)
 val in_child : bool ref

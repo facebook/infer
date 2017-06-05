@@ -113,9 +113,9 @@ struct
       let item_annot = Annot.Item.empty in
       fname, typ, item_annot in
     let fields = List.map ~f:mk_field_from_captured_var captured_vars in
-    Logging.out_debug "Block %s field:\n" block_name;
+    L.(debug Capture Verbose) "Block %s field:@\n" block_name;
     List.iter ~f:(fun (fn, _, _) ->
-        Logging.out_debug "-----> field: '%s'\n" (Fieldname.to_string fn)) fields;
+        L.(debug Capture Verbose) "-----> field: '%s'@\n" (Fieldname.to_string fn)) fields;
     let block_typename = Typ.Name.Objc.from_string block_name in
     ignore (Tenv.mk_struct tenv ~fields block_typename);
     let block_type = Typ.mk (Typ.Tstruct block_typename) in
@@ -180,7 +180,7 @@ struct
   (* the parameter f will be called with function instruction *)
   let exec_with_block_priority_exception f trans_state e stmt_info =
     if (is_block_expr e) && (PriorityNode.own_priority_node trans_state.priority stmt_info) then (
-      Logging.out_debug "Translating block expression by freeing the priority";
+      L.(debug Capture Verbose) "Translating block expression by freeing the priority";
       f { trans_state with priority = Free } e)
     else f trans_state e
 
@@ -236,7 +236,7 @@ struct
       | None -> assert false in
     let res_trans = f trans_state stmt in
     let (exp, typ) = extract_exp_from_list res_trans.exps
-        "[Warning] Need exactly one expression to add reference type\n" in
+        "[Warning] Need exactly one expression to add reference type@\n" in
     { res_trans with exps = [(exp, add_reference_if_glvalue typ expr_info)] }
 
   (* Execute translation of e forcing to release priority
@@ -430,9 +430,9 @@ struct
         let sizeof_data =
           {Exp.typ=sizeof_typ; nbytes; dynamic_length=None; subtype=Subtype.exact} in
         { empty_res_trans with exps = [(Exp.Sizeof sizeof_data, sizeof_typ)] }
-    | k -> Logging.out
-             "\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: \
-              %s . Expression ignored, returned -1... \n"
+    | k -> L.(debug Capture Medium)
+             "@\nWARNING: Missing translation of Uniry_Expression_Or_Trait of kind: \
+              %s . Expression ignored, returned -1... @\n"
              (Clang_ast_j.string_of_unary_expr_or_type_trait_kind k);
         { empty_res_trans with exps =[(Exp.minus_one, typ)]}
 
@@ -495,10 +495,10 @@ struct
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let name_info, _, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
-    Logging.out_debug "!!!!! Dealing with field '%s' @." name_info.Clang_ast_t.ni_name;
+    L.(debug Capture Verbose) "!!!!! Dealing with field '%s' @." name_info.Clang_ast_t.ni_name;
     let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
-        "WARNING: in Field dereference we expect to know the object\n" in
+        "WARNING: in Field dereference we expect to know the object@\n" in
     let is_pointer_typ = match class_typ.desc with
       | Typ.Tptr _ -> true
       | _ -> false in
@@ -506,7 +506,7 @@ struct
       match class_typ.desc with
       | Typ.Tptr (t, _) -> t
       | _ -> class_typ in
-    Logging.out_debug "Type is  '%s' @." (Typ.to_string class_typ);
+    L.(debug Capture Verbose) "Type is  '%s' @." (Typ.to_string class_typ);
     let field_name = CGeneral_utils.mk_class_field_name name_info in
     let field_exp = Exp.Lfield (obj_sil, field_name, class_typ) in
     (* In certain cases, there is be no LValueToRValue cast, but backend needs dereference*)
@@ -535,7 +535,7 @@ struct
     let decl_opt = CAst_utils.get_function_decl_with_body decl_ptr in
     Option.iter ~f:(call_translation context) decl_opt;
     let method_name = CAst_utils.get_unqualified_name name_info in
-    Logging.out_debug "!!!!! Dealing with method '%s' @." method_name;
+    L.(debug Capture Verbose) "!!!!! Dealing with method '%s' @." method_name;
     let method_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let ms_opt = CMethod_trans.method_signature_of_pointer
         context.translation_unit_context context.tenv decl_ptr in
@@ -651,7 +651,7 @@ struct
           let typ = CType.add_pointer_to_typ (Typ.mk (Tstruct class_typename)) in
           [(var_exp, typ)]
       else [(var_exp, typ)] in
-    Logging.out_debug "\n\n PVAR ='%s'\n\n" (Pvar.to_string pvar);
+    L.(debug Capture Verbose) "@\n@\n PVAR ='%s'@\n@\n" (Pvar.to_string pvar);
     let res_trans = { empty_res_trans with exps } in
     match typ.desc with
     | Tptr (_, Pk_reference) ->
@@ -660,7 +660,7 @@ struct
     | _ -> res_trans
 
   and decl_ref_trans trans_state pre_trans_result stmt_info decl_ref ~is_constructor_init =
-    Logging.out_debug "  priority node free = '%s'@\n@."
+    L.(debug Capture Verbose) "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let decl_kind = decl_ref.Clang_ast_t.dr_kind in
     match decl_kind with
@@ -674,14 +674,14 @@ struct
         method_deref_trans trans_state pre_trans_result decl_ref stmt_info decl_kind
     | _ ->
         let print_error decl_kind =
-          Logging.out
+          L.(debug Capture Medium)
             "Warning: Decl ref expression %s with pointer %d still needs to be translated "
             (Clang_ast_j.string_of_decl_kind decl_kind)
             decl_ref.Clang_ast_t.dr_decl_pointer in
         print_error decl_kind; assert false
 
   and declRefExpr_trans trans_state stmt_info decl_ref_expr_info _ =
-    Logging.out_debug "  priority node free = '%s'\n@."
+    L.(debug Capture Verbose) "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let decl_ref = match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
       | Some dr -> dr
@@ -695,7 +695,7 @@ struct
         (match enum_constant_decl_info.Clang_ast_t.ecdi_init_expr with
          | Some stmt ->
              expression_trans context stmt
-               "WARNING: Expression in Enumeration constant not found\n"
+               "WARNING: Expression in Enumeration constant not found@\n"
          | None ->
              match prev_enum_constant_opt with
              | Some prev_constant_pointer ->
@@ -735,9 +735,9 @@ struct
     let res_trans_a = instruction trans_state array_stmt in
     let res_trans_idx = instruction trans_state idx_stmt in
     let (a_exp, _) = extract_exp_from_list res_trans_a.exps
-        "WARNING: In ArraySubscriptExpr there was a problem in translating array exp.\n" in
+        "WARNING: In ArraySubscriptExpr there was a problem in translating array exp.@\n" in
     let (i_exp, _) = extract_exp_from_list res_trans_idx.exps
-        "WARNING: In ArraySubscriptExpr there was a problem in translating index exp.\n" in
+        "WARNING: In ArraySubscriptExpr there was a problem in translating index exp.@\n" in
     let array_exp = Exp.Lindex (a_exp, i_exp) in
 
     let root_nodes =
@@ -768,8 +768,8 @@ struct
   and binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list =
     let bok =
       Clang_ast_j.string_of_binary_operator_kind binary_operator_info.Clang_ast_t.boi_kind in
-    Logging.out_debug "  BinaryOperator '%s' " bok;
-    Logging.out_debug "  priority node free = '%s'\n@."
+    L.(debug Capture Verbose) "  BinaryOperator '%s' " bok;
+    L.(debug Capture Verbose) "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
@@ -786,14 +786,14 @@ struct
         (* translating the operands.                                       *)
         let res_trans_e1 = exec_with_self_exception instruction trans_state' s1 in
         let (var_exp, var_exp_typ)  = extract_exp_from_list res_trans_e1.exps
-            "\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...\n" in
+            "@\nWARNING: Missing LHS operand in BinOp. Returning -1. Fix needed...@\n" in
         let trans_state'' = { trans_state' with var_exp_typ = Some (var_exp, var_exp_typ)  } in
         let res_trans_e2 =
           (* translation of s2 is done taking care of block special case *)
           exec_with_block_priority_exception (exec_with_self_exception instruction) trans_state''
             s2 stmt_info in
         let (sil_e2, _) = extract_exp_from_list res_trans_e2.exps
-            "\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...\n" in
+            "@\nWARNING: Missing RHS operand in BinOp. Returning -1. Fix needed...@\n" in
         let binop_res_trans, exp_to_parent =
           if List.exists ~f:(Exp.equal var_exp) res_trans_e2.initd_exps then [], []
           else
@@ -879,9 +879,9 @@ struct
           let params = List.tl_exn (collect_exprs result_trans_subexprs) in
           if Int.equal (List.length params) (List.length params_stmt) then
             params
-          else
-            (Logging.out "ERROR: stmt_list and res_trans_par.exps must have same size\n";
-             assert false) in
+          else (
+            L.internal_error "ERROR: stmt_list and res_trans_par.exps must have same size@\n";
+            assert false) in
         let act_params = if is_cf_retain_release then
             (Exp.Const (Const.Cint IntLit.one), Typ.mk (Tint Typ.IBool)) :: act_params
           else act_params in
@@ -1056,7 +1056,7 @@ struct
     | [] -> obj_c_message_expr_info, [empty_res_trans]
 
   and objCMessageExpr_trans trans_state si obj_c_message_expr_info stmt_list expr_info =
-    Logging.out_debug "  priority node free = '%s'\n@."
+    L.(debug Capture Verbose) "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location si context in
@@ -1100,12 +1100,13 @@ struct
 
 
   and dispatch_function_trans trans_state stmt_info stmt_list n =
-    Logging.out_debug "\n Call to a dispatch function treated as special case...\n";
+    L.(debug Capture Verbose) "@\n Call to a dispatch function treated as special case...@\n";
     let transformed_stmt = Ast_expressions.translate_dispatch_function stmt_info stmt_list n in
     instruction trans_state transformed_stmt
 
   and block_enumeration_trans trans_state stmt_info stmt_list ei =
-    Logging.out_debug "\n Call to a block enumeration function treated as special case...\n@.";
+    L.(debug Capture Verbose)
+      "@\n Call to a block enumeration function treated as special case...@\n@.";
     let procname = Procdesc.get_proc_name trans_state.context.CContext.procdesc in
     let pvar = CProcname.get_next_block_pvar procname in
     let transformed_stmt, _ =
@@ -1125,7 +1126,7 @@ struct
       let trans_state' = { trans_state_pri with succ_nodes = [] } in
       let res_trans_b = instruction trans_state' stmt in
       let (e', _) = extract_exp_from_list res_trans_b.exps
-          "\nWARNING: Missing branch expression for Conditional operator. Need to be fixed\n" in
+          "@\nWARNING: Missing branch expression for Conditional operator. Need to be fixed@\n" in
       let set_temp_var = [
         Sil.Store (Exp.Lvar pvar, var_typ, e', sil_loc)
       ] in
@@ -1189,7 +1190,7 @@ struct
         let root_nodes = init_res_trans'.root_nodes in
         let root_nodes' = if root_nodes <> [] then root_nodes else op_res_trans.root_nodes in
         { op_res_trans with root_nodes = root_nodes'; }
-    | _ -> Logging.out "BinaryConditionalOperator not translated@.";
+    | _ -> L.(debug Capture Medium) "BinaryConditionalOperator not translated@.";
         assert false
 
   (* Translate a condition for if/loops statement. It shorts-circuit and/or. *)
@@ -1203,10 +1204,10 @@ struct
       create_prune_node b e ins sil_loc (Sil.Ik_if) context in
     let extract_exp el =
       extract_exp_from_list el
-        "\nWARNING: Missing expression for Conditional operator. Need to be fixed" in
+        "@\nWARNING: Missing expression for Conditional operator. Need to be fixed" in
     (* this function translate cond without doing shortcircuit *)
     let no_short_circuit_cond () =
-      Logging.out_debug " No short-circuit condition\n";
+      L.(debug Capture Verbose) " No short-circuit condition@\n";
       let res_trans_cond =
         if is_null_stmt cond then {
           empty_res_trans with exps = [(Exp.Const (Const.Cint IntLit.one), Typ.mk (Tint Typ.IBool))]
@@ -1267,7 +1268,8 @@ struct
         instrs = res_trans_s1.instrs@res_trans_s2.instrs;
         exps = [(e_cond, typ1)];
       } in
-    Logging.out_debug "Translating Condition for If-then-else/Loop/Conditional Operator \n";
+    L.(debug Capture Verbose)
+      "Translating Condition for If-then-else/Loop/Conditional Operator @\n";
     let open Clang_ast_t in
     match cond with
     | BinaryOperator(_, [s1; s2], _, boi) ->
@@ -1353,7 +1355,7 @@ struct
           else [switch_special_cond_node] in
         let (switch_e_cond', switch_e_cond'_typ) =
           extract_exp_from_list res_trans_cond_tmp.exps
-            "\nWARNING: The condition of the SwitchStmt is not singleton. Need to be fixed\n" in
+            "@\nWARNING: The condition of the SwitchStmt is not singleton. Need to be fixed@\n" in
         let res_trans_cond = { res_trans_cond_tmp with
                                root_nodes = root_nodes;
                                leaf_nodes = [switch_special_cond_node]
@@ -1474,7 +1476,7 @@ struct
 
   and stmtExpr_trans trans_state stmt_list =
     let stmt =
-      extract_stmt_from_singleton stmt_list "ERROR: StmtExpr should have only one statement.\n" in
+      extract_stmt_from_singleton stmt_list "ERROR: StmtExpr should have only one statement.@\n" in
     let res_trans_stmt = instruction trans_state stmt in
     let exps' = List.rev res_trans_stmt.exps in
     match exps' with
@@ -1683,7 +1685,7 @@ struct
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state array_stmt_info in
     let dynlength_trans_result = instruction trans_state_pri dynlength_stmt in
     let dynlength_exp_typ = extract_exp_from_list dynlength_trans_result.exps
-        "WARNING: There should be one expression.\n" in
+        "WARNING: There should be one expression.@\n" in
     let sil_loc = CLocation.get_sil_location dynlength_stmt_info trans_state_pri.context in
     let call_instr =
       let call_exp = Exp.Const (Const.Cfun BuiltinDecl.__set_array_length) in
@@ -1722,7 +1724,7 @@ struct
             exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
           exec_with_block_priority_exception instruction' trans_state' ie var_stmt_info in
         let (sil_e1', ie_typ) = extract_exp_from_list res_trans_ie.exps
-            "WARNING: In DeclStmt we expect only one expression returned in recursive call\n" in
+            "WARNING: In DeclStmt we expect only one expression returned in recursive call@\n" in
         let rhs_owning_method = CTrans_utils.is_owning_method ie in
         let _, instrs_assign =
           (* variable might be initialized already - do nothing in that case*)
@@ -1792,7 +1794,7 @@ struct
       | RecordDecl _ :: _ -> (* Case for struct *)
           collect_all_decl trans_state decl_list succ_nodes stmt_info
       | _ ->
-          Logging.out
+          L.(debug Capture Medium)
             "WARNING: In DeclStmt found an unknown declaration type. \
              RETURNING empty list of declaration. NEED TO BE FIXED";
           empty_res_trans in
@@ -1805,7 +1807,7 @@ struct
 
   (* For OpaqueValueExpr we return the translation generated from its source expression*)
   and opaqueValueExpr_trans trans_state opaque_value_expr_info =
-    Logging.out_debug "  priority node free = '%s'\n@."
+    L.(debug Capture Verbose) "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     match trans_state.opaque_exp with
     | Some exp -> { empty_res_trans with exps = [exp] }
@@ -1833,7 +1835,7 @@ struct
   (* to translate the CallToSetter which is
      how x.f = a is actually implemented by the runtime.*)
   and pseudoObjectExpr_trans trans_state stmt_list =
-    Logging.out_debug "  priority node free = '%s'\n@."
+    L.(debug Capture Verbose) "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let rec do_semantic_elements el =
       let open Clang_ast_t in
@@ -1849,11 +1851,11 @@ struct
   (* Cast expression are treated the same apart from the cast operation kind*)
   and cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_expr_info =
     let context = trans_state.context in
-    Logging.out_debug "  priority node free = '%s'\n@."
+    L.(debug Capture Verbose) "  priority node free = '%s'@\n@."
       (string_of_bool (PriorityNode.is_priority_free trans_state));
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let stmt = extract_stmt_from_singleton stmt_list
-        "WARNING: In CastExpr There must be only one stmt defining the expression to be cast.\n" in
+        "WARNING: In CastExpr There must be only one stmt defining the expression to be cast.@\n" in
     let res_trans_stmt = instruction trans_state stmt in
     let typ =
       CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
@@ -1872,7 +1874,7 @@ struct
   (* function used in the computation for both Member_Expr and ObjCIVarRefExpr *)
   and do_memb_ivar_ref_exp trans_state stmt_info stmt_list decl_ref  =
     let exp_stmt = extract_stmt_from_singleton stmt_list
-        "WARNING: in MemberExpr there must be only one stmt defining its expression.\n" in
+        "WARNING: in MemberExpr there must be only one stmt defining its expression.@\n" in
     (* Don't pass var_exp_typ to child of MemberExpr - this may lead to initializing variable *)
     (* with wrong value. For example, we don't want p to be initialized with X(1) for:*)
     (* int p = X(1).field; *)
@@ -1896,13 +1898,13 @@ struct
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let stmt = extract_stmt_from_singleton stmt_list
         "WARNING: We expect only one element in stmt list defining \
-         the operand in UnaryOperator. NEED FIXING\n" in
+         the operand in UnaryOperator. NEED FIXING@\n" in
     let trans_state' = { trans_state_pri with succ_nodes = [] } in
     let res_trans_stmt = instruction trans_state' stmt in
     (* Assumption: the operand does not create a cfg node*)
     let (sil_e', _) =
       extract_exp_from_list res_trans_stmt.exps
-        "\nWARNING: Missing operand in unary operator. NEED FIXING.\n" in
+        "@\nWARNING: Missing operand in unary operator. NEED FIXING.@\n" in
     let ret_typ =
       CType_decl.qual_type_to_sil_type
         context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type in
@@ -1947,7 +1949,7 @@ struct
                                  var_exp_typ = Some (ret_exp, ret_typ) } in
             let res_trans_stmt = exec_with_self_exception instruction trans_state' stmt in
             let (sil_expr, _) = extract_exp_from_list res_trans_stmt.exps
-                "WARNING: There should be only one return expression.\n" in
+                "WARNING: There should be only one return expression.@\n" in
 
             let ret_instrs = if List.exists ~f:(Exp.equal ret_exp) res_trans_stmt.initd_exps
               then []
@@ -1967,9 +1969,9 @@ struct
         | [] -> (* return; *)
             let ret_node = mk_ret_node [] in
             { empty_res_trans with root_nodes = [ret_node]; leaf_nodes = []}
-        | _ -> Logging.out_debug
-                 "\nWARNING: Missing translation of Return Expression. \
-                  Return Statement ignored. Need fixing!\n";
+        | _ -> L.(debug Capture Verbose)
+                 "@\nWARNING: Missing translation of Return Expression. \
+                  Return Statement ignored. Need fixing!@\n";
             { empty_res_trans with root_nodes = succ_nodes }) in
     (* We expect a return with only one expression *)
     trans_result
@@ -1980,7 +1982,7 @@ struct
   (* In paren expression there should be only one stmt that defines the  expression  *)
   and parenExpr_trans trans_state stmt_list =
     let stmt = extract_stmt_from_singleton stmt_list
-        "WARNING: In ParenExpression there should be only one stmt.\n" in
+        "WARNING: In ParenExpression there should be only one stmt.@\n" in
     instruction trans_state stmt
 
   and objCBoxedExpr_trans trans_state info sel stmt_info stmts =
@@ -2201,7 +2203,7 @@ struct
     let trans_state_param = { trans_state_pri with succ_nodes = [] } in
     let result_trans_param = exec_with_self_exception instruction trans_state_param param in
     let exp = extract_exp_from_list result_trans_param.exps
-        "WARNING: There should be one expression to delete. \n" in
+        "WARNING: There should be one expression to delete. @\n" in
     let call_instr =
       Sil.Call (None, Exp.Const (Const.Cfun fname), [exp], sil_loc, CallFlags.default) in
     let call_res_trans = { empty_res_trans with instrs = [call_instr] } in
@@ -2237,7 +2239,7 @@ struct
     let var_exp_typ = (Exp.Lvar pvar, typ_tmp) in
     let res_trans = init_expr_trans trans_state var_exp_typ stmt_info (Some temp_exp) in
     let _, typ = extract_exp_from_list res_trans.exps
-        "MaterializeExpr initializer missing\n" in
+        "MaterializeExpr initializer missing@\n" in
     Procdesc.append_locals procdesc [(Pvar.get_name pvar, typ)];
     res_trans
 
@@ -2402,7 +2404,7 @@ struct
     let stmt_kind = Clang_ast_proj.get_stmt_kind_string instr in
     let stmt_info, _ = Clang_ast_proj.get_stmt_tuple instr in
     let stmt_pointer = stmt_info.Clang_ast_t.si_pointer in
-    Logging.out_debug "\nPassing from %s '%d' \n" stmt_kind stmt_pointer;
+    L.(debug Capture Verbose) "@\nPassing from %s '%d' @\n" stmt_kind stmt_pointer;
     let open Clang_ast_t in
     match instr with
     | GotoStmt(stmt_info, _, { Clang_ast_t.gsi_label = label_name; _ }) ->
@@ -2455,8 +2457,8 @@ struct
         switchStmt_trans trans_state stmt_info switch_stmt_list
 
     | CaseStmt _ ->
-        Logging.out_debug
-          "FATAL: Passing from CaseStmt outside of SwitchStmt, terminating.\n";
+        L.(debug Capture Verbose)
+          "FATAL: Passing from CaseStmt outside of SwitchStmt, terminating.@\n";
         assert false
 
     | StmtExpr(_, stmt_list, _) ->
@@ -2604,8 +2606,8 @@ struct
     | ObjCAtTryStmt (_, stmts) ->
         compoundStmt_trans trans_state stmts
     | CXXTryStmt (_, stmts) ->
-        (Logging.out
-           "\n!!!!WARNING: found statement %s. \nTranslation need to be improved.... \n"
+        (L.(debug Capture Medium)
+           "@\n!!!!WARNING: found statement %s. @\nTranslation need to be improved.... @\n"
            (Clang_ast_proj.get_stmt_kind_string instr);
          compoundStmt_trans trans_state stmts)
 
@@ -2690,9 +2692,9 @@ struct
     | SubstNonTypeTemplateParmPackExpr _
     | CXXDependentScopeMemberExpr _ -> raise (CTrans_utils.TemplatedCodeException instr)
 
-    | s -> (Logging.out
-              "\n!!!!WARNING: found statement %s. \nACTION REQUIRED: \
-               Translation need to be defined. Statement ignored.... \n"
+    | s -> (L.(debug Capture Medium)
+              "@\n!!!!WARNING: found statement %s. @\nACTION REQUIRED: \
+               Translation need to be defined. Statement ignored.... @\n"
               (Clang_ast_proj.get_stmt_kind_string s);
             assert false)
 
@@ -2716,7 +2718,7 @@ struct
     let var_res_trans = match ctor_init.Clang_ast_t.xci_subject with
       | `Delegating _ | `BaseClass _ ->
           let this_exp, this_typ = extract_exp_from_list this_res_trans.exps
-              "WARNING: There should be one expression for 'this' in constructor. \n" in
+              "WARNING: There should be one expression for 'this' in constructor. @\n" in
           (* Hack: Strip pointer from type here since cxxConstructExpr_trans expects it this way *)
           (* it will add pointer back before making it a parameter to a call *)
           let class_typ = match this_typ.Typ.desc with Tptr (t, _) -> t | _ -> assert false in
@@ -2725,7 +2727,7 @@ struct
           decl_ref_trans trans_state' this_res_trans child_stmt_info decl_ref
             ~is_constructor_init:true in
     let var_exp_typ = extract_exp_from_list var_res_trans.exps
-        "WARNING: There should be one expression to initialize in constructor initializer. \n" in
+        "WARNING: There should be one expression to initialize in constructor initializer. @\n" in
     let init_expr = ctor_init.Clang_ast_t.xci_init_expr in
     let init_res_trans = init_expr_trans trans_state' var_exp_typ child_stmt_info init_expr in
     PriorityNode.compute_results_to_parent trans_state' sil_loc "Constructor Init"

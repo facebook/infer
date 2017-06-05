@@ -7,9 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+(** Utility module for translating unary and binary operations and compound assignments *)
+
 open! IStd
 
-(** Utility module for translating unary and binary operations and compound assignments *)
+module L = Logging
 
 (* Returns the translation of assignment when ARC mode is enabled in Obj-C *)
 (* For __weak and __unsafe_unretained the translation is the same as non-ARC *)
@@ -129,8 +131,8 @@ let binary_operation_instruction boi e1 typ e2 loc rhs_owning_method =
   (* We should not get here.  *)
   (* These should be treated by compound_assignment_binary_operation_instruction*)
   | bok ->
-      Logging.out
-        "\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...\n"
+      L.(debug Capture Medium)
+        "@\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...@\n"
         (Clang_ast_j.string_of_binary_operator_kind bok);
       (Exp.minus_one, [])
 
@@ -176,8 +178,10 @@ let unary_operation_instruction translation_unit_context uoi e typ loc =
   | `AddrOf -> (e, [])
   | `Real | `Imag | `Extension | `Coawait ->
       let uok = Clang_ast_j.string_of_unary_operator_kind (uoi.Clang_ast_t.uoi_kind) in
-      Logging.out
-        "\nWARNING: Missing translation for Unary Operator Kind %s. The construct has been ignored...\n" uok;
+      L.(debug Capture Medium)
+        "@\nWARNING: Missing translation for Unary Operator Kind %s. \
+         The construct has been ignored...@\n"
+        uok;
       (e, [])
 
 let bin_op_to_string boi =
