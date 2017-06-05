@@ -61,9 +61,9 @@ let type_from_unary_expr_or_type_trait_expr_info info =
   | None -> None
 
 let get_decl decl_ptr =
-  try
-    Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.pointer_decl_index)
-  with Not_found -> Logging.out "decl with pointer %d not found\n" decl_ptr; None
+  let decl = Int.Table.find ClangPointers.pointer_decl_table decl_ptr in
+  if Option.is_none decl then Logging.out "decl with pointer %d not found\n" decl_ptr;
+  decl
 
 let get_decl_opt decl_ptr_opt =
   match decl_ptr_opt with
@@ -71,9 +71,9 @@ let get_decl_opt decl_ptr_opt =
   | None -> None
 
 let get_stmt stmt_ptr =
-  try
-    Some (Clang_ast_main.PointerMap.find stmt_ptr !CFrontend_config.pointer_stmt_index)
-  with Not_found -> Logging.out "stmt with pointer %d not found\n" stmt_ptr; None
+  let stmt = Int.Table.find ClangPointers.pointer_stmt_table stmt_ptr in
+  if Option.is_none stmt then Logging.out "stmt with pointer %d not found\n" stmt_ptr;
+  stmt
 
 let get_stmt_opt stmt_ptr_opt =
   match stmt_ptr_opt with
@@ -86,41 +86,36 @@ let get_decl_opt_with_decl_ref decl_ref_opt =
   | None -> None
 
 let get_property_of_ivar decl_ptr =
-  try
-    Some (Clang_ast_main.PointerMap.find decl_ptr !CFrontend_config.ivar_to_property_index)
-  with Not_found -> Logging.out "property with pointer %d not found\n" decl_ptr; None
+  let decl = Int.Table.find ClangPointers.ivar_to_property_table decl_ptr in
+  if Option.is_none decl then Logging.out "property with pointer %d not found\n" decl_ptr;
+  decl
 
 let update_sil_types_map type_ptr sil_type =
   CFrontend_config.sil_types_map :=
     Clang_ast_extend.TypePointerMap.add type_ptr sil_type !CFrontend_config.sil_types_map
 
 let update_enum_map enum_constant_pointer sil_exp =
-  let open Clang_ast_main in
   let (predecessor_pointer_opt, _) =
-    try PointerMap.find enum_constant_pointer !CFrontend_config.enum_map
-    with Not_found -> assert false in
+    ClangPointers.Map.find_exn !CFrontend_config.enum_map enum_constant_pointer in
   let enum_map_value = (predecessor_pointer_opt, Some sil_exp) in
   CFrontend_config.enum_map :=
-    PointerMap.add enum_constant_pointer enum_map_value !CFrontend_config.enum_map
+    ClangPointers.Map.add !CFrontend_config.enum_map ~key:enum_constant_pointer ~data:enum_map_value
 
 let add_enum_constant enum_constant_pointer predecessor_pointer_opt =
   let enum_map_value = (predecessor_pointer_opt, None) in
   CFrontend_config.enum_map :=
-    Clang_ast_main.PointerMap.add enum_constant_pointer enum_map_value !CFrontend_config.enum_map
+    ClangPointers.Map.add !CFrontend_config.enum_map ~key:enum_constant_pointer ~data:enum_map_value
 
 let get_enum_constant_exp enum_constant_pointer =
-  Clang_ast_main.PointerMap.find enum_constant_pointer !CFrontend_config.enum_map
+  ClangPointers.Map.find_exn !CFrontend_config.enum_map enum_constant_pointer
 
 let get_type type_ptr =
   (* There is chance for success only if type_ptr is in fact clang pointer *)
   match type_ptr with
   | Clang_ast_types.TypePtr.Ptr raw_ptr ->
-      (try
-         Some (Clang_ast_main.PointerMap.find raw_ptr !CFrontend_config.pointer_type_index)
-       with Not_found ->
-         Logging.out "type with pointer %d not found\n" raw_ptr;
-         None
-      )
+      let typ = Int.Table.find ClangPointers.pointer_type_table raw_ptr in
+      if Option.is_none typ then Logging.out "type with pointer %d not found\n" raw_ptr;
+      typ
   | _ ->
       (* otherwise, function fails *)
       let type_str = Clang_ast_extend.type_ptr_to_string type_ptr in

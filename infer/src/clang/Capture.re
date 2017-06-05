@@ -53,7 +53,6 @@ let init_global_state_for_capture_and_linters source_file => {
   register_perf_stats_report source_file;
   Config.curr_language := Config.Clang;
   DB.Results_dir.init source_file;
-  Clang_ast_main.reset_cache ();
   CFrontend_config.reset_global_state ()
 };
 
@@ -91,12 +90,7 @@ let run_clang_frontend ast_source => {
     | `Pipe _ =>
       Format.fprintf fmt "stdin of %a" SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
     };
-  let (decl_index, stmt_index, type_index, ivar_to_property_index) =
-    Clang_ast_main.index_node_pointers ast_decl;
-  CFrontend_config.pointer_decl_index := decl_index;
-  CFrontend_config.pointer_stmt_index := stmt_index;
-  CFrontend_config.pointer_type_index := type_index;
-  CFrontend_config.ivar_to_property_index := ivar_to_property_index;
+  ClangPointers.populate_all_tables ast_decl;
   Logging.out "Clang frontend action is  %s@\n" Config.clang_frontend_action_string;
   Logging.out
     "Start %s of AST from %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source;

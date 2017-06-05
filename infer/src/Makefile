@@ -109,8 +109,7 @@ CLANG_ATDGEN_STUBS = $(addprefix $(CLANG_ATDGEN_STUB_BASE), $(CLANG_ATDGEN_SUFFI
 
 FCP_CLANG_AST_PROJ = $(addprefix $(FCP_CLANG_OCAML_BUILD_DIR)/, \
                        clang_ast_proj.ml clang_ast_proj.mli)
-FCP_CLANG_AST_MAIN = $(addprefix $(FCP_CLANG_OCAML_DIR)/, \
-                       clang_ast_visit.ml clang_ast_main.ml clang_ast_types.ml)
+FCP_CLANG_AST_MAIN = $(addprefix $(FCP_CLANG_OCAML_DIR)/, clang_ast_visit.ml clang_ast_types.ml)
 FCP_FILES_TO_MIRROR = $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN)
 INFER_CLANG_FCP_MIRRORED_FILES = $(addprefix $(CLANG_SOURCES)/, $(notdir $(FCP_FILES_TO_MIRROR)))
 

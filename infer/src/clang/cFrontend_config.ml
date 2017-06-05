@@ -93,21 +93,13 @@ let modeled_function_attributes = [replace_with_deref_first_arg_attr]
 
 (** Global state *)
 
-let enum_map = ref Clang_ast_main.PointerMap.empty
+let enum_map = ref ClangPointers.Map.empty
 let global_translation_unit_decls : Clang_ast_t.decl list ref = ref []
-let ivar_to_property_index = ref Clang_ast_main.PointerMap.empty
 let log_out = ref Format.std_formatter
-let pointer_decl_index = ref Clang_ast_main.PointerMap.empty
-let pointer_stmt_index = ref Clang_ast_main.PointerMap.empty
-let pointer_type_index = ref Clang_ast_main.PointerMap.empty
 let sil_types_map = ref Clang_ast_extend.TypePointerMap.empty
 
 let reset_global_state () =
-  enum_map := Clang_ast_main.PointerMap.empty;
+  enum_map := ClangPointers.Map.empty;
   global_translation_unit_decls := [];
-  ivar_to_property_index := Clang_ast_main.PointerMap.empty;
   log_out := Format.std_formatter;
-  pointer_decl_index := Clang_ast_main.PointerMap.empty;
-  pointer_stmt_index := Clang_ast_main.PointerMap.empty;
-  pointer_type_index := Clang_ast_main.PointerMap.empty;
   sil_types_map := Clang_ast_extend.TypePointerMap.empty;

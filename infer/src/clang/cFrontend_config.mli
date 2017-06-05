@@ -93,15 +93,9 @@ val modeled_function_attributes : string list
 (** Global state *)
 
 (** Map from enum constants pointers to their predecesor and their sil value *)
-val enum_map : (Clang_ast_t.pointer option * Exp.t option) Clang_ast_main.PointerMap.t ref
+val enum_map : (Clang_ast_t.pointer option * Exp.t option) ClangPointers.Map.t ref
 val global_translation_unit_decls : Clang_ast_t.decl list ref
-val ivar_to_property_index : Clang_ast_t.decl Clang_ast_main.PointerMap.t ref
 val log_out : Format.formatter ref
-val pointer_decl_index : Clang_ast_t.decl Clang_ast_main.PointerMap.t ref
-val pointer_stmt_index : Clang_ast_t.stmt Clang_ast_main.PointerMap.t ref
-
-(** Map from clang pointers to types produced by ast exporter.  Populated once on startup *)
-val pointer_type_index : Clang_ast_t.c_type Clang_ast_main.PointerMap.t ref
 
 (** Map from type pointers (clang pointers and types created later by frontend) to sil types
     Populated during frontend execution when new type is found *)

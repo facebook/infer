@@ -1677,8 +1677,8 @@ struct
         { empty_res_trans with root_nodes = trans_state.succ_nodes }
 
   and init_dynamic_array trans_state array_exp_typ array_stmt_info dynlength_stmt_pointer =
-    let dynlength_stmt = Clang_ast_main.PointerMap.find dynlength_stmt_pointer
-        !CFrontend_config.pointer_stmt_index in
+    let dynlength_stmt = Int.Table.find_exn ClangPointers.pointer_stmt_table
+        dynlength_stmt_pointer in
     let dynlength_stmt_info, _ = Clang_ast_proj.get_stmt_tuple dynlength_stmt in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state array_stmt_info in
     let dynlength_trans_result = instruction trans_state_pri dynlength_stmt in
