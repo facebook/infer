@@ -548,16 +548,28 @@ let differential_mode () =
   Unix.mkdir_p out_path;
   Differential.to_files diff out_path
 
+let assert_results_dir advice =
+  if Sys.file_exists Config.results_dir <> `Yes then (
+    L.stderr "ERROR: results directory %s does not exist@\nERROR: %s@." Config.results_dir advice;
+    exit 1
+  )
+
+let setup_results_dir () =
+  match Config.command with
+  | Analyze -> assert_results_dir "have you run capture before?"
+  | Clang | Report | ReportDiff -> create_results_dir ()
+  | Capture | Compile | Run  ->
+      (* These have their own logic depending on the rest of the command line. It particular they
+         might delete the previous results directory. Let them do their thing. *)
+      ()
+
 let () =
   if Config.print_builtins then Builtin.print_and_exit ();
+  setup_results_dir ();
   match Config.command with
   | Analyze ->
       Logging.set_log_file_identifier
         CommandLineOption.Analyze (Option.map ~f:Filename.basename Config.cluster_cmdline);
-      if Sys.file_exists Config.results_dir <> `Yes then (
-        L.stderr "ERROR: results directory %s does not exist@.@." Config.results_dir;
-        Config.print_usage_exit ()
-      );
       InferAnalyze.register_perf_stats_report ();
       analyze Analyze
   | Clang ->
