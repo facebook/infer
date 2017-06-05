@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** used to combine pp together, wrap content into a monospaced block  *)
 val wrap_monospaced : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit
 

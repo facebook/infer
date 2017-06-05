@@ -8,6 +8,8 @@
  *)
 
 {
+  open! IStd
+
   open Lexing
   open Types_parser
 

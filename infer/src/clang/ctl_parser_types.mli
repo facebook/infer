@@ -9,6 +9,8 @@
 
 (* Types used by the ctl parser *)
 
+open! IStd
+
 (** the kind of AST nodes where formulas are evaluated *)
 type ast_node =
   | Stmt of Clang_ast_t.stmt

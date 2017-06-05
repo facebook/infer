@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 type t = {
   introduced : Jsonbug_t.report;
   fixed : Jsonbug_t.report;

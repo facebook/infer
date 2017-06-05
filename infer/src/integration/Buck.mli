@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** is this a Buck target string, eg //foo/bar:baz or boo//foo/bar:baz *)
 val is_target_string : string -> bool
 

@@ -10,6 +10,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 module F = Format
 
 module Allocsite =
@@ -33,8 +35,8 @@ struct
     | Var v ->
         Var.pp F.str_formatter v;
         let s = F.flush_str_formatter () in
-        if s.[0] = '&' then
-          F.fprintf fmt "%s" (String.sub s 1 (String.length s - 1))
+        if Char.equal s.[0] '&' then
+          F.fprintf fmt "%s" (String.sub s ~pos:1 ~len:(String.length s - 1))
         else F.fprintf fmt "%s" s
     | Allocsite a -> Allocsite.pp fmt a
     | Field (l, f) -> F.fprintf fmt "%a.%a" pp l Fieldname.pp f

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 module DeprecatedAPIUsage = struct
   let checker _ _ = None
 end

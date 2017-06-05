@@ -9,6 +9,8 @@
 
 %{
 
+  open! IStd
+
   let formal_params : (ALVar.t list) ref = ref []
 
   let is_not_infer_reserved_id id =
@@ -19,7 +21,7 @@
      else ()
 
   let is_defined_identifier id =
-     if (List.mem (ALVar.Var id) !formal_params) then
+     if (List.mem ~equal:ALVar.equal !formal_params (ALVar.Var id)) then
               Logging.out "\tParsed exp '%s' as variable" id
      else
       raise (Ctl_parser_types.ALParsingException
@@ -149,7 +151,7 @@ clause:
       | "severity" -> ALVar.Severity
       | "mode" -> ALVar.Mode
       | "path" -> ALVar.Path
-      | _ -> IStd.failwithf "[ERROR] string '%s' cannot be set in a SET clause. \
+      | _ -> failwithf "[ERROR] string '%s' cannot be set in a SET clause. \
                         Use either of: \
                         'message', 'mode', 'severity', 'suggestion' or 'path'" $2 in
       CTL.CDesc (alvar, $4) }

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 (** tree of (trace, access path) associations organized by structure of access paths *)
 module type S = sig
   module TraceDomain : AbstractDomain.WithBottom

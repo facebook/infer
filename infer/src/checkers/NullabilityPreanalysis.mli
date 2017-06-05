@@ -9,5 +9,7 @@
 
 (* Module that define preanalysis to derive nullability annotations *)
 
+open! IStd
+
 (* Analysis the cfg and updates the tenv with nullability annotations *)
 val analysis : Cfg.cfg -> Tenv.t -> unit

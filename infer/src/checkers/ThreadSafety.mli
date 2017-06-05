@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 val file_analysis : Callbacks.cluster_callback_t
 
 val analyze_procedure : Callbacks.proc_callback_t

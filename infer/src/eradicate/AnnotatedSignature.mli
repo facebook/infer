@@ -7,8 +7,9 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-
 (** Method signature with annotations. *)
+
+open! IStd
 
 type t = {
   ret : Annot.Item.t * Typ.t; (** Annotated return type. *)

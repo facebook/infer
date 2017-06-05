@@ -8,6 +8,8 @@
  */
 
 %{
+  open! IStd
+
   open Ctl_parser_types
 
 (* See StringRef BuiltinType::getName in

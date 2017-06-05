@@ -7,13 +7,15 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+open! IStd
+
 type t [@@deriving compare]
 
 (** Maps from source_file *)
-module Map : Map.S with type key = t
+module Map : Caml.Map.S with type key = t
 
 (** Set of source files *)
-module Set : Set.S with type elt = t
+module Set : Caml.Set.S with type elt = t
 
 module UNSAFE : sig
   (** Create a SourceFile from any path. This is unchecked and should not be
