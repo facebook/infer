@@ -1302,6 +1302,11 @@ and reactive_capture =
   CLOpt.mk_bool ~long:"reactive-capture"
     "Compile source files only when required by analyzer (clang only)"
 
+and report =
+  CLOpt.mk_bool ~long:"report" ~default:true
+    ~in_help:CLOpt.[Analyze, manual_generic; Run, manual_generic]
+    "Run the reporting phase once the analysis has completed"
+
 and report_current =
   CLOpt.mk_path_opt ~long:"report-current" ~in_help:CLOpt.[ReportDiff, manual_generic]
     "report of the latest revision"
@@ -1878,6 +1883,7 @@ and quiet = !quiet
 and reactive_mode = !reactive
 and reactive_capture = !reactive_capture
 and repeated_calls = !repeated_calls
+and report = !report
 and report_current = !report_current
 and report_custom_error = !report_custom_error
 and report_formatter = !report_formatter

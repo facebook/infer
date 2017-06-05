@@ -24,7 +24,7 @@ let pp_prolog fmt clusters =
   let compilation_dbs_cmd =
     List.map ~f:infer_flag_of_compilation_db !Config.clang_compilation_dbs
     |> String.concat ~sep:" " |> escape in
-  F.fprintf fmt "INFERANALYZE = '%s' --results-dir '%s' %s@\n@\n"
+  F.fprintf fmt "INFERANALYZE = '%s' --no-report --results-dir '%s' %s@\n@\n"
     (Config.bin_dir ^/ CommandDoc.exe_name_of_command CLOpt.Analyze)
     (escape Config.results_dir)
     compilation_dbs_cmd;

@@ -387,7 +387,7 @@ let analyze driver_mode =
     L.stderr "There was nothing to analyze.@\n@." ;
   ) else if should_analyze then
     execute_analyze ();
-  if should_report then report ()
+  if should_report && Config.report then report ()
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
 let fail_on_issue_epilogue () =
