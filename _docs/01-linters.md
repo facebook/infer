@@ -32,9 +32,9 @@ Once the new linter is added to the linters' file it will then work out of the b
 
 <a name="clang_ast">**Background on the clang AST**</a>  
 
-First of all, get familiar with the `decl` and `stmt` data structures of the ast in infer/infer/src/clang/clang_ast_t.mli. This is a generated file. `decl` is the type for declarations and  contains items such as `ObjCInterfaceDecl`, `ObjCPropertyDecl`, `ObjCMethodDecl`, etc. `stmt` is a type for statements and contains items such as `ObjCMessageExpr`, `IfStmt`, etc. For information on those names, you can google them, and you'll find the clang docs, for instance [ObjCInterfaceDecl](http://clang.llvm.org/doxygen/classclang_1_1ObjCInterfaceDecl.html).
+First of all, get familiar with the `decl` and `stmt` data structures of the AST in infer/infer/src/clang/clang_ast_t.mli. This is a generated file. `decl` is the type for declarations and  contains items such as `ObjCInterfaceDecl`, `ObjCPropertyDecl`, `ObjCMethodDecl`, etc. `stmt` is a type for statements and contains items such as `ObjCMessageExpr`, `IfStmt`, etc. For information on those names, you can google them, and you'll find the clang docs, for instance [ObjCInterfaceDecl](http://clang.llvm.org/doxygen/classclang_1_1ObjCInterfaceDecl.html).
 
-More important is to be able to map source code to its ast components. You can do this in two ways. Say your file is called Test.m. The first one is with the command
+More important is to be able to map source code to its AST components. You can do this in two ways. Say your file is called Test.m. The first one is with the command
 
 ```bash
 clang -Xclang -ast-dump -fsyntax-only Test.m
@@ -45,9 +45,9 @@ and the other one is using Infer. First, call Infer with
 infer --debug -- clang -c Test.m
 ```
 
-where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.m.ast.sh in the current directory. Run this script with bash Test.m.ast.sh and a file Test.m.ast.bdump will be generated, that contains the ast of the program in a readable format.
+where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.m.ast.sh in the current directory. Run this script with bash Test.m.ast.sh and a file Test.m.ast.bdump will be generated, that contains the AST of the program in a readable format.
 
-For more info, [here](http://clang.llvm.org/docs/IntroductionToTheClangAST.html) is an introduction to the clang ast.
+For more info, [here](http://clang.llvm.org/docs/IntroductionToTheClangAST.html) is an introduction to the Clang AST.
 
 
 <a name="write_linters">**Using AL to write linters**</a>
