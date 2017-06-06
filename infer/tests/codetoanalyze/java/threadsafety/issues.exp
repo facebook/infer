@@ -21,6 +21,8 @@ codetoanalyze/java/threadsafety/Builders.java, void TopLevelBuilder.setG(String)
 codetoanalyze/java/threadsafety/Constructors.java, Constructors Constructors.singletonBad(), 2, THREAD_SAFETY_VIOLATION, [call to Constructors.<init>(Object),access to `Constructors.staticField`]
 codetoanalyze/java/threadsafety/Constructors.java, Constructors.<init>(), 1, THREAD_SAFETY_VIOLATION, [access to `Constructors.staticField`]
 codetoanalyze/java/threadsafety/Constructors.java, Constructors.<init>(Constructors), 1, THREAD_SAFETY_VIOLATION, [access to `Constructors.field`]
+codetoanalyze/java/threadsafety/Containers.java, void Containers.addToSparseArrayBad(SparseArray), 1, THREAD_SAFETY_VIOLATION, [container `&sparseArray` via call to `put`]
+codetoanalyze/java/threadsafety/Containers.java, void Containers.addToSparseArrayCompatBad(SparseArrayCompat), 1, THREAD_SAFETY_VIOLATION, [container `&sparseArray` via call to `put`]
 codetoanalyze/java/threadsafety/Containers.java, void Containers.containerWrapperUnownedWriteBad(Object), 1, THREAD_SAFETY_VIOLATION, [container `codetoanalyze.java.checkers.ContainerWrapper.children` via call to `add`,container `codetoanalyze.java.checkers.ContainerWrapper.children` via call to `add`,container `codetoanalyze.java.checkers.ContainerWrapper.children` via call to `add`]
 codetoanalyze/java/threadsafety/Containers.java, void Containers.listAddAllBad(Collection), 1, THREAD_SAFETY_VIOLATION, [container `codetoanalyze.java.checkers.Containers.mList` via call to `addAll`]
 codetoanalyze/java/threadsafety/Containers.java, void Containers.listAddBad1(String), 1, THREAD_SAFETY_VIOLATION, [container `codetoanalyze.java.checkers.Containers.mList` via call to `add`]

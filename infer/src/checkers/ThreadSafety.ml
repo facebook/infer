@@ -346,6 +346,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
         let is_container_write_ typename _ =
           match Typ.Name.name typename, Typ.Procname.java_get_method java_pname with
+          | ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat"),
+            ("append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"
+            | "setValueAt") -> true
           | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") -> true
           | "java.util.Map", ("clear" | "put" | "putAll" | "remove") -> true
           | _ -> false in

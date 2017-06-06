@@ -21,6 +21,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.concurrent.ThreadSafe;
 
 import android.support.v4.util.Pools.SynchronizedPool;
+import android.support.v4.util.SparseArrayCompat;
+import android.util.SparseArray;
 
 class ContainerWrapper {
   private final List<Object> children = new ArrayList<Object>();
@@ -214,6 +216,24 @@ class Containers {
   public void addToNullListOk() {
     List list = null;
     addOrCreateList(list);
+  }
+
+  void addToSparseArrayCompatOk() {
+    SparseArrayCompat sparseArray = new SparseArrayCompat();
+    sparseArray.put(0, new Object());
+  }
+
+  public void addToSparseArrayCompatBad(SparseArrayCompat sparseArray) {
+    sparseArray.put(0, new Object());
+  }
+
+  public void addToSparseArrayOk() {
+    SparseArray sparseArray = new SparseArray();
+    sparseArray.put(0, new Object());
+  }
+
+  public void addToSparseArrayBad(SparseArray sparseArray) {
+    sparseArray.put(0, new Object());
   }
 
 }
