@@ -24,9 +24,24 @@ let of_id id =
 let of_pvar pvar =
   ProgramVar pvar
 
+let of_formal_index formal_index =
+  of_id (Ident.create_footprint Ident.name_spec formal_index)
+
 let to_exp = function
   | ProgramVar pvar -> Exp.Lvar pvar
   | LogicalVar id -> Exp.Var id
+
+let is_global  = function
+  | ProgramVar pvar -> Pvar.is_global pvar
+  | LogicalVar _ -> false
+
+let is_return = function
+  | ProgramVar pvar -> Pvar.is_return pvar
+  | LogicalVar _ -> false
+
+let is_footprint = function
+  | ProgramVar _ -> false
+  | LogicalVar id -> Ident.is_footprint id
 
 let pp fmt = function
   | ProgramVar pv -> (Pvar.pp Pp.text) fmt pv

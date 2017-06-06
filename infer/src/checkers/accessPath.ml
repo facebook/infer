@@ -203,6 +203,10 @@ let is_prefix ((base1, path1) as ap1) ((base2, path2) as ap2) =
 let extract = function
   | Exact ap | Abstracted ap -> ap
 
+let to_footprint formal_index access_path =
+  let _, base_typ = fst (extract access_path) in
+  with_base (Var.of_formal_index formal_index, base_typ) access_path
+
 let is_exact = function
   | Exact _ -> true
   | Abstracted _ -> false

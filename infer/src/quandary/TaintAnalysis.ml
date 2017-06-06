@@ -30,25 +30,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
   module Domain = TaintDomain
 
-  let is_global (var, _) = match var with
-    | Var.ProgramVar pvar -> Pvar.is_global pvar
-    | Var.LogicalVar _ -> false
-
-  let is_return (var, _) = match var with
-    | Var.ProgramVar pvar -> Pvar.is_return pvar
-    | Var.LogicalVar _ -> false
-
-  let is_footprint (var, _) = match var with
-    | Var.ProgramVar _ -> false
-    | Var.LogicalVar id -> Ident.is_footprint id
-
-  let make_footprint_var formal_index =
-    Var.of_id (Ident.create_footprint Ident.name_spec formal_index)
-
-  let make_footprint_access_path formal_index access_path =
-    let _, base_typ = fst (AccessPath.extract access_path) in
-    AccessPath.with_base (make_footprint_var formal_index, base_typ) access_path
-
   type extras = { formal_map : FormalMap.t; summary : Specs.summary; }
 
   module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -70,9 +51,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           let root, _ = AccessPath.extract access_path in
           match FormalMap.get_formal_index root proc_data.extras.formal_map with
           | Some formal_index ->
-              make_footprint_trace (make_footprint_access_path formal_index access_path)
+              make_footprint_trace (AccessPath.to_footprint formal_index access_path)
           | None ->
-              if is_global root
+              if Var.is_global (fst root)
               then make_footprint_trace access_path
               else None
 
@@ -198,10 +179,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           let pp_access_path_opt fmt = function
             | None -> F.fprintf fmt ""
             | Some access_path ->
-                let raw_access_path = AccessPath.extract access_path in
+                let base, _ = AccessPath.extract access_path in
                 F.fprintf fmt " with tainted data %a"
                   AccessPath.pp
-                  (if is_footprint (fst raw_access_path)
+                  (if Var.is_footprint (fst base)
                    then
                      (* TODO: resolve footprint identifier to formal name *)
                      access_path
@@ -580,9 +561,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let with_footprint_vars =
       AccessPath.BaseMap.fold
         (fun base ((trace, subtree) as node) acc ->
-           if is_global base || is_return base
+           if Var.is_global (fst base) || Var.is_return (fst base)
            then AccessPath.BaseMap.add base node acc
-           else if is_footprint base
+           else if Var.is_footprint (fst base)
            then
              if is_empty_node node
              then
@@ -596,7 +577,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
            else
              match FormalMap.get_formal_index base formal_map with
              | Some formal_index ->
-                 let base' = make_footprint_var formal_index, snd base in
+                 let base' = Var.of_formal_index formal_index, snd base in
                  let joined_node =
                    try TaintDomain.node_join (AccessPath.BaseMap.find base' acc) node
                    with Not_found -> node in

@@ -22,7 +22,16 @@ val of_id : Ident.t -> t
 
 val of_pvar : Pvar.t -> t
 
+(** Create a variable representing the ith formal of the current procedure *)
+val of_formal_index : int -> t
+
 val to_exp : t -> Exp.t
+
+val is_global : t -> bool
+
+val is_return : t -> bool
+
+val is_footprint : t -> bool
 
 val pp : Format.formatter -> t -> unit
 

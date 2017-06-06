@@ -74,6 +74,9 @@ val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> Raw.t option) -> Raw.t lis
 (** convert [lhs_exp] to a raw access path, resolving identifiers using [f_resolve_id] *)
 val of_lhs_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> Raw.t option) -> Raw.t option
 
+(** replace the base var with a footprint variable rooted at formal index [formal_index] *)
+val to_footprint : int -> t -> t
+
 (** append new accesses to an existing access path; e.g., `append_access x.f [g, h]` produces
     `x.f.g.h` *)
 val append : Raw.t -> access list -> Raw.t
