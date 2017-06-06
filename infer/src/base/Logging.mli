@@ -43,7 +43,6 @@ val internal_error : ('a, Format.formatter, unit) format -> 'a
 val external_error : ('a, Format.formatter, unit) format -> 'a
 val external_warning : ('a, Format.formatter, unit) format -> 'a
 
-(** *)
 type debug_kind = Analysis | BufferOverrun | Capture | Linters | MergeCapture
 
 (** Level of verbosity for debug output. Each level enables all the levels before it. *)

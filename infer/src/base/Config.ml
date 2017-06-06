@@ -790,6 +790,7 @@ and (
   print_logs,
   print_types,
   reports_include_ml_loc,
+  stats,
   test,
   trace_error,
   write_html,
@@ -917,6 +918,11 @@ and (
       ~in_help:CLOpt.[Analyze, manual_generic; Capture, manual_generic; Run, manual_generic;
                       Report, manual_generic]
       "Also log messages to stdout and stderr"
+
+  and stats =
+    CLOpt.mk_bool ~deprecated:["stats"] ~long:"stats" "Stats mode (debugging)"
+      ~f:(fun stats -> if stats then set_debug_level 1 else set_debug_level 0; stats)
+
   in
   let linters_developer_mode =
     CLOpt.mk_bool_group ~long:"linters-developer-mode"
@@ -944,6 +950,7 @@ and (
     print_logs,
     print_types,
     reports_include_ml_loc,
+    stats,
     test,
     trace_error,
     write_html,
@@ -1504,9 +1511,6 @@ and stacktraces_dir =
     ~meta:"dir" "Directory path containing multiple json-encoded Java crash stacktraces. \
                  Used to guide the  analysis (only with '-a crashcontext').  See \
                  tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
-
-and stats =
-  CLOpt.mk_bool ~deprecated:["stats"] ~long:"stats" "Stats mode (debugging)"
 
 and stats_report =
   CLOpt.mk_path_opt ~long:"stats-report"
