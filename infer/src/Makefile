@@ -22,6 +22,8 @@ ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
 
 #### ocamlbuild options ####
 
+GENERATED_OCAML_SOURCES_GLOB = <*{clang_plugin/*,backend/jsonbug_*,checkers/stacktree_*}>
+
 OCAML_FATAL_WARNINGS = +3+5+6+8+10+11+12+18+19+20+21+23+26+29+27+33+34+35+37+38+39+50+52+57
 
 # options for ocamlbuild
@@ -37,9 +39,9 @@ OCAMLBUILD_OPTIONS = \
   -cflags -strict-formats \
   -cflags -strict-sequence \
   -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-32-40-41-42-45-48 \
-  -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-34-35-39)" \
-  -tag-line "<*/{,*/}*.{ml,re}{,i}>: package(ppx_compare)" \
-  -tag-line "not <**/{IList,IStd,jsonbug_j,clang_ast_j,clang_ast_b,stacktree_j}.*>: open(IStd)" \
+  -tag-line "$(GENERATED_OCAML_SOURCES_GLOB): warn(-27-32-34-35-39)" \
+  -tag-line "not $(GENERATED_OCAML_SOURCES_GLOB) and <*/{,*/}*.{ml,re}{,i}>: package(ppx_compare)" \
+  -tag-line "not $(GENERATED_OCAML_SOURCES_GLOB) and not <*{base/IList,base/IStd}.*>: open(IStd)" \
   -tag thread \
   -pkgs ANSITerminal,atdgen,cmdliner,core,extlib,oUnit,parmap,str,unix,xmlm,yojson,zip
 
@@ -58,6 +60,8 @@ endif
 ifeq ($(TEST),1)
 OCAMLBUILD_OPTIONS += -cflags -warn-error,$(OCAML_FATAL_WARNINGS)
 endif
+
+export OCAMLFIND_IGNORE_DUPS_IN=$(shell $(OCAMLC) -where)/compiler-libs
 
 #### Backend declarations ####
 
@@ -97,13 +101,15 @@ JAVA_SOURCES = java
 
 CLANG_SOURCES = clang
 
+CLANG_PLUGIN_MIRROR = clang_plugin
+
 FCP_CLANG_OCAML_BUILD_DIR = $(FCP_CLANG_OCAML_DIR)/build
 
 CLANG_PLUGIN_BINARIES = $(addprefix $(FCP_CLANG_OCAML_BUILD_DIR), \
                           clang_ast_converter clang_ast_named_decl_printer)
 
 CLANG_AST_BASE_NAME = clang_ast
-CLANG_ATDGEN_STUB_BASE = $(CLANG_SOURCES)/$(CLANG_AST_BASE_NAME)
+CLANG_ATDGEN_STUB_BASE = $(CLANG_PLUGIN_MIRROR)/$(CLANG_AST_BASE_NAME)
 CLANG_ATDGEN_STUB_ATD = $(FCP_CLANG_OCAML_BUILD_DIR)/$(CLANG_AST_BASE_NAME).atd
 CLANG_ATDGEN_SUFFIXES = _t.ml _t.mli _b.ml _b.mli _j.ml _j.mli _v.ml _v.mli
 CLANG_ATDGEN_STUBS = $(addprefix $(CLANG_ATDGEN_STUB_BASE), $(CLANG_ATDGEN_SUFFIXES))
@@ -112,7 +118,7 @@ FCP_CLANG_AST_PROJ = $(addprefix $(FCP_CLANG_OCAML_BUILD_DIR)/, \
                        clang_ast_proj.ml clang_ast_proj.mli)
 FCP_CLANG_AST_MAIN = $(addprefix $(FCP_CLANG_OCAML_DIR)/, clang_ast_visit.ml clang_ast_types.ml)
 FCP_FILES_TO_MIRROR = $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN)
-INFER_CLANG_FCP_MIRRORED_FILES = $(addprefix $(CLANG_SOURCES)/, $(notdir $(FCP_FILES_TO_MIRROR)))
+CLANG_PLUGIN_MIRRORED_FILES = $(addprefix $(CLANG_PLUGIN_MIRROR)/, $(notdir $(FCP_FILES_TO_MIRROR)))
 
 CLANG_BINIOU_DICT = $(ETC_DIR)/clang_ast.dict
 
@@ -157,7 +163,7 @@ else
 DEPENDENCIES += java_stubs
 endif
 ifeq ($(BUILD_C_ANALYZERS),yes)
-DEPENDENCIES += clang unit/clang
+DEPENDENCIES += clang clang_plugin unit/clang
 else
 DEPENDENCIES += clang_stubs unit/clang_stubs
 endif
@@ -172,11 +178,9 @@ OCAML_BASE_SOURCES = \
   $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
 OCAML_CONFIG_SOURCES = $(OCAML_BASE_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
-OCAML_CONFIG_SOURCES += $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
+OCAML_CONFIG_SOURCES += $(CLANG_ATDGEN_STUBS) $(CLANG_PLUGIN_MIRRORED_FILES)
 endif
-OCAML_ALL_SOURCES = $(OCAML_BASE_SOURCES) $(CLANG_ATDGEN_STUBS) $(INFER_CLANG_FCP_MIRRORED_FILES)
-
-export OCAMLFIND_IGNORE_DUPS_IN=$(shell $(OCAMLC) -where)/compiler-libs
+OCAML_ALL_SOURCES = $(OCAML_BASE_SOURCES) $(CLANG_ATDGEN_STUBS) $(CLANG_PLUGIN_MIRRORED_FILES)
 
 .PHONY: all
 all: infer
@@ -367,7 +371,7 @@ $(foreach atd_type,b j t v,\
 
 
 define mirror_fcp_file
-$(CLANG_SOURCES)/$(notdir $(1)): $(1)
+$(CLANG_PLUGIN_MIRROR)/$(notdir $(1)): $(1)
 	$(INSTALL_DATA) $$< $$@
 endef
 
@@ -415,8 +419,11 @@ clean:
 #	only existed in previous versions get removed as well
 	$(REMOVE) $(BIN_DIR)/Infer* $(BIN_DIR)/infer-* $(INFER_BIN){,.byte,.native} $(INFER_BIN_ALIASES) \
 	  $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
-	$(REMOVE) $(CLANG_ATDGEN_STUBS)
-	$(REMOVE) $(INFER_CLANG_FCP_MIRRORED_FILES)
 	$(REMOVE) $(INFER_CREATE_TRACEVIEW_LINKS_BIN)
+	$(REMOVE) $(CLANG_PLUGIN_MIRROR)/*
 	$(REMOVE) mod_dep.dot
 	$(REMOVE) mod_dep.pdf
+
+# print any variable for Makefile debugging
+print-%:
+	$(QUIET)echo '$*=$($*)'
