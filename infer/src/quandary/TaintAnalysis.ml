@@ -123,40 +123,115 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     (** log any new reportable source-sink flows in [trace] *)
     let report_trace trace cur_site (proc_data : extras ProcData.t) =
-      let trace_of_pname pname =
+      let get_summary pname =
         if Typ.Procname.equal pname (Procdesc.get_proc_name proc_data.pdesc)
         then
           (* read_summary will trigger ondemand analysis of the current proc. we don't want that. *)
-          TraceDomain.empty
+          TaintDomain.empty
         else
           match Summary.read_summary proc_data.pdesc pname with
-          | Some summary ->
-              TaintDomain.trace_fold
-                (fun acc _ trace -> TraceDomain.join trace acc)
-                (TaintSpecification.of_summary_access_tree summary)
-                TraceDomain.empty
-          | None ->
-              TraceDomain.empty in
+          | Some summary -> TaintSpecification.of_summary_access_tree summary
+          | None -> TaintDomain.empty in
 
-      let pp_path_short fmt (_, sources_passthroughs, sinks_passthroughs) =
-        let original_source = fst (List.hd_exn sources_passthroughs) in
-        let final_sink = fst (List.hd_exn sinks_passthroughs) in
-        F.fprintf
-          fmt
+      let get_short_trace_string original_source final_sink =
+        F.asprintf
           "%a -> %a%s"
           TraceDomain.Source.pp original_source
           TraceDomain.Sink.pp final_sink
           (if is_endpoint original_source then ". Note: source is an endpoint." else "") in
 
-      let report_error path =
+      let report_one (source, sink, _) =
+        let open TraceDomain in
+        let rec expand_source source0 ((report_acc, seen_acc) as acc) =
+          let kind = Source.kind source0 in
+          let call_site = Source.call_site source0 in
+          let seen_acc' = CallSite.Set.add call_site seen_acc in
+          let is_recursive source =
+            CallSite.Set.mem (Source.call_site source) seen_acc' in
+          let matching_sources =
+            (* TODO: group by matching call sites, remember all access paths *)
+            TaintDomain.trace_fold
+              (fun acc access_path trace ->
+                 match List.find
+                         ~f:(fun source ->
+                             [%compare.equal : Source.Kind.t]
+                               kind (Source.kind source) && not (is_recursive source))
+                         (Sources.elements (sources trace))
+                 with
+                 | Some matching_source -> (Some access_path, matching_source) :: acc
+                 | None -> acc)
+              (get_summary (CallSite.pname call_site))
+              [] in
+          match matching_sources with
+          | ((_, matching_source) as choice)  :: _ ->
+              expand_source matching_source (choice :: report_acc, seen_acc')
+          | [] ->
+              acc in
+        let rec expand_sink sink0 ((report_acc, seen_acc) as acc) =
+          let kind = Sink.kind sink0 in
+          let call_site = Sink.call_site sink0 in
+          let seen_acc' = CallSite.Set.add call_site seen_acc in
+          let is_recursive sink =
+            CallSite.Set.mem (Sink.call_site sink) seen_acc' in
+          let matching_sinks =
+            (* TODO: use index info *)
+            TaintDomain.trace_fold
+              (fun acc _ trace ->
+                 match List.find
+                         ~f:(fun sink ->
+                             [%compare.equal : Sink.Kind.t]
+                               kind (Sink.kind sink) && not (is_recursive sink))
+                         (Sinks.elements (sinks trace))
+                 with
+                 | Some matching_sink -> matching_sink :: acc
+                 | None -> acc)
+              (get_summary (CallSite.pname call_site))
+              [] in
+          match matching_sinks with
+          | matching_sink :: _ ->
+              expand_sink matching_sink (matching_sink :: report_acc, seen_acc')
+          | [] ->
+              acc in
+        let expanded_sources, _ = expand_source source ([None, source], CallSite.Set.empty) in
+        let expanded_sinks, _ = expand_sink sink ([sink], CallSite.Set.empty) in
+        let source_trace =
+          let pp_access_path_opt fmt = function
+            | None -> F.fprintf fmt ""
+            | Some access_path ->
+                let raw_access_path = AccessPath.extract access_path in
+                F.fprintf fmt " with tainted data %a"
+                  AccessPath.pp
+                  (if is_footprint (fst raw_access_path)
+                   then
+                     (* TODO: resolve footprint identifier to formal name *)
+                     access_path
+                   else
+                     access_path) in
+          List.map ~f:(fun (access_path_opt, source) ->
+              let call_site = Source.call_site source in
+              let desc =
+                Format.asprintf
+                  "Return from %a%a"
+                  Typ.Procname.pp (CallSite.pname call_site)
+                  pp_access_path_opt access_path_opt in
+              Errlog.make_trace_element 0 (CallSite.loc call_site) desc [])
+            expanded_sources in
+        let sink_trace =
+          List.map ~f:(fun sink ->
+              let call_site = Sink.call_site sink in
+              let desc = Format.asprintf "Call to %a" Typ.Procname.pp (CallSite.pname call_site) in
+              Errlog.make_trace_element 0 (CallSite.loc call_site) desc [])
+            expanded_sinks in
         let msg = Localise.to_issue_id Localise.quandary_taint_error in
-        let trace_str = F.asprintf "%a" pp_path_short path in
-        let ltr = TraceDomain.to_loc_trace path in
+        let _, original_source = List.hd_exn expanded_sources in
+        let final_sink = List.hd_exn expanded_sinks in
+        let trace_str = get_short_trace_string original_source final_sink in
+        let ltr = source_trace @ (List.rev sink_trace) in
         let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
         Reporting.log_error_from_summary
           proc_data.extras.summary ~loc:(CallSite.loc cur_site) ~ltr exn in
 
-      List.iter ~f:report_error (TraceDomain.get_reportable_paths ~cur_site trace ~trace_of_pname)
+      List.iter ~f:report_one (TraceDomain.get_reports ~cur_site trace)
 
     let add_sink sink actuals access_tree proc_data callee_site =
       (* add [sink] to the trace associated with the [formal_index]th actual *)
