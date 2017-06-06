@@ -1706,9 +1706,9 @@ let post_parsing_initialization command_opt =
     Caml.Printexc.set_uncaught_exception_handler
       (fun exn _ ->
          let exn_msg = match exn with
-           | Failure msg -> "ERROR: " ^ msg
-           | _ -> "ERROR: " ^ Caml.Printexc.to_string exn in
-         Format.eprintf "%s@?" exn_msg
+           | Failure msg -> msg
+           | _ -> Caml.Printexc.to_string exn in
+         Format.eprintf "ERROR: %s@." exn_msg
       );
 
   F.set_margin !margin ;
