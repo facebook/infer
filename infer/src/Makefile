@@ -39,6 +39,7 @@ OCAMLBUILD_OPTIONS = \
   -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-32-40-41-42-45-48 \
   -tag-line "<*{clang/clang_ast_*,backend/jsonbug_*,checkers/stacktree_*}>: warn(-27-32-34-35-39)" \
   -tag-line "<*/{,*/}*.{ml,re}{,i}>: package(ppx_compare)" \
+  -tag-line "not <**/{IList,IStd,jsonbug_j,clang_ast_j,clang_ast_b,stacktree_j}.*>: open(IStd)" \
   -tag thread \
   -pkgs ANSITerminal,atdgen,cmdliner,core,extlib,oUnit,parmap,str,unix,xmlm,yojson,zip
 
