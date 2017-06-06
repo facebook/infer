@@ -158,16 +158,16 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
       List.iter ~f:report_error (TraceDomain.get_reportable_paths ~cur_site trace ~trace_of_pname)
 
-    let add_sinks sinks actuals access_tree proc_data callee_site =
+    let add_sink sink actuals access_tree proc_data callee_site =
       (* add [sink] to the trace associated with the [formal_index]th actual *)
-      let add_sink_to_actual access_tree_acc (sink_param : TraceDomain.Sink.parameter) =
-        match List.nth_exn actuals sink_param.index with
+      let add_sink_to_actual sink_index access_tree_acc =
+        match List.nth_exn actuals sink_index with
         | HilExp.AccessPath actual_ap_raw ->
             let actual_ap = AccessPath.Abstracted actual_ap_raw in
             begin
               match access_path_get_node actual_ap access_tree_acc proc_data with
               | Some (actual_trace, _) ->
-                  let actual_trace' = TraceDomain.add_sink sink_param.sink actual_trace in
+                  let actual_trace' = TraceDomain.add_sink sink actual_trace in
                   report_trace actual_trace' callee_site proc_data;
                   TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
               | None ->
@@ -175,7 +175,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             end
         | _ ->
             access_tree_acc in
-      List.fold ~f:add_sink_to_actual ~init:access_tree sinks
+      IntSet.fold add_sink_to_actual (TraceDomain.Sink.indexes sink) access_tree
 
     let apply_summary
         ret_opt
@@ -382,10 +382,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           let analyze_call astate_acc callee_pname =
             let call_site = CallSite.make callee_pname callee_loc in
 
-            let sinks = TraceDomain.Sink.get call_site actuals proc_data.ProcData.tenv in
-            let astate_with_sink = match sinks with
-              | [] -> astate
-              | sinks -> add_sinks sinks actuals astate proc_data call_site in
+            let sink = TraceDomain.Sink.get call_site actuals proc_data.ProcData.tenv in
+            let astate_with_sink =
+              match sink with
+              | Some sink -> add_sink sink actuals astate proc_data call_site
+              | None -> astate in
             let source = TraceDomain.Source.get call_site proc_data.tenv in
             let astate_with_source =
               match source with
@@ -400,7 +401,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   astate_with_sink in
 
             let astate_with_summary =
-              if sinks <> [] || Option.is_some source
+              if Option.is_some source || Option.is_some sink
               then
                 (* don't use a summary for a procedure that is a direct source or sink *)
                 astate_with_source

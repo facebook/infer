@@ -15,23 +15,15 @@ module L = Logging
 module type Kind = sig
   include TraceElem.Kind
 
-  (** return the parameter index and sink kind for the given call site with the given actuals *)
-  val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * int) list
+  val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * IntSet.t) option
 end
 
 module type S = sig
   include TraceElem.S
 
-  type parameter =
-    {
-      sink : t;
-      (** sink type of the parameter *)
-      index : int;
-      (** index of the parameter *)
-    }
+  val get : CallSite.t -> HilExp.t list -> Tenv.t -> t option
 
-  (** return the parameter index and sink kind for the given call site with the given actuals *)
-  val get : CallSite.t -> HilExp.t list -> Tenv.t -> parameter list
+  val indexes : t -> IntSet.t
 end
 
 module Make (Kind : Kind) = struct
@@ -41,15 +33,8 @@ module Make (Kind : Kind) = struct
     {
       kind : Kind.t;
       site : CallSite.t;
+      indexes : IntSet.t;
     } [@@deriving compare]
-
-  type parameter =
-    {
-      sink : t;
-      (** sink type of the parameter *)
-      index : int;
-      (** index of the parameter *)
-    }
 
   let kind t =
     t.kind
@@ -57,16 +42,16 @@ module Make (Kind : Kind) = struct
   let call_site t =
     t.site
 
-  let make kind site =
-    { kind; site; }
+  let indexes t =
+    t.indexes
 
-  let make_sink_param sink index =
-    { sink; index; }
+  let make ?(indexes=IntSet.empty) kind site =
+    { kind; site; indexes; }
 
   let get site actuals tenv =
-    List.map
-      ~f:(fun (kind, index) -> make_sink_param (make kind site) index)
-      (Kind.get (CallSite.pname site) actuals tenv)
+    match Kind.get (CallSite.pname site) actuals tenv with
+    | Some (kind, indexes) -> Some { kind; site; indexes; }
+    | None -> None
 
   let with_callsite t callee_site =
     { t with site = callee_site; }

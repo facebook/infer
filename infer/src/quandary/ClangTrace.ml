@@ -128,10 +128,10 @@ module SinkKind = struct
 
   (* taint the nth parameter (0-indexed) *)
   let taint_nth n kind =
-    [kind, n]
+    Some (kind, IntSet.singleton n)
 
   let taint_all actuals kind =
-    List.mapi ~f:(fun actual_num _ -> kind, actual_num) actuals
+    Some (kind, IntSet.of_list (List.mapi ~f:(fun actual_num _ -> actual_num) actuals))
 
   (* return Some(sink kind) if [procedure_name] is in the list of externally specified sinks *)
   let get_external_sink pname actuals =
@@ -143,10 +143,10 @@ module SinkKind = struct
             let kind = of_string kind in
             try
               let n = int_of_string index in
-              Some (taint_nth n kind)
+              taint_nth n kind
             with Failure _ ->
               (* couldn't parse the index, just taint everything *)
-              Some (taint_all actuals kind)
+              taint_all actuals kind
           else
             None)
       external_sinks
@@ -154,7 +154,7 @@ module SinkKind = struct
   let get pname actuals _ =
     match pname with
     | Typ.Procname.ObjC_Cpp _ ->
-        Option.value (get_external_sink pname actuals) ~default:[]
+        get_external_sink pname actuals
     | Typ.Procname.C _ ->
         begin
           match Typ.Procname.to_string pname with
@@ -163,12 +163,12 @@ module SinkKind = struct
           | "brk" | "calloc" | "malloc" | "realloc" | "sbrk" ->
               taint_all actuals Allocation
           | _ ->
-              Option.value (get_external_sink pname actuals) ~default:[]
+              get_external_sink pname actuals
         end
     | Typ.Procname.Block _ ->
-        []
+        None
     | pname when BuiltinDecl.is_declared pname ->
-        []
+        None
     | pname ->
         failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname
 

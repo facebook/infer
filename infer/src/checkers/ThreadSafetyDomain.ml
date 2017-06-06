@@ -48,7 +48,7 @@ module TraceElem = struct
 
   let kind { kind; } = kind
 
-  let make kind site = { kind; site; }
+  let make ?indexes:_ kind site = { kind; site; }
 
   let with_callsite t site = { t with site; }
 

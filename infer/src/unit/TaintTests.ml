@@ -32,8 +32,10 @@ module MockTrace = Trace.Make(struct
 
         let get pname _ _ =
           if String.is_prefix ~prefix:"SINK" (Typ.Procname.to_string pname)
-          then [CallSite.make pname Location.dummy, 0]
-          else []
+          then Some (CallSite.make pname Location.dummy, IntSet.singleton 0)
+          else None
+
+        let indexes _ = IntSet.empty
       end)
 
     let should_report _ _ = false

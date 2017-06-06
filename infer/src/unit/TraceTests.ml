@@ -26,7 +26,7 @@ module MockTraceElem = struct
 
   let kind t = t
 
-  let make kind _ = kind
+  let make ?indexes:_ kind _ = kind
 
   let pp fmt = function
     | Kind1 -> F.fprintf fmt "Kind1"
@@ -66,6 +66,8 @@ module MockSink = struct
   type parameter = { sink : t; index : int; }
 
   let get _ = assert false
+
+  let indexes _ = IntSet.empty
 
   let equal = [%compare.equal : t]
 end

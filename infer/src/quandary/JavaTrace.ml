@@ -218,13 +218,14 @@ module SinkKind = struct
         if Typ.Procname.java_is_static pname || taint_this
         then actuals, 0
         else List.tl_exn actuals, 1 in
-      List.mapi
-        ~f:(fun param_num _ -> kind, param_num + offset)
-        actuals_to_taint in
+      let indexes =
+        IntSet.of_list (List.mapi ~f:(fun param_num _ -> param_num + offset) actuals_to_taint) in
+      Some (kind, indexes) in
+
     (* taint the nth non-"this" parameter (0-indexed) *)
     let taint_nth n kind =
       let first_index = if Typ.Procname.java_is_static pname then n else n + 1 in
-      [kind, first_index] in
+      Some (kind, IntSet.singleton first_index) in
     match pname with
     | Typ.Procname.Java java_pname ->
         begin
@@ -237,17 +238,17 @@ module SinkKind = struct
           | "java.nio.file.Paths", "get" ->
               taint_all CreateFile
           | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink" ->
-              [Other, 0]
+              taint_nth 0 Other
           | class_name, method_name ->
               let taint_matching_supertype typename _ =
                 match Typ.Name.name typename, method_name with
                 | "android.app.Activity",
                   ("startActivityFromChild" | "startActivityFromFragment") ->
-                    Some (taint_nth 1 StartComponent)
+                    taint_nth 1 StartComponent
                 | "android.app.Activity", "startIntentSenderForResult"  ->
-                    Some (taint_nth 2 StartComponent)
+                    taint_nth 2 StartComponent
                 | "android.app.Activity", "startIntentSenderFromChild"  ->
-                    Some (taint_nth 3 StartComponent)
+                    taint_nth 3 StartComponent
                 | "android.content.Context",
                   ("bindService" |
                    "sendBroadcast" |
@@ -265,9 +266,9 @@ module SinkKind = struct
                    "startNextMatchingActivity" |
                    "startService" |
                    "stopService") ->
-                    Some (taint_nth 0 StartComponent)
+                    taint_nth 0 StartComponent
                 | "android.content.Context", "startIntentSender" ->
-                    Some (taint_nth 1 StartComponent)
+                    taint_nth 1 StartComponent
                 | "android.content.Intent",
                   ("parseUri" |
                    "getIntent" |
@@ -278,9 +279,9 @@ module SinkKind = struct
                    "setDataAndType" |
                    "setDataAndTypeAndNormalize" |
                    "setPackage") ->
-                    Some (taint_nth 0 CreateIntent)
+                    taint_nth 0 CreateIntent
                 | "android.content.Intent", "setClassName" ->
-                    Some (taint_all CreateIntent)
+                    taint_all CreateIntent
                 | "android.webkit.WebView",
                   ("evaluateJavascript" |
                    "loadData" |
@@ -288,7 +289,7 @@ module SinkKind = struct
                    "loadUrl" |
                    "postUrl" |
                    "postWebMessage") ->
-                    Some (taint_all JavaScript)
+                    taint_all JavaScript
                 | class_name, method_name ->
                     (* check the list of externally specified sinks *)
                     let procedure = class_name ^ "." ^ method_name in
@@ -299,25 +300,19 @@ module SinkKind = struct
                             let kind = of_string kind in
                             try
                               let n = int_of_string index in
-                              Some (taint_nth n kind)
+                              taint_nth n kind
                             with Failure _ ->
                               (* couldn't parse the index, just taint everything *)
-                              Some (taint_all kind)
+                              taint_all kind
                           else
                             None)
                       external_sinks in
-              begin
-                match
-                  PatternMatch.supertype_find_map_opt
-                    tenv
-                    taint_matching_supertype
-                    (Typ.Name.Java.from_string class_name) with
-                | Some sinks -> sinks
-                | None -> []
-              end
-
+              PatternMatch.supertype_find_map_opt
+                tenv
+                taint_matching_supertype
+                (Typ.Name.Java.from_string class_name)
         end
-    | pname when BuiltinDecl.is_declared pname -> []
+    | pname when BuiltinDecl.is_declared pname -> None
     | pname -> failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
 
   let pp fmt kind =

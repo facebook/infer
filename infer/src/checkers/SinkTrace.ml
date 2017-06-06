@@ -32,9 +32,9 @@ end
 
 module MakeSink(TraceElem : TraceElem.S) = struct
   include TraceElem
-  type parameter = { sink : t; index : int; }
 
-  let get _ _ _ = []
+  let get _ _ _ = None
+  let indexes _ = IntSet.empty
 end
 
 module Make (TraceElem : TraceElem.S) = struct

@@ -85,7 +85,7 @@ module Make (Kind : Kind) = struct
     | Normal kind -> kind
     | Footprint _ -> Kind.unknown
 
-  let make kind site =
+  let make ?indexes:_ kind site =
     { site; kind = Normal kind; }
 
   let make_footprint ap pdesc =
@@ -135,7 +135,7 @@ module Dummy = struct
 
   let kind t = t
 
-  let make kind _ = kind
+  let make ?indexes:_ kind _ = kind
 
   let pp _ () = ()
 
