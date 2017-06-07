@@ -217,7 +217,7 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
   SET severity = "LIKE";
 };
 
-DEFINE-CHECKER TEST_NAMESPACE_NAME = {
+DEFINE-CHECKER TEST_DEFINE_NAMESPACE = {
 
   SET report_when =
     WHEN
@@ -225,6 +225,15 @@ DEFINE-CHECKER TEST_NAMESPACE_NAME = {
     HOLDS-IN-NODE NamespaceDecl;
 
   SET message = "Found a namespace with name....";
+
+};
+
+DEFINE-CHECKER TEST_USING_NAMESPACE = {
+
+  SET report_when =
+      using_namespace(REGEXP("FirstNam*"));
+
+  SET message = "Found using namespace with name....";
 
 };
 

@@ -647,6 +647,8 @@ let rec eval_Atomic _pred_name args an lcxt =
       CPredicates.within_responds_to_selector_block lcxt an
   | "objc_method_has_nth_parameter_of_type", [num; typ], an ->
       CPredicates.objc_method_has_nth_parameter_of_type an num typ
+  | "using_namespace", [namespace], an ->
+      CPredicates.using_namespace an namespace
   | _ -> failwith
            ("ERROR: Undefined Predicate or wrong set of arguments: '"
             ^ pred_name ^ "'")

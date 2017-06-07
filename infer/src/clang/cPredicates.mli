@@ -81,3 +81,5 @@ val within_responds_to_selector_block :
 
 val objc_method_has_nth_parameter_of_type :
   Ctl_parser_types.ast_node -> ALVar.alexp -> ALVar.alexp -> bool
+
+val using_namespace : Ctl_parser_types.ast_node -> ALVar.alexp -> bool

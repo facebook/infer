@@ -422,3 +422,14 @@ let objc_method_has_nth_parameter_of_type an _num _typ =
            type_ptr_equal_type qt.qt_type_ptr typ
        | _ -> false)
   | _, _, _ -> false
+
+let using_namespace an namespace =
+  let open Clang_ast_t in
+  match an with
+  | Ctl_parser_types.Decl (UsingDirectiveDecl (_, _, uddi)) ->
+      (match uddi.uddi_nominated_namespace with
+       | Some dr -> (match dr.dr_kind, dr.dr_name with
+           | `Namespace, Some ni -> ALVar.compare_str_with_alexp ni.ni_name namespace
+           | _ -> false)
+       | None -> false)
+  | _ -> false

@@ -14,3 +14,5 @@ class C {
 }
 void SecodNameSpace::C::m() {}
 }
+using namespace FirstNameSpace;
+void foo() { SecodNameSpace::C(); }
