@@ -72,6 +72,10 @@ public class ParameterNotNullable {
     return s;
   }
 
+  @Nullable String testSystemGetenvBad() {
+    return System.getenv(null);
+  }
+
   static @Nullable URL testClassGetResourceArgument(Class cls) {
     return cls.getResource(null);
   }

@@ -141,6 +141,7 @@ let annotated_list_nullable =
     n1, "java.lang.String.equals(java.lang.Object):boolean";
     n1, "java.lang.StringBuilder.append(java.lang.String):java.lang.StringBuilder";
     (n, [o]), "java.lang.System.getProperty(java.lang.String):java.lang.String";
+    (n, [o]), "java.lang.System.getenv(java.lang.String):java.lang.String";
     on, "java.net.URLClassLoader.newInstance(java.net.URL[],java.lang.ClassLoader):java.net.URLClassLoader";
     n1, "java.util.AbstractList.equals(java.lang.Object):boolean";
     ca, "java.util.ArrayList.add(java.lang.Object):boolean"; (* container add *)

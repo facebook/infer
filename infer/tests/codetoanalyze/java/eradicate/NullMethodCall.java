@@ -239,6 +239,11 @@ public class NullMethodCall {
     int n = s.length();
   }
 
+  int testSystemGetenvBad() {
+    String envValue = System.getenv("WHATEVER");
+    return envValue.length();
+  }
+
   class SystemExitDoesNotReturn {
     native boolean whoknows();
 
