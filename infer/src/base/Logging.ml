@@ -26,14 +26,11 @@ let copy_formatter f =
   F.pp_set_formatter_out_functions new_f out_funs;
   new_f
 
-(* Return a formatter that multiplexes to [fmt1] and [fmt2].
-
-   If [copy] is true then the formatter is created from a fresh copy of [fmt1].
-   If [copy] is false then [fmt1] is mutated instead. *)
-let dup_formatter ~copy fmt1 fmt2 =
+(* Return a formatter that multiplexes to [fmt1] and [fmt2]. *)
+let dup_formatter fmt1 fmt2 =
   let out_funs1 = F.pp_get_formatter_out_functions fmt1 () in
   let out_funs2 = F.pp_get_formatter_out_functions fmt2 () in
-  let f = if copy then copy_formatter fmt1 else fmt1 in
+  let f = copy_formatter fmt1 in
   F.pp_set_formatter_out_functions f {
     F.out_string = (fun s p n -> out_funs1.out_string s p n; out_funs2.out_string s p n);
     out_flush = (fun () -> out_funs1.out_flush (); out_funs2.out_flush ());
@@ -46,9 +43,10 @@ let dup_formatter ~copy fmt1 fmt2 =
    lost in the meantime *)
 let log_file =
   let b = Buffer.create 256 in
-  let f = F.formatter_of_buffer b in
-  if Config.print_logs then dup_formatter ~copy:false f F.err_formatter |> ignore;
-  ref (f, `Buffer b)
+  let fmt =
+    let f = F.formatter_of_buffer b in
+    if Config.print_logs then dup_formatter f F.err_formatter else f in
+  ref (fmt, `Buffer b)
 
 type formatters = {
   file : F.formatter; (** send to log file *)
@@ -108,7 +106,7 @@ let register_formatter =
         let file = mk_file_formatter justified_prefix in
         let console_file =
           let console = if use_stdout then F.std_formatter else F.err_formatter in
-          dup_formatter ~copy:true console file in
+          dup_formatter console file in
         { file; console_file } in
       let formatters = mk_formatters () in
       let formatters_ref = ref formatters in
@@ -142,8 +140,7 @@ let close_logs () =
   F.pp_print_flush fmt ();
   match chan with
   | `Buffer b ->
-      CLOpt.warnf
-        "WARNING: log file is still a temporary buffer, with contents %s" (Buffer.contents b)
+      prerr_endline (Buffer.contents b)
   | `Channel c ->
       Out_channel.close c
 
@@ -282,8 +279,9 @@ let setup_log_file () =
           let logfile_path = Config.results_dir ^/ Config.log_file in
           let preexisting_logfile = PVariant.(=) (Sys.file_exists logfile_path) `Yes in
           let chan = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 logfile_path in
-          let file_fmt = F.formatter_of_out_channel chan in
-          if Config.print_logs then dup_formatter ~copy:false file_fmt F.err_formatter |> ignore;
+          let file_fmt =
+            let f = F.formatter_of_out_channel chan in
+            if Config.print_logs then dup_formatter f F.err_formatter else f in
           file_fmt, chan, preexisting_logfile in
       log_file := fmt, `Channel chan;
       if preexisting_logfile then is_newline := false;
