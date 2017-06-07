@@ -218,3 +218,14 @@ Follow `clang-format` (see ".clang-format" at the root of the repository).
 $ infer --debug -- clang -c examples/hello.c
 $ firefox infer-out/captured/hello.c.*.html
 ```
+
+## Updating opam and opam.lock
+
+tl; dr: Run `make opam.lock`.
+
+opam.lock records fixed versions of the opam dependencies known to work with infer and to respect
+the constraints in opam. This prevents unpredictable breakages of infer or its dependencies,
+especially for infer releases, for which it is more difficult to change their package constraints
+after the fact.
+
+To add an opam package or update its version constraints, edit 'opam' then run `make opam.lock`.

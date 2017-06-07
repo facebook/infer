@@ -193,6 +193,14 @@ AC_ASSERT_PROG([rebuild], [$REBUILD])
 AC_ARG_VAR([CAML_LD_LIBRARY_PATH],
   [Additional directories to search for dynamically-loaded libraries.])
 
+
+AC_CHECK_TOOL([OPAM], [opam], [no])
+AS_IF([test "$OPAM" != "no"], [
+  AC_MSG_CHECKING([current opam switch])
+  OPAMSWITCH=$("$OPAM" switch show)
+  AC_MSG_RESULT([$OPAMSWITCH])
+])
+
 if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVA], [java], [no])
   AC_PATH_TOOL([JAVAC], [javac], [no])

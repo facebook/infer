@@ -518,6 +518,27 @@ conf-clean: clean
 	$(REMOVE_DIR) $(MODELS_DIR)/java/infer-out/
 	$(REMOVE_DIR) $(MODELS_DIR)/objc/out/
 
+
+# opam package to hold infer dependencies
+INFER_PKG_OPAMLOCK=infer-lock-deps
+
+# phony because it depends on opam's internal state
+.PHONY: opam.lock
+opam.lock: opam
+	$(QUIET)if test x"$$(git status --porcelain -- opam)" != "x"; then \
+	  echo "ERROR: Changes to 'opam' detected." 1>&2; \
+	  echo "ERROR: Please commit or revert your changes before updating opam.lock." 1>&2; \
+	  echo "ERROR: This is because opam.lock is generated from the HEAD commit." 1>&2; \
+	  exit 1; \
+	fi
+	$(QUIET)$(call silent_on_success,opam update,$(OPAM) update)
+	$(QUIET)$(call silent_on_success,installing dependencies $(INFER_PKG_OPAMLOCK) opam package,\
+	  OPAMSWITCH=$(OPAMSWITCH); \
+	  $(OPAM) pin add --yes --no-action -k git $(INFER_PKG_OPAMLOCK) .#HEAD; \
+	  $(OPAM) install --deps-only --yes infer)
+	$(QUIET)$(call silent_on_success,generating opam.lock,\
+	  $(OPAM) lock --pkg  $(INFER_PKG_OPAMLOCK) > opam.lock)
+
 # print any variable for Makefile debugging
 print-%:
 	$(QUIET)echo '$*=$($*)'
