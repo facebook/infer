@@ -15,7 +15,8 @@ module MF = MarkupFormatter
 module UseDefChain = struct
   type astate =
     | DependsOn of (Location.t * AccessPath.Raw.t)
-    | NullDef of (Location.t * AccessPath.Raw.t)
+    | NullDefCompare of (Location.t * AccessPath.Raw.t)
+    | NullDefAssign of (Location.t * AccessPath.Raw.t)
   [@@deriving compare]
 
   let (<=) ~lhs ~rhs =
@@ -30,8 +31,10 @@ module UseDefChain = struct
     join prev next
 
   let pp fmt = function
-    | NullDef (loc, ap) ->
-        F.fprintf fmt "NullDef(%a, %a)" Location.pp loc AccessPath.Raw.pp ap
+    | NullDefAssign (loc, ap) ->
+        F.fprintf fmt "NullDefAssign(%a, %a)" Location.pp loc AccessPath.Raw.pp ap
+    | NullDefCompare (loc, ap) ->
+        F.fprintf fmt "NullDefCompare(%a, %a)" Location.pp loc AccessPath.Raw.pp ap
     | DependsOn (loc, ap) ->
         F.fprintf fmt "DependsOn(%a, %a)" Location.pp loc AccessPath.Raw.pp ap
 end
@@ -61,19 +64,40 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let nullable_usedef_chain_of exp lhs astate loc =
     match exp with
     | HilExp.Constant (Cint n) when IntLit.isnull n ->
-        Some (UseDefChain.NullDef (loc, lhs))
+        Some (UseDefChain.NullDefAssign (loc, lhs))
     | HilExp.AccessPath ap ->
-        if Domain.mem ap astate then
-          Some (UseDefChain.DependsOn (loc, ap))
-        else
-          None
+        begin
+          try
+            match Domain.find ap astate with
+            | UseDefChain.NullDefCompare _ ->
+                (* Stop NullDefCompare from propagating here because we want to prevent
+                 * the checker from suggesting @Nullable on y in the following case:
+                 * if (x == null) ... else { y = x; } *)
+                None
+            | _ ->
+                Some (UseDefChain.DependsOn (loc, ap))
+          with
+          | Not_found -> None
+        end
+    | _ -> None
+
+  let extract_null_compare_expr = function
+    | HilExp.BinaryOperator ((Eq | Ne), HilExp.AccessPath ap, exp)
+    | HilExp.BinaryOperator ((Eq | Ne), exp, HilExp.AccessPath ap) ->
+        Option.some_if (HilExp.is_null_literal exp) ap
     | _ -> None
 
   let exec_instr (astate : Domain.astate) proc_data _ (instr : HilInstr.t) =
     match instr with
-    | Assume _ ->
-        (* For now we just assume that conditionals does not have any implications on nullability *)
-        astate
+    | Assume (expr, _, _, loc) ->
+        begin
+          match extract_null_compare_expr expr with
+          | Some ap when not (is_access_nullable ap proc_data) ->
+              let udchain = UseDefChain.NullDefCompare (loc, ap) in
+              Domain.add ap udchain astate
+          | _ ->
+              astate
+        end
     | Call _ ->
         (* For now we just assume the callee always return non-null *)
         astate
@@ -106,8 +130,12 @@ let make_error_trace astate ap ud =
   in
   let open UseDefChain in
   let rec error_trace_impl depth ap = function
-    | NullDef (loc, src) ->
+    | NullDefAssign (loc, src) ->
         let msg = F.sprintf "%s is assigned null here" (name_of src) in
+        let ltr = [Errlog.make_trace_element depth loc msg []] in
+        Some (loc, ltr)
+    | NullDefCompare (loc, src) ->
+        let msg = F.sprintf "%s is compared to null here" (name_of src) in
         let ltr = [Errlog.make_trace_element depth loc msg []] in
         Some (loc, ltr)
     | DependsOn (loc, dep) ->

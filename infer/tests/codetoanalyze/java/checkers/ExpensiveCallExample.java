@@ -15,7 +15,7 @@ import android.view.View;
 
 import com.facebook.infer.annotation.Expensive;
 import com.facebook.infer.annotation.PerformanceCritical;
-
+import javax.annotation.Nullable;
 
 interface AnnotatedInterface {
 
@@ -100,7 +100,7 @@ class PerformanceCriticalSubclass extends PerformanceCriticalClass {
 
 public class ExpensiveCallExample implements AnnotatedInterface {
 
-  Other mOther;
+  @Nullable Other mOther;
 
   void nonExpensiveMethod() {}
 
