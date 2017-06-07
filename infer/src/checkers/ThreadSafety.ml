@@ -1223,17 +1223,29 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
          List.exists
            ~f:(fun (_, _, _, tenv, pdesc) -> is_thread_safe_method pdesc tenv)
            grouped_accesses in
-       (* report if
-          - the method/class of the access is thread-safe (or an override or superclass is), or
-          - any access is in a field marked thread-safe (or an override) *)
+       let class_has_mutex_member objc_cpp tenv =
+         let class_name = Typ.Procname.objc_cpp_get_class_type_name objc_cpp in
+         let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex"] in
+         Option.exists (Tenv.lookup tenv class_name) ~f:(fun class_str ->
+             (* check if the class contains a member of type std::mutex *)
+             List.exists (class_str.Typ.Struct.fields) ~f:(fun (_, ft, _) ->
+                 Option.exists (Typ.name ft) ~f:(fun name ->
+                     QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name))
+               )
+           ) in
        let should_report pdesc tenv =
          match Procdesc.get_proc_name pdesc with
          | Java _ ->
+             (* report if
+                - the method/class of the access is thread-safe
+                  (or an override or superclass is), or
+                - any access is in a field marked thread-safe (or an override) *)
              ((is_file_threadsafe || accessed_by_threadsafe_method)
               && should_report_on_proc pdesc tenv)
              || is_thread_safe_method pdesc tenv
-         | ObjC_Cpp _ ->
-             true
+         | ObjC_Cpp objc_cpp ->
+             (* report if the class has a mutex member  *)
+             class_has_mutex_member objc_cpp tenv
          | _ ->
              false
        in
