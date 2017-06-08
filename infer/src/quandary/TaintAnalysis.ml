@@ -103,7 +103,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           false
 
     (** log any new reportable source-sink flows in [trace] *)
-    let report_trace trace cur_site (proc_data : extras ProcData.t) =
+    let report_trace ?(sink_indexes=IntSet.empty) trace cur_site (proc_data : extras ProcData.t) =
       let get_summary pname =
         if Typ.Procname.equal pname (Procdesc.get_proc_name proc_data.pdesc)
         then
@@ -148,14 +148,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               expand_source matching_source (choice :: report_acc, seen_acc')
           | [] ->
               acc in
-        let rec expand_sink sink0 ((report_acc, seen_acc) as acc) =
+        let rec expand_sink sink0 indexes0 ((report_acc, seen_acc) as acc) =
           let kind = Sink.kind sink0 in
           let call_site = Sink.call_site sink0 in
           let seen_acc' = CallSite.Set.add call_site seen_acc in
           let is_recursive sink =
             CallSite.Set.mem (Sink.call_site sink) seen_acc' in
           let matching_sinks =
-            (* TODO: use index info *)
             TaintDomain.trace_fold
               (fun acc _ trace ->
                  match List.find
@@ -164,17 +163,35 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                                kind (Sink.kind sink) && not (is_recursive sink))
                          (Sinks.elements (sinks trace))
                  with
-                 | Some matching_sink -> matching_sink :: acc
-                 | None -> acc)
+                 | Some matching_sink ->
+                     let indexes_match = not
+                         (IntSet.is_empty (IntSet.inter indexes0 (get_footprint_indexes trace))) in
+                     (matching_sink, indexes_match) :: acc
+                 | None ->
+                     acc)
               (get_summary (CallSite.pname call_site))
               [] in
-          match matching_sinks with
-          | matching_sink :: _ ->
-              expand_sink matching_sink (matching_sink :: report_acc, seen_acc')
-          | [] ->
-              acc in
+          try
+            (* try to find a sink whose indexes match the current sink *)
+            let matching_sink, _ = List.find_exn ~f:snd matching_sinks in
+            expand_sink
+              matching_sink (Sink.indexes matching_sink) (matching_sink :: report_acc, seen_acc')
+          with Not_found ->
+            (* didn't find a sink whose indexes match; this can happen when taint flows in via a
+               global. pick any sink whose kind matches *)
+            begin
+              match matching_sinks with
+              | (matching_sink, _) :: _ ->
+                  expand_sink
+                    matching_sink
+                    (Sink.indexes matching_sink)
+                    (matching_sink :: report_acc, seen_acc')
+              | [] ->
+                  acc
+            end in
         let expanded_sources, _ = expand_source source ([None, source], CallSite.Set.empty) in
-        let expanded_sinks, _ = expand_sink sink ([sink], CallSite.Set.empty) in
+        let expanded_sinks, _ =
+          expand_sink sink sink_indexes ([sink], CallSite.Set.empty) in
         let source_trace =
           let pp_access_path_opt fmt = function
             | None -> F.fprintf fmt ""
@@ -223,7 +240,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             begin
               match access_path_get_node actual_ap access_tree_acc proc_data with
               | Some (actual_trace, _) ->
-                  let actual_trace' = TraceDomain.add_sink sink actual_trace in
+                  let sink' =
+                    let indexes = TraceDomain.get_footprint_indexes actual_trace in
+                    TraceDomain.Sink.make ~indexes (TraceDomain.Sink.kind sink) callee_site in
+                  let actual_trace' = TraceDomain.add_sink sink' actual_trace in
                   report_trace actual_trace' callee_site proc_data;
                   TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
               | None ->
@@ -299,8 +319,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
       let instantiate_and_report callee_trace caller_trace access_tree =
         let caller_trace' = replace_footprint_sources callee_trace caller_trace access_tree in
+        let sink_indexes = TraceDomain.get_footprint_indexes callee_trace in
         let appended_trace = TraceDomain.append caller_trace' callee_trace callee_site in
-        report_trace appended_trace callee_site proc_data;
+        report_trace appended_trace callee_site ~sink_indexes proc_data;
         appended_trace in
 
       let add_to_caller_tree access_tree_acc callee_ap callee_trace =

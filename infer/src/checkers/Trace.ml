@@ -76,6 +76,8 @@ module type S = sig
 
   val update_sinks : t -> Sinks.t -> t
 
+  val get_footprint_indexes : t -> IntSet.t
+
   (** append the trace for given call site to the current caller trace *)
   val append : t -> t -> CallSite.t -> t
 
@@ -342,6 +344,21 @@ module Make (Spec : Spec) = struct
   let update_sources t sources = { t with sources }
 
   let update_sinks t sinks = { t with sinks }
+
+  let get_footprint_index source =
+    match Source.get_footprint_access_path source with
+    | Some access_path ->
+        AccessPath.get_footprint_index access_path
+    | None ->
+        None
+
+  let get_footprint_indexes trace =
+    Sources.fold
+      (fun source acc -> match get_footprint_index source with
+         | Some footprint_index -> IntSet.add footprint_index acc
+         | None -> acc)
+      (sources trace)
+      IntSet.empty
 
   (** compute caller_trace + callee_trace *)
   let append caller_trace callee_trace callee_site =

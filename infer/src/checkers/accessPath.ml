@@ -207,6 +207,14 @@ let to_footprint formal_index access_path =
   let _, base_typ = fst (extract access_path) in
   with_base (Var.of_formal_index formal_index, base_typ) access_path
 
+let get_footprint_index access_path =
+  let raw_access_path = extract access_path in
+  match raw_access_path with
+  | (Var.LogicalVar id, _), _ when Ident.is_footprint id ->
+      Some (Ident.get_stamp id)
+  | _ ->
+      None
+
 let is_exact = function
   | Exact _ -> true
   | Abstracted _ -> false
