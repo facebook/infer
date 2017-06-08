@@ -18,7 +18,7 @@ type ast_node =
   | Stmt of Clang_ast_t.stmt
   | Decl of Clang_ast_t.decl
 
-let ast_node_name an =
+let rec ast_node_name an =
   let open Clang_ast_t in
   match an with
   | Decl dec ->
@@ -36,19 +36,36 @@ let ast_node_name an =
       ndi.ni_name
   | Stmt (ObjCMessageExpr (_, _, _, {omei_selector})) ->
       omei_selector
-  | _ -> ""
-
-let rec eventual_child_name an =
-  match an with
-  | Stmt stmt ->
-      (let _, stmts = Clang_ast_proj.get_stmt_tuple stmt in
-       match stmts with
-       | [stmt] ->
-           let name = ast_node_name (Stmt stmt) in
-           if String.length name > 0 then
-             name
-           else eventual_child_name (Stmt stmt)
+  | Stmt (IntegerLiteral (_, _, _,  integer_literal_info)) ->
+      integer_literal_info.ili_value
+  | Stmt CStyleCastExpr (_, _, _, cast_expr_info, _) ->
+      (match cast_expr_info.cei_cast_kind with
+       | `NullToPointer -> "nil"
        | _ -> "")
+  | Stmt ObjCSubscriptRefExpr (_, [stmt; stmt_index], _, _) ->
+      (ast_node_name (Stmt stmt)) ^ "["^ (ast_node_name (Stmt stmt_index)) ^"]"
+  | Stmt OpaqueValueExpr (_, _, _, opaque_value_expr_info) ->
+      (match opaque_value_expr_info.ovei_source_expr with
+       | Some stmt -> ast_node_name (Stmt stmt)
+       | None -> "")
+  | Stmt ImplicitCastExpr (_, [stmt], _, _)
+  | Stmt PseudoObjectExpr (_, stmt::_, _)
+  | Stmt ParenExpr (_, [stmt], _) ->
+      ast_node_name (Stmt stmt)
+  | Stmt CallExpr (_, func::_, _) ->
+      let func_str = ast_node_name (Stmt func) in
+      func_str ^ "(...)"
+  | Stmt ObjCPropertyRefExpr (_, [stmt], _, obj_c_property_ref_expr_info) ->
+      let property_str =
+        (match obj_c_property_ref_expr_info.oprei_kind with
+         | `MethodRef obj_c_method_ref_info ->
+             (match obj_c_method_ref_info.mri_getter, obj_c_method_ref_info.mri_setter with
+              | Some name, _ -> name
+              | _, Some name -> name
+              | _ -> "")
+         | `PropertyRef decl_ref ->
+             match decl_ref.dr_name with Some name -> name.ni_name | None -> "") in
+      (ast_node_name (Stmt stmt)) ^ "." ^ property_str
   | _ -> ""
 
 let infer_prefix = "__infer_ctl_"
@@ -87,10 +104,12 @@ type builtin_kind =
   | NullPtr (** nullptr_t *)
   | ObjCId (** id *)
   | ObjCClass (** Class *)
-  | ObjCSel (** SEL *)
+  | ObjCSel (** SEL *)[@@deriving compare]
 (*  | OCLSampler | OCLEvent | OCLClkEvent | OCLQueue | OCLNDRange
     | OCLReserveID | Dependent | Overload | BoundMember | PseudoObject
     | UnknownAny | BuiltinFn | ARCUnbridgedCast | OMPArraySection *)
+
+let equal_builtin_kind = [%compare.equal : builtin_kind]
 
 let builtin_kind_to_string t =
   match t with
@@ -139,40 +158,43 @@ let rec abs_ctype_to_string t =
   | Pointer t' -> "Pointer (" ^ (abs_ctype_to_string t') ^ ")"
   | TypeName ae -> "TypeName (" ^ (ALVar.alexp_to_string ae) ^ ")"
 
+let builtin_type_kind_assoc =
+  [
+    (`Char_U, Char_U);
+    (`Char_S, Char_U);
+    (`Char16, Char16);
+    (`Char32, Char32);
+    (`WChar_U, WChar_U);
+    (`WChar_S, WChar_U);
+    (`Bool, Bool);
+    (`Short, Short);
+    (`Int, Int);
+    (`Long, Long);
+    (`Float, Float);
+    (`Double, Double);
+    (`Void, Void);
+    (`SChar, SChar);
+    (`LongLong, LongLong);
+    (`UChar, UChar);
+    (`UShort, UShort);
+    (`UInt, UInt);
+    (`ULong, ULong);
+    (`ULongLong, ULongLong);
+    (`LongDouble, LongDouble);
+    (`Int128, Int128);
+    (`UInt128, UInt128);
+    (`Float128, Float128);
+    (`NullPtr, NullPtr);
+    (`ObjCId, ObjCId);
+    (`ObjCClass, ObjCClass);
+    (`ObjCSel, ObjCSel);
+    (`Half, Half)
+  ]
 
-let builtin_equal bi abi =
-  match bi, abi with
-  | `Char_U, Char_U
-  | `Char_S, Char_U
-  | `Char16, Char16
-  | `Char32, Char32
-  | `WChar_U, WChar_U
-  | `WChar_S, WChar_U
-  | `Bool, Bool
-  | `Short, Short
-  | `Int, Int
-  | `Long, Long
-  | `Float, Float
-  | `Double, Double
-  | `Void, Void
-  | `SChar, SChar
-  | `LongLong, LongLong
-  | `UChar, UChar
-  | `UShort, UShort
-  | `UInt, UInt
-  | `ULong, ULong
-  | `ULongLong, ULongLong
-  | `LongDouble, LongDouble
-  | `Int128, Int128
-  | `UInt128, UInt128
-  | `Float128, Float128
-  | `NullPtr, NullPtr
-  | `ObjCId, ObjCId
-  | `ObjCClass, ObjCClass
-  | `ObjCSel, ObjCSel
-  | `Half, Half -> true
-  | _, _ -> display_equality_warning ();
-      false
+let builtin_equal (bi : Clang_ast_t.builtin_type_kind) (abi : builtin_kind) =
+  match List.Assoc.find ~equal:PVariant.(=) builtin_type_kind_assoc bi with
+  | Some assoc_abi when equal_builtin_kind assoc_abi abi -> true
+  | _ -> display_equality_warning ();false
 
 let typename_to_string pointer =
   match CAst_utils.get_decl pointer  with
@@ -228,7 +250,9 @@ let rec typ_string_of_type_ptr type_ptr =
   let open Clang_ast_t in
   match CAst_utils.get_type type_ptr with
   | Some BuiltinType (_, bt) ->
-      Clang_ast_j.string_of_builtin_type_kind bt
+      (match List.Assoc.find builtin_type_kind_assoc bt with
+       | Some abt -> builtin_kind_to_string abt
+       | None -> "")
   | Some PointerType (_, qt)
   | Some ObjCObjectPointerType (_, qt) ->
       (typ_string_of_type_ptr qt.qt_type_ptr) ^ "*"
@@ -239,17 +263,20 @@ let rec typ_string_of_type_ptr type_ptr =
   | _ -> ""
 
 let ast_node_type an =
-  match an with
-  | Stmt stmt ->
-      (match Clang_ast_proj.get_expr_tuple stmt with
-       | Some (_, _, expr_info) ->
-           typ_string_of_type_ptr expr_info.ei_qual_type.qt_type_ptr
-       | _ -> "")
-  | Decl decl ->
-      (match CAst_utils.type_of_decl decl with
-       | Some type_ptr ->
-           typ_string_of_type_ptr type_ptr
-       | _ -> "")
+  let typ_str =
+    match an with
+    | Stmt stmt ->
+        (match Clang_ast_proj.get_expr_tuple stmt with
+         | Some (_, _, expr_info) ->
+             typ_string_of_type_ptr expr_info.ei_qual_type.qt_type_ptr
+         | _ -> "")
+    | Decl decl ->
+        (match CAst_utils.type_of_decl decl with
+         | Some type_ptr ->
+             typ_string_of_type_ptr type_ptr
+         | _ -> "") in
+  if String.length typ_str > 0 then typ_str
+  else "<type not known>"
 
 let stmt_node_child_type an =
   match an with

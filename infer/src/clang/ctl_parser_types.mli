@@ -18,8 +18,6 @@ type ast_node =
 
 val ast_node_name : ast_node -> string
 
-val eventual_child_name : ast_node -> string
-
 val ast_node_type : ast_node -> string
 
 val stmt_node_child_type : ast_node -> string

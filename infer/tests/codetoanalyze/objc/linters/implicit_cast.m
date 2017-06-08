@@ -21,3 +21,34 @@ void calling_funct_with_pointer1() {
   NSString* s = @"Dulma";
   func_with_integer_param(s);
 }
+
+void integer_nil() { NSInteger n = nil; }
+
+NSString* returns_s() { return @""; }
+
+void calling_funct_with_pointer_from_a_method() {
+  func_with_integer_param(returns_s());
+}
+
+@interface Implicit_cast : NSObject
+
+@property NSString* p;
+
+@end
+
+extern NSString* const key;
+
+@implementation Implicit_cast {
+
+  NSDictionary<NSString*, NSNumber*>* _userInfo;
+}
+
+- (void)ivar_dictionary_item_call_funct_with_int {
+  func_with_integer_param(_userInfo[key]);
+}
+
+- (void)property_with_int {
+  func_with_integer_param(self.p);
+}
+
+@end
