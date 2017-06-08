@@ -1568,6 +1568,10 @@ and tracing =
     "Report error traces for runtime exceptions (Java only): generate preconditions for runtime\
      exceptions in Java and report errors for public methods which throw runtime exceptions"
 
+and tv_limit =
+  CLOpt.mk_int ~long:"tv-limit" ~default:100
+    ~meta:"int" "The maximum number of traces to submit to Traceview"
+
 and type_size =
   CLOpt.mk_bool ~deprecated:["type_size"] ~long:"type-size"
     "Consider the size of types during analysis, e.g. cannot use an int pointer to write to a char"
@@ -1990,6 +1994,7 @@ and trace_ondemand = !trace_ondemand
 and trace_join = !trace_join
 and trace_rearrange = !trace_rearrange
 and tracing = !tracing
+and tv_limit = !tv_limit
 and type_size = !type_size
 and unsafe_malloc = !unsafe_malloc
 and whole_seconds = !whole_seconds

@@ -353,6 +353,7 @@ val trace_error : bool
 val trace_ondemand : bool
 val trace_join : bool
 val trace_rearrange : bool
+val tv_limit : int
 val type_size : bool
 val unsafe_malloc : bool
 val whole_seconds : bool
