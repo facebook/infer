@@ -28,10 +28,10 @@ public class FragmentDoesNotRetainViewExample extends Fragment {
 
   }
 
-  @Nullable View mView1;
-  @Nullable View mView2;
-  @Nullable ViewGroup mViewSubclass;
-  @Nullable CustomView mCustomView;
+  View mView1;
+  View mView2;
+  ViewGroup mViewSubclass;
+  CustomView mCustomView;
 
   boolean b;
 

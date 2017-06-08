@@ -164,10 +164,9 @@ let pretty_field_name proc_data field_name =
       (* This format is subject to change once this checker gets to run on C/Cpp/ObjC *)
       Fieldname.to_string field_name
 
-let checker callback =
+let checker ({ Callbacks.summary } as callback) =
   let report astate (proc_data : extras ProcData.t) =
     let report_access_path ap udchain =
-      let pname = Procdesc.get_proc_name proc_data.pdesc in
       let issue_kind = Localise.to_issue_id Localise.field_should_be_nullable in
       match AccessPath.Raw.get_field_and_annotation ap proc_data.tenv with
       | Some (field_name, _) ->
@@ -180,9 +179,9 @@ let checker callback =
           begin
             match make_error_trace astate ap udchain with
             | Some (loc, ltr) ->
-                Reporting.log_warning_deprecated pname ~loc ~ltr exn
+                Reporting.log_warning summary ~loc ~ltr exn
             | None ->
-                Reporting.log_warning_deprecated pname exn
+                Reporting.log_warning summary exn
           end
       | _ -> ()
     in
