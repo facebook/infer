@@ -135,35 +135,45 @@ let create_results_dir () =
   Unix.mkdir_p (Config.results_dir ^/ Config.specs_dir_name);
   L.setup_log_file ()
 
+(* Clean up the results dir to select only what's relevant to go in the Buck cache. In particular,
+   get rid of non-deterministic outputs.*)
 let clean_results_dir () =
-  let dirs = ["classnames"; "filelists"; "multicore"; "sources"; "log";
-              "attributes"; "backend_stats"; "reporting_stats"; "frontend_stats"] in
-  let suffixes = [".cfg"; ".cg"; ".txt"; ".csv"; ".json"] in
+  (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
+  let should_delete_dir =
+    let dirs_to_delete =
+      "backend_stats" :: "classnames" :: "filelists" :: "frontend_stats" :: "multicore" ::
+      "reporting_stats" :: "sources" ::
+      if Config.flavors then []
+      else ["attributes"] in
+    List.mem ~equal:String.equal dirs_to_delete in
+  let should_delete_file =
+    let suffixes_to_delete =
+      ".txt" :: ".csv" :: ".json" ::
+      if Config.flavors then []
+      else [ ".cfg"; ".cg" ] in
+    fun name ->
+      (* Keep the JSON report *)
+      not (String.equal (Filename.basename name) "report.json")
+      && List.exists ~f:(Filename.check_suffix name) suffixes_to_delete in
   let rec clean name =
+    let rec cleandir dir = match Unix.readdir dir with
+      | entry ->
+          if should_delete_dir entry then (
+            rmtree (name ^/ entry)
+          ) else if not (String.equal entry Filename.current_dir_name
+                         || String.equal entry Filename.parent_dir_name) then (
+            clean (name ^/ entry)
+          );
+          cleandir dir (* next entry *)
+      | exception End_of_file ->
+          Unix.closedir dir in
     match Unix.opendir name with
-    | dir -> (
-        let rec cleandir dir =
-          match Unix.readdir dir with
-          | entry ->
-              if (List.exists ~f:(String.equal entry) dirs) then (
-                rmtree (name ^/ entry)
-              ) else if not (String.equal entry Filename.current_dir_name
-                             || String.equal entry Filename.parent_dir_name) then (
-                clean (name ^/ entry)
-              );
-              cleandir dir
-          | exception End_of_file ->
-              Unix.closedir dir in
+    | dir ->
         cleandir dir
-      )
-    | exception Unix.Unix_error (Unix.ENOTDIR, _, _)
-      when String.equal (Filename.basename name) "report.json" ->
-        (* Keep the JSON report *)
-        ()
     | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
-        if not (String.equal (Filename.basename name) "report.json")
-        && List.exists ~f:(Filename.check_suffix name) suffixes then
-          Unix.unlink name
+        if should_delete_file name then
+          Unix.unlink name;
+        ()
     | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
         () in
   clean Config.results_dir
@@ -187,7 +197,6 @@ let register_perf_stats_report () =
   let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name in
   let stats_base = Config.perf_stats_prefix ^ ".json" in
   let stats_file = Filename.concat stats_dir stats_base in
-  Unix.mkdir_p stats_dir;
   PerfStats.register_report_at_exit stats_file
 
 let reset_duplicates_file () =
@@ -297,6 +306,10 @@ let capture = function
               ["--xcode-developer-dir"; d]) @
           "--" ::
           if in_buck_mode && Config.flavors then
+            (* let children infer processes know that they are inside Buck *)
+            let infer_args_with_buck = String.concat ~sep:(String.of_char CLOpt.env_var_sep)
+                (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"]) in
+            Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck;
             Buck.add_flavors_to_buck_command build_cmd
           else build_cmd
         ) in
@@ -437,8 +450,13 @@ let assert_supported_build_system build_system = match build_system with
           (`Clang, "buck with flavors")
         else if Option.is_some Config.buck_compilation_database then
           (`Clang, "buck compilation database")
-        else
-          (`Java, string_of_build_system build_system) in
+        else (
+          if Config.reactive_mode then
+            L.user_error
+              "WARNING: The reactive analysis mode is not compatible with the Buck integration for \
+               Java";
+          (`Java, string_of_build_system build_system)
+        ) in
       assert_supported_mode analyzer build_string
   | BAnalyze ->
       ()
@@ -505,9 +523,7 @@ let infer_mode () =
      anyway, pretend that we are not called from another make to prevent make falling back to a
      mono-threaded execution. *)
   Unix.unsetenv "MAKEFLAGS";
-  if not Config.buck_cache_mode then register_perf_stats_report () ;
-  if Config.buck_cache_mode && Config.reactive_mode then
-    failwith "The reactive analysis mode is not compatible with the Buck integration for Java";
+  register_perf_stats_report () ;
   if not Config.buck_cache_mode then touch_start_file_unless_continue () ;
   capture driver_mode ;
   analyze driver_mode ;
@@ -519,8 +535,8 @@ let infer_mode () =
     if Config.fail_on_bug then
       fail_on_issue_epilogue () ;
   );
-  if Config.buck_cache_mode then
-    clean_results_dir ()
+  if Config.buck_cache_mode then clean_results_dir ();
+  ()
 
 let differential_mode () =
   (* at least one report must be passed in input to compute differential *)

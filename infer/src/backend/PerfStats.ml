@@ -141,22 +141,24 @@ let stats () =
   }
 
 let register_report_at_exit file =
-  Epilogues.register ~f:(fun () ->
-      try
-        let json_stats = to_json (stats ()) in
+  if not Config.buck_cache_mode then
+    Epilogues.register ~f:(fun () ->
         try
-          Unix.mkdir_p (Filename.dirname file);
-          let stats_oc = open_out file in
-          let stats_fd = Unix.descr_of_out_channel stats_oc in
-          ignore (Unix.flock stats_fd Unix.Flock_command.lock_exclusive);
-          Yojson.Basic.pretty_to_channel stats_oc json_stats;
-          ignore (Unix.flock stats_fd Unix.Flock_command.unlock);
-          Out_channel.close stats_oc
+          let json_stats = to_json (stats ()) in
+          try
+            Unix.mkdir_p (Filename.dirname file);
+            let stats_oc = open_out file in
+            let stats_fd = Unix.descr_of_out_channel stats_oc in
+            ignore (Unix.flock stats_fd Unix.Flock_command.lock_exclusive);
+            Yojson.Basic.pretty_to_channel stats_oc json_stats;
+            flush stats_oc;
+            ignore (Unix.flock stats_fd Unix.Flock_command.unlock);
+            Out_channel.close stats_oc
+          with exc ->
+            Format.eprintf "Info: failed to write stats to %s@\n%s@\n%s@\n%s@."
+              file (Exn.to_string exc) (Yojson.Basic.pretty_to_string json_stats)
+              (Printexc.get_backtrace ())
         with exc ->
-          Format.eprintf "Info: failed to write stats to %s@\n%s@\n%s@\n%s@."
-            file (Exn.to_string exc) (Yojson.Basic.pretty_to_string json_stats)
-            (Printexc.get_backtrace ())
-      with exc ->
-        Format.eprintf "Info: failed to compute stats for %s@\n%s@\n%s@."
-          file (Exn.to_string exc) (Printexc.get_backtrace ())
-    ) ("stats reporting in " ^ file)
+          Format.eprintf "Info: failed to compute stats for %s@\n%s@\n%s@."
+            file (Exn.to_string exc) (Printexc.get_backtrace ())
+      ) ("stats reporting in " ^ file)
