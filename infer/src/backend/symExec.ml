@@ -802,13 +802,6 @@ let normalize_params tenv pdesc prop actual_params =
   let prop, args = List.fold ~f:norm_arg ~init:(prop, []) actual_params in
   (prop, List.rev args)
 
-let do_error_checks tenv node_opt instr pname pdesc = match node_opt with
-  | Some node ->
-      if Config.curr_language_is Config.Java then
-        PrintfArgs.check_printf_args_ok tenv node instr pname pdesc
-  | None ->
-      ()
-
 let add_strexp_to_footprint tenv strexp abduced_pv typ prop =
   let abduced_lvar = Exp.Lvar abduced_pv in
   let lvar_pt_fpvar =
@@ -1115,7 +1108,6 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                     proc_call resolved_summary (call_args prop_ callee_pname norm_args ret_id loc)
               end
           | Java callee_pname_java ->
-              do_error_checks tenv (Paths.Path.curr_node path) instr current_pname current_pdesc;
               let norm_prop, norm_args = normalize_params tenv current_pname prop_ actual_params in
               let url_handled_args =
                 call_constructor_url_update_args callee_pname norm_args in

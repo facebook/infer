@@ -40,10 +40,6 @@ let printf_like_functions =
         vararg_pos = Some 3 };
     ]
 
-let add_printf_like_function plf =
-  printf_like_functions := plf :: !printf_like_functions
-
-
 let printf_like_function
     (proc_name: Typ.Procname.t): printf_signature option =
   List.find
@@ -109,11 +105,14 @@ let rec format_string_type_names
     fmt_type:: format_string_type_names fmt_string (Str.match_end ())
   with Not_found -> []
 
-let check_printf_args_ok tenv
+let check_printf_args_ok
+    tenv
     (node: Procdesc.Node.t)
     (instr: Sil.instr)
     (proc_name: Typ.Procname.t)
-    (proc_desc: Procdesc.t): unit =
+    (proc_desc: Procdesc.t)
+    summary
+  : unit =
 
   (* Check if format string lines up with arguments *)
   let rec check_type_names instr_loc n_arg instr_proc_name fmt_type_names arg_type_names =
@@ -129,12 +128,8 @@ let check_printf_args_ok tenv
               n_arg
               (default_format_type_name ft)
               gt in
-          Checkers.ST.report_error tenv
-            proc_name
-            proc_desc
-            Localise.checkers_printf_args
-            instr_loc
-            description
+          let exn = Exceptions.Checkers (description, Localise.verbatim_desc description) in
+          Reporting.log_error_from_summary summary ~loc:instr_loc exn
         else
           check_type_names instr_loc (n_arg + 1) instr_proc_name fs gs
     | [], [] -> ()
@@ -143,12 +138,8 @@ let check_printf_args_ok tenv
             "format string arguments don't mach provided arguments in %s at line %s"
             instr_name
             instr_line in
-        Checkers.ST.report_error tenv
-          proc_name
-          proc_desc
-          Localise.checkers_printf_args
-          instr_loc
-          description in
+        let exn = Exceptions.Checkers (description, Localise.verbatim_desc description) in
+        Reporting.log_error_from_summary summary ~loc:instr_loc exn in
 
   (* Get the array ivar for a given nvar *)
   let rec array_ivar instrs nvar =
@@ -208,16 +199,6 @@ let check_printf_args_ok tenv
 
 let callback_printf_args { Callbacks.tenv; proc_desc; summary } : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  Procdesc.iter_instrs (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc) proc_desc;
+  Procdesc.iter_instrs
+    (fun n i -> check_printf_args_ok tenv n i proc_name proc_desc summary) proc_desc;
   summary
-
-(*
-let printf_signature_to_string
-    (printf: printf_signature): string =
-  Printf.sprintf
-    "{%s; %d [%s] %s}"
-    printf.unique_id
-    printf.format_pos
-    (String.concat ~sep:"," (List.map ~f:string_of_int printf.fixed_pos))
-    (match printf.vararg_pos with | Some i -> string_of_int i | _ -> "-")
-*)
