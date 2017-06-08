@@ -416,6 +416,9 @@ module Procname: {
   /** Check if the proc name comes from a lambda expression */
   let java_is_lambda: t => bool;
 
+  /** Check if the proc name comes from generated code */
+  let java_is_generated: t => bool;
+
   /** Check if the last parameter is a hidden inner class, and remove it if present.
       This is used in private constructors, where a proxy constructor is generated
       with an extra parameter and calls the normal constructor. */

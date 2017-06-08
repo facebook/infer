@@ -152,4 +152,7 @@ public class ReturnNotNullable {
     return stream.map(x -> null); // Intentionaly not reporting here
   }
 
+  Object $generatedReturnsNullOk() {
+    return null;
+  }
 }

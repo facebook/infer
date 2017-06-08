@@ -44,12 +44,16 @@ let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_
 
 
 let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file exn =
+  let is_generated_method =
+    Typ.Procname.java_is_generated (Specs.get_proc_name summary) in
   let should_suppress_lint =
     Config.curr_language_is Config.Java &&
     Annotations.ia_is_suppress_lint
       (fst summary.Specs.attributes.ProcAttributes.method_annotation) in
-  if not should_suppress_lint
+  if should_suppress_lint || is_generated_method
   then
+    () (* Skip the reporting *)
+  else
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
     log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file exn
 
