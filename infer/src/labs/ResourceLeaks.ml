@@ -106,7 +106,7 @@ let checker ({ Callbacks.summary; } as callback) : Specs.summary =
       let issue_kind = Localise.to_issue_id Localise.resource_leak in
       let message = F.asprintf "Leaked %d resource(s)" leak_count in
       let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
-      Reporting.log_error_from_summary summary ~loc:last_loc exn in
+      Reporting.log_error summary ~loc:last_loc exn in
   (* Convert the abstract state to a summary. for now, just the identity function *)
   let convert_to_summary (post : Domain.astate) : Domain.summary =
     (* 4(a) *)

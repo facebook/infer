@@ -226,8 +226,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let trace_str = get_short_trace_string original_source final_sink in
         let ltr = source_trace @ (List.rev sink_trace) in
         let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
-        Reporting.log_error_from_summary
-          proc_data.extras.summary ~loc:(CallSite.loc cur_site) ~ltr exn in
+        Reporting.log_error proc_data.extras.summary ~loc:(CallSite.loc cur_site) ~ltr exn in
 
       List.iter ~f:report_one (TraceDomain.get_reports ~cur_site trace)
 

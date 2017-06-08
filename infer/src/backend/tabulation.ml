@@ -377,7 +377,7 @@ let check_path_errors_in_post tenv caller_pname post post_path =
             else current_path, None (* position not found, only use the path up to the callee *) in
           State.set_path new_path path_pos_opt;
           let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-          Reporting.log_warning caller_pname exn
+          Reporting.log_warning_deprecated caller_pname exn
     | _ -> () in
   List.iter ~f:check_attr (Attribute.get_all post)
 
@@ -831,7 +831,7 @@ let report_taint_error e taint_info callee_pname caller_pname calling_prop =
   let exn =
     Exceptions.Tainted_value_reaching_sensitive_function
       (err_desc, __POS__) in
-  Reporting.log_warning caller_pname exn
+  Reporting.log_warning_deprecated caller_pname exn
 
 let check_taint_on_variadic_function tenv callee_pname caller_pname actual_params calling_prop =
   let rec n_tail lst n = (* return the tail of a list from element n *)
@@ -1038,7 +1038,7 @@ let exe_spec
        frame_fld, missing_fld, frame_typ, missing_typ) ->
       let log_check_exn check =
         let exn = get_check_exn tenv check callee_pname loc __POS__ in
-        Reporting.log_warning caller_pname exn in
+        Reporting.log_warning_deprecated caller_pname exn in
       let do_split () =
         let missing_pi' =
           if Config.taint_analysis then

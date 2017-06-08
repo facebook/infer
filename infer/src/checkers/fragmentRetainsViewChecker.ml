@@ -19,7 +19,7 @@ let report_error fragment_typ fld fld_typ summary pdesc =
   let description = Localise.desc_fragment_retains_view fragment_typ fld fld_typ pname in
   let exn =  Exceptions.Checkers (retained_view, description) in
   let loc = Procdesc.get_loc pdesc in
-  Reporting.log_error_from_summary summary ~loc exn
+  Reporting.log_error summary ~loc exn
 
 let callback_fragment_retains_view_java
     pname_java { Callbacks.proc_desc; summary; tenv } =

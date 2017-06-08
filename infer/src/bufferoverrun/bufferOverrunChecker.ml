@@ -424,7 +424,7 @@ struct
                      let desc = Errdesc.explain_condition_always_true_false tenv i cond node loc in
                      let exn =
                        Exceptions.Condition_always_true_false (desc, not true_branch, __POS__) in
-                     Reporting.log_warning pname ~loc exn
+                     Reporting.log_warning_deprecated pname ~loc exn
                  | Sil.Call (_, Const (Cfun pname), _, _, _) when
                      String.equal (Typ.Procname.get_method pname) "exit" &&
                      is_last_statement_of_if_branch rem_instrs node -> ()
@@ -432,7 +432,7 @@ struct
                      let loc = Sil.instr_get_loc instr in
                      let desc = Errdesc.explain_unreachable_code_after loc in
                      let exn = Exceptions.Unreachable_code_after (desc, __POS__) in
-                     Reporting.log_error pname ~loc exn)
+                     Reporting.log_error_deprecated pname ~loc exn)
             | _ -> ()
           in
           print_debug_info instr mem' cond_set;
@@ -471,7 +471,7 @@ struct
             let exn =
               Exceptions.Checkers (Localise.to_issue_id Localise.buffer_overrun, error_desc) in
             let trace = [Errlog.make_trace_element 0 loc description []] in
-            Reporting.log_error pname ~loc ~ltr:trace exn
+            Reporting.log_error_deprecated pname ~loc ~ltr:trace exn
         | _ -> ()
       in
       Dom.ConditionSet.iter report1 conds

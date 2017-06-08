@@ -180,9 +180,9 @@ let checker callback =
           begin
             match make_error_trace astate ap udchain with
             | Some (loc, ltr) ->
-                Reporting.log_warning pname ~loc ~ltr exn
+                Reporting.log_warning_deprecated pname ~loc ~ltr exn
             | None ->
-                Reporting.log_warning pname exn
+                Reporting.log_warning_deprecated pname exn
           end
       | _ -> ()
     in

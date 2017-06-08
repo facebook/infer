@@ -114,6 +114,6 @@ module ST = struct
           SourceFile.pp loc.Location.file
           (Typ.Procname.to_string proc_name);
         L.progress "%s@." description;
-        Reporting.log_error proc_name ~loc ~ltr:trace exn
+        Reporting.log_error_deprecated proc_name ~loc ~ltr:trace exn
       end
 end

@@ -147,7 +147,7 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     summary in
 
   let log_error_and_continue exn summary kind =
-    Reporting.log_error_from_summary summary exn;
+    Reporting.log_error summary exn;
     let stats = { summary.Specs.stats with Specs.stats_failure = Some kind } in
     let payload =
       { summary.Specs.payload with Specs.preposts = Some []; } in

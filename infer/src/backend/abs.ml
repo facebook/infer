@@ -1178,7 +1178,7 @@ let check_junk ?original_prop pname tenv prop =
                 if not report_and_continue then raise exn
                 else
                   begin
-                    Reporting.log_error pname exn;
+                    Reporting.log_error_deprecated pname exn;
                     leaks_reported := alloc_attribute :: !leaks_reported;
                   end in
               if not ignore_leak then report_leak ();

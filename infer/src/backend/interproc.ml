@@ -453,7 +453,7 @@ let check_assignement_guard pdesc node =
               if (is_prune_exp e) && not ((node_contains_call node) && (is_frontend_tmp e)) then (
                 let desc = Errdesc.explain_condition_is_assignment l_node in
                 let exn = Exceptions.Condition_is_assignment (desc, __POS__) in
-                Reporting.log_warning pname ~loc:l_node exn
+                Reporting.log_warning_deprecated pname ~loc:l_node exn
               )
               else ()
           | _ ->
@@ -516,7 +516,7 @@ let forward_tabulate tenv pdesc wl =
      | None -> ());
     L.d_strln "SIL INSTR:";
     Procdesc.Node.d_instrs ~sub_instrs: true (State.get_instr ()) curr_node; L.d_ln ();
-    Reporting.log_error pname exn;
+    Reporting.log_error_deprecated pname exn;
     State.mark_instr_fail exn in
 
   let exe_iter f pathset =
@@ -666,7 +666,7 @@ let report_context_leaks pname sigma tenv =
             let err_desc =
               Errdesc.explain_context_leak pname (Typ.mk (Tstruct name)) fld_name leak_path in
             let exn = Exceptions.Context_leak (err_desc, __POS__) in
-            Reporting.log_error pname exn)
+            Reporting.log_error_deprecated pname exn)
       context_exps in
   (* get the set of pointed-to expressions of type T <: Context *)
   let context_exps =
@@ -701,7 +701,7 @@ let remove_locals_formals_and_check tenv pdesc p =
     let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
     let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
     let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
-    Reporting.log_warning pname exn in
+    Reporting.log_warning_deprecated pname exn in
   List.iter ~f:check_pvar pvars;
   p'
 
@@ -1017,7 +1017,7 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t)
       ignore (path_set_put_todo wl start_node init_edgeset);
       forward_tabulate tenv pdesc wl in
     let get_results (wl : Worklist.t) () =
-      State.process_execution_failures Reporting.log_warning pname;
+      State.process_execution_failures Reporting.log_warning_deprecated pname;
       let results = collect_analysis_result tenv wl pdesc in
       L.(debug Analysis Medium) "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname;
       L.(debug Analysis Medium) "#### Finished: Footprint Computation for %a %a ####@."
@@ -1031,7 +1031,7 @@ let perform_analysis_phase tenv (summary : Specs.summary) (pdesc : Procdesc.t)
             let exn =
               Exceptions.Internal_error
                 (Localise.verbatim_desc "Leak_while_collecting_specs_after_footprint") in
-            Reporting.log_error pname exn;
+            Reporting.log_error_deprecated pname exn;
             [] (* retuning no specs *) in
       specs, Specs.FOOTPRINT in
     let wl = path_set_create_worklist pdesc in
@@ -1189,7 +1189,7 @@ let report_runtime_exceptions tenv pdesc summary =
         F.asprintf "%a" (Prop.pp_prop Pp.text) (Specs.Jprop.to_prop pre) in
       let exn_desc = Localise.java_unchecked_exn_desc pname runtime_exception pre_str in
       let exn = Exceptions.Java_runtime_exception (runtime_exception, pre_str, exn_desc) in
-      Reporting.log_error pname exn in
+      Reporting.log_error_deprecated pname exn in
   List.iter ~f:report exn_preconditions
 
 
@@ -1202,7 +1202,7 @@ let report_custom_errors tenv summary =
       let loc = summary.Specs.attributes.ProcAttributes.loc in
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
-      Reporting.log_error pname exn in
+      Reporting.log_error_deprecated pname exn in
   List.iter ~f:report error_preconditions
 
 module SpecMap = Caml.Map.Make (struct

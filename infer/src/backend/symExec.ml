@@ -114,7 +114,7 @@ let rec apply_offlist
             let deref_str = Localise.deref_str_uninitialized alloc_attribute_opt in
             let err_desc = Errdesc.explain_memory_access tenv deref_str p (State.get_loc ()) in
             let exn = (Exceptions.Uninitialized_value (err_desc, __POS__)) in
-            Reporting.log_warning pname exn;
+            Reporting.log_warning_deprecated pname exn;
             Sil.update_inst inst_curr inst
         | Sil.Ilookup -> (* a lookup does not change an inst unless it is inst_initial *)
             lookup_inst := Some inst_curr;
@@ -380,7 +380,7 @@ let check_inherently_dangerous_function caller_pname callee_pname =
     let exn =
       Exceptions.Inherently_dangerous_function
         (Localise.desc_inherently_dangerous_function callee_pname) in
-    Reporting.log_warning caller_pname exn
+    Reporting.log_warning_deprecated caller_pname exn
 
 let call_should_be_skipped callee_summary =
   (* check skip flag *)
@@ -415,14 +415,14 @@ let check_arith_norm_exp tenv pname exp prop =
   | Some (Attribute.Div0 div), prop' ->
       let desc = Errdesc.explain_divide_by_zero tenv div (State.get_node ()) (State.get_loc ()) in
       let exn = Exceptions.Divide_by_zero (desc, __POS__) in
-      Reporting.log_warning pname exn;
+      Reporting.log_warning_deprecated pname exn;
       Prop.exp_normalize_prop tenv prop exp, prop'
   | Some (Attribute.UminusUnsigned (e, typ)), prop' ->
       let desc =
         Errdesc.explain_unary_minus_applied_to_unsigned_expression tenv
           e typ (State.get_node ()) (State.get_loc ()) in
       let exn = Exceptions.Unary_minus_applied_to_unsigned_expression (desc, __POS__) in
-      Reporting.log_warning pname exn;
+      Reporting.log_warning_deprecated pname exn;
       Prop.exp_normalize_prop tenv prop exp, prop'
   | None, prop' -> Prop.exp_normalize_prop tenv prop exp, prop'
 
@@ -458,7 +458,7 @@ let check_already_dereferenced tenv pname cond prop =
           (Exp.Var id) (State.get_node ()) n (State.get_loc ()) in
       let exn =
         (Exceptions.Null_test_after_dereference (desc, __POS__)) in
-      Reporting.log_warning pname exn
+      Reporting.log_warning_deprecated pname exn
   | None -> ()
 
 (** Check whether symbolic execution de-allocated a stack variable or a constant string,
@@ -1027,7 +1027,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       ret_typ_opt actual_args =
     let skip_res () =
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
-      Reporting.log_info current_pname exn;
+      Reporting.log_info_deprecated current_pname exn;
       L.d_strln
         ("Undefined function " ^ Typ.Procname.to_string callee_pname
          ^ ", returning undefined value.");
@@ -1074,7 +1074,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
               let desc = Errdesc.explain_condition_always_true_false tenv i cond node loc in
               let exn =
                 Exceptions.Condition_always_true_false (desc, not (IntLit.iszero i), __POS__) in
-              Reporting.log_warning current_pname exn
+              Reporting.log_warning_deprecated current_pname exn
           | _ -> () in
       if not Config.tracing then
         check_already_dereferenced tenv current_pname cond prop__;
@@ -1390,7 +1390,7 @@ and check_untainted tenv exp taint_kind caller_pname callee_pname prop =
       let exn =
         Exceptions.Tainted_value_reaching_sensitive_function
           (err_desc, __POS__) in
-      Reporting.log_warning caller_pname exn;
+      Reporting.log_warning_deprecated caller_pname exn;
       Attribute.add_or_replace tenv prop (Apred (Auntaint taint_info, [exp]))
   | _ ->
       if !Config.footprint then
@@ -1577,7 +1577,7 @@ and proc_call
     && is_none (Specs.get_flag callee_summary ProcAttributes.proc_flag_ignore_return) then
       let err_desc = Localise.desc_return_value_ignored callee_pname loc in
       let exn = (Exceptions.Return_value_ignored (err_desc, __POS__)) in
-      Reporting.log_warning caller_pname exn in
+      Reporting.log_warning_deprecated caller_pname exn in
   check_inherently_dangerous_function caller_pname callee_pname;
   begin
     let formal_types = List.map ~f:snd (Specs.get_formals callee_summary) in

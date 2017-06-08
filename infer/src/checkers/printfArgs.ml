@@ -129,7 +129,7 @@ let check_printf_args_ok
               (default_format_type_name ft)
               gt in
           let exn = Exceptions.Checkers (description, Localise.verbatim_desc description) in
-          Reporting.log_error_from_summary summary ~loc:instr_loc exn
+          Reporting.log_error summary ~loc:instr_loc exn
         else
           check_type_names instr_loc (n_arg + 1) instr_proc_name fs gs
     | [], [] -> ()
@@ -139,7 +139,7 @@ let check_printf_args_ok
             instr_name
             instr_line in
         let exn = Exceptions.Checkers (description, Localise.verbatim_desc description) in
-        Reporting.log_error_from_summary summary ~loc:instr_loc exn in
+        Reporting.log_error summary ~loc:instr_loc exn in
 
   (* Get the array ivar for a given nvar *)
   let rec array_ivar instrs nvar =

@@ -53,7 +53,7 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
     let err_log = summary.Specs.attributes.ProcAttributes.err_log in
     log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file exn
 
-let log_issue
+let log_issue_deprecated
     ?(store_summary=false)
     err_kind
     proc_name
@@ -80,10 +80,15 @@ let log_error_from_errlog = log_issue_from_errlog Exceptions.Kerror
 let log_warning_from_errlog = log_issue_from_errlog Exceptions.Kwarning
 let log_info_from_errlog = log_issue_from_errlog Exceptions.Kinfo
 
-let log_error_from_summary = log_issue_from_summary Exceptions.Kerror
-let log_warning_from_summary = log_issue_from_summary Exceptions.Kwarning
-let log_info_from_summary = log_issue_from_summary Exceptions.Kwarning
+let log_error = log_issue_from_summary Exceptions.Kerror
+let log_warning = log_issue_from_summary Exceptions.Kwarning
+let log_info = log_issue_from_summary Exceptions.Kwarning
 
-let log_error ?(store_summary=false) = log_issue ~store_summary Exceptions.Kerror
-let log_warning ?(store_summary=false) = log_issue ~store_summary Exceptions.Kwarning
-let log_info ?(store_summary=false) = log_issue ~store_summary Exceptions.Kinfo
+let log_error_deprecated ?(store_summary=false) =
+  log_issue_deprecated ~store_summary Exceptions.Kerror
+
+let log_warning_deprecated ?(store_summary=false) =
+  log_issue_deprecated ~store_summary Exceptions.Kwarning
+
+let log_info_deprecated ?(store_summary=false) =
+  log_issue_deprecated ~store_summary Exceptions.Kinfo

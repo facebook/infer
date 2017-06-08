@@ -189,7 +189,7 @@ let report_allocation_stack
       MF.pp_monospaced (stack_str ^ ("new "^constr_str)) in
   let exn =
     Exceptions.Checkers (allocates_memory, Localise.verbatim_desc description) in
-  Reporting.log_error_from_summary summary ~loc:fst_call_loc ~ltr:final_trace exn
+  Reporting.log_error summary ~loc:fst_call_loc ~ltr:final_trace exn
 
 let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str snk_pname call_loc =
   let src_pname = Specs.get_proc_name src_summary in
@@ -212,7 +212,7 @@ let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str 
       else annotation_reachability_error in
     let exn =
       Exceptions.Checkers (msg, Localise.verbatim_desc description) in
-    Reporting.log_error_from_summary src_summary ~loc ~ltr:final_trace exn
+    Reporting.log_error src_summary ~loc ~ltr:final_trace exn
 
 let report_call_stack summary end_of_stack lookup_next_calls report call_site sink_map =
   (* TODO: stop using this; we can use the call site instead *)
@@ -387,7 +387,7 @@ let check_expensive_subtyping_rules { Callbacks.proc_desc; tenv; summary } overr
     let exn =
       Exceptions.Checkers
         (expensive_overrides_unexpensive, Localise.verbatim_desc description) in
-    Reporting.log_error_from_summary summary ~loc exn
+    Reporting.log_error summary ~loc exn
 
 module Interprocedural = struct
   include AbstractInterpreter.Interprocedural(Summary)
