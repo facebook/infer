@@ -71,8 +71,5 @@ infer_group.add_argument('-l', '--load-average', metavar='<float>', type=float,
                          'be started if there are others jobs running and the '
                          'load average is at least <float>.')
 
-infer_group.add_argument('--buck', action='store_true', dest='buck',
-                         help='To use when run with buck')
-
 infer_group.add_argument('--java-jar-compiler',
                          metavar='<file>')

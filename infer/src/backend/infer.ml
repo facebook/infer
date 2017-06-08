@@ -270,8 +270,6 @@ let capture = function
            | _ -> []) @
           (if not Config.create_harness then [] else
              ["--android-harness"]) @
-          (if not Config.buck then [] else
-             ["--buck"]) @
           (match Config.java_jar_compiler with None -> [] | Some p ->
               ["--java-jar-compiler"; p]) @
           (match List.rev Config.buck_build_args with
