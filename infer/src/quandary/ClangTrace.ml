@@ -14,7 +14,7 @@ module L = Logging
 
 module SourceKind = struct
   type t =
-    | Endpoint (** source originating from an endpoint *)
+    | Endpoint of Mangled.t (** source originating from formal of an endpoint *)
     | EnvironmentVariable (** source that was read from an environment variable *)
     | File (** source that was read from a file *)
     | Other (** for testing or uncategorized sources *)
@@ -24,7 +24,7 @@ module SourceKind = struct
   let unknown = Unknown
 
   let of_string = function
-    | "Endpoint" -> Endpoint
+    | "Endpoint" -> Endpoint (Mangled.from_string "NONE")
     | "EnvironmentVariable" -> EnvironmentVariable
     | "File" -> File
     | _ -> Other
@@ -90,15 +90,19 @@ module SourceKind = struct
             (Typ.Procname.objc_cpp_get_class_name objc)
             (Typ.Procname.get_method pname) in
         if String.Set.mem endpoints qualified_pname
-        then List.map ~f:(fun (name, typ) -> name, typ, Some Endpoint) (Procdesc.get_formals pdesc)
-        else Source.all_formals_untainted pdesc
+        then
+          List.map
+            ~f:(fun (name, typ) -> name, typ, Some (Endpoint name))
+            (Procdesc.get_formals pdesc)
+        else
+          Source.all_formals_untainted pdesc
     | _ ->
         Source.all_formals_untainted pdesc
 
   let pp fmt kind =
-    F.fprintf fmt
+    F.fprintf fmt "%s"
       (match kind with
-       | Endpoint -> "Endpoint"
+       | Endpoint formal_name -> F.sprintf "Endpoint[%s]" (Mangled.to_string formal_name)
        | EnvironmentVariable -> "EnvironmentVariable"
        | File -> "File"
        | Other -> "Other"
@@ -189,10 +193,10 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | (Endpoint | EnvironmentVariable | File), ShellExec ->
+      | (Endpoint _ | EnvironmentVariable | File), ShellExec ->
           (* untrusted data flowing to exec *)
           true
-      | (Endpoint | EnvironmentVariable | File), Allocation ->
+      | (Endpoint _ | EnvironmentVariable | File), Allocation ->
           (* untrusted data flowing to memory allocation *)
           true
       | _, (Allocation | Other | ShellExec) when Source.is_footprint source ->
