@@ -31,7 +31,7 @@ function usage() {
   echo
   echo " options:"
   echo "   -h,--help             show this message"
-  echo "   --only-install-opam   install the opam dependencies of infer and exists"
+  echo "   --only-setup-opam     initialize opam, install the opam dependencies of infer, and exit"
   echo "   --opam-switch         specify the opam switch where to install infer (default: $INFER_OPAM_SWITCH_DEFAULT)"
   echo "   --no-opam-lock        do not use the opam.lock file and let opam resolve dependencies"
   echo "   -y,--yes              automatically agree to everything"
@@ -120,13 +120,13 @@ export OPAMYES=1
 check_installed () {
   local cmd=$1
   if ! which $cmd >/dev/null 2>&1; then
-    echo "dependency not found: $cmd"
+    echo "dependency not found: $cmd" >&2
     exit 1
   fi
 }
 
 setup_opam () {
-    opam init --compiler=$OCAML_VERSION -j $NCPU --no-setup --yes
+    opam init --compiler=$OCAML_VERSION -j $NCPU --no-setup
     opam switch set -j $NCPU $INFER_OPAM_SWITCH --alias-of $OCAML_VERSION
 }
 
@@ -151,7 +151,7 @@ install_infer-deps () {
 
 install_locked_deps() {
     if ! opam lock 2> /dev/null; then
-        echo "opam-lock not found in the current switch, installing from '$OPAM_LOCK_URL'..."
+        echo "opam-lock not found in the current switch, installing from '$OPAM_LOCK_URL'..." >&2
         opam pin add -k git lock "$OPAM_LOCK_URL"
     fi
     opam lock --install < "$INFER_ROOT"/opam.lock
@@ -166,7 +166,7 @@ install_opam_deps() {
 }
 
 
-echo "initializing opam... "
+echo "initializing opam... " >&2
 check_installed opam
 if [ "$INFER_OPAM_SWITCH" = "$INFER_OPAM_SWITCH_DEFAULT" ]; then
     # set up the custom infer switch
@@ -175,12 +175,12 @@ else
     opam switch set -j $NCPU $INFER_OPAM_SWITCH
 fi
 eval $(SHELL=bash opam config env --switch=$INFER_OPAM_SWITCH)
-echo
-echo "installing infer dependencies; this can take up to 30 minutes... "
+echo >&2
+echo "installing infer dependencies; this can take up to 30 minutes... " >&2
 install_opam_deps || ( \
-  echo; \
-  echo '*** Failed to install opam dependencies'; \
-  echo '*** Updating opam then retrying'; \
+  echo >&2; \
+  echo '*** Failed to install opam dependencies' >&2; \
+  echo '*** Updating opam then retrying' >&2; \
   opam update && \
   install_opam_deps \
 )
@@ -189,7 +189,7 @@ if [ "$ONLY_SETUP_OPAM" = "yes" ]; then
   exit 0
 fi
 
-echo "preparing build... "
+echo "preparing build... " >&2
 if [ ! -f .release ]; then
   if [ "$BUILD_CLANG" = "no" ]; then
     SKIP_SUBMODULES=true ./autogen.sh > /dev/null
@@ -239,10 +239,10 @@ if [ "$BUILD_CLANG" = "yes" ] && ! facebook-clang-plugins/clang/setup.sh --only-
 fi
 
 make -j $NCPU all || (
-  echo
-  echo '  compilation failure; you can try running'
-  echo
-  echo '    make clean'
-  echo "    $0 $ORIG_ARGS"
-  echo
+  echo >&2
+  echo '  compilation failure; you can try running' >&2
+  echo >&2
+  echo '    make clean' >&2
+  echo "    $0 $ORIG_ARGS" >&2
+  echo >&2
   exit 1)
