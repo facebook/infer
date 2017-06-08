@@ -1045,10 +1045,17 @@ let report_thread_safety_violation tenv pdesc ~make_description ?(conflicts=[]) 
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
 
+let pp_procname_short fmt = function
+  | Typ.Procname.Java java ->
+      F.fprintf fmt "%s.%s"
+        (Typ.Procname.java_get_class_name java) (Typ.Procname.java_get_method java)
+  | pname ->
+      Typ.Procname.pp fmt pname
+
 let make_unprotected_write_description tenv pname final_sink_site initial_sink_site final_sink =
   Format.asprintf
-    "Unprotected write. Public method %a%s %s %a outside of synchronization.%s"
-    (MF.wrap_monospaced Typ.Procname.pp) pname
+    "Unprotected write. Non-private method %a%s %s %a outside of synchronization.%s"
+    (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if is_container_write_sink final_sink then "mutates" else "writes to field")
     pp_access final_sink
@@ -1077,8 +1084,8 @@ let make_read_write_race_description
           but the current method is not specified to be. Consider adding synchronization \
           or a @ThreadConfined annotation to the current method."
        else "") in
-  Format.asprintf "Read/Write race. Public method %a%s reads from field %a. %s %s"
-    (MF.wrap_monospaced Typ.Procname.pp) pname
+  Format.asprintf "Read/Write race. Non-private method %a%s reads from field %a. %s %s"
+    (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     pp_access final_sink
     conflicts_description
