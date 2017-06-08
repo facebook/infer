@@ -349,6 +349,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat"),
             ("append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"
             | "setValueAt") -> true
+          | "android.support.v4.util.SimpleArrayMap",
+            ("clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt"
+            | "setValueAt") -> true
           | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") -> true
           | "java.util.Map", ("clear" | "put" | "putAll" | "remove") -> true
           | _ -> false in
