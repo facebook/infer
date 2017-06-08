@@ -1027,7 +1027,7 @@ let make_trace_with_conflicts conflicts original_path pdesc =
   | [] ->
       original_trace
 
-let report_thread_safety_violation tenv pdesc ~make_description ?(conflicts=[]) access =
+let report_thread_safety_violation tenv pdesc ~make_description ~conflicts access =
   let open ThreadSafetyDomain in
   let pname = Procdesc.get_proc_name pdesc in
   let report_one_path ((_, sinks) as path) =
@@ -1157,6 +1157,7 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
                       tenv
                       pdesc
                       ~make_description:make_unprotected_write_description
+                      ~conflicts:[]
                       access;
                     update_reported access pname reported_acc
                   end
@@ -1220,6 +1221,7 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
                 tenv
                 pdesc
                 ~make_description:(make_read_write_race_description conflicting_writes)
+                ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) conflicting_writes)
                 access;
               update_reported access pname reported_acc
             end in

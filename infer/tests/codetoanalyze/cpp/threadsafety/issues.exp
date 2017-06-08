@@ -1,4 +1,4 @@
-codetoanalyze/cpp/threadsafety/basics.cpp, basics::Basic_get2, 3, THREAD_SAFETY_VIOLATION, [access to `suspiciously_written`]
+codetoanalyze/cpp/threadsafety/basics.cpp, basics::Basic_get2, 3, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `suspiciously_written`,<Beginning of write trace>,access to `suspiciously_written`]
 codetoanalyze/cpp/threadsafety/basics.cpp, basics::Basic_get3, 0, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `not_guarded`,<Beginning of write trace>,access to `not_guarded`]
 codetoanalyze/cpp/threadsafety/basics.cpp, basics::Basic_get4, 0, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `suspiciously_read`,<Beginning of write trace>,access to `suspiciously_read`]
 codetoanalyze/cpp/threadsafety/basics_with_mutex.cpp, basics::BasicsWithHeader_get1, 0, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `field_1`,<Beginning of write trace>,access to `field_1`]
