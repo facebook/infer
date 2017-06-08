@@ -208,6 +208,7 @@ val copy_propagation : bool
 val crashcontext : bool
 val create_harness : bool
 val cxx : bool
+val cxx_infer_headers : bool
 val debug_level_analysis : int
 val debug_level_capture : int
 val debug_level_linters : int

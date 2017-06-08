@@ -31,7 +31,7 @@ let plugin_name = "BiniouASTExporter";
 
 
 /** whether to amend include search path with C++ model headers */
-let infer_cxx_models = Config.cxx;
+let infer_cxx_models = Config.cxx_infer_headers;
 
 let value_of_argv_option argv opt_name =>
   List.fold

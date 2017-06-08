@@ -767,11 +767,21 @@ and copy_propagation =
   CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
     "Perform copy-propagation on the IR"
 
-and cxx =
-  CLOpt.mk_bool ~deprecated:["cxx-experimental"] ~long:"cxx"
-    ~default:true
-    ~in_help:CLOpt.[Capture, manual_clang]
-    "Analyze C++ methods"
+and cxx, cxx_infer_headers =
+  let cxx_infer_headers =
+    CLOpt.mk_bool ~long:"cxx-infer-headers"
+      ~default:true
+      ~in_help:CLOpt.[Capture, manual_clang]
+      "Include C++ header models during compilation, set by $(b,--cxx). Infer swaps some C++ \
+       headers for its own in order to get a better model of, eg, the standard library. This \
+       can sometimes cause compilation failures." in
+  let cxx = CLOpt.mk_bool_group ~long:"cxx"
+      ~default:true
+      ~in_help:CLOpt.[Capture, manual_clang]
+      "Analyze C++ methods"
+      [cxx_infer_headers] [] in
+  cxx, cxx_infer_headers
+
 
 and (
   bo_debug,
@@ -1846,6 +1856,7 @@ and copy_propagation = !copy_propagation
 and crashcontext = !crashcontext
 and create_harness = !android_harness
 and cxx = !cxx
+and cxx_infer_headers = !cxx_infer_headers
 and debug_level_analysis = !debug_level_analysis
 and debug_level_capture = !debug_level_capture
 and debug_level_linters = !debug_level_linters
