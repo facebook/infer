@@ -31,7 +31,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Download the latest Infer release
-RUN INFER_VERSION=v0.11.0; \
+RUN INFER_VERSION=v0.12.0; \
     cd /opt && \
     curl -sL \
       https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux64-${INFER_VERSION}.tar.xz | \
