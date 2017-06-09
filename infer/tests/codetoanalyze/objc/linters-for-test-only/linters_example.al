@@ -164,7 +164,7 @@ DEFINE-CHECKER TEST_IMPLICIT_CAST_CHECK = {
             has_type("int") AND has_type_long_expr
 	    HOLDS-IN-NODE ImplicitCastExpr;
 
-  SET message = "An implicit case from long to int can cause a crash";
+  SET message = "An implicit cast from long to int can cause a crash";
 };
 
 DEFINE-CHECKER TEST_VAR_TYPE_CHECK = {
