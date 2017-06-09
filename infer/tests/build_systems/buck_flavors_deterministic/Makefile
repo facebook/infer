@@ -52,3 +52,7 @@ test: differences.exp.test
 .PHONY: replace
 replace: differences.exp.test
 	$(QUIET)cp $< differences.exp
+
+.PHONY: clean
+clean:
+	$(QUIET)$(REMOVE_DIR) infer-out $(OBJECTS) $(CLEAN_EXTRA)
