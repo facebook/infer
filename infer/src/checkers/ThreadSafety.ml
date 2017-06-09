@@ -1117,8 +1117,35 @@ let should_report_on_proc proc_desc tenv =
    Procdesc.get_access proc_desc <> PredSymb.Private &&
    not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting))
 
-(* report accesses that may race with each other *)
-let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
+(** Report accesses that may race with each other.
+
+    Principles for race reporting.
+
+    Two accesses are excluded if they are both protected by the same lock or are known to be on the
+    same thread. Otherwise they are in conflict. We want to report conflicting accesses one of which
+    is a write.
+
+    To cut down on duplication noise we don't always report at both sites (line numbers) involved in
+    a race.
+
+    -- If a protected access races with an unprotected one, we don't report the protected but we do
+       report the unprotected one (and we point to the protected from the unprotected one).  This
+       way the report is at the line number in a race-pair where the programmer should take action.
+
+    -- Similarly, if a threaded and unthreaded (not known to be threaded) access race, we report at
+       the unthreaded site.
+
+    Also, we avoid reporting multiple races at the same line (which can happen a lot in an
+    interprocedural scenario) or multiple accesses to the same field in a single method, expecting
+    that the programmer already gets signal from one report. To report all the races with separate
+    warnings leads to a lot of noise.  But note, we never suppress all the potential issues in a
+    class: if we don't report any races, it means we didn't find any.
+
+    The above is tempered at the moment by abstractions of "same lock" and "same thread": we are
+    currently not distinguishing different locks, and are treating "known to be confined to a
+    thread" as if "known to be confined to UI thread".
+*)
+let report_unsafe_accesses aggregated_access_map =
   let open ThreadSafetyDomain in
   let is_duplicate_report access pname { reported_sites; reported_writes; reported_reads; } =
     CallSite.Set.mem (TraceElem.call_site access) reported_sites ||
@@ -1247,14 +1274,32 @@ let report_unsafe_accesses ~is_file_threadsafe aggregated_access_map =
            ) in
        let should_report pdesc tenv =
          match Procdesc.get_proc_name pdesc with
-         | Java _ ->
+         | Java _ as pname ->
              (* report if
                 - the method/class of the access is thread-safe
                   (or an override or superclass is), or
                 - any access is in a field marked thread-safe (or an override) *)
-             ((is_file_threadsafe || accessed_by_threadsafe_method)
-              && should_report_on_proc pdesc tenv)
-             || is_thread_safe_method pdesc tenv
+             (accessed_by_threadsafe_method
+              ||
+              let is_class_threadsafe =
+                not
+                  (let current_class_marked_not_threadsafe =
+                     PatternMatch.check_current_class_attributes
+                       Annotations.ia_is_not_thread_safe tenv pname
+                   in
+                   current_class_marked_not_threadsafe)
+                &&
+                (let current_class_or_super_marked_threadsafe =
+                   match get_current_class_and_threadsafe_superclasses tenv pname with
+                   | Some (_, thread_safe_annotated_classes) ->
+                       not (List.is_empty thread_safe_annotated_classes)
+                   | _ ->
+                       false
+                 in
+                 current_class_or_super_marked_threadsafe)
+              in
+              is_class_threadsafe)
+             && should_report_on_proc pdesc tenv
          | ObjC_Cpp objc_cpp ->
              (* report if the class has a mutex member  *)
              class_has_mutex_member objc_cpp tenv
@@ -1358,50 +1403,7 @@ let make_results_table file_env =
     | None -> acc in
   List.fold ~f:aggregate_posts file_env ~init:AccessListMap.empty |> quotient_access_map
 
-(**
-   Principles for race reporting.
-   Two accesses are excluded if they are both protected by the same lock or
-   are known to be on the same thread. Otherwise they are in conflict. We want to report
-   conflicting accesses one of which is a write.
-
-   To cut down on duplication noise we don't always report at both sites (line numbers)
-   involved in a race.
-   -- If a protected access races with an unprotected one, we don't
-   report the protected but we do report the unprotected one (and we
-   point to the protected from the unprotected one).
-   This way the report is at the line number in a race-pair where the programmer should take action.
-   -- Similarly, if a threaded and unthreaded (not known to be threaded) access race,
-   we report at the unthreaded site.
-
-   Also, we avoid reporting multiple races at the same line (which can happen a lot in
-   an interprocedural scenario) or multiple accesses to the same field in a single method,
-   expecting that the programmer already gets signal from one report. To report all the races
-   with separate warnings leads to a lot of noise.  But note, we never suppress
-   all the potential issues in a class: if we don't report any races, it means we didn't
-   find any.
-
-   The above is tempered at the moment by abstractions of "same lock" and "same thread":
-   we are currently not distinguishing different locks, and are treating "known to be
-   confined to a thread" as if "known to be confined to UI thread".
-*)
-let process_results_table file_env tab =
-  (* Currently we analyze if there is an @ThreadSafe annotation on at least one of the classes in a
-     file. This might be tightened in future or even broadened in future based on other criteria *)
-  let is_file_threadsafe =
-    let current_class_or_super_marked_threadsafe (_, tenv, pname, _) =
-      match get_current_class_and_threadsafe_superclasses tenv pname with
-      | Some (_, thread_safe_annotated_classes) ->
-          not (List.is_empty thread_safe_annotated_classes)
-      | _ ->
-          false in
-    let current_class_marked_not_threadsafe (_, tenv, pname, _) =
-      PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname in
-    not (List.exists ~f:current_class_marked_not_threadsafe file_env) &&
-    List.exists ~f:current_class_or_super_marked_threadsafe file_env in
-
-  report_unsafe_accesses ~is_file_threadsafe tab
-
 (* Gathers results by analyzing all the methods in a file, then post-processes the results to check
    an (approximation of) thread safety *)
 let file_analysis _ _ _ file_env =
-  process_results_table file_env (make_results_table file_env)
+  report_unsafe_accesses (make_results_table file_env)
