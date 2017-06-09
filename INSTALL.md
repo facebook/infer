@@ -102,7 +102,7 @@ sudo make install
 Here are instructions on how to install the dependencies needed to
 compile Infer on a few Linux distributions.
 
-### Debian 7 and Ubuntu 14.04 LTS
+### Debian 7 (Wheezy) and Ubuntu 14.04 LTS
 
 ```sh
 sudo apt-get update
@@ -123,7 +123,7 @@ sudo apt-get install -y \
   zlib1g-dev
 ```
 
-### Debian 8
+### Debian 8 (Jessie)
 
 ```sh
 sudo apt install -y \
