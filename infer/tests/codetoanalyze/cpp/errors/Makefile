@@ -60,6 +60,7 @@ SOURCES = \
   shared/types/struct_pass_by_value.cpp \
   shared/types/typeid_expr.cpp \
   $(wildcard smart_ptr/*.cpp) \
+	$(wildcard static_local/*.cpp) \
   $(wildcard subtyping/*.cpp) \
   $(wildcard vector/*.cpp) \
 
