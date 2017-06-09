@@ -99,6 +99,7 @@ buck-out/
 /infer/bin/infer-reportdiff
 /infer/bin/infer-run
 /infer/bin/InferCreateTraceViewLinks
+/infer/bin/InferUnit
 /infer/man
 
 /infer/src/base/Version.ml
