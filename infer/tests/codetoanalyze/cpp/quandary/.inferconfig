@@ -37,6 +37,11 @@
       "index": "0"
     },
     {
+      "procedure": "__infer_sql_sink",
+      "kind": "SQL",
+      "index": "all"
+    },
+    {
       "procedure": "basics::Obj::method_sink",
       "kind": "Other",
       "index": "1"

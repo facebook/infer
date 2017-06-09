@@ -8,14 +8,16 @@
  */
 
 #include <cstdlib>
+#include <string>
 #include <unistd.h>
 
 extern int rand();
 
-// mocking gflags-generated field
+extern void __infer_sql_sink(std::string query);
 
 namespace execs {
 
+// mocking gflags-generated field
 extern char* FLAGS_cli_string;
 
 int callAllSinks(const char* stringSource, char ** arrSource) {
@@ -94,4 +96,9 @@ void customGetEnvOk() {
 }
 
 void exec_flag_bad() { execl(FLAGS_cli_string, NULL); }
+
+void sql_on_env_var_bad() {
+  std::string source = (std::string)std::getenv("ENV_VAR");
+  __infer_sql_sink(source);
+}
 }

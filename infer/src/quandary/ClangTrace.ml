@@ -116,12 +116,14 @@ module SinkKind = struct
   type t =
     | Allocation (** memory allocation *)
     | ShellExec (** shell exec function *)
+    | SQL (** SQL query *)
     | Other (** for testing or uncategorized sinks *)
   [@@deriving compare]
 
   let of_string = function
     | "Allocation" -> Allocation
     | "ShellExec" -> ShellExec
+    | "SQL" -> SQL
     | _ -> Other
 
   let external_sinks =
@@ -181,6 +183,7 @@ module SinkKind = struct
       (match kind with
        | Allocation -> "Allocation"
        | ShellExec -> "ShellExec"
+       | SQL -> "SQL"
        | Other -> "Other")
 end
 
@@ -193,13 +196,13 @@ include
 
     let should_report source sink =
       match Source.kind source, Sink.kind sink with
-      | (Endpoint _ | EnvironmentVariable | File), ShellExec ->
-          (* untrusted data flowing to exec *)
+      | (Endpoint _ | EnvironmentVariable | File), (ShellExec | SQL) ->
+          (* untrusted data flowing to exec/sql *)
           true
       | (Endpoint _ | EnvironmentVariable | File), Allocation ->
           (* untrusted data flowing to memory allocation *)
           true
-      | _, (Allocation | Other | ShellExec) when Source.is_footprint source ->
+      | _, (Allocation | Other | ShellExec | SQL) when Source.is_footprint source ->
           (* is this var a command line flag created by the popular gflags library? *)
           let is_gflag pvar =
             String.is_substring ~substring:"FLAGS_" (Pvar.get_simplified_name pvar) in
@@ -216,6 +219,6 @@ include
           true
       | _, Other ->
           true
-      | Unknown, (Allocation | ShellExec) ->
+      | Unknown, (Allocation | ShellExec | SQL) ->
           false
   end)
