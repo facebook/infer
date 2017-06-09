@@ -24,6 +24,7 @@ import android.support.v4.util.Pools.SynchronizedPool;
 import android.support.v4.util.SparseArrayCompat;
 import android.util.SparseArray;
 import android.support.v4.util.SimpleArrayMap;
+import android.support.v4.util.Pools.SimplePool;
 
 class ContainerWrapper {
   private final List<Object> children = new ArrayList<Object>();
@@ -252,5 +253,16 @@ class Containers {
     return si_map.get(1);
   }
 
+  SimplePool<Integer> simplePool = new SimplePool<Integer>(10);
+  synchronized public Integer getFromPoolOK() {
+    return simplePool.acquire();
+  }
 
+  public void poolBad() {
+    Integer a;
+    synchronized(this) {
+      a = simplePool.acquire();
+    }
+    simplePool.release(a);
+  }
 }

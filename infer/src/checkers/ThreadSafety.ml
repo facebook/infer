@@ -329,7 +329,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | ("android.app.Activity" | "android.view.View"), "findViewById" ->
                 (* assume findViewById creates fresh View's (note: not always true) *)
                 true
-            | "android.support.v4.util.Pools$SynchronizedPool", "acquire" ->
+            | "android.support.v4.util.Pools$SimplePool", "acquire" ->
                 (* a pool should own all of its objects *)
                 true
             | _ ->
@@ -352,51 +352,62 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | "android.support.v4.util.SimpleArrayMap",
             ("clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt"
             | "setValueAt") -> true
+          | "android.support.v4.util.Pools$SimplePool",
+            ("acquire" | "release") -> true
           | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") -> true
           | "java.util.Map", ("clear" | "put" | "putAll" | "remove") -> true
           | _ -> false in
-        let is_threadsafe_collection typename _ = match Typ.Name.name typename with
-          | "java.util.concurrent.ConcurrentMap" | "java.util.concurrent.CopyOnWriteArrayList" ->
-              true
-          | _ ->
-              false in
-        PatternMatch.supertype_exists tenv is_container_write_ typename &&
-        not (PatternMatch.supertype_exists tenv is_threadsafe_collection typename)
+        PatternMatch.supertype_exists tenv is_container_write_ typename
     | _ ->
         false
 
-  let is_synchronized_container ((_, (base_typ : Typ.t)), accesses) tenv =
-    let is_annotated_synchronized base_typename container_field tenv =
-      match Tenv.lookup tenv base_typename with
-      | Some base_typ ->
-          Annotations.field_has_annot
-            container_field
-            base_typ Annotations.ia_is_synchronized_collection
-      | None ->
-          false in
-    match List.rev accesses with
-    | AccessPath.FieldAccess base_field ::
-      AccessPath.FieldAccess container_field :: _->
-        let base_typename =
-          Typ.Name.Java.from_string (Fieldname.java_get_class base_field) in
-        is_annotated_synchronized base_typename container_field tenv
-    | [AccessPath.FieldAccess container_field] ->
-        begin
-          match base_typ.desc with
-          | Typ.Tstruct base_typename | Tptr ({Typ.desc=Tstruct base_typename}, _) ->
-              is_annotated_synchronized base_typename container_field tenv
-          | _ ->
-              false
-        end
-    | _ ->
-        false
+  let is_threadsafe_collection pn tenv = match pn with
+    | Typ.Procname.Java java_pname ->
+        let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
+        let aux tn _ =
+          match Typ.Name.name tn with
+          | "java.util.concurrent.ConcurrentMap"
+          | "java.util.concurrent.CopyOnWriteArrayList"
+          | "android.support.v4.util.Pools$SynchronizedPool" -> true
+          | _ -> false in
+        PatternMatch.supertype_exists tenv aux typename
+    | _ -> false
 
-  let add_container_write callee_pname receiver_ap callee_loc tenv =
-    (* return true if field pointing to container is marked @SyncrhonizedContainer *)
+  let is_synchronized_container callee_pname ((_, (base_typ : Typ.t)), accesses) tenv =
+    if is_threadsafe_collection callee_pname tenv
+    then
+      true
+    else
+      let is_annotated_synchronized base_typename container_field tenv =
+        match Tenv.lookup tenv base_typename with
+        | Some base_typ ->
+            Annotations.field_has_annot
+              container_field
+              base_typ Annotations.ia_is_synchronized_collection
+        | None ->
+            false in
+      match List.rev accesses with
+      | AccessPath.FieldAccess base_field ::
+        AccessPath.FieldAccess container_field :: _->
+          let base_typename =
+            Typ.Name.Java.from_string (Fieldname.java_get_class base_field) in
+          is_annotated_synchronized base_typename container_field tenv
+      | [AccessPath.FieldAccess container_field] ->
+          begin
+            match base_typ.desc with
+            | Typ.Tstruct base_typename | Tptr ({Typ.desc=Tstruct base_typename}, _) ->
+                is_annotated_synchronized base_typename container_field tenv
+            | _ ->
+                false
+          end
+      | _ ->
+          false
+
+  let make_container_write callee_pname receiver_ap callee_loc tenv =
     (* create a dummy write that represents mutating the contents of the container *)
     let open Domain in
     let callee_accesses =
-      if is_synchronized_container receiver_ap tenv
+      if is_synchronized_container callee_pname receiver_ap tenv
       then
         AccessDomain.empty
       else
@@ -420,7 +431,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             failwithf
               "Call to %a is marked as a container write, but has no receiver"
               Typ.Procname.pp callee_pname in
-      add_container_write callee_pname receiver_ap callee_loc tenv
+      make_container_write callee_pname receiver_ap callee_loc tenv
     else
       Summary.read_summary caller_pdesc callee_pname
 
