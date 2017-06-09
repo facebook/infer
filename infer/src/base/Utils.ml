@@ -255,7 +255,7 @@ let create_dir dir =
 
 let realpath_cache = Hashtbl.create 1023
 
-let realpath path =
+let realpath ?(warn_on_error=true) path =
   match Hashtbl.find realpath_cache path with
   | exception Not_found -> (
       match Filename.realpath path with
@@ -263,8 +263,9 @@ let realpath path =
           Hashtbl.add realpath_cache path (Ok realpath);
           realpath
       | exception Unix.Unix_error (code, f, arg) ->
-          F.eprintf
-            "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg (Unix.error_message code);
+          if warn_on_error then
+            F.eprintf
+              "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg (Unix.error_message code);
           (* cache failures as well *)
           Hashtbl.add realpath_cache path (Error (code, f, arg));
           raise (Unix.Unix_error (code, f, arg))

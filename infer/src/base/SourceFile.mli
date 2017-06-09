@@ -38,12 +38,15 @@ val invalid : string -> t
 (** equality of source files *)
 val equal : t -> t -> bool
 
-(** create source file from absolute path *)
-val from_abs_path : string -> t
+(** create source file from absolute path.
+    WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for
+    the given path (e.g. if it does not exist). *)
+val from_abs_path : ?warn_on_error:bool -> string -> t
 
-(* Create a SourceFile from a given path. If relative, it assumes it is w.r.t.
-   project root *)
-val create : string -> t
+(* Create a SourceFile from a given path. If relative, it assumes it is w.r.t. project root.
+   WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for
+   the given path (e.g. if it does not exist). *)
+val create : ?warn_on_error:bool -> string -> t
 
 (** Returns true if the file is a C++ model *)
 val is_cpp_model : t -> bool
@@ -57,8 +60,10 @@ val is_under_project_root : t -> bool
 val line_count : t -> int
 
 (** Return approximate source file corresponding to the parameter if it's header file and
-    file exists. returns None otherwise *)
-val of_header : t -> t option
+    file exists. returns None otherwise.
+    WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for
+    the given SourceFile (e.g. if it does not exist).*)
+val of_header : ?warn_on_error:bool -> t -> t option
 
 (** pretty print t *)
 val pp : Format.formatter -> t -> unit

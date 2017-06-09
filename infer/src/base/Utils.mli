@@ -71,9 +71,11 @@ val shell_escape_command : string list -> string
 (** create a directory if it does not exist already *)
 val create_dir : string -> unit
 
-(** [realpath path] returns path with all symbolic links resolved. It caches results of previous
-    calls to avoid expensive system calls *)
-val realpath : string -> string
+(** [realpath warn_on_error path] returns path with all symbolic links resolved.
+    It caches results of previous calls to avoid expensive system calls.
+    WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for
+    the given path (e.g. if it does not exist). *)
+val realpath : ?warn_on_error:bool -> string -> string
 
 (** wraps a function expecting 2 arguments in another that temporarily redirects stderr to /dev/null
     for the duration of the function call *)
