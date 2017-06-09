@@ -1,5 +1,6 @@
 S src/**
 B _build/infer/**
+B _build/test/infer/unit/**
 PKG ANSITerminal
 PKG atdgen
 PKG cmdliner
