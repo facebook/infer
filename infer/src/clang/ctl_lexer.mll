@@ -54,6 +54,8 @@ rule token = parse
   | "LET" { LET }
   | "TRUE" { TRUE }
   | "FALSE" { FALSE }
+  | "whitelist_path" { WHITELIST_PATH }
+  | "blacklist_path" { BLACKLIST_PATH }
   | "{" { LEFT_BRACE }
   | "}" { RIGHT_BRACE }
   | "(" { LEFT_PAREN }

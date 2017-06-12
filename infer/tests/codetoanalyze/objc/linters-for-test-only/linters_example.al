@@ -242,7 +242,7 @@ DEFINE-CHECKER FILTER_BY_PATH_EXAMPLE = {
      WHEN declaration_has_name("main")
      HOLDS-IN-NODE FunctionDecl;
   SET message = "Found main method";
-  SET path = "codetoanalyze/objc/linters-for-test-only/filter_by_path/.*";
+  SET whitelist_path = { REGEXP("codetoanalyze/objc/linters-for-test-only/filter_by_path/.*"), "A.m" };
 };
 
 DEFINE-CHECKER ALL_PATH_NO_FILTER_EXAMPLE = {
@@ -257,5 +257,22 @@ DEFINE-CHECKER FILTER_BY_ALL_PATH_EXAMPLE = {
      WHEN declaration_has_name("main")
      HOLDS-IN-NODE FunctionDecl;
   SET message = "Found main method";
-  SET path = ".*";
+  SET whitelist_path = { REGEXP(".*") };
+};
+
+DEFINE-CHECKER BLACKLIST_PATH_EXAMPLE = {
+  SET report_when =
+     WHEN declaration_has_name("main")
+     HOLDS-IN-NODE FunctionDecl;
+  SET message = "Found main method";
+  SET blacklist_path = { REGEXP("codetoanalyze/objc/linters-for-test-only/filter_by_path/.*") };
+};
+
+DEFINE-CHECKER WHITE_BLACKLIST_PATH_EXAMPLE = {
+  SET report_when =
+     WHEN declaration_has_name("main")
+     HOLDS-IN-NODE FunctionDecl;
+  SET message = "Found main method";
+  SET whitelist_path = { REGEXP(".*") };
+  SET blacklist_path = { REGEXP("codetoanalyze/objc/linters-for-test-only/filter_by_path/.*") };
 };

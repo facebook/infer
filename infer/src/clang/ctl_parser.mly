@@ -67,6 +67,8 @@
 %token <string> IDENTIFIER
 %token <string> FILE_IDENTIFIER
 %token <string> STRING
+%token WHITELIST_PATH
+%token BLACKLIST_PATH
 %token EOF
 
 /* associativity and priority (lower to higher) of operators */
@@ -125,6 +127,11 @@ checker:
   }
 ;
 
+path_list:
+ | alexp { [$1] }
+ | alexp COMMA path_list { $1 :: $3 }
+;
+
 clause_list:
  | clause SEMICOLON { [$1] }
  | clause SEMICOLON clause_list { $1 :: $3 }
@@ -143,6 +150,10 @@ clause:
       | _ -> failwith "string '%s' cannot be set to a variable. \
                        Use the reserverd variable 'report_when'" in
       CTL.CSet (alvar, $4) }
+  | SET WHITELIST_PATH ASSIGNMENT LEFT_BRACE path_list RIGHT_BRACE
+    { CTL.CPath (`WhitelistPath, $5) }
+  | SET BLACKLIST_PATH ASSIGNMENT LEFT_BRACE path_list RIGHT_BRACE
+    { CTL.CPath (`BlacklistPath, $5) }
   | SET identifier ASSIGNMENT STRING
     { L.(debug Linters Verbose) "\tParsed SET clause@\n";
       let alvar = match $2 with
@@ -150,10 +161,9 @@ clause:
       | "suggestion" -> ALVar.Suggestion
       | "severity" -> ALVar.Severity
       | "mode" -> ALVar.Mode
-      | "path" -> ALVar.Path
       | _ -> failwithf "string '%s' cannot be set in a SET clause. \
                         Use either of: \
-                        'message', 'mode', 'severity', 'suggestion' or 'path'" $2 in
+                        'message', 'mode', 'severity' or 'suggestion'" $2 in
       CTL.CDesc (alvar, $4) }
     | let_clause { $1 }
     ;

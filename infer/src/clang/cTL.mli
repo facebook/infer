@@ -80,6 +80,7 @@ type clause =
   | CLet  of ALVar.formula_id * ALVar.t list * t (* Let clause: let id = definifion;  *)
   | CSet of ALVar.keyword * t (* Set clause: set id = definition *)
   | CDesc of ALVar.keyword * string (* Description clause eg: set message = "..." *)
+  | CPath of [ `WhitelistPath | `BlacklistPath ] * ALVar.t list
 
 type ctl_checker = {
   name : string; (* Checker's name *)

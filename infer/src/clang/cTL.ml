@@ -77,10 +77,12 @@ let has_transition phi = match phi with
    set message = "bla"
 
 *)
+
 type clause =
   | CLet of ALVar.formula_id * ALVar.t list * t (* Let clause: let id = definifion;  *)
   | CSet of ALVar.keyword * t (* Set clause: set id = definition *)
   | CDesc of ALVar.keyword * string (* Description clause eg: set message = "..." *)
+  | CPath of [ `WhitelistPath | `BlacklistPath ] * ALVar.t list
 
 type ctl_checker = {
   name : string; (* Checker's name *)
@@ -441,7 +443,14 @@ let print_checker c =
             cn_str Debug.pp_formula phi
       | CDesc (keyword, s) ->
           let cn_str = ALVar.keyword_to_string keyword in
-          L.(debug Linters Medium) "    %s=  @\n    %s@\n@\n" cn_str s)
+          L.(debug Linters Medium) "    %s=  @\n    %s@\n@\n" cn_str s
+      | CPath (paths_keyword, paths) ->
+          let keyword =
+            (match paths_keyword with
+             | `WhitelistPath -> "whitelist_path"
+             | _ -> "blacklist_path") in
+          let paths_str = String.concat ~sep:"," (List.map ~f:ALVar.alexp_to_string paths) in
+          L.(debug Linters Medium) "    %s=  @\n    %s@\n@\n" keyword paths_str)
     ) c.definitions;
   L.(debug Linters Medium) "@\n-------------------- @\n"
 

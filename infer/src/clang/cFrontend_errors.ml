@@ -18,7 +18,8 @@ type linter = {
   condition : CTL.t;
   issue_desc : CIssue.issue_desc;
   def_file : string option;
-  path : string option;
+  whitelist_paths : ALVar.t list;
+  blacklist_paths : ALVar.t list;
 }
 
 (* If in linter developer mode and if current linter was passed, filter it out *)
@@ -37,9 +38,16 @@ let filter_parsed_linters_developer parsed_linters =
 
 let filter_parsed_linters_by_path parsed_linters source_file =
   let filter_parsed_linter_by_path linter =
-    match linter.path with
-    | Some path -> ALVar.str_match_regex (SourceFile.to_rel_path source_file) path
-    | None -> true in
+    let should_lint paths =
+      List.exists
+        ~f:(fun path -> ALVar.compare_str_with_alexp (SourceFile.to_rel_path source_file) path)
+        paths in
+    let whitelist_ok =
+      List.is_empty linter.whitelist_paths || should_lint linter.whitelist_paths in
+    let blacklist_ok =
+      List.is_empty linter.blacklist_paths ||  not (should_lint linter.blacklist_paths) in
+    whitelist_ok && blacklist_ok
+  in
   List.filter ~f:filter_parsed_linter_by_path parsed_linters
 
 let filter_parsed_linters parsed_linters source_file =
@@ -162,30 +170,32 @@ let create_parsed_linters linters_def_file checkers : linter list =
       severity = Exceptions.Kwarning;
       mode = CIssue.On;
     } in
-    let issue_desc, condition, path =
-      let process_linter_definitions (issue, cond, path) description =
+    let issue_desc, condition, whitelist_paths, blacklist_paths =
+      let process_linter_definitions (issue, cond, wl_paths, bl_paths) description =
         match description with
         | CSet (av, phi) when ALVar.is_report_when_keyword av ->
-            issue, phi, path
+            issue, phi, wl_paths, bl_paths
         | CDesc (av, msg) when ALVar.is_message_keyword av ->
-            {issue with description = msg}, cond, path
+            {issue with description = msg}, cond, wl_paths, bl_paths
         | CDesc (av, sugg) when ALVar.is_suggestion_keyword av ->
-            {issue with suggestion = Some sugg}, cond, path
+            {issue with suggestion = Some sugg}, cond, wl_paths, bl_paths
         | CDesc (av, sev) when ALVar.is_severity_keyword  av ->
-            {issue with severity = string_to_err_kind sev}, cond, path
+            {issue with severity = string_to_err_kind sev}, cond, wl_paths, bl_paths
         | CDesc (av, m) when ALVar.is_mode_keyword  av ->
-            {issue with mode = string_to_issue_mode m }, cond, path
-        | CDesc (av, path') when ALVar.is_path_keyword av ->
-            issue, cond, string_to_path path'
-        | _ -> issue, cond, path in
+            {issue with mode = string_to_issue_mode m }, cond, wl_paths, bl_paths
+        | CPath (`WhitelistPath, paths) ->
+            issue, cond, paths, bl_paths
+        | CPath (`BlacklistPath, paths) ->
+            issue, cond, wl_paths, paths
+        | _ -> issue, cond, wl_paths, bl_paths in
       List.fold
         ~f:process_linter_definitions
-        ~init:(dummy_issue, CTL.False, None)
+        ~init:(dummy_issue, CTL.False, [], [])
         checker.definitions in
     L.(debug Linters Medium) "@\nMaking condition and issue desc for checker '%s'@\n" checker.name;
     L.(debug Linters Medium) "@\nCondition =@\n    %a@\n" CTL.Debug.pp_formula condition;
     L.(debug Linters Medium) "@\nIssue_desc = %a@\n" CIssue.pp_issue issue_desc;
-    {condition; issue_desc; def_file = Some linters_def_file; path;} in
+    {condition; issue_desc; def_file = Some linters_def_file; whitelist_paths; blacklist_paths;} in
   List.map ~f:do_one_checker checkers
 
 let rec apply_substitution f sub =

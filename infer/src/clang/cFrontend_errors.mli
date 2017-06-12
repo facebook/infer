@@ -13,7 +13,8 @@ type linter = {
   condition : CTL.t;
   issue_desc : CIssue.issue_desc;
   def_file : string option;
-  path : string option;
+  whitelist_paths : ALVar.t list;
+  blacklist_paths : ALVar.t list;
 }
 
 val filter_parsed_linters : linter list -> SourceFile.t -> linter list
