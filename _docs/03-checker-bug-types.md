@@ -49,8 +49,16 @@ Action:
   import javax.annotation.Nullable;
   ...
   private @Nullable List<String> idList;
+  public void doSomethingWithIdList() {
+    int numIds = idList.size();  // Infer will complain that idList is not null-checked here
+    ...
+  }
 ```
 - If the field is never intended to be nullable, please refactor your codes so that it will never be assigned or compared with `null`.
+```java
+  private List<String> idList = new List<String>();
+  ...
+```
 
 ## <a name="FRAGMENT_RETAINS_VIEW"></a>Fragment retains view
 
