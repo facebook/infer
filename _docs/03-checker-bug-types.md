@@ -33,7 +33,7 @@ This error type is reported in Java. It fires when a field is not marked `@Nulla
   }
 ```
 
-- Tested for `null` in a method
+- Or tested for `null` in a method
 
 ```java
   private List<String> idList;
