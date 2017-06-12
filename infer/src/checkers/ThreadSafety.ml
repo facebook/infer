@@ -83,8 +83,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ -> false
 
   let get_lock_model =
-    let is_std_mutex_lock =
-      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex::lock"] in
+    let is_cpp_lock =
+      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names [
+          "std::mutex::lock"; "std::lock_guard::lock_guard"] in
       fun pname ->
         QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
     and is_std_mutex_unlock =
@@ -123,7 +124,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | _ ->
                 NoEffect
           end
-    | (Typ.Procname.ObjC_Cpp _ as pname) when is_std_mutex_lock pname ->
+    | (Typ.Procname.ObjC_Cpp _ as pname) when is_cpp_lock pname ->
         Lock
     | (Typ.Procname.ObjC_Cpp _ as pname) when is_std_mutex_unlock pname ->
         Unlock
