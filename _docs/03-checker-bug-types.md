@@ -22,26 +22,35 @@ Action: you can change the return type to be immutable, or make a copy of the co
 
 ## <a name="FIELD_SHOULD_BE_NULLABLE"></a>Field should be nullable
 
-This error type is reported in Java. It fires when a method may nullify a field and the field is not marked `@Nullable`.
+This error type is reported in Java. It fires when a field is not marked `@Nullable`, but it is 
+- Nullified in a method
 
 ```java
   private List<String> idList;
-  public int getNumberOfIds() { return idList.size(); }
   public void reset() {
     idList = null;
     ...
   }
 ```
 
-This can lead to a runtime error if users of the class accidentally accesse the list (e.g. calling getNumberOfIds()) immediately after calling reset(), which nullifies the idList field. 
+- Tested for `null` in a method
 
-Action: add `@Nullable` annotation in the field declaration. The annotation comes with no runtime cost and it benefits [other Infer checkers](http://fbinfer.com/docs/eradicate.html) to statically detect ` NullPointerException` more effectively:
+```java
+  private List<String> idList;
+  public void doSomethingWithIdList() {
+    if (idList = null) { ... }
+  }
+```
+
+Action: 
+- You may want to add `@Nullable` annotation in the field declaration. This will inform Infer that the field is intended to be set to `null` at some point. For such fields, Infer will emit a warning if you forget to check for `null` before accessing them.
 
 ```java
   import javax.annotation.Nullable;
   ...
   private @Nullable List<String> idList;
 ```
+- If the field is never intended to be nullable, please refactor your codes so that it will never be assigned or compared with `null`.
 
 ## <a name="FRAGMENT_RETAINS_VIEW"></a>Fragment retains view
 
