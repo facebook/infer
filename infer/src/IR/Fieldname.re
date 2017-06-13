@@ -99,16 +99,6 @@ let java_get_field fn => {
 };
 
 
-/** Equality for field names ignoring the struct or class which contains the field. */
-let equal_modulo_parent x y =>
-  switch (x, y) {
-  | (Hidden, Hidden) => true
-  | (Clang a, Clang b) => Int.equal 0 (compare_clang_field_info a b)
-  | (Java _, Java _) => String.equal (java_get_field x) (java_get_field y)
-  | _ => false
-  };
-
-
 /** Check if the field is the synthetic this$n of a nested class, used to access the n-th outher instance. */
 let java_is_outer_instance fn => {
   let fn = to_string fn;

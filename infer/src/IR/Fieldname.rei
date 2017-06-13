@@ -17,10 +17,6 @@ type t [@@deriving compare];
 let equal: t => t => bool;
 
 
-/** Equality for field names ignoring the struct or class which contains the field. */
-let equal_modulo_parent: t => t => bool;
-
-
 /** Set for fieldnames */
 module Set: Caml.Set.S with type elt = t;
 
