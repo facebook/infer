@@ -223,10 +223,52 @@ struct
       List.fold ~f:add_formal ~init:(mem, inst_num, 0) (Sem.get_formals pdesc)
       |> fst3
 
-  let instantiate_ret
-    : Tenv.t -> Procdesc.t option -> Typ.Procname.t -> (Exp.t * Typ.t) list
-      -> Dom.Mem.astate -> Dom.Summary.t -> Location.t -> Dom.Val.astate
-    = fun tenv callee_pdesc callee_pname params caller_mem summary loc ->
+  let instantiate_ret ret callee_pname callee_exit_mem subst_map mem =
+    match ret with
+    | Some (id, _) ->
+        let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
+        let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
+        let ret_var = Loc.of_var (Var.of_id id) in
+        Dom.Val.subst ret_val subst_map
+        |> Fn.flip (Dom.Mem.add_stack ret_var) mem
+    | None -> mem
+
+  let instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map location mem =
+    let formals = Sem.get_formals pdesc in
+    let actuals = List.map ~f:(fun (a, _) -> Sem.eval a mem location) params in
+    let f mem formal actual =
+      match (snd formal).Typ.desc with
+      | Typ.Tptr (typ, _) ->
+          (match typ.Typ.desc with
+           | Typ.Tstruct typename ->
+               (match Tenv.lookup tenv typename with
+                | Some str ->
+                    let formal_locs = Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_entry_mem
+                                      |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc in
+                    let instantiate_fld mem (fn, _, _) =
+                      let formal_fields = PowLoc.append_field formal_locs fn in
+                      let v = Dom.Mem.find_heap_set formal_fields callee_exit_mem in
+                      let actual_fields = PowLoc.append_field (Dom.Val.get_all_locs actual) fn in
+                      Dom.Val.subst v subst_map
+                      |> Fn.flip (Dom.Mem.strong_update_heap actual_fields) mem
+                    in
+                    List.fold ~f:instantiate_fld ~init:mem str.Typ.Struct.fields
+                | _ -> mem)
+           | _ ->
+               let formal_locs = Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_entry_mem
+                                 |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc in
+               let v = Dom.Mem.find_heap_set formal_locs callee_exit_mem in
+               let actual_locs = Dom.Val.get_all_locs actual in
+               Dom.Val.subst v subst_map
+               |> Fn.flip (Dom.Mem.strong_update_heap actual_locs) mem)
+      | _ -> mem
+    in
+    try List.fold2_exn formals actuals ~init:mem ~f with Invalid_argument _ -> mem
+
+  let instantiate_mem
+    : Tenv.t -> (Ident.t * Typ.t) option -> Procdesc.t option -> Typ.Procname.t
+      -> (Exp.t * Typ.t) list -> Dom.Mem.astate -> Dom.Summary.t -> Location.t -> Dom.Mem.astate
+    = fun tenv ret callee_pdesc callee_pname params caller_mem summary loc ->
       let callee_entry_mem = Dom.Summary.get_input summary in
       let callee_exit_mem = Dom.Summary.get_output summary in
       match callee_pdesc with
@@ -234,11 +276,9 @@ struct
           let subst_map =
             Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc
           in
-          let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
-          let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
-          Dom.Val.subst ret_val subst_map
-          |> Dom.Val.normalize    (* normalize bottom *)
-      | _ -> Dom.Val.Itv.top
+          instantiate_ret ret callee_pname callee_exit_mem subst_map caller_mem
+          |> instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map loc
+      | None -> caller_mem
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit
     = fun instr pre post ->
@@ -270,13 +310,7 @@ struct
             (match Summary.read_summary pdesc callee_pname with
              | Some summary ->
                  let callee = extras callee_pname in
-                 let ret_val =
-                   instantiate_ret tenv callee callee_pname params mem summary loc
-                 in
-                 (match ret with
-                  | Some (id, _) ->
-                      Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) ret_val mem
-                  | _ -> mem)
+                 instantiate_mem tenv ret callee callee_pname params mem summary loc
              | None ->
                  handle_unknown_call pname ret callee_pname params node mem loc)
         | Declare_locals (locals, _) ->

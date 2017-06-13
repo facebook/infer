@@ -7,18 +7,24 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+struct S {
+  int field;
+};
+
 void ref_set_to_zero(int& x) {
   x = 0;
 }
 
-void call_by_ref_good_FP() {
+void struct_ref_set_to_zero(struct S& s) { s.field = 0; }
+
+void call_by_ref_good() {
   int arr[10];
   int i = 99;
   ref_set_to_zero(i);
   arr[i] = 123;
 }
 
-void call_by_ref_bad_FN() {
+void call_by_ref_bad() {
   int arr[10];
   int i = 5;
   ref_set_to_zero(i);

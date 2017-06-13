@@ -385,11 +385,6 @@ struct
       then { bot with itv = Itv.top }
       else { bot with itv = ArrayBlk.diff x.arrayblk y.arrayblk }
 
-  let subst : t -> Itv.Bound.t Itv.SubstMap.t -> t
-    = fun x subst_map ->
-      { x with itv = Itv.subst x.itv subst_map;
-               arrayblk = ArrayBlk.subst x.arrayblk subst_map }
-
   let get_symbols : t -> Itv.Symbol.t list
     = fun x ->
       List.append (Itv.get_symbols x.itv) (ArrayBlk.get_symbols x.arrayblk)
@@ -397,6 +392,12 @@ struct
   let normalize : t -> t
     = fun x ->
       { x with itv = Itv.normalize x.itv; arrayblk = ArrayBlk.normalize x.arrayblk }
+
+  let subst : t -> Itv.Bound.t Itv.SubstMap.t -> t
+    = fun x subst_map ->
+      { x with itv = Itv.subst x.itv subst_map;
+               arrayblk = ArrayBlk.subst x.arrayblk subst_map }
+      |> normalize  (* normalize bottom *)
 
   let pp_summary : F.formatter -> t -> unit
     = fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk
