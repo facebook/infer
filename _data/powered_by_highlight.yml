@@ -21,3 +21,6 @@
   - name: WhatsApp
     url: https://www.whatsapp.com
     img: static/images/whatsapp.svg
+  - name: Mozilla
+    url: http://www.mozilla.com/
+    img: static/images/mozilla.png
