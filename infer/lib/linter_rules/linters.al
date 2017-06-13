@@ -18,7 +18,7 @@ DEFINE-CHECKER DIRECT_ATOMIC_PROPERTY_ACCESS = {
 		HOLDS-IN-NODE ObjCIvarRefExpr;
 
   	SET message = "Direct access to ivar %ivar_name% of an atomic property";
-  	SET suggestion = "Accessing an ivar of an atomic property makes the property nonatomic";
+  	SET suggestion = "Accessing an ivar of an atomic property makes the property nonatomic.";
 	  SET severity = "WARNING";
 };
 
@@ -149,7 +149,7 @@ DEFINE-CHECKER STRONG_DELEGATE_WARNING = {
 			HOLDS-IN-NODE ObjCPropertyDecl;
 
   SET message = "Property or ivar %decl_name% declared strong";
-  SET suggestion = "In general delegates should be declared weak or assign";
+  SET suggestion = "In general delegates should be declared weak or assign.";
 
 };
 
