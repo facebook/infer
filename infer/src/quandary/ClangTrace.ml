@@ -14,7 +14,7 @@ module L = Logging
 
 module SourceKind = struct
   type t =
-    | Endpoint of Mangled.t (** source originating from formal of an endpoint *)
+    | Endpoint of (Mangled.t * Typ.desc) (** source originating from formal of an endpoint *)
     | EnvironmentVariable (** source that was read from an environment variable *)
     | File (** source that was read from a file *)
     | Other (** for testing or uncategorized sources *)
@@ -24,7 +24,7 @@ module SourceKind = struct
   let unknown = Unknown
 
   let of_string = function
-    | "Endpoint" -> Endpoint (Mangled.from_string "NONE")
+    | "Endpoint" -> Endpoint (Mangled.from_string "NONE", Typ.Tvoid)
     | "EnvironmentVariable" -> EnvironmentVariable
     | "File" -> File
     | _ -> Other
@@ -92,7 +92,7 @@ module SourceKind = struct
         if String.Set.mem endpoints qualified_pname
         then
           List.map
-            ~f:(fun (name, typ) -> name, typ, Some (Endpoint name))
+            ~f:(fun (name, typ) -> name, typ, Some (Endpoint (name, typ.Typ.desc)))
             (Procdesc.get_formals pdesc)
         else
           Source.all_formals_untainted pdesc
@@ -102,7 +102,7 @@ module SourceKind = struct
   let pp fmt kind =
     F.fprintf fmt "%s"
       (match kind with
-       | Endpoint formal_name -> F.sprintf "Endpoint[%s]" (Mangled.to_string formal_name)
+       | Endpoint (formal_name, _) -> F.sprintf "Endpoint[%s]" (Mangled.to_string formal_name)
        | EnvironmentVariable -> "EnvironmentVariable"
        | File -> "File"
        | Other -> "Other"
@@ -195,9 +195,17 @@ include
     module Sink = CppSink
 
     let should_report source sink =
+      (* using this to match custom string wrappers such as folly::StringPiece *)
+      let is_stringy typ =
+        let lowercase_typ = String.lowercase (Typ.to_string (Typ.mk typ)) in
+        String.is_substring ~substring:"string" lowercase_typ ||
+        String.is_substring ~substring:"char*" lowercase_typ in
       match Source.kind source, Sink.kind sink with
-      | (Endpoint _ | EnvironmentVariable | File), (ShellExec | SQL) ->
-          (* untrusted data flowing to exec/sql *)
+      | Endpoint (_, typ), (ShellExec | SQL) ->
+          (* untrusted string data flowing to shell exec/SQL *)
+          is_stringy typ
+      | (EnvironmentVariable | File), (ShellExec | SQL) ->
+          (* untrusted environment var or file data flowing to shell exec *)
           true
       | (Endpoint _ | EnvironmentVariable | File), Allocation ->
           (* untrusted data flowing to memory allocation *)

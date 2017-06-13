@@ -71,6 +71,7 @@
     }
   ],
   "quandary-endpoints": [
-    "basics::Obj::endpoint"
+    "basics::Obj::endpoint",
+    "execs::Obj::endpoint"
   ]
 }
