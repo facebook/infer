@@ -5,18 +5,8 @@ layout: docs
 permalink: /docs/experimental-checkers.html
 ---
 
-Infer contains a number of experimental checkers that can be run using just like the normal infer analysis `infer run -a <checker name> -- <your build command>`. 
-`checker_name` can be `threadsafety`, `bufferoverrun`, or `quandary`. We'll explain the capabilities of each experimental checker, its level of maturity (on a scale including "in development", "medium", and "probably deployable"), and the language(s) it targets.
-
-# Thread-safety
-- Languages: Java
-- Maturity: Probably deployable
-
-When a class is marked `@ThreadSafe` or a method is marked [`@ThreadSafeMethod`](https://github.com/facebook/infer/blob/master/infer/annotations/com/facebook/infer/annotation/ThreadSafeMethod.java), this checker will complain if any methods in the class/the marked method writes to a field outside of sychronization.
-The idea here is that any race condition involves two concurrent accesses where at least one is a write. 
-This checker aims to identify the writes that may be involved in a race.
-
-There are several specialized annotations like `@ThreadConfined` and `@AssumeThreadSafe` that can be used to suppress warnings for the thread-safety analysis; you can read more about what these do in the source [files](https://github.com/facebook/infer/tree/master/infer/annotations/com/facebook/infer/annotation) for the annotations.
+Infer contains a number of experimental checkers that can be run using just like the normal infer analysis `infer -a checkers --<checker_name> -- <your build command>`. 
+`checker_name` can be `bufferoverrun`, `siof`, or `quandary`. We'll explain the capabilities of each experimental checker, its level of maturity (on a scale including "in development", "medium", and "probably deployable"), and the language(s) it targets.
 
 # Inferbo
 - Languages: C (but should be easy to adapt to Objective-C/C++, and possibly Java.)
@@ -26,7 +16,7 @@ Inferbo is a detector for out-of-bounds array accesses. You can read all about i
 It has been tuned for C, but we are planning to adapt it to other languages in the near future.
 
 # Quandary
-- Languages: Java (but should be easy to adapt to Objective-C/C++/C)
+- Languages: Java, C/C++
 - Maturity: Medium
 
 Quandary is a static taint analyzer that identifies a variety of unsafe information flows. 
