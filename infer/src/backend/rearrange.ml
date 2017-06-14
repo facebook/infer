@@ -1368,8 +1368,9 @@ let check_dereference_error tenv pdesc (prop : Prop.normal Prop.t) lexp loc =
   let is_deref_of_nullable =
     let is_definitely_non_null exp prop =
       Prover.check_disequal tenv prop exp Exp.zero in
-    Config.report_nullable_inconsistency && not (is_definitely_non_null root prop)
-    && Option.is_some nullable_var_opt in
+    Config.report_nullable_inconsistency
+    && Option.is_some nullable_var_opt
+    && not (is_definitely_non_null root prop) in
   let relevant_attributes_getters = [
     Attribute.get_resource tenv;
     Attribute.get_undef tenv;
