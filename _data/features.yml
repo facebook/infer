@@ -1,6 +1,7 @@
 - title: Android and Java
   text: |
-        Infer reports null pointer exceptions and resource leaks in Android and Java code.
+        Infer checks for null pointer exceptions, resource leaks, annotation reachability, missing lock guards, and concurrency race condtions 
+        in Android and Java code.
 
 - title: C, C++, and iOS/Objective-C
   text: |
