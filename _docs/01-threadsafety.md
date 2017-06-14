@@ -9,11 +9,11 @@ Infer's thread-safety analysis find data races in your Java code.
 To run the analysis, you can use `infer -a checkers` (to run the thread-safety analysis along with other checkers) or `infer -a checkers --no-default-checkers --threadsafety` (to run only the thread-safety analysis).
 The annotations described below can be used via the Maven Central package [here](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation/0.10.0.2).
 
-# Background
+## Background
 
 Infer statically analyzes Java code to detect potential concurrency bugs. This analysis does not attempt to prove thread safety, rather, it searches for some typical thread safety problems. At the moment Infer concentrates on race conditions between methods in a class that is itself intended to be thread safe. A race condition occurs when there are two concurrent accesses to a class member variable that are not separated by mutual exclusion, and at least one of the accesses is a write. Mutual exclusion can be obtained by synchronization primitives such as locks, or by knowledge that both accesses occur on the same thread.
 
-# Unprotected write warnings
+## Unprotected write warnings
 
 Given a class annotated with `@ThreadSafe`, Infer will report whether that class causes any writes which are not guarded by a lock or `synchronized` block.
 
@@ -38,7 +38,7 @@ The class `Dinner` will generate the following report on the public method `make
 
 Fix the warning by synchronizing the access to `mTemperature`, making `mTemperature` `volatile`, or suppress the warning by changing the class annotation to `@ThreadSafe(enableChecks = false)`. See the `com.facebook.infer.annotation` package for the full details on this and other annotations.
 
-# Read/Write Race Warning
+## Read/Write Race Warning
 
 We sometimes need to protect read accesses as well as writes. Consider the following class with unsynchronized methods.
 
@@ -73,7 +73,7 @@ on the line with this boolean condition.
 
 A solution to the threading problem here is to make both methods `synchronized` to wrap both read and write accesses, and not only the writes.
 
-# Annotations: `@ThreadConfined`
+## Annotations: `@ThreadConfined`
 
 The intuitive idea of thread-safety is that a class is impervious to concurrency issues for all concurrent contexts, even those that have not been written yet (it is future proof). Infer implements this by naively assuming that any method can potentially be called on any thread. You may determine, however, that an object, method, or field is only ever accessed on a single thread during program execution. Annotating such elements with `@ThreadConfined` informs Infer of this restriction. Note that a thread-confined method cannot race with itself but it can still race with other methods.
 
@@ -95,7 +95,7 @@ void prepareCache() {
 ```
 In this example, both `prepareCache` and `run` touch `mCache`. But there's no possibility of a race between the two methods because both of them will run sequentially on the UI thread. Adding a `@ThreadConfined(UI)` annotation to these methods will stop it from warning that there is a race on `mCache`. We could also choose to add a `@ThreadConfined` annotation to `mCache` itself.
 
-# Annotations: `@Functional`
+## Annotations: `@Functional`
 Some writes may be race safe - ie. regardless of program execution order, the write will always be the same value. Consider the method `helloWorld()` which caches the string `"Hello World"`. The write to `mHelloWorld` is unprotected and Infer would normally generate a warning. Yet, the write is safe because (a) `concat(String a, String b)` always returns an equivalent value for equivalent parameters, and (b) this is the only write to `mHelloWorld` (THIS IS IMPORTANT! And make sure it's true, because Infer won't check that for you). `concat()` can be annotated with `@Functional` to suppress the warning.
 
 ```
@@ -133,7 +133,7 @@ public class MySingleton {
 }
 ```
 
-# Annotations: `@ReturnsOwnership`
+## Annotations: `@ReturnsOwnership`
 Infer does not warn on unprotected writes to “owned” objects. A method “owns” an object if that object is only referenced by local variables. Infer automatically tracks ownership through non-overridden methods but needs help with polymorphic ones. Annotate super-class and interface methods with `@ReturnsOwnership` if they return an object without saving it.
 
 ```
@@ -150,7 +150,7 @@ public interface Car {
 }
 ```
 
-# Limitations
+## Limitations
 There are many types of concurrency issues out there that Infer does not check for (but might in the future). Examples include deadlock, thread confined objects escaping to other threads, and check-then-act bugs (shown below). You must look for these bugs yourself!
 
 ```
