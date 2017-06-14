@@ -1,8 +1,8 @@
 ---
-docid: experimental-checkers
-title: "Infer : Experimental Checkers"
+docid: threadsafety
+title: "Infer : Thread-Safety Checker"
 layout: docs
-permalink: /docs/experimental-checkers.html
+permalink: /docs/threadsafety.html
 ---
 
 Infer's thread-safety analysis find data races in your Java code. 
