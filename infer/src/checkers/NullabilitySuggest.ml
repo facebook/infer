@@ -164,7 +164,7 @@ let pretty_field_name proc_data field_name =
       (* This format is subject to change once this checker gets to run on C/Cpp/ObjC *)
       Fieldname.to_string field_name
 
-let checker ({ Callbacks.summary } as callback) =
+let checker { Callbacks.summary; proc_desc; tenv; } =
   let report astate (proc_data : extras ProcData.t) =
     let report_access_path ap udchain =
       let issue_kind = Localise.to_issue_id Localise.field_should_be_nullable in
@@ -199,4 +199,4 @@ let checker ({ Callbacks.summary } as callback) =
           "Analyzer failed to compute post for %a"
           Typ.Procname.pp (Procdesc.get_proc_name proc_data.pdesc)
   in
-  Interprocedural.compute_and_store_post ~compute_post ~make_extras:(fun _ -> ()) callback
+  Interprocedural.compute_summary ~compute_post ~make_extras:(fun _ -> ()) proc_desc tenv summary

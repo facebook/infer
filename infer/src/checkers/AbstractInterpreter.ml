@@ -157,14 +157,12 @@ end
 
 module Interprocedural (Summ : Summary.S) = struct
 
-  let compute_and_store_post
-      ~compute_post ~make_extras { Callbacks.proc_desc; summary; tenv; } : Specs.summary  =
+  let compute_summary ~compute_post ~make_extras proc_desc tenv summary =
     match compute_post (ProcData.make proc_desc tenv (make_extras proc_desc)) with
     | Some post ->
         Summ.update_summary post summary
     | None ->
         summary
-
 end
 
 module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.MakeSIL) =

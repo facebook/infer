@@ -97,7 +97,7 @@ module Analyzer =
 module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
-let checker ({ Callbacks.summary; } as callback) : Specs.summary =
+let checker { Callbacks.summary; proc_desc; tenv; } : Specs.summary =
   (* Report an error when we have acquired more resources than we have released *)
   let report leak_count (proc_data : extras ProcData.t) =
     if leak_count > 0 (* 3(a) *)
@@ -123,4 +123,4 @@ let checker ({ Callbacks.summary; } as callback) : Specs.summary =
           "Analyzer failed to compute post for %a"
           Typ.Procname.pp (Procdesc.get_proc_name proc_data.pdesc) in
 
-  Interprocedural.compute_and_store_post ~compute_post ~make_extras:FormalMap.make callback
+  Interprocedural.compute_summary ~compute_post ~make_extras:FormalMap.make proc_desc tenv summary

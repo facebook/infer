@@ -614,7 +614,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
   module Interprocedural = AbstractInterpreter.Interprocedural(Summary)
 
-  let checker ({ Callbacks.tenv; summary; } as callback) : Specs.summary =
+  let checker { Callbacks.tenv; summary; proc_desc; } : Specs.summary =
 
     (* bind parameters to a trace with a tainted source (if applicable) *)
     let make_initial pdesc =
@@ -650,5 +650,5 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let make_extras pdesc =
       let formal_map = FormalMap.make pdesc in
       { formal_map; summary; } in
-    Interprocedural.compute_and_store_post ~compute_post ~make_extras callback
+    Interprocedural.compute_summary ~compute_post ~make_extras proc_desc tenv summary
 end

@@ -67,11 +67,13 @@ module Make
 (** create an interprocedural abstract interpreter given logic for handling summaries *)
 module Interprocedural (Summary : Summary.S) : sig
 
-  (** compute and return the summary for the given procedure and store it on disk using
-      [compute_post]. *)
-  val compute_and_store_post :
+  (** compute a summary for the given procedure using [compute_post] and write it into the
+      aggregated [Specs.summary] *)
+  val compute_summary :
     compute_post: ('a ProcData.t -> Summary.payload option) ->
     make_extras : (Procdesc.t -> 'a) ->
-    Callbacks.proc_callback_args ->
+    Procdesc.t ->
+    Tenv.t ->
+    Specs.summary ->
     Specs.summary
 end

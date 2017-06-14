@@ -539,14 +539,16 @@ let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit
       Dom.Summary.pp_summary s
 
 let checker : Callbacks.proc_callback_args -> Specs.summary
-  = fun ({ summary } as callback) ->
+  = fun ({ proc_desc; tenv; summary } as callback) ->
     let proc_name = Specs.get_proc_name summary in
     let make_extras _ = callback.get_proc_desc in
     let updated_summary : Specs.summary =
-      Interprocedural.compute_and_store_post
+      Interprocedural.compute_summary
         ~compute_post
         ~make_extras
-        callback in
+        proc_desc
+        tenv
+        summary in
     let post =
       updated_summary.payload.buffer_overrun in
     begin

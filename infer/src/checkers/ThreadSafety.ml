@@ -866,7 +866,7 @@ let empty_post =
   and return_attrs = ThreadSafetyDomain.AttributeSetDomain.empty in
   (initial_thumbs_up, initial_known_on_ui_thread, has_lock, ThreadSafetyDomain.AccessDomain.empty, return_attrs)
 
-let analyze_procedure callback =
+let analyze_procedure { Callbacks.proc_desc; tenv; summary; } =
   let is_initializer tenv proc_name =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
   let open ThreadSafetyDomain in
@@ -917,10 +917,7 @@ let analyze_procedure callback =
       end
     else
       Some empty_post in
-  Interprocedural.compute_and_store_post
-    ~compute_post
-    ~make_extras:FormalMap.make
-    callback
+  Interprocedural.compute_summary ~compute_post ~make_extras:FormalMap.make proc_desc tenv summary
 
 (* we assume two access paths can alias if their access parts are equal (we ignore the base). *)
 let can_alias access_path1 access_path2 =

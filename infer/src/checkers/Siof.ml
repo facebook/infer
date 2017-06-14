@@ -244,12 +244,14 @@ let compute_post proc_data =
     ~initial:(SiofDomain.BottomSiofTrace.Bottom, SiofDomain.VarNames.empty)
   |> Option.map ~f:SiofDomain.normalize
 
-let checker ({ Callbacks.proc_desc } as callback) : Specs.summary =
+let checker { Callbacks.proc_desc; tenv; summary } : Specs.summary =
   let updated_summary =
-    Interprocedural.compute_and_store_post
+    Interprocedural.compute_summary
       ~compute_post
       ~make_extras:ProcData.make_empty_extras
-      callback in
+      proc_desc
+      tenv
+      summary in
   let pname = Procdesc.get_proc_name proc_desc in
   begin
     match Typ.Procname.get_global_name_of_initializer pname with
