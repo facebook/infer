@@ -12,12 +12,10 @@ At present Infer is tracking problems caused by null pointer dereferences and re
 
 
 Infer came to Facebook with the acquisition of the verification startup Monoidics in 2013.
-Monoidics was itself based on recent
-academic research, particularly on separation logic and bi-abduction.
+Monoidics was itself based on recent academic research, particularly on separation logic and bi-abduction.
 
 We have broadened Infer's scope within the past few years. We now refer to the original separation logic analysis as 
-Infer.SL.We now also have   
-Infer.AI. a general analysis framework which is     an interface to the modular analysis engine which can be used by other kinds of program analyses (technically, called ``abstract interpretations'', hence the AI monicker).  
+Infer.SL.We now also have    Infer.AI. a general analysis framework which is     an interface to the modular analysis engine which can be used by other kinds of program analyses (technically, called ``abstract interpretations'', hence the AI monicker).  
 This added generality has been used to develop instantiations of Infer.AI for security, concurrency and in other domains.
 Additionally, we have Infer linters for describing shallow syntactic analyses, using the AL language,
 because sometimes linters are just what you need.
