@@ -5,4 +5,4 @@
 
 - title: C, C++, and iOS/Objective-C
   text: |
-        Infer also reports memory leak problems in C, C++, and Objective-C code.
+        Infer checks for null pointer exceptions, memory leaks, coding conventions and unavailable API's.
