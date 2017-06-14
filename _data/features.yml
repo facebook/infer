@@ -5,4 +5,4 @@
 
 - title: C, C++, and iOS/Objective-C
   text: |
-        Infer checks for null pointer exceptions, memory leaks, coding conventions and unavailable API's.
+        Infer checks for null pointer dereferences, memory leaks, coding conventions and unavailable API's.
