@@ -251,6 +251,7 @@ val ignore_trivial_traces : bool
 val immutable_cast : bool
 val infer_cache : string option
 val iphoneos_target_sdk_version : string option
+val iphoneos_target_sdk_version_skip_path : string list
 val issues_fields : [`Issue_field_bug_class
                     | `Issue_field_kind
                     | `Issue_field_bug_type

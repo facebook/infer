@@ -328,9 +328,19 @@ let is_class an re =
       declaration_has_name an re
   | _ -> false
 
+let should_use_iphoneos_target_sdk_version (cxt : CLintersContext.context) =
+  let source_file = cxt.translation_unit_context.source_file  in
+  not (List.exists
+         ~f:(fun path -> ALVar.str_match_regex (SourceFile.to_rel_path source_file) path)
+         Config.iphoneos_target_sdk_version_skip_path)
+
 let decl_unavailable_in_supported_ios_sdk (cxt : CLintersContext.context) an =
+  let config_iphoneos_target_sdk_version =
+    if should_use_iphoneos_target_sdk_version cxt then
+      Config.iphoneos_target_sdk_version
+    else None in
   let allowed_os_versions =
-    match Config.iphoneos_target_sdk_version,
+    match config_iphoneos_target_sdk_version,
           (cxt.if_context : CLintersContext.if_context option) with
     | Some iphoneos_target_sdk_version, Some if_context ->
         iphoneos_target_sdk_version :: if_context.ios_version_guard

@@ -1128,6 +1128,13 @@ and iphoneos_target_sdk_version =
     ~in_help:CLOpt.[Capture, manual_clang_linters]
     "Specify the target SDK version to use for iphoneos"
 
+and iphoneos_target_sdk_version_skip_path =
+  CLOpt.mk_string_list ~long:"iphoneos-target-sdk-version-skip-path"
+    ~in_help:CLOpt.[Capture, manual_clang_linters]
+    ~meta:"path prefix OCaml regex"
+    "To be used together with iphoneos-target-sdk-version, \
+     to disable that flag in a particular path (can be specified multiple times)"
+
 and issues_fields =
   CLOpt.mk_symbol_seq ~long:"issues-fields"
     ~in_help:CLOpt.[Report, manual_generic]
@@ -1899,6 +1906,7 @@ and ignore_trivial_traces = !ignore_trivial_traces
 and immutable_cast = !immutable_cast
 and infer_cache = !infer_cache
 and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
+and iphoneos_target_sdk_version_skip_path = !iphoneos_target_sdk_version_skip_path
 and issues_fields = !issues_fields
 and iterations = !iterations
 and java_jar_compiler = !java_jar_compiler
