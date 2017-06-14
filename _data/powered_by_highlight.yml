@@ -9,6 +9,9 @@
   - name: Kiuwan
     url: https://www.kiuwan.com/
     img: static/images/kiuwan.png
+  - name: Mozilla
+    url: http://www.mozilla.com/
+    img: static/images/mozilla.png
   - name: Oculus
     url: https://www.oculus.com/
     img: static/images/oculus.png
@@ -21,6 +24,3 @@
   - name: WhatsApp
     url: https://www.whatsapp.com
     img: static/images/whatsapp.svg
-  - name: Mozilla
-    url: http://www.mozilla.com/
-    img: static/images/mozilla.png
