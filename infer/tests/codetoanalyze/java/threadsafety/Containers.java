@@ -24,6 +24,7 @@ import android.support.v4.util.Pools.SynchronizedPool;
 import android.support.v4.util.SparseArrayCompat;
 import android.util.SparseArray;
 import android.support.v4.util.SimpleArrayMap;
+import android.support.v4.util.Pools;
 import android.support.v4.util.Pools.SimplePool;
 
 class ContainerWrapper {
@@ -175,7 +176,7 @@ class Containers {
 
   static boolean sUsePooling;
 
-  private Obj poolWrapper() {
+  private Obj poolWrapper1() {
     Obj obj = sUsePooling ? sPool.acquire() : null;
     if (obj == null) {
       obj = new Obj();
@@ -184,8 +185,28 @@ class Containers {
     return obj;
   }
 
-  void poolWrapperOk() {
-    Obj obj = poolWrapper();
+  void poolWrapperOk1() {
+    Obj obj = poolWrapper1();
+    obj.f = new Object();
+  }
+
+  private Pools.Pool<Obj> mPool;
+  private boolean mIsSync;
+
+  private Obj poolWrapper2() {
+    Obj item;
+    if (mIsSync) {
+      synchronized (this) {
+        item = mPool.acquire();
+      }
+    } else {
+      item = mPool.acquire();
+    }
+    return item;
+  }
+
+  void poolWrapperOk2() {
+    Obj obj = poolWrapper2();
     obj.f = new Object();
   }
 
@@ -265,4 +286,5 @@ class Containers {
     }
     simplePool.release(a);
   }
+
 }

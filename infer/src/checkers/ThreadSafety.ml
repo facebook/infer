@@ -330,7 +330,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | ("android.app.Activity" | "android.view.View"), "findViewById" ->
                 (* assume findViewById creates fresh View's (note: not always true) *)
                 true
-            | "android.support.v4.util.Pools$SimplePool", "acquire" ->
+            | "android.support.v4.util.Pools$Pool", "acquire" ->
                 (* a pool should own all of its objects *)
                 true
             | _ ->
