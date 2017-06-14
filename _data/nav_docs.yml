@@ -7,8 +7,8 @@
   - id: infer-workflow
   - id: analyzing-apps-or-projects
   - id: steps-for-ci
-  - id: eradicate
   - id: checkers
+  - id: eradicate
   - id: linters
   - id: threadsafety
   - id: experimental-checkers
