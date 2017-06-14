@@ -236,7 +236,6 @@ val fcp_apple_clang : string option
 val fcp_syntax_only : bool
 val file_renamings : string option
 val filter_paths : bool
-val filter_report_paths : string option
 val filtering : bool
 val flavors : bool
 val fragment_retains_view : bool

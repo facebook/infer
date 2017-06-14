@@ -1054,12 +1054,6 @@ and filter_paths =
   CLOpt.mk_bool ~long:"filter-paths" ~default:true
     "Filters specified in .inferconfig"
 
-and filter_report_paths =
-  CLOpt.mk_string_opt
-    ~long:"filter-report-paths" ~in_help:CLOpt.[Report, manual_generic]
-    "Specify the file containing a newline-separated list of files for which to emit a report. \
-     Source files should be specified relative to project root or be absolute."
-
 and flavors =
   CLOpt.mk_bool ~deprecated:["-use-flavors"] ~long:"flavors"
     ~in_help:CLOpt.[Capture, manual_buck_flavors]
@@ -1893,7 +1887,6 @@ and fcp_apple_clang = !fcp_apple_clang
 and fcp_syntax_only = !fcp_syntax_only
 and file_renamings = !file_renamings
 and filter_paths = !filter_paths
-and filter_report_paths = !filter_report_paths
 and filtering = !filtering
 and flavors = !flavors
 and fragment_retains_view = !fragment_retains_view
