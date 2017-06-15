@@ -41,6 +41,11 @@ class LockGuard {
 
   int get4() { return suspiciously_read; }
 
+  int test1() {
+    int result = get1();
+    return suspiciously_read + result;
+  }
+
  private:
   int well_guarded;
   int suspiciously_read;

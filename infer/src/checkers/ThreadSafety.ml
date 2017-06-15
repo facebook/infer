@@ -910,7 +910,18 @@ let analyze_procedure { Callbacks.proc_desc; tenv; summary; } =
           let return_attributes =
             try AttributeMapDomain.find return_var_ap attribute_map
             with Not_found -> AttributeSetDomain.empty in
-          let post = thumbs_up, threads, locks, accesses, return_attributes in
+          (* A hack for modeling lock_guard by releasing a
+             lock at the end of the procedure, as destructors are not modeled yet *)
+          let update_locks = match Procdesc.get_proc_name proc_desc with
+            | ObjC_Cpp _ when locks ->
+                let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::lock_guard"] in
+                (* Unlock, if the procedure contains a local field of type std::lock_guard *)
+                not (List.exists (Procdesc.get_locals proc_desc) ~f:(fun (_, ft) ->
+                    Option.exists (Typ.name ft) ~f:(fun name ->
+                        QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name))
+                  ))
+            | _ -> locks in
+          let post = thumbs_up, threads, update_locks, accesses, return_attributes in
           Summary.update_summary post summary
       | None ->
           summary
