@@ -152,6 +152,7 @@ context_in_synchronized_block ()
 declaration_has_name ("decl_name")
 declaration_ref_name ("decl_ref_name")
 decl_unavailable_in_supported_ios_sdk ()
+has_cast_kind("cast_kind") // useful in a cast node
 has_type ("type") // only builtin types, pointers and Objective-C classes available at the moment
 isa ("class_name")
 is_assign_property ()
@@ -170,6 +171,8 @@ is_property_pointer_type ()
 is_strong_property ()
 is_unop_with_kind ("kind")
 method_return_type ("type") // only builtin type, pointers, and Objective-C classes available at the moment
+objc_method_has_nth_parameter_of_type("type")
+using_namespace("namespace")
 within_responds_to_selector_block ()
 ```
 
