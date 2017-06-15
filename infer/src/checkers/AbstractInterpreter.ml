@@ -92,7 +92,7 @@ module MakeNoCFG
           let instrs = List.map ~f:fst instr_ids in
           L.d_strln
             (Format.asprintf "PRE: %a@.INSTRS: %aPOST: %a@."
-               Domain.pp pre (Sil.pp_instr_list Pp.text) instrs Domain.pp astate_post);
+               Domain.pp pre (Sil.pp_instr_list Pp.(html Green)) instrs Domain.pp astate_post);
           NodePrinter.finish_session (CFG.underlying_node node);
         end;
       let inv_map'' =
