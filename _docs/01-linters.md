@@ -123,10 +123,8 @@ It is possible to define macros that can be used in several checkers. This is do
 
 ```bash
 GLOBAL-MACROS {
-
   LET is_subclass_of(x) =
         is_class(x) HOLDS-IN-SOME-SUPERCLASS-OF ObjCInterfaceDecl;
-
  };
 ```
 
