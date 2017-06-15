@@ -324,7 +324,7 @@ A good way to learn how to write checkers is looking at existing checkers in the
 
 <a name="info_message">**AST info in messages**</a>
 
-When you write the message of your rule, you may want to specify which particular ast items were involved in the issue, such as a type or a variable name. We have a mechanism for that, we specified a few placeholders that can be used in rules with the syntax `%placeholder%` and it will be substituted by the correct ast info. At the moment we have `%type%`, `%child_type%` and `%name%` that print the type of the node, the type of a the node's child, and a string representation of the node, respectively. As with predicates, we can add more as needed.
+When you write the message of your rule, you may want to specify which particular ast items were involved in the issue, such as a type or a variable name. We have a mechanism for that, we specified a few placeholders that can be used in rules with the syntax `%placeholder%` and it will be substituted by the correct ast info. At the moment we have `%type%`, `%child_type%` and `%name%` that print the type of the node, the type of the node's child, and a string representation of the node, respectively. As with predicates, we can add more as needed.
 
 <a name="testing">**Testing your rule**</a>
 
