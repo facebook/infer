@@ -121,7 +121,7 @@ The default severity is `WARNING` and the default mode is `ON`, so these are opt
 
 It is possible to define macros that can be used in several checkers. This is done in the following way:
 
-```
+```bash
 GLOBAL-MACROS {
 
   LET is_subclass_of(x) =
