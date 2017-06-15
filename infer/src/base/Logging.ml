@@ -243,7 +243,7 @@ let external_error fmt =
   log ~to_console:(not Config.quiet) external_error_file_fmts fmt
 
 let internal_error fmt =
-  log ~to_console:(not Config.developer_mode) internal_error_file_fmts fmt
+  log ~to_console:Config.developer_mode internal_error_file_fmts fmt
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int

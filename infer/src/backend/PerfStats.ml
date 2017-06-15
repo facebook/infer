@@ -11,6 +11,8 @@
 
 open! IStd
 
+module L = Logging
+
 type perf_stats = {
   rtime : float;
   utime : float;
@@ -147,18 +149,14 @@ let register_report_at_exit file =
           let json_stats = to_json (stats ()) in
           try
             Unix.mkdir_p (Filename.dirname file);
-            let stats_oc = open_out file in
-            let stats_fd = Unix.descr_of_out_channel stats_oc in
-            ignore (Unix.flock stats_fd Unix.Flock_command.lock_exclusive);
-            Yojson.Basic.pretty_to_channel stats_oc json_stats;
-            flush stats_oc;
-            ignore (Unix.flock stats_fd Unix.Flock_command.unlock);
-            Out_channel.close stats_oc
+            Utils.write_file_with_locking file ~f:(fun stats_oc ->
+                Yojson.Basic.pretty_to_channel stats_oc json_stats;
+              );
           with exc ->
-            Format.eprintf "Info: failed to write stats to %s@\n%s@\n%s@\n%s@."
+            L.internal_error "Info: failed to write stats to %s@\n%s@\n%s@\n%s@."
               file (Exn.to_string exc) (Yojson.Basic.pretty_to_string json_stats)
               (Printexc.get_backtrace ())
         with exc ->
-          Format.eprintf "Info: failed to compute stats for %s@\n%s@\n%s@."
+          L.internal_error "Info: failed to compute stats for %s@\n%s@\n%s@."
             file (Exn.to_string exc) (Printexc.get_backtrace ())
       ) ("stats reporting in " ^ file)

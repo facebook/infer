@@ -85,3 +85,7 @@ val suppress_stderr2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
     -1 if v1 is older than v2 and 0 if they are the same version.
     The versions are strings of the shape "n.m.t", the order is lexicographic. *)
 val compare_versions : string -> string -> int
+
+(** Lock file passed as argument and write into it using [f]. If [delete] then the file is unlinked
+    once this is done. *)
+val write_file_with_locking : ?delete:bool -> f:(out_channel -> unit) -> string -> unit
