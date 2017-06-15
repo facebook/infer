@@ -155,16 +155,6 @@ module MakeNoCFG
     extract_post (CFG.id (CFG.exit_node cfg)) inv_map
 end
 
-module Interprocedural (Summ : Summary.S) = struct
-
-  let compute_summary ~compute_post ~make_extras proc_desc tenv summary =
-    match compute_post (ProcData.make proc_desc tenv (make_extras proc_desc)) with
-    | Some post ->
-        Summ.update_summary post summary
-    | None ->
-        summary
-end
-
 module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.MakeSIL) =
   MakeNoCFG (S (C)) (T (C))
 

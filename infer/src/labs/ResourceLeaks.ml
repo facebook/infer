@@ -92,10 +92,6 @@ module Analyzer =
     (ProcCfg.Normal) (* 5(a) *)
     (LowerHil.Make(TransferFunctions))
 
-(* Lift our intraprocedural abstract interpreter into an interprocedural one that computes
-   summaries of the type we defined earlier *)
-module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
-
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
 let checker { Callbacks.summary; proc_desc; tenv; } : Specs.summary =
   (* Report an error when we have acquired more resources than we have released *)
@@ -107,20 +103,20 @@ let checker { Callbacks.summary; proc_desc; tenv; } : Specs.summary =
       let message = F.asprintf "Leaked %d resource(s)" leak_count in
       let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
       Reporting.log_error summary ~loc:last_loc exn in
+
   (* Convert the abstract state to a summary. for now, just the identity function *)
   let convert_to_summary (post : Domain.astate) : Domain.summary =
     (* 4(a) *)
     post in
-  let compute_post (proc_data : extras ProcData.t) =
-    let initial = ResourceLeakDomain.initial, IdAccessPathMapDomain.empty in
-    match Analyzer.compute_post proc_data ~initial ~debug:false with
-    | Some (post, _) ->
-        (* 1(c) *)
-        report post proc_data;
-        Some (convert_to_summary post)
-    | None ->
-        failwithf
-          "Analyzer failed to compute post for %a"
-          Typ.Procname.pp (Procdesc.get_proc_name proc_data.pdesc) in
-
-  Interprocedural.compute_summary ~compute_post ~make_extras:FormalMap.make proc_desc tenv summary
+  let extras = FormalMap.make proc_desc in
+  let proc_data = ProcData.make proc_desc tenv extras in
+  let initial = ResourceLeakDomain.initial, IdAccessPathMapDomain.empty in
+  match Analyzer.compute_post proc_data ~initial ~debug:false with
+  | Some (post, _) ->
+      (* 1(c) *)
+      report post proc_data;
+      Summary.update_summary (convert_to_summary post) summary
+  | None ->
+      failwithf
+        "Analyzer failed to compute post for %a"
+        Typ.Procname.pp (Procdesc.get_proc_name proc_data.pdesc)

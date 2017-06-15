@@ -345,7 +345,6 @@ end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 
-module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
 module CFG = Analyzer.TransferFunctions.CFG
 module Sem = BufferOverrunSemantics.Make (CFG)
 
@@ -539,21 +538,12 @@ let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit
       Dom.Summary.pp_summary s
 
 let checker : Callbacks.proc_callback_args -> Specs.summary
-  = fun ({ proc_desc; tenv; summary } as callback) ->
+  = fun { proc_desc; tenv; summary; get_proc_desc; } ->
     let proc_name = Specs.get_proc_name summary in
-    let make_extras _ = callback.get_proc_desc in
-    let updated_summary : Specs.summary =
-      Interprocedural.compute_summary
-        ~compute_post
-        ~make_extras
-        proc_desc
-        tenv
-        summary in
-    let post =
-      updated_summary.payload.buffer_overrun in
-    begin
-      match post with
-      | Some s when Config.bo_debug >= 1 -> print_summary proc_name s
-      | _ -> ()
-    end;
-    updated_summary
+    let proc_data = ProcData.make proc_desc tenv get_proc_desc in
+    match compute_post proc_data with
+    | Some post ->
+        if Config.bo_debug >= 1 then print_summary proc_name post;
+        Summary.update_summary post summary
+    | None ->
+        summary

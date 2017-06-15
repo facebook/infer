@@ -761,8 +761,6 @@ end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (LowerHil.Make(TransferFunctions))
 
-module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
-
 (* similarly, we assume that immutable classes safely encapsulate their state *)
 let is_immutable_collection_class class_name tenv =
   let immutable_collections = [
@@ -871,53 +869,54 @@ let analyze_procedure { Callbacks.proc_desc; tenv; summary; } =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name in
   let open ThreadSafetyDomain in
   (* convert the abstract state to a summary by dropping the id map *)
-  let compute_post ({ ProcData.pdesc; tenv; extras; } as proc_data) =
-    if should_analyze_proc pdesc tenv
-    then
-      begin
-        if not (Procdesc.did_preanalysis pdesc) then Preanal.do_liveness pdesc tenv;
-        let initial =
-          let threads = runs_on_ui_thread pdesc || is_thread_confined_method tenv pdesc in
-          if is_initializer tenv (Procdesc.get_proc_name pdesc)
-          then
-            let add_owned_formal acc formal_index =
-              match FormalMap.get_formal_base formal_index extras with
-              | Some base ->
-                  AttributeMapDomain.add_attribute (base, []) Attribute.unconditionally_owned acc
-              | None ->
-                  acc in
-            let owned_formals =
-              (* if a constructer is called via DI, all of its formals will be freshly allocated
-                 and therefore owned. we assume that constructors annotated with @Inject will only
-                 be called via DI or using fresh parameters. *)
-              if Annotations.pdesc_has_return_annot pdesc Annotations.ia_is_inject
-              then List.mapi ~f:(fun i _ -> i)  (Procdesc.get_formals pdesc)
-              else [0] (* express that the constructor owns [this] *) in
-            let attribute_map =
-              List.fold
-                ~f:add_owned_formal
-                owned_formals
-                ~init:ThreadSafetyDomain.empty.attribute_map in
-            { ThreadSafetyDomain.empty with attribute_map; threads; }, IdAccessPathMapDomain.empty
-          else
-            { ThreadSafetyDomain.empty with threads; }, IdAccessPathMapDomain.empty in
+  if should_analyze_proc proc_desc tenv
+  then
+    begin
+      if not (Procdesc.did_preanalysis proc_desc) then Preanal.do_liveness proc_desc tenv;
+      let extras = FormalMap.make proc_desc in
+      let proc_data = ProcData.make proc_desc tenv extras in
+      let initial =
+        let threads = runs_on_ui_thread proc_desc || is_thread_confined_method tenv proc_desc in
+        if is_initializer tenv (Procdesc.get_proc_name proc_desc)
+        then
+          let add_owned_formal acc formal_index =
+            match FormalMap.get_formal_base formal_index extras with
+            | Some base ->
+                AttributeMapDomain.add_attribute (base, []) Attribute.unconditionally_owned acc
+            | None ->
+                acc in
+          let owned_formals =
+            (* if a constructer is called via DI, all of its formals will be freshly allocated
+               and therefore owned. we assume that constructors annotated with @Inject will only
+               be called via DI or using fresh parameters. *)
+            if Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject
+            then List.mapi ~f:(fun i _ -> i)  (Procdesc.get_formals proc_desc)
+            else [0] (* express that the constructor owns [this] *) in
+          let attribute_map =
+            List.fold
+              ~f:add_owned_formal
+              owned_formals
+              ~init:ThreadSafetyDomain.empty.attribute_map in
+          { ThreadSafetyDomain.empty with attribute_map; threads; }, IdAccessPathMapDomain.empty
+        else
+          { ThreadSafetyDomain.empty with threads; }, IdAccessPathMapDomain.empty in
 
-        match Analyzer.compute_post proc_data ~initial ~debug:false with
-        | Some ({ thumbs_up; threads; locks; accesses; attribute_map; }, _) ->
-            let return_var_ap =
-              AccessPath.of_pvar
-                (Pvar.get_ret_pvar (Procdesc.get_proc_name pdesc))
-                (Procdesc.get_ret_type pdesc) in
-            let return_attributes =
-              try AttributeMapDomain.find return_var_ap attribute_map
-              with Not_found -> AttributeSetDomain.empty in
-            Some (thumbs_up, threads, locks, accesses, return_attributes)
-        | None ->
-            None
-      end
-    else
-      Some empty_post in
-  Interprocedural.compute_summary ~compute_post ~make_extras:FormalMap.make proc_desc tenv summary
+      match Analyzer.compute_post proc_data ~initial ~debug:false with
+      | Some ({ thumbs_up; threads; locks; accesses; attribute_map; }, _) ->
+          let return_var_ap =
+            AccessPath.of_pvar
+              (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
+              (Procdesc.get_ret_type proc_desc) in
+          let return_attributes =
+            try AttributeMapDomain.find return_var_ap attribute_map
+            with Not_found -> AttributeSetDomain.empty in
+          let post = thumbs_up, threads, locks, accesses, return_attributes in
+          Summary.update_summary post summary
+      | None ->
+          summary
+    end
+  else
+    Summary.update_summary empty_post summary
 
 (* we assume two access paths can alias if their access parts are equal (we ignore the base). *)
 let can_alias access_path1 access_path2 =

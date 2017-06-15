@@ -63,17 +63,3 @@ module Make
     (CFG : ProcCfg.S)
     (MakeTransferFunctions : TransferFunctions.MakeSIL) :
   S with module TransferFunctions = MakeTransferFunctions(CFG)
-
-(** create an interprocedural abstract interpreter given logic for handling summaries *)
-module Interprocedural (Summary : Summary.S) : sig
-
-  (** compute a summary for the given procedure using [compute_post] and write it into the
-      aggregated [Specs.summary] *)
-  val compute_summary :
-    compute_post: ('a ProcData.t -> Summary.payload option) ->
-    make_extras : (Procdesc.t -> 'a) ->
-    Procdesc.t ->
-    Tenv.t ->
-    Specs.summary ->
-    Specs.summary
-end

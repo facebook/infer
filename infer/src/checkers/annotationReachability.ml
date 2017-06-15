@@ -389,37 +389,20 @@ let check_expensive_subtyping_rules { Callbacks.proc_desc; tenv; summary } overr
         (expensive_overrides_unexpensive, Localise.verbatim_desc description) in
     Reporting.log_error summary ~loc exn
 
-module Interprocedural = struct
-  include AbstractInterpreter.Interprocedural(Summary)
 
-  let check_and_report ({ Callbacks.proc_desc; tenv; summary} as callback) : Specs.summary =
-    let proc_name = Procdesc.get_proc_name proc_desc in
-    if is_expensive tenv proc_name then
-      PatternMatch.override_iter (check_expensive_subtyping_rules callback) tenv proc_name;
-
-    let initial =
-      (AnnotReachabilityDomain.empty, Domain.TrackingDomain.NonBottom Domain.TrackingVar.empty) in
-    let compute_post proc_data =
-      Option.map ~f:fst (Analyzer.compute_post ~initial proc_data) in
-    let updated_summary : Specs.summary =
-      compute_summary
-        ~compute_post:compute_post
-        ~make_extras:ProcData.make_empty_extras
-        proc_desc
-        tenv
-        summary in
-    begin
-      match updated_summary.payload.annot_map with
-      | Some annot_map ->
-          List.iter ~f:(report_src_snk_paths callback annot_map) src_snk_pairs
-      | None ->
-          ()
-    end;
-    updated_summary
-
-end
-
-let checker = Interprocedural.check_and_report
+let checker ({ Callbacks.proc_desc; tenv; summary} as callback) : Specs.summary =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  if is_expensive tenv proc_name then
+    PatternMatch.override_iter (check_expensive_subtyping_rules callback) tenv proc_name;
+  let initial =
+    (AnnotReachabilityDomain.empty, Domain.TrackingDomain.NonBottom Domain.TrackingVar.empty) in
+  let proc_data = ProcData.make_default proc_desc tenv in
+  match Analyzer.compute_post proc_data ~initial with
+  | Some (annot_map, _) ->
+      List.iter ~f:(report_src_snk_paths callback annot_map) src_snk_pairs;
+      Summary.update_summary annot_map summary
+  | None ->
+      summary
 
 (* New implementation starts here *)
 

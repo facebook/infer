@@ -172,9 +172,6 @@ end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 
-module Interprocedural = AbstractInterpreter.Interprocedural (Summary)
-
-
 let is_foreign tu_opt (v, _) =
   match Pvar.get_translation_unit v, tu_opt with
   | TUFile v_tu, Some current_tu ->
@@ -239,25 +236,16 @@ let siof_check pdesc gname (summary : Specs.summary) =
   | Some (SiofDomain.BottomSiofTrace.Bottom, _) | None ->
       ()
 
-let compute_post proc_data =
-  Analyzer.compute_post proc_data
-    ~initial:(SiofDomain.BottomSiofTrace.Bottom, SiofDomain.VarNames.empty)
-  |> Option.map ~f:SiofDomain.normalize
-
-let checker { Callbacks.proc_desc; tenv; summary } : Specs.summary =
+let checker { Callbacks.proc_desc; tenv; summary; } : Specs.summary =
+  let proc_data = ProcData.make_default proc_desc tenv in
+  let initial = SiofDomain.BottomSiofTrace.Bottom, SiofDomain.VarNames.empty in
   let updated_summary =
-    Interprocedural.compute_summary
-      ~compute_post
-      ~make_extras:ProcData.make_empty_extras
-      proc_desc
-      tenv
-      summary in
-  let pname = Procdesc.get_proc_name proc_desc in
+    match Analyzer.compute_post proc_data ~initial with
+    | Some post -> Summary.update_summary (SiofDomain.normalize post) summary
+    | None -> summary in
   begin
-    match Typ.Procname.get_global_name_of_initializer pname with
-    | Some gname ->
-        siof_check proc_desc gname updated_summary
-    | None ->
-        ()
+    match Typ.Procname.get_global_name_of_initializer (Procdesc.get_proc_name proc_desc) with
+    | Some gname -> siof_check proc_desc gname updated_summary
+    | None -> ()
   end;
   updated_summary

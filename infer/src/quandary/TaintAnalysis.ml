@@ -612,8 +612,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     TaintSpecification.to_summary_access_tree with_footprint_vars
 
-  module Interprocedural = AbstractInterpreter.Interprocedural(Summary)
-
   let checker { Callbacks.tenv; summary; proc_desc; } : Specs.summary =
 
     (* bind parameters to a trace with a tainted source (if applicable) *)
@@ -631,24 +629,22 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           (TraceDomain.Source.get_tainted_formals pdesc tenv) in
       access_tree, IdAccessPathMapDomain.empty in
 
-    let compute_post (proc_data : extras ProcData.t) =
-      if not (Procdesc.did_preanalysis proc_data.pdesc)
-      then
-        begin
-          Preanal.do_liveness proc_data.pdesc proc_data.tenv;
-          Preanal.do_dynamic_dispatch
-            proc_data.pdesc (Cg.create (SourceFile.invalid __FILE__)) proc_data.tenv;
-        end;
-      let initial = make_initial proc_data.pdesc in
-      match Analyzer.compute_post proc_data ~initial ~debug:false with
-      | Some (access_tree, _) ->
-          Some (make_summary proc_data access_tree)
-      | None ->
-          if Procdesc.Node.get_succs (Procdesc.get_start_node proc_data.pdesc) <> []
-          then failwith "Couldn't compute post"
-          else None in
-    let make_extras pdesc =
-      let formal_map = FormalMap.make pdesc in
+    if not (Procdesc.did_preanalysis proc_desc)
+    then
+      begin
+        Preanal.do_liveness proc_desc tenv;
+        Preanal.do_dynamic_dispatch proc_desc (Cg.create (SourceFile.invalid __FILE__)) tenv;
+      end;
+    let initial = make_initial proc_desc in
+    let extras =
+      let formal_map = FormalMap.make proc_desc in
       { formal_map; summary; } in
-    Interprocedural.compute_summary ~compute_post ~make_extras proc_desc tenv summary
+    let proc_data = ProcData.make proc_desc tenv extras in
+    match Analyzer.compute_post proc_data ~initial ~debug:false with
+    | Some (access_tree, _) ->
+        Summary.update_summary (make_summary proc_data access_tree) summary
+    | None ->
+        if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> []
+        then failwith "Couldn't compute post"
+        else summary
 end
