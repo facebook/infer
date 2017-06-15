@@ -234,8 +234,11 @@ _ACEOF
   fi
   AC_MSG_RESULT([$USER_JAVA_HOME])
   AC_SUBST([USER_JAVA_HOME])
-fi
 
+  AC_CHECK_LIB([z], [inflateEnd], [ZLIB_FOUND=yes], [ZLIB_FOUND=no])
+  AS_IF([test x"$ZLIB_FOUND" = xno], [AC_MSG_ERROR([zlib not found.])])
+fi
+# end if($enable_java_analyzers)
 
 AC_PATH_TOOL([ATDGEN], [atdgen], [no])
 AC_ASSERT_PROG([atdgen], [$ATDGEN])
