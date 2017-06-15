@@ -27,7 +27,7 @@ val is_model : Typ.Procname.t -> bool
 
 val split_classpath : string -> string list
 
-(** map entry for source files with potential basname collision within the same compiler call *)
+(** map entry for source files with potential basename collision within the same compiler call *)
 type file_entry =
   | Singleton of SourceFile.t
   | Duplicate of (string * SourceFile.t) list
