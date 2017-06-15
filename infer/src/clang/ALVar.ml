@@ -107,3 +107,8 @@ module FormulaIdMap = Caml.Map.Make (
   struct
     type t = formula_id[@@deriving compare]
   end)
+
+module VarMap = Caml.Map.Make (
+  struct
+    type t = string[@@deriving compare]
+  end)

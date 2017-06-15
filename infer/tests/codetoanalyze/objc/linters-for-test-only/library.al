@@ -5,3 +5,8 @@ GLOBAL-MACROS {
         is_class(x) HOLDS-IN-SOME-SUPERCLASS-OF ObjCInterfaceDecl;
 
 };
+
+
+GLOBAL-PATHS {
+ LET all_files = {REGEXP(".*") };
+};

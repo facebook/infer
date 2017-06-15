@@ -30,6 +30,10 @@ GLOBAL-MACROS {
  };
 
 
+ GLOBAL-PATHS {
+ 	LET filtered_files = {REGEXP("codetoanalyze/objc/linters-for-test-only/filter_by_path/.*") };
+ };
+
 //Check that class A is not subclassed.
 DEFINE-CHECKER SUBCLASSING_TEST_EXAMPLE = {
 
@@ -242,7 +246,7 @@ DEFINE-CHECKER FILTER_BY_PATH_EXAMPLE = {
      WHEN declaration_has_name("main")
      HOLDS-IN-NODE FunctionDecl;
   SET message = "Found main method";
-  SET whitelist_path = { REGEXP("codetoanalyze/objc/linters-for-test-only/filter_by_path/.*"), "A.m" };
+  SET whitelist_path = { filtered_files, "A.m" };
 };
 
 DEFINE-CHECKER ALL_PATH_NO_FILTER_EXAMPLE = {
@@ -273,6 +277,6 @@ DEFINE-CHECKER WHITE_BLACKLIST_PATH_EXAMPLE = {
      WHEN declaration_has_name("main")
      HOLDS-IN-NODE FunctionDecl;
   SET message = "Found main method";
-  SET whitelist_path = { REGEXP(".*") };
-  SET blacklist_path = { REGEXP("codetoanalyze/objc/linters-for-test-only/filter_by_path/.*") };
+  SET whitelist_path = { all_files };
+  SET blacklist_path = { filtered_files };
 };

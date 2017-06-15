@@ -34,40 +34,55 @@ let parse_al_file fname channel : CTL.al_file option =
 
 let already_imported_files = ref []
 
-let rec parse_import_file import_file channel : CTL.clause list =
+let rec parse_import_file import_file channel =
   if List.mem !already_imported_files import_file then
     failwith ("Cyclic imports: file '" ^ import_file ^ "' was already imported.")
   else (
     match parse_al_file import_file channel with
-    | Some {import_files = imports; global_macros = curr_file_macros; checkers = _} ->
+    | Some {
+        import_files = imports;
+        global_macros = curr_file_macros;
+        global_paths = curr_file_paths;
+        checkers = _
+      } ->
         already_imported_files := import_file :: !already_imported_files;
-        collect_all_macros imports curr_file_macros
-    | None -> L.(debug Linters Medium) "No macros found.@\n";[])
+        collect_all_macros_and_paths imports curr_file_macros curr_file_paths
+    | None -> L.(debug Linters Medium) "No macros or paths found.@\n";[], [])
 
-and collect_all_macros imports curr_file_macros =
+and collect_all_macros_and_paths imports curr_file_macros curr_file_paths =
   L.(debug Linters Medium) "#### Start parsing import macros #####@\n";
-  let import_macros = parse_imports imports in
+  let import_macros, import_paths = parse_imports imports in
   L.(debug Linters Medium) "#### Add global macros to import macros #####@\n";
-  List.append import_macros curr_file_macros
+  let macros = List.append import_macros curr_file_macros in
+  let paths = List.append import_paths curr_file_paths in
+  macros, paths
 
 (* Parse import files with macro definitions, and it returns a list of LET clauses *)
-and parse_imports imports_files : CTL.clause list =
-  let parse_one_import_file fimport macros =
+and parse_imports imports_files =
+  let parse_one_import_file fimport (macros, paths) =
     L.(debug Linters Medium) "  Loading import macros from file %s@\n" fimport;
     let in_channel = open_in fimport in
-    let parsed_macros = parse_import_file fimport in_channel in
+    let parsed_macros, parsed_paths = parse_import_file fimport in_channel in
     In_channel.close in_channel;
-    List.append parsed_macros macros in
-  List.fold_right ~f:parse_one_import_file ~init:[] imports_files
+    let macros = List.append parsed_macros macros in
+    let paths = List.append parsed_paths paths in
+    macros, paths in
+  List.fold_right ~f:parse_one_import_file ~init:([], []) imports_files
 
 let parse_ctl_file linters_def_file channel : CFrontend_errors.linter list =
   match parse_al_file linters_def_file channel with
-  | Some {import_files = imports; global_macros = curr_file_macros; checkers = parsed_checkers} ->
+  | Some {
+      import_files = imports;
+      global_macros = curr_file_macros;
+      global_paths = curr_file_paths;
+      checkers = parsed_checkers
+    } ->
       already_imported_files := [linters_def_file];
-      let macros = collect_all_macros imports curr_file_macros in
+      let macros, paths = collect_all_macros_and_paths imports curr_file_macros curr_file_paths in
       let macros_map = CFrontend_errors.build_macros_map macros in
+      let paths_map = CFrontend_errors.build_paths_map paths in
       L.(debug Linters Medium) "#### Start Expanding checkers #####@\n";
-      let exp_checkers = CFrontend_errors.expand_checkers macros_map parsed_checkers in
+      let exp_checkers = CFrontend_errors.expand_checkers macros_map paths_map parsed_checkers in
       L.(debug Linters Medium) "#### Checkers Expanded #####@\n";
       if Config.debug_mode then List.iter ~f:CTL.print_checker exp_checkers;
       CFrontend_errors.create_parsed_linters linters_def_file exp_checkers

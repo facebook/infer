@@ -90,6 +90,7 @@ type ctl_checker = {
 type al_file = {
   import_files : string list;
   global_macros : clause list;
+  global_paths : (string * ALVar.alexp list) list;
   checkers : ctl_checker list
 }
 

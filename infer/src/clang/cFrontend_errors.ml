@@ -64,6 +64,9 @@ let pp_linters fmt linters =
    formula was already expanded and, if yes we have a cyclic definifion *)
 type macros_map = (bool * ALVar.t list * CTL.t) ALVar.FormulaIdMap.t
 
+(* Map a path name to a list of paths.  *)
+type paths_map = (ALVar.t list) ALVar.VarMap.t
+
 let single_to_multi checker =
   fun ctx an ->
     let issue_desc_opt = checker ctx an in
@@ -285,6 +288,18 @@ let expand_formula phi _map _error_msg =
     | ETX (tl, sw, f1) -> ETX (tl, sw, expand f1 map error_msg) in
   expand phi _map _error_msg
 
+let rec expand_path paths path_map =
+  match paths with
+  | [] -> []
+  | ALVar.Var path_var :: rest ->
+      (try
+         let paths = ALVar.VarMap.find path_var path_map in
+         List.append paths (expand_path rest path_map)
+       with Not_found -> failwithf "Path variable %s not found. " path_var)
+  | path :: rest ->
+      path :: (expand_path rest path_map)
+
+
 let _build_macros_map macros init_map =
   let macros_map = List.fold ~f:(fun map' data -> match data with
       | CTL.CLet (key, params, formula) ->
@@ -299,8 +314,18 @@ let build_macros_map macros =
   let init_map : macros_map = ALVar.FormulaIdMap.empty in
   _build_macros_map macros init_map
 
+let build_paths_map paths =
+  let build_paths_map_aux paths init_map =
+    let paths_map = List.fold ~f:(fun map' data -> match data with
+        | (path_name, paths) ->
+            if ALVar.VarMap.mem path_name map' then
+              failwith ("Path '" ^ path_name ^ "' has more than one definition.")
+            else ALVar.VarMap.add path_name paths map') ~init:init_map paths in
+    paths_map in
+  build_paths_map_aux paths ALVar.VarMap.empty
+
 (* expands use of let defined formula id in checkers with their definition *)
-let expand_checkers macro_map checkers =
+let expand_checkers macro_map path_map checkers =
   let open CTL in
   let expand_one_checker c =
     L.(debug Linters Medium) " +Start expanding %s@\n" c.name;
@@ -310,6 +335,9 @@ let expand_checkers macro_map checkers =
         | CSet (report_when_const, phi) ->
             L.(debug Linters Medium) "  -Expanding report_when@\n";
             CSet (report_when_const, expand_formula phi map "") :: defs
+        | CPath (black_or_white_list, paths) ->
+            L.(debug Linters Medium) "  -Expanding path@\n";
+            CPath (black_or_white_list, expand_path paths path_map) :: defs
         | cl -> cl :: defs) ~init:[] c.definitions in
     { c with definitions = exp_defs} in
   List.map ~f:expand_one_checker checkers
