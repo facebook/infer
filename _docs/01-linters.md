@@ -100,8 +100,8 @@ DEFINE-CHECKER name_of_the_checker = {
      SET suggestion = <optional suggestion to the user>;
      SET severity = INFO | LIKE | ADVICE | WARNING | ERROR; 
      SET mode = ON | OFF 
-     SET whitelist_path = {path1, path2, ..., pathn }
-     SET blacklist_path = {path1, path2, ..., pathn }
+     SET whitelist_path = {path1, path2, ..., pathn };
+     SET blacklist_path = {path1, path2, ..., pathn };
   };
 ```
 
@@ -113,7 +113,7 @@ The default severity is `WARNING` and the default mode is `ON`, so these are opt
 
 ```bash
  GLOBAL-PATHS {
-     path1 = {"A.m", REGEXP("path/to/.*")}
+     path1 = {"A.m", REGEXP("path/to/.*")};
   };
 ```
 
