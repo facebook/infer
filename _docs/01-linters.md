@@ -130,9 +130,9 @@ GLOBAL-MACROS {
  };
 ```
 
-`GLOBAL-MACROS` is the section of an AL specification where one can define a list of global macros. In the example we are defining the macro `is_subclass(x)` which can now use in checkers instead of its complex definition. 
+`GLOBAL-MACROS` is the section of an AL specification where one can define a list of global macros. In the example we are defining the macro `is_subclass(x)` which can now be used in checkers instead of its complex definition. 
 
-It's possible to import library of macros and paths with the following command:
+It is possible to import a library of macros and paths with the following command:
 
 ```
 #IMPORT <library.al>
