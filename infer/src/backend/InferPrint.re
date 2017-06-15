@@ -60,7 +60,16 @@ let error_advice_to_csv_string error_desc => {
 
 let error_desc_to_plain_string error_desc => {
   let pp fmt => F.fprintf fmt "%a" Localise.pp_error_desc error_desc;
-  F.asprintf "%t" pp
+  let s = F.asprintf "%t" pp;
+  let s = String.strip s;
+  let s =
+    /* end error description with a dot */
+    if (String.is_suffix suffix::"." s) {
+      s
+    } else {
+      s ^ "."
+    };
+  s
 };
 
 let error_desc_to_dotty_string error_desc => Localise.error_desc_get_dotty error_desc;
