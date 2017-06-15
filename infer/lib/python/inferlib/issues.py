@@ -61,7 +61,7 @@ JSON_INDEX_VISIBILITY = 'visibility'
 ISSUE_TYPES_URL = 'http://fbinfer.com/docs/infer-issue-types.html#'
 
 
-def _text_of_infer_loc(loc):
+def text_of_infer_loc(loc):
     return ' ({}:{}:{}-{}:)'.format(
         loc[JSON_INDEX_ISL_FILE],
         loc[JSON_INDEX_ISL_LNUM],
@@ -78,7 +78,7 @@ def text_of_report(report):
     msg = report[JSON_INDEX_QUALIFIER]
     infer_loc = ''
     if JSON_INDEX_INFER_SOURCE_LOC in report:
-        infer_loc = _text_of_infer_loc(report[JSON_INDEX_INFER_SOURCE_LOC])
+        infer_loc = text_of_infer_loc(report[JSON_INDEX_INFER_SOURCE_LOC])
     return '%s:%d: %s: %s%s\n  %s' % (
         filename,
         line,
@@ -137,7 +137,7 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
         # assert failures are not very informative without knowing
         # which assertion failed
         if t == 'Assert_failure' and JSON_INDEX_INFER_SOURCE_LOC in report:
-            t += _text_of_infer_loc(report[JSON_INDEX_INFER_SOURCE_LOC])
+            t += text_of_infer_loc(report[JSON_INDEX_INFER_SOURCE_LOC])
         if t not in error_types_count:
             error_types_count[t] = 1
         else:
