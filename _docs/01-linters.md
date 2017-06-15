@@ -11,9 +11,10 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
 - [Background on the clang AST](/docs/linters.html#clang_ast)
 - [Using AL to write linters](/docs/linters.html#write_linters) 
   - [General structure of a checker](/docs/linters.html#checker_structure) 
+  - [Defining Paths](/docs/linters.html#paths) 
+  - [Defining Macros](/docs/linters.html#macros) 
   - [AL Predicates](/docs/linters.html#predicates) 
   - [AL Formulas](/docs/linters.html#formulas) 
-  - [Defining Macros](/docs/linters.html#macros) 
   - [Testing your rule](/docs/linters.html#testing)  
   - [Debugging](/docs/linters.html#debugging) 
   - [Demo](/docs/linters.html#demo) 
@@ -106,7 +107,9 @@ DEFINE-CHECKER name_of_the_checker = {
 
 The default severity is `WARNING` and the default mode is `ON`, so these are optional. If the check is `OFF` it will only be available in debug mode (flags `--debug` or `--linters-developer-mode`). `INFOs` are generally also not reported, except with some specialzed flags.
 
-`whitelist_path` and `blacklist_path` are optional, by default the rule is enabled everywhere. For specifying paths, one can use either string constants (`"File.m"`) or regexes (`REGEXP("path/to/.*")`) or variables. The variables stand for any list of paths, and are defined in a separate block:
+<a name="paths">**Defining Paths**</a> 
+
+`whitelist_path` and `blacklist_path` are optional, by default the rule is enabled everywhere. For specifying paths, one can use either string constants (`"File.m"`) or regexes (`REGEXP("path/to/.*")`) or variables. The variables stand for a list of paths, and are defined in a separate block:
 
 ```bash
  GLOBAL-PATHS {
@@ -114,7 +117,28 @@ The default severity is `WARNING` and the default mode is `ON`, so these are opt
   };
 ```
 
-This block can also be created in a separate al file that is imported into the checkers file.
+<a name="macros">**Defining Macros**</a> 
+
+It is possible to define macros that can be used in several checkers. This is done in the following way:
+
+```
+GLOBAL-MACROS {
+
+  LET is_subclass_of(x) =
+        is_class(x) HOLDS-IN-SOME-SUPERCLASS-OF ObjCInterfaceDecl;
+
+ };
+```
+
+`GLOBAL-MACROS` is the section of an AL specification where one can define a list of global macros. In the example we are defining the macro `is_subclass(x)` which can now use in checkers instead of its complex definition. 
+
+It's possible to import library of macros and paths with the following command:
+
+```
+#IMPORT <library.al>
+```
+
+In an AL file, the command above import and make available all the macros and paths defined in the `library.al` file.
 
 <a name="predicates">**AL Predicates**</a> 
 
@@ -292,27 +316,6 @@ The following tree explain the concept:
 ![](static/images/AL/in_node_with_transition.jpeg)
 
 The concept of transition is needed because of the special structure of the clang AST. Certain kind of nodes, for example statements, have a list of children that are statements as well. In this case there is no special tag attached to the edge between the node and the children. Other nodes have records, where some of the fields point to other nodes. For example a node representing a function declaration will have a record where one of the fields is body. This is pointing to a statement representing the function's body. For records, sometimes we need to specify that we need a particular node reachable via a particular field (i.e., a transition).
-
-<a name="macros">**Defining Macros**</a> 
-
-It is possible to define macros that can be used in several checkers. This is done in the following way:
-
-```
-GLOBAL-MACROS {
-
-  LET is_subclass_of(x) =
-        is_class(x) HOLDS-IN-SOME-SUPERCLASS-OF ObjCInterfaceDecl;
-
- };
-```
-
-`GLOBAL-MACROS` is the section of an AL specification where one can define a list of global macros. In the example we are defining the macro `is_subclass(x)` which can now use in checkers instead of its complex definition. It's possible to import library of macros with the following command:
-
-```
-#IMPORT <library.al>
-```
-
-In an AL file, the command above import and make available all the macros defined in the `library.al` file.
 
 **Hint**
 A good way to learn how to write checkers is looking at existing checkers in the file [linters.al](https://github.com/facebook/infer/blob/master/infer/lib/linter_rules/linters.al).
