@@ -22,6 +22,7 @@
 _build_infer
 *.exp.test*
 *.test.dot
+*.test.txt
 duplicates.txt
 *.ast.sh
 *.ast.bdump

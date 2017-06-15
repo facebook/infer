@@ -216,6 +216,8 @@ val debug_exceptions : bool
 val debug_mode : bool
 val dependency_mode : bool
 val developer_mode : bool
+val differential_filter_files : string option
+val differential_filter_set : [`Introduced | `Fixed | `Preexisting ] list
 val disable_checks : string list
 val dotty_cfg_libs : bool
 val dump_duplicate_symbols : bool

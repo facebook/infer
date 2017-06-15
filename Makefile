@@ -60,6 +60,7 @@ endif # BUILD_C_ANALYZERS
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
+	differential_interesting_paths_filter \
   differential_resolve_infer_eradicate_conflict \
   differential_skip_anonymous_class_renamings \
   differential_skip_duplicated_types_on_filenames \

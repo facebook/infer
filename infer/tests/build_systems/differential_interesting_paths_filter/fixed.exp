@@ -1,0 +1,1 @@
+NULL_DEREFERENCE, src/com/example/DiffClass2.java, int DiffClass2.doStuff(), 1, com.example.DiffClass2.doStuff():int.0bd745e5e0ee00c272a09256adbe19d2, com.example.DiffClass2.doStuff():int

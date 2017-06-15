@@ -28,7 +28,8 @@ sig
   end
 end
 
-val do_filter : Differential.t -> FileRenamings.t -> skip_duplicated_types:bool -> Differential.t
+val do_filter : Differential.t -> FileRenamings.t -> skip_duplicated_types:bool ->
+  interesting_paths:SourceFile.t list option -> Differential.t
 
 module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
   val relative_complements :
@@ -41,4 +42,6 @@ module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
     Config.analyzer ->
     (Config.analyzer -> Inferconfig.filters) ->
     Differential.t -> Differential.t
+  val interesting_paths_filter :
+    SourceFile.t list option -> Jsonbug_t.jsonbug list -> Jsonbug_t.jsonbug list
 end

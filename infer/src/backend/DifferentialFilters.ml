@@ -192,11 +192,34 @@ let resolve_infer_eradicate_conflict
     preexisting = filter diff.preexisting;
   }
 
+(* Strip issues whose paths are not among those we're interested in *)
+let interesting_paths_filter (interesting_paths: SourceFile.t list option) =
+  match interesting_paths with
+  | Some (paths: SourceFile.t list) ->
+      let interesting_paths_set =
+        paths
+        |> List.filter_map
+          ~f:(fun p ->
+              if not (SourceFile.is_invalid p) && SourceFile.is_under_project_root p then
+                Some (SourceFile.to_string p)
+              else None)
+        |> String.Set.of_list in
+      fun report ->
+        List.filter
+          ~f:(fun issue -> String.Set.mem interesting_paths_set issue.Jsonbug_t.file) report
+  | None -> Fn.id
+
 let do_filter
     (diff: Differential.t)
     (renamings: FileRenamings.t)
-    ~(skip_duplicated_types: bool): Differential.t =
-  if Config.filtering then (
+    ~(skip_duplicated_types: bool)
+    ~(interesting_paths: SourceFile.t list option): Differential.t =
+  let paths_filter = interesting_paths_filter interesting_paths in
+  let apply_paths_filter_if_needed label issues =
+    if List.exists ~f:(PVariant.(=) label) Config.differential_filter_set then
+      paths_filter issues
+    else issues in
+  let diff' =
     diff
     |> (if Config.equal_analyzer Config.analyzer Config.BiAbduction then
           skip_anonymous_class_renamings
@@ -206,8 +229,13 @@ let do_filter
          else Fn.id)
     |> (if Config.resolve_infer_eradicate_conflict then
           resolve_infer_eradicate_conflict Config.analyzer Inferconfig.create_filters
-        else Fn.id))
-  else diff
+        else Fn.id) in
+  {
+    introduced = apply_paths_filter_if_needed `Introduced diff'.introduced;
+    fixed = apply_paths_filter_if_needed `Fixed diff'.fixed;
+    preexisting = apply_paths_filter_if_needed `Preexisting diff'.preexisting;
+  }
+
 
 module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
   let relative_complements = relative_complements
@@ -216,4 +244,5 @@ module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
   let value_of_qualifier_tag = value_of_qualifier_tag
   let skip_anonymous_class_renamings = skip_anonymous_class_renamings
   let resolve_infer_eradicate_conflict = resolve_infer_eradicate_conflict
+  let interesting_paths_filter = interesting_paths_filter
 end

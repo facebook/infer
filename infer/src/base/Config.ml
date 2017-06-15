@@ -974,6 +974,20 @@ and dependencies =
     "Translate all the dependencies during the capture. The classes in the given jar file will be \
      translated. No sources needed."
 
+and differential_filter_files =
+  CLOpt.mk_string_opt
+    ~long:"differential-filter-files" ~in_help:CLOpt.[Report, manual_generic]
+    "Specify the file containing the list of source files for which a differential report \
+     is desired. Source files should be specified relative to project root or be absolute"
+
+and differential_filter_set =
+  CLOpt.mk_symbol_seq ~long:"differential-filter-set" ~eq:PVariant.(=)
+    "Specify which set of the differential results is filtered with the modified files provided \
+     through the $(b,--differential-modified-files) argument. By default it is applied to all sets \
+     ($(b,introduced), $(b,fixed), and $(b,preexisting))"
+    ~symbols:[("introduced", `Introduced); ("fixed", `Fixed); ("preexisting", `Preexisting)]
+    ~default:[`Introduced; `Fixed; `Preexisting]
+
 and disable_checks =
   CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error name"
     ~in_help:CLOpt.[Report, manual_generic]
@@ -1869,6 +1883,8 @@ and debug_exceptions = !debug_exceptions
 and debug_mode = !debug
 and dependency_mode = !dependencies
 and developer_mode = !developer_mode
+and differential_filter_files = !differential_filter_files
+and differential_filter_set = !differential_filter_set
 and disable_checks = !disable_checks
 and dotty_cfg_libs = !dotty_cfg_libs
 and enable_checks = !enable_checks

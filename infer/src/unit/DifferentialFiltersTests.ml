@@ -514,10 +514,46 @@ let test_resolve_infer_eradicate_conflict =
     ~f:(fun (name, analyzer, expected_output) ->
         name >:: create_test analyzer expected_output)
 
+let test_interesting_paths_filter =
+  let report = [
+    create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:1 ();
+    create_fake_jsonbug
+      ~bug_type:(Localise.to_issue_id Localise.null_dereference) ~file:"file_2.java" ~hash:2 ();
+    create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_4.java" ~hash:4 ();
+  ] in
+  let create_test interesting_paths expected_hashes _ =
+    let filter =
+      DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.interesting_paths_filter
+        interesting_paths in
+    let filtered_report = filter report in
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Bug hash")
+      expected_hashes (sorted_hashes_of_issues filtered_report) in
+  [
+    ("test_interesting_paths_filter_with_none_interesting_paths",
+     None,
+     [1;2;4]);
+    ("test_interesting_paths_filter_with_some_interesting_paths",
+     Some [
+       SourceFile.create ~warn_on_error:false "file_not_existing.java";
+       SourceFile.create ~warn_on_error:false "file_4.java";
+     ],
+     [4]);
+    ("test_interesting_paths_filter_with_some_interesting_paths_that_are_not_in_report",
+     Some [
+       SourceFile.create ~warn_on_error:false "file_not_existing.java";
+       SourceFile.create ~warn_on_error:false "file_whatever.java";
+     ],
+     []);
+  ] |> List.map
+    ~f:(fun (name, interesting_paths, expected_output) ->
+        name >:: create_test interesting_paths expected_output)
+
 let tests = "differential_filters_suite" >:::
             test_file_renamings_from_json @
             test_file_renamings_find_previous @
             test_relative_complements @
             test_skip_anonymous_class_renamings @
             test_resolve_infer_eradicate_conflict @
+            test_interesting_paths_filter @
             [test_skip_duplicated_types_on_filenames; test_value_of_qualifier_tag]
