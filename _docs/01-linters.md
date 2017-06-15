@@ -99,10 +99,22 @@ DEFINE-CHECKER name_of_the_checker = {
      SET suggestion = <optional suggestion to the user>;
      SET severity = INFO | LIKE | ADVICE | WARNING | ERROR; 
      SET mode = ON | OFF 
+     SET whitelist_path = {path1, path2, ..., pathn }
+     SET blacklist_path = {path1, path2, ..., pathn }
   };
 ```
 
 The default severity is `WARNING` and the default mode is `ON`, so these are optional. If the check is `OFF` it will only be available in debug mode (flags `--debug` or `--linters-developer-mode`). `INFOs` are generally also not reported, except with some specialzed flags.
+
+`whitelist_path` and `blacklist_path` are optional, by default the rule is enabled everywhere. For specifying paths, one can use either string constants (`"File.m"`) or regexes (`REGEXP("path/to/.*")`) or variables. The variables stand for any list of paths, and are defined in a separate block:
+
+```bash
+ GLOBAL-PATHS {
+     path1 = {"A.m", REGEXP("path/to/.*")}
+  };
+```
+
+This block can also be created in a separate al file that is imported into the checkers file.
 
 <a name="predicates">**AL Predicates**</a> 
 
