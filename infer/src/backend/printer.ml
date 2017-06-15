@@ -556,7 +556,7 @@ let write_html_file linereader filename procs =
       ~f:(fun err_string ->
           F.fprintf fmt "%s" (create_err_message err_string))
       errors_at_linenum;
-    F.fprintf fmt "%s" "</td></tr>@\n" in
+    F.fprintf fmt "</td></tr>@\n" in
 
   pp_prelude ();
   let global_err_log = Errlog.empty () in
@@ -572,7 +572,7 @@ let write_html_file linereader filename procs =
       print_one_line proof_cover table_nodes_at_linenum table_err_per_line !linenum
     done
   with End_of_file ->
-    (F.fprintf fmt "%s" "</table>@\n";
+    (F.fprintf fmt "</table>@\n";
      Errlog.pp_html filename [fname_encoding] fmt global_err_log;
      Io_infer.Html.close (fd, fmt))
 

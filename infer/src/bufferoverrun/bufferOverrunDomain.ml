@@ -799,6 +799,6 @@ struct
 
   let pp : F.formatter -> t -> unit
     = fun fmt (entry_mem, exit_mem, condition_set) ->
-      F.fprintf fmt "%a@,%a@,%a@"
+      F.fprintf fmt "%a@,%a@,%a@,"
         Mem.pp entry_mem Mem.pp exit_mem ConditionSet.pp condition_set
 end
