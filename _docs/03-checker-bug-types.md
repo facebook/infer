@@ -38,7 +38,7 @@ This error type is reported in Java. It fires when a field is not marked `@Nulla
 ```java
   private List<String> idList;
   public void doSomethingWithIdList() {
-    if (idList = null) { ... }
+    if (idList == null) { ... }
   }
 ```
 
