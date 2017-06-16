@@ -938,10 +938,10 @@ and (
     CLOpt.mk_bool_group ~long:"linters-developer-mode"
       ~in_help:CLOpt.[Capture, manual_clang_linters]
       "Debug mode for developing new linters. (Sets the analyzer to $(b,linters); also sets \
-       $(b,--debug), $(b,--debug-level-linters 2), $(b,--developer-mode), $(b,--print-logs), and \
+       $(b,--debug), $(b,--debug-level-linters 2), $(b,--developer-mode), and \
        unsets $(b,--allowed-failures) and $(b,--default-linters)."
       ~f:(fun debug -> debug_level_linters := if debug then 2 else 0; debug)
-      [debug; developer_mode; print_logs] [failures_allowed; default_linters]
+      [debug; developer_mode] [failures_allowed; default_linters]
 
   in (
     bo_debug,

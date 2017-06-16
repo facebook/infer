@@ -590,6 +590,8 @@ let setup_results_dir () =
 let () =
   if Config.print_builtins then Builtin.print_and_exit ();
   setup_results_dir ();
+  if Config.debug_mode then
+    L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file);
   match Config.command with
   | Analyze ->
       let pp_cluster_opt fmt = function
