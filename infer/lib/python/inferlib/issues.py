@@ -94,12 +94,14 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
                          formatter=colorize.TERMINAL_FORMATTER):
     n_issues = len(reports)
     if n_issues == 0:
+        msg = 'No issues found'
         if formatter == colorize.TERMINAL_FORMATTER:
-            out = colorize.color('  No issues found  ',
+            msg = colorize.color('  %s  ' % msg,
                                  colorize.SUCCESS, formatter)
-            return out + '\n'
-        else:
-            return 'No issues found'
+        if console_out:
+            utils.stderr(msg)
+        return msg
+
 
     text_errors_list = []
     for report in reports[:limit]:
@@ -174,7 +176,6 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
     )
 
     if console_out:
-        utils.stderr('')
         utils.stderr(bug_list)
         utils.stdout(summary)
 
@@ -194,6 +195,7 @@ def print_and_save_errors(infer_out, project_root, json_report, bugs_out,
                           pmd_xml):
     errors = utils.load_json_from_path(json_report)
     errors = [e for e in errors if _is_user_visible(project_root, e)]
+    utils.stderr('')
     _text_of_report_list(project_root, errors, bugs_out, console_out=True,
                          limit=10)
     plain_out = _text_of_report_list(project_root, errors, bugs_out,
