@@ -9,9 +9,9 @@ TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
 ANALYZER = infer
-BUCK_TARGET = //infer/tests/codetoanalyze/java/infer:compile
+BUCK_TARGET = //infer/tests/build_systems/genrule/module2:module2
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
-OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/codetoanalyze/java/infer/lib__compile_compile__output/compile_compile.jar
+OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/build_systems/genrule/module2/lib__module2__output/module2.jar
 INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
 CLEAN_EXTRA = $(ROOT_DIR)/buck-out
 
