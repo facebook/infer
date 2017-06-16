@@ -31,6 +31,25 @@ def gen_instance(*args):
 create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 
+def extract_filepath(parts):
+    if not parts:
+        return ([], None)
+    path = ' '.join(parts)
+    if os.path.isfile(path):
+        return ([], path)
+    remainder, path = extract_filepath(parts[1:])
+    return ([parts[0]] + remainder, path)
+
+
+def normalize(path):
+    # From Javac docs: If a filename contains embedded spaces,
+    # put the whole filename in double quotes
+    quoted_path = path
+    if ' ' in path:
+        quoted_path = '"' + path + '"'
+    return utils.encode(quoted_path)
+
+
 class GradleCapture:
 
     def __init__(self, args, cmd):
@@ -62,11 +81,30 @@ class GradleCapture:
                 javac_arguments = content.split(' ')
                 java_files = []
                 java_args = []
+                collected = []
                 for java_arg in javac_arguments:
-                    if java_arg.endswith('.java'):
-                        java_files.append(java_arg)
-                    else:
+                    if java_arg and java_arg[0] == '-':
+                        # The term item is either a new option or
+                        # a java file (see below)
+                        if collected:
+                            java_args.append(' '.join(collected))
+                            collected = []
+                        # Option don't have spaces
                         java_args.append(java_arg)
+                    else:
+                        collected.append(java_arg)
+                        if java_arg.endswith('.java'):
+                            # We may have the option values before sources
+                            collected, path = extract_filepath(collected)
+                            if path:
+                                java_files.append(path)
+                            if collected:
+                                java_args.append(' '.join(collected))
+                            collected = []
+                if collected:
+                    # We may have the option values at the end
+                    java_args.append(' '.join(collected))
+
                 with tempfile.NamedTemporaryFile(
                         mode='w',
                         suffix='.txt',
@@ -74,7 +112,7 @@ class GradleCapture:
                         dir=os.path.join(self.args.infer_out,
                                          config.JAVAC_FILELISTS_FILENAME),
                         delete=False) as sources:
-                    sources.write('\n'.join(map(utils.encode, java_files)))
+                    sources.write('\n'.join(map(normalize, java_files)))
                     sources.flush()
                     java_args.append('@' + sources.name)
                 capture = jwlib.create_infer_command(java_args)
