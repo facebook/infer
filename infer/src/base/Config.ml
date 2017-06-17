@@ -236,6 +236,7 @@ let whitelisted_cpp_methods = [
   "std::forward";
   "std::min";
   "std::max";
+  "std::swap";
   "google::CheckNotNull";
 ]
 
