@@ -157,23 +157,70 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _ ->
         attributes
 
-  let propagate_attributes lhs_access_path rhs_access_paths attribute_map formal_map =
-    let rhs_attributes =
-      if List.is_empty rhs_access_paths (* only happens when rhs is a constant *)
-      then
-        (* rhs is a constant, and constants are both owned and functional *)
-        Domain.AttributeSetDomain.of_list
-          [Domain.Attribute.unconditionally_owned; Domain.Attribute.Functional]
-      else
-        let propagate_attributes_ acc rhs_access_path =
-          (try Domain.AttributeMapDomain.find rhs_access_path attribute_map
-           with Not_found -> acc)
-          |> add_conditional_ownership_attribute rhs_access_path formal_map attribute_map in
-        List.fold
-          ~f:propagate_attributes_
-          ~init:Domain.AttributeSetDomain.empty
-          rhs_access_paths in
-    Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
+
+  let remove_ownership_attributes attributes =
+    Domain.AttributeSetDomain.filter
+      (function | Domain.Attribute.OwnedIf _ -> false | _ -> true)
+      attributes
+
+  (* propagate attributes from the leaves to the root of an RHS Hil expression.
+     Special casing on ownership. *)
+  let rec attributes_of_expr formal_map attribute_map e =
+    let open HilExp in
+    let open Domain in
+    match e with
+    | Constant _ ->
+        AttributeSetDomain.of_list [Attribute.unconditionally_owned; Attribute.Functional]
+    | AccessPath ap ->
+        begin
+          try AttributeMapDomain.find ap attribute_map
+          with Not_found -> AttributeSetDomain.empty
+        end
+        |> add_conditional_ownership_attribute ap formal_map attribute_map
+    | Exception expr (* treat exceptions as transparent wrt attributes *)
+    | Cast(_, expr) ->
+        attributes_of_expr formal_map attribute_map expr
+    | UnaryOperator(_, expr, _) ->
+        attributes_of_expr formal_map attribute_map expr
+        |> remove_ownership_attributes
+    | BinaryOperator(_, expr1, expr2) ->
+        let attributes1 = attributes_of_expr formal_map attribute_map expr1 in
+        let attributes2 = attributes_of_expr formal_map attribute_map expr2 in
+        AttributeSetDomain.join attributes1 attributes2
+        |> remove_ownership_attributes
+    | Closure _ | Sizeof _ ->
+        AttributeSetDomain.empty
+
+  (* will return true on x.f.g.h when x.f and x.f.g are owned, but not requiring x.f.g.h *)
+  (* must not be called with an empty access list *)
+  let all_prefixes_owned (base, accesses) attribute_map =
+    let but_last_rev = List.rev accesses |> List.tl_exn in
+    let rec aux acc = function
+      | [] -> acc
+      | (_::tail) as all -> aux ((List.rev all)::acc) tail in
+    let prefixes = aux [] but_last_rev in
+    List.for_all ~f:(fun ap -> is_owned (base, ap) attribute_map) prefixes
+
+  let propagate_attributes lhs_access_path rhs_exp attribute_map formal_map =
+    let rhs_attributes = attributes_of_expr formal_map attribute_map rhs_exp in
+    let lhs_root = fst lhs_access_path in
+    let filter_on_globals =
+      (* do not assign ownership to access paths rooted at globals *)
+      if Var.is_global (fst lhs_root)
+      then remove_ownership_attributes else Fn.id
+    in
+    let filter_on_lhs =
+      (* do not assign ownership when lhs is not a single var or
+         a single-field ap whose root is conditionally owned, or,
+         all prefixes are owned *)
+      match snd lhs_access_path with
+      | [] -> Fn.id
+      | [_] when FormalMap.is_formal lhs_root formal_map -> Fn.id
+      | _ when all_prefixes_owned lhs_access_path attribute_map -> Fn.id
+      | _ -> remove_ownership_attributes
+    in
+    let final_attributes = filter_on_globals rhs_attributes |> filter_on_lhs in
+    Domain.AttributeMapDomain.add lhs_access_path final_attributes attribute_map
 
   let propagate_return_attributes ret_opt ret_attributes actuals attribute_map formal_map =
     let open Domain in
@@ -696,8 +743,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               astate.attribute_map
               proc_data in
         let attribute_map =
-          propagate_attributes
-            lhs_access_path (HilExp.get_access_paths rhs_exp) astate.attribute_map extras in
+          propagate_attributes lhs_access_path rhs_exp astate.attribute_map extras in
         { astate with accesses; attribute_map; }
 
     | Assume (assume_exp, _, _, loc) ->
