@@ -1215,11 +1215,16 @@ let report_unsafe_accesses aggregated_access_map =
           (* protected write, do nothing *)
           reported_acc
       | Access.Read, AccessPrecondition.Unprotected _ ->
-          (* unprotected read. report all writes as conflicts *)
+          (* unprotected read. report all writes as conflicts for java *)
+          (* for c++ filter out unprotected writes *)
+          let is_cpp_protected_write pre = match pre with
+            | AccessPrecondition.Unprotected _ -> Typ.Procname.is_java pname
+            | AccessPrecondition.Protected _ -> true in
           let all_writes =
             List.filter
-              ~f:(fun (other_access, _, other_threaded, _, _) ->
-                  TraceElem.is_write other_access && not (threaded && other_threaded))
+              ~f:(fun (other_access, pre, other_threaded, _, _) ->
+                  TraceElem.is_write other_access && not (threaded && other_threaded)
+                  && is_cpp_protected_write pre)
               accesses in
           if List.is_empty all_writes
           then
