@@ -152,80 +152,98 @@ struct
             ~inst_num ~dimension:(dimension + 1) mem
       | _ -> mem
 
-  let declare_symbolic_array
+  let counter_gen init =
+    let num_ref = ref init in
+    let get_num () =
+      let v = !num_ref in
+      num_ref := v + 1;
+      v
+    in
+    get_num
+
+  let declare_symbolic_val
     : Typ.Procname.t -> Tenv.t -> CFG.node -> Loc.t -> Typ.t -> inst_num:int
-    -> sym_num:int -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate * int
-    = fun pname tenv node loc typ ~inst_num ~sym_num ~dimension mem ->
-      let offset = Itv.make_sym pname sym_num in
-      let size = Itv.make_sym pname (sym_num + 2) in
-      let arr =
-        Sem.eval_array_alloc pname node typ offset size inst_num dimension
-      in
-      let elem_val = Dom.Val.make_sym pname (sym_num + 4) in
-      let arr_loc = arr |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc in
-      let mem =
-        mem
-        |> Dom.Mem.add_heap loc arr
-        |> Dom.Mem.strong_update_heap arr_loc elem_val
-      in
-      let decl_fld (mem, sym_num) (fn, typ, _) =
-        let loc =
-          mem |> Dom.Mem.find_heap loc |> Dom.Val.get_array_locs |> PowLoc.choose
+    -> new_sym_num: (unit -> int) -> Domain.t -> Domain.t
+    = fun pname tenv node loc typ ~inst_num ~new_sym_num mem ->
+      let max_depth = 2 in
+      let new_alloc_num = counter_gen 1 in
+      let rec decl_sym_fld ~depth loc typ mem =
+        if depth > max_depth then mem else
+          let depth = depth + 1 in
+          match typ.Typ.desc with
+          | Typ.Tint ikind ->
+              let unsigned = Typ.ikind_is_unsigned ikind in
+              let sym_num = new_sym_num () in
+              let _ = new_sym_num () in
+              let v = Dom.Val.make_sym ~unsigned pname sym_num in
+              Dom.Mem.add_heap loc v mem
+          | Typ.Tfloat _ ->
+              let sym_num = new_sym_num () in
+              let _ = new_sym_num () in
+              let v = Dom.Val.make_sym pname sym_num in
+              Dom.Mem.add_heap loc v mem
+          | Typ.Tptr (typ, _) ->
+              decl_sym_arr ~depth loc typ mem
+          | Typ.Tarray (typ, opt_int_lit, _) ->
+              let opt_size = Option.map ~f:Itv.of_int_lit opt_int_lit in
+              let opt_offset = Some Itv.zero in
+              decl_sym_arr ~depth loc typ ~opt_offset ~opt_size mem
+          | Typ.Tstruct typename ->
+              let decl_fld mem (fn, typ, _) =
+                let loc_fld = Loc.append_field loc fn in
+                decl_sym_fld ~depth loc_fld typ mem
+              in
+              let decl_flds str =
+                List.fold ~f:decl_fld ~init:mem str.Typ.Struct.fields
+              in
+              let opt_struct = Tenv.lookup tenv typename in
+              Option.value_map opt_struct ~default:mem ~f:decl_flds
+          | _ ->
+              if Config.bo_debug >= 3 then
+                L.(debug BufferOverrun Verbose) "/!\\ decl_fld of unhandled type: %a at %a@."
+                  (Typ.pp Pp.text) typ
+                  Location.pp (CFG.loc node);
+              mem
+
+      and decl_sym_arr ~depth loc typ ?(opt_offset=None) ?(opt_size=None) mem =
+        let option_value opt_x default_f =
+          match opt_x with
+          | Some x -> x
+          | None -> default_f ()
         in
-        let field = Loc.append_field loc fn in
-        match typ.Typ.desc with
-        | Typ.Tint ikind ->
-            let unsigned = Typ.ikind_is_unsigned ikind in
-            let v = Dom.Val.make_sym ~unsigned pname sym_num in
-            (Dom.Mem.add_heap field v mem, sym_num + 2)
-        | Typ.Tfloat _ ->
-            let v = Dom.Val.make_sym pname sym_num in
-            (Dom.Mem.add_heap field v mem, sym_num + 2)
-        | Typ.Tptr (typ, _) ->
-            let offset = Itv.make_sym pname sym_num in
-            let size = Itv.make_sym pname (sym_num + 2) in
-            let v =
-              Sem.eval_array_alloc pname node typ offset size inst_num dimension
-            in
-            (Dom.Mem.add_heap field v mem, sym_num + 4)
-        | _ ->
-            L.(debug BufferOverrun Verbose) "/!\\ decl_fld of unhandled type: %a at %a@."
-              (Typ.pp Pp.text) typ
-              Location.pp (CFG.loc node);
-            (mem, sym_num)
+        let itv_make_sym () =
+          let sym_num = new_sym_num () in
+          let _ = new_sym_num () in
+          Itv.make_sym pname sym_num
+        in
+        let offset = option_value opt_offset itv_make_sym in
+        let size = option_value opt_size itv_make_sym in
+        let alloc_num = new_alloc_num () in
+        let arr =
+          Sem.eval_array_alloc pname node typ offset size inst_num alloc_num
+        in
+        let mem = Dom.Mem.add_heap loc arr mem in
+        let deref_loc =
+          Loc.of_allocsite (Sem.get_allocsite pname node inst_num alloc_num)
+        in
+        decl_sym_fld ~depth deref_loc typ mem
       in
-      match typ.Typ.desc with
-      | Typ.Tstruct typename ->
-          (match Tenv.lookup tenv typename with
-           | Some str ->
-               List.fold ~f:decl_fld ~init:(mem, sym_num + 6) str.Typ.Struct.fields
-           | _ -> (mem, sym_num + 6))
-      | _ -> (mem, sym_num + 6)
+      decl_sym_fld ~depth:0 loc typ mem
 
   let declare_symbolic_parameter
     : Procdesc.t -> Tenv.t -> CFG.node -> int -> Dom.Mem.astate -> Dom.Mem.astate
     = fun pdesc tenv node inst_num mem ->
       let pname = Procdesc.get_proc_name pdesc in
-      let add_formal (mem, inst_num, sym_num) (pvar, typ) =
-        match typ.Typ.desc with
-        | Typ.Tint ikind ->
-            let unsigned = Typ.ikind_is_unsigned ikind in
-            let v = Dom.Val.make_sym ~unsigned pname sym_num in
-            let mem = Dom.Mem.add_heap (Loc.of_pvar pvar) v mem in
-            (mem, inst_num + 1, sym_num + 2)
-        | Typ.Tptr (typ, _) ->
-            let (mem, sym_num) =
-              declare_symbolic_array pname tenv node (Loc.of_pvar pvar) typ
-                ~inst_num ~sym_num ~dimension:1 mem
-            in
-            (mem, inst_num + 1, sym_num)
-        | _ ->
-            L.(debug BufferOverrun Verbose) "declare_symbolic_parameter of unhandled type: %a@."
-              (Typ.pp Pp.text) typ;
-            (mem, inst_num, sym_num) (* TODO: add other cases if necessary *)
+      let new_sym_num = counter_gen 0 in
+      let add_formal (mem, inst_num) (pvar, typ) =
+        let loc = Loc.of_pvar pvar in
+        let mem =
+          declare_symbolic_val pname tenv node loc typ ~inst_num ~new_sym_num mem
+        in
+        (mem, inst_num + 1)
       in
-      List.fold ~f:add_formal ~init:(mem, inst_num, 0) (Sem.get_formals pdesc)
-      |> fst3
+      List.fold ~f:add_formal ~init:(mem, inst_num) (Sem.get_formals pdesc)
+      |> fst
 
   let instantiate_ret ret callee_pname callee_exit_mem subst_map mem =
     match ret with
@@ -365,15 +383,17 @@ struct
         | Exp.Var _ ->
             let arr = Sem.eval exp mem loc |> Dom.Val.get_array_blk in
             Some (arr, Itv.zero, true)
-        | Exp.Lindex (e1, e2)
-        | Exp.BinOp (Binop.PlusA, e1, e2) ->
-            let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
+        | Exp.Lindex (e1, e2) ->
+            let locs = Sem.eval_locs e1 mem loc |> Dom.Val.get_all_locs in
+            let arr = Dom.Mem.find_set locs mem |> Dom.Val.get_array_blk in
             let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
             Some (arr, idx, true)
-        | Exp.BinOp (Binop.MinusA, e1, e2) ->
+        | Exp.BinOp (Binop.PlusA as bop, e1, e2)
+        | Exp.BinOp (Binop.MinusA as bop, e1, e2) ->
             let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
             let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
-            Some (arr, idx, false)
+            let is_plus = Binop.equal bop Binop.PlusA in
+            Some (arr, idx, is_plus)
         | _ -> None
       in
       match array_access with

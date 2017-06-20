@@ -621,6 +621,10 @@ struct
   let find_heap_set : PowLoc.t -> t -> Val.t
     = fun k m -> Heap.find_set k m.heap
 
+  let find_set : PowLoc.t -> t -> Val.t
+    = fun k m ->
+      Val.join (find_stack_set k m) (find_heap_set k m)
+
   let find_alias : Ident.t -> t -> Pvar.t option
     = fun k m -> Alias.find k m.alias
 
@@ -710,6 +714,10 @@ module Mem = struct
   let find_heap_set : PowLoc.t -> t -> Val.t
     = fun k ->
       f_lift_default Val.bot (MemReach.find_heap_set k)
+
+  let find_set : PowLoc.t -> t -> Val.t
+    = fun k ->
+      f_lift_default Val.bot (MemReach.find_set k)
 
   let find_alias : Ident.t -> t -> Pvar.t option
     = fun k ->

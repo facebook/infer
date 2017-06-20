@@ -879,7 +879,9 @@ let ub : t -> Bound.t
 let of_int : int -> astate
   = fun n -> NonBottom (ItvPure.of_int n)
 
-let of_int_lit n = of_int (IntLit.to_int n)
+let of_int_lit n =
+  try of_int (IntLit.to_int n) with
+  | _ -> top
 
 let is_bot : t -> bool
   = fun x -> equal x Bottom
