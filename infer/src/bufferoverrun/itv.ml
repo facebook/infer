@@ -547,21 +547,27 @@ struct
 
   let of_int n = of_bound (Bound.of_int n)
 
+  let of_int_lit : IntLit.t -> t option
+    = fun s ->
+      match IntLit.to_int s with
+      | size -> Some (of_int size)
+      | exception _ -> None
+
   let get_new_sym : Typ.Procname.t -> t
     = fun pname ->
       let lower = Bound.of_sym (SymLinear.get_new pname) in
       let upper = Bound.of_sym (SymLinear.get_new pname) in
       (lower, upper)
 
-  let make_sym : unsigned:bool -> Typ.Procname.t -> int -> t
-    = fun ~unsigned pname i ->
+  let make_sym : unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t
+    = fun ~unsigned pname new_sym_num ->
       let lower =
         if unsigned then
-          Bound.MinMax (Bound.Max, 0, Symbol.make pname i)
+          Bound.MinMax (Bound.Max, 0, Symbol.make pname (new_sym_num ()))
         else
-          Bound.of_sym (SymLinear.make pname i)
+          Bound.of_sym (SymLinear.make pname (new_sym_num ()))
       in
-      let upper = Bound.of_sym (SymLinear.make pname (i+1)) in
+      let upper = Bound.of_sym (SymLinear.make pname (new_sym_num ())) in
       (lower, upper)
 
   let m1_255 = (Bound.minus_one, Bound._255)
@@ -970,8 +976,8 @@ let minus : t -> t -> t
 let get_new_sym : Typ.Procname.t -> t
   = fun pname -> NonBottom (ItvPure.get_new_sym pname)
 
-let make_sym : ?unsigned:bool -> Typ.Procname.t -> int -> t
-  = fun ?(unsigned=false) pname i -> NonBottom (ItvPure.make_sym ~unsigned pname i)
+let make_sym : ?unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t
+  = fun ?(unsigned=false) pname new_sym_num -> NonBottom (ItvPure.make_sym ~unsigned pname new_sym_num)
 
 let neg : t -> t
   = lift1 ItvPure.neg

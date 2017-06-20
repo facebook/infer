@@ -162,25 +162,21 @@ struct
     get_num
 
   let declare_symbolic_val
-    : Typ.Procname.t -> Tenv.t -> CFG.node -> Loc.t -> Typ.t -> inst_num:int
-    -> new_sym_num: (unit -> int) -> Domain.t -> Domain.t
+    : Typ.Procname.t -> Tenv.t -> CFG.node -> Loc.t -> Typ.typ
+      -> inst_num:int -> new_sym_num: (unit -> int) -> Domain.t -> Domain.t
     = fun pname tenv node loc typ ~inst_num ~new_sym_num mem ->
       let max_depth = 2 in
       let new_alloc_num = counter_gen 1 in
-      let rec decl_sym_fld ~depth loc typ mem =
+      let rec decl_sym_val ~depth loc typ mem =
         if depth > max_depth then mem else
           let depth = depth + 1 in
           match typ.Typ.desc with
           | Typ.Tint ikind ->
               let unsigned = Typ.ikind_is_unsigned ikind in
-              let sym_num = new_sym_num () in
-              let _ = new_sym_num () in
-              let v = Dom.Val.make_sym ~unsigned pname sym_num in
+              let v = Dom.Val.make_sym ~unsigned pname new_sym_num in
               Dom.Mem.add_heap loc v mem
           | Typ.Tfloat _ ->
-              let sym_num = new_sym_num () in
-              let _ = new_sym_num () in
-              let v = Dom.Val.make_sym pname sym_num in
+              let v = Dom.Val.make_sym pname new_sym_num in
               Dom.Mem.add_heap loc v mem
           | Typ.Tptr (typ, _) ->
               decl_sym_arr ~depth loc typ mem
@@ -191,7 +187,7 @@ struct
           | Typ.Tstruct typename ->
               let decl_fld mem (fn, typ, _) =
                 let loc_fld = Loc.append_field loc fn in
-                decl_sym_fld ~depth loc_fld typ mem
+                decl_sym_val ~depth loc_fld typ mem
               in
               let decl_flds str =
                 List.fold ~f:decl_fld ~init:mem str.Typ.Struct.fields
@@ -211,11 +207,7 @@ struct
           | Some x -> x
           | None -> default_f ()
         in
-        let itv_make_sym () =
-          let sym_num = new_sym_num () in
-          let _ = new_sym_num () in
-          Itv.make_sym pname sym_num
-        in
+        let itv_make_sym () = Itv.make_sym pname new_sym_num in
         let offset = option_value opt_offset itv_make_sym in
         let size = option_value opt_size itv_make_sym in
         let alloc_num = new_alloc_num () in
@@ -226,9 +218,9 @@ struct
         let deref_loc =
           Loc.of_allocsite (Sem.get_allocsite pname node inst_num alloc_num)
         in
-        decl_sym_fld ~depth deref_loc typ mem
+        decl_sym_val ~depth deref_loc typ mem
       in
-      decl_sym_fld ~depth:0 loc typ mem
+      decl_sym_val ~depth:0 loc typ mem
 
   let declare_symbolic_parameter
     : Procdesc.t -> Tenv.t -> CFG.node -> int -> Dom.Mem.astate -> Dom.Mem.astate

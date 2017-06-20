@@ -274,9 +274,9 @@ struct
   let modify_itv : Itv.t -> t -> t
     = fun i x -> { x with itv = i }
 
-  let make_sym : ?unsigned:bool -> Typ.Procname.t -> int -> t
-    = fun ?(unsigned=false) pname i ->
-      { bot with itv = Itv.make_sym ~unsigned pname i }
+  let make_sym : ?unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t
+    = fun ?(unsigned=false) pname new_sym_num ->
+      { bot with itv = Itv.make_sym ~unsigned pname new_sym_num }
 
   let unknown_bit : t -> t
     = fun x -> { x with itv = Itv.top }
