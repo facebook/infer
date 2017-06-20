@@ -12,14 +12,26 @@ void modulo_signed_Bad(int i) {
   arr[i % 5] = 123;
 }
 
-void modulo_signed_Good_FP(int i) {
+void modulo_signed_Good(int i) {
   char arr[5];
   if (i >= 0) {
     arr[i % 5] = 123;
   }
 }
 
-void modulo_signed_Good2_FP(int i) {
+void modulo_signed_neg_Bad(int i) {
+  char arr[5];
+  arr[i % -5] = 123;
+}
+
+void modulo_signed_neg_Good(int i) {
+  char arr[5];
+  if (i >= 0) {
+    arr[i % -5] = 123;
+  }
+}
+
+void modulo_signed_Good2(int i) {
   char arr[5];
   int j = i % 5;
   if (j >= 0) {

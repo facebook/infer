@@ -592,6 +592,14 @@ struct
   let is_symbolic : t -> bool
     = fun (lb, ub) -> Bound.is_symbolic lb || Bound.is_symbolic ub
 
+  let is_ge_zero : t -> bool
+    = fun (lb, _) ->
+      if lb <> Bound.Bot then Bound.le Bound.zero lb else false
+
+  let is_le_zero : t -> bool
+    = fun (_, ub) ->
+      if ub <> Bound.Bot then Bound.le ub Bound.zero else false
+
   let neg : t -> t
     = fun (l, u) ->
       let l' = Option.value ~default:Bound.MInf (Bound.neg u) in
@@ -653,8 +661,13 @@ struct
   let mod_sem : t -> t -> t
     = fun x y ->
       match is_const x, is_const y with
-      | Some n, Some m -> if Int.equal m 0 then x else of_int (n mod m)
-      | _, Some m -> (Bound.of_int (-m), Bound.of_int m)
+      | _, Some 0 -> x
+      | Some n, Some m -> of_int (n mod m)
+      | _, Some m ->
+          let abs_m = abs m in
+          if is_ge_zero x then (Bound.zero, Bound.of_int (abs_m - 1)) else
+          if is_le_zero x then (Bound.of_int (-abs_m + 1), Bound.zero) else
+            (Bound.of_int (-abs_m + 1), Bound.of_int (abs_m - 1))
       | _, None -> top
 
   (* x << [-1,-1] does nothing. *)
