@@ -313,8 +313,11 @@ struct
         | Load (id, exp, _, loc) ->
             let locs = Sem.eval exp mem loc |> Dom.Val.get_all_locs in
             let v = Dom.Mem.find_heap_set locs mem in
-            Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) v mem
-            |> Dom.Mem.load_alias id exp
+            if Ident.is_none id then
+              mem
+            else
+              Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) v mem
+              |> Dom.Mem.load_alias id exp
         | Store (exp1, _, exp2, loc) ->
             let locs = Sem.eval exp1 mem loc |> Dom.Val.get_all_locs in
             Dom.Mem.update_mem locs (Sem.eval exp2 mem loc) mem
