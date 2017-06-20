@@ -174,7 +174,10 @@ struct
         in
         let field = Loc.append_field loc fn in
         match typ.Typ.desc with
-        | Typ.Tint _
+        | Typ.Tint ikind ->
+            let unsigned = Typ.ikind_is_unsigned ikind in
+            let v = Dom.Val.make_sym ~unsigned pname sym_num in
+            (Dom.Mem.add_heap field v mem, sym_num + 2)
         | Typ.Tfloat _ ->
             let v = Dom.Val.make_sym pname sym_num in
             (Dom.Mem.add_heap field v mem, sym_num + 2)
@@ -205,8 +208,9 @@ struct
       let pname = Procdesc.get_proc_name pdesc in
       let add_formal (mem, inst_num, sym_num) (pvar, typ) =
         match typ.Typ.desc with
-        | Typ.Tint _ ->
-            let v = Dom.Val.make_sym pname sym_num in
+        | Typ.Tint ikind ->
+            let unsigned = Typ.ikind_is_unsigned ikind in
+            let v = Dom.Val.make_sym ~unsigned pname sym_num in
             let mem = Dom.Mem.add_heap (Loc.of_pvar pvar) v mem in
             (mem, inst_num + 1, sym_num + 2)
         | Typ.Tptr (typ, _) ->

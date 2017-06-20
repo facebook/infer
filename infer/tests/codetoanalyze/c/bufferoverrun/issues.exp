@@ -1,6 +1,5 @@
 codetoanalyze/c/bufferoverrun/arith.c, modulo_signed_Bad, 2, BUFFER_OVERRUN, [Offset: [-4, 4] Size: [5, 5]]
 codetoanalyze/c/bufferoverrun/arith.c, modulo_signed_neg_Bad, 2, BUFFER_OVERRUN, [Offset: [-4, 4] Size: [5, 5]]
-codetoanalyze/c/bufferoverrun/arith.c, modulo_unsigned_Good_FP, 2, BUFFER_OVERRUN, [Offset: [-4, 4] Size: [5, 5]]
 codetoanalyze/c/bufferoverrun/array_dynlength.c, init_variable_array, 3, BUFFER_OVERRUN, [Offset: [3xs$0 + 1, 3xs$1 + 1] Size: [3xs$0 + 1, 3xs$1 + 1]]
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 4, CONDITION_ALWAYS_TRUE, []
 codetoanalyze/c/bufferoverrun/break_continue_return.c, break_continue_return, 13, CONDITION_ALWAYS_TRUE, []

@@ -405,6 +405,8 @@ struct
             if Int.equal coeff 1
             then Itv.SubstMap.add symbol actual map
             else assert false
+        | Itv.Bound.MinMax (Itv.Bound.Max, 0, symbol) ->
+            Itv.SubstMap.add symbol actual map
         | _ -> assert false
       in
       List.fold ~f:add_pair ~init:Itv.SubstMap.empty pairs

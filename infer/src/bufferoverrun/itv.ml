@@ -553,9 +553,14 @@ struct
       let upper = Bound.of_sym (SymLinear.get_new pname) in
       (lower, upper)
 
-  let make_sym : Typ.Procname.t -> int -> t
-    = fun pname i ->
-      let lower = Bound.of_sym (SymLinear.make pname i) in
+  let make_sym : unsigned:bool -> Typ.Procname.t -> int -> t
+    = fun ~unsigned pname i ->
+      let lower =
+        if unsigned then
+          Bound.MinMax (Bound.Max, 0, Symbol.make pname i)
+        else
+          Bound.of_sym (SymLinear.make pname i)
+      in
       let upper = Bound.of_sym (SymLinear.make pname (i+1)) in
       (lower, upper)
 
@@ -963,8 +968,8 @@ let minus : t -> t -> t
 let get_new_sym : Typ.Procname.t -> t
   = fun pname -> NonBottom (ItvPure.get_new_sym pname)
 
-let make_sym : Typ.Procname.t -> int -> t
-  = fun pname i -> NonBottom (ItvPure.make_sym pname i)
+let make_sym : ?unsigned:bool -> Typ.Procname.t -> int -> t
+  = fun ?(unsigned=false) pname i -> NonBottom (ItvPure.make_sym ~unsigned pname i)
 
 let neg : t -> t
   = lift1 ItvPure.neg

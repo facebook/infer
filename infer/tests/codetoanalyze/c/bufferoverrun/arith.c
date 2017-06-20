@@ -39,7 +39,7 @@ void modulo_signed_Good2(int i) {
   }
 }
 
-void modulo_unsigned_Good_FP(unsigned int i) {
+void modulo_unsigned_Good(unsigned int i) {
   char arr[5];
   arr[i % 5] = 123;
 }
