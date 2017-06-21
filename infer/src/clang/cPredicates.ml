@@ -20,12 +20,12 @@ let get_available_attr_ios_sdk an =
   let rec get_available_attr attrs =
     match attrs with
     | [] -> None
-    | AvailabilityAttr attr_info :: _ ->
+    | AvailabilityAttr attr_info :: rest ->
         (match attr_info.ai_parameters with
          | "ios" :: version :: _ ->
              Some (String.Search_pattern.replace_all
                      (String.Search_pattern.create "_") ~in_:version ~with_:".")
-         | _ -> None)
+         | _ -> get_available_attr rest)
     | _ :: rest -> get_available_attr rest in
   match an with
   | Ctl_parser_types.Decl decl ->
