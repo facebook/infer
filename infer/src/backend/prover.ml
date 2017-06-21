@@ -632,6 +632,12 @@ let check_disequal tenv prop e1 e2 =
     | Exp.BinOp (Binop.Mult, Exp.Sizeof _, e21), Exp.Const (Const.Cint n)
     | Exp.BinOp (Binop.Mult, e21, Exp.Sizeof _), Exp.Const (Const.Cint n) ->
         IntLit.iszero n && not (Exp.is_zero e21)
+    | Exp.Lvar pv0, Exp.Lvar pv1 ->
+        (* Addresses of any two local vars must be different *)
+        not (Pvar.equal pv0 pv1)
+    | Exp.Lvar _, Exp.Var id | Exp.Var id, Exp.Lvar _ ->
+        (* Address of any local var must be different from the value of any footprint var *)
+        Ident.is_footprint id
     | _, _ -> false in
   let ineq = lazy (Inequalities.from_prop tenv prop) in
   let check_pi_implies_disequal e1 e2 =
