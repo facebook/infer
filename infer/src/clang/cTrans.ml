@@ -1206,13 +1206,27 @@ struct
       extract_exp_from_list el
         "@\nWARNING: Missing expression for Conditional operator. Need to be fixed" in
     (* this function translate cond without doing shortcircuit *)
-    let no_short_circuit_cond () =
+    let no_short_circuit_cond ~is_cmp =
       L.(debug Capture Verbose) " No short-circuit condition@\n";
       let res_trans_cond =
         if is_null_stmt cond then {
           empty_res_trans with exps = [(Exp.Const (Const.Cint IntLit.one), Typ.mk (Tint Typ.IBool))]
         }
         (* Assumption: If it's a null_stmt, it is a loop with no bound, so we set condition to 1 *)
+        else
+        if is_cmp then
+          let open Clang_ast_t in
+          (* If we have a comparision here, do not dispatch it to `instruction` function, which
+           * invokes binaryOperator_trans_with_cond -> conditionalOperator_trans -> cond_trans.
+           * This will throw the translation process into an infinite loop immediately.
+           * Instead, dispatch to binaryOperator_trans directly. *)
+          (* If one wants to add a new kind of `BinaryOperator` that will have the same behavior,
+           * she need to change both the codes here and the `match` in
+           * binaryOperator_trans_with_cond *)
+          match cond with
+          | BinaryOperator (si, ss, ei, boi) ->
+              binaryOperator_trans trans_state boi si ei ss
+          | _ -> instruction trans_state cond
         else
           instruction trans_state cond in
       let e', instrs' =
@@ -1276,10 +1290,12 @@ struct
         (match boi.Clang_ast_t.boi_kind with
          | `LAnd -> short_circuit (Binop.LAnd) s1 s2
          | `LOr -> short_circuit (Binop.LOr) s1 s2
-         | _ -> no_short_circuit_cond ())
+         | `LT | `GT | `LE | `GE | `EQ | `NE ->
+             no_short_circuit_cond ~is_cmp:true
+         | _ -> no_short_circuit_cond ~is_cmp:false)
     | ParenExpr(_,[s], _) -> (* condition can be wrapped in parenthesys *)
         cond_trans trans_state s
-    | _ -> no_short_circuit_cond ()
+    | _ -> no_short_circuit_cond ~is_cmp:false
 
   and declStmt_in_condition_trans trans_state decl_stmt res_trans_cond =
     match decl_stmt with
@@ -2370,19 +2386,17 @@ struct
     let trans_state' = { trans_state with obj_bridged_cast_typ = Some typ } in
     instruction trans_state' stmt
 
-  and binaryOperator_trans_shortc trans_state stmt_info stmt_list expr_info binary_operator_info =
+  and binaryOperator_trans_with_cond trans_state stmt_info stmt_list expr_info binop_info =
     let open Clang_ast_t in
-    match binary_operator_info.boi_kind with
-    | `LAnd | `LOr  ->
-        (* For LAnd/LOr we compiles a binary expression bo into an semantic equivalent
-           conditional operator 'bo ? 1:0'.
+    match binop_info.boi_kind with
+    | `LAnd | `LOr | `LT | `GT | `LE | `GE | `EQ | `NE ->
+        (* For LAnd/LOr/comparison operators we compiles a binary expression bo into an semantic
+           equivalent conditional operator 'bo ? 1:0'.
            The conditional operator takes care of shortcircuit when/where needed *)
-        let bo = BinaryOperator (stmt_info, stmt_list, expr_info, binary_operator_info) in
-        let stmt_list' =
-          [bo; Ast_expressions.create_integer_literal "1"; Ast_expressions.create_integer_literal "0"] in
-        conditionalOperator_trans trans_state stmt_info stmt_list' expr_info
-    | _  -> binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list
-
+        let bo = BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) in
+        let cond = Ast_expressions.trans_with_conditional stmt_info expr_info [bo] in
+        instruction trans_state cond
+    | _  -> binaryOperator_trans trans_state binop_info stmt_info expr_info stmt_list
   and attributedStmt_trans trans_state stmts attrs =
     let open Clang_ast_t in
     match stmts, attrs with
@@ -2416,8 +2430,8 @@ struct
     | ArraySubscriptExpr(_, stmt_list, expr_info) ->
         arraySubscriptExpr_trans trans_state expr_info stmt_list
 
-    | BinaryOperator (stmt_info, stmt_list, expr_info, binary_operator_info) ->
-        binaryOperator_trans_shortc trans_state stmt_info stmt_list expr_info binary_operator_info
+    | BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) ->
+        binaryOperator_trans_with_cond trans_state stmt_info stmt_list expr_info binop_info
 
     | CallExpr(stmt_info, stmt_list, ei) ->
         (match is_dispatch_function stmt_list with

@@ -60,6 +60,9 @@ val translate_dispatch_function : stmt_info -> stmt list -> int -> stmt
 val translate_block_enumerate : string ->  stmt_info  -> stmt list -> expr_info ->
   stmt * (string * Clang_ast_t.pointer * qual_type) list
 
-(* We translate the logical negation of an integer with a conditional*)
+(* We translate an expression with a conditional*)
+(* x <=> x?1:0 *)
+val trans_with_conditional : stmt_info -> expr_info -> stmt list -> stmt
+(* We translate the logical negation of an expression with a conditional*)
 (* !x <=> x?0:1 *)
 val trans_negation_with_conditional : stmt_info -> expr_info -> stmt list -> stmt
