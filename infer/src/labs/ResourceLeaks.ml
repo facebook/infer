@@ -55,12 +55,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match instr with
     | Call (_return_opt, Direct callee_procname, _actuals, _, _loc) ->
         (* function call [return_opt] := invoke [callee_procname]([actuals]) *)
-        (* (1)(b) *)
+        (* 1(e) *)
         let astate' =
           if acquires_resource callee_procname tenv
-          then astate + 1 (* 3(a) *)
+          then astate + 1 (* 2(a) *)
           else if releases_resource callee_procname tenv
-          then astate - 1 (* 3(a) *)
+          then astate - 1 (* 2(a) *)
           else astate in
         begin
           match Summary.read_summary pdesc callee_procname with
@@ -96,7 +96,7 @@ module Analyzer =
 let checker { Callbacks.summary; proc_desc; tenv; } : Specs.summary =
   (* Report an error when we have acquired more resources than we have released *)
   let report leak_count (proc_data : extras ProcData.t) =
-    if leak_count > 0 (* 3(a) *)
+    if leak_count > 0 (* 2(a) *)
     then
       let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_data.pdesc) in
       let issue_kind = Localise.to_issue_id Localise.resource_leak in
@@ -113,7 +113,7 @@ let checker { Callbacks.summary; proc_desc; tenv; } : Specs.summary =
   let initial = ResourceLeakDomain.initial, IdAccessPathMapDomain.empty in
   match Analyzer.compute_post proc_data ~initial ~debug:false with
   | Some (post, _) ->
-      (* 1(c) *)
+      (* 1(f) *)
       report post proc_data;
       Summary.update_summary (convert_to_summary post) summary
   | None ->

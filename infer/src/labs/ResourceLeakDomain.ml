@@ -14,7 +14,7 @@ module L = Logging
 
 (* Extremely simple abstraction of resources: count the number of acquired resources. If there's
    not a corresponding number of releases, there may be a leak. *)
-type astate = int (* 3(a) *)
+type astate = int (* 2(a) *)
 
 (* For now, type of abstract state and summary are the same *)
 type summary = astate (* 4(a) *)
