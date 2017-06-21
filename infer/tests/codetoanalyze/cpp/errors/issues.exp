@@ -19,6 +19,7 @@ codetoanalyze/cpp/errors/memory_leaks/raii_malloc.cpp, memory_leak, 0, MEMORY_LE
 codetoanalyze/cpp/errors/models/move.cpp, move::div0_moved_from, 3, DIVIDE_BY_ZERO, [start of procedure move::div0_moved_from(),start of procedure X,return from a call to move::X_X,start of procedure X,return from a call to move::X_X]
 codetoanalyze/cpp/errors/models/move.cpp, move::div0_moved_to, 3, DIVIDE_BY_ZERO, [start of procedure move::div0_moved_to(),start of procedure X,return from a call to move::X_X,start of procedure X,return from a call to move::X_X]
 codetoanalyze/cpp/errors/models/swap.cpp, swap_null_bad, 4, NULL_DEREFERENCE, [start of procedure swap_null_bad()]
+codetoanalyze/cpp/errors/models/throw_wrapper.cpp, nothrow_if_null_bad, 4, NULL_DEREFERENCE, [start of procedure nothrow_if_null_bad(),start of procedure get_null(),return from a call to get_null,Condition is true,start of procedure do_nothing(),return from a call to do_nothing]
 codetoanalyze/cpp/errors/mutex/std_mutex.cpp, alarm1, 2, DOUBLE_LOCK, [start of procedure alarm1()]
 codetoanalyze/cpp/errors/mutex/std_mutex.cpp, alarm2, 2, DOUBLE_LOCK, [start of procedure alarm2()]
 codetoanalyze/cpp/errors/mutex/std_mutex.cpp, alarm2, 2, DOUBLE_LOCK, [start of procedure alarm2()]
