@@ -157,8 +157,6 @@ let string_to_issue_mode m =
       L.internal_error "@\n[ERROR] Mode %s does not exist. Please specify ON/OFF@\n" s;
       assert false
 
-let string_to_path path = Some path
-
 (** Convert a parsed checker in list of linters *)
 let create_parsed_linters linters_def_file checkers : linter list =
   let open CIssue in
