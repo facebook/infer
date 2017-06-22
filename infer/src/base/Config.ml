@@ -1509,10 +1509,11 @@ and specs_library =
         if Filename.is_relative path then
           failwith ("Failing because path " ^ path ^ " is not absolute") in
       match Utils.read_file (resolve fname) with
-      | Some pathlist ->
+      | Ok pathlist ->
           List.iter ~f:validate_path pathlist;
           pathlist
-      | None -> failwith ("cannot read file " ^ fname ^ " from cwd " ^ (Sys.getcwd ()))
+      | Error error ->
+          failwithf "cannot read file '%s' from cwd '%s': %s" fname (Sys.getcwd ()) error
     in
     (* Add the newline-separated directories listed in <file> to the list of directories to be
        searched for .spec files *)

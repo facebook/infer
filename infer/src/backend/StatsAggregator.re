@@ -71,8 +71,8 @@ let load_data_from_infer_deps file => {
   let lines = Utils.read_file file;
   try (
     switch lines {
-    | Some l => Ok (List.map f::extract_target_and_path l)
-    | None => raise (Failure ("Error reading '" ^ file ^ "'"))
+    | Ok l => Ok (List.map f::extract_target_and_path l)
+    | Error error => raise (Failure (Printf.sprintf "Error reading '%s': %s" file error))
     }
   ) {
   | Failure msg => Error msg

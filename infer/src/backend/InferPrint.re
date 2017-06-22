@@ -1026,7 +1026,7 @@ let pp_summary_by_report_kind
 
 let pp_json_report_by_report_kind formats_by_report_kind fname =>
   switch (Utils.read_file fname) {
-  | Some report_lines =>
+  | Ok report_lines =>
     let pp_json_issues format_list report => {
       let pp_json_issue (format_kind, outf: Utils.outfile) =>
         switch format_kind {
@@ -1048,7 +1048,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =>
       | _ => ()
       };
     List.iter f::pp_report_by_report_kind formats_by_report_kind
-  | None => failwithf "Error reading %s. Does the file exist?" fname
+  | Error error => failwithf "Error reading '%s': %s" fname error
   };
 
 let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log => {

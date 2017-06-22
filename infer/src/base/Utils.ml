@@ -38,10 +38,10 @@ let read_file fname =
   with
   | End_of_file ->
       cleanup ();
-      Some (List.rev !res)
-  | Sys_error _ ->
+      Ok (List.rev !res)
+  | Sys_error error ->
       cleanup ();
-      None
+      Error error
 
 (** copy a source file, return the number of lines, or None in case of error *)
 let copy_file fname_from fname_to =

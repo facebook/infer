@@ -21,8 +21,8 @@ val string_crc_hex32 : string -> string
 (** copy a source file, return the number of lines, or None in case of error *)
 val copy_file : string -> string -> int option
 
-(** read a source file and return a list of lines, or None in case of error *)
-val read_file : string -> string list option
+(** read a source file and return a list of lines *)
+val read_file : string -> (string list, string) Result.t
 
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
 val filename_to_absolute : root:string -> string -> string
