@@ -1,0 +1,2 @@
+NULL_DEREFERENCE, src/DiffExampleRenamed.java, int DiffExampleRenamed.triggerNpe(), 1, DiffExampleRenamed.triggerNpe():int.708d86c0dc5dc4e5dbbbcd38276ce86f, DiffExampleRenamed.triggerNpe():int
+RESOURCE_LEAK, src/DiffExampleRenamed.java, void DiffExampleRenamed.openResource(), 5, DiffExampleRenamed.openResource():void.715df29eeb5b62c29d4081c6dc9d407a, DiffExampleRenamed.openResource():void

@@ -55,28 +55,30 @@ module FileRenamings = struct
   end
 end
 
-(* Remove duplicates between two lists whenever pred is true for such element *)
+(** Returns a triple [(l1', dups, l2')] where [dups] is the set of elements of that are in the
+    intersection of [l1] and [l2] according to [cmd] and additionally satisfy [pred], and [lN'] is
+    [lN] minus [dups]. [dups] contains only one witness for each removed issue, taken from [l1]. *)
 let relative_complements ~cmp ?(pred=(fun _ -> true)) l1 l2 =
-  let rec aux last_dup ((out_l1, out_l2) as out) in_l1 in_l2 =
-    let is_last_seen_dup v = match last_dup with
-      | Some ld -> Int.equal (cmp ld v) 0
-      | None -> false in
+  let rec aux ((out_l1, dups, out_l2) as out) in_l1 in_l2 =
+    let is_last_seen_dup v = match dups with
+      | ld::_ -> Int.equal (cmp ld v) 0
+      | [] -> false in
     match in_l1, in_l2 with
     | i::is, f::fs when Int.equal (cmp i f) 0 -> (* i = f *)
-        if pred i then aux (Some i) (out_l1, out_l2) is fs
-        else aux None (i::out_l1, f::out_l2) is fs
+        if pred i then aux (out_l1, i::dups, out_l2) is fs
+        else aux (i::out_l1, dups, f::out_l2) is fs
     | i::is, f::_ when cmp i f < 0 -> (* i < f *)
         let out_l1' = if is_last_seen_dup i then out_l1 else i::out_l1 in
-        aux last_dup (out_l1', out_l2) is in_l2
+        aux (out_l1', dups, out_l2) is in_l2
     | _::_, f::fs ->  (* i > f *)
         let out_l2' = if is_last_seen_dup f then out_l2 else f::out_l2 in
-        aux last_dup (out_l1, out_l2') in_l1 fs
-    | i::is, [] when is_last_seen_dup i -> aux last_dup out is in_l2
-    | [], f::fs when is_last_seen_dup f -> aux last_dup out in_l1 fs
-    | _, _ -> List.rev_append in_l1 out_l1, List.rev_append in_l2 out_l2 in
+        aux (out_l1, dups, out_l2') in_l1 fs
+    | i::is, [] when is_last_seen_dup i -> aux out is in_l2
+    | [], f::fs when is_last_seen_dup f -> aux out in_l1 fs
+    | _, _ -> List.rev_append in_l1 out_l1, dups, List.rev_append in_l2 out_l2 in
   let l1_sorted = List.sort ~cmp l1 in
   let l2_sorted = List.sort ~cmp l2 in
-  aux None ([], []) l1_sorted l2_sorted
+  aux ([], [], []) l1_sorted l2_sorted
 
 type issue_file_with_renaming = Jsonbug_t.jsonbug * (string option)
 
@@ -92,7 +94,7 @@ let skip_duplicated_types_on_filenames
     [%compare : string * issue_file_with_renaming]
       (issue1.Jsonbug_t.bug_type, issue_with_previous_file1)
       (issue2.Jsonbug_t.bug_type, issue_with_previous_file2) in
-  let introduced, fixed =
+  let introduced, preexisting, fixed =
     (* All comparisons will be made against filenames *before* renamings.
        This way, all introduced and fixed issues can be sorted independently
        over the same domain. *)
@@ -100,10 +102,13 @@ let skip_duplicated_types_on_filenames
       List.map diff.introduced
         ~f:(fun i -> i, FileRenamings.find_previous renamings i.Jsonbug_t.file) in
     let fixed_normalized = List.map diff.fixed ~f:(fun f -> f, None) in
-    let introduced_normalized', fixed_normalized' =
+    let introduced_normalized', preexisting', fixed_normalized' =
       relative_complements ~cmp introduced_normalized fixed_normalized in
-    List.map ~f:fst introduced_normalized', List.map ~f:fst fixed_normalized' in
-  {introduced; fixed; preexisting = diff.preexisting}
+    let list_map_fst = List.map ~f:fst in
+    list_map_fst introduced_normalized',
+    (list_map_fst preexisting') @ diff.preexisting,
+    list_map_fst fixed_normalized' in
+  {introduced; fixed; preexisting}
 
 let java_anon_class_pattern = Str.regexp "\\$[0-9]+"
 
@@ -168,8 +173,8 @@ let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
         true
       with Not_found -> false in
     is_java_file () && has_anonymous_class_token () in
-  let introduced, fixed = relative_complements ~cmp ~pred diff.introduced diff.fixed in
-  {introduced; fixed; preexisting = diff.preexisting}
+  let introduced, preexisting, fixed = relative_complements ~cmp ~pred diff.introduced diff.fixed in
+  {introduced; fixed; preexisting = preexisting @ diff.preexisting}
 
 (* Filter out null dereferences reported by infer if file has eradicate
    enabled, to avoid double reporting. *)

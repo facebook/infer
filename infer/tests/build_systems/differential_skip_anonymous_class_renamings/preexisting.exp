@@ -1,0 +1,1 @@
+NULL_DEREFERENCE, src/DiffExample.java, int DiffExample$4.aaa(), 0, DiffExample$4.aaa():int.a7bd5e834e7a8fb4284c75f621544e3e, DiffExample$4.aaa():int
