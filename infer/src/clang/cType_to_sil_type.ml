@@ -35,7 +35,7 @@ let type_desc_of_builtin_type_kind builtin_type_kind =
   | `WChar_S
   | `Char16
   | `Char32 -> Typ.Tint IChar
-  | `UShort
+  | `UShort -> Typ.Tint IUShort
   | `Short -> Typ.Tint IShort
   | `UInt
   | `UInt128 -> Typ.Tint IUInt

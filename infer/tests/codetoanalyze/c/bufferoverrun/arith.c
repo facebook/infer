@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+#include <stdint.h>
 
 void modulo_signed_Bad(int i) {
   char arr[5];
@@ -40,6 +41,11 @@ void modulo_signed_Good2(int i) {
 }
 
 void modulo_unsigned_Good(unsigned int i) {
+  char arr[5];
+  arr[i % 5] = 123;
+}
+
+void modulo_unsigned_short_Good(uint16_t i) {
   char arr[5];
   arr[i % 5] = 123;
 }
