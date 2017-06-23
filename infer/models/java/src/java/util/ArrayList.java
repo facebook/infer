@@ -12,9 +12,7 @@ package java.util;
 import java.io.Serializable;
 
 // abstract so we don't have to implement every method of List
-public abstract class ArrayList<T>
-  extends AbstractList<T>
-  implements RandomAccess, Cloneable, Serializable {
+public abstract class ArrayList<T> extends AbstractList<T> {
 
   @Override
   public boolean isEmpty() {

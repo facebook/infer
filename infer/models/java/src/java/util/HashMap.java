@@ -24,16 +24,14 @@ import com.facebook.infer.builtins.InferUndefined;
  * get(key).
 */
 
-public abstract class HashMap<K,V> extends AbstractMap<K,V>
-  implements Map<K,V>, Cloneable, Serializable {
+public abstract class HashMap<K,V> {
 
-  private Object lastKey1 = null;
-  private Object lastKey2 = null;
+  private K lastKey1 = null;
+  private K lastKey2 = null;
 
-  public boolean containsKey(Object key) {
+  public boolean containsKey(K key) {
     // doesn't actually check if _containsKey(key). If you just put a
     // key in the map, why would you check if it's still there?
-
     if (InferUndefined.boolean_undefined()) {
       pushKey(key);
       return true;
@@ -42,7 +40,7 @@ public abstract class HashMap<K,V> extends AbstractMap<K,V>
     }
   }
 
-  public V get(Object key) {
+  public V get(K key) {
     if (_containsKey(key)) {
       return (V)InferUndefined.object_undefined();
     } else if (InferUndefined.boolean_undefined()) {
@@ -64,17 +62,16 @@ public abstract class HashMap<K,V> extends AbstractMap<K,V>
 
 
   /** some sort of circular buffer simulator */
-  private void pushKey(Object key) {
+  private void pushKey(K key) {
     lastKey2 = lastKey1;
     lastKey1 = key;
   }
 
-  private boolean _containsKey(Object key) {
+  private boolean _containsKey(K key) {
       return areEqual(key, lastKey1) || areEqual(key, lastKey2);
   }
 
-  /* does explicit dynamic dispatch to help Infer out */
-  private static boolean areEqual(Object x, Object y) {
+  private boolean areEqual(K x, K y) {
     return x == y;
   }
 

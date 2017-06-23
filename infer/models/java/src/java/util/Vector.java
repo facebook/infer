@@ -11,9 +11,9 @@ package java.util;
 
 import com.facebook.infer.builtins.InferUndefined;
 
-public abstract class Vector<E> extends AbstractList<E> {
+public abstract class Vector<E> {
 
-    protected Object[] elementData;
+    protected E[] elementData;
 
     E elementData(int index) {
         return (E) elementData[index];
