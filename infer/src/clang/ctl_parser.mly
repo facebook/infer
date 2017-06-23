@@ -178,9 +178,10 @@ clause:
       | "suggestion" -> ALVar.Suggestion
       | "severity" -> ALVar.Severity
       | "mode" -> ALVar.Mode
+      | "doc_url" -> ALVar.Doc_url
       | _ -> failwithf "string '%s' cannot be set in a SET clause. \
                         Use either of: \
-                        'message', 'mode', 'severity' or 'suggestion'" $2 in
+                        'doc_url', 'message', 'mode', 'severity' or 'suggestion'" $2 in
       CTL.CDesc (alvar, $4) }
     | let_clause { $1 }
     ;

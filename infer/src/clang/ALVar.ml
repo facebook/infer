@@ -16,6 +16,7 @@ type keyword =
   | Suggestion
   | Severity
   | Mode
+  | Doc_url
 
 type formula_id = Formula_id of string[@@deriving compare]
 
@@ -48,6 +49,7 @@ let keyword_to_string k =
   | Suggestion -> "suggestion"
   | Severity -> "severity"
   | Mode -> "mode"
+  | Doc_url -> "doc_url"
 
 let is_report_when_keyword k =
   match k with
@@ -72,6 +74,11 @@ let is_severity_keyword k =
 let is_mode_keyword k =
   match k with
   | Mode -> true
+  | _ -> false
+
+let is_doc_url_keyword k =
+  match k with
+  | Doc_url -> true
   | _ -> false
 
 (* true if and only if a substring of container matches the regular

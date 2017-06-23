@@ -132,6 +132,7 @@ let mutable_local_vars_advice context an =
             "Local variable " ^ MF.monospaced_to_string named_decl_info.ni_name ^
             " should be const to avoid reassignment";
           suggestion = Some "Add a const (after the asterisk for pointer types).";
+          doc_url = None;
           loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
       else None
@@ -162,6 +163,7 @@ let component_factory_function_advice context an =
               "Prefer subclassing CKCompositeComponent to static helper functions \
                that return a CKComponent subclass."
             );
+          doc_url = None;
           loc = CFrontend_checkers.location_from_dinfo context decl_info
         }
       else None
@@ -205,6 +207,7 @@ let component_with_unconventional_superclass_advice context an =
               suggestion = Some (
                   "Instead, create a new subclass of CKCompositeComponent."
                 );
+              doc_url = None;
               loc = CFrontend_checkers.location_from_decl context if_decl
             }
           else
@@ -259,6 +262,7 @@ let component_with_multiple_factory_methods_advice context an =
               suggestion =
                 Some "Instead, always expose all parameters in a single \
                       designated initializer and document which are optional.";
+              doc_url = None;
               loc = CFrontend_checkers.location_from_decl context meth_decl
             }) (List.drop factory_methods 1)
     | _ -> assert false in
@@ -311,6 +315,7 @@ let rec _component_initializer_with_side_effects_advice
                description = "No Side-effects";
                suggestion = Some "Your +new method should not modify any \
                                   global variables or global state.";
+               doc_url = None;
                loc = CFrontend_checkers.location_from_stmt context call_stmt
              }
          | _ ->
@@ -344,6 +349,7 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
             mode = CIssue.Off;
             description = "Line count analytics";
             suggestion = None;
+            doc_url = None;
             loc = {
               Location.line = i;
               Location.col = 0;
@@ -390,6 +396,7 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
         mode = CIssue.Off;
         description = "Cyclomatic Complexity Incremental Marker";
         suggestion = None;
+        doc_url = None;
         loc = loc
       }
   | _ -> None

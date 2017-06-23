@@ -92,6 +92,7 @@ type log_issue =
   ?session: int ->
   ?ltr: Errlog.loc_trace ->
   ?linters_def_file:string ->
+  ?doc_url:string ->
   exn ->
   unit
 

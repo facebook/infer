@@ -17,6 +17,7 @@ type issue_desc = {
   mode : mode;
   description : string; (* Description in the error message *)
   suggestion : string option; (* an optional suggestion or correction *)
+  doc_url : string option;
   loc : Location.t; (* location in the code *)
 }
 

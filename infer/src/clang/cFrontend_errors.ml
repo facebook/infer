@@ -169,6 +169,7 @@ let create_parsed_linters linters_def_file checkers : linter list =
       suggestion = None;
       loc = Location.dummy;
       severity = Exceptions.Kwarning;
+      doc_url = None;
       mode = CIssue.On;
     } in
     let issue_desc, condition, whitelist_paths, blacklist_paths =
@@ -184,6 +185,8 @@ let create_parsed_linters linters_def_file checkers : linter list =
             {issue with severity = string_to_err_kind sev}, cond, wl_paths, bl_paths
         | CDesc (av, m) when ALVar.is_mode_keyword  av ->
             {issue with mode = string_to_issue_mode m }, cond, wl_paths, bl_paths
+        | CDesc (av, doc) when ALVar.is_doc_url_keyword  av ->
+            {issue with doc_url = Some doc }, cond, wl_paths, bl_paths
         | CPath (`WhitelistPath, paths) ->
             issue, cond, paths, bl_paths
         | CPath (`BlacklistPath, paths) ->
@@ -360,7 +363,7 @@ let log_frontend_issue translation_unit_context method_decl_opt key issue_desc l
                     |> QualifiedCppName.to_qual_string in
   let key = Hashtbl.hash (key ^ method_name) in
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace
-    ~node_id:(0, key) ?linters_def_file
+    ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.CIssue.doc_url
 
 let get_current_method context (an : Ctl_parser_types.ast_node) =
   match an with

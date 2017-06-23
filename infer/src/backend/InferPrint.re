@@ -503,6 +503,7 @@ module IssuesJson = {
           infer_source_loc: json_ml_loc,
           bug_type_hum: Localise.to_human_readable_string key.err_name,
           linters_def_file: err_data.linters_def_file,
+          doc_url: err_data.doc_url,
           traceview_id: None
         };
         if (not !is_first_item) {

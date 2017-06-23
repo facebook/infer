@@ -229,4 +229,5 @@ DEFINE-CHECKER POINTER_TO_INTEGRAL_IMPLICIT_CAST = {
       WHEN has_cast_kind("PointerToIntegral")
       HOLDS-IN-NODE ImplicitCastExpr;
   SET message = "Implicit conversion from %child_type% to %type% in usage of %name%";
+	SET doc_url = "https://clang.llvm.org/docs/DiagnosticsReference.html#wint-conversion";
 };

@@ -28,7 +28,8 @@ let create_fake_jsonbug
     ?(hash=1)
     ?(dotty=None)
     ?(infer_source_loc=None)
-    ?(linters_def_file=Some "file/at/certain/path.al") () : Jsonbug_t.jsonbug =
+    ?(linters_def_file=Some "file/at/certain/path.al")
+    ?doc_url () : Jsonbug_t.jsonbug =
   {
     bug_class;
     kind;
@@ -50,6 +51,7 @@ let create_fake_jsonbug
     infer_source_loc;
     bug_type_hum = kind;
     linters_def_file;
+    doc_url;
     traceview_id = None;
   }
 
