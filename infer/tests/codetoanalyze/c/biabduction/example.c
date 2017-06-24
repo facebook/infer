@@ -12,18 +12,28 @@ void foo() {
   *p = 42;
 }
 
-void local_addr_noalis_ok(int* p) {
+void local_addr_noalias_ok(int* p) {
   int* q = 0;
   int x = 1;
-  if (&x == p)
+  if (&x == p) {
     *q = 42;
+  }
 }
 
 void local_addr_noalias_bad(int* p) {
   int* q = 0;
   int x = 1;
-  if (&x != p)
+  if (&x != p) {
     *q = 42;
+  }
+}
+
+static int g = 0;
+void global_addr_alias_bad(int* p) {
+  int* q = 0;
+  if (&g == p) {
+    *q = 42;
+  }
 }
 
 int bar() {
