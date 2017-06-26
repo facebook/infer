@@ -62,11 +62,15 @@ def extract_all(javac_arguments):
     >>> extract_all(['undef1', 'undef2'])
     {'files': [], 'opts': ['undef1 undef2']}
     """
+    def pop():
+        if javac_arguments:
+            return javac_arguments.pop()
+        return None
+
     java_files = []
     java_opts = []
     # Reversed Javac options parameters
     rev_opt_params = []
-    pop = lambda: javac_arguments.pop() if javac_arguments else None
     java_arg = pop()
     while java_arg:
         if java_arg.endswith('.java'):
