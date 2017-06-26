@@ -236,6 +236,7 @@ let whitelisted_cpp_methods = [
   "std::forward";
   "std::min";
   "std::max";
+  "std::swap";
   "google::CheckNotNull";
 ]
 
@@ -938,10 +939,10 @@ and (
     CLOpt.mk_bool_group ~long:"linters-developer-mode"
       ~in_help:CLOpt.[Capture, manual_clang_linters]
       "Debug mode for developing new linters. (Sets the analyzer to $(b,linters); also sets \
-       $(b,--debug), $(b,--debug-level-linters 2), $(b,--developer-mode), $(b,--print-logs), and \
+       $(b,--debug), $(b,--debug-level-linters 2), $(b,--developer-mode), and \
        unsets $(b,--allowed-failures) and $(b,--default-linters)."
       ~f:(fun debug -> debug_level_linters := if debug then 2 else 0; debug)
-      [debug; developer_mode; print_logs] [failures_allowed; default_linters]
+      [debug; developer_mode] [failures_allowed; default_linters]
 
   in (
     bo_debug,
@@ -1508,10 +1509,11 @@ and specs_library =
         if Filename.is_relative path then
           failwith ("Failing because path " ^ path ^ " is not absolute") in
       match Utils.read_file (resolve fname) with
-      | Some pathlist ->
+      | Ok pathlist ->
           List.iter ~f:validate_path pathlist;
           pathlist
-      | None -> failwith ("cannot read file " ^ fname ^ " from cwd " ^ (Sys.getcwd ()))
+      | Error error ->
+          failwithf "cannot read file '%s' from cwd '%s': %s" fname (Sys.getcwd ()) error
     in
     (* Add the newline-separated directories listed in <file> to the list of directories to be
        searched for .spec files *)

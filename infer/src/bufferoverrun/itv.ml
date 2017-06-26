@@ -547,16 +547,27 @@ struct
 
   let of_int n = of_bound (Bound.of_int n)
 
+  let of_int_lit : IntLit.t -> t option
+    = fun s ->
+      match IntLit.to_int s with
+      | size -> Some (of_int size)
+      | exception _ -> None
+
   let get_new_sym : Typ.Procname.t -> t
     = fun pname ->
       let lower = Bound.of_sym (SymLinear.get_new pname) in
       let upper = Bound.of_sym (SymLinear.get_new pname) in
       (lower, upper)
 
-  let make_sym : Typ.Procname.t -> int -> t
-    = fun pname i ->
-      let lower = Bound.of_sym (SymLinear.make pname i) in
-      let upper = Bound.of_sym (SymLinear.make pname (i+1)) in
+  let make_sym : unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t
+    = fun ~unsigned pname new_sym_num ->
+      let lower =
+        if unsigned then
+          Bound.MinMax (Bound.Max, 0, Symbol.make pname (new_sym_num ()))
+        else
+          Bound.of_sym (SymLinear.make pname (new_sym_num ()))
+      in
+      let upper = Bound.of_sym (SymLinear.make pname (new_sym_num ())) in
       (lower, upper)
 
   let m1_255 = (Bound.minus_one, Bound._255)
@@ -591,6 +602,14 @@ struct
 
   let is_symbolic : t -> bool
     = fun (lb, ub) -> Bound.is_symbolic lb || Bound.is_symbolic ub
+
+  let is_ge_zero : t -> bool
+    = fun (lb, _) ->
+      if lb <> Bound.Bot then Bound.le Bound.zero lb else false
+
+  let is_le_zero : t -> bool
+    = fun (_, ub) ->
+      if ub <> Bound.Bot then Bound.le ub Bound.zero else false
 
   let neg : t -> t
     = fun (l, u) ->
@@ -653,8 +672,13 @@ struct
   let mod_sem : t -> t -> t
     = fun x y ->
       match is_const x, is_const y with
-      | Some n, Some m -> if Int.equal m 0 then x else of_int (n mod m)
-      | _, Some m -> (Bound.of_int (-m), Bound.of_int m)
+      | _, Some 0 -> x
+      | Some n, Some m -> of_int (n mod m)
+      | _, Some m ->
+          let abs_m = abs m in
+          if is_ge_zero x then (Bound.zero, Bound.of_int (abs_m - 1)) else
+          if is_le_zero x then (Bound.of_int (-abs_m + 1), Bound.zero) else
+            (Bound.of_int (-abs_m + 1), Bound.of_int (abs_m - 1))
       | _, None -> top
 
   (* x << [-1,-1] does nothing. *)
@@ -861,7 +885,9 @@ let ub : t -> Bound.t
 let of_int : int -> astate
   = fun n -> NonBottom (ItvPure.of_int n)
 
-let of_int_lit n = of_int (IntLit.to_int n)
+let of_int_lit n =
+  try of_int (IntLit.to_int n) with
+  | _ -> top
 
 let is_bot : t -> bool
   = fun x -> equal x Bottom
@@ -950,8 +976,8 @@ let minus : t -> t -> t
 let get_new_sym : Typ.Procname.t -> t
   = fun pname -> NonBottom (ItvPure.get_new_sym pname)
 
-let make_sym : Typ.Procname.t -> int -> t
-  = fun pname i -> NonBottom (ItvPure.make_sym pname i)
+let make_sym : ?unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t
+  = fun ?(unsigned=false) pname new_sym_num -> NonBottom (ItvPure.make_sym ~unsigned pname new_sym_num)
 
 let neg : t -> t
   = lift1 ItvPure.neg

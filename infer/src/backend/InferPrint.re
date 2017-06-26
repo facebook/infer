@@ -503,6 +503,7 @@ module IssuesJson = {
           infer_source_loc: json_ml_loc,
           bug_type_hum: Localise.to_human_readable_string key.err_name,
           linters_def_file: err_data.linters_def_file,
+          doc_url: err_data.doc_url,
           traceview_id: None
         };
         if (not !is_first_item) {
@@ -1026,7 +1027,7 @@ let pp_summary_by_report_kind
 
 let pp_json_report_by_report_kind formats_by_report_kind fname =>
   switch (Utils.read_file fname) {
-  | Some report_lines =>
+  | Ok report_lines =>
     let pp_json_issues format_list report => {
       let pp_json_issue (format_kind, outf: Utils.outfile) =>
         switch format_kind {
@@ -1048,7 +1049,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =>
       | _ => ()
       };
     List.iter f::pp_report_by_report_kind formats_by_report_kind
-  | None => failwithf "Error reading %s. Does the file exist?" fname
+  | Error error => failwithf "Error reading '%s': %s" fname error
   };
 
 let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log => {

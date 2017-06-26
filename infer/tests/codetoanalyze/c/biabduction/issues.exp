@@ -1,1 +1,2 @@
 codetoanalyze/c/biabduction/example.c, foo, 2, NULL_DEREFERENCE, [start of procedure foo()]
+codetoanalyze/c/biabduction/example.c, local_addr_noalias_bad, 4, NULL_DEREFERENCE, [start of procedure local_addr_noalias_bad(),Condition is true]

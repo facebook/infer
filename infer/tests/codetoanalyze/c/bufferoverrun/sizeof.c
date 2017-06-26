@@ -32,3 +32,8 @@ void static_stride_bad() {
     a[1]; // report
   }
 }
+
+void sizeof_char_good_FP(int i) {
+  char b[10];
+  b[sizeof(b) - 1] = 123;
+}

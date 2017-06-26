@@ -568,7 +568,12 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
         (Clang_ast_j.string_of_stmt_info stmt_info);
       CompoundStmt (stmt_info, stmt_list), []
 
-(* We translate the logical negation of an integer with a conditional*)
+(* We translate an expression with a conditional*)
+(* x <=> x?1:0 *)
+let trans_with_conditional stmt_info expr_info stmt_list =
+  let stmt_list_cond = stmt_list @ [create_integer_literal "1"] @ [create_integer_literal "0"] in
+  Clang_ast_t.ConditionalOperator (stmt_info, stmt_list_cond, expr_info)
+(* We translate the logical negation of an expression with a conditional*)
 (* !x <=> x?0:1 *)
 let trans_negation_with_conditional stmt_info expr_info stmt_list =
   let stmt_list_cond = stmt_list @ [create_integer_literal "0"] @ [create_integer_literal "1"] in

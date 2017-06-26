@@ -52,17 +52,42 @@ digraph iCFG {
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_13" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_12" ;
-"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_1" [label="1: Start operator!=\nFormals:  i1:iterator& i2:iterator&\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_1" [label="1: Start operator!=\nFormals:  i1:iterator& i2:iterator&\nLocals:  0$?%__sil_tmpSIL_temp_conditional___n$0:_Bool \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_temp_conditional___n$0); [line 21]\n " color=yellow style=filled]
 	
 
-	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_1" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_3" ;
+	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_1" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_4" ;
 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_2" [label="2: Exit operator!= \n  " color=yellow style=filled]
 	
 
-"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_3" [label="3:  Return Stmt \n   n$0=*&i1:iterator& [line 21]\n  n$1=*n$0.val:int [line 21]\n  n$2=*&i2:iterator& [line 21]\n  n$3=*n$2.val:int [line 21]\n  *&return:_Bool=(n$1 != n$3) [line 21]\n " shape="box"]
+"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_3" [label="3: + \n  " ]
 	
 
-	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_3" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_2" ;
+	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_3" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_9" ;
+"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_4" [label="4:  BinaryOperatorStmt: NE \n   n$1=*&i1:iterator& [line 21]\n  n$2=*n$1.val:int [line 21]\n  n$3=*&i2:iterator& [line 21]\n  n$4=*n$3.val:int [line 21]\n " shape="box"]
+	
+
+	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_4" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_5" ;
+	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_4" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_6" ;
+"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_5" [label="5: Prune (true branch) \n   PRUNE(((n$2 != n$4) != 0), true); [line 21]\n " shape="invhouse"]
+	
+
+	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_5" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_7" ;
+"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_6" [label="6: Prune (false branch) \n   PRUNE(((n$2 != n$4) == 0), false); [line 21]\n " shape="invhouse"]
+	
+
+	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_6" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_8" ;
+"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_7" [label="7:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:_Bool=1 [line 21]\n " shape="box"]
+	
+
+	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_7" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_3" ;
+"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_8" [label="8:  ConditinalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$0:_Bool=0 [line 21]\n " shape="box"]
+	
+
+	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_8" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_3" ;
+"operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_9" [label="9:  Return Stmt \n   n$5=*&0$?%__sil_tmpSIL_temp_conditional___n$0:_Bool [line 21]\n  *&return:_Bool=n$5 [line 21]\n " shape="box"]
+	
+
+	 "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_9" -> "operator!=#_Zne8iteratorS_.497d6549b2907c91697671b3c62dc141_2" ;
 "operator*#iterator#(_ZN8iteratordeEv).d1b3c4615152af7edafb600f858babe9_1" [label="1: Start iterator_operator*\nFormals:  this:iterator*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 

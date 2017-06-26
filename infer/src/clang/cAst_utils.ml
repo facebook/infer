@@ -61,9 +61,7 @@ let type_from_unary_expr_or_type_trait_expr_info info =
   | None -> None
 
 let get_decl decl_ptr =
-  let decl = Int.Table.find ClangPointers.pointer_decl_table decl_ptr in
-  if Option.is_none decl then L.internal_error "decl with pointer %d not found@\n" decl_ptr;
-  decl
+  Int.Table.find ClangPointers.pointer_decl_table decl_ptr
 
 let get_decl_opt decl_ptr_opt =
   match decl_ptr_opt with
@@ -86,9 +84,7 @@ let get_decl_opt_with_decl_ref decl_ref_opt =
   | None -> None
 
 let get_property_of_ivar decl_ptr =
-  let decl = Int.Table.find ClangPointers.ivar_to_property_table decl_ptr in
-  if Option.is_none decl then L.internal_error "property with pointer %d not found\n" decl_ptr;
-  decl
+  Int.Table.find ClangPointers.ivar_to_property_table decl_ptr
 
 let update_sil_types_map type_ptr sil_type =
   CFrontend_config.sil_types_map :=

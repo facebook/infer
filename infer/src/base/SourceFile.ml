@@ -10,6 +10,8 @@
 open! IStd
 open! PVariant
 
+module L = Logging
+
 let count_newlines (path: string): int =
   let f file = In_channel.fold_lines file ~init:0 ~f:(fun i _ -> i + 1) in
   In_channel.with_file path ~f
@@ -134,19 +136,22 @@ let create ?(warn_on_error=true) path =
     from_abs_path ~warn_on_error path
 
 let changed_files_set =
-  Option.bind Config.changed_files_index Utils.read_file |>
-  Option.map ~f:(
-    List.fold
-      ~f:(fun changed_files line ->
-          let source_file = create line in
-          let changed_files' = Set.add source_file changed_files in
-          (* Add source corresponding to changed header if it exists *)
-          match of_header source_file with
-          | Some src -> Set.add src changed_files'
-          | None -> changed_files'
-        )
-      ~init:Set.empty
-  )
+  match Config.changed_files_index with
+  | None ->
+      None
+  | Some index -> match Utils.read_file index with
+    | Ok lines ->
+        Some (List.fold lines ~init:Set.empty ~f:(fun changed_files line ->
+            let source_file = create line in
+            let changed_files' = Set.add source_file changed_files in
+            (* Add source corresponding to changed header if it exists *)
+            match of_header source_file with
+            | Some src -> Set.add src changed_files'
+            | None -> changed_files'
+          ))
+    | Error error ->
+        L.user_error "Error reading the changed files index '%s': %s@." index error ;
+        None
 
 module UNSAFE = struct
   let from_string str =

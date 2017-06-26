@@ -115,94 +115,96 @@ let test_file_renamings_find_previous =
         name >:: create_test test_input expected_output)
 
 let test_relative_complements =
-  let create_test pred (l1, l2) (expected_l1, expected_l2) _ =
+  let create_test pred (l1, l2) (expected_l1, expected_l2, expected_l3) _ =
     let cmp = Int.compare in
-    let output_l1, output_l2 =
+    let output_l1, output_l2, output_l3 =
       DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.relative_complements
         ~cmp ~pred l1 l2 in
     let list_equal l1 l2 = List.equal ~equal:(fun v1 v2 -> Int.equal (cmp v1 v2) 0) l1 l2 in
     assert_equal
       ~pp_diff:(pp_diff_of_int_list "First list") ~cmp:list_equal expected_l1 output_l1;
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Second list") ~cmp:list_equal expected_l2 output_l2 in
+      ~pp_diff:(pp_diff_of_int_list "Second list") ~cmp:list_equal expected_l2 output_l2;
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Third list") ~cmp:list_equal expected_l3 output_l3 in
   [
     (
       "test_relative_complements_with_always_true_pred",
       (fun _ -> true),
       ([0;1;2;3;4;5], [5;3;7;1;1;2]),
-      ([4;0], [7])
+      ([4;0], [5;3;2;1], [7])
     );
     (
       "test_relative_complements_with_even_numbers_pred",
       (fun i -> Int.equal (i mod 2) 0), (* skip when even, keep odd *)
       ([0;1;2;3;4;5], [5;3;7;1;1;2]),
-      ([5;4;3;1;0], [7;5;3;1;1])
+      ([5;4;3;1;0], [2], [7;5;3;1;1])
     );
     (
       "test_relative_complements_with_even_numbers_pred_2",
       (fun i -> Int.equal (i mod 2) 0), (* skip when even, keep odd *)
       ([0;1;2;3;5;5], [1;1;2;3;4;7]),
-      ([5;5;3;1;0], [7;4;3;1;1])
+      ([5;5;3;1;0], [2], [7;4;3;1;1])
     );
     (
       "test_relative_complements_with_always_true_pred_and_disjoint_lists_of_different_length",
       (fun _ -> true),
       ([0;3;2;3;5], [9;7;6;8;4;6;9]),
-      ([5;3;3;2;0], [9;9;8;7;6;6;4])
+      ([5;3;3;2;0], [], [9;9;8;7;6;6;4])
     );
     (
       "test_relative_complements_with_always_true_pred_and_lists_of_different_length",
       (fun _ -> true),
       ([0;3;2;3], [9;7;3;8;0;6;9;4]),
-      ([2], [9;9;8;7;6;4])
+      ([2], [3;0], [9;9;8;7;6;4])
     );
     (
       "test_relative_complements_with_odd_numbers_on_lists_of_different_length",
       (fun i -> Int.equal (i mod 2) 1), (* skip when odd, keep even *)
       ([0;3;2;3], [9;7;3;8;0;6;9;4]),
-      ([2;0], [9;9;8;7;6;4;0])
+      ([2;0], [3], [9;9;8;7;6;4;0])
     );
     (
       "test_relative_complements_with_singleton_lists1",
       (fun _ -> true),
       ([0], [0;1;0;0]),
-      ([], [1])
+      ([], [0], [1])
     );
     (
       "test_relative_complements_with_singleton_lists2",
       (fun _ -> true),
       ([0;1;0;0], [0]),
-      ([1], [])
+      ([1], [0], [])
     );
     (
       "test_relative_complements_with_singleton_lists3",
       (fun _ -> true),
       ([0], [0]),
-      ([], [])
+      ([], [0], [])
     );
     (
       "test_relative_complements_with_singleton_lists4",
       (fun _ -> true),
       ([0], [1]),
-      ([0], [1])
+      ([0], [], [1])
     );
     (
       "test_relative_complements_with_empty_lists1",
       (fun _ -> true),
       ([], [0;1;0;0]),
-      ([], [1;0;0;0])
+      ([], [], [1;0;0;0])
     );
     (
       "test_relative_complements_with_empty_lists2",
       (fun _ -> true),
       ([0;1;0;0], []),
-      ([1;0;0;0], [])
+      ([1;0;0;0], [], [])
     );
     (
       "test_relative_complements_with_empty_lists3",
       (fun _ -> true),
       ([], []),
-      ([], [])
+      ([], [], [])
     );
   ]
   |> List.map
@@ -243,7 +245,7 @@ let test_skip_duplicated_types_on_filenames =
       [3] (sorted_hashes_of_issues diff'.fixed);
     assert_equal
       ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting")
-      [222] (sorted_hashes_of_issues diff'.preexisting) in
+      [22; 55; 111; 222] (sorted_hashes_of_issues diff'.preexisting) in
   "test_skip_duplicated_types_on_filenames" >:: do_assert
 
 let test_value_of_qualifier_tag =
@@ -340,7 +342,7 @@ let test_skip_anonymous_class_renamings =
            ~key:2
            ~hash:2 ();
        ],
-     ([4;5], [2], []));
+     ([4;5], [2], [3]));
     ("test_skip_anonymous_class_renamings_with_empty_qualifier_tags",
      Differential.of_reports
        ~current_report:[
@@ -372,7 +374,7 @@ let test_skip_anonymous_class_renamings =
            ~key:1
            ~hash:4 ();
        ],
-     ([1], [2], []));
+     ([1], [2], [3]));
     ("test_skip_anonymous_class_renamings_with_matching_non_anonymous_procedure_ids",
      Differential.of_reports
        ~current_report:[
@@ -436,7 +438,7 @@ let test_skip_anonymous_class_renamings =
            ~key:1
            ~hash:4 ();
        ],
-     ([3], [4], []));
+     ([3], [4], [1]));
     ("test_skip_anonymous_class_renamings_with_different_call_procedure_qualifier_tags",
      Differential.of_reports
        ~current_report:[

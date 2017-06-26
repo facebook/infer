@@ -403,12 +403,15 @@ let analyze driver_mode =
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
 let fail_on_issue_epilogue () =
-  let issues_json = DB.Results_dir.(path_to_filename Abs_root ["report.json"]) in
-  match Utils.read_file (DB.filename_to_string issues_json) with
-  | Some lines ->
+  let issues_json = DB.Results_dir.(path_to_filename Abs_root ["report.json"])
+                    |> DB.filename_to_string in
+  match Utils.read_file issues_json with
+  | Ok lines ->
       let issues = Jsonbug_j.report_of_string @@ String.concat ~sep:"" lines in
       if issues <> [] then exit Config.fail_on_issue_exit_code
-  | None -> ()
+  | Error error ->
+      L.internal_error "Failed to read report file '%s': %s@." issues_json error ;
+      ()
 
 let log_infer_args driver_mode =
   L.environment_info "INFER_ARGS = %s@\n"
@@ -590,6 +593,8 @@ let setup_results_dir () =
 let () =
   if Config.print_builtins then Builtin.print_and_exit ();
   setup_results_dir ();
+  if Config.debug_mode then
+    L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file);
   match Config.command with
   | Analyze ->
       let pp_cluster_opt fmt = function

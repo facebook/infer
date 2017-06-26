@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.lang.IllegalArgumentException;
 
 
-public class Scanner extends Object {
+public class Scanner {
 
   InputStream src;
   private void init(InputStream source) {

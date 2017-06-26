@@ -214,6 +214,33 @@ struct
       | Binop.LOr -> Val.lor_sem v1 v2
       | Binop.PtrFld -> raise Not_implemented
 
+  let rec eval_locs : Exp.t -> Mem.astate -> Location.t -> Val.t
+    = fun exp mem loc ->
+      match exp with
+      | Exp.Var id ->
+          (match Mem.find_alias id mem with
+           | Some pvar ->
+               Var.of_pvar pvar |> Loc.of_var |> PowLoc.singleton |> Val.of_pow_loc
+           | None -> Val.bot)
+      | Exp.Lvar pvar ->
+          pvar |> Loc.of_pvar |> PowLoc.singleton |> Val.of_pow_loc
+      | Exp.BinOp (bop, e1, e2) -> eval_binop bop e1 e2 mem loc
+      | Exp.Cast (_, e) -> eval_locs e mem loc
+      | Exp.Lfield (e, fn, _) ->
+          eval e mem loc
+          |> Val.get_all_locs
+          |> Fn.flip PowLoc.append_field fn
+          |> Val.of_pow_loc
+      | Exp.Lindex (e1, e2) ->
+          let arr = eval e1 mem loc in
+          let idx = eval e2 mem loc in
+          Val.plus_pi arr idx
+      | Exp.Const _
+      | Exp.UnOp _
+      | Exp.Sizeof _
+      | Exp.Exn _
+      | Exp.Closure _ -> Val.bot
+
   let get_allocsite : Typ.Procname.t -> CFG.node -> int -> int -> string
     = fun proc_name node inst_num dimension ->
       let proc_name = Typ.Procname.to_string proc_name in
@@ -400,11 +427,14 @@ struct
     = fun pairs ->
       let add_pair map (formal, actual) =
         match formal with
+        | Itv.Bound.Linear (_, se1) when Itv.SymLinear.is_zero se1 -> map
         | Itv.Bound.Linear (0, se1) when Itv.SymLinear.cardinal se1 > 0 ->
             let (symbol, coeff) = Itv.SymLinear.choose se1 in
             if Int.equal coeff 1
             then Itv.SubstMap.add symbol actual map
             else assert false
+        | Itv.Bound.MinMax (Itv.Bound.Max, 0, symbol) ->
+            Itv.SubstMap.add symbol actual map
         | _ -> assert false
       in
       List.fold ~f:add_pair ~init:Itv.SubstMap.empty pairs

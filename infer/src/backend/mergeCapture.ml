@@ -29,9 +29,10 @@ let modified_targets = ref String.Set.empty
 
 let modified_file file =
   match Utils.read_file file with
-  | Some targets ->
+  | Ok targets ->
       modified_targets := List.fold ~f:String.Set.add ~init:String.Set.empty targets
-  | None ->
+  | Error error ->
+      L.user_error "Failed to read modified targets file '%s': %s@." file error ;
       ()
 
 type stats =
@@ -192,9 +193,11 @@ let process_merge_file deps_file =
         then slink ~stats ~skiplevels infer_out_src infer_out_dst
     | _ ->
         () in
-  Option.iter
-    ~f:(fun lines -> List.iter ~f:process_line lines)
-    (Utils.read_file deps_file);
+  (
+    match Utils.read_file deps_file with
+    | Ok lines -> List.iter ~f:process_line lines
+    | Error error -> L.internal_error "Couldn't read deps file '%s': %s" deps_file error
+  );
   create_multilinks ();
   L.progress "Captured results merged.@.";
   L.progress "Targets merged: %d@." stats.targets_merged;

@@ -536,7 +536,7 @@ opam.lock: opam
 	$(QUIET)$(call silent_on_success,installing dependencies $(INFER_PKG_OPAMLOCK) opam package,\
 	  OPAMSWITCH=$(OPAMSWITCH); \
 	  $(OPAM) pin add --yes --no-action -k git $(INFER_PKG_OPAMLOCK) .#HEAD; \
-	  $(OPAM) install --deps-only --yes infer)
+	  $(OPAM) install --deps-only --yes $(INFER_PKG_OPAMLOCK))
 	$(QUIET)$(call silent_on_success,generating opam.lock,\
 	  $(OPAM) lock --pkg  $(INFER_PKG_OPAMLOCK) > opam.lock)
 

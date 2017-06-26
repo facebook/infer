@@ -347,62 +347,26 @@ end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
 
-let report_src_snk_paths { Callbacks.proc_desc; tenv; summary }
-    annot_map (src_annot_list, (snk_annot: Annot.t)) =
+let report_src_snk_path { Callbacks.proc_desc; tenv; summary } sink_map snk_annot src_annot =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let loc = Procdesc.get_loc proc_desc in
-  let report_src_snk_path sink_map (src_annot: Annot.t) =
-    if method_overrides_annot src_annot tenv proc_name
-    then
-      let f_report =
-        report_annotation_stack src_annot.class_name snk_annot.class_name in
-      report_call_stack
-        summary
-        (method_has_annot snk_annot tenv)
-        (lookup_annotation_calls proc_desc snk_annot)
-        f_report
-        (CallSite.make proc_name loc)
-        sink_map in
+  if method_overrides_annot src_annot tenv proc_name
+  then
+    let f_report =
+      report_annotation_stack src_annot.Annot.class_name snk_annot.Annot.class_name in
+    report_call_stack
+      summary
+      (method_has_annot snk_annot tenv)
+      (lookup_annotation_calls proc_desc snk_annot)
+      f_report
+      (CallSite.make proc_name loc)
+      sink_map
+
+let report_src_snk_paths proc_data annot_map src_annot_list snk_annot =
   try
     let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
-    List.iter ~f:(report_src_snk_path sink_map) src_annot_list
+    List.iter ~f:(report_src_snk_path proc_data sink_map snk_annot) src_annot_list
   with Not_found -> ()
-
-let is_expensive tenv pname =
-  check_attributes Annotations.ia_is_expensive tenv pname
-
-let method_is_expensive tenv pname =
-  is_modeled_expensive tenv pname || is_expensive tenv pname
-
-let check_expensive_subtyping_rules { Callbacks.proc_desc; tenv; summary } overridden_pname =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  let loc = Procdesc.get_loc proc_desc in
-  if not (method_is_expensive tenv overridden_pname) then
-    let description =
-      Format.asprintf
-        "Method %a overrides unannotated method %a and cannot be annotated with %a"
-        MF.pp_monospaced (Typ.Procname.to_string proc_name)
-        MF.pp_monospaced (Typ.Procname.to_string overridden_pname)
-        MF.pp_monospaced ("@" ^ Annotations.expensive) in
-    let exn =
-      Exceptions.Checkers
-        (expensive_overrides_unexpensive, Localise.verbatim_desc description) in
-    Reporting.log_error summary ~loc exn
-
-
-let checker ({ Callbacks.proc_desc; tenv; summary} as callback) : Specs.summary =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  if is_expensive tenv proc_name then
-    PatternMatch.override_iter (check_expensive_subtyping_rules callback) tenv proc_name;
-  let initial =
-    (AnnotReachabilityDomain.empty, Domain.TrackingDomain.NonBottom Domain.TrackingVar.empty) in
-  let proc_data = ProcData.make_default proc_desc tenv in
-  match Analyzer.compute_post proc_data ~initial with
-  | Some (annot_map, _) ->
-      List.iter ~f:(report_src_snk_paths callback annot_map) src_snk_pairs;
-      Summary.update_summary annot_map summary
-  | None ->
-      summary
 
 (* New implementation starts here *)
 
@@ -430,31 +394,58 @@ module StandardAnnotationSpec = struct
       sink_predicate = (method_has_annot snk_annot);
       sanitizer_predicate = default_sanitizer;
       report = (fun proc_data annot_map ->
-          List.iter ~f:(report_src_snk_paths proc_data annot_map) src_snk_pairs
-        );
+          report_src_snk_paths proc_data annot_map src_annots snk_annot)
     }
 end
 
 module NoAllocationAnnotationSpec = struct
+  let no_allocation_annot = annotation_of_str Annotations.no_allocation
+  let constructor_annot = annotation_of_str dummy_constructor_annot
+
   let spec = AnnotationSpec.{
       source_predicate = (fun tenv pname ->
-          method_overrides_annot (annotation_of_str Annotations.performance_critical) tenv pname);
-      sink_predicate = (method_has_annot (annotation_of_str dummy_constructor_annot));
+          method_overrides_annot no_allocation_annot tenv pname);
+      sink_predicate = (method_has_annot constructor_annot);
       sanitizer_predicate = method_has_ignore_allocation_annot;
       report = (fun proc_data annot_map ->
-          List.iter ~f:(report_src_snk_paths proc_data annot_map) src_snk_pairs
-        );
+          report_src_snk_paths proc_data annot_map [no_allocation_annot] constructor_annot);
     }
 end
 
 module ExpensiveAnnotationSpec = struct
+  let performance_critical_annot = annotation_of_str Annotations.performance_critical
+  let expensive_annot = annotation_of_str Annotations.expensive
+
+  let is_expensive tenv pname =
+    check_attributes Annotations.ia_is_expensive tenv pname
+
+  let method_is_expensive tenv pname =
+    is_modeled_expensive tenv pname || is_expensive tenv pname
+
+  let check_expensive_subtyping_rules { Callbacks.proc_desc; tenv; summary } overridden_pname =
+    let proc_name = Procdesc.get_proc_name proc_desc in
+    let loc = Procdesc.get_loc proc_desc in
+    if not (method_is_expensive tenv overridden_pname) then
+      let description =
+        Format.asprintf
+          "Method %a overrides unannotated method %a and cannot be annotated with %a"
+          MF.pp_monospaced (Typ.Procname.to_string proc_name)
+          MF.pp_monospaced (Typ.Procname.to_string overridden_pname)
+          MF.pp_monospaced ("@" ^ Annotations.expensive) in
+      let exn =
+        Exceptions.Checkers
+          (expensive_overrides_unexpensive, Localise.verbatim_desc description) in
+      Reporting.log_error summary ~loc exn
+
   let spec = AnnotationSpec.{
       source_predicate = is_expensive;
-      sink_predicate = (method_has_annot (annotation_of_str Annotations.expensive));
+      sink_predicate = (method_has_annot expensive_annot);
       sanitizer_predicate = default_sanitizer;
-      report = (fun ({ Callbacks.tenv; proc_desc } as proc_data) _ ->
+      report = (fun ({ Callbacks.tenv; proc_desc } as proc_data) astate ->
           let proc_name = Procdesc.get_proc_name proc_desc in
-          PatternMatch.override_iter (check_expensive_subtyping_rules proc_data) tenv proc_name;
+          if is_expensive tenv proc_name then
+            PatternMatch.override_iter (check_expensive_subtyping_rules proc_data) tenv proc_name;
+          report_src_snk_paths proc_data astate [performance_critical_annot] expensive_annot
         );
     }
 end
@@ -475,3 +466,14 @@ let annot_specs =
      [annotation_of_str Annotations.ui_thread  ; annotation_of_str Annotations.for_ui_thread]
      (annotation_of_str Annotations.for_non_ui_thread)) ::
   user_defined_specs
+
+let checker ({ Callbacks.proc_desc; tenv; summary} as callback) : Specs.summary =
+  let initial =
+    (AnnotReachabilityDomain.empty, Domain.TrackingDomain.NonBottom Domain.TrackingVar.empty) in
+  let proc_data = ProcData.make_default proc_desc tenv in
+  match Analyzer.compute_post proc_data ~initial with
+  | Some (annot_map, _) ->
+      List.iter annot_specs ~f:(fun (spec: AnnotationSpec.t) -> spec.report callback annot_map);
+      Summary.update_summary annot_map summary
+  | None ->
+      summary

@@ -41,6 +41,11 @@ void exit_at_end_of_if_good() {
   }
 }
 
+void FP_exit_at_end_of_proc_good() {
+  nop();
+  exit(5);
+}
+
 void FN_useless_else_bad() {
   if (__infer_nondet_int()) {
     exit(0);
@@ -91,6 +96,12 @@ void FP_loop_with_unreachable_good() {
       infinite_loop_bad();
     }
   }
+}
+
+void FP_loop_once_intentional_good() {
+  do {
+    nop();
+  } while (0);
 }
 
 void FN_loop_once_break_bad() {

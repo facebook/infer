@@ -279,4 +279,5 @@ DEFINE-CHECKER WHITE_BLACKLIST_PATH_EXAMPLE = {
   SET message = "Found main method";
   SET whitelist_path = { all_files };
   SET blacklist_path = { filtered_files };
+  SET doc_url = "www.example.com";
 };

@@ -23,6 +23,7 @@ type jsonbug = {
   bug_class : string;
   kind : string;
   bug_type : string;
+  ?doc_url : string option;
   qualifier : string;
   severity : string;
   visibility : string;

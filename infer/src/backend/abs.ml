@@ -428,8 +428,10 @@ let typ_get_recursive_flds tenv typ_exp =
           match Tenv.lookup tenv name with
           | Some { fields } -> List.map ~f:fst3 (List.filter ~f:(filter typ) fields)
           | None ->
-              L.(debug Analysis Quiet) "@\ntyp_get_recursive: unexpected type expr: %a@."
-                Exp.pp typ_exp;
+              L.(debug Analysis Quiet)
+                "@\ntyp_get_recursive_flds: unexpected %a unknown struct type: %a@."
+                Exp.pp typ_exp
+                Typ.Name.pp name;
               [] (* ToDo: assert false *)
         )
       | Tint _ | Tvoid | Tfun _ | Tptr _ | Tfloat _ | Tarray _ | TVar _ -> []
@@ -437,7 +439,7 @@ let typ_get_recursive_flds tenv typ_exp =
   | Exp.Var _ -> [] (* type of |-> not known yet *)
   | Exp.Const _ -> []
   | _ ->
-      L.internal_error "@\ntyp_get_recursive: unexpected type expr: %a@." Exp.pp typ_exp;
+      L.internal_error "@\ntyp_get_recursive_flds: unexpected type expr: %a@." Exp.pp typ_exp;
       assert false
 
 let discover_para_roots tenv p root1 next1 root2 next2 : Sil.hpara option =

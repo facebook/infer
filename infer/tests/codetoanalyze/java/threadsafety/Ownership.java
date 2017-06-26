@@ -385,8 +385,54 @@ public class Ownership {
    catch (CloneNotSupportedException e) {}
   }
 
+  static MyObj global;
+
+  void storeInGlobalAndWriteBad() {
+    MyObj x = new MyObj();
+    synchronized(this) { global = x; }
+    x.data = 5;
+  }
+
+  int readGlobalBad() {
+    synchronized(this) { return global.data; }
+  }
+
+  public void writeOwnedWithExceptionOk() {
+    Obj options = returnOwnedWithException();
+    options.f = new Object();
+  }
+
+  private Obj returnOwnedWithException() {
+    Obj options = new Obj();
+    if (options.f==null) {
+      throw new IllegalArgumentException();
+    }
+    return options;
+  }
+
+  // not propagating ownership to access path rooted in formal
+  public void notPropagatingOwnershipToAccessPathRootedAtFormalBad(Obj m) {
+    m.g = new Obj();
+  }
+
+  // not propagating ownership to unowned local access path
+  public void notPropagatingOwnershipToUnownedLocalAccessPathBad() {
+    Obj m;
+    synchronized(this) { m = field; }
+    m.g = new Obj();
+  }
+
+  // propagating ownership to owned access path
+  public void propagatingOwnershipToOwnedAccessPathOk() {
+    Obj m = new Obj();
+    m.g = new Obj();
+    m.g.g = new Obj();
+    m.g.g.g = new Obj();
+  }
+
 }
 
+class MyObj { int data; }
 
 class Subclass extends Obj {
 

@@ -33,7 +33,7 @@ val do_filter : Differential.t -> FileRenamings.t -> skip_duplicated_types:bool 
 
 module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
   val relative_complements :
-    cmp:('a -> 'a -> int) -> ?pred:('a -> bool) -> 'a list -> 'a list -> 'a list * 'a list
+    cmp:('a -> 'a -> int) -> ?pred:('a -> bool) -> 'a list -> 'a list -> 'a list * 'a list * 'a list
   val skip_duplicated_types_on_filenames : FileRenamings.t -> Differential.t -> Differential.t
   val java_anon_class_pattern : Str.regexp
   val value_of_qualifier_tag : Jsonbug_t.tag_value_record list -> string -> string option
