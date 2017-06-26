@@ -15,8 +15,6 @@ module F = Format
 
 (** Module to merge the results of capture for different buck targets. *)
 
-let use_multilinks = true
-
 (** Flag to control whether the timestamp of symbolic links
     is used to determine whether a captured directory needs to be merged. *)
 let check_timestamp_of_symlinks = true
@@ -27,7 +25,7 @@ let infer_deps () = Filename.concat Config.results_dir Config.buck_infer_deps_fi
 
 let modified_targets = ref String.Set.empty
 
-let modified_file file =
+let record_modified_targets_from_file file =
   match Utils.read_file file with
   | Ok targets ->
       modified_targets := List.fold ~f:String.Set.add ~init:String.Set.empty targets
@@ -118,7 +116,7 @@ let rec slink ~stats ~skiplevels src dst =
         items
     end
   else if skiplevels > 0 then ()
-  else if use_multilinks && Filename.check_suffix dst ".attr"
+  else if Config.merge && Filename.check_suffix dst ".attr"
   then add_multilink_attr ~stats src dst
   else create_link ~stats src dst
 
