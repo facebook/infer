@@ -128,7 +128,8 @@ struct
           L.(debug BufferOverrun Verbose) "/!\\ Unknown call to %s at %a@\n"
             proc_name
             Location.pp loc;
-          model_by_value Dom.Val.Itv.top ret mem
+          model_by_value Dom.Val.unknown ret mem
+          |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown
 
   let rec declare_array
     : Typ.Procname.t -> CFG.node -> Loc.t -> Typ.t -> length:IntLit.t option -> ?stride:int

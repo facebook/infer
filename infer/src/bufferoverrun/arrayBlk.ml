@@ -119,6 +119,9 @@ include AbstractDomain.Map (Allocsite) (ArrInfo)
 let bot : astate
   = empty
 
+let unknown : astate
+  = add Allocsite.unknown (ArrInfo.top) bot
+
 let is_bot : astate -> bool
   = is_empty
 

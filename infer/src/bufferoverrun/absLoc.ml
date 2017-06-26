@@ -19,6 +19,7 @@ struct
   include String
   let pp fmt s = Format.fprintf fmt "%s" s
   let make x = x
+  let unknown = "Unknown"
 end
 
 module Loc =
@@ -27,10 +28,9 @@ struct
     | Var of Var.t
     | Allocsite of Allocsite.t
     | Field of t * Fieldname.t
-    | Unknown
   [@@deriving compare]
 
-  let unknown = Unknown
+  let unknown = Allocsite Allocsite.unknown
   let rec pp fmt = function
     | Var v ->
         Var.pp F.str_formatter v;
@@ -40,7 +40,6 @@ struct
         else F.fprintf fmt "%s" s
     | Allocsite a -> Allocsite.pp fmt a
     | Field (l, f) -> F.fprintf fmt "%a.%a" pp l Fieldname.pp f
-    | Unknown -> F.fprintf fmt "Unknown"
   let is_var = function Var _ -> true | _ -> false
   let is_logical_var = function
     | Var (Var.LogicalVar _) -> true
