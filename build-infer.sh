@@ -168,12 +168,7 @@ install_opam_deps() {
 
 echo "initializing opam... " >&2
 check_installed opam
-if [ "$INFER_OPAM_SWITCH" = "$INFER_OPAM_SWITCH_DEFAULT" ]; then
-    # set up the custom infer switch
-    setup_opam
-else
-    opam switch set -j $NCPU $INFER_OPAM_SWITCH
-fi
+setup_opam
 eval $(SHELL=bash opam config env --switch=$INFER_OPAM_SWITCH)
 echo >&2
 echo "installing infer dependencies; this can take up to 30 minutes... " >&2
