@@ -222,6 +222,7 @@ actual_params:
 transition_label:
   | identifier { match $1 with
                   | "Body" | "body" -> "Body", Some CTL.Body
+                  | "Protocol" | "protocol" -> "Protocol", Some CTL.Protocol
                   | "InitExpr" | "initexpr" -> "InitExpr", Some CTL.InitExpr
                   | "Cond" | "cond" -> "Cond", Some CTL.Cond
                   | "Parameters" | "parameters" -> "Parameters", Some CTL.Parameters
@@ -245,11 +246,20 @@ formula:
   | formula AU formula { L.(debug Linters Verbose) "\tParsed AU@\n"; CTL.AU (None,$1, $3) }
   | formula AF { L.(debug Linters Verbose) "\tParsed AF@\n"; CTL.AF (None,$1) }
   | formula EX { L.(debug Linters Verbose) "\tParsed EX@\n"; CTL.EX (None, $1) }
+  | formula EX WITH_TRANSITION transition_label
+     { L.(debug Linters Verbose) "\tParsed EX WITH-TRANSITION '%s'@\n" (fst $4);
+       CTL.EX (snd $4, $1) }
   | formula AX { L.(debug Linters Verbose) "\tParsed AX@\n"; CTL.AX (None, $1) }
+  | formula AX WITH_TRANSITION transition_label
+     { L.(debug Linters Verbose) "\tParsed AX WITH-TRANSITION '%s'@\n" (fst $4);
+       CTL.AX (snd $4, $1) }
   | formula EG { L.(debug Linters Verbose) "\tParsed EG@\n"; CTL.EG (None, $1) }
   | formula AG { L.(debug Linters Verbose) "\tParsed AG@\n"; CTL.AG (None, $1) }
   | formula EH node_list { L.(debug Linters Verbose) "\tParsed EH@\n"; CTL.EH ($3, $1) }
   | formula EF { L.(debug Linters Verbose) "\tParsed EF@\n"; CTL.EF (None, $1) }
+  | formula EF WITH_TRANSITION transition_label
+     { L.(debug Linters Verbose) "\tParsed EF WITH-TRANSITION '%s'@\n" (fst $4);
+       CTL.EF(snd $4, $1) }
   | WHEN formula HOLDS_IN_NODE node_list
      { L.(debug Linters Verbose) "\tParsed InNode@\n"; CTL.InNode ($4, $2)}
   | ET node_list WITH_TRANSITION transition_label formula_EF

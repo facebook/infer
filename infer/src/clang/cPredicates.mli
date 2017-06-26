@@ -74,6 +74,8 @@ val has_type : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val method_return_type : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
+val has_type_subprotocol_of : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+
 val get_available_attr_ios_sdk : Ctl_parser_types.ast_node -> string option
 
 val within_responds_to_selector_block :

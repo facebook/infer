@@ -221,6 +221,63 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
   SET severity = "LIKE";
 };
 
+DEFINE-CHECKER TEST_PROTOCOL_DEF_INHERITANCE = {
+
+  LET is_subprotocol_of(x) =
+          declaration_has_name(x) HOLDS-EVENTUALLY WITH-TRANSITION Protocol;
+
+  SET report_when =
+    WHEN
+      is_subprotocol_of("A")
+    HOLDS-IN-NODE ObjCProtocolDecl;
+
+  SET message = "Protocol inherit from A";
+};
+
+DEFINE-CHECKER TEST_PROTOCOL_TYPE_INHERITANCE = {
+
+  LET method_has_parameter_subprotocol_of(x) =
+            WHEN
+             HOLDS-NEXT WITH-TRANSITION Parameters
+                (has_type_subprotocol_of(x))
+             HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET report_when =
+      WHEN
+        declaration_has_name(REGEXP("^newWith.*:$")) AND
+        method_has_parameter_subprotocol_of("A")
+      HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET message = "Method declared with parameter whose type inherit from protocol A";
+};
+
+DEFINE-CHECKER TEST_GENERICS_TYPE = {
+
+  LET method_has_parameter_type(x) =
+        WHEN
+          HOLDS-NEXT WITH-TRANSITION Parameters
+            (has_type(x))
+          HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET report_when =
+      WHEN
+         method_has_parameter_type ("NSArray<id<C>>*")
+      HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET message = "Method declared with parameter whose type NSArray<id<C>>*";
+};
+
+
+DEFINE-CHECKER TEST_INSTANCE_TYPE = {
+
+  SET report_when =
+      WHEN
+        has_type("instancetype")
+      HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET message = "Method declared has return type instancetype";
+};
+
 DEFINE-CHECKER TEST_DEFINE_NAMESPACE = {
 
   SET report_when =

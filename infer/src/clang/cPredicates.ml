@@ -361,6 +361,7 @@ let type_ptr_equal_type type_ptr type_str =
     (string_of_int  (pos.pos_cnum - pos.pos_bol + 1)) in
 
   let parse_type_string str =
+    L.(debug Linters Medium) "Starting parsing type string '%s'@\n" str;
     let lexbuf = Lexing.from_string str in
     try
       (Types_parser.abs_ctype token lexbuf)
@@ -383,18 +384,17 @@ let type_ptr_equal_type type_ptr type_str =
       Ctl_parser_types.c_type_equal c_type' abs_ctype
   | _ -> L.(debug Linters Medium) "Couldn't find type....@\n"; false
 
-let has_type an _typ =
-  match an, _typ with
-  | Ctl_parser_types.Stmt stmt, ALVar.Const typ ->
+let get_ast_node_type_ptr an =
+  match an with
+  | Ctl_parser_types.Stmt stmt ->
       (match Clang_ast_proj.get_expr_tuple stmt with
-       | Some (_, _, expr_info) ->
-           type_ptr_equal_type expr_info.ei_qual_type.qt_type_ptr typ
-       | _ -> false)
-  | Ctl_parser_types.Decl decl, ALVar.Const typ ->
-      (match CAst_utils.type_of_decl decl with
-       | Some type_ptr ->
-           type_ptr_equal_type type_ptr typ
-       | _ -> false)
+       | Some (_, _, expr_info) -> Some expr_info.ei_qual_type.qt_type_ptr
+       | _ -> None)
+  | Ctl_parser_types.Decl decl -> CAst_utils.type_of_decl decl
+
+let has_type an _typ =
+  match get_ast_node_type_ptr an, _typ with
+  | Some pt, ALVar.Const typ -> type_ptr_equal_type pt typ
   | _ -> false
 
 let method_return_type an _typ =
@@ -404,6 +404,45 @@ let method_return_type an _typ =
       L.(debug Linters Verbose) "@\n with parameter `%s`...." typ;
       let qual_type = mdi.Clang_ast_t.omdi_result_type in
       type_ptr_equal_type qual_type.Clang_ast_t.qt_type_ptr typ
+  | _ -> false
+
+let rec check_protocol_hiearachy decls_ptr _prot_name =
+  let open Clang_ast_t in
+  let is_this_protocol di_opt =
+    match di_opt with
+    | Some di -> ALVar.compare_str_with_alexp di.ni_name _prot_name
+    | _ -> false in
+  match decls_ptr with
+  | [] -> false
+  | pt :: decls' ->
+      let di, protocols = (match CAst_utils.get_decl pt with
+          | Some ObjCProtocolDecl (_, di, _, _, opcdi) ->
+              Some di, opcdi.opcdi_protocols
+          | _ -> None, []) in
+      if (is_this_protocol di)
+      || List.exists ~f:(fun dr -> is_this_protocol dr.dr_name) protocols then
+        true
+      else
+        let super_prot = List.map ~f:(fun dr -> dr.dr_decl_pointer) protocols in
+        check_protocol_hiearachy (super_prot @ decls') _prot_name
+
+let has_type_subprotocol_of an _prot_name =
+  let open Clang_ast_t in
+  let rec check_subprotocol t =
+    match t with
+    | Some ObjCObjectPointerType (_, qt) ->
+        check_subprotocol (CAst_utils.get_type qt.qt_type_ptr)
+    | Some ObjCObjectType (_, ooti) ->
+        if List.length ooti.protocol_decls_ptr > 0 then
+          check_protocol_hiearachy ooti.protocol_decls_ptr _prot_name
+        else
+          List.exists
+            ~f:(fun qt -> check_subprotocol (CAst_utils.get_type qt.qt_type_ptr)) ooti.type_args
+    | Some ObjCInterfaceType (_, pt) ->
+        check_protocol_hiearachy [pt] _prot_name
+    | _ -> false in
+  match get_ast_node_type_ptr an with
+  | Some tp -> check_subprotocol (CAst_utils.get_type tp)
   | _ -> false
 
 let within_responds_to_selector_block (cxt:CLintersContext.context) an =
