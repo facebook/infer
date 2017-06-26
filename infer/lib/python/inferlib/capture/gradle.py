@@ -10,8 +10,6 @@ import os
 import util
 import tempfile
 
-from inferlib import config, jwlib, utils
-
 MODULE_NAME = __name__
 MODULE_DESCRIPTION = '''Run analysis of code built with a command like:
 gradle [options] [task]
@@ -41,7 +39,65 @@ def extract_filepath(parts):
     return ([parts[0]] + remainder, path)
 
 
+# Please run the doctests using:
+# $ python -m doctest -v gradle.py
+def extract_all(javac_arguments):
+    """Extract Java filenames and Javac options from the Javac arguments.
+
+    >>> os.path.isfile = lambda s: s[1:].startswith('path/to/')
+    >>> extract_all([])
+    {'files': [], 'opts': []}
+    >>> extract_all(['-opt1', 'optval1', '/path/to/1.java'])
+    {'files': ['/path/to/1.java'], 'opts': ['-opt1', 'optval1']}
+    >>> extract_all(['-opt1', 'optval1', '/path/to/a', 'b/1.java'])
+    {'files': ['/path/to/a b/1.java'], 'opts': ['-opt1', 'optval1']}
+    >>> extract_all(['-opt1', 'opt', 'val1', '/path/to/1.java'])
+    {'files': ['/path/to/1.java'], 'opts': ['-opt1', 'opt val1']}
+    >>> extract_all(['-opt1', '/path/to/a', 'b/c', 'd/1.java', '-opt2'])
+    {'files': ['/path/to/a b/c d/1.java'], 'opts': ['-opt1', '-opt2']}
+    >>> extract_all(['-opt1', 'optval1', '-path/to/1.java'])
+    {'files': ['-path/to/1.java'], 'opts': ['-opt1', 'optval1']}
+    >>> extract_all(['-opt1', 'optval1', '/path/to/', '-1.java'])
+    {'files': ['/path/to/ -1.java'], 'opts': ['-opt1', 'optval1']}
+    >>> extract_all(['undef1', 'undef2'])
+    {'files': [], 'opts': ['undef1 undef2']}
+    """
+    java_files = []
+    java_opts = []
+    # Reversed Javac options parameters
+    rev_opt_params = []
+    pop = lambda: javac_arguments.pop() if javac_arguments else None
+    java_arg = pop()
+    while java_arg:
+        if java_arg.endswith('.java'):
+            # Probably got a file
+            remainder, path = extract_filepath(javac_arguments + [java_arg])
+            if path:
+                java_files.append(path)
+                javac_arguments = remainder
+            else:
+                # A use-case here: *.java dir as an option parameter
+                rev_opt_params.append(java_arg)
+        elif java_arg[0] == '-':
+            # Got a Javac option
+            option = [java_arg]
+            if rev_opt_params:
+                option.append(' '.join(reversed(rev_opt_params)))
+                rev_opt_params = []
+            java_opts[0:0] = option
+        else:
+            # Got Javac option parameter
+            rev_opt_params.append(java_arg)
+        java_arg = pop()
+    if rev_opt_params:
+        # Javac option without - (or incorrect file), put into Javac arguments
+        option = [' '.join(reversed(rev_opt_params))]
+        java_opts[0:0] = option
+    return {'files': java_files, 'opts': java_opts}
+
+
 def normalize(path):
+    from inferlib import utils
     # From Javac docs: If a filename contains embedded spaces,
     # put the whole filename in double quotes
     quoted_path = path
@@ -53,6 +109,8 @@ def normalize(path):
 class GradleCapture:
 
     def __init__(self, args, cmd):
+        from inferlib import config, utils
+
         self.args = args
         # TODO: make the extraction of targets smarter
         self.build_cmd = [cmd[0], '--debug'] + cmd[1:]
@@ -65,6 +123,8 @@ class GradleCapture:
         logging.info('Running with:\n' + utils.decode(version_str))
 
     def get_infer_commands(self, verbose_output):
+        from inferlib import config, jwlib
+
         argument_start_pattern = ' Compiler arguments: '
         calls = []
         seen_build_cmds = set([])
@@ -78,32 +138,11 @@ class GradleCapture:
                 if build_agnostic_cmd in seen_build_cmds:
                     continue
                 seen_build_cmds.add(build_agnostic_cmd)
-                javac_arguments = content.split(' ')
-                java_files = []
-                java_args = []
-                collected = []
-                for java_arg in javac_arguments:
-                    if java_arg and java_arg[0] == '-':
-                        # The term item is either a new option or
-                        # a java file (see below)
-                        if collected:
-                            java_args.append(' '.join(collected))
-                            collected = []
-                        # Option don't have spaces
-                        java_args.append(java_arg)
-                    else:
-                        collected.append(java_arg)
-                        if java_arg.endswith('.java'):
-                            # We may have the option values before sources
-                            collected, path = extract_filepath(collected)
-                            if path:
-                                java_files.append(path)
-                            if collected:
-                                java_args.append(' '.join(collected))
-                            collected = []
-                if collected:
-                    # We may have the option values at the end
-                    java_args.append(' '.join(collected))
+                # Filter out the empty elements
+                arguments = list(filter(None, content.split(' ')))
+                extracted = extract_all(arguments)
+                java_files = extracted['files']
+                java_args = extracted['opts']
 
                 with tempfile.NamedTemporaryFile(
                         mode='w',
