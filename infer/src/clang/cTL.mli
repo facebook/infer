@@ -23,6 +23,7 @@ type transitions =
   | Parameters (* decl to decl *)
   | Cond
   | PointerToDecl (* stmt to decl *)
+  | Protocol (** decl to decl *)
 
 (* In formulas below prefix
    "E" means "exists a path"

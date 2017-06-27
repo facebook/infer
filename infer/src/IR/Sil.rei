@@ -93,6 +93,8 @@ type atom =
 
 let equal_atom: atom => atom => bool;
 
+let atom_has_local_addr: atom => bool;
+
 
 /** kind of lseg or dllseg predicates */
 type lseg_kind =

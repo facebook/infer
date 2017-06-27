@@ -212,6 +212,9 @@ struct
   let bot : t
     = { itv = Itv.bot; powloc = PowLoc.bot; arrayblk = ArrayBlk.bot }
 
+  let unknown : t
+    = { itv = Itv.top; powloc = PowLoc.unknown; arrayblk = ArrayBlk.unknown }
+
   let (<=) ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else

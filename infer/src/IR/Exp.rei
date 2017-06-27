@@ -106,6 +106,10 @@ let get_undefined: bool => t;
 let pointer_arith: t => bool;
 
 
+/** returns true if the express operates on address of local variable */
+let has_local_addr: t => bool;
+
+
 /** Integer constant 0 */
 let zero: t;
 

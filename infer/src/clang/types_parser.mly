@@ -61,6 +61,8 @@
 %token REGEXP
 %token LEFT_PAREN
 %token RIGHT_PAREN
+%token LEFT_ANGLE
+%token RIGHT_ANGLE
 %token <string> IDENTIFIER
 %token <string> STRING
 %token <string> REARG
@@ -76,6 +78,7 @@ abs_ctype:
  ;
 
 ctype_specifier_seq:
+| protocol_or_generics_type_spec { $1 }
 | noptr_type_spec  { $1 }
 | ptr_type_spec  { $1 }
 | type_name { $1 }
@@ -85,10 +88,30 @@ ptr_type_spec:
 | noptr_type_spec STAR { Pointer $1 }
 | ptr_type_spec STAR { Pointer $1 }
 | type_name STAR { Pointer $1 }
+| protocol_or_generics_type_spec STAR { Pointer $1 }
 ;
 
+protocol_or_generics_type_spec:
+|  type_name_or_objid LEFT_ANGLE ctype_specifier_seq RIGHT_ANGLE {
+   let tname = $1 in
+    L.(debug Linters Verbose) "\tProtocol or Generics parsed: `%s<%s>`@\n"
+    (Ctl_parser_types.abs_ctype_to_string tname)
+    (Ctl_parser_types.abs_ctype_to_string $3);
+    ObjCGenProt (tname, $3)
+  }
+;
+
+
+type_name_or_objid:
+ | OBJCID { BuiltIn ObjCId}
+ | type_name { $1 }
+ ;
+
 type_name:
-  | alexp { TypeName $1 }
+  | alexp {
+    L.(debug Linters Verbose) "\tType_name parsed: `%s`@\n"
+    (ALVar.alexp_to_string $1);
+    TypeName $1 }
 
 noptr_type_spec:
   | trailing_type_specifier_seq

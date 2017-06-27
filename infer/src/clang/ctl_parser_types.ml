@@ -145,6 +145,7 @@ type abs_ctype =
   | BuiltIn of builtin_kind
   | Pointer of abs_ctype
   | TypeName of ALVar.alexp
+  | ObjCGenProt of abs_ctype * abs_ctype (* Objective-C Protocol or Generics *)
 
 let display_equality_warning () =
   L.(debug Linters Medium)
@@ -157,6 +158,8 @@ let rec abs_ctype_to_string t =
   | BuiltIn t' -> "BuiltIn (" ^ (builtin_kind_to_string t') ^ ")"
   | Pointer t' -> "Pointer (" ^ (abs_ctype_to_string t') ^ ")"
   | TypeName ae -> "TypeName (" ^ (ALVar.alexp_to_string ae) ^ ")"
+  | ObjCGenProt (b,p) ->
+      "ObjCGenProt (" ^ (abs_ctype_to_string b) ^ "," ^ (abs_ctype_to_string p) ^")"
 
 let builtin_type_kind_assoc =
   [
@@ -209,17 +212,43 @@ let rec pointer_type_equal p ap =
   match p, ap with
   | PointerType (_, qt), Pointer abs_ctype'
   | ObjCObjectPointerType (_, qt), Pointer abs_ctype' ->
-      (match CAst_utils.get_type qt.qt_type_ptr with
-       | Some c_type' ->
-           c_type_equal c_type' abs_ctype'
-       | None -> false)
+      check_type_ptr qt.qt_type_ptr abs_ctype'
   | _, _ -> display_equality_warning ();
       false
+
+and objc_object_type_equal c_type abs_ctype =
+  let open Clang_ast_t in
+  let check_type_args abs_arg_type qt =
+    check_type_ptr qt.qt_type_ptr abs_arg_type in
+  let check_prot prot_name pointer =
+    match prot_name with
+    | TypeName ae -> typename_equal pointer ae
+    | _ -> false in
+  match c_type, abs_ctype with
+  | ObjCObjectType (_, ooti), ObjCGenProt (base, args) ->
+      (match (CAst_utils.get_type ooti.base_type), ooti.protocol_decls_ptr, ooti.type_args with
+       | Some base_type, _::_, [] ->
+           c_type_equal base_type base &&
+           (List.for_all ~f:(check_prot args) ooti.protocol_decls_ptr)
+       | Some base_type, [], _::_ ->
+           c_type_equal base_type base &&
+           (List.for_all ~f:(check_type_args args) ooti.type_args)
+       | _ -> false)
+  | _ -> false
+
 
 and typename_equal pointer typename =
   match typename_to_string pointer  with
   | Some name ->
+      L.(debug Linters Medium)
+        "Comparing typename '%s' and pointer '%s' for equality...@\n"
+        (ALVar.alexp_to_string typename) name;
       ALVar.compare_str_with_alexp name typename
+  | None -> false
+
+and check_type_ptr type_ptr abs_ctype =
+  match CAst_utils.get_type type_ptr with
+  | Some c_type' -> c_type_equal c_type' abs_ctype
   | None -> false
 
 (* Temporary, partial equality function. Cover only what's covered
@@ -227,7 +256,7 @@ and typename_equal pointer typename =
    comparison function for Clang_ast_t.c_type *)
 and c_type_equal c_type abs_ctype =
   L.(debug Linters Medium)
-    "Comparing c_type/abs_ctype for equality... \
+    "@\nComparing c_type/abs_ctype for equality... \
      Type compared: @\nc_type = `%s`  @\nabs_ctype =`%s`@\n"
     (Clang_ast_j.string_of_c_type c_type)
     (abs_ctype_to_string abs_ctype);
@@ -238,10 +267,18 @@ and c_type_equal c_type abs_ctype =
   | PointerType _, Pointer _
   | ObjCObjectPointerType _, Pointer _ ->
       pointer_type_equal c_type abs_ctype
+  | ObjCObjectPointerType (_, qt), ObjCGenProt _ ->
+      check_type_ptr qt.qt_type_ptr abs_ctype
+  | ObjCObjectType _, ObjCGenProt _ ->
+      objc_object_type_equal c_type abs_ctype
   | ObjCInterfaceType (_, pointer), TypeName ae ->
       typename_equal pointer ae
   | TypedefType (_, tdi), TypeName ae ->
       typename_equal tdi.tti_decl_ptr ae
+  | TypedefType (ti, _), ObjCGenProt _ ->
+      (match ti.ti_desugared_type with
+       | Some dt -> check_type_ptr dt abs_ctype
+       | None -> false)
   | _, _ -> display_equality_warning ();
       false
 

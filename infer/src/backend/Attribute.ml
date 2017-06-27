@@ -294,7 +294,18 @@ let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
           end in
     List.iter ~f:do_var !fresh_address_vars;
     !res in
-  !stack_vars_address_in_post, List.fold ~f:(Prop.prop_atom_and tenv) ~init:p'' pi
+  (* Filter out local addresses in p'' *)
+  let filtered_pi, changed = List.fold_right p''.pi ~init:([], false)
+      ~f:(fun a (filtered, changed) ->
+          if Sil.atom_has_local_addr a then
+            filtered, true
+          else
+            a :: filtered, changed
+        ) in
+  (* Avoid normalization when p'' does not change *)
+  let p''' = if changed then Prop.normalize tenv (Prop.set p'' ~pi:filtered_pi)
+    else p'' in
+  !stack_vars_address_in_post, List.fold ~f:(Prop.prop_atom_and tenv) ~init:p''' pi
 
 (** Input of this method is an exp in a prop. Output is a formal variable or path from a
     formal variable that is equal to the expression,

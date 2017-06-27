@@ -25,6 +25,7 @@ type transitions =
   | Parameters (** decl to decl *)
   | Cond
   | PointerToDecl (** stmt to decl *)
+  | Protocol (** decl to decl *)
 
 (* In formulas below prefix
    "E" means "exists a path"
@@ -106,6 +107,7 @@ module Debug = struct
       | Super -> Format.pp_print_string fmt "Super"
       | Parameters -> Format.pp_print_string fmt "Parameters"
       | Cond -> Format.pp_print_string fmt "Cond"
+      | Protocol -> Format.pp_print_string fmt "Protocol"
       | PointerToDecl -> Format.pp_print_string fmt "PointerToDecl" in
     match trans_opt with
     | Some trans -> pp_aux fmt trans
@@ -576,6 +578,18 @@ let transition_decl_to_decl_via_super d =
       decl_opt_to_ast_node_opt (CAst_utils.get_decl_opt_with_decl_ref idi.otdi_super)
   | _ -> []
 
+
+let transition_decl_to_decl_via_protocol d =
+  let open Clang_ast_t in
+  let get_nodes dr =
+    match CAst_utils.get_decl dr.dr_decl_pointer with
+    | Some d -> Some (Decl d)
+    | None -> None in
+  match d with
+  | Clang_ast_t.ObjCProtocolDecl (_, _, _, _, opdi) ->
+      List.filter_map ~f:get_nodes opdi.opcdi_protocols
+  | _ -> []
+
 let transition_stmt_to_stmt_via_condition st =
   let open Clang_ast_t in
   match st with
@@ -612,6 +626,7 @@ let next_state_via_transition an trans =
   | Decl d, Parameters -> transition_decl_to_decl_via_parameters d
   | Decl d, InitExpr
   | Decl d, Body -> transition_decl_to_stmt d trans
+  | Decl d, Protocol -> transition_decl_to_decl_via_protocol d
   | Stmt st, Cond -> transition_stmt_to_stmt_via_condition st
   | Stmt st, PointerToDecl -> transition_stmt_to_decl_via_pointer st
   | _, _ -> []
@@ -659,6 +674,8 @@ let rec eval_Atomic _pred_name args an lcxt =
       CPredicates.objc_method_has_nth_parameter_of_type an num typ
   | "using_namespace", [namespace], an ->
       CPredicates.using_namespace an namespace
+  | "has_type_subprotocol_of", [protname], an ->
+      CPredicates.has_type_subprotocol_of an protname
   | _ -> failwith
            ("ERROR: Undefined Predicate or wrong set of arguments: '"
             ^ pred_name ^ "'")

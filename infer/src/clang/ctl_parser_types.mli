@@ -66,6 +66,7 @@ type abs_ctype =
   | BuiltIn of builtin_kind
   | Pointer of abs_ctype
   | TypeName of ALVar.alexp
+  | ObjCGenProt of abs_ctype * abs_ctype (* Objective-C Protocol or Generics *)
 
 val c_type_equal : Clang_ast_t.c_type -> abs_ctype -> bool
 

@@ -132,7 +132,7 @@ let main makefile => {
   BuiltinDefn.init ();
   RegisterCheckers.register ();
   switch Config.modified_targets {
-  | Some file => MergeCapture.modified_file file
+  | Some file => MergeCapture.record_modified_targets_from_file file
   | None => ()
   };
   switch Config.cluster_cmdline {

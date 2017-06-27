@@ -59,6 +59,8 @@ rule token = parse
   | "REGEXP" { REGEXP }
   | "(" { LEFT_PAREN }
   | ")" { RIGHT_PAREN }
+  | "<" { LEFT_ANGLE }
+  | ">" { RIGHT_ANGLE }
   | id { IDENTIFIER (Lexing.lexeme lexbuf) }
   | ''' { read_string (Buffer.create 80) lexbuf }
   | _ { raise (SyntaxError ("Unexpected char: '" ^ (Lexing.lexeme lexbuf) ^"'")) }
