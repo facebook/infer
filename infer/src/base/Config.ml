@@ -797,12 +797,12 @@ and (
   filtering,
   frontend_tests,
   linters_developer_mode,
+  only_cheap_debug,
   print_buckets,
   print_logs,
   print_types,
   reports_include_ml_loc,
   stats,
-  test,
   trace_error,
   write_html,
   write_dotty
@@ -847,6 +847,11 @@ and (
       "Do not show the results from experimental checks (note: some of them may contain many false \
        alarms)"
 
+  and only_cheap_debug =
+    CLOpt.mk_bool ~long:"only-cheap-debug"
+      ~default:true
+      "Disable expensive debugging output"
+
   and print_buckets =
     CLOpt.mk_bool ~long:"print-buckets"
       "Show the internal bucket of Infer reports in their textual description"
@@ -858,11 +863,6 @@ and (
   and reports_include_ml_loc =
     CLOpt.mk_bool ~deprecated:["with_infer_src_loc"] ~long:"reports-include-ml-loc"
       "Include the location in the Infer source code from where reports are generated"
-
-  and test =
-    CLOpt.mk_bool ~long:"only-cheap-debug"
-      ~default:true
-      "Disable expensive debugging output"
 
   and trace_error =
     CLOpt.mk_bool ~long:"trace-error"
@@ -887,12 +887,12 @@ and (
     CLOpt.mk_bool_group ~deprecated:["debug"] ~long:"debug" ~short:'g'
       ~in_help:all_generic_manuals
       "Debug mode (also sets $(b,--debug-level 2), $(b,--developer-mode), $(b,--no-filtering), \
-       $(b,--print-buckets), $(b,--print-types), $(b,--reports-include-ml-loc), $(b,--no-test), \
-       $(b,--trace-error), $(b,--write-dotty), $(b,--write-html))"
+       $(b,--print-buckets), $(b,--print-types), $(b,--reports-include-ml-loc), \
+       $(b,--no-only-cheap-debug), $(b,--trace-error), $(b,--write-dotty), $(b,--write-html))"
       ~f:(fun debug -> if debug then set_debug_level 2 else set_debug_level 0; debug)
       [developer_mode; print_buckets; print_types; reports_include_ml_loc; trace_error; write_html;
        write_dotty]
-      [filtering; test]
+      [filtering; only_cheap_debug]
 
   and _ : int option ref =
     CLOpt.mk_int_opt ~long:"debug-level"
@@ -957,12 +957,12 @@ and (
     filtering,
     frontend_tests,
     linters_developer_mode,
+    only_cheap_debug,
     print_buckets,
     print_logs,
     print_types,
     reports_include_ml_loc,
     stats,
-    test,
     trace_error,
     write_html,
     write_dotty
@@ -1946,6 +1946,7 @@ and nelseg = !nelseg
 and suggest_nullable = !suggest_nullable
 and no_translate_libs = not !headers
 and objc_memory_model_on = !objc_memory_model
+and only_cheap_debug = !only_cheap_debug
 and only_footprint = !only_footprint
 and passthroughs = !passthroughs
 and patterns_never_returning_null = match patterns_never_returning_null with (k,r) -> (k,!r)
@@ -2003,7 +2004,6 @@ and stats_report = !stats_report
 and subtype_multirange = !subtype_multirange
 and svg = !svg
 and symops_per_iteration = !symops_per_iteration
-and test = !test
 and test_filtering = !test_filtering
 and testing_mode = !testing_mode
 and threadsafety = !threadsafety

@@ -342,7 +342,7 @@ let printer_hook = ref (fun _ -> failwith "uninitialized printer hook")
 (** extend the current print log *)
 let add_print_action pact =
   if Config.write_html then delayed_actions := pact :: !delayed_actions
-  else if not Config.test then !printer_hook (fst !log_file) pact
+  else if not Config.only_cheap_debug then !printer_hook (fst !log_file) pact
 
 (** reset the delayed print actions *)
 let reset_delayed_prints () =
