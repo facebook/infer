@@ -846,7 +846,8 @@ let create_dereference_desc tenv
       | Some (DExp.Ddot (dexp, fieldname)) ->
           if is_special_field mutex_matcher (Some "null_if_locked") fieldname then
             Localise.desc_double_lock None (DExp.to_string dexp) loc
-          else if is_special_field vector_matcher (Some "beginPtr") fieldname then
+          else if is_special_field vector_matcher (Some "beginPtr") fieldname
+               || is_special_field vector_matcher (Some "endPtr") fieldname then
             Localise.desc_empty_vector_access None (DExp.to_string dexp) loc
           else
             desc
