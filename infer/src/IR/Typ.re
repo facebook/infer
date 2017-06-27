@@ -1030,8 +1030,7 @@ let java_proc_return_typ pname_java :t => {
 };
 
 module Fieldname = {
-  type clang_field_info = {qual_class: QualifiedCppName.t, field_name: string}
-  [@@deriving compare];
+  type clang_field_info = {class_name: Name.t, field_name: string} [@@deriving compare];
   type t =
     | Hidden /* Backend relies that Hidden is the smallest (first) field in Abs.should_raise_objc_leak */
     | Clang clang_field_info
@@ -1046,7 +1045,7 @@ module Fieldname = {
   module Set = Caml.Set.Make T;
   module Map = Caml.Map.Make T;
   module Clang = {
-    let from_qualified qual_class field_name => Clang {qual_class, field_name};
+    let from_class_name class_name field_name => Clang {class_name, field_name};
   };
   module Java = {
     let from_string n => Java n;
@@ -1071,6 +1070,11 @@ module Fieldname = {
     | _ => s
     }
   };
+  let to_full_string fname =>
+    switch fname {
+    | Clang {class_name, field_name} => Name.to_string class_name ^ "::" ^ field_name
+    | _ => to_string fname
+    };
 
   /** Convert a fieldname to a flat string without path. */
   let to_flat_string fn => {
@@ -1114,7 +1118,7 @@ module Fieldname = {
   };
   let clang_get_qual_class =
     fun
-    | Clang {qual_class} => Some qual_class
+    | Clang {class_name} => Some (Name.qual_name class_name)
     | _ => None;
 
   /** hidded fieldname constant */

@@ -90,9 +90,10 @@ let rec get_struct_fields tenv decl =
     | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
     | RecordDecl (_, _, _, _, decl_list, _, _) -> decl_list
     | _ -> [] in
+  let class_tname = get_record_typename ~tenv decl in
   let do_one_decl decl = match decl with
-    | FieldDecl (_, name_info, qt, _) ->
-        let id = CGeneral_utils.mk_class_field_name name_info in
+    | FieldDecl (_, {ni_name}, qt, _) ->
+        let id = CGeneral_utils.mk_class_field_name class_tname ni_name in
         let typ = qual_type_to_sil_type tenv qt in
         let annotation_items = [] in (* For the moment we don't use them*)
         [(id, typ, annotation_items)]
@@ -140,10 +141,14 @@ and get_record_typename ?tenv decl =
 
   | ObjCInterfaceDecl (_, name_info, _, _, _), _
   | ObjCImplementationDecl (_, name_info, _, _, _), _
-  | ObjCProtocolDecl (_, name_info, _, _, _), _
-  | ObjCCategoryDecl (_, name_info, _, _, _), _
-  | ObjCCategoryImplDecl (_, name_info, _, _, _), _ ->
+  | ObjCProtocolDecl (_, name_info, _, _, _), _ ->
       CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.from_qual_name
+  | ObjCCategoryDecl (_, _, _, _, {odi_class_interface=Some {dr_name}}), _
+  | ObjCCategoryImplDecl (_, _, _, _, {ocidi_class_interface=Some {dr_name}}), _ -> (
+      match dr_name with
+      | Some name_info ->
+          CAst_utils.get_qualified_name name_info |> Typ.Name.Objc.from_qual_name
+      | None -> assert false)
   | _ -> assert false
 
 (** fetches list of superclasses for C++ classes *)

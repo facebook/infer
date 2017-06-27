@@ -490,11 +490,7 @@ module Fieldname: {
 
   /** Map for fieldnames */
   module Map: Caml.Map.S with type key = t;
-  module Clang: {
-
-    /** Create a clang field name from qualified c++ name */
-    let from_qualified: QualifiedCppName.t => string => t;
-  };
+  module Clang: {let from_class_name: Name.t => string => t;};
   module Java: {
 
     /** Create a java field name from string */
@@ -503,6 +499,7 @@ module Fieldname: {
 
   /** Convert a field name to a string. */
   let to_string: t => string;
+  let to_full_string: t => string;
 
   /** Convert a fieldname to a simplified string with at most one-level path. */
   let to_simplified_string: t => string;

@@ -235,7 +235,7 @@ let recognize_exception exn =
         (Localise.from_string "Match failure",
          Localise.no_desc, Some ml_loc, Exn_developer, High, None, Nocat)
     | Missing_fld (fld, ml_loc) ->
-        let desc = Localise.verbatim_desc (Typ.Fieldname.to_string fld) in
+        let desc = Localise.verbatim_desc (Typ.Fieldname.to_full_string fld) in
         (Localise.from_string "Missing_fld" ~hum:"Missing Field",
          desc, Some ml_loc, Exn_developer, Medium, None, Nocat)
     | Premature_nil_termination (desc, ml_loc) ->

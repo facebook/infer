@@ -43,7 +43,7 @@ val list_range: int -> int -> int list
 
 val replicate: int -> 'a -> 'a list
 
-val mk_class_field_name : Clang_ast_t.named_decl_info -> Typ.Fieldname.t
+val mk_class_field_name : Typ.Name.t -> string -> Typ.Fieldname.t
 
 val get_var_name_mangled : Clang_ast_t.named_decl_info -> Clang_ast_t.var_decl_info ->
   (string * Mangled.t)
