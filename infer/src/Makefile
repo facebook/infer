@@ -272,7 +272,7 @@ rei:
 %.rei : %.mli
 	$(SCRIPT_DIR)/refmt.sh -parse ml -print re $< > $*.rei
 
-roots:=Infer StatsAggregator
+roots:=Infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
 roots += $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 endif

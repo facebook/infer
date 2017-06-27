@@ -315,3 +315,25 @@ let write_file_with_locking ?(delete=false) ~f:do_write fname =
   if delete then
     try Unix.unlink fname with
     | Unix.Unix_error _ -> ()
+
+let rec rmtree name =
+  match Unix.((lstat name).st_kind) with
+  | S_DIR ->
+      let dir = Unix.opendir name in
+      let rec rmdir dir =
+        match Unix.readdir dir with
+        | entry ->
+            if not (String.equal entry Filename.current_dir_name ||
+                    String.equal entry Filename.parent_dir_name)
+            then (
+              rmtree (name ^/ entry)
+            );
+            rmdir dir
+        | exception End_of_file ->
+            Unix.closedir dir ;
+            Unix.rmdir name in
+      rmdir dir
+  | _ ->
+      Unix.unlink name
+  | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
+      ()
