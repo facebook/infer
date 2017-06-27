@@ -115,7 +115,7 @@ struct
     let fields = List.map ~f:mk_field_from_captured_var captured_vars in
     L.(debug Capture Verbose) "Block %s field:@\n" block_name;
     List.iter ~f:(fun (fn, _, _) ->
-        L.(debug Capture Verbose) "-----> field: '%s'@\n" (Fieldname.to_string fn)) fields;
+        L.(debug Capture Verbose) "-----> field: '%s'@\n" (Typ.Fieldname.to_string fn)) fields;
     let block_typename = Typ.Name.Objc.from_string block_name in
     ignore (Tenv.mk_struct tenv ~fields block_typename);
     let block_type = Typ.mk (Typ.Tstruct block_typename) in

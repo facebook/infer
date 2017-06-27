@@ -87,7 +87,7 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
       ocidi.Clang_ast_t.otdi_protocols in
   let fields_sc = CField_decl.fields_superclass tenv ocidi in
   List.iter ~f:(fun (fn, ft, _) ->
-      L.(debug Capture Verbose) "----->SuperClass field: '%s' " (Fieldname.to_string fn);
+      L.(debug Capture Verbose) "----->SuperClass field: '%s' " (Typ.Fieldname.to_string fn);
       L.(debug Capture Verbose) "type: '%s'@\n" (Typ.to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (supers : Typ.Name.t list) =
@@ -103,7 +103,7 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
   let all_fields = CGeneral_utils.append_no_duplicates_fields modelled_fields fields in
   L.(debug Capture Verbose) "Class %a field:@\n" QualifiedCppName.pp class_name;
   List.iter ~f:(fun (fn, _, _) ->
-      L.(debug Capture Verbose) "-----> field: '%s'@\n" (Fieldname.to_string fn)) all_fields;
+      L.(debug Capture Verbose) "-----> field: '%s'@\n" (Typ.Fieldname.to_string fn)) all_fields;
   ignore(
     Tenv.mk_struct tenv
       ~fields: all_fields ~supers ~methods:[] ~annots:Annot.Class.objc interface_name );

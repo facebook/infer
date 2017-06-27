@@ -72,7 +72,7 @@ exception Java_runtime_exception of Typ.Name.t * string * Localise.error_desc
 exception Leak of
     bool * Sil.hpred * (visibility * Localise.error_desc)
     * bool * PredSymb.resource * Logging.ml_loc
-exception Missing_fld of Fieldname.t * Logging.ml_loc
+exception Missing_fld of Typ.Fieldname.t * Logging.ml_loc
 exception Premature_nil_termination of Localise.error_desc * Logging.ml_loc
 exception Null_dereference of Localise.error_desc * Logging.ml_loc
 exception Null_test_after_dereference of Localise.error_desc * Logging.ml_loc

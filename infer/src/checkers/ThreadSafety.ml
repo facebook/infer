@@ -33,13 +33,13 @@ let container_write_string = "infer.dummy.__CONTAINERWRITE__"
 let get_container_write_desc sink =
   let (base_var, _), access_list = fst (ThreadSafetyDomain.TraceElem.kind sink) in
   let get_container_write_desc_ call_name container_name =
-    match String.chop_prefix (Fieldname.to_string call_name) ~prefix:container_write_string with
+    match String.chop_prefix (Typ.Fieldname.to_string call_name) ~prefix:container_write_string with
     | Some call_name -> Some (container_name, call_name)
     | None -> None in
 
   match List.rev access_list with
   |  FieldAccess call_name :: FieldAccess container_name :: _ ->
-      get_container_write_desc_ call_name (Fieldname.to_string container_name)
+      get_container_write_desc_ call_name (Typ.Fieldname.to_string container_name)
   | [FieldAccess call_name] ->
       get_container_write_desc_ call_name (F.asprintf "%a" Var.pp base_var)
   | _ ->
@@ -438,7 +438,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | AccessPath.FieldAccess base_field ::
         AccessPath.FieldAccess container_field :: _->
           let base_typename =
-            Typ.Name.Java.from_string (Fieldname.java_get_class base_field) in
+            Typ.Name.Java.from_string (Typ.Fieldname.java_get_class base_field) in
           is_annotated_synchronized base_typename container_field tenv
       | [AccessPath.FieldAccess container_field] ->
           begin
@@ -460,7 +460,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         AccessDomain.empty
       else
         let dummy_fieldname =
-          Fieldname.Java.from_string
+          Typ.Fieldname.Java.from_string
             (container_write_string ^ (Typ.Procname.get_method callee_pname)) in
         let dummy_access_ap =
           fst receiver_ap, (snd receiver_ap) @ [AccessPath.FieldAccess dummy_fieldname] in
@@ -1396,7 +1396,7 @@ let may_alias tenv p1 p2 =
   | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _ -> false
   (* fields in Java contain the class name /declaring/ them
      thus two fields can be aliases *iff* they are equal *)
-  | FieldAccess f1, FieldAccess f2 -> Fieldname.equal f1 f2
+  | FieldAccess f1, FieldAccess f2 -> Typ.Fieldname.equal f1 f2
   (* if arrays of objects that have an inheritance rel then they can alias *)
   | ArrayAccess {desc=Tptr ({desc=Tstruct tn1}, _)},
     ArrayAccess {desc=Tptr ({desc=Tstruct tn2}, _)} ->
@@ -1441,7 +1441,7 @@ let should_filter_access (_, path) =
   let check_access_step = function
     | AccessPath.ArrayAccess _ -> false
     | AccessPath.FieldAccess fld ->
-        String.is_substring ~substring:"$SwitchMap" (Fieldname.to_string fld) in
+        String.is_substring ~substring:"$SwitchMap" (Typ.Fieldname.to_string fld) in
   List.exists path ~f:check_access_step
 
 (* create a map from [abstraction of a memory loc] -> accesses that may touch that memory loc. for

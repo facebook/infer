@@ -107,7 +107,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
         match Tenv.lookup tenv name with
         | Some ({ fields; statics; } as struct_typ) -> (
             match List.find
-                    ~f:(fun (f', _, _) -> Fieldname.equal f f')
+                    ~f:(fun (f', _, _) -> Typ.Fieldname.equal f f')
                     (fields @ statics) with
             | Some (_, t', _) ->
                 let atoms', se', res_t' =
@@ -115,7 +115,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
                     pname tenv orig_prop footprint_part kind max_stamp t' off' inst in
                 let se = Sil.Estruct ([(f, se')], inst) in
                 let replace_typ_of_f (f', t', a') =
-                  if Fieldname.equal f f' then (f, res_t', a') else (f', t', a') in
+                  if Typ.Fieldname.equal f f' then (f, res_t', a') else (f', t', a') in
                 let fields' =
                   List.sort ~cmp:Typ.Struct.compare_field (List.map ~f:replace_typ_of_f fields) in
                 ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
@@ -209,22 +209,22 @@ let rec _strexp_extend_values
   | (Off_fld (f, _)) :: off', Sil.Estruct (fsel, inst'), Tstruct name -> (
       match Tenv.lookup tenv name with
       | Some ({ fields; statics; } as struct_typ) -> (
-          match List.find ~f:(fun (f', _, _) -> Fieldname.equal f f') (fields @ statics) with
+          match List.find ~f:(fun (f', _, _) -> Typ.Fieldname.equal f f') (fields @ statics) with
           | Some (_, typ', _) -> (
-              match List.find ~f:(fun (f', _) -> Fieldname.equal f f') fsel with
+              match List.find ~f:(fun (f', _) -> Typ.Fieldname.equal f f') fsel with
               | Some (_, se') ->
                   let atoms_se_typ_list' =
                     _strexp_extend_values
                       pname tenv orig_prop footprint_part kind max_stamp se' typ' off' inst in
                   let replace acc (res_atoms', res_se', res_typ') =
                     let replace_fse ((f1, _) as ft1) =
-                      if Fieldname.equal f1 f then (f1, res_se') else ft1 in
+                      if Typ.Fieldname.equal f1 f then (f1, res_se') else ft1 in
                     let res_fsel' =
                       List.sort
-                        ~cmp:[%compare: Fieldname.t * Sil.strexp]
+                        ~cmp:[%compare: Typ.Fieldname.t * Sil.strexp]
                         (List.map ~f:replace_fse fsel) in
                     let replace_fta ((f1, _, a1) as fta1) =
-                      if Fieldname.equal f f1 then (f1, res_typ', a1) else fta1 in
+                      if Typ.Fieldname.equal f f1 then (f1, res_typ', a1) else fta1 in
                     let fields' =
                       List.sort ~cmp:Typ.Struct.compare_field (List.map ~f:replace_fta fields) in
                     ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
@@ -235,9 +235,9 @@ let rec _strexp_extend_values
                     create_struct_values
                       pname tenv orig_prop footprint_part kind max_stamp typ' off' inst in
                   let res_fsel' =
-                    List.sort ~cmp:[%compare: Fieldname.t * Sil.strexp] ((f, se'):: fsel) in
+                    List.sort ~cmp:[%compare: Typ.Fieldname.t * Sil.strexp] ((f, se'):: fsel) in
                   let replace_fta (f', t', a') =
-                    if Fieldname.equal f' f then (f, res_typ', a') else (f', t', a') in
+                    if Typ.Fieldname.equal f' f then (f, res_typ', a') else (f', t', a') in
                   let fields' =
                     List.sort ~cmp:Typ.Struct.compare_field (List.map ~f:replace_fta fields) in
                   ignore (Tenv.mk_struct tenv ~default:struct_typ ~fields:fields' name) ;
@@ -482,7 +482,7 @@ let prop_iter_check_fields_ptsto_shallow tenv iter lexp =
     | (Sil.Off_fld (fld, _)):: off' ->
         (match se with
          | Sil.Estruct (fsel, _) ->
-             (match List.find ~f:(fun (fld', _) -> Fieldname.equal fld fld') fsel with
+             (match List.find ~f:(fun (fld', _) -> Typ.Fieldname.equal fld fld') fsel with
               | Some (_, se') ->
                   check_offset se' off'
               | None -> Some fld)
@@ -716,7 +716,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
           match extract_guarded_by_str item_annot with
           | Some "this" ->
               (* expand "this" into <classname>.this *)
-              Some (Printf.sprintf "%s.this" (Fieldname.java_get_class fld))
+              Some (Printf.sprintf "%s.this" (Typ.Fieldname.java_get_class fld))
           | guarded_by_str_opt ->
               guarded_by_str_opt
         end
@@ -727,8 +727,8 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     let is_guarded_by_fld guarded_by_str fld _ =
       (* this comparison needs to be somewhat fuzzy, since programmers are free to write
          @GuardedBy("mLock"), @GuardedBy("MyClass.mLock"), or use other conventions *)
-      String.equal (Fieldname.to_flat_string fld) guarded_by_str ||
-      String.equal (Fieldname.to_string fld) guarded_by_str in
+      String.equal (Typ.Fieldname.to_flat_string fld) guarded_by_str ||
+      String.equal (Typ.Fieldname.to_string fld) guarded_by_str in
 
     let get_fld_strexp_and_typ typ f flds =
       let match_one (fld, strexp) =
@@ -784,7 +784,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                      nothing we can do to disambiguate them. *)
                   get_fld_strexp_and_typ
                     typ
-                    (fun f _ -> Fieldname.java_is_outer_instance f)
+                    (fun f _ -> Typ.Fieldname.java_is_outer_instance f)
                     flds
               | None ->
                   (* can't find an exact match. try a different convention. *)
@@ -841,7 +841,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
         (Attribute.get_for_exp tenv prop guarded_by_exp) in
     let guardedby_is_self_referential =
       String.equal "itself" (String.lowercase guarded_by_str) ||
-      String.is_suffix ~suffix:guarded_by_str (Fieldname.to_string accessed_fld) in
+      String.is_suffix ~suffix:guarded_by_str (Typ.Fieldname.to_string accessed_fld) in
     let proc_has_suppress_guarded_by_annot pdesc =
       match extract_suppress_warnings_str (Annotations.pdesc_get_return_annot pdesc) with
       | Some suppression_str->
@@ -861,7 +861,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                   List.exists
                     ~f:(fun (fld, strexp) -> match strexp with
                         | Sil.Eexp (rhs_exp, _) ->
-                            Exp.equal exp rhs_exp && not (Fieldname.equal fld accessed_fld)
+                            Exp.equal exp rhs_exp && not (Typ.Fieldname.equal fld accessed_fld)
                         | _ ->
                             false)
                     flds
@@ -1140,7 +1140,7 @@ let type_at_offset tenv texp off =
     | (Off_fld (f, _)) :: off', Tstruct name -> (
         match Tenv.lookup tenv name with
         | Some { fields } -> (
-            match List.find ~f:(fun (f', _, _) -> Fieldname.equal f f') fields with
+            match List.find ~f:(fun (f', _, _) -> Typ.Fieldname.equal f f') fields with
             | Some (_, typ', _) -> strip_offset off' typ'
             | None -> None
           )
@@ -1195,7 +1195,7 @@ let rec iter_rearrange
             (* access through field: get the struct type from the field *)
             if Config.trace_rearrange then begin
               L.d_increase_indent 1;
-              L.d_str "iter_rearrange: root of lexp accesses field "; L.d_strln (Fieldname.to_string f);
+              L.d_str "iter_rearrange: root of lexp accesses field "; L.d_strln (Typ.Fieldname.to_string f);
               L.d_str "  struct type from field: "; Typ.d_full fld_typ; L.d_ln();
               L.d_decrease_indent 1;
               L.d_ln();
@@ -1324,7 +1324,7 @@ let is_strexp_pt_fld_with_annot tenv obj_str is_annotation typ deref_exp  (fld, 
   | Sil.Eexp (Exp.Var _ as exp, _) when Exp.equal exp deref_exp ->
       let has_annot = fld_has_annot fld in
       if has_annot then
-        obj_str := Some (Fieldname.to_simplified_string fld);
+        obj_str := Some (Typ.Fieldname.to_simplified_string fld);
       has_annot
   | _ -> true
 

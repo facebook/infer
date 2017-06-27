@@ -27,7 +27,7 @@ struct
   type t =
     | Var of Var.t
     | Allocsite of Allocsite.t
-    | Field of t * Fieldname.t
+    | Field of t * Typ.Fieldname.t
   [@@deriving compare]
 
   let unknown = Allocsite Allocsite.unknown
@@ -39,7 +39,7 @@ struct
           F.fprintf fmt "%s" (String.sub s ~pos:1 ~len:(String.length s - 1))
         else F.fprintf fmt "%s" s
     | Allocsite a -> Allocsite.pp fmt a
-    | Field (l, f) -> F.fprintf fmt "%a.%a" pp l Fieldname.pp f
+    | Field (l, f) -> F.fprintf fmt "%a.%a" pp l Typ.Fieldname.pp f
   let is_var = function Var _ -> true | _ -> false
   let is_logical_var = function
     | Var (Var.LogicalVar _) -> true

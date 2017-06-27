@@ -107,13 +107,13 @@ let rec get_type_name {Typ.desc} =
 
 let get_field_type_name tenv
     (typ: Typ.t)
-    (fieldname: Fieldname.t): string option =
+    (fieldname: Typ.Fieldname.t): string option =
   match typ.desc with
   | Tstruct name | Tptr ({desc=Tstruct name}, _) -> (
       match Tenv.lookup tenv name with
       | Some { fields } -> (
           match List.find
-                  ~f:(function | (fn, _, _) -> Fieldname.equal fn fieldname)
+                  ~f:(function | (fn, _, _) -> Typ.Fieldname.equal fn fieldname)
                   fields with
           | Some (_, ft, _) -> Some (get_type_name ft)
           | None -> None
@@ -204,7 +204,7 @@ let is_setter pname_java =
 (** Returns the signature of a field access (class name, field name, field type name) *)
 let get_java_field_access_signature = function
   | Sil.Load (_, Exp.Lfield (_, fn, ft), bt, _) ->
-      Some (get_type_name bt, Fieldname.java_get_field fn, get_type_name ft)
+      Some (get_type_name bt, Typ.Fieldname.java_get_field fn, get_type_name ft)
   | _ -> None
 
 (** Returns the formal signature (class name, method name,
@@ -343,13 +343,13 @@ let get_fields_nullified procdesc =
   let collect_nullified_flds (nullified_flds, this_ids) _ = function
     | Sil.Store (Exp.Lfield (Exp.Var lhs, fld, _), _, rhs, _)
       when Exp.is_null_literal rhs && Ident.IdentSet.mem lhs this_ids ->
-        (Fieldname.Set.add fld nullified_flds, this_ids)
+        (Typ.Fieldname.Set.add fld nullified_flds, this_ids)
     | Sil.Load (id, rhs, _, _) when Exp.is_this rhs ->
         (nullified_flds, Ident.IdentSet.add id this_ids)
     | _ -> (nullified_flds, this_ids) in
   let (nullified_flds, _) =
     Procdesc.fold_instrs
-      collect_nullified_flds (Fieldname.Set.empty, Ident.IdentSet.empty) procdesc in
+      collect_nullified_flds (Typ.Fieldname.Set.empty, Ident.IdentSet.empty) procdesc in
   nullified_flds
 
 (** Checks if the exception is an unchecked exception *)

@@ -38,8 +38,8 @@ let proc_flags_find proc_flags key => Hashtbl.find proc_flags key;
 
 /** Type for ObjC accessors */
 type objc_accessor_type =
-  | Objc_getter Fieldname.t
-  | Objc_setter Fieldname.t
+  | Objc_getter Typ.Fieldname.t
+  | Objc_setter Typ.Fieldname.t
 [@@deriving compare];
 
 type t = {
