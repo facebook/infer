@@ -371,8 +371,13 @@ let get_objc_property_accessor ms =
   | Some (ObjCPropertyDecl (_, _, obj_c_property_decl_info)) ->
       let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
       (match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
-       | Some ObjCIvarDecl (_, named_decl_info, _, _, _) ->
-           let field_name = CGeneral_utils.mk_class_field_name named_decl_info in
+       | Some ObjCIvarDecl (_ , {ni_name}, _, _, _) ->
+           let class_tname = match CMethod_signature.ms_get_name ms with
+             | Typ.Procname.ObjC_Cpp objc_cpp ->
+                 Typ.Procname.objc_cpp_get_class_type_name objc_cpp
+             | _ -> assert false
+           in
+           let field_name = CGeneral_utils.mk_class_field_name class_tname ni_name in
            if CMethod_signature.ms_is_getter ms then
              Some (ProcAttributes.Objc_getter field_name)
            else if CMethod_signature.ms_is_setter ms then

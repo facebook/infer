@@ -18,17 +18,6 @@ let capture_text =
   if Config.equal_analyzer Config.analyzer Config.Linters then "linting"
   else "translating"
 
-(** Read the files to compile from the changed files index. *)
-let should_capture_file_from_index () =
-  match SourceFile.changed_files_set with
-  | None ->
-      (match Config.changed_files_index with
-       | Some index ->
-           Process.print_error_and_exit "Error reading the changed files index %s.@\n%!" index
-       | None -> function _ -> true)
-  | Some files_set ->
-      function source_file -> SourceFile.Set.mem source_file files_set
-
 let create_files_stack compilation_database should_capture_file =
   let stack = Stack.create () in
   let add_to_stack file _ = if should_capture_file file then
@@ -140,8 +129,14 @@ let get_compilation_database_files_xcodebuild ~prog ~args =
       L.external_error "There was an error executing the build command";
       exit 1
 
-let capture_files_in_database compilation_database =
-  run_compilation_database compilation_database (should_capture_file_from_index ())
+let capture_files_in_database ~changed_files compilation_database =
+  let filter_changed = match changed_files with
+    | None ->
+        fun _ -> true
+    | Some changed_files_set ->
+        fun source_file -> SourceFile.Set.mem source_file changed_files_set
+  in
+  run_compilation_database compilation_database filter_changed
 
 let capture_file_in_database compilation_database source_file =
   run_compilation_database compilation_database (SourceFile.equal source_file)

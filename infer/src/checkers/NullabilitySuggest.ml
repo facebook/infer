@@ -113,7 +113,7 @@ let make_error_trace astate ap ud =
   let name_of ap =
     match AccessPath.Raw.get_last_access ap with
     | Some (AccessPath.FieldAccess field_name) ->
-        "Field " ^ (Fieldname.to_flat_string field_name)
+        "Field " ^ (Typ.Fieldname.to_flat_string field_name)
     | Some (AccessPath.ArrayAccess _) ->
         "Some array element"
     | None ->
@@ -146,14 +146,14 @@ let pretty_field_name proc_data field_name =
   match Procdesc.get_proc_name proc_data.ProcData.pdesc with
   | Typ.Procname.Java jproc_name ->
       let proc_class_name = Typ.Procname.java_get_class_name jproc_name in
-      let field_class_name = Fieldname.java_get_class field_name in
+      let field_class_name = Typ.Fieldname.java_get_class field_name in
       if String.equal proc_class_name field_class_name then
-        Fieldname.to_flat_string field_name
+        Typ.Fieldname.to_flat_string field_name
       else
-        Fieldname.to_simplified_string field_name
+        Typ.Fieldname.to_simplified_string field_name
   | _ ->
       (* This format is subject to change once this checker gets to run on C/Cpp/ObjC *)
-      Fieldname.to_string field_name
+      Typ.Fieldname.to_string field_name
 
 let checker { Callbacks.summary; proc_desc; tenv; } =
   let report astate (proc_data : extras ProcData.t) =

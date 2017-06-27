@@ -14,6 +14,16 @@ int access_empty() {
   return vec[0];
 }
 
+int access_empty_front_bad() {
+  const std::vector<int> vec;
+  return vec.front();
+}
+
+int access_empty_back_bad() {
+  const std::vector<int> vec;
+  return vec.back();
+}
+
 int access_nonempty() {
   const std::vector<int> vec(1);
   return vec[0];

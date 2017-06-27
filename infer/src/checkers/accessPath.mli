@@ -15,7 +15,7 @@ type base = Var.t * Typ.t [@@deriving compare]
 
 type access =
   | ArrayAccess of Typ.t (* array element type. index is unknown *)
-  | FieldAccess of Fieldname.t (* field name *)
+  | FieldAccess of Typ.Fieldname.t (* field name *)
 [@@deriving compare]
 
 module Raw : sig
@@ -32,7 +32,7 @@ module Raw : sig
 
   (** get the field name and the annotation of the last access in the list of accesses if
       the list is non-empty and the last access is a field access *)
-  val get_field_and_annotation : t -> Tenv.t -> (Fieldname.t * Annot.Item.t) option
+  val get_field_and_annotation : t -> Tenv.t -> (Typ.Fieldname.t * Annot.Item.t) option
 
   (** get the typ of the last access in the list of accesses if the list is non-empty, or the base
       if the list is empty. that is, for x.f.g, return typ(g), and for x, return typ(x) *)

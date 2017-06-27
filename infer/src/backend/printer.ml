@@ -384,7 +384,7 @@ let node_start_session node session =
 
 (** Finish a session, and perform delayed print actions if required *)
 let node_finish_session node =
-  if not Config.test then force_delayed_prints ()
+  if not Config.only_cheap_debug then force_delayed_prints ()
   else L.reset_delayed_prints ();
   if Config.write_html then begin
     F.fprintf !curr_html_formatter "</LISTING>%a"

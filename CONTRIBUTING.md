@@ -21,17 +21,11 @@ We welcome contributions via [pull requests on GitHub](https://github.com/facebo
 
 ### Development Dependencies
 
-You'll want to install a few more dependencies to comfortably hack on the infer codebase. Using
-opam:
+You'll want to install a few more dependencies to comfortably hack on the infer codebase. Simply
+run:
 ```sh
-opam install ocp-indent merlin tuareg
+make devsetup
 ```
-
-[Merlin](https://github.com/ocaml/merlin) provides OCaml and Reason support for several editors,
-including [Atom](https://atom.io/), [Emacs](https://www.gnu.org/software/emacs/), and
-[Vim](http://www.vim.org/).
-
-Run `opam user-setup install` to set up your terminal and editors to use this tooling.
 
 ### Tips and Tricks
 

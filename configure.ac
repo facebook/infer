@@ -202,7 +202,8 @@ AS_IF([test "$OPAM" != "no"], [
   AC_MSG_CHECKING([current opam switch])
   OPAMSWITCH=$("$OPAM" switch show)
   AC_MSG_RESULT([$OPAMSWITCH])
-])
+], [OPAMSWITCH=no])
+AC_SUBST([OPAMSWITCH])
 
 if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVA], [java], [no])

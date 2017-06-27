@@ -66,8 +66,8 @@ let get_base_class_name_from_category decl =
 (* Add potential extra fields defined only in the category *)
 (* to the corresponding class. Update the tenv accordingly.*)
 let process_category qual_type_to_sil_type tenv class_name decl_info decl_list =
-  let decl_fields = CField_decl.get_fields qual_type_to_sil_type tenv decl_list in
   let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
+  let decl_fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tn_name decl_list in
   let class_tn_desc = Typ.Tstruct class_tn_name in
   let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key class_tn_desc;

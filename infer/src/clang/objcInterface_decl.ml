@@ -65,12 +65,12 @@ let get_interface_supers super_opt protocols =
   let super_classes = super_class@protocol_names in
   super_classes
 
-let create_supers_fields qual_type_to_sil_type tenv decl_list
+let create_supers_fields qual_type_to_sil_type tenv class_tname decl_list
     otdi_super otdi_protocols =
   let super = get_super_interface_decl otdi_super in
   let protocols = get_protocols otdi_protocols in
   let supers = get_interface_supers super protocols in
-  let fields = CField_decl.get_fields qual_type_to_sil_type tenv decl_list in
+  let fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tname decl_list in
   supers, fields
 
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
@@ -82,12 +82,12 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
   let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
   CAst_utils.update_sil_types_map decl_key interface_desc;
   let decl_supers, decl_fields =
-    create_supers_fields qual_type_to_sil_type tenv decl_list
+    create_supers_fields qual_type_to_sil_type tenv interface_name decl_list
       ocidi.Clang_ast_t.otdi_super
       ocidi.Clang_ast_t.otdi_protocols in
   let fields_sc = CField_decl.fields_superclass tenv ocidi in
   List.iter ~f:(fun (fn, ft, _) ->
-      L.(debug Capture Verbose) "----->SuperClass field: '%s' " (Fieldname.to_string fn);
+      L.(debug Capture Verbose) "----->SuperClass field: '%s' " (Typ.Fieldname.to_string fn);
       L.(debug Capture Verbose) "type: '%s'@\n" (Typ.to_string ft)) fields_sc;
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (supers : Typ.Name.t list) =
@@ -103,7 +103,7 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
   let all_fields = CGeneral_utils.append_no_duplicates_fields modelled_fields fields in
   L.(debug Capture Verbose) "Class %a field:@\n" QualifiedCppName.pp class_name;
   List.iter ~f:(fun (fn, _, _) ->
-      L.(debug Capture Verbose) "-----> field: '%s'@\n" (Fieldname.to_string fn)) all_fields;
+      L.(debug Capture Verbose) "-----> field: '%s'@\n" (Typ.Fieldname.to_string fn)) all_fields;
   ignore(
     Tenv.mk_struct tenv
       ~fields: all_fields ~supers ~methods:[] ~annots:Annot.Class.objc interface_name );
@@ -140,9 +140,9 @@ let interface_impl_declaration qual_type_to_sil_type tenv decl =
       L.(debug Capture Verbose)
         "ADDING: ObjCImplementationDecl for class '%a'@\n" QualifiedCppName.pp class_name;
       let _ = add_class_decl qual_type_to_sil_type tenv idi in
-      let fields = CField_decl.get_fields qual_type_to_sil_type tenv decl_list in
-      CField_decl.add_missing_fields tenv class_name fields;
       let class_tn_name = Typ.Name.Objc.from_qual_name class_name in
+      let fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tn_name decl_list in
+      CField_decl.add_missing_fields tenv class_name fields;
       let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
       let class_desc = Typ.Tstruct class_tn_name in
       CAst_utils.update_sil_types_map decl_key class_desc;

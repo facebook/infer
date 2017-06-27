@@ -295,6 +295,7 @@ val monitor_prop_size : bool
 val nelseg : bool
 val no_translate_libs : bool
 val objc_memory_model_on : bool
+val only_cheap_debug : bool
 val only_footprint : bool
 val pmd_xml : bool
 val precondition_stats : bool
@@ -346,7 +347,6 @@ val subtype_multirange : bool
 val suggest_nullable: bool
 val svg : bool
 val symops_per_iteration : int option
-val test : bool
 val test_filtering : bool
 val testing_mode : bool
 val threadsafety : bool

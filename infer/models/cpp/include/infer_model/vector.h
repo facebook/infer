@@ -53,6 +53,8 @@ struct vector_ref<bool> {
   typedef bool_ref ref;
 };
 
+int __infer_skip__get_int_val();
+
 // this function will be treated as SKIP by infer
 template <class T>
 T* __infer_skip__get_nondet_val() {}
@@ -89,7 +91,7 @@ class vector {
   value_type* endPtr = nullptr;
   value_type* __ignore;
 
-  value_type* get() const {
+  value_type* _get_begin() const {
     // we have to resort to that hack so that infer can truly dereference
     // beginPtr.
     // Another way to model that would be 'auto tmp = *beginPtr' but that will
@@ -98,11 +100,23 @@ class vector {
     return beginPtr;
   }
 
+  value_type* _get_end() const {
+    __infer_deref_first_arg(beginPtr);
+    __infer_deref_first_arg(endPtr);
+    return endPtr;
+  }
+
+  value_type* _get_index(size_type __n) const {
+    __infer_deref_first_arg(beginPtr);
+    return __infer_skip__get_nondet_val<value_type>();
+  }
+
   void allocate(size_type size) {
     // assume that allocation will produce non-empty vector regardless of the
     // size
     // if (size > 0) {
     beginPtr = __infer_skip__get_nondet_val<value_type>();
+    endPtr = __infer_skip__get_nondet_val<value_type>();
     //} else {
     //  deallocate();
     //}
@@ -233,14 +247,20 @@ class vector {
   reference at(size_type __n);
   const_reference at(size_type __n) const;
 
-  reference front() { return (reference)*get(); }
-  const_reference front() const { return (const_reference)*get(); }
-  reference back() { return (reference)*get(); }
-  const_reference back() const { return (const_reference)*get(); }
+  reference front() { return (reference)*_get_begin(); }
+  const_reference front() const { return (const_reference)*_get_begin(); }
+  reference back() {
+    size_t last_element = __infer_skip__get_int_val();
+    return (reference)*_get_index(last_element);
+  }
+  const_reference back() const {
+    size_t last_element = __infer_skip__get_int_val();
+    return (const_reference)*_get_index(last_element);
+  }
 
-  value_type* data() noexcept { return get(); }
+  value_type* data() noexcept { return _get_begin(); }
 
-  const value_type* data() const noexcept { return get(); }
+  const value_type* data() const noexcept { return _get_begin(); }
 
   void push_back(const_reference __x);
   void push_back(value_type&& __x);
@@ -445,25 +465,25 @@ vector<_Tp, _Allocator>::end() const noexcept {
 template <class _Tp, class _Allocator>
 inline typename vector<_Tp, _Allocator>::reference vector<_Tp, _Allocator>::
 operator[](size_type __n) {
-  return (reference)*get();
+  return (reference)*_get_index(__n);
 }
 
 template <class _Tp, class _Allocator>
 inline typename vector<_Tp, _Allocator>::const_reference
     vector<_Tp, _Allocator>::operator[](size_type __n) const {
-  return (const_reference)*get();
+  return (const_reference)*_get_index(__n);
 }
 
 template <class _Tp, class _Allocator>
 typename vector<_Tp, _Allocator>::reference vector<_Tp, _Allocator>::at(
     size_type __n) {
-  return (reference)*get();
+  return (reference)*_get_index(__n);
 }
 
 template <class _Tp, class _Allocator>
 typename vector<_Tp, _Allocator>::const_reference vector<_Tp, _Allocator>::at(
     size_type __n) const {
-  return (const_reference)*get();
+  return (const_reference)*_get_index(__n);
 }
 
 template <class _Tp, class _Allocator>

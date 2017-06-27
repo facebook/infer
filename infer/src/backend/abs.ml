@@ -478,7 +478,7 @@ let discover_para_candidates tenv p =
   let edges = ref [] in
   let add_edge edg = edges := edg :: !edges in
   let get_edges_strexp rec_flds root se =
-    let is_rec_fld fld = List.exists ~f:(Fieldname.equal fld) rec_flds in
+    let is_rec_fld fld = List.exists ~f:(Typ.Fieldname.equal fld) rec_flds in
     match se with
     | Sil.Eexp _ | Sil.Earray _ -> ()
     | Sil.Estruct (fsel, _) ->
@@ -514,7 +514,7 @@ let discover_para_dll_candidates tenv p =
   let edges = ref [] in
   let add_edge edg = (edges := edg :: !edges) in
   let get_edges_strexp rec_flds root se =
-    let is_rec_fld fld = List.exists ~f:(Fieldname.equal fld) rec_flds in
+    let is_rec_fld fld = List.exists ~f:(Typ.Fieldname.equal fld) rec_flds in
     match se with
     | Sil.Eexp _ | Sil.Earray _ -> ()
     | Sil.Estruct (fsel, _) ->
@@ -893,7 +893,7 @@ let get_cycle root prop =
          match e, e' with
          | Sil.Eexp (e, _), Sil.Eexp (e', _) ->
              L.d_str ("("^(Exp.to_string e)^": "^(Typ.to_string t)^", "
-                      ^(Fieldname.to_string f)^", "^(Exp.to_string e')^")")
+                      ^(Typ.Fieldname.to_string f)^", "^(Exp.to_string e')^")")
          | _ -> ()) cyc;
      L.d_strln "") in
   (* Perform a dfs of a graph stopping when e_root is reached.
@@ -938,7 +938,7 @@ let should_raise_objc_leak hpred =
   match hpred with
   | Sil.Hpointsto(_, Sil.Estruct((fn, Sil.Eexp( (Exp.Const (Const.Cint i)), _)):: _, _),
                   Exp.Sizeof {typ})
-    when Fieldname.is_hidden fn && IntLit.gt i IntLit.zero (* counter > 0 *) ->
+    when Typ.Fieldname.is_hidden fn && IntLit.gt i IntLit.zero (* counter > 0 *) ->
       Mleak_buckets.should_raise_objc_leak typ
   | _ -> None
 
@@ -1003,7 +1003,7 @@ let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
   let get_item_annotation (t: Typ.t) fn =
     match t.desc with
     | Tstruct name -> (
-        let equal_fn (fn', _, _) = Fieldname.equal fn fn' in
+        let equal_fn (fn', _, _) = Typ.Fieldname.equal fn fn' in
         match Tenv.lookup tenv name with
         | Some { fields; statics } -> (
             List.find ~f:equal_fn (fields @ statics) |>

@@ -11,10 +11,6 @@ open! IStd
 
 (** Module for on-demand analysis. *)
 
-(** Optional set of source dirs to analyze in on-demand mode. If None then all source dirs
-    will be analyzed *)
-val dirs_to_analyze : String.Set.t option
-
 type analyze_ondemand = Specs.summary -> Procdesc.t -> Specs.summary
 
 type get_proc_desc = Typ.Procname.t -> Procdesc.t option

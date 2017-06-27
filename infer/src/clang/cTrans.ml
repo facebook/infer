@@ -108,14 +108,14 @@ struct
     let procname = Procdesc.get_proc_name procdesc in
     let mk_field_from_captured_var (var, typ) =
       let vname = Pvar.get_name var in
-      let qual_name = CAst_utils.make_qual_name_decl [block_name] (Mangled.to_string vname) in
-      let fname = CGeneral_utils.mk_class_field_name qual_name in
+      let tname = Typ.Name.C.from_string block_name in
+      let fname = CGeneral_utils.mk_class_field_name tname (Mangled.to_string vname) in
       let item_annot = Annot.Item.empty in
       fname, typ, item_annot in
     let fields = List.map ~f:mk_field_from_captured_var captured_vars in
     L.(debug Capture Verbose) "Block %s field:@\n" block_name;
     List.iter ~f:(fun (fn, _, _) ->
-        L.(debug Capture Verbose) "-----> field: '%s'@\n" (Fieldname.to_string fn)) fields;
+        L.(debug Capture Verbose) "-----> field: '%s'@\n" (Typ.Fieldname.to_string fn)) fields;
     let block_typename = Typ.Name.Objc.from_string block_name in
     ignore (Tenv.mk_struct tenv ~fields block_typename);
     let block_type = Typ.mk (Typ.Tstruct block_typename) in
@@ -494,8 +494,9 @@ struct
     let open CContext in
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
-    let name_info, _, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
-    L.(debug Capture Verbose) "!!!!! Dealing with field '%s' @." name_info.Clang_ast_t.ni_name;
+    let name_info, decl_ptr, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
+    let field_string = name_info.Clang_ast_t.ni_name in
+    L.(debug Capture Verbose) "!!!!! Dealing with field '%s' @." field_string;
     let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let (obj_sil, class_typ) = extract_exp_from_list pre_trans_result.exps
         "WARNING: in Field dereference we expect to know the object@\n" in
@@ -507,7 +508,16 @@ struct
       | Typ.Tptr (t, _) -> t
       | _ -> class_typ in
     L.(debug Capture Verbose) "Type is  '%s' @." (Typ.to_string class_typ);
-    let field_name = CGeneral_utils.mk_class_field_name name_info in
+    let class_tname = match CAst_utils.get_decl decl_ptr with
+      | Some FieldDecl ({di_parent_pointer}, _, _, _)
+      | Some ObjCIvarDecl ({di_parent_pointer}, _, _, _, _) -> (
+          match CAst_utils.get_decl_opt di_parent_pointer with
+          | Some decl -> CType_decl.get_record_typename ~tenv:context.tenv decl
+          | _ -> assert false
+        )
+      | _ -> assert false (* di_parent_pointer should be always set for fields/ivars *)
+    in
+    let field_name = CGeneral_utils.mk_class_field_name class_tname field_string in
     let field_exp = Exp.Lfield (obj_sil, field_name, class_typ) in
     (* In certain cases, there is be no LValueToRValue cast, but backend needs dereference*)
     (* there either way:*)
@@ -2343,8 +2353,9 @@ struct
     let void_typ = Typ.mk Tvoid in
     let type_info_objc = (Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype=Subtype.exact},
                           void_typ) in
-    let field_name_decl = CAst_utils.make_qual_name_decl ["type_info"; "std"] "__type_name" in
-    let field_name = CGeneral_utils.mk_class_field_name field_name_decl in
+    let class_tname =
+      Typ.Name.Cpp.from_qual_name Typ.NoTemplate (QualifiedCppName.of_list ["std"; "type_info"]) in
+    let field_name = CGeneral_utils.mk_class_field_name class_tname "__type_name" in
     let ret_exp = Exp.Var ret_id in
     let field_exp = Exp.Lfield (ret_exp, field_name, typ) in
     let args = type_info_objc :: (field_exp, void_typ) :: res_trans_subexpr.exps in

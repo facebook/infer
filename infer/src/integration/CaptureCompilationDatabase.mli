@@ -9,10 +9,10 @@
 
 open! IStd
 
-(** capture_files_in_database file runs the capture of the files for which
-    we have compilation commands in the database. If the option changed-files-index
-    is passed, we only capture the files there *)
-val capture_files_in_database : CompilationDatabase.t -> unit
+(** Run the capture of the files for which we have compilation commands in the database and in
+    [changed_files], if specified. *)
+val capture_files_in_database : changed_files:SourceFile.Set.t option ->
+  CompilationDatabase.t -> unit
 
 val capture_file_in_database : CompilationDatabase.t -> SourceFile.t -> unit
 

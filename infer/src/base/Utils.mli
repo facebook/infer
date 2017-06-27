@@ -89,3 +89,6 @@ val compare_versions : string -> string -> int
 (** Lock file passed as argument and write into it using [f]. If [delete] then the file is unlinked
     once this is done. *)
 val write_file_with_locking : ?delete:bool -> f:(out_channel -> unit) -> string -> unit
+
+(** [rmtree path] removes [path] and, if [path] is a directory, recursively removes its contents *)
+val rmtree : string -> unit

@@ -15,7 +15,7 @@ let make_var var_str =
 let make_base ?(typ=Typ.mk Tvoid) base_str =
   AccessPath.base_of_pvar (make_var base_str) typ
 
-let make_fieldname = Fieldname.Java.from_string
+let make_fieldname = Typ.Fieldname.Java.from_string
 
 let make_field_access access_str =
   AccessPath.FieldAccess (make_fieldname access_str)

@@ -540,6 +540,58 @@ opam.lock: opam
 	$(QUIET)$(call silent_on_success,generating opam.lock,\
 	  $(OPAM) lock --pkg  $(INFER_PKG_OPAMLOCK) > opam.lock)
 
+OPAM_DEV_DEPS = ocp-indent merlin tuareg
+
+.PHONY: devsetup
+devsetup: Makefile.autoconf
+	$(QUIET)[ $(OPAM) != "no" ] || (echo 'No `opam` found, aborting setup.' >&2; exit 1)
+	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
+	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-checksum user-setup $(OPAM_DEV_DEPS))
+	$(QUIET)echo '$(TERM_INFO)*** Running `opam config setup -a`$(TERM_RESET)' >&2
+	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); $(OPAM) config --yes setup -a
+	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2
+	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); OPAMYES=1; $(OPAM) user-setup install
+# 	expand all occurrences of "~" in PATH and MANPATH
+	$(QUIET)infer_repo_is_in_path=$$(echo $${PATH//\~/$$HOME} | grep -q "$(ABSOLUTE_ROOT_DIR)"/infer/bin; echo $$?); \
+	infer_repo_is_in_manpath=$$(echo $${MANPATH//\~/$$HOME} | grep -q "$(ABSOLUTE_ROOT_DIR)"/infer/man; echo $$?); \
+	if [ "$$infer_repo_is_in_path" != "0" ] || [ "$$infer_repo_is_in_manpath" != "0" ]; then \
+	  shell_config_file="<could not auto-detect, please fill in yourself>"; \
+	  if [ $$(basename "$(ORIG_SHELL)") = "bash" ]; then \
+	    if [ "$(PLATFORM)" = "Linux" ]; then \
+	      shell_config_file="$$HOME"/.bashrc; \
+	    else \
+	      shell_config_file="$$HOME"/.bash_profile; \
+	    fi; \
+	  elif [ $$(basename "$(ORIG_SHELL)") = "zsh" ]; then \
+	    shell_config_file="$$HOME"/.zshrc; \
+	  fi; \
+	  echo >&2; \
+	  echo '$(TERM_INFO)*** NOTE: `infer` is not in your PATH or MANPATH. If you are hacking on infer, you may$(TERM_RESET)' >&2; \
+	  echo '$(TERM_INFO)*** NOTE: want to make infer executables and manuals available in your terminal. Type$(TERM_RESET)' >&2; \
+	  echo '$(TERM_INFO)*** NOTE: the following commands to configure the current terminal and record the$(TERM_RESET)' >&2; \
+	  printf '$(TERM_INFO)*** NOTE: changes in your shell configuration file (%s):$(TERM_RESET)\n' "$$shell_config_file">&2; \
+	  echo >&2; \
+	  if [ "$$infer_repo_is_in_path" != "0" ]; then \
+	    printf '$(TERM_INFO)  export PATH="%s/infer/bin":$$PATH$(TERM_RESET)\n' "$(ABSOLUTE_ROOT_DIR)" >&2; \
+	  fi; \
+	  if [ "$$infer_repo_is_in_manpath" != "0" ]; then \
+	    printf '$(TERM_INFO)  export MANPATH="%s/infer/man":$$MANPATH$(TERM_RESET)\n' "$(ABSOLUTE_ROOT_DIR)" >&2; \
+	  fi; \
+	  if [ "$$infer_repo_is_in_path" != "0" ]; then \
+	    printf "$(TERM_INFO)  echo 'export PATH=\"%s/infer/bin\":\$$PATH' >> \"$$shell_config_file\"\n" "$(ABSOLUTE_ROOT_DIR)" >&2; \
+	  fi; \
+	  if [ "$$infer_repo_is_in_manpath" != "0" ]; then \
+	    printf "$(TERM_INFO)  echo 'export MANPATH=\"%s/infer/man\":\$$MANPATH' >> \"$$shell_config_file\"\n" "$(ABSOLUTE_ROOT_DIR)" >&2; \
+	  fi; \
+	fi
+	$(QUIET)PATH=$(ORIG_SHELL_PATH); if [ "$$(ocamlc -where 2>/dev/null)" != "$$($(OCAMLC) -where)" ]; then \
+	  echo >&2; \
+	  echo '$(TERM_INFO)*** NOTE: The current shell is not set up for the right opam switch.$(TERM_RESET)' >&2; \
+	  echo '$(TERM_INFO)*** NOTE: Please run:$(TERM_RESET)' >&2; \
+	  echo >&2; \
+	  echo '$(TERM_INFO)  eval $$(opam config env)$(TERM_RESET)' >&2; \
+	fi
+
 # print any variable for Makefile debugging
 print-%:
 	$(QUIET)echo '$*=$($*)'

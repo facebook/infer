@@ -16,7 +16,7 @@ INFER_ROOT="$SCRIPT_DIR"
 INFER_DEPS_DIR="$INFER_ROOT/dependencies/infer-deps"
 PLATFORM="$(uname)"
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-OCAML_VERSION="4.04.0"
+OCAML_VERSION="4.04.2"
 OPAM_LOCK_URL=${OPAM_LOCK_URL:-"https://github.com/rgrinberg/opam-lock"}
 
 INFER_OPAM_SWITCH_DEFAULT=infer-"$OCAML_VERSION"
@@ -31,9 +31,9 @@ function usage() {
   echo
   echo " options:"
   echo "   -h,--help             show this message"
+  echo "   --no-opam-lock        do not use the opam.lock file and let opam resolve dependencies"
   echo "   --only-setup-opam     initialize opam, install the opam dependencies of infer, and exit"
   echo "   --opam-switch         specify the opam switch where to install infer (default: $INFER_OPAM_SWITCH_DEFAULT)"
-  echo "   --no-opam-lock        do not use the opam.lock file and let opam resolve dependencies"
   echo "   -y,--yes              automatically agree to everything"
   echo
   echo " examples:"
@@ -125,6 +125,14 @@ check_installed () {
   fi
 }
 
+opam_failed () {
+    command=$1
+    echo
+    printf '*** ERROR: %s failed\n' "$command" >&2
+    printf '*** ERROR: Try running `opam update` then running this script again\n' >&2
+    exit 1
+}
+
 setup_opam () {
     opam init --compiler=$OCAML_VERSION -j $NCPU --no-setup
     opam switch set -j $NCPU $INFER_OPAM_SWITCH --alias-of $OCAML_VERSION
@@ -168,17 +176,11 @@ install_opam_deps() {
 
 echo "initializing opam... " >&2
 check_installed opam
-setup_opam
+setup_opam || opam_failed 'opam setup'
 eval $(SHELL=bash opam config env --switch=$INFER_OPAM_SWITCH)
 echo >&2
 echo "installing infer dependencies; this can take up to 30 minutes... " >&2
-install_opam_deps || ( \
-  echo >&2; \
-  echo '*** Failed to install opam dependencies' >&2; \
-  echo '*** Updating opam then retrying' >&2; \
-  opam update && \
-  install_opam_deps \
-)
+install_opam_deps || opam_failed 'installing opam dependencies'
 
 if [ "$ONLY_SETUP_OPAM" = "yes" ]; then
   exit 0
@@ -241,3 +243,9 @@ make -j $NCPU all || (
   echo "    $0 $ORIG_ARGS" >&2
   echo >&2
   exit 1)
+
+echo
+echo "*** Success! Infer is now built in '$SCRIPT_PATH/infer/bin/'."
+echo '*** Install infer on your system with `make install`.'
+echo
+echo '*** If you plan to hack on infer, check out CONTRIBUTING.md to setup your dev environment.'

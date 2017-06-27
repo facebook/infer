@@ -80,7 +80,7 @@ let instr_is_auxiliary =
 
 /** offset for an lvalue */
 type offset =
-  | Off_fld Fieldname.t Typ.t
+  | Off_fld Typ.Fieldname.t Typ.t
   | Off_index Exp.t;
 
 
@@ -144,7 +144,7 @@ let equal_inst = [%compare.equal : inst];
 /** structured expressions represent a value of structured type, such as an array or a struct. */
 type strexp0 'inst =
   | Eexp Exp.t 'inst /** Base case: expression with instrumentation */
-  | Estruct (list (Fieldname.t, strexp0 'inst)) 'inst /** C structure */
+  | Estruct (list (Typ.Fieldname.t, strexp0 'inst)) 'inst /** C structure */
   /** Array of given length
       There are two conditions imposed / used in the array case.
       First, if some index and value pair appears inside an array
@@ -419,7 +419,7 @@ let d_texp_full (te: Exp.t) => L.add_print_action (L.PTtexp_full, Obj.repr te);
 /** Pretty print an offset */
 let pp_offset pe f =>
   fun
-  | Off_fld fld _ => F.fprintf f "%a" Fieldname.pp fld
+  | Off_fld fld _ => F.fprintf f "%a" Typ.Fieldname.pp fld
   | Off_index exp => F.fprintf f "%a" (pp_exp_printenv pe) exp;
 
 
@@ -927,11 +927,11 @@ let rec pp_sexp_env pe0 envo f se => {
     switch pe.Pp.kind {
     | TEXT
     | HTML =>
-      let pp_diff f (n, se) => F.fprintf f "%a:%a" Fieldname.pp n (pp_sexp_env pe envo) se;
+      let pp_diff f (n, se) => F.fprintf f "%a:%a" Typ.Fieldname.pp n (pp_sexp_env pe envo) se;
       F.fprintf f "{%a}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
     | LATEX =>
       let pp_diff f (n, se) =>
-        F.fprintf f "%a:%a" (Fieldname.pp_latex Latex.Boldface) n (pp_sexp_env pe envo) se;
+        F.fprintf f "%a:%a" (Typ.Fieldname.pp_latex Latex.Boldface) n (pp_sexp_env pe envo) se;
       F.fprintf f "\\{%a\\}%a" (pp_seq_diff pp_diff pe) fel (pp_inst_if_trace pe) inst
     }
   | Earray len nel inst =>
@@ -2054,7 +2054,7 @@ let rec exp_compare_structural e1 e2 exp_map => {
       if (n != 0) {
         n
       } else {
-        let n = Fieldname.compare f1 f2;
+        let n = Typ.Fieldname.compare f1 f2;
         if (n != 0) {
           n
         } else {
