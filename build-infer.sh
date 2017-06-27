@@ -128,8 +128,8 @@ check_installed () {
 opam_failed () {
     command=$1
     echo
-    echo "*** ERROR: $command failed" >&2
-    echo "*** ERROR: Try running `opam update` then try this script again" >&2
+    printf '*** ERROR: %s failed\n' "$command" >&2
+    printf '*** ERROR: Try running `opam update` then running this script again\n' >&2
     exit 1
 }
 
