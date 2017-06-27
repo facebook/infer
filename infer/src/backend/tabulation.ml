@@ -1134,7 +1134,9 @@ let prop_pure_to_footprint tenv (p: 'a Prop.t) : Prop.normal Prop.t =
   if List.is_empty new_footprint_atoms
   then p
   else (* add pure fact to footprint *)
-    Prop.normalize tenv (Prop.set p ~pi_fp:(p.Prop.pi_fp @ new_footprint_atoms))
+    let filtered_pi_fp = List.filter (p.Prop.pi_fp @ new_footprint_atoms) ~f:(fun a ->
+        not (Sil.atom_has_local_addr a)) in
+    Prop.normalize tenv (Prop.set p ~pi_fp:filtered_pi_fp)
 
 (** post-process the raw result of a function call *)
 let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc results =

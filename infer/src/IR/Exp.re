@@ -143,6 +143,19 @@ let get_undefined footprint =>
   Var (Ident.create_fresh (if footprint {Ident.kfootprint} else {Ident.kprimed}));
 
 
+/** returns true if the express operates on address of local variable */
+let rec has_local_addr e =>
+  switch (e: t) {
+  | Lvar pv => Pvar.is_local pv
+  | UnOp _ e' _
+  | Cast _ e'
+  | Lfield e' _ _ => has_local_addr e'
+  | BinOp _ e0 e1
+  | Lindex e0 e1 => has_local_addr e0 || has_local_addr e1
+  | _ => false
+  };
+
+
 /** Create integer constant */
 let int i => Const (Cint i);
 

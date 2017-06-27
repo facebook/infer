@@ -96,6 +96,14 @@ type atom =
 
 let equal_atom = [%compare.equal : atom];
 
+let atom_has_local_addr a =>
+  switch a {
+  | Aeq e0 e1
+  | Aneq e0 e1 => Exp.has_local_addr e0 || Exp.has_local_addr e1
+  | Apred _
+  | Anpred _ => false
+  };
+
 
 /** kind of lseg or dllseg predicates */
 type lseg_kind =
