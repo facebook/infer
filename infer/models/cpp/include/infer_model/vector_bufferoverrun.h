@@ -90,13 +90,13 @@ class vector {
   void* _ignore2;
 
   void access_at(size_type index) const {
-    _Tp* dummy_array = (_Tp*) malloc(sizeof(value_type) * infer_size);
-    __infer_deref_first_arg(&dummy_array[index]);
-    free(dummy_array);
+    int* dummy_array = (int*)malloc(sizeof(int) * infer_size);
+    int x = dummy_array[index];
   }
 
   value_type* get() const {
-    return __infer_skip__get_nondet_val<value_type>();
+    value_type* p = (value_type*)malloc(sizeof(value_type));
+    return p;
   }
 
   void allocate(size_type __n) {
@@ -437,6 +437,7 @@ operator[](size_type __n) {
 template <class _Tp, class _Allocator>
 inline typename vector<_Tp, _Allocator>::const_reference
     vector<_Tp, _Allocator>::operator[](size_type __n) const {
+  access_at(__n);
   return (const_reference)*get();
 }
 
