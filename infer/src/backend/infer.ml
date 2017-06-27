@@ -243,13 +243,13 @@ let capture_with_compilation_database db_files =
   let compilation_database = CompilationDatabase.from_json_files db_files in
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
-let capture = function
+let capture ~changed_files = function
   | Analyze ->
       ()
   | BuckCompilationDB (prog, args) ->
       L.progress "Capturing using Buck's compilation database...@.";
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck ~prog ~args in
-      capture_with_compilation_database json_cdb
+      capture_with_compilation_database ~changed_files json_cdb
   | BuckGenrule path ->
       L.progress "Capturing for Buck genrule compatibility...@.";
       JMain.from_arguments path
@@ -258,7 +258,7 @@ let capture = function
       Clang.capture compiler ~prog ~args
   | ClangCompilationDB db_files ->
       L.progress "Capturing using compilation database...@.";
-      capture_with_compilation_database db_files
+      capture_with_compilation_database ~changed_files db_files
   | Javac (compiler, prog, args) ->
       L.progress "Capturing in javac mode...@.";
       Javac.capture compiler ~prog ~args
@@ -327,13 +327,13 @@ let capture = function
       check_xcpretty ();
       let json_cdb =
         CaptureCompilationDatabase.get_compilation_database_files_xcodebuild ~prog ~args in
-      capture_with_compilation_database json_cdb
+      capture_with_compilation_database ~changed_files json_cdb
 
-let run_parallel_analysis () =
+let run_parallel_analysis ~changed_files =
   let multicore_dir = Config.results_dir ^/ Config.multicore_dir_name in
   rmtree multicore_dir ;
   Unix.mkdir_p multicore_dir ;
-  InferAnalyze.main (multicore_dir ^/ "Makefile") ;
+  InferAnalyze.main ~changed_files ~makefile:(multicore_dir ^/ "Makefile") ;
   run_command
     ~prog:"make" ~args:(
     "-C" :: multicore_dir ::
@@ -343,11 +343,11 @@ let run_parallel_analysis () =
     (if Config.debug_mode then [] else ["-s"])
   ) (fun _ -> ())
 
-let execute_analyze () =
+let execute_analyze ~changed_files =
   if Int.equal Config.jobs 1 || Config.cluster_cmdline <> None then
-    InferAnalyze.main ""
+    InferAnalyze.main ~changed_files ~makefile:""
   else
-    run_parallel_analysis ()
+    run_parallel_analysis ~changed_files
 
 let report () =
   let report_csv =
@@ -378,7 +378,7 @@ let report () =
           "** Error running the reporting script:@\n**   %s %s@\n** See error above@."
           prog (String.concat ~sep:" " args)
 
-let analyze driver_mode =
+let analyze driver_mode ~changed_files =
   let should_analyze, should_report = match driver_mode, Config.analyzer with
     | PythonCapture (BBuck, _), _ ->
         (* In Buck mode when compilation db is not used, analysis is invoked either from capture or
@@ -398,7 +398,7 @@ let analyze driver_mode =
       check_captured_empty driver_mode) then (
     L.user_error "There was nothing to analyze.@\n@." ;
   ) else if should_analyze then
-    execute_analyze ();
+    execute_analyze ~changed_files;
   if should_report && Config.report then report ()
 
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
@@ -512,6 +512,17 @@ let get_driver_mode () =
   | None ->
       driver_mode_of_build_cmd (List.rev Config.rest)
 
+let read_config_changed_files () =
+  match Config.changed_files_index with
+  | None ->
+      None
+  | Some index -> match Utils.read_file index with
+    | Ok lines ->
+        Some (SourceFile.changed_sources_from_changed_files lines)
+    | Error error ->
+        L.external_error "Error reading the changed files index '%s': %s@." index error ;
+        None
+
 let infer_mode () =
   let driver_mode = get_driver_mode () in
   if not (equal_driver_mode driver_mode Analyze ||
@@ -528,8 +539,9 @@ let infer_mode () =
   Unix.unsetenv "MAKEFLAGS";
   register_perf_stats_report () ;
   if not Config.buck_cache_mode then touch_start_file_unless_continue () ;
-  capture driver_mode ;
-  analyze driver_mode ;
+  let changed_files = read_config_changed_files () in
+  capture driver_mode ~changed_files ;
+  analyze driver_mode ~changed_files ;
   if CLOpt.is_originator then (
     let in_buck_mode = match driver_mode with | PythonCapture (BBuck, _) -> true | _ -> false in
     StatsAggregator.generate_files () ;
@@ -602,7 +614,7 @@ let () =
         | Some cluster -> F.fprintf fmt "of cluster %s" (Filename.basename cluster) in
       L.environment_info "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline;
       InferAnalyze.register_perf_stats_report ();
-      analyze Analyze
+      analyze Analyze ~changed_files:(read_config_changed_files ())
   | Clang ->
       let prog, args = match Array.to_list Sys.argv with
         | prog::args -> prog, args

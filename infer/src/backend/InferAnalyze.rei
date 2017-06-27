@@ -13,6 +13,6 @@ open! IStd;
 /** Main module for the analysis after the capture phase */
 
 /** Given a name of the Makefile to use for multicore analysis, analyze the captured code */
-let main: string => unit;
+let main: changed_files::option SourceFile.Set.t => makefile::string => unit;
 
 let register_perf_stats_report: unit => unit;

@@ -15,18 +15,6 @@ open! PVariant
 module L = Logging
 module F = Format
 
-(** Optional set of source dirs to analyze in on-demand mode. If None then all source dirs
-    will be analyzed *)
-let dirs_to_analyze =
-  let process_changed_files changed_files =
-    SourceFile.Set.fold
-      (fun source_file source_dir_set ->
-         let source_dir = DB.source_dir_from_source_file source_file in
-         String.Set.add source_dir_set (DB.source_dir_to_string source_dir)
-      )
-      changed_files String.Set.empty in
-  Option.map ~f:process_changed_files SourceFile.changed_files_set
-
 type analyze_ondemand = Specs.summary -> Procdesc.t -> Specs.summary
 
 type get_proc_desc = Typ.Procname.t -> Procdesc.t option

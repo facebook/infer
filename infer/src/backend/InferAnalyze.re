@@ -108,10 +108,25 @@ let print_legend () => {
   L.progress "@\n@?"
 };
 
-let cluster_should_be_analyzed cluster => {
+let cluster_should_be_analyzed ::changed_files cluster => {
   let fname = DB.source_dir_to_string cluster;
-  let in_ondemand_config =
-    Option.map f::(fun dirs => String.Set.mem dirs fname) Ondemand.dirs_to_analyze;
+  /* whether [fname] is one of the [changed_files] */
+  let is_changed_file = {
+    /* set of source dirs to analyze inside infer-out/captured/ */
+    let source_dirs_to_analyze changed_files =>
+      SourceFile.Set.fold
+        (
+          fun source_file source_dir_set => {
+            let source_dir = DB.source_dir_from_source_file source_file;
+            String.Set.add source_dir_set (DB.source_dir_to_string source_dir)
+          }
+        )
+        changed_files
+        String.Set.empty;
+    Option.map f::source_dirs_to_analyze changed_files |> (
+      fun dirs_opt => Option.map dirs_opt f::(fun dirs => String.Set.mem dirs fname)
+    )
+  };
   let check_modified () => {
     let modified = DB.file_was_updated_after_start (DB.filename_from_string fname);
     if (modified && Config.developer_mode) {
@@ -119,16 +134,14 @@ let cluster_should_be_analyzed cluster => {
     };
     modified
   };
-  switch in_ondemand_config {
-  | Some b =>
-    /* ondemand config file is specified */
-    b
+  switch is_changed_file {
+  | Some b => b
   | None when Config.reactive_mode => check_modified ()
   | None => true
   }
 };
 
-let main makefile => {
+let main ::changed_files ::makefile => {
   BuiltinDefn.init ();
   RegisterCheckers.register ();
   switch Config.modified_targets {
@@ -145,13 +158,14 @@ let main makefile => {
       MergeCapture.merge_captured_targets ()
     };
     let all_clusters = DB.find_source_dirs ();
-    let clusters_to_analyze = List.filter f::cluster_should_be_analyzed all_clusters;
+    let clusters_to_analyze =
+      List.filter f::(cluster_should_be_analyzed ::changed_files) all_clusters;
     let n_clusters_to_analyze = List.length clusters_to_analyze;
     L.progress
       "Found %d%s source file%s to analyze in %s@."
       n_clusters_to_analyze
       (
-        if (Config.reactive_mode || Option.is_some Ondemand.dirs_to_analyze) {
+        if (Config.reactive_mode || Option.is_some changed_files) {
           " (out of " ^ string_of_int (List.length all_clusters) ^ ")"
         } else {
           ""

@@ -30,7 +30,7 @@ val is_invalid : t -> bool
 (** Set of files read from --changed-files-index file, None if option not specified
     NOTE: it may include extra source_files if --changed-files-index contains paths to
           header files *)
-val changed_files_set : Set.t option
+val changed_sources_from_changed_files : string list -> Set.t
 
 (** Invalid source file *)
 val invalid : string -> t
