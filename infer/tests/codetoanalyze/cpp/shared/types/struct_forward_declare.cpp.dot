@@ -78,42 +78,6 @@ digraph iCFG {
 	
 
 	 "Z_div0#struct_forward_declare#_ZN22struct_forward_declare6Z_div0Ev.a505b34806619878f3b8e521270dcf65_5" -> "Z_div0#struct_forward_declare#_ZN22struct_forward_declare6Z_div0Ev.a505b34806619878f3b8e521270dcf65_4" ;
-"getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_1" [label="1: Start struct_forward_declare::X_getF\nFormals:  this:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
-	
-
-	 "getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_1" -> "getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_3" ;
-"getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_2" [label="2: Exit struct_forward_declare::X_getF \n  " color=yellow style=filled]
-	
-
-"getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::X* [line 21]\n  n$1=*n$0.f:int [line 21]\n  *&return:int=n$1 [line 21]\n " shape="box"]
-	
-
-	 "getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_3" -> "getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_2" ;
-"X#X#struct_forward_declare#{_ZN22struct_forward_declare1XC1Ev}.1134af3db0d0d9b85dd903e2f9d96998_1" [label="1: Start struct_forward_declare::X_X\nFormals:  this:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
-	
-
-	 "X#X#struct_forward_declare#{_ZN22struct_forward_declare1XC1Ev}.1134af3db0d0d9b85dd903e2f9d96998_1" -> "X#X#struct_forward_declare#{_ZN22struct_forward_declare1XC1Ev}.1134af3db0d0d9b85dd903e2f9d96998_2" ;
-"X#X#struct_forward_declare#{_ZN22struct_forward_declare1XC1Ev}.1134af3db0d0d9b85dd903e2f9d96998_2" [label="2: Exit struct_forward_declare::X_X \n  " color=yellow style=filled]
-	
-
-"getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_1" [label="1: Start struct_forward_declare::Z_getF\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
-	
-
-	 "getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_1" -> "getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_3" ;
-"getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_2" [label="2: Exit struct_forward_declare::Z_getF \n  " color=yellow style=filled]
-	
-
-"getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::Z* [line 30]\n  n$1=*n$0.f:int [line 30]\n  *&return:int=n$1 [line 30]\n " shape="box"]
-	
-
-	 "getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_3" -> "getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_2" ;
-"Z#Z#struct_forward_declare#{_ZN22struct_forward_declare1ZC1Ev}.9060e5ac1040e8306d6f2997af8106e2_1" [label="1: Start struct_forward_declare::Z_Z\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
-	
-
-	 "Z#Z#struct_forward_declare#{_ZN22struct_forward_declare1ZC1Ev}.9060e5ac1040e8306d6f2997af8106e2_1" -> "Z#Z#struct_forward_declare#{_ZN22struct_forward_declare1ZC1Ev}.9060e5ac1040e8306d6f2997af8106e2_2" ;
-"Z#Z#struct_forward_declare#{_ZN22struct_forward_declare1ZC1Ev}.9060e5ac1040e8306d6f2997af8106e2_2" [label="2: Exit struct_forward_declare::Z_Z \n  " color=yellow style=filled]
-	
-
 "X_ptr_div0#struct_forward_declare#_ZN22struct_forward_declare10X_ptr_div0EPNS_1XE.1092a9e506b6aa3a84ea78a4be5595fa_1" [label="1: Start struct_forward_declare::X_ptr_div0\nFormals:  x:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 42]\n " color=yellow style=filled]
 	
 
@@ -155,4 +119,40 @@ digraph iCFG {
 	
 
 	 "fun_with_Z#struct_forward_declare#_ZN22struct_forward_declare10fun_with_ZEPNS_1ZE.fdd3616744230972b67d3807049d141e_3" -> "fun_with_Z#struct_forward_declare#_ZN22struct_forward_declare10fun_with_ZEPNS_1ZE.fdd3616744230972b67d3807049d141e_2" ;
+"getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_1" [label="1: Start struct_forward_declare::X_getF\nFormals:  this:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 21]\n " color=yellow style=filled]
+	
+
+	 "getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_1" -> "getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_3" ;
+"getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_2" [label="2: Exit struct_forward_declare::X_getF \n  " color=yellow style=filled]
+	
+
+"getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::X* [line 21]\n  n$1=*n$0.f:int [line 21]\n  *&return:int=n$1 [line 21]\n " shape="box"]
+	
+
+	 "getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_3" -> "getF#X#struct_forward_declare#(_ZN22struct_forward_declare1X4getFEv).1e9b3699cbb3e16aa40f3c70fd848d39_2" ;
+"X#X#struct_forward_declare#{_ZN22struct_forward_declare1XC1Ev}.1134af3db0d0d9b85dd903e2f9d96998_1" [label="1: Start struct_forward_declare::X_X\nFormals:  this:struct_forward_declare::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 19]\n " color=yellow style=filled]
+	
+
+	 "X#X#struct_forward_declare#{_ZN22struct_forward_declare1XC1Ev}.1134af3db0d0d9b85dd903e2f9d96998_1" -> "X#X#struct_forward_declare#{_ZN22struct_forward_declare1XC1Ev}.1134af3db0d0d9b85dd903e2f9d96998_2" ;
+"X#X#struct_forward_declare#{_ZN22struct_forward_declare1XC1Ev}.1134af3db0d0d9b85dd903e2f9d96998_2" [label="2: Exit struct_forward_declare::X_X \n  " color=yellow style=filled]
+	
+
+"getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_1" [label="1: Start struct_forward_declare::Z_getF\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
+	
+
+	 "getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_1" -> "getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_3" ;
+"getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_2" [label="2: Exit struct_forward_declare::Z_getF \n  " color=yellow style=filled]
+	
+
+"getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_3" [label="3:  Return Stmt \n   n$0=*&this:struct_forward_declare::Z* [line 30]\n  n$1=*n$0.f:int [line 30]\n  *&return:int=n$1 [line 30]\n " shape="box"]
+	
+
+	 "getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_3" -> "getF#Z#struct_forward_declare#(_ZN22struct_forward_declare1Z4getFEv).972609c8e19c27c5beb0f97c0f754d03_2" ;
+"Z#Z#struct_forward_declare#{_ZN22struct_forward_declare1ZC1Ev}.9060e5ac1040e8306d6f2997af8106e2_1" [label="1: Start struct_forward_declare::Z_Z\nFormals:  this:struct_forward_declare::Z*\nLocals:  \n   DECLARE_LOCALS(&return); [line 28]\n " color=yellow style=filled]
+	
+
+	 "Z#Z#struct_forward_declare#{_ZN22struct_forward_declare1ZC1Ev}.9060e5ac1040e8306d6f2997af8106e2_1" -> "Z#Z#struct_forward_declare#{_ZN22struct_forward_declare1ZC1Ev}.9060e5ac1040e8306d6f2997af8106e2_2" ;
+"Z#Z#struct_forward_declare#{_ZN22struct_forward_declare1ZC1Ev}.9060e5ac1040e8306d6f2997af8106e2_2" [label="2: Exit struct_forward_declare::Z_Z \n  " color=yellow style=filled]
+	
+
 }

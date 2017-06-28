@@ -1,16 +1,5 @@
 /* @generated */
 digraph iCFG {
-"operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_1" [label="1: Start X_operator[]\nFormals:  this:X* x:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
-	
-
-	 "operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_1" -> "operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_3" ;
-"operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_2" [label="2: Exit X_operator[] \n  " color=yellow style=filled]
-	
-
-"operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 12]\n  *&return:int=n$0 [line 12]\n " shape="box"]
-	
-
-	 "operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_3" -> "operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_2" ;
 "div0_method_op_ptr#_Z18div0_method_op_ptrP1X.9f859b8dfbff4649a66713bba3a306b6_1" [label="1: Start div0_method_op_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
 	
 
@@ -100,4 +89,15 @@ digraph iCFG {
 	
 
 	 "div0_inheritted_op#_Z18div0_inheritted_opR1Y.b14e6f1cfc9721bb55e18550b46b4910_3" -> "div0_inheritted_op#_Z18div0_inheritted_opR1Y.b14e6f1cfc9721bb55e18550b46b4910_2" ;
+"operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_1" [label="1: Start X_operator[]\nFormals:  this:X* x:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_1" -> "operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_3" ;
+"operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_2" [label="2: Exit X_operator[] \n  " color=yellow style=filled]
+	
+
+"operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 12]\n  *&return:int=n$0 [line 12]\n " shape="box"]
+	
+
+	 "operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_3" -> "operator[]#X#(_ZN1XixEi).06c2ebd179efd21996b7e7592333f283_2" ;
 }

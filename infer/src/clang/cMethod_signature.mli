@@ -18,6 +18,8 @@ val ms_get_name : method_signature -> Typ.Procname.t
 
 val ms_set_name : method_signature -> Typ.Procname.t -> unit
 
+val ms_get_access : method_signature -> Clang_ast_t.access_specifier
+
 val ms_get_args : method_signature ->
   (Mangled.t * Clang_ast_t.qual_type) list
 
@@ -49,7 +51,7 @@ val make_ms : Typ.Procname.t -> (Mangled.t * Clang_ast_t.qual_type) list -> Clan
   -> Clang_ast_t.attribute list -> Clang_ast_t.source_range -> bool
   -> ?is_cpp_virtual:bool -> ?is_cpp_nothrow:bool
   -> CFrontend_config.clang_lang -> Clang_ast_t.pointer option -> Clang_ast_t.pointer option
-  -> Typ.t option -> method_signature
+  -> Typ.t option -> Clang_ast_t.access_specifier -> method_signature
 
 val replace_name_ms : method_signature -> Typ.Procname.t -> method_signature
 
