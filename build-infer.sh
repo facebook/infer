@@ -125,17 +125,23 @@ check_installed () {
   fi
 }
 
-opam_failed () {
-    command=$1
-    echo
-    printf '*** ERROR: %s failed\n' "$command" >&2
-    printf '*** ERROR: Try running `opam update` then running this script again\n' >&2
-    exit 1
+opam_retry () {
+  "$@" || ( \
+    echo >&2; \
+    printf '*** `%s` failed\n' "$*" >&2; \
+    echo '*** Updating opam then retrying' >&2; \
+    opam update && \
+    "$@" || ( \
+      echo >&2; \
+      printf '*** ERROR: `%s` failed\n' "$*" >&2; \
+      exit 1 \
+    ) \
+  ) \
 }
 
 setup_opam () {
-    opam init --compiler=$OCAML_VERSION -j $NCPU --no-setup
-    opam switch set -j $NCPU $INFER_OPAM_SWITCH --alias-of $OCAML_VERSION
+    opam_retry opam init --compiler=$OCAML_VERSION -j $NCPU --no-setup
+    opam_retry opam switch set -j $NCPU $INFER_OPAM_SWITCH --alias-of $OCAML_VERSION
 }
 
 # Install and record the infer dependencies in opam. The main trick is to install the
@@ -149,7 +155,7 @@ install_infer-deps () {
     cp -a "$INFER_DEPS_DIR"/* "$INFER_TMP_DEPS_DIR"
     # give unique name to the package to force opam to recheck the dependencies are all installed
     opam pin add --no-action "$INFER_TMP_PACKAGE_NAME" "$INFER_TMP_DEPS_DIR"
-    opam install -j $NCPU --deps-only "$INFER_TMP_PACKAGE_NAME"
+    opam opam install -j $NCPU --deps-only "$INFER_TMP_PACKAGE_NAME"
     opam pin remove "$INFER_TMP_PACKAGE_NAME"
     rm -fr "$INFER_TMP_DEPS_DIR"
     # pin infer so that opam doesn't violate its package constraints when the user does
@@ -176,11 +182,11 @@ install_opam_deps() {
 
 echo "initializing opam... " >&2
 check_installed opam
-setup_opam || opam_failed 'opam setup'
+setup_opam
 eval $(SHELL=bash opam config env --switch=$INFER_OPAM_SWITCH)
 echo >&2
 echo "installing infer dependencies; this can take up to 30 minutes... " >&2
-install_opam_deps || (opam update && install_opam_deps) || opam_failed 'installing opam dependencies'
+opam_retry install_opam_deps
 
 if [ "$ONLY_SETUP_OPAM" = "yes" ]; then
   exit 0
