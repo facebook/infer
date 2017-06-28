@@ -180,7 +180,7 @@ setup_opam || opam_failed 'opam setup'
 eval $(SHELL=bash opam config env --switch=$INFER_OPAM_SWITCH)
 echo >&2
 echo "installing infer dependencies; this can take up to 30 minutes... " >&2
-install_opam_deps || opam_failed 'installing opam dependencies'
+install_opam_deps || (opam update && install_opam_deps) || opam_failed 'installing opam dependencies'
 
 if [ "$ONLY_SETUP_OPAM" = "yes" ]; then
   exit 0
