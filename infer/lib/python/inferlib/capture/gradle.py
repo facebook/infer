@@ -39,6 +39,40 @@ def extract_filepath(parts):
     return ([parts[0]] + remainder, path)
 
 
+def pop(the_list):
+    if len(the_list) > 0:
+        return the_list.pop()
+    return None
+
+
+def extract_argfiles_from_rev(javac_arguments):
+    """Extract class names and @argfiles from the reversed list."""
+    # Reverse the list, so it's in a natural order now
+    javac_arguments = list(reversed(javac_arguments))
+    java_opts = []
+    saved = []
+    java_arg = pop(javac_arguments)
+    while java_arg:
+        if java_arg.startswith('@'):
+            # Probably got an @argfile
+            path = ' '.join([java_arg[1:]] + saved)
+            if os.path.isfile(path):
+                java_opts.insert(0, '@' + path)
+                saved = []
+            else:
+                # @ at the middle of the path
+                saved.insert(0, java_arg)
+        else:
+            # Either a class name or a part of the @argfile path
+            saved.insert(0, java_arg)
+        java_arg = pop(javac_arguments)
+
+    # Only class names left
+    java_opts[0:0] = saved
+
+    return java_opts
+
+
 # Please run the doctests using:
 # $ python -m doctest -v gradle.py
 def extract_all(javac_arguments):
@@ -62,25 +96,18 @@ def extract_all(javac_arguments):
     >>> extract_all(['undef1', 'undef2'])
     {'files': [], 'opts': ['undef1', 'undef2']}
     >>> extract_all(['-o', '/path/to/1.java', 'cls.class', '@/path/to/1'])
-    {'files': ['/path/to/1.java'], 'opts': ['cls.class', '@/path/to/1', '-o']}
+    {'files': ['/path/to/1.java'], 'opts': ['-o', 'cls.class', '@/path/to/1']}
     >>> extract_all(['-opt1', 'optval1', '/path/to/1.java', 'cls.class'])
-    {'files': ['/path/to/1.java'], 'opts': ['cls.class', '-opt1', 'optval1']}
+    {'files': ['/path/to/1.java'], 'opts': ['-opt1', 'optval1', 'cls.class']}
     >>> extract_all(['cls.class', '@/path/to/a', 'b.txt'])
     {'files': [], 'opts': ['cls.class', '@/path/to/a b.txt']}
     >>> extract_all(['cls.class', '@/path/to/a', '@b.txt'])
     {'files': [], 'opts': ['cls.class', '@/path/to/a @b.txt']}
     """
-    def pop(the_list):
-        if len(the_list) > 0:
-            return the_list.pop()
-        return None
-
     java_files = []
     java_opts = []
     # Reversed Javac options parameters
     rev_opt_params = []
-    # Arguments for the firther analysis
-    saved = []
     java_arg = pop(javac_arguments)
     while java_arg:
         if java_arg.endswith('.java'):
@@ -90,7 +117,7 @@ def extract_all(javac_arguments):
                 java_files.append(path)
                 javac_arguments = remainder
                 # The file name can't be in the middle of the option
-                saved.extend(reversed(rev_opt_params))
+                java_opts.extend(extract_argfiles_from_rev(rev_opt_params))
                 rev_opt_params = []
             else:
                 # A use-case here: *.java dir as an option parameter
@@ -107,28 +134,8 @@ def extract_all(javac_arguments):
             rev_opt_params.append(java_arg)
         java_arg = pop(javac_arguments)
 
-    # Reverse the list, so it's in a natural order now
-    rev_opt_params = list(reversed(rev_opt_params)) + saved
-    saved = []
     # We may have class names and @argfiles besides java files and options
-    java_arg = pop(rev_opt_params)
-    while java_arg:
-        if java_arg.startswith('@'):
-            # Probably got an @argfile
-            path = ' '.join([java_arg[1:]] + saved)
-            if os.path.isfile(path):
-                java_opts.insert(0, '@' + path)
-                saved = []
-            else:
-                # @ at the middle of the path
-                saved.insert(0, java_arg)
-        else:
-            # Either a class name or a part of the @argfile path
-            saved.insert(0, java_arg)
-        java_arg = pop(rev_opt_params)
-
-    # Only class names left
-    java_opts[0:0] = saved
+    java_opts.extend(extract_argfiles_from_rev(rev_opt_params))
 
     return {'files': java_files, 'opts': java_opts}
 
