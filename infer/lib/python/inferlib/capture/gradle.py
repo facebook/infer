@@ -30,7 +30,7 @@ create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 
 def extract_filepath(parts):
-    if not parts:
+    if len(parts) == 0:
         return ([], None)
     path = ' '.join(parts)
     if os.path.isfile(path):
@@ -60,43 +60,76 @@ def extract_all(javac_arguments):
     >>> extract_all(['-opt1', 'optval1', '/path/to/', '-1.java'])
     {'files': ['/path/to/ -1.java'], 'opts': ['-opt1', 'optval1']}
     >>> extract_all(['undef1', 'undef2'])
-    {'files': [], 'opts': ['undef1 undef2']}
+    {'files': [], 'opts': ['undef1', 'undef2']}
+    >>> extract_all(['-o', '/path/to/1.java', 'cls.class', '@/path/to/1'])
+    {'files': ['/path/to/1.java'], 'opts': ['cls.class', '@/path/to/1', '-o']}
+    >>> extract_all(['-opt1', 'optval1', '/path/to/1.java', 'cls.class'])
+    {'files': ['/path/to/1.java'], 'opts': ['cls.class', '-opt1', 'optval1']}
+    >>> extract_all(['cls.class', '@/path/to/a', 'b.txt'])
+    {'files': [], 'opts': ['cls.class', '@/path/to/a b.txt']}
+    >>> extract_all(['cls.class', '@/path/to/a', '@b.txt'])
+    {'files': [], 'opts': ['cls.class', '@/path/to/a @b.txt']}
     """
-    def pop():
-        if javac_arguments:
-            return javac_arguments.pop()
+    def pop(the_list):
+        if len(the_list) > 0:
+            return the_list.pop()
         return None
 
     java_files = []
     java_opts = []
     # Reversed Javac options parameters
     rev_opt_params = []
-    java_arg = pop()
+    # Arguments for the firther analysis
+    saved = []
+    java_arg = pop(javac_arguments)
     while java_arg:
         if java_arg.endswith('.java'):
             # Probably got a file
             remainder, path = extract_filepath(javac_arguments + [java_arg])
-            if path:
+            if path is not None:
                 java_files.append(path)
                 javac_arguments = remainder
+                # The file name can't be in the middle of the option
+                saved.extend(reversed(rev_opt_params))
+                rev_opt_params = []
             else:
                 # A use-case here: *.java dir as an option parameter
                 rev_opt_params.append(java_arg)
-        elif java_arg[0] == '-':
+        elif java_arg.startswith('-'):
             # Got a Javac option
             option = [java_arg]
-            if rev_opt_params:
+            if len(rev_opt_params) > 0:
                 option.append(' '.join(reversed(rev_opt_params)))
                 rev_opt_params = []
             java_opts[0:0] = option
         else:
             # Got Javac option parameter
             rev_opt_params.append(java_arg)
-        java_arg = pop()
-    if rev_opt_params:
-        # Javac option without - (or incorrect file), put into Javac arguments
-        option = [' '.join(reversed(rev_opt_params))]
-        java_opts[0:0] = option
+        java_arg = pop(javac_arguments)
+
+    # Reverse the list, so it's in a natural order now
+    rev_opt_params = list(reversed(rev_opt_params)) + saved
+    saved = []
+    # We may have class names and @argfiles besides java files and options
+    java_arg = pop(rev_opt_params)
+    while java_arg:
+        if java_arg.startswith('@'):
+            # Probably got an @argfile
+            path = ' '.join([java_arg[1:]] + saved)
+            if os.path.isfile(path):
+                java_opts.insert(0, '@' + path)
+                saved = []
+            else:
+                # @ at the middle of the path
+                saved.insert(0, java_arg)
+        else:
+            # Either a class name or a part of the @argfile path
+            saved.insert(0, java_arg)
+        java_arg = pop(rev_opt_params)
+
+    # Only class names left
+    java_opts[0:0] = saved
+
     return {'files': java_files, 'opts': java_opts}
 
 
