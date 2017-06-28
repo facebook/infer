@@ -383,7 +383,7 @@ struct
       let get_size v = v |> Val.get_array_blk |> ArrayBlk.sizeof in
       let get_field_name (fn, _, _) = fn in
       let deref_field v fn mem =
-        Mem.find_heap_set (PowLoc.append_field (Val.get_array_locs v) fn) mem
+        Mem.find_heap_set (PowLoc.append_field (Val.get_all_locs v) fn) mem
       in
       let deref_ptr v mem = Mem.find_heap_set (Val.get_array_locs v) mem in
       let add_pair_itv itv1 itv2 l =
