@@ -31,7 +31,7 @@ BUILD_SYSTEMS_TESTS += \
   waf \
 
 DIRECT_TESTS += \
-  c_bufferoverrun c_errors c_frontend \
+  c_biabduction c_bufferoverrun c_errors c_frontend \
   cpp_bufferoverrun cpp_errors cpp_frontend cpp_quandary cpp_siof cpp_threadsafety \
 
 ifneq ($(BUCK),no)
