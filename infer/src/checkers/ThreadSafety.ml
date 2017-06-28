@@ -1381,6 +1381,8 @@ let report_unsafe_accesses aggregated_access_map =
               is_class_threadsafe)
              && should_report_on_proc pdesc tenv
          | ObjC_Cpp objc_cpp ->
+             (* do not report if a procedure is private  *)
+             Procdesc.get_access pdesc <> PredSymb.Private &&
              (* report if the class has a mutex member  *)
              class_has_mutex_member objc_cpp tenv
          | _ ->

@@ -52,5 +52,7 @@ class LockGuard {
   int suspiciously_written;
   int not_guarded;
   std::mutex mutex_;
+
+  int test2() { return suspiciously_read; }
 };
 }
