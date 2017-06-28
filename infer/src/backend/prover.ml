@@ -1202,6 +1202,9 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
         (* symmetric of above case *)
         let e' = Exp.BinOp (Binop.MinusA, e1, e2') in
         do_imply subs (Prop.exp_normalize_noabs tenv Sil.sub_empty e') e2
+    | Exp.Var id, Exp.Lvar pv when Ident.is_footprint id && Pvar.is_local pv ->
+        (* Footprint var could never be the same as local address *)
+        raise (IMPL_EXC ("expression not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
     | Exp.Var _, e2 ->
         if calc_missing then
           let () = ProverState.add_missing_pi (Sil.Aeq (e1_in, e2_in)) in
