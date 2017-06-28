@@ -84,56 +84,64 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let get_lock_model =
     let is_cpp_lock =
-      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names [
-          "std::mutex::lock"; "std::lock_guard::lock_guard"] in
-      fun pname ->
-        QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
-    and is_std_mutex_unlock =
-      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex::unlock"] in
+      let matcher_lock = QualifiedCppName.Match.of_fuzzy_qual_names [
+          "std::mutex::lock"; "std::unique_lock::lock"] in
+      let matcher_lock_constructor = QualifiedCppName.Match.of_fuzzy_qual_names [
+          "std::lock_guard::lock_guard"; "std::unique_lock::unique_lock"] in
+      fun pname actuals ->
+        QualifiedCppName.Match.match_qualifiers matcher_lock (Typ.Procname.get_qualifiers pname)
+        || (QualifiedCppName.Match.match_qualifiers matcher_lock_constructor
+              (Typ.Procname.get_qualifiers pname)
+            (* Passing additional parameter allows to defer the lock *)
+            && (Int.equal 2 (List.length actuals)))
+    and is_cpp_unlock =
+      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names
+          ["std::mutex::unlock"; "std::unique_lock::unlock"] in
       fun pname ->
         QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
     in
-    function
-    | Typ.Procname.Java java_pname ->
-        if is_thread_utils_method "assertHoldsLock" (Typ.Procname.Java java_pname) then Lock
-        else
-          begin
-            match Typ.Procname.java_get_class_name java_pname,
-                  Typ.Procname.java_get_method java_pname with
-            | ("java.util.concurrent.locks.Lock"
-              | "java.util.concurrent.locks.ReentrantLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
-              ("lock" | "lockInterruptibly") ->
-                Lock
-            | ("java.util.concurrent.locks.Lock"
-              |"java.util.concurrent.locks.ReentrantLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
-              "unlock" ->
-                Unlock
-            | ("java.util.concurrent.locks.Lock"
-              | "java.util.concurrent.locks.ReentrantLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
-              | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
-              "tryLock" ->
-                LockedIfTrue
-            | "com.facebook.buck.util.concurrent.AutoCloseableReadWriteUpdateLock",
-              ("readLock" | "updateLock" | "writeLock") ->
-                Lock
-            | _ ->
-                NoEffect
-          end
-    | (Typ.Procname.ObjC_Cpp _ as pname) when is_cpp_lock pname ->
-        Lock
-    | (Typ.Procname.ObjC_Cpp _ as pname) when is_std_mutex_unlock pname ->
-        Unlock
-    | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
-        Lock
-    | pname when Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
-        Unlock
-    | _ ->
-        NoEffect
+    fun pname actuals ->
+      match pname with
+      | Typ.Procname.Java java_pname ->
+          if is_thread_utils_method "assertHoldsLock" (Typ.Procname.Java java_pname) then Lock
+          else
+            begin
+              match Typ.Procname.java_get_class_name java_pname,
+                    Typ.Procname.java_get_method java_pname with
+              | ("java.util.concurrent.locks.Lock"
+                | "java.util.concurrent.locks.ReentrantLock"
+                | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
+                | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
+                ("lock" | "lockInterruptibly") ->
+                  Lock
+              | ("java.util.concurrent.locks.Lock"
+                |"java.util.concurrent.locks.ReentrantLock"
+                | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
+                | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
+                "unlock" ->
+                  Unlock
+              | ("java.util.concurrent.locks.Lock"
+                | "java.util.concurrent.locks.ReentrantLock"
+                | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
+                | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock"),
+                "tryLock" ->
+                  LockedIfTrue
+              | "com.facebook.buck.util.concurrent.AutoCloseableReadWriteUpdateLock",
+                ("readLock" | "updateLock" | "writeLock") ->
+                  Lock
+              | _ ->
+                  NoEffect
+            end
+      | (Typ.Procname.ObjC_Cpp _ as pname) when is_cpp_lock pname actuals ->
+          Lock
+      | (Typ.Procname.ObjC_Cpp _ as pname) when is_cpp_unlock pname ->
+          Unlock
+      | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
+          Lock
+      | pname when Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
+          Unlock
+      | _ ->
+          NoEffect
 
   let get_thread_model = function
     | Typ.Procname.Java java_pname ->
@@ -557,7 +565,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           then
             { astate with threads = true; }
           else
-            match get_lock_model callee_pname with
+            match get_lock_model callee_pname actuals with
             | Lock ->
                 { astate with locks = true; }
             | Unlock ->
@@ -960,8 +968,10 @@ let analyze_procedure { Callbacks.proc_desc; tenv; summary; } =
              lock at the end of the procedure, as destructors are not modeled yet *)
           let update_locks = match Procdesc.get_proc_name proc_desc with
             | ObjC_Cpp _ when locks ->
-                let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::lock_guard"] in
-                (* Unlock, if the procedure contains a local field of type std::lock_guard *)
+                let matcher = QualifiedCppName.Match.of_fuzzy_qual_names
+                    ["std::lock_guard"; "std::unique_lock"] in
+                (* Unlock, if the procedure contains a local field
+                   of type std::lock_guard or std::unique_lock *)
                 not (List.exists (Procdesc.get_locals proc_desc) ~f:(fun (_, ft) ->
                     Option.exists (Typ.name ft) ~f:(fun name ->
                         QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name))
