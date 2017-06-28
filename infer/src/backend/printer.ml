@@ -582,6 +582,18 @@ let write_all_html_files cluster =
   let load_proc_desc pname = ignore (Exe_env.get_proc_desc exe_env pname) in
   let () = List.iter ~f:load_proc_desc (Cg.get_defined_nodes (Exe_env.get_cg exe_env)) in
 
+  let opt_whitelist_regex = match Config.write_html_whitelist_regex with
+    | [] -> None
+    | _ as reg_list ->
+        Some (Str.regexp (String.concat ~sep:"\\|" reg_list))
+  in
+  let is_whitelisted file =
+    Option.value_map opt_whitelist_regex ~default:true ~f:(fun regex ->
+        let fname = SourceFile.to_rel_path file in
+        Str.string_match regex fname 0
+      )
+  in
+
   let linereader = LineReader.create () in
   Exe_env.iter_files
     (fun _ cfg ->
@@ -592,7 +604,9 @@ let write_all_html_files cluster =
               if Procdesc.is_defined proc_desc
               then
                 let file = (Procdesc.get_loc proc_desc).Location.file in
-                files := SourceFile.Set.add file !files);
+                if is_whitelisted file then
+                  files := SourceFile.Set.add file !files
+                else ());
          !files in
        SourceFile.Set.iter
          (fun file ->
