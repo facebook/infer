@@ -24,7 +24,7 @@ remove: [
      "--prefix=%{prefix}%"]
   ["make" "uninstall"]
 ]
-ocaml-version: [ >= "4.04.0" ]
+ocaml-version: [ >= "4.04.2" ]
 depends: [
   "ANSITerminal" {>="0.7"}
   "atdgen" {>="1.6.0"}
