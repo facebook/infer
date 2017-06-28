@@ -1166,7 +1166,8 @@ and iterations =
 and java_jar_compiler =
   CLOpt.mk_path_opt
     ~long:"java-jar-compiler"
-    ~meta:"path" "Specifify the Java compiler jar used to generate the bytecode"
+    ~in_help:CLOpt.[Capture, manual_java]
+    ~meta:"path" "Specify the Java compiler jar used to generate the bytecode"
 
 and jobs =
   CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:'j' ~default:ncpu
