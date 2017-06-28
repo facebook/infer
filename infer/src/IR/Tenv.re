@@ -132,7 +132,7 @@ let store_to_file (filename: DB.filename) (tenv: t) => {
   Serialization.write_to_file tenv_serializer filename data::tenv;
   if Config.debug_mode {
     let debug_filename = DB.filename_to_string (DB.filename_add_suffix filename ".debug");
-    let out_channel = open_out debug_filename;
+    let out_channel = Out_channel.create debug_filename;
     let fmt = Format.formatter_of_out_channel out_channel;
     Format.fprintf fmt "%a" pp tenv;
     Out_channel.close out_channel

@@ -99,13 +99,13 @@ type t = string * file_entry String.Map.t * JBasics.ClassSet.t
    Only the case where the package is declared in a single line is supported *)
 let read_package_declaration source_file =
   let path = SourceFile.to_abs_path source_file in
-  let file_in = open_in path in
+  let file_in = In_channel.create path in
   let remove_trailing_semicolon =
     Str.replace_first (Str.regexp ";") "" in
   let empty_package = "" in
   let rec loop () =
     try
-      let line = remove_trailing_semicolon (input_line file_in) in
+      let line = remove_trailing_semicolon (In_channel.input_line_exn file_in) in
       match Str.split (Str.regexp "[ \t]+") line with
       | [] -> loop ()
       | hd::package::[] when String.equal hd "package" -> package
@@ -153,7 +153,7 @@ let add_root_path path roots =
 
 
 let load_from_verbose_output javac_verbose_out =
-  let file_in = open_in javac_verbose_out in
+  let file_in = In_channel.create javac_verbose_out in
   let class_filename_re =
     Str.regexp
       "\\[wrote RegularFileObject\\[\\(.*\\)\\]\\]" in
@@ -165,7 +165,7 @@ let load_from_verbose_output javac_verbose_out =
       "\\[search path for class files: \\(.*\\)\\]" in
   let rec loop paths roots sources classes =
     try
-      let line = input_line file_in in
+      let line = In_channel.input_line_exn file_in in
       if Str.string_match class_filename_re line 0 then
         let path = Str.matched_group 1 line in
         let cn, root_info = Javalib.extract_class_name_from_file path in

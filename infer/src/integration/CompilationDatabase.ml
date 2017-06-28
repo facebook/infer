@@ -44,7 +44,7 @@ let decode_json_file (database : t) json_format =
     | `Raw _ ->
         s
     | `Escaped _ ->
-        Utils.with_process_in (Printf.sprintf "/bin/sh -c 'printf \"%%s\" %s'" s) input_line
+        Utils.with_process_in (Printf.sprintf "/bin/sh -c 'printf \"%%s\" %s'" s) In_channel.input_line_exn
         |> fst in
   L.(debug Capture Quiet) "parsing compilation database from %s@\n" json_path;
   let exit_format_error () =

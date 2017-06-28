@@ -136,7 +136,7 @@ let run_plugin_and_frontend source_path frontend clang_args => {
     let basename = source_path ^ ".ast";
     /* Emit the clang command with the extra args piped to infer-as-clang */
     let frontend_script_fname = Printf.sprintf "%s.sh" basename;
-    let debug_script_out = open_out frontend_script_fname;
+    let debug_script_out = Out_channel.create frontend_script_fname;
     let debug_script_fmt = Format.formatter_of_out_channel debug_script_out;
     let biniou_fname = Printf.sprintf "%s.biniou" basename;
     Format.fprintf debug_script_fmt "%s \\@\n  > %s@\n" clang_command biniou_fname;

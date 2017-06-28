@@ -287,7 +287,7 @@ let rec typ_string_of_type_ptr type_ptr =
   let open Clang_ast_t in
   match CAst_utils.get_type type_ptr with
   | Some BuiltinType (_, bt) ->
-      (match List.Assoc.find builtin_type_kind_assoc bt with
+      (match List.Assoc.find ~equal:Poly.equal builtin_type_kind_assoc bt with
        | Some abt -> builtin_kind_to_string abt
        | None -> "")
   | Some PointerType (_, qt)

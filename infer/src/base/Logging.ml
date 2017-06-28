@@ -271,7 +271,7 @@ let setup_log_file () =
       let fmt, chan, preexisting_logfile =
         if Config.buck_cache_mode then
           (* suppress log file in order not to cause flakiness in the Buck cache *)
-          let devnull_chan = open_out "/dev/null" in
+          let devnull_chan = Out_channel.create "/dev/null" in
           let devnull_fmt = F.formatter_of_out_channel devnull_chan in
           devnull_fmt, devnull_chan, true
         else

@@ -77,7 +77,7 @@ let output_json_makefile_stats clusters => {
   let file_stats =
     `Assoc [("files", `Int num_files), ("procedures", `Int num_procs), ("lines", `Int num_lines)];
   /* write stats file to disk, intentionally overwriting old file if it already exists */
-  let f = open_out (Filename.concat Config.results_dir Config.proc_stats_filename);
+  let f = Out_channel.create (Filename.concat Config.results_dir Config.proc_stats_filename);
   Yojson.Basic.pretty_to_channel f file_stats
 };
 

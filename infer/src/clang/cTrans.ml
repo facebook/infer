@@ -458,7 +458,7 @@ struct
                assert false)
       | None -> None in
     let name = QualifiedCppName.to_qual_string qual_name in
-    let function_attr_opt = Option.bind decl_opt get_annotate_attr_arg in
+    let function_attr_opt = Option.bind decl_opt ~f:get_annotate_attr_arg in
     match function_attr_opt with
     | Some attr when CTrans_models.is_modeled_attribute attr ->
         Some (Typ.Procname.from_string_c_fun attr)
@@ -878,8 +878,8 @@ struct
       let res_trans_p = List.map ~f:(instruction' trans_state_param) params_stmt in
       res_trans_callee :: res_trans_p in
     match Option.bind callee_pname_opt
-            (CTrans_utils.builtin_trans
-               trans_state_pri sil_loc si function_type result_trans_subexprs) with
+            ~f:(CTrans_utils.builtin_trans
+                  trans_state_pri sil_loc si function_type result_trans_subexprs) with
     | Some builtin -> builtin
     | None ->
         let is_cf_retain_release =
@@ -897,7 +897,7 @@ struct
           else act_params in
         let res_trans_call =
           let cast_trans_fun = cast_trans act_params sil_loc function_type in
-          match Option.bind callee_pname_opt cast_trans_fun with
+          match Option.bind callee_pname_opt ~f:cast_trans_fun with
           | Some (instr, cast_exp) ->
               { empty_res_trans with
                 instrs = [instr];

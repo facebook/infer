@@ -45,8 +45,9 @@ let read ::dir :option t => {
 /* Write a multilink file in the given directory */
 let write multilinks ::dir => {
   let fname = Filename.concat dir multilink_file_name;
-  let outc = open_out fname;
-  String.Table.iteri f::(fun key::_ data::src => output_string outc (src ^ "\n")) multilinks;
+  let outc = Out_channel.create fname;
+  String.Table.iteri
+    f::(fun key::_ data::src => Out_channel.output_string outc (src ^ "\n")) multilinks;
   Out_channel.close outc
 };
 

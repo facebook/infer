@@ -28,10 +28,10 @@ let read_file fname =
     | None -> ()
     | Some cin -> In_channel.close cin in
   try
-    let cin = open_in fname in
+    let cin = In_channel.create fname in
     cin_ref := Some cin;
     while true do
-      let line = input_line cin in
+      let line = In_channel.input_line_exn cin in
       res := line :: !res
     done;
     assert false
@@ -58,14 +58,14 @@ let copy_file fname_from fname_to =
       | Some cout -> Out_channel.close cout
     end in
   try
-    let cin = open_in fname_from in
+    let cin = In_channel.create fname_from in
     cin_ref := Some cin;
-    let cout = open_out fname_to in
+    let cout = Out_channel.create fname_to in
     cout_ref := Some cout;
     while true do
-      let line = input_line cin in
-      output_string cout line;
-      output_char cout '\n';
+      let line = In_channel.input_line_exn cin in
+      Out_channel.output_string cout line;
+      Out_channel.output_char cout '\n';
       incr res
     done;
     assert false
@@ -80,13 +80,13 @@ let copy_file fname_from fname_to =
 (** type for files used for printing *)
 type outfile =
   { fname : string; (** name of the file *)
-    out_c : out_channel; (** output channel *)
+    out_c : Out_channel.t; (** output channel *)
     fmt : F.formatter (** formatter for printing *) }
 
 (** create an outfile for the command line *)
 let create_outfile fname =
   try
-    let out_c = open_out fname in
+    let out_c = Out_channel.create fname in
     let fmt = F.formatter_of_out_channel out_c in
     Some { fname = fname; out_c = out_c; fmt = fmt }
   with Sys_error _ ->
@@ -181,7 +181,7 @@ let dir_is_empty path =
   let is_empty = ref true in
   (try
      while !is_empty;
-     do if not (List.mem ~equal:String.equal["."; ".."] (Unix.readdir dir_handle)) then
+     do if not (Option.value_map (Unix.readdir_opt dir_handle) ~default:false ~f:(List.mem ~equal:String.equal ["."; ".."])) then
          is_empty := false;
      done;
    with End_of_file -> ()
@@ -220,7 +220,7 @@ let write_json_to_file destfile json =
 
 let consume_in chan_in =
   try
-    while true do input_line chan_in |> ignore done
+    while true do In_channel.input_line_exn chan_in |> ignore done
   with End_of_file -> ()
 
 let with_process_in command read =
@@ -265,7 +265,7 @@ let realpath ?(warn_on_error=true) path =
       | exception Unix.Unix_error (code, f, arg) ->
           if warn_on_error then
             F.eprintf
-              "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg (Unix.error_message code);
+              "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg (Unix.Error.message code);
           (* cache failures as well *)
           Hashtbl.add realpath_cache path (Error (code, f, arg));
           raise (Unix.Unix_error (code, f, arg))
@@ -308,7 +308,7 @@ let write_file_with_locking ?(delete=false) ~f:do_write fname =
         Unix.ftruncate file_descr ~len:Int64.zero;
         let outc = Unix.out_channel_of_descr file_descr in
         do_write outc;
-        flush outc;
+        Out_channel.flush outc;
         ignore (Unix.flock file_descr Unix.Flock_command.unlock)
       );
     );
@@ -321,15 +321,15 @@ let rec rmtree name =
   | S_DIR ->
       let dir = Unix.opendir name in
       let rec rmdir dir =
-        match Unix.readdir dir with
-        | entry ->
+        match Unix.readdir_opt dir with
+        | Some entry ->
             if not (String.equal entry Filename.current_dir_name ||
                     String.equal entry Filename.parent_dir_name)
             then (
               rmtree (name ^/ entry)
             );
             rmdir dir
-        | exception End_of_file ->
+        | None ->
             Unix.closedir dir ;
             Unix.rmdir name in
       rmdir dir

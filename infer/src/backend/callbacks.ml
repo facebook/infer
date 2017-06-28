@@ -136,7 +136,7 @@ let iterate_callbacks call_graph exe_env =
     | Some pdesc -> Some pdesc
     | None when Config.dynamic_dispatch = `Lazy ->
         Option.bind (Specs.get_summary proc_name)
-          (fun summary -> summary.Specs.proc_desc_option)
+          ~f:(fun summary -> summary.Specs.proc_desc_option)
     | None -> None in
 
   let callbacks = {

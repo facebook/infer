@@ -62,7 +62,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_compile_time_constructed pdesc pv =
     let init_pname = Pvar.get_initializer_pname pv in
-    match Option.bind init_pname (Summary.read_summary pdesc) with
+    match Option.bind init_pname ~f:(Summary.read_summary pdesc) with
     | Some (Domain.BottomSiofTrace.Bottom, _)->
         (* we analyzed the initializer for this global and found that it doesn't require any runtime
            initialization so cannot participate in SIOF *)

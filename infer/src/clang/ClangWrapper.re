@@ -107,7 +107,7 @@ let normalize ::prog ::args :list action_item => {
   let consume_input i =>
     try (
       while true {
-        let line = input_line i;
+        let line = In_channel.input_line_exn i;
         /* keep only commands and errors */
         if (Str.string_match commands_or_errors line 0) {
           normalized_commands := [one_line line, ...!normalized_commands]

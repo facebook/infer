@@ -661,7 +661,7 @@ let resolve_and_analyze
                ~f:(fun callee_proc_desc ->
                    Cfg.specialize_types callee_proc_desc resolved_pname args)
                (Ondemand.get_proc_desc callee_proc_name)) in
-      Option.bind resolved_proc_desc_option analyze in
+      Option.bind resolved_proc_desc_option ~f:analyze in
   let resolved_pname = match callee_proc_name with
     | Typ.Procname.Java callee_proc_name_java ->
         Typ.Procname.Java

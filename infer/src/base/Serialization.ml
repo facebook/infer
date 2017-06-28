@@ -77,7 +77,7 @@ let create_serializer (key : Key.t) : 'a serializer =
      The writes are synchronized with a .lock file. *)
   let read_from_file (fname : DB.filename) : 'a option =
     let fname_str = DB.filename_to_string fname in
-    match open_in_bin fname_str with
+    match In_channel.create ~binary:true fname_str with
     | exception Sys_error _ ->
         None
     | inc ->

@@ -27,11 +27,11 @@ struct
     Hashtbl.create 1
 
   let read_file fname =
-    let cin = open_in fname in
+    let cin = In_channel.create fname in
     let lines = ref [] in
     try
       while true do
-        let line_raw = input_line cin in
+        let line_raw = In_channel.input_line_exn cin in
         let line =
           let len = String.length line_raw in
           if len > 0 && Char.equal (String.get line_raw (len -1)) '\013' then

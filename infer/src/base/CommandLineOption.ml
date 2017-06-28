@@ -178,7 +178,7 @@ let hidden_descs_list = ref []
 (** add [desc] to the one relevant parse_tag_desc_lists for the purposes of parsing, and, in the
     case of InferCommand, include [desc] in --help only for the relevant sections. *)
 let add parse_mode sections desc =
-  let desc_list = List.Assoc.find_exn parse_mode_desc_lists parse_mode in
+  let desc_list = List.Assoc.find_exn ~equal:equal_parse_mode parse_mode_desc_lists parse_mode in
   desc_list := desc :: !desc_list;
   let add_to_section (command, section) =
     let sections = List.Assoc.find_exn ~equal:equal_command help_sections_desc_lists command in
@@ -845,7 +845,7 @@ let show_manual ?internal_section format default_doc command_opt =
     | None ->
         default_doc
     | Some command ->
-        match List.Assoc.find_exn !subcommands command with
+        match List.Assoc.find_exn ~equal:equal_command !subcommands command with
         | (Some command_doc, _, _) ->
             command_doc
         | (None, _, _) ->
@@ -885,7 +885,7 @@ let show_manual ?internal_section format default_doc command_opt =
               [] in
         match command_opt with
         | Some command ->
-            let sections = List.Assoc.find_exn help_sections_desc_lists command in
+            let sections = List.Assoc.find_exn ~equal:equal_command help_sections_desc_lists command in
             SectionMap.fold (fun section descs result ->
                 `S section ::
                 (if String.equal section Cmdliner.Manpage.s_options then blocks else []) @

@@ -345,7 +345,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   "openRawResource";
                   "openRawResourceFd"
                 ] in
-                not (List.mem non_functional_resource_methods method_name)
+                not (List.mem ~equal:String.equal non_functional_resource_methods method_name)
             | _ ->
                 false
           end

@@ -407,7 +407,7 @@ let pp_graph_dotty (g: t) fmt => {
 let save_call_graph_dotty source (g: t) => {
   let fname_dot =
     DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source) ["call_graph.dot"];
-  let outc = open_out (DB.filename_to_string fname_dot);
+  let outc = Out_channel.create (DB.filename_to_string fname_dot);
   let fmt = F.formatter_of_out_channel outc;
   pp_graph_dotty g fmt;
   Out_channel.close outc

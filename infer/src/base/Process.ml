@@ -24,7 +24,7 @@ let print_error_and_exit ?(exit_code=1) fmt =
     terminate. The standard out and error are not redirected.  If the command fails to execute,
     print an error message and exit. *)
 let create_process_and_wait ~prog ~args =
-  Unix.fork_exec ~prog ~args:(prog :: args) ()
+  Unix.fork_exec ~prog ~argv:(prog :: args) ()
   |> Unix.waitpid
   |> function
   | Ok () -> ()
@@ -85,7 +85,7 @@ let run_jobs_in_parallel ?(fail_on_failed_job=false) jobs_stack gen_prog prog_to
       match Unix.fork () with
       | `In_the_child ->
           Option.iter dir_opt ~f:Unix.chdir ;
-          Unix.exec ~prog ~args:(prog :: args) ~env ~use_path:false
+          Unix.exec ~prog ~argv:(prog :: args) ~env ~use_path:false
           |> Unix.handle_unix_error
           |> never_returns
       | `In_the_parent pid_child ->
@@ -108,7 +108,7 @@ let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
       Unix.close pipe_out ;
       Unix.close pipe_in ;
       (* exec producer *)
-      never_returns (Unix.exec ~prog:producer_prog ~args:producer_args ())
+      never_returns (Unix.exec ~prog:producer_prog ~argv:producer_args ())
   | `In_the_parent producer_pid ->
       match Unix.fork () with
       | `In_the_child ->
@@ -118,7 +118,7 @@ let pipeline ~producer_prog ~producer_args ~consumer_prog ~consumer_args =
           Unix.close pipe_out ;
           Unix.close pipe_in ;
           (* exec consumer *)
-          never_returns (Unix.exec ~prog:consumer_prog ~args:consumer_args ())
+          never_returns (Unix.exec ~prog:consumer_prog ~argv:consumer_args ())
       | `In_the_parent consumer_pid ->
           (* close parent's copy of pipe ends *)
           Unix.close pipe_out ;

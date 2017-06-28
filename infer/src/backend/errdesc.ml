@@ -412,7 +412,7 @@ and _exp_rv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
         _exp_rv_dexp tenv seen node e1
     | Exp.Sizeof {typ; dynamic_length; subtype} ->
         if verbose then (L.d_str "exp_rv_dexp: type "; Sil.d_exp e; L.d_ln ());
-        Some (DExp.Dsizeof (typ, Option.bind dynamic_length (_exp_rv_dexp tenv seen node), subtype))
+        Some (DExp.Dsizeof (typ, Option.bind dynamic_length ~f:(_exp_rv_dexp tenv seen node), subtype))
     | _ ->
         if verbose then (L.d_str "exp_rv_dexp: no match for  "; Sil.d_exp e; L.d_ln ());
         None

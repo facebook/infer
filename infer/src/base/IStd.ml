@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-include Core.Std
+include Core
 
 module Unix_ = struct
 
@@ -39,10 +39,6 @@ module Unix_ = struct
   let fork_redirect_exec_wait ~prog ~args ?stdin ?stdout ?stderr () =
     Unix.waitpid (create_process_redirect ~prog ~args ?stdin ?stdout ?stderr ())
     |> Unix.Exit_or_signal.or_error |> ok_exn
-
-  (* Unix.symlink has ambiguous function application when the optional argument is not provided, but
-     the optional argument is not used in the implementation anyway. *)
-  let symlink ~src ~dst = Unix.symlink ?to_dir:None ~src ~dst
 
 end
 
