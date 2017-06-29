@@ -11,7 +11,7 @@ TESTS_DIR = ../..
 
 MODIFIED_FILES_FILE = filter_files.test.txt
 DIFFERENTIAL_ARGS = --differential-filter-files $(MODIFIED_FILES_FILE) \
-	--differential-filter-set fixed --differential-filter-set preexisting
+	--differential-filter-set "fixed,preexisting"
 SRC_OBJECT_FILES = src/com/example/*.java src/com/example/*.class com/
 CLEAN_EXTRA = $(SRC_OBJECT_FILES) $(MODIFIED_FILES_FILE)
 
