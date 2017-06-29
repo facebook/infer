@@ -178,14 +178,19 @@ let checker { Callbacks.summary; proc_desc; tenv; } =
     in
     Domain.iter report_access_path astate
   in
-  (* Assume all fields are not null in the beginning *)
-  let initial = Domain.empty, IdAccessPathMapDomain.empty in
-  let proc_data = ProcData.make_default proc_desc tenv in
-  match Analyzer.compute_post proc_data ~initial ~debug:false with
-  | Some (post, _) ->
-      report post proc_data;
-      summary
-  | None ->
-      failwithf
-        "Analyzer failed to compute post for %a"
-        Typ.Procname.pp (Procdesc.get_proc_name proc_data.pdesc)
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  if AndroidFramework.is_destroy_method proc_name then
+    (* Skip the fields nullified in Fragment onDestroy and onDestroyView *)
+    summary
+  else
+    (* Assume all fields are not null in the beginning *)
+    let initial = Domain.empty, IdAccessPathMapDomain.empty in
+    let proc_data = ProcData.make_default proc_desc tenv in
+    match Analyzer.compute_post proc_data ~initial ~debug:false with
+    | Some (post, _) ->
+        report post proc_data;
+        summary
+    | None ->
+        failwithf
+          "Analyzer failed to compute post for %a"
+          Typ.Procname.pp proc_name
