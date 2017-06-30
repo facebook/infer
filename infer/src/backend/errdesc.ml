@@ -912,7 +912,8 @@ let _explain_access tenv
         if verbose then (L.d_str "explain_dereference Binop.Leteref "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Call (_, Exp.Const (Const.Cfun fn), [(e, _)], _, _)
-      when String.equal (Typ.Procname.to_string fn) "free" ->
+      when List.exists ~f:(Typ.Procname.equal fn)
+          [BuiltinDecl.free; BuiltinDecl.__delete; BuiltinDecl.__delete_array] ->
         if verbose then (L.d_str "explain_dereference Sil.Call "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Call (_, (Exp.Var _ as e), _, _, _) ->
