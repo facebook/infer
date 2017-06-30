@@ -15,33 +15,6 @@ module MF = MarkupFormatter
 
 let dummy_constructor_annot = "__infer_is_constructor"
 
-let annotation_of_str annot_str =
-  { Annot.class_name = annot_str; parameters = []; }
-
-(* parse user-defined specs from .inferconfig *)
-let parse_user_defined_specs = function
-  | `List user_specs ->
-      let parse_user_spec json =
-        let open Yojson.Basic in
-        let sources = Util.member "sources" json |> Util.to_list |> List.map ~f:Util.to_string in
-        let sinks = Util.member "sink" json |> Util.to_string in
-        sources, sinks in
-      List.map ~f:parse_user_spec user_specs
-  | _ ->
-      []
-
-let src_snk_pairs =
-  let specs =
-    ([Annotations.performance_critical], Annotations.expensive) ::
-    ([Annotations.no_allocation], dummy_constructor_annot) ::
-    ([Annotations.any_thread; Annotations.for_non_ui_thread], Annotations.ui_thread) ::
-    ([Annotations.ui_thread; Annotations.for_ui_thread], Annotations.for_non_ui_thread) ::
-    (parse_user_defined_specs Config.annotation_reachability_custom_pairs) in
-  List.map
-    ~f:(fun (src_annot_str_list, snk_annot_str) ->
-        List.map ~f:annotation_of_str src_annot_str_list, annotation_of_str snk_annot_str)
-    specs
-
 module Domain = struct
   module TrackingVar = AbstractDomain.FiniteSet (Var)
   module TrackingDomain = AbstractDomain.BottomLifted (TrackingVar)
@@ -253,15 +226,152 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
        with Not_found -> ())
     sink_map
 
-let method_has_ignore_allocation_annot tenv pname =
-  check_attributes Annotations.ia_is_ignore_allocations tenv pname
+let report_src_snk_path { Callbacks.proc_desc; tenv; summary } sink_map snk_annot src_annot =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let loc = Procdesc.get_loc proc_desc in
+  if method_overrides_annot src_annot tenv proc_name
+  then
+    let f_report =
+      report_annotation_stack src_annot.Annot.class_name snk_annot.Annot.class_name in
+    report_call_stack
+      summary
+      (method_has_annot snk_annot tenv)
+      (lookup_annotation_calls proc_desc snk_annot)
+      f_report
+      (CallSite.make proc_name loc)
+      sink_map
 
-(* TODO: generalize this to allow sanitizers for other annotation types, store it in [extras] so
-   we can compute it just once *)
-let method_is_sanitizer annot tenv pname =
-  if String.equal annot.Annot.class_name dummy_constructor_annot
-  then method_has_ignore_allocation_annot tenv pname
-  else false
+let report_src_snk_paths proc_data annot_map src_annot_list snk_annot =
+  try
+    let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
+    List.iter ~f:(report_src_snk_path proc_data sink_map snk_annot) src_annot_list
+  with Not_found -> ()
+
+(* New implementation starts here *)
+
+let annotation_of_str annot_str =
+  { Annot.class_name = annot_str; parameters = []; }
+
+module AnnotationSpec = struct
+  type predicate = Tenv.t -> Typ.Procname.t -> bool
+
+  type t = {
+    source_predicate: predicate;
+    sink_predicate: predicate;
+    sanitizer_predicate: predicate;
+    sink_annotation: Annot.t;
+    report: Callbacks.proc_callback_args -> AnnotReachabilityDomain.astate -> unit;
+  }
+
+  (* The default sanitizer does not sanitize anything *)
+  let default_sanitizer _ _ = false
+
+  (* The default report function does not report anything *)
+  let default_report _ _ = ()
+end
+
+module StandardAnnotationSpec = struct
+  let from_annotations src_annots snk_annot = AnnotationSpec.{
+      source_predicate = (fun tenv pname ->
+          List.exists src_annots ~f:(fun a -> method_overrides_annot a tenv pname));
+      sink_predicate = (fun tenv pname ->
+          let has_annot ia = Annotations.ia_ends_with ia snk_annot.Annot.class_name in
+          check_attributes has_annot tenv pname
+        );
+      sanitizer_predicate = default_sanitizer;
+      sink_annotation = snk_annot;
+      report = (fun proc_data annot_map ->
+          report_src_snk_paths proc_data annot_map src_annots snk_annot)
+    }
+end
+
+module NoAllocationAnnotationSpec = struct
+  let no_allocation_annot = annotation_of_str Annotations.no_allocation
+  let constructor_annot = annotation_of_str dummy_constructor_annot
+
+  let spec = AnnotationSpec.{
+      source_predicate = (fun tenv pname ->
+          method_overrides_annot no_allocation_annot tenv pname);
+      sink_predicate = (fun tenv pname ->
+          is_allocator tenv pname);
+      sanitizer_predicate = (fun tenv pname ->
+          check_attributes Annotations.ia_is_ignore_allocations tenv pname);
+      sink_annotation = constructor_annot;
+      report = (fun proc_data annot_map ->
+          report_src_snk_paths proc_data annot_map [no_allocation_annot] constructor_annot);
+    }
+end
+
+module ExpensiveAnnotationSpec = struct
+  let performance_critical_annot = annotation_of_str Annotations.performance_critical
+  let expensive_annot = annotation_of_str Annotations.expensive
+
+  let is_expensive tenv pname =
+    check_attributes Annotations.ia_is_expensive tenv pname
+
+  let method_is_expensive tenv pname =
+    is_modeled_expensive tenv pname || is_expensive tenv pname
+
+  let check_expensive_subtyping_rules { Callbacks.proc_desc; tenv; summary } overridden_pname =
+    let proc_name = Procdesc.get_proc_name proc_desc in
+    let loc = Procdesc.get_loc proc_desc in
+    if not (method_is_expensive tenv overridden_pname) then
+      let description =
+        Format.asprintf
+          "Method %a overrides unannotated method %a and cannot be annotated with %a"
+          MF.pp_monospaced (Typ.Procname.to_string proc_name)
+          MF.pp_monospaced (Typ.Procname.to_string overridden_pname)
+          MF.pp_monospaced ("@" ^ Annotations.expensive) in
+      let exn =
+        Exceptions.Checkers
+          (expensive_overrides_unexpensive, Localise.verbatim_desc description) in
+      Reporting.log_error summary ~loc exn
+
+  let spec = AnnotationSpec.{
+      source_predicate = is_expensive;
+      sink_predicate = (fun tenv pname ->
+          let has_annot ia = Annotations.ia_ends_with ia expensive_annot.class_name in
+          check_attributes has_annot tenv pname || is_modeled_expensive tenv pname
+        );
+      sanitizer_predicate = default_sanitizer;
+      sink_annotation = expensive_annot;
+      report = (fun ({ Callbacks.tenv; proc_desc } as proc_data) astate ->
+          let proc_name = Procdesc.get_proc_name proc_desc in
+          if is_expensive tenv proc_name then
+            PatternMatch.override_iter (check_expensive_subtyping_rules proc_data) tenv proc_name;
+          report_src_snk_paths proc_data astate [performance_critical_annot] expensive_annot
+        );
+    }
+end
+
+(* parse user-defined specs from .inferconfig *)
+let parse_user_defined_specs = function
+  | `List user_specs ->
+      let parse_user_spec json =
+        let open Yojson.Basic in
+        let sources = Util.member "sources" json |> Util.to_list |> List.map ~f:Util.to_string in
+        let sinks = Util.member "sink" json |> Util.to_string in
+        sources, sinks in
+      List.map ~f:parse_user_spec user_specs
+  | _ ->
+      []
+
+let annot_specs =
+  let user_defined_specs =
+    let specs = parse_user_defined_specs Config.annotation_reachability_custom_pairs in
+    List.map specs ~f:(fun (src_annots, snk_annot) ->
+        StandardAnnotationSpec.from_annotations
+          (List.map ~f:annotation_of_str src_annots) (annotation_of_str snk_annot))
+  in
+  ExpensiveAnnotationSpec.spec ::
+  NoAllocationAnnotationSpec.spec ::
+  (StandardAnnotationSpec.from_annotations
+     [annotation_of_str Annotations.any_thread ; annotation_of_str Annotations.for_non_ui_thread]
+     (annotation_of_str Annotations.ui_thread)) ::
+  (StandardAnnotationSpec.from_annotations
+     [annotation_of_str Annotations.ui_thread  ; annotation_of_str Annotations.for_ui_thread]
+     (annotation_of_str Annotations.for_non_ui_thread)) ::
+  user_defined_specs
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
@@ -295,12 +405,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let check_call tenv callee_pname caller_pname call_site astate =
     List.fold
       ~init:astate
-      ~f:(fun astate (_, annot) ->
-          if method_has_annot annot tenv callee_pname &&
-             not (method_is_sanitizer annot tenv caller_pname)
-          then Domain.add_call_site annot callee_pname call_site astate
+      ~f:(fun astate (spec: AnnotationSpec.t) ->
+          if spec.sink_predicate tenv callee_pname &&
+             not (spec.sanitizer_predicate tenv caller_pname)
+          then Domain.add_call_site spec.sink_annotation callee_pname call_site astate
           else astate)
-      src_snk_pairs
+      annot_specs
 
   let merge_callee_map call_site pdesc callee_pname astate =
     match Summary.read_summary pdesc callee_pname with
@@ -346,127 +456,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
-
-let report_src_snk_path { Callbacks.proc_desc; tenv; summary } sink_map snk_annot src_annot =
-  let proc_name = Procdesc.get_proc_name proc_desc in
-  let loc = Procdesc.get_loc proc_desc in
-  if method_overrides_annot src_annot tenv proc_name
-  then
-    let f_report =
-      report_annotation_stack src_annot.Annot.class_name snk_annot.Annot.class_name in
-    report_call_stack
-      summary
-      (method_has_annot snk_annot tenv)
-      (lookup_annotation_calls proc_desc snk_annot)
-      f_report
-      (CallSite.make proc_name loc)
-      sink_map
-
-let report_src_snk_paths proc_data annot_map src_annot_list snk_annot =
-  try
-    let sink_map = AnnotReachabilityDomain.find snk_annot annot_map in
-    List.iter ~f:(report_src_snk_path proc_data sink_map snk_annot) src_annot_list
-  with Not_found -> ()
-
-(* New implementation starts here *)
-
-module AnnotationSpec = struct
-  type predicate = Tenv.t -> Typ.Procname.t -> bool
-
-  type t = {
-    source_predicate: predicate;
-    sink_predicate: predicate;
-    sanitizer_predicate: predicate;
-    report: Callbacks.proc_callback_args -> AnnotReachabilityDomain.astate -> unit;
-  }
-
-  (* The default sanitizer does not sanitize anything *)
-  let default_sanitizer _ _ = false
-
-  (* The default report function does not report anything *)
-  let default_report _ _ = ()
-end
-
-module StandardAnnotationSpec = struct
-  let from_annotations src_annots snk_annot = AnnotationSpec.{
-      source_predicate = (fun tenv pname ->
-          List.exists src_annots ~f:(fun a -> method_overrides_annot a tenv pname));
-      sink_predicate = (method_has_annot snk_annot);
-      sanitizer_predicate = default_sanitizer;
-      report = (fun proc_data annot_map ->
-          report_src_snk_paths proc_data annot_map src_annots snk_annot)
-    }
-end
-
-module NoAllocationAnnotationSpec = struct
-  let no_allocation_annot = annotation_of_str Annotations.no_allocation
-  let constructor_annot = annotation_of_str dummy_constructor_annot
-
-  let spec = AnnotationSpec.{
-      source_predicate = (fun tenv pname ->
-          method_overrides_annot no_allocation_annot tenv pname);
-      sink_predicate = (method_has_annot constructor_annot);
-      sanitizer_predicate = method_has_ignore_allocation_annot;
-      report = (fun proc_data annot_map ->
-          report_src_snk_paths proc_data annot_map [no_allocation_annot] constructor_annot);
-    }
-end
-
-module ExpensiveAnnotationSpec = struct
-  let performance_critical_annot = annotation_of_str Annotations.performance_critical
-  let expensive_annot = annotation_of_str Annotations.expensive
-
-  let is_expensive tenv pname =
-    check_attributes Annotations.ia_is_expensive tenv pname
-
-  let method_is_expensive tenv pname =
-    is_modeled_expensive tenv pname || is_expensive tenv pname
-
-  let check_expensive_subtyping_rules { Callbacks.proc_desc; tenv; summary } overridden_pname =
-    let proc_name = Procdesc.get_proc_name proc_desc in
-    let loc = Procdesc.get_loc proc_desc in
-    if not (method_is_expensive tenv overridden_pname) then
-      let description =
-        Format.asprintf
-          "Method %a overrides unannotated method %a and cannot be annotated with %a"
-          MF.pp_monospaced (Typ.Procname.to_string proc_name)
-          MF.pp_monospaced (Typ.Procname.to_string overridden_pname)
-          MF.pp_monospaced ("@" ^ Annotations.expensive) in
-      let exn =
-        Exceptions.Checkers
-          (expensive_overrides_unexpensive, Localise.verbatim_desc description) in
-      Reporting.log_error summary ~loc exn
-
-  let spec = AnnotationSpec.{
-      source_predicate = is_expensive;
-      sink_predicate = (method_has_annot expensive_annot);
-      sanitizer_predicate = default_sanitizer;
-      report = (fun ({ Callbacks.tenv; proc_desc } as proc_data) astate ->
-          let proc_name = Procdesc.get_proc_name proc_desc in
-          if is_expensive tenv proc_name then
-            PatternMatch.override_iter (check_expensive_subtyping_rules proc_data) tenv proc_name;
-          report_src_snk_paths proc_data astate [performance_critical_annot] expensive_annot
-        );
-    }
-end
-
-let annot_specs =
-  let user_defined_specs =
-    let specs = parse_user_defined_specs Config.annotation_reachability_custom_pairs in
-    List.map specs ~f:(fun (src_annots, snk_annot) ->
-        StandardAnnotationSpec.from_annotations
-          (List.map ~f:annotation_of_str src_annots) (annotation_of_str snk_annot))
-  in
-  ExpensiveAnnotationSpec.spec ::
-  NoAllocationAnnotationSpec.spec ::
-  (StandardAnnotationSpec.from_annotations
-     [annotation_of_str Annotations.any_thread ; annotation_of_str Annotations.for_non_ui_thread]
-     (annotation_of_str Annotations.ui_thread)) ::
-  (StandardAnnotationSpec.from_annotations
-     [annotation_of_str Annotations.ui_thread  ; annotation_of_str Annotations.for_ui_thread]
-     (annotation_of_str Annotations.for_non_ui_thread)) ::
-  user_defined_specs
-
 let checker ({ Callbacks.proc_desc; tenv; summary} as callback) : Specs.summary =
   let initial =
     (AnnotReachabilityDomain.empty, Domain.TrackingDomain.NonBottom Domain.TrackingVar.empty) in
