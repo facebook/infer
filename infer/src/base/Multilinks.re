@@ -30,9 +30,7 @@ let reset_cache () => String.Table.clear multilink_files_cache;
 let read ::dir :option t => {
   let multilink_fname = Filename.concat dir multilink_file_name;
   switch (Utils.read_file multilink_fname) {
-  | Error error =>
-    L.internal_error "Couldn't read multilink file '%s': %s@." multilink_fname error;
-    None
+  | Error error => None
   | Ok lines =>
     let links = create ();
     List.iter
