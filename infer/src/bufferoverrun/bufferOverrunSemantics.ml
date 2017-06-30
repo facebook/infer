@@ -16,6 +16,8 @@ open AbsLoc
 module F = Format
 module L = Logging
 module Domain = BufferOverrunDomain
+module Trace = BufferOverrunTrace
+module TraceSet = Trace.Set
 open Domain
 
 module Make (CFG : ProcCfg.S) =
@@ -376,7 +378,7 @@ struct
 
   let get_matching_pairs
     : Tenv.t -> Val.t -> Val.t -> Typ.t -> Mem.astate -> Mem.astate
-      -> (Itv.Bound.t * Itv.Bound.t) list
+      -> (Itv.Bound.t * Itv.Bound.t * TraceSet.t) list
     = fun tenv formal actual typ caller_mem callee_mem ->
       let get_itv v = Val.get_itv v in
       let get_offset v = v |> Val.get_array_blk |> ArrayBlk.offsetof in
@@ -386,20 +388,20 @@ struct
         Mem.find_heap_set (PowLoc.append_field (Val.get_all_locs v) fn) mem
       in
       let deref_ptr v mem = Mem.find_heap_set (Val.get_array_locs v) mem in
-      let add_pair_itv itv1 itv2 l =
+      let add_pair_itv itv1 itv2 traces l =
         let open Itv in
         if itv1 <> bot && itv1 <> top && itv2 <> bot then
-          (lb itv1, lb itv2) :: (ub itv1, ub itv2) :: l
+          (lb itv1, lb itv2, traces) :: (ub itv1, ub itv2, traces) :: l
         else if itv1 <> bot && itv1 <> top && Itv.eq itv2 bot then
-          (lb itv1, Bound.Bot) :: (ub itv1, Bound.Bot) :: l
+          (lb itv1, Bound.Bot, TraceSet.empty) :: (ub itv1, Bound.Bot, TraceSet.empty) :: l
         else
           l
       in
       let add_pair_val v1 v2 pairs =
         pairs
-        |> add_pair_itv (get_itv v1) (get_itv v2)
-        |> add_pair_itv (get_offset v1) (get_offset v2)
-        |> add_pair_itv (get_size v1) (get_size v2)
+        |> add_pair_itv (get_itv v1) (get_itv v2) (Val.get_traces v2)
+        |> add_pair_itv (get_offset v1) (get_offset v2) (Val.get_traces v2)
+        |> add_pair_itv (get_size v1) (get_size v2) (Val.get_traces v2)
       in
       let add_pair_field v1 v2 pairs fn =
         let v1' = deref_field v1 fn callee_mem in
@@ -422,22 +424,23 @@ struct
       in
       [] |> add_pair_val formal actual |> add_pair_ptr typ formal actual
 
-  let subst_map_of_pairs
-    : (Itv.Bound.t * Itv.Bound.t) list -> Itv.Bound.t Itv.SubstMap.t
+  let subst_map_of_pairs : (Itv.Bound.t * Itv.Bound.t * TraceSet.t) list
+    -> (Itv.Bound.t Itv.SubstMap.t) * (TraceSet.t Itv.SubstMap.t)
     = fun pairs ->
-      let add_pair map (formal, actual) =
+      let add_pair (bound_map, trace_map) (formal, actual, traces) =
         match formal with
-        | Itv.Bound.Linear (_, se1) when Itv.SymLinear.is_zero se1 -> map
+        | Itv.Bound.Linear (_, se1) when Itv.SymLinear.is_zero se1 -> (bound_map, trace_map)
         | Itv.Bound.Linear (0, se1) when Itv.SymLinear.cardinal se1 > 0 ->
             let (symbol, coeff) = Itv.SymLinear.choose se1 in
             if Int.equal coeff 1
-            then Itv.SubstMap.add symbol actual map
+            then
+              (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
             else assert false
         | Itv.Bound.MinMax (Itv.Bound.Max, 0, symbol) ->
-            Itv.SubstMap.add symbol actual map
+            (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
         | _ -> assert false
       in
-      List.fold ~f:add_pair ~init:Itv.SubstMap.empty pairs
+      List.fold ~f:add_pair ~init:(Itv.SubstMap.empty, Itv.SubstMap.empty) pairs
 
   let rec list_fold2_def
     : default:Val.t -> f:('a -> Val.t -> 'b -> 'b) -> 'a list -> Val.t list -> init:'b -> 'b
@@ -450,7 +453,7 @@ struct
 
   let get_subst_map
     : Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Mem.astate
-      -> Location.t -> Itv.Bound.t Itv.SubstMap.t
+      -> Location.t -> (Itv.Bound.t Itv.SubstMap.t) * (TraceSet.t Itv.SubstMap.t)
     = fun tenv callee_pdesc params caller_mem callee_entry_mem loc ->
       let add_pair (formal, typ) actual l =
         let formal = Mem.find_heap (Loc.of_pvar formal) callee_entry_mem in

@@ -16,6 +16,8 @@ open AbsLoc
 module F = Format
 module L = Logging
 module Dom = BufferOverrunDomain
+module Trace = BufferOverrunTrace
+module TraceSet = Trace.Set
 
 module Summary = Summary.Make (struct
     type payload = Dom.Summary.t
@@ -53,13 +55,15 @@ struct
 
   let model_malloc
     : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
-      -> Dom.Mem.astate -> Dom.Mem.astate
-    = fun pname ret params node mem ->
+      -> Location.t -> Dom.Mem.astate -> Dom.Mem.astate
+    = fun pname ret params node location mem ->
       match ret with
       | Some (id, _) ->
           let (typ, stride, length0) = get_malloc_info (List.hd_exn params |> fst) in
-          let length = Sem.eval length0 mem (CFG.loc node) |> Dom.Val.get_itv in
-          let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero length 0 1 in
+          let length = Sem.eval length0 mem (CFG.loc node) in
+          let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
+          let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero (Dom.Val.get_itv length) 0 1
+                  |> Dom.Val.set_traces traces in
           mem
           |> Dom.Mem.add_stack (Loc.of_id id) v
           |> set_uninitialized node typ (Dom.Val.get_array_locs v)
@@ -70,9 +74,9 @@ struct
 
   let model_realloc
     : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
-      -> Dom.Mem.astate -> Dom.Mem.astate
-    = fun pname ret params node mem ->
-      model_malloc pname ret (List.tl_exn params) node mem
+      -> Location.t -> Dom.Mem.astate -> Dom.Mem.astate
+    = fun pname ret params node location mem ->
+      model_malloc pname ret (List.tl_exn params) node location mem
 
   let model_by_value value ret mem =
     match ret with
@@ -120,8 +124,8 @@ struct
       | "fgetc" -> model_by_value Dom.Val.Itv.m1_255 ret mem
       | "infer_print" -> model_infer_print params mem loc
       | "malloc"
-      | "__new_array" -> model_malloc pname ret params node mem
-      | "realloc" -> model_realloc pname ret params node mem
+      | "__new_array" -> model_malloc pname ret params node loc mem
+      | "realloc" -> model_realloc pname ret params node loc mem
       | "__set_array_length" -> model_infer_set_array_length pname node params mem loc
       | "strlen" -> model_by_value Dom.Val.Itv.nat ret mem
       | proc_name ->
@@ -132,12 +136,13 @@ struct
           |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown
 
   let rec declare_array
-    : Typ.Procname.t -> CFG.node -> Loc.t -> Typ.t -> length:IntLit.t option -> ?stride:int
-    -> inst_num:int -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate
-    = fun pname node loc typ ~length ?stride ~inst_num ~dimension mem ->
+    : Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t -> length:IntLit.t option
+    -> ?stride:int -> inst_num:int -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate
+    = fun pname node location loc typ ~length ?stride ~inst_num ~dimension mem ->
       let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
       let arr =
         Sem.eval_array_alloc pname node typ Itv.zero size ?stride inst_num dimension
+        |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
       in
       let mem =
         if Int.equal dimension 1
@@ -149,8 +154,8 @@ struct
       in
       match typ.Typ.desc with
       | Typ.Tarray (typ, length, stride) ->
-          declare_array pname node loc typ ~length ?stride:(Option.map ~f:IntLit.to_int stride)
-            ~inst_num ~dimension:(dimension + 1) mem
+          declare_array pname node location loc typ ~length
+            ?stride:(Option.map ~f:IntLit.to_int stride) ~inst_num ~dimension:(dimension + 1) mem
       | _ -> mem
 
   let counter_gen init =
@@ -163,9 +168,9 @@ struct
     get_num
 
   let declare_symbolic_val
-    : Typ.Procname.t -> Tenv.t -> CFG.node -> Loc.t -> Typ.typ
+    : Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> Loc.t -> Typ.typ
       -> inst_num:int -> new_sym_num: (unit -> int) -> Domain.t -> Domain.t
-    = fun pname tenv node loc typ ~inst_num ~new_sym_num mem ->
+    = fun pname tenv node location loc typ ~inst_num ~new_sym_num mem ->
       let max_depth = 2 in
       let new_alloc_num = counter_gen 1 in
       let rec decl_sym_val ~depth loc typ mem =
@@ -174,17 +179,21 @@ struct
           match typ.Typ.desc with
           | Typ.Tint ikind ->
               let unsigned = Typ.ikind_is_unsigned ikind in
-              let v = Dom.Val.make_sym ~unsigned pname new_sym_num in
+              let v = Dom.Val.make_sym ~unsigned pname new_sym_num
+                      |> Dom.Val.add_trace_elem (Trace.SymAssign location)
+              in
               Dom.Mem.add_heap loc v mem
           | Typ.Tfloat _ ->
-              let v = Dom.Val.make_sym pname new_sym_num in
+              let v = Dom.Val.make_sym pname new_sym_num
+                      |> Dom.Val.add_trace_elem (Trace.SymAssign location)
+              in
               Dom.Mem.add_heap loc v mem
           | Typ.Tptr (typ, _) ->
-              decl_sym_arr ~depth loc typ mem
+              decl_sym_arr ~depth loc location typ mem
           | Typ.Tarray (typ, opt_int_lit, _) ->
               let opt_size = Option.map ~f:Itv.of_int_lit opt_int_lit in
               let opt_offset = Some Itv.zero in
-              decl_sym_arr ~depth loc typ ~opt_offset ~opt_size mem
+              decl_sym_arr ~depth loc location typ ~opt_offset ~opt_size mem
           | Typ.Tstruct typename ->
               let decl_fld mem (fn, typ, _) =
                 let loc_fld = Loc.append_field loc fn in
@@ -202,7 +211,7 @@ struct
                   Location.pp (CFG.loc node);
               mem
 
-      and decl_sym_arr ~depth loc typ ?(opt_offset=None) ?(opt_size=None) mem =
+      and decl_sym_arr ~depth loc location typ ?(opt_offset=None) ?(opt_size=None) mem =
         let option_value opt_x default_f =
           match opt_x with
           | Some x -> x
@@ -212,8 +221,10 @@ struct
         let offset = option_value opt_offset itv_make_sym in
         let size = option_value opt_size itv_make_sym in
         let alloc_num = new_alloc_num () in
+        let elem = Trace.SymAssign location in
         let arr =
           Sem.eval_array_alloc pname node typ offset size inst_num alloc_num
+          |> Dom.Val.add_trace_elem elem
         in
         let mem = Dom.Mem.add_heap loc arr mem in
         let deref_loc =
@@ -224,27 +235,28 @@ struct
       decl_sym_val ~depth:0 loc typ mem
 
   let declare_symbolic_parameter
-    : Procdesc.t -> Tenv.t -> CFG.node -> int -> Dom.Mem.astate -> Dom.Mem.astate
-    = fun pdesc tenv node inst_num mem ->
+    : Procdesc.t -> Tenv.t -> CFG.node -> Location.t -> int -> Dom.Mem.astate -> Dom.Mem.astate
+    = fun pdesc tenv node location inst_num mem ->
       let pname = Procdesc.get_proc_name pdesc in
       let new_sym_num = counter_gen 0 in
       let add_formal (mem, inst_num) (pvar, typ) =
         let loc = Loc.of_pvar pvar in
         let mem =
-          declare_symbolic_val pname tenv node loc typ ~inst_num ~new_sym_num mem
+          declare_symbolic_val pname tenv node location loc typ ~inst_num ~new_sym_num mem
         in
         (mem, inst_num + 1)
       in
       List.fold ~f:add_formal ~init:(mem, inst_num) (Sem.get_formals pdesc)
       |> fst
 
-  let instantiate_ret ret callee_pname callee_exit_mem subst_map mem =
+  let instantiate_ret ret callee_pname callee_exit_mem subst_map mem loc =
     match ret with
     | Some (id, _) ->
         let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
         let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
         let ret_var = Loc.of_var (Var.of_id id) in
-        Dom.Val.subst ret_val subst_map
+        Dom.Val.subst ret_val subst_map loc
+        |> Dom.Val.add_trace_elem (Trace.Return loc)
         |> Fn.flip (Dom.Mem.add_stack ret_var) mem
     | None -> mem
 
@@ -264,7 +276,7 @@ struct
                       let formal_fields = PowLoc.append_field formal_locs fn in
                       let v = Dom.Mem.find_heap_set formal_fields callee_exit_mem in
                       let actual_fields = PowLoc.append_field (Dom.Val.get_all_locs actual) fn in
-                      Dom.Val.subst v subst_map
+                      Dom.Val.subst v subst_map location
                       |> Fn.flip (Dom.Mem.strong_update_heap actual_fields) mem
                     in
                     List.fold ~f:instantiate_fld ~init:mem str.Typ.Struct.fields
@@ -274,7 +286,7 @@ struct
                                  |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc in
                let v = Dom.Mem.find_heap_set formal_locs callee_exit_mem in
                let actual_locs = Dom.Val.get_all_locs actual in
-               Dom.Val.subst v subst_map
+               Dom.Val.subst v subst_map location
                |> Fn.flip (Dom.Mem.strong_update_heap actual_locs) mem)
       | _ -> mem
     in
@@ -291,7 +303,7 @@ struct
           let subst_map =
             Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc
           in
-          instantiate_ret ret callee_pname callee_exit_mem subst_map caller_mem
+          instantiate_ret ret callee_pname callee_exit_mem subst_map caller_mem loc
           |> instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map loc
       | None -> caller_mem
 
@@ -321,7 +333,8 @@ struct
               |> Dom.Mem.load_alias id exp
         | Store (exp1, _, exp2, loc) ->
             let locs = Sem.eval exp1 mem loc |> Dom.Val.get_all_locs in
-            Dom.Mem.update_mem locs (Sem.eval exp2 mem loc) mem
+            let v = Sem.eval exp2 mem loc |> Dom.Val.add_trace_elem (Trace.Assign loc) in
+            Dom.Mem.update_mem locs v mem
             |> Dom.Mem.store_alias exp1 exp2
         | Prune (exp, loc, _, _) -> Sem.prune exp loc mem
         | Call (ret, Const (Cfun callee_pname), params, loc, _) ->
@@ -331,21 +344,22 @@ struct
                  instantiate_mem tenv ret callee callee_pname params mem summary loc
              | None ->
                  handle_unknown_call pname ret callee_pname params node mem loc)
-        | Declare_locals (locals, _) ->
+        | Declare_locals (locals, location) ->
             (* array allocation in stack e.g., int arr[10] *)
-            let try_decl_arr (mem, inst_num) (pvar, typ) =
+            let try_decl_arr location (mem, inst_num) (pvar, typ) =
               match typ.Typ.desc with
               | Typ.Tarray (typ, length, stride0) ->
                   let loc = Loc.of_pvar pvar in
                   let stride = Option.map ~f:IntLit.to_int stride0 in
                   let mem =
-                    declare_array pname node loc typ ~length ?stride ~inst_num ~dimension:1 mem
+                    declare_array pname node location loc typ ~length ?stride ~inst_num
+                      ~dimension:1 mem
                   in
                   (mem, inst_num + 1)
               | _ -> (mem, inst_num)
             in
-            let (mem, inst_num) = List.fold ~f:try_decl_arr ~init:(mem, 1) locals in
-            declare_symbolic_parameter pdesc tenv node inst_num mem
+            let (mem, inst_num) = List.fold ~f:(try_decl_arr location) ~init:(mem, 1) locals in
+            declare_symbolic_parameter pdesc tenv node location inst_num mem
         | Call (_, fun_exp, _, loc, _) ->
             let () =
               L.(debug BufferOverrun Verbose) "/!\\ Call to non-const function %a at %a"
@@ -377,23 +391,33 @@ struct
       let array_access =
         match exp with
         | Exp.Var _ ->
-            let arr = Sem.eval exp mem loc |> Dom.Val.get_array_blk in
-            Some (arr, Itv.zero, true)
+            let v = Sem.eval exp mem loc in
+            let arr = Dom.Val.get_array_blk v in
+            let arr_traces = Dom.Val.get_traces v in
+            Some (arr, arr_traces, Itv.zero, TraceSet.empty, true)
         | Exp.Lindex (e1, e2) ->
             let locs = Sem.eval_locs e1 mem loc |> Dom.Val.get_all_locs in
-            let arr = Dom.Mem.find_set locs mem |> Dom.Val.get_array_blk in
-            let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
-            Some (arr, idx, true)
+            let v_arr = Dom.Mem.find_set locs mem in
+            let arr = Dom.Val.get_array_blk v_arr in
+            let arr_traces = Dom.Val.get_traces v_arr in
+            let v_idx = Sem.eval e2 mem loc in
+            let idx = Dom.Val.get_itv v_idx in
+            let idx_traces = Dom.Val.get_traces v_idx in
+            Some (arr, arr_traces, idx, idx_traces, true)
         | Exp.BinOp (Binop.PlusA as bop, e1, e2)
         | Exp.BinOp (Binop.MinusA as bop, e1, e2) ->
-            let arr = Sem.eval e1 mem loc |> Dom.Val.get_array_blk in
-            let idx = Sem.eval e2 mem loc |> Dom.Val.get_itv in
+            let v_arr = Sem.eval e1 mem loc in
+            let arr = Dom.Val.get_array_blk v_arr in
+            let arr_traces = Dom.Val.get_traces v_arr in
+            let v_idx = Sem.eval e2 mem loc in
+            let idx = Dom.Val.get_itv v_idx in
+            let idx_traces = Dom.Val.get_traces v_idx in
             let is_plus = Binop.equal bop Binop.PlusA in
-            Some (arr, idx, is_plus)
+            Some (arr, arr_traces, idx, idx_traces, is_plus)
         | _ -> None
       in
       match array_access with
-      | Some (arr, idx, is_plus) ->
+      | Some (arr, traces_arr, idx, traces_idx, is_plus) ->
           let site = Sem.get_allocsite pname node 0 0 in
           let size = ArrayBlk.sizeof arr in
           let offset = ArrayBlk.offsetof arr in
@@ -403,7 +427,8 @@ struct
           L.(debug BufferOverrun Verbose) "  idx: %a@," Itv.pp idx;
           L.(debug BufferOverrun Verbose) "@]@.";
           if size <> Itv.bot && idx <> Itv.bot then
-            Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx cond_set
+            let traces = TraceSet.merge ~traces_arr ~traces_idx loc in
+            Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx traces cond_set
           else cond_set
       | None -> cond_set
 
@@ -506,13 +531,31 @@ struct
       let add_node1 acc node = collect_node pdata inv_map acc node in
       Procdesc.fold_nodes add_node1 Dom.ConditionSet.empty pdesc
 
+  let make_err_trace : Trace.t -> string -> Errlog.loc_trace
+    = fun trace desc ->
+      let f elem (trace,depth) =
+        match elem with
+        | Trace.Assign loc ->
+            ((Errlog.make_trace_element depth loc "Assignment" []) :: trace, depth)
+        | Trace.ArrDecl loc ->
+            ((Errlog.make_trace_element depth loc "ArrayDeclaration" []) :: trace, depth)
+        | Trace.Call loc ->
+            ((Errlog.make_trace_element depth loc "Call" []) :: trace, depth + 1)
+        | Trace.Return loc ->
+            ((Errlog.make_trace_element (depth - 1) loc "Return" []) :: trace, depth - 1)
+        | Trace.SymAssign _ -> (trace,depth)
+        | Trace.ArrAccess loc ->
+            ((Errlog.make_trace_element depth loc ("ArrayAccess: " ^ desc) []) :: trace, depth)
+      in
+      List.fold_right ~f ~init:([],0) trace.trace |> fst |> List.rev
+
   let report_error : Procdesc.t -> Dom.ConditionSet.t -> unit
     = fun pdesc conds ->
       let pname = Procdesc.get_proc_name pdesc in
       let report1 cond =
         let alarm = Dom.Condition.check cond in
         let (caller_pname, loc) =
-          match Dom.Condition.get_trace cond with
+          match Dom.Condition.get_cond_trace cond with
           | Dom.Condition.Inter (caller_pname, _, loc) -> (caller_pname, loc)
           | Dom.Condition.Intra pname -> (pname, Dom.Condition.get_location cond)
         in
@@ -523,7 +566,9 @@ struct
             let error_desc = Localise.desc_buffer_overrun bucket description in
             let exn =
               Exceptions.Checkers (Localise.to_issue_id Localise.buffer_overrun, error_desc) in
-            let trace = [Errlog.make_trace_element 0 loc description []] in
+            let trace = match TraceSet.choose_shortest cond.Dom.Condition.traces with
+              | trace -> make_err_trace trace description
+              | exception _ -> [Errlog.make_trace_element 0 loc description []] in
             Reporting.log_error_deprecated pname ~loc ~ltr:trace exn
         | _ -> ()
       in
