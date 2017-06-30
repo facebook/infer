@@ -106,7 +106,11 @@ let get_undefined: bool => t;
 let pointer_arith: t => bool;
 
 
-/** returns true if the express operates on address of local variable */
+/** returns true if the expression represents a stack-directed address */
+let is_stack_addr: t => bool;
+
+
+/** returns true if the expression operates on address of local variable */
 let has_local_addr: t => bool;
 
 

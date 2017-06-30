@@ -946,7 +946,7 @@ let execute_load ?(report_deref_errors=true) pname pdesc tenv id rhs_exp typ loc
             | _ -> callee_opt in
           List.fold ~f:fold_undef_pname ~init:None (Attribute.get_for_exp tenv prop exp) in
         let prop' =
-          if Config.angelic_execution then
+          if Config.angelic_execution && not (Exp.is_stack_addr n_rhs_exp') then
             (* when we try to deref an undefined value, add it to the footprint *)
             match exp_get_undef_attr n_rhs_exp' with
             | Some (Apred (Aundef (callee_pname, ret_annots, callee_loc, _), _)) ->
