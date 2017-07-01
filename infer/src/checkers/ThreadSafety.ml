@@ -810,7 +810,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               astate in
         { astate' with accesses; }
     | Call (_, Indirect _, _, _, _) ->
-        failwithf "Unexpected indirect call instruction %a" HilInstr.pp instr
+        match Procdesc.get_proc_name pdesc with
+        | Typ.Procname.Java _ ->
+            failwithf "Unexpected indirect call instruction %a" HilInstr.pp instr
+        | _ ->
+            astate
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (LowerHil.Make(TransferFunctions))

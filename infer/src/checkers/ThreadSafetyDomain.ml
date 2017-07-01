@@ -11,8 +11,6 @@ open! IStd
 
 module F = Format
 
-module AccessPathSetDomain = AbstractDomain.InvertedSet(AccessPath.RawSet)
-
 module Access = struct
   type kind =
     | Read
