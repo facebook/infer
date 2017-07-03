@@ -607,8 +607,8 @@ let check_disequal tenv prop e1 e2 =
   let spatial_part = prop.Prop.sigma in
   let n_e1 = Prop.exp_normalize_prop tenv prop e1 in
   let n_e2 = Prop.exp_normalize_prop tenv prop e2 in
-  let check_disequal_const () =
-    match n_e1, n_e2 with
+  let rec check_expr_disequal ce1 ce2 =
+    match ce1, ce2 with
     | Exp.Const c1, Exp.Const c2 ->
         (Const.kind_equal c1 c2) && not (Const.equal c1 c2)
     | Exp.Const c1, Exp.Lindex(Exp.Const c2, Exp.Const (Const.Cint d)) ->
@@ -638,6 +638,14 @@ let check_disequal tenv prop e1 e2 =
     | Exp.Lvar pv, Exp.Var id | Exp.Var id, Exp.Lvar pv ->
         (* Address of any non-global var must be different from the value of any footprint var *)
         (not (Pvar.is_global pv)) && Ident.is_footprint id
+    | Exp.UnOp (op1, e1, _), Exp.UnOp (op2, e2, _) ->
+        if Unop.equal op1 op2 then check_expr_disequal e1 e2
+        else false
+    | Exp.Lfield (e1, f1, _), Exp.Lfield (e2, f2, _) ->
+        if Typ.Fieldname.equal f1 f2 then check_expr_disequal e1 e2
+        else false
+    | Exp.Exn e1, Exp.Exn e2 ->
+        check_expr_disequal e1 e2
     | _, _ -> false in
   let ineq = lazy (Inequalities.from_prop tenv prop) in
   let check_pi_implies_disequal e1 e2 =
@@ -701,9 +709,11 @@ let check_disequal tenv prop e1 e2 =
         (match f_null_check [] n_e2 spatial_part_leftover with
          | None -> false
          | Some ((e2_allocated : bool), _) -> e1_allocated || e2_allocated) in
+  let check_disequal_expr () =
+    check_expr_disequal n_e1 n_e2 in
   let neq_pure_part () =
     check_pi_implies_disequal n_e1 n_e2 in
-  check_disequal_const () || neq_pure_part () || neq_spatial_part ()
+  check_disequal_expr () || neq_pure_part () || neq_spatial_part ()
 
 (** Check [prop |- e1<=e2], to be called from normalized atom *)
 let check_le_normalized tenv prop e1 e2 =
@@ -1249,6 +1259,8 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
         do_imply subs e1 e2
     | Exp.Lindex(e1, f1), Exp.Lindex(e2, f2) ->
         do_imply (do_imply subs e1 e2) f1 f2
+    | Exp.Exn e1, Exp.Exn e2 ->
+        do_imply subs e1 e2
     | _ ->
         d_impl_err ("exp_imply not implemented", subs, (EXC_FALSE_EXPS (e1, e2)));
         raise (Exceptions.Abduction_case_not_implemented __POS__) in
