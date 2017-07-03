@@ -72,6 +72,9 @@ codetoanalyze/c/errors/null_dereference/getc.c, crash_ungetc, 5, NULL_DEREFERENC
 codetoanalyze/c/errors/null_dereference/getc.c, crash_ungetc, 5, RETURN_VALUE_IGNORED
 codetoanalyze/c/errors/null_dereference/getc.c, crash_vfprintf, 5, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/getc.c, nocrash_ungetc, 5, RETURN_VALUE_IGNORED
+codetoanalyze/c/errors/null_dereference/issue_680.c, null_ptr_deref2_bad, 0, NULL_DEREFERENCE
+codetoanalyze/c/errors/null_dereference/issue_680.c, null_ptr_deref_bad, 0, NULL_DEREFERENCE
+codetoanalyze/c/errors/null_dereference/issue_680.c, null_ptr_deref_bad_FN, 0, PRECONDITION_NOT_MET
 codetoanalyze/c/errors/null_dereference/malloc_no_null_check.c, test_malloc, 2, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/memcpy-test.c, testError1, 3, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/memcpy-test.c, testError2, 5, NULL_DEREFERENCE
