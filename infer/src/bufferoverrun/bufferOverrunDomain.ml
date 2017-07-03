@@ -144,11 +144,13 @@ struct
       let c = set_size_pos c in
       "Offset: " ^ Itv.to_string c.idx ^ " Size: " ^ Itv.to_string c.size
       ^ (match c.cond_trace with
-          | Inter (_, pname, _) ->
+          | Inter (_, pname, _)
+            when Config.bo_debug >= 1
+              || not (SourceFile.is_cpp_model c.loc.Location.file) ->
               let loc = pp_location F.str_formatter c; F.flush_str_formatter () in
               " @ " ^ loc ^ " by call "
               ^ MF.monospaced_to_string (Typ.Procname.to_string pname ^ "()") ^ " "
-          | Intra _ -> "")
+          | _ -> "")
 
   let subst : t -> (Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t) -> Typ.Procname.t ->
     Typ.Procname.t -> Location.t -> t
