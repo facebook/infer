@@ -92,7 +92,7 @@ struct
     = fun params mem loc ->
       match params with
       | (e, _) :: _ ->
-          L.(debug BufferOverrun Quiet) "@[<v>=== Infer Print === at %a@,%a@]%!"
+          L.(debug BufferOverrun Medium) "@[<v>=== Infer Print === at %a@,%a@]%!"
             Location.pp loc
             Dom.Val.pp (Sem.eval e mem loc);
           mem
@@ -309,13 +309,13 @@ struct
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit
     = fun instr pre post ->
-      L.(debug BufferOverrun Medium) "@\n@\n================================@\n";
-      L.(debug BufferOverrun Medium) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre;
-      L.(debug BufferOverrun Medium) "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr;
-      L.(debug BufferOverrun Medium) "@\n@\n";
-      L.(debug BufferOverrun Medium) "@[<v 2>Post-state : @,%a" Dom.Mem.pp post;
-      L.(debug BufferOverrun Medium) "@]@\n";
-      L.(debug BufferOverrun Medium) "================================@\n@."
+      L.(debug BufferOverrun Verbose) "@\n@\n================================@\n";
+      L.(debug BufferOverrun Verbose) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre;
+      L.(debug BufferOverrun Verbose) "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr;
+      L.(debug BufferOverrun Verbose) "@\n@\n";
+      L.(debug BufferOverrun Verbose) "@[<v 2>Post-state : @,%a" Dom.Mem.pp post;
+      L.(debug BufferOverrun Verbose) "@]@\n";
+      L.(debug BufferOverrun Verbose) "================================@\n@."
 
   let exec_instr
     : Dom.Mem.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate
