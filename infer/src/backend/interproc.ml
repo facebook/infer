@@ -1453,7 +1453,7 @@ let do_analysis_closures exe_env : Tasks.closure list =
       | Some pdesc -> Some pdesc
       | None when Config.dynamic_dispatch = `Lazy ->
           Option.bind (Specs.get_summary proc_name)
-            (fun summary -> summary.Specs.proc_desc_option)
+            ~f:(fun summary -> summary.Specs.proc_desc_option)
       | None -> None in
     let analyze_ondemand _ proc_desc =
       let proc_name = Procdesc.get_proc_name proc_desc in
@@ -1578,7 +1578,7 @@ let print_stats_cfg proc_shadowed source cfg =
     let source_dir = DB.source_dir_from_source_file source in
     let stats_file = DB.source_dir_get_internal_file source_dir ".stats" in
     try
-      let outc = open_out (DB.filename_to_string stats_file) in
+      let outc = Out_channel.create (DB.filename_to_string stats_file) in
       let fmt = F.formatter_of_out_channel outc in
       print_file_stats fmt ();
       Out_channel.close outc

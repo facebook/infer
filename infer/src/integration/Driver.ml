@@ -35,12 +35,12 @@ let build_system_exe_assoc = [
 
 let build_system_of_exe_name name =
   try
-    List.Assoc.find_exn (List.Assoc.inverse build_system_exe_assoc) name
+    List.Assoc.find_exn ~equal:String.equal (List.Assoc.inverse build_system_exe_assoc) name
   with Not_found ->
     invalid_argf "Unsupported build command %s" name
 
 let string_of_build_system build_system =
-  List.Assoc.find_exn build_system_exe_assoc build_system
+  List.Assoc.find_exn ~equal:equal_build_system build_system_exe_assoc build_system
 
 (* based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
@@ -121,8 +121,8 @@ let clean_results_dir () =
       not (String.equal (Filename.basename name) "report.json")
       && List.exists ~f:(Filename.check_suffix name) suffixes_to_delete in
   let rec clean name =
-    let rec cleandir dir = match Unix.readdir dir with
-      | entry ->
+    let rec cleandir dir = match Unix.readdir_opt dir with
+      | Some entry ->
           if should_delete_dir entry then (
             Utils.rmtree (name ^/ entry)
           ) else if not (String.equal entry Filename.current_dir_name
@@ -130,7 +130,7 @@ let clean_results_dir () =
             clean (name ^/ entry)
           );
           cleandir dir (* next entry *)
-      | exception End_of_file ->
+      | None ->
           Unix.closedir dir in
     match Unix.opendir name with
     | dir ->
@@ -185,7 +185,7 @@ let touch_start_file_unless_continue () =
 
 
 let run_command ~prog ~args cleanup =
-  Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ())
+  Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())
   |> fun status
   -> cleanup status
    ; ok_exn (Unix.Exit_or_signal.or_error status)
@@ -338,7 +338,7 @@ let report () =
           "--project-root"; Config.project_root;
           "--results-dir"; Config.results_dir
         ] in
-      if is_error (Unix.waitpid (Unix.fork_exec ~prog ~args:(prog :: args) ())) then
+      if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
         L.external_error
           "** Error running the reporting script:@\n**   %s %s@\n** See error above@."
           prog (String.concat ~sep:" " args)

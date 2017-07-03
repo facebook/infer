@@ -14,6 +14,7 @@ open! IStd
 
 type method_signature = {
   mutable name : Typ.Procname.t;
+  access : Clang_ast_t.access_specifier;
   args : (Mangled.t * Clang_ast_t.qual_type) list;
   ret_type : Clang_ast_t.qual_type;
   attributes : Clang_ast_t.attribute list;
@@ -32,6 +33,9 @@ let ms_get_name { name } =
 
 let ms_set_name ms name =
   ms.name <- name
+
+let ms_get_access { access } =
+  access
 
 let ms_get_args { args } =
   args
@@ -79,7 +83,7 @@ let ms_is_setter { pointer_to_property_opt; args } =
   Int.equal (List.length args) 2
 
 let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual ?is_cpp_nothrow
-    language pointer_to_parent pointer_to_property_opt return_param_typ =
+    language pointer_to_parent pointer_to_property_opt return_param_typ access =
   let booloption_to_bool = function
     | Some b -> b
     | None -> false in
@@ -87,6 +91,7 @@ let make_ms name args ret_type attributes loc is_instance ?is_cpp_virtual ?is_cp
   let is_cpp_nothrow = booloption_to_bool is_cpp_nothrow in
   {
     name;
+    access;
     args;
     ret_type;
     attributes;

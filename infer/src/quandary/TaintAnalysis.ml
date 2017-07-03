@@ -262,8 +262,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
       let get_caller_ap formal_ap =
         let apply_return ret_ap = match ret_opt with
-          | Some base_var -> AccessPath.with_base base_var ret_ap
-          | None -> failwith "Have summary for retval, but no ret id to bind it to!" in
+          | Some base_var -> Some (AccessPath.with_base base_var ret_ap)
+          | None ->
+              Logging.internal_error "Have summary for retval, but no ret id to bind it to: %a@\n"
+                AccessPath.pp ret_ap;
+              None in
         let get_actual_ap formal_index =
           Option.value_map
             ~f:(function
@@ -280,7 +283,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         match base_var with
         | Var.ProgramVar pvar ->
             if Pvar.is_return pvar
-            then Some (apply_return formal_ap)
+            then apply_return formal_ap
             else Some formal_ap
         | Var.LogicalVar id when Ident.is_footprint id ->
             begin

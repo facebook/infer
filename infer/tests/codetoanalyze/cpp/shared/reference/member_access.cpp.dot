@@ -1,16 +1,5 @@
 /* @generated */
 digraph iCFG {
-"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
-	
-
-	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" ;
-"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" [label="2: Exit X_call \n  " color=yellow style=filled]
-	
-
-"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 12]\n  n$1=*n$0.f:int [line 12]\n  *&return:int=n$1 [line 12]\n " shape="box"]
-	
-
-	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" ;
 "access_ptr#_Z10access_ptrP1X.d92da761037ff62981b797569043086d_1" [label="1: Start access_ptr\nFormals:  x:X*\nLocals:  c:int f:int \n   DECLARE_LOCALS(&return,&c,&f); [line 20]\n " color=yellow style=filled]
 	
 
@@ -41,4 +30,15 @@ digraph iCFG {
 	
 
 	 "access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_4" -> "access_ref#_Z10access_refR1X.fe108dde015a2c821663ca99df26a44e_3" ;
+"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" ;
+"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" [label="2: Exit X_call \n  " color=yellow style=filled]
+	
+
+"call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 12]\n  n$1=*n$0.f:int [line 12]\n  *&return:int=n$1 [line 12]\n " shape="box"]
+	
+
+	 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_3" -> "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_2" ;
 }

@@ -394,7 +394,7 @@ end = struct
           if type_opt_is_unsigned t then add_lt_minus1_e e
       | Sil.Estruct (fsel, _), t ->
           let get_field_type f =
-            Option.bind t (fun t' ->
+            Option.bind t ~f:(fun t' ->
                 Option.map ~f:fst @@ Typ.Struct.get_field_type_and_annotation ~lookup f t'
               ) in
           List.iter ~f:(fun (f, se) -> strexp_extract (se, get_field_type f)) fsel
@@ -742,7 +742,7 @@ let check_lt_normalized tenv prop e1 e2 =
     We use this to distinguish among different queries. *)
 let get_smt_key a p =
   let tmp_filename = Filename.temp_file "smt_query" ".cns" in
-  let outc_tmp = open_out tmp_filename in
+  let outc_tmp = Out_channel.create tmp_filename in
   let fmt_tmp = F.formatter_of_out_channel outc_tmp in
   let () = F.fprintf fmt_tmp "%a%a" (Sil.pp_atom Pp.text) a (Prop.pp_prop Pp.text) p in
   Out_channel.close outc_tmp;
@@ -759,7 +759,7 @@ let check_atom tenv prop a0 =
       DB.Results_dir.path_to_filename
         (DB.Results_dir.Abs_source_dir source)
         [(key ^ ".cns")] in
-    let outc = open_out (DB.filename_to_string key_filename) in
+    let outc = Out_channel.create (DB.filename_to_string key_filename) in
     let fmt = F.formatter_of_out_channel outc in
     L.d_str ("ID: "^key); L.d_ln ();
     L.d_str "CHECK_ATOM_BOUND: "; Sil.d_atom a; L.d_ln ();
@@ -1202,6 +1202,9 @@ let exp_imply tenv calc_missing subs e1_in e2_in : subst2 =
         (* symmetric of above case *)
         let e' = Exp.BinOp (Binop.MinusA, e1, e2') in
         do_imply subs (Prop.exp_normalize_noabs tenv Sil.sub_empty e') e2
+    | Exp.Var id, Exp.Lvar pv when Ident.is_footprint id && Pvar.is_local pv ->
+        (* Footprint var could never be the same as local address *)
+        raise (IMPL_EXC ("expression not equal", subs, (EXC_FALSE_EXPS (e1, e2))))
     | Exp.Var _, e2 ->
         if calc_missing then
           let () = ProverState.add_missing_pi (Sil.Aeq (e1_in, e2_in)) in

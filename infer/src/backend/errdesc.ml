@@ -412,7 +412,7 @@ and _exp_rv_dexp tenv (_seen : Exp.Set.t) node e : DExp.t option =
         _exp_rv_dexp tenv seen node e1
     | Exp.Sizeof {typ; dynamic_length; subtype} ->
         if verbose then (L.d_str "exp_rv_dexp: type "; Sil.d_exp e; L.d_ln ());
-        Some (DExp.Dsizeof (typ, Option.bind dynamic_length (_exp_rv_dexp tenv seen node), subtype))
+        Some (DExp.Dsizeof (typ, Option.bind dynamic_length ~f:(_exp_rv_dexp tenv seen node), subtype))
     | _ ->
         if verbose then (L.d_str "exp_rv_dexp: no match for  "; Sil.d_exp e; L.d_ln ());
         None
@@ -912,7 +912,8 @@ let _explain_access tenv
         if verbose then (L.d_str "explain_dereference Binop.Leteref "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Call (_, Exp.Const (Const.Cfun fn), [(e, _)], _, _)
-      when String.equal (Typ.Procname.to_string fn) "free" ->
+      when List.exists ~f:(Typ.Procname.equal fn)
+          [BuiltinDecl.free; BuiltinDecl.__delete; BuiltinDecl.__delete_array] ->
         if verbose then (L.d_str "explain_dereference Sil.Call "; Sil.d_exp e; L.d_ln ());
         Some e
     | Some Sil.Call (_, (Exp.Var _ as e), _, _, _) ->

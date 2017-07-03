@@ -805,6 +805,7 @@ and (
   stats,
   trace_error,
   write_html,
+  write_html_whitelist_regex,
   write_dotty
 ) =
   let all_generic_manuals =
@@ -871,6 +872,10 @@ and (
   and write_html =
     CLOpt.mk_bool ~long:"write-html"
       "Produce hmtl debug output in the results directory"
+
+  and write_html_whitelist_regex =
+    CLOpt.mk_string_list ~long:"write-html-whitelist-regex"
+      "whitelist files that will have its html debug output printed"
 
   and write_dotty =
     CLOpt.mk_bool ~long:"write-dotty"
@@ -965,6 +970,7 @@ and (
     stats,
     trace_error,
     write_html,
+    write_html_whitelist_regex,
     write_dotty
   )
 
@@ -1166,7 +1172,8 @@ and iterations =
 and java_jar_compiler =
   CLOpt.mk_path_opt
     ~long:"java-jar-compiler"
-    ~meta:"path" "Specifify the Java compiler jar used to generate the bytecode"
+    ~in_help:CLOpt.[Capture, manual_java]
+    ~meta:"path" "Specify the Java compiler jar used to generate the bytecode"
 
 and jobs =
   CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:'j' ~default:ncpu
@@ -2020,6 +2027,7 @@ and whole_seconds = !whole_seconds
 and worklist_mode = !worklist_mode
 and write_dotty = !write_dotty
 and write_html = !write_html
+and write_html_whitelist_regex = !write_html_whitelist_regex
 and xcode_developer_dir = !xcode_developer_dir
 and xcpretty = !xcpretty
 and xml_specs = !xml_specs

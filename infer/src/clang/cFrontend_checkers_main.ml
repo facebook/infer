@@ -35,7 +35,7 @@ let parse_al_file fname channel : CTL.al_file option =
 let already_imported_files = ref []
 
 let rec parse_import_file import_file channel =
-  if List.mem !already_imported_files import_file then
+  if List.mem ~equal:String.equal !already_imported_files import_file then
     failwith ("Cyclic imports: file '" ^ import_file ^ "' was already imported.")
   else (
     match parse_al_file import_file channel with
@@ -61,7 +61,7 @@ and collect_all_macros_and_paths imports curr_file_macros curr_file_paths =
 and parse_imports imports_files =
   let parse_one_import_file fimport (macros, paths) =
     L.(debug Linters Medium) "  Loading import macros from file %s@\n" fimport;
-    let in_channel = open_in fimport in
+    let in_channel = In_channel.create fimport in
     let parsed_macros, parsed_paths = parse_import_file fimport in_channel in
     In_channel.close in_channel;
     let macros = List.append parsed_macros macros in
@@ -92,7 +92,7 @@ let parse_ctl_file linters_def_file channel : CFrontend_errors.linter list =
 let parse_ctl_files linters_def_files : CFrontend_errors.linter list =
   let collect_parsed_linters linters_def_file linters =
     L.(debug Linters Medium) "Loading linters rules from %s@\n" linters_def_file;
-    let in_channel = open_in linters_def_file in
+    let in_channel = In_channel.create linters_def_file in
     let parsed_linters = parse_ctl_file linters_def_file in_channel in
     In_channel.close in_channel;
     List.append parsed_linters linters in

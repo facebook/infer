@@ -43,7 +43,7 @@ let pp_epilog fmt () =
   F.fprintf fmt "@.clean:@.\trm -f $(CLUSTERS)@."
 
 let create_cluster_makefile (clusters: Cluster.t list) (fname: string) =
-  let outc = open_out fname in
+  let outc = Out_channel.create fname in
   let fmt = Format.formatter_of_out_channel outc in
   let do_cluster cluster_nr cluster =
     F.fprintf fmt "#%s@\n" (DB.source_dir_to_string cluster);

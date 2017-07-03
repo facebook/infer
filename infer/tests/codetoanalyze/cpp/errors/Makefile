@@ -25,6 +25,7 @@ SOURCES = \
   $(wildcard npe/*.cpp) \
   $(wildcard numeric/*.cpp) \
   $(wildcard overwrite_attribute/*.cpp) \
+  $(wildcard pointers/*.cpp) \
   $(wildcard resource_leaks/*.cpp) \
   $(wildcard shared/attributes/*.cpp) \
   $(wildcard shared/conditional/*.cpp) \
@@ -60,6 +61,7 @@ SOURCES = \
   shared/types/struct_pass_by_value.cpp \
   shared/types/typeid_expr.cpp \
   $(wildcard smart_ptr/*.cpp) \
+	$(wildcard stack_escape/*.cpp) \
 	$(wildcard static_local/*.cpp) \
   $(wildcard subtyping/*.cpp) \
   $(wildcard vector/*.cpp) \

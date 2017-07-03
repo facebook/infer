@@ -11,17 +11,6 @@ digraph iCFG {
 	
 
 	 "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_3" -> "__infer_globals_initializer_test.19c6153ea70b713d8d2a1a0fd4ae91e3_2" ;
-"hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_1" [label="1: Start MyHasher_hash\nFormals:  t:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
-	
-
-	 "hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_1" -> "hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_3" ;
-"hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_2" [label="2: Exit MyHasher_hash \n  " color=yellow style=filled]
-	
-
-"hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_3" [label="3:  Return Stmt \n   *&return:int=1 [line 11]\n " shape="box"]
-	
-
-	 "hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_3" -> "hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_2" ;
 "hash_combine_generic<MyHasher,_int,_int,_int>#_Z20hash_combine_genericI8MyHasheriJiiEEiRKT0_DpRKT1_.3a83fee393c73f136d3b23cd9979468e_1" [label="1: Start hash_combine_generic<MyHasher,_int,_int,_int>\nFormals:  t:int const & ts:int const & ts:int const &\nLocals:  seed:int \n   DECLARE_LOCALS(&return,&seed); [line 15]\n " color=yellow style=filled]
 	
 
@@ -54,4 +43,15 @@ digraph iCFG {
 
 	 "hash_combine_generic<MyHasher,_int,_int,_int>#_Z20hash_combine_genericI8MyHasheriJiiEEiRKT0_DpRKT1_.3a83fee393c73f136d3b23cd9979468e_8" -> "hash_combine_generic<MyHasher,_int,_int,_int>#_Z20hash_combine_genericI8MyHasheriJiiEEiRKT0_DpRKT1_.3a83fee393c73f136d3b23cd9979468e_5" ;
 	 "hash_combine_generic<MyHasher,_int,_int,_int>#_Z20hash_combine_genericI8MyHasheriJiiEEiRKT0_DpRKT1_.3a83fee393c73f136d3b23cd9979468e_8" -> "hash_combine_generic<MyHasher,_int,_int,_int>#_Z20hash_combine_genericI8MyHasheriJiiEEiRKT0_DpRKT1_.3a83fee393c73f136d3b23cd9979468e_6" ;
+"hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_1" [label="1: Start MyHasher_hash\nFormals:  t:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+	
+
+	 "hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_1" -> "hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_3" ;
+"hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_2" [label="2: Exit MyHasher_hash \n  " color=yellow style=filled]
+	
+
+"hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_3" [label="3:  Return Stmt \n   *&return:int=1 [line 11]\n " shape="box"]
+	
+
+	 "hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_3" -> "hash#MyHasher#(_ZN8MyHasher4hashEi).1eea369da12a365223bc03beb7f7b901_2" ;
 }

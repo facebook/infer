@@ -35,7 +35,7 @@ let append_crc_cutoff ?(key="") name =
 let dot_crc_len = 1 + 32
 
 let strip_crc str =
-  Core.Std.String.slice str 0 (- dot_crc_len)
+  String.slice str 0 (- dot_crc_len)
 
 let string_crc_has_extension ~ext name_crc =
   let name = strip_crc name_crc in

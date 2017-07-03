@@ -69,7 +69,7 @@ module FileContainsStringMatcher = struct
   let file_contains regexp file_in =
     let rec loop () =
       try
-        (Str.search_forward regexp (input_line file_in) 0) >= 0
+        (Str.search_forward regexp (In_channel.input_line_exn file_in) 0) >= 0
       with
       | Not_found -> loop ()
       | End_of_file -> false in
@@ -87,7 +87,7 @@ module FileContainsStringMatcher = struct
           SourceFile.Map.find source_file !source_map
         with Not_found ->
         try
-          let file_in = open_in (SourceFile.to_abs_path source_file) in
+          let file_in = In_channel.create (SourceFile.to_abs_path source_file) in
           let pattern_found = file_contains regexp file_in in
           In_channel.close file_in;
           source_map := SourceFile.Map.add source_file pattern_found !source_map;

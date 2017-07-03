@@ -46,6 +46,7 @@ let empty_decl_info = {
   di_is_invalid_decl = false;
   di_attributes = [];
   di_full_comment = None;
+  di_access = `None;
 }
 
 let empty_var_decl_info = {

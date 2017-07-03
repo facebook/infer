@@ -362,6 +362,7 @@ val whole_seconds : bool
 val worklist_mode : int
 val write_dotty : bool
 val write_html : bool
+val write_html_whitelist_regex : string list
 val xcode_developer_dir : string option
 val xcpretty : bool
 val xml_specs : bool

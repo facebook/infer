@@ -173,7 +173,7 @@ fi
 AC_PROG_OCAML
 AC_ASSERT_PROG([ocamlc], [$OCAMLC])
 # check the version of OCaml
-AC_ASSERT_OCAML_MIN_VERSION([4.04.0])
+AC_ASSERT_OCAML_MIN_VERSION([4.04.2])
 AC_ASSERT_PROG([ocamlopt], [$OCAMLOPT])
 AC_ASSERT_PROG([ocamlbuild], [$OCAMLBUILD])
 AC_PROG_FINDLIB
@@ -181,7 +181,7 @@ AC_PROG_OCAMLLEX
 AC_ASSERT_PROG([ocamllex], [$OCAMLLEX])
 AC_PATH_TOOL([MENHIR], [menhir], [no])
 AC_ASSERT_PROG([menhir], [$MENHIR])
-AC_ASSERT_OCAML_PKG([atdgen], [], [1.6.0])
+AC_ASSERT_OCAML_PKG([atdgen], [], [])
 AC_ASSERT_OCAML_PKG([biniou])
 AC_ASSERT_OCAML_PKG([camlzip], [zip])
 AC_ASSERT_OCAML_PKG([easy-format])

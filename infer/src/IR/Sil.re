@@ -2248,8 +2248,53 @@ let hpred_sub subst => {
 
 
 /** {2 Functions for replacing occurrences of expressions.} */
-let exp_replace_exp epairs e =>
-  List.find f::(fun (e1, _) => Exp.equal e e1) epairs |> Option.value_map f::snd default::e;
+let rec exp_replace_exp epairs e =>
+  /* First we check if there is an exact match */
+  switch (List.find f::(fun (e1, _) => Exp.equal e e1) epairs) {
+  | Some (_, e2) => e2
+  | None =>
+    /* If e is a compound expression, we need to check for its subexpressions as well */
+    switch e {
+    | Exp.UnOp op e0 ty =>
+      let e0' = exp_replace_exp epairs e0;
+      if (phys_equal e0 e0') {
+        e
+      } else {
+        Exp.UnOp op e0' ty
+      }
+    | Exp.BinOp op lhs rhs =>
+      let lhs' = exp_replace_exp epairs lhs;
+      let rhs' = exp_replace_exp epairs rhs;
+      if (phys_equal lhs lhs' && phys_equal rhs rhs') {
+        e
+      } else {
+        Exp.BinOp op lhs' rhs'
+      }
+    | Exp.Cast ty e0 =>
+      let e0' = exp_replace_exp epairs e0;
+      if (phys_equal e0 e0') {
+        e
+      } else {
+        Exp.Cast ty e0'
+      }
+    | Exp.Lfield e0 fname ty =>
+      let e0' = exp_replace_exp epairs e0;
+      if (phys_equal e0 e0') {
+        e
+      } else {
+        Exp.Lfield e0' fname ty
+      }
+    | Exp.Lindex base index =>
+      let base' = exp_replace_exp epairs base;
+      let index' = exp_replace_exp epairs index;
+      if (phys_equal base base' && phys_equal index index') {
+        e
+      } else {
+        Exp.Lindex base' index'
+      }
+    | _ => e
+    }
+  };
 
 let atom_replace_exp epairs atom => atom_expmap (fun e => exp_replace_exp epairs e) atom;
 

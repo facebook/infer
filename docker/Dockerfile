@@ -40,7 +40,7 @@ RUN INFER_VERSION=v0.12.0; \
     ln -s ${PWD}/infer-linux64-$INFER_VERSION /infer
 
 # Compile Infer
-RUN OCAML_VERSION=4.04.0; \
+RUN OCAML_VERSION=4.04.2; \
     opam init --compiler=$OCAML_VERSION -j $(getconf _NPROCESSORS_ONLN || echo 1) --yes && \
     cd /infer && \
     ./build-infer.sh --opam-switch $OCAML_VERSION && \

@@ -185,46 +185,6 @@ digraph iCFG {
 	
 
 	 "get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_5" -> "get_global_ref_div1_field#_Z25get_global_ref_div1_fieldv.d1cf014a8a7594c25502e7467036db43_4" ;
-"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_1" [label="1: Start X_nonzero\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
-	
-
-	 "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_1" -> "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" ;
-"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_2" [label="2: Exit X_nonzero \n  " color=yellow style=filled]
-	
-
-"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 12]\n  *n$0.f:int=1 [line 12]\n " shape="box"]
-	
-
-	 "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" -> "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_2" ;
-"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_1" [label="1: Start X_zero\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
-	
-
-	 "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_1" -> "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" ;
-"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_2" [label="2: Exit X_zero \n  " color=yellow style=filled]
-	
-
-"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 13]\n  *n$0.f:int=0 [line 13]\n " shape="box"]
-	
-
-	 "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" -> "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_2" ;
-"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_1" [label="1: Start X_div\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
-	
-
-	 "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_1" -> "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" ;
-"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_2" [label="2: Exit X_div \n  " color=yellow style=filled]
-	
-
-"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 14]\n  n$1=*n$0.f:int [line 14]\n  *&return:int=(1 / n$1) [line 14]\n " shape="box"]
-	
-
-	 "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" -> "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_2" ;
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
-	
-
-	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" ;
-"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" [label="2: Exit X_X \n  " color=yellow style=filled]
-	
-
 "zero_ptr#_Z8zero_ptrP1X.116c76a845da4635b8015868b6f88148_1" [label="1: Start zero_ptr\nFormals:  x:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
 	
 
@@ -479,4 +439,44 @@ digraph iCFG {
 	
 
 	 "set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_3" -> "set_field_ref#_Z13set_field_refR1Xi.9462d74c213d319726fe99c7c846fa01_2" ;
+"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_1" [label="1: Start X_nonzero\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_1" -> "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" ;
+"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_2" [label="2: Exit X_nonzero \n  " color=yellow style=filled]
+	
+
+"nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 12]\n  *n$0.f:int=1 [line 12]\n " shape="box"]
+	
+
+	 "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_3" -> "nonzero#X#(_ZN1X7nonzeroEv).2573fca1bed3ac1e33f8f506c6474b44_2" ;
+"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_1" [label="1: Start X_zero\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
+	
+
+	 "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_1" -> "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" ;
+"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_2" [label="2: Exit X_zero \n  " color=yellow style=filled]
+	
+
+"zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:X* [line 13]\n  *n$0.f:int=0 [line 13]\n " shape="box"]
+	
+
+	 "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_3" -> "zero#X#(_ZN1X4zeroEv).c444db103f7b307f02ac43a6a304dbe1_2" ;
+"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_1" [label="1: Start X_div\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 14]\n " color=yellow style=filled]
+	
+
+	 "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_1" -> "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" ;
+"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_2" [label="2: Exit X_div \n  " color=yellow style=filled]
+	
+
+"div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" [label="3:  Return Stmt \n   n$0=*&this:X* [line 14]\n  n$1=*n$0.f:int [line 14]\n  *&return:int=(1 / n$1) [line 14]\n " shape="box"]
+	
+
+	 "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_3" -> "div#X#(_ZN1X3divEv).fae6613d1bfa8e05808cbca4d87359bf_2" ;
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" [label="1: Start X_X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+	
+
+	 "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_1" -> "X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" ;
+"X#X#{_ZN1XC1Ev}.de3838d93566ad3a73011188ff48af20_2" [label="2: Exit X_X \n  " color=yellow style=filled]
+	
+
 }

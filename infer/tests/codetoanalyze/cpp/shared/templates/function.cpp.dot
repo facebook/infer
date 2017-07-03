@@ -112,6 +112,28 @@ digraph iCFG {
 	
 
 	 "div1_create_and_get_val#function#_ZN8function23div1_create_and_get_valEv.94dff1e803b66aea8e36148ceb174417_3" -> "div1_create_and_get_val#function#_ZN8function23div1_create_and_get_valEv.94dff1e803b66aea8e36148ceb174417_2" ;
+"getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_1" [label="1: Start function::getVal<function::X1>\nFormals:  x:function::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+	
+
+	 "getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_1" -> "getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_3" ;
+"getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_2" [label="2: Exit function::getVal<function::X1> \n  " color=yellow style=filled]
+	
+
+"getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_3" [label="3:  Return Stmt \n   n$0=*&x:function::X1& [line 26]\n  _=*n$0:function::X1 [line 26]\n  n$2=_fun_function::X1_getVal(n$0:function::X1&) [line 26]\n  *&return:int=n$2 [line 26]\n " shape="box"]
+	
+
+	 "getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_3" -> "getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_2" ;
+"getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_1" [label="1: Start function::getVal<function::X3>\nFormals:  x:function::X3&\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
+	
+
+	 "getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_1" -> "getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_3" ;
+"getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_2" [label="2: Exit function::getVal<function::X3> \n  " color=yellow style=filled]
+	
+
+"getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_3" [label="3:  Return Stmt \n   n$0=*&x:function::X3& [line 32]\n  _=*n$0:function::X3 [line 32]\n  n$2=_fun_function::X3_get(n$0:function::X3&) [line 32]\n  *&return:int=n$2 [line 32]\n " shape="box"]
+	
+
+	 "getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_3" -> "getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_2" ;
 "getVal#X1#function#(_ZN8function2X16getValEv).bb0ae63addee293bc0dd7065b769992f_1" [label="1: Start function::X1_getVal\nFormals:  this:function::X1*\nLocals:  \n   DECLARE_LOCALS(&return); [line 13]\n " color=yellow style=filled]
 	
 
@@ -159,26 +181,4 @@ digraph iCFG {
 "X3#X3#function#{_ZN8function2X3C1Ev|constexpr}.798f1471dcf2568095e45da7bfc54c33_2" [label="2: Exit function::X3_X3 \n  " color=yellow style=filled]
 	
 
-"getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_1" [label="1: Start function::getVal<function::X1>\nFormals:  x:function::X1&\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
-	
-
-	 "getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_1" -> "getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_3" ;
-"getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_2" [label="2: Exit function::getVal<function::X1> \n  " color=yellow style=filled]
-	
-
-"getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_3" [label="3:  Return Stmt \n   n$0=*&x:function::X1& [line 26]\n  _=*n$0:function::X1 [line 26]\n  n$2=_fun_function::X1_getVal(n$0:function::X1&) [line 26]\n  *&return:int=n$2 [line 26]\n " shape="box"]
-	
-
-	 "getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_3" -> "getVal<function::X1>#function#_ZN8function6getValINS_2X1EEEiRT_.4276809d8e79ffc18c519ad85c9e825e_2" ;
-"getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_1" [label="1: Start function::getVal<function::X3>\nFormals:  x:function::X3&\nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
-	
-
-	 "getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_1" -> "getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_3" ;
-"getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_2" [label="2: Exit function::getVal<function::X3> \n  " color=yellow style=filled]
-	
-
-"getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_3" [label="3:  Return Stmt \n   n$0=*&x:function::X3& [line 32]\n  _=*n$0:function::X3 [line 32]\n  n$2=_fun_function::X3_get(n$0:function::X3&) [line 32]\n  *&return:int=n$2 [line 32]\n " shape="box"]
-	
-
-	 "getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_3" -> "getVal<function::X3>#function#_ZN8function6getValINS_2X3EEEiRT_.4f3d136dded8bcc8ebefbf11d77e9d06_2" ;
 }

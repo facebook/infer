@@ -16,22 +16,25 @@ open AbsLoc
 module F = Format
 module L = Logging
 module MF = MarkupFormatter
+module Trace = BufferOverrunTrace
+module TraceSet = Trace.Set
 
 let always_strong_update = true (* unsound but ok for bug catching *)
 
 module Condition =
 struct
-  type trace = Intra of Typ.Procname.t
-             | Inter of Typ.Procname.t * Typ.Procname.t * Location.t
+  type cond_trace = Intra of Typ.Procname.t
+                  | Inter of Typ.Procname.t * Typ.Procname.t * Location.t
   [@@deriving compare]
 
   type t = {
     proc_name : Typ.Procname.t;
     loc : Location.t;
     id : string;
-    trace : trace;
+    cond_trace : cond_trace;
     idx : Itv.astate;
     size : Itv.astate;
+    traces : TraceSet.t;
   }
   [@@deriving compare]
 
@@ -53,25 +56,27 @@ struct
       if Config.bo_debug <= 1 then
         F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
       else
-        match c.trace with
+        match c.cond_trace with
           Inter (_, pname, loc) ->
             let pname = Typ.Procname.to_string pname in
-            F.fprintf fmt "%a < %a at %a by call %s() at %a"
+            F.fprintf fmt "%a < %a at %a by call %s() at %a (%a)"
               Itv.pp c.idx Itv.pp c.size pp_location c pname Location.pp_file_pos loc
-        | Intra _ -> F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
+              TraceSet.pp c.traces
+        | Intra _ -> F.fprintf fmt "%a < %a at %a (%a)" Itv.pp c.idx Itv.pp c.size pp_location c
+                       TraceSet.pp c.traces
 
   let get_location : t -> Location.t
     = fun c -> c.loc
 
-  let get_trace : t -> trace
-    = fun c -> c.trace
+  let get_cond_trace : t -> cond_trace
+    = fun c -> c.cond_trace
 
   let get_proc_name : t -> Typ.Procname.t
     = fun c -> c.proc_name
 
-  let make : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> t
-    = fun proc_name loc id ~idx ~size ->
-      { proc_name; idx; size; loc; id ; trace = Intra proc_name }
+  let make : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> TraceSet.t -> t
+    = fun proc_name loc id ~idx ~size traces ->
+      { proc_name; idx; size; loc; id ; cond_trace = Intra proc_name; traces }
 
   let filter1 : t -> bool
     = fun c ->
@@ -138,19 +143,28 @@ struct
     = fun c ->
       let c = set_size_pos c in
       "Offset: " ^ Itv.to_string c.idx ^ " Size: " ^ Itv.to_string c.size
-      ^ (match c.trace with
+      ^ (match c.cond_trace with
           | Inter (_, pname, _) ->
               let loc = pp_location F.str_formatter c; F.flush_str_formatter () in
               " @ " ^ loc ^ " by call "
               ^ MF.monospaced_to_string (Typ.Procname.to_string pname ^ "()") ^ " "
           | Intra _ -> "")
 
-  let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> t
-    = fun c subst_map caller_pname callee_pname loc ->
+  let subst : t -> (Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t) -> Typ.Procname.t ->
+    Typ.Procname.t -> Location.t -> t
+    = fun c (bound_map, trace_map) caller_pname callee_pname loc ->
       if Itv.is_symbolic c.idx || Itv.is_symbolic c.size then
-        { c with idx = Itv.subst c.idx subst_map;
-                 size = Itv.subst c.size subst_map;
-                 trace = Inter (caller_pname, callee_pname, loc) }
+        let symbols = Itv.get_symbols c.idx @ Itv.get_symbols c.size in
+        let traces_caller = List.fold symbols ~init:TraceSet.empty
+            ~f:(fun traces symbol ->
+                match Itv.SubstMap.find symbol trace_map with
+                | symbol_trace -> TraceSet.join symbol_trace traces
+                | exception Not_found -> traces) in
+        let traces = TraceSet.instantiate ~traces_caller ~traces_callee:c.traces loc in
+        { c with idx = Itv.subst c.idx bound_map;
+                 size = Itv.subst c.size bound_map;
+                 cond_trace = Inter (caller_pname, callee_pname, loc);
+                 traces }
       else c
 end
 
@@ -161,11 +175,12 @@ struct
   module Map = Caml.Map.Make (Location)
 
   let add_bo_safety
-    : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> t -> t
-    = fun pname loc id ~idx ~size cond ->
-      add (Condition.make pname loc id ~idx ~size) cond
+    : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> TraceSet.t -> t -> t
+    = fun pname loc id ~idx ~size traces cond ->
+      add (Condition.make pname loc id ~idx ~size traces) cond
 
-  let subst : t -> Itv.Bound.t Itv.SubstMap.t -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> t
+  let subst : t -> (Itv.Bound.t Itv.SubstMap.t) * (TraceSet.t Itv.SubstMap.t) -> Typ.Procname.t ->
+    Typ.Procname.t -> Location.t -> t
     = fun x subst_map caller_pname callee_pname loc ->
       fold (fun e -> add (Condition.subst e subst_map caller_pname callee_pname loc)) x empty
 
@@ -205,15 +220,23 @@ struct
     itv : Itv.astate;
     powloc : PowLoc.astate;
     arrayblk : ArrayBlk.astate;
+    traces : TraceSet.t;
   }
 
   type t = astate
 
   let bot : t
-    = { itv = Itv.bot; powloc = PowLoc.bot; arrayblk = ArrayBlk.bot }
+    = { itv = Itv.bot; powloc = PowLoc.bot; arrayblk = ArrayBlk.bot; traces = TraceSet.empty }
+
+  let pp fmt x =
+    if Config.bo_debug <= 1 then
+      F.fprintf fmt "(%a, %a, %a)" Itv.pp x.itv PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk
+    else
+      F.fprintf fmt "(%a, %a, %a, %a)" Itv.pp x.itv PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk
+        TraceSet.pp x.traces
 
   let unknown : t
-    = { itv = Itv.top; powloc = PowLoc.unknown; arrayblk = ArrayBlk.unknown }
+    = { bot with itv = Itv.top; powloc = PowLoc.unknown; arrayblk = ArrayBlk.unknown }
 
   let (<=) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -227,10 +250,8 @@ struct
     else
       { itv = Itv.widen ~prev:(prev.itv) ~next:(next.itv) ~num_iters;
         powloc = PowLoc.widen ~prev:(prev.powloc) ~next:(next.powloc) ~num_iters;
-        arrayblk = ArrayBlk.widen ~prev:(prev.arrayblk) ~next:(next.arrayblk) ~num_iters; }
-
-  let pp fmt x =
-    F.fprintf fmt "(%a, %a, %a)" Itv.pp x.itv PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk
+        arrayblk = ArrayBlk.widen ~prev:(prev.arrayblk) ~next:(next.arrayblk) ~num_iters;
+        traces = TraceSet.join prev.traces next.traces; }
 
   let join : t -> t -> t
     = fun x y ->
@@ -238,7 +259,8 @@ struct
       else
         { itv = Itv.join x.itv y.itv;
           powloc = PowLoc.join x.powloc y.powloc;
-          arrayblk = ArrayBlk.join x.arrayblk y.arrayblk }
+          arrayblk = ArrayBlk.join x.arrayblk y.arrayblk;
+          traces = TraceSet.join x.traces y.traces; }
 
   let rec joins : t list -> t
     = function
@@ -260,6 +282,12 @@ struct
 
   let get_all_locs : t -> PowLoc.t
     = fun x -> PowLoc.join x.powloc (get_array_locs x)
+
+  let get_traces : t -> TraceSet.t
+    = fun x -> x.traces
+
+  let set_traces : TraceSet.t -> t -> t
+    = fun traces x -> { x with traces }
 
   let of_itv itv = { bot with itv }
 
@@ -305,19 +333,20 @@ struct
 
   let plus : t -> t -> t
     = fun x y ->
-      { x with itv = Itv.plus x.itv y.itv; arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv }
+      { x with itv = Itv.plus x.itv y.itv; arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv;
+               traces = TraceSet.join x.traces y.traces }
 
   let minus : t -> t -> t
     = fun x y ->
       let n = Itv.join (Itv.minus x.itv y.itv) (ArrayBlk.diff x.arrayblk y.arrayblk) in
       let a = ArrayBlk.minus_offset x.arrayblk y.itv in
-      { bot with itv = n; arrayblk = a}
+      { bot with itv = n; arrayblk = a; traces = TraceSet.join x.traces y.traces }
 
   let mult : t -> t -> t
-    = lift_itv Itv.mult
+    = fun x y -> { (lift_itv Itv.mult x y) with traces = TraceSet.join x.traces y.traces }
 
   let div : t -> t -> t
-    = lift_itv Itv.div
+    = fun x y -> { (lift_itv Itv.div x y) with traces = TraceSet.join x.traces y.traces }
 
   let mod_sem : t -> t -> t
     = lift_itv Itv.mod_sem
@@ -359,7 +388,8 @@ struct
     : (Itv.t -> Itv.t -> Itv.t)
       -> (ArrayBlk.astate -> ArrayBlk.astate -> ArrayBlk.astate) -> t -> t -> t
     = fun f g x y ->
-      { x with itv = f x.itv y.itv; arrayblk = g x.arrayblk y.arrayblk }
+      { x with itv = f x.itv y.itv; arrayblk = g x.arrayblk y.arrayblk;
+               traces = TraceSet.join x.traces y.traces }
 
   let prune_zero : t -> t
     = lift_prune1 Itv.prune_zero
@@ -373,13 +403,15 @@ struct
   let prune_ne : t -> t -> t
     = lift_prune2 Itv.prune_ne ArrayBlk.prune_eq
 
+  let lift_pi : (ArrayBlk.astate -> Itv.t -> ArrayBlk.astate) -> t -> t -> t
+    = fun f x y ->
+      { bot with arrayblk = f x.arrayblk y.itv; traces = TraceSet.join x.traces y.traces }
+
   let plus_pi : t -> t -> t
-    = fun x y ->
-      { bot with powloc = x.powloc; arrayblk = ArrayBlk.plus_offset x.arrayblk y.itv }
+    = fun x y -> lift_pi ArrayBlk.plus_offset x y
 
   let minus_pi : t -> t -> t
-    = fun x y ->
-      { bot with powloc = x.powloc; arrayblk = ArrayBlk.minus_offset x.arrayblk y.itv }
+    = fun x y -> lift_pi ArrayBlk.minus_offset x y
 
   let minus_pp : t -> t -> t
     = fun x y ->
@@ -387,7 +419,8 @@ struct
       if (not (PowLoc.is_bot x.powloc) && ArrayBlk.is_bot x.arrayblk) ||
          (not (PowLoc.is_bot y.powloc) && ArrayBlk.is_bot y.arrayblk)
       then { bot with itv = Itv.top }
-      else { bot with itv = ArrayBlk.diff x.arrayblk y.arrayblk }
+      else { bot with itv = ArrayBlk.diff x.arrayblk y.arrayblk;
+                      traces = TraceSet.join x.traces y.traces }
 
   let get_symbols : t -> Itv.Symbol.t list
     = fun x ->
@@ -397,11 +430,27 @@ struct
     = fun x ->
       { x with itv = Itv.normalize x.itv; arrayblk = ArrayBlk.normalize x.arrayblk }
 
-  let subst : t -> Itv.Bound.t Itv.SubstMap.t -> t
-    = fun x subst_map ->
-      { x with itv = Itv.subst x.itv subst_map;
-               arrayblk = ArrayBlk.subst x.arrayblk subst_map }
+  let subst : t -> (Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t) -> Location.t -> t
+    = fun x (bound_map, trace_map) loc ->
+      let symbols = get_symbols x in
+      let traces_caller = List.fold ~f:(fun traces symbol ->
+          try
+            TraceSet.join (Itv.SubstMap.find symbol trace_map) traces
+          with _ -> traces) ~init:TraceSet.empty symbols in
+      let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces loc in
+      { x with itv = Itv.subst x.itv bound_map; arrayblk = ArrayBlk.subst x.arrayblk bound_map;
+               traces }
       |> normalize  (* normalize bottom *)
+
+  let add_trace_elem : Trace.elem -> t -> t
+    = fun elem x ->
+      let traces = TraceSet.add_elem elem x.traces in
+      { x with traces }
+
+  let add_trace_elem_last : Trace.elem -> t -> t
+    = fun elem x ->
+      let traces = TraceSet.add_elem_last elem x.traces in
+      { x with traces }
 
   let pp_summary : F.formatter -> t -> unit
     = fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk

@@ -85,11 +85,13 @@ let rec of_sil ~f_resolve_id (exp : Exp.t) typ = match exp with
               AccessPath.base_of_pvar pvar typ, of_sil ~f_resolve_id value typ)
           closure.captured_vars in
       Closure (closure.name, environment)
-  | Lindex (Const (Cstr _), index_exp) ->
+  | Lindex (Const (Cstr s), index_exp) ->
       (* indexed string literal (e.g., "foo"[1]). represent this by introducing a dummy variable
          for the string literal. if you actually need to see the value of the string literal in the
-         analysis, you should probably be using SIL *)
-      of_sil ~f_resolve_id (Exp.Lindex (Var (Ident.create_none ()), index_exp)) typ
+         analysis, you should probably be using SIL. this is unsound if the code modifies the
+         literal, e.g. using `const_cast<char*>` *)
+      of_sil ~f_resolve_id
+        (Exp.Lindex (Var (Ident.create_normal (Ident.string_to_name s) 0), index_exp)) typ
   | Lvar _ | Lfield _ | Lindex _ ->
       match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
       | Some access_path ->

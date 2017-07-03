@@ -53,7 +53,7 @@ type 'a t =
   } [@@deriving compare]
 
 (* Ignore the extension field, which is a pure instrumentation *)
-let compare t1 t2 = compare_t (fun _ _ -> 0) t1 t2
+let compare t1 t2 = compare (fun _ _ -> 0) t1 t2
 
 let equal t1 t2 = Int.equal (compare t1 t2) 0
 

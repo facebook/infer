@@ -143,6 +143,18 @@ let get_undefined footprint =>
   Var (Ident.create_fresh (if footprint {Ident.kfootprint} else {Ident.kprimed}));
 
 
+/** returns true if the expression represents a stack-directed address */
+let rec is_stack_addr e =>
+  switch (e: t) {
+  | Lvar pv => not (Pvar.is_global pv)
+  | UnOp _ e' _
+  | Cast _ e'
+  | Lfield e' _ _
+  | Lindex e' _ => is_stack_addr e'
+  | _ => false
+  };
+
+
 /** returns true if the express operates on address of local variable */
 let rec has_local_addr e =>
   switch (e: t) {

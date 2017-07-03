@@ -305,7 +305,7 @@ module Debug = struct
         L.progress "%s@\n" ast_str;
         let quit_token = "q" in
         L.progress "Press Enter to continue or type %s to quit... @?" quit_token;
-        match read_line () |> String.lowercase with
+        match In_channel.input_line_exn In_channel.stdin |> String.lowercase with
         | s when String.equal s quit_token -> exit 0
         | _ ->
             (* Remove the line at the bottom of terminal with the debug instructions *)
@@ -491,7 +491,7 @@ let save_dotty_when_in_debug_mode source_file =
       let source_file_basename = Filename.basename (SourceFile.to_abs_path source_file) in
       let file = dotty_dir ^/ (source_file_basename ^ ".dot") in
       let dotty = Debug.EvaluationTracker.DottyPrinter.dotty_of_ctl_evaluation tracker in
-      Utils.with_file_out file ~f:(fun oc -> output_string oc dotty)
+      Utils.with_file_out file ~f:(fun oc -> Out_channel.output_string oc dotty)
   | _ -> ()
 
 (* Helper functions *)

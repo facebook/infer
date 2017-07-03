@@ -14,12 +14,12 @@ void out_of_bound_Bad(std::vector<int> v) {
   v[n] = 1;
 }
 
-void constructor_Good_FP() {
+void constructor_Good() {
   std::vector<int> v(1);
   v[0] = 2;
 }
 
-void push_back_Good_FP() {
+void push_back_Good() {
   std::vector<int> v;
   v.push_back(1);
   v[0] = 2;
@@ -31,7 +31,7 @@ void push_back_Bad() {
   v[1] = 2;
 }
 
-void reserve_Good_FP() {
+void reserve_Good() {
   std::vector<int> v;
   v.reserve(42);
   v.push_back(1);

@@ -126,8 +126,8 @@ let cache_classname cn =
     | [] -> ()
     | d:: tl -> mkdir tl (Filename.concat p d) in
   mkdir splitted_root_dir Filename.dir_sep;
-  let file_out = open_out(path) in
-  output_string file_out (string_of_float (Unix.time ()));
+  let file_out = Out_channel.create path in
+  Out_channel.output_string file_out (string_of_float (Unix.time ()));
   Out_channel.close file_out
 
 let is_classname_cached cn =

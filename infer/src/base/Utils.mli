@@ -34,7 +34,7 @@ val filename_to_relative : root:string -> string -> string option
 (** type for files used for printing *)
 type outfile =
   { fname : string; (** name of the file *)
-    out_c : out_channel; (** output channel *)
+    out_c : Out_channel.t; (** output channel *)
     fmt : Format.formatter (** formatter for printing *) }
 
 (** create an outfile for the command line, the boolean indicates whether to do demangling when closing the file *)
@@ -62,9 +62,9 @@ val with_file_out : string -> f:(Out_channel.t -> 'a) -> 'a
 
 val write_json_to_file : string -> Yojson.Basic.json -> unit
 
-val consume_in : in_channel -> unit
+val consume_in : In_channel.t -> unit
 
-val with_process_in : string -> (in_channel -> 'a) -> ('a * Unix.Exit_or_signal.t)
+val with_process_in : string -> (In_channel.t -> 'a) -> ('a * Unix.Exit_or_signal.t)
 
 val shell_escape_command : string list -> string
 
@@ -88,7 +88,7 @@ val compare_versions : string -> string -> int
 
 (** Lock file passed as argument and write into it using [f]. If [delete] then the file is unlinked
     once this is done. *)
-val write_file_with_locking : ?delete:bool -> f:(out_channel -> unit) -> string -> unit
+val write_file_with_locking : ?delete:bool -> f:(Out_channel.t -> unit) -> string -> unit
 
 (** [rmtree path] removes [path] and, if [path] is a directory, recursively removes its contents *)
 val rmtree : string -> unit

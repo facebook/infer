@@ -48,6 +48,17 @@ digraph iCFG {
 	
 
 	 "npe_call_with_forward_declaration#_Z33npe_call_with_forward_declarationv.ad7fd394481920cd97c78fc355441a32_3" -> "npe_call_with_forward_declaration#_Z33npe_call_with_forward_declarationv.ad7fd394481920cd97c78fc355441a32_2" ;
+"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_1" [label="1: Start call_with_forward_declaration\nFormals:  x:XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n " color=yellow style=filled]
+	
+
+	 "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_1" -> "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" ;
+"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
+	
+
+"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" [label="3:  Call _fun_XForward_call \n   n$0=*&x:XForward* [line 35]\n  _=*n$0:XForward [line 35]\n  n$2=_fun_XForward_call(n$0:XForward*) [line 35]\n " shape="box"]
+	
+
+	 "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" -> "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_2" ;
 "call#X#(_ZN1X4callEv).6850f213fac2fabbb652507f2d371b31_1" [label="1: Start X_call\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
@@ -70,15 +81,4 @@ digraph iCFG {
 	
 
 	 "call#XForward#(_ZN8XForward4callEv).6e2d73601523a55b813cc82c5e49ca70_3" -> "call#XForward#(_ZN8XForward4callEv).6e2d73601523a55b813cc82c5e49ca70_2" ;
-"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_1" [label="1: Start call_with_forward_declaration\nFormals:  x:XForward*\nLocals:  \n   DECLARE_LOCALS(&return); [line 35]\n " color=yellow style=filled]
-	
-
-	 "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_1" -> "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" ;
-"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_2" [label="2: Exit call_with_forward_declaration \n  " color=yellow style=filled]
-	
-
-"call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" [label="3:  Call _fun_XForward_call \n   n$0=*&x:XForward* [line 35]\n  _=*n$0:XForward [line 35]\n  n$2=_fun_XForward_call(n$0:XForward*) [line 35]\n " shape="box"]
-	
-
-	 "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_3" -> "call_with_forward_declaration#_Z29call_with_forward_declarationP8XForward.bbdb4d104caed29f8898a86f2a4a6f01_2" ;
 }

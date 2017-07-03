@@ -82,6 +82,17 @@ digraph iCFG {
 	
 
 	 "getB#inheritance_casts#_ZN17inheritance_casts4getBEi.3a3dc8645898c5027aae99e05025494c_5" -> "getB#inheritance_casts#_ZN17inheritance_casts4getBEi.3a3dc8645898c5027aae99e05025494c_4" ;
+"div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_1" [label="1: Start inheritance_casts::div\nFormals:  x:inheritance_casts::A const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
+	
+
+	 "div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_1" -> "div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_3" ;
+"div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_2" [label="2: Exit inheritance_casts::div \n  " color=yellow style=filled]
+	
+
+"div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_3" [label="3:  Return Stmt \n   n$0=*&x:inheritance_casts::A const & [line 26]\n  n$1=*n$0.f:int [line 26]\n  *&return:int=(1 / n$1) [line 26]\n " shape="box"]
+	
+
+	 "div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_3" -> "div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_2" ;
 "A#A#inheritance_casts#{_ZN17inheritance_casts1AC1Ev}.a3d1803b12cc04cbb5260c678862cdba_1" [label="1: Start inheritance_casts::A_A\nFormals:  this:inheritance_casts::A*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
@@ -122,15 +133,4 @@ digraph iCFG {
 	
 
 	 "B#B#inheritance_casts#{_ZN17inheritance_casts1BC1EOS0_|constexpr}.e38b8f435b929838652bf1e8572853f3_3" -> "B#B#inheritance_casts#{_ZN17inheritance_casts1BC1EOS0_|constexpr}.e38b8f435b929838652bf1e8572853f3_2" ;
-"div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_1" [label="1: Start inheritance_casts::div\nFormals:  x:inheritance_casts::A const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 26]\n " color=yellow style=filled]
-	
-
-	 "div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_1" -> "div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_3" ;
-"div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_2" [label="2: Exit inheritance_casts::div \n  " color=yellow style=filled]
-	
-
-"div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_3" [label="3:  Return Stmt \n   n$0=*&x:inheritance_casts::A const & [line 26]\n  n$1=*n$0.f:int [line 26]\n  *&return:int=(1 / n$1) [line 26]\n " shape="box"]
-	
-
-	 "div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_3" -> "div#inheritance_casts#_ZN17inheritance_casts3divERKNS_1AE.2add4c23f8184f07027ccb32fe3cee6d_2" ;
 }

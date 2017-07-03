@@ -51,7 +51,7 @@ let capture compiler ~prog ~args =
       let new_path = Config.wrappers_dir ^ ":" ^ (Sys.getenv_exn path_var) in
       let extended_env = `Extend [path_var, new_path] in
       L.environment_info "Running command %s with env:@\n%a@\n@." prog pp_extended_env extended_env;
-      Unix.fork_exec ~prog:prog ~args:(prog::args) ~env:extended_env ()
+      Unix.fork_exec ~prog:prog ~argv:(prog::args) ~env:extended_env ()
       |> Unix.waitpid
       |> function
       | Ok () -> ()

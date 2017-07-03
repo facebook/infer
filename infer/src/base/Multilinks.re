@@ -30,9 +30,7 @@ let reset_cache () => String.Table.clear multilink_files_cache;
 let read ::dir :option t => {
   let multilink_fname = Filename.concat dir multilink_file_name;
   switch (Utils.read_file multilink_fname) {
-  | Error error =>
-    L.internal_error "Couldn't read multilink file '%s': %s@." multilink_fname error;
-    None
+  | Error _ => None
   | Ok lines =>
     let links = create ();
     List.iter
@@ -45,8 +43,9 @@ let read ::dir :option t => {
 /* Write a multilink file in the given directory */
 let write multilinks ::dir => {
   let fname = Filename.concat dir multilink_file_name;
-  let outc = open_out fname;
-  String.Table.iteri f::(fun key::_ data::src => output_string outc (src ^ "\n")) multilinks;
+  let outc = Out_channel.create fname;
+  String.Table.iteri
+    f::(fun key::_ data::src => Out_channel.output_string outc (src ^ "\n")) multilinks;
   Out_channel.close outc
 };
 

@@ -109,6 +109,28 @@ digraph iCFG {
 	
 
 	 "param_get_copied_div1#struct_pass_by_value#_ZN20struct_pass_by_value21param_get_copied_div1Ev.a478d92732cbfd3143baded8caa93a88_5" -> "param_get_copied_div1#struct_pass_by_value#_ZN20struct_pass_by_value21param_get_copied_div1Ev.a478d92732cbfd3143baded8caa93a88_4" ;
+"get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_1" [label="1: Start struct_pass_by_value::get_f\nFormals:  val:struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+	
+
+	 "get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_1" -> "get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_3" ;
+"get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_2" [label="2: Exit struct_pass_by_value::get_f \n  " color=yellow style=filled]
+	
+
+"get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_3" [label="3:  Return Stmt \n   n$0=*&val:struct_pass_by_value::X& [line 22]\n  n$1=*n$0.f:int [line 22]\n  *&return:int=n$1 [line 22]\n " shape="box"]
+	
+
+	 "get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_3" -> "get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_2" ;
+"set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_1" [label="1: Start struct_pass_by_value::set_f\nFormals:  val:struct_pass_by_value::X& f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
+	
+
+	 "set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_1" -> "set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_3" ;
+"set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_2" [label="2: Exit struct_pass_by_value::set_f \n  " color=yellow style=filled]
+	
+
+"set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&val:struct_pass_by_value::X& [line 25]\n  n$1=*&f:int [line 25]\n  *n$0.f:int=n$1 [line 25]\n " shape="box"]
+	
+
+	 "set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_3" -> "set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_2" ;
 "X#X#struct_pass_by_value#{_ZN20struct_pass_by_value1XC1EOS0_|constexpr}.38a71213b4829bbfe72ae0107ed450f0_1" [label="1: Start struct_pass_by_value::X_X\nFormals:  this:struct_pass_by_value::X* __param_0:struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
@@ -153,26 +175,4 @@ digraph iCFG {
 	
 
 	 "Y#Y#struct_pass_by_value#{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.8a81f6f538ade21c1d4ebc1a51bad9e6_3" -> "Y#Y#struct_pass_by_value#{_ZN20struct_pass_by_value1YC1ERKNS_1XE}.8a81f6f538ade21c1d4ebc1a51bad9e6_2" ;
-"get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_1" [label="1: Start struct_pass_by_value::get_f\nFormals:  val:struct_pass_by_value::X&\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
-	
-
-	 "get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_1" -> "get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_3" ;
-"get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_2" [label="2: Exit struct_pass_by_value::get_f \n  " color=yellow style=filled]
-	
-
-"get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_3" [label="3:  Return Stmt \n   n$0=*&val:struct_pass_by_value::X& [line 22]\n  n$1=*n$0.f:int [line 22]\n  *&return:int=n$1 [line 22]\n " shape="box"]
-	
-
-	 "get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_3" -> "get_f#struct_pass_by_value#_ZN20struct_pass_by_value5get_fENS_1XE.d9eb5656addf74c4646b11cf2d3f3307_2" ;
-"set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_1" [label="1: Start struct_pass_by_value::set_f\nFormals:  val:struct_pass_by_value::X& f:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 25]\n " color=yellow style=filled]
-	
-
-	 "set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_1" -> "set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_3" ;
-"set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_2" [label="2: Exit struct_pass_by_value::set_f \n  " color=yellow style=filled]
-	
-
-"set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&val:struct_pass_by_value::X& [line 25]\n  n$1=*&f:int [line 25]\n  *n$0.f:int=n$1 [line 25]\n " shape="box"]
-	
-
-	 "set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_3" -> "set_f#struct_pass_by_value#_ZN20struct_pass_by_value5set_fENS_1XEi.f10cea3478ded77d2dcefbe25a6546ca_2" ;
 }

@@ -238,7 +238,7 @@ struct
              Option.value_exn (Pvar.get_initializer_pname global) in
            let ms = CMethod_signature.make_ms procname [] Ast_expressions.create_void_type
                [] decl_info.Clang_ast_t.di_source_range false trans_unit_ctx.CFrontend_config.lang
-               None None None in
+               None None None `None in
            let stmt_info = { si_pointer = CAst_utils.get_fresh_pointer ();
                              si_source_range = decl_info.di_source_range } in
            let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in

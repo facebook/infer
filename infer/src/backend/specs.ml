@@ -33,7 +33,7 @@ module Jprop = struct
   [@@deriving compare]
 
   (** Comparison for joined_prop *)
-  let compare jp1 jp2 = compare_t (fun _ _ -> 0) jp1 jp2
+  let compare jp1 jp2 = compare (fun _ _ -> 0) jp1 jp2
 
   (** Return true if the two join_prop's are equal *)
   let equal jp1 jp2 =

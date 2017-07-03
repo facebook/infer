@@ -35,7 +35,7 @@ let quote style =>
 let mk_arg_file prefix style args => {
   let file = Filename.temp_file prefix ".txt";
   let write_args outc =>
-    output_string outc (List.map f::(quote style) args |> String.concat sep::" ");
+    Out_channel.output_string outc (List.map f::(quote style) args |> String.concat sep::" ");
   Utils.with_file_out file f::write_args |> ignore;
   L.(debug Capture Medium) "Clang options stored in file %s@\n" file;
   file

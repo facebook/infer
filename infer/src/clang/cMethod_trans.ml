@@ -147,9 +147,10 @@ let build_method_signature trans_unit_ctx tenv decl_info procname function_metho
   let lang = get_language trans_unit_ctx function_method_decl_info in
   let is_cpp_virtual = is_cpp_virtual function_method_decl_info in
   let is_cpp_nothrow = is_cpp_nothrow function_method_decl_info in
+  let access = decl_info.Clang_ast_t.di_access in
   CMethod_signature.make_ms
     procname parameters tp attributes source_range is_instance_method ~is_cpp_virtual
-    ~is_cpp_nothrow lang parent_pointer pointer_to_property_opt return_param_type_opt
+    ~is_cpp_nothrow lang parent_pointer pointer_to_property_opt return_param_type_opt access
 
 let get_init_list_instrs method_decl_info =
   let create_custom_instr construct_instr = `CXXConstructorInit construct_instr in
@@ -400,6 +401,11 @@ let create_local_procdesc ?(set_objc_accessor_attr=false) trans_unit_ctx cfg ten
     CMethod_signature.ms_is_instance ms &&
     CFrontend_config.equal_clang_lang (CMethod_signature.ms_get_lang ms) CFrontend_config.CPP in
   let is_cpp_nothrow = CMethod_signature.ms_is_cpp_nothrow ms in
+  let access = match CMethod_signature.ms_get_access ms with
+    | `None -> PredSymb.Default
+    | `Private -> PredSymb.Private
+    | `Protected -> PredSymb.Protected
+    | `Public -> PredSymb.Protected in
   let create_new_procdesc () =
     let formals = get_formal_parameters tenv ms in
     let captured_mangled = List.map ~f:(fun (var, t) -> (Pvar.get_name var), t) captured in
@@ -423,6 +429,7 @@ let create_local_procdesc ?(set_objc_accessor_attr=false) trans_unit_ctx cfg ten
           ProcAttributes.captured = captured_mangled;
           formals;
           const_formals;
+          access = access;
           func_attributes = attributes;
           is_defined = defined;
           is_objc_instance_method = is_objc_inst_method;
