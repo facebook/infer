@@ -85,6 +85,18 @@ let rec of_sil ~f_resolve_id (exp : Exp.t) typ = match exp with
               AccessPath.base_of_pvar pvar typ, of_sil ~f_resolve_id value typ)
           closure.captured_vars in
       Closure (closure.name, environment)
+  | Lfield (root_exp, fld, root_exp_typ) -> (
+      match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
+      | Some access_path ->
+          AccessPath access_path
+      | None ->
+          (* unsupported field expression: represent with a dummy variable *)
+          of_sil ~f_resolve_id
+            (Exp.Lfield
+               (Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0),
+                fld,
+                root_exp_typ))
+            typ )
   | Lindex (Const (Cstr s), index_exp) ->
       (* indexed string literal (e.g., "foo"[1]). represent this by introducing a dummy variable
          for the string literal. if you actually need to see the value of the string literal in the
@@ -92,12 +104,23 @@ let rec of_sil ~f_resolve_id (exp : Exp.t) typ = match exp with
          literal, e.g. using `const_cast<char*>` *)
       of_sil ~f_resolve_id
         (Exp.Lindex (Var (Ident.create_normal (Ident.string_to_name s) 0), index_exp)) typ
-  | Lvar _ | Lfield _ | Lindex _ ->
+  | Lindex (root_exp, index_exp) -> (
       match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
       | Some access_path ->
           AccessPath access_path
       | None ->
-          failwithf "Couldn't convert var/field/index expression %a to access path" Exp.pp exp
+          (* unsupported index expression: represent with a dummy variable *)
+          of_sil ~f_resolve_id
+            (Exp.Lindex
+               (Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0),
+                index_exp))
+            typ )
+  | Lvar _ ->
+      match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
+      | Some access_path ->
+          AccessPath access_path
+      | None ->
+          failwithf "Couldn't convert var expression %a to access path" Exp.pp exp
 
 let is_null_literal = function
   | Constant (Cint n) -> IntLit.isnull n
