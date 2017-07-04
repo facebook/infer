@@ -28,7 +28,7 @@ compile_commands.json: compile_commands.json.in
 	$(QUIET)sed -e 's#%pwd%#$(CURDIR)#g' $< > $@ || $(REMOVE) $@
 
 infer-out/report.json: compile_commands.json $(SOURCES) Makefile \
-                       ../codetoanalyze/path\ with\ spaces/hel\ lo.c
+                       ../codetoanalyze/path\ with\ spaces/hel\ lo.c $(CLANG_DEPS)
 	$(QUIET)$(call silent_on_success,Clang compilation database with relative paths integration,\
 	  $(INFER_BIN) -a $(ANALYZER) $(INFER_OPTIONS) --project-root $(TESTS_DIR) \
 	  --compilation-database $<)
