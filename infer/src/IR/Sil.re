@@ -1653,7 +1653,9 @@ let equal_ident_exp = [%compare.equal : ident_exp];
 
 type exp_subst = list ident_exp [@@deriving compare];
 
-type subst = [ | `Exp exp_subst] [@@deriving compare];
+type subst = [ | `Exp exp_subst | `Typ Typ.type_subst_t] [@@deriving compare];
+
+type subst_fun = [ | `Exp (Ident.t => Exp.t) | `Typ (Typ.t => Typ.t, Typ.Name.t => Typ.Name.t)];
 
 
 /** Equality for substitutions. */
@@ -1708,7 +1710,8 @@ let sub_empty = `Exp exp_sub_empty;
 let is_sub_empty =
   fun
   | `Exp [] => true
-  | `Exp _ => false;
+  | `Exp _ => false
+  | `Typ sub => Typ.is_type_subst_empty sub;
 
 
 /** Join two substitutions into one.
@@ -1825,12 +1828,26 @@ let sub_fav_add fav (sub: exp_subst) =>
 /** Substitutions do not contain binders */
 let sub_av_add = sub_fav_add;
 
-let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
+let rec exp_sub_ids (f: subst_fun) exp => {
+  let f_typ x =>
+    switch f {
+    | `Exp _ => x
+    | `Typ (f, _) => f x
+    };
+  let f_tname x =>
+    switch f {
+    | `Exp _ => x
+    | `Typ (_, f) => f x
+    };
   switch (exp: Exp.t) {
   | Var id =>
-    switch (f id) {
-    | Var id' when Ident.equal id id' => exp
-    | exp' => exp'
+    switch f {
+    | `Exp f_exp =>
+      switch (f_exp id) {
+      | Exp.Var id' when Ident.equal id id' => /* it will preserve physical equality when needed */ exp
+      | exp' => exp'
+      }
+    | _ => exp
     }
   | Lvar _ => exp
   | Exn e =>
@@ -1846,10 +1863,11 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
         (
           fun ((e, pvar, typ) as captured) => {
             let e' = exp_sub_ids f e;
-            if (phys_equal e' e) {
+            let typ' = f_typ typ;
+            if (phys_equal e' e && phys_equal typ typ') {
               captured
             } else {
-              (e', pvar, typ)
+              (e', pvar, typ')
             }
           }
         )
@@ -1862,17 +1880,29 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
   | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => exp
   | Cast t e =>
     let e' = exp_sub_ids f e;
-    if (phys_equal e' e) {
+    let t' = f_typ t;
+    if (phys_equal e' e && phys_equal t' t) {
       exp
     } else {
-      Exp.Cast t e'
+      Exp.Cast t' e'
     }
   | UnOp op e typ_opt =>
     let e' = exp_sub_ids f e;
-    if (phys_equal e' e) {
+    let typ_opt' =
+      switch typ_opt {
+      | Some t =>
+        let t' = f_typ t;
+        if (phys_equal t t') {
+          typ_opt
+        } else {
+          Some t'
+        }
+      | None => typ_opt
+      };
+    if (phys_equal e' e && phys_equal typ_opt typ_opt') {
       exp
     } else {
-      Exp.UnOp op e' typ_opt
+      Exp.UnOp op e' typ_opt'
     }
   | BinOp op e1 e2 =>
     let e1' = exp_sub_ids f e1;
@@ -1884,10 +1914,12 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
     }
   | Lfield e fld typ =>
     let e' = exp_sub_ids f e;
-    if (phys_equal e' e) {
+    let typ' = f_typ typ;
+    let fld' = Typ.Fieldname.class_name_replace f::f_tname fld;
+    if (phys_equal e' e && phys_equal typ typ' && phys_equal fld fld') {
       exp
     } else {
-      Exp.Lfield e' fld typ
+      Exp.Lfield e' fld' typ'
     }
   | Lindex e1 e2 =>
     let e1' = exp_sub_ids f e1;
@@ -1897,36 +1929,53 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
     } else {
       Exp.Lindex e1' e2'
     }
-  | Sizeof ({dynamic_length: Some l} as sizeof_data) =>
+  | Sizeof ({typ, dynamic_length: Some l, subtype} as sizeof_data) =>
     let l' = exp_sub_ids f l;
-    if (phys_equal l' l) {
+    let typ' = f_typ typ;
+    let subtype' = Subtype.sub_type f_tname subtype;
+    if (phys_equal l' l && phys_equal typ typ' && phys_equal subtype subtype') {
       exp
     } else {
-      Exp.Sizeof {...sizeof_data, dynamic_length: Some l'}
+      Exp.Sizeof {...sizeof_data, typ: typ', dynamic_length: Some l', subtype: subtype'}
     }
-  | Sizeof {dynamic_length: None} => exp
-  };
-
-let rec apply_sub subst id =>
-  switch subst {
-  | `Exp [] => Exp.Var id
-  | `Exp [(i, e), ...l] =>
-    if (Ident.equal i id) {
-      e
+  | Sizeof ({typ, dynamic_length: None, subtype} as sizeof_data) =>
+    let typ' = f_typ typ;
+    let subtype' = Subtype.sub_type f_tname subtype;
+    if (phys_equal typ typ') {
+      exp
     } else {
-      apply_sub (`Exp l) id
+      Exp.Sizeof {...sizeof_data, typ: typ', subtype: subtype'}
     }
+  }
+};
+
+let apply_sub subst :subst_fun =>
+  switch subst {
+  | `Exp l =>
+    `Exp (
+      fun id =>
+        switch (List.Assoc.find l equal::Ident.equal id) {
+        | Some x => x
+        | None => Exp.Var id
+        }
+    )
+  | `Typ typ_subst => `Typ (Typ.sub_type typ_subst, Typ.sub_tname typ_subst)
   };
 
 let exp_sub (subst: subst) e => exp_sub_ids (apply_sub subst) e;
 
 
 /** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's */
-let instr_sub_ids ::sub_id_binders (f: Ident.t => Exp.t) instr => {
+let instr_sub_ids ::sub_id_binders f instr => {
   let sub_id id =>
     switch (exp_sub_ids f (Var id)) {
     | Var id' when not (Ident.equal id id') => id'
     | _ => id
+    };
+  let sub_typ x =>
+    switch f {
+    | `Exp _ => x
+    | `Typ (f, _) => f x
     };
   switch instr {
   | Load id rhs_exp typ loc =>
@@ -1937,18 +1986,20 @@ let instr_sub_ids ::sub_id_binders (f: Ident.t => Exp.t) instr => {
         id
       };
     let rhs_exp' = exp_sub_ids f rhs_exp;
-    if (phys_equal id' id && phys_equal rhs_exp' rhs_exp) {
+    let typ' = sub_typ typ;
+    if (phys_equal id' id && phys_equal rhs_exp' rhs_exp && phys_equal typ typ') {
       instr
     } else {
-      Load id' rhs_exp' typ loc
+      Load id' rhs_exp' typ' loc
     }
   | Store lhs_exp typ rhs_exp loc =>
     let lhs_exp' = exp_sub_ids f lhs_exp;
+    let typ' = sub_typ typ;
     let rhs_exp' = exp_sub_ids f rhs_exp;
-    if (phys_equal lhs_exp' lhs_exp && phys_equal rhs_exp' rhs_exp) {
+    if (phys_equal lhs_exp' lhs_exp && phys_equal typ typ' && phys_equal rhs_exp' rhs_exp) {
       instr
     } else {
-      Store lhs_exp' typ rhs_exp' loc
+      Store lhs_exp' typ' rhs_exp' loc
     }
   | Call ret_id fun_exp actuals call_flags loc =>
     let ret_id' =
@@ -1956,7 +2007,12 @@ let instr_sub_ids ::sub_id_binders (f: Ident.t => Exp.t) instr => {
         switch ret_id {
         | Some (id, typ) =>
           let id' = sub_id id;
-          Ident.equal id id' ? ret_id : Some (id', typ)
+          let typ' = sub_typ typ;
+          if (Ident.equal id id' && phys_equal typ typ') {
+            ret_id
+          } else {
+            Some (id', typ')
+          }
         | None => None
         }
       } else {
@@ -1968,10 +2024,11 @@ let instr_sub_ids ::sub_id_binders (f: Ident.t => Exp.t) instr => {
         (
           fun ((actual, typ) as actual_pair) => {
             let actual' = exp_sub_ids f actual;
-            if (phys_equal actual' actual) {
+            let typ' = sub_typ typ;
+            if (phys_equal actual' actual && phys_equal typ typ') {
               actual_pair
             } else {
-              (actual', typ)
+              (actual', typ')
             }
           }
         )
@@ -1995,9 +2052,27 @@ let instr_sub_ids ::sub_id_binders (f: Ident.t => Exp.t) instr => {
     } else {
       Remove_temps ids' loc
     }
+  | Declare_locals locals loc =>
+    let locals' =
+      IList.map_changed
+        (
+          fun ((name, typ) as local_var) => {
+            let typ' = sub_typ typ;
+            if (phys_equal typ typ') {
+              local_var
+            } else {
+              (name, typ')
+            }
+          }
+        )
+        locals;
+    if (phys_equal locals locals') {
+      instr
+    } else {
+      Declare_locals locals' loc
+    }
   | Nullify _
-  | Abstract _
-  | Declare_locals _ => instr
+  | Abstract _ => instr
   }
 };
 

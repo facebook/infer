@@ -114,6 +114,10 @@ and template_spec_info =
 /** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such as quals */
 let mk: default::t? => quals::type_quals? => desc => t;
 
+
+/** Stores information about type substitution */
+type type_subst_t [@@deriving compare];
+
 module Name: {
 
   /** Named types. */
@@ -185,6 +189,12 @@ let equal: t => t => bool;
 let equal_desc: desc => desc => bool;
 
 let equal_quals: type_quals => type_quals => bool;
+
+let sub_type: type_subst_t => t => t;
+
+let sub_tname: type_subst_t => Name.t => Name.t;
+
+let is_type_subst_empty: type_subst_t => bool;
 
 
 /** Sets of types. */
@@ -500,6 +510,7 @@ module Fieldname: {
   /** Convert a field name to a string. */
   let to_string: t => string;
   let to_full_string: t => string;
+  let class_name_replace: t => f::(Name.t => Name.t) => t;
 
   /** Convert a fieldname to a simplified string with at most one-level path. */
   let to_simplified_string: t => string;

@@ -19,6 +19,8 @@ type t [@@deriving compare];
 
 let pp: F.formatter => t => unit;
 
+let sub_type: (Typ.Name.t => Typ.Name.t) => t => t;
+
 let exact: t; /** denotes the current type only */
 
 let subtypes: t; /** denotes the current type and any subtypes */

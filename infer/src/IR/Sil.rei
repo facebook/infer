@@ -670,7 +670,9 @@ let hpara_av_add: fav => hpara => unit;
 /** {2 Substitution} */
 type exp_subst [@@deriving compare];
 
-type subst = [ | `Exp exp_subst] [@@deriving compare];
+type subst = [ | `Exp exp_subst | `Typ Typ.type_subst_t] [@@deriving compare];
+
+type subst_fun = [ | `Exp (Ident.t => Exp.t) | `Typ (Typ.t => Typ.t, Typ.Name.t => Typ.Name.t)];
 
 
 /** Equality for substitutions. */
@@ -790,11 +792,9 @@ let instr_sub: subst => instr => instr;
 
 let hpred_sub: subst => hpred => hpred;
 
-let exp_sub_ids: (Ident.t => Exp.t) => Exp.t => Exp.t;
-
 
 /** apply [f] to id's in [instr]. if [sub_id_binders] is false, [f] is only applied to bound id's */
-let instr_sub_ids: sub_id_binders::bool => (Ident.t => Exp.t) => instr => instr;
+let instr_sub_ids: sub_id_binders::bool => subst_fun => instr => instr;
 
 
 /** {2 Functions for replacing occurrences of expressions.} */

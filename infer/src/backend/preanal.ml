@@ -263,7 +263,8 @@ let do_copy_propagation pdesc tenv =
               begin
                 match CopyProp.extract_pre id copy_prop_inv_map with
                 | Some pre when not (CopyPropagation.Domain.is_empty pre) ->
-                    let instr' = Sil.instr_sub_ids ~sub_id_binders:false (id_sub pre) instr in
+                    let instr' =
+                      Sil.instr_sub_ids ~sub_id_binders:false (`Exp (id_sub pre)) instr in
                     instr' :: instrs, changed || not (phys_equal instr' instr)
                 | _ ->
                     instr :: instrs, changed

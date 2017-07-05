@@ -156,6 +156,8 @@ let pp_sub pe f = function
   | `Exp sub ->
       let pi_sub = List.map ~f:(fun (id, e) -> Sil.Aeq (Var id, e)) (Sil.sub_to_list sub) in
       (Pp.semicolon_seq_oneline pe (Sil.pp_atom pe)) f pi_sub
+  | `Typ _ ->
+      F.fprintf f "Printing typ_subst not implemented."
 
 (** Dump a substitution. *)
 let d_sub (sub: Sil.subst) = L.add_print_action (PTsub, Obj.repr sub)

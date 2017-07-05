@@ -167,6 +167,12 @@ let mk ::default=? ::quals=? desc :t => {
   mk_aux ::?default ::?quals desc
 };
 
+let merge_quals quals1 quals2 => {
+  is_const: quals1.is_const || quals2.is_const,
+  is_restrict: quals1.is_restrict || quals2.is_restrict,
+  is_volatile: quals1.is_volatile || quals2.is_volatile
+};
+
 let escape pe =>
   if (Pp.equal_print_kind pe.Pp.kind Pp.HTML) {
     Escape.escape_xml
@@ -244,6 +250,67 @@ let to_string typ => {
   let pp fmt => pp_full Pp.text fmt typ;
   F.asprintf "%t" pp
 };
+
+type type_subst_t = list (string, t) [@@deriving compare];
+
+let is_type_subst_empty = List.is_empty;
+
+
+/** Given the template type mapping and the type, substitute tvars within the type. */
+let rec sub_type subst generic_typ :t =>
+  switch generic_typ.desc {
+  | TVar tname =>
+    switch (List.Assoc.find subst equal::String.equal tname) {
+    | Some t =>
+      /* Type qualifiers may come from original type or be part of substitution. Merge them */
+      mk quals::(merge_quals t.quals generic_typ.quals) t.desc
+    | None => generic_typ
+    }
+  | Tarray typ arg1 arg2 =>
+    let typ' = sub_type subst typ;
+    if (phys_equal typ typ') {
+      generic_typ
+    } else {
+      mk default::generic_typ (Tarray typ' arg1 arg2)
+    }
+  | Tptr typ arg =>
+    let typ' = sub_type subst typ;
+    if (phys_equal typ typ') {
+      generic_typ
+    } else {
+      mk default::generic_typ (Tptr typ' arg)
+    }
+  | Tstruct tname =>
+    let tname' = sub_tname subst tname;
+    if (phys_equal tname tname') {
+      generic_typ
+    } else {
+      mk default::generic_typ (Tstruct tname')
+    }
+  | _ => generic_typ
+  }
+and sub_tname subst tname =>
+  switch tname {
+  | CppClass name (Template spec_info) =>
+    let sub_typ_opt typ_opt =>
+      switch typ_opt {
+      | Some typ =>
+        let typ' = sub_type subst typ;
+        if (phys_equal typ typ') {
+          typ_opt
+        } else {
+          Some typ'
+        }
+      | None => typ_opt
+      };
+    let spec_info' = IList.map_changed sub_typ_opt spec_info;
+    if (phys_equal spec_info spec_info') {
+      tname
+    } else {
+      CppClass name (Template spec_info')
+    }
+  | _ => tname
+  };
 
 module Name = {
   type t = name [@@deriving compare];
@@ -1090,6 +1157,17 @@ module Fieldname = {
     | Java field_name
     | Clang {field_name} => Format.fprintf f "%s" field_name;
   let pp_latex style f fn => Latex.pp_string style f (to_string fn);
+  let class_name_replace fname ::f =>
+    switch fname {
+    | Clang {class_name, field_name} =>
+      let class_name' = f class_name;
+      if (phys_equal class_name class_name') {
+        fname
+      } else {
+        Clang {class_name: class_name', field_name}
+      }
+    | _ => fname
+    };
 
   /** Returns the class part of the fieldname */
   let java_get_class fn => {

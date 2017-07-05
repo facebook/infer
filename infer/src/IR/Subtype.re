@@ -49,6 +49,20 @@ type result =
 
 let equal_result = [%compare.equal : result];
 
+let sub_type tname_subst st_pair => {
+  let (st, kind) = st_pair;
+  switch st {
+  | Subtypes tnames =>
+    let tnames' = IList.map_changed tname_subst tnames;
+    if (phys_equal tnames tnames') {
+      st_pair
+    } else {
+      (Subtypes tnames', kind)
+    }
+  | Exact => st_pair
+  }
+};
+
 let max_result res1 res2 =>
   if (compare_result res1 res2 <= 0) {
     res2
