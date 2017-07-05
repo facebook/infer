@@ -52,7 +52,9 @@ let filter_parsed_linters_by_path parsed_linters source_file =
 
 let filter_parsed_linters parsed_linters source_file =
   let linters = filter_parsed_linters_developer parsed_linters in
-  filter_parsed_linters_by_path linters source_file
+  if (Config.debug_mode || not Config.filtering) then
+    linters (* do not filter by path if in debug or no filtering mode *)
+  else filter_parsed_linters_by_path linters source_file
 
 let pp_linters fmt linters =
   let pp_linter fmt {issue_desc={name}} =
