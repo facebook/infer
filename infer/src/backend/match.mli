@@ -29,14 +29,14 @@ val pp_hpat : Pp.env -> Format.formatter -> hpred_pat -> unit
 
 val pp_hpat_list : Pp.env -> Format.formatter -> hpred_pat list -> unit
 
-type sidecondition = Prop.normal Prop.t -> Sil.subst -> bool
+type sidecondition = Prop.normal Prop.t -> Sil.exp_subst -> bool
 
 (** [prop_match_with_impl p condition vars hpat hpats]
     returns [(subst, p_leftover)] such that
     1) [dom(subst) = vars]
     2) [p |- (hpat.hpred * hpats.hpred)[subst] * p_leftover].
     Using the flag [field], we can control the strength of |-. *)
-val prop_match_with_impl : Tenv.t -> Prop.normal Prop.t -> sidecondition -> Ident.t list -> hpred_pat -> hpred_pat list -> (Sil.subst * Prop.normal Prop.t) option
+val prop_match_with_impl : Tenv.t -> Prop.normal Prop.t -> sidecondition -> Ident.t list -> hpred_pat -> hpred_pat list -> (Sil.exp_subst * Prop.normal Prop.t) option
 
 (** [find_partial_iso] finds disjoint isomorphic sub-sigmas inside a given sigma.
     The first argument is an equality checker.

@@ -464,7 +464,7 @@ let mk_ptsto_exp_footprint
         (atoms, Prop.mk_ptsto tenv root se
            (Exp.Sizeof {typ; nbytes=None; dynamic_length=None; subtype})) in
   let atoms, ptsto_foot = create_ptsto true off_foot in
-  let sub = Sil.sub_of_list eqs in
+  let sub = Sil.subst_of_list eqs in
   let ptsto = Sil.hpred_sub sub ptsto_foot in
   let atoms' = List.map ~f:(fun (id, e) -> Prop.mk_eq tenv (Exp.Var id) e) eqs in
   (ptsto, ptsto_foot, atoms @ atoms')

@@ -668,108 +668,113 @@ let hpara_av_add: fav => hpara => unit;
 
 
 /** {2 Substitution} */
-type subst [@@deriving compare];
+type exp_subst [@@deriving compare];
+
+type subst = [ | `Exp exp_subst] [@@deriving compare];
 
 
 /** Equality for substitutions. */
-let equal_subst: subst => subst => bool;
+let equal_exp_subst: exp_subst => exp_subst => bool;
 
 
 /** Create a substitution from a list of pairs.
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. */
-let sub_of_list: list (Ident.t, Exp.t) => subst;
+let exp_subst_of_list: list (Ident.t, Exp.t) => exp_subst;
+
+let subst_of_list: list (Ident.t, Exp.t) => subst;
 
 
-/** like sub_of_list, but allow duplicate ids and only keep the first occurrence */
-let sub_of_list_duplicates: list (Ident.t, Exp.t) => subst;
+/** like exp_subst_of_list, but allow duplicate ids and only keep the first occurrence */
+let exp_subst_of_list_duplicates: list (Ident.t, Exp.t) => exp_subst;
 
 
 /** Convert a subst to a list of pairs. */
-let sub_to_list: subst => list (Ident.t, Exp.t);
+let sub_to_list: exp_subst => list (Ident.t, Exp.t);
 
 
 /** The empty substitution. */
 let sub_empty: subst;
 
+let exp_sub_empty: exp_subst;
+
+let is_sub_empty: subst => bool;
+
+/* let to_exp_subst : [< `Exp exp_subst] => exp_subst; */
 
 /** Compute the common id-exp part of two inputs [subst1] and [subst2].
     The first component of the output is this common part.
     The second and third components are the remainder of [subst1]
     and [subst2], respectively. */
-let sub_join: subst => subst => subst;
+let sub_join: exp_subst => exp_subst => exp_subst;
 
 
 /** Compute the common id-exp part of two inputs [subst1] and [subst2].
     The first component of the output is this common part.
     The second and third components are the remainder of [subst1]
     and [subst2], respectively. */
-let sub_symmetric_difference: subst => subst => (subst, subst, subst);
+let sub_symmetric_difference: exp_subst => exp_subst => (exp_subst, exp_subst, exp_subst);
 
 
 /** [sub_find filter sub] returns the expression associated to the first identifier
     that satisfies [filter].
     Raise [Not_found] if there isn't one. */
-let sub_find: (Ident.t => bool) => subst => Exp.t;
+let sub_find: (Ident.t => bool) => exp_subst => Exp.t;
 
 
 /** [sub_filter filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter]. */
-let sub_filter: (Ident.t => bool) => subst => subst;
+let sub_filter: (Ident.t => bool) => exp_subst => exp_subst;
 
 
 /** [sub_filter_exp filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter(id, sub(id))]. */
-let sub_filter_pair: subst => f::((Ident.t, Exp.t) => bool) => subst;
+let sub_filter_pair: exp_subst => f::((Ident.t, Exp.t) => bool) => exp_subst;
 
 
 /** [sub_range_partition filter sub] partitions [sub] according to
     whether range expressions satisfy [filter]. */
-let sub_range_partition: (Exp.t => bool) => subst => (subst, subst);
+let sub_range_partition: (Exp.t => bool) => exp_subst => (exp_subst, exp_subst);
 
 
 /** [sub_domain_partition filter sub] partitions [sub] according to
     whether domain identifiers satisfy [filter]. */
-let sub_domain_partition: (Ident.t => bool) => subst => (subst, subst);
+let sub_domain_partition: (Ident.t => bool) => exp_subst => (exp_subst, exp_subst);
 
 
 /** Return the list of identifiers in the domain of the substitution. */
-let sub_domain: subst => list Ident.t;
+let sub_domain: exp_subst => list Ident.t;
 
 
 /** Return the list of expressions in the range of the substitution. */
-let sub_range: subst => list Exp.t;
+let sub_range: exp_subst => list Exp.t;
 
 
 /** [sub_range_map f sub] applies [f] to the expressions in the range of [sub]. */
-let sub_range_map: (Exp.t => Exp.t) => subst => subst;
+let sub_range_map: (Exp.t => Exp.t) => exp_subst => exp_subst;
 
 
 /** [sub_map f g sub] applies the renaming [f] to identifiers in the domain
     of [sub] and the substitution [g] to the expressions in the range of [sub]. */
-let sub_map: (Ident.t => Ident.t) => (Exp.t => Exp.t) => subst => subst;
+let sub_map: (Ident.t => Ident.t) => (Exp.t => Exp.t) => exp_subst => exp_subst;
 
 
 /** Checks whether [id] belongs to the domain of [subst]. */
-let mem_sub: Ident.t => subst => bool;
+let mem_sub: Ident.t => exp_subst => bool;
 
 
 /** Extend substitution and return [None] if not possible. */
-let extend_sub: subst => Ident.t => Exp.t => option subst;
+let extend_sub: exp_subst => Ident.t => Exp.t => option exp_subst;
 
 
 /** Free auxilary variables in the domain and range of the
     substitution. */
-let sub_fav_add: fav => subst => unit;
+let sub_fav_add: fav => exp_subst => unit;
 
 
 /** Free or bound auxilary variables in the domain and range of the
     substitution. */
-let sub_av_add: fav => subst => unit;
-
-
-/** Compute free pvars in a sub */
-let sub_fpv: subst => list Pvar.t;
+let sub_av_add: fav => exp_subst => unit;
 
 
 /** substitution functions */

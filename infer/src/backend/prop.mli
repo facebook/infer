@@ -27,7 +27,7 @@ type sigma = Sil.hpred list
 type 'a t = private
   {
     sigma: sigma;  (** spatial part *)
-    sub: Sil.subst;  (** substitution *)
+    sub: Sil.exp_subst;  (** substitution *)
     pi: pi;  (** pure part *)
     sigma_fp : sigma;  (** abduced spatial part *)
     pi_fp: pi;  (** abduced pure part *)
@@ -127,9 +127,6 @@ val prop_fav_nonpure : normal t -> fav
 
 (** Find fav of the footprint part of the prop *)
 val prop_footprint_fav : 'a t -> fav
-
-(** Compute all the free program variables in the prop *)
-val prop_fpv: 'a t -> Pvar.t list
 
 (** Apply substitution for pi *)
 val pi_sub : subst -> atom list -> atom list
@@ -304,7 +301,7 @@ val from_pi : pi -> exposed t
 val from_sigma : sigma -> exposed t
 
 (** Set individual fields of the prop. *)
-val set : ?sub:Sil.subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma ->
+val set : ?sub:Sil.exp_subst -> ?pi:pi -> ?sigma:sigma -> ?pi_fp:pi -> ?sigma_fp:sigma ->
   'a t -> exposed t
 
 (** Rename free variables in a prop replacing them with existentially quantified vars *)

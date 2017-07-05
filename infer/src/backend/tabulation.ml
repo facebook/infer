@@ -107,7 +107,7 @@ let spec_rename_vars pname spec =
   List.iter ~f:(fun (p, _) -> Prop.prop_fav_add fav p) spec.Specs.posts;
   let ids = Sil.fav_to_list fav in
   let ids' = List.map ~f:(fun i -> (i, Ident.create_fresh Ident.kprimed)) ids in
-  let ren_sub = Sil.sub_of_list (List.map ~f:(fun (i, i') -> (i, Exp.Var i')) ids') in
+  let ren_sub = Sil.subst_of_list (List.map ~f:(fun (i, i') -> (i, Exp.Var i')) ids') in
   let pre' = Specs.Jprop.jprop_sub ren_sub spec.Specs.pre in
   let posts' = List.map ~f:(fun (p, path) -> (Prop.prop_sub ren_sub p, path)) spec.Specs.posts in
   let pre'' = jprop_add_callee_suffix pre' in
@@ -163,7 +163,7 @@ let process_splitting
       List.map
         ~f:(function (id, Exp.Var id') -> (id', Exp.Var id) | _ -> assert false)
         sub1_list'
-    in Sil.sub_of_list_duplicates sub1_inverse_list in
+    in Sil.exp_subst_of_list_duplicates sub1_inverse_list in
   let fav_actual_pre =
     let fav_sub2 = (* vars which represent expansions of fields *)
       let fav = Sil.fav_new () in
@@ -175,15 +175,15 @@ let process_splitting
     Sil.ident_list_fav_add (Sil.fav_to_list fav_sub2) fav_pre;
     fav_pre in
 
-  let fav_missing = Prop.sigma_fav (Prop.sigma_sub sub missing_sigma) in
-  Prop.pi_fav_add fav_missing (Prop.pi_sub sub missing_pi);
+  let fav_missing = Prop.sigma_fav (Prop.sigma_sub (`Exp sub) missing_sigma) in
+  Prop.pi_fav_add fav_missing (Prop.pi_sub (`Exp sub) missing_pi);
   let fav_missing_primed =
     let filter id = Ident.is_primed id && not (Sil.fav_mem fav_actual_pre id)
     in Sil.fav_copy_filter_ident fav_missing filter in
-  let fav_missing_fld = Prop.sigma_fav (Prop.sigma_sub sub missing_fld) in
+  let fav_missing_fld = Prop.sigma_fav (Prop.sigma_sub (`Exp sub) missing_fld) in
 
   let map_var_to_pre_var_or_fresh id =
-    match Sil.exp_sub sub1_inverse (Exp.Var id) with
+    match Sil.exp_sub (`Exp sub1_inverse) (Exp.Var id) with
     | Exp.Var id' ->
         if Sil.fav_mem fav_actual_pre id' || Ident.is_path id'
         (* a path id represents a position in the pre *)
@@ -216,13 +216,13 @@ let process_splitting
         L.d_str "Don't know about id: "; Sil.d_exp (Exp.Var id); L.d_ln ();
         assert false;
       end
-    in Sil.sub_of_list (List.map ~f fav_sub_list) in
+    in Sil.subst_of_list (List.map ~f fav_sub_list) in
   let sub2_list =
     let f id = (id, Exp.Var (Ident.create_fresh Ident.kfootprint))
     in List.map ~f (Sil.fav_to_list fav_missing_primed) in
   let sub_list' =
     List.map ~f:(fun (id, e) -> (id, Sil.exp_sub sub1 e)) sub_list in
-  let sub' = Sil.sub_of_list (sub2_list @ sub_list') in
+  let sub' = Sil.subst_of_list (sub2_list @ sub_list') in
   (* normalize everything w.r.t sub' *)
   let norm_missing_pi = Prop.pi_sub sub' missing_pi in
   let norm_missing_sigma = Prop.sigma_sub sub' missing_sigma in
@@ -947,7 +947,7 @@ let inconsistent_actualpre_missing tenv actual_pre split_opt =
 let do_taint_check tenv caller_pname callee_pname calling_prop missing_pi sub actual_params =
   let calling_pi = calling_prop.Prop.pi in
   (* get a version of [missing_pi] whose var names match the names in calling pi *)
-  let missing_pi_sub = Prop.pi_sub sub missing_pi in
+  let missing_pi_sub = Prop.pi_sub (`Exp sub) missing_pi in
   let combined_pi = calling_pi @ missing_pi_sub in
   (* build a map from exp -> [taint attrs, untaint attrs], keeping only exprs with both kinds of
      attrs (we will flag errors on those exprs) *)
@@ -1068,8 +1068,8 @@ let exe_spec
                         vr_incons_res = inconsistent_results } in
       begin
         List.iter ~f:log_check_exn checks;
-        let subbed_pre = (Prop.prop_sub sub1 actual_pre) in
-        match check_dereferences tenv callee_pname subbed_pre sub2 spec_pre formal_params with
+        let subbed_pre = (Prop.prop_sub (`Exp sub1) actual_pre) in
+        match check_dereferences tenv callee_pname subbed_pre (`Exp sub2) spec_pre formal_params with
         | Some (Deref_undef _, _) when Config.angelic_execution ->
             let split = do_split () in
             report_valid_res split

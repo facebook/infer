@@ -1651,11 +1651,13 @@ type ident_exp = (Ident.t, Exp.t) [@@deriving compare];
 
 let equal_ident_exp = [%compare.equal : ident_exp];
 
-type subst = list ident_exp [@@deriving compare];
+type exp_subst = list ident_exp [@@deriving compare];
+
+type subst = [ | `Exp exp_subst] [@@deriving compare];
 
 
 /** Equality for substitutions. */
-let equal_subst = [%compare.equal : subst];
+let equal_exp_subst = [%compare.equal : exp_subst];
 
 let sub_check_duplicated_ids sub => {
   let f (id1, _) (id2, _) => Ident.equal id1 id2;
@@ -1666,7 +1668,7 @@ let sub_check_duplicated_ids sub => {
 /** Create a substitution from a list of pairs.
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. */
-let sub_of_list sub => {
+let exp_subst_of_list sub => {
   let sub' = List.sort cmp::compare_ident_exp sub;
   let sub'' = remove_duplicates_from_sorted equal_ident_exp sub';
   if (sub_check_duplicated_ids sub'') {
@@ -1675,9 +1677,11 @@ let sub_of_list sub => {
   sub'
 };
 
+let subst_of_list sub => `Exp (exp_subst_of_list sub);
 
-/** like sub_of_list, but allow duplicate ids and only keep the first occurrence */
-let sub_of_list_duplicates sub => {
+
+/** like exp_subst_of_list, but allow duplicate ids and only keep the first occurrence */
+let exp_subst_of_list_duplicates sub => {
   let sub' = List.sort cmp::compare_ident_exp sub;
   let rec remove_duplicate_ids =
     fun
@@ -1697,7 +1701,14 @@ let sub_to_list sub => sub;
 
 
 /** The empty substitution. */
-let sub_empty = sub_of_list [];
+let exp_sub_empty = exp_subst_of_list [];
+
+let sub_empty = `Exp exp_sub_empty;
+
+let is_sub_empty =
+  fun
+  | `Exp [] => true
+  | `Exp _ => false;
 
 
 /** Join two substitutions into one.
@@ -1743,12 +1754,12 @@ let sub_symmetric_difference sub1_in sub2_in => {
 
 /** [sub_find filter sub] returns the expression associated to the first identifier
     that satisfies [filter]. Raise [Not_found] if there isn't one. */
-let sub_find filter (sub: subst) => snd (List.find_exn f::(fun (i, _) => filter i) sub);
+let sub_find filter (sub: exp_subst) => snd (List.find_exn f::(fun (i, _) => filter i) sub);
 
 
 /** [sub_filter filter sub] restricts the domain of [sub] to the
     identifiers satisfying [filter]. */
-let sub_filter filter (sub: subst) => List.filter f::(fun (i, _) => filter i) sub;
+let sub_filter filter (sub: exp_subst) => List.filter f::(fun (i, _) => filter i) sub;
 
 
 /** [sub_filter_pair filter sub] restricts the domain of [sub] to the
@@ -1758,12 +1769,14 @@ let sub_filter_pair = List.filter;
 
 /** [sub_range_partition filter sub] partitions [sub] according to
     whether range expressions satisfy [filter]. */
-let sub_range_partition filter (sub: subst) => List.partition_tf f::(fun (_, e) => filter e) sub;
+let sub_range_partition filter (sub: exp_subst) =>
+  List.partition_tf f::(fun (_, e) => filter e) sub;
 
 
 /** [sub_domain_partition filter sub] partitions [sub] according to
     whether domain identifiers satisfy [filter]. */
-let sub_domain_partition filter (sub: subst) => List.partition_tf f::(fun (i, _) => filter i) sub;
+let sub_domain_partition filter (sub: exp_subst) =>
+  List.partition_tf f::(fun (i, _) => filter i) sub;
 
 
 /** Return the list of identifiers in the domain of the substitution. */
@@ -1775,18 +1788,18 @@ let sub_range sub => List.map f::snd sub;
 
 
 /** [sub_range_map f sub] applies [f] to the expressions in the range of [sub]. */
-let sub_range_map f sub => sub_of_list (List.map f::(fun (i, e) => (i, f e)) sub);
+let sub_range_map f sub => exp_subst_of_list (List.map f::(fun (i, e) => (i, f e)) sub);
 
 
 /** [sub_map f g sub] applies the renaming [f] to identifiers in the domain
     of [sub] and the substitution [g] to the expressions in the range of [sub]. */
-let sub_map f g sub => sub_of_list (List.map f::(fun (i, e) => (f i, g e)) sub);
+let sub_map f g sub => exp_subst_of_list (List.map f::(fun (i, e) => (f i, g e)) sub);
 
 let mem_sub id sub => List.exists f::(fun (id1, _) => Ident.equal id id1) sub;
 
 
 /** Extend substitution and return [None] if not possible. */
-let extend_sub sub id exp :option subst => {
+let extend_sub sub id exp :option exp_subst => {
   let compare (id1, _) (id2, _) => Ident.compare id1 id2;
   if (mem_sub id sub) {
     None
@@ -1798,7 +1811,7 @@ let extend_sub sub id exp :option subst => {
 
 /** Free auxilary variables in the domain and range of the
     substitution. */
-let sub_fav_add fav (sub: subst) =>
+let sub_fav_add fav (sub: exp_subst) =>
   List.iter
     f::(
       fun (id, e) => {
@@ -1807,8 +1820,6 @@ let sub_fav_add fav (sub: subst) =>
       }
     )
     sub;
-
-let sub_fpv (sub: subst) => List.concat_map f::(fun (_, e) => exp_fpv e) sub;
 
 
 /** Substitutions do not contain binders */
@@ -1898,12 +1909,12 @@ let rec exp_sub_ids (f: Ident.t => Exp.t) exp =>
 
 let rec apply_sub subst id =>
   switch subst {
-  | [] => Exp.Var id
-  | [(i, e), ...l] =>
+  | `Exp [] => Exp.Var id
+  | `Exp [(i, e), ...l] =>
     if (Ident.equal i id) {
       e
     } else {
-      apply_sub l id
+      apply_sub (`Exp l) id
     }
   };
 
@@ -2473,7 +2484,9 @@ let hpara_instantiate para e1 e2 elist => {
     }
   };
   let subst =
-    sub_of_list ([(para.root, e1), (para.next, e2), ...subst_for_svars] @ subst_for_evars);
+    `Exp (
+      exp_subst_of_list ([(para.root, e1), (para.next, e2), ...subst_for_svars] @ subst_for_evars)
+    );
   (ids_evars, List.map f::(hpred_sub subst) para.body)
 };
 
@@ -2501,8 +2514,10 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist => {
     }
   };
   let subst =
-    sub_of_list (
-      [(para.cell, cell), (para.blink, blink), (para.flink, flink), ...subst_for_svars] @ subst_for_evars
+    `Exp (
+      exp_subst_of_list (
+        [(para.cell, cell), (para.blink, blink), (para.flink, flink), ...subst_for_svars] @ subst_for_evars
+      )
     );
   (ids_evars, List.map f::(hpred_sub subst) para.body_dll)
 };

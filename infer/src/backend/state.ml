@@ -157,7 +157,7 @@ let instrs_normalize instrs =
     let gensym id =
       incr count;
       Ident.set_stamp id !count in
-    Sil.sub_of_list (List.map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids) in
+    Sil.subst_of_list (List.map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids) in
   List.map ~f:(Sil.instr_sub subst) instrs
 
 (** Create a function to find duplicate nodes.
@@ -253,7 +253,7 @@ let extract_pre p tenv pdesc abstract_fun =
     let fav = Prop.prop_fav p in
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
-    Sil.sub_of_list (List.map ~f:(fun id ->
+    Sil.subst_of_list (List.map ~f:(fun id ->
         incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
   let _, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let pre, _ = Prop.extract_spec p' in

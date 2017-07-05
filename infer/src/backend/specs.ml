@@ -199,7 +199,7 @@ end = struct
     let idlist = Sil.fav_to_list fav in
     let count = ref 0 in
     let sub =
-      Sil.sub_of_list (List.map ~f:(fun id ->
+      Sil.subst_of_list (List.map ~f:(fun id ->
           incr count; (id, Exp.Var (Ident.create_normal Ident.name_spec !count))) idlist) in
     spec_sub tenv sub spec
 

@@ -285,7 +285,7 @@ let propagate_nodes_divergence
       let prop_incons =
         let mk_incons prop =
           let p_abs = Abs.abstract pname tenv prop in
-          let p_zero = Prop.set p_abs ~sub:Sil.sub_empty ~sigma:[] in
+          let p_zero = Prop.set p_abs ~sub:Sil.exp_sub_empty ~sigma:[] in
           Prop.normalize tenv (Prop.set p_zero ~pi:[Sil.Aneq (Exp.zero, Exp.zero)]) in
         Paths.PathSet.map mk_incons diverging_states in
       (L.d_strln_color Orange) "Propagating Divergence -- diverging states:";
@@ -751,20 +751,20 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
       List.map
         ~f:(fun id -> (id, Exp.Var (Ident.create_fresh (Ident.knormal))))
         (Sil.fav_to_list fav) in
-    Sil.sub_of_list sub_list in
+    Sil.exp_subst_of_list sub_list in
   let pre_post_visited_list =
     let pplist = Paths.PathSet.elements pathset in
     let f (prop, path) =
       let _, prop' = PropUtil.remove_locals_formals tenv pdesc prop in
       let prop'' = Abs.abstract pname tenv prop' in
       let pre, post = Prop.extract_spec prop'' in
-      let pre' = Prop.normalize tenv (Prop.prop_sub sub pre) in
+      let pre' = Prop.normalize tenv (Prop.prop_sub (`Exp sub) pre) in
       if Config.curr_language_is Config.Java &&
          Procdesc.get_access pdesc <> PredSymb.Private then
         report_context_leaks pname post.Prop.sigma tenv;
       let post' =
         if Prover.check_inconsistency_base tenv prop then None
-        else Some (Prop.normalize tenv (Prop.prop_sub sub post), path) in
+        else Some (Prop.normalize tenv (Prop.prop_sub (`Exp sub) post), path) in
       let visited =
         let vset_ref = ref Procdesc.NodeSet.empty in
         vset_ref_add_path vset_ref path;
@@ -901,7 +901,7 @@ let initial_prop_from_pre tenv curr_f pre =
       List.map
         ~f:(fun id -> (id, Exp.Var (Ident.create_fresh (Ident.kfootprint))))
         vars in
-    let sub = Sil.sub_of_list sub_list in
+    let sub = Sil.subst_of_list sub_list in
     let pre2 = Prop.prop_sub sub pre in
     let pre3 =
       Prop.set pre2 ~pi_fp:(Prop.get_pure pre2) ~sigma_fp:pre2.Prop.sigma in

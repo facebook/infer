@@ -1631,8 +1631,8 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
     let ids_primed_normal =
       List.map ~f:(fun id -> (id, Ident.create_fresh Ident.knormal)) ids_primed in
     let ren_sub =
-      Sil.sub_of_list (List.map
-                         ~f:(fun (id1, id2) -> (id1, Exp.Var id2)) ids_primed_normal) in
+      Sil.subst_of_list (List.map
+                           ~f:(fun (id1, id2) -> (id1, Exp.Var id2)) ids_primed_normal) in
     let p' = Prop.normalize tenv (Prop.prop_sub ren_sub p) in
     let fav_normal = Sil.fav_from_list (List.map ~f:snd ids_primed_normal) in
     p', fav_normal in

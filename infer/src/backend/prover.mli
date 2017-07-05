@@ -77,7 +77,7 @@ val d_typings : (Exp.t * Exp.t) list -> unit
 
 type implication_result =
   | ImplOK of
-      (check list * Sil.subst * Sil.subst * Sil.hpred list * (Sil.atom list) * (Sil.hpred list) *
+      (check list * Sil.exp_subst * Sil.exp_subst * Sil.hpred list * (Sil.atom list) * (Sil.hpred list) *
        (Sil.hpred list) * (Sil.hpred list) * ((Exp.t * Exp.t) list) * ((Exp.t * Exp.t) list))
   | ImplFail of check list
 
@@ -113,6 +113,3 @@ sig
 end
 
 val get_overrides_of : Tenv.t -> Typ.t -> Typ.Procname.t -> (Typ.t * Typ.Procname.t) list
-
-
-
