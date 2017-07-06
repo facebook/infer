@@ -34,7 +34,7 @@
 };
 
 - (void)dealloc {
-  [self dealloc];
+  [super dealloc];
 }
 
 @end
@@ -45,7 +45,7 @@ void testCycle() {
   CADisplay* b = a;
 }
 
-void testNoCycle() {
+void testNoCycle_FP() {
 
   CADisplay* a = [[CADisplay alloc] init];
   [a invalidate]; // break the cycle
