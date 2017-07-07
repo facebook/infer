@@ -37,22 +37,38 @@ let run driver_mode =
   analyze_and_report driver_mode ~changed_files ;
   run_epilogue driver_mode
 
-let remove_results_dir () =
-  Utils.rmtree Config.results_dir
+let results_dir_dir_markers = List.map ~f:(Filename.concat Config.results_dir) [
+    Config.attributes_dir_name; Config.captured_dir_name; Config.specs_dir_name;
+  ]
+
+let is_results_dir () =
+  let not_found = ref "" in
+  let has_all_markers = List.for_all results_dir_dir_markers ~f:(fun d ->
+      Sys.is_directory d = `Yes || (not_found := d; false)) in
+  Result.ok_if_true has_all_markers ~error:(Printf.sprintf "'%s/' not found" !not_found)
 
 let create_results_dir () =
-  Unix.mkdir_p (Config.results_dir ^/ Config.attributes_dir_name) ;
-  Unix.mkdir_p (Config.results_dir ^/ Config.captured_dir_name) ;
-  Unix.mkdir_p (Config.results_dir ^/ Config.specs_dir_name);
+  List.iter ~f:Unix.mkdir_p results_dir_dir_markers;
   L.setup_log_file ()
 
 let assert_results_dir advice =
-  if Sys.file_exists Config.results_dir <> `Yes then (
-    L.user_error "ERROR: results directory %s does not exist@\nERROR: %s@."
-      Config.results_dir advice;
-    exit 1
-  );
+  Result.iter_error (is_results_dir ()) ~f:(fun err ->
+      L.user_error "ERROR: No results directory at '%s': %s@\nERROR: %s@."
+        Config.results_dir err advice;
+      exit 1
+    );
   L.setup_log_file ()
+
+let remove_results_dir () =
+  if Sys.is_directory Config.results_dir = `Yes then (
+    Result.iter_error (is_results_dir ()) ~f:(fun err ->
+        L.user_error "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\n\
+                      ERROR: Please delete '%s' and try again@."
+          Config.results_dir err Config.results_dir;
+        exit 1
+      );
+    Utils.rmtree Config.results_dir
+  )
 
 let setup_results_dir () =
   match Config.command with
