@@ -27,6 +27,7 @@ type pvar_kind =
   | Callee_var Typ.Procname.t /** local variable belonging to a callee */
   | Abduced_retvar Typ.Procname.t Location.t /** synthetic variable to represent return value */
   | Abduced_ref_param Typ.Procname.t t Location.t
+  | Abduced_ref_param_val Typ.Procname.t Ident.t Location.t
   /** synthetic variable to represent param passed by reference */
   | Global_var (translation_unit, bool, bool, bool)
   /** global variable: translation unit + is it compile constant? + is it POD? + is it a static
@@ -69,6 +70,12 @@ let rec _pp f pv => {
       F.fprintf f "%a|%a|abducedRefParam" _pp pv Mangled.pp name
     } else {
       F.fprintf f "%a$%a%a|abducedRefParam" Typ.Procname.pp n Location.pp l Mangled.pp name
+    }
+  | Abduced_ref_param_val n id l =>
+    if !Config.pp_simple {
+      F.fprintf f "%a|%a|abducedRefParamVal" (Ident.pp Pp.text) id Mangled.pp name
+    } else {
+      F.fprintf f "%a$%a%a|abducedRefParamVal" Typ.Procname.pp n Location.pp l Mangled.pp name
     }
   | Global_var (translation_unit, is_const, is_pod, _) =>
     F.fprintf
@@ -120,6 +127,14 @@ let pp_latex f pv => {
       (Mangled.to_string name)
       (Latex.pp_string Latex.Roman)
       "abducedRefParam"
+  | Abduced_ref_param_val _ =>
+    F.fprintf
+      f
+      "%a_{%a}"
+      (Latex.pp_string Latex.Roman)
+      (Mangled.to_string name)
+      (Latex.pp_string Latex.Roman)
+      "abducedRefParamVal"
   | Global_var _ => Latex.pp_string Latex.Boldface f (Mangled.to_string name)
   | Seed_var =>
     F.fprintf
@@ -194,7 +209,8 @@ let get_simplified_name pv => {
 let is_abduced pv =>
   switch pv.pv_kind {
   | Abduced_retvar _
-  | Abduced_ref_param _ => true
+  | Abduced_ref_param _
+  | Abduced_ref_param_val _ => true
   | _ => false
   };
 
@@ -291,6 +307,7 @@ let to_callee pname pvar =>
   | Callee_var _
   | Abduced_retvar _
   | Abduced_ref_param _
+  | Abduced_ref_param_val _
   | Seed_var =>
     L.d_str "Cannot convert pvar to callee: ";
     d pvar;
@@ -351,6 +368,11 @@ let mk_abduced_ret (proc_name: Typ.Procname.t) (loc: Location.t) :t => {
 let mk_abduced_ref_param (proc_name: Typ.Procname.t) (pv: t) (loc: Location.t) :t => {
   let name = Mangled.from_string ("$REF_PARAM_" ^ Typ.Procname.to_unique_id proc_name);
   {pv_hash: name_hash name, pv_name: name, pv_kind: Abduced_ref_param proc_name pv loc}
+};
+
+let mk_abduced_ref_param_val (proc_name: Typ.Procname.t) (id: Ident.t) (loc: Location.t) :t => {
+  let name = Mangled.from_string ("$REF_PARAM_VAL_" ^ Typ.Procname.to_unique_id proc_name);
+  {pv_hash: name_hash name, pv_name: name, pv_kind: Abduced_ref_param_val proc_name id loc}
 };
 
 let get_translation_unit pvar =>

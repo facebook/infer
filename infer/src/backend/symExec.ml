@@ -1290,66 +1290,68 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
         prop.Prop.sigma in
     Prop.normalize tenv (Prop.set prop ~sigma:sigma') in
   let add_actual_by_ref_to_footprint prop (actual, actual_typ, _) =
-    match actual with
-    | Exp.Lvar actual_pv ->
-        (* introduce a fresh program variable to allow abduction on the return value *)
-        let abduced_ref_pv =
-          Pvar.mk_abduced_ref_param callee_pname actual_pv callee_loc in
-        let already_has_abduced_retval p =
-          List.exists
-            ~f:(fun hpred -> match hpred with
-                | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced_ref_pv
-                | _ -> false)
-            p.Prop.sigma_fp in
-        (* prevent introducing multiple abduced retvals for a single call site in a loop *)
-        if already_has_abduced_retval prop then prop
-        else
-        if !Config.footprint then
-          let prop', abduced_strexp =
-            match actual_typ.Typ.desc with
-            | Typ.Tptr ({desc=Tstruct _} as typ, _) ->
-                (* for struct types passed by reference, do abduction on the fields of the
-                   struct *)
-                add_struct_value_to_footprint tenv abduced_ref_pv typ prop
-            | Typ.Tptr (typ, _) ->
-                (* for pointer types passed by reference, do abduction directly on the pointer *)
-                let (prop', fresh_fp_var) =
-                  add_to_footprint tenv abduced_ref_pv typ prop in
-                prop', Sil.Eexp (fresh_fp_var, Sil.Inone)
-            | _ ->
-                failwith
-                  ("No need for abduction on non-pointer type " ^
-                   (Typ.to_string actual_typ)) in
-          (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
-          let filtered_sigma =
-            List.map
-              ~f:(function
-                  | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
-                      Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
-                  | hpred -> hpred)
-              prop'.Prop.sigma in
-          Prop.normalize tenv (Prop.set prop' ~sigma:filtered_sigma)
-        else
-          (* bind actual passed by ref to the abduced value pointed to by the synthetic pvar *)
-          let prop' =
-            let filtered_sigma =
-              List.filter
-                ~f:(function
-                    | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual ->
-                        false
-                    | _ -> true)
-                prop.Prop.sigma in
-            Prop.normalize tenv (Prop.set prop ~sigma:filtered_sigma) in
-          List.fold
-            ~f:(fun p hpred ->
-                match hpred with
-                | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abduced_ref_pv ->
-                    let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
-                    Prop.normalize tenv (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
-                | _ -> p)
-            ~init:prop'
-            prop'.Prop.sigma
-    | _ -> assert false in
+    let abduced = match actual with
+      | Exp.Lvar actual_pv ->
+          Pvar.mk_abduced_ref_param callee_pname actual_pv callee_loc
+      | Exp.Var actual_id ->
+          Pvar.mk_abduced_ref_param_val callee_pname actual_id callee_loc
+      | _ -> assert false
+    in
+    let already_has_abduced_retval p =
+      List.exists
+        ~f:(fun hpred -> match hpred with
+            | Sil.Hpointsto (Exp.Lvar pv, _, _) -> Pvar.equal pv abduced
+            | _ -> false)
+        p.Prop.sigma_fp in
+    (* prevent introducing multiple abduced retvals for a single call site in a loop *)
+    if already_has_abduced_retval prop then prop
+    else
+    if !Config.footprint then
+      let prop', abduced_strexp =
+        match actual_typ.Typ.desc with
+        | Typ.Tptr ({desc=Tstruct _} as typ, _) ->
+            (* for struct types passed by reference, do abduction on the fields of the
+               struct *)
+            add_struct_value_to_footprint tenv abduced typ prop
+        | Typ.Tptr (typ, _) ->
+            (* for pointer types passed by reference, do abduction directly on the pointer *)
+            let (prop', fresh_fp_var) =
+              add_to_footprint tenv abduced typ prop in
+            prop', Sil.Eexp (fresh_fp_var, Sil.Inone)
+        | _ ->
+            failwith
+              ("No need for abduction on non-pointer type " ^
+               (Typ.to_string actual_typ)) in
+      (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
+      let filtered_sigma =
+        List.map
+          ~f:(function
+              | Sil.Hpointsto (lhs, _, typ_exp) when Exp.equal lhs actual ->
+                  Sil.Hpointsto (lhs, abduced_strexp, typ_exp)
+              | hpred -> hpred)
+          prop'.Prop.sigma in
+      Prop.normalize tenv (Prop.set prop' ~sigma:filtered_sigma)
+    else
+      (* bind actual passed by ref to the abduced value pointed to by the synthetic pvar *)
+      let prop' =
+        let filtered_sigma =
+          List.filter
+            ~f:(function
+                | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual ->
+                    false
+                | _ -> true)
+            prop.Prop.sigma in
+        Prop.normalize tenv (Prop.set prop ~sigma:filtered_sigma) in
+      List.fold
+        ~f:(fun p hpred ->
+            match hpred with
+            | Sil.Hpointsto (Exp.Lvar pv, rhs, texp) when Pvar.equal pv abduced ->
+                let new_hpred = Sil.Hpointsto (actual, rhs, texp) in
+                Prop.normalize tenv (Prop.set p ~sigma:(new_hpred :: prop'.Prop.sigma))
+            | _ -> p)
+        ~init:prop'
+        prop'.Prop.sigma
+  in
   (* non-angelic mode; havoc each var passed by reference by assigning it to a fresh id *)
   let havoc_actual_by_ref prop (actual, actual_typ, _) =
     let actual_pt_havocd_var =
@@ -1435,10 +1437,29 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
             actuals
           |> fst
     else prop in
+  let should_abduce_param_value pname =
+    let open Typ.Procname in
+    match pname with
+    | Java _ ->
+        (* FIXME (T19882766): we need to disable this for Java because it breaks too many tests *)
+        false
+    | ObjC_Cpp _ ->
+        (* FIXME: we need to work around a frontend hack for std::shared_ptr
+         * to silent some of the uninitialization warnings *)
+        if String.is_suffix ~suffix:"_std__shared_ptr"
+            (Typ.Procname.to_string callee_pname) then
+          false
+        else
+          true
+    | _ -> true
+  in
   let actuals_by_ref =
     List.filter_mapi
       ~f:(fun i actual -> match actual with
           | (Exp.Lvar _ as e, ({Typ.desc=Tptr _} as t)) -> Some (e, t, i)
+          | (Exp.Var _ as e, ({Typ.desc=Tptr _} as t))
+            when should_abduce_param_value callee_pname ->
+              Some (e, t, i)
           | _ -> None)
       args in
   let has_nullable_annot = Annotations.ia_is_nullable ret_annots in

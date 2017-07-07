@@ -13,7 +13,6 @@ codetoanalyze/objc/errors/npe/null_returned_by_method.m, NullReturnedByMethodA_t
 codetoanalyze/objc/errors/procdescs/main.c, ProcdescMain, 2, MEMORY_LEAK, [start of procedure ProcdescMain(),Skipped call: function or method not found]
 codetoanalyze/objc/errors/procdescs/main.c, ProcdescMain, 3, MEMORY_LEAK, [start of procedure ProcdescMain(),Skipped call: function or method not found]
 codetoanalyze/objc/errors/procdescs/main.c, call_nslog, 1, MEMORY_LEAK, [start of procedure call_nslog()]
-codetoanalyze/objc/errors/procdescs/main.c, call_nslog, 2, MEMORY_LEAK, [start of procedure call_nslog(),Skipped call: function or method not found]
 codetoanalyze/objc/errors/procdescs/main.c, call_nslog, 3, MEMORY_LEAK, [start of procedure call_nslog(),Skipped call: function or method not found]
 codetoanalyze/objc/errors/property/main.c, property_main, 2, MEMORY_LEAK, [start of procedure property_main(),Skipped call: function or method not found]
 codetoanalyze/objc/errors/property/main.c, property_main, 3, MEMORY_LEAK, [start of procedure property_main(),Skipped call: function or method not found]

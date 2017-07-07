@@ -105,6 +105,10 @@ let mk: Mangled.t => Typ.Procname.t => t;
 let mk_abduced_ref_param: Typ.Procname.t => t => Location.t => t;
 
 
+/** create an abduced variable for a parameter passed by reference */
+let mk_abduced_ref_param_val: Typ.Procname.t => Ident.t => Location.t => t;
+
+
 /** create an abduced return variable for a call to [proc_name] at [loc] */
 let mk_abduced_ret: Typ.Procname.t => Location.t => t;
 

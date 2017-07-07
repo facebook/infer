@@ -52,6 +52,8 @@ codetoanalyze/cpp/errors/numeric/min_max.cpp, max_int_div0, 0, DIVIDE_BY_ZERO, [
 codetoanalyze/cpp/errors/numeric/min_max.cpp, min_X_div0, 2, DIVIDE_BY_ZERO, [start of procedure min_X_div0(),start of procedure X,return from a call to X_X,start of procedure X,return from a call to X_X]
 codetoanalyze/cpp/errors/numeric/min_max.cpp, min_int_div0, 0, DIVIDE_BY_ZERO, [start of procedure min_int_div0()]
 codetoanalyze/cpp/errors/overwrite_attribute/main.cpp, testSetIntValue, 3, DIVIDE_BY_ZERO, [start of procedure testSetIntValue(),start of procedure setIntValue(),return from a call to setIntValue]
+codetoanalyze/cpp/errors/pointers/unintialized.cpp, known_ctor_dangling_bad, 2, DANGLING_POINTER_DEREFERENCE, [start of procedure known_ctor_dangling_bad(),start of procedure TestDangling,return from a call to TestDangling_TestDangling]
+codetoanalyze/cpp/errors/pointers/unintialized.cpp, known_ctor_dangling_bad, 2, UNINITIALIZED_VALUE, [start of procedure known_ctor_dangling_bad(),start of procedure TestDangling,return from a call to TestDangling_TestDangling]
 codetoanalyze/cpp/errors/pointers/unintialized.cpp, uninitialized_dangling_bad, 2, DANGLING_POINTER_DEREFERENCE, [start of procedure uninitialized_dangling_bad()]
 codetoanalyze/cpp/errors/pointers/unintialized.cpp, uninitialized_dangling_bad, 2, UNINITIALIZED_VALUE, [start of procedure uninitialized_dangling_bad()]
 codetoanalyze/cpp/errors/resource_leaks/raii.cpp, resource_leak, 7, RESOURCE_LEAK, [start of procedure resource_leak(),Condition is false]
