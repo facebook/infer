@@ -83,6 +83,19 @@
 }
 
 // no bug
+- (void)with_instances_responds_to_selector {
+  if ([[UICollectionView class]
+          instancesRespondToSelector:@selector(setPrefetchingEnabled:)]) {
+    [[UICollectionView appearance] setPrefetchingEnabled:NO];
+  }
+}
+
+// bug
+- (void)without_instances_responds_to_selector {
+  [[UICollectionView appearance] setPrefetchingEnabled:NO];
+}
+
+// no bug
 - (void)with_responds_to_selector_two_selectors:
     (Unavailable_api_allowed_cases*)a {
   if ([a respondsToSelector:@selector(m)] &&

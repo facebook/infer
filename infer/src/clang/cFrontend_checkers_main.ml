@@ -100,10 +100,11 @@ let parse_ctl_files linters_def_files : CFrontend_errors.linter list =
 
 let rec get_responds_to_selector stmt =
   let open Clang_ast_t in
+  let responToSelectorMethods = ["respondsToSelector:"; "instancesRespondToSelector:"] in
   match stmt with
   | ObjCMessageExpr (_, [_; ObjCSelectorExpr (_, _, _, method_name)], _, mdi)
   | ObjCMessageExpr (_, [ObjCSelectorExpr (_, _, _, method_name)], _, mdi)
-    when  String.equal mdi.Clang_ast_t.omei_selector "respondsToSelector:" ->
+    when List.mem ~equal:String.equal responToSelectorMethods mdi.Clang_ast_t.omei_selector ->
       [method_name]
   | BinaryOperator (_, [stmt1;stmt2], _, bo_info)
     when PVariant.(=) bo_info.Clang_ast_t.boi_kind `LAnd ->
