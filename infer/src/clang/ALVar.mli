@@ -9,12 +9,13 @@
 open! IStd
 
 type keyword =
-  | Report_when
-  | Message
-  | Suggestion
-  | Severity
-  | Mode
   | Doc_url
+  | Message
+  | Mode
+  | Name
+  | Report_when
+  | Severity
+  | Suggestion
 
 type formula_id = Formula_id of string
 
@@ -45,6 +46,8 @@ val is_severity_keyword : keyword -> bool
 val is_mode_keyword : keyword -> bool
 
 val is_doc_url_keyword : keyword -> bool
+
+val is_name_keyword : keyword -> bool
 
 val str_match_regex : string -> string -> bool
 

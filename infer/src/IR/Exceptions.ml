@@ -69,7 +69,7 @@ exception Double_lock of Localise.error_desc * L.ml_loc
 exception Empty_vector_access of Localise.error_desc * L.ml_loc
 exception Eradicate of string * Localise.error_desc
 exception Field_not_null_checked of Localise.error_desc * L.ml_loc
-exception Frontend_warning of string * Localise.error_desc * L.ml_loc
+exception Frontend_warning of (string * string option) * Localise.error_desc * L.ml_loc
 exception Checkers of string * Localise.error_desc
 exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
@@ -188,8 +188,8 @@ let recognize_exception exn =
     | Field_not_null_checked (desc, ml_loc) ->
         (Localise.field_not_null_checked,
          desc, Some ml_loc, Exn_user, Medium, Some Kwarning, Nocat)
-    | Frontend_warning (name, desc, ml_loc) ->
-        (Localise.from_string name,
+    | Frontend_warning ((name, hum), desc, ml_loc) ->
+        (Localise.from_string name ?hum,
          desc, Some ml_loc, Exn_user, Medium, None, Linters)
     | Checkers (kind_s, desc) ->
         (Localise.from_string kind_s,

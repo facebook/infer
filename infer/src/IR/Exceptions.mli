@@ -65,7 +65,7 @@ exception Field_not_null_checked of Localise.error_desc * Logging.ml_loc
 exception Empty_vector_access of Localise.error_desc * Logging.ml_loc
 exception Eradicate of string * Localise.error_desc
 exception Checkers of string * Localise.error_desc
-exception Frontend_warning of string * Localise.error_desc * Logging.ml_loc
+exception Frontend_warning of (string * string option) * Localise.error_desc * Logging.ml_loc
 exception Inherently_dangerous_function of Localise.error_desc
 exception Internal_error of Localise.error_desc
 exception Java_runtime_exception of Typ.Name.t * string * Localise.error_desc

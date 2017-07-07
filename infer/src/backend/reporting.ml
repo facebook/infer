@@ -38,7 +38,7 @@ let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_
     | None -> State.get_loc_trace ()
     | Some ltr -> ltr in
   let err_name =  match exn with
-    | Exceptions.Frontend_warning (err_name, _, _) -> err_name
+    | Exceptions.Frontend_warning ((err_name, _), _, _) -> err_name
     | _ -> let err_name, _, _, _, _, _, _ =  Exceptions.recognize_exception exn in
         (Localise.to_issue_id err_name) in
   if (Inferconfig.is_checker_enabled err_name) then

@@ -86,7 +86,7 @@ type clause =
   | CPath of [ `WhitelistPath | `BlacklistPath ] * ALVar.t list
 
 type ctl_checker = {
-  name : string; (* Checker's name *)
+  id : string; (* Checker's id *)
   definitions : clause list (* A list of let/set definitions *)
 }
 
@@ -434,7 +434,7 @@ end
 
 let print_checker c =
   L.(debug Linters Medium) "@\n-------------------- @\n";
-  L.(debug Linters Medium) "@\nChecker name: %s@\n" c.name;
+  L.(debug Linters Medium) "@\nChecker name: %s@\n" c.id;
   List.iter ~f:(fun d -> (match d with
       | CSet (keyword, phi) ->
           let cn_str = ALVar.keyword_to_string keyword in

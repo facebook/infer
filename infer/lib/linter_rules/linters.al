@@ -218,7 +218,7 @@ DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 		  SET message =
 		        "%decl_ref_or_selector_name% is not available in the required iOS SDK version
 		         %iphoneos_target_sdk_version% (only available from version %available_ios_sdk%)";
-
+      SET name = "Unavailable API In Supported iOS SDK";
 		  SET suggestion = "This could cause a crash.";
 			SET severity = "ERROR";
 		};

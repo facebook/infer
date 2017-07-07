@@ -125,7 +125,8 @@ let mutable_local_vars_advice context an =
                       && not decl_info.di_is_implicit in
       if condition then
         Some {
-          CIssue.name = "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE";
+          CIssue.id = "MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE";
+          name = None;
           severity = Exceptions.Kadvice;
           mode = CIssue.On;
           description =
@@ -155,7 +156,8 @@ let component_factory_function_advice context an =
         is_ck_context context an && is_component_if objc_interface in
       if condition then
         Some {
-          CIssue.name = "COMPONENT_FACTORY_FUNCTION";
+          CIssue.id = "COMPONENT_FACTORY_FUNCTION";
+          name = None;
           severity = Exceptions.Kadvice;
           mode = CIssue.Off;
           description = "Break out composite components";
@@ -200,7 +202,8 @@ let component_with_unconventional_superclass_advice context an =
             && not has_conventional_superclass in
           if condition then
             Some {
-              CIssue.name = "COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS";
+              CIssue.id = "COMPONENT_WITH_UNCONVENTIONAL_SUPERCLASS";
+              name = None;
               severity = Exceptions.Kadvice;
               mode = CIssue.On;
               description = "Never Subclass Components";
@@ -255,7 +258,8 @@ let component_with_multiple_factory_methods_advice context an =
     | Clang_ast_t.ObjCInterfaceDecl (_, _, decls, _, _) ->
         let factory_methods = List.filter ~f:(is_available_factory_method if_decl) decls in
         List.map ~f:(fun meth_decl -> {
-              CIssue.name = "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS";
+              CIssue.id = "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS";
+              name = None;
               severity = Exceptions.Kadvice;
               mode = CIssue.On;
               description = "Avoid Overrides";
@@ -309,7 +313,8 @@ let rec _component_initializer_with_side_effects_advice
          | Some "dispatch_async"
          | Some "dispatch_sync" ->
              Some {
-               CIssue.name = "COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS";
+               CIssue.id = "COMPONENT_INITIALIZER_WITH_SIDE_EFFECTS";
+               name = None;
                severity = Exceptions.Kadvice;
                mode = CIssue.On;
                description = "No Side-effects";
@@ -344,7 +349,8 @@ let component_file_line_count_info (context: CLintersContext.context) dec =
         context.translation_unit_context.CFrontend_config.source_file in
       let line_count = SourceFile.line_count source_file in
       List.map ~f:(fun i -> {
-            CIssue.name = "COMPONENT_FILE_LINE_COUNT";
+            CIssue.id = "COMPONENT_FILE_LINE_COUNT";
+            name = None;
             severity = Exceptions.Kinfo;
             mode = CIssue.Off;
             description = "Line count analytics";
@@ -391,7 +397,8 @@ let component_file_cyclomatic_complexity_info (context: CLintersContext.context)
   match cyclo_loc_opt an with
   | Some loc ->
       Some {
-        CIssue.name = "COMPONENT_FILE_CYCLOMATIC_COMPLEXITY";
+        CIssue.id = "COMPONENT_FILE_CYCLOMATIC_COMPLEXITY";
+        name = None;
         severity = Exceptions.Kinfo;
         mode = CIssue.Off;
         description = "Cyclomatic Complexity Incremental Marker";

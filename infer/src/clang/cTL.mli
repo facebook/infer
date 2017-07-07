@@ -84,7 +84,7 @@ type clause =
   | CPath of [ `WhitelistPath | `BlacklistPath ] * ALVar.t list
 
 type ctl_checker = {
-  name : string; (* Checker's name *)
+  id : string; (* Checker's id *)
   definitions : clause list (* A list of let/set definitions *)
 }
 

@@ -32,7 +32,7 @@ let filter_parsed_linters_developer parsed_linters =
                   --linter <name> to specify the linter you want to debug.";
     | Some lint ->
         List.filter ~f:(
-          fun (rule : linter) -> String.equal rule.issue_desc.name lint
+          fun (rule : linter) -> String.equal rule.issue_desc.id lint
         ) parsed_linters
   else parsed_linters
 
@@ -57,8 +57,8 @@ let filter_parsed_linters parsed_linters source_file =
   else filter_parsed_linters_by_path linters source_file
 
 let pp_linters fmt linters =
-  let pp_linter fmt {issue_desc={name}} =
-    F.fprintf fmt "%s@\n" name in
+  let pp_linter fmt {issue_desc={id}} =
+    F.fprintf fmt "%s@\n" id in
   List.iter ~f:(pp_linter fmt) linters
 
 (* Map a formula id to a triple (visited, parameters, definition).
@@ -166,7 +166,8 @@ let create_parsed_linters linters_def_file checkers : linter list =
   L.(debug Linters Medium) "@\nConverting checkers in (condition, issue) pairs@\n";
   let do_one_checker checker : linter =
     let dummy_issue = {
-      name = checker.name;
+      id = checker.id;
+      name = None;
       description = "";
       suggestion = None;
       loc = Location.dummy;
@@ -189,6 +190,8 @@ let create_parsed_linters linters_def_file checkers : linter list =
             {issue with mode = string_to_issue_mode m }, cond, wl_paths, bl_paths
         | CDesc (av, doc) when ALVar.is_doc_url_keyword  av ->
             {issue with doc_url = Some doc }, cond, wl_paths, bl_paths
+        | CDesc (av, name) when ALVar.is_name_keyword  av ->
+            {issue with name = Some name }, cond, wl_paths, bl_paths
         | CPath (`WhitelistPath, paths) ->
             issue, cond, paths, bl_paths
         | CPath (`BlacklistPath, paths) ->
@@ -198,7 +201,7 @@ let create_parsed_linters linters_def_file checkers : linter list =
         ~f:process_linter_definitions
         ~init:(dummy_issue, CTL.False, [], [])
         checker.definitions in
-    L.(debug Linters Medium) "@\nMaking condition and issue desc for checker '%s'@\n" checker.name;
+    L.(debug Linters Medium) "@\nMaking condition and issue desc for checker '%s'@\n" checker.id;
     L.(debug Linters Medium) "@\nCondition =@\n    %a@\n" CTL.Debug.pp_formula condition;
     L.(debug Linters Medium) "@\nIssue_desc = %a@\n" CIssue.pp_issue issue_desc;
     {condition; issue_desc; def_file = Some linters_def_file; whitelist_paths; blacklist_paths;} in
@@ -331,7 +334,7 @@ let build_paths_map paths =
 let expand_checkers macro_map path_map checkers =
   let open CTL in
   let expand_one_checker c =
-    L.(debug Linters Medium) " +Start expanding %s@\n" c.name;
+    L.(debug Linters Medium) " +Start expanding %s@\n" c.id;
     let map = _build_macros_map c.definitions macro_map in
     let exp_defs = List.fold ~f:(fun defs clause ->
         match clause with
@@ -352,20 +355,20 @@ let get_err_log translation_unit_context method_decl_opt =
   LintIssues.get_err_log procname
 
 (* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue translation_unit_context method_decl_opt key issue_desc linters_def_file =
-  let name = issue_desc.CIssue.name in
-  let loc = issue_desc.CIssue.loc in
+let log_frontend_issue translation_unit_context method_decl_opt key (issue_desc : CIssue.issue_desc)
+    linters_def_file =
   let errlog = get_err_log translation_unit_context method_decl_opt in
-  let err_desc = Errdesc.explain_frontend_warning issue_desc.CIssue.description
-      issue_desc.CIssue.suggestion loc in
-  let exn = Exceptions.Frontend_warning (name, err_desc, __POS__) in
-  let trace = [ Errlog.make_trace_element 0 issue_desc.CIssue.loc "" [] ] in
-  let err_kind = issue_desc.CIssue.severity in
+  let err_desc = Errdesc.explain_frontend_warning issue_desc.description
+      issue_desc.suggestion issue_desc.loc in
+  let exn =
+    Exceptions.Frontend_warning ((issue_desc.id, issue_desc.name), err_desc, __POS__) in
+  let trace = [ Errlog.make_trace_element 0 issue_desc.loc "" [] ] in
+  let err_kind = issue_desc.severity in
   let method_name = CAst_utils.full_name_of_decl_opt method_decl_opt
                     |> QualifiedCppName.to_qual_string in
   let key = Hashtbl.hash (key ^ method_name) in
-  Reporting.log_issue_from_errlog err_kind errlog exn ~loc ~ltr:trace
-    ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.CIssue.doc_url
+  Reporting.log_issue_from_errlog err_kind errlog exn ~loc:issue_desc.loc ~ltr:trace
+    ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
 
 let get_current_method context (an : Ctl_parser_types.ast_node) =
   match an with

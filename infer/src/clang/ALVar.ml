@@ -11,12 +11,13 @@ open! IStd
 module L = Logging
 
 type keyword =
-  | Report_when
-  | Message
-  | Suggestion
-  | Severity
-  | Mode
   | Doc_url
+  | Message
+  | Mode
+  | Name
+  | Report_when
+  | Severity
+  | Suggestion
 
 type formula_id = Formula_id of string[@@deriving compare]
 
@@ -44,12 +45,13 @@ let alexp_to_string e =
 
 let keyword_to_string k =
   match k with
-  | Report_when -> "report_when"
-  | Message -> "message"
-  | Suggestion -> "suggestion"
-  | Severity -> "severity"
-  | Mode -> "mode"
   | Doc_url -> "doc_url"
+  | Message -> "message"
+  | Mode -> "mode"
+  | Name -> "name_hum_readable"
+  | Report_when -> "report_when"
+  | Severity -> "severity"
+  | Suggestion -> "suggestion"
 
 let is_report_when_keyword k =
   match k with
@@ -79,6 +81,11 @@ let is_mode_keyword k =
 let is_doc_url_keyword k =
   match k with
   | Doc_url -> true
+  | _ -> false
+
+let is_name_keyword k =
+  match k with
+  | Name -> true
   | _ -> false
 
 (* true if and only if a substring of container matches the regular
