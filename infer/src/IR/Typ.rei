@@ -481,6 +481,14 @@ module Procname: {
 
   /** get qualifiers of a class owning objc/C++ method */
   let objc_cpp_get_class_qualifiers: objc_cpp => QualifiedCppName.t;
+
+  /** Return type substitution that would produce concrete procname from generic procname. Returns None if
+      such substitution doesn't exist
+      NOTE: this function doesn't check if such substitution is correct in terms of return
+            type/function parameters.
+      NOTE: this function doesn't deal with nested template classes, it only extracts mapping for function
+            and/or direct parent (class that defines the method) if it exists. */
+  let get_template_args_mapping: t => t => option type_subst_t;
 };
 
 

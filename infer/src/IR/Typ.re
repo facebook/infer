@@ -1084,6 +1084,61 @@ module Procname = {
       to_generic_filename pname
     | _ => to_concrete_filename pname
     };
+  let get_template_args_mapping generic_procname concrete_procname => {
+
+    /** given two template arguments, try to generate mapping from generic ones to concrete ones. */
+    let mapping_for_template_args (generic_name, generic_args) (concrete_name, concrete_args) =>
+      switch (generic_args, concrete_args) {
+      | (Template generic_typs, Template concrete_typs)
+          when QualifiedCppName.equal generic_name concrete_name =>
+        try (
+          `Valid (
+            List.fold2_exn
+              generic_typs
+              concrete_typs
+              init::[]
+              f::(
+                /* result will be reversed list. Ordering in template mapping doesn't matter so it's ok */
+                fun result gtyp ctyp =>
+                  switch (gtyp, ctyp) {
+                  | (Some {desc: TVar name}, Some concrete) => [(name, concrete), ...result]
+                  | _ => result
+                  }
+              )
+          )
+        ) {
+        | Invalid_argument _ =>
+          /* fold2_exn throws on length mismatch, we need to handle it */ `Invalid
+        }
+      | (NoTemplate, NoTemplate) => `NoTemplate
+      | _ => `Invalid
+      };
+    let combine_mappings mapping1 mapping2 =>
+      switch (mapping1, mapping2) {
+      | (`Valid m1, `Valid m2) => `Valid (List.append m1 m2)
+      | (`NoTemplate, a)
+      | (a, `NoTemplate) => /* no template is no-op state, simply return the other state */ a
+      | _ => /* otherwise there is no valid mapping */ `Invalid
+      };
+    let extract_mapping =
+      fun
+      | `Invalid
+      | `NoTemplate => None
+      | `Valid m => Some m;
+    let empty_qual = QualifiedCppName.of_qual_string "FIXME" /* TODO we should look at procedure names */;
+    switch (generic_procname, concrete_procname) {
+    | (C {template_args: args1}, C {template_args: args2}) /* template function */ =>
+      mapping_for_template_args (empty_qual, args1) (empty_qual, args2) |> extract_mapping
+    | (
+        ObjC_Cpp {template_args: args1, class_name: CppClass name1 class_args1},
+        ObjC_Cpp {template_args: args2, class_name: CppClass name2 class_args2}
+      ) /* template methods/template classes/both */ =>
+      combine_mappings
+        (mapping_for_template_args (name1, class_args1) (name2, class_args2))
+        (mapping_for_template_args (empty_qual, args1) (empty_qual, args2)) |> extract_mapping
+    | _ => None
+    }
+  };
 };
 
 
