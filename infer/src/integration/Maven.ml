@@ -116,11 +116,16 @@ let add_infer_profile mvn_pom infer_pom =
   let ic = In_channel.create mvn_pom in
   let with_oc out_chan =
     let with_ic () =
-      let xml_in = Xmlm.make_input ~strip:false (`Channel ic) in
-      let xml_out = Xmlm.make_output ~nl:true (`Channel out_chan) in
+      let xml_in = Xmlm.make_input ~strip:false (`Channel ic)
+          ~ns:(fun ns -> Some ns) (* be generous with namespaces *) in
+      let xml_out = Xmlm.make_output ~nl:true (`Channel out_chan)
+          ~ns_prefix:(fun prefix -> Some prefix) (* be generous with namespaces *) in
       add_infer_profile_to_xml (Filename.dirname mvn_pom) xml_in xml_out in
     protect ~f:with_ic ~finally:(fun () -> In_channel.close ic) in
-  Utils.with_file_out infer_pom ~f:with_oc
+  try Utils.with_file_out infer_pom ~f:with_oc
+  with Xmlm.Error ((line, col), error) as exn ->
+    L.external_error "%s:%d:%d: ERROR: %s@." mvn_pom line col (Xmlm.error_message error);
+    raise exn
 
 let add_profile_to_pom_in_directory dir =
   (* Even though there is a "-f" command-line arguments to change the config file Maven reads from,
