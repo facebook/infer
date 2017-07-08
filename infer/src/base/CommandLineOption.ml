@@ -658,10 +658,10 @@ let anon_fun arg =
   else if !anon_arg_action.parse_subcommands
        && List.Assoc.mem !subcommand_actions ~equal:String.equal arg then
     let command_switch = List.Assoc.find_exn !subcommand_actions ~equal:String.equal arg in
-    match !curr_command  with
-    | None ->
+    match !curr_command, is_originator with
+    | None, _ | Some _, false ->
         command_switch ()
-    | Some command ->
+    | Some command, true ->
         raise (Arg.Bad
                  (Printf.sprintf "More than one subcommand specified: '%s', '%s'"
                     (string_of_command command) arg))
