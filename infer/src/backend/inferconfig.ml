@@ -348,17 +348,14 @@ let create_filters analyzer =
 (* Decide whether a checker or error type is enabled or disabled based on*)
 (* white/black listing in .inferconfig and the default value *)
 let is_checker_enabled checker_name =
-  match List.mem ~equal:String.(=) Config.disable_checks checker_name,
-        List.mem ~equal:String.(=) Config.enable_checks checker_name with
-  | false, false -> (* if it's not amond white/black listed then we use default value *)
-      not (List.mem ~equal:String.(=) Config.checks_disabled_by_default checker_name)
-  | true, false -> (* if it's blacklisted and not whitelisted then it should be disabled *)
-      false
-  | false, true -> (* if it is not blacklisted and it is whitelisted then it should be enabled *)
-      true
-  | true, true -> (* if it's both blacklisted and whitelisted then we flag error *)
-      failwithf "Inconsistent settings: checker %s is both blacklisted and whitelisted."
-        checker_name
+  (* no-filtering takes priority over both whitelist and blacklist *)
+  (not Config.filtering)
+  (* whitelist takes priority over blacklist *)
+  || (List.mem ~equal:String.(=) Config.enable_checks checker_name)
+  (* if it's blacklisted and not whitelisted then it should be disabled *)
+  || ((not (List.mem ~equal:String.(=) Config.disable_checks checker_name))
+      (* if it's not amond white/black listed then we use default value *)
+      && not (List.mem ~equal:String.(=) Config.checks_disabled_by_default checker_name))
 
 (* This function loads and list the path that are being filtered by the analyzer. The results *)
 (* are of the form: path/to/file.java -> {infer, eradicate} meaning that analysis results will *)

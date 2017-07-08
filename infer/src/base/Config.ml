@@ -845,8 +845,7 @@ and (
   and filtering =
     CLOpt.mk_bool ~deprecated_no:["nf"] ~long:"filtering" ~short:'f' ~default:true
       ~in_help:CLOpt.[Report, manual_generic]
-      "Do not show the results from experimental checks (note: some of them may contain many false \
-       alarms)"
+      "Do not show the results from experimental and blacklisted checks"
 
   and only_cheap_debug =
     CLOpt.mk_bool ~long:"only-cheap-debug"
@@ -998,7 +997,25 @@ and differential_filter_set =
 and disable_checks =
   CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error name"
     ~in_help:CLOpt.[Report, manual_generic]
-    "Do not show reports coming from this type of errors"
+    ~default: [
+      "ANALYSIS_STOPS";
+      "ARRAY_OUT_OF_BOUNDS_L1";
+      "ARRAY_OUT_OF_BOUNDS_L2";
+      "ARRAY_OUT_OF_BOUNDS_L3";
+      "CLASS_CAST_EXCEPTION";
+      "CONDITION_ALWAYS_FALSE";
+      "CONDITION_ALWAYS_TRUE";
+      "DANGLING_POINTER_DEREFERENCE";
+      "DIVIDE_BY_ZERO";
+      "NULL_TEST_AFTER_DEREFERENCE";
+      "RETAIN_CYCLE";
+      "RETURN_VALUE_IGNORED";
+      "STACK_VARIABLE_ADDRESS_ESCAPE";
+      "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION";
+      "UNINITIALIZED_VALUE";
+    ]
+    "Do not show reports coming from this type of errors. This option has lower precedence than \
+     $(b,--no-filtering) and $(b,--enable-checks)"
 
 and dotty_cfg_libs =
   CLOpt.mk_bool ~deprecated:["dotty_no_cfg_libs"] ~long:"dotty-cfg-libs" ~default:true
@@ -1018,7 +1035,8 @@ and dynamic_dispatch =
 
 and enable_checks =
   CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error name"
-    "Show reports coming from this type of errors"
+    "Show reports coming from this type of errors. This option has higher precedence than \
+     $(b,--disable-checks)"
 
 and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant"

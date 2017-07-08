@@ -308,25 +308,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
           };
           issue_bucket_is_high
         } else {
-          let blacklisted_by_default =
-            Localise.[
-              analysis_stops,
-              divide_by_zero,
-              return_value_ignored,
-              array_out_of_bounds_l1,
-              array_out_of_bounds_l2,
-              array_out_of_bounds_l3,
-              null_test_after_dereference,
-              class_cast_exception,
-              uninitialized_value,
-              stack_variable_address_escape,
-              dangling_pointer_dereference,
-              unary_minus_applied_to_unsigned_expression,
-              condition_always_true,
-              condition_always_false,
-              retain_cycle
-            ];
-          not (List.mem equal::Localise.equal blacklisted_by_default issue_type)
+          true
         }
       }
     }
