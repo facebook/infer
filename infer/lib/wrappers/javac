@@ -11,11 +11,13 @@ elif [ -z "$INFER_OLD_PATH" ]; then
 fi
 
 HOST_COMPILER=(`PATH=$INFER_OLD_PATH which javac`)
-COMPILER_ARGS="$@"
-HOST_COMPILER_COMMAND=("$HOST_COMPILER" $COMPILER_ARGS)
-FRONTEND_COMMAND=("infer" "-a" "capture" "-o" "$INFER_RESULTS_DIR" "--" "javac" $COMPILER_ARGS)
+COMPILER_ARGS=("$@")
+HOST_COMPILER_COMMAND=("$HOST_COMPILER" "${COMPILER_ARGS[@]}")
+FRONTEND_COMMAND=("infer" "-a" "capture" "-o" "$INFER_RESULTS_DIR" "--" "javac" "${COMPILER_ARGS[@]}")
 
-if [ -n "$INFER_COMPILER_WRAPPER_IN_RECURSION" ]; then
+if [[ "$*" == *-version* ]]; then
+    "${HOST_COMPILER_COMMAND[@]}"
+elif [ -n "$INFER_COMPILER_WRAPPER_IN_RECURSION" ]; then
     if [ -z "$INFER_LISTENER" ]; then
         "${HOST_COMPILER_COMMAND[@]}"
     fi
