@@ -27,8 +27,8 @@ let frame_id_of_summary stacktree =
       (Str.split (Str.regexp "(") stacktree.Stacktree_j.method_name) in
   match stacktree.Stacktree_j.location with
   | None ->
-      failwith "Attempted to take signature of a frame without location \
-                information. This is undefined."
+      failwith
+        "Attempted to take signature of a frame without location information. This is undefined."
   | Some { line = Some line_num; file } ->
       F.sprintf "%s(%s:%d)" short_name (Filename.basename file) line_num
   | Some { file } ->

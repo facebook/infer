@@ -412,17 +412,19 @@ let () =
 let abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1
     ~meta:"int"
-    "Specify abstraction level for fields of structs:\n\
-     - 0 = no\n\
-     - 1 = forget some fields during matching (and so lseg abstraction)\n"
+{|Specify abstraction level for fields of structs:
+- 0 = no
+- 1 = forget some fields during matching (and so lseg abstraction)
+|}
 
 and abs_val =
   CLOpt.mk_int ~deprecated:["absval"] ~long:"abs-val" ~default:2
     ~meta:"int"
-    "Specify abstraction level for expressions:\n\
-     - 0 = no abstraction\n\
-     - 1 = evaluate all expressions abstractly\n\
-     - 2 = 1 + abstract constant integer values during join\n"
+{|Specify abstraction level for expressions:
+- 0 = no abstraction
+- 1 = evaluate all expressions abstractly
+- 2 = 1 + abstract constant integer values during join
+|}
 
 
 and allow_leak =
@@ -488,15 +490,13 @@ and analyzer =
     | Linters -> () in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
     ~in_help:CLOpt.[Analyze, manual_generic; Run, manual_generic]
-    "Specify which analyzer to run (only one at a time is supported):\n\
-     - $(b,infer): run the bi-abduction based checker, in particular to check for memory errors \
-     (activated by default)\n\
-     - $(b,checkers), $(b,eradicate): run the specified analysis\n\
-     - $(b,capture): similar to specifying the $(b,capture) subcommand (DEPRECATED)\n\
-     - $(b,compile): similar to specifying the $(b,compile) subcommand (DEPRECATED)\n\
-     - $(b,crashcontext): experimental (see $(b,--crashcontext))\n\
-     - $(b,linters): run linters based on the ast only (Objective-C and Objective-C++ only, \
-     activated by default)"
+{|Specify which analyzer to run (only one at a time is supported):
+- $(b,infer): run the bi-abduction based checker, in particular to check for memory errors (activated by default)
+- $(b,checkers), $(b,eradicate): run the specified analysis
+- $(b,capture): similar to specifying the $(b,capture) subcommand (DEPRECATED)
+- $(b,compile): similar to specifying the $(b,compile) subcommand (DEPRECATED)
+- $(b,crashcontext): experimental (see $(b,--crashcontext))
+- $(b,linters): run linters based on the ast only (Objective-C and Objective-C++ only, activated by default)|}
     ~f:(function
         | CaptureOnly | CompileOnly as x ->
             let analyzer_str = List.find_map_exn string_to_analyzer
@@ -621,17 +621,18 @@ and (annotation_reachability,
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
     ~in_help:CLOpt.[Analyze, manual_java]
-    "Specify custom sources/sink for the annotation reachability checker\n\
-     Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}\n\
-     { \"sources\" : [\"Source1\", \"Source2\"], \"sink\" : \"Sink1\" }"
+{|Specify custom sources/sink for the annotation reachability checker
+Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}
+{ "sources" : ["Source1", "Source2"], "sink" : "Sink1" }|}
 
 and array_level =
   CLOpt.mk_int ~deprecated:["arraylevel"] ~long:"array-level" ~default:0
-    ~meta:"int" "Level of treating the array indexing and pointer arithmetic:\n\
-                 - 0 = treats both features soundly\n\
-                 - 1 = assumes that the size of every array is infinite\n\
-                 - 2 = assumes that all heap dereferences via array indexing and pointer \
-                 arithmetic are correct\n"
+    ~meta:"int"
+{|Level of treating the array indexing and pointer arithmetic:
+- 0 = treats both features soundly
+- 1 = assumes that the size of every array is infinite
+- 2 = assumes that all heap dereferences via array indexing and pointer arithmetic are correct
+|}
 and ast_file =
   CLOpt.mk_path_opt ~deprecated:["ast"] ~long:"ast-file"
     ~meta:"file" "AST file for the translation"
@@ -902,11 +903,10 @@ and (
     CLOpt.mk_int_opt ~long:"debug-level"
       ~in_help:all_generic_manuals ~meta:"level"
       ~f:(fun level -> set_debug_level level; level)
-      "Debug level (sets $(b,--bo-debug) $(i,level), $(b,--debug-level-analysis) $(i,level), \
-       $(b,--debug-level-capture) $(i,level), $(b,--debug-level-linters) $(i,level)):\
-       \n  - 0: only basic debugging enabled\
-       \n  - 1: verbose debugging enabled\
-       \n  - 2: very verbose debugging enabled"
+{|Debug level (sets $(b,--bo-debug) $(i,level), $(b,--debug-level-analysis) $(i,level), $(b,--debug-level-capture) $(i,level), $(b,--debug-level-linters) $(i,level)):
+  - 0: only basic debugging enabled
+  - 1: verbose debugging enabled
+  - 2: very verbose debugging enabled|}
 
   and debug_exceptions =
     CLOpt.mk_bool_group ~long:"debug-exceptions"
@@ -1200,9 +1200,11 @@ and jobs =
 
 and join_cond =
   CLOpt.mk_int ~deprecated:["join_cond"] ~long:"join-cond" ~default:1
-    ~meta:"int" "Set the strength of the final information-loss check used by the join:\n\
-                 - 0 = use the most aggressive join for preconditions\n\
-                 - 1 = use the least aggressive join for preconditions\n"
+    ~meta:"int"
+{|Set the strength of the final information-loss check used by the join:
+- 0 = use the most aggressive join for preconditions
+- 1 = use the least aggressive join for preconditions
+|}
 
 and latex =
   CLOpt.mk_path_opt ~deprecated:["latex"] ~long:"latex"
@@ -1263,11 +1265,12 @@ and ml_buckets =
   CLOpt.mk_symbol_seq ~deprecated:["ml_buckets"; "-ml_buckets"] ~long:"ml-buckets"
     ~default:[`MLeak_cf]
     ~in_help:CLOpt.[Analyze, manual_clang]
-    "Specify the memory leak buckets to be checked in Objective-C/C++:\n\
-     - $(b,cf) checks leaks from Core Foundation (activated by default),\n\
-     - $(b,arc) from code compiled in ARC mode,\n\
-     - $(b,narc) from code not compiled in ARC mode,\n\
-     - $(b,cpp) from C++ code\n"
+{|Specify the memory leak buckets to be checked in Objective-C/C++:
+- $(b,cf) checks leaks from Core Foundation (activated by default),
+- $(b,arc) from code compiled in ARC mode,
+- $(b,narc) from code not compiled in ARC mode,
+- $(b,cpp) from C++ code
+|}
     ~symbols:ml_bucket_symbols ~eq:PVariant.(=)
 
 and models_mode =
@@ -1321,8 +1324,7 @@ and patterns_skip_translation =
 
 and per_procedure_parallelism =
   CLOpt.mk_bool ~long:"per-procedure-parallelism" ~default:true
-    "Perform analysis with per-procedure parallelism.\n\
-     Java is not supported."
+    "Perform analysis with per-procedure parallelism. Java is not supported."
 
 and pmd_xml =
   CLOpt.mk_bool ~long:"pmd-xml"
@@ -1518,9 +1520,11 @@ and sourcepath =
 
 and spec_abs_level =
   CLOpt.mk_int ~deprecated:["spec_abs_level"] ~long:"spec-abs-level" ~default:1
-    ~meta:"int" "Set the level of abstracting the postconditions of discovered specs:\n\
-                 - 0 = nothing special\n\
-                 - 1 = filter out redundant posts implied by other posts\n"
+    ~meta:"int"
+{|Set the level of abstracting the postconditions of discovered specs:
+- 0 = nothing special
+- 1 = filter out redundant posts implied by other posts
+|}
 
 and specs_library =
   let specs_library =

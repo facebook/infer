@@ -62,31 +62,27 @@ let mk_command_doc ~see_also:see_also_commands ?and_also ?environment:environmen
 let analyze =
   mk_command_doc ~title:"Infer Analysis"
     ~short_description:"analyze the files captured by infer"
-    ~synopsis:"$(b,infer) $(b,analyze) $(i,[options])\n\
-               $(b,infer) $(i,[options])"
+    ~synopsis:
+{|$(b,infer) $(b,analyze) $(i,[options])
+$(b,infer) $(i,[options])|}
     ~description:[`P "Analyze the files captured in the project results directory and report."]
     ~see_also:CLOpt.[Report; Run]
 
 let capture =
   mk_command_doc ~title:"Infer Compilation Capture"
     ~short_description:"capture source files for later analysis"
-    ~synopsis:"$(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,buck) $(i,...)\n\
-               $(b,infer) $(b,capture) $(b,--flavors) $(i,[options]) $(b,--) $(b,buck) $(i,...)\n\
-               $(b,infer) $(b,capture) $(b,--buck-compilation-database) $(i,[no-]deps) \
-               $(i,[options]) $(b,--) $(b,buck) $(i,...)\n\
-               $(b,infer) $(b,capture) $(i,[options]) $(b,--compilation-database) $(i,file)\n\
-               $(b,infer) $(b,capture) $(i,[options]) $(b,--compilation-database-escaped) \
-               $(i,file)\n\
-               $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,gradle)/$(b,gradlew) \
-               $(i,...)\n\
-               $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,javac) $(i,...)\n\
-               $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,make)/$(b,clang)/$(b,gcc) \
-               $(i,...)\n\
-               $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,mvn)/$(b,mvnw) \
-               $(i,...)\n\
-               $(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,ndk-build) $(i,...)\n\
-               $(b,infer) $(b,capture) $(i,[--no-xcpretty]) $(i,[options]) $(b,--) \
-               $(b,xcodebuild) $(i,...)"
+    ~synopsis:
+{|$(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,buck) $(i,...)
+$(b,infer) $(b,capture) $(b,--flavors) $(i,[options]) $(b,--) $(b,buck) $(i,...)
+$(b,infer) $(b,capture) $(b,--buck-compilation-database) $(i,[no-]deps) $(i,[options]) $(b,--) $(b,buck) $(i,...)
+$(b,infer) $(b,capture) $(i,[options]) $(b,--compilation-database) $(i,file)
+$(b,infer) $(b,capture) $(i,[options]) $(b,--compilation-database-escaped) $(i,file)
+$(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,gradle)/$(b,gradlew) $(i,...)
+$(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,javac) $(i,...)
+$(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,make)/$(b,clang)/$(b,gcc) $(i,...)
+$(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,mvn)/$(b,mvnw) $(i,...)
+$(b,infer) $(b,capture) $(i,[options]) $(b,--) $(b,ndk-build) $(i,...)
+$(b,infer) $(b,capture) $(i,[--no-xcpretty]) $(i,[options]) $(b,--) $(b,xcodebuild) $(i,...)|}
     ~description:[
       `P "Capture the build command or compilation database specified on the command line: infer \
           intercepts calls to the compiler to read source files, translate them into infer's \
@@ -109,35 +105,36 @@ let compile =
           generates, which defeats the later capture of compilation commands by infer. Thus, to \
           capture a CMake project, one should configure the project from within the infer build \
           environment, for instance:";
-      `Pre "  \
-            mkdir build && cd build\n  \
-            infer compile -- cmake ..\n  \
-            infer capture -- make";
+      `Pre
+{|  mkdir build && cd build
+  infer compile -- cmake ..
+  infer capture -- make|};
       `P "The same solution can be used for projects whose \"./configure\" script hardcodes the \
           paths to the compilers, for instance:";
-      `Pre "  \
-            infer compile -- ./configure\n  \
-            infer capture -- make";
+      `Pre
+{|  infer compile -- ./configure
+  infer capture -- make|};
       `P "Another solution for CMake projects is to use CMake's compilation databases, for \
           instance:";
-      `Pre "  \
-            mkdir build && cd build\n  \
-            cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..\n  \
-            infer capture --compilation-database compile_commands.json";
+      `Pre
+{|  mkdir build && cd build
+  cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
+  infer capture --compilation-database compile_commands.json|};
     ]
     ~see_also:CLOpt.[Capture]
 
 let infer = mk_command_doc ~title:"Infer Static Analyzer"
     ~short_description:"static analysis for Java and C/C++/Objective-C/Objective-C++"
-    ~synopsis:"$(b,infer) $(b,analyze) $(i,[options])\n\
-               $(b,infer) $(b,capture) $(i,[options])\n\
-               $(b,infer) $(b,compile) $(i,[options])\n\
-               $(b,infer) $(b,report) $(i,[options])\n\
-               $(b,infer) $(b,reportdiff) $(i,[options])\n\
-               $(b,infer) $(b,run) $(i,[options])\n\
-               $(b,infer) $(b,--compilation-database[-escaped]) $(i,file) $(i,[options])\n\
-               $(b,infer) $(i,[options]) $(b,--) $(b,compile command)\n\
-               $(b,infer) $(i,[options])"
+    ~synopsis:
+{|$(b,infer) $(b,analyze) $(i,[options])
+$(b,infer) $(b,capture) $(i,[options])
+$(b,infer) $(b,compile) $(i,[options])
+$(b,infer) $(b,report) $(i,[options])
+$(b,infer) $(b,reportdiff) $(i,[options])
+$(b,infer) $(b,run) $(i,[options])
+$(b,infer) $(b,--compilation-database[-escaped]) $(i,file) $(i,[options])
+$(b,infer) $(i,[options]) $(b,--) $(b,compile command)
+$(b,infer) $(i,[options])|}
     ~description:[
       `P "Infer is a static analyzer. Given a collection of source files written in Java or in \
           languages of the C family, and a command to build them, infer produces a list of \
@@ -209,10 +206,11 @@ let infer = mk_command_doc ~title:"Infer Static Analyzer"
                           parent, etc., stopping at the first $(b,%s) file found."
             inferconfig_file inferconfig_file);
       `P "Example:";
-      `Pre "  {\
-            \n    \"cxx\": false,\
-            \n    \"infer-blacklist-files-containing\": [\"@generated\",\"@Generated\"]\
-            \n  }";
+      `Pre
+{|  {
+    "cxx": false,
+    "infer-blacklist-files-containing": ["@generated","@Generated"]
+  }|};
     ]
     ~see_also:(List.filter ~f:(function | CLOpt.Clang -> false | _ -> true) CLOpt.all_commands)
     ~and_also:", $(b,inferTraceBugs)"
@@ -252,13 +250,15 @@ let reportdiff =
 let run =
   mk_command_doc ~title:"Infer Analysis of a Project"
     ~short_description:"capture source files, analyze, and report"
-    ~synopsis:"$(b,infer) $(b,run) $(i,[options])\n\
-               $(b,infer) $(i,[options]) $(b,--) $(i,compile command)"
+    ~synopsis:
+{|$(b,infer) $(b,run) $(i,[options])
+$(b,infer) $(i,[options]) $(b,--) $(i,compile command)|}
     ~description:[
       `P "Calling \"$(b,infer) $(b,run) $(i,[options])\" is equivalent to performing the following \
           sequence of commands:";
-      `Pre "$(b,infer) $(b,capture) $(i,[options])\n\
-            $(b,infer) $(b,analyze) $(i,[options])";
+      `Pre
+{|$(b,infer) $(b,capture) $(i,[options])
+$(b,infer) $(b,analyze) $(i,[options])|};
     ]
     ~see_also:CLOpt.[Analyze; Capture; Report]
 

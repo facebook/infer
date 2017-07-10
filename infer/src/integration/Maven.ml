@@ -15,25 +15,25 @@ let infer_profile_name = "infer-capture"
 
 let infer_profile = lazy
   (* indented so that users may copy it into their projects if they want to *)
-  (Printf.sprintf "\
-\n    <profile>\
-\n      <id>%s</id>\
-\n      <build>\
-\n        <plugins>\
-\n          <plugin>\
-\n            <groupId>org.apache.maven.plugins</groupId>\
-\n            <artifactId>maven-compiler-plugin</artifactId>\
-\n            <configuration>\
-\n              <compilerId>javac</compilerId>\
-\n              <forceJavacCompilerUse>true</forceJavacCompilerUse>\
-\n              <fork>true</fork>\
-\n              <executable>%s</executable>\
-\n            </configuration>\
-\n          </plugin>\
-\n        </plugins>\
-\n      </build>\
-\n    </profile>\
-  " infer_profile_name (Config.bin_dir ^/ CommandDoc.infer_exe_name))
+  (Printf.sprintf {|
+    <profile>
+      <id>%s</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <compilerId>javac</compilerId>
+              <forceJavacCompilerUse>true</forceJavacCompilerUse>
+              <fork>true</fork>
+              <executable>%s</executable>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>|}
+     infer_profile_name (Config.bin_dir ^/ CommandDoc.infer_exe_name))
 
 let pom_worklist = ref [CLOpt.init_work_dir]
 

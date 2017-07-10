@@ -605,17 +605,19 @@ let print_kind f kind =
   | Lambda_pred (no, lev, array) ->
       match array with
       | false ->
-          F.fprintf f "style=dashed; color=blue \
-                       @\n state%iL%i \
-                       [label=\"INTERNAL STRUCTURE %i \",  style=filled, color= lightblue]@\n"
-            !dotty_state_count !lambda_counter !lambda_counter ;
+          F.fprintf f
+            "%s @\n state%iL%i [label=\"INTERNAL STRUCTURE %i \",  %s]@\n"
+            "style=dashed; color=blue"
+            !dotty_state_count !lambda_counter !lambda_counter
+            "style=filled, color= lightblue";
           F.fprintf f "state%iL%i -> state%iL%i [color=\"lightblue \"  arrowhead=none] @\n"
             !dotty_state_count !lambda_counter no lev;
       | true ->
-          F.fprintf f "style=dashed; color=blue \
-                       @\n state%iL%i \
-                       [label=\"INTERNAL STRUCTURE %i \",  style=filled, color= lightblue]@\n"
-            !dotty_state_count !lambda_counter !lambda_counter ;
+          F.fprintf f
+            "%s @\n state%iL%i [label=\"INTERNAL STRUCTURE %i \",  %s]@\n"
+            "style=dashed; color=blue"
+            !dotty_state_count !lambda_counter !lambda_counter
+            "style=filled, color= lightblue" ;
           (* F.fprintf f "state%iL%i -> struct%iL%i:%s [color=\"lightblue \"  arrowhead=none] @\n"
              !dotty_state_count !lambda_counter no lev lab;*)
           incr dotty_state_count
@@ -720,14 +722,14 @@ let rec print_struct f pe e te l coo c =
   F.fprintf f "subgraph structs_%iL%i {@\n" n lambda ;
   if !print_full_prop then
     F.fprintf f
-      " node [shape=record]; @\n struct%iL%i \
-       [label=\"{<%s%iL%i> STRUCT: %a } | %a\" ] fontcolor=%s@\n"
+      " node [%s]; @\n struct%iL%i [label=\"{<%s%iL%i> STRUCT: %a } | %a\" ] fontcolor=%s@\n"
+      "shape=record"
       n lambda
       e_no_special_char n lambda (Sil.pp_exp_printenv pe) e (struct_to_dotty_str pe coo) l c
   else
     F.fprintf f
-      " node [shape=record]; @\n struct%iL%i \
-       [label=\"{<%s%iL%i> OBJECT: %s } | %a\" ] fontcolor=%s@\n"
+      " node [%s]; @\n struct%iL%i [label=\"{<%s%iL%i> OBJECT: %s } | %a\" ] fontcolor=%s@\n"
+      "shape=record"
       n lambda e_no_special_char n lambda print_type (struct_to_dotty_str pe coo) l c;
   F.fprintf f "}@\n"
 
@@ -736,8 +738,9 @@ and print_array f pe e1 e2 l coo c =
   let lambda = coo.lambda in
   let e_no_special_char = strip_special_chars (Exp.to_string e1) in
   F.fprintf f "subgraph structs_%iL%i {@\n" n lambda ;
-  F.fprintf f " node [shape=record]; @\n struct%iL%i \
-               [label=\"{<%s%iL%i> ARRAY| SIZE: %a } | %a\" ] fontcolor=%s@\n"
+  F.fprintf f
+    " node [%s]; @\n struct%iL%i [label=\"{<%s%iL%i> ARRAY| SIZE: %a } | %a\" ] fontcolor=%s@\n"
+    "shape=record"
     n lambda e_no_special_char n lambda (Sil.pp_exp_printenv pe) e2 (get_contents pe coo) l c;
   F.fprintf f "}@\n"
 
@@ -749,13 +752,13 @@ and print_sll f pe nesting k e1 coo =
   begin
     match k with
     | Sil.Lseg_NE ->
-        F.fprintf f "subgraph cluster_%iL%i { \
-                     style=filled; color=lightgrey; node [style=filled,color=white];  \
-                     label=\"list NE\";" n' lambda  (*pp_nesting nesting*)
+        F.fprintf f
+          "subgraph cluster_%iL%i { %s node [style=filled,color=white];  label=\"list NE\";"
+          n' lambda "style=filled; color=lightgrey;"
     | Sil.Lseg_PE ->
-        F.fprintf f "subgraph cluster_%iL%i { \
-                     style=filled; color=lightgrey; node [style=filled,color=white];  \
-                     label=\"list PE\";" n' lambda (*pp_nesting nesting *)
+        F.fprintf f
+          "subgraph cluster_%iL%i { %s node [style=filled,color=white];   label=\"list PE\";"
+          n' lambda "style=filled; color=lightgrey;"
   end;
   F.fprintf f "state%iL%i [label=\"%a\"]@\n" n lambda (Sil.pp_exp_printenv pe) e1;
   let n' = !dotty_state_count in
@@ -776,13 +779,13 @@ and print_dll f pe nesting k e1 e4 coo =
   begin
     match k with
     | Sil.Lseg_NE ->
-        F.fprintf f "subgraph cluster_%iL%i { \
-                     style=filled; color=lightgrey; node [style=filled,color=white];  \
-                     label=\"doubly-linked list NE\";" n' lambda  (*pp_nesting nesting *)
+        F.fprintf f
+          "subgraph cluster_%iL%i { %s node [style=filled,color=white];  label=\"%s\";"
+          n' lambda "style=filled; color=lightgrey;" "doubly-linked list NE"
     | Sil.Lseg_PE ->
-        F.fprintf f "subgraph cluster_%iL%i { \
-                     style=filled; color=lightgrey; node [style=filled,color=white];  \
-                     label=\"doubly-linked list PE\";" n' lambda (*pp_nesting nesting *)
+        F.fprintf f
+          "subgraph cluster_%iL%i { %s node [style=filled,color=white];  label=\"%s\";"
+          n' lambda "style=filled; color=lightgrey;" "doubly-linked list PE"
   end;
   F.fprintf f "state%iL%i [label=\"%a\"]@\n" n lambda (Sil.pp_exp_printenv pe) e1;
   let n' = !dotty_state_count in
@@ -859,8 +862,8 @@ and display_pure_info f pe prop =
     done in
   let pure = Prop.get_pure prop in
   F.fprintf f "subgraph {@\n";
-  F.fprintf f " node [shape=box]; \
-               @\n state_pi_%i [label=\"STACK \\n\\n %a\" color=orange style=filled]@\n"
+  F.fprintf f
+    " node [shape=box]; @\n state_pi_%i [label=\"STACK \\n\\n %a\" color=orange style=filled]@\n"
     !proposition_counter (Prop.pp_pi pe) pure;
   if !invisible_arrows then print_invisible_objects ();
   F.fprintf f "}@\n"

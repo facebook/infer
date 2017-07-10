@@ -255,7 +255,7 @@ let pp_summary fmt (thumbs_up, threads, locks,
                     accesses, return_attributes) =
   F.fprintf
     fmt
-    "\nThumbsUp: %a, Threads: %a, Locks: %a \nAccesses %a \nReturn Attributes: %a\n"
+    "@\nThumbsUp: %a, Threads: %a, Locks: %a @\nAccesses %a @\nReturn Attributes: %a@\n"
     ThumbsUpDomain.pp thumbs_up
     ThreadsDomain.pp threads
     LocksDomain.pp locks
@@ -265,7 +265,7 @@ let pp_summary fmt (thumbs_up, threads, locks,
 let pp fmt { thumbs_up; threads; locks; accesses; attribute_map; } =
   F.fprintf
     fmt
-    "\nThumbsUp: %a, Threads: %a, Locks: %a \nAccesses %a \nReturn Attributes: %a\n"
+    "@\nThumbsUp: %a, Threads: %a, Locks: %a @\nAccesses %a @\nReturn Attributes: %a@\n"
     ThumbsUpDomain.pp thumbs_up
     ThreadsDomain.pp threads
     LocksDomain.pp locks

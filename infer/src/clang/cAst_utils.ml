@@ -70,7 +70,7 @@ let get_decl_opt decl_ptr_opt =
 
 let get_stmt stmt_ptr =
   let stmt = Int.Table.find ClangPointers.pointer_stmt_table stmt_ptr in
-  if Option.is_none stmt then L.internal_error "stmt with pointer %d not found\n" stmt_ptr;
+  if Option.is_none stmt then L.internal_error "stmt with pointer %d not found@\n" stmt_ptr;
   stmt
 
 let get_stmt_opt stmt_ptr_opt =
@@ -110,7 +110,7 @@ let get_type type_ptr =
   match type_ptr with
   | Clang_ast_types.TypePtr.Ptr raw_ptr ->
       let typ = Int.Table.find ClangPointers.pointer_type_table raw_ptr in
-      if Option.is_none typ then L.internal_error "type with pointer %d not found\n" raw_ptr;
+      if Option.is_none typ then L.internal_error "type with pointer %d not found@\n" raw_ptr;
       typ
   | _ ->
       (* otherwise, function fails *)

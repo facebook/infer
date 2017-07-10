@@ -28,100 +28,58 @@ struct
     let outc = Unix.out_channel_of_descr fd in
     let fmt = F.formatter_of_out_channel outc in
     let s =
-      "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n\
-       <html>\n\
-       <head>\n\
-       <title>" ^
+{|<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>|} ^
       fname ^
-      "</title>\n\
-       <style type=\"text/css\">\n\
-       body { color:#000000; background-color:#ffffff }\n\
-       body { font-family:Helvetica, sans-serif; font-size:10pt }\n\
-       h1 { font-size:14pt }\n\
-       .code { border-collapse:collapse; width:100%; }\n\
-       .code { font-family: \"Andale Mono\", monospace; font-size:10pt }\n\
-       .code { line-height: 1.2em }\n\
-       .comment { color: green; font-style: oblique }\n\
-       .keyword { color: blue }\n\
-       .string_literal { color: red }\n\
-       .color_black { color: black }\n\
-       .color_blue { color: blue }\n\
-       .color_green { color: green }\n\
-       .color_red { color: red }\n\
-       .color_orange { color: orange }\n\
-       .directive { color: darkmagenta }\n\
-       .expansion { display: none; }\n\
-       .visited:hover .expansion {\
-       display: block;\
-       border: 2px\
-       solid #FF0000;\
-       padding: 2px;\
-       background-color:#FFF0F0;\
-       font-weight: normal;\
-       -webkit-border-radius:5px;\
-       -webkit-box-shadow:1px 1px 7px #000;\
-       position: absolute;\
-       top: -1em;\
-       left:10em;\
-       z-index: 1 }\n\
-       .visited {\
-       color: darkmagenta;\
-       background-color:LemonChiffon;\
-       position: relative }\n\
-       .visitedproof:hover .expansion {\
-       display: block;\
-       border: 2px solid #FF0000;\
-       padding: 2px;\
-       background-color:#FFF0F0;\
-       font-weight: normal;\
-       -webkit-border-radius:5px;\
-       -webkit-box-shadow:1px 1px 7px #000;\
-       position: absolute;\
-       top: -1em;\
-       left:10em;\
-       z-index: 1 }\n\
-       .visitedproof {\
-       color: darkmagenta;\
-       background-color:lightgreen;\
-       position: relative }\n\
-       .dangling:hover .expansion {\
-       display: block;\
-       border: 2px solid #FF0000;\
-       padding: 2px;\
-       background-color:#FFF0F0;\
-       font-weight: normal;\
-       -webkit-border-radius:5px;\
-       -webkit-box-shadow:1px 1px 7px #000;\
-       position: absolute;\
-       top: -1em;\
-       left:10em;\
-       z-index: 1 }\n\
-       .dangling { color: gray; background-color:white; position: relative }\n\
-       .num { width:2.5em; padding-right:2ex; background-color:#eeeeee }\n\
-       .num { text-align:right; font-size: smaller }\n\
-       .num { color:#444444 }\n\
-       .line { padding-left: 1ex; border-left: 3px solid #ccc }\n\
-       .line { white-space: pre }\n\
-       .msg { background-color:#fff8b4; color:#000000 }\n\
-       .msg { -webkit-box-shadow:1px 1px 7px #000 }\n\
-       .msg { -webkit-border-radius:5px }\n\
-       .msg { font-family:Helvetica, sans-serif; font-size: smaller }\n\
-       .msg { font-weight: bold }\n\
-       .msg { float:left }\n\
-       .msg { padding:0.5em 1ex 0.5em 1ex }\n\
-       .msg { margin-top:10px; margin-bottom:10px }\n\
-       .msg { max-width:60em; word-wrap: break-word; white-space: pre-wrap;}\n\
-       .mrange { background-color:#dfddf3 }\n\
-       .mrange { border-bottom:1px solid #6F9DBE }\n\
-       .PathIndex { font-weight: bold }\n\
-       table.simpletable { padding: 5px; font-size:12pt; margin:20px; border-collapse: collapse;\
-       border-spacing: 0px; }\n\
-       td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2ex; }\n\
-       </style>\n\
-       </head>\
-       \n\
-       <body>\
-       \n" in
+{|</title>
+<style type="text/css">
+body { color:#000000; background-color:#ffffff }
+body { font-family:Helvetica, sans-serif; font-size:10pt }
+h1 { font-size:14pt }
+.code { border-collapse:collapse; width:100%; }
+.code { font-family: "Andale Mono", monospace; font-size:10pt }
+.code { line-height: 1.2em }
+.comment { color: green; font-style: oblique }
+.keyword { color: blue }
+.string_literal { color: red }
+.color_black { color: black }
+.color_blue { color: blue }
+.color_green { color: green }
+.color_red { color: red }
+.color_orange { color: orange }
+.directive { color: darkmagenta }
+.expansion { display: none; }
+.visited:hover .expansion { display: block; border: 2px solid #FF0000; padding: 2px; background-color:#FFF0F0; font-weight: normal; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; position: absolute; top: -1em; left:10em; z-index: 1 }
+.visited { color: darkmagenta; background-color:LemonChiffon; position: relative }
+.visitedproof:hover .expansion { display: block; border: 2px solid #FF0000; padding: 2px; background-color:#FFF0F0; font-weight: normal; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; position: absolute; top: -1em; left:10em; z-index: 1 }
+.visitedproof { color: darkmagenta; background-color:lightgreen; position: relative }
+.dangling:hover .expansion { display: block; border: 2px solid #FF0000; padding: 2px; background-color:#FFF0F0; font-weight: normal; -webkit-border-radius:5px; -webkit-box-shadow:1px 1px 7px #000; position: absolute; top: -1em; left:10em; z-index: 1 }
+.dangling { color: gray; background-color:white; position: relative }
+.num { width:2.5em; padding-right:2ex; background-color:#eeeeee }
+.num { text-align:right; font-size: smaller }
+.num { color:#444444 }
+.line { padding-left: 1ex; border-left: 3px solid #ccc }
+.line { white-space: pre }
+.msg { background-color:#fff8b4; color:#000000 }
+.msg { -webkit-box-shadow:1px 1px 7px #000 }
+.msg { -webkit-border-radius:5px }
+.msg { font-family:Helvetica, sans-serif; font-size: smaller }
+.msg { font-weight: bold }
+.msg { float:left }
+.msg { padding:0.5em 1ex 0.5em 1ex }
+.msg { margin-top:10px; margin-bottom:10px }
+.msg { max-width:60em; word-wrap: break-word; white-space: pre-wrap;}
+.mrange { background-color:#dfddf3 }
+.mrange { border-bottom:1px solid #6F9DBE }
+.PathIndex { font-weight: bold }
+table.simpletable { padding: 5px; font-size:12pt; margin:20px; border-collapse: collapse; border-spacing: 0px; }
+td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2ex; }
+</style>
+</head>
+<body>
+|} in
     F.fprintf fmt "%s" s;
     (fd, fmt)
 
