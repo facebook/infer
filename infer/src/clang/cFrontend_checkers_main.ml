@@ -298,6 +298,10 @@ let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_contex
     L.(debug Linters Medium) "Start linting file %a with rules: @\n%a@\n"
       SourceFile.pp source_file
       CFrontend_errors.pp_linters filtered_parsed_linters;
+    if Config.print_active_checkers then
+      L.progress "Linting file %a, active linters: @\n%a@\n"
+        SourceFile.pp source_file
+        CFrontend_errors.pp_linters filtered_parsed_linters;
     match ast with
     | Clang_ast_t.TranslationUnitDecl(_, decl_list, _, _) ->
         let context =
