@@ -214,7 +214,6 @@ struct
       | Binop.BOr -> Val.unknown_bit v1
       | Binop.LAnd -> Val.land_sem v1 v2
       | Binop.LOr -> Val.lor_sem v1 v2
-      | Binop.PtrFld -> raise Not_implemented
 
   let rec eval_locs : Exp.t -> Mem.astate -> Location.t -> Val.t
     = fun exp mem loc ->

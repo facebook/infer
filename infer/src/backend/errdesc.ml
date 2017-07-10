@@ -895,9 +895,6 @@ let _explain_access tenv
     | Exp.Cast (_, e') ->
         if verbose then (L.d_str "find_outermost_dereference: cast "; Sil.d_exp e; L.d_ln ());
         find_outermost_dereference node e'
-    | Exp.BinOp(Binop.PtrFld, _, e') ->
-        if verbose then (L.d_str "find_outermost_dereference: PtrFld "; Sil.d_exp e; L.d_ln ());
-        find_outermost_dereference node e'
     | _ ->
         if verbose
         then

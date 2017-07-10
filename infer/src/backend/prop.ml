@@ -1053,17 +1053,6 @@ module Normalize = struct
             | _ ->
                 if abs then Exp.get_undefined false else BinOp (BXor, e1', e2')
           end
-      | BinOp (PtrFld, e1, e2) ->
-          let e1' = eval e1 in
-          let e2' = eval e2 in
-          begin
-            match e2' with
-            | Const (Cptr_to_fld (fn, typ)) ->
-                eval (Exp.Lfield(e1', fn, typ))
-            | Const (Cint i) when IntLit.iszero i ->
-                Exp.zero (* cause a NULL dereference *)
-            | _ -> BinOp (PtrFld, e1', e2')
-          end
       | Exn _ ->
           e
       | Lvar _ ->

@@ -23,7 +23,6 @@ type t =
   | Cstr string /** string constants */
   | Cfloat float /** float constants */
   | Cclass Ident.name /** class constant */
-  | Cptr_to_fld Typ.Fieldname.t Typ.t /** pointer to field constant, and type of the surrounding Csu.t type */
 [@@deriving compare];
 
 let equal: t => t => bool;

@@ -21,7 +21,6 @@ type t =
   | Cstr string /** string constants */
   | Cfloat float /** float constants */
   | Cclass Ident.name /** class constant */
-  | Cptr_to_fld Typ.Fieldname.t Typ.t /** pointer to field constant, and type of the surrounding Csu.t type */
 [@@deriving compare];
 
 let equal = [%compare.equal : t];
@@ -33,8 +32,7 @@ let kind_equal c1 c2 => {
     | Cfun _ => 2
     | Cstr _ => 3
     | Cfloat _ => 4
-    | Cclass _ => 5
-    | Cptr_to_fld _ => 6;
+    | Cclass _ => 5;
   Int.equal (const_kind_number c1) (const_kind_number c2)
 };
 
@@ -48,8 +46,7 @@ let pp pe f =>
     }
   | Cstr s => F.fprintf f "\"%s\"" (String.escaped s)
   | Cfloat v => F.fprintf f "%f" v
-  | Cclass c => F.fprintf f "%a" Ident.pp_name c
-  | Cptr_to_fld fn _ => F.fprintf f "__fld_%a" Typ.Fieldname.pp fn;
+  | Cclass c => F.fprintf f "%a" Ident.pp_name c;
 
 let to_string c => F.asprintf "%a" (pp Pp.text) c;
 

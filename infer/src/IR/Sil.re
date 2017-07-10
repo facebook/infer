@@ -1441,7 +1441,7 @@ let rec exp_fav_add fav e =>
   | Var id => fav ++ id
   | Exn e => exp_fav_add fav e
   | Closure {captured_vars} => List.iter f::(fun (e, _, _) => exp_fav_add fav e) captured_vars
-  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => ()
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _) => ()
   | Cast _ e
   | UnOp _ e _ => exp_fav_add fav e
   | BinOp _ e1 e2 =>
@@ -1877,7 +1877,7 @@ let rec exp_sub_ids (f: subst_fun) exp => {
     } else {
       Exp.Closure {...c, captured_vars}
     }
-  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => exp
+  | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _) => exp
   | Cast t e =>
     let e' = exp_sub_ids f e;
     let t' = f_typ t;

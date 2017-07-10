@@ -29,7 +29,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         |> add_address_taken_pvars e2
     | Exp.Exn _
     | Exp.Closure _
-    | Exp.Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _)
+    | Exp.Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _)
     | Exp.Var _ | Exp.Sizeof _ ->
         astate
 

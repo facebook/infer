@@ -39,7 +39,6 @@ type t =
   | BOr /** inclusive-or */
   | LAnd /** logical and. Does not always evaluate both operands. */
   | LOr /** logical or. Does not always evaluate both operands. */
-  | PtrFld /** field offset via pointer to field: takes the address of a Csu.t and a Cptr_to_fld constant to form an Lfield expression (see prop.ml) */
 [@@deriving compare];
 
 let equal = [%compare.equal : t];
@@ -113,8 +112,7 @@ let text =
   | BXor => "^"
   | BOr => "|"
   | LAnd => "&&"
-  | LOr => "||"
-  | PtrFld => "_ptrfld_";
+  | LOr => "||";
 
 
 /** Pretty print a binary operator. */

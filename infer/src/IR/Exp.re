@@ -229,7 +229,7 @@ let get_vars exp => {
         f::(fun vars_acc (captured_exp, _, _) => get_vars_ captured_exp vars_acc)
         init::vars
         captured_vars
-    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _ | Cptr_to_fld _) => vars
+    | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _) => vars
     /* TODO: Sizeof dynamic length expressions may contain variables, do not ignore them. */
     | Sizeof _ => vars
     };
