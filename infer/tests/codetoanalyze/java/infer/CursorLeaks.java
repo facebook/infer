@@ -54,6 +54,26 @@ public class CursorLeaks {
     return value;
   }
 
+  public Object cursorClosedCheckNullCheckClosed_FP(SQLiteDatabase sqLiteDatabase) {
+    Cursor cursor = sqLiteDatabase.query(
+        "events", null,
+        null, null, null, null, null);
+    Object value = null;
+
+    try {
+      if (cursor == null) {
+        return null;
+      }
+
+      value = cursor.getString(0);
+    } finally {
+      if (cursor != null && !cursor.isClosed()) {
+        cursor.close();
+      }
+    }
+    return value;
+  }
+
   public int cursorNotClosed(SQLiteDatabase sqLiteDatabase) {
     Cursor cursor = sqLiteDatabase.query(
         "events", null,
