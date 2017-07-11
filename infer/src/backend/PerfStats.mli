@@ -17,6 +17,6 @@ val from_json : Yojson.Basic.json -> perf_stats
 
 val aggregate : perf_stats list -> Yojson.Basic.json
 
+val register_report_at_exit : string -> unit
 (** Create performance report when the current process terminates. Automatically disabled when
     [Config.buck_cache_mode] is true. *)
-val register_report_at_exit : string -> unit

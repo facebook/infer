@@ -17,36 +17,36 @@ open! IStd
 module LineReader : sig
   type t
 
-  (** create a line reader *)
   val create : unit -> t
+  (** create a line reader *)
 
-  (** get the line from a source file and line number *)
   val from_file_linenum_original : t -> SourceFile.t -> int -> string option
+  (** get the line from a source file and line number *)
 
-  (** get the line from a source file and line number looking for the copy of the file in the results dir *)
   val from_file_linenum : t -> SourceFile.t -> int -> string option
+  (** get the line from a source file and line number looking for the copy of the file in the results dir *)
 
-  (** get the line from a location looking for the copy of the file in the results dir *)
   val from_loc : t -> Location.t -> string option
+  (** get the line from a location looking for the copy of the file in the results dir *)
 end
 
-(** Current html formatter *)
 val curr_html_formatter : Format.formatter ref
+(** Current html formatter *)
 
-(** Execute the delayed print actions *)
 val force_delayed_prints : unit -> unit
+(** Execute the delayed print actions *)
 
-(** Finish a session, and perform delayed print actions if required *)
 val node_finish_session : Procdesc.Node.t -> unit
+(** Finish a session, and perform delayed print actions if required *)
 
-(** Return true if the node was visited during footprint and during re-execution *)
 val node_is_visited : Procdesc.Node.t -> bool * bool
+(** Return true if the node was visited during footprint and during re-execution *)
 
-(** Start a session, and create a new html fine for the node if it does not exist yet *)
 val node_start_session : Procdesc.Node.t -> int -> unit
+(** Start a session, and create a new html fine for the node if it does not exist yet *)
 
-(** Write html file for the procedure. *)
 val write_proc_html : Procdesc.t -> unit
+(** Write html file for the procedure. *)
 
-(** Create filename.ext.html for each file in the cluster. *)
 val write_all_html_files : Cluster.t -> unit
+(** Create filename.ext.html for each file in the cluster. *)

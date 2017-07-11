@@ -12,24 +12,22 @@ open! IStd
 module type Payload = sig
   type payload
 
-  (** Uptade the corresponding part of the payload in the procedure summary *)
   val update_payload : payload -> Specs.summary -> Specs.summary
+  (** Uptade the corresponding part of the payload in the procedure summary *)
 
-  (** Read the corresponding part of the payload from the procedure summary *)
   val read_payload : Specs.summary -> payload option
-
+  (** Read the corresponding part of the payload from the procedure summary *)
 end
 
 module type S = sig
   type payload
 
-  (** Uptade the corresponding part of the payload in the procedure summary *)
   val update_summary : payload -> Specs.summary -> Specs.summary
+  (** Uptade the corresponding part of the payload in the procedure summary *)
 
+  val read_summary : Procdesc.t -> Typ.Procname.t -> payload option
   (** Return the payload for the given procedure.
       Runs the analysis on-demand if necessary *)
-  val read_summary : Procdesc.t -> Typ.Procname.t -> payload option
-
 end
 
 module Make (P : Payload) : S with type payload = P.payload

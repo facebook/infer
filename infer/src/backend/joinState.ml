@@ -11,10 +11,7 @@ open! IStd
 
 (** Object representing the status of the join operation *)
 
-type mode =
-  | Pre
-  | Post
-[@@deriving compare]
+type mode = Pre | Post [@@deriving compare]
 
 let equal_mode = [%compare.equal : mode]
 

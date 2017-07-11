@@ -9,6 +9,6 @@
 
 open! IStd
 
-let is_custom_init _ _  = false
+let is_custom_init _ _ = false
 
 let is_logging_method _ = false

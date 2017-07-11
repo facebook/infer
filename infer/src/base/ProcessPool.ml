@@ -11,42 +11,28 @@ open! IStd
 (** Keep track of whether the current execution is in a child process *)
 let in_child = ref false
 
-type t =
-  {
-    mutable num_processes : int;
-    jobs : int;
-  }
-let create ~jobs =
-  {
-    num_processes = 0;
-    jobs;
-  }
+type t = {mutable num_processes: int; jobs: int}
 
-let incr counter =
-  counter.num_processes <- counter.num_processes + 1
+let create ~jobs = {num_processes= 0; jobs}
 
-let decr counter =
-  counter.num_processes <- counter.num_processes - 1
+let incr counter = counter.num_processes <- counter.num_processes + 1
+
+let decr counter = counter.num_processes <- counter.num_processes - 1
 
 let wait counter =
   let _ = Unix.wait `Any in
   decr counter
 
-let wait_all counter =
-  for _ = 1 to counter.num_processes do
-    wait counter
-  done
+let wait_all counter = for _ = 1 to counter.num_processes do wait counter done
 
-let should_wait counter =
-  counter.num_processes >= counter.jobs
+let should_wait counter = counter.num_processes >= counter.jobs
 
 let start_child ~f ~pool x =
   match Unix.fork () with
-  | `In_the_child ->
-      in_child := true;
-      f x;
+  | `In_the_child
+   -> in_child := true ;
+      f x ;
       exit 0
-  | `In_the_parent _pid ->
-      incr pool;
-      if should_wait pool
-      then wait pool
+  | `In_the_parent _pid
+   -> incr pool ;
+      if should_wait pool then wait pool

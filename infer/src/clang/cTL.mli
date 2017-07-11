@@ -14,16 +14,21 @@ open Ctl_parser_types
    are intepreted over the AST of the program. A checker is defined by a
    CTL formula which express a condition saying when the checker should
     report a problem *)
-
 (* Transition labels used for example to switch from decl to stmt *)
+
 type transitions =
-  | Body (* decl to stmt *)
-  | InitExpr (* decl to stmt *)
-  | Super (* decl to decl *)
-  | Parameters (* decl to decl *)
+  | Body
+  (* decl to stmt *)
+  | InitExpr
+  (* decl to stmt *)
+  | Super
+  (* decl to decl *)
+  | Parameters
+  (* decl to decl *)
   | Cond
-  | PointerToDecl (* stmt to decl *)
-  | Protocol (** decl to decl *)
+  | PointerToDecl
+  (* stmt to decl *)
+  | Protocol  (** decl to decl *)
 
 (* In formulas below prefix
    "E" means "exists a path"
@@ -33,30 +38,39 @@ type transitions =
 type t =
   | True
   | False
-  | Atomic of CPredicates.t (** Atomic formula *)
+  | Atomic of CPredicates.t  (** Atomic formula *)
   | Not of t
   | And of t * t
   | Or of t * t
   | Implies of t * t
   | InNode of ALVar.alexp list * t
-  | AX of transitions option * t (** AX phi <=> for all children of the current node phi holds *)
-  | EX of transitions option * t (** EX phi <=> exist a child of the current node such that phi holds *)
-  | AF of transitions option * t (** AF phi <=> for all path from the current node there is a descendant where phi holds *)
-  | EF of transitions option * t (** EF phi <=> there exits a a path from the current node with a descendant where phi hold *)
-  | AG of transitions option * t (** AG phi <=> for all discendant of the current node phi hold *)
-  | EG of transitions option * t (** EG phi <=>
+  | AX of transitions option * t  (** AX phi <=> for all children of the current node phi holds *)
+  | EX of transitions option * t
+      (** EX phi <=> exist a child of the current node such that phi holds *)
+  | AF of transitions option * t
+      (** AF phi <=> for all path from the current node there is a descendant where phi holds *)
+  | EF of transitions option * t
+      (** EF phi <=> there exits a a path from the current node with a descendant where phi hold *)
+  | AG of transitions option * t  (** AG phi <=> for all discendant of the current node phi hold *)
+  | EG of transitions option * t
+      (** EG phi <=>
                                      there exists a path (of descendants) from the current node where phi hold at each node of the path *)
-  | AU of transitions option * t * t (** AU(phi1, phi2) <=>
+  | AU of transitions option * t * t
+      (** AU(phi1, phi2) <=>
                                          for all paths from the current node phi1 holds in every node until ph2 holds *)
-  | EU of transitions option * t * t (** EU(phi1, phi2) <=>
+  | EU of transitions option * t * t
+      (** EU(phi1, phi2) <=>
                                          there exists a path from the current node such that phi1 holds until phi2 holds *)
-  | EH of ALVar.alexp list * t (** EH[classes]phi <=>
+  | EH of ALVar.alexp list * t
+      (** EH[classes]phi <=>
                                    there exists a node defining a super class in the hierarchy of the class
                                    defined by the current node (if any) where  phi holds *)
-  | ET of ALVar.alexp list * transitions option * t (** ET[T][l] phi <=>
+  | ET of ALVar.alexp list * transitions option * t
+      (** ET[T][l] phi <=>
                                                                there exists a descentant an of the current node such that an is of type in set T
                                                                making a transition to a node an' via label l, such that in an phi holds. *)
-  | ETX of ALVar.alexp list * transitions option * t (** ET[T][l] phi <=>
+  | ETX of ALVar.alexp list * transitions option * t
+      (** ET[T][l] phi <=>
                                                                there exists a descentant an of the current node such that an is of type in set T
                                                                making a transition to a node an' via label l, such that in an phi holds. *)
 
@@ -78,22 +92,23 @@ type t =
 *)
 
 type clause =
-  | CLet  of ALVar.formula_id * ALVar.t list * t (* Let clause: let id = definifion;  *)
-  | CSet of ALVar.keyword * t (* Set clause: set id = definition *)
-  | CDesc of ALVar.keyword * string (* Description clause eg: set message = "..." *)
-  | CPath of [ `WhitelistPath | `BlacklistPath ] * ALVar.t list
+  | CLet of ALVar.formula_id * ALVar.t list * t
+  (* Let clause: let id = definifion;  *)
+  | CSet of ALVar.keyword * t
+  (* Set clause: set id = definition *)
+  | CDesc of ALVar.keyword * string
+  (* Description clause eg: set message = "..." *)
+  | CPath of [`WhitelistPath | `BlacklistPath] * ALVar.t list
 
-type ctl_checker = {
-  id : string; (* Checker's id *)
-  definitions : clause list (* A list of let/set definitions *)
-}
+type ctl_checker =
+  {id: string; (* Checker's id *)
+  definitions: clause list (* A list of let/set definitions *)}
 
-type al_file = {
-  import_files : string list;
-  global_macros : clause list;
-  global_paths : (string * ALVar.alexp list) list;
-  checkers : ctl_checker list
-}
+type al_file =
+  { import_files: string list
+  ; global_macros: clause list
+  ; global_paths: (string * ALVar.alexp list) list
+  ; checkers: ctl_checker list }
 
 val print_checker : ctl_checker -> unit
 

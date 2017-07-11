@@ -12,11 +12,11 @@ open! IStd
 
 (** Abstraction for Arrays *)
 
-(** Apply array abstraction and check the result *)
 val abstract_array_check : Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t
+(** Apply array abstraction and check the result *)
 
-(** Remember whether array abstraction was performed (to be reset before calling Abs.abstract) *)
 val array_abstraction_performed : bool ref
+(** Remember whether array abstraction was performed (to be reset before calling Abs.abstract) *)
 
-(** remove redundant elements in an array *)
 val remove_redundant_elements : Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t
+(** remove redundant elements in an array *)

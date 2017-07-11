@@ -14,29 +14,31 @@ open! IStd
 type base = Var.t * Typ.t [@@deriving compare]
 
 type access =
-  | ArrayAccess of Typ.t (* array element type. index is unknown *)
-  | FieldAccess of Typ.Fieldname.t (* field name *)
-[@@deriving compare]
+  | ArrayAccess of Typ.t
+  (* array element type. index is unknown *)
+  | FieldAccess of Typ.Fieldname.t
+  (* field name *)
+  [@@deriving compare]
 
 module Raw : sig
   (** root var, and a list of accesses. closest to the root var is first that is, x.f.g is
       representedas (x, [f; g]) *)
   type t = base * access list [@@deriving compare]
 
+  val truncate : t -> t
   (** remove the last access of the access path if the access list is non-empty. returns the
       original access path if the access list is empty *)
-  val truncate : t -> t
 
-  (** get the last access in the list. returns None if the list is empty *)
   val get_last_access : t -> access option
+  (** get the last access in the list. returns None if the list is empty *)
 
+  val get_field_and_annotation : t -> Tenv.t -> (Typ.Fieldname.t * Annot.Item.t) option
   (** get the field name and the annotation of the last access in the list of accesses if
       the list is non-empty and the last access is a field access *)
-  val get_field_and_annotation : t -> Tenv.t -> (Typ.Fieldname.t * Annot.Item.t) option
 
+  val get_typ : t -> Tenv.t -> Typ.t option
   (** get the typ of the last access in the list of accesses if the list is non-empty, or the base
       if the list is empty. that is, for x.f.g, return typ(g), and for x, return typ(x) *)
-  val get_typ : t -> Tenv.t -> Typ.t option
 
   val equal : t -> t -> bool
 
@@ -44,9 +46,9 @@ module Raw : sig
 end
 
 type t =
-  | Abstracted of Raw.t (** abstraction of heap reachable from an access path, e.g. x.f* *)
-  | Exact of Raw.t (** precise representation of an access path, e.g. x.f.g *)
-[@@deriving compare]
+  | Abstracted of Raw.t  (** abstraction of heap reachable from an access path, e.g. x.f* *)
+  | Exact of Raw.t  (** precise representation of an access path, e.g. x.f.g *)
+  [@@deriving compare]
 
 val equal_base : base -> base -> bool
 
@@ -56,54 +58,54 @@ val equal_access_list : access list -> access list -> bool
 
 val equal : t -> t -> bool
 
-(** create a base from a pvar *)
 val base_of_pvar : Pvar.t -> Typ.t -> base
+(** create a base from a pvar *)
 
-(** create a base from an ident *)
 val base_of_id : Ident.t -> Typ.t -> base
+(** create a base from an ident *)
 
-(** create an access path from a pvar *)
 val of_pvar : Pvar.t -> Typ.t -> Raw.t
+(** create an access path from a pvar *)
 
-(** create an access path from an ident *)
 val of_id : Ident.t -> Typ.t -> Raw.t
+(** create an access path from an ident *)
 
-(** extract the raw access paths that occur in [exp], resolving identifiers using [f_resolve_id] *)
 val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> Raw.t option) -> Raw.t list
+(** extract the raw access paths that occur in [exp], resolving identifiers using [f_resolve_id] *)
 
-(** convert [lhs_exp] to a raw access path, resolving identifiers using [f_resolve_id] *)
 val of_lhs_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> Raw.t option) -> Raw.t option
+(** convert [lhs_exp] to a raw access path, resolving identifiers using [f_resolve_id] *)
 
-(** replace the base var with a footprint variable rooted at formal index [formal_index] *)
 val to_footprint : int -> t -> t
+(** replace the base var with a footprint variable rooted at formal index [formal_index] *)
 
+val get_footprint_index : t -> int option
 (** return the formal index associated with the base of this access path if there is one, or None
     otherwise *)
-val get_footprint_index : t -> int option
 
+val append : Raw.t -> access list -> Raw.t
 (** append new accesses to an existing access path; e.g., `append_access x.f [g, h]` produces
     `x.f.g.h` *)
-val append : Raw.t -> access list -> Raw.t
 
+val with_base : base -> t -> t
 (** swap base of existing access path for [base_var] (e.g., `with_base_bvar x y.f.g` produces
     `x.f.g` *)
-val with_base : base -> t -> t
 
-(** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
 val is_prefix : Raw.t -> Raw.t -> bool
+(** return true if [ap1] is a prefix of [ap2]. returns true for equal access paths *)
 
 val pp_access : Format.formatter -> access -> unit
 
 val pp_access_list : Format.formatter -> access list -> unit
 
-(** extract a raw access path from its wrapper *)
 val extract : t -> Raw.t
+(** extract a raw access path from its wrapper *)
 
-(** return true if [t] is an exact representation of an access path, false if it's an abstraction *)
 val is_exact : t -> bool
+(** return true if [t] is an exact representation of an access path, false if it's an abstraction *)
 
+val ( <= ) : lhs:t -> rhs:t -> bool
 (** return true if \gamma(lhs) \subseteq \gamma(rhs) *)
-val (<=) : lhs:t -> rhs:t -> bool
 
 val pp_base : Format.formatter -> base -> unit
 

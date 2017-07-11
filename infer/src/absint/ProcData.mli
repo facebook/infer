@@ -9,7 +9,7 @@
 
 open! IStd
 
-type 'a t = { pdesc : Procdesc.t; tenv : Tenv.t; extras : 'a; }
+type 'a t = {pdesc: Procdesc.t; tenv: Tenv.t; extras: 'a}
 
 type no_extras
 

@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-
 module F = Format
 
 (** Wrappers for making pretty-printable modules *)
@@ -23,16 +22,20 @@ end
 
 module type PPSet = sig
   include Caml.Set.S
+
   val pp_element : F.formatter -> elt -> unit
+
   val pp : F.formatter -> t -> unit
 end
 
 module type PPMap = sig
   include Caml.Map.S
+
   val pp_key : F.formatter -> key -> unit
+
   val pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit
 end
 
-module MakePPSet (Ord : PrintableOrderedType) : (PPSet with type elt = Ord.t)
+module MakePPSet (Ord : PrintableOrderedType) : PPSet with type elt = Ord.t
 
-module MakePPMap (Ord : PrintableOrderedType) : (PPMap with type key = Ord.t)
+module MakePPMap (Ord : PrintableOrderedType) : PPMap with type key = Ord.t

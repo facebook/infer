@@ -11,11 +11,7 @@ open! IStd
 
 type t
 
-type compilation_data = {
-  dir : string;
-  command : string;
-  args : string;
-}
+type compilation_data = {dir: string; command: string; args: string}
 
 val empty : unit -> t
 
@@ -25,6 +21,6 @@ val iter : t -> (SourceFile.t -> compilation_data -> unit) -> unit
 
 val find : t -> SourceFile.t -> compilation_data
 
-val decode_json_file : t ->  [< `Escaped of string | `Raw of string ] -> unit
+val decode_json_file : t -> [< `Escaped of string | `Raw of string] -> unit
 
-val from_json_files :  [< `Escaped of string | `Raw of string ] list -> t
+val from_json_files : [< `Escaped of string | `Raw of string] list -> t

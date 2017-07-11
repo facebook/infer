@@ -10,6 +10,7 @@
 open! IStd
 
 (** Translate an enumeration declaration by adding it to the tenv and *)
+
 (** translating the code and adding it to a fake procdesc *)
 
 val enum_decl : Clang_ast_t.decl -> Typ.desc

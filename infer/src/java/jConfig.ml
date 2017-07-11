@@ -9,7 +9,6 @@
  *)
 
 open! IStd
-
 open Javalib_pack
 
 (** {2 Class names and types} *)
@@ -22,7 +21,7 @@ let infer_array_cl = builtins_package ^ ".InferArray"
 
 let infer_undefined_cl = builtins_package ^ ".InferUndefined"
 
-let obj_type = (JBasics.TObject (JBasics.TClass JBasics.java_lang_object))
+let obj_type = JBasics.TObject (JBasics.TClass JBasics.java_lang_object)
 
 let bool_type = JBasics.TBasic `Bool
 
@@ -42,9 +41,9 @@ let lock_cl = "java.util.concurrent.locks.Lock"
 
 let reentrant_rwlock_cl = "java.util.concurrent.locks.ReentrantReadWriteLock"
 
-let reentrant_rlock_cl = reentrant_rwlock_cl^"$ReadLock"
+let reentrant_rlock_cl = reentrant_rwlock_cl ^ "$ReadLock"
 
-let reentrant_wlock_cl = reentrant_rwlock_cl^"$WriteLock"
+let reentrant_wlock_cl = reentrant_rwlock_cl ^ "$WriteLock"
 
 let thread_class = "java.lang.Thread"
 
@@ -110,9 +109,10 @@ let long_code = "J"
 
 let short_code = "S"
 
-let class_code cl = "L"^cl
+let class_code cl = "L" ^ cl
 
 let errors_db_file = "errors.db"
+
 let main_errors_file = "Java_frontend.errors"
 
 (** {2 Flags } *)

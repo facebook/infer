@@ -15,15 +15,11 @@ open! IStd
 module L = Logging
 module F = Format
 
-
 (** Check whether an atom is used to mark an attribute *)
-let is_pred atom =
-  match atom with
-  | Sil.Apred _ | Anpred _ -> true
-  | _ -> false
+let is_pred atom = match atom with Sil.Apred _ | Anpred _ -> true | _ -> false
 
 (** Add an attribute associated to the argument expressions *)
-let add tenv ?(footprint = false) ?(polarity = true) prop attr args =
+let add tenv ?(footprint= false) ?(polarity= true) prop attr args =
   Prop.prop_atom_and tenv ~footprint prop
     (if polarity then Sil.Apred (attr, args) else Sil.Anpred (attr, args))
 
@@ -35,182 +31,185 @@ let attributes_in_same_category attr1 attr2 =
 (** Replace an attribute associated to the expression *)
 let add_or_replace_check_changed tenv check_attribute_change prop atom0 =
   match atom0 with
-  | Sil.Apred (att0, ((_ :: _) as exps0)) | Anpred (att0, ((_ :: _) as exps0)) ->
-      let pairs =
-        List.map ~f:(fun e -> (e, Prop.exp_normalize_prop tenv prop e)) exps0 in
-      let _, nexp = List.hd_exn pairs in (* len exps0 > 0 by match *)
+  | Sil.Apred (att0, (_ :: _ as exps0)) | Anpred (att0, (_ :: _ as exps0))
+   -> let pairs = List.map ~f:(fun e -> (e, Prop.exp_normalize_prop tenv prop e)) exps0 in
+      let _, nexp = List.hd_exn pairs in
+      (* len exps0 > 0 by match *)
       let natom = Sil.atom_replace_exp pairs atom0 in
       let atom_map = function
-        | Sil.Apred (att, exp :: _) | Anpred (att, exp :: _)
-          when Exp.equal nexp exp && attributes_in_same_category att att0 ->
-            check_attribute_change att att0;
-            natom
-        | atom ->
-            atom in
+        | Sil.Apred (att, exp :: _)
+        | Anpred (att, exp :: _)
+          when Exp.equal nexp exp && attributes_in_same_category att att0
+         -> check_attribute_change att att0 ; natom
+        | atom
+         -> atom
+      in
       let pi = prop.Prop.pi in
       let pi' = IList.map_changed atom_map pi in
-      if phys_equal pi pi'
-      then Prop.prop_atom_and tenv prop natom
+      if phys_equal pi pi' then Prop.prop_atom_and tenv prop natom
       else Prop.normalize tenv (Prop.set prop ~pi:pi')
-  | _ ->
-      prop
+  | _
+   -> prop
 
 let add_or_replace tenv prop atom =
   (* wrapper for the most common case: do nothing *)
-  let check_attr_changed = (fun _ _ -> ()) in
+  let check_attr_changed _ _ = () in
   add_or_replace_check_changed tenv check_attr_changed prop atom
 
 (** Get all the attributes of the prop *)
 let get_all (prop: 'a Prop.t) =
   let res = ref [] in
   let do_atom a = if is_pred a then res := a :: !res in
-  List.iter ~f:do_atom prop.pi;
+  List.iter ~f:do_atom prop.pi ;
   List.rev !res
 
 (** Get all the attributes of the prop *)
 let get_for_symb prop att =
-  List.filter ~f:(function
-      | Sil.Apred (att', _) | Anpred (att', _) -> PredSymb.equal att' att
-      | _ -> false
-    ) prop.Prop.pi
+  List.filter
+    ~f:(function Sil.Apred (att', _) | Anpred (att', _) -> PredSymb.equal att' att | _ -> false)
+    prop.Prop.pi
 
 (** Get the attribute associated to the expression, if any *)
 let get_for_exp tenv (prop: 'a Prop.t) exp =
   let nexp = Prop.exp_normalize_prop tenv prop exp in
   let atom_get_attr attributes atom =
     match atom with
-    | Sil.Apred (_, es) | Anpred (_, es)
-      when List.mem ~equal:Exp.equal es nexp -> atom :: attributes
-    | _ -> attributes in
+    | (Sil.Apred (_, es) | Anpred (_, es)) when List.mem ~equal:Exp.equal es nexp
+     -> atom :: attributes
+    | _
+     -> attributes
+  in
   List.fold ~f:atom_get_attr ~init:[] prop.pi
 
 let get tenv prop exp category =
   let atts = get_for_exp tenv prop exp in
   List.find
     ~f:(function
-        | Sil.Apred (att, _) | Anpred (att, _) ->
-            PredSymb.equal_category (PredSymb.to_category att) category
-        | _ -> false)
+        | Sil.Apred (att, _) | Anpred (att, _)
+         -> PredSymb.equal_category (PredSymb.to_category att) category
+        | _
+         -> false)
     atts
 
-let get_undef tenv prop exp =
-  get tenv prop exp ACundef
+let get_undef tenv prop exp = get tenv prop exp ACundef
 
-let get_resource tenv prop exp =
-  get tenv prop exp ACresource
+let get_resource tenv prop exp = get tenv prop exp ACresource
 
-let get_taint tenv prop exp =
-  get tenv prop exp ACtaint
+let get_taint tenv prop exp = get tenv prop exp ACtaint
 
-let get_autorelease tenv prop exp =
-  get tenv prop exp ACautorelease
+let get_autorelease tenv prop exp = get tenv prop exp ACautorelease
 
-let get_objc_null tenv prop exp =
-  get tenv prop exp ACobjc_null
+let get_objc_null tenv prop exp = get tenv prop exp ACobjc_null
 
-let get_div0 tenv prop exp =
-  get tenv prop exp ACdiv0
+let get_div0 tenv prop exp = get tenv prop exp ACdiv0
 
-let get_observer tenv prop exp =
-  get tenv prop exp ACobserver
+let get_observer tenv prop exp = get tenv prop exp ACobserver
 
-let get_retval tenv prop exp =
-  get tenv prop exp ACretval
+let get_retval tenv prop exp = get tenv prop exp ACretval
 
 let has_dangling_uninit tenv prop exp =
   let la = get_for_exp tenv prop exp in
-  List.exists ~f:(function
-      | Sil.Apred (a, _) -> PredSymb.equal a (Adangling DAuninit)
-      | _ -> false
-    ) la
+  List.exists
+    ~f:(function Sil.Apred (a, _) -> PredSymb.equal a (Adangling DAuninit) | _ -> false)
+    la
 
 let filter_atoms tenv ~f prop =
   let pi0 = prop.Prop.pi in
   let pi1 = IList.filter_changed f pi0 in
-  if phys_equal pi1 pi0 then
-    prop
-  else
-    Prop.normalize tenv (Prop.set prop ~pi:pi1)
+  if phys_equal pi1 pi0 then prop else Prop.normalize tenv (Prop.set prop ~pi:pi1)
 
 let remove tenv prop atom =
   if is_pred atom then
     let natom = Prop.atom_normalize_prop tenv prop atom in
     let f a = not (Sil.equal_atom natom a) in
     filter_atoms tenv ~f prop
-  else
-    prop
+  else prop
 
 (** Remove an attribute from all the atoms in the heap *)
 let remove_for_attr tenv prop att0 =
   let f = function
-    | Sil.Apred (att, _) | Anpred (att, _) -> not (PredSymb.equal att0 att)
-    | _ -> true in
+    | Sil.Apred (att, _) | Anpred (att, _)
+     -> not (PredSymb.equal att0 att)
+    | _
+     -> true
+  in
   filter_atoms tenv ~f prop
 
 let remove_resource tenv ra_kind ra_res =
   let f = function
-    | Sil.Apred (Aresource res_action, _) ->
-        PredSymb.compare_res_act_kind res_action.ra_kind ra_kind <> 0
+    | Sil.Apred (Aresource res_action, _)
+     -> PredSymb.compare_res_act_kind res_action.ra_kind ra_kind <> 0
         || PredSymb.compare_resource res_action.ra_res ra_res <> 0
-    | _ -> true in
+    | _
+     -> true
+  in
   filter_atoms tenv ~f
 
 (** Apply f to every resource attribute in the prop *)
 let map_resource tenv prop f =
   let attribute_map e = function
-    | PredSymb.Aresource ra -> PredSymb.Aresource (f e ra)
-    | att -> att in
+    | PredSymb.Aresource ra
+     -> PredSymb.Aresource (f e ra)
+    | att
+     -> att
+  in
   let atom_map = function
-    | Sil.Apred (att, ([e] as es)) -> Sil.Apred (attribute_map e att, es)
-    | Sil.Anpred (att, ([e] as es)) -> Sil.Anpred (attribute_map e att, es)
-    | atom -> atom in
+    | Sil.Apred (att, ([e] as es))
+     -> Sil.Apred (attribute_map e att, es)
+    | Sil.Anpred (att, ([e] as es))
+     -> Sil.Anpred (attribute_map e att, es)
+    | atom
+     -> atom
+  in
   let pi0 = prop.Prop.pi in
   let pi1 = IList.map_changed atom_map pi0 in
-  if phys_equal pi1 pi0 then
-    prop
-  else
-    Prop.normalize tenv (Prop.set prop ~pi:pi1)
+  if phys_equal pi1 pi0 then prop else Prop.normalize tenv (Prop.set prop ~pi:pi1)
 
 (* Replace an attribute OBJC_NULL($n1) with OBJC_NULL(var) when var = $n1, and also sets $n1 =
    0 *)
 let replace_objc_null tenv prop lhs_exp rhs_exp =
-  match get_objc_null tenv prop rhs_exp, rhs_exp with
-  | Some atom, Exp.Var _ ->
-      let prop = remove tenv prop atom in
+  match (get_objc_null tenv prop rhs_exp, rhs_exp) with
+  | Some atom, Exp.Var _
+   -> let prop = remove tenv prop atom in
       let prop = Prop.conjoin_eq tenv rhs_exp Exp.zero prop in
       let natom = Sil.atom_replace_exp [(rhs_exp, lhs_exp)] atom in
       add_or_replace tenv prop natom
-  | _ -> prop
+  | _
+   -> prop
 
 let rec nullify_exp_with_objc_null tenv prop exp =
   match exp with
-  | Exp.BinOp (_, exp1, exp2) ->
-      let prop' = nullify_exp_with_objc_null tenv prop exp1 in
+  | Exp.BinOp (_, exp1, exp2)
+   -> let prop' = nullify_exp_with_objc_null tenv prop exp1 in
       nullify_exp_with_objc_null tenv prop' exp2
-  | Exp.UnOp (_, exp, _) ->
-      nullify_exp_with_objc_null tenv prop exp
-  | Exp.Var _ ->
-      (match get_objc_null tenv prop exp with
-       | Some atom ->
-           let prop' = remove tenv prop atom in
-           Prop.conjoin_eq tenv exp Exp.zero prop'
-       | _ -> prop)
-  | _ -> prop
+  | Exp.UnOp (_, exp, _)
+   -> nullify_exp_with_objc_null tenv prop exp
+  | Exp.Var _ -> (
+    match get_objc_null tenv prop exp with
+    | Some atom
+     -> let prop' = remove tenv prop atom in
+        Prop.conjoin_eq tenv exp Exp.zero prop'
+    | _
+     -> prop )
+  | _
+   -> prop
 
 (** mark Exp.Var's or Exp.Lvar's as undefined *)
 let mark_vars_as_undefined tenv prop vars_to_mark callee_pname ret_annots loc path_pos =
   let att_undef = PredSymb.Aundef (callee_pname, ret_annots, loc, path_pos) in
   let mark_var_as_undefined exp prop =
     match exp with
-    | Exp.Var _ | Lvar _ -> add_or_replace tenv prop (Apred (att_undef, [exp]))
-    | _ -> prop in
+    | Exp.Var _ | Lvar _
+     -> add_or_replace tenv prop (Apred (att_undef, [exp]))
+    | _
+     -> prop
+  in
   List.fold ~f:(fun prop id -> mark_var_as_undefined id prop) ~init:prop vars_to_mark
 
 (** type for arithmetic problems *)
 type arith_problem =
   (* division by zero *)
   | Div0 of Exp.t
-
   (* unary minus of unsigned type applied to the given expression *)
   | UminusUnsigned of Exp.t * Typ.t
 
@@ -221,64 +220,92 @@ let find_arithmetic_problem tenv proc_node_session prop exp =
   let res = ref prop in
   let check_zero e =
     match Prop.exp_normalize_prop tenv prop e with
-    | Exp.Const c when Const.iszero_int_float c -> true
-    | _ ->
-        res := add_or_replace tenv !res (Apred (Adiv0 proc_node_session, [e]));
-        false in
+    | Exp.Const c when Const.iszero_int_float c
+     -> true
+    | _
+     -> res := add_or_replace tenv !res (Apred (Adiv0 proc_node_session, [e])) ;
+        false
+  in
   let rec walk = function
-    | Exp.Var _ -> ()
-    | Exp.UnOp (Unop.Neg, e, Some (
-        ({Typ.desc=Tint
-              (Typ.IUChar | Typ.IUInt | Typ.IUShort | Typ.IULong | Typ.IULongLong)} as typ))) ->
-        uminus_unsigned := (e, typ) :: !uminus_unsigned
-    | Exp.UnOp(_, e, _) -> walk e
-    | Exp.BinOp(op, e1, e2) ->
-        if Binop.equal op Binop.Div || Binop.equal op Binop.Mod
-        then exps_divided := e2 :: !exps_divided;
-        walk e1; walk e2
-    | Exp.Exn _ -> ()
-    | Exp.Closure _ -> ()
-    | Exp.Const _ -> ()
-    | Exp.Cast (_, e) -> walk e
-    | Exp.Lvar _ -> ()
-    | Exp.Lfield (e, _, _) -> walk e
-    | Exp.Lindex (e1, e2) -> walk e1; walk e2
-    | Exp.Sizeof {dynamic_length=None} -> ()
-    | Exp.Sizeof {dynamic_length=Some len} -> walk len in
-  walk exp;
+    | Exp.Var _
+     -> ()
+    | Exp.UnOp
+        ( Unop.Neg
+        , e
+        , Some
+            ( {Typ.desc= Tint (Typ.IUChar | Typ.IUInt | Typ.IUShort | Typ.IULong | Typ.IULongLong)}
+            as typ ) )
+     -> uminus_unsigned := (e, typ) :: !uminus_unsigned
+    | Exp.UnOp (_, e, _)
+     -> walk e
+    | Exp.BinOp (op, e1, e2)
+     -> if Binop.equal op Binop.Div || Binop.equal op Binop.Mod then exps_divided
+          := e2 :: !exps_divided ;
+        walk e1 ;
+        walk e2
+    | Exp.Exn _
+     -> ()
+    | Exp.Closure _
+     -> ()
+    | Exp.Const _
+     -> ()
+    | Exp.Cast (_, e)
+     -> walk e
+    | Exp.Lvar _
+     -> ()
+    | Exp.Lfield (e, _, _)
+     -> walk e
+    | Exp.Lindex (e1, e2)
+     -> walk e1 ; walk e2
+    | Exp.Sizeof {dynamic_length= None}
+     -> ()
+    | Exp.Sizeof {dynamic_length= Some len}
+     -> walk len
+  in
+  walk exp ;
   let problem_opt =
     match (List.find ~f:check_zero !exps_divided, !uminus_unsigned) with
-    | Some e, _ ->
-        Some (Div0 e)
-    | None, (e, t):: _ ->
-        Some (UminusUnsigned (e, t))
-    | None, [] ->
-        None in
-  problem_opt, !res
+    | Some e, _
+     -> Some (Div0 e)
+    | None, (e, t) :: _
+     -> Some (UminusUnsigned (e, t))
+    | None, []
+     -> None
+  in
+  (problem_opt, !res)
 
 (** Deallocate the stack variables in [pvars], and replace them by normal variables.
     Return the list of stack variables whose address was still present after deallocation. *)
 let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
   let filter = function
-    | Sil.Hpointsto (Exp.Lvar v, _, _) ->
-        List.exists ~f:(Pvar.equal v) pvars
-    | _ -> false in
+    | Sil.Hpointsto (Exp.Lvar v, _, _)
+     -> List.exists ~f:(Pvar.equal v) pvars
+    | _
+     -> false
+  in
   let sigma_stack, sigma_other = List.partition_tf ~f:filter p.sigma in
-  let fresh_address_vars = ref [] in (* fresh vars substituted for the address of stack vars *)
-  let stack_vars_address_in_post = ref [] in (* stack vars whose address is still present *)
-  let exp_replace = List.map ~f:(function
-      | Sil.Hpointsto (Exp.Lvar v, _, _) ->
-          let freshv = Ident.create_fresh Ident.kprimed in
-          fresh_address_vars := (v, freshv) :: !fresh_address_vars;
-          (Exp.Lvar v, Exp.Var freshv)
-      | _ -> assert false) sigma_stack in
+  let fresh_address_vars = ref [] in
+  (* fresh vars substituted for the address of stack vars *)
+  let stack_vars_address_in_post = ref [] in
+  (* stack vars whose address is still present *)
+  let exp_replace =
+    List.map
+      ~f:(function
+          | Sil.Hpointsto (Exp.Lvar v, _, _)
+           -> let freshv = Ident.create_fresh Ident.kprimed in
+              fresh_address_vars := (v, freshv) :: !fresh_address_vars ;
+              (Exp.Lvar v, Exp.Var freshv)
+          | _
+           -> assert false)
+      sigma_stack
+  in
   let pi1 = List.map ~f:(fun (id, e) -> Sil.Aeq (Exp.Var id, e)) (Sil.sub_to_list p.sub) in
   let pi = List.map ~f:(Sil.atom_replace_exp exp_replace) (p.pi @ pi1) in
   let p' =
     Prop.normalize tenv
-      (Prop.set p
-         ~sub:Sil.exp_sub_empty
-         ~sigma: (Prop.sigma_replace_exp tenv exp_replace sigma_other)) in
+      (Prop.set p ~sub:Sil.exp_sub_empty
+         ~sigma:(Prop.sigma_replace_exp tenv exp_replace sigma_other))
+  in
   let p'' =
     let res = ref p' in
     let p'_fav = Prop.prop_fav p' in
@@ -286,60 +313,68 @@ let deallocate_stack_vars tenv (p: 'a Prop.t) pvars =
       (* static locals are not stack-allocated *)
       if not (Pvar.is_static_local v) then
         (* the address of a de-allocated stack var in in the post *)
-        if Sil.fav_mem p'_fav freshv then
-          begin
-            stack_vars_address_in_post := v :: !stack_vars_address_in_post;
-            let pred = Sil.Apred (Adangling DAaddr_stack_var, [Exp.Var freshv]) in
-            res := add_or_replace tenv !res pred
-          end in
-    List.iter ~f:do_var !fresh_address_vars;
-    !res in
+        if Sil.fav_mem p'_fav freshv then (
+          stack_vars_address_in_post := v :: !stack_vars_address_in_post ;
+          let pred = Sil.Apred (Adangling DAaddr_stack_var, [Exp.Var freshv]) in
+          res := add_or_replace tenv !res pred )
+    in
+    List.iter ~f:do_var !fresh_address_vars ;
+    !res
+  in
   (* Filter out local addresses in p'' *)
-  let filtered_pi, changed = List.fold_right p''.pi ~init:([], false)
-      ~f:(fun a (filtered, changed) ->
-          if Sil.atom_has_local_addr a then
-            filtered, true
-          else
-            a :: filtered, changed
-        ) in
+  let filtered_pi, changed =
+    List.fold_right p''.pi ~init:([], false) ~f:(fun a (filtered, changed) ->
+        if Sil.atom_has_local_addr a then (filtered, true) else (a :: filtered, changed) )
+  in
   (* Avoid normalization when p'' does not change *)
-  let p''' = if changed then Prop.normalize tenv (Prop.set p'' ~pi:filtered_pi)
-    else p'' in
-  !stack_vars_address_in_post, List.fold ~f:(Prop.prop_atom_and tenv) ~init:p''' pi
+  let p''' = if changed then Prop.normalize tenv (Prop.set p'' ~pi:filtered_pi) else p'' in
+  (!stack_vars_address_in_post, List.fold ~f:(Prop.prop_atom_and tenv) ~init:p''' pi)
 
 (** Input of this method is an exp in a prop. Output is a formal variable or path from a
     formal variable that is equal to the expression,
     or the OBJC_NULL attribute of the expression. *)
 let find_equal_formal_path tenv e prop =
   let rec find_in_sigma e seen_hpreds =
-    List.fold_right ~f:(
-      fun hpred res ->
+    List.fold_right
+      ~f:(fun hpred res ->
         if List.mem ~equal:Sil.equal_hpred seen_hpreds hpred then None
         else
           let seen_hpreds = hpred :: seen_hpreds in
           match res with
-          | Some _ -> res
+          | Some _
+           -> res
           | None ->
-              match hpred with
-              | Sil.Hpointsto (Exp.Lvar pvar1, Sil.Eexp (exp2, Sil.Iformal(_, _) ), _)
-                when Exp.equal exp2 e &&
-                     (Pvar.is_local pvar1 || Pvar.is_seed pvar1) ->
-                  Some (Exp.Lvar pvar1)
-              | Sil.Hpointsto (exp1, Sil.Estruct (fields, _), _) ->
-                  List.fold_right ~f:(fun (field, strexp) res ->
-                      match res with
-                      | Some _ -> res
-                      | None ->
-                          match strexp with
-                          | Sil.Eexp (exp2, _) when Exp.equal exp2 e ->
-                              (match find_in_sigma exp1 seen_hpreds with
-                               | Some vfs -> Some (Exp.Lfield (vfs, field, Typ.mk Tvoid))
-                               | None -> None)
-                          | _ -> None) fields ~init:None
-              | _ -> None) prop.Prop.sigma ~init:None in
+            match hpred with
+            | Sil.Hpointsto (Exp.Lvar pvar1, Sil.Eexp (exp2, Sil.Iformal (_, _)), _)
+              when Exp.equal exp2 e && (Pvar.is_local pvar1 || Pvar.is_seed pvar1)
+             -> Some (Exp.Lvar pvar1)
+            | Sil.Hpointsto (exp1, Sil.Estruct (fields, _), _)
+             -> List.fold_right
+                  ~f:(fun (field, strexp) res ->
+                    match res with
+                    | Some _
+                     -> res
+                    | None ->
+                      match strexp with
+                      | Sil.Eexp (exp2, _) when Exp.equal exp2 e -> (
+                        match find_in_sigma exp1 seen_hpreds with
+                        | Some vfs
+                         -> Some (Exp.Lfield (vfs, field, Typ.mk Tvoid))
+                        | None
+                         -> None )
+                      | _
+                       -> None)
+                  fields ~init:None
+            | _
+             -> None)
+      prop.Prop.sigma ~init:None
+  in
   match find_in_sigma e [] with
-  | Some vfs -> Some vfs
+  | Some vfs
+   -> Some vfs
   | None ->
-      match get_objc_null tenv prop e with
-      | Some (Apred (Aobjc_null, [_; vfs])) -> Some vfs
-      | _ -> None
+    match get_objc_null tenv prop e with
+    | Some Apred (Aobjc_null, [_; vfs])
+     -> Some vfs
+    | _
+     -> None

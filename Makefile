@@ -113,27 +113,15 @@ fb-setup:
 
 OCAMLFORMAT_EXE=facebook/dependencies/ocamlformat/src/_build/opt/ocamlformat.exe
 
+.PHONY: fmt
+fmt:
+	parallel $(OCAMLFORMAT_EXE) -i -- $$(git diff --name-only $$(git merge-base origin/master HEAD) | grep "\.mli\?$$")
+
 SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -path facebook/dependencies \) -not -prune -or -type f -and -name '*'.ml -or -name '*'.mli 2>/dev/null)
 
-.PHONY: fmt_all_ml
-fmt_all_ml:
-	parallel $(OCAMLFORMAT_EXE) --no-warn-error -i -- $(SRC_ML)
-
-SRC_RE:=$(shell find infer/src -name '*'.re 2>/dev/null)
-SRC_REI:=$(shell find infer/src -name '*'.rei 2>/dev/null)
-SRC_RE_ML:=$(patsubst %.re,%.ml,$(SRC_RE))
-SRC_REI_MLI:=$(patsubst %.rei,%.mli,$(SRC_REI))
-
-%.ml: %.re
-	refmt --print=binary_reason $< | $(OCAMLFORMAT_EXE) $< --reason-impl -o $@
-
-%.mli: %.rei
-	refmt --print=binary_reason $< | $(OCAMLFORMAT_EXE) $< --reason-intf -o $@
-
 .PHONY: fmt_all
-fmt_all: fmt_all_ml $(SRC_RE_ML) $(SRC_REI_MLI)
-	git add $(SRC_RE_ML) $(SRC_REI_MLI)
-	rm -f $(SRC_RE) $(SRC_REI)
+fmt_all:
+	parallel $(OCAMLFORMAT_EXE) -i -- $(SRC_ML)
 
 .PHONY: src_build
 src_build:
@@ -321,7 +309,7 @@ endif
 
 .PHONY: check_missing_mli
 check_missing_mli:
-	$(QUIET)for x in $$(find $(INFER_DIR)/src -name "*.ml" -or -name "*.re"); do \
+	$(QUIET)for x in $$(find $(INFER_DIR)/src -name "*.ml"); do \
 	    test -f "$$x"i || echo Missing "$$x"i; done
 
 .PHONY: toplevel

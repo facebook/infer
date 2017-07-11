@@ -18,27 +18,27 @@ type initial
 (** execution environment: a global call graph, and map from procedure names to cfg and tenv *)
 type t
 
+val add_cg : initial -> DB.source_dir -> unit
 (** add call graph from the source dir in the spec db,
     with relative tenv and cfg, to the execution environment *)
-val add_cg : initial -> DB.source_dir -> unit
 
-(** Create an exe_env from a cluster *)
 val from_cluster : Cluster.t -> t
+(** Create an exe_env from a cluster *)
 
-(** get the global call graph *)
 val get_cg : t -> Cg.t
+(** get the global call graph *)
 
-(** return the source file associated to the procedure *)
 val get_source : t -> Typ.Procname.t -> SourceFile.t option
+(** return the source file associated to the procedure *)
 
-(** return the type environment associated to the procedure *)
 val get_tenv : t -> Typ.Procname.t -> Tenv.t
+(** return the type environment associated to the procedure *)
 
-(** return the cfg associated to the procedure *)
 val get_cfg : t -> Typ.Procname.t -> Cfg.cfg option
+(** return the cfg associated to the procedure *)
 
-(** return the proc desc associated to the procedure *)
 val get_proc_desc : t -> Typ.Procname.t -> Procdesc.t option
+(** return the proc desc associated to the procedure *)
 
-(** [iter_files f exe_env] applies [f] to the source file and tenv and cfg for each file in [exe_env] *)
 val iter_files : (SourceFile.t -> Cfg.cfg -> unit) -> t -> unit
+(** [iter_files f exe_env] applies [f] to the source file and tenv and cfg for each file in [exe_env] *)

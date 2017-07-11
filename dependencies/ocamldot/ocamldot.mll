@@ -320,7 +320,7 @@ let dir_to_mod_names graph dir =
   fold_dir (fun dir_to_mod_names path ->
     let file = Filename.basename path in
     let mod_name = String.capitalize (try Filename.chop_extension file with _ -> file) in
-    if ((Filename.check_suffix file ".ml" || Filename.check_suffix file ".re")
+    if ((Filename.check_suffix file ".ml")
         && StringSet.mem mod_name nodes)
     then
       let dir = Filename.dirname path in

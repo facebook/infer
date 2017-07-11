@@ -9,17 +9,21 @@
 
 open! IStd
 
-module type Spec =
-sig
+module type Spec = sig
   type astate
+
   val initial : astate
+
   val exec_instr :
-    astate ->
-    Sil.instr -> Procdesc.Node.nodekind -> Typ.Procname.t -> Tenv.t -> astate
+    astate -> Sil.instr -> Procdesc.Node.nodekind -> Typ.Procname.t -> Tenv.t -> astate
+
   val report : astate -> Location.t -> Typ.Procname.t -> unit
+
   val compare : astate -> astate -> int
 end
 
-module type S = sig val checker : Callbacks.proc_callback_t end
+module type S = sig
+  val checker : Callbacks.proc_callback_t
+end
 
-module Make : functor (Spec : Spec) -> S
+module Make (Spec : Spec) : S

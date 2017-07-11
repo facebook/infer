@@ -9,12 +9,10 @@
  *)
 
 open! IStd
-
 open Javalib_pack
 
-
-(** Translate an item annotation. *)
 val translate_item : (JBasics.annotation * Javalib.visibility) list -> Annot.Item.t
+(** Translate an item annotation. *)
 
-(** Translate a method annotation. *)
 val translate_method : Javalib.method_annotations -> Annot.Method.t
+(** Translate a method annotation. *)

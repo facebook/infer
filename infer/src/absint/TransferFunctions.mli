@@ -24,22 +24,22 @@ module type S = sig
   (** type of the instructions the transfer functions operate on *)
   type instr
 
-  (** {A} instr {A'}. [node] is the node of the current instruction *)
   val exec_instr : Domain.astate -> extras ProcData.t -> CFG.node -> instr -> Domain.astate
+  (** {A} instr {A'}. [node] is the node of the current instruction *)
 end
 
 module type SIL = sig
-  include (S with type instr := Sil.instr)
+  include S with type instr := Sil.instr
 end
 
 module type HIL = sig
-  include (S with type instr := HilInstr.t)
+  include S with type instr := HilInstr.t
 end
 
 module type MakeSIL = functor (C : ProcCfg.S) -> sig
-  include (SIL with module CFG = C)
+  include SIL with module CFG = C
 end
 
 module type MakeHIL = functor (C : ProcCfg.S) -> sig
-  include (HIL with module CFG = C)
+  include HIL with module CFG = C
 end

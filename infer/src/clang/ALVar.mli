@@ -6,24 +6,14 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
 open! IStd
 
-type keyword =
-  | Doc_url
-  | Message
-  | Mode
-  | Name
-  | Report_when
-  | Severity
-  | Suggestion
+type keyword = Doc_url | Message | Mode | Name | Report_when | Severity | Suggestion
 
 type formula_id = Formula_id of string
 
-type alexp =
-  | Const of string
-  | Regexp of string
-  | Var of string
-  | FId of formula_id
+type alexp = Const of string | Regexp of string | Var of string | FId of formula_id
 
 type t = alexp
 

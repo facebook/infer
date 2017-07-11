@@ -11,12 +11,10 @@ open! IStd
 
 (** Object representing the status of the join operation *)
 
-type mode =
-  | Pre
-  | Post
-[@@deriving compare]
+type mode = Pre | Post [@@deriving compare]
 
 val equal_mode : mode -> mode -> bool
 
 val get_footprint : unit -> bool
+
 val set_footprint : bool -> unit

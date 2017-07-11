@@ -15,7 +15,6 @@ module type Payload = sig
   val update_payload : payload -> Specs.summary -> Specs.summary
 
   val read_payload : Specs.summary -> payload option
-
 end
 
 module type S = sig
@@ -24,19 +23,17 @@ module type S = sig
   val update_summary : payload -> Specs.summary -> Specs.summary
 
   val read_summary : Procdesc.t -> Typ.Procname.t -> payload option
-
 end
 
 module Make (P : Payload) : S with type payload = P.payload = struct
-
   type payload = P.payload
 
-  let update_summary payload summary =
-    P.update_payload payload summary
+  let update_summary payload summary = P.update_payload payload summary
 
   let read_summary caller_pdesc callee_pname =
     match Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc callee_pname with
-    | None -> None
-    | Some summary -> P.read_payload summary
-
+    | None
+     -> None
+    | Some summary
+     -> P.read_payload summary
 end

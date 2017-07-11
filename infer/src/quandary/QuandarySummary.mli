@@ -9,18 +9,16 @@
 
 open! IStd
 
-
 (** summary type for Quandary taint analysis *)
 
 module F = Format
 
-module Java : module type of (AccessTree.Make(JavaTrace))
-module Clang : module type of (AccessTree.Make(ClangTrace))
+module Java : module type of AccessTree.Make (JavaTrace)
+
+module Clang : module type of AccessTree.Make (ClangTrace)
 
 module AccessTree : sig
-  type t =
-    | Java of Java.t
-    | Clang of Clang.t
+  type t = Java of Java.t | Clang of Clang.t
 end
 
 type t = AccessTree.t

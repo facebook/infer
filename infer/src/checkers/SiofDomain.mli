@@ -9,9 +9,9 @@
 
 open! IStd
 
-module VarNames : module type of AbstractDomain.FiniteSet(String)
+module VarNames : module type of AbstractDomain.FiniteSet (String)
 
-module BottomSiofTrace : module type of AbstractDomain.BottomLifted(SiofTrace)
+module BottomSiofTrace : module type of AbstractDomain.BottomLifted (SiofTrace)
 
 (* The domain for the analysis is:
 
@@ -28,9 +28,8 @@ module BottomSiofTrace : module type of AbstractDomain.BottomLifted(SiofTrace)
    - On the other hand, the set of variables that are guaranteed to be initialized when the function
    terminates (even before main() has started). For instance, this is the case for
    std::ios_base::Init::Init(). *)
-include module type of AbstractDomain.Pair
-    (AbstractDomain.BottomLifted(SiofTrace))
-    (VarNames)
 
-(** group together procedure-local accesses *)
+include module type of AbstractDomain.Pair (AbstractDomain.BottomLifted (SiofTrace)) (VarNames)
+
 val normalize : astate -> astate
+(** group together procedure-local accesses *)

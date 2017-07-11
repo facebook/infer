@@ -12,18 +12,18 @@ open! IStd
 module type Kind = sig
   include TraceElem.Kind
 
+  val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * IntSet.t) option
   (** return Some kind if the given procname/actuals are a sink, None otherwise *)
-  val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * IntSet.t)  option
 end
 
 module type S = sig
   include TraceElem.S
 
-  (** return Some sink if the given call site/actuals are a sink, None otherwise *)
   val get : CallSite.t -> HilExp.t list -> Tenv.t -> t option
+  (** return Some sink if the given call site/actuals are a sink, None otherwise *)
 
-  (** return the indexes where taint can flow into the sink *)
   val indexes : t -> IntSet.t
+  (** return the indexes where taint can flow into the sink *)
 end
 
 module Make (Kind : Kind) : S with module Kind = Kind

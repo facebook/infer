@@ -8,28 +8,22 @@
  *)
 
 open! IStd
-
 module F = Format
 
 (* for now this is just a call site, but in the future we may add input access path, output kind,
    etc. depending on what we need *)
-type t =
-  {
-    site : CallSite.t;
-  }
-[@@deriving compare]
+type t = {site: CallSite.t} [@@deriving compare]
 
-let make site =
-  { site }
+let make site = {site}
 
-let site t =
-  t.site
+let site t = t.site
 
-let pp fmt s =
-  F.fprintf fmt "%a" CallSite.pp s.site
+let pp fmt s = F.fprintf fmt "%a" CallSite.pp s.site
 
-module Set = PrettyPrintable.MakePPSet(struct
-    type nonrec t = t
-    let compare = compare
-    let pp = pp
-  end)
+module Set = PrettyPrintable.MakePPSet (struct
+  type nonrec t = t
+
+  let compare = compare
+
+  let pp = pp
+end)

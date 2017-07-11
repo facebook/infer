@@ -9,17 +9,13 @@
 
 open! IStd
 
-val location_from_stmt :
-  CLintersContext.context -> Clang_ast_t.stmt -> Location.t
+val location_from_stmt : CLintersContext.context -> Clang_ast_t.stmt -> Location.t
 
-val location_from_dinfo :
-  CLintersContext.context -> Clang_ast_t.decl_info -> Location.t
+val location_from_dinfo : CLintersContext.context -> Clang_ast_t.decl_info -> Location.t
 
-val location_from_an :
-  CLintersContext.context -> Ctl_parser_types.ast_node -> Location.t
+val location_from_an : CLintersContext.context -> Ctl_parser_types.ast_node -> Location.t
 
-val location_from_decl :
-  CLintersContext.context -> Clang_ast_t.decl -> Location.t
+val location_from_decl : CLintersContext.context -> Clang_ast_t.decl -> Location.t
 
 val ivar_name : Ctl_parser_types.ast_node -> string
 

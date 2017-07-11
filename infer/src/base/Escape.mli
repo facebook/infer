@@ -12,23 +12,22 @@ open! IStd
 (** Escape a string for use in a CSV or XML file: replace reserved
     characters with escape sequences *)
 
-(** escape a string specifying the per character escaping function *)
 val escape_map : (char -> string option) -> string -> string
+(** escape a string specifying the per character escaping function *)
 
-(** escape a string to be used in a dotty file *)
 val escape_dotty : string -> string
+(** escape a string to be used in a dotty file *)
 
-(** escape a string to be used in a csv file *)
 val escape_csv : string -> string
+(** escape a string to be used in a csv file *)
 
-(** escape a path replacing the directory separator with an underscore *)
 val escape_path : string -> string
+(** escape a path replacing the directory separator with an underscore *)
 
-(** escape a string to be used in an xml file *)
 val escape_xml : string -> string
-
+(** escape a string to be used in an xml file *)
 
 val escape_url : string -> string
 
-(** escape a string to be used as a file name *)
 val escape_filename : string -> string
+(** escape a string to be used as a file name *)

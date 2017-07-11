@@ -9,4 +9,4 @@
 
 open! IStd
 
-module CTrans_funct(F: CModule_type.CFrontend) : CModule_type.CTranslation
+module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation

@@ -9,10 +9,10 @@
 
 open! IStd
 
-(** Given decl, return its procname. This function should be used for all procedures
-    present in original AST *)
 val from_decl :
   CFrontend_config.translation_unit_context -> ?tenv:Tenv.t -> Clang_ast_t.decl -> Typ.Procname.t
+(** Given decl, return its procname. This function should be used for all procedures
+    present in original AST *)
 
 (** WARNING: functions from this module should not be used if full decl is available in AST *)
 module NoAstDecl : sig
@@ -21,17 +21,16 @@ module NoAstDecl : sig
 
   val cpp_method_of_string : Tenv.t -> Typ.Name.t -> string -> Typ.Procname.t
 
-  val objc_method_of_string_kind : Typ.Name.t -> string -> Typ.Procname.objc_cpp_method_kind ->
-    Typ.Procname.t
-
+  val objc_method_of_string_kind :
+    Typ.Name.t -> string -> Typ.Procname.objc_cpp_method_kind -> Typ.Procname.t
 end
 
+val mk_fresh_block_procname : Typ.Procname.t -> Typ.Procname.t
 (** Makes a fresh name for a block defined inside the defining procedure.
     It updates the global block_counter *)
-val mk_fresh_block_procname : Typ.Procname.t -> Typ.Procname.t
 
+val get_next_block_pvar : Typ.Procname.t -> Pvar.t
 (** Returns the next fresh name for a block defined inside the defining procedure
     It does not update the global block_counter *)
-val get_next_block_pvar : Typ.Procname.t -> Pvar.t
 
 val reset_block_counter : unit -> unit

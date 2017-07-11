@@ -8,11 +8,9 @@
  *)
 
 open! IStd
-
 module F = Format
 
 (** List of annotations that should be considered aliases of @ThreadSafe *)
 module AnnotationAliases : sig
-
   val of_json : Yojson.Basic.json -> string list
 end

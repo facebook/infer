@@ -138,28 +138,7 @@ module MF = MarkupFormatter
 
 - Use the `_hum` suffix to flag functions that output human-readable strings.
 
-- Follow the ocp-indent style in infer/.ocpindent for indentation.
-
-- Spaces around binary operators, e.g., `let x = a + 5`.
-
-- Spaces around parentheses, no space inside parentheses.
-
-- Spaces around braces and brackets, spaces inside braces and brackets.
-
-- Space after `,` and `;`, e.g. `let (a, b) = ({ foo = 4; }, ())`.
-
-- Terminate multi-line values such as lists and records with `;` so that it's easy to add new lines
-  without modifying existing ones. For instance:
-```OCaml
-let foo = [
-  value1;
-  value2;
-]
-```
-
-### Reason
-
-Follow `refmt`.
+- Format code with ocamlformat.
 
 ### C/C++/Objective-C
 

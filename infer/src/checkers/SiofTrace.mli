@@ -9,7 +9,7 @@
 
 open! IStd
 
-module GlobalsAccesses : PrettyPrintable.PPSet with type elt = (Pvar.t * Location.t)
+module GlobalsAccesses : PrettyPrintable.PPSet with type elt = Pvar.t * Location.t
 
 include SinkTrace.S with type Sink.Kind.t = GlobalsAccesses.t
 

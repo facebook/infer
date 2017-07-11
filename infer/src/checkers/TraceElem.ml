@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-
 module F = Format
 
 module type Kind = sig
@@ -23,9 +22,11 @@ module type S = sig
   module Kind : Kind
 
   val call_site : t -> CallSite.t
+
   val kind : t -> Kind.t
 
   val make : ?indexes:IntSet.t -> Kind.t -> CallSite.t -> t
+
   val with_callsite : t -> CallSite.t -> t
 
   val pp : F.formatter -> t -> unit

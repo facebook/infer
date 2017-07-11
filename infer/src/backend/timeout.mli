@@ -11,11 +11,11 @@ open! IStd
 
 (** Handle timeout events *)
 
-(** Execute the function up to a given timeout. *)
 val exe_timeout : ('a -> unit) -> 'a -> SymOp.failure_kind option
+(** Execute the function up to a given timeout. *)
 
-(** Resume a previously suspended timeout. *)
 val resume_previous_timeout : unit -> unit
+(** Resume a previously suspended timeout. *)
 
-(** Suspend the current timeout. It must be resumed later. *)
 val suspend_existing_timeout : keep_symop_total:bool -> unit
+(** Suspend the current timeout. It must be resumed later. *)

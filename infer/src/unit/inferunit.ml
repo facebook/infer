@@ -13,21 +13,22 @@ open! IStd
 
 let () =
   let open OUnit2 in
-  let tests = [
-    AbstractInterpreterTests.tests;
-    AccessPathTests.tests;
-    AccessTreeTests.tests;
-    AddressTakenTests.tests;
-    BoundedCallTreeTests.tests;
-    CopyPropagationTests.tests;
-    DifferentialTests.tests;
-    DifferentialFiltersTests.tests;
-    ProcCfgTests.tests;
-    LivenessTests.tests;
-    SchedulerTests.tests;
-    StacktraceTests.tests;
-    TaintTests.tests;
-    TraceTests.tests;
-  ] @ ClangTests.tests in
+  let tests =
+    [ AbstractInterpreterTests.tests
+    ; AccessPathTests.tests
+    ; AccessTreeTests.tests
+    ; AddressTakenTests.tests
+    ; BoundedCallTreeTests.tests
+    ; CopyPropagationTests.tests
+    ; DifferentialTests.tests
+    ; DifferentialFiltersTests.tests
+    ; ProcCfgTests.tests
+    ; LivenessTests.tests
+    ; SchedulerTests.tests
+    ; StacktraceTests.tests
+    ; TaintTests.tests
+    ; TraceTests.tests ]
+    @ ClangTests.tests
+  in
   let test_suite = "all" >::: tests in
   OUnit2.run_test_tt_main test_suite

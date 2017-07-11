@@ -12,13 +12,16 @@ open! IStd
 (** tree of (trace, access path) associations organized by structure of access paths *)
 module type S = sig
   module TraceDomain : AbstractDomain.WithBottom
+
   module AccessMap = AccessPath.AccessMap
   module BaseMap = AccessPath.BaseMap
 
   type node = TraceDomain.astate * tree
+
   and tree =
-    | Subtree of node AccessMap.t (** map from access -> nodes. a leaf is encoded as an empty map *)
-    | Star (** special leaf for starred access paths *)
+    | Subtree of node AccessMap.t
+        (** map from access -> nodes. a leaf is encoded as an empty map *)
+    | Star  (** special leaf for starred access paths *)
 
   (** map from base var -> access subtree. Here's how to represent a few different kinds of
       trace * access path associations:
@@ -38,36 +41,36 @@ module type S = sig
 
   val make_node : TraceDomain.astate -> node AccessMap.t -> node
 
-  (** for testing only *)
   val make_access_node : TraceDomain.astate -> AccessPath.access -> TraceDomain.astate -> node
+  (** for testing only *)
 
-  (** create a leaf node with no successors *)
   val make_normal_leaf : TraceDomain.astate -> node
+  (** create a leaf node with no successors *)
 
-  (** create a leaf node with a wildcard successor *)
   val make_starred_leaf : TraceDomain.astate -> node
+  (** create a leaf node with a wildcard successor *)
 
-  (** retrieve the node associated with the given access path *)
   val get_node : AccessPath.t -> t -> node option
+  (** retrieve the node associated with the given access path *)
 
-  (** retrieve the trace associated with the given access path *)
   val get_trace : AccessPath.t -> t -> TraceDomain.astate option
+  (** retrieve the trace associated with the given access path *)
 
+  val add_node : AccessPath.t -> node -> t -> t
   (** add the given access path to the tree and associate its last access with with the given node.
       if any of the accesses in the path are not already present in the tree, they will be added
       with with empty traces associated with each of the inner nodes. *)
-  val add_node : AccessPath.t -> node -> t -> t
 
+  val add_trace : AccessPath.t -> TraceDomain.astate -> t -> t
   (** add the given access path to the tree and associate its last access with with the given trace.
       if any of the accesses in the path are not already present in the tree, they will be added
       with with empty traces associated with each of the inner nodes. *)
-  val add_trace : AccessPath.t -> TraceDomain.astate -> t -> t
 
-  (** join two nodes *)
   val node_join : node -> node -> node
+  (** join two nodes *)
 
-  (** apply a function to each (access path, node) pair in the tree. *)
   val fold : ('a -> AccessPath.t -> node -> 'a) -> t -> 'a -> 'a
+  (** apply a function to each (access path, node) pair in the tree. *)
 
   val trace_fold : ('a -> AccessPath.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
 

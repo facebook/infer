@@ -8,28 +8,26 @@
  *)
 
 open! IStd
-
 module F = Format
 module L = Logging
 
 (* Extremely simple abstraction of resources: count the number of acquired resources. If there's
    not a corresponding number of releases, there may be a leak. *)
-type astate = int (* 2(a) *)
+type astate = int
 
+(* 2(a) *)
 (* For now, type of abstract state and summary are the same *)
-type summary = astate (* 4(a) *)
+type summary = astate
 
-let (<=) ~lhs ~rhs =
-  lhs <= rhs
+(* 4(a) *)
 
-let join =
-  Pervasives.max
+let ( <= ) ~lhs ~rhs = lhs <= rhs
 
-let widen ~prev ~next ~num_iters:_ =
-  join prev next
+let join = Pervasives.max
 
-let pp fmt astate =
-  F.fprintf fmt "Resource count: %d" astate
+let widen ~prev ~next ~num_iters:_ = join prev next
+
+let pp fmt astate = F.fprintf fmt "Resource count: %d" astate
 
 (* At the beginning of a procedure, assume no resources are held *)
 let initial = 0

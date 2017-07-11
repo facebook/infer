@@ -12,66 +12,66 @@ open! IStd
 
 (** log messages at different levels of verbosity *)
 
-(** log information about the environment *)
 val environment_info : ('a, Format.formatter, unit) format -> 'a
+(** log information about the environment *)
 
-(** print immediately to standard error unless --quiet is specified *)
 val progress : ('a, Format.formatter, unit) format -> 'a
+(** print immediately to standard error unless --quiet is specified *)
 
-(** Progress bar: start of the analysis of a file. *)
 val progressbar_file : unit -> unit
+(** Progress bar: start of the analysis of a file. *)
 
-(** Progress bar: start of the analysis of a procedure. *)
 val progressbar_procedure : unit -> unit
+(** Progress bar: start of the analysis of a procedure. *)
 
-(** Progress bar: log a timeout event if in developer mode. *)
 val progressbar_timeout_event : SymOp.failure_kind -> unit
+(** Progress bar: log a timeout event if in developer mode. *)
 
+val result : ('a, Format.formatter, unit) format -> 'a
 (** Emit a result to stdout. Use only if the output format is stable and useful enough that it may
     conceivably get piped to another program, ie, almost never (use [progress] instead otherwise).
 *)
-val result : ('a, Format.formatter, unit) format -> 'a
 
-(** bad input, etc. detected *)
 val user_error : ('a, Format.formatter, unit) format -> 'a
+(** bad input, etc. detected *)
+
 val user_warning : ('a, Format.formatter, unit) format -> 'a
 
-(** huho, infer has a bug *)
 val internal_error : ('a, Format.formatter, unit) format -> 'a
+(** huho, infer has a bug *)
 
-(** some other tool has a bug or is called wrongly *)
 val external_error : ('a, Format.formatter, unit) format -> 'a
+(** some other tool has a bug or is called wrongly *)
+
 val external_warning : ('a, Format.formatter, unit) format -> 'a
 
 type debug_kind = Analysis | BufferOverrun | Capture | Linters | MergeCapture
 
 (** Level of verbosity for debug output. Each level enables all the levels before it. *)
 type debug_level =
-  | Quiet (** innocuous, eg emitted once per toplevel execution *)
-  | Medium (** still fairly lightweight, eg emitted O(<number of infer processes>) *)
-  | Verbose (** go crazy *)
+  | Quiet  (** innocuous, eg emitted once per toplevel execution *)
+  | Medium  (** still fairly lightweight, eg emitted O(<number of infer processes>) *)
+  | Verbose  (** go crazy *)
 
-(** log debug info *)
 val debug : debug_kind -> debug_level -> ('a, Format.formatter, unit) format -> 'a
+(** log debug info *)
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int
 
-(** Convert a ml location to a string *)
 val ml_loc_to_string : ml_loc -> string
+(** Convert a ml location to a string *)
 
-(** Pretty print a location of ml source *)
 val pp_ml_loc_opt : Format.formatter -> ml_loc option -> unit
-
+(** Pretty print a location of ml source *)
 
 (** log management *)
 
-(** Set up logging to go to the log file. Call this once the results directory has been set up. *)
 val setup_log_file : unit -> unit
+(** Set up logging to go to the log file. Call this once the results directory has been set up. *)
 
-(** Reset the formatters used for logging. Call this when you fork(2). *)
 val reset_formatters : unit -> unit
-
+(** Reset the formatters used for logging. Call this when you fork(2). *)
 
 (** Delayed printing (HTML debug, ...) *)
 
@@ -117,53 +117,52 @@ type print_type =
   | PTinfo
 
 (** delayable print action *)
-type print_action =
-  print_type * Obj.t (** data to be printed *)
+type print_action = print_type * Obj.t  (** data to be printed *)
 
-(** hook for the current printer of delayed print actions *)
 val printer_hook : (Format.formatter -> print_action -> unit) ref
+(** hook for the current printer of delayed print actions *)
 
-(** extend he current print log *)
 val add_print_action : print_action -> unit
+(** extend he current print log *)
 
-(** return the delayed print actions *)
 val get_delayed_prints : unit -> print_action list
+(** return the delayed print actions *)
 
-(** set the delayed print actions *)
 val set_delayed_prints : print_action list -> unit
+(** set the delayed print actions *)
 
-(** reset the delayed print actions *)
 val reset_delayed_prints : unit -> unit
+(** reset the delayed print actions *)
 
-(** dump a string *)
 val d_str : string -> unit
+(** dump a string *)
 
-(** dump a string with the given color *)
 val d_str_color : Pp.color -> string -> unit
+(** dump a string with the given color *)
 
-(** dump a string plus newline *)
 val d_strln : string -> unit
+(** dump a string plus newline *)
 
-(** dump a string plus newline with the given color *)
 val d_strln_color : Pp.color -> string -> unit
+(** dump a string plus newline with the given color *)
 
-(** dump a newline *)
 val d_ln : unit -> unit
+(** dump a newline *)
 
-(** dump an error string *)
 val d_error : string -> unit
+(** dump an error string *)
 
-(** dump a warning string *)
 val d_warning : string -> unit
+(** dump a warning string *)
 
-(** dump an info string *)
 val d_info : string -> unit
+(** dump an info string *)
 
-(** dump an indentation *)
 val d_indent : int -> unit
+(** dump an indentation *)
 
-(** dump command to increase the indentation level *)
 val d_increase_indent : int -> unit
+(** dump command to increase the indentation level *)
 
-(** dump command to decrease the indentation level *)
 val d_decrease_indent : int -> unit
+(** dump command to decrease the indentation level *)

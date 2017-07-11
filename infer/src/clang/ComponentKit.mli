@@ -9,12 +9,12 @@
 
 open! IStd
 
+val contains_ck_impl : Clang_ast_t.decl list -> bool
 (** Returns true if the passed-in list of decls contains an
     ObjCImplementationDecl of a descendant of CKComponent or
     CKComponentController.
 
     Does not recurse into hierarchy. *)
-val contains_ck_impl : Clang_ast_t.decl list -> bool
 
 val mutable_local_vars_advice :
   CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.issue_desc option

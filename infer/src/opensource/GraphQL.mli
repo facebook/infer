@@ -9,9 +9,6 @@
 
 open! IStd
 
-module DeprecatedAPIUsage :
-sig
-  val checker :
-    CLintersContext.context -> Ctl_parser_types.ast_node ->
-    CIssue.issue_desc option
+module DeprecatedAPIUsage : sig
+  val checker : CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.issue_desc option
 end

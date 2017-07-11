@@ -15,11 +15,11 @@ val errLogMap : Errlog.t Typ.Procname.Map.t ref
 
 val exists_issues : unit -> bool
 
-(** Save issues to a file *)
 val get_err_log : Typ.Procname.t -> Errlog.t
+(** Save issues to a file *)
 
-(** Load issues from the given file *)
 val store_issues : DB.filename -> Errlog.t Typ.Procname.Map.t -> unit
+(** Load issues from the given file *)
 
-(** Load all the lint issues in the given dir and update the issues map *)
 val load_issues_to_errlog_map : string -> unit
+(** Load all the lint issues in the given dir and update the issues map *)
