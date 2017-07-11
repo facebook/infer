@@ -56,6 +56,7 @@
   // Objc types
   NSString* a = @"lol"; // error
   NSString* const b = @"lol"; // no error
+  static NSString* st = @"lol"; // no error
   const NSString* c = @"lol"; // error
   const NSString* const d = @"lol"; // no error
 

@@ -124,7 +124,8 @@ let mutable_local_vars_advice context an =
       let is_const = qual_type.qt_is_const || is_const_ref in
       let condition =
         is_ck_context context an && not (CAst_utils.is_syntactically_global_var decl)
-        && not is_const && not (is_of_whitelisted_type qual_type) && not decl_info.di_is_implicit
+        && not (CAst_utils.is_static_local_var decl) && not is_const
+        && not (is_of_whitelisted_type qual_type) && not decl_info.di_is_implicit
       in
       if condition then
         Some
