@@ -104,10 +104,14 @@ let evaluate_place_holder ph an =
    -> MF.monospaced_to_string (CFrontend_checkers.cxx_ref_captured_in_block an)
   | "%decl_ref_or_selector_name%"
    -> MF.monospaced_to_string (CFrontend_checkers.decl_ref_or_selector_name an)
+  | "%receiver_method_call%"
+   -> MF.monospaced_to_string (CFrontend_checkers.receiver_method_call an)
   | "%iphoneos_target_sdk_version%"
    -> MF.monospaced_to_string (CFrontend_checkers.iphoneos_target_sdk_version an)
   | "%available_ios_sdk%"
    -> MF.monospaced_to_string (CFrontend_checkers.available_ios_sdk an)
+  | "%class_available_ios_sdk%"
+   -> MF.monospaced_to_string (CFrontend_checkers.class_available_ios_sdk an)
   | "%type%"
    -> MF.monospaced_to_string (Ctl_parser_types.ast_node_type an)
   | "%child_type%"

@@ -72,6 +72,9 @@ val pp_predicate : Format.formatter -> t -> unit
 val decl_unavailable_in_supported_ios_sdk :
   CLintersContext.context -> Ctl_parser_types.ast_node -> bool
 
+val class_unavailable_in_supported_ios_sdk :
+  CLintersContext.context -> Ctl_parser_types.ast_node -> bool
+
 val has_type : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val method_return_type : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
@@ -87,3 +90,5 @@ val objc_method_has_nth_parameter_of_type :
   Ctl_parser_types.ast_node -> ALVar.alexp -> ALVar.alexp -> bool
 
 val using_namespace : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+
+val receiver_method_call : Ctl_parser_types.ast_node -> Clang_ast_t.decl option

@@ -14,6 +14,42 @@ module L = Logging
 
 let parsed_type_map : Ctl_parser_types.abs_ctype String.Map.t ref = ref String.Map.empty
 
+let rec objc_class_of_pointer_type type_ptr =
+  match CAst_utils.get_type type_ptr with
+  | Some ObjCInterfaceType (_, decl_ptr)
+   -> CAst_utils.get_decl decl_ptr
+  | Some ObjCObjectPointerType (_, inner_qual_type)
+   -> objc_class_of_pointer_type inner_qual_type.qt_type_ptr
+  | Some AttributedType (type_info, _) -> (
+    match type_info.ti_desugared_type with
+    | Some type_ptr
+     -> objc_class_of_pointer_type type_ptr
+    | None
+     -> None )
+  | _
+   -> None
+
+let receiver_method_call an =
+  match an with
+  | Ctl_parser_types.Stmt ObjCMessageExpr (_, args, _, obj_c_message_expr_info) -> (
+    match obj_c_message_expr_info.omei_receiver_kind with
+    | `Class qt
+     -> CAst_utils.get_decl_from_typ_ptr qt.qt_type_ptr
+    | `Instance -> (
+      match args with
+      | receiver :: _ -> (
+        match Clang_ast_proj.get_expr_tuple receiver with
+        | Some (_, _, expr_info)
+         -> objc_class_of_pointer_type expr_info.ei_qual_type.qt_type_ptr
+        | None
+         -> None )
+      | []
+       -> None )
+    | _
+     -> None )
+  | _
+   -> None
+
 let get_available_attr_ios_sdk an =
   let open Clang_ast_t in
   let rec get_available_attr attrs =
@@ -409,6 +445,13 @@ let decl_unavailable_in_supported_ios_sdk (cxt: CLintersContext.context) an =
   | Some available_attr_ios_sdk, Some max_allowed_version
    -> Utils.compare_versions available_attr_ios_sdk max_allowed_version > 0
   | _
+   -> false
+
+let class_unavailable_in_supported_ios_sdk (cxt: CLintersContext.context) an =
+  match receiver_method_call an with
+  | Some decl
+   -> decl_unavailable_in_supported_ios_sdk cxt (Ctl_parser_types.Decl decl)
+  | None
    -> false
 
 (* Check whether a type_ptr and a string denote the same type *)

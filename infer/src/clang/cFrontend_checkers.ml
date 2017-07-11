@@ -66,6 +66,27 @@ let available_ios_sdk an =
         ( "available_ios_sdk must be called with a DeclRefExpr or an ObjCMessageExpr, but got "
         ^ tag_name_of_node an )
 
+let class_available_ios_sdk an =
+  match CPredicates.receiver_method_call an with
+  | Some decl -> (
+    match CPredicates.get_available_attr_ios_sdk (Decl decl) with
+    | Some version
+     -> version
+    | None
+     -> "" )
+  | None
+   -> failwith
+        ( "class_available_ios_sdk must be called with ObjCMessageExpr, but got "
+        ^ tag_name_of_node an )
+
+let receiver_method_call an =
+  match CPredicates.receiver_method_call an with
+  | Some decl
+   -> Ctl_parser_types.ast_node_name (Ctl_parser_types.Decl decl)
+  | _
+   -> failwith
+        ("receiver_method_call must be called with ObjCMessageExpr, but got " ^ tag_name_of_node an)
+
 let ivar_name an =
   let open Clang_ast_t in
   match an with

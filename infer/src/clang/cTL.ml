@@ -744,6 +744,8 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.declaration_ref_name an decl_name
   | "decl_unavailable_in_supported_ios_sdk", [], an
    -> CPredicates.decl_unavailable_in_supported_ios_sdk lcxt an
+  | "class_unavailable_in_supported_ios_sdk", [], an
+   -> CPredicates.class_unavailable_in_supported_ios_sdk lcxt an
   | "has_cast_kind", [name], an
    -> CPredicates.has_cast_kind an name
   | "has_type", [typ], an
