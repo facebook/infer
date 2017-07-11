@@ -115,13 +115,13 @@ OCAMLFORMAT_EXE=facebook/dependencies/ocamlformat/src/_build/opt/ocamlformat.exe
 
 .PHONY: fmt
 fmt:
-	parallel $(OCAMLFORMAT_EXE) -i -- $$(git diff --name-only $$(git merge-base origin/master HEAD) | grep "\.mli\?$$")
+	parallel $(OCAMLFORMAT_EXE) --no-warn-error -i ::: $$(git diff --name-only $$(git merge-base origin/master HEAD) | grep "\.mli\?$$")
 
 SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -path facebook/dependencies \) -not -prune -or -type f -and -name '*'.ml -or -name '*'.mli 2>/dev/null)
 
 .PHONY: fmt_all
 fmt_all:
-	parallel $(OCAMLFORMAT_EXE) -i -- $(SRC_ML)
+	parallel $(OCAMLFORMAT_EXE) --no-warn-error -i ::: $(SRC_ML)
 
 .PHONY: src_build
 src_build:
@@ -563,6 +563,12 @@ devsetup: Makefile.autoconf
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); $(OPAM) config --yes setup -a
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); OPAMYES=1; $(OPAM) user-setup install
+	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && ! $$(parallel -h | grep -q GNU); then \
+	  echo '$(TERM_INFO)*** Installing GNU parallel$(TERM_RESET)' >&2; \
+	  brew install parallel; \
+	fi
+	$(QUIET)if [ ! -d "$$HOME"/.parallel ]; then mkdir "$$HOME"/.parallel; fi
+	$(QUIET)touch "$$HOME"/.parallel/will-cite
 # 	expand all occurrences of "~" in PATH and MANPATH
 	$(QUIET)infer_repo_is_in_path=$$(echo $${PATH//\~/$$HOME} | grep -q "$(ABSOLUTE_ROOT_DIR)"/infer/bin; echo $$?); \
 	infer_repo_is_in_manpath=$$(echo $${MANPATH//\~/$$HOME} | grep -q "$(ABSOLUTE_ROOT_DIR)"/infer/man; echo $$?); \
