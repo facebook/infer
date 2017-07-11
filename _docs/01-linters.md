@@ -108,9 +108,7 @@ DEFINE-CHECKER id_of_the_checker = {
   };
 ```
 
-The default severity is `WARNING` and the default mode is `ON`, so these are optional. If the check is `OFF` it will only be available in debug mode (flags `--debug` or `--linters-developer-mode`). `INFOs` are generally also not reported, except with some specialzed flags.
-
-`name` and `doc_url` are used only for Phabricator comments at the moment. 
+The default severity is `WARNING` and the default mode is `ON`, so these are optional. If the check is `OFF` it will only be available in debug mode (flags `--debug` or `--linters-developer-mode`). `INFOs` are generally also not reported, except with some specialzed flags. `name` and `doc_url` are used only for Phabricator comments at the moment. 
 
 <a name="paths">**Defining Paths**</a> 
 
