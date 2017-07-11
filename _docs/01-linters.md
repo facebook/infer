@@ -90,15 +90,17 @@ The `SET message` clause defines the error message that will be displayed to the
 The <a name="checker_structure">general structure of a checker</a> is the following:
 
 ```bash
-DEFINE-CHECKER name_of_the_checker = {
+DEFINE-CHECKER id_of_the_checker = {
 
      LET formula = <formula definition>;
      LET ….
 
      SET report_when = <formula definition>;
     
+     SET name = <optional name>;
      SET message = <error message to show the user>;
      SET suggestion = <optional suggestion to the user>;
+     SET doc_url = <optional URL to documentation of the issue>;
      SET severity = INFO | LIKE | ADVICE | WARNING | ERROR; 
      SET mode = ON | OFF 
      SET whitelist_path = {path1, path2, ..., pathn };
@@ -107,6 +109,8 @@ DEFINE-CHECKER name_of_the_checker = {
 ```
 
 The default severity is `WARNING` and the default mode is `ON`, so these are optional. If the check is `OFF` it will only be available in debug mode (flags `--debug` or `--linters-developer-mode`). `INFOs` are generally also not reported, except with some specialzed flags.
+
+`name` and `doc_url` are used only for Phabricator comments at the moment. 
 
 <a name="paths">**Defining Paths**</a> 
 
@@ -179,6 +183,7 @@ within_responds_to_selector_block ()
 
 In general, the parameters of predicates can be constants, or variables, or regular expressions. Variables are used in macros, see below. The syntax for using regexes is `REGEX("your_reg_exp_here")`.
 
+If you need to add a new predicate, write the predicate in [cPredicates.ml](https://github.com/facebook/infer/blob/master/infer/src/clang/cPredicates.ml) and then register it in [CTL.ml](https://github.com/facebook/infer/blob/master/infer/src/clang/cTL.ml#L728).
 
 <a name="formulas">**AL Formulas**</a>
 
