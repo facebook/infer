@@ -30,6 +30,8 @@ module Loc = struct
     | Field of t * Typ.Fieldname.t
     [@@deriving compare]
 
+  let equal = [%compare.equal : t]
+
   let unknown = Allocsite Allocsite.unknown
 
   let rec pp fmt = function
@@ -81,4 +83,6 @@ module PowLoc = struct
   let append_field ploc fn =
     if is_bot ploc then singleton Loc.unknown
     else fold (fun l -> add (Loc.append_field l fn)) ploc empty
+
+  let is_singleton x = Int.equal (cardinal x) 1
 end

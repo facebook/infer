@@ -44,6 +44,33 @@ void reserve_Bad() {
   v[0] = 2;
 }
 
+void safe_access(std::vector<int> v) {
+  if (v.size() >= 10) {
+    v[9] = 1;
+  }
+}
+
+void call_safe_access_Good() {
+  std::vector<int> v(5, 0);
+  safe_access(v);
+}
+
+void safe_access2(std::vector<int> v) {
+  if (v.empty()) {
+    return;
+  }
+
+  unsigned int a[v.size()];
+  for (unsigned int i = 0; i < v.size(); i++) {
+    a[i] = 0;
+  }
+}
+
+void call_safe_access2_Good_FP() {
+  std::vector<int> v;
+  safe_access2(v);
+}
+
 struct Int_no_copy {
   Int_no_copy(Int_no_copy&) = delete;
   Int_no_copy(const Int_no_copy&) = delete;

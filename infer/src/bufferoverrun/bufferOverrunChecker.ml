@@ -242,12 +242,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       List.fold ~f:add_formal ~init:(mem, inst_num) (Sem.get_formals pdesc) |> fst
 
-  let instantiate_ret ret callee_pname callee_exit_mem subst_map mem loc =
+  let instantiate_ret ret callee_pname callee_exit_mem subst_map mem ret_alias loc =
     match ret with
     | Some (id, _)
      -> let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
         let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
         let ret_var = Loc.of_var (Var.of_id id) in
+        let add_ret_alias l = Dom.Mem.load_alias id l mem in
+        let mem = Option.value_map ret_alias ~default:mem ~f:add_ret_alias in
         Dom.Val.subst ret_val subst_map loc |> Dom.Val.add_trace_elem (Trace.Return loc)
         |> Fn.flip (Dom.Mem.add_stack ret_var) mem
     | None
@@ -298,10 +300,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     fun tenv ret callee_pdesc callee_pname params caller_mem summary loc ->
       let callee_entry_mem = Dom.Summary.get_input summary in
       let callee_exit_mem = Dom.Summary.get_output summary in
+      let callee_ret_alias = Dom.Mem.find_ret_alias callee_exit_mem in
       match callee_pdesc with
       | Some pdesc
-       -> let subst_map = Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc in
-          instantiate_ret ret callee_pname callee_exit_mem subst_map caller_mem loc
+       -> let subst_map, ret_alias =
+            Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias loc
+          in
+          instantiate_ret ret callee_pname callee_exit_mem subst_map caller_mem ret_alias loc
           |> instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map loc
       | None
        -> caller_mem
@@ -325,11 +330,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
          -> let locs = Sem.eval exp mem loc |> Dom.Val.get_all_locs in
             let v = Dom.Mem.find_heap_set locs mem in
             if Ident.is_none id then mem
-            else Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) v mem |> Dom.Mem.load_alias id exp
+            else
+              let mem = Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) v mem in
+              if PowLoc.is_singleton locs then Dom.Mem.load_alias id (PowLoc.choose locs) mem
+              else mem
         | Store (exp1, _, exp2, loc)
          -> let locs = Sem.eval exp1 mem loc |> Dom.Val.get_all_locs in
             let v = Sem.eval exp2 mem loc |> Dom.Val.add_trace_elem (Trace.Assign loc) in
-            Dom.Mem.update_mem locs v mem |> Dom.Mem.store_alias exp1 exp2
+            let mem = Dom.Mem.update_mem locs v mem in
+            if PowLoc.is_singleton locs then Dom.Mem.store_alias (PowLoc.choose locs) exp2 mem
+            else mem
         | Prune (exp, loc, _, _)
          -> Sem.prune exp loc mem
         | Call (ret, Const Cfun callee_pname, params, loc, _) -> (
@@ -432,7 +442,10 @@ module Report = struct
       let callee_cond = Dom.Summary.get_cond_set summary in
       match callee_pdesc with
       | Some pdesc
-       -> let subst_map = Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem loc in
+       -> let subst_map, _ =
+            Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias:None
+              loc
+          in
           let pname = Procdesc.get_proc_name pdesc in
           Dom.ConditionSet.subst callee_cond subst_map caller_pname pname loc
       | _
