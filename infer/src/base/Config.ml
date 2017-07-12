@@ -786,6 +786,7 @@ and ( bo_debug
     , failures_allowed
     , filtering
     , frontend_tests
+    , keep_going
     , linters_developer_mode
     , only_cheap_debug
     , print_buckets
@@ -833,6 +834,10 @@ and ( bo_debug
       "Show the internal bucket of Infer reports in their textual description"
   and print_types =
     CLOpt.mk_bool ~long:"print-types" ~default:false "Print types in symbolic heaps"
+  and keep_going =
+    CLOpt.mk_bool ~long:"keep-going"
+      ~in_help:CLOpt.([(Analyze, manual_generic)])
+      ~default:true "Keep going when the analysis encounters a failure"
   and reports_include_ml_loc =
     CLOpt.mk_bool ~deprecated:["with_infer_src_loc"] ~long:"reports-include-ml-loc"
       "Include the location in the Infer source code from where reports are generated"
@@ -875,7 +880,7 @@ and ( bo_debug
   and debug_exceptions =
     CLOpt.mk_bool_group ~long:"debug-exceptions"
       "Generate lightweight debugging information: just print the internal exceptions during analysis (also sets $(b,--developer-mode), $(b,--no-filtering), $(b,--print-buckets), $(b,--reports-include-ml-loc))"
-      [developer_mode; print_buckets; reports_include_ml_loc] [filtering]
+      [developer_mode; print_buckets; reports_include_ml_loc] [filtering; keep_going]
   and default_linters =
     CLOpt.mk_bool ~long:"default-linters"
       ~in_help:CLOpt.([(Capture, manual_clang_linters)])
@@ -919,6 +924,7 @@ and ( bo_debug
   , failures_allowed
   , filtering
   , frontend_tests
+  , keep_going
   , linters_developer_mode
   , only_cheap_debug
   , print_buckets
@@ -2078,6 +2084,8 @@ and subtype_multirange = !subtype_multirange
 and svg = !svg
 
 and symops_per_iteration = !symops_per_iteration
+
+and keep_going = !keep_going
 
 and test_filtering = !test_filtering
 

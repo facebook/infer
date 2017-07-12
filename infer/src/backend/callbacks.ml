@@ -128,7 +128,7 @@ let iterate_callbacks call_graph exe_env =
     | None
      -> failwithf "Could not find proc desc for %a" Typ.Procname.pp pname
     | Some pdesc
-     -> ignore (Ondemand.analyze_proc_desc ~propagate_exceptions:true pdesc pdesc)
+     -> ignore (Ondemand.analyze_proc_desc pdesc pdesc)
   in
   Ondemand.set_callbacks callbacks ;
   (* Invoke procedure callbacks using on-demand anlaysis schedulling *)

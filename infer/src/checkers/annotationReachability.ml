@@ -127,7 +127,7 @@ let method_has_annot annot tenv pname =
 let method_overrides_annot annot tenv pname = method_overrides (method_has_annot annot) tenv pname
 
 let lookup_annotation_calls caller_pdesc annot pname =
-  match Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc pname with
+  match Ondemand.analyze_proc_name caller_pdesc pname with
   | Some {Specs.payload= {Specs.annot_map= Some annot_map}} -> (
     try AnnotReachabilityDomain.find annot annot_map
     with Not_found -> AnnotReachabilityDomain.SinkMap.empty )

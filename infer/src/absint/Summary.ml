@@ -31,7 +31,7 @@ module Make (P : Payload) : S with type payload = P.payload = struct
   let update_summary payload summary = P.update_payload payload summary
 
   let read_summary caller_pdesc callee_pname =
-    match Ondemand.analyze_proc_name ~propagate_exceptions:false caller_pdesc callee_pname with
+    match Ondemand.analyze_proc_name caller_pdesc callee_pname with
     | None
      -> None
     | Some summary

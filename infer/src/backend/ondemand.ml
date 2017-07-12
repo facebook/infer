@@ -95,7 +95,7 @@ let restore_global_state st =
   State.restore_state st.symexec_state ;
   Timeout.resume_previous_timeout ()
 
-let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc =
+let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let log_elapsed_time =
@@ -141,18 +141,18 @@ let run_proc_analysis ~propagate_exceptions analyze_proc curr_pdesc callee_pdesc
     L.internal_error "@\nONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@?" Typ.Procname.pp callee_pname
       (Exn.to_string exn) (Printexc.get_backtrace ()) ;
     restore_global_state old_state ;
-    if propagate_exceptions then raise exn
-    else
+    if Config.keep_going then
       match exn with
       | SymOp.Analysis_failure_exe kind
        -> (* in production mode, log the timeout/crash and continue with the summary we had before
-             the failure occurred *)
+              the failure occurred *)
           log_error_and_continue exn initial_summary kind
       | _
        -> (* this happens with assert false or some other unrecognized exception *)
           log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn))
+    else raise exn
 
-let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc : Specs.summary option =
+let analyze_proc_desc curr_pdesc callee_pdesc : Specs.summary option =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let proc_attributes = Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
@@ -161,15 +161,13 @@ let analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc : Specs.summ
         Typ.Procname.pp callee_pname Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
   | Some callbacks
    -> if should_be_analyzed callee_pname proc_attributes then
-        Some
-          (run_proc_analysis ~propagate_exceptions callbacks.analyze_ondemand curr_pdesc
-             callee_pdesc)
+        Some (run_proc_analysis callbacks.analyze_ondemand curr_pdesc callee_pdesc)
       else Specs.get_summary callee_pname
 
 (** analyze_proc_name curr_pdesc proc_name
     performs an on-demand analysis of proc_name
     triggered during the analysis of curr_pname. *)
-let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname : Specs.summary option =
+let analyze_proc_name curr_pdesc callee_pname : Specs.summary option =
   match !callbacks_ref with
   | None
    -> failwithf "No callbacks registered to analyze proc name %a when analyzing %a@."
@@ -178,7 +176,7 @@ let analyze_proc_name ~propagate_exceptions curr_pdesc callee_pname : Specs.summ
    -> if procedure_should_be_analyzed callee_pname then
         match callbacks.get_proc_desc callee_pname with
         | Some callee_pdesc
-         -> analyze_proc_desc ~propagate_exceptions curr_pdesc callee_pdesc
+         -> analyze_proc_desc curr_pdesc callee_pdesc
         | None
          -> Specs.get_summary callee_pname
       else Specs.get_summary callee_pname

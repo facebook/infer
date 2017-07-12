@@ -1391,9 +1391,7 @@ let interprocedural_algorithm_closures ~prepare_proc exe_env : Tasks.closure lis
   let call_graph = Exe_env.get_cg exe_env in
   let process_one_proc proc_name =
     prepare_proc proc_name ;
-    let analyze proc_desc =
-      ignore (Ondemand.analyze_proc_desc ~propagate_exceptions:false proc_desc proc_desc)
-    in
+    let analyze proc_desc = ignore (Ondemand.analyze_proc_desc proc_desc proc_desc) in
     match Exe_env.get_proc_desc exe_env proc_name with
     | Some proc_desc
       when Config.reactive_mode

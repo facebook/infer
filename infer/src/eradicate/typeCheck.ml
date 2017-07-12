@@ -522,7 +522,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
       , etl_
       , loc
       , cflags )
-   -> ignore (Ondemand.analyze_proc_name ~propagate_exceptions:true curr_pdesc callee_pname) ;
+   -> ignore (Ondemand.analyze_proc_name curr_pdesc callee_pname) ;
       let callee_attributes =
         match Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname with
         | Some proc_attributes

@@ -457,6 +457,8 @@ val jobs : int
 
 val join_cond : int
 
+val keep_going : bool
+
 val latex : string option
 
 val linter : string option
