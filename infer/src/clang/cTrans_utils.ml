@@ -753,7 +753,9 @@ let var_or_zero_in_init_list tenv e typ ~return_zero =
       match Tenv.lookup tenv tn with
       | Some {fields}
        -> let lh_exprs =
-            List.map ~f:(fun (fieldname, _, _) -> Exp.Lfield (e, fieldname, typ)) fields
+            List.filter_map fields ~f:(fun (fieldname, _, _) ->
+                if Typ.Fieldname.is_hidden fieldname then None
+                else Some (Exp.Lfield (e, fieldname, typ)) )
           in
           let lh_types = List.map ~f:(fun (_, fieldtype, _) -> fieldtype) fields in
           let exp_types = zip lh_exprs lh_types in
