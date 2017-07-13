@@ -15,8 +15,19 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
   - [Defining Macros](/docs/linters.html#macros) 
   - [AL Predicates](/docs/linters.html#predicates) 
   - [AL Formulas](/docs/linters.html#formulas) 
-  - [Example AL checkers](/docs/linters.html#examples)
-     - [A check for flagging a Objective-C class that inherits from a class that shouldn't be subclassed](/docs/linters.html#examples)
+  - [Example AL checkers for flagging:](/docs/linters.html#examples)
+     - [Objective-C class that inherits from a class that shouldn't be subclassed](/docs/linters.html#subclass_check)
+     - [Objective-C instance method call](/docs/linters.html#instance_method_check)
+     - [Objective-C instance method call of any method of a class](/docs/linters.html#any_instance_method_check)
+     - [Objective-C class method call](/docs/linters.html#class_method_check)
+     - [Objective-C method call of a method with int return type](/docs/linters.html#return_type)
+     - [Variable declaration with type long](/docs/linters.html#variable_type)
+     - [Method that has a parameter of type A*](/docs/linters.html#some_parameter)
+     - [Method that has all the parameters of type A* (and at least one)](/docs/linters.html#all_parameters)
+     - [Method that has the 2nd parameter of type A* ](/docs/linters.html#sec_parameter)
+     - [Protocol that inherits from a given protocol](/docs/linters.html#protocol)
+     - [Constructor is defined with a parameter of a type that implements a given protocol (or that inherits from it)](/docs/linters.html#constructor_protocol_type)
+     - [Variable declaration of type NSArray applied to A](/docs/linters.html#nsarray_generics)
   - [AST info in messages](/docs/linters.html#info_message) 
   - [Testing your rule](/docs/linters.html#testing)  
   - [Debugging](/docs/linters.html#debugging) 
@@ -367,7 +378,7 @@ DEFINE-CHECKER CALL_CLASS_METHOD = {
 };
 ```
 
-*  <a name="return_type"></a> A check for flagging an Objective-C method call of a method with int return type:
+*  A check for flagging an Objective-C method call of a method with int return type:
 
 ```
 DEFINE-CHECKER TEST_RETURN_METHOD = {
