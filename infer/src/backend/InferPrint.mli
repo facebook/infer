@@ -12,5 +12,3 @@ open! IStd
 val exception_value : string
 
 val main : report_csv:string option -> report_json:string option -> unit
-
-val main_from_config : unit -> unit

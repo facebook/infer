@@ -195,6 +195,8 @@ val report_condition_always_true_in_clang : bool
 
 val report_custom_error : bool
 
+val report_json : string
+
 val report_nullable_inconsistency : bool
 
 val reporting_stats_dir_name : string
@@ -288,8 +290,6 @@ val buck_out : string option
 val bufferoverrun : bool
 
 val bugs_csv : string option
-
-val bugs_json : string option
 
 val bugs_tests : string option
 

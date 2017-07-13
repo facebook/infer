@@ -1106,5 +1106,3 @@ let main ~report_csv ~report_json =
     ; (Summary, init_summary_format_list ()) ]
   in
   register_perf_stats_report () ; print_issues formats_by_report_kind
-
-let main_from_config () = main ~report_csv:Config.bugs_csv ~report_json:Config.bugs_json

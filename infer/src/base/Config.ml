@@ -212,6 +212,8 @@ let property_attributes = "property_attributes"
 
 let report_condition_always_true_in_clang = false
 
+let report_json = "report.json"
+
 (** If true, sanity-check inferred preconditions against Nullable annotations and report
     inconsistencies *)
 let report_nullable_inconsistency = true
@@ -679,27 +681,22 @@ and buck_out =
 and bugs_csv =
   CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
     ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write a list of issues in CSV format to a file"
-
-and bugs_json =
-  CLOpt.mk_path_opt ~deprecated:["bugs_json"] ~long:"issues-json"
-    ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write a list of issues in JSON format to a file"
+    ~meta:"file" "Write a list of issues in CSV format to $(i,file)"
 
 and bugs_tests =
   CLOpt.mk_path_opt ~long:"issues-tests"
     ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write a list of issues in a format suitable for tests to a file"
+    ~meta:"file" "Write a list of issues in a format suitable for tests to $(i,file)"
 
 and bugs_txt =
   CLOpt.mk_path_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
     ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write a list of issues in TXT format to a file"
+    ~meta:"file" "Write a list of issues in text format to $(i,file)"
 
 and calls_csv =
   CLOpt.mk_path_opt ~deprecated:["calls"] ~long:"calls-csv"
     ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write individual calls in CSV format to a file"
+    ~meta:"file" "Write individual calls in CSV format to $(i,file)"
 
 and changed_files_index =
   CLOpt.mk_path_opt ~long:"changed-files-index"
@@ -1787,8 +1784,6 @@ and buck_out = !buck_out
 and bufferoverrun = !bufferoverrun
 
 and bugs_csv = !bugs_csv
-
-and bugs_json = !bugs_json
 
 and frontend_tests = !frontend_tests
 
