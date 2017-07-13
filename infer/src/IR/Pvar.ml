@@ -9,6 +9,7 @@
  *)
 
 (** The Smallfoot Intermediate Language *)
+
 open! IStd
 module L = Logging
 module F = Format

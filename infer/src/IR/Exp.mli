@@ -9,6 +9,7 @@
  *)
 
 (** The Smallfoot Intermediate Language: Expressions *)
+
 open! IStd
 module L = Logging
 module F = Format
@@ -29,128 +30,103 @@ and sizeof_data = {typ: Typ.t; nbytes: int option; dynamic_length: t option; sub
 
 (** Program expressions. *)
 and t =
-  (** Pure variable: it is not an lvalue *)
-  | Var of Ident.t  (** Unary operator with type of the result if known *)
-  | UnOp of Unop.t * t * Typ.t option  (** Binary operator *)
-  | BinOp of Binop.t * t * t  (** Exception *)
-  | Exn of t  (** Anonymous function *)
-  | Closure of closure  (** Constants *)
-  | Const of Const.t  (** Type cast *)
-  | Cast of Typ.t * t  (** The address of a program variable *)
-  | Lvar of Pvar.t  (** A field offset, the type is the surrounding struct type *)
-  | Lfield of t * Typ.Fieldname.t * Typ.t  (** An array index offset: [exp1\[exp2\]] *)
-  | Lindex of t * t
+  | Var of Ident.t  (** Pure variable: it is not an lvalue *)
+  | UnOp of Unop.t * t * Typ.t option  (** Unary operator with type of the result if known *)
+  | BinOp of Binop.t * t * t  (** Binary operator *)
+  | Exn of t  (** Exception *)
+  | Closure of closure  (** Anonymous function *)
+  | Const of Const.t  (** Constants *)
+  | Cast of Typ.t * t  (** Type cast *)
+  | Lvar of Pvar.t  (** The address of a program variable *)
+  | Lfield of t * Typ.Fieldname.t * Typ.t
+      (** A field offset, the type is the surrounding struct type *)
+  | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
   | Sizeof of sizeof_data
   [@@deriving compare]
 
+val equal : t -> t -> bool
 (** Equality for expressions. *)
 
-val equal : t -> t -> bool
-
+val hash : t -> int
 (** Hash function for expressions. *)
 
-val hash : t -> int
-
 (** Set of expressions. *)
-
 module Set : Caml.Set.S with type elt = t
 
 (** Map with expression keys. *)
-
 module Map : Caml.Map.S with type key = t
 
 (** Hashtable with expression keys. *)
-
 module Hash : Caml.Hashtbl.S with type key = t
 
-(** returns true is index is an array index of arr. *)
-
 val is_array_index_of : t -> t -> bool
+(** returns true is index is an array index of arr. *)
 
 val is_null_literal : t -> bool
 
-(** return true if [exp] is the special this/self expression *)
-
 val is_this : t -> bool
+(** return true if [exp] is the special this/self expression *)
 
 val is_zero : t -> bool
 
 (** {2 Utility Functions for Expressions} *)
 
+val texp_to_typ : Typ.t option -> t -> Typ.t
 (** Turn an expression representing a type into the type it represents
     If not a sizeof, return the default type if given, otherwise raise an exception *)
 
-val texp_to_typ : Typ.t option -> t -> Typ.t
-
+val root_of_lexp : t -> t
 (** Return the root of [lexp]. *)
 
-val root_of_lexp : t -> t
-
+val get_undefined : bool -> t
 (** Get an expression "undefined", the boolean indicates
     whether the undefined value goest into the footprint *)
 
-val get_undefined : bool -> t
-
+val pointer_arith : t -> bool
 (** Checks whether an expression denotes a location using pointer arithmetic.
     Currently, catches array - indexing expressions such as a[i] only. *)
 
-val pointer_arith : t -> bool
-
+val is_stack_addr : t -> bool
 (** returns true if the expression represents a stack-directed address *)
 
-val is_stack_addr : t -> bool
-
+val has_local_addr : t -> bool
 (** returns true if the expression operates on address of local variable *)
 
-val has_local_addr : t -> bool
-
+val zero : t
 (** Integer constant 0 *)
 
-val zero : t
-
+val null : t
 (** Null constant *)
 
-val null : t
-
+val one : t
 (** Integer constant 1 *)
 
-val one : t
-
+val minus_one : t
 (** Integer constant -1 *)
 
-val minus_one : t
-
+val int : IntLit.t -> t
 (** Create integer constant *)
 
-val int : IntLit.t -> t
-
+val float : float -> t
 (** Create float constant *)
 
-val float : float -> t
-
+val bool : bool -> t
 (** Create integer constant corresponding to the boolean value *)
 
-val bool : bool -> t
-
+val eq : t -> t -> t
 (** Create expresstion [e1 == e2] *)
 
-val eq : t -> t -> t
-
+val ne : t -> t -> t
 (** Create expresstion [e1 != e2] *)
 
-val ne : t -> t -> t
-
+val le : t -> t -> t
 (** Create expresstion [e1 <= e2] *)
 
-val le : t -> t -> t
-
+val lt : t -> t -> t
 (** Create expression [e1 < e2] *)
 
-val lt : t -> t -> t
-
-(** Extract the ids and pvars from an expression *)
-
 val get_vars : t -> Ident.t list * Pvar.t list
+(** Extract the ids and pvars from an expression *)
 
 val pp_printenv : Pp.env -> (Pp.env -> F.formatter -> Typ.t -> unit) -> F.formatter -> t -> unit
 

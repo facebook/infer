@@ -9,12 +9,12 @@
  *)
 
 (** The Smallfoot Intermediate Language: Unary Operators *)
+
 open! IStd
 module L = Logging
 module F = Format
 
 (** Unary operations *)
-
 type t =
   | Neg  (** Unary minus *)
   | BNot  (** Bitwise complement (~) *)
@@ -23,6 +23,5 @@ type t =
 
 val equal : t -> t -> bool
 
-(** String representation of a unary operator. *)
-
 val str : t -> string
+(** String representation of a unary operator. *)

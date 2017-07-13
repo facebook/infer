@@ -9,6 +9,7 @@
  *)
 
 (** Module for call graphs *)
+
 open! IStd
 module Hashtbl = Caml.Hashtbl
 module L = Logging
@@ -21,19 +22,19 @@ type in_out_calls =
   ; out_calls: int  (** total number of out calls transitively *) }
 
 type node_info =
-  { (** defined procedure as opposed to just declared *)
-  mutable defined: bool
+  { mutable defined: bool  (** defined procedure as opposed to just declared *)
   ; mutable parents: Typ.Procname.Set.t
-  ; mutable children: Typ.Procname.Set.t  (** ancestors are computed lazily *)
-  ; mutable ancestors: Typ.Procname.Set.t option  (** heirs are computed lazily *)
-  ; mutable heirs: Typ.Procname.Set.t option  (** recursive dependents are computed lazily *)
-  ; mutable recursive_dependents: Typ.Procname.Set.t option  (** calls are computed lazily *)
-  ; mutable in_out_calls: in_out_calls option }
+  ; mutable children: Typ.Procname.Set.t
+  ; mutable ancestors: Typ.Procname.Set.t option  (** ancestors are computed lazily *)
+  ; mutable heirs: Typ.Procname.Set.t option  (** heirs are computed lazily *)
+  ; mutable recursive_dependents: Typ.Procname.Set.t option
+        (** recursive dependents are computed lazily *)
+  ; mutable in_out_calls: in_out_calls option  (** calls are computed lazily *) }
 
 (** Type for call graph *)
 type t =
   { source: SourceFile.t  (** path for the source file *)
-  ; node_map: (** map from node to node_info *) node_info Typ.Procname.Hash.t }
+  ; node_map: node_info Typ.Procname.Hash.t  (** map from node to node_info *) }
 
 let create source = {source; node_map= Typ.Procname.Hash.create 3}
 

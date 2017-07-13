@@ -11,53 +11,41 @@ open! IStd
 
 (** Module for Type Environments. *)
 
+(** Type for type environment. *)
 type t
 
-(** Type for type environment. *)
-
+val add : t -> Typ.Name.t -> Typ.Struct.t -> unit
 (** Add a (name,typename) pair to the global type environment. *)
 
-val add : t -> Typ.Name.t -> Typ.Struct.t -> unit
-
+val create : unit -> t
 (** Create a new type environment. *)
 
-val create : unit -> t
-
+val fold : (Typ.Name.t -> Typ.Struct.t -> 'a -> 'a) -> t -> 'a -> 'a
 (** Fold a function over the elements of the type environment. *)
 
-val fold : (Typ.Name.t -> Typ.Struct.t -> 'a -> 'a) -> t -> 'a -> 'a
-
+val iter : (Typ.Name.t -> Typ.Struct.t -> unit) -> t -> unit
 (** iterate over a type environment *)
 
-val iter : (Typ.Name.t -> Typ.Struct.t -> unit) -> t -> unit
-
+val load_from_file : DB.filename -> t option
 (** Load a type environment from a file *)
 
-val load_from_file : DB.filename -> t option
-
-(** Look up a name in the global type environment. *)
-
 val lookup : t -> Typ.Name.t -> Typ.Struct.t option
-
-(** Construct a struct_typ, normalizing field types *)
+(** Look up a name in the global type environment. *)
 
 val mk_struct :
   t -> ?default:Typ.Struct.t -> ?fields:Typ.Struct.fields -> ?statics:Typ.Struct.fields
   -> ?methods:Typ.Procname.t list -> ?supers:Typ.Name.t list -> ?annots:Annot.Item.t -> Typ.Name.t
   -> Typ.Struct.t
-
-(** Check if typename is found in t *)
+(** Construct a struct_typ, normalizing field types *)
 
 val mem : t -> Typ.Name.t -> bool
-
-(** print a type environment *)
+(** Check if typename is found in t *)
 
 val pp : Format.formatter -> t -> unit
-
-(** Save a type environment into a file *)
+(** print a type environment *)
 
 val store_to_file : DB.filename -> t -> unit
-
-(** Get method that is being overriden by java_pname (if any) **)
+(** Save a type environment into a file *)
 
 val get_overriden_method : t -> Typ.Procname.java -> Typ.Procname.t option
+(** Get method that is being overriden by java_pname (if any) **)

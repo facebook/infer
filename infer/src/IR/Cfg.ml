@@ -7,12 +7,13 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
 open! IStd
 module L = Logging
 module F = Format
 
 (** data type for the control flow graph *)
-type cfg = {proc_desc_table: (** Map proc name to procdesc *) Procdesc.t Typ.Procname.Hash.t}
+type cfg = {proc_desc_table: Procdesc.t Typ.Procname.Hash.t  (** Map proc name to procdesc *)}
 
 (** create a new empty cfg *)
 let create_cfg () = {proc_desc_table= Typ.Procname.Hash.create 16}

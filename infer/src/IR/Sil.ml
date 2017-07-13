@@ -9,6 +9,7 @@
  *)
 
 (** The Smallfoot Intermediate Language *)
+
 open! IStd
 module Hashtbl = Caml.Hashtbl
 module L = Logging
@@ -18,40 +19,37 @@ module F = Format
 
 (** Kind of prune instruction *)
 type if_kind =
-  | Ik_bexp
-  (* boolean expressions, and exp ? exp : exp *)
+  | Ik_bexp  (** boolean expressions, and exp ? exp : exp *)
   | Ik_dowhile
   | Ik_for
   | Ik_if
-  | Ik_land_lor
-  (* obtained from translation of && or || *)
+  | Ik_land_lor  (** obtained from translation of && or || *)
   | Ik_while
   | Ik_switch
   [@@deriving compare]
 
 (** An instruction. *)
 type instr =
-  (** Load a value from the heap into an identifier.
-      [x = *lexp:typ] where
-        [lexp] is an expression denoting a heap address
-        [typ] is the root type of [lexp]. *)
   (* Note for frontend writers:
      [x] must be used in a subsequent instruction, otherwise the entire
      `Load` instruction may be eliminated by copy-propagation. *)
   | Load of Ident.t * Exp.t * Typ.t * Location.t
-      (** Store the value of an expression into the heap.
-      [*lexp1:typ = exp2] where
-        [lexp1] is an expression denoting a heap address
-        [typ] is the root type of [lexp1]
-        [exp2] is the expression whose value is store. *)
+      (** Load a value from the heap into an identifier.
+          [x = *lexp:typ] where
+            [lexp] is an expression denoting a heap address
+            [typ] is the root type of [lexp]. *)
   | Store of Exp.t * Typ.t * Exp.t * Location.t
-      (** prune the state based on [exp=1], the boolean indicates whether true branch *)
+      (** Store the value of an expression into the heap.
+          [*lexp1:typ = exp2] where
+            [lexp1] is an expression denoting a heap address
+            [typ] is the root type of [lexp1]
+            [exp2] is the expression whose value is store. *)
   | Prune of Exp.t * Location.t * bool * if_kind
-      (** [Call (ret_id, e_fun, arg_ts, loc, call_flags)] represents an instruction
-      [ret_id = e_fun(arg_ts);]. The return value is ignored when [ret_id = None]. *)
+      (** prune the state based on [exp=1], the boolean indicates whether true branch *)
   | Call of (Ident.t * Typ.t) option * Exp.t * (Exp.t * Typ.t) list * Location.t * CallFlags.t
-      (** nullify stack variable *)
-  | Nullify of Pvar.t * Location.t
+      (** [Call (ret_id, e_fun, arg_ts, loc, call_flags)] represents an instruction
+          [ret_id = e_fun(arg_ts);]. The return value is ignored when [ret_id = None]. *)
+  | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | Abstract of Location.t  (** apply abstraction *)
   | Remove_temps of Ident.t list * Location.t  (** remove temporaries *)
   | Declare_locals of (Pvar.t * Typ.t) list * Location.t  (** declare local variables *)
@@ -77,8 +75,8 @@ type offset = Off_fld of Typ.Fieldname.t * Typ.t | Off_index of Exp.t
 type atom =
   | Aeq of Exp.t * Exp.t  (** equality *)
   | Aneq of Exp.t * Exp.t  (** disequality *)
-  | Apred of PredSymb.t * (** predicate symbol applied to exps *) Exp.t list
-  | Anpred of PredSymb.t * (** negated predicate symbol applied to exps *) Exp.t list
+  | Apred of PredSymb.t * Exp.t list  (** predicate symbol applied to exps *)
+  | Anpred of PredSymb.t * Exp.t list  (** negated predicate symbol applied to exps *)
   [@@deriving compare]
 
 let equal_atom = [%compare.equal : atom]
@@ -126,14 +124,14 @@ let equal_inst = [%compare.equal : inst]
 type 'inst strexp0 =
   | Eexp of Exp.t * 'inst  (** Base case: expression with instrumentation *)
   | Estruct of (Typ.Fieldname.t * 'inst strexp0) list * 'inst  (** C structure *)
-  (** Array of given length
-      There are two conditions imposed / used in the array case.
-      First, if some index and value pair appears inside an array
-      in a strexp, then the index is less than the length of the array.
-      For instance, x |->[10 | e1: v1] implies that e1 <= 9.
-      Second, if two indices appear in an array, they should be different.
-      For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. *)
   | Earray of Exp.t * (Exp.t * 'inst strexp0) list * 'inst
+      (** Array of given length
+          There are two conditions imposed / used in the array case.
+          First, if some index and value pair appears inside an array
+          in a strexp, then the index is less than the length of the array.
+          For instance, x |->[10 | e1: v1] implies that e1 <= 9.
+          Second, if two indices appear in an array, they should be different.
+          For instance, x |->[10 | e1: v1, e2: v2] implies that e1 != e2. *)
   [@@deriving compare]
 
 type strexp = inst strexp0
@@ -261,8 +259,8 @@ let color_pre_wrapper pe f x =
       else Latex.pp_color )
         f color ;
       if Pp.equal_color color Pp.Red then
-        (Pp.{(** All subexpressiona red *)
-             pe with cmap_norm= colormap_red; color= Red}, true)
+        (* All subexpressions red *)
+        (Pp.{pe with cmap_norm= colormap_red; color= Red}, true)
       else (Pp.{pe with color}, true) )
     else (pe, false)
   else (pe, false)
@@ -295,7 +293,7 @@ let pp_exp_printenv pe0 f e0 =
   let e =
     match pe.Pp.obj_sub with
     | Some sub
-     -> Obj.obj (sub (Obj.repr e0) (* apply object substitution to expression *))
+     -> (* apply object substitution to expression *) Obj.obj (sub (Obj.repr e0))
     | None
      -> e0
   in
@@ -424,7 +422,7 @@ let pp_instr pe0 f instr =
 (** Check if a pvar is a local pointing to a block in objc *)
 let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar))
 
-(* A block pvar used to explain retain cycles *)
+(** A block pvar used to explain retain cycles *)
 let block_pvar = Pvar.mk (Mangled.from_string "block") (Typ.Procname.from_string_c_fun "")
 
 (** Dump an instruction. *)
@@ -479,8 +477,6 @@ let rec pp_star_seq pp f = function
    -> F.fprintf f "%a" pp x
   | x :: l
    -> F.fprintf f "%a * %a" pp x (pp_star_seq pp) l
-
-(********* START OF MODULE Predicates **********)
 
 (** Module Predicates records the occurrences of predicates as parameters
     of (doubly -)linked lists and Epara. Provides unique numbering
@@ -612,7 +608,6 @@ end = struct
     done
 end
 
-(********* END OF MODULE Predicates **********)
 let pp_texp_simple pe =
   match pe.Pp.opt with SIM_DEFAULT -> pp_texp pe | SIM_WITH_TYP -> pp_texp_full pe
 
@@ -848,7 +843,7 @@ let rec pp_hpred_env pe0 envo f hpred =
       let pe' =
         match (e, se) with
         | Lvar pvar, Eexp (Var _, _) when not (Pvar.is_global pvar)
-         -> Pp.{pe with obj_sub= None (* dont use obj sub on the var defining it *)}
+         -> Pp.{pe with obj_sub= None} (* dont use obj sub on the var defining it *)
         | _
          -> pe
       in
@@ -963,6 +958,7 @@ let rec pp_hpara_dll_list pe f = function
 let d_hpred (hpred: hpred) = L.add_print_action (L.PThpred, Obj.repr hpred)
 
 (** {2 Functions for traversing SIL data types} *)
+
 let rec strexp_expmap (f: Exp.t * inst option -> Exp.t * inst option) =
   let fe e = fst (f (e, None)) in
   let fei (e, inst) =
@@ -1047,6 +1043,7 @@ let atom_expmap (f: Exp.t -> Exp.t) = function
 let atom_list_expmap (f: Exp.t -> Exp.t) (alist: atom list) = List.map ~f:(atom_expmap f) alist
 
 (** {2 Function for computing lexps in sigma} *)
+
 let hpred_get_lexp acc = function
   | Hpointsto (e, _, _)
    -> e :: acc
@@ -1235,8 +1232,7 @@ let rec exp_fav_add fav e =
    -> exp_fav_add fav e1 ; exp_fav_add fav e2
   | Lvar _
    -> ()
-  | Lfield (* do nothing since we only count non-program variables *)
-      (e, _, _)
+  | Lfield (e, _, _) (* do nothing since we only count non-program variables *)
    -> exp_fav_add fav e
   | Lindex (e1, e2)
    -> exp_fav_add fav e1 ; exp_fav_add fav e2
@@ -1364,6 +1360,7 @@ let hpara_shallow_av = fav_imperative_to_functional hpara_shallow_av_add
 let hpara_dll_shallow_av = fav_imperative_to_functional hpara_dll_shallow_av_add
 
 (** {2 Functions for Substitution} *)
+
 let rec reverse_with_base base = function [] -> base | x :: l -> reverse_with_base (x :: base) l
 
 let sorted_list_merge compare l1_in l2_in =
@@ -1527,8 +1524,8 @@ let rec exp_sub_ids (f: subst_fun) exp =
     | `Exp f_exp -> (
       match f_exp id with
       | Exp.Var id' when Ident.equal id id'
-       -> exp
-      (* it will preserve physical equality when needed *) | exp'
+       -> exp (* it will preserve physical equality when needed *)
+      | exp'
        -> exp' )
     | _
      -> exp )

@@ -12,30 +12,24 @@ open! IStd
 (** Attributes of a procedure. *)
 
 (** flags for a procedure *)
-
 type proc_flags = (string, string) Caml.Hashtbl.t [@@deriving compare]
 
+val proc_flag_skip : string
 (** keys for proc_flags *)
 
-val proc_flag_skip : string
-
-(** key to specify that a function should be treated as a skip function *)
-
 val proc_flag_ignore_return : string
+(** key to specify that a function should be treated as a skip function *)
 
 (** key to specify that it is OK to ignore the return value *)
 
+val proc_flags_empty : unit -> proc_flags
 (** empty proc flags *)
 
-val proc_flags_empty : unit -> proc_flags
-
+val proc_flags_add : proc_flags -> string -> string -> unit
 (** add a key value pair to a proc flags *)
 
-val proc_flags_add : proc_flags -> string -> string -> unit
-
-(** find a value for a key in the proc flags *)
-
 val proc_flags_find : proc_flags -> string -> string
+(** find a value for a key in the proc flags *)
 
 type objc_accessor_type =
   | Objc_getter of Typ.Fieldname.t
@@ -73,6 +67,5 @@ type t =
   ; source_file_captured: SourceFile.t  (** source file where the procedure was captured *) }
   [@@deriving compare]
 
-(** Create a proc_attributes with default values. *)
-
 val default : Typ.Procname.t -> Config.language -> t
+(** Create a proc_attributes with default values. *)

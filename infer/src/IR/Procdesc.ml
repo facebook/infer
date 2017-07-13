@@ -7,6 +7,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
 open! IStd
 module Hashtbl = Caml.Hashtbl
 module L = Logging
@@ -31,16 +32,15 @@ module Node = struct
 
   (** a node *)
   type t =
-    { (** unique id of the node *)
-    id: id  (** distance to the exit node *)
-    ; mutable dist_exit: int option  (** exception nodes in the cfg *)
-    ; mutable exn: t list  (** instructions for symbolic execution *)
-    ; mutable instrs: Sil.instr list  (** kind of node *)
-    ; kind: nodekind  (** location in the source code *)
-    ; loc: Location.t  (** predecessor nodes in the cfg *)
-    ; mutable preds: t list  (** name of the procedure the node belongs to *)
-    ; pname_opt: Typ.Procname.t option  (** successor nodes in the cfg *)
-    ; mutable succs: t list }
+    { id: id  (** unique id of the node *)
+    ; mutable dist_exit: int option  (** distance to the exit node *)
+    ; mutable exn: t list  (** exception nodes in the cfg *)
+    ; mutable instrs: Sil.instr list  (** instructions for symbolic execution *)
+    ; kind: nodekind  (** kind of node *)
+    ; loc: Location.t  (** location in the source code *)
+    ; mutable preds: t list  (** predecessor nodes in the cfg *)
+    ; pname_opt: Typ.Procname.t option  (** name of the procedure the node belongs to *)
+    ; mutable succs: t list  (** successor nodes in the cfg *) }
 
   let exn_handler_kind = Stmt_node "exception handler"
 
@@ -240,11 +240,14 @@ end
 (* =============== END of module Node =============== *)
 
 (** Map over nodes *)
-module NodeMap = Caml.Map.Make (Node)  (** Hash table with nodes as keys. *)
+module NodeMap = Caml.Map.Make (Node)
+
 (** Hash table with nodes as keys. *)
-module NodeHash = Hashtbl.Make (Node)  (** Set of nodes. *)
+module NodeHash = Hashtbl.Make (Node)
+
 (** Set of nodes. *)
-module NodeSet = Node.NodeSet  (** Map with node id keys. *)
+module NodeSet = Node.NodeSet
+
 (** Map with node id keys. *)
 module IdMap = Node.IdMap
 
@@ -255,7 +258,7 @@ type t =
   ; mutable nodes_num: int  (** number of nodes *)
   ; mutable start_node: Node.t  (** start node of this procedure *)
   ; mutable exit_node: Node.t  (** exit node of ths procedure *)
-  ; mutable loop_heads: (** loop head nodes of this procedure *) NodeSet.t option }
+  ; mutable loop_heads: NodeSet.t option  (** loop head nodes of this procedure *) }
   [@@deriving compare]
 
 (** Only call from Cfg *)

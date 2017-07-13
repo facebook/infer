@@ -9,12 +9,12 @@
  *)
 
 (** The Smallfoot Intermediate Language: Decompiled Expressions *)
+
 open! IStd
 module L = Logging
 module F = Format
 
 (** expression representing the result of decompilation *)
-
 type t =
   | Darray of t * t
   | Dbinop of Binop.t * t * t
@@ -32,21 +32,16 @@ type t =
 
 (** Value paths: identify an occurrence of a value in a symbolic heap
     each expression represents a path, with Dpvar being the simplest one *)
-
 type vpath = t option
 
+val to_string : t -> string
 (** convert to a string *)
 
-val to_string : t -> string
-
+val pp : F.formatter -> t -> unit
 (** pretty print *)
 
-val pp : F.formatter -> t -> unit
-
+val pp_vpath : Pp.env -> F.formatter -> vpath -> unit
 (** Pretty print a value path *)
 
-val pp_vpath : Pp.env -> F.formatter -> vpath -> unit
-
-(** return true if [dexp] contains a temporary pvar *)
-
 val has_tmp_var : t -> bool
+(** return true if [dexp] contains a temporary pvar *)

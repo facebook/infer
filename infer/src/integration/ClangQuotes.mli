@@ -7,12 +7,11 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+(** module for escaping clang arguments on the command line and put them into files *)
+
 open! IStd
 
-(* module for escaping clang arguments on the command line and put them into files *)
-
 (** quoting style of the arguments *)
-
 type style =
   | EscapedDoubleQuotes
       (** the arguments should be enclosed in "double quotes" and are already escaped *)

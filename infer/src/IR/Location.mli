@@ -10,7 +10,6 @@
 open! IStd
 
 (** Location in the original source file *)
-
 type t =
   { line: int  (** The line number. -1 means "do not know" *)
   ; col: int  (** The column number. -1 means "do not know" *)
@@ -19,26 +18,20 @@ type t =
 
 val equal : t -> t -> bool
 
+val d : t -> unit
 (** Dump a location. *)
 
-val d : t -> unit
-
+val none : SourceFile.t -> t
 (** Dummy source location for the given file *)
 
-val none : SourceFile.t -> t
-
+val dummy : t
 (** Dummy location with no source file *)
 
-val dummy : t
-
+val pp : Format.formatter -> t -> unit
 (** Pretty print a location. *)
 
-val pp : Format.formatter -> t -> unit
-
+val to_string : t -> string
 (** String representation of a location. *)
 
-val to_string : t -> string
-
-(** Pretty print a file-position of a location *)
-
 val pp_file_pos : Format.formatter -> t -> unit
+(** Pretty print a file-position of a location *)

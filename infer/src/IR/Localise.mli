@@ -181,13 +181,11 @@ module Tags : sig
   val tag_value_records_of_tags : t -> Jsonbug_t.tag_value_record list
   (** convert error description's tags to atd-serializable format *)
 
-  (* convert atd-serializable format to error description's tags *)
-
   val tags_of_tag_value_records : Jsonbug_t.tag_value_record list -> t
-
-  (* collect all lines from tags *)
+  (** convert atd-serializable format to error description's tags *)
 
   val lines_of_tags : t -> int list
+  (** collect all lines from tags *)
 end
 
 (** description field of error messages *)
@@ -209,8 +207,7 @@ val custom_desc_with_advice : string -> string -> (string * string) list -> erro
 
 module BucketLevel : sig
   val b1 : string
-
-  (* highest likelyhood *)
+  (** highest likelyhood *)
 
   val b2 : string
 
@@ -219,7 +216,7 @@ module BucketLevel : sig
   val b4 : string
 
   val b5 : string
-  (* lowest likelyhood *)
+  (** lowest likelyhood *)
 end
 
 val error_desc_extract_tag_value : error_desc -> string -> string
@@ -295,10 +292,8 @@ val deref_str_pointer_size_mismatch : Typ.t -> Typ.t -> deref_str
 
 (** type of access *)
 type access =
-  | Last_assigned of int * bool
-  (* line, null_case_flag *)
-  | Last_accessed of int * bool
-  (* line, is_nullable flag *)
+  | Last_assigned of int * bool  (** line, null_case_flag *)
+  | Last_accessed of int * bool  (** line, is_nullable flag *)
   | Initialized_automatically
   | Returned_from_call of int
 
@@ -358,9 +353,8 @@ val desc_context_leak :
 
 val desc_fragment_retains_view : Typ.t -> Typ.Fieldname.t -> Typ.t -> Typ.Procname.t -> error_desc
 
-(* Create human-readable error description for assertion failures *)
-
 val desc_custom_error : Location.t -> error_desc
+(** Create human-readable error description for assertion failures *)
 
 (** kind of precondition not met *)
 type pnm_kind = Pnm_bounds | Pnm_dangling

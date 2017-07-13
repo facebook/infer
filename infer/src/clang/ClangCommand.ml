@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
+
 open! IStd
 module L = Logging
 
@@ -73,8 +74,8 @@ let clang_cc1_cmd_sanitizer cmd =
   let mllvm_flags_blacklist = ["-profile-guided-section-prefix"] in
   let replace_option_arg option arg =
     if String.equal option "-arch" && String.equal arg "armv7k" then "armv7"
-    else if (* replace armv7k arch with armv7 *)
-            String.is_suffix arg ~suffix:"dep.tmp" then (
+      (* replace armv7k arch with armv7 *)
+    else if String.is_suffix arg ~suffix:"dep.tmp" then (
       (* compilation-database Buck integration produces path to `dep.tmp` file that doesn't exist. Create it *)
       Unix.mkdir_p (Filename.dirname arg) ;
       arg )

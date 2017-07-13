@@ -9,6 +9,7 @@
  *)
 
 (** The Smallfoot Intermediate Language: Expressions *)
+
 open! IStd
 module Hashtbl = Caml.Hashtbl
 module L = Logging
@@ -35,17 +36,17 @@ and sizeof_data = {typ: Typ.t; nbytes: int option; dynamic_length: t option; sub
 
 (** Program expressions. *)
 and t =
-  (** Pure variable: it is not an lvalue *)
-  | Var of _ident  (** Unary operator with type of the result if known *)
-  | UnOp of Unop.t * t * Typ.t option  (** Binary operator *)
-  | BinOp of Binop.t * t * t  (** Exception *)
-  | Exn of t  (** Anonymous function *)
-  | Closure of closure  (** Constants *)
-  | Const of Const.t  (** Type cast *)
-  | Cast of Typ.t * t  (** The address of a program variable *)
-  | Lvar of Pvar.t  (** A field offset, the type is the surrounding struct type *)
-  | Lfield of t * Typ.Fieldname.t * Typ.t  (** An array index offset: [exp1\[exp2\]] *)
-  | Lindex of t * t
+  | Var of _ident  (** Pure variable: it is not an lvalue *)
+  | UnOp of Unop.t * t * Typ.t option  (** Unary operator with type of the result if known *)
+  | BinOp of Binop.t * t * t  (** Binary operator *)
+  | Exn of t  (** Exception *)
+  | Closure of closure  (** Anonymous function *)
+  | Const of Const.t  (** Constants *)
+  | Cast of Typ.t * t  (** Type cast *)
+  | Lvar of Pvar.t  (** The address of a program variable *)
+  | Lfield of t * Typ.Fieldname.t * Typ.t
+      (** A field offset, the type is the surrounding struct type *)
+  | Lindex of t * t  (** An array index offset: [exp1\[exp2\]] *)
   | Sizeof of sizeof_data
   [@@deriving compare]
 

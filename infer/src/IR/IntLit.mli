@@ -12,19 +12,16 @@ open! IStd
 module F = Format
 
 (** signed and unsigned integer literals *)
-
 type t
 
 val add : t -> t -> t
 
+val compare : t -> t -> int
 (** compare integers ignoring the distinction between pointers and non-pointers *)
 
-val compare : t -> t -> int
-
+val compare_value : t -> t -> int
 (** compare the value of the integers, notice this is different from const compare,
     which distinguished between signed and unsigned +1 *)
-
-val compare_value : t -> t -> int
 
 val div : t -> t -> t
 
@@ -73,7 +70,6 @@ val neg : t -> t
 val neq : t -> t -> bool
 
 val null : t
-
 (** null behaves like zero except for the function isnull *)
 
 val one : t
@@ -88,9 +84,8 @@ val to_int : t -> int
 
 val to_signed : t -> t option
 
-(** convert to signed if the value is representable *)
-
 val to_string : t -> string
+(** convert to signed if the value is representable *)
 
 val two : t
 

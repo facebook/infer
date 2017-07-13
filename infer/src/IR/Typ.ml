@@ -9,6 +9,7 @@
  *)
 
 (** The Smallfoot Intermediate Language: Types *)
+
 open! IStd
 module Hashtbl = Caml.Hashtbl
 module L = Logging
@@ -124,10 +125,8 @@ module T = struct
     | Tptr of t * ptr_kind  (** pointer type *)
     | Tstruct of name  (** structured value type name *)
     | TVar of string  (** type variable (ie. C++ template variables) *)
-    | Tarray of
-        t
-        * IntLit.t option
-        * (** array type with statically fixed length and stride *) IntLit.t option
+    | Tarray of t * IntLit.t option * IntLit.t option
+        (** array type with statically fixed length and stride *)
     [@@deriving compare]
 
   and name =
@@ -487,9 +486,8 @@ module Procname = struct
     { method_name: string
     ; parameters: java_type list
     ; class_name: Name.t
-    ; return_type: java_type option
-    ; (* option because constructors have no return type *)
-    kind: method_kind }
+    ; return_type: java_type option (* option because constructors have no return type *)
+    ; kind: method_kind }
     [@@deriving compare]
 
   (** Type of c procedure names. *)
@@ -501,7 +499,7 @@ module Procname = struct
     [@@deriving compare]
 
   type objc_cpp_method_kind =
-    | CPPMethod of (** with mangling *) string option
+    | CPPMethod of string option  (** with mangling *)
     | CPPConstructor of (string option * bool)  (** with mangling + is it constexpr? *)
     | ObjCClassMethod
     | ObjCInstanceMethod
@@ -1011,8 +1009,8 @@ module Procname = struct
     | _
      -> to_concrete_filename pname
 
+  (** given two template arguments, try to generate mapping from generic ones to concrete ones. *)
   let get_template_args_mapping generic_procname concrete_procname =
-    (** given two template arguments, try to generate mapping from generic ones to concrete ones. *)
     let mapping_for_template_args (generic_name, generic_args) (concrete_name, concrete_args) =
       match (generic_args, concrete_args) with
       | Template generic_typs, Template concrete_typs

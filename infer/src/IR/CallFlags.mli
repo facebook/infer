@@ -9,12 +9,12 @@
  *)
 
 (** The Smallfoot Intermediate Language: Call Flags *)
+
 open! IStd
 module L = Logging
 module F = Format
 
 (** Flags for a procedure call *)
-
 type t =
   { cf_virtual: bool
   ; cf_interface: bool
@@ -25,6 +25,5 @@ type t =
 
 val pp : F.formatter -> t -> unit
 
-(** Default value where all fields are set to false *)
-
 val default : t
+(** Default value where all fields are set to false *)

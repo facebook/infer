@@ -9,12 +9,12 @@
  *)
 
 (** The Smallfoot Intermediate Language: Constants *)
+
 open! IStd
 module L = Logging
 module F = Format
 
 (** Constants *)
-
 type t =
   | Cint of IntLit.t  (** integer constants *)
   | Cfun of Typ.Procname.t  (** function names *)
@@ -25,13 +25,11 @@ type t =
 
 val equal : t -> t -> bool
 
+val kind_equal : t -> t -> bool
 (** Return true if the constants have the same kind (both integers, ...) *)
 
-val kind_equal : t -> t -> bool
-
-(** Pretty print a const *)
-
 val pp : Pp.env -> F.formatter -> t -> unit
+(** Pretty print a const *)
 
 val to_string : t -> string
 

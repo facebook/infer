@@ -24,7 +24,7 @@ ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
 
 GENERATED_OCAML_SOURCES_GLOB = <*{clang_plugin/*,backend/jsonbug_*,checkers/stacktree_*}>
 
-OCAML_FATAL_WARNINGS = +3+5+6+8+10+11+12+18+19+20+21+23+26+29+27+33+34+35+37+38+39+50+52+57-50
+OCAML_FATAL_WARNINGS = +3+5+6+8+10+11+12+18+19+20+21+23+26+29+27+33+34+35+37+38+39+50+52+57
 
 # options for ocamlbuild
 # Notice that use-ocamlfind is used here to avoid a linker bug in ocamlbuild when using -tag thread

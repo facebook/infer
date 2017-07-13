@@ -10,29 +10,24 @@
 open! IStd
 module F = Format
 
-(* the first bool indicates whether this is an unsigned value,
-   and the second whether it is a pointer *)
-
 (** signed and unsigned integer literals *)
 type t = bool * Int64.t * bool
+
+(* the first bool indicates whether this is an unsigned value,
+   and the second whether it is a pointer *)
 
 let area u i =
   match (i < 0L, u) with
   | true, false
-   -> 1
-  (* only representable as signed *)
+   -> (* only representable as signed *) 1
   | false, _
-   -> 2
-  (* in the intersection between signed and unsigned *)
+   -> (* in the intersection between signed and unsigned *) 2
   | true, true
-   -> 3
-
-(* only representable as unsigned *)
+   -> (* only representable as unsigned *) 3
 
 let to_signed (unsigned, i, ptr) =
   if Int.equal (area unsigned i) 3 then None
-  else Some (* not representable as signed *)
-            (false, i, ptr)
+  else (* not representable as signed *) Some (false, i, ptr)
 
 let compare (unsigned1, i1, _) (unsigned2, i2, _) =
   let n = Bool.compare unsigned1 unsigned2 in

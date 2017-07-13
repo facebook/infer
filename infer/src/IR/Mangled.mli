@@ -13,41 +13,31 @@ open! IStd
 (** Module for Mangled Names *)
 
 (** Type of mangled names *)
-
 type t [@@deriving compare]
 
+val equal : t -> t -> bool
 (** Equality for mangled names *)
 
-val equal : t -> t -> bool
-
+val from_string : string -> t
 (** Convert a string to a mangled name *)
 
-val from_string : string -> t
-
+val mangled : string -> string -> t
 (** Create a mangled name from a plain and mangled string *)
 
-val mangled : string -> string -> t
-
+val to_string : t -> string
 (** Convert a mangled name to a string *)
 
-val to_string : t -> string
-
+val to_string_full : t -> string
 (** Convert a full mangled name to a string *)
 
-val to_string_full : t -> string
-
+val get_mangled : t -> string
 (** Get mangled string if given *)
 
-val get_mangled : t -> string
-
+val pp : Format.formatter -> t -> unit
 (** Pretty print a mangled name *)
 
-val pp : Format.formatter -> t -> unit
-
 (** Set of Mangled. *)
-
 module Set : Caml.Set.S with type elt = t
 
 (** Map with Mangled as key *)
-
 module Map : Caml.Map.S with type key = t

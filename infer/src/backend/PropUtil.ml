@@ -15,9 +15,9 @@ let get_name_of_objc_static_locals (curr_f: Procdesc.t) p =
   let pname = Typ.Procname.to_string (Procdesc.get_proc_name curr_f) in
   let local_static e =
     match e with
-    | Exp.Lvar (* is a local static if it's a global and it has a static local name *)
-        pvar
+    | Exp.Lvar pvar
       when Pvar.is_global pvar && Sil.is_static_local_name pname pvar
+           (* is a local static if it's a global and it has a static local name *)
      -> [pvar]
     | _
      -> []

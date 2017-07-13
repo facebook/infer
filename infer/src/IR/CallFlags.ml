@@ -9,6 +9,7 @@
  *)
 
 (** The Smallfoot Intermediate Language: Call Flags *)
+
 open! IStd
 module L = Logging
 module F = Format

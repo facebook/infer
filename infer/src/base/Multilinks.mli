@@ -12,35 +12,27 @@ module F = Format
 module L = Logging
 
 (** In-memory representation of multilink files. *)
-
 type t
 
+val add : t -> string -> unit
 (** Add a link. *)
 
-val add : t -> string -> unit
-
+val create : unit -> t
 (** Create a new multilink. *)
 
-val create : unit -> t
-
+val multilink_file_name : string
 (** Name of the multilink file.
     A multilink file is recognized by its file name. *)
 
-val multilink_file_name : string
-
+val read : dir:string -> t option
 (** Read a multilink file from disk. *)
 
-val read : dir:string -> t option
-
+val resolve : DB.filename -> DB.filename
 (** Resolve a filename following multilinks.
     The cache is updated if a new multilinks file is read. *)
 
-val resolve : DB.filename -> DB.filename
-
+val reset_cache : unit -> unit
 (** Reset the cache of multilink files *)
 
-val reset_cache : unit -> unit
-
-(** Write a multilink file in the given directory *)
-
 val write : t -> dir:string -> unit
+(** Write a multilink file in the given directory *)

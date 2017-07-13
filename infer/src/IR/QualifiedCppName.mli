@@ -11,58 +11,47 @@ open! IStd
 
 type t [@@deriving compare]
 
-(** empty qualified name *)
-
 val empty : t
+(** empty qualified name *)
 
 val equal : t -> t -> bool
 
+val of_qual_string : string -> t
 (** attempts to parse the argument into a list::of::possibly::templated<T>::qualifiers *)
 
-val of_qual_string : string -> t
-
+val to_qual_string : t -> string
 (** returns qualified name as a string with "::" as a separator between qualifiers *)
 
-val to_qual_string : t -> string
-
+val append_qualifier : t -> qual:string -> t
 (** append qualifier to the end (innermost scope) of the qualified name *)
 
-val append_qualifier : t -> qual:string -> t
-
+val extract_last : t -> (string * t) option
 (** returns last (innermost scope) qualifier and qualified name without last qualifier *)
 
-val extract_last : t -> (string * t) option
-
+val strip_template_args : t -> t
 (** returns qualified name without template arguments. For example:
     input: std::shared_ptr<int>::shared_ptr<long>
     output: std::shared_ptr::shared_ptr *)
 
-val strip_template_args : t -> t
-
+val append_template_args_to_last : t -> args:string -> t
 (** append template arguments to the last qualifier. Fails if qualified name is empty or it already has
     template args *)
 
-val append_template_args_to_last : t -> args:string -> t
-
+val to_list : t -> string list
 (** returns list of qualifers *)
 
-val to_list : t -> string list
-
+val to_rev_list : t -> string list
 (** returns reversed list of qualifiers, ie innermost scope is the first element *)
 
-val to_rev_list : t -> string list
-
+val of_list : string list -> t
 (** given list of qualifiers in normal order produce qualified name ["std", "move"] *)
 
-val of_list : string list -> t
-
-(** given reversed list of qualifiers, produce qualified name (ie. ["move", "std"] for std::move )*)
-
 val of_rev_list : string list -> t
+(** given reversed list of qualifiers, produce qualified name (ie. ["move", "std"] for std::move )*)
 
 val pp : Format.formatter -> t -> unit
 
-(* Module to match qualified C++ procnames "fuzzily", that is up to namescapes and templating. In
+(** Module to match qualified C++ procnames "fuzzily", that is up to namescapes and templating. In
     particular, this deals with the following issues:
 
     1. 'std::' namespace may have inline namespace afterwards: std::move becomes std::__1::move. This
@@ -89,7 +78,6 @@ val pp : Format.formatter -> t -> unit
                                                           qualifiers to match
        does not match: ["folly","someFunction<int>", "BAD"] - same as previous example
    *)
-
 module Match : sig
   type quals_matcher
 
