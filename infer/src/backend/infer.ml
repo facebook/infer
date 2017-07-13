@@ -73,6 +73,8 @@ let setup_results_dir () =
    -> assert_results_dir "have you run capture before?"
   | Clang | Report | ReportDiff
    -> create_results_dir ()
+  | Diff
+   -> remove_results_dir () ; create_results_dir ()
   | Capture | Compile | Run
    -> let driver_mode = Lazy.force Driver.mode_from_command_line in
       if not
@@ -124,3 +126,5 @@ let () =
         ~previous_report:Config.report_previous
   | Capture | Compile | Run
    -> run (Lazy.force Driver.mode_from_command_line)
+  | Diff
+   -> Diff.diff (Lazy.force Driver.mode_from_command_line)

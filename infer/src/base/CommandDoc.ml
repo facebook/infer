@@ -23,6 +23,7 @@ let command_to_name =
   [ (Analyze, "analyze")
   ; (Capture, "capture")
   ; (Compile, "compile")
+  ; (Diff, "diff")
   ; (Report, "report")
   ; (ReportDiff, "reportdiff")
   ; (Run, "run") ]
@@ -124,6 +125,13 @@ let compile =
   infer capture --compilation-database compile_commands.json|}
       ]
     ~see_also:CLOpt.([Capture])
+
+let diff =
+  mk_command_doc ~title:"Infer Differential Analysis of a Project"
+    ~short_description:"Report the difference between two versions of a project"
+    ~synopsis:"$(b,infer) $(b,diff) $(i,[options])"
+    ~description:[`P "EXPERIMENTAL AND IN NO WAY READY TO USE"]
+    ~see_also:CLOpt.([ReportDiff; Run])
 
 let infer =
   mk_command_doc ~title:"Infer Static Analyzer"
@@ -258,6 +266,7 @@ let command_to_data =
   [ mk Analyze analyze
   ; mk Capture capture
   ; mk Compile compile
+  ; mk Diff diff
   ; mk Report report
   ; mk ReportDiff reportdiff
   ; mk Run run ]

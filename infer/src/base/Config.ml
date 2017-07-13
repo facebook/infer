@@ -357,7 +357,7 @@ let startup_action =
     match initial_command with
     | Some Clang
      -> NoParse
-    | None | Some (Analyze | Capture | Compile | Report | ReportDiff | Run)
+    | None | Some (Analyze | Capture | Compile | Diff | Report | ReportDiff | Run)
      -> InferCommand
 
 let exe_usage =
@@ -411,7 +411,7 @@ let () =
      -> assert false (* filtered out *)
     | Report
      -> `Add
-    | Analyze | Capture | Compile | ReportDiff | Run
+    | Analyze | Capture | Compile | Diff | ReportDiff | Run
      -> `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -758,6 +758,12 @@ and continue =
 and copy_propagation =
   CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
     "Perform copy-propagation on the IR"
+
+and current_to_previous_script =
+  CLOpt.mk_string_opt ~long:"current-to-previous-script"
+    ~in_help:CLOpt.([(Diff, manual_generic)])
+    ~meta:"shell"
+    "Specify a script to checkout a previous version of the project to compare against, assuming we are on the current version already."
 
 and cxx, cxx_infer_headers =
   let cxx_infer_headers =
@@ -1254,6 +1260,12 @@ and pmd_xml =
 and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
     "Print stats about preconditions to standard output"
+
+and previous_to_current_script =
+  CLOpt.mk_string_opt ~long:"previous-to-current-script"
+    ~in_help:CLOpt.([(Diff, manual_generic)])
+    ~meta:"shell"
+    "Specify a script to checkout the current version of the project. The project is supposed to already be at that current version when running $(b,infer diff); the script is used after having analyzed the current and previous versions of the project, to restore the project to the current version."
 
 and print_active_checkers =
   CLOpt.mk_bool ~long:"print-active-checkers"
@@ -1813,11 +1825,7 @@ and compute_analytics = !compute_analytics
 
 and continue_capture = !continue
 
-and linter = !linter
-
-and default_linters = !default_linters
-
-and linters_ignore_clang_failures = !linters_ignore_clang_failures
+and current_to_previous_script = !current_to_previous_script
 
 and copy_propagation = !copy_propagation
 
@@ -1838,6 +1846,8 @@ and debug_level_linters = !debug_level_linters
 and debug_exceptions = !debug_exceptions
 
 and debug_mode = !debug
+
+and default_linters = !default_linters
 
 and dependency_mode = !dependencies
 
@@ -1925,11 +1935,15 @@ and join_cond = !join_cond
 
 and latex = !latex
 
+and linter = !linter
+
 and linters_def_file = !linters_def_file
 
 and linters_def_folder = !linters_def_folder
 
 and linters_developer_mode = !linters_developer_mode
+
+and linters_ignore_clang_failures = !linters_ignore_clang_failures
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
@@ -1981,6 +1995,8 @@ and per_procedure_parallelism = !per_procedure_parallelism
 and pmd_xml = !pmd_xml
 
 and precondition_stats = !precondition_stats
+
+and previous_to_current_script = !previous_to_current_script
 
 and printf_args = !printf_args
 

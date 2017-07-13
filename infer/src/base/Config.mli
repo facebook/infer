@@ -322,15 +322,13 @@ val compute_analytics : bool
 
 val continue_capture : bool
 
-val default_linters : bool
-
-val linters_ignore_clang_failures : bool
-
 val copy_propagation : bool
 
 val crashcontext : bool
 
 val create_harness : bool
+
+val current_to_previous_script : string option
 
 val cxx : bool
 
@@ -345,6 +343,8 @@ val debug_level_linters : int
 val debug_exceptions : bool
 
 val debug_mode : bool
+
+val default_linters : bool
 
 val dependency_mode : bool
 
@@ -469,6 +469,8 @@ val linters_def_folder : string list
 
 val linters_developer_mode : bool
 
+val linters_ignore_clang_failures : bool
+
 val load_analysis_results : string option
 
 val log_file : string
@@ -501,6 +503,8 @@ val only_footprint : bool
 val pmd_xml : bool
 
 val precondition_stats : bool
+
+val previous_to_current_script : string option
 
 val print_active_checkers : bool
 

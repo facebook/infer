@@ -89,6 +89,7 @@ type command =
   | Capture
   | Clang
   | Compile
+  | Diff
   | Report
   | ReportDiff
   | Run
@@ -96,7 +97,7 @@ type command =
 
 let equal_command = [%compare.equal : command]
 
-let all_commands = [Analyze; Capture; Clang; Compile; Report; ReportDiff; Run]
+let all_commands = [Analyze; Capture; Clang; Compile; Diff; Report; ReportDiff; Run]
 
 type command_doc =
   { title: Cmdliner.Manpage.title

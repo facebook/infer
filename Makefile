@@ -20,6 +20,7 @@ BUILD_SYSTEMS_TESTS += \
   clang_with_M_flag \
   clang_with_MD_flag \
   delete_results_dir \
+  diff \
   fail_on_issue \
   j1 \
   linters \

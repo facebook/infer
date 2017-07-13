@@ -322,7 +322,9 @@ let potential_exception_message = "potential exception at line"
 module IssuesJson = struct
   let is_first_item = ref true
 
-  let pp_json_open fmt () = F.fprintf fmt "[@?"
+  let pp_json_open fmt () =
+    is_first_item := true ;
+    F.fprintf fmt "[@?"
 
   let pp_json_close fmt () = F.fprintf fmt "]@\n@?"
 
