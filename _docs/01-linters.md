@@ -330,7 +330,7 @@ A good way to learn how to write checkers is looking at existing checkers in the
 
 In the following we show a few examples of simple checks you may wish to write and the corresponding formulas:
 
-1. A check for flagging a Objective-C class that inherits from a class that shouldn't be subclassed.
+* A check for flagging a Objective-C class that inherits from a class that shouldn't be subclassed.
 
 ```
 DEFINE-CHECKER SUBCLASSING_TEST_EXAMPLE = {
@@ -339,7 +339,7 @@ DEFINE-CHECKER SUBCLASSING_TEST_EXAMPLE = {
 };
 ```
 
-2. A check for flagging an Objective-C instance method call:
+* A check for flagging an Objective-C instance method call:
 
 ```
 DEFINE-CHECKER CALL_INSTANCE_METHOD = {
@@ -348,7 +348,7 @@ DEFINE-CHECKER CALL_INSTANCE_METHOD = {
 };
 ```
 
-3. A check for flagging an Objective-C instance method call of any method of a class:
+* A check for flagging an Objective-C instance method call of any method of a class:
 
 ```
 DEFINE-CHECKER CALL_ANY_INSTANCE_METHODS = {
@@ -357,7 +357,7 @@ DEFINE-CHECKER CALL_ANY_INSTANCE_METHODS = {
 };
 ```
 
-4. A check for flagging an Objective-C class method call:
+* A check for flagging an Objective-C class method call:
 
 ```
 DEFINE-CHECKER CALL_CLASS_METHOD = {
@@ -366,7 +366,7 @@ DEFINE-CHECKER CALL_CLASS_METHOD = {
 };
 ```
 
-5.  A check for flagging an Objective-C method call of a method with int return type:
+*  A check for flagging an Objective-C method call of a method with int return type:
 
 ```
 DEFINE-CHECKER TEST_RETURN_METHOD = {
@@ -376,7 +376,7 @@ DEFINE-CHECKER TEST_RETURN_METHOD = {
 };
 ```
 
-6. A check for flagging a variable declaration with type long 
+* A check for flagging a variable declaration with type long 
 
 ```
 DEFINE-CHECKER TEST_VAR_TYPE_CHECK = {
@@ -386,7 +386,7 @@ DEFINE-CHECKER TEST_VAR_TYPE_CHECK = {
 };
 ```
 
-7. A check for flagging a method that has a parameter of type A*
+* A check for flagging a method that has a parameter of type A*
 
 ```
 DEFINE-CHECKER TEST_PARAM_TYPE_CHECK = {
@@ -399,7 +399,7 @@ DEFINE-CHECKER TEST_PARAM_TYPE_CHECK = {
 };
 ```
 
-7. A check for flagging a method that has all the parameters of type A* (and at least one)
+* A check for flagging a method that has all the parameters of type A* (and at least one)
 
 ```
 DEFINE-CHECKER TEST_PARAM_TYPE_CHECK2 = {
@@ -417,7 +417,7 @@ DEFINE-CHECKER TEST_PARAM_TYPE_CHECK2 = {
 };
 ```
 
-8. A check for flagging a method that has the 2nd parameter of type A* 
+* A check for flagging a method that has the 2nd parameter of type A* 
 
 ```
 DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
@@ -429,7 +429,7 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
 };
 ```
 
-9. A check for flagging a protocol that inherits from a given protocol.
+* A check for flagging a protocol that inherits from a given protocol.
 
 ```
 DEFINE-CHECKER TEST_PROTOCOL_DEF_INHERITANCE = {
@@ -441,7 +441,7 @@ DEFINE-CHECKER TEST_PROTOCOL_DEF_INHERITANCE = {
 };
 ```
 
-10. A check for flagging when a constructor is defined with a parameter of a type that implements a given protocol (or that inherits from it).
+* A check for flagging when a constructor is defined with a parameter of a type that implements a given protocol (or that inherits from it).
 
 ```
 DEFINE-CHECKER TEST_PROTOCOL_TYPE_INHERITANCE = {
@@ -462,7 +462,7 @@ DEFINE-CHECKER TEST_PROTOCOL_TYPE_INHERITANCE = {
 };
 ```
 
-11. A check for flagging a variable declaration of type NSArray applied to A. 
+* A check for flagging a variable declaration of type NSArray applied to A. 
 
 ```
 DEFINE-CHECKER TEST_GENERICS_TYPE = {
@@ -473,7 +473,7 @@ DEFINE-CHECKER TEST_GENERICS_TYPE = {
 };
 ```
 
-12. A check for flagging using a given namespace 
+* A check for flagging using a given namespace 
 
 ```
 DEFINE-CHECKER TEST_USING_NAMESPACE = {
