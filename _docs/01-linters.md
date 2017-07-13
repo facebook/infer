@@ -29,7 +29,7 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
      - [Constructor is defined with a parameter of a type that implements a given protocol](/docs/linters.html#constructor_protocol_type)
      - [Variable declaration of type NSArray applied to A](/docs/linters.html#nsarray_generics)
      - [Using a property or variable that is not available in the supported API](/docs/linters.html#unavailable_api)
-     - [A check for flagging using a given namespace](/docs/linters.html#use_namespace)
+     - [Using a given namespace](/docs/linters.html#use_namespace)
   - [AST info in messages](/docs/linters.html#info_message) 
   - [Testing your rule](/docs/linters.html#testing)  
   - [Debugging](/docs/linters.html#debugging) 
