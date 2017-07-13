@@ -18,9 +18,10 @@ import logging
 import subprocess
 import traceback
 
+from inferlib import utils
+
 
 def get_build_output(build_cmd):
-    from inferlib import utils
     #  TODO make it return generator to be able to handle large builds
     proc = subprocess.Popen(build_cmd, stdout=subprocess.PIPE)
     (verbose_out_chars, _) = proc.communicate()
@@ -31,7 +32,6 @@ def run_compilation_commands(cmds, clean_cmd):
     """runs compilation commands, and suggests a project cleaning command
     in case there is nothing to compile.
     """
-    from inferlib import utils
     #  TODO call it in parallel
     if len(cmds) == 0:
         utils.stderr('Nothing to compile. Try running `{}` first.'
