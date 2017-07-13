@@ -143,13 +143,15 @@ let clean_results_dir () =
     List.mem ~equal:String.equal dirs_to_delete
   in
   let should_delete_file =
+    let files_to_delete = [Config.log_file] in
     let suffixes_to_delete =
       ".txt" :: ".csv" :: ".json" :: (if Config.flavors then [] else [".cfg"; ".cg"])
     in
     fun name ->
       (* Keep the JSON report *)
       not (String.equal (Filename.basename name) Config.report_json)
-      && List.exists ~f:(Filename.check_suffix name) suffixes_to_delete
+      && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
+         || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
   in
   let rec clean name =
     let rec cleandir dir =

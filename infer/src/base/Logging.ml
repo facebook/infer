@@ -287,21 +287,15 @@ let setup_log_file () =
       ()
   | _, `Buffer b
    -> let fmt, chan, preexisting_logfile =
-        if Config.buck_cache_mode then
-          (* suppress log file in order not to cause flakiness in the Buck cache *)
-          let devnull_chan = Out_channel.create "/dev/null" in
-          let devnull_fmt = F.formatter_of_out_channel devnull_chan in
-          (devnull_fmt, devnull_chan, true)
-        else
-          (* assumes Config.results_dir exists already *)
-          let logfile_path = Config.results_dir ^/ Config.log_file in
-          let preexisting_logfile = PVariant.( = ) (Sys.file_exists logfile_path) `Yes in
-          let chan = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 logfile_path in
-          let file_fmt =
-            let f = F.formatter_of_out_channel chan in
-            if Config.print_logs then dup_formatter f F.err_formatter else f
-          in
-          (file_fmt, chan, preexisting_logfile)
+        (* assumes Config.results_dir exists already *)
+        let logfile_path = Config.results_dir ^/ Config.log_file in
+        let preexisting_logfile = PVariant.( = ) (Sys.file_exists logfile_path) `Yes in
+        let chan = Pervasives.open_out_gen [Open_append; Open_creat] 0o666 logfile_path in
+        let file_fmt =
+          let f = F.formatter_of_out_channel chan in
+          if Config.print_logs then dup_formatter f F.err_formatter else f
+        in
+        (file_fmt, chan, preexisting_logfile)
       in
       log_file := (fmt, `Channel chan) ;
       if preexisting_logfile then is_newline := false ;
