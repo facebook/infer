@@ -26,7 +26,7 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
      - [Method that has all the parameters of type A* (and at least one)](/docs/linters.html#all_parameters)
      - [Method that has the 2nd parameter of type A* ](/docs/linters.html#sec_parameter)
      - [Protocol that inherits from a given protocol](/docs/linters.html#protocol)
-     - [Constructor is defined with a parameter of a type that implements a given protocol (or that inherits from it)](/docs/linters.html#constructor_protocol_type)
+     - [Constructor is defined with a parameter of a type that implements a given protocol](/docs/linters.html#constructor_protocol_type)
      - [Variable declaration of type NSArray applied to A](/docs/linters.html#nsarray_generics)
   - [AST info in messages](/docs/linters.html#info_message) 
   - [Testing your rule](/docs/linters.html#testing)  
