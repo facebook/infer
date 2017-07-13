@@ -15,7 +15,8 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
   - [Defining Macros](/docs/linters.html#macros) 
   - [AL Predicates](/docs/linters.html#predicates) 
   - [AL Formulas](/docs/linters.html#formulas) 
-  - [Example AL checkers](/docs/linters.html#examples) 
+  - [Example AL checkers](/docs/linters.html#examples)
+     - [A check for flagging a Objective-C class that inherits from a class that shouldn't be subclassed](/docs/linters.html#examples)
   - [AST info in messages](/docs/linters.html#info_message) 
   - [Testing your rule](/docs/linters.html#testing)  
   - [Debugging](/docs/linters.html#debugging) 
@@ -330,7 +331,7 @@ A good way to learn how to write checkers is looking at existing checkers in the
 
 In the following we show a few examples of simple checks you may wish to write and the corresponding formulas:
 
-* A check for flagging a Objective-C class that inherits from a class that shouldn't be subclassed.
+* <a name="subclass_check"></a>A check for flagging a Objective-C class that inherits from a class that shouldn't be subclassed.
 
 ```
 DEFINE-CHECKER SUBCLASSING_TEST_EXAMPLE = {
@@ -339,7 +340,7 @@ DEFINE-CHECKER SUBCLASSING_TEST_EXAMPLE = {
 };
 ```
 
-* A check for flagging an Objective-C instance method call:
+* <a name="instance_method_check"></a> A check for flagging an Objective-C instance method call:
 
 ```
 DEFINE-CHECKER CALL_INSTANCE_METHOD = {
@@ -348,7 +349,7 @@ DEFINE-CHECKER CALL_INSTANCE_METHOD = {
 };
 ```
 
-* A check for flagging an Objective-C instance method call of any method of a class:
+* <a name="any_instance_method_check"></a> A check for flagging an Objective-C instance method call of any method of a class:
 
 ```
 DEFINE-CHECKER CALL_ANY_INSTANCE_METHODS = {
@@ -357,7 +358,7 @@ DEFINE-CHECKER CALL_ANY_INSTANCE_METHODS = {
 };
 ```
 
-* A check for flagging an Objective-C class method call:
+* <a name="class_method_check"></a> A check for flagging an Objective-C class method call:
 
 ```
 DEFINE-CHECKER CALL_CLASS_METHOD = {
@@ -376,7 +377,7 @@ DEFINE-CHECKER TEST_RETURN_METHOD = {
 };
 ```
 
-* A check for flagging a variable declaration with type long 
+* <a name="variable_type"></a> A check for flagging a variable declaration with type long 
 
 ```
 DEFINE-CHECKER TEST_VAR_TYPE_CHECK = {
@@ -386,7 +387,7 @@ DEFINE-CHECKER TEST_VAR_TYPE_CHECK = {
 };
 ```
 
-* A check for flagging a method that has a parameter of type A*
+* <a name="some_parameter"></a> A check for flagging a method that has a parameter of type A*
 
 ```
 DEFINE-CHECKER TEST_PARAM_TYPE_CHECK = {
@@ -399,7 +400,7 @@ DEFINE-CHECKER TEST_PARAM_TYPE_CHECK = {
 };
 ```
 
-* A check for flagging a method that has all the parameters of type A* (and at least one)
+* <a name="all_parameters"></a> A check for flagging a method that has all the parameters of type A* (and at least one)
 
 ```
 DEFINE-CHECKER TEST_PARAM_TYPE_CHECK2 = {
@@ -417,7 +418,7 @@ DEFINE-CHECKER TEST_PARAM_TYPE_CHECK2 = {
 };
 ```
 
-* A check for flagging a method that has the 2nd parameter of type A* 
+* <a name="sec_parameter"></a> A check for flagging a method that has the 2nd parameter of type A* 
 
 ```
 DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
@@ -429,7 +430,7 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
 };
 ```
 
-* A check for flagging a protocol that inherits from a given protocol.
+* <a name="protocol"></a> A check for flagging a protocol that inherits from a given protocol.
 
 ```
 DEFINE-CHECKER TEST_PROTOCOL_DEF_INHERITANCE = {
@@ -441,7 +442,7 @@ DEFINE-CHECKER TEST_PROTOCOL_DEF_INHERITANCE = {
 };
 ```
 
-* A check for flagging when a constructor is defined with a parameter of a type that implements a given protocol (or that inherits from it).
+* <a name="constructor_protocol_type"></a> A check for flagging when a constructor is defined with a parameter of a type that implements a given protocol (or that inherits from it).
 
 ```
 DEFINE-CHECKER TEST_PROTOCOL_TYPE_INHERITANCE = {
@@ -462,7 +463,7 @@ DEFINE-CHECKER TEST_PROTOCOL_TYPE_INHERITANCE = {
 };
 ```
 
-* A check for flagging a variable declaration of type NSArray applied to A. 
+* <a name="nsarray_generics"></a> A check for flagging a variable declaration of type NSArray applied to A. 
 
 ```
 DEFINE-CHECKER TEST_GENERICS_TYPE = {
@@ -473,7 +474,7 @@ DEFINE-CHECKER TEST_GENERICS_TYPE = {
 };
 ```
 
-* A check for flagging using a given namespace 
+* <a name="use_namespace"></a> A check for flagging using a given namespace 
 
 ```
 DEFINE-CHECKER TEST_USING_NAMESPACE = {
