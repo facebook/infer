@@ -15,7 +15,7 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
   - [Defining Macros](/docs/linters.html#macros) 
   - [AL Predicates](/docs/linters.html#predicates) 
   - [AL Formulas](/docs/linters.html#formulas) 
-  - [Example AL checkers for flagging:](/docs/linters.html#examples)
+  - [Example AL checkers:](/docs/linters.html#examples)
      - [Objective-C class that inherits from a class that shouldn't be subclassed](/docs/linters.html#subclass_check)
      - [Objective-C instance method call](/docs/linters.html#instance_method_check)
      - [Objective-C instance method call of any method of a class](/docs/linters.html#any_instance_method_check)
