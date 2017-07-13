@@ -444,6 +444,7 @@ DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
 ```
 
 * <a name="protocol"></a> A check for flagging a protocol that inherits from a given protocol.
+`HOLDS-EVENTUALLY WITH-TRANSITION Protocol` means follow the `Protocol` branch in the AST until the condition holds.
 
 ```
 DEFINE-CHECKER TEST_PROTOCOL_DEF_INHERITANCE = {
@@ -455,7 +456,8 @@ DEFINE-CHECKER TEST_PROTOCOL_DEF_INHERITANCE = {
 };
 ```
 
-* <a name="constructor_protocol_type"></a> A check for flagging when a constructor is defined with a parameter of a type that implements a given protocol (or that inherits from it).
+* <a name="constructor_protocol_type"></a> A check for flagging when a constructor is defined with a parameter of a type that implements a given protocol (or that inherits from it).  
+`HOLDS-NEXT WITH-TRANSITION Parameters` means, starting in the `ObjCMethodDecl` node, follow the `Parameters` branch in the AST and check that the condition holds there.
 
 ```
 DEFINE-CHECKER TEST_PROTOCOL_TYPE_INHERITANCE = {
