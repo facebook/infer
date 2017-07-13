@@ -185,10 +185,16 @@ OCAML_ALL_SOURCES = $(OCAML_BASE_SOURCES) $(CLANG_ATDGEN_STUBS) $(CLANG_PLUGIN_M
 .PHONY: all
 all: infer
 
+.PHONY: src_build_common
+src_build_common: base/Version.ml $(OCAML_CONFIG_SOURCES)
+
+ifeq ($(BUILD_C_ANALYZERS),yes)
+src_build_common: $(CLANG_BINIOU_DICT)
+endif
+
 # single out infer.native as the source of truth for make, knowing that in fact several targets are
 # produced by the build
-$(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(OCAML_CONFIG_SOURCES) \
-                                         $(MAKEFILE_LIST)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).native: src_build_common $(MAKEFILE_LIST)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_CONFIG_TARGETS)
@@ -215,12 +221,7 @@ endif
 .PHONY: infer
 infer: $(INFER_BIN).native
 
-ifeq ($(BUILD_C_ANALYZERS),yes)
-infer: $(CLANG_BINIOU_DICT)
-endif
-
-$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(OCAML_CONFIG_SOURCES) \
-                                       $(MAKEFILE_LIST)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: src_build_common $(MAKEFILE_LIST)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_CONFIG_TARGETS:.native=.byte)
@@ -251,7 +252,7 @@ M=
 MFLAGS=
 
 .PHONY: module
-module: base/Version.ml $(OCAML_ALL_SOURCES)
+module: src_build_common $(OCAML_ALL_SOURCES)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
           $(MFLAGS) \
@@ -293,7 +294,7 @@ $(shell \
   | awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}')
 endef
 
-toplevel.mlpack: base/Version.ml $(OCAML_CONFIG_SOURCES) $(MAKEFILE_LIST)
+toplevel.mlpack: src_build_common $(MAKEFILE_LIST)
 #	We need to pack all the infer modules into another module to avoid name clashes with some
 #	of them coming from ocaml libraries (Ident for example).  To do that, we generate a .mlpack
 #	file containing namespaced modules.
@@ -332,11 +333,11 @@ $(CHECKCOPYRIGHT_BIN): $(CHECKCOPYRIGHT_MAIN).ml $(MAKEFILE_LIST)
 define gen_atdgen_rules
 # generate files using atdgen
 # parameters:
-#   1. the .atd file to generate .ml{,i} files from
-#   2. the base name of .ml{,i} files
+#   1. the .atd file to generate .ml{,i} files from, e.g. foo.atd
+#   2. the base name of .ml{,i} files, e.g. foo
 #   3. the type of files to generate: b, j, t, or v
 
-$(2)_$(3).ml $(2)_$(3).mli: $(1)
+$(2)_$(3).mli: $(1)
 	$(ATDGEN) -$(3) $$< -o $(2)
 
 # the .ml depends on the corresponding .mli to avoid running atdgen

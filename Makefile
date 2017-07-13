@@ -123,18 +123,24 @@ SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -pat
 fmt_all:
 	parallel $(OCAMLFORMAT_EXE) --no-warn-error -i ::: $(SRC_ML)
 
+# pre-building these avoids race conditions when building, eg src_build and test_build in parallel
+.PHONY: src_build_common
+src_build_common:
+	$(QUIET)$(call silent_on_success,Generating source dependencies,\
+	$(MAKE) -C $(SRC_DIR) src_build_common)
+
 .PHONY: src_build
-src_build:
+src_build: src_build_common
 	$(QUIET)$(call silent_on_success,Building native Infer,\
 	$(MAKE) -C $(SRC_DIR) infer)
 
 .PHONY: byte
-byte:
+byte: src_build_common
 	$(QUIET)$(call silent_on_success,Building byte Infer,\
 	$(MAKE) -C $(SRC_DIR) byte)
 
 .PHONY: test_build
-test_build:
+test_build: src_build_common
 	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
 	$(MAKE) -C $(SRC_DIR) TEST=1 byte_no_install)
 #	byte_no_install builds most of what toplevel needs, so it's more efficient to run the
@@ -148,7 +154,7 @@ byte src_build test_build: fb-setup
 endif
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
-byte src_build test_build: clang_plugin
+byte src_build src_build_common test_build: clang_plugin
 endif
 
 $(INFER_COMMAND_MANUALS): src_build Makefile
@@ -313,7 +319,7 @@ check_missing_mli:
 	    test -f "$$x"i || echo Missing "$$x"i; done
 
 .PHONY: toplevel
-toplevel: clang_plugin
+toplevel: clang_plugin src_build_common
 	$(QUIET)$(MAKE) -C $(SRC_DIR) toplevel
 
 .PHONY: inferScriptMode_test
@@ -496,21 +502,29 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(QUIET)$(MAKE) -C facebook install
 endif
 
-.PHONY: clean
-clean: test_clean
+# Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
+.PHONY: ocaml_clean
+ocaml_clean:
 ifeq ($(IS_RELEASE_TREE),no)
 ifeq ($(BUILD_C_ANALYZERS),yes)
-	$(QUIET)$(MAKE) -C $(FCP_DIR) clean
 	$(QUIET)$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
 endif
 endif
 	$(QUIET)$(MAKE) -C $(SRC_DIR) clean
+	$(QUIET)$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
+
+.PHONY: clean
+clean: test_clean ocaml_clean
+ifeq ($(IS_RELEASE_TREE),no)
+ifeq ($(BUILD_C_ANALYZERS),yes)
+	$(QUIET)$(MAKE) -C $(FCP_DIR) clean
+endif
+endif
 	$(QUIET)$(MAKE) -C $(ANNOTATIONS_DIR) clean
 	$(QUIET)$(MAKE) -C $(MODELS_DIR) clean
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(QUIET)$(MAKE) -C facebook clean
 endif
-	$(QUIET)$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
 	find $(INFER_DIR)/tests \( -name '*.o' -o -name '*.o.sh' \) -delete
 	$(QUIET)$(REMOVE_DIR) _build_logs $(MAN_DIR)
 
