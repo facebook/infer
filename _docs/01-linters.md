@@ -325,6 +325,162 @@ The concept of transition is needed because of the special structure of the clan
 **Hint**
 A good way to learn how to write checkers is looking at existing checkers in the file [linters.al](https://github.com/facebook/infer/blob/master/infer/lib/linter_rules/linters.al).
 
+<a name="examples">**Example checks**</a>
+
+In the following we show a few examples of simple checks you may wish to write and the corresponding formulas:
+
+1. A check for flagging a Objective-C class that inherits from a class that shouldn't be subclassed.
+
+```
+DEFINE-CHECKER SUBCLASSING_TEST_EXAMPLE = {
+   SET report_when = is_class("A") HOLDS-IN-SOME-SUPERCLASS-OF ObjCInterfaceDecl;
+   SET message = "This is subclassing A. Class A should not be subclassed.";
+};
+```
+
+2. A check for flagging an Objective-C instance method call:
+
+```
+DEFINE-CHECKER CALL_INSTANCE_METHOD = {
+  SET report_when = call_instance_method("A", "foo:");
+  SET message = "Do not call this method";
+};
+```
+
+3. A check for flagging an Objective-C instance method call of any method of a class:
+
+```
+DEFINE-CHECKER CALL_ANY_INSTANCE_METHODS = {
+  SET report_when = call_instance_method(A, REGEXP("*"));
+  SET message = "Do not call any method of class A";
+};
+```
+
+4. A check for flagging an Objective-C class method call:
+
+```
+DEFINE-CHECKER CALL_CLASS_METHOD = {
+  SET report_when = call_class_method("A", "foo:");
+  SET message = "Do not call this method";
+};
+```
+
+5.  A check for flagging an Objective-C method call of a method with int return type:
+
+```
+DEFINE-CHECKER TEST_RETURN_METHOD = {
+  SET report_when = WHEN method_return_type("int")
+        HOLDS-IN-NODE ObjCMethodDecl;
+  SET message = "Method return int";
+};
+```
+
+6. A check for flagging a variable declaration with type long 
+
+```
+DEFINE-CHECKER TEST_VAR_TYPE_CHECK = {
+  SET report_when = WHEN has_type("long")
+	    HOLDS-IN-NODE VarDecl;
+  SET message = "Var %name% has type long";
+};
+```
+
+7. A check for flagging a method that has a parameter of type A*
+
+```
+DEFINE-CHECKER TEST_PARAM_TYPE_CHECK = {
+  LET method_has_a_parameter_with_type(x) =
+        WHEN HOLDS-NEXT WITH-TRANSITION Parameters (has_type(x))
+        HOLDS-IN-NODE ObjCMethodDecl;
+  SET report_when =
+           method_has_a_parameter_with_type("A*" );
+  SET message = "Found a method with a parameter of type A";
+};
+```
+
+7. A check for flagging a method that has all the parameters of type A* (and at least one)
+
+```
+DEFINE-CHECKER TEST_PARAM_TYPE_CHECK2 = {
+  LET method_has_at_least_a_parameter =
+      WHEN HOLDS-NEXT WITH-TRANSITION Parameters (TRUE)
+       HOLDS-IN-NODE ObjCMethodDecl;
+       
+   LET method_has_all_parameter_with_type(x) =
+        WHEN HOLDS-EVERYWHERE-NEXT WITH-TRANSITION Parameters (has_type(x))
+        HOLDS-IN-NODE ObjCMethodDecl;
+        
+  SET report_when = method_has_at_least_a_parameter AND
+                    method_has_all_parameter_with_type("int");
+  SET message = "All the parameters of the method have type int";
+};
+```
+
+8. A check for flagging a method that has the 2nd parameter of type A* 
+
+```
+DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
+  SET report_when =
+    WHEN objc_method_has_nth_parameter_of_type("2", "A*")
+    HOLDS-IN-NODE ObjCMethodDecl;
+  SET message = "Found a method with the 2nd parameter of type A*";
+  SET severity = "LIKE";
+};
+```
+
+9. A check for flagging a protocol that inherits from a given protocol.
+
+```
+DEFINE-CHECKER TEST_PROTOCOL_DEF_INHERITANCE = {
+  LET is_subprotocol_of(x) = declaration_has_name(x) HOLDS-EVENTUALLY WITH-TRANSITION Protocol;
+  SET report_when = 
+    WHEN is_subprotocol_of("P")
+    HOLDS-IN-NODE ObjCProtocolDecl;
+  SET message = "Do not inherit from Protocol P";
+};
+```
+
+10. A check for flagging when a constructor is defined with a parameter of a type that implements a given protocol (or that inherits from it).
+
+```
+DEFINE-CHECKER TEST_PROTOCOL_TYPE_INHERITANCE = {
+
+  LET method_has_parameter_subprotocol_of(x) =
+            WHEN
+             HOLDS-NEXT WITH-TRANSITION Parameters
+                (has_type_subprotocol_of(x))
+             HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET report_when =
+      WHEN
+        declaration_has_name(REGEXP("^newWith.*:$")) AND
+        method_has_parameter_subprotocol_of("P")
+      HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET message = "Do not define parameters of type P.";
+};
+```
+
+11. A check for flagging a variable declaration of type NSArray applied to A. 
+
+```
+DEFINE-CHECKER TEST_GENERICS_TYPE = {
+  SET report_when =
+      WHEN has_type("NSArray<A>*")
+      HOLDS-IN-NODE VarDecl;
+  SET message = "Do not create arrays of type A";
+};
+```
+
+12. A check for flagging using a given namespace 
+
+```
+DEFINE-CHECKER TEST_USING_NAMESPACE = {
+  SET report_when = using_namespace("N");
+  SET message = "Do not use namespace N";
+};
+```
+
 <a name="info_message">**AST info in messages**</a>
 
 When you write the message of your rule, you may want to specify which particular ast items were involved in the issue, such as a type or a variable name. We have a mechanism for that, we specified a few placeholders that can be used in rules with the syntax `%placeholder%` and it will be substituted by the correct ast info. At the moment we have `%type%`, `%child_type%` and `%name%` that print the type of the node, the type of the node's child, and a string representation of the node, respectively. As with predicates, we can add more as needed.
