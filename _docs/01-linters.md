@@ -487,7 +487,7 @@ DEFINE-CHECKER TEST_GENERICS_TYPE = {
 };
 ```
 
-* <a name="unavailable_api"></a> A check for flagging using a property or variable that is not available in the supported API. decl_unavailable_in_supported_ios_sdk is a predicate that works on a declaration, checks the available attribute from the declaration and compares it with the supported iOS SDK. Notice that we flag the occurrence of the variable or property, but the attribute is in the declaration, so we need the transition PointerToDecl that follows the pointer from the usage to the declaration. 
+* <a name="unavailable_api"></a> A check for flagging using a property or variable that is not available in the supported API. decl_unavailable_in_supported_ios_sdk is a predicate that works on a declaration, checks the available attribute from the declaration and compares it with the supported iOS SDK. Notice that we flag the occurrence of the variable or property, but the attribute is in the declaration, so we need the transition `PointerToDecl` that follows the pointer from the usage to the declaration. 
 
 ```
 DEFINE-CHECKER UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK = {
