@@ -1659,7 +1659,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let stmt =
       extract_stmt_from_singleton stmt_list "ERROR: StmtExpr should have only one statement.@\n"
     in
-    let res_trans_stmt = instruction trans_state stmt in
+    let trans_state' = {trans_state with priority= Free} in
+    let res_trans_stmt = instruction trans_state' stmt in
     let exps' = List.rev res_trans_stmt.exps in
     match exps' with
     | last_exp :: _
@@ -3009,7 +3010,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let res_trans_tail = exec_trans_instrs_no_rev trans_state' trans_stmt_fun_list' in
           { empty_res_trans with
             root_nodes= res_trans_tail.root_nodes
-          ; leaf_nodes= []
+          ; leaf_nodes= res_trans_s.leaf_nodes
           ; instrs= res_trans_tail.instrs @ res_trans_s.instrs
           ; exps= res_trans_tail.exps @ res_trans_s.exps
           ; initd_exps= res_trans_tail.initd_exps @ res_trans_s.initd_exps }
