@@ -15,6 +15,7 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
   - [Defining Macros](/docs/linters.html#macros) 
   - [AL Predicates](/docs/linters.html#predicates) 
   - [AL Formulas](/docs/linters.html#formulas) 
+  - [Example AL checkers](/docs/linters.html#examples) 
   - [AST info in messages](/docs/linters.html#info_message) 
   - [Testing your rule](/docs/linters.html#testing)  
   - [Debugging](/docs/linters.html#debugging) 
