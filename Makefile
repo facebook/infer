@@ -23,7 +23,6 @@ BUILD_SYSTEMS_TESTS += \
   fail_on_issue \
   j1 \
   linters \
-  make \
   project_root_rel \
   reactive \
   run_hidden_linters \
@@ -84,7 +83,7 @@ endif
 endif
 
 ifeq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
-BUILD_SYSTEMS_TESTS += utf8_in_pwd
+BUILD_SYSTEMS_TESTS += make utf8_in_pwd
 endif
 
 .PHONY: all

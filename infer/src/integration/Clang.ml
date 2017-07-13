@@ -49,8 +49,9 @@ let capture compiler ~prog ~args =
    -> ClangWrapper.exe ~prog ~args
   | Make
    -> let path_var = "PATH" in
-      let new_path = Config.wrappers_dir ^ ":" ^ Sys.getenv_exn path_var in
-      let extended_env = `Extend [(path_var, new_path)] in
+      let old_path = Option.value ~default:"" (Sys.getenv path_var) in
+      let new_path = Config.wrappers_dir ^ ":" ^ old_path in
+      let extended_env = `Extend [(path_var, new_path); ("INFER_OLD_PATH", old_path)] in
       L.environment_info "Running command %s with env:@\n%a@\n@." prog pp_extended_env extended_env ;
       Unix.fork_exec ~prog ~argv:(prog :: args) ~env:extended_env () |> Unix.waitpid
       |> function

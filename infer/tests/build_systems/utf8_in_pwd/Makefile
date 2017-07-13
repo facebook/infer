@@ -31,7 +31,7 @@ JAVAC_SOURCES = $(ROOT_DIR)/examples/Hello.java
 
 MAKE_DIR = $(UTF8_DIR)/make
 MAKE_SOURCES_DIR = ../codetoanalyze/make
-MAKE_SOURCES = $(wildcard $(MAKE_SOURCES_DIR)/*.c)
+MAKE_SOURCES = $(wildcard $(MAKE_SOURCES_DIR)/*.c $(MAKE_SOURCES_DIR)/*.java)
 
 ANALYZER = infer
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR) $(CMAKE_ANALYZE_DIR) infer-out-cmake

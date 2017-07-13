@@ -2,28 +2,23 @@
 
 # This is a wrapper for javac
 
-if [ -z "$INFER_RESULTS_DIR" ]; then
-    echo '$INFER_RESULTS_DIR with a path to the results dir not provided.' > /dev/stderr
-    exit 1
-elif [ -z "$INFER_OLD_PATH" ]; then
+if [ -z "$INFER_OLD_PATH" ]; then
     echo '$INFER_OLD_PATH with a copy of $PATH not provided.' > /dev/stderr
     exit 1
 fi
 
-HOST_COMPILER=(`PATH=$INFER_OLD_PATH which javac`)
+HOST_COMPILER=(`PATH="$INFER_OLD_PATH" which javac`)
 COMPILER_ARGS=("$@")
 HOST_COMPILER_COMMAND=("$HOST_COMPILER" "${COMPILER_ARGS[@]}")
-FRONTEND_COMMAND=("infer" "-a" "capture" "-o" "$INFER_RESULTS_DIR" "--" "javac" "${COMPILER_ARGS[@]}")
+FRONTEND_COMMAND=("infer" "capture" "--continue" "--" "javac" "${COMPILER_ARGS[@]}")
 
 if [[ "$*" == *-version* ]]; then
-    "${HOST_COMPILER_COMMAND[@]}"
-elif [ -n "$INFER_COMPILER_WRAPPER_IN_RECURSION" ]; then
-    if [ -z "$INFER_LISTENER" ]; then
-        "${HOST_COMPILER_COMMAND[@]}"
-    fi
+    exec "${HOST_COMPILER_COMMAND[@]}"
+elif [ "$INFER_COMPILER_WRAPPER_IN_RECURSION" != "1" ]; then
+    export INFER_COMPILER_WRAPPER_IN_RECURSION="1"
+    PATH="$INFER_OLD_PATH" exec "${FRONTEND_COMMAND[@]}"
 else
-    export INFER_COMPILER_WRAPPER_IN_RECURSION="Y"
-    "${FRONTEND_COMMAND[@]}"
+    echo 'ERROR: the javac wrapper called itself!' > /dev/stderr
+    # internal error
+    exit 3
 fi
-
-exit $?
