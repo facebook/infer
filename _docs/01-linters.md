@@ -28,6 +28,8 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
      - [Protocol that inherits from a given protocol](/docs/linters.html#protocol)
      - [Constructor is defined with a parameter of a type that implements a given protocol](/docs/linters.html#constructor_protocol_type)
      - [Variable declaration of type NSArray applied to A](/docs/linters.html#nsarray_generics)
+     - [Using a property or variable that is not available in the supported API](/docs/linters.html#unavailable_api)
+     - [A check for flagging using a given namespace](/docs/linters.html#use_namespace)
   - [AST info in messages](/docs/linters.html#info_message) 
   - [Testing your rule](/docs/linters.html#testing)  
   - [Debugging](/docs/linters.html#debugging) 
@@ -482,6 +484,18 @@ DEFINE-CHECKER TEST_GENERICS_TYPE = {
       WHEN has_type("NSArray<A>*")
       HOLDS-IN-NODE VarDecl;
   SET message = "Do not create arrays of type A";
+};
+```
+
+* <a name="unavailable_api"></a> A check for flagging using a property or variable that is not available in the supported API. decl_unavailable_in_supported_ios_sdk is a predicate that works on a declaration, checks the available attribute from the declaration and compares it with the supported iOS SDK. Notice that we flag the occurrence of the variable or property, but the attribute is in the declaration, so we need the transition PointerToDecl that follows the pointer from the usage to the declaration. 
+
+```
+DEFINE-CHECKER UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK = {
+  SET report_when =
+	WHEN HOLDS-NEXT WITH-TRANSITION PointerToDecl
+	 (decl_unavailable_in_supported_ios_sdk() AND
+	HOLDS-IN-NODE DeclRefExpr;
+  SET message = "%name% is not available in the required iOS SDK version";
 };
 ```
 
