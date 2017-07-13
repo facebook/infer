@@ -378,7 +378,7 @@ DEFINE-CHECKER CALL_CLASS_METHOD = {
 };
 ```
 
-*  A check for flagging an Objective-C method call of a method with int return type:
+*  <a name="return_type"></a> A check for flagging an Objective-C method call of a method with int return type:
 
 ```
 DEFINE-CHECKER TEST_RETURN_METHOD = {
