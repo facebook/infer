@@ -128,7 +128,7 @@ let get_compilation_database_files_xcodebuild ~prog ~args =
   | Ok (), Ok ()
    -> [`Escaped tmp_file]
   | _
-   -> L.external_error "There was an error executing the build command" ; exit 1
+   -> L.(die ExternalError) "There was an error executing the build command"
 
 let capture_files_in_database ~changed_files compilation_database =
   let filter_changed =

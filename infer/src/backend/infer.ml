@@ -55,18 +55,16 @@ let create_results_dir () = List.iter ~f:Unix.mkdir_p results_dir_dir_markers ; 
 
 let assert_results_dir advice =
   Result.iter_error (is_results_dir ()) ~f:(fun err ->
-      L.user_error "ERROR: No results directory at '%s': %s@\nERROR: %s@." Config.results_dir err
-        advice ;
-      exit 1 ) ;
+      L.(die UserError)
+        "ERROR: No results directory at '%s': %s@\nERROR: %s@." Config.results_dir err advice ) ;
   L.setup_log_file ()
 
 let remove_results_dir () =
   if Sys.is_directory Config.results_dir = `Yes then (
     Result.iter_error (is_results_dir ()) ~f:(fun err ->
-        L.user_error
+        L.(die UserError)
           "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\nERROR: Please delete '%s' and try again@."
-          Config.results_dir err Config.results_dir ;
-        exit 1 ) ;
+          Config.results_dir err Config.results_dir ) ;
     Utils.rmtree Config.results_dir )
 
 let setup_results_dir () =

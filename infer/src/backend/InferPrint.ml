@@ -935,7 +935,7 @@ module AnalysisResults = struct
     let load_file fname =
       match Specs.load_summary (DB.filename_from_string fname) with
       | None
-       -> L.user_error "Error: cannot open file %s@." fname ; exit 1
+       -> L.(die UserError) "Error: cannot open file %s@." fname
       | Some summary
        -> summaries := (fname, summary) :: !summaries
     in
@@ -958,7 +958,7 @@ module AnalysisResults = struct
     let do_spec f fname =
       match Specs.load_summary (DB.filename_from_string fname) with
       | None
-       -> L.user_error "Error: cannot open file %s@." fname ; exit 1
+       -> L.(die UserError) "Error: cannot open file %s@." fname
       | Some summary
        -> f (fname, summary)
     in
@@ -996,7 +996,7 @@ module AnalysisResults = struct
       | Some r
        -> iterator_of_summary_list r
       | None
-       -> L.user_error "Error: cannot open analysis results file %s@." fname ; exit 1
+       -> L.(die UserError) "Error: cannot open analysis results file %s@." fname
 end
 
 let register_perf_stats_report () =

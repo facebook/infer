@@ -28,11 +28,11 @@ let create_process_and_wait ~prog ~args =
   |> function
     | Ok ()
      -> ()
-    | Error err as status
-     -> L.external_error "Error executing: %s@\n%s@\n"
+    | Error _ as status
+     -> L.(die ExternalError)
+          "Error executing: %s@\n%s@\n"
           (String.concat ~sep:" " (prog :: args))
-          (Unix.Exit_or_signal.to_string_hum status) ;
-        exit (match err with `Exit_non_zero i -> i | `Signal _ -> 1)
+          (Unix.Exit_or_signal.to_string_hum status)
 
 (** Given a process id and a function that describes the command that the process id
     represents, prints a message explaining the command and its status, if in debug or stats mode.

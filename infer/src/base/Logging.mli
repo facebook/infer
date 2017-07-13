@@ -12,10 +12,12 @@ open! IStd
 
 (** log messages at different levels of verbosity *)
 
-val environment_info : ('a, Format.formatter, unit) format -> 'a
+module F = Format
+
+val environment_info : ('a, F.formatter, unit) format -> 'a
 (** log information about the environment *)
 
-val progress : ('a, Format.formatter, unit) format -> 'a
+val progress : ('a, F.formatter, unit) format -> 'a
 (** print immediately to standard error unless --quiet is specified *)
 
 val progressbar_file : unit -> unit
@@ -27,23 +29,23 @@ val progressbar_procedure : unit -> unit
 val progressbar_timeout_event : SymOp.failure_kind -> unit
 (** Progress bar: log a timeout event if in developer mode. *)
 
-val result : ('a, Format.formatter, unit) format -> 'a
+val result : ('a, F.formatter, unit) format -> 'a
 (** Emit a result to stdout. Use only if the output format is stable and useful enough that it may
     conceivably get piped to another program, ie, almost never (use [progress] instead otherwise).
 *)
 
-val user_error : ('a, Format.formatter, unit) format -> 'a
+val user_error : ('a, F.formatter, unit) format -> 'a
 (** bad input, etc. detected *)
 
-val user_warning : ('a, Format.formatter, unit) format -> 'a
+val user_warning : ('a, F.formatter, unit) format -> 'a
 
-val internal_error : ('a, Format.formatter, unit) format -> 'a
+val internal_error : ('a, F.formatter, unit) format -> 'a
 (** huho, infer has a bug *)
 
-val external_error : ('a, Format.formatter, unit) format -> 'a
+val external_error : ('a, F.formatter, unit) format -> 'a
 (** some other tool has a bug or is called wrongly *)
 
-val external_warning : ('a, Format.formatter, unit) format -> 'a
+val external_warning : ('a, F.formatter, unit) format -> 'a
 
 type debug_kind = Analysis | BufferOverrun | Capture | Linters | MergeCapture
 
@@ -53,8 +55,17 @@ type debug_level =
   | Medium  (** still fairly lightweight, eg emitted O(<number of infer processes>) *)
   | Verbose  (** go crazy *)
 
-val debug : debug_kind -> debug_level -> ('a, Format.formatter, unit) format -> 'a
+val debug : debug_kind -> debug_level -> ('a, F.formatter, unit) format -> 'a
 (** log debug info *)
+
+(** kind of error for [die], with similar semantics as above *)
+type error = UserError | ExternalError | InternalError
+
+val die : error -> ('a, F.formatter, unit, _) format4 -> 'a
+(** Print message and exit. The error code depends on [error].
+
+    Do not use lightly: failing hard should not be considered unless it's impossible to keep
+    going. *)
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int
@@ -62,7 +73,7 @@ type ml_loc = string * int * int * int
 val ml_loc_to_string : ml_loc -> string
 (** Convert a ml location to a string *)
 
-val pp_ml_loc_opt : Format.formatter -> ml_loc option -> unit
+val pp_ml_loc_opt : F.formatter -> ml_loc option -> unit
 (** Pretty print a location of ml source *)
 
 (** log management *)
@@ -119,7 +130,7 @@ type print_type =
 (** delayable print action *)
 type print_action = print_type * Obj.t  (** data to be printed *)
 
-val printer_hook : (Format.formatter -> print_action -> unit) ref
+val printer_hook : (F.formatter -> print_action -> unit) ref
 (** hook for the current printer of delayed print actions *)
 
 val add_print_action : print_action -> unit

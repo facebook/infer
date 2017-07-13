@@ -142,16 +142,18 @@ let close_logs () =
 
 let () = Epilogues.register ~f:close_logs "flushing logs and closing log file"
 
-let log ~to_console ?(to_file= true) (lazy formatters) =
+let log_k ~to_console ?(to_file= true) ~k (lazy formatters) =
   match (to_console, to_file) with
   | false, false
-   -> F.ifprintf F.std_formatter
+   -> F.ikfprintf k F.std_formatter
   | true, _ when not Config.print_logs
-   -> F.fprintf !formatters.console_file
+   -> F.kfprintf k !formatters.console_file
   | _
    -> (* to_console might be true, but in that case so is Config.print_logs so do not print to
          stderr because it will get logs from the log file already *)
-      F.fprintf !formatters.file
+      F.kfprintf k !formatters.file
+
+let log = log_k ~k:ignore
 
 let debug_file_fmts = register_formatter "debug"
 
@@ -196,7 +198,9 @@ let progressbar_timeout_event failure_kind =
 
 let user_warning fmt = log ~to_console:(not Config.quiet) user_warning_file_fmts fmt
 
-let user_error fmt = log ~to_console:(not Config.quiet) user_error_file_fmts fmt
+let user_error_k ~k fmt = log_k ~to_console:(not Config.quiet) ~k user_error_file_fmts fmt
+
+let user_error fmt = user_error_k ~k:ignore fmt
 
 type debug_level = Quiet | Medium | Verbose [@@deriving compare]
 
@@ -238,9 +242,14 @@ let environment_info fmt = log ~to_console:false environment_info_file_fmts fmt
 
 let external_warning fmt = log ~to_console:(not Config.quiet) external_warning_file_fmts fmt
 
-let external_error fmt = log ~to_console:(not Config.quiet) external_error_file_fmts fmt
+let external_error_k ~k fmt = log_k ~to_console:(not Config.quiet) ~k external_error_file_fmts fmt
 
-let internal_error fmt = log ~to_console:Config.developer_mode internal_error_file_fmts fmt
+let external_error fmt = external_error_k ~k:ignore fmt
+
+let internal_error_k ~k fmt =
+  log_k ~to_console:Config.developer_mode ~k internal_error_file_fmts fmt
+
+let internal_error fmt = internal_error_k ~k:ignore fmt
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int
@@ -254,6 +263,21 @@ let pp_ml_loc fmt ml_loc = F.fprintf fmt "%s" (ml_loc_to_string ml_loc)
 let pp_ml_loc_opt fmt ml_loc_opt =
   if Config.developer_mode then
     match ml_loc_opt with None -> () | Some ml_loc -> F.fprintf fmt "(%a)" pp_ml_loc ml_loc
+
+type error = UserError | ExternalError | InternalError
+
+(* exit code 2 is used by the OCaml runtime in cases of uncaught exceptions, avoid it *)
+let exit_code_of_kind = function UserError -> 1 | ExternalError -> 10 | InternalError -> 3
+
+let log_of_kind = function
+  | UserError
+   -> user_error_k
+  | ExternalError
+   -> external_error_k
+  | InternalError
+   -> internal_error_k
+
+let die error msg = log_of_kind error ~k:(fun _ -> exit (exit_code_of_kind error)) msg
 
 (* create new channel from the log file, and dumps the contents of the temporary log buffer there *)
 let setup_log_file () =

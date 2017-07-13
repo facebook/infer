@@ -784,7 +784,7 @@ let parse_args ~usage initial_action ?initial_command args =
      -> if !anon_arg_action.on_unknown <> `Reject && is_unknown usage_msg then (
           anon_fun !args_to_parse.(!arg_being_parsed) ;
           parse_loop () )
-        else ( Pervasives.prerr_string usage_msg ; exit 2 )
+        else ( Pervasives.prerr_string usage_msg ; exit 1 )
     | Arg.Help _
      -> (* we handle --help by ourselves and error on -help, so Arg has no way to raise Help
            anymore *)
