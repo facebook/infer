@@ -21,6 +21,8 @@ val call_class_method : Ctl_parser_types.ast_node -> ALVar.alexp -> ALVar.alexp 
 
 val call_instance_method : Ctl_parser_types.ast_node -> ALVar.alexp -> ALVar.alexp -> bool
 
+val is_enum_constant : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+
 val is_objc_interface_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val is_objc_extension : CLintersContext.context -> bool

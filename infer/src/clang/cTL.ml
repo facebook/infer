@@ -760,6 +760,8 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.is_class an cname
   | "is_const_var", [], an
    -> CPredicates.is_const_expr_var an
+  | "is_enum_constant", [cname], an
+   -> CPredicates.is_enum_constant an cname
   | "is_global_var", [], an
    -> CPredicates.is_syntactically_global_var an
   | "is_ivar_atomic", [], an

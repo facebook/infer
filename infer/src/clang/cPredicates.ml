@@ -216,6 +216,13 @@ let call_function an name =
   | _
    -> false
 
+let is_enum_constant an name =
+  match an with
+  | Ctl_parser_types.Stmt st
+   -> decl_ref_name ~kind:`EnumConstant name st
+  | _
+   -> false
+
 let is_strong_property an =
   match an with
   | Ctl_parser_types.Decl Clang_ast_t.ObjCPropertyDecl (_, _, pdi)
