@@ -118,13 +118,34 @@ end
 module AccessDomain : sig
   include module type of AbstractDomain.Map (AccessPrecondition) (PathDomain)
 
-  (* add the given (access, precondition) pair to the map *)
-
   val add_access : AccessPrecondition.t -> TraceElem.t -> astate -> astate
-
-  (* get all accesses with the given precondition *)
+  (** add the given (access, precondition) pair to the map *)
 
   val get_accesses : AccessPrecondition.t -> astate -> PathDomain.astate
+  (** get all accesses with the given precondition *)
+end
+
+(** a formal or a local variable that may escape *)
+module Escapee : sig
+  type t = Formal of int | Local of Var.t [@@deriving compare]
+
+  val pp : F.formatter -> t -> unit
+
+  val of_access_path : FormalMap.t -> AccessPath.Raw.t -> t
+end
+
+(** set of formals or locals that may escape *)
+module EscapeeDomain : sig
+  include module type of AbstractDomain.FiniteSet (Escapee)
+
+  val add_from_list : astate -> Escapee.t list -> astate
+end
+
+(** Domain that only includes escaping formals, for use in summary *)
+module FormalsDomain : sig
+  include module type of AbstractDomain.FiniteSet (Int)
+
+  val of_escapees : EscapeeDomain.astate -> astate
 end
 
 type astate =
@@ -134,16 +155,19 @@ type astate =
   ; accesses: AccessDomain.astate
         (** read and writes accesses performed without ownership permissions *)
   ; attribute_map: AttributeMapDomain.astate
-        (** map of access paths to attributes such as owned, functional, ... *) }
+        (** map of access paths to attributes such as owned, functional, ... *)
+  ; escapees: EscapeeDomain.astate  (** set of formals and locals that may escape *) }
 
-(** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of the
-    attributes associated with the return value *)
+(** same as astate, but without [attribute_map] (since these involve locals)
+    and with the addition of the attributes associated with the return value
+    as well as the set of formals which may escape *)
 type summary =
   ThumbsUpDomain.astate
   * ThreadsDomain.astate
   * LocksDomain.astate
   * AccessDomain.astate
   * AttributeSetDomain.astate
+  * FormalsDomain.astate
 
 include AbstractDomain.WithBottom with type astate := astate
 

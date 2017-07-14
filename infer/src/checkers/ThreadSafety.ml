@@ -451,7 +451,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _
        -> false
 
-  let make_container_write callee_pname receiver_ap callee_loc tenv =
+  let make_container_write callee_pname actuals receiver_ap callee_loc tenv =
     (* create a dummy write that represents mutating the contents of the container *)
     let open Domain in
     let callee_accesses =
@@ -467,7 +467,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         AccessDomain.add_access (Unprotected (Some 0))
           (make_access dummy_access_ap Write callee_loc) AccessDomain.empty
     in
-    Some (true, false, false, callee_accesses, AttributeSetDomain.empty)
+    (* TODO: for now all formals escape *)
+    (* we need a more intelligent escape analysis, that branches on whether
+             we own the container *)
+    let escapee_formals = List.length actuals |> List.range 0 |> FormalsDomain.of_list in
+    Some (true, false, false, callee_accesses, AttributeSetDomain.empty, escapee_formals)
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
     if is_container_write callee_pname tenv then
@@ -479,7 +483,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
          -> failwithf "Call to %a is marked as a container write, but has no receiver"
               Typ.Procname.pp callee_pname
       in
-      make_container_write callee_pname receiver_ap callee_loc tenv
+      make_container_write callee_pname actuals receiver_ap callee_loc tenv
     else Summary.read_summary caller_pdesc callee_pname
 
   (* return true if the given procname boxes a primitive type into a reference type *)
@@ -502,6 +506,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~f:(fun acc exp -> add_access exp loc Read acc locks threads attribute_map proc_data)
       exps ~init:accesses
 
+  let add_escapees_from_exp rhs_exp extras escapees =
+    HilExp.get_access_paths rhs_exp |> List.rev_map ~f:(Domain.Escapee.of_access_path extras)
+    |> Domain.EscapeeDomain.add_from_list escapees
+
+  let add_escapees_from_exp_list exp_list extras escapees =
+    List.fold ~init:escapees exp_list ~f:(fun acc exp -> add_escapees_from_exp exp extras acc)
+
+  let add_escapees_from_call actuals escapee_formals extras escapees =
+    let escapee_actuals =
+      Domain.FormalsDomain.elements escapee_formals |> List.rev_map ~f:(List.nth_exn actuals)
+    in
+    add_escapees_from_exp_list escapee_actuals extras escapees
+
   let exec_instr (astate: Domain.astate) ({ProcData.extras; tenv; pdesc} as proc_data) _
       (instr: HilInstr.t) =
     let open Domain in
@@ -515,7 +532,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           AttributeMapDomain.add_attribute (ret_base, []) Attribute.unconditionally_owned
             astate.attribute_map
         in
-        {astate with accesses; attribute_map}
+        (* TODO: we need to model escaping formals, now just assume all escape *)
+        let escapees = add_escapees_from_exp_list actuals extras astate.escapees in
+        {astate with accesses; attribute_map; escapees}
     | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc)
      -> (
         let accesses =
@@ -568,7 +587,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   , callee_threads
                   , callee_locks
                   , callee_accesses
-                  , return_attributes )
+                  , return_attributes
+                  , escapee_formals )
                -> let update_caller_accesses pre callee_accesses caller_accesses =
                     let combined_accesses =
                       PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
@@ -645,9 +665,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     propagate_return_attributes ret_opt return_attributes actuals
                       astate.attribute_map extras
                   in
-                  {thumbs_up; locks; threads; accesses; attribute_map}
+                  let escapees =
+                    add_escapees_from_call actuals escapee_formals extras astate.escapees
+                  in
+                  {thumbs_up; locks; threads; accesses; attribute_map; escapees}
               | None
-               -> let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
+               -> (* TODO: assume actuals escape, should we? *)
+                  let new_escapees = add_escapees_from_exp_list actuals extras astate.escapees in
+                  let astate = {astate with escapees= new_escapees} in
+                  let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
                     (* assume non-interface methods with no summary and no parameters return
                          ownership *)
                     not call_flags.cf_interface && List.is_empty actuals
@@ -721,7 +747,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let attribute_map =
           propagate_attributes lhs_access_path rhs_exp astate.attribute_map extras
         in
-        {astate with accesses; attribute_map}
+        (* assigning to the return variable leads to no new escapees *)
+        let escapees =
+          if fst lhs_access_path |> fst |> Var.is_return then astate.escapees
+          else add_escapees_from_exp rhs_exp extras astate.escapees
+        in
+        {astate with accesses; attribute_map; escapees}
     | Assume (assume_exp, _, _, loc)
      -> let rec eval_binop op var e1 e2 =
           match (eval_bexp var e1, eval_bexp var e2) with
@@ -877,12 +908,14 @@ let empty_post =
   let initial_thumbs_up = true
   and initial_known_on_ui_thread = false
   and has_lock = false
-  and return_attrs = ThreadSafetyDomain.AttributeSetDomain.empty in
+  and return_attrs = ThreadSafetyDomain.AttributeSetDomain.empty
+  and escapee_formals = ThreadSafetyDomain.FormalsDomain.empty in
   ( initial_thumbs_up
   , initial_known_on_ui_thread
   , has_lock
   , ThreadSafetyDomain.AccessDomain.empty
-  , return_attrs )
+  , return_attrs
+  , escapee_formals )
 
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let is_initializer tenv proc_name =
@@ -920,7 +953,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
       else ({ThreadSafetyDomain.empty with threads}, IdAccessPathMapDomain.empty)
     in
     match Analyzer.compute_post proc_data ~initial ~debug:false with
-    | Some ({thumbs_up; threads; locks; accesses; attribute_map}, _)
+    | Some ({thumbs_up; threads; locks; accesses; attribute_map; escapees}, _)
      -> let return_var_ap =
           AccessPath.of_pvar
             (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
@@ -948,20 +981,21 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           | _
            -> locks
         in
-        let post = (thumbs_up, threads, update_locks, accesses, return_attributes) in
+        let escapee_formals = FormalsDomain.of_escapees escapees in
+        let post =
+          (thumbs_up, threads, update_locks, accesses, return_attributes, escapee_formals)
+        in
         Summary.update_summary post summary
     | None
      -> summary )
   else Summary.update_summary empty_post summary
 
-(* we assume two access paths can alias if their access parts are equal (we ignore the base). *)
-let can_alias access_path1 access_path2 =
-  List.compare AccessPath.compare_access (snd access_path1) (snd access_path2)
-
 module AccessListMap = Caml.Map.Make (struct
-  type t = AccessPath.Raw.t [@@deriving compare]
+  type t = AccessPath.Raw.t
 
-  let compare = can_alias
+  (* TODO -- keep this compare to satisfy the order of tests, consider using Raw.compare *)
+  let compare access_path1 access_path2 =
+    List.compare AccessPath.compare_access (snd access_path1) (snd access_path2)
 end)
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
@@ -1032,7 +1066,7 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
   let open ThreadSafetyDomain in
   let orig_access = PathDomain.Sink.kind orig_sink in
   match Summary.read_summary orig_pdesc callee_pname with
-  | Some (_, _, _, access_map, _)
+  | Some (_, _, _, access_map, _, _)
    -> get_all_accesses
         (fun access -> Int.equal (Access.compare (PathDomain.Sink.kind access) orig_access) 0)
         access_map
@@ -1397,7 +1431,7 @@ let should_filter_access (_, path) =
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
 let make_results_table file_env =
-  let aggregate_post (_, threaded, _, accesses, _) tenv pdesc acc =
+  let aggregate_post (_, threaded, _, accesses, _, _) tenv pdesc acc =
     let open ThreadSafetyDomain in
     AccessDomain.fold
       (fun pre accesses acc ->

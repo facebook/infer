@@ -178,12 +178,47 @@ module AccessDomain = struct
     with Not_found -> PathDomain.empty
 end
 
+module Escapee = struct
+  type t = Formal of int | Local of Var.t [@@deriving compare]
+
+  let pp fmt = function
+    | Formal fml
+     -> F.fprintf fmt "Formal(%d)" fml
+    | Local loc
+     -> F.fprintf fmt "Local(%a)" Var.pp loc
+
+  let of_access_path extras (base, _) =
+    match FormalMap.get_formal_index base extras with
+    | Some fml
+     -> Formal fml
+    | None
+     -> Local (fst base)
+end
+
+module EscapeeDomain = struct
+  include AbstractDomain.FiniteSet (Escapee)
+
+  let add_from_list escapees escapee_list =
+    List.fold ~init:escapees escapee_list ~f:(fun acc v -> add v acc)
+end
+
+module FormalsDomain = struct
+  include AbstractDomain.FiniteSet (Int)
+
+  let of_escapees escapees =
+    let aux escapee acc =
+      match escapee with Escapee.Formal fml -> add fml acc | Escapee.Local _ -> acc
+    in
+    EscapeeDomain.fold aux escapees empty
+end
+
 type astate =
   { thumbs_up: ThumbsUpDomain.astate
   ; threads: ThreadsDomain.astate
   ; locks: LocksDomain.astate
   ; accesses: AccessDomain.astate
-  ; attribute_map: AttributeMapDomain.astate }
+  ; attribute_map: AttributeMapDomain.astate
+  ; escapees: EscapeeDomain.astate }
 
 type summary =
   ThumbsUpDomain.astate
@@ -191,6 +226,7 @@ type summary =
   * LocksDomain.astate
   * AccessDomain.astate
   * AttributeSetDomain.astate
+  * FormalsDomain.astate
 
 let empty =
   let thumbs_up = true in
@@ -198,7 +234,8 @@ let empty =
   let locks = false in
   let accesses = AccessDomain.empty in
   let attribute_map = AccessPath.RawMap.empty in
-  {thumbs_up; threads; locks; accesses; attribute_map}
+  let escapees = EscapeeDomain.empty in
+  {thumbs_up; threads; locks; accesses; attribute_map; escapees}
 
 let ( <= ) ~lhs ~rhs =
   if phys_equal lhs rhs then true
@@ -206,6 +243,7 @@ let ( <= ) ~lhs ~rhs =
     && LocksDomain.( <= ) ~lhs:lhs.locks ~rhs:rhs.locks
     && AccessDomain.( <= ) ~lhs:lhs.accesses ~rhs:rhs.accesses
     && AttributeMapDomain.( <= ) ~lhs:lhs.attribute_map ~rhs:rhs.attribute_map
+    && EscapeeDomain.( <= ) ~lhs:lhs.escapees ~rhs:rhs.escapees
 
 let join astate1 astate2 =
   if phys_equal astate1 astate2 then astate1
@@ -215,7 +253,8 @@ let join astate1 astate2 =
     let locks = LocksDomain.join astate1.locks astate2.locks in
     let accesses = AccessDomain.join astate1.accesses astate2.accesses in
     let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
-    {thumbs_up; threads; locks; accesses; attribute_map}
+    let escapees = EscapeeDomain.join astate1.escapees astate2.escapees in
+    {thumbs_up; threads; locks; accesses; attribute_map; escapees}
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next then prev
@@ -227,16 +266,17 @@ let widen ~prev ~next ~num_iters =
     let attribute_map =
       AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters
     in
-    {thumbs_up; threads; locks; accesses; attribute_map}
+    let escapees = EscapeeDomain.widen ~prev:prev.escapees ~next:next.escapees ~num_iters in
+    {thumbs_up; threads; locks; accesses; attribute_map; escapees}
 
-let pp_summary fmt (thumbs_up, threads, locks, accesses, return_attributes) =
+let pp_summary fmt (thumbs_up, threads, locks, accesses, return_attributes, escapee_formals) =
   F.fprintf fmt
-    "@\nThumbsUp: %a, Threads: %a, Locks: %a @\nAccesses %a @\nReturn Attributes: %a@\n"
+    "@\nThumbsUp: %a, Threads: %a, Locks: %a @\nAccesses %a @\nReturn Attributes: %a @\nEscapee Formals: %a @\n"
     ThumbsUpDomain.pp thumbs_up ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp
-    accesses AttributeSetDomain.pp return_attributes
+    accesses AttributeSetDomain.pp return_attributes FormalsDomain.pp escapee_formals
 
-let pp fmt {thumbs_up; threads; locks; accesses; attribute_map} =
+let pp fmt {thumbs_up; threads; locks; accesses; attribute_map; escapees} =
   F.fprintf fmt
-    "@\nThumbsUp: %a, Threads: %a, Locks: %a @\nAccesses %a @\nReturn Attributes: %a@\n"
+    "@\nThumbsUp: %a, Threads: %a, Locks: %a @\nAccesses %a @\nReturn Attributes: %a @\nEscapees: %a @\n"
     ThumbsUpDomain.pp thumbs_up ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp
-    accesses AttributeMapDomain.pp attribute_map
+    accesses AttributeMapDomain.pp attribute_map EscapeeDomain.pp escapees
