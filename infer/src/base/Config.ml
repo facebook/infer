@@ -1616,6 +1616,26 @@ and () = CLOpt.mk_set ~parse_mode:CLOpt.Javac version ~deprecated:["version"] ~l
 
 (** Parse Command Line Args *)
 
+let config_file =
+  let rec find dir =
+    match Sys.file_exists ~follow_symlinks:false (dir ^/ CommandDoc.inferconfig_file) with
+    | `Yes
+     -> Some dir
+    | `No | `Unknown
+     -> let parent = Filename.dirname dir in
+        let is_root = String.equal dir parent in
+        if is_root then None else find parent
+  in
+  match Sys.getenv CommandDoc.inferconfig_env_var with
+  | Some env_path
+   -> (* make sure the path makes sense in children infer processes *)
+      Some
+        ( if Filename.is_relative env_path then
+            Utils.filename_to_absolute ~root:CLOpt.init_work_dir env_path
+        else env_path )
+  | None
+   -> find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
+
 let post_parsing_initialization command_opt =
   ( match !version with
   | `Full
@@ -1640,7 +1660,14 @@ let post_parsing_initialization command_opt =
           (List.map ~f:(fun (n, a) -> (a, n)) string_to_analyzer)
           (match !analyzer with Some a -> a | None -> BiAbduction)
       in
-      let infer_version = Version.commit in
+      let infer_version =
+        match config_file with
+        | Some inferconfig
+         -> Printf.sprintf "version %s/inferconfig %s" Version.commit
+              (Digest.to_hex (Digest.file inferconfig))
+        | None
+         -> Version.commit
+      in
       F.eprintf "%s/%s/%s@." javac_version analyzer_name infer_version
   | `Javac
    -> prerr_endline version_string
@@ -1709,28 +1736,7 @@ let post_parsing_initialization command_opt =
       (* the default option is to run the biabduction analysis *) ) ;
   Option.value ~default:CLOpt.Run command_opt
 
-let inferconfig_path () =
-  let rec find dir =
-    match Sys.file_exists ~follow_symlinks:false (dir ^/ CommandDoc.inferconfig_file) with
-    | `Yes
-     -> Some dir
-    | `No | `Unknown
-     -> let parent = Filename.dirname dir in
-        let is_root = String.equal dir parent in
-        if is_root then None else find parent
-  in
-  match Sys.getenv CommandDoc.inferconfig_env_var with
-  | Some env_path
-   -> (* make sure the path makes sense in children infer processes *)
-      Some
-        ( if Filename.is_relative env_path then
-            Utils.filename_to_absolute ~root:CLOpt.init_work_dir env_path
-        else env_path )
-  | None
-   -> find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
-
 let command, parse_args_and_return_usage_exit =
-  let config_file = inferconfig_path () in
   let command_opt, usage_exit =
     CLOpt.parse ?config_file ~usage:exe_usage startup_action initial_command
   in
