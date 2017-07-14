@@ -71,7 +71,6 @@ let include_override_regex = Option.map ~f:Str.regexp Config.clang_include_to_ov
 let clang_cc1_cmd_sanitizer cmd =
   (* command line options not supported by the opensource compiler or the plugins *)
   let flags_blacklist = ["-fembed-bitcode-marker"; "-fno-canonical-system-headers"] in
-  let mllvm_flags_blacklist = ["-profile-guided-section-prefix"] in
   let replace_option_arg option arg =
     if String.equal option "-arch" && String.equal arg "armv7k" then "armv7"
       (* replace armv7k arch with armv7 *)
@@ -107,9 +106,7 @@ let clang_cc1_cmd_sanitizer cmd =
         List.rev_append res_rev (List.rev post_args_rev)
     | flag :: tl when List.mem ~equal:String.equal flags_blacklist flag
      -> filter_unsupported_args_and_swap_includes (flag, res_rev) tl
-    | flag1 :: flag2 :: tl
-      when String.equal "-mllvm" flag1
-           && List.exists ~f:(fun prefix -> String.is_prefix ~prefix flag2) mllvm_flags_blacklist
+    | flag1 :: flag2 :: tl when String.equal "-mllvm" flag1
      -> filter_unsupported_args_and_swap_includes (flag2, res_rev) tl
     | arg :: tl
      -> let res_rev' = replace_option_arg prev arg :: res_rev in
