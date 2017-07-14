@@ -514,7 +514,7 @@ DEFINE-CHECKER TEST_USING_NAMESPACE = {
 ```
 DEFINE-CHECKER ENUM_CONSTANTS = {
   SET report_when = is_enum_constant(REGEXP("MyName.*"));
-  SET message = "Do not use the enum MyName or strategy";
+  SET message = "Do not use the enum MyName";
 };
 ```
 
