@@ -105,4 +105,25 @@ public class NullableSuggest {
       // Pretend that we did something here...
     }
   }
+
+  void methodWithCapturedNullableParameterOk(@Nullable Object parameter) {
+    Object object = new Object() {
+        void foo() {
+          if (parameter != null) {
+            parameter.toString();
+          }
+        }
+      };
+  }
+
+  void methodWithCapturednonNullableParameterBad_FN(Object parameter) {
+    Object object = new Object() {
+        void foo() {
+          if (parameter != null) {
+            parameter.toString();
+          }
+        }
+      };
+  }
+
 }

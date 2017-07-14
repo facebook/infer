@@ -509,6 +509,9 @@ module Fieldname : sig
   module Java : sig
     val from_string : string -> t
     (** Create a java field name from string *)
+
+    val is_captured_parameter : t -> bool
+    (** Check if field is a captured parameter *)
   end
 
   val to_string : t -> string

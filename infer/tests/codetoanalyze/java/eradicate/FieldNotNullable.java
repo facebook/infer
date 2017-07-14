@@ -350,4 +350,12 @@ class NestedFieldAccess {
      }
   }
 
+  void methodWithNullableCapturedParameterBad_FN(@Nullable Object parameter) {
+    Object object = new Object() {
+      void foo() {
+        parameter.toString();
+      }
+    };
+  }
+
 }

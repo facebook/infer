@@ -1092,14 +1092,6 @@ module Fieldname = struct
   module Set = Caml.Set.Make (T)
   module Map = Caml.Map.Make (T)
 
-  module Clang = struct
-    let from_class_name class_name field_name = Clang {class_name; field_name}
-  end
-
-  module Java = struct
-    let from_string n = Java n
-  end
-
   (** Convert a fieldname to a string. *)
   let to_string = function
     | Hidden
@@ -1181,6 +1173,21 @@ module Fieldname = struct
 
   (** hidded fieldname constant *)
   let is_hidden fn = equal fn hidden
+
+  module Clang = struct
+    let from_class_name class_name field_name = Clang {class_name; field_name}
+  end
+
+  module Java = struct
+    let from_string n = Java n
+
+    let is_captured_parameter field_name =
+      match field_name with
+      | Java _
+       -> String.is_prefix ~prefix:"val$" (to_flat_string field_name)
+      | Hidden | Clang _
+       -> false
+  end
 end
 
 module Struct = struct
