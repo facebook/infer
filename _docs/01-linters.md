@@ -30,6 +30,7 @@ For iOS apps, we provide a linters framework. These are checks about the syntax 
      - [Variable declaration of type NSArray applied to A](/docs/linters.html#nsarray_generics)
      - [Using a property or variable that is not available in the supported API](/docs/linters.html#unavailable_api)
      - [Using a given namespace](/docs/linters.html#use_namespace)
+     - [A check for flagging the use of given enum constants](/docs/linters.html#enum_constants)
   - [AST info in messages](/docs/linters.html#info_message) 
   - [Testing your rule](/docs/linters.html#testing)  
   - [Debugging](/docs/linters.html#debugging) 
@@ -505,6 +506,15 @@ DEFINE-CHECKER UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK = {
 DEFINE-CHECKER TEST_USING_NAMESPACE = {
   SET report_when = using_namespace("N");
   SET message = "Do not use namespace N";
+};
+```
+
+* <a name="enum_constants"></a> A check for flagging the use of given enum constants
+
+```
+DEFINE-CHECKER ENUM_CONSTANTS = {
+  SET report_when = is_enum_constant(REGEXP("MyName.*"));
+  SET message = "Do not use the enum MyName or strategy";
 };
 ```
 
