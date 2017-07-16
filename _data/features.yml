@@ -1,6 +1,6 @@
 - title: Android and Java
   text: |
-        Infer checks for null pointer exceptions, resource leaks, annotation reachability, missing lock guards, and concurrency race condtions 
+        Infer checks for null pointer exceptions, resource leaks, annotation reachability, missing lock guards, and concurrency race conditions 
         in Android and Java code.
 
 - title: C, C++, and iOS/Objective-C
