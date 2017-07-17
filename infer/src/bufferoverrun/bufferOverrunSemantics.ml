@@ -325,7 +325,7 @@ module Make (CFG : ProcCfg.S) = struct
         match Mem.find_alias x mem with
         | Some lv
          -> let v = Mem.find_heap lv mem in
-            let itv_v = if Itv.is_bot (Val.get_itv v) then Itv.bot else Itv.false_sem in
+            let itv_v = Itv.prune_ne (Val.get_itv v) Itv.false_sem in
             let v' = Val.modify_itv itv_v v in
             Mem.update_mem (PowLoc.singleton lv) v' mem
         | None
