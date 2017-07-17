@@ -219,6 +219,30 @@ let pi_of_subst sub = List.map ~f:(fun (id1, e2) -> Sil.Aeq (Var id1, e2)) (Sil.
 (** Return the pure part of [prop]. *)
 let get_pure (p: 'a t) : pi = pi_of_subst p.sub @ p.pi
 
+(* Same with get_pure, except that when we have both "x = t" and "y = t" where t is a primed ident, 
+* we add "x = y" to the result. This is crucial for the normalizer, as it tend to drop "x = t" before 
+* processing "y = t". If we don't explicitly preserve "x = y", the normalizer cannot pick it up *)
+let get_pure_extended p =
+  let base = get_pure p in
+  let primed_atoms, _ =
+    List.fold base ~init:([], Ident.IdentMap.empty) ~f:(fun (atoms, primed_map as acc) base_atom ->
+        let extend_atoms id pid =
+          try
+            let old_id = Ident.IdentMap.find pid primed_map in
+            let new_atom = Sil.Aeq (Var id, Var old_id) in
+            (new_atom :: atoms, primed_map)
+          with Not_found -> (atoms, Ident.IdentMap.add pid id primed_map)
+        in
+        match base_atom with
+        | Sil.Aeq (Exp.Var id0, Exp.Var id1) when Ident.is_primed id0 && not (Ident.is_primed id1)
+         -> extend_atoms id1 id0
+        | Sil.Aeq (Exp.Var id0, Exp.Var id1) when Ident.is_primed id1 && not (Ident.is_primed id0)
+         -> extend_atoms id0 id1
+        | _
+         -> acc )
+  in
+  primed_atoms @ base
+
 (** Print existential quantification *)
 let pp_evars pe f evars =
   if evars <> [] then
@@ -1610,7 +1634,7 @@ module Normalize = struct
     let p0 =
       unsafe_cast_to_normal (set prop_emp ~sigma:(sigma_normalize tenv Sil.sub_empty eprop.sigma))
     in
-    let nprop = List.fold ~f:(prop_atom_and tenv) ~init:p0 (get_pure eprop) in
+    let nprop = List.fold ~f:(prop_atom_and tenv) ~init:p0 (get_pure_extended eprop) in
     unsafe_cast_to_normal
       (footprint_normalize tenv (set nprop ~pi_fp:eprop.pi_fp ~sigma_fp:eprop.sigma_fp))
 end
