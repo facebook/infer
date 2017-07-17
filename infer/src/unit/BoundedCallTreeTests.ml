@@ -73,7 +73,7 @@ let tests =
   let test_list_from_baz =
     [ ( "ignore_procs_unrelated_to_trace"
       , [make_call ~procname:f_proc_name None []; (* means f() *)
-        invariant "{  }"] ) ]
+        invariant "{ }"] ) ]
     |> TestInterpreter.create_tests ~test_pname:caller_baz_name extras ~initial
   in
   let test_list_multiple_traces_from_foo =

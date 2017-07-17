@@ -15,7 +15,7 @@ module TestInterpreter =
 let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
-  let assert_empty = invariant "{  }" in
+  let assert_empty = invariant "{ }" in
   let test_list =
     [ ("id_load_id_no_gen", [id_assign_id "b" "a"; (* means b = *a *)
                             assert_empty])

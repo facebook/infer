@@ -14,7 +14,7 @@ module TestInterpreter = AnalyzerTester.Make (ProcCfg.Exceptional) (AddressTaken
 let tests =
   let open OUnit2 in
   let open AnalyzerTester.StructuredSil in
-  let assert_empty = invariant "{  }" in
+  let assert_empty = invariant "{ }" in
   let int_typ = Typ.mk (Tint IInt) in
   let int_ptr_typ = Typ.mk (Tptr (int_typ, Pk_pointer)) in
   let fun_ptr_typ = Typ.mk (Tptr (Typ.mk (Tfun false), Pk_pointer)) in

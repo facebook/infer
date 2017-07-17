@@ -114,7 +114,7 @@ let tests =
   let read_field_to_id lhs_id_str root_str fld_str =
     make_load_fld ~rhs_typ:(Typ.mk Tvoid) lhs_id_str fld_str (Exp.Var (ident_of_str root_str))
   in
-  let assert_empty = invariant "{  }" in
+  let assert_empty = invariant "{ }" in
   (* hack: register an empty analyze_ondemand to prevent a crash because the callback is unset *)
   let analyze_ondemand summary _ = summary in
   let get_proc_desc _ = None in
@@ -137,8 +137,8 @@ let tests =
         ; read_field_to_id "read_id" "base_id" "f"
         ; var_assign_id "var" "read_id"
         ; invariant
-            "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?), &var => (SOURCE -> ?) }" ]
-      )
+            "{ base_id$0.f => (SOURCE -> ?),\n  ret_id$0 => (SOURCE -> ?),\n  &var => (SOURCE -> ?) }"
+        ] )
     ; ( "source flows to var then cleared"
       , [ assign_to_source "ret_id"
         ; var_assign_id "var" "ret_id"
@@ -184,7 +184,7 @@ let tests =
         ; read_field_to_id "read_id" "var_id" "f"
         ; call_sink "read_id"
         ; invariant
-            "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?), &var.f* => (SOURCE -> SINK) }"
+            "{ base_id$0.f => (SOURCE -> ?),\n  ret_id$0 => (SOURCE -> ?),\n  &var.f* => (SOURCE -> SINK) }"
         ] )
     ; ( "source -> sink via cast"
       , [ assign_to_source "ret_id"
