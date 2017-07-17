@@ -2,6 +2,8 @@
 
 # This is a wrapper for javac
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 if [ -z "$INFER_OLD_PATH" ]; then
     echo '$INFER_OLD_PATH with a copy of $PATH not provided.' > /dev/stderr
     exit 1
@@ -10,7 +12,8 @@ fi
 HOST_COMPILER=(`PATH="$INFER_OLD_PATH" which javac`)
 COMPILER_ARGS=("$@")
 HOST_COMPILER_COMMAND=("$HOST_COMPILER" "${COMPILER_ARGS[@]}")
-FRONTEND_COMMAND=("infer" "capture" "--continue" "--" "javac" "${COMPILER_ARGS[@]}")
+FRONTEND_COMMAND=("$SCRIPT_DIR/../../bin/infer" "capture" "--continue"
+                  "--" "javac" "${COMPILER_ARGS[@]}")
 
 if [[ "$*" == *-version* ]]; then
     exec "${HOST_COMPILER_COMMAND[@]}"
