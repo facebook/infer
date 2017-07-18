@@ -250,14 +250,22 @@ let use_jar_cache = true
 let weak = "<\"Weak\">"
 
 let whitelisted_cpp_methods =
-  ["std::move"; "std::forward"; "std::min"; "std::max"; "std::swap"; "google::CheckNotNull"]
+  [ "google::CheckNotNull"
+  ; "std::forward"
+  ; "std::get"
+  ; "std::make_pair"
+  ; "std::max"
+  ; "std::min"
+  ; "std::move"
+  ; "std::swap" ]
 
 let whitelisted_cpp_classes =
-  (* libstdc++ internal name of vector iterator *)
-  [ "std::__less"
-  ; "std::__wrap_iter"
-  ; (* libc++ internal name of vector iterator *)
-  "__gnu_cxx::__normal_iterator" ]
+  [ "__gnu_cxx::__normal_iterator" (* libstdc++ internal name of vector iterator *)
+  ; "std::__less"
+  ; "std::__wrap_iter" (* libc++ internal name of vector iterator *)
+  ; "std::__get_pair" (* libc++ internal support class for std::get<std::pair> *)
+  ; "std::__pair_get" (* libstdc++ internal support class for std::get<std::pair> *)
+  ; "std::pair" ]
 
 type dynamic_dispatch_policy = [`None | `Interface | `Sound | `Lazy]
 
