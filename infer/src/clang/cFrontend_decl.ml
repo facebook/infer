@@ -172,6 +172,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       match dec with
       | Clang_ast_t.FunctionDecl (_, name_info, _, _)
       | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _)
+      | Clang_ast_t.CXXConstructorDecl (_, name_info, _, _, _)
+      | Clang_ast_t.CXXConversionDecl (_, name_info, _, _, _)
+      | Clang_ast_t.CXXDestructorDecl (_, name_info, _, _, _)
        -> is_whitelisted_cpp_method (CAst_utils.get_qualified_name name_info)
       | _
        -> false
@@ -184,6 +187,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       match dec with
       | Clang_ast_t.FunctionDecl (_, name_info, _, _)
       | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _)
+      | Clang_ast_t.CXXConstructorDecl (_, name_info, _, _, _)
+      | Clang_ast_t.CXXConversionDecl (_, name_info, _, _, _)
+      | Clang_ast_t.CXXDestructorDecl (_, name_info, _, _, _)
        -> let fun_name = name_info.Clang_ast_t.ni_name in
           Str.string_match (Str.regexp "__infer_skip__") fun_name 0
       | _
