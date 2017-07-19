@@ -45,7 +45,7 @@ void testCycle() {
   CADisplay* b = a;
 }
 
-void testNoCycle_FP() {
+void testNoCycle() {
 
   CADisplay* a = [[CADisplay alloc] init];
   [a invalidate]; // break the cycle

@@ -22,8 +22,7 @@ type pvar_kind =
   | Callee_var of Typ.Procname.t  (** local variable belonging to a callee *)
   | Abduced_retvar of Typ.Procname.t * Location.t
       (** synthetic variable to represent return value *)
-  | Abduced_ref_param of Typ.Procname.t * t * Location.t
-  | Abduced_ref_param_val of Typ.Procname.t * Ident.t * Location.t
+  | Abduced_ref_param of Typ.Procname.t * int * Location.t
       (** synthetic variable to represent param passed by reference *)
   | Global_var of (translation_unit * bool * bool * bool)
       (** global variable: translation unit + is it compile constant? + is it POD? + is it a static
@@ -42,7 +41,7 @@ let pp_translation_unit fmt = function
   | TUExtern
    -> Format.fprintf fmt "EXTERN"
 
-let rec _pp f pv =
+let _pp f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
   | Local_var n
@@ -54,13 +53,9 @@ let rec _pp f pv =
   | Abduced_retvar (n, l)
    -> if !Config.pp_simple then F.fprintf f "%a|abducedRetvar" Mangled.pp name
       else F.fprintf f "%a$%a%a|abducedRetvar" Typ.Procname.pp n Location.pp l Mangled.pp name
-  | Abduced_ref_param (n, pv, l)
-   -> if !Config.pp_simple then F.fprintf f "%a|%a|abducedRefParam" _pp pv Mangled.pp name
+  | Abduced_ref_param (n, index, l)
+   -> if !Config.pp_simple then F.fprintf f "%a|abducedRefParam%d" Mangled.pp name index
       else F.fprintf f "%a$%a%a|abducedRefParam" Typ.Procname.pp n Location.pp l Mangled.pp name
-  | Abduced_ref_param_val (n, id, l)
-   -> if !Config.pp_simple then
-        F.fprintf f "%a|%a|abducedRefParamVal" (Ident.pp Pp.text) id Mangled.pp name
-      else F.fprintf f "%a$%a%a|abducedRefParamVal" Typ.Procname.pp n Location.pp l Mangled.pp name
   | Global_var (translation_unit, is_const, is_pod, _)
    -> F.fprintf f "#GB<%a%s%s>$%a" pp_translation_unit translation_unit
         (if is_const then "|const" else "")
@@ -84,9 +79,6 @@ let pp_latex f pv =
   | Abduced_ref_param _
    -> F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "abducedRefParam"
-  | Abduced_ref_param_val _
-   -> F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
-        (Latex.pp_string Latex.Roman) "abducedRefParamVal"
   | Global_var _
    -> Latex.pp_string Latex.Boldface f (Mangled.to_string name)
   | Seed_var
@@ -125,11 +117,7 @@ let get_simplified_name pv =
 
 (** Check if the pvar is an abucted return var or param passed by ref *)
 let is_abduced pv =
-  match pv.pv_kind with
-  | Abduced_retvar _ | Abduced_ref_param _ | Abduced_ref_param_val _
-   -> true
-  | _
-   -> false
+  match pv.pv_kind with Abduced_retvar _ | Abduced_ref_param _ -> true | _ -> false
 
 (** Turn a pvar into a seed pvar (which stored the initial value) *)
 let to_seed pv = {pv with pv_kind= Seed_var}
@@ -193,7 +181,7 @@ let to_callee pname pvar =
    -> {pvar with pv_kind= Callee_var pname}
   | Global_var _
    -> pvar
-  | Callee_var _ | Abduced_retvar _ | Abduced_ref_param _ | Abduced_ref_param_val _ | Seed_var
+  | Callee_var _ | Abduced_retvar _ | Abduced_ref_param _ | Seed_var
    -> L.d_str "Cannot convert pvar to callee: " ;
       d pvar ;
       L.d_ln () ;
@@ -230,13 +218,9 @@ let mk_abduced_ret (proc_name: Typ.Procname.t) (loc: Location.t) : t =
   let name = Mangled.from_string ("$RET_" ^ Typ.Procname.to_unique_id proc_name) in
   {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc)}
 
-let mk_abduced_ref_param (proc_name: Typ.Procname.t) (pv: t) (loc: Location.t) : t =
-  let name = Mangled.from_string ("$REF_PARAM_" ^ Typ.Procname.to_unique_id proc_name) in
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_ref_param (proc_name, pv, loc)}
-
-let mk_abduced_ref_param_val (proc_name: Typ.Procname.t) (id: Ident.t) (loc: Location.t) : t =
+let mk_abduced_ref_param (proc_name: Typ.Procname.t) (index: int) (loc: Location.t) : t =
   let name = Mangled.from_string ("$REF_PARAM_VAL_" ^ Typ.Procname.to_unique_id proc_name) in
-  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_ref_param_val (proc_name, id, loc)}
+  {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_ref_param (proc_name, index, loc)}
 
 let get_translation_unit pvar =
   match pvar.pv_kind with

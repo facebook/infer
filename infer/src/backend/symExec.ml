@@ -1437,15 +1437,13 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     in
     Prop.normalize tenv (Prop.set prop ~sigma:sigma')
   in
-  let add_actual_by_ref_to_footprint prop (actual, actual_typ, _) =
+  let add_actual_by_ref_to_footprint prop (actual, actual_typ, actual_index) =
     let abduced =
       match actual with
-      | Exp.Lvar actual_pv
-       -> Pvar.mk_abduced_ref_param callee_pname actual_pv callee_loc
-      | Exp.Var actual_id
-       -> Pvar.mk_abduced_ref_param_val callee_pname actual_id callee_loc
+      | Exp.Lvar _ | Exp.Var _
+       -> Pvar.mk_abduced_ref_param callee_pname actual_index callee_loc
       | _
-       -> assert false
+       -> failwithf "Unexpected variable expression %a" Exp.pp actual
     in
     let already_has_abduced_retval p =
       List.exists
@@ -1473,7 +1471,6 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
         | _
          -> failwith ("No need for abduction on non-pointer type " ^ Typ.to_string actual_typ)
       in
-      (* replace [actual] |-> _ with [actual] |-> [fresh_fp_var] *)
       let filtered_sigma =
         List.map
           ~f:(function

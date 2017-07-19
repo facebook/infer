@@ -78,10 +78,7 @@ val is_ssa_frontend_tmp : t -> bool
 val mk : Mangled.t -> Typ.Procname.t -> t
 (** [mk name proc_name suffix] creates a program var with the given function name and suffix *)
 
-val mk_abduced_ref_param : Typ.Procname.t -> t -> Location.t -> t
-(** create an abduced variable for a parameter passed by reference *)
-
-val mk_abduced_ref_param_val : Typ.Procname.t -> Ident.t -> Location.t -> t
+val mk_abduced_ref_param : Typ.Procname.t -> int -> Location.t -> t
 (** create an abduced variable for a parameter passed by reference *)
 
 val mk_abduced_ret : Typ.Procname.t -> Location.t -> t
