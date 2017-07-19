@@ -826,14 +826,20 @@ let parse ?config_file ~usage action initial_command =
     let curr_usage = parse_args ~usage action ?initial_command cl_args in
     add_parsed_args_to_args_to_export () ; curr_usage
   in
-  (* we have to be careful not to add too much data to the environment because the size of the
-     environment contributes to the length of the command to be run. if the environment + CLI is too
-     big, running any command will fail with a cryptic "exit code 127" error. here, we hack around the
-     issue by refusing to add a string to the environment if it's sufficiently big (and praying that
-     this won't make the command fail). TODO (t20145863): use argfiles here *)
-  if List.is_empty !extra_env_args || String.length !args_to_export < 100000 then
-    Unix.putenv ~key:args_env_var ~data:!args_to_export ;
-  (!curr_command, curr_usage)
+  let to_export =
+    (* We have to be careful not to add too much data to the environment because the size of the
+       environment contributes to the length of the command to be run. If the environment + CLI is
+       too big, running any command will fail with a cryptic "exit code 127" error. Use an argfile
+       to prevent this from happening *)
+    let file = Filename.temp_file "args_" "" in
+    let quoted_file_args =
+      List.map (decode_env_to_argv !args_to_export) ~f:(fun arg ->
+          if String.contains arg '\'' then arg else F.sprintf "'%s'" arg )
+    in
+    Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc quoted_file_args) ;
+    "@" ^ file
+  in
+  Unix.putenv ~key:args_env_var ~data:to_export ; (!curr_command, curr_usage)
 
 let wrap_line indent_string wrap_length line0 =
   let line = indent_string ^ line0 in
