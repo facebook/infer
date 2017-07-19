@@ -257,6 +257,12 @@ let whitelisted_cpp_methods =
   ; "std::max"
   ; "std::min"
   ; "std::move"
+  ; "std::operator!="
+  ; "std::operator<"
+  ; "std::operator<="
+  ; "std::operator=="
+  ; "std::operator>"
+  ; "std::operator>="
   ; "std::swap" ]
 
 let whitelisted_cpp_classes =
@@ -265,6 +271,12 @@ let whitelisted_cpp_classes =
   ; "std::__wrap_iter" (* libc++ internal name of vector iterator *)
   ; "std::__get_pair" (* libc++ internal support class for std::get<std::pair> *)
   ; "std::__pair_get" (* libstdc++ internal support class for std::get<std::pair> *)
+  ; "std::equal_to"
+  ; "std::greater"
+  ; "std::greater_equal"
+  ; "std::less"
+  ; "std::less_equal"
+  ; "std::not_equal_to"
   ; "std::pair" ]
 
 type dynamic_dispatch_policy = [`None | `Interface | `Sound | `Lazy]

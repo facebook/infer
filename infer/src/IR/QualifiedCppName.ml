@@ -76,7 +76,14 @@ module Match = struct
     (* Fail if we detect templates in the fuzzy name. Template instantiations are not taken into
        account when fuzzy matching, and templates may produce wrong results when parsing qualified
        names. *)
-    if String.contains qual_name '<' then
+    let filtered_qual_name =
+      (* Filter out the '<' in operator< and operator<= *)
+      let operator_less_length = 14 in
+      if String.is_prefix qual_name ~prefix:"std::operator<" then
+        String.drop_prefix qual_name operator_less_length
+      else qual_name
+    in
+    if String.contains filtered_qual_name '<' then
       failwithf "Unexpected template in fuzzy qualified name %s." qual_name ;
     of_qual_string qual_name
 
