@@ -11,9 +11,9 @@ open! IStd
 module F = Format
 
 module Access : sig
-  type kind = Read | Write [@@deriving compare]
+  type t = Read of AccessPath.Raw.t | Write of AccessPath.Raw.t [@@deriving compare]
 
-  type t = AccessPath.Raw.t * kind [@@deriving compare]
+  val get_access_path : t -> AccessPath.Raw.t option
 
   val pp : F.formatter -> t -> unit
 end
@@ -171,6 +171,6 @@ type summary =
 
 include AbstractDomain.WithBottom with type astate := astate
 
-val make_access : AccessPath.Raw.t -> Access.kind -> Location.t -> TraceElem.t
+val make_access : AccessPath.Raw.t -> is_write:bool -> Location.t -> TraceElem.t
 
 val pp_summary : F.formatter -> summary -> unit
