@@ -11,7 +11,7 @@ ANALYZER = infer
 
 CLANG_OPTIONS = -x c++ -std=c++14 -isystem$(ROOT_DIR) -c
 INFER_OPTIONS = --ml-buckets cpp --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
-                --no-failures-allowed --pmd-xml
+                --no-failures-allowed --pmd-xml --report-custom-error
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

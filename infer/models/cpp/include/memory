@@ -10,7 +10,7 @@
 #include<infer_model/unique_ptr.h>
 #include<infer_model/shared_ptr.h>
 
-#else 
+#else
 // don't model memory for pre-C++11 code
 #include_next <memory>
 #endif
