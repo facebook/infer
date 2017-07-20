@@ -185,16 +185,17 @@ OCAML_ALL_SOURCES = $(OCAML_BASE_SOURCES) $(CLANG_ATDGEN_STUBS) $(CLANG_PLUGIN_M
 .PHONY: all
 all: infer
 
-.PHONY: src_build_common
-src_build_common: base/Version.ml $(OCAML_CONFIG_SOURCES)
-
+SRC_BUILD_COMMON = base/Version.ml $(OCAML_CONFIG_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
-src_build_common: $(CLANG_BINIOU_DICT)
+SRC_BUILD_COMMON += $(CLANG_BINIOU_DICT)
 endif
+
+.PHONY: src_build_common
+src_build_common: $(SRC_BUILD_COMMON)
 
 # single out infer.native as the source of truth for make, knowing that in fact several targets are
 # produced by the build
-$(INFER_BUILD_DIR)/$(INFER_MAIN).native: src_build_common $(MAKEFILE_LIST)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).native: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_CONFIG_TARGETS)
@@ -221,7 +222,7 @@ endif
 .PHONY: infer
 infer: $(INFER_BIN).native
 
-$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: src_build_common $(MAKEFILE_LIST)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_CONFIG_TARGETS:.native=.byte)
@@ -252,7 +253,7 @@ M=
 MFLAGS=
 
 .PHONY: module
-module: src_build_common $(OCAML_ALL_SOURCES)
+module: $(SRC_BUILD_COMMON) $(OCAML_ALL_SOURCES)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
           $(MFLAGS) \
@@ -294,7 +295,7 @@ $(shell \
   | awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}')
 endef
 
-toplevel.mlpack: src_build_common $(MAKEFILE_LIST)
+toplevel.mlpack: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 #	We need to pack all the infer modules into another module to avoid name clashes with some
 #	of them coming from ocaml libraries (Ident for example).  To do that, we generate a .mlpack
 #	file containing namespaced modules.
