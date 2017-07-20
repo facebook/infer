@@ -60,7 +60,9 @@ let assert_results_dir advice =
   L.setup_log_file ()
 
 let remove_results_dir () =
-  if Sys.is_directory Config.results_dir = `Yes then (
+  (* Look if file exists, it may not be a directory but that will be caught by the call to [is_results_dir]. If it's an empty directory, leave it alone. This allows users to create a temporary directory for the infer results without infer removing it to recreate it, which could be racy. *)
+  if Sys.file_exists Config.results_dir = `Yes && not (Utils.directory_is_empty Config.results_dir)
+  then (
     Result.iter_error (is_results_dir ()) ~f:(fun err ->
         L.(die UserError)
           "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\nERROR: Please delete '%s' and try again@."
