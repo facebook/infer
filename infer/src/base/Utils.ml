@@ -156,18 +156,7 @@ let directory_iter f path =
   in
   if Sys.is_directory path = `Yes then loop [path] else f path
 
-let dir_is_empty path =
-  let dir_handle = Unix.opendir path in
-  let is_empty = ref true in
-  ( try
-      while !is_empty do
-        if not
-             (Option.value_map (Unix.readdir_opt dir_handle) ~default:false
-                ~f:(List.mem ~equal:String.equal ["."; ".."]))
-        then is_empty := false
-      done
-    with End_of_file -> () ) ;
-  Unix.closedir dir_handle ; !is_empty
+let directory_is_empty path = Sys.readdir path |> Array.is_empty
 
 let string_crc_hex32 s = Digest.to_hex (Digest.string s)
 
