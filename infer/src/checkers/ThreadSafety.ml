@@ -48,7 +48,7 @@ let get_container_write_desc sink =
        -> get_container_write_desc_ call_name (F.asprintf "%a" Var.pp base_var)
       | _
        -> None )
-  | Read _
+  | Read _ | InterfaceCall _
    -> (* TODO: support Read *)
       None
 
@@ -264,6 +264,47 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_unprotected is_locked is_threaded pdesc =
     not is_locked && not is_threaded && not (Procdesc.is_java_synchronized pdesc)
 
+  (** return true if this function is library code from the JDK core libraries or Android *)
+  let is_java_library = function
+    | Typ.Procname.Java java_pname -> (
+      match Typ.Procname.java_get_package java_pname with
+      | Some package_name
+       -> String.is_prefix ~prefix:"java." package_name
+          || String.is_prefix ~prefix:"android." package_name
+          || String.is_prefix ~prefix:"com.google." package_name
+      | None
+       -> false )
+    | _
+     -> false
+
+  let is_builder_function = function
+    | Typ.Procname.Java java_pname
+     -> String.is_suffix ~suffix:"$Builder" (Typ.Procname.java_get_class_name java_pname)
+    | _
+     -> false
+
+  let has_return_annot predicate pn =
+    Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes predicate
+
+  let add_unannotated_call_access pname (call_flags: CallFlags.t) loc tenv ~locks ~threads
+      attribute_map (proc_data: FormalMap.t ProcData.t) =
+    if call_flags.cf_interface && Typ.Procname.is_java pname
+       && not (is_java_library pname || is_builder_function pname)
+       (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
+          thread-safe (would be unreasonable to ask everyone to annotate them) *)
+       && not (PatternMatch.check_class_attributes Annotations.ia_is_thread_safe tenv pname)
+       && not (has_return_annot Annotations.ia_is_thread_safe pname)
+    then
+      let open Domain in
+      let pre =
+        if is_unprotected locks threads proc_data.pdesc then AccessPrecondition.unprotected
+        else
+          AccessPrecondition.Protected
+            (make_excluder (locks || Procdesc.is_java_synchronized proc_data.pdesc) threads)
+      in
+      AccessDomain.add_access pre (make_unannotated_call_access pname loc) attribute_map
+    else attribute_map
+
   let add_access exp loc ~is_write_access accesses locks threads attribute_map
       (proc_data: FormalMap.t ProcData.t) =
     let open Domain in
@@ -294,12 +335,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                || is_safe_access access prefix_path proc_data.tenv
             then access_acc
             else
-              (* TODO: I think there's a utility function for this somewhere *)
-              let accesses = AccessDomain.get_accesses pre access_acc in
-              let accesses' =
-                PathDomain.add_sink (make_access access_path ~is_write loc) accesses
-              in
-              AccessDomain.add pre accesses' access_acc
+              AccessDomain.add_access pre (make_field_access access_path ~is_write loc) access_acc
           in
           add_field_accesses pre access_path access_acc' access_list'
     in
@@ -320,9 +356,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_field_accesses pre (base, []) acc accesses
     in
     List.fold ~f:add_access_ ~init:accesses (HilExp.get_access_paths exp)
-
-  let has_return_annot predicate pn =
-    Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes predicate
 
   let is_functional pname =
     let is_annotated_functional = has_return_annot Annotations.ia_is_functional in
@@ -472,7 +505,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (fst receiver_ap, snd receiver_ap @ [AccessPath.FieldAccess dummy_fieldname])
         in
         AccessDomain.add_access (Unprotected (Some 0))
-          (make_access dummy_access_ap ~is_write:true callee_loc) AccessDomain.empty
+          (make_field_access dummy_access_ap ~is_write:true callee_loc) AccessDomain.empty
     in
     (* TODO: for now all formals escape *)
     (* we need a more intelligent escape analysis, that branches on whether
@@ -545,9 +578,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         {astate with accesses; attribute_map; escapees}
     | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc)
      -> (
+        let accesses_with_unannotated_calls =
+          add_unannotated_call_access callee_pname call_flags loc tenv ~locks:astate.locks
+            ~threads:astate.threads astate.accesses proc_data
+        in
         let accesses =
-          add_reads actuals loc astate.accesses astate.locks astate.threads astate.attribute_map
-            proc_data
+          add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
+            astate.attribute_map proc_data
         in
         let astate = {astate with accesses} in
         let astate =
@@ -1057,12 +1094,12 @@ let pp_access fmt sink =
   match get_container_write_desc sink with
   | Some container_write_desc
    -> pp_container_access fmt container_write_desc
-  | None
-   -> let access_path =
-        match ThreadSafetyDomain.PathDomain.Sink.kind sink
-        with Read access_path | Write access_path -> access_path
-      in
-      F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp_access_list) (snd access_path)
+  | None ->
+    match ThreadSafetyDomain.PathDomain.Sink.kind sink with
+    | Read access_path | Write access_path
+     -> F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp_access_list) (snd access_path)
+    | InterfaceCall _ as access
+     -> F.fprintf fmt "%a" ThreadSafetyDomain.Access.pp access
 
 let desc_of_sink sink =
   match get_container_write_desc sink with
@@ -1071,7 +1108,11 @@ let desc_of_sink sink =
   | None
    -> let sink_pname = CallSite.pname (ThreadSafetyDomain.PathDomain.Sink.call_site sink) in
       if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
-        F.asprintf "access to %a" pp_access sink
+        match ThreadSafetyDomain.PathDomain.Sink.kind sink with
+        | Read _ | Write _
+         -> F.asprintf "access to %a" pp_access sink
+        | InterfaceCall interface_pname
+         -> F.asprintf "call to %a" Typ.Procname.pp interface_pname
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
 
 let trace_of_pname orig_sink orig_pdesc callee_pname =
@@ -1129,6 +1170,20 @@ let report_thread_safety_violation tenv pdesc ~make_description ~conflicts acces
   in
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
+
+let report_unannotated_interface_violation tenv pdesc access reported_pname =
+  match reported_pname with
+  | Typ.Procname.Java java_pname
+   -> let class_name = Typ.Procname.java_get_class_name java_pname in
+      let make_description _ _ _ _ _ =
+        F.asprintf
+          "Unprotected call to method of un-annotated interface %s. Consider annotating the class with %a or adding a lock"
+          class_name MF.pp_monospaced "@ThreadSafe"
+      in
+      report_thread_safety_violation tenv pdesc ~make_description ~conflicts:[] access
+  | _
+   -> (* skip reporting on C++ *)
+      ()
 
 let pp_procname_short fmt = function
   | Typ.Procname.Java java
@@ -1225,12 +1280,14 @@ let report_unsafe_accesses aggregated_access_map =
   let open ThreadSafetyDomain in
   let is_duplicate_report access pname {reported_sites; reported_writes; reported_reads} =
     CallSite.Set.mem (TraceElem.call_site access) reported_sites
-    || Typ.Procname.Set.mem pname
-         ( match TraceElem.kind access with
-         | Access.Write _
-          -> reported_writes
-         | Access.Read _
-          -> reported_reads )
+    ||
+    match TraceElem.kind access with
+    | Access.Write _
+     -> Typ.Procname.Set.mem pname reported_writes
+    | Access.Read _
+     -> Typ.Procname.Set.mem pname reported_reads
+    | Access.InterfaceCall _
+     -> false
   in
   let update_reported access pname reported =
     let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
@@ -1241,12 +1298,21 @@ let report_unsafe_accesses aggregated_access_map =
     | Access.Read _
      -> let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
         {reported with reported_reads; reported_sites}
+    | Access.InterfaceCall _
+     -> reported
   in
   let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_acc =
     let pname = Procdesc.get_proc_name pdesc in
     if is_duplicate_report access pname reported_acc then reported_acc
     else
       match (TraceElem.kind access, pre) with
+      | Access.InterfaceCall unannoted_call_pname, AccessPrecondition.Unprotected _
+       -> (* un-annotated interface call + no lock. warn *)
+          report_unannotated_interface_violation tenv pdesc access unannoted_call_pname ;
+          update_reported access pname reported_acc
+      | Access.InterfaceCall _, AccessPrecondition.Protected _
+       -> (* un-annotated interface call, but it's protected by a lock/thread. don't report *)
+          reported_acc
       | Access.Write _, AccessPrecondition.Unprotected _ -> (
         match Procdesc.get_proc_name pdesc with
         | Java _

@@ -124,6 +124,8 @@ val ia_is_returns_ownership : Annot.Item.t -> bool
 
 val ia_is_synchronized_collection : Annot.Item.t -> bool
 
+val ia_is_thread_safe : Annot.Item.t -> bool
+
 val ia_is_thread_confined : Annot.Item.t -> bool
 
 val ia_is_ui_thread : Annot.Item.t -> bool

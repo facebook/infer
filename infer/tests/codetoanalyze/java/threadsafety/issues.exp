@@ -47,6 +47,8 @@ codetoanalyze/java/threadsafety/DeDup.java, void DeDup.two_reads(), 3, THREAD_SA
 codetoanalyze/java/threadsafety/DeDup.java, void DeDup.two_writes(), 2, THREAD_SAFETY_VIOLATION, [access to `codetoanalyze.java.checkers.DeDup.field`]
 codetoanalyze/java/threadsafety/DeDup.java, void DeDup.write_read(), 2, THREAD_SAFETY_VIOLATION, [access to `codetoanalyze.java.checkers.DeDup.field`]
 codetoanalyze/java/threadsafety/DeDup.java, void DeDup.write_read(), 3, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `codetoanalyze.java.checkers.DeDup.field`,<Beginning of write trace>,access to `codetoanalyze.java.checkers.DeDup.field`]
+codetoanalyze/java/threadsafety/Dispatch.java, void Dispatch.callUnannotatedInterfaceBad(UnannotatedInterface), 1, THREAD_SAFETY_VIOLATION, [call to void UnannotatedInterface.foo()]
+codetoanalyze/java/threadsafety/Dispatch.java, void Dispatch.callUnannotatedInterfaceIndirectBad(NotThreadSafe,UnannotatedInterface), 1, THREAD_SAFETY_VIOLATION, [call to void NotThreadSafe.notThreadSafeOk(UnannotatedInterface),call to void UnannotatedInterface.foo()]
 codetoanalyze/java/threadsafety/Locks.java, void Locks.FP_unlockOneLock(), 4, THREAD_SAFETY_VIOLATION, [access to `codetoanalyze.java.checkers.Locks.f`]
 codetoanalyze/java/threadsafety/Locks.java, void Locks.afterReentrantLockUnlockBad(), 3, THREAD_SAFETY_VIOLATION, [access to `codetoanalyze.java.checkers.Locks.f`]
 codetoanalyze/java/threadsafety/Locks.java, void Locks.afterUnlockBad(), 3, THREAD_SAFETY_VIOLATION, [access to `codetoanalyze.java.checkers.Locks.f`]
