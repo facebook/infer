@@ -77,6 +77,8 @@ let context_leak = from_string "CONTEXT_LEAK"
 
 let dangling_pointer_dereference = from_string "DANGLING_POINTER_DEREFERENCE"
 
+let dead_store = from_string "DEAD_STORE"
+
 let deallocate_stack_variable = from_string "DEALLOCATE_STACK_VARIABLE"
 
 let deallocate_static_memory = from_string "DEALLOCATE_STATIC_MEMORY"

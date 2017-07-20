@@ -39,6 +39,7 @@ let checkers =
   ; ( "immutable cast"
     , Config.immutable_cast
     , [(Procedure ImmutableChecker.callback_check_immutable_cast, Config.Java)] )
+  ; ("liveness", Config.liveness, [(Procedure Liveness.checker, Config.Clang)])
   ; ("printf args", Config.printf_args, [(Procedure PrintfArgs.callback_printf_args, Config.Java)])
   ; ( "nullable suggestion"
     , Config.suggest_nullable

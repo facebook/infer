@@ -1,0 +1,6 @@
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::FP_assign_array_tricky_ok, 3, DEAD_STORE, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::dead_pointer_bad, 2, DEAD_STORE, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::dead_then_live_bad, 1, DEAD_STORE, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::easy_bad, 0, DEAD_STORE, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::reassign_param_bad, 0, DEAD_STORE, [Write of unused value]
+codetoanalyze/cpp/liveness/dead_stores.cpp, dead_stores::use_then_dead_bad, 3, DEAD_STORE, [Write of unused value]

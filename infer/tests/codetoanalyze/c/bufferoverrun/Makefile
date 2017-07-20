@@ -12,7 +12,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = checkers
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --bufferoverrun -F --project-root $(TESTS_DIR) --no-failures-allowed
+INFER_OPTIONS = -F --project-root $(TESTS_DIR) --no-failures-allowed --no-liveness --bufferoverrun
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.c)

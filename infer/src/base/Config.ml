@@ -559,6 +559,7 @@ and ( annotation_reachability
     , eradicate
     , fragment_retains_view
     , immutable_cast
+    , liveness
     , printf_args
     , quandary
     , repeated_calls
@@ -596,6 +597,10 @@ and ( annotation_reachability
       ~in_help:CLOpt.([(Analyze, manual_generic)])
       ~default:true
       "the detection of object cast from immutable type to mutable type. For instance, it will detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
+  and liveness =
+    CLOpt.mk_bool ~long:"liveness"
+      ~in_help:CLOpt.([(Analyze, manual_generic)])
+      ~default:true "the detection of dead stores and unused variables"
   and printf_args =
     CLOpt.mk_bool ~long:"printf-args"
       ~in_help:CLOpt.([(Analyze, manual_generic)])
@@ -643,6 +648,7 @@ and ( annotation_reachability
   , eradicate
   , fragment_retains_view
   , immutable_cast
+  , liveness
   , printf_args
   , quandary
   , repeated_calls
@@ -1970,6 +1976,8 @@ and linters_def_folder = !linters_def_folder
 and linters_developer_mode = !linters_developer_mode
 
 and linters_ignore_clang_failures = !linters_ignore_clang_failures
+
+and liveness = !liveness
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average

@@ -8,6 +8,7 @@
  */
 
 #include <string>
+#include <iostream>
 
 extern std::string* __infer_taint_source();
 extern void __infer_taint_sink(std::string);
@@ -56,6 +57,7 @@ void assign_source_by_reference_bad3() {
 
 void reuse_pointer_as_local(std::string* pointer) {
   pointer = __infer_taint_source();
+  std::cout << *pointer;
 }
 
 // need to understand that assigning a reference doesn't change the value in the

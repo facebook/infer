@@ -69,6 +69,8 @@ val context_leak : t
 
 val dangling_pointer_dereference : t
 
+val dead_store : t
+
 val deallocate_stack_variable : t
 
 val deallocate_static_memory : t
