@@ -1306,9 +1306,8 @@ let report_unsafe_accesses aggregated_access_map =
     if is_duplicate_report access pname reported_acc then reported_acc
     else
       match (TraceElem.kind access, pre) with
-      | Access.InterfaceCall unannoted_call_pname, AccessPrecondition.Unprotected _
+      | Access.InterfaceCall _, AccessPrecondition.Unprotected _
        -> (* un-annotated interface call + no lock. warn *)
-          report_unannotated_interface_violation tenv pdesc access unannoted_call_pname ;
           update_reported access pname reported_acc
       | Access.InterfaceCall _, AccessPrecondition.Protected _
        -> (* un-annotated interface call, but it's protected by a lock/thread. don't report *)
