@@ -636,6 +636,10 @@ let execute___set_unlocked_attribute ({Builtin.pdesc; loc} as builtin_args) : Bu
   in
   execute___set_attr (PredSymb.Aresource ra) builtin_args
 
+(** Set the attibute of the value as wont leak*)
+let execute___set_wont_leak_attribute builtin_args : Builtin.ret_typ =
+  execute___set_attr PredSymb.Awont_leak builtin_args
+
 (** Set the attibute of the value as tainted *)
 let execute___set_taint_attribute {Builtin.tenv; pdesc; args; prop_; path} : Builtin.ret_typ =
   match args with
@@ -1188,6 +1192,9 @@ let __set_unsubscribed_observer_attribute =
 
 let __set_untaint_attribute =
   Builtin.register BuiltinDecl.__set_untaint_attribute execute___set_untaint_attribute
+
+let __set_wont_leak_attribute =
+  Builtin.register BuiltinDecl.__set_wont_leak_attribute execute___set_wont_leak_attribute
 
 (* splits a string given a separator and returns the nth string *)
 let __split_get_nth = Builtin.register BuiltinDecl.__split_get_nth execute___split_get_nth

@@ -96,6 +96,7 @@ type t =
   | Aobserver  (** denotes an object registered as an observers to a notification center *)
   | Aunsubscribed_observer
       (** denotes an object unsubscribed from observers of a notification center *)
+  | Awont_leak  (** value do not participate in memory leak analysis *)
   [@@deriving compare]
 
 val equal : t -> t -> bool
@@ -117,6 +118,7 @@ type category =
   | ACundef
   | ACretval
   | ACobserver
+  | ACwontleak
   [@@deriving compare]
 
 val equal_category : category -> category -> bool
@@ -125,6 +127,8 @@ val to_category : t -> category
 (**  Return the category to which the attribute belongs. *)
 
 val is_undef : t -> bool
+
+val is_wont_leak : t -> bool
 
 val to_string : Pp.env -> t -> string
 (** convert the attribute to a string *)

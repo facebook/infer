@@ -107,6 +107,8 @@ module type S = sig
 
   val __set_untaint_attribute : t
 
+  val __set_wont_leak_attribute : t
+
   val __split_get_nth : t
 
   val __throw : t

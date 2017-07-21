@@ -107,6 +107,8 @@ let get_observer tenv prop exp = get tenv prop exp ACobserver
 
 let get_retval tenv prop exp = get tenv prop exp ACretval
 
+let get_wontleak tenv prop exp = get tenv prop exp ACwontleak
+
 let has_dangling_uninit tenv prop exp =
   let la = get_for_exp tenv prop exp in
   List.exists

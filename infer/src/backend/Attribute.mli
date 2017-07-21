@@ -65,6 +65,9 @@ val get_taint : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
 val get_undef : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
 (** Get the undef attribute associated to the expression, if any *)
 
+val get_wontleak : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
+(** Get the wontleak attribute associated to the expression, if any *)
+
 val has_dangling_uninit : Tenv.t -> 'a Prop.t -> Exp.t -> bool
 (** Test for existence of an Adangling DAuninit attribute associated to the exp *)
 

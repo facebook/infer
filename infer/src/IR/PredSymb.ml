@@ -121,6 +121,7 @@ type t =
   | Aobserver  (** denotes an object registered as an observers to a notification center *)
   | Aunsubscribed_observer
       (** denotes an object unsubscribed from observers of a notification center *)
+  | Awont_leak  (** value do not participate in memory leak analysis *)
   [@@deriving compare]
 
 let equal = [%compare.equal : t]
@@ -158,6 +159,7 @@ type category =
   | ACundef
   | ACretval
   | ACobserver
+  | ACwontleak
   [@@deriving compare]
 
 let equal_category = [%compare.equal : category]
@@ -182,8 +184,12 @@ let to_category att =
    -> ACundef
   | Aobserver | Aunsubscribed_observer
    -> ACobserver
+  | Awont_leak
+   -> ACwontleak
 
 let is_undef = function Aundef _ -> true | _ -> false
+
+let is_wont_leak = function Awont_leak -> true | _ -> false
 
 (** convert the attribute to a string *)
 let to_string pe = function
@@ -254,6 +260,8 @@ let to_string pe = function
    -> "OBSERVER"
   | Aunsubscribed_observer
    -> "UNSUBSCRIBED_OBSERVER"
+  | Awont_leak
+   -> "WONT_LEAK"
 
 (** dump an attribute *)
 let d_attribute (a: t) = L.add_print_action (L.PTattribute, Obj.repr a)

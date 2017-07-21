@@ -10,22 +10,33 @@
 #import "NSString.h"
 #import <stdlib.h>
 
-void __get_array_length(const UInt8);
+size_t __get_array_length(const void* arr);
 
 void __infer_assume(bool cond);
+void __set_wont_leak_attribute(const void* ptr);
 
 @implementation NSString
 
 + (instancetype)stringWithUTF8String:(const char*)bytes {
   // using alloc as the documentation doesn't say it may return nil
   NSString* s = [NSString alloc];
-  s->value = bytes;
+  int len;
+  len = __get_array_length(bytes);
+  s->value = (const char*)malloc(len);
+  // The newly allocated string will be autoreleased by the runtime
+  __set_wont_leak_attribute(s->value);
+  memcpy(s->value, bytes, len);
   return s;
 }
 
 + (instancetype)stringWithString:(NSString*)aString {
   NSString* s = [NSString alloc];
-  s->value = aString->value;
+  int len;
+  len = __get_array_length(aString->value);
+  s->value = (const char*)malloc(len);
+  // The newly allocated string will be autoreleased by the runtime
+  __set_wont_leak_attribute(s->value);
+  memcpy(s->value, aString->value, len);
   return s;
 }
 
@@ -68,6 +79,13 @@ void __infer_assume(bool cond);
     __infer_assume(res >= 0);
     return res;
   }
+}
+
+- (void)dealloc {
+  if (self != nil && self->value != 0) {
+    free(self->value);
+  }
+  [super dealloc];
 }
 
 @end

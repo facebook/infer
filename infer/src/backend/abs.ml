@@ -1232,18 +1232,24 @@ let check_junk ?original_prop pname tenv prop =
               let res = ref None in
               let do_entry e =
                 check_observer_is_unsubscribed_deallocation tenv prop e ;
-                match Attribute.get_resource tenv prop e with
-                | Some Apred ((Aresource {ra_kind= Racquire} as a), _)
-                 -> L.d_str "ATTRIBUTE: " ;
-                    PredSymb.d_attribute a ;
-                    L.d_ln () ;
+                match Attribute.get_wontleak tenv prop e with
+                | Some Apred ((Awont_leak as a), _)
+                 -> L.d_strln "WONT_LEAK" ;
                     res := Some a
                 | _ ->
-                  match Attribute.get_undef tenv prop e with
-                  | Some Apred ((Aundef _ as a), _)
-                   -> res := Some a
-                  | _
-                   -> ()
+                  match Attribute.get_resource tenv prop e with
+                  | Some Apred ((Aresource {ra_kind= Racquire} as a), _)
+                   -> L.d_str "ATTRIBUTE: " ;
+                      PredSymb.d_attribute a ;
+                      L.d_ln () ;
+                      res := Some a
+                  | _ ->
+                    match Attribute.get_undef tenv prop e with
+                    | Some Apred ((Aundef _ as a), _)
+                     -> L.d_strln "UNDEF" ;
+                        res := Some a
+                    | _
+                     -> ()
               in
               List.iter ~f:do_entry entries ; !res
             in
@@ -1285,6 +1291,8 @@ let check_junk ?original_prop pname tenv prop =
             in
             let ignore_resource, exn =
               match (alloc_attribute, resource) with
+              | Some PredSymb.Awont_leak, Rmemory _
+               -> (true, exn_leak)
               | Some _, Rmemory Mobjc when hpred_in_cycle hpred
                -> (* When there is a cycle in objc we ignore it
                         only if it's empty or it has weak or unsafe_unretained fields.

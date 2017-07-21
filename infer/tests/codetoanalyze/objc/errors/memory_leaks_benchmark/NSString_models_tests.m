@@ -30,6 +30,17 @@ NSString* createURLQueryStringBodyEscaping(NSDictionary* parameters,
   return resultString;
 }
 
+NSString* stringWithUTF8StringNoLeakOk(const char* buf) {
+  return [NSString stringWithUTF8String:buf];
+}
+NSString* stringWithStringNoLeakOk(const char* buf) {
+  return [NSString stringWithString:buf];
+}
+
+- (void)NSAssertNoLeakOk {
+  NSAssert(true, @"This string does not create any memory leak");
+}
+
 - (NSString*)hexStringValue {
   size_t hexLen = 2 * 10 * sizeof(char);
   char* outString = (char*)malloc(hexLen + 1);

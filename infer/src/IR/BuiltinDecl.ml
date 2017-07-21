@@ -123,6 +123,8 @@ let __set_unsubscribed_observer_attribute = create_procname "__set_unsubscribed_
 
 let __set_untaint_attribute = create_procname "__set_untaint_attribute"
 
+let __set_wont_leak_attribute = create_procname "__set_wont_leak_attribute"
+
 let __split_get_nth = create_procname "__split_get_nth"
 
 let __throw = create_procname "__throw"

@@ -19,4 +19,5 @@
 + (instancetype)localizedStringWithFormat:(NSString*)format, ...;
 - (instancetype)initWithFormat:(NSString*)format, ...;
 - (instancetype)initWithFormat:(NSString*)format arguments:(va_list)argList;
+- (void)dealloc;
 @end
