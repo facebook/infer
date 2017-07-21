@@ -11,5 +11,5 @@ open! IStd
 
 type const_map = Procdesc.Node.t -> Exp.t -> Const.t option
 
-(** Build a const map lazily. *)
 val build_const_map : Tenv.t -> Procdesc.t -> const_map
+(** Build a const map lazily. *)

@@ -17,11 +17,11 @@ module F = Format
 
 (** {2 Sets of Propositions} *)
 
-module PropSet =
-  Caml.Set.Make(struct
-    type t = Prop.normal Prop.t
-    let compare = Prop.compare_prop
-  end)
+module PropSet = Caml.Set.Make (struct
+  type t = Prop.normal Prop.t
+
+  let compare = Prop.compare_prop
+end)
 
 let compare = PropSet.compare
 
@@ -32,28 +32,23 @@ type t = PropSet.t
 let add tenv p pset =
   let ps = Prop.prop_expand tenv p in
   List.fold
-    ~f:(fun pset' p' ->
-        PropSet.add (Prop.prop_rename_primed_footprint_vars tenv p') pset')
-    ~init:pset
-    ps
+    ~f:(fun pset' p' -> PropSet.add (Prop.prop_rename_primed_footprint_vars tenv p') pset')
+    ~init:pset ps
 
 (** Singleton set. *)
-let singleton tenv p =
-  add tenv p PropSet.empty
+let singleton tenv p = add tenv p PropSet.empty
 
 (** Set union. *)
 let union = PropSet.union
 
 (** Set membership *)
-let mem p =
-  PropSet.mem p
+let mem p = PropSet.mem p
 
 (** Set intersection *)
 let inter = PropSet.inter
 
 (** Set difference. *)
-let diff =
-  PropSet.diff
+let diff = PropSet.diff
 
 let empty = PropSet.empty
 
@@ -65,22 +60,19 @@ let size = PropSet.cardinal
 
 let filter = PropSet.filter
 
-let from_proplist tenv plist =
-  List.fold ~f:(fun pset p -> add tenv p pset) ~init:empty plist
+let from_proplist tenv plist = List.fold ~f:(fun pset p -> add tenv p pset) ~init:empty plist
 
-let to_proplist pset =
-  PropSet.elements pset
+let to_proplist pset = PropSet.elements pset
 
 (** Apply function to all the elements of [propset], removing those where it returns [None]. *)
 let map_option tenv f pset =
   let plisto = List.map ~f (to_proplist pset) in
-  let plisto = List.filter ~f:(function | Some _ -> true | None -> false) plisto in
+  let plisto = List.filter ~f:(function Some _ -> true | None -> false) plisto in
   let plist = List.map ~f:(function Some p -> p | None -> assert false) plisto in
   from_proplist tenv plist
 
 (** Apply function to all the elements of [propset]. *)
-let map tenv f pset =
-  from_proplist tenv (List.map ~f (to_proplist pset))
+let map tenv f pset = from_proplist tenv (List.map ~f (to_proplist pset))
 
 (** [fold f pset a] computes [f (... (f (f a p1) p2) ...) pn]
     where [p1 ... pN] are the elements of pset, in increasing order. *)
@@ -90,21 +82,18 @@ let fold f a pset =
 
 (** [iter f pset] computes (f p1;f p2;..;f pN)
     where [p1 ... pN] are the elements of pset, in increasing order. *)
-let iter =
-  PropSet.iter
+let iter = PropSet.iter
 
-let subseteq =
-  PropSet.subset
+let subseteq = PropSet.subset
 
-let partition =
-  PropSet.partition
+let partition = PropSet.partition
 
 (** {2 Pretty print} *)
 
 (** Pretty print a set of propositions, obtained from the given prop. *)
 let pp pe prop f pset =
   let plist = to_proplist pset in
-  (Propgraph.pp_proplist pe "PROP" (prop, false)) f plist
+  Propgraph.pp_proplist pe "PROP" (prop, false) f plist
 
 let d p ps =
   let plist = to_proplist ps in

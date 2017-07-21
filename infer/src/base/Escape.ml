@@ -18,74 +18,103 @@ let escape_map map_fun s =
   let buf = Buffer.create len in
   for i = 0 to len - 1 do
     let c = String.unsafe_get s i in
-    match map_fun c with
-    | None -> Buffer.add_char buf c
-    | Some s' -> Buffer.add_string buf s'
-  done;
+    match map_fun c with None -> Buffer.add_char buf c | Some s' -> Buffer.add_string buf s'
+  done ;
   Buffer.contents buf
 
 let escape_csv s =
   let map = function
-    | '"' -> Some "\"\""
-    | c when Char.to_int c > 127 -> Some "?" (* non-ascii character: escape *)
-    | _ -> None in
+    | '"'
+     -> Some "\"\""
+    | c when Char.to_int c > 127
+     -> Some "?" (* non-ascii character: escape *)
+    | _
+     -> None
+  in
   escape_map map s
 
 let escape_xml s =
   let map = function
-    | '"' -> (* on next line to avoid bad indentation *)
+    | '"'
+     -> (* on next line to avoid bad indentation *)
         Some "&quot;"
-    | '>' -> Some "&gt;"
-    | '<' -> Some "&lt;"
-    | '&' -> Some "&amp;"
-    | '%' -> Some "&#37;"
-    | c when Char.to_int c > 127 -> (* non-ascii character: escape *)
+    | '>'
+     -> Some "&gt;"
+    | '<'
+     -> Some "&lt;"
+    | '&'
+     -> Some "&amp;"
+    | '%'
+     -> Some "&#37;"
+    | c when Char.to_int c > 127
+     -> (* non-ascii character: escape *)
         Some ("&#" ^ string_of_int (Char.to_int c) ^ ";")
-    | _ -> None in
+    | _
+     -> None
+  in
   escape_map map s
 
 let escape_url s =
   let map = function
-    | '!' -> Some "%21"
-    | '#' -> Some "%23"
-    | '$' -> Some "%24"
-    | '&' -> Some "%26"
-    | '\'' -> Some "%27"
-    | '(' -> Some "%28"
-    | ')' -> Some "%29"
-    | '*' -> Some "%2A"
-    | '+' -> Some "%2B"
-    | ',' -> Some "%2C"
-    | '/' -> Some "%2F"
-    | ':' -> Some "%3A"
-    | ';' -> Some "%3B"
-    | '=' -> Some "%3D"
-    | '?' -> Some "%3F"
-    | '@' -> Some "%40"
-    | '[' -> Some "%5B"
-    | ']' -> Some "%5D"
-    | _ -> None in
+    | '!'
+     -> Some "%21"
+    | '#'
+     -> Some "%23"
+    | '$'
+     -> Some "%24"
+    | '&'
+     -> Some "%26"
+    | '\''
+     -> Some "%27"
+    | '('
+     -> Some "%28"
+    | ')'
+     -> Some "%29"
+    | '*'
+     -> Some "%2A"
+    | '+'
+     -> Some "%2B"
+    | ','
+     -> Some "%2C"
+    | '/'
+     -> Some "%2F"
+    | ':'
+     -> Some "%3A"
+    | ';'
+     -> Some "%3B"
+    | '='
+     -> Some "%3D"
+    | '?'
+     -> Some "%3F"
+    | '@'
+     -> Some "%40"
+    | '['
+     -> Some "%5B"
+    | ']'
+     -> Some "%5D"
+    | _
+     -> None
+  in
   escape_map map s
 
 let escape_dotty s =
-  let map = function
-    | '"' -> Some "\\\""
-    | '\\' -> Some "\\\\"
-    | _ -> None in
+  let map = function '"' -> Some "\\\"" | '\\' -> Some "\\\\" | _ -> None in
   escape_map map s
 
 let escape_path s =
   let map = function
-    | c ->
-        if String.equal (Char.escaped c) Filename.dir_sep
-        then Some "_"
-        else None in
+    | c
+     -> if String.equal (Char.escaped c) Filename.dir_sep then Some "_" else None
+  in
   escape_map map s
 
 (* Python 2 sucks at utf8 so do not write unicode file names to disk
    as Python may need to see them *)
 let escape_filename s =
   let map = function
-    | c when Char.to_int c > 127 -> Some "?" (* non-ascii character: escape *)
-    | _ -> None in
+    | c when Char.to_int c > 127
+     -> Some "?" (* non-ascii character: escape *)
+    | _
+     -> None
+  in
   escape_map map s

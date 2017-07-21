@@ -10,25 +10,22 @@
 
 open! IStd
 
-type style =
-  | Boldface
-  | Roman
-  | Italics
+type style = Boldface | Roman | Italics
 
-(** Convert a string to a latex-friendly format *)
 val convert_string : string -> string
+(** Convert a string to a latex-friendly format *)
 
-(** Print a string in the given style, after converting it into latex-friendly format *)
 val pp_string : style -> Format.formatter -> string -> unit
+(** Print a string in the given style, after converting it into latex-friendly format *)
 
-(** Print color command *)
 val pp_color : Format.formatter -> Pp.color -> unit
+(** Print color command *)
 
+val pp_begin : Format.formatter -> string * string * bool -> unit
 (** Prelude for a latex file with the given author and title and table of contents flag *)
-val pp_begin : Format.formatter -> (string * string * bool) -> unit
 
-(** Epilogue for a latex file *)
 val pp_end : Format.formatter -> unit -> unit
+(** Epilogue for a latex file *)
 
-(** Section with the given title *)
 val pp_section : Format.formatter -> string -> unit
+(** Section with the given title *)

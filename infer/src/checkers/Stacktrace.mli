@@ -11,17 +11,9 @@ open! IStd
 
 (** Module for parsing stack traces and using them to guide Infer analysis *)
 
-type frame = {
-  class_str : string;
-  method_str : string;
-  file_str : string;
-  line_num : int option;
-}
+type frame = {class_str: string; method_str: string; file_str: string; line_num: int option}
 
-type t = {
-  exception_name: string;
-  frames: frame list;
-}
+type t = {exception_name: string; frames: frame list}
 
 val make : string -> frame list -> t
 

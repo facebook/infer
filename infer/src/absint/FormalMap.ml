@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-
 module F = Format
 module L = Logging
 
@@ -20,13 +19,13 @@ let make pdesc =
   let formals_with_nums =
     List.mapi
       ~f:(fun index (name, typ) ->
-         let pvar = Pvar.mk name pname in
-         AccessPath.base_of_pvar pvar typ, index)
-      attrs.ProcAttributes.formals in
+        let pvar = Pvar.mk name pname in
+        (AccessPath.base_of_pvar pvar typ, index))
+      attrs.ProcAttributes.formals
+  in
   List.fold
     ~f:(fun formal_map (base, index) -> AccessPath.BaseMap.add base index formal_map)
-    ~init:AccessPath.BaseMap.empty
-    formals_with_nums
+    ~init:AccessPath.BaseMap.empty formals_with_nums
 
 let empty = AccessPath.BaseMap.empty
 

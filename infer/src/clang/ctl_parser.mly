@@ -138,7 +138,7 @@ checker:
  DEFINE_CHECKER identifier ASSIGNMENT LEFT_BRACE clause_list RIGHT_BRACE
   {
     L.(debug Linters Verbose) "@\nParsed checker definition@\n";
-    let c = { CTL.name = $2; CTL.definitions = $5 } in
+    let c = { CTL.id = $2; CTL.definitions = $5 } in
     CTL.print_checker c;
     c
   }
@@ -179,9 +179,10 @@ clause:
       | "severity" -> ALVar.Severity
       | "mode" -> ALVar.Mode
       | "doc_url" -> ALVar.Doc_url
+      | "name" -> ALVar.Name
       | _ -> failwithf "string '%s' cannot be set in a SET clause. \
                         Use either of: \
-                        'doc_url', 'message', 'mode', 'severity' or 'suggestion'" $2 in
+                        'doc_url', 'message', 'mode', 'name', 'severity' or 'suggestion'" $2 in
       CTL.CDesc (alvar, $4) }
     | let_clause { $1 }
     ;

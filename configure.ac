@@ -18,7 +18,7 @@ AC_INIT([Infer],
         [0.12.0],
         [https://github.com/facebook/infer/issues/])
 
-AC_CONFIG_SRCDIR([infer/src/IR/Sil.re])
+AC_CONFIG_SRCDIR([infer/src/base/IStd.ml])
 
 # WARNING: keep in sync with above
 INFER_MAJOR=0
@@ -175,6 +175,7 @@ AC_ASSERT_PROG([ocamlc], [$OCAMLC])
 # check the version of OCaml
 AC_ASSERT_OCAML_MIN_VERSION([4.04.2])
 AC_ASSERT_PROG([ocamlopt], [$OCAMLOPT])
+AC_PATH_TOOL([OCAMLBUILD], [ocamlbuild], [no])
 AC_ASSERT_PROG([ocamlbuild], [$OCAMLBUILD])
 AC_PROG_FINDLIB
 AC_PROG_OCAMLLEX
@@ -186,12 +187,7 @@ AC_ASSERT_OCAML_PKG([biniou])
 AC_ASSERT_OCAML_PKG([camlzip], [zip])
 AC_ASSERT_OCAML_PKG([easy-format])
 AC_ASSERT_OCAML_PKG([oUnit], [], [2.0.0])
-AC_ASSERT_OCAML_PKG([reason])
 AC_ASSERT_OCAML_PKG([yojson])
-# check for rebuild after checking for Reason since `rebuild` is normally provided by Reason. This
-# way if Reason is missing we get a more helpful error message and not "rebuild not found".
-AC_PATH_TOOL([REBUILD], [rebuild], [no])
-AC_ASSERT_PROG([rebuild], [$REBUILD])
 
 AC_ARG_VAR([CAML_LD_LIBRARY_PATH],
   [Additional directories to search for dynamically-loaded libraries.])

@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-
 module F = Format
 
 type t [@@deriving compare]

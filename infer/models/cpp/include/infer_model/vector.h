@@ -25,9 +25,6 @@
 // libc++ vector header includes it, but it breaks
 // compilation with stdlibc++ implementation
 #include <algorithm>
-#define _LIBCPP_VECTOR
-#else
-#define _GLIBCXX_VECTOR
 #endif
 
 INFER_NAMESPACE_STD_BEGIN

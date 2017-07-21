@@ -11,14 +11,13 @@ open! IStd
 
 (** Module to register and invoke callbacks *)
 
-type proc_callback_args = {
-  get_proc_desc : Typ.Procname.t -> Procdesc.t option;
-  get_procs_in_file : Typ.Procname.t -> Typ.Procname.t list;
-  idenv : Idenv.t;
-  tenv : Tenv.t;
-  summary : Specs.summary;
-  proc_desc : Procdesc.t;
-}
+type proc_callback_args =
+  { get_proc_desc: Typ.Procname.t -> Procdesc.t option
+  ; get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
+  ; idenv: Idenv.t
+  ; tenv: Tenv.t
+  ; summary: Specs.summary
+  ; proc_desc: Procdesc.t }
 
 (** Type of a procedure callback:
     - List of all the procedures the callback will be called on.
@@ -29,17 +28,14 @@ type proc_callback_args = {
 type proc_callback_t = proc_callback_args -> Specs.summary
 
 type cluster_callback_t =
-  Exe_env.t ->
-  Typ.Procname.t list ->
-  (Typ.Procname.t -> Procdesc.t option) ->
-  (Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t) list ->
-  unit
+  Exe_env.t -> Typ.Procname.t list -> (Typ.Procname.t -> Procdesc.t option)
+  -> (Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t) list -> unit
 
-(** register a procedure callback *)
 val register_procedure_callback : Config.language option -> proc_callback_t -> unit
+(** register a procedure callback *)
 
-(** register a cluster callback *)
 val register_cluster_callback : Config.language option -> cluster_callback_t -> unit
+(** register a cluster callback *)
 
-(** Invoke all the registered callbacks. *)
 val iterate_callbacks : Cg.t -> Exe_env.t -> unit
+(** Invoke all the registered callbacks. *)

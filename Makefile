@@ -20,10 +20,10 @@ BUILD_SYSTEMS_TESTS += \
   clang_with_M_flag \
   clang_with_MD_flag \
   delete_results_dir \
+  diff \
   fail_on_issue \
   j1 \
   linters \
-  make \
   project_root_rel \
   reactive \
   run_hidden_linters \
@@ -32,7 +32,7 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   c_biabduction c_bufferoverrun c_errors c_frontend \
-  cpp_bufferoverrun cpp_errors cpp_frontend cpp_quandary cpp_siof cpp_threadsafety \
+  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_quandary cpp_siof cpp_threadsafety \
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck-clang-db buck_flavors buck_flavors_deterministic
@@ -84,7 +84,7 @@ endif
 endif
 
 ifeq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
-BUILD_SYSTEMS_TESTS += utf8_in_pwd
+BUILD_SYSTEMS_TESTS += make utf8_in_pwd
 endif
 
 .PHONY: all
@@ -111,18 +111,36 @@ fb-setup:
 	$(QUIET)$(call silent_on_success,Facebook setup,\
 	$(MAKE) -C facebook setup)
 
+OCAMLFORMAT_EXE=facebook/dependencies/ocamlformat/src/_build/opt/ocamlformat.exe
+
+.PHONY: fmt
+fmt:
+	parallel $(OCAMLFORMAT_EXE) --no-warn-error -i ::: $$(git diff --name-only $$(git merge-base origin/master HEAD) | grep "\.mli\?$$")
+
+SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -path facebook/dependencies \) -not -prune -or -type f -and -name '*'.ml -or -name '*'.mli 2>/dev/null)
+
+.PHONY: fmt_all
+fmt_all:
+	parallel $(OCAMLFORMAT_EXE) --no-warn-error -i ::: $(SRC_ML)
+
+# pre-building these avoids race conditions when building, eg src_build and test_build in parallel
+.PHONY: src_build_common
+src_build_common:
+	$(QUIET)$(call silent_on_success,Generating source dependencies,\
+	$(MAKE) -C $(SRC_DIR) src_build_common)
+
 .PHONY: src_build
-src_build:
+src_build: src_build_common
 	$(QUIET)$(call silent_on_success,Building native Infer,\
 	$(MAKE) -C $(SRC_DIR) infer)
 
 .PHONY: byte
-byte:
+byte: src_build_common
 	$(QUIET)$(call silent_on_success,Building byte Infer,\
 	$(MAKE) -C $(SRC_DIR) byte)
 
 .PHONY: test_build
-test_build:
+test_build: src_build_common
 	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
 	$(MAKE) -C $(SRC_DIR) TEST=1 byte_no_install)
 #	byte_no_install builds most of what toplevel needs, so it's more efficient to run the
@@ -136,7 +154,7 @@ byte src_build test_build: fb-setup
 endif
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
-byte src_build test_build: clang_plugin
+byte src_build src_build_common test_build: clang_plugin
 endif
 
 $(INFER_COMMAND_MANUALS): src_build Makefile
@@ -297,18 +315,18 @@ endif
 
 .PHONY: check_missing_mli
 check_missing_mli:
-	$(QUIET)for x in $$(find $(INFER_DIR)/src -name "*.ml" -or -name "*.re"); do \
+	$(QUIET)for x in $$(find $(INFER_DIR)/src -name "*.ml"); do \
 	    test -f "$$x"i || echo Missing "$$x"i; done
 
 .PHONY: toplevel
-toplevel: clang_plugin
+toplevel: clang_plugin src_build_common
 	$(QUIET)$(MAKE) -C $(SRC_DIR) toplevel
 
 .PHONY: inferScriptMode_test
 inferScriptMode_test: test_build
 	$(QUIET)$(call silent_on_success,Testing infer OCaml REPL,\
 	INFER_REPL_BINARY=ocaml TOPLEVEL_DIR=$(BUILD_DIR)/test/infer $(SCRIPT_DIR)/infer_repl \
-	  $(INFER_DIR)/tests/repl/infer_batch_script.ml)
+	  $(INFER_DIR)/tests/repl/infer_batch_script.mltop)
 
 .PHONY: checkCopyright
 checkCopyright:
@@ -484,21 +502,29 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(QUIET)$(MAKE) -C facebook install
 endif
 
-.PHONY: clean
-clean: test_clean
+# Nuke objects built from OCaml. Useful when changing the OCaml compiler, for instance.
+.PHONY: ocaml_clean
+ocaml_clean:
 ifeq ($(IS_RELEASE_TREE),no)
 ifeq ($(BUILD_C_ANALYZERS),yes)
-	$(QUIET)$(MAKE) -C $(FCP_DIR) clean
 	$(QUIET)$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
 endif
 endif
 	$(QUIET)$(MAKE) -C $(SRC_DIR) clean
+	$(QUIET)$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
+
+.PHONY: clean
+clean: test_clean ocaml_clean
+ifeq ($(IS_RELEASE_TREE),no)
+ifeq ($(BUILD_C_ANALYZERS),yes)
+	$(QUIET)$(MAKE) -C $(FCP_DIR) clean
+endif
+endif
 	$(QUIET)$(MAKE) -C $(ANNOTATIONS_DIR) clean
 	$(QUIET)$(MAKE) -C $(MODELS_DIR) clean
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(QUIET)$(MAKE) -C facebook clean
 endif
-	$(QUIET)$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
 	find $(INFER_DIR)/tests \( -name '*.o' -o -name '*.o.sh' \) -delete
 	$(QUIET)$(REMOVE_DIR) _build_logs $(MAN_DIR)
 
@@ -551,6 +577,12 @@ devsetup: Makefile.autoconf
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); $(OPAM) config --yes setup -a
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); OPAMYES=1; $(OPAM) user-setup install
+	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && ! $$(parallel -h | grep -q GNU); then \
+	  echo '$(TERM_INFO)*** Installing GNU parallel$(TERM_RESET)' >&2; \
+	  brew install parallel; \
+	fi
+	$(QUIET)if [ ! -d "$$HOME"/.parallel ]; then mkdir "$$HOME"/.parallel; fi
+	$(QUIET)touch "$$HOME"/.parallel/will-cite
 # 	expand all occurrences of "~" in PATH and MANPATH
 	$(QUIET)infer_repo_is_in_path=$$(echo $${PATH//\~/$$HOME} | grep -q "$(ABSOLUTE_ROOT_DIR)"/infer/bin; echo $$?); \
 	infer_repo_is_in_manpath=$$(echo $${MANPATH//\~/$$HOME} | grep -q "$(ABSOLUTE_ROOT_DIR)"/infer/man; echo $$?); \
@@ -578,10 +610,10 @@ devsetup: Makefile.autoconf
 	    printf '$(TERM_INFO)  export MANPATH="%s/infer/man":$$MANPATH$(TERM_RESET)\n' "$(ABSOLUTE_ROOT_DIR)" >&2; \
 	  fi; \
 	  if [ "$$infer_repo_is_in_path" != "0" ]; then \
-	    printf "$(TERM_INFO)  echo 'export PATH=\"%s/infer/bin\":\$$PATH' >> \"$$shell_config_file\"\n" "$(ABSOLUTE_ROOT_DIR)" >&2; \
+	    printf "$(TERM_INFO)  echo 'export PATH=\"%s/infer/bin\":\$$PATH' >> \"$$shell_config_file\"$(TERM_RESET)\n" "$(ABSOLUTE_ROOT_DIR)" >&2; \
 	  fi; \
 	  if [ "$$infer_repo_is_in_manpath" != "0" ]; then \
-	    printf "$(TERM_INFO)  echo 'export MANPATH=\"%s/infer/man\":\$$MANPATH' >> \"$$shell_config_file\"\n" "$(ABSOLUTE_ROOT_DIR)" >&2; \
+	    printf "$(TERM_INFO)  echo 'export MANPATH=\"%s/infer/man\":\$$MANPATH' >> \"$$shell_config_file\"$(TERM_RESET)\n" "$(ABSOLUTE_ROOT_DIR)" >&2; \
 	  fi; \
 	fi
 	$(QUIET)PATH=$(ORIG_SHELL_PATH); if [ "$$(ocamlc -where 2>/dev/null)" != "$$($(OCAMLC) -where)" ]; then \

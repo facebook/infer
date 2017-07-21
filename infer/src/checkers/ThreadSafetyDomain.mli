@@ -8,16 +8,17 @@
  *)
 
 open! IStd
-
 module F = Format
 
 module Access : sig
-  type kind =
-    | Read
-    | Write
-  [@@deriving compare]
+  type t =
+    | Read of AccessPath.Raw.t  (** Field read *)
+    | Write of AccessPath.Raw.t  (** Field write *)
+    | InterfaceCall of Typ.Procname.t
+        (** Call to method of interface not annotated with @ThreadSafe *)
+    [@@deriving compare]
 
-  type t = AccessPath.Raw.t * kind [@@deriving compare]
+  val get_access_path : t -> AccessPath.Raw.t option
 
   val pp : F.formatter -> t -> unit
 end
@@ -28,6 +29,8 @@ module TraceElem : sig
   val is_write : t -> bool
 
   val is_read : t -> bool
+
+  val is_interface_call : t -> bool
 end
 
 (** A bool that is true if a lock is definitely held. Note that this is unsound because it assumes
@@ -41,14 +44,14 @@ module ThreadsDomain : AbstractDomain.S with type astate = bool
 
 module ThumbsUpDomain : AbstractDomain.S with type astate = bool
 
-module PathDomain : module type of SinkTrace.Make(TraceElem)
+module PathDomain : module type of SinkTrace.Make (TraceElem)
 
 (** attribute attached to a boolean variable specifying what it means when the boolean is true *)
 module Choice : sig
   type t =
-    | OnMainThread (** the current procedure is running on the main thread *)
-    | LockHeld (** a lock is currently held *)
-  [@@deriving compare]
+    | OnMainThread  (** the current procedure is running on the main thread *)
+    | LockHeld  (** a lock is currently held *)
+    [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
 end
@@ -56,15 +59,13 @@ end
 module Attribute : sig
   type t =
     | OwnedIf of int option
-    (** owned unconditionally if OwnedIf None, owned when formal at index i is owned otherwise *)
-    | Functional
-    (** holds a value returned from a callee marked @Functional *)
-    | Choice of Choice.t
-    (** holds a boolean choice variable *)
-  [@@deriving compare]
+        (** owned unconditionally if OwnedIf None, owned when formal at index i is owned otherwise *)
+    | Functional  (** holds a value returned from a callee marked @Functional *)
+    | Choice of Choice.t  (** holds a boolean choice variable *)
+    [@@deriving compare]
 
-  (** alias for OwnedIf None *)
   val unconditionally_owned : t
+  (** alias for OwnedIf None *)
 
   val pp : F.formatter -> t -> unit
 
@@ -78,15 +79,14 @@ module AttributeMapDomain : sig
 
   val has_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> bool
 
-  (** get the formal index of the the formal that must own the given access path (if any) *)
   val get_conditional_ownership_index : AccessPath.Raw.t -> astate -> int option
+  (** get the formal index of the the formal that must own the given access path (if any) *)
 
-  (** get the choice attributes associated with the given access path *)
   val get_choices : AccessPath.Raw.t -> astate -> Choice.t list
+  (** get the choice attributes associated with the given access path *)
 
   val add_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> astate
 end
-
 
 (** Excluders: Two things can provide for mutual exclusion: holding a lock,
     and knowing that you are on a particular thread. Here, we
@@ -97,12 +97,8 @@ end
     There is no need for a lattice relation between Thread, Lock and Both:
     you don't ever join Thread and Lock, rather, they are treated pointwise.
  **)
-module Excluder: sig
-  type t =
-    | Thread
-    | Lock
-    | Both
-  [@@deriving compare]
+module Excluder : sig
+  type t = Thread | Lock | Both [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
 end
@@ -110,16 +106,16 @@ end
 module AccessPrecondition : sig
   type t =
     | Protected of Excluder.t
-    (** access potentially protected for mutual exclusion by
+        (** access potentially protected for mutual exclusion by
         lock or thread or both *)
     | Unprotected of int option
-    (** access rooted in formal at index i. Safe if actual passed at index is owned (i.e.,
+        (** access rooted in formal at index i. Safe if actual passed at index is owned (i.e.,
         !owned(i) implies an unsafe access). Unprotected None means the access is unsafe unless a
         lock is held in the caller *)
-  [@@deriving compare]
+    [@@deriving compare]
 
-  (** type of an unprotected access *)
   val unprotected : t
+  (** type of an unprotected access *)
 
   val pp : F.formatter -> t -> unit
 end
@@ -129,35 +125,61 @@ end
 module AccessDomain : sig
   include module type of AbstractDomain.Map (AccessPrecondition) (PathDomain)
 
-  (* add the given (access, precondition) pair to the map *)
   val add_access : AccessPrecondition.t -> TraceElem.t -> astate -> astate
+  (** add the given (access, precondition) pair to the map *)
 
-  (* get all accesses with the given precondition *)
   val get_accesses : AccessPrecondition.t -> astate -> PathDomain.astate
+  (** get all accesses with the given precondition *)
+end
+
+(** a formal or a local variable that may escape *)
+module Escapee : sig
+  type t = Formal of int | Local of Var.t [@@deriving compare]
+
+  val pp : F.formatter -> t -> unit
+
+  val of_access_path : FormalMap.t -> AccessPath.Raw.t -> t
+end
+
+(** set of formals or locals that may escape *)
+module EscapeeDomain : sig
+  include module type of AbstractDomain.FiniteSet (Escapee)
+
+  val add_from_list : astate -> Escapee.t list -> astate
+end
+
+(** Domain that only includes escaping formals, for use in summary *)
+module FormalsDomain : sig
+  include module type of AbstractDomain.FiniteSet (Int)
+
+  val of_escapees : EscapeeDomain.astate -> astate
 end
 
 type astate =
-  {
-    thumbs_up : ThreadsDomain.astate;
-    (** boolean that is true if we think we have a proof *)
-    threads : ThreadsDomain.astate;
-    (** boolean that is true if we know we are on UI/main thread *)
-    locks : LocksDomain.astate;
-    (** boolean that is true if a lock must currently be held *)
-    accesses : AccessDomain.astate;
-    (** read and writes accesses performed without ownership permissions *)
-    attribute_map : AttributeMapDomain.astate;
-    (** map of access paths to attributes such as owned, functional, ... *)
-  }
+  { thumbs_up: ThreadsDomain.astate  (** boolean that is true if we think we have a proof *)
+  ; threads: ThreadsDomain.astate  (** boolean that is true if we know we are on UI/main thread *)
+  ; locks: LocksDomain.astate  (** boolean that is true if a lock must currently be held *)
+  ; accesses: AccessDomain.astate
+        (** read and writes accesses performed without ownership permissions *)
+  ; attribute_map: AttributeMapDomain.astate
+        (** map of access paths to attributes such as owned, functional, ... *)
+  ; escapees: EscapeeDomain.astate  (** set of formals and locals that may escape *) }
 
-(** same as astate, but without [id_map]/[owned] (since they are local) and with the addition of the
-    attributes associated with the return value *)
+(** same as astate, but without [attribute_map] (since these involve locals)
+    and with the addition of the attributes associated with the return value
+    as well as the set of formals which may escape *)
 type summary =
-  ThumbsUpDomain.astate * ThreadsDomain.astate * LocksDomain.astate
-  * AccessDomain.astate * AttributeSetDomain.astate
+  ThumbsUpDomain.astate
+  * ThreadsDomain.astate
+  * LocksDomain.astate
+  * AccessDomain.astate
+  * AttributeSetDomain.astate
+  * FormalsDomain.astate
 
 include AbstractDomain.WithBottom with type astate := astate
 
-val make_access : AccessPath.Raw.t -> Access.kind -> Location.t -> TraceElem.t
+val make_field_access : AccessPath.Raw.t -> is_write:bool -> Location.t -> TraceElem.t
+
+val make_unannotated_call_access : Typ.Procname.t -> Location.t -> TraceElem.t
 
 val pp_summary : F.formatter -> summary -> unit

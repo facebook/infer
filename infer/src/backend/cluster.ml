@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-
 module L = Logging
 module F = Format
 
@@ -25,23 +24,25 @@ let serializer : serializer_t Serialization.serializer =
   Serialization.create_serializer Serialization.Key.cluster
 
 (** Load a cluster from a file *)
-let load_from_file (filename : DB.filename) : serializer_t option =
+let load_from_file (filename: DB.filename) : serializer_t option =
   Serialization.read_from_file serializer filename
 
 (** Save a cluster into a file *)
-let store_to_file (filename : DB.filename) (data: serializer_t) =
+let store_to_file (filename: DB.filename) (data: serializer_t) =
   Serialization.write_to_file serializer filename ~data
 
 let cl_name n = "cl" ^ string_of_int n
-let cl_file n = "x" ^ (cl_name n) ^ ".cluster"
+
+let cl_file n = "x" ^ cl_name n ^ ".cluster"
+
 let pp_cluster_name fmt n = Format.fprintf fmt "%s" (cl_name n)
 
 let pp_cluster fmt (nr, cluster) =
   let fname = Config.results_dir ^/ Config.multicore_dir_name ^/ cl_file nr in
   let pp_cl fmt n = Format.fprintf fmt "%s" (cl_name n) in
-  store_to_file (DB.filename_from_string fname) (nr, cluster);
-  F.fprintf fmt "%a: @\n" pp_cl nr;
-  F.fprintf fmt "\t%@$(INFERANALYZE) --cluster '%s'@\n" fname;
+  store_to_file (DB.filename_from_string fname) (nr, cluster) ;
+  F.fprintf fmt "%a: @\n" pp_cl nr ;
+  F.fprintf fmt "\t%@$(INFERANALYZE) --cluster '%s'@\n" fname ;
   (* touch the target of the rule to let `make` know that the job has been done *)
-  F.fprintf fmt "\t%@touch $%@@\n";
+  F.fprintf fmt "\t%@touch $%@@\n" ;
   F.fprintf fmt "@\n"

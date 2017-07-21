@@ -11,31 +11,40 @@
 open! IStd
 
 let is_yes = String.equal "yes"
+
 let is_not_no = Fn.non (String.equal "no")
 
 let major = @INFER_MAJOR@
+
 let minor = @INFER_MINOR@
+
 let patch = @INFER_PATCH@
 
 let commit = "@INFER_GIT_COMMIT@"
+
 let branch = "@INFER_GIT_BRANCH@"
+
 let is_release = is_yes "@IS_RELEASE_TREE@"
+
 let tag = Printf.sprintf "v%d.%d.%d" major minor patch
 
-let versionString =
-  if is_release then tag
-  else Printf.sprintf "%s-%s" tag commit
+let versionString = if is_release then tag else Printf.sprintf "%s-%s" tag commit
 
-let versionJson = String.concat ~sep:"\n" [
-    "{"; "\"major\": " ^ (string_of_int major) ^ ", ";
-    "\"minor\": " ^ (string_of_int minor) ^ ", ";
-    "\"patch\": " ^ (string_of_int patch) ^ ", ";
-    "\"commit\": \"" ^ commit ^ "\", ";
-    "\"branch\": \"" ^ branch ^ "\", ";
-    "\"tag\": \"" ^ tag ^ "\""; "}" ]
+let versionJson =
+  String.concat ~sep:"\n"
+    [ "{"
+    ; ("\"major\": " ^ string_of_int major ^ ", ")
+    ; ("\"minor\": " ^ string_of_int minor ^ ", ")
+    ; ("\"patch\": " ^ string_of_int patch ^ ", ")
+    ; ("\"commit\": \"" ^ commit ^ "\", ")
+    ; ("\"branch\": \"" ^ branch ^ "\", ")
+    ; ("\"tag\": \"" ^ tag ^ "\"")
+    ; "}" ]
 
 let clang_enabled = is_yes "@BUILD_C_ANALYZERS@"
+
 let java_enabled = is_yes "@BUILD_JAVA_ANALYZERS@"
+
 let xcode_enabled = is_not_no "@XCODE_SELECT@"
 
 let man_pages_last_modify_date = "@INFER_MAN_LAST_MODIFIED@"

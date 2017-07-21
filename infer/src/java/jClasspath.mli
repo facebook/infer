@@ -9,36 +9,33 @@
  *)
 
 open! IStd
-
 open Javalib_pack
 
-(** Jar file containing the models *)
 val models_jar : string ref
+(** Jar file containing the models *)
 
-(** Type environment of the models *)
 val models_tenv : Tenv.t ref
+(** Type environment of the models *)
 
+val add_models : string -> unit
 (**  Adds the set of procnames for the models of Java libraries so that methods
      with similar names are skipped during the capture *)
-val add_models : string -> unit
 
-(** Check if there is a model for the given procname *)
 val is_model : Typ.Procname.t -> bool
+(** Check if there is a model for the given procname *)
 
 val split_classpath : string -> string list
 
 (** map entry for source files with potential basename collision within the same compiler call *)
-type file_entry =
-  | Singleton of SourceFile.t
-  | Duplicate of (string * SourceFile.t) list
+type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
 
 type t = string * file_entry String.Map.t * JBasics.ClassSet.t
 
-(** load the list of source files and the list of classes from the javac verbose file *)
 val load_from_verbose_output : string -> t
+(** load the list of source files and the list of classes from the javac verbose file *)
 
-(** load the list of source files and the list of classes from Config.generated_classes *)
 val load_from_arguments : string -> t
+(** load the list of source files and the list of classes from Config.generated_classes *)
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 
@@ -50,11 +47,11 @@ val get_models : program -> classmap
 
 val cleanup : program -> unit
 
-(** load a java program *)
 val load_program : string -> JBasics.ClassSet.t -> program
+(** load a java program *)
 
-(** retrive a Java node from the classname *)
 val lookup_node : JBasics.class_name -> program -> JCode.jcode Javalib.interface_or_class option
+(** retrive a Java node from the classname *)
 
-(** [collect_classes cmap filename] adds to [cmap] the classes found in the jar file [filename] *)
 val collect_classes : classmap -> string -> classmap
+(** [collect_classes cmap filename] adds to [cmap] the classes found in the jar file [filename] *)

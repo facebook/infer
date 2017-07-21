@@ -11,17 +11,16 @@ open! IStd
 
 (** Module for builtin functions with their symbolic execution handler *)
 
-type args = {
-  pdesc : Procdesc.t;
-  instr : Sil.instr;
-  tenv : Tenv.t;
-  prop_ : Prop.normal Prop.t;
-  path : Paths.Path.t;
-  ret_id : (Ident.t * Typ.t) option;
-  args : (Exp.t * Typ.t) list;
-  proc_name : Typ.Procname.t;
-  loc : Location.t;
-}
+type args =
+  { pdesc: Procdesc.t
+  ; instr: Sil.instr
+  ; tenv: Tenv.t
+  ; prop_: Prop.normal Prop.t
+  ; path: Paths.Path.t
+  ; ret_id: (Ident.t * Typ.t) option
+  ; args: (Exp.t * Typ.t) list
+  ; proc_name: Typ.Procname.t
+  ; loc: Location.t }
 
 type ret_typ = (Prop.normal Prop.t * Paths.Path.t) list
 

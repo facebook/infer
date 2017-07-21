@@ -24,3 +24,10 @@ int test(int* p) {
     x + y;
   });
 }
+
+int with_conditional(int* p) {
+  return ({
+    int x = 1;
+    p ? *p + x : x;
+  });
+}

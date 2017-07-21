@@ -15,35 +15,35 @@ open! IStd
 (** Frame and anti-frame *)
 type splitting
 
-(** Remove constant string or class from a prop *)
 val remove_constant_string_class : Tenv.t -> 'a Prop.t -> Prop.normal Prop.t
+(** Remove constant string or class from a prop *)
 
+val check_attr_dealloc_mismatch : PredSymb.t -> PredSymb.t -> unit
 (** Check if the attribute change is a mismatch between a kind of allocation
     and a different kind of deallocation *)
-val check_attr_dealloc_mismatch : PredSymb.t -> PredSymb.t -> unit
 
+val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * PredSymb.path_pos) option
 (** Check whether a sexp contains a dereference without null check,
     and return the line number and path position *)
-val find_dereference_without_null_check_in_sexp : Sil.strexp -> (int * PredSymb.path_pos) option
 
-(** raise a cast exception *)
 val create_cast_exception :
   Tenv.t -> Logging.ml_loc -> Typ.Procname.t option -> Exp.t -> Exp.t -> Exp.t -> exn
+(** raise a cast exception *)
 
-(** check if a prop is an exception *)
 val prop_is_exn : Typ.Procname.t -> 'a Prop.t -> bool
+(** check if a prop is an exception *)
 
-(** when prop is an exception, return the exception name *)
 val prop_get_exn_name : Typ.Procname.t -> 'a Prop.t -> Typ.Name.t option
+(** when prop is an exception, return the exception name *)
 
-(** search in prop contains an error state *)
 val lookup_custom_errors : 'a Prop.t -> string option
+(** search in prop contains an error state *)
 
-(** Dump a splitting *)
 val d_splitting : splitting -> unit
+(** Dump a splitting *)
 
+val exe_function_call :
+  Specs.summary -> Tenv.t -> (Ident.t * Typ.t) option -> Procdesc.t -> Typ.Procname.t -> Location.t
+  -> (Exp.t * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t
+  -> (Prop.normal Prop.t * Paths.Path.t) list
 (** Execute the function call and return the list of results with return value *)
-val exe_function_call:
-  Specs.summary -> Tenv.t -> (Ident.t * Typ.t) option -> Procdesc.t -> Typ.Procname.t ->
-  Location.t -> (Exp.t * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t ->
-  (Prop.normal Prop.t * Paths.Path.t) list

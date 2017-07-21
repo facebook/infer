@@ -32,6 +32,7 @@ open! IStd
     infer/tests/endtoend/java/crashcontext/
 *)
 
+val crashcontext_epilogue : in_buck_mode:bool -> unit
 (**
    Runs crashcontext epilogue code, which takes the per-method summaries
    produced by crashcontext related analysis (future: analyses) and stitches
@@ -41,6 +42,5 @@ open! IStd
    so this runs at the end of the parent buck infer process only.
    TODO: Similar integration with build systems other than buck.
 *)
-val crashcontext_epilogue : in_buck_mode:bool -> unit
 
 val pp_stacktree : Format.formatter -> Stacktree_t.stacktree -> unit

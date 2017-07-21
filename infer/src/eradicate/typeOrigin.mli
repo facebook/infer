@@ -11,30 +11,29 @@ open! IStd
 
 (** Case Proc *)
 type proc_origin =
-  {
-    pname : Typ.Procname.t;
-    loc: Location.t;
-    annotated_signature : AnnotatedSignature.t;
-    is_library : bool;
-  } [@@deriving compare]
+  { pname: Typ.Procname.t
+  ; loc: Location.t
+  ; annotated_signature: AnnotatedSignature.t
+  ; is_library: bool }
+  [@@deriving compare]
 
 type t =
-  | Const of Location.t (** A constant in the source *)
-  | Field of t * Typ.Fieldname.t * Location.t (** A field access *)
-  | Formal of Mangled.t (** A formal parameter *)
-  | Proc of proc_origin (** A procedure call *)
-  | New (** A new object creation *)
-  | ONone (** No origin is known *)
-  | Undef (** Undefined value before initialization *)
-[@@deriving compare]
+  | Const of Location.t  (** A constant in the source *)
+  | Field of t * Typ.Fieldname.t * Location.t  (** A field access *)
+  | Formal of Mangled.t  (** A formal parameter *)
+  | Proc of proc_origin  (** A procedure call *)
+  | New  (** A new object creation *)
+  | ONone  (** No origin is known *)
+  | Undef  (** Undefined value before initialization *)
+  [@@deriving compare]
 
 val equal : t -> t -> bool
 
-(** Get a description to be used for error messages. *)
 val get_description : Tenv.t -> t -> TypeErr.origin_descr option
+(** Get a description to be used for error messages. *)
 
-(** Join with left priority *)
 val join : t -> t -> t
+(** Join with left priority *)
 
-(** Raw string representation. *)
 val to_string : t -> string
+(** Raw string representation. *)

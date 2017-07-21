@@ -12,6 +12,7 @@
 
 #include <infer_model/common.h>
 #include <infer_model/infer_traits.h>
+#include <infer_model/weak_ptr.h>
 
 INFER_NAMESPACE_STD_BEGIN
 
@@ -141,7 +142,6 @@ class shared_ptr : public std__shared_ptr<T> {
   }
 
   template <class Y,
-
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
   shared_ptr(const shared_ptr<Y>& r) noexcept {
     model_copy(__cast_to_infer_ptr(this), __cast_to_infer_ptr(&r));
@@ -159,7 +159,9 @@ class shared_ptr : public std__shared_ptr<T> {
 
   template <class Y,
             typename = typename enable_if<is_convertible<Y*, T*>::value>::type>
-  explicit shared_ptr(const weak_ptr<Y>& r) {}
+  explicit shared_ptr(const weak_ptr<Y>& r) : shared_ptr(std::move(r.lock())) {
+    // TODO: throw if r is empty
+  }
 
   /* Because of implementation differences between libc++ and stdlibc++, don't
    * define this constructor (it will be defined elsewhere in case of
@@ -407,6 +409,27 @@ template <class T, class... Args>
 shared_ptr<T> make_shared(Args&&... args) {
   return shared_ptr<T>(::new T(std::forward<Args>(args)...));
 }
+
+template <class T>
+struct owner_less;
+
+template <class T>
+struct owner_less<shared_ptr<T>>
+    : binary_function<shared_ptr<T>, shared_ptr<T>, bool> {
+  typedef bool result_type;
+
+  bool operator()(shared_ptr<T> const& x, shared_ptr<T> const& y) const {
+    return x.owner_before(y);
+  }
+
+  bool operator()(shared_ptr<T> const& x, weak_ptr<T> const& y) const {
+    return x.owner_before(y);
+  }
+
+  bool operator()(weak_ptr<T> const& x, shared_ptr<T> const& y) const {
+    return x.owner_before(y);
+  }
+};
 
 #undef __cast_to_infer_ptr
 INFER_NAMESPACE_STD_END

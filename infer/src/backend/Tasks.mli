@@ -19,28 +19,29 @@ type tasks = t
 type closure = unit -> unit
 
 (* Aggregate closures into groups of the given size *)
+
 val aggregate : size:int -> t -> t
 
+val create : ?continuation:closure option -> closure list -> t
 (** Create tasks with a list of closures to be executed in parallel,
     and an optional continuation to be executed afterwards *)
-val create : ?continuation:(closure option) -> closure list -> t
 
-(** No-op tasks *)
 val empty : t
+(** No-op tasks *)
 
-(** Run the closures and continuation *)
 val run : t -> unit
+(** Run the closures and continuation *)
 
 module Runner : sig
   (** A runner accepts new tasks repeatedly for parallel execution *)
   type runner
 
+  val create : jobs:int -> runner
   (** Create a runner *)
-  val create: jobs:int -> runner
 
-  (** Start the given tasks with the runner *)
   val start : runner -> tasks:t -> unit
+  (** Start the given tasks with the runner *)
 
-  (** Complete all the outstanding tasks *)
   val complete : runner -> unit
+  (** Complete all the outstanding tasks *)
 end

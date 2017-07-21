@@ -338,3 +338,8 @@ DEFINE-CHECKER WHITE_BLACKLIST_PATH_EXAMPLE = {
   SET blacklist_path = { filtered_files };
   SET doc_url = "www.example.com";
 };
+
+DEFINE-CHECKER ENUM_CONSTANTS = {
+  SET report_when = is_enum_constant(REGEXP("MyName.*")) OR is_enum_constant("IMMEDIATE");
+  SET message = "Do not use the enum MyName or strategy";
+};

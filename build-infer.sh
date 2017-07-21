@@ -16,7 +16,7 @@ INFER_ROOT="$SCRIPT_DIR"
 INFER_DEPS_DIR="$INFER_ROOT/dependencies/infer-deps"
 PLATFORM="$(uname)"
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-OCAML_VERSION="4.04.2"
+OCAML_VERSION=${OCAML_VERSION:-"4.04.2"}
 OPAM_LOCK_URL=${OPAM_LOCK_URL:-"https://github.com/rgrinberg/opam-lock"}
 
 INFER_OPAM_SWITCH_DEFAULT=infer-"$OCAML_VERSION"
@@ -155,7 +155,7 @@ install_infer-deps () {
     cp -a "$INFER_DEPS_DIR"/* "$INFER_TMP_DEPS_DIR"
     # give unique name to the package to force opam to recheck the dependencies are all installed
     opam pin add --no-action "$INFER_TMP_PACKAGE_NAME" "$INFER_TMP_DEPS_DIR"
-    opam opam install -j $NCPU --deps-only "$INFER_TMP_PACKAGE_NAME"
+    opam install -j $NCPU --deps-only "$INFER_TMP_PACKAGE_NAME"
     opam pin remove "$INFER_TMP_PACKAGE_NAME"
     rm -fr "$INFER_TMP_DEPS_DIR"
     # pin infer so that opam doesn't violate its package constraints when the user does

@@ -8,6 +8,7 @@
  */
 
 #import <Foundation/NSObject.h>
+#import <UIKit/UIKit.h>
 
 int main() {
   int z;
@@ -22,4 +23,8 @@ int test() {
   C* c1 = [C alloc];
   C* c2 = [C alloc];
   C* a[3] = {[c1 init], c1, c2};
+}
+
+CGAffineTransform struct_init_test() {
+  return (CGAffineTransform){.a = -1, .b = 0, .c = -0, .d = -1};
 }

@@ -49,6 +49,13 @@ digraph iCFG {
 	
 
 	 "fooOK#_Z5fooOKv.17fb07f2bfe616303a58d2e25ed98781_4" -> "fooOK#_Z5fooOKv.17fb07f2bfe616303a58d2e25ed98781_3" ;
+"init_capture#_Z12init_capturev.b56a308a8fe2b749cb39e3b566237ec2_1" [label="1: Start init_capture\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 30]\n " color=yellow style=filled]
+	
+
+	 "init_capture#_Z12init_capturev.b56a308a8fe2b749cb39e3b566237ec2_1" -> "init_capture#_Z12init_capturev.b56a308a8fe2b749cb39e3b566237ec2_2" ;
+"init_capture#_Z12init_capturev.b56a308a8fe2b749cb39e3b566237ec2_2" [label="2: Exit init_capture \n  " color=yellow style=filled]
+	
+
 "operator()#lambda_shared_lambda_lambda1.cpp:11:15#bar#(_ZZ3barvENK3$_0clEv).6e24f7d75fa4d9b98ee11419b33635ae_1" [label="1: Start bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()\nFormals:  this:bar::lambda_shared_lambda_lambda1.cpp:11:15*\nLocals:  i:int \n   DECLARE_LOCALS(&return,&i); [line 11]\n " color=yellow style=filled]
 	
 
@@ -125,4 +132,11 @@ digraph iCFG {
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:26:12#fooOK#(_ZZ5fooOKvENK3$_3clEi).3d555a16319a7bb49d565b6ed9aa8c7f_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:26:12#fooOK#(_ZZ5fooOKvENK3$_3clEi).3d555a16319a7bb49d565b6ed9aa8c7f_2" ;
+"operator()#lambda_shared_lambda_lambda1.cpp:31:3#init_capture#(_ZZ12init_capturevENK3$_4clEv).1a4cfb9f400c66ee04ea1f7aeeef1d92_1" [label="1: Start init_capture::lambda_shared_lambda_lambda1.cpp:31:3_operator()\nFormals:  this:init_capture::lambda_shared_lambda_lambda1.cpp:31:3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 31]\n " color=yellow style=filled]
+	
+
+	 "operator()#lambda_shared_lambda_lambda1.cpp:31:3#init_capture#(_ZZ12init_capturevENK3$_4clEv).1a4cfb9f400c66ee04ea1f7aeeef1d92_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:31:3#init_capture#(_ZZ12init_capturevENK3$_4clEv).1a4cfb9f400c66ee04ea1f7aeeef1d92_2" ;
+"operator()#lambda_shared_lambda_lambda1.cpp:31:3#init_capture#(_ZZ12init_capturevENK3$_4clEv).1a4cfb9f400c66ee04ea1f7aeeef1d92_2" [label="2: Exit init_capture::lambda_shared_lambda_lambda1.cpp:31:3_operator() \n  " color=yellow style=filled]
+	
+
 }

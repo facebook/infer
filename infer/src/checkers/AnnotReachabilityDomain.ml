@@ -8,9 +8,6 @@
  *)
 
 open! IStd
-
 module CallSites = AbstractDomain.FiniteSet (CallSite)
-
 module SinkMap = AbstractDomain.Map (Typ.Procname) (CallSites)
-
 include AbstractDomain.Map (Annot) (SinkMap)

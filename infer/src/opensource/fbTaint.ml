@@ -10,5 +10,7 @@
 open! IStd
 
 let sources = []
+
 let sinks = []
+
 let functions_with_tainted_params = []

@@ -11,10 +11,7 @@ open! IStd
 
 (** Single abstraction for all the kinds of variables in SIL *)
 
-type t = private
-  | LogicalVar of Ident.t
-  | ProgramVar of Pvar.t
-[@@deriving compare]
+type t = private LogicalVar of Ident.t | ProgramVar of Pvar.t [@@deriving compare]
 
 val equal : t -> t -> bool
 
@@ -22,8 +19,8 @@ val of_id : Ident.t -> t
 
 val of_pvar : Pvar.t -> t
 
-(** Create a variable representing the ith formal of the current procedure *)
 val of_formal_index : int -> t
+(** Create a variable representing the ith formal of the current procedure *)
 
 val to_exp : t -> Exp.t
 

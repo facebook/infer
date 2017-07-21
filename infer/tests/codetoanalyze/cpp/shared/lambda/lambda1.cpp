@@ -26,3 +26,7 @@ int fooOK() {
   auto y = [](int i) { return i++; };
   return 5 / (4 - y(3));
 }
+
+void init_capture() {
+  [i = 0]() { i; };
+}

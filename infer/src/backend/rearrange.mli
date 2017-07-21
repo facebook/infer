@@ -10,30 +10,31 @@
 
 open! IStd
 
-(** Re-arrangement and extension of structures with fresh variables *) (* TODO: this description is not clear *)
+(** Re-arrangement and extension of structures with fresh variables *)
+
+(* TODO: this description is not clear *)
 
 exception ARRAY_ACCESS
 
 val is_only_pt_by_fld_or_param_with_annot :
-  ?check_weak_captured_var:bool -> Procdesc.t -> Tenv.t -> Prop.normal Prop.t ->
-  Exp.t -> (Annot.Item.t -> bool) -> string option
+  ?check_weak_captured_var:bool -> Procdesc.t -> Tenv.t -> Prop.normal Prop.t -> Exp.t
+  -> (Annot.Item.t -> bool) -> string option
 
-val is_only_pt_by_fld_or_param_nonnull : Procdesc.t -> Tenv.t -> Prop.normal Prop.t ->
-  Exp.t -> bool
+val is_only_pt_by_fld_or_param_nonnull :
+  Procdesc.t -> Tenv.t -> Prop.normal Prop.t -> Exp.t -> bool
 
-(** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 val check_dereference_error :
   Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Exp.t -> Location.t -> unit
+(** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 
-(** Check that an expression representing an objc block can be null and raise a [B1] null exception.
-    It's used to check that we don't call possibly null blocks *)
 val check_call_to_objc_block_error :
   Tenv.t -> Procdesc.t -> Prop.normal Prop.t -> Exp.t -> Location.t -> unit
+(** Check that an expression representing an objc block can be null and raise a [B1] null exception.
+    It's used to check that we don't call possibly null blocks *)
 
+val rearrange :
+  ?report_deref_errors:bool -> Procdesc.t -> Tenv.t -> Exp.t -> Typ.t -> Prop.normal Prop.t
+  -> Location.t -> Sil.offset list Prop.prop_iter list
 (** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ].
     It returns an iterator with [lexp |-> strexp: typ] as current predicate
     and the path (an [offsetlist]) which leads to [lexp] as the iterator state. *)
-val rearrange :
-  ?report_deref_errors:bool -> Procdesc.t -> Tenv.t -> Exp.t ->
-  Typ.t -> Prop.normal Prop.t ->
-  Location.t -> (Sil.offset list) Prop.prop_iter list

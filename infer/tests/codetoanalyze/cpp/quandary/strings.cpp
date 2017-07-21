@@ -16,28 +16,28 @@ extern void __infer_taint_sink(std::string);
 // tests related to string manipulation, format strings, etc.
 namespace strings {
 
-void sprintf_bad1() {
+void sprintf1_bad() {
   char laundered_source[50];
   auto source = __infer_taint_source().c_str();
   sprintf(laundered_source, "%s", source);
   __infer_taint_sink(laundered_source);
 }
 
-void sprintf_bad2() {
+void sprintf2_bad() {
   char laundered_source[50];
   auto source = __infer_taint_source().c_str();
   sprintf(laundered_source, "%s%s%d", "a", source, 1);
   __infer_taint_sink(laundered_source);
 }
 
-void strcpy_bad1() {
+void strcpy1_bad() {
   char laundered_source[50];
   auto source = __infer_taint_source().c_str();
   auto copy = strcpy(laundered_source, source);
   __infer_taint_sink(copy);
 }
 
-void strcpy_bad2() {
+void strcpy2_bad() {
   char laundered_source[50];
   auto source = __infer_taint_source().c_str();
   strcpy(laundered_source, source);
@@ -71,81 +71,81 @@ void memchr_bad() {
   __infer_taint_sink(laundered_source);
 }
 
-void constructor_bad1() {
+void constructor1_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = std::string(source);
   __infer_taint_sink(laundered_source);
 }
 
-void constructor_bad2() {
+void constructor2_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = std::string(source, 0, 5);
   __infer_taint_sink(laundered_source);
 }
 
-void constructor_bad3() {
+void FN_constructor3_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = std::string(source.begin(), source.begin() + 5);
   __infer_taint_sink(laundered_source);
 }
 
-void concat_bad1() {
+void concat1_bad() {
   auto source = __infer_taint_source();
   source += "other string";
   __infer_taint_sink(source);
 }
 
-void concat_bad2() {
+void concat2_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = std::string("string");
   laundered_source += source;
   __infer_taint_sink(laundered_source);
 }
 
-void concat_bad3() {
+void concat3_bad() {
   auto source = __infer_taint_source();
   __infer_taint_sink(source += "string");
 }
 
-void append_bad1() {
+void append1_bad() {
   auto source = __infer_taint_source();
   __infer_taint_sink(std::string("string").append(source));
 }
 
-void append_bad2() {
+void append2_bad() {
   auto source = __infer_taint_source();
   source.append("string");
   __infer_taint_sink(source);
 }
 
-void assign_bad1() {
+void assign1_bad() {
   auto source = __infer_taint_source();
   __infer_taint_sink(std::string("string").assign(source));
 }
 
-void assign_bad2() {
+void assign2_bad() {
   auto source = __infer_taint_source();
   source.assign("string");
   __infer_taint_sink(source);
 }
 
-void insert_bad1() {
+void insert1_bad() {
   auto source = __infer_taint_source();
   __infer_taint_sink(std::string("string").assign(source));
 }
 
-void insert_bad2() {
+void insert2_bad() {
   auto source = __infer_taint_source();
   source.insert(0, "string");
   __infer_taint_sink(source);
 }
 
-void replace_bad1() {
+void replace1_bad() {
   auto source = __infer_taint_source();
   __infer_taint_sink(std::string("string").replace(0, 5, source));
 }
 
-void replace_bad2() {
+void replace2_bad() {
   auto source = __infer_taint_source();
   source.replace(0, 5, "string");
   __infer_taint_sink(source);
@@ -182,25 +182,25 @@ Formatter<Args...> format3(std::string fmt, Args&&... args);
 template <class... Args>
 Formatter<Args...>* format4(std::string fmt, Args&&... args);
 
-void format_bad1() {
+void format1_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = format1("%s", source).str();
   __infer_taint_sink(laundered_source);
 }
 
-void format_bad2() {
+void format2_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = format2("%s", source)->str();
   __infer_taint_sink(laundered_source);
 }
 
-void format_bad3() {
+void format3_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = format3("%s", source).str();
   __infer_taint_sink(laundered_source);
 }
 
-void format_bad4() {
+void format4_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = format4("%s", source)->str();
   __infer_taint_sink(laundered_source);

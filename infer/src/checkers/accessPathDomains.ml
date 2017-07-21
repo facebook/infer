@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-
 module F = Format
 
 module Set = struct
@@ -25,7 +24,7 @@ module Set = struct
   let normalize aps =
     APSet.filter
       (fun lhs ->
-         not (APSet.exists (fun rhs -> not (phys_equal lhs rhs) && AccessPath.(<=) ~lhs ~rhs) aps))
+        not (APSet.exists (fun rhs -> not (phys_equal lhs rhs) && AccessPath.( <= ) ~lhs ~rhs) aps))
       aps
 
   let add = APSet.add
@@ -33,34 +32,32 @@ module Set = struct
   let of_list = APSet.of_list
 
   let mem ap aps =
-    APSet.mem ap aps || APSet.exists (fun other_ap -> AccessPath.(<=) ~lhs:ap ~rhs:other_ap) aps
+    APSet.mem ap aps || APSet.exists (fun other_ap -> AccessPath.( <= ) ~lhs:ap ~rhs:other_ap) aps
 
   let mem_fuzzy ap aps =
     let has_overlap ap1 ap2 =
-      AccessPath.(<=) ~lhs:ap1 ~rhs:ap2 || AccessPath.(<=) ~lhs:ap2 ~rhs:ap1 in
+      AccessPath.( <= ) ~lhs:ap1 ~rhs:ap2 || AccessPath.( <= ) ~lhs:ap2 ~rhs:ap1
+    in
     APSet.mem ap aps || APSet.exists (has_overlap ap) aps
 
-  let (<=) ~lhs ~rhs =
-    if phys_equal lhs rhs
-    then true
+  let ( <= ) ~lhs ~rhs =
+    if phys_equal lhs rhs then true
     else
-      let rhs_contains lhs_ap =
-        mem lhs_ap rhs in
+      let rhs_contains lhs_ap = mem lhs_ap rhs in
       APSet.subset lhs rhs || APSet.for_all rhs_contains lhs
 
-  let join aps1 aps2 =
-    if phys_equal aps1 aps2
-    then aps1
-    else APSet.union aps1 aps2
+  let join aps1 aps2 = if phys_equal aps1 aps2 then aps1 else APSet.union aps1 aps2
 
   let widen ~prev ~next ~num_iters:_ =
-    if phys_equal prev next
-    then prev
+    if phys_equal prev next then prev
     else
-      let abstract_access_path ap aps = match ap with
-        | AccessPath.Exact exact_ap -> APSet.add (AccessPath.Abstracted exact_ap) aps
-        | AccessPath.Abstracted _ -> APSet.add ap aps in
+      let abstract_access_path ap aps =
+        match ap with
+        | AccessPath.Exact exact_ap
+         -> APSet.add (AccessPath.Abstracted exact_ap) aps
+        | AccessPath.Abstracted _
+         -> APSet.add ap aps
+      in
       let diff_aps = APSet.diff next prev in
-      APSet.fold abstract_access_path diff_aps APSet.empty
-      |> join prev
+      APSet.fold abstract_access_path diff_aps APSet.empty |> join prev
 end

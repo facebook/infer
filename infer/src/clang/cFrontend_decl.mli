@@ -11,4 +11,4 @@ open! IStd
 
 (** Translate declarations **)
 
-module CFrontend_decl_funct(T: CModule_type.CTranslation) : CModule_type.CFrontend
+module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFrontend

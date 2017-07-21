@@ -10,7 +10,9 @@
 open! IStd
 
 (** Process properties by creating their getters and setters in the case that they need to be syntethized *)
+
 (** or in the case of dynamic. *)
+
 (* How it works: *)
 (* - First, the property is defined in the interface. Then, we add the method declarations of the getter *)
 (* and setter to the map property_table. *)
@@ -19,12 +21,8 @@ open! IStd
 
 let is_strong_property obj_c_property_decl_info =
   let attrs = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
-  List.exists ~f:(fun a -> match a with
-      | `Strong -> true
-      | _ -> false) attrs
+  List.exists ~f:(fun a -> match a with `Strong -> true | _ -> false) attrs
 
 let is_assign_property obj_c_property_decl_info =
   let attrs = obj_c_property_decl_info.Clang_ast_t.opdi_property_attributes in
-  List.exists ~f:(fun a -> match a with
-      | `Assign -> true
-      | _ -> false) attrs
+  List.exists ~f:(fun a -> match a with `Assign -> true | _ -> false) attrs

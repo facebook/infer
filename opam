@@ -38,7 +38,6 @@ depends: [
   "ounit" {="2.0.0"}
   "parmap" {>="1.0-rc8"}
   "ppx_deriving" {>="4.1"}
-  "reason" {="1.13.4"}
   "sawja" {>="1.5.2"}
   "xmlm" {>="1.2.0"}
 ]

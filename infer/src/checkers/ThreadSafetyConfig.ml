@@ -8,12 +8,12 @@
  *)
 
 open! IStd
-
 module F = Format
 
 module AnnotationAliases = struct
-
   let of_json = function
-    | `List aliases -> List.map ~f:Yojson.Basic.Util.to_string aliases
-    | _ -> failwith "Couldn't parse thread-safety annotation aliases; expected list of strings"
+    | `List aliases
+     -> List.map ~f:Yojson.Basic.Util.to_string aliases
+    | _
+     -> failwith "Couldn't parse thread-safety annotation aliases; expected list of strings"
 end

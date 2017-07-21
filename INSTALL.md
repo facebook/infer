@@ -33,7 +33,6 @@ You can install some of these dependencies using
 
 ```sh
 brew install autoconf automake cmake opam pkg-config
-brew install caskroom/cask/brew-cask
 brew cask install java
 ```
 

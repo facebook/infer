@@ -3,14 +3,22 @@ digraph iCFG {
 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_1" [label="1: Start DispatchInMacroTest\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
 	
 
-	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_1" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" ;
+	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_1" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" ;
 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_2" [label="2: Exit DispatchInMacroTest \n  " color=yellow style=filled]
 	
 
-"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" [label="3:  Return Stmt \n   DECLARE_LOCALS(&__objc_anonymous_block_DispatchInMacroTest______1); [line 23]\n  n$3=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_DispatchInMacroTest______1):unsigned long) [line 23]\n  *&__objc_anonymous_block_DispatchInMacroTest______1:__objc_anonymous_block_DispatchInMacroTest______1=n$3 [line 23]\n  n$4=*&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject* [line 23]\n  *n$3.DispatchInMacroTest_static_storage:NSObject*=n$4 [line 23]\n  n$5=(_fun___objc_anonymous_block_DispatchInMacroTest______1)() [line 23]\n  n$0=*&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject* [line 23]\n  *&return:objc_object*=n$0 [line 23]\n " shape="box"]
+"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" [label="3:  Fallback node \n   n$0=*&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject* [line 23]\n " shape="box"]
 	
 
-	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_2" ;
+	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_5" ;
+"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" [label="4:  Call (_fun___objc_anonymous_block_DispatchInMacroTest______1) \n   DECLARE_LOCALS(&__objc_anonymous_block_DispatchInMacroTest______1); [line 23]\n  n$3=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_DispatchInMacroTest______1):unsigned long) [line 23]\n  *&__objc_anonymous_block_DispatchInMacroTest______1:__objc_anonymous_block_DispatchInMacroTest______1=n$3 [line 23]\n  n$4=*&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject* [line 23]\n  *n$3.DispatchInMacroTest_static_storage:NSObject*=n$4 [line 23]\n  n$5=(_fun___objc_anonymous_block_DispatchInMacroTest______1)() [line 23]\n " shape="box"]
+	
+
+	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" ;
+"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_5" [label="5:  Return Stmt \n   *&return:objc_object*=n$0 [line 23]\n " shape="box"]
+	
+
+	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_5" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_2" ;
 "__objc_anonymous_block_DispatchInMacroTest______1.db6c315d2cd0e3514d444428887908e2_1" [label="1: Start __objc_anonymous_block_DispatchInMacroTest______1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
 	
 

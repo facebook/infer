@@ -143,7 +143,7 @@ DEPENDENCIES = \
 
 # ocamlbuild command with options common to all build targets
 OCAMLBUILD_BASE = \
-  $(REBUILD) $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES)) \
+  $(OCAMLBUILD) $(OCAMLBUILD_OPTIONS) -j $(NCPU) $(addprefix -I , $(DEPENDENCIES)) \
 
 # ocamlbuild with options necessary to build all targets at once, regardless of configure flags
 OCAMLBUILD_ALL = $(OCAMLBUILD_BASE) $(JAVA_OCAMLBUILD_OPTIONS)
@@ -185,10 +185,17 @@ OCAML_ALL_SOURCES = $(OCAML_BASE_SOURCES) $(CLANG_ATDGEN_STUBS) $(CLANG_PLUGIN_M
 .PHONY: all
 all: infer
 
+SRC_BUILD_COMMON = base/Version.ml $(OCAML_CONFIG_SOURCES)
+ifeq ($(BUILD_C_ANALYZERS),yes)
+SRC_BUILD_COMMON += $(CLANG_BINIOU_DICT)
+endif
+
+.PHONY: src_build_common
+src_build_common: $(SRC_BUILD_COMMON)
+
 # single out infer.native as the source of truth for make, knowing that in fact several targets are
 # produced by the build
-$(INFER_BUILD_DIR)/$(INFER_MAIN).native: base/Version.ml $(OCAML_CONFIG_SOURCES) \
-                                         $(MAKEFILE_LIST)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).native: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_CONFIG_TARGETS)
@@ -215,12 +222,7 @@ endif
 .PHONY: infer
 infer: $(INFER_BIN).native
 
-ifeq ($(BUILD_C_ANALYZERS),yes)
-infer: $(CLANG_BINIOU_DICT)
-endif
-
-$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: base/Version.ml $(OCAML_CONFIG_SOURCES) \
-                                       $(MAKEFILE_LIST)
+$(INFER_BUILD_DIR)/$(INFER_MAIN).byte: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_CONFIG) -build-dir $(INFER_BUILD_DIR) \
 	  $(INFER_CONFIG_TARGETS:.native=.byte)
@@ -251,7 +253,7 @@ M=
 MFLAGS=
 
 .PHONY: module
-module: base/Version.ml $(OCAML_ALL_SOURCES)
+module: $(SRC_BUILD_COMMON) $(OCAML_ALL_SOURCES)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
 	$(OCAMLBUILD_ALL) -build-dir $(INFER_BUILD_DIR) \
           $(MFLAGS) \
@@ -262,16 +264,6 @@ module: base/Version.ml $(OCAML_ALL_SOURCES)
 mli:
 	$(OCAMLFIND) ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I $(INFER_BUILD_DIR),$(DEPENDENCIES)) -i $(M).ml > $(M).mli
 
-rei:
-	$(OCAMLFIND) ocamlc -package atdgen,oUnit,str,unix,yojson,zip $(addprefix -I $(INFER_BUILD_DIR),$(DEPENDENCIES)) -i -pp refmt -impl $(M).re > $(M).rei
-
-# convert to reason
-%.re : %.ml
-	$(SCRIPT_DIR)/refmt.sh -parse ml -print re $< > $*.re
-
-%.rei : %.mli
-	$(SCRIPT_DIR)/refmt.sh -parse ml -print re $< > $*.rei
-
 roots:=Infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
 roots += $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
@@ -279,15 +271,13 @@ endif
 clusters:=base clang java IR
 
 ml_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.ml\(i\)*')
-re_src_files:=$(shell find $(DEPENDENCIES) -regex '.*\.re\(i\)*')
 inc_flags:=$(foreach dir,$(DEPENDENCIES),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
 cluster_flags:=$(foreach cluster,$(clusters),-c $(cluster))
 
-mod_dep.dot: $(ml_src_files) $(re_src_files)
+mod_dep.dot: $(ml_src_files)
 	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot
-	{ ocamldep.opt $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files); \
-	  ocamldep.opt $(inc_flags) -ml-synonym .re -mli-synonym .rei -pp refmt $(re_src_files); } \
+	ocamldep.opt $(inc_flags) $(ml_src_files) \
 	| $(DEPENDENCIES_DIR)/ocamldot/ocamldot $(cluster_flags) $(root_flags) \
 	| grep -v -e "\"IList\"\|\"Utils\"" \
         > mod_dep.dot
@@ -297,7 +287,7 @@ mod_dep.pdf: mod_dep.dot
 
 .PHONY: dsort
 dsort:
-	$(QUIET)ocamldep.opt -sort $(inc_flags) -ml-synonym .re -mli-synonym .rei $(ml_src_files) -pp refmt $(re_src_files)
+	$(QUIET)ocamldep.opt -sort $(inc_flags) $(ml_src_files)
 
 define to_ocaml_module
 $(shell \
@@ -305,7 +295,7 @@ $(shell \
   | awk 'BEGIN { FS = "/"; OFS = "/" } ; {$$NF=toupper(substr($$NF,1,1))substr($$NF,2); print $$0}')
 endef
 
-toplevel.mlpack: base/Version.ml $(OCAML_CONFIG_SOURCES) $(MAKEFILE_LIST)
+toplevel.mlpack: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 #	We need to pack all the infer modules into another module to avoid name clashes with some
 #	of them coming from ocaml libraries (Ident for example).  To do that, we generate a .mlpack
 #	file containing namespaced modules.
@@ -335,7 +325,7 @@ checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
 $(CHECKCOPYRIGHT_BIN): $(CHECKCOPYRIGHT_MAIN).ml $(MAKEFILE_LIST)
 	$(MKDIR_P) $(BASE_BUILD_DIR)
-	$(REBUILD) -quiet -r -j $(NCPU) -build-dir $(BASE_BUILD_DIR)/checkCopyright \
+	$(OCAMLBUILD) -quiet -r -j $(NCPU) -build-dir $(BASE_BUILD_DIR)/checkCopyright \
 	  -cflags -g,-safe-string -lflags -g \
 	  -pkgs core,str -tag thread -use-ocamlfind $(CHECKCOPYRIGHT_MAIN).native
 	$(INSTALL_PROGRAM) \
@@ -344,11 +334,11 @@ $(CHECKCOPYRIGHT_BIN): $(CHECKCOPYRIGHT_MAIN).ml $(MAKEFILE_LIST)
 define gen_atdgen_rules
 # generate files using atdgen
 # parameters:
-#   1. the .atd file to generate .ml{,i} files from
-#   2. the base name of .ml{,i} files
+#   1. the .atd file to generate .ml{,i} files from, e.g. foo.atd
+#   2. the base name of .ml{,i} files, e.g. foo
 #   3. the type of files to generate: b, j, t, or v
 
-$(2)_$(3).ml $(2)_$(3).mli: $(1)
+$(2)_$(3).mli: $(1)
 	$(ATDGEN) -$(3) $$< -o $(2)
 
 # the .ml depends on the corresponding .mli to avoid running atdgen
@@ -423,6 +413,10 @@ clean:
 	$(REMOVE) $(CLANG_PLUGIN_MIRROR)/*
 	$(REMOVE) mod_dep.dot
 	$(REMOVE) mod_dep.pdf
+
+.PHONY: fmt
+fmt:
+	@$(MAKE) -C $(ROOT_DIR) fmt
 
 # print any variable for Makefile debugging
 print-%:

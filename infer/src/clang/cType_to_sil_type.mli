@@ -9,7 +9,7 @@
 
 open! IStd
 
-val get_builtin_objc_typename :  [< `ObjCClass | `ObjCId ] -> Typ.Name.t
+val get_builtin_objc_typename : [< `ObjCClass | `ObjCId] -> Typ.Name.t
 
-val qual_type_to_sil_type : (Tenv.t -> Clang_ast_t.decl -> Typ.desc) ->
-  Tenv.t -> Clang_ast_t.qual_type -> Typ.t
+val qual_type_to_sil_type :
+  (Tenv.t -> Clang_ast_t.decl -> Typ.desc) -> Tenv.t -> Clang_ast_t.qual_type -> Typ.t

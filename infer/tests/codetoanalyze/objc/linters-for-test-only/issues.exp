@@ -1,3 +1,5 @@
+codetoanalyze/objc/linters-for-test-only/enums.m, test, 16, ENUM_CONSTANTS, []
+codetoanalyze/objc/linters-for-test-only/enums.m, test_c_style_enum, 20, ENUM_CONSTANTS, []
 codetoanalyze/objc/linters-for-test-only/filter_by_path/include_file.m, main, 9, ALL_PATH_NO_FILTER_EXAMPLE, []
 codetoanalyze/objc/linters-for-test-only/filter_by_path/include_file.m, main, 9, FILTER_BY_ALL_PATH_EXAMPLE, []
 codetoanalyze/objc/linters-for-test-only/filter_by_path/include_file.m, main, 9, FILTER_BY_PATH_EXAMPLE, []

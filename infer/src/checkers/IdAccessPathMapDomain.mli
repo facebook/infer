@@ -15,6 +15,6 @@ module IdMap = Var.Map
 
 type astate = AccessPath.Raw.t IdMap.t
 
-include (module type of IdMap)
+include module type of IdMap
 
 include AbstractDomain.WithBottom with type astate := astate

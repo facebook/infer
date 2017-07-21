@@ -34,7 +34,7 @@
 };
 
 - (void)dealloc {
-  [self dealloc];
+  [super dealloc];
 }
 
 @end
