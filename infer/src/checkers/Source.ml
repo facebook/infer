@@ -19,7 +19,7 @@ module type Kind = sig
 
   val unknown : t
 
-  val get : Typ.Procname.t -> Tenv.t -> (t * int option) option
+  val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * int option) option
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
@@ -35,7 +35,7 @@ module type S = sig
 
   val get_footprint_access_path : t -> AccessPath.t option
 
-  val get : CallSite.t -> Tenv.t -> spec option
+  val get : CallSite.t -> HilExp.t list -> Tenv.t -> spec option
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
 end
@@ -73,8 +73,8 @@ module Make (Kind : Kind) = struct
     let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
     {site; kind}
 
-  let get site tenv =
-    match Kind.get (CallSite.pname site) tenv with
+  let get site actuals tenv =
+    match Kind.get (CallSite.pname site) actuals tenv with
     | Some (kind, index)
      -> let source = make kind site in
         Some {source; index}
@@ -122,7 +122,7 @@ module Dummy = struct
 
   let get_footprint_access_path _ = assert false
 
-  let get _ _ = None
+  let get _ _ _ = None
 
   let get_tainted_formals pdesc _ =
     List.map ~f:(fun (name, typ) -> (name, typ, None)) (Procdesc.get_formals pdesc)

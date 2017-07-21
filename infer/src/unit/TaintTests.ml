@@ -18,7 +18,7 @@ module MockTrace = Trace.Make (struct
 
     let unknown = CallSite.dummy
 
-    let get pname _ =
+    let get pname _ _ =
       if String.is_prefix ~prefix:"SOURCE" (Typ.Procname.to_string pname) then
         Some (CallSite.make pname Location.dummy, None)
       else None

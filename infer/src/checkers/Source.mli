@@ -18,8 +18,8 @@ module type Kind = sig
   val unknown : t
   (** kind of an unknown source *)
 
-  val get : Typ.Procname.t -> Tenv.t -> (t * int option) option
-  (** return Some (kind) if the procedure is a taint source, None otherwise *)
+  val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * int option) option
+  (** return Some (kind) if the procedure with the given actuals is a taint source, None otherwise *)
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
   (** return each formal of the function paired with either Some(kind) if the formal is a taint
@@ -42,8 +42,8 @@ module type S = sig
   val get_footprint_access_path : t -> AccessPath.t option
   (** return Some(access path) if the current source is a footprint source, None otherwise *)
 
-  val get : CallSite.t -> Tenv.t -> spec option
-  (** return Some (taint spec) if the call site is a taint source, None otherwise *)
+  val get : CallSite.t -> HilExp.t list -> Tenv.t -> spec option
+  (** return Some (taint spec) if the call site with the given actuals is a taint source, None otherwise *)
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
   (** return each formal of the function paired with either Some(source) if the formal is a taint

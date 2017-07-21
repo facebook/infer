@@ -40,7 +40,7 @@ module SourceKind = struct
       ~f:(fun {QuandaryConfig.Source.procedure; kind} -> (Str.regexp procedure, kind))
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
-  let get pname tenv =
+  let get pname _ tenv =
     let return = None in
     match pname with
     | Typ.Procname.Java pname -> (

@@ -54,7 +54,7 @@ module SourceKind = struct
         else None)
       external_sources
 
-  let get pname _ =
+  let get pname _ _ =
     let return = None in
     match pname with
     | Typ.Procname.ObjC_Cpp cpp_name

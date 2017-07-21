@@ -55,7 +55,7 @@ module MockSource = struct
   include Source.Make (struct
     include MockTraceElem
 
-    let get _ = assert false
+    let get _ _ = assert false
 
     let get_tainted_formals _ = assert false
   end)

@@ -466,7 +466,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | None
                -> astate
             in
-            let source = TraceDomain.Source.get call_site proc_data.tenv in
+            let source = TraceDomain.Source.get call_site actuals proc_data.tenv in
             let astate_with_source =
               match source with
               | Some {TraceDomain.Source.source; index= None}
