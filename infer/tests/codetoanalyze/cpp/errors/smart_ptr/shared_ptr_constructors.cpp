@@ -8,6 +8,7 @@
  */
 
 #include <memory>
+#include <stdexcept>
 
 namespace shared_ptr_constructors {
 
@@ -96,5 +97,49 @@ void get_from_derived3_null_f1_deref() {
   std::shared_ptr<Base> p = getFromDerived3(&b);
   b.f1 = nullptr;
   int r = *(p->f1);
+}
+
+struct A {
+  void baz();
+};
+struct B {
+  A* a;
+};
+
+std::shared_ptr<B> external_def();
+std::shared_ptr<B> internal_null_def() {
+  // TODO: do the same test for std::make_shared
+  // We can't use std::make_shared here because it will cause a memory leak to
+  // be reported instead. In the future we probably need to use something like
+  // __set_wont_leak_attribute() to suppress the leak report.
+  auto r = external_def();
+  r->a = nullptr;
+  return r;
+}
+
+std::shared_ptr<A> aliasing_construct_from_external() {
+  auto p = external_def();
+  if (!p)
+    throw std::logic_error("Suppress NULL");
+  return {p, p->a};
+}
+std::shared_ptr<A> aliasing_construct_from_internal() {
+  auto p = internal_null_def();
+  if (!p)
+    throw std::logic_error("Suppress NULL");
+  return {p, p->a};
+}
+
+void aliasing_member_not_null_ok() {
+  auto q = aliasing_construct_from_external();
+  // q is unknown here so we should not report null deref
+  // Also we should not report dangling pointer because q is still alive
+  q->baz();
+}
+void aliasing_member_null_bad() {
+  auto q = aliasing_construct_from_internal();
+  // q is known here so we should report null deref
+  // Also we should not report dangling pointer because q is still alive
+  q->baz();
 }
 }

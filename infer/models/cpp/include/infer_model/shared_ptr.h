@@ -134,7 +134,7 @@ class shared_ptr : public std__shared_ptr<T> {
 
   template <class Y>
   shared_ptr(const shared_ptr<Y>& r, T* p) noexcept {
-    model_set(__cast_to_infer_ptr(this), nullptr); /* TODO */
+    model_set(__cast_to_infer_ptr(this), p); /* TODO */
   }
 
   shared_ptr(const shared_ptr& r) noexcept {
