@@ -5,6 +5,7 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+import itertools
 import logging
 import os
 import util
@@ -30,13 +31,14 @@ create_argparser = util.base_argparser(MODULE_DESCRIPTION, MODULE_NAME)
 
 
 def extract_filepath(parts):
-    if len(parts) == 0:
-        return ([], None)
-    path = ' '.join(parts)
-    if os.path.isfile(path):
-        return ([], path)
-    remainder, path = extract_filepath(parts[1:])
-    return ([parts[0]] + remainder, path)
+    pos = 0
+    size = len(parts)
+    while pos < size:
+        path = ' '.join(itertools.islice(parts, pos, None))
+        if os.path.isfile(path):
+            return parts[:pos], path
+        pos += 1
+    return parts, None
 
 
 def pop(the_list):
@@ -103,6 +105,9 @@ def extract_all(javac_arguments):
     {'files': [], 'opts': ['cls.class', '@/path/to/a b.txt']}
     >>> extract_all(['cls.class', '@/path/to/a', '@b.txt'])
     {'files': [], 'opts': ['cls.class', '@/path/to/a @b.txt']}
+    >>> v = extract_all(['-opt1', 'optval1'] * 1000 + ['/path/to/1.java'])
+    >>> len(v['opts'])
+    2000
     """
     java_files = []
     java_opts = []
