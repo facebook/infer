@@ -18,7 +18,7 @@ all: install
 $(INFER_RESULTS): $(MODELS_SOURCES) $(CLANG_DEPS_NO_MODELS)
 #	make clean in src/ to recompile all the models
 	$(QUIET)$(call silent_on_success,Building C++ models,\
-	  $(INFER_BIN) -o $(@D) --models-mode --no-failures-allowed -- $(MAKE) -C src clean all)
+	  $(INFER_BIN) -o $(@D) --models-mode -- $(MAKE) -C src clean all)
 
 $(CPP_MODELS_FILE): $(INFER_RESULTS)
 	$(QUIET)$(INSTALL_DATA) $(dir $(INFER_RESULTS))/specs/*.specs $(SPECS_LIB_DIR)

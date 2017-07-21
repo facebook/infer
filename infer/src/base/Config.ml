@@ -817,6 +817,7 @@ and ( bo_debug
     , frontend_tests
     , keep_going
     , linters_developer_mode
+    , models_mode
     , only_cheap_debug
     , print_buckets
     , print_logs
@@ -919,6 +920,9 @@ and ( bo_debug
       ~in_help:CLOpt.([(Capture, manual_clang)])
       "Save filename.ext.test.dot with the cfg in dotty format for frontend tests (also sets $(b,--print-types))"
       [print_types] []
+  and models_mode =
+    CLOpt.mk_bool_group ~long:"models-mode" "Mode for analyzing the models" []
+      [failures_allowed; keep_going]
   and print_logs =
     CLOpt.mk_bool ~long:"print-logs"
       ~in_help:
@@ -955,6 +959,7 @@ and ( bo_debug
   , frontend_tests
   , keep_going
   , linters_developer_mode
+  , models_mode
   , only_cheap_debug
   , print_buckets
   , print_logs
@@ -1229,10 +1234,6 @@ and ml_buckets =
 - $(b,cpp) from C++ code
 |}
     ~symbols:ml_bucket_symbols ~eq:PVariant.( = )
-
-and models_mode =
-  CLOpt.mk_bool ~deprecated:["models_mode"; "-models_mode"] ~long:"models-mode"
-    "Mode for analyzing the models"
 
 and modified_targets =
   CLOpt.mk_path_opt ~deprecated:["modified_targets"] ~long:"modified-targets" ~meta:"file"
