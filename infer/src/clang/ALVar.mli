@@ -13,7 +13,15 @@ type keyword = Doc_url | Message | Mode | Name | Report_when | Severity | Sugges
 
 type formula_id = Formula_id of string
 
-type alexp = Const of string | Regexp of string | Var of string | FId of formula_id
+(** a regexp and its cached compiled version *)
+type cached_regexp = {string: string; regexp: Str.regexp Lazy.t} [@@deriving compare]
+
+type alexp =
+  | Const of string
+  | Regexp of cached_regexp
+  | Var of string
+  | FId of formula_id
+  [@@deriving compare]
 
 type t = alexp
 
@@ -39,7 +47,7 @@ val is_doc_url_keyword : keyword -> bool
 
 val is_name_keyword : keyword -> bool
 
-val str_match_regex : string -> string -> bool
+val str_match_forward : string -> Str.regexp -> bool
 
 val compare_str_with_alexp : string -> alexp -> bool
 

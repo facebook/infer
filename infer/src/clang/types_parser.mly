@@ -159,7 +159,7 @@ simple_type_specifier:
               ALVar.Const $1 }
    | REGEXP LEFT_PAREN REARG RIGHT_PAREN
             { L.(debug Linters Verbose) "\tParsed regular expression '%s' @\n" $3;
-              ALVar.Regexp $3 }
+              ALVar.Regexp {string=$3; regexp=lazy (Str.regexp $3)} }
    | IDENTIFIER { ALVar.Var $1 }
    ;
 

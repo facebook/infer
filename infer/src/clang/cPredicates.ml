@@ -424,12 +424,20 @@ let is_class an re =
   | _
    -> false
 
-let should_use_iphoneos_target_sdk_version (cxt: CLintersContext.context) =
-  let source_file = cxt.translation_unit_context.source_file in
-  not
-    (List.exists
-       ~f:(fun path -> ALVar.str_match_regex (SourceFile.to_rel_path source_file) path)
-       Config.iphoneos_target_sdk_version_skip_path)
+let should_use_iphoneos_target_sdk_version =
+  let f =
+    ( lazy
+    ( match Config.iphoneos_target_sdk_version_skip_path with
+    | []
+     -> fun _ -> true
+    | _ :: _ as skip_paths
+     -> (* pre-compute the regexp because it is expensive *)
+        let paths_regexp = String.concat ~sep:"\\|" skip_paths |> Str.regexp in
+        (* return a closure so that the regexp is computed only once *)
+        fun {CLintersContext.translation_unit_context= {source_file}} ->
+          not (ALVar.str_match_forward (SourceFile.to_rel_path source_file) paths_regexp) ) )
+  in
+  fun ctx -> Lazy.force f ctx
 
 let decl_unavailable_in_supported_ios_sdk (cxt: CLintersContext.context) an =
   let config_iphoneos_target_sdk_version =

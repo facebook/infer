@@ -290,7 +290,7 @@ alexp_const: STRING
 
 alexp_regex:  REGEXP LEFT_PAREN STRING RIGHT_PAREN
           { L.(debug Linters Verbose) "\tParsed regular expression '%s'@\n" $3;
-            ALVar.Regexp $3 }
+            ALVar.Regexp {string=$3; regexp=lazy (Str.regexp $3)} }
 
 alexp_var: identifier { is_defined_identifier $1; ALVar.Var $1 }
 
