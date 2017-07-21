@@ -77,11 +77,17 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     | _
      -> ()
   in
-  List.iter (CFG.nodes cfg) ~f:(fun node ->
-      (* note: extract_pre grabs the post, since the analysis is backward *)
-      match Analyzer.extract_pre (CFG.id node) invariant_map with
-      | Some live_vars
-       -> List.iter ~f:(report_dead_store live_vars) (CFG.instrs node)
-      | None
-       -> () ) ;
+  let report_on_node node =
+    List.iter (CFG.instr_ids node) ~f:(fun (instr, node_id_opt) ->
+        match node_id_opt with
+        | Some node_id -> (
+          match Analyzer.extract_pre node_id invariant_map with
+          | Some live_vars
+           -> report_dead_store live_vars instr
+          | None
+           -> () )
+        | None
+         -> () )
+  in
+  List.iter (CFG.nodes cfg) ~f:report_on_node ;
   summary

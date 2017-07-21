@@ -31,6 +31,21 @@ void dead_pointer_bad() {
   int* x = &num;
 }
 
+void plus_plus1_bad() {
+  int i = 0;
+  ++i;
+}
+
+void plus_plus2_bad() {
+  int i = 0;
+  i++;
+}
+
+int plus_plus3_bad() {
+  int i = 0;
+  return i++;
+}
+
 int return_ok() {
   int x = 5;
   return x;
@@ -84,6 +99,19 @@ int* assign_pointer2_ok() {
 }
 
 void by_ref_ok(int& ref) { ref = 7; }
+
+int plus_plus_ok() {
+  int x = 0;
+  return ++x;
+}
+
+int plus_plus_loop_ok(int n) {
+  int i;
+  for (i = 0; i < n; i++) {
+    i++;
+  }
+  return i;
+}
 
 char* global;
 
