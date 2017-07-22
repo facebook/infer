@@ -31,10 +31,6 @@ val unknown_or_scan_call : is_scan:bool -> Typ.t option -> Annot.Item.t -> Built
 
 val check_variadic_sentinel : ?fails_on_nil:bool -> int -> int * int -> Builtin.t
 
-val check_untainted :
-  Tenv.t -> Exp.t -> PredSymb.taint_kind -> Typ.Procname.t -> Typ.Procname.t -> Prop.normal Prop.t
-  -> Prop.normal Prop.t
-
 val check_arith_norm_exp :
   Tenv.t -> Typ.Procname.t -> Exp.t -> Prop.normal Prop.t -> Exp.t * Prop.normal Prop.t
 (** Check for arithmetic problems and normalize an expression. *)

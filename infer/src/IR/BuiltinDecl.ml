@@ -42,8 +42,6 @@ let __builtin_va_start = create_procname "__builtin_va_start"
 
 let __cast = create_procname "__cast"
 
-let __check_untainted = create_procname "__check_untainted"
-
 let __cxx_typeid = create_procname "__cxx_typeid"
 
 let __delete = create_procname "__delete"
@@ -115,13 +113,9 @@ let __set_mem_attribute = create_procname "__set_mem_attribute"
 
 let __set_observer_attribute = create_procname "__set_observer_attribute"
 
-let __set_taint_attribute = create_procname "__set_taint_attribute"
-
 let __set_unlocked_attribute = create_procname "__set_unlocked_attribute"
 
 let __set_unsubscribed_observer_attribute = create_procname "__set_unsubscribed_observer_attribute"
-
-let __set_untaint_attribute = create_procname "__set_untaint_attribute"
 
 let __set_wont_leak_attribute = create_procname "__set_wont_leak_attribute"
 

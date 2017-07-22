@@ -11,15 +11,6 @@ open! IStd
 
 (** Module for Pattern matching. *)
 
-type taint_spec =
-  { classname: string
-  ; method_name: string
-  ; ret_type: string
-  ; params: string list
-  ; is_static: bool
-  ; taint_kind: PredSymb.taint_kind
-  ; language: Config.language }
-
 val get_java_field_access_signature : Sil.instr -> (string * string * string) option
 (** Returns the signature of a field access (class name, field name, field type name) *)
 

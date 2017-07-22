@@ -234,9 +234,6 @@ let specs_files_suffix = ".specs"
 
 let start_filename = ".start"
 
-(** If true performs taint analysis *)
-let taint_analysis = true
-
 (** Enable detailed tracing information during array abstraction *)
 let trace_absarray = false
 

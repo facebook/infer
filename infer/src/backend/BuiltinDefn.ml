@@ -392,17 +392,6 @@ let execute___set_mem_attribute {Builtin.tenv; pdesc; prop_; path; ret_id; args;
   | _
    -> raise (Exceptions.Wrong_argument_number __POS__)
 
-(** report an error if [lexp] is tainted; otherwise, add untained([lexp]) as a precondition *)
-let execute___check_untainted
-    {Builtin.tenv; pdesc; prop_; path; ret_id; args; proc_name= callee_pname} : Builtin.ret_typ =
-  match (args, ret_id) with
-  | [(lexp, _)], _
-   -> let caller_pname = Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp tenv caller_pname lexp prop_ in
-      [(check_untainted tenv n_lexp PredSymb.Tk_unknown caller_pname callee_pname prop, path)]
-  | _
-   -> raise (Exceptions.Wrong_argument_number __POS__)
-
 (** take a pointer to a struct, and return the value of a hidden field in the struct *)
 let execute___get_hidden_field {Builtin.tenv; pdesc; prop_; path; ret_id; args} : Builtin.ret_typ =
   match args with
@@ -639,38 +628,6 @@ let execute___set_unlocked_attribute ({Builtin.pdesc; loc} as builtin_args) : Bu
 (** Set the attibute of the value as wont leak*)
 let execute___set_wont_leak_attribute builtin_args : Builtin.ret_typ =
   execute___set_attr PredSymb.Awont_leak builtin_args
-
-(** Set the attibute of the value as tainted *)
-let execute___set_taint_attribute {Builtin.tenv; pdesc; args; prop_; path} : Builtin.ret_typ =
-  match args with
-  | [(exp, _); (Exp.Const Const.Cstr taint_kind_str, _)]
-   -> let taint_source = Procdesc.get_proc_name pdesc in
-      let taint_kind =
-        match taint_kind_str with
-        | "UnverifiedSSLSocket"
-         -> PredSymb.Tk_unverified_SSL_socket
-        | "SharedPreferenceData"
-         -> PredSymb.Tk_shared_preferences_data
-        | other_str
-         -> failwith ("Unrecognized taint kind " ^ other_str)
-      in
-      set_attr tenv pdesc prop_ path exp
-        (PredSymb.Ataint {PredSymb.taint_source= taint_source; taint_kind})
-  | _
-   -> (* note: we can also get this if [taint_kind] is not a string literal *)
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-(** Set the attibute of the value as tainted *)
-let execute___set_untaint_attribute {Builtin.tenv; pdesc; args; prop_; path} : Builtin.ret_typ =
-  match args with
-  | [(exp, _)]
-   -> let taint_source = Procdesc.get_proc_name pdesc in
-      let taint_kind = PredSymb.Tk_unknown in
-      (* TODO: change builtin to specify taint kind *)
-      set_attr tenv pdesc prop_ path exp
-        (PredSymb.Auntaint {PredSymb.taint_source= taint_source; taint_kind})
-  | _
-   -> raise (Exceptions.Wrong_argument_number __POS__)
 
 let execute___objc_cast {Builtin.tenv; pdesc; prop_; path; ret_id; args} : Builtin.ret_typ =
   match args with
@@ -1086,9 +1043,6 @@ let __builtin_va_start = Builtin.register BuiltinDecl.__builtin_va_start execute
 (* [__cast(val,typ)] implements java's [typ(val)] *)
 let __cast = Builtin.register BuiltinDecl.__cast execute___cast
 
-(* report a taint error if the parameter is tainted, and assume it is untainted afterward *)
-let __check_untainted = Builtin.register BuiltinDecl.__check_untainted execute___check_untainted
-
 let __cxx_typeid = Builtin.register BuiltinDecl.__cxx_typeid execute___cxx_typeid
 
 let __delete = Builtin.register BuiltinDecl.__delete (execute_free PredSymb.Mnew)
@@ -1180,18 +1134,12 @@ let __set_mem_attribute =
 let __set_observer_attribute =
   Builtin.register BuiltinDecl.__set_observer_attribute (execute___set_attr PredSymb.Aobserver)
 
-let __set_taint_attribute =
-  Builtin.register BuiltinDecl.__set_taint_attribute execute___set_taint_attribute
-
 let __set_unlocked_attribute =
   Builtin.register BuiltinDecl.__set_unlocked_attribute execute___set_unlocked_attribute
 
 let __set_unsubscribed_observer_attribute =
   Builtin.register BuiltinDecl.__set_unsubscribed_observer_attribute
     (execute___set_attr PredSymb.Aunsubscribed_observer)
-
-let __set_untaint_attribute =
-  Builtin.register BuiltinDecl.__set_untaint_attribute execute___set_untaint_attribute
 
 let __set_wont_leak_attribute =
   Builtin.register BuiltinDecl.__set_wont_leak_attribute execute___set_wont_leak_attribute

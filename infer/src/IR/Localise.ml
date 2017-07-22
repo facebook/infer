@@ -189,9 +189,6 @@ let stack_variable_address_escape = from_string "STACK_VARIABLE_ADDRESS_ESCAPE"
 
 let static_initialization_order_fiasco = from_string "STATIC_INITIALIZATION_ORDER_FIASCO"
 
-let tainted_value_reaching_sensitive_function =
-  from_string "TAINTED_VALUE_REACHING_SENSITIVE_FUNCTION"
-
 let thread_safety_violation = from_string "THREAD_SAFETY_VIOLATION"
 
 let unary_minus_applied_to_unsigned_expression =
@@ -1119,41 +1116,6 @@ let desc_stack_variable_address_escape expr_str addr_dexp_str loc =
   let description =
     Format.asprintf "Address of stack variable %a escapes %s%s" MF.pp_monospaced expr_str
       escape_to_str (at_line tags loc)
-  in
-  {no_desc with descriptions= [description]; tags= !tags}
-
-let desc_tainted_value_reaching_sensitive_function taint_kind expr_str tainting_fun sensitive_fun
-    loc =
-  let tags = Tags.create () in
-  Tags.update tags Tags.value expr_str ;
-  let description =
-    match taint_kind with
-    | PredSymb.Tk_unverified_SSL_socket
-     -> F.asprintf
-          "The hostname of SSL socket %a (returned from %s) has not been verified! Reading from the socket via the call to %s %s is dangerous. You should verify the hostname of the socket using a HostnameVerifier before reading; otherwise, you may be vulnerable to a man-in-the-middle attack."
-          MF.pp_monospaced expr_str (format_method tainting_fun) (format_method sensitive_fun)
-          (at_line tags loc)
-    | PredSymb.Tk_shared_preferences_data
-     -> F.asprintf
-          "%a holds sensitive data read from a SharedPreferences object (via call to %s). This data may leak via the call to %s %s."
-          MF.pp_monospaced expr_str (format_method tainting_fun) (format_method sensitive_fun)
-          (at_line tags loc)
-    | PredSymb.Tk_privacy_annotation
-     -> F.asprintf
-          "%a holds privacy-sensitive data (source: call to %s). This data may leak via the call to %s %s."
-          MF.pp_monospaced expr_str (format_method tainting_fun) (format_method sensitive_fun)
-          (at_line tags loc)
-    | PredSymb.Tk_integrity_annotation
-     -> F.asprintf
-          "%a holds untrusted user-controlled data (source: call to %s). This data may flow into a security-sensitive sink via the call to %s %s."
-          MF.pp_monospaced expr_str (format_method tainting_fun) (format_method sensitive_fun)
-          (at_line tags loc)
-    | PredSymb.Tk_unknown
-     -> F.asprintf
-          "Value %a could be insecure (tainted) due to call to function %s %s %s %s. Function %s %s"
-          MF.pp_monospaced expr_str (format_method tainting_fun)
-          "and is reaching sensitive function" (format_method sensitive_fun) (at_line tags loc)
-          (format_method sensitive_fun) "requires its input to be verified or sanitized."
   in
   {no_desc with descriptions= [description]; tags= !tags}
 

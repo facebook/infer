@@ -53,15 +53,6 @@ type path_pos = Typ.Procname.t * int [@@deriving compare]
 
 val equal_path_pos : path_pos -> path_pos -> bool
 
-type taint_kind =
-  | Tk_unverified_SSL_socket
-  | Tk_shared_preferences_data
-  | Tk_privacy_annotation
-  | Tk_integrity_annotation
-  | Tk_unknown
-
-type taint_info = {taint_source: Typ.Procname.t; taint_kind: taint_kind}
-
 (** acquire/release action on a resource *)
 type res_action =
   { ra_kind: res_act_kind  (** kind of action *)
@@ -83,9 +74,6 @@ type t =
   | Aautorelease
   | Adangling of dangling_kind  (** dangling pointer *)
   | Aundef of Typ.Procname.t * Annot.Item.t * Location.t * path_pos
-      (** undefined value obtained by calling the given procedure, plus its return value annots *)
-  | Ataint of taint_info
-  | Auntaint of taint_info
   | Alocked
   | Aunlocked
   | Adiv0 of path_pos  (** value appeared in second argument of division at given path position *)
@@ -111,7 +99,6 @@ val mem_dealloc_pname : mem_kind -> Typ.Procname.t
 type category =
   | ACresource
   | ACautorelease
-  | ACtaint
   | AClock
   | ACdiv0
   | ACobjc_null

@@ -478,20 +478,6 @@ let mark_visited summary node =
     stats.Specs.nodes_visited_fp <- IntSet.add (node_id :> int) stats.Specs.nodes_visited_fp
   else stats.Specs.nodes_visited_re <- IntSet.add (node_id :> int) stats.Specs.nodes_visited_re
 
-let add_taint_attrs tenv proc_name proc_desc prop =
-  match Taint.tainted_params proc_name with
-  | []
-   -> prop
-  | tainted_param_nums
-   -> let formal_params = Procdesc.get_formals proc_desc in
-      let formal_params' = List.map ~f:(fun (p, _) -> Pvar.mk p proc_name) formal_params in
-      Taint.get_params_to_taint tainted_param_nums formal_params'
-      |> List.fold
-           ~f:(fun prop_acc (param, taint_kind) ->
-             let attr = PredSymb.Ataint {taint_source= proc_name; taint_kind} in
-             Taint.add_tainting_attribute tenv attr param prop_acc)
-           ~init:prop
-
 let forward_tabulate tenv pdesc wl =
   let pname = Procdesc.get_proc_name pdesc in
   let handle_exn_node curr_node exn =
@@ -543,8 +529,7 @@ let forward_tabulate tenv pdesc wl =
     L.d_ln () ;
     L.d_ln ()
   in
-  let do_prop curr_node handle_exn prop_ path cnt num_paths =
-    let prop = if Config.taint_analysis then add_taint_attrs tenv pname pdesc prop_ else prop_ in
+  let do_prop curr_node handle_exn prop path cnt num_paths =
     L.d_strln ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths) ;
     L.d_increase_indent 1 ;
     try

@@ -162,9 +162,6 @@ val skip_pointer_dereference : t
 val stack_variable_address_escape : t
 
 val static_initialization_order_fiasco : t
-
-val tainted_value_reaching_sensitive_function : t
-
 val thread_safety_violation : t
 
 val unary_minus_applied_to_unsigned_expression : t
@@ -387,8 +384,5 @@ val desc_unary_minus_applied_to_unsigned_expression :
   string option -> string -> Location.t -> error_desc
 
 val desc_unsafe_guarded_by_access : Typ.Fieldname.t -> string -> Location.t -> error_desc
-
-val desc_tainted_value_reaching_sensitive_function :
-  PredSymb.taint_kind -> string -> Typ.Procname.t -> Typ.Procname.t -> Location.t -> error_desc
 
 val desc_uninitialized_dangling_pointer_deref : deref_str -> string -> Location.t -> error_desc

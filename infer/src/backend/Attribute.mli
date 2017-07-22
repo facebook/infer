@@ -59,9 +59,6 @@ val get_resource : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
 val get_retval : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
 (** Get the retval null attribute associated to the expression, if any *)
 
-val get_taint : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
-(** Get the taint attribute associated to the expression, if any *)
-
 val get_undef : Tenv.t -> 'a Prop.t -> Exp.t -> Sil.atom option
 (** Get the undef attribute associated to the expression, if any *)
 

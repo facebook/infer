@@ -1137,24 +1137,6 @@ let explain_return_expression_required loc typ =
 (** Explain retain cycle value error *)
 let explain_retain_cycle cycle loc dotty_str = Localise.desc_retain_cycle cycle loc dotty_str
 
-(** Explain a tainted value error *)
-let explain_tainted_value_reaching_sensitive_function prop e {PredSymb.taint_source; taint_kind}
-    sensitive_fun loc =
-  let var_desc =
-    match e with
-    | Exp.Lvar pv
-     -> Pvar.to_string pv
-    | _ ->
-      match find_with_exp prop e with
-      | Some (pvar, pvar_off)
-       -> let dexp = dexp_apply_pvar_off (DExp.Dpvar pvar) pvar_off in
-          DExp.to_string dexp
-      | None
-       -> Exp.to_string e
-  in
-  Localise.desc_tainted_value_reaching_sensitive_function taint_kind var_desc taint_source
-    sensitive_fun loc
-
 (** explain a return statement missing *)
 let explain_return_statement_missing loc = Localise.desc_return_statement_missing loc
 

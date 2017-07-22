@@ -95,8 +95,6 @@ let get_undef tenv prop exp = get tenv prop exp ACundef
 
 let get_resource tenv prop exp = get tenv prop exp ACresource
 
-let get_taint tenv prop exp = get tenv prop exp ACtaint
-
 let get_autorelease tenv prop exp = get tenv prop exp ACautorelease
 
 let get_objc_null tenv prop exp = get tenv prop exp ACobjc_null

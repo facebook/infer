@@ -25,16 +25,13 @@ public class Socket {
     inputStream = new InputStream();
     InferBuiltins.__set_file_attribute(inputStream);
     outputStream = new OutputStream();
-    InferBuiltins.__set_file_attribute(outputStream);
   }
 
   public InputStream getInputStream() throws IOException {
-    InferBuiltins.__check_untainted(this);
     return inputStream;
   }
 
   public OutputStream getOutputStream() throws IOException {
-    InferBuiltins.__check_untainted(this);
     return outputStream;
   }
 

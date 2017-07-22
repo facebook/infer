@@ -60,16 +60,6 @@ type path_pos = Typ.Procname.t * int [@@deriving compare]
 
 let equal_path_pos = [%compare.equal : path_pos]
 
-type taint_kind =
-  | Tk_unverified_SSL_socket
-  | Tk_shared_preferences_data
-  | Tk_privacy_annotation
-  | Tk_integrity_annotation
-  | Tk_unknown
-  [@@deriving compare]
-
-type taint_info = {taint_source: Typ.Procname.t; taint_kind: taint_kind} [@@deriving compare]
-
 (** acquire/release action on a resource *)
 type res_action =
   { ra_kind: res_act_kind  (** kind of action *)
@@ -108,9 +98,6 @@ type t =
   | Aautorelease
   | Adangling of dangling_kind  (** dangling pointer *)
   | Aundef of Typ.Procname.t * _annot_item * _location * _path_pos
-      (** undefined value obtained by calling the given procedure, plus its return value annots *)
-  | Ataint of taint_info
-  | Auntaint of taint_info
   | Alocked
   | Aunlocked
   | Adiv0 of path_pos  (** value appeared in second argument of division at given path position *)
@@ -152,7 +139,6 @@ let mem_dealloc_pname = function
 type category =
   | ACresource
   | ACautorelease
-  | ACtaint
   | AClock
   | ACdiv0
   | ACobjc_null
@@ -168,8 +154,6 @@ let to_category att =
   match att with
   | Aresource _ | Adangling _
    -> ACresource
-  | Ataint _ | Auntaint _
-   -> ACtaint
   | Alocked | Aunlocked
    -> AClock
   | Aautorelease
@@ -242,10 +226,6 @@ let to_string pe = function
   | Aundef (pn, _, loc, _)
    -> "UND" ^ Binop.str pe Lt ^ Typ.Procname.to_string pn ^ Binop.str pe Gt ^ ":"
       ^ string_of_int loc.Location.line
-  | Ataint {taint_source}
-   -> "TAINTED[" ^ Typ.Procname.to_string taint_source ^ "]"
-  | Auntaint _
-   -> "UNTAINTED"
   | Alocked
    -> "LOCKED"
   | Aunlocked

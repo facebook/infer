@@ -137,8 +137,6 @@ exception Stack_variable_address_escape of Localise.error_desc * L.ml_loc
 
 exception Symexec_memory_error of L.ml_loc
 
-exception Tainted_value_reaching_sensitive_function of Localise.error_desc * L.ml_loc
-
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.ml_loc
 
 exception Uninitialized_value of Localise.error_desc * L.ml_loc
@@ -386,14 +384,6 @@ let recognize_exception exn =
         , Exn_system
         , Low
         , None
-        , Nocat )
-    | Tainted_value_reaching_sensitive_function (desc, ml_loc)
-     -> ( Localise.tainted_value_reaching_sensitive_function
-        , desc
-        , Some ml_loc
-        , Exn_user
-        , Medium
-        , Some Kerror
         , Nocat )
     | Unix.Unix_error (_, s1, s2)
      -> let desc = Localise.verbatim_desc (s1 ^ s2) in

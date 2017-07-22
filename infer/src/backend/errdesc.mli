@@ -113,11 +113,6 @@ val explain_unary_minus_applied_to_unsigned_expression :
   Tenv.t -> Exp.t -> Typ.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain unary minus applied to unsigned expression *)
 
-val explain_tainted_value_reaching_sensitive_function :
-  Prop.normal Prop.t -> Exp.t -> PredSymb.taint_info -> Typ.Procname.t -> Location.t
-  -> Localise.error_desc
-(** Explain a tainted value error *)
-
 val explain_leak :
   Tenv.t -> Sil.hpred -> 'a Prop.t -> PredSymb.t option -> string option
   -> Exceptions.visibility * Localise.error_desc

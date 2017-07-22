@@ -925,58 +925,6 @@ let combine tenv ret_id (posts: ('a Prop.t * Paths.Path.t) list) actual_pre path
     print_results tenv actual_pre (List.map ~f:fst results) ;
     Some results
 
-(* Add Auntaint attribute to a callee_pname precondition *)
-let mk_pre tenv pre formal_params callee_pname callee_attrs =
-  if Config.taint_analysis then
-    match Taint.accepts_sensitive_params callee_pname (Some callee_attrs) with
-    | []
-     -> pre
-    | tainted_param_nums
-     -> Taint.get_params_to_taint tainted_param_nums formal_params
-        |> List.fold
-             ~f:(fun prop_acc (param, taint_kind) ->
-               let attr = PredSymb.Auntaint {taint_source= callee_pname; taint_kind} in
-               Taint.add_tainting_attribute tenv attr param prop_acc)
-             ~init:(Prop.normalize tenv pre)
-        |> Prop.expose
-  else pre
-
-let report_taint_error e taint_info callee_pname caller_pname calling_prop =
-  let err_desc =
-    Errdesc.explain_tainted_value_reaching_sensitive_function calling_prop e taint_info
-      callee_pname (State.get_loc ())
-  in
-  let exn = Exceptions.Tainted_value_reaching_sensitive_function (err_desc, __POS__) in
-  Reporting.log_warning_deprecated caller_pname exn
-
-let check_taint_on_variadic_function tenv callee_pname caller_pname actual_params calling_prop =
-  let rec n_tail lst n =
-    (* return the tail of a list from element n *)
-    if Int.equal n 1 then lst else match lst with [] -> [] | _ :: lst' -> n_tail lst' (n - 1)
-  in
-  let tainted_params = Taint.accepts_sensitive_params callee_pname None in
-  match tainted_params with
-  | [(tp, _)] when tp < 0
-   -> (* All actual params from abs(tp) should not be tainted. If we find one we give the warning *)
-      let tp_abs = abs tp in
-      L.d_strln
-        ( "Checking tainted actual parameters from parameter number " ^ string_of_int tp_abs
-        ^ " onwards." ) ;
-      let actual_params' = n_tail actual_params tp_abs in
-      L.d_str "Paramters to be checked:  [ " ;
-      List.iter
-        ~f:(fun (e, _) ->
-          L.d_str (" " ^ Exp.to_string e ^ " ") ;
-          match Attribute.get_taint tenv calling_prop e with
-          | Some Apred (Ataint taint_info, _)
-           -> report_taint_error e taint_info callee_pname caller_pname calling_prop
-          | _
-           -> ())
-        actual_params' ;
-      L.d_strln " ]"
-  | _
-   -> ()
-
 (** Construct the actual precondition: add to the current state a copy
     of the (callee's) formal parameters instantiated with the actual
     parameters. *)
@@ -1008,60 +956,39 @@ let mk_actual_precondition tenv prop actual_params formal_params =
   let actual_pre = Prop.prop_sigma_star prop instantiated_formals in
   Prop.normalize tenv actual_pre
 
-let mk_posts tenv ret_id prop callee_pname callee_attrs posts =
-  match ret_id with
-  | Some (ret_id, _)
-   -> let mk_getter_idempotent posts =
-        (* if we have seen a previous call to the same function, only use specs whose return value
+let mk_posts tenv ret_id_opt prop callee_pname posts =
+  if is_none ret_id_opt then posts
+  else
+    let mk_getter_idempotent posts =
+      (* if we have seen a previous call to the same function, only use specs whose return value
            is consistent with constraints on the return value of the previous call w.r.t to
            nullness. meant to eliminate false NPE warnings from the common
            "if (get() != null) get().something()" pattern *)
-        let last_call_ret_non_null =
+      let last_call_ret_non_null =
+        List.exists
+          ~f:(function
+              | Sil.Apred (Aretval (pname, _), [exp]) when Typ.Procname.equal callee_pname pname
+               -> Prover.check_disequal tenv prop exp Exp.zero
+              | _
+               -> false)
+          (Attribute.get_all prop)
+      in
+      if last_call_ret_non_null then
+        let returns_null prop =
           List.exists
             ~f:(function
-                | Sil.Apred (Aretval (pname, _), [exp]) when Typ.Procname.equal callee_pname pname
-                 -> Prover.check_disequal tenv prop exp Exp.zero
+                | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar
+                 -> Prover.check_equal tenv (Prop.normalize tenv prop) e Exp.zero
                 | _
                  -> false)
-            (Attribute.get_all prop)
+            prop.Prop.sigma
         in
-        if last_call_ret_non_null then
-          let returns_null prop =
-            List.exists
-              ~f:(function
-                  | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp (e, _), _) when Pvar.is_return pvar
-                   -> Prover.check_equal tenv (Prop.normalize tenv prop) e Exp.zero
-                  | _
-                   -> false)
-              prop.Prop.sigma
-          in
-          List.filter ~f:(fun (prop, _) -> not (returns_null prop)) posts
-        else posts
-      in
-      let mk_retval_tainted posts =
-        match Taint.returns_tainted callee_pname (Some callee_attrs) with
-        | Some taint_kind
-         -> let taint_retval (prop, path) =
-              let prop_normal = Prop.normalize tenv prop in
-              let prop' =
-                Attribute.add_or_replace tenv prop_normal
-                  (Apred (Ataint {taint_source= callee_pname; taint_kind}, [Exp.Var ret_id]))
-                |> Prop.expose
-              in
-              (prop', path)
-            in
-            List.map ~f:taint_retval posts
-        | None
-         -> posts
-      in
-      let posts' =
-        if Config.idempotent_getters && Config.curr_language_is Config.Java then
-          mk_getter_idempotent posts
-        else posts
-      in
-      if Config.taint_analysis then mk_retval_tainted posts' else posts'
-  | _
-   -> posts
+        List.filter ~f:(fun (prop, _) -> not (returns_null prop)) posts
+      else posts
+    in
+    if Config.idempotent_getters && Config.curr_language_is Config.Java then
+      mk_getter_idempotent posts
+    else posts
 
 (** Check if actual_pre * missing_footprint |- false *)
 let inconsistent_actualpre_missing tenv actual_pre split_opt =
@@ -1072,69 +999,6 @@ let inconsistent_actualpre_missing tenv actual_pre split_opt =
       Prover.check_inconsistency tenv prop''
   | None
    -> false
-
-(* perform the taint analysis check by comparing the taint atoms in [calling_pi] with the untaint
-   atoms required by the [missing_pi] computed during abduction *)
-let do_taint_check tenv caller_pname callee_pname calling_prop missing_pi sub actual_params =
-  let calling_pi = calling_prop.Prop.pi in
-  (* get a version of [missing_pi] whose var names match the names in calling pi *)
-  let missing_pi_sub = Prop.pi_sub (`Exp sub) missing_pi in
-  let combined_pi = calling_pi @ missing_pi_sub in
-  (* build a map from exp -> [taint attrs, untaint attrs], keeping only exprs with both kinds of
-     attrs (we will flag errors on those exprs) *)
-  let collect_taint_untaint_exprs acc_map (atom: Sil.atom) =
-    match atom with
-    | Apred (Ataint _, [e])
-     -> let taint_atoms, untaint_atoms =
-          try Exp.Map.find e acc_map
-          with Not_found -> ([], [])
-        in
-        Exp.Map.add e (atom :: taint_atoms, untaint_atoms) acc_map
-    | Apred (Auntaint _, [e])
-     -> let taint_atoms, untaint_atoms =
-          try Exp.Map.find e acc_map
-          with Not_found -> ([], [])
-        in
-        Exp.Map.add e (taint_atoms, atom :: untaint_atoms) acc_map
-    | _
-     -> acc_map
-  in
-  let taint_untaint_exp_map =
-    List.fold ~f:collect_taint_untaint_exprs ~init:Exp.Map.empty combined_pi
-    |> Exp.Map.filter (fun _ (taint, untaint) -> taint <> [] && untaint <> [])
-  in
-  (* TODO: in the future, we will have a richer taint domain that will require making sure that the
-     "kind" (e.g. security, privacy) of the taint and untaint match, but for now we don't look at
-     the untaint atoms *)
-  let report_taint_errors e (taint_atoms, _untaint_atoms) =
-    let report_one_error (taint_atom: Sil.atom) =
-      let taint_info =
-        match taint_atom with
-        | Apred (Ataint taint_info, _)
-         -> taint_info
-        | _
-         -> failwith "Expected to get taint attr on atom"
-      in
-      report_taint_error e taint_info callee_pname caller_pname calling_prop
-    in
-    List.iter ~f:report_one_error taint_atoms
-  in
-  Exp.Map.iter report_taint_errors taint_untaint_exp_map ;
-  (* filter out UNTAINT(e) atoms from [missing_pi] such that we have already reported a taint
-     error on e. without doing this, we will get PRECONDITION_NOT_MET (and failed spec
-     inference), which is bad. instead, what this does is effectively assume that the UNTAINT(e)
-     precondition was met, and continue with the analysis under this assumption. this makes sense
-     because we are reporting the taint error, but propagating a *safe* postcondition w.r.t to
-     tainting. *)
-  let not_untaint_atom atom =
-    not
-      (Exp.Map.exists
-         (fun _ (_, untaint_atoms) ->
-           List.exists ~f:(fun a -> Sil.equal_atom atom a) untaint_atoms)
-         taint_untaint_exp_map)
-  in
-  check_taint_on_variadic_function tenv callee_pname caller_pname actual_params calling_prop ;
-  List.filter ~f:not_untaint_atom missing_pi_sub
 
 let class_cast_exn tenv pname_opt texp1 texp2 exp ml_loc =
   let desc =
@@ -1165,14 +1029,12 @@ let check_uninitialize_dangling_deref tenv callee_pname actual_pre sub formal_pa
     props
 
 (** Perform symbolic execution for a single spec *)
-let exe_spec tenv ret_id (n, nspecs) caller_pdesc callee_pname callee_attrs loc prop path_pre
+let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path_pre
     (spec: Prop.exposed Specs.spec) actual_params formal_params : abduction_res =
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
-  let posts = mk_posts tenv ret_id prop callee_pname callee_attrs spec.Specs.posts in
+  let posts = mk_posts tenv ret_id_opt prop callee_pname spec.Specs.posts in
   let actual_pre = mk_actual_precondition tenv prop actual_params formal_params in
-  let spec_pre =
-    mk_pre tenv (Specs.Jprop.to_prop spec.Specs.pre) formal_params callee_pname callee_attrs
-  in
+  let spec_pre = Specs.Jprop.to_prop spec.Specs.pre in
   L.d_strln ("EXECUTING SPEC " ^ string_of_int n ^ "/" ^ string_of_int nspecs) ;
   L.d_strln "ACTUAL PRECONDITION =" ;
   L.d_increase_indent 1 ;
@@ -1205,17 +1067,12 @@ let exe_spec tenv ret_id (n, nspecs) caller_pdesc callee_pname callee_attrs loc 
         Reporting.log_warning_deprecated caller_pname exn
       in
       let do_split () =
-        let missing_pi' =
-          if Config.taint_analysis then
-            do_taint_check tenv caller_pname callee_pname actual_pre missing_pi sub2 actual_params
-          else missing_pi
-        in
-        process_splitting actual_pre sub1 sub2 frame missing_pi' missing_sigma frame_fld
-          missing_fld frame_typ missing_typ
+        process_splitting actual_pre sub1 sub2 frame missing_pi missing_sigma frame_fld missing_fld
+          frame_typ missing_typ
       in
       let report_valid_res split =
         match
-          combine tenv ret_id posts actual_pre path_pre split caller_pdesc callee_pname loc
+          combine tenv ret_id_opt posts actual_pre path_pre split caller_pdesc callee_pname loc
         with
         | None
          -> Invalid_res Cannot_combine
@@ -1474,8 +1331,8 @@ let exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc re
    -> res
 
 (** Execute the function call and return the list of results with return value *)
-let exe_function_call callee_summary tenv ret_id caller_pdesc callee_pname loc actual_params prop
-    path =
+let exe_function_call callee_summary tenv ret_id_opt caller_pdesc callee_pname loc actual_params
+    prop path =
   let callee_attrs = Specs.get_attributes callee_summary in
   let caller_pname = Procdesc.get_proc_name caller_pdesc in
   let caller_summary = Specs.get_summary_unsafe "exe_function_call" caller_pname in
@@ -1491,8 +1348,8 @@ let exe_function_call callee_summary tenv ret_id caller_pdesc callee_pname loc a
   Prop.d_prop prop ;
   L.d_ln () ;
   let exe_one_spec (n, spec) =
-    exe_spec tenv ret_id (n, nspecs) caller_pdesc callee_pname callee_attrs loc prop path spec
-      actual_params formal_params
+    exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path spec actual_params
+      formal_params
   in
   let results = List.map ~f:exe_one_spec spec_list in
-  exe_call_postprocess tenv ret_id trace_call callee_pname callee_attrs loc results
+  exe_call_postprocess tenv ret_id_opt trace_call callee_pname callee_attrs loc results

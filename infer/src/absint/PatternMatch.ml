@@ -14,15 +14,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-type taint_spec =
-  { classname: string
-  ; method_name: string
-  ; ret_type: string
-  ; params: string list
-  ; is_static: bool
-  ; taint_kind: PredSymb.taint_kind
-  ; language: Config.language }
-
 let type_is_object typ =
   match typ.Typ.desc with
   | Tptr ({desc= Tstruct name}, _)

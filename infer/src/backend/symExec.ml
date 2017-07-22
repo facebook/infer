@@ -929,9 +929,6 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
       else
         match typ.Typ.desc with Typ.Tptr _ -> Prop.conjoin_neq tenv exp Exp.zero prop | _ -> prop
     in
-    let add_tainted_post ret_exp callee_pname prop =
-      Attribute.add_or_replace tenv prop (Apred (Ataint callee_pname, [ret_exp]))
-    in
     if Config.angelic_execution && not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
       let abduced_ret_pv = Pvar.mk_abduced_ret callee_pname callee_loc in
@@ -946,33 +943,8 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
             (* bind return id to the abduced value pointed to by the pvar we introduced *)
             bind_exp_to_abduced_val ret_exp abduced_ret_pv prop
         in
-        let prop'' = add_ret_non_null ret_exp typ prop' in
-        if Config.taint_analysis then
-          match Taint.returns_tainted callee_pname None with
-          | Some taint_kind
-           -> add_tainted_post ret_exp {taint_source= callee_pname; taint_kind} prop''
-          | None
-           -> prop''
-        else prop''
+        add_ret_non_null ret_exp typ prop'
     else add_ret_non_null ret_exp typ prop
-
-let add_taint prop lhs_id rhs_exp pname tenv =
-  let add_attribute_if_field_tainted prop fieldname struct_typ =
-    if Taint.has_taint_annotation fieldname struct_typ then
-      let taint_info = {PredSymb.taint_source= pname; taint_kind= Tk_unknown} in
-      Attribute.add_or_replace tenv prop (Apred (Ataint taint_info, [Exp.Var lhs_id]))
-    else prop
-  in
-  match rhs_exp with
-  | Exp.Lfield (_, fieldname, ({desc= Tstruct typname} | {desc= Tptr ({desc= Tstruct typname}, _)}))
-   -> (
-    match Tenv.lookup tenv typname with
-    | Some struct_typ
-     -> add_attribute_if_field_tainted prop fieldname struct_typ
-    | None
-     -> prop )
-  | _
-   -> prop
 
 let execute_load ?(report_deref_errors= true) pname pdesc tenv id rhs_exp typ loc prop_ =
   let execute_load_ pdesc tenv id loc acc_in iter =
@@ -994,10 +966,7 @@ let execute_load ?(report_deref_errors= true) pname pdesc tenv id rhs_exp typ lo
               Attribute.add_or_replace tenv prop' (Apred (Adangling DAuninit, [Exp.Var id]))
             else prop'
           in
-          let prop''' =
-            if Config.taint_analysis then add_taint prop'' id rhs_exp pname tenv else prop''
-          in
-          prop''' :: acc
+          prop'' :: acc
         in
         match pred_insts_op with
         | None
@@ -1537,23 +1506,6 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
   in
   List.fold ~f:do_actual_by_ref ~init:prop non_const_actuals_by_ref
 
-and check_untainted tenv exp taint_kind caller_pname callee_pname prop =
-  match Attribute.get_taint tenv prop exp with
-  | Some Apred (Ataint taint_info, _)
-   -> let err_desc =
-        Errdesc.explain_tainted_value_reaching_sensitive_function prop exp taint_info callee_pname
-          (State.get_loc ())
-      in
-      let exn = Exceptions.Tainted_value_reaching_sensitive_function (err_desc, __POS__) in
-      Reporting.log_warning_deprecated caller_pname exn ;
-      Attribute.add_or_replace tenv prop (Apred (Auntaint taint_info, [exp]))
-  | _
-   -> if !Config.footprint then
-        let taint_info = {PredSymb.taint_source= callee_pname; taint_kind} in
-        (* add untained(n_lexp) to the footprint *)
-        Attribute.add tenv ~footprint:true prop (Auntaint taint_info) [exp]
-      else prop
-
 (** execute a call for an unknown or scan function *)
 and unknown_or_scan_call ~is_scan ret_type_option ret_annots
     {Builtin.tenv; pdesc; prop_= pre; path; ret_id; args; proc_name= callee_pname; loc; instr} =
@@ -1577,25 +1529,6 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
        -> args
     in
     List.fold ~f:do_exp ~init:prop filtered_args
-  in
-  let add_tainted_pre prop actuals caller_pname callee_pname =
-    if Config.taint_analysis then
-      match Taint.accepts_sensitive_params callee_pname None with
-      | []
-       -> prop
-      | param_nums
-       -> let check_taint_if_nums_match (prop_acc, param_num) (actual_exp, _actual_typ) =
-            let prop_acc' =
-              match List.find ~f:(fun (num, _) -> Int.equal num param_num) param_nums with
-              | Some (_, taint_kind)
-               -> check_untainted tenv actual_exp taint_kind caller_pname callee_pname prop_acc
-              | None
-               -> prop_acc
-            in
-            (prop_acc', param_num + 1)
-          in
-          List.fold ~f:check_taint_if_nums_match ~init:(prop, 0) actuals |> fst
-    else prop
   in
   let should_abduce_param_value pname =
     let open Typ.Procname in
@@ -1637,9 +1570,7 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       | _
        -> pre_1
     in
-    let pre_3 = add_constraints_on_actuals_by_ref tenv pre_2 actuals_by_ref callee_pname loc in
-    let caller_pname = Procdesc.get_proc_name pdesc in
-    add_tainted_pre pre_3 args caller_pname callee_pname
+    add_constraints_on_actuals_by_ref tenv pre_2 actuals_by_ref callee_pname loc
   in
   if is_scan (* if scan function, don't mark anything with undef attributes *) then
     [(Tabulation.remove_constant_string_class tenv pre_final, path)]

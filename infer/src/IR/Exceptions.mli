@@ -136,9 +136,6 @@ exception Skip_pointer_dereference of Localise.error_desc * Logging.ml_loc
 exception Stack_variable_address_escape of Localise.error_desc * Logging.ml_loc
 
 exception Symexec_memory_error of Logging.ml_loc
-
-exception Tainted_value_reaching_sensitive_function of Localise.error_desc * Logging.ml_loc
-
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Logging.ml_loc
 
 exception Uninitialized_value of Localise.error_desc * Logging.ml_loc

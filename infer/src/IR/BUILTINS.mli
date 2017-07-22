@@ -26,8 +26,6 @@ module type S = sig
   val __cast : t
   (** [__cast(val,typ)] implements java's [typ(val)] *)
 
-  val __check_untainted : t
-
   val __cxx_typeid : t
 
   val __delete : t
@@ -99,13 +97,9 @@ module type S = sig
 
   val __set_observer_attribute : t
 
-  val __set_taint_attribute : t
-
   val __set_unlocked_attribute : t
 
   val __set_unsubscribed_observer_attribute : t
-
-  val __set_untaint_attribute : t
 
   val __set_wont_leak_attribute : t
 
