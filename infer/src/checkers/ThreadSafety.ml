@@ -25,35 +25,6 @@ let is_owned access_path attribute_map =
   ThreadSafetyDomain.AttributeMapDomain.has_attribute access_path
     ThreadSafetyDomain.Attribute.unconditionally_owned attribute_map
 
-let container_write_string = "infer.dummy.__CONTAINERWRITE__"
-
-(* return (name of container, name of mutating function call) pair *)
-let get_container_write_desc sink =
-  match ThreadSafetyDomain.TraceElem.kind sink with
-  | Write ((base_var, _), access_list)
-   -> (
-      let get_container_write_desc_ call_name container_name =
-        match
-          String.chop_prefix (Typ.Fieldname.to_string call_name) ~prefix:container_write_string
-        with
-        | Some call_name
-         -> Some (container_name, call_name)
-        | None
-         -> None
-      in
-      match List.rev access_list with
-      | (FieldAccess call_name) :: (FieldAccess container_name) :: _
-       -> get_container_write_desc_ call_name (Typ.Fieldname.to_string container_name)
-      | [(FieldAccess call_name)]
-       -> get_container_write_desc_ call_name (F.asprintf "%a" Var.pp base_var)
-      | _
-       -> None )
-  | Read _ | InterfaceCall _
-   -> (* TODO: support Read *)
-      None
-
-let is_container_write_sink sink = Option.is_some (get_container_write_desc sink)
-
 (*Bit of redundancy with code in is_unprotected, might alter later *)
 let make_excluder locks threads =
   if locks && not threads then ThreadSafetyDomain.Excluder.Lock
@@ -497,15 +468,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let callee_accesses =
       if is_synchronized_container callee_pname receiver_ap tenv then AccessDomain.empty
       else
-        let dummy_fieldname =
-          Typ.Fieldname.Java.from_string
-            (container_write_string ^ Typ.Procname.get_method callee_pname)
-        in
-        let dummy_access_ap =
-          (fst receiver_ap, snd receiver_ap @ [AccessPath.FieldAccess dummy_fieldname])
-        in
-        AccessDomain.add_access (Unprotected (Some 0))
-          (make_field_access dummy_access_ap ~is_write:true callee_loc) AccessDomain.empty
+        let container_access = make_container_access receiver_ap callee_pname in
+        AccessDomain.add_access (Unprotected (Some 0)) (container_access ~is_write:true callee_loc)
+          AccessDomain.empty
     in
     (* TODO: for now all formals escape *)
     (* we need a more intelligent escape analysis, that branches on whether
@@ -1036,12 +1001,17 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   else Summary.update_summary empty_post summary
 
 module AccessListMap = Caml.Map.Make (struct
-  type t = AccessPath.Raw.t option
+  type t = ThreadSafetyDomain.Access.t
 
   (* TODO -- keep this compare to satisfy the order of tests, consider using Raw.compare *)
-  let compare =
-    Option.compare (fun access_path1 access_path2 ->
-        List.compare AccessPath.compare_access (snd access_path1) (snd access_path2) )
+  let compare access1 access2 =
+    let open ThreadSafetyDomain in
+    match (access1, access2) with
+    | ( (Access.Read access_path1 | Write access_path1)
+      , (Access.Read access_path2 | Write access_path2) )
+     -> List.compare AccessPath.compare_access (snd access_path1) (snd access_path2)
+    | _
+     -> Access.compare access1 access2
 end)
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
@@ -1086,33 +1056,33 @@ let get_all_accesses_with_pre pre_filter access_filter accesses =
 
 let get_all_accesses = get_all_accesses_with_pre (fun _ -> true)
 
-let pp_container_access fmt (container_name, function_name) =
-  F.fprintf fmt "container %s via call to %s" (MF.monospaced_to_string container_name)
-    (MF.monospaced_to_string function_name)
+let pp_container_access fmt (access_path, access_pname) =
+  F.fprintf fmt "container %a via call to %s" (MF.wrap_monospaced AccessPath.Raw.pp) access_path
+    (MF.monospaced_to_string (Typ.Procname.get_method access_pname))
 
 let pp_access fmt sink =
-  match get_container_write_desc sink with
-  | Some container_write_desc
-   -> pp_container_access fmt container_write_desc
-  | None ->
-    match ThreadSafetyDomain.PathDomain.Sink.kind sink with
-    | Read access_path | Write access_path
-     -> F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp_access_list) (snd access_path)
-    | InterfaceCall _ as access
-     -> F.fprintf fmt "%a" ThreadSafetyDomain.Access.pp access
+  match ThreadSafetyDomain.PathDomain.Sink.kind sink with
+  | Read access_path | Write access_path
+   -> F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp_access_list) (snd access_path)
+  | ContainerWrite (access_path, access_pname)
+   -> pp_container_access fmt (access_path, access_pname)
+  | InterfaceCall _ as access
+   -> F.fprintf fmt "%a" ThreadSafetyDomain.Access.pp access
 
 let desc_of_sink sink =
-  match get_container_write_desc sink with
-  | Some container_write_desc
-   -> F.asprintf "%a" pp_container_access container_write_desc
-  | None
-   -> let sink_pname = CallSite.pname (ThreadSafetyDomain.PathDomain.Sink.call_site sink) in
-      if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
-        match ThreadSafetyDomain.PathDomain.Sink.kind sink with
-        | Read _ | Write _
-         -> F.asprintf "access to %a" pp_access sink
-        | InterfaceCall interface_pname
-         -> F.asprintf "call to %a" Typ.Procname.pp interface_pname
+  let sink_pname = CallSite.pname (ThreadSafetyDomain.PathDomain.Sink.call_site sink) in
+  match ThreadSafetyDomain.PathDomain.Sink.kind sink with
+  | Read _ | Write _
+   -> if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
+        F.asprintf "access to %a" pp_access sink
+      else F.asprintf "call to %a" Typ.Procname.pp sink_pname
+  | ContainerWrite (access_path, access_pname)
+   -> if Typ.Procname.equal sink_pname access_pname then
+        F.asprintf "Write to %a" pp_container_access (access_path, access_pname)
+      else F.asprintf "call to %a" Typ.Procname.pp sink_pname
+  | InterfaceCall _ as access
+   -> if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
+        F.asprintf "%a1" ThreadSafetyDomain.Access.pp access
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
 
 let trace_of_pname orig_sink orig_pdesc callee_pname =
@@ -1196,7 +1166,8 @@ let make_unprotected_write_description tenv pname final_sink_site initial_sink_s
   Format.asprintf "Unprotected write. Non-private method %a%s %s %a outside of synchronization.%s"
     (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
-    (if is_container_write_sink final_sink then "mutates" else "writes to field")
+    ( if ThreadSafetyDomain.TraceElem.is_container_write final_sink then "mutates"
+    else "writes to field" )
     pp_access final_sink (calculate_addendum_message tenv pname)
 
 let make_read_write_race_description conflicts tenv pname final_sink_site initial_sink_site
@@ -1282,7 +1253,7 @@ let report_unsafe_accesses aggregated_access_map =
     CallSite.Set.mem (TraceElem.call_site access) reported_sites
     ||
     match TraceElem.kind access with
-    | Access.Write _
+    | Access.Write _ | Access.ContainerWrite _
      -> Typ.Procname.Set.mem pname reported_writes
     | Access.Read _
      -> Typ.Procname.Set.mem pname reported_reads
@@ -1292,7 +1263,7 @@ let report_unsafe_accesses aggregated_access_map =
   let update_reported access pname reported =
     let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
     match TraceElem.kind access with
-    | Access.Write _
+    | Access.Write _ | Access.ContainerWrite _
      -> let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
         {reported with reported_writes; reported_sites}
     | Access.Read _
@@ -1312,7 +1283,7 @@ let report_unsafe_accesses aggregated_access_map =
       | Access.InterfaceCall _, AccessPrecondition.Protected _
        -> (* un-annotated interface call, but it's protected by a lock/thread. don't report *)
           reported_acc
-      | Access.Write _, AccessPrecondition.Unprotected _ -> (
+      | (Access.Write _ | ContainerWrite _), AccessPrecondition.Unprotected _ -> (
         match Procdesc.get_proc_name pdesc with
         | Java _
          -> if threaded then reported_acc
@@ -1324,7 +1295,7 @@ let report_unsafe_accesses aggregated_access_map =
         | _
          -> (* Do not report unprotected writes for ObjC_Cpp *)
             reported_acc )
-      | Access.Write _, AccessPrecondition.Protected _
+      | (Access.Write _ | ContainerWrite _), AccessPrecondition.Protected _
        -> (* protected write, do nothing *)
           reported_acc
       | Access.Read _, AccessPrecondition.Unprotected _
@@ -1478,31 +1449,25 @@ let quotient_access_map acc_map =
   let rec aux acc m =
     if AccessListMap.is_empty m then acc
     else
-      let k_opt, vals = AccessListMap.choose m in
+      let k, vals = AccessListMap.choose m in
       let _, _, _, tenv, _ =
         List.find_exn vals ~f:(fun (elem, _, _, _, _) ->
-            Option.equal
-              (fun e1 e2 -> AccessPath.Raw.equal e1 e2)
-              k_opt
-              (ThreadSafetyDomain.Access.get_access_path (ThreadSafetyDomain.TraceElem.kind elem))
-        )
+            ThreadSafetyDomain.Access.equal (ThreadSafetyDomain.TraceElem.kind elem) k )
       in
       (* assumption: the tenv for k is sufficient for k' too *)
       let k_part, non_k_part =
         AccessListMap.partition
-          (fun k_opt' _ ->
-            match (k_opt', k_opt) with
-            | Some k', Some k
-             -> may_alias tenv k k'
-            | None, None
-             -> true
+          (fun k' _ ->
+            match (k, k') with
+            | (Read ap1 | Write ap1), (Read ap2 | Write ap2)
+             -> may_alias tenv ap1 ap2
             | _
-             -> false)
+             -> ThreadSafetyDomain.Access.equal k k')
           m
       in
       if AccessListMap.is_empty k_part then failwith "may_alias is not reflexive!" ;
       let k_accesses = AccessListMap.fold (fun _ v acc' -> List.append v acc') k_part [] in
-      let new_acc = AccessListMap.add k_opt k_accesses acc in
+      let new_acc = AccessListMap.add k k_accesses acc in
       aux new_acc non_k_part
   in
   aux AccessListMap.empty acc_map
@@ -1510,14 +1475,18 @@ let quotient_access_map acc_map =
 (* decide if we should throw away a path before doing safety analysis
    for now, just check for whether the access is within a switch-map
    that is auto-generated by Java. *)
-let should_filter_access (_, path) =
-  let check_access_step = function
-    | AccessPath.ArrayAccess _
-     -> false
-    | AccessPath.FieldAccess fld
-     -> String.is_substring ~substring:"$SwitchMap" (Typ.Fieldname.to_string fld)
-  in
-  List.exists path ~f:check_access_step
+let should_filter_access access =
+  match ThreadSafetyDomain.Access.get_access_path access with
+  | Some (_, path)
+   -> let check_access_step = function
+        | AccessPath.ArrayAccess _
+         -> false
+        | AccessPath.FieldAccess fld
+         -> String.is_substring ~substring:"$SwitchMap" (Typ.Fieldname.to_string fld)
+      in
+      List.exists path ~f:check_access_step
+  | None
+   -> false
 
 (* create a map from [abstraction of a memory loc] -> accesses that may touch that memory loc. for
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
@@ -1529,14 +1498,14 @@ let make_results_table file_env =
       (fun pre accesses acc ->
         PathDomain.Sinks.fold
           (fun access acc ->
-            let access_path_opt = Access.get_access_path (TraceElem.kind access) in
-            if Option.exists ~f:should_filter_access access_path_opt then acc
+            let access_kind = TraceElem.kind access in
+            if should_filter_access access_kind then acc
             else
               let grouped_accesses =
-                try AccessListMap.find access_path_opt acc
+                try AccessListMap.find access_kind acc
                 with Not_found -> []
               in
-              AccessListMap.add access_path_opt
+              AccessListMap.add access_kind
                 ((access, pre, threaded, tenv, pdesc) :: grouped_accesses) acc)
           (PathDomain.sinks accesses) acc)
       accesses acc

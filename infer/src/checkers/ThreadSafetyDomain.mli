@@ -12,13 +12,16 @@ module F = Format
 
 module Access : sig
   type t =
-    | Read of AccessPath.Raw.t  (** Field read *)
-    | Write of AccessPath.Raw.t  (** Field write *)
+    | Read of AccessPath.Raw.t  (** Field or array read *)
+    | Write of AccessPath.Raw.t  (** Field or array write *)
+    | ContainerWrite of AccessPath.Raw.t * Typ.Procname.t  (** Write to container object *)
     | InterfaceCall of Typ.Procname.t
         (** Call to method of interface not annotated with @ThreadSafe *)
     [@@deriving compare]
 
   val get_access_path : t -> AccessPath.Raw.t option
+
+  val equal : t -> t -> bool
 
   val pp : F.formatter -> t -> unit
 end
@@ -28,9 +31,7 @@ module TraceElem : sig
 
   val is_write : t -> bool
 
-  val is_read : t -> bool
-
-  val is_interface_call : t -> bool
+  val is_container_write : t -> bool
 end
 
 (** A bool that is true if a lock is definitely held. Note that this is unsound because it assumes
@@ -177,6 +178,9 @@ type summary =
   * FormalsDomain.astate
 
 include AbstractDomain.WithBottom with type astate := astate
+
+val make_container_access :
+  AccessPath.Raw.t -> Typ.Procname.t -> is_write:bool -> Location.t -> TraceElem.t
 
 val make_field_access : AccessPath.Raw.t -> is_write:bool -> Location.t -> TraceElem.t
 
