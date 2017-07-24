@@ -71,8 +71,6 @@ val env_inside_maven : Unix.env
 
 (** Constant configuration values *)
 
-val allow_missing_index_in_proc_call : bool
-
 val anonymous_block_num_sep : string
 
 val anonymous_block_prefix : string
@@ -216,6 +214,7 @@ val specs_dir_name : string
 val specs_files_suffix : string
 
 val start_filename : string
+
 val trace_absarray : bool
 
 val undo_join : bool

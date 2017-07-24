@@ -83,11 +83,6 @@ type os_type = Unix | Win32 | Cygwin
 
 (** Constant configuration values *)
 
-(** If true, a precondition with e.g. index 3 in an array does not require the caller to
-    have index 3 too this mimics what happens with direct access to the array without a
-    procedure call, where the index is simply materialized if not there *)
-let allow_missing_index_in_proc_call = true
-
 let anonymous_block_num_sep = "______"
 
 let anonymous_block_prefix = "__objc_anonymous_block_"

@@ -1478,8 +1478,8 @@ let rec sexp_imply tenv source calc_index_frame calc_missing subs se1 se2 typ2
         if index_frame <> [] then Some (Sil.Earray (len1, index_frame, inst1)) else None
       in
       let index_missing_opt =
-        if index_missing <> [] && (Config.allow_missing_index_in_proc_call || !Config.footprint)
-        then Some (Sil.Earray (len1, index_missing, inst1))
+        if index_missing <> [] && !Config.footprint then
+          Some (Sil.Earray (len1, index_missing, inst1))
         else None
       in
       (subs'', index_frame_opt, index_missing_opt)
