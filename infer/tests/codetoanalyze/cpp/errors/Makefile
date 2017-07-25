@@ -59,11 +59,11 @@ SOURCES = \
   shared/types/return_struct.cpp \
   shared/types/struct_forward_declare.cpp \
   shared/types/struct_pass_by_value.cpp \
-  shared/types/typeid_expr.cpp \
   $(wildcard smart_ptr/*.cpp) \
 	$(wildcard stack_escape/*.cpp) \
 	$(wildcard static_local/*.cpp) \
   $(wildcard subtyping/*.cpp) \
+  $(wildcard types/*.cpp) \
   $(wildcard vector/*.cpp) \
 
 include $(TESTS_DIR)/clang.make

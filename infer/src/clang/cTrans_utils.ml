@@ -486,6 +486,11 @@ let trans_builtin_expect params_trans_res =
   (* for simpler symbolic execution *)
   match params_trans_res with [_; fst_arg_res; _] -> Some fst_arg_res | _ -> None
 
+let trans_std_addressof params_trans_res =
+  (* Translate call to std::addressof as the first argument *)
+  (* for simpler symbolic execution. *)
+  match params_trans_res with [_; fst_arg_res] -> Some fst_arg_res | _ -> assert false
+
 let trans_replace_with_deref_first_arg sil_loc params_trans_res ~cxx_method_call =
   let first_arg_res_trans =
     match params_trans_res with
@@ -510,6 +515,7 @@ let builtin_trans trans_state loc stmt_info function_type params_trans_res pname
   else if CTrans_models.is_builtin_expect pname then trans_builtin_expect params_trans_res
   else if CTrans_models.is_replace_with_deref_first_arg pname then
     Some (trans_replace_with_deref_first_arg loc params_trans_res ~cxx_method_call:false)
+  else if CTrans_models.is_std_addressof pname then trans_std_addressof params_trans_res
   else None
 
 let cxx_method_builtin_trans trans_state loc params_trans_res pname =

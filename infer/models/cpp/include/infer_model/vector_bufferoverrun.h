@@ -59,7 +59,14 @@ void __infer_deref_first_arg(T* ptr) INFER_MODEL_AS_DEREF_FIRST_ARG;
 
 // WARNING: do not add any new fields to std::vector model. sizeof(std::vector)
 // = 24 !!
+#ifdef INFER_USE_LIBCPP
+// if using libcpp, then this template will have already a default _Allocator
+// set (see include/c++/v1/iosfwd, where vector's declaration has a template
+// with a default allocator<_Tp>, like the commented section below)
+template <class _Tp, class _Allocator /* = allocator<_Tp> */>
+#else
 template <class _Tp, class _Allocator = allocator<_Tp>>
+#endif
 class vector {
 
  public:

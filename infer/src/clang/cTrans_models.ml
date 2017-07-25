@@ -32,6 +32,11 @@ let is_builtin_expect pname =
 let is_builtin_object_size pname =
   String.equal (Typ.Procname.to_string pname) CFrontend_config.builtin_object_size
 
+let is_std_addressof pname =
+  (* since std_addressof is a template function, matching it requires QualifiedCppName *)
+  QualifiedCppName.Match.match_qualifiers CFrontend_config.std_addressof
+    (Typ.Procname.get_qualifiers pname)
+
 let is_replace_with_deref_first_arg pname =
   String.equal (Typ.Procname.to_string pname) CFrontend_config.replace_with_deref_first_arg_attr
 

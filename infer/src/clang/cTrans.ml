@@ -444,7 +444,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let exps = var_or_zero_in_init_list tenv var_exp typ ~return_zero:true in
     {empty_res_trans with exps}
 
-  let nullStmt_trans succ_nodes = {empty_res_trans with root_nodes= succ_nodes}
+  let no_op_trans succ_nodes = {empty_res_trans with root_nodes= succ_nodes}
 
   (* The stmt seems to be always empty *)
   let unaryExprOrTypeTraitExpr_trans trans_state expr_info unary_expr_or_type_trait_expr_info =
@@ -2709,7 +2709,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | [stmt], [attr] -> (
       match (stmt, attr) with
       | NullStmt _, FallThroughAttr _
-       -> nullStmt_trans trans_state.succ_nodes
+       -> no_op_trans trans_state.succ_nodes
       | _
        -> assert false (* More cases to come. With the assert false we can find them *) )
     | _
@@ -2784,7 +2784,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | ObjCForCollectionStmt (stmt_info, [item; items; body])
      -> objCForCollectionStmt_trans trans_state item items body stmt_info
     | NullStmt _
-     -> nullStmt_trans trans_state.succ_nodes
+     -> no_op_trans trans_state.succ_nodes
     | CompoundAssignOperator (stmt_info, stmt_list, expr_info, binary_operator_info, _)
      -> binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list
     | DeclStmt (stmt_info, _, decl_list)
@@ -2937,6 +2937,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> booleanValue_trans trans_state expr_info cxx_noexcept_expr_info.Clang_ast_t.xnee_value
     | OffsetOfExpr (_, _, expr_info) | VAArgExpr (_, _, expr_info)
      -> trans_into_undefined_expr trans_state expr_info
+    | ArrayInitIndexExpr _ | ArrayInitLoopExpr _
+     -> no_op_trans trans_state.succ_nodes
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)
     | SubstNonTypeTemplateParmExpr _

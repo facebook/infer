@@ -19,6 +19,8 @@ val is_builtin_expect : Typ.Procname.t -> bool
 
 val is_builtin_object_size : Typ.Procname.t -> bool
 
+val is_std_addressof : Typ.Procname.t -> bool
+
 val is_replace_with_deref_first_arg : Typ.Procname.t -> bool
 
 val is_objc_memory_model_controlled : string -> bool

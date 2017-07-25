@@ -138,6 +138,8 @@ let self = "self"
 
 let static = "static"
 
+let std_addressof = QualifiedCppName.Match.of_fuzzy_qual_names ["std::addressof"]
+
 let string_with_utf8_m = "stringWithUTF8String:"
 
 let this = "this"
