@@ -25,7 +25,12 @@ def get_build_output(build_cmd):
     #  TODO make it return generator to be able to handle large builds
     proc = subprocess.Popen(build_cmd, stdout=subprocess.PIPE)
     (verbose_out_chars, _) = proc.communicate()
-    return utils.decode(verbose_out_chars).split('\n')
+    if proc.returncode != 0:
+        utils.stderr(
+            'ERROR: couldn\'t run compilation command `{}`'.format(build_cmd))
+        return (proc.returncode, None)
+    out = utils.decode(verbose_out_chars).split('\n')
+    return (os.EX_OK, out)
 
 
 def run_compilation_commands(cmds, clean_cmd):
@@ -33,7 +38,7 @@ def run_compilation_commands(cmds, clean_cmd):
     in case there is nothing to compile.
     """
     #  TODO call it in parallel
-    if len(cmds) == 0:
+    if cmds is None or len(cmds) == 0:
         utils.stderr('Nothing to compile. Try running `{}` first.'
                      .format(clean_cmd))
         return os.EX_NOINPUT

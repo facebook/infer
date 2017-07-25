@@ -83,6 +83,9 @@ class GradleCapture:
 
     def capture(self):
         print('Running and capturing gradle compilation...')
-        cmds = self.get_infer_commands(util.get_build_output(self.build_cmd))
+        (code, verbose_out) = util.get_build_output(self.build_cmd)
+        if code != os.EX_OK:
+            return code
+        cmds = self.get_infer_commands(verbose_out)
         clean_cmd = '%s clean' % self.build_cmd[0]
         return util.run_compilation_commands(cmds, clean_cmd)

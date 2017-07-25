@@ -6,6 +6,7 @@
 # of patent rights can be found in the PATENTS file in the same directory.
 
 import logging
+import os
 
 from . import util
 from inferlib import jwlib
@@ -78,6 +79,9 @@ class AntCapture:
         return calls
 
     def capture(self):
-        cmds = self.get_infer_commands(util.get_build_output(self.build_cmd))
-        clean_cmd = '%s clean' % self.build_cmd[0]
+        (code, verbose_out) = util.get_build_output(self.build_cmd)
+        if code != os.EX_OK:
+            return code
+        clean_cmd = '\'{}\' clean'.format(self.build_cmd[0])
+        cmds = self.get_infer_commands(verbose_out)
         return util.run_compilation_commands(cmds, clean_cmd)
