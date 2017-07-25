@@ -27,6 +27,18 @@ int fooOK() {
   return 5 / (4 - y(3));
 }
 
+int normal_capture() {
+  int x = 1;
+  int y = 2;
+  return [x, y]() { return x + y; }();
+}
+
+int capture_by_ref() {
+  int x = 0;
+  [&x]() { x++; }();
+  return x;
+}
+
 void init_capture() {
   [i = 0]() { i; };
 }

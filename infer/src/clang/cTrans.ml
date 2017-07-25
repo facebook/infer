@@ -2413,19 +2413,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             in
             stmt_res_trans :: rest_stmts_res_trans
 
-  and lambdaExpr_trans trans_state expr_info decl =
+  and lambdaExpr_trans trans_state expr_info {Clang_ast_t.lei_lambda_decl; lei_captures} =
     let open CContext in
     let qual_type = expr_info.Clang_ast_t.ei_qual_type in
     let context = trans_state.context in
-    call_translation context decl ;
+    call_translation context lei_lambda_decl ;
     let procname = Procdesc.get_proc_name context.procdesc in
-    let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context decl in
+    let lambda_pname = CMethod_trans.get_procname_from_cpp_lambda context lei_lambda_decl in
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     (* We need to set the explicit dependency between the newly created lambda and the *)
     (* defining procedure. We add an edge in the call graph.*)
     Cg.add_edge context.cg procname lambda_pname ;
-    let captured_vars = [] in
-    (* TODO *)
+    let captured_vars =
+      List.fold_right
+        ~f:(fun {Clang_ast_t.lci_captured_var} acc ->
+          match lci_captured_var with
+          | Some decl_ref
+           -> CVar_decl.sil_var_of_captured_var decl_ref context procname :: acc
+          | None
+           -> acc)
+        ~init:[] lei_captures
+      |> List.map ~f:(fun (pvar, typ) -> (Exp.Lvar pvar, pvar, typ))
+    in
     let closure = Exp.Closure {name= lambda_pname; captured_vars} in
     {empty_res_trans with exps= [(closure, typ)]}
 
@@ -2927,8 +2936,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> cxxStdInitializerListExpr_trans trans_state stmt_info stmts expr_info
     | LambdaExpr (_, _, expr_info, lambda_expr_info)
      -> let trans_state' = {trans_state with priority= Free} in
-        let decl = lambda_expr_info.Clang_ast_t.lei_lambda_decl in
-        lambdaExpr_trans trans_state' expr_info decl
+        lambdaExpr_trans trans_state' expr_info lambda_expr_info
     | AttributedStmt (_, stmts, attrs)
      -> attributedStmt_trans trans_state stmts attrs
     | TypeTraitExpr (_, _, expr_info, type_trait_info)

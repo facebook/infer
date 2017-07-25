@@ -89,23 +89,23 @@ let compute_autorelease_pool_vars context stmts =
   in
   Exp.Map.bindings (do_stmts Exp.Map.empty stmts)
 
+let sil_var_of_captured_var decl_ref context procname =
+  match decl_ref with
+  | {Clang_ast_t.dr_qual_type= Some qual_type}
+   -> ( sil_var_of_decl_ref context decl_ref procname
+      , CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type )
+  | _
+   -> assert false
+
 (* Returns a list of captured variables as sil variables. *)
 let captured_vars_from_block_info context cvl =
   let procname = Procdesc.get_proc_name context.CContext.procdesc in
-  let sil_var_of_captured_var cv vars =
-    match cv.Clang_ast_t.bcv_variable with
-    | Some dr -> (
-      match (dr.Clang_ast_t.dr_name, dr.Clang_ast_t.dr_qual_type) with
-      | Some name_info, Some qual_type
-       -> let n = name_info.Clang_ast_t.ni_name in
-          if String.equal n CFrontend_config.self && not (CContext.is_objc_instance context) then
-            vars
-          else
-            let pvar = sil_var_of_decl_ref context dr procname in
-            let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-            (pvar, typ) :: vars
-      | _
-       -> assert false )
+  let sil_var_of_captured_var {Clang_ast_t.bcv_variable} vars_acc =
+    match bcv_variable with
+    | Some ({Clang_ast_t.dr_name= Some {Clang_ast_t.ni_name}} as decl_ref)
+     -> if String.equal ni_name CFrontend_config.self && not (CContext.is_objc_instance context)
+        then vars_acc
+        else sil_var_of_captured_var decl_ref context procname :: vars_acc
     | _
      -> assert false
   in
