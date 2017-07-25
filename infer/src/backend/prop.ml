@@ -992,9 +992,33 @@ module Normalize = struct
           | _
            -> if abs then Exp.get_undefined false else BinOp (Mod, e1', e2') )
       | BinOp (Shiftlt, e1, e2)
-       -> if abs then Exp.get_undefined false else BinOp (Shiftlt, eval e1, eval e2)
+       -> (
+          if abs then Exp.get_undefined false
+          else
+            match (e1, e2) with
+            | Const Cint n, Const Cint m
+             -> Exp.int (IntLit.shift_left n m)
+            | _, Const Cint m when IntLit.iszero m
+             -> eval e1
+            | _, Const Cint m when IntLit.isone m
+             -> eval (Exp.BinOp (PlusA, e1, e1))
+            | Const Cint m, _ when IntLit.iszero m
+             -> e1
+            | _
+             -> BinOp (Shiftlt, eval e1, eval e2) )
       | BinOp (Shiftrt, e1, e2)
-       -> if abs then Exp.get_undefined false else BinOp (Shiftrt, eval e1, eval e2)
+       -> (
+          if abs then Exp.get_undefined false
+          else
+            match (e1, e2) with
+            | Const Cint n, Const Cint m
+             -> Exp.int (IntLit.shift_right n m)
+            | _, Const Cint m when IntLit.iszero m
+             -> eval e1
+            | Const Cint m, _ when IntLit.iszero m
+             -> e1
+            | _
+             -> BinOp (Shiftrt, eval e1, eval e2) )
       | BinOp (BAnd, e1, e2)
        -> (
           let e1' = eval e1 in
