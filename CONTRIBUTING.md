@@ -44,6 +44,12 @@ make devsetup
   before running the test, but running `make -C infer/tests/codetoanalyze/java/infer test` will just
   execute the test.
 
+## Hacking on the Code in facebook-clang-plugins 
+
+Infer uses `ASTExporter` from the [facebook-clang-plugins](https://github.com/facebook/facebook-clang-plugins)
+repository. To change that part of the code:
+1. Create a [pull request](https://github.com/facebook/facebook-clang-plugins/pulls) in `facebook-clang-plugins` with the changes.
+2. Create a pull request in this repository updating the version of the git submodule.
 
 ## Contributor License Agreement
 
