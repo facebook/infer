@@ -792,6 +792,8 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.objc_method_has_nth_parameter_of_type an num typ
   | "using_namespace", [namespace], an
    -> CPredicates.using_namespace an namespace
+  | "is_at_selector_with_name", [name], an
+   -> CPredicates.is_at_selector_with_name an name
   | "has_type_subprotocol_of", [protname], an
    -> CPredicates.has_type_subprotocol_of an protname
   | _

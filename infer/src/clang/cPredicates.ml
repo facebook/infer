@@ -416,6 +416,14 @@ let declaration_has_name an name =
   | _
    -> false
 
+(* an is an expression @selector with whose name in the language of re *)
+let is_at_selector_with_name an re =
+  match an with
+  | Ctl_parser_types.Stmt ObjCSelectorExpr (_, _, _, s)
+   -> ALVar.compare_str_with_alexp s re
+  | _
+   -> false
+
 let is_class an re =
   match an with
   | Ctl_parser_types.Decl Clang_ast_t.ObjCInterfaceDecl _

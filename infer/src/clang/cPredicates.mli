@@ -94,3 +94,6 @@ val objc_method_has_nth_parameter_of_type :
 val using_namespace : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val receiver_method_call : Ctl_parser_types.ast_node -> Clang_ast_t.decl option
+
+val is_at_selector_with_name : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+(** an is an expression @selector with whose name in the language of re *)

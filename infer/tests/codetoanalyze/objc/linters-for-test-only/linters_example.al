@@ -343,3 +343,8 @@ DEFINE-CHECKER ENUM_CONSTANTS = {
   SET report_when = is_enum_constant(REGEXP("MyName.*")) OR is_enum_constant("IMMEDIATE");
   SET message = "Do not use the enum MyName or strategy";
 };
+
+ DEFINE-CHECKER TEST_SELECTOR = {
+   SET report_when = is_at_selector_with_name("actionButtonTapped:");
+   SET message = "Found @selector(actionButtonTapped:)";
+ };
