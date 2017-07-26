@@ -80,10 +80,11 @@ let check_cfg_connectedness cfg =
       match succs with [n'] when is_exit_node n' -> false | _ -> Int.equal (List.length preds) 0
   in
   let do_pdesc pd =
-    let pname = Typ.Procname.to_string (Procdesc.get_proc_name pd) in
+    let pname = Procdesc.get_proc_name pd in
     let nodes = Procdesc.get_nodes pd in
-    let broken = List.exists ~f:broken_node nodes in
-    if broken then L.internal_error "@\n ***BROKEN CFG: '%s'@\n" pname
+    (* TODO (T20302015): also check the CFGs for the C-like procedures *)
+    if not Config.keep_going && Typ.Procname.is_java pname && List.exists ~f:broken_node nodes then
+      failwithf "Broken CFG on %a" Typ.Procname.pp pname
   in
   let pdescs = get_all_procs cfg in
   List.iter ~f:do_pdesc pdescs
