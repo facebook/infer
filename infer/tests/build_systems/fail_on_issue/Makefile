@@ -24,7 +24,7 @@ default: compile
 
 issues.exp.test: $(CLANG_DEPS) $(SOURCES)
 	$(QUIET)$(call silent_on_success,Testing Infer fails on issue,\
-	  ($(INFER_BIN) --fail-on-issue -- clang $(CLANG_OPTIONS) $(SOURCES); \
+	  ($(INFER_BIN) --no-keep-going --fail-on-issue -- clang $(CLANG_OPTIONS) $(SOURCES); \
 	   echo "infer exit code: $$?" > $@))
 
 .PHONY: compile
