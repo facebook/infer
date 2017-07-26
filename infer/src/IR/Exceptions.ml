@@ -260,9 +260,6 @@ let recognize_exception exn =
      -> (Localise.inherently_dangerous_function, desc, None, Exn_developer, Medium, None, Nocat)
     | Internal_error desc
      -> (Localise.from_string "Internal_error", desc, None, Exn_developer, High, None, Nocat)
-    | Invalid_argument s
-     -> let desc = Localise.verbatim_desc s in
-        (Localise.from_string "Invalid_argument", desc, None, Exn_system, Low, None, Nocat)
     | Java_runtime_exception (exn_name, _, desc)
      -> let exn_str = Typ.Name.name exn_name in
         (Localise.from_string exn_str, desc, None, Exn_user, High, None, Prover)
@@ -296,15 +293,6 @@ let recognize_exception exn =
              -> Localise.memory_leak
           in
           (loc_str, error_desc, Some ml_loc, exn_vis, High, None, Prover)
-    | Match_failure (f, l, c)
-     -> let ml_loc = (f, l, c, c) in
-        ( Localise.from_string "Match failure"
-        , Localise.no_desc
-        , Some ml_loc
-        , Exn_developer
-        , High
-        , None
-        , Nocat )
     | Missing_fld (fld, ml_loc)
      -> let desc = Localise.verbatim_desc (Typ.Fieldname.to_full_string fld) in
         ( Localise.from_string "Missing_fld" ~hum:"Missing Field"
@@ -316,8 +304,6 @@ let recognize_exception exn =
         , Nocat )
     | Premature_nil_termination (desc, ml_loc)
      -> (Localise.premature_nil_termination, desc, Some ml_loc, Exn_user, High, None, Prover)
-    | Not_found
-     -> (Localise.from_string "Not_found", Localise.no_desc, None, Exn_system, Low, None, Nocat)
     | Parameter_not_null_checked (desc, ml_loc)
      -> ( Localise.parameter_not_null_checked
         , desc
@@ -376,15 +362,6 @@ let recognize_exception exn =
         , Low
         , None
         , Nocat )
-    | Sys_error s
-     -> let desc = Localise.verbatim_desc s in
-        ( Localise.from_string "Sys_error" ~hum:"System Error"
-        , desc
-        , None
-        , Exn_system
-        , Low
-        , None
-        , Nocat )
     | Unix.Unix_error (_, s1, s2)
      -> let desc = Localise.verbatim_desc (s1 ^ s2) in
         (Localise.from_string "Unix_error", desc, None, Exn_system, Low, None, Nocat)
@@ -420,11 +397,8 @@ let recognize_exception exn =
         , Low
         , None
         , Nocat )
-    | Failure _ as f
-     -> raise f
     | exn
-     -> let exn_name = Exn.to_string exn in
-        (Localise.from_string exn_name, Localise.no_desc, None, Exn_developer, Low, None, Nocat)
+     -> raise exn
   in
   (err_name, desc, ml_loc_opt, visibility, severity, force_kind, eclass)
 
