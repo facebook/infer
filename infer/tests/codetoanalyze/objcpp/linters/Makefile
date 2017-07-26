@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = linters
 CLANG_OPTIONS = -x objective-c++ -std=c++11 -fobjc-arc -c
-INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-failures-allowed \
+INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-keep-going \
 --enable-checks GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL
 INFERPRINT_OPTIONS = --issues-tests 
 

@@ -380,8 +380,6 @@ val eradicate_verbose : bool
 
 val fail_on_bug : bool
 
-val failures_allowed : bool
-
 val fcp_apple_clang : string option
 
 val fcp_syntax_only : bool

@@ -19,7 +19,7 @@ ANALYZER = linters
 INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
 --iphoneos-target-sdk-version 8.0 \
 --iphoneos-target-sdk-version-skip-path "codetoanalyze/objc/ioslints/filter_out_unavailable_api\.m" \
---no-failures-allowed
+--no-keep-going
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

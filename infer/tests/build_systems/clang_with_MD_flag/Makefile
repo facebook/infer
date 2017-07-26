@@ -9,7 +9,7 @@ TESTS_DIR = ../..
 
 ANALYZER = infer
 CLANG_OPTIONS = -MD -c
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root ../codetoanalyze --no-failures-allowed
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root ../codetoanalyze --no-keep-going
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = ../codetoanalyze/hello.c

@@ -24,7 +24,7 @@ CLEAN_EXTRA = $(DOT_FILES) $(foreach source,$(SOURCES),infer-out-$(basename $(no
 
 include $(TESTS_DIR)/clang-frontend.make
 
-INFER_OPTIONS = capture --frontend-tests --skip-translation-headers exclude_dir --no-failures-allowed
+INFER_OPTIONS = capture --frontend-tests --skip-translation-headers exclude_dir --no-keep-going
 
 capture: $(DOT_FILES)
 

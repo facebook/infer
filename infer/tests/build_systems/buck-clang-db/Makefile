@@ -10,7 +10,7 @@ TESTS_DIR = ../..
 SOURCE_DIR = ../codetoanalyze
 
 ANALYZER = infer
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(SOURCE_DIR) --no-failures-allowed
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(SOURCE_DIR) --no-keep-going
 SOURCES = $(wildcard $(SOURCE_DIR)/*.cpp $(SOURCE_DIR)/*.h)
 OBJECTS = '$(SOURCE_DIR)/buck-out/gen/clang_compilation_database/__Hel lo\#compilation-database,x86_64.json'
 INFERPRINT_OPTIONS = --issues-tests

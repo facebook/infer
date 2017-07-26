@@ -15,7 +15,7 @@ ANALYZER = linters
 CODETOANALYZE_DIR = ../codetoanalyze/componentkit
 
 CLANG_OPTIONS = -x objective-c++ -std=c++11 -c -fblocks
-INFER_OPTIONS = --compute-analytics --project-root $(CODETOANALYZE_DIR) --no-failures-allowed
+INFER_OPTIONS = --compute-analytics --project-root $(CODETOANALYZE_DIR) --no-keep-going
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(CODETOANALYZE_DIR)/TestComponentKitAnalytics.mm

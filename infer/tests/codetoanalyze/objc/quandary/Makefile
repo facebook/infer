@@ -16,7 +16,7 @@ CLANG_OPTIONS = -x objective-c \
   -mios-simulator-version-min=8.2 --target=x86_64-apple-darwin14 -c \
 
 ANALYZER = quandary
-INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --iphoneos-target-sdk-version 8.0 --no-failures-allowed
+INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --iphoneos-target-sdk-version 8.0 --no-keep-going
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

@@ -104,7 +104,7 @@ let run_clang_frontend ast_source =
 
 let run_and_validate_clang_frontend ast_source =
   try run_clang_frontend ast_source
-  with exc -> if not Config.failures_allowed then raise exc
+  with exc -> if not Config.keep_going then raise exc
 
 let run_clang clang_command read =
   let exit_with_error exit_code =

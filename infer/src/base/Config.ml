@@ -804,7 +804,6 @@ and ( bo_debug
     , debug_level_capture
     , debug_level_linters
     , default_linters
-    , failures_allowed
     , filtering
     , frontend_tests
     , keep_going
@@ -842,9 +841,6 @@ and ( bo_debug
     CLOpt.mk_bool ~long:"developer-mode"
       ~default:(Option.value_map ~default:false ~f:CLOpt.(equal_command Report) initial_command)
       "Show internal exceptions"
-  and failures_allowed =
-    CLOpt.mk_bool ~deprecated_no:["-no_failures_allowed"] ~long:"failures-allowed" ~default:true
-      "Fail if at least one of the translations fails (clang only)"
   and filtering =
     CLOpt.mk_bool ~deprecated_no:["nf"] ~long:"filtering" ~short:'f' ~default:true
       ~in_help:CLOpt.([(Report, manual_generic)])
@@ -857,7 +853,7 @@ and ( bo_debug
   and print_types =
     CLOpt.mk_bool ~long:"print-types" ~default:false "Print types in symbolic heaps"
   and keep_going =
-    CLOpt.mk_bool ~long:"keep-going"
+    CLOpt.mk_bool ~deprecated_no:["-no-failures-allowed"] ~long:"keep-going"
       ~in_help:CLOpt.([(Analyze, manual_generic)])
       ~default:true "Keep going when the analysis encounters a failure"
   and reports_include_ml_loc =
@@ -913,8 +909,7 @@ and ( bo_debug
       "Save filename.ext.test.dot with the cfg in dotty format for frontend tests (also sets $(b,--print-types))"
       [print_types] []
   and models_mode =
-    CLOpt.mk_bool_group ~long:"models-mode" "Mode for analyzing the models" []
-      [failures_allowed; keep_going]
+    CLOpt.mk_bool_group ~long:"models-mode" "Mode for analyzing the models" [] [keep_going]
   and print_logs =
     CLOpt.mk_bool ~long:"print-logs"
       ~in_help:
@@ -936,7 +931,7 @@ and ( bo_debug
       ~f:(fun debug ->
         debug_level_linters := if debug then 2 else 0 ;
         debug)
-      [debug; developer_mode] [failures_allowed; default_linters]
+      [debug; developer_mode] [default_linters; keep_going]
   in
   ( bo_debug
   , developer_mode
@@ -946,7 +941,6 @@ and ( bo_debug
   , debug_level_capture
   , debug_level_linters
   , default_linters
-  , failures_allowed
   , filtering
   , frontend_tests
   , keep_going
@@ -1907,8 +1901,6 @@ and eradicate_debug = !eradicate_debug
 and eradicate_verbose = !eradicate_verbose
 
 and fail_on_bug = !fail_on_bug
-
-and failures_allowed = !failures_allowed
 
 and fcp_apple_clang = !fcp_apple_clang
 
