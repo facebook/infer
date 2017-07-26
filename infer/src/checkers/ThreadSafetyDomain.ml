@@ -14,6 +14,7 @@ module Access = struct
   type t =
     | Read of AccessPath.Raw.t
     | Write of AccessPath.Raw.t
+    | ContainerRead of AccessPath.Raw.t * Typ.Procname.t
     | ContainerWrite of AccessPath.Raw.t * Typ.Procname.t
     | InterfaceCall of Typ.Procname.t
     [@@deriving compare]
@@ -22,7 +23,10 @@ module Access = struct
     if is_write then Write access_path else Read access_path
 
   let get_access_path = function
-    | Read access_path | Write access_path | ContainerWrite (access_path, _)
+    | Read access_path
+    | Write access_path
+    | ContainerWrite (access_path, _)
+    | ContainerRead (access_path, _)
      -> Some access_path
     | InterfaceCall _
      -> None
@@ -34,6 +38,9 @@ module Access = struct
      -> F.fprintf fmt "Read of %a" AccessPath.Raw.pp access_path
     | Write access_path
      -> F.fprintf fmt "Write to %a" AccessPath.Raw.pp access_path
+    | ContainerRead (access_path, pname)
+     -> F.fprintf fmt "Read of container %a via %a" AccessPath.Raw.pp access_path Typ.Procname.pp
+          pname
     | ContainerWrite (access_path, pname)
      -> F.fprintf fmt "Write to container %a via %a" AccessPath.Raw.pp access_path Typ.Procname.pp
           pname
@@ -47,10 +54,18 @@ module TraceElem = struct
   type t = {site: CallSite.t; kind: Kind.t} [@@deriving compare]
 
   let is_write {kind} =
-    match kind with InterfaceCall _ | Read _ -> false | ContainerWrite _ | Write _ -> true
+    match kind with
+    | InterfaceCall _ | Read _ | ContainerRead _
+     -> false
+    | ContainerWrite _ | Write _
+     -> true
 
   let is_container_write {kind} =
-    match kind with InterfaceCall _ | Read _ | Write _ -> false | ContainerWrite _ -> true
+    match kind with
+    | InterfaceCall _ | Read _ | Write _ | ContainerRead _
+     -> false
+    | ContainerWrite _
+     -> true
 
   let call_site {site} = site
 

@@ -14,6 +14,7 @@ module Access : sig
   type t =
     | Read of AccessPath.Raw.t  (** Field or array read *)
     | Write of AccessPath.Raw.t  (** Field or array write *)
+    | ContainerRead of AccessPath.Raw.t * Typ.Procname.t  (** Read of container object *)
     | ContainerWrite of AccessPath.Raw.t * Typ.Procname.t  (** Write to container object *)
     | InterfaceCall of Typ.Procname.t
         (** Call to method of interface not annotated with @ThreadSafe *)

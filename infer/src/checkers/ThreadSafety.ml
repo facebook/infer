@@ -42,6 +42,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type thread_model = Threaded | Unknown | ThreadedIfTrue
 
+  type container_access_model = ContainerRead | ContainerWrite
+
   let is_thread_utils_type java_pname =
     let pn = Typ.Procname.java_get_class_name java_pname in
     String.is_suffix ~suffix:"ThreadUtils" pn || String.is_suffix ~suffix:"ThreadUtil" pn
@@ -131,6 +133,36 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       assertOnBackgroundThread. These treated as Unknown*)
     | _
      -> Unknown
+
+  let get_container_access pn tenv =
+    match pn with
+    | Typ.Procname.Java java_pname
+     -> let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
+        let get_container_access_ typename _ =
+          match (Typ.Name.name typename, Typ.Procname.java_get_method java_pname) with
+          | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
+            , ( "append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"
+              | "setValueAt" ) )
+           -> Some ContainerWrite
+          | ( "android.support.v4.util.SimpleArrayMap"
+            , ("clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt" | "setValueAt")
+            )
+           -> Some ContainerWrite
+          | "android.support.v4.util.Pools$SimplePool", ("acquire" | "release")
+           -> Some ContainerWrite
+          | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set")
+           -> Some ContainerWrite
+          | "java.util.Map", ("clear" | "put" | "putAll" | "remove")
+           -> Some ContainerWrite
+          | "java.util.Map", "get" when false
+           -> (* temporary measure to silence compiler warning *)
+              Some ContainerRead
+          | _
+           -> None
+        in
+        PatternMatch.supertype_find_map_opt tenv get_container_access_ typename
+    | _
+     -> None
 
   let add_conditional_ownership_attribute access_path formal_map attribute_map attributes =
     match FormalMap.get_formal_index (fst access_path) formal_map with
@@ -392,33 +424,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     is_allocation pname || is_owned_in_library pname
     || PatternMatch.override_exists is_owned_in_library tenv pname
 
-  let is_container_write pn tenv =
-    match pn with
-    | Typ.Procname.Java java_pname
-     -> let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
-        let is_container_write_ typename _ =
-          match (Typ.Name.name typename, Typ.Procname.java_get_method java_pname) with
-          | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
-            , ( "append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"
-              | "setValueAt" ) )
-           -> true
-          | ( "android.support.v4.util.SimpleArrayMap"
-            , ("clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt" | "setValueAt")
-            )
-           -> true
-          | "android.support.v4.util.Pools$SimplePool", ("acquire" | "release")
-           -> true
-          | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set")
-           -> true
-          | "java.util.Map", ("clear" | "put" | "putAll" | "remove")
-           -> true
-          | _
-           -> false
-        in
-        PatternMatch.supertype_exists tenv is_container_write_ typename
-    | _
-     -> false
-
   let is_threadsafe_collection pn tenv =
     match pn with
     | Typ.Procname.Java java_pname
@@ -479,17 +484,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Some (true, false, false, callee_accesses, AttributeSetDomain.empty, escapee_formals)
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
-    if is_container_write callee_pname tenv then
-      let receiver_ap =
-        match List.hd actuals with
-        | Some HilExp.AccessPath receiver_ap
-         -> receiver_ap
-        | _
-         -> failwithf "Call to %a is marked as a container write, but has no receiver"
-              Typ.Procname.pp callee_pname
-      in
-      make_container_write callee_pname actuals receiver_ap callee_loc tenv
-    else Summary.read_summary caller_pdesc callee_pname
+    match get_container_access callee_pname tenv with
+    | Some ContainerWrite
+     -> let receiver_ap =
+          match List.hd actuals with
+          | Some HilExp.AccessPath receiver_ap
+           -> receiver_ap
+          | _
+           -> failwithf "Call to %a is marked as a container write, but has no receiver"
+                Typ.Procname.pp callee_pname
+        in
+        make_container_write callee_pname actuals receiver_ap callee_loc tenv
+    | Some ContainerRead
+     -> failwith "Container reads not yet supported"
+    | None
+     -> Summary.read_summary caller_pdesc callee_pname
 
   (* return true if the given procname boxes a primitive type into a reference type *)
   let is_box = function
@@ -1064,7 +1073,7 @@ let pp_access fmt sink =
   match ThreadSafetyDomain.PathDomain.Sink.kind sink with
   | Read access_path | Write access_path
    -> F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp_access_list) (snd access_path)
-  | ContainerWrite (access_path, access_pname)
+  | ContainerRead (access_path, access_pname) | ContainerWrite (access_path, access_pname)
    -> pp_container_access fmt (access_path, access_pname)
   | InterfaceCall _ as access
    -> F.fprintf fmt "%a" ThreadSafetyDomain.Access.pp access
@@ -1075,6 +1084,10 @@ let desc_of_sink sink =
   | Read _ | Write _
    -> if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
         F.asprintf "access to %a" pp_access sink
+      else F.asprintf "call to %a" Typ.Procname.pp sink_pname
+  | ContainerRead (access_path, access_pname)
+   -> if Typ.Procname.equal sink_pname access_pname then
+        F.asprintf "Read of %a" pp_container_access (access_path, access_pname)
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
   | ContainerWrite (access_path, access_pname)
    -> if Typ.Procname.equal sink_pname access_pname then
@@ -1255,7 +1268,7 @@ let report_unsafe_accesses aggregated_access_map =
     match TraceElem.kind access with
     | Access.Write _ | Access.ContainerWrite _
      -> Typ.Procname.Set.mem pname reported_writes
-    | Access.Read _
+    | Access.Read _ | Access.ContainerRead _
      -> Typ.Procname.Set.mem pname reported_reads
     | Access.InterfaceCall _
      -> false
@@ -1266,7 +1279,7 @@ let report_unsafe_accesses aggregated_access_map =
     | Access.Write _ | Access.ContainerWrite _
      -> let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
         {reported with reported_writes; reported_sites}
-    | Access.Read _
+    | Access.Read _ | Access.ContainerRead _
      -> let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
         {reported with reported_reads; reported_sites}
     | Access.InterfaceCall _
@@ -1298,7 +1311,7 @@ let report_unsafe_accesses aggregated_access_map =
       | (Access.Write _ | ContainerWrite _), AccessPrecondition.Protected _
        -> (* protected write, do nothing *)
           reported_acc
-      | Access.Read _, AccessPrecondition.Unprotected _
+      | (Access.Read _ | ContainerRead _), AccessPrecondition.Unprotected _
        -> (* unprotected read. report all writes as conflicts for java *)
           (* for c++ filter out unprotected writes *)
           let is_cpp_protected_write pre =
@@ -1322,7 +1335,7 @@ let report_unsafe_accesses aggregated_access_map =
               ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) all_writes)
               access ;
             update_reported access pname reported_acc )
-      | Access.Read _, AccessPrecondition.Protected excl
+      | (Access.Read _ | ContainerRead _), AccessPrecondition.Protected excl
        -> (* protected read.
              report unprotected writes and opposite protected writes as conflicts
              Thread and Lock are opposites of one another, and
