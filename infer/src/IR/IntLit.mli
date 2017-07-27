@@ -14,6 +14,8 @@ module F = Format
 (** signed and unsigned integer literals *)
 type t
 
+exception OversizedShift
+
 val add : t -> t -> t
 
 val compare : t -> t -> int

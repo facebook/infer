@@ -13,6 +13,8 @@ module F = Format
 (** signed and unsigned integer literals *)
 type t = bool * Int64.t * bool
 
+exception OversizedShift
+
 (* the first bool indicates whether this is an unsigned value,
    and the second whether it is a pointer *)
 
@@ -108,7 +110,7 @@ let shift_left (unsigned1, i1, ptr1) (_, i2, _) =
   | None
    -> failwithf "Shifting failed with operand %a" Int64.pp i2
   | Some i2
-   -> if i2 < 0 || i2 >= 64 then failwithf "Oversized shift: %d" i2 ;
+   -> if i2 < 0 || i2 >= 64 then raise OversizedShift ;
       let res = Int64.shift_left i1 i2 in
       (unsigned1, res, ptr1)
 
@@ -117,7 +119,7 @@ let shift_right (unsigned1, i1, ptr1) (_, i2, _) =
   | None
    -> failwithf "Shifting failed with operand %a" Int64.pp i2
   | Some i2
-   -> if i2 < 0 || i2 >= 64 then failwithf "Oversized shift: %d" i2 ;
+   -> if i2 < 0 || i2 >= 64 then raise OversizedShift ;
       let res = Int64.shift_right i1 i2 in
       (unsigned1, res, ptr1)
 
