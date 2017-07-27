@@ -46,11 +46,6 @@ base_group.add_argument('-nf', '--no-filtering', action='store_true',
                         help='''Also show the results from the experimental
                         checks. Warning: some checks may contain many false
                         alarms''')
-
-base_group.add_argument('--android-harness', action='store_true',
-                        help='''[experimental] Create harness to detect bugs
-                        involving the Android lifecycle''')
-
 base_group.add_argument('--pmd-xml',
                         action='store_true',
                         help='''Output issues in (PMD) XML format.''')

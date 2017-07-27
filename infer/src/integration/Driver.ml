@@ -274,7 +274,6 @@ let capture ~changed_files = function
              -> ["--blacklist-regex"; s]
             | _
              -> [] )
-          @ (if not Config.create_harness then [] else ["--android-harness"])
           @ ( match Config.java_jar_compiler with
             | None
              -> []
