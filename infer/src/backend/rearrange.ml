@@ -1606,6 +1606,15 @@ let check_dereference_error tenv pdesc (prop: Prop.normal Prop.t) lexp loc =
 (* Check that an expression representin an objc block can be null and raise a [B1] null exception.*)
 (* It's used to check that we don't call possibly null blocks *)
 let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
+  let is_this = function
+    | Exp.Lvar pvar
+     -> let {ProcAttributes.is_objc_instance_method; is_cpp_instance_method} =
+          Procdesc.get_attributes pdesc
+        in
+        is_objc_instance_method && Pvar.is_self pvar || is_cpp_instance_method && Pvar.is_this pvar
+    | _
+     -> false
+  in
   let fun_exp_may_be_null () =
     (* may be null if we don't know if it is definitely not null *)
     not (Prover.check_disequal tenv prop (Exp.root_of_lexp fun_exp) Exp.zero)
@@ -1661,20 +1670,23 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
     in
     match fun_exp with
     | Exp.Var id when Ident.is_footprint id
-     -> let e_opt, is_field_deref = is_field_deref () in
-        let err_desc_nobuckets' =
-          match e_opt with
-          | Some e
-           -> Localise.parameter_field_not_null_checked_desc err_desc_nobuckets e
-          | _
-           -> err_desc_nobuckets
+     -> (
+        let e_opt, is_field_deref = is_field_deref () in
+        let warn err_desc =
+          let err_desc =
+            Localise.error_desc_set_bucket err_desc Localise.BucketLevel.b1 Config.show_buckets
+          in
+          if is_field_deref then raise (Exceptions.Field_not_null_checked (err_desc, __POS__))
+          else raise (Exceptions.Parameter_not_null_checked (err_desc, __POS__))
         in
-        let err_desc =
-          Localise.error_desc_set_bucket err_desc_nobuckets' Localise.BucketLevel.b1
-            Config.show_buckets
-        in
-        if is_field_deref then raise (Exceptions.Field_not_null_checked (err_desc, __POS__))
-        else raise (Exceptions.Parameter_not_null_checked (err_desc, __POS__))
+        match e_opt with
+        | Some e when is_this e
+         -> (* don't warn that this/self can be null *)
+            ()
+        | Some e
+         -> warn (Localise.parameter_field_not_null_checked_desc err_desc_nobuckets e)
+        | _
+         -> warn err_desc_nobuckets )
     | _
      -> (* HP: fun_exp is not a footprint therefore,
              either is a local or it's a modified param *)
