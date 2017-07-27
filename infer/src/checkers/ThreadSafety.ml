@@ -138,7 +138,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match pn with
     | Typ.Procname.Java java_pname
      -> let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
-        let get_container_access_ typename _ =
+        let get_container_access_ typename =
           match (Typ.Name.name typename, Typ.Procname.java_get_method java_pname) with
           | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
             , ( "append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"

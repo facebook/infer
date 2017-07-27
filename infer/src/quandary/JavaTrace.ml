@@ -55,7 +55,7 @@ module SourceKind = struct
       | "com.facebook.infer.builtins.InferTaint", "inferSecretSource"
        -> Some (Other, return)
       | class_name, method_name
-       -> let taint_matching_supertype typename _ =
+       -> let taint_matching_supertype typename =
             match (Typ.Name.name typename, method_name) with
             | "android.app.Activity", "getIntent"
              -> Some (Intent, return)
@@ -113,7 +113,7 @@ module SourceKind = struct
       | "codetoanalyze.java.quandary.TaintedFormals", "taintedContextBad"
        -> taint_formals_with_types ["java.lang.Integer"; "java.lang.String"] Other formals
       | class_name, method_name
-       -> let taint_matching_supertype typename _ =
+       -> let taint_matching_supertype typename =
             match (Typ.Name.name typename, method_name) with
             | "android.app.Activity", ("onActivityResult" | "onNewIntent")
              -> Some (taint_formals_with_types ["android.content.Intent"] Intent formals)
@@ -234,7 +234,7 @@ module SinkKind = struct
       | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink"
        -> taint_nth 0 Other
       | class_name, method_name
-       -> let taint_matching_supertype typename _ =
+       -> let taint_matching_supertype typename =
             match (Typ.Name.name typename, method_name) with
             | "android.app.Activity", ("startActivityFromChild" | "startActivityFromFragment")
              -> taint_nth 1 StartComponent

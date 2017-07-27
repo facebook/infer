@@ -51,8 +51,7 @@ val is_subtype_of_str : Tenv.t -> Typ.Name.t -> string -> bool
 val supertype_exists : Tenv.t -> (Typ.Name.t -> Typ.Struct.t -> bool) -> Typ.Name.t -> bool
 (** Holds iff the predicate holds on a supertype of the named type, including the type itself *)
 
-val supertype_find_map_opt :
-  Tenv.t -> (Typ.Name.t -> Typ.Struct.t -> 'a option) -> Typ.Name.t -> 'a option
+val supertype_find_map_opt : Tenv.t -> (Typ.Name.t -> 'a option) -> Typ.Name.t -> 'a option
 (** Return the first non-None result found when applying the given function to supertypes of the
     named type, including the type itself *)
 
