@@ -493,7 +493,7 @@ let pp_text_of_report fmt report =
     F.fprintf fmt "%s:%d: %s: %s %s@\n" jsonbug.file jsonbug.line jsonbug.kind jsonbug.bug_type
       jsonbug.qualifier
   in
-  List.iter ~f:pp_row report
+  List.iter ~f:pp_row report ; F.fprintf fmt "@?"
 
 module CallsCsv = struct
   (** Write proc summary stats in csv format *)
