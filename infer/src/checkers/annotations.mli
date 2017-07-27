@@ -84,6 +84,8 @@ val ia_is_verify : Annot.Item.t -> bool
 
 val ia_is_expensive : Annot.Item.t -> bool
 
+val ia_is_final : Annot.Item.t -> bool
+
 val ia_is_functional : Annot.Item.t -> bool
 
 val ia_is_performance_critical : Annot.Item.t -> bool

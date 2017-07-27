@@ -23,6 +23,8 @@ type t =
 
 let volatile = {class_name= "volatile"; parameters= []}
 
+let final = {class_name= "final"; parameters= []}
+
 (** Pretty print an annotation. *)
 let prefix = match Config.curr_language_is Config.Java with true -> "@" | false -> "_"
 

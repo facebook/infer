@@ -33,6 +33,8 @@ let expensive = "Expensive"
 
 let false_on_null = "FalseOnNull"
 
+let final = "final"
+
 let for_ui_thread = "ForUiThread"
 
 let for_non_ui_thread = "ForNonUiThread"
@@ -162,6 +164,8 @@ let field_has_annot fieldname (struct_typ: Typ.Struct.t) predicate =
   || List.exists ~f:fld_has_taint_annot struct_typ.statics
 
 let struct_typ_has_annot (struct_typ: Typ.Struct.t) predicate = predicate struct_typ.annots
+
+let ia_is_final ia = ia_contains ia final
 
 let ia_is_not_thread_safe ia = ia_ends_with ia not_thread_safe
 

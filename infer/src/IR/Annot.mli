@@ -21,7 +21,10 @@ type t =
   [@@deriving compare]
 
 val volatile : t
-(** annotation for fields/methods marked with the "volatile" keyword *)
+(** annotation for fields marked with the "volatile" keyword *)
+
+val final : t
+(** annotation for fields marked with the "final" keyword *)
 
 val pp : F.formatter -> t -> unit
 (** Pretty print an annotation. *)
