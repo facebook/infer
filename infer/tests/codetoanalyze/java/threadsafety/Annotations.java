@@ -250,6 +250,23 @@ class Annotations implements Interface {
   double mDouble;
   long mLong;
 
+  int mInt1;
+  int mInt2;
+
+  public int functionalAcrossUnboxingAndCast1Ok() {
+    if (b) {
+      mInt1 = (int) returnDouble();
+    }
+    return 0;
+  }
+
+  public int functionalAcrossUnboxingAndCast2Ok() {
+    if (b) {
+      mInt2 = (int) returnLong();
+    }
+    return 0;
+  }
+
   // writes to doubles are not atomic on all platforms, so this is not a benign race
   public double functionalDoubleBad() {
     if (b) {

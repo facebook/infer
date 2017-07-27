@@ -723,10 +723,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   else astate
         in
         match ret_opt with
-        | Some (_, {Typ.desc= Typ.Tint ILong | Tfloat FDouble})
-         -> (* writes to longs and doubles are not guaranteed to be atomic in Java, so don't
-                 bother tracking whether a returned long or float value is functional *)
-            astate_callee
         | Some ret
          -> let add_if_annotated predicate attribute attribute_map =
               if PatternMatch.override_exists predicate tenv callee_pname then
@@ -753,6 +749,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                ~f:(fun access_path ->
                  AttributeMapDomain.has_attribute access_path Functional astate.attribute_map)
                rhs_access_paths
+          &&
+          match AccessPath.Raw.get_typ lhs_access_path tenv with
+          | Some {Typ.desc= Typ.Tint ILong | Tfloat FDouble}
+           -> (* writes to longs and doubles are not guaranteed to be atomic in Java
+                 (http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.7), so there
+                 can be a race even if the RHS is functional *)
+              false
+          | _
+           -> true
         in
         let accesses =
           if is_functional then
