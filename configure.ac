@@ -252,15 +252,14 @@ AC_SUBST([ENABLE_OCAML_BINANNOT])
 
 
 # We use Buck to run the Infer tests
-AC_MSG_CHECKING([which version of Buck to use])
-buckversion_file=.buckversion
-oss_buck_version=c8c96ad4f2664c9636865e162513c530823f6d5b
-fb_buck_version=a5e9b874a2ee0607cefa87367577583e187a83a4
+AC_MSG_CHECKING([which .buckversion to use])
+fb_buckversion_file=facebook/dependencies/dotbuckversion
+oss_buckversion_file=dotbuckversion
 AS_IF([test x"$is_facebook_tree" = x"yes"],
-  [buck_version=$fb_buck_version],
-  [buck_version=$oss_buck_version])
-echo $buck_version > "$buckversion_file"
-AC_MSG_RESULT([$buck_version])
+  [buckversion_file="$fb_buckversion_file"],
+  [buckversion_file="$oss_buckversion_file"])
+cat "$buckversion_file" > ".buckversion"
+AC_MSG_RESULT([$buckversion_file])
 
 
 AC_PATH_TOOL([GETCONF], [getconf], [no])
