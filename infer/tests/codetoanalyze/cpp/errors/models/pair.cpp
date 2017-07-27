@@ -30,12 +30,6 @@ int deref_pair_null1_bad() {
   return std::get<0>(p) + *std::get<1>(p);
 }
 
-int deref_pair_null2_bad() {
-  auto p = pairOfZeroNull();
-  // Should report an NPE here as p.second is NULL
-  return std::get<int>(p) + *std::get<int*>(p);
-}
-
 int deref_pair_null3_bad() {
   auto p = pairOfZeroNull2();
   // Should report an NPE here as p.second is NULL

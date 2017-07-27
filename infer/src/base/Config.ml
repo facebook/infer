@@ -241,10 +241,15 @@ let use_jar_cache = true
 
 let weak = "<\"Weak\">"
 
-let whitelisted_cpp_methods =
-  [ "google::CheckNotNull"
+(* Whitelists for C++ library functions *)
+
+let std_whitelisted_cpp_methods =
+  [ "std::back_inserter"
   ; "std::forward"
+  ; "std::front_inserter"
   ; "std::get"
+  ; "std::inserter"
+  ; "std::make_move_iterator"
   ; "std::make_pair"
   ; "std::max"
   ; "std::min"
@@ -257,19 +262,62 @@ let whitelisted_cpp_methods =
   ; "std::operator>="
   ; "std::swap" ]
 
-let whitelisted_cpp_classes =
-  [ "__gnu_cxx::__normal_iterator" (* libstdc++ internal name of vector iterator *)
-  ; "std::__less"
-  ; "std::__wrap_iter" (* libc++ internal name of vector iterator *)
-  ; "std::__get_pair" (* libc++ internal support class for std::get<std::pair> *)
-  ; "std::__pair_get" (* libstdc++ internal support class for std::get<std::pair> *)
+let libstdcxx_whitelisted_cpp_methods =
+  [ "__gnu_cxx::operator!="
+  ; "__gnu_cxx::operator<"
+  ; "__gnu_cxx::operator<="
+  ; "__gnu_cxx::operator=="
+  ; "__gnu_cxx::operator>"
+  ; "__gnu_cxx::operator>="
+  ; "__gnu_cxx::operator+"
+  ; "__gnu_cxx::operator-" ]
+
+let libcxx_whitelisted_cpp_methods = []
+
+let other_whitelisted_cpp_methods = ["google::CheckNotNull"]
+
+let whitelisted_cpp_methods =
+  List.concat
+    [ std_whitelisted_cpp_methods
+    ; libstdcxx_whitelisted_cpp_methods
+    ; libcxx_whitelisted_cpp_methods
+    ; other_whitelisted_cpp_methods ]
+
+(* Whitelists for C++ library classes *)
+
+let std_whitelisted_cpp_classes =
+  [ "std::back_insert_iterator"
   ; "std::equal_to"
+  ; "std::front_insert_iterator"
   ; "std::greater"
   ; "std::greater_equal"
+  ; "std::insert_iterator"
   ; "std::less"
   ; "std::less_equal"
+  ; "std::move_iterator"
   ; "std::not_equal_to"
-  ; "std::pair" ]
+  ; "std::pair"
+  ; "std::reverse_iterator" ]
+
+let libstdcxx_whitelisted_cpp_classes =
+  (* libstdc++ internal support class for std::get<std::pair> *)
+  [ "__gnu_cxx::__normal_iterator" (* libstdc++ internal name of vector iterator *)
+  ; "std::__pair_get" ]
+
+let libcxx_whitelisted_cpp_classes =
+  (* libc++ internal support class for std::get<std::pair> *)
+  [ "std::__less"
+  ; "std::__wrap_iter" (* libc++ internal name of vector iterator *)
+  ; "std::__get_pair" ]
+
+let other_whitelisted_cpp_classes = []
+
+let whitelisted_cpp_classes =
+  List.concat
+    [ std_whitelisted_cpp_classes
+    ; libstdcxx_whitelisted_cpp_classes
+    ; libcxx_whitelisted_cpp_classes
+    ; other_whitelisted_cpp_classes ]
 
 type dynamic_dispatch_policy = [`None | `Interface | `Sound | `Lazy]
 

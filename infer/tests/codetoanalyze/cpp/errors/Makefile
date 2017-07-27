@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = infer
 
-CLANG_OPTIONS = -x c++ -std=c++14 -isystem$(ROOT_DIR) -c
+CLANG_OPTIONS = -x c++ -std=c++1y -isystem$(ROOT_DIR) -c
 INFER_OPTIONS = --ml-buckets cpp --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
                 --no-keep-going --pmd-xml --report-custom-error
 INFERPRINT_OPTIONS = --issues-tests
