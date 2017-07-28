@@ -153,6 +153,8 @@ val log_dir_name : string
 
 val max_recursion : int
 
+val max_widens : int
+
 val meet_level : int
 
 val models_dir : string

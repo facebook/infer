@@ -96,7 +96,13 @@ struct
         else astate_pre
       in
       if Domain.( <= ) ~lhs:widened_pre ~rhs:old_state.pre then (inv_map, work_queue)
-      else update_inv_map widened_pre (old_state.visit_count + 1)
+      else
+        let visit_count' = old_state.visit_count + 1 in
+        if visit_count' > Config.max_widens then
+          failwithf
+            "Exceeded max widening threshold %d while analyzing %a. Please check your widening operator or increase the threshold"
+            Config.max_widens Typ.Procname.pp (Procdesc.get_proc_name pdesc) ;
+        update_inv_map widened_pre visit_count'
     else
       (* first time visiting this node *)
       let visit_count = 1 in

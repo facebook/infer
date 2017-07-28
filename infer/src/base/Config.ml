@@ -189,6 +189,11 @@ let manual_threadsafety = "THREADSAFETY CHECKER OPTIONS"
 (** Maximum level of recursion during the analysis, after which a timeout is generated *)
 let max_recursion = 5
 
+(** Maximum number of widens that can be performed before the analysis will intentionally crash.
+    Used to guard against divergence in the case that someone has implemented a bad widening
+    operator *)
+let max_widens = 10000
+
 (** Flag to tune the level of applying the meet operator for
     preconditions during the footprint analysis:
     0 = do not use the meet
