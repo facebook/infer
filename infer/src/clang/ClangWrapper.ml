@@ -67,6 +67,9 @@ let normalize ~prog ~args : action_item list =
            passing -Wno-ignored-optimization-argument prevents that. *)
          ClangCommand.append_args
            ["-fno-cxx-modules"; "-Qunused-arguments"; "-Wno-ignored-optimization-argument"]
+      |> (* If -fembed-bitcode is passed, it leads to multiple cc1 commands, which try to read .bc
+            files that don't get generated, and fail. So pass -fembed-bitcode=off to disable. *)
+         ClangCommand.append_args ["-fembed-bitcode=off"]
       |> ClangCommand.command_to_run )
   in
   L.(debug Capture Medium) "clang -### invocation: %s@\n" clang_hashhashhash ;
