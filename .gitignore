@@ -122,8 +122,14 @@ buck-out/
 /infer/src/toplevel.mlpack
 
 #atdgen stubs
-/infer/src/backend/jsonbug_*
-/infer/src/checkers/stacktree_*
+/infer/src/backend/jsonbug_j.ml
+/infer/src/backend/jsonbug_j.mli
+/infer/src/backend/jsonbug_t.ml
+/infer/src/backend/jsonbug_t.mli
+/infer/src/checkers/stacktree_j.ml
+/infer/src/checkers/stacktree_j.mli
+/infer/src/checkers/stacktree_t.ml
+/infer/src/checkers/stacktree_t.mli
 
 # intelliJ files
 /infer/src/backend/.projectSettings

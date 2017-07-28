@@ -28,7 +28,6 @@ BUILD_SYSTEMS_TESTS += \
   reactive \
   run_hidden_linters \
   utf8_in_procname \
-  waf \
 
 DIRECT_TESTS += \
   c_biabduction c_bufferoverrun c_errors c_frontend \
@@ -77,6 +76,9 @@ BUILD_SYSTEMS_TESTS += ant
 endif
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck genrule
+# do not run these two tests in parallel otherwise Buck has a bad time
+build_genrule_test: build_buck_test
+build_genrule_print: build_buck_print
 endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += mvn
@@ -84,7 +86,10 @@ endif
 endif
 
 ifeq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
-BUILD_SYSTEMS_TESTS += make utf8_in_pwd
+BUILD_SYSTEMS_TESTS += make utf8_in_pwd waf
+# the waf test and the make test run the same `make` command
+build_waf_test: build_make_test
+build_waf_print: build_make_print
 endif
 
 .PHONY: all
@@ -251,14 +256,6 @@ $(DIRECT_TESTS:%=direct_%_replace): infer
 
 .PHONY: direct_tests
 direct_tests: $(DIRECT_TESTS:%=direct_%_test)
-
-# do not run these two tests in parallel otherwise Buck has a bad time
-build_genrule_test: build_buck_test
-build_genrule_print: build_buck_print
-
-# the waf test and the make test run the same `make` command
-build_waf_test: build_make_test
-build_waf_print: build_make_print
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 $(BUILD_SYSTEMS_TESTS:%=build_%_test): infer
