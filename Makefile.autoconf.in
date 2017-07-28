@@ -75,8 +75,5 @@ LN_S = @LN_S@ -v
 endif
 
 # Export parts of the config relevant to running other programs
-# be merciful and allow PATH to be updated between ./configure and make
-# except for OCaml-related executables
-# TODO(17630614) get rid of this hack
-export PATH := $(dir $(OCAMLC)):$(shell printf "%s" "$$PATH"):$(PATH)
+export PATH := $(PATH)
 export CAML_LD_LIBRARY_PATH := $(CAML_LD_LIBRARY_PATH)

@@ -96,7 +96,7 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
   AC_CHECK_TOOL([SHASUM], [shasum], [no])
   AC_ASSERT_PROG([shasum], [$SHASUM])
   # cmake is required to build llvm+clang
-  AC_PATH_TOOL([CMAKE], [cmake], [no])
+  AC_CHECK_TOOL([CMAKE], [cmake], [no])
   AS_IF([test "x$is_release_tree" = "xno"], [
     AC_ASSERT_PROG([cmake], [$CMAKE])
   ])
@@ -113,7 +113,7 @@ AS_IF([test "x$enable_c_analyzers" = "xyes"], [
 AC_CHECK_TOOL([PYTHON27], [python2.7], [no])
 AC_ASSERT_PROG([python2.7], [$PYTHON27])
 
-AC_PATH_TOOL([XCODE_SELECT], [xcode-select], [no])
+AC_CHECK_TOOL([XCODE_SELECT], [xcode-select], [no])
 
 
 # prefer clang over gcc because the plugins makes use of
@@ -175,12 +175,12 @@ AC_ASSERT_PROG([ocamlc], [$OCAMLC])
 # check the version of OCaml
 AC_ASSERT_OCAML_MIN_VERSION([4.04.2])
 AC_ASSERT_PROG([ocamlopt], [$OCAMLOPT])
-AC_PATH_TOOL([OCAMLBUILD], [ocamlbuild], [no])
+AC_CHECK_TOOL([OCAMLBUILD], [ocamlbuild], [no])
 AC_ASSERT_PROG([ocamlbuild], [$OCAMLBUILD])
 AC_PROG_FINDLIB
 AC_PROG_OCAMLLEX
 AC_ASSERT_PROG([ocamllex], [$OCAMLLEX])
-AC_PATH_TOOL([MENHIR], [menhir], [no])
+AC_CHECK_TOOL([MENHIR], [menhir], [no])
 AC_ASSERT_PROG([menhir], [$MENHIR])
 AC_ASSERT_OCAML_PKG([atdgen], [], [])
 AC_ASSERT_OCAML_PKG([biniou])
@@ -203,7 +203,7 @@ AC_SUBST([OPAMSWITCH])
 
 if test "x$enable_java_analyzers" = "xyes"; then
   AC_CHECK_TOOL([JAVA], [java], [no])
-  AC_PATH_TOOL([JAVAC], [javac], [no])
+  AC_CHECK_TOOL([JAVAC], [javac], [no])
   AC_ASSERT_PROG([javac], [$JAVAC])
   AC_ASSERT_PROG([java], [$JAVA])
   AC_ASSERT_OCAML_PKG([javalib], [], [2.3.3])
@@ -240,7 +240,7 @@ _ACEOF
 fi
 # end if($enable_java_analyzers)
 
-AC_PATH_TOOL([ATDGEN], [atdgen], [no])
+AC_CHECK_TOOL([ATDGEN], [atdgen], [no])
 AC_ASSERT_PROG([atdgen], [$ATDGEN])
 
 AC_ARG_ENABLE(ocaml-bin-annot,
@@ -262,7 +262,7 @@ cat "$buckversion_file" > ".buckversion"
 AC_MSG_RESULT([$buckversion_file])
 
 
-AC_PATH_TOOL([GETCONF], [getconf], [no])
+AC_CHECK_TOOL([GETCONF], [getconf], [no])
 AC_MSG_CHECKING([the number of cpus the build host has])
 if test "$GETCONF" != "no"; then
   if test $("$GETCONF" _NPROCESSORS_ONLN); then
@@ -277,20 +277,15 @@ AC_SUBST([NCPU])
 
 # optional progs and libraries that, eg build systems to be run in integration tests
 
-AC_PATH_TOOL([ANT], [ant], [no])
-if test ! -z "$SANDCASTLE"; then
-   BUCK=buck
-   AC_SUBST([BUCK])
-else
-  AC_PATH_TOOL([BUCK], [buck], [no])
-fi
+AC_CHECK_TOOL([ANT], [ant], [no])
+AC_CHECK_TOOL([BUCK], [buck], [no])
 AC_ARG_VAR([MVN], [command to execute Maven when running tests])
 AS_IF([test "x$MVN" = "x"], [
-  AC_PATH_TOOL([MVN], [mvn], [no])
+  AC_CHECK_TOOL([MVN], [mvn], [no])
 ], [
   AC_MSG_RESULT([checking for mvn... $MVN])
 ])
-AC_PATH_TOOL([NDKBUILD], [ndk-build], [no])
+AC_CHECK_TOOL([NDKBUILD], [ndk-build], [no])
 if test x"$NDKBUILD" = x"no"; then
 # ndk-build not in $PATH, look into potential android NDK install paths and record the absolute path
 # to ndk-build
@@ -300,9 +295,9 @@ fi
 
 AC_CHECK_PYTHON_MODULE([$PYTHON27], [lxml])
 
-AC_PATH_TOOL([XCPRETTY], [xcpretty], [no])
+AC_CHECK_TOOL([XCPRETTY], [xcpretty], [no])
 
-AC_PATH_TOOL([BREW], [brew], [no])
+AC_CHECK_TOOL([BREW], [brew], [no])
 
 # warn about broken pkg-config version for brew users
 if test "$BREW" != "no"; then
