@@ -554,8 +554,6 @@ val tracing : bool
 
 val reports_include_ml_loc : bool
 
-val resolve_infer_eradicate_conflict : bool
-
 val resource_leak : bool
 
 val results_dir : string

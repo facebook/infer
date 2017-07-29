@@ -206,26 +206,6 @@ let skip_anonymous_class_renamings (diff: Differential.t) : Differential.t =
   in
   {introduced; fixed; preexisting= preexisting @ diff.preexisting}
 
-(* Filter out null dereferences reported by infer if file has eradicate
-   enabled, to avoid double reporting. *)
-let resolve_infer_eradicate_conflict (analyzer: Config.analyzer)
-    (filters_of_analyzer: Config.analyzer -> Inferconfig.filters) (diff: Differential.t)
-    : Differential.t =
-  let should_discard_issue (issue: Jsonbug_t.jsonbug) =
-    let file_is_whitelisted () =
-      let source_file = SourceFile.UNSAFE.from_string issue.file in
-      let filters = filters_of_analyzer Config.Eradicate in
-      filters.path_filter source_file
-    in
-    Config.equal_analyzer analyzer Config.BiAbduction
-    && String.equal issue.bug_type (Localise.to_issue_id Localise.null_dereference)
-    && file_is_whitelisted ()
-  in
-  let filter issues = List.filter ~f:(Fn.non should_discard_issue) issues in
-  { introduced= filter diff.introduced
-  ; fixed= filter diff.fixed
-  ; preexisting= filter diff.preexisting }
-
 (* Strip issues whose paths are not among those we're interested in *)
 let interesting_paths_filter (interesting_paths: SourceFile.t list option) =
   match interesting_paths with
@@ -259,10 +239,7 @@ let do_filter (diff: Differential.t) (renamings: FileRenamings.t) ~(skip_duplica
            skip_anonymous_class_renamings
        else Fn.id )
     |> (if skip_duplicated_types then skip_duplicated_types_on_filenames renamings else Fn.id)
-    |>
-    if Config.resolve_infer_eradicate_conflict then
-      resolve_infer_eradicate_conflict Config.analyzer Inferconfig.create_filters
-    else Fn.id
+    |> Fn.id
   in
   { introduced= apply_paths_filter_if_needed `Introduced diff'.introduced
   ; fixed= apply_paths_filter_if_needed `Fixed diff'.fixed
@@ -278,8 +255,6 @@ module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY = struct
   let value_of_qualifier_tag = value_of_qualifier_tag
 
   let skip_anonymous_class_renamings = skip_anonymous_class_renamings
-
-  let resolve_infer_eradicate_conflict = resolve_infer_eradicate_conflict
 
   let interesting_paths_filter = interesting_paths_filter
 end

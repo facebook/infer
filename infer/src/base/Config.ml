@@ -1442,11 +1442,6 @@ and report_previous =
 and resource_leak =
   CLOpt.mk_bool ~long:"resource-leak" ~default:false "the resource leak analysis (experimental)"
 
-and resolve_infer_eradicate_conflict =
-  CLOpt.mk_bool ~long:"resolve-infer-eradicate-conflict" ~default:false
-    ~in_help:CLOpt.([(ReportDiff, manual_generic)])
-    "Filter out Null Dereferences reported by Infer if Eradicate is enabled"
-
 and rest =
   CLOpt.mk_rest_actions ~in_help:CLOpt.([(Capture, manual_generic); (Run, manual_generic)])
     "Stop argument processing, use remaining arguments as a build command" ~usage:exe_usage
@@ -2121,8 +2116,6 @@ and report_hook = !report_hook
 and report_previous = !report_previous
 
 and reports_include_ml_loc = !reports_include_ml_loc
-
-and resolve_infer_eradicate_conflict = !resolve_infer_eradicate_conflict
 
 and resource_leak = !resource_leak
 

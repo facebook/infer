@@ -48,9 +48,6 @@ module VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY : sig
 
   val skip_anonymous_class_renamings : Differential.t -> Differential.t
 
-  val resolve_infer_eradicate_conflict :
-    Config.analyzer -> (Config.analyzer -> Inferconfig.filters) -> Differential.t -> Differential.t
-
   val interesting_paths_filter :
     SourceFile.t list option -> Jsonbug_t.jsonbug list -> Jsonbug_t.jsonbug list
 end

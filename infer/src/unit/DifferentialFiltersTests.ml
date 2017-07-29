@@ -321,54 +321,6 @@ let test_skip_anonymous_class_renamings =
     , ([1], [2], []) ) ]
   |> List.map ~f:(fun (name, diff, expected_output) -> name >:: create_test diff expected_output)
 
-let test_resolve_infer_eradicate_conflict =
-  let fake_filters_factory analyzer =
-    match analyzer with
-    | Config.Eradicate
-     -> { Inferconfig.path_filter= (function _ -> true)
-        ; (* all paths are whitelisted *)
-        error_filter= (function _ -> failwith "error_filter is not needed")
-        ; proc_filter= (function _ -> failwith "proc_filter is not needed") }
-    | _
-     -> failwith "This mock only supports Eradicate"
-  in
-  let create_test analyzer (exp_introduced, exp_fixed, exp_preexisting) _ =
-    let null_dereference = Localise.to_issue_id Localise.null_dereference in
-    let current_report =
-      [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:1 ()
-      ; create_fake_jsonbug ~bug_type:null_dereference ~file:"file_2.java" ~hash:2 ()
-      ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_4.java" ~hash:4 () ]
-    in
-    let previous_report =
-      [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:11 ()
-      ; create_fake_jsonbug ~bug_type:null_dereference ~file:"file_3.java" ~hash:3 ()
-      ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_4.java" ~hash:4 () ]
-    in
-    let diff = Differential.of_reports ~current_report ~previous_report in
-    let diff' =
-      DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.resolve_infer_eradicate_conflict
-        analyzer fake_filters_factory diff
-    in
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of introduced") exp_introduced
-      (sorted_hashes_of_issues diff'.introduced) ;
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of fixed") exp_fixed
-      (sorted_hashes_of_issues diff'.fixed) ;
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting") exp_preexisting
-      (sorted_hashes_of_issues diff'.preexisting)
-  in
-  (* [(test_name, analyzer, expected_hashes); ...] *)
-  [ ( "test_resolve_infer_eradicate_conflict_runs_with_infer_analyzer"
-    , Config.BiAbduction
-    , ([1], [11], [4]) )
-  ; ( "test_resolve_infer_eradicate_conflict_skips_with_checkers_analyzer"
-    , Config.Checkers
-    , ([1; 2], [3; 11], [4]) )
-  ; ( "test_resolve_infer_eradicate_conflict_skips_with_linters_analyzer"
-    , Config.Linters
-    , ([1; 2], [3; 11], [4]) ) ]
-  |> List.map ~f:(fun (name, analyzer, expected_output) ->
-         name >:: create_test analyzer expected_output )
-
 let test_interesting_paths_filter =
   let report =
     [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:1 ()
@@ -403,5 +355,5 @@ let tests =
   "differential_filters_suite"
   >::: test_file_renamings_from_json @ test_file_renamings_find_previous
        @ test_relative_complements @ test_skip_anonymous_class_renamings
-       @ test_resolve_infer_eradicate_conflict @ test_interesting_paths_filter
+       @ test_interesting_paths_filter
        @ [test_skip_duplicated_types_on_filenames; test_value_of_qualifier_tag]
