@@ -39,9 +39,6 @@ val prop_get_exn_name : Typ.Procname.t -> 'a Prop.t -> Typ.Name.t option
 val lookup_custom_errors : 'a Prop.t -> string option
 (** search in prop contains an error state *)
 
-val d_splitting : splitting -> unit
-(** Dump a splitting *)
-
 val exe_function_call :
   Specs.summary -> Tenv.t -> (Ident.t * Typ.t) option -> Procdesc.t -> Typ.Procname.t -> Location.t
   -> (Exp.t * Typ.t) list -> Prop.normal Prop.t -> Paths.Path.t

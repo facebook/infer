@@ -58,33 +58,6 @@ type abduction_res =
   | Invalid_res of invalid_res  (** reason for invalid result *)
 
 (**************** printing functions ****************)
-let d_splitting split =
-  L.d_strln "Actual splitting" ;
-  L.d_increase_indent 1 ;
-  L.d_strln "------------------------------------------------------------" ;
-  L.d_strln "SUB = " ;
-  Prop.d_sub split.sub ;
-  L.d_ln () ;
-  L.d_strln "FRAME =" ;
-  Prop.d_sigma split.frame ;
-  L.d_ln () ;
-  L.d_strln "MISSING =" ;
-  Prop.d_pi_sigma split.missing_pi split.missing_sigma ;
-  L.d_ln () ;
-  L.d_strln "FRAME FLD = " ;
-  Prop.d_sigma split.frame_fld ;
-  L.d_ln () ;
-  L.d_strln "MISSING FLD = " ;
-  Prop.d_sigma split.missing_fld ;
-  L.d_ln () ;
-  if split.frame_typ <> [] then L.d_strln "FRAME TYP = " ;
-  Prover.d_typings split.frame_typ ;
-  L.d_ln () ;
-  if split.missing_typ <> [] then L.d_strln "MISSING TYP = " ;
-  Prover.d_typings split.missing_typ ;
-  L.d_ln () ;
-  L.d_strln "------------------------------------------------------------" ;
-  L.d_decrease_indent 1
 
 let print_results tenv actual_pre results =
   L.d_strln "***** RESULTS FUNCTION CALL *******" ;
