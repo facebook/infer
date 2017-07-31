@@ -25,13 +25,30 @@ module FileRenamings = struct
   let from_json input : t =
     let j = Yojson.Basic.from_string input in
     let renaming_of_assoc assoc : renaming =
-      match assoc with
-      | `Assoc [("current", `String current); ("previous", `String previous)]
-       -> {current; previous}
-      | _
-       -> failwithf "Expected JSON object of the following form: '%s', but instead got: '%s'"
-            "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}"
-            (Yojson.Basic.to_string assoc)
+      try
+        match assoc with
+        | `Assoc l
+         -> (
+            let current_opt = List.Assoc.find ~equal:String.equal l "current" in
+            let previous_opt = List.Assoc.find ~equal:String.equal l "previous" in
+            match (current_opt, previous_opt) with
+            | Some `String current, Some `String previous
+             -> {current; previous}
+            | None, _
+             -> raise (Yojson.Json_error "\"current\" field missing")
+            | Some _, None
+             -> raise (Yojson.Json_error "\"previous\" field missing")
+            | Some _, Some `String _
+             -> raise (Yojson.Json_error "\"current\" field is not a string")
+            | Some _, Some _
+             -> raise (Yojson.Json_error "\"previous\" field is not a string") )
+        | _
+         -> raise (Yojson.Json_error "not a record")
+      with Yojson.Json_error err ->
+        failwithf
+          "Error parsing file renamings: %s@\nExpected JSON object of the following form: '%s', but instead got: '%s'"
+          err "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}"
+          (Yojson.Basic.to_string assoc)
     in
     match j with
     | `List json_renamings

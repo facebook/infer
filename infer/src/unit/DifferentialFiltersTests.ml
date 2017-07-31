@@ -49,7 +49,8 @@ let test_file_renamings_from_json =
     , "[{\"current\": 1, \"previous\": \"BBB.java\"}]"
     , Raise
         (Failure
-           ( "Expected JSON object of the following form: "
+           ( "Error parsing file renamings: \"current\" field is not a string"
+           ^ "\nExpected JSON object of the following form: "
            ^ "'{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}', "
            ^ "but instead got: '{\"current\":1,\"previous\":\"BBB.java\"}'" )) )
   ; ( "test_file_renamings_from_json_with_malformed_input"
