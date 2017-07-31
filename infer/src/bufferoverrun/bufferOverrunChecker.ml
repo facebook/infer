@@ -372,7 +372,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 "/!\\ Call to non-const function %a at %a" Exp.pp fun_exp Location.pp loc
             in
             mem
-        | Remove_temps _ | Abstract _ | Nullify _
+        | Remove_temps (temps, _)
+         -> Dom.Mem.remove_temps temps mem
+        | Abstract _ | Nullify _
          -> mem
       in
       print_debug_info instr mem output_mem ; output_mem
@@ -621,6 +623,7 @@ let checker : Callbacks.proc_callback_args -> Specs.summary =
   fun {proc_desc; tenv; summary; get_proc_desc} ->
     let proc_name = Specs.get_proc_name summary in
     let proc_data = ProcData.make proc_desc tenv get_proc_desc in
+    if not (Procdesc.did_preanalysis proc_desc) then Preanal.do_liveness proc_desc tenv ;
     match compute_post proc_data with
     | Some post
      -> if Config.bo_debug >= 1 then print_summary proc_name post ;

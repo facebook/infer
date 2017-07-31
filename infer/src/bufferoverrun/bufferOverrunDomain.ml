@@ -447,6 +447,14 @@ module Stack = struct
         if Loc.is_logical_var k then () else F.fprintf fmt "%a -> %a@," Loc.pp k Val.pp_summary v
       in
       iter pp_not_logical_var mem
+
+  let remove_temps : Ident.t list -> astate -> astate =
+    fun temps mem ->
+      let remove_temp mem temp =
+        let temp_loc = Loc.of_id temp in
+        remove temp_loc mem
+      in
+      List.fold temps ~init:mem ~f:remove_temp
 end
 
 module Heap = struct
@@ -552,6 +560,11 @@ module AliasMap = struct
     fun k m ->
       try Some (M.find k m)
       with Not_found -> None
+
+  let remove_temps : Ident.t list -> t -> t =
+    fun temps m ->
+      let remove_temp m temp = M.remove temp m in
+      List.fold temps ~init:m ~f:remove_temp
 end
 
 module AliasRet = struct
@@ -620,6 +633,9 @@ module Alias = struct
           Option.value_map (find l a) ~default:a ~f:update_ret
       | _
        -> a
+
+  let remove_temps : Ident.t list -> astate -> astate =
+    fun temps a -> (AliasMap.remove_temps temps (fst a), snd a)
 end
 
 module MemReach = struct
@@ -715,6 +731,10 @@ module MemReach = struct
           L.(debug BufferOverrun Verbose) "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
         in
         weak_update_heap ploc v s
+
+  let remove_temps : Ident.t list -> t -> t =
+    fun temps m ->
+      {m with stack= Stack.remove_temps temps m.stack; alias= Alias.remove_temps temps m.alias}
 end
 
 module Mem = struct
@@ -784,6 +804,8 @@ module Mem = struct
   let can_strong_update : PowLoc.t -> bool = MemReach.can_strong_update
 
   let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> f_lift (MemReach.update_mem ploc v)
+
+  let remove_temps : Ident.t list -> t -> t = fun temps -> f_lift (MemReach.remove_temps temps)
 end
 
 module Summary = struct
