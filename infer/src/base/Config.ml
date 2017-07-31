@@ -2097,7 +2097,7 @@ and quandary_sinks = !quandary_sinks
 
 and quiet = !quiet
 
-and reactive_mode = !reactive
+and reactive_mode = !reactive || CLOpt.(equal_command Diff) command
 
 and reactive_capture = !reactive_capture
 
