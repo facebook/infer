@@ -357,8 +357,8 @@ let report () =
   let report_csv =
     if Config.buck_cache_mode then None else Some (Config.results_dir ^/ "report.csv")
   in
-  let report_json = Some Config.(results_dir ^/ report_json) in
-  InferPrint.main ~report_csv ~report_json ;
+  let report_json = Config.(results_dir ^/ report_json) in
+  InferPrint.main ~report_csv ~report_json:(Some report_json) ;
   (* Post-process the report according to the user config. By default, calls report.py to create a
      human-readable report.
 
@@ -369,11 +369,18 @@ let report () =
   | false, Some prog
    -> let if_some key opt args = match opt with None -> args | Some arg -> key :: arg :: args in
       let if_true key opt args = if not opt then args else key :: args in
+      let bugs_txt = Option.value ~default:(Config.results_dir ^/ "bugs.txt") Config.bugs_txt in
       let args =
-        if_some "--issues-csv" report_csv @@ if_some "--issues-json" report_json
-        @@ if_some "--issues-txt" Config.bugs_txt
+        if_some "--issues-csv" report_csv
         @@ if_true "--pmd-xml" Config.pmd_xml
-             ["--project-root"; Config.project_root; "--results-dir"; Config.results_dir]
+             [ "--issues-json"
+             ; report_json
+             ; "--issues-txt"
+             ; bugs_txt
+             ; "--project-root"
+             ; Config.project_root
+             ; "--results-dir"
+             ; Config.results_dir ]
       in
       if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
         L.external_error

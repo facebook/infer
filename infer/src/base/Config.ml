@@ -762,7 +762,7 @@ and bugs_tests =
 and bugs_txt =
   CLOpt.mk_path_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
     ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write a list of issues in text format to $(i,file)"
+    ~meta:"file" "Write a list of issues in text format to $(i,file) (default: infer-out/bugs.txt)"
 
 and calls_csv =
   CLOpt.mk_path_opt ~deprecated:["calls"] ~long:"calls-csv"
