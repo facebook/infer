@@ -989,33 +989,17 @@ let execute_load ?(report_deref_errors= true) pname pdesc tenv id rhs_exp typ lo
     match check_constant_string_dereference n_rhs_exp' with
     | Some value
      -> [Prop.conjoin_eq tenv (Exp.Var id) value prop]
-    | None
-     -> let exp_get_undef_attr exp =
-          let fold_undef_pname callee_opt atom =
-            match (callee_opt, atom) with
-            | None, Sil.Apred (Aundef _, _)
-             -> Some atom
-            | _
-             -> callee_opt
-          in
-          List.fold ~f:fold_undef_pname ~init:None (Attribute.get_for_exp tenv prop exp)
-        in
-        let prop' =
-          if Config.angelic_execution && not (Exp.is_stack_addr n_rhs_exp') then
-            (* when we try to deref an undefined value, add it to the footprint *)
-            match exp_get_undef_attr n_rhs_exp' with
-            | Some Apred (Aundef (callee_pname, ret_annots, callee_loc, _), _)
-             -> let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
-                add_constraints_on_retval tenv pdesc prop n_rhs_exp' ~has_nullable_annot typ
-                  callee_pname callee_loc
-            | _
-             -> prop
-          else prop
-        in
+    | None ->
+      try
         let iter_list =
-          Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop' loc
+          Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop loc
         in
         List.rev (List.fold ~f:(execute_load_ pdesc tenv id loc) ~init:[] iter_list)
+      with Exceptions.Symexec_memory_error _ ->
+        (* This should normally be a real alarm and should not be caught but currently happens
+           when the normalization drops hpreds of the form ident |-> footprint var. *)
+        let undef = Exp.get_undefined !Config.footprint in
+        [Prop.conjoin_eq tenv (Exp.Var id) undef prop]
   with Rearrange.ARRAY_ACCESS ->
     if Int.equal Config.array_level 0 then assert false
     else
