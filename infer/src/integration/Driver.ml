@@ -510,18 +510,6 @@ let mode_of_build_command build_cmd =
       | BAnt | BBuck | BGradle | BNdk | BXcode as build_system
        -> PythonCapture (build_system, build_cmd)
 
-let get_mode () =
-  match Config.generated_classes with
-  | _ when Config.maven
-   -> (* infer is pretending to be javac in the Maven integration *)
-      let build_args = match Array.to_list Sys.argv with _ :: args -> args | [] -> [] in
-      Javac (Javac.Javac, "javac", build_args)
-  | Some path
-   -> assert_supported_mode `Java "Buck genrule" ;
-      BuckGenrule path
-  | None
-   -> mode_of_build_command (List.rev Config.rest)
-
 let mode_from_command_line =
   ( lazy
   ( match Config.generated_classes with

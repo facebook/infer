@@ -105,6 +105,8 @@ val relative_cpp_models_dir : string
 
 val csl_analysis : bool
 
+val default_checkers : bool
+
 val default_failure_name : string
 
 val default_in_zip_results_dir : string

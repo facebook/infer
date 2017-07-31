@@ -248,8 +248,6 @@ module AnnotationSpec = struct
   (* The default sanitizer does not sanitize anything *)
   let default_sanitizer _ _ = false
 
-  (* The default report function does not report anything *)
-  let default_report _ _ = ()
 end
 
 module StandardAnnotationSpec = struct

@@ -1914,6 +1914,8 @@ and debug_exceptions = !debug_exceptions
 
 and debug_mode = !debug
 
+and default_checkers = !default_checkers
+
 and default_linters = !default_linters
 
 and dependency_mode = !dependencies

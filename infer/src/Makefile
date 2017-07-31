@@ -24,7 +24,7 @@ ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
 
 GENERATED_OCAML_SOURCES_GLOB = <*{clang_plugin/*,backend/jsonbug_*,checkers/stacktree_*}>
 
-OCAML_FATAL_WARNINGS = +3+5+6+8+10+11+12+18+19+20+21+23+26+29+27+33+34+35+37+38+39+50+52+57
+OCAML_FATAL_WARNINGS = +3+5+6+8+10+11+12+18+19+20+21+23+26+29+27+32+33+34+35+37+38+39+50+52+57
 
 # options for ocamlbuild
 # Notice that use-ocamlfind is used here to avoid a linker bug in ocamlbuild when using -tag thread
@@ -38,7 +38,7 @@ OCAMLBUILD_OPTIONS = \
   -cflags -principal \
   -cflags -strict-formats \
   -cflags -strict-sequence \
-  -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-32-40-41-42-45-48 \
+  -cflags -w,$(OCAML_FATAL_WARNINGS)-4-9-40-41-42-45-48 \
   -tag-line "$(GENERATED_OCAML_SOURCES_GLOB): warn(-27-32-34-35-39)" \
   -tag-line "not $(GENERATED_OCAML_SOURCES_GLOB) and <*/{,*/}*.{ml,re}{,i}>: package(ppx_compare)" \
   -tag-line "not $(GENERATED_OCAML_SOURCES_GLOB) and not <*{base/IList,base/IStd}.*>: open(IStd)" \

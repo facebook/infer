@@ -181,10 +181,6 @@ module Bound = struct
 
   let of_int : int -> t = fun n -> Linear (n, SymLinear.empty)
 
-  let zero = of_int 0
-
-  let one = of_int 1
-
   let minus_one = of_int (-1)
 
   let _255 = of_int 255

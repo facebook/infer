@@ -1174,7 +1174,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ~conflicts acces
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
 
-let report_unannotated_interface_violation tenv pdesc access reported_pname =
+let _report_unannotated_interface_violation tenv pdesc access reported_pname =
   match reported_pname with
   | Typ.Procname.Java java_pname
    -> let class_name = Typ.Procname.java_get_class_name java_pname in
