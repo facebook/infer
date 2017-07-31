@@ -771,7 +771,7 @@ and calls_csv =
 
 and changed_files_index =
   CLOpt.mk_path_opt ~long:"changed-files-index"
-    ~in_help:CLOpt.([(Analyze, manual_generic)])
+    ~in_help:CLOpt.([(Analyze, manual_generic); (Diff, manual_generic)])
     ~meta:"file"
     "Specify the file containing the list of source files from which reactive analysis should start. Source files should be specified relative to project root or be absolute"
 

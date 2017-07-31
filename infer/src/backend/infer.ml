@@ -17,17 +17,6 @@ module CLOpt = CommandLineOption
 module L = Logging
 module F = Format
 
-let read_config_changed_files () =
-  match Config.changed_files_index with
-  | None
-   -> None
-  | Some index ->
-    match Utils.read_file index with
-    | Ok lines
-     -> Some (SourceFile.changed_sources_from_changed_files lines)
-    | Error error
-     -> L.external_error "Error reading the changed files index '%s': %s@." index error ; None
-
 let run driver_mode =
   let open Driver in
   run_prologue driver_mode ;
@@ -99,7 +88,7 @@ let () =
       in
       L.environment_info "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline ;
       InferAnalyze.register_perf_stats_report () ;
-      Driver.analyze_and_report Analyze ~changed_files:(read_config_changed_files ())
+      Driver.analyze_and_report Analyze ~changed_files:(Driver.read_config_changed_files ())
   | Clang
    -> let prog, args =
         match Array.to_list Sys.argv with prog :: args -> (prog, args) | [] -> assert false

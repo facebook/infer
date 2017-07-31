@@ -551,3 +551,14 @@ let run_epilogue driver_mode =
         fail_on_issue_epilogue () ) ;
   if Config.buck_cache_mode then clean_results_dir () ;
   ()
+
+let read_config_changed_files () =
+  match Config.changed_files_index with
+  | None
+   -> None
+  | Some index ->
+    match Utils.read_file index with
+    | Ok lines
+     -> Some (SourceFile.changed_sources_from_changed_files lines)
+    | Error error
+     -> L.external_error "Error reading the changed files index '%s': %s@." index error ; None
