@@ -1455,30 +1455,9 @@ let report_unsafe_accesses aggregated_access_map =
     aggregated_access_map empty_reported
   |> ignore
 
-(* equivalence relation computing whether two access paths may refer to the
-   same heap location. *)
-let may_alias tenv p1 p2 =
-  let open Typ in
-  let open AccessPath in
-  phys_equal p1 p2
-  ||
-  match (List.last_exn (snd p1), List.last_exn (snd p2)) with
-  | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _
-   -> false
-  (* fields in Java contain the class name /declaring/ them
-     thus two fields can be aliases *iff* they are equal *)
-  | FieldAccess f1, FieldAccess f2
-   -> Typ.Fieldname.equal f1 f2
-  (* if arrays of objects that have an inheritance rel then they can alias *)
-  | ( ArrayAccess {desc= Tptr ({desc= Tstruct tn1}, _)}
-    , ArrayAccess {desc= Tptr ({desc= Tstruct tn2}, _)} )
-   -> PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
-  (* primitive type arrays can alias if the prim. type is the same *)
-  | ArrayAccess t1, ArrayAccess t2
-   -> equal_desc t1.desc t2.desc
+let sound = false
 
 let may_alias_container tenv p1 p2 =
-  let sound = false in
   if sound then
     (* this is much too noisy: we'll warn that accesses to *any* Map can race with accesses to any
        other Map, etc. Instead, do something simple and unsound: just assume that two accesses can
@@ -1502,6 +1481,29 @@ let may_alias_container tenv p1 p2 =
         AccessPath.equal_access_list (snd p1) (snd p2)
     | _
      -> AccessPath.Raw.equal p1 p2
+
+(* equivalence relation computing whether two access paths may refer to the
+   same heap location. *)
+let may_alias tenv p1 p2 =
+  let open Typ in
+  let open AccessPath in
+  phys_equal p1 p2
+  ||
+  match (List.last_exn (snd p1), List.last_exn (snd p2)) with
+  | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _
+   -> false
+  (* fields in Java contain the class name /declaring/ them
+     thus two fields can be aliases *iff* they are equal *)
+  | FieldAccess f1, FieldAccess f2
+   -> Typ.Fieldname.equal f1 f2
+  (* if arrays of objects that have an inheritance rel then they can alias *)
+  | ( ArrayAccess {desc= Tptr ({desc= Tstruct tn1}, _)}
+    , ArrayAccess {desc= Tptr ({desc= Tstruct tn2}, _)} )
+   -> if sound then PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
+      else may_alias_container tenv p1 p2
+  (* primitive type arrays can alias if the prim. type is the same *)
+  | ArrayAccess t1, ArrayAccess t2
+   -> if sound then equal_desc t1.desc t2.desc else may_alias_container tenv p1 p2
 
 (* take a results table and quotient it by the may_alias relation *)
 let quotient_access_map acc_map =
