@@ -12,6 +12,8 @@ open! IStd
 (** Pool of processes to execute in parallel up to a number of jobs. *)
 type t
 
+exception Execution_error of string(** Infer process execution failure *)
+
 val create : jobs:int -> t
 (** Create a new pool of processes *)
 

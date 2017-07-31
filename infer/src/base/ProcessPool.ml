@@ -13,6 +13,8 @@ let in_child = ref false
 
 type t = {mutable num_processes: int; jobs: int}
 
+exception Execution_error of string
+
 let create ~jobs = {num_processes= 0; jobs}
 
 let incr counter = counter.num_processes <- counter.num_processes + 1
@@ -20,8 +22,14 @@ let incr counter = counter.num_processes <- counter.num_processes + 1
 let decr counter = counter.num_processes <- counter.num_processes - 1
 
 let wait counter =
-  let _ = Unix.wait `Any in
-  decr counter
+  match Unix.wait `Any with
+  | _, Ok _
+   -> decr counter
+  | _, Error _ when Config.keep_going
+   -> (* Proceed past the failure when keep going mode is on *)
+      decr counter
+  | _, (Error _ as status)
+   -> raise (Execution_error (Unix.Exit_or_signal.to_string_hum status))
 
 let wait_all counter = for _ = 1 to counter.num_processes do wait counter done
 

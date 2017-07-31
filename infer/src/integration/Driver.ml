@@ -216,7 +216,19 @@ let touch_start_file_unless_continue () =
   if not (Sys.file_exists start = `Yes) then create ()
   else if not Config.continue_capture then ( delete () ; create () )
 
-let run_command ~prog ~args cleanup =
+exception Infer_error of string
+
+let default_error_handling : Unix.Exit_or_signal.t -> unit = function
+  | Ok _
+   -> ()
+  | Error _ as status when Config.keep_going
+   -> (* Log error and proceed past the failure when keep going mode is on *)
+      L.external_error "%s" (Unix.Exit_or_signal.to_string_hum status) ;
+      ()
+  | Error _ as status
+   -> raise (Infer_error (Unix.Exit_or_signal.to_string_hum status))
+
+let run_command ?(cleanup= default_error_handling) ~prog ~args () =
   Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())
   |> fun status ->
   cleanup status ;
@@ -316,13 +328,17 @@ let capture ~changed_files = function
                    Buck.add_flavors_to_buck_command build_cmd
                else build_cmd ) )
       in
-      run_command ~prog:infer_py ~args (function
-        | Result.Error `Exit_non_zero exit_code
-         -> if Int.equal exit_code Config.infer_py_argparse_error_exit_code then
-              (* swallow infer.py argument parsing error *)
-              Config.print_usage_exit ()
-        | _
-         -> () )
+      run_command ~prog:infer_py ~args
+        ~cleanup:(function
+            | Error `Exit_non_zero exit_code
+              when Int.equal exit_code Config.infer_py_argparse_error_exit_code
+             -> (* swallow infer.py argument parsing error *)
+                Config.print_usage_exit ()
+            | Error _ as status
+             -> raise (Infer_error (Unix.Exit_or_signal.to_string_hum status))
+            | Ok _
+             -> ())
+        ()
   | XcodeXcpretty (prog, args)
    -> L.progress "Capturing using xcodebuild and xcpretty...@." ;
       check_xcpretty () ;
@@ -331,22 +347,23 @@ let capture ~changed_files = function
       in
       capture_with_compilation_database ~changed_files json_cdb
 
-let run_parallel_analysis ~changed_files =
+let run_parallel_analysis ~changed_files : unit =
   let multicore_dir = Config.results_dir ^/ Config.multicore_dir_name in
   Utils.rmtree multicore_dir ;
   Unix.mkdir_p multicore_dir ;
   InferAnalyze.main ~changed_files ~makefile:(multicore_dir ^/ "Makefile") ;
   run_command ~prog:"make"
     ~args:
-      ( "-C"
+      ( "--directory"
         :: multicore_dir
-           :: "-k"
-              :: "-j"
+           :: (if Config.keep_going then "--keep-going" else "--no-keep-going")
+              :: "--jobs"
                  :: string_of_int Config.jobs
                     :: Option.value_map
-                         ~f:(fun l -> ["-l"; string_of_float l])
+                         ~f:(fun l -> ["--load-average"; string_of_float l])
                          ~default:[] Config.load_average
-      @ if Config.debug_mode then [] else ["-s"] ) (fun _ -> () )
+      @ if Config.debug_mode then [] else ["--silent"] )
+    ()
 
 let execute_analyze ~changed_files =
   if Int.equal Config.jobs 1 || Config.cluster_cmdline <> None then
