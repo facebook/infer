@@ -44,6 +44,7 @@ let save_report revision =
   report_name
 
 let diff driver_mode =
+  Driver.run_prologue driver_mode ;
   (* TODO(t15553258) run gen-build script if specified *)
   (* run capture *)
   Driver.capture driver_mode ~changed_files:None ;
@@ -61,5 +62,4 @@ let diff driver_mode =
   checkout Current ;
   let previous_report = Some (save_report Previous) in
   (* compute differential *)
-  ReportDiff.reportdiff ~current_report ~previous_report ; (* TODO(t15553258) report new bugs! *)
-                                                           ()
+  ReportDiff.reportdiff ~current_report ~previous_report ; Driver.run_epilogue driver_mode ; ()

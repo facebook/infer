@@ -547,6 +547,7 @@ let run_epilogue driver_mode =
       StatsAggregator.generate_files () ;
       if Config.equal_analyzer Config.analyzer Config.Crashcontext then
         Crashcontext.crashcontext_epilogue ~in_buck_mode ;
-      if Config.fail_on_bug then fail_on_issue_epilogue () ) ;
+      if CLOpt.(equal_command Run) Config.command && Config.fail_on_bug then
+        fail_on_issue_epilogue () ) ;
   if Config.buck_cache_mode then clean_results_dir () ;
   ()

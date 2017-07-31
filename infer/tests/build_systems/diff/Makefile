@@ -52,7 +52,7 @@ test: print
 	$(QUIET)$(call check_no_diff,preexisting.exp,preexisting.exp.test)
 
 .PHONY: replace
-replace: $(EXPECTED_TEST_OUTPUT)
+replace: introduced.exp.test
 	$(COPY) introduced.exp.test introduced.exp
 	$(COPY) fixed.exp.test fixed.exp
 	$(COPY) preexisting.exp.test preexisting.exp
