@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_4" -> "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_3" ;
-"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_5" [label="5:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(Person):unsigned long) [line 56]\n  n$6=_fun_NSObject_init(n$5:Person*) virtual [line 56]\n  *&person:Person*=n$6 [line 56]\n " shape="box"]
+"npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_5" [label="5:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=Person):unsigned long) [line 56]\n  n$6=_fun_NSObject_init(n$5:Person*) virtual [line 56]\n  *&person:Person*=n$6 [line 56]\n " shape="box"]
 	
 
 	 "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_5" -> "npe_property_nullable.ba4461b16b55481ab8de5124734d2bf3_4" ;

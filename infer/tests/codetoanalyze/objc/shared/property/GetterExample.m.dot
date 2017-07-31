@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_4" -> "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_3" ;
-"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_5" [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(GetterExample):unsigned long) [line 15]\n  n$4=_fun_NSObject_init(n$3:GetterExample*) virtual [line 15]\n  *&a:GetterExample*=n$4 [line 15]\n " shape="box"]
+"should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_5" [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(t=GetterExample):unsigned long) [line 15]\n  n$4=_fun_NSObject_init(n$3:GetterExample*) virtual [line 15]\n  *&a:GetterExample*=n$4 [line 15]\n " shape="box"]
 	
 
 	 "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_5" -> "should_have_div0.f0a0c4e0ab301ca0aa2f50aa87721dc4_4" ;

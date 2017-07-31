@@ -7,7 +7,7 @@ digraph iCFG {
 "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_2" [label="2: Exit MemoryLeakExample_measureFrameSizeForText \n  " color=yellow style=filled]
 	
 
-"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" [label="3:  Call alloc \n   n$14=_fun___objc_alloc_no_fail(sizeof(__CFAttributedString):unsigned long,_fun_CFAttributedStringCreateMutable:void) [line 35]\n " shape="box"]
+"measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" [label="3:  Call alloc \n   n$14=_fun___objc_alloc_no_fail(sizeof(t=__CFAttributedString):unsigned long,_fun_CFAttributedStringCreateMutable:void) [line 35]\n " shape="box"]
 	
 
 	 "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_3" -> "measureFrameSizeForText#MemoryLeakExample#class.f59bd9e59cef3fd16475487a380b3804_2" ;
@@ -22,7 +22,7 @@ digraph iCFG {
 	
 
 	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_2" ;
-"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" [label="4:  DeclStmt \n   n$16=_fun___objc_alloc_no_fail(sizeof(__CFAttributedString):unsigned long,_fun_CFAttributedStringCreateMutable:void) [line 40]\n  *&maString:__CFAttributedString*=n$16 [line 39]\n " shape="box"]
+"measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" [label="4:  DeclStmt \n   n$16=_fun___objc_alloc_no_fail(sizeof(t=__CFAttributedString):unsigned long,_fun_CFAttributedStringCreateMutable:void) [line 40]\n  *&maString:__CFAttributedString*=n$16 [line 39]\n " shape="box"]
 	
 
 	 "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_4" -> "measureFrameSizeForTextNoLeak#MemoryLeakExample#class.9443bec011166230e1709abbe3c930d4_3" ;
@@ -78,7 +78,7 @@ digraph iCFG {
 "createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_2" [label="2: Exit MemoryLeakExample_createCloseCrossGlyph: \n  " color=yellow style=filled]
 	
 
-"createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_3" [label="3:  Call alloc \n   n$21=_fun___objc_alloc_no_fail(sizeof(CGPath):unsigned long,_fun_CGPathCreateMutable:void) [line 55]\n " shape="box"]
+"createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_3" [label="3:  Call alloc \n   n$21=_fun___objc_alloc_no_fail(sizeof(t=CGPath):unsigned long,_fun_CGPathCreateMutable:void) [line 55]\n " shape="box"]
 	
 
 	 "createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_3" -> "createCloseCrossGlyph:#MemoryLeakExample#class.b78475cbe035b221b50538a8aad3c9cf_2" ;
@@ -97,7 +97,7 @@ digraph iCFG {
 	
 
 	 "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_3" -> "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_2" ;
-"createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_4" [label="4:  DeclStmt \n   n$25=_fun___objc_alloc_no_fail(sizeof(CGPath):unsigned long,_fun_CGPathCreateMutable:void) [line 62]\n  *&path1:CGPath*=n$25 [line 62]\n " shape="box"]
+"createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_4" [label="4:  DeclStmt \n   n$25=_fun___objc_alloc_no_fail(sizeof(t=CGPath):unsigned long,_fun_CGPathCreateMutable:void) [line 62]\n  *&path1:CGPath*=n$25 [line 62]\n " shape="box"]
 	
 
 	 "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_4" -> "createCloseCrossGlyphNoLeak:#MemoryLeakExample#class.0954bcd442044fd9788af38303a3790b_3" ;
@@ -120,11 +120,11 @@ digraph iCFG {
 	
 
 	 "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_4" -> "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_3" ;
-"layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_5" [label="5:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(CGPath const ):unsigned long,_fun_CGPathCreateWithRect:void) [line 22]\n  *&shadowPath:CGPath const *=n$4 [line 21]\n " shape="box"]
+"layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_5" [label="5:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=CGPath const ):unsigned long,_fun_CGPathCreateWithRect:void) [line 22]\n  *&shadowPath:CGPath const *=n$4 [line 21]\n " shape="box"]
 	
 
 	 "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_5" -> "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_4" ;
-"layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_6" [label="6:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(UIView):unsigned long) [line 20]\n  *&attachmentContainerView:UIView*=n$5 [line 20]\n " shape="box"]
+"layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_6" [label="6:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=UIView):unsigned long) [line 20]\n  *&attachmentContainerView:UIView*=n$5 [line 20]\n " shape="box"]
 	
 
 	 "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_6" -> "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_5" ;
@@ -139,7 +139,7 @@ digraph iCFG {
 	
 
 	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_3" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_2" ;
-"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" [label="4:  DeclStmt \n   n$13=_fun___objc_alloc_no_fail(sizeof(CGPath const ):unsigned long,_fun_CGPathCreateWithRect:void) [line 30]\n  *&shadowPath:CGPath const *=n$13 [line 29]\n " shape="box"]
+"test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" [label="4:  DeclStmt \n   n$13=_fun___objc_alloc_no_fail(sizeof(t=CGPath const ):unsigned long,_fun_CGPathCreateWithRect:void) [line 30]\n  *&shadowPath:CGPath const *=n$13 [line 29]\n " shape="box"]
 	
 
 	 "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_4" -> "test#MemoryLeakExample#instance.cbb708bfe735ac5e5777524359299e00_3" ;
@@ -173,7 +173,7 @@ digraph iCFG {
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_4" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_3" ;
-"regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" [label="5:  DeclStmt \n   n$39=_fun_malloc_no_fail(sizeof(int32):int) [line 88]\n  *&x:int*=n$39 [line 88]\n " shape="box"]
+"regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" [label="5:  DeclStmt \n   n$39=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 88]\n  *&x:int*=n$39 [line 88]\n " shape="box"]
 	
 
 	 "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_5" -> "regularLeak#MemoryLeakExample#instance.939a892cee505c3459f2d889292f218b_4" ;
@@ -188,7 +188,7 @@ digraph iCFG {
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_2" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1); [line 96]\n  n$45=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1):unsigned long) [line 96]\n  *&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1:__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1=n$45 [line 96]\n  n$46=*&x:int* [line 96]\n  *n$45.x:int*=n$46 [line 96]\n  n$42=*&x:int* [line 96]\n  *&blk:_fn_(*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,n$42) [line 96]\n " shape="box"]
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1); [line 96]\n  n$45=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1):unsigned long) [line 96]\n  *&__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1:__objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1=n$45 [line 96]\n  n$46=*&x:int* [line 96]\n  *n$45.x:int*=n$46 [line 96]\n  n$42=*&x:int* [line 96]\n  *&blk:_fn_(*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockCapturedVarLeak______1,n$42) [line 96]\n " shape="box"]
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_3" ;
@@ -196,7 +196,7 @@ digraph iCFG {
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_4" ;
-"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" [label="6:  DeclStmt \n   n$48=_fun_malloc_no_fail(sizeof(int32):int) [line 94]\n  *&x:int*=n$48 [line 94]\n " shape="box"]
+"blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" [label="6:  DeclStmt \n   n$48=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 94]\n  *&x:int*=n$48 [line 94]\n " shape="box"]
 	
 
 	 "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_6" -> "blockCapturedVarLeak#MemoryLeakExample#instance.53bb018bc84d6a696dc756e20b5b3f52_5" ;
@@ -211,7 +211,7 @@ digraph iCFG {
 	
 
 	 "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_3" -> "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_2" ;
-"blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2); [line 105]\n  n$56=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2):unsigned long) [line 105]\n  *&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2:__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2=n$56 [line 105]\n  n$57=*&x:int* [line 105]\n  *n$56.x:int*=n$57 [line 105]\n  n$51=*&x:int* [line 105]\n  *&blk:_fn_(*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,n$51) [line 105]\n " shape="box"]
+"blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2); [line 105]\n  n$56=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2):unsigned long) [line 105]\n  *&__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2:__objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2=n$56 [line 105]\n  n$57=*&x:int* [line 105]\n  *n$56.x:int*=n$57 [line 105]\n  n$51=*&x:int* [line 105]\n  *&blk:_fn_(*)=(_fun___objc_anonymous_block_MemoryLeakExample_blockFreeNoLeakTODO______2,n$51) [line 105]\n " shape="box"]
 	
 
 	 "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_4" -> "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_3" ;
@@ -219,7 +219,7 @@ digraph iCFG {
 	
 
 	 "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_5" -> "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_4" ;
-"blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_6" [label="6:  DeclStmt \n   n$59=_fun_malloc_no_fail(sizeof(int32):int) [line 103]\n  *&x:int*=n$59 [line 103]\n " shape="box"]
+"blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_6" [label="6:  DeclStmt \n   n$59=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 103]\n  *&x:int*=n$59 [line 103]\n " shape="box"]
 	
 
 	 "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_6" -> "blockFreeNoLeakTODO#MemoryLeakExample#instance.745cca07ccdb517734d79c9d7a1eaed8_5" ;

@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 "retain_release2_test.7ec6637f213ea568e9cee49c4a91f673_5" -> "retain_release2_test.7ec6637f213ea568e9cee49c4a91f673_4" ;
-"retain_release2_test.7ec6637f213ea568e9cee49c4a91f673_6" [label="6:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(RR2):unsigned long) [line 29]\n  n$5=_fun_RR2_init(n$4:RR2*) virtual [line 29]\n  *&a:RR2*=n$5 [line 29]\n " shape="box"]
+"retain_release2_test.7ec6637f213ea568e9cee49c4a91f673_6" [label="6:  DeclStmt \n   n$4=_fun___objc_alloc_no_fail(sizeof(t=RR2):unsigned long) [line 29]\n  n$5=_fun_RR2_init(n$4:RR2*) virtual [line 29]\n  *&a:RR2*=n$5 [line 29]\n " shape="box"]
 	
 
 	 "retain_release2_test.7ec6637f213ea568e9cee49c4a91f673_6" -> "retain_release2_test.7ec6637f213ea568e9cee49c4a91f673_5" ;
@@ -75,7 +75,7 @@ digraph iCFG {
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_3" -> "test5.e3d704f3542b44a621ebed70dc0efe13_2" ;
-"test5.e3d704f3542b44a621ebed70dc0efe13_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(RR2):unsigned long) [line 55]\n  n$2=_fun_RR2_init(n$1:RR2*) virtual [line 55]\n  *&a:RR2*=n$2 [line 55]\n " shape="box"]
+"test5.e3d704f3542b44a621ebed70dc0efe13_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=RR2):unsigned long) [line 55]\n  n$2=_fun_RR2_init(n$1:RR2*) virtual [line 55]\n  *&a:RR2*=n$2 [line 55]\n " shape="box"]
 	
 
 	 "test5.e3d704f3542b44a621ebed70dc0efe13_4" -> "test5.e3d704f3542b44a621ebed70dc0efe13_3" ;
@@ -94,7 +94,7 @@ digraph iCFG {
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_4" -> "test6.4cfad7076129962ee70c36839a1e3e15_3" ;
-"test6.4cfad7076129962ee70c36839a1e3e15_5" [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(RR2):unsigned long) [line 61]\n  n$4=_fun_RR2_init(n$3:RR2*) virtual [line 61]\n  *&a:RR2*=n$4 [line 61]\n " shape="box"]
+"test6.4cfad7076129962ee70c36839a1e3e15_5" [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(t=RR2):unsigned long) [line 61]\n  n$4=_fun_RR2_init(n$3:RR2*) virtual [line 61]\n  *&a:RR2*=n$4 [line 61]\n " shape="box"]
 	
 
 	 "test6.4cfad7076129962ee70c36839a1e3e15_5" -> "test6.4cfad7076129962ee70c36839a1e3e15_4" ;

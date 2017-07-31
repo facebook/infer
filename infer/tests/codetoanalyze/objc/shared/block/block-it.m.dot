@@ -121,11 +121,11 @@ digraph iCFG {
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_16" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_5" ;
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_17" [label="17:  DeclStmt \n   n$18=_fun_malloc_no_fail(sizeof(signed char1):signed char) [line 21]\n  *&stop:_Bool*=n$18 [line 21]\n " shape="box"]
+"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_17" [label="17:  DeclStmt \n   n$18=_fun_malloc_no_fail(sizeof(t=signed char;nbytes=1):signed char) [line 21]\n  *&stop:_Bool*=n$18 [line 21]\n " shape="box"]
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_17" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_16" ;
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_18" [label="18:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array______1); [line 21]\n  n$21=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_MyBlock_array______1):unsigned long) [line 21]\n  *&__objc_anonymous_block_MyBlock_array______1:__objc_anonymous_block_MyBlock_array______1=n$21 [line 21]\n  *&0$?%__sil_tmp__objc_anonymous_block_MyBlock_array______1n$0:_fn_(*)=(_fun___objc_anonymous_block_MyBlock_array______1) [line 21]\n " shape="box"]
+"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_18" [label="18:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array______1); [line 21]\n  n$21=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_MyBlock_array______1):unsigned long) [line 21]\n  *&__objc_anonymous_block_MyBlock_array______1:__objc_anonymous_block_MyBlock_array______1=n$21 [line 21]\n  *&0$?%__sil_tmp__objc_anonymous_block_MyBlock_array______1n$0:_fn_(*)=(_fun___objc_anonymous_block_MyBlock_array______1) [line 21]\n " shape="box"]
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_18" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_17" ;
@@ -133,7 +133,7 @@ digraph iCFG {
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_19" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_18" ;
-"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_20" [label="20:  DeclStmt \n   n$23=_fun___objc_alloc_no_fail(sizeof(NSArray):unsigned long) [line 20]\n  n$24=_fun_NSArray_init(n$23:NSArray*) virtual [line 20]\n  *&a:NSArray*=n$24 [line 20]\n " shape="box"]
+"array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_20" [label="20:  DeclStmt \n   n$23=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 20]\n  n$24=_fun_NSArray_init(n$23:NSArray*) virtual [line 20]\n  *&a:NSArray*=n$24 [line 20]\n " shape="box"]
 	
 
 	 "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_20" -> "array#MyBlock#instance.8be6e5b5e968d186440e1931c9eb40de_19" ;
@@ -202,11 +202,11 @@ digraph iCFG {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_16" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_5" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" [label="17:  DeclStmt \n   n$40=_fun_malloc_no_fail(sizeof(_Bool8):_Bool) [line 48]\n  *&stop:_Bool*=n$40 [line 48]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" [label="17:  DeclStmt \n   n$40=_fun_malloc_no_fail(sizeof(t=_Bool;nbytes=1):_Bool) [line 48]\n  *&stop:_Bool*=n$40 [line 48]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_16" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" [label="18:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array_trans______2); [line 40]\n  n$43=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_MyBlock_array_trans______2):unsigned long) [line 40]\n  *&__objc_anonymous_block_MyBlock_array_trans______2:__objc_anonymous_block_MyBlock_array_trans______2=n$43 [line 40]\n  *&enumerateObjectsUsingBlock:_fn_(*)=(_fun___objc_anonymous_block_MyBlock_array_trans______2) [line 39]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" [label="18:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_MyBlock_array_trans______2); [line 40]\n  n$43=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_MyBlock_array_trans______2):unsigned long) [line 40]\n  *&__objc_anonymous_block_MyBlock_array_trans______2:__objc_anonymous_block_MyBlock_array_trans______2=n$43 [line 40]\n  *&enumerateObjectsUsingBlock:_fn_(*)=(_fun___objc_anonymous_block_MyBlock_array_trans______2) [line 39]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_17" ;
@@ -214,7 +214,7 @@ digraph iCFG {
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_18" ;
-"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" [label="20:  DeclStmt \n   n$45=_fun___objc_alloc_no_fail(sizeof(NSArray):unsigned long) [line 34]\n  n$46=_fun_NSArray_init(n$45:NSArray*) virtual [line 34]\n  *&a:NSArray*=n$46 [line 34]\n " shape="box"]
+"array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" [label="20:  DeclStmt \n   n$45=_fun___objc_alloc_no_fail(sizeof(t=NSArray):unsigned long) [line 34]\n  n$46=_fun_NSArray_init(n$45:NSArray*) virtual [line 34]\n  *&a:NSArray*=n$46 [line 34]\n " shape="box"]
 	
 
 	 "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_20" -> "array_trans#MyBlock#instance.13289a590560d0628a3ae5174e716a32_19" ;

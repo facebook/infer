@@ -55,7 +55,7 @@ digraph iCFG {
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_10" ;
-"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" [label="12:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1); [line 19]\n  n$10=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_BlockVar_navigateToURLInBackground______1):unsigned long) [line 19]\n  *&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1:__objc_anonymous_block_BlockVar_navigateToURLInBackground______1=n$10 [line 19]\n  *&addBlock:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_navigateToURLInBackground______1) [line 19]\n " shape="box"]
+"navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" [label="12:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1); [line 19]\n  n$10=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_BlockVar_navigateToURLInBackground______1):unsigned long) [line 19]\n  *&__objc_anonymous_block_BlockVar_navigateToURLInBackground______1:__objc_anonymous_block_BlockVar_navigateToURLInBackground______1=n$10 [line 19]\n  *&addBlock:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_navigateToURLInBackground______1) [line 19]\n " shape="box"]
 	
 
 	 "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_12" -> "navigateToURLInBackground#BlockVar#class.f4e64a7a224e4dae5096c3b731a4233e_11" ;
@@ -85,7 +85,7 @@ digraph iCFG {
 	
 
 	 "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_3" -> "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_2" ;
-"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostBad______2); [line 33]\n  n$16=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_BlockVar_blockPostBad______2):unsigned long) [line 33]\n  *&__objc_anonymous_block_BlockVar_blockPostBad______2:__objc_anonymous_block_BlockVar_blockPostBad______2=n$16 [line 33]\n  n$17=*&x:int* [line 33]\n  *n$16.x:int*=n$17 [line 33]\n  n$14=*&x:int* [line 33]\n  *&my_block:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_blockPostBad______2,n$14) [line 33]\n " shape="box"]
+"blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostBad______2); [line 33]\n  n$16=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_BlockVar_blockPostBad______2):unsigned long) [line 33]\n  *&__objc_anonymous_block_BlockVar_blockPostBad______2:__objc_anonymous_block_BlockVar_blockPostBad______2=n$16 [line 33]\n  n$17=*&x:int* [line 33]\n  *n$16.x:int*=n$17 [line 33]\n  n$14=*&x:int* [line 33]\n  *&my_block:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_blockPostBad______2,n$14) [line 33]\n " shape="box"]
 	
 
 	 "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_4" -> "blockPostBad#BlockVar#instance.60292f870cad8c1a5cefdbfe4194d6f9_3" ;
@@ -104,7 +104,7 @@ digraph iCFG {
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_3" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_2" ;
-"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostOk______3); [line 42]\n  n$23=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_BlockVar_blockPostOk______3):unsigned long) [line 42]\n  *&__objc_anonymous_block_BlockVar_blockPostOk______3:__objc_anonymous_block_BlockVar_blockPostOk______3=n$23 [line 42]\n  n$24=*&x:int* [line 42]\n  *n$23.x:int*=n$24 [line 42]\n  n$21=*&x:int* [line 42]\n  *&my_block:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_blockPostOk______3,n$21) [line 42]\n " shape="box"]
+"blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_blockPostOk______3); [line 42]\n  n$23=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_BlockVar_blockPostOk______3):unsigned long) [line 42]\n  *&__objc_anonymous_block_BlockVar_blockPostOk______3:__objc_anonymous_block_BlockVar_blockPostOk______3=n$23 [line 42]\n  n$24=*&x:int* [line 42]\n  *n$23.x:int*=n$24 [line 42]\n  n$21=*&x:int* [line 42]\n  *&my_block:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_blockPostOk______3,n$21) [line 42]\n " shape="box"]
 	
 
 	 "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_4" -> "blockPostOk#BlockVar#instance.1bb64a946f8b169b31996644931ed82d_3" ;
@@ -127,7 +127,7 @@ digraph iCFG {
 	
 
 	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_2" ;
-"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNullDeref______4); [line 50]\n  n$30=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_BlockVar_capturedNullDeref______4):unsigned long) [line 50]\n  *&__objc_anonymous_block_BlockVar_capturedNullDeref______4:__objc_anonymous_block_BlockVar_capturedNullDeref______4=n$30 [line 50]\n  n$31=*&x:int* [line 50]\n  *n$30.x:int*=n$31 [line 50]\n  n$27=*&x:int* [line 50]\n  *&my_block:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_capturedNullDeref______4,n$27) [line 50]\n " shape="box"]
+"capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" [label="4:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNullDeref______4); [line 50]\n  n$30=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_BlockVar_capturedNullDeref______4):unsigned long) [line 50]\n  *&__objc_anonymous_block_BlockVar_capturedNullDeref______4:__objc_anonymous_block_BlockVar_capturedNullDeref______4=n$30 [line 50]\n  n$31=*&x:int* [line 50]\n  *n$30.x:int*=n$31 [line 50]\n  n$27=*&x:int* [line 50]\n  *&my_block:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_capturedNullDeref______4,n$27) [line 50]\n " shape="box"]
 	
 
 	 "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_4" -> "capturedNullDeref#BlockVar#instance.48c44f7ae26caf7a1ac522523ebac894_3" ;
@@ -150,7 +150,7 @@ digraph iCFG {
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_4" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_3" ;
-"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" [label="5:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5); [line 59]\n  n$37=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_BlockVar_capturedNoNullDeref______5):unsigned long) [line 59]\n  *&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5:__objc_anonymous_block_BlockVar_capturedNoNullDeref______5=n$37 [line 59]\n  n$38=*&x:int* [line 59]\n  *n$37.x:int*=n$38 [line 59]\n  n$34=*&x:int* [line 59]\n  *&my_block:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_capturedNoNullDeref______5,n$34) [line 59]\n " shape="box"]
+"capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" [label="5:  DeclStmt \n   DECLARE_LOCALS(&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5); [line 59]\n  n$37=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_BlockVar_capturedNoNullDeref______5):unsigned long) [line 59]\n  *&__objc_anonymous_block_BlockVar_capturedNoNullDeref______5:__objc_anonymous_block_BlockVar_capturedNoNullDeref______5=n$37 [line 59]\n  n$38=*&x:int* [line 59]\n  *n$37.x:int*=n$38 [line 59]\n  n$34=*&x:int* [line 59]\n  *&my_block:_fn_(*)=(_fun___objc_anonymous_block_BlockVar_capturedNoNullDeref______5,n$34) [line 59]\n " shape="box"]
 	
 
 	 "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_5" -> "capturedNoNullDeref#BlockVar#instance.ebe646baaabdc58144a5916780ee8c76_4" ;

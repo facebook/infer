@@ -32,7 +32,7 @@ digraph iCFG {
 "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_2" [label="2: Exit A_call_alloc_class \n  " color=yellow style=filled]
 	
 
-"call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" [label="3:  Call alloc \n   n$1=_fun___objc_alloc_no_fail(sizeof(A):unsigned long) [line 58]\n " shape="box"]
+"call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" [label="3:  Call alloc \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 58]\n " shape="box"]
 	
 
 	 "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_3" -> "call_alloc_class#A#class.0cef99601cab56333305f5f96f227079_2" ;
@@ -67,11 +67,11 @@ digraph iCFG {
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" ;
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_5" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" [label="6: Prune (true branch) \n   PRUNE(((sizeof(A) != n$15) != 0), true); [line 95]\n " shape="invhouse"]
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" [label="6: Prune (true branch) \n   PRUNE(((sizeof(t=A) != n$15) != 0), true); [line 95]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_6" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_8" ;
-"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" [label="7: Prune (false branch) \n   PRUNE(((sizeof(A) != n$15) == 0), false); [line 95]\n " shape="invhouse"]
+"used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" [label="7: Prune (false branch) \n   PRUNE(((sizeof(t=A) != n$15) == 0), false); [line 95]\n " shape="invhouse"]
 	
 
 	 "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_7" -> "used_in_binary_op:#A#class.9f855a338b344f4b5060d2d4a2a955ed_9" ;
@@ -108,7 +108,7 @@ digraph iCFG {
 "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_2" [label="2: Exit A_call_alloc_instance \n  " color=yellow style=filled]
 	
 
-"call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" [label="3:  Call alloc \n   n$3=_fun___objc_alloc_no_fail(sizeof(A):unsigned long) [line 62]\n " shape="box"]
+"call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" [label="3:  Call alloc \n   n$3=_fun___objc_alloc_no_fail(sizeof(t=A):unsigned long) [line 62]\n " shape="box"]
 	
 
 	 "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_3" -> "call_alloc_instance#A#instance.70a20314d55f22fb46408deb70d9aabb_2" ;
@@ -145,7 +145,7 @@ digraph iCFG {
 	
 
 	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_3" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_2" ;
-"t#A#instance.e31b9a7bced712626784e2860af1a31b_4" [label="4:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(B):unsigned long) [line 74]\n  n$7=_fun_NSObject_init(n$6:B*) virtual [line 74]\n  *&b:B*=n$7 [line 74]\n " shape="box"]
+"t#A#instance.e31b9a7bced712626784e2860af1a31b_4" [label="4:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 74]\n  n$7=_fun_NSObject_init(n$6:B*) virtual [line 74]\n  *&b:B*=n$7 [line 74]\n " shape="box"]
 	
 
 	 "t#A#instance.e31b9a7bced712626784e2860af1a31b_4" -> "t#A#instance.e31b9a7bced712626784e2860af1a31b_3" ;
@@ -167,7 +167,7 @@ digraph iCFG {
 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_2" [label="2: Exit A_loggerName \n  " color=yellow style=filled]
 	
 
-"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" [label="3:  Return Stmt \n   n$14=_fun_NSStringFromClass(sizeof(A):unsigned long) [line 91]\n  *&return:NSString*=n$14 [line 91]\n " shape="box"]
+"loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" [label="3:  Return Stmt \n   n$14=_fun_NSStringFromClass(sizeof(t=A):unsigned long) [line 91]\n  *&return:NSString*=n$14 [line 91]\n " shape="box"]
 	
 
 	 "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_3" -> "loggerName#A#instance.36b9a42412bcf7d8d3f8397eb2bcb555_2" ;
@@ -178,7 +178,7 @@ digraph iCFG {
 "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_2" [label="2: Exit A_use_class_in_other_ways: \n  " color=yellow style=filled]
 	
 
-"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" [label="3:  Return Stmt \n   n$8=*&object:B* [line 79]\n  n$10=_fun_B_isC:(n$8:B*,sizeof(A):unsigned long) virtual [line 79]\n  *&return:_Bool=n$10 [line 79]\n " shape="box"]
+"use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" [label="3:  Return Stmt \n   n$8=*&object:B* [line 79]\n  n$10=_fun_B_isC:(n$8:B*,sizeof(t=A):unsigned long) virtual [line 79]\n  *&return:_Bool=n$10 [line 79]\n " shape="box"]
 	
 
 	 "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_3" -> "use_class_in_other_ways:#A#instance.cbf4e00d3f8c81248ee881a47ed7e84f_2" ;

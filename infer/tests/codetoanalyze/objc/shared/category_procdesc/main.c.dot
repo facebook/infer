@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_2" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" [label="4:  DeclStmt \n   n$0=_fun_malloc_no_fail(sizeof(int32):int) [line 16]\n  *&x:int*=n$0 [line 16]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" [label="4:  DeclStmt \n   n$0=_fun_malloc_no_fail(sizeof(t=int;nbytes=4):int) [line 16]\n  *&x:int*=n$0 [line 16]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_3" ;
@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_4" ;
-"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" [label="6:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(EOCPerson):unsigned long) [line 14]\n  n$3=_fun_NSObject_init(n$2:EOCPerson*) virtual [line 14]\n  *&person:EOCPerson*=n$3 [line 14]\n " shape="box"]
+"CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" [label="6:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=EOCPerson):unsigned long) [line 14]\n  n$3=_fun_NSObject_init(n$2:EOCPerson*) virtual [line 14]\n  *&person:EOCPerson*=n$3 [line 14]\n " shape="box"]
 	
 
 	 "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_6" -> "CategoryProcdescMain.ae2ee334c26ccbf8ee413efe5d896611_5" ;

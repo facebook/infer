@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_My_manager_m______1):unsigned long) [line 25]\n  *&__objc_anonymous_block_My_manager_m______1:__objc_anonymous_block_My_manager_m______1=n$7 [line 25]\n  n$8=*&z:int [line 25]\n  n$9=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 25]\n  *n$7.z:int=n$8 [line 25]\n  *n$7.g:int=n$9 [line 25]\n  n$5=*&z:int [line 25]\n  *&b:_fn_(*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_My_manager_m______1):unsigned long) [line 25]\n  *&__objc_anonymous_block_My_manager_m______1:__objc_anonymous_block_My_manager_m______1=n$7 [line 25]\n  n$8=*&z:int [line 25]\n  n$9=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 25]\n  *n$7.z:int=n$8 [line 25]\n  *n$7.g:int=n$9 [line 25]\n  n$5=*&z:int [line 25]\n  *&b:_fn_(*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" ;

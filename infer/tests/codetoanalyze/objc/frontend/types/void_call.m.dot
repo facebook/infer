@@ -31,7 +31,7 @@ digraph iCFG {
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_8" -> "main.fad58de7366495db4650cfefac2fcd61_7" ;
-"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(AClass):unsigned long) [line 40]\n  *&o:AClass*=n$6 [line 40]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_9" [label="9:  DeclStmt \n   n$6=_fun___objc_alloc_no_fail(sizeof(t=AClass):unsigned long) [line 40]\n  *&o:AClass*=n$6 [line 40]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_9" -> "main.fad58de7366495db4650cfefac2fcd61_5" ;

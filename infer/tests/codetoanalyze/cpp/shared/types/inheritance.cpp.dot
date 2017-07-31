@@ -31,15 +31,15 @@ digraph iCFG {
 	
 
 	 "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_8" -> "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_7" ;
-"call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_9" [label="9:  DeclStmt \n   n$18=_fun___new(sizeof(Sub):unsigned long) [line 24]\n  _fun_Sub_Sub(n$18:Sub*) [line 24]\n  *&s2:Sub*=n$18 [line 24]\n " shape="box"]
+"call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_9" [label="9:  DeclStmt \n   n$18=_fun___new(sizeof(t=Sub):unsigned long) [line 24]\n  _fun_Sub_Sub(n$18:Sub*) [line 24]\n  *&s2:Sub*=n$18 [line 24]\n " shape="box"]
 	
 
 	 "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_9" -> "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_8" ;
-"call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_10" [label="10:  DeclStmt \n   n$19=_fun___new(sizeof(Sub):unsigned long) [line 23]\n  _fun_Sub_Sub(n$19:Sub*) [line 23]\n  *&s1:Sub*=n$19 [line 23]\n " shape="box"]
+"call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_10" [label="10:  DeclStmt \n   n$19=_fun___new(sizeof(t=Sub):unsigned long) [line 23]\n  _fun_Sub_Sub(n$19:Sub*) [line 23]\n  *&s1:Sub*=n$19 [line 23]\n " shape="box"]
 	
 
 	 "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_10" -> "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_9" ;
-"call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_11" [label="11:  DeclStmt \n   n$20=_fun___new(sizeof(Base):unsigned long) [line 22]\n  _fun_Base_Base(n$20:Base*) [line 22]\n  *&b:Base*=n$20 [line 22]\n " shape="box"]
+"call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_11" [label="11:  DeclStmt \n   n$20=_fun___new(sizeof(t=Base):unsigned long) [line 22]\n  _fun_Base_Base(n$20:Base*) [line 22]\n  *&b:Base*=n$20 [line 22]\n " shape="box"]
 	
 
 	 "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_11" -> "call_static_methods#_Z19call_static_methodsv.8f6d53f5ba8026b1f1c82b61375a3dfc_10" ;

@@ -41,7 +41,7 @@ digraph iCFG {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_5" -> "main1.38f534a9576db7ec6ebcbca8c111f942_4" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_6" [label="6:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______1); [line 34]\n  n$7=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_main1______1):unsigned long) [line 34]\n  *&__objc_anonymous_block_main1______1:__objc_anonymous_block_main1______1=n$7 [line 34]\n  n$8=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 34]\n  *n$7.main1_s:int=n$8 [line 34]\n  *&addblock:_fn_(*)=(_fun___objc_anonymous_block_main1______1) [line 34]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_6" [label="6:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______1); [line 34]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_main1______1):unsigned long) [line 34]\n  *&__objc_anonymous_block_main1______1:__objc_anonymous_block_main1______1=n$7 [line 34]\n  n$8=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 34]\n  *n$7.main1_s:int=n$8 [line 34]\n  *&addblock:_fn_(*)=(_fun___objc_anonymous_block_main1______1) [line 34]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_6" -> "main1.38f534a9576db7ec6ebcbca8c111f942_5" ;
@@ -49,7 +49,7 @@ digraph iCFG {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_7" -> "main1.38f534a9576db7ec6ebcbca8c111f942_6" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_8" [label="8:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______2); [line 18]\n  n$27=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_main1______2):unsigned long) [line 18]\n  *&__objc_anonymous_block_main1______2:__objc_anonymous_block_main1______2=n$27 [line 18]\n  n$28=*&x:int [line 18]\n  *n$27.x:int=n$28 [line 18]\n  n$11=*&x:int [line 18]\n  *&addblock:_fn_(*)=(_fun___objc_anonymous_block_main1______2,n$11) [line 18]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_8" [label="8:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_main1______2); [line 18]\n  n$27=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_main1______2):unsigned long) [line 18]\n  *&__objc_anonymous_block_main1______2:__objc_anonymous_block_main1______2=n$27 [line 18]\n  n$28=*&x:int [line 18]\n  *n$27.x:int=n$28 [line 18]\n  n$11=*&x:int [line 18]\n  *&addblock:_fn_(*)=(_fun___objc_anonymous_block_main1______2,n$11) [line 18]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_8" -> "main1.38f534a9576db7ec6ebcbca8c111f942_7" ;
@@ -76,7 +76,7 @@ digraph iCFG {
 	
 
 	 "__objc_anonymous_block_main1______2.5623c8c0e39082421999af7ffad7371b_4" -> "__objc_anonymous_block_main1______2.5623c8c0e39082421999af7ffad7371b_3" ;
-"__objc_anonymous_block_main1______2.5623c8c0e39082421999af7ffad7371b_5" [label="5:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block___objc_anonymous_block_main1______2______3); [line 24]\n  n$23=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block___objc_anonymous_block_main1______2______3):unsigned long) [line 24]\n  *&__objc_anonymous_block___objc_anonymous_block_main1______2______3:__objc_anonymous_block___objc_anonymous_block_main1______2______3=n$23 [line 24]\n  n$24=*&x:int [line 24]\n  n$25=*&bla:int [line 24]\n  n$26=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 24]\n  *n$23.x:int=n$24 [line 24]\n  *n$23.bla:int=n$25 [line 24]\n  *n$23.main1_s:int=n$26 [line 24]\n  n$17=*&x:int [line 24]\n  n$18=*&bla:int [line 24]\n  *&addblock2:_fn_(*)=(_fun___objc_anonymous_block___objc_anonymous_block_main1______2______3,n$17,n$18) [line 24]\n " shape="box"]
+"__objc_anonymous_block_main1______2.5623c8c0e39082421999af7ffad7371b_5" [label="5:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block___objc_anonymous_block_main1______2______3); [line 24]\n  n$23=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block___objc_anonymous_block_main1______2______3):unsigned long) [line 24]\n  *&__objc_anonymous_block___objc_anonymous_block_main1______2______3:__objc_anonymous_block___objc_anonymous_block_main1______2______3=n$23 [line 24]\n  n$24=*&x:int [line 24]\n  n$25=*&bla:int [line 24]\n  n$26=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 24]\n  *n$23.x:int=n$24 [line 24]\n  *n$23.bla:int=n$25 [line 24]\n  *n$23.main1_s:int=n$26 [line 24]\n  n$17=*&x:int [line 24]\n  n$18=*&bla:int [line 24]\n  *&addblock2:_fn_(*)=(_fun___objc_anonymous_block___objc_anonymous_block_main1______2______3,n$17,n$18) [line 24]\n " shape="box"]
 	
 
 	 "__objc_anonymous_block_main1______2.5623c8c0e39082421999af7ffad7371b_5" -> "__objc_anonymous_block_main1______2.5623c8c0e39082421999af7ffad7371b_4" ;

@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_5" ;
-"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" [label="4:  Call (_fun___objc_anonymous_block_DispatchInMacroTest______1) \n   DECLARE_LOCALS(&__objc_anonymous_block_DispatchInMacroTest______1); [line 23]\n  n$3=_fun___objc_alloc_no_fail(sizeof(__objc_anonymous_block_DispatchInMacroTest______1):unsigned long) [line 23]\n  *&__objc_anonymous_block_DispatchInMacroTest______1:__objc_anonymous_block_DispatchInMacroTest______1=n$3 [line 23]\n  n$4=*&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject* [line 23]\n  *n$3.DispatchInMacroTest_static_storage:NSObject*=n$4 [line 23]\n  n$5=(_fun___objc_anonymous_block_DispatchInMacroTest______1)() [line 23]\n " shape="box"]
+"DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" [label="4:  Call (_fun___objc_anonymous_block_DispatchInMacroTest______1) \n   DECLARE_LOCALS(&__objc_anonymous_block_DispatchInMacroTest______1); [line 23]\n  n$3=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_DispatchInMacroTest______1):unsigned long) [line 23]\n  *&__objc_anonymous_block_DispatchInMacroTest______1:__objc_anonymous_block_DispatchInMacroTest______1=n$3 [line 23]\n  n$4=*&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject* [line 23]\n  *n$3.DispatchInMacroTest_static_storage:NSObject*=n$4 [line 23]\n  n$5=(_fun___objc_anonymous_block_DispatchInMacroTest______1)() [line 23]\n " shape="box"]
 	
 
 	 "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_4" -> "DispatchInMacroTest.f5d56763274a479d06265a2f9562bef1_3" ;
@@ -26,7 +26,7 @@ digraph iCFG {
 "__objc_anonymous_block_DispatchInMacroTest______1.db6c315d2cd0e3514d444428887908e2_2" [label="2: Exit __objc_anonymous_block_DispatchInMacroTest______1 \n  " color=yellow style=filled]
 	
 
-"__objc_anonymous_block_DispatchInMacroTest______1.db6c315d2cd0e3514d444428887908e2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(NSObject):unsigned long) [line 23]\n  n$2=_fun_NSObject_init(n$1:NSObject*) virtual [line 23]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject*=n$2 [line 23]\n " shape="box"]
+"__objc_anonymous_block_DispatchInMacroTest______1.db6c315d2cd0e3514d444428887908e2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=NSObject):unsigned long) [line 23]\n  n$2=_fun_NSObject_init(n$1:NSObject*) virtual [line 23]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch_in_macro.m>$DispatchInMacroTest_static_storage:NSObject*=n$2 [line 23]\n " shape="box"]
 	
 
 	 "__objc_anonymous_block_DispatchInMacroTest______1.db6c315d2cd0e3514d444428887908e2_3" -> "__objc_anonymous_block_DispatchInMacroTest______1.db6c315d2cd0e3514d444428887908e2_2" ;

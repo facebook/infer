@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" ;
-"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(ASuper):unsigned long) [line 42]\n  n$2=_fun_NSObject_init(n$1:ASuper*) virtual [line 42]\n  *&a:objc_object*=n$2 [line 42]\n " shape="box"]
+"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=ASuper):unsigned long) [line 42]\n  n$2=_fun_NSObject_init(n$1:ASuper*) virtual [line 42]\n  *&a:objc_object*=n$2 [line 42]\n " shape="box"]
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_4" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" ;

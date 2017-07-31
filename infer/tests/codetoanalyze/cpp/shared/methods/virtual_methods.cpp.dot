@@ -107,7 +107,7 @@ digraph iCFG {
 	
 
 	 "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_3" -> "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_2" ;
-"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" [label="4:  DeclStmt \n   n$1=_fun___new(sizeof(Triangle):unsigned long) [line 71]\n  _fun_Triangle_Triangle(n$1:Triangle*) [line 71]\n  *&trgl:Triangle*=n$1 [line 71]\n " shape="box"]
+"call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" [label="4:  DeclStmt \n   n$1=_fun___new(sizeof(t=Triangle):unsigned long) [line 71]\n  _fun_Triangle_Triangle(n$1:Triangle*) [line 71]\n  *&trgl:Triangle*=n$1 [line 71]\n " shape="box"]
 	
 
 	 "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_4" -> "call_virtual_destructor#_Z23call_virtual_destructorv.c49554769ae5a95a20567435741c5c0d_3" ;

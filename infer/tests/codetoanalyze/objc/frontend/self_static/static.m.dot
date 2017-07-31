@@ -7,7 +7,7 @@ digraph iCFG {
 "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_2" [label="2: Exit MyClass_aClassMethod \n  " color=yellow style=filled]
 	
 
-"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" [label="3:  DeclStmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(MyClass):unsigned long) [line 21]\n  *&myClass:MyClass*=n$0 [line 21]\n " shape="box"]
+"aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" [label="3:  DeclStmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(t=MyClass):unsigned long) [line 21]\n  *&myClass:MyClass*=n$0 [line 21]\n " shape="box"]
 	
 
 	 "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_3" -> "aClassMethod#MyClass#class.889732ffd1b4632cdd7c3f47090e69c0_2" ;

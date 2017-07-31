@@ -7,7 +7,7 @@ digraph iCFG {
 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_2" [label="2: Exit cfautorelease_test \n  " color=yellow style=filled]
 	
 
-"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" [label="3:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char const *) [line 41]\n  n$1=_fun_CTFontCreateWithName(n$0:__CFString const *,17.000000:double,null:CGAffineTransform const *) [line 41]\n  n$2=_fun___objc_cast(n$1:void const *,sizeof(void const ):unsigned long) [line 41]\n  *&return:__CTFont const *=n$2 [line 41]\n " shape="box"]
+"cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" [label="3:  Return Stmt \n   n$0=_fun___builtin___CFStringMakeConstantString(\"Icon\":char const *) [line 41]\n  n$1=_fun_CTFontCreateWithName(n$0:__CFString const *,17.000000:double,null:CGAffineTransform const *) [line 41]\n  n$2=_fun___objc_cast(n$1:void const *,sizeof(t=void const ):unsigned long) [line 41]\n  *&return:__CTFont const *=n$2 [line 41]\n " shape="box"]
 	
 
 	 "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_3" -> "cfautorelease_test.2ccea2233b65cd3828a2d5e2571ad69b_2" ;
@@ -67,7 +67,7 @@ digraph iCFG {
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_2" ;
-"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" [label="4:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(NSLocale):unsigned long) [line 30]\n  *&observer:objc_object*=n$5 [line 30]\n " shape="box"]
+"brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" [label="4:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=NSLocale):unsigned long) [line 30]\n  *&observer:objc_object*=n$5 [line 30]\n " shape="box"]
 	
 
 	 "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_4" -> "brideRetained#TollBridgeExample#instance.de039e838ea3246eff789fdc0d11405c_3" ;
@@ -78,7 +78,7 @@ digraph iCFG {
 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_2" [label="2: Exit TollBridgeExample__readHTTPHeader \n  " color=yellow style=filled]
 	
 
-"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" [label="3:  Call _fun_CFBridgingRelease \n   n$6=*&ref:__CFDictionary const * [line 37]\n  n$7=_fun___objc_cast(n$6:void const *,sizeof(objc_object):unsigned long) [line 37]\n " shape="box"]
+"_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" [label="3:  Call _fun_CFBridgingRelease \n   n$6=*&ref:__CFDictionary const * [line 37]\n  n$7=_fun___objc_cast(n$6:void const *,sizeof(t=objc_object):unsigned long) [line 37]\n " shape="box"]
 	
 
 	 "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_3" -> "_readHTTPHeader#TollBridgeExample#instance.3d37ce88cf13750e89ba404865a70554_2" ;

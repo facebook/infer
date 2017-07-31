@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" ;
-"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(NSString):unsigned long) [line 20]\n  *&s:NSString*=n$2 [line 20]\n " shape="box"]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" [label="4:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 20]\n  *&s:NSString*=n$2 [line 20]\n " shape="box"]
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_4" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" ;
@@ -42,7 +42,7 @@ digraph iCFG {
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_7" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_3" ;
-"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" [label="8:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(NSString):unsigned long) [line 28]\n  *&s:NSString*=n$7 [line 28]\n " shape="box"]
+"test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" [label="8:  DeclStmt \n   n$7=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 28]\n  *&s:NSString*=n$7 [line 28]\n " shape="box"]
 	
 
 	 "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_8" -> "test1#ExceptionExample#instance.400b3bc567ff814f7f6788584460738f_5" ;

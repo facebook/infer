@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" ;
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(RRA):unsigned long) [line 25]\n  n$4=_fun_RRA_init(n$3:RRA*) virtual [line 25]\n  *&a:RRA*=n$4 [line 25]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" [label="5:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(t=RRA):unsigned long) [line 25]\n  n$4=_fun_RRA_init(n$3:RRA*) virtual [line 25]\n  *&a:RRA*=n$4 [line 25]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_5" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" ;

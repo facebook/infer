@@ -19,7 +19,7 @@ digraph iCFG {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_5" -> "test.098f6bcd4621d373cade4e832627b4f6_4" ;
-"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(PropertyA):unsigned long) [line 43]\n  n$4=_fun_PropertyA_init(n$3:PropertyA*) virtual [line 43]\n  *&a:PropertyA*=n$4 [line 43]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_6" [label="6:  DeclStmt \n   n$3=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 43]\n  n$4=_fun_PropertyA_init(n$3:PropertyA*) virtual [line 43]\n  *&a:PropertyA*=n$4 [line 43]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_6" -> "test.098f6bcd4621d373cade4e832627b4f6_5" ;
@@ -69,7 +69,7 @@ digraph iCFG {
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_9" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_8" ;
-"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   n$12=_fun___objc_alloc_no_fail(sizeof(PropertyA):unsigned long) [line 31]\n  n$13=_fun_PropertyA_init(n$12:PropertyA*) virtual [line 31]\n  *&other:PropertyA*=n$13 [line 31]\n " shape="box"]
+"copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" [label="10:  DeclStmt \n   n$12=_fun___objc_alloc_no_fail(sizeof(t=PropertyA):unsigned long) [line 31]\n  n$13=_fun_PropertyA_init(n$12:PropertyA*) virtual [line 31]\n  *&other:PropertyA*=n$13 [line 31]\n " shape="box"]
 	
 
 	 "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_10" -> "copy#PropertyA#instance.d5955e11cf35af4b4d602b2971590d5f_5" ;

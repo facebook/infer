@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_3" ;
-"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" [label="5:  DeclStmt \n   n$2=_fun_malloc_no_fail(sizeof(Person64):Person) [line 25]\n  *&person:Person*=n$2 [line 25]\n " shape="box"]
+"test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" [label="5:  DeclStmt \n   n$2=_fun_malloc_no_fail(sizeof(t=Person;nbytes=8):Person) [line 25]\n  *&person:Person*=n$2 [line 25]\n " shape="box"]
 	
 
 	 "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_5" -> "test#NpeMallocC#instance.736ba93f935cc64d6e9c549cc16c07a7_4" ;

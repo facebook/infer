@@ -11,11 +11,11 @@ digraph iCFG {
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_2" ;
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" [label="4:  CXXNewExpr \n   n$1=_fun___new(sizeof(int):unsigned long) [line 13]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" [label="4:  CXXNewExpr \n   n$1=_fun___new(sizeof(t=int):unsigned long) [line 13]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_3" ;
-"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" [label="5:  DeclStmt \n   n$2=_fun___new(sizeof(int):unsigned long) [line 12]\n  *&i:int*=n$2 [line 12]\n " shape="box"]
+"test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" [label="5:  DeclStmt \n   n$2=_fun___new(sizeof(t=int):unsigned long) [line 12]\n  *&i:int*=n$2 [line 12]\n " shape="box"]
 	
 
 	 "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_5" -> "test#_Z4testv.1b928d988491fdd2fa78fcb048d46e8c_4" ;

@@ -1,6 +1,6 @@
 /* @generated */
 digraph iCFG {
-"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_1" [label="1: Start vaarg_foo\nFormals:  x:int\nLocals:  val:int i:int valist:void[1*192] \n   DECLARE_LOCALS(&return,&val,&i,&valist); [line 12]\n " color=yellow style=filled]
+"vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_1" [label="1: Start vaarg_foo\nFormals:  x:int\nLocals:  val:int i:int valist:void[1*24] \n   DECLARE_LOCALS(&return,&val,&i,&valist); [line 12]\n " color=yellow style=filled]
 	
 
 	 "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_1" -> "vaarg_foo.73af1e8d32c2d09f7488c5fea173b853_12" ;

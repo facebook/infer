@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_2" ;
-"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(ArcMethodsA):unsigned long) [line 23]\n  n$2=_fun_NSObject_init(n$1:ArcMethodsA*) virtual [line 23]\n  *&a:ArcMethodsA*=n$2 [line 23]\n " shape="box"]
+"newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 23]\n  n$2=_fun_NSObject_init(n$1:ArcMethodsA*) virtual [line 23]\n  *&a:ArcMethodsA*=n$2 [line 23]\n " shape="box"]
 	
 
 	 "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_4" -> "newA#ArcMethodsA#class.8f73d571693162b8fe59ae9b171012f1_3" ;
@@ -26,7 +26,7 @@ digraph iCFG {
 	
 
 	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_2" ;
-"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" [label="4:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(ArcMethodsA):unsigned long) [line 28]\n  n$6=_fun_NSObject_init(n$5:ArcMethodsA*) virtual [line 28]\n  *&a:ArcMethodsA*=n$6 [line 28]\n " shape="box"]
+"someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" [label="4:  DeclStmt \n   n$5=_fun___objc_alloc_no_fail(sizeof(t=ArcMethodsA):unsigned long) [line 28]\n  n$6=_fun_NSObject_init(n$5:ArcMethodsA*) virtual [line 28]\n  *&a:ArcMethodsA*=n$6 [line 28]\n " shape="box"]
 	
 
 	 "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_4" -> "someA#ArcMethodsA#class.b84b222a4d332a9b8f3f1d6626af9c8f_3" ;
