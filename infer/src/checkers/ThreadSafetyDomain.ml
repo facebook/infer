@@ -86,9 +86,13 @@ module TraceElem = struct
   end)
 end
 
-let make_container_access access_path pname ~is_write:_ loc =
+let make_container_access access_path pname ~is_write loc =
   let site = CallSite.make Typ.Procname.empty_block loc in
-  TraceElem.make (Access.ContainerWrite (access_path, pname)) site
+  let access =
+    if is_write then Access.ContainerWrite (access_path, pname)
+    else Access.ContainerRead (access_path, pname)
+  in
+  TraceElem.make access site
 
 let make_field_access access_path ~is_write loc =
   let site = CallSite.make Typ.Procname.empty_block loc in

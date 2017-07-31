@@ -85,11 +85,17 @@ class Containers {
     list.remove(index);
   }
 
+  List mListNobodyWrites;
+
   void listReadOk(int index, String s) {
-    mList.contains(s);
-    mList.get(index);
-    mList.isEmpty();
-    mList.size();
+    mListNobodyWrites.contains(s);
+    mListNobodyWrites.get(index);
+    mListNobodyWrites.isEmpty();
+    mListNobodyWrites.size();
+  }
+
+  boolean listReadBad(String s) {
+    return mList.contains(s);
   }
 
   void accessSafeListOk(CopyOnWriteArrayList list, int index) {
@@ -113,15 +119,17 @@ class Containers {
     mMap.putAll(otherMap);
   }
 
+  Map<String,String> mMapNobodyWrites;
+
   void mapReadsOk(String s) {
-    mMap.containsKey(s);
-    mMap.containsValue(s);
-    mMap.entrySet();
-    mMap.hashCode();
-    mMap.isEmpty();
-    mMap.keySet();
-    mMap.size();
-    mMap.values();
+    mMapNobodyWrites.containsKey(s);
+    mMapNobodyWrites.containsValue(s);
+    mMapNobodyWrites.entrySet();
+    mMapNobodyWrites.hashCode();
+    mMapNobodyWrites.isEmpty();
+    mMapNobodyWrites.keySet();
+    mMapNobodyWrites.size();
+    mMapNobodyWrites.values();
   }
 
   // make sure we still warn on subtypes of Map
@@ -270,7 +278,7 @@ class Containers {
   }
 
   // this should be a read/write race with addToSimpleArrayMapOk
-  public int FN_readSimpleArrayMap() {
+  public int readSimpleArrayMap() {
     return si_map.get(1);
   }
 
@@ -285,6 +293,17 @@ class Containers {
       a = simplePool.acquire();
     }
     simplePool.release(a);
+  }
+
+  Map<String,String> mAliasedMap;
+
+  // won't report here because the read happens through an alias
+  public String FN_AliasedMapBad() {
+    synchronized (this) {
+      mAliasedMap.put("a", "b");
+    }
+    Map<String,String> alias = mAliasedMap;
+    return alias.get("a");
   }
 
 }

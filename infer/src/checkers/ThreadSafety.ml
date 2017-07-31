@@ -144,19 +144,31 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             , ( "append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"
               | "setValueAt" ) )
            -> Some ContainerWrite
+          | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
+            , ("clone" | "get" | "indexOfKey" | "indexOfValue" | "keyAt" | "size" | "valueAt") )
+           -> Some ContainerRead
           | ( "android.support.v4.util.SimpleArrayMap"
             , ("clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt" | "setValueAt")
             )
            -> Some ContainerWrite
+          | ( "android.support.v4.util.SimpleArrayMap"
+            , ( "containsKey" | "containsValue" | "get" | "hashCode" | "indexOfKey" | "isEmpty"
+              | "keyAt" | "size" | "valueAt" ) )
+           -> Some ContainerRead
           | "android.support.v4.util.Pools$SimplePool", ("acquire" | "release")
            -> Some ContainerWrite
           | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set")
            -> Some ContainerWrite
+          | ( "java.util.List"
+            , ( "contains" | "containsAll" | "equals" | "get" | "hashCode" | "indexOf" | "isEmpty"
+              | "iterator" | "lastIndexOf" | "listIterator" | "size" | "toArray" ) )
+           -> Some ContainerRead
           | "java.util.Map", ("clear" | "put" | "putAll" | "remove")
            -> Some ContainerWrite
-          | "java.util.Map", "get" when false
-           -> (* temporary measure to silence compiler warning *)
-              Some ContainerRead
+          | ( "java.util.Map"
+            , ( "containsKey" | "containsValue" | "entrySet" | "equals" | "get" | "hashCode"
+              | "isEmpty" | "keySet" | "size" | "values" ) )
+           -> Some ContainerRead
           | _
            -> None
         in
@@ -467,15 +479,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _
        -> false
 
-  let make_container_write callee_pname actuals receiver_ap callee_loc tenv =
+  let make_container_access callee_pname ~is_write actuals receiver_ap callee_loc tenv =
     (* create a dummy write that represents mutating the contents of the container *)
     let open Domain in
     let callee_accesses =
       if is_synchronized_container callee_pname receiver_ap tenv then AccessDomain.empty
       else
-        let container_access = make_container_access receiver_ap callee_pname in
-        AccessDomain.add_access (Unprotected (Some 0)) (container_access ~is_write:true callee_loc)
-          AccessDomain.empty
+        let container_access =
+          make_container_access receiver_ap ~is_write callee_pname callee_loc
+        in
+        AccessDomain.add_access (Unprotected (Some 0)) container_access AccessDomain.empty
     in
     (* TODO: for now all formals escape *)
     (* we need a more intelligent escape analysis, that branches on whether
@@ -484,19 +497,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Some (true, false, false, callee_accesses, AttributeSetDomain.empty, escapee_formals)
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
+    let get_receiver_ap actuals =
+      match List.hd actuals with
+      | Some HilExp.AccessPath receiver_ap
+       -> receiver_ap
+      | _
+       -> failwithf "Call to %a is marked as a container write, but has no receiver"
+            Typ.Procname.pp callee_pname
+    in
     match get_container_access callee_pname tenv with
     | Some ContainerWrite
-     -> let receiver_ap =
-          match List.hd actuals with
-          | Some HilExp.AccessPath receiver_ap
-           -> receiver_ap
-          | _
-           -> failwithf "Call to %a is marked as a container write, but has no receiver"
-                Typ.Procname.pp callee_pname
-        in
-        make_container_write callee_pname actuals receiver_ap callee_loc tenv
+     -> make_container_access callee_pname ~is_write:true actuals (get_receiver_ap actuals)
+          callee_loc tenv
     | Some ContainerRead
-     -> failwith "Container reads not yet supported"
+     -> make_container_access callee_pname ~is_write:false actuals (get_receiver_ap actuals)
+          callee_loc tenv
     | None
      -> Summary.read_summary caller_pdesc callee_pname
 
@@ -1208,7 +1223,7 @@ let make_read_write_race_description conflicts tenv pname final_sink_site initia
           "\n Note: some of these write conflicts are confined to the UI or another thread, but the current method is not specified to be. Consider adding synchronization or a @ThreadConfined annotation to the current method."
       else "" )
   in
-  Format.asprintf "Read/Write race. Non-private method %a%s reads from field %a. %s %s"
+  Format.asprintf "Read/Write race. Non-private method %a%s reads from %a. %s %s"
     (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     pp_access final_sink conflicts_description (calculate_addendum_message tenv pname)
@@ -1462,6 +1477,32 @@ let may_alias tenv p1 p2 =
   | ArrayAccess t1, ArrayAccess t2
    -> equal_desc t1.desc t2.desc
 
+let may_alias_container tenv p1 p2 =
+  let sound = false in
+  if sound then
+    (* this is much too noisy: we'll warn that accesses to *any* Map can race with accesses to any
+       other Map, etc. Instead, do something simple and unsound: just assume that two accesses can
+       be to the same container if they are to the same access path *)
+    match (AccessPath.Raw.get_typ p1 tenv, AccessPath.Raw.get_typ p2 tenv) with
+    | Some {desc= Tptr ({desc= Tstruct tn1}, _)}, Some {desc= Tptr ({desc= Tstruct tn2}, _)}
+     -> PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
+    | _
+     -> true
+  else
+    (* unsound, but effective: report that the containers alias if their access paths are
+       syntactically identical *)
+    match (fst p1, fst p2) with
+    | (Var.ProgramVar pvar1, typ1), (Var.ProgramVar pvar2, typ2)
+      when Pvar.is_this pvar1 && Pvar.is_this pvar2
+           && ( Prover.Subtyping_check.check_subtype tenv typ1 typ2
+              || Prover.Subtyping_check.check_subtype tenv typ2 typ1 )
+     -> (* the `this` used in C.foo and C.bar will compare unequal if we're not careful `this` is
+           represented as a local pvar, and a local pvar contains its parent procedure name. Count
+           the `this`'s as equal if their types are compatible *)
+        AccessPath.equal_access_list (snd p1) (snd p2)
+    | _
+     -> AccessPath.Raw.equal p1 p2
+
 (* take a results table and quotient it by the may_alias relation *)
 let quotient_access_map acc_map =
   let rec aux acc m =
@@ -1479,6 +1520,9 @@ let quotient_access_map acc_map =
             match (k, k') with
             | (Read ap1 | Write ap1), (Read ap2 | Write ap2)
              -> may_alias tenv ap1 ap2
+            | ( (ContainerRead (ap1, _) | ContainerWrite (ap1, _))
+              , (ContainerRead (ap2, _) | ContainerWrite (ap2, _)) )
+             -> may_alias_container tenv ap1 ap2
             | _
              -> ThreadSafetyDomain.Access.equal k k')
           m
