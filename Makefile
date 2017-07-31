@@ -27,6 +27,7 @@ BUILD_SYSTEMS_TESTS += \
   project_root_rel \
   reactive \
   run_hidden_linters \
+  tracebugs \
   utf8_in_procname \
 
 DIRECT_TESTS += \
@@ -226,7 +227,7 @@ endef
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_test)
 $(DIRECT_TESTS:%=direct_%_test): infer
-	$(QUIET)$(call silent_on_success,Running $(subst _, ,$@),\
+	$(QUIET)$(call silent_on_success,Running test: $(subst _, ,$@),\
 	$(call silence_make,\
 	$(MAKE) -C \
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
@@ -234,80 +235,60 @@ $(DIRECT_TESTS:%=direct_%_test): infer
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_print)
 $(DIRECT_TESTS:%=direct_%_print): infer
-	$(QUIET)$(call silence_make,\
+	$(QUIET)$(call silent_on_success,Running: $(subst _, ,$@),\
+	$(call silence_make,\
 	$(MAKE) -C \
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
-	  print)
+	  print))
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_clean)
 $(DIRECT_TESTS:%=direct_%_clean):
-	$(QUIET)$(call silence_make,\
+	$(QUIET)$(call silent_on_success,Cleaning: $(subst _, ,$@),\
+	$(call silence_make,\
 	$(MAKE) -C \
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
-	  clean)
+	  clean))
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_replace)
 $(DIRECT_TESTS:%=direct_%_replace): infer
-	$(QUIET)$(call silence_make,\
+	$(QUIET)$(call silent_on_success,Recording: $(subst _, ,$@),\
+	$(call silence_make,\
 	$(MAKE) -C \
 	  $(INFER_DIR)/tests/codetoanalyze/$(shell printf $@ | cut -f 2 -d _)/$(shell printf $@ | cut -f 3 -d _) \
-	  replace)
+	  replace))
 
 .PHONY: direct_tests
 direct_tests: $(DIRECT_TESTS:%=direct_%_test)
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 $(BUILD_SYSTEMS_TESTS:%=build_%_test): infer
-	$(QUIET)$(call silent_on_success,Running $(subst _, ,$@),\
+	$(QUIET)$(call silent_on_success,Running test: $(subst _, ,$@),\
 	$(call silence_make,\
 	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_test,%,$@) test))
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_print)
 $(BUILD_SYSTEMS_TESTS:%=build_%_print): infer
-	$(QUIET)$(call silence_make,\
-	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_print,%,$@) print)
+	$(QUIET)$(call silent_on_success,Running: $(subst _, ,$@),\
+	$(call silence_make,\
+	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_print,%,$@) print))
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
 $(BUILD_SYSTEMS_TESTS:%=build_%_clean):
-	$(QUIET)$(call silence_make,\
-	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_clean,%,$@) clean)
+	$(QUIET)$(call silent_on_success,Cleaning: $(subst _, ,$@),\
+	$(call silence_make,\
+	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_clean,%,$@) clean))
 
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_replace)
 $(BUILD_SYSTEMS_TESTS:%=build_%_replace): infer
-	$(QUIET)$(call silence_make,\
-	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_replace,%,$@) replace)
+	$(QUIET)$(call silent_on_success,Recording: $(subst _, ,$@),\
+	$(call silence_make,\
+	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_replace,%,$@) replace))
 
 .PHONY: build_systems_tests
 build_systems_tests: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 
 .PHONY: endtoend_test
 endtoend_test: $(BUILD_SYSTEMS_TESTS:%=build_%_test) $(DIRECT_TESTS:%=direct_%_test)
-
-.PHONY: inferTraceBugs_test
-inferTraceBugs_test: infer
-ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: running infer,\
-	$(INFER_BIN) -o __test-infer-out__ -- \
-	  $(JAVAC) $(EXAMPLES_DIR)/Hello.java)
-else
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: running infer,\
-	$(INFER_BIN) -o __test-infer-out__ -- \
-	  clang -c $(EXAMPLES_DIR)/hello.c)
-endif
-	$(QUIET)$(REMOVE) Hello.class
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=max,\
-	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
-	  --select 0 --max-level max)
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=0,\
-	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
-	  --select 0 --max-level 0)
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=max --no-source,\
-	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
-	  --select 0 --max-level max --no-source)
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --only-show,\
-	$(PYTHON_DIR)/inferTraceBugs -o __test-infer-out__ \
-	  --only-show)
-	$(QUIET)$(REMOVE_DIR) __test-infer-out__
 
 .PHONY: check_missing_mli
 check_missing_mli:
@@ -360,7 +341,7 @@ else
 endif
 
 .PHONY: config_tests
-config_tests: test_build ocaml_unit_test endtoend_test inferTraceBugs_test inferScriptMode_test \
+config_tests: test_build ocaml_unit_test endtoend_test inferScriptMode_test \
       checkCopyright validate-skel
 	$(QUIET)$(call silent_on_success,Building Infer source dependency graph,\
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot)
@@ -503,26 +484,35 @@ endif
 ocaml_clean:
 ifeq ($(IS_RELEASE_TREE),no)
 ifeq ($(BUILD_C_ANALYZERS),yes)
-	$(QUIET)$(MAKE) -C $(FCP_DIR)/clang-ocaml clean
+	$(QUIET)$(call silent_on_success,Cleaning facebook-clang-plugins OCaml build,\
+	$(MAKE) -C $(FCP_DIR)/clang-ocaml clean)
 endif
 endif
-	$(QUIET)$(MAKE) -C $(SRC_DIR) clean
-	$(QUIET)$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean
+	$(QUIET)$(call silent_on_success,Cleaning infer OCaml build,\
+	$(MAKE) -C $(SRC_DIR) clean)
+	$(QUIET)$(call silent_on_success,Cleaning ocamldot,\
+	$(MAKE) -C $(DEPENDENCIES_DIR)/ocamldot clean)
 
 .PHONY: clean
 clean: test_clean ocaml_clean
 ifeq ($(IS_RELEASE_TREE),no)
 ifeq ($(BUILD_C_ANALYZERS),yes)
-	$(QUIET)$(MAKE) -C $(FCP_DIR) clean
+	$(QUIET)$(call silent_on_success,Cleaning facebook-clang-plugins C++ build,\
+	$(MAKE) -C $(FCP_DIR) clean)
 endif
 endif
-	$(QUIET)$(MAKE) -C $(ANNOTATIONS_DIR) clean
-	$(QUIET)$(MAKE) -C $(MODELS_DIR) clean
+	$(QUIET)$(call silent_on_success,Cleaning Java annotations,\
+	$(MAKE) -C $(ANNOTATIONS_DIR) clean)
+	$(QUIET)$(call silent_on_success,Cleaning infer models,\
+	$(MAKE) -C $(MODELS_DIR) clean)
 ifeq ($(IS_FACEBOOK_TREE),yes)
-	$(QUIET)$(MAKE) -C facebook clean
+	$(QUIET)$(call silent_on_success,Cleaning facebook/,\
+	$(MAKE) -C facebook clean)
 endif
-	find $(INFER_DIR)/tests \( -name '*.o' -o -name '*.o.sh' \) -delete
-	$(QUIET)$(REMOVE_DIR) _build_logs $(MAN_DIR)
+	$(QUIET)$(call silent_on_success,Removing *.o and *.o.sh,\
+	find $(INFER_DIR)/tests \( -name '*.o' -o -name '*.o.sh' \) -delete)
+	$(QUIET)$(call silent_on_success,Removing build logs,\
+	$(REMOVE_DIR) _build_logs $(MAN_DIR))
 
 .PHONY: conf-clean
 conf-clean: clean

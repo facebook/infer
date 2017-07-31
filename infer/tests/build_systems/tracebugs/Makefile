@@ -1,0 +1,57 @@
+# Copyright (c) 2017 - present Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+TESTS_DIR = ../..
+
+include $(TESTS_DIR)/base.make
+
+SOURCES = ../codetoanalyze/hello.c
+OBJECTS = $(SOURCES:.c=.o)
+
+default: print
+
+infer-out/report.json: $(SOURCES) $(CLANG_DEPS)
+	$(QUIET)$(call silent_on_success,Running infer,\
+	$(INFER_BIN) run -- clang -c $(SOURCES))
+
+.PHONY: test1
+test1: infer-out/report.json
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=max,\
+	$(PYTHON_DIR)/inferTraceBugs -o infer-out \
+	  --select 0 --max-level max)
+
+.PHONY: test2
+test2: infer-out/report.json
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=0,\
+	$(PYTHON_DIR)/inferTraceBugs -o infer-out \
+	  --select 0 --max-level 0)
+
+.PHONY: test3
+test3: infer-out/report.json
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=max --no-source,\
+	$(PYTHON_DIR)/inferTraceBugs -o infer-out \
+	  --select 0 --max-level max --no-source)
+
+.PHONY: test4
+test4: infer-out/report.json
+	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --only-show,\
+	$(PYTHON_DIR)/inferTraceBugs -o infer-out \
+	  --only-show)
+
+
+.PHONY: print
+print: test1 test2 test3 test4
+
+.PHONY: test
+test: print
+
+.PHONY: replace
+replace: test
+
+.PHONY: clean
+clean:
+	$(REMOVE_DIR) $(OBJECTS) infer-out $(CLEAN_EXTRA)
