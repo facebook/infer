@@ -69,7 +69,7 @@ let setup_results_dir () =
   | Capture | Compile | Run
    -> let driver_mode = Lazy.force Driver.mode_from_command_line in
       if not
-           ( Driver.(equal_driver_mode driver_mode Analyze)
+           ( Driver.(equal_mode driver_mode Analyze)
            || Config.(buck || continue_capture || maven || reactive_mode) )
       then remove_results_dir () ;
       create_results_dir ()

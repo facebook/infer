@@ -27,7 +27,7 @@ type mode =
   | XcodeXcpretty of string * string list
   [@@deriving compare]
 
-val equal_driver_mode : mode -> mode -> bool
+val equal_mode : mode -> mode -> bool
 
 val mode_from_command_line : mode Lazy.t
 (** driver mode computed from the command-line arguments and settings in Config *)

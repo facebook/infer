@@ -77,9 +77,9 @@ type mode =
   | XcodeXcpretty of string * string list
   [@@deriving compare]
 
-let equal_driver_mode = [%compare.equal : mode]
+let equal_mode = [%compare.equal : mode]
 
-let pp_driver_mode fmt driver_mode =
+let pp_mode fmt mode =
   let log_argfile_arg fname =
     try
       F.fprintf fmt "-- Contents of '%s'@\n" fname ;
@@ -87,7 +87,7 @@ let pp_driver_mode fmt driver_mode =
       F.fprintf fmt "-- /Contents of '%s'@." fname
     with exn -> F.fprintf fmt "  Error reading file '%s':@\n  %a@." fname Exn.pp exn
   in
-  match driver_mode with
+  match mode with
   | Analyze
   | BuckGenrule _
   | BuckCompilationDB _
@@ -117,8 +117,8 @@ let pp_driver_mode fmt driver_mode =
 
 (* A clean command for each driver mode to be suggested to the user
    in case nothing got captured. *)
-let clean_compilation_command driver_mode =
-  match driver_mode with
+let clean_compilation_command mode =
+  match mode with
   | BuckCompilationDB (prog, _) | Clang (_, prog, _)
    -> Some (prog ^ " clean")
   | XcodeXcpretty (prog, args)
@@ -178,8 +178,8 @@ let clean_results_dir () =
   in
   clean Config.results_dir
 
-let check_captured_empty driver_mode =
-  let clean_command_opt = clean_compilation_command driver_mode in
+let check_captured_empty mode =
+  let clean_command_opt = clean_compilation_command mode in
   (* if merge is passed, the captured folder will be empty at this point,
      but will be filled later on. *)
   if Utils.directory_is_empty Config.captured_dir && not Config.merge then (
@@ -380,9 +380,9 @@ let report () =
           "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
           (String.concat ~sep:" " args)
 
-let analyze_and_report ~changed_files driver_mode =
+let analyze_and_report ~changed_files mode =
   let should_analyze, should_report =
-    match (driver_mode, Config.analyzer) with
+    match (mode, Config.analyzer) with
     | PythonCapture (BBuck, _), _
      -> (* In Buck mode when compilation db is not used, analysis is invoked either from capture or
            a separate Analyze invocation is necessary, depending on the buck flavor used. *)
@@ -398,7 +398,7 @@ let analyze_and_report ~changed_files driver_mode =
      -> (false, true)
   in
   if (should_analyze || should_report)
-     && (Sys.file_exists Config.captured_dir <> `Yes || check_captured_empty driver_mode)
+     && (Sys.file_exists Config.captured_dir <> `Yes || check_captured_empty mode)
   then L.user_error "There was nothing to analyze.@\n@."
   else if should_analyze then execute_analyze ~changed_files ;
   if should_report && Config.report then report ()
@@ -415,14 +415,14 @@ let fail_on_issue_epilogue () =
   | Error error
    -> L.internal_error "Failed to read report file '%s': %s@." issues_json error ; ()
 
-let log_infer_args driver_mode =
+let log_infer_args mode =
   L.environment_info "INFER_ARGS = %s@\n"
     (Option.value (Sys.getenv CLOpt.args_env_var) ~default:"<not found>") ;
   List.iter ~f:(L.environment_info "anon arg: %s@\n") Config.anon_args ;
   List.iter ~f:(L.environment_info "rest arg: %s@\n") Config.rest ;
   L.environment_info "Project root = %s@\n" Config.project_root ;
   L.environment_info "CWD = %s@\n" (Sys.getcwd ()) ;
-  L.environment_info "Driver mode:@\n%a@." pp_driver_mode driver_mode
+  L.environment_info "Driver mode:@\n%a@." pp_mode mode
 
 let assert_supported_mode required_analyzer requested_mode_string =
   let analyzer_enabled =
@@ -471,7 +471,7 @@ let assert_supported_build_system build_system =
   | BAnalyze
    -> ()
 
-let driver_mode_of_build_cmd build_cmd =
+let mode_of_build_command build_cmd =
   match build_cmd with
   | []
    -> if not (List.is_empty !Config.clang_compilation_dbs) then (
@@ -503,7 +503,7 @@ let driver_mode_of_build_cmd build_cmd =
       | BAnt | BBuck | BGradle | BNdk | BXcode as build_system
        -> PythonCapture (build_system, build_cmd)
 
-let get_driver_mode () =
+let get_mode () =
   match Config.generated_classes with
   | _ when Config.maven
    -> (* infer is pretending to be javac in the Maven integration *)
@@ -513,7 +513,7 @@ let get_driver_mode () =
    -> assert_supported_mode `Java "Buck genrule" ;
       BuckGenrule path
   | None
-   -> driver_mode_of_build_cmd (List.rev Config.rest)
+   -> mode_of_build_command (List.rev Config.rest)
 
 let mode_from_command_line =
   ( lazy
@@ -526,11 +526,11 @@ let mode_from_command_line =
    -> assert_supported_mode `Java "Buck genrule" ;
       BuckGenrule path
   | None
-   -> driver_mode_of_build_cmd (List.rev Config.rest) ) )
+   -> mode_of_build_command (List.rev Config.rest) ) )
 
-let run_prologue driver_mode =
+let run_prologue mode =
   if CLOpt.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
-  if Config.debug_mode || Config.stats_mode then log_infer_args driver_mode ;
+  if Config.debug_mode || Config.stats_mode then log_infer_args mode ;
   if Config.dump_duplicate_symbols then reset_duplicates_file () ;
   (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
      but cannot communicate with the parent make command. Since infer won't interfere with them
@@ -541,9 +541,9 @@ let run_prologue driver_mode =
   if not Config.buck_cache_mode then touch_start_file_unless_continue () ;
   ()
 
-let run_epilogue driver_mode =
+let run_epilogue mode =
   ( if CLOpt.is_originator then
-      let in_buck_mode = match driver_mode with PythonCapture (BBuck, _) -> true | _ -> false in
+      let in_buck_mode = match mode with PythonCapture (BBuck, _) -> true | _ -> false in
       StatsAggregator.generate_files () ;
       if Config.equal_analyzer Config.analyzer Config.Crashcontext then
         Crashcontext.crashcontext_epilogue ~in_buck_mode ;
