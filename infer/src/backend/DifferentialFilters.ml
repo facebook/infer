@@ -118,9 +118,9 @@ let skip_duplicated_types_on_filenames renamings (diff: Differential.t) : Differ
     String.compare f1 f2
   in
   let cmp (issue1, _ as issue_with_previous_file1) (issue2, _ as issue_with_previous_file2) =
-    [%compare : string * issue_file_with_renaming]
-      (issue1.Jsonbug_t.bug_type, issue_with_previous_file1)
-      (issue2.Jsonbug_t.bug_type, issue_with_previous_file2)
+    [%compare : int * string * issue_file_with_renaming]
+      (issue1.Jsonbug_t.key, issue1.Jsonbug_t.bug_type, issue_with_previous_file1)
+      (issue2.Jsonbug_t.key, issue2.Jsonbug_t.bug_type, issue_with_previous_file2)
   in
   let introduced, preexisting, fixed =
     (* All comparisons will be made against filenames *before* renamings.
