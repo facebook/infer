@@ -11,7 +11,7 @@ open! IStd
 module F = Format
 
 module Set = struct
-  module APSet = PrettyPrintable.MakePPSet (AccessPath)
+  module APSet = PrettyPrintable.MakePPSet (AccessPath.Abs)
 
   (** TODO (12086310): best-case behavior of some operations can be improved by adding "abstracted"
       bool recording whether an abstracted access path has been introduced *)
@@ -24,7 +24,10 @@ module Set = struct
   let normalize aps =
     APSet.filter
       (fun lhs ->
-        not (APSet.exists (fun rhs -> not (phys_equal lhs rhs) && AccessPath.( <= ) ~lhs ~rhs) aps))
+        not
+          (APSet.exists
+             (fun rhs -> not (phys_equal lhs rhs) && AccessPath.Abs.( <= ) ~lhs ~rhs)
+             aps))
       aps
 
   let add = APSet.add
@@ -32,11 +35,12 @@ module Set = struct
   let of_list = APSet.of_list
 
   let mem ap aps =
-    APSet.mem ap aps || APSet.exists (fun other_ap -> AccessPath.( <= ) ~lhs:ap ~rhs:other_ap) aps
+    APSet.mem ap aps
+    || APSet.exists (fun other_ap -> AccessPath.Abs.( <= ) ~lhs:ap ~rhs:other_ap) aps
 
   let mem_fuzzy ap aps =
     let has_overlap ap1 ap2 =
-      AccessPath.( <= ) ~lhs:ap1 ~rhs:ap2 || AccessPath.( <= ) ~lhs:ap2 ~rhs:ap1
+      AccessPath.Abs.( <= ) ~lhs:ap1 ~rhs:ap2 || AccessPath.Abs.( <= ) ~lhs:ap2 ~rhs:ap1
     in
     APSet.mem ap aps || APSet.exists (has_overlap ap) aps
 
@@ -53,9 +57,9 @@ module Set = struct
     else
       let abstract_access_path ap aps =
         match ap with
-        | AccessPath.Exact exact_ap
-         -> APSet.add (AccessPath.Abstracted exact_ap) aps
-        | AccessPath.Abstracted _
+        | AccessPath.Abs.Exact exact_ap
+         -> APSet.add (AccessPath.Abs.Abstracted exact_ap) aps
+        | AccessPath.Abs.Abstracted _
          -> APSet.add ap aps
       in
       let diff_aps = APSet.diff next prev in

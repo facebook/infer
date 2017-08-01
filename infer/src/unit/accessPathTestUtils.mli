@@ -19,4 +19,4 @@ val make_field_access : string -> AccessPath.access
 
 val make_array_access : Typ.t -> AccessPath.access
 
-val make_access_path : string -> string list -> AccessPath.Raw.t
+val make_access_path : string -> string list -> AccessPath.t

@@ -83,7 +83,7 @@ let tests =
       F.fprintf fmt "(%a -> %a)" pp_sources (MockTrace.sources trace) pp_sinks
         (MockTrace.sinks trace)
     in
-    let pp_item fmt (ap, trace) = F.fprintf fmt "%a => %a" AccessPath.pp ap pp_trace trace in
+    let pp_item fmt (ap, trace) = F.fprintf fmt "%a => %a" AccessPath.Abs.pp ap pp_trace trace in
     (* flatten access tree into list of access paths with associated traces *)
     let trace_assocs =
       MockTaintAnalysis.TaintDomain.trace_fold

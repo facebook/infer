@@ -25,32 +25,28 @@ let tests =
     let base = make_base "x" ~typ:dummy_arr_typ in
     (base, [make_array_access dummy_typ])
   in
-  let x_exact = AccessPath.Exact x in
-  let y_exact = AccessPath.Exact y in
-  let x_abstract = AccessPath.Abstracted x in
-  let xF_exact = AccessPath.Exact xF in
-  let xFG_exact = AccessPath.Exact xFG in
-  let yF_exact = AccessPath.Exact yF in
-  let yF_abstract = AccessPath.Abstracted yF in
+  let x_exact = AccessPath.Abs.Exact x in
+  let y_exact = AccessPath.Abs.Exact y in
+  let x_abstract = AccessPath.Abs.Abstracted x in
+  let xF_exact = AccessPath.Abs.Exact xF in
+  let xFG_exact = AccessPath.Abs.Exact xFG in
+  let yF_exact = AccessPath.Abs.Exact yF in
+  let yF_abstract = AccessPath.Abs.Abstracted yF in
   let open OUnit2 in
   let equal_test =
     let equal_test_ _ =
-      assert_bool "equal works for bases" (AccessPath.Raw.equal x (make_access_path "x" [])) ;
-      assert_bool "equal works for paths"
-        (AccessPath.Raw.equal xFG (make_access_path "x" ["f"; "g"])) ;
-      assert_bool "disequality works for bases" (not (AccessPath.Raw.equal x y)) ;
-      assert_bool "disequality works for paths" (not (AccessPath.Raw.equal xF xFG))
+      assert_bool "equal works for bases" (AccessPath.equal x (make_access_path "x" [])) ;
+      assert_bool "equal works for paths" (AccessPath.equal xFG (make_access_path "x" ["f"; "g"])) ;
+      assert_bool "disequality works for bases" (not (AccessPath.equal x y)) ;
+      assert_bool "disequality works for paths" (not (AccessPath.equal xF xFG))
     in
     "equal" >:: equal_test_
   in
   let append_test =
     let pp_diff fmt (actual, expected) =
-      F.fprintf fmt "Expected output %a but got %a" AccessPath.Raw.pp expected AccessPath.Raw.pp
-        actual
+      F.fprintf fmt "Expected output %a but got %a" AccessPath.pp expected AccessPath.pp actual
     in
-    let assert_eq input expected =
-      assert_equal ~cmp:AccessPath.Raw.equal ~pp_diff input expected
-    in
+    let assert_eq input expected = assert_equal ~cmp:AccessPath.equal ~pp_diff input expected in
     let append_test_ _ =
       assert_eq xF (AccessPath.append x [f_access]) ;
       assert_eq xFG (AccessPath.append xF [g_access])
@@ -85,9 +81,9 @@ let tests =
       let actual_ap = make_ap exp in
       let pp_diff fmt (actual_ap, expected_ap) =
         F.fprintf fmt "Expected to make access path %a from expression %a, but got %a"
-          AccessPath.Raw.pp expected_ap Exp.pp exp AccessPath.Raw.pp actual_ap
+          AccessPath.pp expected_ap Exp.pp exp AccessPath.pp actual_ap
       in
-      assert_equal ~cmp:AccessPath.Raw.equal ~pp_diff actual_ap expected_ap
+      assert_equal ~cmp:AccessPath.equal ~pp_diff actual_ap expected_ap
     in
     let of_exp_test_ _ =
       let f_fieldname = make_fieldname "f" in
@@ -111,8 +107,7 @@ let tests =
       let binop_exp = Exp.le xF_exp xFG_exp in
       match AccessPath.of_exp binop_exp dummy_typ ~f_resolve_id with
       | [ap1; ap2]
-       -> assert_equal ~cmp:AccessPath.Raw.equal ap1 xFG ;
-          assert_equal ~cmp:AccessPath.Raw.equal ap2 xF
+       -> assert_equal ~cmp:AccessPath.equal ap1 xFG ; assert_equal ~cmp:AccessPath.equal ap2 xF
       | _
        -> assert false
     in
@@ -120,13 +115,13 @@ let tests =
   in
   let abstraction_test =
     let abstraction_test_ _ =
-      assert_bool "extract" (AccessPath.Raw.equal (AccessPath.extract xF_exact) xF) ;
-      assert_bool "is_exact" (AccessPath.is_exact x_exact) ;
-      assert_bool "not is_exact" (not (AccessPath.is_exact x_abstract)) ;
-      assert_bool "(<=)1" (AccessPath.( <= ) ~lhs:x_exact ~rhs:x_abstract) ;
-      assert_bool "(<=)2" (AccessPath.( <= ) ~lhs:xF_exact ~rhs:x_abstract) ;
-      assert_bool "not (<=)1" (not (AccessPath.( <= ) ~lhs:x_abstract ~rhs:x_exact)) ;
-      assert_bool "not (<=)2" (not (AccessPath.( <= ) ~lhs:x_abstract ~rhs:xF_exact))
+      assert_bool "extract" (AccessPath.equal (AccessPath.Abs.extract xF_exact) xF) ;
+      assert_bool "is_exact" (AccessPath.Abs.is_exact x_exact) ;
+      assert_bool "not is_exact" (not (AccessPath.Abs.is_exact x_abstract)) ;
+      assert_bool "(<=)1" (AccessPath.Abs.( <= ) ~lhs:x_exact ~rhs:x_abstract) ;
+      assert_bool "(<=)2" (AccessPath.Abs.( <= ) ~lhs:xF_exact ~rhs:x_abstract) ;
+      assert_bool "not (<=)1" (not (AccessPath.Abs.( <= ) ~lhs:x_abstract ~rhs:x_exact)) ;
+      assert_bool "not (<=)2" (not (AccessPath.Abs.( <= ) ~lhs:x_abstract ~rhs:xF_exact))
     in
     "abstraction" >:: abstraction_test_
   in

@@ -222,7 +222,7 @@ include Trace.Make (struct
         let is_gflag pvar =
           String.is_substring ~substring:"FLAGS_" (Pvar.get_simplified_name pvar)
         in
-        match Option.map ~f:AccessPath.extract (Source.get_footprint_access_path source) with
+        match Option.map ~f:AccessPath.Abs.extract (Source.get_footprint_access_path source) with
         | Some ((Var.ProgramVar pvar, _), _) when Pvar.is_global pvar && is_gflag pvar
          -> (* gflags globals come from the environment; treat them as sources *)
             true

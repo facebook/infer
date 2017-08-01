@@ -50,18 +50,18 @@ module type S = sig
   val make_starred_leaf : TraceDomain.astate -> node
   (** create a leaf node with a wildcard successor *)
 
-  val get_node : AccessPath.t -> t -> node option
+  val get_node : AccessPath.Abs.t -> t -> node option
   (** retrieve the node associated with the given access path *)
 
-  val get_trace : AccessPath.t -> t -> TraceDomain.astate option
+  val get_trace : AccessPath.Abs.t -> t -> TraceDomain.astate option
   (** retrieve the trace associated with the given access path *)
 
-  val add_node : AccessPath.t -> node -> t -> t
+  val add_node : AccessPath.Abs.t -> node -> t -> t
   (** add the given access path to the tree and associate its last access with with the given node.
       if any of the accesses in the path are not already present in the tree, they will be added
       with with empty traces associated with each of the inner nodes. *)
 
-  val add_trace : AccessPath.t -> TraceDomain.astate -> t -> t
+  val add_trace : AccessPath.Abs.t -> TraceDomain.astate -> t -> t
   (** add the given access path to the tree and associate its last access with with the given trace.
       if any of the accesses in the path are not already present in the tree, they will be added
       with with empty traces associated with each of the inner nodes. *)
@@ -69,10 +69,10 @@ module type S = sig
   val node_join : node -> node -> node
   (** join two nodes *)
 
-  val fold : ('a -> AccessPath.t -> node -> 'a) -> t -> 'a -> 'a
+  val fold : ('a -> AccessPath.Abs.t -> node -> 'a) -> t -> 'a -> 'a
   (** apply a function to each (access path, node) pair in the tree. *)
 
-  val trace_fold : ('a -> AccessPath.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
+  val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
 
   val pp_node : Format.formatter -> node -> unit
 end

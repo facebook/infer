@@ -114,7 +114,7 @@ let tests =
     let append_ _ =
       let call_site = CallSite.dummy in
       let footprint_ap =
-        AccessPath.Exact (AccessPath.of_id (Ident.create_none ()) (Typ.mk Tvoid))
+        AccessPath.Abs.Exact (AccessPath.of_id (Ident.create_none ()) (Typ.mk Tvoid))
       in
       let dummy_pdesc =
         Cfg.create_proc_desc (Cfg.create_cfg ())

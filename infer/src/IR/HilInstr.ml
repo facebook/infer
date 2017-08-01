@@ -11,23 +11,23 @@ open! IStd
 module F = Format
 module L = Logging
 
-type call = Direct of Typ.Procname.t | Indirect of AccessPath.Raw.t [@@deriving compare]
+type call = Direct of Typ.Procname.t | Indirect of AccessPath.t [@@deriving compare]
 
 let pp_call fmt = function
   | Direct pname
    -> Typ.Procname.pp fmt pname
   | Indirect access_path
-   -> F.fprintf fmt "*%a" AccessPath.Raw.pp access_path
+   -> F.fprintf fmt "*%a" AccessPath.pp access_path
 
 type t =
-  | Assign of AccessPath.Raw.t * HilExp.t * Location.t
+  | Assign of AccessPath.t * HilExp.t * Location.t
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
   | Call of AccessPath.base option * call * HilExp.t list * CallFlags.t * Location.t
   [@@deriving compare]
 
 let pp fmt = function
   | Assign (access_path, exp, loc)
-   -> F.fprintf fmt "%a := %a [%a]" AccessPath.Raw.pp access_path HilExp.pp exp Location.pp loc
+   -> F.fprintf fmt "%a := %a [%a]" AccessPath.pp access_path HilExp.pp exp Location.pp loc
   | Assume (exp, _, _, loc)
    -> F.fprintf fmt "assume %a [%a]" HilExp.pp exp Location.pp loc
   | Call (ret_opt, call, actuals, _, loc)
@@ -35,7 +35,7 @@ let pp fmt = function
       let pp_actuals fmt = PrettyPrintable.pp_collection ~pp_item:HilExp.pp fmt in
       F.fprintf fmt "%a%a(%a) [%a]" pp_ret ret_opt pp_call call pp_actuals actuals Location.pp loc
 
-type translation = Instr of t | Bind of Var.t * AccessPath.Raw.t | Unbind of Var.t list | Ignore
+type translation = Instr of t | Bind of Var.t * AccessPath.t | Unbind of Var.t list | Ignore
 
 (* convert an SIL instruction into an HIL instruction. the [f_resolve_id] function should map an SSA
    temporary variable to the access path it represents. evaluating the HIL instruction should

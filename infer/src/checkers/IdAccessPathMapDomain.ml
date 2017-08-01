@@ -10,20 +10,19 @@
 open! IStd
 module IdMap = Var.Map
 
-type astate = AccessPath.Raw.t IdMap.t
+type astate = AccessPath.t IdMap.t
 
 include IdMap
 
-let pp fmt astate = IdMap.pp ~pp_value:AccessPath.Raw.pp fmt astate
+let pp fmt astate = IdMap.pp ~pp_value:AccessPath.pp fmt astate
 
 let check_invariant ap1 ap2 = function
   | Var.ProgramVar pvar when Pvar.is_ssa_frontend_tmp pvar
    -> (* Sawja reuses temporary variables which sometimes breaks this invariant *)
       ()
   | id
-   -> if not (AccessPath.Raw.equal ap1 ap2) then
-        failwithf "Id %a maps to both %a and %a@." Var.pp id AccessPath.Raw.pp ap1
-          AccessPath.Raw.pp ap2
+   -> if not (AccessPath.equal ap1 ap2) then
+        failwithf "Id %a maps to both %a and %a@." Var.pp id AccessPath.pp ap1 AccessPath.pp ap2
 
 let ( <= ) ~lhs ~rhs =
   if phys_equal lhs rhs then true

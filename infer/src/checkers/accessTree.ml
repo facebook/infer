@@ -34,19 +34,19 @@ module type S = sig
 
   val make_starred_leaf : TraceDomain.astate -> node
 
-  val get_node : AccessPath.t -> t -> node option
+  val get_node : AccessPath.Abs.t -> t -> node option
 
-  val get_trace : AccessPath.t -> t -> TraceDomain.astate option
+  val get_trace : AccessPath.Abs.t -> t -> TraceDomain.astate option
 
-  val add_node : AccessPath.t -> node -> t -> t
+  val add_node : AccessPath.Abs.t -> node -> t -> t
 
-  val add_trace : AccessPath.t -> TraceDomain.astate -> t -> t
+  val add_trace : AccessPath.Abs.t -> TraceDomain.astate -> t -> t
 
   val node_join : node -> node -> node
 
-  val fold : ('a -> AccessPath.t -> node -> 'a) -> t -> 'a -> 'a
+  val fold : ('a -> AccessPath.Abs.t -> node -> 'a) -> t -> 'a -> 'a
 
-  val trace_fold : ('a -> AccessPath.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
+  val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
 
   val pp_node : F.formatter -> node -> unit
 end
@@ -104,10 +104,10 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
       let base_trace, base_tree = BaseMap.find base tree in
       accesses_get_node accesses base_trace base_tree
     in
-    let base, accesses = AccessPath.extract ap in
+    let base, accesses = AccessPath.Abs.extract ap in
     match get_node_ base accesses tree with
     | trace, subtree
-     -> if AccessPath.is_exact ap then Some (trace, subtree)
+     -> if AccessPath.Abs.is_exact ap then Some (trace, subtree)
         else
           (* input query was [ap]*, and [trace] is the trace associated with [ap]. get the traces
              associated with the children of [ap] in [tree] and join them with [trace] *)
@@ -222,8 +222,8 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
     access_tree_add_trace_ ~seen_array_access accesses node
 
   let add_node ap node_to_add tree =
-    let base, accesses = AccessPath.extract ap in
-    let is_exact = AccessPath.is_exact ap in
+    let base, accesses = AccessPath.Abs.extract ap in
+    let is_exact = AccessPath.Abs.is_exact ap in
     let base_node =
       try BaseMap.find base tree
       with Not_found -> make_normal_leaf TraceDomain.empty
@@ -246,17 +246,18 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
     let cur_ap_raw = (base, accesses) in
     match tree with
     | Subtree access_map
-     -> let acc' = f acc (AccessPath.Exact cur_ap_raw) node in
+     -> let acc' = f acc (AccessPath.Abs.Exact cur_ap_raw) node in
         access_map_fold_ f base accesses access_map acc'
     | Star
-     -> f acc (AccessPath.Abstracted cur_ap_raw) node
+     -> f acc (AccessPath.Abs.Abstracted cur_ap_raw) node
 
-  let node_fold (f: 'a -> AccessPath.t -> node -> 'a) base node acc = node_fold_ f base [] node acc
+  let node_fold (f: 'a -> AccessPath.Abs.t -> node -> 'a) base node acc =
+    node_fold_ f base [] node acc
 
-  let fold (f: 'a -> AccessPath.t -> node -> 'a) tree acc_ =
+  let fold (f: 'a -> AccessPath.Abs.t -> node -> 'a) tree acc_ =
     BaseMap.fold (fun base node acc -> node_fold f base node acc) tree acc_
 
-  let trace_fold (f: 'a -> AccessPath.t -> TraceDomain.astate -> 'a) =
+  let trace_fold (f: 'a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) =
     let f_ acc ap (trace, _) = f acc ap trace in
     fold f_
 

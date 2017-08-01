@@ -12,7 +12,7 @@ module F = Format
 module L = Logging
 
 type t =
-  | AccessPath of AccessPath.Raw.t
+  | AccessPath of AccessPath.t
   | UnaryOperator of Unop.t * t * Typ.t option
   | BinaryOperator of Binop.t * t * t
   | Exception of t
@@ -24,7 +24,7 @@ type t =
 
 let rec pp fmt = function
   | AccessPath access_path
-   -> AccessPath.Raw.pp fmt access_path
+   -> AccessPath.pp fmt access_path
   | UnaryOperator (op, e, _)
    -> F.fprintf fmt "%s%a" (Unop.str op) pp e
   | BinaryOperator (op, e1, e2)
@@ -43,7 +43,7 @@ let rec pp fmt = function
 
 let rec get_typ tenv = function
   | AccessPath access_path
-   -> AccessPath.Raw.get_typ access_path tenv
+   -> AccessPath.get_typ access_path tenv
   | UnaryOperator (_, _, typ_opt)
    -> typ_opt
   | BinaryOperator ((Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr), _, _)

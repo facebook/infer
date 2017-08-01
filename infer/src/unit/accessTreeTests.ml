@@ -64,29 +64,29 @@ let tests =
   let f = make_field_access "f" in
   let g = make_field_access "g" in
   let array = make_array_access (Typ.mk Tvoid) in
-  let x = AccessPath.Exact (make_access_path "x" []) in
-  let xF = AccessPath.Exact (make_access_path "x" ["f"]) in
-  let xG = AccessPath.Exact (make_access_path "x" ["g"]) in
-  let xFG = AccessPath.Exact (make_access_path "x" ["f"; "g"]) in
-  let y = AccessPath.Exact (make_access_path "y" []) in
-  let yF = AccessPath.Exact (make_access_path "y" ["f"]) in
-  let yG = AccessPath.Exact (make_access_path "y" ["g"]) in
-  let yFG = AccessPath.Exact (make_access_path "y" ["f"; "g"]) in
-  let z = AccessPath.Exact (make_access_path "z" []) in
-  let zF = AccessPath.Exact (make_access_path "z" ["f"]) in
-  let zFG = AccessPath.Exact (make_access_path "z" ["f"; "g"]) in
-  let xArr = AccessPath.Exact (make_base "x", [array]) in
+  let x = AccessPath.Abs.Exact (make_access_path "x" []) in
+  let xF = AccessPath.Abs.Exact (make_access_path "x" ["f"]) in
+  let xG = AccessPath.Abs.Exact (make_access_path "x" ["g"]) in
+  let xFG = AccessPath.Abs.Exact (make_access_path "x" ["f"; "g"]) in
+  let y = AccessPath.Abs.Exact (make_access_path "y" []) in
+  let yF = AccessPath.Abs.Exact (make_access_path "y" ["f"]) in
+  let yG = AccessPath.Abs.Exact (make_access_path "y" ["g"]) in
+  let yFG = AccessPath.Abs.Exact (make_access_path "y" ["f"; "g"]) in
+  let z = AccessPath.Abs.Exact (make_access_path "z" []) in
+  let zF = AccessPath.Abs.Exact (make_access_path "z" ["f"]) in
+  let zFG = AccessPath.Abs.Exact (make_access_path "z" ["f"; "g"]) in
+  let xArr = AccessPath.Abs.Exact (make_base "x", [array]) in
   let xArrF =
     let accesses = [array; make_field_access "f"] in
-    AccessPath.Exact (make_base "x", accesses)
+    AccessPath.Abs.Exact (make_base "x", accesses)
   in
-  let a_star = AccessPath.Abstracted (make_access_path "a" []) in
-  let x_star = AccessPath.Abstracted (make_access_path "x" []) in
-  let xF_star = AccessPath.Abstracted (make_access_path "x" ["f"]) in
-  let xG_star = AccessPath.Abstracted (make_access_path "x" ["g"]) in
-  let y_star = AccessPath.Abstracted (make_access_path "y" []) in
-  let yF_star = AccessPath.Abstracted (make_access_path "y" ["f"]) in
-  let z_star = AccessPath.Abstracted (make_access_path "z" []) in
+  let a_star = AccessPath.Abs.Abstracted (make_access_path "a" []) in
+  let x_star = AccessPath.Abs.Abstracted (make_access_path "x" []) in
+  let xF_star = AccessPath.Abs.Abstracted (make_access_path "x" ["f"]) in
+  let xG_star = AccessPath.Abs.Abstracted (make_access_path "x" ["g"]) in
+  let y_star = AccessPath.Abs.Abstracted (make_access_path "y" []) in
+  let yF_star = AccessPath.Abs.Abstracted (make_access_path "y" ["f"]) in
+  let z_star = AccessPath.Abs.Abstracted (make_access_path "z" []) in
   let x_trace = MockTraceDomain.singleton "x" in
   let y_trace = MockTraceDomain.singleton "y" in
   let z_trace = MockTraceDomain.singleton "z" in
@@ -386,7 +386,8 @@ let tests =
       let ap_traces = Domain.trace_fold collect_ap_traces tree [] in
       let has_ap_trace_pair ap_in trace_in =
         List.exists
-          ~f:(fun (ap, trace) -> AccessPath.equal ap ap_in && MockTraceDomain.equal trace trace_in)
+          ~f:(fun (ap, trace) ->
+            AccessPath.Abs.equal ap ap_in && MockTraceDomain.equal trace trace_in)
           ap_traces
       in
       assert_bool "Should have six ap/trace pairs" (Int.equal (List.length ap_traces) 6) ;

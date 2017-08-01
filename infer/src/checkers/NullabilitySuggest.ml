@@ -13,9 +13,9 @@ module MF = MarkupFormatter
 
 module UseDefChain = struct
   type astate =
-    | DependsOn of (Location.t * AccessPath.Raw.t)
-    | NullDefCompare of (Location.t * AccessPath.Raw.t)
-    | NullDefAssign of (Location.t * AccessPath.Raw.t)
+    | DependsOn of (Location.t * AccessPath.t)
+    | NullDefCompare of (Location.t * AccessPath.t)
+    | NullDefAssign of (Location.t * AccessPath.t)
     [@@deriving compare]
 
   let ( <= ) ~lhs ~rhs = compare_astate lhs rhs <= 0
@@ -28,14 +28,14 @@ module UseDefChain = struct
 
   let pp fmt = function
     | NullDefAssign (loc, ap)
-     -> F.fprintf fmt "NullDefAssign(%a, %a)" Location.pp loc AccessPath.Raw.pp ap
+     -> F.fprintf fmt "NullDefAssign(%a, %a)" Location.pp loc AccessPath.pp ap
     | NullDefCompare (loc, ap)
-     -> F.fprintf fmt "NullDefCompare(%a, %a)" Location.pp loc AccessPath.Raw.pp ap
+     -> F.fprintf fmt "NullDefCompare(%a, %a)" Location.pp loc AccessPath.pp ap
     | DependsOn (loc, ap)
-     -> F.fprintf fmt "DependsOn(%a, %a)" Location.pp loc AccessPath.Raw.pp ap
+     -> F.fprintf fmt "DependsOn(%a, %a)" Location.pp loc AccessPath.pp ap
 end
 
-module Domain = AbstractDomain.Map (AccessPath.Raw) (UseDefChain)
+module Domain = AbstractDomain.Map (AccessPath) (UseDefChain)
 
 type extras = ProcData.no_extras
 
@@ -46,7 +46,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   type nonrec extras = extras
 
   let is_access_nullable ap proc_data =
-    match AccessPath.Raw.get_field_and_annotation ap proc_data.ProcData.tenv with
+    match AccessPath.get_field_and_annotation ap proc_data.ProcData.tenv with
     | Some (_, annot_item)
      -> Annotations.ia_is_nullable annot_item
     | _
@@ -103,7 +103,7 @@ module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.Make 
 
 let make_error_trace astate ap ud =
   let name_of ap =
-    match AccessPath.Raw.get_last_access ap with
+    match AccessPath.get_last_access ap with
     | Some AccessPath.FieldAccess field_name
      -> "Field " ^ Typ.Fieldname.to_flat_string field_name
     | Some AccessPath.ArrayAccess _
@@ -147,7 +147,7 @@ let checker {Callbacks.summary; proc_desc; tenv} =
   let report astate (proc_data: extras ProcData.t) =
     let report_access_path ap udchain =
       let issue_kind = Localise.to_issue_id Localise.field_should_be_nullable in
-      match AccessPath.Raw.get_field_and_annotation ap proc_data.tenv with
+      match AccessPath.get_field_and_annotation ap proc_data.tenv with
       | Some (field_name, _) when Typ.Fieldname.Java.is_captured_parameter field_name
        -> (* Skip reporting when field comes from generated code *)
           ()

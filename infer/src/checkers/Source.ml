@@ -31,9 +31,9 @@ module type S = sig
 
   val is_footprint : t -> bool
 
-  val make_footprint : AccessPath.t -> Procdesc.t -> t
+  val make_footprint : AccessPath.Abs.t -> Procdesc.t -> t
 
-  val get_footprint_access_path : t -> AccessPath.t option
+  val get_footprint_access_path : t -> AccessPath.Abs.t option
 
   val get : CallSite.t -> HilExp.t list -> Tenv.t -> spec option
 
@@ -45,14 +45,14 @@ module Make (Kind : Kind) = struct
 
   type kind =
     | Normal of Kind.t  (** known source returned directly or transitively from a callee *)
-    | Footprint of AccessPath.t  (** unknown source read from the environment *)
+    | Footprint of AccessPath.Abs.t  (** unknown source read from the environment *)
     [@@deriving compare]
 
   let pp_kind fmt = function
     | Normal kind
      -> Kind.pp fmt kind
     | Footprint ap
-     -> F.fprintf fmt "Footprint(%a)" AccessPath.pp ap
+     -> F.fprintf fmt "Footprint(%a)" AccessPath.Abs.pp ap
 
   type t = {kind: kind; site: CallSite.t} [@@deriving compare]
 

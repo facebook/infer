@@ -326,7 +326,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
        (b) volatile *)
     let is_safe_access access prefix_path tenv =
-      match (access, AccessPath.Raw.get_typ prefix_path tenv) with
+      match (access, AccessPath.get_typ prefix_path tenv) with
       | ( AccessPath.FieldAccess fieldname
         , Some ({Typ.desc= Tstruct typename} | {desc= Tptr ({desc= Tstruct typename}, _)}) ) -> (
         match Tenv.lookup tenv typename with
@@ -765,7 +765,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                  AttributeMapDomain.has_attribute access_path Functional astate.attribute_map)
                rhs_access_paths
           &&
-          match AccessPath.Raw.get_typ lhs_access_path tenv with
+          match AccessPath.get_typ lhs_access_path tenv with
           | Some {Typ.desc= Typ.Tint ILong | Tfloat FDouble}
            -> (* writes to longs and doubles are not guaranteed to be atomic in Java
                  (http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.7), so there
@@ -803,7 +803,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            [var] is set to true. return None if it has free variables that stop us from
            evaluating it *)
         and eval_bexp var = function
-          | HilExp.AccessPath ap when AccessPath.Raw.equal ap var
+          | HilExp.AccessPath ap when AccessPath.equal ap var
            -> Some true
           | HilExp.Constant c
            -> Some (not (Const.iszero_int_float c))
@@ -1086,7 +1086,7 @@ let get_all_accesses_with_pre pre_filter access_filter accesses =
 let get_all_accesses = get_all_accesses_with_pre (fun _ -> true)
 
 let pp_container_access fmt (access_path, access_pname) =
-  F.fprintf fmt "container %a via call to %s" (MF.wrap_monospaced AccessPath.Raw.pp) access_path
+  F.fprintf fmt "container %a via call to %s" (MF.wrap_monospaced AccessPath.pp) access_path
     (MF.monospaced_to_string (Typ.Procname.get_method access_pname))
 
 let pp_access fmt sink =
@@ -1462,7 +1462,7 @@ let may_alias_container tenv p1 p2 =
     (* this is much too noisy: we'll warn that accesses to *any* Map can race with accesses to any
        other Map, etc. Instead, do something simple and unsound: just assume that two accesses can
        be to the same container if they are to the same access path *)
-    match (AccessPath.Raw.get_typ p1 tenv, AccessPath.Raw.get_typ p2 tenv) with
+    match (AccessPath.get_typ p1 tenv, AccessPath.get_typ p2 tenv) with
     | Some {desc= Tptr ({desc= Tstruct tn1}, _)}, Some {desc= Tptr ({desc= Tstruct tn2}, _)}
      -> PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
     | _
@@ -1480,7 +1480,7 @@ let may_alias_container tenv p1 p2 =
            the `this`'s as equal if their types are compatible *)
         AccessPath.equal_access_list (snd p1) (snd p2)
     | _
-     -> AccessPath.Raw.equal p1 p2
+     -> AccessPath.equal p1 p2
 
 (* equivalence relation computing whether two access paths may refer to the
    same heap location. *)

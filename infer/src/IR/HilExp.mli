@@ -11,7 +11,7 @@ open! IStd
 module F = Format
 
 type t =
-  | AccessPath of AccessPath.Raw.t  (** access path (e.g., x.f.g or x[i]) *)
+  | AccessPath of AccessPath.t  (** access path (e.g., x.f.g or x[i]) *)
   | UnaryOperator of Unop.t * t * Typ.t option
       (** Unary operator with type of the result if known *)
   | BinaryOperator of Binop.t * t * t  (** Binary operator *)
@@ -29,10 +29,10 @@ val pp : F.formatter -> t -> unit
 val get_typ : Tenv.t -> t -> Typ.t option
 (** Get the type of the expression. Warning: not fully implemented *)
 
-val of_sil : f_resolve_id:(Var.t -> AccessPath.Raw.t option) -> Exp.t -> Typ.t -> t
+val of_sil : f_resolve_id:(Var.t -> AccessPath.t option) -> Exp.t -> Typ.t -> t
 (** Convert SIL expression to HIL expression *)
 
-val get_access_paths : t -> AccessPath.Raw.t list
+val get_access_paths : t -> AccessPath.t list
 (** Get all the access paths used in the given HIL expression, including duplicates if a path is
     used more than once. *)
 

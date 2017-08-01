@@ -351,7 +351,7 @@ module Make (Spec : Spec) = struct
   let get_footprint_index source =
     match Source.get_footprint_access_path source with
     | Some access_path
-     -> AccessPath.get_footprint_index access_path
+     -> AccessPath.Abs.get_footprint_index access_path
     | None
      -> None
 

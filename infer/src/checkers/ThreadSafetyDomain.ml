@@ -12,10 +12,10 @@ module F = Format
 
 module Access = struct
   type t =
-    | Read of AccessPath.Raw.t
-    | Write of AccessPath.Raw.t
-    | ContainerRead of AccessPath.Raw.t * Typ.Procname.t
-    | ContainerWrite of AccessPath.Raw.t * Typ.Procname.t
+    | Read of AccessPath.t
+    | Write of AccessPath.t
+    | ContainerRead of AccessPath.t * Typ.Procname.t
+    | ContainerWrite of AccessPath.t * Typ.Procname.t
     | InterfaceCall of Typ.Procname.t
     [@@deriving compare]
 
@@ -35,14 +35,13 @@ module Access = struct
 
   let pp fmt = function
     | Read access_path
-     -> F.fprintf fmt "Read of %a" AccessPath.Raw.pp access_path
+     -> F.fprintf fmt "Read of %a" AccessPath.pp access_path
     | Write access_path
-     -> F.fprintf fmt "Write to %a" AccessPath.Raw.pp access_path
+     -> F.fprintf fmt "Write to %a" AccessPath.pp access_path
     | ContainerRead (access_path, pname)
-     -> F.fprintf fmt "Read of container %a via %a" AccessPath.Raw.pp access_path Typ.Procname.pp
-          pname
+     -> F.fprintf fmt "Read of container %a via %a" AccessPath.pp access_path Typ.Procname.pp pname
     | ContainerWrite (access_path, pname)
-     -> F.fprintf fmt "Write to container %a via %a" AccessPath.Raw.pp access_path Typ.Procname.pp
+     -> F.fprintf fmt "Write to container %a via %a" AccessPath.pp access_path Typ.Procname.pp
           pname
     | InterfaceCall pname
      -> F.fprintf fmt "Call to un-annotated interface method %a" Typ.Procname.pp pname
@@ -151,7 +150,7 @@ end
 module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute.Set)
 
 module AttributeMapDomain = struct
-  include AbstractDomain.InvertedMap (AccessPath.RawMap) (AttributeSetDomain)
+  include AbstractDomain.InvertedMap (AccessPath.Map) (AttributeSetDomain)
 
   let has_attribute access_path attribute t =
     try find access_path t |> AttributeSetDomain.mem attribute
@@ -280,7 +279,7 @@ let empty =
   let threads = false in
   let locks = false in
   let accesses = AccessDomain.empty in
-  let attribute_map = AccessPath.RawMap.empty in
+  let attribute_map = AccessPath.Map.empty in
   let escapees = EscapeeDomain.empty in
   {thumbs_up; threads; locks; accesses; attribute_map; escapees}
 

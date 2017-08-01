@@ -12,15 +12,15 @@ module F = Format
 
 module Access : sig
   type t =
-    | Read of AccessPath.Raw.t  (** Field or array read *)
-    | Write of AccessPath.Raw.t  (** Field or array write *)
-    | ContainerRead of AccessPath.Raw.t * Typ.Procname.t  (** Read of container object *)
-    | ContainerWrite of AccessPath.Raw.t * Typ.Procname.t  (** Write to container object *)
+    | Read of AccessPath.t  (** Field or array read *)
+    | Write of AccessPath.t  (** Field or array write *)
+    | ContainerRead of AccessPath.t * Typ.Procname.t  (** Read of container object *)
+    | ContainerWrite of AccessPath.t * Typ.Procname.t  (** Write to container object *)
     | InterfaceCall of Typ.Procname.t
         (** Call to method of interface not annotated with @ThreadSafe *)
     [@@deriving compare]
 
-  val get_access_path : t -> AccessPath.Raw.t option
+  val get_access_path : t -> AccessPath.t option
 
   val equal : t -> t -> bool
 
@@ -77,17 +77,17 @@ end
 module AttributeSetDomain : module type of AbstractDomain.InvertedSet (Attribute.Set)
 
 module AttributeMapDomain : sig
-  include module type of AbstractDomain.InvertedMap (AccessPath.RawMap) (AttributeSetDomain)
+  include module type of AbstractDomain.InvertedMap (AccessPath.Map) (AttributeSetDomain)
 
-  val has_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> bool
+  val has_attribute : AccessPath.t -> Attribute.t -> astate -> bool
 
-  val get_conditional_ownership_index : AccessPath.Raw.t -> astate -> int option
+  val get_conditional_ownership_index : AccessPath.t -> astate -> int option
   (** get the formal index of the the formal that must own the given access path (if any) *)
 
-  val get_choices : AccessPath.Raw.t -> astate -> Choice.t list
+  val get_choices : AccessPath.t -> astate -> Choice.t list
   (** get the choice attributes associated with the given access path *)
 
-  val add_attribute : AccessPath.Raw.t -> Attribute.t -> astate -> astate
+  val add_attribute : AccessPath.t -> Attribute.t -> astate -> astate
 end
 
 (** Excluders: Two things can provide for mutual exclusion: holding a lock,
@@ -140,7 +140,7 @@ module Escapee : sig
 
   val pp : F.formatter -> t -> unit
 
-  val of_access_path : FormalMap.t -> AccessPath.Raw.t -> t
+  val of_access_path : FormalMap.t -> AccessPath.t -> t
 end
 
 (** set of formals or locals that may escape *)
@@ -181,9 +181,9 @@ type summary =
 include AbstractDomain.WithBottom with type astate := astate
 
 val make_container_access :
-  AccessPath.Raw.t -> Typ.Procname.t -> is_write:bool -> Location.t -> TraceElem.t
+  AccessPath.t -> Typ.Procname.t -> is_write:bool -> Location.t -> TraceElem.t
 
-val make_field_access : AccessPath.Raw.t -> is_write:bool -> Location.t -> TraceElem.t
+val make_field_access : AccessPath.t -> is_write:bool -> Location.t -> TraceElem.t
 
 val make_unannotated_call_access : Typ.Procname.t -> Location.t -> TraceElem.t
 

@@ -48,10 +48,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             in
             Some (TaintDomain.make_normal_leaf trace)
           in
-          let root, _ = AccessPath.extract access_path in
+          let root, _ = AccessPath.Abs.extract access_path in
           match FormalMap.get_formal_index root proc_data.extras.formal_map with
           | Some formal_index
-           -> make_footprint_trace (AccessPath.to_footprint formal_index access_path)
+           -> make_footprint_trace (AccessPath.Abs.to_footprint formal_index access_path)
           | None
            -> if Var.is_global (fst root) then make_footprint_trace access_path else None
 
@@ -65,8 +65,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     let exp_get_node_ ~abstracted raw_access_path access_tree proc_data =
       let access_path =
-        if abstracted then AccessPath.Abstracted raw_access_path
-        else AccessPath.Exact raw_access_path
+        if abstracted then AccessPath.Abs.Abstracted raw_access_path
+        else AccessPath.Abs.Exact raw_access_path
       in
       access_path_get_node access_path access_tree proc_data
 
@@ -80,13 +80,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     let add_return_source source ret_base access_tree =
       let trace = TraceDomain.of_source source in
-      let id_ap = AccessPath.Exact (ret_base, []) in
+      let id_ap = AccessPath.Abs.Exact (ret_base, []) in
       TaintDomain.add_trace id_ap trace access_tree
 
     let add_actual_source source index actuals access_tree proc_data =
       match List.nth_exn actuals index with
       | HilExp.AccessPath actual_ap_raw
-       -> let actual_ap = AccessPath.Exact actual_ap_raw in
+       -> let actual_ap = AccessPath.Abs.Exact actual_ap_raw in
           let trace = access_path_get_trace actual_ap access_tree proc_data in
           TaintDomain.add_trace actual_ap (TraceDomain.add_source source trace) access_tree
       | _
@@ -200,8 +200,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             | None
              -> F.fprintf fmt ""
             | Some access_path
-             -> let base, _ = AccessPath.extract access_path in
-                F.fprintf fmt " with tainted data %a" AccessPath.pp
+             -> let base, _ = AccessPath.Abs.extract access_path in
+                F.fprintf fmt " with tainted data %a" AccessPath.Abs.pp
                   ( if Var.is_footprint (fst base) then
                       (* TODO: resolve footprint identifier to formal name *)
                       access_path
@@ -241,7 +241,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         match List.nth_exn actuals sink_index with
         | HilExp.AccessPath actual_ap_raw
          -> (
-            let actual_ap = AccessPath.Abstracted actual_ap_raw in
+            let actual_ap = AccessPath.Abs.Abstracted actual_ap_raw in
             match access_path_get_node actual_ap access_tree_acc proc_data with
             | Some (actual_trace, _)
              -> let sink' =
@@ -264,10 +264,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let apply_return ret_ap =
           match ret_opt with
           | Some base_var
-           -> Some (AccessPath.with_base base_var ret_ap)
+           -> Some (AccessPath.Abs.with_base base_var ret_ap)
           | None
            -> Logging.internal_error "Have summary for retval, but no ret id to bind it to: %a@\n"
-                AccessPath.pp ret_ap ;
+                AccessPath.Abs.pp ret_ap ;
               None
         in
         let get_actual_ap formal_index =
@@ -276,11 +276,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             ~default:None (List.nth actuals formal_index)
         in
         let project ~formal_ap ~actual_ap =
-          let projected_ap = AccessPath.append actual_ap (snd (AccessPath.extract formal_ap)) in
-          if AccessPath.is_exact formal_ap then AccessPath.Exact projected_ap
-          else AccessPath.Abstracted projected_ap
+          let projected_ap =
+            AccessPath.append actual_ap (snd (AccessPath.Abs.extract formal_ap))
+          in
+          if AccessPath.Abs.is_exact formal_ap then AccessPath.Abs.Exact projected_ap
+          else AccessPath.Abs.Abstracted projected_ap
         in
-        let base_var, _ = fst (AccessPath.extract formal_ap) in
+        let base_var, _ = fst (AccessPath.Abs.extract formal_ap) in
         match base_var with
         | Var.ProgramVar pvar
          -> if Pvar.is_return pvar then apply_return formal_ap else Some formal_ap
@@ -342,7 +344,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let rhs_node =
           Option.value (hil_exp_get_node rhs_exp astate proc_data) ~default:TaintDomain.empty_node
         in
-        TaintDomain.add_node (AccessPath.Exact lhs_access_path) rhs_node astate
+        TaintDomain.add_node (AccessPath.Abs.Exact lhs_access_path) rhs_node astate
       in
       match instr with
       | Assign (((Var.ProgramVar pvar, _), []), HilExp.Exception _, _) when Pvar.is_return pvar
@@ -391,7 +393,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                     match TraceDomain.Source.get_footprint_access_path source with
                     | Some access_path
                      -> Option.exists
-                          (AccessPath.Raw.get_typ (AccessPath.extract access_path) proc_data.tenv)
+                          (AccessPath.get_typ (AccessPath.Abs.extract access_path) proc_data.tenv)
                           ~f:should_taint_typ
                     | None
                      -> true)
@@ -407,15 +409,16 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | _, [], _
                -> astate_acc
               | TaintSpec.Propagate_to_return, actuals, Some ret_ap
-               -> propagate_to_access_path (AccessPath.Exact (ret_ap, [])) actuals astate_acc
+               -> propagate_to_access_path (AccessPath.Abs.Exact (ret_ap, [])) actuals astate_acc
               | ( TaintSpec.Propagate_to_receiver
                 , (AccessPath receiver_ap) :: (_ :: _ as other_actuals)
                 , _ )
-               -> propagate_to_access_path (AccessPath.Exact receiver_ap) other_actuals astate_acc
+               -> propagate_to_access_path (AccessPath.Abs.Exact receiver_ap) other_actuals
+                    astate_acc
               | TaintSpec.Propagate_to_actual actual_index, _, _ -> (
                 match List.nth actuals actual_index with
                 | Some HilExp.AccessPath actual_ap
-                 -> propagate_to_access_path (AccessPath.Exact actual_ap) actuals astate_acc
+                 -> propagate_to_access_path (AccessPath.Abs.Exact actual_ap) actuals astate_acc
                 | _
                  -> astate_acc )
               | _
@@ -622,7 +625,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           ~f:(fun acc (name, typ, taint_opt) ->
             match taint_opt with
             | Some source
-             -> let base_ap = AccessPath.Exact (AccessPath.of_pvar (Pvar.mk name pname) typ) in
+             -> let base_ap = AccessPath.Abs.Exact (AccessPath.of_pvar (Pvar.mk name pname) typ) in
                 TaintDomain.add_trace base_ap (TraceDomain.of_source source) acc
             | None
              -> acc)
