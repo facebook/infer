@@ -41,6 +41,46 @@ let rec pp fmt = function
    -> let pp_length fmt = Option.iter ~f:(F.fprintf fmt "[%a]" pp) in
       F.fprintf fmt "sizeof(%a%a)" (Typ.pp_full Pp.text) typ pp_length length
 
+let rec get_typ tenv = function
+  | AccessPath access_path
+   -> AccessPath.Raw.get_typ access_path tenv
+  | UnaryOperator (_, _, typ_opt)
+   -> typ_opt
+  | BinaryOperator ((Lt | Gt | Le | Ge | Eq | Ne | LAnd | LOr), _, _)
+   -> Some (Typ.mk (Typ.Tint Typ.IBool))
+  | BinaryOperator (_, e1, e2) -> (
+    match
+      (* TODO: doing this properly will require taking account of language-specific coercion
+          semantics. Only return a type when the operands have the same type for now *)
+      (get_typ tenv e1, get_typ tenv e2)
+    with
+    | Some typ1, Some typ2 when Typ.equal typ1 typ2
+     -> Some typ1
+    | _
+     -> None )
+  | Exception t
+   -> get_typ tenv t
+  | Closure _ | Constant Cfun _
+   -> (* We don't have a way to represent function types *)
+      None
+  | Constant Cint _
+   -> (* TODO: handle signedness *)
+      Some (Typ.mk (Typ.Tint Typ.IInt))
+  | Constant Cfloat _
+   -> Some (Typ.mk (Typ.Tfloat Typ.FFloat))
+  | Constant Cclass _
+   -> (* TODO: this only happens in Java. We probably need to change it to `Cclass of Typ.Name.t`
+         to give a useful result here *)
+      None
+  | Constant Cstr _
+   -> (* TODO: this will need to behave differently depending on whether we're in C++ or Java *)
+      None
+  | Cast (typ, _)
+   -> Some typ
+  | Sizeof _
+   -> (* sizeof returns a size_t, which is an unsigned int *)
+      Some (Typ.mk (Typ.Tint Typ.IUInt))
+
 let get_access_paths exp0 =
   let rec get_access_paths_ exp acc =
     match exp with
