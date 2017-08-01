@@ -124,6 +124,15 @@ int plus_plus_loop_ok(int n) {
   return i;
 }
 
+void lambda_bad() {
+  int x = []() {
+    int y = 1;
+    y = 2;
+    return y;
+  }();
+  return x;
+}
+
 void capture1_ok() {
   int x = 1;
   [x]() { return x; }();
@@ -133,9 +142,28 @@ void capture2_ok(int x) {
   [x]() { return x; }();
 }
 
-int FP_capture_by_ref_ok() {
+int capture_by_ref1_ok() {
   int x = 0;
   [&x]() { x++; }();
+  return x;
+}
+
+int capture_by_ref2_ok() {
+  int x = 0;
+  int y = 0;
+  [&]() {
+    x = x + y;
+    y = x;
+  }();
+  return x + y;
+}
+
+int FN_capture_by_ref_reuseBad() {
+  int x = 0;
+  [&x]() {
+    x = 1; // dead, but we won't report
+    x = 2;
+  }();
   return x;
 }
 

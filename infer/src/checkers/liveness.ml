@@ -64,11 +64,24 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   let invariant_map =
     Analyzer.exec_cfg cfg (ProcData.make_default proc_desc tenv) ~initial:Domain.empty ~debug:true
   in
+  let procname = Procdesc.get_proc_name proc_desc in
+  let is_cpp_lambda =
+    match Typ.Procname.get_method procname with "operator()" -> true | _ -> false
+  in
+  let is_captured_var pvar =
+    let pvar_name = Pvar.get_name pvar in
+    let pvar_matches (name, _) = Mangled.equal name pvar_name in
+    (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
+    is_cpp_lambda
+    && not
+         ( List.exists ~f:pvar_matches (Procdesc.get_locals proc_desc)
+         || List.exists ~f:pvar_matches (Procdesc.get_formals proc_desc) )
+  in
   let report_dead_store live_vars = function
     | Sil.Store (Lvar pvar, _, _, loc)
       when not
              ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
-             || Domain.mem (Var.of_pvar pvar) live_vars )
+             || Domain.mem (Var.of_pvar pvar) live_vars || is_captured_var pvar )
      -> let issue_id = Localise.to_issue_id Localise.dead_store in
         let message = F.asprintf "The value written to %a is never used" (Pvar.pp Pp.text) pvar in
         let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
