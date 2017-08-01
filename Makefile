@@ -5,6 +5,9 @@
 # LICENSE file in the root directory of this source tree. An additional grant
 # of patent rights can be found in the PATENTS file in the same directory.
 
+.PHONY: default
+default: infer
+
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
@@ -91,9 +94,6 @@ BUILD_SYSTEMS_TESTS += make utf8_in_pwd waf
 build_waf_test: build_make_test
 build_waf_print: build_make_print
 endif
-
-.PHONY: all
-all: infer
 
 ifeq ($(IS_INFER_RELEASE),no)
 configure: configure.ac $(wildcard m4/*.m4)
