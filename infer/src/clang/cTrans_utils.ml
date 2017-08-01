@@ -291,6 +291,50 @@ module Loops = struct
     with For (_, _, cond, _, _) | While (_, cond, _) | DoWhile (cond, _) -> cond
 end
 
+module Scope = struct
+  module StmtMap = ClangPointers.Map
+
+  let add_scope_vars_to_destroy var_map stmt_info vars =
+    let ptr = stmt_info.Clang_ast_t.si_pointer in
+    StmtMap.add var_map ~key:ptr ~data:vars
+
+  let rec compute_vars vars_in_scope var_map stmt =
+    (* vars_in_scope corresponds to the list of all variables existing in the current scope *)
+    let open Clang_ast_t in
+    let get_var_info_from_decl = function VarDecl _ as decl -> Some decl | _ -> None in
+    let get_new_vars = function
+      | DeclStmt (_, _, decl_list)
+       -> List.filter_map ~f:get_var_info_from_decl decl_list
+      | _
+       -> []
+    in
+    let rec handle_instructions_block var_map vars_in_scope instrs =
+      match instrs with
+      | []
+       -> (vars_in_scope, var_map)
+      | stmt :: rest
+       -> let new_var_map = compute_vars vars_in_scope var_map stmt in
+          let new_vars_in_stmt = get_new_vars stmt in
+          handle_instructions_block new_var_map (new_vars_in_stmt @ vars_in_scope) rest
+    in
+    (* TODO handle following stmts: *)
+    (* BreakStmt _ | ContinueStmt _ | GotoStmt _ | ForStmt _ | WhileStmt _ |
+       DoStmt _ | IfStmt _ | SwitchStmt _ | CXXForRangeStmt _  | LabelStmt_ *)
+    match stmt with
+    | CompoundStmt (stmt_info, stmt_list)
+     -> let vars, new_var_map = handle_instructions_block var_map vars_in_scope stmt_list in
+        (* vars contains the variables defined in the current compound statement + vars_in_scope *)
+        let vars_to_destroy = List.take vars (List.length vars - List.length vars_in_scope) in
+        add_scope_vars_to_destroy new_var_map stmt_info vars_to_destroy
+    | ReturnStmt (stmt_info, _)
+     -> add_scope_vars_to_destroy var_map stmt_info vars_in_scope
+    | _
+     -> let stmt_list = snd (Clang_ast_proj.get_stmt_tuple stmt) in
+        List.fold_left ~f:(compute_vars vars_in_scope) stmt_list ~init:var_map
+
+  let compute_vars_to_destroy body = List.fold_left ~f:(compute_vars []) ~init:StmtMap.empty [body]
+end
+
 (** This function handles ObjC new/alloc and C++ new calls *)
 let create_alloc_instrs sil_loc function_type fname size_exp_opt procname_opt =
   let function_type, function_type_np =

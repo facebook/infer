@@ -666,8 +666,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        -> None
     in
     match destruct_decl_ref_opt with
-    | Some decl_ref
-     -> method_deref_trans trans_state pvar_trans_result decl_ref si `CXXDestructor
+    | Some decl_ref -> (
+      match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+      | Some CXXDestructorDecl (_, named_decl_info, _, {fdi_body= None}, _)
+       -> L.(debug Capture Verbose)
+            "@\n Trying to translate destructor call, but found empty destructor body for %s@\n@."
+            (CAst_utils.get_unqualified_name named_decl_info) ;
+          empty_res_trans
+      | Some CXXDestructorDecl (_, _, _, {fdi_body= Some _}, _)
+      (* Translate only those destructors that have bodies *)
+       -> method_deref_trans trans_state pvar_trans_result decl_ref si `CXXDestructor
+      | _
+       -> empty_res_trans )
     | None
      -> empty_res_trans
 
@@ -1248,7 +1258,68 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     instruction trans_state transformed_stmt
 
-  and compoundStmt_trans trans_state stmt_list = instructions trans_state stmt_list
+  and inject_destructors trans_state stmt_info =
+    let context = trans_state.context in
+    if not (CGeneral_utils.is_cpp_translation context.translation_unit_context) then
+      empty_res_trans
+    else
+      let procname = Procdesc.get_proc_name context.CContext.procdesc in
+      (* The source location of destructor should reflect the end of the statement *)
+      let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
+      let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
+      (* ReturnStmt may claim a priority with the same `stmt_info`.
+         New pointer is generated to avoid premature node creation *)
+      let stmt_info' =
+        {stmt_info_loc with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
+      in
+      let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info' in
+      let all_res_trans =
+        try
+          let map = context.CContext.vars_to_destroy in
+          let vars_to_destroy = CContext.StmtMap.find_exn map stmt_info.Clang_ast_t.si_pointer in
+          List.map
+            ~f:(function
+                | Clang_ast_t.VarDecl (_, _, qual_type, _) as decl
+                 -> let pvar = CVar_decl.sil_var_of_decl context decl procname in
+                    let exp = Exp.Lvar pvar in
+                    let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+                    let this_res_trans_destruct =
+                      {empty_res_trans with exps= [(exp, CType.add_pointer_to_typ typ)]}
+                    in
+                    (* cxx_destructor_call_trans may claim a priority with the same `stmt_info`.
+                       New pointer is generated to avoid premature node creation *)
+                    let stmt_info'' =
+                      {stmt_info_loc with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
+                    in
+                    cxx_destructor_call_trans trans_state_pri stmt_info'' this_res_trans_destruct
+                      qual_type
+                | _
+                 -> assert false)
+            vars_to_destroy
+        with Not_found ->
+          L.(debug Capture Verbose) "@\n Variables that go out of scope are not found...@\n@." ; []
+      in
+      let sil_loc = CLocation.get_sil_location stmt_info context in
+      PriorityNode.compute_results_to_parent trans_state_pri sil_loc "Destruction" stmt_info'
+        all_res_trans
+
+  and compoundStmt_trans trans_state stmt_info stmt_list =
+    (* Computing destructor call nodes to inject at the end of the compound statement,
+       except if the statement ends with Return statemenent *)
+    let destr_trans_result =
+      match List.last stmt_list with
+      | Some Clang_ast_t.ReturnStmt _
+       -> empty_res_trans
+      | _
+       -> inject_destructors trans_state stmt_info
+    in
+    (* Injecting destructor call nodes at the end of the compound statement *)
+    let succ_nodes =
+      if destr_trans_result.root_nodes <> [] then destr_trans_result.root_nodes
+      else trans_state.succ_nodes
+    in
+    let trans_state' = {trans_state with succ_nodes} in
+    instructions trans_state' stmt_list
 
   and conditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
@@ -2171,7 +2242,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let mk_ret_node instrs =
-      let ret_node = create_node (Procdesc.Node.Stmt_node "Return Stmt") instrs sil_loc context in
+      let destr_trans_result = inject_destructors trans_state_pri stmt_info in
+      let ret_node =
+        create_node (Procdesc.Node.Stmt_node "Return Stmt") (instrs @ destr_trans_result.instrs)
+          sil_loc context
+      in
       Procdesc.node_set_succs_exn context.procdesc ret_node
         [Procdesc.get_exit_node context.CContext.procdesc] [] ;
       ret_node
@@ -2766,9 +2841,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           block_enumeration_trans trans_state stmt_info stmt_list expr_info
         else
           objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
-    | CompoundStmt (_, stmt_list)
+    | CompoundStmt (stmt_info, stmt_list)
      -> (* No node for this statement. We just collect its statement list*)
-        compoundStmt_trans trans_state stmt_list
+        compoundStmt_trans trans_state stmt_info stmt_list
     | ConditionalOperator (stmt_info, stmt_list, expr_info)
      -> (* Ternary operator "cond ? exp1 : exp2" *)
         conditionalOperator_trans trans_state stmt_info stmt_list expr_info
@@ -2885,19 +2960,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> blockExpr_trans trans_state stmt_info expr_info decl
     | ObjCAutoreleasePoolStmt (stmt_info, stmts)
      -> objcAutoreleasePool_trans trans_state stmt_info stmts
-    | ObjCAtTryStmt (_, stmts)
-     -> compoundStmt_trans trans_state stmts
-    | CXXTryStmt (_, stmts)
+    | ObjCAtTryStmt (stmt_info, stmts)
+     -> compoundStmt_trans trans_state stmt_info stmts
+    | CXXTryStmt (stmt_info, stmts)
      -> L.(debug Capture Medium)
           "@\n!!!!WARNING: found statement %s. @\nTranslation need to be improved.... @\n"
           (Clang_ast_proj.get_stmt_kind_string instr) ;
-        compoundStmt_trans trans_state stmts
+        compoundStmt_trans trans_state stmt_info stmts
     | ObjCAtThrowStmt (stmt_info, stmts) | CXXThrowExpr (stmt_info, stmts, _)
      -> objc_cxx_throw_trans trans_state stmt_info stmts
-    | ObjCAtFinallyStmt (_, stmts)
-     -> compoundStmt_trans trans_state stmts
-    | ObjCAtCatchStmt _ | CXXCatchStmt _
-     -> compoundStmt_trans trans_state []
+    | ObjCAtFinallyStmt (stmt_info, stmts)
+     -> compoundStmt_trans trans_state stmt_info stmts
+    | ObjCAtCatchStmt (stmt_info, _, _) | CXXCatchStmt (stmt_info, _, _)
+     -> compoundStmt_trans trans_state stmt_info []
     | PredefinedExpr (_, _, expr_info, _)
      -> stringLiteral_trans trans_state expr_info ""
     | BinaryConditionalOperator (stmt_info, stmts, expr_info)

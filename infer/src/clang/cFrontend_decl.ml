@@ -29,9 +29,10 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       match Cfg.find_proc_desc_from_name cfg procname with
       | Some procdesc
        -> if Procdesc.is_defined procdesc && not (model_exists procname) then
+            let vars_to_destroy = CTrans_utils.Scope.compute_vars_to_destroy body in
             let context =
               CContext.create_context trans_unit_ctx tenv cg cfg procdesc class_decl_opt
-                has_return_param is_objc_method outer_context_opt
+                has_return_param is_objc_method outer_context_opt vars_to_destroy
             in
             let start_node = Procdesc.get_start_node procdesc in
             let exit_node = Procdesc.get_exit_node procdesc in

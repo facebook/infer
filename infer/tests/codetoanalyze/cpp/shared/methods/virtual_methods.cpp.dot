@@ -30,11 +30,11 @@ digraph iCFG {
 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_2" [label="2: Exit tri_area \n  " color=yellow style=filled]
 	
 
-"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 50]\n  _=*n$0:Polygon [line 50]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 50]\n  *&return:int=(1 / (n$2 - 10)) [line 50]\n " shape="box"]
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 50]\n  _=*n$0:Polygon [line 50]\n  n$2=_fun_Polygon_area(n$0:Polygon*) virtual [line 50]\n  *&return:int=(1 / (n$2 - 10)) [line 50]\n  _=*&trgl:Triangle [line 50]\n  _fun_Triangle_~Triangle(&trgl:Triangle*) virtual [line 50]\n " shape="box"]
 	
 
 	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_2" ;
-"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:Polygon* [line 49]\n  _=*n$3:Polygon [line 49]\n  _fun_Polygon_set_values(n$3:Polygon*,4:int,5:int) [line 49]\n " shape="box"]
+"tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" [label="4:  Call _fun_Polygon_set_values \n   n$4=*&ppoly2:Polygon* [line 49]\n  _=*n$4:Polygon [line 49]\n  _fun_Polygon_set_values(n$4:Polygon*,4:int,5:int) [line 49]\n " shape="box"]
 	
 
 	 "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_4" -> "tri_area#_Z8tri_areav.403fd0c777354a6dc0b49fdc8d1c7762_3" ;
@@ -76,11 +76,11 @@ digraph iCFG {
 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_2" [label="2: Exit tri_not_virtual_area \n  " color=yellow style=filled]
 	
 
-"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 64]\n  _=*n$0:Polygon [line 64]\n  n$2=_fun_Polygon_area(n$0:Polygon*) [line 64]\n  *&return:int=(1 / n$2) [line 64]\n " shape="box"]
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" [label="3:  Return Stmt \n   n$0=*&ppoly2:Polygon* [line 64]\n  _=*n$0:Polygon [line 64]\n  n$2=_fun_Polygon_area(n$0:Polygon*) [line 64]\n  *&return:int=(1 / n$2) [line 64]\n  _=*&trgl:Triangle [line 64]\n  _fun_Triangle_~Triangle(&trgl:Triangle*) virtual [line 64]\n " shape="box"]
 	
 
 	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_2" ;
-"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" [label="4:  Call _fun_Polygon_set_values \n   n$3=*&ppoly2:Polygon* [line 63]\n  _=*n$3:Polygon [line 63]\n  _fun_Polygon_set_values(n$3:Polygon*,4:int,5:int) [line 63]\n " shape="box"]
+"tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" [label="4:  Call _fun_Polygon_set_values \n   n$4=*&ppoly2:Polygon* [line 63]\n  _=*n$4:Polygon [line 63]\n  _fun_Polygon_set_values(n$4:Polygon*,4:int,5:int) [line 63]\n " shape="box"]
 	
 
 	 "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_4" -> "tri_not_virtual_area#_Z20tri_not_virtual_areav.f5155c2065082d5f4483008c8070f701_3" ;

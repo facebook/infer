@@ -15,6 +15,7 @@ module Hashtbl = Caml.Hashtbl
 (** and the cg, cfg, and tenv corresponding to the current file. *)
 
 module L = Logging
+module StmtMap = ClangPointers.Map
 
 type pointer = int [@@deriving compare]
 
@@ -39,10 +40,11 @@ type t =
         (** in case of objc blocks, the context of the method containing the
                                   block *)
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Typ.Procname.Map.t
-  ; label_map: str_node_map }
+  ; label_map: str_node_map
+  ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t }
 
 let create_context translation_unit_context tenv cg cfg procdesc curr_class return_param_typ
-    is_objc_method outer_context =
+    is_objc_method outer_context vars_to_destroy =
   { translation_unit_context
   ; tenv
   ; cg
@@ -53,7 +55,8 @@ let create_context translation_unit_context tenv cg cfg procdesc curr_class retu
   ; is_objc_method
   ; outer_context
   ; blocks_static_vars= Typ.Procname.Map.empty
-  ; label_map= Hashtbl.create 17 }
+  ; label_map= Hashtbl.create 17
+  ; vars_to_destroy }
 
 let get_cfg context = context.cfg
 

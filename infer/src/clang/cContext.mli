@@ -13,6 +13,8 @@ open! IStd
 
 (** and the cg, cfg, and tenv corresponding to the current file. *)
 
+module StmtMap = ClangPointers.Map
+
 type curr_class = ContextClsDeclPtr of int | ContextNoCls [@@deriving compare]
 
 val equal_curr_class : curr_class -> curr_class -> bool
@@ -32,7 +34,10 @@ type t =
         (** in case of objc blocks, the context of the method containing the
                                   block *)
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Typ.Procname.Map.t
-  ; label_map: str_node_map }
+  ; label_map: str_node_map
+  ; vars_to_destroy: Clang_ast_t.decl list StmtMap.t
+  (* mapping from a statement to a list of variables, that go out of scope after the end of the statement *)
+  }
 
 val get_procdesc : t -> Procdesc.t
 
@@ -54,7 +59,7 @@ val get_tenv : t -> Tenv.t
 
 val create_context :
   CFrontend_config.translation_unit_context -> Tenv.t -> Cg.t -> Cfg.cfg -> Procdesc.t
-  -> curr_class -> Typ.t option -> bool -> t option -> t
+  -> curr_class -> Typ.t option -> bool -> t option -> Clang_ast_t.decl list StmtMap.t -> t
 
 val add_block_static_var : t -> Typ.Procname.t -> Pvar.t * Typ.t -> unit
 
