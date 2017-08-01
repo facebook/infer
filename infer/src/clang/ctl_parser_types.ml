@@ -73,6 +73,11 @@ let rec ast_node_name an =
    -> s
   | Stmt ObjCStringLiteral (_, [stmt], _)
    -> "@" ^ ast_node_name (Stmt stmt)
+  | Stmt ObjCBoxedExpr (_, [stmt], _, objc_boxed_expr_info)
+   -> let selector =
+        match objc_boxed_expr_info.obei_boxing_method with Some sel -> sel | None -> ""
+      in
+      selector ^ ast_node_name (Stmt stmt)
   | _
    -> ""
 

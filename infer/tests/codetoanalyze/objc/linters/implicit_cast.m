@@ -62,4 +62,11 @@ typedef NS_ENUM(NSUInteger, MyEnum) {
   [self enum_param:@"s"];
 }
 
+- (void)param_int:(int)s {
+}
+
+- (void)call_with_boxed_int {
+  [self param_int:@0];
+}
+
 @end
