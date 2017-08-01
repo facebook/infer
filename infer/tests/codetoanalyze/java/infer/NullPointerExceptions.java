@@ -434,6 +434,12 @@ public class NullPointerExceptions {
     }
   }
 
+  void assumeUndefNullableIdempotentOk() {
+    if (undefNullableRet() != null) {
+      undefNullableRet().toString();
+    }
+  }
+
   public Object undefNullableWrapper() {
     return undefNullableRet();
   }
