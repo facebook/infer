@@ -1430,6 +1430,7 @@ and report_formatter =
 
 and report_hook =
   CLOpt.mk_string_opt ~long:"report-hook"
+    ~in_help:CLOpt.([(Analyze, manual_generic); (Run, manual_generic)])
     ~default:(lib_dir ^/ "python" ^/ "report.py")
     ~meta:"script"
     "Specify a script to be executed after the analysis results are written.  This script will be passed $(b,--issues-csv), $(b,--issues-json), $(b,--issues-txt), $(b,--issues-xml), $(b,--project-root), and $(b,--results-dir)."
