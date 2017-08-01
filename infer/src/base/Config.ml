@@ -21,7 +21,6 @@ type analyzer =
   | BiAbduction
   | CaptureOnly
   | CompileOnly
-  | Eradicate
   | Checkers
   | Crashcontext
   | Linters
@@ -34,7 +33,6 @@ let string_to_analyzer =
   ; ("checkers", Checkers)
   ; ("compile", CompileOnly)
   ; ("crashcontext", Crashcontext)
-  ; ("eradicate", Eradicate)
   ; ("infer", BiAbduction)
   ; ("linters", Linters) ]
 
@@ -559,7 +557,6 @@ and analyzer =
     BiAbduction
     | CaptureOnly
     | CompileOnly
-    | Eradicate
     | Checkers
     | Crashcontext
     | Linters
@@ -1782,8 +1779,6 @@ let post_parsing_initialization command_opt =
    -> biabduction := true
   | Some Crashcontext
    -> crashcontext := true
-  | Some Eradicate
-   -> eradicate := true
   | Some (CaptureOnly | CompileOnly | Checkers | Linters)
    -> ()
   | None

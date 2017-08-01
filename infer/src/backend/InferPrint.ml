@@ -206,15 +206,6 @@ end
 let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass =
   if not Config.filtering || Exceptions.equal_err_class eclass Exceptions.Linters then true
   else
-    let analyzer_is_whitelisted =
-      match Config.analyzer with
-      | Eradicate
-       -> true
-      | BiAbduction | CaptureOnly | Checkers | CompileOnly | Crashcontext | Linters
-       -> false
-    in
-    if analyzer_is_whitelisted then true
-    else
       let issue_kind_is_blacklisted =
         match issue_kind with Kinfo -> true | Kerror | Kwarning | Kadvice | Klike -> false
       in

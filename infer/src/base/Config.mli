@@ -18,7 +18,6 @@ type analyzer =
   | BiAbduction
   | CaptureOnly
   | CompileOnly
-  | Eradicate
   | Checkers
   | Crashcontext
   | Linters

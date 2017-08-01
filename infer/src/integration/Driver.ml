@@ -416,7 +416,7 @@ let analyze_and_report ~changed_files mode =
         (false, false)
     | _, (CaptureOnly | CompileOnly)
      -> (false, false)
-    | _, (BiAbduction | Checkers | Crashcontext | Eradicate)
+    | _, (BiAbduction | Checkers | Crashcontext)
      -> (true, true)
     | _, Linters
      -> (false, true)
