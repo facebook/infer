@@ -362,9 +362,6 @@ let recognize_exception exn =
         , Low
         , None
         , Nocat )
-    | Unix.Unix_error (_, s1, s2)
-     -> let desc = Localise.verbatim_desc (s1 ^ s2) in
-        (Localise.from_string "Unix_error", desc, None, Exn_system, Low, None, Nocat)
     | Uninitialized_value (desc, ml_loc)
      -> (Localise.uninitialized_value, desc, Some ml_loc, Exn_user, Medium, None, Nocat)
     | Unary_minus_applied_to_unsigned_expression (desc, ml_loc)
