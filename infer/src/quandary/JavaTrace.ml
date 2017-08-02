@@ -177,6 +177,7 @@ module SinkKind = struct
   type t =
     | CreateFile  (** sink that creates a file *)
     | CreateIntent  (** sink that creates an Intent *)
+    | HTML  (** sink that creates HTML *)
     | JavaScript  (** sink that passes its arguments to untrusted JS code *)
     | Logging  (** sink that logs one or more of its arguments *)
     | StartComponent  (** sink that launches an Activity, Service, etc. *)
@@ -188,6 +189,8 @@ module SinkKind = struct
      -> CreateFile
     | "CreateIntent"
      -> CreateIntent
+    | "HTML"
+     -> HTML
     | "JavaScript"
      -> JavaScript
     | "Logging"
@@ -225,6 +228,8 @@ module SinkKind = struct
       match
         (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
       with
+      | "android.text.Html", "fromHtml"
+       -> taint_nth 0 HTML
       | "android.util.Log", ("e" | "println" | "w" | "wtf")
        -> taint_all Logging
       | "java.io.File", "<init>"
@@ -293,6 +298,8 @@ module SinkKind = struct
        -> "CreateFile"
       | CreateIntent
        -> "CreateIntent"
+      | HTML
+       -> "HTML"
       | JavaScript
        -> "JavaScript"
       | Logging
@@ -327,7 +334,7 @@ include Trace.Make (struct
       (* create intent/launch component from user-controlled URI *)
       | UserControlledURI, CreateFile
       (* create file from user-controller URI; potential path-traversal vulnerability *)
-      | Clipboard, (StartComponent | CreateIntent | JavaScript | CreateFile)
+      | Clipboard, (StartComponent | CreateIntent | JavaScript | CreateFile | HTML)
        -> (* do something sensitive with user-controlled data from the clipboard *)
           true
       | Other, _ | _, Other

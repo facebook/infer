@@ -25,6 +25,7 @@ codetoanalyze/java/quandary/Basics.java, void Basics.viaVarBad2(), 3, QUANDARY_T
 codetoanalyze/java/quandary/Basics.java, void Basics.viaVarBad3(), 4, QUANDARY_TAINT_ERROR, [Return from Object InferTaint.inferSecretSource(),Call to void InferTaint.inferSensitiveSink(Object)]
 codetoanalyze/java/quandary/Basics.java, void Basics.whileBad1(int), 3, QUANDARY_TAINT_ERROR, [Return from Object InferTaint.inferSecretSource(),Call to void InferTaint.inferSensitiveSink(Object)]
 codetoanalyze/java/quandary/Basics.java, void Basics.whileBad2(int), 6, QUANDARY_TAINT_ERROR, [Return from Object InferTaint.inferSecretSource(),Call to void InferTaint.inferSensitiveSink(Object)]
+codetoanalyze/java/quandary/Clipboard.java, Spanned Clipboard.clipboardToHtmlBad(), 1, QUANDARY_TAINT_ERROR, [Return from CharSequence ClipboardManager.getText(),Call to Spanned Html.fromHtml(String)]
 codetoanalyze/java/quandary/Clipboard.java, void Clipboard.readClipboardSourcesBad(), 1, QUANDARY_TAINT_ERROR, [Return from CharSequence ClipboardManager.getText(),Call to void InferTaint.inferSensitiveSink(Object)]
 codetoanalyze/java/quandary/Clipboard.java, void Clipboard.readClipboardSourcesBad(), 2, QUANDARY_TAINT_ERROR, [Return from ClipData ClipboardManager.getPrimaryClip(),Call to void InferTaint.inferSensitiveSink(Object)]
 codetoanalyze/java/quandary/Clipboard.java, void Clipboard.readClipboardSourcesBad(), 3, QUANDARY_TAINT_ERROR, [Return from ClipData ClipboardManager.getPrimaryClip(),Call to void InferTaint.inferSensitiveSink(Object)]

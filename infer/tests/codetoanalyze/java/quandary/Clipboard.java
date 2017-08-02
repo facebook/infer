@@ -11,6 +11,8 @@ package codetoanalyze.java.quandary;
 
 import android.app.Activity;
 import android.content.ClipboardManager;
+import android.text.Html;
+import android.text.Spanned;
 
 import com.facebook.infer.builtins.InferTaint;
 
@@ -24,6 +26,10 @@ public class Clipboard {
     InferTaint.inferSensitiveSink(clipboard.getPrimaryClip().getItemAt(5).getText());
     InferTaint.inferSensitiveSink(clipboard.getPrimaryClip().toString());
     // 5 reports
+  }
+
+  Spanned clipboardToHtmlBad() {
+    return Html.fromHtml(clipboard.getText().toString());
   }
 
 }
