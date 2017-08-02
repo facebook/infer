@@ -1673,24 +1673,6 @@ and proc_call callee_summary
     {Builtin.pdesc; tenv; prop_= pre; path; ret_id; args= actual_pars; loc} =
   let caller_pname = Procdesc.get_proc_name pdesc in
   let callee_pname = Specs.get_proc_name callee_summary in
-  let ret_typ = Specs.get_ret_type callee_summary in
-  let check_return_value_ignored () =
-    (* check if the return value of the call is ignored, and issue a warning *)
-    let is_ignored =
-      match (ret_typ.Typ.desc, ret_id) with
-      | Typ.Tvoid, _
-       -> false
-      | _, None
-       -> true
-      | _, Some (id, _)
-       -> Errdesc.id_is_assigned_then_dead (State.get_node ()) id
-    in
-    if is_ignored && is_none (Specs.get_flag callee_summary ProcAttributes.proc_flag_ignore_return)
-    then
-      let err_desc = Localise.desc_return_value_ignored callee_pname loc in
-      let exn = Exceptions.Return_value_ignored (err_desc, __POS__) in
-      Reporting.log_warning_deprecated caller_pname exn
-  in
   check_inherently_dangerous_function caller_pname callee_pname ;
   let formal_types = List.map ~f:snd (Specs.get_formals callee_summary) in
   let rec comb actual_pars formal_types =
@@ -1722,12 +1704,11 @@ and proc_call callee_summary
         L.d_ln () ;
         raise (Exceptions.Wrong_argument_number __POS__)
   in
-  let actual_params = comb actual_pars formal_types in
   (* Actual parameters are associated to their formal
        parameter type if there are enough formal parameters, and
        to their actual type otherwise. The latter case happens
        with variable - arguments functions *)
-  check_return_value_ignored () ;
+  let actual_params = comb actual_pars formal_types in
   (* In case we call an objc instance method we add and extra spec *)
   (* were the receiver is null and the semantics of the call is nop*)
   (* let callee_attrs = Specs.get_attributes callee_summary in *)

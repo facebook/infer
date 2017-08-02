@@ -16,13 +16,10 @@ codetoanalyze/c/errors/attributes/sentinel.c, truncated_call, 5, PREMATURE_NIL_T
 codetoanalyze/c/errors/custom_error/custom.c, paf, 3, UNEXPECTED_NEGATIVE_EXPONENT
 codetoanalyze/c/errors/custom_error/custom.c, pouf, 3, UNEXPECTED_NEGATIVE_EXPONENT
 codetoanalyze/c/errors/dangling_deref/dpd.c, dpd, 3, DANGLING_POINTER_DEREFERENCE
-codetoanalyze/c/errors/dangling_deref/dpd.c, dpd, 3, RETURN_VALUE_IGNORED
 codetoanalyze/c/errors/dangling_deref/dpd.c, dpd, 3, UNINITIALIZED_VALUE
 codetoanalyze/c/errors/dangling_deref/dpd.c, intraprocdpd, 3, DANGLING_POINTER_DEREFERENCE
 codetoanalyze/c/errors/dangling_deref/dpd.c, intraprocdpd, 3, UNINITIALIZED_VALUE
-codetoanalyze/c/errors/dangling_deref/dpd.c, nodpd, 2, RETURN_VALUE_IGNORED
 codetoanalyze/c/errors/dangling_deref/dpd.c, nodpd1, 3, NULL_DEREFERENCE
-codetoanalyze/c/errors/dangling_deref/dpd.c, nodpd1, 3, RETURN_VALUE_IGNORED
 codetoanalyze/c/errors/initialization/compound_literal.c, divide_by_zero, 0, DIVIDE_BY_ZERO
 codetoanalyze/c/errors/initialization/initlistexpr.c, init_divide_by_zero, 2, Assert_failure
 codetoanalyze/c/errors/initialization/initlistexpr.c, init_divide_by_zero, 2, DIVIDE_BY_ZERO
@@ -69,9 +66,7 @@ codetoanalyze/c/errors/null_dereference/getc.c, crash_getc, 4, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/getc.c, crash_putc, 4, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/getc.c, crash_rewind, 4, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/getc.c, crash_ungetc, 5, NULL_DEREFERENCE
-codetoanalyze/c/errors/null_dereference/getc.c, crash_ungetc, 5, RETURN_VALUE_IGNORED
 codetoanalyze/c/errors/null_dereference/getc.c, crash_vfprintf, 5, NULL_DEREFERENCE
-codetoanalyze/c/errors/null_dereference/getc.c, nocrash_ungetc, 5, RETURN_VALUE_IGNORED
 codetoanalyze/c/errors/null_dereference/issue_680.c, null_ptr_deref2_bad, 0, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/issue_680.c, null_ptr_deref_bad, 0, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/issue_680.c, null_ptr_deref_bad_FN, 0, PRECONDITION_NOT_MET
