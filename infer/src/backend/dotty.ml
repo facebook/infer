@@ -1091,9 +1091,14 @@ let pp_proplist_parsed2dotty_file filename plist =
 let pp_cfgnodename pname fmt (n: Procdesc.Node.t) =
   F.fprintf fmt "\"%s_%d\"" (Typ.Procname.to_filename pname) (Procdesc.Node.get_id n :> int)
 
-let pp_etlist fmt etl =
-  List.iter
-    ~f:(fun (id, ty) -> Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty)
+let pp_etlist byvals fmt etl =
+  List.iteri
+    ~f:(fun index (id, ({Typ.desc} as ty)) ->
+      let is_ptr = match desc with Tptr _ -> true | _ -> false in
+      let byval_mark =
+        if is_ptr && List.mem byvals index ~equal:Int.equal then "(byval)" else ""
+      in
+      Format.fprintf fmt " %a:%a%s" Mangled.pp id (Typ.pp_full Pp.text) ty byval_mark)
     etl
 
 let pp_local_list fmt etl =
@@ -1106,11 +1111,12 @@ let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
     match Procdesc.Node.get_kind n with
     | Procdesc.Node.Start_node pname
      -> let pname_string = Typ.Procname.to_string pname in
-        Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a" pname_string pp_etlist
+        let attributes = Procdesc.get_attributes pdesc in
+        let byvals = attributes.ProcAttributes.by_vals in
+        Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a" pname_string (pp_etlist byvals)
           (Procdesc.get_formals pdesc) pp_local_list (Procdesc.get_locals pdesc) ;
         if List.length (Procdesc.get_captured pdesc) <> 0 then
           Format.fprintf fmt "\\nCaptured: %a" pp_local_list (Procdesc.get_captured pdesc) ;
-        let attributes = Procdesc.get_attributes pdesc in
         let method_annotation = attributes.ProcAttributes.method_annotation in
         if not (Annot.Method.is_empty method_annotation) then
           Format.fprintf fmt "\\nAnnotation: %a" (Annot.Method.pp pname_string) method_annotation

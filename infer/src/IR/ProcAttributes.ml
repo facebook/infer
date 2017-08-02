@@ -46,6 +46,7 @@ type t =
   ; exceptions: string list  (** exceptions thrown by the procedure *)
   ; formals: (Mangled.t * Typ.t) list  (** name and type of formal parameters *)
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
+  ; by_vals: int list  (** list of indices of formals that are passed by-value *)
   ; func_attributes: PredSymb.func_attribute list
   ; is_abstract: bool  (** the procedure is abstract *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
@@ -77,6 +78,7 @@ let default proc_name language =
   ; exceptions= []
   ; formals= []
   ; const_formals= []
+  ; by_vals= []
   ; func_attributes= []
   ; is_abstract= false
   ; is_bridge_method= false

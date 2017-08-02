@@ -403,6 +403,76 @@ let is_pointer_to_const {Clang_ast_t.qt_type_ptr} =
   | _
    -> false
 
+let is_value {Clang_ast_t.qt_type_ptr} =
+  match qt_type_ptr with
+  | Clang_ast_extend.Builtin _
+  (* We rely on the assumption here that Clang_ast_extend.ReferenceOf is only created for pass-by-value structs. *)
+  (* TODO: Create a dedicated variant in Clang_ast_extend for pass-by-val params *)
+  | Clang_ast_extend.ReferenceOf _
+   -> true
+  | Clang_ast_types.TypePtr.Ptr _
+   -> let rec is_value_raw qt_type_ptr =
+        match CAst_utils.get_type qt_type_ptr with
+        | Some BuiltinType _
+        | Some ComplexType _
+        | Some DependentSizedExtVectorType _
+        | Some VectorType _
+        | Some ExtVectorType _
+        | Some RecordType _
+        | Some EnumType _
+        | Some InjectedClassNameType _
+        | Some ObjCObjectType _
+        | Some ObjCInterfaceType _
+         -> true
+        | Some AdjustedType (_, {Clang_ast_t.qt_type_ptr})
+        | Some DecayedType (_, {Clang_ast_t.qt_type_ptr})
+        | Some ParenType (_, {Clang_ast_t.qt_type_ptr})
+        | Some DecltypeType (_, {Clang_ast_t.qt_type_ptr})
+        | Some AtomicType (_, {Clang_ast_t.qt_type_ptr})
+         -> is_value_raw qt_type_ptr
+        | Some TypedefType (_, {Clang_ast_t.tti_child_type})
+         -> is_value_raw tti_child_type.Clang_ast_t.qt_type_ptr
+        (* These types could be value types, and we try our best to resolve them *)
+        | Some AttributedType ({Clang_ast_t.ti_desugared_type}, _)
+        | Some TypeOfExprType {Clang_ast_t.ti_desugared_type}
+        | Some TypeOfType {Clang_ast_t.ti_desugared_type}
+        | Some UnaryTransformType {Clang_ast_t.ti_desugared_type}
+        | Some ElaboratedType {Clang_ast_t.ti_desugared_type}
+        | Some AutoType {Clang_ast_t.ti_desugared_type}
+        | Some DependentNameType {Clang_ast_t.ti_desugared_type}
+        | Some DeducedTemplateSpecializationType {Clang_ast_t.ti_desugared_type}
+        | Some TemplateSpecializationType {Clang_ast_t.ti_desugared_type}
+        | Some DependentTemplateSpecializationType {Clang_ast_t.ti_desugared_type}
+        | Some TemplateTypeParmType {Clang_ast_t.ti_desugared_type}
+        | Some SubstTemplateTypeParmType {Clang_ast_t.ti_desugared_type}
+        | Some SubstTemplateTypeParmPackType {Clang_ast_t.ti_desugared_type}
+        | Some PackExpansionType {Clang_ast_t.ti_desugared_type}
+        | Some UnresolvedUsingType {Clang_ast_t.ti_desugared_type} -> (
+          match ti_desugared_type with Some ptr -> is_value_raw ptr | None -> false )
+        (* These types are known to be non-value types *)
+        | Some PointerType _
+        | Some BlockPointerType _
+        | Some LValueReferenceType _
+        | Some RValueReferenceType _
+        | Some MemberPointerType _
+        | Some ConstantArrayType _
+        | Some IncompleteArrayType _
+        | Some VariableArrayType _
+        | Some DependentSizedArrayType _
+        | Some FunctionProtoType _
+        | Some FunctionNoProtoType _
+        | Some ObjCObjectPointerType _
+        | Some NoneType _
+        (* These types I don't know what they are. Be conservative and treat them as non value types *)
+        | Some ObjCTypeParamType _
+        | Some PipeType _
+        | None
+         -> false
+      in
+      is_value_raw qt_type_ptr
+  | _
+   -> false
+
 (** Returns a list of the indices of expressions in [args] which point to const-typed values. Each
     index is offset by [shift]. *)
 let get_const_args_indices ~shift args =
@@ -415,6 +485,11 @@ let get_const_args_indices ~shift args =
         if is_pointer_to_const qual_type then aux (!i - 1 :: result) tl else aux result tl
   in
   aux [] args
+
+let get_byval_args_indices ~shift args =
+  List.filter_mapi args ~f:(fun index (_, qual_type) ->
+      let index' = index + shift in
+      Option.some_if (is_value qual_type) index' )
 
 let get_objc_property_accessor ms =
   let open Clang_ast_t in
@@ -477,9 +552,16 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
       get_const_args_indices ~shift:(List.length captured_mangled)
         (CMethod_signature.ms_get_args ms)
     in
+    let by_vals =
+      get_byval_args_indices ~shift:(List.length captured_mangled)
+        (CMethod_signature.ms_get_args ms)
+    in
     let source_range = CMethod_signature.ms_get_loc ms in
     L.(debug Capture Verbose) "@\nCreating a new procdesc for function: '%s'@\n@." pname ;
     L.(debug Capture Verbose) "@\nms = %s@\n@." (CMethod_signature.ms_to_string ms) ;
+    L.(debug Capture Verbose)
+      "@\nbyvals = [ %s ]@\n@."
+      (String.concat ~sep:", " (List.map by_vals ~f:string_of_int)) ;
     let loc_start = CLocation.get_sil_location_from_range trans_unit_ctx source_range true in
     let loc_exit = CLocation.get_sil_location_from_range trans_unit_ctx source_range false in
     let ret_type = get_return_type tenv ms in
@@ -492,6 +574,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
           ProcAttributes.captured= captured_mangled
         ; formals
         ; const_formals
+        ; by_vals
         ; access
         ; func_attributes= attributes
         ; is_defined= defined
