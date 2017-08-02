@@ -407,9 +407,8 @@ let report () =
 let analyze_and_report ~changed_files mode =
   let should_analyze, should_report =
     match (mode, Config.analyzer) with
-    | PythonCapture (BBuck, _), _
-     -> (* In Buck mode when compilation db is not used, analysis is invoked either from capture or
-           a separate Analyze invocation is necessary, depending on the buck flavor used. *)
+    | PythonCapture (BBuck, _), _ when not Config.flavors
+     -> (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
         (false, false)
     | _ when Config.maven
      -> (* Called from Maven, only do capture. *)
@@ -421,6 +420,15 @@ let analyze_and_report ~changed_files mode =
     | _, Linters
      -> (false, true)
   in
+  let should_merge =
+    match mode with
+    | PythonCapture (BBuck, _) when Config.flavors && CLOpt.(equal_command Run) Config.command
+     -> (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
+        true
+    | _
+     -> (* else rely on the command line value *) Config.merge
+  in
+  if should_merge then MergeCapture.merge_captured_targets () ;
   if (should_analyze || should_report)
      && (Sys.file_exists Config.captured_dir <> `Yes || check_captured_empty mode)
   then L.user_error "There was nothing to analyze.@\n@."

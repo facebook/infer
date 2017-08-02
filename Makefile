@@ -38,7 +38,7 @@ DIRECT_TESTS += \
   cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_quandary cpp_siof cpp_threadsafety \
 
 ifneq ($(BUCK),no)
-BUILD_SYSTEMS_TESTS += buck-clang-db buck_flavors buck_flavors_deterministic
+BUILD_SYSTEMS_TESTS += buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
 endif
 ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake inferconfig

@@ -124,7 +124,6 @@ let main ~changed_files ~makefile =
    -> process_cluster_cmdline fname
   | None
    -> if Config.allow_specs_cleanup then DB.Results_dir.clean_specs_dir () ;
-      if Config.merge then MergeCapture.merge_captured_targets () ;
       let all_clusters = DB.find_source_dirs () in
       let clusters_to_analyze =
         List.filter ~f:(cluster_should_be_analyzed ~changed_files) all_clusters

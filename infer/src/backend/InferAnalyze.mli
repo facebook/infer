@@ -12,8 +12,7 @@ open! IStd
 
 (** Main module for the analysis after the capture phase *)
 
-(** Given a name of the Makefile to use for multicore analysis, analyze the captured code *)
-
 val main : changed_files:SourceFile.Set.t option -> makefile:string -> unit
+(** Given a name of the Makefile to use for multicore analysis, analyze the captured code *)
 
 val register_perf_stats_report : unit -> unit

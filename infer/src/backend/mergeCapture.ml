@@ -178,9 +178,10 @@ let process_merge_file deps_file =
   | Error error
    -> L.internal_error "Couldn't read deps file '%s': %s" deps_file error ) ;
   create_multilinks () ;
-  L.progress "Captured results merged.@." ;
   L.progress "Targets merged: %d@." stats.targets_merged ;
   L.progress "Files linked: %d@." stats.files_linked ;
   L.progress "Files multilinked: %d@." stats.files_multilinked
 
-let merge_captured_targets () = process_merge_file (infer_deps ())
+let merge_captured_targets () =
+  L.progress "Merging captured Buck targets...@\n%!" ;
+  process_merge_file (infer_deps ())
