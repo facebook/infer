@@ -59,6 +59,10 @@ T* __infer_skip__get_nondet_val() {}
 template <class T>
 void __infer_deref_first_arg(T* ptr) INFER_MODEL_AS_DEREF_FIRST_ARG;
 
+#define INFER_EXCLUDE_CONDITION(cond) \
+  if (cond)                           \
+    while (1)
+
 // WARNING: do not add any new fields to std::vector model. sizeof(std::vector)
 // = 24 !!
 #ifdef INFER_USE_LIBCPP
@@ -241,7 +245,14 @@ class vector {
 
   size_type capacity() const noexcept {}
 
-  bool empty() const noexcept { return beginPtr == nullptr; }
+  bool empty() const noexcept {
+    if (beginPtr == nullptr) {
+      // prune branch where beginPtr is nullptr and endPtr isn't
+      INFER_EXCLUDE_CONDITION(endPtr != nullptr);
+      return true;
+    }
+    return false;
+  }
   size_type max_size() const noexcept;
   void reserve(size_type __n);
   void shrink_to_fit() noexcept;
