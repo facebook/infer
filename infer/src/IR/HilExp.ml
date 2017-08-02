@@ -99,70 +99,71 @@ let get_access_paths exp0 =
    temporary variable to the access path it represents. evaluating the HIL expression should
    produce the same result as evaluating the SIL expression and replacing the temporary variables
    using [f_resolve_id] *)
-let rec of_sil ~f_resolve_id (exp: Exp.t) typ =
-  match exp with
-  | Var id
-   -> let ap =
-        match f_resolve_id (Var.of_id id) with
-        | Some access_path
-         -> access_path
-        | None
-         -> AccessPath.of_id id typ
-      in
-      AccessPath ap
-  | UnOp (op, e, typ_opt)
-   -> UnaryOperator (op, of_sil ~f_resolve_id e typ, typ_opt)
-  | BinOp (op, e0, e1)
-   -> BinaryOperator (op, of_sil ~f_resolve_id e0 typ, of_sil ~f_resolve_id e1 typ)
-  | Exn e
-   -> Exception (of_sil ~f_resolve_id e typ)
-  | Const c
-   -> Constant c
-  | Cast (cast_typ, e)
-   -> Cast (cast_typ, of_sil ~f_resolve_id e typ)
-  | Sizeof {typ; dynamic_length}
-   -> Sizeof (typ, Option.map ~f:(fun e -> of_sil ~f_resolve_id e typ) dynamic_length)
-  | Closure closure
-   -> let environment =
-        List.map
-          ~f:(fun (value, pvar, typ) ->
-            (AccessPath.base_of_pvar pvar typ, of_sil ~f_resolve_id value typ))
-          closure.captured_vars
-      in
-      Closure (closure.name, environment)
-  | Lfield (root_exp, fld, root_exp_typ) -> (
-    match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
-    | Some access_path
-     -> AccessPath access_path
-    | None
-     -> (* unsupported field expression: represent with a dummy variable *)
-        of_sil ~f_resolve_id
-          (Exp.Lfield
-             ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
-             , fld
-             , root_exp_typ )) typ )
-  | Lindex (Const Cstr s, index_exp)
-   -> (* indexed string literal (e.g., "foo"[1]). represent this by introducing a dummy variable
+let of_sil ~include_array_indexes ~f_resolve_id exp typ =
+  let rec of_sil_ (exp: Exp.t) typ =
+    match exp with
+    | Var id
+     -> let ap =
+          match f_resolve_id (Var.of_id id) with
+          | Some access_path
+           -> access_path
+          | None
+           -> AccessPath.of_id id typ
+        in
+        AccessPath ap
+    | UnOp (op, e, typ_opt)
+     -> UnaryOperator (op, of_sil_ e typ, typ_opt)
+    | BinOp (op, e0, e1)
+     -> BinaryOperator (op, of_sil_ e0 typ, of_sil_ e1 typ)
+    | Exn e
+     -> Exception (of_sil_ e typ)
+    | Const c
+     -> Constant c
+    | Cast (cast_typ, e)
+     -> Cast (cast_typ, of_sil_ e typ)
+    | Sizeof {typ; dynamic_length}
+     -> Sizeof (typ, Option.map ~f:(fun e -> of_sil_ e typ) dynamic_length)
+    | Closure closure
+     -> let environment =
+          List.map
+            ~f:(fun (value, pvar, typ) -> (AccessPath.base_of_pvar pvar typ, of_sil_ value typ))
+            closure.captured_vars
+        in
+        Closure (closure.name, environment)
+    | Lfield (root_exp, fld, root_exp_typ) -> (
+      match AccessPath.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
+      | Some access_path
+       -> AccessPath access_path
+      | None
+       -> (* unsupported field expression: represent with a dummy variable *)
+          of_sil_
+            (Exp.Lfield
+               ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
+               , fld
+               , root_exp_typ )) typ )
+    | Lindex (Const Cstr s, index_exp)
+     -> (* indexed string literal (e.g., "foo"[1]). represent this by introducing a dummy variable
          for the string literal. if you actually need to see the value of the string literal in the
          analysis, you should probably be using SIL. this is unsound if the code modifies the
          literal, e.g. using `const_cast<char*>` *)
-      of_sil ~f_resolve_id
-        (Exp.Lindex (Var (Ident.create_normal (Ident.string_to_name s) 0), index_exp)) typ
-  | Lindex (root_exp, index_exp) -> (
-    match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
-    | Some access_path
-     -> AccessPath access_path
-    | None
-     -> (* unsupported index expression: represent with a dummy variable *)
-        of_sil ~f_resolve_id
-          (Exp.Lindex
-             ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
-             , index_exp )) typ )
-  | Lvar _ ->
-    match AccessPath.of_lhs_exp exp typ ~f_resolve_id with
-    | Some access_path
-     -> AccessPath access_path
-    | None
-     -> failwithf "Couldn't convert var expression %a to access path" Exp.pp exp
+        of_sil_ (Exp.Lindex (Var (Ident.create_normal (Ident.string_to_name s) 0), index_exp)) typ
+    | Lindex (root_exp, index_exp) -> (
+      match AccessPath.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
+      | Some access_path
+       -> AccessPath access_path
+      | None
+       -> (* unsupported index expression: represent with a dummy variable *)
+          of_sil_
+            (Exp.Lindex
+               ( Var (Ident.create_normal (Ident.string_to_name (Exp.to_string root_exp)) 0)
+               , index_exp )) typ )
+    | Lvar _ ->
+      match AccessPath.of_lhs_exp ~include_array_indexes exp typ ~f_resolve_id with
+      | Some access_path
+       -> AccessPath access_path
+      | None
+       -> failwithf "Couldn't convert var expression %a to access path" Exp.pp exp
+  in
+  of_sil_ exp typ
 
 let is_null_literal = function Constant Cint n -> IntLit.isnull n | _ -> false

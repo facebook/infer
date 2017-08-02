@@ -99,7 +99,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else astate
 end
 
-module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.Make (TransferFunctions))
+module Analyzer =
+  AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.MakeDefault (TransferFunctions))
 
 let make_error_trace astate ap ud =
   let name_of ap =

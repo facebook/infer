@@ -10,7 +10,19 @@
 open! IStd
 module L = Logging
 
-module Make (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S) = struct
+module type HilConfig = sig
+  val include_array_indexes : bool
+end
+
+module DefaultConfig : HilConfig = struct
+  let include_array_indexes = false
+end
+
+module Make
+    (MakeTransferFunctions : TransferFunctions.MakeHIL)
+    (HilConfig : HilConfig)
+    (CFG : ProcCfg.S) =
+struct
   module TransferFunctions = MakeTransferFunctions (CFG)
   module CFG = TransferFunctions.CFG
   module Domain = AbstractDomain.Pair (TransferFunctions.Domain) (IdAccessPathMapDomain)
@@ -22,7 +34,9 @@ module Make (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S
       try Some (IdAccessPathMapDomain.find id id_map)
       with Not_found -> None
     in
-    match HilInstr.of_sil ~f_resolve_id instr with
+    match
+      HilInstr.of_sil ~include_array_indexes:HilConfig.include_array_indexes ~f_resolve_id instr
+    with
     | Bind (id, access_path)
      -> let id_map' = IdAccessPathMapDomain.add id access_path id_map in
         if phys_equal id_map id_map' then astate else (actual_state, id_map')
@@ -44,3 +58,6 @@ module Make (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S
     | Ignore
      -> astate
 end
+
+module MakeDefault (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S) =
+  Make (MakeTransferFunctions) (DefaultConfig) (CFG)

@@ -72,7 +72,7 @@ let tests =
     let dummy_typ = Typ.mk Tvoid in
     let check_make_ap exp expected_ap ~f_resolve_id =
       let make_ap exp =
-        match AccessPath.of_lhs_exp exp dummy_typ ~f_resolve_id with
+        match AccessPath.of_lhs_exp ~include_array_indexes:true exp dummy_typ ~f_resolve_id with
         | Some ap
          -> ap
         | None
@@ -105,7 +105,7 @@ let tests =
       check_make_ap xFG_exp_with_id xFG ~f_resolve_id:f_resolve_id_to_xF ;
       (* make sure we can grab access paths from compound expressions *)
       let binop_exp = Exp.le xF_exp xFG_exp in
-      match AccessPath.of_exp binop_exp dummy_typ ~f_resolve_id with
+      match AccessPath.of_exp ~include_array_indexes:true binop_exp dummy_typ ~f_resolve_id with
       | [ap1; ap2]
        -> assert_equal ~cmp:AccessPath.equal ap1 xFG ; assert_equal ~cmp:AccessPath.equal ap2 xF
       | _

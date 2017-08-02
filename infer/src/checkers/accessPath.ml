@@ -21,7 +21,9 @@ module Raw = struct
 
   let equal_base = [%compare.equal : base]
 
-  type access = ArrayAccess of Typ.t | FieldAccess of Typ.Fieldname.t [@@deriving compare]
+  type access = ArrayAccess of Typ.t * t list | FieldAccess of Typ.Fieldname.t
+
+  and t = (base * access list) [@@deriving compare]
 
   let equal_access = [%compare.equal : access]
 
@@ -29,17 +31,23 @@ module Raw = struct
 
   let pp_base fmt (pvar, _) = Var.pp fmt pvar
 
-  let pp_access fmt = function
+  let rec pp_access fmt = function
     | FieldAccess field_name
      -> Typ.Fieldname.pp fmt field_name
-    | ArrayAccess _
+    | ArrayAccess (_, [])
      -> F.fprintf fmt "[_]"
+    | ArrayAccess (_, index_aps)
+     -> F.fprintf fmt "[%a]" (PrettyPrintable.pp_collection ~pp_item:pp) index_aps
 
-  let pp_access_list fmt accesses =
+  and pp_access_list fmt accesses =
     let pp_sep _ _ = F.fprintf fmt "." in
     F.pp_print_list ~pp_sep pp_access fmt accesses
 
-  type t = base * access list [@@deriving compare]
+  and pp fmt = function
+    | base, []
+     -> pp_base fmt base
+    | base, accesses
+     -> F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
 
   let equal = [%compare.equal : t]
 
@@ -57,7 +65,7 @@ module Raw = struct
   let get_access_type tenv base_typ = function
     | FieldAccess field_name
      -> Option.map (lookup_field_type_annot tenv base_typ field_name) ~f:fst
-    | ArrayAccess array_typ
+    | ArrayAccess (array_typ, _)
      -> Some array_typ
 
   (* For field access, get the field name and the annotation associated with it
@@ -117,7 +125,7 @@ module Raw = struct
 
   let of_id id typ = (base_of_id id typ, [])
 
-  let of_exp exp0 typ0 ~(f_resolve_id: Var.t -> t option) =
+  let of_exp ~include_array_indexes exp0 typ0 ~(f_resolve_id: Var.t -> t option) =
     (* [typ] is the type of the last element of the access path (e.g., typeof(g) for x.f.g) *)
     let rec of_exp_ exp typ accesses acc =
       match exp with
@@ -138,8 +146,11 @@ module Raw = struct
       | Exp.Lfield (root_exp, fld, root_exp_typ)
        -> let field_access = FieldAccess fld in
           of_exp_ root_exp root_exp_typ (field_access :: accesses) acc
-      | Exp.Lindex (root_exp, _)
-       -> let array_access = ArrayAccess typ in
+      | Exp.Lindex (root_exp, index_exp)
+       -> let index_access_paths =
+            if include_array_indexes then of_exp_ index_exp typ [] [] else []
+          in
+          let array_access = ArrayAccess (typ, index_access_paths) in
           let array_typ = Typ.mk (Tarray (typ, None, None)) in
           of_exp_ root_exp array_typ (array_access :: accesses) acc
       | Exp.Cast (cast_typ, cast_exp)
@@ -156,8 +167,12 @@ module Raw = struct
     in
     of_exp_ exp0 typ0 [] []
 
-  let of_lhs_exp lhs_exp typ ~(f_resolve_id: Var.t -> t option) =
-    match of_exp lhs_exp typ ~f_resolve_id with [lhs_ap] -> Some lhs_ap | _ -> None
+  let of_lhs_exp ~include_array_indexes lhs_exp typ ~(f_resolve_id: Var.t -> t option) =
+    match of_exp ~include_array_indexes lhs_exp typ ~f_resolve_id with
+    | [lhs_ap]
+     -> Some lhs_ap
+    | _
+     -> None
 
   let append (base, old_accesses) new_accesses = (base, old_accesses @ new_accesses)
 
@@ -174,12 +189,6 @@ module Raw = struct
 
   let is_prefix (base1, path1 as ap1) (base2, path2 as ap2) =
     if phys_equal ap1 ap2 then true else equal_base base1 base2 && is_prefix_path path1 path2
-
-  let pp fmt = function
-    | base, []
-     -> pp_base fmt base
-    | base, accesses
-     -> F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
 end
 
 module Abs = struct

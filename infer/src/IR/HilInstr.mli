@@ -32,5 +32,7 @@ type translation =
   | Unbind of Var.t list  (** remove binding from identifier map *)
   | Ignore  (** no-op *)
 
-val of_sil : f_resolve_id:(Var.t -> AccessPath.t option) -> Sil.instr -> translation
+val of_sil :
+  include_array_indexes:bool -> f_resolve_id:(Var.t -> AccessPath.t option) -> Sil.instr
+  -> translation
 (** Convert an SIL instruction to an HIL instruction *)

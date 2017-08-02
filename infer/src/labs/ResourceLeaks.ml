@@ -96,7 +96,7 @@ module Analyzer =
        ignore them *)
     (ProcCfg.Normal)
     (* 5(a) *)
-    (LowerHil.Make (TransferFunctions))
+    (LowerHil.Make (TransferFunctions) (LowerHil.DefaultConfig))
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
 let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =

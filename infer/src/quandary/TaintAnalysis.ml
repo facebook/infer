@@ -539,7 +539,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   end
 
   module Analyzer =
-    AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.Make (TransferFunctions))
+    AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.MakeDefault (TransferFunctions))
 
   let make_summary {ProcData.pdesc; extras= {formal_map}} access_tree =
     let is_java = Typ.Procname.is_java (Procdesc.get_proc_name pdesc) in

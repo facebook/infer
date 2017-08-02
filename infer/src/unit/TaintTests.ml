@@ -56,7 +56,7 @@ module MockTaintAnalysis = TaintAnalysis.Make (struct
 end)
 
 module TestInterpreter =
-  AnalyzerTester.Make (ProcCfg.Normal) (LowerHil.Make (MockTaintAnalysis.TransferFunctions))
+  AnalyzerTester.Make (ProcCfg.Normal) (LowerHil.MakeDefault (MockTaintAnalysis.TransferFunctions))
 
 let tests =
   let open OUnit2 in

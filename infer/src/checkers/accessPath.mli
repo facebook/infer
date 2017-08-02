@@ -14,15 +14,13 @@ open! IStd
 type base = Var.t * Typ.t [@@deriving compare]
 
 type access =
-  | ArrayAccess of Typ.t
-  (* array element type. index is unknown *)
-  | FieldAccess of Typ.Fieldname.t
-  (* field name *)
+  | ArrayAccess of Typ.t * t list  (** array element type with list of access paths in index *)
+  | FieldAccess of Typ.Fieldname.t  (** field name *)
   [@@deriving compare]
 
 (** root var, and a list of accesses. closest to the root var is first that is, x.f.g is
       representedas (x, [f; g]) *)
-type t = base * access list [@@deriving compare]
+and t = base * access list [@@deriving compare]
 
 val truncate : t -> t
 (** remove the last access of the access path if the access list is non-empty. returns the
@@ -51,10 +49,12 @@ val of_pvar : Pvar.t -> Typ.t -> t
 val of_id : Ident.t -> Typ.t -> t
 (** create an access path from an ident *)
 
-val of_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> t option) -> t list
-(** extract the access paths that occur in [exp], resolving identifiers using [f_resolve_id] *)
+val of_exp :
+  include_array_indexes:bool -> Exp.t -> Typ.t -> f_resolve_id:(Var.t -> t option) -> t list
+(** extract the access paths that occur in [exp], resolving identifiers using [f_resolve_id]. don't include index expressions in array accesses if [include_array_indexes] is false *)
 
-val of_lhs_exp : Exp.t -> Typ.t -> f_resolve_id:(Var.t -> t option) -> t option
+val of_lhs_exp :
+  include_array_indexes:bool -> Exp.t -> Typ.t -> f_resolve_id:(Var.t -> t option) -> t option
 (** convert [lhs_exp] to an access path, resolving identifiers using [f_resolve_id] *)
 
 val append : t -> access list -> t

@@ -861,7 +861,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
        -> astate
 end
 
-module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (LowerHil.Make (TransferFunctions))
+module Analyzer =
+  AbstractInterpreter.Make (ProcCfg.Normal) (LowerHil.MakeDefault (TransferFunctions))
 
 (* similarly, we assume that immutable classes safely encapsulate their state *)
 let is_immutable_collection_class class_name tenv =
@@ -1480,12 +1481,12 @@ let may_alias tenv p1 p2 =
   | FieldAccess f1, FieldAccess f2
    -> Typ.Fieldname.equal f1 f2
   (* if arrays of objects that have an inheritance rel then they can alias *)
-  | ( ArrayAccess {desc= Tptr ({desc= Tstruct tn1}, _)}
-    , ArrayAccess {desc= Tptr ({desc= Tstruct tn2}, _)} )
+  | ( ArrayAccess ({desc= Tptr ({desc= Tstruct tn1}, _)}, _)
+    , ArrayAccess ({desc= Tptr ({desc= Tstruct tn2}, _)}, _) )
    -> if sound then PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
       else may_alias_container tenv p1 p2
   (* primitive type arrays can alias if the prim. type is the same *)
-  | ArrayAccess t1, ArrayAccess t2
+  | ArrayAccess (t1, _), ArrayAccess (t2, _)
    -> if sound then equal_desc t1.desc t2.desc else may_alias_container tenv p1 p2
 
 (* take a results table and quotient it by the may_alias relation *)
