@@ -22,8 +22,6 @@ class LockGuardWithScope {
       suspiciously_read = new_value;
     }
 
-    // FIXME: missing unlocks in destructors make the following accesses
-    // to be treated as protected
     not_guarded = new_value;
     suspiciously_written = new_value;
   }
@@ -38,12 +36,10 @@ class LockGuardWithScope {
   int get2() {
     int result;
     std::lock_guard<std::mutex> lock(mutex_);
-    // FIXME: It does not report due to missing unlocks in destructors
     result = suspiciously_written;
     return result;
   }
 
-  // FIXME: It reports due to missing unlocks in destructors
   int get3() { return not_guarded; }
 
   int get4() { return suspiciously_read; }
