@@ -1260,6 +1260,14 @@ module Normalize = struct
        -> if Exp.equal idx1 idx2 then normalize_eq (e1', e2')
           else if Exp.equal e1' e2' then normalize_eq (idx1, idx2)
           else eq
+      | BinOp ((PlusA | PlusPI | MinusA | MinusPI), e1, e2), e1' when Exp.equal e1 e1'
+       -> (e2, Exp.int IntLit.zero)
+      | BinOp ((PlusA | PlusPI), e2, e1), e1' when Exp.equal e1 e1'
+       -> (e2, Exp.int IntLit.zero)
+      | e1', BinOp ((PlusA | PlusPI | MinusA | MinusPI), e1, e2) when Exp.equal e1 e1'
+       -> (e2, Exp.int IntLit.zero)
+      | e1', BinOp ((PlusA | PlusPI), e2, e1) when Exp.equal e1 e1'
+       -> (e2, Exp.int IntLit.zero)
       | _
        -> eq
     in
