@@ -757,12 +757,7 @@ let rec instruction (context: JContext.t) pc instr : translation =
     Instr (create_node node_kind (instrs @ [deref_instr; instr]))
   in
   let create_node_kind procname =
-    let assume_noexcept =
-      match Typ.Procname.get_method procname with "close" -> true | _ -> false
-    in
-    let desc =
-      if assume_noexcept then "call_noexcept" else "Call " ^ Typ.Procname.to_string procname
-    in
+    let desc = "Call " ^ Typ.Procname.to_string procname in
     Procdesc.Node.Stmt_node desc
   in
   try

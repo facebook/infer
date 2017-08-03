@@ -179,14 +179,7 @@ module Exceptional = struct
 
   include (DefaultNode : module type of DefaultNode with type t := node)
 
-  let exceptional_succs _ n =
-    match Procdesc.Node.get_kind n with
-    | Procdesc.Node.Stmt_node "call_noexcept"
-     -> (* Hack: signal from the frontend that this node should be modelled as non-throwing.
-           Eventually, we'll just avoid translating the exceptional edge in the frontend instead. *)
-        []
-    | _
-     -> Procdesc.Node.get_exn n
+  let exceptional_succs _ n = Procdesc.Node.get_exn n
 
   let from_pdesc pdesc =
     (* map from a node to its exceptional predecessors *)
