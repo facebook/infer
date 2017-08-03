@@ -1720,7 +1720,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let _ = connected_instruction (List.rev pre_case_stmts) top_entry_point in
         Procdesc.node_set_succs_exn context.procdesc switch_special_cond_node top_prune_nodes [] ;
         let top_nodes = res_trans_decl.root_nodes in
-        List.iter ~f:(fun n' -> Procdesc.Node.append_instrs n' []) succ_nodes ;
         (* succ_nodes will remove the temps *)
         {empty_res_trans with root_nodes= top_nodes; leaf_nodes= succ_nodes}
     | _
