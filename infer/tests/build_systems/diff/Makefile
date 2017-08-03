@@ -16,7 +16,6 @@ INFER_OPTIONS = \
   --previous-to-current-script '$(COPY) $(SRC_DIR)/some_bugs.c src/hello.c' \
   --current-to-previous-script '$(COPY) $(SRC_DIR)/some_different_bugs.c src/hello.c' \
   --changed-files-index changed_files.txt \
-  --report-hook '/bin/true' \
   -- clang -c src/hello.c
 
 SOURCES = $(SRC_DIR)/some_bugs.c $(SRC_DIR)/some_different_bugs.c

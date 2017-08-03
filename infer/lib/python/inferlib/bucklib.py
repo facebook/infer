@@ -139,8 +139,8 @@ def get_output_jars(targets):
 
 
 def collect_results(args, start_time, targets):
-    """Walks through buck-gen, collects results for the different buck targets
-    and stores them in in args.infer_out/results.csv.
+    """Walks through buck-out/, collects results for the different buck targets
+    and stores them in in args.infer_out/results.json.
     """
     all_json_rows = set()
 
@@ -166,7 +166,8 @@ def collect_results(args, start_time, targets):
 
     bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
     issues.print_and_save_errors(args.infer_out, args.project_root,
-                                 json_report, bugs_out, args.pmd_xml)
+                                 json_report, bugs_out, args.pmd_xml,
+                                 console_out=not args.quiet)
 
 
 def cleanup(temp_files):

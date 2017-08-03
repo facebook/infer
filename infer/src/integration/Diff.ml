@@ -67,7 +67,7 @@ let diff driver_mode =
   Driver.run_prologue driver_mode ;
   let changed_files = Driver.read_config_changed_files () in
   Driver.capture driver_mode ~changed_files ;
-  Driver.analyze_and_report driver_mode ~changed_files ;
+  Driver.analyze_and_report ~suppress_console_report:true driver_mode ~changed_files ;
   let current_report = Some (save_report Current) in
   (* Some files in the current checkout may be deleted in the old checkout. If we kept the results of the previous capture and analysis around, we would report issues on these files again in the previous checkout, which is wrong. Do not do anything too smart for now and just delete all results from the analysis of the current checkout. *)
   delete_capture_and_analysis_artifacts () ;
@@ -79,7 +79,7 @@ let diff driver_mode =
       Config.gen_previous_build_command_script
   in
   Driver.capture previous_driver_mode ~changed_files ;
-  Driver.analyze_and_report previous_driver_mode ~changed_files ;
+  Driver.analyze_and_report ~suppress_console_report:true previous_driver_mode ~changed_files ;
   checkout Current ;
   let previous_report = Some (save_report Previous) in
   (* compute differential *)

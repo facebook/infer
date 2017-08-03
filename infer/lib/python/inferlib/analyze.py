@@ -49,6 +49,8 @@ base_group.add_argument('-nf', '--no-filtering', action='store_true',
 base_group.add_argument('--pmd-xml',
                         action='store_true',
                         help='''Output issues in (PMD) XML format.''')
+base_group.add_argument('--quiet', action='store_true',
+                        help='Silence console output.')
 
 
 infer_parser = argparse.ArgumentParser(parents=[base_parser])

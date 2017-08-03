@@ -182,7 +182,7 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
     return bug_list + summary
 
 
-def _is_user_visible(project_root, report):
+def _is_user_visible(report):
     kind = report[JSON_INDEX_KIND]
     return kind in [
         ISSUE_KIND_ERROR,
@@ -192,12 +192,13 @@ def _is_user_visible(project_root, report):
 
 
 def print_and_save_errors(infer_out, project_root, json_report, bugs_out,
-                          pmd_xml):
+                          pmd_xml, console_out):
     errors = utils.load_json_from_path(json_report)
-    errors = [e for e in errors if _is_user_visible(project_root, e)]
-    utils.stderr('')
-    _text_of_report_list(project_root, errors, bugs_out, console_out=True,
-                         limit=10)
+    errors = [e for e in errors if _is_user_visible(e)]
+    if console_out:
+        utils.stderr('')
+        _text_of_report_list(project_root, errors, bugs_out, console_out=True,
+                             limit=10)
     plain_out = _text_of_report_list(project_root, errors, bugs_out,
                                      formatter=colorize.PLAIN_FORMATTER)
     with codecs.open(bugs_out, 'w',

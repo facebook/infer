@@ -18,7 +18,6 @@ INFER_OPTIONS = \
   --gen-previous-build-command-script 'echo "clang -c src/some_bugs.c"' \
   --changed-files-index changed_files.txt \
   --file-renamings file_renamings.json \
-  --report-hook '/bin/true' \
   -- clang -c src/some_different_bugs.c
 
 SOURCES = $(SRC_DIR)/some_bugs.c $(SRC_DIR)/some_different_bugs.c
