@@ -44,10 +44,10 @@ Local variable declarations are not annotated: their nullability is inferred.
 
 ### How is Infer:Eradicate invoked?
 
-Eradicate can be invoked by adding the option `-a eradicate` to the analysis command as in this example:
+Eradicate can be invoked by adding the option `--eradicate` to the checkers mode as in this example:
 
 ```bash
-infer run -a eradicate -- javac Test.java
+infer run -a checkers --eradicate -- javac Test.java
 ```
 
 The checker will report an error on the following program that accesses a nullable value without null check:
