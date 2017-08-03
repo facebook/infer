@@ -566,7 +566,7 @@ and analyzer =
     ~in_help:CLOpt.([(Analyze, manual_generic); (Run, manual_generic)])
     {|Specify which analyzer to run (only one at a time is supported):
 - $(b,infer): run the bi-abduction based checker, in particular to check for memory errors (activated by default)
-- $(b,checkers), $(b,eradicate): run the specified analysis
+- $(b,checkers): run the checkers
 - $(b,capture): similar to specifying the $(b,capture) subcommand (DEPRECATED)
 - $(b,compile): similar to specifying the $(b,compile) subcommand (DEPRECATED)
 - $(b,crashcontext): experimental (see $(b,--crashcontext))

@@ -62,7 +62,6 @@ BUCK_OUT_GEN = os.path.join(BUCK_OUT, 'gen')
 
 # list of possible analyzers
 ANALYZER_INFER = 'infer'
-ANALYZER_ERADICATE = 'eradicate'
 ANALYZER_CHECKERS = 'checkers'
 ANALYZER_CAPTURE = 'capture'
 ANALYZER_COMPILE = 'compile'
@@ -74,7 +73,6 @@ ANALYZERS = [
     ANALYZER_CHECKERS,
     ANALYZER_COMPILE,
     ANALYZER_CRASHCONTEXT,
-    ANALYZER_ERADICATE,
     ANALYZER_INFER,
     ANALYZER_LINTERS,
 ]

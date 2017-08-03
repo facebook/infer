@@ -1,6 +1,6 @@
 import os
 
-analyzers = ['infer', 'eradicate']
+analyzers = ['infer', 'checkers']
 
 original_java_library = java_library
 def java_library(

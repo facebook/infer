@@ -343,8 +343,8 @@ let is_checker_enabled checker_name =
      && not (List.mem ~equal:String.( = ) Config.checks_disabled_by_default checker_name)
 
 (* This function loads and list the path that are being filtered by the analyzer. The results *)
-(* are of the form: path/to/file.java -> {infer, eradicate} meaning that analysis results will *)
-(* be reported on path/to/file.java both for infer and for eradicate *)
+(* are of the form: path/to/file.java -> {infer, checkers} meaning that analysis results will *)
+(* be reported on path/to/file.java both for infer and for the checkers *)
 let test () =
   let filters =
     List.map
