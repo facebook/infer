@@ -66,6 +66,14 @@ let run_compilation_database compilation_database should_capture_file =
 
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck ~prog ~args =
+  let args =
+    match Config.buck_compilation_database with
+    | Some `Deps
+     -> let targets, no_targets = Buck.get_dependency_targets args in
+        no_targets @ targets
+    | _
+     -> args
+  in
   match Buck.add_flavors_to_buck_command args with
   | build :: args_with_flavor
    -> (

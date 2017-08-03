@@ -42,9 +42,7 @@ let add_flavor_to_target target =
     else {target with flavors= flavor :: target.flavors}
   in
   match (Config.buck_compilation_database, Config.analyzer) with
-  | Some `Deps, _
-   -> add "uber-compilation-database"
-  | Some `NoDeps, _
+  | Some _, _
    -> add "compilation-database"
   | None, CompileOnly
    -> target
@@ -64,3 +62,29 @@ let add_flavors_to_buck_command build_cmd =
   in
   if not found_one_target then no_targets_found_error_and_exit build_cmd ;
   cmd'
+
+let call_buck_query_for_dependencies targets =
+  let build_deps_string targets =
+    List.map targets ~f:(fun target -> Printf.sprintf "deps('%s')" target)
+    |> String.concat ~sep:" union "
+  in
+  let buck_query =
+    [ "buck"
+    ; "query"
+    ; ( "\"kind('(apple_binary|apple_library|apple_test|cxx_binary|cxx_library|cxx_test)', "
+      ^ build_deps_string targets ^ ")\"" ) ]
+  in
+  let buck_query_cmd = String.concat buck_query ~sep:" " in
+  let output, exit_or_signal = Utils.with_process_in buck_query_cmd In_channel.input_lines in
+  match exit_or_signal with
+  | Error _ as status
+   -> Logging.(die ExternalError)
+        "*** command failed:@\n*** %s@\n*** %s@." buck_query_cmd
+        (Unix.Exit_or_signal.to_string_hum status)
+  | Ok ()
+   -> output
+
+let get_dependency_targets args =
+  let targets, no_targets = List.partition_tf ~f:is_target_string args in
+  let targets = call_buck_query_for_dependencies targets in
+  (targets, no_targets)
