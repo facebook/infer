@@ -24,6 +24,7 @@ BUILD_SYSTEMS_TESTS += \
   clang_with_MD_flag \
   delete_results_dir \
   diff \
+  diff_gen_build_script \
   fail_on_issue \
   j1 \
   linters \

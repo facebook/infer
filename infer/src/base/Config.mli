@@ -405,6 +405,8 @@ val frontend_tests : bool
 
 val frontend_stats : bool
 
+val gen_previous_build_command_script : string option
+
 val generated_classes : string option
 
 val headers : bool

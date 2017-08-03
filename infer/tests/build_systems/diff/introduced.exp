@@ -1,1 +1,1 @@
-src/hello.c, test2, 2, NULL_DEREFERENCE, [start of procedure test2()]
+src/hello.c, test2, 2, NULL_DEREFERENCE, [start of procedure test2(),start of procedure nullify()]

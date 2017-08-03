@@ -14,7 +14,9 @@ void test1() {
   *s1 = 42;
 }
 
-void test2() {
+void nullify(int* x) { *x = 0; }
+
+void test2(int x) {
   int* s2 = NULL;
-  *s2 = 42;
+  nullify(s2);
 }

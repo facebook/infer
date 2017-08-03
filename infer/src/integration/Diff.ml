@@ -43,20 +43,43 @@ let save_report revision =
   L.progress "Results for the %a revision stored in %s@\n" pp_revision revision report_name ;
   report_name
 
+let gen_previous_driver_mode script =
+  let output, exit_or_signal = Utils.with_process_in script In_channel.input_lines in
+  match exit_or_signal with
+  | Error _ as status
+   -> L.(die UserError)
+        "*** command failed:@\n*** %s@\n*** %s@." script (Unix.Exit_or_signal.to_string_hum status)
+  | Ok ()
+   -> (* FIXME(t15553258): this won't work if the build command has arguments that contain spaces. In that case the user should be able to use an argfile for the build command instead, so not critical to fix. *)
+      let command = List.concat_map ~f:(String.split ~on:' ') output in
+      L.environment_info "Build command for the previous project version: '%s'@\n%!"
+        (String.concat ~sep:" " command) ;
+      Driver.mode_of_build_command command
+
+let delete_capture_and_analysis_artifacts () =
+  let dirs_to_delete =
+    List.map ~f:(Filename.concat Config.results_dir)
+      Config.([attributes_dir_name; captured_dir_name; specs_dir_name])
+  in
+  List.iter ~f:Utils.rmtree dirs_to_delete ; List.iter ~f:Unix.mkdir_p dirs_to_delete ; ()
+
 let diff driver_mode =
   Driver.run_prologue driver_mode ;
   let changed_files = Driver.read_config_changed_files () in
-  (* TODO(t15553258) run gen-build script if specified *)
-  (* run capture *)
   Driver.capture driver_mode ~changed_files ;
   Driver.analyze_and_report driver_mode ~changed_files ;
   let current_report = Some (save_report Current) in
+  (* Some files in the current checkout may be deleted in the old checkout. If we kept the results of the previous capture and analysis around, we would report issues on these files again in the previous checkout, which is wrong. Do not do anything too smart for now and just delete all results from the analysis of the current checkout. *)
+  delete_capture_and_analysis_artifacts () ;
   (* TODO(t15553258) bail if nothing to analyze (configurable, some people might care about bugs
      fixed more than about time to analyze) *)
   checkout Previous ;
-  (* TODO(t15553258) run gen-build script if specified *)
-  Driver.capture driver_mode ~changed_files ;
-  Driver.analyze_and_report driver_mode ~changed_files ;
+  let previous_driver_mode =
+    Option.value_map ~default:driver_mode ~f:gen_previous_driver_mode
+      Config.gen_previous_build_command_script
+  in
+  Driver.capture previous_driver_mode ~changed_files ;
+  Driver.analyze_and_report previous_driver_mode ~changed_files ;
   checkout Current ;
   let previous_report = Some (save_report Previous) in
   (* compute differential *)
