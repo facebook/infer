@@ -1310,6 +1310,11 @@ let exp_imply tenv calc_missing (subs: subst2) e1_in e2_in : subst2 =
     match (e1, e2) with
     | Exp.Var v1, Exp.Var v2
      -> var_imply subs v1 v2
+    | Exp.BinOp ((PlusA | PlusPI | MinusA | MinusPI), Exp.Var v1, e2), Exp.Var v2
+      when Ident.equal v1 v2
+     -> do_imply subs e2 Exp.zero
+    | Exp.BinOp ((PlusA | PlusPI), e2, Exp.Var v1), Exp.Var v2 when Ident.equal v1 v2
+     -> do_imply subs e2 Exp.zero
     | e1, Exp.Var v2
      -> let occurs_check v e =
           (* check whether [v] occurs in normalized [e] *)
