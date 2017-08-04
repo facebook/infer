@@ -78,8 +78,6 @@ module SourceKind = struct
        -> get_external_source (Typ.Procname.get_qualifiers pname) )
     | Typ.Procname.Block _
      -> None
-    | pname when BuiltinDecl.is_declared pname
-     -> None
     | pname
      -> failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname
 
@@ -189,6 +187,9 @@ module SinkKind = struct
         -> get_external_sink pname actuals )
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__array_access
       -> taint_all BufferAccess actuals
+    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__set_array_length
+     -> (* called when creating a stack-allocated array *)
+       taint_nth 1 Allocation actuals
     | Typ.Procname.C _ -> (
       match Typ.Procname.to_string pname with
       | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system"
@@ -198,8 +199,6 @@ module SinkKind = struct
       | _
        -> get_external_sink pname actuals )
     | Typ.Procname.Block _
-     -> None
-    | pname when BuiltinDecl.is_declared pname
      -> None
     | pname
      -> failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname

@@ -42,6 +42,12 @@ void std_string_sink_bad(std::string str) {
   str[source] = 'a';
 }
 
+int stack_smash_bad() {
+  int source = __infer_taint_source();
+  int arr[source];
+  return arr[0]; // could read from anywhere in the stack
+}
+
 // these examples used to crash the HIL conversion
 char index_of_literal_ok1() { return "foo"[1]; }
 

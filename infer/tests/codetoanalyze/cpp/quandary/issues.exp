@@ -9,6 +9,7 @@ codetoanalyze/cpp/quandary/arrays.cpp, arrays::array_sink1_bad, 2, QUANDARY_TAIN
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::array_sink2_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to __array_access]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::array_sink3_bad, 0, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to __array_access]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::array_sink4_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to __array_access]
+codetoanalyze/cpp/quandary/arrays.cpp, arrays::stack_smash_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to __set_array_length]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::std_array_sink_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to std::array<int,_>_operator[]]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::std_string_sink_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to std::basic_string<char,std::char_traits<char>,std::allocator<char>>_operator[]]
 codetoanalyze/cpp/quandary/basics.cpp, basics::Obj_endpoint, 1, QUANDARY_TAINT_ERROR, [Return from basics::Obj_endpoint,Call to basics::Obj_string_sink]
