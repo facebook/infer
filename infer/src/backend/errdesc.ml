@@ -1146,9 +1146,6 @@ let explain_frontend_warning loc = Localise.desc_frontend_warning loc
 (** explain a comparing floats for equality *)
 let explain_comparing_floats_for_equality loc = Localise.desc_comparing_floats_for_equality loc
 
-(** explain a condition is an assignment *)
-let explain_condition_is_assignment loc = Localise.desc_condition_is_assignment loc
-
 (** explain a condition which is always true or false *)
 let explain_condition_always_true_false tenv i cond node loc =
   let cond_str_opt =

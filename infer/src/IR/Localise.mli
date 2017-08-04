@@ -63,8 +63,6 @@ val condition_always_false : t
 
 val condition_always_true : t
 
-val condition_is_assignment : t
-
 val context_leak : t
 
 val dangling_pointer_dereference : t
@@ -314,8 +312,6 @@ val desc_class_cast_exception :
   Typ.Procname.t option -> string -> string -> string option -> Location.t -> error_desc
 
 val desc_comparing_floats_for_equality : Location.t -> error_desc
-
-val desc_condition_is_assignment : Location.t -> error_desc
 
 val desc_condition_always_true_false : IntLit.t -> string option -> Location.t -> error_desc
 

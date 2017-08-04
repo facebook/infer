@@ -63,8 +63,6 @@ exception Comparing_floats_for_equality of Localise.error_desc * Logging.ml_loc
 
 exception Condition_always_true_false of Localise.error_desc * bool * Logging.ml_loc
 
-exception Condition_is_assignment of Localise.error_desc * Logging.ml_loc
-
 exception Context_leak of Localise.error_desc * Logging.ml_loc
 
 exception Custom_error of string * Localise.error_desc

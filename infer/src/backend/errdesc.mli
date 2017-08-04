@@ -85,9 +85,6 @@ val explain_return_expression_required : Location.t -> Typ.t -> Localise.error_d
 val explain_comparing_floats_for_equality : Location.t -> Localise.error_desc
 (** explain a comparing floats for equality *)
 
-val explain_condition_is_assignment : Location.t -> Localise.error_desc
-(** explain a condition is an assignment *)
-
 val explain_condition_always_true_false :
   Tenv.t -> IntLit.t -> Exp.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain a condition which is always true or false *)

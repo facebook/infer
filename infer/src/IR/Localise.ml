@@ -71,8 +71,6 @@ let condition_always_false = from_string "CONDITION_ALWAYS_FALSE"
 
 let condition_always_true = from_string "CONDITION_ALWAYS_TRUE"
 
-let condition_is_assignment = from_string "CONDITION_IS_ASSIGNMENT"
-
 let context_leak = from_string "CONTEXT_LEAK"
 
 let dangling_pointer_dereference = from_string "DANGLING_POINTER_DEREFERENCE"
@@ -828,11 +826,6 @@ let desc_allocation_mismatch alloc dealloc =
 let desc_comparing_floats_for_equality loc =
   let tags = Tags.create () in
   {no_desc with descriptions= [("Comparing floats for equality " ^ at_line tags loc)]; tags= !tags}
-
-let desc_condition_is_assignment loc =
-  let tags = Tags.create () in
-  { no_desc with
-    descriptions= [("Boolean condition is an assignment " ^ at_line tags loc)]; tags= !tags }
 
 let desc_condition_always_true_false i cond_str_opt loc =
   let tags = Tags.create () in

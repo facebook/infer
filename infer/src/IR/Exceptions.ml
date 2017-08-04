@@ -63,8 +63,6 @@ exception Codequery of Localise.error_desc
 
 exception Comparing_floats_for_equality of Localise.error_desc * L.ml_loc
 
-exception Condition_is_assignment of Localise.error_desc * L.ml_loc
-
 exception Condition_always_true_false of Localise.error_desc * bool * L.ml_loc
 
 exception Context_leak of Localise.error_desc * L.ml_loc
@@ -219,8 +217,6 @@ let recognize_exception exn =
         (name, desc, Some ml_loc, Exn_user, Medium, None, Nocat)
     | Custom_error (error_msg, desc)
      -> (Localise.from_string error_msg, desc, None, Exn_user, High, None, Checker)
-    | Condition_is_assignment (desc, ml_loc)
-     -> (Localise.condition_is_assignment, desc, Some ml_loc, Exn_user, Medium, None, Nocat)
     | Dangling_pointer_dereference (dko, desc, ml_loc)
      -> let visibility =
           match dko with

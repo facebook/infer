@@ -351,113 +351,12 @@ let instrs_get_normal_vars instrs =
   in
   List.iter ~f:do_instr instrs ; Sil.fav_filter_ident fav Ident.is_normal ; Sil.fav_to_list fav
 
-(* checks that boolean conditions on a conditional are assignment *)
-(* The check is done as follows: we check that the successors or a node that make an *)
-(* set instruction are prune nodes, they are all at the same location and the condition on*)
-(* which they prune is the variable (or the negation) which was set in the set instruction *)
-(* we exclude function calls: if (g(x,y)) ....*)
-(* we check that prune nodes have simple guards: a var or its negation*)
-let check_assignement_guard pdesc node =
-  let pname = Procdesc.get_proc_name pdesc in
-  let verbose = false in
-  let node_contains_call n =
-    let instrs = Procdesc.Node.get_instrs n in
-    let is_call = function Sil.Call _ -> true | _ -> false in
-    List.exists ~f:is_call instrs
-  in
-  let is_set_instr i = match i with Sil.Store _ -> true | _ -> false in
-  let is_prune_instr i = match i with Sil.Prune _ -> true | _ -> false in
-  let is_load_instr i = match i with Sil.Load _ -> true | _ -> false in
-  let is_frontend_tmp e = match e with Exp.Lvar pv -> Pvar.is_frontend_tmp pv | _ -> false in
-  let succs = Procdesc.Node.get_succs node in
-  let l_node = Procdesc.Node.get_last_loc node in
-  (* e is prune if in all successors prune nodes we have for some temp n$1: *)
-  (* n$1=*&e;Prune(n$1) or n$1=*&e;Prune(!n$1) *)
-  let is_prune_exp e =
-    let prune_var n =
-      let ins = Procdesc.Node.get_instrs n in
-      let pi = List.filter ~f:is_prune_instr ins in
-      let leti = List.filter ~f:is_load_instr ins in
-      match (pi, leti) with
-      | [(Sil.Prune (Exp.Var e1, _, _, _))], [(Sil.Load (e2, e', _, _))]
-      | [(Sil.Prune (Exp.UnOp (Unop.LNot, Exp.Var e1, _), _, _, _))], [(Sil.Load (e2, e', _, _))]
-        when Ident.equal e1 e2
-       -> if verbose then L.d_strln ("Found " ^ Exp.to_string e' ^ " as prune var") ;
-          [e']
-      | _
-       -> []
-    in
-    let prune_vars = List.concat_map ~f:(fun n -> prune_var n) succs in
-    List.for_all ~f:(fun e' -> Exp.equal e' e) prune_vars
-  in
-  let succs_loc = List.map ~f:(fun n -> Procdesc.Node.get_loc n) succs in
-  let succs_are_all_prune_nodes () =
-    List.for_all
-      ~f:(fun n ->
-        match Procdesc.Node.get_kind n with Procdesc.Node.Prune_node _ -> true | _ -> false)
-      succs
-  in
-  let succs_same_loc_as_node () =
-    if verbose then (
-      L.d_str ("LOCATION NODE: line: " ^ string_of_int l_node.Location.line) ;
-      L.d_strln " " ) ;
-    List.for_all
-      ~f:(fun l ->
-        if verbose then (
-          L.d_str ("LOCATION l: line: " ^ string_of_int l.Location.line) ;
-          L.d_strln " " ) ;
-        Location.equal l l_node)
-      succs_loc
-  in
-  (* check that the guards of the succs are a var or its negation *)
-  let succs_have_simple_guards () =
-    let check_instr = function
-      | Sil.Prune (Exp.Var _, _, _, _)
-       -> true
-      | Sil.Prune (Exp.UnOp (Unop.LNot, Exp.Var _, _), _, _, _)
-       -> true
-      | Sil.Prune _
-       -> false
-      | _
-       -> true
-    in
-    let check_guard n = List.for_all ~f:check_instr (Procdesc.Node.get_instrs n) in
-    List.for_all ~f:check_guard succs
-  in
-  if Config.curr_language_is Config.Clang && succs_are_all_prune_nodes ()
-     && succs_same_loc_as_node () && succs_have_simple_guards ()
-  then (
-    let instr = Procdesc.Node.get_instrs node in
-    match succs_loc with
-    (* at this point all successors are at the same location, so we can take the first*)
-    | loc_succ :: _
-     -> (
-        let set_instr_at_succs_loc =
-          List.filter
-            ~f:(fun i -> Location.equal (Sil.instr_get_loc i) loc_succ && is_set_instr i)
-            instr
-        in
-        match set_instr_at_succs_loc with
-        | [(Sil.Store (e, _, _, _))]
-         -> (* we now check if e is the same expression used to prune*)
-            if is_prune_exp e && not (node_contains_call node && is_frontend_tmp e) then
-              let desc = Errdesc.explain_condition_is_assignment l_node in
-              let exn = Exceptions.Condition_is_assignment (desc, __POS__) in
-              Reporting.log_warning_deprecated pname ~loc:l_node exn
-            else ()
-        | _
-         -> () )
-    | _
-     -> if verbose then L.d_strln "NOT FOUND loc_succ" )
-  else ()
-
 (** Perform symbolic execution for a node starting from an initial prop *)
 let do_symbolic_execution pdesc handle_exn tenv (node: Procdesc.Node.t) (prop: Prop.normal Prop.t)
     (path: Paths.Path.t) =
   State.mark_execution_start node ;
   (* build the const map lazily *)
   State.set_const_map (ConstantPropagation.build_const_map tenv pdesc) ;
-  check_assignement_guard pdesc node ;
   let instrs = Procdesc.Node.get_instrs node in
   (* fresh normal vars must be fresh w.r.t. instructions *)
   Ident.update_name_generator (instrs_get_normal_vars instrs) ;
