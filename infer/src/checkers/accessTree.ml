@@ -14,7 +14,8 @@ module L = Logging
 module type S = sig
   module TraceDomain : AbstractDomain.WithBottom
 
-  module AccessMap = AccessPath.AccessMap
+  module AccessMap : PrettyPrintable.PPMap with type key = AccessPath.access
+
   module BaseMap = AccessPath.BaseMap
 
   type node = TraceDomain.astate * tree
@@ -53,7 +54,21 @@ end
 
 module Make (TraceDomain : AbstractDomain.WithBottom) = struct
   module TraceDomain = TraceDomain
-  module AccessMap = AccessPath.AccessMap
+
+  module AccessMap = PrettyPrintable.MakePPMap (struct
+    type t = AccessPath.access
+
+    let compare a1 a2 =
+      match (a1, a2) with
+      | AccessPath.ArrayAccess (t1, _), AccessPath.ArrayAccess (t2, _)
+       -> (* ignore indexes *)
+          Typ.compare t1 t2
+      | _
+       -> AccessPath.compare_access a1 a2
+
+    let pp = AccessPath.pp_access
+  end)
+
   module BaseMap = AccessPath.BaseMap
 
   type node = (TraceDomain.astate * tree)

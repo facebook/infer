@@ -13,7 +13,7 @@ open! IStd
 module type S = sig
   module TraceDomain : AbstractDomain.WithBottom
 
-  module AccessMap = AccessPath.AccessMap
+  module AccessMap : PrettyPrintable.PPMap with type key = AccessPath.access
   module BaseMap = AccessPath.BaseMap
 
   type node = TraceDomain.astate * tree

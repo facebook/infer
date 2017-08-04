@@ -13,6 +13,8 @@ open! IStd
 module type S = sig
   type t
 
+  val __array_access : t
+
   val __assert_fail : t
 
   val __builtin_va_arg : t

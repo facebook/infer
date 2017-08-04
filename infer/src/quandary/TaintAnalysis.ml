@@ -344,6 +344,36 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       TaintDomain.trace_fold add_to_caller_tree summary caller_access_tree
 
     let exec_instr (astate: Domain.astate) (proc_data: extras ProcData.t) _ (instr: HilInstr.t) =
+      (* not all sinks are function calls; we might want to treat an array or field access as a
+         sink too. do this by pretending an access is a call to a dummy function and using the
+         existing machinery for adding function call sinks *)
+      let add_sinks_for_access_path (_, accesses) loc astate =
+        let add_sinks_for_access astate_acc = function
+          | AccessPath.FieldAccess _ | AccessPath.ArrayAccess (_, [])
+           -> astate_acc
+          | AccessPath.ArrayAccess (_, indexes)
+           -> let dummy_call_site = CallSite.make BuiltinDecl.__array_access loc in
+              let dummy_actuals =
+                List.map ~f:(fun index_ap -> HilExp.AccessPath index_ap) indexes
+              in
+              let sinks =
+                TraceDomain.Sink.get dummy_call_site dummy_actuals proc_data.ProcData.tenv
+              in
+              match sinks with
+              | None
+               -> astate_acc
+              | Some sink
+               -> add_sink sink dummy_actuals astate proc_data dummy_call_site
+        in
+        List.fold ~f:add_sinks_for_access ~init:astate accesses
+      in
+      let add_sinks_for_exp exp loc astate =
+        match exp with
+        | HilExp.AccessPath access_path
+         -> add_sinks_for_access_path access_path loc astate
+        | _
+         -> astate
+      in
       let exec_write lhs_access_path rhs_exp astate =
         let rhs_node =
           Option.value (hil_exp_get_node rhs_exp astate proc_data) ~default:TaintDomain.empty_node
@@ -363,10 +393,16 @@ module Make (TaintSpecification : TaintSpec.S) = struct
        -> (* similar to the case above; the Java frontend translates "return no exception" as
              `return null` in a void function *)
           astate
-      | Assign (lhs_access_path, rhs_exp, _)
-       -> exec_write lhs_access_path rhs_exp astate
+      | Assign (lhs_access_path, rhs_exp, loc)
+       -> add_sinks_for_exp rhs_exp loc astate |> add_sinks_for_access_path lhs_access_path loc
+          |> exec_write lhs_access_path rhs_exp
+      | Assume (assume_exp, _, _, loc)
+       -> add_sinks_for_exp assume_exp loc astate
       | Call (ret_opt, Direct called_pname, actuals, call_flags, callee_loc)
-       -> let handle_model callee_pname access_tree model =
+       -> let astate =
+            List.fold ~f:(fun acc exp -> add_sinks_for_exp exp callee_loc acc) actuals ~init:astate
+          in
+          let handle_model callee_pname access_tree model =
             let is_variadic =
               match callee_pname with
               | Typ.Procname.Java pname -> (
@@ -545,8 +581,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
        -> astate
   end
 
+  module HilConfig : LowerHil.HilConfig = struct
+    (* we want this so we can treat array accesses as sinks *)
+    let include_array_indexes = true
+  end
+
   module Analyzer =
-    AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.MakeDefault (TransferFunctions))
+    AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.Make (TransferFunctions) (HilConfig))
 
   let make_summary {ProcData.pdesc; extras= {formal_map}} access_tree =
     let is_java = Typ.Procname.is_java (Procdesc.get_proc_name pdesc) in

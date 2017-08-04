@@ -1030,6 +1030,9 @@ let execute___objc_dictionary_literal builtin_args =
   let pname = BuiltinDecl.__objc_dictionary_literal in
   execute_objc_NSDictionary_alloc_no_fail res' pname builtin_args
 
+(* only used in Quandary, so ok to skip *)
+let __array_access = Builtin.register BuiltinDecl.__array_access execute_skip
+
 let __assert_fail = Builtin.register BuiltinDecl.__assert_fail execute___assert_fail
 
 let __builtin_va_arg = Builtin.register BuiltinDecl.__builtin_va_arg execute___builtin_va_arg

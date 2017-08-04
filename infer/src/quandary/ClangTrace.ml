@@ -84,17 +84,22 @@ module SourceKind = struct
      -> failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname
 
   let get_tainted_formals pdesc _ =
+    let get_tainted_formals_ qualified_pname =
+      if String.Set.mem endpoints qualified_pname then
+        List.map
+          ~f:(fun (name, typ) -> (name, typ, Some (Endpoint (name, typ.Typ.desc))))
+          (Procdesc.get_formals pdesc)
+      else Source.all_formals_untainted pdesc
+    in
     match Procdesc.get_proc_name pdesc with
     | Typ.Procname.ObjC_Cpp objc as pname
      -> let qualified_pname =
           F.sprintf "%s::%s" (Typ.Procname.objc_cpp_get_class_name objc)
             (Typ.Procname.get_method pname)
         in
-        if String.Set.mem endpoints qualified_pname then
-          List.map
-            ~f:(fun (name, typ) -> (name, typ, Some (Endpoint (name, typ.Typ.desc))))
-            (Procdesc.get_formals pdesc)
-        else Source.all_formals_untainted pdesc
+        get_tainted_formals_ qualified_pname
+    | Typ.Procname.C _ as pname
+     -> get_tainted_formals_ (Typ.Procname.get_method pname)
     | _
      -> Source.all_formals_untainted pdesc
 
@@ -118,6 +123,7 @@ module CppSource = Source.Make (SourceKind)
 module SinkKind = struct
   type t =
     | Allocation  (** memory allocation *)
+    | BufferAccess  (** read/write an array *)
     | ShellExec  (** shell exec function *)
     | SQL  (** SQL query *)
     | Other  (** for testing or uncategorized sinks *)
@@ -143,7 +149,7 @@ module SinkKind = struct
   let taint_nth n kind actuals =
     if n < List.length actuals then Some (kind, IntSet.singleton n) else None
 
-  let taint_all actuals kind =
+  let taint_all kind actuals =
     Some (kind, IntSet.of_list (List.mapi ~f:(fun actual_num _ -> actual_num) actuals))
 
   (* return Some(sink kind) if [procedure_name] is in the list of externally specified sinks *)
@@ -158,20 +164,37 @@ module SinkKind = struct
             taint_nth n kind actuals
           with Failure _ ->
             (* couldn't parse the index, just taint everything *)
-            taint_all actuals kind
+            taint_all kind actuals
         else None)
       external_sinks
 
   let get pname actuals _ =
+    let is_buffer_class cpp_name =
+      (* assume it's a buffer class if it's "vector-y", "array-y", or "string-y". don't want to
+         report on accesses to maps etc., but also want to recognize custom vectors like fbvector
+         rather than overfitting to std::vector *)
+      let typename =
+        String.lowercase (Typ.Name.to_string (Typ.Procname.objc_cpp_get_class_type_name cpp_name))
+      in
+      String.is_substring ~substring:"vec" typename
+      || String.is_substring ~substring:"array" typename
+      || String.is_substring ~substring:"string" typename
+    in
     match pname with
-    | Typ.Procname.ObjC_Cpp _
-     -> get_external_sink pname actuals
+    | Typ.Procname.ObjC_Cpp cpp_name -> (
+      match Typ.Procname.get_method pname with
+      | "operator[]" when is_buffer_class cpp_name
+        -> taint_nth 1 BufferAccess actuals
+      | _
+        -> get_external_sink pname actuals )
+    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__array_access
+      -> taint_all BufferAccess actuals
     | Typ.Procname.C _ -> (
       match Typ.Procname.to_string pname with
       | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system"
-       -> taint_all actuals ShellExec
+       -> taint_all ShellExec actuals
       | "brk" | "calloc" | "malloc" | "realloc" | "sbrk"
-       -> taint_all actuals Allocation
+       -> taint_all Allocation actuals
       | _
        -> get_external_sink pname actuals )
     | Typ.Procname.Block _
@@ -186,6 +209,8 @@ module SinkKind = struct
       ( match kind with
       | Allocation
        -> "Allocation"
+      | BufferAccess
+       -> "BufferAccess"
       | ShellExec
        -> "ShellExec"
       | SQL
@@ -208,11 +233,14 @@ include Trace.Make (struct
       || String.is_substring ~substring:"char*" lowercase_typ
     in
     match (Source.kind source, Sink.kind sink) with
+    | Endpoint _, BufferAccess
+     -> (* untrusted data from an endpoint flowing into a buffer *)
+        true
     | Endpoint (_, typ), (ShellExec | SQL)
      -> (* untrusted string data flowing to shell exec/SQL *)
         is_stringy typ
-    | (EnvironmentVariable | File), (ShellExec | SQL)
-     -> (* untrusted environment var or file data flowing to shell exec *)
+    | (EnvironmentVariable | File), (BufferAccess | ShellExec | SQL)
+     -> (* untrusted environment var or file data flowing to buffer or code injection *)
         true
     | (Endpoint _ | EnvironmentVariable | File), Allocation
      -> (* untrusted data flowing to memory allocation *)
@@ -234,6 +262,6 @@ include Trace.Make (struct
         true
     | _, Other
      -> true
-    | Unknown, (Allocation | ShellExec | SQL)
+    | Unknown, (Allocation | BufferAccess | ShellExec | SQL)
      -> false
 end)

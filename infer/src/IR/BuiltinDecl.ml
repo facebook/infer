@@ -30,6 +30,8 @@ let create_objc_class_method class_name method_name =
 
 let is_declared pname = Typ.Procname.Set.mem pname !builtin_decls
 
+let __array_access = create_procname "__array_access"
+
 let __assert_fail = create_procname "__assert_fail"
 
 let __builtin_va_arg = create_procname "__builtin_va_arg"
