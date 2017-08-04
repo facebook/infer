@@ -45,15 +45,14 @@ base_parser.add_argument('--no-source',
                          help='Do not print code excerpts')
 base_parser.add_argument('--select',
                          metavar='N',
-                         nargs=1,
+                         type=int,
                          help='Select bug number N. '
                          'If omitted, prompts you for input.')
 base_parser.add_argument('--max-level',
                          metavar='N',
-                         nargs=1,
+                         type=int,
                          help='Level of nested procedure calls to show. '
-                         'Can be "max", in which case all levels are shown. '
-                         'If omitted, prompts you for input.')
+                         'By default, all levels are shown.')
 base_parser.add_argument('--html',
                          action='store_true',
                          help='Generate HTML report.')
@@ -159,7 +158,7 @@ class Selector(object):
     def prompt_report(self):
         report_number = 0
         if self.args.select is not None:
-            report_number = self.parse_report_number(self.args.select[0], True)
+            report_number = self.parse_report_number(self.args.select, True)
         else:
             self.show_choices()
 
@@ -174,19 +173,7 @@ class Selector(object):
         return self.reports[report_number]
 
     def prompt_level(self):
-        if self.args.max_level is not None:
-            return self.parse_max_level(self.args.max_level[0], True)
-
-        max_level_str = raw_input(
-            'Choose maximum level of nested procedures calls (default=max): ')
-        if max_level_str == '':
-            max_level = sys.maxsize
-        else:
-            max_level = self.parse_max_level(max_level_str)
-
-        print('')
-
-        return max_level
+        return self.parse_max_level(self.args.max_level, True)
 
     def parse_report_number(self, s, show_help=False):
         try:
@@ -202,14 +189,14 @@ class Selector(object):
         return n
 
     def parse_max_level(self, s, show_help=False):
-        if s == 'max':
+        if s is None:
             return sys.maxsize
 
         try:
             n = int(s)
         except ValueError:
             show_error_and_exit(
-                'ERROR: integer max level or "max" expected',
+                'ERROR: integer max level expected',
                 show_help)
 
         if n < 0:

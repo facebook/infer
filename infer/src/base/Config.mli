@@ -411,6 +411,8 @@ val generated_classes : string option
 
 val headers : bool
 
+val html : bool
+
 val icfg_dotty_outfile : string option
 
 val ignore_trivial_traces : bool
@@ -480,6 +482,8 @@ val makefile_cmdline : string
 
 val maven : bool
 
+val max_nesting : int option
+
 val merge : bool
 
 val ml_buckets :
@@ -500,6 +504,8 @@ val objc_memory_model_on : bool
 val only_cheap_debug : bool
 
 val only_footprint : bool
+
+val only_show : bool
 
 val pmd_xml : bool
 
@@ -565,6 +571,8 @@ val save_analysis_results : string option
 
 val seconds_per_iteration : float option
 
+val select : int option
+
 val show_buckets : bool
 
 val show_progress_bar : bool
@@ -580,6 +588,8 @@ val skip_analysis_in_path_skips_compilation : bool
 val skip_duplicated_types : bool
 
 val skip_translation_headers : string list
+
+val source_preview : bool
 
 val spec_abs_level : int
 

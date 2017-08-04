@@ -24,6 +24,7 @@ let command_to_name =
   ; (Capture, "capture")
   ; (Compile, "compile")
   ; (Diff, "diff")
+  ; (Explore, "explore")
   ; (Report, "report")
   ; (ReportDiff, "reportdiff")
   ; (Run, "run") ]
@@ -38,8 +39,8 @@ let command_of_exe_name exe_name =
   List.find_map command_to_name ~f:(fun (cmd, name) ->
       if String.equal exe_name (exe_name_of_command_name name) then Some cmd else None )
 
-let mk_command_doc ~see_also:see_also_commands ?and_also ?environment:environment_opt
-    ?files:files_opt ~synopsis =
+let mk_command_doc ~see_also:see_also_commands ?environment:environment_opt ?files:files_opt
+    ~synopsis =
   let section = 1 in
   let see_also =
     let exe_names =
@@ -47,8 +48,7 @@ let mk_command_doc ~see_also:see_also_commands ?and_also ?environment:environmen
           let exe = exe_name_of_command cmd in
           Printf.sprintf "$(b,%s)(%d)" (Cmdliner.Manpage.escape exe) section )
     in
-    let suffix = Option.value ~default:"" and_also in
-    [`P (String.concat ~sep:", " exe_names ^ suffix)]
+    [`P (String.concat ~sep:", " exe_names)]
   in
   let environment =
     Option.value environment_opt
@@ -133,6 +133,16 @@ let diff =
     ~description:[`P "EXPERIMENTAL AND IN NO WAY READY TO USE"]
     ~see_also:CLOpt.([ReportDiff; Run])
 
+let explore =
+  mk_command_doc ~title:"Infer Explore"
+    ~short_description:"explore the error traces in infer reports"
+    ~synopsis:{|$(b,infer) $(b,explore) $(i,[options])|}
+    ~description:
+      [ `P
+          "Show the list of bugs on the console and explore symbolic program traces emitted by infer to explain a report. Can also generate an HTML report from a JSON report."
+      ]
+    ~see_also:CLOpt.([Report; Run])
+
 let infer =
   mk_command_doc ~title:"Infer Static Analyzer"
     ~short_description:"static analysis for Java and C/C++/Objective-C/Objective-C++"
@@ -211,7 +221,7 @@ $(b,infer) $(i,[options])|}
   }|}
       ]
     ~see_also:(List.filter ~f:(function CLOpt.Clang -> false | _ -> true) CLOpt.all_commands)
-    ~and_also:", $(b,inferTraceBugs)" "infer"
+    "infer"
 
 let report =
   mk_command_doc ~title:"Infer Reporting" ~short_description:"compute and manipulate infer results"
@@ -267,6 +277,7 @@ let command_to_data =
   ; mk Capture capture
   ; mk Compile compile
   ; mk Diff diff
+  ; mk Explore explore
   ; mk Report report
   ; mk ReportDiff reportdiff
   ; mk Run run ]

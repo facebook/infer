@@ -98,6 +98,7 @@ buck-out/
 /infer/bin/infer-analyze
 /infer/bin/infer-capture
 /infer/bin/infer-compile
+/infer/bin/infer-explore
 /infer/bin/infer-report
 /infer/bin/infer-reportdiff
 /infer/bin/infer-run

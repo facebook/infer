@@ -5,5 +5,3 @@
 *infer* : Main command to run Infer. Check out the docs for instructions on how to use it.
 
 *infer-<command>* : Infer subcommands. Running `infer-<command> [options]` is the same as running `infer <command> [options]`.
-
-*inferTraceBugs* : Python script to explore the error traces in Infer reports

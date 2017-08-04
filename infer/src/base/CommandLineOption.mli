@@ -34,6 +34,7 @@ type command =
       (** set up the infer environment then run the compilation commands without capturing the
                 source files *)
   | Diff  (** orchestrate a diff analysis *)
+  | Explore  (** explore infer reports *)
   | Report  (** post-process infer results and reports *)
   | ReportDiff  (** compute the difference of two infer reports *)
   | Run  (** orchestrate the capture, analysis, and reporting of a compilation command *)

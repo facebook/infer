@@ -157,7 +157,7 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
     if limit >= 0 and n_issues > limit:
         text_errors += colorize.color(
             ('\n\n...too many issues to display (limit=%d exceeded), please ' +
-             'see %s or run `inferTraceBugs` for the remaining issues.')
+             'see %s or run `infer-explore` for the remaining issues.')
             % (limit, bugs_txt_path), colorize.HEADER, formatter)
 
     issues_found = 'Found {n_issues}'.format(

@@ -469,9 +469,6 @@ endif
 	  (cd $(DESTDIR)$(libdir)/infer/infer/bin && \
 	   $(REMOVE) $$alias && \
 	   $(LN_S) infer $$alias); done
-	(cd $(DESTDIR)$(bindir)/ && \
-	 $(REMOVE) inferTraceBugs && \
-	 $(LN_S) $(libdir_relative_to_bindir)/infer/infer/lib/python/inferTraceBugs inferTraceBugs)
 	$(QUIET)for i in $(MAN_DIR)/man1/*; do \
 	  $(INSTALL_DATA) -C $$i $(DESTDIR)$(mandir)/man1/$$(basename $$i); \
 	done

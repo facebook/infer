@@ -420,7 +420,7 @@ let startup_action =
     match initial_command with
     | Some Clang
      -> NoParse
-    | None | Some (Analyze | Capture | Compile | Diff | Report | ReportDiff | Run)
+    | None | Some (Analyze | Capture | Compile | Diff | Explore | Report | ReportDiff | Run)
      -> InferCommand
 
 let exe_usage =
@@ -474,7 +474,7 @@ let () =
      -> assert false (* filtered out *)
     | Report
      -> `Add
-    | Analyze | Capture | Compile | Diff | ReportDiff | Run
+    | Analyze | Capture | Compile | Diff | Explore | ReportDiff | Run
      -> `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -871,7 +871,8 @@ and ( bo_debug
     , write_dotty ) =
   let all_generic_manuals =
     List.filter_map CLOpt.all_commands ~f:(fun cmd ->
-        if CLOpt.(equal_command cmd Clang) then None else Some (cmd, manual_generic) )
+        if List.mem ~equal:CLOpt.equal_command CLOpt.([Clang; Explore]) cmd then None
+        else Some (cmd, manual_generic) )
   in
   let bo_debug =
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
@@ -1159,6 +1160,9 @@ and help_format =
     ~in_help:(List.map CLOpt.all_commands ~f:(fun command -> (command, manual_generic)))
     "Show this help in the specified format. $(b,auto) sets the format to $(b,plain) if the environment variable $(b,TERM) is \"dumb\" or undefined, and to $(b,pager) otherwise."
 
+and html =
+  CLOpt.mk_bool ~long:"html" ~in_help:CLOpt.([(Explore, manual_generic)]) "Generate html report."
+
 and icfg_dotty_outfile =
   CLOpt.mk_path_opt ~long:"icfg-dotty-outfile" ~meta:"path"
     "If set, specifies path where .dot file should be written, it overrides the path for all other options that would generate icfg file otherwise"
@@ -1260,6 +1264,11 @@ and margin =
   CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100 ~meta:"int"
     "Set right margin for the pretty printing functions"
 
+and max_nesting =
+  CLOpt.mk_int_opt ~long:"max-nesting"
+    ~in_help:CLOpt.([(Explore, manual_generic)])
+    "Level of nested procedure calls to show. Trace elements beyond the maximum nesting level are skipped. If omitted, all levels are shown."
+
 and merge =
   CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
     ~in_help:CLOpt.([(Analyze, manual_buck_flavors)])
@@ -1293,6 +1302,11 @@ and objc_memory_model =
 
 and only_footprint =
   CLOpt.mk_bool ~deprecated:["only_footprint"] ~long:"only-footprint" "Skip the re-execution phase"
+
+and only_show =
+  CLOpt.mk_bool ~long:"only-show"
+    ~in_help:CLOpt.([(Explore, manual_generic)])
+    "Show the list of reports and exit"
 
 and passthroughs =
   CLOpt.mk_bool ~long:"passthroughs" ~default:false
@@ -1459,6 +1473,7 @@ and results_dir =
       (CLOpt.(
         [ (Analyze, manual_generic)
         ; (Capture, manual_generic)
+        ; (Explore, manual_generic)
         ; (Run, manual_generic)
         ; (Report, manual_generic) ]))
     ~meta:"dir" "Write results and internal files in the specified directory"
@@ -1471,6 +1486,11 @@ and save_results =
 and seconds_per_iteration =
   CLOpt.mk_float_opt ~deprecated:["seconds_per_iteration"] ~long:"seconds-per-iteration"
     ~meta:"float" "Set the number of seconds per iteration (see $(b,--iterations))"
+
+and select =
+  CLOpt.mk_int_opt ~long:"select" ~meta:"N"
+    ~in_help:CLOpt.([(Explore, manual_generic)])
+    "Select bug number $(i,N). If omitted, prompt for input."
 
 and siof_safe_methods =
   CLOpt.mk_string_list ~long:"siof-safe-methods"
@@ -1497,6 +1517,11 @@ and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
     ~in_help:CLOpt.([(Capture, manual_clang)])
     ~meta:"path prefix" "Ignore headers whose path matches the given prefix"
+
+and source_preview =
+  CLOpt.mk_bool ~long:"source-preview" ~default:true
+    ~in_help:CLOpt.([(Explore, manual_generic)])
+    "print code excerpts around trace elements"
 
 and sources = CLOpt.mk_string_list ~long:"sources" "Specify the list of source files"
 
@@ -1978,6 +2003,8 @@ and frontend_stats = !frontend_stats
 
 and headers = !headers
 
+and html = !html
+
 and icfg_dotty_outfile = !icfg_dotty_outfile
 
 and ignore_trivial_traces = !ignore_trivial_traces
@@ -2027,6 +2054,8 @@ and log_file = !log_file
 
 and makefile_cmdline = !makefile
 
+and max_nesting = !max_nesting
+
 and merge = !merge
 
 and ml_buckets = !ml_buckets
@@ -2048,6 +2077,8 @@ and objc_memory_model_on = !objc_memory_model
 and only_cheap_debug = !only_cheap_debug
 
 and only_footprint = !only_footprint
+
+and only_show = !only_show
 
 and passthroughs = !passthroughs
 
@@ -2131,6 +2162,8 @@ and save_analysis_results = !save_results
 
 and seconds_per_iteration = !seconds_per_iteration
 
+and select = !select
+
 and show_buckets = !print_buckets
 
 and show_progress_bar = !progress_bar
@@ -2146,6 +2179,8 @@ and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compi
 and skip_duplicated_types = !skip_duplicated_types
 
 and skip_translation_headers = !skip_translation_headers
+
+and source_preview = !source_preview
 
 and sources = !sources
 

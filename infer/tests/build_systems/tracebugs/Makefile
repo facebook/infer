@@ -20,26 +20,26 @@ infer-out/report.json: $(SOURCES) $(CLANG_DEPS)
 
 .PHONY: test1
 test1: infer-out/report.json
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=max,\
-	$(PYTHON_DIR)/inferTraceBugs -o infer-out \
-	  --select 0 --max-level max)
+	$(QUIET)$(call silent_on_success,Testing infer-explore: --max-nesting=3,\
+	$(INFER_BIN) explore -o infer-out \
+	  --select 0 --max-nesting 3)
 
 .PHONY: test2
 test2: infer-out/report.json
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=0,\
-	$(PYTHON_DIR)/inferTraceBugs -o infer-out \
-	  --select 0 --max-level 0)
+	$(QUIET)$(call silent_on_success,Testing infer-explore: --max-nesting=0,\
+	$(INFER_BIN) explore -o infer-out \
+	  --select 0 --max-nesting 0)
 
 .PHONY: test3
 test3: infer-out/report.json
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --max-level=max --no-source,\
-	$(PYTHON_DIR)/inferTraceBugs -o infer-out \
-	  --select 0 --max-level max --no-source)
+	$(QUIET)$(call silent_on_success,Testing infer-explore: --no-source-preview,\
+	$(INFER_BIN) explore -o infer-out \
+	  --select 0 --no-source-preview)
 
 .PHONY: test4
 test4: infer-out/report.json
-	$(QUIET)$(call silent_on_success,Testing inferTraceBugs: --only-show,\
-	$(PYTHON_DIR)/inferTraceBugs -o infer-out \
+	$(QUIET)$(call silent_on_success,Testing infer-explore: --only-show,\
+	$(INFER_BIN) explore -o infer-out \
 	  --only-show)
 
 
