@@ -331,7 +331,7 @@ let prune_ineq tenv ~is_strict ~positive prop e1 e2 =
       Propset.singleton tenv prop_with_ineq
 
 let rec prune tenv ~positive condition prop =
-  match condition with
+  match Prop.exp_normalize_prop ~destructive:true tenv prop condition with
   | Exp.Var _ | Exp.Lvar _
    -> prune_ne tenv ~positive condition Exp.zero prop
   | Exp.Const Const.Cint i when IntLit.iszero i

@@ -158,10 +158,12 @@ val atom_exp_le_const : Sil.atom -> (Exp.t * IntLit.t) option
 val atom_const_lt_exp : Sil.atom -> (IntLit.t * Exp.t) option
 (** If the atom is [n<e] return [n,e] *)
 
-val exp_normalize_prop : Tenv.t -> 'a t -> Exp.t -> Exp.t
-(** Normalize [exp] using the pure part of [prop].  Later, we should
-    change this such that the normalization exposes offsets of [exp]
-    as much as possible. *)
+val exp_normalize_prop : ?destructive:bool -> Tenv.t -> 'a t -> Exp.t -> Exp.t
+(** Normalize [exp] using the pure part of [prop].  Later, we should change this such that the
+    normalization exposes offsets of [exp] as much as possible.
+
+    If [destructive] is true then normalize more aggressively, which may lose some useful structure
+    or types. *)
 
 val exp_normalize_noabs : Tenv.t -> Sil.subst -> Exp.t -> Exp.t
 (** Normalize the expression without abstracting complex subexpressions *)

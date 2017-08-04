@@ -685,7 +685,7 @@ module Normalize = struct
 
   let ( ++ ) = IntLit.add
 
-  let sym_eval tenv abs e =
+  let sym_eval ?(destructive= false) tenv abs e =
     let lookup = Tenv.lookup tenv in
     let rec eval (e: Exp.t) : Exp.t =
       (* L.d_str " ["; Sil.d_exp e; L.d_str"] "; *)
@@ -699,6 +699,8 @@ module Normalize = struct
           Closure {c with captured_vars}
       | Const _
        -> e
+      | Sizeof {nbytes= Some n} when destructive
+       -> Exp.Const (Const.Cint (IntLit.of_int n))
       | Sizeof {typ= {desc= Tarray ({desc= Tint ik}, _, _)}; dynamic_length= Some l}
         when Typ.ikind_is_char ik && Config.curr_language_is Config.Clang
        -> eval l
@@ -1084,9 +1086,10 @@ module Normalize = struct
     (* L.d_str "sym_eval "; Sil.d_exp e; L.d_str" --> "; Sil.d_exp e'; L.d_ln (); *)
     e'
 
-  let exp_normalize tenv sub exp =
+  let exp_normalize ?destructive tenv sub exp =
     let exp' = Sil.exp_sub sub exp in
-    if !Config.abs_val >= 1 then sym_eval tenv true exp' else sym_eval tenv false exp'
+    let abstract_expressions = !Config.abs_val >= 1 in
+    sym_eval ?destructive tenv abstract_expressions exp'
 
   let texp_normalize tenv sub (exp: Exp.t) : Exp.t =
     match exp with
@@ -1675,8 +1678,10 @@ end
 
 (* End of module Normalize *)
 
-let exp_normalize_prop tenv prop exp =
-  Config.run_with_abs_val_equal_zero (Normalize.exp_normalize tenv (`Exp prop.sub)) exp
+let exp_normalize_prop ?destructive tenv prop exp =
+  Config.run_with_abs_val_equal_zero
+    (Normalize.exp_normalize ?destructive tenv (`Exp prop.sub))
+    exp
 
 let lexp_normalize_prop tenv p lexp =
   let root = Exp.root_of_lexp lexp in
