@@ -238,8 +238,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     let add_sink sink actuals access_tree proc_data callee_site =
       (* add [sink] to the trace associated with the [formal_index]th actual *)
       let add_sink_to_actual sink_index access_tree_acc =
-        match List.nth_exn actuals sink_index with
-        | HilExp.AccessPath actual_ap_raw
+        match List.nth actuals sink_index with
+        | Some HilExp.AccessPath actual_ap_raw
          -> (
             let actual_ap = AccessPath.Abs.Abstracted actual_ap_raw in
             match access_path_get_node actual_ap access_tree_acc proc_data with
@@ -253,6 +253,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
             | None
              -> access_tree_acc )
+        | None
+         -> Logging.internal_error
+              "Taint is supposed to flow into sink %a at index %d, but the index is out of bounds@\n"
+              CallSite.pp callee_site sink_index ;
+            access_tree_acc
         | _
          -> access_tree_acc
       in
