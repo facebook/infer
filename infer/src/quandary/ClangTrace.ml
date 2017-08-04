@@ -140,7 +140,8 @@ module SinkKind = struct
       (QuandaryConfig.Sink.of_json Config.quandary_sinks)
 
   (* taint the nth parameter (0-indexed) *)
-  let taint_nth n kind = Some (kind, IntSet.singleton n)
+  let taint_nth n kind actuals =
+    if n < List.length actuals then Some (kind, IntSet.singleton n) else None
 
   let taint_all actuals kind =
     Some (kind, IntSet.of_list (List.mapi ~f:(fun actual_num _ -> actual_num) actuals))
@@ -154,7 +155,7 @@ module SinkKind = struct
           let kind = of_string kind in
           try
             let n = int_of_string index in
-            taint_nth n kind
+            taint_nth n kind actuals
           with Failure _ ->
             (* couldn't parse the index, just taint everything *)
             taint_all actuals kind

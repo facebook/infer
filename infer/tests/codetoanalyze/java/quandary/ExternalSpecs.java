@@ -102,5 +102,16 @@ public class ExternalSpecs {
     return sanitized;
   }
 
+  // if theres' a procedure with the same name defined in .inferconfig as a sink on parameter 1,
+  // we shouldn't crash
+  public static void loggingSink1() {}
+
+  // we shouldn't fail when calling this either
+  public static void loggingSink1(Object notASink) { }
+
+  void callLoggingSink1sOk(Object o) {
+    loggingSink1();
+    loggingSink1(o);
+  }
 
 }

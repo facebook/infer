@@ -221,7 +221,7 @@ module SinkKind = struct
     (* taint the nth non-"this" parameter (0-indexed) *)
     let taint_nth n kind =
       let first_index = if Typ.Procname.java_is_static pname then n else n + 1 in
-      Some (kind, IntSet.singleton first_index)
+      if first_index < List.length actuals then Some (kind, IntSet.singleton first_index) else None
     in
     match pname with
     | Typ.Procname.Java java_pname -> (

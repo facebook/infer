@@ -254,10 +254,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             | None
              -> access_tree_acc )
         | None
-         -> Logging.internal_error
+         -> failwithf
               "Taint is supposed to flow into sink %a at index %d, but the index is out of bounds@\n"
-              CallSite.pp callee_site sink_index ;
-            access_tree_acc
+              CallSite.pp callee_site sink_index
         | _
          -> access_tree_acc
       in
@@ -466,7 +465,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           in
           let analyze_call astate_acc callee_pname =
             let call_site = CallSite.make callee_pname callee_loc in
-            let sink = TraceDomain.Sink.get call_site actuals proc_data.ProcData.tenv in
+            let sink =
+              if List.is_empty actuals then None
+              else TraceDomain.Sink.get call_site actuals proc_data.ProcData.tenv
+            in
             let astate_with_sink =
               match sink with
               | Some sink
