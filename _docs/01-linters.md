@@ -197,6 +197,8 @@ within_responds_to_selector_block ()
 
 In general, the parameters of predicates can be constants, or variables, or regular expressions. Variables are used in macros, see below. The syntax for using regexes is `REGEX("your_reg_exp_here")`.
 
+NOTE: The predicates that expect types, such as `has_type` or `method_return_type` or `objc_method_has_nth_parameter_of_type` also accept regexes, but the syntax is a bit different: `REGEX('your_reg_exp_here')`, and this regex can be embedded inside another string, for example: `has_type("REGEXP('NS.+')*" )` which stands for pointer to a class of name starting with NS.
+
 If you need to add a new predicate, write the predicate in [cPredicates.ml](https://github.com/facebook/infer/blob/master/infer/src/clang/cPredicates.ml) and then register it in [CTL.ml](https://github.com/facebook/infer/blob/master/infer/src/clang/cTL.ml#L728).
 
 <a name="formulas">**AL Formulas**</a>
