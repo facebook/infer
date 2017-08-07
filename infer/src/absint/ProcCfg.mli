@@ -52,6 +52,7 @@ module type S = sig
       and remember them otherwise *)
 
   val succs : t -> node -> node list
+  (** all succcessors (normal and exceptional) *)
 
   val preds : t -> node -> node list
   (** all predecessors (normal and exceptional) *)

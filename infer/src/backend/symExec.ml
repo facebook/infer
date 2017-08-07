@@ -53,7 +53,7 @@ let get_blocks_nullified node =
     List.concat_map
       ~f:(fun i ->
         match i with Sil.Nullify (pvar, _) when Sil.is_block_pvar pvar -> [pvar] | _ -> [])
-      (Procdesc.Node.get_instrs node)
+      (ProcCfg.Exceptional.instrs node)
   in
   null_blocks
 
@@ -1723,9 +1723,9 @@ and proc_call callee_summary
       pre path
 
 (** perform symbolic execution for a single prop, and check for junk *)
-and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), path)
+and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t), path)
     : Paths.PathSet.t =
-  let pname = Procdesc.get_proc_name pdesc in
+  let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let prop_primed_to_normal p =
     (* Rename primed vars with fresh normal vars, and return them *)
     let fav = Prop.prop_fav p in
@@ -1765,10 +1765,10 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
       State.set_path path None ;
       let node_has_abstraction node =
         let instr_is_abstraction = function Sil.Abstract _ -> true | _ -> false in
-        List.exists ~f:instr_is_abstraction (Procdesc.Node.get_instrs node)
+        List.exists ~f:instr_is_abstraction (ProcCfg.Exceptional.instrs node)
       in
       let curr_node = State.get_node () in
-      match Procdesc.Node.get_kind curr_node with
+      match ProcCfg.Exceptional.kind curr_node with
       | Procdesc.Node.Prune_node _ when not (node_has_abstraction curr_node)
        -> (* don't check for leaks in prune nodes, unless there is abstraction anyway,*)
           (* but force them into either branch *)
@@ -1783,7 +1783,7 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
     let res_list =
       Config.run_with_abs_val_equal_zero
         (* no exp abstraction during sym exe *)
-          (fun () -> sym_exec tenv pdesc instr prop' path)
+          (fun () -> sym_exec tenv (ProcCfg.Exceptional.proc_desc proc_cfg) instr prop' path)
         ()
     in
     let res_list_nojunk =
@@ -1805,12 +1805,13 @@ and sym_exec_wrapper handle_exn tenv pdesc instr ((prop: Prop.normal Prop.t), pa
 
 (** {2 Lifted Abstract Transfer Functions} *)
 
-let node handle_exn tenv pdesc node (pset: Paths.PathSet.t) : Paths.PathSet.t =
-  let pname = Procdesc.get_proc_name pdesc in
+let node handle_exn tenv proc_cfg (node: ProcCfg.Exceptional.node) (pset: Paths.PathSet.t)
+    : Paths.PathSet.t =
+  let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let exe_instr_prop instr p tr (pset1: Paths.PathSet.t) =
     let pset2 =
       if Tabulation.prop_is_exn pname p && not (Sil.instr_is_auxiliary instr)
-         && Procdesc.Node.get_kind node <> Procdesc.Node.exn_handler_kind
+         && ProcCfg.Exceptional.kind node <> Procdesc.Node.exn_handler_kind
          (* skip normal instructions if an exception was thrown,
             unless this is an exception handler node *)
       then (
@@ -1818,11 +1819,11 @@ let node handle_exn tenv pdesc node (pset: Paths.PathSet.t) : Paths.PathSet.t =
         Sil.d_instr instr ;
         L.d_strln " due to exception" ;
         Paths.PathSet.from_renamed_list [(p, tr)] )
-      else sym_exec_wrapper handle_exn tenv pdesc instr (p, tr)
+      else sym_exec_wrapper handle_exn tenv proc_cfg instr (p, tr)
     in
     Paths.PathSet.union pset2 pset1
   in
   let exe_instr_pset pset instr =
     Paths.PathSet.fold (exe_instr_prop instr) pset Paths.PathSet.empty
   in
-  List.fold ~f:exe_instr_pset ~init:pset (Procdesc.Node.get_instrs node)
+  List.fold ~f:exe_instr_pset ~init:pset (ProcCfg.Exceptional.instrs node)

@@ -123,8 +123,11 @@ end
 
 (* =============== END of module Worklist =============== *)
 
-let path_set_create_worklist pdesc =
-  State.reset () ; Procdesc.compute_distance_to_exit_node pdesc ; Worklist.create ()
+let path_set_create_worklist proc_cfg =
+  (* TODO: reimplement compute_distance_to_exit_node in ProcCfg, and use that instead *)
+  State.reset () ;
+  Procdesc.compute_distance_to_exit_node (ProcCfg.Exceptional.proc_desc proc_cfg) ;
+  Worklist.create ()
 
 let htable_retrieve (htable: (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t) (key: Procdesc.Node.id)
     : Paths.PathSet.t =
@@ -265,13 +268,13 @@ let propagate (wl: Worklist.t) pname ~is_exception (pset: Paths.PathSet.t)
   if changed then Worklist.add wl curr_node
 
 (** propagate a set of results, including exceptions and divergence *)
-let propagate_nodes_divergence tenv (pdesc: Procdesc.t) (pset: Paths.PathSet.t)
+let propagate_nodes_divergence tenv (proc_cfg: ProcCfg.Exceptional.t) (pset: Paths.PathSet.t)
     (succ_nodes: Procdesc.Node.t list) (exn_nodes: Procdesc.Node.t list) (wl: Worklist.t) =
-  let pname = Procdesc.get_proc_name pdesc in
+  let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let pset_exn, pset_ok = Paths.PathSet.partition (Tabulation.prop_is_exn pname) pset in
   if !Config.footprint && not (Paths.PathSet.is_empty (State.get_diverging_states_node ())) then (
     Errdesc.warning_err (State.get_loc ()) "Propagating Divergence@." ;
-    let exit_node = Procdesc.get_exit_node pdesc in
+    let exit_node = ProcCfg.Exceptional.exit_node proc_cfg in
     let diverging_states = State.get_diverging_states_node () in
     let prop_incons =
       let mk_incons prop =
@@ -292,9 +295,10 @@ let propagate_nodes_divergence tenv (pdesc: Procdesc.t) (pset: Paths.PathSet.t)
 (* =============== START of forward_tabulate =============== *)
 
 (** Symbolic execution for a Join node *)
-let do_symexec_join pname tenv wl curr_node (edgeset_todo: Paths.PathSet.t) =
-  let curr_node_id = Procdesc.Node.get_id curr_node in
-  let succ_nodes = Procdesc.Node.get_succs curr_node in
+let do_symexec_join proc_cfg tenv wl curr_node (edgeset_todo: Paths.PathSet.t) =
+  let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
+  let curr_node_id = ProcCfg.Exceptional.id curr_node in
+  let succ_nodes = ProcCfg.Exceptional.normal_succs proc_cfg curr_node in
   let new_dset = edgeset_todo in
   let old_dset = Join_table.find wl.Worklist.join_table curr_node_id in
   let old_dset', new_dset' = Dom.pathset_join pname tenv old_dset new_dset in
@@ -352,16 +356,17 @@ let instrs_get_normal_vars instrs =
   List.iter ~f:do_instr instrs ; Sil.fav_filter_ident fav Ident.is_normal ; Sil.fav_to_list fav
 
 (** Perform symbolic execution for a node starting from an initial prop *)
-let do_symbolic_execution pdesc handle_exn tenv (node: Procdesc.Node.t) (prop: Prop.normal Prop.t)
-    (path: Paths.Path.t) =
+let do_symbolic_execution proc_cfg handle_exn tenv (node: ProcCfg.Exceptional.node)
+    (prop: Prop.normal Prop.t) (path: Paths.Path.t) =
+  let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   State.mark_execution_start node ;
   (* build the const map lazily *)
   State.set_const_map (ConstantPropagation.build_const_map tenv pdesc) ;
-  let instrs = Procdesc.Node.get_instrs node in
+  let instrs = ProcCfg.Exceptional.instrs node in
   (* fresh normal vars must be fresh w.r.t. instructions *)
   Ident.update_name_generator (instrs_get_normal_vars instrs) ;
   let pset =
-    SymExec.node handle_exn tenv pdesc node (Paths.PathSet.from_renamed_list [(prop, path)])
+    SymExec.node handle_exn tenv proc_cfg node (Paths.PathSet.from_renamed_list [(prop, path)])
   in
   L.d_strln ".... After Symbolic Execution ...." ;
   Propset.d prop (Paths.PathSet.to_propset tenv pset) ;
@@ -377,8 +382,8 @@ let mark_visited summary node =
     stats.Specs.nodes_visited_fp <- IntSet.add (node_id :> int) stats.Specs.nodes_visited_fp
   else stats.Specs.nodes_visited_re <- IntSet.add (node_id :> int) stats.Specs.nodes_visited_re
 
-let forward_tabulate tenv pdesc wl =
-  let pname = Procdesc.get_proc_name pdesc in
+let forward_tabulate tenv proc_cfg wl =
+  let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
   let handle_exn_node curr_node exn =
     Exceptions.print_exception_html "Failure of symbolic execution: " exn ;
     let pre_opt =
@@ -428,15 +433,15 @@ let forward_tabulate tenv pdesc wl =
     L.d_ln () ;
     L.d_ln ()
   in
-  let do_prop curr_node handle_exn prop path cnt num_paths =
+  let do_prop (curr_node: ProcCfg.Exceptional.node) handle_exn prop path cnt num_paths =
     L.d_strln ("Processing prop " ^ string_of_int cnt ^ "/" ^ string_of_int num_paths) ;
     L.d_increase_indent 1 ;
     try
       State.reset_diverging_states_node () ;
-      let pset = do_symbolic_execution pdesc handle_exn tenv curr_node prop path in
-      let succ_nodes = Procdesc.Node.get_succs curr_node in
-      let exn_nodes = Procdesc.Node.get_exn curr_node in
-      propagate_nodes_divergence tenv pdesc pset succ_nodes exn_nodes wl ;
+      let pset = do_symbolic_execution proc_cfg handle_exn tenv curr_node prop path in
+      let normal_succ_nodes = ProcCfg.Exceptional.normal_succs proc_cfg curr_node in
+      let exn_succ_nodes = ProcCfg.Exceptional.exceptional_succs proc_cfg curr_node in
+      propagate_nodes_divergence tenv proc_cfg pset normal_succ_nodes exn_succ_nodes wl ;
       L.d_decrease_indent 1 ;
       L.d_ln ()
     with exn when Exceptions.handle_exception exn && !Config.footprint ->
@@ -447,7 +452,7 @@ let forward_tabulate tenv pdesc wl =
     print_node_preamble curr_node session pathset_todo ;
     match Procdesc.Node.get_kind curr_node with
     | Procdesc.Node.Join_node
-     -> do_symexec_join pname tenv wl curr_node pathset_todo
+     -> do_symexec_join proc_cfg tenv wl curr_node pathset_todo
     | Procdesc.Node.Stmt_node _
     | Procdesc.Node.Prune_node _
     | Procdesc.Node.Exit_node _
@@ -574,11 +579,12 @@ let report_context_leaks pname sigma tenv =
 
 (** Remove locals and formals,
     and check if the address of a stack variable is left in the result *)
-let remove_locals_formals_and_check tenv pdesc p =
+let remove_locals_formals_and_check tenv proc_cfg p =
+  let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
   let pvars, p' = PropUtil.remove_locals_formals tenv pdesc p in
   let check_pvar pvar =
-    let loc = Procdesc.Node.get_loc (Procdesc.get_exit_node pdesc) in
+    let loc = ProcCfg.Exceptional.loc (ProcCfg.Exceptional.exit_node proc_cfg) in
     let dexp_opt, _ = Errdesc.vpath_find tenv p (Exp.Lvar pvar) in
     let desc = Errdesc.explain_stack_variable_address_escape loc pvar dexp_opt in
     let exn = Exceptions.Stack_variable_address_escape (desc, __POS__) in
@@ -587,11 +593,11 @@ let remove_locals_formals_and_check tenv pdesc p =
   List.iter ~f:check_pvar pvars ; p'
 
 (** Collect the analysis results for the exit node. *)
-let collect_analysis_result tenv wl pdesc : Paths.PathSet.t =
-  let exit_node = Procdesc.get_exit_node pdesc in
-  let exit_node_id = Procdesc.Node.get_id exit_node in
+let collect_analysis_result tenv wl proc_cfg : Paths.PathSet.t =
+  let exit_node = ProcCfg.Exceptional.exit_node proc_cfg in
+  let exit_node_id = ProcCfg.Exceptional.id exit_node in
   let pathset = htable_retrieve wl.Worklist.path_set_visited exit_node_id in
-  Paths.PathSet.map (remove_locals_formals_and_check tenv pdesc) pathset
+  Paths.PathSet.map (remove_locals_formals_and_check tenv proc_cfg) pathset
 
 module Pmap = Caml.Map.Make (struct
   type t = Prop.normal Prop.t
@@ -609,7 +615,7 @@ let compute_visited vset =
   let res = ref Specs.Visitedset.empty in
   let node_get_all_lines n =
     let node_loc = Procdesc.Node.get_loc n in
-    let instrs_loc = List.map ~f:Sil.instr_get_loc (Procdesc.Node.get_instrs n) in
+    let instrs_loc = List.map ~f:Sil.instr_get_loc (ProcCfg.Exceptional.instrs n) in
     let lines = List.map ~f:(fun loc -> loc.Location.line) (node_loc :: instrs_loc) in
     List.remove_consecutive_duplicates ~equal:Int.equal (List.sort ~cmp:Int.compare lines)
   in
@@ -685,9 +691,9 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   in
   Pmap.iter add_spec pre_post_map ; !specs
 
-let collect_postconditions wl tenv pdesc : Paths.PathSet.t * Specs.Visitedset.t =
-  let pname = Procdesc.get_proc_name pdesc in
-  let pathset = collect_analysis_result tenv wl pdesc in
+let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * Specs.Visitedset.t =
+  let pname = Procdesc.get_proc_name (ProcCfg.Exceptional.proc_desc proc_cfg) in
+  let pathset = collect_analysis_result tenv wl proc_cfg in
   (* Assuming C++ developers use RAII, remove resources from the constructor posts *)
   let pathset =
     match pname with
@@ -796,8 +802,9 @@ let initial_prop_from_pre tenv curr_f pre =
   else initial_prop tenv curr_f pre false
 
 (** Re-execute one precondition and return some spec if there was no re-execution error. *)
-let execute_filter_prop wl tenv pdesc init_node (precondition: Prop.normal Specs.Jprop.t)
+let execute_filter_prop wl tenv proc_cfg init_node (precondition: Prop.normal Specs.Jprop.t)
     : Prop.normal Specs.spec option =
+  let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let pname = Procdesc.get_proc_name pdesc in
   do_before_node 0 init_node ;
   L.d_strln ("#### Start: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####") ;
@@ -814,7 +821,7 @@ let execute_filter_prop wl tenv pdesc init_node (precondition: Prop.normal Specs
   try
     Worklist.add wl init_node ;
     ignore (path_set_put_todo wl init_node init_edgeset) ;
-    forward_tabulate tenv pdesc wl ;
+    forward_tabulate tenv proc_cfg wl ;
     do_before_node 0 init_node ;
     L.d_strln_color Green
       ("#### Finished: RE-execution for " ^ Typ.Procname.to_string pname ^ " ####") ;
@@ -823,7 +830,7 @@ let execute_filter_prop wl tenv pdesc init_node (precondition: Prop.normal Specs
     Prop.d_prop (Specs.Jprop.to_prop precondition) ;
     L.d_ln () ;
     let posts, visited =
-      let pset, visited = collect_postconditions wl tenv pdesc in
+      let pset, visited = collect_postconditions wl tenv proc_cfg in
       let plist =
         List.map
           ~f:(fun (p, path) -> (PropUtil.remove_seed_vars tenv p, path))
@@ -853,15 +860,15 @@ let execute_filter_prop wl tenv pdesc init_node (precondition: Prop.normal Specs
     do_after_node init_node ;
     None
 
-let pp_intra_stats wl proc_desc fmt _ =
+let pp_intra_stats wl proc_cfg fmt _ =
   let nstates = ref 0 in
-  let nodes = Procdesc.get_nodes proc_desc in
+  let nodes = ProcCfg.Exceptional.nodes proc_cfg in
   List.iter
     ~f:(fun node ->
       nstates
       := !nstates
          + Paths.PathSet.size
-             (htable_retrieve wl.Worklist.path_set_visited (Procdesc.Node.get_id node)))
+             (htable_retrieve wl.Worklist.path_set_visited (ProcCfg.Exceptional.id node)))
     nodes ;
   F.fprintf fmt "(%d nodes containing %d states)" (List.length nodes) !nstates
 
@@ -872,11 +879,13 @@ type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.p
     and [get_results ()] returns the results computed.
     This function is architected so that [get_results ()] can be called even after
     [go ()] was interrupted by and exception. *)
-let perform_analysis_phase tenv (summary: Specs.summary) (pdesc: Procdesc.t) : exe_phase =
+let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exceptional.t)
+    : exe_phase =
   let pname = Specs.get_proc_name summary in
-  let start_node = Procdesc.get_start_node pdesc in
+  let start_node = ProcCfg.Exceptional.start_node proc_cfg in
   let compute_footprint () : exe_phase =
     let go (wl: Worklist.t) () =
+      let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
       let init_prop = initial_prop_from_emp tenv pdesc in
       (* use existing pre's (in recursion some might exist) as starting points *)
       let init_props_from_pres =
@@ -905,20 +914,20 @@ let perform_analysis_phase tenv (summary: Specs.summary) (pdesc: Procdesc.t) : e
       Worklist.add wl start_node ;
       Config.arc_mode := Hashtbl.mem (Procdesc.get_flags pdesc) Mleak_buckets.objc_arc_flag ;
       ignore (path_set_put_todo wl start_node init_edgeset) ;
-      forward_tabulate tenv pdesc wl
+      forward_tabulate tenv proc_cfg wl
     in
     let get_results (wl: Worklist.t) () =
       State.process_execution_failures Reporting.log_warning_deprecated pname ;
-      let results = collect_analysis_result tenv wl pdesc in
+      let results = collect_analysis_result tenv wl proc_cfg in
       L.(debug Analysis Medium) "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname ;
       L.(debug Analysis Medium)
         "#### Finished: Footprint Computation for %a %a ####@." Typ.Procname.pp pname
-        (pp_intra_stats wl pdesc) pname ;
+        (pp_intra_stats wl proc_cfg) pname ;
       L.(debug Analysis Medium)
         "#### [FUNCTION %a] Footprint Analysis result ####@\n%a@." Typ.Procname.pp pname
         (Paths.PathSet.pp Pp.text) results ;
       let specs =
-        try extract_specs tenv pdesc results
+        try extract_specs tenv (ProcCfg.Exceptional.proc_desc proc_cfg) results
         with Exceptions.Leak _ ->
           let exn =
             Exceptions.Internal_error
@@ -929,7 +938,7 @@ let perform_analysis_phase tenv (summary: Specs.summary) (pdesc: Procdesc.t) : e
       in
       (specs, Specs.FOOTPRINT)
     in
-    let wl = path_set_create_worklist pdesc in
+    let wl = path_set_create_worklist proc_cfg in
     (go wl, get_results wl)
   in
   let re_execution () : exe_phase =
@@ -940,8 +949,8 @@ let perform_analysis_phase tenv (summary: Specs.summary) (pdesc: Procdesc.t) : e
     let go () =
       L.(debug Analysis Medium) "@.#### Start: Re-Execution for %a ####@." Typ.Procname.pp pname ;
       let filter p =
-        let wl = path_set_create_worklist pdesc in
-        let speco = execute_filter_prop wl tenv pdesc start_node p in
+        let wl = path_set_create_worklist proc_cfg in
+        let speco = execute_filter_prop wl tenv proc_cfg start_node p in
         let is_valid =
           match speco with
           | None
@@ -953,7 +962,7 @@ let perform_analysis_phase tenv (summary: Specs.summary) (pdesc: Procdesc.t) : e
         let outcome = if is_valid then "pass" else "fail" in
         L.(debug Analysis Medium)
           "Finished re-execution for precondition %d %a (%s)@." (Specs.Jprop.to_number p)
-          (pp_intra_stats wl pdesc) pname outcome ;
+          (pp_intra_stats wl proc_cfg) pname outcome ;
         speco
       in
       if Config.undo_join then ignore (Specs.Jprop.filter filter candidate_preconditions)
@@ -964,7 +973,7 @@ let perform_analysis_phase tenv (summary: Specs.summary) (pdesc: Procdesc.t) : e
       L.(debug Analysis Medium) "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname ;
       L.(debug Analysis Medium) "#### Finished: Re-Execution for %a ####@." Typ.Procname.pp pname ;
       let valid_preconditions = List.map ~f:(fun spec -> spec.Specs.pre) specs in
-      let source = (Procdesc.get_loc pdesc).file in
+      let source = (Procdesc.get_loc (ProcCfg.Exceptional.proc_desc proc_cfg)).file in
       let filename =
         DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source)
           [Typ.Procname.to_filename pname]
@@ -1202,11 +1211,12 @@ let update_summary tenv prev_summary specs phase res =
   {prev_summary with Specs.phase= phase; stats; payload}
 
 (** Analyze the procedure and return the resulting summary. *)
-let analyze_proc tenv proc_desc : Specs.summary =
+let analyze_proc tenv proc_cfg : Specs.summary =
+  let proc_desc = ProcCfg.Exceptional.proc_desc proc_cfg in
   let proc_name = Procdesc.get_proc_name proc_desc in
   reset_global_values proc_desc ;
   let summary = Specs.get_summary_unsafe "analyze_proc" proc_name in
-  let go, get_results = perform_analysis_phase tenv summary proc_desc in
+  let go, get_results = perform_analysis_phase tenv summary proc_cfg in
   let res = Timeout.exe_timeout go () in
   let specs, phase = get_results () in
   let updated_summary = update_summary tenv summary specs phase res in
@@ -1236,14 +1246,14 @@ let transition_footprint_re_exe tenv proc_name joined_pres =
 
 (** Perform phase transition from [FOOTPRINT] to [RE_EXECUTION] for
     the procedures enabled after the analysis of [proc_name] *)
-let perform_transition proc_desc tenv proc_name =
+let perform_transition proc_cfg tenv proc_name =
   let transition summary =
     (* disable exceptions for leaks and protect against any other errors *)
     let joined_pres =
       let allow_leak = !Config.allow_leak in
       (* apply the start node to f, and do nothing in case of exception *)
       let apply_start_node f =
-        try f (Procdesc.get_start_node proc_desc)
+        try f (ProcCfg.Exceptional.start_node proc_cfg)
         with exn when SymOp.exn_not_failure exn -> ()
       in
       apply_start_node (do_before_node 0) ;
@@ -1293,14 +1303,15 @@ let interprocedural_algorithm_closures ~prepare_proc exe_env : Tasks.closure lis
 
 let analyze_procedure_aux cg_opt tenv proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
+  let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
   if not (Procdesc.did_preanalysis proc_desc) then (
     Preanal.do_liveness proc_desc tenv ;
     Preanal.do_abstraction proc_desc ;
     Option.iter cg_opt ~f:(fun cg -> Preanal.do_dynamic_dispatch proc_desc cg tenv) ) ;
-  let summaryfp = Config.run_in_footprint_mode (analyze_proc tenv) proc_desc in
+  let summaryfp = Config.run_in_footprint_mode (analyze_proc tenv) proc_cfg in
   Specs.add_summary proc_name summaryfp ;
-  perform_transition proc_desc tenv proc_name ;
-  let summaryre = Config.run_in_re_execution_mode (analyze_proc tenv) proc_desc in
+  perform_transition proc_cfg tenv proc_name ;
+  let summaryre = Config.run_in_re_execution_mode (analyze_proc tenv) proc_cfg in
   Specs.add_summary proc_name summaryre ; summaryre
 
 let analyze_procedure {Callbacks.summary; proc_desc; tenv} : Specs.summary =
