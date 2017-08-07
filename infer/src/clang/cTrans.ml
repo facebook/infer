@@ -192,9 +192,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let collect_exprs res_trans_list =
     List.concat_map ~f:(fun res_trans -> res_trans.exps) res_trans_list
 
-  let collect_initid_exprs res_trans_list =
-    List.concat_map ~f:(fun res_trans -> res_trans.initd_exps) res_trans_list
-
   (* If e is a block and the calling node has the priority then *)
   (* we need to release the priority to allow*)
   (* creation of nodes inside the block.*)
@@ -437,12 +434,47 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | _
      -> empty_res_trans
 
-  let implicitValueInitExpr_trans trans_state expr_info =
-    let var_exp, _ = extract_var_exp_or_fail trans_state in
+  (** Create instructions to initialize record with zeroes. It needs to traverse
+      whole type structure, to assign 0 values to all transitive fields because of
+      AST construction in C translation *)
+  let implicitValueInitExpr_trans trans_state stmt_info =
+    (* This node will always be child of InitListExpr, claiming priority will always fail *)
+    let var_exp_typ = extract_var_exp_or_fail trans_state in
     let tenv = trans_state.context.CContext.tenv in
-    let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
-    let exps = var_or_zero_in_init_list tenv var_exp typ ~return_zero:true in
-    {empty_res_trans with exps}
+    let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
+    let flatten_res_trans = collect_res_trans trans_state.context.procdesc in
+    (* Traverse structure of a type and initialize int/float/ptr fields with zero *)
+    let rec fill_typ_with_zero (exp, typ) : trans_result =
+      match typ.Typ.desc with
+      | Tstruct tn
+       -> let field_exps =
+            match Tenv.lookup tenv tn with
+            | Some {fields}
+             -> List.filter_map fields ~f:(fun (fieldname, fieldtype, _) ->
+                    if Typ.Fieldname.is_hidden fieldname then None
+                    else Some (Exp.Lfield (exp, fieldname, typ), fieldtype) )
+            | None
+             -> assert false
+          in
+          List.map ~f:fill_typ_with_zero field_exps |> flatten_res_trans
+      | Tarray (field_typ, Some n, _)
+       -> let size = IntLit.to_int n in
+          let indices = CGeneral_utils.list_range 0 (size - 1) in
+          List.map indices ~f:(fun i ->
+              let idx_exp = Exp.Const (Const.Cint (IntLit.of_int i)) in
+              let field_exp = Exp.Lindex (exp, idx_exp) in
+              fill_typ_with_zero (field_exp, field_typ) )
+          |> flatten_res_trans
+      | Tint _ | Tfloat _ | Tptr _
+       -> let zero_exp = Sil.zero_value_of_numerical_type typ in
+          let instrs = [Sil.Store (exp, typ, zero_exp, sil_loc)] in
+          let exps = [(exp, typ)] in
+          {empty_res_trans with exps; instrs}
+      | Tfun _ | Tvoid | Tarray _ | TVar _
+       -> assert false
+    in
+    let res_trans = fill_typ_with_zero var_exp_typ in
+    {res_trans with initd_exps= [fst var_exp_typ]}
 
   let no_op_trans succ_nodes = {empty_res_trans with root_nodes= succ_nodes}
 
@@ -1891,73 +1923,88 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let loop = Clang_ast_t.WhileStmt (stmt_info, [null_stmt; cond; body']) in
     instruction trans_state (Clang_ast_t.CompoundStmt (stmt_info, [assign_next_object; loop]))
 
-  and initListExpr_trans trans_state stmt_info expr_info stmts =
+  and initListExpr_array_trans trans_state stmt_info stmts var_exp field_typ =
+    let lh_exp idx =
+      let idx_exp = Exp.Const (Const.Cint (IntLit.of_int idx)) in
+      Exp.Lindex (var_exp, idx_exp)
+    in
+    let init_field idx stmt =
+      init_expr_trans trans_state (lh_exp idx, field_typ) stmt_info (Some stmt)
+    in
+    (* rest of fields when length(stmts) < size is ignored *)
+    List.mapi ~f:init_field stmts
+
+  and initListExpr_struct_trans trans_state stmt_info stmts var_exp var_typ =
     let context = trans_state.context in
     let tenv = context.tenv in
-    let is_array typ = match typ.Typ.desc with Typ.Tarray _ -> true | _ -> false in
-    let var_exp, typ =
+    let tname = match var_typ.Typ.desc with Tstruct tname -> tname | _ -> assert false in
+    let field_exps =
+      match Tenv.lookup tenv tname with
+      | Some {fields}
+       -> List.filter_map fields ~f:(fun (fieldname, fieldtype, _) ->
+              if Typ.Fieldname.is_hidden fieldname then None
+              else Some (Exp.Lfield (var_exp, fieldname, var_typ), fieldtype) )
+      | None
+       -> assert false
+    in
+    let init_field field_exp_typ stmt =
+      init_expr_trans trans_state field_exp_typ stmt_info (Some stmt)
+    in
+    List.map2_exn field_exps stmts ~f:init_field
+
+  and initListExpr_builtin_trans trans_state stmt_info stmts var_exp var_typ =
+    let stmt = match stmts with [s] -> s | _ -> assert false in
+    [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
+
+  (** InitListExpr can have following meanings:
+   - initialize all record fields
+   - initialize array
+   - initialize primitive type (int/flaot/pointer/...)
+   - perform zero initalization - http://en.cppreference.com/w/cpp/language/zero_initialization
+   Decision which case happens is based on the type of the InitListExpr
+  *)
+  and initListExpr_trans trans_state stmt_info expr_info stmts =
+    let var_exp, var_typ =
       match trans_state.var_exp_typ with
       | Some var_exp_typ
        -> var_exp_typ
       | None
        -> create_var_exp_tmp_var trans_state expr_info "SIL_init_list__"
     in
-    let trans_state = {trans_state with var_exp_typ= Some (var_exp, typ)} in
-    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
-    let sil_loc = CLocation.get_sil_location stmt_info context in
-    let var_type =
-      CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type
-    in
-    let lh = var_or_zero_in_init_list tenv var_exp var_type ~return_zero:false in
-    let res_trans_subexpr_list =
-      initListExpr_initializers_trans trans_state var_exp 0 stmts typ false stmt_info
-    in
-    let rh_exps = collect_exprs res_trans_subexpr_list in
-    if Int.equal (List.length rh_exps) 0 then
+    if Int.equal (List.length stmts) 0 then
+      (* perform zero initialization of a primitive type, record types will have
+         ImplicitValueInitExpr nodes *)
       let exps =
-        match Sil.zero_value_of_numerical_type_option var_type with
+        match Sil.zero_value_of_numerical_type_option var_typ with
         | Some zero_exp
-         -> [(zero_exp, typ)]
+         -> [(zero_exp, var_typ)]
         | None
          -> []
       in
       {empty_res_trans with root_nodes= trans_state.succ_nodes; exps}
     else
-      (* For arrays, the size in the type may be an overapproximation of the number *)
-      (* of literals the array is initialized with *)
-      let lh =
-        if is_array var_type && List.length lh > List.length rh_exps then
-          List.take lh (List.length rh_exps)
-        else lh
+      let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
+      let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+      let init_stmt_info =
+        {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
       in
-      if Int.equal (List.length rh_exps) (List.length lh) then
-        (* Creating new instructions by assigning right hand side to left hand side expressions *)
-        let assign_instr (lh_exp, lh_t) (rh_exp, _) = Sil.Store (lh_exp, lh_t, rh_exp, sil_loc) in
-        let assign_instrs =
-          let initd_exps = collect_initid_exprs res_trans_subexpr_list in
-          (* If the variable var_exp is of type array, and some of its indices were initialized *)
-          (* by some constructor call, which we can tell by the fact that the index is returned *)
-          (* in initd_exps, then we assume that all the indices were initialized and *)
-          (* we don't need any assignments. *)
-          if List.exists ~f:((fun arr index -> Exp.is_array_index_of index arr) var_exp) initd_exps
-          then []
-          else List.map2_exn ~f:assign_instr lh rh_exps
-        in
-        let initlist_expr_res =
-          { empty_res_trans with
-            exps= [(var_exp, var_type)]; initd_exps= [var_exp]; instrs= assign_instrs }
-        in
-        let all_res_trans = res_trans_subexpr_list @ [initlist_expr_res] in
-        let nname = "InitListExp" in
-        let res_trans_to_parent =
-          PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname stmt_info
-            all_res_trans
-        in
-        {res_trans_to_parent with exps= initlist_expr_res.exps}
-      else
-        (* If the right hand expressions are not as many as the left hand expressions *)
-        (* something's wrong *)
-        {empty_res_trans with root_nodes= trans_state.succ_nodes}
+      let all_res_trans =
+        match var_typ.Typ.desc with
+        | Typ.Tarray (typ_inside, _, _)
+         -> initListExpr_array_trans trans_state_pri init_stmt_info stmts var_exp typ_inside
+        | Typ.Tstruct _
+         -> initListExpr_struct_trans trans_state_pri init_stmt_info stmts var_exp var_typ
+        | Tint _ | Tfloat _ | Tptr _
+         -> initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
+        | _
+         -> assert false
+      in
+      let nname = "InitListExp" in
+      let res_trans =
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname stmt_info
+          all_res_trans
+      in
+      {res_trans with exps= [(var_exp, var_typ)]; initd_exps= [var_exp]}
 
   and init_dynamic_array trans_state array_exp_typ array_stmt_info dynlength_stmt_pointer =
     let dynlength_stmt =
@@ -2449,44 +2496,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | _
      -> assert false
 
-  and initListExpr_initializers_trans trans_state var_exp n stmts typ is_dyn_array stmt_info =
-    let var_exp_inside, typ_inside =
-      match typ.Typ.desc with
-      | Typ.Tarray (t, _, _) when Typ.is_array_of_cpp_class typ
-       -> (Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int n))), t)
-      | _ when is_dyn_array
-       -> (Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int n))), typ)
-      | _
-       -> (var_exp, typ)
-    in
-    let trans_state' = {trans_state with var_exp_typ= Some (var_exp_inside, typ_inside)} in
-    match stmts with
-    | []
-     -> []
-    | stmt :: rest
-     -> let rest_stmts_res_trans =
-          initListExpr_initializers_trans trans_state var_exp (n + 1) rest typ is_dyn_array
-            stmt_info
-        in
-        match stmt with
-        | Clang_ast_t.InitListExpr (_, stmts, _)
-         -> let inside_stmts_res_trans =
-              initListExpr_initializers_trans trans_state var_exp_inside 0 stmts typ_inside
-                is_dyn_array stmt_info
-            in
-            inside_stmts_res_trans @ rest_stmts_res_trans
-        | _
-         -> let stmt_res_trans =
-              if is_dyn_array then
-                let init_stmt_info =
-                  {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
-                in
-                init_expr_trans trans_state' (var_exp_inside, typ_inside) init_stmt_info
-                  (Some stmt)
-              else instruction trans_state' stmt
-            in
-            stmt_res_trans :: rest_stmts_res_trans
-
   and lambdaExpr_trans trans_state expr_info {Clang_ast_t.lei_lambda_decl; lei_captures} =
     let open CContext in
     let qual_type = expr_info.Clang_ast_t.ei_qual_type in
@@ -2539,7 +2548,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let trans_state_init = {trans_state_pri with succ_nodes= []} in
     let var_exp_typ =
       match res_trans_new.exps with
-      | [(var_exp, {Typ.desc= Tptr (t, _)})]
+      | [(var_exp, ({desc= Tptr (t, _)} as var_typ))] when is_dyn_array
+       -> (* represent dynamic array as Tarray *)
+          (var_exp, Typ.mk ~default:var_typ (Typ.Tarray (t, None, None)))
+      | [(var_exp, {desc= Tptr (t, _)})] when not is_dyn_array
        -> (var_exp, t)
       | _
        -> assert false
@@ -2550,25 +2562,27 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
     in
     let res_trans_init =
-      if is_dyn_array && Typ.is_pointer_to_cpp_class typ then
-        let rec create_stmts stmt_opt size_exp_opt =
-          match (stmt_opt, size_exp_opt) with
-          | Some stmt, Some Exp.Const Const.Cint n when not (IntLit.iszero n)
-           -> let n_minus_1 = Some (Exp.Const (Const.Cint (IntLit.sub n IntLit.one))) in
-              stmt :: create_stmts stmt_opt n_minus_1
-          | _
-           -> []
-        in
-        let stmts = create_stmts stmt_opt size_exp_opt in
-        let var_exp, typ = var_exp_typ in
-        let res_trans_init_list =
-          initListExpr_initializers_trans trans_state_init var_exp 0 stmts typ is_dyn_array
-            stmt_info
-        in
-        CTrans_utils.collect_res_trans context.procdesc res_trans_init_list
-      else init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt
+      match stmt_opt with
+      | Some InitListExpr _
+       -> [init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt]
+      | _ when is_dyn_array && Typ.is_pointer_to_cpp_class typ
+       -> (* NOTE: this is heuristic to initialize C++ objects when the size of dynamic
+           array is constant, it doesn't do anything for non-const lengths, it should be translated as a loop *)
+          let rec create_stmts stmt_opt size_exp_opt =
+            match (stmt_opt, size_exp_opt) with
+            | Some stmt, Some Exp.Const Const.Cint n when not (IntLit.iszero n)
+             -> let n_minus_1 = Some (Exp.Const (Const.Cint (IntLit.sub n IntLit.one))) in
+                stmt :: create_stmts stmt_opt n_minus_1
+            | _
+             -> []
+          in
+          let stmts = create_stmts stmt_opt size_exp_opt in
+          let var_exp, var_typ = var_exp_typ in
+          initListExpr_array_trans trans_state_init init_stmt_info stmts var_exp var_typ
+      | _
+       -> [init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt]
     in
-    let all_res_trans = [res_trans_size; res_trans_new; res_trans_init] in
+    let all_res_trans = [res_trans_size; res_trans_new] @ res_trans_init in
     let nname = "CXXNewExpr" in
     let result_trans_to_parent =
       PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname stmt_info all_res_trans
@@ -2994,8 +3008,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CXXDefaultArgExpr (_, _, _, default_expr_info)
     | CXXDefaultInitExpr (_, _, _, default_expr_info)
      -> cxxDefaultExpr_trans trans_state default_expr_info
-    | ImplicitValueInitExpr (_, _, expr_info)
-     -> implicitValueInitExpr_trans trans_state expr_info
+    | ImplicitValueInitExpr (stmt_info, _, _)
+     -> implicitValueInitExpr_trans trans_state stmt_info
     | GenericSelectionExpr _
     (* to be fixed when we dump the right info in the ast *)
     | SizeOfPackExpr _

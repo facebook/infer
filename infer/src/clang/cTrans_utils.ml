@@ -791,47 +791,6 @@ let is_dispatch_function stmt_list =
 let is_block_enumerate_function mei =
   String.equal mei.Clang_ast_t.omei_selector CFrontend_config.enumerateObjectsUsingBlock
 
-(* This takes a variable of type struct or array and returns a list of expressions *)
-(* for each of its fields (also recursively, such that each field access is of a basic type) *)
-(* If the flag return_zero is true, the list will be a list of zero values, otherwise it will *)
-(* be a list of LField expressions *)
-let var_or_zero_in_init_list tenv e typ ~return_zero =
-  let rec var_or_zero_in_init_list' e typ tns =
-    let open CGeneral_utils in
-    match typ.Typ.desc with
-    | Tstruct tn -> (
-      match Tenv.lookup tenv tn with
-      | Some {fields}
-       -> let lh_exprs =
-            List.filter_map fields ~f:(fun (fieldname, _, _) ->
-                if Typ.Fieldname.is_hidden fieldname then None
-                else Some (Exp.Lfield (e, fieldname, typ)) )
-          in
-          let lh_types = List.map ~f:(fun (_, fieldtype, _) -> fieldtype) fields in
-          let exp_types = zip lh_exprs lh_types in
-          List.map ~f:(fun (e, t) -> List.concat (var_or_zero_in_init_list' e t tns)) exp_types
-      | None
-       -> assert false )
-    | Tarray (arrtyp, Some n, _)
-     -> let size = IntLit.to_int n in
-        let indices = list_range 0 (size - 1) in
-        let index_constants =
-          List.map ~f:(fun i -> Exp.Const (Const.Cint (IntLit.of_int i))) indices
-        in
-        let lh_exprs =
-          List.map ~f:(fun index_expr -> Exp.Lindex (e, index_expr)) index_constants
-        in
-        let lh_types = replicate size arrtyp in
-        let exp_types = zip lh_exprs lh_types in
-        List.map ~f:(fun (e, t) -> List.concat (var_or_zero_in_init_list' e t tns)) exp_types
-    | Tint _ | Tfloat _ | Tptr _
-     -> let exp = if return_zero then Sil.zero_value_of_numerical_type typ else e in
-        [[(exp, typ)]]
-    | Tfun _ | Tvoid | Tarray _ | TVar _
-     -> assert false
-  in
-  List.concat (var_or_zero_in_init_list' e typ String.Set.empty)
-
 (*
 (** Similar to extract_item_from_singleton but for option type *)
 let extract_item_from_option op warning_string =

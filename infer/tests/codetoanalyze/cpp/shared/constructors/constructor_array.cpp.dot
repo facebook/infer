@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "array_of_person#_Z15array_of_personv.7c553fa3272204bd300dabdf4e138df7_3" -> "array_of_person#_Z15array_of_personv.7c553fa3272204bd300dabdf4e138df7_2" ;
-"array_of_person#_Z15array_of_personv.7c553fa3272204bd300dabdf4e138df7_4" [label="4:  DeclStmt \n   _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:Person*) [line 18]\n  _fun_Person_Person(&arr[0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:Person&) [line 18]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 18]\n  _fun_Person_Person(&arr[1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 18]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:Person*) [line 18]\n  _fun_Person_Person(&arr[2]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:Person&) [line 18]\n " shape="box"]
+"array_of_person#_Z15array_of_personv.7c553fa3272204bd300dabdf4e138df7_4" [label="4:  DeclStmt \n   _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:Person*) [line 18]\n  _fun_Person_Person(&arr[0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:Person&) [line 18]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 18]\n  _fun_Person_Person(&arr[1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 18]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:Person*) [line 18]\n  _fun_Person_Person(&arr[2]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:Person&) [line 18]\n " shape="box"]
 	
 
 	 "array_of_person#_Z15array_of_personv.7c553fa3272204bd300dabdf4e138df7_4" -> "array_of_person#_Z15array_of_personv.7c553fa3272204bd300dabdf4e138df7_3" ;
@@ -26,7 +26,7 @@ digraph iCFG {
 	
 
 	 "matrix_of_person#_Z16matrix_of_personv.39f4dcf0df55c7259a99fabe8ccde35d_3" -> "matrix_of_person#_Z16matrix_of_personv.39f4dcf0df55c7259a99fabe8ccde35d_2" ;
-"matrix_of_person#_Z16matrix_of_personv.39f4dcf0df55c7259a99fabe8ccde35d_4" [label="4:  DeclStmt \n   _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$4:Person*) [line 23]\n  _fun_Person_Person(&arr[0][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$4:Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:Person*) [line 23]\n  _fun_Person_Person(&arr[0][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 23]\n  _fun_Person_Person(&arr[1][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:Person*) [line 23]\n  _fun_Person_Person(&arr[1][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:Person&) [line 23]\n " shape="box"]
+"matrix_of_person#_Z16matrix_of_personv.39f4dcf0df55c7259a99fabe8ccde35d_4" [label="4:  DeclStmt \n   _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:Person*) [line 23]\n  _fun_Person_Person(&arr[0][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 23]\n  _fun_Person_Person(&arr[0][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:Person*) [line 23]\n  _fun_Person_Person(&arr[1][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:Person&) [line 23]\n  _fun_Person_Person(&0$?%__sil_tmpSIL_materialize_temp__n$4:Person*) [line 23]\n  _fun_Person_Person(&arr[1][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$4:Person&) [line 23]\n " shape="box"]
 	
 
 	 "matrix_of_person#_Z16matrix_of_personv.39f4dcf0df55c7259a99fabe8ccde35d_4" -> "matrix_of_person#_Z16matrix_of_personv.39f4dcf0df55c7259a99fabe8ccde35d_3" ;
@@ -56,7 +56,7 @@ digraph iCFG {
 	
 
 	 "initialization_mixed_styles_not_handled_correctly#_Z49initialization_mixed_styles_not_handled_correc.e1de50291cecd2ac4e0ba29b88e060a6_3" -> "initialization_mixed_styles_not_handled_correctly#_Z49initialization_mixed_styles_not_handled_correc.e1de50291cecd2ac4e0ba29b88e060a6_2" ;
-"initialization_mixed_styles_not_handled_correctly#_Z49initialization_mixed_styles_not_handled_correc.e1de50291cecd2ac4e0ba29b88e060a6_4" [label="4:  DeclStmt \n   _fun_Z_Z(&z[1]:Z*,&old:Z&) [line 41]\n " shape="box"]
+"initialization_mixed_styles_not_handled_correctly#_Z49initialization_mixed_styles_not_handled_correc.e1de50291cecd2ac4e0ba29b88e060a6_4" [label="4:  DeclStmt \n   *&z[0].a:int=1 [line 41]\n  *&z[0].b:int=2 [line 41]\n  _fun_Z_Z(&z[1]:Z*,&old:Z&) [line 41]\n " shape="box"]
 	
 
 	 "initialization_mixed_styles_not_handled_correctly#_Z49initialization_mixed_styles_not_handled_correc.e1de50291cecd2ac4e0ba29b88e060a6_4" -> "initialization_mixed_styles_not_handled_correctly#_Z49initialization_mixed_styles_not_handled_correc.e1de50291cecd2ac4e0ba29b88e060a6_3" ;

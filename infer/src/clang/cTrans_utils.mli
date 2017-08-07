@@ -222,5 +222,3 @@ val is_logical_negation_of_int :
 val is_dispatch_function : Clang_ast_t.stmt list -> int option
 
 val is_block_enumerate_function : Clang_ast_t.obj_c_message_expr_info -> bool
-
-val var_or_zero_in_init_list : Tenv.t -> Exp.t -> Typ.t -> return_zero:bool -> (Exp.t * Typ.t) list

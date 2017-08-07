@@ -18,7 +18,7 @@ digraph iCFG {
 "main.fad58de7366495db4650cfefac2fcd61_2" [label="2: Exit main \n  " color=yellow style=filled]
 	
 
-"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   n$0=_fun_foo() [line 17]\n  *&p.x:int=1 [line 17]\n  *&p.y:int=(n$0 + 3) [line 17]\n " shape="box"]
+"main.fad58de7366495db4650cfefac2fcd61_3" [label="3:  DeclStmt \n   *&p.x:int=1 [line 17]\n  n$0=_fun_foo() [line 17]\n  *&p.y:int=(n$0 + 3) [line 17]\n " shape="box"]
 	
 
 	 "main.fad58de7366495db4650cfefac2fcd61_3" -> "main.fad58de7366495db4650cfefac2fcd61_2" ;
