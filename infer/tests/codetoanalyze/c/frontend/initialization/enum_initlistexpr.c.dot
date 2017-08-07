@@ -1,0 +1,10 @@
+/* @generated */
+digraph iCFG {
+"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_1" [label="1: Start union_initialize_FIXME\nFormals: \nLocals:  set_f1_implicit:U set_f2:U set_f1:U \n   DECLARE_LOCALS(&return,&set_f1_implicit,&set_f2,&set_f1); [line 14]\n " color=yellow style=filled]
+	
+
+	 "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_1" -> "union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_2" ;
+"union_initialize_FIXME.324b85335f5d2e418a28cb97eb896f20_2" [label="2: Exit union_initialize_FIXME \n  " color=yellow style=filled]
+	
+
+}

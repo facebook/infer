@@ -1950,7 +1950,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let init_field field_exp_typ stmt =
       init_expr_trans trans_state field_exp_typ stmt_info (Some stmt)
     in
-    List.map2_exn field_exps stmts ~f:init_field
+    match List.map2 field_exps stmts ~f:init_field with
+    | Ok result
+     -> result
+    | Unequal_lengths
+     -> (* This can happen with union initializers. Skip them for now *) []
 
   and initListExpr_builtin_trans trans_state stmt_info stmts var_exp var_typ =
     let stmt = match stmts with [s] -> s | _ -> assert false in
