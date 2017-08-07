@@ -8,10 +8,17 @@
  */
 #include <vector>
 
-void foreach_access_ok(std::vector<int>& vec) {
+void foreach_access1_ok(std::vector<int>& vec) {
   if (vec.empty()) {
     // do nothing
   }
+  for (const auto& elem : vec) {
+    auto r = elem;
+  }
+}
+
+void foreach_access2_ok(std::vector<int>& vec) {
+  int s = vec.size();
   for (const auto& elem : vec) {
     auto r = elem;
   }

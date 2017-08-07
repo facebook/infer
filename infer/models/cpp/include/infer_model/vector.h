@@ -237,10 +237,10 @@ class vector {
   const_reverse_iterator crend() const noexcept { return rend(); }
 
   size_type size() const noexcept {
-    if (beginPtr) {
-      return 10;
+    if (empty()) {
+      return 0;
     }
-    return 0;
+    return 10;
   }
 
   size_type capacity() const noexcept {}
