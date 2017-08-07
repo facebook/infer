@@ -1237,9 +1237,16 @@ and linters_def_file =
     ~meta:"file" "Specify the file containing linters definition (e.g. 'linters.al')"
 
 and linters_def_folder =
-  CLOpt.mk_path_list ~default:[] ~long:"linters-def-folder"
-    ~in_help:CLOpt.([(Capture, manual_clang_linters)])
-    ~meta:"dir" "Specify the folder containing linters files with extension .al"
+  let linters_def_folder =
+    CLOpt.mk_path_list ~default:[] ~long:"linters-def-folder"
+      ~in_help:CLOpt.([(Capture, manual_clang_linters)])
+      ~meta:"dir" "Specify the folder containing linters files with extension .al"
+  in
+  let _ =
+    CLOpt.mk_set linters_def_folder [] ~long:"reset-linters-def-folder"
+      "Reset the list of folders containing linters definitions to be empty (see $(b,linters-def-folder))."
+  in
+  linters_def_folder
 
 and linters_ignore_clang_failures =
   CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
