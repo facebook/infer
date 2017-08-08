@@ -19,7 +19,6 @@ let () =
     ; AccessTreeTests.tests
     ; AddressTakenTests.tests
     ; BoundedCallTreeTests.tests
-    ; CopyPropagationTests.tests
     ; DifferentialTests.tests
     ; DifferentialFiltersTests.tests
     ; ProcCfgTests.tests

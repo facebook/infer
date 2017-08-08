@@ -823,10 +823,6 @@ and continue =
     ~in_help:CLOpt.([(Analyze, manual_generic)])
     "Continue the capture for the reactive analysis, increasing the changed files/procedures. (If a procedure was changed beforehand, keep the changed marking.)"
 
-and copy_propagation =
-  CLOpt.mk_bool ~deprecated:["copy-propagation"] ~long:"copy-propagation"
-    "Perform copy-propagation on the IR"
-
 and current_to_previous_script =
   CLOpt.mk_string_opt ~long:"current-to-previous-script"
     ~in_help:CLOpt.([(Diff, manual_generic)])
@@ -1929,8 +1925,6 @@ and compute_analytics = !compute_analytics
 and continue_capture = !continue
 
 and current_to_previous_script = !current_to_previous_script
-
-and copy_propagation = !copy_propagation
 
 and crashcontext = !crashcontext
 

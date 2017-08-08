@@ -95,7 +95,7 @@ let add_abstraction_instructions pdesc =
   in
   Procdesc.iter_nodes do_node pdesc
 
-module BackwardCfg = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
+module BackwardCfg = ProcCfg.Backward (ProcCfg.Exceptional)
 module LivenessAnalysis = AbstractInterpreter.Make (BackwardCfg) (Liveness.TransferFunctions)
 module VarDomain = Liveness.Domain
 
@@ -115,7 +115,7 @@ module NullifyTransferFunctions = struct
   type extras = LivenessAnalysis.invariant_map
 
   let postprocess (reaching_defs, _ as astate) node {ProcData.extras} =
-    let node_id = (Procdesc.Node.get_id (CFG.underlying_node node), ProcCfg.Node_index) in
+    let node_id = Procdesc.Node.get_id (CFG.underlying_node node) in
     match LivenessAnalysis.extract_state node_id extras with
     (* note: because the analysis is backward, post and pre are reversed *)
     | Some {AbstractInterpreter.post= live_before; pre= live_after}
@@ -229,52 +229,6 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
     let exit_node = ProcCfg.Exceptional.exit_node nullify_proc_cfg in
     node_add_nullify_instructions exit_node (AddressTaken.Domain.elements address_taken_vars)
 
-module ExceptionalOneInstrPerNodeCfg = ProcCfg.OneInstrPerNode (ProcCfg.Exceptional)
-module CopyProp =
-  AbstractInterpreter.Make (ExceptionalOneInstrPerNodeCfg) (CopyPropagation.TransferFunctions)
-
-let do_copy_propagation pdesc tenv =
-  let proc_cfg = ExceptionalOneInstrPerNodeCfg.from_pdesc pdesc in
-  let initial = CopyPropagation.Domain.empty in
-  let copy_prop_inv_map =
-    CopyProp.exec_cfg proc_cfg (ProcData.make_default pdesc tenv) ~initial ~debug:false
-  in
-  (* [var_map] represents a chain of variable. copies v_0 -> v_1 ... -> v_n. starting from some
-     ident v_j, we want to walk backward through the chain to find the lowest v_i that is also an
-     ident. *)
-  let id_sub var_map id =
-    (* [last_id] is the highest identifier in the chain that we've seen so far *)
-    let rec id_sub_inner var_map var last_id =
-      try
-        let var' = CopyPropagation.Domain.find var var_map in
-        let last_id' = match var' with Var.LogicalVar id -> id | _ -> last_id in
-        id_sub_inner var_map var' last_id'
-      with Not_found -> Exp.Var last_id
-    in
-    id_sub_inner var_map (Var.of_id id) id
-  in
-  (* perform copy-propagation on each instruction in [node] *)
-  let rev_transform_node_instrs node =
-    List.fold
-      ~f:(fun (instrs, changed) (instr, id_opt) ->
-        match id_opt with
-        | Some id -> (
-          match CopyProp.extract_pre id copy_prop_inv_map with
-          | Some pre when not (CopyPropagation.Domain.is_empty pre)
-           -> let instr' = Sil.instr_sub_ids ~sub_id_binders:false (`Exp (id_sub pre)) instr in
-              (instr' :: instrs, changed || not (phys_equal instr' instr))
-          | _
-           -> (instr :: instrs, changed) )
-        | None
-         -> (instr :: instrs, changed))
-      ~init:([], false) (ExceptionalOneInstrPerNodeCfg.instr_ids node)
-  in
-  List.iter
-    ~f:(fun node ->
-      let instrs, changed = rev_transform_node_instrs node in
-      if changed then Procdesc.Node.replace_instrs node (List.rev instrs))
-    (Procdesc.get_nodes pdesc)
-
 let do_liveness pdesc tenv =
   let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
   let initial = Liveness.Domain.empty in
@@ -282,7 +236,6 @@ let do_liveness pdesc tenv =
     LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv) ~initial
       ~debug:false
   in
-  if Config.copy_propagation then do_copy_propagation pdesc tenv ;
   add_nullify_instrs pdesc tenv liveness_inv_map ;
   Procdesc.signal_did_preanalysis pdesc
 

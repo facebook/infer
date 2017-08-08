@@ -321,8 +321,6 @@ val compute_analytics : bool
 
 val continue_capture : bool
 
-val copy_propagation : bool
-
 val crashcontext : bool
 
 val create_harness : bool
