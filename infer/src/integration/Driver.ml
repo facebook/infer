@@ -180,9 +180,7 @@ let clean_results_dir () =
 
 let check_captured_empty mode =
   let clean_command_opt = clean_compilation_command mode in
-  (* if merge is passed, the captured folder will be empty at this point,
-     but will be filled later on. *)
-  if Utils.directory_is_empty Config.captured_dir && not Config.merge then (
+  if Utils.directory_is_empty Config.captured_dir then (
     ( match clean_command_opt with
     | Some clean_command
      -> L.user_warning "@\nNothing to compile. Try running `%s` first.@." clean_command

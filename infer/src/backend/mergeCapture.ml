@@ -101,7 +101,7 @@ let rec slink ~stats ~skiplevels src dst =
           (Filename.concat dst item))
       items )
   else if skiplevels > 0 then ()
-  else if Config.merge && Filename.check_suffix dst ".attr" then add_multilink_attr ~stats src dst
+  else if Filename.check_suffix dst ".attr" then add_multilink_attr ~stats src dst
   else create_link ~stats src dst
 
 (** Determine if the destination should link to the source.
