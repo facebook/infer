@@ -1,0 +1,99 @@
+/* @generated */
+digraph iCFG {
+"foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_1" [label="1: Start class_specialization::foo_intptr\nFormals: \nLocals:  x:int b:class_specialization::Derived<int*> \n   DECLARE_LOCALS(&return,&x,&b); [line 26]\n " color=yellow style=filled]
+	
+
+	 "foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_1" -> "foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_5" ;
+"foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_2" [label="2: Exit class_specialization::foo_intptr \n  " color=yellow style=filled]
+	
+
+"foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_3" [label="3:  DeclStmt \n   n$0=*&b.x:int* [line 29]\n  n$1=*n$0:int [line 29]\n  *&x:int=n$1 [line 29]\n " shape="box"]
+	
+
+	 "foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_3" -> "foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_2" ;
+"foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_4" [label="4:  Call _fun_class_specialization::Derived<int*>_foo2 \n   _=*&b:class_specialization::Derived<int*> [line 28]\n  _fun_class_specialization::Derived<int*>_foo2(&b:class_specialization::Derived<int*>&,null:int*) [line 28]\n " shape="box"]
+	
+
+	 "foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_4" -> "foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_3" ;
+"foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_5" [label="5:  DeclStmt \n   _fun_class_specialization::Derived<int*>_Derived(&b:class_specialization::Derived<int*>*) [line 27]\n " shape="box"]
+	
+
+	 "foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_5" -> "foo_intptr#class_specialization#_ZN20class_specialization10foo_intptrEv.c19d80b3d535dbc9c6d850dd8f10e3a6_4" ;
+"foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_1" [label="1: Start class_specialization::foo_int\nFormals: \nLocals:  z:int b:class_specialization::Derived<int> \n   DECLARE_LOCALS(&return,&z,&b); [line 32]\n " color=yellow style=filled]
+	
+
+	 "foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_1" -> "foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_5" ;
+"foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_2" [label="2: Exit class_specialization::foo_int \n  " color=yellow style=filled]
+	
+
+"foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_3" [label="3:  DeclStmt \n   n$0=*&b.x:int [line 35]\n  *&z:int=(1 / n$0) [line 35]\n " shape="box"]
+	
+
+	 "foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_3" -> "foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_2" ;
+"foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_4" [label="4:  Call _fun_class_specialization::Derived<int>_foo \n   _=*&b:class_specialization::Derived<int> [line 34]\n  _fun_class_specialization::Derived<int>_foo(&b:class_specialization::Derived<int>&,0:int) [line 34]\n " shape="box"]
+	
+
+	 "foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_4" -> "foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_3" ;
+"foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_5" [label="5:  DeclStmt \n   _fun_class_specialization::Derived<int>_Derived(&b:class_specialization::Derived<int>*) [line 33]\n " shape="box"]
+	
+
+	 "foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_5" -> "foo_int#class_specialization#_ZN20class_specialization7foo_intEv.6f63111c0806782f53c8007624316a0c_4" ;
+"Base#Base<int>#class_specialization#{_ZN20class_specialization4BaseIiEC1Ev}.9f658966397464c569b5cdf0a55d2da4_1" [label="1: Start class_specialization::Base<int>_Base\nFormals:  this:class_specialization::Base<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "Base#Base<int>#class_specialization#{_ZN20class_specialization4BaseIiEC1Ev}.9f658966397464c569b5cdf0a55d2da4_1" -> "Base#Base<int>#class_specialization#{_ZN20class_specialization4BaseIiEC1Ev}.9f658966397464c569b5cdf0a55d2da4_2" ;
+"Base#Base<int>#class_specialization#{_ZN20class_specialization4BaseIiEC1Ev}.9f658966397464c569b5cdf0a55d2da4_2" [label="2: Exit class_specialization::Base<int>_Base \n  " color=yellow style=filled]
+	
+
+"Base#Base<int*>#class_specialization#{_ZN20class_specialization4BaseIPiEC1Ev}.dea792851a5bef48197214d7ac20d162_1" [label="1: Start class_specialization::Base<int*>_Base\nFormals:  this:class_specialization::Base<int*>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "Base#Base<int*>#class_specialization#{_ZN20class_specialization4BaseIPiEC1Ev}.dea792851a5bef48197214d7ac20d162_1" -> "Base#Base<int*>#class_specialization#{_ZN20class_specialization4BaseIPiEC1Ev}.dea792851a5bef48197214d7ac20d162_2" ;
+"Base#Base<int*>#class_specialization#{_ZN20class_specialization4BaseIPiEC1Ev}.dea792851a5bef48197214d7ac20d162_2" [label="2: Exit class_specialization::Base<int*>_Base \n  " color=yellow style=filled]
+	
+
+"Derived#Derived<int>#class_specialization#{_ZN20class_specialization7DerivedIiEC1Ev}.e116e1143fd21e664658f83e6ae62af4_1" [label="1: Start class_specialization::Derived<int>_Derived\nFormals:  this:class_specialization::Derived<int>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 17]\n " color=yellow style=filled]
+	
+
+	 "Derived#Derived<int>#class_specialization#{_ZN20class_specialization7DerivedIiEC1Ev}.e116e1143fd21e664658f83e6ae62af4_1" -> "Derived#Derived<int>#class_specialization#{_ZN20class_specialization7DerivedIiEC1Ev}.e116e1143fd21e664658f83e6ae62af4_3" ;
+"Derived#Derived<int>#class_specialization#{_ZN20class_specialization7DerivedIiEC1Ev}.e116e1143fd21e664658f83e6ae62af4_2" [label="2: Exit class_specialization::Derived<int>_Derived \n  " color=yellow style=filled]
+	
+
+"Derived#Derived<int>#class_specialization#{_ZN20class_specialization7DerivedIiEC1Ev}.e116e1143fd21e664658f83e6ae62af4_3" [label="3:  Constructor Init \n   n$0=*&this:class_specialization::Derived<int>* [line 17]\n  _fun_class_specialization::Base<int>_Base(n$0:class_specialization::Derived<int>*) [line 17]\n " shape="box"]
+	
+
+	 "Derived#Derived<int>#class_specialization#{_ZN20class_specialization7DerivedIiEC1Ev}.e116e1143fd21e664658f83e6ae62af4_3" -> "Derived#Derived<int>#class_specialization#{_ZN20class_specialization7DerivedIiEC1Ev}.e116e1143fd21e664658f83e6ae62af4_2" ;
+"foo#Derived<int>#class_specialization#(_ZN20class_specialization7DerivedIiE3fooEi).0c794b38a798abffd37d8daf11cfbbef_1" [label="1: Start class_specialization::Derived<int>_foo\nFormals:  this:class_specialization::Derived<int>* t:int\nLocals:  \n   DECLARE_LOCALS(&return); [line 18]\n " color=yellow style=filled]
+	
+
+	 "foo#Derived<int>#class_specialization#(_ZN20class_specialization7DerivedIiE3fooEi).0c794b38a798abffd37d8daf11cfbbef_1" -> "foo#Derived<int>#class_specialization#(_ZN20class_specialization7DerivedIiE3fooEi).0c794b38a798abffd37d8daf11cfbbef_3" ;
+"foo#Derived<int>#class_specialization#(_ZN20class_specialization7DerivedIiE3fooEi).0c794b38a798abffd37d8daf11cfbbef_2" [label="2: Exit class_specialization::Derived<int>_foo \n  " color=yellow style=filled]
+	
+
+"foo#Derived<int>#class_specialization#(_ZN20class_specialization7DerivedIiE3fooEi).0c794b38a798abffd37d8daf11cfbbef_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class_specialization::Derived<int>* [line 18]\n  n$1=*&t:int [line 18]\n  *n$0.x:int=n$1 [line 18]\n " shape="box"]
+	
+
+	 "foo#Derived<int>#class_specialization#(_ZN20class_specialization7DerivedIiE3fooEi).0c794b38a798abffd37d8daf11cfbbef_3" -> "foo#Derived<int>#class_specialization#(_ZN20class_specialization7DerivedIiE3fooEi).0c794b38a798abffd37d8daf11cfbbef_2" ;
+"Derived#Derived<int*>#class_specialization#{_ZN20class_specialization7DerivedIPiEC1Ev}.1a3cc564bd2adc598344fe93c409db80_1" [label="1: Start class_specialization::Derived<int*>_Derived\nFormals:  this:class_specialization::Derived<int*>*\nLocals:  \n   DECLARE_LOCALS(&return); [line 22]\n " color=yellow style=filled]
+	
+
+	 "Derived#Derived<int*>#class_specialization#{_ZN20class_specialization7DerivedIPiEC1Ev}.1a3cc564bd2adc598344fe93c409db80_1" -> "Derived#Derived<int*>#class_specialization#{_ZN20class_specialization7DerivedIPiEC1Ev}.1a3cc564bd2adc598344fe93c409db80_3" ;
+"Derived#Derived<int*>#class_specialization#{_ZN20class_specialization7DerivedIPiEC1Ev}.1a3cc564bd2adc598344fe93c409db80_2" [label="2: Exit class_specialization::Derived<int*>_Derived \n  " color=yellow style=filled]
+	
+
+"Derived#Derived<int*>#class_specialization#{_ZN20class_specialization7DerivedIPiEC1Ev}.1a3cc564bd2adc598344fe93c409db80_3" [label="3:  Constructor Init \n   n$0=*&this:class_specialization::Derived<int*>* [line 22]\n  _fun_class_specialization::Base<int*>_Base(n$0:class_specialization::Derived<int*>*) [line 22]\n " shape="box"]
+	
+
+	 "Derived#Derived<int*>#class_specialization#{_ZN20class_specialization7DerivedIPiEC1Ev}.1a3cc564bd2adc598344fe93c409db80_3" -> "Derived#Derived<int*>#class_specialization#{_ZN20class_specialization7DerivedIPiEC1Ev}.1a3cc564bd2adc598344fe93c409db80_2" ;
+"foo2#Derived<int*>#class_specialization#(_ZN20class_specialization7DerivedIPiE4foo2ES1_).ad7ae4c6761ba05b845d0f55f64e64f6_1" [label="1: Start class_specialization::Derived<int*>_foo2\nFormals:  this:class_specialization::Derived<int*>* t:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 23]\n " color=yellow style=filled]
+	
+
+	 "foo2#Derived<int*>#class_specialization#(_ZN20class_specialization7DerivedIPiE4foo2ES1_).ad7ae4c6761ba05b845d0f55f64e64f6_1" -> "foo2#Derived<int*>#class_specialization#(_ZN20class_specialization7DerivedIPiE4foo2ES1_).ad7ae4c6761ba05b845d0f55f64e64f6_3" ;
+"foo2#Derived<int*>#class_specialization#(_ZN20class_specialization7DerivedIPiE4foo2ES1_).ad7ae4c6761ba05b845d0f55f64e64f6_2" [label="2: Exit class_specialization::Derived<int*>_foo2 \n  " color=yellow style=filled]
+	
+
+"foo2#Derived<int*>#class_specialization#(_ZN20class_specialization7DerivedIPiE4foo2ES1_).ad7ae4c6761ba05b845d0f55f64e64f6_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&this:class_specialization::Derived<int*>* [line 23]\n  n$1=*&t:int* [line 23]\n  *n$0.x:int*=n$1 [line 23]\n " shape="box"]
+	
+
+	 "foo2#Derived<int*>#class_specialization#(_ZN20class_specialization7DerivedIPiE4foo2ES1_).ad7ae4c6761ba05b845d0f55f64e64f6_3" -> "foo2#Derived<int*>#class_specialization#(_ZN20class_specialization7DerivedIPiE4foo2ES1_).ad7ae4c6761ba05b845d0f55f64e64f6_2" ;
+}

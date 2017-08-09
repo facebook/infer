@@ -49,6 +49,7 @@ SOURCES = \
   shared/reference/reference_type_e2e.cpp \
   shared/reference/temporary_lvalue.cpp \
   shared/templates/class_template_instantiate.cpp \
+  shared/templates/class_specialization.cpp \
   shared/templates/function.cpp \
   shared/templates/function_pack.cpp \
   shared/templates/method.cpp \
