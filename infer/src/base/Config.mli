@@ -74,6 +74,8 @@ val anonymous_block_num_sep : string
 
 val anonymous_block_prefix : string
 
+val append_buck_flavors : string list
+
 val assign : string
 
 val attributes_dir_name : string

@@ -82,7 +82,7 @@ let call_buck_query_for_dependencies targets =
         "*** command failed:@\n*** %s@\n*** %s@." buck_query_cmd
         (Unix.Exit_or_signal.to_string_hum status)
   | Ok ()
-   -> output
+   -> List.map ~f:(fun name -> string_of_target {name; flavors= Config.append_buck_flavors}) output
 
 let get_dependency_targets args =
   let targets, no_targets = List.partition_tf ~f:is_target_string args in

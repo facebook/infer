@@ -705,6 +705,11 @@ and annotation_reachability_custom_pairs =
 Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}
 { "sources" : ["Source1", "Source2"], "sink" : "Sink1" }|}
 
+and append_buck_flavors =
+  CLOpt.mk_string_list ~long:"append-buck-flavors"
+    ~in_help:CLOpt.([(Capture, manual_buck_flavors)])
+    "Additional Buck flavors to append to targets discovered by the $(b,--buck-compilation-database) option."
+
 and array_level =
   CLOpt.mk_int ~deprecated:["arraylevel"] ~long:"array-level" ~default:0 ~meta:"int"
     {|Level of treating the array indexing and pointer arithmetic:
@@ -1867,6 +1872,8 @@ and angelic_execution = !angelic_execution
 and annotation_reachability = !annotation_reachability
 
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
+
+and append_buck_flavors = !append_buck_flavors
 
 and array_level = !array_level
 
