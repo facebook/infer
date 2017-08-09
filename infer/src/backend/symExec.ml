@@ -464,6 +464,17 @@ let check_already_dereferenced tenv pname cond prop =
     | Exp.BinOp ((Binop.Eq | Binop.Ne), Exp.Var id, Exp.Const Const.Cint i)
       when IntLit.iszero i
      -> Some id
+    (* These two patterns appear frequently in Prune nodes *)
+    | Exp.BinOp
+        ( (Binop.Eq | Binop.Ne)
+        , Exp.BinOp (Binop.Eq, Exp.Var id, Exp.Const Const.Cint i)
+        , Exp.Const Const.Cint j )
+    | Exp.BinOp
+        ( (Binop.Eq | Binop.Ne)
+        , Exp.BinOp (Binop.Eq, Exp.Const Const.Cint i, Exp.Var id)
+        , Exp.Const Const.Cint j )
+      when IntLit.iszero i && IntLit.iszero j
+     -> Some id
     | _
      -> None
   in

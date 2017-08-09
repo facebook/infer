@@ -89,6 +89,7 @@ codetoanalyze/c/errors/null_dereference/short.c, g_error, 2, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/short.c, g_error, 2, NULL_TEST_AFTER_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/short.c, l_error, 2, NULL_DEREFERENCE
 codetoanalyze/c/errors/null_dereference/short.c, m, 2, NULL_TEST_AFTER_DEREFERENCE
+codetoanalyze/c/errors/null_test_after_deref/basic.c, null_test_deref_basic_bad, 2, NULL_TEST_AFTER_DEREFERENCE
 codetoanalyze/c/errors/resource_leaks/leak.c, fileNotClosed, 5, RESOURCE_LEAK
 codetoanalyze/c/errors/resource_leaks/leak.c, socketNotClosed, 5, RESOURCE_LEAK
 codetoanalyze/c/errors/sizeof/sizeof_706.c, sentinel_bad, 0, DIVIDE_BY_ZERO
