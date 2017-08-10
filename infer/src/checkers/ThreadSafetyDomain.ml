@@ -233,8 +233,8 @@ module Escapee = struct
     | Local loc
      -> F.fprintf fmt "Local(%a)" Var.pp loc
 
-  let of_access_path extras (base, _) =
-    match FormalMap.get_formal_index base extras with
+  let of_access_path attribute_map (base, _) =
+    match AttributeMapDomain.get_conditional_ownership_index (base, []) attribute_map with
     | Some fml
      -> Formal fml
     | None

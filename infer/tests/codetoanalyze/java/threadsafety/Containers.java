@@ -240,11 +240,13 @@ class Containers {
     if (list == null) {
       list = new ArrayList<>();
     }
+    // we get list |->  ({ OwnedIf (0) } |_| { Owned }) here, which simplifies to list |-> {} due
+    // to limitations in AttributeMapDomain (join is just simple intersection)
     list.add(new Object());
     return list;
   }
 
-  public void addToNullListOk() {
+  public void FP_addToNullListOk() {
     List list = null;
     addOrCreateList(list);
   }

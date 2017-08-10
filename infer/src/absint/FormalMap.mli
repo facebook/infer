@@ -29,3 +29,5 @@ val get_formal_index : AccessPath.base -> t -> int option
 val get_formal_base : int -> t -> AccessPath.base option
 (** return the base var for the given index if it exists, or None if it does not. Note: this is
     linear in the size of the formal map *)
+
+val get_formals_indexes : t -> (AccessPath.base * int) list

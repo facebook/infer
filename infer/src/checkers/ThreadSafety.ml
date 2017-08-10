@@ -36,7 +36,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = ThreadSafetyDomain
 
-  type extras = FormalMap.t
+  type extras = ProcData.no_extras
 
   type lock_model = Lock | Unlock | LockedIfTrue | NoEffect
 
@@ -179,8 +179,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _
      -> None
 
-  let add_conditional_ownership_attribute access_path formal_map attribute_map attributes =
-    match FormalMap.get_formal_index (fst access_path) formal_map with
+  let add_conditional_ownership_attribute access_path attribute_map attributes =
+    match
+      Domain.AttributeMapDomain.get_conditional_ownership_index (fst access_path, []) attribute_map
+    with
     | Some formal_index when not (is_owned access_path attribute_map)
      -> Domain.AttributeSetDomain.add (Domain.Attribute.OwnedIf (Some formal_index)) attributes
     | _
@@ -193,7 +195,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   (* propagate attributes from the leaves to the root of an RHS Hil expression.
      Special casing on ownership. *)
-  let rec attributes_of_expr formal_map attribute_map e =
+  let rec attributes_of_expr attribute_map e =
     let open HilExp in
     let open Domain in
     match e with
@@ -202,14 +204,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | AccessPath ap
      -> ( try AttributeMapDomain.find ap attribute_map
           with Not_found -> AttributeSetDomain.empty )
-        |> add_conditional_ownership_attribute ap formal_map attribute_map
+        |> add_conditional_ownership_attribute ap attribute_map
     | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr)
-     -> attributes_of_expr formal_map attribute_map expr
+     -> attributes_of_expr attribute_map expr
     | UnaryOperator (_, expr, _)
-     -> attributes_of_expr formal_map attribute_map expr |> remove_ownership_attributes
+     -> attributes_of_expr attribute_map expr |> remove_ownership_attributes
     | BinaryOperator (_, expr1, expr2)
-     -> let attributes1 = attributes_of_expr formal_map attribute_map expr1 in
-        let attributes2 = attributes_of_expr formal_map attribute_map expr2 in
+     -> let attributes1 = attributes_of_expr attribute_map expr1 in
+        let attributes2 = attributes_of_expr attribute_map expr2 in
         AttributeSetDomain.join attributes1 attributes2 |> remove_ownership_attributes
     | Closure _ | Sizeof _
      -> AttributeSetDomain.empty
@@ -222,8 +224,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let prefixes = aux [] but_last_rev in
     List.for_all ~f:(fun ap -> is_owned (base, ap) attribute_map) prefixes
 
-  let propagate_attributes lhs_access_path rhs_exp attribute_map formal_map =
-    let rhs_attributes = attributes_of_expr formal_map attribute_map rhs_exp in
+  let propagate_attributes lhs_access_path rhs_exp attribute_map =
+    let rhs_attributes = attributes_of_expr attribute_map rhs_exp in
     let lhs_root = fst lhs_access_path in
     let filter_on_globals =
       (* do not assign ownership to access paths rooted at globals *)
@@ -236,7 +238,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       match snd lhs_access_path with
       | []
        -> Fn.id
-      | [_] when FormalMap.is_formal lhs_root formal_map
+      | [_]
+        when Option.is_some
+               (Domain.AttributeMapDomain.get_conditional_ownership_index (lhs_root, [])
+                  attribute_map)
        -> Fn.id
       | _ when all_prefixes_owned lhs_access_path attribute_map
        -> Fn.id
@@ -246,7 +251,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let final_attributes = filter_on_globals rhs_attributes |> filter_on_lhs in
     Domain.AttributeMapDomain.add lhs_access_path final_attributes attribute_map
 
-  let propagate_return_attributes ret_opt ret_attributes actuals attribute_map formal_map =
+  let propagate_return_attributes ret_opt ret_attributes actuals attribute_map =
     let open Domain in
     match ret_opt with
     | None
@@ -266,9 +271,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | Some HilExp.AccessPath actual_ap
              -> if is_owned actual_ap attribute_map then
                   AttributeSetDomain.add Attribute.unconditionally_owned other_attributes
-                else
-                  add_conditional_ownership_attribute actual_ap formal_map attribute_map
-                    other_attributes
+                else add_conditional_ownership_attribute actual_ap attribute_map other_attributes
             | Some HilExp.Constant _
              -> AttributeSetDomain.add Attribute.unconditionally_owned other_attributes
             | _
@@ -305,7 +308,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes predicate
 
   let add_unannotated_call_access pname (call_flags: CallFlags.t) loc tenv ~locks ~threads
-      attribute_map (proc_data: FormalMap.t ProcData.t) =
+      attribute_map (proc_data: ProcData.no_extras ProcData.t) =
     if call_flags.cf_interface && Typ.Procname.is_java pname
        && not (is_java_library pname || is_builder_function pname)
        (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
@@ -324,7 +327,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else attribute_map
 
   let add_access exp loc ~is_write_access accesses locks threads attribute_map
-      (proc_data: FormalMap.t ProcData.t) =
+      (proc_data: ProcData.no_extras ProcData.t) =
     let open Domain in
     (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
        (b) volatile *)
@@ -358,11 +361,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           add_field_accesses pre access_path access_acc' access_list'
     in
     let add_access_ acc (base, accesses) =
+      let base_access_path = (base, []) in
       if List.is_empty accesses then acc
       else
         let pre =
           if is_unprotected locks threads proc_data.pdesc then
-            match FormalMap.get_formal_index base proc_data.extras with
+            match
+              AttributeMapDomain.get_conditional_ownership_index base_access_path attribute_map
+            with
             | Some formal_index
              -> AccessPrecondition.Unprotected (Some formal_index)
             | None
@@ -371,7 +377,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             AccessPrecondition.Protected
               (make_excluder (locks || Procdesc.is_java_synchronized proc_data.pdesc) threads)
         in
-        add_field_accesses pre (base, []) acc accesses
+        add_field_accesses pre base_access_path acc accesses
     in
     List.fold ~f:add_access_ ~init:accesses (HilExp.get_access_paths exp)
 
@@ -539,8 +545,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_access exp loc ~is_write_access:false acc locks threads attribute_map proc_data)
       exps ~init:accesses
 
-  let add_escapees_from_exp rhs_exp extras escapees =
-    HilExp.get_access_paths rhs_exp |> List.rev_map ~f:(Domain.Escapee.of_access_path extras)
+  let add_escapees_from_exp rhs_exp attribute_map escapees =
+    HilExp.get_access_paths rhs_exp
+    |> List.rev_map ~f:(Domain.Escapee.of_access_path attribute_map)
     |> Domain.EscapeeDomain.add_from_list escapees
 
   let add_escapees_from_exp_list exp_list extras escapees =
@@ -552,7 +559,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     add_escapees_from_exp_list escapee_actuals extras escapees
 
-  let exec_instr (astate: Domain.astate) ({ProcData.extras; tenv; pdesc} as proc_data) _
+  let exec_instr (astate: Domain.astate) ({ProcData.tenv; pdesc} as proc_data) _
       (instr: HilInstr.t) =
     let open Domain in
     match instr with
@@ -566,7 +573,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             astate.attribute_map
         in
         (* TODO: we need to model escaping formals, now just assume all escape *)
-        let escapees = add_escapees_from_exp_list actuals extras astate.escapees in
+        let escapees = add_escapees_from_exp_list actuals astate.attribute_map astate.escapees in
         {astate with accesses; attribute_map; escapees}
     | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc)
      -> (
@@ -653,7 +660,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                           let pre =
                             if unprotected then
                               let base = fst actual_access_path in
-                              match FormalMap.get_formal_index base extras with
+                              match
+                                AttributeMapDomain.get_conditional_ownership_index (base, [])
+                                  astate.attribute_map
+                              with
                               | Some formal_index
                                -> (* the actual passed to the current callee is rooted in a
                                          formal *)
@@ -700,15 +710,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   in
                   let attribute_map =
                     propagate_return_attributes ret_opt return_attributes actuals
-                      astate.attribute_map extras
+                      astate.attribute_map
                   in
                   let escapees =
-                    add_escapees_from_call actuals escapee_formals extras astate.escapees
+                    add_escapees_from_call actuals escapee_formals astate.attribute_map
+                      astate.escapees
                   in
                   {thumbs_up; locks; threads; accesses; attribute_map; escapees}
               | None
                -> (* TODO: assume actuals escape, should we? *)
-                  let new_escapees = add_escapees_from_exp_list actuals extras astate.escapees in
+                  let new_escapees =
+                    add_escapees_from_exp_list actuals astate.attribute_map astate.escapees
+                  in
                   let astate = {astate with escapees= new_escapees} in
                   let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
                     (* assume non-interface methods with no summary and no parameters return
@@ -786,13 +799,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             add_access (AccessPath lhs_access_path) loc ~is_write_access:true rhs_accesses
               astate.locks astate.threads astate.attribute_map proc_data
         in
-        let attribute_map =
-          propagate_attributes lhs_access_path rhs_exp astate.attribute_map extras
-        in
+        let attribute_map = propagate_attributes lhs_access_path rhs_exp astate.attribute_map in
         (* assigning to the return variable leads to no new escapees *)
         let escapees =
           if fst lhs_access_path |> fst |> Var.is_return then astate.escapees
-          else add_escapees_from_exp rhs_exp extras astate.escapees
+          else add_escapees_from_exp rhs_exp astate.attribute_map astate.escapees
         in
         {astate with accesses; attribute_map; escapees}
     | Assume (assume_exp, _, _, loc)
@@ -968,13 +979,13 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   (* convert the abstract state to a summary by dropping the id map *)
   if should_analyze_proc proc_desc tenv then (
     if not (Procdesc.did_preanalysis proc_desc) then Preanal.do_liveness proc_desc tenv ;
-    let extras = FormalMap.make proc_desc in
-    let proc_data = ProcData.make proc_desc tenv extras in
+    let formal_map = FormalMap.make proc_desc in
+    let proc_data = ProcData.make_default proc_desc tenv in
     let initial =
       let threads = runs_on_ui_thread proc_desc || is_thread_confined_method tenv proc_desc in
       if is_initializer tenv (Procdesc.get_proc_name proc_desc) then
         let add_owned_formal acc formal_index =
-          match FormalMap.get_formal_base formal_index extras with
+          match FormalMap.get_formal_base formal_index formal_map with
           | Some base
            -> AttributeMapDomain.add_attribute (base, []) Attribute.unconditionally_owned acc
           | None
@@ -993,7 +1004,17 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           List.fold ~f:add_owned_formal owned_formals ~init:ThreadSafetyDomain.empty.attribute_map
         in
         ({ThreadSafetyDomain.empty with attribute_map; threads}, IdAccessPathMapDomain.empty)
-      else ({ThreadSafetyDomain.empty with threads}, IdAccessPathMapDomain.empty)
+      else
+        (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
+           it is owned in the caller *)
+        let add_owned_formal acc (formal, formal_index) =
+          AttributeMapDomain.add_attribute (formal, []) (Attribute.OwnedIf (Some formal_index)) acc
+        in
+        let attribute_map =
+          List.fold ~f:add_owned_formal (FormalMap.get_formals_indexes formal_map)
+            ~init:ThreadSafetyDomain.empty.attribute_map
+        in
+        ({ThreadSafetyDomain.empty with attribute_map; threads}, IdAccessPathMapDomain.empty)
     in
     match Analyzer.compute_post proc_data ~initial ~debug:false with
     | Some ({thumbs_up; threads; locks; accesses; attribute_map; escapees}, _)

@@ -140,7 +140,7 @@ module Escapee : sig
 
   val pp : F.formatter -> t -> unit
 
-  val of_access_path : FormalMap.t -> AccessPath.t -> t
+  val of_access_path : AttributeMapDomain.astate -> AccessPath.t -> t
 end
 
 (** set of formals or locals that may escape *)

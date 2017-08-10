@@ -38,3 +38,5 @@ let get_formal_index base t =
 let get_formal_base index t =
   List.find ~f:(fun (_, i) -> Int.equal i index) (AccessPath.BaseMap.bindings t)
   |> Option.map ~f:fst
+
+let get_formals_indexes = AccessPath.BaseMap.bindings
