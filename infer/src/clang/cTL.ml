@@ -796,6 +796,10 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.is_at_selector_with_name an name
   | "has_type_subprotocol_of", [protname], an
    -> CPredicates.has_type_subprotocol_of an protname
+  | "has_visibility_attribute", [vis], an
+   -> CPredicates.has_visibility_attribute an vis
+  | "has_used_attribute", [], an
+   -> CPredicates.has_used_attribute an
   | _
    -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: '" ^ pred_name ^ "'")
 

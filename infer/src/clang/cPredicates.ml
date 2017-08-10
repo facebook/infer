@@ -632,3 +632,42 @@ let using_namespace an namespace =
      -> false )
   | _
    -> false
+
+let rec get_decl_attributes_for_callexpr an =
+  let open Clang_ast_t in
+  let open Ctl_parser_types in
+  match an with
+  | Stmt CallExpr (_, func :: _, _)
+   -> get_decl_attributes_for_callexpr (Stmt func)
+  | Stmt ImplicitCastExpr (_, [stmt], _, _)
+   -> get_decl_attributes_for_callexpr (Stmt stmt)
+  | Stmt DeclRefExpr (_, _, _, drti) -> (
+    match CAst_utils.get_decl_opt_with_decl_ref drti.drti_decl_ref with
+    | Some decl
+     -> let decl_info = Clang_ast_proj.get_decl_tuple decl in
+        decl_info.di_attributes
+    | None
+     -> [] )
+  | _
+   -> []
+
+let has_visibility_attribute an visibility =
+  let open Clang_ast_t in
+  let rec has_visibility_attr attrs param =
+    match attrs with
+    | []
+     -> false
+    | (VisibilityAttr attr_info) :: rest
+     -> if List.exists ~f:(fun s -> String.equal param (String.strip s)) attr_info.ai_parameters
+        then true
+        else has_visibility_attr rest param
+    | _ :: rest
+     -> has_visibility_attr rest param
+  in
+  let attributes = get_decl_attributes_for_callexpr an in
+  match visibility with ALVar.Const vis -> has_visibility_attr attributes vis | _ -> false
+
+let has_used_attribute an =
+  let open Clang_ast_t in
+  let attributes = get_decl_attributes_for_callexpr an in
+  List.exists ~f:(fun attr -> match attr with UsedAttr _ -> true | _ -> false) attributes

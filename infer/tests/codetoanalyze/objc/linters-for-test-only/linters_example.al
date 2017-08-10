@@ -348,3 +348,31 @@ DEFINE-CHECKER ENUM_CONSTANTS = {
    SET report_when = is_at_selector_with_name("actionButtonTapped:");
    SET message = "Found @selector(actionButtonTapped:)";
  };
+
+ DEFINE-CHECKER TEST_DEFAULT_VISIBILITY = {
+   SET report_when =
+       WHEN has_visibility_attribute("Default")
+       HOLDS-IN-NODE CallExpr;
+   SET message = "%name% has default visibility";
+ };
+
+ DEFINE-CHECKER TEST_HIDDEN_VISIBILITY = {
+   SET report_when =
+       WHEN has_visibility_attribute("Hidden")
+       HOLDS-IN-NODE CallExpr;
+   SET message = "%name% has hidden visibility";
+ };
+
+ DEFINE-CHECKER TEST_USED_ATTRIBUTE = {
+   SET report_when =
+       WHEN has_used_attribute()
+       HOLDS-IN-NODE CallExpr;
+   SET message = "%name% has used attribute";
+ };
+
+ DEFINE-CHECKER TEST_DEFAULT_VISIBILITY_WITH_USED_ATTRIBUTE = {
+   SET report_when =
+       WHEN has_visibility_attribute("Default") AND has_used_attribute
+       HOLDS-IN-NODE CallExpr;
+   SET message = "%name% has default visibility and used attribute";
+ };
