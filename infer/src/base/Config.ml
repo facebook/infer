@@ -538,11 +538,11 @@ and ( analysis_blacklist_files_containing_options
   , mk_filtering_options ~suffix:"blacklist-path-regex" ~deprecated_suffix:["blacklist"]
       ~help:
         "blacklist the analysis of files whose relative path matches the specified OCaml-style regex (to whitelist: $(b,--<analyzer>-whitelist-path-regex))"
-      ~meta:"path regex"
+      ~meta:"path_regex"
   , mk_filtering_options ~suffix:"whitelist-path-regex" ~deprecated_suffix:["whitelist"] ~help:""
-      ~meta:"path regex"
+      ~meta:"path_regex"
   , mk_filtering_options ~suffix:"suppress-errors" ~deprecated_suffix:["suppress_errors"]
-      ~help:"do not report a type of errors" ~meta:"error name" )
+      ~help:"do not report a type of errors" ~meta:"error_name" )
 
 and analysis_stops =
   CLOpt.mk_bool ~deprecated:["analysis_stops"] ~long:"analysis-stops"
@@ -792,11 +792,11 @@ and clang_frontend_action =
 
 and clang_include_to_override_regex =
   CLOpt.mk_string_opt ~long:"clang-include-to-override-regex"
-    ~deprecated:["-clang-include-to-override"] ~meta:"dir OCaml regex"
+    ~deprecated:["-clang-include-to-override"] ~meta:"dir_OCaml_regex"
     "Use this option in the uncommon case where the normal compilation process overrides the location of internal compiler headers. This option should specify regular expression with the path to those headers so that infer can use its own clang internal headers instead."
 
 and clang_ignore_regex =
-  CLOpt.mk_string_opt ~long:"clang-ignore-regex" ~meta:"dir OCaml regex"
+  CLOpt.mk_string_opt ~long:"clang-ignore-regex" ~meta:"dir_OCaml_regex"
     "The files in this regex will be ignored in the compilation process and an empty file will be passed to clang instead. This is to be used with the buck flavour infer-capture-all to work around missing generated files."
 
 and classpath = CLOpt.mk_string_opt ~long:"classpath" "Specify the Java classpath"
@@ -1026,7 +1026,7 @@ and differential_filter_set =
     ~default:[`Introduced; `Fixed; `Preexisting]
 
 and disable_checks =
-  CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error name"
+  CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error_name"
     ~in_help:CLOpt.([(Report, manual_generic)])
     ~default:
       [ "ANALYSIS_STOPS"
@@ -1061,7 +1061,7 @@ and dynamic_dispatch =
     ~symbols:[("none", `None); ("interface", `Interface); ("sound", `Sound); ("lazy", `Lazy)]
 
 and enable_checks =
-  CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error name"
+  CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error_name"
     "Show reports coming from this type of errors. This option has higher precedence than $(b,--disable-checks)"
 
 and eradicate_condition_redundant =
@@ -1184,7 +1184,7 @@ and iphoneos_target_sdk_version =
 and iphoneos_target_sdk_version_skip_path =
   CLOpt.mk_string_list ~long:"iphoneos-target-sdk-version-skip-path"
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
-    ~meta:"path prefix OCaml regex"
+    ~meta:"path_prefix_OCaml_regex"
     "To be used together with iphoneos-target-sdk-version, to disable that flag in a particular path (can be specified multiple times)"
 
 and issues_fields =
@@ -1508,7 +1508,7 @@ and siof_safe_methods =
 and skip_analysis_in_path =
   CLOpt.mk_string_list ~deprecated:["-skip-clang-analysis-in-path"] ~long:"skip-analysis-in-path"
     ~in_help:CLOpt.([(Capture, manual_generic); (Run, manual_generic)])
-    ~meta:"path prefix OCaml regex"
+    ~meta:"path_prefix_OCaml_regex"
     "Ignore files whose path matches the given prefix (can be specified multiple times)"
 
 and skip_analysis_in_path_skips_compilation =
@@ -1524,7 +1524,7 @@ and skip_duplicated_types =
 and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
     ~in_help:CLOpt.([(Capture, manual_clang)])
-    ~meta:"path prefix" "Ignore headers whose path matches the given prefix"
+    ~meta:"path_prefix" "Ignore headers whose path matches the given prefix"
 
 and source_preview =
   CLOpt.mk_bool ~long:"source-preview" ~default:true

@@ -161,12 +161,12 @@ $(b,infer) $(i,[options])|}
           "Infer is a static analyzer. Given a collection of source files written in Java or in languages of the C family, and a command to build them, infer produces a list of potential issues."
       ; `P
           "Infer consists of a collection of tools referenced in the $(i,SEE ALSO) section of this manual. See their respective manuals for more information about each."
+      ; `P
+          "If a compilation command is specified via the $(b,--) option or one of the $(b,--clang-compilation-database[-escaped]) options, $(b,infer) behaves as $(b,infer-run)(1). Otherwise, $(b,infer) behaves as $(b,infer-analyze)(1)."
       ]
     ~options:
       (`Prepend
         [ `P
-            "If a compilation command is specified via the $(b,--) option or one of the $(b,--clang-compilation-database[-escaped]) options, $(b,infer) behaves as $(b,infer-run)(1). Otherwise, $(b,infer) behaves as $(b,infer-analyze)(1)."
-        ; `P
             "Every infer command accepts the arguments from all the other infer commands. The same option may affect and thus be list in the manual of several commands."
         ; `P
             (Printf.sprintf
@@ -175,6 +175,8 @@ $(b,infer) $(i,[options])|}
                CLOpt.args_env_var Cmdliner.Manpage.s_environment Cmdliner.Manpage.s_files)
         ; `P
             "Options can be specified inside an argument file $(i,file) by passing $(b,@)$(i,file) as argument. The format is one option per line, and enclosing single ' and double \" quotes are ignored."
+        ; `P
+            "Options without a default value (e.g., $(b,--linter)) and options with list-like values (e.g., $(b,--Xbuck)) all have a corresponding $(b,--option-reset) flag that resets their values to nothing or the empty list, respectively. For instance, $(b,--Xbuck-reset) will cancel any previous $(b,--Xbuck) option passed to infer."
         ; `P
             "See the manuals of individual infer commands for details about their supported options. The following is a list of all the supported options (see also $(b,--help-full) for options reserved for internal use)."
         ])

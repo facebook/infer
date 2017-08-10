@@ -106,7 +106,10 @@ val mk_string_opt : ?default:string -> ?f:(string -> string) -> string option re
 val mk_string_list : ?default:string list -> ?f:(string -> string) -> string list ref t
 (** [mk_string_list] defines a [string list ref], initialized to [[]] unless overridden by
     [~default].  Each argument of an occurrence of the option will be prepended to the list, so the
-    final value will be in the reverse order they appeared on the command line. *)
+    final value will be in the reverse order they appeared on the command line.
+
+    An option "--[long]-reset" is automatically created that resets the list to [] when found on the
+    command line.  *)
 
 val mk_path : default:string -> string ref t
 (** like [mk_string] but will resolve the string into an absolute path so that children processes
