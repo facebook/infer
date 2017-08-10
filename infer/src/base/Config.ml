@@ -597,7 +597,6 @@ and ( annotation_reachability
     , biabduction
     , bufferoverrun
     , crashcontext
-    , default_checkers
     , eradicate
     , fragment_retains_view
     , immutable_cast
@@ -608,85 +607,71 @@ and ( annotation_reachability
     , siof
     , threadsafety
     , suggest_nullable ) =
+  let all_checkers = ref [] in
+  let default_checkers = ref [] in
+  let mk_checker ?(default= false) ~long doc =
+    let var = CLOpt.mk_bool ~long ~in_help:CLOpt.([(Analyze, manual_generic)]) ~default doc in
+    all_checkers := (var, long) :: !all_checkers ;
+    if default then default_checkers := (var, long) :: !default_checkers ;
+    var
+  in
   let annotation_reachability =
-    CLOpt.mk_bool ~long:"annotation-reachability"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:true
+    mk_checker ~default:true ~long:"annotation-reachability"
       "the annotation reachability checker. Given a pair of source and sink annotation, e.g. @PerformanceCritical and @Expensive, this checker will warn whenever some method annotated with @PerformanceCritical calls, directly or indirectly, another method annotated with @Expensive"
   and biabduction =
-    CLOpt.mk_bool ~long:"biabduction"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
+    mk_checker ~long:"biabduction"
       "the separation logic based bi-abduction analysis using the checkers framework"
-  and bufferoverrun =
-    CLOpt.mk_bool ~long:"bufferoverrun"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      "the buffer overrun analysis"
+  and bufferoverrun = mk_checker ~long:"bufferoverrun" "the buffer overrun analysis"
   and crashcontext =
-    CLOpt.mk_bool ~long:"crashcontext"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
+    mk_checker ~long:"crashcontext"
       "the crashcontext checker for Java stack trace context reconstruction"
   and eradicate =
-    CLOpt.mk_bool ~long:"eradicate"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      "the eradicate @Nullable checker for Java annotations"
+    mk_checker ~long:"eradicate" "the eradicate @Nullable checker for Java annotations"
   and fragment_retains_view =
-    CLOpt.mk_bool ~long:"fragment-retains-view"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:true
+    mk_checker ~long:"fragment-retains-view" ~default:true
       "detects when Android fragments are not explicitly nullified before becoming unreabable"
   and immutable_cast =
-    CLOpt.mk_bool ~long:"immutable-cast"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:true
+    mk_checker ~long:"immutable-cast" ~default:true
       "the detection of object cast from immutable type to mutable type. For instance, it will detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
   and liveness =
-    CLOpt.mk_bool ~long:"liveness"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:true "the detection of dead stores and unused variables"
+    mk_checker ~long:"liveness" ~default:true "the detection of dead stores and unused variables"
   and printf_args =
-    CLOpt.mk_bool ~long:"printf-args"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:true
+    mk_checker ~long:"printf-args" ~default:true
       "the detection of mismatch between the Java printf format strings and the argument types For, example, this checker will warn about the type error in `printf(\"Hello %d\", \"world\")`"
-  and repeated_calls =
-    CLOpt.mk_bool ~long:"repeated-calls"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      "check for repeated calls"
-  and quandary =
-    CLOpt.mk_bool ~long:"quandary"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:true "the quandary taint analysis"
+  and repeated_calls = mk_checker ~long:"repeated-calls" "check for repeated calls"
+  and quandary = mk_checker ~long:"quandary" ~default:true "the quandary taint analysis"
   and siof =
-    CLOpt.mk_bool ~long:"siof"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:true "the Static Initialization Order Fiasco analysis (C++ only)"
-  and threadsafety =
-    CLOpt.mk_bool ~long:"threadsafety"
-      ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:true "the thread safety analysis"
+    mk_checker ~long:"siof" ~default:true
+      "the Static Initialization Order Fiasco analysis (C++ only)"
+  and threadsafety = mk_checker ~long:"threadsafety" ~default:true "the thread safety analysis"
   and suggest_nullable =
-    CLOpt.mk_bool ~long:"suggest-nullable" ~default:false
+    mk_checker ~long:"suggest-nullable" ~default:false
       "Nullable annotation sugesstions analysis (experimental)"
   in
-  (* IMPORTANT: keep in sync with the checkers that have ~default:true above *)
-  let default_checkers =
+  let mk_only (var, long) =
+    let _ : bool ref =
+      CLOpt.mk_bool_group ~long:(long ^ "-only")
+        ~in_help:CLOpt.([(Analyze, manual_generic)])
+        (Printf.sprintf "Enable $(b,--%s) and disable all other checkers" long) [var]
+        (List.map ~f:fst !all_checkers)
+    in
+    ()
+  in
+  List.iter ~f:mk_only !all_checkers ;
+  let _default_checkers : bool ref =
     CLOpt.mk_bool_group ~long:"default-checkers"
       ~in_help:CLOpt.([(Analyze, manual_generic)])
       ~default:true
-      "Default checkers: $(b,--annotation-reachability), $(b,--fragments-retains-view), $(b,--immutable-cast), $(b,--printf-args), $(b,--quandary), $(b,--siof), $(b,--threadsafety)"
-      [ annotation_reachability
-      ; fragment_retains_view
-      ; immutable_cast
-      ; printf_args
-      ; quandary
-      ; siof
-      ; threadsafety ] []
+      ( "Default checkers: "
+      ^ ( List.map ~f:(fun (_, s) -> Printf.sprintf "$(b,--%s)" s) !default_checkers
+        |> String.concat ~sep:", " ) )
+      (List.map ~f:fst !default_checkers)
+      []
   in
   ( annotation_reachability
   , biabduction
   , bufferoverrun
   , crashcontext
-  , default_checkers
   , eradicate
   , fragment_retains_view
   , immutable_cast
@@ -1243,7 +1228,7 @@ and linters_def_folder =
       ~in_help:CLOpt.([(Capture, manual_clang_linters)])
       ~meta:"dir" "Specify the folder containing linters files with extension .al"
   in
-  let _ =
+  let () =
     CLOpt.mk_set linters_def_folder [] ~long:"reset-linters-def-folder"
       "Reset the list of folders containing linters definitions to be empty (see $(b,linters-def-folder))."
   in
@@ -1547,7 +1532,7 @@ and specs_library =
     CLOpt.mk_path_list ~deprecated:["lib"] ~long:"specs-library" ~short:'L' ~meta:"dir|jar"
       "Search for .spec files in given directory or jar file"
   in
-  let _ =
+  let _ : string ref =
     (* Given a filename with a list of paths, convert it into a list of string iff they are
        absolute *)
     let read_specs_dir_list_file fname =
@@ -1950,8 +1935,6 @@ and debug_level_linters = !debug_level_linters
 and debug_exceptions = !debug_exceptions
 
 and debug_mode = !debug
-
-and default_checkers = !default_checkers
 
 and default_linters = !default_linters
 

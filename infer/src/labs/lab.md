@@ -12,7 +12,7 @@ The `ResourceLeaks.ml` and `ResourceLeaksDomain.ml` files have comments containi
 
 (c) Add a new test method containing a resource leak to `Leaks.java`, then run the tests again. The tests should now fail, and the error message should indicate that the failure is due to the new lreeak that you added. As the message suggests, run `make replace` to update the expected output (this simply copies the actual output `issues.exp.test` to the expected output `issues.exp`). Re-run the tests; they should now pass again.
 
-(d) Run the analyzer on a single test file to produce the debug HTML: `infer --debug -a checkers --no-default-checkers --resource-leak -- javac Leaks.java`. Then, open the debug HTML: `open infer-out/captured/*.html`. This helpful artifact shows the Infer warnings alongside the code they are complaining about. It also displays the CFG node(s) associated with each line of code. Clicking a CFG node shows the Infer IR associated with the node, and the pre/post state computed while analyzing the instruction. Come back to the debug HTML early and often when you can't understand what your analysis is doing--it will help!
+(d) Run the analyzer on a single test file to produce the debug HTML: `infer --debug -a checkers --resource-leak-only -- javac Leaks.java`. Then, open the debug HTML: `open infer-out/captured/*.html`. This helpful artifact shows the Infer warnings alongside the code they are complaining about. It also displays the CFG node(s) associated with each line of code. Clicking a CFG node shows the Infer IR associated with the node, and the pre/post state computed while analyzing the instruction. Come back to the debug HTML early and often when you can't understand what your analysis is doing--it will help!
 
 (e) The `Logging.d_str`/`Logging.d_strln` functions print to the debug HTML. The logging is contextual: it will print to the log for the CFG node that's being analyzed at the time the logging statement execute. Try adding `Logging.d_strln "Hi Infer";` inside of the case for `Call`, recompiling/re-running. You should see the text you printed inside the appropriate CFG node log in the debug HTML.
 
@@ -132,7 +132,7 @@ void closeInCatchBad() {
 ```
 
 (b) Try running on real code! The instructions [here](http://fm.csl.sri.com/SSFT17/infer-instr.html) have several suggestions for open-source Android apps to point your analysis at. Try `./gradlew assembleDebug -x test` first to make sure everything builds correctly without Infer (if not, you are probably missing some dependencies--the error messages should guide you). Once that's working, try
-`./gradlew clean; infer -a checkers --no-default-checkers --resource-leak -- ./gradlew assembleDebug -x test`.
+`./gradlew clean; infer -a checkers --resource-leak-only -- ./gradlew assembleDebug -x test`.
 - Found a real bug? Bonus points! Send a pull request to fix it! Very frequently, the best fix is to use try-with-resources.
 - Found a false positive in your analysis? Try re-running Infer with `--debug` and see if you can narrow down the root cause/fix it?
 - How does your analysis compare to Infer's production resource leak analysis? Run with `infer -- <gradle command>` to see if your analysis finds bugs that Infer misses, or vice versa.
