@@ -21,10 +21,6 @@ module Summary = Summary.Make (struct
   let read_payload (summary: Specs.summary) = summary.payload.threadsafety
 end)
 
-let is_owned access_path attribute_map =
-  ThreadSafetyDomain.AttributeMapDomain.has_attribute access_path
-    ThreadSafetyDomain.Attribute.unconditionally_owned attribute_map
-
 (*Bit of redundancy with code in is_unprotected, might alter later *)
 let make_excluder locks threads =
   if locks && not threads then ThreadSafetyDomain.Excluder.Lock
@@ -179,42 +175,39 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _
      -> None
 
-  let add_conditional_ownership_attribute access_path attribute_map attributes =
-    match
-      Domain.AttributeMapDomain.get_conditional_ownership_index (fst access_path, []) attribute_map
-    with
-    | Some formal_index when not (is_owned access_path attribute_map)
-     -> Domain.AttributeSetDomain.add (Domain.Attribute.OwnedIf (Some formal_index)) attributes
-    | _
-     -> attributes
-
-  let remove_ownership_attributes attributes =
-    Domain.AttributeSetDomain.filter
-      (function Domain.Attribute.OwnedIf _ -> false | _ -> true)
-      attributes
-
-  (* propagate attributes from the leaves to the root of an RHS Hil expression.
-     Special casing on ownership. *)
+  (* propagate attributes from the leaves to the root of an RHS Hil expression *)
   let rec attributes_of_expr attribute_map e =
     let open HilExp in
     let open Domain in
     match e with
+    | HilExp.AccessPath ap -> (
+      try AttributeMapDomain.find ap attribute_map
+      with Not_found -> AttributeSetDomain.empty )
     | Constant _
-     -> AttributeSetDomain.of_list [Attribute.unconditionally_owned; Attribute.Functional]
-    | AccessPath ap
-     -> ( try AttributeMapDomain.find ap attribute_map
-          with Not_found -> AttributeSetDomain.empty )
-        |> add_conditional_ownership_attribute ap attribute_map
+     -> AttributeSetDomain.of_list [Attribute.Functional]
     | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr)
      -> attributes_of_expr attribute_map expr
     | UnaryOperator (_, expr, _)
-     -> attributes_of_expr attribute_map expr |> remove_ownership_attributes
+     -> attributes_of_expr attribute_map expr
     | BinaryOperator (_, expr1, expr2)
      -> let attributes1 = attributes_of_expr attribute_map expr1 in
         let attributes2 = attributes_of_expr attribute_map expr2 in
-        AttributeSetDomain.join attributes1 attributes2 |> remove_ownership_attributes
+        AttributeSetDomain.join attributes1 attributes2
     | Closure _ | Sizeof _
      -> AttributeSetDomain.empty
+
+  let rec ownership_of_expr expr ownership =
+    let open Domain in
+    let open HilExp in
+    match expr with
+    | AccessPath ap
+     -> OwnershipDomain.get_owned ap ownership
+    | Constant _
+     -> OwnershipAbstractValue.owned
+    | Exception e (* treat exceptions as transparent wrt ownership *) | Cast (_, e)
+     -> ownership_of_expr e ownership
+    | _
+     -> OwnershipAbstractValue.unowned
 
   (* will return true on x.f.g.h when x.f and x.f.g are owned, but not requiring x.f.g.h *)
   (* must not be called with an empty access list *)
@@ -222,65 +215,66 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let but_last_rev = List.rev accesses |> List.tl_exn in
     let rec aux acc = function [] -> acc | _ :: tail as all -> aux (List.rev all :: acc) tail in
     let prefixes = aux [] but_last_rev in
-    List.for_all ~f:(fun ap -> is_owned (base, ap) attribute_map) prefixes
+    List.for_all
+      ~f:(fun ap -> ThreadSafetyDomain.OwnershipDomain.is_owned (base, ap) attribute_map)
+      prefixes
 
   let propagate_attributes lhs_access_path rhs_exp attribute_map =
     let rhs_attributes = attributes_of_expr attribute_map rhs_exp in
-    let lhs_root = fst lhs_access_path in
-    let filter_on_globals =
-      (* do not assign ownership to access paths rooted at globals *)
-      if Var.is_global (fst lhs_root) then remove_ownership_attributes else Fn.id
-    in
-    let filter_on_lhs =
-      (* do not assign ownership when lhs is not a single var or
-         a single-field ap whose root is conditionally owned, or,
-         all prefixes are owned *)
-      match snd lhs_access_path with
-      | []
-       -> Fn.id
-      | [_]
-        when Option.is_some
-               (Domain.AttributeMapDomain.get_conditional_ownership_index (lhs_root, [])
-                  attribute_map)
-       -> Fn.id
-      | _ when all_prefixes_owned lhs_access_path attribute_map
-       -> Fn.id
-      | _
-       -> remove_ownership_attributes
-    in
-    let final_attributes = filter_on_globals rhs_attributes |> filter_on_lhs in
-    Domain.AttributeMapDomain.add lhs_access_path final_attributes attribute_map
+    Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
 
-  let propagate_return_attributes ret_opt ret_attributes actuals attribute_map =
+  let propagate_ownership (lhs_root, accesses as lhs_access_path) rhs_exp ownership =
+    if Var.is_global (fst lhs_root) then
+      (* do not assign ownership to access paths rooted at globals *)
+      ownership
+    else
+      let ownership_value =
+        match accesses with
+        | []
+         -> ownership_of_expr rhs_exp ownership
+        | [_]
+          when match Domain.OwnershipDomain.get_owned (lhs_root, []) ownership with
+               | Domain.OwnershipAbstractValue.OwnedIf _
+                -> true
+               | _
+                -> false
+         -> ownership_of_expr rhs_exp ownership
+        | _ when all_prefixes_owned lhs_access_path ownership
+         -> ownership_of_expr rhs_exp ownership
+        | _
+         -> Domain.OwnershipAbstractValue.unowned
+      in
+      Domain.OwnershipDomain.add lhs_access_path ownership_value ownership
+
+  let propagate_return ret_opt ret_ownership ret_attributes actuals
+      {Domain.ownership; attribute_map} =
     let open Domain in
     match ret_opt with
     | None
-     -> attribute_map
+     -> (ownership, attribute_map)
     | Some ret
-     -> let ownership_attributes, other_attributes =
-          AttributeSetDomain.partition (function OwnedIf _ -> true | _ -> false) ret_attributes
+     -> let ret_access_path = (ret, []) in
+        let get_ownership formal_index acc =
+          match List.nth actuals formal_index with
+          | Some HilExp.AccessPath actual_ap
+           -> OwnershipDomain.get_owned actual_ap ownership |> OwnershipAbstractValue.join acc
+          | Some HilExp.Constant _
+           -> acc
+          | _
+           -> OwnershipAbstractValue.unowned
         in
-        let caller_return_attributes =
-          match AttributeSetDomain.elements ownership_attributes with
-          | []
-           -> other_attributes
-          | [(OwnedIf None as unconditionally_owned)]
-           -> AttributeSetDomain.add unconditionally_owned other_attributes
-          | [(OwnedIf Some formal_index)] -> (
-            match List.nth actuals formal_index with
-            | Some HilExp.AccessPath actual_ap
-             -> if is_owned actual_ap attribute_map then
-                  AttributeSetDomain.add Attribute.unconditionally_owned other_attributes
-                else add_conditional_ownership_attribute actual_ap attribute_map other_attributes
-            | Some HilExp.Constant _
-             -> AttributeSetDomain.add Attribute.unconditionally_owned other_attributes
-            | _
-             -> other_attributes )
-          | _multiple_ownership_attributes
-           -> (* TODO: handle multiple ownership attributes *)
-              other_attributes
+        let ownership' =
+          match ret_ownership with
+          | OwnershipAbstractValue.Owned | Unowned
+           -> OwnershipDomain.add ret_access_path ret_ownership ownership
+          | OwnershipAbstractValue.OwnedIf formal_indexes
+           -> let actuals_ownership =
+                IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
+              in
+              OwnershipDomain.add ret_access_path actuals_ownership ownership
         in
-        AttributeMapDomain.add (ret, []) caller_return_attributes attribute_map
+        let attribute_map' = AttributeMapDomain.add ret_access_path ret_attributes attribute_map in
+        (ownership', attribute_map')
 
   let is_unprotected is_locked is_threaded pdesc =
     not is_locked && not is_threaded && not (Procdesc.is_java_synchronized pdesc)
@@ -318,7 +312,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     then
       let open Domain in
       let pre =
-        if is_unprotected locks threads proc_data.pdesc then AccessPrecondition.unprotected
+        if is_unprotected locks threads proc_data.pdesc then AccessPrecondition.TotallyUnprotected
         else
           AccessPrecondition.Protected
             (make_excluder (locks || Procdesc.is_java_synchronized proc_data.pdesc) threads)
@@ -326,7 +320,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       AccessDomain.add_access pre (make_unannotated_call_access pname loc) attribute_map
     else attribute_map
 
-  let add_access exp loc ~is_write_access accesses locks threads attribute_map
+  let add_access exp loc ~is_write_access accesses locks threads ownership
       (proc_data: ProcData.no_extras ProcData.t) =
     let open Domain in
     (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
@@ -352,7 +346,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
        -> let is_write = if List.is_empty access_list' then is_write_access else false in
           let access_path = (fst prefix_path, snd prefix_path @ [access]) in
           let access_acc' =
-            if is_owned prefix_path attribute_map
+            if OwnershipDomain.is_owned prefix_path ownership
                || is_safe_access access prefix_path proc_data.tenv
             then access_acc
             else
@@ -362,17 +356,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let add_access_ acc (base, accesses) =
       let base_access_path = (base, []) in
-      if List.is_empty accesses then acc
+      if List.is_empty accesses || OwnershipDomain.is_owned base_access_path ownership then acc
       else
         let pre =
           if is_unprotected locks threads proc_data.pdesc then
-            match
-              AttributeMapDomain.get_conditional_ownership_index base_access_path attribute_map
-            with
-            | Some formal_index
-             -> AccessPrecondition.Unprotected (Some formal_index)
-            | None
-             -> AccessPrecondition.unprotected
+            match OwnershipDomain.get_owned base_access_path ownership with
+            | OwnershipAbstractValue.OwnedIf formal_indexes
+             -> AccessPrecondition.Unprotected formal_indexes
+            | OwnershipAbstractValue.Owned
+             -> assert false
+            | OwnershipAbstractValue.Unowned
+             -> AccessPrecondition.TotallyUnprotected
           else
             AccessPrecondition.Protected
               (make_excluder (locks || Procdesc.is_java_synchronized proc_data.pdesc) threads)
@@ -497,13 +491,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let container_access =
           make_container_access receiver_ap ~is_write callee_pname callee_loc
         in
-        AccessDomain.add_access (Unprotected (Some 0)) container_access AccessDomain.empty
+        AccessDomain.add_access (Unprotected (IntSet.singleton 0)) container_access
+          AccessDomain.empty
     in
     (* TODO: for now all formals escape *)
     (* we need a more intelligent escape analysis, that branches on whether
              we own the container *)
     let escapee_formals = List.length actuals |> List.range 0 |> FormalsDomain.of_list in
-    Some (true, false, false, callee_accesses, AttributeSetDomain.empty, escapee_formals)
+    Some
+      ( true
+      , false
+      , false
+      , callee_accesses
+      , OwnershipAbstractValue.unowned
+      , AttributeSetDomain.empty
+      , escapee_formals )
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
     let get_receiver_ap actuals =
@@ -539,16 +541,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _
      -> false
 
-  let add_reads exps loc accesses locks threads attribute_map proc_data =
+  let add_reads exps loc accesses locks threads ownership proc_data =
     List.fold
       ~f:(fun acc exp ->
-        add_access exp loc ~is_write_access:false acc locks threads attribute_map proc_data)
+        add_access exp loc ~is_write_access:false acc locks threads ownership proc_data)
       exps ~init:accesses
 
-  let add_escapees_from_exp rhs_exp attribute_map escapees =
-    HilExp.get_access_paths rhs_exp
-    |> List.rev_map ~f:(Domain.Escapee.of_access_path attribute_map)
-    |> Domain.EscapeeDomain.add_from_list escapees
+  let add_escapees_from_exp rhs_exp ownership escapees =
+    HilExp.get_access_paths rhs_exp |> List.rev_map ~f:(Domain.Escapee.of_access_path ownership)
+    |> List.concat_no_order |> Domain.EscapeeDomain.add_from_list escapees
 
   let add_escapees_from_exp_list exp_list extras escapees =
     List.fold ~init:escapees exp_list ~f:(fun acc exp -> add_escapees_from_exp exp extras acc)
@@ -565,16 +566,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     match instr with
     | Call (Some ret_base, Direct procname, actuals, _, loc) when acquires_ownership procname tenv
      -> let accesses =
-          add_reads actuals loc astate.accesses astate.locks astate.threads astate.attribute_map
+          add_reads actuals loc astate.accesses astate.locks astate.threads astate.ownership
             proc_data
         in
-        let attribute_map =
-          AttributeMapDomain.add_attribute (ret_base, []) Attribute.unconditionally_owned
-            astate.attribute_map
+        let ownership =
+          OwnershipDomain.add (ret_base, []) OwnershipAbstractValue.owned astate.ownership
         in
         (* TODO: we need to model escaping formals, now just assume all escape *)
-        let escapees = add_escapees_from_exp_list actuals astate.attribute_map astate.escapees in
-        {astate with accesses; attribute_map; escapees}
+        let escapees = add_escapees_from_exp_list actuals astate.ownership astate.escapees in
+        {astate with accesses; ownership; escapees}
     | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc)
      -> (
         let accesses_with_unannotated_calls =
@@ -583,7 +583,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let accesses =
           add_reads actuals loc accesses_with_unannotated_calls astate.locks astate.threads
-            astate.attribute_map proc_data
+            astate.ownership proc_data
         in
         let astate = {astate with accesses} in
         let astate =
@@ -631,6 +631,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   , callee_threads
                   , callee_locks
                   , callee_accesses
+                  , return_ownership
                   , return_attributes
                   , escapee_formals )
                -> let update_caller_accesses pre callee_accesses caller_accesses =
@@ -652,35 +653,33 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                      -> (* the actual is a constant, so it's owned in the caller. *)
                         accesses_acc
                     | HilExp.AccessPath actual_access_path
-                     -> if is_owned actual_access_path astate.attribute_map then
+                     -> if OwnershipDomain.is_owned actual_access_path astate.ownership then
                           (* the actual passed to the current callee is owned. drop all the
-                                 conditional accesses for that actual, since they're all safe *)
+                             conditional accesses for that actual, since they're all safe *)
                           accesses_acc
                         else
                           let pre =
                             if unprotected then
                               let base = fst actual_access_path in
-                              match
-                                AttributeMapDomain.get_conditional_ownership_index (base, [])
-                                  astate.attribute_map
-                              with
-                              | Some formal_index
+                              match OwnershipDomain.get_owned (base, []) astate.ownership with
+                              | OwnershipAbstractValue.OwnedIf formal_indexes
                                -> (* the actual passed to the current callee is rooted in a
-                                         formal *)
-                                  AccessPrecondition.Unprotected (Some formal_index)
-                              | None ->
+                                     formal *)
+                                  AccessPrecondition.Unprotected formal_indexes
+                              | OwnershipAbstractValue.Unowned | OwnershipAbstractValue.Owned ->
                                 match
-                                  AttributeMapDomain.get_conditional_ownership_index
-                                    actual_access_path astate.attribute_map
+                                  OwnershipDomain.get_owned actual_access_path astate.ownership
                                 with
-                                | Some formal_index
-                                 -> (* access path conditionally owned if [formal_index] is
-                                             owned *)
-                                    AccessPrecondition.Unprotected (Some formal_index)
-                                | None
-                                 -> (* access path not rooted in a formal and not
-                                             conditionally owned *)
-                                    AccessPrecondition.unprotected
+                                | OwnershipAbstractValue.OwnedIf formal_indexes
+                                 -> (* access path conditionally owned if [formal_indexex] are
+                                           owned *)
+                                    AccessPrecondition.Unprotected formal_indexes
+                                | OwnershipAbstractValue.Owned
+                                 -> assert false
+                                | OwnershipAbstractValue.Unowned
+                                 -> (* access path not rooted in a formal and not conditionally
+                                       owned *)
+                                    AccessPrecondition.TotallyUnprotected
                             else
                               (* access protected by held lock *)
                               AccessPrecondition.Protected (make_excluder true threads)
@@ -688,39 +687,39 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                           update_caller_accesses pre ownership_accesses accesses_acc
                     | _
                      -> (* couldn't find access path, don't know if it's owned *)
-                        update_caller_accesses AccessPrecondition.unprotected ownership_accesses
-                          accesses_acc
+                        update_caller_accesses AccessPrecondition.TotallyUnprotected
+                          ownership_accesses accesses_acc
                   in
                   let accesses =
                     let update_accesses pre callee_accesses accesses_acc =
                       match pre with
                       | AccessPrecondition.Protected _
                        -> update_caller_accesses pre callee_accesses accesses_acc
-                      | AccessPrecondition.Unprotected None
+                      | AccessPrecondition.TotallyUnprotected
                        -> let pre' =
                             if unprotected then pre
                             else AccessPrecondition.Protected (make_excluder true threads)
                           in
                           update_caller_accesses pre' callee_accesses accesses_acc
-                      | AccessPrecondition.Unprotected Some index
-                       -> add_ownership_access callee_accesses (List.nth_exn actuals index)
-                            accesses_acc
+                      | AccessPrecondition.Unprotected formal_indexes
+                       -> IntSet.fold
+                            (fun index acc ->
+                              add_ownership_access callee_accesses (List.nth_exn actuals index) acc)
+                            formal_indexes accesses_acc
                     in
                     AccessDomain.fold update_accesses callee_accesses astate.accesses
                   in
-                  let attribute_map =
-                    propagate_return_attributes ret_opt return_attributes actuals
-                      astate.attribute_map
+                  let ownership, attribute_map =
+                    propagate_return ret_opt return_ownership return_attributes actuals astate
                   in
                   let escapees =
-                    add_escapees_from_call actuals escapee_formals astate.attribute_map
-                      astate.escapees
+                    add_escapees_from_call actuals escapee_formals astate.ownership astate.escapees
                   in
-                  {thumbs_up; locks; threads; accesses; attribute_map; escapees}
+                  {thumbs_up; locks; threads; accesses; ownership; attribute_map; escapees}
               | None
                -> (* TODO: assume actuals escape, should we? *)
                   let new_escapees =
-                    add_escapees_from_exp_list actuals astate.attribute_map astate.escapees
+                    add_escapees_from_exp_list actuals astate.ownership astate.escapees
                   in
                   let astate = {astate with escapees= new_escapees} in
                   let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
@@ -744,11 +743,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   else if should_assume_returns_ownership call_flags actuals then
                     match ret_opt with
                     | Some ret
-                     -> let attribute_map =
-                          AttributeMapDomain.add_attribute (ret, [])
-                            Attribute.unconditionally_owned astate.attribute_map
+                     -> let ownership =
+                          OwnershipDomain.add (ret, []) OwnershipAbstractValue.owned
+                            astate.ownership
                         in
-                        {astate with attribute_map}
+                        {astate with ownership}
                     | None
                      -> astate
                   else astate
@@ -762,16 +761,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             in
             let attribute_map =
               add_if_annotated is_functional Functional astate_callee.attribute_map
-              |> add_if_annotated (has_return_annot Annotations.ia_is_returns_ownership)
-                   Domain.Attribute.unconditionally_owned
             in
-            {astate_callee with attribute_map}
+            let ownership =
+              if PatternMatch.override_exists
+                   (has_return_annot Annotations.ia_is_returns_ownership) tenv callee_pname
+              then
+                OwnershipDomain.add (ret, []) OwnershipAbstractValue.owned astate_callee.ownership
+              else astate_callee.ownership
+            in
+            {astate_callee with ownership; attribute_map}
         | _
          -> astate_callee )
     | Assign (lhs_access_path, rhs_exp, loc)
      -> let rhs_accesses =
           add_access rhs_exp loc ~is_write_access:false astate.accesses astate.locks astate.threads
-            astate.attribute_map proc_data
+            astate.ownership proc_data
         in
         let rhs_access_paths = HilExp.get_access_paths rhs_exp in
         let is_functional =
@@ -797,15 +801,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             rhs_accesses
           else
             add_access (AccessPath lhs_access_path) loc ~is_write_access:true rhs_accesses
-              astate.locks astate.threads astate.attribute_map proc_data
+              astate.locks astate.threads astate.ownership proc_data
         in
+        let ownership = propagate_ownership lhs_access_path rhs_exp astate.ownership in
         let attribute_map = propagate_attributes lhs_access_path rhs_exp astate.attribute_map in
         (* assigning to the return variable leads to no new escapees *)
         let escapees =
           if fst lhs_access_path |> fst |> Var.is_return then astate.escapees
-          else add_escapees_from_exp rhs_exp astate.attribute_map astate.escapees
+          else add_escapees_from_exp rhs_exp astate.ownership astate.escapees
         in
-        {astate with accesses; attribute_map; escapees}
+        {astate with accesses; ownership; attribute_map; escapees}
     | Assume (assume_exp, _, _, loc)
      -> let rec eval_binop op var e1 e2 =
           match (eval_bexp var e1, eval_bexp var e2) with
@@ -846,7 +851,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let accesses =
           add_access assume_exp loc ~is_write_access:false astate.accesses astate.locks
-            astate.threads astate.attribute_map proc_data
+            astate.threads astate.ownership proc_data
         in
         let astate' =
           match HilExp.get_access_paths assume_exp with
@@ -962,12 +967,14 @@ let empty_post =
   let initial_thumbs_up = true
   and initial_known_on_ui_thread = false
   and has_lock = false
+  and return_ownership = ThreadSafetyDomain.OwnershipAbstractValue.unowned
   and return_attrs = ThreadSafetyDomain.AttributeSetDomain.empty
   and escapee_formals = ThreadSafetyDomain.FormalsDomain.empty in
   ( initial_thumbs_up
   , initial_known_on_ui_thread
   , has_lock
   , ThreadSafetyDomain.AccessDomain.empty
+  , return_ownership
   , return_attrs
   , escapee_formals )
 
@@ -987,7 +994,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         let add_owned_formal acc formal_index =
           match FormalMap.get_formal_base formal_index formal_map with
           | Some base
-           -> AttributeMapDomain.add_attribute (base, []) Attribute.unconditionally_owned acc
+           -> OwnershipDomain.add (base, []) OwnershipAbstractValue.owned acc
           | None
            -> acc
         in
@@ -1000,35 +1007,42 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           else [0]
           (* express that the constructor owns [this] *)
         in
-        let attribute_map =
-          List.fold ~f:add_owned_formal owned_formals ~init:ThreadSafetyDomain.empty.attribute_map
-        in
-        ({ThreadSafetyDomain.empty with attribute_map; threads}, IdAccessPathMapDomain.empty)
+        let ownership = List.fold ~f:add_owned_formal owned_formals ~init:OwnershipDomain.empty in
+        ({ThreadSafetyDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
       else
         (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
            it is owned in the caller *)
         let add_owned_formal acc (formal, formal_index) =
-          AttributeMapDomain.add_attribute (formal, []) (Attribute.OwnedIf (Some formal_index)) acc
+          OwnershipDomain.add (formal, []) (OwnershipAbstractValue.make_owned_if formal_index) acc
         in
-        let attribute_map =
+        let ownership =
           List.fold ~f:add_owned_formal (FormalMap.get_formals_indexes formal_map)
-            ~init:ThreadSafetyDomain.empty.attribute_map
+            ~init:OwnershipDomain.empty
         in
-        ({ThreadSafetyDomain.empty with attribute_map; threads}, IdAccessPathMapDomain.empty)
+        ({ThreadSafetyDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
     in
     match Analyzer.compute_post proc_data ~initial ~debug:false with
-    | Some ({thumbs_up; threads; locks; accesses; attribute_map; escapees}, _)
+    | Some ({thumbs_up; threads; locks; accesses; ownership; attribute_map; escapees}, _)
      -> let return_var_ap =
           AccessPath.of_pvar
             (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
             (Procdesc.get_ret_type proc_desc)
         in
+        let return_ownership = OwnershipDomain.get_owned return_var_ap ownership in
         let return_attributes =
           try AttributeMapDomain.find return_var_ap attribute_map
           with Not_found -> AttributeSetDomain.empty
         in
         let escapee_formals = FormalsDomain.of_escapees escapees in
-        let post = (thumbs_up, threads, locks, accesses, return_attributes, escapee_formals) in
+        let post =
+          ( thumbs_up
+          , threads
+          , locks
+          , accesses
+          , return_ownership
+          , return_attributes
+          , escapee_formals )
+        in
         Summary.update_summary post summary
     | None
      -> summary )
@@ -1127,7 +1141,7 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
   let open ThreadSafetyDomain in
   let orig_access = PathDomain.Sink.kind orig_sink in
   match Summary.read_summary orig_pdesc callee_pname with
-  | Some (_, _, _, access_map, _, _)
+  | Some (_, _, _, access_map, _, _, _)
    -> get_all_accesses
         (fun access -> Int.equal (Access.compare (PathDomain.Sink.kind access) orig_access) 0)
         access_map
@@ -1315,13 +1329,15 @@ let report_unsafe_accesses aggregated_access_map =
     if is_duplicate_report access pname reported_acc then reported_acc
     else
       match (TraceElem.kind access, pre) with
-      | Access.InterfaceCall _, AccessPrecondition.Unprotected _
+      | ( Access.InterfaceCall _
+        , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) )
        -> (* un-annotated interface call + no lock. warn *)
           update_reported access pname reported_acc
       | Access.InterfaceCall _, AccessPrecondition.Protected _
        -> (* un-annotated interface call, but it's protected by a lock/thread. don't report *)
           reported_acc
-      | (Access.Write _ | ContainerWrite _), AccessPrecondition.Unprotected _ -> (
+      | ( (Access.Write _ | ContainerWrite _)
+        , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) ) -> (
         match Procdesc.get_proc_name pdesc with
         | Java _
          -> if threaded then reported_acc
@@ -1336,12 +1352,13 @@ let report_unsafe_accesses aggregated_access_map =
       | (Access.Write _ | ContainerWrite _), AccessPrecondition.Protected _
        -> (* protected write, do nothing *)
           reported_acc
-      | (Access.Read _ | ContainerRead _), AccessPrecondition.Unprotected _
+      | ( (Access.Read _ | ContainerRead _)
+        , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) )
        -> (* unprotected read. report all writes as conflicts for java *)
           (* for c++ filter out unprotected writes *)
           let is_cpp_protected_write pre =
             match pre with
-            | AccessPrecondition.Unprotected _
+            | AccessPrecondition.Unprotected _ | TotallyUnprotected
              -> Typ.Procname.is_java pname
             | AccessPrecondition.Protected _
              -> true
@@ -1561,7 +1578,7 @@ let should_filter_access access =
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
 let make_results_table file_env =
-  let aggregate_post (_, threaded, _, accesses, _, _) tenv pdesc acc =
+  let aggregate_post (_, threaded, _, accesses, _, _, _) tenv pdesc acc =
     let open ThreadSafetyDomain in
     AccessDomain.fold
       (fun pre accesses acc ->

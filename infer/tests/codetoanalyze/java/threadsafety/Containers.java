@@ -246,7 +246,7 @@ class Containers {
     return list;
   }
 
-  public void FP_addToNullListOk() {
+  public void addToNullListOk() {
     List list = null;
     addOrCreateList(list);
   }

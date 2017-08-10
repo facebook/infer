@@ -87,14 +87,9 @@ end
 
 module Attribute : sig
   type t =
-    | OwnedIf of int option
-        (** owned unconditionally if OwnedIf None, owned when formal at index i is owned otherwise *)
     | Functional  (** holds a value returned from a callee marked @Functional *)
     | Choice of Choice.t  (** holds a boolean choice variable *)
     [@@deriving compare]
-
-  val unconditionally_owned : t
-  (** alias for OwnedIf None *)
 
   val pp : F.formatter -> t -> unit
 
@@ -106,10 +101,9 @@ module AttributeSetDomain : module type of AbstractDomain.InvertedSet (Attribute
 module AttributeMapDomain : sig
   include module type of AbstractDomain.InvertedMap (AccessPath.Map) (AttributeSetDomain)
 
-  val has_attribute : AccessPath.t -> Attribute.t -> astate -> bool
+  val add : AccessPath.t -> AttributeSetDomain.astate -> astate -> astate
 
-  val get_conditional_ownership_index : AccessPath.t -> astate -> int option
-  (** get the formal index of the the formal that must own the given access path (if any) *)
+  val has_attribute : AccessPath.t -> Attribute.t -> astate -> bool
 
   val get_choices : AccessPath.t -> astate -> Choice.t list
   (** get the choice attributes associated with the given access path *)
@@ -137,14 +131,11 @@ module AccessPrecondition : sig
     | Protected of Excluder.t
         (** access potentially protected for mutual exclusion by
         lock or thread or both *)
-    | Unprotected of int option
-        (** access rooted in formal at index i. Safe if actual passed at index is owned (i.e.,
-        !owned(i) implies an unsafe access). Unprotected None means the access is unsafe unless a
-        lock is held in the caller *)
+    | Unprotected of IntSet.t
+        (** access rooted in formal(s) at indexes i. Safe if actuals passed at given indexes are
+            owned (i.e., !owned(i) implies an unsafe access). *)
+    | TotallyUnprotected  (** access is unsafe unless a lock is held in a caller *)
     [@@deriving compare]
-
-  val unprotected : t
-  (** type of an unprotected access *)
 
   val pp : F.formatter -> t -> unit
 end
@@ -167,7 +158,7 @@ module Escapee : sig
 
   val pp : F.formatter -> t -> unit
 
-  val of_access_path : AttributeMapDomain.astate -> AccessPath.t -> t
+  val of_access_path : OwnershipDomain.astate -> AccessPath.t -> t list
 end
 
 (** set of formals or locals that may escape *)
@@ -190,6 +181,7 @@ type astate =
   ; locks: LocksDomain.astate  (** boolean that is true if a lock must currently be held *)
   ; accesses: AccessDomain.astate
         (** read and writes accesses performed without ownership permissions *)
+  ; ownership: OwnershipDomain.astate  (** map of access paths to ownership predicates *)
   ; attribute_map: AttributeMapDomain.astate
         (** map of access paths to attributes such as owned, functional, ... *)
   ; escapees: EscapeeDomain.astate  (** set of formals and locals that may escape *) }
@@ -202,6 +194,7 @@ type summary =
   * ThreadsDomain.astate
   * LocksDomain.astate
   * AccessDomain.astate
+  * OwnershipAbstractValue.astate
   * AttributeSetDomain.astate
   * FormalsDomain.astate
 

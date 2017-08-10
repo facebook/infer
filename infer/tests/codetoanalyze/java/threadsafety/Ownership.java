@@ -284,7 +284,7 @@ public class Ownership {
   }
 
   // TODO: need to handle multiple ownership attributes in order to get this one
-  public void FP_ownAndConditionalOwnOk() {
+  public void ownAndConditionalOwnOk() {
     Obj owned = new Obj();
     Obj shouldBeOwned = returnOwnedOrConditionalOwned(owned);
     shouldBeOwned.f = new Object();
@@ -303,7 +303,7 @@ public class Ownership {
   }
 
   // need to handle multiple ownership attributes in order to get this one
-  public void FP_twoDifferentConditionalOwnsOk() {
+  public void twoDifferentConditionalOwnsOk() {
     Obj owned1 = new Obj();
     Obj owned2 = new Obj();
     Obj shouldBeOwned = twoDifferentConditionalOwns(owned1, owned2);
@@ -495,10 +495,7 @@ public class Ownership {
     alias.f = null; // ok if both o1 and o2 are owned
   }
 
-  // we don't allow multiple owned(formal_index) predicates to be associated with a single access
-  // path. this means we can't tell that alias is owned in conditionAlias, and so we'll report a
-  // false positive
-  void FP_conditionalAliasOk() {
+  void conditionalAliasOk() {
     conditionalAlias(new Obj(), new Obj());
   }
 
