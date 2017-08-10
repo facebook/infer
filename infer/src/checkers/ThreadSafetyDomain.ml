@@ -149,6 +149,66 @@ end
 
 module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute.Set)
 
+module OwnershipAbstractValue = struct
+  type astate = Owned | OwnedIf of IntSet.t | Unowned [@@deriving compare]
+
+  let owned = Owned
+
+  let unowned = Unowned
+
+  let make_owned_if formal_index = OwnedIf (IntSet.singleton formal_index)
+
+  let ( <= ) ~lhs ~rhs =
+    if phys_equal lhs rhs then true
+    else
+      match (lhs, rhs) with
+      | _, Unowned
+       -> true (* Unowned is top *)
+      | Unowned, _
+       -> false
+      | Owned, _
+       -> true (* Owned is bottom *)
+      | OwnedIf s1, OwnedIf s2
+       -> IntSet.subset s1 s2
+      | OwnedIf _, Owned
+       -> false
+
+  let join astate1 astate2 =
+    if phys_equal astate1 astate2 then astate1
+    else
+      match (astate1, astate2) with
+      | _, Unowned | Unowned, _
+       -> Unowned
+      | astate, Owned | Owned, astate
+       -> astate
+      | OwnedIf s1, OwnedIf s2
+       -> OwnedIf (IntSet.union s1 s2)
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let pp fmt = function
+    | Unowned
+     -> F.fprintf fmt "Unowned"
+    | OwnedIf s
+     -> F.fprintf fmt "OwnedIf%a" (PrettyPrintable.pp_collection ~pp_item:Int.pp)
+          (IntSet.elements s)
+    | Owned
+     -> F.fprintf fmt "Owned"
+end
+
+module OwnershipDomain = struct
+  include AbstractDomain.Map (AccessPath) (OwnershipAbstractValue)
+
+  let get_owned access_path astate =
+    try find access_path astate
+    with Not_found -> OwnershipAbstractValue.Unowned
+
+  let is_owned access_path astate =
+    match get_owned access_path astate with OwnershipAbstractValue.Owned -> true | _ -> false
+
+  let find = `Use_get_owned_instead
+end
+
 module AttributeMapDomain = struct
   include AbstractDomain.InvertedMap (AccessPath.Map) (AttributeSetDomain)
 

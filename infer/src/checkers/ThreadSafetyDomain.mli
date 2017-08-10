@@ -48,6 +48,33 @@ module ThumbsUpDomain : AbstractDomain.S with type astate = bool
 
 module PathDomain : module type of SinkTrace.Make (TraceElem)
 
+(** Powerset domain on the formal indexes in OwnedIf with a distinguished bottom element (Owned) and top element (Unowned) *)
+module OwnershipAbstractValue : sig
+  type astate = private
+    | Owned  (** Owned value; bottom of the lattice *)
+    | OwnedIf of IntSet.t  (** Owned if the formals at the given indexes are owned in the caller *)
+    | Unowned  (** Unowned value; top of the lattice *)
+    [@@deriving compare]
+
+  val owned : astate
+
+  val unowned : astate
+
+  val make_owned_if : int -> astate
+
+  include AbstractDomain.S with type astate := astate
+end
+
+module OwnershipDomain : sig
+  include module type of AbstractDomain.Map (AccessPath) (OwnershipAbstractValue)
+
+  val get_owned : AccessPath.t -> astate -> OwnershipAbstractValue.astate
+
+  val is_owned : AccessPath.t -> astate -> bool
+
+  val find : [`Use_get_owned_instead]
+end
+
 (** attribute attached to a boolean variable specifying what it means when the boolean is true *)
 module Choice : sig
   type t =
