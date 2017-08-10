@@ -343,10 +343,13 @@ else
 	@:
 endif
 
-.PHONY: config_tests
-config_tests: test_build ocaml_unit_test endtoend_test checkCopyright validate-skel
+.PHONY: mod_dep
+mod_dep: src_build_common
 	$(QUIET)$(call silent_on_success,Building Infer source dependency graph,\
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot)
+
+.PHONY: config_tests
+config_tests: test_build ocaml_unit_test endtoend_test checkCopyright validate-skel mod_dep
 
 .PHONY: test
 test: crash_if_not_all_analyzers_enabled config_tests
