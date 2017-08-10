@@ -187,6 +187,7 @@ AC_ASSERT_OCAML_PKG([biniou])
 AC_ASSERT_OCAML_PKG([camlzip], [zip])
 AC_ASSERT_OCAML_PKG([easy-format])
 AC_ASSERT_OCAML_PKG([oUnit], [], [2.0.0])
+AC_CHECK_TOOL([UTOP], [utop], [no])
 AC_ASSERT_OCAML_PKG([yojson])
 
 AC_ARG_VAR([CAML_LD_LIBRARY_PATH],

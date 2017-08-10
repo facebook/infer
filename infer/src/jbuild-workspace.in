@@ -1,0 +1,9 @@
+;; Do not let jbuilder generate .merlin files because it gets it
+;; wrong. This is mainly due to the fact that source files live in
+;; sub-directories and are copied into _build/ by our jbuild. jbuilder
+;; wants to write "S ." in .merlin but that makes merlin use the
+;; copied source files in _build/ instead of only using the original
+;; files.
+
+(context ((switch @OPAMSWITCH@) (name default)))
+(context ((switch @OPAMSWITCH@) (name test)))

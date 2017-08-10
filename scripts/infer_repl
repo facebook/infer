@@ -1,20 +1,25 @@
 #!/bin/bash
 
+## Wrapper around infertop. To build infertop, run `make toplevel`.
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# where to find toplevel.cmo, can be overridden
-TOPLEVEL_DIR=${TOPLEVEL_DIR:-"$SCRIPT_DIR"/../infer/_build/infer}
+# where to find toplevel.bc, can be overridden
+TOPLEVEL_DIR=${TOPLEVEL_DIR:-"$SCRIPT_DIR"/../infer/src/_build/default}
 
-# how to load the toplevel; can be overridden (with "ocaml" for example)
-INFER_REPL_BINARY=${INFER_REPL_BINARY:-"utop"}
-
-# to build new toplevel, run `make toplevel`
-# -init option is used only in interactive mode
-# in batch mode, scripts need to import toplevel_init themselves
+# The -init option is effective only in interactive mode.
+# In batch mode, scripts need to import toplevel_init themselves.
 # It can be done by adding #use "toplevel_init";; to the beginning
 # of a script.
 # NOTE: $SCRIPT_DIR is added search path for batch scripts
 #       so they can be located anywhere and still find toplevel_init
 #       file. In interactive mode $SCRIPT_DIR isn't needed
 
-"$INFER_REPL_BINARY" -init "$SCRIPT_DIR"/toplevel_init -I "$TOPLEVEL_DIR" -I "$SCRIPT_DIR" $@
+set -x
+# infertop expects to be run from where jbuild is located
+cd "$SCRIPT_DIR"/../infer
+"$TOPLEVEL_DIR"/infertop.bc \
+  -init "$SCRIPT_DIR"/toplevel_init \
+  -I "$TOPLEVEL_DIR" \
+  -I "$SCRIPT_DIR" \
+  "$@"

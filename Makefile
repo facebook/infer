@@ -11,6 +11,11 @@ default: infer
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
+ifneq ($(UTOP),no)
+BUILD_SYSTEMS_TESTS += infertop
+build_infertop_print build_infertop_replace build_infertop_test: toplevel_test
+endif
+
 ifeq ($(BUILD_C_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   assembly \
@@ -81,8 +86,8 @@ endif
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck genrule
 # do not run these two tests in parallel otherwise Buck has a bad time
-build_genrule_test: build_buck_test
-build_genrule_print: build_buck_print
+build_genrule_test: | build_buck_test
+build_genrule_print: | build_buck_print
 endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += mvn
@@ -149,14 +154,9 @@ byte: src_build_common
 test_build: src_build_common
 	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
 	$(MAKE) -C $(SRC_DIR) TEST=1 byte_no_install)
-#	byte_no_install builds most of what toplevel needs, so it's more efficient to run the
-#	toplevel build straight after it rather than in parallel. Note that both targets build files
-#	that the other doesn't.
-	$(QUIET)$(call silent_on_success,Testing Infer toplevel builds,\
-	$(MAKE) -C $(SRC_DIR) TEST=1 toplevel)
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
-byte src_build test_build: fb-setup
+byte src_build_common src_build test_build: fb-setup
 endif
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -219,7 +219,7 @@ endif
 .PHONY: ocaml_unit_test
 ocaml_unit_test: test_build
 	$(QUIET)$(call silent_on_success,Running OCaml unit tests,\
-	$(BUILD_DIR)/test/infer/unit/inferunit.byte)
+	$(BUILD_DIR)/test/inferunit.bc)
 
 define silence_make
   ($(1) 2> >(grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target") \
@@ -296,15 +296,17 @@ check_missing_mli:
 	$(QUIET)for x in $$(find $(INFER_DIR)/src -name "*.ml"); do \
 	    test -f "$$x"i || echo Missing "$$x"i; done
 
-.PHONY: toplevel
-toplevel: clang_plugin src_build_common
-	$(QUIET)$(MAKE) -C $(SRC_DIR) toplevel
+# depend on test_build because jbuilder doesn't like running concurrently with itself
+.PHONY: toplevel_test
+toplevel_test: src_build_common | test_build
+#	build with TEST=1 as the infer_repl scripts expects to find the toplevel in the test build
+	$(QUIET)$(call silent_on_success,Building infer toplevel (test mode),\
+	$(MAKE) -C $(SRC_DIR) TEST=1 toplevel)
 
-.PHONY: inferScriptMode_test
-inferScriptMode_test: test_build
-	$(QUIET)$(call silent_on_success,Testing infer OCaml REPL,\
-	INFER_REPL_BINARY=ocaml TOPLEVEL_DIR=$(BUILD_DIR)/test/infer $(SCRIPT_DIR)/infer_repl \
-	  $(INFER_DIR)/tests/repl/infer_batch_script.mltop)
+.PHONY: toplevel
+toplevel: src_build_common
+	$(QUIET)$(call silent_on_success,Building infer toplevel,\
+	$(MAKE) -C $(SRC_DIR) toplevel)
 
 .PHONY: checkCopyright
 checkCopyright:
@@ -342,8 +344,7 @@ else
 endif
 
 .PHONY: config_tests
-config_tests: test_build ocaml_unit_test endtoend_test inferScriptMode_test \
-      checkCopyright validate-skel
+config_tests: test_build ocaml_unit_test endtoend_test checkCopyright validate-skel
 	$(QUIET)$(call silent_on_success,Building Infer source dependency graph,\
 	$(MAKE) -C $(SRC_DIR) mod_dep.dot)
 
@@ -550,7 +551,10 @@ opam.lock: opam
 	$(QUIET)$(call silent_on_success,generating opam.lock,\
 	  $(OPAM) lock --pkg  $(INFER_PKG_OPAMLOCK) > opam.lock)
 
-OPAM_DEV_DEPS = ocp-indent merlin tuareg
+# This is a magical version number that doesn't reinstall the world when added on top of what we
+# have in opam.lock. To upgrade this version number, manually try to install several utop versions
+# until you find one that doesn't recompile the world. TODO(t20828442): get rid of magic
+OPAM_DEV_DEPS = ocp-indent merlin tuareg utop.2.0.0
 
 .PHONY: devsetup
 devsetup: Makefile.autoconf

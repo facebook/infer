@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-open! Core.Std
+open! Core
 module F = Format
 
 let copyright_modified_exit_code = 1
@@ -193,7 +193,7 @@ let copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr =
 
 let update_file fname mono fb_year com_style prefix cstart cend lines_arr =
   try
-    let cout = open_out fname in
+    let cout = Out_channel.create fname in
     let fmt = F.formatter_of_out_channel cout in
     for i = 0 to cstart - 1 do F.fprintf fmt "%s@." lines_arr.(i) done ;
     pp_copyright mono fb_year com_style fmt prefix ;

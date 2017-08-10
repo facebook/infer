@@ -34,6 +34,7 @@ depends: [
   "ctypes" {>="0.9.2"}
   "extlib-compat"
   "javalib" {>="2.3.3"}
+  "jbuilder" {build & >="1.0+beta11"}
   "ocamlfind" {build}
   "ounit" {="2.0.0"}
   "parmap" {>="1.0-rc8"}

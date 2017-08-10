@@ -45,6 +45,9 @@ differences.exp.test: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	)
 	$(QUIET)$(REMOVE) capture_hash-1.sha capture_hash-2.sha
 
+.PHONY: print
+print: differences.exp.test
+
 .PHONY: test
 test: differences.exp.test
 	$(QUIET)diff -u differences.exp $<

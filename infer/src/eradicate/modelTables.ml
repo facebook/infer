@@ -418,7 +418,7 @@ let mk_table list =
   List.iter ~f:(function v, pn_id -> Hashtbl.replace map pn_id v) list ;
   map
 
-let this_file = __FILE__
+let this_file = Filename.basename __FILE__
 
 let annotated_table_nullable = mk_table annotated_list_nullable
 

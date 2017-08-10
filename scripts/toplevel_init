@@ -1,3 +1,5 @@
+(* to be used with infertop, infer's custom toplevel *)
+
 (* load dependencies *)
 #use "topfind";;
 #thread;;
@@ -10,6 +12,5 @@
 #require "xmlm";;
 #require "ANSITerminal";;
 
-(* load infer code *)
-#load_rec "toplevel.cmo";;
-open Toplevel;;
+open InferModules;;
+open InferBaseStdlib;;
