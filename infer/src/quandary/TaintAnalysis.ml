@@ -473,8 +473,17 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                     actuals with
               | [(AccessPath lhs_access_path); rhs_exp]
                -> exec_write lhs_access_path rhs_exp access_tree
+              | [ (AccessPath lhs_access_path)
+                ; rhs_exp
+                ; (HilExp.AccessPath ((Var.ProgramVar pvar, _), [] as dummy_ret_access_path)) ]
+                when Pvar.is_frontend_tmp pvar
+               -> (* the frontend translates operator=(x, y) as operator=(x, y, dummy_ret) when
+                     operator= returns a value type *)
+                  exec_write lhs_access_path rhs_exp access_tree
+                  |> exec_write dummy_ret_access_path rhs_exp
               | _
-               -> failwithf "Unexpected call to operator= %a" HilInstr.pp instr )
+               -> failwithf "Unexpected call to operator= %a in %a" HilInstr.pp instr
+                    Typ.Procname.pp callee_pname )
             | _
              -> let model =
                   TaintSpecification.handle_unknown_call callee_pname (Option.map ~f:snd ret_opt)

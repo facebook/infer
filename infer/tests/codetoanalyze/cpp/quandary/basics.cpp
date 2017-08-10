@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <atomic>
+#include <chrono>
 #include <string>
 
 extern void* __infer_taint_source();
@@ -168,5 +170,12 @@ std::string* unsanitized_bad(Obj* obj) {
   std::string* sanitized = Obj::sanitizer1(source);
   obj->string_sink(*source);
   return sanitized;
+}
+
+void atomic_eq(std::atomic<std::chrono::duration<int, std::centi>> x,
+               std::chrono::duration<int, std::centi> y) {
+  // this gets translated as operator=(x, y, &tmp_return), which used to cause a
+  // crash
+  x = y;
 }
 }
