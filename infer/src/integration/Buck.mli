@@ -23,6 +23,6 @@ val add_flavors_to_buck_command : string list -> string list
     buck build //foo/bar:baz#infer-capture-all,some,flavor
 *)
 
-val get_dependency_targets : string list -> string list * string list
+val get_dependency_targets_and_add_flavors : string list -> string list
 (** Runs buck query to get the dependency targets of the given targets
 [get_dependency_targets args] = targets with dependent targets, other args *)

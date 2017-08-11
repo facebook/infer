@@ -64,28 +64,31 @@ let run_compilation_database compilation_database should_capture_file =
   Process.run_jobs_in_parallel ~fail_on_failed_job jobs_stack
     (run_compilation_file compilation_database) job_to_string
 
+let buck_targets_in_file buck_targets =
+  let file = Filename.temp_file "buck_targets_" ".txt" in
+  let write_args outc = Out_channel.output_string outc (String.concat ~sep:"\n" buck_targets) in
+  Utils.with_file_out file ~f:write_args |> ignore ;
+  L.(debug Capture Quiet) "Buck targets options stored in file %s@\n" file ;
+  Printf.sprintf "@%s" file
+
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck ~prog ~args =
-  let args =
+  let targets, no_targets = List.partition_tf ~f:Buck.is_target_string args in
+  let targets =
     match Config.buck_compilation_database with
     | Some `Deps
-     -> let targets, no_targets = Buck.get_dependency_targets args in
-        no_targets @ targets
+     -> Buck.get_dependency_targets_and_add_flavors targets
     | _
-     -> args
+     -> Buck.add_flavors_to_buck_command targets
   in
-  match Buck.add_flavors_to_buck_command args with
-  | build :: args_with_flavor
+  match no_targets with
+  | "build" :: _
    -> (
-      let build_args = build :: "--config" :: "*//cxx.pch_enabled=false" :: args_with_flavor in
+      let targets_in_file = buck_targets_in_file targets in
+      let build_args = no_targets @ ["--config"; "*//cxx.pch_enabled=false"; targets_in_file] in
       Process.create_process_and_wait ~prog ~args:build_args ;
-      (* The option --keep-going is not accepted in the command buck targets *)
-      let args_with_flavor_no_keep_going =
-        List.filter ~f:(fun s -> not (String.equal s "--keep-going")) args_with_flavor
-      in
       let buck_targets_shell =
-        prog :: "targets" :: "--show-output" :: args_with_flavor_no_keep_going
-        |> Utils.shell_escape_command
+        [prog; "targets"; "--show-output"; targets_in_file] |> Utils.shell_escape_command
       in
       let output, exit_or_signal =
         Utils.with_process_in buck_targets_shell In_channel.input_lines
