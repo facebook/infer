@@ -704,6 +704,10 @@ let check_disequal tenv prop e1 e2 =
     | Exp.Lvar pv, Exp.Var id | Exp.Var id, Exp.Lvar pv
      -> (* Address of any non-global var must be different from the value of any footprint var *)
         not (Pvar.is_global pv) && Ident.is_footprint id
+    | Exp.Lvar _, Exp.Const Const.Cint _ | Exp.Const Const.Cint _, Exp.Lvar _
+     -> (* Comparing pointer with nonzero integer is undefined behavior in ISO C++ *)
+        (* Assume they are not equal *)
+        true
     | Exp.UnOp (op1, e1, _), Exp.UnOp (op2, e2, _)
      -> if Unop.equal op1 op2 then check_expr_disequal e1 e2 else false
     | Exp.Lfield (e1, f1, _), Exp.Lfield (e2, f2, _)

@@ -775,6 +775,10 @@ module Normalize = struct
          -> Exp.bool (IntLit.eq n m)
         | Const Cfloat v, Const Cfloat w
          -> Exp.bool (Float.equal v w)
+        | Const Cint _, Exp.Lvar _ | Exp.Lvar _, Const Cint _
+         -> (* Comparing pointer with nonzero integer is undefined behavior in ISO C++ *)
+            (* Assume they are not equal *)
+            Exp.zero
         | e1', e2'
          -> Exp.eq e1' e2' )
       | BinOp (Ne, e1, e2) -> (
@@ -783,6 +787,10 @@ module Normalize = struct
          -> Exp.bool (IntLit.neq n m)
         | Const Cfloat v, Const Cfloat w
          -> Exp.bool (v <> w)
+        | Const Cint _, Exp.Lvar _ | Exp.Lvar _, Const Cint _
+         -> (* Comparing pointer with nonzero integer is undefined behavior in ISO C++ *)
+            (* Assume they are not equal *)
+            Exp.one
         | e1', e2'
          -> Exp.ne e1' e2' )
       | BinOp (LAnd, e1, e2)
