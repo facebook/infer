@@ -351,7 +351,7 @@ let initial_command =
   (* Sys.executable_name tries to do clever things which we must avoid, use argv[0] instead *)
   let exe_basename = Filename.basename Sys.argv.(0) in
   let is_clang = List.mem ~equal:String.equal clang_exe_aliases in
-  match CommandDoc.command_of_exe_name exe_basename with
+  match CLOpt.command_of_exe_name exe_basename with
   | Some _ as command
    -> command
   | None when is_clang exe_basename
@@ -429,7 +429,7 @@ let exe_usage =
     | Some CLOpt.Clang
      -> None (* users cannot see this *)
     | Some command
-     -> Some (CommandDoc.name_of_command command)
+     -> Some (CLOpt.name_of_command command)
     | None
      -> None
   in

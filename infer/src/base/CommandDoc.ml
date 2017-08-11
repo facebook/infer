@@ -13,31 +13,8 @@ type data = {name: string; command_doc: CLOpt.command_doc}
 
 let inferconfig_env_var = "INFERCONFIG"
 
-let infer_exe_name = "infer"
-
 (** Name of the infer configuration file *)
 let inferconfig_file = ".inferconfig"
-
-let command_to_name =
-  let open CLOpt in
-  [ (Analyze, "analyze")
-  ; (Capture, "capture")
-  ; (Compile, "compile")
-  ; (Diff, "diff")
-  ; (Explore, "explore")
-  ; (Report, "report")
-  ; (ReportDiff, "reportdiff")
-  ; (Run, "run") ]
-
-let name_of_command = List.Assoc.find_exn ~equal:CLOpt.equal_command command_to_name
-
-let exe_name_of_command_name name = Printf.sprintf "%s-%s" infer_exe_name name
-
-let exe_name_of_command cmd = name_of_command cmd |> exe_name_of_command_name
-
-let command_of_exe_name exe_name =
-  List.find_map command_to_name ~f:(fun (cmd, name) ->
-      if String.equal exe_name (exe_name_of_command_name name) then Some cmd else None )
 
 let mk_command_doc ~see_also:see_also_commands ?environment:environment_opt ?files:files_opt
     ~synopsis =
@@ -45,7 +22,7 @@ let mk_command_doc ~see_also:see_also_commands ?environment:environment_opt ?fil
   let see_also =
     let exe_names =
       List.map see_also_commands ~f:(fun cmd ->
-          let exe = exe_name_of_command cmd in
+          let exe = CLOpt.exe_name_of_command cmd in
           Printf.sprintf "$(b,%s)(%d)" (Cmdliner.Manpage.escape exe) section )
     in
     [`P (String.concat ~sep:", " exe_names)]
@@ -160,14 +137,13 @@ $(b,infer) $(i,[options])|}
       [ `P
           "Infer is a static analyzer. Given a collection of source files written in Java or in languages of the C family, and a command to build them, infer produces a list of potential issues."
       ; `P
-          "Infer consists of a collection of tools referenced in the $(i,SEE ALSO) section of this manual. See their respective manuals for more information about each."
+          "Infer consists of a collection of tools referenced in the $(i,SEE ALSO) section of this manual. See their respective manuals for more information."
       ; `P
-          "If a compilation command is specified via the $(b,--) option or one of the $(b,--clang-compilation-database[-escaped]) options, $(b,infer) behaves as $(b,infer-run)(1). Otherwise, $(b,infer) behaves as $(b,infer-analyze)(1)."
+          "When run without a subcommand, and if a compilation command is specified via the $(b,--) option or one of the $(b,--clang-compilation-database[-escaped]) options, then $(b,infer) behaves as $(b,infer-run)(1). Otherwise, $(b,infer) behaves as $(b,infer-analyze)(1)."
       ]
     ~options:
       (`Prepend
-        [ `P
-            "Every infer command accepts the arguments from all the other infer commands. The same option may affect and thus be list in the manual of several commands."
+        [ `P "Every infer command accepts the arguments from all the other infer commands."
         ; `P
             (Printf.sprintf
                "Options are read from the $(b,%s) file, then from the $(b,%s) environment variable, then from the command line. Options in $(b,%s) take precedence over options in $(b,%s), and options passed on the command line take precedence over options in $(b,%s). See the $(i,%s) and $(i,%s) sections of this manual for more information."
@@ -270,8 +246,8 @@ $(b,infer) $(b,analyze) $(i,[options])|} ]
 
 let command_to_data =
   let mk cmd mk_doc =
-    let name = name_of_command cmd in
-    let command_doc = mk_doc (exe_name_of_command cmd) in
+    let name = CLOpt.name_of_command cmd in
+    let command_doc = mk_doc (CLOpt.exe_name_of_command cmd) in
     (cmd, {name; command_doc})
   in
   let open CLOpt in

@@ -44,6 +44,14 @@ val equal_command : command -> command -> bool
 
 val all_commands : command list
 
+val infer_exe_name : string
+
+val name_of_command : command -> string
+
+val exe_name_of_command : command -> string
+
+val command_of_exe_name : string -> command option
+
 val is_originator : bool
 
 val init_work_dir : string

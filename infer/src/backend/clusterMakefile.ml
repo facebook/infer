@@ -27,7 +27,7 @@ let pp_prolog fmt clusters =
     |> String.concat ~sep:" " |> escape
   in
   F.fprintf fmt "INFERANALYZE = '%s' --no-report --results-dir '%s' %s@\n@\n"
-    (Config.bin_dir ^/ CommandDoc.exe_name_of_command CLOpt.Analyze)
+    (Config.bin_dir ^/ CLOpt.exe_name_of_command CLOpt.Analyze)
     (escape Config.results_dir) compilation_dbs_cmd ;
   F.fprintf fmt "CLUSTERS=" ;
   List.iteri ~f:(fun i _ -> F.fprintf fmt "%a " Cluster.pp_cluster_name (i + 1)) clusters ;

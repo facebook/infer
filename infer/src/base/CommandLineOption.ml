@@ -98,7 +98,30 @@ type command =
 
 let equal_command = [%compare.equal : command]
 
-let all_commands = [Analyze; Capture; Clang; Compile; Diff; Explore; Report; ReportDiff; Run]
+let infer_exe_name = "infer"
+
+let command_to_name =
+  [ (Analyze, "analyze")
+  ; (Capture, "capture")
+  ; (Clang, "clang")
+  ; (Compile, "compile")
+  ; (Diff, "diff")
+  ; (Explore, "explore")
+  ; (Report, "report")
+  ; (ReportDiff, "reportdiff")
+  ; (Run, "run") ]
+
+let all_commands = List.map ~f:fst command_to_name
+
+let name_of_command = List.Assoc.find_exn ~equal:equal_command command_to_name
+
+let exe_name_of_command_name name = Printf.sprintf "%s-%s" infer_exe_name name
+
+let exe_name_of_command cmd = name_of_command cmd |> exe_name_of_command_name
+
+let command_of_exe_name exe_name =
+  List.find_map command_to_name ~f:(fun (cmd, name) ->
+      if String.equal exe_name (exe_name_of_command_name name) then Some cmd else None )
 
 type command_doc =
   { title: Cmdliner.Manpage.title
@@ -207,8 +230,39 @@ let add parse_mode sections desc =
   in
   List.iter sections ~f:add_to_section ;
   if List.is_empty sections then hidden_descs_list := desc :: !hidden_descs_list
-  else visible_descs_list := desc :: !visible_descs_list ;
-  ()
+  else
+    let desc_infer =
+      if String.equal "" desc.doc then desc
+      else
+        let oxford_comma l =
+          let rec aux acc l =
+            match (l, acc) with
+            | [], _
+             -> assert false
+            | [x], []
+             -> x
+            | [x; y], []
+             -> Printf.sprintf "%s and %s" x y
+            | [x; y], acc
+             -> Printf.sprintf "%s, %s, and %s" (String.concat ~sep:", " (List.rev acc)) x y
+            | x :: tl, acc
+             -> aux (x :: acc) tl
+          in
+          aux [] l
+        in
+        (* in the help of `infer` itself, show in which specific commands the option is used *)
+        let commands =
+          List.map ~f:fst sections |> List.sort ~cmp:compare_command
+          |> List.remove_consecutive_duplicates ~equal:equal_command
+          |> List.map ~f:(fun cmd ->
+                 let exe = exe_name_of_command cmd in
+                 Printf.sprintf "$(b,%s)(1)" (Cmdliner.Manpage.escape exe) )
+          |> oxford_comma
+        in
+        {desc with doc= Printf.sprintf "%s\nSee also %s." desc.doc commands}
+    in
+    visible_descs_list := desc_infer :: !visible_descs_list ;
+    ()
 
 let deprecate_desc parse_mode ~long ~short ~deprecated desc =
   let warn () =
