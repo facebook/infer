@@ -908,6 +908,9 @@ let is_empty_vector_access_desc desc = has_tag desc Tags.empty_vector_access
 let desc_frontend_warning desc sugg_opt loc =
   let tags = Tags.create () in
   let sugg = match sugg_opt with Some sugg -> sugg | None -> "" in
+  (* If the description ends in a period, we remove it because the sentence continues with
+  "at line ..." *)
+  let desc = match String.chop_suffix ~suffix:"." desc with Some desc -> desc | None -> desc in
   let description = Format.sprintf "%s %s. %s" desc (at_line tags loc) sugg in
   {no_desc with descriptions= [description]; tags= !tags}
 
