@@ -14,6 +14,10 @@ open! IStd
 
 module F = Format
 
+(** write a message to /dev/tty. Only intended for local
+ * debugging *)
+val tty_debug : string -> unit
+
 val environment_info : ('a, F.formatter, unit) format -> 'a
 (** log information about the environment *)
 

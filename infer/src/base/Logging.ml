@@ -236,6 +236,20 @@ let debug kind level fmt =
   let to_file = compare_debug_level level base_level <= 0 in
   log ~to_console:false ~to_file debug_file_fmts fmt
 
+(* file descriptor for tty, lazily allocated *)
+let dev_tty = ref None;;
+
+let tty_debug str =
+  (match (!dev_tty) with
+  | None -> dev_tty := Some (Out_channel.create "/dev/tty")
+  | _ -> ()
+  ) ;
+  (match (!dev_tty) with
+  | (Some fh) -> Printf.fprintf fh "%s" str
+  | _ -> ()
+  )
+
+
 let result fmt = log ~to_console:true result_file_fmts fmt
 
 let environment_info fmt = log ~to_console:false environment_info_file_fmts fmt
