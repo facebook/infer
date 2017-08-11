@@ -64,6 +64,13 @@ val issues_fields_symbols :
 
 type os_type = Unix | Win32 | Cygwin
 
+type compilation_database_dependencies =
+  | Deps of int option
+  (** get the compilation database of the dependencies up to depth n
+     by [Deps (Some n)], or all by [Deps None]  *)
+  | NoDeps
+  [@@deriving compare]
+
 type dynamic_dispatch_policy = [`None | `Interface | `Sound | `Lazy]
 
 val env_inside_maven : Unix.env
@@ -282,7 +289,7 @@ val buck_build_args : string list
 
 val buck_cache_mode : bool
 
-val buck_compilation_database : [`Deps | `NoDeps] option
+val buck_compilation_database : compilation_database_dependencies option
 
 val buck_out : string option
 

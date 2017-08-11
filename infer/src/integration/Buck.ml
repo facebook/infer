@@ -63,9 +63,14 @@ let add_flavors_to_buck_command build_cmd =
   if not found_one_target then no_targets_found_error_and_exit build_cmd ;
   cmd'
 
-let get_dependency_targets_and_add_flavors targets =
+let get_dependency_targets_and_add_flavors targets ~depth =
   let build_deps_string targets =
-    List.map targets ~f:(fun target -> Printf.sprintf "deps('%s')" target)
+    List.map targets ~f:(fun target ->
+        match depth with
+        | None (* full depth *)
+         -> Printf.sprintf "deps('%s')" target
+        | Some n
+         -> Printf.sprintf "deps('%s', %d)" target n )
     |> String.concat ~sep:" union "
   in
   let buck_query =
@@ -75,6 +80,7 @@ let get_dependency_targets_and_add_flavors targets =
       ^ build_deps_string targets ^ ")\"" ) ]
   in
   let buck_query_cmd = String.concat buck_query ~sep:" " in
+  Logging.(debug Linters Medium) "*** Executing command:@\n*** %s@." buck_query_cmd ;
   let output, exit_or_signal = Utils.with_process_in buck_query_cmd In_channel.input_lines in
   match exit_or_signal with
   | Error _ as status

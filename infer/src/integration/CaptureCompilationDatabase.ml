@@ -56,7 +56,7 @@ let run_compilation_database compilation_database should_capture_file =
     if Config.linters_ignore_clang_failures then false
     else
       match Config.buck_compilation_database with
-      | Some `NoDeps
+      | Some NoDeps
        -> Config.clang_frontend_do_lint
       | _
        -> false
@@ -76,8 +76,8 @@ let get_compilation_database_files_buck ~prog ~args =
   let targets, no_targets = List.partition_tf ~f:Buck.is_target_string args in
   let targets =
     match Config.buck_compilation_database with
-    | Some `Deps
-     -> Buck.get_dependency_targets_and_add_flavors targets
+    | Some Deps depth
+     -> Buck.get_dependency_targets_and_add_flavors targets ~depth
     | _
      -> Buck.add_flavors_to_buck_command targets
   in
