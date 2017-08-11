@@ -183,7 +183,7 @@ roots += $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 endif
 clusters:=base clang java IR
 
-ml_src_files:=$(shell find . -regex '.*\.ml\(i\)*')
+ml_src_files:=$(shell find . -regex '\./[a-zA-Z].*\.ml\(i\)*')
 inc_flags:=$(foreach dir,$(shell find . -type d),-I $(dir))
 root_flags:=$(foreach root,$(roots),-r $(root))
 cluster_flags:=$(foreach cluster,$(clusters),-c $(cluster))
