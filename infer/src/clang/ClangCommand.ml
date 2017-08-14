@@ -65,12 +65,30 @@ let file_arg_cmd_sanitizer cmd =
 
 let include_override_regex = Option.map ~f:Str.regexp Config.clang_include_to_override_regex
 
+let filter_and_replace_unsupported_args ?(replace_option_arg= fun _ s -> s)
+    ?(blacklisted_flags= []) ?(blacklisted_flags_with_arg= []) ?(post_args= []) args =
+  let rec aux (prev, res_rev) args =
+    match args with
+    | []
+     -> (* return non-reversed list *)
+        List.rev_append res_rev post_args
+    | flag :: tl when List.mem ~equal:String.equal blacklisted_flags flag
+     -> aux (flag, res_rev) tl
+    | flag1 :: flag2 :: tl when List.mem ~equal:String.equal blacklisted_flags_with_arg flag1
+     -> aux (flag2, res_rev) tl
+    | arg :: tl
+     -> let res_rev' = replace_option_arg prev arg :: res_rev in
+        aux (arg, res_rev') tl
+  in
+  aux ("", []) args
+
 (* Work around various path or library issues occurring when one tries to substitute Apple's version
    of clang with a different version. Also mitigate version discrepancies in clang's
    fatal warnings. *)
 let clang_cc1_cmd_sanitizer cmd =
   (* command line options not supported by the opensource compiler or the plugins *)
-  let flags_blacklist = ["-fembed-bitcode-marker"; "-fno-canonical-system-headers"] in
+  let blacklisted_flags = ["-fembed-bitcode-marker"; "-fno-canonical-system-headers"] in
+  let blacklisted_flags_with_arg = ["-mllvm"] in
   let replace_option_arg option arg =
     if String.equal option "-arch" && String.equal arg "armv7k" then "armv7"
       (* replace armv7k arch with armv7 *)
@@ -100,22 +118,17 @@ let clang_cc1_cmd_sanitizer cmd =
        level. *)
        argv_cons "-Wno-everything"
   in
-  let rec filter_unsupported_args_and_swap_includes (prev, res_rev) = function
-    | []
-     -> (* return non-reversed list *)
-        List.rev_append res_rev (List.rev post_args_rev)
-    | flag :: tl when List.mem ~equal:String.equal flags_blacklist flag
-     -> filter_unsupported_args_and_swap_includes (flag, res_rev) tl
-    | flag1 :: flag2 :: tl when String.equal "-mllvm" flag1
-     -> filter_unsupported_args_and_swap_includes (flag2, res_rev) tl
-    | arg :: tl
-     -> let res_rev' = replace_option_arg prev arg :: res_rev in
-        filter_unsupported_args_and_swap_includes (arg, res_rev') tl
+  let clang_arguments =
+    filter_and_replace_unsupported_args ~blacklisted_flags ~blacklisted_flags_with_arg
+      ~replace_option_arg ~post_args:(List.rev post_args_rev) cmd.argv
   in
-  let clang_arguments = filter_unsupported_args_and_swap_includes ("", []) cmd.argv in
   file_arg_cmd_sanitizer {cmd with argv= clang_arguments}
 
-let mk quoting_style ~prog ~args = {exec= prog; orig_argv= args; argv= args; quoting_style}
+let mk quoting_style ~prog ~args =
+  (* Some arguments break the compiler so they need to be removed even before the normalization step *)
+  let blacklisted_flags_with_arg = ["-index-store-path"] in
+  let sanitized_args = filter_and_replace_unsupported_args ~blacklisted_flags_with_arg args in
+  {exec= prog; orig_argv= sanitized_args; argv= sanitized_args; quoting_style}
 
 let command_to_run cmd =
   let mk_cmd normalizer =
