@@ -20,29 +20,27 @@ let ( ^/ ) = Filename.concat
 
 let sources =
   let src_dirs =
-    let src_dir = "." in
     (* if you update the list of source directories, do not forget to also update .merlin *)
-    src_dir
+    "."
     :: ( if facebook then
            (* do not use the symlinks in src/facebook/: jbuilder will not detect that the files have changed if they are hidden behind a symlink *)
            "../../facebook/skel/infer/src/facebook"
-       else src_dir ^/ "opensource" )
-       :: List.map (Filename.concat src_dir)
-            ( ( if clang then ["clang"; "clang_plugin"; ("unit" ^/ "clang")]
-              else ["clang_stubs"; ("unit" ^/ "clang_stubs")] )
-            @ [ (if java then "java" else "java_stubs")
-              ; "absint"
-              ; "backend"
-              ; "base"
-              ; "bufferoverrun"
-              ; "checkers"
-              ; "eradicate"
-              ; "harness"
-              ; "integration"
-              ; "IR"
-              ; "labs"
-              ; "quandary"
-              ; "unit" ] )
+       else "opensource" )
+       :: ( ( if clang then ["clang"; "clang_plugin"; ("unit" ^/ "clang")]
+            else ["clang_stubs"; ("unit" ^/ "clang_stubs")] )
+          @ [ (if java then "java" else "java_stubs")
+            ; "absint"
+            ; "backend"
+            ; "base"
+            ; "bufferoverrun"
+            ; "checkers"
+            ; "eradicate"
+            ; "harness"
+            ; "integration"
+            ; "IR"
+            ; "labs"
+            ; "quandary"
+            ; "unit" ] )
   in
   let files = ref [] in
   let ml_suffixes = [".ml"; ".mli"; ".mll"; ".mly"] in
