@@ -260,7 +260,7 @@ end
 (* Strict *)
 
 type st_report_error =
-  Typ.Procname.t -> Procdesc.t -> Localise.t -> Location.t -> ?advice:string option
+  Typ.Procname.t -> Procdesc.t -> IssueType.t -> Location.t -> ?advice:string option
   -> ?field_name:Typ.Fieldname.t option -> ?origin_loc:Location.t option
   -> ?exception_kind:(string -> Localise.error_desc -> exn) -> ?always_report:bool -> string
   -> unit
@@ -277,14 +277,14 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
       | _
        -> Typ.Procname.to_simplified_string pname
     in
-    L.progress "%s %s in %s %s@." ew_string (Localise.to_issue_id kind) mname s
+    L.progress "%s %s in %s %s@." ew_string kind.IssueType.unique_id mname s
   in
   let is_err, kind, description, advice, field_name, origin_loc =
     match err_instance with
     | Condition_redundant (b, s_opt, nonnull)
      -> let name =
-          if nonnull then Localise.eradicate_condition_redundant_nonnull
-          else Localise.eradicate_condition_redundant
+          if nonnull then IssueType.eradicate_condition_redundant_nonnull
+          else IssueType.eradicate_condition_redundant
         in
         ( false
         , name
@@ -306,7 +306,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
              -> MF.monospaced_to_string (Typ.Procname.to_simplified_string pn)
         in
         ( true
-        , Localise.eradicate_field_not_initialized
+        , IssueType.eradicate_field_not_initialized
         , Format.asprintf "Field %a is not initialized in %s and is not declared %a"
             MF.pp_monospaced (Typ.Fieldname.to_simplified_string fn) constructor_name
             MF.pp_monospaced "@Nullable"
@@ -315,7 +315,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         , None )
     | Field_not_mutable (fn, (origin_description, origin_loc, _))
      -> ( true
-        , Localise.eradicate_field_not_mutable
+        , IssueType.eradicate_field_not_mutable
         , Format.asprintf "Field %a is modified but is not declared %a. %s" MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn) MF.pp_monospaced "@Mutable" origin_description
         , None
@@ -325,12 +325,12 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
      -> let kind_s, description =
           match ann with
           | AnnotatedSignature.Nullable
-           -> ( Localise.eradicate_field_not_nullable
+           -> ( IssueType.eradicate_field_not_nullable
               , Format.asprintf "Field %a can be null but is not declared %a. %s" MF.pp_monospaced
                   (Typ.Fieldname.to_simplified_string fn) MF.pp_monospaced "@Nullable"
                   origin_description )
           | AnnotatedSignature.Present
-           -> ( Localise.eradicate_field_value_absent
+           -> ( IssueType.eradicate_field_value_absent
               , Format.asprintf
                   "Field %a is assigned a possibly absent value but is declared %a. %s"
                   MF.pp_monospaced (Typ.Fieldname.to_simplified_string fn) MF.pp_monospaced
@@ -348,7 +348,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
              -> Typ.Procname.to_simplified_string pn
         in
         ( true
-        , Localise.eradicate_field_over_annotated
+        , IssueType.eradicate_field_over_annotated
         , Format.asprintf "Field %a is always initialized in %s but is declared %a"
             MF.pp_monospaced (Typ.Fieldname.to_simplified_string fn) constructor_name
             MF.pp_monospaced "@Nullable"
@@ -358,7 +358,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
     | Null_field_access (s_opt, fn, (origin_description, origin_loc, _), indexed)
      -> let at_index = if indexed then "element at index" else "field" in
         ( true
-        , Localise.eradicate_null_field_access
+        , IssueType.eradicate_null_field_access
         , Format.asprintf "Object %a could be null when accessing %s %a. %s" MF.pp_monospaced
             (Option.value s_opt ~default:"") at_index MF.pp_monospaced
             (Typ.Fieldname.to_simplified_string fn) origin_description
@@ -369,12 +369,12 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
      -> let kind_s, description =
           match ann with
           | AnnotatedSignature.Nullable
-           -> ( Localise.eradicate_null_method_call
+           -> ( IssueType.eradicate_null_method_call
               , Format.asprintf "The value of %a in the call to %a could be null. %s"
                   MF.pp_monospaced (Option.value s_opt ~default:"") MF.pp_monospaced
                   (Typ.Procname.to_simplified_string pn) origin_description )
           | AnnotatedSignature.Present
-           -> ( Localise.eradicate_value_not_present
+           -> ( IssueType.eradicate_value_not_present
               , Format.asprintf "The value of %a in the call to %a is not %a. %s" MF.pp_monospaced
                   (Option.value s_opt ~default:"") MF.pp_monospaced
                   (Typ.Procname.to_simplified_string pn) MF.pp_monospaced "@Present"
@@ -385,13 +385,13 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
      -> let kind_s, description =
           match ann with
           | AnnotatedSignature.Nullable
-           -> ( Localise.eradicate_parameter_not_nullable
+           -> ( IssueType.eradicate_parameter_not_nullable
               , Format.asprintf
                   "%a needs a non-null value in parameter %d but argument %a can be null. %s"
                   MF.pp_monospaced (Typ.Procname.to_simplified_string pn) n MF.pp_monospaced s
                   origin_desc )
           | AnnotatedSignature.Present
-           -> ( Localise.eradicate_parameter_value_absent
+           -> ( IssueType.eradicate_parameter_value_absent
               , Format.asprintf
                   "%a needs a present value in parameter %d but argument %a can be absent. %s"
                   MF.pp_monospaced (Typ.Procname.to_simplified_string pn) n MF.pp_monospaced s
@@ -402,12 +402,12 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
      -> let kind_s, description =
           match ann with
           | AnnotatedSignature.Nullable
-           -> ( Localise.eradicate_return_not_nullable
+           -> ( IssueType.eradicate_return_not_nullable
               , Format.asprintf "Method %a may return null but it is not annotated with %a. %s"
                   MF.pp_monospaced (Typ.Procname.to_simplified_string pn) MF.pp_monospaced
                   "@Nullable" origin_description )
           | AnnotatedSignature.Present
-           -> ( Localise.eradicate_return_value_not_present
+           -> ( IssueType.eradicate_return_value_not_present
               , Format.asprintf
                   "Method %a may return an absent value but it is annotated with %a. %s"
                   MF.pp_monospaced (Typ.Procname.to_simplified_string pn) MF.pp_monospaced
@@ -416,7 +416,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         (true, kind_s, description, None, None, origin_loc)
     | Return_over_annotated pn
      -> ( false
-        , Localise.eradicate_return_over_annotated
+        , IssueType.eradicate_return_over_annotated
         , Format.asprintf "Method %a is annotated with %a but never returns null." MF.pp_monospaced
             (Typ.Procname.to_simplified_string pn) MF.pp_monospaced "@Nullable"
         , None
@@ -424,7 +424,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
         , None )
     | Inconsistent_subclass_return_annotation (pn, opn)
      -> ( false
-        , Localise.eradicate_inconsistent_subclass_return_annotation
+        , IssueType.eradicate_inconsistent_subclass_return_annotation
         , Format.asprintf "Method %a is annotated with %a but overrides unannotated method %a."
             MF.pp_monospaced (Typ.Procname.to_simplified_string ~withclass:true pn)
             MF.pp_monospaced "@Nullable" MF.pp_monospaced
@@ -444,7 +444,7 @@ let report_error_now tenv (st_report_error: st_report_error) err_instance loc pd
            -> string_of_int n ^ "th"
         in
         ( false
-        , Localise.eradicate_inconsistent_subclass_parameter_annotation
+        , IssueType.eradicate_inconsistent_subclass_parameter_annotation
         , Format.asprintf
             "%s parameter %a of method %a is not %a but is declared %ain the parent class method %a."
             (translate_position pos) MF.pp_monospaced param_name MF.pp_monospaced

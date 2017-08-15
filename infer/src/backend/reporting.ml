@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-module L = Logging
 
 type log_t =
   ?loc:Location.t -> ?node_id:int * int -> ?session:int -> ?ltr:Errlog.loc_trace
@@ -26,15 +25,11 @@ let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_
     match session with None -> (State.get_session () :> int) | Some session -> session
   in
   let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-  let err_name =
-    match exn with
-    | Exceptions.Frontend_warning ((err_name, _), _, _)
-     -> err_name
-    | _
-     -> let err_name, _, _, _, _, _, _ = Exceptions.recognize_exception exn in
-        Localise.to_issue_id err_name
+  let issue_type =
+    let err_name, _, _, _, _, _, _ = Exceptions.recognize_exception exn in
+    err_name
   in
-  if Inferconfig.is_checker_enabled err_name then
+  if not Config.filtering (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     Errlog.log_issue err_kind err_log loc node_id session ltr ?linters_def_file ?doc_url exn
 
 let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url

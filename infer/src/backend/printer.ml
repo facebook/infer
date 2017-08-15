@@ -379,7 +379,7 @@ let create_table_err_per_line err_log =
   let err_per_line = Hashtbl.create 17 in
   let add_err (key: Errlog.err_key) (err_data: Errlog.err_data) =
     let err_str =
-      Localise.to_issue_id key.err_name ^ " " ^ F.asprintf "%a" Localise.pp_error_desc key.err_desc
+      key.err_name.IssueType.unique_id ^ " " ^ F.asprintf "%a" Localise.pp_error_desc key.err_desc
     in
     try
       let set = Hashtbl.find err_per_line err_data.loc.Location.line in

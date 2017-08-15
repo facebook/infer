@@ -1185,7 +1185,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ~conflicts acces
     let final_sink_site = PathDomain.Sink.call_site final_sink in
     let loc = CallSite.loc initial_sink_site in
     let ltr = make_trace_with_conflicts conflicts path pdesc in
-    let msg = Localise.to_issue_id Localise.thread_safety_violation in
+    let msg = IssueType.thread_safety_violation.unique_id in
     let description = make_description tenv pname final_sink_site initial_sink_site final_sink in
     let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
     Reporting.log_error_deprecated ~store_summary:true pname ~loc ~ltr exn

@@ -134,6 +134,7 @@ exception Skip_pointer_dereference of Localise.error_desc * Logging.ml_loc
 exception Stack_variable_address_escape of Localise.error_desc * Logging.ml_loc
 
 exception Symexec_memory_error of Logging.ml_loc
+
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * Logging.ml_loc
 
 exception Uninitialized_value of Localise.error_desc * Logging.ml_loc
@@ -161,13 +162,13 @@ val print_exception_html : string -> exn -> unit
 (** print a description of the exception to the html output *)
 
 val pp_err :
-  node_key:int -> Location.t -> err_kind -> Localise.t -> Localise.error_desc
+  node_key:int -> Location.t -> err_kind -> IssueType.t -> Localise.error_desc
   -> Logging.ml_loc option -> Format.formatter -> unit -> unit
 (** pretty print an error *)
 
 val recognize_exception :
   exn
-  -> Localise.t
+  -> IssueType.t
      * Localise.error_desc
      * Logging.ml_loc option
      * visibility

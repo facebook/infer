@@ -411,7 +411,7 @@ let get_err_log translation_unit_context method_decl_opt =
   in
   LintIssues.get_err_log procname
 
-(* Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
+(** Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
 let log_frontend_issue translation_unit_context method_decl_opt key (issue_desc: CIssue.issue_desc)
     linters_def_file =
   let errlog = get_err_log translation_unit_context method_decl_opt in

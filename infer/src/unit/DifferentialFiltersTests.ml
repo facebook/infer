@@ -325,8 +325,8 @@ let test_skip_anonymous_class_renamings =
 let test_interesting_paths_filter =
   let report =
     [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:1 ()
-    ; create_fake_jsonbug ~bug_type:(Localise.to_issue_id Localise.null_dereference)
-        ~file:"file_2.java" ~hash:2 ()
+    ; create_fake_jsonbug ~bug_type:IssueType.null_dereference.unique_id ~file:"file_2.java"
+        ~hash:2 ()
     ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_4.java" ~hash:4 () ]
   in
   let create_test interesting_paths expected_hashes _ =

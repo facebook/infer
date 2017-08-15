@@ -576,9 +576,7 @@ module Report = struct
         | Some bucket when Typ.Procname.equal pname caller_pname
          -> let description = Dom.Condition.to_string cond in
             let error_desc = Localise.desc_buffer_overrun bucket description in
-            let exn =
-              Exceptions.Checkers (Localise.to_issue_id Localise.buffer_overrun, error_desc)
-            in
+            let exn = Exceptions.Checkers (IssueType.buffer_overrun.unique_id, error_desc) in
             let trace =
               match TraceSet.choose_shortest cond.Dom.Condition.traces with
               | trace

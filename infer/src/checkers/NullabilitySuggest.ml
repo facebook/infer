@@ -147,7 +147,7 @@ let pretty_field_name proc_data field_name =
 let checker {Callbacks.summary; proc_desc; tenv} =
   let report astate (proc_data: extras ProcData.t) =
     let report_access_path ap udchain =
-      let issue_kind = Localise.to_issue_id Localise.field_should_be_nullable in
+      let issue_kind = IssueType.field_should_be_nullable.unique_id in
       match AccessPath.get_field_and_annotation ap proc_data.tenv with
       | Some (field_name, _) when Typ.Fieldname.Java.is_captured_parameter field_name
        -> (* Skip reporting when field comes from generated code *)

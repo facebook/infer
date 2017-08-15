@@ -9,12 +9,11 @@
 
 open! IStd
 module CLOpt = CommandLineOption
-module F = Format
 module L = Logging
 
 type path_filter = SourceFile.t -> bool
 
-type error_filter = Localise.t -> bool
+type error_filter = IssueType.t -> bool
 
 type proc_filter = Typ.Procname.t -> bool
 
@@ -320,7 +319,7 @@ let filters_from_inferconfig inferconfig : filters =
   in
   let error_filter = function
     | error_name
-     -> let error_str = Localise.to_issue_id error_name in
+     -> let error_str = error_name.IssueType.unique_id in
         not (List.exists ~f:(String.equal error_str) inferconfig.suppress_errors)
   in
   {path_filter; error_filter; proc_filter= default_proc_filter}
@@ -329,18 +328,6 @@ let filters_from_inferconfig inferconfig : filters =
 let create_filters analyzer =
   if not Config.filter_paths then do_not_filter
   else filters_from_inferconfig (load_filters analyzer)
-
-(* Decide whether a checker or error type is enabled or disabled based on*)
-(* white/black listing in .inferconfig and the default value *)
-let is_checker_enabled checker_name =
-  (* no-filtering takes priority over both whitelist and blacklist *)
-  not Config.filtering
-  (* whitelist takes priority over blacklist *)
-  || List.mem ~equal:String.( = ) Config.enable_checks checker_name
-  (* if it's blacklisted and not whitelisted then it should be disabled *)
-  || not (List.mem ~equal:String.( = ) Config.disable_checks checker_name)
-     (* if it's not amond white/black listed then we use default value *)
-     && not (List.mem ~equal:String.( = ) Config.checks_disabled_by_default checker_name)
 
 (* This function loads and list the path that are being filtered by the analyzer. The results *)
 (* are of the form: path/to/file.java -> {infer, checkers} meaning that analysis results will *)

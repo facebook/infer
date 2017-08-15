@@ -13,7 +13,7 @@
   "infer-blacklist-files-containing": [
     "@generated"
   ],
-  "enable-checks": [
+  "enable-issue-type": [
       "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
     ],
   "skip-translation": [

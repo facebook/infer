@@ -1388,7 +1388,7 @@ and instrs ?(mask_errors= false) tenv pdesc instrs ppl =
       let loc =
         match ml_source with Some ml_loc -> "at " ^ L.ml_loc_to_string ml_loc | None -> ""
       in
-      L.d_warning ("Generated Instruction Failed with: " ^ Localise.to_issue_id err_name ^ loc) ;
+      L.d_warning ("Generated Instruction Failed with: " ^ err_name.IssueType.unique_id ^ loc) ;
       L.d_ln () ;
       [(p, path)]
   in

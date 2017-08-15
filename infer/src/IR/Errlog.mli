@@ -41,7 +41,7 @@ type node_id_key = private {node_id: int; node_key: int}
 type err_key = private
   { err_kind: Exceptions.err_kind
   ; in_footprint: bool
-  ; err_name: Localise.t
+  ; err_name: IssueType.t
   ; err_desc: Localise.error_desc
   ; severity: string }
   [@@deriving compare]

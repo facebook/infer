@@ -42,7 +42,7 @@ module ST = struct
       Localise.custom_desc_with_advice description (Option.value ~default:"" advice)
         [("always_report", string_of_bool always_report)]
     in
-    let exn = exception_kind (Localise.to_issue_id kind) localized_description in
+    let exn = exception_kind kind.IssueType.unique_id localized_description in
     let proc_attributes = Specs.pdesc_resolve_attributes proc_desc in
     (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be
        suppressed with the following annotations:
@@ -56,11 +56,11 @@ module ST = struct
         let normalized_equal s1 s2 = String.equal (normalize s1) (normalize s2) in
         let is_parameter_suppressed =
           String.is_suffix a.class_name ~suffix:Annotations.suppress_lint
-          && List.mem ~equal:normalized_equal a.parameters (Localise.to_issue_id kind)
+          && List.mem ~equal:normalized_equal a.parameters kind.IssueType.unique_id
         in
         let is_annotation_suppressed =
           String.is_suffix
-            ~suffix:(normalize (drop_prefix (Localise.to_issue_id kind)))
+            ~suffix:(normalize (drop_prefix kind.IssueType.unique_id))
             (normalize a.class_name)
         in
         is_parameter_suppressed || is_annotation_suppressed
@@ -104,7 +104,7 @@ module ST = struct
       origin_elements @ [Errlog.make_trace_element 0 loc description []]
     in
     if not suppressed then (
-      L.progress "%s: %a: %s@\n" (Localise.to_issue_id kind) SourceFile.pp loc.Location.file
+      L.progress "%s: %a: %s@\n" kind.IssueType.unique_id SourceFile.pp loc.Location.file
         (Typ.Procname.to_string proc_name) ;
       L.progress "%s@." description ;
       Reporting.log_error_deprecated proc_name ~loc ~ltr:trace exn )

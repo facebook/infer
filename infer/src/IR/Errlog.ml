@@ -67,7 +67,7 @@ type node_id_key = {node_id: int; node_key: int}
 type err_key =
   { err_kind: Exceptions.err_kind
   ; in_footprint: bool
-  ; err_name: Localise.t
+  ; err_name: IssueType.t
   ; err_desc: Localise.error_desc
   ; severity: string }
   [@@deriving compare]
@@ -104,7 +104,7 @@ module ErrLogHash = struct
         (key.err_kind, key.in_footprint, key.err_name, Localise.error_desc_hash key.err_desc)
 
     let equal key1 key2 =
-      [%compare.equal : Exceptions.err_kind * bool * Localise.t]
+      [%compare.equal : Exceptions.err_kind * bool * IssueType.t]
         (key1.err_kind, key1.in_footprint, key1.err_name)
         (key2.err_kind, key2.in_footprint, key2.err_name)
       && Localise.error_desc_equal key1.err_desc key2.err_desc
@@ -147,7 +147,7 @@ let size filter (err_log: t) =
 let pp_errors fmt (errlog: t) =
   let f key _ =
     if Exceptions.equal_err_kind key.err_kind Exceptions.Kerror then
-      F.fprintf fmt "%a@ " Localise.pp key.err_name
+      F.fprintf fmt "%a@ " IssueType.pp key.err_name
   in
   ErrLogHash.iter f errlog
 
@@ -155,7 +155,7 @@ let pp_errors fmt (errlog: t) =
 let pp_warnings fmt (errlog: t) =
   let f key _ =
     if Exceptions.equal_err_kind key.err_kind Exceptions.Kwarning then
-      F.fprintf fmt "%a %a@ " Localise.pp key.err_name Localise.pp_error_desc key.err_desc
+      F.fprintf fmt "%a %a@ " IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
   in
   ErrLogHash.iter f errlog
 
@@ -170,7 +170,7 @@ let pp_html source path_to_root fmt (errlog: t) =
   in
   let pp_err_log do_fp ek key err_datas =
     if Exceptions.equal_err_kind key.err_kind ek && Bool.equal do_fp key.in_footprint then
-      F.fprintf fmt "<br>%a %a %a" Localise.pp key.err_name Localise.pp_error_desc key.err_desc
+      F.fprintf fmt "<br>%a %a %a" IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
         pp_eds err_datas
   in
   F.fprintf fmt "%aERRORS DURING FOOTPRINT@\n" Io_infer.Html.pp_hline () ;
@@ -263,7 +263,7 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
       if err_kind <> Exceptions.Kerror then
         let warn_str =
           let pp fmt =
-            Format.fprintf fmt "%s %a" (Localise.to_issue_id err_name) Localise.pp_error_desc desc
+            Format.fprintf fmt "%s %a" err_name.IssueType.unique_id Localise.pp_error_desc desc
           in
           F.asprintf "%t" pp
         in
@@ -295,8 +295,8 @@ module Err_table = struct
   let pp_stats_footprint ekind fmt (err_table: err_log) =
     let err_name_map = ref String.Map.empty in
     (* map error name to count *)
-    let count_err (err_name: Localise.t) n =
-      let err_string = Localise.to_issue_id err_name in
+    let count_err (err_name: IssueType.t) n =
+      let err_string = err_name.IssueType.unique_id in
       let count =
         try String.Map.find_exn !err_name_map err_string
         with Not_found -> 0

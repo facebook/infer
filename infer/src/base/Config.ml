@@ -111,8 +111,6 @@ let buck_results_dir_name = "infer"
 
 let captured_dir_name = "captured"
 
-let checks_disabled_by_default = ["GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"]
-
 let clang_initializer_prefix = "__infer_globals_initializer_"
 
 (** Experimental: if true do some specialized analysis of concurrent constructs. *)
@@ -894,7 +892,7 @@ and ( bo_debug
   and filtering =
     CLOpt.mk_bool ~deprecated_no:["nf"] ~long:"filtering" ~short:'f' ~default:true
       ~in_help:CLOpt.([(Report, manual_generic)])
-      "Do not show the results from experimental and blacklisted checks"
+      "Do not show the experimental and blacklisted issue types"
   and only_cheap_debug =
     CLOpt.mk_bool ~long:"only-cheap-debug" ~default:true "Disable expensive debugging output"
   and print_buckets =
@@ -1023,26 +1021,31 @@ and differential_filter_set =
     ~symbols:[("introduced", `Introduced); ("fixed", `Fixed); ("preexisting", `Preexisting)]
     ~default:[`Introduced; `Fixed; `Preexisting]
 
-and disable_checks =
-  CLOpt.mk_string_list ~deprecated:["disable_checks"] ~long:"disable-checks" ~meta:"error_name"
-    ~in_help:CLOpt.([(Report, manual_generic)])
-    ~default:
-      [ "ANALYSIS_STOPS"
-      ; "ARRAY_OUT_OF_BOUNDS_L1"
-      ; "ARRAY_OUT_OF_BOUNDS_L2"
-      ; "ARRAY_OUT_OF_BOUNDS_L3"
-      ; "CLASS_CAST_EXCEPTION"
-      ; "CONDITION_ALWAYS_FALSE"
-      ; "CONDITION_ALWAYS_TRUE"
-      ; "DANGLING_POINTER_DEREFERENCE"
-      ; "DIVIDE_BY_ZERO"
-      ; "NULL_TEST_AFTER_DEREFERENCE"
-      ; "RETAIN_CYCLE"
-      ; "RETURN_VALUE_IGNORED"
-      ; "STACK_VARIABLE_ADDRESS_ESCAPE"
-      ; "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
-      ; "UNINITIALIZED_VALUE" ]
-    "Do not show reports coming from this type of errors. This option has lower precedence than $(b,--no-filtering) and $(b,--enable-checks)"
+and () =
+  let mk b ?deprecated ~long ?default doc =
+    let _ : string list ref =
+      CLOpt.mk_string_list ?deprecated ~long
+        ~f:(fun issue_id ->
+          let issue = IssueType.from_string issue_id in
+          IssueType.set_enabled issue b ; issue_id)
+        ?default ~meta:"issue_type"
+        ~in_help:CLOpt.([(Report, manual_generic)])
+        doc
+    in
+    ()
+  in
+  let disabled_issues_ids =
+    IssueType.all_issues ()
+    |> List.filter_map ~f:(fun issue ->
+           if not issue.IssueType.enabled then Some issue.IssueType.unique_id else None )
+  in
+  mk false ~default:disabled_issues_ids ~long:"disable-issue-type"
+    ~deprecated:["disable_checks"; "-disable-checks"]
+    (Printf.sprintf
+       "Do not show reports coming from this type of issue. Each checker can report a range of issue types. This option provides fine-grained filtering over which types of issue should be reported once the checkers have run. In particular, note that disabling issue types does not make the corresponding checker not run.\n By default, the following issue types are disabled: %s.\n\n See also $(b,--report-issue-type).\n"
+       (String.concat ~sep:", " disabled_issues_ids)) ;
+  mk true ~long:"enable-issue-type" ~deprecated:["enable_checks"; "-enable-checks"]
+    "Show reports coming from this type of issue. By default, all issue types are enabled except the ones listed in $(b,--disable-issue-type). Note that enabling issue types does not make the corresponding checker run; see individual checker options to turn them on or off."
 
 and dotty_cfg_libs =
   CLOpt.mk_bool ~deprecated:["dotty_no_cfg_libs"] ~long:"dotty-cfg-libs" ~default:true
@@ -1057,10 +1060,6 @@ and dynamic_dispatch =
   CLOpt.mk_symbol_opt ~long:"dynamic-dispatch"
     "Specify treatment of dynamic dispatch in Java code: 'none' treats dynamic dispatch as a call to unknown code, 'lazy' follows the JVM semantics and creates procedure descriptions during symbolic execution using the type information found in the abstract state; 'sound' is significantly more computationally expensive"
     ~symbols:[("none", `None); ("interface", `Interface); ("sound", `Sound); ("lazy", `Lazy)]
-
-and enable_checks =
-  CLOpt.mk_string_list ~deprecated:["enable_checks"] ~long:"enable-checks" ~meta:"error_name"
-    "Show reports coming from this type of errors. This option has higher precedence than $(b,--disable-checks)"
 
 and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant" "Condition redundant warnings"
@@ -1966,11 +1965,7 @@ and differential_filter_files = !differential_filter_files
 
 and differential_filter_set = !differential_filter_set
 
-and disable_checks = !disable_checks
-
 and dotty_cfg_libs = !dotty_cfg_libs
-
-and enable_checks = !enable_checks
 
 and eradicate = !eradicate
 

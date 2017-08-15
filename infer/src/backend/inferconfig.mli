@@ -13,7 +13,7 @@ open! IStd
 type path_filter = SourceFile.t -> bool
 
 (** Filter type for an error name. *)
-type error_filter = Localise.t -> bool
+type error_filter = IssueType.t -> bool
 
 (** Filter type for a procedure name *)
 type proc_filter = Typ.Procname.t -> bool
@@ -34,7 +34,3 @@ val modeled_expensive_matcher : (string -> bool) -> Typ.Procname.t -> bool
 
 val test : unit -> unit
 (** Load the config file and list the files to report on *)
-
-val is_checker_enabled : string -> bool
-(** is_checker_enabled [error_name] is [true] if [error_name] is whitelisted in .inferconfig or if
-    it's enabled by default *)

@@ -99,8 +99,6 @@ val buck_infer_deps_file_name : string
 
 val captured_dir_name : string
 
-val checks_disabled_by_default : string list
-
 val clang_initializer_prefix : string
 
 val classpath : string option
@@ -358,15 +356,11 @@ val differential_filter_files : string option
 
 val differential_filter_set : [`Introduced | `Fixed | `Preexisting] list
 
-val disable_checks : string list
-
 val dotty_cfg_libs : bool
 
 val dump_duplicate_symbols : bool
 
 val dynamic_dispatch : [`None | `Interface | `Sound | `Lazy]
-
-val enable_checks : string list
 
 val eradicate : bool
 

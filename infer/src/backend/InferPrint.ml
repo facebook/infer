@@ -206,32 +206,32 @@ end
 let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass =
   if not Config.filtering || Exceptions.equal_err_class eclass Exceptions.Linters then true
   else
-      let issue_kind_is_blacklisted =
-        match issue_kind with Kinfo -> true | Kerror | Kwarning | Kadvice | Klike -> false
-      in
-      if issue_kind_is_blacklisted then false
-      else
-        let issue_type_is_null_deref =
-          let null_deref_issue_types =
-            let open Localise in
-            [ field_not_null_checked
-            ; null_dereference
-            ; parameter_not_null_checked
-            ; premature_nil_termination
-            ; empty_vector_access ]
-          in
-          List.mem ~equal:Localise.equal null_deref_issue_types issue_type
+    let issue_kind_is_blacklisted =
+      match issue_kind with Kinfo -> true | Kerror | Kwarning | Kadvice | Klike -> false
+    in
+    if issue_kind_is_blacklisted then false
+    else
+      let issue_type_is_null_deref =
+        let null_deref_issue_types =
+          let open IssueType in
+          [ field_not_null_checked
+          ; null_dereference
+          ; parameter_not_null_checked
+          ; premature_nil_termination
+          ; empty_vector_access ]
         in
-        let issue_type_is_buffer_overrun = Localise.equal issue_type Localise.buffer_overrun in
-        if issue_type_is_null_deref || issue_type_is_buffer_overrun then
-          let issue_bucket_is_high =
-            let issue_bucket = Localise.error_desc_get_bucket error_desc in
-            let high_buckets = Localise.BucketLevel.([b1; b2]) in
-            Option.value_map issue_bucket ~default:false ~f:(fun b ->
-                List.mem ~equal:String.equal high_buckets b )
-          in
-          issue_bucket_is_high
-        else true
+        List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
+      in
+      let issue_type_is_buffer_overrun = IssueType.(equal buffer_overrun) issue_type in
+      if issue_type_is_null_deref || issue_type_is_buffer_overrun then
+        let issue_bucket_is_high =
+          let issue_bucket = Localise.error_desc_get_bucket error_desc in
+          let high_buckets = Localise.BucketLevel.([b1; b2]) in
+          Option.value_map issue_bucket ~default:false ~f:(fun b ->
+              List.mem ~equal:String.equal high_buckets b )
+        in
+        issue_bucket_is_high
+      else true
 
 module IssuesCsv = struct
   let csv_issues_id = ref 0
@@ -270,7 +270,7 @@ module IssuesCsv = struct
           Escape.escape_csv s
         in
         let kind = Exceptions.err_kind_string key.err_kind in
-        let type_str = Localise.to_issue_id key.err_name in
+        let type_str = key.err_name.IssueType.unique_id in
         let procedure_id = Typ.Procname.to_filename procname in
         let filename = SourceFile.to_string source_file in
         let always_report =
@@ -331,7 +331,7 @@ module IssuesJson = struct
          -> (err_data.loc.Location.file, 0)
       in
       if SourceFile.is_invalid source_file then
-        failwithf "Invalid source file for %a %a@.Trace: %a@." Localise.pp key.err_name
+        failwithf "Invalid source file for %a %a@.Trace: %a@." IssueType.pp key.err_name
           Localise.pp_error_desc key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
       let should_report_source_file =
         not (SourceFile.is_infer_model source_file) || Config.debug_mode || Config.debug_exceptions
@@ -341,7 +341,7 @@ module IssuesJson = struct
          && should_report key.err_kind key.err_name key.err_desc err_data.err_class
       then
         let kind = Exceptions.err_kind_string key.err_kind in
-        let bug_type = Localise.to_issue_id key.err_name in
+        let bug_type = key.err_name.IssueType.unique_id in
         let procedure_id = Typ.Procname.to_filename procname in
         let file = SourceFile.to_string source_file in
         let json_ml_loc =
@@ -354,7 +354,7 @@ module IssuesJson = struct
         let visibility = Exceptions.string_of_visibility err_data.visibility in
         let qualifier =
           let base_qualifier = error_desc_to_plain_string key.err_desc in
-          if Localise.equal key.err_name Localise.resource_leak then
+          if IssueType.(equal resource_leak) key.err_name then
             match Errlog.compute_local_exception_line err_data.loc_trace with
             | None
              -> base_qualifier
@@ -387,7 +387,7 @@ module IssuesJson = struct
                 key.err_desc
           ; dotty= error_desc_to_dotty_string key.err_desc
           ; infer_source_loc= json_ml_loc
-          ; bug_type_hum= Localise.to_human_readable_string key.err_name
+          ; bug_type_hum= key.err_name.IssueType.hum
           ; linters_def_file= err_data.linters_def_file
           ; doc_url= err_data.doc_url
           ; traceview_id= None }
@@ -571,7 +571,7 @@ module Stats = struct
   let process_err_log error_filter linereader err_log stats =
     let found_errors = ref false in
     let process_row (key: Errlog.err_key) (err_data: Errlog.err_data) =
-      let type_str = Localise.to_issue_id key.err_name in
+      let type_str = key.err_name.IssueType.unique_id in
       if key.in_footprint && error_filter key.err_desc key.err_name then
         match key.err_kind with
         | Exceptions.Kerror
@@ -726,7 +726,7 @@ let error_filter filters proc_name file error_desc error_name =
   let always_report () =
     String.equal (Localise.error_desc_extract_tag_value error_desc "always_report") "true"
   in
-  (Config.write_html || not (Localise.equal error_name Localise.skip_function))
+  (Config.write_html || not (IssueType.(equal skip_function) error_name))
   && (filters.Inferconfig.path_filter file || always_report ())
   && filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name
 

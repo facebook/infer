@@ -82,7 +82,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       when not
              ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
              || Domain.mem (Var.of_pvar pvar) live_vars || is_captured_var pvar )
-     -> let issue_id = Localise.to_issue_id Localise.dead_store in
+     -> let issue_id = IssueType.dead_store.unique_id in
         let message = F.asprintf "The value written to %a is never used" (Pvar.pp Pp.text) pvar in
         let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
         let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in

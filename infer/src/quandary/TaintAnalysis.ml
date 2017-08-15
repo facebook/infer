@@ -225,7 +225,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               Errlog.make_trace_element 0 (CallSite.loc call_site) desc [])
             expanded_sinks
         in
-        let msg = Localise.to_issue_id Localise.quandary_taint_error in
+        let msg = IssueType.quandary_taint_error.unique_id in
         let _, original_source = List.hd_exn expanded_sources in
         let final_sink = List.hd_exn expanded_sinks in
         let trace_str = get_short_trace_string original_source final_sink in

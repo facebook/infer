@@ -83,7 +83,7 @@ val mk_set : 'a ref -> 'a -> unit t
 
 val mk_option :
   ?default:'a option -> ?default_to_string:('a option -> string) -> f:(string -> 'a option)
-  -> 'a option ref t
+  -> ?mk_reset:bool -> 'a option ref t
 
 val mk_bool : ?deprecated_no:string list -> ?default:bool -> ?f:(bool -> bool) -> bool ref t
 (** [mk_bool long short doc] defines a [bool ref] set by the command line flag [--long] (and
@@ -109,7 +109,10 @@ val mk_float_opt : ?default:float -> float option ref t
 
 val mk_string : default:string -> ?f:(string -> string) -> string ref t
 
-val mk_string_opt : ?default:string -> ?f:(string -> string) -> string option ref t
+val mk_string_opt :
+  ?default:string -> ?f:(string -> string) -> ?mk_reset:bool -> string option ref t
+(** An option "--[long]-reset" is automatically created that resets the reference to None when found
+    on the command line, unless [mk_reset] is false.  *)
 
 val mk_string_list : ?default:string list -> ?f:(string -> string) -> string list ref t
 (** [mk_string_list] defines a [string list ref], initialized to [[]] unless overridden by
@@ -129,12 +132,14 @@ val mk_path_opt : ?default:string -> string option ref t
 val mk_path_list : ?default:string list -> string list ref t
 (** analogous of [mk_string_list] with the extra feature of [mk_path] *)
 
-val mk_symbol : default:'a -> symbols:(string * 'a) list -> eq:('a -> 'a -> bool) -> 'a ref t
+val mk_symbol :
+  default:'a -> symbols:(string * 'a) list -> eq:('a -> 'a -> bool) -> ?f:('a -> 'a) -> 'a ref t
 (** [mk_symbol long symbols] defines a command line flag [--long <symbol>] where [(<symbol>,_)] is
     an element of [symbols]. *)
 
-val mk_symbol_opt : symbols:(string * 'a) list -> ?f:('a -> 'a) -> 'a option ref t
-(** [mk_symbol_opt] is similar to [mk_symbol] but defaults to [None]. *)
+val mk_symbol_opt :
+  symbols:(string * 'a) list -> ?f:('a -> 'a) -> ?mk_reset:bool -> 'a option ref t
+(** [mk_symbol_opt] is similar to [mk_symbol] but defaults to [None]. If [mk_reset] is false then do not create an additional --[long]-reset option to reset the value of the option to [None]. *)
 
 val mk_symbol_seq :
   ?default:'a list -> symbols:(string * 'a) list -> eq:('a -> 'a -> bool) -> 'a list ref t

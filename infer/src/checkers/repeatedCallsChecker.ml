@@ -133,7 +133,7 @@ module RepeatedCallsExtension : Eradicate.ExtensionT = struct
                     SourceFile.pp alloc_loc.Location.file alloc_loc.Location.line
                 in
                 Checkers.ST.report_error tenv curr_pname curr_pdesc
-                  Localise.checkers_repeated_calls loc description
+                  IssueType.checkers_repeated_calls loc description
             | None
              -> () )
           | _
