@@ -102,18 +102,21 @@ ifeq ($(TEST),1)
 INFER_CONFIG_TARGETS += $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).exe
 endif
 
-OCAML_SOURCES = \
-  $(wildcard */[a-zA-Z]*.ml */[a-zA-Z]*.ml[ily]) \
+OCAML_GENERATED_SOURCES = \
   base/Version.ml $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
-OCAML_SOURCES += $(CLANG_ATDGEN_STUBS) $(CLANG_PLUGIN_MIRRORED_FILES)
+OCAML_GENERATED_SOURCES += $(CLANG_ATDGEN_STUBS) $(CLANG_PLUGIN_MIRRORED_FILES)
 endif
+
+OCAML_SOURCES = \
+  $(wildcard */[a-zA-Z]*.ml */[a-zA-Z]*.ml[ily]) \
+  $(OCAML_GENERATED_SOURCES)
 
 .PHONY: all
 all: infer
 
-$(INFER_BUILD_DIR)/.ppx/ppx_compare/ppx.exe: jbuild jbuild-workspace $(OCAML_SOURCES)
+$(INFER_BUILD_DIR)/.ppx/ppx_compare/ppx.exe: jbuild jbuild-workspace $(OCAML_GENERATED_SOURCES)
 #      some voodoo to make jbuilder tolerate being run in parallel: force jbuilder to build its
 #      jbuild files and some files that have been seen to race otherwise
 	jbuilder build \
