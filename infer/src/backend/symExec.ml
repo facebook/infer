@@ -1165,7 +1165,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           | _
            -> ()
       in
-      if not Config.tracing then check_already_dereferenced tenv current_pname cond prop__ ;
+      if not (Config.tracing || Typ.Procname.is_java current_pname) then
+        check_already_dereferenced tenv current_pname cond prop__ ;
       check_condition_always_true_false () ;
       let n_cond, prop = check_arith_norm_exp tenv current_pname cond prop__ in
       ret_old_path (Propset.to_proplist (prune tenv ~positive:true n_cond prop))
