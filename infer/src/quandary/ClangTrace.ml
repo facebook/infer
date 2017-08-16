@@ -182,18 +182,20 @@ module SinkKind = struct
     | Typ.Procname.ObjC_Cpp cpp_name -> (
       match Typ.Procname.get_method pname with
       | "operator[]" when is_buffer_class cpp_name
-        -> taint_nth 1 BufferAccess actuals
+       -> taint_nth 1 BufferAccess actuals
       | _
-        -> get_external_sink pname actuals )
+       -> get_external_sink pname actuals )
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__array_access
-      -> taint_all BufferAccess actuals
+     -> taint_all BufferAccess actuals
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__set_array_length
      -> (* called when creating a stack-allocated array *)
-       taint_nth 1 Allocation actuals
+        taint_nth 1 Allocation actuals
     | Typ.Procname.C _ -> (
       match Typ.Procname.to_string pname with
       | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system"
        -> taint_all ShellExec actuals
+      | "popen"
+       -> taint_nth 0 ShellExec actuals
       | "brk" | "calloc" | "malloc" | "realloc" | "sbrk"
        -> taint_all Allocation actuals
       | _

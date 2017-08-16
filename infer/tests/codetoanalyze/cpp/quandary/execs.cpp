@@ -9,6 +9,7 @@
 
 #include <cstdlib>
 #include <string>
+#include <stdio.h>
 #include <unistd.h>
 
 extern int rand();
@@ -83,6 +84,9 @@ int callExecBad() {
       return execve(NULL, arrSource, NULL);
     case 14:
       return system(stringSource);
+    case 15:
+      FILE* f = popen(stringSource, "w");
+      return pclose(f);
   }
   return 0;
 }
@@ -100,6 +104,11 @@ void exec_flag_bad() { execl(FLAGS_cli_string, NULL); }
 void sql_on_env_var_bad() {
   std::string source = (std::string)std::getenv("ENV_VAR");
   __infer_sql_sink(source, 0);
+}
+
+void tainted_flag_popen_ok() {
+  char* tainted = std::getenv("something");
+  popen("ls", tainted); // should not warn;
 }
 
 class Obj {

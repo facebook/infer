@@ -46,6 +46,7 @@ codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 27, QUANDARY_TAINT_ERR
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 29, QUANDARY_TAINT_ERROR, [Return from getenv,Call to execve]
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 31, QUANDARY_TAINT_ERROR, [Return from getenv,Call to execve]
 codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 33, QUANDARY_TAINT_ERROR, [Return from getenv,Call to system]
+codetoanalyze/cpp/quandary/execs.cpp, execs::callExecBad, 35, QUANDARY_TAINT_ERROR, [Return from getenv,Call to popen]
 codetoanalyze/cpp/quandary/execs.cpp, execs::exec_flag_bad, 0, QUANDARY_TAINT_ERROR, [Return from execs::exec_flag_bad,Call to execl]
 codetoanalyze/cpp/quandary/execs.cpp, execs::sql_on_env_var_bad, 2, QUANDARY_TAINT_ERROR, [Return from getenv,Call to __infer_sql_sink]
 codetoanalyze/cpp/quandary/files.cpp, files::read_file_call_exec_bad1, 5, QUANDARY_TAINT_ERROR, [Return from std::basic_istream<char,std::char_traits<char>>_read,Call to execle]
