@@ -141,7 +141,11 @@ opam_retry () {
 
 setup_opam () {
     opam_retry opam init --compiler=$OCAML_VERSION -j $NCPU --no-setup
-    opam_retry opam switch set -j $NCPU $INFER_OPAM_SWITCH --alias-of $OCAML_VERSION
+    if [ "$INFER_OPAM_SWITCH" = "$INFER_OPAM_SWITCH_DEFAULT" ]; then
+        opam_retry opam switch set -j $NCPU "$INFER_OPAM_SWITCH" --alias-of $OCAML_VERSION
+    else
+        opam_retry opam switch set -j $NCPU "$INFER_OPAM_SWITCH"
+    fi
 }
 
 # Install and record the infer dependencies in opam. The main trick is to install the
