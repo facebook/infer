@@ -62,6 +62,7 @@ type builtin_kind =
 type abs_ctype =
   | BuiltIn of builtin_kind
   | Pointer of abs_ctype
+  | Reference of abs_ctype
   | TypeName of ALVar.alexp
   | ObjCGenProt of abs_ctype * abs_ctype
 

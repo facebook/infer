@@ -186,6 +186,7 @@ let builtin_kind_to_string t =
 type abs_ctype =
   | BuiltIn of builtin_kind
   | Pointer of abs_ctype
+  | Reference of abs_ctype
   | TypeName of ALVar.alexp
   | ObjCGenProt of abs_ctype * abs_ctype
 
@@ -201,6 +202,8 @@ let rec abs_ctype_to_string t =
    -> "BuiltIn (" ^ builtin_kind_to_string t' ^ ")"
   | Pointer t'
    -> "Pointer (" ^ abs_ctype_to_string t' ^ ")"
+  | Reference t'
+   -> "Reference (" ^ abs_ctype_to_string t' ^ ")"
   | TypeName ae
    -> "TypeName (" ^ ALVar.alexp_to_string ae ^ ")"
   | ObjCGenProt (b, p)
@@ -311,6 +314,8 @@ and c_type_equal c_type abs_ctype =
    -> builtin_equal bi abi
   | PointerType _, Pointer _ | ObjCObjectPointerType _, Pointer _
    -> pointer_type_equal c_type abs_ctype
+  | LValueReferenceType (_, qt), Reference abs_typ | RValueReferenceType (_, qt), Reference abs_typ
+   -> check_type_ptr qt.qt_type_ptr abs_typ
   | ObjCObjectPointerType (_, qt), ObjCGenProt _
    -> check_type_ptr qt.qt_type_ptr abs_ctype
   | ObjCObjectType _, ObjCGenProt _

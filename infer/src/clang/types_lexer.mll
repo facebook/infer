@@ -56,6 +56,7 @@ rule token = parse
   | "Class" { OBJCCLASS }
   | "SEL" { OBJCSEL }
   | "*" { STAR }
+  | "&" { AMPERSAND }
   | "REGEXP" { REGEXP }
   | "(" { LEFT_PAREN }
   | ")" { RIGHT_PAREN }

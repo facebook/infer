@@ -1,0 +1,6 @@
+codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWithAction:, 27, TEST_REFERENCE, []
+codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWithAction:, 44, TEST_REFERENCE, []
+codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWithActionRef:, 24, TEST_REFERENCE, []
+codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWithActionRef:, 40, TEST_REFERENCE, []
+codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWithConstAction:, 21, TEST_REFERENCE, []
+codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWithConstAction:, 36, TEST_REFERENCE, []

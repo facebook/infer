@@ -57,6 +57,7 @@
 %token OBJCCLASS
 %token OBJCSEL
 %token STAR
+%token AMPERSAND
 %token EOF
 %token REGEXP
 %token LEFT_PAREN
@@ -81,6 +82,7 @@ ctype_specifier_seq:
 | protocol_or_generics_type_spec { $1 }
 | noptr_type_spec  { $1 }
 | ptr_type_spec  { $1 }
+| reference_type_spec { $1 }
 | type_name { $1 }
 ;
 
@@ -89,6 +91,10 @@ ptr_type_spec:
 | ptr_type_spec STAR { Pointer $1 }
 | type_name STAR { Pointer $1 }
 | protocol_or_generics_type_spec STAR { Pointer $1 }
+;
+
+reference_type_spec:
+| type_name AMPERSAND { Reference $1 }
 ;
 
 protocol_or_generics_type_spec:
