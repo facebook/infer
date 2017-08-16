@@ -499,13 +499,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              we own the container *)
     let escapee_formals = List.length actuals |> List.range 0 |> FormalsDomain.of_list in
     Some
-      ( true
-      , false
-      , false
-      , callee_accesses
-      , OwnershipAbstractValue.unowned
-      , AttributeSetDomain.empty
-      , escapee_formals )
+      { thumbs_up= true
+      ; locks= false
+      ; threads= false
+      ; accesses= callee_accesses
+      ; return_ownership= OwnershipAbstractValue.unowned
+      ; return_attributes= AttributeSetDomain.empty
+      ; escapee_formals }
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
     let get_receiver_ap actuals =
@@ -627,13 +627,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | NoEffect ->
               match get_summary pdesc callee_pname actuals loc tenv with
               | Some
-                  ( callee_thumbs_up
-                  , callee_threads
-                  , callee_locks
-                  , callee_accesses
-                  , return_ownership
-                  , return_attributes
-                  , escapee_formals )
+                  { thumbs_up
+                  ; threads
+                  ; locks
+                  ; accesses
+                  ; return_ownership
+                  ; return_attributes
+                  ; escapee_formals }
                -> let update_caller_accesses pre callee_accesses caller_accesses =
                     let combined_accesses =
                       PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
@@ -641,9 +641,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     in
                     AccessDomain.add pre combined_accesses caller_accesses
                   in
-                  let thumbs_up = callee_thumbs_up && astate.thumbs_up in
-                  let locks = callee_locks || astate.locks in
-                  let threads = callee_threads || astate.threads in
+                  let thumbs_up = thumbs_up && astate.thumbs_up in
+                  let locks = locks || astate.locks in
+                  let threads = threads || astate.threads in
                   let unprotected = is_unprotected locks threads pdesc in
                   (* add [ownership_accesses] to the [accesses_acc] with a protected pre if
                        [exp] is owned, and an appropriate unprotected pre otherwise *)
@@ -707,7 +707,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                               add_ownership_access callee_accesses (List.nth_exn actuals index) acc)
                             formal_indexes accesses_acc
                     in
-                    AccessDomain.fold update_accesses callee_accesses astate.accesses
+                    AccessDomain.fold update_accesses accesses astate.accesses
                   in
                   let ownership, attribute_map =
                     propagate_return ret_opt return_ownership return_attributes actuals astate
@@ -841,7 +841,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            -> (* non-boolean expression; can't evaluate it *)
               None
         in
-        let add_choice bool_value acc = function
+        let add_choice bool_value (acc: Domain.astate) = function
           | Choice.LockHeld
            -> let locks = bool_value in
               {acc with locks}
@@ -963,20 +963,14 @@ let is_thread_safe_method pdesc tenv =
         is_thread_safe)
     tenv (Procdesc.get_proc_name pdesc)
 
-let empty_post =
-  let initial_thumbs_up = true
-  and initial_known_on_ui_thread = false
-  and has_lock = false
-  and return_ownership = ThreadSafetyDomain.OwnershipAbstractValue.unowned
-  and return_attrs = ThreadSafetyDomain.AttributeSetDomain.empty
-  and escapee_formals = ThreadSafetyDomain.FormalsDomain.empty in
-  ( initial_thumbs_up
-  , initial_known_on_ui_thread
-  , has_lock
-  , ThreadSafetyDomain.AccessDomain.empty
-  , return_ownership
-  , return_attrs
-  , escapee_formals )
+let empty_post : ThreadSafetyDomain.summary =
+  { ThreadSafetyDomain.thumbs_up= true
+  ; threads= false
+  ; locks= false
+  ; accesses= ThreadSafetyDomain.AccessDomain.empty
+  ; return_ownership= ThreadSafetyDomain.OwnershipAbstractValue.unowned
+  ; return_attributes= ThreadSafetyDomain.AttributeSetDomain.empty
+  ; escapee_formals= ThreadSafetyDomain.FormalsDomain.empty }
 
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let is_initializer tenv proc_name =
@@ -1035,13 +1029,13 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         in
         let escapee_formals = FormalsDomain.of_escapees escapees in
         let post =
-          ( thumbs_up
-          , threads
-          , locks
-          , accesses
-          , return_ownership
-          , return_attributes
-          , escapee_formals )
+          { thumbs_up
+          ; threads
+          ; locks
+          ; accesses
+          ; return_ownership
+          ; return_attributes
+          ; escapee_formals }
         in
         Summary.update_summary post summary
     | None
@@ -1141,10 +1135,10 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
   let open ThreadSafetyDomain in
   let orig_access = PathDomain.Sink.kind orig_sink in
   match Summary.read_summary orig_pdesc callee_pname with
-  | Some (_, _, _, access_map, _, _, _)
+  | Some {accesses}
    -> get_all_accesses
         (fun access -> Int.equal (Access.compare (PathDomain.Sink.kind access) orig_access) 0)
-        access_map
+        accesses
   | _
    -> PathDomain.empty
 
@@ -1578,8 +1572,8 @@ let should_filter_access access =
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
 let make_results_table file_env =
-  let aggregate_post (_, threaded, _, accesses, _, _, _) tenv pdesc acc =
-    let open ThreadSafetyDomain in
+  let open ThreadSafetyDomain in
+  let aggregate_post {threads; accesses} tenv pdesc acc =
     AccessDomain.fold
       (fun pre accesses acc ->
         PathDomain.Sinks.fold
@@ -1592,7 +1586,7 @@ let make_results_table file_env =
                 with Not_found -> []
               in
               AccessListMap.add access_kind
-                ((access, pre, threaded, tenv, pdesc) :: grouped_accesses) acc)
+                ((access, pre, threads, tenv, pdesc) :: grouped_accesses) acc)
           (PathDomain.sinks accesses) acc)
       accesses acc
   in

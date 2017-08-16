@@ -318,15 +318,6 @@ type astate =
   ; attribute_map: AttributeMapDomain.astate
   ; escapees: EscapeeDomain.astate }
 
-type summary =
-  ThumbsUpDomain.astate
-  * ThreadsDomain.astate
-  * LocksDomain.astate
-  * AccessDomain.astate
-  * OwnershipAbstractValue.astate
-  * AttributeSetDomain.astate
-  * FormalsDomain.astate
-
 let empty =
   let thumbs_up = true in
   let threads = false in
@@ -371,12 +362,21 @@ let widen ~prev ~next ~num_iters =
     let escapees = EscapeeDomain.widen ~prev:prev.escapees ~next:next.escapees ~num_iters in
     {thumbs_up; threads; locks; accesses; ownership; attribute_map; escapees}
 
+type summary =
+  { thumbs_up: ThumbsUpDomain.astate
+  ; threads: ThreadsDomain.astate
+  ; locks: LocksDomain.astate
+  ; accesses: AccessDomain.astate
+  ; return_ownership: OwnershipAbstractValue.astate
+  ; return_attributes: AttributeSetDomain.astate
+  ; escapee_formals: FormalsDomain.astate }
+
 let pp_summary fmt
-    (thumbs_up, threads, locks, accesses, ownership, return_attributes, escapee_formals) =
+    {thumbs_up; threads; locks; accesses; return_ownership; return_attributes; escapee_formals} =
   F.fprintf fmt
     "@\nThumbsUp: %a, Threads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nReturn Attributes: %a @\nEscapee Formals: %a @\n"
     ThumbsUpDomain.pp thumbs_up ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp
-    accesses OwnershipAbstractValue.pp ownership AttributeSetDomain.pp return_attributes
+    accesses OwnershipAbstractValue.pp return_ownership AttributeSetDomain.pp return_attributes
     FormalsDomain.pp escapee_formals
 
 let pp fmt {thumbs_up; threads; locks; accesses; ownership; attribute_map; escapees} =

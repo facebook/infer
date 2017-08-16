@@ -186,17 +186,17 @@ type astate =
         (** map of access paths to attributes such as owned, functional, ... *)
   ; escapees: EscapeeDomain.astate  (** set of formals and locals that may escape *) }
 
-(** same as astate, but without [attribute_map] (since these involve locals)
-    and with the addition of the attributes associated with the return value
-    as well as the set of formals which may escape *)
+(** same as astate, but without [attribute_map] (since these involve locals) and with the addition
+    of the ownership/attributes associated with the return value as well as the set of formals which
+    may escape *)
 type summary =
-  ThumbsUpDomain.astate
-  * ThreadsDomain.astate
-  * LocksDomain.astate
-  * AccessDomain.astate
-  * OwnershipAbstractValue.astate
-  * AttributeSetDomain.astate
-  * FormalsDomain.astate
+  { thumbs_up: ThumbsUpDomain.astate
+  ; threads: ThreadsDomain.astate
+  ; locks: LocksDomain.astate
+  ; accesses: AccessDomain.astate
+  ; return_ownership: OwnershipAbstractValue.astate
+  ; return_attributes: AttributeSetDomain.astate
+  ; escapee_formals: FormalsDomain.astate }
 
 include AbstractDomain.WithBottom with type astate := astate
 
