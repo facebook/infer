@@ -17,22 +17,4 @@ PKG zip
 FLG -principal -safe-string -short-paths -strict-formats -strict-sequence
 FLG -w +a-4-9-40-41-42-44-45-48-60
 FLG -open InferBaseStdlib -open InferGenerated -open InferModules
-S backend
-S base
-S bufferoverrun
-S checkers
-S clang
-S clang_plugin
-S clang_stubs
-S eradicate
-S facebook
-S harness
-S integration
-S IR
-S java
-S java_stubs
-S labs
-S opensource
-S quandary
-S scripts
-S unit
+S **
