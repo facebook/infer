@@ -41,8 +41,13 @@ void exit_at_end_of_if_good() {
   }
 }
 
-void FP_exit_at_end_of_proc_good() {
+void exit_at_end_of_proc_good() {
   nop();
+  exit(5);
+}
+
+void exit_at_end_of_proc_good_local_var() {
+  int a = 57;
   exit(5);
 }
 

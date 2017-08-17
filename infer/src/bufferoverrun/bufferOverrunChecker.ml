@@ -462,14 +462,44 @@ module Report = struct
       L.(debug BufferOverrun Verbose) "@]@\n" ;
       L.(debug BufferOverrun Verbose) "================================@\n@."
 
-  let is_last_statement_of_if_branch rem_instrs node =
-    if rem_instrs <> [] then false
-    else
-      match Procdesc.Node.get_succs node with
-      | [succ] -> (
-        match Procdesc.Node.get_preds succ with _ :: _ :: _ -> true | _ -> false )
+  module ExitStatement = struct
+    let successors node = Procdesc.Node.get_succs node
+
+    let predecessors node = Procdesc.Node.get_preds node
+
+    let preds_of_singleton_successor node =
+      match successors node with [succ] -> Some (predecessors succ) | _ -> None
+
+    (* last statement in if branch *)
+    (* do we transfer control to a node with multiple predecessors *)
+    let has_multiple_sibling_nodes_and_one_successor node =
+      match preds_of_singleton_successor node with
+      (* we need at least 2 predecessors *)
+      | Some (_ :: _ :: _)
+       -> true
       | _
        -> false
+
+    (* check that we are the last instruction in the current node
+     * and that the current node is followed by a unique successor
+     * with no instructions.
+     * 
+     * this is our proxy for being the last statement in a procedure.
+     * The tests pass, but it's kind of a hack and depends on an internal
+     * detail of SIL that could change in the future. *)
+    let is_last_in_node_and_followed_by_empty_successor node rem_instrs =
+      List.is_empty rem_instrs
+      &&
+      match Procdesc.Node.get_succs node with
+      | [succ] -> (
+        match CFG.instrs succ with
+        | []
+         -> List.is_empty (Procdesc.Node.get_succs succ)
+        | _
+         -> false )
+      | _
+       -> false
+  end
 
   let rec collect_instrs
       : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate -> Dom.ConditionSet.t
@@ -509,9 +539,15 @@ module Report = struct
                     Exceptions.Condition_always_true_false (desc, not true_branch, __POS__)
                   in
                   Reporting.log_warning_deprecated pname ~loc exn
+              (* special case for when we're at the end of a procedure *)
               | Sil.Call (_, Const Cfun pname, _, _, _)
                 when String.equal (Typ.Procname.get_method pname) "exit"
-                     && is_last_statement_of_if_branch rem_instrs node
+                     && ExitStatement.is_last_in_node_and_followed_by_empty_successor node
+                          rem_instrs
+               -> ()
+              | Sil.Call (_, Const Cfun pname, _, _, _)
+                when String.equal (Typ.Procname.get_method pname) "exit"
+                     && ExitStatement.has_multiple_sibling_nodes_and_one_successor node
                -> ()
               | _
                -> let loc = Sil.instr_get_loc instr in
