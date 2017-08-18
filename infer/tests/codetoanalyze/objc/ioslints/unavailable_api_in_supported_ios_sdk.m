@@ -38,11 +38,28 @@ NS_CLASS_AVAILABLE(10_12, 10_0)
     NSLog(@"");
   }
 }
+// no bug
+- (void)unsupported_class_with_check {
+  if ([AVPlayerLooper class]) {
+    AVPlayerLooper* looper =
+        [[AVPlayerLooper alloc] initWithPlayer:nil
+                                  templateItem:nil
+                                     timeRange:kCMTimeRangeInvalid];
+  }
+}
 
 // bug
 - (void)unsupported_class_with_attributes:(nonnull Unav_class*)c {
-  [c m];
+  [Unav_class new];
 }
+
+// no bug
+- (void)unsupported_class_with_attributes_with_check:(nonnull Unav_class*)c {
+  if ([Unav_class class]) {
+    [[Unav_class alloc] init];
+  }
+}
+
 @end
 
 static NSDictionary* OpenURLOptionsFromSourceApplication(

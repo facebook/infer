@@ -162,19 +162,33 @@ let rec get_current_os_version stmt =
 
 let compute_if_context (context: CLintersContext.context) stmt =
   let selector = get_responds_to_selector stmt in
+  let receiver_class_method_call =
+    match
+      (CPredicates.get_selector (Stmt stmt), CPredicates.receiver_class_method_call (Stmt stmt))
+    with
+    | Some selector, Some receiver when String.equal selector "class"
+     -> Option.to_list (CPredicates.declaration_name receiver)
+    | _
+     -> []
+  in
   let os_version = get_current_os_version stmt in
-  let within_responds_to_selector_block, ios_version_guard =
+  let within_responds_to_selector_block, within_available_class_block, ios_version_guard =
     match context.if_context with
     | Some if_context
      -> let within_responds_to_selector_block =
           List.append selector if_context.within_responds_to_selector_block
         in
+        let within_available_class_block =
+          List.append receiver_class_method_call if_context.within_available_class_block
+        in
         let ios_version_guard = List.append os_version if_context.ios_version_guard in
-        (within_responds_to_selector_block, ios_version_guard)
+        (within_responds_to_selector_block, within_available_class_block, ios_version_guard)
     | None
-     -> (selector, os_version)
+     -> (selector, receiver_class_method_call, os_version)
   in
-  Some ({within_responds_to_selector_block; ios_version_guard} : CLintersContext.if_context)
+  Some
+    ( {within_responds_to_selector_block; within_available_class_block; ios_version_guard}
+    : CLintersContext.if_context )
 
 let is_factory_method (context: CLintersContext.context) decl =
   let interface_decl_opt =

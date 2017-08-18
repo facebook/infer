@@ -29,12 +29,21 @@ let rec objc_class_of_pointer_type type_ptr =
   | _
    -> None
 
-let receiver_method_call an =
+let receiver_class_method_call an =
   match an with
-  | Ctl_parser_types.Stmt ObjCMessageExpr (_, args, _, obj_c_message_expr_info) -> (
+  | Ctl_parser_types.Stmt ObjCMessageExpr (_, _, _, obj_c_message_expr_info) -> (
     match obj_c_message_expr_info.omei_receiver_kind with
     | `Class qt
      -> CAst_utils.get_decl_from_typ_ptr qt.qt_type_ptr
+    | _
+     -> None )
+  | _
+   -> None
+
+let receiver_instance_method_call an =
+  match an with
+  | Ctl_parser_types.Stmt ObjCMessageExpr (_, args, _, obj_c_message_expr_info) -> (
+    match obj_c_message_expr_info.omei_receiver_kind with
     | `Instance -> (
       match args with
       | receiver :: _ -> (
@@ -48,6 +57,20 @@ let receiver_method_call an =
     | _
      -> None )
   | _
+   -> None
+
+let receiver_method_call an =
+  match receiver_class_method_call an with
+  | Some decl
+   -> Some decl
+  | None
+   -> receiver_instance_method_call an
+
+let declaration_name decl =
+  match Clang_ast_proj.get_named_decl_tuple decl with
+  | Some (_, ndi)
+   -> Some ndi.ni_name
+  | None
    -> None
 
 let get_available_attr_ios_sdk an =
@@ -137,11 +160,18 @@ let is_object_of_class_named receiver cname =
   | _
    -> false
 
-(* an |= call_method(m) where the name must be exactly m *)
-let call_method an m =
+let get_selector an =
   match an with
   | Ctl_parser_types.Stmt Clang_ast_t.ObjCMessageExpr (_, _, _, omei)
-   -> ALVar.compare_str_with_alexp omei.omei_selector m
+   -> Some omei.omei_selector
+  | _
+   -> None
+
+(* an |= call_method(m) where the name must be exactly m *)
+let call_method an m =
+  match get_selector an with
+  | Some selector
+   -> ALVar.compare_str_with_alexp selector m
   | _
    -> false
 
@@ -592,6 +622,19 @@ let within_responds_to_selector_block (cxt: CLintersContext.context) an =
         List.mem ~equal:String.equal in_selector_block named_decl_info.ni_name
     | None
      -> false )
+  | _
+   -> false
+
+let within_available_class_block (cxt: CLintersContext.context) an =
+  match (receiver_method_call an, cxt.if_context) with
+  | Some receiver, Some if_context
+   -> (
+      let in_available_class_block = if_context.within_available_class_block in
+      match declaration_name receiver with
+      | Some receiver_name
+       -> List.mem ~equal:String.equal in_available_class_block receiver_name
+      | None
+       -> false )
   | _
    -> false
 

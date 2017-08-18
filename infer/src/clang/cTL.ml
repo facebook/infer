@@ -800,6 +800,8 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.has_visibility_attribute an vis
   | "has_used_attribute", [], an
    -> CPredicates.has_used_attribute an
+  | "within_available_class_block", [], an
+   -> CPredicates.within_available_class_block lcxt an
   | _
    -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: '" ^ pred_name ^ "'")
 

@@ -9,7 +9,10 @@
 
 open! IStd
 
-type if_context = {within_responds_to_selector_block: string list; ios_version_guard: string list}
+type if_context =
+  { within_responds_to_selector_block: string list
+  ; within_available_class_block: string list
+  ; ios_version_guard: string list }
 
 type context =
   { translation_unit_context: CFrontend_config.translation_unit_context
