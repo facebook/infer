@@ -764,6 +764,18 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.is_enum_constant an cname
   | "is_global_var", [], an
    -> CPredicates.is_syntactically_global_var an
+  | "is_in_block", [], _
+   -> CPredicates.is_in_block lcxt
+  | "is_in_cxx_constructor", [name], _
+   -> CPredicates.is_in_cxx_constructor lcxt name
+  | "is_in_cxx_destructor", [name], _
+   -> CPredicates.is_in_cxx_destructor lcxt name
+  | "is_in_cxx_method", [name], _
+   -> CPredicates.is_in_cxx_method lcxt name
+  | "is_in_function", [name], _
+   -> CPredicates.is_in_function lcxt name
+  | "is_in_objc_method", [name], _
+   -> CPredicates.is_in_objc_method lcxt name
   | "is_ivar_atomic", [], an
    -> CPredicates.is_ivar_atomic an
   | "is_method_property_accessor_of_ivar", [], an

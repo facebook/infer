@@ -48,6 +48,18 @@ val is_ivar_atomic : Ctl_parser_types.ast_node -> bool
 val is_method_property_accessor_of_ivar :
   Ctl_parser_types.ast_node -> CLintersContext.context -> bool
 
+val is_in_block : CLintersContext.context -> bool
+
+val is_in_cxx_constructor : CLintersContext.context -> ALVar.alexp -> bool
+
+val is_in_cxx_destructor : CLintersContext.context -> ALVar.alexp -> bool
+
+val is_in_cxx_method : CLintersContext.context -> ALVar.alexp -> bool
+
+val is_in_function : CLintersContext.context -> ALVar.alexp -> bool
+
+val is_in_objc_method : CLintersContext.context -> ALVar.alexp -> bool
+
 val is_objc_constructor : CLintersContext.context -> bool
 
 val is_objc_dealloc : CLintersContext.context -> bool

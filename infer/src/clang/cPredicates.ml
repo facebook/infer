@@ -330,33 +330,63 @@ let is_method_property_accessor_of_ivar an context =
   | _
    -> false
 
-let is_objc_constructor context =
+let get_method_name_from_context context =
   match context.CLintersContext.current_method with
-  | Some method_decl
-   -> let method_name =
-        match Clang_ast_proj.get_named_decl_tuple method_decl with
-        | Some (_, mnd)
-         -> mnd.Clang_ast_t.ni_name
-        | _
-         -> ""
-      in
-      Typ.Procname.is_objc_constructor method_name
+  | Some method_decl -> (
+    match Clang_ast_proj.get_named_decl_tuple method_decl with
+    | Some (_, mnd)
+     -> mnd.Clang_ast_t.ni_name
+    | _
+     -> "" )
+  | _
+   -> ""
+
+let is_objc_constructor context =
+  Typ.Procname.is_objc_constructor (get_method_name_from_context context)
+
+let is_objc_dealloc context = Typ.Procname.is_objc_dealloc (get_method_name_from_context context)
+
+let is_in_method context name =
+  let current_method_name = get_method_name_from_context context in
+  ALVar.compare_str_with_alexp current_method_name name
+
+let is_in_objc_method context name =
+  match context.CLintersContext.current_method with
+  | Some ObjCMethodDecl _
+   -> is_in_method context name
   | _
    -> false
 
-let is_objc_dealloc context =
+let is_in_function context name =
   match context.CLintersContext.current_method with
-  | Some method_decl
-   -> let method_name =
-        match Clang_ast_proj.get_named_decl_tuple method_decl with
-        | Some (_, mnd)
-         -> mnd.Clang_ast_t.ni_name
-        | _
-         -> ""
-      in
-      Typ.Procname.is_objc_dealloc method_name
+  | Some FunctionDecl _
+   -> is_in_method context name
   | _
    -> false
+
+let is_in_cxx_method context name =
+  match context.CLintersContext.current_method with
+  | Some CXXMethodDecl _
+   -> is_in_method context name
+  | _
+   -> false
+
+let is_in_cxx_constructor context name =
+  match context.CLintersContext.current_method with
+  | Some CXXConstructorDecl _
+   -> is_in_method context name
+  | _
+   -> false
+
+let is_in_cxx_destructor context name =
+  match context.CLintersContext.current_method with
+  | Some CXXDestructorDecl _
+   -> is_in_method context name
+  | _
+   -> false
+
+let is_in_block context =
+  match context.CLintersContext.current_method with Some BlockDecl _ -> true | _ -> false
 
 let captures_cxx_references an = List.length (captured_variables_cxx_ref an) > 0
 

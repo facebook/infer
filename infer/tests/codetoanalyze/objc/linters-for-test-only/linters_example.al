@@ -376,3 +376,24 @@ DEFINE-CHECKER ENUM_CONSTANTS = {
        HOLDS-IN-NODE CallExpr;
    SET message = "%name% has default visibility and used attribute";
  };
+
+ DEFINE-CHECKER TEST_IN_METHOD_CONTEXT = {
+   SET report_when =
+       WHEN declaration_has_name("x") AND is_in_objc_method("method")
+       HOLDS-IN-NODE VarDecl;
+   SET message = "var %name% declared in ObjC method";
+ };
+
+ DEFINE-CHECKER TEST_IN_BLOCK_CONTEXT = {
+   SET report_when =
+       WHEN declaration_has_name("x") AND is_in_block()
+       HOLDS-IN-NODE VarDecl;
+   SET message = "var %name% declared in block";
+ };
+
+ DEFINE-CHECKER TEST_IN_FUNCTION_CONTEXT = {
+   SET report_when =
+       WHEN declaration_has_name("x") AND is_in_function(REGEXP("funct.*"))
+       HOLDS-IN-NODE VarDecl;
+   SET message = "var %name% declared in function";
+ };
