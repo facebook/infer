@@ -113,6 +113,8 @@ let captured_dir_name = "captured"
 
 let clang_initializer_prefix = "__infer_globals_initializer_"
 
+let classnames_dir_name = "classnames"
+
 (** Experimental: if true do some specialized analysis of concurrent constructs. *)
 let csl_analysis = true
 

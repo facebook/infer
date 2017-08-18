@@ -107,7 +107,7 @@ let add_cmethod source_file program linereader icfg cm proc_name =
       add_edges context start_node exn_node [exit_node] method_body_nodes jbir_code false
 
 let path_of_cached_classname cn =
-  let root_path = Filename.concat Config.results_dir "classnames" in
+  let root_path = Config.(results_dir ^/ classnames_dir_name) in
   let package_path = List.fold ~f:Filename.concat ~init:root_path (JBasics.cn_package cn) in
   Filename.concat package_path (JBasics.cn_simple_name cn ^ ".java")
 

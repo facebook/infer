@@ -132,13 +132,12 @@ let clean_results_dir () =
   (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
   let should_delete_dir =
     let dirs_to_delete =
-      "backend_stats"
-      :: "classnames"
-         :: "filelists"
-            :: "frontend_stats"
-               :: "multicore"
-                  :: "reporting_stats"
-                     :: "sources" :: (if Config.flavors then [] else ["attributes"])
+      let open Config in
+      backend_stats_dir_name
+      :: classnames_dir_name
+         :: frontend_stats_dir_name
+            :: multicore_dir_name
+               :: reporting_stats_dir_name :: (if Config.flavors then [] else [attributes_dir_name])
     in
     List.mem ~equal:String.equal dirs_to_delete
   in

@@ -66,7 +66,7 @@ type os_type = Unix | Win32 | Cygwin
 
 type compilation_database_dependencies =
   | Deps of int option
-  (** get the compilation database of the dependencies up to depth n
+      (** get the compilation database of the dependencies up to depth n
      by [Deps (Some n)], or all by [Deps None]  *)
   | NoDeps
   [@@deriving compare]
@@ -100,6 +100,8 @@ val buck_infer_deps_file_name : string
 val captured_dir_name : string
 
 val clang_initializer_prefix : string
+
+val classnames_dir_name : string
 
 val classpath : string option
 
