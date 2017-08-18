@@ -14,6 +14,8 @@ open! IStd
 val get_lifecycles : (string * string * string list) list
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
 
+val is_autocloseable : Tenv.t -> Typ.Name.t -> bool
+
 val is_context : Tenv.t -> Typ.Name.t -> bool
 (** return true if [typename] <: android.content.Context *)
 
