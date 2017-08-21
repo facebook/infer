@@ -492,25 +492,21 @@ let is_class an re =
   | _
    -> false
 
-let should_use_iphoneos_target_sdk_version =
-  let f =
-    ( lazy
-    ( match Config.iphoneos_target_sdk_version_skip_path with
-    | []
-     -> fun _ -> true
-    | _ :: _ as skip_paths
-     -> (* pre-compute the regexp because it is expensive *)
-        let paths_regexp = String.concat ~sep:"\\|" skip_paths |> Str.regexp in
-        (* return a closure so that the regexp is computed only once *)
-        fun {CLintersContext.translation_unit_context= {source_file}} ->
-          not (ALVar.str_match_forward (SourceFile.to_rel_path source_file) paths_regexp) ) )
+let iphoneos_target_sdk_version_by_path (cxt: CLintersContext.context) =
+  let source_file = cxt.translation_unit_context.source_file in
+  let regex_version_opt =
+    List.find Config.iphoneos_target_sdk_version_path_regex ~f:
+      (fun (version_path_regex: Config.iphoneos_target_sdk_version_path_regex) ->
+        ALVar.str_match_forward (SourceFile.to_rel_path source_file) version_path_regex.path )
   in
-  fun ctx -> Lazy.force f ctx
+  match regex_version_opt with
+  | Some version_by_regex
+   -> Some version_by_regex.version
+  | None (* no version by path specified, use default version *)
+   -> Config.iphoneos_target_sdk_version
 
 let decl_unavailable_in_supported_ios_sdk (cxt: CLintersContext.context) an =
-  let config_iphoneos_target_sdk_version =
-    if should_use_iphoneos_target_sdk_version cxt then Config.iphoneos_target_sdk_version else None
-  in
+  let config_iphoneos_target_sdk_version = iphoneos_target_sdk_version_by_path cxt in
   let allowed_os_versions =
     match
       (config_iphoneos_target_sdk_version, (cxt.if_context : CLintersContext.if_context option))

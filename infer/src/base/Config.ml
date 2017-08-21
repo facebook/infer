@@ -1180,11 +1180,10 @@ and iphoneos_target_sdk_version =
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
     "Specify the target SDK version to use for iphoneos"
 
-and iphoneos_target_sdk_version_skip_path =
-  CLOpt.mk_string_list ~long:"iphoneos-target-sdk-version-skip-path"
+and iphoneos_target_sdk_version_path_regex =
+  CLOpt.mk_string_list ~long:"iphoneos-target-sdk-version-path-regex"
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
-    ~meta:"path_prefix_OCaml_regex"
-    "To be used together with iphoneos-target-sdk-version, to disable that flag in a particular path (can be specified multiple times)"
+    "To pass a specific target SDK version to use for iphoneos in a particular path, with the format path:version (can be specified multiple times)"
 
 and issues_fields =
   CLOpt.mk_symbol_seq ~long:"issues-fields"
@@ -1840,6 +1839,20 @@ let command, parse_args_and_return_usage_exit =
 
 let print_usage_exit () = parse_args_and_return_usage_exit 1
 
+type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string}
+
+let process_iphoneos_target_sdk_version_path_regex args =
+  let process_iphoneos_target_sdk_version_path_regex arg : iphoneos_target_sdk_version_path_regex =
+    match String.rsplit2 ~on:':' arg with
+    | Some (path, version)
+     -> {path= Str.regexp path; version}
+    | None
+     -> failwithf
+          "Incorrect format for the option iphoneos-target-sdk_version-path-regex. The correct format is path:version but got %s"
+          arg
+  in
+  List.map ~f:process_iphoneos_target_sdk_version_path_regex args
+
 (** Freeze initialized configuration values *)
 
 let anon_args = !anon_args
@@ -2023,7 +2036,8 @@ and infer_cache = !infer_cache
 
 and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 
-and iphoneos_target_sdk_version_skip_path = !iphoneos_target_sdk_version_skip_path
+and iphoneos_target_sdk_version_path_regex =
+  process_iphoneos_target_sdk_version_path_regex !iphoneos_target_sdk_version_path_regex
 
 and issues_fields = !issues_fields
 
