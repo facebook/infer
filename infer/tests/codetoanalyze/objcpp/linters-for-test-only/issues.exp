@@ -4,3 +4,7 @@ codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWi
 codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWithActionRef:, 40, TEST_REFERENCE, []
 codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWithConstAction:, 21, TEST_REFERENCE, []
 codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWithConstAction:, 36, TEST_REFERENCE, []
+codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, anotherButtonComponent, 33, TEST_PARAMETER_LABEL, []
+codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, anotherButtonComponent, 33, TEST_PARAMETER_LABEL_REGEXP, []
+codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, buttonComponent, 28, TEST_PARAMETER_LABEL, []
+codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, buttonComponent, 28, TEST_PARAMETER_LABEL_REGEXP, []

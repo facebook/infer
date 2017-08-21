@@ -20,6 +20,7 @@ type transitions =
   | Body  (** decl to stmt *)
   | InitExpr  (** decl to stmt *)
   | Super  (** decl to decl *)
+  | ParameterName of ALVar.alexp  (** stmt to stmt, decl to decl *)
   | Parameters  (** decl to decl *)
   | Cond
   | PointerToDecl  (** stmt to decl *)
@@ -124,6 +125,8 @@ module Debug = struct
        -> Format.pp_print_string fmt "InitExpr"
       | Super
        -> Format.pp_print_string fmt "Super"
+      | ParameterName name
+       -> Format.pp_print_string fmt ("ParameterName " ^ ALVar.alexp_to_string name)
       | Parameters
        -> Format.pp_print_string fmt "Parameters"
       | Cond
@@ -702,6 +705,35 @@ let transition_decl_to_decl_via_parameters dec =
   | _
    -> []
 
+let parameter_of_corresp_name method_name args name =
+  let names =
+    List.filter (String.split ~on:':' method_name) ~f:(fun label -> not (String.is_empty label))
+  in
+  match List.zip names args with
+  | Some names_args
+   -> (
+      let names_arg_opt =
+        List.find names_args ~f:(fun (arg_label, _) -> ALVar.compare_str_with_alexp arg_label name)
+      in
+      match names_arg_opt with Some (_, arg) -> Some arg | None -> None )
+  | None
+   -> None
+
+let transition_via_parameter_name an name =
+  match an with
+  | Stmt ObjCMessageExpr (_, stmt_list, _, omei)
+   -> (
+      let arg_stmt_opt = parameter_of_corresp_name omei.omei_selector stmt_list name in
+      match arg_stmt_opt with Some arg -> [Stmt arg] | None -> [] )
+  | Decl ObjCMethodDecl (_, named_decl_info, omdi)
+   -> (
+      let arg_decl_opt =
+        parameter_of_corresp_name named_decl_info.ni_name omdi.omdi_parameters name
+      in
+      match arg_decl_opt with Some arg -> [Decl arg] | None -> [] )
+  | _
+   -> []
+
 (* given a node an returns a list of nodes an' such that an transition to an' via label trans *)
 let next_state_via_transition an trans =
   match (an, trans) with
@@ -717,6 +749,8 @@ let next_state_via_transition an trans =
    -> transition_stmt_to_stmt_via_condition st
   | Stmt st, PointerToDecl
    -> transition_stmt_to_decl_via_pointer st
+  | an, ParameterName name
+   -> transition_via_parameter_name an name
   | _, _
    -> []
 

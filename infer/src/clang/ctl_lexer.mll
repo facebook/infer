@@ -71,6 +71,14 @@ rule token = parse
   | "NOT" { NOT }
   | "IMPLIES" { IMPLIES }
   | "REGEXP" { REGEXP }
+  | "Any" {ANY}
+  | "Parameters" { PARAMETERS }
+  | "ParameterName" { PARAMETER_NAME }
+  | "Body" {BODY}
+  | "Protocol" {PROTOCOL}
+  | "InitExpr" {INIT_EXPR}
+  | "Cond" {COND}
+  | "PointerToDecl" {POINTER_TO_DECL}
   | id { IDENTIFIER (Lexing.lexeme lexbuf) }
   | file_id { FILE_IDENTIFIER (Lexing.lexeme lexbuf) }
   | '"' { read_string (Buffer.create 80) lexbuf }

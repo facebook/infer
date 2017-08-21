@@ -71,6 +71,14 @@
 %token <string> STRING
 %token WHITELIST_PATH
 %token BLACKLIST_PATH
+%token ANY
+%token BODY
+%token COND
+%token INIT_EXPR
+%token PARAMETERS
+%token PARAMETER_NAME
+%token POINTER_TO_DECL
+%token PROTOCOL
 %token EOF
 
 /* associativity and priority (lower to higher) of operators */
@@ -221,14 +229,14 @@ actual_params:
   ;
 
 transition_label:
-  | identifier { match $1 with
-                  | "Body" | "body" -> "Body", Some CTL.Body
-                  | "Protocol" | "protocol" -> "Protocol", Some CTL.Protocol
-                  | "InitExpr" | "initexpr" -> "InitExpr", Some CTL.InitExpr
-                  | "Cond" | "cond" -> "Cond", Some CTL.Cond
-                  | "Parameters" | "parameters" -> "Parameters", Some CTL.Parameters
-                  | "PointerToDecl" | "pointertodecl" -> "PointerToDecl", Some CTL.PointerToDecl
-                  | _  -> "None", None }
+  | ANY { None }
+  | BODY { Some CTL.Body }
+  | COND { Some CTL.Cond }
+  | INIT_EXPR { Some CTL.InitExpr }
+  | PARAMETERS { Some CTL.Parameters }
+  | PARAMETER_NAME alexp { Some (CTL.ParameterName $2) }
+  | POINTER_TO_DECL { Some CTL.PointerToDecl }
+  | PROTOCOL { Some CTL.Protocol }
   ;
 
 formula_EF:
@@ -248,33 +256,34 @@ formula:
   | formula AF { L.(debug Linters Verbose) "\tParsed AF@\n"; CTL.AF (None,$1) }
   | formula EX { L.(debug Linters Verbose) "\tParsed EX@\n"; CTL.EX (None, $1) }
   | formula EX WITH_TRANSITION transition_label
-     { L.(debug Linters Verbose) "\tParsed EX WITH-TRANSITION '%s'@\n" (fst $4);
-       CTL.EX (snd $4, $1) }
+     { L.(debug Linters Verbose) "\tParsed EX WITH-TRANSITION '%a'@\n" CTL.Debug.pp_transition $4;
+       CTL.EX ($4, $1) }
   | formula AX { L.(debug Linters Verbose) "\tParsed AX@\n"; CTL.AX (None, $1) }
   | formula AX WITH_TRANSITION transition_label
-     { L.(debug Linters Verbose) "\tParsed AX WITH-TRANSITION '%s'@\n" (fst $4);
-       CTL.AX (snd $4, $1) }
+     { L.(debug Linters Verbose) "\tParsed AX WITH-TRANSITION '%a'@\n" CTL.Debug.pp_transition $4;
+       CTL.AX ($4, $1) }
   | formula EG { L.(debug Linters Verbose) "\tParsed EG@\n"; CTL.EG (None, $1) }
   | formula AG { L.(debug Linters Verbose) "\tParsed AG@\n"; CTL.AG (None, $1) }
   | formula EH node_list { L.(debug Linters Verbose) "\tParsed EH@\n"; CTL.EH ($3, $1) }
   | formula EF { L.(debug Linters Verbose) "\tParsed EF@\n"; CTL.EF (None, $1) }
   | formula EF WITH_TRANSITION transition_label
-     { L.(debug Linters Verbose) "\tParsed EF WITH-TRANSITION '%s'@\n" (fst $4);
-       CTL.EF(snd $4, $1) }
+     { L.(debug Linters Verbose) "\tParsed EF WITH-TRANSITION '%a'@\n" CTL.Debug.pp_transition $4;
+       CTL.EF($4, $1) }
   | WHEN formula HOLDS_IN_NODE node_list
      { L.(debug Linters Verbose) "\tParsed InNode@\n"; CTL.InNode ($4, $2)}
   | ET node_list WITH_TRANSITION transition_label formula_EF
-     { L.(debug Linters Verbose) "\tParsed ET with transition '%s'@\n" (fst $4);
-       CTL.ET ($2, snd $4, $5)}
+     { L.(debug Linters Verbose) "\tParsed ET with transition '%a'@\n" CTL.Debug.pp_transition $4;
+       CTL.ET ($2, $4, $5)}
   | ETX node_list WITH_TRANSITION transition_label formula_EF
-     { L.(debug Linters Verbose) "\tParsed ETX ith transition '%s'@\n" (fst $4);
-       CTL.ETX ($2, snd $4, $5)}
+     { L.(debug Linters Verbose) "\tParsed ETX ith transition '%a'@\n" CTL.Debug.pp_transition $4;
+       CTL.ETX ($2, $4, $5)}
   | EX WITH_TRANSITION transition_label formula_with_paren
-    { L.(debug Linters Verbose) "\tParsed EX with transition '%s'@\n" (fst $3);
-      CTL.EX (snd $3, $4)}
+    { L.(debug Linters Verbose) "\tParsed EX with transition '%a'@\n" CTL.Debug.pp_transition $3;
+      CTL.EX ($3, $4)}
   | AX WITH_TRANSITION transition_label formula_with_paren
-      { L.(debug Linters Verbose) "\tParsed AX with transition '%s'@\n" (fst $3);
-        CTL.AX (snd $3, $4)}
+      { L.(debug Linters Verbose)
+        "\tParsed AX with transition '%a'@\n" CTL.Debug.pp_transition $3;
+        CTL.AX ($3, $4)}
   | formula AND formula { L.(debug Linters Verbose) "\tParsed AND@\n"; CTL.And ($1, $3) }
   | formula OR formula { L.(debug Linters Verbose) "\tParsed OR@\n"; CTL.Or ($1, $3) }
   | formula IMPLIES formula

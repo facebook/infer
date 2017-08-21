@@ -23,6 +23,8 @@ type transitions =
   (* decl to stmt *)
   | Super
   (* decl to decl *)
+  | ParameterName of ALVar.alexp
+  (* stmt to stmt, decl to decl *)
   | Parameters
   (* decl to decl *)
   | Cond
@@ -122,4 +124,6 @@ val create_ctl_evaluation_tracker : SourceFile.t -> unit
 
 module Debug : sig
   val pp_formula : Format.formatter -> t -> unit
+
+  val pp_transition : Format.formatter -> transitions option -> unit
 end
