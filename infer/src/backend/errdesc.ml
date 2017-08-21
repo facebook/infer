@@ -1167,7 +1167,7 @@ let explain_stack_variable_address_escape loc pvar addr_dexp_opt =
     | None
      -> None
   in
-  Localise.desc_stack_variable_address_escape (Pvar.to_string pvar) addr_dexp_str loc
+  Localise.desc_stack_variable_address_escape pvar addr_dexp_str loc
 
 (** explain unary minus applied to unsigned expression *)
 let explain_unary_minus_applied_to_unsigned_expression tenv exp typ node loc =

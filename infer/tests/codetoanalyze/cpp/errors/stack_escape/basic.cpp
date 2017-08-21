@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+
 int* basic_escape_local_bad() {
   int a;
   return &a;
@@ -16,7 +17,16 @@ int* basic_escape_param_bad(int a) { return &a; }
 struct EscapeTest {
   int x;
 };
+
 int* escape_local_struct_member_bad() {
   EscapeTest esc;
   return &(esc.x);
 }
+
+struct A {
+  A() {}
+};
+
+struct B {
+  const A& return_ref() { return A(); }
+};

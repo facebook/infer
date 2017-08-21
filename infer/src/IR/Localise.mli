@@ -210,7 +210,7 @@ val desc_return_statement_missing : Location.t -> error_desc
 
 val desc_return_value_ignored : Typ.Procname.t -> Location.t -> error_desc
 
-val desc_stack_variable_address_escape : string -> string option -> Location.t -> error_desc
+val desc_stack_variable_address_escape : Pvar.t -> string option -> Location.t -> error_desc
 
 val desc_skip_function : Typ.Procname.t -> error_desc
 
