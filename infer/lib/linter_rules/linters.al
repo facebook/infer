@@ -124,7 +124,8 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 
   SET report_when =
 			WHEN
-	    	NOT (eventually_addObserver IMPLIES eventually_removeObserver)
+	    	NOT (eventually_addObserver IMPLIES eventually_removeObserver) AND
+				NOT iphoneos_target_sdk_version_greater_or_equal("9.0") //this is not needed after iOS SDK 9.0
 			HOLDS-IN-NODE ObjCImplementationDecl, ObjCProtocolDecl;
 
 	SET message =

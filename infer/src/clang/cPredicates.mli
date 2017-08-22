@@ -122,4 +122,6 @@ val has_visibility_attribute : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val has_used_attribute : Ctl_parser_types.ast_node -> bool
 
+val iphoneos_target_sdk_version_greater_or_equal : CLintersContext.context -> string -> bool
+
 val within_available_class_block : CLintersContext.context -> Ctl_parser_types.ast_node -> bool

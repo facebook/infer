@@ -830,6 +830,8 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.is_strong_property an
   | "is_unop_with_kind", [kind], an
    -> CPredicates.is_unop_with_kind an kind
+  | "iphoneos_target_sdk_version_greater_or_equal", [version], _
+   -> CPredicates.iphoneos_target_sdk_version_greater_or_equal lcxt (ALVar.alexp_to_string version)
   | "method_return_type", [typ], an
    -> CPredicates.method_return_type an typ
   | "within_responds_to_selector_block", [], an

@@ -505,6 +505,13 @@ let iphoneos_target_sdk_version_by_path (cxt: CLintersContext.context) =
   | None (* no version by path specified, use default version *)
    -> Config.iphoneos_target_sdk_version
 
+let iphoneos_target_sdk_version_greater_or_equal (cxt: CLintersContext.context) version =
+  match iphoneos_target_sdk_version_by_path cxt with
+  | Some target_version
+   -> Utils.compare_versions target_version version >= 0
+  | None
+   -> false
+
 let decl_unavailable_in_supported_ios_sdk (cxt: CLintersContext.context) an =
   let config_iphoneos_target_sdk_version = iphoneos_target_sdk_version_by_path cxt in
   let allowed_os_versions =
