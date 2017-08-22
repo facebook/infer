@@ -262,6 +262,8 @@ end
 module BooleanOr = struct
   type astate = bool
 
+  let empty = false
+
   let ( <= ) ~lhs ~rhs = not lhs || rhs
 
   let join = ( || )

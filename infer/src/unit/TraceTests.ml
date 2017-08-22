@@ -83,6 +83,8 @@ module MockTrace = Trace.Make (struct
     [%compare.equal : MockTraceElem.t] (Source.kind source) (Sink.kind sink)
 end)
 
+let trace_equal t1 t2 = MockTrace.( <= ) ~lhs:t1 ~rhs:t2 && MockTrace.( <= ) ~lhs:t2 ~rhs:t1
+
 let tests =
   let source1 = MockSource.make MockTraceElem.Kind1 CallSite.dummy in
   let source2 = MockSource.make MockTraceElem.Kind2 CallSite.dummy in
@@ -125,7 +127,7 @@ let tests =
       let footprint_trace = MockTrace.of_source footprint_source |> MockTrace.add_sink sink1 in
       let expected_trace = MockTrace.of_source source1 |> MockTrace.add_sink sink1 in
       assert_bool "Appended trace should contain source and sink"
-        (MockTrace.equal (MockTrace.append source_trace footprint_trace call_site) expected_trace)
+        (trace_equal (MockTrace.append source_trace footprint_trace call_site) expected_trace)
     in
     "append" >:: append_
   in

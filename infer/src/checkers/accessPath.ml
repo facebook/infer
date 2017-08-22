@@ -210,13 +210,16 @@ module Abs = struct
     let _, base_typ = fst (extract access_path) in
     with_base (Var.of_formal_index formal_index, base_typ) access_path
 
-  let get_footprint_index access_path =
-    let raw_access_path = extract access_path in
-    match raw_access_path with
-    | (Var.LogicalVar id, _), _ when Ident.is_footprint id
+  let get_footprint_index_base base =
+    match base with
+    | Var.LogicalVar id, _ when Ident.is_footprint id
      -> Some (Ident.get_stamp id)
     | _
      -> None
+
+  let get_footprint_index access_path =
+    let base, _ = extract access_path in
+    get_footprint_index_base base
 
   let is_exact = function Exact _ -> true | Abstracted _ -> false
 

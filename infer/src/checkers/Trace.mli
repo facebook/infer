@@ -29,7 +29,28 @@ module type S = sig
 
   include AbstractDomain.WithBottom with type astate := astate
 
-  module Sources = Source.Set
+  module Sources : sig
+    (** Set of sources returned by callees of the current function *)
+    module Known : module type of AbstractDomain.FiniteSet (Source)
+
+    (** Set of access paths representing the sources that may flow in from the caller *)
+    module Footprint = AccessTree.PathSet
+
+    type astate = {known: Known.astate; footprint: Footprint.astate}
+
+    type t = astate
+
+    val empty : t
+
+    val is_empty : t -> bool
+
+    val of_source : Source.t -> t
+
+    val add : Source.t -> t -> t
+
+    val get_footprint_indexes : t -> IntSet.t
+  end
+
   module Sinks = Sink.Set
   module Passthroughs = Passthrough.Set
 
@@ -89,10 +110,6 @@ module type S = sig
 
   val is_empty : t -> bool
   (** return true if this trace has no source or sink data *)
-
-  val compare : t -> t -> int
-
-  val equal : t -> t -> bool
 
   val pp : F.formatter -> t -> unit
 

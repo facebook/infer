@@ -69,9 +69,9 @@ let tests =
     let pp_sources fmt sources =
       if MockTrace.Sources.is_empty sources then F.fprintf fmt "?"
       else
-        MockTrace.Sources.iter
+        MockTrace.Sources.Known.iter
           (fun source -> pp_call_site fmt (MockTrace.Source.call_site source))
-          sources
+          sources.MockTrace.Sources.known
     in
     let pp_sinks fmt sinks =
       if MockTrace.Sinks.is_empty sinks then F.fprintf fmt "?"

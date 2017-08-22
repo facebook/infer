@@ -14,6 +14,7 @@ module type S = sig
   module TraceDomain : AbstractDomain.WithBottom
 
   module AccessMap : PrettyPrintable.PPMap with type key = AccessPath.access
+
   module BaseMap = AccessPath.BaseMap
 
   type node = TraceDomain.astate * tree
@@ -78,3 +79,6 @@ module type S = sig
 end
 
 module Make (TraceDomain : AbstractDomain.WithBottom) : S with module TraceDomain = TraceDomain
+
+(** Concise representation of a set of access paths *)
+module PathSet : module type of Make (AbstractDomain.BooleanOr)

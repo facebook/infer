@@ -319,3 +319,5 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
 
   let pp fmt base_tree = BaseMap.pp ~pp_value:pp_node fmt base_tree
 end
+
+module PathSet = Make (AbstractDomain.BooleanOr)

@@ -93,9 +93,13 @@ module Abs : sig
   val to_footprint : int -> t -> t
   (** replace the base var with a footprint variable rooted at formal index [formal_index] *)
 
-  val get_footprint_index : t -> int option
+  val get_footprint_index_base : base -> int option
   (** return the formal index associated with the base of this access path if there is one, or None
     otherwise *)
+
+  val get_footprint_index : t -> int option
+  (** return the formal index associated with the base of this access path if there is one, or None
+      otherwise *)
 
   val with_base : base -> t -> t
   (** swap base of existing access path for [base_var] (e.g., `with_base_bvar x y.f.g` produces

@@ -99,4 +99,4 @@ module BooleanAnd : S with type astate = bool
 
 (** Boolean domain ordered by ~p || q. Useful when you want a boolean that's true only when it's
     true in one conditional branch. *)
-module BooleanOr : S with type astate = bool
+module BooleanOr : WithBottom with type astate = bool

@@ -120,7 +120,7 @@ module Dummy = struct
 
   let make_footprint _ _ = assert false
 
-  let get_footprint_access_path _ = assert false
+  let get_footprint_access_path _ = None
 
   let get _ _ _ = None
 

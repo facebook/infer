@@ -138,7 +138,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                     ~f:(fun source ->
                       [%compare.equal : Source.Kind.t] kind (Source.kind source)
                       && not (is_recursive source))
-                    (Sources.elements (sources trace))
+                    (Sources.Known.elements (sources trace).Sources.known)
                 with
                 | Some matching_source
                  -> (Some access_path, matching_source) :: acc
@@ -312,19 +312,17 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         Option.map (get_caller_ap ap) ~f:get_caller_node
       in
       let replace_footprint_sources callee_trace caller_trace access_tree =
-        let replace_footprint_source source acc =
-          match TraceDomain.Source.get_footprint_access_path source with
-          | Some footprint_access_path -> (
+        let replace_footprint_source acc footprint_access_path (is_mem, _) =
+          if is_mem then
             match get_caller_ap_node_opt footprint_access_path access_tree with
             | Some (_, (caller_ap_trace, _))
              -> TraceDomain.join caller_ap_trace acc
             | None
-             -> acc )
-          | None
-           -> acc
+             -> acc
+          else acc
         in
-        TraceDomain.Sources.fold replace_footprint_source (TraceDomain.sources callee_trace)
-          caller_trace
+        let {TraceDomain.Sources.footprint} = TraceDomain.sources callee_trace in
+        TraceDomain.Sources.Footprint.fold replace_footprint_source footprint caller_trace
       in
       let instantiate_and_report callee_trace caller_trace access_tree =
         let caller_trace' = replace_footprint_sources callee_trace caller_trace access_tree in
@@ -427,18 +425,19 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               let trace_with_propagation =
                 List.fold ~f:exp_join_traces ~init:initial_trace actuals
               in
-              let filtered_sources =
-                TraceDomain.Sources.filter
-                  (fun source ->
-                    match TraceDomain.Source.get_footprint_access_path source with
-                    | Some access_path
-                     -> Option.exists
-                          (AccessPath.get_typ (AccessPath.Abs.extract access_path) proc_data.tenv)
-                          ~f:should_taint_typ
-                    | None
-                     -> true)
-                  (TraceDomain.sources trace_with_propagation)
+              let sources = TraceDomain.sources trace_with_propagation in
+              let filtered_footprint =
+                TraceDomain.Sources.Footprint.fold
+                  (fun acc access_path (is_mem, _) ->
+                    if is_mem
+                       && Option.exists
+                            (AccessPath.get_typ (AccessPath.Abs.extract access_path) proc_data.tenv)
+                            ~f:should_taint_typ
+                    then TraceDomain.Sources.Footprint.add_trace access_path true acc
+                    else acc)
+                  sources.footprint TraceDomain.Sources.Footprint.empty
               in
+              let filtered_sources = {sources with footprint= filtered_footprint} in
               if TraceDomain.Sources.is_empty filtered_sources then access_tree
               else
                 let trace' = TraceDomain.update_sources trace_with_propagation filtered_sources in
@@ -608,21 +607,19 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             (* if this trace has no sinks, we don't need to attach it to anything *)
             access_tree_acc
           else
-            TraceDomain.Sources.fold
-              (fun source acc ->
-                match TraceDomain.Source.get_footprint_access_path source with
-                | Some footprint_access_path
-                 -> let node' =
-                      match TaintDomain.get_node footprint_access_path acc with
-                      | Some n
-                       -> TaintDomain.node_join node n
-                      | None
-                       -> node
-                    in
-                    TaintDomain.add_node footprint_access_path node' acc
-                | None
-                 -> acc)
-              (TraceDomain.sources trace) access_tree_acc)
+            TraceDomain.Sources.Footprint.fold
+              (fun acc footprint_access_path (is_mem, _) ->
+                if is_mem then
+                  let node' =
+                    match TaintDomain.get_node footprint_access_path acc with
+                    | Some n
+                     -> TaintDomain.node_join node n
+                    | None
+                     -> node
+                  in
+                  TaintDomain.add_node footprint_access_path node' acc
+                else acc)
+              (TraceDomain.sources trace).TraceDomain.Sources.footprint access_tree_acc)
         access_tree access_tree
     in
     (* should only be used on nodes associated with a footprint base *)
