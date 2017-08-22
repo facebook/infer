@@ -337,7 +337,7 @@ let tests =
       let make_x_base_tree trace =
         Domain.BaseMap.singleton x_base (Domain.make_normal_leaf trace)
       in
-      let widen prev next = Domain.widen ~prev ~next ~num_iters:0 in
+      let widen prev next = Domain.widen ~prev ~next ~num_iters:4 in
       (* a bit light on the tests here, since widen is implemented as a simple wrapper of join *)
       (* widening traces works:
          x |-> ("x", empty) \/ x |-> ("y", empty) =
@@ -358,15 +358,13 @@ let tests =
       (* adding stars to a subtree works:
          x |-> ("y", empty) \/
          x |-> ("x" , f |-> ("f", g |-> ("g", empty))) =
-         x |-> (T , f |-> ("f", g |-> ("g", Star)))
+         x |-> (T , f |-> (T, * ))
       *)
-      let xFG_star_tree =
-        let g_subtree = Domain.make_starred_leaf xFG_trace in
-        Domain.AccessMap.singleton g g_subtree |> Domain.make_node xF_trace
-        |> Domain.AccessMap.singleton f |> Domain.make_node MockTraceDomain.top
-        |> Domain.BaseMap.singleton x_base
+      let xF_star_tree =
+        Domain.AccessMap.singleton f (Domain.make_starred_leaf MockTraceDomain.top)
+        |> Domain.make_node MockTraceDomain.top |> Domain.BaseMap.singleton x_base
       in
-      assert_trees_equal (widen x_tree_y_trace xFG_tree) xFG_star_tree ;
+      assert_trees_equal (widen x_tree_y_trace xFG_tree) xF_star_tree ;
       (* widening is not commutative, and is it not join:
          x |-> ("x" , f |-> ("f", g |-> ("g", empty))) \/
          x |-> ("y", empty) =

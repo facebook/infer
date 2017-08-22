@@ -92,11 +92,11 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
     make_node base_trace (AccessMap.singleton access (make_normal_leaf trace))
 
   (** find all of the traces in the subtree and join them with [orig_trace] *)
-  let rec join_all_traces orig_trace = function
+  let rec join_all_traces ?(join_traces= TraceDomain.join) orig_trace = function
     | Subtree subtree
      -> let join_all_traces_ orig_trace tree =
           let node_join_traces _ (trace, node) trace_acc =
-            join_all_traces (TraceDomain.join trace_acc trace) node
+            join_all_traces (join_traces trace_acc trace) node
           in
           AccessMap.fold node_join_traces tree orig_trace
         in
@@ -276,21 +276,23 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
     let f_ acc ap (trace, _) = f acc ap trace in
     fold f_
 
-  (* replace the normal leaves of [node] with starred leaves *)
-  let rec node_add_stars (trace, tree as node) =
-    match tree with
-    | Subtree subtree
-     -> if AccessMap.is_empty subtree then make_starred_leaf trace
-        else
-          let subtree' = AccessMap.map node_add_stars subtree in
-          if phys_equal subtree' subtree then node else (trace, Subtree subtree')
-    | Star
-     -> node
+  (* try for a bit to reach a fixed point before widening aggressively *)
+  let joins_before_widen = 3
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
+    else if Int.( <= ) num_iters joins_before_widen then join prev next
     else
       let trace_widen prev next = TraceDomain.widen ~prev ~next ~num_iters in
+      (* turn [node] into a starred node by vacuuming up its sub-traces *)
+      let node_add_stars (trace, tree as node) =
+        match tree with
+        | Subtree _
+         -> let trace' = join_all_traces ~join_traces:trace_widen trace tree in
+            make_starred_leaf trace'
+        | Star
+         -> node
+      in
       let rec node_widen prev_node_opt next_node_opt =
         match (prev_node_opt, next_node_opt) with
         | Some prev_node, Some next_node

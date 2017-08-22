@@ -178,4 +178,21 @@ void atomic_eq(std::atomic<std::chrono::duration<int, std::centi>> x,
   // crash
   x = y;
 }
+struct node {
+  struct node* prev;
+  struct node* next;
+};
+
+// we used to hang on this example before the widening operator was fixed
+void loop_ok() {
+  struct node* init;
+  struct node* tmp;
+
+  while (1) {
+    tmp->next = init;
+    init = tmp;
+    tmp->prev = init;
+  }
+}
+
 }
