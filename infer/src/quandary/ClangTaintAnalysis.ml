@@ -65,6 +65,9 @@ include TaintAnalysis.Make (struct
      -> [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
     | "sprintf"
      -> [TaintSpec.Propagate_to_receiver]
+    | "strlen"
+     -> (* don't propagate taint for strlen *)
+        []
     | _
      -> handle_generic_unknown ret_typ_opt actuals
 

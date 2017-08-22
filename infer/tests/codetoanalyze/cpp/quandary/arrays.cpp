@@ -48,6 +48,49 @@ int stack_smash_bad() {
   return arr[0]; // could read from anywhere in the stack
 }
 
+void strcpy_bad(char* str) {
+  char* source = getenv("some_var");
+  strcpy(str, source);
+}
+
+void memcpy_bad(void* data1, void* data2) {
+  int source = __infer_taint_source();
+  memcpy(data1, data2, source);
+}
+
+void wmemcpy_bad(wchar_t* data1, wchar_t* data2) {
+  int source = __infer_taint_source();
+  wmemcpy(data1, data2, source);
+}
+
+void memmove_bad(void* data1, void* data2) {
+  int source = __infer_taint_source();
+  memmove(data1, data2, source);
+}
+
+void wmemmove_bad(wchar_t* data1, wchar_t* data2) {
+  int source = __infer_taint_source();
+  wmemmove(data1, data2, source);
+}
+
+void memset_bad(char* str) {
+  int source = __infer_taint_source();
+  memset(str, '0', source);
+}
+
+void strncpy_bad(char* str1, char* str2) {
+  int source = __infer_taint_source();
+  strncpy(str1, str2, source);
+}
+void copies_ok(char* str) {
+  char* source = getenv("some_var");
+  int len = std::min(strlen(str), strlen(source));
+  memcpy(str, source, len);
+  memmove(str, source, len);
+  memset(str, '0', len);
+  strncpy(str, source, len);
+}
+
 // these examples used to crash the HIL conversion
 char index_of_literal_ok1() { return "foo"[1]; }
 

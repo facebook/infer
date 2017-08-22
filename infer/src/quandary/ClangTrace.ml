@@ -198,6 +198,12 @@ module SinkKind = struct
        -> taint_nth 0 ShellExec actuals
       | "brk" | "calloc" | "malloc" | "realloc" | "sbrk"
        -> taint_all Allocation actuals
+      | "strcpy"
+       -> (* warn if source array is tainted *)
+          taint_nth 1 BufferAccess actuals
+      | "memcpy" | "memmove" | "memset" | "strncpy" | "wmemcpy" | "wmemmove"
+       -> (* warn if count argument is tainted *)
+          taint_nth 2 BufferAccess actuals
       | _
        -> get_external_sink pname actuals )
     | Typ.Procname.Block _
