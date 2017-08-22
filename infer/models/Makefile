@@ -34,7 +34,7 @@ clean_specs:
 	$(REMOVE) $(SPECS_LIB_DIR)/*.specs $(C_MODELS_FILE) $(CPP_MODELS_FILE) $(OBJC_MODELS_FILE)
 
 $(CLANG_SUBDIRS):
-	$(QUIET)$(MAKE) -C $@ install
+	$(QUIET)$(MAKE) -C $@ out/report.json
 
 # The clang deps have changed, so the models need to be rebuilt. If infer itself has changed, we
 # need to nuke the previous specs files in case the serialization has changed, otherwise we might
@@ -44,6 +44,9 @@ $(CLANG_MODELS_FILE): $(CLANG_DEPS_NO_MODELS)
 #	Since [CLANG_DEPS_NO_MODELS] is newer than [CLANG_MODELS_FILE], it is also newer than the
 #	previously built clang models, so they will all be rebuilt by the subdirs' Makefiles.
 	$(QUIET)$(MAKE) $(CLANG_SUBDIRS)
+#	Run the installs sequentially as the models shared some of the C procedures. This can cause
+#	race conditions when copying specs files inside lib/specs/
+	$(QUIET)for clang_dir in $(CLANG_SUBDIRS); do $(MAKE) -C "$$clang_dir" install; done
 #	Maintain the invariant that [CLANG_MODELS_FILE] is newer than the clang models.
 	$(QUIET)touch $@
 
