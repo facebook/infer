@@ -114,4 +114,14 @@ public class ExternalSpecs {
     loggingSink1(o);
   }
 
+  public static Object sinkThatPropagates(Object o) {
+    return o;
+  }
+
+  void callSinkThatPropagatesBad() {
+    Object source = InferTaint.inferSecretSource();
+    Object sourceAgain = sinkThatPropagates(source); // should report
+    loggingSink1(null, sourceAgain); // should report here too
+  }
+
 }

@@ -506,16 +506,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           in
           let analyze_call astate_acc callee_pname =
             let call_site = CallSite.make callee_pname callee_loc in
-            let sink =
-              if List.is_empty actuals then None
-              else TraceDomain.Sink.get call_site actuals proc_data.ProcData.tenv
-            in
             let astate_with_sink =
-              match sink with
-              | Some sink
-               -> add_sink sink actuals astate proc_data call_site
-              | None
-               -> astate
+              if List.is_empty actuals then astate
+              else
+                match TraceDomain.Sink.get call_site actuals proc_data.ProcData.tenv with
+                | Some sink
+                 -> add_sink sink actuals astate proc_data call_site
+                | None
+                 -> astate
             in
             let source = TraceDomain.Source.get call_site actuals proc_data.tenv in
             let astate_with_source =
@@ -530,8 +528,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                -> astate_with_sink
             in
             let astate_with_summary =
-              if Option.is_some source || Option.is_some sink then
-                (* don't use a summary for a procedure that is a direct source or sink *)
+              if Option.is_some source then
+                (* don't use a summary for a procedure that is a direct source *)
                 astate_with_source
               else
                 match Summary.read_summary proc_data.pdesc callee_pname with

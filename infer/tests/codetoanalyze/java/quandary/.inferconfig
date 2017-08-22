@@ -14,6 +14,10 @@
     {
       "procedure": "codetoanalyze.java.quandary.ExternalSpecs.loggingSink2",
       "kind": "Logging"
+    },
+    {
+      "procedure": "codetoanalyze.java.quandary.ExternalSpecs.sinkThatPropagates",
+      "kind": "Logging"
     }
   ],
   "quandary-sanitizers": [
