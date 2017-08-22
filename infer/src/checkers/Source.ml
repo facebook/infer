@@ -29,12 +29,6 @@ module type S = sig
 
   type spec = {source: t; index: int option}
 
-  val is_footprint : t -> bool
-
-  val make_footprint : AccessPath.Abs.t -> Procdesc.t -> t
-
-  val get_footprint_access_path : t -> AccessPath.Abs.t option
-
   val get : CallSite.t -> HilExp.t list -> Tenv.t -> spec option
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
@@ -43,35 +37,15 @@ end
 module Make (Kind : Kind) = struct
   module Kind = Kind
 
-  type kind =
-    | Normal of Kind.t  (** known source returned directly or transitively from a callee *)
-    | Footprint of AccessPath.Abs.t  (** unknown source read from the environment *)
-    [@@deriving compare]
-
-  let pp_kind fmt = function
-    | Normal kind
-     -> Kind.pp fmt kind
-    | Footprint ap
-     -> F.fprintf fmt "Footprint(%a)" AccessPath.Abs.pp ap
-
-  type t = {kind: kind; site: CallSite.t} [@@deriving compare]
+  type t = {kind: Kind.t; site: CallSite.t} [@@deriving compare]
 
   type spec = {source: t; index: int option}
 
-  let is_footprint t = match t.kind with Footprint _ -> true | _ -> false
-
-  let get_footprint_access_path t = match t.kind with Footprint ap -> Some ap | _ -> None
-
   let call_site t = t.site
 
-  let kind t = match t.kind with Normal kind -> kind | Footprint _ -> Kind.unknown
+  let kind t = t.kind
 
-  let make ?indexes:_ kind site = {site; kind= Normal kind}
-
-  let make_footprint ap pdesc =
-    let kind = Footprint ap in
-    let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
-    {site; kind}
+  let make ?indexes:_ kind site = {site; kind}
 
   let get site actuals tenv =
     match Kind.get (CallSite.pname site) actuals tenv with
@@ -88,11 +62,9 @@ module Make (Kind : Kind) = struct
         (name, typ, Option.map kind_opt ~f:(fun kind -> make kind site)))
       (Kind.get_tainted_formals pdesc tenv)
 
-  let pp fmt s = F.fprintf fmt "%a(%a)" pp_kind s.kind CallSite.pp s.site
+  let pp fmt s = F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
 
-  let with_callsite t callee_site =
-    if is_footprint t then failwithf "Can't change the call site of footprint source %a" pp t ;
-    {t with site= callee_site}
+  let with_callsite t callee_site = {t with site= callee_site}
 
   module Set = PrettyPrintable.MakePPSet (struct
     type nonrec t = t
@@ -115,12 +87,6 @@ module Dummy = struct
   let make ?indexes:_ kind _ = kind
 
   let pp _ () = ()
-
-  let is_footprint _ = false
-
-  let make_footprint _ _ = assert false
-
-  let get_footprint_access_path _ = None
 
   let get _ _ _ = None
 

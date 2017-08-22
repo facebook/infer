@@ -317,9 +317,7 @@ include Trace.Make (struct
   module Sink = JavaSink
 
   let should_report source sink =
-    if Source.is_footprint source then false
-    else
-      match (Source.kind source, Sink.kind sink) with
+    match (Source.kind source, Sink.kind sink) with
       | PrivateData, Logging
       (* logging private data issue *)
       | Intent, StartComponent

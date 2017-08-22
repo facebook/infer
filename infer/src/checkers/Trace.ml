@@ -44,6 +44,8 @@ module type S = sig
 
     val of_source : Source.t -> t
 
+    val of_footprint : AccessPath.Abs.t -> t
+
     val add : Source.t -> t -> t
 
     val get_footprint_indexes : t -> IntSet.t
@@ -88,8 +90,11 @@ module type S = sig
   val of_source : Source.t -> t
   (** create a trace from a source *)
 
+  val of_footprint : AccessPath.Abs.t -> t
+  (** create a trace from a footprint access path *)
+
   val add_source : Source.t -> t -> t
-  (** ad a source to the current trace *)
+  (** add a source to the current trace *)
 
   val add_sink : Sink.t -> t -> t
   (** add a sink to the current trace. *)
@@ -183,26 +188,17 @@ module Make (Spec : Spec) = struct
 
     let is_empty {known; footprint} = Known.is_empty known && Footprint.BaseMap.is_empty footprint
 
-    let add_footprint_access_path access_path footprint =
-      Footprint.add_trace access_path true footprint
+    let of_footprint access_path =
+      let footprint = Footprint.add_trace access_path true Footprint.empty in
+      {empty with footprint}
 
     let of_source source =
-      match Source.get_footprint_access_path source with
-      | Some access_path
-       -> let footprint = add_footprint_access_path access_path Footprint.empty in
-          {empty with footprint}
-      | None
-       -> let known = Known.singleton source in
-          {empty with known}
+      let known = Known.singleton source in
+      {empty with known}
 
     let add source astate =
-      match Source.get_footprint_access_path source with
-      | Some access_path
-       -> let footprint = add_footprint_access_path access_path astate.footprint in
-          {astate with footprint}
-      | None
-       -> let known = Known.add source astate.known in
-          {astate with known}
+      let known = Known.add source astate.known in
+      {astate with known}
 
     let get_footprint_indexes {footprint} =
       Footprint.BaseMap.fold
@@ -408,11 +404,18 @@ module Make (Spec : Spec) = struct
       ~f:(fun acc source -> trace_elems_of_source source acc)
       ~init:trace_prefix sources_with_level
 
-  let of_source source =
-    let sources = Sources.of_source source in
+  let of_sources sources =
     let passthroughs = Passthroughs.empty in
     let sinks = Sinks.empty in
     {sources; passthroughs; sinks}
+
+  let of_source source =
+    let sources = Sources.of_source source in
+    of_sources sources
+
+  let of_footprint access_path =
+    let sources = Sources.of_footprint access_path in
+    of_sources sources
 
   let add_source source t =
     let sources = Sources.add source t.sources in

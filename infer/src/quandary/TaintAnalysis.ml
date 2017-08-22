@@ -42,10 +42,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
        -> node_opt
       | None
        -> let make_footprint_trace footprint_ap =
-            let trace =
-              TraceDomain.of_source
-                (TraceDomain.Source.make_footprint footprint_ap proc_data.pdesc)
-            in
+            let trace = TraceDomain.of_footprint footprint_ap in
             Some (TaintDomain.make_normal_leaf trace)
           in
           let root, _ = AccessPath.Abs.extract access_path in

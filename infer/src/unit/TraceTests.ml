@@ -118,13 +118,8 @@ let tests =
       let footprint_ap =
         AccessPath.Abs.Exact (AccessPath.of_id (Ident.create_none ()) (Typ.mk Tvoid))
       in
-      let dummy_pdesc =
-        Cfg.create_proc_desc (Cfg.create_cfg ())
-          (ProcAttributes.default Typ.Procname.empty_block !Config.curr_language)
-      in
-      let footprint_source = MockSource.make_footprint footprint_ap dummy_pdesc in
       let source_trace = MockTrace.of_source source1 in
-      let footprint_trace = MockTrace.of_source footprint_source |> MockTrace.add_sink sink1 in
+      let footprint_trace = MockTrace.of_footprint footprint_ap |> MockTrace.add_sink sink1 in
       let expected_trace = MockTrace.of_source source1 |> MockTrace.add_sink sink1 in
       assert_bool "Appended trace should contain source and sink"
         (trace_equal (MockTrace.append source_trace footprint_trace call_site) expected_trace)
