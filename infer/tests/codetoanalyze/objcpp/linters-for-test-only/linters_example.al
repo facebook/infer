@@ -35,3 +35,23 @@ DEFINE-CHECKER TEST_PARAMETER_LABEL_REGEXP = {
       HOLDS-IN-NODE ObjCMessageExpr;
   SET message = "Found method with parameter labeled with `number` and with type `int`";
 };
+
+DEFINE-CHECKER TEST_PARAMETER_LABEL_EMPTY_STRUCT = {
+  LET is_empty_init_list =
+    WHEN ((is_node("ImplicitValueInitExpr")) HOLDS-EVERYWHERE-NEXT)
+     HOLDS-IN-NODE InitListExpr;
+  LET is_empty_struct =
+    WHEN ((is_empty_init_list) HOLDS-EVERYWHERE-NEXT)
+  	 HOLDS-IN-NODE CXXBindTemporaryExpr;
+  LET method_has_parameter_type =
+        WHEN
+          HOLDS-NEXT WITH-TRANSITION ParameterName "newWithStruct"
+            (is_empty_struct)
+          HOLDS-IN-NODE ObjCMessageExpr;
+  SET report_when =
+      WHEN
+         method_has_parameter_type
+         AND call_method(REGEXP("^new.*:$"))
+      HOLDS-IN-NODE ObjCMessageExpr;
+  SET message = "Do not pass empty struct to the parameter `newWithStruct` of method `new...`";
+};
