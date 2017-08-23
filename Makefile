@@ -13,7 +13,7 @@ include $(ROOT_DIR)/Makefile.config
 
 ifneq ($(UTOP),no)
 BUILD_SYSTEMS_TESTS += infertop
-build_infertop_print build_infertop_replace build_infertop_test: toplevel_test
+build_infertop_print build_infertop_replace build_infertop_test: test_build
 endif
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -85,9 +85,13 @@ BUILD_SYSTEMS_TESTS += ant
 endif
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck genrule
-# do not run these two tests in parallel otherwise Buck has a bad time
-build_genrule_test: | build_buck_test
-build_genrule_print: | build_buck_print
+# Introduce the dependency only if the two tests are going to be built in parallel, so that they do
+# not run in parallel (otherwise Buck has a bad time). This works by checking if one of the main
+# testing targets was passed as a goal on the command line.
+ifneq ($(filter build_systems_tests config_tests test,${MAKECMDGOALS}),)
+build_genrule_test: build_buck_test
+build_genrule_print: build_buck_print
+endif
 endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += mvn
@@ -96,9 +100,12 @@ endif
 
 ifeq ($(BUILD_C_ANALYZERS)+$(BUILD_JAVA_ANALYZERS),yes+yes)
 BUILD_SYSTEMS_TESTS += make utf8_in_pwd waf
-# the waf test and the make test run the same `make` command
+# the waf test and the make test run the same `make` command; use the same trick as for
+# "build_buck_test" to prevent make from running them in parallel
+ifneq ($(filter build_systems_tests config_tests test,${MAKECMDGOALS}),)
 build_waf_test: build_make_test
 build_waf_print: build_make_print
+endif
 endif
 
 ifeq ($(IS_INFER_RELEASE),no)
@@ -153,7 +160,7 @@ byte: src_build_common
 .PHONY: test_build
 test_build: src_build_common
 	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
-	$(MAKE) -C $(SRC_DIR) TEST=1 byte_no_install)
+	$(MAKE) -C $(SRC_DIR) test)
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 byte src_build_common src_build test_build: fb-setup
@@ -296,18 +303,6 @@ check_missing_mli:
 	$(QUIET)for x in $$(find $(INFER_DIR)/src -name "*.ml"); do \
 	    test -f "$$x"i || echo Missing "$$x"i; done
 
-# depend on test_build because jbuilder doesn't like running concurrently with itself
-.PHONY: toplevel_test
-toplevel_test: src_build_common | test_build
-#	build with TEST=1 as the infer_repl scripts expects to find the toplevel in the test build
-	$(QUIET)$(call silent_on_success,Building infer toplevel (test mode),\
-	$(MAKE) -C $(SRC_DIR) TEST=1 toplevel)
-
-.PHONY: toplevel
-toplevel: src_build_common
-	$(QUIET)$(call silent_on_success,Building infer toplevel,\
-	$(MAKE) -C $(SRC_DIR) toplevel)
-
 .PHONY: checkCopyright
 checkCopyright: src_build_common
 	$(QUIET)$(call silent_on_success,Building checkCopyright,\
@@ -350,6 +345,11 @@ mod_dep: src_build_common
 
 .PHONY: config_tests
 config_tests: test_build ocaml_unit_test endtoend_test checkCopyright validate-skel mod_dep
+
+ifneq ($(filter config_tests test,${MAKECMDGOALS}),)
+test_build: src_build
+checkCopyright: src_build test_build
+endif
 
 .PHONY: test
 test: crash_if_not_all_analyzers_enabled config_tests

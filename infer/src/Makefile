@@ -12,13 +12,7 @@ include $(ROOT_DIR)/Makefile.config
 
 ETC_DIR = $(INFER_DIR)/etc
 # paths to BUILD_DIR are relative because that's how jbuilder likes it
-JBUILDER_BUILD_DEFAULT = _build/default
-JBUILDER_BUILD_TEST = _build/test
-ifeq ($(TEST),1)
-INFER_BUILD_DIR = $(JBUILDER_BUILD_TEST)
-else
-INFER_BUILD_DIR = $(JBUILDER_BUILD_DEFAULT)
-endif
+INFER_BUILD_DIR = _build/default
 
 ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli
 
@@ -98,10 +92,6 @@ ifeq ($(IS_FACEBOOK_TREE),yes)
 INFER_CONFIG_TARGETS += $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).exe
 endif
 
-ifeq ($(TEST),1)
-INFER_CONFIG_TARGETS += $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).exe
-endif
-
 OCAML_GENERATED_SOURCES = \
   base/Version.ml $(STACKTREE_ATDGEN_STUBS) $(INFERPRINT_ATDGEN_STUBS)
 
@@ -116,17 +106,7 @@ OCAML_SOURCES = \
 .PHONY: all
 all: infer
 
-$(INFER_BUILD_DIR)/.ppx/ppx_compare/ppx.exe: \
-  jbuild atd/jbuild istd/jbuild scripts/jbuild jbuild-workspace \
-  $(OCAML_GENERATED_SOURCES) $(MAKEFILE_LIST)
-#      some voodoo to make jbuilder tolerate being run in parallel: force jbuilder to build its
-#      jbuild files and some files that have been seen to race otherwise
-	jbuilder build \
-	  $(JBUILDER_BUILD_DEFAULT)/.ppx/ppx_compare/ppx.exe \
-	  $(JBUILDER_BUILD_TEST)/.ppx/ppx_compare/ppx.exe
-	touch $@
-
-SRC_BUILD_COMMON = $(INFER_BUILD_DIR)/.ppx/ppx_compare/ppx.exe $(OCAML_SOURCES)
+SRC_BUILD_COMMON = jbuild atd/jbuild istd/jbuild scripts/jbuild jbuild-workspace $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 SRC_BUILD_COMMON += $(CLANG_BINIOU_DICT)
 endif
@@ -137,9 +117,15 @@ src_build_common: $(SRC_BUILD_COMMON)
 # single out infer.exe as the source of truth for make, knowing that in fact several targets are
 # produced by the build
 $(INFER_BUILD_DIR)/$(INFER_MAIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	jbuilder build $(INFER_CONFIG_TARGETS)
+	$(QUIET)jbuilder build $(INFER_CONFIG_TARGETS)
 #	let make know that the target is up-to-date even if ocamlbuild cached it
 	$(QUIET)touch $@
+
+.PHONY: test
+test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
+	$(QUIET)jbuilder build \
+	  $(patsubst _build/default/%.exe,_build/test/%.bc,$(INFER_CONFIG_TARGETS)) \
+	  _build/test/scripts/checkCopyright.bc _build/test/$(INFERUNIT_MAIN).bc _build/test/infertop.bc
 
 INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias))
 
@@ -168,9 +154,6 @@ $(INFER_BUILD_DIR)/$(INFER_MAIN).bc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 $(INFER_BIN).bc: $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN_ALIASES)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_MAIN).bc $(INFER_BIN).bc
-ifeq ($(TEST),1)
-	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFERUNIT_MAIN).bc $(INFERUNIT_BIN)
-endif
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/$(INFER_CREATE_TRACEVIEW_LINKS_MAIN).bc \
 		$(INFER_CREATE_TRACEVIEW_LINKS_BIN)
@@ -178,9 +161,6 @@ endif
 
 .PHONY: byte
 byte: $(INFER_BIN).bc
-
-.PHONY: byte_no_install
-byte_no_install: $(INFER_BUILD_DIR)/$(INFER_MAIN).bc
 
 roots:=Infer
 ifeq ($(IS_FACEBOOK_TREE),yes)
