@@ -71,7 +71,7 @@ us a line at cla@fb.com. Thanks!
 
 ### OCaml
 
-- The module IStd (infer/src/base/IStd.ml) is automatically opened in every file. Beware that this
+- The module IStd (infer/src/istd/IStd.ml) is automatically opened in every file. Beware that this
   can cause weird errors such as:
 ```
 $ pwd
@@ -84,10 +84,6 @@ File "base/toto.ml", line 1, characters 17-21:
 Error: This variant expression is expected to have type 'a list
        The constructor true does not belong to type list
 ```
-
-  If your new module cannot compile with `IStd`, for instance because it's generated code, modify
-  the line in infer/src/Makefile that adds `-open IStd` so that your module is excluded (see how
-  it's done for other such modules, eg IStd.ml).
 
 - All modules open `IStd` using `open! IStd`. This is to make that fact more explicit (there's also
   the compilation flag mentioned above), and also it helps merlin find the right types. In

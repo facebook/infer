@@ -18,7 +18,7 @@ AC_INIT([Infer],
         [0.13.0],
         [https://github.com/facebook/infer/issues/])
 
-AC_CONFIG_SRCDIR([infer/src/base/IStd.ml])
+AC_CONFIG_SRCDIR([infer/src/istd/IStd.ml])
 
 # WARNING: keep in sync with above
 INFER_MAJOR=0

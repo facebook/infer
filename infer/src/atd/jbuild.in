@@ -1,0 +1,14 @@
+(* -*- tuareg -*- *)
+(* NOTE: prepend jbuild.common to this file! *)
+
+let cflags = common_cflags @ ["-w"; "-27-32-34-35-39"]
+
+;; Format.sprintf {|
+(library
+ ((name InferGenerated)
+  (flags (%s))
+  (libraries (atdgen))
+ ))
+|}
+     (String.concat " " cflags)
+   |> Jbuild_plugin.V1.send

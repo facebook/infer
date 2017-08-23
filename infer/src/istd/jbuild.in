@@ -1,0 +1,12 @@
+(* -*- tuareg -*- *)
+(* NOTE: prepend jbuild.common to this file! *)
+
+;; Format.sprintf {|
+(library
+ ((name InferStdlib)
+  (flags (%s))
+  (libraries (%s))
+ ))
+|}
+     (String.concat " " common_cflags) (String.concat " " common_libraries)
+   |> Jbuild_plugin.V1.send

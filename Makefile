@@ -309,7 +309,7 @@ toplevel: src_build_common
 	$(MAKE) -C $(SRC_DIR) toplevel)
 
 .PHONY: checkCopyright
-checkCopyright:
+checkCopyright: src_build_common
 	$(QUIET)$(call silent_on_success,Building checkCopyright,\
 	$(MAKE) -C $(SRC_DIR) checkCopyright)
 

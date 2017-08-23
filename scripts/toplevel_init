@@ -12,5 +12,6 @@
 #require "xmlm";;
 #require "ANSITerminal";;
 
+open InferStdlib;;
+open InferGenerated;;
 open InferModules;;
-open InferBaseStdlib;;

@@ -122,15 +122,13 @@ buck-out/
 /infer/etc/clang_ast.dict
 /infer/src/toplevel.mlpack
 
-#atdgen stubs
-/infer/src/backend/jsonbug_j.ml
-/infer/src/backend/jsonbug_j.mli
-/infer/src/backend/jsonbug_t.ml
-/infer/src/backend/jsonbug_t.mli
-/infer/src/checkers/stacktree_j.ml
-/infer/src/checkers/stacktree_j.mli
-/infer/src/checkers/stacktree_t.ml
-/infer/src/checkers/stacktree_t.mli
+# atdgen generated files
+/infer/src/atd/*_j.ml
+/infer/src/atd/*_j.mli
+/infer/src/atd/*_t.ml
+/infer/src/atd/*_t.mli
+/infer/src/atd/clang_*.ml
+/infer/src/atd/clang_*.mli
 
 # intelliJ files
 /infer/src/backend/.projectSettings
@@ -153,6 +151,9 @@ infer/src/.project
 
 # jbuilder
 /infer/src/_build
+/infer/src/jbuild.common
 /infer/src/jbuild
+/infer/src/atd/jbuild
+/infer/src/istd/jbuild
+/infer/src/scripts/jbuild
 /infer/src/jbuild-workspace
-/infer/src/scripts/.merlin

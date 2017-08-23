@@ -28,13 +28,13 @@ INFER_MAIN = infer
 
 #### Checkers declarations ####
 
-STACKTREE_ATDGEN_STUB_BASE = checkers/stacktree
+STACKTREE_ATDGEN_STUB_BASE = atd/stacktree
 STACKTREE_ATDGEN_STUB_ATD = $(STACKTREE_ATDGEN_STUB_BASE).atd
 STACKTREE_ATDGEN_STUBS = $(addprefix $(STACKTREE_ATDGEN_STUB_BASE), $(ATDGEN_SUFFIXES))
 
 #### InferPrint declarations ####
 
-INFERPRINT_ATDGEN_STUB_BASE = backend/jsonbug
+INFERPRINT_ATDGEN_STUB_BASE = atd/jsonbug
 INFERPRINT_ATDGEN_STUB_ATD = $(INFERPRINT_ATDGEN_STUB_BASE).atd
 INFERPRINT_ATDGEN_STUBS = $(addprefix $(INFERPRINT_ATDGEN_STUB_BASE), $(ATDGEN_SUFFIXES))
 
@@ -58,7 +58,7 @@ JAVA_SOURCES = java
 
 CLANG_SOURCES = clang
 
-CLANG_PLUGIN_MIRROR = clang_plugin
+CLANG_PLUGIN_MIRROR = atd
 
 FCP_CLANG_OCAML_BUILD_DIR = $(FCP_CLANG_OCAML_DIR)/build
 
@@ -116,7 +116,9 @@ OCAML_SOURCES = \
 .PHONY: all
 all: infer
 
-$(INFER_BUILD_DIR)/.ppx/ppx_compare/ppx.exe: jbuild jbuild-workspace $(OCAML_GENERATED_SOURCES)
+$(INFER_BUILD_DIR)/.ppx/ppx_compare/ppx.exe: \
+  jbuild atd/jbuild istd/jbuild scripts/jbuild jbuild-workspace \
+  $(OCAML_GENERATED_SOURCES) $(MAKEFILE_LIST)
 #      some voodoo to make jbuilder tolerate being run in parallel: force jbuilder to build its
 #      jbuild files and some files that have been seen to race otherwise
 	jbuilder build \
@@ -215,7 +217,7 @@ toplevel: $(INFER_BUILD_DIR)/infertop.bc
 .PHONY: checkCopyright
 checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
-$(CHECKCOPYRIGHT_BIN): scripts/$(CHECKCOPYRIGHT_MAIN).ml $(MAKEFILE_LIST)
+$(CHECKCOPYRIGHT_BIN): $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	jbuilder build $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe
 	$(INSTALL_PROGRAM) $(INFER_BUILD_DIR)/scripts/$(CHECKCOPYRIGHT_MAIN).exe $(CHECKCOPYRIGHT_BIN)
 
@@ -264,7 +266,7 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $@
 
-jbuild jbuild-workspace base/Version.ml: $(MAKEFILE_LIST)
+jbuild.common jbuild-workspace base/Version.ml: $(MAKEFILE_LIST)
 	TMPFILE=$$(mktemp $@.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
 	INFER_GIT_BRANCH=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --abbrev-ref HEAD || printf "unknown"); \
@@ -285,9 +287,17 @@ jbuild jbuild-workspace base/Version.ml: $(MAKEFILE_LIST)
 	  $@.in > "$$TMPFILE"; \
 	cat "$$TMPFILE" > $@; \
 	$(REMOVE) "$$TMPFILE"
-jbuild: jbuild.in
+jbuild.common: jbuild.common.in
 jbuild-workspace: jbuild-workspace.in
 base/Version.ml: base/Version.ml.in
+
+jbuild atd/jbuild istd/jbuild scripts/jbuild: jbuild.common
+	$(QUIET)cat $+ > $@
+
+jbuild: jbuild.in
+atd/jbuild: atd/jbuild.in
+istd/jbuild: istd/jbuild.in
+scripts/jbuild: scripts/jbuild.in
 
 .PHONY: clean
 clean:
@@ -295,16 +305,14 @@ clean:
 	$(REMOVE) toplevel.mlpack
 	$(REMOVE_DIR) $(BUILD_DIR)
 	$(REMOVE) $(ETC_DIR)/clang_ast.dict
-	$(REMOVE) base/Version.ml jbuild jbuild-workspace
+	$(REMOVE) base/Version.ml jbuild atd/jbuild istd/jbuild jbuild-workspace
 	$(REMOVE) base/Version.ml.tmp.* jbuild.tmp.* jbuild-workspace.tmp.*
-	$(REMOVE) backend/jsonbug_{j,t}.ml{,i}
-	$(REMOVE) checkers/stacktree_{j,t}.ml{,i}
 #	be a bit more aggressive than needed with what we remove here so that stale binaries that
 #	only existed in previous versions get removed as well
 	$(REMOVE) $(BIN_DIR)/Infer* $(BIN_DIR)/infer-* $(INFER_BIN){,.bc,.exe} $(INFER_BIN_ALIASES) \
 	  $(INFERUNIT_BIN) $(CHECKCOPYRIGHT_BIN)
 	$(REMOVE) $(INFER_CREATE_TRACEVIEW_LINKS_BIN)
-	$(REMOVE) $(CLANG_PLUGIN_MIRROR)/*
+	$(REMOVE) atd/*_{j,t,v}.ml{,i} atd/clang_*
 	$(REMOVE) mod_dep.dot
 	$(REMOVE) mod_dep.pdf
 

@@ -1,0 +1,11 @@
+(* NOTE: prepend jbuild.common to this file! *)
+;; Format.sprintf
+     {|
+(executable
+ ((name checkCopyright)
+  (flags (%s))
+  (libraries (core str))
+ ))
+|}
+     (String.concat " " common_cflags)
+   |> Jbuild_plugin.V1.send
