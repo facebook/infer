@@ -475,6 +475,8 @@ val linters_developer_mode : bool
 
 val linters_ignore_clang_failures : bool
 
+val linters_validate_syntax_only : bool
+
 val liveness : bool
 
 val load_analysis_results : string option

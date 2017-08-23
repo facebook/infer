@@ -20,6 +20,12 @@ let create_exc_info description lexbuf =
   let pos = lexbuf.Lexing.lex_curr_p in
   {description; filename= pos.pos_fname; line= pos.pos_lnum}
 
+let json_of_exc_info exc_info =
+  `Assoc
+    [ ("description", `String exc_info.description)
+    ; ("filename", `String exc_info.filename)
+    ; ("line", `Int exc_info.line) ]
+
 let () =
   Caml.Printexc.register_printer (fun exc ->
       match exc with

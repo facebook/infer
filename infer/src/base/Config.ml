@@ -1252,6 +1252,12 @@ and linters_ignore_clang_failures =
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
     ~default:false "Continue linting files even if some compilation fails."
 
+and linters_validate_syntax_only =
+  CLOpt.mk_bool ~long:"linters-validate-syntax-only"
+    ~in_help:CLOpt.([(Capture, manual_clang_linters)])
+    ~default:false
+    "Validate syntax of AL files, then emit possible errors in JSON format to stdout"
+
 and load_average =
   CLOpt.mk_float_opt ~long:"load-average" ~short:'l'
     ~in_help:CLOpt.([(Capture, manual_generic)])
@@ -2064,6 +2070,8 @@ and linters_def_folder = !linters_def_folder
 and linters_developer_mode = !linters_developer_mode
 
 and linters_ignore_clang_failures = !linters_ignore_clang_failures
+
+and linters_validate_syntax_only = !linters_validate_syntax_only
 
 and liveness = !liveness
 
