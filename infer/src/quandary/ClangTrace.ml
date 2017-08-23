@@ -17,10 +17,7 @@ module SourceKind = struct
     | EnvironmentVariable  (** source that was read from an environment variable *)
     | File  (** source that was read from a file *)
     | Other  (** for testing or uncategorized sources *)
-    | Unknown
     [@@deriving compare]
-
-  let unknown = Unknown
 
   let of_string = function
     | "Endpoint"
@@ -111,9 +108,7 @@ module SourceKind = struct
       | File
        -> "File"
       | Other
-       -> "Other"
-      | Unknown
-       -> "Unknown" )
+       -> "Other" )
 end
 
 module CppSource = Source.Make (SourceKind)
@@ -257,6 +252,22 @@ include Trace.Make (struct
         true
     | _, Other
      -> true
-    | Unknown, (Allocation | BufferAccess | ShellExec | SQL)
-     -> false
+
+  let should_report_footprint footprint_access_path sink =
+    (* is this var a command line flag created by the popular C++ gflags library for creating
+       command-line flags (https://github.com/gflags/gflags)? *)
+    let is_gflag access_path =
+      let pvar_is_gflag pvar =
+        String.is_substring ~substring:"FLAGS_" (Pvar.get_simplified_name pvar)
+      in
+      match AccessPath.Abs.extract access_path with
+      | (Var.ProgramVar pvar, _), _
+       -> Pvar.is_global pvar && pvar_is_gflag pvar
+      | _
+       -> false
+    in
+    match Sink.kind sink
+    with Allocation | BufferAccess | Other | ShellExec | SQL ->
+      (* gflags globals come from the environment; treat them as sources for everything *)
+      is_gflag footprint_access_path
 end)

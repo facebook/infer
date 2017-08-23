@@ -18,10 +18,7 @@ module SourceKind = struct
     | Other  (** for testing or uncategorized sources *)
     | PrivateData  (** private user or device-specific data *)
     | UserControlledURI  (** resource locator controller by user *)
-    | Unknown
     [@@deriving compare]
-
-  let unknown = Unknown
 
   let of_string = function
     | "Clipboard"
@@ -166,9 +163,7 @@ module SourceKind = struct
       | PrivateData
        -> "PrivateData"
       | Other
-       -> "Other"
-      | Unknown
-       -> "Unknown" )
+       -> "Other" )
 end
 
 module JavaSource = Source.Make (SourceKind)
@@ -318,26 +313,28 @@ include Trace.Make (struct
 
   let should_report source sink =
     match (Source.kind source, Sink.kind sink) with
-      | PrivateData, Logging
-      (* logging private data issue *)
-      | Intent, StartComponent
-      (* intent reuse issue *)
-      | Intent, CreateIntent
-      (* intent configured with external values issue *)
-      | Intent, JavaScript
-      (* external data flows into JS: remote code execution risk *)
-      | PrivateData, JavaScript
-      (* leaking private data into JS *)
-      | UserControlledURI, (CreateIntent | StartComponent)
-      (* create intent/launch component from user-controlled URI *)
-      | UserControlledURI, CreateFile
-      (* create file from user-controller URI; potential path-traversal vulnerability *)
-      | Clipboard, (StartComponent | CreateIntent | JavaScript | CreateFile | HTML)
-       -> (* do something sensitive with user-controlled data from the clipboard *)
-          true
-      | Other, _ | _, Other
-       -> (* for testing purposes, Other matches everything *)
-          true
-      | _
-       -> false
+    | PrivateData, Logging
+    (* logging private data issue *)
+    | Intent, StartComponent
+    (* intent reuse issue *)
+    | Intent, CreateIntent
+    (* intent configured with external values issue *)
+    | Intent, JavaScript
+    (* external data flows into JS: remote code execution risk *)
+    | PrivateData, JavaScript
+    (* leaking private data into JS *)
+    | UserControlledURI, (CreateIntent | StartComponent)
+    (* create intent/launch component from user-controlled URI *)
+    | UserControlledURI, CreateFile
+    (* create file from user-controller URI; potential path-traversal vulnerability *)
+    | Clipboard, (StartComponent | CreateIntent | JavaScript | CreateFile | HTML)
+     -> (* do something sensitive with user-controlled data from the clipboard *)
+        true
+    | Other, _ | _, Other
+     -> (* for testing purposes, Other matches everything *)
+        true
+    | _
+     -> false
+
+  let should_report_footprint _ _ = false
 end)

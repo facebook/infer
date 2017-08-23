@@ -99,7 +99,7 @@ void customGetEnvOk() {
   return execl(NULL, source);
 }
 
-void FN_exec_flag_bad() { execl(FLAGS_cli_string, NULL); }
+void exec_flag_bad() { execl(FLAGS_cli_string, NULL); }
 
 void sql_on_env_var_bad() {
   std::string source = (std::string)std::getenv("ENV_VAR");

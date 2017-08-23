@@ -18,6 +18,10 @@ module type Spec = sig
 
   val should_report : Source.t -> Sink.t -> bool
   (** should a flow originating at source and entering sink be reported? *)
+
+  val should_report_footprint : AccessPath.Abs.t -> Sink.t -> bool
+  (** should a flow read from the environment via the  given access path and entering sink be
+      reported? *)
 end
 
 module type S = sig
@@ -56,10 +60,18 @@ module type S = sig
   module Sinks = Sink.Set
   module Passthroughs = Passthrough.Set
 
+  type path_source =
+    | Known of Source.t  (** source originating from a called procedure *)
+    | Footprint of AccessPath.Abs.t
+        (** source read from an access path rooted in a parameter or global *)
+
+  type path_sink = Sink.t
+
   (** path from a source to a sink with passthroughs at each step in the call stack. the first set
       of passthroughs are the ones in the "reporting" procedure that calls the first function in
       both the source and sink stack *)
-  type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
+  type path =
+    Passthroughs.t * (path_source * Passthroughs.t) list * (path_sink * Passthroughs.t) list
 
   val empty : t
   (** the empty trace *)
@@ -73,7 +85,7 @@ module type S = sig
   val passthroughs : t -> Passthroughs.t
   (** get the passthroughs of the trace *)
 
-  val get_reports : ?cur_site:CallSite.t -> t -> (Source.t * Sink.t * Passthroughs.t) list
+  val get_reports : ?cur_site:CallSite.t -> t -> (path_source * path_sink * Passthroughs.t) list
   (** get the reportable source-sink flows in this trace. specifying [cur_site] restricts the
       reported paths to ones introduced by the call at [cur_site]  *)
 
@@ -83,8 +95,8 @@ module type S = sig
       [cur_site] restricts the reported paths to ones introduced by the call at [cur_site] *)
 
   val to_loc_trace :
-    ?desc_of_source:(Source.t -> string) -> ?source_should_nest:(Source.t -> bool)
-    -> ?desc_of_sink:(Sink.t -> string) -> ?sink_should_nest:(Sink.t -> bool) -> path
+    ?desc_of_source:(path_source -> string) -> ?source_should_nest:(path_source -> bool)
+    -> ?desc_of_sink:(path_sink -> string) -> ?sink_should_nest:(path_sink -> bool) -> path
     -> Errlog.loc_trace
   (** create a loc_trace from a path; [source_should_nest s] should be true when we are going one
       deeper into a call-chain, ie when lt_level should be bumper in the next loc_trace_elem, and
@@ -120,6 +132,8 @@ module type S = sig
 
   val pp_path : Typ.Procname.t -> F.formatter -> path -> unit
   (** pretty-print a path in the context of the given procname *)
+
+  val pp_path_source : F.formatter -> path_source -> unit
 end
 
 module Make (Spec : Spec) : S with module Source = Spec.Source and module Sink = Spec.Sink

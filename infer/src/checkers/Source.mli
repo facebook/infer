@@ -15,9 +15,6 @@ val all_formals_untainted : Procdesc.t -> (Mangled.t * Typ.t * 'a option) list
 module type Kind = sig
   include TraceElem.Kind
 
-  val unknown : t
-  (** kind of an unknown source *)
-
   val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * int option) option
   (** return Some (kind) if the procedure with the given actuals is a taint source, None otherwise *)
 

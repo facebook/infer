@@ -17,8 +17,6 @@ let all_formals_untainted pdesc =
 module type Kind = sig
   include TraceElem.Kind
 
-  val unknown : t
-
   val get : Typ.Procname.t -> HilExp.t list -> Tenv.t -> (t * int option) option
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list

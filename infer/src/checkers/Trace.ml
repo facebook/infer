@@ -18,6 +18,8 @@ module type Spec = sig
 
   val should_report : Source.t -> Sink.t -> bool
   (** should a flow originating at source and entering sink be reported? *)
+
+  val should_report_footprint : AccessPath.Abs.t -> Sink.t -> bool
 end
 
 module type S = sig
@@ -54,10 +56,12 @@ module type S = sig
   module Sinks = Sink.Set
   module Passthroughs = Passthrough.Set
 
-  (** path from a source to a sink with passthroughs at each step in the call stack. the first set
-      of passthroughs are the ones in the "reporting" procedure that calls the first function in
-      both the source and sink stack *)
-  type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
+  type path_source = Known of Source.t | Footprint of AccessPath.Abs.t
+
+  type path_sink = Sink.t
+
+  type path =
+    Passthroughs.t * (path_source * Passthroughs.t) list * (path_sink * Passthroughs.t) list
 
   val empty : t
 
@@ -70,7 +74,7 @@ module type S = sig
   val passthroughs : t -> Passthroughs.t
   (** get the passthroughs of the trace *)
 
-  val get_reports : ?cur_site:CallSite.t -> t -> (Source.t * Sink.t * Passthroughs.t) list
+  val get_reports : ?cur_site:CallSite.t -> t -> (path_source * path_sink * Passthroughs.t) list
   (** get the reportable source-sink flows in this trace. specifying [cur_site] restricts the
       reported paths to ones introduced by the call at [cur_site]  *)
 
@@ -80,8 +84,8 @@ module type S = sig
       [cur_site] restricts the reported paths to ones introduced by the call at [cur_site] *)
 
   val to_loc_trace :
-    ?desc_of_source:(Source.t -> string) -> ?source_should_nest:(Source.t -> bool)
-    -> ?desc_of_sink:(Sink.t -> string) -> ?sink_should_nest:(Sink.t -> bool) -> path
+    ?desc_of_source:(path_source -> string) -> ?source_should_nest:(path_source -> bool)
+    -> ?desc_of_sink:(path_sink -> string) -> ?sink_should_nest:(path_sink -> bool) -> path
     -> Errlog.loc_trace
   (** create a loc_trace from a path; [source_should_nest s] should be true when we are going one
       deeper into a call-chain, ie when lt_level should be bumper in the next loc_trace_elem, and
@@ -115,6 +119,8 @@ module type S = sig
 
   val pp_path : Typ.Procname.t -> F.formatter -> path -> unit
   (** pretty-print a path in the context of the given procname *)
+
+  val pp_path_source : F.formatter -> path_source -> unit
 end
 
 (** Expand a trace element (i.e., a source or sink) into a list of trace elements bottoming out in
@@ -224,11 +230,22 @@ module Make (Spec : Spec) = struct
 
   type astate = t
 
-  type path = Passthroughs.t * (Source.t * Passthroughs.t) list * (Sink.t * Passthroughs.t) list
+  type path_source = Known of Source.t | Footprint of AccessPath.Abs.t
+
+  type path_sink = Sink.t
+
+  type path =
+    Passthroughs.t * (path_source * Passthroughs.t) list * (path_sink * Passthroughs.t) list
 
   let pp fmt t =
     F.fprintf fmt "%a -> %a via %a" Sources.pp t.sources Sinks.pp t.sinks Passthroughs.pp
       t.passthroughs
+
+  let get_path_source_call_site = function
+    | Known source
+     -> Source.call_site source
+    | Footprint _
+     -> CallSite.dummy
 
   let sources t = t.sources
 
@@ -258,13 +275,28 @@ module Make (Spec : Spec) = struct
       let report_source source sinks acc0 =
         let report_one sink acc =
           if Spec.should_report source sink && should_report_at_site source sink then
-            (source, sink, t.passthroughs) :: acc
+            (Known source, sink, t.passthroughs) :: acc
           else acc
         in
         Sinks.fold report_one sinks acc0
       in
+      let report_footprint acc0 footprint_access_path (is_mem, _) =
+        let report_one sink acc =
+          if is_mem && Spec.should_report_footprint footprint_access_path sink then
+            (Footprint footprint_access_path, sink, t.passthroughs) :: acc
+          else acc
+        in
+        Sinks.fold report_one t.sinks acc0
+      in
       let report_sources source acc = report_source source t.sinks acc in
       Sources.Known.fold report_sources t.sources.known []
+      |> Sources.Footprint.fold report_footprint t.sources.footprint
+
+  let pp_path_source fmt = function
+    | Known source
+     -> Source.pp fmt source
+    | Footprint access_path
+     -> AccessPath.Abs.pp fmt access_path
 
   let pp_path cur_pname fmt (cur_passthroughs, sources_passthroughs, sinks_passthroughs) =
     let pp_passthroughs fmt passthroughs =
@@ -278,11 +310,11 @@ module Make (Spec : Spec) = struct
       in
       F.pp_print_list ~pp_sep pp_elem fmt elems_passthroughs
     in
-    let pp_sources = pp_elems Source.call_site in
+    let pp_sources = pp_elems get_path_source_call_site in
     let pp_sinks = pp_elems Sink.call_site in
     let original_source = fst (List.hd_exn sources_passthroughs) in
     let final_sink = fst (List.hd_exn sinks_passthroughs) in
-    F.fprintf fmt "Error: %a -> %a. Full trace:@.%a@.Current procedure %a %a@.%a" Source.pp
+    F.fprintf fmt "Error: %a -> %a. Full trace:@.%a@.Current procedure %a %a@.%a" pp_path_source
       original_source Sink.pp final_sink pp_sources sources_passthroughs Typ.Procname.pp cur_pname
       pp_passthroughs cur_passthroughs pp_sinks (List.rev sinks_passthroughs)
 
@@ -312,41 +344,57 @@ module Make (Spec : Spec) = struct
       in
       Passthrough.Set.filter between_start_and_end passthroughs
     in
-    let expand_path source sink =
-      let sources_of_pname pname =
-        let trace = trace_of_pname pname in
-        (Sources.Known.elements (sources trace).known, passthroughs trace)
-      in
-      let sinks_of_pname pname =
-        let trace = trace_of_pname pname in
-        (Sinks.elements (sinks trace), passthroughs trace)
-      in
-      let sources_passthroughs =
-        let filter_passthroughs = filter_passthroughs_ Source in
-        SourceExpander.expand source ~elems_passthroughs_of_pname:sources_of_pname
-          ~filter_passthroughs
-      in
-      let sinks_passthroughs =
-        let filter_passthroughs = filter_passthroughs_ Sink in
-        SinkExpander.expand sink ~elems_passthroughs_of_pname:sinks_of_pname ~filter_passthroughs
-      in
-      (sources_passthroughs, sinks_passthroughs)
+    let expand_path path_source sink =
+      match path_source with
+      | Known source
+       -> let sources_of_pname pname =
+            let trace = trace_of_pname pname in
+            (Sources.Known.elements (sources trace).known, passthroughs trace)
+          in
+          let sinks_of_pname pname =
+            let trace = trace_of_pname pname in
+            (Sinks.elements (sinks trace), passthroughs trace)
+          in
+          let sources_passthroughs =
+            let filter_passthroughs = filter_passthroughs_ Source in
+            SourceExpander.expand source ~elems_passthroughs_of_pname:sources_of_pname
+              ~filter_passthroughs
+            |> List.map ~f:(fun (source, passthrough) -> (Known source, passthrough))
+          in
+          let sinks_passthroughs =
+            let filter_passthroughs = filter_passthroughs_ Sink in
+            SinkExpander.expand sink ~elems_passthroughs_of_pname:sinks_of_pname
+              ~filter_passthroughs
+          in
+          (sources_passthroughs, sinks_passthroughs)
+      | Footprint _
+       -> ([], [])
     in
     List.map
-      ~f:(fun (source, sink, passthroughs) ->
-        let sources_passthroughs, sinks_passthroughs = expand_path source sink in
+      ~f:(fun (path_source, sink, passthroughs) ->
+        let sources_passthroughs, sinks_passthroughs = expand_path path_source sink in
         let filtered_passthroughs =
-          filter_passthroughs_ Top_level (Source.call_site source) (Sink.call_site sink)
-            passthroughs
+          let source_site =
+            match path_source with
+            | Known source
+             -> Source.call_site source
+            | Footprint _
+             -> Option.value ~default:CallSite.dummy cur_site
+          in
+          filter_passthroughs_ Top_level source_site (Sink.call_site sink) passthroughs
         in
         (filtered_passthroughs, sources_passthroughs, sinks_passthroughs))
       (get_reports ?cur_site t)
 
   let to_loc_trace
-      ?(desc_of_source= fun source ->
-                          let callsite = Source.call_site source in
-                          Format.asprintf "return from %a" Typ.Procname.pp
-                            (CallSite.pname callsite)) ?(source_should_nest= fun _ -> true)
+      ?(desc_of_source= function
+                          | Known source
+                           -> let callsite = Source.call_site source in
+                              Format.asprintf "return from %a" Typ.Procname.pp
+                                (CallSite.pname callsite)
+                          | Footprint access_path
+                           -> Format.asprintf "read from %a" AccessPath.Abs.pp access_path)
+      ?(source_should_nest= fun _ -> true)
       ?(desc_of_sink= fun sink ->
                         let callsite = Sink.call_site sink in
                         Format.asprintf "call to %a" Typ.Procname.pp (CallSite.pname callsite))
@@ -389,7 +437,7 @@ module Make (Spec : Spec) = struct
         trace_elem :: trace_elems_of_passthroughs lt_level passthroughs acc
     in
     let trace_elems_of_source =
-      trace_elems_of_path_elem Source.call_site desc_of_source ~is_source:true
+      trace_elems_of_path_elem get_path_source_call_site desc_of_source ~is_source:true
     in
     let trace_elems_of_sink =
       trace_elems_of_path_elem Sink.call_site desc_of_sink ~is_source:false
