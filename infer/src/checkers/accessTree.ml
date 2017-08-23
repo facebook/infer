@@ -329,4 +329,11 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
   let pp fmt base_tree = BaseMap.pp ~pp_value:pp_node fmt base_tree
 end
 
-module PathSet = Make (AbstractDomain.BooleanOr)
+module PathSet = struct
+  include Make (AbstractDomain.BooleanOr)
+
+  (* print as a set of paths rather than a map of paths to bools *)
+  let pp fmt tree =
+    let collect_path acc access_path (is_mem, _) = if is_mem then access_path :: acc else acc in
+    fold collect_path tree [] |> PrettyPrintable.pp_collection ~pp_item:AccessPath.Abs.pp fmt
+end

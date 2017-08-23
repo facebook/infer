@@ -188,7 +188,10 @@ module Make (Spec : Spec) = struct
         {known; footprint}
 
     let pp fmt {known; footprint} =
-      F.fprintf fmt "Known: %a@\nFootprint: %a@\n" Known.pp known Footprint.pp footprint
+      if Known.is_empty known then
+        if Footprint.is_empty footprint then F.fprintf fmt "{}"
+        else F.fprintf fmt "Footprint(%a)" Footprint.pp footprint
+      else F.fprintf fmt "%a + Footprint(%a)" Known.pp known Footprint.pp footprint
 
     let empty = {known= Known.empty; footprint= Footprint.empty}
 
