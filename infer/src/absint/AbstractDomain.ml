@@ -28,6 +28,8 @@ module type WithBottom = sig
   include S
 
   val empty : astate
+
+  val is_empty : astate -> bool
 end
 
 module type WithTop = sig
@@ -40,6 +42,8 @@ module BottomLifted (Domain : S) = struct
   type astate = Bottom | NonBottom of Domain.astate
 
   let empty = Bottom
+
+  let is_empty = function Bottom -> true | NonBottom _ -> false
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
@@ -263,6 +267,8 @@ module BooleanOr = struct
   type astate = bool
 
   let empty = false
+
+  let is_empty astate = not astate
 
   let ( <= ) ~lhs ~rhs = not lhs || rhs
 

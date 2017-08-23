@@ -21,6 +21,8 @@ module Set = struct
 
   let empty = APSet.empty
 
+  let is_empty = APSet.is_empty
+
   let normalize aps =
     APSet.filter
       (fun lhs ->

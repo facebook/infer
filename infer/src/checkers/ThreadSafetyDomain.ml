@@ -328,6 +328,11 @@ let empty =
   let escapees = EscapeeDomain.empty in
   {thumbs_up; threads; locks; accesses; ownership; attribute_map; escapees}
 
+let is_empty {thumbs_up; threads; locks; accesses; ownership; attribute_map; escapees} =
+  thumbs_up && not threads && not locks && AccessDomain.is_empty accesses
+  && OwnershipDomain.is_empty ownership && AttributeMapDomain.is_empty attribute_map
+  && EscapeeDomain.is_empty escapees
+
 let ( <= ) ~lhs ~rhs =
   if phys_equal lhs rhs then true
   else ThreadsDomain.( <= ) ~lhs:lhs.threads ~rhs:rhs.threads

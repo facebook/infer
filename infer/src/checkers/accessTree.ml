@@ -80,9 +80,13 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
 
   let empty = BaseMap.empty
 
+  let is_empty = BaseMap.is_empty
+
   let make_node trace subtree = (trace, Subtree subtree)
 
   let empty_node = make_node TraceDomain.empty AccessMap.empty
+
+  let is_empty_tree = function Star -> false | Subtree node_map -> AccessMap.is_empty node_map
 
   let make_normal_leaf trace = make_node trace AccessMap.empty
 
@@ -309,13 +313,18 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
       BaseMap.merge (fun _ prev_node next_node -> node_widen prev_node next_node) prev next
 
   let rec pp_node fmt (trace, subtree) =
-    let pp_subtree fmt = function
+    let pp_subtree fmt tree =
+      match tree with
       | Subtree access_map
        -> AccessMap.pp ~pp_value:pp_node fmt access_map
       | Star
        -> F.fprintf fmt "*"
     in
-    F.fprintf fmt "(%a, %a)" TraceDomain.pp trace pp_subtree subtree
+    if not (TraceDomain.is_empty trace) then
+      if not (is_empty_tree subtree) then
+        F.fprintf fmt "(%a, %a)" TraceDomain.pp trace pp_subtree subtree
+      else F.fprintf fmt "%a" TraceDomain.pp trace
+    else F.fprintf fmt "%a" pp_subtree subtree
 
   let pp fmt base_tree = BaseMap.pp ~pp_value:pp_node fmt base_tree
 end

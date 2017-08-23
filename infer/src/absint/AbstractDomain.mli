@@ -33,6 +33,9 @@ module type WithBottom = sig
   (** The bottom value of the domain.
       Naming it empty instead of bottom helps to bind the empty
       value for sets and maps to the natural definition for bottom *)
+
+  val is_empty : astate -> bool
+  (** Return true if this is the bottom value *)
 end
 
 (** A domain with an explicit top value *)
