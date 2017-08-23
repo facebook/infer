@@ -16,7 +16,7 @@
 
   let is_not_infer_reserved_id id =
     if Str.string_match (Str.regexp_string Ctl_parser_types.infer_prefix) id 0 then
-      raise (CTLExceptions.ALParsingException
+      raise (CTLExceptions.ALParserInvariantViolationException
                ("ERROR: " ^ id ^ " contains __infer_ctl_ that is a reserved keyword "
             ^ "which cannot be used in identifiers:"))
      else ()
@@ -25,7 +25,7 @@
        if (List.mem ~equal:ALVar.equal !formal_params (ALVar.Var id)) then
          L.(debug Linters Verbose) "\tParsed exp '%s' as variable" id
        else
-         raise (CTLExceptions.ALParsingException
+         raise (CTLExceptions.ALParserInvariantViolationException
                   ("ERROR: Variable '" ^ id ^ "' is undefined"))
 
 %}

@@ -8,7 +8,6 @@
  *)
 
 open! IStd
-open Lexing
 open Types_lexer
 module L = Logging
 
@@ -542,19 +541,16 @@ let class_unavailable_in_supported_ios_sdk (cxt: CLintersContext.context) an =
 
 (* Check whether a type_ptr and a string denote the same type *)
 let type_ptr_equal_type type_ptr type_str =
-  let pos_str lexbuf =
-    let pos = lexbuf.lex_curr_p in
-    pos.pos_fname ^ ":" ^ string_of_int pos.pos_lnum ^ ":"
-    ^ string_of_int (pos.pos_cnum - pos.pos_bol + 1)
-  in
   let parse_type_string str =
     L.(debug Linters Medium) "Starting parsing type string '%s'@\n" str ;
     let lexbuf = Lexing.from_string str in
     try Types_parser.abs_ctype token lexbuf with
-    | CTLExceptions.ALParsingException s
-     -> raise (CTLExceptions.ALParsingException ("Syntax Error when defining type" ^ s))
+    | CTLExceptions.ALParserInvariantViolationException s
+     -> raise
+          (CTLExceptions.(
+            ALFileException (create_exc_info ("Syntax Error when defining type " ^ s) lexbuf)))
     | SyntaxError _ | Types_parser.Error
-     -> raise (CTLExceptions.ALParsingException ("SYNTAX ERROR at " ^ pos_str lexbuf))
+     -> raise CTLExceptions.(ALFileException (create_exc_info "SYNTAX ERROR" lexbuf))
   in
   let abs_ctype =
     match String.Map.find !parsed_type_map type_str with

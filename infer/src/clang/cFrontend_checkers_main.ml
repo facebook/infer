@@ -13,17 +13,12 @@ open Ctl_lexer
 module L = Logging
 
 let parse_al_file fname channel : CTL.al_file option =
-  let pos_str lexbuf =
-    let pos = lexbuf.lex_curr_p in
-    pos.pos_fname ^ ":" ^ string_of_int pos.pos_lnum ^ ":"
-    ^ string_of_int (pos.pos_cnum - pos.pos_bol + 1)
-  in
   let parse_with_error lexbuf =
     try Some (Ctl_parser.al_file token lexbuf) with
-    | CTLExceptions.ALParsingException s
-     -> raise (CTLExceptions.ALParsingException (s ^ " at " ^ pos_str lexbuf))
+    | CTLExceptions.ALParserInvariantViolationException s
+     -> raise CTLExceptions.(ALFileException (create_exc_info s lexbuf))
     | SyntaxError _ | Ctl_parser.Error
-     -> raise (CTLExceptions.ALParsingException ("SYNTAX ERROR at " ^ pos_str lexbuf))
+     -> raise CTLExceptions.(ALFileException (create_exc_info "SYNTAX ERROR" lexbuf))
   in
   let lexbuf = Lexing.from_channel channel in
   lexbuf.lex_curr_p <- {lexbuf.lex_curr_p with pos_fname= fname} ;

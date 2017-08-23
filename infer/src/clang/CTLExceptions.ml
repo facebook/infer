@@ -7,4 +7,23 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-exception ALParsingException of string
+exception ALParserInvariantViolationException of string
+
+type exc_info = {description: string; filename: string; line: int}
+
+exception ALFileException of exc_info
+
+let hum_string_of_exc_info exc_info =
+  Format.sprintf "%s at %s:%d" exc_info.description exc_info.filename exc_info.line
+
+let create_exc_info description lexbuf =
+  let pos = lexbuf.Lexing.lex_curr_p in
+  {description; filename= pos.pos_fname; line= pos.pos_lnum}
+
+let () =
+  Caml.Printexc.register_printer (fun exc ->
+      match exc with
+      | ALFileException exc_info
+       -> Some (Format.sprintf "ALFileException: %s" (hum_string_of_exc_info exc_info))
+      | _
+       -> None )

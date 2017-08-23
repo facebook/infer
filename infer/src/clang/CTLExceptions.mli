@@ -7,4 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
-exception ALParsingException of string
+exception
+  ALParserInvariantViolationException of
+  string(** Raised when the parser encounters a violation of a certain invariant  *)
+
+type exc_info
+
+exception
+  ALFileException of
+  exc_info(** Raised when any exception from the lexer/parser of AL is caught, to include source-location info *)
+
+val create_exc_info : string -> Lexing.lexbuf -> exc_info
+
+val hum_string_of_exc_info : exc_info -> string
+(** human-readable version of exc_info *)
