@@ -551,10 +551,10 @@ let type_ptr_equal_type type_ptr type_str =
     L.(debug Linters Medium) "Starting parsing type string '%s'@\n" str ;
     let lexbuf = Lexing.from_string str in
     try Types_parser.abs_ctype token lexbuf with
-    | Ctl_parser_types.ALParsingException s
-     -> raise (Ctl_parser_types.ALParsingException ("Syntax Error when defining type" ^ s))
+    | CTLExceptions.ALParsingException s
+     -> raise (CTLExceptions.ALParsingException ("Syntax Error when defining type" ^ s))
     | SyntaxError _ | Types_parser.Error
-     -> raise (Ctl_parser_types.ALParsingException ("SYNTAX ERROR at " ^ pos_str lexbuf))
+     -> raise (CTLExceptions.ALParsingException ("SYNTAX ERROR at " ^ pos_str lexbuf))
   in
   let abs_ctype =
     match String.Map.find !parsed_type_map type_str with

@@ -21,8 +21,6 @@ val stmt_node_child_type : ast_node -> string
 
 val ast_node_cast_kind : ast_node -> string
 
-exception ALParsingException of string
-
 val infer_prefix : string
 
 (** Data structures for type parser.

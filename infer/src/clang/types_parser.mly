@@ -28,7 +28,7 @@
     | [UInt; Long; Long] -> BuiltIn ULongLong
     | [Long; Double] -> BuiltIn LongDouble
     | [UInt; Int128] -> BuiltIn UInt128
-    | _ -> raise (Ctl_parser_types.ALParsingException
+    | _ -> raise (CTLExceptions.ALParsingException
       ("ERROR: syntax error on types"))
 
 

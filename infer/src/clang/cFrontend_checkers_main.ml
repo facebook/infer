@@ -20,10 +20,10 @@ let parse_al_file fname channel : CTL.al_file option =
   in
   let parse_with_error lexbuf =
     try Some (Ctl_parser.al_file token lexbuf) with
-    | Ctl_parser_types.ALParsingException s
-     -> raise (Ctl_parser_types.ALParsingException (s ^ " at " ^ pos_str lexbuf))
+    | CTLExceptions.ALParsingException s
+     -> raise (CTLExceptions.ALParsingException (s ^ " at " ^ pos_str lexbuf))
     | SyntaxError _ | Ctl_parser.Error
-     -> raise (Ctl_parser_types.ALParsingException ("SYNTAX ERROR at " ^ pos_str lexbuf))
+     -> raise (CTLExceptions.ALParsingException ("SYNTAX ERROR at " ^ pos_str lexbuf))
   in
   let lexbuf = Lexing.from_channel channel in
   lexbuf.lex_curr_p <- {lexbuf.lex_curr_p with pos_fname= fname} ;

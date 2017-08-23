@@ -83,8 +83,6 @@ let rec ast_node_name an =
 
 let infer_prefix = "__infer_ctl_"
 
-exception ALParsingException of string
-
 (** Data structures for type parser.
     Correspondence with clang types inferred from
     StringRef BuiltinType::getName in
