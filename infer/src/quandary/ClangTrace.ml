@@ -176,11 +176,12 @@ module SinkKind = struct
     match pname with
     | Typ.Procname.ObjC_Cpp cpp_name -> (
       match Typ.Procname.get_method pname with
-      | "operator[]" when is_buffer_class cpp_name
+      | "operator[]" when Config.developer_mode && is_buffer_class cpp_name
        -> taint_nth 1 BufferAccess actuals
       | _
        -> get_external_sink pname actuals )
-    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__array_access
+    | Typ.Procname.C _
+      when Config.developer_mode && Typ.Procname.equal pname BuiltinDecl.__array_access
      -> taint_all BufferAccess actuals
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__set_array_length
      -> (* called when creating a stack-allocated array *)
@@ -191,12 +192,18 @@ module SinkKind = struct
        -> taint_all ShellExec actuals
       | "popen"
        -> taint_nth 0 ShellExec actuals
-      | "brk" | "calloc" | "malloc" | "realloc" | "sbrk"
+      | ("brk" | "calloc" | "malloc" | "realloc" | "sbrk") when Config.developer_mode
        -> taint_all Allocation actuals
-      | "strcpy"
+      | "strcpy" when Config.developer_mode
        -> (* warn if source array is tainted *)
           taint_nth 1 BufferAccess actuals
-      | "memcpy" | "memmove" | "memset" | "strncpy" | "wmemcpy" | "wmemmove"
+      | "memcpy"
+      | "memmove"
+      | "memset"
+      | "strncpy"
+      | "wmemcpy"
+      | "wmemmove"
+        when Config.developer_mode
        -> (* warn if count argument is tainted *)
           taint_nth 2 BufferAccess actuals
       | _
