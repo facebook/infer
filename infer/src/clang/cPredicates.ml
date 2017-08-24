@@ -252,6 +252,29 @@ let is_enum_constant an name =
   | _
    -> false
 
+let is_enum_constant_of_enum an name =
+  match an with
+  | Ctl_parser_types.Stmt Clang_ast_t.DeclRefExpr (_, _, _, drti) -> (
+    match drti.drti_decl_ref with
+    | Some dr
+     -> (
+        let ndi, _, _ = CAst_utils.get_info_from_decl_ref dr in
+        let qual_name = CAst_utils.get_qualified_name ndi in
+        match QualifiedCppName.extract_last qual_name with
+        | Some (_, stripped_qual_name) -> (
+          match QualifiedCppName.extract_last stripped_qual_name with
+          | Some (enum_name, _)
+           -> PVariant.( = ) dr.Clang_ast_t.dr_kind `EnumConstant
+              && ALVar.compare_str_with_alexp enum_name name
+          | _
+           -> false )
+        | _
+         -> false )
+    | _
+     -> false )
+  | _
+   -> false
+
 let is_strong_property an =
   match an with
   | Ctl_parser_types.Decl Clang_ast_t.ObjCPropertyDecl (_, _, pdi)

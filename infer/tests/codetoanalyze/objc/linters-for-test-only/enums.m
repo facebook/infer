@@ -11,9 +11,12 @@
 
 typedef NS_ENUM(NSUInteger, MyName) {
   MyNameUndefined,
+  MyNameDefined,
 };
 
 int test() { return MyNameUndefined; }
+
+int test_enum_constant_of_enum() { return MyNameDefined; }
 
 enum { RANDOM, IMMEDIATE, SEARCH } strategy;
 

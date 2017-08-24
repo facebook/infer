@@ -25,6 +25,8 @@ val declaration_name : Clang_ast_t.decl -> string option
 
 val is_enum_constant : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
+val is_enum_constant_of_enum : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+
 val is_objc_interface_named : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val is_objc_extension : CLintersContext.context -> bool

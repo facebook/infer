@@ -344,6 +344,11 @@ DEFINE-CHECKER ENUM_CONSTANTS = {
   SET message = "Do not use the enum MyName or strategy";
 };
 
+DEFINE-CHECKER ENUM_CONSTANTS_OF_ENUM = {
+  SET report_when = is_enum_constant_of_enum("MyName");
+  SET message = "Do not use the enum MyName";
+};
+
  DEFINE-CHECKER TEST_SELECTOR = {
    SET report_when = is_at_selector_with_name("actionButtonTapped:");
    SET message = "Found @selector(actionButtonTapped:)";
