@@ -398,5 +398,18 @@ let tests =
     in
     "fold" >:: fold_test_
   in
+  let depth_test =
+    let depth_test_ _ =
+      assert_equal (Domain.depth Domain.empty) 0 ;
+      assert_equal (Domain.depth x_base_tree) 1 ;
+      assert_equal (Domain.depth x_y_base_tree) 1 ;
+      assert_equal (Domain.depth xFG_tree) 3 ;
+      assert_equal (Domain.depth x_star_tree) 1 ;
+      assert_equal (Domain.depth yF_star_tree) 2 ;
+      assert_equal (Domain.depth x_yF_star_tree) 2 ;
+      ()
+    in
+    "depth" >:: depth_test_
+  in
   "access_tree_suite"
-  >::: [get_trace_test; add_trace_test; lteq_test; join_test; widen_test; fold_test]
+  >::: [get_trace_test; add_trace_test; lteq_test; join_test; widen_test; fold_test; depth_test]

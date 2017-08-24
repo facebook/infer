@@ -49,6 +49,8 @@ module type S = sig
 
   val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
 
+  val depth : t -> int
+
   val pp_node : F.formatter -> node -> unit
 end
 
@@ -91,6 +93,19 @@ module Make (TraceDomain : AbstractDomain.WithBottom) = struct
   let make_normal_leaf trace = make_node trace AccessMap.empty
 
   let make_starred_leaf trace = (trace, Star)
+
+  (* no need to make it tail-recursive, trees shouldn't be big enough to blow up the call stack *)
+  let rec node_depth (_, tree) = 1 + tree_depth tree
+
+  and tree_depth = function
+    | Star
+     -> 0
+    | Subtree node_map
+     -> AccessMap.fold (fun _ node acc -> max_depth node acc) node_map 0
+
+  and max_depth node max_depth_acc = Int.max (node_depth node) max_depth_acc
+
+  let depth access_tree = BaseMap.fold (fun _ node acc -> max_depth node acc) access_tree 0
 
   let make_access_node base_trace access trace =
     make_node base_trace (AccessMap.singleton access (make_normal_leaf trace))

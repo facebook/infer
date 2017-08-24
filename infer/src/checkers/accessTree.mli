@@ -75,6 +75,9 @@ module type S = sig
 
   val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
 
+  val depth : t -> int
+  (** number of traces in the tallest branch of the tree *)
+
   val pp_node : Format.formatter -> node -> unit
 end
 
