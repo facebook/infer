@@ -190,7 +190,7 @@ let get_binop binop =
   | JBir.IXor
    -> Binop.BXor
   | JBir.IUshr
-   -> raise (Frontend_error "Unsigned right shift operator")
+   -> Binop.Shiftrt
   | JBir.LShl
    -> Binop.Shiftlt
   | JBir.LShr
@@ -202,9 +202,9 @@ let get_binop binop =
   | JBir.LXor
    -> Binop.BXor
   | JBir.LUshr
-   -> raise (Frontend_error "Unsigned right shift operator")
+   -> Binop.Shiftrt
   | JBir.CMP _
-   -> raise (Frontend_error "Unsigned right shift operator")
+   -> raise (Frontend_error "Comparison operators")
   | JBir.ArrayLoad _
    -> raise (Frontend_error "Array load operator")
 
