@@ -253,16 +253,15 @@ let component_with_multiple_factory_methods_advice context an =
     match attr with Clang_ast_t.UnavailableAttr _ -> true | _ -> false
   in
   let is_available_factory_method if_decl (decl: Clang_ast_t.decl) =
-    let attrs =
-      match decl with
-      | ObjCMethodDecl (decl_info, _, _)
-       -> decl_info.Clang_ast_t.di_attributes
-      | _
-       -> assert false
-    in
-    let unavailable_attrs = List.filter ~f:is_unavailable_attr attrs in
-    let is_available = Int.equal (List.length unavailable_attrs) 0 in
-    CAst_utils.is_objc_factory_method if_decl decl && is_available
+    match decl with
+    | ObjCMethodDecl (decl_info, _, _)
+     -> let unavailable_attrs =
+          List.filter ~f:is_unavailable_attr decl_info.Clang_ast_t.di_attributes
+        in
+        let is_available = List.is_empty unavailable_attrs in
+        CAst_utils.is_objc_factory_method if_decl decl && is_available
+    | _
+     -> false
   in
   let check_interface if_decl =
     match if_decl with

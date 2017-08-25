@@ -25,6 +25,9 @@
 
 // Not OK - Using the class name instaed of `instancename` doesn't make this OK
 @interface BadComponent : CKCompositeComponent
+
+@property int x;
+
 + (instancetype)newWithObject1:(NSObject*)obj;
 + (BadComponent*)newWithObject2:(NSObject*)obj;
 @end
