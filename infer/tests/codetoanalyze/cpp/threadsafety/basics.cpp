@@ -44,11 +44,15 @@ class Basic {
 
   int get4() { return suspiciously_read; }
 
+  int get5() { return get_private_suspiciously_read(); }
+
  private:
   int well_guarded;
   int suspiciously_read;
   int suspiciously_written;
   int not_guarded;
   std::mutex mutex_;
+
+  int get_private_suspiciously_read() { return suspiciously_read; }
 };
 }

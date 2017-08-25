@@ -1,5 +1,6 @@
 codetoanalyze/cpp/threadsafety/basics.cpp, basics::Basic_get2, 3, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `suspiciously_written`,<Beginning of write trace>,access to `suspiciously_written`]
 codetoanalyze/cpp/threadsafety/basics.cpp, basics::Basic_get4, 0, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `suspiciously_read`,<Beginning of write trace>,access to `suspiciously_read`]
+codetoanalyze/cpp/threadsafety/basics.cpp, basics::Basic_get5, 0, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,call to basics::Basic_get_private_suspiciously_read,access to `suspiciously_read`,<Beginning of write trace>,access to `suspiciously_read`]
 codetoanalyze/cpp/threadsafety/lock_guard.cpp, basics::LockGuard_get2, 3, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `suspiciously_written`,<Beginning of write trace>,access to `suspiciously_written`]
 codetoanalyze/cpp/threadsafety/lock_guard.cpp, basics::LockGuard_get4, 0, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `suspiciously_read`,<Beginning of write trace>,access to `suspiciously_read`]
 codetoanalyze/cpp/threadsafety/lock_guard.cpp, basics::LockGuard_test1, 2, THREAD_SAFETY_VIOLATION, [<Beginning of read trace>,access to `suspiciously_read`,<Beginning of write trace>,access to `suspiciously_read`]
