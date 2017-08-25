@@ -102,6 +102,8 @@ let mk_cpp_method ?tenv class_name method_name ?meth_decl mangled =
     match meth_decl with
     | Some Clang_ast_t.CXXConstructorDecl (_, _, _, _, {xmdi_is_constexpr})
      -> Typ.Procname.CPPConstructor (mangled, xmdi_is_constexpr)
+    | Some Clang_ast_t.CXXDestructorDecl _
+     -> Typ.Procname.CPPDestructor mangled
     | _
      -> Typ.Procname.CPPMethod mangled
   in

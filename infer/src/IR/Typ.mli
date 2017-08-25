@@ -283,6 +283,7 @@ module Procname : sig
   type objc_cpp_method_kind =
     | CPPMethod of string option  (** with mangling *)
     | CPPConstructor of (string option * bool)  (** with mangling + is it constexpr? *)
+    | CPPDestructor of string option  (** with mangling *)
     | ObjCClassMethod
     | ObjCInstanceMethod
     | ObjCInternalMethod

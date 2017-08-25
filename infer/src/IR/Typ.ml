@@ -501,6 +501,7 @@ module Procname = struct
   type objc_cpp_method_kind =
     | CPPMethod of string option  (** with mangling *)
     | CPPConstructor of (string option * bool)  (** with mangling + is it constexpr? *)
+    | CPPDestructor of string option  (** with mangling *)
     | ObjCClassMethod
     | ObjCInstanceMethod
     | ObjCInternalMethod
@@ -829,9 +830,14 @@ module Procname = struct
 
   let is_objc_dealloc method_name = String.equal method_name "dealloc"
 
-  (** [is_dealloc pname] returns true if [pname] is the dealloc method in Objective-C
-      TODO: add case for C++ *)
-  let is_destructor = function ObjC_Cpp name -> is_objc_dealloc name.method_name | _ -> false
+  (** [is_dealloc pname] returns true if [pname] is the dealloc method in Objective-C *)
+  let is_destructor = function
+    | ObjC_Cpp {kind= CPPDestructor _}
+     -> true
+    | ObjC_Cpp name
+     -> is_objc_dealloc name.method_name
+    | _
+     -> false
 
   let java_is_close = function Java js -> String.equal js.method_name "close" | _ -> false
 
@@ -869,7 +875,7 @@ module Procname = struct
 
   let c_method_kind_verbose_str kind =
     match kind with
-    | CPPMethod m
+    | CPPMethod m | CPPDestructor m
      -> "(" ^ (match m with None -> "" | Some s -> s) ^ ")"
     | CPPConstructor (m, is_constexpr)
      -> "{" ^ (match m with None -> "" | Some s -> s) ^ (if is_constexpr then "|constexpr" else "")
