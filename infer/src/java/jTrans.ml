@@ -64,29 +64,6 @@ let get_location source_file impl pc =
   in
   {Location.line= line_number; col= -1; file= source_file}
 
-let get_undefined_method_call ovt =
-  let get_undefined_method ovt =
-    match ovt with
-    | None
-     -> JConfig.void ^ "_undefined"
-    | Some vt ->
-      match vt with
-      | JBasics.TBasic bt
-       -> JTransType.string_of_basic_type bt ^ "_undefined"
-      | JBasics.TObject ot ->
-        match ot with
-        | JBasics.TArray _
-         -> assert false
-        | JBasics.TClass cn
-         -> if String.equal (JBasics.cn_name cn) JConfig.string_cl then "string_undefined"
-            else if JBasics.cn_equal cn JBasics.java_lang_object then "object_undefined"
-            else assert false
-  in
-  let undef_cn = JBasics.make_cn JConfig.infer_undefined_cl in
-  let undef_name = get_undefined_method ovt in
-  let undef_ms = JBasics.make_ms undef_name [] ovt in
-  (undef_cn, undef_ms)
-
 let retrieve_fieldname fieldname =
   try
     let subs = Str.split (Str.regexp (Str.quote ".")) (Typ.Fieldname.to_string fieldname) in
@@ -706,16 +683,6 @@ type translation =
   | Prune of Procdesc.Node.t * Procdesc.Node.t
   | Loop of Procdesc.Node.t * Procdesc.Node.t * Procdesc.Node.t
 
-let instruction_array_call ms obj_type obj args var_opt =
-  if is_clone ms then
-    let cn = JBasics.make_cn JConfig.infer_array_cl in
-    let vt = JBasics.TObject obj_type in
-    let ms = JBasics.make_ms JConfig.clone_name [vt] (Some vt) in
-    JBir.InvokeStatic (var_opt, cn, ms, obj :: args)
-  else
-    let undef_cn, undef_ms = get_undefined_method_call (JBasics.ms_rtype ms) in
-    JBir.InvokeStatic (var_opt, undef_cn, undef_ms, [])
-
 let is_this expr =
   match expr with
   | JBir.Var (_, var) -> (
@@ -734,7 +701,7 @@ let assume_not_null loc sil_expr =
   let call_args = [(not_null_expr, Typ.mk (Tint Typ.IBool))] in
   Sil.Call (None, builtin_infer_assume, call_args, loc, assume_call_flag)
 
-let rec instruction (context: JContext.t) pc instr : translation =
+let instruction (context: JContext.t) pc instr : translation =
   let tenv = JContext.get_tenv context in
   let cg = JContext.get_cg context in
   let program = context.program in
@@ -942,13 +909,15 @@ let rec instruction (context: JContext.t) pc instr : translation =
           Instr call_node
         in
         match call_kind with
-        | JBir.VirtualCall obj_type -> (
-          match obj_type with
-          | JBasics.TClass cn
-           -> trans_virtual_call cn I_Virtual
-          | JBasics.TArray _
-           -> let instr = instruction_array_call ms obj_type obj args var_opt in
-              instruction context pc instr )
+        | JBir.VirtualCall obj_type
+         -> let cn =
+              match obj_type with
+              | JBasics.TClass cn
+               -> cn
+              | JBasics.TArray _
+               -> JBasics.java_lang_object
+            in
+            trans_virtual_call cn I_Virtual
         | JBir.InterfaceCall cn
          -> trans_virtual_call cn I_Interface )
     | JBir.InvokeNonVirtual (var_opt, obj, cn, ms, args)

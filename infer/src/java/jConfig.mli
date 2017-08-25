@@ -65,8 +65,6 @@ val field_st : Mangled.t
 
 val infer_builtins_cl : string
 
-val infer_array_cl : string
-
 val npe_cl : string
 
 val out_of_bound_cl : string
