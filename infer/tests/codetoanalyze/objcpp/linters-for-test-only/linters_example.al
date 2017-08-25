@@ -79,3 +79,26 @@ DEFINE-CHECKER TEST_PARAMETER_LABEL_EMPTY_MAP = {
       HOLDS-IN-NODE ObjCMessageExpr;
   SET message = "Do not pass empty map to the parameter `map` of method `new...`";
 };
+
+DEFINE-CHECKER TEST_PARAMETER_SELECTOR = {
+
+ LET initialized_with_selector_expr =
+  WHEN (is_node("ObjCSelectorExpr") HOLDS-EVERYWHERE-NEXT) HOLDS-IN-NODE CXXConstructExpr;
+
+  LET materialized_with_selector_expr =
+   WHEN (initialized_with_selector_expr HOLDS-EVENTUALLY) HOLDS-IN-NODE CXXConstructExpr;
+
+  LET method_has_parameter_type =
+        WHEN
+          HOLDS-NEXT WITH-TRANSITION ParameterName "newWithAction"
+            (initialized_with_selector_expr OR
+            materialized_with_selector_expr)
+          HOLDS-IN-NODE ObjCMessageExpr;
+
+  SET report_when =
+      WHEN
+         method_has_parameter_type
+         AND call_method(REGEXP("^new.*:$"))
+      HOLDS-IN-NODE ObjCMessageExpr;
+  SET message = "Do not construct the Component action with a selector only...`";
+};

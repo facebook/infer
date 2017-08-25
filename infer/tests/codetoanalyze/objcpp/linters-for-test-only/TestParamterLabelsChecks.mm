@@ -10,6 +10,8 @@
 
 #import <Foundation/NSObject.h>
 
+#pragma GCC diagnostic ignored "-Wundeclared-selector"
+
 struct SomeStruct {
   NSString* someLabel;
 };
@@ -37,4 +39,21 @@ SomeButton* anotherButtonComponent(void) {
                                }
                             object:@"a string object"
                             number:5];
+};
+
+struct CKComponentAction {
+  CKComponentAction(SEL selector);
+  CKComponentAction(id target, SEL selector);
+};
+
+@interface FBSomeComponent : NSObject
++ (instancetype)newWithAction:(CKComponentAction)action;
+@end
+
+void foo(NSObject* someObject) {
+  [FBSomeComponent newWithAction:@selector(thisBad:)];
+
+  [FBSomeComponent newWithAction:{ @selector(thisIsAlsoBad:) }];
+
+  [FBSomeComponent newWithAction:{ someObject, @selector(thisIsGood:) }];
 };
