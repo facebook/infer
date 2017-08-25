@@ -25,7 +25,7 @@ struct SomeStruct {
 
 SomeButton* buttonComponent(void);
 SomeButton* buttonComponent(void) {
-  // flagging passing empty struct
+  // flagging passing empty struct and map
   return [SomeButton newWithStruct:{} map:{} object:nil number:0];
 };
 

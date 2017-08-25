@@ -7,5 +7,6 @@ codetoanalyze/objcpp/linters-for-test-only/ReferenceTest.mm, ReferenceTest_newWi
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, anotherButtonComponent, 34, TEST_PARAMETER_LABEL, []
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, anotherButtonComponent, 34, TEST_PARAMETER_LABEL_REGEXP, []
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, buttonComponent, 29, TEST_PARAMETER_LABEL, []
+codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, buttonComponent, 29, TEST_PARAMETER_LABEL_EMPTY_MAP, []
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, buttonComponent, 29, TEST_PARAMETER_LABEL_EMPTY_STRUCT, []
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, buttonComponent, 29, TEST_PARAMETER_LABEL_REGEXP, []

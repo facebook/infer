@@ -55,3 +55,27 @@ DEFINE-CHECKER TEST_PARAMETER_LABEL_EMPTY_STRUCT = {
       HOLDS-IN-NODE ObjCMessageExpr;
   SET message = "Do not pass empty struct to the parameter `newWithStruct` of method `new...`";
 };
+
+DEFINE-CHECKER TEST_PARAMETER_LABEL_EMPTY_MAP = {
+   //This means the node has no children.
+  LET constructor_with_no_parameters =
+    WHEN (FALSE HOLDS-EVERYWHERE-NEXT) HOLDS-IN-NODE CXXConstructExpr;
+
+  LET temp_expr =
+    WHEN (constructor_with_no_parameters HOLDS-EVERYWHERE-NEXT) HOLDS-IN-NODE CXXBindTemporaryExpr;
+
+   LET is_empty_map =
+    WHEN (temp_expr HOLDS-EVERYWHERE-NEXT) HOLDS-IN-NODE MaterializeTemporaryExpr;
+
+  LET method_has_parameter_type =
+        WHEN
+          HOLDS-NEXT WITH-TRANSITION ParameterName "map"
+            (is_empty_map)
+          HOLDS-IN-NODE ObjCMessageExpr;
+  SET report_when =
+      WHEN
+         method_has_parameter_type
+         AND call_method(REGEXP("^new.*:$"))
+      HOLDS-IN-NODE ObjCMessageExpr;
+  SET message = "Do not pass empty map to the parameter `map` of method `new...`";
+};
