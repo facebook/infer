@@ -12,3 +12,4 @@ codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, buttonCo
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, buttonComponent, 31, TEST_PARAMETER_LABEL_REGEXP, []
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, foo, 54, TEST_PARAMETER_SELECTOR, []
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, foo, 56, TEST_PARAMETER_SELECTOR, []
+codetoanalyze/objcpp/linters-for-test-only/hash_test.mm, std::hash_NSObject_*__operator(), 14, DISCOURAGED_HASH_METHOD_INVOCATION, []

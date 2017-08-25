@@ -38,7 +38,7 @@ val add_enum_constant : Clang_ast_t.pointer -> Clang_ast_t.pointer option -> uni
 
 val get_enum_constant_exp : Clang_ast_t.pointer -> Clang_ast_t.pointer option * Exp.t option
 
-val get_qualified_name : Clang_ast_t.named_decl_info -> QualifiedCppName.t
+val get_qualified_name : ?linters_mode:bool -> Clang_ast_t.named_decl_info -> QualifiedCppName.t
 (** returns sanitized, fully qualified name given name info *)
 
 val get_unqualified_name : Clang_ast_t.named_decl_info -> string

@@ -102,3 +102,8 @@ DEFINE-CHECKER TEST_PARAMETER_SELECTOR = {
       HOLDS-IN-NODE ObjCMessageExpr;
   SET message = "Do not construct the Component action with a selector only...`";
 };
+
+DEFINE-CHECKER DISCOURAGED_HASH_METHOD_INVOCATION = {
+  SET report_when = call_method("hash");
+  SET message = "Don't use the hash method";
+};

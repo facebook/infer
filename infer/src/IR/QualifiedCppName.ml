@@ -27,7 +27,9 @@ let strip_template_args quals =
 let append_template_args_to_last quals ~args =
   match quals with
   | [last; _] when String.contains last '<'
-   -> failwith "expected qualified name without template args"
+   -> failwithf
+        "expected qualified name without template args, but got %s, the last qualifier of %s" last
+        (String.concat ~sep:", " quals)
   | last :: rest
    -> (last ^ args) :: rest
   | []

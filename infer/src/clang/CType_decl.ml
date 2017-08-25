@@ -177,9 +177,10 @@ and get_record_as_typevar (definition_decl: Clang_ast_t.decl) =
    as it defaults to Typ.NoTemplate *)
 and get_record_typename ?tenv decl =
   let open Clang_ast_t in
+  let linters_mode = match tenv with Some _ -> false | None -> true in
   match (decl, tenv) with
   | RecordDecl (_, name_info, opt_type, _, _, _, _), _
-   -> CAst_utils.get_qualified_name name_info |> create_c_record_typename opt_type
+   -> CAst_utils.get_qualified_name ~linters_mode name_info |> create_c_record_typename opt_type
   | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, spec_info), Some tenv
    -> let tname =
         match CAst_utils.get_decl spec_info.tsi_template_decl with
@@ -200,7 +201,8 @@ and get_record_typename ?tenv decl =
   | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _), _
    -> (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
-      Typ.Name.Cpp.from_qual_name Typ.NoTemplate (CAst_utils.get_qualified_name name_info)
+      Typ.Name.Cpp.from_qual_name Typ.NoTemplate
+        (CAst_utils.get_qualified_name ~linters_mode name_info)
   | ObjCInterfaceDecl (_, name_info, _, _, _), _
   | ObjCImplementationDecl (_, name_info, _, _, _), _
   | ObjCProtocolDecl (_, name_info, _, _, _), _
