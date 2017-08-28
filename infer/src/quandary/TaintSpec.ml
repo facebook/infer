@@ -24,7 +24,7 @@ type sanitizer = Return  (** a sanitizer that removes taint from its return valu
 module type S = sig
   module Trace : Trace.S
 
-  module AccessTree : module type of AccessTree.Make (Trace)
+  module AccessTree : module type of AccessTree.Make (Trace) (AccessTree.DefaultConfig)
 
   val handle_unknown_call :
     Typ.Procname.t -> Typ.t option -> HilExp.t list -> Tenv.t -> action list

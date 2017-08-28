@@ -13,7 +13,7 @@ module L = Logging
 
 include TaintAnalysis.Make (struct
   module Trace = JavaTrace
-  module AccessTree = AccessTree.Make (Trace)
+  module AccessTree = AccessTree.Make (Trace) (AccessTree.DefaultConfig)
 
   let to_summary_access_tree access_tree = QuandarySummary.AccessTree.Java access_tree
 

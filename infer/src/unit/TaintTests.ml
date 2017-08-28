@@ -40,7 +40,7 @@ end)
 
 module MockTaintAnalysis = TaintAnalysis.Make (struct
   module Trace = MockTrace
-  module AccessTree = AccessTree.Make (Trace)
+  module AccessTree = AccessTree.Make (Trace) (AccessTree.DefaultConfig)
 
   let of_summary_access_tree _ = assert false
 

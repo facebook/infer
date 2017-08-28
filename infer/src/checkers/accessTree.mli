@@ -81,7 +81,14 @@ module type S = sig
   val pp_node : Format.formatter -> node -> unit
 end
 
-module Make (TraceDomain : AbstractDomain.WithBottom) : S with module TraceDomain = TraceDomain
+module type Config = sig
+  val max_depth : int
+end
+
+module DefaultConfig : Config
+
+module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) :
+  S with module TraceDomain = TraceDomain
 
 (** Concise representation of a set of access paths *)
 module PathSet : module type of Make (AbstractDomain.BooleanOr)

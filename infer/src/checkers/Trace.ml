@@ -34,7 +34,9 @@ module type S = sig
   module Sources : sig
     module Known : module type of AbstractDomain.FiniteSet (Source)
 
-    module Footprint = AccessTree.PathSet
+    module FootprintConfig : AccessTree.Config
+
+    module Footprint : module type of AccessTree.PathSet (FootprintConfig)
 
     type astate = {known: Known.astate; footprint: Footprint.astate}
 
@@ -162,7 +164,8 @@ module Make (Spec : Spec) = struct
 
   module Sources = struct
     module Known = AbstractDomain.FiniteSet (Source)
-    module Footprint = AccessTree.PathSet
+    module FootprintConfig = AccessTree.DefaultConfig
+    module Footprint = AccessTree.PathSet (FootprintConfig)
 
     type astate = {known: Known.astate; footprint: Footprint.astate}
 

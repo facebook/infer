@@ -37,8 +37,10 @@ module type S = sig
     (** Set of sources returned by callees of the current function *)
     module Known : module type of AbstractDomain.FiniteSet (Source)
 
+    module FootprintConfig : AccessTree.Config
+
     (** Set of access paths representing the sources that may flow in from the caller *)
-    module Footprint = AccessTree.PathSet
+    module Footprint : module type of AccessTree.PathSet (FootprintConfig)
 
     type astate = {known: Known.astate; footprint: Footprint.astate}
 

@@ -13,9 +13,9 @@ open! IStd
 
 module F = Format
 
-module Java : module type of AccessTree.Make (JavaTrace)
+module Java : module type of AccessTree.Make (JavaTrace) (AccessTree.DefaultConfig)
 
-module Clang : module type of AccessTree.Make (ClangTrace)
+module Clang : module type of AccessTree.Make (ClangTrace) (AccessTree.DefaultConfig)
 
 module AccessTree : sig
   type t = Java of Java.t | Clang of Clang.t
