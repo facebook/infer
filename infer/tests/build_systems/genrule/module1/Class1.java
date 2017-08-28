@@ -11,10 +11,9 @@ package genrule.module1;
 
 import genrule.annotations.Nullable;
 
-public class Class1 {
+public abstract class Class1 {
 
-  @Nullable
-  public static String returnsNull() {
+  public static @Nullable String returnsNull() {
     return null;
   }
 
@@ -22,5 +21,9 @@ public class Class1 {
     Object obj = null;
     obj.toString();
   }
+
+  public abstract @Nullable Object abstractMayReturnNull();
+
+  public native @Nullable Object nativeMayReturnNull();
 
 }

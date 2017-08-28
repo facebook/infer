@@ -13,13 +13,23 @@ import genrule.module1.Class1;
 
 public class Class2 {
 
+  void localNPE2() {
+    Object obj = null;
+    obj.toString();
+  }
+
   void interTargetNPE() {
     Object obj = Class1.returnsNull();
     obj.toString();
   }
 
-  void localNPE2() {
-    Object obj = null;
+  void interTargetAbstractNPE(Class1 class1) {
+    Object obj = class1.abstractMayReturnNull();
+    obj.toString();
+  }
+
+  void FN_interTargetNativeNPE(Class1 class1) {
+    Object obj = class1.nativeMayReturnNull();
     obj.toString();
   }
 
