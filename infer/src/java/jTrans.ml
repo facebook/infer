@@ -275,6 +275,16 @@ let trans_access = function
   | `Protected
    -> PredSymb.Protected
 
+let create_empty_cfg proc_name source_file procdesc =
+  let start_kind = Procdesc.Node.Start_node proc_name in
+  let start_node = Procdesc.create_node procdesc (Location.none source_file) start_kind [] in
+  let exit_kind = Procdesc.Node.Exit_node proc_name in
+  let exit_node = Procdesc.create_node procdesc (Location.none source_file) exit_kind [] in
+  Procdesc.node_set_succs_exn procdesc start_node [exit_node] [exit_node] ;
+  Procdesc.set_start_node procdesc start_node ;
+  Procdesc.set_exit_node procdesc exit_node ;
+  procdesc
+
 let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
@@ -290,7 +300,6 @@ let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
       ; formals
       ; is_abstract= true
       ; is_bridge_method= am.Javalib.am_bridge
-      ; is_defined= true
       ; is_model= Config.models_mode
       ; is_synthetic_method= am.Javalib.am_synthetic
       ; method_annotation
@@ -299,14 +308,7 @@ let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
     in
     Cfg.create_proc_desc cfg proc_attributes
   in
-  let start_kind = Procdesc.Node.Start_node proc_name in
-  let start_node = Procdesc.create_node procdesc (Location.none source_file) start_kind [] in
-  let exit_kind = Procdesc.Node.Exit_node proc_name in
-  let exit_node = Procdesc.create_node procdesc (Location.none source_file) exit_kind [] in
-  Procdesc.node_set_succs_exn procdesc start_node [exit_node] [exit_node] ;
-  Procdesc.set_start_node procdesc start_node ;
-  Procdesc.set_exit_node procdesc exit_node ;
-  procdesc
+  create_empty_cfg proc_name source_file procdesc
 
 let create_native_procdesc source_file program icfg cm proc_name =
   let cfg = icfg.JContext.cfg in
@@ -315,19 +317,22 @@ let create_native_procdesc source_file program icfg cm proc_name =
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
   let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
   let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
-  let proc_attributes =
-    { (ProcAttributes.default proc_name Config.Java) with
-      ProcAttributes.access= trans_access cm.Javalib.cm_access
-    ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
-    ; formals
-    ; is_bridge_method= cm.Javalib.cm_bridge
-    ; is_model= Config.models_mode
-    ; is_synthetic_method= cm.Javalib.cm_synthetic
-    ; method_annotation
-    ; ret_type= JTransType.return_type program tenv ms
-    ; loc= Location.none source_file }
+  let procdesc =
+    let proc_attributes =
+      { (ProcAttributes.default proc_name Config.Java) with
+        ProcAttributes.access= trans_access cm.Javalib.cm_access
+      ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
+      ; formals
+      ; is_bridge_method= cm.Javalib.cm_bridge
+      ; is_model= Config.models_mode
+      ; is_synthetic_method= cm.Javalib.cm_synthetic
+      ; method_annotation
+      ; ret_type= JTransType.return_type program tenv ms
+      ; loc= Location.none source_file }
+    in
+    Cfg.create_proc_desc cfg proc_attributes
   in
-  Cfg.create_proc_desc cfg proc_attributes
+  create_empty_cfg proc_name source_file procdesc
 
 (** Creates a procedure description. *)
 let create_cm_procdesc source_file program linereader icfg cm proc_name =

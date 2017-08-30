@@ -39,6 +39,13 @@ let is_active, add_active, remove_active =
   in
   (is_active, add_active, remove_active)
 
+let should_create_summary proc_name proc_attributes =
+  match proc_name with
+  | Typ.Procname.Java _
+   -> true
+  | _
+   -> proc_attributes.ProcAttributes.is_defined
+
 let should_be_analyzed proc_name proc_attributes =
   let already_analyzed () =
     match Specs.get_summary proc_name with
@@ -47,12 +54,9 @@ let should_be_analyzed proc_name proc_attributes =
     | None
      -> false
   in
-  proc_attributes.ProcAttributes.is_defined
-  (* we have the implementation *)
-  && not (is_active proc_name) && (* avoid infinite loops *)
-                                  not (already_analyzed ())
-
-(* avoid re-analysis of the same procedure *)
+  should_create_summary proc_name proc_attributes && not (is_active proc_name)
+  && (* avoid infinite loops *)
+     not (already_analyzed ())
 
 let procedure_should_be_analyzed proc_name =
   match Specs.proc_resolve_attributes proc_name with
@@ -135,8 +139,13 @@ let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
   let old_state = save_global_state () in
   let initial_summary = preprocess () in
   try
-    let summary = analyze_proc initial_summary callee_pdesc |> postprocess in
-    restore_global_state old_state ; summary
+    let attributes = Procdesc.get_attributes callee_pdesc in
+    let summary =
+      if attributes.ProcAttributes.is_defined then analyze_proc initial_summary callee_pdesc
+      else initial_summary
+    in
+    let final_summary = postprocess summary in
+    restore_global_state old_state ; final_summary
   with exn ->
     L.internal_error "@\nONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@?" Typ.Procname.pp callee_pname
       (Exn.to_string exn) (Printexc.get_backtrace ()) ;

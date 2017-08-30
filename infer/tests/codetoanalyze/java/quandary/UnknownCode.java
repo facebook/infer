@@ -73,7 +73,7 @@ public abstract class UnknownCode {
     propagateFootprint((String) InferTaint.inferSecretSource());
   }
 
-  static void FN_propagateViaInterfaceCodeBad(Interface i) {
+  static void propagateViaInterfaceCodeBad(Interface i) {
     Object source = InferTaint.inferSecretSource();
     Object launderedSource = i.interfaceMethod(source);
     InferTaint.inferSensitiveSink(launderedSource);

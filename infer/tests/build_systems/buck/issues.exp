@@ -1,4 +1,5 @@
 infer/tests/build_systems/genrule/module1/Class1.java, void Class1.localNPE1(), 2, NULL_DEREFERENCE, [start of procedure localNPE1()]
 infer/tests/build_systems/genrule/module2/Class2.java, void Class2.interTargetAbstractNPE(Class1), 2, NULL_DEREFERENCE, [start of procedure interTargetAbstractNPE(...),Skipping abstractMayReturnNull(): function or method not found]
 infer/tests/build_systems/genrule/module2/Class2.java, void Class2.interTargetNPE(), 2, NULL_DEREFERENCE, [start of procedure interTargetNPE(),start of procedure returnsNull(),return from a call to String Class1.returnsNull()]
+infer/tests/build_systems/genrule/module2/Class2.java, void Class2.interTargetNativeNPE(Class1), 2, NULL_DEREFERENCE, [start of procedure interTargetNativeNPE(...),Skipping nativeMayReturnNull(): function or method not found]
 infer/tests/build_systems/genrule/module2/Class2.java, void Class2.localNPE2(), 2, NULL_DEREFERENCE, [start of procedure localNPE2()]

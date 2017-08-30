@@ -28,7 +28,7 @@ public class Class2 {
     obj.toString();
   }
 
-  void FN_interTargetNativeNPE(Class1 class1) {
+  void interTargetNativeNPE(Class1 class1) {
     Object obj = class1.nativeMayReturnNull();
     obj.toString();
   }
