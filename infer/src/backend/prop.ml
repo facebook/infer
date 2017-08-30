@@ -219,8 +219,8 @@ let pi_of_subst sub = List.map ~f:(fun (id1, e2) -> Sil.Aeq (Var id1, e2)) (Sil.
 (** Return the pure part of [prop]. *)
 let get_pure (p: 'a t) : pi = pi_of_subst p.sub @ p.pi
 
-(* Same with get_pure, except that when we have both "x = t" and "y = t" where t is a primed ident, 
-* we add "x = y" to the result. This is crucial for the normalizer, as it tend to drop "x = t" before 
+(* Same with get_pure, except that when we have both "x = t" and "y = t" where t is a primed ident,
+* we add "x = y" to the result. This is crucial for the normalizer, as it tend to drop "x = t" before
 * processing "y = t". If we don't explicitly preserve "x = y", the normalizer cannot pick it up *)
 let get_pure_extended p =
   let base = get_pure p in
@@ -1653,15 +1653,8 @@ module Normalize = struct
       in
       if not footprint then p'
       else
-        let fav_a' = Sil.atom_fav a' in
-        let fav_nofootprint_a' =
-          Sil.fav_copy_filter_ident fav_a' (fun id -> not (Ident.is_footprint id))
-        in
-        let predicate_warning = not (Sil.fav_is_empty fav_nofootprint_a') in
         let p'' =
-          if predicate_warning then footprint_normalize tenv p'
-          else
-            match a' with
+          match a' with
             | Aeq (Exp.Var i, e) when not (Sil.ident_in_exp i e)
              -> let mysub = Sil.subst_of_list [(i, e)] in
                 let sigma_fp' = sigma_normalize tenv mysub p'.sigma_fp in
@@ -1670,8 +1663,6 @@ module Normalize = struct
             | _
              -> footprint_normalize tenv (set p' ~pi_fp:(a' :: p'.pi_fp))
         in
-        if predicate_warning then (
-          L.d_warning "dropping non-footprint " ; Sil.d_atom a' ; L.d_ln () ) ;
         unsafe_cast_to_normal p''
 
   (** normalize a prop *)

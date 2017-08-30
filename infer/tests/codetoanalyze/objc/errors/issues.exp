@@ -34,7 +34,7 @@ codetoanalyze/objc/shared/block/block_no_args.m, My_manager_m, 10, NULL_DEREFERE
 codetoanalyze/objc/shared/block/block_release.m, My_manager_blockReleaseTODO, 5, MEMORY_LEAK, [start of procedure blockReleaseTODO]
 codetoanalyze/objc/shared/category_procdesc/main.c, CategoryProcdescMain, 2, MEMORY_LEAK, [start of procedure CategoryProcdescMain(),Skipping performDaysWork: function or method not found]
 codetoanalyze/objc/shared/category_procdesc/main.c, CategoryProcdescMain, 3, MEMORY_LEAK, [start of procedure CategoryProcdescMain(),Skipping performDaysWork: function or method not found]
-codetoanalyze/objc/shared/field_superclass/SuperExample.m, ASuper_init, 2, NULL_DEREFERENCE, [start of procedure init]
+codetoanalyze/objc/shared/field_superclass/SuperExample.m, ASuper_init, 2, NULL_DEREFERENCE, [start of procedure init,start of procedure init,return from a call to BSuper_init]
 codetoanalyze/objc/shared/field_superclass/SuperExample.m, super_example_main, 2, MEMORY_LEAK, [start of procedure super_example_main(),Skipping init: function or method not found]
 codetoanalyze/objc/shared/memory_leaks_benchmark/RetainReleaseExample2.m, test3, 0, MEMORY_LEAK, [start of procedure test3(),start of procedure retain_release2_test(),start of procedure init,return from a call to RR2_init,return from a call to retain_release2_test]
 codetoanalyze/objc/shared/memory_leaks_benchmark/RetainReleaseExample2.m, test4, 3, MEMORY_LEAK, [start of procedure test4(),start of procedure retain_release2_test(),start of procedure init,return from a call to RR2_init,return from a call to retain_release2_test]
