@@ -142,3 +142,5 @@ val name_of_decl_ref_opt : Clang_ast_t.decl_ref option -> string option
 val sil_annot_of_type : Clang_ast_t.qual_type -> Annot.Item.t
 
 val type_of_decl : Clang_ast_t.decl -> Clang_ast_t.type_ptr option
+
+val get_record_fields : Clang_ast_t.decl -> Clang_ast_t.decl list

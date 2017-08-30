@@ -460,3 +460,13 @@ let type_of_decl decl =
    -> Some qual_type.qt_type_ptr
   | _
    -> None
+
+let get_record_fields decl =
+  let open Clang_ast_t in
+  match decl with
+  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
+  | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
+  | RecordDecl (_, _, _, _, decl_list, _, _)
+   -> List.filter ~f:(function FieldDecl _ -> true | _ -> false) decl_list
+  | _
+   -> []

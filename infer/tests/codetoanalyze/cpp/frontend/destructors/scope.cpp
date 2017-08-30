@@ -19,7 +19,21 @@ struct Y {
 struct Z {};
 
 struct S {
+  X x1;
+};
+
+struct W {
+  static S statics;
   X x;
+  Y y;
+  S s;
+  bool b;
+  ~W() {
+    X x;
+    if (b)
+      return;
+    Y y;
+  };
 };
 
 void test1(bool a, bool b) {

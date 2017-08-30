@@ -1163,11 +1163,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {res_trans with exps= extra_res_trans.exps}
 
   and cxx_destructor_call_trans trans_state si this_res_trans class_qual_type =
-    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
-    let res_trans_callee = destructor_deref_trans trans_state this_res_trans class_qual_type si in
+    (* cxx_method_construct_call_trans claims a priority with the same `si`.
+                    New pointer is generated to avoid premature node creation *)
+    let si' = {si with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
+    let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si' in
+    let this_exp, this_typ =
+      extract_exp_from_list this_res_trans.exps
+        "WARNING: There should be one expression for 'this' in constructor. @\n"
+    in
+    let this_res_trans' =
+      {this_res_trans with exps= [(this_exp, CType.add_pointer_to_typ this_typ)]}
+    in
+    let res_trans_callee =
+      destructor_deref_trans trans_state this_res_trans' class_qual_type si'
+    in
     let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
     if res_trans_callee.exps <> [] then
-      cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si (Typ.mk Tvoid)
+      cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' (Typ.mk Tvoid)
         is_cpp_call_virtual empty_res_trans
     else empty_res_trans
 
@@ -1290,6 +1302,67 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     instruction trans_state transformed_stmt
 
+  and cxx_inject_field_destructors_in_destructor_body trans_state stmt_info =
+    let context = trans_state.context in
+    if not (CGeneral_utils.is_cpp_translation context.translation_unit_context) then
+      empty_res_trans
+    else
+      (* get fields of the current class *)
+      let class_ptr = CContext.get_curr_class_decl_ptr context.CContext.curr_class in
+      let decl = Option.value_exn (CAst_utils.get_decl class_ptr) in
+      let fields = CAst_utils.get_record_fields decl in
+      (* compute `this` once that is used for all fields *)
+      let class_qual_type = CAst_utils.qual_type_of_decl_ptr class_ptr in
+      let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
+      let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
+      let sil_loc = CLocation.get_sil_location stmt_info_loc context in
+      let this_res_trans =
+        this_expr_trans trans_state sil_loc
+          (Ast_expressions.create_pointer_qual_type class_qual_type)
+      in
+      let obj_sil, class_typ =
+        extract_exp_from_list this_res_trans.exps
+          "WARNING: There should be one expression for 'this' in constructor. @\n"
+      in
+      (* ReturnStmt claims a priority with the same `stmt_info`.
+       New pointer is generated to avoid premature node creation *)
+      let stmt_info' =
+        {stmt_info_loc with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
+      in
+      let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info' in
+      let all_res_trans =
+        List.rev_map fields ~f:(function
+          | Clang_ast_t.FieldDecl ({di_parent_pointer}, {ni_name}, qual_type, _)
+           -> let class_tname =
+                match CAst_utils.get_decl_opt di_parent_pointer with
+                | Some decl
+                 -> CType_decl.get_record_typename ~tenv:context.tenv decl
+                | _
+                 -> assert false
+              in
+              let field_name = CGeneral_utils.mk_class_field_name class_tname ni_name in
+              let this_qual_type =
+                match class_typ.desc with Typ.Tptr (t, _) -> t | _ -> class_typ
+              in
+              let field_exp = Exp.Lfield (obj_sil, field_name, this_qual_type) in
+              let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
+              let this_res_trans_destruct =
+                {empty_res_trans with exps= [(field_exp, field_typ)]}
+              in
+              cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
+                qual_type
+          | _
+           -> assert false )
+      in
+      let all_res_trans = List.filter ~f:(fun res -> res <> empty_res_trans) all_res_trans in
+      let all_res_trans =
+        if all_res_trans <> [] then {empty_res_trans with instrs= this_res_trans.instrs}
+          :: all_res_trans
+        else all_res_trans
+      in
+      PriorityNode.compute_results_to_parent trans_state_pri sil_loc "Destruction" stmt_info'
+        all_res_trans
+
   and inject_destructors trans_state stmt_info =
     let context = trans_state.context in
     if not (CGeneral_utils.is_cpp_translation context.translation_unit_context) then
@@ -1299,7 +1372,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       (* The source location of destructor should reflect the end of the statement *)
       let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
       let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
-      (* ReturnStmt may claim a priority with the same `stmt_info`.
+      (* ReturnStmt claims a priority with the same `stmt_info`.
          New pointer is generated to avoid premature node creation *)
       let stmt_info' =
         {stmt_info_loc with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
@@ -1315,15 +1388,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                  -> let pvar = CVar_decl.sil_var_of_decl context decl procname in
                     let exp = Exp.Lvar pvar in
                     let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-                    let this_res_trans_destruct =
-                      {empty_res_trans with exps= [(exp, CType.add_pointer_to_typ typ)]}
-                    in
-                    (* cxx_destructor_call_trans may claim a priority with the same `stmt_info`.
-                       New pointer is generated to avoid premature node creation *)
-                    let stmt_info'' =
-                      {stmt_info_loc with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
-                    in
-                    cxx_destructor_call_trans trans_state_pri stmt_info'' this_res_trans_destruct
+                    let this_res_trans_destruct = {empty_res_trans with exps= [(exp, typ)]} in
+                    cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
                       qual_type
                 | _
                  -> assert false)
@@ -2290,11 +2356,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
     let sil_loc = CLocation.get_sil_location stmt_info context in
+    let procdesc = context.CContext.procdesc in
+    let procname = Procdesc.get_proc_name procdesc in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
     let mk_ret_node instrs =
       let destr_trans_result = inject_destructors trans_state_pri stmt_info in
+      (* `inject_destructors` should not create new nodes for return statement,
+          this is ensured by creating a fresh pointer in `inject_destructors`
+      *)
+      if destr_trans_result.root_nodes <> [] then assert false ;
+      let is_destructor = Typ.Procname.is_destructor procname in
+      let destructor_res =
+        if is_destructor then
+          cxx_inject_field_destructors_in_destructor_body trans_state_pri stmt_info
+        else empty_res_trans
+      in
+      (* `cxx_inject_field_destructors_in_destructor_body` should not create new nodes for return statement,
+          this is ensured by creating a fresh pointer in `cxx_inject_field_destructors_in_destructor_body`
+      *)
+      if destructor_res.root_nodes <> [] then assert false ;
       let ret_node =
-        create_node (Procdesc.Node.Stmt_node "Return Stmt") (instrs @ destr_trans_result.instrs)
+        create_node (Procdesc.Node.Stmt_node "Return Stmt")
+          (instrs @ destr_trans_result.instrs @ destructor_res.instrs)
           sil_loc context
       in
       Procdesc.node_set_succs_exn context.procdesc ret_node
@@ -2305,13 +2388,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match stmt_list with
       | [stmt]
        -> (* return exp; *)
-          let procdesc = context.CContext.procdesc in
           let ret_type = Procdesc.get_ret_type procdesc in
           let ret_exp, ret_typ, var_instrs =
             match context.CContext.return_param_typ with
             | Some ret_param_typ
              -> let name = CFrontend_config.return_param in
-                let procname = Procdesc.get_proc_name procdesc in
                 let pvar = Pvar.mk (Mangled.from_string name) procname in
                 let id = Ident.create_fresh Ident.knormal in
                 let instr = Sil.Load (id, Exp.Lvar pvar, ret_param_typ, sil_loc) in
@@ -3157,8 +3238,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ; opaque_exp= None
       ; obj_bridged_cast_typ= None }
     in
+    let procname = Procdesc.get_proc_name context.CContext.procdesc in
+    let is_destructor = Typ.Procname.is_destructor procname in
+    let stmt_info, _ = Clang_ast_proj.get_stmt_tuple body in
+    let destructor_res =
+      if is_destructor then cxx_inject_field_destructors_in_destructor_body trans_state stmt_info
+      else empty_res_trans
+    in
+    (* Injecting destructor call nodes of fields at the end of the body *)
+    let succ_nodes =
+      if destructor_res.root_nodes <> [] then destructor_res.root_nodes else trans_state.succ_nodes
+    in
+    let trans_state' = {trans_state with succ_nodes} in
     let instrs = extra_instrs @ [`ClangStmt body] in
     let instrs_trans = List.map ~f:get_custom_stmt_trans instrs in
-    let res_trans = exec_trans_instrs trans_state instrs_trans in
+    let res_trans = exec_trans_instrs trans_state' instrs_trans in
     res_trans.root_nodes
 end
