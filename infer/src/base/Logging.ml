@@ -14,6 +14,7 @@ open! IStd
 
 module F = Format
 module CLOpt = CommandLineOption
+include SimpleLogging
 
 (* log files *)
 (* make a copy of [f] *)
@@ -35,15 +36,9 @@ let dup_formatter fmt1 fmt2 =
     ; out_spaces= (fun n -> out_funs1.out_spaces n ; out_funs2.out_spaces n) } ;
   f
 
-(* should be set up to emit to a file later on; initially a string buffer so that logging is not
-   lost in the meantime *)
-let log_file =
-  let b = Buffer.create 256 in
-  let fmt =
-    let f = F.formatter_of_buffer b in
-    if Config.print_logs then dup_formatter f F.err_formatter else f
-  in
-  ref (fmt, `Buffer b)
+(* can be set up to emit to a file later on, but can also be left as-is and logging will only happen
+   on the console *)
+let log_file = ref (F.err_formatter, `Console)
 
 type formatters =
   { file: F.formatter  (** send to log file *)
@@ -134,26 +129,20 @@ let close_logs () =
   List.iter ~f:close_fmt !logging_formatters ;
   let fmt, chan = !log_file in
   F.pp_print_flush fmt () ;
-  match chan with
-  | `Buffer b
-   -> prerr_endline (Buffer.contents b)
-  | `Channel c
-   -> Out_channel.close c
+  match chan with `Console -> () | `Channel c -> Out_channel.close c
 
 let () = Epilogues.register ~f:close_logs "flushing logs and closing log file"
 
-let log_k ~to_console ?(to_file= true) ~k (lazy formatters) =
+let log ~to_console ?(to_file= true) (lazy formatters) =
   match (to_console, to_file) with
   | false, false
-   -> F.ikfprintf k F.std_formatter
+   -> F.ifprintf F.std_formatter
   | true, _ when not Config.print_logs
-   -> F.kfprintf k !formatters.console_file
+   -> F.fprintf !formatters.console_file
   | _
    -> (* to_console might be true, but in that case so is Config.print_logs so do not print to
          stderr because it will get logs from the log file already *)
-      F.kfprintf k !formatters.file
-
-let log = log_k ~k:ignore
+      F.fprintf !formatters.file
 
 let debug_file_fmts = register_formatter "debug"
 
@@ -165,6 +154,8 @@ let external_error_file_fmts = register_formatter "extern err"
 
 let internal_error_file_fmts = register_formatter "intern err"
 
+let phase_file_fmts = register_formatter "phase"
+
 let progress_file_fmts = register_formatter "progress"
 
 let result_file_fmts = register_formatter ~use_stdout:true "result"
@@ -172,6 +163,8 @@ let result_file_fmts = register_formatter ~use_stdout:true "result"
 let user_warning_file_fmts = register_formatter "user warn"
 
 let user_error_file_fmts = register_formatter "user err"
+
+let phase fmt = log ~to_console:false phase_file_fmts fmt
 
 let progress fmt = log ~to_console:(not Config.quiet) progress_file_fmts fmt
 
@@ -198,9 +191,7 @@ let progressbar_timeout_event failure_kind =
 
 let user_warning fmt = log ~to_console:(not Config.quiet) user_warning_file_fmts fmt
 
-let user_error_k ~k fmt = log_k ~to_console:(not Config.quiet) ~k user_error_file_fmts fmt
-
-let user_error fmt = user_error_k ~k:ignore fmt
+let user_error fmt = log ~to_console:true user_error_file_fmts fmt
 
 type debug_level = Quiet | Medium | Verbose [@@deriving compare]
 
@@ -242,14 +233,9 @@ let environment_info fmt = log ~to_console:false environment_info_file_fmts fmt
 
 let external_warning fmt = log ~to_console:(not Config.quiet) external_warning_file_fmts fmt
 
-let external_error_k ~k fmt = log_k ~to_console:(not Config.quiet) ~k external_error_file_fmts fmt
+let external_error fmt = log ~to_console:(not Config.quiet) external_error_file_fmts fmt
 
-let external_error fmt = external_error_k ~k:ignore fmt
-
-let internal_error_k ~k fmt =
-  log_k ~to_console:Config.developer_mode ~k internal_error_file_fmts fmt
-
-let internal_error fmt = internal_error_k ~k:ignore fmt
+let internal_error fmt = log ~to_console:Config.developer_mode internal_error_file_fmts fmt
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int
@@ -264,20 +250,24 @@ let pp_ml_loc_opt fmt ml_loc_opt =
   if Config.developer_mode then
     match ml_loc_opt with None -> () | Some ml_loc -> F.fprintf fmt "(%a)" pp_ml_loc ml_loc
 
-type error = UserError | ExternalError | InternalError
-
-(* exit code 2 is used by the OCaml runtime in cases of uncaught exceptions, avoid it *)
-let exit_code_of_kind = function UserError -> 1 | ExternalError -> 10 | InternalError -> 3
-
-let log_of_kind = function
+let log_of_kind error fmt =
+  match error with
   | UserError
-   -> user_error_k
+   -> log ~to_console:false user_error_file_fmts fmt
   | ExternalError
-   -> external_error_k
+   -> log ~to_console:false external_error_file_fmts fmt
   | InternalError
-   -> internal_error_k
+   -> log ~to_console:false internal_error_file_fmts fmt
 
-let die error msg = log_of_kind error ~k:(fun _ -> exit (exit_code_of_kind error)) msg
+let die error msg =
+  F.kasprintf
+    (fun s ->
+      (* backtraces contain line breaks, which results in lines without the [pid][error kind] prefix in the logs if printed as-is *)
+      Exn.backtrace () |> String.split ~on:'\n'
+      |> List.iter ~f:(fun line -> log_of_kind error "%s@\n" line) ;
+      log_of_kind error "%s@\n" s ;
+      die error "%s" s)
+    msg
 
 (* create new channel from the log file, and dumps the contents of the temporary log buffer there *)
 let setup_log_file () =
@@ -285,7 +275,7 @@ let setup_log_file () =
   | _, `Channel _
    -> (* already set up *)
       ()
-  | _, `Buffer b
+  | _, `Console
    -> let fmt, chan, preexisting_logfile =
         (* assumes Config.results_dir exists already *)
         let logfile_path = Config.results_dir ^/ Config.log_file in
@@ -300,7 +290,9 @@ let setup_log_file () =
       log_file := (fmt, `Channel chan) ;
       if preexisting_logfile then is_newline := false ;
       reset_formatters () ;
-      Buffer.output_buffer chan b
+      if CLOpt.is_originator && preexisting_logfile then
+        phase
+          "============================================================@\n= New infer execution begins@\n============================================================"
 
 (** type of printable elements *)
 type print_type =
@@ -349,7 +341,7 @@ type print_action = print_type * Obj.t  (** data to be printed *)
 let delayed_actions = ref []
 
 (** hook for the current printer of delayed print actions *)
-let printer_hook = ref (fun _ -> failwith "uninitialized printer hook")
+let printer_hook = ref (fun _ -> SimpleLogging.(die InternalError) "uninitialized printer hook")
 
 (** extend the current print log *)
 let add_print_action pact =

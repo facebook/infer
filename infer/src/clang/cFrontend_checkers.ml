@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 (* Helper functions *)
 let location_from_stmt lctx stmt =
@@ -45,9 +46,9 @@ let decl_ref_or_selector_name an =
   | [(Ctl_parser_types.Decl _ as decl_an)]
    -> "The reference " ^ Ctl_parser_types.ast_node_name decl_an
   | _
-   -> failwith
-        ( "decl_ref_or_selector_name must be called with a DeclRefExpr or an ObjCMessageExpr, but got "
-        ^ tag_name_of_node an )
+   -> L.(die ExternalError)
+        "decl_ref_or_selector_name must be called with a DeclRefExpr or an ObjCMessageExpr, but got %s"
+        (tag_name_of_node an)
 
 let iphoneos_target_sdk_version _ =
   match Config.iphoneos_target_sdk_version with Some f -> f | None -> "0"
@@ -62,9 +63,9 @@ let available_ios_sdk an =
     | None
      -> "" )
   | _
-   -> failwith
-        ( "available_ios_sdk must be called with a DeclRefExpr or an ObjCMessageExpr, but got "
-        ^ tag_name_of_node an )
+   -> L.(die ExternalError)
+        "available_ios_sdk must be called with a DeclRefExpr or an ObjCMessageExpr, but got %s"
+        (tag_name_of_node an)
 
 let class_available_ios_sdk an =
   match CPredicates.receiver_method_call an with
@@ -75,17 +76,18 @@ let class_available_ios_sdk an =
     | None
      -> "" )
   | None
-   -> failwith
-        ( "class_available_ios_sdk must be called with ObjCMessageExpr, but got "
-        ^ tag_name_of_node an )
+   -> L.(die ExternalError)
+        "class_available_ios_sdk must be called with ObjCMessageExpr, but got %s"
+        (tag_name_of_node an)
 
 let receiver_method_call an =
   match CPredicates.receiver_method_call an with
   | Some decl
    -> Ctl_parser_types.ast_node_name (Ctl_parser_types.Decl decl)
   | _
-   -> failwith
-        ("receiver_method_call must be called with ObjCMessageExpr, but got " ^ tag_name_of_node an)
+   -> L.(die ExternalError)
+        "receiver_method_call must be called with ObjCMessageExpr, but got %s"
+        (tag_name_of_node an)
 
 let ivar_name an =
   let open Clang_ast_t in

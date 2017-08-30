@@ -63,8 +63,10 @@ module PVariant = struct
   let ( = ) (v1: [> ]) (v2: [> ]) = Polymorphic_compare.( = ) v1 v2
 end
 
-let failwithf fmt =
-  Format.kfprintf (fun _ -> failwith (Format.flush_str_formatter ())) Format.str_formatter fmt
+let failwith _ : [`use_Logging_die_instead] = assert false
 
-let invalid_argf fmt =
-  Format.kfprintf (fun _ -> invalid_arg (Format.flush_str_formatter ())) Format.str_formatter fmt
+let failwithf _ : [`use_Logging_die_instead] = assert false
+
+let invalid_arg _ : [`use_Logging_die_instead] = assert false
+
+let invalid_argf _ : [`use_Logging_die_instead] = assert false

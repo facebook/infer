@@ -14,7 +14,7 @@ let already_imported_files = ref []
 
 let rec parse_import_file import_file channel =
   if List.mem ~equal:String.equal !already_imported_files import_file then
-    failwith ("Cyclic imports: file '" ^ import_file ^ "' was already imported.")
+    L.(die ExternalError) "Cyclic imports: file '%s' was already imported." import_file
   else
     match CTLParserHelper.parse_al_file import_file channel with
     | Some

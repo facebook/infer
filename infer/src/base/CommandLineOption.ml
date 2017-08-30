@@ -12,6 +12,7 @@
 open! IStd
 module F = Format
 module YBU = Yojson.Basic.Util
+module L = SimpleLogging
 
 let ( = ) = String.equal
 
@@ -34,7 +35,7 @@ let strict_mode_env_var = "INFER_STRICT_MODE"
 let strict_mode = is_env_var_set strict_mode_env_var
 
 let warnf =
-  if strict_mode then failwithf
+  if strict_mode then fun fmt -> L.(die UserError) fmt
   else if not is_originator then fun fmt -> F.ifprintf F.err_formatter fmt
   else F.eprintf
 
@@ -183,7 +184,7 @@ let check_no_duplicates desc_list =
     | [] | [_]
      -> true
     | (x, _, _) :: (y, _, _) :: _ when x <> "" && x = y
-     -> failwith ("Multiple definitions of command line option: " ^ x)
+     -> L.(die InternalError) "Multiple definitions of command line option: %s" x
     | _ :: tl
      -> check_for_duplicates_ tl
   in
@@ -286,7 +287,7 @@ let deprecate_desc parse_mode ~long ~short ~deprecated desc =
      -> spec
   in
   let deprecated_decode_json ~inferconfig_dir j =
-    warnf "WARNING: in .inferconfig: '%s' is deprecated. Use '%s' instead.@." deprecated long ;
+    warnf "WARNING: in .inferconfig: '%s' is deprecated. Use '%s' instead." deprecated long ;
     desc.decode_json ~inferconfig_dir j
   in
   { long= ""
@@ -510,9 +511,10 @@ let mk_path_helper ~setter ~default_to_string ~default ~deprecated ~long ~short 
       let abs_path = normalize_path_in_args_being_parsed ~is_anon_arg:false str in
       setter var abs_path) ~mk_spec:(fun set -> String set )
 
-let mk_path ~default ?(deprecated= []) ~long ?short ?parse_mode ?in_help ?(meta= "path") =
+let mk_path ~default ?(f= Fn.id) ?(deprecated= []) ~long ?short ?parse_mode ?in_help
+    ?(meta= "path") =
   mk_path_helper
-    ~setter:(fun var x -> var := x)
+    ~setter:(fun var x -> var := f x)
     ~decode_json:(path_json_decoder ~long)
     ~default_to_string:(fun s -> s)
     ~default ~deprecated ~long ~short ~parse_mode ~in_help ~meta
@@ -975,7 +977,7 @@ let show_manual ?internal_section format default_doc command_opt =
       | Some command_doc, _, _
        -> command_doc
       | None, _, _
-       -> invalid_argf "No manual for internal command %s" (string_of_command command)
+       -> L.(die InternalError) "No manual for internal command %s" (string_of_command command)
   in
   let pp_meta f meta =
     match meta with "" -> () | meta -> F.fprintf f " $(i,%s)" (Cmdliner.Manpage.escape meta)

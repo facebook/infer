@@ -213,8 +213,9 @@ let inhabit_call tenv (procname, receiver) cfg env =
           | formals, None
            -> formals
           | [], Some _
-           -> failwithf "Expected at least one formal to bind receiver to in method %a"
-                Typ.Procname.pp procname
+           -> L.(die InternalError)
+                "Expected at least one formal to bind receiver to in method %a" Typ.Procname.pp
+                procname
         in
         let args, env = inhabit_args tenv formals cfg env in
         inhabit_call_with_args procname procdesc args env

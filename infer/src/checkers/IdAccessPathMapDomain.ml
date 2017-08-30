@@ -9,6 +9,7 @@
 
 open! IStd
 module IdMap = Var.Map
+module L = Logging
 
 type astate = AccessPath.t IdMap.t
 
@@ -22,7 +23,8 @@ let check_invariant ap1 ap2 = function
       ()
   | id
    -> if not (AccessPath.equal ap1 ap2) then
-        failwithf "Id %a maps to both %a and %a@." Var.pp id AccessPath.pp ap1 AccessPath.pp ap2
+        L.(die InternalError)
+          "Id %a maps to both %a and %a" Var.pp id AccessPath.pp ap1 AccessPath.pp ap2
 
 let ( <= ) ~lhs ~rhs =
   if phys_equal lhs rhs then true

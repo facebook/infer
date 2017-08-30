@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 type target = {name: string; flavors: string list}
 
@@ -19,7 +20,7 @@ let target_of_string target =
   | [name]
    -> {name; flavors= []}
   | _
-   -> failwithf "cannot parse target %s" target
+   -> L.(die ExternalError) "cannot parse target %s" target
 
 let string_of_target {name; flavors} =
   let pp_string fmt s = Format.fprintf fmt "%s" s in
@@ -49,7 +50,8 @@ let add_flavor_to_target target =
   | None, (BiAbduction | CaptureOnly | Checkers | Linters)
    -> add "infer-capture-all"
   | None, Crashcontext
-   -> failwithf "Analyzer %s is Java-only; not supported with Buck flavors"
+   -> L.(die UserError)
+        "Analyzer %s is Java-only; not supported with Buck flavors"
         (Config.string_of_analyzer Config.analyzer)
 
 let add_flavors_to_buck_command build_cmd =

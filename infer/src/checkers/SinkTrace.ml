@@ -80,7 +80,7 @@ module Make (TraceElem : TraceElem.S) = struct
     | [report]
      -> Some report
     | _
-     -> failwithf "Should not get >1 report for 1 sink"
+     -> L.(die InternalError) "Should not get >1 report for 1 sink"
 
   let pp fmt t =
     let pp_passthroughs_if_not_empty fmt p =

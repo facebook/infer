@@ -654,7 +654,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procna
          -> (* default mode for Java virtual calls: resolution only *)
             [resolved_target] )
   | _
-   -> failwith "A virtual call must have a receiver"
+   -> L.(die InternalError) "A virtual call must have a receiver"
 
 (** Resolve the name of the procedure to call based on the type of the arguments *)
 let resolve_java_pname tenv prop args pname_java call_flags : Typ.Procname.java =
@@ -1413,7 +1413,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
       | Exp.Lvar _ | Exp.Var _
        -> Pvar.mk_abduced_ref_param callee_pname actual_index callee_loc
       | _
-       -> failwithf "Unexpected variable expression %a" Exp.pp actual
+       -> L.(die InternalError) "Unexpected variable expression %a" Exp.pp actual
     in
     let already_has_abduced_retval p =
       List.exists
@@ -1439,7 +1439,8 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
             let prop', fresh_fp_var = add_to_footprint tenv abduced typ prop in
             (prop', Sil.Eexp (fresh_fp_var, Sil.Inone))
         | _
-         -> failwith ("No need for abduction on non-pointer type " ^ Typ.to_string actual_typ)
+         -> L.(die InternalError)
+              "No need for abduction on non-pointer type %s" (Typ.to_string actual_typ)
       in
       let filtered_sigma =
         List.map

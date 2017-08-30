@@ -149,8 +149,8 @@ let java_global_tenv =
   ( lazy
   ( match Tenv.load_from_file DB.global_tenv_fname with
   | None
-   -> failwithf "Could not load the global tenv at path %s@."
-        (DB.filename_to_string DB.global_tenv_fname)
+   -> L.(die InternalError)
+        "Could not load the global tenv at path '%s'" (DB.filename_to_string DB.global_tenv_fname)
   | Some tenv
    -> tenv ) )
 
@@ -166,10 +166,11 @@ let get_tenv exe_env proc_name =
       | Some tenv
        -> tenv
       | None
-       -> failwithf "get_tenv: tenv not found for %a in file %s" Typ.Procname.pp proc_name
+       -> L.(die InternalError)
+            "get_tenv: tenv not found for %a in file '%s'" Typ.Procname.pp proc_name
             (DB.filename_to_string file_data.tenv_file) )
     | None
-     -> failwithf "get_tenv: file_data not found for %a" Typ.Procname.pp proc_name
+     -> L.(die InternalError) "get_tenv: file_data not found for %a" Typ.Procname.pp proc_name
 
 (** return the cfg associated to the procedure *)
 let get_cfg exe_env pname =

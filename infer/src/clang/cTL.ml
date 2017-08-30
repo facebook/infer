@@ -433,7 +433,7 @@ module Debug = struct
               | Eval_false
                -> "red"
               | _
-               -> failwith "Tree is not fully evaluated"
+               -> L.(die InternalError) "Tree is not fully evaluated"
             in
             let label =
               let string_of_lcxt c =
@@ -527,7 +527,7 @@ let create_ctl_evaluation_tracker source_file =
   | true, None
    -> ctl_evaluation_tracker := Some (Debug.EvaluationTracker.create source_file)
   | true, _
-   -> failwith "A CTL evaluation tracker has already been created"
+   -> L.(die InternalError) "A CTL evaluation tracker has already been created"
   | _
    -> ()
 
@@ -853,7 +853,7 @@ let rec eval_Atomic _pred_name args an lcxt =
   | "within_available_class_block", [], an
    -> CPredicates.within_available_class_block lcxt an
   | _
-   -> failwith ("ERROR: Undefined Predicate or wrong set of arguments: '" ^ pred_name ^ "'")
+   -> L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
 
 (* an, lcxt |= EF phi  <=>
    an, lcxt |= phi or exists an' in Successors(st): an', lcxt |= EF phi

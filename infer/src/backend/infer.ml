@@ -118,7 +118,8 @@ let () =
    -> (* at least one report must be passed in input to compute differential *)
       ( match (Config.report_current, Config.report_previous) with
       | None, None
-       -> failwith "Expected at least one argument among 'report-current' and 'report-previous'\n"
+       -> L.(die UserError)
+            "Expected at least one argument among 'report-current' and 'report-previous'"
       | _
        -> () ) ;
       ReportDiff.reportdiff ~current_report:Config.report_current

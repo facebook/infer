@@ -130,7 +130,7 @@ let file_modified_time ?(symlink= false) fname =
   try
     let stat = (if symlink then Unix.lstat else Unix.stat) fname in
     stat.Unix.st_mtime
-  with Unix.Unix_error _ -> failwithf "File %s does not exist." fname
+  with Unix.Unix_error _ -> L.(die InternalError) "File %s does not exist." fname
 
 let filename_create_dir fname =
   let dirname = Filename.dirname fname in
@@ -172,7 +172,7 @@ let read_file_with_lock dir fname =
       Unix.lockf fd ~mode:Unix.F_RLOCK ~len:0L ;
       let buf = read_whole_file fd in
       Unix.lockf fd ~mode:Unix.F_ULOCK ~len:0L ; Unix.close fd ; Some buf
-    with Unix.Unix_error _ -> failwith "read_file_with_lock: Unix error"
+    with Unix.Unix_error _ -> L.(die ExternalError) "read_file_with_lock: Unix error"
   with Unix.Unix_error _ -> None
 
 (** {2 Results Directory} *)
@@ -217,7 +217,7 @@ module Results_dir = struct
 
   (** initialize the results directory *)
   let init source =
-    if SourceFile.is_invalid source then invalid_arg "Invalid source file passed" ;
+    if SourceFile.is_invalid source then L.(die InternalError) "Invalid source file passed" ;
     Utils.create_dir Config.results_dir ;
     Utils.create_dir specs_dir ;
     Utils.create_dir (path_to_filename Abs_root [Config.attributes_dir_name]) ;
@@ -245,7 +245,7 @@ module Results_dir = struct
       | filename :: dir_path
        -> (filename, dir_path)
       | []
-       -> raise (Failure "create_path")
+       -> L.(die InternalError) "create_path"
     in
     let full_fname = Filename.concat (create dir_path) filename in
     Unix.openfile full_fname ~mode:Unix.([O_WRONLY; O_CREAT; O_TRUNC]) ~perm:0o777

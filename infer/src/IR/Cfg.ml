@@ -84,7 +84,7 @@ let check_cfg_connectedness cfg =
     let nodes = Procdesc.get_nodes pd in
     (* TODO (T20302015): also check the CFGs for the C-like procedures *)
     if not Config.keep_going && Typ.Procname.is_java pname && List.exists ~f:broken_node nodes then
-      failwithf "Broken CFG on %a" Typ.Procname.pp pname
+      L.(die InternalError) "Broken CFG on %a" Typ.Procname.pp pname
   in
   let pdescs = get_all_procs cfg in
   List.iter ~f:do_pdesc pdescs

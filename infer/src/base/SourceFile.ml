@@ -39,7 +39,7 @@ module Set = Caml.Set.Make (OrderedSourceFile)
 
 let from_abs_path ?(warn_on_error= true) fname =
   if Filename.is_relative fname then
-    failwithf "ERROR: Path %s is relative, when absolute path was expected .@." fname ;
+    L.(die InternalError) "Path '%s' is relative, when absolute path was expected." fname ;
   (* try to get realpath of source file. Use original if it fails *)
   let fname_real =
     try Utils.realpath ~warn_on_error fname
@@ -74,7 +74,7 @@ let pp fmt fname = Format.fprintf fmt "%s" (to_string fname)
 let to_abs_path fname =
   match fname with
   | Invalid origin
-   -> invalid_arg ("cannot be called with Invalid source file originating in " ^ origin)
+   -> L.(die InternalError) "cannot be called with Invalid source file originating in %s" origin
   | RelativeProjectRoot path
    -> Filename.concat Config.project_root path
   | RelativeInferModel path
@@ -96,7 +96,7 @@ let is_invalid = function Invalid _ -> true | _ -> false
 let is_infer_model source_file =
   match source_file with
   | Invalid origin
-   -> invalid_arg ("cannot be called with Invalid source file from " ^ origin)
+   -> L.(die InternalError) "cannot be called with Invalid source file from %s" origin
   | RelativeProjectRoot _ | Absolute _
    -> false
   | RelativeInferModel _
@@ -112,7 +112,7 @@ let is_cpp_model file =
 
 let is_under_project_root = function
   | Invalid origin
-   -> invalid_arg ("cannot be called with Invalid source file from " ^ origin)
+   -> L.(die InternalError) "cannot be called with Invalid source file from %s" origin
   | RelativeProjectRoot _
    -> true
   | Absolute _ | RelativeInferModel _

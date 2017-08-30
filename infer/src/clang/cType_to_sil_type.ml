@@ -213,7 +213,7 @@ and type_ptr_to_type_desc translate_decl tenv type_ptr : Typ.desc =
   | Clang_ast_extend.ErrorType
    -> Typ.Tvoid
   | _
-   -> raise (invalid_arg "unknown variant for type_ptr")
+   -> L.(die InternalError) "unknown variant for type_ptr"
 
 and qual_type_to_sil_type translate_decl tenv qual_type =
   let desc = type_ptr_to_type_desc translate_decl tenv qual_type.Clang_ast_t.qt_type_ptr in

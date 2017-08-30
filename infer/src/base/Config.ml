@@ -14,8 +14,9 @@ open! PVariant
 (** Configuration values: either constant, determined at compile time, or set at startup
     time by system calls, environment variables, or command line options *)
 
-module CLOpt = CommandLineOption
 module F = Format
+module CLOpt = CommandLineOption
+module L = SimpleLogging
 
 type analyzer =
   | BiAbduction
@@ -1555,19 +1556,15 @@ and specs_library =
     (* Given a filename with a list of paths, convert it into a list of string iff they are
        absolute *)
     let read_specs_dir_list_file fname =
-      let validate_path path =
-        if Filename.is_relative path then
-          failwith ("Failing because path " ^ path ^ " is not absolute")
-      in
       match Utils.read_file (resolve fname) with
       | Ok pathlist
-       -> List.iter ~f:validate_path pathlist ; pathlist
+       -> pathlist
       | Error error
-       -> failwithf "cannot read file '%s' from cwd '%s': %s" fname (Sys.getcwd ()) error
+       -> L.(die UserError) "cannot read file '%s' from cwd '%s': %s" fname (Sys.getcwd ()) error
     in
     (* Add the newline-separated directories listed in <file> to the list of directories to be
        searched for .spec files *)
-    CLOpt.mk_string ~deprecated:["specs-dir-list-file"; "-specs-dir-list-file"]
+    CLOpt.mk_path ~deprecated:["specs-dir-list-file"; "-specs-dir-list-file"]
       ~long:"specs-library-index" ~default:""
       ~f:(fun file ->
         specs_library := read_specs_dir_list_file file @ !specs_library ;
@@ -1787,12 +1784,34 @@ let post_parsing_initialization command_opt =
   | `None
    -> () ) ;
   if !version <> `None || !help <> `None then exit 0 ;
-  (* Core sets a verbose exception handler by default, with backtrace. This is good for developers
-     but in user-mode we want something lighter weight. *)
-  if not !developer_mode then
-    Caml.Printexc.set_uncaught_exception_handler (fun exn _ ->
-        let exn_msg = match exn with Failure msg -> msg | _ -> Caml.Printexc.to_string exn in
-        Format.eprintf "ERROR: %s@." exn_msg ) ;
+  let uncaught_exception_handler exn raw_backtrace =
+    let backtrace, should_print_backtrace_default =
+      match exn with
+      | L.InferExternalError (_, bt) | L.InferInternalError (_, bt)
+       -> (bt, true)
+      | L.InferUserError (_, bt)
+       -> (bt, false)
+      | _
+       -> (Caml.Printexc.raw_backtrace_to_string raw_backtrace, true)
+    in
+    let print_exception () =
+      match exn with
+      | Failure msg
+       -> F.eprintf "ERROR: %s@\n" msg
+      | L.InferExternalError (msg, _)
+       -> F.eprintf "External Error: %s@\n" msg
+      | L.InferInternalError (msg, _)
+       -> F.eprintf "Internal Error: %s@\n" msg
+      | L.InferUserError (msg, _)
+       -> F.eprintf "Usage Error: %s@\n" msg
+      | _
+       -> F.eprintf "Uncaught error: %s@\n" (Exn.to_string exn)
+    in
+    if should_print_backtrace_default || !developer_mode then prerr_endline backtrace ;
+    print_exception () ;
+    exit (L.exit_code_of_exception exn)
+  in
+  Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
   F.set_margin !margin ;
   let set_minor_heap_size nMb =
     (* increase the minor heap size to speed up gc *)
@@ -1853,7 +1872,7 @@ let process_iphoneos_target_sdk_version_path_regex args =
     | Some (path, version)
      -> {path= Str.regexp path; version}
     | None
-     -> failwithf
+     -> L.(die UserError)
           "Incorrect format for the option iphoneos-target-sdk_version-path-regex. The correct format is path:version but got %s"
           arg
   in

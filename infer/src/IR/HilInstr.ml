@@ -84,10 +84,10 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
             | ap :: _
              -> ap
             | []
-             -> invalid_argf "Invalid pointer arithmetic expression %a used as LHS" Exp.pp lhs_exp
-          )
+             -> L.(die InternalError)
+                  "Invalid pointer arithmetic expression %a used as LHS" Exp.pp lhs_exp )
         | _
-         -> invalid_argf "Non-assignable LHS expression %a" Exp.pp lhs_exp
+         -> L.(die InternalError) "Non-assignable LHS expression %a" Exp.pp lhs_exp
       in
       Instr (Assign (lhs_access_path, exp_of_sil rhs_exp typ, loc))
   | Call (ret_opt, call_exp, formals, loc, call_flags)
@@ -99,7 +99,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
         | AccessPath access_path
          -> Indirect access_path
         | call_exp
-         -> invalid_argf "Unexpected call expression %a" HilExp.pp call_exp
+         -> L.(die InternalError) "Unexpected call expression %a" HilExp.pp call_exp
       in
       let formals = List.map ~f:(fun (exp, typ) -> exp_of_sil exp typ) formals in
       Instr (Call (hil_ret, hil_call, formals, call_flags, loc))

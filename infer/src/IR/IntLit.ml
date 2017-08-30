@@ -9,6 +9,7 @@
  *)
 open! IStd
 module F = Format
+module L = Logging
 
 (** signed and unsigned integer literals *)
 type t = bool * Int64.t * bool
@@ -108,7 +109,7 @@ let sub i1 i2 = add i1 (neg i2)
 let shift_left (unsigned1, i1, ptr1) (_, i2, _) =
   match Int64.to_int i2 with
   | None
-   -> failwithf "Shifting failed with operand %a" Int64.pp i2
+   -> L.(die InternalError) "Shifting failed with operand %a" Int64.pp i2
   | Some i2
    -> if i2 < 0 || i2 >= 64 then raise OversizedShift ;
       let res = Int64.shift_left i1 i2 in
@@ -117,7 +118,7 @@ let shift_left (unsigned1, i1, ptr1) (_, i2, _) =
 let shift_right (unsigned1, i1, ptr1) (_, i2, _) =
   match Int64.to_int i2 with
   | None
-   -> failwithf "Shifting failed with operand %a" Int64.pp i2
+   -> L.(die InternalError) "Shifting failed with operand %a" Int64.pp i2
   | Some i2
    -> if i2 < 0 || i2 >= 64 then raise OversizedShift ;
       let res = Int64.shift_right i1 i2 in

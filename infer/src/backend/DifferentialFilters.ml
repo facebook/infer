@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 module FileRenamings = struct
   type renaming = {current: string; previous: string} [@@deriving compare]
@@ -45,7 +46,7 @@ module FileRenamings = struct
         | _
          -> raise (Yojson.Json_error "not a record")
       with Yojson.Json_error err ->
-        failwithf
+        L.(die UserError)
           "Error parsing file renamings: %s@\nExpected JSON object of the following form: '%s', but instead got: '%s'"
           err "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}"
           (Yojson.Basic.to_string assoc)
@@ -54,7 +55,7 @@ module FileRenamings = struct
     | `List json_renamings
      -> List.map ~f:renaming_of_assoc json_renamings
     | _
-     -> failwithf "Expected JSON list but got '%s'" input
+     -> L.(die UserError) "Expected JSON list but got '%s'" input
 
   let from_json_file file : t = from_json (In_channel.read_all file)
 

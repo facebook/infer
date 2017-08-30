@@ -247,7 +247,6 @@ module AnnotationSpec = struct
 
   (* The default sanitizer does not sanitize anything *)
   let default_sanitizer _ _ = false
-
 end
 
 module StandardAnnotationSpec = struct
@@ -427,7 +426,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Prune (exp, _, _, _) when prunes_tracking_var astate exp
      -> Domain.stop_tracking astate
     | Sil.Call (None, _, _, _, _)
-     -> failwith "Expecting a return identifier"
+     -> L.(die InternalError) "Expecting a return identifier"
     | _
      -> astate
 end

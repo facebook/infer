@@ -109,9 +109,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         mem |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
         |> set_uninitialized node typ (Dom.Val.get_array_locs v)
     | [_; _]
-     -> failwithf "Unexpected type of arguments for __set_array_length()"
+     -> L.(die InternalError) "Unexpected type of arguments for __set_array_length()"
     | _
-     -> failwithf "Unexpected number of arguments for __set_array_length()"
+     -> L.(die InternalError) "Unexpected number of arguments for __set_array_length()"
 
   let handle_unknown_call
       : Typ.Procname.t -> (Ident.t * Typ.t) option -> Typ.Procname.t -> (Exp.t * Typ.t) list

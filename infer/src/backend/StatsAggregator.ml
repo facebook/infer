@@ -8,6 +8,7 @@
  *)
 open! IStd
 open! PVariant
+module L = Logging
 
 let aggregated_stats_filename = "aggregated_stats.json"
 
@@ -51,22 +52,18 @@ let find_stats_files_in_dir dir =
   {frontend_paths; backend_paths; reporting_paths}
 
 let load_data_from_infer_deps file =
+  let error msg = Printf.sprintf ("Error reading '%s': " ^^ msg) file in
   let extract_target_and_path line =
-    match Str.split_delim (Str.regexp (Str.quote "\t")) line with
+    match String.split ~on:'\t' line with
     | target :: _ :: path :: _
-     -> if dir_exists path then (target, path)
-        else raise (Failure ("path '" ^ path ^ "' is not a valid directory"))
+     -> if dir_exists path then Ok (target, path)
+        else Error (error "path '%s' is not a valid directory" path)
     | _
-     -> raise (Failure "malformed input")
+     -> Error (error "malformed input")
   in
-  let lines = Utils.read_file file in
-  try
-    match lines with
-    | Ok l
-     -> Ok (List.map ~f:extract_target_and_path l)
-    | Error error
-     -> raise (Failure (Printf.sprintf "Error reading '%s': %s" file error))
-  with Failure msg -> Error msg
+  let parse_lines lines = List.map lines ~f:extract_target_and_path |> Result.all in
+  Utils.read_file file |> Result.map_error ~f:(fun msg -> error "%s" msg)
+  |> Result.bind ~f:parse_lines
 
 let collect_all_stats_files () =
   let infer_out = Config.results_dir in
@@ -138,7 +135,9 @@ let aggregate_stats_by_target tp =
 let generate_files () =
   let infer_out = Config.results_dir in
   let stats_files = collect_all_stats_files () in
-  let origin = match stats_files with Ok origin -> origin | Error e -> failwith e in
+  let origin =
+    match stats_files with Ok origin -> origin | Error e -> L.(die InternalError) "%s" e
+  in
   let aggregated_frontend_stats_dir = Filename.concat infer_out Config.frontend_stats_dir_name in
   let aggregated_backend_stats_dir = Filename.concat infer_out Config.backend_stats_dir_name in
   let aggregated_reporting_stats_dir = Filename.concat infer_out Config.reporting_stats_dir_name in

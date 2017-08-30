@@ -14,7 +14,8 @@ let tests =
   let open OUnit2 in
   let empty_string_test =
     let empty_string_test_ _ =
-      assert_raises (Failure "Empty stack trace") (fun () -> Stacktrace.of_string "")
+      UnitUtils.assert_raises (Logging.InferUserError ("Empty stack trace", "")) (fun () ->
+          Stacktrace.of_string "" )
     in
     "empty_string" >:: empty_string_test_
   in

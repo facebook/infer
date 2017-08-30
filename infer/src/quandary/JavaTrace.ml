@@ -84,7 +84,7 @@ module SourceKind = struct
     | pname when BuiltinDecl.is_declared pname
      -> None
     | pname
-     -> failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
+     -> L.(die InternalError) "Non-Java procname %a in Java analysis" Typ.Procname.pp pname
 
   let get_tainted_formals pdesc tenv =
     let make_untainted (name, typ) = (name, typ, None) in
@@ -148,8 +148,8 @@ module SourceKind = struct
           | None
            -> Source.all_formals_untainted pdesc )
     | procname
-     -> failwithf "Non-Java procedure %a where only Java procedures are expected" Typ.Procname.pp
-          procname
+     -> L.(die InternalError)
+          "Non-Java procedure %a where only Java procedures are expected" Typ.Procname.pp procname
 
   let pp fmt kind =
     F.fprintf fmt
@@ -284,7 +284,7 @@ module SinkKind = struct
     | pname when BuiltinDecl.is_declared pname
      -> None
     | pname
-     -> failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
+     -> L.(die InternalError) "Non-Java procname %a in Java analysis" Typ.Procname.pp pname
 
   let pp fmt kind =
     F.fprintf fmt

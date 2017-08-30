@@ -83,7 +83,7 @@ let add_infer_profile_to_xml dir maven_xml infer_xml =
          -> (* closing the first tag, we're done *)
             ()
         | []
-         -> invalid_arg "ill-formed xml" )
+         -> L.(die UserError) "ill-formed xml" )
     | `Data data
      -> Xmlm.output xml_out elt_in ;
         ( match tag_stack with
@@ -110,7 +110,7 @@ let add_infer_profile_to_xml dir maven_xml infer_xml =
      -> Xmlm.output infer_xml (`Dtd None) ) ;
     process_root maven_xml infer_xml ;
     Xmlm.eoi maven_xml |> ignore ;
-    if not (Xmlm.eoi maven_xml) then invalid_arg "More than one document"
+    if not (Xmlm.eoi maven_xml) then L.(die UserError) "More than one document"
   in
   process_document ()
 
@@ -171,6 +171,7 @@ let capture ~prog ~args =
     | Ok ()
      -> ()
     | Error _ as status
-     -> failwithf "*** Maven command failed:@\n*** %s@\n*** %s@\n"
+     -> L.(die UserError)
+          "*** Maven command failed:@\n*** %s@\n*** %s@\n"
           (String.concat ~sep:" " (prog :: capture_args))
           (Unix.Exit_or_signal.to_string_hum status)

@@ -149,7 +149,7 @@ let check_printf_args_ok tenv (node: Procdesc.Node.t) (instr: Sil.instr)
     | Exp.Const c
      -> PatternMatch.java_get_const_type_name c
     | _
-     -> raise (Failure "Could not resolve fixed type name")
+     -> L.(die InternalError) "Could not resolve fixed type name"
   in
   match instr with
   | Sil.Call (_, Exp.Const Const.Cfun pn, args, cl, _) -> (

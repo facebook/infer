@@ -338,7 +338,7 @@ let rec is_objc_if_descendant ?(blacklist= default_blacklist) if_decl ancestors 
   (* List of ancestors to check for and list of classes to short-circuit to
      false can't intersect *)
   if not String.Set.(is_empty (inter (of_list blacklist) (of_list ancestors))) then
-    failwith "Blacklist and ancestors must be mutually exclusive."
+    L.(die InternalError) "Blacklist and ancestors must be mutually exclusive."
   else
     match if_decl with
     | Some Clang_ast_t.ObjCInterfaceDecl (_, ndi, _, _, _)

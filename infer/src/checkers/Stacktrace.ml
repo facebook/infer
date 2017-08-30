@@ -11,6 +11,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 
 type frame = {class_str: string; method_str: string; file_str: string; line_num: int option}
 
@@ -86,7 +87,7 @@ let of_string s =
       let parsed = List.map ~f:parse_stack_frame trace in
       make exception_name parsed
   | []
-   -> failwith "Empty stack trace"
+   -> L.(die UserError) "Empty stack trace"
 
 let of_json filename json =
   let exception_name_key = "exception_type" in
@@ -94,7 +95,7 @@ let of_json filename json =
   let extract_json_member key =
     match Yojson.Basic.Util.member key json with
     | `Null
-     -> failwithf "Missing key in supplied JSON data: %s (in file %s)" key filename
+     -> L.(die UserError) "Missing key in supplied JSON data: %s (in file %s)" key filename
     | item
      -> item
   in
@@ -109,4 +110,5 @@ let of_json filename json =
 let of_json_file filename =
   try of_json filename (Yojson.Basic.from_file filename)
   with Sys_error msg | Yojson.Json_error msg ->
-    failwithf "Could not read or parse the supplied JSON stacktrace file %s :@\n %s" filename msg
+    L.(die UserError)
+      "Could not read or parse the supplied JSON stacktrace file %s :@\n %s" filename msg

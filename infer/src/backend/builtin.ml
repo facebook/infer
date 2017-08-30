@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 (** Module for builtin functions with their symbolic execution handler *)
 
@@ -34,7 +35,7 @@ let builtin_functions = Typ.Procname.Hash.create 4
 let check_register_populated () =
   (* check if BuiltinDefn were loaded before accessing register *)
   if Int.equal (Typ.Procname.Hash.length builtin_functions) 0 then
-    failwith "Builtins were not initialized"
+    L.(die InternalError) "Builtins were not initialized"
 
 (** check if the function is a builtin *)
 let is_registered name =

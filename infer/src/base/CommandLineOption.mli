@@ -122,7 +122,7 @@ val mk_string_list : ?default:string list -> ?f:(string -> string) -> string lis
     An option "--[long]-reset" is automatically created that resets the list to [] when found on the
     command line.  *)
 
-val mk_path : default:string -> string ref t
+val mk_path : default:string -> ?f:(string -> string) -> string ref t
 (** like [mk_string] but will resolve the string into an absolute path so that children processes
     agree on the absolute path that the option represents *)
 

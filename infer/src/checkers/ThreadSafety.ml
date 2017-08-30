@@ -26,7 +26,7 @@ let make_excluder locks threads =
   if locks && not threads then ThreadSafetyDomain.Excluder.Lock
   else if not locks && threads then ThreadSafetyDomain.Excluder.Thread
   else if locks && threads then ThreadSafetyDomain.Excluder.Both
-  else failwithf "called when neither lock nor thread known"
+  else L.(die InternalError) "called when neither lock nor thread known"
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
@@ -513,8 +513,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Some HilExp.AccessPath receiver_ap
        -> receiver_ap
       | _
-       -> failwithf "Call to %a is marked as a container write, but has no receiver"
-            Typ.Procname.pp callee_pname
+       -> L.(die InternalError)
+            "Call to %a is marked as a container write, but has no receiver" Typ.Procname.pp
+            callee_pname
     in
     match get_container_access callee_pname tenv with
     | Some ContainerWrite
@@ -599,7 +600,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 in
                 {astate with attribute_map}
             | None
-             -> failwithf "Procedure %a specified as returning boolean, but returns nothing"
+             -> L.(die InternalError)
+                  "Procedure %a specified as returning boolean, but returns nothing"
                   Typ.Procname.pp callee_pname )
           | Unknown
            -> astate
@@ -622,7 +624,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   in
                   {astate with attribute_map}
               | None
-               -> failwithf "Procedure %a specified as returning boolean, but returns nothing"
+               -> L.(die InternalError)
+                    "Procedure %a specified as returning boolean, but returns nothing"
                     Typ.Procname.pp callee_pname )
             | NoEffect ->
               match get_summary pdesc callee_pname actuals loc tenv with
@@ -872,7 +875,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Indirect _, _, _, _) ->
       match Procdesc.get_proc_name pdesc with
       | Typ.Procname.Java _
-       -> failwithf "Unexpected indirect call instruction %a" HilInstr.pp instr
+       -> L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
       | _
        -> astate
 end
@@ -1545,7 +1548,7 @@ let quotient_access_map acc_map =
              -> ThreadSafetyDomain.Access.equal k k')
           m
       in
-      if AccessListMap.is_empty k_part then failwith "may_alias is not reflexive!" ;
+      if AccessListMap.is_empty k_part then L.(die InternalError) "may_alias is not reflexive!" ;
       let k_accesses = AccessListMap.fold (fun _ v acc' -> List.append v acc') k_part [] in
       let new_acc = AccessListMap.add k k_accesses acc in
       aux new_acc non_k_part

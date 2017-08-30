@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 type log_t =
   ?loc:Location.t -> ?node_id:int * int -> ?session:int -> ?ltr:Errlog.loc_trace
@@ -56,7 +57,7 @@ let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_i
         (* TODO (#16348004): This is currently needed as ThreadSafety works as a cluster checker *)
         Specs.store_summary summary
   | None
-   -> failwithf
+   -> L.(die InternalError)
         "Trying to report error on procedure %a, but cannot because no summary exists for this procedure. Did you mean to log the error on the caller of %a instead?"
         Typ.Procname.pp proc_name Typ.Procname.pp proc_name
 

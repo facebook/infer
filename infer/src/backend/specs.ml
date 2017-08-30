@@ -607,7 +607,8 @@ let rec get_summary proc_name =
 let get_summary_unsafe s proc_name =
   match get_summary proc_name with
   | None
-   -> failwithf "[%s] Specs.get_summary_unsafe: %a Not found" s Typ.Procname.pp proc_name
+   -> L.(die InternalError)
+        "[%s] Specs.get_summary_unsafe: %a Not found" s Typ.Procname.pp proc_name
   | Some summary
    -> summary
 

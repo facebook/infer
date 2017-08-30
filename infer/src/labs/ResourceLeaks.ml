@@ -86,7 +86,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         astate
     | Call (_, Indirect _, _, _, _)
      -> (* This should never happen in Java. Fail if it does. *)
-        failwithf "Unexpected indirect call %a" HilInstr.pp instr
+        L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr
 end
 
 (* Create an intraprocedural abstract interpreter from the transfer functions we defined *)
@@ -123,5 +123,6 @@ let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =
       report post proc_data ;
       Summary.update_summary (convert_to_summary post) summary
   | None
-   -> failwithf "Analyzer failed to compute post for %a" Typ.Procname.pp
+   -> L.(die InternalError)
+        "Analyzer failed to compute post for %a" Typ.Procname.pp
         (Procdesc.get_proc_name proc_data.pdesc)

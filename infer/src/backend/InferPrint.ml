@@ -331,7 +331,8 @@ module IssuesJson = struct
          -> (err_data.loc.Location.file, 0)
       in
       if SourceFile.is_invalid source_file then
-        failwithf "Invalid source file for %a %a@.Trace: %a@." IssueType.pp key.err_name
+        L.(die InternalError)
+          "Invalid source file for %a %a@.Trace: %a@." IssueType.pp key.err_name
           Localise.pp_error_desc key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
       let should_report_source_file =
         not (SourceFile.is_infer_model source_file) || Config.debug_mode || Config.debug_exceptions
@@ -741,39 +742,39 @@ let pp_issues_in_format (format_kind, (outf: Utils.outfile)) =
   | Csv
    -> IssuesCsv.pp_issues_of_error_log outf.fmt
   | Tests
-   -> failwith "Print issues as tests is not implemented"
+   -> L.(die InternalError) "Print issues as tests is not implemented"
   | Text
    -> IssuesTxt.pp_issues_of_error_log outf.fmt
   | Latex
-   -> failwith "Printing issues in latex is not implemented"
+   -> L.(die InternalError) "Printing issues in latex is not implemented"
 
 let pp_procs_in_format (format_kind, (outf: Utils.outfile)) =
   match format_kind with
   | Csv
    -> ProcsCsv.pp_summary outf.fmt
   | Json | Latex | Tests | Text
-   -> failwith "Printing procs in json/latex/tests/text is not implemented"
+   -> L.(die InternalError) "Printing procs in json/latex/tests/text is not implemented"
 
 let pp_calls_in_format (format_kind, (outf: Utils.outfile)) =
   match format_kind with
   | Csv
    -> CallsCsv.pp_calls outf.fmt
   | Json | Tests | Text | Latex
-   -> failwith "Printing calls in json/tests/text/latex is not implemented"
+   -> L.(die InternalError) "Printing calls in json/tests/text/latex is not implemented"
 
 let pp_stats_in_format (format_kind, _) =
   match format_kind with
   | Csv
    -> Stats.process_summary
   | Json | Tests | Text | Latex
-   -> failwith "Printing stats in json/tests/text/latex is not implemented"
+   -> L.(die InternalError) "Printing stats in json/tests/text/latex is not implemented"
 
 let pp_summary_in_format (format_kind, (outf: Utils.outfile)) =
   match format_kind with
   | Latex
    -> Summary.write_summary_latex outf.fmt
   | Json | Csv | Tests | Text
-   -> failwith "Printing summary in json/csv/tests/text is not implemented"
+   -> L.(die InternalError) "Printing summary in json/csv/tests/text is not implemented"
 
 let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list =
   let pp_issues_in_format format =
@@ -848,11 +849,11 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
           | Text
            -> pp_text_of_report outf.fmt report
           | Json
-           -> failwith "Printing issues from json does not support json output"
+           -> L.(die InternalError) "Printing issues from json does not support json output"
           | Csv
-           -> failwith "Printing issues from json does not support csv output"
+           -> L.(die InternalError) "Printing issues from json does not support csv output"
           | Latex
-           -> failwith "Printing issues from json does not support latex output"
+           -> L.(die InternalError) "Printing issues from json does not support latex output"
         in
         List.iter ~f:pp_json_issue format_list
       in
@@ -869,7 +870,7 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
       in
       List.iter ~f:pp_report_by_report_kind formats_by_report_kind
   | Error error
-   -> failwithf "Error reading '%s': %s" fname error
+   -> L.(die UserError) "Error reading '%s': %s" fname error
 
 let pp_lint_issues_by_report_kind formats_by_report_kind error_filter linereader procname error_log =
   let pp_summary_by_report_kind (report_kind, format_list) =

@@ -99,7 +99,7 @@ struct
       else
         let visit_count' = old_state.visit_count + 1 in
         if visit_count' > Config.max_widens then
-          failwithf
+          L.(die InternalError)
             "Exceeded max widening threshold %d while analyzing %a. Please check your widening operator or increase the threshold"
             Config.max_widens Typ.Procname.pp (Procdesc.get_proc_name pdesc) ;
         update_inv_map widened_pre visit_count'

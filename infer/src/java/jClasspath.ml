@@ -37,14 +37,14 @@ let load_models_tenv zip_channel =
       Zip.copy_entry_to_file zip_channel entry temp_tenv_file ;
       match Tenv.load_from_file temp_tenv_filename with
       | None
-       -> failwith "Models tenv file could not be loaded"
+       -> L.(die InternalError) "Models tenv file could not be loaded"
       | Some tenv
        -> tenv
     with
     | Not_found
-     -> failwith "Models tenv not found in jar file"
+     -> L.(die InternalError) "Models tenv not found in jar file"
     | Sys_error msg
-     -> failwith ("Models jar could not be opened " ^ msg)
+     -> L.(die InternalError) "Models jar could not be opened: %s" msg
   in
   DB.file_remove temp_tenv_filename ; models_tenv
 
@@ -65,7 +65,7 @@ let collect_specs_filenames jar_filename =
 let add_models jar_filename =
   models_jar := jar_filename ;
   if Sys.file_exists !models_jar = `Yes then collect_specs_filenames jar_filename
-  else failwith "Java model file not found"
+  else L.(die InternalError) "Java model file not found"
 
 let is_model procname = String.Set.mem !models_specs_filenames (Typ.Procname.to_filename procname)
 

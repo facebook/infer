@@ -227,7 +227,7 @@ let get_translation_unit pvar =
   | Global_var (tu, _, _, _)
    -> tu
   | _
-   -> invalid_argf "Expected a global variable"
+   -> L.(die InternalError) "Expected a global variable"
 
 let is_compile_constant pvar = match pvar.pv_kind with Global_var (_, b, _, _) -> b | _ -> false
 

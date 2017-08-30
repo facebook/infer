@@ -181,4 +181,4 @@ let checker {Callbacks.summary; proc_desc; tenv} =
     | Some (post, _)
      -> report post proc_data ; summary
     | None
-     -> failwithf "Analyzer failed to compute post for %a" Typ.Procname.pp proc_name
+     -> L.(die InternalError) "Analyzer failed to compute post for %a" Typ.Procname.pp proc_name

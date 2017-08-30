@@ -71,7 +71,8 @@ let load_tenv () =
   | None
    -> Tenv.create ()
   | Some _ when Config.models_mode
-   -> failwithf "Unexpected tenv file %s found while generating the models"
+   -> L.(die InternalError)
+        "Unexpected tenv file %s found while generating the models"
         (DB.filename_to_string DB.global_tenv_fname)
   | Some tenv
    -> tenv
@@ -128,9 +129,9 @@ let main load_sources_and_classes =
   | true, false
    -> ()
   | false, false
-   -> failwith "Java model file is required"
+   -> L.(die UserError) "Java model file is required"
   | true, true
-   -> failwith "Not expecting model file when analyzing the models"
+   -> L.(die UserError) "Not expecting model file when analyzing the models"
   | false, true
    -> JClasspath.add_models Config.models_jar ) ;
   JBasics.set_permissive true ;
@@ -141,7 +142,7 @@ let main load_sources_and_classes =
     | `FromArguments path
      -> JClasspath.load_from_arguments path
   in
-  if String.Map.is_empty sources then failwith "Failed to load any Java source code"
+  if String.Map.is_empty sources then L.(die UserError) "Failed to load any Java source code"
   else do_all_files classpath sources classes
 
 let from_arguments path = main (`FromArguments path)

@@ -172,8 +172,8 @@ clause:
     { L.(debug Linters Verbose) "\tParsed SET clause@\n";
     let alvar = match $2 with
       | "report_when" -> ALVar.Report_when
-      | _ -> failwith "string '%s' cannot be set to a variable. \
-                       Use the reserverd variable 'report_when'" in
+      | _ -> L.(die ExternalError) "string '%s' cannot be set to a variable. \
+                       Use the reserved variable 'report_when'" $2 in
       CTL.CSet (alvar, $4) }
   | SET WHITELIST_PATH ASSIGNMENT LEFT_BRACE path_list RIGHT_BRACE
     { CTL.CPath (`WhitelistPath, $5) }
@@ -188,9 +188,10 @@ clause:
       | "mode" -> ALVar.Mode
       | "doc_url" -> ALVar.Doc_url
       | "name" -> ALVar.Name
-      | _ -> failwithf "string '%s' cannot be set in a SET clause. \
-                        Use either of: \
-                        'doc_url', 'message', 'mode', 'name', 'severity' or 'suggestion'" $2 in
+      | _ -> L.(die ExternalError)
+              "string '%s' cannot be set in a SET clause. \
+               Use either of: \
+               'doc_url', 'message', 'mode', 'name', 'severity' or 'suggestion'" $2 in
       CTL.CDesc (alvar, $4) }
     | let_clause { $1 }
     ;

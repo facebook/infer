@@ -76,7 +76,7 @@ module SourceKind = struct
     | Typ.Procname.Block _
      -> None
     | pname
-     -> failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname
+     -> L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
 
   let get_tainted_formals pdesc _ =
     let get_tainted_formals_ qualified_pname =
@@ -211,7 +211,7 @@ module SinkKind = struct
     | Typ.Procname.Block _
      -> None
     | pname
-     -> failwithf "Non-C++ procname %a in C++ analysis@." Typ.Procname.pp pname
+     -> L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
 
   let pp fmt kind =
     F.fprintf fmt

@@ -126,7 +126,7 @@ let iterate_callbacks call_graph exe_env =
   let analyze_proc_name pname =
     match Ondemand.get_proc_desc pname with
     | None
-     -> failwithf "Could not find proc desc for %a" Typ.Procname.pp pname
+     -> L.(die InternalError) "Could not find proc desc for %a" Typ.Procname.pp pname
     | Some pdesc
      -> ignore (Ondemand.analyze_proc_desc pdesc pdesc)
   in

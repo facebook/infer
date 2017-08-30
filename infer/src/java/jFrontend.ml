@@ -99,7 +99,7 @@ let add_cmethod source_file program linereader icfg cm proc_name =
         | Some node
          -> node
         | None
-         -> failwithf "No exn node found for %s" (Typ.Procname.to_string proc_name)
+         -> L.(die InternalError) "No exn node found for %s" (Typ.Procname.to_string proc_name)
       in
       let instrs = JBir.code jbir_code in
       let context = JContext.create_context icfg procdesc jbir_code cn source_file program in

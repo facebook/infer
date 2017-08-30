@@ -232,7 +232,8 @@ let get_implementation cm =
   | Javalib.Native
    -> let cms = cm.Javalib.cm_class_method_signature in
       let cn, ms = JBasics.cms_split cms in
-      failwithf "native method %s found in %s@." (JBasics.ms_name ms) (JBasics.cn_name cn)
+      L.(die InternalError)
+        "native method %s found in %s@." (JBasics.ms_name ms) (JBasics.cn_name cn)
   | Javalib.Java t
    -> (* Sawja doesn't handle invokedynamic, and it will crash with a Match_failure if we give it
          bytecode with this instruction. hack around this problem by converting all invokedynamic's

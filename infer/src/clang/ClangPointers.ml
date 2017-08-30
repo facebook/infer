@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+module L = Logging
 
 type t = Clang_ast_t.pointer
 
@@ -34,8 +35,8 @@ let visit_ast ?(visit_decl= empty_v) ?(visit_stmt= empty_v) ?(visit_type= empty_
   | None
    -> ()
   | Some error
-   -> failwithf "visiting the clang AST failed with error %s"
-        (Ag_util.Validation.string_of_error error)
+   -> L.(die InternalError)
+        "visiting the clang AST failed with error %s" (Ag_util.Validation.string_of_error error)
 
 let get_ptr_from_node node =
   match node with

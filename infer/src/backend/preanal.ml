@@ -10,6 +10,7 @@
 
 open! IStd
 open! PVariant
+module L = Logging
 
 (** mutate the cfg/cg to add dynamic dispatch handling *)
 let add_dispatch_calls pdesc cg tenv =
@@ -160,7 +161,8 @@ module NullifyTransferFunctions = struct
       | Sil.Store _ | Prune _ | Declare_locals _ | Remove_temps _ | Abstract _
        -> astate
       | Sil.Nullify _
-       -> failwith "Should not add nullify instructions before running nullify analysis!"
+       -> L.(die InternalError)
+            "Should not add nullify instructions before running nullify analysis!"
     in
     if is_last_instr_in_node instr node then postprocess astate' node extras else astate'
 end
@@ -236,8 +238,7 @@ let do_liveness pdesc tenv =
     LivenessAnalysis.exec_cfg liveness_proc_cfg (ProcData.make_default pdesc tenv) ~initial
       ~debug:false
   in
-  add_nullify_instrs pdesc tenv liveness_inv_map ;
-  Procdesc.signal_did_preanalysis pdesc
+  add_nullify_instrs pdesc tenv liveness_inv_map ; Procdesc.signal_did_preanalysis pdesc
 
 let do_abstraction pdesc =
   add_abstraction_instructions pdesc ; Procdesc.signal_did_preanalysis pdesc

@@ -14,6 +14,11 @@ open! IStd
 
 module F = Format
 
+(* If Logging has not been set up yet, SimpleLogging can be used instead. Prefer to use the
+   functions here, as they can do more logging. *)
+
+include module type of SimpleLogging
+
 val environment_info : ('a, F.formatter, unit) format -> 'a
 (** log information about the environment *)
 
@@ -57,15 +62,6 @@ type debug_level =
 
 val debug : debug_kind -> debug_level -> ('a, F.formatter, unit) format -> 'a
 (** log debug info *)
-
-(** kind of error for [die], with similar semantics as above *)
-type error = UserError | ExternalError | InternalError
-
-val die : error -> ('a, F.formatter, unit, _) format4 -> 'a
-(** Print message and exit. The error code depends on [error].
-
-    Do not use lightly: failing hard should not be considered unless it's impossible to keep
-    going. *)
 
 (** Type of location in ml source: __POS__ *)
 type ml_loc = string * int * int * int

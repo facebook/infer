@@ -1734,7 +1734,8 @@ let expand_hpred_pointer =
                   Exp.Sizeof {sizeof_data with typ= Typ.mk (Tstruct name)}
               | _
                -> (* type of struct at adr_base and of contents are both unknown: give up *)
-                  raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lfield")
+                  L.(die InternalError)
+                    "expand_hpred_pointer: Unexpected non-sizeof type in Lfield"
           in
           let hpred' =
             Sil.Hpointsto (adr_base, Estruct ([(fld, cnt)], Sil.inst_none), cnt_texp')
@@ -1746,7 +1747,7 @@ let expand_hpred_pointer =
             | Exp.Sizeof ({typ= t_} as sizeof_data)
              -> Exp.Sizeof {sizeof_data with typ= Typ.mk (Tarray (t_, None, None))}
             | _
-             -> raise (Failure "expand_hpred_pointer: Unexpected non-sizeof type in Lindex")
+             -> L.(die InternalError) "expand_hpred_pointer: Unexpected non-sizeof type in Lindex"
           in
           let len =
             match t' with

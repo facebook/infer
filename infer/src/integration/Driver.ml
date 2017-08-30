@@ -59,7 +59,7 @@ let build_system_exe_assoc =
 
 let build_system_of_exe_name name =
   try List.Assoc.find_exn ~equal:String.equal (List.Assoc.inverse build_system_exe_assoc) name
-  with Not_found -> invalid_argf "Unsupported build command %s" name
+  with Not_found -> L.(die InternalError) "Unsupported build command %s" name
 
 let string_of_build_system build_system =
   List.Assoc.find_exn ~equal:equal_build_system build_system_exe_assoc build_system
@@ -474,7 +474,7 @@ let assert_supported_mode required_analyzer requested_mode_string =
       | `Xcode
        -> "clang and xcode"
     in
-    failwithf
+    L.(die UserError)
       "Unsupported build mode: %s@\nInfer was built with %s analyzers disabled.@ Please rebuild infer with %s enabled.@."
       requested_mode_string analyzer_string analyzer_string
 

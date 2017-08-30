@@ -73,7 +73,7 @@ include TaintAnalysis.Make (struct
     | pname when BuiltinDecl.is_declared pname
      -> []
     | pname
-     -> failwithf "Non-Java procname %a in Java analysis@." Typ.Procname.pp pname
+     -> L.(die InternalError) "Non-Java procname %a in Java analysis" Typ.Procname.pp pname
 
   let get_model _ _ _ _ _ = None
 

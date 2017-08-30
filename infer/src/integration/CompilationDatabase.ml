@@ -49,7 +49,7 @@ let decode_json_file (database: t) json_format =
         |> fst
   in
   L.(debug Capture Quiet) "parsing compilation database from %s@\n" json_path ;
-  let exit_format_error () = failwith "Json file doesn't have the expected format" in
+  let exit_format_error () = L.(die ExternalError) "Json file doesn't have the expected format" in
   let json = Yojson.Basic.from_file json_path in
   let get_dir el = match el with "directory", `String dir -> Some (to_string dir) | _ -> None in
   let get_file el = match el with "file", `String file -> Some (to_string file) | _ -> None in

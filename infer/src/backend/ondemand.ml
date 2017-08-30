@@ -157,8 +157,9 @@ let analyze_proc_desc curr_pdesc callee_pdesc : Specs.summary option =
   let proc_attributes = Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
   | None
-   -> failwithf "No callbacks registered to analyze proc desc %a when analyzing %a@."
-        Typ.Procname.pp callee_pname Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
+   -> L.(die InternalError)
+        "No callbacks registered to analyze proc desc %a when analyzing %a@." Typ.Procname.pp
+        callee_pname Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
   | Some callbacks
    -> if should_be_analyzed callee_pname proc_attributes then
         Some (run_proc_analysis callbacks.analyze_ondemand curr_pdesc callee_pdesc)
@@ -170,8 +171,9 @@ let analyze_proc_desc curr_pdesc callee_pdesc : Specs.summary option =
 let analyze_proc_name curr_pdesc callee_pname : Specs.summary option =
   match !callbacks_ref with
   | None
-   -> failwithf "No callbacks registered to analyze proc name %a when analyzing %a@."
-        Typ.Procname.pp callee_pname Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
+   -> L.(die InternalError)
+        "No callbacks registered to analyze proc name %a when analyzing %a@." Typ.Procname.pp
+        callee_pname Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
   | Some callbacks
    -> if procedure_should_be_analyzed callee_pname then
         match callbacks.get_proc_desc callee_pname with

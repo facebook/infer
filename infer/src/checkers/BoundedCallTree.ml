@@ -112,7 +112,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | Typ.Procname.C _
              -> true (* Needed for test code. *)
             | Typ.Procname.Block _ | Typ.Procname.Linters_dummy_method
-             -> failwith "Proc type not supported by crashcontext: block"
+             -> L.(die InternalError) "Proc type not supported by crashcontext: block"
           in
           String.equal frame.Stacktrace.method_str (Typ.Procname.get_method caller)
           && matches_class caller
@@ -166,7 +166,7 @@ let loaded_stacktraces =
 let checker {Callbacks.proc_desc; tenv; get_proc_desc; summary} : Specs.summary =
   ( match loaded_stacktraces with
   | None
-   -> failwith
+   -> L.(die UserError)
         "Missing command line option. Either '--stacktrace stack.json' or '--stacktrace-dir ./dir' must be used when running '-a crashcontext'. This options expects a JSON formated stack trace or a directory containing multiple such traces, respectively. See tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
   | Some stacktraces
    -> let extras = {get_proc_desc; stacktraces} in

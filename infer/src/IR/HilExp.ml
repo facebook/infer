@@ -162,7 +162,7 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
       | Some access_path
        -> AccessPath access_path
       | None
-       -> failwithf "Couldn't convert var expression %a to access path" Exp.pp exp
+       -> L.(die InternalError) "Couldn't convert var expression %a to access path" Exp.pp exp
   in
   of_sil_ exp typ
 

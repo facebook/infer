@@ -8,10 +8,11 @@
  *)
 
 open! IStd
+(* This module adds more variants to some types in AST The implementation extends default one from
+   the facebook-clang-plugins repository *)
 
-(* This module adds more variants to some types in AST *)
-(* The implementation extends default one from *)
-(* facebook-clang-plugins repository *)
+module L = Logging
+
 (* Type pointers *)
 type Clang_ast_types.TypePtr.t +=
   | Builtin of Clang_ast_t.builtin_type_kind
@@ -20,6 +21,24 @@ type Clang_ast_types.TypePtr.t +=
   | ClassType of Typ.Name.t
   | DeclPtr of int
   | ErrorType
+
+let rec type_ptr_to_string = function
+  | Clang_ast_types.TypePtr.Ptr raw
+   -> "clang_ptr_" ^ string_of_int raw
+  | Builtin t
+   -> "sil_" ^ Clang_ast_j.string_of_builtin_type_kind t
+  | PointerOf typ
+   -> "pointer_of_" ^ type_ptr_to_string typ.Clang_ast_t.qt_type_ptr
+  | ReferenceOf typ
+   -> "reference_of_" ^ type_ptr_to_string typ.Clang_ast_t.qt_type_ptr
+  | ClassType name
+   -> "class_name_" ^ Typ.Name.name name
+  | DeclPtr raw
+   -> "decl_ptr_" ^ string_of_int raw
+  | ErrorType
+   -> "error_type"
+  | _
+   -> "unknown"
 
 module TypePointerOrd = struct
   type t = Clang_ast_types.TypePtr.t
@@ -66,8 +85,9 @@ module TypePointerOrd = struct
      -> -1
     | ErrorType, ErrorType
      -> 0
-    | _
-     -> raise (invalid_arg "unexpected type_ptr variants: ")
+    | t1, t2
+     -> L.(die InternalError)
+          "unexpected type_ptr variants: %s, %s" (type_ptr_to_string t1) (type_ptr_to_string t2)
 
   and compare_qual_type (qt1: Clang_ast_t.qual_type) (qt2: Clang_ast_t.qual_type) =
     if phys_equal qt1 qt2 then 0
@@ -90,21 +110,3 @@ module TypePointerOrd = struct
 end
 
 module TypePointerMap = Caml.Map.Make (TypePointerOrd)
-
-let rec type_ptr_to_string = function
-  | Clang_ast_types.TypePtr.Ptr raw
-   -> "clang_ptr_" ^ string_of_int raw
-  | Builtin t
-   -> "sil_" ^ Clang_ast_j.string_of_builtin_type_kind t
-  | PointerOf typ
-   -> "pointer_of_" ^ type_ptr_to_string typ.Clang_ast_t.qt_type_ptr
-  | ReferenceOf typ
-   -> "reference_of_" ^ type_ptr_to_string typ.Clang_ast_t.qt_type_ptr
-  | ClassType name
-   -> "class_name_" ^ Typ.Name.name name
-  | DeclPtr raw
-   -> "decl_ptr_" ^ string_of_int raw
-  | ErrorType
-   -> "error_type"
-  | _
-   -> "unknown"

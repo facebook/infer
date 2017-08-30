@@ -88,8 +88,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           TaintDomain.add_trace actual_ap (TraceDomain.add_source source trace) access_tree
       | _
        -> access_tree
-      | exception Failure _
-       -> failwithf "Bad source specification: index %d out of bounds" index
+      | exception Failure s
+       -> L.(die InternalError) "Bad source specification: index %d out of bounds (%s)" index s
 
     let endpoints =
       (lazy (String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)))
@@ -266,8 +266,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             | None
              -> access_tree_acc )
         | None
-         -> failwithf
-              "Taint is supposed to flow into sink %a at index %d, but the index is out of bounds@\n"
+         -> L.(die InternalError)
+              "Taint is supposed to flow into sink %a at index %d, but the index is out of bounds"
               CallSite.pp callee_site sink_index
         | _
          -> access_tree_acc
@@ -493,8 +493,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   exec_write lhs_access_path rhs_exp access_tree
                   |> exec_write dummy_ret_access_path rhs_exp
               | _
-               -> failwithf "Unexpected call to operator= %a in %a" HilInstr.pp instr
-                    Typ.Procname.pp callee_pname )
+               -> L.(die InternalError)
+                    "Unexpected call to operator= %a in %a" HilInstr.pp instr Typ.Procname.pp
+                    callee_pname )
             | _
              -> let model =
                   TaintSpecification.handle_unknown_call callee_pname (Option.map ~f:snd ret_opt)
@@ -711,6 +712,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
      -> Summary.update_summary (make_summary proc_data access_tree) summary
     | None
      -> if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then
-          failwith "Couldn't compute post"
+          L.(die InternalError) "Couldn't compute post"
         else summary
 end

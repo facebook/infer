@@ -95,7 +95,8 @@ let get_compilation_database_files_buck ~prog ~args =
       in
       match exit_or_signal with
       | Error _ as status
-       -> failwithf "*** command failed:@\n*** %s@\n*** %s@." buck_targets_shell
+       -> L.(die ExternalError)
+            "*** command failed:@\n*** %s@\n*** %s@." buck_targets_shell
             (Unix.Exit_or_signal.to_string_hum status)
       | Ok () ->
         match output with
@@ -111,8 +112,8 @@ let get_compilation_database_files_buck ~prog ~args =
               | [_; filename]
                -> `Raw filename :: compilation_database_files
               | _
-               -> failwithf "Failed to parse `buck targets --show-output ...` line of output:@\n%s"
-                    line
+               -> L.(die ExternalError)
+                    "Failed to parse `buck targets --show-output ...` line of output:@\n%s" line
             in
             List.fold ~f:scan_output ~init:[] lines )
   | _

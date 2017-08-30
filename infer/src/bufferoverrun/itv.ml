@@ -370,14 +370,14 @@ module Bound = struct
   let widen_l : t -> t -> t =
     fun x y ->
       assert (x <> Bot && y <> Bot) ;
-      if equal x PInf || equal y PInf then failwith "Lower bound cannot be +oo."
+      if equal x PInf || equal y PInf then L.(die InternalError) "Lower bound cannot be +oo."
       else if le x y then x
       else MInf
 
   let widen_u : t -> t -> t =
     fun x y ->
       assert (x <> Bot && y <> Bot) ;
-      if equal x MInf || equal y MInf then failwith "Upper bound cannot be -oo."
+      if equal x MInf || equal y MInf then L.(die InternalError) "Upper bound cannot be -oo."
       else if le y x then x
       else PInf
 
@@ -852,14 +852,14 @@ let top : t = NonBottom ItvPure.top
 let lb : t -> Bound.t = function
   | NonBottom x
    -> ItvPure.lb x
-  | _
-   -> raise (Failure "lower bound of bottom")
+  | Bottom
+   -> L.(die InternalError) "lower bound of bottom"
 
 let ub : t -> Bound.t = function
   | NonBottom x
    -> ItvPure.ub x
-  | _
-   -> raise (Failure "upper bound of bottom")
+  | Bottom
+   -> L.(die InternalError) "upper bound of bottom"
 
 let of_int : int -> astate = fun n -> NonBottom (ItvPure.of_int n)
 

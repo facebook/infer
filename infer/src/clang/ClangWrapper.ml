@@ -85,7 +85,7 @@ let normalize ~prog ~args : action_item list =
         | prog :: args
          -> ClangCommand.mk ClangQuotes.EscapedDoubleQuotes ~prog ~args
         | []
-         -> failwith "ClangWrapper: argv cannot be empty" )
+         -> L.(die InternalError) "ClangWrapper: argv cannot be empty" )
     else if Str.string_match (Str.regexp "clang[^ :]*: warning: ") line 0 then ClangWarning line
     else ClangError line
   in
@@ -112,7 +112,7 @@ let exec_action_item = function
   | ClangError error
    -> (* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
        `clang -###` pretty much never fails, but warns of failures on stderr instead. *)
-      failwithf
+      L.(die UserError)
         "Failed to execute compilation command. Output:@\n%s@\n*** Infer needs a working compilation command to run."
         error
   | ClangWarning warning

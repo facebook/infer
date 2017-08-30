@@ -26,7 +26,7 @@ let test_file_renamings_from_json =
           ~cmp:DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.equal exp
           (test_output test_input)
     | Raise exc
-     -> assert_raises exc (fun () -> test_output test_input)
+     -> UnitUtils.assert_raises exc (fun () -> test_output test_input)
   in
   [ ( "test_file_renamings_from_json_with_good_input"
     , "[" ^ "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"},"
@@ -44,15 +44,16 @@ let test_file_renamings_from_json =
            []) )
   ; ( "test_file_renamings_from_json_with_well_formed_but_unexpected_input"
     , "{}"
-    , Raise (Failure "Expected JSON list but got '{}'") )
+    , Raise (Logging.InferUserError ("Expected JSON list but got '{}'", "")) )
   ; ( "test_file_renamings_from_json_with_well_formed_but_unexpected_value"
     , "[{\"current\": 1, \"previous\": \"BBB.java\"}]"
     , Raise
-        (Failure
+        (Logging.InferUserError
            ( "Error parsing file renamings: \"current\" field is not a string"
-           ^ "\nExpected JSON object of the following form: "
-           ^ "'{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}', "
-           ^ "but instead got: '{\"current\":1,\"previous\":\"BBB.java\"}'" )) )
+             ^ "\nExpected JSON object of the following form: "
+             ^ "'{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"}', "
+             ^ "but instead got: '{\"current\":1,\"previous\":\"BBB.java\"}'"
+           , "" )) )
   ; ( "test_file_renamings_from_json_with_malformed_input"
     , "A"
     , Raise (Yojson.Json_error "Line 1, bytes 0-1:\nInvalid token 'A'") ) ]

@@ -415,7 +415,7 @@ let captures_cxx_references an = List.length (captured_variables_cxx_ref an) > 0
 let is_binop_with_kind an alexp_kind =
   let str_kind = ALVar.alexp_to_string alexp_kind in
   if not (Clang_ast_proj.is_valid_binop_kind_name str_kind) then
-    failwith ("Binary operator kind " ^ str_kind ^ " is not valid") ;
+    L.(die ExternalError) "Binary operator kind '%s' is not valid" str_kind ;
   match an with
   | Ctl_parser_types.Stmt Clang_ast_t.BinaryOperator (_, _, _, boi)
    -> ALVar.compare_str_with_alexp (Clang_ast_proj.string_of_binop_kind boi.boi_kind) alexp_kind
@@ -425,7 +425,7 @@ let is_binop_with_kind an alexp_kind =
 let is_unop_with_kind an alexp_kind =
   let str_kind = ALVar.alexp_to_string alexp_kind in
   if not (Clang_ast_proj.is_valid_unop_kind_name str_kind) then
-    failwith ("Unary operator kind " ^ str_kind ^ " is not valid") ;
+    L.(die ExternalError) "Unary operator kind '%s' is not valid" str_kind ;
   match an with
   | Ctl_parser_types.Stmt Clang_ast_t.UnaryOperator (_, _, _, uoi)
    -> ALVar.compare_str_with_alexp (Clang_ast_proj.string_of_unop_kind uoi.uoi_kind) alexp_kind
@@ -448,7 +448,7 @@ let has_cast_kind an alexp_kind =
 let is_node an nodename =
   let nodename_str = ALVar.alexp_to_string nodename in
   if not (Clang_ast_proj.is_valid_astnode_kind nodename_str) then
-    failwith ("Node " ^ nodename_str ^ " is not a valid AST node") ;
+    L.(die ExternalError) "Node '%s' is not a valid AST node" nodename_str ;
   let an_str =
     match an with
     | Ctl_parser_types.Stmt s

@@ -178,7 +178,7 @@ module OverridesMatcher = struct
        -> is_subtype mp.class_name
           && Option.value_map ~f:(match_method language proc_name) ~default:false mp.method_name
       | _
-       -> failwith "Expecting method pattern"
+       -> L.(die UserError) "Expecting method pattern"
     in
     List.exists ~f:is_matching patterns
 end
@@ -229,7 +229,9 @@ let patterns_of_json_with_key (json_key, json) =
         | `String s
          -> s :: accu
         | _
-         -> failwith ("Unrecognised parameters in " ^ Yojson.Basic.to_string (`Assoc assoc))
+         -> L.(die UserError)
+              "Unrecognised parameters in %s"
+              (Yojson.Basic.to_string (`Assoc assoc))
       in
       List.rev (List.fold ~f:collect ~init:[] l)
     in
@@ -244,7 +246,7 @@ let patterns_of_json_with_key (json_key, json) =
         | key, _ when String.equal key "language"
          -> mp
         | _
-         -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc))
+         -> L.(die UserError) "Failed to parse %s" (Yojson.Basic.to_string (`Assoc assoc))
       in
       List.fold ~f:loop ~init:default_method_pattern assoc
     and create_string_contains assoc =
@@ -254,7 +256,7 @@ let patterns_of_json_with_key (json_key, json) =
         | key, _ when String.equal key "language"
          -> sc
         | _
-         -> failwith ("Fails to parse " ^ Yojson.Basic.to_string (`Assoc assoc))
+         -> L.(die UserError) "Failed to parse %s" (Yojson.Basic.to_string (`Assoc assoc))
       in
       List.fold ~f:loop ~init:default_source_contains assoc
     in

@@ -58,6 +58,7 @@ let capture compiler ~prog ~args =
         | Ok ()
          -> ()
         | Error _ as status
-         -> failwithf "*** capture command failed:@\n*** %s@\n*** %s@."
+         -> L.(die ExternalError)
+              "*** capture command failed:@\n*** %s@\n*** %s@."
               (String.concat ~sep:" " (prog :: args))
               (Unix.Exit_or_signal.to_string_hum status)

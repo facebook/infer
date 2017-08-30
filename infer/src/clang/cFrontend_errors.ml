@@ -24,7 +24,7 @@ let filter_parsed_linters_developer parsed_linters =
   if List.length parsed_linters > 1 && Config.linters_developer_mode then
     match Config.linter with
     | None
-     -> failwith
+     -> L.(die UserError)
           "In linters developer mode you should debug only one linter at a time. This is important for debugging the rule. Pass the flag --linter <name> to specify the linter you want to debug."
     | Some lint
      -> List.filter ~f:(fun (rule: linter) -> String.equal rule.issue_desc.id lint) parsed_linters
@@ -266,7 +266,7 @@ let rec apply_substitution f sub =
 
 let expand_formula phi _map _error_msg =
   let fail_with_circular_macro_definition name error_msg =
-    failwithf "Macro '%s' has a circular definition.@\n Cycle:@\n%s" name error_msg
+    L.(die ExternalError) "Macro '%s' has a circular definition.@\n Cycle:@\n%s" name error_msg
   in
   let open CTL in
   let rec expand acc map error_msg =
@@ -289,9 +289,8 @@ let expand_formula phi _map _error_msg =
                 let map' = ALVar.FormulaIdMap.add av (true, fparams, f1) map in
                 expand f1_sub map' error_msg'
             | None
-             -> failwith
-                  ( "Formula identifier '" ^ name
-                  ^ "' is not called with the right number of parameters" )
+             -> L.(die ExternalError)
+                  "Formula identifier '%s' is not called with the right number of parameters" name
         with Not_found -> acc
         (* in this case it should be a predicate *) )
     | Not f1
@@ -337,7 +336,7 @@ let rec expand_path paths path_map =
     try
       let paths = ALVar.VarMap.find path_var path_map in
       List.append paths (expand_path rest path_map)
-    with Not_found -> failwithf "Path variable %s not found. " path_var )
+    with Not_found -> L.(die ExternalError) "Path variable %s not found. " path_var )
   | path :: rest
    -> path :: expand_path rest path_map
 
@@ -348,8 +347,8 @@ let _build_macros_map macros init_map =
         match data with
         | CTL.CLet (key, params, formula)
          -> if ALVar.FormulaIdMap.mem key map' then
-              failwith
-                ("Macro '" ^ ALVar.formula_id_to_string key ^ "' has more than one definition.")
+              L.(die ExternalError)
+                "Macro '%s' has more than one definition." (ALVar.formula_id_to_string key)
             else ALVar.FormulaIdMap.add key (false, params, formula) map'
         | _
          -> map')
@@ -369,7 +368,7 @@ let build_paths_map paths =
           match data
           with path_name, paths ->
             if ALVar.VarMap.mem path_name map' then
-              failwith ("Path '" ^ path_name ^ "' has more than one definition.")
+              L.(die ExternalError) "Path '%s' has more than one definition." path_name
             else ALVar.VarMap.add path_name paths map')
         ~init:init_map paths
     in

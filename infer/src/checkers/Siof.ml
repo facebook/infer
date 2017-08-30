@@ -184,7 +184,7 @@ let is_foreign tu_opt (v, _) =
   | TUExtern, Some _
    -> true
   | _, None
-   -> invalid_arg "cannot be called with translation unit set to None"
+   -> L.(die InternalError) "cannot be called with translation unit set to None"
 
 let report_siof summary trace pdesc gname loc =
   let tu_opt =
