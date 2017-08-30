@@ -443,9 +443,11 @@ end = struct
     let trace = ref [] in
     let g level path _ exn_opt =
       match (path, curr_node path) with
-      | Pcall (_, _, ExecSkipped reason, _), Some curr_node
+      | Pcall (_, pname, ExecSkipped reason, _), Some curr_node
        -> let curr_loc = Procdesc.Node.get_loc curr_node in
-          let descr = "Skipped call: " ^ reason in
+          let descr =
+            Format.sprintf "Skipping %s: %s" (Typ.Procname.to_simplified_string pname) reason
+          in
           let node_tags = [] in
           trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
       | _, Some curr_node
