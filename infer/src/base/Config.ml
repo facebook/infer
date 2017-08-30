@@ -1338,6 +1338,13 @@ and patterns_never_returning_null =
   , CLOpt.mk_json ~deprecated:["never_returning_null"] ~long
       "Matcher or list of matchers for functions that never return $(i,null)." )
 
+and patterns_skip_implementation =
+  let long = "skip-implementation" in
+  ( long
+  , CLOpt.mk_json ~long
+      "Matcher or list of matchers for names of files where we only want to translate the method declaration, skipping the body of the methods (Java only)."
+  )
+
 and patterns_skip_translation =
   let long = "skip-translation" in
   ( long
@@ -2131,16 +2138,20 @@ and only_show = !only_show
 
 and passthroughs = !passthroughs
 
+and patterns_modeled_expensive =
+  match patterns_modeled_expensive
+  with k, r -> (k, !r)
+
 and patterns_never_returning_null =
   match patterns_never_returning_null
   with k, r -> (k, !r)
 
-and patterns_skip_translation =
-  match patterns_skip_translation
+and patterns_skip_implementation =
+  match patterns_skip_implementation
   with k, r -> (k, !r)
 
-and patterns_modeled_expensive =
-  match patterns_modeled_expensive
+and patterns_skip_translation =
+  match patterns_skip_translation
   with k, r -> (k, !r)
 
 and per_procedure_parallelism = !per_procedure_parallelism

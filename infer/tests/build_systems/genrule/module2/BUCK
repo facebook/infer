@@ -1,6 +1,6 @@
 java_library(
     name='module2',
-    srcs=['Class2.java'],
+    srcs=glob(["*.java"]),
     deps=[
         '//infer/tests/build_systems/genrule/module1:module1'
     ]

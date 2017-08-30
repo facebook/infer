@@ -296,6 +296,9 @@ let never_return_null_matcher =
 let skip_translation_matcher =
   FileOrProcMatcher.load_matcher (patterns_of_json_with_key Config.patterns_skip_translation)
 
+let skip_implementation_matcher =
+  FileOrProcMatcher.load_matcher (patterns_of_json_with_key Config.patterns_skip_implementation)
+
 let load_filters analyzer =
   { whitelist= Config.analysis_path_regex_whitelist analyzer
   ; blacklist= Config.analysis_path_regex_blacklist analyzer

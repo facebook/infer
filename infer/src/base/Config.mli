@@ -185,6 +185,8 @@ val patterns_modeled_expensive : string * Yojson.Basic.json
 
 val patterns_never_returning_null : string * Yojson.Basic.json
 
+val patterns_skip_implementation : string * Yojson.Basic.json
+
 val patterns_skip_translation : string * Yojson.Basic.json
 
 val per_procedure_parallelism : bool

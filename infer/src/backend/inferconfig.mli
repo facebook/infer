@@ -30,6 +30,8 @@ val never_return_null_matcher : SourceFile.t -> Typ.Procname.t -> bool
 
 val skip_translation_matcher : SourceFile.t -> Typ.Procname.t -> bool
 
+val skip_implementation_matcher : SourceFile.t -> Typ.Procname.t -> bool
+
 val modeled_expensive_matcher : (string -> bool) -> Typ.Procname.t -> bool
 
 val test : unit -> unit

@@ -10,6 +10,7 @@
 package genrule.module2;
 
 import genrule.module1.Class1;
+import genrule.module1.SkipImplementationClass1;
 
 public class Class2 {
 
@@ -31,6 +32,16 @@ public class Class2 {
   void interTargetNativeNPE(Class1 class1) {
     Object obj = class1.nativeMayReturnNull();
     obj.toString();
+  }
+
+  void followMethodDeclarationOnlyBad(SkipImplementationClass1 obj1) {
+    Object obj2 = obj1.annotatedNullable();
+    obj2.toString();
+  }
+
+  void followMethodDeclarationOnlyOk(SkipImplementationClass1 obj1) {
+    Object obj2 = obj1.notAnnotatedNullable();
+    obj2.toString();
   }
 
 }
