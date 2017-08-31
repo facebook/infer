@@ -16,6 +16,8 @@ module L = Logging
 
 exception TemplatedCodeException of Clang_ast_t.stmt
 
+exception UnsupportedStatementException of Clang_ast_t.stmt
+
 (* Extract the element of a singleton list. If the list is not a singleton *)
 (* It stops the computation giving a warning. We use this because we       *)
 (* assume in many places that a list is just a singleton. We use the       *)

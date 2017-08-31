@@ -38,6 +38,8 @@ type trans_result =
 
 exception TemplatedCodeException of Clang_ast_t.stmt
 
+exception UnsupportedStatementException of Clang_ast_t.stmt
+
 val empty_res_trans : trans_result
 
 val undefined_expression : unit -> Exp.t

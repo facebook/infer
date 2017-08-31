@@ -57,6 +57,10 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | CTrans_utils.TemplatedCodeException _
      -> L.internal_error "Fatal error: frontend doesn't support translation of templated code@\n" ;
         handle_translation_failure ()
+    | CTrans_utils.UnsupportedStatementException stmt when Config.keep_going
+     -> L.internal_error "Unimplemented: translation for statement %s"
+          (Clang_ast_proj.get_stmt_kind_string stmt) ;
+        handle_translation_failure ()
     | Assert_failure (file, line, column) when Config.keep_going
      -> L.internal_error "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column ;
         handle_translation_failure ()

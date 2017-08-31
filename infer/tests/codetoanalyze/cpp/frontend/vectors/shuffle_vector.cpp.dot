@@ -1,0 +1,14 @@
+/* @generated */
+digraph iCFG {
+"simple#_Z6simpleDv2_f.e9c9c4d600ba08c47099d8822b175fec_1" [label="1: Start simple\nFormals:  vec:void\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "simple#_Z6simpleDv2_f.e9c9c4d600ba08c47099d8822b175fec_1" -> "simple#_Z6simpleDv2_f.e9c9c4d600ba08c47099d8822b175fec_3" ;
+"simple#_Z6simpleDv2_f.e9c9c4d600ba08c47099d8822b175fec_2" [label="2: Exit simple \n  " color=yellow style=filled]
+	
+
+"simple#_Z6simpleDv2_f.e9c9c4d600ba08c47099d8822b175fec_3" [label="3:  Return Stmt \n   n$0=*&vec:void [line 12]\n  *&return:void=n$0 [line 12]\n " shape="box"]
+	
+
+	 "simple#_Z6simpleDv2_f.e9c9c4d600ba08c47099d8822b175fec_3" -> "simple#_Z6simpleDv2_f.e9c9c4d600ba08c47099d8822b175fec_2" ;
+}

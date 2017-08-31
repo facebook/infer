@@ -2903,6 +2903,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let typ = CType_decl.get_type_from_expr_info expr_info tenv in
     {empty_res_trans with exps= [(CTrans_utils.undefined_expression (), typ)]}
 
+  (* no-op translated for unsupported instructions that will at least translate subexpressions *)
+  and skip_unimplemented trans_state stmts = instructions trans_state stmts
+
   (* Translates a clang instruction into SIL instructions. It takes a       *)
   (* a trans_state containing current info on the translation and it returns *)
   (* a result_state.*)
@@ -3120,6 +3123,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> trans_into_undefined_expr trans_state expr_info
     | ArrayInitIndexExpr _ | ArrayInitLoopExpr _
      -> no_op_trans trans_state.succ_nodes
+    (* vector instructions for OpenCL etc. we basically ignore these for now; just translate the
+       sub-expressions *)
+    | ExtVectorElementExpr (_, stmts, _)
+    | ShuffleVectorExpr (_, stmts, _)
+     -> skip_unimplemented trans_state stmts
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)
     | SubstNonTypeTemplateParmExpr _
@@ -3127,10 +3135,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CXXDependentScopeMemberExpr _
      -> raise (CTrans_utils.TemplatedCodeException instr)
     | s
-     -> L.(debug Capture Medium)
-          "@\n!!!!WARNING: found statement %s. @\nACTION REQUIRED: Translation need to be defined. Statement ignored.... @\n"
-          (Clang_ast_proj.get_stmt_kind_string s) ;
-        assert false
+     -> raise (CTrans_utils.UnsupportedStatementException s)
 
   (* Function similar to instruction function, but it takes C++ constructor initializer as
      an input parameter. *)
