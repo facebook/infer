@@ -11,7 +11,7 @@ module CLOpt = CommandLineOption
 module L = Logging
 
 (** enable debug mode (to get more data saved to disk for future inspections) *)
-let debug_mode = Config.debug_mode || Config.frontend_stats || Config.frontend_debug
+let debug_mode = Config.debug_mode || Config.frontend_stats
 
 let buffer_len = 262143
 

@@ -402,8 +402,6 @@ val fragment_retains_view : bool
 
 val from_json_report : string option
 
-val frontend_debug : bool
-
 val frontend_tests : bool
 
 val frontend_stats : bool
