@@ -3127,6 +3127,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        sub-expressions *)
     | ExtVectorElementExpr (_, stmts, _)
     | ShuffleVectorExpr (_, stmts, _)
+    | UserDefinedLiteral (_, stmts, _)
      -> skip_unimplemented trans_state stmts
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)

@@ -1089,7 +1089,9 @@ let pp_proplist_parsed2dotty_file filename plist =
 (* channel. You have to compute an interprocedural cfg first               *)
 
 let pp_cfgnodename pname fmt (n: Procdesc.Node.t) =
-  F.fprintf fmt "\"%s_%d\"" (Typ.Procname.to_filename pname) (Procdesc.Node.get_id n :> int)
+  F.fprintf fmt "\"%s_%d\""
+    (Escape.escape_dotty (Typ.Procname.to_filename pname))
+    (Procdesc.Node.get_id n :> int)
 
 let pp_etlist byvals fmt etl =
   List.iteri
@@ -1110,7 +1112,7 @@ let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
   let pp_label fmt n =
     match Procdesc.Node.get_kind n with
     | Procdesc.Node.Start_node pname
-     -> let pname_string = Typ.Procname.to_string pname in
+     -> let pname_string = Escape.escape_dotty (Typ.Procname.to_string pname) in
         let attributes = Procdesc.get_attributes pdesc in
         let byvals = attributes.ProcAttributes.by_vals in
         Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a" pname_string (pp_etlist byvals)
@@ -1121,7 +1123,7 @@ let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
         if not (Annot.Method.is_empty method_annotation) then
           Format.fprintf fmt "\\nAnnotation: %a" (Annot.Method.pp pname_string) method_annotation
     | Procdesc.Node.Exit_node pname
-     -> Format.fprintf fmt "Exit %s" (Typ.Procname.to_string pname)
+     -> Format.fprintf fmt "Exit %s" (Escape.escape_dotty (Typ.Procname.to_string pname))
     | Procdesc.Node.Join_node
      -> Format.fprintf fmt "+"
     | Procdesc.Node.Prune_node (is_true_branch, _, _)

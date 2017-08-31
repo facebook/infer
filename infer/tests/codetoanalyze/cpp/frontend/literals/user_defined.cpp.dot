@@ -1,0 +1,25 @@
+/* @generated */
+digraph iCFG {
+"foo#_Z3foov.69dc85dbfdb3da90badccdb11670a4ca_1" [label="1: Start foo\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "foo#_Z3foov.69dc85dbfdb3da90badccdb11670a4ca_1" -> "foo#_Z3foov.69dc85dbfdb3da90badccdb11670a4ca_3" ;
+"foo#_Z3foov.69dc85dbfdb3da90badccdb11670a4ca_2" [label="2: Exit foo \n  " color=yellow style=filled]
+	
+
+"foo#_Z3foov.69dc85dbfdb3da90badccdb11670a4ca_3" [label="3:  Return Stmt \n   *&return:int=-1 [line 12]\n " shape="box"]
+	
+
+	 "foo#_Z3foov.69dc85dbfdb3da90badccdb11670a4ca_3" -> "foo#_Z3foov.69dc85dbfdb3da90badccdb11670a4ca_2" ;
+"operator\"\"_literal#_Zli8_literaly.5b4cb9a2f3419057428a12f4b4e6b72b_1" [label="1: Start operator\"\"_literal\nFormals:  i:unsigned long long\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+	
+
+	 "operator\"\"_literal#_Zli8_literaly.5b4cb9a2f3419057428a12f4b4e6b72b_1" -> "operator\"\"_literal#_Zli8_literaly.5b4cb9a2f3419057428a12f4b4e6b72b_3" ;
+"operator\"\"_literal#_Zli8_literaly.5b4cb9a2f3419057428a12f4b4e6b72b_2" [label="2: Exit operator\"\"_literal \n  " color=yellow style=filled]
+	
+
+"operator\"\"_literal#_Zli8_literaly.5b4cb9a2f3419057428a12f4b4e6b72b_3" [label="3:  Return Stmt \n   n$0=*&i:unsigned long long [line 10]\n  *&return:int=n$0 [line 10]\n " shape="box"]
+	
+
+	 "operator\"\"_literal#_Zli8_literaly.5b4cb9a2f3419057428a12f4b4e6b72b_3" -> "operator\"\"_literal#_Zli8_literaly.5b4cb9a2f3419057428a12f4b4e6b72b_2" ;
+}
