@@ -115,3 +115,27 @@ DEFINE-CHECKER PARAMETER_TRANS_TYPE = {
       HOLDS-IN-NODE ObjCMessageExpr;
   SET message = "Found method called with an argument of type int";
 };
+
+DEFINE-CHECKER TEST_PARAMETER_SELECTOR_BY_TYPE = {
+
+ LET initialized_with_selector_expr =
+  WHEN (is_node("ObjCSelectorExpr") HOLDS-EVERYWHERE-NEXT) HOLDS-IN-NODE CXXConstructExpr;
+
+  LET materialized_with_selector_expr =
+   WHEN (initialized_with_selector_expr HOLDS-EVENTUALLY) HOLDS-IN-NODE CXXConstructExpr;
+
+  LET method_has_parameter_type =
+    WHEN
+      HOLDS-NEXT WITH-TRANSITION Parameters
+        (has_type("CKComponentAction") AND
+        (initialized_with_selector_expr OR
+        materialized_with_selector_expr))
+      HOLDS-IN-NODE ObjCMessageExpr;
+
+  SET report_when =
+      WHEN
+         method_has_parameter_type
+         AND call_method(REGEXP("^new.*:$"))
+      HOLDS-IN-NODE ObjCMessageExpr;
+  SET message = "Do not construct the Component action with a selector only...`";
+};

@@ -320,6 +320,8 @@ and c_type_equal c_type abs_ctype =
    -> objc_object_type_equal c_type abs_ctype
   | ObjCInterfaceType (_, pointer), TypeName ae
    -> typename_equal pointer ae
+  | RecordType (_, pointer), TypeName ae
+   -> typename_equal pointer ae
   | TypedefType (_, tdi), TypeName ae
    -> typename_equal tdi.tti_decl_ptr ae
   | TypedefType (ti, _), ObjCGenProt _ -> (
