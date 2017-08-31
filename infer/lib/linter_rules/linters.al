@@ -217,8 +217,7 @@ DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 				 HOLDS-IN-NODE DeclRefExpr, ObjCMessageExpr;
 
 		  SET message =
-		        "%decl_ref_or_selector_name% is not available in the required iOS SDK version
-		         %iphoneos_target_sdk_version% (only available from version %available_ios_sdk%)";
+		        "%decl_ref_or_selector_name% is not available in the required iOS SDK version %iphoneos_target_sdk_version% (only available from version %available_ios_sdk%)";
       SET name = "Unavailable API In Supported iOS SDK";
 		  SET suggestion = "This could cause a crash.";
 			SET severity = "ERROR";
@@ -233,8 +232,7 @@ DEFINE-CHECKER CXX_REFERENCE_CAPTURED_IN_OBJC_BLOCK = {
 				 HOLDS-IN-NODE ObjCMessageExpr;
 
 			SET message =
-						"The receiver %receiver_method_call% of %name% is not available in the required iOS SDK version
-						 %iphoneos_target_sdk_version% (only available from version %class_available_ios_sdk%)";
+						"The receiver %receiver_method_call% of %name% is not available in the required iOS SDK version %iphoneos_target_sdk_version% (only available from version %class_available_ios_sdk%)";
 			SET name = "Unavailable API In Supported iOS SDK";
 			SET severity = "ERROR";
 			SET mode = "ON";

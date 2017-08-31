@@ -23,7 +23,7 @@ val cxx_ref_captured_in_block : Ctl_parser_types.ast_node -> string
 
 val decl_ref_or_selector_name : Ctl_parser_types.ast_node -> string
 
-val iphoneos_target_sdk_version : Ctl_parser_types.ast_node -> string
+val iphoneos_target_sdk_version : CLintersContext.context -> Ctl_parser_types.ast_node -> string
 
 val available_ios_sdk : Ctl_parser_types.ast_node -> string
 

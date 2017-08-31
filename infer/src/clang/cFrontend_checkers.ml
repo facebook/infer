@@ -50,8 +50,8 @@ let decl_ref_or_selector_name an =
         "decl_ref_or_selector_name must be called with a DeclRefExpr or an ObjCMessageExpr, but got %s"
         (tag_name_of_node an)
 
-let iphoneos_target_sdk_version _ =
-  match Config.iphoneos_target_sdk_version with Some f -> f | None -> "0"
+let iphoneos_target_sdk_version context _ =
+  match CPredicates.iphoneos_target_sdk_version_by_path context with Some f -> f | None -> "0"
 
 let available_ios_sdk an =
   let open Ctl_parser_types in
