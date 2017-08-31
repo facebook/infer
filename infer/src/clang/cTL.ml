@@ -697,11 +697,13 @@ let transition_stmt_to_decl_via_pointer stmt =
   | _
    -> []
 
-let transition_decl_to_decl_via_parameters dec =
+let transition_via_parameters an =
   let open Clang_ast_t in
-  match dec with
-  | ObjCMethodDecl (_, _, omdi)
+  match an with
+  | Decl ObjCMethodDecl (_, _, omdi)
    -> List.map ~f:(fun d -> Decl d) omdi.omdi_parameters
+  | Stmt ObjCMessageExpr (_, stmt_list, _, _)
+   -> List.map ~f:(fun stmt -> Stmt stmt) stmt_list
   | _
    -> []
 
@@ -739,8 +741,8 @@ let next_state_via_transition an trans =
   match (an, trans) with
   | Decl d, Super
    -> transition_decl_to_decl_via_super d
-  | Decl d, Parameters
-   -> transition_decl_to_decl_via_parameters d
+  | _, Parameters
+   -> transition_via_parameters an
   | Decl d, InitExpr | Decl d, Body
    -> transition_decl_to_stmt d trans
   | Decl d, Protocol

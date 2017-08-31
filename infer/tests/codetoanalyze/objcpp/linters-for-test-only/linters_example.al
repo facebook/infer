@@ -107,3 +107,11 @@ DEFINE-CHECKER DISCOURAGED_HASH_METHOD_INVOCATION = {
   SET report_when = call_method("hash");
   SET message = "Don't use the hash method";
 };
+
+DEFINE-CHECKER PARAMETER_TRANS_TYPE = {
+  SET report_when =
+    WHEN
+      HOLDS-NEXT WITH-TRANSITION Parameters (has_type("int"))
+      HOLDS-IN-NODE ObjCMessageExpr;
+  SET message = "Found method called with an argument of type int";
+};
