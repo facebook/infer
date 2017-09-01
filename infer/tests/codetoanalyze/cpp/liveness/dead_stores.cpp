@@ -122,6 +122,12 @@ void by_ref1_ok(int& ref) { ref = 7; }
 
 void by_ref2_ok(int& ref) { ref++; }
 
+int capture_by_ref3_ok() {
+  int x = 0;
+  [&](auto y) { x += y; }(3);
+  return x;
+}
+
 int plus_plus_ok() {
   int x = 0;
   return ++x;

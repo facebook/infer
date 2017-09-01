@@ -66,7 +66,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   let procname = Procdesc.get_proc_name proc_desc in
   let is_cpp_lambda =
-    match Typ.Procname.get_method procname with "operator()" -> true | _ -> false
+    String.is_substring ~substring:"operator()" (Typ.Procname.get_method procname)
   in
   let is_captured_var pvar =
     let pvar_name = Pvar.get_name pvar in
