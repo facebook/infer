@@ -194,17 +194,30 @@ let rec nullify_exp_with_objc_null tenv prop exp =
   | _
    -> prop
 
-(** mark Exp.Var's or Exp.Lvar's as undefined *)
-let mark_vars_as_undefined tenv prop vars_to_mark callee_pname ret_annots loc path_pos =
-  let att_undef = PredSymb.Aundef (callee_pname, ret_annots, loc, path_pos) in
-  let mark_var_as_undefined exp prop =
+(** mark Exp.Var's or Exp.Lvar's as undefined
+The annotations of the return type of the method get propagated to the return id,
+with the exception of when the return type is a struct, and we translate it as passing a reference
+to the method.  *)
+let mark_vars_as_undefined tenv prop ~ret_exp_opt ~undefined_actuals_by_ref callee_pname ret_annots
+    loc path_pos =
+  let mark_var_as_undefined ~annot exp prop =
     match exp with
     | Exp.Var _ | Lvar _
-     -> add_or_replace tenv prop (Apred (att_undef, [exp]))
+     -> let att_undef = PredSymb.Aundef (callee_pname, annot, loc, path_pos) in
+        add_or_replace tenv prop (Apred (att_undef, [exp]))
     | _
      -> prop
   in
-  List.fold ~f:(fun prop id -> mark_var_as_undefined id prop) ~init:prop vars_to_mark
+  let prop_with_ret_attr =
+    match ret_exp_opt with
+    | Some ret_exp
+     -> mark_var_as_undefined ~annot:ret_annots ret_exp prop
+    | None
+     -> prop
+  in
+  List.fold
+    ~f:(fun prop id -> mark_var_as_undefined ~annot:[] id prop)
+    ~init:prop_with_ret_attr undefined_actuals_by_ref
 
 (** type for arithmetic problems *)
 type arith_problem =

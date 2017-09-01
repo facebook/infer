@@ -1578,16 +1578,12 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
     [(Tabulation.remove_constant_string_class tenv pre_final, path)]
   else
     (* otherwise, add undefined attribute to retvals and actuals passed by ref *)
-    let exps_to_mark =
-      let ret_exps = Option.value_map ~f:(fun (id, _) -> [Exp.Var id]) ~default:[] ret_id in
-      List.fold
-        ~f:(fun exps_to_mark (exp, _, _) -> exp :: exps_to_mark)
-        ~init:ret_exps actuals_by_ref
-    in
+    let undefined_actuals_by_ref = List.map ~f:(fun (exp, _, _) -> exp) actuals_by_ref in
+    let ret_exp_opt = Option.map ~f:(fun (id, _) -> Exp.Var id) ret_id in
     let prop_with_undef_attr =
       let path_pos = State.get_path_pos () in
-      Attribute.mark_vars_as_undefined tenv pre_final exps_to_mark callee_pname ret_annots loc
-        path_pos
+      Attribute.mark_vars_as_undefined tenv pre_final ~ret_exp_opt ~undefined_actuals_by_ref
+        callee_pname ret_annots loc path_pos
     in
     let reason = "function or method not found" in
     let skip_path = Paths.Path.add_skipped_call path callee_pname reason in

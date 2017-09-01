@@ -92,8 +92,8 @@ val nullify_exp_with_objc_null : Tenv.t -> Prop.normal Prop.t -> Exp.t -> Prop.n
     remove the attribute and conjoin an equality to zero. *)
 
 val mark_vars_as_undefined :
-  Tenv.t -> Prop.normal Prop.t -> Exp.t list -> Typ.Procname.t -> Annot.Item.t -> Location.t
-  -> PredSymb.path_pos -> Prop.normal Prop.t
+  Tenv.t -> Prop.normal Prop.t -> ret_exp_opt:Exp.t option -> undefined_actuals_by_ref:Exp.t list
+  -> Typ.Procname.t -> Annot.Item.t -> Location.t -> PredSymb.path_pos -> Prop.normal Prop.t
 (** mark Exp.Var's or Exp.Lvar's as undefined *)
 
 (** type for arithmetic problems *)
