@@ -89,7 +89,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       | _
        -> access_tree
       | exception Failure s
-       -> L.(die InternalError) "Bad source specification: index %d out of bounds (%s)" index s
+       -> L.(die InternalError)
+            "Bad source specification: index %d out of bounds (%s) for source %a, actuals %a" index
+            s TraceDomain.Source.pp source (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
+            actuals
 
     let endpoints =
       (lazy (String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)))
@@ -282,8 +285,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           | Some base_var
            -> Some (AccessPath.Abs.with_base base_var ret_ap)
           | None
-           -> Logging.internal_error "Have summary for retval, but no ret id to bind it to: %a@\n"
-                AccessPath.Abs.pp ret_ap ;
+           -> L.internal_error
+                "Have summary for retval %a of callee %a, but no ret id to bind it to@\n"
+                AccessPath.Abs.pp ret_ap Typ.Procname.pp (CallSite.pname callee_site) ;
               None
         in
         let get_actual_ap formal_index =
@@ -561,8 +565,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                     | Some model
                      -> handle_model callee_pname astate_with_source model
                     | None
-                     -> apply_summary ret_opt actuals access_tree astate_with_source proc_data
-                          call_site
+                     -> apply_summary dummy_ret_opt actuals access_tree astate_with_source
+                          proc_data call_site
             in
             let astate_with_sanitizer =
               match dummy_ret_opt with
@@ -712,6 +716,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
      -> Summary.update_summary (make_summary proc_data access_tree) summary
     | None
      -> if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then
-          L.(die InternalError) "Couldn't compute post"
+          L.(die InternalError)
+            "Couldn't compute post for %a. Broken CFG suspected" Typ.Procname.pp
+            (Procdesc.get_proc_name proc_desc)
         else summary
 end
