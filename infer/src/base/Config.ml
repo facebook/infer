@@ -660,8 +660,12 @@ and ( annotation_reachability
     let _ : bool ref =
       CLOpt.mk_bool_group ~long:(long ^ "-only")
         ~in_help:CLOpt.([(Analyze, manual_generic)])
-        (Printf.sprintf "Enable $(b,--%s) and disable all other checkers" long) [var]
-        (List.map ~f:fst !all_checkers)
+        (Printf.sprintf "Enable $(b,--%s) and disable all other checkers" long)
+        [(* enable this checker *) var]
+        ((* disable all checkers except this one *)
+         List.filter_map
+           ~f:(fun (var', long') -> if String.equal long long' then None else Some var')
+           !all_checkers)
     in
     ()
   in
