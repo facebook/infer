@@ -687,10 +687,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     ; exps= [method_exp] @ extra_exps
     ; instrs= pre_trans_result.instrs @ extra_instrs }
 
-  let destructor_deref_trans trans_state pvar_trans_result class_qual_type si =
+  let destructor_deref_trans trans_state pvar_trans_result class_type_ptr si =
     let open Clang_ast_t in
     let destruct_decl_ref_opt =
-      match CAst_utils.get_decl_from_typ_ptr class_qual_type.Clang_ast_t.qt_type_ptr with
+      match CAst_utils.get_decl_from_typ_ptr class_type_ptr with
       | Some CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_info)
       | Some ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _)
        -> cxx_record_info.xrdi_destructor
@@ -1162,7 +1162,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     {res_trans with exps= extra_res_trans.exps}
 
-  and cxx_destructor_call_trans trans_state si this_res_trans class_qual_type =
+  and cxx_destructor_call_trans trans_state si this_res_trans class_type_ptr =
     (* cxx_method_construct_call_trans claims a priority with the same `si`.
                     New pointer is generated to avoid premature node creation *)
     let si' = {si with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()} in
@@ -1174,9 +1174,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let this_res_trans' =
       {this_res_trans with exps= [(this_exp, CType.add_pointer_to_typ this_typ)]}
     in
-    let res_trans_callee =
-      destructor_deref_trans trans_state this_res_trans' class_qual_type si'
-    in
+    let res_trans_callee = destructor_deref_trans trans_state this_res_trans' class_type_ptr si' in
     let is_cpp_call_virtual = res_trans_callee.is_cpp_call_virtual in
     if res_trans_callee.exps <> [] then
       cxx_method_construct_call_trans trans_state_pri res_trans_callee [] si' (Typ.mk Tvoid)
@@ -1350,7 +1348,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 {empty_res_trans with exps= [(field_exp, field_typ)]}
               in
               cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                qual_type
+                qual_type.Clang_ast_t.qt_type_ptr
           | _
            -> assert false )
       in
@@ -1390,7 +1388,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                     let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
                     let this_res_trans_destruct = {empty_res_trans with exps= [(exp, typ)]} in
                     cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                      qual_type
+                      qual_type.Clang_ast_t.qt_type_ptr
                 | _
                  -> assert false)
             vars_to_destroy
@@ -2705,7 +2703,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let this_res_trans_destruct = {empty_res_trans with exps= result_trans_param.exps} in
         let destruct_res_trans =
           cxx_destructor_call_trans trans_state_pri destruct_stmt_info this_res_trans_destruct
-            deleted_type
+            deleted_type.Clang_ast_t.qt_type_ptr
         in
         [result_trans_param; destruct_res_trans; call_res_trans] (* --- END OF DEAD CODE --- *)
       else [result_trans_param; call_res_trans]
