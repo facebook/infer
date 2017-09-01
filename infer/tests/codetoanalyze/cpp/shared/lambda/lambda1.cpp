@@ -39,6 +39,13 @@ int capture_by_ref() {
   return x;
 }
 
-void init_capture() {
-  [i = 0]() { i; };
+int init_capture1() {
+  return [i = 0]() { return i; }
+  ();
+}
+
+int init_capture2() {
+  int i = 0;
+  return [ a = i, b = 0, c = 3 ]() { return a + b + c; }
+  ();
 }

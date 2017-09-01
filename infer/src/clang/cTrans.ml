@@ -2587,7 +2587,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | _
      -> assert false
 
-  and lambdaExpr_trans trans_state expr_info {Clang_ast_t.lei_lambda_decl; lei_captures} =
+  and lambdaExpr_trans trans_state stmt_info expr_info {Clang_ast_t.lei_lambda_decl; lei_captures} =
     let open CContext in
     let qual_type = expr_info.Clang_ast_t.ei_qual_type in
     let context = trans_state.context in
@@ -2598,19 +2598,40 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* We need to set the explicit dependency between the newly created lambda and the *)
     (* defining procedure. We add an edge in the call graph.*)
     Cg.add_edge context.cg procname lambda_pname ;
-    let captured_vars =
-      List.fold_right
-        ~f:(fun {Clang_ast_t.lci_captured_var} acc ->
-          match lci_captured_var with
-          | Some decl_ref
-           -> CVar_decl.sil_var_of_captured_var decl_ref context procname :: acc
-          | None
-           -> acc)
-        ~init:[] lei_captures
-      |> List.map ~f:(fun (pvar, typ) -> (Exp.Lvar pvar, pvar, typ))
+    let make_captured_tuple (pvar, typ) = (Exp.Lvar pvar, pvar, typ) in
+    let get_captured_pvar_typ decl_ref =
+      CVar_decl.sil_var_of_captured_var decl_ref context procname
     in
+    let translate_capture_init (pvar, typ) init_decl =
+      match init_decl with
+      | Clang_ast_t.VarDecl (_, _, _, {vdi_init_expr})
+       -> init_expr_trans trans_state (Exp.Lvar pvar, typ) stmt_info vdi_init_expr
+      | _
+       -> L.die ExternalError "Unexpected: capture-init statement without var decl"
+    in
+    let translate_captured {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl}
+        (trans_results_acc, captured_vars_acc as acc) =
+      match (lci_captured_var, lci_init_captured_vardecl) with
+      | Some captured_var_decl_ref, Some init_decl
+       -> (* capture and init *)
+          let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in
+          ( translate_capture_init pvar_typ init_decl :: trans_results_acc
+          , make_captured_tuple pvar_typ :: captured_vars_acc )
+      | Some captured_var_decl_ref, None
+       -> (* just capture *)
+          let pvar_typ = get_captured_pvar_typ captured_var_decl_ref in
+          (trans_results_acc, make_captured_tuple pvar_typ :: captured_vars_acc)
+      | None, None
+       -> acc
+      | None, Some _
+       -> L.die InternalError "Capture-init with init, but no capture"
+    in
+    let trans_results, captured_vars =
+      List.fold_right ~f:translate_captured ~init:([], []) lei_captures
+    in
+    let final_trans_result = collect_res_trans context.procdesc trans_results in
     let closure = Exp.Closure {name= lambda_pname; captured_vars} in
-    {empty_res_trans with exps= [(closure, typ)]}
+    {final_trans_result with exps= [(closure, typ)]}
 
   and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
     let context = trans_state.context in
@@ -3116,9 +3137,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> cxxTypeidExpr_trans trans_state stmt_info stmts expr_info
     | CXXStdInitializerListExpr (stmt_info, stmts, expr_info)
      -> cxxStdInitializerListExpr_trans trans_state stmt_info stmts expr_info
-    | LambdaExpr (_, _, expr_info, lambda_expr_info)
+    | LambdaExpr (stmt_info, _, expr_info, lambda_expr_info)
      -> let trans_state' = {trans_state with priority= Free} in
-        lambdaExpr_trans trans_state' expr_info lambda_expr_info
+        lambdaExpr_trans trans_state' stmt_info expr_info lambda_expr_info
     | AttributedStmt (_, stmts, attrs)
      -> attributedStmt_trans trans_state stmts attrs
     | TypeTraitExpr (_, _, expr_info, type_trait_info)

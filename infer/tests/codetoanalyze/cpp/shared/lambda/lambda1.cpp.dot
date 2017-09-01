@@ -87,13 +87,48 @@ digraph iCFG {
 	
 
 	 "capture_by_ref#_Z14capture_by_refv.c683a8db53a834aa19283088dfffe460_5" -> "capture_by_ref#_Z14capture_by_refv.c683a8db53a834aa19283088dfffe460_4" ;
-"init_capture#_Z12init_capturev.b56a308a8fe2b749cb39e3b566237ec2_1" [label="1: Start init_capture\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 42]\n " color=yellow style=filled]
+"init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_1" [label="1: Start init_capture1\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 42]\n " color=yellow style=filled]
 	
 
-	 "init_capture#_Z12init_capturev.b56a308a8fe2b749cb39e3b566237ec2_1" -> "init_capture#_Z12init_capturev.b56a308a8fe2b749cb39e3b566237ec2_2" ;
-"init_capture#_Z12init_capturev.b56a308a8fe2b749cb39e3b566237ec2_2" [label="2: Exit init_capture \n  " color=yellow style=filled]
+	 "init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_1" -> "init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_3" ;
+"init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_2" [label="2: Exit init_capture1 \n  " color=yellow style=filled]
 	
 
+"init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_3" [label="3:  DeclStmt \n   *&i:int=0 [line 43]\n " shape="box"]
+	
+
+	 "init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_3" -> "init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_4" ;
+"init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_4" [label="4:  Return Stmt \n   n$0=_fun_init_capture1::lambda_shared_lambda_lambda1.cpp:43:10_operator()((_fun_init_capture1::lambda_shared_lambda_lambda1.cpp:43:10_operator(),&i):init_capture1::lambda_shared_lambda_lambda1.cpp:43:10) [line 43]\n  *&return:int=n$0 [line 43]\n " shape="box"]
+	
+
+	 "init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_4" -> "init_capture1#_Z13init_capture1v.7519553572919eb8fa8af50760159e66_2" ;
+"init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_1" [label="1: Start init_capture2\nFormals: \nLocals:  i:int \n   DECLARE_LOCALS(&return,&i); [line 47]\n " color=yellow style=filled]
+	
+
+	 "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_1" -> "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_7" ;
+"init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_2" [label="2: Exit init_capture2 \n  " color=yellow style=filled]
+	
+
+"init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_3" [label="3:  DeclStmt \n   *&c:int=3 [line 49]\n " shape="box"]
+	
+
+	 "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_3" -> "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_6" ;
+"init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_4" [label="4:  DeclStmt \n   *&b:int=0 [line 49]\n " shape="box"]
+	
+
+	 "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_4" -> "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_3" ;
+"init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_5" [label="5:  DeclStmt \n   n$0=*&i:int [line 49]\n  *&a:int=n$0 [line 49]\n " shape="box"]
+	
+
+	 "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_5" -> "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_4" ;
+"init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_6" [label="6:  Return Stmt \n   n$1=_fun_init_capture2::lambda_shared_lambda_lambda1.cpp:49:10_operator()((_fun_init_capture2::lambda_shared_lambda_lambda1.cpp:49:10_operator(),&a,&b,&c):init_capture2::lambda_shared_lambda_lambda1.cpp:49:10) [line 49]\n  *&return:int=n$1 [line 49]\n " shape="box"]
+	
+
+	 "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_6" -> "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_2" ;
+"init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_7" [label="7:  DeclStmt \n   *&i:int=0 [line 48]\n " shape="box"]
+	
+
+	 "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_7" -> "init_capture2#_Z13init_capture2v.ea2bbe7e5f5b3cec548b40ebd7beb345_5" ;
 "operator()#lambda_shared_lambda_lambda1.cpp:11:15#bar#(_ZZ3barvENK3$_0clEv).6e24f7d75fa4d9b98ee11419b33635ae_1" [label="1: Start bar::lambda_shared_lambda_lambda1.cpp:11:15_operator()\nFormals:  this:bar::lambda_shared_lambda_lambda1.cpp:11:15*\nLocals:  i:int \n   DECLARE_LOCALS(&return,&i); [line 11]\n " color=yellow style=filled]
 	
 
@@ -192,11 +227,26 @@ digraph iCFG {
 	
 
 	 "operator()#lambda_shared_lambda_lambda1.cpp:38:3#capture_by_ref#(_ZZ14capture_by_refvENK3$_5clEv).801ff4a46ab35f8d28f7ad0e26ae456e_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:38:3#capture_by_ref#(_ZZ14capture_by_refvENK3$_5clEv).801ff4a46ab35f8d28f7ad0e26ae456e_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:43:3#init_capture#(_ZZ12init_capturevENK3$_6clEv).43d5b008ae982e3438cddd48c4a55f04_1" [label="1: Start init_capture::lambda_shared_lambda_lambda1.cpp:43:3_operator()\nFormals:  this:init_capture::lambda_shared_lambda_lambda1.cpp:43:3*\nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n " color=yellow style=filled]
+"operator()#lambda_shared_lambda_lambda1.cpp:43:10#init_capture1#(_ZZ13init_capture1vENK3$_6clEv).184e351188c1ce3cde6eb3d7757baeac_1" [label="1: Start init_capture1::lambda_shared_lambda_lambda1.cpp:43:10_operator()\nFormals:  this:init_capture1::lambda_shared_lambda_lambda1.cpp:43:10*\nLocals:  \n   DECLARE_LOCALS(&return); [line 43]\n " color=yellow style=filled]
 	
 
-	 "operator()#lambda_shared_lambda_lambda1.cpp:43:3#init_capture#(_ZZ12init_capturevENK3$_6clEv).43d5b008ae982e3438cddd48c4a55f04_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:43:3#init_capture#(_ZZ12init_capturevENK3$_6clEv).43d5b008ae982e3438cddd48c4a55f04_2" ;
-"operator()#lambda_shared_lambda_lambda1.cpp:43:3#init_capture#(_ZZ12init_capturevENK3$_6clEv).43d5b008ae982e3438cddd48c4a55f04_2" [label="2: Exit init_capture::lambda_shared_lambda_lambda1.cpp:43:3_operator() \n  " color=yellow style=filled]
+	 "operator()#lambda_shared_lambda_lambda1.cpp:43:10#init_capture1#(_ZZ13init_capture1vENK3$_6clEv).184e351188c1ce3cde6eb3d7757baeac_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:43:10#init_capture1#(_ZZ13init_capture1vENK3$_6clEv).184e351188c1ce3cde6eb3d7757baeac_3" ;
+"operator()#lambda_shared_lambda_lambda1.cpp:43:10#init_capture1#(_ZZ13init_capture1vENK3$_6clEv).184e351188c1ce3cde6eb3d7757baeac_2" [label="2: Exit init_capture1::lambda_shared_lambda_lambda1.cpp:43:10_operator() \n  " color=yellow style=filled]
 	
 
+"operator()#lambda_shared_lambda_lambda1.cpp:43:10#init_capture1#(_ZZ13init_capture1vENK3$_6clEv).184e351188c1ce3cde6eb3d7757baeac_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 43]\n  *&return:int=n$0 [line 43]\n " shape="box"]
+	
+
+	 "operator()#lambda_shared_lambda_lambda1.cpp:43:10#init_capture1#(_ZZ13init_capture1vENK3$_6clEv).184e351188c1ce3cde6eb3d7757baeac_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:43:10#init_capture1#(_ZZ13init_capture1vENK3$_6clEv).184e351188c1ce3cde6eb3d7757baeac_2" ;
+"operator()#lambda_shared_lambda_lambda1.cpp:49:10#init_capture2#(_ZZ13init_capture2vENK3$_7clEv).1c25acd20a722db722068b75ba66296b_1" [label="1: Start init_capture2::lambda_shared_lambda_lambda1.cpp:49:10_operator()\nFormals:  this:init_capture2::lambda_shared_lambda_lambda1.cpp:49:10*\nLocals:  \n   DECLARE_LOCALS(&return); [line 49]\n " color=yellow style=filled]
+	
+
+	 "operator()#lambda_shared_lambda_lambda1.cpp:49:10#init_capture2#(_ZZ13init_capture2vENK3$_7clEv).1c25acd20a722db722068b75ba66296b_1" -> "operator()#lambda_shared_lambda_lambda1.cpp:49:10#init_capture2#(_ZZ13init_capture2vENK3$_7clEv).1c25acd20a722db722068b75ba66296b_3" ;
+"operator()#lambda_shared_lambda_lambda1.cpp:49:10#init_capture2#(_ZZ13init_capture2vENK3$_7clEv).1c25acd20a722db722068b75ba66296b_2" [label="2: Exit init_capture2::lambda_shared_lambda_lambda1.cpp:49:10_operator() \n  " color=yellow style=filled]
+	
+
+"operator()#lambda_shared_lambda_lambda1.cpp:49:10#init_capture2#(_ZZ13init_capture2vENK3$_7clEv).1c25acd20a722db722068b75ba66296b_3" [label="3:  Return Stmt \n   n$0=*&a:int [line 49]\n  n$1=*&b:int [line 49]\n  n$2=*&c:int [line 49]\n  *&return:int=((n$0 + n$1) + n$2) [line 49]\n " shape="box"]
+	
+
+	 "operator()#lambda_shared_lambda_lambda1.cpp:49:10#init_capture2#(_ZZ13init_capture2vENK3$_7clEv).1c25acd20a722db722068b75ba66296b_3" -> "operator()#lambda_shared_lambda_lambda1.cpp:49:10#init_capture2#(_ZZ13init_capture2vENK3$_7clEv).1c25acd20a722db722068b75ba66296b_2" ;
 }

@@ -51,8 +51,19 @@ void FN_capture_no_read_bad() {
   [x]() { return; }();
 }
 
-void FN_init_capture_no_read_bad() {
-  [i = 0]() { return; };
+void init_capture_reassign_bad() {
+  int i = 0; // this is a dead store
+  return [i = 0]() { return i; }
+  ();
+}
+
+void init_capture_no_call_bad() {
+  [i = 0]() { return i; };
+}
+
+int FN_init_capture_no_read_bad() {
+  return [i = 0]() { return 0; }
+  ();
 }
 
 int return_ok() {
@@ -167,8 +178,44 @@ int FN_capture_by_ref_reuseBad() {
   return x;
 }
 
-void init_capture_ok() {
-  [i = 0]() { return i; };
+int init_capture1_ok() {
+  return [i = 0]() { return i; }
+  ();
+}
+
+int init_capture2_ok() {
+  int i = 0;
+  return [j = i]() { return j; }
+  ();
+}
+
+int init_capture3_ok() {
+  int i = 0;
+  return [i = i]() { return i; }
+  ();
+}
+
+int init_capture4_ok() {
+  int i = 0;
+  int j = 0;
+  return [ a = 0, b = i, c = j ]() { return a + b + c; }
+  ();
+}
+
+int init_capture5_ok() {
+  int i = 0;
+  int k = [j = i]() { return j; }
+  ();
+  i = 5; // should not be flagged
+  return i + k;
+}
+
+int init_capture6_ok() {
+  int i = 0;
+  int k = [i = i + 1]() { return i; }
+  ();
+  i = 5; // should not be flagged;
+  return i + k;
 }
 
 char* global;
@@ -179,4 +226,5 @@ void FP_assign_array_tricky_ok() {
   *(int*)arr = 123; // think this is a bug in the frontend... this instruction
   // looks like &arr:int = 123
 }
+
 }
