@@ -40,17 +40,9 @@ INFER_CREATE_TRACEVIEW_LINKS_MAIN = $(INFER_CREATE_TRACEVIEW_LINKS_MODULE)
 
 ### InferUnit declarations ###
 
-UNIT_SOURCES = unit
-
 INFERUNIT_MAIN = inferunit
 
-#### Java declarations ####
-
-JAVA_SOURCES = java
-
 #### Clang declarations ####
-
-CLANG_SOURCES = clang
 
 CLANG_PLUGIN_MIRROR = atd
 
@@ -74,8 +66,6 @@ CLANG_PLUGIN_MIRRORED_FILES = $(addprefix $(CLANG_PLUGIN_MIRROR)/, $(notdir $(FC
 CLANG_BINIOU_DICT = $(ETC_DIR)/clang_ast.dict
 
 #### scripts declarations ####
-
-SCRIPT_SOURCES = scripts
 
 CHECKCOPYRIGHT_BIN = $(SCRIPT_DIR)/checkCopyright
 CHECKCOPYRIGHT_MAIN = checkCopyright
@@ -106,7 +96,11 @@ OCAML_SOURCES = \
 .PHONY: all
 all: infer
 
-SRC_BUILD_COMMON = jbuild atd/jbuild istd/jbuild scripts/jbuild jbuild-workspace $(OCAML_SOURCES)
+GENERATED_FROM_AUTOCONF = jbuild.common jbuild-workspace base/Version.ml
+
+GENERATED_JBUILDS = jbuild atd/jbuild istd/jbuild scripts/jbuild
+
+SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_JBUILDS) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 SRC_BUILD_COMMON += $(CLANG_BINIOU_DICT)
 endif
@@ -246,7 +240,7 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $@
 
-jbuild.common jbuild-workspace base/Version.ml: $(MAKEFILE_LIST)
+$(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	TMPFILE=$$(mktemp $@.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
 	INFER_GIT_BRANCH=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --abbrev-ref HEAD || printf "unknown"); \
@@ -271,7 +265,7 @@ jbuild.common: jbuild.common.in
 jbuild-workspace: jbuild-workspace.in
 base/Version.ml: base/Version.ml.in
 
-jbuild atd/jbuild istd/jbuild scripts/jbuild: jbuild.common
+$(GENERATED_JBUILDS): jbuild.common
 	$(QUIET)cat $+ > $@
 
 jbuild: jbuild.in
@@ -285,7 +279,8 @@ clean:
 	$(REMOVE) toplevel.mlpack
 	$(REMOVE_DIR) $(BUILD_DIR)
 	$(REMOVE) $(ETC_DIR)/clang_ast.dict
-	$(REMOVE) base/Version.ml jbuild atd/jbuild istd/jbuild jbuild-workspace
+	$(REMOVE) $(GENERATED_FROM_AUTOCONF)
+	$(REMOVE) $(GENERATED_JBUILDS)
 	$(REMOVE) base/Version.ml.tmp.* jbuild.tmp.* jbuild-workspace.tmp.*
 #	be a bit more aggressive than needed with what we remove here so that stale binaries that
 #	only existed in previous versions get removed as well
