@@ -462,6 +462,8 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst
      -> Subtype.exact
     | Config.Java
      -> Subtype.subtypes
+    | Config.Python
+     -> L.die InternalError "Subtypes for Python not implemented"
   in
   let create_ptsto footprint_part off0 =
     match (root, off0, typ.Typ.desc) with

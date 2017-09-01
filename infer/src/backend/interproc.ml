@@ -757,6 +757,8 @@ let prop_init_formals_seed tenv new_formals (prop: 'a Prop.t) : Prop.exposed Pro
          -> Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
         | Config.Java
          -> Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes}
+        | Config.Python
+         -> L.die InternalError "prop_init_formals_seed not implemented for Python"
       in
       Prop.mk_ptsto_lvar tenv Prop.Fld_init Sil.inst_formal (pv, texp, None)
     in

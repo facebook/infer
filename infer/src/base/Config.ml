@@ -43,11 +43,11 @@ let string_of_analyzer a =
 let clang_frontend_action_symbols =
   [("lint", `Lint); ("capture", `Capture); ("lint_and_capture", `Lint_and_capture)]
 
-type language = Clang | Java [@@deriving compare]
+type language = Clang | Java | Python [@@deriving compare]
 
 let equal_language = [%compare.equal : language]
 
-let string_of_language = function Java -> "Java" | Clang -> "C_CPP"
+let string_of_language = function Java -> "Java" | Clang -> "C_CPP" | Python -> "python"
 
 let ml_bucket_symbols =
   [ ("all", `MLeak_all)

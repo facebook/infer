@@ -17,6 +17,7 @@ let sources =
     :: ( ( if clang then ["clang"; ("unit" ^/ "clang")]
          else ["clang_stubs"; ("unit" ^/ "clang_stubs")] )
        @ [ (if java then "java" else "java_stubs")
+         ; (if python && facebook then "python" else "python_stubs")
          ; "absint"
          ; "backend"
          ; "base"
@@ -66,6 +67,8 @@ let stanzas =
   ( if clang then
       ["(ocamllex (types_lexer ctl_lexer))"; "(menhir ((modules (types_parser ctl_parser))))"]
   else [] )
+  @ ( if python && facebook then ["(ocamllex (pythonLexer))"; "(menhir ((modules (pythonParser))))"]
+    else [] )
   @ [ Format.sprintf
         {|
 (library
@@ -73,7 +76,7 @@ let stanzas =
   (flags (%s))
   (libraries (%s))
   (modules (:standard \ %s infertop))
-  (preprocess (pps (ppx_compare)))
+  (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
  ))
 |}
         (String.concat " " infer_cflags) (String.concat " " infer_libraries)
@@ -85,7 +88,7 @@ let stanzas =
   (flags (%s -open InferModules))
   (libraries (InferModules))
   (modules (%s))
-  (preprocess (pps (ppx_compare)))
+  (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
  ))
 |}
         (String.concat " " infer_binaries) (String.concat " " infer_cflags)

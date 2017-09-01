@@ -30,7 +30,7 @@ val string_to_analyzer : (string * analyzer) list
 
 val string_of_analyzer : analyzer -> string
 
-type language = Clang | Java [@@deriving compare]
+type language = Clang | Java | Python [@@deriving compare]
 
 val equal_language : language -> language -> bool
 

@@ -70,6 +70,15 @@ AC_ARG_ENABLE(java-analyzers,
 BUILD_JAVA_ANALYZERS=$enable_java_analyzers
 AC_SUBST([BUILD_JAVA_ANALYZERS])
 
+AC_ARG_ENABLE(python-analyzers,
+  AS_HELP_STRING([--disable-python-analyzers],
+    [do not build the Python analyzers (default is to build them)]),
+  ,
+  enable_python_analyzers=yes)
+
+BUILD_PYTHON_ANALYZERS=$enable_python_analyzers
+AC_SUBST([BUILD_PYTHON_ANALYZERS])
+
 AC_ARG_WITH(fcp-clang,
   AS_HELP_STRING([--without-fcp-clang],
     [do not use $CLANG_PREFIX/bin/clang to override the default compiler (default is to override if in an infer release)]),
