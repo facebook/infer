@@ -144,3 +144,5 @@ val sil_annot_of_type : Clang_ast_t.qual_type -> Annot.Item.t
 val type_of_decl : Clang_ast_t.decl -> Clang_ast_t.type_ptr option
 
 val get_record_fields : Clang_ast_t.decl -> Clang_ast_t.decl list
+
+val get_cxx_base_classes : Clang_ast_t.decl -> Clang_ast_t.type_ptr list

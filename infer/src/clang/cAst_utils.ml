@@ -470,3 +470,12 @@ let get_record_fields decl =
    -> List.filter ~f:(function FieldDecl _ -> true | _ -> false) decl_list
   | _
    -> []
+
+let get_cxx_base_classes decl =
+  let open Clang_ast_t in
+  match decl with
+  | CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_info)
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _)
+   -> cxx_record_info.xrdi_bases
+  | _
+   -> []

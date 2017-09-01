@@ -1309,6 +1309,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let class_ptr = CContext.get_curr_class_decl_ptr context.CContext.curr_class in
       let decl = Option.value_exn (CAst_utils.get_decl class_ptr) in
       let fields = CAst_utils.get_record_fields decl in
+      let bases = CAst_utils.get_cxx_base_classes decl in
       (* compute `this` once that is used for all fields *)
       let class_qual_type = CAst_utils.qual_type_of_decl_ptr class_ptr in
       let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
@@ -1322,6 +1323,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         extract_exp_from_list this_res_trans.exps
           "WARNING: There should be one expression for 'this' in constructor. @\n"
       in
+      let this_qual_type = match class_typ.desc with Typ.Tptr (t, _) -> t | _ -> class_typ in
       (* ReturnStmt claims a priority with the same `stmt_info`.
        New pointer is generated to avoid premature node creation *)
       let stmt_info' =
@@ -1339,9 +1341,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                  -> assert false
               in
               let field_name = CGeneral_utils.mk_class_field_name class_tname ni_name in
-              let this_qual_type =
-                match class_typ.desc with Typ.Tptr (t, _) -> t | _ -> class_typ
-              in
               let field_exp = Exp.Lfield (obj_sil, field_name, this_qual_type) in
               let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
               let this_res_trans_destruct =
@@ -1352,7 +1351,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | _
            -> assert false )
       in
-      let all_res_trans = List.filter ~f:(fun res -> res <> empty_res_trans) all_res_trans in
+      let bases_res_trans =
+        List.rev_map bases ~f:(fun base ->
+            let this_res_trans_destruct =
+              {empty_res_trans with exps= [(obj_sil, this_qual_type)]}
+            in
+            cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct base )
+      in
+      let all_res_trans =
+        List.filter ~f:(fun res -> res <> empty_res_trans) (all_res_trans @ bases_res_trans)
+      in
       let all_res_trans =
         if all_res_trans <> [] then {empty_res_trans with instrs= this_res_trans.instrs}
           :: all_res_trans
