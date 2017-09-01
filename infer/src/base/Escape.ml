@@ -14,13 +14,17 @@ open! IStd
 
 (** apply a map function for escape sequences *)
 let escape_map map_fun s =
-  let len = String.length s in
-  let buf = Buffer.create len in
-  for i = 0 to len - 1 do
-    let c = String.unsafe_get s i in
-    match map_fun c with None -> Buffer.add_char buf c | Some s' -> Buffer.add_string buf s'
-  done ;
-  Buffer.contents buf
+  let needs_escape = String.exists ~f:(fun c -> Option.is_some (map_fun c)) s in
+  if needs_escape then
+    let len = String.length s in
+    let buf = Buffer.create len in
+    for i = 0 to len - 1 do
+      let c = String.unsafe_get s i in
+      match map_fun c with None -> Buffer.add_char buf c | Some s' -> Buffer.add_string buf s'
+    done ;
+    Buffer.contents buf
+  else (* not escaping anything, so don't waste memory on a copy of the string *)
+    s
 
 let escape_csv s =
   let map = function
