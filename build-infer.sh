@@ -176,9 +176,7 @@ install_patched_javalib() {
     tar xvf "$javalib_dir"/javalib-2.3.3.tar.bz2 -C "$javalib_dir"
     # apply the patch
     patch -d "$unzipped_javalib_dir"/src < "$javalib_dir"/allow_empty_method.patch
-    opam pin add javalib "$unzipped_javalib_dir"
-    # clean up unzipped source
-    rm -rf "$unzipped_javalib_dir"
+    opam pin add --no-action javalib "$unzipped_javalib_dir"
 }
 
 install_locked_deps() {
