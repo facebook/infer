@@ -39,6 +39,7 @@ def create_genrules(
   if 'GENERATE_INFER_GENRULES' in os.environ and srcs:
     for analyzer in analyzers:
       analyzer_name = name + '_{}'.format(analyzer)
+      bootclasspath = os.path.join(os.environ['JAVA_HOME'], 'jre', 'lib', 'rt.jar')
       genrule(
         name = analyzer_name,
         srcs=srcs,
@@ -47,6 +48,7 @@ def create_genrules(
           '-a', analyzer,
           '--results-dir', '$OUT',
           '--classpath', '$(classpath :{})'.format(name),
+          '--bootclasspath', bootclasspath,
           '--sourcepath', '$SRCDIR',
           '--generated-classes', '$(location :{})'.format(name),
         ]),
