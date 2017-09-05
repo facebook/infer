@@ -29,24 +29,23 @@ let attributes_in_same_category attr1 attr2 =
   PredSymb.equal_category cat1 cat2
 
 (** Replace an attribute associated to the expression *)
-let add_or_replace_check_changed tenv check_attribute_change prop atom0 =
-  match atom0 with
+let add_or_replace_check_changed tenv check_attribute_change prop atom =
+  match atom with
   | Sil.Apred (att0, (_ :: _ as exps0)) | Anpred (att0, (_ :: _ as exps0))
    -> let pairs = List.map ~f:(fun e -> (e, Prop.exp_normalize_prop tenv prop e)) exps0 in
       let _, nexp = List.hd_exn pairs in
       (* len exps0 > 0 by match *)
-      let natom = Sil.atom_replace_exp pairs atom0 in
       let atom_map = function
         | Sil.Apred (att, exp :: _)
         | Anpred (att, exp :: _)
           when Exp.equal nexp exp && attributes_in_same_category att att0
-         -> check_attribute_change att att0 ; natom
-        | atom
-         -> atom
+         -> check_attribute_change att att0 ; atom
+        | atom'
+         -> atom'
       in
       let pi = prop.Prop.pi in
       let pi' = IList.map_changed atom_map pi in
-      if phys_equal pi pi' then Prop.prop_atom_and tenv prop natom
+      if phys_equal pi pi' then Prop.prop_atom_and tenv prop atom
       else Prop.normalize tenv (Prop.set prop ~pi:pi')
   | _
    -> prop
