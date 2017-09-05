@@ -14,10 +14,10 @@ open! IStd
 
 module F = Format
 
-(* If Logging has not been set up yet, SimpleLogging can be used instead. Prefer to use the
-   functions here, as they can do more logging. *)
+(* If Logging has not been set up yet, Die can be used instead. Prefer to use the
+   functions here, as they can do more logging. These functions are documented in Die. *)
 
-include module type of SimpleLogging
+include module type of Die
 
 val environment_info : ('a, F.formatter, unit) format -> 'a
 (** log information about the environment *)

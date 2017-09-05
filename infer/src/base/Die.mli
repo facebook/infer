@@ -11,11 +11,11 @@ open! IStd
 
 (* WARNING: ONLY USE IF Logging IS NOT AVAILABLE TO YOU FOR SOME REASON (e.g., inside Config). *)
 
-exception InferExternalError of string * string
+exception InferExternalError of string
 
-exception InferInternalError of string * string
+exception InferInternalError of string
 
-exception InferUserError of string * string
+exception InferUserError of string
 
 (** kind of error for [die], with similar semantics as [Logging.{external,internal,user}_error] *)
 type error = ExternalError | InternalError | UserError
@@ -24,3 +24,5 @@ val exit_code_of_exception : Exn.t -> int
 
 val die : error -> ('a, Format.formatter, unit, _) format4 -> 'a
 (** Raise the corresponding exception. *)
+
+val raise_error : error -> msg:string -> 'a

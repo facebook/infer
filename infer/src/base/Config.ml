@@ -16,7 +16,7 @@ open! PVariant
 
 module F = Format
 module CLOpt = CommandLineOption
-module L = SimpleLogging
+module L = Die
 
 type analyzer =
   | BiAbduction
@@ -1791,29 +1791,33 @@ let post_parsing_initialization command_opt =
    -> () ) ;
   if !version <> `None || !help <> `None then exit 0 ;
   let uncaught_exception_handler exn raw_backtrace =
-    let backtrace, should_print_backtrace_default =
-      match exn with
-      | L.InferExternalError (_, bt) | L.InferInternalError (_, bt)
-       -> (bt, true)
-      | L.InferUserError (_, bt)
-       -> (bt, false)
-      | _
-       -> (Caml.Printexc.raw_backtrace_to_string raw_backtrace, true)
+    let should_print_backtrace_default =
+      match exn with L.InferUserError _ -> false | _ -> true
     in
+    let backtrace = Caml.Printexc.raw_backtrace_to_string raw_backtrace in
     let print_exception () =
+      let error prefix msg =
+        ANSITerminal.(prerr_string [Bold; Foreground Red]) prefix ;
+        ANSITerminal.(prerr_string [Bold; Foreground Red]) msg ;
+        Out_channel.newline stderr
+      in
       match exn with
       | Failure msg
-       -> F.eprintf "ERROR: %s@\n" msg
-      | L.InferExternalError (msg, _)
-       -> F.eprintf "External Error: %s@\n" msg
-      | L.InferInternalError (msg, _)
-       -> F.eprintf "Internal Error: %s@\n" msg
-      | L.InferUserError (msg, _)
-       -> F.eprintf "Usage Error: %s@\n" msg
+       -> error "ERROR: " msg
+      | L.InferExternalError msg
+       -> error "External Error: " msg
+      | L.InferInternalError msg
+       -> error "Internal Error: " msg
+      | L.InferUserError msg
+       -> error "Usage Error: " msg
       | _
-       -> F.eprintf "Uncaught error: %s@\n" (Exn.to_string exn)
+       -> error "Uncaught error: " (Exn.to_string exn)
     in
-    if should_print_backtrace_default || !developer_mode then prerr_endline backtrace ;
+    if should_print_backtrace_default || !developer_mode then (
+      Out_channel.newline stderr ;
+      ANSITerminal.(prerr_string []) "Error backtrace:" ;
+      Out_channel.newline stderr ;
+      ANSITerminal.(prerr_string [Foreground Red] backtrace) ) ;
     print_exception () ;
     exit (L.exit_code_of_exception exn)
   in

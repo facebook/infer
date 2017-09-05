@@ -14,7 +14,7 @@ open! IStd
 
 module F = Format
 module CLOpt = CommandLineOption
-include SimpleLogging
+include Die
 
 (* log files *)
 (* make a copy of [f] *)
@@ -260,14 +260,7 @@ let log_of_kind error fmt =
    -> log ~to_console:false internal_error_file_fmts fmt
 
 let die error msg =
-  F.kasprintf
-    (fun s ->
-      (* backtraces contain line breaks, which results in lines without the [pid][error kind] prefix in the logs if printed as-is *)
-      Exn.backtrace () |> String.split ~on:'\n'
-      |> List.iter ~f:(fun line -> log_of_kind error "%s@\n" line) ;
-      log_of_kind error "%s@\n" s ;
-      die error "%s" s)
-    msg
+  F.kasprintf (fun msg -> log_of_kind error "%s@\n" msg ; raise_error error ~msg) msg
 
 (* create new channel from the log file, and dumps the contents of the temporary log buffer there *)
 let setup_log_file () =
@@ -341,7 +334,7 @@ type print_action = print_type * Obj.t  (** data to be printed *)
 let delayed_actions = ref []
 
 (** hook for the current printer of delayed print actions *)
-let printer_hook = ref (fun _ -> SimpleLogging.(die InternalError) "uninitialized printer hook")
+let printer_hook = ref (fun _ -> Die.(die InternalError) "uninitialized printer hook")
 
 (** extend the current print log *)
 let add_print_action pact =

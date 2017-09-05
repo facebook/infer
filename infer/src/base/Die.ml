@@ -11,24 +11,22 @@ module F = Format
 
 type error = ExternalError | InternalError | UserError
 
-exception InferExternalError of string * string
+exception InferExternalError of string
 
-exception InferInternalError of string * string
+exception InferInternalError of string
 
-exception InferUserError of string * string
+exception InferUserError of string
 
-let raise_error error msg backtrace =
+let raise_error error ~msg =
   match error with
   | ExternalError
-   -> raise (InferExternalError (msg, backtrace))
+   -> raise (InferExternalError msg)
   | InternalError
-   -> raise (InferInternalError (msg, backtrace))
+   -> raise (InferInternalError msg)
   | UserError
-   -> raise (InferUserError (msg, backtrace))
+   -> raise (InferUserError msg)
 
-let die error msg =
-  let backtrace = Exn.backtrace () in
-  F.kasprintf (fun s -> raise_error error s backtrace) msg
+let die error fmt = F.kasprintf (fun msg -> raise_error error ~msg) fmt
 
 let exit_code_of_exception = function
   | InferUserError _

@@ -11,7 +11,7 @@ open! IStd
 open! PVariant
 module F = Format
 module Hashtbl = Caml.Hashtbl
-module L = SimpleLogging
+module L = Die
 
 (** initial process times *)
 let initial_times = Unix.times ()

@@ -12,7 +12,7 @@
 open! IStd
 module F = Format
 module YBU = Yojson.Basic.Util
-module L = SimpleLogging
+module L = Die
 
 let ( = ) = String.equal
 
