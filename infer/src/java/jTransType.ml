@@ -301,12 +301,21 @@ let rec get_all_fields program tenv cn =
   let trans_fields classname =
     match JClasspath.lookup_node classname program with
     | Some Javalib.JClass jclass
-     -> let super_fields =
+     -> let superclass_fields =
           match jclass.Javalib.c_super_class with
           | None
            -> ([], [])
           | Some super_classname
            -> extract_class_fields super_classname
+        in
+        let super_fields =
+          let rev_pair (l1, l2) = (List.rev l1, List.rev l2) in
+          List.fold
+            ~f:(fun (statics, fields) interface_name ->
+              let interface_statics, interface_fields = extract_class_fields interface_name in
+              (interface_statics @ statics, interface_fields @ fields))
+            ~init:(rev_pair superclass_fields) jclass.Javalib.c_interfaces
+          |> rev_pair
         in
         Javalib.cf_fold (collect_class_field classname) (Javalib.JClass jclass) super_fields
     | Some Javalib.JInterface jinterface

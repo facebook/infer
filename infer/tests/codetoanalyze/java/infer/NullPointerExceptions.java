@@ -617,4 +617,16 @@ public class NullPointerExceptions {
     return Assertions.assertNotNull(object).toString();
   }
 
+  interface I {
+    @Nullable Object mObject = null;
+  }
+
+  class E implements I {
+
+    void dereferenceNullableInterfaceFieldBad() {
+      mObject.toString();
+    }
+
+  }
+
 }
