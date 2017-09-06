@@ -399,10 +399,8 @@ let check_inherently_dangerous_function caller_pname callee_pname =
     Reporting.log_warning_deprecated caller_pname exn
 
 let call_should_be_skipped callee_summary =
-  (* check skip flag *)
-  Specs.get_flag callee_summary ProcAttributes.proc_flag_skip <> None
   (* skip abstract methods *)
-  || callee_summary.Specs.attributes.ProcAttributes.is_abstract
+  callee_summary.Specs.attributes.ProcAttributes.is_abstract
   (* treat calls with no specs as skip functions in angelic mode *)
   || Config.angelic_execution && List.is_empty (Specs.get_specs_from_payload callee_summary)
 

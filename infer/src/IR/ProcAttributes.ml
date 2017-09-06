@@ -23,8 +23,6 @@ let compare_proc_flags x y =
 
 let proc_flags_empty () : proc_flags = Hashtbl.create 1
 
-let proc_flag_skip = "skip"
-
 let proc_flag_ignore_return = "ignore_return"
 
 let proc_flags_add proc_flags key value = Hashtbl.replace proc_flags key value

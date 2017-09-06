@@ -180,9 +180,6 @@ val get_ret_type : summary -> Typ.t
 val get_formals : summary -> (Mangled.t * Typ.t) list
 (** Get the formal paramters of the procedure *)
 
-val get_flag : summary -> string -> string option
-(** Get the flag with the given key for the procedure, if any *)
-
 val get_phase : summary -> phase
 (** Return the current phase for the proc *)
 

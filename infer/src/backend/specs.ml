@@ -668,12 +668,6 @@ let get_formals summary = summary.attributes.ProcAttributes.formals
 
 let get_attributes summary = summary.attributes
 
-(** Get the flag with the given key for the procedure, if any *)
-let get_flag summary key =
-  let proc_flags = summary.attributes.ProcAttributes.proc_flags in
-  try Some (Hashtbl.find proc_flags key)
-  with Not_found -> None
-
 (** Return the current phase for the proc *)
 let get_phase summary = summary.phase
 

@@ -14,9 +14,6 @@ open! IStd
 (** flags for a procedure *)
 type proc_flags = (string, string) Caml.Hashtbl.t [@@deriving compare]
 
-val proc_flag_skip : string
-(** keys for proc_flags *)
-
 val proc_flag_ignore_return : string
 (** key to specify that a function should be treated as a skip function *)
 
