@@ -12,7 +12,35 @@ module Hashtbl = Caml.Hashtbl
 module F = Format
 module L = Logging
 
-type attr_kind = ProcDefined | ProcObjCAccessor | ProcUndefined
+type attributes_kind = ProcUndefined | ProcObjCAccessor | ProcDefined [@@deriving compare]
+
+let least_relevant_up_to_proc_kind_exclusive = function
+  | ProcUndefined
+   -> []
+  | ProcObjCAccessor
+   -> [ProcUndefined]
+  | ProcDefined
+   -> [ProcUndefined; ProcObjCAccessor]
+
+let most_relevant_down_to_proc_kind_inclusive = function
+  | ProcUndefined
+   -> [ProcDefined; ProcObjCAccessor; ProcUndefined]
+  | ProcObjCAccessor
+   -> [ProcDefined; ProcObjCAccessor]
+  | ProcDefined
+   -> [ProcDefined]
+
+let proc_kind_of_attr (proc_attributes: ProcAttributes.t) =
+  if proc_attributes.is_defined then ProcDefined
+  else if Option.is_some proc_attributes.objc_accessor then ProcObjCAccessor
+  else ProcUndefined
+
+let should_override_attr attr1 attr2 =
+  (* use the source file to be more deterministic in case the same procedure name is defined in several files *)
+  [%compare : attributes_kind * SourceFile.t]
+    (proc_kind_of_attr attr1, attr1.ProcAttributes.loc.file)
+    (proc_kind_of_attr attr2, attr2.ProcAttributes.loc.file)
+  > 0
 
 (** Module to manage the table of attributes. *)
 let serializer : ProcAttributes.t Serialization.serializer =
@@ -52,41 +80,14 @@ let load_attr ~defined_only proc_name =
   let attributes_file ~proc_kind proc_name =
     Multilinks.resolve (res_dir_attr_filename ~create_dir:false ~proc_kind proc_name)
   in
-  let attr =
-    Serialization.read_from_file serializer (attributes_file ~proc_kind:ProcDefined proc_name)
-  in
-  if is_none attr && not defined_only then
-    (* We try to load the objc accesor one if they exist, if not then we load the undefined one *)
-    let attr =
-      Serialization.read_from_file serializer
-        (attributes_file ~proc_kind:ProcObjCAccessor proc_name)
-    in
-    match attr with
-    | Some attr
-     -> Some attr
-    | None
-     -> Serialization.read_from_file serializer
-          (attributes_file ~proc_kind:ProcUndefined proc_name)
-  else attr
-
-let create_proc_kind (proc_attributes: ProcAttributes.t) =
-  if proc_attributes.is_defined then ProcDefined
-  else if Option.is_some proc_attributes.objc_accessor then ProcObjCAccessor
-  else ProcUndefined
-
-let less_relevant_proc_kinds proc_kind =
-  match proc_kind with
-  | ProcDefined
-   -> [ProcObjCAccessor; ProcUndefined]
-  | ProcObjCAccessor
-   -> [ProcUndefined]
-  | ProcUndefined
-   -> []
+  let min_kind = if defined_only then ProcDefined else ProcUndefined in
+  List.find_map (most_relevant_down_to_proc_kind_inclusive min_kind) ~f:(fun proc_kind ->
+      Serialization.read_from_file serializer (attributes_file ~proc_kind proc_name) )
 
 (* Write a proc attributes to file.
    If defined, delete the declared file if it exists. *)
 let write_and_delete proc_name (proc_attributes: ProcAttributes.t) =
-  let proc_kind = create_proc_kind proc_attributes in
+  let proc_kind = proc_kind_of_attr proc_attributes in
   let attributes_file proc_kind = res_dir_attr_filename ~create_dir:true ~proc_kind proc_name in
   Serialization.write_to_file serializer (attributes_file proc_kind) ~data:proc_attributes ;
   let upgrade_relevance less_relevant_proc_kind =
@@ -95,25 +96,7 @@ let write_and_delete proc_name (proc_attributes: ProcAttributes.t) =
       try Unix.unlink fname_declared
       with Unix.Unix_error _ -> ()
   in
-  List.iter ~f:upgrade_relevance (less_relevant_proc_kinds proc_kind)
-
-(* This creates an ordering in the attribute files: 1.defined, 2.objc accessor, 3.else.
-   To be used to figure out if we should override an existing attribute file with a new
-   one, if relevant information will be updated, or lost.
-   If the relevance is not upgraded, choose based on whether its associated file has higher
-   rank (alphabetically) than the other. *)
-let should_override_attr (new_attr: ProcAttributes.t) (old_attr: ProcAttributes.t) =
-  if new_attr.is_defined then
-    if old_attr.is_defined then SourceFile.compare new_attr.loc.file old_attr.loc.file > 0
-    else true (* new becomes defined, override  *)
-  else if old_attr.is_defined then false (* old was defined, new isn't, don't override *)
-  else if Option.is_some new_attr.objc_accessor then
-    if Option.is_some old_attr.objc_accessor then
-      SourceFile.compare new_attr.loc.file old_attr.loc.file > 0
-    else true (* new becomes objc accessor, override *)
-  else false
-
-(* new isn't defined or objc accessor, don't overide *)
+  List.iter ~f:upgrade_relevance (least_relevant_up_to_proc_kind_exclusive proc_kind)
 
 let store_attributes (proc_attributes: ProcAttributes.t) =
   let proc_name = proc_attributes.proc_name in
