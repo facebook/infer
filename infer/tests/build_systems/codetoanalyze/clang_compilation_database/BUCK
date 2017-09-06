@@ -7,3 +7,10 @@ cxx_library(
     '-std=c++11',
   ],
 )
+
+cxx_library(
+  name = 'hello_test',
+  srcs = [
+    'hello_test.c',
+  ],
+)

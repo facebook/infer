@@ -82,7 +82,7 @@ let get_dependency_targets_and_add_flavors targets ~depth =
       ^ build_deps_string targets ^ ")\"" ) ]
   in
   let buck_query_cmd = String.concat buck_query ~sep:" " in
-  Logging.(debug Linters Medium) "*** Executing command:@\n*** %s@." buck_query_cmd ;
+  Logging.(debug Linters Quiet) "*** Executing command:@\n*** %s@." buck_query_cmd ;
   let output, exit_or_signal = Utils.with_process_in buck_query_cmd In_channel.input_lines in
   match exit_or_signal with
   | Error _ as status
@@ -92,3 +92,29 @@ let get_dependency_targets_and_add_flavors targets ~depth =
   | Ok ()
    -> List.map output ~f:(fun name ->
           string_of_target (add_flavor_to_target {name; flavors= Config.append_buck_flavors}) )
+
+(** Given a list of arguments return the extended list of arguments where
+the args in a file have been extracted *)
+let inline_argument_files buck_args =
+  let expand_buck_arg buck_arg =
+    if String.is_prefix ~prefix:"@" buck_arg then
+      let file_name = String.chop_prefix_exn ~prefix:"@" buck_arg in
+      if Sys.file_exists file_name <> `Yes then [buck_arg]
+        (* Arguments that start with @ could mean something different than an arguments file in buck. *)
+      else
+        let expanded_args =
+          try Utils.with_file_in file_name ~f:In_channel.input_lines
+          with exn ->
+            Logging.die UserError "Could not read from file '%s': %a@." file_name Exn.pp exn
+        in
+        expanded_args
+    else [buck_arg]
+  in
+  List.concat_map ~f:expand_buck_arg buck_args
+
+let store_targets_in_file buck_targets =
+  let file = Filename.temp_file "buck_targets_" ".txt" in
+  let write_args outc = Out_channel.output_string outc (String.concat ~sep:"\n" buck_targets) in
+  Utils.with_file_out file ~f:write_args |> ignore ;
+  L.(debug Capture Quiet) "Buck targets options stored in file '%s'@\n" file ;
+  Printf.sprintf "@%s" file

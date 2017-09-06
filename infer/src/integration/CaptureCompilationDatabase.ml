@@ -64,16 +64,10 @@ let run_compilation_database compilation_database should_capture_file =
   Process.run_jobs_in_parallel ~fail_on_failed_job jobs_stack
     (run_compilation_file compilation_database) job_to_string
 
-let buck_targets_in_file buck_targets =
-  let file = Filename.temp_file "buck_targets_" ".txt" in
-  let write_args outc = Out_channel.output_string outc (String.concat ~sep:"\n" buck_targets) in
-  Utils.with_file_out file ~f:write_args |> ignore ;
-  L.(debug Capture Quiet) "Buck targets options stored in file %s@\n" file ;
-  Printf.sprintf "@%s" file
-
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck ~prog ~args =
-  let targets, no_targets = List.partition_tf ~f:Buck.is_target_string args in
+  let all_buck_args = Buck.inline_argument_files args in
+  let targets, no_targets = List.partition_tf ~f:Buck.is_target_string all_buck_args in
   let targets =
     match Config.buck_compilation_database with
     | Some Deps depth
@@ -84,8 +78,10 @@ let get_compilation_database_files_buck ~prog ~args =
   match no_targets with
   | "build" :: _
    -> (
-      let targets_in_file = buck_targets_in_file targets in
+      let targets_in_file = Buck.store_targets_in_file targets in
       let build_args = no_targets @ ["--config"; "*//cxx.pch_enabled=false"; targets_in_file] in
+      Logging.(debug Linters Quiet)
+        "Processed buck command is : 'buck %s'@\n" (String.concat ~sep:" " build_args) ;
       Process.create_process_and_wait ~prog ~args:build_args ;
       let buck_targets_shell =
         [prog; "targets"; "--show-output"; targets_in_file] |> Utils.shell_escape_command

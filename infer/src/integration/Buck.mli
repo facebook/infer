@@ -26,3 +26,10 @@ val add_flavors_to_buck_command : string list -> string list
 val get_dependency_targets_and_add_flavors : string list -> depth:int option -> string list
 (** Runs buck query to get the dependency targets of the given targets
 [get_dependency_targets args] = targets with dependent targets, other args *)
+
+val inline_argument_files : string list -> string list
+(** Given a list of arguments to buck, return the extended list of arguments where
+    the args in a file have been extracted *)
+
+val store_targets_in_file : string list -> string
+(** Given a list of buck targets, stores them in a file and returns the file name *)

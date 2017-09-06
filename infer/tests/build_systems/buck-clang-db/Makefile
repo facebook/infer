@@ -24,4 +24,4 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	  NO_BUCKD=1 \
 	  $(INFER_BIN) -a $(ANALYZER) --stats $(INFER_OPTIONS) -o $(CURDIR)/$(@D) \
 	  --buck-compilation-database no-deps \
-	  -- $(BUCK) build --no-cache '//clang_compilation_database:Hel lo#x86_64')
+	  -- $(BUCK) build --no-cache '//clang_compilation_database:Hel lo#x86_64' @clang_compilation_database/buck_target_hello_test.txt)
