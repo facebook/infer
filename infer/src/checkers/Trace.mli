@@ -18,10 +18,6 @@ module type Spec = sig
 
   val should_report : Source.t -> Sink.t -> bool
   (** should a flow originating at source and entering sink be reported? *)
-
-  val should_report_footprint : AccessPath.Abs.t -> Sink.t -> bool
-  (** should a flow read from the environment via the  given access path and entering sink be
-      reported? *)
 end
 
 module type S = sig

@@ -13,6 +13,7 @@ module L = Logging
 
 module SourceKind = struct
   type t =
+    | CommandLineFlag of Var.t  (** source that was read from a command line flag *)
     | Endpoint of (Mangled.t * Typ.desc)  (** source originating from formal of an endpoint *)
     | EnvironmentVariable  (** source that was read from an environment variable *)
     | File  (** source that was read from a file *)
@@ -20,6 +21,8 @@ module SourceKind = struct
     [@@deriving compare]
 
   let of_string = function
+    | "CommandLineFlag"
+     -> L.die UserError "User-specified CommandLineFlag sources are not supported"
     | "Endpoint"
      -> Endpoint (Mangled.from_string "NONE", Typ.Tvoid)
     | "EnvironmentVariable"
@@ -51,7 +54,7 @@ module SourceKind = struct
         else None)
       external_sources
 
-  let get pname _ _ =
+  let get pname actuals _ =
     let return = None in
     match pname with
     | Typ.Procname.ObjC_Cpp cpp_name
@@ -67,6 +70,27 @@ module SourceKind = struct
          -> Some (File, Some 1)
         | _
          -> get_external_source qualified_pname )
+    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access
+     -> (
+        (* is this var a command line flag created by the popular C++ gflags library for creating
+           command-line flags (https://github.com/gflags/gflags)? *)
+        let is_gflag access_path =
+          let pvar_is_gflag pvar =
+            String.is_substring ~substring:"FLAGS_" (Pvar.get_simplified_name pvar)
+          in
+          match access_path with
+          | (Var.ProgramVar pvar, _), _
+           -> Pvar.is_global pvar && pvar_is_gflag pvar
+          | _
+           -> false
+        in
+        (* accessed global will be passed to us as the only parameter *)
+        match actuals with
+        | [(HilExp.AccessPath access_path)] when is_gflag access_path
+         -> let (global_pvar, _), _ = access_path in
+            Some (CommandLineFlag global_pvar, None)
+        | _
+         -> None )
     | Typ.Procname.C _ -> (
       match Typ.Procname.to_string pname with
       | "getenv"
@@ -98,17 +122,17 @@ module SourceKind = struct
     | _
      -> Source.all_formals_untainted pdesc
 
-  let pp fmt kind =
-    F.fprintf fmt "%s"
-      ( match kind with
-      | Endpoint (formal_name, _)
-       -> F.sprintf "Endpoint[%s]" (Mangled.to_string formal_name)
-      | EnvironmentVariable
-       -> "EnvironmentVariable"
-      | File
-       -> "File"
-      | Other
-       -> "Other" )
+  let pp fmt = function
+    | Endpoint (formal_name, _)
+     -> F.fprintf fmt "Endpoint[%s]" (Mangled.to_string formal_name)
+    | EnvironmentVariable
+     -> F.fprintf fmt "EnvironmentVariable"
+    | File
+     -> F.fprintf fmt "File"
+    | CommandLineFlag var
+     -> F.fprintf fmt "CommandLineFlag[%a]" Var.pp var
+    | Other
+     -> F.fprintf fmt "Other"
 end
 
 module CppSource = Source.Make (SourceKind)
@@ -254,27 +278,12 @@ include Trace.Make (struct
     | (Endpoint _ | EnvironmentVariable | File), Allocation
      -> (* untrusted data flowing to memory allocation *)
         true
+    | CommandLineFlag _, (Allocation | BufferAccess | Other | ShellExec | SQL)
+     -> (* data controlled by a command line flag flowing somewhere sensitive *)
+        true
     | Other, _
      -> (* Other matches everything *)
         true
     | _, Other
      -> true
-
-  let should_report_footprint footprint_access_path sink =
-    (* is this var a command line flag created by the popular C++ gflags library for creating
-       command-line flags (https://github.com/gflags/gflags)? *)
-    let is_gflag access_path =
-      let pvar_is_gflag pvar =
-        String.is_substring ~substring:"FLAGS_" (Pvar.get_simplified_name pvar)
-      in
-      match AccessPath.Abs.extract access_path with
-      | (Var.ProgramVar pvar, _), _
-       -> Pvar.is_global pvar && pvar_is_gflag pvar
-      | _
-       -> false
-    in
-    match Sink.kind sink
-    with Allocation | BufferAccess | Other | ShellExec | SQL ->
-      (* gflags globals come from the environment; treat them as sources for everything *)
-      is_gflag footprint_access_path
 end)

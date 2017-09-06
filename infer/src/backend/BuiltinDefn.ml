@@ -1064,6 +1064,9 @@ let __get_hidden_field = Builtin.register BuiltinDecl.__get_hidden_field execute
 
 let __get_type_of = Builtin.register BuiltinDecl.__get_type_of execute___get_type_of
 
+(* only used in Quandary, so ok to skip *)
+let __global_access = Builtin.register BuiltinDecl.__global_access execute_skip
+
 (* infer assume, diverging on inconsistencies *)
 let __infer_assume = Builtin.register BuiltinDecl.__infer_assume execute___infer_assume
 

@@ -381,10 +381,30 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         in
         List.fold ~f:add_sinks_for_access ~init:astate accesses
       in
-      let add_sinks_for_exp exp loc astate =
+      let add_sources_for_access_path ((var, _), _ as ap) loc astate =
+        L.d_strln "adding sources for access path" ;
+        if Var.is_global var then
+          let dummy_call_site = CallSite.make BuiltinDecl.__global_access loc in
+          match TraceDomain.Source.get dummy_call_site [HilExp.AccessPath ap] proc_data.tenv with
+          | Some {TraceDomain.Source.source}
+           -> L.d_strln "Got source to add" ;
+              let access_path = AccessPath.Abs.Exact ap in
+              let trace, subtree =
+                Option.value ~default:TaintDomain.empty_node
+                  (TaintDomain.get_node access_path astate)
+              in
+              TaintDomain.add_node access_path (TraceDomain.add_source source trace, subtree)
+                astate
+          | None
+           -> astate
+        else astate
+      in
+      let add_sources_sinks_for_exp exp loc astate =
+        L.d_strln "adding source/sinks" ;
         match exp with
         | HilExp.AccessPath access_path
          -> add_sinks_for_access_path access_path loc astate
+            |> add_sources_for_access_path access_path loc
         | _
          -> astate
       in
@@ -408,13 +428,15 @@ module Make (TaintSpecification : TaintSpec.S) = struct
              `return null` in a void function *)
           astate
       | Assign (lhs_access_path, rhs_exp, loc)
-       -> add_sinks_for_exp rhs_exp loc astate |> add_sinks_for_access_path lhs_access_path loc
-          |> exec_write lhs_access_path rhs_exp
+       -> add_sources_sinks_for_exp rhs_exp loc astate
+          |> add_sinks_for_access_path lhs_access_path loc |> exec_write lhs_access_path rhs_exp
       | Assume (assume_exp, _, _, loc)
-       -> add_sinks_for_exp assume_exp loc astate
+       -> add_sources_sinks_for_exp assume_exp loc astate
       | Call (ret_opt, Direct called_pname, actuals, call_flags, callee_loc)
        -> let astate =
-            List.fold ~f:(fun acc exp -> add_sinks_for_exp exp callee_loc acc) actuals ~init:astate
+            List.fold
+              ~f:(fun acc exp -> add_sources_sinks_for_exp exp callee_loc acc)
+              actuals ~init:astate
           in
           let handle_model callee_pname access_tree model =
             let is_variadic =

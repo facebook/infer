@@ -335,6 +335,4 @@ include Trace.Make (struct
         true
     | _
      -> false
-
-  let should_report_footprint _ _ = false
 end)

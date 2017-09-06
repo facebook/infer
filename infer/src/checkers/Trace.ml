@@ -18,8 +18,6 @@ module type Spec = sig
 
   val should_report : Source.t -> Sink.t -> bool
   (** should a flow originating at source and entering sink be reported? *)
-
-  val should_report_footprint : AccessPath.Abs.t -> Sink.t -> bool
 end
 
 module type S = sig
@@ -291,17 +289,8 @@ module Make (Spec : Spec) = struct
         in
         Sinks.fold report_one sinks acc0
       in
-      let report_footprint acc0 footprint_access_path (is_mem, _) =
-        let report_one sink acc =
-          if is_mem && Spec.should_report_footprint footprint_access_path sink then
-            (Footprint footprint_access_path, sink, t.passthroughs) :: acc
-          else acc
-        in
-        Sinks.fold report_one t.sinks acc0
-      in
       let report_sources source acc = report_source source t.sinks acc in
       Sources.Known.fold report_sources t.sources.known []
-      |> Sources.Footprint.fold report_footprint t.sources.footprint
 
   let pp_path_source fmt = function
     | Known source

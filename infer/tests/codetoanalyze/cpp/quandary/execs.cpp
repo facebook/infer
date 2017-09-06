@@ -101,6 +101,16 @@ void customGetEnvOk() {
 
 void exec_flag_bad() { execl(FLAGS_cli_string, NULL); }
 
+char* return_global() {
+  char* local = FLAGS_cli_string;
+  return local;
+}
+
+void exec_flag_interproc_bad() {
+  char* flag = return_global();
+  execl(flag, NULL);
+}
+
 void sql_on_env_var_bad() {
   std::string source = (std::string)std::getenv("ENV_VAR");
   __infer_sql_sink(source, 0);

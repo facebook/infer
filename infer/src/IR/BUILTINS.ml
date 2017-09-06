@@ -44,6 +44,8 @@ module type S = sig
 
   val __get_type_of : t
 
+  val __global_access : t
+
   val __infer_assume : t
 
   val __infer_fail : t

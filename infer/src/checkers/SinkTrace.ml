@@ -43,8 +43,6 @@ module Make (TraceElem : TraceElem.S) = struct
     module Sink = MakeSink (TraceElem)
 
     let should_report _ _ = true
-
-    let should_report_footprint _ _ = false
   end)
 
   type sink_path = Passthroughs.t * (Sink.t * Passthroughs.t) list

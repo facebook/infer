@@ -77,8 +77,6 @@ module MockTrace = Trace.Make (struct
 
   let should_report source sink =
     [%compare.equal : MockTraceElem.t] (Source.kind source) (Sink.kind sink)
-
-  let should_report_footprint _ _ = false
 end)
 
 let trace_equal t1 t2 = MockTrace.( <= ) ~lhs:t1 ~rhs:t2 && MockTrace.( <= ) ~lhs:t2 ~rhs:t1
