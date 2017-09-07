@@ -61,4 +61,4 @@ let pp_registered fmt () =
   Format.fprintf fmt "@]@."
 
 (** print the builtin functions and exit *)
-let print_and_exit () = pp_registered Format.std_formatter () ; exit 0
+let print_and_exit () = pp_registered Format.std_formatter () ; L.exit 0

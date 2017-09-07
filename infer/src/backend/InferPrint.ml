@@ -910,7 +910,7 @@ module AnalysisResults = struct
           if not (Filename.check_suffix arg Config.specs_files_suffix) && arg <> "." then
             print_usage_exit ("file " ^ arg ^ ": arguments must be .specs files"))
         Config.anon_args ;
-      if Config.test_filtering then ( Inferconfig.test () ; exit 0 ) ;
+      if Config.test_filtering then ( Inferconfig.test () ; L.exit 0 ) ;
       if List.is_empty Config.anon_args then load_specfiles () else List.rev Config.anon_args )
     else load_specfiles ()
 

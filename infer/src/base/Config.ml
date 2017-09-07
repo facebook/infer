@@ -1789,10 +1789,10 @@ let post_parsing_initialization command_opt =
    -> CLOpt.show_manual ~internal_section:manual_internal !help_format CommandDoc.infer command_opt
   | `None
    -> () ) ;
-  if !version <> `None || !help <> `None then exit 0 ;
+  if !version <> `None || !help <> `None then Pervasives.exit 0 ;
   let uncaught_exception_handler exn raw_backtrace =
     let should_print_backtrace_default =
-      match exn with L.InferUserError _ -> false | _ -> true
+      match exn with L.InferUserError _ | L.InferExit _ -> false | _ -> true
     in
     let backtrace = Caml.Printexc.raw_backtrace_to_string raw_backtrace in
     let print_exception () =
@@ -1810,6 +1810,8 @@ let post_parsing_initialization command_opt =
        -> error "Internal Error: " msg
       | L.InferUserError msg
        -> error "Usage Error: " msg
+      | L.InferExit _
+       -> ()
       | _
        -> error "Uncaught error: " (Exn.to_string exn)
     in
@@ -1819,7 +1821,7 @@ let post_parsing_initialization command_opt =
       Out_channel.newline stderr ;
       ANSITerminal.(prerr_string [Foreground Red] backtrace) ) ;
     print_exception () ;
-    exit (L.exit_code_of_exception exn)
+    Pervasives.exit (L.exit_code_of_exception exn)
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
   F.set_margin !margin ;

@@ -40,7 +40,7 @@ let start_child ~f ~pool x =
   | `In_the_child
    -> in_child := true ;
       f x ;
-      exit 0
+      Pervasives.exit 0
   | `In_the_parent _pid
    -> incr pool ;
       if should_wait pool then wait pool

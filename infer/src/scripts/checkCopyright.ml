@@ -245,7 +245,7 @@ let check_copyright fname =
         let prefix = prefix_of_comment_style com_style in
         let start = default_start_line_of_com_style com_style in
         output_diff fname lines_arr start (-1) (-1) 0 false year com_style prefix ;
-        exit copyright_modified_exit_code
+        Pervasives.exit copyright_modified_exit_code
   | Some n
    -> let line = lines_arr.(n) in
       let cstart, com_style = find_comment_start_and_style lines_arr n in
@@ -254,14 +254,17 @@ let check_copyright fname =
         let mono = contains_monoidics cstart cend lines_arr in
         match get_fb_year cstart cend lines_arr with
         | None
-         -> F.eprintf "Can't find fb year: %s@." fname ; exit copyright_malformed_exit_code
+         -> F.eprintf "Can't find fb year: %s@." fname ;
+            Pervasives.exit copyright_malformed_exit_code
         | Some fb_year
          -> let prefix = prefix_of_comment_style com_style in
             if copyright_has_changed mono fb_year com_style prefix cstart cend lines_arr then
               let len = String.length line in
               output_diff fname lines_arr cstart n cend len mono fb_year com_style prefix ;
-              exit copyright_modified_exit_code )
-      else ( F.eprintf "Copyright not recognized: %s@." fname ; exit copyright_malformed_exit_code )
+              Pervasives.exit copyright_modified_exit_code )
+      else (
+        F.eprintf "Copyright not recognized: %s@." fname ;
+        Pervasives.exit copyright_malformed_exit_code )
 
 let speclist = [("-i", Arg.Set update_files, "Update copyright notice in-place")]
 
@@ -272,4 +275,4 @@ let () =
   let add_file_to_check fname = to_check := fname :: !to_check in
   Arg.parse (Arg.align speclist) add_file_to_check usage_msg ;
   List.iter ~f:check_copyright (List.rev !to_check) ;
-  exit 0
+  Pervasives.exit 0

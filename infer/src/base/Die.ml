@@ -17,6 +17,8 @@ exception InferInternalError of string
 
 exception InferUserError of string
 
+exception InferExit of int
+
 let raise_error error ~msg =
   match error with
   | ExternalError
@@ -28,6 +30,8 @@ let raise_error error ~msg =
 
 let die error fmt = F.kasprintf (fun msg -> raise_error error ~msg) fmt
 
+let exit exitcode = raise (InferExit exitcode)
+
 let exit_code_of_exception = function
   | InferUserError _
    -> 1
@@ -35,5 +39,7 @@ let exit_code_of_exception = function
    -> 3
   | InferInternalError _
    -> 4
+  | InferExit exitcode
+   -> exitcode
   | _
    -> (* exit code 2 is used by the OCaml runtime in cases of uncaught exceptions *) 2

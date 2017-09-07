@@ -339,7 +339,7 @@ module Debug = struct
         L.progress "Press Enter to continue or type %s to quit... @?" quit_token ;
         match In_channel.input_line_exn In_channel.stdin |> String.lowercase with
         | s when String.equal s quit_token
-         -> exit 0
+         -> L.exit 0
         | _
          -> (* Remove the line at the bottom of terminal with the debug instructions *)
             let open ANSITerminal in

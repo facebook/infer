@@ -17,7 +17,7 @@ let activate_run_epilogues_on_signal =
      F.eprintf "*** %s: Caught %s, time to die@." (Filename.basename Sys.executable_name)
        (Signal.to_string s) ;
      (* Epilogues are registered with [at_exit] so exiting will make them run. *)
-     exit 0
+     Pervasives.exit 0
    in
    Signal.Expert.handle Signal.int run_epilogues_on_signal) )
 

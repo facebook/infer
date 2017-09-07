@@ -674,7 +674,7 @@ let set_curr_speclist_for_parse_mode ~usage parse_mode =
   let curr_usage status =
     prerr_endline (String.concat_array ~sep:" " !args_to_parse) ;
     prerr_endline usage ;
-    exit status
+    Pervasives.exit status
   in
   (* "-help" and "--help" are automatically recognized by Arg.parse, so we have to give them special
      treatment *)
@@ -883,7 +883,7 @@ let parse_args ~usage initial_action ?initial_command args =
      -> if !anon_arg_action.on_unknown <> `Reject && is_unknown usage_msg then (
           anon_fun !args_to_parse.(!arg_being_parsed) ;
           parse_loop () )
-        else ( Pervasives.prerr_string usage_msg ; exit 1 )
+        else Pervasives.(prerr_string usage_msg ; exit 1)
     | Arg.Help _
      -> (* we handle --help by ourselves and error on -help, so Arg has no way to raise Help
            anymore *)

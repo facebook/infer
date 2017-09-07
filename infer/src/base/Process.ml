@@ -17,7 +17,7 @@ let print_error_and_exit ?(exit_code= 1) fmt =
   F.kfprintf
     (fun _ ->
       L.external_error "%s" (F.flush_str_formatter ()) ;
-      exit exit_code)
+      L.exit exit_code)
     F.str_formatter fmt
 
 (** Given a command to be executed, create a process to execute this command, and wait for it to
@@ -45,7 +45,7 @@ let print_status ~fail_on_failed_job f pid status =
   L.progress ".%!" ;
   match status with
   | Error err when fail_on_failed_job
-   -> exit (match err with `Exit_non_zero i -> i | `Signal _ -> 1)
+   -> L.exit (match err with `Exit_non_zero i -> i | `Signal _ -> 1)
   | _
    -> ()
 

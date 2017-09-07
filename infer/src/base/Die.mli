@@ -17,8 +17,14 @@ exception InferInternalError of string
 
 exception InferUserError of string
 
+exception
+  InferExit of
+  int(** This can be used to avoid scattering exit invocations all over the codebase *)
+
 (** kind of error for [die], with similar semantics as [Logging.{external,internal,user}_error] *)
 type error = ExternalError | InternalError | UserError
+
+val exit : int -> 'a
 
 val exit_code_of_exception : Exn.t -> int
 

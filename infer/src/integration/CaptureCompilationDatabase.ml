@@ -97,7 +97,7 @@ let get_compilation_database_files_buck ~prog ~args =
       | Ok () ->
         match output with
         | []
-         -> L.external_error "There are no files to process, exiting@." ; exit 0
+         -> L.external_error "There are no files to process, exiting@." ; L.exit 0
         | lines
          -> L.(debug Capture Quiet)
               "Reading compilation database from:@\n%s@\n" (String.concat ~sep:"\n" lines) ;

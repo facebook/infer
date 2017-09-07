@@ -110,7 +110,7 @@ let run_clang clang_command read =
   let exit_with_error exit_code =
     L.external_error "Error: the following clang command did not run successfully:@\n  %s@\n"
       clang_command ;
-    exit exit_code
+    L.exit exit_code
   in
   (* NOTE: exceptions will propagate through without exiting here *)
   match Utils.with_process_in clang_command read with
