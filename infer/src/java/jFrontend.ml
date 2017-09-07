@@ -88,7 +88,10 @@ let add_edges (context: JContext.t) start_node exn_node exit_nodes method_body_n
 (** Add a concrete method. *)
 let add_cmethod source_file program linereader icfg cm proc_name =
   let cn, _ = JBasics.cms_split cm.Javalib.cm_class_method_signature in
-  match JTrans.create_cm_procdesc source_file program linereader icfg cm proc_name with
+  let skip_implementation = Inferconfig.skip_implementation_matcher source_file proc_name in
+  match
+    JTrans.create_cm_procdesc source_file program linereader icfg cm proc_name skip_implementation
+  with
   | None
    -> ()
   | Some (procdesc, _, jbir_code)
@@ -101,7 +104,7 @@ let add_cmethod source_file program linereader icfg cm proc_name =
         | None
          -> L.(die InternalError) "No exn node found for %s" (Typ.Procname.to_string proc_name)
       in
-      let instrs = JBir.code jbir_code in
+      let instrs = if skip_implementation then Array.of_list [] else JBir.code jbir_code in
       let context = JContext.create_context icfg procdesc jbir_code cn source_file program in
       let method_body_nodes = Array.mapi ~f:(JTrans.instruction context) instrs in
       add_edges context start_node exn_node [exit_node] method_body_nodes jbir_code false
@@ -156,9 +159,6 @@ let create_icfg source_file linereader program icfg cn node =
         | Javalib.AbstractMethod am
          -> ignore (JTrans.create_am_procdesc source_file program icfg am proc_name)
         | Javalib.ConcreteMethod cm when JTrans.is_java_native cm
-         -> ignore (JTrans.create_native_procdesc source_file program icfg cm proc_name)
-        | Javalib.ConcreteMethod cm
-          when Inferconfig.skip_implementation_matcher source_file proc_name
          -> ignore (JTrans.create_native_procdesc source_file program icfg cm proc_name)
         | Javalib.ConcreteMethod cm
          -> add_cmethod source_file program linereader icfg cm proc_name ) ;

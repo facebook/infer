@@ -335,7 +335,7 @@ let create_native_procdesc source_file program icfg cm proc_name =
   create_empty_cfg proc_name source_file procdesc
 
 (** Creates a procedure description. *)
-let create_cm_procdesc source_file program linereader icfg cm proc_name =
+let create_cm_procdesc source_file program linereader icfg cm proc_name skip_implementation =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let m = Javalib.ConcreteMethod cm in
@@ -359,7 +359,7 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name =
         ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
         ; formals
         ; is_bridge_method= cm.Javalib.cm_bridge
-        ; is_defined= true
+        ; is_defined= not skip_implementation
         ; is_model= Config.models_mode
         ; is_synthetic_method= cm.Javalib.cm_synthetic
         ; is_java_synchronized_method= cm.Javalib.cm_synchronized
