@@ -22,7 +22,7 @@ compare_reports: current.exp.test previous.exp.test
 	$(QUIET)$(call check_no_diff,current.exp,current.exp.test)
 	$(QUIET)$(call check_no_diff,previous.exp,previous.exp.test)
 
-replace_reports:
+replace_reports: current.exp.test previous.exp.test
 	$(COPY) current.exp.test current.exp
 	$(COPY) previous.exp.test previous.exp
 
