@@ -28,6 +28,11 @@
          raise (CTLExceptions.ALParserInvariantViolationException
                   ("ERROR: Variable '" ^ id ^ "' is undefined"))
 
+   let is_valid_astnode node_name =
+      if Clang_ast_proj.is_valid_astnode_kind node_name then ()
+      else
+        raise (CTLExceptions.ALParserInvariantViolationException ("Invalid AST node " ^ node_name))
+
 %}
 
 %token EU
@@ -97,8 +102,8 @@ var_list:
 ;
 
 node_list:
-  | identifier { [ALVar.Const $1] }
-  | identifier COMMA node_list { ALVar.Const($1) :: $3 }
+  | identifier { is_valid_astnode $1; [ALVar.Const $1] }
+  | identifier COMMA node_list { is_valid_astnode $1; ALVar.Const($1) :: $3 }
 ;
 
 formal_params:
