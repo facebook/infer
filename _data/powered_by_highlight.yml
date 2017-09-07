@@ -1,5 +1,8 @@
 - title: <a name="who-uses-infer">Who Uses Infer?
   items:
+  - name: Amazon Web Services
+    url: https://aws.amazon.com/
+    img: static/images/aws.svg
   - name: Facebook
     url: https://facebook.com
     img: static/images/facebook.png
