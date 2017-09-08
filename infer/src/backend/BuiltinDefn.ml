@@ -879,8 +879,8 @@ let execute_scan_function skip_n_arguments ({Builtin.args} as call_args) : Built
   | _ when List.length args >= skip_n_arguments
    -> let varargs = ref args in
       varargs := List.drop !varargs skip_n_arguments ;
-      SymExec.unknown_or_scan_call ~is_scan:true None Annot.Item.empty
-        {call_args with args= !varargs}
+      SymExec.unknown_or_scan_call ~is_scan:true ~reason:"execute scan function" None
+        Annot.Item.empty {call_args with args= !varargs}
   | _
    -> raise (Exceptions.Wrong_argument_number __POS__)
 

@@ -398,11 +398,13 @@ let check_inherently_dangerous_function caller_pname callee_pname =
     in
     Reporting.log_warning_deprecated caller_pname exn
 
-let call_should_be_skipped callee_summary =
-  (* skip abstract methods *)
-  callee_summary.Specs.attributes.ProcAttributes.is_abstract
-  (* treat calls with no specs as skip functions in angelic mode *)
-  || Config.angelic_execution && List.is_empty (Specs.get_specs_from_payload callee_summary)
+let reason_to_skip callee_summary : string option =
+  let attributes = callee_summary.Specs.attributes in
+  if attributes.ProcAttributes.is_abstract then Some "abstract method"
+  else if not attributes.ProcAttributes.is_defined then Some "method has no implementation"
+  else if Config.angelic_execution && List.is_empty (Specs.get_specs_from_payload callee_summary)
+  then Some "empty list of specs"
+  else None
 
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
@@ -1094,8 +1096,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
     | _
      -> _instr
   in
-  let skip_call ?(is_objc_instance_method= false) prop path callee_pname ret_annots loc ret_id
-      ret_typ_opt actual_args =
+  let skip_call ?(is_objc_instance_method= false) ~reason prop path callee_pname ret_annots loc
+      ret_id ret_typ_opt actual_args =
     let skip_res () =
       let exn = Exceptions.Skip_function (Localise.desc_skip_function callee_pname) in
       Reporting.log_info_deprecated current_pname exn ;
@@ -1108,7 +1110,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
       | Some summary
        -> Specs.CallStats.trace summary.Specs.stats.Specs.call_stats callee_pname loc
             Specs.CallStats.CR_skip !Config.footprint ) ;
-      unknown_or_scan_call ~is_scan:false ret_typ_opt ret_annots
+      unknown_or_scan_call ~is_scan:false ~reason ret_typ_opt ret_annots
         (Builtin.
           { pdesc= current_pdesc
           ; instr
@@ -1178,8 +1180,9 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
        -> (
           let norm_prop, norm_args' = normalize_params tenv current_pname prop_ actual_params in
           let norm_args = call_constructor_url_update_args callee_pname norm_args' in
-          let exec_skip_call skipped_pname ret_annots ret_type =
-            skip_call norm_prop path skipped_pname ret_annots loc ret_id (Some ret_type) norm_args
+          let exec_skip_call ~reason skipped_pname ret_annots ret_type =
+            skip_call ~reason norm_prop path skipped_pname ret_annots loc ret_id (Some ret_type)
+              norm_args
           in
           let resolved_pname, resolved_summary_opt =
             resolve_and_analyze tenv current_pdesc norm_prop norm_args callee_pname call_flags
@@ -1188,13 +1191,16 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           | None
            -> let ret_typ = Typ.java_proc_return_typ callee_pname_java in
               let ret_annots = load_ret_annots callee_pname in
-              exec_skip_call resolved_pname ret_annots ret_typ
-          | Some resolved_summary when call_should_be_skipped resolved_summary
-           -> let proc_attrs = resolved_summary.Specs.attributes in
-              let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
-              exec_skip_call resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
-          | Some resolved_summary
-           -> proc_call resolved_summary (call_args prop_ callee_pname norm_args ret_id loc) )
+              exec_skip_call ~reason:"unknown method" resolved_pname ret_annots ret_typ
+          | Some resolved_summary ->
+            match reason_to_skip resolved_summary with
+            | None
+             -> proc_call resolved_summary (call_args prop_ callee_pname norm_args ret_id loc)
+            | Some reason
+             -> let proc_attrs = resolved_summary.Specs.attributes in
+                let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
+                exec_skip_call ~reason resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
+          )
       | Java callee_pname_java
        -> let norm_prop, norm_args = normalize_params tenv current_pname prop_ actual_params in
           let url_handled_args = call_constructor_url_update_args callee_pname norm_args in
@@ -1202,21 +1208,24 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             resolve_virtual_pname tenv norm_prop url_handled_args callee_pname call_flags
           in
           let exec_one_pname pname =
-            let exec_skip_call ret_annots ret_type =
-              skip_call norm_prop path pname ret_annots loc ret_id (Some ret_type) url_handled_args
+            let exec_skip_call ~reason ret_annots ret_type =
+              skip_call ~reason norm_prop path pname ret_annots loc ret_id (Some ret_type)
+                url_handled_args
             in
             match Ondemand.analyze_proc_name current_pdesc pname with
             | None
              -> let ret_typ = Typ.java_proc_return_typ callee_pname_java in
                 let ret_annots = load_ret_annots callee_pname in
-                exec_skip_call ret_annots ret_typ
-            | Some callee_summary when call_should_be_skipped callee_summary
-             -> let proc_attrs = callee_summary.Specs.attributes in
-                let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
-                exec_skip_call ret_annots proc_attrs.ProcAttributes.ret_type
-            | Some callee_summary
-             -> let handled_args = call_args norm_prop pname url_handled_args ret_id loc in
-                proc_call callee_summary handled_args
+                exec_skip_call ~reason:"unknown method" ret_annots ret_typ
+            | Some callee_summary ->
+              match reason_to_skip callee_summary with
+              | None
+               -> let handled_args = call_args norm_prop pname url_handled_args ret_id loc in
+                  proc_call callee_summary handled_args
+              | Some reason
+               -> let proc_attrs = callee_summary.Specs.attributes in
+                  let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
+                  exec_skip_call ~reason ret_annots proc_attrs.ProcAttributes.ret_type
           in
           List.fold ~f:(fun acc pname -> exec_one_pname pname @ acc) ~init:[] resolved_pnames
       | _
@@ -1239,7 +1248,10 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             else [(prop_r, path)]
           in
           let do_call (prop, path) =
-            if Option.value_map ~f:call_should_be_skipped ~default:true resolved_summary_opt then
+            if Option.value_map
+                 ~f:(fun summary -> is_some (reason_to_skip summary))
+                 ~default:true resolved_summary_opt
+            then
               (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
               let attrs_opt =
                 let attr_opt = Option.map ~f:Procdesc.get_attributes callee_pdesc_opt in
@@ -1285,8 +1297,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                     | None
                      -> false
                   in
-                  skip_call ~is_objc_instance_method prop path resolved_pname ret_annots loc ret_id
-                    ret_typ_opt n_actual_params
+                  skip_call ~is_objc_instance_method ~reason:"function or method not found" prop
+                    path resolved_pname ret_annots loc ret_id ret_typ_opt n_actual_params
             else
               proc_call (Option.value_exn resolved_summary_opt)
                 (call_args prop resolved_pname n_actual_params ret_id loc)
@@ -1309,7 +1321,8 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         Sil.d_exp fun_exp ;
         L.d_strln ", returning undefined value." ;
         let callee_pname = Typ.Procname.from_string_c_fun "__function_pointer__" in
-        unknown_or_scan_call ~is_scan:false None Annot.Item.empty
+        unknown_or_scan_call ~is_scan:false ~reason:"unresolved function pointer" None
+          Annot.Item.empty
           (Builtin.
             { pdesc= current_pdesc
             ; instr
@@ -1507,7 +1520,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
   List.fold ~f:do_actual_by_ref ~init:prop non_const_actuals_by_ref
 
 (** execute a call for an unknown or scan function *)
-and unknown_or_scan_call ~is_scan ret_type_option ret_annots
+and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots
     {Builtin.tenv; pdesc; prop_= pre; path; ret_id; args; proc_name= callee_pname; loc; instr} =
   let remove_file_attribute prop =
     let do_exp p (e, _) =
@@ -1583,7 +1596,6 @@ and unknown_or_scan_call ~is_scan ret_type_option ret_annots
       Attribute.mark_vars_as_undefined tenv pre_final ~ret_exp_opt ~undefined_actuals_by_ref
         callee_pname ret_annots loc path_pos
     in
-    let reason = "function or method not found" in
     let skip_path = Paths.Path.add_skipped_call path callee_pname reason in
     [(prop_with_undef_attr, skip_path)]
 
