@@ -1596,7 +1596,12 @@ and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots
       Attribute.mark_vars_as_undefined tenv pre_final ~ret_exp_opt ~undefined_actuals_by_ref
         callee_pname ret_annots loc path_pos
     in
-    let skip_path = Paths.Path.add_skipped_call path callee_pname reason in
+    let callee_loc_opt =
+      Option.map
+        ~f:(fun attributes -> attributes.ProcAttributes.loc)
+        (Specs.proc_resolve_attributes callee_pname)
+    in
+    let skip_path = Paths.Path.add_skipped_call path callee_pname reason callee_loc_opt in
     [(prop_with_undef_attr, skip_path)]
 
 and check_variadic_sentinel ?(fails_on_nil= false) n_formals (sentinel, null_pos)

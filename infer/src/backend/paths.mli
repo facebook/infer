@@ -21,8 +21,8 @@ module Path : sig
   val add_call : bool -> t -> Typ.Procname.t -> t -> t
   (** add a call with its sub-path, the boolean indicates whether the subtrace for the procedure should be included *)
 
-  val add_skipped_call : t -> Typ.Procname.t -> string -> t
-  (** add a call to a procname that's had to be skipped, along with the reason *)
+  val add_skipped_call : t -> Typ.Procname.t -> string -> Location.t option -> t
+  (** add a call to a procname that's had to be skipped, along with the reason and the location of the procname when known *)
 
   val contains : t -> t -> bool
   (** check whether a path contains another path *)

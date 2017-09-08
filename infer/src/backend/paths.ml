@@ -26,8 +26,8 @@ module Path : sig
   val add_call : bool -> t -> Typ.Procname.t -> t -> t
   (** add a call with its sub-path, the boolean indicates whether the subtrace for the procedure should be included *)
 
-  val add_skipped_call : t -> Typ.Procname.t -> string -> t
-  (** add a call to a procname that's had to be skipped, along with the reason *)
+  val add_skipped_call : t -> Typ.Procname.t -> string -> Location.t option -> t
+  (** add a call to a procname that's had to be skipped, along with the reason and the location of the procname when known *)
 
   val contains : t -> t -> bool
   (** check whether a path contains another path *)
@@ -99,7 +99,7 @@ end = struct
   let compare__string_option _ _ = 0
 
   type _path_exec =
-    | ExecSkipped of string  (** call was skipped with a reason *)
+    | ExecSkipped of string * Location.t option  (** call was skipped with a reason *)
     | ExecCompleted of t  (** call was completed *)
 
   and t =
@@ -153,7 +153,8 @@ end = struct
   let add_call include_subtrace p pname p_sub =
     if include_subtrace then Pcall (p, pname, ExecCompleted p_sub, get_dummy_stats ()) else p
 
-  let add_skipped_call p pname reason = Pcall (p, pname, ExecSkipped reason, get_dummy_stats ())
+  let add_skipped_call p pname reason loc_opt =
+    Pcall (p, pname, ExecSkipped (reason, loc_opt), get_dummy_stats ())
 
   (** functions in this module either do not assume, or do not re-establish, the invariant on dummy
       stats *)
@@ -419,7 +420,7 @@ end = struct
          -> F.fprintf fmt "(%a + %a)" (doit (n - 1)) path1 (doit (n - 1)) path2
         | Pcall (path1, _, ExecCompleted path2, _)
          -> F.fprintf fmt "(%a{%a})" (doit (n - 1)) path1 (doit (n - 1)) path2
-        | Pcall (path, _, ExecSkipped reason, _)
+        | Pcall (path, _, ExecSkipped (reason, _), _)
          -> F.fprintf fmt "(%a: %s)" (doit (n - 1)) path reason
     in
     let print_delayed () =
@@ -443,13 +444,21 @@ end = struct
     let trace = ref [] in
     let g level path _ exn_opt =
       match (path, curr_node path) with
-      | Pcall (_, pname, ExecSkipped reason, _), Some curr_node
+      | Pcall (_, pname, ExecSkipped (reason, loc_opt), _), Some curr_node
        -> let curr_loc = Procdesc.Node.get_loc curr_node in
           let descr =
             Format.sprintf "Skipping %s: %s" (Typ.Procname.to_simplified_string pname) reason
           in
           let node_tags = [] in
-          trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace
+          trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace ;
+          Option.iter
+            ~f:(fun loc ->
+              if Typ.Procname.is_java pname && loc.Location.line > 0 then
+                let definition_descr =
+                  Format.sprintf "Definition of %s" (Typ.Procname.to_simplified_string pname)
+                in
+                trace := Errlog.make_trace_element (level + 1) loc definition_descr [] :: !trace)
+            loc_opt
       | _, Some curr_node
        -> (
           let curr_loc = Procdesc.Node.get_loc curr_node in
