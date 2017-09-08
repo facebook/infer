@@ -104,10 +104,13 @@ let add_cmethod source_file program linereader icfg cm proc_name =
         | None
          -> L.(die InternalError) "No exn node found for %s" (Typ.Procname.to_string proc_name)
       in
-      let instrs = if skip_implementation then Array.of_list [] else JBir.code jbir_code in
-      let context = JContext.create_context icfg procdesc jbir_code cn source_file program in
-      let method_body_nodes = Array.mapi ~f:(JTrans.instruction context) instrs in
-      add_edges context start_node exn_node [exit_node] method_body_nodes jbir_code false
+      if skip_implementation then
+        Procdesc.node_set_succs_exn procdesc start_node [exit_node] [exn_node]
+      else
+        let instrs = JBir.code jbir_code in
+        let context = JContext.create_context icfg procdesc jbir_code cn source_file program in
+        let method_body_nodes = Array.mapi ~f:(JTrans.instruction context) instrs in
+        add_edges context start_node exn_node [exit_node] method_body_nodes jbir_code false
 
 let path_of_cached_classname cn =
   let root_path = Config.(results_dir ^/ classnames_dir_name) in
