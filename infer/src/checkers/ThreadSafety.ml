@@ -1228,7 +1228,7 @@ let make_read_write_race_description conflicts tenv pname final_sink_site initia
   in
   let pp_conflicts fmt conflicts =
     if Int.equal (Typ.Procname.Set.cardinal conflicts) 1 then
-      Typ.Procname.pp fmt (Typ.Procname.Set.choose conflicts)
+      Typ.Procname.pp fmt (Typ.Procname.Set.min_elt conflicts)
     else Typ.Procname.Set.pp fmt conflicts
   in
   let conflicts_description =
@@ -1529,7 +1529,7 @@ let quotient_access_map acc_map =
   let rec aux acc m =
     if AccessListMap.is_empty m then acc
     else
-      let k, vals = AccessListMap.choose m in
+      let k, vals = AccessListMap.min_binding m in
       let _, _, _, tenv, _ =
         List.find_exn vals ~f:(fun (elem, _, _, _, _) ->
             ThreadSafetyDomain.Access.equal (ThreadSafetyDomain.TraceElem.kind elem) k )

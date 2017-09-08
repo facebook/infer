@@ -50,7 +50,7 @@ module SymLinear = struct
 
   let cardinal : t -> int = M.cardinal
 
-  let choose : t -> Symbol.t * int = M.choose
+  let min_binding : t -> Symbol.t * int = M.min_binding
 
   let fold : (Symbol.t -> int -> 'b -> 'b) -> t -> 'b -> 'b = M.fold
 
@@ -138,7 +138,7 @@ module SymLinear = struct
     fun x ->
       let x = M.filter (fun _ v -> v <> 0) x in
       if Int.equal (M.cardinal x) 1 then
-        let k, v = M.choose x in
+        let k, v = M.min_binding x in
         if Int.equal v 1 then Some k else None
       else None
 

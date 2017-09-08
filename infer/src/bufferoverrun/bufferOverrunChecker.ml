@@ -332,13 +332,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             if Ident.is_none id then mem
             else
               let mem = Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) v mem in
-              if PowLoc.is_singleton locs then Dom.Mem.load_alias id (PowLoc.choose locs) mem
+              if PowLoc.is_singleton locs then Dom.Mem.load_alias id (PowLoc.min_elt locs) mem
               else mem
         | Store (exp1, _, exp2, loc)
          -> let locs = Sem.eval exp1 mem loc |> Dom.Val.get_all_locs in
             let v = Sem.eval exp2 mem loc |> Dom.Val.add_trace_elem (Trace.Assign loc) in
             let mem = Dom.Mem.update_mem locs v mem in
-            if PowLoc.is_singleton locs then Dom.Mem.store_alias (PowLoc.choose locs) exp2 mem
+            if PowLoc.is_singleton locs then Dom.Mem.store_alias (PowLoc.min_elt locs) exp2 mem
             else mem
         | Prune (exp, loc, _, _)
          -> Sem.prune exp loc mem
@@ -483,7 +483,7 @@ module Report = struct
     (* check that we are the last instruction in the current node
      * and that the current node is followed by a unique successor
      * with no instructions.
-     * 
+     *
      * this is our proxy for being the last statement in a procedure.
      * The tests pass, but it's kind of a hack and depends on an internal
      * detail of SIL that could change in the future. *)

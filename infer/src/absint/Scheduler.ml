@@ -94,7 +94,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
      quick popping, and do a linear search only when this list is empty *)
   let pop t =
     try
-      let init_id, init_work = M.choose t.worklist in
+      let init_id, init_work = M.min_binding t.worklist in
       let init_priority = WorkUnit.priority init_work in
       let max_priority_id, _ =
         M.fold

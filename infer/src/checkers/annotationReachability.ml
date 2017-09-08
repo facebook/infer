@@ -196,7 +196,7 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
         AnnotReachabilityDomain.SinkMap.fold
           (fun _ call_sites (unseen, visited as accu) ->
             try
-              let call_site = AnnotReachabilityDomain.CallSites.choose call_sites in
+              let call_site = AnnotReachabilityDomain.CallSites.min_elt call_sites in
               let p = CallSite.pname call_site in
               let loc = CallSite.loc call_site in
               if Typ.Procname.Set.mem p visited then accu
@@ -209,7 +209,7 @@ let report_call_stack summary end_of_stack lookup_next_calls report call_site si
   AnnotReachabilityDomain.SinkMap.iter
     (fun _ call_sites ->
       try
-        let fst_call_site = AnnotReachabilityDomain.CallSites.choose call_sites in
+        let fst_call_site = AnnotReachabilityDomain.CallSites.min_elt call_sites in
         let fst_callee_pname = CallSite.pname fst_call_site in
         let fst_call_loc = CallSite.loc fst_call_site in
         let start_trace = update_trace (CallSite.loc call_site) [] in
