@@ -173,21 +173,18 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       (Exp.Var id, typ)
     in
     let make_arg typ (id, _, _) = (id, typ) in
-    let rec f es =
-      match es with
-      | []
-       -> []
-      | (Exp.Closure {name; captured_vars}, ({Typ.desc= Tptr ({Typ.desc= Tfun _}, _)} as t)) :: es'
-       -> let app =
-            let function_name = make_function_name t name in
-            let args = List.map ~f:(make_arg t) captured_vars in
-            function_name :: args
-          in
-          app @ f es'
-      | e :: es'
-       -> e :: f es'
+    let f = function
+      | Exp.Closure {name; captured_vars}, ({Typ.desc= Tptr ({Typ.desc= Tfun _}, _)} as t)
+       -> let function_name = make_function_name t name in
+          let args = List.map ~f:(make_arg t) captured_vars in
+          function_name :: args
+      | e
+       -> [e]
     in
-    (f exps, !insts)
+    (* evaluation order matters here *)
+    let exps' = List.concat_map ~f exps in
+    let insts' = !insts in
+    (exps', insts')
 
   let collect_exprs res_trans_list =
     List.concat_map ~f:(fun res_trans -> res_trans.exps) res_trans_list
