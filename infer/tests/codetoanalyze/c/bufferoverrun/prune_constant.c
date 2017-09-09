@@ -36,3 +36,11 @@ void prune_constant_value_Ok(int x) {
     }
   }
 }
+
+void prune_constant_not_Bad() {
+  int x = 0;
+  int a[1];
+  if (!x) {
+    a[x + 1] = 0;
+  }
+}
