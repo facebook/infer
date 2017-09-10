@@ -7,7 +7,7 @@ permalink: /docs/steps-for-ci.html
 
 The recommended flow for CI integration is to determine the modified files, and run the analysis in reactive mode starting from those files. If you would like to run more then one analyzer, it is more efficient to separate the capture phase, so that the result can be used by all the analyzers.
 
-### Differential Worflow
+### Differential Workflow
 
 Here's how to run infer on two versions of a project and compare the results in general.
 
