@@ -114,7 +114,8 @@ type al_file =
 
 val print_checker : ctl_checker -> unit
 
-val eval_formula : t -> ast_node -> CLintersContext.context -> bool
+val eval_formula : t -> ast_node -> CLintersContext.context -> ast_node option
+(** return the evaluation of the formula and a witness *)
 
 val save_dotty_when_in_debug_mode : SourceFile.t -> unit
 

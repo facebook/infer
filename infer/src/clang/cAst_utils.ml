@@ -380,7 +380,7 @@ let qual_type_is_typedef_named qual_type (type_name: string) : bool =
 
 let if_decl_to_di_pointer_opt if_decl =
   match if_decl with
-  | Clang_ast_t.ObjCInterfaceDecl (if_decl_info, _, _, _, _)
+  | Some Clang_ast_t.ObjCInterfaceDecl (if_decl_info, _, _, _, _)
    -> Some if_decl_info.di_pointer
   | _
    -> None
@@ -392,21 +392,19 @@ let is_instance_type qual_type =
   | None
    -> false
 
-let return_type_matches_class_type rtp type_decl_pointer =
-  if is_instance_type rtp then true
+let return_type_matches_class_type result_type interface_decl =
+  if is_instance_type result_type then true
   else
-    let return_type_decl_opt = qual_type_to_objc_interface rtp in
-    let return_type_decl_pointer_opt =
-      Option.map ~f:if_decl_to_di_pointer_opt return_type_decl_opt
-    in
-    [%compare.equal : int option option] (Some type_decl_pointer) return_type_decl_pointer_opt
+    let return_type_decl_opt = qual_type_to_objc_interface result_type in
+    [%compare.equal : int option]
+      (if_decl_to_di_pointer_opt interface_decl) (if_decl_to_di_pointer_opt return_type_decl_opt)
 
-let is_objc_factory_method if_decl meth_decl =
-  let if_type_decl_pointer = if_decl_to_di_pointer_opt if_decl in
-  match meth_decl with
-  | Clang_ast_t.ObjCMethodDecl (_, _, omdi)
+let is_objc_factory_method ~class_decl:interface_decl ~method_decl:meth_decl_opt =
+  let open Clang_ast_t in
+  match meth_decl_opt with
+  | Some ObjCMethodDecl (_, _, omdi)
    -> not omdi.omdi_is_instance_method
-      && return_type_matches_class_type omdi.omdi_result_type if_type_decl_pointer
+      && return_type_matches_class_type omdi.omdi_result_type interface_decl
   | _
    -> false
 

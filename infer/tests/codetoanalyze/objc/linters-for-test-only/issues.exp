@@ -92,7 +92,7 @@ codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m25, 101, TEST_
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m26, 102, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m26:pname2:pname3:pname4:, 103, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m26:pname2:pname3:pname4:, 103, TEST_NTH_PARAM_TYPE_CHECK, []
-codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m26:pname2:pname3:pname4:, 103, TEST_PARAM_TYPE_CHECK, []
+codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m26:pname2:pname3:pname4:, 105, TEST_PARAM_TYPE_CHECK, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m3, 75, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m4, 76, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, TestType_m7, 79, TEST_BUILTIN_TYPE, []

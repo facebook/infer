@@ -427,24 +427,11 @@ let log_frontend_issue translation_unit_context method_decl_opt key (issue_desc:
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc:issue_desc.loc ~ltr:trace
     ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
 
-let get_current_method context (an: Ctl_parser_types.ast_node) =
-  match an with
-  | Decl (FunctionDecl _ as d)
-  | Decl (CXXMethodDecl _ as d)
-  | Decl (CXXConstructorDecl _ as d)
-  | Decl (CXXConversionDecl _ as d)
-  | Decl (CXXDestructorDecl _ as d)
-  | Decl (ObjCMethodDecl _ as d)
-  | Decl (BlockDecl _ as d)
-   -> Some d
-  | _
-   -> context.CLintersContext.current_method
-
 let fill_issue_desc_info_and_log context an key issue_desc linters_def_file loc =
   let desc = remove_new_lines (expand_message_string context issue_desc.CIssue.description an) in
   let issue_desc' = {issue_desc with CIssue.description= desc; CIssue.loc= loc} in
   log_frontend_issue context.CLintersContext.translation_unit_context
-    (get_current_method context an) key issue_desc' linters_def_file
+    context.CLintersContext.current_method key issue_desc' linters_def_file
 
 (* Calls the set of hard coded checkers (if any) *)
 let invoke_set_of_hard_coded_checkers_an context (an: Ctl_parser_types.ast_node) =
@@ -467,20 +454,22 @@ let invoke_set_of_hard_coded_checkers_an context (an: Ctl_parser_types.ast_node)
 
 (* Calls the set of checkers parsed from files (if any) *)
 let invoke_set_of_parsed_checkers_an parsed_linters context (an: Ctl_parser_types.ast_node) =
-  let key =
-    match an with
-    | Decl dec
-     -> CAst_utils.generate_key_decl dec
-    | Stmt st
-     -> CAst_utils.generate_key_stmt st
-  in
   List.iter
     ~f:(fun (linter: linter) ->
-      if CIssue.should_run_check linter.issue_desc.CIssue.mode
-         && CTL.eval_formula linter.condition an context
-      then
-        let loc = CFrontend_checkers.location_from_an context an in
-        fill_issue_desc_info_and_log context an key linter.issue_desc linter.def_file loc)
+      if CIssue.should_run_check linter.issue_desc.CIssue.mode then
+        match CTL.eval_formula linter.condition an context with
+        | None
+         -> ()
+        | Some witness
+         -> let key =
+              match witness with
+              | Decl dec
+               -> CAst_utils.generate_key_decl dec
+              | Stmt st
+               -> CAst_utils.generate_key_stmt st
+            in
+            let loc = CFrontend_checkers.location_from_an context witness in
+            fill_issue_desc_info_and_log context witness key linter.issue_desc linter.def_file loc)
     parsed_linters
 
 (* We decouple the hardcoded checkers from the parsed ones *)

@@ -13,13 +13,25 @@ open! IStd
 (** the kind of AST nodes where formulas are evaluated *)
 type ast_node = Stmt of Clang_ast_t.stmt | Decl of Clang_ast_t.decl
 
+val ast_node_equal : ast_node -> ast_node -> bool
+
 val ast_node_name : ast_node -> string
 
 val ast_node_type : ast_node -> string
 
+val ast_node_kind : ast_node -> string
+
+val ast_node_has_kind : ALVar.alexp list -> ast_node -> bool
+
+val ast_node_unique_string_id : ast_node -> string
+
 val stmt_node_child_type : ast_node -> string
 
 val ast_node_cast_kind : ast_node -> string
+
+val is_node_successor_of : is_successor:ast_node -> ast_node -> bool
+
+val get_direct_successor_nodes : ast_node -> ast_node list
 
 val infer_prefix : string
 

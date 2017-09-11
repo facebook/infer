@@ -259,14 +259,15 @@ let component_with_multiple_factory_methods_advice context an =
           List.filter ~f:is_unavailable_attr decl_info.Clang_ast_t.di_attributes
         in
         let is_available = List.is_empty unavailable_attrs in
-        CAst_utils.is_objc_factory_method if_decl decl && is_available
+        CAst_utils.is_objc_factory_method ~class_decl:if_decl ~method_decl:(Some decl)
+        && is_available
     | _
      -> false
   in
   let check_interface if_decl =
     match if_decl with
     | Clang_ast_t.ObjCInterfaceDecl (_, _, decls, _, _)
-     -> let factory_methods = List.filter ~f:(is_available_factory_method if_decl) decls in
+     -> let factory_methods = List.filter ~f:(is_available_factory_method (Some if_decl)) decls in
         List.map
           ~f:(fun meth_decl ->
             { CIssue.id= "COMPONENT_WITH_MULTIPLE_FACTORY_METHODS"
@@ -295,8 +296,27 @@ let component_with_multiple_factory_methods_advice context an =
 
 let in_ck_class (context: CLintersContext.context) =
   Option.value_map ~f:is_component_or_controller_descendant_impl ~default:false
-    context.current_objc_impl
+    context.current_objc_class
   && CGeneral_utils.is_objc_extension context.translation_unit_context
+
+let is_in_factory_method (context: CLintersContext.context) =
+  let interface_decl_opt =
+    match context.current_objc_class with
+    | Some ObjCImplementationDecl (_, _, _, _, impl_decl_info)
+     -> CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
+    | _
+     -> None
+  in
+  let methods_to_check =
+    match context.current_method with
+    | Some current_method
+     -> current_method :: context.parent_methods
+    | None
+     -> context.parent_methods
+  in
+  List.exists methods_to_check ~f:(fun method_decl ->
+      CAst_utils.is_objc_factory_method ~class_decl:interface_decl_opt
+        ~method_decl:(Some method_decl) )
 
 (** Components shouldn't have side-effects in its initializer.
 
@@ -310,9 +330,9 @@ let in_ck_class (context: CLintersContext.context) =
 let rec _component_initializer_with_side_effects_advice (context: CLintersContext.context)
     call_stmt =
   let condition =
-    in_ck_class context && context.in_objc_static_factory_method
+    in_ck_class context && is_in_factory_method context
     &&
-    match context.current_objc_impl with
+    match context.current_objc_class with
     | Some d
      -> is_in_main_file context.translation_unit_context (Ctl_parser_types.Decl d)
     | None

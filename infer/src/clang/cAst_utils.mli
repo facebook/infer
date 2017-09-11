@@ -134,7 +134,8 @@ val qual_type_to_objc_interface : Clang_ast_t.qual_type -> Clang_ast_t.decl opti
 
 val qual_type_is_typedef_named : Clang_ast_t.qual_type -> string -> bool
 
-val is_objc_factory_method : Clang_ast_t.decl -> Clang_ast_t.decl -> bool
+val is_objc_factory_method :
+  class_decl:Clang_ast_t.decl option -> method_decl:Clang_ast_t.decl option -> bool
 (** A class method that returns an instance of the class is a factory method. *)
 
 val name_of_decl_ref_opt : Clang_ast_t.decl_ref option -> string option

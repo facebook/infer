@@ -26,6 +26,13 @@ type transitions =
   | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
 
+let is_transition_to_successor trans =
+  match trans with
+  | Body | InitExpr | ParameterName _ | Parameters | Cond
+   -> true
+  | Super | PointerToDecl | Protocol
+   -> false
+
 (* In formulas below prefix
    "E" means "exists a path"
    "A" means "for all path" *)
@@ -257,7 +264,11 @@ module Debug = struct
     type eval_result = Eval_undefined | Eval_true | Eval_false
 
     type content =
-      {ast_node: ast_node; phi: t; lcxt: CLintersContext.context; eval_result: eval_result}
+      { ast_node: ast_node
+      ; phi: t
+      ; lcxt: CLintersContext.context
+      ; eval_result: eval_result
+      ; witness: ast_node option }
 
     type eval_node = {id: int; content: content}
 
@@ -276,7 +287,8 @@ module Debug = struct
       ; breakpoint_line: int option
       ; debugger_active: bool }
 
-    let create_content ast_node phi lcxt = {ast_node; phi; eval_result= Eval_undefined; lcxt}
+    let create_content ast_node phi lcxt =
+      {ast_node; phi; eval_result= Eval_undefined; lcxt; witness= None}
 
     let create source_file =
       let breakpoint_token = "INFER_BREAKPOINT" in
@@ -319,10 +331,18 @@ module Debug = struct
           | Last_occurrence n
            -> (n, true)
         in
+        let witness_str =
+          match eval_node.content.witness with
+          | Some witness
+           -> "\n- witness: " ^ Ctl_parser_types.ast_node_kind witness ^ " "
+              ^ Ctl_parser_types.ast_node_name witness
+          | None
+           -> ""
+        in
         let ast_str =
-          Format.asprintf "%a"
+          Format.asprintf "%a %s"
             (pp_ast ~ast_node_to_highlight ~prettifier:(ANSITerminal.sprintf highlight_style "%s"))
-            ast_root
+            ast_root witness_str
         in
         L.progress "@\nNode ID: %d\tEvaluation stack level: %d\tSource line-number: %s@\n"
           eval_node.id (Stack.length t.eval_stack)
@@ -380,13 +400,16 @@ module Debug = struct
       {t' with next_id= t.next_id + 1}
 
     let eval_end t result =
+      let result_bool = Option.is_some result in
       let eval_result_of_bool = function true -> Eval_true | false -> Eval_false in
       if Stack.is_empty t.eval_stack then
         raise (Empty_stack "Unbalanced number of eval_begin/eval_end invocations") ;
       let evaluated_tree, eval_node, ast_node_to_display =
         match Stack.pop_exn t.eval_stack
         with Tree (({id= _; content} as eval_node), children), ast_node_to_display ->
-          let content' = {content with eval_result= eval_result_of_bool result} in
+          let content' =
+            {content with eval_result= eval_result_of_bool result_bool; witness= result}
+          in
           let eval_node' = {eval_node with content= content'} in
           (Tree (eval_node', children), eval_node', ast_node_to_display)
       in
@@ -565,48 +588,6 @@ let save_dotty_when_in_debug_mode source_file =
    -> ()
 
 (* Helper functions *)
-
-let get_successor_nodes an =
-  (* get_decl_of_stmt get declarations that are directly embedded
-     as immediate children (i.e. distance 1) of an stmt (i.e., no transition).
-     TBD: check if a dual is needed for get_stmt_of_decl
-  *)
-  let get_decl_of_stmt st =
-    match st with Clang_ast_t.BlockExpr (_, _, _, d) -> [Decl d] | _ -> []
-  in
-  match an with
-  | Stmt st
-   -> let _, succs_st = Clang_ast_proj.get_stmt_tuple st in
-      let succs = List.map ~f:(fun s -> Stmt s) succs_st in
-      succs @ get_decl_of_stmt st
-  | Decl dec ->
-    match Clang_ast_proj.get_decl_context_tuple dec with
-    | Some (decl_list, _)
-     -> List.map ~f:(fun d -> Decl d) decl_list
-    | None
-     -> []
-
-let node_to_string an =
-  match an with
-  | Decl d
-   -> Clang_ast_proj.get_decl_kind_string d
-  | Stmt s
-   -> Clang_ast_proj.get_stmt_kind_string s
-
-let node_to_unique_string_id an =
-  match an with
-  | Decl d
-   -> let di = Clang_ast_proj.get_decl_tuple d in
-      Clang_ast_proj.get_decl_kind_string d ^ string_of_int di.Clang_ast_t.di_pointer
-  | Stmt s
-   -> let si, _ = Clang_ast_proj.get_stmt_tuple s in
-      Clang_ast_proj.get_stmt_kind_string s ^ string_of_int si.Clang_ast_t.si_pointer
-
-(* true iff an ast node is a node of type among the list tl *)
-let node_has_type tl an =
-  let an_alexp = ALVar.Const (node_to_string an) in
-  List.mem ~equal:ALVar.equal tl an_alexp
-
 (* given a decl returns a stmt such that decl--->stmt via label trs *)
 let transition_decl_to_stmt d trs =
   let open Clang_ast_t in
@@ -756,6 +737,20 @@ let next_state_via_transition an trans =
   | _, _
    -> []
 
+let choose_one_witness an1 an2 =
+  if Ctl_parser_types.ast_node_equal an1 an2 then an1
+  else if Ctl_parser_types.is_node_successor_of an1 ~is_successor:an2 then an2
+  else an1
+
+let choose_witness_opt witness_opt1 witness_opt2 =
+  match (witness_opt1, witness_opt2) with
+  | Some witness1, Some witness2
+   -> Some (choose_one_witness witness1 witness2)
+  | Some witness, None | None, Some witness
+   -> Some witness
+  | None, None
+   -> None
+
 (* Evaluation of formulas *)
 (* evaluate an atomic formula (i.e. a predicate) on a ast node an and a
    linter context lcxt. That is:  an, lcxt |= pred_name(params) *)
@@ -857,6 +852,24 @@ let rec eval_Atomic _pred_name args an lcxt =
   | _
    -> L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
 
+and eval_AND an lcxt f1 f2 =
+  match eval_formula f1 an lcxt with
+  | Some witness1 -> (
+    match eval_formula f2 an lcxt with
+    | Some witness2
+     -> Some (choose_one_witness witness1 witness2)
+    | _
+     -> None )
+  | None (* we short-circuit the AND evaluation *)
+   -> None
+
+and eval_OR an lcxt f1 f2 = choose_witness_opt (eval_formula f1 an lcxt) (eval_formula f2 an lcxt)
+
+and eval_Implies an lcxt f1 f2 =
+  let witness1 = if Option.is_some (eval_formula f1 an lcxt) then None else Some an in
+  let witness2 = eval_formula f2 an lcxt in
+  choose_witness_opt witness1 witness2
+
 (* an, lcxt |= EF phi  <=>
    an, lcxt |= phi or exists an' in Successors(st): an', lcxt |= EF phi
 
@@ -871,8 +884,11 @@ and eval_EF phi an lcxt trans =
       let phi' = Or (phi, EX (trans, EF (trans, phi))) in
       eval_formula phi' an lcxt
   | None, _
-   -> eval_formula phi an lcxt
-      || List.exists ~f:(fun an' -> eval_EF phi an' lcxt trans) (get_successor_nodes an)
+   -> let witness_opt = eval_formula phi an lcxt in
+      if Option.is_some witness_opt then witness_opt
+      else
+        List.fold_left (Ctl_parser_types.get_direct_successor_nodes an) ~init:witness_opt ~f:
+          (fun acc node -> choose_witness_opt (eval_EF phi node lcxt trans) acc )
 
 (* an, lcxt |= EX phi  <=> exists an' in Successors(st): an', lcxt |= phi
 
@@ -882,9 +898,21 @@ and eval_EF phi an lcxt trans =
 *)
 and eval_EX phi an lcxt trans =
   let succs =
-    match trans with Some l -> next_state_via_transition an l | None -> get_successor_nodes an
+    match trans with
+    | Some l
+     -> next_state_via_transition an l
+    | None
+     -> Ctl_parser_types.get_direct_successor_nodes an
   in
-  List.exists ~f:(fun an' -> eval_formula phi an' lcxt) succs
+  let witness_opt =
+    List.fold_left succs ~init:None ~f:(fun acc node ->
+        choose_witness_opt (eval_formula phi node lcxt) acc )
+  in
+  match (witness_opt, trans) with
+  | Some _, Some trans when not (is_transition_to_successor trans)
+   -> Some an (* We want to limit the witnesses to the successors of the original node. *)
+  | _
+   -> witness_opt
 
 (* an, lcxt |= E(phi1 U phi2) evaluated using the equivalence
    an, lcxt |= E(phi1 U phi2) <=> an, lcxt |= phi2 or (phi1 and EX(E(phi1 U phi2)))
@@ -912,11 +940,15 @@ and in_node node_type_list phi an lctx =
   let holds_for_one_node n =
     match lctx.CLintersContext.et_evaluation_node with
     | Some id
-     -> String.equal id (node_to_unique_string_id an) && eval_formula phi an lctx
+     -> if String.equal id (Ctl_parser_types.ast_node_unique_string_id an) then
+          eval_formula phi an lctx
+        else None
     | None
-     -> node_has_type [n] an && eval_formula phi an lctx
+     -> if Ctl_parser_types.ast_node_has_kind [n] an then eval_formula phi an lctx else None
   in
-  List.exists ~f:holds_for_one_node node_type_list
+  (* This is basically an OR of formula holds in the various nodes in the list *)
+  List.fold_left node_type_list ~init:None ~f:(fun acc node ->
+      choose_witness_opt (holds_for_one_node node) acc )
 
 (* Intuitive meaning: (an,lcxt) satifies EH[Classes] phi
    if the node an is among the declaration specified by the list Classes and
@@ -952,10 +984,12 @@ and eval_ET tl trs phi an lcxt =
 
 and eval_ETX tl trs phi an lcxt =
   let lcxt', tl' =
-    match (lcxt.CLintersContext.et_evaluation_node, node_has_type tl an) with
+    match (lcxt.CLintersContext.et_evaluation_node, Ctl_parser_types.ast_node_has_kind tl an) with
     | None, true
-     -> let an_alexp = ALVar.Const (node_to_string an) in
-        ( {lcxt with CLintersContext.et_evaluation_node= Some (node_to_unique_string_id an)}
+     -> let an_alexp = ALVar.Const (Ctl_parser_types.ast_node_kind an) in
+        ( { lcxt with
+            CLintersContext.et_evaluation_node=
+              Some (Ctl_parser_types.ast_node_unique_string_id an) }
         , [an_alexp] )
     | _, _
      -> (lcxt, tl)
@@ -970,26 +1004,26 @@ and eval_ETX tl trs phi an lcxt =
   eval_formula f an lcxt'
 
 (* Formulas are evaluated on a AST node an and a linter context lcxt *)
-and eval_formula f an lcxt =
+and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
   debug_eval_begin (debug_create_payload an f lcxt) ;
   let res =
     match f with
     | True
-     -> true
+     -> Some an
     | False
-     -> false
+     -> None
     | Atomic (name, params)
-     -> eval_Atomic name params an lcxt
-    | Not f1
-     -> not (eval_formula f1 an lcxt)
-    | And (f1, f2)
-     -> eval_formula f1 an lcxt && eval_formula f2 an lcxt
-    | Or (f1, f2)
-     -> eval_formula f1 an lcxt || eval_formula f2 an lcxt
-    | Implies (f1, f2)
-     -> not (eval_formula f1 an lcxt) || eval_formula f2 an lcxt
+     -> if eval_Atomic name params an lcxt then Some an else None
     | InNode (node_type_list, f1)
      -> in_node node_type_list f1 an lcxt
+    | Not f1 -> (
+      match eval_formula f1 an lcxt with Some _ -> None | None -> Some an )
+    | And (f1, f2)
+     -> eval_AND an lcxt f1 f2
+    | Or (f1, f2)
+     -> eval_OR an lcxt f1 f2
+    | Implies (f1, f2)
+     -> eval_Implies an lcxt f1 f2
     | AU (trans, f1, f2)
      -> eval_AU f1 f2 an lcxt trans
     | EU (trans, f1, f2)

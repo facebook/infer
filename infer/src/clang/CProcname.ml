@@ -204,4 +204,5 @@ let from_decl translation_unit_context ?tenv meth_decl =
       in
       Typ.Procname.mangled_objc_block name
   | _
-   -> assert false
+   -> Logging.die InternalError "Expected method decl, but got %s."
+        (Clang_ast_proj.get_decl_kind_string meth_decl)

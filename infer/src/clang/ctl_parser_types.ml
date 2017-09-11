@@ -81,6 +81,130 @@ let rec ast_node_name an =
   | _
    -> ""
 
+let ast_node_kind node =
+  match node with
+  | Stmt stmt
+   -> Clang_ast_proj.get_stmt_kind_string stmt
+  | Decl decl
+   -> Clang_ast_proj.get_decl_kind_string decl
+
+(* true iff an ast node is a node of type among the list tl *)
+let ast_node_has_kind tl an =
+  let an_alexp = ALVar.Const (ast_node_kind an) in
+  List.mem ~equal:ALVar.equal tl an_alexp
+
+let ast_node_pointer node =
+  match node with
+  | Stmt stmt
+   -> let s_stmt_info, _ = Clang_ast_proj.get_stmt_tuple stmt in
+      s_stmt_info.si_pointer
+  | Decl decl
+   -> let d_decl_info = Clang_ast_proj.get_decl_tuple decl in
+      d_decl_info.di_pointer
+
+let ast_node_unique_string_id an = Printf.sprintf "%s %d" (ast_node_kind an) (ast_node_pointer an)
+
+let ast_node_cast_kind an =
+  match an with
+  | Decl _
+   -> ""
+  | Stmt stmt ->
+    match Clang_ast_proj.get_cast_kind stmt with
+    | Some cast_kind
+     -> Clang_ast_proj.string_of_cast_kind cast_kind
+    | None
+     -> ""
+
+let ast_node_equal node1 node2 = Int.equal (ast_node_pointer node1) (ast_node_pointer node2)
+
+let get_successor_stmts_of_stmt stmt =
+  let _, node_succ_stmts = Clang_ast_proj.get_stmt_tuple stmt in
+  node_succ_stmts
+
+let get_successor_decls_of_stmt stmt =
+  let open Clang_ast_t in
+  match stmt with
+  | DeclStmt (_, _, succ_decls)
+   -> succ_decls
+  | BlockExpr (_, _, _, decl)
+   -> [decl]
+  | _
+   -> []
+
+let get_successor_decls_of_decl decl =
+  match Clang_ast_proj.get_decl_context_tuple decl with Some (decls, _) -> decls | None -> []
+
+let get_successor_stmts_of_decl decl =
+  let open Clang_ast_t in
+  match decl with
+  | FunctionDecl (_, _, _, fdi)
+  | CXXMethodDecl (_, _, _, fdi, _)
+  | CXXConstructorDecl (_, _, _, fdi, _)
+  | CXXConversionDecl (_, _, _, fdi, _)
+  | CXXDestructorDecl (_, _, _, fdi, _)
+   -> Option.to_list fdi.Clang_ast_t.fdi_body
+  | ObjCMethodDecl (_, _, mdi)
+   -> Option.to_list mdi.Clang_ast_t.omdi_body
+  | BlockDecl (_, block_decl_info)
+   -> Option.to_list block_decl_info.Clang_ast_t.bdi_body
+  | VarDecl (_, _, _, var_decl_info)
+   -> Option.to_list var_decl_info.vdi_init_expr
+  | ObjCIvarDecl (_, _, _, fldi, _)
+  | FieldDecl (_, _, _, fldi)
+  | ObjCAtDefsFieldDecl (_, _, _, fldi)
+   -> Option.to_list fldi.fldi_init_expr
+  | _
+   -> []
+
+let get_successor_stmts an =
+  match an with
+  | Stmt stmt
+   -> get_successor_stmts_of_stmt stmt
+  | Decl decl
+   -> get_successor_stmts_of_decl decl
+
+let get_successor_decls an =
+  match an with
+  | Stmt stmt
+   -> get_successor_decls_of_stmt stmt
+  | Decl decl
+   -> get_successor_decls_of_decl decl
+
+(* Either succ_node is a direct successor of node or
+succ_node is a successor of one of the successors of node *)
+let rec is_node_successor_of ~is_successor:succ_node node =
+  match succ_node with
+  | Stmt _
+   -> let node_succ_stmts = get_successor_stmts node in
+      List.exists node_succ_stmts ~f:(fun (s: Clang_ast_t.stmt) ->
+          ast_node_equal (Stmt s) succ_node
+          || is_node_successor_of ~is_successor:succ_node (Stmt s) )
+  | Decl _
+   -> let node_succ_decls = get_successor_decls node in
+      List.exists node_succ_decls ~f:(fun (d: Clang_ast_t.decl) ->
+          ast_node_equal (Decl d) succ_node
+          || is_node_successor_of ~is_successor:succ_node (Decl d) )
+
+let get_direct_successor_nodes an =
+  (* get_decl_of_stmt get declarations that are directly embedded
+     as immediate children (i.e. distance 1) of an stmt (i.e., no transition).
+     TBD: check if a dual is needed for get_stmt_of_decl
+  *)
+  let get_decl_of_stmt st =
+    match st with Clang_ast_t.BlockExpr (_, _, _, d) -> [Decl d] | _ -> []
+  in
+  match an with
+  | Stmt st
+   -> let _, succs_st = Clang_ast_proj.get_stmt_tuple st in
+      let succs = List.map ~f:(fun s -> Stmt s) succs_st in
+      succs @ get_decl_of_stmt st
+  | Decl dec ->
+    match Clang_ast_proj.get_decl_context_tuple dec with
+    | Some (decl_list, _)
+     -> List.map ~f:(fun d -> Decl d) decl_list
+    | None
+     -> []
+
 let infer_prefix = "__infer_ctl_"
 
 (** Data structures for type parser.
@@ -374,14 +498,3 @@ let stmt_node_child_type an =
       match stmts with [stmt] -> ast_node_type (Stmt stmt) | _ -> "" )
   | _
    -> ""
-
-let ast_node_cast_kind an =
-  match an with
-  | Decl _
-   -> ""
-  | Stmt stmt ->
-    match Clang_ast_proj.get_cast_kind stmt with
-    | Some cast_kind
-     -> Clang_ast_proj.string_of_cast_kind cast_kind
-    | None
-     -> ""

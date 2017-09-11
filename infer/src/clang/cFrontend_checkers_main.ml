@@ -171,19 +171,22 @@ let compute_if_context (context: CLintersContext.context) stmt =
     ( {within_responds_to_selector_block; within_available_class_block; ios_version_guard}
     : CLintersContext.if_context )
 
-let is_factory_method (context: CLintersContext.context) decl =
-  let interface_decl_opt =
-    match context.current_objc_impl with
-    | Some ObjCImplementationDecl (_, _, _, _, impl_decl_info)
-     -> CAst_utils.get_decl_opt_with_decl_ref impl_decl_info.oidi_class_interface
-    | _
-     -> None
-  in
-  match interface_decl_opt with
-  | Some interface_decl
-   -> CAst_utils.is_objc_factory_method interface_decl decl
+let get_method_body_opt decl =
+  let open Clang_ast_t in
+  match decl with
+  | FunctionDecl (_, _, _, fdi)
+  | CXXMethodDecl (_, _, _, fdi, _)
+  | CXXConstructorDecl (_, _, _, fdi, _)
+  | CXXConversionDecl (_, _, _, fdi, _)
+  | CXXDestructorDecl (_, _, _, fdi, _)
+   -> fdi.Clang_ast_t.fdi_body
+  | ObjCMethodDecl (_, _, mdi)
+   -> mdi.Clang_ast_t.omdi_body
+  | BlockDecl (_, block_decl_info)
+   -> block_decl_info.Clang_ast_t.bdi_body
   | _
-   -> false
+   -> Logging.die InternalError "Should only be called with method, but got %s"
+        (Clang_ast_proj.get_decl_kind_string decl)
 
 let rec do_frontend_checks_stmt (context: CLintersContext.context) stmt =
   let open Clang_ast_t in
@@ -231,49 +234,33 @@ let rec do_frontend_checks_stmt (context: CLintersContext.context) stmt =
 
 and do_frontend_checks_decl (context: CLintersContext.context) decl =
   let open Clang_ast_t in
-  CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl decl) ;
   match decl with
-  | FunctionDecl (_, _, _, fdi)
-  | CXXMethodDecl (_, _, _, fdi, _)
-  | CXXConstructorDecl (_, _, _, fdi, _)
-  | CXXConversionDecl (_, _, _, fdi, _)
-  | CXXDestructorDecl (_, _, _, fdi, _)
+  | FunctionDecl _
+  | CXXMethodDecl _
+  | CXXConstructorDecl _
+  | CXXConversionDecl _
+  | CXXDestructorDecl _
+  | ObjCMethodDecl _
+  | BlockDecl _
    -> (
-      let context' = {context with CLintersContext.current_method= Some decl} in
-      match fdi.Clang_ast_t.fdi_body with
+      let context' = CLintersContext.update_current_method context decl in
+      CFrontend_errors.invoke_set_of_checkers_on_node context' (Ctl_parser_types.Decl decl) ;
+      match get_method_body_opt decl with
       | Some stmt
        -> do_frontend_checks_stmt context' stmt
       | None
        -> () )
-  | ObjCMethodDecl (_, _, mdi)
-   -> (
-      let context' =
-        { context with
-          CLintersContext.current_method= Some decl
-        ; CLintersContext.in_objc_static_factory_method= is_factory_method context decl }
-      in
-      match mdi.Clang_ast_t.omdi_body with
-      | Some stmt
-       -> do_frontend_checks_stmt context' stmt
-      | None
-       -> () )
-  | BlockDecl (_, block_decl_info)
-   -> (
-      let context' = {context with CLintersContext.current_method= Some decl} in
-      match block_decl_info.Clang_ast_t.bdi_body with
-      | Some stmt
-       -> do_frontend_checks_stmt context' stmt
-      | None
-       -> () )
-  | ObjCImplementationDecl (_, _, decls, _, _)
-   -> let context' = {context with current_objc_impl= Some decl} in
+  | ObjCImplementationDecl (_, _, decls, _, _) | ObjCInterfaceDecl (_, _, decls, _, _)
+   -> CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl decl) ;
+      let context' = {context with current_objc_class= Some decl} in
       List.iter ~f:(do_frontend_checks_decl context') decls
-  | _ ->
-    match Clang_ast_proj.get_decl_context_tuple decl with
-    | Some (decls, _)
-     -> List.iter ~f:(do_frontend_checks_decl context) decls
-    | None
-     -> ()
+  | _
+   -> CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl decl) ;
+      match Clang_ast_proj.get_decl_context_tuple decl with
+      | Some (decls, _)
+       -> List.iter ~f:(do_frontend_checks_decl context) decls
+      | None
+       -> ()
 
 let context_with_ck_set context decl_list =
   let is_ck =
