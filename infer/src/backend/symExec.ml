@@ -1633,7 +1633,7 @@ and check_variadic_sentinel ?(fails_on_nil= false) n_formals (sentinel, null_pos
             loc
         in
         raise (Exceptions.Premature_nil_termination (err_desc, __POS__))
-      else raise e
+      else reraise e
   in
   (* fold_left reverses the arguments back so that we report an *)
   (* error on the first premature nil argument *)

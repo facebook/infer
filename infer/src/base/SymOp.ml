@@ -28,18 +28,20 @@ let try_finally ?(fail_early= false) f g =
   | r
    -> g () ; r
   | exception (Analysis_failure_exe _ as f_exn)
-   -> ( if not fail_early then
+   -> let backtrace = Caml.Printexc.get_raw_backtrace () in
+      ( if not fail_early then
           try g ()
-          with _ -> () ) ;
-      raise f_exn
-  | exception f_exn ->
-    match g () with
-    | ()
-     -> raise f_exn
-    | exception (Analysis_failure_exe _ as g_exn)
-     -> raise g_exn
-    | exception _
-     -> raise f_exn
+          with _ -> () (* swallow in favor of the original exception *) ) ;
+      reraise ~backtrace f_exn
+  | exception f_exn
+   -> let f_backtrace = Caml.Printexc.get_raw_backtrace () in
+      match g () with
+      | ()
+       -> reraise ~backtrace:f_backtrace f_exn
+      | exception (Analysis_failure_exe _ as g_exn)
+       -> reraise g_exn
+      | exception _
+       -> reraise ~backtrace:f_backtrace f_exn
 
 let finally_try g f = try_finally f g
 

@@ -658,10 +658,6 @@ val xml_specs : bool
 
 (** Global variables *)
 
-val set_reference_and_call_function : 'a ref -> 'a -> ('b -> 'c) -> 'b -> 'c
-(** [set_reference_and_call_function ref val f x] calls f x with ref set to val.
-    Restore the initial value also in case of exception. *)
-
 val arc_mode : bool ref
 
 val curr_language : language ref

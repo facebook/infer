@@ -131,9 +131,8 @@ let add_infer_profile mvn_pom infer_pom =
     protect ~f:with_ic ~finally:(fun () -> In_channel.close ic)
   in
   try Utils.with_file_out infer_pom ~f:with_oc
-  with Xmlm.Error ((line, col), error) as exn ->
-    L.external_error "%s:%d:%d: ERROR: %s@." mvn_pom line col (Xmlm.error_message error) ;
-    raise exn
+  with Xmlm.Error ((line, col), error) ->
+    L.die ExternalError "%s:%d:%d: ERROR: %s" mvn_pom line col (Xmlm.error_message error)
 
 let add_profile_to_pom_in_directory dir =
   (* Even though there is a "-f" command-line arguments to change the config file Maven reads from,

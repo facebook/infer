@@ -1567,7 +1567,7 @@ let sigma_partial_join tenv mode (sigma1: Prop.sigma) (sigma2: Prop.sigma)
   try
     if Rename.check lost_little then ( CheckJoin.final () ; (s1, s2, s3) )
     else ( L.d_strln "failed Rename.check" ; CheckJoin.final () ; raise Sil.JoinFail )
-  with exn -> CheckJoin.final () ; raise exn
+  with exn -> CheckJoin.final () ; reraise exn
 
 let rec sigma_partial_meet' tenv (sigma_acc: Prop.sigma) (sigma1_in: Prop.sigma)
     (sigma2_in: Prop.sigma) : Prop.sigma =
@@ -1812,7 +1812,7 @@ let prop_partial_meet tenv p1 p2 =
     Rename.final () ;
     FreshVarExp.final () ;
     Todo.final () ;
-    match exn with Sil.JoinFail -> None | _ -> raise exn
+    match exn with Sil.JoinFail -> None | _ -> reraise exn
 
 let eprop_partial_join' tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed Prop.t)
     : Prop.normal Prop.t =
@@ -1928,7 +1928,7 @@ let prop_partial_join pname tenv mode p1 p2 =
         FreshVarExp.final () ;
         Todo.final () ;
         if !Config.footprint then JoinState.set_footprint false ;
-        match exn with Sil.JoinFail -> None | _ -> raise exn )
+        match exn with Sil.JoinFail -> None | _ -> reraise exn )
   | Some _
    -> res_by_implication_only
 
@@ -1940,7 +1940,7 @@ let eprop_partial_join tenv mode (ep1: Prop.exposed Prop.t) (ep2: Prop.exposed P
   try
     let res = eprop_partial_join' tenv mode ep1 ep2 in
     Rename.final () ; FreshVarExp.final () ; Todo.final () ; res
-  with exn -> Rename.final () ; FreshVarExp.final () ; Todo.final () ; raise exn
+  with exn -> Rename.final () ; FreshVarExp.final () ; Todo.final () ; reraise exn
 
 (** {2 Join and Meet for Propset} *)
 

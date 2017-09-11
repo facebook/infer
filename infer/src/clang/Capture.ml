@@ -104,11 +104,14 @@ let run_clang_frontend ast_source =
 
 let run_and_validate_clang_frontend ast_source =
   try run_clang_frontend ast_source
-  with exc -> if not Config.keep_going then raise exc
+  with exc ->
+    if not Config.keep_going then reraise exc
+    else
+      L.internal_error "ERROR RUNNING CAPTURE: %a@\n%s@\n" Exn.pp exc (Printexc.get_backtrace ())
 
 let run_clang clang_command read =
   let exit_with_error exit_code =
-    L.external_error "Error: the following clang command did not run successfully:@\n  %s@\n"
+    L.external_error "Error: the following clang command did not run successfully:@\n  %s@\n%!"
       clang_command ;
     L.exit exit_code
   in

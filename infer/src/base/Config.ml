@@ -2396,7 +2396,7 @@ let set_reference_and_call_function reference value f x =
     reference := value ;
     let res = f x in
     restore () ; res
-  with exn -> restore () ; raise exn
+  with exn -> restore () ; reraise exn
 
 (** Current Objective-C Automatic Reference Counting (ARC) mode *)
 let arc_mode = ref false

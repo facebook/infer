@@ -448,7 +448,7 @@ let atom_const_lt_exp (atom: Sil.atom) =
 
 let exp_reorder e1 e2 = if Exp.compare e1 e2 <= 0 then (e1, e2) else (e2, e1)
 
-(** create a strexp of the given type, populating the structures if [expand_structs] is true *)
+(** create a strexp of the given type, populating the structures if [struct_init_mode] is [Fld_init] *)
 let rec create_strexp_of_type tenv struct_init_mode (typ: Typ.t) len inst : Sil.strexp =
   let init_value () =
     let create_fresh_var () =
@@ -1364,10 +1364,9 @@ module Normalize = struct
     let nsexp = strexp_normalize tenv Sil.sub_empty sexp in
     Hpointsto (lexp, nsexp, te)
 
-  (** Construct a points-to predicate for an expression using
-      either the provided expression [name] as
-      base for fresh identifiers. If [expand_structs] is true,
-      initialize the fields of structs with fresh variables. *)
+  (** Construct a points-to predicate for an expression using either the provided expression [name]
+      as base for fresh identifiers. If [struct_init_mode] is [Fld_init], initialize the fields of
+      structs with fresh variables. *)
   let mk_ptsto_exp tenv struct_init_mode (exp, (te: Exp.t), expo) inst : Sil.hpred =
     let default_strexp () : Sil.strexp =
       match te with
@@ -1754,7 +1753,7 @@ let mk_dll_hpara tenv iF oB oF svars evars body =
   Normalize.hpara_dll_normalize tenv para
 
 (** Construct a points-to predicate for a single program variable.
-    If [expand_structs] is true, initialize the fields of structs with fresh variables. *)
+    If [expand_structs] is [Fld_init], initialize the fields of structs with fresh variables. *)
 let mk_ptsto_lvar tenv expand_structs inst ((pvar: Pvar.t), texp, expo) : Sil.hpred =
   Normalize.mk_ptsto_exp tenv expand_structs (Lvar pvar, texp, expo) inst
 

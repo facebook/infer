@@ -169,8 +169,10 @@ let do_finally f g =
   let res =
     try f ()
     with exc ->
-      g () |> ignore ;
-      raise exc
+      let backtrace = Caml.Printexc.get_raw_backtrace () in
+      ( try g () |> ignore
+        with _ -> () (* swallow in favor of the original exception *) ) ;
+      reraise ~backtrace exc
   in
   let res' = g () in
   (res, res')

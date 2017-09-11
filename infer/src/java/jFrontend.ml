@@ -202,7 +202,7 @@ let compute_source_icfg linereader classes program tenv source_basename package_
     {JContext.cg= Cg.create source_file; JContext.cfg= Cfg.create_cfg (); JContext.tenv= tenv}
   in
   let select test procedure cn node =
-    if test node then try procedure cn node with Bir.Subroutine -> () | e -> raise e
+    if test node then try procedure cn node with Bir.Subroutine -> () | e -> reraise e
   in
   let () =
     JBasics.ClassMap.iter
@@ -220,5 +220,5 @@ let compute_class_icfg source_file linereader program tenv node =
   | Bir.Subroutine
    -> ()
   | e
-   -> raise e ) ;
+   -> reraise e ) ;
   (icfg.JContext.cg, icfg.JContext.cfg)

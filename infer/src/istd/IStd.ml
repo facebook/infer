@@ -63,6 +63,12 @@ module PVariant = struct
   let ( = ) (v1: [> ]) (v2: [> ]) = Polymorphic_compare.( = ) v1 v2
 end
 
+let reraise ?backtrace:backtrace0 exn =
+  let backtrace =
+    match backtrace0 with Some bt -> bt | None -> Caml.Printexc.get_raw_backtrace ()
+  in
+  Caml.Printexc.raise_with_backtrace exn backtrace
+
 let failwith _ : [`use_Logging_die_instead] = assert false
 
 let failwithf _ : [`use_Logging_die_instead] = assert false
@@ -71,8 +77,7 @@ let invalid_arg _ : [`use_Logging_die_instead] = assert false
 
 let invalid_argf _ : [`use_Logging_die_instead] = assert false
 
-(* With Logging.exit you have more control of the code that invokes exit,
-for example when forking and running certain functions that may in turn invoke
-exit, and you want to handle the execution flow differently - like invoking
-certain callbacks before exiting, or not exiting at all. *)
+(** With Logging.exit you have more control of the code that invokes exit, for example when forking
+    and running certain functions that may in turn invoke exit, and you want to handle the execution
+    flow differently - like invoking certain callbacks before exiting, or not exiting at all. *)
 let exit = `In_general_prefer_using_Logging_exit_over_Pervasives_exit

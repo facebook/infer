@@ -73,7 +73,7 @@ let compile compiler build_prog build_args =
             "@\n*** Failed to execute compilation command: %s@\n*** Command: %s@\n*** Output:@\n%s%s@\n*** Infer needs a working compilation command to run.@."
             (Unix.Exit_or_signal.to_string_hum (Error err)) shell_cmd log verbose_errlog
       | None, `ExceptionError exn
-       -> raise exn
+       -> reraise exn
     in
     match Utils.with_process_in shell_cmd_redirected In_channel.input_all with
     | log, Error err

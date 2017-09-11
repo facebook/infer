@@ -333,4 +333,4 @@ let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_contex
     (* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *)
   with Assert_failure (file, line, column) as exn ->
     L.internal_error "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column ;
-    raise exn
+    reraise exn

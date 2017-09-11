@@ -106,4 +106,4 @@ let exe_timeout f x =
       Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." SymOp.pp_failure_kind kind ;
       Some kind
   | exe
-   -> resume_previous_timeout () ; raise exe
+   -> resume_previous_timeout () ; reraise exe

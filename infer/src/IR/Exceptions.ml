@@ -363,7 +363,8 @@ let recognize_exception exn =
         , None
         , Nocat )
     | exn
-     -> raise exn
+     -> L.internal_error "Backend error '%a'. Backtrace:@\n%s" Exn.pp exn (Exn.backtrace ()) ;
+        reraise exn
   in
   (err_name, desc, ml_loc_opt, visibility, severity, force_kind, eclass)
 

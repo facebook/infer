@@ -147,10 +147,10 @@ let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
     let final_summary = postprocess summary in
     restore_global_state old_state ; final_summary
   with exn ->
-    L.internal_error "@\nONDEMAND EXCEPTION %a %s@.@.BACK TRACE@.%s@?" Typ.Procname.pp callee_pname
-      (Exn.to_string exn) (Printexc.get_backtrace ()) ;
     restore_global_state old_state ;
-    if Config.keep_going then
+    if Config.keep_going then (
+      L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Typ.Procname.pp
+        callee_pname (Exn.to_string exn) (Printexc.get_backtrace ()) ;
       match exn with
       | SymOp.Analysis_failure_exe kind
        -> (* in production mode, log the timeout/crash and continue with the summary we had before
@@ -158,8 +158,8 @@ let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
           log_error_and_continue exn initial_summary kind
       | _
        -> (* this happens with assert false or some other unrecognized exception *)
-          log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn))
-    else raise exn
+          log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn)) )
+    else reraise exn
 
 let analyze_proc_desc curr_pdesc callee_pdesc : Specs.summary option =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
@@ -167,7 +167,7 @@ let analyze_proc_desc curr_pdesc callee_pdesc : Specs.summary option =
   match !callbacks_ref with
   | None
    -> L.(die InternalError)
-        "No callbacks registered to analyze proc desc %a when analyzing %a@." Typ.Procname.pp
+        "No callbacks registered to analyze proc desc %a when analyzing %a" Typ.Procname.pp
         callee_pname Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
   | Some callbacks
    -> if should_be_analyzed callee_pname proc_attributes then
