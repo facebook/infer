@@ -133,47 +133,63 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | _
      -> Unknown
 
-  let get_container_access pn tenv =
-    match pn with
-    | Typ.Procname.Java java_pname
-     -> let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
-        let get_container_access_ typename =
-          match (Typ.Name.name typename, Typ.Procname.java_get_method java_pname) with
-          | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
-            , ( "append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"
-              | "setValueAt" ) )
-           -> Some ContainerWrite
-          | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
-            , ("clone" | "get" | "indexOfKey" | "indexOfValue" | "keyAt" | "size" | "valueAt") )
-           -> Some ContainerRead
-          | ( "android.support.v4.util.SimpleArrayMap"
-            , ("clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt" | "setValueAt")
-            )
-           -> Some ContainerWrite
-          | ( "android.support.v4.util.SimpleArrayMap"
-            , ( "containsKey" | "containsValue" | "get" | "hashCode" | "indexOfKey" | "isEmpty"
-              | "keyAt" | "size" | "valueAt" ) )
-           -> Some ContainerRead
-          | "android.support.v4.util.Pools$SimplePool", ("acquire" | "release")
-           -> Some ContainerWrite
-          | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set")
-           -> Some ContainerWrite
-          | ( "java.util.List"
-            , ( "contains" | "containsAll" | "equals" | "get" | "hashCode" | "indexOf" | "isEmpty"
-              | "iterator" | "lastIndexOf" | "listIterator" | "size" | "toArray" ) )
-           -> Some ContainerRead
-          | "java.util.Map", ("clear" | "put" | "putAll" | "remove")
-           -> Some ContainerWrite
-          | ( "java.util.Map"
-            , ( "containsKey" | "containsValue" | "entrySet" | "equals" | "get" | "hashCode"
-              | "isEmpty" | "keySet" | "size" | "values" ) )
-           -> Some ContainerRead
-          | _
-           -> None
-        in
-        PatternMatch.supertype_find_map_opt tenv get_container_access_ typename
-    | _
-     -> None
+  let get_container_access =
+    let is_cpp_container_read =
+      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::find"] in
+      fun pname ->
+        QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+    and is_cpp_container_write =
+      let matcher =
+        QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::operator[]"; "std::map::erase"]
+      in
+      fun pname ->
+        QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+    in
+    fun pn tenv ->
+      match pn with
+      | Typ.Procname.Java java_pname
+       -> let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
+          let get_container_access_ typename =
+            match (Typ.Name.name typename, Typ.Procname.java_get_method java_pname) with
+            | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
+              , ( "append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"
+                | "setValueAt" ) )
+             -> Some ContainerWrite
+            | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
+              , ("clone" | "get" | "indexOfKey" | "indexOfValue" | "keyAt" | "size" | "valueAt") )
+             -> Some ContainerRead
+            | ( "android.support.v4.util.SimpleArrayMap"
+              , ( "clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt"
+                | "setValueAt" ) )
+             -> Some ContainerWrite
+            | ( "android.support.v4.util.SimpleArrayMap"
+              , ( "containsKey" | "containsValue" | "get" | "hashCode" | "indexOfKey" | "isEmpty"
+                | "keyAt" | "size" | "valueAt" ) )
+             -> Some ContainerRead
+            | "android.support.v4.util.Pools$SimplePool", ("acquire" | "release")
+             -> Some ContainerWrite
+            | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set")
+             -> Some ContainerWrite
+            | ( "java.util.List"
+              , ( "contains" | "containsAll" | "equals" | "get" | "hashCode" | "indexOf"
+                | "isEmpty" | "iterator" | "lastIndexOf" | "listIterator" | "size" | "toArray" ) )
+             -> Some ContainerRead
+            | "java.util.Map", ("clear" | "put" | "putAll" | "remove")
+             -> Some ContainerWrite
+            | ( "java.util.Map"
+              , ( "containsKey" | "containsValue" | "entrySet" | "equals" | "get" | "hashCode"
+                | "isEmpty" | "keySet" | "size" | "values" ) )
+             -> Some ContainerRead
+            | _
+             -> None
+          in
+          PatternMatch.supertype_find_map_opt tenv get_container_access_ typename
+      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_container_read pname
+       -> Some ContainerRead
+      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_container_write pname
+       -> Some ContainerWrite
+      | _
+       -> None
 
   (* propagate attributes from the leaves to the root of an RHS Hil expression *)
   let rec attributes_of_expr attribute_map e =
