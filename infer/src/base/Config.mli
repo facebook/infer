@@ -133,6 +133,8 @@ val incremental_procs : bool
 
 val infer_py_argparse_error_exit_code : int
 
+val infer_top_results_dir_env_var : string
+
 val initial_analysis_time : float
 
 val ivar_attributes : string

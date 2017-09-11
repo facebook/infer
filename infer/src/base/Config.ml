@@ -412,6 +412,8 @@ let os_type = match Sys.os_type with "Win32" -> Win32 | "Cygwin" -> Cygwin | _ -
     directory of the initial invocation of infer. *)
 let resolve = Utils.filename_to_absolute ~root:CLOpt.init_work_dir
 
+let infer_top_results_dir_env_var = "INFER_TOP_RESULTS_DIR"
+
 let infer_inside_maven_env_var = "INFER_INSIDE_MAVEN"
 
 let maven = CLOpt.is_env_var_set infer_inside_maven_env_var
@@ -1742,6 +1744,8 @@ let config_file =
    -> find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
 
 let post_parsing_initialization command_opt =
+  if CommandLineOption.is_originator then
+    Unix.putenv ~key:infer_top_results_dir_env_var ~data:!results_dir ;
   ( match !version with
   | `Full
    -> (* TODO(11791235) change back to stdout once buck integration is fixed *)
