@@ -1846,7 +1846,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let sil_loc = CLocation.get_sil_location stmt_info context in
     let join_node = create_node Procdesc.Node.Join_node [] sil_loc context in
     let continuation = Some {break= succ_nodes; continue= [join_node]; return_temp= false} in
-    (* set the flat to inform that we are translating a condition of a if *)
+    (* set the flag to inform that we are translating a condition of a if *)
     let continuation_cond = mk_cond_continuation outer_continuation in
     let init_incr_nodes =
       match loop_kind with
@@ -1887,8 +1887,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        -> res_trans_cond.root_nodes
     in
     let body_continuation =
-      match (continuation, init_incr_nodes) with
-      | Some c, Some (_, nodes_incr)
+      match (loop_kind, continuation, init_incr_nodes) with
+      | Loops.DoWhile _, Some c, _
+       -> Some {c with continue= res_trans_cond.root_nodes}
+      | _, Some c, Some (_, nodes_incr)
        -> Some {c with continue= nodes_incr}
       | _
        -> continuation
