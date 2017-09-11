@@ -335,13 +335,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let call_instr = Sil.Call (ret_id', function_sil, params, sil_loc, call_flags) in
     {empty_res_trans with instrs= [call_instr]; exps= ret_exps; initd_exps}
 
-  let breakStmt_trans trans_state =
-    match trans_state.continuation with
-    | Some bn
-     -> {empty_res_trans with root_nodes= bn.break}
-    | _
-     -> assert false
-
   let continueStmt_trans trans_state =
     match trans_state.continuation with
     | Some bn
@@ -2923,6 +2916,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | _
      -> assert false
 
+  and breakStmt_trans trans_state stmt_info =
+    match trans_state.continuation with
+    | Some bn
+     -> let trans_state' = {trans_state with succ_nodes= bn.break} in
+        let destr_trans_result = inject_destructors trans_state' stmt_info in
+        if destr_trans_result.root_nodes <> [] then destr_trans_result
+        else {empty_res_trans with root_nodes= bn.break}
+    | _
+     -> assert false
+
   (* Expect that this doesn't happen *)
   and trans_into_undefined_expr trans_state expr_info =
     let tenv = trans_state.context.CContext.tenv in
@@ -3075,8 +3078,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> objCDictionaryLiteral_trans trans_state info stmt_info stmts
     | ObjCStringLiteral (stmt_info, stmts, info)
      -> objCStringLiteral_trans trans_state stmt_info stmts info
-    | BreakStmt _
-     -> breakStmt_trans trans_state
+    | BreakStmt (stmt_info, _)
+     -> breakStmt_trans trans_state stmt_info
     | ContinueStmt _
      -> continueStmt_trans trans_state
     | ObjCAtSynchronizedStmt (_, stmt_list)
