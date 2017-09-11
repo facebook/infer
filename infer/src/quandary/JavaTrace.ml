@@ -13,22 +13,22 @@ module L = Logging
 
 module SourceKind = struct
   type t =
-    | Clipboard  (** data read from the clipboard service *)
     | Intent  (** external Intent or a value read from one *)
     | Other  (** for testing or uncategorized sources *)
     | PrivateData  (** private user or device-specific data *)
-    | UserControlledURI  (** resource locator controller by user *)
+    | UserControlledString  (** data read from a text box or the clipboard service *)
+    | UserControlledURI  (** resource locator from the browser bar *)
     [@@deriving compare]
 
   let of_string = function
-    | "Clipboard"
-     -> Clipboard
     | "Intent"
      -> Intent
     | "PrivateData"
      -> PrivateData
     | "UserControlledURI"
      -> UserControlledURI
+    | "UserControlledString"
+     -> UserControlledString
     | _
      -> Other
 
@@ -62,7 +62,9 @@ module SourceKind = struct
              -> Some (PrivateData, return)
             | ( ("android.content.ClipboardManager" | "android.text.ClipboardManager")
               , ("getPrimaryClip" | "getText") )
-             -> Some (Clipboard, return)
+             -> Some (UserControlledString, return)
+            | "android.widget.EditText", "getText"
+             -> Some (UserControlledString, return)
             | _
              -> None
           in
@@ -154,16 +156,16 @@ module SourceKind = struct
   let pp fmt kind =
     F.fprintf fmt
       ( match kind with
-      | Clipboard
-       -> "Clipboard"
       | Intent
        -> "Intent"
-      | UserControlledURI
-       -> "UserControlledURI"
+      | Other
+       -> "Other"
       | PrivateData
        -> "PrivateData"
-      | Other
-       -> "Other" )
+      | UserControlledString
+       -> "UserControlledString"
+      | UserControlledURI
+       -> "UserControlledURI" )
 end
 
 module JavaSource = Source.Make (SourceKind)
@@ -327,8 +329,8 @@ include Trace.Make (struct
     (* create intent/launch component from user-controlled URI *)
     | UserControlledURI, CreateFile
     (* create file from user-controller URI; potential path-traversal vulnerability *)
-    | Clipboard, (StartComponent | CreateIntent | JavaScript | CreateFile | HTML)
-     -> (* do something sensitive with user-controlled data from the clipboard *)
+    | UserControlledString, (StartComponent | CreateIntent | JavaScript | CreateFile | HTML)
+     -> (* do something sensitive with a user-controlled string *)
         true
     | Other, _ | _, Other
      -> (* for testing purposes, Other matches everything *)

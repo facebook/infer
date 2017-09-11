@@ -13,10 +13,11 @@ import android.app.Activity;
 import android.content.ClipboardManager;
 import android.text.Html;
 import android.text.Spanned;
+import android.widget.EditText;
 
 import com.facebook.infer.builtins.InferTaint;
 
-public class Clipboard {
+public class UserControlledStrings {
   ClipboardManager clipboard;
 
   void readClipboardSourcesBad() {
@@ -30,6 +31,11 @@ public class Clipboard {
 
   Spanned clipboardToHtmlBad() {
     return Html.fromHtml(clipboard.getText().toString());
+  }
+
+  EditText mEditText;
+  Spanned editTextToHtmlBad() {
+    return Html.fromHtml(mEditText.getText().toString());
   }
 
 }
