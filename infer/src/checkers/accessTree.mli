@@ -83,6 +83,8 @@ end
 
 module type Config = sig
   val max_depth : int
+
+  val max_width : int
 end
 
 module DefaultConfig : Config

@@ -422,6 +422,8 @@ let tests =
     let max_depth_test_ _ =
       let module Max1 = MakeTree (struct
         let max_depth = 1
+
+        let max_width = Int.max_value / 2
       end) in
       let f_node =
         Max1.AccessMap.singleton f (Max1.make_normal_leaf x_trace)
@@ -439,6 +441,8 @@ let tests =
       Max1.assert_trees_equal (Max1.add_trace x x_trace Max1.empty) x_tree ;
       let module Max2 = MakeTree (struct
         let max_depth = 2
+
+        let max_width = Int.max_value / 2
       end) in
       let f_node =
         Max2.AccessMap.singleton f (Max2.make_normal_leaf x_trace)
@@ -464,6 +468,43 @@ let tests =
     in
     "max_depth" >:: max_depth_test_
   in
+  let max_width_test =
+    let max_width_test_ _ =
+      let module Max1 = MakeTree (struct
+        let max_depth = Int.max_value / 2
+
+        let max_width = 1
+      end) in
+      let x_base_tree = Max1.BaseMap.singleton x_base Max1.empty_node in
+      let y_base_tree = Max1.BaseMap.singleton y_base Max1.empty_node in
+      let x_y_base_tree = Max1.BaseMap.add y_base Max1.empty_node x_base_tree in
+      let f_node =
+        Max1.AccessMap.singleton f (Max1.make_normal_leaf y_trace)
+        |> Max1.make_node MockTraceDomain.empty
+      in
+      let g_node =
+        Max1.AccessMap.singleton g (Max1.make_normal_leaf z_trace)
+        |> Max1.make_node MockTraceDomain.empty
+      in
+      let star_node = Max1.make_starred_leaf (MockTraceDomain.join y_trace z_trace) in
+      let xF_tree = Max1.BaseMap.singleton x_base f_node in
+      let xG_tree = Max1.BaseMap.singleton x_base g_node in
+      let x_star_tree = Max1.BaseMap.singleton x_base star_node in
+      (* adding x.f to a tree containing just x should work *)
+      Max1.assert_trees_equal (Max1.add_trace xF y_trace Max1.empty) xF_tree ;
+      (* but adding x.g to a tree containing x.f should create a star *)
+      Max1.assert_trees_equal (Max1.add_trace xG z_trace xF_tree) x_star_tree ;
+      (* joining the x.f and x.g trees should also create a star *)
+      Max1.assert_trees_equal (Max1.join xF_tree xG_tree) x_star_tree ;
+      (* adding x.f to a tree where it's already present shouldn't create a star *)
+      Max1.assert_trees_equal (Max1.add_trace xF y_trace xF_tree) xF_tree ;
+      (* and joining the same tree with itself shouldn't either *)
+      Max1.assert_trees_equal (Max1.join xF_tree xF_tree) xF_tree ;
+      (* note that the width limit doesn't apply to the base layer *)
+      Max1.assert_trees_equal (Max1.join x_base_tree y_base_tree) x_y_base_tree
+    in
+    "max_width" >:: max_width_test_
+  in
   "access_tree_suite"
   >::: [ get_trace_test
        ; add_trace_test
@@ -472,4 +513,5 @@ let tests =
        ; widen_test
        ; fold_test
        ; depth_test
-       ; max_depth_test ]
+       ; max_depth_test
+       ; max_width_test ]

@@ -56,11 +56,17 @@ end
 
 module type Config = sig
   val max_depth : int
+
+  (* note : doesn't apply to bases, since we can't represent a starred base *)
+
+  val max_width : int
 end
 
 module DefaultConfig = struct
   (* arbitrarily chosen large value *)
   let max_depth = Int.max_value / 2
+
+  let max_width = Int.max_value / 2
 end
 
 module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
@@ -202,7 +208,11 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
       match (tree1, tree2) with
       | Subtree subtree1, Subtree subtree2
        -> let tree' = AccessMap.merge (fun _ v1 v2 -> f_node_merge v1 v2) subtree1 subtree2 in
-          if phys_equal trace' trace1 && phys_equal tree' subtree1 then node1
+          if AccessMap.cardinal tree' > Config.max_width then
+            (* too big; create a star insted *)
+            let trace'' = join_all_traces trace' (Subtree tree') in
+            (trace'', Star)
+          else if phys_equal trace' trace1 && phys_equal tree' subtree1 then node1
           else if phys_equal trace' trace2 && phys_equal tree' subtree2 then node2
           else (trace', Subtree tree')
       | Star, t
@@ -291,7 +301,10 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
               in
               access_tree_add_trace_ ~seen_array_access accesses access_node depth'
           in
-          (trace, Subtree (AccessMap.add access access_node' subtree))
+          let access_map = AccessMap.add access access_node' subtree in
+          if AccessMap.cardinal access_map > Config.max_width then
+            (join_all_traces trace (Subtree access_map), Star)
+          else (trace, Subtree (AccessMap.add access access_node' subtree))
     in
     access_tree_add_trace_ ~seen_array_access accesses node 1
 
