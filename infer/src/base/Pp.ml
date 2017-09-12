@@ -32,6 +32,7 @@ type colormap = Obj.t -> color
 type env =
   { opt: simple_kind  (** Current option for simple printing *)
   ; kind: print_kind  (** Current kind of printing *)
+  ; break_lines: bool  (** whether to let Format add its own line breaks or not *)
   ; cmap_norm: colormap  (** Current colormap for the normal part *)
   ; cmap_foot: colormap  (** Current colormap for the footprint part *)
   ; color: color  (** Current color *)
@@ -50,6 +51,7 @@ let colormap_red (_: Obj.t) = Red
 let text =
   { opt= SIM_DEFAULT
   ; kind= TEXT
+  ; break_lines= false
   ; cmap_norm= colormap_black
   ; cmap_foot= colormap_black
   ; color= Black
@@ -64,6 +66,7 @@ let html color =
 let latex color =
   { opt= SIM_DEFAULT
   ; kind= LATEX
+  ; break_lines= false
   ; cmap_norm= colormap_from_color color
   ; cmap_foot= colormap_from_color color
   ; color
@@ -99,59 +102,26 @@ let color_string = function
   | Red
    -> "color_red"
 
-(** Pretty print a space-separated sequence *)
-let rec seq pp f = function
-  | []
-   -> ()
-  | [x]
-   -> F.fprintf f "%a" pp x
-  | x :: l
-   -> F.fprintf f "%a %a" pp x (seq pp) l
-
-(** Print a comma-separated sequence *)
-let rec comma_seq pp f = function
-  | []
-   -> ()
-  | [x]
-   -> F.fprintf f "%a" pp x
-  | x :: l
-   -> F.fprintf f "%a,%a" pp x (comma_seq pp) l
-
-(** Print a ;-separated sequence. *)
-let rec _semicolon_seq oneline pe pp f =
-  let sep fmt () = if oneline then F.fprintf fmt " " else F.fprintf fmt "@\n" in
-  function
+let seq ?(print_env= text) ?sep:(sep_text = " ") ?(sep_html= sep_text) ?(sep_latex= sep_text) pp =
+  let rec aux f = function
     | []
      -> ()
     | [x]
      -> F.fprintf f "%a" pp x
-    | x :: l ->
-      match pe.kind with
-      | TEXT | HTML
-       -> F.fprintf f "%a ; %a%a" pp x sep () (_semicolon_seq oneline pe pp) l
-      | LATEX
-       -> F.fprintf f "%a ;\\\\%a %a" pp x sep () (_semicolon_seq oneline pe pp) l
+    | x :: l
+     -> let sep =
+          match print_env.kind with TEXT -> sep_text | HTML -> sep_html | LATEX -> sep_latex
+        in
+        if print_env.break_lines then F.fprintf f "%a%s@ %a" pp x sep aux l
+        else F.fprintf f "%a%s%a" pp x sep aux l
+  in
+  aux
 
-(** Print a ;-separated sequence with newlines. *)
-let semicolon_seq pe = _semicolon_seq false pe
+let comma_seq ?print_env pp f l = seq ?print_env ~sep:"," pp f l
 
-(** Print a ;-separated sequence on one line. *)
-let semicolon_seq_oneline pe = _semicolon_seq true pe
+let semicolon_seq ?print_env pp f l = seq ?print_env ~sep:";" pp f l
 
-(** Print an or-separated sequence. *)
-let or_seq pe pp f = function
-  | []
-   -> ()
-  | [x]
-   -> F.fprintf f "%a" pp x
-  | x :: l ->
-    match pe.kind with
-    | TEXT
-     -> F.fprintf f "%a || %a" pp x (semicolon_seq pe pp) l
-    | HTML
-     -> F.fprintf f "%a &or; %a" pp x (semicolon_seq pe pp) l
-    | LATEX
-     -> F.fprintf f "%a \\vee %a" pp x (semicolon_seq pe pp) l
+let or_seq ?print_env pp f = seq ?print_env ~sep:" ||" ~sep_html:" &or;" ~sep_latex:" \\vee" pp f
 
 (** Print the current time and date in a format similar to the "date" command *)
 let current_time f () =
@@ -162,4 +132,6 @@ let current_time f () =
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
 let elapsed_time fmt () =
   let elapsed = Unix.gettimeofday () -. Utils.initial_timeofday in
-  Format.fprintf fmt "%f" elapsed
+  F.fprintf fmt "%f" elapsed
+
+let to_string ~f fmt x = F.fprintf fmt "%s" (f x)

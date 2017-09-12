@@ -104,11 +104,13 @@ let pp_footprint _pe f fp =
   let pe = {_pe with Pp.cmap_norm= _pe.Pp.cmap_foot} in
   let pp_pi f () =
     if fp.pi_fp <> [] then
-      F.fprintf f "%a ;@\n" (Pp.semicolon_seq_oneline pe (Sil.pp_atom pe)) fp.pi_fp
+      F.fprintf f "%a ;@\n"
+        (Pp.semicolon_seq ~print_env:{pe with break_lines= false} (Sil.pp_atom pe))
+        fp.pi_fp
   in
   if fp.pi_fp <> [] || fp.sigma_fp <> [] then
     F.fprintf f "@\n[footprint@\n  @[%a%a@]  ]" pp_pi ()
-      (Pp.semicolon_seq pe (Sil.pp_hpred pe))
+      (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred pe))
       fp.sigma_fp
 
 let pp_texp_simple pe =
@@ -141,7 +143,7 @@ let pp_hpred_stackvar pe0 f (hpred: Sil.hpred) =
 let pp_sub pe f = function
   | `Exp sub
    -> let pi_sub = List.map ~f:(fun (id, e) -> Sil.Aeq (Var id, e)) (Sil.sub_to_list sub) in
-      Pp.semicolon_seq_oneline pe (Sil.pp_atom pe) f pi_sub
+      Pp.semicolon_seq ~print_env:{pe with break_lines= false} (Sil.pp_atom pe) f pi_sub
   | `Typ _
    -> F.fprintf f "Printing typ_subst not implemented."
 
@@ -160,19 +162,19 @@ let pp_sub_entry pe0 f entry =
 
 (** Pretty print a substitution as a list of (ident,exp) pairs *)
 let pp_subl pe =
-  if Config.smt_output then Pp.semicolon_seq pe (pp_sub_entry pe)
-  else Pp.semicolon_seq_oneline pe (pp_sub_entry pe)
+  if Config.smt_output then Pp.semicolon_seq ~print_env:pe (pp_sub_entry pe)
+  else Pp.semicolon_seq ~print_env:{pe with break_lines= false} (pp_sub_entry pe)
 
 (** Pretty print a pi. *)
 let pp_pi pe =
-  if Config.smt_output then Pp.semicolon_seq pe (Sil.pp_atom pe)
-  else Pp.semicolon_seq_oneline pe (Sil.pp_atom pe)
+  if Config.smt_output then Pp.semicolon_seq ~print_env:pe (Sil.pp_atom pe)
+  else Pp.semicolon_seq ~print_env:{pe with break_lines= false} (Sil.pp_atom pe)
 
 (** Dump a pi. *)
 let d_pi (pi: pi) = L.add_print_action (PTpi, Obj.repr pi)
 
 (** Pretty print a sigma. *)
-let pp_sigma pe = Pp.semicolon_seq pe (Sil.pp_hpred pe)
+let pp_sigma pe = Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred pe)
 
 (** Split sigma into stack and nonstack parts.
     The boolean indicates whether the stack should only include local variales. *)
@@ -190,7 +192,8 @@ let pp_sigma_simple pe env fmt sigma =
   let sigma_stack, sigma_nonstack = sigma_get_stack_nonstack false sigma in
   let pp_stack fmt _sg =
     let sg = List.sort ~cmp:Sil.compare_hpred _sg in
-    if sg <> [] then Format.fprintf fmt "%a" (Pp.semicolon_seq pe (pp_hpred_stackvar pe)) sg
+    if sg <> [] then
+      Format.fprintf fmt "%a" (Pp.semicolon_seq ~print_env:pe (pp_hpred_stackvar pe)) sg
   in
   let pp_nl fmt doit =
     if doit then
@@ -200,7 +203,7 @@ let pp_sigma_simple pe env fmt sigma =
       | LATEX
        -> Format.fprintf fmt " ; \\\\@\n"
   in
-  let pp_nonstack fmt = Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env)) fmt in
+  let pp_nonstack fmt = Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)) fmt in
   if sigma_stack <> [] || sigma_nonstack <> [] then
     Format.fprintf fmt "%a%a%a" pp_stack sigma_stack pp_nl
       (sigma_stack <> [] && sigma_nonstack <> [])
@@ -259,11 +262,11 @@ let pp_hpara_simple _pe env n f pred =
   match pe.kind with
   | TEXT | HTML
    -> F.fprintf f "P%d = %a%a" n (pp_evars pe) pred.Sil.evars
-        (Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env)))
+        (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
         pred.Sil.body
   | LATEX
    -> F.fprintf f "P_{%d} = %a%a\\\\" n (pp_evars pe) pred.Sil.evars
-        (Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env)))
+        (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
         pred.Sil.body
 
 (** Print an hpara_dll in simple mode *)
@@ -273,11 +276,11 @@ let pp_hpara_dll_simple _pe env n f pred =
   match pe.kind with
   | TEXT | HTML
    -> F.fprintf f "P%d = %a%a" n (pp_evars pe) pred.Sil.evars_dll
-        (Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env)))
+        (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
         pred.Sil.body_dll
   | LATEX
    -> F.fprintf f "P_{%d} = %a%a" n (pp_evars pe) pred.Sil.evars_dll
-        (Pp.semicolon_seq pe (Sil.pp_hpred_env pe (Some env)))
+        (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
         pred.Sil.body_dll
 
 (** Create an environment mapping (ident) expressions to the program variables containing them *)
@@ -1654,13 +1657,13 @@ module Normalize = struct
       else
         let p'' =
           match a' with
-            | Aeq (Exp.Var i, e) when not (Sil.ident_in_exp i e)
-             -> let mysub = Sil.subst_of_list [(i, e)] in
-                let sigma_fp' = sigma_normalize tenv mysub p'.sigma_fp in
-                let pi_fp' = a' :: pi_normalize tenv mysub sigma_fp' p'.pi_fp in
-                footprint_normalize tenv (set p' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp')
-            | _
-             -> footprint_normalize tenv (set p' ~pi_fp:(a' :: p'.pi_fp))
+          | Aeq (Exp.Var i, e) when not (Sil.ident_in_exp i e)
+           -> let mysub = Sil.subst_of_list [(i, e)] in
+              let sigma_fp' = sigma_normalize tenv mysub p'.sigma_fp in
+              let pi_fp' = a' :: pi_normalize tenv mysub sigma_fp' p'.pi_fp in
+              footprint_normalize tenv (set p' ~pi_fp:pi_fp' ~sigma_fp:sigma_fp')
+          | _
+           -> footprint_normalize tenv (set p' ~pi_fp:(a' :: p'.pi_fp))
         in
         unsafe_cast_to_normal p''
 

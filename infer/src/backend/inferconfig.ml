@@ -154,7 +154,7 @@ module FileOrProcMatcher = struct
     in
     let pp_method_pattern fmt mp =
       let pp_params fmt l =
-        Format.fprintf fmt "[%a]" (Pp.semicolon_seq_oneline Pp.text pp_string) l
+        Format.fprintf fmt "[%a]" (Pp.semicolon_seq ~print_env:Pp.text pp_string) l
       in
       Format.fprintf fmt "%a%a%a" (pp_key_value pp_string) ("class", Some mp.class_name)
         (pp_key_value pp_string) ("method", mp.method_name) (pp_key_value pp_params)

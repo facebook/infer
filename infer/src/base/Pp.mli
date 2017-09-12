@@ -9,6 +9,7 @@
  *)
 
 open! IStd
+module F = Format
 
 (** Pretty Printing} *)
 
@@ -32,6 +33,8 @@ val equal_print_kind : print_kind -> print_kind -> bool
 type env =
   { opt: simple_kind  (** Current option for simple printing *)
   ; kind: print_kind  (** Current kind of printing *)
+  ; break_lines: bool
+        (** whether to let Format add its own line breaks or not (false by default) *)
   ; cmap_norm: colormap  (** Current colormap for the normal part *)
   ; cmap_foot: colormap  (** Current colormap for the footprint part *)
   ; color: color  (** Current color *)
@@ -65,24 +68,26 @@ val latex : color -> env
 val color_string : color -> string
 (** string representation of colors *)
 
-val seq : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a list -> unit
-(** Pretty print a space-separated sequence *)
+val seq :
+  ?print_env:env -> ?sep:string -> ?sep_html:string -> ?sep_latex:string
+  -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
+(** Pretty print a sequence with [sep] followed by a space between each element. By default,
+    [print_env] is [text], [sep] is "", and [sep_html] and [sep_latex] set to [sep]. *)
 
-val comma_seq : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a list -> unit
-(** Pretty print a comma-separated sequence *)
+val comma_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
+(** Pretty print a comma-separated sequence. *)
 
-val semicolon_seq : env -> (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a list -> unit
+val semicolon_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 (** Pretty print a ;-separated sequence *)
 
-val semicolon_seq_oneline :
-  env -> (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a list -> unit
-(** Pretty print a ;-separated sequence on one line *)
-
-val or_seq : env -> (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a list -> unit
+val or_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 (** Pretty print a or-separated sequence *)
 
-val current_time : Format.formatter -> unit -> unit
+val to_string : f:('a -> string) -> F.formatter -> 'a -> unit
+(** turn a "to_string" function into a "pp_foo" *)
+
+val current_time : F.formatter -> unit -> unit
 (** Print the current time and date in a format similar to the "date" command *)
 
-val elapsed_time : Format.formatter -> unit -> unit
+val elapsed_time : F.formatter -> unit -> unit
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
