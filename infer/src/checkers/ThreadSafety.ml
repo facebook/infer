@@ -485,6 +485,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       match List.rev accesses with
       | (AccessPath.FieldAccess base_field) :: (AccessPath.FieldAccess container_field) :: _
+        when Typ.Procname.is_java callee_pname
        -> let base_typename =
             Typ.Name.Java.from_string (Typ.Fieldname.java_get_class base_field)
           in
