@@ -322,7 +322,7 @@ module Scope = struct
           handle_instructions_block new_var_map (new_vars_in_stmt @ vars_in_scope) break_count rest
     in
     (* TODO handle following stmts: *)
-    (* ContinueStmt _ | GotoStmt _ |  | LabelStmt_ *)
+    (* GotoStmt _ |  | LabelStmt_ *)
     match stmt with
     | CompoundStmt (stmt_info, stmt_list)
      -> let vars, new_var_map =
@@ -333,7 +333,7 @@ module Scope = struct
         add_scope_vars_to_destroy new_var_map stmt_info vars_to_destroy
     | ReturnStmt (stmt_info, _)
      -> add_scope_vars_to_destroy var_map stmt_info vars_in_scope
-    | BreakStmt (stmt_info, _)
+    | BreakStmt (stmt_info, _) | ContinueStmt (stmt_info, _)
      -> let vars_to_destroy = List.take vars_in_scope (List.length vars_in_scope - break_count) in
         add_scope_vars_to_destroy var_map stmt_info vars_to_destroy
     | WhileStmt (_, stmt_list)

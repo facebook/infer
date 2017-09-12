@@ -335,13 +335,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let call_instr = Sil.Call (ret_id', function_sil, params, sil_loc, call_flags) in
     {empty_res_trans with instrs= [call_instr]; exps= ret_exps; initd_exps}
 
-  let continueStmt_trans trans_state =
-    match trans_state.continuation with
-    | Some bn
-     -> {empty_res_trans with root_nodes= bn.continue}
-    | _
-     -> assert false
-
   let stringLiteral_trans trans_state expr_info str =
     let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.CContext.tenv in
     let exp = Exp.Const (Const.Cstr str) in
@@ -2926,6 +2919,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | _
      -> assert false
 
+  and continueStmt_trans trans_state stmt_info =
+    match trans_state.continuation with
+    | Some bn
+     -> let trans_state' = {trans_state with succ_nodes= bn.continue} in
+        let destr_trans_result = inject_destructors trans_state' stmt_info in
+        if destr_trans_result.root_nodes <> [] then destr_trans_result
+        else {empty_res_trans with root_nodes= bn.continue}
+    | _
+     -> assert false
+
   (* Expect that this doesn't happen *)
   and trans_into_undefined_expr trans_state expr_info =
     let tenv = trans_state.context.CContext.tenv in
@@ -3080,8 +3083,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> objCStringLiteral_trans trans_state stmt_info stmts info
     | BreakStmt (stmt_info, _)
      -> breakStmt_trans trans_state stmt_info
-    | ContinueStmt _
-     -> continueStmt_trans trans_state
+    | ContinueStmt (stmt_info, _)
+     -> continueStmt_trans trans_state stmt_info
     | ObjCAtSynchronizedStmt (_, stmt_list)
      -> objCAtSynchronizedStmt_trans trans_state stmt_list
     | ObjCIndirectCopyRestoreExpr (_, stmt_list, _)
