@@ -61,10 +61,8 @@ DEFINE-CHECKER BAD_POINTER_COMPARISON = {
 						is_nsnumber
 					);
 
-  LET etx =
-		IN-EXCLUSIVE-NODE IfStmt, ForStmt, WhileStmt, ConditionalOperator WITH-TRANSITION Cond
-				(eu)
-		HOLDS-EVENTUALLY;
+  LET etx = eu HOLDS-NEXT WITH-TRANSITION Cond;
+
 
  	SET report_when =
 					WHEN

@@ -58,7 +58,7 @@ type t =
   | EU of transitions option * t * t
   | EH of ALVar.alexp list * t
   | ET of ALVar.alexp list * transitions option * t
-  | ETX of ALVar.alexp list * transitions option * t
+
 
 let has_transition phi =
   match phi with
@@ -81,7 +81,6 @@ let has_transition phi =
   | EG (trans_opt, _)
   | EU (trans_opt, _, _)
   | ET (_, trans_opt, _)
-  | ETX (_, trans_opt, _)
    -> Option.is_some trans_opt
 
 (* "set" clauses are used for defining mandatory variables that will be used
@@ -192,9 +191,6 @@ module Debug = struct
           (nodes_to_string arglist) pp_formula phi
     | ET (arglist, trans, phi)
      -> Format.fprintf fmt "ET[%a][%a](%a)" (Pp.comma_seq Format.pp_print_string)
-          (nodes_to_string arglist) pp_transition trans pp_formula phi
-    | ETX (arglist, trans, phi)
-     -> Format.fprintf fmt "ETX[%a][%a](%a)" (Pp.comma_seq Format.pp_print_string)
           (nodes_to_string arglist) pp_transition trans pp_formula phi
 
   let pp_ast ~ast_node_to_highlight ?(prettifier= Fn.id) fmt root =
@@ -982,27 +978,6 @@ and eval_ET tl trs phi an lcxt =
   in
   eval_formula f an lcxt
 
-and eval_ETX tl trs phi an lcxt =
-  let lcxt', tl' =
-    match (lcxt.CLintersContext.et_evaluation_node, Ctl_parser_types.ast_node_has_kind tl an) with
-    | None, true
-     -> let an_alexp = ALVar.Const (Ctl_parser_types.ast_node_kind an) in
-        ( { lcxt with
-            CLintersContext.et_evaluation_node=
-              Some (Ctl_parser_types.ast_node_unique_string_id an) }
-        , [an_alexp] )
-    | _, _
-     -> (lcxt, tl)
-  in
-  let f =
-    match trs with
-    | Some _
-     -> EF (None, InNode (tl', EX (trs, phi)))
-    | None
-     -> EF (None, InNode (tl', phi))
-  in
-  eval_formula f an lcxt'
-
 (* Formulas are evaluated on a AST node an and a linter context lcxt *)
 and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
   debug_eval_begin (debug_create_payload an f lcxt) ;
@@ -1045,7 +1020,5 @@ and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
         eval_formula (And (f1, EX (trans, EG (trans, f1)))) an lcxt
     | ET (tl, sw, phi)
      -> eval_ET tl sw phi an lcxt
-    | ETX (tl, sw, phi)
-     -> eval_ETX tl sw phi an lcxt
   in
   debug_eval_end res ; res

@@ -261,8 +261,7 @@ let rec apply_substitution f sub =
    -> EG (trans, apply_substitution f1 sub)
   | ET (ntl, sw, f1)
    -> ET (sub_list_param ntl, sw, apply_substitution f1 sub)
-  | ETX (ntl, sw, f1)
-   -> ETX (sub_list_param ntl, sw, apply_substitution f1 sub)
+
 
 let expand_formula phi _map _error_msg =
   let fail_with_circular_macro_definition name error_msg =
@@ -323,8 +322,6 @@ let expand_formula phi _map _error_msg =
      -> EG (trans, expand f1 map error_msg)
     | ET (tl, sw, f1)
      -> ET (tl, sw, expand f1 map error_msg)
-    | ETX (tl, sw, f1)
-     -> ETX (tl, sw, expand f1 map error_msg)
   in
   expand phi _map _error_msg
 

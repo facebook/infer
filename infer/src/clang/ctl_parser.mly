@@ -51,7 +51,6 @@
 %token LESS_THAN
 %token GREATER_THAN
 %token ET
-%token ETX
 %token WITH_TRANSITION
 %token WHEN
 %token HOLDS_IN_NODE
@@ -280,9 +279,6 @@ formula:
   | ET node_list WITH_TRANSITION transition_label formula_EF
      { L.(debug Linters Verbose) "\tParsed ET with transition '%a'@\n" CTL.Debug.pp_transition $4;
        CTL.ET ($2, $4, $5)}
-  | ETX node_list WITH_TRANSITION transition_label formula_EF
-     { L.(debug Linters Verbose) "\tParsed ETX ith transition '%a'@\n" CTL.Debug.pp_transition $4;
-       CTL.ETX ($2, $4, $5)}
   | EX WITH_TRANSITION transition_label formula_with_paren
     { L.(debug Linters Verbose) "\tParsed EX with transition '%a'@\n" CTL.Debug.pp_transition $3;
       CTL.EX ($3, $4)}
