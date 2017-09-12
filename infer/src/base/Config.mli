@@ -473,6 +473,10 @@ val linters_def_file : string list
 
 val linters_def_folder : string list
 
+type linter_doc_url = {linter: string; doc_url: string}
+
+val linters_doc_url : linter_doc_url list
+
 val linters_developer_mode : bool
 
 val linters_ignore_clang_failures : bool

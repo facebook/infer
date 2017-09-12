@@ -169,6 +169,17 @@ let string_to_issue_mode m =
    -> L.internal_error "@\n[ERROR] Mode %s does not exist. Please specify ON/OFF@\n" s ;
       assert false
 
+let post_process_linter_definition (linter: linter) =
+  match
+    List.find Config.linters_doc_url ~f:(fun (linter_doc_url: Config.linter_doc_url) ->
+        String.equal linter.issue_desc.id linter_doc_url.linter )
+  with
+  | Some linter_doc_url
+   -> let issue_desc = {linter.issue_desc with doc_url= Some linter_doc_url.doc_url} in
+      {linter with issue_desc}
+  | None
+   -> linter
+
 (** Convert a parsed checker in list of linters *)
 let create_parsed_linters linters_def_file checkers : linter list =
   let open CIssue in
@@ -215,7 +226,10 @@ let create_parsed_linters linters_def_file checkers : linter list =
     L.(debug Linters Medium) "@\nMaking condition and issue desc for checker '%s'@\n" checker.id ;
     L.(debug Linters Medium) "@\nCondition =@\n    %a@\n" CTL.Debug.pp_formula condition ;
     L.(debug Linters Medium) "@\nIssue_desc = %a@\n" CIssue.pp_issue issue_desc ;
-    {condition; issue_desc; def_file= Some linters_def_file; whitelist_paths; blacklist_paths}
+    let linter =
+      {condition; issue_desc; def_file= Some linters_def_file; whitelist_paths; blacklist_paths}
+    in
+    post_process_linter_definition linter
   in
   List.map ~f:do_one_checker checkers
 

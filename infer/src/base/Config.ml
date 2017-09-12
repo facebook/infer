@@ -1249,6 +1249,11 @@ and linters_def_folder =
   in
   linters_def_folder
 
+and linters_doc_url =
+  CLOpt.mk_string_list ~long:"linters-doc-url"
+    ~in_help:CLOpt.([(Capture, manual_clang_linters)])
+    "Specify custom documentation URL for some linter that overrides the default one. Useful if your project has specific ways of fixing a lint error that is not true in general or public info. Format: linter_name:doc_url."
+
 and linters_ignore_clang_failures =
   CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
@@ -1894,6 +1899,20 @@ let process_iphoneos_target_sdk_version_path_regex args =
   in
   List.map ~f:process_iphoneos_target_sdk_version_path_regex args
 
+type linter_doc_url = {linter: string; doc_url: string}
+
+let process_linters_doc_url args =
+  let linters_doc_url arg =
+    match String.rsplit2 ~on:':' arg with
+    | Some (linter, doc_url)
+     -> {linter; doc_url}
+    | None
+     -> L.(die UserError)
+          "Incorrect format for the option linters-doc-url. The correct format is linter:doc_url but got %s"
+          arg
+  in
+  List.map ~f:linters_doc_url args
+
 (** Freeze initialized configuration values *)
 
 let anon_args = !anon_args
@@ -2099,6 +2118,8 @@ and linter = !linter
 and linters_def_file = !linters_def_file
 
 and linters_def_folder = !linters_def_folder
+
+and linters_doc_url = process_linters_doc_url !linters_doc_url
 
 and linters_developer_mode = !linters_developer_mode
 
