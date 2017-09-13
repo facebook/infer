@@ -895,7 +895,7 @@ and ( bo_debug
   and keep_going =
     CLOpt.mk_bool ~deprecated_no:["-no-failures-allowed"] ~long:"keep-going"
       ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:true "Keep going when the analysis encounters a failure"
+      ~default:(not CLOpt.strict_mode) "Keep going when the analysis encounters a failure"
   and reports_include_ml_loc =
     CLOpt.mk_bool ~deprecated:["with_infer_src_loc"] ~long:"reports-include-ml-loc"
       "Include the location in the Infer source code from where reports are generated"

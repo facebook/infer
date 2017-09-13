@@ -617,10 +617,6 @@ devsetup: Makefile.autoconf
 	  echo '$(TERM_INFO)  eval $$(opam config env)$(TERM_RESET)' >&2; \
 	fi
 
-# print any variable for Makefile debugging
-print-%:
-	$(QUIET)echo '$*=$($*)'
-
 # print list of targets
 .PHONY: show-targets
 show-targets:

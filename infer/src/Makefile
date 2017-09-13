@@ -295,7 +295,3 @@ clean:
 .PHONY: fmt
 fmt:
 	@$(MAKE) -C $(ROOT_DIR) fmt
-
-# print any variable for Makefile debugging
-print-%:
-	$(QUIET)echo '$*=$($*)'
