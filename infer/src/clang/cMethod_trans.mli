@@ -59,3 +59,5 @@ val add_default_method_for_class :
   CFrontend_config.translation_unit_context -> Typ.Name.t -> Clang_ast_t.decl_info -> unit
 
 val get_procname_from_cpp_lambda : CContext.t -> Clang_ast_t.decl -> Typ.Procname.t
+
+val get_captures_from_cpp_lambda : Clang_ast_t.decl -> Clang_ast_t.lambda_capture_info list

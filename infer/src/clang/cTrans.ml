@@ -2572,7 +2572,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | _
      -> assert false
 
-  and lambdaExpr_trans trans_state stmt_info expr_info {Clang_ast_t.lei_lambda_decl; lei_captures} =
+  and lambdaExpr_trans trans_state stmt_info expr_info {Clang_ast_t.lei_lambda_decl} =
     let open CContext in
     let qual_type = expr_info.Clang_ast_t.ei_qual_type in
     let context = trans_state.context in
@@ -2611,6 +2611,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | None, Some _
        -> L.die InternalError "Capture-init with init, but no capture"
     in
+    let lei_captures = CMethod_trans.get_captures_from_cpp_lambda lei_lambda_decl in
     let trans_results, captured_vars =
       List.fold_right ~f:translate_captured ~init:([], []) lei_captures
     in
