@@ -431,10 +431,7 @@ let log_frontend_issue translation_unit_context method_decl_opt key (issue_desc:
   let exn = Exceptions.Frontend_warning ((issue_desc.id, issue_desc.name), err_desc, __POS__) in
   let trace = [Errlog.make_trace_element 0 issue_desc.loc "" []] in
   let err_kind = issue_desc.severity in
-  let method_name =
-    CAst_utils.full_name_of_decl_opt method_decl_opt |> QualifiedCppName.to_qual_string
-  in
-  let key = Hashtbl.hash (key ^ method_name) in
+  let key = Hashtbl.hash key in
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc:issue_desc.loc ~ltr:trace
     ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
 

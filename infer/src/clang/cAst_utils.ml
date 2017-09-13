@@ -282,6 +282,9 @@ let generate_key_decl decl =
   let name = full_name_of_decl_opt (Some decl) in
   Buffer.add_string buffer (string_of_int (get_tag decl)) ;
   Buffer.add_string buffer (QualifiedCppName.to_qual_string name) ;
+  Logging.(debug Capture Medium)
+    "Generated key for decl with name %s and tag %d is %s" (QualifiedCppName.to_qual_string name)
+    (get_tag decl) (Buffer.contents buffer) ;
   Buffer.contents buffer
 
 let rec get_super_if decl =

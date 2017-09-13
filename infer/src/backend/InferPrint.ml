@@ -67,6 +67,18 @@ let get_bug_hash (kind: string) (type_str: string) (procedure_id: string) (filen
     (node_key: int) (error_desc: Localise.error_desc) =
   let qualifier_tag_call_procedure = Localise.error_desc_get_tag_call_procedure error_desc in
   let qualifier_tag_value = Localise.error_desc_get_tag_value error_desc in
+  Logging.progress
+   "\nCreating hash from kind=%s, type_str=%s, \
+   procedure_id=%s, filename=%s, node_key=%d, \
+   qualifier_tag_call_procedure=%s, qualifier_tag_value=%s  @."
+   kind
+   type_str
+   procedure_id
+   filename
+   node_key
+   qualifier_tag_call_procedure
+   qualifier_tag_value
+   ;
   Hashtbl.hash
     ( kind
     , type_str

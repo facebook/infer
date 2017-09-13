@@ -132,7 +132,24 @@ let get_successor_decls_of_stmt stmt =
    -> []
 
 let get_successor_decls_of_decl decl =
-  match Clang_ast_proj.get_decl_context_tuple decl with Some (decls, _) -> decls | None -> []
+  let open Clang_ast_t in
+  match Clang_ast_proj.get_decl_context_tuple decl with
+  | Some (decls, _)
+   -> decls
+  | None ->
+    match decl with
+    | FunctionDecl (_, _, _, fdi)
+    | CXXMethodDecl (_, _, _, fdi, _)
+    | CXXConstructorDecl (_, _, _, fdi, _)
+    | CXXConversionDecl (_, _, _, fdi, _)
+    | CXXDestructorDecl (_, _, _, fdi, _)
+     -> fdi.Clang_ast_t.fdi_parameters
+    | ObjCMethodDecl (_, _, mdi)
+     -> mdi.Clang_ast_t.omdi_parameters
+    | BlockDecl (_, block_decl_info)
+     -> block_decl_info.Clang_ast_t.bdi_parameters
+    | _
+     -> []
 
 let get_successor_stmts_of_decl decl =
   let open Clang_ast_t in

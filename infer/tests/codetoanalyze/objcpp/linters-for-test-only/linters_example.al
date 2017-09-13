@@ -139,3 +139,13 @@ DEFINE-CHECKER TEST_PARAMETER_SELECTOR_BY_TYPE = {
       HOLDS-IN-NODE ObjCMessageExpr;
   SET message = "Do not construct the Component action with a selector only...`";
 };
+
+DEFINE-CHECKER NEW_COMPONENT_USING_MEM_MODEL = {
+  SET report_when =
+          WHEN method_return_type("instancetype")
+          AND HOLDS-NEXT WITH-TRANSITION Parameters (has_type("REGEXP('FBMem.*')*"))
+          AND declaration_has_name(REGEXP("^new.*:$"))
+          HOLDS-IN-NODE ObjCMethodDecl;
+
+  SET message = "Consider using fragment models instead.";
+};
