@@ -12,6 +12,8 @@ module F = Format
 
 (** Pretty Printing} *)
 
+module CLOpt = CommandLineOption
+
 (** Kind of simple printing: default or with full types *)
 type simple_kind = SIM_DEFAULT | SIM_WITH_TYP
 
@@ -134,4 +136,19 @@ let elapsed_time fmt () =
   let elapsed = Unix.gettimeofday () -. Utils.initial_timeofday in
   F.fprintf fmt "%f" elapsed
 
-let to_string ~f fmt x = F.fprintf fmt "%s" (f x)
+let string fmt s = F.fprintf fmt "%s" s
+
+let to_string ~f fmt x = string fmt (f x)
+
+let pp_argfile fmt fname =
+  try
+    F.fprintf fmt "  Contents of '%s'@\n" fname ;
+    In_channel.iter_lines ~f:(F.fprintf fmt "  %s@\n") (In_channel.create fname) ;
+    F.fprintf fmt "  /Contents of '%s'@\n" fname
+  with exn -> F.fprintf fmt "  Error reading file '%s':@\n  %a@\n" fname Exn.pp exn
+
+let cli_args fmt args =
+  F.fprintf fmt "%a@\n%a"
+    (seq ~sep:(String.of_char CLOpt.env_var_sep) string)
+    args (seq ~sep:"\n" pp_argfile)
+    (List.filter_map ~f:(String.chop_prefix ~prefix:"@") args)

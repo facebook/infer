@@ -424,6 +424,10 @@ val immutable_cast : bool
 
 val infer_cache : string option
 
+val infer_is_clang : bool
+
+val infer_is_javac : bool
+
 val iphoneos_target_sdk_version : string option
 
 type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string}
@@ -490,8 +494,6 @@ val load_analysis_results : string option
 val log_file : string
 
 val makefile_cmdline : string
-
-val maven : bool
 
 val max_nesting : int option
 

@@ -62,7 +62,7 @@ let setup_results_dir () =
   match Config.command with
   | Analyze
    -> assert_results_dir "have you run capture before?"
-  | Clang | Report | ReportDiff
+  | Report | ReportDiff
    -> create_results_dir ()
   | Diff
    -> remove_results_dir () ; create_results_dir ()
@@ -70,11 +70,22 @@ let setup_results_dir () =
    -> let driver_mode = Lazy.force Driver.mode_from_command_line in
       if not
            ( Driver.(equal_mode driver_mode Analyze)
-           || Config.(buck || continue_capture || maven || reactive_mode) )
+           ||
+           Config.(buck || continue_capture || infer_is_clang || infer_is_javac || reactive_mode) )
       then remove_results_dir () ;
       create_results_dir ()
   | Explore
    -> assert_results_dir "please run an infer analysis first"
+
+let log_environment_info () =
+  L.environment_info "CWD = %s@\n" (Sys.getcwd ()) ;
+  L.environment_info "Project root = %s@\n" Config.project_root ;
+  let infer_args =
+    Sys.getenv CLOpt.args_env_var |> Option.map ~f:(String.split ~on:CLOpt.env_var_sep)
+    |> Option.value ~default:["<not set>"]
+  in
+  L.environment_info "INFER_ARGS = %a" Pp.cli_args infer_args ;
+  L.environment_info "command line arguments: %a" Pp.cli_args (Array.to_list Sys.argv)
 
 let () =
   ( if Config.linters_validate_syntax_only then
@@ -85,6 +96,7 @@ let () =
        -> print_endline e ; L.exit 3 ) ;
   if Config.print_builtins then Builtin.print_and_exit () ;
   setup_results_dir () ;
+  log_environment_info () ;
   if Config.debug_mode then L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
   match Config.command with
   | Analyze
@@ -97,12 +109,6 @@ let () =
       L.environment_info "Starting analysis %a" pp_cluster_opt Config.cluster_cmdline ;
       InferAnalyze.register_perf_stats_report () ;
       Driver.analyze_and_report Analyze ~changed_files:(Driver.read_config_changed_files ())
-  | Clang
-   -> let prog, args =
-        match Array.to_list Sys.argv with prog :: args -> (prog, args) | [] -> assert false
-        (* Sys.argv is never empty *)
-      in
-      ClangWrapper.exe ~prog ~args
   | Report
    -> let report_json =
         match Config.from_json_report with

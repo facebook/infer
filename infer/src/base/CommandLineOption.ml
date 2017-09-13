@@ -88,7 +88,6 @@ let anon_arg_action_of_parse_mode parse_mode =
 type command =
   | Analyze
   | Capture
-  | Clang
   | Compile
   | Diff
   | Explore
@@ -104,7 +103,6 @@ let infer_exe_name = "infer"
 let command_to_name =
   [ (Analyze, "analyze")
   ; (Capture, "capture")
-  ; (Clang, "clang")
   ; (Compile, "compile")
   ; (Diff, "diff")
   ; (Explore, "explore")
@@ -925,17 +923,16 @@ let parse ?config_file ~usage action initial_command =
     add_parsed_args_to_args_to_export () ; curr_usage
   in
   let to_export =
-    (* We have to be careful not to add too much data to the environment because the size of the
-       environment contributes to the length of the command to be run. If the environment + CLI is
-       too big, running any command will fail with a cryptic "exit code 127" error. Use an argfile
-       to prevent this from happening *)
-    let file = Filename.temp_file "args_" "" in
-    let quoted_file_args =
-      List.map (decode_env_to_argv !args_to_export) ~f:(fun arg ->
-          if String.contains arg '\'' then arg else F.sprintf "'%s'" arg )
-    in
-    Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc quoted_file_args) ;
-    "@" ^ file
+    let argv_to_export = decode_env_to_argv !args_to_export in
+    if argv_to_export <> [] then
+      (* We have to be careful not to add too much data to the environment because the size of the
+         environment contributes to the length of the command to be run. If the environment + CLI is
+         too big, running any command will fail with a cryptic "exit code 127" error. Use an argfile
+         to prevent this from happening *)
+      let file = Filename.temp_file "args_" "" in
+      Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc argv_to_export) ;
+      "@" ^ file
+    else ""
   in
   Unix.putenv ~key:args_env_var ~data:to_export ; (!curr_command, curr_usage)
 

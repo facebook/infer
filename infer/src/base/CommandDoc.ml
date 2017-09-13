@@ -197,9 +197,7 @@ $(b,infer) $(i,[options])|}
     "cxx": false,
     "infer-blacklist-files-containing": ["@generated","@Generated"]
   }|}
-      ]
-    ~see_also:(List.filter ~f:(function CLOpt.Clang -> false | _ -> true) CLOpt.all_commands)
-    "infer"
+      ] ~see_also:CLOpt.all_commands "infer"
 
 let report =
   mk_command_doc ~title:"Infer Reporting" ~short_description:"compute and manipulate infer results"

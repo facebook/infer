@@ -355,17 +355,14 @@ let clang_exe_aliases =
   ; "g++"
   ; "gcc" ]
 
-let initial_command =
+let exe_basename =
   (* Sys.executable_name tries to do clever things which we must avoid, use argv[0] instead *)
-  let exe_basename = Filename.basename Sys.argv.(0) in
-  let is_clang = List.mem ~equal:String.equal clang_exe_aliases in
-  match CLOpt.command_of_exe_name exe_basename with
-  | Some _ as command
-   -> command
-  | None when is_clang exe_basename
-   -> Some CLOpt.Clang
-  | None
-   -> None
+  Filename.basename Sys.argv.(0)
+
+let infer_is_clang = List.mem ~equal:String.equal clang_exe_aliases exe_basename
+
+let initial_command =
+  match CLOpt.command_of_exe_name exe_basename with Some _ as command -> command | None -> None
 
 let bin_dir =
   (* Resolve symlinks to get to the real executable, which is located in [bin_dir]. *)
@@ -426,18 +423,12 @@ let startup_action =
   let open CLOpt in
   if infer_is_javac then Javac
   else if !Sys.interactive then NoParse
-  else
-    match initial_command with
-    | Some Clang
-     -> NoParse
-    | None | Some (Analyze | Capture | Compile | Diff | Explore | Report | ReportDiff | Run)
-     -> InferCommand
+  else if infer_is_clang then NoParse
+  else InferCommand
 
 let exe_usage =
   let exe_command_name =
     match initial_command with
-    | Some CLOpt.Clang
-     -> None (* users cannot see this *)
     | Some command
      -> Some (CLOpt.name_of_command command)
     | None
@@ -480,24 +471,17 @@ let anon_args = CLOpt.mk_anon ()
 let () =
   let on_unknown_arg_from_command (cmd: CLOpt.command) =
     match cmd with
-    | Clang
-     -> assert false (* filtered out *)
     | Report
      -> `Add
     | Analyze | Capture | Compile | Diff | Explore | ReportDiff | Run
      -> `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
-  List.filter ~f:(Fn.non CLOpt.(equal_command Clang)) CLOpt.all_commands
-  |> List.iter ~f:(fun cmd ->
-         let {CommandDoc.name; command_doc} = CommandDoc.data_of_command cmd in
-         let on_unknown_arg = on_unknown_arg_from_command cmd in
-         let deprecated_long =
-           if CLOpt.(equal_command ReportDiff) cmd then Some "diff" else None
-         in
-         CLOpt.mk_subcommand cmd ~name ?deprecated_long ~on_unknown_arg (Some command_doc) )
-
-let () = CLOpt.mk_subcommand CLOpt.Clang ~name:"clang" ~on_unknown_arg:`Skip None
+  List.iter CLOpt.all_commands ~f:(fun cmd ->
+      let {CommandDoc.name; command_doc} = CommandDoc.data_of_command cmd in
+      let on_unknown_arg = on_unknown_arg_from_command cmd in
+      let deprecated_long = if CLOpt.(equal_command ReportDiff) cmd then Some "diff" else None in
+      CLOpt.mk_subcommand cmd ~name ?deprecated_long ~on_unknown_arg (Some command_doc) )
 
 let abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1 ~meta:"int"
@@ -877,8 +861,7 @@ and ( bo_debug
     , write_dotty ) =
   let all_generic_manuals =
     List.filter_map CLOpt.all_commands ~f:(fun cmd ->
-        if List.mem ~equal:CLOpt.equal_command CLOpt.([Clang; Explore]) cmd then None
-        else Some (cmd, manual_generic) )
+        if CLOpt.equal_command Explore cmd then None else Some (cmd, manual_generic) )
   in
   let bo_debug =
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
