@@ -9,84 +9,24 @@
 
 package java.lang;
 
+import com.facebook.infer.builtins.InferBuiltins;
 import com.facebook.infer.builtins.InferUndefined;
 
-import java.io.*;
+import java.io.FileDescriptor;
 
 public abstract class Process {
 
-  protected final int pid;
-  protected final InputStream inputStream;
-  protected final OutputStream outputStream;
-  protected final InputStream errorStream;
-
   public Process(int pid, FileDescriptor in, FileDescriptor out, FileDescriptor err) {
-        this.pid = pid;
-        this.inputStream = new ProcessInputStream(in);
-        this.outputStream = new ProcessOutputStream(out);
-        this.errorStream = new ProcessInputStream(err);
-    }
-    public int exitValue() {
-        return InferUndefined.int_undefined();
-    }
+    InferBuiltins.__set_file_attribute(this);
+  }
 
-    public InputStream getInputStream() {
-        return this.inputStream;
-    }
+  public void destroy() {
+    InferBuiltins.__set_mem_attribute(this);
+  }
 
-    public OutputStream getOutputStream() {
-        return this.outputStream;
-    }
-
-    public int waitFor() throws InterruptedException {
-        return InferUndefined.int_undefined();
-    }
-
-    public void destroy() {
-        try {
-            inputStream.close();
-        } catch (IOException e) {}
-        try {
-            outputStream.close();
-        } catch (IOException e) {}
-        try {
-            errorStream.close();
-        } catch (IOException e) {}
-    }
-
-    public Process destroyForcibly() {
-      destroy();
-      return this;
-    }
-
-    private static class ProcessInputStream extends FileInputStream {
-
-        private FileDescriptor fd;
-
-        private ProcessInputStream(FileDescriptor fd) {
-            super(fd);
-            this.fd = fd;
-        }
-
-        @Override
-        public void close() throws IOException {
-            super.close();
-        }
-    }
-
-    private static class ProcessOutputStream extends FileOutputStream {
-
-        private FileDescriptor fd;
-
-        private ProcessOutputStream(FileDescriptor fd) {
-            super(fd);
-            this.fd = fd;
-        }
-
-        @Override
-        public void close() throws IOException {
-            super.close();
-        }
-    }
+  public Process destroyForcibly() {
+    destroy();
+    return this;
+  }
 
 }
