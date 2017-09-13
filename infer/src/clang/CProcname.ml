@@ -176,6 +176,12 @@ module NoAstDecl = struct
     mk_objc_method class_name method_name method_kind
 end
 
+let objc_method_procname ?tenv decl_info method_name mdi =
+  let class_typename = get_class_typename ?tenv decl_info in
+  let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
+  let method_kind = Typ.Procname.objc_method_kind_of_bool is_instance in
+  mk_objc_method class_typename method_name method_kind
+
 let from_decl translation_unit_context ?tenv meth_decl =
   let open Clang_ast_t in
   match meth_decl with
@@ -192,11 +198,7 @@ let from_decl translation_unit_context ?tenv meth_decl =
       let class_typename = get_class_typename ?tenv decl_info in
       mk_cpp_method ?tenv class_typename method_name ~meth_decl mangled
   | ObjCMethodDecl (decl_info, name_info, mdi)
-   -> let class_typename = get_class_typename ?tenv decl_info in
-      let method_name = name_info.Clang_ast_t.ni_name in
-      let is_instance = mdi.Clang_ast_t.omdi_is_instance_method in
-      let method_kind = Typ.Procname.objc_method_kind_of_bool is_instance in
-      mk_objc_method class_typename method_name method_kind
+   -> objc_method_procname ?tenv decl_info name_info.Clang_ast_t.ni_name mdi
   | BlockDecl _
    -> let name =
         Config.anonymous_block_prefix ^ Config.anonymous_block_num_sep
@@ -206,3 +208,18 @@ let from_decl translation_unit_context ?tenv meth_decl =
   | _
    -> Logging.die InternalError "Expected method decl, but got %s."
         (Clang_ast_proj.get_decl_kind_string meth_decl)
+
+let from_decl_for_linters translation_unit_context method_decl =
+  let open Clang_ast_t in
+  match method_decl with
+  | ObjCMethodDecl (decl_info, name_info, mdi)
+   -> let method_name =
+        match String.split ~on:':' name_info.Clang_ast_t.ni_name with
+        | hd :: _
+         -> hd
+        | _
+         -> name_info.Clang_ast_t.ni_name
+      in
+      objc_method_procname decl_info method_name mdi
+  | _
+   -> from_decl translation_unit_context method_decl

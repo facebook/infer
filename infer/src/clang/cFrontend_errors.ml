@@ -276,7 +276,6 @@ let rec apply_substitution f sub =
   | ET (ntl, sw, f1)
    -> ET (sub_list_param ntl, sw, apply_substitution f1 sub)
 
-
 let expand_formula phi _map _error_msg =
   let fail_with_circular_macro_definition name error_msg =
     L.(die ExternalError) "Macro '%s' has a circular definition.@\n Cycle:@\n%s" name error_msg
@@ -415,15 +414,15 @@ let get_err_log translation_unit_context method_decl_opt =
   let procname =
     match method_decl_opt with
     | Some method_decl
-     -> CProcname.from_decl translation_unit_context method_decl
+     -> CProcname.from_decl_for_linters translation_unit_context method_decl
     | None
      -> Typ.Procname.Linters_dummy_method
   in
   LintIssues.get_err_log procname
 
 (** Add a frontend warning with a description desc at location loc to the errlog of a proc desc *)
-let log_frontend_issue translation_unit_context method_decl_opt key (issue_desc: CIssue.issue_desc)
-    linters_def_file =
+let log_frontend_issue translation_unit_context method_decl_opt (node: Ctl_parser_types.ast_node)
+    (issue_desc: CIssue.issue_desc) linters_def_file =
   let errlog = get_err_log translation_unit_context method_decl_opt in
   let err_desc =
     Errdesc.explain_frontend_warning issue_desc.description issue_desc.suggestion issue_desc.loc
@@ -431,32 +430,33 @@ let log_frontend_issue translation_unit_context method_decl_opt key (issue_desc:
   let exn = Exceptions.Frontend_warning ((issue_desc.id, issue_desc.name), err_desc, __POS__) in
   let trace = [Errlog.make_trace_element 0 issue_desc.loc "" []] in
   let err_kind = issue_desc.severity in
-  let key = Hashtbl.hash key in
+  let key_str =
+    match node with
+    | Decl dec
+     -> CAst_utils.generate_key_decl dec
+    | Stmt st
+     -> CAst_utils.generate_key_stmt st
+  in
+  let key = Hashtbl.hash key_str in
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc:issue_desc.loc ~ltr:trace
     ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
 
-let fill_issue_desc_info_and_log context an key issue_desc linters_def_file loc =
+let fill_issue_desc_info_and_log context an issue_desc linters_def_file loc =
   let desc = remove_new_lines (expand_message_string context issue_desc.CIssue.description an) in
   let issue_desc' = {issue_desc with CIssue.description= desc; CIssue.loc= loc} in
   log_frontend_issue context.CLintersContext.translation_unit_context
-    context.CLintersContext.current_method key issue_desc' linters_def_file
+    context.CLintersContext.current_method an issue_desc' linters_def_file
 
 (* Calls the set of hard coded checkers (if any) *)
 let invoke_set_of_hard_coded_checkers_an context (an: Ctl_parser_types.ast_node) =
-  let checkers, key =
-    match an with
-    | Decl dec
-     -> (decl_checkers_list, CAst_utils.generate_key_decl dec)
-    | Stmt st
-     -> (stmt_checkers_list, CAst_utils.generate_key_stmt st)
-  in
+  let checkers = match an with Decl _ -> decl_checkers_list | Stmt _ -> stmt_checkers_list in
   List.iter
     ~f:(fun checker ->
       let issue_desc_list = checker context an in
       List.iter
         ~f:(fun issue_desc ->
           if CIssue.should_run_check issue_desc.CIssue.mode then
-            fill_issue_desc_info_and_log context an key issue_desc None issue_desc.CIssue.loc)
+            fill_issue_desc_info_and_log context an issue_desc None issue_desc.CIssue.loc)
         issue_desc_list)
     checkers
 
@@ -469,15 +469,8 @@ let invoke_set_of_parsed_checkers_an parsed_linters context (an: Ctl_parser_type
         | None
          -> ()
         | Some witness
-         -> let key =
-              match witness with
-              | Decl dec
-               -> CAst_utils.generate_key_decl dec
-              | Stmt st
-               -> CAst_utils.generate_key_stmt st
-            in
-            let loc = CFrontend_checkers.location_from_an context witness in
-            fill_issue_desc_info_and_log context witness key linter.issue_desc linter.def_file loc)
+         -> let loc = CFrontend_checkers.location_from_an context witness in
+            fill_issue_desc_info_and_log context witness linter.issue_desc linter.def_file loc)
     parsed_linters
 
 (* We decouple the hardcoded checkers from the parsed ones *)

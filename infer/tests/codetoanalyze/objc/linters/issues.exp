@@ -9,7 +9,7 @@ codetoanalyze/objc/linters/atomic_prop.m, A_readP, 77, POINTER_TO_INTEGRAL_IMPLI
 codetoanalyze/objc/linters/atomic_prop.m, A_readP, 78, POINTER_TO_INTEGRAL_IMPLICIT_CAST, []
 codetoanalyze/objc/linters/atomic_prop.m, A_readQ, 86, DIRECT_ATOMIC_PROPERTY_ACCESS, []
 codetoanalyze/objc/linters/atomic_prop.m, A_readQ, 86, POINTER_TO_INTEGRAL_IMPLICIT_CAST, []
-codetoanalyze/objc/linters/atomic_prop.m, A_writeQ:, 82, DIRECT_ATOMIC_PROPERTY_ACCESS, []
+codetoanalyze/objc/linters/atomic_prop.m, A_writeQ, 82, DIRECT_ATOMIC_PROPERTY_ACCESS, []
 codetoanalyze/objc/linters/atomic_prop.m, __objc_anonymous_block_______1, 114, DIRECT_ATOMIC_PROPERTY_ACCESS, []
 codetoanalyze/objc/linters/badpointer.m, bad1, 17, BAD_POINTER_COMPARISON, []
 codetoanalyze/objc/linters/badpointer.m, bad10, 139, BAD_POINTER_COMPARISON, []
