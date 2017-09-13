@@ -174,6 +174,7 @@ module SinkKind = struct
   type t =
     | CreateFile  (** sink that creates a file *)
     | CreateIntent  (** sink that creates an Intent *)
+    | Deserialization  (** sink that deserializes a Java object *)
     | HTML  (** sink that creates HTML *)
     | JavaScript  (** sink that passes its arguments to untrusted JS code *)
     | Logging  (** sink that logs one or more of its arguments *)
@@ -186,6 +187,8 @@ module SinkKind = struct
      -> CreateFile
     | "CreateIntent"
      -> CreateIntent
+    | "Deserialization"
+     -> Deserialization
     | "HTML"
      -> HTML
     | "JavaScript"
@@ -233,6 +236,8 @@ module SinkKind = struct
       | "java.nio.file.FileSystem", "getPath"
       | "java.nio.file.Paths", "get"
        -> taint_all CreateFile
+      | "java.io.ObjectInputStream", "<init>"
+       -> taint_all Deserialization
       | "com.facebook.infer.builtins.InferTaint", "inferSensitiveSink"
        -> taint_nth 0 Other
       | class_name, method_name
@@ -295,6 +300,8 @@ module SinkKind = struct
        -> "CreateFile"
       | CreateIntent
        -> "CreateIntent"
+      | Deserialization
+       -> "Deserialization"
       | HTML
        -> "HTML"
       | JavaScript
@@ -331,6 +338,9 @@ include Trace.Make (struct
     (* create file from user-controller URI; potential path-traversal vulnerability *)
     | UserControlledString, (StartComponent | CreateIntent | JavaScript | CreateFile | HTML)
      -> (* do something sensitive with a user-controlled string *)
+        true
+    | (Intent | UserControlledURI | UserControlledString), Deserialization
+     -> (* shouldn't let anyone external control what we deserialize *)
         true
     | Other, _ | _, Other
      -> (* for testing purposes, Other matches everything *)
