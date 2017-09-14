@@ -1886,7 +1886,7 @@ type linter_doc_url = {linter: string; doc_url: string}
 
 let process_linters_doc_url args =
   let linters_doc_url arg =
-    match String.rsplit2 ~on:':' arg with
+    match String.lsplit2 ~on:':' arg with
     | Some (linter, doc_url)
      -> {linter; doc_url}
     | None
