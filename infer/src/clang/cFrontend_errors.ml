@@ -118,8 +118,7 @@ let evaluate_place_holder context ph an =
   | "%name%"
    -> MF.monospaced_to_string (Ctl_parser_types.ast_node_name an)
   | _
-   -> L.internal_error "ERROR: helper function %s is unknown. Stop.@\n" ph ;
-      assert false
+   -> L.die InternalError "helper function %s is unknown" ph
 
 (* given a message this function searches for a place-holder identifier,
    eg %id%. Then it evaluates id and replaces %id% in message
@@ -156,8 +155,7 @@ let string_to_err_kind = function
   | "LIKE"
    -> Exceptions.Klike
   | s
-   -> L.internal_error "@\n[ERROR] Severity %s does not exist. Stop.@\n" s ;
-      assert false
+   -> L.die InternalError "Severity %s does not exist" s
 
 let string_to_issue_mode m =
   match m with
@@ -166,8 +164,7 @@ let string_to_issue_mode m =
   | "OFF"
    -> CIssue.Off
   | s
-   -> L.internal_error "@\n[ERROR] Mode %s does not exist. Please specify ON/OFF@\n" s ;
-      assert false
+   -> L.die InternalError "Mode %s does not exist. Please specify ON/OFF" s
 
 let post_process_linter_definition (linter: linter) =
   match

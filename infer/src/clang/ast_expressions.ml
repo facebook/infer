@@ -229,7 +229,8 @@ let make_next_object_exp stmt_info item items =
         let decl_ref_expr_info = make_decl_ref_expr_info decl_ref in
         (Clang_ast_t.DeclRefExpr (stmt_info_var, [], expr_info, decl_ref_expr_info), var_qual_type)
     | _
-     -> assert false
+     -> CFrontend_config.incorrect_assumption "unexpected item %a"
+          (Pp.to_string ~f:Clang_ast_j.string_of_stmt) item
   in
   let message_call =
     make_message_expr create_id_type CFrontend_config.next_object items stmt_info false
@@ -582,7 +583,10 @@ let translate_block_enumerate block_name stmt_info stmt_list ei =
           ; free_stop ]
         , op )
     | _
-     -> assert false
+     -> (* FIXME(t21762295) this is reachable *)
+        CFrontend_config.incorrect_assumption "wrong params in block enumerate translation: %a"
+          (Pp.seq (Pp.to_string ~f:Clang_ast_j.string_of_decl))
+          params
   in
   let open Clang_ast_t in
   match stmt_list with

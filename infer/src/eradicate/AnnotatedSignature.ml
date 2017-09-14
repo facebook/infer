@@ -118,11 +118,9 @@ let mark proc_name ann asig (b, bs) =
   in
   let params' =
     let fail () =
-      L.internal_error
-        "INTERNAL ERROR: annotation for procedure %s has wrong number of arguments@."
-        (Typ.Procname.to_unique_id proc_name) ;
-      L.internal_error "  ANNOTATED SIGNATURE: %a@." (pp proc_name) asig ;
-      assert false
+      L.die InternalError
+        "Annotation for procedure %s has wrong number of arguments.@\n  Annotated signature: %a"
+        (Typ.Procname.to_unique_id proc_name) (pp proc_name) asig
     in
     let rec combine l1 l2 =
       match (l1, l2) with

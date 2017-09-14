@@ -19,12 +19,14 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
   (* Translates the method/function's body into nodes of the cfg. *)
   let add_method trans_unit_ctx tenv cg cfg class_decl_opt procname body has_return_param
       is_objc_method outer_context_opt extra_instrs =
-    let handle_translation_failure () =
-      Cfg.remove_proc_desc cfg procname ;
-      CMethod_trans.create_external_procdesc cfg procname is_objc_method None
-    in
     L.(debug Capture Verbose)
-      "@\n@\n>>---------- ADDING METHOD: '%s' ---------<<@\n@." (Typ.Procname.to_string procname) ;
+      "@\n@\n>>---------- ADDING METHOD: '%a' ---------<<@\n@\n" Typ.Procname.pp procname ;
+    let handle_frontend_failure ~print fmt =
+      Cfg.remove_proc_desc cfg procname ;
+      CMethod_trans.create_external_procdesc cfg procname is_objc_method None ;
+      (if print then L.internal_error else L.(debug Capture Quiet))
+        ("Aborting translation of method '%a':@\n" ^^ fmt) Typ.Procname.pp procname
+    in
     try
       match Cfg.find_proc_desc_from_name cfg procname with
       | Some procdesc
@@ -48,22 +50,21 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       | None
        -> ()
     with
-    | Not_found
-     -> ()
-    | CTrans_utils.Self.SelfClassException _
-     -> (* this shouldn't happen, because self or [a class] should always be arguments of
-           functions. This is to make sure I'm not wrong. *)
-        assert false
-    | CTrans_utils.TemplatedCodeException _
-     -> L.internal_error "Fatal error: frontend doesn't support translation of templated code@\n" ;
-        handle_translation_failure ()
-    | CTrans_utils.UnsupportedStatementException stmt when Config.keep_going
-     -> L.internal_error "Unimplemented: translation for statement %s"
-          (Clang_ast_proj.get_stmt_kind_string stmt) ;
-        handle_translation_failure ()
-    | Assert_failure (file, line, column) when Config.keep_going
-     -> L.internal_error "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column ;
-        handle_translation_failure ()
+    (* Always keep going in case of known limitations of the frontend, crash otherwise (by not
+       catching the exception) unless `--keep-going` was passed. Print errors we should fix
+       (t21762295) to the console. *)
+    | CFrontend_config.Unimplemented msg
+     -> handle_frontend_failure ~print:false "Unimplemented feature:@\n  %s@\n" msg
+    | CFrontend_config.IncorrectAssumption msg
+     -> (* FIXME(t21762295): we do not expect this to happen but it does *)
+        handle_frontend_failure ~print:true "Known incorrect assumption in the frontend: %s@\n" msg
+    | CTrans_utils.Self.SelfClassException class_name
+     -> (* FIXME(t21762295): we do not expect this to happen but it does *)
+        handle_frontend_failure ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp
+          class_name
+    | exn when Config.keep_going
+     -> handle_frontend_failure ~print:true "Frontend error: %a@\nBacktrace:@\n%s" Exn.pp exn
+          (Exn.backtrace ())
 
   let function_decl trans_unit_ctx tenv cfg cg func_decl block_data_opt =
     let captured_vars, outer_context_opt =

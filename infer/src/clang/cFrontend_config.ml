@@ -8,8 +8,17 @@
  *)
 
 open! IStd
+module F = Format
 
 (** Module that contains constants and global state used in the frontend *)
+
+exception IncorrectAssumption of string
+
+let incorrect_assumption fmt = F.kasprintf (fun msg -> raise (IncorrectAssumption msg)) fmt
+
+exception Unimplemented of string
+
+let unimplemented fmt = F.kasprintf (fun msg -> raise (Unimplemented msg)) fmt
 
 type clang_lang = C | CPP | ObjC | ObjCPP [@@deriving compare]
 

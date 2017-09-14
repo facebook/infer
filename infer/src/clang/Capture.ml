@@ -15,25 +15,13 @@ let debug_mode = Config.debug_mode || Config.frontend_stats
 
 let buffer_len = 262143
 
-let catch_biniou_buffer_errors f x =
-  try[@warning "-52"] f x
-  with
-  | Invalid_argument
-      (* suppress warning: allow this one case because we're just reraising the error with another
-       error message so it doesn't really matter if this eventually fails *)
-      "Bi_inbuf.refill_from_channel"
-  ->
-    L.external_error "WARNING: biniou buffer too short, skipping the file@\n" ;
-    assert false
-
 (* This function reads the json file in fname, validates it, and encoded in the AST data structure
    defined in Clang_ast_t.  *)
 let validate_decl_from_file fname =
-  catch_biniou_buffer_errors (Ag_util.Biniou.from_file ~len:buffer_len Clang_ast_b.read_decl) fname
+  Ag_util.Biniou.from_file ~len:buffer_len Clang_ast_b.read_decl fname
 
 let validate_decl_from_channel chan =
-  catch_biniou_buffer_errors (Ag_util.Biniou.from_channel ~len:buffer_len Clang_ast_b.read_decl)
-    chan
+  Ag_util.Biniou.from_channel ~len:buffer_len Clang_ast_b.read_decl chan
 
 let register_perf_stats_report source_file =
   let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in

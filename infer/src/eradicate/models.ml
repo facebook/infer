@@ -44,9 +44,7 @@ module Inference = struct
       if String.is_empty s_old then 0
       else
         try int_of_string s_old
-        with Failure _ ->
-          L.internal_error "int_of_string %s@." s_old ;
-          assert false
+        with Failure _ -> L.die InternalError "int_of_string %s" s_old
     in
     string_of_int (n + 1)
 

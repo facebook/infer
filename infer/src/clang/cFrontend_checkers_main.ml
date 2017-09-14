@@ -301,36 +301,32 @@ let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_contex
     "Loading the following linters files: %a@\n" (Pp.comma_seq Format.pp_print_string)
     linters_files ;
   CTL.create_ctl_evaluation_tracker trans_unit_ctx.source_file ;
-  try
-    let parsed_linters = parse_ctl_files linters_files in
-    let filtered_parsed_linters =
-      CFrontend_errors.filter_parsed_linters parsed_linters trans_unit_ctx.source_file
-    in
-    CFrontend_errors.parsed_linters := filtered_parsed_linters ;
-    let source_file = trans_unit_ctx.CFrontend_config.source_file in
-    L.(debug Linters Medium)
-      "Start linting file %a with rules: @\n%a@\n" SourceFile.pp source_file
+  let parsed_linters = parse_ctl_files linters_files in
+  let filtered_parsed_linters =
+    CFrontend_errors.filter_parsed_linters parsed_linters trans_unit_ctx.source_file
+  in
+  CFrontend_errors.parsed_linters := filtered_parsed_linters ;
+  let source_file = trans_unit_ctx.CFrontend_config.source_file in
+  L.(debug Linters Medium)
+    "Start linting file %a with rules: @\n%a@\n" SourceFile.pp source_file
+    CFrontend_errors.pp_linters filtered_parsed_linters ;
+  if Config.print_active_checkers then
+    L.progress "Linting file %a, active linters: @\n%a@\n" SourceFile.pp source_file
       CFrontend_errors.pp_linters filtered_parsed_linters ;
-    if Config.print_active_checkers then
-      L.progress "Linting file %a, active linters: @\n%a@\n" SourceFile.pp source_file
-        CFrontend_errors.pp_linters filtered_parsed_linters ;
-    match ast with
-    | Clang_ast_t.TranslationUnitDecl (_, decl_list, _, _)
-     -> let context = context_with_ck_set (CLintersContext.empty trans_unit_ctx) decl_list in
-        let is_decl_allowed decl =
-          let decl_info = Clang_ast_proj.get_decl_tuple decl in
-          CLocation.should_do_frontend_check trans_unit_ctx decl_info.Clang_ast_t.di_source_range
-        in
-        let allowed_decls = List.filter ~f:is_decl_allowed decl_list in
-        (* We analyze the top level and then all the allowed declarations *)
-        CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl ast) ;
-        List.iter ~f:(do_frontend_checks_decl context) allowed_decls ;
-        if LintIssues.exists_issues () then store_issues source_file ;
-        L.(debug Linters Medium) "End linting file %a@\n" SourceFile.pp source_file ;
-        CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file
-    | _
-     -> assert false
-    (* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *)
-  with Assert_failure (file, line, column) as exn ->
-    L.internal_error "Fatal error: exception Assert_failure(%s, %d, %d)@\n%!" file line column ;
-    reraise exn
+  match ast with
+  | Clang_ast_t.TranslationUnitDecl (_, decl_list, _, _)
+   -> let context = context_with_ck_set (CLintersContext.empty trans_unit_ctx) decl_list in
+      let is_decl_allowed decl =
+        let decl_info = Clang_ast_proj.get_decl_tuple decl in
+        CLocation.should_do_frontend_check trans_unit_ctx decl_info.Clang_ast_t.di_source_range
+      in
+      let allowed_decls = List.filter ~f:is_decl_allowed decl_list in
+      (* We analyze the top level and then all the allowed declarations *)
+      CFrontend_errors.invoke_set_of_checkers_on_node context (Ctl_parser_types.Decl ast) ;
+      List.iter ~f:(do_frontend_checks_decl context) allowed_decls ;
+      if LintIssues.exists_issues () then store_issues source_file ;
+      L.(debug Linters Medium) "End linting file %a@\n" SourceFile.pp source_file ;
+      CTL.save_dotty_when_in_debug_mode trans_unit_ctx.CFrontend_config.source_file
+  | _
+   -> (* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *)
+      assert false

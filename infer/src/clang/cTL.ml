@@ -59,7 +59,6 @@ type t =
   | EH of ALVar.alexp list * t
   | ET of ALVar.alexp list * transitions option * t
 
-
 let has_transition phi =
   match phi with
   | True
@@ -609,7 +608,9 @@ let transition_decl_to_stmt d trs =
     | InitExpr, CXXConstructorDecl _
     | InitExpr, CXXConversionDecl _
     | InitExpr, CXXDestructorDecl _
-     -> assert false (* to be done. Requires extending to lists *)
+     -> (* requires extending to lists *)
+        CFrontend_config.unimplemented
+          "transition_decl_to_stmt: InitExpr/CXX{Method,Constructor,Conversion,Destructor}"
     | InitExpr, EnumConstantDecl (_, _, _, ecdi)
      -> ecdi.ecdi_init_expr
     | _, _

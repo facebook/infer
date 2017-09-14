@@ -454,7 +454,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let exps = [(exp, typ)] in
           {empty_res_trans with exps; instrs}
       | Tfun _ | Tvoid | Tarray _ | TVar _
-       -> assert false
+       -> CFrontend_config.unimplemented "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
     in
     let res_trans = fill_typ_with_zero var_exp_typ in
     {res_trans with initd_exps= [fst var_exp_typ]}
@@ -572,9 +572,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
          -> CType_decl.get_record_typename ~tenv:context.tenv decl
         | _
          -> assert false )
-      | _
-       -> assert false
-      (* di_parent_pointer should be always set for fields/ivars *)
+      | _ as decl
+       -> (* FIXME(t21762295): we do not expect this to happen but it does *)
+          CFrontend_config.incorrect_assumption
+            "di_parent_pointer should be always set for fields/ivars, but got %a"
+            (Pp.option (Pp.to_string ~f:Clang_ast_j.string_of_decl))
+            decl
     in
     let field_name = CGeneral_utils.mk_class_field_name class_tname field_string in
     let field_exp = Exp.Lfield (obj_sil, field_name, class_typ) in
@@ -844,8 +847,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match stmt_list with
       | [a; i]
        -> (a, i)
-          (* Assumption: the statement list contains 2 elements,
-                             the first is the array expr and the second the index *)
+      (* Assumption: the statement list contains 2 elements, the first is the array expr and the
+         second the index *)
       | _
        -> assert false
       (* Let's get notified if the assumption is wrong...*)
@@ -1013,9 +1016,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let act_params =
           let params = List.tl_exn (collect_exprs result_trans_subexprs) in
           if Int.equal (List.length params) (List.length params_stmt) then params
-          else (
-            L.internal_error "ERROR: stmt_list and res_trans_par.exps must have same size@\n" ;
-            assert false )
+          else
+            (* FIXME(t21762295) this is reachable *)
+            CFrontend_config.incorrect_assumption
+              "In call to %a: stmt_list and res_trans_par.exps must have same size but they don't:@\nstmt_list(%d)=[%a]@\nres_trans_par.exps(%d)=[%a]@\n"
+              Typ.Procname.pp procname (List.length params) (Pp.seq Exp.pp)
+              (List.map ~f:fst params) (List.length params_stmt)
+              (Pp.seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
+              params_stmt
         in
         let act_params =
           if is_cf_retain_release then (Exp.Const (Const.Cint IntLit.one), Typ.mk (Tint Typ.IBool))
@@ -1050,16 +1058,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state_pri.context in
     let procname = Procdesc.get_proc_name context.procdesc in
     let sil_loc = CLocation.get_sil_location si context in
-    (* first for method address, second for 'this' expression *)
-    assert (Int.equal (List.length result_trans_callee.exps) 2) ;
+    (* first for method address, second for 'this' expression and other parameters *)
+    assert (List.length result_trans_callee.exps >= 1) ;
     let sil_method, _ = List.hd_exn result_trans_callee.exps in
     let callee_pname =
-      match sil_method with Exp.Const Const.Cfun pn -> pn | _ -> assert false
-      (* method pointer not implemented, this shouldn't happen *)
+      match sil_method with
+      | Exp.Const Const.Cfun pn
+       -> pn
+      | _
+       -> (* method pointer not implemented, this shouldn't happen but it does (t21762295) *)
+          CFrontend_config.incorrect_assumption "Could not resolve CXX method call %a" Exp.pp
+            sil_method
     in
-    (* As we may have nodes coming from different parameters we need to  *)
-    (* call instruction for each parameter and collect the results       *)
-    (* afterwards. The 'instructions' function does not do that          *)
+    (* As we may have nodes coming from different parameters we need to call instruction for each
+       parameter and collect the results afterwards. The 'instructions' function does not do that *)
     let result_trans_subexprs =
       let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
       let instruction' = exec_with_self_exception (exec_with_glvalue_as_reference instruction) in
@@ -1175,7 +1187,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CMethod_trans.get_class_name_method_call_from_receiver_kind context obj_c_message_expr_info
           act_params
       in
-      raise (Self.SelfClassException class_name) (* alloc or new *)
+      (* alloc or new *)
+      (* FIXME(t21762295): we do not expect this to propagate to the top but it does *)
+      raise (Self.SelfClassException class_name)
     else if String.equal selector CFrontend_config.alloc
             || String.equal selector CFrontend_config.new_str
     then
@@ -1489,8 +1503,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let root_nodes' = if root_nodes <> [] then root_nodes else op_res_trans.root_nodes in
         {op_res_trans with root_nodes= root_nodes'}
     | _
-     -> L.(debug Capture Medium) "BinaryConditionalOperator not translated@." ;
-        assert false
+     -> CFrontend_config.unimplemented "BinaryConditionalOperator not translated"
 
   (* Translate a condition for if/loops statement. It shorts-circuit and/or. *)
   (* The invariant is that the translation of a condition always contains (at least) *)
@@ -1810,7 +1823,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* succ_nodes will remove the temps *)
         {empty_res_trans with root_nodes= top_nodes; leaf_nodes= succ_nodes}
     | _
-     -> assert false
+     -> (* TODO(t21762295) this raises sometimes *)
+        CFrontend_config.incorrect_assumption
+          "Unexpected Switch Statement sub-expression list: [%a]"
+          (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
+          switch_stmt_list
 
   and stmtExpr_trans trans_state stmt_list =
     let stmt =
@@ -2058,7 +2075,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | Tint _ | Tfloat _ | Tptr _
          -> initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
         | _
-         -> assert false
+         -> CFrontend_config.unimplemented "InitListExp for var %a of type %a" Exp.pp var_exp
+              (Typ.pp Pp.text) var_typ
       in
       let nname = "InitListExp" in
       let res_trans =
@@ -2185,8 +2203,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | (RecordDecl _) :: var_decls'
      -> (* Record declaration is done in the beginning when procdesc is defined.*)
         collect_all_decl trans_state var_decls' next_nodes stmt_info
-    | _
-     -> assert false
+    | decl :: _
+     -> CFrontend_config.incorrect_assumption "unexpected decl type %s in collect_all_decl: %a"
+          (Clang_ast_proj.get_decl_kind_string decl) (Pp.to_string ~f:Clang_ast_j.string_of_decl)
+          decl
 
   (* stmt_list is ignored because it contains the same instructions as *)
   (* the init expression. We use the latter info.                      *)
@@ -2196,15 +2216,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let open Clang_ast_t in
       match decl_list with
       | (VarDecl _) :: _
-       -> (* Case for simple variable declarations*)
-          collect_all_decl trans_state decl_list succ_nodes stmt_info
-      | (CXXRecordDecl _) :: _ (*C++/C record decl treated in the same way *) | (RecordDecl _) :: _
+      (* Case for simple variable declarations*)
+      | (CXXRecordDecl _) :: _
+      (*C++/C record decl treated in the same way *)
+      | (RecordDecl _) :: _
        -> (* Case for struct *)
           collect_all_decl trans_state decl_list succ_nodes stmt_info
-      | _
-       -> L.(debug Capture Medium)
-            "WARNING: In DeclStmt found an unknown declaration type. RETURNING empty list of declaration. NEED TO BE FIXED" ;
-          empty_res_trans
+      | (TypedefDecl _) :: _ | (UsingDirectiveDecl _) :: _
+       -> empty_res_trans
+      | decl :: _
+       -> CFrontend_config.unimplemented "In DeclStmt found an unknown declaration type %s"
+            (Clang_ast_j.string_of_decl decl)
+      | []
+       -> assert false
     in
     {res_trans with leaf_nodes= []}
 
@@ -2246,7 +2270,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      how x.f = a is actually implemented by the runtime.*)
   and pseudoObjectExpr_trans trans_state stmt_list =
     L.(debug Capture Verbose)
-      "  priority node free = '%s'@\n@."
+      "  priority node free = '%s'@\n@\n"
       (string_of_bool (PriorityNode.is_priority_free trans_state)) ;
     let rec do_semantic_elements el =
       let open Clang_ast_t in
@@ -2906,9 +2930,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | NullStmt _, FallThroughAttr _
        -> no_op_trans trans_state.succ_nodes
       | _
-       -> assert false (* More cases to come. With the assert false we can find them *) )
+       -> CFrontend_config.unimplemented
+            "attributedStmt [stmt] [attr] with:@\nstmt=%s@\nattr=%s@\n"
+            (Clang_ast_j.string_of_stmt stmt) (Clang_ast_j.string_of_attribute attr) )
     | _
-     -> assert false
+     -> CFrontend_config.unimplemented "attributedStmt with:@\nstmts=[%a]@\nattrs=[%a]@\n"
+          (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
+          stmts
+          (Pp.semicolon_seq (Pp.to_string ~f:Clang_ast_j.string_of_attribute))
+          attrs
 
   and breakStmt_trans trans_state stmt_info =
     match trans_state.continuation with
@@ -2986,9 +3016,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SwitchStmt (stmt_info, switch_stmt_list)
      -> switchStmt_trans trans_state stmt_info switch_stmt_list
     | CaseStmt _
-     -> L.(debug Capture Verbose)
-          "FATAL: Passing from CaseStmt outside of SwitchStmt, terminating.@\n" ;
-        assert false
+     -> (* where do we even get case stmts outside of the switch stmt? (t21762295) *)
+        CFrontend_config.incorrect_assumption "Case statement outside of switch statement: %a"
+          (Pp.to_string ~f:Clang_ast_j.string_of_stmt) instr
     | StmtExpr (_, stmt_list, _)
      -> stmtExpr_trans trans_state stmt_list
     | ForStmt (stmt_info, [init; decl_stmt; cond; incr; body])
@@ -3167,9 +3197,105 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SubstNonTypeTemplateParmExpr _
     | SubstNonTypeTemplateParmPackExpr _
     | CXXDependentScopeMemberExpr _
-     -> raise (CTrans_utils.TemplatedCodeException instr)
-    | s
-     -> raise (CTrans_utils.UnsupportedStatementException s)
+     -> raise
+          (CFrontend_config.unimplemented "Translation of templated code is unsupported: %a"
+             (Pp.to_string ~f:Clang_ast_j.string_of_stmt) instr)
+    | ForStmt (_, _) | WhileStmt (_, _) | DoStmt (_, _) | ObjCForCollectionStmt (_, _)
+     -> assert false
+    | MSAsmStmt _
+    | CapturedStmt _
+    | CoreturnStmt _
+    | CoroutineBodyStmt _
+    | AddrLabelExpr _
+    | ArrayTypeTraitExpr _
+    | AsTypeExpr _
+    | AtomicExpr _
+    | CXXFoldExpr _
+    | CXXInheritedCtorInitExpr _
+    | CXXUnresolvedConstructExpr _
+    | CXXUuidofExpr _
+    | CUDAKernelCallExpr _
+    | ChooseExpr _
+    | ConvertVectorExpr _
+    | CoawaitExpr _
+    | CoyieldExpr _
+    | DependentCoawaitExpr _
+    | DependentScopeDeclRefExpr _
+    | DesignatedInitExpr _
+    | DesignatedInitUpdateExpr _
+    | ExpressionTraitExpr _
+    | FunctionParmPackExpr _
+    | ImaginaryLiteral _
+    | MSPropertyRefExpr _
+    | MSPropertySubscriptExpr _
+    | NoInitExpr _
+    | OMPArraySectionExpr _
+    | ObjCAvailabilityCheckExpr _
+    | ObjCIsaExpr _
+    | ObjCSubscriptRefExpr _
+    | UnresolvedLookupExpr _
+    | UnresolvedMemberExpr _
+    | PackExpansionExpr _
+    | ParenListExpr _
+    | TypoExpr _
+    | IndirectGotoStmt _
+    | MSDependentExistsStmt _
+    | OMPAtomicDirective _
+    | OMPBarrierDirective _
+    | OMPCancelDirective _
+    | OMPCancellationPointDirective _
+    | OMPCriticalDirective _
+    | OMPFlushDirective _
+    | OMPDistributeDirective _
+    | OMPDistributeParallelForDirective _
+    | OMPDistributeParallelForSimdDirective _
+    | OMPDistributeSimdDirective _
+    | OMPForDirective _
+    | OMPForSimdDirective _
+    | OMPParallelForDirective _
+    | OMPParallelForSimdDirective _
+    | OMPSimdDirective _
+    | OMPTargetParallelForSimdDirective _
+    | OMPTargetSimdDirective _
+    | OMPTargetTeamsDistributeDirective _
+    | OMPTargetTeamsDistributeParallelForDirective _
+    | OMPTargetTeamsDistributeParallelForSimdDirective _
+    | OMPTargetTeamsDistributeSimdDirective _
+    | OMPTaskLoopDirective _
+    | OMPTaskLoopSimdDirective _
+    | OMPTeamsDistributeDirective _
+    | OMPTeamsDistributeParallelForDirective _
+    | OMPTeamsDistributeParallelForSimdDirective _
+    | OMPTeamsDistributeSimdDirective _
+    | OMPMasterDirective _
+    | OMPOrderedDirective _
+    | OMPParallelDirective _
+    | OMPParallelSectionsDirective _
+    | OMPSectionDirective _
+    | OMPSectionsDirective _
+    | OMPSingleDirective _
+    | OMPTargetDataDirective _
+    | OMPTargetDirective _
+    | OMPTargetEnterDataDirective _
+    | OMPTargetExitDataDirective _
+    | OMPTargetParallelDirective _
+    | OMPTargetParallelForDirective _
+    | OMPTargetTeamsDirective _
+    | OMPTargetUpdateDirective _
+    | OMPTaskDirective _
+    | OMPTaskgroupDirective _
+    | OMPTaskwaitDirective _
+    | OMPTaskyieldDirective _
+    | OMPTeamsDirective _
+    | SEHExceptStmt _
+    | SEHFinallyStmt _
+    | SEHLeaveStmt _
+    | SEHTryStmt _
+    | DefaultStmt _
+     -> raise
+          (CFrontend_config.unimplemented "Statement translation for kind %s: %a"
+             (Clang_ast_proj.get_stmt_kind_string instr)
+             (Pp.to_string ~f:Clang_ast_j.string_of_stmt) instr)
 
   (* Function similar to instruction function, but it takes C++ constructor initializer as
      an input parameter. *)

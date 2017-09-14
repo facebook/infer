@@ -68,6 +68,8 @@ val latex : color -> env
 val color_string : color -> string
 (** string representation of colors *)
 
+val option : (F.formatter -> 'a -> unit) -> F.formatter -> 'a option -> unit
+
 val string : F.formatter -> string -> unit
 
 val cli_args : F.formatter -> string list -> unit

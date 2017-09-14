@@ -138,6 +138,8 @@ let elapsed_time fmt () =
 
 let string fmt s = F.fprintf fmt "%s" s
 
+let option pp fmt = function None -> string fmt "None" | Some x -> F.fprintf fmt "Some %a" pp x
+
 let to_string ~f fmt x = string fmt (f x)
 
 let pp_argfile fmt fname =

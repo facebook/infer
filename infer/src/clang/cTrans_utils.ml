@@ -14,10 +14,6 @@ module Hashtbl = Caml.Hashtbl
 
 module L = Logging
 
-exception TemplatedCodeException of Clang_ast_t.stmt
-
-exception UnsupportedStatementException of Clang_ast_t.stmt
-
 (* Extract the element of a singleton list. If the list is not a singleton *)
 (* It stops the computation giving a warning. We use this because we       *)
 (* assume in many places that a list is just a singleton. We use the       *)
@@ -653,8 +649,7 @@ let rec get_type_from_exp_stmt stmt =
   | DeclRefExpr (_, _, _, info)
    -> do_decl_ref_exp info
   | _
-   -> L.internal_error "Failing with: %s@\n%!" (Clang_ast_j.string_of_stmt stmt) ;
-      assert false
+   -> L.die InternalError "get_type_from_expr_stmt failure: %s" (Clang_ast_j.string_of_stmt stmt)
 
 module Self = struct
   exception SelfClassException of Typ.Name.t
@@ -793,7 +788,7 @@ let is_dispatch_function stmt_list =
               try
                 let arg_stmt = List.nth_exn arg_stmts block_arg_pos in
                 if is_block_stmt arg_stmt then Some block_arg_pos else None
-              with Failure _ -> None )
+              with Invalid_argument _ -> None )
         | _
          -> None )
     | _ ->
