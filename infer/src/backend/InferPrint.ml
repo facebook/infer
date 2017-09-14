@@ -724,6 +724,34 @@ module PreconditionStats = struct
     L.result "Procedures with data constraints: %d@." !nr_dataconstraints
 end
 
+(* Wrapper of an issue that compares all parts except the procname *)
+module Issue = struct
+  type err_data_ = Errlog.err_data
+
+  (* no derived compare for err_data; just compare the locations *)
+  let compare_err_data_ (err_data1: Errlog.err_data) (err_data2: Errlog.err_data) =
+    Location.compare err_data1.loc err_data2.loc
+
+  type t =
+    { proc_name: Typ.Procname.t [@compare.ignore ]
+    ; proc_location: Location.t
+    ; err_key: Errlog.err_key
+    ; err_data: err_data_ }
+    [@@deriving compare]
+
+  (* If two issues are identical except for their procnames, they are probably duplicate reports on
+     two different instantiations of the same template. We don't want to spam users by reporting
+     identical warning on the same line. Accomplish this by sorting without regard to procname, then
+     de-duplicating. *)
+  let sort_filter_issues issues =
+    let issues' = List.dedup ~compare issues in
+    ( if Config.developer_mode then
+        let num_pruned_issues = List.length issues - List.length issues' in
+        if num_pruned_issues > 0 then
+          L.user_warning "Note: pruned %d duplicate issues" num_pruned_issues ) ;
+    issues'
+end
+
 let error_filter filters proc_name file error_desc error_name =
   let always_report () =
     String.equal (Localise.error_desc_extract_tag_value error_desc "always_report") "true"
@@ -737,18 +765,18 @@ type report_kind = Issues | Procs | Stats | Calls | Summary [@@deriving compare]
 type bug_format_kind = Json | Csv | Tests | Text | Latex [@@deriving compare]
 
 let pp_issue_in_format (format_kind, (outf: Utils.outfile)) error_filter
-    (procname, procname_loc, err_key, err_data) =
+    {Issue.proc_name; proc_location; err_key; err_data} =
   match format_kind with
   | Csv
-   -> IssuesCsv.pp_issue outf.fmt error_filter procname (Some procname_loc) err_key err_data
+   -> IssuesCsv.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
   | Json
-   -> IssuesJson.pp_issue outf.fmt error_filter procname (Some procname_loc) err_key err_data
+   -> IssuesJson.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
   | Latex
    -> L.(die InternalError) "Printing issues in latex is not implemented"
   | Tests
    -> L.(die InternalError) "Print issues as tests is not implemented"
   | Text
-   -> IssuesTxt.pp_issue outf.fmt error_filter (Some procname_loc) err_key err_data
+   -> IssuesTxt.pp_issue outf.fmt error_filter (Some proc_location) err_key err_data
 
 let pp_issues_in_format (format_kind, (outf: Utils.outfile)) =
   match format_kind with
@@ -799,10 +827,11 @@ let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log
 
 let collect_issues summary issues_acc =
   let err_log = summary.Specs.attributes.ProcAttributes.err_log in
-  let procname = Specs.get_proc_name summary in
-  let proc_loc = summary.Specs.attributes.ProcAttributes.loc in
+  let proc_name = Specs.get_proc_name summary in
+  let proc_location = summary.Specs.attributes.ProcAttributes.loc in
   Errlog.fold
-    (fun err_key err_data acc -> (procname, proc_loc, err_key, err_data) :: acc)
+    (fun err_key err_data acc ->
+      {Issue.proc_name= proc_name; proc_location; err_key; err_data} :: acc)
     err_log issues_acc
 
 let pp_procs summary procs_format_list =
@@ -1101,12 +1130,12 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
       := process_summary filters formats_by_report_kind linereader stats filename summary
            !all_issues ) ;
   List.iter
-    ~f:(fun (procname, _, _, _ as issue) ->
-      let error_filter = error_filter filters procname in
+    ~f:(fun ({Issue.proc_name} as issue) ->
+      let error_filter = error_filter filters proc_name in
       List.iter
         ~f:(fun issue_format -> pp_issue_in_format issue_format error_filter issue)
         issue_formats)
-    (List.rev !all_issues) ;
+    (Issue.sort_filter_issues !all_issues) ;
   if Config.precondition_stats then PreconditionStats.pp_stats () ;
   LintIssues.load_issues_to_errlog_map Config.lint_issues_dir_name ;
   Typ.Procname.Map.iter (pp_lint_issues filters formats_by_report_kind linereader)
