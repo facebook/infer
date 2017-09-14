@@ -133,4 +133,26 @@ public class DynamicDispatch {
 
   }
 
+  private Object callFoo(Supertype o) {
+    return o.foo();
+  }
+
+  void dynamicResolutionWithPrivateMethodBad() {
+    Supertype subtype = new Subtype();
+    callFoo(subtype).toString();
+  }
+
+  Object variadicMethod(Supertype... args) {
+    if (args.length == 0) {
+      return null;
+    } else {
+      return args[0].foo();
+    }
+  }
+
+  void dynamicResolutionWithVariadicMethodBad() {
+    Supertype subtype = new Subtype();
+    variadicMethod(subtype, null, null).toString();
+  }
+
 }
