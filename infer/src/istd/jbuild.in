@@ -1,12 +1,14 @@
-(* -*- tuareg -*- *)
-(* NOTE: prepend jbuild.common to this file! *)
-
-;; Format.sprintf {|
+;; (* -*- tuareg -*- *)
+   (* NOTE: prepend jbuild.common to this file! *)
+   Format.sprintf
+     {|
 (library
  ((name InferStdlib)
   (flags (%s))
+  (ocamlopt_flags (%s))
   (libraries (%s))
  ))
 |}
-     (String.concat " " common_cflags) (String.concat " " common_libraries)
+     (String.concat " " common_cflags) (String.concat " " common_optflags)
+     (String.concat " " common_libraries)
    |> Jbuild_plugin.V1.send

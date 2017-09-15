@@ -1,6 +1,19 @@
 (* -*- tuareg -*- *)
 (* use strings so that it looks like OCaml even before substituting, e.g. to use ocamlformat *)
 
+type build_mode = Default | Opt | Test
+
+let build_mode =
+  match Jbuild_plugin.V1.context with
+  | "test"
+   -> Test
+  | "default"
+   -> Default
+  | "opt"
+   -> Opt
+  | ctx
+   -> invalid_arg ("unknown context: " ^ ctx)
+
 let is_yes = String.equal "yes"
 
 let clang = is_yes "@BUILD_C_ANALYZERS@"
@@ -27,13 +40,15 @@ let common_cflags =
     ; "-w"
     ; warnings ]
   in
-  match Jbuild_plugin.V1.context with
-  | "test"
-   -> "-warn-error" :: fatal_warnings :: common_flags
-  | "default"
+  match build_mode with
+  | Default | Opt
    -> common_flags
-  | ctx
-   -> invalid_arg ("unknown context: " ^ ctx)
+  | Test
+   -> "-warn-error" :: fatal_warnings :: common_flags
+
+let common_optflags = match build_mode with
+  | Opt -> ["-O3"]
+  | Default | Test -> []
 
 let common_libraries =
   (if java then ["javalib"; "ptrees"; "sawja"] else [])

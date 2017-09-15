@@ -12,6 +12,7 @@ include $(ROOT_DIR)/Makefile.config
 
 ETC_DIR = $(INFER_DIR)/etc
 # paths to BUILD_DIR are relative because that's how jbuilder likes it
+# can be overriden to specify another build mode (eg opt)
 INFER_BUILD_DIR = _build/default
 
 ATDGEN_SUFFIXES = _t.ml _t.mli _j.ml _j.mli

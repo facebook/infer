@@ -16,9 +16,8 @@ INFER_ROOT="$SCRIPT_DIR"
 INFER_DEPS_DIR="$INFER_ROOT/dependencies/infer-deps"
 PLATFORM="$(uname)"
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-OCAML_VERSION=${OCAML_VERSION:-"4.05.0"}
+OCAML_VERSION=${OCAML_VERSION:-"4.05.0+flambda"}
 OPAM_LOCK_URL=${OPAM_LOCK_URL:-"https://github.com/rgrinberg/opam-lock"}
-
 INFER_OPAM_SWITCH_DEFAULT=infer-"$OCAML_VERSION"
 
 function usage() {

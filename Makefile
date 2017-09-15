@@ -11,6 +11,11 @@ default: infer
 ROOT_DIR = .
 include $(ROOT_DIR)/Makefile.config
 
+# override this for faster builds (but slower infer)
+BUILD_MODE ?= opt
+
+MAKE_SOURCE = $(MAKE) -C $(SRC_DIR) INFER_BUILD_DIR=_build/$(BUILD_MODE)
+
 ifneq ($(UTOP),no)
 BUILD_SYSTEMS_TESTS += infertop
 build_infertop_print build_infertop_test: test_build
@@ -147,22 +152,22 @@ fmt_all:
 .PHONY: src_build_common
 src_build_common:
 	$(QUIET)$(call silent_on_success,Generating source dependencies,\
-	$(MAKE) -C $(SRC_DIR) src_build_common)
+	$(MAKE_SOURCE) src_build_common)
 
 .PHONY: src_build
 src_build: src_build_common
 	$(QUIET)$(call silent_on_success,Building native Infer,\
-	$(MAKE) -C $(SRC_DIR) infer)
+	$(MAKE_SOURCE) infer)
 
 .PHONY: byte
 byte: src_build_common
 	$(QUIET)$(call silent_on_success,Building byte Infer,\
-	$(MAKE) -C $(SRC_DIR) byte)
+	$(MAKE_SOURCE) byte)
 
 .PHONY: test_build
 test_build: src_build_common
 	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
-	$(MAKE) -C $(SRC_DIR) test)
+	$(MAKE_SOURCE) test)
 
 ifeq ($(IS_FACEBOOK_TREE),yes)
 byte src_build_common src_build test_build: fb-setup
@@ -608,7 +613,17 @@ devsetup: Makefile.autoconf
 	  if [ "$$infer_repo_is_in_manpath" != "0" ]; then \
 	    printf "$(TERM_INFO)  echo 'export MANPATH=\"%s/infer/man\":\$$MANPATH' >> \"$$shell_config_file\"$(TERM_RESET)\n" "$(ABSOLUTE_ROOT_DIR)" >&2; \
 	  fi; \
-	fi
+	fi; \
+	test "$$BUILD_MODE" = "default" || \
+	  echo >&2; \
+	  echo '$(TERM_INFO)*** NOTE: Set `BUILD_MODE=default` in your shell to disable flambda by default.$(TERM_RESET)' >&2; \
+	  echo '$(TERM_INFO)*** NOTE: Compiling with flambda is ~5 times slower than without, so unless you are$(TERM_RESET)' >&2; \
+	  echo '$(TERM_INFO)*** NOTE: testing infer on a very large project it will not be worth it. Use the$(TERM_RESET)' >&2; \
+	  echo '$(TERM_INFO)*** NOTE: commands below to set the default build mode. You can then use `make BUILD_MODE=opt`$(TERM_RESET)' >&2; \
+	  echo '$(TERM_INFO)*** NOTE: when you really do want to enable flambda.$(TERM_RESET)' >&2; \
+	  echo >&2; \
+	  printf "$(TERM_INFO)  export BUILD_MODE=default$(TERM_RESET)\n" >&2; \
+	  printf "$(TERM_INFO)  echo 'export BUILD_MODE=default' >> \"$$shell_config_file\"$(TERM_RESET)\n" >&2
 	$(QUIET)PATH=$(ORIG_SHELL_PATH); if [ "$$(ocamlc -where 2>/dev/null)" != "$$($(OCAMLC) -where)" ]; then \
 	  echo >&2; \
 	  echo '$(TERM_INFO)*** NOTE: The current shell is not set up for the right opam switch.$(TERM_RESET)' >&2; \
