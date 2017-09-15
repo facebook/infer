@@ -42,8 +42,6 @@ val undefined_expression : unit -> Exp.t
 
 val collect_res_trans : Procdesc.t -> trans_result list -> trans_result
 
-val extract_var_exp_or_fail : trans_state -> Exp.t * Typ.t
-
 val is_return_temp : continuation option -> bool
 
 val ids_to_parent : continuation option -> Ident.t list -> Ident.t list

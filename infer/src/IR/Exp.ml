@@ -189,7 +189,7 @@ let get_vars exp =
      -> (fst vars, pvar :: snd vars)
     | Var id
      -> (id :: fst vars, snd vars)
-    | Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) | Exn e
+    | Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) | Exn e | Sizeof {dynamic_length= Some e}
      -> get_vars_ e vars
     | BinOp (_, e1, e2) | Lindex (e1, e2)
      -> get_vars_ e1 vars |> get_vars_ e2
@@ -199,7 +199,6 @@ let get_vars exp =
           ~init:vars captured_vars
     | Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _)
      -> vars
-    (* TODO: Sizeof dynamic length expressions may contain variables, do not ignore them. *)
     | Sizeof _
      -> vars
   in

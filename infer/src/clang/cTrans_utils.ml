@@ -196,9 +196,6 @@ let collect_res_trans pdesc l =
   let rt = collect l empty_res_trans in
   {rt with instrs= List.rev rt.instrs; exps= List.rev rt.exps; initd_exps= List.rev rt.initd_exps}
 
-let extract_var_exp_or_fail transt_state =
-  match transt_state.var_exp_typ with Some var_exp_typ -> var_exp_typ | None -> assert false
-
 (* priority_node is used to enforce some kind of policy for creating nodes *)
 (* in the cfg. Certain elements of the AST _must_ create nodes therefore   *)
 (* there is no need for them to use priority_node. Certain elements        *)

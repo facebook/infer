@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <new>
+
 namespace dead_stores {
 
 void easy_bad() { int x = 5; }
@@ -231,6 +233,13 @@ void FP_assign_array_tricky_ok() {
   global = arr;
   *(int*)arr = 123; // think this is a bug in the frontend... this instruction
   // looks like &arr:int = 123
+}
+
+void placement_new_ok(int len, int* ptr) {
+  int* placement = ptr;
+  while (len--) {
+    new (placement++) int(5);
+  }
 }
 
 }

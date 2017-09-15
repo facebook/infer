@@ -421,43 +421,46 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       whole type structure, to assign 0 values to all transitive fields because of
       AST construction in C translation *)
   let implicitValueInitExpr_trans trans_state stmt_info =
-    (* This node will always be child of InitListExpr, claiming priority will always fail *)
-    let var_exp_typ = extract_var_exp_or_fail trans_state in
-    let tenv = trans_state.context.CContext.tenv in
-    let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
-    let flatten_res_trans = collect_res_trans trans_state.context.procdesc in
-    (* Traverse structure of a type and initialize int/float/ptr fields with zero *)
-    let rec fill_typ_with_zero (exp, typ) : trans_result =
-      match typ.Typ.desc with
-      | Tstruct tn
-       -> let field_exps =
-            match Tenv.lookup tenv tn with
-            | Some {fields}
-             -> List.filter_map fields ~f:(fun (fieldname, fieldtype, _) ->
-                    if Typ.Fieldname.is_hidden fieldname then None
-                    else Some (Exp.Lfield (exp, fieldname, typ), fieldtype) )
-            | None
-             -> assert false
-          in
-          List.map ~f:fill_typ_with_zero field_exps |> flatten_res_trans
-      | Tarray (field_typ, Some n, _)
-       -> let size = IntLit.to_int n in
-          let indices = CGeneral_utils.list_range 0 (size - 1) in
-          List.map indices ~f:(fun i ->
-              let idx_exp = Exp.Const (Const.Cint (IntLit.of_int i)) in
-              let field_exp = Exp.Lindex (exp, idx_exp) in
-              fill_typ_with_zero (field_exp, field_typ) )
-          |> flatten_res_trans
-      | Tint _ | Tfloat _ | Tptr _
-       -> let zero_exp = Sil.zero_value_of_numerical_type typ in
-          let instrs = [Sil.Store (exp, typ, zero_exp, sil_loc)] in
-          let exps = [(exp, typ)] in
-          {empty_res_trans with exps; instrs}
-      | Tfun _ | Tvoid | Tarray _ | TVar _
-       -> CFrontend_config.unimplemented "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
-    in
-    let res_trans = fill_typ_with_zero var_exp_typ in
-    {res_trans with initd_exps= [fst var_exp_typ]}
+    match trans_state.var_exp_typ with
+    | Some var_exp_typ
+     -> (* This node will always be child of InitListExpr, claiming priority will always fail *)
+        let tenv = trans_state.context.CContext.tenv in
+        let sil_loc = CLocation.get_sil_location stmt_info trans_state.context in
+        let flatten_res_trans = collect_res_trans trans_state.context.procdesc in
+        (* Traverse structure of a type and initialize int/float/ptr fields with zero *)
+        let rec fill_typ_with_zero (exp, typ) : trans_result =
+          match typ.Typ.desc with
+          | Tstruct tn
+           -> let field_exps =
+                match Tenv.lookup tenv tn with
+                | Some {fields}
+                 -> List.filter_map fields ~f:(fun (fieldname, fieldtype, _) ->
+                        if Typ.Fieldname.is_hidden fieldname then None
+                        else Some (Exp.Lfield (exp, fieldname, typ), fieldtype) )
+                | None
+                 -> assert false
+              in
+              List.map ~f:fill_typ_with_zero field_exps |> flatten_res_trans
+          | Tarray (field_typ, Some n, _)
+           -> let size = IntLit.to_int n in
+              let indices = CGeneral_utils.list_range 0 (size - 1) in
+              List.map indices ~f:(fun i ->
+                  let idx_exp = Exp.Const (Const.Cint (IntLit.of_int i)) in
+                  let field_exp = Exp.Lindex (exp, idx_exp) in
+                  fill_typ_with_zero (field_exp, field_typ) )
+              |> flatten_res_trans
+          | Tint _ | Tfloat _ | Tptr _
+           -> let zero_exp = Sil.zero_value_of_numerical_type typ in
+              let instrs = [Sil.Store (exp, typ, zero_exp, sil_loc)] in
+              let exps = [(exp, typ)] in
+              {empty_res_trans with exps; instrs}
+          | Tfun _ | Tvoid | Tarray _ | TVar _
+           -> CFrontend_config.unimplemented "fill_typ_with_zero on type %a" (Typ.pp Pp.text) typ
+        in
+        let res_trans = fill_typ_with_zero var_exp_typ in
+        {res_trans with initd_exps= [fst var_exp_typ]}
+    | None
+     -> CFrontend_config.unimplemented "Retrieving var from non-InitListExpr parent"
 
   let no_op_trans succ_nodes = {empty_res_trans with root_nodes= succ_nodes}
 
@@ -2031,8 +2034,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> (* This can happen with union initializers. Skip them for now *) []
 
   and initListExpr_builtin_trans trans_state stmt_info stmts var_exp var_typ =
-    let stmt = match stmts with [s] -> s | _ -> assert false in
-    [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
+    match stmts with
+    | [stmt]
+     -> [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
+    | _
+     -> CFrontend_config.unimplemented
+          "InitListExpression for var %a type %a with multiple init statements" Exp.pp var_exp
+          (Typ.pp_full Pp.text) var_typ
 
   (** InitListExpr can have following meanings:
    - initialize all record fields
@@ -2070,7 +2078,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         match var_typ.Typ.desc with
         | Typ.Tarray (typ_inside, _, _)
          -> initListExpr_array_trans trans_state_pri init_stmt_info stmts var_exp typ_inside
-        | Typ.Tstruct _
+        | Tstruct _
          -> initListExpr_struct_trans trans_state_pri init_stmt_info stmts var_exp var_typ
         | Tint _ | Tfloat _ | Tptr _
          -> initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
@@ -2643,7 +2651,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let closure = Exp.Closure {name= lambda_pname; captured_vars} in
     {final_trans_result with exps= [(closure, typ)]}
 
-  and cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info =
+  and cxxNewExpr_trans trans_state stmt_info stmt_list expr_info cxx_new_expr_info =
+    let instructions_trans_result = instructions trans_state stmt_list in
     let context = trans_state.context in
     let typ = CType_decl.get_type_from_expr_info expr_info context.tenv in
     let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -2709,7 +2718,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let result_trans_to_parent =
       PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname stmt_info all_res_trans
     in
-    {result_trans_to_parent with exps= res_trans_new.exps}
+    collect_res_trans context.CContext.procdesc
+      [instructions_trans_result; {result_trans_to_parent with exps= res_trans_new.exps}]
 
   and cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info =
     let context = trans_state.context in
@@ -3141,8 +3151,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> stringLiteral_trans trans_state expr_info ""
     | BinaryConditionalOperator (stmt_info, stmts, expr_info)
      -> binaryConditionalOperator_trans trans_state stmt_info stmts expr_info
-    | CXXNewExpr (stmt_info, _, expr_info, cxx_new_expr_info)
-     -> cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info
+    | CXXNewExpr (stmt_info, stmt_list, expr_info, cxx_new_expr_info)
+     -> cxxNewExpr_trans trans_state stmt_info stmt_list expr_info cxx_new_expr_info
     | CXXDeleteExpr (stmt_info, stmt_list, _, delete_expr_info)
      -> cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info
     | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _)
