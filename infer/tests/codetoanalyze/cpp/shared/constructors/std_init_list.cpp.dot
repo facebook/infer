@@ -35,11 +35,11 @@ digraph iCFG {
 
 	 "X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_6" -> "X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_7" ;
 	 "X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_6" -> "X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_8" ;
-"X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_7" [label="7: Prune (true branch) \n   PRUNE(((n$4 != n$7) != 0), true); [line 15]\n " shape="invhouse"]
+"X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_7" [label="7: Prune (true branch) \n   PRUNE((n$4 != n$7), true); [line 15]\n " shape="invhouse"]
 	
 
 	 "X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_7" -> "X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_9" ;
-"X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_8" [label="8: Prune (false branch) \n   PRUNE(((n$4 != n$7) == 0), false); [line 15]\n " shape="invhouse"]
+"X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_8" [label="8: Prune (false branch) \n   PRUNE(!(n$4 != n$7), false); [line 15]\n " shape="invhouse"]
 	
 
 	 "X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_8" -> "X#X#{_ZN1XC1ESt16initializer_listIiE}.778d0439d25462bdf7ed466490fcf946_2" ;

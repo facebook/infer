@@ -28,11 +28,11 @@ digraph iCFG {
 	
 
 	 "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_7" -> "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_2" ;
-"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_8" [label="8: Prune (true branch) \n   PRUNE(((n$0 == 2) != 0), true); [line 15]\n " shape="invhouse"]
+"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_8" [label="8: Prune (true branch) \n   PRUNE((n$0 == 2), true); [line 15]\n " shape="invhouse"]
 	
 
 	 "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_8" -> "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_7" ;
-"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_9" [label="9: Prune (false branch) \n   PRUNE(((n$0 == 2) == 0), false); [line 15]\n " shape="invhouse"]
+"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_9" [label="9: Prune (false branch) \n   PRUNE(!(n$0 == 2), false); [line 15]\n " shape="invhouse"]
 	
 
 	 "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_9" -> "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_5" ;
@@ -40,20 +40,20 @@ digraph iCFG {
 	
 
 	 "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_10" -> "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_2" ;
-"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_11" [label="11: Prune (true branch) \n   PRUNE(((n$0 == 1) != 0), true); [line 13]\n " shape="invhouse"]
+"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_11" [label="11: Prune (true branch) \n   PRUNE((n$0 == 1), true); [line 13]\n " shape="invhouse"]
 	
 
 	 "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_11" -> "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_10" ;
-"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_12" [label="12: Prune (false branch) \n   PRUNE(((n$0 == 1) == 0), false); [line 13]\n " shape="invhouse"]
+"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_12" [label="12: Prune (false branch) \n   PRUNE(!(n$0 == 1), false); [line 13]\n " shape="invhouse"]
 	
 
 	 "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_12" -> "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_8" ;
 	 "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_12" -> "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_9" ;
-"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_13" [label="13: Prune (true branch) \n   PRUNE(((n$0 == 0) != 0), true); [line 12]\n " shape="invhouse"]
+"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_13" [label="13: Prune (true branch) \n   PRUNE((n$0 == 0), true); [line 12]\n " shape="invhouse"]
 	
 
 	 "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_13" -> "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_10" ;
-"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_14" [label="14: Prune (false branch) \n   PRUNE(((n$0 == 0) == 0), false); [line 12]\n " shape="invhouse"]
+"get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_14" [label="14: Prune (false branch) \n   PRUNE(!(n$0 == 0), false); [line 12]\n " shape="invhouse"]
 	
 
 	 "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_14" -> "get#_Z3geti.1d02298fe5ac75f9576d4cbc2d8c4b49_11" ;

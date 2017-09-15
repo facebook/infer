@@ -54,10 +54,7 @@ module Nodes = struct
       extract_exp_from_list e_cond
         "@\nWARNING: Missing expression for Conditional operator. Need to be fixed"
     in
-    let e_cond'' =
-      if branch then Exp.BinOp (Binop.Ne, e_cond', Exp.zero)
-      else Exp.BinOp (Binop.Eq, e_cond', Exp.zero)
-    in
+    let e_cond'' = if branch then e_cond' else Exp.UnOp (Unop.LNot, e_cond', None) in
     let instrs_cond' = instrs_cond @ [Sil.Prune (e_cond'', loc, branch, ik)] in
     create_node (prune_kind branch) instrs_cond' loc context
 

@@ -15,11 +15,11 @@ digraph iCFG {
 	
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_4" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_3" ;
-"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_5" [label="5: Prune (true branch) \n   n$1=*&context:CGContext* [line 30]\n  PRUNE((n$1 != 0), true); [line 30]\n " shape="invhouse"]
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_5" [label="5: Prune (true branch) \n   n$1=*&context:CGContext* [line 30]\n  PRUNE(n$1, true); [line 30]\n " shape="invhouse"]
 	
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_5" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_7" ;
-"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_6" [label="6: Prune (false branch) \n   n$1=*&context:CGContext* [line 30]\n  PRUNE((n$1 == 0), false); [line 30]\n " shape="invhouse"]
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_6" [label="6: Prune (false branch) \n   n$1=*&context:CGContext* [line 30]\n  PRUNE(!n$1, false); [line 30]\n " shape="invhouse"]
 	
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_6" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_4" ;
@@ -64,11 +64,11 @@ digraph iCFG {
 	
 
 	 "__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_4" -> "__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_2" ;
-"__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_5" [label="5: Prune (true branch) \n   n$6=*&newImage:CGImage* [line 26]\n  PRUNE((n$6 != 0), true); [line 26]\n " shape="invhouse"]
+"__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_5" [label="5: Prune (true branch) \n   n$6=*&newImage:CGImage* [line 26]\n  PRUNE(n$6, true); [line 26]\n " shape="invhouse"]
 	
 
 	 "__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_5" -> "__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_7" ;
-"__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_6" [label="6: Prune (false branch) \n   n$6=*&newImage:CGImage* [line 26]\n  PRUNE((n$6 == 0), false); [line 26]\n " shape="invhouse"]
+"__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_6" [label="6: Prune (false branch) \n   n$6=*&newImage:CGImage* [line 26]\n  PRUNE(!n$6, false); [line 26]\n " shape="invhouse"]
 	
 
 	 "__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_6" -> "__objc_anonymous_block_My_manager_blockReleaseTODO______1.727fb709fde4c2da5c24b6a887eca95a_3" ;

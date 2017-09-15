@@ -223,11 +223,11 @@ digraph iCFG {
 	
 
 	 "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_4" -> "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_2" ;
-"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 34]\n  PRUNE((n$0 != 0), true); [line 34]\n " shape="invhouse"]
+"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 34]\n  PRUNE(n$0, true); [line 34]\n " shape="invhouse"]
 	
 
 	 "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_5" -> "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_8" ;
-"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 34]\n  PRUNE((n$0 == 0), false); [line 34]\n " shape="invhouse"]
+"method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 34]\n  PRUNE(!n$0, false); [line 34]\n " shape="invhouse"]
 	
 
 	 "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_6" -> "method_div0_ptr#_Z15method_div0_ptrP1X.89748dda027601789e559d77df3bd502_3" ;
@@ -255,11 +255,11 @@ digraph iCFG {
 	
 
 	 "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_4" -> "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_2" ;
-"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 41]\n  PRUNE((n$0 != 0), true); [line 41]\n " shape="invhouse"]
+"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 41]\n  PRUNE(n$0, true); [line 41]\n " shape="invhouse"]
 	
 
 	 "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_5" -> "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_8" ;
-"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 41]\n  PRUNE((n$0 == 0), false); [line 41]\n " shape="invhouse"]
+"method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 41]\n  PRUNE(!n$0, false); [line 41]\n " shape="invhouse"]
 	
 
 	 "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_6" -> "method_div1_ptr#_Z15method_div1_ptrP1X.bca763ecaac4ee9e4e051ad3a1a68639_3" ;
@@ -287,11 +287,11 @@ digraph iCFG {
 	
 
 	 "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_4" -> "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_2" ;
-"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 48]\n  PRUNE((n$0 != 0), true); [line 48]\n " shape="invhouse"]
+"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 48]\n  PRUNE(n$0, true); [line 48]\n " shape="invhouse"]
 	
 
 	 "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_5" -> "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_8" ;
-"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 48]\n  PRUNE((n$0 == 0), false); [line 48]\n " shape="invhouse"]
+"field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 48]\n  PRUNE(!n$0, false); [line 48]\n " shape="invhouse"]
 	
 
 	 "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_6" -> "field_div0_ptr#_Z14field_div0_ptrP1X.dd7817bc5e741382fd4c50ecc2b5232f_3" ;
@@ -319,11 +319,11 @@ digraph iCFG {
 	
 
 	 "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_4" -> "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_2" ;
-"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 55]\n  PRUNE((n$0 != 0), true); [line 55]\n " shape="invhouse"]
+"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_5" [label="5: Prune (true branch) \n   n$0=*&x:X* [line 55]\n  PRUNE(n$0, true); [line 55]\n " shape="invhouse"]
 	
 
 	 "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_5" -> "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_8" ;
-"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 55]\n  PRUNE((n$0 == 0), false); [line 55]\n " shape="invhouse"]
+"field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_6" [label="6: Prune (false branch) \n   n$0=*&x:X* [line 55]\n  PRUNE(!n$0, false); [line 55]\n " shape="invhouse"]
 	
 
 	 "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_6" -> "field_div1_ptr#_Z14field_div1_ptrP1X.815a8370627b5e78bb1fad6408d1711b_3" ;

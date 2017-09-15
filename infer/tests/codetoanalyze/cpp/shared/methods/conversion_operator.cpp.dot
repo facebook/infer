@@ -20,11 +20,11 @@ digraph iCFG {
 
 	 "branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_5" -> "branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_6" ;
 	 "branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_5" -> "branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_7" ;
-"branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_6" [label="6: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 36]\n " shape="invhouse"]
+"branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_6" [label="6: Prune (true branch) \n   PRUNE(n$3, true); [line 36]\n " shape="invhouse"]
 	
 
 	 "branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_6" -> "branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_9" ;
-"branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_7" [label="7: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 36]\n " shape="invhouse"]
+"branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_7" [label="7: Prune (false branch) \n   PRUNE(!n$3, false); [line 36]\n " shape="invhouse"]
 	
 
 	 "branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_7" -> "branch_div0#conversion_operator#_ZN19conversion_operator11branch_div0Ev.7ac2fbad786f1d6a619b754c3edb7bda_4" ;
@@ -60,11 +60,11 @@ digraph iCFG {
 
 	 "y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_5" -> "y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_6" ;
 	 "y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_5" -> "y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_7" ;
-"y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_6" [label="6: Prune (true branch) \n   PRUNE((n$9 != 0), true); [line 47]\n " shape="invhouse"]
+"y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_6" [label="6: Prune (true branch) \n   PRUNE(n$9, true); [line 47]\n " shape="invhouse"]
 	
 
 	 "y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_6" -> "y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_9" ;
-"y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_7" [label="7: Prune (false branch) \n   PRUNE((n$9 == 0), false); [line 47]\n " shape="invhouse"]
+"y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_7" [label="7: Prune (false branch) \n   PRUNE(!n$9, false); [line 47]\n " shape="invhouse"]
 	
 
 	 "y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_7" -> "y_branch_div0#conversion_operator#_ZN19conversion_operator13y_branch_div0Ev.55b1d7191b07a83040d3d6f4f6c86612_4" ;
@@ -108,11 +108,11 @@ digraph iCFG {
 
 	 "branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_5" -> "branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_6" ;
 	 "branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_5" -> "branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_7" ;
-"branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_6" [label="6: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 56]\n " shape="invhouse"]
+"branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_6" [label="6: Prune (true branch) \n   PRUNE(n$3, true); [line 56]\n " shape="invhouse"]
 	
 
 	 "branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_6" -> "branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_9" ;
-"branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_7" [label="7: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 56]\n " shape="invhouse"]
+"branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_7" [label="7: Prune (false branch) \n   PRUNE(!n$3, false); [line 56]\n " shape="invhouse"]
 	
 
 	 "branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_7" -> "branch_no_div#conversion_operator#_ZN19conversion_operator13branch_no_divEv.a0238eac9b6689e30d59d287a7b20301_4" ;
@@ -148,11 +148,11 @@ digraph iCFG {
 
 	 "branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_5" -> "branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_6" ;
 	 "branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_5" -> "branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_7" ;
-"branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_6" [label="6: Prune (true branch) \n   PRUNE((n$3 != 0), true); [line 65]\n " shape="invhouse"]
+"branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_6" [label="6: Prune (true branch) \n   PRUNE(n$3, true); [line 65]\n " shape="invhouse"]
 	
 
 	 "branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_6" -> "branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_9" ;
-"branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_7" [label="7: Prune (false branch) \n   PRUNE((n$3 == 0), false); [line 65]\n " shape="invhouse"]
+"branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_7" [label="7: Prune (false branch) \n   PRUNE(!n$3, false); [line 65]\n " shape="invhouse"]
 	
 
 	 "branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_7" -> "branch_div1#conversion_operator#_ZN19conversion_operator11branch_div1Ev.c9238a51dfce95d160a10844a88372f4_4" ;

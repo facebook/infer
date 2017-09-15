@@ -30,6 +30,7 @@ codetoanalyze/c/errors/local_vars/local_vars.c, m2, 9, DIVIDE_BY_ZERO
 codetoanalyze/c/errors/local_vars/local_vars.c, mm, 6, DIVIDE_BY_ZERO
 codetoanalyze/c/errors/local_vars/local_vars.c, t, 8, DIVIDE_BY_ZERO
 codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak, 3, MEMORY_LEAK
+codetoanalyze/c/errors/memory_leaks/test.c, common_realloc_leak, 5, NULL_TEST_AFTER_DEREFERENCE
 codetoanalyze/c/errors/memory_leaks/test.c, conditional_last_instruction, 2, MEMORY_LEAK
 codetoanalyze/c/errors/memory_leaks/test.c, simple_leak, 2, MEMORY_LEAK
 codetoanalyze/c/errors/memory_leaks/test.c, uses_allocator, 3, MEMORY_LEAK
