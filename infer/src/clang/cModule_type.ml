@@ -20,7 +20,8 @@ module type CTranslation = sig
   (** Translates instructions: (statements and expressions) from the ast into sil *)
 
   val instructions_trans :
-    CContext.t -> Clang_ast_t.stmt -> instr_type list -> Procdesc.Node.t -> Procdesc.Node.t list
+    CContext.t -> Clang_ast_t.stmt -> instr_type list -> Procdesc.Node.t
+    -> is_destructor_wrapper:bool -> Procdesc.Node.t list
   (** It receives the context, a list of statements from clang ast, list of custom statments to be
       added before clang statements and the exit node and it returns a list of cfg nodes that
       represent the translation of the stmts into sil. *)

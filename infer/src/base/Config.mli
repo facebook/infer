@@ -101,6 +101,8 @@ val captured_dir_name : string
 
 val clang_initializer_prefix : string
 
+val clang_inner_destructor_prefix : string
+
 val classnames_dir_name : string
 
 val classpath : string option

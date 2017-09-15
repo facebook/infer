@@ -207,21 +207,32 @@ digraph iCFG {
 	
 
 	 "shared_ptr#shared_ptr<int>#std#{_ZNSt3__110shared_ptrIiEC1Ev|constexpr}.a83df2e127dfd835cd19672b6db04408_4" -> "shared_ptr#shared_ptr<int>#std#{_ZNSt3__110shared_ptrIiEC1Ev|constexpr}.a83df2e127dfd835cd19672b6db04408_3" ;
+"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_1" [label="1: Start std::shared_ptr<int>___infer_inner_destructor_~shared_ptr\nFormals:  this:int**\nLocals:  \n   DECLARE_LOCALS(&return); [line 182]\n " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_1" -> "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_4" ;
+"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_2" [label="2: Exit std::shared_ptr<int>___infer_inner_destructor_~shared_ptr \n  " color=yellow style=filled]
+	
+
+"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_3" [label="3:  Destruction \n   n$0=*&this:int** [line 182]\n  _=*n$0:int* [line 182]\n  _fun_std::std__shared_ptr<int>___infer_inner_destructor_~std__shared_ptr(n$0:int**) [line 182]\n " shape="box"]
+	
+
+	 "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_3" -> "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_2" ;
+"__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_4" [label="4:  Call _fun_std::shared_ptr<int>_reset<int,_void> \n   n$2=*&this:int** [line 182]\n  _=*n$2:int* [line 182]\n  _fun_std::shared_ptr<int>_reset<int,_void>(n$2:int**,null:int*) [line 182]\n " shape="box"]
+	
+
+	 "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_4" -> "__infer_inner_destructor_~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).e1de29ff17d1dd4b1e883acc49f18c8d_3" ;
 "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_1" [label="1: Start std::shared_ptr<int>_~shared_ptr\nFormals:  this:int**\nLocals:  \n   DECLARE_LOCALS(&return); [line 182]\n " color=yellow style=filled]
 	
 
-	 "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_1" -> "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_4" ;
+	 "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_1" -> "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_3" ;
 "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_2" [label="2: Exit std::shared_ptr<int>_~shared_ptr \n  " color=yellow style=filled]
 	
 
-"~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_3" [label="3:  Destruction \n   n$0=*&this:int** [line 182]\n  _=*n$0:int* [line 182]\n  _fun_std::std__shared_ptr<int>_~std__shared_ptr(n$0:int**) [line 182]\n " shape="box"]
+"~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_3" [label="3:  Destruction \n   n$0=*&this:int** [line 182]\n  _=*n$0:int* [line 182]\n  _fun_std::shared_ptr<int>___infer_inner_destructor_~shared_ptr(n$0:int**) [line 182]\n " shape="box"]
 	
 
 	 "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_3" -> "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_2" ;
-"~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_4" [label="4:  Call _fun_std::shared_ptr<int>_reset<int,_void> \n   n$2=*&this:int** [line 182]\n  _=*n$2:int* [line 182]\n  _fun_std::shared_ptr<int>_reset<int,_void>(n$2:int**,null:int*) [line 182]\n " shape="box"]
-	
-
-	 "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_4" -> "~shared_ptr#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiED0Ev).64f04c4b2ed4a174cbcd135fb2e0998b_3" ;
 "reset<int,_void>#shared_ptr<int>#std#(_ZNSt3__110shared_ptrIiE5resetIivEEvPT_).a1205b56a9f5cca1b1c1504f3db46c6e_1" [label="1: Start std::shared_ptr<int>_reset<int,_void>\nFormals:  this:int** p:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 234]\n " color=yellow style=filled]
 	
 

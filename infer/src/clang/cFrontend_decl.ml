@@ -17,8 +17,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
   let model_exists procname = Specs.summary_exists_in_models procname && not Config.models_mode
 
   (* Translates the method/function's body into nodes of the cfg. *)
-  let add_method trans_unit_ctx tenv cg cfg class_decl_opt procname body has_return_param
-      is_objc_method outer_context_opt extra_instrs =
+  let add_method ?(is_destructor_wrapper= false) trans_unit_ctx tenv cg cfg class_decl_opt procname
+      body has_return_param is_objc_method outer_context_opt extra_instrs =
     L.(debug Capture Verbose)
       "@\n@\n>>---------- ADDING METHOD: '%a' ---------<<@\n@\n" Typ.Procname.pp procname ;
     let handle_frontend_failure ~print fmt =
@@ -41,7 +41,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             L.(debug Capture Verbose)
               "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
               (Typ.Procname.to_string procname) ;
-            let meth_body_nodes = T.instructions_trans context body extra_instrs exit_node in
+            let meth_body_nodes =
+              T.instructions_trans context body extra_instrs exit_node ~is_destructor_wrapper
+            in
             let proc_attributes = Procdesc.get_attributes procdesc in
             Procdesc.Node.add_locals_ret_declaration start_node proc_attributes
               (Procdesc.get_locals procdesc) ;
@@ -90,8 +92,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | None
      -> ()
 
-  let process_method_decl ?(set_objc_accessor_attr= false) trans_unit_ctx tenv cg cfg curr_class
-      meth_decl ~is_objc =
+  let process_method_decl ?(set_objc_accessor_attr= false) ?(is_destructor= false) trans_unit_ctx
+      tenv cg cfg curr_class meth_decl ~is_objc =
     let ms, body_opt, extra_instrs =
       CMethod_trans.method_signature_of_decl trans_unit_ctx tenv meth_decl None
     in
@@ -101,11 +103,32 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | Some body
      -> let procname = CMethod_signature.ms_get_name ms in
         let return_param_typ_opt = CMethod_signature.ms_get_return_param_typ ms in
-        if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv ms
+        let ms', procname' =
+          if is_destructor then (
+            (* For a destructor we create two procedures: a destructor wrapper and an inner destructor *)
+            (* A destructor wrapper is called from the outside, i.e. for destructing local variables and fields *)
+            (* The destructor wrapper calls the inner destructor which has the actual body *)
+            if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv
+                 ms [body] [] is_objc_inst_method
+            then
+              add_method trans_unit_ctx tenv cg cfg curr_class procname body return_param_typ_opt
+                is_objc None extra_instrs ~is_destructor_wrapper:true ;
+            let new_method_name =
+              Config.clang_inner_destructor_prefix ^ Typ.Procname.get_method procname
+            in
+            let ms' =
+              CMethod_signature.replace_name_ms ms
+                (Typ.Procname.objc_cpp_replace_method_name procname new_method_name)
+            in
+            let procname' = CMethod_signature.ms_get_name ms' in
+            (ms', procname') )
+          else (ms, procname)
+        in
+        if CMethod_trans.create_local_procdesc ~set_objc_accessor_attr trans_unit_ctx cfg tenv ms'
              [body] [] is_objc_inst_method
         then
-          add_method trans_unit_ctx tenv cg cfg curr_class procname body return_param_typ_opt
-            is_objc None extra_instrs
+          add_method trans_unit_ctx tenv cg cfg curr_class procname' body return_param_typ_opt
+            is_objc None extra_instrs ~is_destructor_wrapper:false
     | None
      -> if set_objc_accessor_attr then
           ignore
@@ -133,8 +156,11 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
   let process_one_method_decl trans_unit_ctx tenv cg cfg curr_class dec =
     let open Clang_ast_t in
     match dec with
-    | CXXMethodDecl _ | CXXConstructorDecl _ | CXXConversionDecl _ | CXXDestructorDecl _
+    | CXXMethodDecl _ | CXXConstructorDecl _ | CXXConversionDecl _
      -> process_method_decl trans_unit_ctx tenv cg cfg curr_class dec ~is_objc:false
+    | CXXDestructorDecl _
+     -> process_method_decl trans_unit_ctx tenv cg cfg curr_class dec ~is_objc:false
+          ~is_destructor:true
     | ObjCMethodDecl _
      -> process_method_decl trans_unit_ctx tenv cg cfg curr_class dec ~is_objc:true
     | ObjCPropertyImplDecl (_, obj_c_property_impl_decl_info)

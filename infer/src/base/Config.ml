@@ -114,6 +114,8 @@ let captured_dir_name = "captured"
 
 let clang_initializer_prefix = "__infer_globals_initializer_"
 
+let clang_inner_destructor_prefix = "__infer_inner_destructor_"
+
 let classnames_dir_name = "classnames"
 
 (** Experimental: if true do some specialized analysis of concurrent constructs. *)

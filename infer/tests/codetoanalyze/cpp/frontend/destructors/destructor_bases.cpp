@@ -7,12 +7,17 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-struct A {
+struct T {
+  T(){};
+  ~T(){};
+};
+
+struct A : virtual T {
   A(){};
   ~A(){};
 };
 
-struct B : A {
+struct B : virtual A {
   B(){};
   ~B(){};
 };
@@ -31,4 +36,9 @@ struct D : A, C {
 struct E : B, C, D {
   E(){};
   ~E(){};
+};
+
+struct F : B, virtual C, D {
+  F(){};
+  ~F(){};
 };

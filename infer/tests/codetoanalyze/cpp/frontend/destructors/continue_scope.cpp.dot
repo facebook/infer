@@ -402,13 +402,24 @@ digraph iCFG {
 "X#X#continue_scope#{_ZN14continue_scope1XC1Ev|constexpr}.309ed1a5aaa9a7f91a1b2c965b22fb65_2" [label="2: Exit continue_scope::X_X \n  " color=yellow style=filled]
 	
 
+"__infer_inner_destructor_~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).6e2c8e3d1d5c09b82f94d5cf6f8b46ca_1" [label="1: Start continue_scope::X___infer_inner_destructor_~X\nFormals:  this:continue_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).6e2c8e3d1d5c09b82f94d5cf6f8b46ca_1" -> "__infer_inner_destructor_~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).6e2c8e3d1d5c09b82f94d5cf6f8b46ca_2" ;
+"__infer_inner_destructor_~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).6e2c8e3d1d5c09b82f94d5cf6f8b46ca_2" [label="2: Exit continue_scope::X___infer_inner_destructor_~X \n  " color=yellow style=filled]
+	
+
 "~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).4072450acbc3373059f5ebe403a65b9b_1" [label="1: Start continue_scope::X_~X\nFormals:  this:continue_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
-	 "~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).4072450acbc3373059f5ebe403a65b9b_1" -> "~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).4072450acbc3373059f5ebe403a65b9b_2" ;
+	 "~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).4072450acbc3373059f5ebe403a65b9b_1" -> "~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).4072450acbc3373059f5ebe403a65b9b_3" ;
 "~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).4072450acbc3373059f5ebe403a65b9b_2" [label="2: Exit continue_scope::X_~X \n  " color=yellow style=filled]
 	
 
+"~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).4072450acbc3373059f5ebe403a65b9b_3" [label="3:  Destruction \n   n$0=*&this:continue_scope::X* [line 12]\n  _=*n$0:continue_scope::X [line 12]\n  _fun_continue_scope::X___infer_inner_destructor_~X(n$0:continue_scope::X*) [line 12]\n " shape="box"]
+	
+
+	 "~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).4072450acbc3373059f5ebe403a65b9b_3" -> "~X#X#continue_scope#(_ZN14continue_scope1XD0Ev).4072450acbc3373059f5ebe403a65b9b_2" ;
 "X#X#continue_scope#{_ZN14continue_scope1XC1ERKS0_|constexpr}.e9ad42d27c2e4394802f687830879658_1" [label="1: Start continue_scope::X_X\nFormals:  this:continue_scope::X* __param_0:continue_scope::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
@@ -534,13 +545,24 @@ digraph iCFG {
 	
 
 	 "vec#vec#continue_scope#{_ZN14continue_scope3vecC1Ev}.02564fa4cf1e87af7244f8fd35b7d277_3" -> "vec#vec#continue_scope#{_ZN14continue_scope3vecC1Ev}.02564fa4cf1e87af7244f8fd35b7d277_2" ;
+"__infer_inner_destructor_~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).ca8dc8da9da26cefea028f77edaba5ec_1" [label="1: Start continue_scope::vec___infer_inner_destructor_~vec\nFormals:  this:continue_scope::vec*\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).ca8dc8da9da26cefea028f77edaba5ec_1" -> "__infer_inner_destructor_~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).ca8dc8da9da26cefea028f77edaba5ec_2" ;
+"__infer_inner_destructor_~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).ca8dc8da9da26cefea028f77edaba5ec_2" [label="2: Exit continue_scope::vec___infer_inner_destructor_~vec \n  " color=yellow style=filled]
+	
+
 "~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).0f31d591628d81f66a8e6d7551b6574f_1" [label="1: Start continue_scope::vec_~vec\nFormals:  this:continue_scope::vec*\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
 	
 
-	 "~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).0f31d591628d81f66a8e6d7551b6574f_1" -> "~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).0f31d591628d81f66a8e6d7551b6574f_2" ;
+	 "~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).0f31d591628d81f66a8e6d7551b6574f_1" -> "~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).0f31d591628d81f66a8e6d7551b6574f_3" ;
 "~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).0f31d591628d81f66a8e6d7551b6574f_2" [label="2: Exit continue_scope::vec_~vec \n  " color=yellow style=filled]
 	
 
+"~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).0f31d591628d81f66a8e6d7551b6574f_3" [label="3:  Destruction \n   n$0=*&this:continue_scope::vec* [line 34]\n  _=*n$0:continue_scope::vec [line 34]\n  _fun_continue_scope::vec___infer_inner_destructor_~vec(n$0:continue_scope::vec*) [line 34]\n " shape="box"]
+	
+
+	 "~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).0f31d591628d81f66a8e6d7551b6574f_3" -> "~vec#vec#continue_scope#(_ZN14continue_scope3vecD0Ev).0f31d591628d81f66a8e6d7551b6574f_2" ;
 "begin#vec#continue_scope#(_ZN14continue_scope3vec5beginEv).4167375ef226120932c1b2e1ed1e96fb_1" [label="1: Start continue_scope::vec_begin\nFormals:  this:continue_scope::vec* __return_param:continue_scope::iterator*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:continue_scope::iterator \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 36]\n " color=yellow style=filled]
 	
 

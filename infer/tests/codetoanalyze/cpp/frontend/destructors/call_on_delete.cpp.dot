@@ -22,11 +22,22 @@ digraph iCFG {
 	
 
 	 "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_3" -> "deleteX#_Z7deleteXP1X.ddffb30c0ee6370177b08414b2c6d138_2" ;
+"__infer_inner_destructor_~X#X#(_ZN1XD0Ev).a1bdd64497fedf372add1f9d013cfbad_1" [label="1: Start X___infer_inner_destructor_~X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~X#X#(_ZN1XD0Ev).a1bdd64497fedf372add1f9d013cfbad_1" -> "__infer_inner_destructor_~X#X#(_ZN1XD0Ev).a1bdd64497fedf372add1f9d013cfbad_2" ;
+"__infer_inner_destructor_~X#X#(_ZN1XD0Ev).a1bdd64497fedf372add1f9d013cfbad_2" [label="2: Exit X___infer_inner_destructor_~X \n  " color=yellow style=filled]
+	
+
 "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_1" [label="1: Start X_~X\nFormals:  this:X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
-	 "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_1" -> "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_2" ;
+	 "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_1" -> "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_3" ;
 "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_2" [label="2: Exit X_~X \n  " color=yellow style=filled]
 	
 
+"~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_3" [label="3:  Destruction \n   n$0=*&this:X* [line 11]\n  _=*n$0:X [line 11]\n  _fun_X___infer_inner_destructor_~X(n$0:X*) [line 11]\n " shape="box"]
+	
+
+	 "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_3" -> "~X#X#(_ZN1XD0Ev).570f4e582c393d8fb931d72cddd28836_2" ;
 }

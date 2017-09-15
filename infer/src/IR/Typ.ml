@@ -638,6 +638,13 @@ module Procname = struct
     | C _ | Block _ | Linters_dummy_method
      -> t
 
+  let objc_cpp_replace_method_name t (new_method_name: string) =
+    match t with
+    | ObjC_Cpp osig
+     -> ObjC_Cpp {osig with method_name= new_method_name}
+    | C _ | Block _ | Linters_dummy_method | Java _
+     -> t
+
   (** Get the class name of a Objective-C/C++ procedure name. *)
   let objc_cpp_get_class_name objc_cpp = Name.name objc_cpp.class_name
 

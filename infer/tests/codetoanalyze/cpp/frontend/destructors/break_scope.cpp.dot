@@ -479,13 +479,24 @@ digraph iCFG {
 "X#X#break_scope#{_ZN11break_scope1XC1Ev|constexpr}.c40e3536eb37af840612f198a520182a_2" [label="2: Exit break_scope::X_X \n  " color=yellow style=filled]
 	
 
+"__infer_inner_destructor_~X#X#break_scope#(_ZN11break_scope1XD0Ev).ef09409bcd4ddc481e7220bbe1a3263d_1" [label="1: Start break_scope::X___infer_inner_destructor_~X\nFormals:  this:break_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~X#X#break_scope#(_ZN11break_scope1XD0Ev).ef09409bcd4ddc481e7220bbe1a3263d_1" -> "__infer_inner_destructor_~X#X#break_scope#(_ZN11break_scope1XD0Ev).ef09409bcd4ddc481e7220bbe1a3263d_2" ;
+"__infer_inner_destructor_~X#X#break_scope#(_ZN11break_scope1XD0Ev).ef09409bcd4ddc481e7220bbe1a3263d_2" [label="2: Exit break_scope::X___infer_inner_destructor_~X \n  " color=yellow style=filled]
+	
+
 "~X#X#break_scope#(_ZN11break_scope1XD0Ev).c4abbf50a9425a7490a5d9414ad324ac_1" [label="1: Start break_scope::X_~X\nFormals:  this:break_scope::X*\nLocals:  \n   DECLARE_LOCALS(&return); [line 12]\n " color=yellow style=filled]
 	
 
-	 "~X#X#break_scope#(_ZN11break_scope1XD0Ev).c4abbf50a9425a7490a5d9414ad324ac_1" -> "~X#X#break_scope#(_ZN11break_scope1XD0Ev).c4abbf50a9425a7490a5d9414ad324ac_2" ;
+	 "~X#X#break_scope#(_ZN11break_scope1XD0Ev).c4abbf50a9425a7490a5d9414ad324ac_1" -> "~X#X#break_scope#(_ZN11break_scope1XD0Ev).c4abbf50a9425a7490a5d9414ad324ac_3" ;
 "~X#X#break_scope#(_ZN11break_scope1XD0Ev).c4abbf50a9425a7490a5d9414ad324ac_2" [label="2: Exit break_scope::X_~X \n  " color=yellow style=filled]
 	
 
+"~X#X#break_scope#(_ZN11break_scope1XD0Ev).c4abbf50a9425a7490a5d9414ad324ac_3" [label="3:  Destruction \n   n$0=*&this:break_scope::X* [line 12]\n  _=*n$0:break_scope::X [line 12]\n  _fun_break_scope::X___infer_inner_destructor_~X(n$0:break_scope::X*) [line 12]\n " shape="box"]
+	
+
+	 "~X#X#break_scope#(_ZN11break_scope1XD0Ev).c4abbf50a9425a7490a5d9414ad324ac_3" -> "~X#X#break_scope#(_ZN11break_scope1XD0Ev).c4abbf50a9425a7490a5d9414ad324ac_2" ;
 "X#X#break_scope#{_ZN11break_scope1XC1ERKS0_|constexpr}.ac741cc117694680a0db71143e20b138_1" [label="1: Start break_scope::X_X\nFormals:  this:break_scope::X* __param_0:break_scope::X const &\nLocals:  \n   DECLARE_LOCALS(&return); [line 11]\n " color=yellow style=filled]
 	
 
@@ -611,13 +622,24 @@ digraph iCFG {
 	
 
 	 "vec#vec#break_scope#{_ZN11break_scope3vecC1Ev}.cb47feb1d11066b4d5321ee0edf92827_3" -> "vec#vec#break_scope#{_ZN11break_scope3vecC1Ev}.cb47feb1d11066b4d5321ee0edf92827_2" ;
+"__infer_inner_destructor_~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).607b2f31918f9f66761e59a18277e9f1_1" [label="1: Start break_scope::vec___infer_inner_destructor_~vec\nFormals:  this:break_scope::vec*\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).607b2f31918f9f66761e59a18277e9f1_1" -> "__infer_inner_destructor_~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).607b2f31918f9f66761e59a18277e9f1_2" ;
+"__infer_inner_destructor_~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).607b2f31918f9f66761e59a18277e9f1_2" [label="2: Exit break_scope::vec___infer_inner_destructor_~vec \n  " color=yellow style=filled]
+	
+
 "~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).053725d75c82d883e2b287c914d73376_1" [label="1: Start break_scope::vec_~vec\nFormals:  this:break_scope::vec*\nLocals:  \n   DECLARE_LOCALS(&return); [line 34]\n " color=yellow style=filled]
 	
 
-	 "~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).053725d75c82d883e2b287c914d73376_1" -> "~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).053725d75c82d883e2b287c914d73376_2" ;
+	 "~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).053725d75c82d883e2b287c914d73376_1" -> "~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).053725d75c82d883e2b287c914d73376_3" ;
 "~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).053725d75c82d883e2b287c914d73376_2" [label="2: Exit break_scope::vec_~vec \n  " color=yellow style=filled]
 	
 
+"~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).053725d75c82d883e2b287c914d73376_3" [label="3:  Destruction \n   n$0=*&this:break_scope::vec* [line 34]\n  _=*n$0:break_scope::vec [line 34]\n  _fun_break_scope::vec___infer_inner_destructor_~vec(n$0:break_scope::vec*) [line 34]\n " shape="box"]
+	
+
+	 "~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).053725d75c82d883e2b287c914d73376_3" -> "~vec#vec#break_scope#(_ZN11break_scope3vecD0Ev).053725d75c82d883e2b287c914d73376_2" ;
 "begin#vec#break_scope#(_ZN11break_scope3vec5beginEv).74725bafe1f90b7d151b8912e60afd42_1" [label="1: Start break_scope::vec_begin\nFormals:  this:break_scope::vec* __return_param:break_scope::iterator*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:break_scope::iterator \n   DECLARE_LOCALS(&return,&0$?%__sil_tmpSIL_materialize_temp__n$1); [line 36]\n " color=yellow style=filled]
 	
 

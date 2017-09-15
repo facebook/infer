@@ -377,6 +377,8 @@ module Procname : sig
 
   val objc_cpp_get_class_type_name : objc_cpp -> Name.t
 
+  val objc_cpp_replace_method_name : t -> string -> t
+
   val objc_method_kind_of_bool : bool -> objc_cpp_method_kind
   (** Create ObjC method type from a bool is_instance. *)
 

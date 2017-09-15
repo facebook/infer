@@ -477,3 +477,12 @@ let get_cxx_base_classes decl =
    -> cxx_record_info.xrdi_bases
   | _
    -> []
+
+let get_cxx_virtual_base_classes decl =
+  let open Clang_ast_t in
+  match decl with
+  | CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_info)
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _)
+   -> cxx_record_info.xrdi_transitive_vbases
+  | _
+   -> []
