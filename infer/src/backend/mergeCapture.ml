@@ -178,10 +178,12 @@ let process_merge_file deps_file =
   | Error error
    -> L.internal_error "Couldn't read deps file '%s': %s" deps_file error ) ;
   create_multilinks () ;
-  L.progress "Targets merged: %d@." stats.targets_merged ;
-  L.progress "Files linked: %d@." stats.files_linked ;
-  L.progress "Files multilinked: %d@." stats.files_multilinked
+  L.progress "Targets merged: %d@\n" stats.targets_merged ;
+  L.progress "Files linked: %d@\n" stats.files_linked ;
+  L.progress "Files multilinked: %d@\n" stats.files_multilinked
 
 let merge_captured_targets () =
+  let time0 = Unix.gettimeofday () in
   L.progress "Merging captured Buck targets...@\n%!" ;
-  process_merge_file (infer_deps ())
+  process_merge_file (infer_deps ()) ;
+  L.progress "Merging captured Buck targets took %.03fs@\n%!" (Unix.gettimeofday () -. time0)
