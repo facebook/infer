@@ -98,7 +98,17 @@ and name =
   | ObjcProtocol of QualifiedCppName.t
   [@@deriving compare]
 
-and template_spec_info = NoTemplate | Template of t option list [@@deriving compare]
+and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque [@@deriving compare]
+
+and template_spec_info =
+  | NoTemplate
+  | Template of
+      { mangled: string option
+            (** WARNING: because of type substitutions performed by [sub_type] and [sub_tname],
+                mangling is not guaranteed to be unique to a single type. All the information in
+                the template arguments is also needed for uniqueness. *)
+      ; args: template_arg list }
+  [@@deriving compare]
 
 val mk : ?default:t -> ?quals:type_quals -> desc -> t
 (** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such as quals *)

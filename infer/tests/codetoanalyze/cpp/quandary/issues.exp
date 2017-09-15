@@ -13,7 +13,7 @@ codetoanalyze/cpp/quandary/arrays.cpp, arrays::memcpy_bad, 2, QUANDARY_TAINT_ERR
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::memmove_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to memmove]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::memset_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to memset]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::stack_smash_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to __set_array_length]
-codetoanalyze/cpp/quandary/arrays.cpp, arrays::std_array_sink_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to std::array<int,_>_operator[]]
+codetoanalyze/cpp/quandary/arrays.cpp, arrays::std_array_sink_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to std::array<int,2>_operator[]]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::std_string_sink_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to std::basic_string<char,std::char_traits<char>,std::allocator<char>>_operator[]]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::strcpy_bad, 2, QUANDARY_TAINT_ERROR, [Return from getenv,Call to strcpy]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::strncpy_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to strncpy]

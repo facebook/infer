@@ -284,7 +284,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         (* Note that C and C++ records are treated the same way
           Skip translating implicit struct declarations, unless they have
           full definition (which happens with C++ lambdas) *)
-        | ClassTemplateSpecializationDecl (di, _, _, _, decl_list, _, rdi, _, _)
+        | ClassTemplateSpecializationDecl (di, _, _, _, decl_list, _, rdi, _, _, _)
         | CXXRecordDecl (di, _, _, _, decl_list, _, rdi, _)
         | RecordDecl (di, _, _, _, decl_list, _, rdi)
           when not di.di_is_implicit || rdi.rdi_is_complete_definition

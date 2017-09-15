@@ -138,7 +138,18 @@ module T = struct
     | ObjcProtocol of QualifiedCppName.t
     [@@deriving compare]
 
-  and template_spec_info = NoTemplate | Template of t option list [@@deriving compare]
+  and template_arg =
+    | TType of t
+    | TInt of Int64.t
+    | TNull
+    | TNullPtr
+    | TOpaque
+    [@@deriving compare]
+
+  and template_spec_info =
+    | NoTemplate
+    | Template of {mangled: string option; args: template_arg list}
+    [@@deriving compare]
 
   let equal_desc = [%compare.equal : desc]
 
@@ -221,12 +232,18 @@ and pp_name_c_syntax pe f = function
 and pp_template_spec_info pe f = function
   | NoTemplate
    -> ()
-  | Template args
+  | Template {args}
    -> let pp_arg_opt f = function
-        | Some typ
-         -> F.fprintf f "%a" (pp_full pe) typ
-        | None
-         -> F.fprintf f "_"
+        | TType typ
+         -> pp_full pe f typ
+        | TInt i
+         -> Int64.pp f i
+        | TNull
+         -> Pp.string f "null"
+        | TNullPtr
+         -> Pp.string f "NullPtr"
+        | TOpaque
+         -> Pp.string f "Opaque"
       in
       F.fprintf f "%s%a%s" (escape pe "<") (Pp.comma_seq pp_arg_opt) args (escape pe ">")
 
@@ -266,17 +283,17 @@ let rec sub_type subst generic_typ : t =
 
 and sub_tname subst tname =
   match tname with
-  | CppClass (name, Template spec_info)
+  | CppClass (name, Template {mangled; args})
    -> let sub_typ_opt typ_opt =
         match typ_opt with
-        | Some typ
+        | TType typ
          -> let typ' = sub_type subst typ in
-            if phys_equal typ typ' then typ_opt else Some typ'
-        | None
+            if phys_equal typ typ' then typ_opt else TType typ'
+        | TInt _ | TNull | TNullPtr | TOpaque
          -> typ_opt
       in
-      let spec_info' = IList.map_changed sub_typ_opt spec_info in
-      if phys_equal spec_info spec_info' then tname else CppClass (name, Template spec_info')
+      let args' = IList.map_changed sub_typ_opt args in
+      if phys_equal args args' then tname else CppClass (name, Template {mangled; args= args'})
   | _
    -> tname
 
@@ -304,7 +321,7 @@ module Name = struct
 
   let name n =
     match n with
-    | CStruct _ | CUnion _ | CppClass (_, _) | ObjcClass _ | ObjcProtocol _
+    | CStruct _ | CUnion _ | CppClass _ | ObjcClass _ | ObjcProtocol _
      -> qual_name n |> QualifiedCppName.to_qual_string
     | JavaClass name
      -> Mangled.to_string name
@@ -315,7 +332,7 @@ module Name = struct
        -> "struct"
       | CUnion _
        -> "union"
-      | CppClass (_, _) | JavaClass _ | ObjcClass _
+      | CppClass _ | JavaClass _ | ObjcClass _
        -> "class"
       | ObjcProtocol _
        -> "protocol"
@@ -324,13 +341,13 @@ module Name = struct
 
   let to_string = F.asprintf "%a" pp
 
-  let is_class = function CppClass (_, _) | JavaClass _ | ObjcClass _ -> true | _ -> false
+  let is_class = function CppClass _ | JavaClass _ | ObjcClass _ -> true | _ -> false
 
   let is_same_type t1 t2 =
     match (t1, t2) with
     | CStruct _, CStruct _
     | CUnion _, CUnion _
-    | CppClass (_, _), CppClass (_, _)
+    | CppClass _, CppClass _
     | JavaClass _, JavaClass _
     | ObjcClass _, ObjcClass _
     | ObjcProtocol _, ObjcProtocol _
@@ -1019,7 +1036,7 @@ module Procname = struct
   let get_template_args_mapping generic_procname concrete_procname =
     let mapping_for_template_args (generic_name, generic_args) (concrete_name, concrete_args) =
       match (generic_args, concrete_args) with
-      | Template generic_typs, Template concrete_typs
+      | Template {args= generic_typs}, Template {args= concrete_typs}
         when QualifiedCppName.equal generic_name concrete_name -> (
         try
           `Valid
@@ -1030,7 +1047,7 @@ module Procname = struct
                ctyp
                ->
                  match (gtyp, ctyp) with
-                 | Some {desc= TVar name}, Some concrete
+                 | TType {desc= TVar name}, TType concrete
                   -> (name, concrete) :: result
                  | _
                   -> result ))

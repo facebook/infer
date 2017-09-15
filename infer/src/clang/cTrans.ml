@@ -678,7 +678,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let destruct_decl_ref_opt =
       match CAst_utils.get_decl_from_typ_ptr class_type_ptr with
       | Some CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_info)
-      | Some ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _)
+      | Some ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _)
        -> cxx_record_info.xrdi_destructor
       | _
        -> None

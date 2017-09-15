@@ -451,8 +451,14 @@ let atom_const_lt_exp (atom: Sil.atom) =
 
 let exp_reorder e1 e2 = if Exp.compare e1 e2 <= 0 then (e1, e2) else (e2, e1)
 
+let rec pp_path f = function
+  | []
+   -> ()
+  | (name, fld) :: path
+   -> F.fprintf f "%a.%a: " Typ.Name.pp name Typ.Fieldname.pp fld ; pp_path f path
+
 (** create a strexp of the given type, populating the structures if [struct_init_mode] is [Fld_init] *)
-let rec create_strexp_of_type tenv struct_init_mode (typ: Typ.t) len inst : Sil.strexp =
+let rec create_strexp_of_type ~path tenv struct_init_mode (typ: Typ.t) len inst : Sil.strexp =
   let init_value () =
     let create_fresh_var () =
       let fresh_id =
@@ -467,20 +473,30 @@ let rec create_strexp_of_type tenv struct_init_mode (typ: Typ.t) len inst : Sil.
   match (typ.desc, len) with
   | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _ | TVar _), None
    -> Eexp (init_value (), inst)
-  | Tstruct name, _ -> (
-    match (struct_init_mode, Tenv.lookup tenv name) with
-    | Fld_init, Some {fields}
-     -> (* pass len as an accumulator, so that it is passed to create_strexp_of_type for the last
+  | Tstruct name, _
+   -> (
+      if List.exists ~f:(fun (n, _) -> Typ.Name.equal n name) path then
+        L.die InternalError
+          "Ill-founded recursion in [create_strexp_of_type]: a sub-element of struct %a is also of type struct %a: %a:%a"
+          Typ.Name.pp name Typ.Name.pp name pp_path (List.rev path) Typ.Name.pp name ;
+      match (struct_init_mode, Tenv.lookup tenv name) with
+      | Fld_init, Some {fields}
+       -> (* pass len as an accumulator, so that it is passed to create_strexp_of_type for the last
              field, but always return None so that only the last field receives len *)
-        let f (fld, t, a) (flds, len) =
-          if Typ.Struct.is_objc_ref_counter_field (fld, t, a) then
-            ((fld, Sil.Eexp (Exp.one, inst)) :: flds, None)
-          else ((fld, create_strexp_of_type tenv struct_init_mode t len inst) :: flds, None)
-        in
-        let flds, _ = List.fold_right ~f fields ~init:([], len) in
-        Estruct (flds, inst)
-    | _
-     -> Estruct ([], inst) )
+          let f (fld, t, a) (flds, len) =
+            if Typ.Struct.is_objc_ref_counter_field (fld, t, a) then
+              ((fld, Sil.Eexp (Exp.one, inst)) :: flds, None)
+            else
+              ( ( fld
+                , create_strexp_of_type ~path:((name, fld) :: path) tenv struct_init_mode t len
+                    inst )
+                :: flds
+              , None )
+          in
+          let flds, _ = List.fold_right ~f fields ~init:([], len) in
+          Estruct (flds, inst)
+      | _
+       -> Estruct ([], inst) )
   | Tarray (_, len_opt, _), None
    -> let len =
         match len_opt with None -> Exp.get_undefined false | Some len -> Exp.Const (Cint len)
@@ -490,6 +506,9 @@ let rec create_strexp_of_type tenv struct_init_mode (typ: Typ.t) len inst : Sil.
    -> Earray (len, [], inst)
   | (Tint _ | Tfloat _ | Tvoid | Tfun _ | Tptr _ | TVar _), Some _
    -> assert false
+
+let create_strexp_of_type tenv struct_init_mode (typ: Typ.t) len inst : Sil.strexp =
+  create_strexp_of_type ~path:[] tenv struct_init_mode (typ : Typ.t) len inst
 
 let replace_array_contents (hpred: Sil.hpred) esel : Sil.hpred =
   match hpred with

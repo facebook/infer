@@ -425,8 +425,8 @@ let type_of_decl decl =
   | EnumDecl (_, _, _, type_ptr, _, _, _)
   | RecordDecl (_, _, _, type_ptr, _, _, _)
   | CXXRecordDecl (_, _, _, type_ptr, _, _, _, _)
-  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, _, _, _)
-  | ClassTemplatePartialSpecializationDecl (_, _, _, type_ptr, _, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, _, _, _, _)
+  | ClassTemplatePartialSpecializationDecl (_, _, _, type_ptr, _, _, _, _, _, _)
   | TemplateTypeParmDecl (_, _, _, type_ptr)
   | ObjCTypeParamDecl (_, _, _, type_ptr)
   | TypeAliasDecl (_, _, _, type_ptr)
@@ -462,7 +462,7 @@ let type_of_decl decl =
 let get_record_fields decl =
   let open Clang_ast_t in
   match decl with
-  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _, _)
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
   | RecordDecl (_, _, _, _, decl_list, _, _)
    -> List.filter ~f:(function FieldDecl _ -> true | _ -> false) decl_list
@@ -473,7 +473,7 @@ let get_cxx_base_classes decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (_, _, _, _, _, _, _, cxx_record_info)
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _)
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_record_info, _, _)
    -> cxx_record_info.xrdi_bases
   | _
    -> []

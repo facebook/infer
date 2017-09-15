@@ -46,7 +46,7 @@ let get_superclass_decls decl =
   let open Clang_ast_t in
   match decl with
   | CXXRecordDecl (_, _, _, _, _, _, _, cxx_rec_info)
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info, _)
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, cxx_rec_info, _, _)
    -> (* there is no concept of virtual inheritance in the backend right now *)
       let base_ptr = cxx_rec_info.Clang_ast_t.xrdi_bases @ cxx_rec_info.Clang_ast_t.xrdi_vbases in
       let get_decl_or_fail typ_ptr =
@@ -86,7 +86,7 @@ let get_translate_as_friend_decl decl_list =
   match get_friend_decl_opt (List.find_exn ~f:is_translate_as_friend_decl decl_list) with
   | Some
       Clang_ast_t.ClassTemplateSpecializationDecl
-        (_, _, _, _, _, _, _, _, {tsi_specialization_args= [(`Type t_ptr)]})
+        (_, _, _, _, _, _, _, _, _, {tsi_specialization_args= [(`Type t_ptr)]})
    -> Some t_ptr
   | _
    -> None
@@ -97,7 +97,7 @@ let get_record_definition decl =
   let open Clang_ast_t in
   match decl with
   | ClassTemplateSpecializationDecl
-      (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _, _)
+      (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _, _, _)
   | CXXRecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr}, _)
   | RecordDecl (_, _, _, _, _, _, {rdi_is_complete_definition; rdi_definition_ptr})
     when not rdi_is_complete_definition && rdi_definition_ptr <> 0
@@ -109,7 +109,7 @@ let rec get_struct_fields tenv decl =
   let open Clang_ast_t in
   let decl_list =
     match decl with
-    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
+    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _, _)
     | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
     | RecordDecl (_, _, _, _, decl_list, _, _)
      -> decl_list
@@ -149,7 +149,7 @@ and get_record_custom_type tenv definition_decl =
 and get_record_friend_decl_type tenv definition_decl =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _, _)
   | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
    -> Option.map ~f:(qual_type_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
   | _
@@ -181,7 +181,7 @@ and get_record_typename ?tenv decl =
   match (decl, tenv) with
   | RecordDecl (_, name_info, opt_type, _, _, _, _), _
    -> CAst_utils.get_qualified_name ~linters_mode name_info |> create_c_record_typename opt_type
-  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, spec_info), Some tenv
+  | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, mangling, spec_info), Some tenv
    -> let tname =
         match CAst_utils.get_decl spec_info.tsi_template_decl with
         | Some dec
@@ -189,16 +189,11 @@ and get_record_typename ?tenv decl =
         | None
          -> assert false
       in
-      let args_in_sil =
-        List.map spec_info.tsi_specialization_args ~f:(function
-          | `Type qual_type
-           -> Some (qual_type_to_sil_type tenv qual_type)
-          | _
-           -> None )
-      in
-      Typ.Name.Cpp.from_qual_name (Typ.Template args_in_sil) tname
+      let args = get_template_args tenv spec_info in
+      let mangled = if String.equal "" mangling then None else Some mangling in
+      Typ.Name.Cpp.from_qual_name (Typ.Template {mangled; args}) tname
   | CXXRecordDecl (_, name_info, _, _, _, _, _, _), _
-  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _), _
+  | ClassTemplateSpecializationDecl (_, name_info, _, _, _, _, _, _, _, _), _
    -> (* we use Typ.CppClass for C++ because we expect Typ.CppClass from *)
       (* types that have methods. And in C++ struct/class/union can have methods *)
       Typ.Name.Cpp.from_qual_name Typ.NoTemplate
@@ -226,7 +221,7 @@ and get_superclass_list_cpp tenv decl =
 and get_record_struct_type tenv definition_decl : Typ.desc =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, record_decl_info, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, record_decl_info, _, _, _)
   | CXXRecordDecl (_, _, _, type_ptr, _, _, record_decl_info, _)
   | RecordDecl (_, _, _, type_ptr, _, _, record_decl_info)
    -> (
@@ -286,6 +281,23 @@ and add_types_from_decl_to_tenv tenv decl =
    -> CEnum_decl.enum_decl decl
   | _
    -> assert false
+
+and get_template_args tenv (tsi: Clang_ast_t.template_specialization_info) =
+  let rec aux = function
+    | `Type qual_type
+     -> [Typ.TType (qual_type_to_sil_type tenv qual_type)]
+    | `Expression | `TemplateExpansion | `Template | `Declaration _
+     -> [Typ.TOpaque]
+    | `Integral i -> (
+      match Int64.of_string i with x -> [Typ.TInt x] | exception Failure _ -> [Typ.TOpaque] )
+    | `Null
+     -> [Typ.TNull]
+    | `NullPtr
+     -> [Typ.TNullPtr]
+    | `Pack p
+     -> List.concat_map ~f:aux p
+  in
+  List.concat_map ~f:aux tsi.tsi_specialization_args
 
 and qual_type_to_sil_type tenv qual_type =
   CType_to_sil_type.qual_type_to_sil_type add_types_from_decl_to_tenv tenv qual_type
