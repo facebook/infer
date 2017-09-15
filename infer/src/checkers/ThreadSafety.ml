@@ -1207,7 +1207,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ~conflicts acces
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
 
-let _report_unannotated_interface_violation tenv pdesc access reported_pname =
+let report_unannotated_interface_violation tenv pdesc access reported_pname =
   match reported_pname with
   | Typ.Procname.Java java_pname
    -> let class_name = Typ.Procname.java_get_class_name java_pname in
@@ -1343,9 +1343,10 @@ let report_unsafe_accesses aggregated_access_map =
     if is_duplicate_report access pname reported_acc then reported_acc
     else
       match (TraceElem.kind access, pre) with
-      | ( Access.InterfaceCall _
+      | ( Access.InterfaceCall unannoted_call_pname
         , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) )
        -> (* un-annotated interface call + no lock. warn *)
+          report_unannotated_interface_violation tenv pdesc access unannoted_call_pname ;
           update_reported access pname reported_acc
       | Access.InterfaceCall _, AccessPrecondition.Protected _
        -> (* un-annotated interface call, but it's protected by a lock/thread. don't report *)

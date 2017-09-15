@@ -35,11 +35,11 @@ class NotThreadSafe {
 @ThreadSafe
 public class Dispatch {
 
-  void FN_callUnannotatedInterfaceBad(UnannotatedInterface i) {
+  void callUnannotatedInterfaceBad(UnannotatedInterface i) {
     i.foo();
   }
 
-  void FN_callUnannotatedInterfaceIndirectBad(NotThreadSafe s, UnannotatedInterface i) {
+  void callUnannotatedInterfaceIndirectBad(NotThreadSafe s, UnannotatedInterface i) {
     s.notThreadSafeOk(i);
   }
 
