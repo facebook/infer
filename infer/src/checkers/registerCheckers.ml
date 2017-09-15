@@ -43,7 +43,8 @@ let checkers =
   ; ("printf args", Config.printf_args, [(Procedure PrintfArgs.callback_printf_args, Config.Java)])
   ; ( "nullable suggestion"
     , Config.suggest_nullable
-    , [(Procedure NullabilitySuggest.checker, Config.Java)] )
+    , [ (Procedure NullabilitySuggest.checker, Config.Java)
+      ; (Procedure NullabilitySuggest.checker, Config.Clang) ] )
   ; ( "quandary"
     , Config.quandary
     , [ (Procedure JavaTaintAnalysis.checker, Config.Java)

@@ -145,6 +145,9 @@ let pretty_field_name proc_data field_name =
       Typ.Fieldname.to_string field_name
 
 let checker {Callbacks.summary; proc_desc; tenv} =
+  let nullable_annotation =
+    if Typ.Procname.is_java (Procdesc.get_proc_name proc_desc) then "@Nullable" else "_Nullable"
+  in
   let report astate (proc_data: extras ProcData.t) =
     let report_access_path ap udchain =
       let issue_kind = IssueType.field_should_be_nullable.unique_id in
@@ -156,7 +159,7 @@ let checker {Callbacks.summary; proc_desc; tenv} =
        -> (
           let message =
             F.asprintf "Field %a should be annotated with %a" MF.pp_monospaced
-              (pretty_field_name proc_data field_name) MF.pp_monospaced "@Nullable"
+              (pretty_field_name proc_data field_name) MF.pp_monospaced nullable_annotation
           in
           let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
           match make_error_trace astate ap udchain with

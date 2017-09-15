@@ -1,0 +1,4 @@
+codetoanalyze/cpp/nullable/example.cpp, T_assign_nullable_field_to_null_okay, 0, FIELD_SHOULD_BE_NULLABLE, [Field nullable_field is assigned null here]
+codetoanalyze/cpp/nullable/example.cpp, T_assign_unnanotated_field_to_null_bad, 0, FIELD_SHOULD_BE_NULLABLE, [Field unnanotated_field is assigned null here]
+codetoanalyze/cpp/nullable/example.cpp, T_test_nullable_field_for_null_okay, 1, FIELD_SHOULD_BE_NULLABLE, [Field nullable_field is compared to null here]
+codetoanalyze/cpp/nullable/example.cpp, T_test_unnanotated_field_for_null_bad, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotated_field is compared to null here]
