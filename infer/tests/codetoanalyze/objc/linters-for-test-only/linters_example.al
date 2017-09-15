@@ -402,3 +402,15 @@ DEFINE-CHECKER ENUM_CONSTANTS_OF_ENUM = {
        HOLDS-IN-NODE VarDecl;
    SET message = "var %name% declared in function";
  };
+
+DEFINE-CHECKER TEST_PARAMETER_SEL_TYPE = {
+
+ SET report_when =
+     WHEN
+       method_return_type("instancetype") AND
+       method_has_a_parameter_with_type("SEL")
+     HOLDS-IN-NODE ObjCMethodDecl;
+
+ SET message = "Method has parameter of type SEL";
+
+ };

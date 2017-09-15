@@ -39,6 +39,8 @@ codetoanalyze/objc/linters-for-test-only/protocols.m, Foo_newWithD, 28, TEST_BUI
 codetoanalyze/objc/linters-for-test-only/protocols.m, Linters_dummy_method, 11, TEST_PROTOCOL_DEF_INHERITANCE, []
 codetoanalyze/objc/linters-for-test-only/protocols.m, Linters_dummy_method, 14, TEST_PROTOCOL_DEF_INHERITANCE, []
 codetoanalyze/objc/linters-for-test-only/protocols.m, Linters_dummy_method, 17, TEST_PROTOCOL_DEF_INHERITANCE, []
+codetoanalyze/objc/linters-for-test-only/sel.m, fooButtonComponent_newWithAction, 12, TEST_INSTANCE_TYPE, []
+codetoanalyze/objc/linters-for-test-only/sel.m, fooButtonComponent_newWithAction, 12, TEST_PARAMETER_SEL_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, A_foo, 13, TEST_BUILTIN_TYPE, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, A_foo, 13, TEST_PARAM_TYPE_CHECK2, []
 codetoanalyze/objc/linters-for-test-only/subclassing.m, A_foo, 13, TEST_RETURN_METHOD, []

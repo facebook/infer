@@ -402,6 +402,8 @@ let rec pointer_type_equal p ap =
   match (p, ap) with
   | PointerType (_, qt), Pointer abs_ctype' | ObjCObjectPointerType (_, qt), Pointer abs_ctype'
    -> check_type_ptr qt.qt_type_ptr abs_ctype'
+  | PointerType (_, qt), BuiltIn _
+   -> check_type_ptr qt.qt_type_ptr ap
   | _, _
    -> display_equality_warning () ; false
 
@@ -451,7 +453,9 @@ and c_type_equal c_type abs_ctype =
   match (c_type, abs_ctype) with
   | BuiltinType (_, bi), BuiltIn abi
    -> builtin_equal bi abi
-  | PointerType _, Pointer _ | ObjCObjectPointerType _, Pointer _
+  | TypedefType (_, tdi), BuiltIn _
+   -> check_type_ptr tdi.tti_child_type.qt_type_ptr abs_ctype
+  | PointerType _, BuiltIn _ | PointerType _, Pointer _ | ObjCObjectPointerType _, Pointer _
    -> pointer_type_equal c_type abs_ctype
   | LValueReferenceType (_, qt), Reference abs_typ | RValueReferenceType (_, qt), Reference abs_typ
    -> check_type_ptr qt.qt_type_ptr abs_typ
