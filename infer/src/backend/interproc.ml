@@ -538,19 +538,15 @@ let report_context_leaks pname sigma tenv =
     List.iter
       ~f:(fun (context_exp, name) ->
         if Exp.Set.mem context_exp reachable_exps then
-          let leak_path =
-            match get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
-            | Some path
-             -> path
-            | None
-             -> assert false
-            (* a path must exist in order for a leak to be reported *)
-          in
-          let err_desc =
-            Errdesc.explain_context_leak pname (Typ.mk (Tstruct name)) fld_name leak_path
-          in
-          let exn = Exceptions.Context_leak (err_desc, __POS__) in
-          Reporting.log_error_deprecated pname exn)
+          match get_fld_typ_path_opt fld_exps context_exp reachable_hpreds with
+          | None
+           -> () (* TODO (T21871205): the underlying issue still need to be fixed *)
+          | Some leak_path
+           -> let err_desc =
+                Errdesc.explain_context_leak pname (Typ.mk (Tstruct name)) fld_name leak_path
+              in
+              let exn = Exceptions.Context_leak (err_desc, __POS__) in
+              Reporting.log_error_deprecated pname exn)
       context_exps
   in
   (* get the set of pointed-to expressions of type T <: Context *)
