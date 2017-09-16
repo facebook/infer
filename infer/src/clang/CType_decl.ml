@@ -122,8 +122,7 @@ let rec get_struct_fields tenv decl =
     | FieldDecl (_, {ni_name}, qt, _)
      -> let id = CGeneral_utils.mk_class_field_name class_tname ni_name in
         let typ = qual_type_to_sil_type tenv qt in
-        let annotation_items = [] in
-        (* For the moment we don't use them*)
+        let annotation_items = CAst_utils.sil_annot_of_type qt in
         [(id, typ, annotation_items)]
     | _
      -> []
