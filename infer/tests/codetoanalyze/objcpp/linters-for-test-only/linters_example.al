@@ -149,3 +149,48 @@ DEFINE-CHECKER NEW_COMPONENT_USING_MEM_MODEL = {
 
   SET message = "Consider using fragment models instead.";
 };
+
+
+DEFINE-CHECKER TITLE_NOT_INITIALIZED = {
+	LET rectangle_is_not_initialized_with_title =
+ 	  WHEN
+		HOLDS-NEXT WITH-TRANSITION FieldName "title"
+		(is_node("ImplicitValueInitExpr"))
+	   HOLDS-IN-NODE InitListExpr;
+
+    LET exists_rectangle_is_not_initialized_with_title =
+      rectangle_is_not_initialized_with_title HOLDS-EVENTUALLY;
+
+    LET parameter_rectangle_is_not_initialized_with_title =
+       WHEN
+          HOLDS-NEXT WITH-TRANSITION Parameters
+            (exists_rectangle_is_not_initialized_with_title)
+	   HOLDS-IN-NODE ObjCMessageExpr;
+
+	SET report_when =
+	  WHEN
+		 call_method(REGEXP("^new.*:$")) AND
+		 (parameter_rectangle_is_not_initialized_with_title)
+	  HOLDS-IN-NODE ObjCMessageExpr;
+
+	SET message = "The title is not initialized";
+	SET severity = "WARNING";
+	SET mode = "ON";
+};
+
+DEFINE-CHECKER FIELD_STRUCT_STRING = {
+  LET has_field_string =
+     WHEN
+        HOLDS-NEXT WITH-TRANSITION Fields
+          (has_type("NSString*"))
+   HOLDS-IN-NODE CXXRecordDecl;
+
+	SET report_when =
+	  WHEN
+		 declaration_has_name("Rectangle") AND
+		 (has_field_string)
+	  HOLDS-IN-NODE CXXRecordDecl;
+	SET message = "Found a field of type NSString";
+	SET severity = "WARNING";
+	SET mode = "ON";
+};

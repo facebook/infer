@@ -15,20 +15,23 @@ module L = Logging
    are intepreted over the AST of the program. A checker is defined by a
    CTL formula which express a condition saying when the checker should
     report a problem *)
-(* Transition labels used for example to switch from decl to stmt *)
+
+(** Transition labels used for example to switch from decl to stmt *)
 type transitions =
   | Body  (** decl to stmt *)
+  | FieldName of ALVar.alexp  (** stmt to stmt, decl to decl *)
+  | Fields  (** stmt to stmt, decl to decl *)
   | InitExpr  (** decl to stmt *)
   | Super  (** decl to decl *)
   | ParameterName of ALVar.alexp  (** stmt to stmt, decl to decl *)
-  | Parameters  (** decl to decl *)
+  | Parameters  (** stmt to stmt, decl to decl *)
   | Cond
   | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
 
 let is_transition_to_successor trans =
   match trans with
-  | Body | InitExpr | ParameterName _ | Parameters | Cond
+  | Body | InitExpr | FieldName _ | Fields | ParameterName _ | Parameters | Cond
    -> true
   | Super | PointerToDecl | Protocol
    -> false
@@ -126,6 +129,10 @@ module Debug = struct
       match trans with
       | Body
        -> Format.pp_print_string fmt "Body"
+      | FieldName name
+       -> Format.pp_print_string fmt ("FieldName " ^ ALVar.alexp_to_string name)
+      | Fields
+       -> Format.pp_print_string fmt "Fields"
       | InitExpr
        -> Format.pp_print_string fmt "InitExpr"
       | Super
@@ -714,11 +721,60 @@ let transition_via_parameter_name an name =
   | _
    -> []
 
+let transition_via_fields an =
+  let open Clang_ast_t in
+  match an with
+  | Decl RecordDecl (_, _, _, _, decls, _, _) | Decl CXXRecordDecl (_, _, _, _, decls, _, _, _)
+   -> List.filter_map ~f:(fun d -> match d with FieldDecl _ -> Some (Decl d) | _ -> None) decls
+  | Stmt InitListExpr (_, stmts, _)
+   -> List.map ~f:(fun stmt -> Stmt stmt) stmts
+  | _
+   -> []
+
+let field_has_name name node =
+  match node with
+  | Decl FieldDecl (_, name_info, _, _)
+   -> ALVar.compare_str_with_alexp name_info.Clang_ast_t.ni_name name
+  | _
+   -> false
+
+let field_of_name name nodes = List.filter ~f:(field_has_name name) nodes
+
+let field_of_corresp_name_from_init_list_expr name init_nodes (expr_info: Clang_ast_t.expr_info) =
+  match CAst_utils.get_decl_from_typ_ptr expr_info.ei_qual_type.qt_type_ptr with
+  | Some decl
+   -> (
+      let fields = transition_via_fields (Decl decl) in
+      match List.zip init_nodes fields with
+      | Some init_nodes_fields
+       -> List.filter ~f:(fun (_, field) -> field_has_name name field) init_nodes_fields
+          |> List.map ~f:(fun (node, _) -> node)
+      | None
+       -> [] )
+  | None
+   -> []
+
+let transition_via_field_name node name =
+  let open Clang_ast_t in
+  match node with
+  | Decl RecordDecl _ | Decl CXXRecordDecl _
+   -> let fields = transition_via_fields node in
+      field_of_name name fields
+  | Stmt InitListExpr (_, stmts, expr_info)
+   -> let nodes = List.map ~f:(fun stmt -> Stmt stmt) stmts in
+      field_of_corresp_name_from_init_list_expr name nodes expr_info
+  | _
+   -> []
+
 (* given a node an returns a list of nodes an' such that an transition to an' via label trans *)
 let next_state_via_transition an trans =
   match (an, trans) with
   | Decl d, Super
    -> transition_decl_to_decl_via_super d
+  | _, FieldName name
+   -> transition_via_field_name an name
+  | _, Fields
+   -> transition_via_fields an
   | _, Parameters
    -> transition_via_parameters an
   | Decl d, InitExpr | Decl d, Body

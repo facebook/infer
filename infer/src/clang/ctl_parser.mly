@@ -79,6 +79,8 @@
 %token BODY
 %token COND
 %token INIT_EXPR
+%token FIELDS
+%token FIELD_NAME
 %token PARAMETERS
 %token PARAMETER_NAME
 %token POINTER_TO_DECL
@@ -237,6 +239,8 @@ transition_label:
   | ANY { None }
   | BODY { Some CTL.Body }
   | COND { Some CTL.Cond }
+  | FIELDS { Some CTL.Fields }
+  | FIELD_NAME alexp { Some (CTL.FieldName $2) }
   | INIT_EXPR { Some CTL.InitExpr }
   | PARAMETERS { Some CTL.Parameters }
   | PARAMETER_NAME alexp { Some (CTL.ParameterName $2) }

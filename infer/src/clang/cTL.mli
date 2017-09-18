@@ -9,27 +9,22 @@
 
 open! IStd
 open Ctl_parser_types
-
 (* This module defines a language to define checkers. These checkers
    are intepreted over the AST of the program. A checker is defined by a
    CTL formula which express a condition saying when the checker should
     report a problem *)
-(* Transition labels used for example to switch from decl to stmt *)
 
+(** Transition labels used for example to switch from decl to stmt *)
 type transitions =
-  | Body
-  (* decl to stmt *)
-  | InitExpr
-  (* decl to stmt *)
-  | Super
-  (* decl to decl *)
-  | ParameterName of ALVar.alexp
-  (* stmt to stmt, decl to decl *)
-  | Parameters
-  (* decl to decl *)
+  | Body  (** decl to stmt *)
+  | FieldName of ALVar.alexp  (** stmt to stmt, decl to decl *)
+  | Fields  (** stmt to stmt, decl to decl *)
+  | InitExpr  (** decl to stmt *)
+  | Super  (** decl to decl *)
+  | ParameterName of ALVar.alexp  (** stmt to stmt, decl to decl *)
+  | Parameters  (** stmt to stmt, decl to decl *)
   | Cond
-  | PointerToDecl
-  (* stmt to decl *)
+  | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
 
 (* In formulas below prefix
@@ -71,7 +66,6 @@ type t =
       (** ET[T][l] phi <=>
                                                                there exists a descentant an of the current node such that an is of type in set T
                                                                making a transition to a node an' via label l, such that in an phi holds. *)
-
 
 (* "set" clauses are used for defining mandatory variables that will be used
    by when reporting issues: eg for defining the condition.

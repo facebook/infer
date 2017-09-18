@@ -71,6 +71,8 @@ rule token = parse
   | "IMPLIES" { IMPLIES }
   | "REGEXP" { REGEXP }
   | "Any" {ANY}
+  | "Fields" { FIELDS }
+  | "FieldName" { FIELD_NAME }
   | "Parameters" { PARAMETERS }
   | "ParameterName" { PARAMETER_NAME }
   | "Body" {BODY}

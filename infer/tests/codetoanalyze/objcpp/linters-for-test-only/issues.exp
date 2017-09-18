@@ -22,4 +22,8 @@ codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, foo, 54,
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, foo, 54, TEST_PARAMETER_SELECTOR_BY_TYPE, []
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, foo, 56, TEST_PARAMETER_SELECTOR, []
 codetoanalyze/objcpp/linters-for-test-only/TestParamterLabelsChecks.mm, foo, 56, TEST_PARAMETER_SELECTOR_BY_TYPE, []
+codetoanalyze/objcpp/linters-for-test-only/TestStructFieldChecks.mm, Linters_dummy_method, 19, FIELD_STRUCT_STRING, []
+codetoanalyze/objcpp/linters-for-test-only/TestStructFieldChecks.mm, buttonComponent, 33, TITLE_NOT_INITIALIZED, []
+codetoanalyze/objcpp/linters-for-test-only/TestStructFieldChecks.mm, buttonComponent, 35, TITLE_NOT_INITIALIZED, []
+codetoanalyze/objcpp/linters-for-test-only/TestStructFieldChecks.mm, buttonComponent, 39, TITLE_NOT_INITIALIZED, []
 codetoanalyze/objcpp/linters-for-test-only/hash_test.mm, std::hash_NSObject_*__operator(), 14, DISCOURAGED_HASH_METHOD_INVOCATION, []
