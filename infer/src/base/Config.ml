@@ -153,6 +153,8 @@ let lint_dotty_dir_name = "lint_dotty"
 
 let lint_issues_dir_name = "lint_issues"
 
+let linters_failed_sentinel_filename = "linters_failed_sentinel"
+
 (** letters used in the analysis output *)
 let log_analysis_file = "F"
 

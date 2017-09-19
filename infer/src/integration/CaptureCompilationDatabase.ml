@@ -12,57 +12,73 @@ module F = Format
 module CLOpt = CommandLineOption
 module L = Logging
 
-let capture_text =
-  if Config.equal_analyzer Config.analyzer Config.Linters then "linting" else "translating"
+type cmd = {cwd: string; prog: string; args: string}
 
-let create_files_stack compilation_database should_capture_file =
-  let stack = Stack.create () in
-  let add_to_stack file _ = if should_capture_file file then Stack.push stack file in
-  CompilationDatabase.iter compilation_database add_to_stack ; stack
+let create_cmd (compilation_data: CompilationDatabase.compilation_data) =
+  let swap_command cmd =
+    if String.is_suffix ~suffix:"++" cmd then Config.wrappers_dir ^/ "clang++"
+    else Config.wrappers_dir ^/ "clang"
+  in
+  let arg_file =
+    ClangQuotes.mk_arg_file "cdb_clang_args_" ClangQuotes.EscapedNoQuotes [compilation_data.args]
+  in
+  {cwd= compilation_data.dir; prog= swap_command compilation_data.command; args= arg_file}
 
-let swap_command cmd =
-  let plusplus = "++" in
-  let clang = "clang" in
-  let clangplusplus = "clang++" in
-  if String.is_suffix ~suffix:plusplus cmd then Config.wrappers_dir ^/ clangplusplus
-  else Config.wrappers_dir ^/ clang
+(* A sentinel is a file which indicates that a failure occurred in another infer process.
+   Because infer processes run in parallel but do not share any memory, we use the
+   filesystem to signal failures across processes. *)
+let sentinel_exists sentinel_opt =
+  let file_exists sentinel = PVariant.( = ) (Sys.file_exists sentinel) `Yes in
+  Option.value_map ~default:false sentinel_opt ~f:file_exists
 
-let run_compilation_file compilation_database file =
-  try
-    let compilation_data = CompilationDatabase.find compilation_database file in
-    let wrapper_cmd = swap_command compilation_data.command in
-    let arg_file =
-      ClangQuotes.mk_arg_file "cdb_clang_args_" ClangQuotes.EscapedNoQuotes [compilation_data.args]
+let invoke_cmd ~fail_sentinel cmd =
+  if sentinel_exists fail_sentinel then L.progress "E%!"
+  else (
+    Unix.chdir cmd.cwd ;
+    let pid =
+      Unix.fork_exec ~prog:cmd.prog ~argv:[cmd.prog; ("@" ^ cmd.args); "-fsyntax-only"]
+        ~use_path:false ()
     in
-    let args = [("@" ^ arg_file)] in
-    let env =
-      `Extend
-        [ ( CLOpt.args_env_var
-          , String.concat ~sep:(String.of_char CLOpt.env_var_sep)
-              (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--fcp-syntax-only"]) ) ]
+    let create_sentinel_if_needed () =
+      let create_empty_file fname = Utils.with_file_out ~f:(fun _ -> ()) fname in
+      Option.iter fail_sentinel ~f:create_empty_file
     in
-    (Some compilation_data.dir, wrapper_cmd, args, env)
-  with Not_found ->
-    Process.print_error_and_exit "Failed to find compilation data for %a@\n%!" SourceFile.pp file
+    match Unix.waitpid pid with
+    | Ok ()
+     -> L.progress ".%!"
+    | Error _
+     -> L.progress "!%!" ; create_sentinel_if_needed () )
 
 let run_compilation_database compilation_database should_capture_file =
-  let number_of_files = CompilationDatabase.get_size compilation_database in
-  L.(debug Capture Quiet) "Starting %s %d files@\n%!" capture_text number_of_files ;
-  L.progress "Starting %s %d files@\n%!" capture_text number_of_files ;
-  let jobs_stack = create_files_stack compilation_database should_capture_file in
-  let capture_text_upper = String.capitalize capture_text in
-  let job_to_string file = Format.asprintf "%s %a" capture_text_upper SourceFile.pp file in
-  let fail_on_failed_job =
-    if Config.linters_ignore_clang_failures then false
+  let compilation_data =
+    CompilationDatabase.filter_compilation_data compilation_database ~f:should_capture_file
+  in
+  let number_of_jobs = List.length compilation_data in
+  let capture_text =
+    if Config.equal_analyzer Config.analyzer Config.Linters then "linting" else "translating"
+  in
+  L.(debug Capture Quiet) "Starting %s %d files@\n%!" capture_text number_of_jobs ;
+  L.progress "Starting %s %d files@\n%!" capture_text number_of_jobs ;
+  let sequence = Parmap.L (List.map ~f:create_cmd compilation_data) in
+  let fail_sentinel_fname = Config.results_dir ^/ Config.linters_failed_sentinel_filename in
+  let fail_sentinel =
+    if Config.linters_ignore_clang_failures then None
     else
       match Config.buck_compilation_database with
-      | Some NoDeps
-       -> Config.clang_frontend_do_lint
-      | _
-       -> false
+      | Some NoDeps when Config.clang_frontend_do_lint
+       -> Some fail_sentinel_fname
+      | Some NoDeps | Some Deps _ | None
+       -> None
   in
-  Process.run_jobs_in_parallel ~fail_on_failed_job jobs_stack
-    (run_compilation_file compilation_database) job_to_string
+  Utils.rmtree fail_sentinel_fname ;
+  let chunksize = min (List.length compilation_data / Config.jobs + 1) 10 in
+  Parmap.pariter ~ncores:Config.jobs ~chunksize (invoke_cmd ~fail_sentinel) sequence ;
+  L.progress "@." ;
+  L.(debug Analysis Medium) "Ran %d jobs" number_of_jobs ;
+  if sentinel_exists fail_sentinel then (
+    L.progress
+      "Failure detected, capture did not finish successfully. Use `--linters-ignore-clang-failures` to ignore compilation errors. Terminating@." ;
+    L.exit 1 )
 
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck ~prog ~args =
