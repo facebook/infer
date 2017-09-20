@@ -65,10 +65,10 @@ For this you need to install an OCaml package `biniou` with `opam install biniou
 Then, the AST can be created by Infer in debug mode. Call Infer with
 
 ```bash
-infer --debug -- <build command>
+infer -a linters --debug -- <build command>
 ```
 
-This will, among other things, generate a file `/path/to/File.m.ast.sh` for every file `/path/to/File.m` that is being analyzed. Run this script with bash `File.m.ast.sh` and a file `File.m.ast.bdump` will be generated, that contains the AST of the program in `bdump` format (similar to json).
+This will, among other things, generate a file `/path/to/File.m.ast.sh` for every file `/path/to/File.m` that is being analyzed. Run this script with `bash File.m.ast.sh` and a file `/path/to/File.m.ast.bdump` will be generated, that contains the AST of the program in `bdump` format (similar to json).
 
 For general info on the clang AST, you can check out [clang's website](http://clang.llvm.org/docs/IntroductionToTheClangAST.html).
 
