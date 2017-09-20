@@ -52,7 +52,7 @@ Once the new linter is added to the linters' file it will then work out of the b
 
 When you write a linter that traverses the AST of some programs to check some property, you probably need to understand how the AST looks like. You can get the AST of programs using `clang` directly, or using Infer. 
 
-If you have a clang command `clang <clang arguments> File.m` The first one is with the command
+If you have a clang command `clang <clang arguments> File.m` then you can get the AST with 
 
 ```bash
 clang <clang arguments> -Xclang -ast-dump -fsyntax-only File.m
