@@ -51,7 +51,7 @@ def run_compilation_commands(cmds, clean_cmd):
 def run_cmd_ignore_fail(cmd):
     try:
         return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError:
+    except:
         return 'calling {cmd} failed\n{trace}'.format(
             cmd=' '.join(cmd),
             trace=traceback.format_exc())
