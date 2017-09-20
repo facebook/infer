@@ -7,7 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
-package codetoanalyze.java.checkers;
+package build_systems.threadsafety;
 
 import javax.annotation.concurrent.ThreadSafe;
 

@@ -1316,27 +1316,30 @@ let should_report_on_proc proc_desc tenv =
 let report_unsafe_accesses aggregated_access_map =
   let open ThreadSafetyDomain in
   let is_duplicate_report access pname {reported_sites; reported_writes; reported_reads} =
-    CallSite.Set.mem (TraceElem.call_site access) reported_sites
-    ||
-    match TraceElem.kind access with
-    | Access.Write _ | Access.ContainerWrite _
-     -> Typ.Procname.Set.mem pname reported_writes
-    | Access.Read _ | Access.ContainerRead _
-     -> Typ.Procname.Set.mem pname reported_reads
-    | Access.InterfaceCall _
-     -> false
+    if Config.filtering then CallSite.Set.mem (TraceElem.call_site access) reported_sites
+      ||
+      match TraceElem.kind access with
+      | Access.Write _ | Access.ContainerWrite _
+       -> Typ.Procname.Set.mem pname reported_writes
+      | Access.Read _ | Access.ContainerRead _
+       -> Typ.Procname.Set.mem pname reported_reads
+      | Access.InterfaceCall _
+       -> false
+    else false
   in
   let update_reported access pname reported =
-    let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
-    match TraceElem.kind access with
-    | Access.Write _ | Access.ContainerWrite _
-     -> let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
-        {reported with reported_writes; reported_sites}
-    | Access.Read _ | Access.ContainerRead _
-     -> let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
-        {reported with reported_reads; reported_sites}
-    | Access.InterfaceCall _
-     -> reported
+    if Config.filtering then
+      let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
+      match TraceElem.kind access with
+      | Access.Write _ | Access.ContainerWrite _
+       -> let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
+          {reported with reported_writes; reported_sites}
+      | Access.Read _ | Access.ContainerRead _
+       -> let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
+          {reported with reported_reads; reported_sites}
+      | Access.InterfaceCall _
+       -> reported
+    else reported
   in
   let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_acc =
     let pname = Procdesc.get_proc_name pdesc in
