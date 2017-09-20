@@ -8,7 +8,7 @@
 TESTS_DIR = ../..
 
 ANALYZER = infer
-INFER_OPTIONS = --report-custom-error --developer-mode --no-keep-going
+INFER_OPTIONS = --report-custom-error --developer-mode
 SOURCES = \
   ../codetoanalyze/hello.c ../codetoanalyze/hello2.c ../codetoanalyze/hello3.c \
   ../codetoanalyze/path\ with\ spaces/hel\ lo.c

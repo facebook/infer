@@ -14,7 +14,7 @@ ANALYZER = infer
 # leads to an error. This weird case can be observed when -index-store-path is
 # passed in a sequence like the one in CLANG_OPTIONS.
 CLANG_OPTIONS = -x c -index-store-path . -c
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root ../codetoanalyze --no-keep-going
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root ../codetoanalyze
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = ../codetoanalyze/hello.c

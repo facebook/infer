@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = linters
 CLANG_OPTIONS = -fobjc-arc -c
-INFER_OPTIONS = --cxx --linters-def-file linters_example.al --project-root $(TESTS_DIR) --no-keep-going
+INFER_OPTIONS = --cxx --linters-def-file linters_example.al --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

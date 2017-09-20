@@ -20,7 +20,7 @@ INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
 --iphoneos-target-sdk-version 8.0 \
 --iphoneos-target-sdk-version-path-regex "codetoanalyze/objc/ioslints/filter_out_unavailable_api\.m:10.0" \
 --iphoneos-target-sdk-version-path-regex "codetoanalyze/objc/ioslints/RemoveObserverInGivenSDKTest\.m:9.0" \
---no-keep-going
+
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = \

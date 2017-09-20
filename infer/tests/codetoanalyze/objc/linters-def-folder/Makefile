@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = linters
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --linters-def-folder checks --project-root $(TESTS_DIR) --no-keep-going
+INFER_OPTIONS = --linters-def-folder checks --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = file.m

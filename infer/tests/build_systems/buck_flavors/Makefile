@@ -12,7 +12,7 @@ ANALYZER = infer
 BUCK_TARGET = //src:hello @buck_target.txt 
 SOURCES = $(wildcard src/hello.c)
 OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(TESTS_DIR) --no-keep-going
+INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
 CLEAN_EXTRA = buck-out
 

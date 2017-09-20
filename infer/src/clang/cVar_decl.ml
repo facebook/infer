@@ -37,21 +37,24 @@ let sil_var_of_decl_ref context decl_ref procname =
   let name =
     match decl_ref.Clang_ast_t.dr_name with Some name_info -> name_info | None -> assert false
   in
-  let pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
   match decl_ref.Clang_ast_t.dr_kind with
   | `ImplicitParam
    -> let outer_procname = CContext.get_outer_procname context in
       let trans_unit_ctx = context.CContext.translation_unit_context in
       CGeneral_utils.mk_sil_var trans_unit_ctx name None procname outer_procname
   | _
-   -> if is_custom_var_pointer pointer then
+   -> let pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
+      if is_custom_var_pointer pointer then
         Pvar.mk (Mangled.from_string name.Clang_ast_t.ni_name) procname
       else
-        match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+        match CAst_utils.get_decl pointer with
         | Some var_decl
          -> sil_var_of_decl context var_decl procname
         | None
-         -> assert false
+         -> (* FIXME(t21762295) *)
+            CFrontend_config.incorrect_assumption
+              "pointer '%d' for var decl not found. The var decl was: %a" pointer
+              (Pp.to_string ~f:Clang_ast_j.string_of_decl_ref) decl_ref
 
 let add_var_to_locals procdesc var_decl sil_typ pvar =
   let open Clang_ast_t in

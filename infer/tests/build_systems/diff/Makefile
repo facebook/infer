@@ -25,5 +25,4 @@ $(INFER_OUT)/differential/introduced.json: $(SOURCES) $(CLANG_DEPS) changed_file
 	$(QUIET)$(MKDIR_P) src
 	$(QUIET)$(COPY) $(SRC_DIR)/some_bugs.c src/hello.c
 	$(QUIET)$(call silent_on_success,Running diff analysis in $(TEST_REL_DIR),\
-	  $(INFER_BIN) --no-keep-going -o $(INFER_OUT) --project-root $(CURDIR) diff \
-	        $(INFER_OPTIONS))
+	  $(INFER_BIN) -o $(INFER_OUT) --project-root $(CURDIR) diff $(INFER_OPTIONS))

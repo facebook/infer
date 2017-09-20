@@ -10,7 +10,7 @@ TESTS_DIR = ../..
 ANALYZER = checkers
 
 CLANG_OPTIONS = -c
-INFER_OPTIONS = --project-root src --no-keep-going --liveness
+INFER_OPTIONS = --project-root src --liveness
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = src/templates.cpp

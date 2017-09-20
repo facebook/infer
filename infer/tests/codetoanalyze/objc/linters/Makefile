@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = linters
 CLANG_OPTIONS = -x objective-c -fobjc-arc -c
-INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) --no-keep-going \
+INFER_OPTIONS = --no-filtering --debug-exceptions --project-root $(TESTS_DIR) \
 --linters-doc-url "ASSIGN_POINTER_WARNING:www.example.com"
 INFERPRINT_OPTIONS = --issues-tests
 

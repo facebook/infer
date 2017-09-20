@@ -899,7 +899,7 @@ and ( bo_debug
   and keep_going =
     CLOpt.mk_bool ~deprecated_no:["-no-failures-allowed"] ~long:"keep-going"
       ~in_help:CLOpt.([(Analyze, manual_generic)])
-      ~default:(not CLOpt.strict_mode) "Keep going when the analysis encounters a failure"
+      "Keep going when the analysis encounters a failure"
   and reports_include_ml_loc =
     CLOpt.mk_bool ~deprecated:["with_infer_src_loc"] ~long:"reports-include-ml-loc"
       "Include the location in the Infer source code from where reports are generated"
@@ -1790,6 +1790,7 @@ let post_parsing_initialization command_opt =
     let should_print_backtrace_default =
       match exn with L.InferUserError _ | L.InferExit _ -> false | _ -> true
     in
+    let suggest_keep_going = should_print_backtrace_default && not !keep_going in
     let backtrace = Caml.Printexc.raw_backtrace_to_string raw_backtrace in
     let print_exception () =
       let error prefix msg =
@@ -1813,10 +1814,15 @@ let post_parsing_initialization command_opt =
     in
     if should_print_backtrace_default || !developer_mode then (
       Out_channel.newline stderr ;
-      ANSITerminal.(prerr_string []) "Error backtrace:" ;
+      ANSITerminal.(prerr_string [Foreground Red]) "Error backtrace:" ;
       Out_channel.newline stderr ;
-      ANSITerminal.(prerr_string [Foreground Red] backtrace) ) ;
+      ANSITerminal.(prerr_string [Foreground Red]) backtrace ) ;
     print_exception () ;
+    Out_channel.newline stderr ;
+    if suggest_keep_going then (
+      ANSITerminal.(prerr_string [])
+        "Run the command again with `--keep-going` to try and ignore this error." ;
+      Out_channel.newline stderr ) ;
     Pervasives.exit (L.exit_code_of_exception exn)
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
