@@ -23,5 +23,5 @@ fi
 
 echo "Starting release..."
 
-mvn release:clean release:prepare
-mvn release:perform -DpushChanges=false
+mvn -e release:clean release:prepare
+mvn -e release:perform -DpushChanges=false
