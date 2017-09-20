@@ -50,14 +50,17 @@ Once the new linter is added to the linters' file it will then work out of the b
 
 <a name="clang_ast">**Getting the clang AST**</a>  
 
-First of all, get familiar with the `decl` and `stmt` data structures of the AST in infer/infer/src/clang/clang_ast_t.mli. This is a generated file. `decl` is the type for declarations and  contains items such as `ObjCInterfaceDecl`, `ObjCPropertyDecl`, `ObjCMethodDecl`, etc. `stmt` is a type for statements and contains items such as `ObjCMessageExpr`, `IfStmt`, etc. For information on those names, you can google them, and you'll find the clang docs, for instance [ObjCInterfaceDecl](http://clang.llvm.org/doxygen/classclang_1_1ObjCInterfaceDecl.html).
+When you write a linter that traverses the AST of some programs to check some property, you probably need to understand how the AST looks like. You can get the AST of programs using `clang` directly, or using Infer. 
 
-More important is to be able to map source code to its AST components. You can do this in two ways. If you have a clang command `clang <clang arguments> File.m` The first one is with the command
+If you have a clang command `clang <clang arguments> File.m` The first one is with the command
 
 ```bash
 clang <clang arguments> -Xclang -ast-dump -fsyntax-only File.m
 ```
-and the other one is using Infer. For this you need to install an OCaml package `biniou` with `opam install biniou`. See [the opam website](https://opam.ocaml.org/) for instructions to install opam. 
+
+You can also get the AST using Infer. One advantage of this is that you don't need to know the speicifc clang command, just the general build command. Moreover, what you get here is exactly the form of the AST that Infer has as input.
+
+For this you need to install an OCaml package `biniou` with `opam install biniou`. See [the opam website](https://opam.ocaml.org/) for instructions to install opam. 
 
 Then, the AST can be created by Infer in debug mode. Call Infer with
 
@@ -67,7 +70,7 @@ infer --debug -- <build command>
 
 This will, among other things, generate a file `/path/to/File.m.ast.sh` for every file `/path/to/File.m` that is being analyzed. Run this script with bash `File.m.ast.sh` and a file `File.m.ast.bdump` will be generated, that contains the AST of the program in `bdump` format (similar to json).
 
-For more info, [here](http://clang.llvm.org/docs/IntroductionToTheClangAST.html) is an introduction to the Clang AST.
+For general info on the clang AST, you can check out [clang's website](http://clang.llvm.org/docs/IntroductionToTheClangAST.html).
 
 
 <a name="write_linters">**Using AL to write linters**</a>
