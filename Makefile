@@ -405,6 +405,8 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	done
 	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/ || \
 	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules
+	test -d      $(DESTDIR)$(libdir)/infer/infer/etc/ || \
+		$(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/etc 
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/java/ || \
@@ -449,6 +451,8 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	done
 	$(INSTALL_DATA) -C          infer/lib/linter_rules/linters.al \
 	  $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/linters.al
+	$(INSTALL_DATA) -C          infer/etc/clang_ast.dict \
+	  $(DESTDIR)$(libdir)/infer/infer/etc/clang_ast.dict
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(INSTALL_DATA) -C          infer/annotations/annotations.jar \
