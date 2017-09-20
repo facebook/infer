@@ -317,7 +317,7 @@ let check_dereferences tenv callee_pname actual_pre sub spec_pre formal_params =
       | None
        -> assert false
     else if (* Check if the dereferenced expr has the dangling uninitialized attribute. *)
-            (* In that case it raise a dangling pointer dereferece *)
+            (* In that case it raise a dangling pointer dereference *)
             Attribute.has_dangling_uninit tenv spec_pre e
     then Some (Deref_undef_exp, desc false (Localise.deref_str_dangling (Some PredSymb.DAuninit)))
     else if Exp.equal e_sub Exp.minus_one then

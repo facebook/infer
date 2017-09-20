@@ -968,7 +968,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
     else add_ret_non_null ret_exp typ prop
 
 let execute_load ?(report_deref_errors= true) pname pdesc tenv id rhs_exp typ loc prop_ =
-  let execute_load_ pdesc tenv id loc acc_in iter =
+  let execute_load_ acc_in iter =
     let iter_ren = Prop.prop_iter_make_id_primed tenv id iter in
     let prop_ren = Prop.prop_iter_to_prop tenv iter_ren in
     match Prop.prop_iter_current tenv iter_ren with
@@ -1015,7 +1015,7 @@ let execute_load ?(report_deref_errors= true) pname pdesc tenv id rhs_exp typ lo
         let iter_list =
           Rearrange.rearrange ~report_deref_errors pdesc tenv n_rhs_exp' typ prop loc
         in
-        List.rev (List.fold ~f:(execute_load_ pdesc tenv id loc) ~init:[] iter_list)
+        List.rev (List.fold ~f:execute_load_ ~init:[] iter_list)
       with Exceptions.Symexec_memory_error _ ->
         (* This should normally be a real alarm and should not be caught but currently happens
            when the normalization drops hpreds of the form ident |-> footprint var. *)
