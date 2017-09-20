@@ -8,7 +8,7 @@ permalink: /docs/linters.html
 For iOS apps, we provide a linters framework. These are checks about the syntax of the program; it could be about a property, or about code inside one method, or that a class or method have certain properties. We provide [a few checks](/docs/linters-bug-types.html) and we have developed a domain specific language (DSL) to make it easier to write checks.
 
 - [AL: A declarative language for writing linters in Infer](/docs/linters.html#al_intro)
-- [Background on the clang AST](/docs/linters.html#clang_ast)
+- [Getting the clang AST](/docs/linters.html#clang_ast)
 - [Using AL to write linters](/docs/linters.html#write_linters) 
   - [General structure of a checker](/docs/linters.html#checker_structure) 
   - [Defining Paths](/docs/linters.html#paths) 
@@ -48,14 +48,14 @@ However, there are many important software bugs that are confined in the code of
 Once the new linter is added to the linters' file it will then work out of the box without the need to recompile Infer. Moreover to modify and/or debug your linters is enough to just update the linters' file.
 
 
-<a name="clang_ast">**Background on the clang AST**</a>  
+<a name="clang_ast">**Getting the clang AST**</a>  
 
 First of all, get familiar with the `decl` and `stmt` data structures of the AST in infer/infer/src/clang/clang_ast_t.mli. This is a generated file. `decl` is the type for declarations and  contains items such as `ObjCInterfaceDecl`, `ObjCPropertyDecl`, `ObjCMethodDecl`, etc. `stmt` is a type for statements and contains items such as `ObjCMessageExpr`, `IfStmt`, etc. For information on those names, you can google them, and you'll find the clang docs, for instance [ObjCInterfaceDecl](http://clang.llvm.org/doxygen/classclang_1_1ObjCInterfaceDecl.html).
 
-More important is to be able to map source code to its AST components. You can do this in two ways. Say your file is called Test.m. The first one is with the command
+More important is to be able to map source code to its AST components. You can do this in two ways. If you have a clang command `clang <clang arguments> File.m` The first one is with the command
 
 ```bash
-clang -Xclang -ast-dump -fsyntax-only Test.m
+clang <clang arguments> -Xclang -ast-dump -fsyntax-only File.m
 ```
 and the other one is using Infer. For this you need to install an OCaml package `biniou` with `opam install biniou`. See [the opam website](https://opam.ocaml.org/) for instructions to install opam. 
 
