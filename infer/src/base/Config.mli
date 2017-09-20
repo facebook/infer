@@ -404,6 +404,8 @@ val filtering : bool
 
 val flavors : bool
 
+val force_delete_results_dir : bool
+
 val fragment_retains_view : bool
 
 val from_json_report : string option

@@ -1,4 +1,5 @@
 {
+  "force-delete-results-dir": true,
   "siof-safe-methods": ["getGlobalNonPODWhitelisted", "whitelisted::getGlobalNonPOD",
                         "whitelisted::TemplatedObject::getGlobalNonPOD"],
   "skip-translation": [

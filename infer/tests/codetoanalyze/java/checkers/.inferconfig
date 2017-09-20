@@ -1,4 +1,5 @@
 {
+  "force-delete-results-dir": true,
   "modeled-expensive": [
     {
       "language": "Java",

@@ -1106,6 +1106,16 @@ and flavors =
     ~in_help:CLOpt.([(Capture, manual_buck_flavors)])
     "Buck integration using Buck flavors (clang only), eg $(i,`infer --flavors -- buck build //foo:bar#infer`)"
 
+and force_delete_results_dir =
+  CLOpt.mk_bool ~long:"force-delete-results-dir" ~default:false
+    ~in_help:
+      (CLOpt.(
+        [ (Capture, manual_generic)
+        ; (Compile, manual_generic)
+        ; (Diff, manual_generic)
+        ; (Run, manual_generic) ]))
+    "Do not refuse to delete the results directory if it doesn't look like an infer results directory."
+
 and from_json_report =
   CLOpt.mk_path_opt ~long:"from-json-report"
     ~in_help:CLOpt.([(Report, manual_generic)])
@@ -2066,6 +2076,8 @@ and filter_paths = !filter_paths
 and filtering = !filtering
 
 and flavors = !flavors
+
+and force_delete_results_dir = !force_delete_results_dir
 
 and fragment_retains_view = !fragment_retains_view
 
