@@ -60,7 +60,7 @@ clang <clang arguments> -Xclang -ast-dump -fsyntax-only File.m
 
 You can also get the AST using Infer. One advantage of this is that you don't need to know the speicifc clang command, just the general build command. Moreover, what you get here is exactly the form of the AST that Infer has as input.
 
-For this you need to install an OCaml package `biniou` with `opam install biniou`. See [the opam website](https://opam.ocaml.org/) for instructions to install opam. 
+For this you need to install an OCaml package `biniou` with `opam install biniou`. See [the opam website](https://opam.ocaml.org/) for instructions on how to install opam. 
 
 Then, the AST can be created by Infer in debug mode. Call Infer with
 
