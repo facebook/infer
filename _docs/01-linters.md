@@ -57,13 +57,15 @@ More important is to be able to map source code to its AST components. You can d
 ```bash
 clang -Xclang -ast-dump -fsyntax-only Test.m
 ```
-and the other one is using Infer. First, call Infer with
+and the other one is using Infer. For this you need to install an OCaml package `biniou` with `opam install biniou`. See [the opam website](https://opam.ocaml.org/) for instructions to install opam. 
+
+Then, the AST can be created by Infer in debug mode. Call Infer with
 
 ```bash
-infer --debug -- clang -c Test.m
+infer --debug -- <build command>
 ```
 
-where the part after the `--` is the clang command you would use to compile the code. This will, among other things, generate a file Test.m.ast.sh in the current directory. Run this script with bash Test.m.ast.sh and a file Test.m.ast.bdump will be generated, that contains the AST of the program in a readable format.
+This will, among other things, generate a file `/path/to/File.m.ast.sh` for every file `/path/to/File.m` that is being analyzed. Run this script with bash `File.m.ast.sh` and a file `File.m.ast.bdump` will be generated, that contains the AST of the program in `bdump` format (similar to json).
 
 For more info, [here](http://clang.llvm.org/docs/IntroductionToTheClangAST.html) is an introduction to the Clang AST.
 
