@@ -156,7 +156,7 @@ src_build_common:
 
 .PHONY: src_build
 src_build: src_build_common
-	$(QUIET)$(call silent_on_success,Building native Infer,\
+	$(QUIET)$(call silent_on_success,Building native($(BUILD_MODE)) Infer,\
 	$(MAKE_SOURCE) infer)
 
 .PHONY: byte
