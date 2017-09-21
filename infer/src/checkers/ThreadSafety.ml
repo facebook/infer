@@ -37,7 +37,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type lock_model = Lock | Unlock | LockedIfTrue | NoEffect
 
-  type thread_model = MainThread | MainThreadIfTrue | Unknown
+  type thread_model = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
 
   type container_access_model = ContainerRead | ContainerWrite
 
@@ -119,20 +119,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
        -> NoEffect
 
   let get_thread_model = function
-    | Typ.Procname.Java java_pname
-     -> if is_thread_utils_type java_pname then
-          match Typ.Procname.java_get_method java_pname with
-          | "assertMainThread" | "checkOnMainThread" | "assertOnUiThread"
-           -> MainThread
-          | "isMainThread" | "isUiThread"
-           -> MainThreadIfTrue
-          | _
-           -> Unknown
-        else Unknown
-    (* TODO: we can model this now *)
-    (* Note we are not modelling assertOnNonUiThread or assertOnBackgroundThread. These treated as Unknown *)
+    | Typ.Procname.Java java_pname when is_thread_utils_type java_pname -> (
+      match Typ.Procname.java_get_method java_pname with
+      | "assertMainThread" | "assertOnUiThread" | "checkOnMainThread"
+       -> MainThread
+      | "isMainThread" | "isUiThread"
+       -> MainThreadIfTrue
+      | "assertOnBackgroundThread" | "assertOnNonUiThread" | "checkOnNonUiThread"
+       -> BackgroundThread
+      | _
+       -> UnknownThread )
     | _
-     -> Unknown
+     -> UnknownThread
 
   let get_container_access =
     let is_cpp_container_read =
@@ -608,6 +606,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let astate = {astate with accesses} in
         let astate =
           match get_thread_model callee_pname with
+          | BackgroundThread
+           -> {astate with threads= ThreadsDomain.Background}
           | MainThread
            -> {astate with threads= ThreadsDomain.Main}
           | MainThreadIfTrue -> (
@@ -622,7 +622,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
              -> L.(die InternalError)
                   "Procedure %a specified as returning boolean, but returns nothing"
                   Typ.Procname.pp callee_pname )
-          | Unknown
+          | UnknownThread
            -> astate
         in
         let astate_callee =

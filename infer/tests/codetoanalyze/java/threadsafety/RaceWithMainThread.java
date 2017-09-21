@@ -20,6 +20,7 @@ class OurThreadUtils{
 class OurThreadUtil{ /*This is like AndroidThreadUtil*/
   native static boolean isUiThread();
   static void assertOnUiThread(){}
+  static void assertOnBackgroundThread(){}
 }
 
 
@@ -185,5 +186,17 @@ class RaceWithMainThread{
      ff = 99;
    }
  }
+
+  Object mFld;
+
+  public void confusedAssertBad(boolean b) {
+    if (b) {
+      OurThreadUtil.assertOnBackgroundThread();
+    } else {
+      OurThreadUtil.assertOnUiThread();
+    }
+    // not sure if we're on UI or background, should report
+    mFld = null;
+  }
 
 }
