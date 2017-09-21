@@ -1605,14 +1605,6 @@ module Normalize = struct
       let fav = pi_fav npi in
       sigma_fav_add fav nsigma ; fav
     in
-    (* TODO (t4893479): make this check less angelic *)
-    if Sil.fav_exists fp_vars Ident.is_normal && not Config.angelic_execution then (
-      L.d_strln "footprint part contains normal variables" ;
-      d_pi npi ;
-      L.d_ln () ;
-      d_sigma nsigma ;
-      L.d_ln () ;
-      assert false ) ;
     Sil.fav_filter_ident fp_vars Ident.is_primed ;
     (* only keep primed vars *)
     let npi', nsigma' =

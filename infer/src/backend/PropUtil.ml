@@ -143,7 +143,7 @@ let remove_locals tenv (curr_f: Procdesc.t) p =
      -> names_of_locals
   in
   let removed, p' = Attribute.deallocate_stack_vars tenv p names_of_locals' in
-  (removed, if Config.angelic_execution then remove_abduced_retvars tenv p' else p')
+  (removed, remove_abduced_retvars tenv p')
 
 let remove_formals tenv (curr_f: Procdesc.t) p =
   let pname = Procdesc.get_proc_name curr_f in

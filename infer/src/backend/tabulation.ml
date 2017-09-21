@@ -348,23 +348,21 @@ let check_dereferences tenv callee_pname actual_pre sub spec_pre formal_params =
   match deref_err_list with
   | []
    -> None
-  | deref_err :: _
-   -> if Config.angelic_execution then
-        (* In angelic mode, prefer to report Deref_null over other kinds of deref errors. this
+  | deref_err :: _ ->
+    match
+      (* Prefer to report Deref_null over other kinds of deref errors. this
          * makes sure we report a NULL_DEREFERENCE instead of
            a less interesting PRECONDITION_NOT_MET
          * whenever possible *)
-        (* TOOD (t4893533): use this trick outside of angelic mode and in other parts of the code *)
-        match
-          List.find
-            ~f:(fun err -> match err with Deref_null _, _ -> true | _ -> false)
-            deref_err_list
-        with
-        | Some x
-         -> Some x
-        | None
-         -> Some deref_err
-      else Some deref_err
+      (* TOOD (t4893533): use this trick outside of angelic mode and in other parts of the code *)
+      List.find
+        ~f:(fun err -> match err with Deref_null _, _ -> true | _ -> false)
+        deref_err_list
+    with
+    | Some x
+     -> Some x
+    | None
+     -> Some deref_err
 
 let post_process_sigma tenv (sigma: Sil.hpred list) loc : Sil.hpred list =
   let map_inst inst = Sil.inst_new_loc loc inst in
@@ -622,17 +620,8 @@ let prop_footprint_add_pi_sigma_starfld_sigma tenv (prop: 'a Prop.t) pi_new sigm
     | []
      -> Some current_sigma
     | hpred :: new_sigma'
-     -> let fav = Prop.sigma_fav [hpred] in
-        (* TODO (t4893479): make this check less angelic *)
-        if Sil.fav_exists fav (fun id ->
-               not (Ident.is_footprint id) && not Config.angelic_execution )
-        then (
-          L.d_warning "found hpred with non-footprint variable, dropping the spec" ;
-          L.d_ln () ;
-          Sil.d_hpred hpred ;
-          L.d_ln () ;
-          None )
-        else extend_sigma (hpred :: current_sigma) new_sigma'
+     -> (* TODO (t4893479): make this check less angelic *)
+        extend_sigma (hpred :: current_sigma) new_sigma'
   in
   let rec extend_pi current_pi new_pi =
     match new_pi with
@@ -1068,7 +1057,7 @@ let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path
       List.iter ~f:log_check_exn checks ;
       let subbed_pre = Prop.prop_sub (`Exp sub1) actual_pre in
       match check_dereferences tenv callee_pname subbed_pre (`Exp sub2) spec_pre formal_params with
-      | Some (Deref_undef _, _) when Config.angelic_execution
+      | Some (Deref_undef _, _)
        -> let split = do_split () in
           report_valid_res split
       | Some (deref_error, desc)

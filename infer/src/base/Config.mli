@@ -273,8 +273,6 @@ val analysis_suppress_errors : analyzer -> string list
 
 val analyzer : analyzer
 
-val angelic_execution : bool
-
 val annotation_reachability : bool
 
 val annotation_reachability_custom_pairs : Yojson.Basic.json

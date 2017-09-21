@@ -587,10 +587,6 @@ and android_harness =
   CLOpt.mk_bool ~deprecated:["harness"] ~long:"android-harness"
     "(Experimental) Create harness to detect issues involving the Android lifecycle"
 
-and angelic_execution =
-  CLOpt.mk_bool ~deprecated:["angelic_execution"] ~long:"angelic-execution" ~default:true
-    "Angelic execution, where the analysis ignores errors caused by unknown procedure calls"
-
 and ( annotation_reachability
     , biabduction
     , bufferoverrun
@@ -1941,8 +1937,6 @@ and analysis_suppress_errors_options =
   List.map ~f:(fun (a, b) -> (a, !b)) analysis_suppress_errors_options
 
 and analysis_stops = !analysis_stops
-
-and angelic_execution = !angelic_execution
 
 and annotation_reachability = !annotation_reachability
 

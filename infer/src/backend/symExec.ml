@@ -402,8 +402,8 @@ let reason_to_skip callee_summary : string option =
   let attributes = callee_summary.Specs.attributes in
   if attributes.ProcAttributes.is_abstract then Some "abstract method"
   else if not attributes.ProcAttributes.is_defined then Some "method has no implementation"
-  else if Config.angelic_execution && List.is_empty (Specs.get_specs_from_payload callee_summary)
-  then Some "empty list of specs"
+  else if List.is_empty (Specs.get_specs_from_payload callee_summary) then
+    Some "empty list of specs"
   else None
 
 (** In case of constant string dereference, return the result immediately *)
@@ -945,7 +945,7 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
       else
         match typ.Typ.desc with Typ.Tptr _ -> Prop.conjoin_neq tenv exp Exp.zero prop | _ -> prop
     in
-    if Config.angelic_execution && not (is_rec_call callee_pname) then
+    if not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
       let prop_with_abduced_var =
         let abduced_ret_pv =
@@ -1413,16 +1413,6 @@ and instrs ?(mask_errors= false) tenv pdesc instrs ppl =
   List.fold ~f ~init:ppl instrs
 
 and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname callee_loc =
-  (* replace an hpred of the form actual_var |-> _ with new_hpred in prop *)
-  let replace_actual_hpred actual_var new_hpred prop =
-    let sigma' =
-      List.map
-        ~f:(function
-            | Sil.Hpointsto (lhs, _, _) when Exp.equal lhs actual_var -> new_hpred | hpred -> hpred)
-        prop.Prop.sigma
-    in
-    Prop.normalize tenv (Prop.set prop ~sigma:sigma')
-  in
   let add_actual_by_ref_to_footprint prop (actual, actual_typ, actual_index) =
     let abduced =
       match actual with
@@ -1489,24 +1479,6 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
            -> p)
         ~init:prop' prop'.Prop.sigma
   in
-  (* non-angelic mode; havoc each var passed by reference by assigning it to a fresh id *)
-  let havoc_actual_by_ref prop (actual, actual_typ, _) =
-    let actual_pt_havocd_var =
-      let havocd_var = Exp.Var (Ident.create_fresh Ident.kprimed) in
-      let sizeof_exp =
-        Exp.Sizeof
-          { typ= Typ.strip_ptr actual_typ
-          ; nbytes= None
-          ; dynamic_length= None
-          ; subtype= Subtype.subtypes }
-      in
-      Prop.mk_ptsto tenv actual (Sil.Eexp (havocd_var, Sil.Inone)) sizeof_exp
-    in
-    replace_actual_hpred actual actual_pt_havocd_var prop
-  in
-  let do_actual_by_ref =
-    if Config.angelic_execution then add_actual_by_ref_to_footprint else havoc_actual_by_ref
-  in
   let non_const_actuals_by_ref =
     let is_not_const (e, _, i) =
       match AttributesTable.load_attributes ~cache:true callee_pname with
@@ -1522,7 +1494,7 @@ and add_constraints_on_actuals_by_ref tenv prop actuals_by_ref callee_pname call
     in
     List.filter ~f:is_not_const actuals_by_ref
   in
-  List.fold ~f:do_actual_by_ref ~init:prop non_const_actuals_by_ref
+  List.fold ~f:add_actual_by_ref_to_footprint ~init:prop non_const_actuals_by_ref
 
 (** execute a call for an unknown or scan function *)
 and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots

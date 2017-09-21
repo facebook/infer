@@ -449,7 +449,7 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst
   if not (exp_has_only_footprint_ids root) then
     if (* in angelic mode, purposely ignore dangling pointer warnings during the footprint phase -- we
      * will fix them during the re - execution phase *)
-       not (Config.angelic_execution && !Config.footprint)
+       not !Config.footprint
     then (
       L.internal_error "!!!! Footprint Error, Bad Root : %a !!!! @\n" Exp.pp lexp ;
       let deref_str = Localise.deref_str_dangling None in
@@ -1589,12 +1589,8 @@ let check_dereference_error tenv pdesc (prop: Prop.normal Prop.t) lexp loc =
    -> let deref_str = Localise.deref_str_dangling (Some dk) in
       let err_desc = Errdesc.explain_dereference tenv deref_str prop (State.get_loc ()) in
       raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, __POS__))
-  | Some Apred (Aundef (s, _, undef_loc, _), _)
-   -> if Config.angelic_execution then ()
-      else
-        let deref_str = Localise.deref_str_undef (s, undef_loc) in
-        let err_desc = Errdesc.explain_dereference tenv deref_str prop loc in
-        raise (Exceptions.Skip_pointer_dereference (err_desc, __POS__))
+  | Some Apred (Aundef _, _)
+   -> ()
   | Some Apred (Aresource ({ra_kind= Rrelease} as ra), _)
    -> let deref_str = Localise.deref_str_freed ra in
       let err_desc = Errdesc.explain_dereference tenv ~use_buckets:true deref_str prop loc in
