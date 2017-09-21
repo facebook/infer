@@ -109,7 +109,60 @@ let make_unannotated_call_access pname loc =
    all branches.
 *)
 module LocksDomain = AbstractDomain.BooleanAnd
-module ThreadsDomain = AbstractDomain.BooleanAnd
+
+module ThreadsDomain = struct
+  type astate = Unknown | Main | Background | Any
+
+  let empty = Unknown
+
+  let ( <= ) ~lhs ~rhs =
+    match (lhs, rhs) with
+    | Unknown, Unknown | Main, Main | Background, Background | Any, Any
+     -> true
+    | Unknown, _
+     -> true
+    | _, Unknown
+     -> false
+    | _, Any
+     -> true
+    | Any, _
+     -> false
+    | _
+     -> (* Unknown is bottom, Any is top, other elements are incomparable *)
+        false
+
+  let join astate1 astate2 =
+    match (astate1, astate2) with
+    | Unknown, astate | astate, Unknown
+     -> astate
+    | Any, _ | _, Any
+     -> Any
+    | Main, Main | Background, Background
+     -> astate1
+    | Main, Background | Background, Main
+     -> Any
+
+  let widen ~prev ~next ~num_iters:_ = join prev next
+
+  let pp fmt astate =
+    F.fprintf fmt
+      ( match astate with
+      | Unknown
+       -> "Unknown"
+      | Main
+       -> "Main"
+      | Background
+       -> "Background"
+      | Any
+       -> "Any" )
+
+  let is_unknown = function Unknown -> true | _ -> false
+
+  let is_empty = is_unknown
+
+  let is_main = function Main -> true | _ -> false
+end
+
 module ThumbsUpDomain = AbstractDomain.BooleanAnd
 module PathDomain = SinkTrace.Make (TraceElem)
 
@@ -320,7 +373,7 @@ type astate =
 
 let empty =
   let thumbs_up = true in
-  let threads = false in
+  let threads = ThreadsDomain.Unknown in
   let locks = false in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
@@ -329,7 +382,7 @@ let empty =
   {thumbs_up; threads; locks; accesses; ownership; attribute_map; escapees}
 
 let is_empty {thumbs_up; threads; locks; accesses; ownership; attribute_map; escapees} =
-  thumbs_up && not threads && not locks && AccessDomain.is_empty accesses
+  thumbs_up && ThreadsDomain.is_unknown threads && not locks && AccessDomain.is_empty accesses
   && OwnershipDomain.is_empty ownership && AttributeMapDomain.is_empty attribute_map
   && EscapeeDomain.is_empty escapees
 
@@ -344,7 +397,7 @@ let ( <= ) ~lhs ~rhs =
 let join astate1 astate2 =
   if phys_equal astate1 astate2 then astate1
   else
-    let thumbs_up = ThreadsDomain.join astate1.thumbs_up astate2.thumbs_up in
+    let thumbs_up = ThumbsUpDomain.join astate1.thumbs_up astate2.thumbs_up in
     let threads = ThreadsDomain.join astate1.threads astate2.threads in
     let locks = LocksDomain.join astate1.locks astate2.locks in
     let accesses = AccessDomain.join astate1.accesses astate2.accesses in
@@ -356,7 +409,7 @@ let join astate1 astate2 =
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next then prev
   else
-    let thumbs_up = ThreadsDomain.widen ~prev:prev.thumbs_up ~next:next.thumbs_up ~num_iters in
+    let thumbs_up = ThumbsUpDomain.widen ~prev:prev.thumbs_up ~next:next.thumbs_up ~num_iters in
     let threads = ThreadsDomain.widen ~prev:prev.threads ~next:next.threads ~num_iters in
     let locks = LocksDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
     let accesses = AccessDomain.widen ~prev:prev.accesses ~next:next.accesses ~num_iters in

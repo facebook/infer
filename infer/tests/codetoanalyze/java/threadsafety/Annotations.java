@@ -164,25 +164,25 @@ class Annotations implements Interface {
   }
 
   /* Like in RaceWithMainThread.java with assertMainThread() */
-  void conditional_Ok(boolean b){
+  void conditional1_ok(boolean b){
    if (b) {
-     write_on_main_thread_Ok();
-   } /* BooleanAnd for threaded would hose you here and lead to a report */
+     write_on_main_thread_ok();
+   }
   }
 
   Integer ii;
 
   @ThreadConfined(ThreadConfined.UI)
-  void write_on_main_thread_Ok(){
+  void write_on_main_thread_ok(){
      ii = 22;
   }
 
- void conditional_Bad(boolean b){
+ void conditional2_ok(boolean b){
    if (b)
    {
-     write_on_main_thread_Ok();
+     write_on_main_thread_ok();
    } else {
-     ii = 99; // Using || for threaded hoses this; no report
+     ii = 99; // this might or might not run on the main thread; don't warn
    }
  }
 

@@ -109,9 +109,9 @@ class RaceWithMainThread{
      g = 77;
    }
 
-Integer ff;
+  Integer ff;
 
- void conditional_Ok(boolean b){
+  void conditional1_Ok(boolean b){
    if (b)
    { /*People not literally putting this assert inside if's,
        but implicitly by method calls */
@@ -120,15 +120,13 @@ Integer ff;
    }
  }
 
-
-
- void conditional_Bad(boolean b){
+ void conditional2_Ok(boolean b){
    if (b)
    {
      OurThreadUtils.assertMainThread();
      ff = 88;
    } else {
-     ff = 99;
+     ff = 99; // this might or might now run on the main thread; don't warn
    }
  }
 

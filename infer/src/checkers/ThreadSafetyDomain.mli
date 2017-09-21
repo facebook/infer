@@ -42,7 +42,19 @@ end
     and which memory locations correspond to the same lock. *)
 module LocksDomain : AbstractDomain.S with type astate = bool
 
-module ThreadsDomain : AbstractDomain.S with type astate = bool
+module ThreadsDomain : sig
+  type astate =
+    | Unknown  (** Unknown thread; bottom element of the lattice *)
+    | Main  (** Main thread. Accesses here cannot race with other accesses on the main thread *)
+    | Background
+        (** Background thread. Accesses here can race with the main thread or other background
+        threads *)
+    | Any  (** Any thread; top element of the lattice. *)
+
+  include AbstractDomain.WithBottom with type astate := astate
+
+  val is_main : astate -> bool
+end
 
 module ThumbsUpDomain : AbstractDomain.S with type astate = bool
 
@@ -176,8 +188,8 @@ module FormalsDomain : sig
 end
 
 type astate =
-  { thumbs_up: ThreadsDomain.astate  (** boolean that is true if we think we have a proof *)
-  ; threads: ThreadsDomain.astate  (** boolean that is true if we know we are on UI/main thread *)
+  { thumbs_up: ThumbsUpDomain.astate  (** boolean that is true if we think we have a proof *)
+  ; threads: ThreadsDomain.astate  (** current thread: main, background, or unknown *)
   ; locks: LocksDomain.astate  (** boolean that is true if a lock must currently be held *)
   ; accesses: AccessDomain.astate
         (** read and writes accesses performed without ownership permissions *)

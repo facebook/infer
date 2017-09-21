@@ -22,10 +22,11 @@ module Summary = Summary.Make (struct
 end)
 
 (*Bit of redundancy with code in is_unprotected, might alter later *)
-let make_excluder locks threads =
-  if locks && not threads then ThreadSafetyDomain.Excluder.Lock
-  else if not locks && threads then ThreadSafetyDomain.Excluder.Thread
-  else if locks && threads then ThreadSafetyDomain.Excluder.Both
+let make_excluder locks thread =
+  let is_main_thread = ThreadSafetyDomain.ThreadsDomain.is_main thread in
+  if locks && not is_main_thread then ThreadSafetyDomain.Excluder.Lock
+  else if not locks && is_main_thread then ThreadSafetyDomain.Excluder.Thread
+  else if locks && is_main_thread then ThreadSafetyDomain.Excluder.Both
   else L.(die InternalError) "called when neither lock nor thread known"
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -36,7 +37,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type lock_model = Lock | Unlock | LockedIfTrue | NoEffect
 
-  type thread_model = Threaded | Unknown | ThreadedIfTrue
+  type thread_model = MainThread | MainThreadIfTrue | Unknown
 
   type container_access_model = ContainerRead | ContainerWrite
 
@@ -122,14 +123,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
      -> if is_thread_utils_type java_pname then
           match Typ.Procname.java_get_method java_pname with
           | "assertMainThread" | "checkOnMainThread" | "assertOnUiThread"
-           -> Threaded
+           -> MainThread
           | "isMainThread" | "isUiThread"
-           -> ThreadedIfTrue
+           -> MainThreadIfTrue
           | _
            -> Unknown
         else Unknown
-    (*Note we are not modelling assertOnNonUiThread or
-      assertOnBackgroundThread. These treated as Unknown*)
+    (* TODO: we can model this now *)
+    (* Note we are not modelling assertOnNonUiThread or assertOnBackgroundThread. These treated as Unknown *)
     | _
      -> Unknown
 
@@ -292,8 +293,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let attribute_map' = AttributeMapDomain.add ret_access_path ret_attributes attribute_map in
         (ownership', attribute_map')
 
-  let is_unprotected is_locked is_threaded pdesc =
-    not is_locked && not is_threaded && not (Procdesc.is_java_synchronized pdesc)
+  let is_unprotected is_locked thread pdesc =
+    not is_locked && not (ThreadSafetyDomain.ThreadsDomain.is_main thread)
+    && not (Procdesc.is_java_synchronized pdesc)
 
   (** return true if this function is library code from the JDK core libraries or Android *)
   let is_java_library = function
@@ -518,7 +520,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Some
       { thumbs_up= true
       ; locks= false
-      ; threads= false
+      ; threads= ThreadsDomain.Unknown
       ; accesses= callee_accesses
       ; return_ownership= OwnershipAbstractValue.unowned
       ; return_attributes= AttributeSetDomain.empty
@@ -606,9 +608,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let astate = {astate with accesses} in
         let astate =
           match get_thread_model callee_pname with
-          | Threaded
-           -> {astate with threads= true}
-          | ThreadedIfTrue -> (
+          | MainThread
+           -> {astate with threads= ThreadsDomain.Main}
+          | MainThreadIfTrue -> (
             match ret_opt with
             | Some ret_access_path
              -> let attribute_map =
@@ -625,7 +627,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
-          if is_thread_utils_method "assertMainThread" callee_pname then {astate with threads= true}
+          if is_thread_utils_method "assertMainThread" callee_pname then
+            {astate with threads= ThreadsDomain.Main}
           else
             match get_lock_model callee_pname actuals with
             | Lock
@@ -663,7 +666,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   in
                   let thumbs_up = thumbs_up && astate.thumbs_up in
                   let locks = locks || astate.locks in
-                  let threads = threads || astate.threads in
+                  let threads = ThreadsDomain.join threads astate.threads in
                   let unprotected = is_unprotected locks threads pdesc in
                   (* add [ownership_accesses] to the [accesses_acc] with a protected pre if
                        [exp] is owned, and an appropriate unprotected pre otherwise *)
@@ -866,7 +869,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            -> let locks = bool_value in
               {acc with locks}
           | Choice.OnMainThread
-           -> let threads = bool_value in
+           -> let threads = if bool_value then ThreadsDomain.Main else ThreadsDomain.Background in
               {acc with threads}
         in
         let accesses =
@@ -917,7 +920,7 @@ let is_call_to_immutable_collection_method tenv = function
   | _
    -> false
 
-(* Methods in @ThreadConfined classes and methods annotated with @ThreadConfied are assumed to all
+(* Methods in @ThreadConfined classes and methods annotated with @ThreadConfined are assumed to all
    run on the same thread. For the moment we won't warn on accesses resulting from use of such
    methods at all. In future we should account for races between these methods and methods from
    completely different classes that don't necessarily run on the same thread as the confined
@@ -985,7 +988,7 @@ let is_thread_safe_method pdesc tenv =
 
 let empty_post : ThreadSafetyDomain.summary =
   { ThreadSafetyDomain.thumbs_up= true
-  ; threads= false
+  ; threads= ThreadSafetyDomain.ThreadsDomain.Unknown
   ; locks= false
   ; accesses= ThreadSafetyDomain.AccessDomain.empty
   ; return_ownership= ThreadSafetyDomain.OwnershipAbstractValue.unowned
@@ -1003,7 +1006,13 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
     let formal_map = FormalMap.make proc_desc in
     let proc_data = ProcData.make_default proc_desc tenv in
     let initial =
-      let threads = runs_on_ui_thread proc_desc || is_thread_confined_method tenv proc_desc in
+      let threads =
+        if runs_on_ui_thread proc_desc || is_thread_confined_method tenv proc_desc then
+          (* note: modeling @ThreadConfined as running on main thread for now, but should probably
+             change in the future *)
+          ThreadsDomain.Main
+        else ThreadsDomain.Unknown
+      in
       if is_initializer tenv (Procdesc.get_proc_name proc_desc) then
         let add_owned_formal acc formal_index =
           match FormalMap.get_formal_base formal_index formal_map with
@@ -1240,7 +1249,11 @@ let make_unprotected_write_description tenv pname final_sink_site initial_sink_s
 
 let make_read_write_race_description conflicts tenv pname final_sink_site initial_sink_site
     final_sink =
-  let race_with_main_thread = List.exists ~f:(fun (_, _, threaded, _, _) -> threaded) conflicts in
+  let race_with_main_thread =
+    List.exists
+      ~f:(fun (_, _, thread, _, _) -> ThreadSafetyDomain.ThreadsDomain.is_main thread)
+      conflicts
+  in
   let conflicting_proc_names =
     List.map ~f:(fun (_, _, _, _, pdesc) -> Procdesc.get_proc_name pdesc) conflicts
     |> Typ.Procname.Set.of_list
@@ -1315,7 +1328,15 @@ let should_report_on_proc proc_desc tenv =
     currently not distinguishing different locks, and are treating "known to be confined to a
     thread" as if "known to be confined to UI thread".
 *)
-let report_unsafe_accesses aggregated_access_map =
+let report_unsafe_accesses
+    (aggregated_access_map:
+    ( ThreadSafetyDomain.TraceElem.t
+    * ThreadSafetyDomain.AccessPrecondition.t
+    * ThreadSafetyDomain.ThreadsDomain.astate
+    * Tenv.t
+    * Procdesc.t )
+    list
+    AccessListMap.t) =
   let open ThreadSafetyDomain in
   let is_duplicate_report access pname {reported_sites; reported_writes; reported_reads} =
     if Config.filtering then CallSite.Set.mem (TraceElem.call_site access) reported_sites
@@ -1343,7 +1364,7 @@ let report_unsafe_accesses aggregated_access_map =
        -> reported
     else reported
   in
-  let report_unsafe_access (access, pre, threaded, tenv, pdesc) accesses reported_acc =
+  let report_unsafe_access (access, pre, thread, tenv, pdesc) accesses reported_acc =
     let pname = Procdesc.get_proc_name pdesc in
     if is_duplicate_report access pname reported_acc then reported_acc
     else
@@ -1360,7 +1381,7 @@ let report_unsafe_accesses aggregated_access_map =
         , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) ) -> (
         match Procdesc.get_proc_name pdesc with
         | Java _
-         -> if threaded then reported_acc
+         -> if ThreadsDomain.is_main thread then reported_acc
             else (
               (* unprotected write. warn. *)
               report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
@@ -1385,8 +1406,9 @@ let report_unsafe_accesses aggregated_access_map =
           in
           let all_writes =
             List.filter
-              ~f:(fun (other_access, pre, other_threaded, _, _) ->
-                TraceElem.is_write other_access && not (threaded && other_threaded)
+              ~f:(fun (other_access, pre, other_thread, _, _) ->
+                TraceElem.is_write other_access
+                && not (ThreadsDomain.is_main thread && ThreadsDomain.is_main other_thread)
                 && is_cpp_protected_write pre)
               accesses
           in
