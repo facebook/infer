@@ -194,7 +194,7 @@ module Attribute = struct
   end)
 end
 
-module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute.Set)
+module AttributeSetDomain = AbstractDomain.InvertedSet (Attribute)
 
 module OwnershipAbstractValue = struct
   type astate = Owned | OwnedIf of IntSet.t | Unowned [@@deriving compare]
@@ -257,7 +257,7 @@ module OwnershipDomain = struct
 end
 
 module AttributeMapDomain = struct
-  include AbstractDomain.InvertedMap (AccessPath.Map) (AttributeSetDomain)
+  include AbstractDomain.InvertedMap (AccessPath) (AttributeSetDomain)
 
   let add access_path attribute_set t =
     if AttributeSetDomain.is_empty attribute_set then t else add access_path attribute_set t
@@ -377,7 +377,7 @@ let empty =
   let locks = false in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
-  let attribute_map = AccessPath.Map.empty in
+  let attribute_map = AttributeMapDomain.empty in
   let escapees = EscapeeDomain.empty in
   {thumbs_up; threads; locks; accesses; ownership; attribute_map; escapees}
 

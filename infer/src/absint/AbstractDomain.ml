@@ -151,8 +151,8 @@ module FiniteSet (Element : PrettyPrintable.PrintableOrderedType) = struct
   let widen ~prev ~next ~num_iters:_ = join prev next
 end
 
-module InvertedSet (S : PrettyPrintable.PPSet) = struct
-  include S
+module InvertedSet (Element : PrettyPrintable.PrintableOrderedType) = struct
+  include PrettyPrintable.MakePPSet (Element)
 
   type astate = t
 
@@ -210,7 +210,8 @@ module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = stru
   let pp fmt astate = M.pp ~pp_value:ValueDomain.pp fmt astate
 end
 
-module InvertedMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
+module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = struct
+  module M = PrettyPrintable.MakePPMap (Key)
   include M
 
   type astate = ValueDomain.astate M.t
@@ -246,9 +247,6 @@ module InvertedMap (M : PrettyPrintable.PPMap) (ValueDomain : S) = struct
         prev next
 
   let pp fmt astate = M.pp ~pp_value:ValueDomain.pp fmt astate
-
-  (* hide empty so we don't accidentally satisfy the WithBottom signature *)
-  let empty = `This_domain_is_not_pointed
 end
 
 module BooleanAnd = struct

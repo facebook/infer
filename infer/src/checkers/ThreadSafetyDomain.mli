@@ -108,10 +108,10 @@ module Attribute : sig
   module Set : PrettyPrintable.PPSet with type elt = t
 end
 
-module AttributeSetDomain : module type of AbstractDomain.InvertedSet (Attribute.Set)
+module AttributeSetDomain : module type of AbstractDomain.InvertedSet (Attribute)
 
 module AttributeMapDomain : sig
-  include module type of AbstractDomain.InvertedMap (AccessPath.Map) (AttributeSetDomain)
+  include module type of AbstractDomain.InvertedMap (AccessPath) (AttributeSetDomain)
 
   val add : AccessPath.t -> AttributeSetDomain.astate -> astate -> astate
 
