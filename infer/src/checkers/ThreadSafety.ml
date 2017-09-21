@@ -1189,7 +1189,7 @@ let make_trace_with_conflicts conflicts original_path pdesc =
   | []
    -> original_trace
 
-let report_thread_safety_violation tenv pdesc ~make_description ~conflicts access =
+let report_thread_safety_violation tenv pdesc issue_type ~make_description ~conflicts access =
   let open ThreadSafetyDomain in
   let pname = Procdesc.get_proc_name pdesc in
   let report_one_path (_, sinks as path) =
@@ -1199,9 +1199,10 @@ let report_thread_safety_violation tenv pdesc ~make_description ~conflicts acces
     let final_sink_site = PathDomain.Sink.call_site final_sink in
     let loc = CallSite.loc initial_sink_site in
     let ltr = make_trace_with_conflicts conflicts path pdesc in
-    let msg = IssueType.thread_safety_violation.unique_id in
     let description = make_description tenv pname final_sink_site initial_sink_site final_sink in
-    let exn = Exceptions.Checkers (msg, Localise.verbatim_desc description) in
+    let exn =
+      Exceptions.Checkers (issue_type.IssueType.unique_id, Localise.verbatim_desc description)
+    in
     Reporting.log_error_deprecated ~store_summary:true pname ~loc ~ltr exn
   in
   let trace_of_pname = trace_of_pname access pdesc in
@@ -1213,10 +1214,11 @@ let report_unannotated_interface_violation tenv pdesc access reported_pname =
    -> let class_name = Typ.Procname.java_get_class_name java_pname in
       let make_description _ _ _ _ _ =
         F.asprintf
-          "Unprotected call to method of un-annotated interface %s. Consider annotating the class with %a or adding a lock"
+          "Unprotected call to method of un-annotated interface %s. Consider annotating the class with %a, adding a lock, or using an interface that is known to be thread-safe."
           class_name MF.pp_monospaced "@ThreadSafe"
       in
-      report_thread_safety_violation tenv pdesc ~make_description ~conflicts:[] access
+      report_thread_safety_violation tenv pdesc IssueType.interface_not_thread_safe
+        ~make_description ~conflicts:[] access
   | _
    -> (* skip reporting on C++ *)
       ()
@@ -1361,7 +1363,7 @@ let report_unsafe_accesses aggregated_access_map =
          -> if threaded then reported_acc
             else (
               (* unprotected write. warn. *)
-              report_thread_safety_violation tenv pdesc
+              report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
                 ~make_description:make_unprotected_write_description ~conflicts:[] access ;
               update_reported access pname reported_acc )
         | _
@@ -1390,7 +1392,7 @@ let report_unsafe_accesses aggregated_access_map =
           in
           if List.is_empty all_writes then reported_acc
           else (
-            report_thread_safety_violation tenv pdesc
+            report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
               ~make_description:(make_read_write_race_description all_writes)
               ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) all_writes)
               access ;
@@ -1423,7 +1425,7 @@ let report_unsafe_accesses aggregated_access_map =
           if List.is_empty conflicting_writes then reported_acc
           else (
             (* protected read with conflicting unprotected write(s). warn. *)
-            report_thread_safety_violation tenv pdesc
+            report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
               ~make_description:(make_read_write_race_description conflicting_writes)
               ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) conflicting_writes)
               access ;

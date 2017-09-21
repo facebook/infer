@@ -202,6 +202,8 @@ let _global_variable_initialized_with_function_or_method_call =
 
 let inherently_dangerous_function = from_string "INHERENTLY_DANGEROUS_FUNCTION"
 
+let interface_not_thread_safe = from_string "INTERFACE_NOT_THREAD_SAFE"
+
 let internal_error = from_string "Internal_error"
 
 let leak_after_array_abstraction = from_string "Leak_after_array_abstraction"
