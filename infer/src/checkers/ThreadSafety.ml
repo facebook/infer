@@ -1638,7 +1638,7 @@ let make_results_table file_env =
           (PathDomain.sinks accesses) acc)
       accesses acc
   in
-  let aggregate_posts acc (_, tenv, proc_name, proc_desc) =
+  let aggregate_posts acc (tenv, proc_name, proc_desc) =
     match Summary.read_summary proc_desc proc_name with
     | Some summary
      -> aggregate_post summary tenv proc_desc acc
@@ -1651,7 +1651,7 @@ let make_results_table file_env =
    each class individually *)
 let aggregate_by_class file_env =
   List.fold file_env
-    ~f:(fun acc (_, _, pname, _ as proc) ->
+    ~f:(fun acc (_, pname, _ as proc) ->
       let classname =
         match pname with
         | Typ.Procname.Java java_pname

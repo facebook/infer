@@ -14,7 +14,6 @@ open! IStd
 type proc_callback_args =
   { get_proc_desc: Typ.Procname.t -> Procdesc.t option
   ; get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
-  ; idenv: Idenv.t
   ; tenv: Tenv.t
   ; summary: Specs.summary
   ; proc_desc: Procdesc.t }
@@ -29,7 +28,7 @@ type proc_callback_t = proc_callback_args -> Specs.summary
 
 type cluster_callback_t =
   Exe_env.t -> Typ.Procname.t list -> (Typ.Procname.t -> Procdesc.t option)
-  -> (Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t) list -> unit
+  -> (Tenv.t * Typ.Procname.t * Procdesc.t) list -> unit
 
 val register_procedure_callback : Config.language option -> proc_callback_t -> unit
 (** register a procedure callback *)

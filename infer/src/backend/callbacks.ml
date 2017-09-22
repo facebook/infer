@@ -16,7 +16,6 @@ module L = Logging
 type proc_callback_args =
   { get_proc_desc: Typ.Procname.t -> Procdesc.t option
   ; get_procs_in_file: Typ.Procname.t -> Typ.Procname.t list
-  ; idenv: Idenv.t
   ; tenv: Tenv.t
   ; summary: Specs.summary
   ; proc_desc: Procdesc.t }
@@ -25,7 +24,7 @@ type proc_callback_t = proc_callback_args -> Specs.summary
 
 type cluster_callback_t =
   Exe_env.t -> Typ.Procname.t list -> (Typ.Procname.t -> Procdesc.t option)
-  -> (Idenv.t * Tenv.t * Typ.Procname.t * Procdesc.t) list -> unit
+  -> (Tenv.t * Typ.Procname.t * Procdesc.t) list -> unit
 
 let procedure_callbacks = ref []
 
@@ -42,9 +41,8 @@ let get_procedure_definition exe_env proc_name =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   Option.map
     ~f:(fun proc_desc ->
-      let idenv = Idenv.create proc_desc
-      and language = (Procdesc.get_attributes proc_desc).ProcAttributes.language in
-      (idenv, tenv, proc_name, proc_desc, language))
+      let language = (Procdesc.get_attributes proc_desc).ProcAttributes.language in
+      (tenv, proc_name, proc_desc, language))
     (Exe_env.get_proc_desc exe_env proc_name)
 
 let get_language proc_name = if Typ.Procname.is_java proc_name then Config.Java else Config.Clang
@@ -64,7 +62,7 @@ let iterate_procedure_callbacks exe_env summary caller_pname =
   match get_procedure_definition exe_env caller_pname with
   | None
    -> summary
-  | Some (idenv, tenv, _, proc_desc, _)
+  | Some (tenv, _, proc_desc, _)
    -> List.fold ~init:summary
         ~f:(fun summary (language_opt, proc_callback) ->
           let language_matches =
@@ -75,7 +73,7 @@ let iterate_procedure_callbacks exe_env summary caller_pname =
              -> true
           in
           if language_matches then
-            proc_callback {get_proc_desc; get_procs_in_file; idenv; tenv; summary; proc_desc}
+            proc_callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc}
           else summary)
         !procedure_callbacks
 
@@ -85,7 +83,7 @@ let iterate_cluster_callbacks all_procs exe_env =
   let procedure_definitions = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
   let environment =
     List.map
-      ~f:(fun (idenv, tenv, proc_name, proc_desc, _) -> (idenv, tenv, proc_name, proc_desc))
+      ~f:(fun (tenv, proc_name, proc_desc, _) -> (tenv, proc_name, proc_desc))
       procedure_definitions
   in
   (* Procedures matching the given language or all if no language is specified. *)

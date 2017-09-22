@@ -141,8 +141,9 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
      -> (!calls_this, None)
 
   let callback2 calls_this checks
-      {Callbacks.proc_desc= curr_pdesc; summary; get_proc_desc; idenv; tenv; get_procs_in_file}
+      {Callbacks.proc_desc= curr_pdesc; summary; get_proc_desc; tenv; get_procs_in_file}
       annotated_signature linereader proc_loc : unit =
+    let idenv = Idenv.create curr_pdesc in
     let curr_pname = Specs.get_proc_name summary in
     let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
     let find_canonical_duplicate node =
