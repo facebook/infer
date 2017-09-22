@@ -26,9 +26,7 @@ type proc_callback_args =
     - Procedure for the callback to act on. *)
 type proc_callback_t = proc_callback_args -> Specs.summary
 
-type cluster_callback_t =
-  Exe_env.t -> Typ.Procname.t list -> (Typ.Procname.t -> Procdesc.t option)
-  -> (Tenv.t * Typ.Procname.t * Procdesc.t) list -> unit
+type cluster_callback_t = (Tenv.t * Procdesc.t) list -> unit
 
 val register_procedure_callback : Config.language -> proc_callback_t -> unit
 (** register a procedure callback *)

@@ -1638,8 +1638,8 @@ let make_results_table file_env =
           (PathDomain.sinks accesses) acc)
       accesses acc
   in
-  let aggregate_posts acc (tenv, proc_name, proc_desc) =
-    match Summary.read_summary proc_desc proc_name with
+  let aggregate_posts acc (tenv, proc_desc) =
+    match Summary.read_summary proc_desc (Procdesc.get_proc_name proc_desc) with
     | Some summary
      -> aggregate_post summary tenv proc_desc acc
     | None
@@ -1651,7 +1651,8 @@ let make_results_table file_env =
    each class individually *)
 let aggregate_by_class file_env =
   List.fold file_env
-    ~f:(fun acc (_, pname, _ as proc) ->
+    ~f:(fun acc (_, pdesc as proc) ->
+      let pname = Procdesc.get_proc_name pdesc in
       let classname =
         match pname with
         | Typ.Procname.Java java_pname
@@ -1668,7 +1669,7 @@ let aggregate_by_class file_env =
 
 (* Gathers results by analyzing all the methods in a file, then post-processes the results to check
    an (approximation of) thread safety *)
-let file_analysis _ _ _ file_env =
+let file_analysis file_env =
   String.Map.iter
     ~f:(fun class_env -> report_unsafe_accesses (make_results_table class_env))
     (aggregate_by_class file_env)
