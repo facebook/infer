@@ -30,10 +30,10 @@ type cluster_callback_t =
   Exe_env.t -> Typ.Procname.t list -> (Typ.Procname.t -> Procdesc.t option)
   -> (Tenv.t * Typ.Procname.t * Procdesc.t) list -> unit
 
-val register_procedure_callback : Config.language option -> proc_callback_t -> unit
+val register_procedure_callback : Config.language -> proc_callback_t -> unit
 (** register a procedure callback *)
 
-val register_cluster_callback : Config.language option -> cluster_callback_t -> unit
+val register_cluster_callback : Config.language -> cluster_callback_t -> unit
 (** register a cluster callback *)
 
 val iterate_callbacks : Cg.t -> Exe_env.t -> unit

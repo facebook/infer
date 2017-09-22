@@ -66,9 +66,9 @@ let register () =
     let register_callback (callback, language) =
       match callback with
       | Procedure procedure_cb
-       -> Callbacks.register_procedure_callback (Some language) procedure_cb
+       -> Callbacks.register_procedure_callback language procedure_cb
       | Cluster cluster_cb
-       -> Callbacks.register_cluster_callback (Some language) cluster_cb
+       -> Callbacks.register_cluster_callback language cluster_cb
     in
     if active then List.iter ~f:register_callback callbacks
   in

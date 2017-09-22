@@ -30,19 +30,17 @@ let procedure_callbacks = ref []
 
 let cluster_callbacks = ref []
 
-let register_procedure_callback language_opt (callback: proc_callback_t) =
-  procedure_callbacks := (language_opt, callback) :: !procedure_callbacks
+let register_procedure_callback language (callback: proc_callback_t) =
+  procedure_callbacks := (language, callback) :: !procedure_callbacks
 
-let register_cluster_callback language_opt (callback: cluster_callback_t) =
-  cluster_callbacks := (language_opt, callback) :: !cluster_callbacks
+let register_cluster_callback language (callback: cluster_callback_t) =
+  cluster_callbacks := (language, callback) :: !cluster_callbacks
 
 (** Collect what we need to know about a procedure for the analysis. *)
 let get_procedure_definition exe_env proc_name =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   Option.map
-    ~f:(fun proc_desc ->
-      let language = (Procdesc.get_attributes proc_desc).ProcAttributes.language in
-      (tenv, proc_name, proc_desc, language))
+    ~f:(fun proc_desc -> (tenv, proc_name, proc_desc))
     (Exe_env.get_proc_desc exe_env proc_name)
 
 let get_language proc_name = if Typ.Procname.is_java proc_name then Config.Java else Config.Clang
@@ -62,17 +60,10 @@ let iterate_procedure_callbacks exe_env summary caller_pname =
   match get_procedure_definition exe_env caller_pname with
   | None
    -> summary
-  | Some (tenv, _, proc_desc, _)
+  | Some (tenv, _, proc_desc)
    -> List.fold ~init:summary
-        ~f:(fun summary (language_opt, proc_callback) ->
-          let language_matches =
-            match language_opt with
-            | Some language
-             -> Config.equal_language language procedure_language
-            | None
-             -> true
-          in
-          if language_matches then
+        ~f:(fun summary (language, proc_callback) ->
+          if Config.equal_language language procedure_language then
             proc_callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc}
           else summary)
         !procedure_callbacks
@@ -80,23 +71,17 @@ let iterate_procedure_callbacks exe_env summary caller_pname =
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
 let iterate_cluster_callbacks all_procs exe_env =
   let get_procdesc = Exe_env.get_proc_desc exe_env in
-  let procedure_definitions = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
-  let environment =
-    List.map
-      ~f:(fun (tenv, proc_name, proc_desc, _) -> (tenv, proc_name, proc_desc))
-      procedure_definitions
-  in
-  (* Procedures matching the given language or all if no language is specified. *)
-  let relevant_procedures language_opt =
-    Option.value_map
-      ~f:(fun l -> List.filter ~f:(fun p -> Config.equal_language l (get_language p)) all_procs)
-      ~default:all_procs language_opt
+  let environment = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
+  let language_matches language =
+    match environment with
+    | (_, pname, _) :: _
+     -> Config.equal_language language (get_language pname)
+    | _
+     -> true
   in
   List.iter
-    ~f:(fun (language_opt, cluster_callback) ->
-      let proc_names = relevant_procedures language_opt in
-      if List.length proc_names > 0 then
-        cluster_callback exe_env all_procs get_procdesc environment)
+    ~f:(fun (language, cluster_callback) ->
+      if language_matches language then cluster_callback exe_env all_procs get_procdesc environment)
     !cluster_callbacks
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
