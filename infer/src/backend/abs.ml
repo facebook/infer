@@ -1312,6 +1312,8 @@ let check_junk ?original_prop pname tenv prop =
                -> (Config.curr_language_is Config.Java, exn_leak)
               | Some _, Rignore
                -> (true, exn_leak)
+              | Some _, Rfile when Config.tracing
+               -> (true, exn_leak)
               | Some _, Rfile
                -> (false, exn_leak)
               | Some _, Rlock
