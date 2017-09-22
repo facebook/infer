@@ -80,9 +80,9 @@ let iterate_procedure_callbacks exe_env summary caller_pname =
         !procedure_callbacks
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
-let iterate_cluster_callbacks all_procs exe_env proc_names =
+let iterate_cluster_callbacks all_procs exe_env =
   let get_procdesc = Exe_env.get_proc_desc exe_env in
-  let procedure_definitions = List.filter_map ~f:(get_procedure_definition exe_env) proc_names in
+  let procedure_definitions = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
   let environment =
     List.map
       ~f:(fun (idenv, tenv, proc_name, proc_desc, _) -> (idenv, tenv, proc_name, proc_desc))
@@ -91,8 +91,8 @@ let iterate_cluster_callbacks all_procs exe_env proc_names =
   (* Procedures matching the given language or all if no language is specified. *)
   let relevant_procedures language_opt =
     Option.value_map
-      ~f:(fun l -> List.filter ~f:(fun p -> Config.equal_language l (get_language p)) proc_names)
-      ~default:proc_names language_opt
+      ~f:(fun l -> List.filter ~f:(fun p -> Config.equal_language l (get_language p)) all_procs)
+      ~default:all_procs language_opt
   in
   List.iter
     ~f:(fun (language_opt, cluster_callback) ->
@@ -133,32 +133,8 @@ let iterate_callbacks call_graph exe_env =
   Ondemand.set_callbacks callbacks ;
   (* Invoke procedure callbacks using on-demand anlaysis schedulling *)
   List.iter ~f:analyze_proc_name procs_to_analyze ;
-  let originally_defined_procs = Cg.get_defined_nodes call_graph in
-  let cluster_id proc_name =
-    match proc_name with
-    | Typ.Procname.Java pname_java
-     -> Typ.Procname.java_get_class_name pname_java
-    | _
-     -> "unknown"
-  in
-  let cluster proc_names =
-    let cluster_map =
-      List.fold
-        ~f:(fun map proc_name ->
-          let proc_cluster = cluster_id proc_name in
-          let bucket =
-            try String.Map.find_exn map proc_cluster
-            with Not_found -> []
-          in
-          String.Map.add ~key:proc_cluster ~data:(proc_name :: bucket) map)
-        ~init:String.Map.empty proc_names
-    in
-    (* Return all values of the map *)
-    String.Map.data cluster_map
-  in
   (* Invoke cluster callbacks. *)
-  List.iter ~f:(iterate_cluster_callbacks originally_defined_procs exe_env)
-    (cluster procs_to_analyze) ;
+  iterate_cluster_callbacks procs_to_analyze exe_env ;
   (* Unregister callbacks *)
   Ondemand.unset_callbacks () ;
   Config.curr_language := saved_language

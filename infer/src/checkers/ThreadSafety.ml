@@ -1647,6 +1647,28 @@ let make_results_table file_env =
   in
   List.fold ~f:aggregate_posts file_env ~init:AccessListMap.empty |> quotient_access_map
 
+(* aggregate all of the procedures in the file env by their declaring class. this lets us analyze
+   each class individually *)
+let aggregate_by_class file_env =
+  List.fold file_env
+    ~f:(fun acc (_, _, pname, _ as proc) ->
+      let classname =
+        match pname with
+        | Typ.Procname.Java java_pname
+         -> Typ.Procname.java_get_class_name java_pname
+        | _
+         -> "unknown"
+      in
+      let bucket =
+        try String.Map.find_exn acc classname
+        with Not_found -> []
+      in
+      String.Map.add ~key:classname ~data:(proc :: bucket) acc)
+    ~init:String.Map.empty
+
 (* Gathers results by analyzing all the methods in a file, then post-processes the results to check
    an (approximation of) thread safety *)
-let file_analysis _ _ _ file_env = report_unsafe_accesses (make_results_table file_env)
+let file_analysis _ _ _ file_env =
+  String.Map.iter
+    ~f:(fun class_env -> report_unsafe_accesses (make_results_table class_env))
+    (aggregate_by_class file_env)
