@@ -119,7 +119,7 @@ $(INFER_BUILD_DIR)/$(INFER_MAIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 .PHONY: test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(QUIET)jbuilder build \
-	  $(patsubst _build/default/%.exe,_build/test/%.bc,$(INFER_CONFIG_TARGETS)) \
+	  $(patsubst $(INFER_BUILD_DIR)/%.exe,_build/test/%.bc,$(INFER_CONFIG_TARGETS)) \
 	  _build/test/scripts/checkCopyright.bc _build/test/$(INFERUNIT_MAIN).bc _build/test/infertop.bc
 
 INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias))
