@@ -87,4 +87,28 @@ public class HashMapExample {
       x.toString();
   }
 
+  void getAfterRemovingTheKeyBad() {
+    HashMap<Integer, Object> map = new HashMap();
+    Integer key = 42;
+    map.put(key, new Object());
+    map.remove(key);
+    map.get(key).toString(); // NPE here
+  }
+
+  void getAfterRemovingAnotherKeyOk() {
+    HashMap<Integer, Object> map = new HashMap();
+    Integer key = 42;
+    map.put(key, new Object());
+    map.remove(0);
+    map.get(key).toString();
+  }
+
+  void getAfterClearBad() {
+    HashMap<Integer, Object> map = new HashMap();
+    Integer key = 42;
+    map.put(key, new Object());
+    map.clear();
+    map.get(key).toString(); // NPE here
+  }
+
 }

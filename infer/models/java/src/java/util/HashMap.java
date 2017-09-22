@@ -11,6 +11,7 @@ package java.util;
 import java.io.*;
 
 import com.facebook.infer.builtins.InferUndefined;
+import com.facebook.infer.builtins.InferBuiltins;
 
 /**
  * A recency abstraction for hashmaps that remembers only the last two
@@ -60,6 +61,16 @@ public abstract class HashMap<K,V> {
     return null;
   }
 
+  public V remove(K key) {
+    V value = get(key);
+    removeKey(key);
+    return value;
+  }
+
+  public void clear() {
+    lastKey1 = null;
+    lastKey2 = null;
+  }
 
   /** some sort of circular buffer simulator */
   private void pushKey(K key) {
@@ -69,6 +80,15 @@ public abstract class HashMap<K,V> {
 
   private boolean _containsKey(K key) {
       return areEqual(key, lastKey1) || areEqual(key, lastKey2);
+  }
+
+  private void removeKey(K key) {
+    if (areEqual(key, lastKey1)) {
+      lastKey1 = null;
+    }
+    if (areEqual(key, lastKey2)) {
+      lastKey2 = null;
+    }
   }
 
   private boolean areEqual(K x, K y) {
