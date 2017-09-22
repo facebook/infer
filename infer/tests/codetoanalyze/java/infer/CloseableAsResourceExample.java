@@ -14,7 +14,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringReader;
-
+import java.util.Map;
+import java.util.HashMap;
 
 class LocalException extends IOException {
 }
@@ -171,6 +172,37 @@ public class CloseableAsResourceExample {
   void skippedVritualCallDoesNotCloseResourceOnReceiver() {
     SomeResource res = new SomeResource();
     res.foo(42);
+  }
+
+  Map returnsLocalMapContainingResourcesOk() {
+    HashMap<Integer, Closeable> map = new HashMap<>();
+    SomeResource res = new SomeResource();
+    Integer key = 42;
+    map.put(key, res);
+    return map;
+  }
+
+  void createsLocalMapContainingResourcesOk() {
+    HashMap<Integer, Closeable> map = new HashMap<>();
+    SomeResource res = new SomeResource();
+    Integer key = 42;
+    map.put(key, res);
+    map.clear();
+  }
+
+  HashMap<Integer, Closeable> resourceMap = new HashMap<>();
+
+  void fieldMapContainingResourcesOk() {
+    Integer key = 42;
+    SomeResource res = new SomeResource();
+    resourceMap.put(key, res);
+  }
+
+  void notClearinglocalMapContainingResourcesBad() {
+    HashMap<Integer, Closeable> map = new HashMap<>();
+    SomeResource res = new SomeResource();
+    Integer key = 42;
+    map.put(key, res);
   }
 
 }
