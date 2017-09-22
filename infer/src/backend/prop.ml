@@ -350,8 +350,7 @@ let pp_prop pe0 f prop =
     (* print in html mode *)
     F.fprintf f "%a%a%a" Io_infer.Html.pp_start_color Pp.Blue do_print ()
       Io_infer.Html.pp_end_color ()
-  else do_print f () 
-  (** print in text mode *)
+  else (* print in text mode *) do_print f ()
 
 let pp_prop_with_typ pe f p = pp_prop {pe with opt= SIM_WITH_TYP} f p
 

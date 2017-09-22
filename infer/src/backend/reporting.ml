@@ -26,10 +26,7 @@ let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_
     match session with None -> (State.get_session () :> int) | Some session -> session
   in
   let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-  let issue_type =
-    let err_name, _, _, _, _, _, _ = Exceptions.recognize_exception exn in
-    err_name
-  in
+  let issue_type = (Exceptions.recognize_exception exn).name in
   if not Config.filtering (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     Errlog.log_issue err_kind err_log loc node_id session ltr ?linters_def_file ?doc_url exn
 

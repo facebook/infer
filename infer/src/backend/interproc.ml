@@ -158,9 +158,7 @@ let path_set_checkout_todo (wl: Worklist.t) (node: Procdesc.Node.t) : Paths.Path
     let visited = Hashtbl.find wl.Worklist.path_set_visited node_id in
     let new_visited = Paths.PathSet.union visited todo in
     Hashtbl.replace wl.Worklist.path_set_visited node_id new_visited ; todo
-  with Not_found ->
-    L.internal_error "@\n@\nERROR: could not find todo for node %a@\n@." Procdesc.Node.pp node ;
-    assert false
+  with Not_found -> L.die InternalError "could not find todo for node %a" Procdesc.Node.pp node
 
 (* =============== END of the edge_set object =============== *)
 
@@ -444,8 +442,11 @@ let forward_tabulate tenv proc_cfg wl =
       propagate_nodes_divergence tenv proc_cfg pset normal_succ_nodes exn_succ_nodes wl ;
       L.d_decrease_indent 1 ;
       L.d_ln ()
-    with exn when Exceptions.handle_exception exn && !Config.footprint ->
-      handle_exn exn ; L.d_decrease_indent 1 ; L.d_ln ()
+    with exn ->
+      let backtrace = Caml.Printexc.get_raw_backtrace () in
+      if Exceptions.handle_exception exn && !Config.footprint then (
+        handle_exn exn ; L.d_decrease_indent 1 ; L.d_ln () )
+      else reraise ~backtrace exn
   in
   let do_node curr_node pathset_todo session handle_exn =
     check_prop_size pathset_todo ;
@@ -471,11 +472,14 @@ let forward_tabulate tenv proc_cfg wl =
       do_node curr_node pathset_todo session handle_exn ;
       if !handle_exn_called then Printer.force_delayed_prints () ;
       do_after_node curr_node
-    with exn when Exceptions.handle_exception exn ->
-      handle_exn_node curr_node exn ;
-      Printer.force_delayed_prints () ;
-      do_after_node curr_node ;
-      if not !Config.footprint then raise RE_EXE_ERROR
+    with exn ->
+      let backtrace = Caml.Printexc.get_raw_backtrace () in
+      if Exceptions.handle_exception exn then (
+        handle_exn_node curr_node exn ;
+        Printer.force_delayed_prints () ;
+        do_after_node curr_node ;
+        if not !Config.footprint then raise RE_EXE_ERROR )
+      else reraise ~backtrace exn
   in
   while not (Worklist.is_empty wl) do
     let curr_node = Worklist.remove wl in
@@ -720,7 +724,7 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * Specs.Visitedset
         compute_visited !vset_ref
       in
       (do_join_post pname tenv pathset, visited)
-    with exn when match exn with Exceptions.Leak _ -> true | _ -> false ->
+    with Exceptions.Leak _ ->
       L.d_strln "Leak in post collection" ;
       assert false
   in
@@ -1266,9 +1270,9 @@ let perform_transition proc_cfg tenv proc_name =
         Config.allow_leak := allow_leak ;
         L.(debug Analysis Medium)
           "Error in collect_preconditions for %a@." Typ.Procname.pp proc_name ;
-        let err_name, _, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
-        let err_str = "exception raised " ^ err_name.IssueType.unique_id in
-        L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ml_loc_opt ml_loc_opt ; []
+        let error = Exceptions.recognize_exception exn in
+        let err_str = "exception raised " ^ error.name.IssueType.unique_id in
+        L.(debug Analysis Medium) "Error: %s %a@." err_str L.pp_ml_loc_opt error.ml_loc ; []
     in
     transition_footprint_re_exe tenv proc_name joined_pres
   in

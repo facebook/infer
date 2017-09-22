@@ -166,14 +166,13 @@ val pp_err :
   -> Logging.ml_loc option -> Format.formatter -> unit -> unit
 (** pretty print an error *)
 
-val recognize_exception :
-  exn
-  -> IssueType.t
-     * Localise.error_desc
-     * Logging.ml_loc option
-     * visibility
-     * severity
-     * err_kind option
-     * err_class
-(** Turn an exception into an error name, error description,
-    location in ml source, and category *)
+type t =
+  { name: IssueType.t
+  ; description: Localise.error_desc
+  ; ml_loc: Logging.ml_loc option  (** location in the infer source code *)
+  ; visibility: visibility
+  ; severity: severity
+  ; kind: err_kind option
+  ; category: err_class }
+
+val recognize_exception : exn -> t

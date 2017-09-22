@@ -217,25 +217,24 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_file ?doc_url exn =
-  let err_name, err_desc, ml_loc_opt, visibility, severity, force_kind, eclass =
-    Exceptions.recognize_exception exn
-  in
-  let err_kind = match force_kind with Some err_kind -> err_kind | _ -> err_kind in
+  let error = Exceptions.recognize_exception exn in
+  let err_kind = match error.kind with Some err_kind -> err_kind | _ -> err_kind in
   let hide_java_loc_zero =
     (* hide java errors at location zero unless in -developer_mode *)
     not Config.developer_mode && Config.curr_language_is Config.Java
     && Int.equal loc.Location.line 0
   in
   let hide_memory_error =
-    match Localise.error_desc_get_bucket err_desc with
+    match Localise.error_desc_get_bucket error.description with
     | Some bucket when String.equal bucket Mleak_buckets.ml_bucket_unknown_origin
      -> not Mleak_buckets.should_raise_leak_unknown_origin
     | _
      -> false
   in
   let log_it =
-    Exceptions.equal_visibility visibility Exceptions.Exn_user
-    || Config.developer_mode && Exceptions.equal_visibility visibility Exceptions.Exn_developer
+    Exceptions.equal_visibility error.visibility Exceptions.Exn_user
+    || Config.developer_mode
+       && Exceptions.equal_visibility error.visibility Exceptions.Exn_developer
   in
   if log_it && not hide_java_loc_zero && not hide_memory_error then
     let added =
@@ -244,31 +243,32 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
         { node_id_key
         ; session
         ; loc
-        ; loc_in_ml_source= ml_loc_opt
+        ; loc_in_ml_source= error.ml_loc
         ; loc_trace= ltr
-        ; err_class= eclass
-        ; visibility
+        ; err_class= error.category
+        ; visibility= error.visibility
         ; linters_def_file
         ; doc_url }
       in
       let err_key =
         { err_kind
         ; in_footprint= !Config.footprint
-        ; err_name
-        ; err_desc
-        ; severity= severity_to_str severity }
+        ; err_name= error.name
+        ; err_desc= error.description
+        ; severity= severity_to_str error.severity }
       in
       add_issue err_log err_key (ErrDataSet.singleton err_data)
     in
     let should_print_now = match exn with Exceptions.Internal_error _ -> true | _ -> added in
     let print_now () =
-      let ex_name, desc, ml_loc_opt, _, _, _, _ = Exceptions.recognize_exception exn in
       L.(debug Analysis Medium)
-        "@\n%a@\n@?" (Exceptions.pp_err ~node_key loc err_kind ex_name desc ml_loc_opt) () ;
+        "@\n%a@\n@?"
+        (Exceptions.pp_err ~node_key loc err_kind error.name error.description error.ml_loc) () ;
       if err_kind <> Exceptions.Kerror then
         let warn_str =
           let pp fmt =
-            Format.fprintf fmt "%s %a" err_name.IssueType.unique_id Localise.pp_error_desc desc
+            Format.fprintf fmt "%s %a" error.name.IssueType.unique_id Localise.pp_error_desc
+              error.description
           in
           F.asprintf "%t" pp
         in

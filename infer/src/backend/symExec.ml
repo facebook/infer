@@ -1400,14 +1400,17 @@ and instrs ?(mask_errors= false) tenv pdesc instrs ppl =
     Sil.d_instr instr ;
     L.d_ln () ;
     try sym_exec tenv pdesc instr p path
-    with exn when SymOp.exn_not_failure exn && mask_errors ->
-      let err_name, _, ml_source, _, _, _, _ = Exceptions.recognize_exception exn in
-      let loc =
-        match ml_source with Some ml_loc -> "at " ^ L.ml_loc_to_string ml_loc | None -> ""
-      in
-      L.d_warning ("Generated Instruction Failed with: " ^ err_name.IssueType.unique_id ^ loc) ;
-      L.d_ln () ;
-      [(p, path)]
+    with exn ->
+      let backtrace = Caml.Printexc.get_raw_backtrace () in
+      if SymOp.exn_not_failure exn && mask_errors then
+        let error = Exceptions.recognize_exception exn in
+        let loc =
+          match error.ml_loc with Some ml_loc -> "at " ^ L.ml_loc_to_string ml_loc | None -> ""
+        in
+        L.d_warning ("Generated Instruction Failed with: " ^ error.name.IssueType.unique_id ^ loc) ;
+        L.d_ln () ;
+        [(p, path)]
+      else reraise ~backtrace exn
   in
   let f plist instr = List.concat_map ~f:(exe_instr instr) plist in
   List.fold ~f ~init:ppl instrs
@@ -1800,9 +1803,12 @@ and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t),
     L.d_ln () ;
     State.mark_instr_ok () ;
     Paths.PathSet.from_renamed_list results
-  with exn when Exceptions.handle_exception exn && !Config.footprint ->
-    handle_exn exn ; (* calls State.mark_instr_fail *)
-                     Paths.PathSet.empty
+  with exn ->
+    let backtrace = Caml.Printexc.get_raw_backtrace () in
+    if Exceptions.handle_exception exn && !Config.footprint then (
+      handle_exn exn ; (* calls State.mark_instr_fail *)
+                       Paths.PathSet.empty )
+    else reraise ~backtrace exn
 
 (** {2 Lifted Abstract Transfer Functions} *)
 

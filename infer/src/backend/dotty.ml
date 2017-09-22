@@ -600,8 +600,7 @@ let rec dotty_mk_set_links dotnodes sigma p f cycle =
           in
           let nodes_e = select_nodes_exp_lambda dotnodes e lambda in
           let address_struct_id =
-            try get_coordinate_id (List.hd_exn (List.filter ~f:(is_source_node_of_exp e) nodes_e))
-            with exn when SymOp.exn_not_failure exn -> assert false
+            get_coordinate_id (List.hd_exn (List.filter ~f:(is_source_node_of_exp e) nodes_e))
           in
           (* we need to exclude the address node from the sorce of fields. no fields should start from there*)
           let nl' = List.filter ~f:(fun id -> address_struct_id <> id) nl in
