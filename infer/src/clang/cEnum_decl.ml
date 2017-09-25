@@ -46,7 +46,7 @@ let enum_decl decl =
      -> ()
   in
   match decl with
-  | EnumDecl (_, _, _, type_ptr, decl_list, _, _)
+  | EnumDecl (_, _, type_ptr, decl_list, _, _, _)
    -> add_enum_constants_to_map (List.rev decl_list) ;
       let sil_desc = Typ.Tint Typ.IInt in
       CAst_utils.update_sil_types_map type_ptr sil_desc ; sil_desc

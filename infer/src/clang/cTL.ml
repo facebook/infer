@@ -724,7 +724,7 @@ let transition_via_parameter_name an name =
 let transition_via_fields an =
   let open Clang_ast_t in
   match an with
-  | Decl RecordDecl (_, _, _, _, decls, _, _) | Decl CXXRecordDecl (_, _, _, _, decls, _, _, _)
+  | Decl RecordDecl (_, _, _, decls, _, _, _) | Decl CXXRecordDecl (_, _, _, decls, _, _, _, _)
    -> List.filter_map ~f:(fun d -> match d with FieldDecl _ -> Some (Decl d) | _ -> None) decls
   | Stmt InitListExpr (_, stmts, _)
    -> List.map ~f:(fun stmt -> Stmt stmt) stmts

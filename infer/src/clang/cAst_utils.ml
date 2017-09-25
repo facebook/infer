@@ -165,7 +165,7 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
 
 let name_of_typedef_type_info {Clang_ast_t.tti_decl_ptr} =
   match get_decl tti_decl_ptr with
-  | Some TypedefDecl (_, name_decl_info, _, _, _)
+  | Some TypedefDecl (_, name_decl_info, _, _)
    -> get_qualified_name name_decl_info
   | _
    -> QualifiedCppName.empty
@@ -422,16 +422,16 @@ let type_of_decl decl =
    -> Some obj_c_method_decl_info.omdi_result_type.qt_type_ptr
   | ObjCPropertyDecl (_, _, obj_c_property_decl_info)
    -> Some obj_c_property_decl_info.opdi_qual_type.qt_type_ptr
-  | EnumDecl (_, _, _, type_ptr, _, _, _)
-  | RecordDecl (_, _, _, type_ptr, _, _, _)
-  | CXXRecordDecl (_, _, _, type_ptr, _, _, _, _)
-  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, _, _, _, _)
-  | ClassTemplatePartialSpecializationDecl (_, _, _, type_ptr, _, _, _, _, _, _)
-  | TemplateTypeParmDecl (_, _, _, type_ptr)
-  | ObjCTypeParamDecl (_, _, _, type_ptr)
-  | TypeAliasDecl (_, _, _, type_ptr)
-  | TypedefDecl (_, _, _, type_ptr, _)
-  | UnresolvedUsingTypenameDecl (_, _, _, type_ptr)
+  | EnumDecl (_, _, type_ptr, _, _, _, _)
+  | RecordDecl (_, _, type_ptr, _, _, _, _)
+  | CXXRecordDecl (_, _, type_ptr, _, _, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, _, _, _, _)
+  | ClassTemplatePartialSpecializationDecl (_, _, type_ptr, _, _, _, _, _, _, _)
+  | TemplateTypeParmDecl (_, _, type_ptr)
+  | ObjCTypeParamDecl (_, _, type_ptr)
+  | TypeAliasDecl (_, _, type_ptr)
+  | TypedefDecl (_, _, type_ptr, _)
+  | UnresolvedUsingTypenameDecl (_, _, type_ptr)
    -> Some type_ptr
   | BindingDecl (_, _, qual_type)
   | FieldDecl (_, _, qual_type, _)
@@ -462,9 +462,9 @@ let type_of_decl decl =
 let get_record_fields decl =
   let open Clang_ast_t in
   match decl with
-  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _, _)
-  | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
-  | RecordDecl (_, _, _, _, decl_list, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
+  | RecordDecl (_, _, _, decl_list, _, _, _)
    -> List.filter ~f:(function FieldDecl _ -> true | _ -> false) decl_list
   | _
    -> []

@@ -19,22 +19,14 @@ let add_predefined_objc_types tenv =
 
 let add_predefined_types tenv = add_predefined_objc_types tenv
 
-let create_c_record_typename opt_type =
-  match opt_type with
-  | `Type s
-   -> (
-      let buf = Str.split (Str.regexp "[ \t]+") s in
-      match buf with
-      | "struct" :: _
-       -> Typ.Name.C.from_qual_name
-      | "class" :: _
-       -> Typ.Name.Cpp.from_qual_name Typ.NoTemplate
-      | "union" :: _
-       -> Typ.Name.C.union_from_qual_name
-      | _
-       -> Typ.Name.C.from_qual_name )
-  | _
-   -> assert false
+let create_c_record_typename (tag_kind: Clang_ast_t.tag_kind) =
+  match tag_kind with
+  | `TTK_Struct | `TTK_Interface | `TTK_Enum
+   -> Typ.Name.C.from_qual_name
+  | `TTK_Union
+   -> Typ.Name.C.union_from_qual_name
+  | `TTK_Class
+   -> Typ.Name.Cpp.from_qual_name Typ.NoTemplate
 
 let get_class_template_name = function
   | Clang_ast_t.ClassTemplateDecl (_, name_info, _)
@@ -109,9 +101,9 @@ let rec get_struct_fields tenv decl =
   let open Clang_ast_t in
   let decl_list =
     match decl with
-    | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _, _)
-    | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
-    | RecordDecl (_, _, _, _, decl_list, _, _)
+    | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+    | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
+    | RecordDecl (_, _, _, decl_list, _, _, _)
      -> decl_list
     | _
      -> []
@@ -148,8 +140,8 @@ and get_record_custom_type tenv definition_decl =
 and get_record_friend_decl_type tenv definition_decl =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, _, _, decl_list, _, _, _, _, _)
-  | CXXRecordDecl (_, _, _, _, decl_list, _, _, _)
+  | ClassTemplateSpecializationDecl (_, _, _, decl_list, _, _, _, _, _, _)
+  | CXXRecordDecl (_, _, _, decl_list, _, _, _, _)
    -> Option.map ~f:(qual_type_to_sil_type tenv) (get_translate_as_friend_decl decl_list)
   | _
    -> None
@@ -178,8 +170,8 @@ and get_record_typename ?tenv decl =
   let open Clang_ast_t in
   let linters_mode = match tenv with Some _ -> false | None -> true in
   match (decl, tenv) with
-  | RecordDecl (_, name_info, opt_type, _, _, _, _), _
-   -> CAst_utils.get_qualified_name ~linters_mode name_info |> create_c_record_typename opt_type
+  | RecordDecl (_, name_info, _, _, _, tag_kind, _), _
+   -> CAst_utils.get_qualified_name ~linters_mode name_info |> create_c_record_typename tag_kind
   | ClassTemplateSpecializationDecl (_, _, _, _, _, _, _, _, mangling, spec_info), Some tenv
    -> let tname =
         match CAst_utils.get_decl spec_info.tsi_template_decl with
@@ -220,9 +212,9 @@ and get_superclass_list_cpp tenv decl =
 and get_record_struct_type tenv definition_decl : Typ.desc =
   let open Clang_ast_t in
   match definition_decl with
-  | ClassTemplateSpecializationDecl (_, _, _, type_ptr, _, _, record_decl_info, _, _, _)
-  | CXXRecordDecl (_, _, _, type_ptr, _, _, record_decl_info, _)
-  | RecordDecl (_, _, _, type_ptr, _, _, record_decl_info)
+  | ClassTemplateSpecializationDecl (_, _, type_ptr, _, _, _, record_decl_info, _, _, _)
+  | CXXRecordDecl (_, _, type_ptr, _, _, _, record_decl_info, _)
+  | RecordDecl (_, _, type_ptr, _, _, _, record_decl_info)
    -> (
       let sil_typename = get_record_typename ~tenv definition_decl in
       let sil_desc = Typ.Tstruct sil_typename in
