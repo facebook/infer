@@ -141,6 +141,18 @@ let rec get_current_os_version stmt =
   | _
    -> []
 
+let rec get_ios_available_version stmt =
+  let open Clang_ast_t in
+  match stmt with
+  | ObjCAvailabilityCheckExpr (_, _, _, oacei)
+   -> oacei.oacei_version
+  | ImplicitCastExpr (_, [stmt], _, _)
+  | ParenExpr (_, [stmt], _)
+  | ExprWithCleanups (_, [stmt], _, _)
+   -> get_ios_available_version stmt
+  | _
+   -> None
+
 let compute_if_context (context: CLintersContext.context) stmt =
   let selector = get_responds_to_selector stmt in
   let receiver_class_method_call =
@@ -153,6 +165,8 @@ let compute_if_context (context: CLintersContext.context) stmt =
      -> []
   in
   let os_version = get_current_os_version stmt in
+  let ios_available_version_opt = Option.to_list (get_ios_available_version stmt) in
+  let os_version = List.append ios_available_version_opt os_version in
   let within_responds_to_selector_block, within_available_class_block, ios_version_guard =
     match context.if_context with
     | Some if_context
