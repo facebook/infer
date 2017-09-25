@@ -1,35 +1,35 @@
 /* @generated */
 digraph iCFG {
-"foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_1" [label="1: Start foo\nFormals:  p:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_1" [label="1: Start foo\nFormals:  p:int*\nLocals:  \n   DECLARE_LOCALS(&return); [line 10]\n " color=yellow style=filled]
 	
 
-	 "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_1" -> "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_5" ;
-"foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_2" [label="2: Exit foo \n  " color=yellow style=filled]
+	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_1" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" ;
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_2" [label="2: Exit foo \n  " color=yellow style=filled]
 	
 
-"foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_3" [label="3:  Return Stmt \n   *&return:int=52 [line 14]\n " shape="box"]
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_3" [label="3:  Return Stmt \n   *&return:int=52 [line 14]\n " shape="box"]
 	
 
-	 "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_3" -> "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_2" ;
-"foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_4" [label="4: + \n  " ]
+	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_3" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_2" ;
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_4" [label="4: + \n  " ]
 	
 
-	 "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_4" -> "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_3" ;
-"foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_5" [label="5:  BinaryOperatorStmt: Assign \n   n$0=*&p:int* [line 11]\n  *n$0:int=0 [line 11]\n " shape="box"]
+	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_4" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_3" ;
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" [label="5:  BinaryOperatorStmt: Assign \n   n$0=*&p:int* [line 11]\n  *n$0:int=0 [line 11]\n " shape="box"]
 	
 
-	 "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_5" -> "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_6" ;
-	 "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_5" -> "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_7" ;
-"foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_6" [label="6: Prune (true branch) \n   n$1=*n$0:int [line 11]\n  PRUNE(n$1, true); [line 11]\n " shape="invhouse"]
+	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" ;
+	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_5" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" ;
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" [label="6: Prune (true branch) \n   n$1=*n$0:int [line 11]\n  PRUNE(n$1, true); [line 11]\n " shape="invhouse"]
 	
 
-	 "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_6" -> "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_8" ;
-"foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_7" [label="7: Prune (false branch) \n   n$1=*n$0:int [line 11]\n  PRUNE(!n$1, false); [line 11]\n " shape="invhouse"]
+	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_6" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_8" ;
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" [label="7: Prune (false branch) \n   n$1=*n$0:int [line 11]\n  PRUNE(!n$1, false); [line 11]\n " shape="invhouse"]
 	
 
-	 "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_7" -> "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_4" ;
-"foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_8" [label="8:  Return Stmt \n   *&return:int=32 [line 12]\n " shape="box"]
+	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_7" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_4" ;
+"foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_8" [label="8:  Return Stmt \n   *&return:int=32 [line 12]\n " shape="box"]
 	
 
-	 "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_8" -> "foo#_Z3fooPi.30cd597e78990b062da4cbfe00a5800f_2" ;
+	 "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_8" -> "foo#2836494104225061820.259bb50e98efa97b98306a2c09f474f8_2" ;
 }

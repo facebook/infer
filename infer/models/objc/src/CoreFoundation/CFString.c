@@ -12,7 +12,7 @@
 
 CFStringRef __cf_alloc(CFStringRef);
 
-void __get_array_length(const UInt8);
+void __get_array_length(const UInt8*);
 
 CFStringRef CFStringCreateWithBytesNoCopy(CFAllocatorRef alloc,
                                           const UInt8* bytes,
