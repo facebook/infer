@@ -65,7 +65,7 @@ BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
 DIRECT_TESTS += \
   objc_frontend objc_errors objc_linters objc_ioslints \
 	objcpp_frontend objcpp_linters objc_linters-for-test-only objcpp_linters-for-test-only \
-	objc_linters-def-folder
+	objc_linters-def-folder objc_checkers
 ifneq ($(XCPRETTY),no)
 BUILD_SYSTEMS_TESTS += xcodebuild
 endif
@@ -406,7 +406,7 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules/ || \
 	  $(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/lib/linter_rules
 	test -d      $(DESTDIR)$(libdir)/infer/infer/etc/ || \
-		$(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/etc 
+		$(MKDIR_P) $(DESTDIR)$(libdir)/infer/infer/etc
 endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	test -d      $(DESTDIR)$(libdir)/infer/infer/lib/java/ || \

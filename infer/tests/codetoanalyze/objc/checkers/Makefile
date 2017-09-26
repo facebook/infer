@@ -1,4 +1,4 @@
-# Copyright (c) 2016 - present Facebook, Inc.
+# Copyright (c) 2017 - present Facebook, Inc.
 # All rights reserved.
 #
 # This source code is licensed under the BSD style license found in the
@@ -8,12 +8,11 @@
 TESTS_DIR = ../../..
 
 ANALYZER = checkers
-# see explanations in cpp/errors/Makefile for the custom isystem
-CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
+CLANG_OPTIONS = -c
 INFER_OPTIONS = --biabduction --suggest-nullable --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard *.cpp)
+SOURCES = $(wildcard *.m)
 
 include $(TESTS_DIR)/clang.make
 
