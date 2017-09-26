@@ -1308,6 +1308,9 @@ and monitor_prop_size =
 
 and nelseg = CLOpt.mk_bool ~deprecated:["nelseg"] ~long:"nelseg" "Use only nonempty lsegs"
 
+and nullable_annotation =
+  CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify custom nullable annotation name"
+
 (* TODO: document *)
 and objc_memory_model =
   CLOpt.mk_bool ~deprecated:["objcm"] ~long:"objc-memory-model" "Use ObjC memory model"
@@ -2150,6 +2153,8 @@ and modified_targets = !modified_targets
 and monitor_prop_size = !monitor_prop_size
 
 and nelseg = !nelseg
+
+and nullable_annotation = !nullable_annotation
 
 and suggest_nullable = !suggest_nullable
 

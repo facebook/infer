@@ -874,7 +874,7 @@ let explain_dereference_access outermost_array is_nullable _de_opt prop =
   (value_str, access_opt)
 
 (** Create a description of a dereference operation *)
-let create_dereference_desc tenv ?(use_buckets= false) ?(outermost_array= false)
+let create_dereference_desc proc_name tenv ?(use_buckets= false) ?(outermost_array= false)
     ?(is_nullable= false) ?(is_premature_nil= false) de_opt deref_str prop loc =
   let value_str, access_opt = explain_dereference_access outermost_array is_nullable de_opt prop in
   let access_opt' =
@@ -884,7 +884,7 @@ let create_dereference_desc tenv ?(use_buckets= false) ?(outermost_array= false)
     | _
      -> access_opt
   in
-  let desc = Localise.dereference_string deref_str value_str access_opt' loc in
+  let desc = Localise.dereference_string proc_name deref_str value_str access_opt' loc in
   let desc =
     if Config.curr_language_is Config.Clang && not is_premature_nil then
       match de_opt with
@@ -917,7 +917,7 @@ let create_dereference_desc tenv ?(use_buckets= false) ?(outermost_array= false)
     if outermost_array is true, the outermost array access is removed
     if outermost_dereference is true, stop at the outermost dereference
     (skipping e.g. outermost field access) *)
-let _explain_access tenv ?(use_buckets= false) ?(outermost_array= false)
+let _explain_access proc_name tenv ?(use_buckets= false) ?(outermost_array= false)
     ?(outermost_dereference= false) ?(is_nullable= false) ?(is_premature_nil= false) deref_str prop
     loc =
   let rec find_outermost_dereference node e =
@@ -981,15 +981,15 @@ let _explain_access tenv ?(use_buckets= false) ?(outermost_array= false)
         if outermost_dereference then find_outermost_dereference node e
         else exp_lv_dexp tenv node e
       in
-      create_dereference_desc tenv ~use_buckets ~outermost_array ~is_nullable ~is_premature_nil
-        de_opt deref_str prop loc
+      create_dereference_desc proc_name tenv ~use_buckets ~outermost_array ~is_nullable
+        ~is_premature_nil de_opt deref_str prop loc
 
 (** Produce a description of which expression is dereferenced in the current instruction, if any.
     The subexpression to focus on is obtained by removing field and index accesses. *)
-let explain_dereference tenv ?(use_buckets= false) ?(is_nullable= false) ?(is_premature_nil= false)
-    deref_str prop loc =
-  _explain_access tenv ~use_buckets ~outermost_array:false ~outermost_dereference:true ~is_nullable
-    ~is_premature_nil deref_str prop loc
+let explain_dereference proc_name tenv ?(use_buckets= false) ?(is_nullable= false)
+    ?(is_premature_nil= false) deref_str prop loc =
+  _explain_access proc_name tenv ~use_buckets ~outermost_array:false ~outermost_dereference:true
+    ~is_nullable ~is_premature_nil deref_str prop loc
 
 (** Produce a description of the array access performed in the current instruction, if any.
     The subexpression to focus on is obtained by removing the outermost array access. *)
@@ -1020,7 +1020,7 @@ let dexp_apply_pvar_off dexp pvar_off =
 
 (** Produce a description of the nth parameter of the function call, if the current instruction
     is a function call with that parameter *)
-let explain_nth_function_parameter tenv use_buckets deref_str prop n pvar_off =
+let explain_nth_function_parameter proc_name tenv use_buckets deref_str prop n pvar_off =
   let node = State.get_node () in
   let loc = State.get_loc () in
   match State.get_instr () with
@@ -1031,7 +1031,7 @@ let explain_nth_function_parameter tenv use_buckets deref_str prop n pvar_off =
       let dexp_opt' =
         match dexp_opt with Some de -> Some (dexp_apply_pvar_off de pvar_off) | None -> None
       in
-      create_dereference_desc tenv ~use_buckets dexp_opt' deref_str prop loc
+      create_dereference_desc proc_name tenv ~use_buckets dexp_opt' deref_str prop loc
     with exn when SymOp.exn_not_failure exn -> Localise.no_desc )
   | _
    -> Localise.no_desc
@@ -1071,8 +1071,8 @@ let find_with_exp prop exp =
 
 (** return a description explaining value [exp] in [prop] in terms of a source expression
     using the formal parameters of the call *)
-let explain_dereference_as_caller_expression tenv ?(use_buckets= false) deref_str actual_pre
-    spec_pre exp node loc formal_params =
+let explain_dereference_as_caller_expression proc_name tenv ?(use_buckets= false) deref_str
+    actual_pre spec_pre exp node loc formal_params =
   let find_formal_param_number name =
     let rec find n = function
       | []
@@ -1088,11 +1088,12 @@ let explain_dereference_as_caller_expression tenv ?(use_buckets= false) deref_st
       let pv_name = Pvar.get_name pv in
       if Pvar.is_global pv then
         let dexp = exp_lv_dexp tenv node (Exp.Lvar pv) in
-        create_dereference_desc tenv ~use_buckets dexp deref_str actual_pre loc
+        create_dereference_desc proc_name tenv ~use_buckets dexp deref_str actual_pre loc
       else if Pvar.is_callee pv then
         let position = find_formal_param_number pv_name in
         if verbose then L.d_strln ("parameter number: " ^ string_of_int position) ;
-        explain_nth_function_parameter tenv use_buckets deref_str actual_pre position pvar_off
+        explain_nth_function_parameter proc_name tenv use_buckets deref_str actual_pre position
+          pvar_off
       else if Attribute.has_dangling_uninit tenv spec_pre exp then
         Localise.desc_uninitialized_dangling_pointer_deref deref_str (Pvar.to_string pv) loc
       else Localise.no_desc

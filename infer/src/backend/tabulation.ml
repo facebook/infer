@@ -282,13 +282,13 @@ and find_dereference_without_null_check_in_sexp_list = function
 
 (** Check dereferences implicit in the spec pre.
     In case of dereference error, return [Some(deref_error, description)], otherwise [None] *)
-let check_dereferences tenv callee_pname actual_pre sub spec_pre formal_params =
+let check_dereferences caller_pname tenv callee_pname actual_pre sub spec_pre formal_params =
   let check_dereference e sexp =
     let e_sub = Sil.exp_sub sub e in
     let desc use_buckets deref_str =
       let error_desc =
-        Errdesc.explain_dereference_as_caller_expression tenv ~use_buckets deref_str actual_pre
-          spec_pre e (State.get_node ()) (State.get_loc ()) formal_params
+        Errdesc.explain_dereference_as_caller_expression caller_pname tenv ~use_buckets deref_str
+          actual_pre spec_pre e (State.get_node ()) (State.get_loc ()) formal_params
       in
       L.d_strln_color Red "found error in dereference" ;
       L.d_strln "spec_pre:" ;
@@ -980,10 +980,11 @@ let get_check_exn tenv check callee_pname loc ml_loc =
   | Prover.Class_cast_check (texp1, texp2, exp)
    -> class_cast_exn tenv (Some callee_pname) texp1 texp2 exp ml_loc
 
-let check_uninitialize_dangling_deref tenv callee_pname actual_pre sub formal_params props =
+let check_uninitialize_dangling_deref caller_pname tenv callee_pname actual_pre sub formal_params
+    props =
   List.iter
     ~f:(fun (p, _) ->
-      match check_dereferences tenv callee_pname actual_pre sub p formal_params with
+      match check_dereferences caller_pname tenv callee_pname actual_pre sub p formal_params with
       | Some (Deref_undef_exp, desc)
        -> raise (Exceptions.Dangling_pointer_dereference (Some PredSymb.DAuninit, desc, __POS__))
       | _
@@ -1041,8 +1042,8 @@ let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path
         | Some results
          -> (* After combining we check that we have not added
                a points-to of initialized variables.*)
-            check_uninitialize_dangling_deref tenv callee_pname actual_pre split.sub formal_params
-              results ;
+            check_uninitialize_dangling_deref caller_pname tenv callee_pname actual_pre split.sub
+              formal_params results ;
             let inconsistent_results, consistent_results =
               List.partition_tf ~f:(fun (p, _) -> Prover.check_inconsistency tenv p) results
             in
@@ -1056,7 +1057,10 @@ let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path
       in
       List.iter ~f:log_check_exn checks ;
       let subbed_pre = Prop.prop_sub (`Exp sub1) actual_pre in
-      match check_dereferences tenv callee_pname subbed_pre (`Exp sub2) spec_pre formal_params with
+      match
+        check_dereferences caller_pname tenv callee_pname subbed_pre (`Exp sub2) spec_pre
+          formal_params
+      with
       | Some (Deref_undef _, _)
        -> let split = do_split () in
           report_valid_res split

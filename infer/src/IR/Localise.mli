@@ -134,7 +134,11 @@ type access =
   | Initialized_automatically
   | Returned_from_call of int
 
-val dereference_string : deref_str -> string -> access option -> Location.t -> error_desc
+val nullable_annotation_name : Typ.Procname.t -> string
+(** Name of the nullable annotation *)
+
+val dereference_string :
+  Typ.Procname.t -> deref_str -> string -> access option -> Location.t -> error_desc
 
 val parameter_field_not_null_checked_desc : error_desc -> Exp.t -> error_desc
 

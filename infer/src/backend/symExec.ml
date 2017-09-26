@@ -135,7 +135,9 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
               else Attribute.get_undef tenv p root_lexp
             in
             let deref_str = Localise.deref_str_uninitialized alloc_attribute_opt in
-            let err_desc = Errdesc.explain_memory_access tenv deref_str p (State.get_loc ()) in
+            let err_desc =
+              Errdesc.explain_memory_access pname tenv deref_str p (State.get_loc ())
+            in
             let exn = Exceptions.Uninitialized_value (err_desc, __POS__) in
             Reporting.log_warning_deprecated pname exn ; Sil.update_inst inst_curr inst
         | Sil.Ilookup
@@ -1607,8 +1609,8 @@ and check_variadic_sentinel ?(fails_on_nil= false) n_formals (sentinel, null_pos
       reraise_if e ~f:(fun () -> fails_on_nil) ;
       let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
       let err_desc =
-        Errdesc.explain_dereference tenv ~use_buckets:true ~is_premature_nil:true deref_str prop_
-          loc
+        Errdesc.explain_dereference proc_name tenv ~use_buckets:true ~is_premature_nil:true
+          deref_str prop_ loc
       in
       raise (Exceptions.Premature_nil_termination (err_desc, __POS__))
   in

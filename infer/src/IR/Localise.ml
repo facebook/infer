@@ -514,7 +514,16 @@ type access =
   | Initialized_automatically
   | Returned_from_call of int
 
-let dereference_string deref_str value_str access_opt loc =
+let nullable_annotation_name proc_name =
+  match Config.nullable_annotation with
+  | Some name
+   -> name
+  | None when Typ.Procname.is_java proc_name
+   -> "@Nullable"
+  | None (* default Clang annotation name *)
+   -> "_Nullable"
+
+let dereference_string proc_name deref_str value_str access_opt loc =
   let tags = deref_str.tags in
   Tags.update tags Tags.value value_str ;
   let is_call_access = match access_opt with Some Returned_from_call _ -> true | _ -> false in
@@ -541,16 +550,13 @@ let dereference_string deref_str value_str access_opt loc =
      -> ["initialized automatically"]
   in
   let problem_desc =
-    let nullable_text =
-      MF.monospaced_to_string
-        (if Config.curr_language_is Config.Java then "@Nullable" else "__nullable")
-    in
     let problem_str =
+      let annotation_name = nullable_annotation_name proc_name in
       match (Tags.get !tags Tags.nullable_src, Tags.get !tags Tags.weak_captured_var_src) with
       | Some nullable_src, _
-       -> if String.equal nullable_src value_str then "is annotated with " ^ nullable_text
+       -> if String.equal nullable_src value_str then "is annotated with " ^ annotation_name
             ^ " and is dereferenced without a null check"
-          else "is indirectly marked " ^ nullable_text ^ " (source: "
+          else "is indirectly marked " ^ annotation_name ^ " (source: "
             ^ MF.monospaced_to_string nullable_src ^ ") and is dereferenced without a null check"
       | None, Some weak_var_str
        -> if String.equal weak_var_str value_str then

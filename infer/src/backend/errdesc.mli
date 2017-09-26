@@ -50,7 +50,7 @@ val explain_allocation_mismatch : PredSymb.res_action -> PredSymb.res_action -> 
 (** Produce a description of a mismatch between an allocation function and a deallocation function *)
 
 val explain_array_access :
-  Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
+  Typ.Procname.t -> Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
 (** Produce a description of the array access performed in the current instruction, if any. *)
 
 val explain_class_cast_exception :
@@ -65,13 +65,13 @@ val explain_deallocate_constant_string : string -> PredSymb.res_action -> Locali
 (** Explain a deallocate constant string error *)
 
 val explain_dereference :
-  Tenv.t -> ?use_buckets:bool -> ?is_nullable:bool -> ?is_premature_nil:bool -> Localise.deref_str
-  -> 'a Prop.t -> Location.t -> Localise.error_desc
+  Typ.Procname.t -> Tenv.t -> ?use_buckets:bool -> ?is_nullable:bool -> ?is_premature_nil:bool
+  -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
 (** Produce a description of which expression is dereferenced in the current instruction, if any. *)
 
 val explain_dereference_as_caller_expression :
-  Tenv.t -> ?use_buckets:bool -> Localise.deref_str -> 'a Prop.t -> 'b Prop.t -> Exp.t
-  -> Procdesc.Node.t -> Location.t -> Pvar.t list -> Localise.error_desc
+  Typ.Procname.t -> Tenv.t -> ?use_buckets:bool -> Localise.deref_str -> 'a Prop.t -> 'b Prop.t
+  -> Exp.t -> Procdesc.Node.t -> Location.t -> Pvar.t list -> Localise.error_desc
 (** return a description explaining value [exp] in [prop] in terms of a source expression
     using the formal parameters of the call *)
 
@@ -119,7 +119,7 @@ val explain_leak :
     If there is an alloc attribute, print the function call and line number. *)
 
 val explain_memory_access :
-  Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
+  Typ.Procname.t -> Tenv.t -> Localise.deref_str -> 'a Prop.t -> Location.t -> Localise.error_desc
 (** Produce a description of the memory access performed in the current instruction, if any. *)
 
 val explain_null_test_after_dereference :

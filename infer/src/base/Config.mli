@@ -516,6 +516,8 @@ val nelseg : bool
 
 val no_translate_libs : bool
 
+val nullable_annotation : string option
+
 val objc_memory_model_on : bool
 
 val only_cheap_debug : bool

@@ -58,12 +58,12 @@ let check_bad_index tenv pname p len index loc =
       let deref_str = Localise.deref_str_array_bound len_const_opt index_const_opt in
       let exn =
         Exceptions.Array_out_of_bounds_l1
-          (Errdesc.explain_array_access tenv deref_str p loc, __POS__)
+          (Errdesc.explain_array_access pname tenv deref_str p loc, __POS__)
       in
       Reporting.log_warning_deprecated pname exn
     else if len_is_constant then
       let deref_str = Localise.deref_str_array_bound len_const_opt index_const_opt in
-      let desc = Errdesc.explain_array_access tenv deref_str p loc in
+      let desc = Errdesc.explain_array_access pname tenv deref_str p loc in
       let exn =
         if index_has_bounds () then Exceptions.Array_out_of_bounds_l2 (desc, __POS__)
         else Exceptions.Array_out_of_bounds_l3 (desc, __POS__)
@@ -453,7 +453,9 @@ let mk_ptsto_exp_footprint pname tenv orig_prop (lexp, typ) max_stamp inst
     then (
       L.internal_error "!!!! Footprint Error, Bad Root : %a !!!! @\n" Exp.pp lexp ;
       let deref_str = Localise.deref_str_dangling None in
-      let err_desc = Errdesc.explain_dereference tenv deref_str orig_prop (State.get_loc ()) in
+      let err_desc =
+        Errdesc.explain_dereference pname tenv deref_str orig_prop (State.get_loc ())
+      in
       raise (Exceptions.Dangling_pointer_dereference (None, err_desc, __POS__)) ) ;
   let off_foot, eqs = laundry_offset_for_footprint max_stamp off in
   let subtype =
@@ -1305,7 +1307,7 @@ let check_type_size tenv pname prop texp off typ_from_instr =
         let loc = State.get_loc () in
         let exn =
           Exceptions.Pointer_size_mismatch
-            (Errdesc.explain_dereference tenv deref_str prop loc, __POS__)
+            (Errdesc.explain_dereference pname tenv deref_str prop loc, __POS__)
         in
         Reporting.log_warning_deprecated pname exn
   | None
@@ -1527,6 +1529,7 @@ let is_only_pt_by_fld_or_param_nonnull pdesc tenv prop deref_exp =
 
 (** Check for dereference errors: dereferencing 0, a freed value, or an undefined value *)
 let check_dereference_error tenv pdesc (prop: Prop.normal Prop.t) lexp loc =
+  let pname = Procdesc.get_proc_name pdesc in
   let root = Exp.root_of_lexp lexp in
   let nullable_var_opt = is_only_pt_by_fld_or_param_nullable pdesc tenv prop root in
   let is_deref_of_nullable =
@@ -1572,7 +1575,7 @@ let check_dereference_error tenv pdesc (prop: Prop.normal Prop.t) lexp loc =
         else Localise.deref_str_null None
       in
       let err_desc =
-        Errdesc.explain_dereference tenv ~use_buckets:true ~is_nullable:is_deref_of_nullable
+        Errdesc.explain_dereference pname tenv ~use_buckets:true ~is_nullable:is_deref_of_nullable
           deref_str prop loc
       in
       if Localise.is_parameter_not_null_checked_desc err_desc then
@@ -1587,23 +1590,24 @@ let check_dereference_error tenv pdesc (prop: Prop.normal Prop.t) lexp loc =
   match attribute_opt with
   | Some Apred (Adangling dk, _)
    -> let deref_str = Localise.deref_str_dangling (Some dk) in
-      let err_desc = Errdesc.explain_dereference tenv deref_str prop (State.get_loc ()) in
+      let err_desc = Errdesc.explain_dereference pname tenv deref_str prop (State.get_loc ()) in
       raise (Exceptions.Dangling_pointer_dereference (Some dk, err_desc, __POS__))
   | Some Apred (Aundef _, _)
    -> ()
   | Some Apred (Aresource ({ra_kind= Rrelease} as ra), _)
    -> let deref_str = Localise.deref_str_freed ra in
-      let err_desc = Errdesc.explain_dereference tenv ~use_buckets:true deref_str prop loc in
+      let err_desc = Errdesc.explain_dereference pname tenv ~use_buckets:true deref_str prop loc in
       raise (Exceptions.Use_after_free (err_desc, __POS__))
   | _
    -> if Prover.check_equal tenv Prop.prop_emp (Exp.root_of_lexp root) Exp.minus_one then
         let deref_str = Localise.deref_str_dangling None in
-        let err_desc = Errdesc.explain_dereference tenv deref_str prop loc in
+        let err_desc = Errdesc.explain_dereference pname tenv deref_str prop loc in
         raise (Exceptions.Dangling_pointer_dereference (None, err_desc, __POS__))
 
 (* Check that an expression representin an objc block can be null and raise a [B1] null exception.*)
 (* It's used to check that we don't call possibly null blocks *)
 let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
+  let pname = Procdesc.get_proc_name pdesc in
   let is_this = function
     | Exp.Lvar pvar
      -> let {ProcAttributes.is_objc_instance_method; is_cpp_instance_method} =
@@ -1664,7 +1668,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
   then
     let deref_str = Localise.deref_str_null None in
     let err_desc_nobuckets =
-      Errdesc.explain_dereference tenv ~is_nullable:true deref_str prop loc
+      Errdesc.explain_dereference pname tenv ~is_nullable:true deref_str prop loc
     in
     match fun_exp with
     | Exp.Var id when Ident.is_footprint id
