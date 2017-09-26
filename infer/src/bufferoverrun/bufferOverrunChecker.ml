@@ -80,6 +80,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     fun pname ret params node location mem ->
       model_malloc pname ret (List.tl_exn params) node location mem
 
+  let model_min
+      : (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> Location.t -> Dom.Mem.astate
+        -> Dom.Mem.astate =
+    fun ret params location mem ->
+      match (ret, params) with
+      | Some (id, _), [(e1, _); (e2, _)]
+       -> let i1 = Sem.eval e1 mem location |> Dom.Val.get_itv in
+          let i2 = Sem.eval e2 mem location |> Dom.Val.get_itv in
+          let v = Itv.min_sem i1 i2 |> Dom.Val.of_itv in
+          mem |> Dom.Mem.add_stack (Loc.of_id id) v
+      | _
+       -> mem
+
   let model_by_value value ret mem =
     match ret with
     | Some (id, _)
@@ -118,6 +131,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         -> CFG.node -> Dom.Mem.astate -> Location.t -> Dom.Mem.astate =
     fun pname ret callee_pname params node mem loc ->
       match Typ.Procname.get_method callee_pname with
+      | "__inferbo_min"
+       -> model_min ret params loc mem
       | "__exit" | "exit"
        -> Dom.Mem.Bottom
       | "fgetc"

@@ -492,7 +492,7 @@ module Make (CFG : ProcCfg.S) = struct
             if Int.equal coeff 1 then
               (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
             else assert false
-        | Itv.Bound.MinMax (Itv.Bound.Max, 0, symbol)
+        | Itv.Bound.MinMax (0, Itv.Bound.Plus, Itv.Bound.Max, 0, symbol)
          -> (Itv.SubstMap.add symbol actual bound_map, Itv.SubstMap.add symbol traces trace_map)
         | _
          -> assert false

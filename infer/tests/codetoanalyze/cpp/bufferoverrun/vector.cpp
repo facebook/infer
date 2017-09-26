@@ -103,3 +103,21 @@ void just_test_model_FP(void) {
   int y = v3[0];
   int z = v3.at(1);
 }
+
+void safe_access3_Good() {
+  std::vector<int> v;
+  if (!v.empty()) {
+    v[0] = 1;
+  }
+}
+
+void safe_access4(std::vector<int> v) {
+  if (!v.empty()) {
+    v[0] = 1;
+  }
+}
+
+void call_safe_access4_Good_FP() {
+  std::vector<int> v;
+  safe_access4(v);
+}
