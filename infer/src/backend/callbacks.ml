@@ -22,7 +22,10 @@ type proc_callback_args =
 
 type proc_callback_t = proc_callback_args -> Specs.summary
 
-type cluster_callback_t = (Tenv.t * Procdesc.t) list -> unit
+type cluster_callback_args =
+  {procedures: (Tenv.t * Procdesc.t) list; get_proc_desc: Typ.Procname.t -> Procdesc.t option}
+
+type cluster_callback_t = cluster_callback_args -> unit
 
 let procedure_callbacks = ref []
 
@@ -65,10 +68,11 @@ let iterate_procedure_callbacks exe_env summary caller_pname =
         !procedure_callbacks
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
-let iterate_cluster_callbacks all_procs exe_env =
-  let environment = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
+let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
+  let procedures = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
+  let environment = {procedures; get_proc_desc} in
   let language_matches language =
-    match environment with
+    match procedures with
     | (_, pdesc) :: _
      -> Config.equal_language language (get_language (Procdesc.get_proc_name pdesc))
     | _
@@ -112,7 +116,7 @@ let iterate_callbacks call_graph exe_env =
   (* Invoke procedure callbacks using on-demand anlaysis schedulling *)
   List.iter ~f:analyze_proc_name procs_to_analyze ;
   (* Invoke cluster callbacks. *)
-  iterate_cluster_callbacks procs_to_analyze exe_env ;
+  iterate_cluster_callbacks procs_to_analyze exe_env get_proc_desc ;
   (* Unregister callbacks *)
   Ondemand.unset_callbacks () ;
   Config.curr_language := saved_language

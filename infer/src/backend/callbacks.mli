@@ -20,13 +20,15 @@ type proc_callback_args =
 
 (** Type of a procedure callback:
     - List of all the procedures the callback will be called on.
-    - get_proc_desc to get a proc desc from a proc name.
-    - Idenv to look up the definition of ids in a cfg.
+    - get_proc_desc to get a proc desc from a proc name
     - Type environment.
     - Procedure for the callback to act on. *)
 type proc_callback_t = proc_callback_args -> Specs.summary
 
-type cluster_callback_t = (Tenv.t * Procdesc.t) list -> unit
+type cluster_callback_args =
+  {procedures: (Tenv.t * Procdesc.t) list; get_proc_desc: Typ.Procname.t -> Procdesc.t option}
+
+type cluster_callback_t = cluster_callback_args -> unit
 
 val register_procedure_callback : Config.language -> proc_callback_t -> unit
 (** register a procedure callback *)

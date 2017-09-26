@@ -1669,7 +1669,7 @@ let aggregate_by_class file_env =
 
 (* Gathers results by analyzing all the methods in a file, then post-processes the results to check
    an (approximation of) thread safety *)
-let file_analysis file_env =
+let file_analysis {Callbacks.procedures} =
   String.Map.iter
     ~f:(fun class_env -> report_unsafe_accesses (make_results_table class_env))
-    (aggregate_by_class file_env)
+    (aggregate_by_class procedures)
