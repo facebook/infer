@@ -63,11 +63,16 @@ module PVariant = struct
   let ( = ) (v1: [> ]) (v2: [> ]) = Polymorphic_compare.( = ) v1 v2
 end
 
-let reraise ?backtrace:backtrace0 exn =
-  let backtrace =
-    match backtrace0 with Some bt -> bt | None -> Caml.Printexc.get_raw_backtrace ()
-  in
+(** Reraise the exception after doing f. Always reraise immediately after catching the exception, otherwise the backtrace can be wrong *)
+let reraise_after ~f exn =
+  let backtrace = Caml.Printexc.get_raw_backtrace () in
+  let () = f () in
   Caml.Printexc.raise_with_backtrace exn backtrace
+
+(** Reraise the exception if f returns true. Always reraise immediately after catching the exception, otherwise the backtrace can be wrong *)
+let reraise_if ~f exn =
+  let backtrace = Caml.Printexc.get_raw_backtrace () in
+  if f () then Caml.Printexc.raise_with_backtrace exn backtrace
 
 let failwith _ : [`use_Logging_die_instead] = assert false
 

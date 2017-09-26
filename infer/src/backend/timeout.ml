@@ -99,11 +99,11 @@ let exe_timeout f x =
     Option.iter (SymOp.get_timeout_seconds ()) ~f:set_alarm ;
     SymOp.set_alarm ()
   in
-  try suspend_existing_timeout_and_start_new_one () ; f x ; resume_previous_timeout () ; None with
-  | SymOp.Analysis_failure_exe kind
-   -> resume_previous_timeout () ;
-      L.progressbar_timeout_event kind ;
-      Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." SymOp.pp_failure_kind kind ;
-      Some kind
-  | exe
-   -> resume_previous_timeout () ; reraise exe
+  try
+    Utils.try_finally
+      ~f:(fun () -> suspend_existing_timeout_and_start_new_one () ; f x ; None)
+      ~finally:resume_previous_timeout
+  with SymOp.Analysis_failure_exe kind ->
+    L.progressbar_timeout_event kind ;
+    Errdesc.warning_err (State.get_loc ()) "TIMEOUT: %a@." SymOp.pp_failure_kind kind ;
+    Some kind

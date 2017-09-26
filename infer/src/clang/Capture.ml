@@ -93,9 +93,8 @@ let run_clang_frontend ast_source =
 let run_and_validate_clang_frontend ast_source =
   try run_clang_frontend ast_source
   with exc ->
-    if not Config.keep_going then reraise exc
-    else
-      L.internal_error "ERROR RUNNING CAPTURE: %a@\n%s@\n" Exn.pp exc (Printexc.get_backtrace ())
+    reraise_if exc ~f:(fun () -> not Config.keep_going) ;
+    L.internal_error "ERROR RUNNING CAPTURE: %a@\n%s@\n" Exn.pp exc (Printexc.get_backtrace ())
 
 let run_clang clang_command read =
   let exit_with_error exit_code =

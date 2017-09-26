@@ -443,10 +443,10 @@ let forward_tabulate tenv proc_cfg wl =
       L.d_decrease_indent 1 ;
       L.d_ln ()
     with exn ->
-      let backtrace = Caml.Printexc.get_raw_backtrace () in
-      if Exceptions.handle_exception exn && !Config.footprint then (
-        handle_exn exn ; L.d_decrease_indent 1 ; L.d_ln () )
-      else reraise ~backtrace exn
+      reraise_if exn ~f:(fun () -> not !Config.footprint || not (Exceptions.handle_exception exn)) ;
+      handle_exn exn ;
+      L.d_decrease_indent 1 ;
+      L.d_ln ()
   in
   let do_node curr_node pathset_todo session handle_exn =
     check_prop_size pathset_todo ;
@@ -473,13 +473,11 @@ let forward_tabulate tenv proc_cfg wl =
       if !handle_exn_called then Printer.force_delayed_prints () ;
       do_after_node curr_node
     with exn ->
-      let backtrace = Caml.Printexc.get_raw_backtrace () in
-      if Exceptions.handle_exception exn then (
-        handle_exn_node curr_node exn ;
-        Printer.force_delayed_prints () ;
-        do_after_node curr_node ;
-        if not !Config.footprint then raise RE_EXE_ERROR )
-      else reraise ~backtrace exn
+      reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
+      handle_exn_node curr_node exn ;
+      Printer.force_delayed_prints () ;
+      do_after_node curr_node ;
+      if not !Config.footprint then raise RE_EXE_ERROR
   in
   while not (Worklist.is_empty wl) do
     let curr_node = Worklist.remove wl in

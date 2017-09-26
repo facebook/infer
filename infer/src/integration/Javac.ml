@@ -59,27 +59,25 @@ let compile compiler build_prog build_args =
     let shell_cmd = Utils.shell_escape_command cmd in
     let shell_cmd_redirected = Printf.sprintf "%s 2>'%s'" shell_cmd verbose_out_file in
     L.(debug Capture Quiet) "Trying to execute: %s@." shell_cmd_redirected ;
-    let error_k_or_fail err_msg =
-      match (error_k, err_msg) with
-      | Some k, `UnixError (err, log)
+    match Utils.with_process_in shell_cmd_redirected In_channel.input_all with
+    | log, Error err -> (
+      match error_k with
+      | Some k
        -> L.(debug Capture Quiet)
             "*** Failed: %s!@\n%s@." (Unix.Exit_or_signal.to_string_hum (Error err)) log ;
           k ()
-      | Some k, `ExceptionError exn
-       -> L.(debug Capture Quiet) "*** Failed: %a!@\n" Exn.pp exn ; k ()
-      | None, `UnixError (err, log)
+      | None
        -> let verbose_errlog = Utils.with_file_in verbose_out_file ~f:In_channel.input_all in
           L.(die UserError)
             "@\n*** Failed to execute compilation command: %s@\n*** Command: %s@\n*** Output:@\n%s%s@\n*** Infer needs a working compilation command to run.@."
-            (Unix.Exit_or_signal.to_string_hum (Error err)) shell_cmd log verbose_errlog
-      | None, `ExceptionError exn
-       -> reraise exn
-    in
-    match Utils.with_process_in shell_cmd_redirected In_channel.input_all with
-    | log, Error err
-     -> error_k_or_fail (`UnixError (err, log))
+            (Unix.Exit_or_signal.to_string_hum (Error err)) shell_cmd log verbose_errlog )
     | exception exn
-     -> error_k_or_fail (`ExceptionError exn)
+     -> reraise_if exn ~f:(fun () ->
+            match error_k with
+            | Some k
+             -> L.(debug Capture Quiet) "*** Failed: %a!@\n" Exn.pp exn ; k () ; false
+            | None
+             -> true )
     | log, Ok ()
      -> L.(debug Capture Quiet) "*** Success. Logs:@\n%s" log
   in

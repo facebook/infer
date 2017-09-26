@@ -73,7 +73,4 @@ val try_finally : ?fail_early:bool -> (unit -> 'a) -> (unit -> unit) -> 'a
     return reasonably quickly.  [~fail_early=true] can be passed to skip executing [g ()] when [f
     ()] raises a [Analysis_failure_exe] exception. *)
 
-val finally_try : (unit -> unit) -> (unit -> 'a) -> 'a
-(** [finally_try g f] is equivalent to [try_finally f g]. *)
-
 val pp_failure_kind : Format.formatter -> failure_kind -> unit

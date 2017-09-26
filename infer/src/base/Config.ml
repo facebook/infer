@@ -2412,11 +2412,11 @@ let specs_library =
 let set_reference_and_call_function reference value f x =
   let saved = !reference in
   let restore () = reference := saved in
-  try
-    reference := value ;
-    let res = f x in
-    restore () ; res
-  with exn -> restore () ; reraise exn
+  Utils.try_finally
+    ~f:(fun () ->
+      reference := value ;
+      f x)
+    ~finally:restore
 
 (** Current Objective-C Automatic Reference Counting (ARC) mode *)
 let arc_mode = ref false

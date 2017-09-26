@@ -1401,16 +1401,14 @@ and instrs ?(mask_errors= false) tenv pdesc instrs ppl =
     L.d_ln () ;
     try sym_exec tenv pdesc instr p path
     with exn ->
-      let backtrace = Caml.Printexc.get_raw_backtrace () in
-      if SymOp.exn_not_failure exn && mask_errors then
-        let error = Exceptions.recognize_exception exn in
-        let loc =
-          match error.ml_loc with Some ml_loc -> "at " ^ L.ml_loc_to_string ml_loc | None -> ""
-        in
-        L.d_warning ("Generated Instruction Failed with: " ^ error.name.IssueType.unique_id ^ loc) ;
-        L.d_ln () ;
-        [(p, path)]
-      else reraise ~backtrace exn
+      reraise_if exn ~f:(fun () -> not mask_errors || not (SymOp.exn_not_failure exn)) ;
+      let error = Exceptions.recognize_exception exn in
+      let loc =
+        match error.ml_loc with Some ml_loc -> "at " ^ L.ml_loc_to_string ml_loc | None -> ""
+      in
+      L.d_warning ("Generated Instruction Failed with: " ^ error.name.IssueType.unique_id ^ loc) ;
+      L.d_ln () ;
+      [(p, path)]
   in
   let f plist instr = List.concat_map ~f:(exe_instr instr) plist in
   List.fold ~f ~init:ppl instrs
@@ -1606,14 +1604,13 @@ and check_variadic_sentinel ?(fails_on_nil= false) n_formals (sentinel, null_pos
     let load_instr = Sil.Load (tmp_id_deref, lexp, typ, loc) in
     try instrs tenv pdesc [load_instr] result
     with e when SymOp.exn_not_failure e ->
-      if not fails_on_nil then
-        let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
-        let err_desc =
-          Errdesc.explain_dereference tenv ~use_buckets:true ~is_premature_nil:true deref_str prop_
-            loc
-        in
-        raise (Exceptions.Premature_nil_termination (err_desc, __POS__))
-      else reraise e
+      reraise_if e ~f:(fun () -> fails_on_nil) ;
+      let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
+      let err_desc =
+        Errdesc.explain_dereference tenv ~use_buckets:true ~is_premature_nil:true deref_str prop_
+          loc
+      in
+      raise (Exceptions.Premature_nil_termination (err_desc, __POS__))
   in
   (* fold_left reverses the arguments back so that we report an *)
   (* error on the first premature nil argument *)
@@ -1804,11 +1801,10 @@ and sym_exec_wrapper handle_exn tenv proc_cfg instr ((prop: Prop.normal Prop.t),
     State.mark_instr_ok () ;
     Paths.PathSet.from_renamed_list results
   with exn ->
-    let backtrace = Caml.Printexc.get_raw_backtrace () in
-    if Exceptions.handle_exception exn && !Config.footprint then (
-      handle_exn exn ; (* calls State.mark_instr_fail *)
-                       Paths.PathSet.empty )
-    else reraise ~backtrace exn
+    reraise_if exn ~f:(fun () -> not !Config.footprint || not (Exceptions.handle_exception exn)) ;
+    handle_exn exn ;
+    (* calls State.mark_instr_fail *)
+    Paths.PathSet.empty
 
 (** {2 Lifted Abstract Transfer Functions} *)
 

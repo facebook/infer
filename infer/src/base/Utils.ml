@@ -165,29 +165,32 @@ let read_json_file path =
   try Ok (Yojson.Basic.from_file path)
   with Sys_error msg | Yojson.Json_error msg -> Error msg
 
-let do_finally f g =
+let do_finally ~f ~finally =
   let res =
     try f ()
     with exc ->
-      let backtrace = Caml.Printexc.get_raw_backtrace () in
-      ( try g () |> ignore
-        with _ -> () (* swallow in favor of the original exception *) ) ;
-      reraise ~backtrace exc
+      reraise_after exc ~f:(fun () ->
+          try finally () |> ignore
+          with _ -> (* swallow in favor of the original exception *) () )
   in
-  let res' = g () in
+  let res' = finally () in
   (res, res')
+
+let try_finally ~f ~finally =
+  let res, () = do_finally ~f ~finally in
+  res
 
 let with_file_in file ~f =
   let ic = In_channel.create file in
   let f () = f ic in
-  let g () = In_channel.close ic in
-  do_finally f g |> fst
+  let finally () = In_channel.close ic in
+  try_finally ~f ~finally
 
 let with_file_out file ~f =
   let oc = Out_channel.create file in
   let f () = f oc in
-  let g () = Out_channel.close oc in
-  do_finally f g |> fst
+  let finally () = Out_channel.close oc in
+  try_finally ~f ~finally
 
 let write_json_to_file destfile json =
   with_file_out destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
@@ -199,8 +202,8 @@ let consume_in chan_in =
 let with_process_in command read =
   let chan = Unix.open_process_in command in
   let f () = read chan in
-  let g () = consume_in chan ; Unix.close_process_in chan in
-  do_finally f g
+  let finally () = consume_in chan ; Unix.close_process_in chan in
+  do_finally ~f ~finally
 
 let shell_escape_command cmd =
   let escape arg =
