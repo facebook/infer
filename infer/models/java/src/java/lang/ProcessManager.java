@@ -28,17 +28,9 @@ abstract class ProcessManager {
     FileDescriptor out = new FileDescriptor();
     FileDescriptor err = new FileDescriptor();
 
-    ProcessImpl process = new ProcessImpl(InferUndefined.int_undefined(), in, out, err);
-    return process;
+    return new Process(InferUndefined.int_undefined(), in, out, err);
   }
 
   public static native ProcessManager getInstance();
-
-  static class ProcessImpl extends Process {
-
-    ProcessImpl(int pid, FileDescriptor in, FileDescriptor out, FileDescriptor err) {
-      super(pid, in, out, err);
-    }
-  }
 
 }

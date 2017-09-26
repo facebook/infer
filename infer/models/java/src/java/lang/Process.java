@@ -14,7 +14,7 @@ import com.facebook.infer.builtins.InferUndefined;
 
 import java.io.FileDescriptor;
 
-public abstract class Process {
+public class Process {
 
   public Process(int pid, FileDescriptor in, FileDescriptor out, FileDescriptor err) {
     InferBuiltins.__set_file_attribute(this);

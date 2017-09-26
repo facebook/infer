@@ -79,7 +79,6 @@ let load_tenv () =
 
 (* Store to a file the type environment containing all the types required to perform the analysis *)
 let save_tenv tenv =
-  if not Config.models_mode then JTransType.add_models_types tenv ;
   (* TODO: this prevents per compilation step incremental analysis at this stage *)
   if DB.file_exists DB.global_tenv_fname then DB.file_remove DB.global_tenv_fname ;
   L.(debug Capture Medium) "writing new tenv %s@." (DB.filename_to_string DB.global_tenv_fname) ;

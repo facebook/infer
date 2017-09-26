@@ -174,7 +174,6 @@ codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.closeWithCloseab
 codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.closedQuietlyWithCloseables(), 5, UNINITIALIZED_VALUE, [start of procedure closedQuietlyWithCloseables(),exception java.io.IOException]
 codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.closedWithCloseables(), 5, UNINITIALIZED_VALUE, [start of procedure closedWithCloseables(),exception java.io.IOException]
 codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.contextObtainTypedArrayAndLeak(Context), 2, RESOURCE_LEAK, [start of procedure contextObtainTypedArrayAndLeak(...),start of procedure ignore(...),return from a call to void ResourceLeaks.ignore(TypedArray)]
-codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.copyFileLeak(File,File), 6, UNINITIALIZED_VALUE, [start of procedure copyFileLeak(...),exception java.io.IOException]
 codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.copyFileLeak(File,File), 11, RESOURCE_LEAK, [start of procedure copyFileLeak(...),Skipping transferTo(...): unknown method,Taking true branch,exception java.io.IOException]
 codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.copyFileLeak(File,File), 11, RESOURCE_LEAK, [start of procedure copyFileLeak(...),exception java.io.FileNotFoundException]
 codetoanalyze/java/infer/ResourceLeaks.java, void ResourceLeaks.deflaterLeak(), 1, RESOURCE_LEAK, [start of procedure deflaterLeak()]
