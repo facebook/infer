@@ -1503,7 +1503,7 @@ let is_only_pt_by_fld_or_param_with_annot ?(check_weak_captured_var= false) pdes
     | Sil.Hpointsto (Exp.Lvar pvar, Sil.Eexp ((Exp.Var _ as exp), _), _)
       when Exp.equal exp deref_exp
      -> let var_has_annotation =
-          var_has_annotation ~check_weak_captured_var pdesc is_annotation pvar
+          Pvar.is_seed pvar && var_has_annotation ~check_weak_captured_var pdesc is_annotation pvar
         in
         if var_has_annotation then obj_str := Some (Pvar.to_string pvar) ;
         let procname_str_opt = attr_has_annot is_annotation tenv prop exp in

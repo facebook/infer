@@ -912,7 +912,7 @@ let add_struct_value_to_footprint tenv abduced_pv typ prop =
   let prop' = add_strexp_to_footprint tenv struct_strexp abduced_pv typ prop in
   (prop', struct_strexp)
 
-let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ callee_pname
+let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nonnull_annot typ callee_pname
     callee_loc =
   if Typ.Procname.is_infer_undefined callee_pname then prop
   else
@@ -942,10 +942,9 @@ let add_constraints_on_retval tenv pdesc prop ret_exp ~has_nullable_annot typ ca
     in
     (* To avoid obvious false positives, assume skip functions do not return null pointers *)
     let add_ret_non_null exp typ prop =
-      if has_nullable_annot then prop
-        (* don't assume nonnull if the procedure is annotated with @Nullable *)
-      else
+      if has_nonnull_annot then
         match typ.Typ.desc with Typ.Tptr _ -> Prop.conjoin_neq tenv exp Exp.zero prop | _ -> prop
+      else prop
     in
     if not (is_rec_call callee_pname) then
       (* introduce a fresh program variable to allow abduction on the return value *)
@@ -1550,7 +1549,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots
          -> None)
       args
   in
-  let has_nullable_annot = Annotations.ia_is_nullable ret_annots in
+  let has_nonnull_annot = Annotations.ia_is_nonnull ret_annots in
   let pre_final =
     (* in Java, assume that skip functions close resources passed as params *)
     let pre_1 = if Typ.Procname.is_java callee_pname then remove_file_attribute pre else pre in
@@ -1558,7 +1557,7 @@ and unknown_or_scan_call ~is_scan ~reason ret_type_option ret_annots
       match (ret_id, ret_type_option) with
       | Some (ret_id, _), Some ret_typ
        -> (* TODO(jjb): Should this use the type of ret_id, or ret_type from the procedure type? *)
-          add_constraints_on_retval tenv pdesc pre_1 (Exp.Var ret_id) ret_typ ~has_nullable_annot
+          add_constraints_on_retval tenv pdesc pre_1 (Exp.Var ret_id) ret_typ ~has_nonnull_annot
             callee_pname loc
       | _
        -> pre_1

@@ -22,6 +22,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.io.File;
@@ -175,7 +176,7 @@ public class NullPointerExceptions {
     }
   }
 
-  public void noNullPointerExceptionAfterSkipFunction() {
+  public void FP_noNullPointerExceptionAfterSkipFunction() {
     String t = new String("Hello!");
     String s = t.toString();
     genericMethodSomewhereCheckingForNull(s);
@@ -199,13 +200,6 @@ public class NullPointerExceptions {
 
   Integer NPEvalueOfFromHashmapGood(HashMap<Integer,Integer> h, int position) {
     return h.get(position);
-  }
-
-  static void ReturnedValueOfImmutableListOf() {
-    ImmutableList<Object> l = ImmutableList.of();
-    if (l == null) {
-      l.toString();
-    }
   }
 
   void nullPointerExceptionInArrayLengthLoop(Object[] arr) {
@@ -343,7 +337,6 @@ public class NullPointerExceptions {
     }
   }
 
-
   void nullableNonNullStringAfterTextUtilsIsEmptyCheckShouldNotCauseNPE(@Nullable String str) {
     if (!TextUtils.isEmpty(str)) {
       str.length();
@@ -455,7 +448,6 @@ public class NullPointerExceptions {
     return 3;
   }
 
-
   public void testNullablePrecision() {
     Object ret = undefNullableRet();
     if (returnsThreeOnlyIfRetNotNull(ret) == 3) {
@@ -507,6 +499,22 @@ public class NullPointerExceptions {
 
   native Object unknownFunc();
 
+  void nullDerefernceReturnOfSkippedFunctionBad() {
+    Object object = unknownFunc();
+    if (object == null) {
+      object.toString();
+    }
+  }
+
+  native @Nonnull Object doesNotReturnNull();
+
+  void noNPEWhenCallingSkippedNonnullAnnotatedMethodGood() {
+    Object object = doesNotReturnNull();
+    if (object == null) {
+      object.toString();
+    }
+  }
+
   Object callUnknownFunc() {
     return unknownFunc();
   }
@@ -519,6 +527,14 @@ public class NullPointerExceptions {
   void dontReportOnNullableIndirectReassignmentToUnknown(@Nullable Object o) {
     o = callUnknownFunc();
     o.toString();
+  }
+
+  @Nullable Object wrapUnknownFuncWithNullable() {
+    return unknownFunc();
+  }
+
+  void deferenceNullableMethodCallingSkippedMethodBad() {
+    wrapUnknownFuncWithNullable().toString();
   }
 
   String nullTryLock(FileChannel chan) throws IOException {
