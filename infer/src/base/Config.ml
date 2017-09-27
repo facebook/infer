@@ -2364,7 +2364,7 @@ let clang_frontend_do_capture, clang_frontend_do_lint =
     match !analyzer with
     | Some Linters
      -> (false, true) (* no capture, lint *)
-    | Some BiAbduction
+    | Some BiAbduction | Some Checkers
      -> (true, false) (* capture, no lint *)
     | _
      -> (true, true)
