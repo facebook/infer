@@ -20,7 +20,7 @@ let register_perf_stats_report source_file =
   PerfStats.register_report_at_exit (Filename.concat stats_dir stats_file)
 
 let init_global_state source_file =
-  register_perf_stats_report source_file ;
+  if Config.developer_mode then register_perf_stats_report source_file ;
   Config.curr_language := Config.Java ;
   DB.Results_dir.init source_file ;
   Ident.NameGenerator.reset () ;

@@ -560,7 +560,7 @@ let run_prologue mode =
      anyway, pretend that we are not called from another make to prevent make falling back to a
      mono-threaded execution. *)
   Unix.unsetenv "MAKEFLAGS" ;
-  register_perf_stats_report () ;
+  if Config.developer_mode then register_perf_stats_report () ;
   if not Config.buck_cache_mode && not Config.infer_is_clang && not Config.infer_is_javac then
     touch_start_file_unless_continue () ;
   ()
@@ -568,7 +568,7 @@ let run_prologue mode =
 let run_epilogue mode =
   ( if CLOpt.is_originator then
       let in_buck_mode = match mode with PythonCapture (BBuck, _) -> true | _ -> false in
-      StatsAggregator.generate_files () ;
+      if Config.developer_mode then StatsAggregator.generate_files () ;
       if Config.equal_analyzer Config.analyzer Config.Crashcontext then
         Crashcontext.crashcontext_epilogue ~in_buck_mode ;
       if CLOpt.(equal_command Run) Config.command && Config.fail_on_bug then
