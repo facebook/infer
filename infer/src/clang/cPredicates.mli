@@ -95,6 +95,8 @@ val class_unavailable_in_supported_ios_sdk :
 
 val has_type : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
+val has_value : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
+
 val method_return_type : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val has_type_subprotocol_of : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
@@ -105,9 +107,6 @@ val get_selector : Ctl_parser_types.ast_node -> string option
 
 val within_responds_to_selector_block :
   CLintersContext.context -> Ctl_parser_types.ast_node -> bool
-
-val objc_method_has_nth_parameter_of_type :
-  Ctl_parser_types.ast_node -> ALVar.alexp -> ALVar.alexp -> bool
 
 val using_namespace : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 

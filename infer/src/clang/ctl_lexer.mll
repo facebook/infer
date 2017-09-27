@@ -75,6 +75,7 @@ rule token = parse
   | "FieldName" { FIELD_NAME }
   | "Parameters" { PARAMETERS }
   | "ParameterName" { PARAMETER_NAME }
+  | "ParameterPos" { PARAMETER_POS }
   | "Body" {BODY}
   | "Protocol" {PROTOCOL}
   | "InitExpr" {INIT_EXPR}

@@ -118,6 +118,12 @@ typedef struct {
 
 my_pS p;
 
-typedef struct Node { struct my_listNode* next; } my_listNode;
+typedef struct Node {
+  struct my_listNode* next;
+} my_listNode;
 
 my_listNode ln;
+
+void foo(int n, int m) {}
+
+void bar() { foo(0, 2); }

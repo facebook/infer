@@ -211,12 +211,21 @@ DEFINE-CHECKER TEST_PARAM_TYPE_CHECK2 = {
 };
 
 DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK = {
-
   SET report_when =
-    WHEN
-      objc_method_has_nth_parameter_of_type("2", "REGEXP('This.+')*")
-    HOLDS-IN-NODE ObjCMethodDecl;
+      WHEN
+        HOLDS-NEXT WITH-TRANSITION ParameterPos "2"
+          (has_type("REGEXP('This.+')*"))
+        HOLDS-IN-NODE ObjCMethodDecl;
+  SET message = "Found a method with nth parameter of type....";
+  SET severity = "LIKE";
+};
 
+DEFINE-CHECKER TEST_NTH_PARAM_TYPE_CHECK_FUNCTION = {
+  SET report_when =
+      WHEN
+        HOLDS-NEXT WITH-TRANSITION ParameterPos "1"
+          (has_value("2") HOLDS-EVENTUALLY)
+        HOLDS-IN-NODE CallExpr;
   SET message = "Found a method with nth parameter of type....";
   SET severity = "LIKE";
 };

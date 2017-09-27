@@ -22,6 +22,7 @@ type transitions =
   | InitExpr  (** decl to stmt *)
   | Super  (** decl to decl *)
   | ParameterName of ALVar.alexp  (** stmt to stmt, decl to decl *)
+  | ParameterPos of ALVar.alexp  (** stmt to stmt, decl to decl *)
   | Parameters  (** stmt to stmt, decl to decl *)
   | Cond
   | PointerToDecl  (** stmt to decl *)

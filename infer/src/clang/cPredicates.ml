@@ -690,28 +690,6 @@ let within_available_class_block (cxt: CLintersContext.context) an =
   | _
    -> false
 
-let objc_method_has_nth_parameter_of_type an _num _typ =
-  let open Clang_ast_t in
-  let num =
-    match _num with
-    | ALVar.Const n -> (
-      try int_of_string n
-      with Failure _ -> -1 )
-    | _
-     -> -1
-  in
-  match (num, an, _typ) with
-  | -1, _, _
-   -> false
-  | _, Ctl_parser_types.Decl ObjCMethodDecl (_, _, omdi), ALVar.Const typ -> (
-    match List.nth omdi.omdi_parameters num with
-    | Some ParmVarDecl (_, _, qt, _)
-     -> type_ptr_equal_type qt.qt_type_ptr typ
-    | _
-     -> false )
-  | _, _, _
-   -> false
-
 let using_namespace an namespace =
   let open Clang_ast_t in
   match an with
@@ -766,3 +744,15 @@ let has_used_attribute an =
   let open Clang_ast_t in
   let attributes = get_decl_attributes_for_callexpr an in
   List.exists ~f:(fun attr -> match attr with UsedAttr _ -> true | _ -> false) attributes
+
+let has_value an al_exp =
+  let open Clang_ast_t in
+  let open Ctl_parser_types in
+  match an with
+  | Stmt IntegerLiteral (_, _, _, integer_literal_info)
+   -> let value = integer_literal_info.Clang_ast_t.ili_value in
+      ALVar.compare_str_with_alexp value al_exp
+  | Stmt StringLiteral (_, _, _, s)
+   -> ALVar.compare_str_with_alexp s al_exp
+  | _
+   -> false

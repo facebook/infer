@@ -24,6 +24,7 @@ type transitions =
   | InitExpr  (** decl to stmt *)
   | Super  (** decl to decl *)
   | ParameterName of ALVar.alexp  (** stmt to stmt, decl to decl *)
+  | ParameterPos of ALVar.alexp  (** stmt to stmt, decl to decl *)
   | Parameters  (** stmt to stmt, decl to decl *)
   | Cond
   | PointerToDecl  (** stmt to decl *)
@@ -32,7 +33,7 @@ type transitions =
 
 let is_transition_to_successor trans =
   match trans with
-  | Body | InitExpr | FieldName _ | Fields | ParameterName _ | Parameters | Cond
+  | Body | InitExpr | FieldName _ | Fields | ParameterName _ | ParameterPos _ | Parameters | Cond
    -> true
   | Super | PointerToDecl | Protocol
    -> false
@@ -143,6 +144,8 @@ module Debug = struct
        -> Format.pp_print_string fmt "Super"
       | ParameterName name
        -> Format.pp_print_string fmt ("ParameterName " ^ ALVar.alexp_to_string name)
+      | ParameterPos pos
+       -> Format.pp_print_string fmt ("ParameterPos " ^ ALVar.alexp_to_string pos)
       | Parameters
        -> Format.pp_print_string fmt "Parameters"
       | Cond
@@ -708,20 +711,61 @@ let parameter_of_corresp_name method_name args name =
   | None
    -> None
 
-let transition_via_parameter_name an name =
+let parameter_of_corresp_pos args pos =
+  let pos_int =
+    match pos with
+    | ALVar.Const n -> (
+      try int_of_string n
+      with Failure _ -> -1 )
+    | _
+     -> -1
+  in
+  List.nth args pos_int
+
+let transition_via_specified_parameter ~pos an key =
+  let invalid_param_name_use () =
+    Logging.die InternalError "Transition ParameterName is only available for ObjC methods"
+  in
+  let node_opt_to_ast_node_list f arg_stmt_opt =
+    match arg_stmt_opt with Some arg -> [f arg] | None -> []
+  in
+  let apply_decl arg = Decl arg in
+  let apply_stmt arg = Stmt arg in
   match an with
   | Stmt ObjCMessageExpr (_, stmt_list, _, omei)
-   -> (
-      let arg_stmt_opt = parameter_of_corresp_name omei.omei_selector stmt_list name in
-      match arg_stmt_opt with Some arg -> [Stmt arg] | None -> [] )
-  | Decl ObjCMethodDecl (_, named_decl_info, omdi)
-   -> (
-      let arg_decl_opt =
-        parameter_of_corresp_name named_decl_info.ni_name omdi.omdi_parameters name
+   -> let method_name = omei.omei_selector in
+      let parameter_of_corresp_key =
+        if pos then parameter_of_corresp_pos else parameter_of_corresp_name method_name
       in
-      match arg_decl_opt with Some arg -> [Decl arg] | None -> [] )
+      let arg_stmt_opt = parameter_of_corresp_key stmt_list key in
+      node_opt_to_ast_node_list apply_stmt arg_stmt_opt
+  | Stmt CallExpr (_, _ :: args, _)
+   -> let parameter_of_corresp_key =
+        if pos then parameter_of_corresp_pos else invalid_param_name_use ()
+      in
+      let arg_stmt_opt = parameter_of_corresp_key args key in
+      node_opt_to_ast_node_list apply_stmt arg_stmt_opt
+  | Decl ObjCMethodDecl (_, named_decl_info, omdi)
+   -> let method_name = named_decl_info.ni_name in
+      let parameter_of_corresp_key =
+        if pos then parameter_of_corresp_pos else parameter_of_corresp_name method_name
+      in
+      let arg_decl_opt = parameter_of_corresp_key omdi.omdi_parameters key in
+      node_opt_to_ast_node_list apply_decl arg_decl_opt
+  | Decl FunctionDecl (_, _, _, fdi)
+  | Decl CXXMethodDecl (_, _, _, fdi, _)
+  | Decl CXXConstructorDecl (_, _, _, fdi, _)
+   -> let parameter_of_corresp_key =
+        if pos then parameter_of_corresp_pos else invalid_param_name_use ()
+      in
+      let arg_decl_opt = parameter_of_corresp_key fdi.fdi_parameters key in
+      node_opt_to_ast_node_list apply_decl arg_decl_opt
   | _
    -> []
+
+let transition_via_parameter_name an name = transition_via_specified_parameter an name ~pos:false
+
+let transition_via_parameter_pos an pos = transition_via_specified_parameter an pos ~pos:true
 
 let transition_via_fields an =
   let open Clang_ast_t in
@@ -789,6 +833,8 @@ let next_state_via_transition an trans =
    -> transition_stmt_to_decl_via_pointer st
   | an, ParameterName name
    -> transition_via_parameter_name an name
+  | an, ParameterPos pos
+   -> transition_via_parameter_pos an pos
   | _, _
    -> []
 
@@ -836,6 +882,8 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.has_cast_kind an name
   | "has_type", [typ], an
    -> CPredicates.has_type an typ
+  | "has_value", [typ], an
+   -> CPredicates.has_value an typ
   | "isa", [classname], an
    -> CPredicates.isa an classname
   | "is_assign_property", [], an
@@ -890,8 +938,6 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.method_return_type an typ
   | "within_responds_to_selector_block", [], an
    -> CPredicates.within_responds_to_selector_block lcxt an
-  | "objc_method_has_nth_parameter_of_type", [num; typ], an
-   -> CPredicates.objc_method_has_nth_parameter_of_type an num typ
   | "using_namespace", [namespace], an
    -> CPredicates.using_namespace an namespace
   | "is_at_selector_with_name", [name], an
