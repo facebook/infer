@@ -11,7 +11,7 @@ open! IStd
 
 type keyword = Doc_url | Message | Mode | Name | Report_when | Severity | Suggestion
 
-type formula_id = Formula_id of string
+type formula_id = Formula_id of string [@@deriving compare]
 
 (** a regexp and its cached compiled version *)
 type cached_regexp = {string: string; regexp: Str.regexp Lazy.t} [@@deriving compare]

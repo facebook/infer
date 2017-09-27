@@ -131,7 +131,7 @@ let captured_variables_cxx_ref an =
   | _
    -> []
 
-type t = ALVar.formula_id * (* (name, [param1,...,paramK]) *) ALVar.alexp list
+type t = ALVar.formula_id * (* (name, [param1,...,paramK]) *) ALVar.alexp list [@@deriving compare]
 
 let pp_predicate fmt (_name, _arglist) =
   let name = ALVar.formula_id_to_string _name in

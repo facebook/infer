@@ -114,11 +114,11 @@ DEFINE-CHECKER REGISTERED_OBSERVER_BEING_DEALLOCATED = {
 	  		(remove_observer1)
 		HOLDS-EVENTUALLY;
 
- 	LET eventually_removeObserver =
+	LET eventually_removeObserver =
 		IN-NODE ObjCImplementationDecl, ObjCProtocolDecl WITH-TRANSITION Any
 		 		(remove_observer_in_method  OR
 					remove_observer_in_method HOLDS-IN-SOME-SUPERCLASS-OF ObjCImplementationDecl)
-  	HOLDS-EVENTUALLY;
+ 	HOLDS-EVENTUALLY;
 
   SET report_when =
 			WHEN

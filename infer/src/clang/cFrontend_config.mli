@@ -174,3 +174,5 @@ val sil_types_map : Typ.desc Clang_ast_extend.TypePointerMap.t ref
     Populated during frontend execution when new type is found *)
 
 val reset_global_state : unit -> unit
+
+val tableaux_evaluation : bool

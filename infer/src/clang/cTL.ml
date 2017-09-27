@@ -28,6 +28,7 @@ type transitions =
   | Cond
   | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
+  [@@deriving compare]
 
 let is_transition_to_successor trans =
   match trans with
@@ -61,6 +62,9 @@ type t =
   | EU of transitions option * t * t
   | EH of ALVar.alexp list * t
   | ET of ALVar.alexp list * transitions option * t
+  [@@deriving compare]
+
+let equal = [%compare.equal : t]
 
 let has_transition phi =
   match phi with
@@ -596,34 +600,32 @@ let transition_decl_to_stmt d trs =
   let temp_res =
     match (trs, d) with
     | Body, ObjCMethodDecl (_, _, omdi)
-     -> omdi.omdi_body
+     -> [omdi.omdi_body]
     | Body, FunctionDecl (_, _, _, fdi)
     | Body, CXXMethodDecl (_, _, _, fdi, _)
     | Body, CXXConstructorDecl (_, _, _, fdi, _)
     | Body, CXXConversionDecl (_, _, _, fdi, _)
     | Body, CXXDestructorDecl (_, _, _, fdi, _)
-     -> fdi.fdi_body
+     -> [fdi.fdi_body]
     | Body, BlockDecl (_, bdi)
-     -> bdi.bdi_body
+     -> [bdi.bdi_body]
     | InitExpr, VarDecl (_, _, _, vdi)
-     -> vdi.vdi_init_expr
+     -> [vdi.vdi_init_expr]
     | InitExpr, ObjCIvarDecl (_, _, _, fldi, _)
     | InitExpr, FieldDecl (_, _, _, fldi)
     | InitExpr, ObjCAtDefsFieldDecl (_, _, _, fldi)
-     -> fldi.fldi_init_expr
-    | InitExpr, CXXMethodDecl _
-    | InitExpr, CXXConstructorDecl _
-    | InitExpr, CXXConversionDecl _
-    | InitExpr, CXXDestructorDecl _
-     -> (* requires extending to lists *)
-        CFrontend_config.unimplemented
-          "transition_decl_to_stmt: InitExpr/CXX{Method,Constructor,Conversion,Destructor}"
+     -> [fldi.fldi_init_expr]
+    | InitExpr, CXXMethodDecl (_, _, _, _, mdi)
+    | InitExpr, CXXConstructorDecl (_, _, _, _, mdi)
+    | InitExpr, CXXConversionDecl (_, _, _, _, mdi)
+    | InitExpr, CXXDestructorDecl (_, _, _, _, mdi)
+     -> List.map ~f:(fun ci -> ci.xci_init_expr) mdi.xmdi_cxx_ctor_initializers
     | InitExpr, EnumConstantDecl (_, _, _, ecdi)
-     -> ecdi.ecdi_init_expr
+     -> [ecdi.ecdi_init_expr]
     | _, _
-     -> None
+     -> [None]
   in
-  match temp_res with Some st -> [Stmt st] | _ -> []
+  List.fold ~f:(fun l e -> match e with Some st -> Stmt st :: l | _ -> l) temp_res ~init:[]
 
 let transition_decl_to_decl_via_super d =
   let decl_opt_to_ast_node_opt d_opt = match d_opt with Some d' -> [Decl d'] | None -> [] in

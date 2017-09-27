@@ -9,7 +9,7 @@
 
 open! IStd
 
-type t = ALVar.formula_id * ALVar.alexp list
+type t = ALVar.formula_id * ALVar.alexp list [@@deriving compare]
 
 (* (name, [param1,...,paramK]) *)
 

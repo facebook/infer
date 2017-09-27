@@ -174,3 +174,5 @@ let reset_global_state () =
   global_translation_unit_decls := [] ;
   log_out := Format.std_formatter ;
   sil_types_map := Clang_ast_extend.TypePointerMap.empty
+
+let tableaux_evaluation = false

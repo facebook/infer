@@ -26,7 +26,7 @@ type transitions =
   | Cond
   | PointerToDecl  (** stmt to decl *)
   | Protocol  (** decl to decl *)
-
+  [@@deriving compare]
 (* In formulas below prefix
    "E" means "exists a path"
    "A" means "for all path" *)
@@ -63,9 +63,9 @@ type t =
                                    there exists a node defining a super class in the hierarchy of the class
                                    defined by the current node (if any) where  phi holds *)
   | ET of ALVar.alexp list * transitions option * t
-      (** ET[T][l] phi <=>
-                                                               there exists a descentant an of the current node such that an is of type in set T
-                                                               making a transition to a node an' via label l, such that in an phi holds. *)
+      (** ET[T][l] phi <=> there exists a descentant an of the current node such that an is of type in set T
+          making a transition to a node an' via label l, such that in an phi holds. *)
+  [@@deriving compare]
 
 (* "set" clauses are used for defining mandatory variables that will be used
    by when reporting issues: eg for defining the condition.
@@ -83,6 +83,8 @@ type t =
    set message = "bla"
 
 *)
+
+val equal : t -> t -> bool
 
 type clause =
   | CLet of ALVar.formula_id * ALVar.t list * t
