@@ -46,6 +46,14 @@ class Basic {
 
   int get5() { return get_private_suspiciously_read(); }
 
+  void write_array_under_lock_ok(char* arr1) {
+    mutex_.lock();
+    arr1[2] = 'c';
+    mutex_.unlock();
+  }
+
+  int read_array_outside_lock_ok(char* arr2, int i) { return arr2[i]; }
+
  private:
   int well_guarded;
   int suspiciously_read;

@@ -1071,19 +1071,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
      -> summary )
   else Summary.update_summary empty_post summary
 
-module AccessListMap = Caml.Map.Make (struct
-  type t = ThreadSafetyDomain.Access.t
-
-  (* TODO -- keep this compare to satisfy the order of tests, consider using Raw.compare *)
-  let compare access1 access2 =
-    let open ThreadSafetyDomain in
-    match (access1, access2) with
-    | ( (Access.Read access_path1 | Write access_path1)
-      , (Access.Read access_path2 | Write access_path2) )
-     -> List.compare AccessPath.compare_access (snd access_path1) (snd access_path2)
-    | _
-     -> Access.compare access1 access2
-end)
+module AccessListMap = Caml.Map.Make (ThreadSafetyDomain.Access)
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
   match pname with

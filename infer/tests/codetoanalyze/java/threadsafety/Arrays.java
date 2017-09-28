@@ -28,8 +28,8 @@ class Arrays {
     name1[2] = 4;
   }
 
-  // we'll report this because name1 and name2 may alias
-  int arrayParameterReadBad(int[] name2) {
+  // although name1 and name2 may alias, we have no reason to think that they will. don't report
+  int FN_arrayParameterReadBad(int[] name2) {
     return name2[2];
   }
 
