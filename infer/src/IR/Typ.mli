@@ -580,6 +580,8 @@ module Struct : sig
 
   type lookup = Name.t -> t option
 
+  val pp_field : Pp.env -> F.formatter -> field -> unit
+
   val pp : Pp.env -> Name.t -> F.formatter -> t -> unit
   (** Pretty print a struct type. *)
 

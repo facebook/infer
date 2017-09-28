@@ -38,6 +38,9 @@ val mk_struct :
   -> Typ.Struct.t
 (** Construct a struct_typ, normalizing field types *)
 
+val add_field : t -> Typ.Name.t -> Typ.Struct.field -> unit
+(** Add a field to a given struct in the global type environment. *)
+
 val mem : t -> Typ.Name.t -> bool
 (** Check if typename is found in t *)
 

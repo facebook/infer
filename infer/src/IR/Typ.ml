@@ -1235,14 +1235,16 @@ module Struct = struct
 
   type lookup = Name.t -> t option
 
+  let pp_field pe f (field_name, typ, ann) =
+    F.fprintf f "@\n\t\t%a %a %a" (pp_full pe) typ Fieldname.pp field_name Annot.Item.pp ann
+
   let pp pe name f {fields; supers; methods; annots} =
     if Config.debug_mode then
       (* change false to true to print the details of struct *)
       F.fprintf f
         "%a @\n\tfields: {%a@\n\t}@\n\tsupers: {%a@\n\t}@\n\tmethods: {%a@\n\t}@\n\tannots: {%a@\n\t}"
         Name.pp name
-        (Pp.seq (fun f (fld, t, a) ->
-             F.fprintf f "@\n\t\t%a %a %a" (pp_full pe) t Fieldname.pp fld Annot.Item.pp a ))
+        (Pp.seq (pp_field pe))
         fields
         (Pp.seq (fun f n -> F.fprintf f "@\n\t\t%a" Name.pp n))
         supers

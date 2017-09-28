@@ -31,8 +31,8 @@ let proc_flags_find proc_flags key = Hashtbl.find proc_flags key
 
 (** Type for ObjC accessors *)
 type objc_accessor_type =
-  | Objc_getter of Typ.Fieldname.t
-  | Objc_setter of Typ.Fieldname.t
+  | Objc_getter of Typ.Struct.field
+  | Objc_setter of Typ.Struct.field
   [@@deriving compare]
 
 type t =

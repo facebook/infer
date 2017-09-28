@@ -483,10 +483,10 @@ let pp_variable_list fmt etl =
 
 let pp_objc_accessor fmt accessor =
   match accessor with
-  | Some ProcAttributes.Objc_getter name
-   -> Format.fprintf fmt "Getter of %a, " Typ.Fieldname.pp name
-  | Some ProcAttributes.Objc_setter name
-   -> Format.fprintf fmt "Setter of %a, " Typ.Fieldname.pp name
+  | Some ProcAttributes.Objc_getter field
+   -> Format.fprintf fmt "Getter of %a, " (Typ.Struct.pp_field Pp.text) field
+  | Some ProcAttributes.Objc_setter field
+   -> Format.fprintf fmt "Setter of %a, " (Typ.Struct.pp_field Pp.text) field
   | None
    -> ()
 

@@ -29,8 +29,8 @@ val proc_flags_find : proc_flags -> string -> string
 (** find a value for a key in the proc flags *)
 
 type objc_accessor_type =
-  | Objc_getter of Typ.Fieldname.t
-  | Objc_setter of Typ.Fieldname.t
+  | Objc_getter of Typ.Struct.field
+  | Objc_setter of Typ.Struct.field
   [@@deriving compare]
 
 type t =

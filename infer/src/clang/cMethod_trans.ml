@@ -491,7 +491,7 @@ let get_byval_args_indices ~shift args =
       let index' = index + shift in
       Option.some_if (is_value qual_type) index' )
 
-let get_objc_property_accessor ms =
+let get_objc_property_accessor tenv ms =
   let open Clang_ast_t in
   match CAst_utils.get_decl_opt (CMethod_signature.ms_get_pointer_to_property_opt ms) with
   | Some ObjCPropertyDecl (_, _, obj_c_property_decl_info)
@@ -499,7 +499,8 @@ let get_objc_property_accessor ms =
       let ivar_decl_ref = obj_c_property_decl_info.Clang_ast_t.opdi_ivar_decl in
       match CAst_utils.get_decl_opt_with_decl_ref ivar_decl_ref with
       | Some ObjCIvarDecl (_, {ni_name}, _, _, _)
-       -> let class_tname =
+       -> (
+          let class_tname =
             match CMethod_signature.ms_get_name ms with
             | Typ.Procname.ObjC_Cpp objc_cpp
              -> Typ.Procname.objc_cpp_get_class_type_name objc_cpp
@@ -507,10 +508,21 @@ let get_objc_property_accessor ms =
              -> assert false
           in
           let field_name = CGeneral_utils.mk_class_field_name class_tname ni_name in
-          if CMethod_signature.ms_is_getter ms then Some (ProcAttributes.Objc_getter field_name)
-          else if CMethod_signature.ms_is_setter ms then
-            Some (ProcAttributes.Objc_setter field_name)
-          else None
+          match Tenv.lookup tenv class_tname with
+          | Some {fields}
+           -> (
+              let field_opt =
+                List.find ~f:(fun (name, _, _) -> Typ.Fieldname.equal name field_name) fields
+              in
+              match field_opt with
+              | Some field when CMethod_signature.ms_is_getter ms
+               -> Some (ProcAttributes.Objc_getter field)
+              | Some field when CMethod_signature.ms_is_setter ms
+               -> Some (ProcAttributes.Objc_setter field)
+              | _
+               -> None )
+          | None
+           -> None )
       | _
        -> None )
   | _
@@ -566,7 +578,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
     let loc_exit = CLocation.get_sil_location_from_range trans_unit_ctx source_range false in
     let ret_type = get_return_type tenv ms in
     let objc_property_accessor =
-      if set_objc_accessor_attr then get_objc_property_accessor ms else None
+      if set_objc_accessor_attr then get_objc_property_accessor tenv ms else None
     in
     let procdesc =
       let proc_attributes =

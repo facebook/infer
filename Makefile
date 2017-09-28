@@ -61,7 +61,7 @@ ifneq ($(PYTHON_lxml),no)
 BUILD_SYSTEMS_TESTS += results_xml
 endif
 ifneq ($(XCODE_SELECT),no)
-BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty
+BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty objc_getters_setters
 DIRECT_TESTS += \
   objc_frontend objc_errors objc_linters objc_ioslints \
 	objcpp_frontend objcpp_linters objc_linters-for-test-only objcpp_linters-for-test-only \

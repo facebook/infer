@@ -1631,26 +1631,35 @@ and check_variadic_sentinel_if_present ({Builtin.prop_; path; proc_name} as buil
      -> let formals = callee_attributes.ProcAttributes.formals in
         check_variadic_sentinel (List.length formals) sentinel_arg builtin_args
 
-and sym_exec_objc_getter field_name ret_typ tenv ret_id pdesc pname loc args prop =
+and sym_exec_objc_getter field ret_typ tenv ret_id pdesc pname loc args prop =
+  let field_name, _, _ = field in
   L.d_strln
     ( "No custom getter found. Executing the ObjC builtin getter with ivar "
     ^ Typ.Fieldname.to_string field_name ^ "." ) ;
   let ret_id = match ret_id with Some (ret_id, _) -> ret_id | None -> assert false in
   match args with
-  | [(lexp, ({Typ.desc= Tstruct _} as typ | {desc= Tptr (({desc= Tstruct _} as typ), _)}))]
-   -> let field_access_exp = Exp.Lfield (lexp, field_name, typ) in
+  | [ ( lexp
+      , ( {Typ.desc= Tstruct struct_name} as typ
+        | {desc= Tptr (({desc= Tstruct struct_name} as typ), _)} ) ) ]
+   -> Tenv.add_field tenv struct_name field ;
+      let field_access_exp = Exp.Lfield (lexp, field_name, typ) in
       execute_load ~report_deref_errors:false pname pdesc tenv ret_id field_access_exp ret_typ loc
         prop
   | _
    -> raise (Exceptions.Wrong_argument_number __POS__)
 
-and sym_exec_objc_setter field_name _ tenv _ pdesc pname loc args prop =
+and sym_exec_objc_setter field _ tenv _ pdesc pname loc args prop =
+  let field_name, _, _ = field in
   L.d_strln
     ( "No custom setter found. Executing the ObjC builtin setter with ivar "
     ^ Typ.Fieldname.to_string field_name ^ "." ) ;
   match args with
-  | (lexp1, ({Typ.desc= Tstruct _} as typ1 | {Typ.desc= Tptr (typ1, _)})) :: (lexp2, typ2) :: _
-   -> let field_access_exp = Exp.Lfield (lexp1, field_name, typ1) in
+  | ( lexp1
+    , ( {Typ.desc= Tstruct struct_name} as typ1
+      | {Typ.desc= Tptr (({Typ.desc= Tstruct struct_name} as typ1), _)} ) )
+    :: (lexp2, typ2) :: _
+   -> Tenv.add_field tenv struct_name field ;
+      let field_access_exp = Exp.Lfield (lexp1, field_name, typ1) in
       execute_store ~report_deref_errors:false pname pdesc tenv field_access_exp typ2 lexp2 loc
         prop
   | _
@@ -1660,10 +1669,10 @@ and sym_exec_objc_accessor property_accesor ret_typ tenv ret_id pdesc _ loc args
     : Builtin.ret_typ =
   let f_accessor =
     match property_accesor with
-    | ProcAttributes.Objc_getter field_name
-     -> sym_exec_objc_getter field_name
-    | ProcAttributes.Objc_setter field_name
-     -> sym_exec_objc_setter field_name
+    | ProcAttributes.Objc_getter field
+     -> sym_exec_objc_getter field
+    | ProcAttributes.Objc_setter field
+     -> sym_exec_objc_setter field
   in
   (* we want to execute in the context of the current procedure, not in the context of callee_pname,
      since this is the procname of the setter/getter method *)

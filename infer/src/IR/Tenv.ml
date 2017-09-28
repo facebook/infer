@@ -61,6 +61,17 @@ let lookup tenv name : Typ.Struct.t option =
 (** Add a (name,type) pair to the global type environment. *)
 let add tenv name struct_typ = TypenameHash.replace tenv name struct_typ
 
+(** Add a field to a given struct in the global type environment. *)
+let add_field tenv class_tn_name field =
+  match lookup tenv class_tn_name with
+  | Some ({fields} as struct_typ)
+   -> let field_equal (f1, _, _) (f2, _, _) = Typ.Fieldname.equal f1 f2 in
+      if not (List.mem ~equal:field_equal fields field) then
+        let new_fields = field :: fields in
+        ignore (mk_struct tenv ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name)
+  | _
+   -> ()
+
 (** Get method that is being overriden by java_pname (if any) **)
 let get_overriden_method tenv pname_java =
   let struct_typ_get_method_by_name (struct_typ: Typ.Struct.t) method_name =
