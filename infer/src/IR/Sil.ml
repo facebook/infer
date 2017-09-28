@@ -1166,15 +1166,6 @@ let fav_from_list l =
   let _ = List.iter ~f:(fun id -> fav ++ id) l in
   fav
 
-let rec remove_duplicates_from_sorted special_equal = function
-  | []
-   -> []
-  | [x]
-   -> [x]
-  | x :: y :: l
-   -> if special_equal x y then remove_duplicates_from_sorted special_equal (y :: l)
-      else x :: remove_duplicates_from_sorted special_equal (y :: l)
-
 (** Convert a [fav] to a list of identifiers while preserving the order
     that the identifiers were added to [fav]. *)
 let fav_to_list fav = List.rev !fav
@@ -1361,30 +1352,10 @@ let hpara_dll_shallow_av = fav_imperative_to_functional hpara_dll_shallow_av_add
 
 (** {2 Functions for Substitution} *)
 
-let rec reverse_with_base base = function [] -> base | x :: l -> reverse_with_base (x :: base) l
-
-let sorted_list_merge compare l1_in l2_in =
-  let rec merge acc l1 l2 =
-    match (l1, l2) with
-    | [], l2
-     -> reverse_with_base l2 acc
-    | l1, []
-     -> reverse_with_base l1 acc
-    | x1 :: l1', x2 :: l2'
-     -> if compare x1 x2 <= 0 then merge (x1 :: acc) l1' l2 else merge (x2 :: acc) l1 l2'
-  in
-  merge [] l1_in l2_in
-
-let rec sorted_list_check_consecutives f = function
-  | [] | [_]
-   -> false
-  | x1 :: (x2 :: _ as l)
-   -> if f x1 x2 then true else sorted_list_check_consecutives f l
-
 (** substitution *)
 type ident_exp = Ident.t * Exp.t [@@deriving compare]
 
-let equal_ident_exp = [%compare.equal : ident_exp]
+let compare_ident_exp_ids (id1, _) (id2, _) = Ident.compare id1 id2
 
 type exp_subst = ident_exp list [@@deriving compare]
 
@@ -1395,32 +1366,20 @@ type subst_fun = [`Exp of Ident.t -> Exp.t | `Typ of (Typ.t -> Typ.t) * (Typ.Nam
 (** Equality for substitutions. *)
 let equal_exp_subst = [%compare.equal : exp_subst]
 
-let sub_check_duplicated_ids sub =
-  let f (id1, _) (id2, _) = Ident.equal id1 id2 in
-  sorted_list_check_consecutives f sub
+let sub_no_duplicated_ids sub = not (List.contains_dup ~compare:compare_ident_exp_ids sub)
 
 (** Create a substitution from a list of pairs.
     For all (id1, e1), (id2, e2) in the input list,
     if id1 = id2, then e1 = e2. *)
 let exp_subst_of_list sub =
-  let sub' = List.sort ~cmp:compare_ident_exp sub in
-  let sub'' = remove_duplicates_from_sorted equal_ident_exp sub' in
-  if sub_check_duplicated_ids sub'' then assert false ;
+  let sub' = List.dedup ~compare:compare_ident_exp sub in
+  assert (sub_no_duplicated_ids sub') ;
   sub'
 
 let subst_of_list sub = `Exp (exp_subst_of_list sub)
 
 (** like exp_subst_of_list, but allow duplicate ids and only keep the first occurrence *)
-let exp_subst_of_list_duplicates sub =
-  let sub' = List.sort ~cmp:compare_ident_exp sub in
-  let rec remove_duplicate_ids = function
-    | (id1, e1) :: (id2, e2) :: l
-     -> if Ident.equal id1 id2 then remove_duplicate_ids ((id1, e1) :: l)
-        else (id1, e1) :: remove_duplicate_ids ((id2, e2) :: l)
-    | l
-     -> l
-  in
-  remove_duplicate_ids sub'
+let exp_subst_of_list_duplicates sub = List.dedup ~compare:compare_ident_exp_ids sub
 
 (** Convert a subst to a list of pairs. *)
 let sub_to_list sub = sub
@@ -1441,9 +1400,8 @@ let is_sub_empty = function
 (** Join two substitutions into one.
     For all id in dom(sub1) cap dom(sub2), sub1(id) = sub2(id). *)
 let sub_join sub1 sub2 =
-  let sub = sorted_list_merge compare_ident_exp sub1 sub2 in
-  let sub' = remove_duplicates_from_sorted equal_ident_exp sub in
-  if sub_check_duplicated_ids sub' then assert false ;
+  let sub = List_.merge_dedup ~compare:compare_ident_exp sub1 sub2 in
+  assert (sub_no_duplicated_ids sub) ;
   sub
 
 (** Compute the common id-exp part of two inputs [subst1] and [subst2].
@@ -1454,9 +1412,9 @@ let sub_symmetric_difference sub1_in sub2_in =
   let rec diff sub_common sub1_only sub2_only sub1 sub2 =
     match (sub1, sub2) with
     | [], _ | _, []
-     -> let sub1_only' = reverse_with_base sub1 sub1_only in
-        let sub2_only' = reverse_with_base sub2 sub2_only in
-        let sub_common = reverse_with_base [] sub_common in
+     -> let sub1_only' = List.rev_append sub1_only sub1 in
+        let sub2_only' = List.rev_append sub2_only sub2 in
+        let sub_common = List.rev sub_common in
         (sub_common, sub1_only', sub2_only')
     | id_e1 :: sub1', id_e2 :: sub2'
      -> let n = compare_ident_exp id_e1 id_e2 in
@@ -1505,7 +1463,7 @@ let mem_sub id sub = List.exists ~f:(fun (id1, _) -> Ident.equal id id1) sub
 (** Extend substitution and return [None] if not possible. *)
 let extend_sub sub id exp : exp_subst option =
   let compare (id1, _) (id2, _) = Ident.compare id1 id2 in
-  if mem_sub id sub then None else Some (sorted_list_merge compare sub [(id, exp)])
+  if mem_sub id sub then None else Some (List.merge ~cmp:compare sub [(id, exp)])
 
 (** Free auxilary variables in the domain and range of the
     substitution. *)
