@@ -7,3 +7,4 @@ codetoanalyze/objc/checkers/Nullable.m, T_dereferenceUnnanotatedFieldAfterTestFo
 codetoanalyze/objc/checkers/Nullable.m, T_dereferenceUnnanotatedFieldAfterTestForNullBad, 2, NULL_DEREFERENCE, [start of procedure dereferenceUnnanotatedFieldAfterTestForNullBad,Condition is true]
 codetoanalyze/objc/checkers/Nullable.m, T_testNonnullFieldForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field nonnullField is compared to null here]
 codetoanalyze/objc/checkers/Nullable.m, T_testUnnanotatedFieldForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]
+codetoanalyze/objc/checkers/Nullable.m, __objc_anonymous_block_T_testUnnanotatedFieldInClosureBad______1, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]

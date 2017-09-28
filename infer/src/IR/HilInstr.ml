@@ -94,7 +94,7 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
    -> let hil_ret = Option.map ~f:(fun (ret_id, ret_typ) -> (Var.of_id ret_id, ret_typ)) ret_opt in
       let hil_call =
         match exp_of_sil call_exp (Typ.mk Tvoid) with
-        | Constant Cfun procname
+        | Constant Cfun procname | Closure (procname, _)
          -> Direct procname
         | AccessPath access_path
          -> Indirect access_path

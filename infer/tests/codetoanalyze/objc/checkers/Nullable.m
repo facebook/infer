@@ -40,6 +40,18 @@
   }
 }
 
+- (int)testUnnanotatedFieldInClosureBad {
+  int (^testField)(int defaultValue);
+  testField = ^(int defaultValue) {
+    if (unnanotatedField != nil) {
+      return *unnanotatedField;
+    } else {
+      return defaultValue;
+    }
+  };
+  return testField(42);
+}
+
 - (void)testNonnullFieldForNullBad {
   if (nonnullField == nil) {
   }
