@@ -125,19 +125,22 @@ module Condition = struct
 
   let invalid : t -> bool = fun x -> Itv.invalid x.idx || Itv.invalid x.size
 
-  let to_string : t -> string =
-    fun c ->
-      let c = set_size_pos c in
-      "Offset: " ^ Itv.to_string c.idx ^ " Size: " ^ Itv.to_string c.size
-      ^
+  let pp_trace : F.formatter -> t -> unit =
+    fun fmt c ->
       match c.cond_trace with
       | Inter (_, pname, _)
         when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model c.loc.Location.file)
-       -> let loc = pp_location F.str_formatter c ; F.flush_str_formatter () in
-          " @ " ^ loc ^ " by call " ^ MF.monospaced_to_string (Typ.Procname.to_string pname ^ "()")
-          ^ " "
+       -> F.fprintf fmt " %@ %a by call %a " pp_location c MF.pp_monospaced
+            (Typ.Procname.to_string pname ^ "()")
       | _
-       -> ""
+       -> ()
+
+  let pp_description : F.formatter -> t -> unit =
+    fun fmt c ->
+      let c = set_size_pos c in
+      F.fprintf fmt "Offset: %a Size: %a%a" Itv.pp c.idx Itv.pp c.size pp_trace c
+
+  let description : t -> string = fun c -> Format.asprintf "%a" pp_description c
 
   let subst
       : t -> Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Typ.Procname.t
