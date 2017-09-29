@@ -12,7 +12,24 @@ open! IStd
 (** entry points for top-level functionalities such as capture under various build systems,
     analysis, and reporting *)
 
-type build_system
+type build_system =
+  | BAnalyze
+  | BAnt
+  | BBuck
+  | BClang
+  | BGradle
+  | BJava
+  | BJavac
+  | BMake
+  | BMvn
+  | BNdk
+  | BPython
+  | BXcode
+  [@@deriving compare]
+
+val equal_build_system : build_system -> build_system -> bool
+
+val string_of_build_system : build_system -> string
 
 (** based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
@@ -29,6 +46,8 @@ type mode =
   [@@deriving compare]
 
 val equal_mode : mode -> mode -> bool
+
+val pp_mode : Format.formatter -> mode -> unit
 
 val mode_from_command_line : mode Lazy.t
 (** driver mode computed from the command-line arguments and settings in Config *)

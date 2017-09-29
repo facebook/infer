@@ -232,8 +232,9 @@ endif
 
 .PHONY: ocaml_unit_test
 ocaml_unit_test: test_build
+	$(QUIET)$(REMOVE_DIR) infer-out-unit-tests
 	$(QUIET)$(call silent_on_success,Running OCaml unit tests,\
-	$(BUILD_DIR)/test/inferunit.bc)
+	INFER_ARGS=--results-dir^infer-out-unit-tests $(BUILD_DIR)/test/inferunit.bc)
 
 define silence_make
   ($(1) 2> >(grep -v "warning: \(ignoring old\|overriding\) \(commands\|recipe\) for target") \

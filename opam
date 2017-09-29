@@ -40,6 +40,7 @@ depends: [
   "parmap" {>="1.0-rc8"}
   "ppx_deriving" {>="4.1"}
   "sawja" {>="1.5.2"}
+  "sqlite3"
   "xmlm" {>="1.2.0"}
 ]
 depexts: [

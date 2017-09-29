@@ -95,8 +95,6 @@ let anonymous_block_prefix = "__objc_anonymous_block_"
 
 let assign = "<\"Assign\">"
 
-let attributes_dir_name = "attributes"
-
 let backend_stats_dir_name = "backend_stats"
 
 (** If true, a procedure call succeeds even when there is a bound error this mimics what

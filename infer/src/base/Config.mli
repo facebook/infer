@@ -85,8 +85,6 @@ val append_buck_flavors : string list
 
 val assign : string
 
-val attributes_dir_name : string
-
 val backend_stats_dir_name : string
 
 val bin_dir : string

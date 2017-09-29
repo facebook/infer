@@ -658,7 +658,7 @@ let add_default_method_for_class trans_unit_ctx class_name decl_info =
   in
   let proc_name = Typ.Procname.get_default_objc_class_method class_name in
   let attrs = {(ProcAttributes.default proc_name Config.Clang) with loc} in
-  AttributesTable.store_attributes attrs
+  Attributes.store attrs
 
 let get_procname_from_cpp_lambda context dec =
   match dec with

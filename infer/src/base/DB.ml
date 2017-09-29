@@ -220,7 +220,6 @@ module Results_dir = struct
     if SourceFile.is_invalid source then L.(die InternalError) "Invalid source file passed" ;
     Utils.create_dir Config.results_dir ;
     Utils.create_dir specs_dir ;
-    Utils.create_dir (path_to_filename Abs_root [Config.attributes_dir_name]) ;
     Utils.create_dir (path_to_filename Abs_root [Config.captured_dir_name]) ;
     Utils.create_dir (path_to_filename (Abs_source_dir source) [])
 

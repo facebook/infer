@@ -27,11 +27,9 @@ type perf_stats =
   ; compactions: int
   ; top_heap_gb: float
   ; stack_kb: float
-  ; minor_heap_kb: float
-  ; attributes_table: AttributesTable.t }
+  ; minor_heap_kb: float }
 
 let to_json ps =
-  let attributes_table = AttributesTable.stats () in
   `Assoc
     [ ("rtime", `Float ps.rtime)
     ; ("utime", `Float ps.utime)
@@ -47,8 +45,7 @@ let to_json ps =
     ; ("compactions", `Int ps.compactions)
     ; ("top_heap_gb", `Float ps.top_heap_gb)
     ; ("stack_kb", `Float ps.stack_kb)
-    ; ("minor_heap_kb", `Float ps.minor_heap_kb)
-    ; ("attributes_table", AttributesTable.to_json attributes_table) ]
+    ; ("minor_heap_kb", `Float ps.minor_heap_kb) ]
 
 let from_json json =
   let open! Yojson.Basic.Util in
@@ -66,8 +63,7 @@ let from_json json =
   ; compactions= json |> member "compactions" |> to_int
   ; top_heap_gb= json |> member "top_heap_gb" |> to_float
   ; stack_kb= json |> member "stack_kb" |> to_float
-  ; minor_heap_kb= json |> member "minor_heap_kb" |> to_float
-  ; attributes_table= json |> member "attributes_table" |> AttributesTable.from_json }
+  ; minor_heap_kb= json |> member "minor_heap_kb" |> to_float }
 
 let aggregate s =
   let mk_stats f = StatisticsToolbox.compute_statistics (List.map ~f s) in
@@ -86,9 +82,6 @@ let aggregate s =
   let aggr_top_heap_gb = mk_stats (fun stats -> stats.top_heap_gb) in
   let aggr_stack_kb = mk_stats (fun stats -> stats.stack_kb) in
   let aggr_minor_heap_kb = mk_stats (fun stats -> stats.minor_heap_kb) in
-  let aggr_attributes_table =
-    AttributesTable.aggregate (List.map ~f:(fun stats -> stats.attributes_table) s)
-  in
   `Assoc
     [ ("rtime", StatisticsToolbox.to_json aggr_rtime)
     ; ("utime", StatisticsToolbox.to_json aggr_utime)
@@ -104,8 +97,7 @@ let aggregate s =
     ; ("compactions", StatisticsToolbox.to_json aggr_compactions)
     ; ("top_heap_gb", StatisticsToolbox.to_json aggr_top_heap_gb)
     ; ("stack_kb", StatisticsToolbox.to_json aggr_stack_kb)
-    ; ("minor_heap_kb", StatisticsToolbox.to_json aggr_minor_heap_kb)
-    ; ("attributes_table", aggr_attributes_table) ]
+    ; ("minor_heap_kb", StatisticsToolbox.to_json aggr_minor_heap_kb) ]
 
 let stats () =
   let words_to_kb n = n *. float_of_int (Sys.word_size / 8) /. 1024. in
@@ -116,7 +108,6 @@ let stats () =
   let gc_ctrl = Gc.get () in
   let exit_timeofday = Unix.gettimeofday () in
   let exit_times = Unix.times () in
-  let at = AttributesTable.stats () in
   { rtime= exit_timeofday -. Utils.initial_timeofday
   ; utime= exit_times.tms_utime -. Utils.initial_times.tms_utime
   ; stime= exit_times.tms_stime -. Utils.initial_times.tms_stime
@@ -131,8 +122,7 @@ let stats () =
   ; compactions= gc_stats.compactions
   ; top_heap_gb= words_to_gb (float_of_int gc_stats.top_heap_words)
   ; stack_kb= words_to_kb (float_of_int gc_stats.stack_size)
-  ; minor_heap_kb= words_to_kb (float_of_int gc_ctrl.minor_heap_size)
-  ; attributes_table= at }
+  ; minor_heap_kb= words_to_kb (float_of_int gc_ctrl.minor_heap_size) }
 
 let report_at_exit file () =
   try

@@ -8,6 +8,7 @@
 #require "ctypes";;
 #require "ctypes.stubs";;
 #require "sawja";;
+#require "sqlite3";;
 #require "atdgen";;
 #require "xmlm";;
 #require "ANSITerminal";;

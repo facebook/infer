@@ -59,6 +59,7 @@ let common_libraries =
     ; "extlib"
     ; "oUnit"
     ; "parmap"
+    ; "sqlite3"
     ; "str"
     ; "unix"
     ; "xmlm"

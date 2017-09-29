@@ -32,6 +32,9 @@ val empty : t
 val run : t -> unit
 (** Run the closures and continuation *)
 
+val fork_protect : f:('a -> 'b) -> 'a -> 'b
+(** does the bookkeeping necessary to safely execute an infer function [f] after a call to fork(2) *)
+
 module Runner : sig
   (** A runner accepts new tasks repeatedly for parallel execution *)
   type runner

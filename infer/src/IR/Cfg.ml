@@ -106,7 +106,7 @@ let save_attributes source_file cfg =
       let loc' = if Location.equal loc Location.dummy then {loc with file= source_file} else loc in
       {attributes with loc= loc'; source_file_captured= source_file}
     in
-    AttributesTable.store_attributes attributes'
+    Attributes.store attributes'
   in
   List.iter ~f:save_proc (get_all_procs cfg)
 
@@ -419,7 +419,7 @@ let specialize_types callee_pdesc resolved_pname args =
   let resolved_attributes =
     {callee_attributes with formals= List.rev resolved_params; proc_name= resolved_pname}
   in
-  AttributesTable.store_attributes resolved_attributes ;
+  Attributes.store resolved_attributes ;
   let resolved_pdesc =
     let tmp_cfg = create_cfg () in
     create_proc_desc tmp_cfg resolved_attributes

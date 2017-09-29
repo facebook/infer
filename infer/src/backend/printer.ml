@@ -407,7 +407,7 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
   let process_proc =
     Procdesc.is_defined proc_desc && SourceFile.equal proc_loc.Location.file source
     &&
-    match AttributesTable.find_file_capturing_procedure ~cache:true proc_name with
+    match Attributes.find_file_capturing_procedure proc_name with
     | None
      -> true
     | Some (source_captured, _)

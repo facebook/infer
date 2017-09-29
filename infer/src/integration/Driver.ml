@@ -118,11 +118,11 @@ let clean_results_dir () =
   let should_delete_dir =
     let dirs_to_delete =
       let open Config in
-      backend_stats_dir_name
-      :: classnames_dir_name
-         :: frontend_stats_dir_name
-            :: multicore_dir_name
-               :: reporting_stats_dir_name :: (if Config.flavors then [] else [attributes_dir_name])
+      [ backend_stats_dir_name
+      ; classnames_dir_name
+      ; frontend_stats_dir_name
+      ; multicore_dir_name
+      ; reporting_stats_dir_name ]
     in
     List.mem ~equal:String.equal dirs_to_delete
   in
@@ -137,7 +137,7 @@ let clean_results_dir () =
       && ( List.mem ~equal:String.equal files_to_delete (Filename.basename name)
          || List.exists ~f:(Filename.check_suffix name) suffixes_to_delete )
   in
-  let rec clean name =
+  let rec delete_temp_results name =
     let rec cleandir dir =
       match Unix.readdir_opt dir with
       | Some entry
@@ -145,7 +145,7 @@ let clean_results_dir () =
           else if not
                     ( String.equal entry Filename.current_dir_name
                     || String.equal entry Filename.parent_dir_name )
-          then clean (name ^/ entry) ;
+          then delete_temp_results (name ^/ entry) ;
           cleandir dir
           (* next entry *)
       | None
@@ -160,7 +160,11 @@ let clean_results_dir () =
     | exception Unix.Unix_error (Unix.ENOENT, _, _)
      -> ()
   in
-  clean Config.results_dir
+  delete_temp_results Config.results_dir ;
+  if not Config.flavors then
+    (* we do not need to keep the capture data in Buck/Java mode *)
+    ResultsDir.reset_attributes_table () ;
+  ResultsDir.canonicalize_db ()
 
 let check_captured_empty mode =
   let clean_command_opt = clean_compilation_command mode in

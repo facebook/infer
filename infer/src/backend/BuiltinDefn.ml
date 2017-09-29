@@ -767,7 +767,7 @@ let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id; 
     match args with
     | [((Exp.Sizeof ({typ= {Typ.desc= Tstruct (ObjcClass _ as name)}} as sizeof_data) as e), _)]
      -> let e' =
-          match AttributesTable.get_correct_type_from_objc_class_name name with
+          match Attributes.get_correct_type_from_objc_class_name name with
           | Some struct_type
            -> Exp.Sizeof {sizeof_data with typ= struct_type}
           | None

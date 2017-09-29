@@ -56,13 +56,6 @@ let gen_previous_driver_mode script =
         (String.concat ~sep:" " command) ;
       Driver.mode_of_build_command command
 
-let delete_capture_and_analysis_artifacts () =
-  let dirs_to_delete =
-    List.map ~f:(Filename.concat Config.results_dir)
-      Config.([attributes_dir_name; captured_dir_name; specs_dir_name])
-  in
-  List.iter ~f:Utils.rmtree dirs_to_delete ; List.iter ~f:Unix.mkdir_p dirs_to_delete ; ()
-
 let diff driver_mode =
   Driver.run_prologue driver_mode ;
   let changed_files = Driver.read_config_changed_files () in
@@ -70,7 +63,7 @@ let diff driver_mode =
   Driver.analyze_and_report ~suppress_console_report:true driver_mode ~changed_files ;
   let current_report = Some (save_report Current) in
   (* Some files in the current checkout may be deleted in the old checkout. If we kept the results of the previous capture and analysis around, we would report issues on these files again in the previous checkout, which is wrong. Do not do anything too smart for now and just delete all results from the analysis of the current checkout. *)
-  delete_capture_and_analysis_artifacts () ;
+  ResultsDir.delete_capture_and_analysis_data () ;
   (* TODO(t15553258) bail if nothing to analyze (configurable, some people might care about bugs
      fixed more than about time to analyze) *)
   checkout Previous ;

@@ -16,9 +16,7 @@ let compilation_db = (lazy (CompilationDatabase.from_json_files !Config.clang_co
     frontend to finish before returning *)
 let try_capture (attributes: ProcAttributes.t) : ProcAttributes.t option =
   let lazy cdb = compilation_db in
-  ( if Option.is_none
-         (AttributesTable.load_defined_attributes ~cache_none:false attributes.proc_name)
-    then
+  ( if Option.is_none (Attributes.load_defined attributes.proc_name) then
       let decl_file = attributes.loc.file in
       let definition_file_opt = SourceFile.of_header decl_file in
       let try_compile definition_file =
@@ -35,9 +33,7 @@ let try_capture (attributes: ProcAttributes.t) : ProcAttributes.t option =
           protect
             ~f:(fun () -> CaptureCompilationDatabase.capture_file_in_database cdb definition_file)
             ~finally:Timeout.resume_previous_timeout ;
-          if Config.debug_mode
-             && Option.is_none
-                  (AttributesTable.load_defined_attributes ~cache_none:false attributes.proc_name)
+          if Config.debug_mode && Option.is_none (Attributes.load_defined attributes.proc_name)
           then
             (* peek at the results to know if capture succeeded, but only in debug mode *)
             L.(debug Capture Verbose)
@@ -62,11 +58,7 @@ let try_capture (attributes: ProcAttributes.t) : ProcAttributes.t option =
      - there was a race and proc_name got captured by the time we checked whether
        cfg_filename exists. In this case it's important to refetch attributes from disk because
        contents may have changed (attributes file for proc_name may be there now)
-     - proc_name can't be captured (there is no definition we know of). In that case
-       result will stay None. At this point we know(?) we won't be able to find definition
-       for it ever so we can cache None.
-       Caveat: it's possible that procedure will be captured in some other unrelated file
-               later - infer may ignore it then.
-     It also relies on retry mechanism in deserialization code to deal with half-written
-     attributes files *)
-  AttributesTable.load_defined_attributes ~cache_none:true attributes.proc_name
+
+     Caveat: it's possible that procedure will be captured in some other unrelated file
+             later - infer may ignore it then. *)
+  Attributes.load_defined attributes.proc_name

@@ -90,7 +90,7 @@ let add_cg (exe_env: t) (source_dir: DB.source_dir) =
       let defined_procs = Cg.get_defined_nodes cg in
       let duplicate_procs_to_print =
         List.filter_map defined_procs ~f:(fun pname ->
-            match AttributesTable.find_file_capturing_procedure ~cache:false pname with
+            match Attributes.find_file_capturing_procedure pname with
             | None
              -> None
             | Some (source_captured, origin)
@@ -115,7 +115,7 @@ let get_file_data exe_env pname =
   try Some (Typ.Procname.Hash.find exe_env.proc_map pname)
   with Not_found ->
     let source_file_opt =
-      match AttributesTable.load_attributes ~cache:true pname with
+      match Attributes.load pname with
       | None
        -> L.(debug Analysis Medium) "can't find tenv_cfg_object for %a@." Typ.Procname.pp pname ;
           None
