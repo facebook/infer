@@ -13,8 +13,7 @@ open! IStd
 
 type attributes_kind
 
-module Table :
-  KeyValue.Table with type key = Typ.Procname.t * attributes_kind and type value = ProcAttributes.t
+module Table : KeyValue.Table with type key = string and type value = ProcAttributes.t
 
 module Store : KeyValue.S with module Table = Table
 

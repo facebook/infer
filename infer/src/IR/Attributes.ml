@@ -40,7 +40,7 @@ let should_override_attr attr1 attr2 =
   > 0
 
 module Table = struct
-  type key = Typ.Procname.t * attributes_kind
+  type key = string
 
   type value = ProcAttributes.t
 
@@ -49,20 +49,44 @@ end
 
 module Store = KeyValue.Make (Table)
 
+let string_of_pkind = function
+  | ProcUndefined
+   -> "U"
+  | ProcObjCAccessor
+   -> "O"
+  | ProcDefined
+   -> "D"
+
+module KeyHashtbl = Caml.Hashtbl.Make (struct
+  type t = Typ.Procname.t * attributes_kind
+
+  let equal = [%compare.equal : Typ.Procname.t * attributes_kind]
+
+  let hash = Hashtbl.hash
+end)
+
+let pname_to_key = KeyHashtbl.create 16
+
+let key_of_pname_pkind (pname, pkind as p) =
+  try KeyHashtbl.find pname_to_key p
+  with Not_found ->
+    let key = Typ.Procname.to_filename pname ^ string_of_pkind pkind |> Store.blob_of_key in
+    KeyHashtbl.replace pname_to_key p key ; key
+
 let load_aux ?(min_kind= ProcUndefined) pname =
   List.find_map (most_relevant_down_to_proc_kind_inclusive min_kind) ~f:(fun pkind ->
-      Store.find (pname, pkind) )
+      key_of_pname_pkind (pname, pkind) |> Store.find )
 
 let load pname : ProcAttributes.t option = load_aux pname
 
 let store (attr: ProcAttributes.t) =
   let pkind = proc_kind_of_attr attr in
-  let key = (attr.proc_name, pkind) in
-  if load attr.proc_name |> Option.value_map ~default:true ~f:(should_override_attr attr) then (
+  if load attr.proc_name |> Option.value_map ~default:true ~f:(should_override_attr attr) then
     (* NOTE: We need to do this dance of adding the proc_kind to the key because there's a race condition between the time we load the attributes from the db and the time we write possibly better ones. We could avoid this by making the db schema richer than just key/value and turning the SELECT + REPLACE into an atomic transaction. *)
-    Store.replace key attr ;
+    let key = key_of_pname_pkind (attr.proc_name, pkind) in
+    Store.replace key (Store.blob_of_value attr) ;
     least_relevant_up_to_proc_kind_exclusive pkind
-    |> List.iter ~f:(fun k -> Store.delete (attr.proc_name, k)) )
+    |> List.iter ~f:(fun k -> key_of_pname_pkind (attr.proc_name, k) |> Store.delete)
 
 let load_defined pname = load_aux ~min_kind:ProcDefined pname
 

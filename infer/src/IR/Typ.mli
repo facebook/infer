@@ -299,6 +299,7 @@ module Procname : sig
     | ObjCInternalMethod
 
   (** Hash tables with proc names as keys. *)
+  module Hashable : Caml.Hashtbl.HashedType with type t = t
 
   module Hash : Caml.Hashtbl.S with type key = t
 
@@ -479,8 +480,8 @@ module Procname : sig
   val to_unique_id : t -> string
   (** Convert a proc name into a unique identifier. *)
 
-  val to_filename : t -> string
-  (** Convert a proc name to a filename. *)
+  val to_filename : ?crc_only:bool -> t -> string
+  (** Convert a proc name to a filename or only to its crc. *)
 
   val get_qualifiers : t -> QualifiedCppName.t
   (** get qualifiers of C/objc/C++ method/function *)

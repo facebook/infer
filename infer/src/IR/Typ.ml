@@ -969,13 +969,15 @@ module Procname = struct
   (** hash function for procname *)
   let hash_pname = Hashtbl.hash
 
-  module Hash = Hashtbl.Make (struct
+  module Hashable = struct
     type nonrec t = t
 
     let equal = equal
 
     let hash = hash_pname
-  end)
+  end
+
+  module Hash = Hashtbl.Make (Hashable)
 
   module Map = PrettyPrintable.MakePPMap (struct
     type nonrec t = t
@@ -1009,7 +1011,7 @@ module Procname = struct
      -> QualifiedCppName.empty
 
   (** Convert a proc name to a filename *)
-  let to_concrete_filename pname =
+  let to_concrete_filename ?crc_only pname =
     (* filenames for clang procs are REVERSED qualifiers with '#' as separator *)
     let get_qual_name_str pname =
       get_qualifiers pname |> QualifiedCppName.to_rev_list |> String.concat ~sep:"#"
@@ -1023,21 +1025,21 @@ module Procname = struct
       | _
        -> to_unique_id pname
     in
-    Escape.escape_filename @@ DB.append_crc_cutoff proc_id
+    Escape.escape_filename @@ DB.append_crc_cutoff ?crc_only proc_id
 
-  let to_generic_filename pname =
+  let to_generic_filename ?crc_only pname =
     let proc_id =
       get_qualifiers pname |> QualifiedCppName.strip_template_args |> QualifiedCppName.to_rev_list
       |> String.concat ~sep:"#"
     in
-    Escape.escape_filename @@ DB.append_crc_cutoff proc_id
+    Escape.escape_filename @@ DB.append_crc_cutoff ?crc_only proc_id
 
-  let to_filename pname =
+  let to_filename ?crc_only pname =
     match pname with
     | (C {is_generic_model} | ObjC_Cpp {is_generic_model}) when Bool.equal is_generic_model true
-     -> to_generic_filename pname
+     -> to_generic_filename ?crc_only pname
     | _
-     -> to_concrete_filename pname
+     -> to_concrete_filename ?crc_only pname
 
   (** given two template arguments, try to generate mapping from generic ones to concrete ones. *)
   let get_template_args_mapping generic_procname concrete_procname =

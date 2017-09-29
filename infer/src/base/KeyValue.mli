@@ -22,23 +22,27 @@ end
 module type S = sig
   module Table : Table
 
-  val blob_of_key : Table.key -> Sqlite3.Data.t
+  type key_blob
+
+  type value_blob
+
+  val blob_of_key : Table.key -> key_blob
   (** turn a key into a [Sqlite3.Data.BLOB] *)
 
-  val blob_of_value : Table.value -> Sqlite3.Data.t
+  val blob_of_value : Table.value -> value_blob
   (** turn a value into a [Sqlite3.Data.BLOB] *)
 
-  val key_of_blob : Sqlite3.Data.t -> Table.key option
-  (** turn a [Sqlite3.Data.BLOB] (or [Sqlite3.Data.NULL]) back into a key *)
+  external key_blob_of_data : Sqlite3.Data.t -> key_blob = "%identity"
 
-  val value_of_blob : Sqlite3.Data.t -> Table.value option
-  (** turn a [Sqlite3.Data.BLOB] (or [Sqlite3.Data.NULL]) back into a value *)
+  external value_blob_of_data : Sqlite3.Data.t -> value_blob = "%identity"
 
-  val replace : Table.key -> Table.value -> unit
+  val value_of_blob : value_blob -> Table.value option
 
-  val find : Table.key -> Table.value option
+  val replace : key_blob -> value_blob -> unit
 
-  val delete : Table.key -> unit
+  val find : key_blob -> Table.value option
+
+  val delete : key_blob -> unit
 end
 
 module Make (Table : Table) : S with module Table = Table
