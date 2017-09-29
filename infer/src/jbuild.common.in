@@ -54,6 +54,7 @@ let common_libraries =
   (if java then ["javalib"; "ptrees"; "sawja"] else [])
   @ [ "ANSITerminal"
     ; "atdgen"
+    ; "base"
     ; "cmdliner"
     ; "core"
     ; "extlib"

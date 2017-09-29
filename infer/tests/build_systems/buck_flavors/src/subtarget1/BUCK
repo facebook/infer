@@ -1,0 +1,10 @@
+cxx_library(
+  name = 'subtarget1',
+  visibility = [
+    'PUBLIC',
+  ],
+  srcs = [
+    'z_filename_greater_than_subhello1.c',
+    'subhello1.c',
+  ],
+)

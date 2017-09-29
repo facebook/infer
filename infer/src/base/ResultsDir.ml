@@ -16,8 +16,6 @@ let database_filename = "results.db"
 
 let database_fullpath = Config.results_dir ^/ database_filename
 
-let attributes_table = "attributes"
-
 let results_dir_dir_markers =
   List.map ~f:(Filename.concat Config.results_dir) [Config.captured_dir_name; Config.specs_dir_name]
 
@@ -48,10 +46,16 @@ let remove_results_dir () =
     Utils.rmtree Config.results_dir )
 
 let create_attributes_table db =
+  (* it would be nice to use "WITHOUT ROWID" here but ancient versions of sqlite do not support
+     it *)
   SqliteUtils.exec db ~log:"initializing results DB"
     ~stmt:
-      (Printf.sprintf "CREATE TABLE IF NOT EXISTS %s (key BLOB PRIMARY KEY ,value BLOB)"
-         attributes_table)
+      {|
+CREATE TABLE IF NOT EXISTS attributes
+  ( proc_name TEXT PRIMARY KEY
+  , attr_kind INTEGER NOT NULL
+  , source_file TEXT NOT NULL
+  , proc_attributes BLOB NOT NULL )|}
 
 let create_db () =
   let temp_db = Filename.temp_file ~in_dir:Config.results_dir database_filename ".tmp" in
@@ -112,8 +116,7 @@ let get_database () = Option.value_exn !database
 
 let reset_attributes_table () =
   let db = get_database () in
-  SqliteUtils.exec db ~log:"drop attributes table"
-    ~stmt:(Printf.sprintf "DROP TABLE %s" attributes_table) ;
+  SqliteUtils.exec db ~log:"drop attributes table" ~stmt:"DROP TABLE attributes" ;
   create_attributes_table db
 
 let delete_capture_and_analysis_data () =
@@ -126,3 +129,29 @@ let delete_capture_and_analysis_data () =
 let canonicalize_db () =
   let db = get_database () in
   SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
+
+let register_statement stmt_fmt =
+  let k stmt0 =
+    let stmt_ref = ref None in
+    let new_statement db =
+      let stmt =
+        try Sqlite3.prepare db stmt0
+        with Sqlite3.Error error ->
+          L.die InternalError "Could not prepare the following statement:@\n%s@\nReason: %s" stmt0
+            error
+      in
+      on_close_database ~f:(fun _ -> SqliteUtils.finalize ~log:"db close callback" stmt) ;
+      stmt_ref := Some stmt
+    in
+    on_new_database_connection ~f:new_statement ;
+    fun () ->
+      match !stmt_ref with
+      | None
+       -> L.(die InternalError) "database not initialized"
+      | Some stmt
+       -> Sqlite3.reset stmt |> SqliteUtils.check_sqlite_error ~log:"reset prepared statement" ;
+          Sqlite3.clear_bindings stmt
+          |> SqliteUtils.check_sqlite_error ~log:"clear bindings of prepared statement" ;
+          stmt
+  in
+  Printf.ksprintf k stmt_fmt

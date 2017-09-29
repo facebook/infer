@@ -281,7 +281,10 @@ module Procname : sig
     [@@deriving compare]
 
   val equal : t -> t -> bool
-  (** Equality for proc names. *)
+
+  val hash : t -> int
+
+  val sexp_of_t : t -> Sexp.t
 
   type java_type = string option * string
 

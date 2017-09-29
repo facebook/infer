@@ -11,12 +11,6 @@
 
 open! IStd
 
-type attributes_kind
-
-module Table : KeyValue.Table with type key = string and type value = ProcAttributes.t
-
-module Store : KeyValue.S with module Table = Table
-
 val store : ProcAttributes.t -> unit
 (** Save .attr file for the procedure into the attributes database. *)
 

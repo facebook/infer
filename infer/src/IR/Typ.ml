@@ -547,6 +547,8 @@ module Procname = struct
 
   let equal = [%compare.equal : t]
 
+  let hash = Hashtbl.hash
+
   (** Level of verbosity of some to_string functions. *)
   type detail_level = Verbose | Non_verbose | Simple [@@deriving compare]
 
@@ -948,6 +950,8 @@ module Procname = struct
      -> name
     | Linters_dummy_method
      -> to_unique_id p
+
+  let sexp_of_t p = Sexp.Atom (to_string p)
 
   (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
   let to_simplified_string ?(withclass= false) p =

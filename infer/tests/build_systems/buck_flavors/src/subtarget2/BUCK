@@ -1,0 +1,9 @@
+cxx_library(
+  name = 'subtarget2',
+  visibility = [
+    'PUBLIC',
+  ],
+  srcs = [
+    'subhello2.c',
+  ],
+)

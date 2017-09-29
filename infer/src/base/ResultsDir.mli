@@ -15,9 +15,6 @@ val database_filename : string
 val get_database : unit -> Sqlite3.db
 (** The results database. You should always use this function to access the database, as the connection to it may change during the execution (see [new_database_connection]). *)
 
-val attributes_table : string
-(** the name of the table of proc names to their proc attributes  *)
-
 val reset_attributes_table : unit -> unit
 (** zero out the attributes table *)
 
@@ -39,6 +36,11 @@ val delete_capture_and_analysis_data : unit -> unit
 val canonicalize_db : unit -> unit
 (** put the database on disk in deterministic form *)
 
-val on_new_database_connection : f:(Sqlite3.db -> unit) -> unit
+val register_statement : ('a, unit, string, (unit -> Sqlite3.stmt)) Base.format4 -> 'a
+(** Return a function unit -> Sqlite3.stmt that can be called (once the DB has been initialized) to
+    get the prepared statement corresponding to the current DB connection. Use this to prepare
+    statements only once per DB connection.
 
-val on_close_database : f:(Sqlite3.db -> unit) -> unit
+    In particular, clients of this need not worry about calling [Sqlite3.finalize] on the returned
+    statement, or about generating new statements when the connection to the DB changes: this is all
+    handled internally. *)
