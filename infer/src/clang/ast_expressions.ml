@@ -29,7 +29,6 @@ let fresh_decl_info decl_info =
 let empty_decl_info =
   { Clang_ast_t.di_pointer= CAst_utils.get_invalid_pointer ()
   ; di_parent_pointer= None
-  ; di_previous_decl= `None
   ; di_source_range= dummy_source_range ()
   ; di_owning_module= None
   ; di_is_hidden= false
