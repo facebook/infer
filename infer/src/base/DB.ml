@@ -28,7 +28,7 @@ let append_crc_cutoff ?(key= "") ?(crc_only= false) name =
     let name_for_crc = name ^ key in
     Utils.string_crc_hex32 name_for_crc
   in
-  if crc_only then crc_str else name_up_to_cutoff ^ Char.to_string crc_token ^ crc_str
+  if crc_only then crc_str else Printf.sprintf "%s%c%s" name_up_to_cutoff crc_token crc_str
 
 (* Lengh of .crc part: 32 characters of digest, plus 1 character of crc_token *)
 let dot_crc_len = 1 + 32

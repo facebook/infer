@@ -62,9 +62,6 @@ let get_replace_statement =
      in several files *)
   (* TRICK: older versions of sqlite (prior to version 3.15.0 (2016-10-14)) do not support row
      values so the lexicographic ordering for (:akind, :sfile) is done by hand *)
-  (* TODO (optim): it might be worth not generating the source file everytime we do a store, but
-     only generate it if the attribute needs updating (which should be orders of magnitude less
-     frequent) *)
   ResultsDir.register_statement
     {|
 INSERT OR REPLACE INTO attributes
@@ -91,6 +88,24 @@ let replace pname_blob akind loc_file attr_blob =
   |> SqliteUtils.check_sqlite_error ~log:"replace bind proc attributes" ;
   SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Attributes.replace" replace_stmt
 
+let get_find_more_defined_statement =
+  ResultsDir.register_statement
+    {|
+SELECT attr_kind
+FROM attributes
+WHERE proc_name = :pname
+      AND attr_kind > :akind
+|}
+
+let should_try_to_update pname_blob akind =
+  let find_stmt = get_find_more_defined_statement () in
+  Sqlite3.bind find_stmt 1 (* :pname *) pname_blob
+  |> SqliteUtils.check_sqlite_error ~log:"replace bind pname" ;
+  Sqlite3.bind find_stmt 2 (* :akind *) (Sqlite3.Data.INT (int64_of_attributes_kind akind))
+  |> SqliteUtils.check_sqlite_error ~log:"replace bind attribute kind" ;
+  SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.replace" find_stmt
+  |> (* there is no entry with a strictly larger "definedness" for that proc name *) Option.is_none
+
 let get_select_statement =
   ResultsDir.register_statement "SELECT proc_attributes FROM attributes WHERE proc_name = :k"
 
@@ -111,7 +126,8 @@ let load pname = Data.of_pname pname |> find ~defined:false
 let store (attr: ProcAttributes.t) =
   let pkind = proc_kind_of_attr attr in
   let key = Data.of_pname attr.proc_name in
-  replace key pkind (Data.of_source_file attr.loc.Location.file) (Data.of_proc_attr attr)
+  if should_try_to_update key pkind then
+    replace key pkind (Data.of_source_file attr.loc.Location.file) (Data.of_proc_attr attr)
 
 let load_defined pname = Data.of_pname pname |> find ~defined:true
 
