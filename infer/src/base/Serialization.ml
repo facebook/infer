@@ -46,7 +46,7 @@ let retry_exception ~timeout ~catch_exn ~f x =
   let expired () = Unix.gettimeofday () -. init_time >= timeout in
   let rec retry () =
     try f x
-    with e when catch_exn e && not (expired ()) -> retry ()
+    with e when catch_exn e && not (expired ()) -> (retry [@tailcall]) ()
   in
   retry ()
 
