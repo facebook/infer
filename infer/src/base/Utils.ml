@@ -308,3 +308,11 @@ let rec rmtree name =
    -> Unix.unlink name
   | exception Unix.Unix_error (Unix.ENOENT, _, _)
    -> ()
+
+let without_gc ~f =
+  let stat = Gc.get () in
+  let space_oh = stat.space_overhead in
+  Gc.set {stat with space_overhead= 10000} ;
+  let res = f () in
+  Gc.set {stat with space_overhead= space_oh} ;
+  res

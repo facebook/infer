@@ -98,3 +98,6 @@ val rmtree : string -> unit
 val try_finally_swallow_timeout : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
 (** Calls [f] then [finally] even if [f] raised an exception. The original exception is reraised afterwards.
     Where possible use [SymOp.try_finally] to avoid swallowing timeouts. *)
+
+val without_gc : f:(unit -> unit) -> unit
+(** Call [f ()] with the gc compaction disabled during the execution *)

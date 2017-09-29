@@ -20,6 +20,7 @@ compile everything from source (see the end of this document).
 
 - opam 1.2.2 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - Python 2.7
+- sqlite
 - pkg-config
 - Java (only needed for the Java analysis)
 - cmake (only needed for the C/Objective-C analysis)
@@ -32,7 +33,7 @@ You can install some of these dependencies using
 [Homebrew](http://brew.sh/):
 
 ```sh
-brew install autoconf automake cmake opam pkg-config
+brew install autoconf automake cmake opam pkg-config sqlite
 brew cask install java
 ```
 

@@ -26,7 +26,8 @@ let merge ~into db =
   let db_name = "db" in
   SqliteUtils.check_sqlite_error ~fatal:true ~log:"attaching db"
     (Sqlite3.exec into (Printf.sprintf "ATTACH '%s' AS %s" db db_name)) ;
-  merge_attributes_table ~into ~db_name ;
+  let do_merge () = merge_attributes_table ~into ~db_name in
+  Utils.without_gc ~f:do_merge ;
   SqliteUtils.check_sqlite_error ~fatal:true ~log:"detaching db"
     (Sqlite3.exec into (Printf.sprintf "DETACH %s" db_name)) ;
   ()

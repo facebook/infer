@@ -962,15 +962,6 @@ module AnalysisResults = struct
       if List.is_empty Config.anon_args then load_specfiles () else List.rev Config.anon_args )
     else load_specfiles ()
 
-  (** apply [f] to [arg] with the gc compaction disabled during the execution *)
-  let apply_without_gc f arg =
-    let stat = Gc.get () in
-    let space_oh = stat.space_overhead in
-    Gc.set {stat with space_overhead= 10000} ;
-    let res = f arg in
-    Gc.set {stat with space_overhead= space_oh} ;
-    res
-
   (** Load .specs files in memory and return list of summaries *)
   let load_summaries_in_memory () : t =
     let summaries = ref [] in
@@ -981,7 +972,8 @@ module AnalysisResults = struct
       | Some summary
        -> summaries := (fname, summary) :: !summaries
     in
-    apply_without_gc (List.iter ~f:load_file) (spec_files_from_cmdline ()) ;
+    let do_load () = spec_files_from_cmdline () |> List.iter ~f:load_file in
+    Utils.without_gc ~f:do_load ;
     let summ_cmp (_, summ1) (_, summ2) =
       let n =
         SourceFile.compare summ1.Specs.attributes.ProcAttributes.loc.Location.file
