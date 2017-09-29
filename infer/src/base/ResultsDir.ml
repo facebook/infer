@@ -12,10 +12,6 @@ module L = Logging
 
 let database : Sqlite3.db option ref = ref None
 
-let () =
-  Epilogues.register "closing results database" ~f:(fun () ->
-      Option.iter !database ~f:SqliteUtils.db_close )
-
 let database_filename = "results.db"
 
 let database_fullpath = Config.results_dir ^/ database_filename
@@ -69,13 +65,33 @@ let create_db () =
   try Sys.rename temp_db database_fullpath
   with Sys_error _ -> (* lost the race, doesn't matter *) ()
 
+let new_db_callbacks = ref []
+
+let on_new_database_connection ~f = new_db_callbacks := f :: !new_db_callbacks
+
+let close_db_callbacks = ref []
+
+let on_close_database ~f = close_db_callbacks := f :: !close_db_callbacks
+
+let do_db_close db =
+  List.iter ~f:(fun callback -> callback db) !close_db_callbacks ;
+  close_db_callbacks := [] ;
+  SqliteUtils.db_close db
+
+let db_close () =
+  Option.iter !database ~f:do_db_close ;
+  database := None
+
 let new_database_connection () =
-  Option.iter !database ~f:SqliteUtils.db_close ;
+  db_close () ;
   let db = Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL database_fullpath in
   Sqlite3.busy_timeout db 1000 ;
   (* Higher level of "synchronous" are only useful to guarantee that the db will not be corrupted if the machine crashes for some reason before the data has been actually written to disk. We do not need this kind of guarantee for infer results as one can always rerun infer if interrupted. *)
   SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
-  database := Some db
+  database := Some db ;
+  List.iter ~f:(fun callback -> callback db) !new_db_callbacks
+
+let () = Epilogues.register "closing results database" ~f:db_close
 
 let create_results_dir () =
   Unix.mkdir_p Config.results_dir ;

@@ -38,3 +38,7 @@ val delete_capture_and_analysis_data : unit -> unit
 
 val canonicalize_db : unit -> unit
 (** put the database on disk in deterministic form *)
+
+val on_new_database_connection : f:(Sqlite3.db -> unit) -> unit
+
+val on_close_database : f:(Sqlite3.db -> unit) -> unit

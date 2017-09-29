@@ -33,7 +33,7 @@ let finalize ~log stmt =
   | Sqlite3.Error err
    -> error ~fatal:true "finalize: %s: %s" log err
 
-let sqlite_result_rev_list_step ~log stmt =
+let sqlite_result_rev_list_step ?finalize:(do_finalize = true) ~log stmt =
   let rec aux rev_results =
     match Sqlite3.step stmt with
     | Sqlite3.Rc.ROW
@@ -45,10 +45,11 @@ let sqlite_result_rev_list_step ~log stmt =
     | err
      -> L.die InternalError "%s: %s" log (Sqlite3.Rc.to_string err)
   in
-  protect ~finally:(fun () -> finalize ~log stmt) ~f:(fun () -> aux [])
+  if do_finalize then protect ~finally:(fun () -> finalize ~log stmt) ~f:(fun () -> aux [])
+  else aux []
 
-let sqlite_result_step ~log stmt =
-  match sqlite_result_rev_list_step ~log stmt with
+let sqlite_result_step ?finalize ~log stmt =
+  match sqlite_result_rev_list_step ?finalize ~log stmt with
   | []
    -> None
   | [x]
@@ -56,8 +57,8 @@ let sqlite_result_step ~log stmt =
   | l
    -> L.die InternalError "%s: zero or one result expected, got %d instead" log (List.length l)
 
-let sqlite_unit_step ~log stmt =
-  match sqlite_result_rev_list_step ~log stmt with
+let sqlite_unit_step ?finalize ~log stmt =
+  match sqlite_result_rev_list_step ?finalize ~log stmt with
   | []
    -> ()
   | l

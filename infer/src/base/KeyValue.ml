@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 open! IStd
+module L = Logging
 
 module type Table = sig
   type key
@@ -65,35 +66,53 @@ module Make (Table : Table) : S with module Table = Table = struct
   (* cannot mix, e.g., blob_key and blob_value now *)
   include Unsafe
 
-  let replace =
-    let replace_statement =
-      Printf.sprintf "REPLACE INTO %s(key, value) VALUES(:k, :v)" Table.table
+  let register_statement stmt_fmt =
+    let k stmt0 =
+      let stmt_ref = ref None in
+      let new_statement db =
+        let stmt = Sqlite3.prepare db stmt0 in
+        ResultsDir.on_close_database ~f:(fun _ ->
+            Option.iter !stmt_ref ~f:(SqliteUtils.finalize ~log:"db close callback") ) ;
+        stmt_ref := Some stmt
+      in
+      ResultsDir.on_new_database_connection ~f:new_statement ;
+      fun () ->
+        match !stmt_ref with
+        | None
+         -> L.(die InternalError) "database not initialized"
+        | Some stmt
+         -> Sqlite3.reset stmt |> SqliteUtils.check_sqlite_error ~log:"reset prepared statement" ;
+            Sqlite3.clear_bindings stmt
+            |> SqliteUtils.check_sqlite_error ~log:"clear bindings of prepared statement" ;
+            stmt
     in
-    fun key value ->
-      let db = ResultsDir.get_database () in
-      let replace_stmt = Sqlite3.prepare db replace_statement in
-      SqliteUtils.check_sqlite_error ~log:"replace bind key"
-        (Sqlite3.bind replace_stmt 1 (blob_of_key key)) ;
-      SqliteUtils.check_sqlite_error ~log:"replace bind value"
-        (Sqlite3.bind replace_stmt 2 (blob_of_value value)) ;
-      SqliteUtils.sqlite_unit_step ~log:"KeyValue.replace" replace_stmt
+    Printf.ksprintf k stmt_fmt
 
-  let find =
-    let select_statement = Printf.sprintf "SELECT value FROM %s WHERE key = :k" Table.table in
-    fun key ->
-      let db = ResultsDir.get_database () in
-      let select_stmt = Sqlite3.prepare db select_statement in
-      SqliteUtils.check_sqlite_error ~log:"insert bind key"
-        (Sqlite3.bind select_stmt 1 (blob_of_key key)) ;
-      Option.bind ~f:value_of_blob
-        (SqliteUtils.sqlite_result_step ~log:"KeyValue.find" select_stmt)
+  let get_replace_statement =
+    register_statement "REPLACE INTO %s(key, value) VALUES(:k, :v)" Table.table
 
-  let delete =
-    let delete_statement = Printf.sprintf "DELETE FROM %s WHERE key = :k" Table.table in
-    fun key ->
-      let db = ResultsDir.get_database () in
-      let delete_stmt = Sqlite3.prepare db delete_statement in
-      SqliteUtils.check_sqlite_error ~log:"delete bind key"
-        (Sqlite3.bind delete_stmt 1 (blob_of_key key)) ;
-      SqliteUtils.sqlite_unit_step ~log:"KeyValue.delete" delete_stmt
+  let replace key value =
+    let replace_stmt = get_replace_statement () in
+    Sqlite3.bind replace_stmt 1 (blob_of_key key)
+    |> SqliteUtils.check_sqlite_error ~log:"replace bind key" ;
+    Sqlite3.bind replace_stmt 2 (blob_of_value value)
+    |> SqliteUtils.check_sqlite_error ~log:"replace bind value" ;
+    SqliteUtils.sqlite_unit_step ~finalize:false ~log:"KeyValue.replace" replace_stmt
+
+  let get_select_statement = register_statement "SELECT value FROM %s WHERE key = :k" Table.table
+
+  let find key =
+    let select_stmt = get_select_statement () in
+    Sqlite3.bind select_stmt 1 (blob_of_key key)
+    |> SqliteUtils.check_sqlite_error ~log:"insert bind key" ;
+    SqliteUtils.sqlite_result_step ~finalize:false ~log:"KeyValue.find" select_stmt
+    |> Option.bind ~f:value_of_blob
+
+  let get_delete_statement = register_statement "DELETE FROM %s WHERE key = :k" Table.table
+
+  let delete key =
+    let delete_stmt = get_delete_statement () in
+    Sqlite3.bind delete_stmt 1 (blob_of_key key)
+    |> SqliteUtils.check_sqlite_error ~log:"delete bind key" ;
+    SqliteUtils.sqlite_unit_step ~finalize:false ~log:"KeyValue.delete" delete_stmt
 end
