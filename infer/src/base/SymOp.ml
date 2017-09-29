@@ -23,22 +23,21 @@ exception Analysis_failure_exe of failure_kind(** failure that prevented analysi
 
 let exn_not_failure = function Analysis_failure_exe _ -> false | _ -> true
 
-let try_finally ?(fail_early= false) f g =
+let try_finally ~f ~finally =
   match f () with
   | r
-   -> g () ; r
+   -> finally () ; r
   | exception (Analysis_failure_exe _ as f_exn)
    -> reraise_after f_exn ~f:(fun () ->
-          if not fail_early then
-            try g ()
-            with _ -> (* swallow in favor of the original exception *) () )
+          try finally ()
+          with _ -> (* swallow in favor of the original exception *) () )
   | exception f_exn
    -> reraise_after f_exn ~f:(fun () ->
-          try g ()
+          try finally ()
           with
-          | g_exn
-          when (* do not swallow Analysis_failure_exe thrown from g *)
-               match g_exn with Analysis_failure_exe _ -> false | _ -> true
+          | finally_exn
+          when (* do not swallow Analysis_failure_exe thrown from finally *)
+               match finally_exn with Analysis_failure_exe _ -> false | _ -> true
           -> () )
 
 let pp_failure_kind fmt = function

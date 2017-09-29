@@ -2417,7 +2417,7 @@ let specs_library =
 let set_reference_and_call_function reference value f x =
   let saved = !reference in
   let restore () = reference := saved in
-  Utils.try_finally
+  Utils.try_finally_swallow_timeout
     ~f:(fun () ->
       reference := value ;
       f x)

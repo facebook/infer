@@ -165,7 +165,7 @@ let read_json_file path =
   try Ok (Yojson.Basic.from_file path)
   with Sys_error msg | Yojson.Json_error msg -> Error msg
 
-let do_finally ~f ~finally =
+let do_finally_swallow_timeout ~f ~finally =
   let res =
     try f ()
     with exc ->
@@ -176,21 +176,21 @@ let do_finally ~f ~finally =
   let res' = finally () in
   (res, res')
 
-let try_finally ~f ~finally =
-  let res, () = do_finally ~f ~finally in
+let try_finally_swallow_timeout ~f ~finally =
+  let res, () = do_finally_swallow_timeout ~f ~finally in
   res
 
 let with_file_in file ~f =
   let ic = In_channel.create file in
   let f () = f ic in
   let finally () = In_channel.close ic in
-  try_finally ~f ~finally
+  try_finally_swallow_timeout ~f ~finally
 
 let with_file_out file ~f =
   let oc = Out_channel.create file in
   let f () = f oc in
   let finally () = Out_channel.close oc in
-  try_finally ~f ~finally
+  try_finally_swallow_timeout ~f ~finally
 
 let write_json_to_file destfile json =
   with_file_out destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
@@ -203,7 +203,7 @@ let with_process_in command read =
   let chan = Unix.open_process_in command in
   let f () = read chan in
   let finally () = consume_in chan ; Unix.close_process_in chan in
-  do_finally ~f ~finally
+  do_finally_swallow_timeout ~f ~finally
 
 let shell_escape_command cmd =
   let escape arg =

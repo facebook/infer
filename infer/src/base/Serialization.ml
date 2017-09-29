@@ -94,8 +94,8 @@ let create_serializer (key: Key.t) : 'a serializer =
         in
         (* Retry to read for 1 second in case of end of file, *)
         (* which indicates that another process is writing the same file. *)
-        SymOp.try_finally (fun () -> retry_exception ~timeout:1.0 ~catch_exn ~f:read ()) (fun () ->
-            In_channel.close inc )
+        SymOp.try_finally ~f:(fun () -> retry_exception ~timeout:1.0 ~catch_exn ~f:read ())
+          ~finally:(fun () -> In_channel.close inc )
   in
   let write_to_tmp_file fname data =
     let fname_tmp =

@@ -100,7 +100,7 @@ let exe_timeout f x =
     SymOp.set_alarm ()
   in
   try
-    Utils.try_finally
+    SymOp.try_finally
       ~f:(fun () -> suspend_existing_timeout_and_start_new_one () ; f x ; None)
       ~finally:resume_previous_timeout
   with SymOp.Analysis_failure_exe kind ->

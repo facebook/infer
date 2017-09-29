@@ -95,5 +95,6 @@ val write_file_with_locking : ?delete:bool -> f:(Out_channel.t -> unit) -> strin
 val rmtree : string -> unit
 (** [rmtree path] removes [path] and, if [path] is a directory, recursively removes its contents *)
 
-val try_finally : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
-(** Calls [f] then [finally] even if [f] raised an exception. The original exception is reraised afterwards. *)
+val try_finally_swallow_timeout : f:(unit -> 'a) -> finally:(unit -> unit) -> 'a
+(** Calls [f] then [finally] even if [f] raised an exception. The original exception is reraised afterwards.
+    Where possible use [SymOp.try_finally] to avoid swallowing timeouts. *)
