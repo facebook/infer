@@ -15,6 +15,7 @@ open AbsLoc
 open! AbstractDomain.Types
 module F = Format
 module L = Logging
+module ItvPure = Itv.ItvPure
 module MF = MarkupFormatter
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
@@ -34,8 +35,8 @@ module Condition = struct
     ; loc: Location.t
     ; id: string
     ; cond_trace: cond_trace
-    ; idx: Itv.astate
-    ; size: Itv.astate
+    ; idx: ItvPure.astate
+    ; size: ItvPure.astate
     ; traces: TraceSet.t }
     [@@deriving compare]
 
@@ -43,9 +44,8 @@ module Condition = struct
 
   let set_size_pos : t -> t =
     fun c ->
-      if Itv.Bound.lt (Itv.lb c.size) Itv.Bound.zero then
-        {c with size= Itv.make Itv.Bound.zero (Itv.ub c.size)}
-      else c
+      let size' = ItvPure.make_positive c.size in
+      if phys_equal size' c.size then c else {c with size= size'}
 
   let pp_location : F.formatter -> t -> unit = fun fmt c -> Location.pp_file_pos fmt c.loc
 
@@ -53,16 +53,16 @@ module Condition = struct
     fun fmt c ->
       let c = set_size_pos c in
       if Config.bo_debug <= 1 then
-        F.fprintf fmt "%a < %a at %a" Itv.pp c.idx Itv.pp c.size pp_location c
+        F.fprintf fmt "%a < %a at %a" ItvPure.pp c.idx ItvPure.pp c.size pp_location c
       else
         match c.cond_trace with
         | Inter (_, pname, loc)
          -> let pname = Typ.Procname.to_string pname in
-            F.fprintf fmt "%a < %a at %a by call %s() at %a (%a)" Itv.pp c.idx Itv.pp c.size
-              pp_location c pname Location.pp_file_pos loc TraceSet.pp c.traces
+            F.fprintf fmt "%a < %a at %a by call %s() at %a (%a)" ItvPure.pp c.idx ItvPure.pp
+              c.size pp_location c pname Location.pp_file_pos loc TraceSet.pp c.traces
         | Intra _
-         -> F.fprintf fmt "%a < %a at %a (%a)" Itv.pp c.idx Itv.pp c.size pp_location c TraceSet.pp
-              c.traces
+         -> F.fprintf fmt "%a < %a at %a (%a)" ItvPure.pp c.idx ItvPure.pp c.size pp_location c
+              TraceSet.pp c.traces
 
   let get_location : t -> Location.t = fun c -> c.loc
 
@@ -70,37 +70,40 @@ module Condition = struct
 
   let get_proc_name : t -> Typ.Procname.t = fun c -> c.proc_name
 
-  let make : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> TraceSet.t -> t =
+  let make
+      : Typ.Procname.t -> Location.t -> string -> idx:ItvPure.t -> size:ItvPure.t -> TraceSet.t
+        -> t =
     fun proc_name loc id ~idx ~size traces ->
       {proc_name; idx; size; loc; id; cond_trace= Intra proc_name; traces}
 
   let filter1 : t -> bool =
     fun c ->
-      Itv.eq c.idx Itv.top || Itv.eq c.size Itv.top || Itv.Bound.eq (Itv.lb c.idx) Itv.Bound.MInf
-      || Itv.Bound.eq (Itv.lb c.size) Itv.Bound.MInf
-      || Itv.eq c.idx Itv.nat && Itv.eq c.size Itv.nat
+      ItvPure.is_top c.idx || ItvPure.is_top c.size
+      || Itv.Bound.eq (ItvPure.lb c.idx) Itv.Bound.MInf
+      || Itv.Bound.eq (ItvPure.lb c.size) Itv.Bound.MInf
+      || ItvPure.is_nat c.idx && ItvPure.is_nat c.size
 
   let filter2 : t -> bool =
     fun c ->
       (* basically, alarms involving infinity are filtered *)
-      (not (Itv.is_finite c.idx) || not (Itv.is_finite c.size))
+      (not (ItvPure.is_finite c.idx) || not (ItvPure.is_finite c.size))
       && (* except the following cases *)
          not
-           ( Itv.Bound.is_not_infty (Itv.lb c.idx)
+           ( Itv.Bound.is_not_infty (ItvPure.lb c.idx)
              && (* idx non-infty lb < 0 *)
-                Itv.Bound.lt (Itv.lb c.idx) Itv.Bound.zero
-           || Itv.Bound.is_not_infty (Itv.lb c.idx)
+                Itv.Bound.lt (ItvPure.lb c.idx) Itv.Bound.zero
+           || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
               && (* idx non-infty lb > size lb *)
-                 Itv.Bound.gt (Itv.lb c.idx) (Itv.lb c.size)
-           || Itv.Bound.is_not_infty (Itv.lb c.idx)
+                 Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.lb c.size)
+           || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
               && (* idx non-infty lb > size ub *)
-                 Itv.Bound.gt (Itv.lb c.idx) (Itv.ub c.size)
-           || Itv.Bound.is_not_infty (Itv.ub c.idx)
+                 Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.ub c.size)
+           || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
               && (* idx non-infty ub > size lb *)
-                 Itv.Bound.gt (Itv.ub c.idx) (Itv.lb c.size)
-           || Itv.Bound.is_not_infty (Itv.ub c.idx)
+                 Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.lb c.size)
+           || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
               && (* idx non-infty ub > size ub *)
-                 Itv.Bound.gt (Itv.ub c.idx) (Itv.ub c.size) )
+                 Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.ub c.size) )
 
   (* check buffer overrun and return its confidence *)
   let check : t -> string option =
@@ -108,23 +111,26 @@ module Condition = struct
       (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
       let c' = set_size_pos c in
       (* if sl < 0, use sl' = 0 *)
-      let not_overrun = Itv.lt_sem c'.idx c'.size in
-      let not_underrun = Itv.le_sem Itv.zero c'.idx in
+      let not_overrun = ItvPure.lt_sem c'.idx c'.size in
+      let not_underrun = ItvPure.le_sem ItvPure.zero c'.idx in
       (* il >= 0 and iu < sl, definitely not an error *)
-      if Itv.eq not_overrun Itv.one && Itv.eq not_underrun Itv.one then None
+      if ItvPure.is_one not_overrun && ItvPure.is_one not_underrun then None
         (* iu < 0 or il >= su, definitely an error *)
-      else if Itv.eq not_overrun Itv.zero || Itv.eq not_underrun Itv.zero then
+      else if ItvPure.is_zero not_overrun || ItvPure.is_zero not_underrun then
         Some Localise.BucketLevel.b1 (* su <= iu < +oo, most probably an error *)
-      else if Itv.Bound.is_not_infty (Itv.ub c.idx) && Itv.Bound.le (Itv.ub c.size) (Itv.ub c.idx)
+      else if Itv.Bound.is_not_infty (ItvPure.ub c.idx)
+              && Itv.Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
       then Some Localise.BucketLevel.b2 (* symbolic il >= sl, probably an error *)
-      else if Itv.Bound.is_symbolic (Itv.lb c.idx) && Itv.Bound.le (Itv.lb c'.size) (Itv.lb c.idx)
+      else if Itv.Bound.is_symbolic (ItvPure.lb c.idx)
+              && Itv.Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
       then Some Localise.BucketLevel.b3 (* other symbolic bounds are probably too noisy *)
-      else if Config.bo_debug <= 3 && (Itv.is_symbolic c.idx || Itv.is_symbolic c.size) then None
+      else if Config.bo_debug <= 3 && (ItvPure.is_symbolic c.idx || ItvPure.is_symbolic c.size)
+      then None
       else if filter1 c then Some Localise.BucketLevel.b5
       else if filter2 c then Some Localise.BucketLevel.b3
       else Some Localise.BucketLevel.b2
 
-  let invalid : t -> bool = fun x -> Itv.invalid x.idx || Itv.invalid x.size
+  let invalid : t -> bool = fun x -> ItvPure.invalid x.idx || ItvPure.invalid x.size
 
   let pp_trace : F.formatter -> t -> unit =
     fun fmt c ->
@@ -139,31 +145,33 @@ module Condition = struct
   let pp_description : F.formatter -> t -> unit =
     fun fmt c ->
       let c = set_size_pos c in
-      F.fprintf fmt "Offset: %a Size: %a%a" Itv.pp c.idx Itv.pp c.size pp_trace c
+      F.fprintf fmt "Offset: %a Size: %a%a" ItvPure.pp c.idx ItvPure.pp c.size pp_trace c
 
   let description : t -> string = fun c -> Format.asprintf "%a" pp_description c
 
   let subst
       : t -> Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Typ.Procname.t
-        -> Typ.Procname.t -> Location.t -> t =
+        -> Typ.Procname.t -> Location.t -> t option =
     fun c (bound_map, trace_map) caller_pname callee_pname loc ->
-      if Itv.is_symbolic c.idx || Itv.is_symbolic c.size then
-        let symbols = Itv.get_symbols c.idx @ Itv.get_symbols c.size in
-        let traces_caller =
-          List.fold symbols ~init:TraceSet.empty ~f:(fun traces symbol ->
-              match Itv.SubstMap.find symbol trace_map with
-              | symbol_trace
-               -> TraceSet.join symbol_trace traces
-              | exception Not_found
-               -> traces )
-        in
-        let traces = TraceSet.instantiate ~traces_caller ~traces_callee:c.traces loc in
-        { c with
-          idx= Itv.subst c.idx bound_map
-        ; size= Itv.subst c.size bound_map
-        ; cond_trace= Inter (caller_pname, callee_pname, loc)
-        ; traces }
-      else c
+      match ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size with
+      | []
+       -> Some c
+      | symbols
+       -> let idx = ItvPure.subst c.idx bound_map in
+          let size = ItvPure.subst c.size bound_map in
+          if ItvPure.has_bnd_bot idx || ItvPure.has_bnd_bot size then None
+          else
+            let traces_caller =
+              List.fold symbols ~init:TraceSet.empty ~f:(fun traces symbol ->
+                  match Itv.SubstMap.find symbol trace_map with
+                  | symbol_trace
+                   -> TraceSet.join symbol_trace traces
+                  | exception Not_found
+                   -> traces )
+            in
+            let traces = TraceSet.instantiate ~traces_caller ~traces_callee:c.traces loc in
+            let cond_trace = Inter (caller_pname, callee_pname, loc) in
+            Some {c with idx; size; cond_trace; traces}
 end
 
 module ConditionSet = struct
@@ -171,7 +179,8 @@ module ConditionSet = struct
   module Map = Caml.Map.Make (Location)
 
   let add_bo_safety
-      : Typ.Procname.t -> Location.t -> string -> idx:Itv.t -> size:Itv.t -> TraceSet.t -> t -> t =
+      : Typ.Procname.t -> Location.t -> string -> idx:ItvPure.t -> size:ItvPure.t -> TraceSet.t
+        -> t -> t =
     fun pname loc id ~idx ~size traces cond ->
       add (Condition.make pname loc id ~idx ~size traces) cond
 
@@ -179,7 +188,14 @@ module ConditionSet = struct
       : t -> Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Typ.Procname.t
         -> Typ.Procname.t -> Location.t -> t =
     fun x subst_map caller_pname callee_pname loc ->
-      fold (fun e -> add (Condition.subst e subst_map caller_pname callee_pname loc)) x empty
+      fold
+        (fun e x ->
+          match Condition.subst e subst_map caller_pname callee_pname loc with
+          | Some c
+           -> add c x
+          | None
+           -> x)
+        x empty
 
   let group : t -> t Map.t =
     fun x ->

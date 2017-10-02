@@ -528,10 +528,14 @@ module Bound = struct
 
   let mone : t = Linear (-1, SymLinear.zero)
 
-  let is_zero : t -> bool =
-    fun x ->
+  let is_some_const : int -> t -> bool =
+    fun c x ->
       assert (x <> Bot) ;
-      match x with Linear (c, y) -> Int.equal c 0 && SymLinear.is_zero y | _ -> false
+      match x with Linear (c', y) -> Int.equal c c' && SymLinear.is_zero y | _ -> false
+
+  let is_zero : t -> bool = is_some_const 0
+
+  let is_one : t -> bool = is_some_const 1
 
   let is_const : t -> int option =
     fun x ->
@@ -712,10 +716,9 @@ module ItvPure = struct
 
   let unknown_bool = join false_sem true_sem
 
-  let is_true : t -> bool =
-    fun (l, u) -> Bound.le (Bound.of_int 1) l || Bound.le u (Bound.of_int (-1))
+  let is_top : t -> bool = function Bound.MInf, Bound.PInf -> true | _ -> false
 
-  let is_false : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_zero u
+  let is_nat : t -> bool = function l, Bound.PInf -> Bound.is_zero l | _ -> false
 
   let is_const : t -> int option =
     fun (l, u) ->
@@ -724,6 +727,15 @@ module ItvPure = struct
        -> Some n
       | _, _
        -> None
+
+  let is_one : t -> bool = fun (l, u) -> Bound.is_one l && Bound.is_one u
+
+  let is_zero : t -> bool = fun (l, u) -> Bound.is_zero l && Bound.is_zero u
+
+  let is_true : t -> bool =
+    fun (l, u) -> Bound.le (Bound.of_int 1) l || Bound.le u (Bound.of_int (-1))
+
+  let is_false : t -> bool = is_zero
 
   let is_symbolic : t -> bool = fun (lb, ub) -> Bound.is_symbolic lb || Bound.is_symbolic ub
 
@@ -954,6 +966,9 @@ module ItvPure = struct
 
   let get_symbols : t -> Symbol.t list =
     fun (l, u) -> List.append (Bound.get_symbols l) (Bound.get_symbols u)
+
+  let make_positive : t -> t =
+    fun (l, u as x) -> if Bound.lt l Bound.zero then (Bound.zero, u) else x
 
   let normalize : t -> t option = fun (l, u) -> if invalid (l, u) then None else Some (l, u)
 

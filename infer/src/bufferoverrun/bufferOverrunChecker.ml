@@ -437,7 +437,8 @@ module Report = struct
       in
       match array_access with
       | Some (arr, traces_arr, idx, traces_idx, is_plus)
-       -> let site = Sem.get_allocsite pname node 0 0 in
+       -> (
+          let site = Sem.get_allocsite pname node 0 0 in
           let size = ArrayBlk.sizeof arr in
           let offset = ArrayBlk.offsetof arr in
           let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
@@ -445,10 +446,12 @@ module Report = struct
           L.(debug BufferOverrun Verbose) "array: %a@," ArrayBlk.pp arr ;
           L.(debug BufferOverrun Verbose) "  idx: %a@," Itv.pp idx ;
           L.(debug BufferOverrun Verbose) "@]@." ;
-          if size <> Itv.bot && idx <> Itv.bot then
-            let traces = TraceSet.merge ~traces_arr ~traces_idx loc in
-            Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx traces cond_set
-          else cond_set
+          match (size, idx) with
+          | NonBottom size, NonBottom idx
+           -> let traces = TraceSet.merge ~traces_arr ~traces_idx loc in
+              Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx traces cond_set
+          | _
+           -> cond_set )
       | None
        -> cond_set
 
