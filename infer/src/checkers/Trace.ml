@@ -319,13 +319,9 @@ module Make (Spec : Spec) = struct
       pp_passthroughs cur_passthroughs pp_sinks (List.rev sinks_passthroughs)
 
   type passthrough_kind =
-    | Source
-    (* passthroughs of a source *)
-    | Sink
-    (* passthroughs of a sink *)
-    | Top_level
-
-  (* passthroughs of a top-level source->sink path *)
+    | Source  (** passthroughs of a source *)
+    | Sink  (** passthroughs of a sink *)
+    | Top_level  (** passthroughs of a top-level source->sink path *)
 
   let get_reportable_paths ?cur_site t ~trace_of_pname =
     let filter_passthroughs_ passthrough_kind start_site end_site passthroughs =

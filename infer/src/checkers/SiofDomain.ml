@@ -12,28 +12,3 @@ open! AbstractDomain.Types
 module VarNames = AbstractDomain.FiniteSet (String)
 module BottomSiofTrace = AbstractDomain.BottomLifted (SiofTrace)
 include AbstractDomain.Pair (BottomSiofTrace) (VarNames)
-
-(** group together procedure-local accesses *)
-let normalize (trace, initialized as astate) =
-  match trace with
-  | Bottom
-   -> astate
-  | NonBottom trace
-   -> let elems = SiofTrace.Sinks.elements (SiofTrace.sinks trace) in
-      let direct, indirect = List.partition_tf ~f:SiofTrace.is_intraprocedural_access elems in
-      match direct with
-      | [] | [_]
-       -> astate
-      | access :: _
-       -> (* [loc] should be the same for all local accesses: it's the loc of the enclosing
-             procdesc. Use the loc of the first access. *)
-          let loc = CallSite.loc (SiofTrace.Sink.call_site access) in
-          let kind =
-            List.map ~f:SiofTrace.Sink.kind direct
-            |> List.fold ~f:SiofTrace.GlobalsAccesses.union ~init:SiofTrace.GlobalsAccesses.empty
-          in
-          let trace' =
-            SiofTrace.make_access kind loc :: indirect |> SiofTrace.Sinks.of_list
-            |> SiofTrace.update_sinks trace
-          in
-          (NonBottom trace', initialized)

@@ -30,6 +30,3 @@ module BottomSiofTrace : module type of AbstractDomain.BottomLifted (SiofTrace)
    std::ios_base::Init::Init(). *)
 
 include module type of AbstractDomain.Pair (AbstractDomain.BottomLifted (SiofTrace)) (VarNames)
-
-val normalize : astate -> astate
-(** group together procedure-local accesses *)

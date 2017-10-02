@@ -300,6 +300,8 @@ $(BUILD_SYSTEMS_TESTS:%=build_%_replace): infer
 	$(call silence_make,\
 	$(MAKE) -C $(INFER_DIR)/tests/build_systems/$(patsubst build_%_replace,%,$@) replace))
 
+build_infertop_print build_infertop_test build_infertop_replace: test_build
+
 .PHONY: build_systems_tests
 build_systems_tests: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 

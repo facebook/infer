@@ -396,27 +396,27 @@ let pp_instr pe0 f instr =
   let pe, changed = color_pre_wrapper pe0 f instr in
   ( match instr with
   | Load (id, e, t, loc)
-   -> F.fprintf f "%a=*%a:%a %a" (Ident.pp pe) id (pp_exp_printenv pe) e (Typ.pp pe) t Location.pp
-        loc
+   -> F.fprintf f "%a=*%a:%a [%a]" (Ident.pp pe) id (pp_exp_printenv pe) e (Typ.pp pe) t
+        Location.pp loc
   | Store (e1, t, e2, loc)
-   -> F.fprintf f "*%a:%a=%a %a" (pp_exp_printenv pe) e1 (Typ.pp pe) t (pp_exp_printenv pe) e2
+   -> F.fprintf f "*%a:%a=%a [%a]" (pp_exp_printenv pe) e1 (Typ.pp pe) t (pp_exp_printenv pe) e2
         Location.pp loc
   | Prune (cond, loc, true_branch, _)
-   -> F.fprintf f "PRUNE(%a, %b); %a" (pp_exp_printenv pe) cond true_branch Location.pp loc
+   -> F.fprintf f "PRUNE(%a, %b); [%a]" (pp_exp_printenv pe) cond true_branch Location.pp loc
   | Call (ret_id, e, arg_ts, loc, cf)
    -> (match ret_id with None -> () | Some (id, _) -> F.fprintf f "%a=" (Ident.pp pe) id) ;
-      F.fprintf f "%a(%a)%a %a" (pp_exp_printenv pe) e
+      F.fprintf f "%a(%a)%a [%a]" (pp_exp_printenv pe) e
         (Pp.comma_seq (pp_exp_typ pe))
         arg_ts CallFlags.pp cf Location.pp loc
   | Nullify (pvar, loc)
-   -> F.fprintf f "NULLIFY(%a); %a" (Pvar.pp pe) pvar Location.pp loc
+   -> F.fprintf f "NULLIFY(%a); [%a]" (Pvar.pp pe) pvar Location.pp loc
   | Abstract loc
-   -> F.fprintf f "APPLY_ABSTRACTION; %a" Location.pp loc
+   -> F.fprintf f "APPLY_ABSTRACTION; [%a]" Location.pp loc
   | Remove_temps (temps, loc)
-   -> F.fprintf f "REMOVE_TEMPS(%a); %a" (Ident.pp_list pe) temps Location.pp loc
+   -> F.fprintf f "REMOVE_TEMPS(%a); [%a]" (Ident.pp_list pe) temps Location.pp loc
   | Declare_locals (ptl, loc)
-   -> let pp_typ fmt (pvar, _) = F.fprintf fmt "%a" (Pvar.pp pe) pvar in
-      F.fprintf f "DECLARE_LOCALS(%a); %a" (Pp.comma_seq pp_typ) ptl Location.pp loc ) ;
+   -> let pp_typ fmt (pvar, _) = Pvar.pp pe fmt pvar in
+      F.fprintf f "DECLARE_LOCALS(%a); [%a]" (Pp.comma_seq pp_typ) ptl Location.pp loc ) ;
   color_post_wrapper changed pe0 f
 
 (** Check if a pvar is a local pointing to a block in objc *)

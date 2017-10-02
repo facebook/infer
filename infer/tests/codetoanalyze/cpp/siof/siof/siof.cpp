@@ -24,34 +24,33 @@ struct SomeOtherNonPODObject {
   };
 };
 
-SomeOtherNonPODObject another_global_object; // SIOF!
-SomeOtherNonPODObject another_global_object2(access_to_non_pod()); // SIOF!
-SomeOtherNonPODObject another_global_object3(
-    access_to_templated_non_pod()); // SIOF!
-SomeOtherNonPODObject another_global_object4(42); // OK
+SomeOtherNonPODObject another_global_object_bad;
+SomeOtherNonPODObject another_global_object2_bad(access_to_non_pod());
+SomeOtherNonPODObject another_global_object3_bad(access_to_templated_non_pod());
+SomeOtherNonPODObject another_global_object4_good(42);
 
-int pod_accesses_non_pod = access_to_non_pod(); // SIOF!
+int pod_accesses_non_pod_bad = access_to_non_pod();
 
 struct X {
-  static int static_pod_accesses_non_pod;
+  static int static_pod_accesses_non_pod_bad;
 };
 
-int X::static_pod_accesses_non_pod = access_to_non_pod(); // SIOF!
+int X::static_pod_accesses_non_pod_bad = access_to_non_pod();
 
-SomeNonPODObject initWithStatic = getFunctionStaticNonPOD(); // OK
-SomeNonPODObject initWithGlobal = getGlobalNonPOD(); // SIOF!
+SomeNonPODObject initWithStatic_good = getFunctionStaticNonPOD();
+SomeNonPODObject initWithGlobal_bad = getGlobalNonPOD();
 
-SomeNonPODObject initWithGlobalWhitelisted = getGlobalNonPODWhitelisted(); // OK
+SomeNonPODObject initWithGlobalWhitelisted_good = getGlobalNonPODWhitelisted();
 
-SomeNonPODObject initWithGlobalWhitelistedNamespaced =
-    whitelisted::getGlobalNonPOD(); // OK
+SomeNonPODObject initWithGlobalWhitelistedNamespaced_good =
+    whitelisted::getGlobalNonPOD();
 
-SomeNonPODObject initWithGlobalWhitelistedTemplated =
-    whitelisted::TemplatedObject<int>::getGlobalNonPOD(); // OK
+SomeNonPODObject initWithGlobalWhitelistedTemplated_good =
+    whitelisted::TemplatedObject<int>::getGlobalNonPOD();
 
 extern SomeConstexprObject& getGlobalConstexpr();
-SomeConstexprObject initWithConstexpr = getGlobalConstexpr();
+SomeConstexprObject initWithConstexpr_good = getGlobalConstexpr();
 
 extern SomeTemplatedConstexprObject<int>& getGlobalTemplatedConstexpr();
-SomeTemplatedConstexprObject<int> initWithTemplatedConstexpr =
+SomeTemplatedConstexprObject<int> initWithTemplatedConstexpr_good =
     getGlobalTemplatedConstexpr();

@@ -40,5 +40,5 @@ int return_4_no_SIOF() {
   return 4;
 }
 
-int global_bad_std_cerr_access = return_4_SIOF();
-int global_good_std_cerr_access = return_4_no_SIOF();
+int global_std_cerr_access_bad = return_4_SIOF();
+int global_std_cerr_access_good = return_4_no_SIOF();

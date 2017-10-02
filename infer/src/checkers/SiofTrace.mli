@@ -9,11 +9,13 @@
 
 open! IStd
 
-module GlobalsAccesses : PrettyPrintable.PPSet with type elt = Pvar.t * Location.t
+include SinkTrace.S with type Sink.Kind.t = Pvar.t
 
-include SinkTrace.S with type Sink.Kind.t = GlobalsAccesses.t
+module GlobalVar : PrettyPrintable.PrintableOrderedType with type t = Pvar.t
 
-val make_access : GlobalsAccesses.t -> Location.t -> Sink.t
+module GlobalVarSet : PrettyPrintable.PPSet with type elt = Pvar.t
+
+val make_access : Pvar.t -> Location.t -> Sink.t
 
 val is_intraprocedural_access : Sink.t -> bool
 

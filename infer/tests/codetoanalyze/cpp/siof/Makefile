@@ -16,6 +16,7 @@ INFERPRINT_OPTIONS = --issues-tests
 SOURCES = \
   siof/const.cpp \
   siof/const_use.cpp \
+  siof/duplicate_reports.cpp \
   siof/pod_across_translation_units-1.cpp \
   siof/pod_across_translation_units-2.cpp \
   siof/pod_same_translation_unit.cpp \

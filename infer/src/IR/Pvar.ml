@@ -52,10 +52,10 @@ let _pp f pv =
       else F.fprintf f "%a$%a|callee" Typ.Procname.pp n Mangled.pp name
   | Abduced_retvar (n, l)
    -> if !Config.pp_simple then F.fprintf f "%a|abducedRetvar" Mangled.pp name
-      else F.fprintf f "%a$%a%a|abducedRetvar" Typ.Procname.pp n Location.pp l Mangled.pp name
+      else F.fprintf f "%a$[%a]%a|abducedRetvar" Typ.Procname.pp n Location.pp l Mangled.pp name
   | Abduced_ref_param (n, index, l)
    -> if !Config.pp_simple then F.fprintf f "%a|abducedRefParam%d" Mangled.pp name index
-      else F.fprintf f "%a$%a%a|abducedRefParam" Typ.Procname.pp n Location.pp l Mangled.pp name
+      else F.fprintf f "%a$[%a]%a|abducedRefParam" Typ.Procname.pp n Location.pp l Mangled.pp name
   | Global_var (translation_unit, is_const, is_pod, _)
    -> F.fprintf f "#GB<%a%s%s>$%a" pp_translation_unit translation_unit
         (if is_const then "|const" else "")

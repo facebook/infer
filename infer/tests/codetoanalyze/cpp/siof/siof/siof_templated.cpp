@@ -25,9 +25,9 @@ struct SomeOtherTemplatedNonPODObject {
   };
 };
 
-SomeOtherTemplatedNonPODObject<bool> another_templated_global_object; // SIOF!
-SomeOtherTemplatedNonPODObject<bool> another_templated_global_object2(
-    access_to_non_pod()); // SIOF!
-SomeOtherTemplatedNonPODObject<bool> another_templated_global_object3(
-    access_to_templated_non_pod()); // SIOF!
-SomeOtherTemplatedNonPODObject<bool> another_templated_global_object4(42); // OK
+SomeOtherTemplatedNonPODObject<bool> another_templated_global_object_bad;
+SomeOtherTemplatedNonPODObject<bool> another_templated_global_object2_bad(
+    access_to_non_pod());
+SomeOtherTemplatedNonPODObject<bool> another_templated_global_object3_bad(
+    access_to_templated_non_pod());
+SomeOtherTemplatedNonPODObject<bool> another_templated_global_object4_good(42);
