@@ -101,3 +101,19 @@ let invalid_argf _ : [`use_Logging_die_instead] = assert false
     and running certain functions that may in turn invoke exit, and you want to handle the execution
     flow differently - like invoking certain callbacks before exiting, or not exiting at all. *)
 let exit = `In_general_prefer_using_Logging_exit_over_Pervasives_exit
+
+module ANSITerminal : module type of ANSITerminal = struct
+  include ANSITerminal
+
+  let print_string =
+    if Unix.(isatty stdout) then print_string else fun _ -> Pervasives.print_string
+
+  let prerr_string =
+    if Unix.(isatty stderr) then prerr_string else fun _ -> Pervasives.prerr_string
+
+  let printf styles fmt = Format.ksprintf (fun s -> print_string styles s) fmt
+
+  let eprintf styles fmt = Format.ksprintf (fun s -> prerr_string styles s) fmt
+
+  let sprintf = if Unix.(isatty stderr) then sprintf else fun _ -> Printf.sprintf
+end
