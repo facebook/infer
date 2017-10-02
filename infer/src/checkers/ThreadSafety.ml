@@ -499,7 +499,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _
        -> false
 
-  let make_container_access callee_pname ~is_write actuals receiver_ap callee_loc tenv =
+  let make_container_access callee_pname ~is_write receiver_ap callee_loc tenv =
     (* create a dummy write that represents mutating the contents of the container *)
     let open Domain in
     let callee_accesses =
@@ -511,18 +511,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         AccessDomain.add_access (Unprotected (IntSet.singleton 0)) container_access
           AccessDomain.empty
     in
-    (* TODO: for now all formals escape *)
-    (* we need a more intelligent escape analysis, that branches on whether
-             we own the container *)
-    let escapee_formals = List.length actuals |> List.range 0 |> FormalsDomain.of_list in
+    (* we need a more intelligent escape analysis, that branches on whether we own the container *)
     Some
       { thumbs_up= true
       ; locks= false
       ; threads= ThreadsDomain.Unknown
       ; accesses= callee_accesses
       ; return_ownership= OwnershipAbstractValue.unowned
-      ; return_attributes= AttributeSetDomain.empty
-      ; escapee_formals }
+      ; return_attributes= AttributeSetDomain.empty }
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
     let get_receiver_ap actuals =
@@ -536,11 +532,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     match get_container_access callee_pname tenv with
     | Some ContainerWrite
-     -> make_container_access callee_pname ~is_write:true actuals (get_receiver_ap actuals)
-          callee_loc tenv
+     -> make_container_access callee_pname ~is_write:true (get_receiver_ap actuals) callee_loc tenv
     | Some ContainerRead
-     -> make_container_access callee_pname ~is_write:false actuals (get_receiver_ap actuals)
-          callee_loc tenv
+     -> make_container_access callee_pname ~is_write:false (get_receiver_ap actuals) callee_loc
+          tenv
     | None
      -> Summary.read_summary caller_pdesc callee_pname
 
@@ -565,19 +560,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_access exp loc ~is_write_access:false acc locks threads ownership proc_data)
       exps ~init:accesses
 
-  let add_escapees_from_exp rhs_exp ownership escapees =
-    HilExp.get_access_paths rhs_exp |> List.rev_map ~f:(Domain.Escapee.of_access_path ownership)
-    |> List.concat_no_order |> Domain.EscapeeDomain.add_from_list escapees
-
-  let add_escapees_from_exp_list exp_list extras escapees =
-    List.fold ~init:escapees exp_list ~f:(fun acc exp -> add_escapees_from_exp exp extras acc)
-
-  let add_escapees_from_call actuals escapee_formals extras escapees =
-    let escapee_actuals =
-      Domain.FormalsDomain.elements escapee_formals |> List.rev_map ~f:(List.nth_exn actuals)
-    in
-    add_escapees_from_exp_list escapee_actuals extras escapees
-
   let exec_instr (astate: Domain.astate) ({ProcData.tenv; pdesc} as proc_data) _
       (instr: HilInstr.t) =
     let open Domain in
@@ -590,9 +572,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let ownership =
           OwnershipDomain.add (ret_base, []) OwnershipAbstractValue.owned astate.ownership
         in
-        (* TODO: we need to model escaping formals, now just assume all escape *)
-        let escapees = add_escapees_from_exp_list actuals astate.ownership astate.escapees in
-        {astate with accesses; ownership; escapees}
+        {astate with accesses; ownership}
     | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc)
      -> (
         let accesses_with_unannotated_calls =
@@ -649,14 +629,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     Typ.Procname.pp callee_pname )
             | NoEffect ->
               match get_summary pdesc callee_pname actuals loc tenv with
-              | Some
-                  { thumbs_up
-                  ; threads
-                  ; locks
-                  ; accesses
-                  ; return_ownership
-                  ; return_attributes
-                  ; escapee_formals }
+              | Some {thumbs_up; threads; locks; accesses; return_ownership; return_attributes}
                -> let update_caller_accesses pre callee_accesses caller_accesses =
                     let combined_accesses =
                       PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
@@ -735,17 +708,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   let ownership, attribute_map =
                     propagate_return ret_opt return_ownership return_attributes actuals astate
                   in
-                  let escapees =
-                    add_escapees_from_call actuals escapee_formals astate.ownership astate.escapees
-                  in
-                  {thumbs_up; locks; threads; accesses; ownership; attribute_map; escapees}
+                  {thumbs_up; locks; threads; accesses; ownership; attribute_map}
               | None
-               -> (* TODO: assume actuals escape, should we? *)
-                  let new_escapees =
-                    add_escapees_from_exp_list actuals astate.ownership astate.escapees
-                  in
-                  let astate = {astate with escapees= new_escapees} in
-                  let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
+               -> let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
                     (* assume non-interface methods with no summary and no parameters return
                          ownership *)
                     not call_flags.cf_interface && List.is_empty actuals
@@ -828,12 +793,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         let ownership = propagate_ownership lhs_access_path rhs_exp astate.ownership in
         let attribute_map = propagate_attributes lhs_access_path rhs_exp astate.attribute_map in
-        (* assigning to the return variable leads to no new escapees *)
-        let escapees =
-          if fst lhs_access_path |> fst |> Var.is_return then astate.escapees
-          else add_escapees_from_exp rhs_exp astate.ownership astate.escapees
-        in
-        {astate with accesses; ownership; attribute_map; escapees}
+        {astate with accesses; ownership; attribute_map}
     | Assume (assume_exp, _, _, loc)
      -> let rec eval_binop op var e1 e2 =
           match (eval_bexp var e1, eval_bexp var e2) with
@@ -992,8 +952,7 @@ let empty_post : ThreadSafetyDomain.summary =
   ; locks= false
   ; accesses= ThreadSafetyDomain.AccessDomain.empty
   ; return_ownership= ThreadSafetyDomain.OwnershipAbstractValue.unowned
-  ; return_attributes= ThreadSafetyDomain.AttributeSetDomain.empty
-  ; escapee_formals= ThreadSafetyDomain.FormalsDomain.empty }
+  ; return_attributes= ThreadSafetyDomain.AttributeSetDomain.empty }
 
 let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
   let is_initializer tenv proc_name =
@@ -1045,7 +1004,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         ({ThreadSafetyDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
     in
     match Analyzer.compute_post proc_data ~initial ~debug:false with
-    | Some ({thumbs_up; threads; locks; accesses; ownership; attribute_map; escapees}, _)
+    | Some ({thumbs_up; threads; locks; accesses; ownership; attribute_map}, _)
      -> let return_var_ap =
           AccessPath.of_pvar
             (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
@@ -1056,16 +1015,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           try AttributeMapDomain.find return_var_ap attribute_map
           with Not_found -> AttributeSetDomain.empty
         in
-        let escapee_formals = FormalsDomain.of_escapees escapees in
-        let post =
-          { thumbs_up
-          ; threads
-          ; locks
-          ; accesses
-          ; return_ownership
-          ; return_attributes
-          ; escapee_formals }
-        in
+        let post = {thumbs_up; threads; locks; accesses; return_ownership; return_attributes} in
         Summary.update_summary post summary
     | None
      -> summary )

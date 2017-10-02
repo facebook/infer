@@ -164,29 +164,6 @@ module AccessDomain : sig
   (** get all accesses with the given precondition *)
 end
 
-(** a formal or a local variable that may escape *)
-module Escapee : sig
-  type t = Formal of int | Local of Var.t [@@deriving compare]
-
-  val pp : F.formatter -> t -> unit
-
-  val of_access_path : OwnershipDomain.astate -> AccessPath.t -> t list
-end
-
-(** set of formals or locals that may escape *)
-module EscapeeDomain : sig
-  include module type of AbstractDomain.FiniteSet (Escapee)
-
-  val add_from_list : astate -> Escapee.t list -> astate
-end
-
-(** Domain that only includes escaping formals, for use in summary *)
-module FormalsDomain : sig
-  include module type of AbstractDomain.FiniteSet (Int)
-
-  val of_escapees : EscapeeDomain.astate -> astate
-end
-
 type astate =
   { thumbs_up: ThumbsUpDomain.astate  (** boolean that is true if we think we have a proof *)
   ; threads: ThreadsDomain.astate  (** current thread: main, background, or unknown *)
@@ -195,8 +172,7 @@ type astate =
         (** read and writes accesses performed without ownership permissions *)
   ; ownership: OwnershipDomain.astate  (** map of access paths to ownership predicates *)
   ; attribute_map: AttributeMapDomain.astate
-        (** map of access paths to attributes such as owned, functional, ... *)
-  ; escapees: EscapeeDomain.astate  (** set of formals and locals that may escape *) }
+        (** map of access paths to attributes such as owned, functional, ... *) }
 
 (** same as astate, but without [attribute_map] (since these involve locals) and with the addition
     of the ownership/attributes associated with the return value as well as the set of formals which
@@ -207,8 +183,7 @@ type summary =
   ; locks: LocksDomain.astate
   ; accesses: AccessDomain.astate
   ; return_ownership: OwnershipAbstractValue.astate
-  ; return_attributes: AttributeSetDomain.astate
-  ; escapee_formals: FormalsDomain.astate }
+  ; return_attributes: AttributeSetDomain.astate }
 
 include AbstractDomain.WithBottom with type astate := astate
 
