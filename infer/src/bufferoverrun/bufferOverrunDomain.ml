@@ -12,6 +12,7 @@
 
 open! IStd
 open AbsLoc
+open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module MF = MarkupFormatter

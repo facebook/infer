@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module GlobalsAccesses = SiofTrace.GlobalsAccesses
@@ -63,7 +64,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_compile_time_constructed pdesc pv =
     let init_pname = Pvar.get_initializer_pname pv in
     match Option.bind init_pname ~f:(Summary.read_summary pdesc) with
-    | Some (Domain.BottomSiofTrace.Bottom, _)
+    | Some (Bottom, _)
      -> (* we analyzed the initializer for this global and found that it doesn't require any runtime
            initialization so cannot participate in SIOF *)
         true
@@ -94,13 +95,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_globals astate outer_loc globals =
     if GlobalsAccesses.is_empty globals then astate
     else
-      let trace =
-        match fst astate with
-        | Domain.BottomSiofTrace.Bottom
-         -> SiofTrace.empty
-        | Domain.BottomSiofTrace.NonBottom t
-         -> t
-      in
+      let trace = match fst astate with Bottom -> SiofTrace.empty | NonBottom t -> t in
       (* filter out variables that are known to be already initialized *)
       let non_init_globals =
         let initialized = snd astate in
@@ -109,15 +104,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let globals_trace =
         SiofTrace.add_sink (SiofTrace.make_access non_init_globals outer_loc) trace
       in
-      (Domain.BottomSiofTrace.NonBottom globals_trace, snd astate)
+      (NonBottom globals_trace, snd astate)
 
   let add_params_globals astate pdesc call_loc params =
     List.map ~f:(fun (e, _) -> get_globals pdesc call_loc e) params
     |> List.fold ~f:GlobalsAccesses.union ~init:GlobalsAccesses.empty
     |> add_globals astate (Procdesc.get_loc pdesc)
 
-  let at_least_nonbottom =
-    Domain.join (Domain.BottomSiofTrace.NonBottom SiofTrace.empty, Domain.VarNames.empty)
+  let at_least_nonbottom = Domain.join (NonBottom SiofTrace.empty, Domain.VarNames.empty)
 
   let exec_instr astate {ProcData.pdesc} _ (instr: Sil.instr) =
     match instr with
@@ -135,8 +129,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               then Some initialized_globals
               else None )
         in
-        Domain.join astate
-          (Domain.BottomSiofTrace.NonBottom SiofTrace.empty, Domain.VarNames.of_list init)
+        Domain.join astate (NonBottom SiofTrace.empty, Domain.VarNames.of_list init)
     | Call (_, Const Cfun callee_pname, _ :: params_without_self, loc, _)
       when Typ.Procname.is_c_method callee_pname && Typ.Procname.is_constructor callee_pname
            && Typ.Procname.is_constexpr callee_pname
@@ -145,7 +138,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
      -> let callsite = CallSite.make callee_pname loc in
         let callee_astate =
           match Summary.read_summary pdesc callee_pname with
-          | Some (Domain.BottomSiofTrace.NonBottom trace, initialized_globals)
+          | Some (NonBottom trace, initialized_globals)
            -> let trace_without_initialized_globals =
                 let sinks_with_non_init_globals =
                   SiofTrace.Sinks.filter
@@ -156,13 +149,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 in
                 SiofTrace.update_sinks trace sinks_with_non_init_globals
               in
-              ( Domain.BottomSiofTrace.NonBottom
-                  (SiofTrace.with_callsite trace_without_initialized_globals callsite)
+              ( NonBottom (SiofTrace.with_callsite trace_without_initialized_globals callsite)
               , initialized_globals )
-          | Some (Domain.BottomSiofTrace.Bottom, _ as astate)
+          | Some (Bottom, _ as astate)
            -> astate
           | None
-           -> (Domain.BottomSiofTrace.Bottom, Domain.VarNames.empty)
+           -> (Bottom, Domain.VarNames.empty)
         in
         add_params_globals astate pdesc loc params |> Domain.join callee_astate
         |> (* make sure it's not Bottom: we made a function call so this needs initialization *)
@@ -193,7 +185,7 @@ let report_siof summary trace pdesc gname loc =
   in
   let trace_of_pname pname =
     match Summary.read_summary pdesc pname with
-    | Some (SiofDomain.BottomSiofTrace.NonBottom summary, _)
+    | Some (NonBottom summary, _)
      -> summary
     | _
      -> SiofTrace.empty
@@ -233,7 +225,7 @@ let report_siof summary trace pdesc gname loc =
 
 let siof_check pdesc gname (summary: Specs.summary) =
   match summary.payload.siof with
-  | Some (SiofDomain.BottomSiofTrace.NonBottom post, _)
+  | Some (NonBottom post, _)
    -> let attrs = Procdesc.get_attributes pdesc in
       let all_globals =
         SiofTrace.Sinks.fold
@@ -246,12 +238,12 @@ let siof_check pdesc gname (summary: Specs.summary) =
       in
       if GlobalsAccesses.exists (is_foreign tu_opt) all_globals then
         report_siof summary post pdesc gname attrs.ProcAttributes.loc
-  | Some (SiofDomain.BottomSiofTrace.Bottom, _) | None
+  | Some (Bottom, _) | None
    -> ()
 
 let checker {Callbacks.proc_desc; tenv; summary} : Specs.summary =
   let proc_data = ProcData.make_default proc_desc tenv in
-  let initial = (SiofDomain.BottomSiofTrace.Bottom, SiofDomain.VarNames.empty) in
+  let initial = (Bottom, SiofDomain.VarNames.empty) in
   let updated_summary =
     match Analyzer.compute_post proc_data ~initial with
     | Some post

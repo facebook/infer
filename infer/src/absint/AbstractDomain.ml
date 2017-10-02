@@ -10,6 +10,14 @@
 open! IStd
 module F = Format
 
+module Types = struct
+  type 'astate bottom_lifted = Bottom | NonBottom of 'astate
+
+  type 'astate top_lifted = Top | NonTop of 'astate
+end
+
+open! Types
+
 module type S = sig
   type astate
 
@@ -39,7 +47,7 @@ module type WithTop = sig
 end
 
 module BottomLifted (Domain : S) = struct
-  type astate = Bottom | NonBottom of Domain.astate
+  type astate = Domain.astate bottom_lifted
 
   let empty = Bottom
 
@@ -82,7 +90,7 @@ module BottomLifted (Domain : S) = struct
 end
 
 module TopLifted (Domain : S) = struct
-  type astate = Top | NonTop of Domain.astate
+  type astate = Domain.astate top_lifted
 
   let top = Top
 

@@ -10,6 +10,14 @@
 open! IStd
 module F = Format
 
+module Types : sig
+  type 'astate bottom_lifted = Bottom | NonBottom of 'astate
+
+  type 'astate top_lifted = Top | NonTop of 'astate
+end
+
+open! Types
+
 (** Abstract domains and domain combinators *)
 
 module type S = sig
@@ -47,14 +55,14 @@ end
 
 (** Lift a pre-domain to a domain *)
 module BottomLifted (Domain : S) : sig
-  type astate = Bottom | NonBottom of Domain.astate
+  type astate = Domain.astate bottom_lifted
 
   include WithBottom with type astate := astate
 end
 
 (** Create a domain with Top element from a pre-domain *)
 module TopLifted (Domain : S) : sig
-  type astate = Top | NonTop of Domain.astate
+  type astate = Domain.astate top_lifted
 
   include WithTop with type astate := astate
 end

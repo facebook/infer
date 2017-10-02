@@ -8,6 +8,7 @@
  *)
 
 open! IStd
+open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module MF = MarkupFormatter
@@ -21,9 +22,9 @@ module Domain = struct
 
   let add_call_site annot sink call_site (annot_map, previous_vstate as astate) =
     match previous_vstate with
-    | TrackingDomain.Bottom
+    | Bottom
      -> astate
-    | TrackingDomain.NonBottom _
+    | NonBottom _
      -> let sink_map =
           try AnnotReachabilityDomain.find annot annot_map
           with Not_found -> AnnotReachabilityDomain.SinkMap.empty
@@ -37,28 +38,24 @@ module Domain = struct
         if phys_equal sink_map' sink_map then astate
         else (AnnotReachabilityDomain.add annot sink_map' annot_map, previous_vstate)
 
-  let stop_tracking ((annot_map, _): astate) = (annot_map, TrackingDomain.Bottom)
+  let stop_tracking ((annot_map, _): astate) = (annot_map, Bottom)
 
   let add_tracking_var var (annot_map, previous_vstate as astate) =
     match previous_vstate with
-    | TrackingDomain.Bottom
+    | Bottom
      -> astate
-    | TrackingDomain.NonBottom vars
-     -> (annot_map, TrackingDomain.NonBottom (TrackingVar.add var vars))
+    | NonBottom vars
+     -> (annot_map, NonBottom (TrackingVar.add var vars))
 
   let remove_tracking_var var (annot_map, previous_vstate as astate) =
     match previous_vstate with
-    | TrackingDomain.Bottom
+    | Bottom
      -> astate
-    | TrackingDomain.NonBottom vars
-     -> (annot_map, TrackingDomain.NonBottom (TrackingVar.remove var vars))
+    | NonBottom vars
+     -> (annot_map, NonBottom (TrackingVar.remove var vars))
 
   let is_tracked_var var (_, vstate) =
-    match vstate with
-    | TrackingDomain.Bottom
-     -> false
-    | TrackingDomain.NonBottom vars
-     -> TrackingVar.mem var vars
+    match vstate with Bottom -> false | NonBottom vars -> TrackingVar.mem var vars
 end
 
 module Summary = Summary.Make (struct
@@ -434,9 +431,7 @@ end
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
 
 let checker ({Callbacks.proc_desc; tenv; summary} as callback) : Specs.summary =
-  let initial =
-    (AnnotReachabilityDomain.empty, Domain.TrackingDomain.NonBottom Domain.TrackingVar.empty)
-  in
+  let initial = (AnnotReachabilityDomain.empty, NonBottom Domain.TrackingVar.empty) in
   let proc_data = ProcData.make_default proc_desc tenv in
   match Analyzer.compute_post proc_data ~initial with
   | Some (annot_map, _)

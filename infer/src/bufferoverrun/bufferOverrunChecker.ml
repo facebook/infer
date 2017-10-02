@@ -12,6 +12,7 @@
 
 open! IStd
 open AbsLoc
+open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module Dom = BufferOverrunDomain
@@ -134,7 +135,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | "__inferbo_min"
        -> model_min ret params loc mem
       | "__exit" | "exit"
-       -> Dom.Mem.Bottom
+       -> Bottom
       | "fgetc"
        -> model_by_value Dom.Val.Itv.m1_255 ret mem
       | "infer_print"
