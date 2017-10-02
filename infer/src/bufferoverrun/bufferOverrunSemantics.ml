@@ -12,12 +12,12 @@
 
 open! IStd
 open AbsLoc
+open! AbstractDomain.Types
 module F = Format
 module L = Logging
-module Domain = BufferOverrunDomain
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
-open Domain
+open BufferOverrunDomain
 
 module Make (CFG : ProcCfg.S) = struct
   exception Not_implemented
@@ -420,7 +420,7 @@ module Make (CFG : ProcCfg.S) = struct
   let get_matching_pairs
       : Tenv.t -> Val.t -> Val.t -> Typ.t -> Mem.astate -> Mem.astate
         -> callee_ret_alias:Loc.t option
-        -> (Itv.Bound.t * Itv.Bound.t * TraceSet.t) list * Loc.t option =
+        -> (Itv.Bound.t * Itv.Bound.t bottom_lifted * TraceSet.t) list * Loc.t option =
     fun tenv formal actual typ caller_mem callee_mem ~callee_ret_alias ->
       let get_itv v = Val.get_itv v in
       let get_offset v = v |> Val.get_array_blk |> ArrayBlk.offsetof in
@@ -441,10 +441,11 @@ module Make (CFG : ProcCfg.S) = struct
       in
       let add_pair_itv itv1 itv2 traces l =
         let open Itv in
-        if itv1 <> bot && itv1 <> top && itv2 <> bot then (lb itv1, lb itv2, traces)
-          :: (ub itv1, ub itv2, traces) :: l
-        else if itv1 <> bot && itv1 <> top && Itv.eq itv2 bot then
-          (lb itv1, Bound.Bot, TraceSet.empty) :: (ub itv1, Bound.Bot, TraceSet.empty) :: l
+        if itv1 <> bot && itv1 <> top then
+          if Itv.eq itv2 bot then (lb itv1, Bottom, TraceSet.empty)
+            :: (ub itv1, Bottom, TraceSet.empty) :: l
+          else (lb itv1, NonBottom (lb itv2), traces)
+            :: (ub itv1, NonBottom (ub itv2), traces) :: l
         else l
       in
       let add_pair_val v1 v2 pairs =
@@ -480,8 +481,8 @@ module Make (CFG : ProcCfg.S) = struct
       (pairs, !ret_alias)
 
   let subst_map_of_pairs
-      : (Itv.Bound.t * Itv.Bound.t * TraceSet.t) list
-        -> Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t =
+      : (Itv.Bound.t * Itv.Bound.t bottom_lifted * TraceSet.t) list
+        -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t =
     fun pairs ->
       let add_pair (bound_map, trace_map) (formal, actual, traces) =
         match formal with
@@ -515,7 +516,7 @@ module Make (CFG : ProcCfg.S) = struct
   let get_subst_map
       : Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Mem.astate
         -> callee_ret_alias:Loc.t option -> Location.t
-        -> (Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t) * Loc.t option =
+        -> (Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t) * Loc.t option =
     fun tenv callee_pdesc params caller_mem callee_entry_mem ~callee_ret_alias loc ->
       let add_pair (formal, typ) actual (l, ret_alias) =
         let formal = Mem.find_heap (Loc.of_pvar formal) callee_entry_mem in

@@ -150,18 +150,16 @@ module Condition = struct
   let description : t -> string = fun c -> Format.asprintf "%a" pp_description c
 
   let subst
-      : t -> Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Typ.Procname.t
+      : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Typ.Procname.t
         -> Typ.Procname.t -> Location.t -> t option =
     fun c (bound_map, trace_map) caller_pname callee_pname loc ->
       match ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size with
       | []
        -> Some c
-      | symbols
-       -> let idx = ItvPure.subst c.idx bound_map in
-          let size = ItvPure.subst c.size bound_map in
-          if ItvPure.has_bnd_bot idx || ItvPure.has_bnd_bot size then None
-          else
-            let traces_caller =
+      | symbols ->
+        match (ItvPure.subst c.idx bound_map, ItvPure.subst c.size bound_map) with
+        | NonBottom idx, NonBottom size
+         -> let traces_caller =
               List.fold symbols ~init:TraceSet.empty ~f:(fun traces symbol ->
                   match Itv.SubstMap.find symbol trace_map with
                   | symbol_trace
@@ -172,6 +170,8 @@ module Condition = struct
             let traces = TraceSet.instantiate ~traces_caller ~traces_callee:c.traces loc in
             let cond_trace = Inter (caller_pname, callee_pname, loc) in
             Some {c with idx; size; cond_trace; traces}
+        | _
+         -> None
 end
 
 module ConditionSet = struct
@@ -185,7 +185,7 @@ module ConditionSet = struct
       add (Condition.make pname loc id ~idx ~size traces) cond
 
   let subst
-      : t -> Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Typ.Procname.t
+      : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Typ.Procname.t
         -> Typ.Procname.t -> Location.t -> t =
     fun x subst_map caller_pname callee_pname loc ->
       fold
@@ -203,7 +203,7 @@ module ConditionSet = struct
         (fun cond map ->
           let old_set =
             try Map.find cond.loc map
-            with _ -> empty
+            with Not_found -> empty
           in
           Map.add cond.loc (add cond old_set) map)
         x Map.empty
@@ -400,15 +400,17 @@ module Val = struct
   let normalize : t -> t =
     fun x -> {x with itv= Itv.normalize x.itv; arrayblk= ArrayBlk.normalize x.arrayblk}
 
-  let subst : t -> Itv.Bound.t Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Location.t -> t =
+  let subst
+      : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Location.t
+        -> t =
     fun x (bound_map, trace_map) loc ->
       let symbols = get_symbols x in
       let traces_caller =
-        List.fold
+        List.fold symbols
           ~f:(fun traces symbol ->
             try TraceSet.join (Itv.SubstMap.find symbol trace_map) traces
-            with _ -> traces)
-          ~init:TraceSet.empty symbols
+            with Not_found -> traces)
+          ~init:TraceSet.empty
       in
       let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces loc in
       {x with itv= Itv.subst x.itv bound_map; arrayblk= ArrayBlk.subst x.arrayblk bound_map; traces}
