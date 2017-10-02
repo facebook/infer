@@ -125,4 +125,5 @@ codetoanalyze/objc/shared/memory_leaks_benchmark/MemoryLeakExample.m, MemoryLeak
 codetoanalyze/objc/shared/memory_leaks_benchmark/MemoryLeakExample.m, MemoryLeakExample_test1NoLeak, 2, Assert_failure, [start of procedure test1NoLeak]
 codetoanalyze/objc/shared/memory_leaks_benchmark/MemoryLeakExample.m, MemoryLeakExample_test2:, 1, MEMORY_LEAK, [start of procedure test2:]
 codetoanalyze/objc/shared/memory_leaks_benchmark/MemoryLeakExample.m, MemoryLeakExample_test2NoLeak, 2, Assert_failure, [start of procedure test2NoLeak]
+codetoanalyze/objc/shared/npe/Available_expr.m, Available_expr_test_no_bug, 3, NULL_DEREFERENCE, [start of procedure test_no_bug,Condition is true]
 codetoanalyze/objc/shared/npe/Nonnull_attribute_example.m, NonnullC_initWithCoder:and:, 2, UNINITIALIZED_VALUE, [start of procedure initWithCoder:and:,start of procedure getA,return from a call to NonnullA_getA]

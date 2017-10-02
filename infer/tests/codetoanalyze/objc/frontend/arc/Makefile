@@ -26,6 +26,7 @@ SOURCES = \
   ../shared/block/BlockVar.m \
   ../shared/memory_leaks_benchmark/ArcExample.m \
   ../shared/memory_leaks_benchmark/arc_methods.m \
+	../shared/npe/Available_expr.m \
   ../shared/npe/Nonnull_attribute_example.m \
 
 include $(TESTS_DIR)/clang-frontend.make

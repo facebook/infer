@@ -3263,6 +3263,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> no_op_trans trans_state.succ_nodes
     (* vector instructions for OpenCL etc. we basically ignore these for now; just translate the
        sub-expressions *)
+    | ObjCAvailabilityCheckExpr (_, _, expr_info, _)
+     -> trans_into_undefined_expr trans_state expr_info
     | ExtVectorElementExpr (_, stmts, _)
     | ShuffleVectorExpr (_, stmts, _)
     | UserDefinedLiteral (_, stmts, _)
@@ -3305,7 +3307,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | MSPropertySubscriptExpr _
     | NoInitExpr _
     | OMPArraySectionExpr _
-    | ObjCAvailabilityCheckExpr _
     | ObjCIsaExpr _
     | ObjCSubscriptRefExpr _
     | UnresolvedLookupExpr _

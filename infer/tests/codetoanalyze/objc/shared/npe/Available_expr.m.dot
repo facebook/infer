@@ -1,0 +1,35 @@
+/* @generated */
+digraph iCFG {
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_1" [label="1: Start Available_expr_test_no_bug\nFormals:  self:Available_expr*\nLocals:  p:int* \n   DECLARE_LOCALS(&return,&p); [line 17]\n " color=yellow style=filled]
+	
+
+	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_1" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" ;
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" [label="2: Exit Available_expr_test_no_bug \n  " color=yellow style=filled]
+	
+
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" [label="3:  Return Stmt \n   *&return:int=0 [line 22]\n " shape="box"]
+	
+
+	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" ;
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" [label="4: + \n  " ]
+	
+
+	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_3" ;
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" [label="5: Prune (true branch) \n   PRUNE(n$0, true); [line 19]\n " shape="invhouse"]
+	
+
+	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" ;
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" [label="6: Prune (false branch) \n   PRUNE(!n$0, false); [line 19]\n " shape="invhouse"]
+	
+
+	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_4" ;
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" [label="7:  Return Stmt \n   n$1=*&p:int* [line 20]\n  n$2=*n$1:int [line 20]\n  *&return:int=n$2 [line 20]\n " shape="box"]
+	
+
+	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_7" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_2" ;
+"test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" [label="8:  DeclStmt \n   *&p:int*=null [line 18]\n " shape="box"]
+	
+
+	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_5" ;
+	 "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_8" -> "test_no_bug#Available_expr#instance.a4aa786abeb2b17541abfe8ecf02c88f_6" ;
+}

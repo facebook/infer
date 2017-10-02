@@ -48,6 +48,7 @@ SOURCES_DEFAULT = \
   shared/memory_leaks_benchmark/MemoryLeakExample.m \
   shared/memory_leaks_benchmark/RetainReleaseExample.m \
   shared/memory_leaks_benchmark/arc_methods.m \
+	shared/npe/Available_expr.m \
   shared/npe/Nonnull_attribute_example.m \
   shared/property/GetterExample.m \
   shared/property/PropertyAttributes.m \
