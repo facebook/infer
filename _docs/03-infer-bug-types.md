@@ -422,7 +422,9 @@ the information that you know, but that is for later.
 
 ## <a name="EMPTY_VECTOR_ACCESS"></a> Empty vector access
 
-This error type is reported only in C++. The code is trying to access an element of a vector that Infer believes to be empty. Such an access will cause undefined behavior at runtime.
+This error type is reported only in C++, in versions >= C++11.
+
+The code is trying to access an element of a vector that Infer believes to be empty. Such an access will cause undefined behavior at runtime.
 
 ```c++
 #include <vector>
