@@ -700,7 +700,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       | AccessPrecondition.Unprotected formal_indexes
                        -> IntSet.fold
                             (fun index acc ->
-                              add_ownership_access callee_accesses (List.nth_exn actuals index) acc)
+                              match List.nth actuals index with
+                              | Some actual
+                               -> add_ownership_access callee_accesses actual acc
+                              | None
+                               -> L.internal_error
+                                    "Bad actual index %d for callee %a with %d actuals." index
+                                    Typ.Procname.pp callee_pname (List.length actuals) ;
+                                  acc)
                             formal_indexes accesses_acc
                     in
                     AccessDomain.fold update_accesses accesses astate.accesses
