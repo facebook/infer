@@ -33,8 +33,11 @@ val new_database_connection : unit -> unit
 val delete_capture_and_analysis_data : unit -> unit
 (** delete all results from the capture and the analysis *)
 
-val canonicalize_db : unit -> unit
+val db_canonicalize : unit -> unit
 (** put the database on disk in deterministic form *)
+
+val db_close : unit -> unit
+(** close the current connection to the database *)
 
 val register_statement : ('a, unit, string, (unit -> Sqlite3.stmt)) Base.format4 -> 'a
 (** Return a function unit -> Sqlite3.stmt that can be called (once the DB has been initialized) to

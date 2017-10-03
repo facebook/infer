@@ -126,7 +126,7 @@ let delete_capture_and_analysis_data () =
   in
   List.iter ~f:Utils.rmtree dirs_to_delete ; List.iter ~f:Unix.mkdir_p dirs_to_delete ; ()
 
-let canonicalize_db () =
+let db_canonicalize () =
   let db = get_database () in
   SqliteUtils.exec db ~log:"running VACUUM" ~stmt:"VACUUM"
 

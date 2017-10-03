@@ -114,6 +114,12 @@ let clean_compilation_command mode =
 (* Clean up the results dir to select only what's relevant to go in the Buck cache. In particular,
    get rid of non-deterministic outputs.*)
 let clean_results_dir () =
+  if not Config.flavors then
+    (* we do not need to keep the capture data in Buck/Java mode *)
+    ResultsDir.reset_attributes_table () ;
+  ResultsDir.db_canonicalize () ;
+  (* make sure we are done with the database *)
+  ResultsDir.db_close () ;
   (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
   let should_delete_dir =
     let dirs_to_delete =
@@ -127,7 +133,12 @@ let clean_results_dir () =
     List.mem ~equal:String.equal dirs_to_delete
   in
   let should_delete_file =
-    let files_to_delete = [Config.log_file] in
+    let files_to_delete =
+      [ Config.log_file
+      ; (* some versions of sqlite do not clean up after themselves *)
+      (ResultsDir.database_filename ^ "-shm")
+      ; (ResultsDir.database_filename ^ "-wal") ]
+    in
     let suffixes_to_delete =
       ".txt" :: ".csv" :: ".json" :: (if Config.flavors then [] else [".cfg"; ".cg"])
     in
@@ -160,11 +171,7 @@ let clean_results_dir () =
     | exception Unix.Unix_error (Unix.ENOENT, _, _)
      -> ()
   in
-  delete_temp_results Config.results_dir ;
-  if not Config.flavors then
-    (* we do not need to keep the capture data in Buck/Java mode *)
-    ResultsDir.reset_attributes_table () ;
-  ResultsDir.canonicalize_db ()
+  delete_temp_results Config.results_dir
 
 let check_captured_empty mode =
   let clean_command_opt = clean_compilation_command mode in
