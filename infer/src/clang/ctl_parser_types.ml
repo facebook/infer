@@ -415,11 +415,14 @@ and objc_object_type_equal c_type abs_ctype =
   in
   match (c_type, abs_ctype) with
   | ObjCObjectType (_, ooti), ObjCGenProt (base, args) -> (
-    match (CAst_utils.get_type ooti.base_type, ooti.protocol_decls_ptr, ooti.type_args) with
+    match
+      (CAst_utils.get_type ooti.ooti_base_type, ooti.ooti_protocol_decls_ptr, ooti.ooti_type_args)
+    with
     | Some base_type, _ :: _, []
-     -> c_type_equal base_type base && List.for_all ~f:(check_prot args) ooti.protocol_decls_ptr
+     -> c_type_equal base_type base
+        && List.for_all ~f:(check_prot args) ooti.ooti_protocol_decls_ptr
     | Some base_type, [], _ :: _
-     -> c_type_equal base_type base && List.for_all ~f:(check_type_args args) ooti.type_args
+     -> c_type_equal base_type base && List.for_all ~f:(check_type_args args) ooti.ooti_type_args
     | _
      -> false )
   | _

@@ -647,12 +647,12 @@ let has_type_subprotocol_of an _prot_name =
     | Some ObjCObjectPointerType (_, qt)
      -> check_subprotocol (CAst_utils.get_type qt.qt_type_ptr)
     | Some ObjCObjectType (_, ooti)
-     -> if List.length ooti.protocol_decls_ptr > 0 then
-          check_protocol_hiearachy ooti.protocol_decls_ptr _prot_name
+     -> if List.length ooti.ooti_protocol_decls_ptr > 0 then
+          check_protocol_hiearachy ooti.ooti_protocol_decls_ptr _prot_name
         else
           List.exists
             ~f:(fun qt -> check_subprotocol (CAst_utils.get_type qt.qt_type_ptr))
-            ooti.type_args
+            ooti.ooti_type_args
     | Some ObjCInterfaceType (_, pt)
      -> check_protocol_hiearachy [pt] _prot_name
     | _

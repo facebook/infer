@@ -115,7 +115,7 @@ and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
       if Typ.equal_desc desc (get_builtin_objc_type `ObjCClass) then desc
       else Typ.Tptr (typ, Typ.Pk_pointer)
   | ObjCObjectType (_, objc_object_type_info)
-   -> type_ptr_to_type_desc translate_decl tenv objc_object_type_info.Clang_ast_t.base_type
+   -> type_ptr_to_type_desc translate_decl tenv objc_object_type_info.Clang_ast_t.ooti_base_type
   | BlockPointerType (_, qual_type)
    -> let typ = qual_type_to_sil_type translate_decl tenv qual_type in
       Typ.Tptr (typ, Typ.Pk_pointer)
