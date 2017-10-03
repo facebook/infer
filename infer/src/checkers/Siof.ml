@@ -28,17 +28,17 @@ type siof_model =
 
 let parse_siof_model (qual_name, initialized_globals) = {qual_name; initialized_globals}
 
-let models =
-  List.map ~f:parse_siof_model
-    [ ( "std::ios_base::Init::Init"
-      , [ "std::cerr"
-        ; "std::wcerr"
-        ; "std::cin"
-        ; "std::wcin"
-        ; "std::clog"
-        ; "std::wclog"
-        ; "std::cout"
-        ; "std::wcout" ] ) ]
+let standard_streams =
+  [ "std::cerr"
+  ; "std::wcerr"
+  ; "std::cin"
+  ; "std::wcin"
+  ; "std::clog"
+  ; "std::wclog"
+  ; "std::cout"
+  ; "std::wcout" ]
+
+let models = List.map ~f:parse_siof_model [("std::ios_base::Init::Init", standard_streams)]
 
 let is_modelled =
   let models_matcher =
@@ -223,9 +223,30 @@ let siof_check pdesc gname (summary: Specs.summary) =
   | Some (Bottom, _) | None
    -> ()
 
-let checker {Callbacks.proc_desc; tenv; summary} : Specs.summary =
+let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summary =
+  let standard_streams_initialized_in_tu =
+    let includes_iostream tu =
+      let magic_iostream_marker =
+        (* always [Some _] because we create a global variable with [mk_global] *)
+        Option.value_exn
+          ( Pvar.mk_global
+              (Mangled.from_string
+                 (* infer's C++ headers define this global variable in <iostream> *)
+                 "__infer_translation_unit_init_streams") (TUFile tu)
+          |> Pvar.get_initializer_pname )
+      in
+      get_procs_in_file (Procdesc.get_proc_name proc_desc)
+      |> List.exists ~f:(Typ.Procname.equal magic_iostream_marker)
+    in
+    Option.value_map ~default:false ~f:includes_iostream
+      (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
+  in
   let proc_data = ProcData.make_default proc_desc tenv in
-  let initial = (Bottom, SiofDomain.VarNames.empty) in
+  let initial =
+    ( Bottom
+    , if standard_streams_initialized_in_tu then SiofDomain.VarNames.of_list standard_streams
+      else SiofDomain.VarNames.empty )
+  in
   let updated_summary =
     match Analyzer.compute_post proc_data ~initial with
     | Some post

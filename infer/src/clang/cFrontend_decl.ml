@@ -197,33 +197,41 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       | None
        -> false
 
-  let should_translate_decl trans_unit_ctx dec decl_trans_context =
+  let should_translate_decl trans_unit_ctx (dec: Clang_ast_t.decl) decl_trans_context =
     let info = Clang_ast_proj.get_decl_tuple dec in
     let source_range = info.Clang_ast_t.di_source_range in
     let translate_when_used =
       match dec with
-      | Clang_ast_t.FunctionDecl (_, name_info, _, _)
-      | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _)
-      | Clang_ast_t.CXXConstructorDecl (_, name_info, _, _, _)
-      | Clang_ast_t.CXXConversionDecl (_, name_info, _, _, _)
-      | Clang_ast_t.CXXDestructorDecl (_, name_info, _, _, _)
+      | FunctionDecl (_, name_info, _, _)
+      | CXXMethodDecl (_, name_info, _, _, _)
+      | CXXConstructorDecl (_, name_info, _, _, _)
+      | CXXConversionDecl (_, name_info, _, _, _)
+      | CXXDestructorDecl (_, name_info, _, _, _)
        -> is_whitelisted_cpp_method (CAst_utils.get_qualified_name name_info)
       | _
        -> false
     in
+    let always_translate =
+      match dec with
+      | VarDecl (_, {ni_name}, _, _)
+       -> String.is_prefix ni_name ~prefix:"__infer_"
+      | _
+       -> false
+    in
     let translate_location =
-      CLocation.should_translate_lib trans_unit_ctx source_range decl_trans_context
-        ~translate_when_used
+      always_translate
+      || CLocation.should_translate_lib trans_unit_ctx source_range decl_trans_context
+           ~translate_when_used
     in
     let never_translate_decl =
       match dec with
-      | Clang_ast_t.FunctionDecl (_, name_info, _, _)
-      | Clang_ast_t.CXXMethodDecl (_, name_info, _, _, _)
-      | Clang_ast_t.CXXConstructorDecl (_, name_info, _, _, _)
-      | Clang_ast_t.CXXConversionDecl (_, name_info, _, _, _)
-      | Clang_ast_t.CXXDestructorDecl (_, name_info, _, _, _)
+      | FunctionDecl (_, name_info, _, _)
+      | CXXMethodDecl (_, name_info, _, _, _)
+      | CXXConstructorDecl (_, name_info, _, _, _)
+      | CXXConversionDecl (_, name_info, _, _, _)
+      | CXXDestructorDecl (_, name_info, _, _, _)
        -> let fun_name = name_info.Clang_ast_t.ni_name in
-          Str.string_match (Str.regexp "__infer_skip__") fun_name 0
+          String.is_prefix ~prefix:"__infer_skip__" fun_name
       | _
        -> false
     in
@@ -282,7 +290,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             | None
              -> () )
         | VarDecl (decl_info, named_decl_info, qt, ({vdi_is_global; vdi_init_expr} as vdi))
-          when vdi_is_global && Option.is_some vdi_init_expr
+          when String.is_prefix ~prefix:"__infer_" named_decl_info.ni_name
+               || vdi_is_global && Option.is_some vdi_init_expr
          -> (* create a fake procedure that initializes the global variable so that the variable
               initializer can be analyzed by the backend (eg, the SIOF checker) *)
             let procname =

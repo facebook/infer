@@ -12,6 +12,7 @@
 extern SomeNonPODObject extern_global_object;
 SomeNonPODObject global_object;
 extern int access_to_non_pod();
+void safe_streams();
 
 struct SomeOtherNonPODObject {
   SomeOtherNonPODObject() {
@@ -21,6 +22,7 @@ struct SomeOtherNonPODObject {
 
   SomeOtherNonPODObject(int i) {
     global_object.some_method(); // OK, same translation unit
+    safe_streams(); // OK, that function is SIOF safe
   };
 };
 

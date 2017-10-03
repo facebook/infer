@@ -6,11 +6,23 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-#include <iostream>
+#include <istream>
+#include <ostream>
+
+namespace std {
+extern std::istream cin;
+extern std::wistream wcin;
+extern std::ostream cerr;
+extern std::wostream wcerr;
+extern std::ostream clog;
+extern std::wostream wclog;
+extern std::ostream cout;
+extern std::wostream wcout;
+}; // namespace std
 
 void printing_no_SIOF() {
   std::ios_base::Init ioInit;
-  std::cerr << "I haz warning!";
+  std::cerr << "it's ok to print here";
 }
 
 void printing_SIOF() {

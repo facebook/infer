@@ -20,6 +20,7 @@ SOURCES = \
   siof/pod_across_translation_units-1.cpp \
   siof/pod_across_translation_units-2.cpp \
   siof/pod_same_translation_unit.cpp \
+  siof/include_iostream.cpp \
   siof/siof.cpp \
   siof/siof_templated.cpp \
   siof/siof_different_tu.cpp \
