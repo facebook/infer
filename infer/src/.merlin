@@ -7,6 +7,8 @@ PKG base
 PKG cmdliner
 PKG core
 PKG javalib
+PKG mtime
+PKG mtime.clock.os
 PKG oUnit
 PKG parmap
 PKG ppx_compare

@@ -38,10 +38,9 @@ let init_global_state_for_capture_and_linters source_file =
   CFrontend_config.reset_global_state ()
 
 let run_clang_frontend ast_source =
-  let init_time = Unix.gettimeofday () in
+  let init_time = Mtime_clock.counter () in
   let print_elapsed () =
-    let elapsed = Unix.gettimeofday () -. init_time in
-    L.(debug Capture Quiet) "Elapsed: %07.3f seconds.@\n" elapsed
+    L.(debug Capture Quiet) "Elapsed: %a.@\n" Mtime.Span.pp (Mtime_clock.count init_time)
   in
   let ast_decl =
     match ast_source with

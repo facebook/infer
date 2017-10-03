@@ -58,6 +58,7 @@ let common_libraries =
     ; "cmdliner"
     ; "core"
     ; "extlib"
+    ; "mtime.clock.os"
     ; "oUnit"
     ; "parmap"
     ; "sqlite3"

@@ -2018,12 +2018,9 @@ let pathset_collapse tenv pset =
   Paths.PathSet.from_renamed_list
     (List.map ~f:(fun (p, path) -> (Specs.Jprop.to_prop p, path)) plist')
 
-let join_time = ref 0.0
-
 let pathset_join pname tenv (pset1: Paths.PathSet.t) (pset2: Paths.PathSet.t)
     : Paths.PathSet.t * Paths.PathSet.t =
   let mode = JoinState.Post in
-  let initial_time = Unix.gettimeofday () in
   let pset_to_plist pset =
     let f_list p pa acc = (p, pa) :: acc in
     Paths.PathSet.fold f_list pset []
@@ -2070,7 +2067,6 @@ let pathset_join pname tenv (pset1: Paths.PathSet.t) (pset2: Paths.PathSet.t)
   let res =
     (Paths.PathSet.from_renamed_list ppalist1_res, Paths.PathSet.from_renamed_list ppalist2_res)
   in
-  join_time := !join_time +. (Unix.gettimeofday () -. initial_time) ;
   res
 
 (**

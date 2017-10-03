@@ -103,11 +103,11 @@ let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let log_elapsed_time =
-    let start_time = Unix.gettimeofday () in
+    let start_time = Mtime_clock.counter () in
     fun () ->
-      let elapsed_time = Unix.gettimeofday () -. start_time in
       L.(debug Analysis Medium)
-        "Elapsed analysis time: %a: %f@\n" Typ.Procname.pp callee_pname elapsed_time
+        "Elapsed analysis time: %a: %a@\n" Typ.Procname.pp callee_pname Mtime.Span.pp
+        (Mtime_clock.count start_time)
   in
   L.progressbar_procedure () ;
   if Config.trace_ondemand then

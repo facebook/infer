@@ -42,11 +42,11 @@ let version = 27
 (** Retry the function while an exception filtered is thrown,
     or until the timeout in seconds expires. *)
 let retry_exception ~timeout ~catch_exn ~f x =
-  let init_time = Unix.gettimeofday () in
-  let expired () = Unix.gettimeofday () -. init_time >= timeout in
+  let init_time = Mtime_clock.counter () in
+  let expired () = Mtime.Span.compare timeout (Mtime_clock.count init_time) <= 0 in
   let rec retry () =
     try f x
-    with e when catch_exn e && not (expired ()) -> (retry [@tailcall]) ()
+    with e when catch_exn e && not (expired ()) -> Utils.yield () ; (retry [@tailcall]) ()
   in
   retry ()
 
@@ -94,7 +94,8 @@ let create_serializer (key: Key.t) : 'a serializer =
         in
         (* Retry to read for 1 second in case of end of file, *)
         (* which indicates that another process is writing the same file. *)
-        SymOp.try_finally ~f:(fun () -> retry_exception ~timeout:1.0 ~catch_exn ~f:read ())
+        let one_second = Mtime.Span.of_uint64_ns (Int64.of_int 1_000_000_000) in
+        SymOp.try_finally ~f:(fun () -> retry_exception ~timeout:one_second ~catch_exn ~f:read ())
           ~finally:(fun () -> In_channel.close inc )
   in
   let write_to_tmp_file fname data =

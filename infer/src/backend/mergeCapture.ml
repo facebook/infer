@@ -143,9 +143,9 @@ let process_merge_file deps_file =
   L.progress "Files linked: %d@\n" stats.files_linked
 
 let merge_captured_targets () =
-  let time0 = Unix.gettimeofday () in
+  let time0 = Mtime_clock.counter () in
   L.progress "Merging captured Buck targets...@\n%!" ;
   let infer_deps_file = Config.(results_dir ^/ buck_infer_deps_file_name) in
   MergeResults.merge_buck_flavors_results infer_deps_file ;
   process_merge_file infer_deps_file ;
-  L.progress "Merging captured Buck targets took %.03fs@\n%!" (Unix.gettimeofday () -. time0)
+  L.progress "Merging captured Buck targets took %a@\n%!" Mtime.Span.pp (Mtime_clock.count time0)

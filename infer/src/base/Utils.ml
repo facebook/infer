@@ -16,9 +16,6 @@ module L = Die
 (** initial process times *)
 let initial_times = Unix.times ()
 
-(** precise time of day at the start of the analysis *)
-let initial_timeofday = Unix.gettimeofday ()
-
 (** read a source file and return a list of lines, or None in case of error *)
 let read_file fname =
   let res = ref [] in
@@ -316,3 +313,6 @@ let without_gc ~f =
   let res = f () in
   Gc.set {stat with space_overhead= space_oh} ;
   res
+
+let yield () =
+  Unix.select ~read:[] ~write:[] ~except:[] ~timeout:(`After Time_ns.Span.min_value) |> ignore
