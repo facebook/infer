@@ -804,13 +804,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor
      -> method_deref_trans trans_state pre_trans_result decl_ref stmt_info decl_kind
     | _
-     -> let print_error decl_kind =
-          L.(debug Capture Medium)
-            "Warning: Decl ref expression %s with pointer %d still needs to be translated "
-            (Clang_ast_j.string_of_decl_kind decl_kind) decl_ref.Clang_ast_t.dr_decl_pointer
-        in
-        print_error decl_kind ;
-        assert false
+     -> CFrontend_config.unimplemented
+          "Decl ref expression %a with pointer %d still needs to be translated"
+          (Pp.to_string ~f:Clang_ast_j.string_of_decl_kind) decl_kind
+          decl_ref.Clang_ast_t.dr_decl_pointer
 
   and declRefExpr_trans trans_state stmt_info decl_ref_expr_info _ =
     L.(debug Capture Verbose)
@@ -3274,11 +3271,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SubstNonTypeTemplateParmExpr _
     | SubstNonTypeTemplateParmPackExpr _
     | CXXDependentScopeMemberExpr _
-     -> raise
-          (CFrontend_config.unimplemented "Translation of templated code is unsupported: %a"
-             (Pp.to_string ~f:Clang_ast_j.string_of_stmt) instr)
+     -> CFrontend_config.unimplemented "Translation of templated code is unsupported: %a"
+          (Pp.to_string ~f:Clang_ast_j.string_of_stmt) instr
     | ForStmt (_, _) | WhileStmt (_, _) | DoStmt (_, _) | ObjCForCollectionStmt (_, _)
-     -> assert false
+     -> CFrontend_config.incorrect_assumption "Unexpected shape for %a: %a"
+          (Pp.to_string ~f:Clang_ast_proj.get_stmt_kind_string) instr
+          (Pp.to_string ~f:Clang_ast_j.string_of_stmt) instr
     | MSAsmStmt _
     | CapturedStmt _
     | CoreturnStmt _
@@ -3368,10 +3366,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | SEHLeaveStmt _
     | SEHTryStmt _
     | DefaultStmt _
-     -> raise
-          (CFrontend_config.unimplemented "Statement translation for kind %s: %a"
-             (Clang_ast_proj.get_stmt_kind_string instr)
-             (Pp.to_string ~f:Clang_ast_j.string_of_stmt) instr)
+     -> CFrontend_config.unimplemented "Statement translation for kind %s: %a"
+          (Clang_ast_proj.get_stmt_kind_string instr) (Pp.to_string ~f:Clang_ast_j.string_of_stmt)
+          instr
 
   (* Function similar to instruction function, but it takes C++ constructor initializer as
      an input parameter. *)

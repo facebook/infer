@@ -119,7 +119,10 @@ let get_var_name_mangled name_info var_decl_info =
     | "", Some index
      -> "__param_" ^ string_of_int index
     | "", None
-     -> assert false
+     -> CFrontend_config.incorrect_assumption
+          "Got both empty clang_name and None for param_idx in get_var_name_mangled (%a) (%a)"
+          (Pp.to_string ~f:Clang_ast_j.string_of_named_decl_info) name_info
+          (Pp.to_string ~f:Clang_ast_j.string_of_var_decl_info) var_decl_info
     | _
      -> clang_name
   in
