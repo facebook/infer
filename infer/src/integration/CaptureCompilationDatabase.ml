@@ -92,7 +92,7 @@ let get_compilation_database_files_buck ~prog ~args =
      -> Buck.add_flavors_to_buck_command targets
   in
   match no_targets with
-  | "build" :: _
+  | "build" :: no_targets_no_build
    -> (
       let targets_in_file = Buck.store_targets_in_file targets in
       let build_args = no_targets @ ["--config"; "*//cxx.pch_enabled=false"; targets_in_file] in
@@ -100,7 +100,8 @@ let get_compilation_database_files_buck ~prog ~args =
         "Processed buck command is : 'buck %s'@\n" (String.concat ~sep:" " build_args) ;
       Process.create_process_and_wait ~prog ~args:build_args ;
       let buck_targets_shell =
-        [prog; "targets"; "--show-output"; targets_in_file] |> Utils.shell_escape_command
+        List.append [prog; "targets"; "--show-output"; targets_in_file] no_targets_no_build
+        |> Utils.shell_escape_command
       in
       let output, exit_or_signal =
         Utils.with_process_in buck_targets_shell In_channel.input_lines
