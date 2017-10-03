@@ -170,3 +170,18 @@ public class ListUtil<T> {
 }
 ```
 Unfortunately, using `synchronized` blindly as a means to fix every unprotected write or read is not always safe. Even with Infer, finding, understanding, and fixing concurrency issues is difficult. If you would like to learn more about best practices, [Java Concurrency in Practice](http://jcip.net/) is an excellent resource.
+
+## FAQ
+
+### Why do I need to annotate interfaces?
+
+Good question. This is a fine idea in principle, but a bad idea in practice due to a (a) separate compilation and (b) our diff-based deployment model. Consider the following example:
+
+```
+@ThreadSafe void foo(Interface i) {
+  i.bar();
+}
+```
+
+The compiler doesn't have to know about all implementations (or indeed, any implementations) of `Interface` at the time it compiles this code, so there's no guarantee that Infer will know about or be able to check all implementations of `Interface`. That's (a).
+For (b), say that we check that all implementations of `Interface` are thread-safe at the time this code is written, but we don't add the annotation. If someone else comes along and adds a new implementation of `Interface` that is not thread-safe, Infer will have no way of knowing that this will cause a potential bug in `foo`. But if `Interface` is annotated, Infer will enforce that all new implementations of `Interface` are thread-safe, and `foo` will remain bug-free.
