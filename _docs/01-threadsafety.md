@@ -6,7 +6,7 @@ permalink: /docs/threadsafety.html
 ---
 
 Infer's thread-safety analysis find data races in your Java code. 
-To run the analysis, you can use `infer -a checkers` (to run the thread-safety analysis along with other AI's) or `infer -a checkers --no-default-checkers --threadsafety` (to run only the thread-safety analysis).
+To run the analysis, you can use `infer -a checkers` (to run the thread-safety analysis along with other AI's) or `infer -a checkers --threadsafety-only` (to run only the thread-safety analysis).
 The annotations described below can be used via the Maven Central package [here](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation/0.10.0.2).
 
 ## Background
