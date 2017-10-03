@@ -74,4 +74,14 @@ For more technical definition and techniques to avoid/remediate, see the [FAQ](h
 
 ## <a name="DEAD_STORE"></a>Dead store
 
-This is error is reported in C++. It fires when the value assigned to a variables is never used (e.g., `int i = 1; i = 2; return i;`).
+This error is reported in C++. It fires when the value assigned to a variables is never used (e.g., `int i = 1; i = 2; return i;`).
+
+## <a name="THREAD_SAFETY_VIOLATION"></a>Thread safety violation
+
+This error indicates a possible race condition--see the thread-safety [docs](http://fbinfer.com/docs/threadsafety.html) for more details.
+
+## <a name="INTERFACE_NOT_THREADSAFE"></a>Interface not threadsafe
+
+This error indicates that you have invoked an interface method not annotated with `@ThreadSafe` from a thread-safe context (e.g., code that uses locks or is marked `@ThreadSafe`). The fix is to add the `@ThreadSafe` annotation to the interface or to the interface method. For background on why these annotations are necessary, see the thread-safety [docs](http://fbinfer.com/docs/threadsafety.html).
+
+
