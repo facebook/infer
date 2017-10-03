@@ -1046,8 +1046,8 @@ let mk_format format_kind fname =
 let init_issues_format_list report_csv report_json =
   let csv_format = Option.value_map ~f:(mk_format Csv) ~default:[] report_csv in
   let json_format = Option.value_map ~f:(mk_format Json) ~default:[] report_json in
-  let tests_format = Option.value_map ~f:(mk_format Tests) ~default:[] Config.bugs_tests in
-  let txt_format = Option.value_map ~f:(mk_format Text) ~default:[] Config.bugs_txt in
+  let tests_format = Option.value_map ~f:(mk_format Tests) ~default:[] Config.issues_tests in
+  let txt_format = Option.value_map ~f:(mk_format Text) ~default:[] Config.issues_txt in
   csv_format @ json_format @ tests_format @ txt_format
 
 let init_procs_format_list () = Option.value_map ~f:(mk_format Csv) ~default:[] Config.procs_csv

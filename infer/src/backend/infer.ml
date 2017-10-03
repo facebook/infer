@@ -77,16 +77,7 @@ let () =
       if Config.developer_mode then InferAnalyze.register_perf_stats_report () ;
       Driver.analyze_and_report Analyze ~changed_files:(Driver.read_config_changed_files ())
   | Report
-   -> let report_json =
-        match Config.from_json_report with
-        | None
-         -> Some Config.(results_dir ^/ report_json)
-        | Some _
-         -> (* if we start from a json report instead of the specs, do not generate a json report
-              again *)
-            None
-      in
-      InferPrint.main ~report_csv:Config.bugs_csv ~report_json
+   -> InferPrint.main ~report_csv:Config.issues_csv ~report_json:None
   | ReportDiff
    -> (* at least one report must be passed in input to compute differential *)
       ( match (Config.report_current, Config.report_previous) with

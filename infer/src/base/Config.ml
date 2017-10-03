@@ -738,21 +738,6 @@ and buck_out =
     ~in_help:CLOpt.([(Capture, manual_buck_java)])
     ~meta:"dir" "Specify the root directory of buck-out"
 
-and bugs_csv =
-  CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
-    ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write a list of issues in CSV format to $(i,file)"
-
-and bugs_tests =
-  CLOpt.mk_path_opt ~long:"issues-tests"
-    ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write a list of issues in a format suitable for tests to $(i,file)"
-
-and bugs_txt =
-  CLOpt.mk_path_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
-    ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write a list of issues in text format to $(i,file) (default: infer-out/bugs.txt)"
-
 and calls_csv =
   CLOpt.mk_path_opt ~deprecated:["calls"] ~long:"calls-csv"
     ~in_help:CLOpt.([(Report, manual_generic)])
@@ -1178,6 +1163,11 @@ and iphoneos_target_sdk_version_path_regex =
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
     "To pass a specific target SDK version to use for iphoneos in a particular path, with the format path:version (can be specified multiple times)"
 
+and issues_csv =
+  CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
+    ~in_help:CLOpt.([(Report, manual_generic)])
+    ~meta:"file" "Write a list of issues in CSV format to $(i,file)"
+
 and issues_fields =
   CLOpt.mk_symbol_seq ~long:"issues-fields"
     ~in_help:CLOpt.([(Report, manual_generic)])
@@ -1188,6 +1178,16 @@ and issues_fields =
       ; `Issue_field_bug_type
       ; `Issue_field_bug_trace ] ~symbols:issues_fields_symbols ~eq:PVariant.( = )
     "Fields to emit with $(b,--issues-tests)"
+
+and issues_tests =
+  CLOpt.mk_path_opt ~long:"issues-tests"
+    ~in_help:CLOpt.([(Report, manual_generic)])
+    ~meta:"file" "Write a list of issues in a format suitable for tests to $(i,file)"
+
+and issues_txt =
+  CLOpt.mk_path_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
+    ~in_help:CLOpt.([(Report, manual_generic)])
+    ~meta:"file" "Write a list of issues in text format to $(i,file) (default: infer-out/bugs.txt)"
 
 and iterations =
   CLOpt.mk_int ~deprecated:["iterations"] ~long:"iterations" ~default:1 ~meta:"int"
@@ -1976,18 +1976,6 @@ and buck_out = !buck_out
 
 and bufferoverrun = !bufferoverrun
 
-and bugs_csv = !bugs_csv
-
-and frontend_tests = !frontend_tests
-
-and gen_previous_build_command_script = !gen_previous_build_command_script
-
-and generated_classes = !generated_classes
-
-and bugs_tests = !bugs_tests
-
-and bugs_txt = !bugs_txt
-
 and changed_files_index = !changed_files_index
 
 and calls_csv = !calls_csv
@@ -2080,6 +2068,12 @@ and from_json_report = !from_json_report
 
 and frontend_stats = !frontend_stats
 
+and frontend_tests = !frontend_tests
+
+and gen_previous_build_command_script = !gen_previous_build_command_script
+
+and generated_classes = !generated_classes
+
 and headers = !headers
 
 and html = !html
@@ -2097,7 +2091,13 @@ and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 and iphoneos_target_sdk_version_path_regex =
   process_iphoneos_target_sdk_version_path_regex !iphoneos_target_sdk_version_path_regex
 
+and issues_csv = !issues_csv
+
 and issues_fields = !issues_fields
+
+and issues_tests = !issues_tests
+
+and issues_txt = !issues_txt
 
 and iterations = !iterations
 

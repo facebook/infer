@@ -299,12 +299,6 @@ val buck_out : string option
 
 val bufferoverrun : bool
 
-val bugs_csv : string option
-
-val bugs_tests : string option
-
-val bugs_txt : string option
-
 val changed_files_index : string option
 
 val calls_csv : string option
@@ -436,6 +430,8 @@ type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string
 
 val iphoneos_target_sdk_version_path_regex : iphoneos_target_sdk_version_path_regex list
 
+val issues_csv : string option
+
 val issues_fields :
   [ `Issue_field_bug_class
   | `Issue_field_kind
@@ -456,6 +452,10 @@ val issues_fields :
   | `Issue_field_procedure_id_without_crc
   | `Issue_field_qualifier_contains_potential_exception_note ]
   list
+
+val issues_tests : string option
+
+val issues_txt : string option
 
 val iterations : int
 
