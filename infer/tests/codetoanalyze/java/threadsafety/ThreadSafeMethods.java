@@ -95,8 +95,8 @@ class ThreadSafeMethods {
     this.field5 = new Object();
   }
 
-  // unprotected read of a field that is read safely in a method marked thread-safe
-  public Object readSameFieldAsThreadSafeMethod3Bad() {
+  // none of the writes are marked thread-safe/locked, no reason to report
+  public Object readSameFieldAsThreadSafeMethodOk() {
     return this.field5;
   }
 

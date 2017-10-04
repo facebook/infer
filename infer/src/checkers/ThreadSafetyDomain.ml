@@ -130,56 +130,50 @@ let make_unannotated_call_access pname loc =
 module LocksDomain = AbstractDomain.BooleanAnd
 
 module ThreadsDomain = struct
-  type astate = Unknown | Main | Background | Any
+  type astate = NoThread | AnyThreadButSelf | AnyThread [@@deriving compare]
 
-  let empty = Unknown
+  let empty = NoThread
 
+  (* NoThread < AnyThreadButSelf < Any *)
   let ( <= ) ~lhs ~rhs =
     match (lhs, rhs) with
-    | Unknown, Unknown | Main, Main | Background, Background | Any, Any
+    | NoThread, _
      -> true
-    | Unknown, _
-     -> true
-    | _, Unknown
+    | _, NoThread
      -> false
-    | _, Any
+    | _, AnyThread
      -> true
-    | Any, _
+    | AnyThread, _
      -> false
     | _
-     -> (* Unknown is bottom, Any is top, other elements are incomparable *)
-        false
+     -> Int.equal 0 (compare_astate lhs rhs)
 
   let join astate1 astate2 =
     match (astate1, astate2) with
-    | Unknown, astate | astate, Unknown
+    | NoThread, astate | astate, NoThread
      -> astate
-    | Any, _ | _, Any
-     -> Any
-    | Main, Main | Background, Background
-     -> astate1
-    | Main, Background | Background, Main
-     -> Any
+    | AnyThread, _ | _, AnyThread
+     -> AnyThread
+    | AnyThreadButSelf, AnyThreadButSelf
+     -> AnyThreadButSelf
 
   let widen ~prev ~next ~num_iters:_ = join prev next
 
   let pp fmt astate =
     F.fprintf fmt
       ( match astate with
-      | Unknown
-       -> "Unknown"
-      | Main
-       -> "Main"
-      | Background
-       -> "Background"
-      | Any
-       -> "Any" )
+      | NoThread
+       -> "NoThread"
+      | AnyThreadButSelf
+       -> "AnyThreadButSelf"
+      | AnyThread
+       -> "AnyThread" )
 
-  let is_unknown = function Unknown -> true | _ -> false
+  let is_empty = function NoThread -> true | _ -> false
 
-  let is_empty = is_unknown
+  let is_any_but_self = function AnyThreadButSelf -> true | _ -> false
 
-  let is_main = function Main -> true | _ -> false
+  let is_any = function AnyThread -> true | _ -> false
 end
 
 module PathDomain = SinkTrace.Make (TraceElem)
@@ -354,7 +348,7 @@ type astate =
   ; attribute_map: AttributeMapDomain.astate }
 
 let empty =
-  let threads = ThreadsDomain.Unknown in
+  let threads = ThreadsDomain.empty in
   let locks = false in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
@@ -362,7 +356,7 @@ let empty =
   {threads; locks; accesses; ownership; attribute_map}
 
 let is_empty {threads; locks; accesses; ownership; attribute_map} =
-  ThreadsDomain.is_unknown threads && not locks && AccessDomain.is_empty accesses
+  ThreadsDomain.is_empty threads && not locks && AccessDomain.is_empty accesses
   && OwnershipDomain.is_empty ownership && AttributeMapDomain.is_empty attribute_map
 
 let ( <= ) ~lhs ~rhs =

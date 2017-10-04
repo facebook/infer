@@ -123,6 +123,17 @@ public class ThreadSafeExample{
     return this.sharedField; // ok because it only races with a private method
   }
 
+  Object sStaticField;
+
+  public Object FP_lazyInitOk() {
+    synchronized (ThreadSafeExample.class) {
+      if (sStaticField != null) {
+        sStaticField = new Object();
+      }
+    }
+    return sStaticField; // we'll warn here, although this is fine
+  }
+
 }
 
 class ExtendsThreadSafeExample extends ThreadSafeExample{
@@ -164,4 +175,22 @@ class YesThreadSafeExtendsNotThreadSafeExample extends NotThreadSafeExtendsThrea
      subsubfield = 22;
   }
 
+}
+
+class Unannotated {
+  int mField;
+
+  // although ThreadSafeExample is annotated @ThreadSafe, mutating fields of this class in a
+  // non-threadsafe context should be allowed
+  void callThreadSafeAnnotatedCode1Ok(ThreadSafeExample o) {
+    o.f = null;
+  }
+
+  void callThreadSafeAnnotatedCode2Ok(ThreadSafeExample o) {
+    o.tsBad();
+  }
+
+  void mutateMyFieldOk() {
+    this.mField = 1;
+  }
 }

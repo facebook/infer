@@ -46,18 +46,26 @@ end
     and which memory locations correspond to the same lock. *)
 module LocksDomain : AbstractDomain.S with type astate = bool
 
+(** Abstraction of threads that may run in parallel with the current thread.
+    NoThread < AnyThreadExceptSelf < AnyThread *)
 module ThreadsDomain : sig
   type astate =
-    | Unknown  (** Unknown thread; bottom element of the lattice *)
-    | Main  (** Main thread. Accesses here cannot race with other accesses on the main thread *)
-    | Background
-        (** Background thread. Accesses here can race with the main thread or other background
-        threads *)
-    | Any  (** Any thread; top element of the lattice. *)
+    | NoThread
+        (** No threads can run in parallel with the current thread (concretization: empty set). We
+        assume this by default unless we see evidence to the contrary (annotations, use of locks,
+        etc.) *)
+    | AnyThreadButSelf
+        (** Current thread can run in parallel with other threads, but not with itself.
+        (concretization : { t | t \in TIDs ^ t != t_cur } ) *)
+    | AnyThread
+        (** Current thread can run in parallel with any thread, including itself (concretization: set
+        of all TIDs ) *)
 
   include AbstractDomain.WithBottom with type astate := astate
 
-  val is_main : astate -> bool
+  val is_any_but_self : astate -> bool
+
+  val is_any : astate -> bool
 end
 
 module PathDomain : module type of SinkTrace.Make (TraceElem)

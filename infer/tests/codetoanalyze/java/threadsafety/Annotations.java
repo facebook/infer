@@ -177,12 +177,12 @@ class Annotations implements Interface {
      ii = 22;
   }
 
- void conditional2_ok(boolean b){
+ void conditional2_bad(boolean b){
    if (b)
    {
      write_on_main_thread_ok();
    } else {
-     ii = 99; // this might or might not run on the main thread; don't warn
+     ii = 99; // this might or might not run on the main thread; warn
    }
  }
 

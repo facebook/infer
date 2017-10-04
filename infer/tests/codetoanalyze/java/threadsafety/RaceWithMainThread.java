@@ -121,13 +121,13 @@ class RaceWithMainThread{
    }
  }
 
- void conditional2_Ok(boolean b){
+ void conditional2_bad(boolean b){
    if (b)
    {
      OurThreadUtils.assertMainThread();
      ff = 88;
    } else {
-     ff = 99; // this might or might now run on the main thread; don't warn
+     ff = 99; // this might or might now run on the main thread; warn
    }
  }
 
@@ -197,6 +197,30 @@ class RaceWithMainThread{
     }
     // not sure if we're on UI or background, should report
     mFld = null;
+  }
+
+}
+
+
+// not marked thread-safe
+class Unmarked {
+
+  int mField;
+
+  void writeOnUiThreadOk() {
+    OurThreadUtil.assertOnUiThread();
+    mField = 7;
+  }
+
+  int readOnUiThreadOk() {
+    OurThreadUtil.assertOnUiThread();
+    return mField;
+  }
+
+  int readOffUiThreadOk() {
+    // even though this read isn't known to be on the UI thread, we shouldn't assume that it occurs
+    // on a background thread
+    return mField;
   }
 
 }

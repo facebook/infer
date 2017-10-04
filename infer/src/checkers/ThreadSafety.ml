@@ -23,7 +23,7 @@ end)
 
 (*Bit of redundancy with code in is_unprotected, might alter later *)
 let make_excluder locks thread =
-  let is_main_thread = ThreadSafetyDomain.ThreadsDomain.is_main thread in
+  let is_main_thread = ThreadSafetyDomain.ThreadsDomain.is_any_but_self thread in
   if locks && not is_main_thread then ThreadSafetyDomain.Excluder.Lock
   else if not locks && is_main_thread then ThreadSafetyDomain.Excluder.Thread
   else if locks && is_main_thread then ThreadSafetyDomain.Excluder.Both
@@ -292,7 +292,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (ownership', attribute_map')
 
   let is_unprotected is_locked thread pdesc =
-    not is_locked && not (ThreadSafetyDomain.ThreadsDomain.is_main thread)
+    not is_locked && not (ThreadSafetyDomain.ThreadsDomain.is_any_but_self thread)
     && not (Procdesc.is_java_synchronized pdesc)
 
   (** return true if this function is library code from the JDK core libraries or Android *)
@@ -513,8 +513,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     (* we need a more intelligent escape analysis, that branches on whether we own the container *)
     Some
-      { locks= false
-      ; threads= ThreadsDomain.Unknown
+      {
+        locks= false
+      ; threads= ThreadsDomain.empty
       ; accesses= callee_accesses
       ; return_ownership= OwnershipAbstractValue.unowned
       ; return_attributes= AttributeSetDomain.empty }
@@ -586,9 +587,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let astate =
           match get_thread_model callee_pname with
           | BackgroundThread
-           -> {astate with threads= ThreadsDomain.Background}
+           -> {astate with threads= ThreadsDomain.AnyThread}
           | MainThread
-           -> {astate with threads= ThreadsDomain.Main}
+           -> {astate with threads= ThreadsDomain.AnyThreadButSelf}
           | MainThreadIfTrue -> (
             match ret_opt with
             | Some ret_access_path
@@ -607,7 +608,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
           if is_thread_utils_method "assertMainThread" callee_pname then
-            {astate with threads= ThreadsDomain.Main}
+            {astate with threads= ThreadsDomain.AnyThreadButSelf}
           else
             match get_lock_model callee_pname actuals with
             | Lock
@@ -637,7 +638,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     AccessDomain.add pre combined_accesses caller_accesses
                   in
                   let locks = locks || astate.locks in
-                  let threads = ThreadsDomain.join threads astate.threads in
+                  let threads =
+                    match (astate.threads, threads) with
+                    | _, ThreadsDomain.AnyThreadButSelf | AnyThreadButSelf, _
+                     -> ThreadsDomain.AnyThreadButSelf
+                    | _, ThreadsDomain.AnyThread
+                     -> astate.threads
+                    | _
+                     -> ThreadsDomain.join threads astate.threads
+                  in
                   let unprotected = is_unprotected locks threads pdesc in
                   (* add [ownership_accesses] to the [accesses_acc] with a protected pre if
                        [exp] is owned, and an appropriate unprotected pre otherwise *)
@@ -834,7 +843,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            -> let locks = bool_value in
               {acc with locks}
           | Choice.OnMainThread
-           -> let threads = if bool_value then ThreadsDomain.Main else ThreadsDomain.Background in
+           -> let threads =
+                if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
+              in
               {acc with threads}
         in
         let accesses =
@@ -849,7 +860,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               match eval_bexp access_path assume_exp with
               | Some bool_value
                -> (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
-                       add the constraint that the the choice must be [bool_value] to the state *)
+                     add the constraint that the the choice must be [bool_value] to the state *)
                   List.fold ~f:(add_choice bool_value) ~init:astate choices
               | None
                -> astate )
@@ -944,15 +955,43 @@ let should_analyze_proc pdesc tenv =
   && not (is_call_to_immutable_collection_method tenv pn)
   && not (pdesc_is_assumed_thread_safe pdesc tenv)
 
-let is_thread_safe_method pdesc tenv =
+let get_current_class_and_threadsafe_superclasses tenv pname =
+  match pname with
+  | Typ.Procname.Java java_pname
+   -> let current_class = Typ.Procname.java_get_class_type_name java_pname in
+      let thread_safe_annotated_classes =
+        PatternMatch.find_superclasses_with_attributes is_thread_safe tenv current_class
+      in
+      Some (current_class, thread_safe_annotated_classes)
+  | _
+   -> None
+
+let is_thread_safe_class pname tenv =
+  not
+    ((* current class not marked thread-safe *)
+     PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe tenv pname)
+  &&
+  (* current class or superclass is marked thread-safe *)
+  match get_current_class_and_threadsafe_superclasses tenv pname with
+  | Some (_, thread_safe_annotated_classes)
+   -> not (List.is_empty thread_safe_annotated_classes)
+  | _
+   -> false
+
+let is_thread_safe_method pname tenv =
   PatternMatch.override_exists
     (fun pn ->
       Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes
         is_thread_safe)
-    tenv (Procdesc.get_proc_name pdesc)
+    tenv pname
+
+let is_marked_thread_safe pdesc tenv =
+  let pname = Procdesc.get_proc_name pdesc in
+  is_thread_safe_class pname tenv || is_thread_safe_method pname tenv
 
 let empty_post : ThreadSafetyDomain.summary =
-  { threads= ThreadSafetyDomain.ThreadsDomain.Unknown
+  {
+    threads= ThreadSafetyDomain.ThreadsDomain.empty
   ; locks= false
   ; accesses= ThreadSafetyDomain.AccessDomain.empty
   ; return_ownership= ThreadSafetyDomain.OwnershipAbstractValue.unowned
@@ -971,10 +1010,9 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
     let initial =
       let threads =
         if runs_on_ui_thread proc_desc || is_thread_confined_method tenv proc_desc then
-          (* note: modeling @ThreadConfined as running on main thread for now, but should probably
-             change in the future *)
-          ThreadsDomain.Main
-        else ThreadsDomain.Unknown
+          ThreadsDomain.AnyThreadButSelf
+        else if is_marked_thread_safe proc_desc tenv then ThreadsDomain.AnyThread
+        else ThreadsDomain.NoThread
       in
       if is_initializer tenv (Procdesc.get_proc_name proc_desc) then
         let add_owned_formal acc formal_index =
@@ -1027,34 +1065,34 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
 
 module AccessListMap = Caml.Map.Make (ThreadSafetyDomain.Access)
 
-let get_current_class_and_threadsafe_superclasses tenv pname =
-  match pname with
-  | Typ.Procname.Java java_pname
-   -> let current_class = Typ.Procname.java_get_class_type_name java_pname in
-      let thread_safe_annotated_classes =
-        PatternMatch.find_superclasses_with_attributes is_thread_safe tenv current_class
-      in
-      Some (current_class, thread_safe_annotated_classes)
-  | _
-   -> None
-
-(*shouldn't happen*)
-
-(** The addendum message says that a superclass is marked @ThreadSafe,
-    when the current class is not so marked*)
-let calculate_addendum_message tenv pname =
+(** Explain why we are reporting this access *)
+let get_reporting_explanation tenv pname thread =
+  let thread_assumption =
+    if ThreadSafetyDomain.ThreadsDomain.is_any thread then
+      F.asprintf
+        "so we assume that this method can run in parallel with other non-private methods in the class (incuding itself)"
+    else
+      "and another access to the same memory may occur on a background thread even though this access may not"
+  in
   match get_current_class_and_threadsafe_superclasses tenv pname with
-  | Some (current_class, thread_safe_annotated_classes)
-   -> if not (List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class) then
-        match thread_safe_annotated_classes with
-        | hd :: _
-         -> F.asprintf "@\n Note: Superclass %a is marked %a." (MF.wrap_monospaced Typ.Name.pp) hd
-              MF.pp_monospaced "@ThreadSafe"
-        | []
-         -> ""
-      else ""
+  | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes))
+   -> if List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class then
+        F.asprintf "@\n Reporting because the current class is annotated %a, %s." MF.pp_monospaced
+          "@ThreadSafe" thread_assumption
+      else
+        F.asprintf "@\n Reporting because a superclass %a is annotated %a, %s."
+          (MF.wrap_monospaced Typ.Name.pp) thread_safe_class MF.pp_monospaced "@ThreadSafe"
+          thread_assumption
   | _
-   -> ""
+   -> if is_thread_safe_method pname tenv then
+        F.asprintf
+          "@\n Reporting because current method is annotated %a or overrides an annotated method, %s."
+          MF.pp_monospaced "@ThreadSafe" thread_assumption
+      else if ThreadSafetyDomain.ThreadsDomain.is_any thread then
+        F.asprintf "@\n Reporting because this access may occur on a background thread."
+      else
+        F.asprintf
+          "@\n Reporting because another access to the same memory may run on a background thread."
 
 let filter_by_access access_filter trace =
   let open ThreadSafetyDomain in
@@ -1140,7 +1178,7 @@ let make_trace_with_conflicts conflicts original_path pdesc =
   | []
    -> original_trace
 
-let report_thread_safety_violation tenv pdesc issue_type ~make_description ~conflicts access =
+let report_thread_safety_violation tenv pdesc issue_type ~make_description ~conflicts access thread =
   let open ThreadSafetyDomain in
   let pname = Procdesc.get_proc_name pdesc in
   let report_one_path (_, sinks as path) =
@@ -1150,7 +1188,9 @@ let report_thread_safety_violation tenv pdesc issue_type ~make_description ~conf
     let final_sink_site = PathDomain.Sink.call_site final_sink in
     let loc = CallSite.loc initial_sink_site in
     let ltr = make_trace_with_conflicts conflicts path pdesc in
-    let description = make_description tenv pname final_sink_site initial_sink_site final_sink in
+    let description =
+      make_description tenv pname final_sink_site initial_sink_site final_sink thread
+    in
     let exn =
       Exceptions.Checkers (issue_type.IssueType.unique_id, Localise.verbatim_desc description)
     in
@@ -1159,17 +1199,17 @@ let report_thread_safety_violation tenv pdesc issue_type ~make_description ~conf
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
 
-let report_unannotated_interface_violation tenv pdesc access reported_pname =
+let report_unannotated_interface_violation tenv pdesc access thread reported_pname =
   match reported_pname with
   | Typ.Procname.Java java_pname
    -> let class_name = Typ.Procname.java_get_class_name java_pname in
-      let make_description _ _ _ _ _ =
+      let make_description _ _ _ _ _ _ =
         F.asprintf
           "Unprotected call to method of un-annotated interface %s. Consider annotating the class with %a, adding a lock, or using an interface that is known to be thread-safe."
           class_name MF.pp_monospaced "@ThreadSafe"
       in
       report_thread_safety_violation tenv pdesc IssueType.interface_not_thread_safe
-        ~make_description ~conflicts:[] access
+        ~make_description ~conflicts:[] access thread
   | _
    -> (* skip reporting on C++ *)
       ()
@@ -1181,21 +1221,16 @@ let pp_procname_short fmt = function
   | pname
    -> Typ.Procname.pp fmt pname
 
-let make_unprotected_write_description tenv pname final_sink_site initial_sink_site final_sink =
+let make_unprotected_write_description tenv pname final_sink_site initial_sink_site final_sink
+    write_thread =
   Format.asprintf "Unprotected write. Non-private method %a%s %s %a outside of synchronization.%s"
     (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     ( if ThreadSafetyDomain.TraceElem.is_container_write final_sink then "mutates"
     else "writes to field" )
-    pp_access final_sink (calculate_addendum_message tenv pname)
+    pp_access final_sink (get_reporting_explanation tenv pname write_thread)
 
-let make_read_write_race_description ~read_is_sync conflicts tenv pname final_sink_site
-    initial_sink_site final_sink =
-  let race_with_main_thread =
-    List.exists
-      ~f:(fun (_, _, thread, _, _) -> ThreadSafetyDomain.ThreadsDomain.is_main thread)
-      conflicts
-  in
+let make_read_write_race_description ~read_is_sync conflicts tenv pname final_sink_site initial_sink_site final_sink read_thread =
   let conflicting_proc_names =
     List.map ~f:(fun (_, _, _, _, pdesc) -> Procdesc.get_proc_name pdesc) conflicts
     |> Typ.Procname.Set.of_list
@@ -1206,19 +1241,16 @@ let make_read_write_race_description ~read_is_sync conflicts tenv pname final_si
     else Typ.Procname.Set.pp fmt conflicts
   in
   let conflicts_description =
-    Format.asprintf "Potentially races with%s writes in method%s %a. %s"
+    Format.asprintf "Potentially races with%s writes in method%s %a."
       (if read_is_sync then " unsynchronized" else " synchronized")
       (if Typ.Procname.Set.cardinal conflicting_proc_names > 1 then "s" else "")
       (MF.wrap_monospaced pp_conflicts) conflicting_proc_names
-      ( if race_with_main_thread then
-          "\n Note: some of these write conflicts are confined to the UI or another thread, but the current method is not specified to be. Consider adding synchronization or a @ThreadConfined annotation to the current method."
-      else "" )
   in
-  Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s %s"
+  Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s%s"
     (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if read_is_sync then " with synchronization" else " without synchronization")
-    pp_access final_sink conflicts_description (calculate_addendum_message tenv pname)
+    pp_access final_sink conflicts_description (get_reporting_explanation tenv pname read_thread)
 
 (** type for remembering what we have already reported to avoid duplicates. our policy is to report
     each kind of access (read/write) to the same field reachable from the same procedure only once.
@@ -1239,7 +1271,7 @@ let empty_reported =
    requested via @ThreadSafe *)
 let should_report_on_proc proc_desc tenv =
   let proc_name = Procdesc.get_proc_name proc_desc in
-  is_thread_safe_method proc_desc tenv
+  is_thread_safe_method proc_name tenv
   || not (Typ.Procname.java_is_autogen_method proc_name)
      && Procdesc.get_access proc_desc <> PredSymb.Private
      && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
@@ -1315,9 +1347,11 @@ let report_unsafe_accesses
       match (TraceElem.kind access, pre) with
       | ( Access.InterfaceCall unannoted_call_pname
         , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) )
-       -> (* un-annotated interface call + no lock. warn *)
-          report_unannotated_interface_violation tenv pdesc access unannoted_call_pname ;
-          update_reported access pname reported_acc
+       -> if ThreadsDomain.is_any thread && is_marked_thread_safe pdesc tenv then (
+            (* un-annotated interface call + no lock in method marked thread-safe. warn *)
+            report_unannotated_interface_violation tenv pdesc access thread unannoted_call_pname ;
+            update_reported access pname reported_acc )
+          else reported_acc
       | Access.InterfaceCall _, AccessPrecondition.Protected _
        -> (* un-annotated interface call, but it's protected by a lock/thread. don't report *)
           reported_acc
@@ -1325,14 +1359,15 @@ let report_unsafe_accesses
         , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) ) -> (
         match Procdesc.get_proc_name pdesc with
         | Java _
-         -> if ThreadsDomain.is_main thread then reported_acc
-            else (
-              (* unprotected write. warn. *)
-              report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
-                ~make_description:make_unprotected_write_description ~conflicts:[] access ;
-              update_reported access pname reported_acc )
+         -> (** TODO: use a better warning message when the thread is anything but Any (perhaps
+                  show the write that this may race with) *)
+            (* unprotected write. warn. *)
+            report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
+              ~make_description:make_unprotected_write_description ~conflicts:[] access thread ;
+            update_reported access pname reported_acc
         | _
-         -> (* Do not report unprotected writes for ObjC_Cpp *)
+         -> (* Do not report unprotected writes when an access can't run in parallel with itself, or
+               for ObjC_Cpp *)
             reported_acc )
       | (Access.Write _ | ContainerWrite _), AccessPrecondition.Protected _
        -> (* protected write, do nothing *)
@@ -1352,7 +1387,8 @@ let report_unsafe_accesses
             List.filter
               ~f:(fun (other_access, pre, other_thread, _, _) ->
                 TraceElem.is_write other_access
-                && not (ThreadsDomain.is_main thread && ThreadsDomain.is_main other_thread)
+                && ( not (Typ.Procname.is_java pname) || ThreadsDomain.is_any thread
+                   || ThreadsDomain.is_any other_thread )
                 && is_cpp_protected_write pre)
               accesses
           in
@@ -1361,7 +1397,7 @@ let report_unsafe_accesses
             report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
               ~make_description:(make_read_write_race_description ~read_is_sync:false all_writes)
               ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) all_writes)
-              access ;
+              access thread ;
             update_reported access pname reported_acc )
       | (Access.Read _ | ContainerRead _), AccessPrecondition.Protected excl
        -> (* protected read.
@@ -1395,7 +1431,7 @@ let report_unsafe_accesses
               ~make_description:
                 (make_read_write_race_description ~read_is_sync:true conflicting_writes)
               ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) conflicting_writes)
-              access ;
+              access thread ;
             update_reported access pname reported_acc )
   in
   AccessListMap.fold
@@ -1404,11 +1440,6 @@ let report_unsafe_accesses
       let reported =
         { reported_acc with
           reported_writes= Typ.Procname.Set.empty; reported_reads= Typ.Procname.Set.empty }
-      in
-      let accessed_by_threadsafe_method =
-        List.exists
-          ~f:(fun (_, _, _, tenv, pdesc) -> is_thread_safe_method pdesc tenv)
-          grouped_accesses
       in
       let class_has_mutex_member objc_cpp tenv =
         let class_name = Typ.Procname.objc_cpp_get_class_type_name objc_cpp in
@@ -1421,31 +1452,14 @@ let report_unsafe_accesses
       in
       let should_report pdesc tenv =
         match Procdesc.get_proc_name pdesc with
-        | Java _ as pname
+        | Java _
          -> (* report if
                 - the method/class of the access is thread-safe
                   (or an override or superclass is), or
                 - any access is in a field marked thread-safe (or an override) *)
-            ( accessed_by_threadsafe_method
-            ||
-            let is_class_threadsafe =
-              not
-                (let current_class_marked_not_threadsafe =
-                   PatternMatch.check_current_class_attributes Annotations.ia_is_not_thread_safe
-                     tenv pname
-                 in
-                 current_class_marked_not_threadsafe)
-              &&
-              let current_class_or_super_marked_threadsafe =
-                match get_current_class_and_threadsafe_superclasses tenv pname with
-                | Some (_, thread_safe_annotated_classes)
-                 -> not (List.is_empty thread_safe_annotated_classes)
-                | _
-                 -> false
-              in
-              current_class_or_super_marked_threadsafe
-            in
-            is_class_threadsafe )
+            List.exists
+              ~f:(fun (_, _, thread, _, _) -> ThreadsDomain.is_any thread)
+              grouped_accesses
             && should_report_on_proc pdesc tenv
         | ObjC_Cpp objc_cpp
          -> (* do not report if a procedure is private  *)
