@@ -498,3 +498,12 @@ let is_std_vector qt =
      -> false )
   | None
    -> false
+
+let has_block_attribute decl =
+  let open Clang_ast_t in
+  match decl with
+  | VarDecl (decl_info, _, _, _)
+   -> let attributes = decl_info.di_attributes in
+      List.exists ~f:(fun attr -> match attr with BlocksAttr _ -> true | _ -> false) attributes
+  | _
+   -> false

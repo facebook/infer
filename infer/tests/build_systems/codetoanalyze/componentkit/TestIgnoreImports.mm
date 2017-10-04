@@ -25,6 +25,8 @@ struct D {};
   }
 
   std::vector<D*> v; // no error
+
+  __block D* var; // no error
   return nil;
 }
 @end

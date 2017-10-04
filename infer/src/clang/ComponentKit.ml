@@ -127,7 +127,7 @@ let mutable_local_vars_advice context an =
         && not (CAst_utils.is_static_local_var decl) && not is_const
         && not (is_of_whitelisted_type qual_type) && not decl_info.di_is_implicit
         && not context.CLintersContext.in_for_loop_declaration
-        && not (CAst_utils.is_std_vector qual_type)
+        && not (CAst_utils.is_std_vector qual_type) && not (CAst_utils.has_block_attribute decl)
       in
       if condition then
         Some
