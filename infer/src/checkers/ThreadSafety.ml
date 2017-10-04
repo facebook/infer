@@ -513,8 +513,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     (* we need a more intelligent escape analysis, that branches on whether we own the container *)
     Some
-      { thumbs_up= true
-      ; locks= false
+      { locks= false
       ; threads= ThreadsDomain.Unknown
       ; accesses= callee_accesses
       ; return_ownership= OwnershipAbstractValue.unowned
@@ -629,7 +628,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     Typ.Procname.pp callee_pname )
             | NoEffect ->
               match get_summary pdesc callee_pname actuals loc tenv with
-              | Some {thumbs_up; threads; locks; accesses; return_ownership; return_attributes}
+              | Some {threads; locks; accesses; return_ownership; return_attributes}
                -> let update_caller_accesses pre callee_accesses caller_accesses =
                     let combined_accesses =
                       PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
@@ -637,7 +636,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     in
                     AccessDomain.add pre combined_accesses caller_accesses
                   in
-                  let thumbs_up = thumbs_up && astate.thumbs_up in
                   let locks = locks || astate.locks in
                   let threads = ThreadsDomain.join threads astate.threads in
                   let unprotected = is_unprotected locks threads pdesc in
@@ -715,7 +713,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   let ownership, attribute_map =
                     propagate_return ret_opt return_ownership return_attributes actuals astate
                   in
-                  {thumbs_up; locks; threads; accesses; ownership; attribute_map}
+                  {locks; threads; accesses; ownership; attribute_map}
               | None
                -> let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
                     (* assume non-interface methods with no summary and no parameters return
@@ -954,8 +952,7 @@ let is_thread_safe_method pdesc tenv =
     tenv (Procdesc.get_proc_name pdesc)
 
 let empty_post : ThreadSafetyDomain.summary =
-  { ThreadSafetyDomain.thumbs_up= true
-  ; threads= ThreadSafetyDomain.ThreadsDomain.Unknown
+  { threads= ThreadSafetyDomain.ThreadsDomain.Unknown
   ; locks= false
   ; accesses= ThreadSafetyDomain.AccessDomain.empty
   ; return_ownership= ThreadSafetyDomain.OwnershipAbstractValue.unowned
@@ -1011,7 +1008,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
         ({ThreadSafetyDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
     in
     match Analyzer.compute_post proc_data ~initial ~debug:false with
-    | Some ({thumbs_up; threads; locks; accesses; ownership; attribute_map}, _)
+    | Some ({threads; locks; accesses; ownership; attribute_map}, _)
      -> let return_var_ap =
           AccessPath.of_pvar
             (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
@@ -1022,7 +1019,7 @@ let analyze_procedure {Callbacks.proc_desc; tenv; summary} =
           try AttributeMapDomain.find return_var_ap attribute_map
           with Not_found -> AttributeSetDomain.empty
         in
-        let post = {thumbs_up; threads; locks; accesses; return_ownership; return_attributes} in
+        let post = {threads; locks; accesses; return_ownership; return_attributes} in
         Summary.update_summary post summary
     | None
      -> summary )

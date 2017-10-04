@@ -163,7 +163,6 @@ module ThreadsDomain = struct
   let is_main = function Main -> true | _ -> false
 end
 
-module ThumbsUpDomain = AbstractDomain.BooleanAnd
 module PathDomain = SinkTrace.Make (TraceElem)
 
 module Choice = struct
@@ -329,24 +328,22 @@ module AccessDomain = struct
 end
 
 type astate =
-  { thumbs_up: ThumbsUpDomain.astate
-  ; threads: ThreadsDomain.astate
+  { threads: ThreadsDomain.astate
   ; locks: LocksDomain.astate
   ; accesses: AccessDomain.astate
   ; ownership: OwnershipDomain.astate
   ; attribute_map: AttributeMapDomain.astate }
 
 let empty =
-  let thumbs_up = true in
   let threads = ThreadsDomain.Unknown in
   let locks = false in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
   let attribute_map = AttributeMapDomain.empty in
-  {thumbs_up; threads; locks; accesses; ownership; attribute_map}
+  {threads; locks; accesses; ownership; attribute_map}
 
-let is_empty {thumbs_up; threads; locks; accesses; ownership; attribute_map} =
-  thumbs_up && ThreadsDomain.is_unknown threads && not locks && AccessDomain.is_empty accesses
+let is_empty {threads; locks; accesses; ownership; attribute_map} =
+  ThreadsDomain.is_unknown threads && not locks && AccessDomain.is_empty accesses
   && OwnershipDomain.is_empty ownership && AttributeMapDomain.is_empty attribute_map
 
 let ( <= ) ~lhs ~rhs =
@@ -359,18 +356,16 @@ let ( <= ) ~lhs ~rhs =
 let join astate1 astate2 =
   if phys_equal astate1 astate2 then astate1
   else
-    let thumbs_up = ThumbsUpDomain.join astate1.thumbs_up astate2.thumbs_up in
     let threads = ThreadsDomain.join astate1.threads astate2.threads in
     let locks = LocksDomain.join astate1.locks astate2.locks in
     let accesses = AccessDomain.join astate1.accesses astate2.accesses in
     let ownership = OwnershipDomain.join astate1.ownership astate2.ownership in
     let attribute_map = AttributeMapDomain.join astate1.attribute_map astate2.attribute_map in
-    {thumbs_up; threads; locks; accesses; ownership; attribute_map}
+    {threads; locks; accesses; ownership; attribute_map}
 
 let widen ~prev ~next ~num_iters =
   if phys_equal prev next then prev
   else
-    let thumbs_up = ThumbsUpDomain.widen ~prev:prev.thumbs_up ~next:next.thumbs_up ~num_iters in
     let threads = ThreadsDomain.widen ~prev:prev.threads ~next:next.threads ~num_iters in
     let locks = LocksDomain.widen ~prev:prev.locks ~next:next.locks ~num_iters in
     let accesses = AccessDomain.widen ~prev:prev.accesses ~next:next.accesses ~num_iters in
@@ -378,24 +373,22 @@ let widen ~prev ~next ~num_iters =
     let attribute_map =
       AttributeMapDomain.widen ~prev:prev.attribute_map ~next:next.attribute_map ~num_iters
     in
-    {thumbs_up; threads; locks; accesses; ownership; attribute_map}
+    {threads; locks; accesses; ownership; attribute_map}
 
 type summary =
-  { thumbs_up: ThumbsUpDomain.astate
-  ; threads: ThreadsDomain.astate
+  { threads: ThreadsDomain.astate
   ; locks: LocksDomain.astate
   ; accesses: AccessDomain.astate
   ; return_ownership: OwnershipAbstractValue.astate
   ; return_attributes: AttributeSetDomain.astate }
 
-let pp_summary fmt {thumbs_up; threads; locks; accesses; return_ownership; return_attributes} =
+let pp_summary fmt {threads; locks; accesses; return_ownership; return_attributes} =
   F.fprintf fmt
-    "@\nThumbsUp: %a, Threads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nReturn Attributes: %a @\n"
-    ThumbsUpDomain.pp thumbs_up ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp
-    accesses OwnershipAbstractValue.pp return_ownership AttributeSetDomain.pp return_attributes
+    "@\nThreads: %a, Locks: %a @\nAccesses %a @\nOwnership: %a @\nReturn Attributes: %a @\n"
+    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses
+    OwnershipAbstractValue.pp return_ownership AttributeSetDomain.pp return_attributes
 
-let pp fmt {thumbs_up; threads; locks; accesses; ownership; attribute_map} =
-  F.fprintf fmt
-    "@\nThumbsUp: %a, Threads: %a, Locks: %a @\nAccesses %a @\n Ownership: %a @\nAttributes: %a @\n"
-    ThumbsUpDomain.pp thumbs_up ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp
-    accesses OwnershipDomain.pp ownership AttributeMapDomain.pp attribute_map
+let pp fmt {threads; locks; accesses; ownership; attribute_map} =
+  F.fprintf fmt "Threads: %a, Locks: %a @\nAccesses %a @\n Ownership: %a @\nAttributes: %a @\n"
+    ThreadsDomain.pp threads LocksDomain.pp locks AccessDomain.pp accesses OwnershipDomain.pp
+    ownership AttributeMapDomain.pp attribute_map

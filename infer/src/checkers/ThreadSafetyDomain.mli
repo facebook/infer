@@ -56,8 +56,6 @@ module ThreadsDomain : sig
   val is_main : astate -> bool
 end
 
-module ThumbsUpDomain : AbstractDomain.S with type astate = bool
-
 module PathDomain : module type of SinkTrace.Make (TraceElem)
 
 (** Powerset domain on the formal indexes in OwnedIf with a distinguished bottom element (Owned) and top element (Unowned) *)
@@ -165,8 +163,7 @@ module AccessDomain : sig
 end
 
 type astate =
-  { thumbs_up: ThumbsUpDomain.astate  (** boolean that is true if we think we have a proof *)
-  ; threads: ThreadsDomain.astate  (** current thread: main, background, or unknown *)
+  { threads: ThreadsDomain.astate  (** current thread: main, background, or unknown *)
   ; locks: LocksDomain.astate  (** boolean that is true if a lock must currently be held *)
   ; accesses: AccessDomain.astate
         (** read and writes accesses performed without ownership permissions *)
@@ -178,8 +175,7 @@ type astate =
     of the ownership/attributes associated with the return value as well as the set of formals which
     may escape *)
 type summary =
-  { thumbs_up: ThumbsUpDomain.astate
-  ; threads: ThreadsDomain.astate
+  { threads: ThreadsDomain.astate
   ; locks: LocksDomain.astate
   ; accesses: AccessDomain.astate
   ; return_ownership: OwnershipAbstractValue.astate
