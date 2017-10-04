@@ -633,6 +633,8 @@ module ItvPure = struct
 
   type t = astate
 
+  let equal = [%compare.equal : astate]
+
   let initial : t = (Bound.initial, Bound.initial)
 
   let lb : t -> Bound.t = fst

@@ -20,6 +20,8 @@ module Condition = struct
 
   let get_symbols c = ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size
 
+  let eq c1 c2 = ItvPure.equal c1.idx c2.idx && ItvPure.equal c1.size c2.size
+
   let set_size_pos : t -> t =
     fun c ->
       let size' = ItvPure.make_positive c.size in
@@ -162,9 +164,37 @@ module ConditionSet = struct
 
   type t = condition_with_trace list
 
+  (* invariant: add_one of one of the elements should return the original list *)
+
   let empty = []
 
-  let join condset1 condset2 = condset1 @ condset2
+  let compare_by_location cwt1 cwt2 =
+    Location.compare (ConditionTrace.get_location cwt1.trace)
+      (ConditionTrace.get_location cwt2.trace)
+
+  let try_merge ~existing ~new_ =
+    if Condition.eq existing.cond new_.cond then
+      (* keep the first one in the code *)
+      if compare_by_location existing new_ <= 0 then `KeepExistingAndStop
+      else `RemoveExistingAddNewAndStop
+    else `KeepGoingFinallyAddNew
+
+  let add_one condset new_ =
+    let rec aux ~new_ acc = function
+      | []
+       -> new_ :: condset
+      | existing :: rest ->
+        match try_merge ~existing ~new_ with
+        | `KeepExistingAndStop
+         -> condset
+        | `RemoveExistingAddNewAndStop
+         -> new_ :: List.rev_append acc rest
+        | `KeepGoingFinallyAddNew
+         -> aux ~new_ (existing :: acc) rest
+    in
+    aux ~new_ [] condset
+
+  let join condset1 condset2 = List.fold_left ~f:add_one condset1 ~init:condset2
 
   let add_bo_safety pname loc id ~idx ~size val_traces condset =
     match Condition.make ~idx ~size with
