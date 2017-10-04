@@ -16,6 +16,7 @@ open! AbstractDomain.Types
 module F = Format
 module L = Logging
 module Dom = BufferOverrunDomain
+module PO = BufferOverrunProofObligations
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
@@ -404,8 +405,8 @@ module Report = struct
   type extras = Typ.Procname.t -> Procdesc.t option
 
   let add_condition
-      : Typ.Procname.t -> CFG.node -> Exp.t -> Location.t -> Dom.Mem.astate -> Dom.ConditionSet.t
-        -> Dom.ConditionSet.t =
+      : Typ.Procname.t -> CFG.node -> Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
+        -> PO.ConditionSet.t =
     fun pname node exp loc mem cond_set ->
       let array_access =
         match exp with
@@ -449,7 +450,7 @@ module Report = struct
           match (size, idx) with
           | NonBottom size, NonBottom idx
            -> let traces = TraceSet.merge ~traces_arr ~traces_idx loc in
-              Dom.ConditionSet.add_bo_safety pname loc site ~size ~idx traces cond_set
+              PO.ConditionSet.add_bo_safety pname loc site ~size ~idx traces cond_set
           | _
            -> cond_set )
       | None
@@ -457,7 +458,7 @@ module Report = struct
 
   let instantiate_cond
       : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list -> Dom.Mem.astate
-        -> Summary.payload -> Location.t -> Dom.ConditionSet.t =
+        -> Summary.payload -> Location.t -> PO.ConditionSet.t =
     fun tenv caller_pname callee_pdesc params caller_mem summary loc ->
       let callee_entry_mem = Dom.Summary.get_input summary in
       let callee_cond = Dom.Summary.get_cond_set summary in
@@ -468,16 +469,16 @@ module Report = struct
               loc
           in
           let pname = Procdesc.get_proc_name pdesc in
-          Dom.ConditionSet.subst callee_cond subst_map caller_pname pname loc
+          PO.ConditionSet.subst callee_cond subst_map caller_pname pname loc
       | _
        -> callee_cond
 
-  let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.ConditionSet.t -> unit =
+  let print_debug_info : Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t -> unit =
     fun instr pre cond_set ->
       L.(debug BufferOverrun Verbose) "@\n@\n================================@\n" ;
       L.(debug BufferOverrun Verbose) "@[<v 2>Pre-state : @,%a" Dom.Mem.pp pre ;
       L.(debug BufferOverrun Verbose) "@]@\n@\n%a" (Sil.pp_instr Pp.text) instr ;
-      L.(debug BufferOverrun Verbose) "@[<v 2>@\n@\n%a" Dom.ConditionSet.pp cond_set ;
+      L.(debug BufferOverrun Verbose) "@[<v 2>@\n@\n%a" PO.ConditionSet.pp cond_set ;
       L.(debug BufferOverrun Verbose) "@]@\n" ;
       L.(debug BufferOverrun Verbose) "================================@\n@."
 
@@ -521,8 +522,8 @@ module Report = struct
   end
 
   let rec collect_instrs
-      : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate -> Dom.ConditionSet.t
-        -> Dom.ConditionSet.t =
+      : extras ProcData.t -> CFG.node -> Sil.instr list -> Dom.Mem.astate -> PO.ConditionSet.t
+        -> PO.ConditionSet.t =
     fun ({pdesc; tenv; extras} as pdata) node instrs mem cond_set ->
       match instrs with
       | []
@@ -538,7 +539,7 @@ module Report = struct
               | Some summary
                -> let callee = extras callee_pname in
                   instantiate_cond tenv pname callee params mem summary loc
-                  |> Dom.ConditionSet.rm_invalid |> Dom.ConditionSet.join cond_set
+                  |> PO.ConditionSet.join cond_set
               | _
                -> cond_set )
             | _
@@ -579,8 +580,8 @@ module Report = struct
           print_debug_info instr mem' cond_set ; collect_instrs pdata node rem_instrs mem' cond_set
 
   let collect_node
-      : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t -> CFG.node
-        -> Dom.ConditionSet.t =
+      : extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t -> CFG.node
+        -> PO.ConditionSet.t =
     fun pdata inv_map cond_set node ->
       match Analyzer.extract_pre (CFG.id node) inv_map with
       | Some mem
@@ -589,10 +590,10 @@ module Report = struct
       | _
        -> cond_set
 
-  let collect : extras ProcData.t -> Analyzer.invariant_map -> Dom.ConditionSet.t =
+  let collect : extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
     fun ({pdesc} as pdata) inv_map ->
       let add_node1 acc node = collect_node pdata inv_map acc node in
-      Procdesc.fold_nodes add_node1 Dom.ConditionSet.empty pdesc
+      Procdesc.fold_nodes add_node1 PO.ConditionSet.empty pdesc
 
   let make_err_trace : Trace.t -> string -> Errlog.loc_trace =
     fun trace desc ->
@@ -613,37 +614,36 @@ module Report = struct
       in
       List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
 
-  let report_error : Procdesc.t -> Dom.ConditionSet.t -> unit =
+  let report_error : Procdesc.t -> PO.ConditionSet.t -> unit =
     fun pdesc conds ->
       let pname = Procdesc.get_proc_name pdesc in
-      let report1 cond =
-        let alarm = Dom.Condition.check cond in
-        let caller_pname, loc =
-          match Dom.Condition.get_cond_trace cond with
-          | Dom.Condition.Inter (caller_pname, _, loc)
-           -> (caller_pname, loc)
-          | Dom.Condition.Intra pname
-           -> (pname, Dom.Condition.get_location cond)
-        in
+      let report1 cond trace =
+        let alarm = PO.Condition.check cond in
         match alarm with
         | None
          -> ()
-        | Some bucket when Typ.Procname.equal pname caller_pname
-         -> let description = Dom.Condition.description cond in
-            let error_desc = Localise.desc_buffer_overrun bucket description in
-            let exn = Exceptions.Checkers (IssueType.buffer_overrun.unique_id, error_desc) in
-            let trace =
-              match TraceSet.choose_shortest cond.Dom.Condition.traces with
-              | trace
-               -> make_err_trace trace description
-              | exception _
-               -> [Errlog.make_trace_element 0 loc description []]
+        | Some bucket
+         -> let caller_pname, loc =
+              match PO.ConditionTrace.get_cond_trace trace with
+              | PO.ConditionTrace.Inter (caller_pname, _, loc)
+               -> (caller_pname, loc)
+              | PO.ConditionTrace.Intra pname
+               -> (pname, PO.ConditionTrace.get_location trace)
             in
-            Reporting.log_error_deprecated pname ~loc ~ltr:trace exn
-        | _
-         -> ()
+            if Typ.Procname.equal pname caller_pname then
+              let description = PO.description cond trace in
+              let error_desc = Localise.desc_buffer_overrun bucket description in
+              let exn = Exceptions.Checkers (IssueType.buffer_overrun.unique_id, error_desc) in
+              let trace =
+                match TraceSet.choose_shortest trace.PO.ConditionTrace.val_traces with
+                | trace
+                 -> make_err_trace trace description
+                | exception _
+                 -> [Errlog.make_trace_element 0 loc description []]
+              in
+              Reporting.log_error_deprecated pname ~loc ~ltr:trace exn
       in
-      Dom.ConditionSet.iter report1 conds
+      PO.ConditionSet.iter conds ~f:report1
 end
 
 let compute_post : Analyzer.TransferFunctions.extras ProcData.t -> Summary.payload option =

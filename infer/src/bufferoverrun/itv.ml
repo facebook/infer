@@ -854,7 +854,11 @@ module ItvPure = struct
 
   let min_sem : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.lb l1 l2, Bound.lb ~default:u1 u1 u2)
 
-  let invalid : t -> bool = function Bound.PInf, _ | _, Bound.MInf -> true | l, u -> Bound.lt u l
+  let is_invalid : t -> bool = function
+    | Bound.PInf, _ | _, Bound.MInf
+     -> true
+    | l, u
+     -> Bound.lt u l
 
   let prune_le : t -> t -> t =
     fun x y ->
@@ -922,7 +926,7 @@ module ItvPure = struct
 
   let prune_comp : Binop.t -> t -> t -> t option =
     fun c x y ->
-      if invalid y then Some x
+      if is_invalid y then Some x
       else
         let x =
           match c with
@@ -937,7 +941,7 @@ module ItvPure = struct
           | _
            -> assert false
         in
-        if invalid x then None else Some x
+        if is_invalid x then None else Some x
 
   let prune_eq : t -> t -> t option =
     fun x y ->
@@ -945,10 +949,10 @@ module ItvPure = struct
 
   let prune_ne : t -> t -> t option =
     fun x (l, u) ->
-      if invalid (l, u) then Some x
+      if is_invalid (l, u) then Some x
       else
         let x = if Bound.eq l u then diff x l else x in
-        if invalid x then None else Some x
+        if is_invalid x then None else Some x
 
   let get_symbols : t -> Symbol.t list =
     fun (l, u) -> List.append (Bound.get_symbols l) (Bound.get_symbols u)
@@ -956,7 +960,7 @@ module ItvPure = struct
   let make_positive : t -> t =
     fun (l, u as x) -> if Bound.lt l Bound.zero then (Bound.zero, u) else x
 
-  let normalize : t -> t option = fun (l, u) -> if invalid (l, u) then None else Some (l, u)
+  let normalize : t -> t option = fun (l, u) -> if is_invalid (l, u) then None else Some (l, u)
 end
 
 include AbstractDomain.BottomLifted (ItvPure)
@@ -1023,8 +1027,6 @@ let zero = NonBottom ItvPure.zero
 
 let make : Bound.t -> Bound.t -> t =
   fun l u -> if Bound.lt u l then Bottom else NonBottom (ItvPure.make l u)
-
-let invalid : t -> bool = function NonBottom x -> ItvPure.invalid x | Bottom -> false
 
 let is_symbolic : t -> bool = function NonBottom x -> ItvPure.is_symbolic x | Bottom -> false
 

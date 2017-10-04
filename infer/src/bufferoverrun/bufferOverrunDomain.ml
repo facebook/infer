@@ -17,219 +17,12 @@ module F = Format
 module L = Logging
 module ItvPure = Itv.ItvPure
 module MF = MarkupFormatter
+module PO = BufferOverrunProofObligations
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
+(** unsound but ok for bug catching *)
 let always_strong_update = true
-
-(* unsound but ok for bug catching *)
-
-module Condition = struct
-  type cond_trace =
-    | Intra of Typ.Procname.t
-    | Inter of Typ.Procname.t * Typ.Procname.t * Location.t
-    [@@deriving compare]
-
-  type t =
-    { proc_name: Typ.Procname.t
-    ; loc: Location.t
-    ; id: string
-    ; cond_trace: cond_trace
-    ; idx: ItvPure.astate
-    ; size: ItvPure.astate
-    ; traces: TraceSet.t }
-    [@@deriving compare]
-
-  type astate = t
-
-  let set_size_pos : t -> t =
-    fun c ->
-      let size' = ItvPure.make_positive c.size in
-      if phys_equal size' c.size then c else {c with size= size'}
-
-  let pp_location : F.formatter -> t -> unit = fun fmt c -> Location.pp_file_pos fmt c.loc
-
-  let pp : F.formatter -> t -> unit =
-    fun fmt c ->
-      let c = set_size_pos c in
-      if Config.bo_debug <= 1 then
-        F.fprintf fmt "%a < %a at %a" ItvPure.pp c.idx ItvPure.pp c.size pp_location c
-      else
-        match c.cond_trace with
-        | Inter (_, pname, loc)
-         -> let pname = Typ.Procname.to_string pname in
-            F.fprintf fmt "%a < %a at %a by call %s() at %a (%a)" ItvPure.pp c.idx ItvPure.pp
-              c.size pp_location c pname Location.pp_file_pos loc TraceSet.pp c.traces
-        | Intra _
-         -> F.fprintf fmt "%a < %a at %a (%a)" ItvPure.pp c.idx ItvPure.pp c.size pp_location c
-              TraceSet.pp c.traces
-
-  let get_location : t -> Location.t = fun c -> c.loc
-
-  let get_cond_trace : t -> cond_trace = fun c -> c.cond_trace
-
-  let get_proc_name : t -> Typ.Procname.t = fun c -> c.proc_name
-
-  let make
-      : Typ.Procname.t -> Location.t -> string -> idx:ItvPure.t -> size:ItvPure.t -> TraceSet.t
-        -> t =
-    fun proc_name loc id ~idx ~size traces ->
-      {proc_name; idx; size; loc; id; cond_trace= Intra proc_name; traces}
-
-  let filter1 : t -> bool =
-    fun c ->
-      ItvPure.is_top c.idx || ItvPure.is_top c.size
-      || Itv.Bound.eq (ItvPure.lb c.idx) Itv.Bound.MInf
-      || Itv.Bound.eq (ItvPure.lb c.size) Itv.Bound.MInf
-      || ItvPure.is_nat c.idx && ItvPure.is_nat c.size
-
-  let filter2 : t -> bool =
-    fun c ->
-      (* basically, alarms involving infinity are filtered *)
-      (not (ItvPure.is_finite c.idx) || not (ItvPure.is_finite c.size))
-      && (* except the following cases *)
-         not
-           ( Itv.Bound.is_not_infty (ItvPure.lb c.idx)
-             && (* idx non-infty lb < 0 *)
-                Itv.Bound.lt (ItvPure.lb c.idx) Itv.Bound.zero
-           || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
-              && (* idx non-infty lb > size lb *)
-                 Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.lb c.size)
-           || Itv.Bound.is_not_infty (ItvPure.lb c.idx)
-              && (* idx non-infty lb > size ub *)
-                 Itv.Bound.gt (ItvPure.lb c.idx) (ItvPure.ub c.size)
-           || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
-              && (* idx non-infty ub > size lb *)
-                 Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.lb c.size)
-           || Itv.Bound.is_not_infty (ItvPure.ub c.idx)
-              && (* idx non-infty ub > size ub *)
-                 Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.ub c.size) )
-
-  (* check buffer overrun and return its confidence *)
-  let check : t -> string option =
-    fun c ->
-      (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
-      let c' = set_size_pos c in
-      (* if sl < 0, use sl' = 0 *)
-      let not_overrun = ItvPure.lt_sem c'.idx c'.size in
-      let not_underrun = ItvPure.le_sem ItvPure.zero c'.idx in
-      (* il >= 0 and iu < sl, definitely not an error *)
-      if ItvPure.is_one not_overrun && ItvPure.is_one not_underrun then None
-        (* iu < 0 or il >= su, definitely an error *)
-      else if ItvPure.is_zero not_overrun || ItvPure.is_zero not_underrun then
-        Some Localise.BucketLevel.b1 (* su <= iu < +oo, most probably an error *)
-      else if Itv.Bound.is_not_infty (ItvPure.ub c.idx)
-              && Itv.Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
-      then Some Localise.BucketLevel.b2 (* symbolic il >= sl, probably an error *)
-      else if Itv.Bound.is_symbolic (ItvPure.lb c.idx)
-              && Itv.Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
-      then Some Localise.BucketLevel.b3 (* other symbolic bounds are probably too noisy *)
-      else if Config.bo_debug <= 3 && (ItvPure.is_symbolic c.idx || ItvPure.is_symbolic c.size)
-      then None
-      else if filter1 c then Some Localise.BucketLevel.b5
-      else if filter2 c then Some Localise.BucketLevel.b3
-      else Some Localise.BucketLevel.b2
-
-  let invalid : t -> bool = fun x -> ItvPure.invalid x.idx || ItvPure.invalid x.size
-
-  let pp_trace : F.formatter -> t -> unit =
-    fun fmt c ->
-      match c.cond_trace with
-      | Inter (_, pname, _)
-        when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model c.loc.Location.file)
-       -> F.fprintf fmt " %@ %a by call %a " pp_location c MF.pp_monospaced
-            (Typ.Procname.to_string pname ^ "()")
-      | _
-       -> ()
-
-  let pp_description : F.formatter -> t -> unit =
-    fun fmt c ->
-      let c = set_size_pos c in
-      F.fprintf fmt "Offset: %a Size: %a%a" ItvPure.pp c.idx ItvPure.pp c.size pp_trace c
-
-  let description : t -> string = fun c -> Format.asprintf "%a" pp_description c
-
-  let subst
-      : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Typ.Procname.t
-        -> Typ.Procname.t -> Location.t -> t option =
-    fun c (bound_map, trace_map) caller_pname callee_pname loc ->
-      match ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size with
-      | []
-       -> Some c
-      | symbols ->
-        match (ItvPure.subst c.idx bound_map, ItvPure.subst c.size bound_map) with
-        | NonBottom idx, NonBottom size
-         -> let traces_caller =
-              List.fold symbols ~init:TraceSet.empty ~f:(fun traces symbol ->
-                  match Itv.SubstMap.find symbol trace_map with
-                  | symbol_trace
-                   -> TraceSet.join symbol_trace traces
-                  | exception Not_found
-                   -> traces )
-            in
-            let traces = TraceSet.instantiate ~traces_caller ~traces_callee:c.traces loc in
-            let cond_trace = Inter (caller_pname, callee_pname, loc) in
-            Some {c with idx; size; cond_trace; traces}
-        | _
-         -> None
-end
-
-module ConditionSet = struct
-  include AbstractDomain.FiniteSet (Condition)
-  module Map = Caml.Map.Make (Location)
-
-  let add_bo_safety
-      : Typ.Procname.t -> Location.t -> string -> idx:ItvPure.t -> size:ItvPure.t -> TraceSet.t
-        -> t -> t =
-    fun pname loc id ~idx ~size traces cond ->
-      add (Condition.make pname loc id ~idx ~size traces) cond
-
-  let subst
-      : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Typ.Procname.t
-        -> Typ.Procname.t -> Location.t -> t =
-    fun x subst_map caller_pname callee_pname loc ->
-      fold
-        (fun e x ->
-          match Condition.subst e subst_map caller_pname callee_pname loc with
-          | Some c
-           -> add c x
-          | None
-           -> x)
-        x empty
-
-  let group : t -> t Map.t =
-    fun x ->
-      fold
-        (fun cond map ->
-          let old_set =
-            try Map.find cond.loc map
-            with Not_found -> empty
-          in
-          Map.add cond.loc (add cond old_set) map)
-        x Map.empty
-
-  let pp_summary : F.formatter -> t -> unit =
-    fun fmt x ->
-      let pp_sep fmt () = F.fprintf fmt ", @," in
-      let pp_element fmt v = Condition.pp fmt v in
-      F.fprintf fmt "@[<v 0>Safety conditions:@," ;
-      F.fprintf fmt "@[<hov 2>{ " ;
-      F.pp_print_list ~pp_sep pp_element fmt (elements x) ;
-      F.fprintf fmt " }@]" ;
-      F.fprintf fmt "@]"
-
-  let pp : Format.formatter -> t -> unit =
-    fun fmt x ->
-      let pp_sep fmt () = F.fprintf fmt ", @," in
-      let pp_element fmt v = Condition.pp fmt v in
-      F.fprintf fmt "@[<v 2>Safety conditions :@," ;
-      F.fprintf fmt "@[<hov 1>{" ;
-      F.pp_print_list ~pp_sep pp_element fmt (elements x) ;
-      F.fprintf fmt " }@]" ;
-      F.fprintf fmt "@]"
-
-  let rm_invalid : t -> t = fun x -> filter (fun c -> not (Condition.invalid c)) x
-end
 
 module Val = struct
   type astate =
@@ -831,13 +624,13 @@ module Mem = struct
 end
 
 module Summary = struct
-  type t = Mem.t * Mem.t * ConditionSet.t
+  type t = Mem.t * Mem.t * PO.ConditionSet.t
 
   let get_input : t -> Mem.t = fst3
 
   let get_output : t -> Mem.t = snd3
 
-  let get_cond_set : t -> ConditionSet.t = trd3
+  let get_cond_set : t -> PO.ConditionSet.t = trd3
 
   let get_symbols : t -> Itv.Symbol.t list = fun s -> Mem.get_heap_symbols (get_input s)
 
@@ -857,10 +650,11 @@ module Summary = struct
 
   let pp_summary : F.formatter -> t -> unit =
     fun fmt s ->
-      F.fprintf fmt "%a@,%a@,%a" pp_symbol_map s pp_return s ConditionSet.pp_summary
+      F.fprintf fmt "%a@,%a@,%a" pp_symbol_map s pp_return s PO.ConditionSet.pp_summary
         (get_cond_set s)
 
   let pp : F.formatter -> t -> unit =
     fun fmt (entry_mem, exit_mem, condition_set) ->
-      F.fprintf fmt "%a@,%a@,%a@," Mem.pp entry_mem Mem.pp exit_mem ConditionSet.pp condition_set
+      F.fprintf fmt "%a@,%a@,%a@," Mem.pp entry_mem Mem.pp exit_mem PO.ConditionSet.pp
+        condition_set
 end
