@@ -1108,7 +1108,7 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
   match Summary.read_summary orig_pdesc callee_pname with
   | Some {accesses}
    -> get_all_accesses
-        (fun access -> Int.equal (Access.compare (PathDomain.Sink.kind access) orig_access) 0)
+        (fun access -> Access.matches ~caller:orig_access ~callee:(PathDomain.Sink.kind access))
         accesses
   | _
    -> PathDomain.empty

@@ -11,7 +11,11 @@ open! IStd
 module F = Format
 
 module MockTrace = Trace.Make (struct
-  module MockTraceElem = CallSite
+  module MockTraceElem = struct
+    include CallSite
+
+    let matches ~caller ~callee = equal caller callee
+  end
 
   module Source = Source.Make (struct
     include MockTraceElem

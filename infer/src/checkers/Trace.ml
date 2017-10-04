@@ -128,10 +128,10 @@ end
 module Expander (TraceElem : TraceElem.S) = struct
   let expand elem0 ~elems_passthroughs_of_pname ~filter_passthroughs =
     let rec expand_ elem (elems_passthroughs_acc, seen_acc) =
-      let elem_site = TraceElem.call_site elem in
-      let elem_kind = TraceElem.kind elem in
-      let seen_acc' = CallSite.Set.add elem_site seen_acc in
-      let elems, passthroughs = elems_passthroughs_of_pname (CallSite.pname elem_site) in
+      let caller_elem_site = TraceElem.call_site elem in
+      let caller_elem_kind = TraceElem.kind elem in
+      let seen_acc' = CallSite.Set.add caller_elem_site seen_acc in
+      let elems, passthroughs = elems_passthroughs_of_pname (CallSite.pname caller_elem_site) in
       let is_recursive callee_elem seen =
         CallSite.Set.mem (TraceElem.call_site callee_elem) seen
       in
@@ -139,7 +139,7 @@ module Expander (TraceElem : TraceElem.S) = struct
       let matching_elems =
         List.filter
           ~f:(fun callee_elem ->
-            [%compare.equal : TraceElem.Kind.t] (TraceElem.kind callee_elem) elem_kind
+            TraceElem.Kind.matches ~caller:caller_elem_kind ~callee:(TraceElem.kind callee_elem)
             && not (is_recursive callee_elem seen_acc'))
           elems
       in
@@ -148,7 +148,7 @@ module Expander (TraceElem : TraceElem.S) = struct
       | callee_elem :: _
        -> (* TODO: pick the shortest path to a sink here instead (t14242809) *)
           let filtered_passthroughs =
-            filter_passthroughs elem_site (TraceElem.call_site callee_elem) passthroughs
+            filter_passthroughs caller_elem_site (TraceElem.call_site callee_elem) passthroughs
           in
           expand_ callee_elem ((elem, filtered_passthroughs) :: elems_passthroughs_acc, seen_acc')
       | _

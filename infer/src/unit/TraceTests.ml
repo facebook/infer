@@ -14,6 +14,8 @@ module F = Format
 module MockTraceElem = struct
   type t = Kind1 | Kind2 | Footprint [@@deriving compare]
 
+  let matches ~caller ~callee = Int.equal 0 (compare caller callee)
+
   let call_site _ = CallSite.dummy
 
   let kind t = t
@@ -32,6 +34,8 @@ module MockTraceElem = struct
     type nonrec t = t
 
     let compare = compare
+
+    let matches = matches
 
     let pp = pp
   end

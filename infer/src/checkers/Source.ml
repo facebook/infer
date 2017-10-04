@@ -96,6 +96,8 @@ module Dummy = struct
 
     let compare = compare
 
+    let matches ~caller ~callee = Int.equal 0 (compare caller callee)
+
     let pp = pp
   end
 

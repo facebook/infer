@@ -20,6 +20,8 @@ module SourceKind = struct
     | Other  (** for testing or uncategorized sources *)
     [@@deriving compare]
 
+  let matches ~caller ~callee = Int.equal 0 (compare caller callee)
+
   let of_string = function
     | "CommandLineFlag"
      -> L.die UserError "User-specified CommandLineFlag sources are not supported"
@@ -145,6 +147,8 @@ module SinkKind = struct
     | SQL  (** SQL query *)
     | Other  (** for testing or uncategorized sinks *)
     [@@deriving compare]
+
+  let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
   let of_string = function
     | "Allocation"

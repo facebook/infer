@@ -19,6 +19,25 @@ module Access = struct
     | InterfaceCall of Typ.Procname.t
     [@@deriving compare]
 
+  let suffix_matches (_, accesses1) (_, accesses2) =
+    match (List.rev accesses1, List.rev accesses2) with
+    | access1 :: _, access2 :: _
+     -> AccessPath.equal_access access1 access2
+    | _
+     -> false
+
+  let matches ~caller ~callee =
+    match (caller, callee) with
+    | Read ap1, Read ap2 | Write ap1, Write ap2
+     -> suffix_matches ap1 ap2
+    | ContainerRead (ap1, pname1), ContainerRead (ap2, pname2)
+    | ContainerWrite (ap1, pname1), ContainerWrite (ap2, pname2)
+     -> Typ.Procname.equal pname1 pname2 && suffix_matches ap1 ap2
+    | InterfaceCall pname1, InterfaceCall pname2
+     -> Typ.Procname.equal pname1 pname2
+    | _
+     -> false
+
   let make_field_access access_path ~is_write =
     if is_write then Write access_path else Read access_path
 

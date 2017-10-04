@@ -20,6 +20,10 @@ module Access : sig
         (** Call to method of interface not annotated with @ThreadSafe *)
     [@@deriving compare]
 
+  val matches : caller:t -> callee:t -> bool
+  (** returns true if the caller access matches the callee access after accounting for mismatch
+      between the formals and actuals *)
+
   val get_access_path : t -> AccessPath.t option
 
   val equal : t -> t -> bool

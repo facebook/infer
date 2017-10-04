@@ -20,6 +20,8 @@ module SourceKind = struct
     | UserControlledURI  (** resource locator from the browser bar *)
     [@@deriving compare]
 
+  let matches ~caller ~callee = Int.equal 0 (compare caller callee)
+
   let of_string = function
     | "Intent"
      -> Intent
@@ -181,6 +183,8 @@ module SinkKind = struct
     | StartComponent  (** sink that launches an Activity, Service, etc. *)
     | Other  (** for testing or uncategorized sinks *)
     [@@deriving compare]
+
+  let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
   let of_string = function
     | "CreateFile"

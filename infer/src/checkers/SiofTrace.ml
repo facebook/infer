@@ -15,6 +15,8 @@ module L = Logging
 module GlobalVar = struct
   include Pvar
 
+  let matches ~caller ~callee = Pvar.equal caller callee
+
   let pp fmt v =
     F.fprintf fmt "%a|%a" Mangled.pp (Pvar.get_name v) Pvar.pp_translation_unit
       (Pvar.get_translation_unit v)
