@@ -486,3 +486,15 @@ let get_cxx_virtual_base_classes decl =
    -> cxx_record_info.xrdi_transitive_vbases
   | _
    -> []
+
+let is_std_vector qt =
+  match get_decl_from_typ_ptr qt.Clang_ast_t.qt_type_ptr with
+  | Some decl -> (
+    match Clang_ast_proj.get_named_decl_tuple decl with
+    | Some (_, qual_name)
+     -> String.equal qual_name.ni_name "vector"
+        && List.mem ~equal:String.equal qual_name.ni_qual_name "std"
+    | None
+     -> false )
+  | None
+   -> false

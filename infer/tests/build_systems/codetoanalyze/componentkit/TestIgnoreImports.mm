@@ -11,14 +11,20 @@
 
 #include "../../../codetoanalyze/objcpp/linters/componentkit/FakeComponentKitHeader.h"
 
+#include <vector>
+
+struct D {};
+
 @interface SomeClass : CKCompositeComponent
 @end
 @implementation SomeClass
 + (instancetype) new {
   int i; // error
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++) { // no error
   }
+
+  std::vector<D*> v; // no error
   return nil;
 }
 @end
