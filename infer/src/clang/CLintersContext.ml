@@ -25,7 +25,8 @@ type context =
         (** If inside an objc class, contains the objc class (impl or interface) decl. *)
   ; current_objc_class: Clang_ast_t.decl option
   ; et_evaluation_node: string option
-  ; if_context: if_context option }
+  ; if_context: if_context option
+  ; in_for_loop_declaration: bool }
 
 let empty translation_unit_context =
   { current_method= None
@@ -35,7 +36,8 @@ let empty translation_unit_context =
   ; is_ck_translation_unit= false
   ; current_objc_class= None
   ; et_evaluation_node= None
-  ; if_context= None }
+  ; if_context= None
+  ; in_for_loop_declaration= false }
 
 let add_parent_method decl_opt parent_methods =
   match decl_opt with Some decl -> decl :: parent_methods | None -> parent_methods

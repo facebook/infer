@@ -25,7 +25,8 @@ type context =
         (** If inside an objc class, contains the objc class (impl or interface) decl. *)
   ; current_objc_class: Clang_ast_t.decl option
   ; et_evaluation_node: string option
-  ; if_context: if_context option }
+  ; if_context: if_context option
+  ; in_for_loop_declaration: bool }
 
 val empty : CFrontend_config.translation_unit_context -> context
 

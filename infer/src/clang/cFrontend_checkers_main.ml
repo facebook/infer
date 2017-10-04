@@ -241,10 +241,11 @@ let rec do_frontend_checks_stmt (context: CLintersContext.context)
         (* distinguish between then and else branch as they need different context *)
         [ (context, [stmt1; stmt2; cond_stmt; inside_else_stmt])
         ; (inside_if_stmt_context, [inside_if_stmt]) ]
-    (* given that this has not been translated, looking up for variables *)
-    (* inside leads to inconsistencies *)
-    | ObjCAtCatchStmt _
-     -> [(context, [])]
+    | ForStmt (_, stmt1 :: stmts)
+     -> let inside_for_stmt_decl_context =
+          {context with CLintersContext.in_for_loop_declaration= true}
+        in
+        [(context, stmts); (inside_for_stmt_decl_context, [stmt1])]
     | _
      -> [(context, snd (Clang_ast_proj.get_stmt_tuple stmt))]
   in

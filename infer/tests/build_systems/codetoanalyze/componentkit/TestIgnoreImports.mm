@@ -16,6 +16,9 @@
 @implementation SomeClass
 + (instancetype) new {
   int i; // error
+
+  for (int i = 0; i < 10; i++) {
+  }
   return nil;
 }
 @end
