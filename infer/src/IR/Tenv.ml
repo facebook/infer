@@ -23,6 +23,10 @@ end)
 (** Type for type environment. *)
 type t = Typ.Struct.t TypenameHash.t
 
+let iter f tenv = TypenameHash.iter f tenv
+
+let fold f tenv = TypenameHash.fold f tenv
+
 let pp fmt (tenv: t) =
   TypenameHash.iter
     (fun name typ ->
@@ -61,13 +65,24 @@ let lookup tenv name : Typ.Struct.t option =
 (** Add a (name,type) pair to the global type environment. *)
 let add tenv name struct_typ = TypenameHash.replace tenv name struct_typ
 
+let compare_fields (name1, _, _) (name2, _, _) = Typ.Fieldname.compare name1 name2
+
+let equal_fields f1 f2 = Int.equal (compare_fields f1 f2) 0
+
+let sort_fields fields = List.sort ~cmp:compare_fields fields
+
+let sort_fields_tenv tenv =
+  let sort_fields_struct name ({Typ.Struct.fields} as st) =
+    ignore (mk_struct tenv ~default:st ~fields:(sort_fields fields) name)
+  in
+  iter sort_fields_struct tenv
+
 (** Add a field to a given struct in the global type environment. *)
 let add_field tenv class_tn_name field =
   match lookup tenv class_tn_name with
   | Some ({fields} as struct_typ)
-   -> let field_equal (f1, _, _) (f2, _, _) = Typ.Fieldname.equal f1 f2 in
-      if not (List.mem ~equal:field_equal fields field) then
-        let new_fields = field :: fields in
+   -> if not (List.mem ~equal:equal_fields fields field) then
+        let new_fields = List.merge [field] fields ~cmp:compare_fields in
         ignore (mk_struct tenv ~default:struct_typ ~fields:new_fields ~statics:[] class_tn_name)
   | _
    -> ()
@@ -124,7 +139,3 @@ let store_to_file (filename: DB.filename) (tenv: t) =
     let out_channel = Out_channel.create debug_filename in
     let fmt = Format.formatter_of_out_channel out_channel in
     Format.fprintf fmt "%a" pp tenv ; Out_channel.close out_channel
-
-let iter f tenv = TypenameHash.iter f tenv
-
-let fold f tenv = TypenameHash.fold f tenv

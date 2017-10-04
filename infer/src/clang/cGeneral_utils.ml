@@ -65,16 +65,6 @@ let rec append_no_duplicates_fields list1 list2 =
   | []
    -> list2
 
-let sort_fields fields =
-  let compare (name1, _, _) (name2, _, _) = Typ.Fieldname.compare name1 name2 in
-  List.sort ~cmp:compare fields
-
-let sort_fields_tenv tenv =
-  let sort_fields_struct name ({Typ.Struct.fields} as st) =
-    ignore (Tenv.mk_struct tenv ~default:st ~fields:(sort_fields fields) name)
-  in
-  Tenv.iter sort_fields_struct tenv
-
 let rec collect_list_tuples l (a, a1, b, c, d) =
   match l with
   | []

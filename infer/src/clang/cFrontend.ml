@@ -58,7 +58,7 @@ let do_source_file translation_unit_context ast =
   NullabilityPreanalysis.analysis cfg tenv ;
   Cg.store_to_file cg_file call_graph ;
   Cfg.store_cfg_to_file ~source_file cfg_file cfg ;
-  CGeneral_utils.sort_fields_tenv tenv ;
+  Tenv.sort_fields_tenv tenv ;
   Tenv.store_to_file tenv_file tenv ;
   if Config.stats_mode then Cfg.check_cfg_connectedness cfg ;
   if Config.stats_mode || Config.debug_mode || Config.testing_mode || Config.frontend_tests

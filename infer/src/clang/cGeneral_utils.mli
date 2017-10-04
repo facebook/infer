@@ -21,11 +21,6 @@ val append_no_duplicates_fields :
 
 val append_no_duplicates_csu : Typ.Name.t list -> Typ.Name.t list -> Typ.Name.t list
 
-val sort_fields :
-  (Typ.Fieldname.t * Typ.t * Annot.Item.t) list -> (Typ.Fieldname.t * Typ.t * Annot.Item.t) list
-
-val sort_fields_tenv : Tenv.t -> unit
-
 val collect_list_tuples :
   ('a list * 'b list * 'c list * 'd list * 'e list) list
   -> 'a list * 'b list * 'c list * 'd list * 'e list
