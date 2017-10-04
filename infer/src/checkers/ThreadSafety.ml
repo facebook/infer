@@ -1076,7 +1076,7 @@ let pp_container_access fmt (access_path, access_pname) =
 let pp_access fmt sink =
   match ThreadSafetyDomain.PathDomain.Sink.kind sink with
   | Read access_path | Write access_path
-   -> F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp_access_list) (snd access_path)
+   -> F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp) access_path
   | ContainerRead (access_path, access_pname) | ContainerWrite (access_path, access_pname)
    -> pp_container_access fmt (access_path, access_pname)
   | InterfaceCall _ as access
@@ -1189,8 +1189,8 @@ let make_unprotected_write_description tenv pname final_sink_site initial_sink_s
     else "writes to field" )
     pp_access final_sink (calculate_addendum_message tenv pname)
 
-let make_read_write_race_description conflicts tenv pname final_sink_site initial_sink_site
-    final_sink =
+let make_read_write_race_description ~read_is_sync conflicts tenv pname final_sink_site
+    initial_sink_site final_sink =
   let race_with_main_thread =
     List.exists
       ~f:(fun (_, _, thread, _, _) -> ThreadSafetyDomain.ThreadsDomain.is_main thread)
@@ -1206,16 +1206,18 @@ let make_read_write_race_description conflicts tenv pname final_sink_site initia
     else Typ.Procname.Set.pp fmt conflicts
   in
   let conflicts_description =
-    Format.asprintf "Potentially races with writes in method%s %a. %s"
+    Format.asprintf "Potentially races with%s writes in method%s %a. %s"
+      (if read_is_sync then " unsynchronized" else " synchronized")
       (if Typ.Procname.Set.cardinal conflicting_proc_names > 1 then "s" else "")
       (MF.wrap_monospaced pp_conflicts) conflicting_proc_names
       ( if race_with_main_thread then
           "\n Note: some of these write conflicts are confined to the UI or another thread, but the current method is not specified to be. Consider adding synchronization or a @ThreadConfined annotation to the current method."
       else "" )
   in
-  Format.asprintf "Read/Write race. Non-private method %a%s reads from %a. %s %s"
+  Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s %s"
     (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
+    (if read_is_sync then " with synchronization" else " without synchronization")
     pp_access final_sink conflicts_description (calculate_addendum_message tenv pname)
 
 (** type for remembering what we have already reported to avoid duplicates. our policy is to report
@@ -1357,7 +1359,7 @@ let report_unsafe_accesses
           if List.is_empty all_writes then reported_acc
           else (
             report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
-              ~make_description:(make_read_write_race_description all_writes)
+              ~make_description:(make_read_write_race_description ~read_is_sync:false all_writes)
               ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) all_writes)
               access ;
             update_reported access pname reported_acc )
@@ -1390,7 +1392,8 @@ let report_unsafe_accesses
           else (
             (* protected read with conflicting unprotected write(s). warn. *)
             report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
-              ~make_description:(make_read_write_race_description conflicting_writes)
+              ~make_description:
+                (make_read_write_race_description ~read_is_sync:true conflicting_writes)
               ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) conflicting_writes)
               access ;
             update_reported access pname reported_acc )
