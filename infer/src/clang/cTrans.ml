@@ -3132,8 +3132,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind
     | IntegerLiteral (_, _, expr_info, integer_literal_info)
      -> integerLiteral_trans trans_state expr_info integer_literal_info
-    | StringLiteral (_, _, expr_info, str)
-     -> stringLiteral_trans trans_state expr_info str
+    | StringLiteral (_, _, expr_info, str_list)
+     -> stringLiteral_trans trans_state expr_info (String.concat ~sep:"" str_list)
     | GNUNullExpr (_, _, expr_info)
      -> gNUNullExpr_trans trans_state expr_info
     | CXXNullPtrLiteralExpr (_, _, expr_info)

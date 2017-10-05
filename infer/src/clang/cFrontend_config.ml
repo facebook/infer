@@ -40,6 +40,10 @@ let atomic_att = "<\"Atomic\">"
 
 let autorelease = "autorelease"
 
+let biniou_buffer_size =
+  (* the C++ standard suggests that implementation should support string literals up to this length *)
+  65535
+
 let block = "block"
 
 let builtin_expect = "__builtin_expect"

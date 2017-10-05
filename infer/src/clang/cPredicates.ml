@@ -752,7 +752,7 @@ let has_value an al_exp =
   | Stmt IntegerLiteral (_, _, _, integer_literal_info)
    -> let value = integer_literal_info.Clang_ast_t.ili_value in
       ALVar.compare_str_with_alexp value al_exp
-  | Stmt StringLiteral (_, _, _, s)
-   -> ALVar.compare_str_with_alexp s al_exp
+  | Stmt StringLiteral (_, _, _, l)
+   -> ALVar.compare_str_with_alexp (String.concat ~sep:"" l) al_exp
   | _
    -> false

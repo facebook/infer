@@ -147,6 +147,7 @@ let command_to_run cmd =
 let with_exec exec args = {args with exec}
 
 let with_plugin_args args =
+  let plugin_arg_flag = "-plugin-arg-" ^ plugin_name in
   let args_before_rev =
     []
     |> (* -cc1 has to be the first argument or clang will think it runs in driver mode *)
@@ -162,10 +163,12 @@ let with_plugin_args args =
          xcodebuild plus all the sub-steps happy. *)
          (if has_flag args "-fmodules" then "-plugin" else "-add-plugin")
          ; plugin_name
-         ; ("-plugin-arg-" ^ plugin_name)
+         ; plugin_arg_flag
          ; "-"
-         ; ("-plugin-arg-" ^ plugin_name)
-         ; "PREPEND_CURRENT_DIR=1" ]
+         ; plugin_arg_flag
+         ; "PREPEND_CURRENT_DIR=1"
+         ; plugin_arg_flag
+         ; ("MAX_STRING_SIZE=" ^ string_of_int CFrontend_config.biniou_buffer_size) ]
   in
   (* add -O0 option to avoid compiler obfuscation of AST *)
   let args_after_rev =

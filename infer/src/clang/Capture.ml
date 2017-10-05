@@ -13,15 +13,13 @@ module L = Logging
 (** enable debug mode (to get more data saved to disk for future inspections) *)
 let debug_mode = Config.debug_mode || Config.frontend_stats
 
-let buffer_len = 262143
-
-(* This function reads the json file in fname, validates it, and encoded in the AST data structure
-   defined in Clang_ast_t.  *)
+(** This function reads the json file in fname, validates it, and encodes in the AST data structure
+    defined in Clang_ast_t.  *)
 let validate_decl_from_file fname =
-  Ag_util.Biniou.from_file ~len:buffer_len Clang_ast_b.read_decl fname
+  Ag_util.Biniou.from_file ~len:CFrontend_config.biniou_buffer_size Clang_ast_b.read_decl fname
 
 let validate_decl_from_channel chan =
-  Ag_util.Biniou.from_channel ~len:buffer_len Clang_ast_b.read_decl chan
+  Ag_util.Biniou.from_channel ~len:CFrontend_config.biniou_buffer_size Clang_ast_b.read_decl chan
 
 let register_perf_stats_report source_file =
   let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
@@ -150,15 +148,14 @@ let cc1_capture clang_cmd =
   then (
     L.(debug Capture Quiet) "@\n Skip compilation and analysis of source file %s@\n@\n" source_path ;
     () )
-  else (
-    ( match Config.clang_biniou_file with
+  else
+    match Config.clang_biniou_file with
     | Some fname
      -> run_and_validate_clang_frontend (`File fname)
     | None
      -> run_plugin_and_frontend source_path
           (fun chan_in -> run_and_validate_clang_frontend (`Pipe chan_in))
-          clang_cmd ) ;
-    () )
+          clang_cmd
 
 let capture clang_cmd =
   if ClangCommand.can_attach_ast_exporter clang_cmd then

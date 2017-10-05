@@ -43,6 +43,8 @@ val atomic_att : string
 
 val autorelease : string
 
+val biniou_buffer_size : int
+
 val block : string
 
 val builtin_expect : string
