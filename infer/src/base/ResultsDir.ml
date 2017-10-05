@@ -100,8 +100,7 @@ let () = Epilogues.register "closing results database" ~f:db_close
 let create_results_dir () =
   Unix.mkdir_p Config.results_dir ;
   L.setup_log_file () ;
-  if Sys.file_exists database_fullpath <> `Yes then (
-    Logging.progress "creating results database@." ; create_db () ) ;
+  if Sys.file_exists database_fullpath <> `Yes then create_db () ;
   new_database_connection () ;
   List.iter ~f:Unix.mkdir_p results_dir_dir_markers
 
