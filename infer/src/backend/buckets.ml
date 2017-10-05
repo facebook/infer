@@ -148,9 +148,5 @@ let check_access access_opt de_opt =
 
 let classify_access desc access_opt de_opt is_nullable =
   let default_bucket = if is_nullable then Localise.BucketLevel.b1 else Localise.BucketLevel.b5 in
-  let show_in_message = Config.show_buckets in
-  match check_access access_opt de_opt with
-  | None
-   -> Localise.error_desc_set_bucket desc default_bucket show_in_message
-  | Some bucket
-   -> Localise.error_desc_set_bucket desc bucket show_in_message
+  let bucket = check_access access_opt de_opt |> Option.value ~default:default_bucket in
+  Localise.error_desc_set_bucket desc bucket

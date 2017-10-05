@@ -25,11 +25,10 @@ let string_of_visibility vis =
   match vis with Exn_user -> "user" | Exn_developer -> "developer" | Exn_system -> "system"
 
 (** severity of bugs *)
-type severity = High (* high severity bug *)
-  | Medium (* medium severity bug *)
-  | Low
-
-(* low severity bug *)
+type severity =
+  | High  (** high severity bug *)
+  | Medium  (** medium severity bug *)
+  | Low  (** low severity bug *)
 
 (** class of error/warning *)
 type err_class = Checker | Prover | Nocat | Linters [@@deriving compare]

@@ -41,7 +41,7 @@ module Tags = struct
   (* line where value was last assigned *)
   let bucket = "bucket"
 
-  (* bucket to classify likelyhood of real bug *)
+  (* bucket to classify likelihood of real bug *)
   let call_procedure = "call_procedure"
 
   (* name of the procedure called *)
@@ -146,18 +146,17 @@ let error_desc_get_tags err_desc = err_desc.tags
 let error_desc_get_dotty err_desc = err_desc.dotty
 
 module BucketLevel = struct
+  (** highest likelihood *)
   let b1 = "B1"
 
-  (* highest likelyhood *)
   let b2 = "B2"
 
   let b3 = "B3"
 
   let b4 = "B4"
 
+  (** lowest likelihood *)
   let b5 = "B5"
-
-  (* lowest likelyhood *)
 end
 
 (** takes in input a tag to extract from the given error_desc
@@ -178,12 +177,14 @@ let error_desc_get_tag_call_procedure error_desc =
 (** get the bucket value of an error_desc, if any *)
 let error_desc_get_bucket err_desc = Tags.get err_desc.tags Tags.bucket
 
-(** set the bucket value of an error_desc; the boolean indicates where the bucket should be shown in the message *)
-let error_desc_set_bucket err_desc bucket show_in_message =
-  let tags' = Tags.add err_desc.tags Tags.bucket bucket in
-  let l = err_desc.descriptions in
-  let l' = if not show_in_message then l else ("[" ^ bucket ^ "]") :: l in
-  {err_desc with descriptions= l'; tags= tags'}
+(** set the bucket value of an error_desc *)
+let error_desc_set_bucket err_desc bucket =
+  let tags = Tags.add err_desc.tags Tags.bucket bucket in
+  let descriptions =
+    if Config.show_buckets then Printf.sprintf "[%s]" bucket :: err_desc.descriptions
+    else err_desc.descriptions
+  in
+  {err_desc with descriptions; tags}
 
 (** get the value tag, if any *)
 let get_value_line_tag tags =
@@ -791,7 +792,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
 
 let desc_buffer_overrun bucket desc =
   let err_desc = {no_desc with descriptions= [desc]} in
-  error_desc_set_bucket err_desc bucket Config.show_buckets
+  error_desc_set_bucket err_desc bucket
 
 (** kind of precondition not met *)
 type pnm_kind = Pnm_bounds | Pnm_dangling

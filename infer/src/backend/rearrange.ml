@@ -1675,9 +1675,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
      -> (
         let e_opt, is_field_deref = is_field_deref () in
         let warn err_desc =
-          let err_desc =
-            Localise.error_desc_set_bucket err_desc Localise.BucketLevel.b1 Config.show_buckets
-          in
+          let err_desc = Localise.error_desc_set_bucket err_desc Localise.BucketLevel.b1 in
           if is_field_deref then raise (Exceptions.Field_not_null_checked (err_desc, __POS__))
           else raise (Exceptions.Parameter_not_null_checked (err_desc, __POS__))
         in
@@ -1692,10 +1690,7 @@ let check_call_to_objc_block_error tenv pdesc prop fun_exp loc =
     | _
      -> (* HP: fun_exp is not a footprint therefore,
              either is a local or it's a modified param *)
-        let err_desc =
-          Localise.error_desc_set_bucket err_desc_nobuckets Localise.BucketLevel.b1
-            Config.show_buckets
-        in
+        let err_desc = Localise.error_desc_set_bucket err_desc_nobuckets Localise.BucketLevel.b1 in
         raise (Exceptions.Null_dereference (err_desc, __POS__))
 
 (** [rearrange lexp prop] rearranges [prop] into the form [prop' * lexp|->strexp:typ].

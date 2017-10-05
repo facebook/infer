@@ -44,7 +44,7 @@ val custom_desc_with_advice : string -> string -> (string * string) list -> erro
 
 module BucketLevel : sig
   val b1 : string
-  (** highest likelyhood *)
+  (** highest likelihood *)
 
   val b2 : string
 
@@ -53,7 +53,7 @@ module BucketLevel : sig
   val b4 : string
 
   val b5 : string
-  (** lowest likelyhood *)
+  (** lowest likelihood *)
 end
 
 val error_desc_extract_tag_value : error_desc -> string -> string
@@ -71,9 +71,8 @@ val error_desc_get_tag_call_procedure : error_desc -> string
 val error_desc_get_bucket : error_desc -> string option
 (** get the bucket value of an error_desc, if any *)
 
-val error_desc_set_bucket : error_desc -> string -> bool -> error_desc
-(** set the bucket value of an error_desc.
-    The boolean indicates where the bucket should be shown in the message *)
+val error_desc_set_bucket : error_desc -> string -> error_desc
+(** set the bucket value of an error_desc *)
 
 val error_desc_hash : error_desc -> int
 (** hash function for error_desc *)
