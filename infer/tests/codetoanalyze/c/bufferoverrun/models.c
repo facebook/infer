@@ -38,6 +38,12 @@ void fgetc_256_good(FILE* f) {
   }
 }
 
+void fgetc_256_bad(FILE* f) {
+  int arr[256];
+  int c = fgetc(f);
+  arr[c + 1] = 42;
+}
+
 void fgetc_257_good(FILE* f) {
   int arr[257];
   int c = fgetc(f);

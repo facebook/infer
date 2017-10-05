@@ -180,7 +180,7 @@ val desc_leak :
   Exp.t option -> string option -> PredSymb.resource option -> PredSymb.res_action option
   -> Location.t -> string option -> error_desc
 
-val desc_buffer_overrun : string -> string -> error_desc
+val desc_buffer_overrun : string -> error_desc
 
 val desc_null_test_after_dereference : string -> int -> Location.t -> error_desc
 

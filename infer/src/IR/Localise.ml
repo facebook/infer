@@ -790,9 +790,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
   { no_desc with
     descriptions= bucket_str :: xxx_allocated_to @ by_call_to @ is_not_rxxx_after; tags= !tags }
 
-let desc_buffer_overrun bucket desc =
-  let err_desc = {no_desc with descriptions= [desc]} in
-  error_desc_set_bucket err_desc bucket
+let desc_buffer_overrun desc = verbatim_desc desc
 
 (** kind of precondition not met *)
 type pnm_kind = Pnm_bounds | Pnm_dangling

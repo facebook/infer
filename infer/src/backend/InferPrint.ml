@@ -222,8 +222,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
         in
         List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
       in
-      let issue_type_is_buffer_overrun = IssueType.(equal buffer_overrun) issue_type in
-      if issue_type_is_null_deref || issue_type_is_buffer_overrun then
+      if issue_type_is_null_deref then
         let issue_bucket_is_high =
           let issue_bucket = Localise.error_desc_get_bucket error_desc in
           let high_buckets = Localise.BucketLevel.([b1; b2]) in

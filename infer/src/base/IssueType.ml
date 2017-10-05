@@ -90,7 +90,17 @@ let assert_failure = from_string "Assert_failure"
 
 let bad_footprint = from_string "Bad_footprint"
 
-let buffer_overrun = from_string "BUFFER_OVERRUN"
+let buffer_overrun_l1 = from_string "BUFFER_OVERRUN_L1"
+
+let buffer_overrun_l2 = from_string "BUFFER_OVERRUN_L2"
+
+let buffer_overrun_l3 = from_string "BUFFER_OVERRUN_L3"
+
+let buffer_overrun_l4 = from_string ~enabled:false "BUFFER_OVERRUN_L4"
+
+let buffer_overrun_l5 = from_string ~enabled:false "BUFFER_OVERRUN_L5"
+
+let buffer_overrun_s2 = from_string "BUFFER_OVERRUN_S2"
 
 let cannot_star = from_string "Cannot_star"
 

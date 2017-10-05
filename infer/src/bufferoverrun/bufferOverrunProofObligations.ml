@@ -71,7 +71,7 @@ module Condition = struct
                  Itv.Bound.gt (ItvPure.ub c.idx) (ItvPure.ub c.size) )
 
   (* check buffer overrun and return its confidence *)
-  let check : t -> string option =
+  let check : t -> IssueType.t option =
     fun c ->
       (* idx = [il, iu], size = [sl, su], we want to check that 0 <= idx < size *)
       let c' = set_size_pos c in
@@ -82,18 +82,18 @@ module Condition = struct
       if ItvPure.is_one not_overrun && ItvPure.is_one not_underrun then None
         (* iu < 0 or il >= su, definitely an error *)
       else if ItvPure.is_zero not_overrun || ItvPure.is_zero not_underrun then
-        Some Localise.BucketLevel.b1 (* su <= iu < +oo, most probably an error *)
+        Some IssueType.buffer_overrun_l1 (* su <= iu < +oo, most probably an error *)
       else if Itv.Bound.is_not_infty (ItvPure.ub c.idx)
               && Itv.Bound.le (ItvPure.ub c.size) (ItvPure.ub c.idx)
-      then Some Localise.BucketLevel.b2 (* symbolic il >= sl, probably an error *)
+      then Some IssueType.buffer_overrun_l2 (* symbolic il >= sl, probably an error *)
       else if Itv.Bound.is_symbolic (ItvPure.lb c.idx)
               && Itv.Bound.le (ItvPure.lb c'.size) (ItvPure.lb c.idx)
-      then Some Localise.BucketLevel.b3 (* other symbolic bounds are probably too noisy *)
+      then Some IssueType.buffer_overrun_s2 (* other symbolic bounds are probably too noisy *)
       else if Config.bo_debug <= 3 && (ItvPure.is_symbolic c.idx || ItvPure.is_symbolic c.size)
       then None
-      else if filter1 c then Some Localise.BucketLevel.b5
-      else if filter2 c then Some Localise.BucketLevel.b3
-      else Some Localise.BucketLevel.b2
+      else if filter1 c then Some IssueType.buffer_overrun_l5
+      else if filter2 c then Some IssueType.buffer_overrun_l4
+      else Some IssueType.buffer_overrun_l3
 
   let subst : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t -> t option =
     fun c bound_map ->
