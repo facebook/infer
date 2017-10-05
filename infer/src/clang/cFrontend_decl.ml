@@ -8,10 +8,34 @@
  *)
 
 open! IStd
+module F = Format
 
 (** Translate declarations **)
 
 module L = Logging
+
+let protect ~f ~recover ~pp_context =
+  let log_and_recover ~print fmt =
+    recover () ;
+    (if print then L.internal_error else L.(debug Capture Quiet)) ("%a@\n" ^^ fmt) pp_context ()
+  in
+  try f () with
+  (* Always keep going in case of known limitations of the frontend, crash otherwise (by not
+       catching the exception) unless `--keep-going` was passed. Print errors we should fix
+       (t21762295) to the console. *)
+  | CFrontend_config.Unimplemented msg
+   -> log_and_recover ~print:false "Unimplemented feature:@\n  %s@\n" msg
+  | CFrontend_config.IncorrectAssumption msg
+   -> (* FIXME(t21762295): we do not expect this to happen but it does *)
+      log_and_recover ~print:true "Known incorrect assumption in the frontend: %s@\n" msg
+  | CTrans_utils.Self.SelfClassException class_name
+   -> (* FIXME(t21762295): we do not expect this to happen but it does *)
+      log_and_recover ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp class_name
+  | exn
+   -> let trace = Exn.backtrace () in
+      reraise_if exn ~f:(fun () ->
+          L.internal_error "%a: %a@\n%!" pp_context () Exn.pp exn ; not Config.keep_going ) ;
+      log_and_recover ~print:true "Frontend error: %a@\nBacktrace:@\n%s" Exn.pp exn trace
 
 module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFrontend = struct
   let model_exists procname = Specs.summary_exists_in_models procname && not Config.models_mode
@@ -21,52 +45,38 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
       body has_return_param is_objc_method outer_context_opt extra_instrs =
     L.(debug Capture Verbose)
       "@\n@\n>>---------- ADDING METHOD: '%a' ---------<<@\n@\n" Typ.Procname.pp procname ;
-    let handle_frontend_failure ~print fmt =
+    let recover () =
       Cfg.remove_proc_desc cfg procname ;
-      CMethod_trans.create_external_procdesc cfg procname is_objc_method None ;
-      (if print then L.internal_error else L.(debug Capture Quiet))
-        ("Aborting translation of method '%a':@\n" ^^ fmt) Typ.Procname.pp procname
+      CMethod_trans.create_external_procdesc cfg procname is_objc_method None
     in
-    try
+    let pp_context fmt () =
+      F.fprintf fmt "Aborting translation of method '%a'" Typ.Procname.pp procname
+    in
+    let f () =
       match Cfg.find_proc_desc_from_name cfg procname with
-      | Some procdesc
-       -> if Procdesc.is_defined procdesc && not (model_exists procname) then
-            let vars_to_destroy = CTrans_utils.Scope.compute_vars_to_destroy body in
-            let context =
-              CContext.create_context trans_unit_ctx tenv cg cfg procdesc class_decl_opt
-                has_return_param is_objc_method outer_context_opt vars_to_destroy
-            in
-            let start_node = Procdesc.get_start_node procdesc in
-            let exit_node = Procdesc.get_exit_node procdesc in
-            L.(debug Capture Verbose)
-              "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
-              (Typ.Procname.to_string procname) ;
-            let meth_body_nodes =
-              T.instructions_trans context body extra_instrs exit_node ~is_destructor_wrapper
-            in
-            let proc_attributes = Procdesc.get_attributes procdesc in
-            Procdesc.Node.add_locals_ret_declaration start_node proc_attributes
-              (Procdesc.get_locals procdesc) ;
-            Procdesc.node_set_succs_exn procdesc start_node meth_body_nodes [] ;
-            Cg.add_defined_node (CContext.get_cg context) (Procdesc.get_proc_name procdesc)
-      | None
+      | Some procdesc when Procdesc.is_defined procdesc && not (model_exists procname)
+       -> let vars_to_destroy = CTrans_utils.Scope.compute_vars_to_destroy body in
+          let context =
+            CContext.create_context trans_unit_ctx tenv cg cfg procdesc class_decl_opt
+              has_return_param is_objc_method outer_context_opt vars_to_destroy
+          in
+          let start_node = Procdesc.get_start_node procdesc in
+          let exit_node = Procdesc.get_exit_node procdesc in
+          L.(debug Capture Verbose)
+            "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
+            (Typ.Procname.to_string procname) ;
+          let meth_body_nodes =
+            T.instructions_trans context body extra_instrs exit_node ~is_destructor_wrapper
+          in
+          let proc_attributes = Procdesc.get_attributes procdesc in
+          Procdesc.Node.add_locals_ret_declaration start_node proc_attributes
+            (Procdesc.get_locals procdesc) ;
+          Procdesc.node_set_succs_exn procdesc start_node meth_body_nodes [] ;
+          Cg.add_defined_node (CContext.get_cg context) (Procdesc.get_proc_name procdesc)
+      | _
        -> ()
-    with
-    (* Always keep going in case of known limitations of the frontend, crash otherwise (by not
-       catching the exception) unless `--keep-going` was passed. Print errors we should fix
-       (t21762295) to the console. *)
-    | CFrontend_config.Unimplemented msg
-     -> handle_frontend_failure ~print:false "Unimplemented feature:@\n  %s@\n" msg
-    | CFrontend_config.IncorrectAssumption msg
-     -> (* FIXME(t21762295): we do not expect this to happen but it does *)
-        handle_frontend_failure ~print:true "Known incorrect assumption in the frontend: %s@\n" msg
-    | CTrans_utils.Self.SelfClassException class_name
-     -> (* FIXME(t21762295): we do not expect this to happen but it does *)
-        handle_frontend_failure ~print:true "Unexpected SelfClassException %a@\n" Typ.Name.pp
-          class_name
-    | exn when Config.keep_going
-     -> handle_frontend_failure ~print:true "Frontend error: %a@\nBacktrace:@\n%s" Exn.pp exn
-          (Exn.backtrace ())
+    in
+    protect ~f ~recover ~pp_context
 
   let function_decl trans_unit_ctx tenv cfg cg func_decl block_data_opt =
     let captured_vars, outer_context_opt =
@@ -242,7 +252,9 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     let open Clang_ast_t in
     (* each procedure has different scope: start names from id 0 *)
     Ident.NameGenerator.reset () ;
-    let translate = translate_one_declaration trans_unit_ctx tenv cg cfg decl_trans_context in
+    let translate dec =
+      translate_one_declaration trans_unit_ctx tenv cg cfg decl_trans_context dec
+    in
     ( if should_translate_decl trans_unit_ctx dec decl_trans_context then
         let dec_ptr = (Clang_ast_proj.get_decl_tuple dec).di_pointer in
         match dec with
@@ -336,7 +348,10 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
             in
             let method_decls, no_method_decls = List.partition_tf ~f:is_method_decl decl_list in
             List.iter ~f:translate no_method_decls ;
-            ignore (CType_decl.add_types_from_decl_to_tenv tenv dec) ;
+            protect ~f:(fun () -> ignore (CType_decl.add_types_from_decl_to_tenv tenv dec))
+              ~recover:Fn.id ~pp_context:(fun fmt () ->
+                F.fprintf fmt "Error adding types from decl '%a'"
+                  (Pp.to_string ~f:Clang_ast_j.string_of_decl) dec ) ;
             List.iter ~f:translate method_decls
         | _
          -> () ) ;

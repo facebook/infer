@@ -136,8 +136,8 @@ let get_desugared_type type_ptr =
 let get_decl_from_typ_ptr typ_ptr =
   let typ_opt = get_desugared_type typ_ptr in
   let typ = match typ_opt with Some t -> t | _ -> assert false in
-  match typ with
-  | Clang_ast_t.RecordType (_, decl_ptr) | Clang_ast_t.ObjCInterfaceType (_, decl_ptr)
+  match (typ : Clang_ast_t.c_type) with
+  | RecordType (_, decl_ptr) | ObjCInterfaceType (_, decl_ptr)
    -> get_decl decl_ptr
   | _
    -> None

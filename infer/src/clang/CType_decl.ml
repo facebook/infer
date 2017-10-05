@@ -222,17 +222,17 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
       | Some _
        -> sil_desc (* just reuse what is already in tenv *)
       | None
-       -> let is_complete_definition = record_decl_info.Clang_ast_t.rdi_is_complete_definition in
+       -> let is_translatable_definition =
+            let open Clang_ast_t in
+            record_decl_info.rdi_is_complete_definition
+            && not record_decl_info.rdi_is_dependent_type
+          in
           let extra_fields =
             if CTrans_models.is_objc_memory_model_controlled (Typ.Name.name sil_typename) then
               [Typ.Struct.objc_ref_counter_field]
             else []
           in
-          let annots =
-            if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp else Annot.Item.empty
-            (* No annotations for structs *)
-          in
-          if is_complete_definition then (
+          if is_translatable_definition then (
             CAst_utils.update_sil_types_map type_ptr sil_desc ;
             let non_statics = get_struct_fields tenv definition_decl in
             let fields = CGeneral_utils.append_no_duplicates_fields non_statics extra_fields in
@@ -241,6 +241,10 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
             let methods = [] in
             (* C++ methods are not put into tenv (info isn't used) *)
             let supers = get_superclass_list_cpp tenv definition_decl in
+            let annots =
+              if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp
+              else (* No annotations for structs *) Annot.Item.empty
+            in
             Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots sil_typename |> ignore ;
             CAst_utils.update_sil_types_map type_ptr sil_desc ;
             sil_desc )
