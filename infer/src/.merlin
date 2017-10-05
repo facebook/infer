@@ -14,6 +14,7 @@ PKG parmap
 PKG ppx_compare
 PKG ptrees
 PKG sawja
+PKG spawn
 PKG sqlite3
 PKG str
 PKG unix

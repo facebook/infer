@@ -32,22 +32,28 @@ let sentinel_exists sentinel_opt =
   Option.value_map ~default:false sentinel_opt ~f:file_exists
 
 let invoke_cmd ~fail_sentinel cmd =
+  let create_sentinel_if_needed () =
+    let create_empty_file fname = Utils.with_file_out ~f:(fun _ -> ()) fname in
+    Option.iter fail_sentinel ~f:create_empty_file
+  in
   if sentinel_exists fail_sentinel then L.progress "E%!"
-  else (
-    Unix.chdir cmd.cwd ;
-    let pid =
-      Unix.fork_exec ~prog:cmd.prog ~argv:[cmd.prog; ("@" ^ cmd.args); "-fsyntax-only"]
-        ~use_path:false ()
-    in
-    let create_sentinel_if_needed () =
-      let create_empty_file fname = Utils.with_file_out ~f:(fun _ -> ()) fname in
-      Option.iter fail_sentinel ~f:create_empty_file
-    in
-    match Unix.waitpid pid with
-    | Ok ()
-     -> L.progress ".%!"
-    | Error _
-     -> L.progress "!%!" ; create_sentinel_if_needed () )
+  else
+    try
+      let pid =
+        let prog = cmd.prog in
+        let argv = [prog; ("@" ^ cmd.args); "-fsyntax-only"] in
+        Spawn.(spawn ~cwd:(Path cmd.cwd) ~prog ~argv ())
+      in
+      match Unix.waitpid (Pid.of_int pid) with
+      | Ok ()
+       -> L.progress ".%!"
+      | Error _
+       -> L.progress "!%!" ; create_sentinel_if_needed ()
+    with exn ->
+      let trace = Printexc.get_backtrace () in
+      L.external_error "@\nException caught:@\n%a.@\n%s@\n" Exn.pp exn trace ;
+      L.progress "X%!" ;
+      create_sentinel_if_needed ()
 
 let run_compilation_database compilation_database should_capture_file =
   let compilation_data =
