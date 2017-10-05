@@ -172,9 +172,8 @@ let analyze_proc_desc curr_pdesc callee_pdesc : Specs.summary option =
         Some (run_proc_analysis callbacks.analyze_ondemand curr_pdesc callee_pdesc)
       else Specs.get_summary callee_pname
 
-(** analyze_proc_name curr_pdesc proc_name
-    performs an on-demand analysis of proc_name
-    triggered during the analysis of curr_pname. *)
+(** analyze_proc_name curr_pdesc proc_name performs an on-demand analysis of proc_name triggered
+    during the analysis of curr_pname *)
 let analyze_proc_name curr_pdesc callee_pname : Specs.summary option =
   match !callbacks_ref with
   | None

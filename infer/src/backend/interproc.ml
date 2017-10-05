@@ -933,8 +933,7 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
             Exceptions.Internal_error
               (Localise.verbatim_desc "Leak_while_collecting_specs_after_footprint")
           in
-          Reporting.log_error_deprecated pname exn ; []
-        (* retuning no specs *)
+          Reporting.log_error_deprecated pname exn ; (* retuning no specs *) []
       in
       (specs, Specs.FOOTPRINT)
     in
@@ -1317,7 +1316,10 @@ let analyze_procedure_aux cg_opt tenv proc_desc =
 let analyze_procedure {Callbacks.summary; proc_desc; tenv} : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   Specs.add_summary proc_name summary ;
-  ignore (analyze_procedure_aux None tenv proc_desc) ;
+  ( try ignore (analyze_procedure_aux None tenv proc_desc)
+    with exn ->
+    reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
+    Reporting.log_error_deprecated proc_name exn ) ;
   Specs.get_summary_unsafe __FILE__ proc_name
 
 (** Create closures to perform the analysis of an exe_env *)
