@@ -30,6 +30,10 @@ base_group.add_argument('-o', '--out', metavar='<directory>',
                         type=utils.decode,
                         action=utils.AbsolutePathAction,
                         help='Set the Infer results directory')
+base_group.add_argument('--continue', dest="continue_capture",
+                        action='store_true',
+                        help='''Continue the capture, do not delete previous
+                        results''')
 base_group.add_argument('-r', '--reactive', action='store_true',
                         help='''Analyze in reactive propagation mode
                         starting from changed files.''')

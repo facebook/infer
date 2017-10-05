@@ -285,6 +285,7 @@ let capture ~changed_files mode =
              -> ["--blacklist-regex"; s]
             | _
              -> [] )
+          @ (if not Config.continue_capture then [] else ["--continue"])
           @ ( match Config.java_jar_compiler with
             | None
              -> []

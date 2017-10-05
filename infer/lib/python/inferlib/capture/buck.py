@@ -236,7 +236,7 @@ class BuckAnalyzer:
                 raise e
 
     def capture_with_flavors(self):
-        if self.keep_going:
+        if self.keep_going and not self.args.continue_capture:
             self._move_buck_out()
         ret = self._run_buck_with_flavors()
         if not ret == os.EX_OK and not self.keep_going:
