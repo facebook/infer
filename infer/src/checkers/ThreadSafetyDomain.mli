@@ -29,6 +29,8 @@ module Access : sig
   val equal : t -> t -> bool
 
   val pp : F.formatter -> t -> unit
+
+  val map : f:(AccessPath.t -> AccessPath.t) -> t -> t
 end
 
 module TraceElem : sig
@@ -37,6 +39,8 @@ module TraceElem : sig
   val is_write : t -> bool
 
   val is_container_write : t -> bool
+
+  val map : f:(AccessPath.t -> AccessPath.t) -> t -> t
 end
 
 (** A bool that is true if a lock is definitely held. Note that this is unsound because it assumes

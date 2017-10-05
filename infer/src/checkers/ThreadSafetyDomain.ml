@@ -50,6 +50,18 @@ module Access = struct
     | InterfaceCall _
      -> None
 
+  let map ~f = function
+    | Read access_path
+     -> Read (f access_path)
+    | Write access_path
+     -> Write (f access_path)
+    | ContainerWrite (access_path, pname)
+     -> ContainerWrite (f access_path, pname)
+    | ContainerRead (access_path, pname)
+     -> ContainerRead (f access_path, pname)
+    | InterfaceCall _ as intfcall
+     -> intfcall
+
   let equal t1 t2 = Int.equal (compare t1 t2) 0
 
   let pp fmt = function
@@ -94,6 +106,8 @@ module TraceElem = struct
   let with_callsite t site = {t with site}
 
   let pp fmt {site; kind} = F.fprintf fmt "%a at %a" Access.pp kind CallSite.pp site
+
+  let map ~f {site; kind} = {site; kind= Access.map ~f kind}
 
   module Set = PrettyPrintable.MakePPSet (struct
     type nonrec t = t
