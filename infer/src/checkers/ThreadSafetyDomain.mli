@@ -164,6 +164,8 @@ module AccessPrecondition : sig
     [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
+
+  val make : LocksDomain.astate -> ThreadsDomain.astate -> Procdesc.t -> t
 end
 
 (** map of access precondition |-> set of accesses. the map should hold all accesses to a

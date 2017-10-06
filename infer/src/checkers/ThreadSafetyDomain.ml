@@ -336,6 +336,14 @@ module AccessPrecondition = struct
     | Unprotected indexes
      -> F.fprintf fmt "Unprotected(%a)" (PrettyPrintable.pp_collection ~pp_item:Int.pp)
           (IntSet.elements indexes)
+
+  let make locks thread pdesc =
+    let is_main_thread = ThreadsDomain.is_any_but_self thread in
+    let locked = locks || Procdesc.is_java_synchronized pdesc in
+    if not locked && not is_main_thread then TotallyUnprotected
+    else if locked && is_main_thread then Protected Excluder.Both
+    else if locked then Protected Excluder.Lock
+    else Protected Excluder.Thread
 end
 
 module AccessDomain = struct
