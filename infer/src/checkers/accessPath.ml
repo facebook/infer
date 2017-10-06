@@ -248,14 +248,3 @@ module BaseMap = PrettyPrintable.MakePPMap (struct
 
   let pp = pp_base
 end)
-
-module AccessMap = PrettyPrintable.MakePPMap (struct
-  type t = access
-
-  let compare = compare_access
-
-  let pp = pp_access
-end)
-
-module Set = PrettyPrintable.MakePPSet (Raw)
-module Map = PrettyPrintable.MakePPMap (Raw)

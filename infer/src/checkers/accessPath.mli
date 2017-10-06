@@ -118,9 +118,3 @@ module Abs : sig
 end
 
 module BaseMap : PrettyPrintable.PPMap with type key = base
-
-module AccessMap : PrettyPrintable.PPMap with type key = access
-
-module Set : PrettyPrintable.PPSet with type elt = t
-
-module Map : PrettyPrintable.PPMap with type key = t
