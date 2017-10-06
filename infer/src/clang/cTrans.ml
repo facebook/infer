@@ -3019,8 +3019,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let destr_trans_result = inject_destructors trans_state' stmt_info in
         if destr_trans_result.root_nodes <> [] then destr_trans_result
         else {empty_res_trans with root_nodes= bn.break}
-    | _
-     -> assert false
+    | _ (* t21762295 *)
+     -> CFrontend_config.incorrect_assumption "Break stmt without continuation: %a"
+          (Pp.to_string ~f:Clang_ast_j.string_of_stmt_info) stmt_info
 
   and continueStmt_trans trans_state stmt_info =
     match trans_state.continuation with
@@ -3029,8 +3030,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let destr_trans_result = inject_destructors trans_state' stmt_info in
         if destr_trans_result.root_nodes <> [] then destr_trans_result
         else {empty_res_trans with root_nodes= bn.continue}
-    | _
-     -> assert false
+    | _ (* t21762295 *)
+     -> CFrontend_config.incorrect_assumption "Continue stmt without continuation: %a"
+          (Pp.to_string ~f:Clang_ast_j.string_of_stmt_info) stmt_info
 
   (* Expect that this doesn't happen *)
   and trans_into_undefined_expr trans_state expr_info =
