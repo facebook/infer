@@ -192,25 +192,29 @@ module Node = struct
   (** Print extended instructions for the node,
       highlighting the given subinstruction if present *)
   let pp_instrs pe0 ~sub_instrs instro fmt node =
-    let pe =
-      match instro with None -> pe0 | Some instr -> Pp.extend_colormap pe0 (Obj.repr instr) Red
-    in
-    let instrs = get_instrs node in
-    let pp_loc fmt () = F.fprintf fmt " %a " Location.pp (get_loc node) in
-    let print_sub_instrs () = F.fprintf fmt "%a" (Sil.pp_instr_list pe) instrs in
-    match get_kind node with
-    | Stmt_node s
-     -> if sub_instrs then print_sub_instrs () else F.fprintf fmt "statements (%s) %a" s pp_loc ()
-    | Prune_node (_, _, descr)
-     -> if sub_instrs then print_sub_instrs () else F.fprintf fmt "assume %s %a" descr pp_loc ()
-    | Exit_node _
-     -> if sub_instrs then print_sub_instrs () else F.fprintf fmt "exit %a" pp_loc ()
-    | Skip_node s
-     -> if sub_instrs then print_sub_instrs () else F.fprintf fmt "skip (%s) %a" s pp_loc ()
-    | Start_node _
-     -> if sub_instrs then print_sub_instrs () else F.fprintf fmt "start %a" pp_loc ()
-    | Join_node
-     -> if sub_instrs then print_sub_instrs () else F.fprintf fmt "join %a" pp_loc ()
+    if sub_instrs then
+      let pe =
+        match instro with None -> pe0 | Some instr -> Pp.extend_colormap pe0 (Obj.repr instr) Red
+      in
+      let instrs = get_instrs node in
+      Sil.pp_instr_list pe fmt instrs
+    else
+      let () =
+        match get_kind node with
+        | Stmt_node s
+         -> F.fprintf fmt "statements (%s)" s
+        | Prune_node (_, _, descr)
+         -> F.fprintf fmt "assume %s" descr
+        | Exit_node _
+         -> F.fprintf fmt "exit"
+        | Skip_node s
+         -> F.fprintf fmt "skip (%s)" s
+        | Start_node _
+         -> F.fprintf fmt "start"
+        | Join_node
+         -> F.fprintf fmt "join"
+      in
+      F.fprintf fmt "  %a " Location.pp (get_loc node)
 
   (** Dump extended instructions for the node *)
   let d_instrs ~(sub_instrs: bool) (curr_instr: Sil.instr option) (node: t) =

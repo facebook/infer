@@ -208,7 +208,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         let source_trace =
           let pp_access_path_opt fmt = function
             | None
-             -> F.fprintf fmt ""
+             -> ()
             | Some access_path
              -> let base, _ = AccessPath.Abs.extract access_path in
                 F.fprintf fmt " with tainted data %a" AccessPath.Abs.pp

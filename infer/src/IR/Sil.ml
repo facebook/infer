@@ -428,11 +428,12 @@ let block_pvar = Pvar.mk (Mangled.from_string "block") (Typ.Procname.from_string
 (** Dump an instruction. *)
 let d_instr (i: instr) = L.add_print_action (L.PTinstr, Obj.repr i)
 
-let rec pp_instr_list pe f = function
+let pp_instr_list pe fmt = function
   | []
-   -> F.fprintf f ""
-  | i :: is
-   -> F.fprintf f "%a;@\n%a" (pp_instr pe) i (pp_instr_list pe) is
+   -> ()
+  | first :: others
+   -> pp_instr pe fmt first ;
+      List.iter others ~f:(fun instr -> F.fprintf fmt ";@\n%a" (pp_instr pe) instr)
 
 (** Dump a list of instructions. *)
 let d_instr_list (il: instr list) = L.add_print_action (L.PTinstr_list, Obj.repr il)
@@ -467,7 +468,7 @@ let pp_atom pe0 f a =
 (** dump an atom *)
 let d_atom (a: atom) = L.add_print_action (L.PTatom, Obj.repr a)
 
-let pp_lseg_kind f = function Lseg_NE -> F.fprintf f "ne" | Lseg_PE -> F.fprintf f ""
+let pp_lseg_kind f = function Lseg_NE -> F.fprintf f "ne" | Lseg_PE -> ()
 
 (** Print a *-separated sequence. *)
 let rec pp_star_seq pp f = function

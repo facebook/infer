@@ -1154,7 +1154,7 @@ let pp_cfgnodeshape fmt (n: Procdesc.Node.t) =
   | Procdesc.Node.Stmt_node _
    -> F.fprintf fmt "shape=\"box\""
   | _
-   -> F.fprintf fmt ""
+   -> ()
 
 let pp_cfgnode pdesc fmt (n: Procdesc.Node.t) =
   let pname = Procdesc.get_proc_name pdesc in
