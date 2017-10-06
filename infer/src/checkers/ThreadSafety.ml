@@ -55,7 +55,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let get_lock_model =
     let is_cpp_lock =
       let matcher_lock =
-        QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex::lock"; "std::unique_lock::lock"]
+        QualifiedCppName.Match.of_fuzzy_qual_names
+          [ "apache::thrift::concurrency::ReadWriteMutex::acquireRead"
+          ; "apache::thrift::concurrency::ReadWriteMutex::acquireWrite"
+          ; "folly::MicroSpinLock::lock"
+          ; "folly::RWSpinLock::lock"
+          ; "folly::RWSpinLock::lock_shared"
+          ; "folly::SharedMutexImpl::lockExclusiveImpl"
+          ; "folly::SharedMutexImpl::lockSharedImpl"
+          ; "std::mutex::lock"
+          ; "std::unique_lock::lock" ]
       in
       let matcher_lock_constructor =
         QualifiedCppName.Match.of_fuzzy_qual_names
@@ -70,9 +79,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     and is_cpp_unlock =
       let matcher =
         QualifiedCppName.Match.of_fuzzy_qual_names
-          [ "std::mutex::unlock"
-          ; "std::unique_lock::unlock"
+          [ "apache::thrift::concurrency::ReadWriteMutex::release"
+          ; "folly::MicroSpinLock::unlock"
+          ; "folly::RWSpinLock::unlock"
+          ; "folly::RWSpinLock::unlock_shared"
+          ; "folly::SharedMutexImpl::unlock"
+          ; "folly::SharedMutexImpl::unlock_shared"
           ; "std::lock_guard::~lock_guard"
+          ; "std::mutex::unlock"
+          ; "std::unique_lock::unlock"
           ; "std::unique_lock::~unique_lock" ]
       in
       fun pname ->
