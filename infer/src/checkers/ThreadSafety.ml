@@ -580,8 +580,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let open Domain in
     let formals, _ = FormalMap.make pdesc |> FormalMap.get_formals_indexes |> List.unzip in
+    let n = min (List.length formals) (List.length actuals) in
     let fmls_actls =
-      List.zip_exn formals (List.take actuals (List.length formals))
+      List.zip_exn (List.take formals n) (List.take actuals n)
       |> List.filter_map ~f:(fun (fml, act) ->
              match get_access_path act with Some path -> Some (fml, path) | _ -> None )
     in
