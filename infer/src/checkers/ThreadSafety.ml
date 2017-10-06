@@ -534,6 +534,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ; return_ownership= OwnershipAbstractValue.unowned
       ; return_attributes= AttributeSetDomain.empty }
 
+  let cpp_force_skipped =
+    let matcher =
+      ( lazy
+      (QualifiedCppName.Match.of_fuzzy_qual_names ["folly::detail::SingletonHolder::createInstance"])
+      )
+    in
+    fun pname ->
+      QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
+        (Typ.Procname.get_qualifiers pname)
+
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
     let get_receiver_ap actuals =
       match List.hd actuals with
@@ -544,13 +554,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             "Call to %a is marked as a container write, but has no receiver" Typ.Procname.pp
             callee_pname
     in
-    match get_container_access callee_pname tenv with
-    | Some ContainerWrite
+    match (get_container_access callee_pname tenv, callee_pname) with
+    | Some ContainerWrite, _
      -> make_container_access callee_pname ~is_write:true (get_receiver_ap actuals) callee_loc tenv
-    | Some ContainerRead
+    | Some ContainerRead, _
      -> make_container_access callee_pname ~is_write:false (get_receiver_ap actuals) callee_loc
           tenv
-    | None
+    | None, Typ.Procname.ObjC_Cpp _ when cpp_force_skipped callee_pname
+     -> None
+    | None, _
      -> Summary.read_summary caller_pdesc callee_pname
 
   (* return true if the given procname boxes a primitive type into a reference type *)
