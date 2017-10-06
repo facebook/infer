@@ -139,3 +139,14 @@ let store_to_file (filename: DB.filename) (tenv: t) =
     let out_channel = Out_channel.create debug_filename in
     let fmt = Format.formatter_of_out_channel out_channel in
     Format.fprintf fmt "%a" pp tenv ; Out_channel.close out_channel
+
+exception Found of Typ.Name.t
+
+let language_is tenv lang =
+  match TypenameHash.iter (fun n -> raise (Found n)) tenv with
+  | ()
+   -> false
+  | exception Found JavaClass _
+   -> Config.equal_language lang Java
+  | exception Found _
+   -> Config.equal_language lang Clang

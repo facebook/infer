@@ -54,3 +54,6 @@ val store_to_file : DB.filename -> t -> unit
 
 val get_overriden_method : t -> Typ.Procname.java -> Typ.Procname.t option
 (** Get method that is being overriden by java_pname (if any) **)
+
+val language_is : t -> Config.language -> bool
+(** Test the language from which the types in the tenv were translated *)

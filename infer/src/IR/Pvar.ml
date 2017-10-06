@@ -31,7 +31,7 @@ type pvar_kind =
   [@@deriving compare]
 
 (** Names for program variables. *)
-and t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind} [@@deriving compare]
+type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind} [@@deriving compare]
 
 let equal = [%compare.equal : t]
 
