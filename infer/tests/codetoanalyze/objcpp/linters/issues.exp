@@ -19,6 +19,8 @@ codetoanalyze/objcpp/linters/componentkit/MutableLocalVariablesTest.mm, BarCompo
 codetoanalyze/objcpp/linters/componentkit/MutableLocalVariablesTest.mm, FooComponent_newWithString, 52, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, []
 codetoanalyze/objcpp/linters/componentkit/MutableLocalVariablesTest.mm, FooComponent_newWithString, 57, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, []
 codetoanalyze/objcpp/linters/componentkit/MutableLocalVariablesTest.mm, FooComponent_newWithString, 60, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, []
+codetoanalyze/objcpp/linters/componentkit/MutableLocalVariablesTest.mm, FooComponent_newWithString, 60, POINTER_TO_CONST_OBJC_CLASS, []
+codetoanalyze/objcpp/linters/componentkit/MutableLocalVariablesTest.mm, FooComponent_newWithString, 61, POINTER_TO_CONST_OBJC_CLASS, []
 codetoanalyze/objcpp/linters/componentkit/MutableLocalVariablesTest.mm, FooComponent_newWithString, 64, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, []
 codetoanalyze/objcpp/linters/componentkit/MutableLocalVariablesTest.mm, FooComponent_newWithString, 69, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, []
 codetoanalyze/objcpp/linters/componentkit/MutableLocalVariablesTest.mm, SomeClass_init, 40, MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE, []

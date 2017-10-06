@@ -48,7 +48,7 @@ val expand_checkers : macros_map -> paths_map -> CTL.ctl_checker list -> CTL.ctl
 
 val create_parsed_linters : string -> CTL.ctl_checker list -> linter list
 
-val remove_new_lines : string -> string
+val remove_new_lines_and_whitespace : string -> string
 
 val fill_issue_desc_info_and_log :
   CLintersContext.context -> Ctl_parser_types.ast_node -> CIssue.issue_desc -> string option

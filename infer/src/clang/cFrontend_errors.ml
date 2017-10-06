@@ -113,6 +113,8 @@ let evaluate_place_holder context ph an =
    -> MF.monospaced_to_string (CFrontend_checkers.class_available_ios_sdk an)
   | "%type%"
    -> MF.monospaced_to_string (Ctl_parser_types.ast_node_type an)
+  | "%class_name%"
+   -> CFrontend_checkers.class_name an
   | "%child_type%"
    -> MF.monospaced_to_string (Ctl_parser_types.stmt_node_child_type an)
   | "%name%"
@@ -141,7 +143,9 @@ let rec expand_message_string context message an =
     expand_message_string context message' an
   with Not_found -> message
 
-let remove_new_lines message = String.substr_replace_all ~pattern:"\n" ~with_:" " message
+let remove_new_lines_and_whitespace message =
+  let words = List.map ~f:String.strip (String.split ~on:'\n' message) in
+  String.concat words ~sep:" "
 
 let string_to_err_kind = function
   | "WARNING"
@@ -438,9 +442,13 @@ let log_frontend_issue translation_unit_context method_decl_opt (node: Ctl_parse
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc:issue_desc.loc ~ltr:trace
     ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
 
-let fill_issue_desc_info_and_log context an issue_desc linters_def_file loc =
-  let desc = remove_new_lines (expand_message_string context issue_desc.CIssue.description an) in
-  let issue_desc' = {issue_desc with CIssue.description= desc; CIssue.loc= loc} in
+let fill_issue_desc_info_and_log context an (issue_desc: CIssue.issue_desc) linters_def_file loc =
+  let process_message message =
+    remove_new_lines_and_whitespace (expand_message_string context message an)
+  in
+  let description = process_message issue_desc.description in
+  let suggestion = Option.map ~f:process_message issue_desc.suggestion in
+  let issue_desc' = {issue_desc with description; loc; suggestion} in
   log_frontend_issue context.CLintersContext.translation_unit_context
     context.CLintersContext.current_method an issue_desc' linters_def_file
 

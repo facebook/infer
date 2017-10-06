@@ -32,3 +32,5 @@ val class_available_ios_sdk : Ctl_parser_types.ast_node -> string
 val receiver_method_call : Ctl_parser_types.ast_node -> string
 
 val tag_name_of_node : Ctl_parser_types.ast_node -> string
+
+val class_name : Ctl_parser_types.ast_node -> string

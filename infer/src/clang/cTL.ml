@@ -894,6 +894,8 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.is_class an cname
   | "is_const_var", [], an
    -> CPredicates.is_const_expr_var an
+  | "is_decl", [], an
+   -> CPredicates.is_decl an
   | "is_enum_constant", [cname], an
    -> CPredicates.is_enum_constant an cname
   | "is_enum_constant_of_enum", [name], an
@@ -942,6 +944,8 @@ let rec eval_Atomic _pred_name args an lcxt =
    -> CPredicates.using_namespace an namespace
   | "is_at_selector_with_name", [name], an
    -> CPredicates.is_at_selector_with_name an name
+  | "has_type_const_ptr_to_objc_class", [], an
+   -> CPredicates.has_type_const_ptr_to_objc_class an
   | "has_type_subprotocol_of", [protname], an
    -> CPredicates.has_type_subprotocol_of an protname
   | "has_visibility_attribute", [vis], an

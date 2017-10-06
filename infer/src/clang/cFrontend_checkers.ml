@@ -118,3 +118,30 @@ let cxx_ref_captured_in_block an =
   in
   let var_desc vars var_named_decl_info = vars ^ "'" ^ var_named_decl_info.ni_name ^ "'" in
   List.fold ~f:var_desc ~init:"" capt_refs
+
+let class_name node =
+  let open Clang_ast_t in
+  let class_name_of_interface_type typ =
+    match typ with
+    | Some ObjCInterfaceType (_, ptr) -> (
+      match CAst_utils.get_decl ptr with
+      | Some ObjCInterfaceDecl (_, ndi, _, _, _)
+       -> ndi.ni_name
+      | _
+       -> "" )
+    | _
+     -> ""
+  in
+  match CPredicates.get_ast_node_type_ptr node with
+  | Some type_ptr
+   -> (
+      let typ = CAst_utils.get_desugared_type type_ptr in
+      match typ with
+      | Some ObjCObjectPointerType (_, {Clang_ast_t.qt_type_ptr})
+       -> class_name_of_interface_type (CAst_utils.get_desugared_type qt_type_ptr)
+      | Some ObjCInterfaceType _
+       -> class_name_of_interface_type typ
+      | _
+       -> "" )
+  | _
+   -> ""

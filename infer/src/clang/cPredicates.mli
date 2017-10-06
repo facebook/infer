@@ -128,3 +128,9 @@ val iphoneos_target_sdk_version_by_path : CLintersContext.context -> string opti
 val iphoneos_target_sdk_version_greater_or_equal : CLintersContext.context -> string -> bool
 
 val within_available_class_block : CLintersContext.context -> Ctl_parser_types.ast_node -> bool
+
+val has_type_const_ptr_to_objc_class : Ctl_parser_types.ast_node -> bool
+
+val is_decl : Ctl_parser_types.ast_node -> bool
+
+val get_ast_node_type_ptr : Ctl_parser_types.ast_node -> Clang_ast_t.type_ptr option

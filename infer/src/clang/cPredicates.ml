@@ -608,6 +608,21 @@ let has_type an _typ =
   | _
    -> false
 
+let has_type_const_ptr_to_objc_class node =
+  let open Clang_ast_t in
+  match get_ast_node_type_ptr node with
+  | Some type_ptr -> (
+    match CAst_utils.get_desugared_type type_ptr with
+    | Some ObjCObjectPointerType (_, qt)
+     -> qt.qt_is_const
+    | _
+     -> false )
+  | None
+   -> false
+
+let is_decl node =
+  match node with Ctl_parser_types.Decl _ -> true | Ctl_parser_types.Stmt _ -> false
+
 let method_return_type an _typ =
   L.(debug Linters Verbose) "@\n Executing method_return_type..." ;
   match (an, _typ) with
