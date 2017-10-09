@@ -428,12 +428,8 @@ let block_pvar = Pvar.mk (Mangled.from_string "block") (Typ.Procname.from_string
 (** Dump an instruction. *)
 let d_instr (i: instr) = L.add_print_action (L.PTinstr, Obj.repr i)
 
-let pp_instr_list pe fmt = function
-  | []
-   -> ()
-  | first :: others
-   -> pp_instr pe fmt first ;
-      List.iter others ~f:(fun instr -> F.fprintf fmt ";@\n%a" (pp_instr pe) instr)
+let pp_instr_list pe fmt instrs =
+  List.iter instrs ~f:(fun instr -> F.fprintf fmt "%a;@\n" (pp_instr pe) instr)
 
 (** Dump a list of instructions. *)
 let d_instr_list (il: instr list) = L.add_print_action (L.PTinstr_list, Obj.repr il)
