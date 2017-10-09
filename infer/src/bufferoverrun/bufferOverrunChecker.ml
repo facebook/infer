@@ -349,13 +349,25 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             if Ident.is_none id then mem
             else
               let mem = Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) v mem in
-              if PowLoc.is_singleton locs then Dom.Mem.load_alias id (PowLoc.min_elt locs) mem
+              if PowLoc.is_singleton locs then
+                Dom.Mem.load_simple_alias id (PowLoc.min_elt locs) mem
               else mem
         | Store (exp1, _, exp2, loc)
          -> let locs = Sem.eval exp1 mem loc |> Dom.Val.get_all_locs in
             let v = Sem.eval exp2 mem loc |> Dom.Val.add_trace_elem (Trace.Assign loc) in
             let mem = Dom.Mem.update_mem locs v mem in
-            if PowLoc.is_singleton locs then Dom.Mem.store_alias (PowLoc.min_elt locs) exp2 mem
+            if PowLoc.is_singleton locs then
+              let loc_v = PowLoc.min_elt locs in
+              match Typ.Procname.get_method pname with
+              | "__inferbo_empty" when Loc.is_return loc_v -> (
+                match Sem.get_formals pdesc with
+                | [(formal, _)]
+                 -> let formal_v = Dom.Mem.find_heap (Loc.of_pvar formal) mem in
+                    Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
+                | _
+                 -> assert false )
+              | _
+               -> Dom.Mem.store_simple_alias loc_v exp2 mem
             else mem
         | Prune (exp, loc, _, _)
          -> Sem.prune exp loc mem

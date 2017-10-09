@@ -79,7 +79,7 @@ module Make (CFG : ProcCfg.S) = struct
       | Exp.Var x1, Exp.Var x2 -> (
         match (Mem.find_alias x1 m, Mem.find_alias x2 m) with
         | Some x1', Some x2'
-         -> Loc.equal x1' x2'
+         -> AliasTarget.equal x1' x2'
         | _, _
          -> false )
       | Exp.UnOp (uop1, e1', _), Exp.UnOp (uop2, e2', _)
@@ -275,9 +275,9 @@ module Make (CFG : ProcCfg.S) = struct
       match exp with
       | Exp.Var id -> (
         match Mem.find_alias id mem with
-        | Some loc
+        | Some AliasTarget.Simple loc
          -> PowLoc.singleton loc |> Val.of_pow_loc
-        | None
+        | Some AliasTarget.Empty _ | None
          -> Val.bot )
       | Exp.Lvar pvar
        -> pvar |> Loc.of_pvar |> PowLoc.singleton |> Val.of_pow_loc
@@ -315,17 +315,27 @@ module Make (CFG : ProcCfg.S) = struct
       match e with
       | Exp.Var x -> (
         match Mem.find_alias x mem with
-        | Some lv
+        | Some AliasTarget.Simple lv
          -> let v = Mem.find_heap lv mem in
             let v' = Val.prune_zero v in
+            Mem.update_mem (PowLoc.singleton lv) v' mem
+        | Some AliasTarget.Empty lv
+         -> let v = Mem.find_heap lv mem in
+            let itv_v = Itv.prune_eq (Val.get_itv v) Itv.zero in
+            let v' = Val.modify_itv itv_v v in
             Mem.update_mem (PowLoc.singleton lv) v' mem
         | None
          -> mem )
       | Exp.UnOp (Unop.LNot, Exp.Var x, _) -> (
         match Mem.find_alias x mem with
-        | Some lv
+        | Some AliasTarget.Simple lv
          -> let v = Mem.find_heap lv mem in
             let itv_v = Itv.prune_eq (Val.get_itv v) Itv.false_sem in
+            let v' = Val.modify_itv itv_v v in
+            Mem.update_mem (PowLoc.singleton lv) v' mem
+        | Some AliasTarget.Empty lv
+         -> let v = Mem.find_heap lv mem in
+            let itv_v = Itv.prune_comp Binop.Ge (Val.get_itv v) Itv.one in
             let v' = Val.modify_itv itv_v v in
             Mem.update_mem (PowLoc.singleton lv) v' mem
         | None
@@ -340,7 +350,7 @@ module Make (CFG : ProcCfg.S) = struct
       | Exp.BinOp ((Binop.Gt as comp), Exp.Var x, e')
       | Exp.BinOp ((Binop.Le as comp), Exp.Var x, e')
       | Exp.BinOp ((Binop.Ge as comp), Exp.Var x, e') -> (
-        match Mem.find_alias x mem with
+        match Mem.find_simple_alias x mem with
         | Some lv
          -> let v = Mem.find_heap lv mem in
             let v' = Val.prune_comp comp v (eval e' mem loc) in
@@ -348,7 +358,7 @@ module Make (CFG : ProcCfg.S) = struct
         | None
          -> mem )
       | Exp.BinOp (Binop.Eq, Exp.Var x, e') -> (
-        match Mem.find_alias x mem with
+        match Mem.find_simple_alias x mem with
         | Some lv
          -> let v = Mem.find_heap lv mem in
             let v' = Val.prune_eq v (eval e' mem loc) in
@@ -356,7 +366,7 @@ module Make (CFG : ProcCfg.S) = struct
         | None
          -> mem )
       | Exp.BinOp (Binop.Ne, Exp.Var x, e') -> (
-        match Mem.find_alias x mem with
+        match Mem.find_simple_alias x mem with
         | Some lv
          -> let v = Mem.find_heap lv mem in
             let v' = Val.prune_ne v (eval e' mem loc) in
@@ -419,8 +429,8 @@ module Make (CFG : ProcCfg.S) = struct
 
   let get_matching_pairs
       : Tenv.t -> Val.t -> Val.t -> Typ.t -> Mem.astate -> Mem.astate
-        -> callee_ret_alias:Loc.t option
-        -> (Itv.Bound.t * Itv.Bound.t bottom_lifted * TraceSet.t) list * Loc.t option =
+        -> callee_ret_alias:AliasTarget.t option
+        -> (Itv.Bound.t * Itv.Bound.t bottom_lifted * TraceSet.t) list * AliasTarget.t option =
     fun tenv formal actual typ caller_mem callee_mem ~callee_ret_alias ->
       let get_itv v = Val.get_itv v in
       let get_offset v = v |> Val.get_array_blk |> ArrayBlk.offsetof in
@@ -428,14 +438,18 @@ module Make (CFG : ProcCfg.S) = struct
       let get_field_name (fn, _, _) = fn in
       let append_field v fn = PowLoc.append_field (Val.get_all_locs v) fn in
       let deref_field v fn mem = Mem.find_heap_set (append_field v fn) mem in
-      let deref_ptr v mem = Mem.find_heap_set (Val.get_array_locs v) mem in
+      let deref_ptr v mem =
+        let array_locs = Val.get_array_locs v in
+        let locs = if PowLoc.is_empty array_locs then Val.get_pow_loc v else array_locs in
+        Mem.find_heap_set locs mem
+      in
       let ret_alias = ref None in
       let add_ret_alias v1 v2 =
         match callee_ret_alias with
         | Some ret_loc
          -> if PowLoc.is_singleton v1 && PowLoc.is_singleton v2
-               && Loc.equal (PowLoc.min_elt v1) ret_loc
-            then ret_alias := Some (PowLoc.min_elt v2)
+               && AliasTarget.use (PowLoc.min_elt v1) ret_loc
+            then ret_alias := Some (AliasTarget.replace (PowLoc.min_elt v2) ret_loc)
         | None
          -> ()
       in
@@ -515,8 +529,9 @@ module Make (CFG : ProcCfg.S) = struct
 
   let get_subst_map
       : Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Mem.astate
-        -> callee_ret_alias:Loc.t option -> Location.t
-        -> (Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t) * Loc.t option =
+        -> callee_ret_alias:AliasTarget.t option -> Location.t
+        -> (Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t)
+           * AliasTarget.t option =
     fun tenv callee_pdesc params caller_mem callee_entry_mem ~callee_ret_alias loc ->
       let add_pair (formal, typ) actual (l, ret_alias) =
         let formal = Mem.find_heap (Loc.of_pvar formal) callee_entry_mem in

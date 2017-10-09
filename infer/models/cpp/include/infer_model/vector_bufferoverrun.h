@@ -31,6 +31,8 @@ extern "C" {
 int __inferbo_min(int, int);
 }
 
+bool __inferbo_empty(int* size) { return 1 - __inferbo_min(*size, 1); }
+
 INFER_NAMESPACE_STD_BEGIN
 
 struct bool_ref {
@@ -216,7 +218,7 @@ class vector {
 
   size_type capacity() const noexcept {}
 
-  bool empty() const noexcept { return 1 - __inferbo_min(infer_size, 1); }
+  bool empty() const noexcept { return __inferbo_empty((int*)&infer_size); }
   size_type max_size() const noexcept;
   void reserve(size_type __n);
   void shrink_to_fit() noexcept;

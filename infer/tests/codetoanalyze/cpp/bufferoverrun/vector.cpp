@@ -121,3 +121,15 @@ void call_safe_access4_Good_FP() {
   std::vector<int> v;
   safe_access4(v);
 }
+
+void safe_access5(std::vector<int> v) {
+  if (v.empty()) {
+  } else {
+    v[0] = 1;
+  }
+}
+
+void call_safe_access5_Good() {
+  std::vector<int> v;
+  safe_access5(v);
+}
