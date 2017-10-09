@@ -20,8 +20,6 @@ module Condition = struct
 
   let get_symbols c = ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size
 
-  let eq c1 c2 = ItvPure.equal c1.idx c2.idx && ItvPure.equal c1.size c2.size
-
   let set_size_pos : t -> t =
     fun c ->
       let size' = ItvPure.make_positive c.size in
@@ -40,6 +38,53 @@ module Condition = struct
   let make : idx:ItvPure.t -> size:ItvPure.t -> t option =
     fun ~idx ~size ->
       if ItvPure.is_invalid idx || ItvPure.is_invalid size then None else Some {idx; size}
+
+  let have_similar_bounds {idx= lidx; size= lsiz} {idx= ridx; size= rsiz} =
+    ItvPure.have_similar_bounds lidx ridx && ItvPure.have_similar_bounds lsiz rsiz
+
+  let xcompare ~lhs:{idx= lidx; size= lsiz} ~rhs:{idx= ridx; size= rsiz} =
+    let idxcmp = ItvPure.xcompare ~lhs:lidx ~rhs:ridx in
+    let sizcmp = ItvPure.xcompare ~lhs:lsiz ~rhs:rsiz in
+    match (idxcmp, sizcmp) with
+    | `Equal, `Equal
+     -> `Equal
+    | `NotComparable, _
+     -> `NotComparable
+    | `Equal, (`LeftSmallerThanRight | `LeftSubsumesRight)
+     -> `LeftSubsumesRight
+    | `Equal, (`RightSmallerThanLeft | `RightSubsumesLeft)
+     -> `RightSubsumesLeft
+    | `LeftSubsumesRight, (`Equal | `LeftSubsumesRight)
+     -> `LeftSubsumesRight
+    | `RightSubsumesLeft, (`Equal | `RightSubsumesLeft)
+     -> `RightSubsumesLeft
+    | (`LeftSmallerThanRight | `RightSmallerThanLeft), _
+     -> let lidxpos = ItvPure.le_sem ItvPure.zero lidx in
+        let ridxpos = ItvPure.le_sem ItvPure.zero ridx in
+        if not (ItvPure.equal lidxpos ridxpos) then `NotComparable
+        else if ItvPure.is_true lidxpos then
+          (* both idx >= 0 *)
+          match (idxcmp, sizcmp) with
+          | `LeftSmallerThanRight, (`Equal | `RightSmallerThanLeft | `RightSubsumesLeft)
+           -> `RightSubsumesLeft
+          | `RightSmallerThanLeft, (`Equal | `LeftSmallerThanRight | `LeftSubsumesRight)
+           -> `LeftSubsumesRight
+          | _
+           -> `NotComparable
+        else if ItvPure.is_false lidxpos then
+          (* both idx < 0, size doesn't matter *)
+          match idxcmp with
+          | `LeftSmallerThanRight
+           -> `LeftSubsumesRight
+          | `RightSmallerThanLeft
+           -> `RightSubsumesLeft
+          | `Equal
+           -> `Equal
+          | _
+           -> `NotComparable
+        else `NotComparable
+    | _
+     -> `NotComparable
 
   let filter1 : t -> bool =
     fun c ->
@@ -173,26 +218,36 @@ module ConditionSet = struct
       (ConditionTrace.get_location cwt2.trace)
 
   let try_merge ~existing ~new_ =
-    if Condition.eq existing.cond new_.cond then
-      (* keep the first one in the code *)
-      if compare_by_location existing new_ <= 0 then `KeepExistingAndStop
-      else `RemoveExistingAddNewAndStop
-    else `KeepGoingFinallyAddNew
+    if Condition.have_similar_bounds existing.cond new_.cond then
+      match Condition.xcompare ~lhs:existing.cond ~rhs:new_.cond with
+      | `Equal
+       -> (* keep the first one in the code *)
+          if compare_by_location existing new_ <= 0 then `DoNotAddAndStop
+          else `RemoveExistingAndContinue
+      (* we don't want to remove issues that would end up in a higher bucket,
+         e.g. [a, b] < [c, d] is subsumed by [a, +oo] < [c, d] but the latter is less precise *)
+      | `LeftSubsumesRight
+       -> `DoNotAddAndStop
+      | `RightSubsumesLeft
+       -> `RemoveExistingAndContinue
+      | `NotComparable
+       -> `KeepExistingAndContinue
+    else `KeepExistingAndContinue
 
   let add_one condset new_ =
-    let rec aux ~new_ acc = function
+    let rec aux ~new_ acc ~same = function
       | []
-       -> new_ :: condset
-      | existing :: rest ->
+       -> if same then new_ :: condset else new_ :: acc
+      | existing :: rest as existings ->
         match try_merge ~existing ~new_ with
-        | `KeepExistingAndStop
-         -> condset
-        | `RemoveExistingAddNewAndStop
-         -> new_ :: List.rev_append acc rest
-        | `KeepGoingFinallyAddNew
-         -> aux ~new_ (existing :: acc) rest
+        | `DoNotAddAndStop
+         -> if same then condset else List.rev_append acc existings
+        | `RemoveExistingAndContinue
+         -> aux ~new_ acc ~same:false rest
+        | `KeepExistingAndContinue
+         -> aux ~new_ (existing :: acc) ~same rest
     in
-    aux ~new_ [] condset
+    aux ~new_ [] ~same:true condset
 
   let join condset1 condset2 = List.fold_left ~f:add_one condset1 ~init:condset2
 
@@ -206,14 +261,14 @@ module ConditionSet = struct
         join [cwt] condset
 
   let subst condset (bound_map, trace_map) caller_pname callee_pname loc =
-    let subst_cwt cwt =
+    let subst_add_cwt condset cwt =
       match Condition.get_symbols cwt.cond with
       | []
-       -> Some cwt
+       -> add_one condset cwt
       | symbols ->
         match Condition.subst cwt.cond bound_map with
         | None
-         -> None
+         -> condset
         | Some cond
          -> let traces_caller =
               List.fold symbols ~init:ValTraceSet.empty ~f:(fun val_traces symbol ->
@@ -228,9 +283,9 @@ module ConditionSet = struct
                 trace
             in
             let trace = make_call_and_subst cwt.trace in
-            Some {cond; trace}
+            add_one condset {cond; trace}
     in
-    List.filter_map condset ~f:subst_cwt
+    List.fold condset ~f:subst_add_cwt ~init:[]
 
   let iter ~f condset = List.iter condset ~f:(fun cwt -> f cwt.cond cwt.trace)
 

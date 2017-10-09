@@ -432,6 +432,19 @@ module Bound = struct
 
   let eq : t -> t -> bool = fun x y -> le x y && le y x
 
+  let xcompare ~lhs ~rhs =
+    let ller = le lhs rhs in
+    let rlel = le rhs lhs in
+    match (ller, rlel) with
+    | true, true
+     -> `Equal
+    | true, false
+     -> `LeftSmallerThanRight
+    | false, true
+     -> `RightSmallerThanLeft
+    | false, false
+     -> `NotComparable
+
   let remove_max_int : t -> t =
     fun x ->
       match x with
@@ -625,10 +638,22 @@ module Bound = struct
     | MinMax (_, _, _, _, s)
      -> [s]
 
+  let are_similar b1 b2 =
+    match (b1, b2) with
+    | MInf, MInf
+     -> true
+    | PInf, PInf
+     -> true
+    | (Linear _ | MinMax _), (Linear _ | MinMax _)
+     -> true
+    | _
+     -> false
+
   let is_not_infty : t -> bool = function MInf | PInf -> false | _ -> true
 end
 
 module ItvPure = struct
+  (** (l, u) represents the closed interval [l; u] (of course infinite bounds are open) *)
   type astate = Bound.t * Bound.t [@@deriving compare]
 
   type t = astate
@@ -645,6 +670,8 @@ module ItvPure = struct
     fun (l, u) ->
       match (Bound.is_const l, Bound.is_const u) with Some _, Some _ -> true | _, _ -> false
 
+  let have_similar_bounds (l1, u1) (l2, u2) = Bound.are_similar l1 l2 && Bound.are_similar u1 u2
+
   let make : Bound.t -> Bound.t -> t = fun l u -> (l, u)
 
   let subst : t -> Bound.t bottom_lifted SubstMap.t -> t bottom_lifted =
@@ -659,6 +686,35 @@ module ItvPure = struct
 
   let ( <= ) : lhs:t -> rhs:t -> bool =
     fun ~lhs:(l1, u1) ~rhs:(l2, u2) -> Bound.le l2 l1 && Bound.le u1 u2
+
+  let xcompare ~lhs:(l1, u1) ~rhs:(l2, u2) =
+    let lcmp = Bound.xcompare ~lhs:l1 ~rhs:l2 in
+    let ucmp = Bound.xcompare ~lhs:u1 ~rhs:u2 in
+    match (lcmp, ucmp) with
+    | `Equal, `Equal
+     -> `Equal
+    | `NotComparable, _ | _, `NotComparable -> (
+      match Bound.xcompare ~lhs:u1 ~rhs:l2 with
+      | `LeftSmallerThanRight
+       -> `LeftSmallerThanRight
+      | u1l2 ->
+        match (Bound.xcompare ~lhs:u2 ~rhs:l1, u1l2) with
+        | `LeftSmallerThanRight, _
+         -> `RightSmallerThanLeft
+        | `Equal, `Equal
+         -> `Equal (* weird, though *)
+        | _, `Equal
+         -> `LeftSmallerThanRight
+        | _
+         -> `NotComparable )
+    | (`LeftSmallerThanRight | `Equal), (`LeftSmallerThanRight | `Equal)
+     -> `LeftSmallerThanRight
+    | (`RightSmallerThanLeft | `Equal), (`RightSmallerThanLeft | `Equal)
+     -> `RightSmallerThanLeft
+    | `LeftSmallerThanRight, `RightSmallerThanLeft
+     -> `LeftSubsumesRight
+    | `RightSmallerThanLeft, `LeftSmallerThanRight
+     -> `RightSubsumesLeft
 
   let join : t -> t -> t = fun (l1, u1) (l2, u2) -> (Bound.lb l1 l2, Bound.ub u1 u2)
 
