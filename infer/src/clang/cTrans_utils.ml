@@ -49,12 +49,12 @@ module Nodes = struct
     let procdesc = CContext.get_procdesc context in
     Procdesc.create_node procdesc loc node_kind instrs
 
-  let create_prune_node branch e_cond instrs_cond loc ik context =
+  let create_prune_node ~branch ~negate_cond e_cond instrs_cond loc ik context =
     let e_cond', _ =
       extract_exp_from_list e_cond
         "@\nWARNING: Missing expression for Conditional operator. Need to be fixed"
     in
-    let e_cond'' = if branch then e_cond' else Exp.UnOp (Unop.LNot, e_cond', None) in
+    let e_cond'' = if negate_cond then Exp.UnOp (Unop.LNot, e_cond', None) else e_cond' in
     let instrs_cond' = instrs_cond @ [Sil.Prune (e_cond'', loc, branch, ik)] in
     create_node (prune_kind branch) instrs_cond' loc context
 

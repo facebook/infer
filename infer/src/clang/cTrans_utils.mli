@@ -125,8 +125,8 @@ module Nodes : sig
   val is_join_node : Procdesc.Node.t -> bool
 
   val create_prune_node :
-    bool -> (Exp.t * Typ.t) list -> Sil.instr list -> Location.t -> Sil.if_kind -> CContext.t
-    -> Procdesc.Node.t
+    branch:bool -> negate_cond:bool -> (Exp.t * Typ.t) list -> Sil.instr list -> Location.t
+    -> Sil.if_kind -> CContext.t -> Procdesc.Node.t
 
   val is_prune_node : Procdesc.Node.t -> bool
 

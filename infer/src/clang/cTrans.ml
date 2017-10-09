@@ -1526,7 +1526,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         Procdesc.append_locals procdesc [(Pvar.get_name pvar, var_typ)] ;
         let continuation' = mk_cond_continuation trans_state.continuation in
         let trans_state' = {trans_state with continuation= continuation'; succ_nodes= []} in
-        let res_trans_cond = exec_with_priority_exception trans_state' cond cond_trans in
+        let res_trans_cond =
+          exec_with_priority_exception trans_state' cond (cond_trans ~negate_cond:false)
+        in
         (* Note: by contruction prune nodes are leafs_nodes_cond *)
         do_branch true exp1 var_typ res_trans_cond.leaf_nodes join_node pvar ;
         do_branch false exp2 var_typ res_trans_cond.leaf_nodes join_node pvar ;
@@ -1573,11 +1575,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   (* Translate a condition for if/loops statement. It shorts-circuit and/or. *)
   (* The invariant is that the translation of a condition always contains (at least) *)
   (* the prune nodes. Moreover these are always the leaf nodes of the translation. *)
-  and cond_trans trans_state cond =
+  and cond_trans ~negate_cond trans_state cond =
     let context = trans_state.context in
     let si, _ = Clang_ast_proj.get_stmt_tuple cond in
     let sil_loc = CLocation.get_sil_location si context in
-    let mk_prune_node b e ins = create_prune_node b e ins sil_loc Sil.Ik_if context in
+    let mk_prune_node ~branch ~negate_cond e ins =
+      create_prune_node ~branch ~negate_cond e ins sil_loc Sil.Ik_if context
+    in
     let extract_exp el =
       extract_exp_from_list el
         "@\nWARNING: Missing expression for Conditional operator. Need to be fixed"
@@ -1609,13 +1613,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let e', instrs' =
         define_condition_side_effects res_trans_cond.exps res_trans_cond.instrs sil_loc
       in
-      let prune_t = mk_prune_node true e' instrs' in
-      let prune_f = mk_prune_node false e' instrs' in
+      let prune_t = mk_prune_node ~branch:true ~negate_cond e' instrs' in
+      let prune_f = mk_prune_node ~branch:false ~negate_cond:(not negate_cond) e' instrs' in
       List.iter
         ~f:(fun n' -> Procdesc.node_set_succs_exn context.procdesc n' [prune_t; prune_f] [])
         res_trans_cond.leaf_nodes ;
       let rnodes =
-        if Int.equal (List.length res_trans_cond.root_nodes) 0 then [prune_t; prune_f]
+        if List.is_empty res_trans_cond.root_nodes then [prune_t; prune_f]
         else res_trans_cond.root_nodes
       in
       { empty_res_trans with
@@ -1629,11 +1633,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* translation of s2 (i.e., the case when we need to fully evaluate*)
     (* the condition to decide its truth value). *)
     let short_circuit binop s1 s2 =
-      let res_trans_s1 = cond_trans trans_state s1 in
+      let res_trans_s1 = cond_trans ~negate_cond trans_state s1 in
       let prune_nodes_t, prune_nodes_f =
         List.partition_tf ~f:is_true_prune_node res_trans_s1.leaf_nodes
       in
-      let res_trans_s2 = cond_trans trans_state s2 in
+      let res_trans_s2 = cond_trans ~negate_cond trans_state s2 in
       (* prune_to_s2 is the prune node that is connected with the root node of the *)
       (* translation of s2.*)
       (* prune_to_short_c is the prune node that is connected directly with the branch *)
@@ -1651,7 +1655,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         ~f:(fun n -> Procdesc.node_set_succs_exn context.procdesc n res_trans_s2.root_nodes [])
         prune_to_s2 ;
       let root_nodes_to_parent =
-        if Int.equal (List.length res_trans_s1.root_nodes) 0 then res_trans_s1.leaf_nodes
+        if List.is_empty res_trans_s1.root_nodes then res_trans_s1.leaf_nodes
         else res_trans_s1.root_nodes
       in
       let exp1, typ1 = extract_exp res_trans_s1.exps in
@@ -1668,18 +1672,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let open Clang_ast_t in
     match cond with
     | BinaryOperator (_, [s1; s2], _, boi) -> (
-      match boi.Clang_ast_t.boi_kind with
+      match boi.boi_kind with
       | `LAnd
-       -> short_circuit Binop.LAnd s1 s2
+       -> short_circuit (if negate_cond then Binop.LOr else Binop.LAnd) s1 s2
       | `LOr
-       -> short_circuit Binop.LOr s1 s2
+       -> short_circuit (if negate_cond then Binop.LAnd else Binop.LOr) s1 s2
       | `LT | `GT | `LE | `GE | `EQ | `NE
        -> no_short_circuit_cond ~is_cmp:true
       | _
        -> no_short_circuit_cond ~is_cmp:false )
     | ParenExpr (_, [s], _)
      -> (* condition can be wrapped in parenthesys *)
-        cond_trans trans_state s
+        cond_trans ~negate_cond trans_state s
+    | UnaryOperator (_, [s], _, {uoi_kind= `LNot})
+     -> cond_trans ~negate_cond:(not negate_cond) trans_state s
     | _
      -> no_short_circuit_cond ~is_cmp:false
 
@@ -1720,7 +1726,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
      -> (* set the flat to inform that we are translating a condition of a if *)
         let continuation' = mk_cond_continuation trans_state.continuation in
         let trans_state'' = {trans_state with continuation= continuation'; succ_nodes= []} in
-        let res_trans_cond = cond_trans trans_state'' cond in
+        let res_trans_cond = cond_trans ~negate_cond:false trans_state'' cond in
         let res_trans_decl = declStmt_in_condition_trans trans_state decl_stmt res_trans_cond in
         (* Note: by contruction prune nodes are leafs_nodes_cond *)
         do_branch true stmt1 res_trans_cond.leaf_nodes ;
@@ -1837,12 +1843,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 let sil_eq_cond = Exp.BinOp (Binop.Eq, switch_e_cond', e_const') in
                 let sil_loc = CLocation.get_sil_location stmt_info context in
                 let true_prune_node =
-                  create_prune_node true [(sil_eq_cond, switch_e_cond'_typ)]
-                    res_trans_case_const.instrs sil_loc Sil.Ik_switch context
+                  create_prune_node ~branch:true ~negate_cond:false
+                    [(sil_eq_cond, switch_e_cond'_typ)] res_trans_case_const.instrs sil_loc
+                    Sil.Ik_switch context
                 in
                 let false_prune_node =
-                  create_prune_node false [(sil_eq_cond, switch_e_cond'_typ)]
-                    res_trans_case_const.instrs sil_loc Sil.Ik_switch context
+                  create_prune_node ~branch:false ~negate_cond:true
+                    [(sil_eq_cond, switch_e_cond'_typ)] res_trans_case_const.instrs sil_loc
+                    Sil.Ik_switch context
                 in
                 (true_prune_node, false_prune_node)
             | _
@@ -1928,7 +1936,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let cond_stmt = Loops.get_cond loop_kind in
     let trans_state_cond = {trans_state with continuation= continuation_cond; succ_nodes= []} in
-    let res_trans_cond = cond_trans trans_state_cond cond_stmt in
+    let res_trans_cond = cond_trans ~negate_cond:false trans_state_cond cond_stmt in
     let decl_stmt_opt =
       match loop_kind with
       | Loops.For (_, decl_stmt, _, _, _)

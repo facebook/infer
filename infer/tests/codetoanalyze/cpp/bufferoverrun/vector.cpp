@@ -117,7 +117,7 @@ void safe_access4(std::vector<int> v) {
   }
 }
 
-void call_safe_access4_Good_FP() {
+void call_safe_access4_Good() {
   std::vector<int> v;
   safe_access4(v);
 }
