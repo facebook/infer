@@ -16,6 +16,7 @@ Here is an overview of the linter checks we provide in Infer:
   - [Registered observer being deallocated](/docs/linters-bug-types.html#REGISTERED_OBSERVER_BEING_DEALLOCATED)
   - [Strong delegate warning](/docs/linters-bug-types.html#STRONG_DELEGATE_WARNING)
   - [Unavailable api in supported ios sdk](/docs/linters-bug-types.html#UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK)
+  - [Pointer To const Objective-C Class](/docs/linters-bug-types.html#POINTER_TO_CONST_OBJC_CLASS)
   
 - Issues reported in iOS code about [ComponentKit](http://componentkit.org)
   - [Component factory funciton](/docs/linters-bug-types.html#COMPONENT_FACTORY_FUNCTION)
