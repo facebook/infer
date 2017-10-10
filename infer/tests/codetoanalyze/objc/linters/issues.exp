@@ -1,5 +1,3 @@
-codetoanalyze/objc/linters/Pointer_to_const_objc_class.m, C_ptr_to_const_objc_bad, 13, POINTER_TO_CONST_OBJC_CLASS, []
-codetoanalyze/objc/linters/Pointer_to_const_objc_class.m, C_setPtr_to_const_objc_bad, 13, POINTER_TO_CONST_OBJC_CLASS, []
 codetoanalyze/objc/linters/Pointer_to_const_objc_class.m, Linters_dummy_method, 13, POINTER_TO_CONST_OBJC_CLASS, []
 codetoanalyze/objc/linters/assign_pointer.m, Linters_dummy_method, 18, ASSIGN_POINTER_WARNING, []
 codetoanalyze/objc/linters/assign_pointer.m, Linters_dummy_method, 20, ASSIGN_POINTER_WARNING, []

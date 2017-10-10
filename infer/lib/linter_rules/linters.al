@@ -254,5 +254,5 @@ DEFINE-CHECKER POINTER_TO_CONST_OBJC_CLASS = {
   SET suggestion = "Consider using `%class_name% *const` instead, meaning
 	                  the destination of the pointer cannot be changed.";
   SET severity = "WARNING";
-  SET mode = "OFF";
+  SET mode = "ON";
 };

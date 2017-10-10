@@ -280,41 +280,43 @@ and do_frontend_checks_via_transition context map_active an trans =
 and do_frontend_checks_decl (context: CLintersContext.context)
     (map_act: Tableaux.context_linter_map) decl =
   let open Clang_ast_t in
-  let an = Ctl_parser_types.Decl decl in
-  (* The map should be visited when we enter the node before visiting children *)
-  let map_active = Tableaux.update_linter_context_map an map_act in
-  match decl with
-  | FunctionDecl _
-  | CXXMethodDecl _
-  | CXXConstructorDecl _
-  | CXXConversionDecl _
-  | CXXDestructorDecl _
-  | BlockDecl _
-  | ObjCMethodDecl _
-   -> let context' = CLintersContext.update_current_method context decl in
-      CFrontend_errors.invoke_set_of_checkers_on_node context' an ;
-      (* We need to visit explicitly nodes reachable via Parameters transitions
+  if CAst_utils.is_implicit_decl decl then () (* do not analyze implicit declarations *)
+  else
+    let an = Ctl_parser_types.Decl decl in
+    (* The map should be visited when we enter the node before visiting children *)
+    let map_active = Tableaux.update_linter_context_map an map_act in
+    match decl with
+    | FunctionDecl _
+    | CXXMethodDecl _
+    | CXXConstructorDecl _
+    | CXXConversionDecl _
+    | CXXDestructorDecl _
+    | BlockDecl _
+    | ObjCMethodDecl _
+     -> let context' = CLintersContext.update_current_method context decl in
+        CFrontend_errors.invoke_set_of_checkers_on_node context' an ;
+        (* We need to visit explicitly nodes reachable via Parameters transitions
       because they won't be visited during the evaluation of the formula *)
-      do_frontend_checks_via_transition context' map_active an CTL.Parameters ;
-      ( match get_method_body_opt decl with
-      | Some stmt
-       -> do_frontend_checks_stmt context' map_active stmt
-      | None
-       -> () ) ;
-      call_tableaux context' an map_active
-  | ObjCImplementationDecl (_, _, decls, _, _) | ObjCInterfaceDecl (_, _, decls, _, _)
-   -> CFrontend_errors.invoke_set_of_checkers_on_node context an ;
-      let context' = {context with current_objc_class= Some decl} in
-      List.iter ~f:(do_frontend_checks_decl context' map_active) decls ;
-      call_tableaux context' an map_active
-  | _
-   -> CFrontend_errors.invoke_set_of_checkers_on_node context an ;
-      ( match Clang_ast_proj.get_decl_context_tuple decl with
-      | Some (decls, _)
-       -> List.iter ~f:(do_frontend_checks_decl context map_active) decls
-      | None
-       -> () ) ;
-      call_tableaux context an map_active
+        do_frontend_checks_via_transition context' map_active an CTL.Parameters ;
+        ( match get_method_body_opt decl with
+        | Some stmt
+         -> do_frontend_checks_stmt context' map_active stmt
+        | None
+         -> () ) ;
+        call_tableaux context' an map_active
+    | ObjCImplementationDecl (_, _, decls, _, _) | ObjCInterfaceDecl (_, _, decls, _, _)
+     -> CFrontend_errors.invoke_set_of_checkers_on_node context an ;
+        let context' = {context with current_objc_class= Some decl} in
+        List.iter ~f:(do_frontend_checks_decl context' map_active) decls ;
+        call_tableaux context' an map_active
+    | _
+     -> CFrontend_errors.invoke_set_of_checkers_on_node context an ;
+        ( match Clang_ast_proj.get_decl_context_tuple decl with
+        | Some (decls, _)
+         -> List.iter ~f:(do_frontend_checks_decl context map_active) decls
+        | None
+         -> () ) ;
+        call_tableaux context an map_active
 
 let context_with_ck_set context decl_list =
   let is_ck =

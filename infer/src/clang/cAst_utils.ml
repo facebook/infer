@@ -507,3 +507,7 @@ let has_block_attribute decl =
       List.exists ~f:(fun attr -> match attr with BlocksAttr _ -> true | _ -> false) attributes
   | _
    -> false
+
+let is_implicit_decl decl =
+  let decl_info = Clang_ast_proj.get_decl_tuple decl in
+  decl_info.Clang_ast_t.di_is_implicit
