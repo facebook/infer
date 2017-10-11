@@ -297,12 +297,14 @@ val buck_out : string option
 
 val bufferoverrun : bool
 
-val changed_files_index : string option
-
 val calls_csv : string option
 
 val captured_dir : string
 (** directory where the results of the capture phase are stored *)
+
+val changed_files_index : string option
+
+val check_nullable : bool
 
 val clang_biniou_file : string option
 

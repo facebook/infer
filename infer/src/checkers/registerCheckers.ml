@@ -45,6 +45,7 @@ let checkers =
     , Config.suggest_nullable
     , [ (Procedure NullabilitySuggest.checker, Config.Java)
       ; (Procedure NullabilitySuggest.checker, Config.Clang) ] )
+  ; ("nullable checks", Config.check_nullable, [(Procedure NullabilityCheck.checker, Config.Clang)])
   ; ( "quandary"
     , Config.quandary
     , [ (Procedure JavaTaintAnalysis.checker, Config.Java)

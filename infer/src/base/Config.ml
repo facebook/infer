@@ -586,6 +586,7 @@ and android_harness =
 and ( annotation_reachability
     , biabduction
     , bufferoverrun
+    , check_nullable
     , crashcontext
     , eradicate
     , fragment_retains_view
@@ -612,6 +613,9 @@ and ( annotation_reachability
     mk_checker ~long:"biabduction"
       "the separation logic based bi-abduction analysis using the checkers framework"
   and bufferoverrun = mk_checker ~long:"bufferoverrun" "the buffer overrun analysis"
+  and check_nullable =
+    mk_checker ~long:"check-nullable"
+      "checks that values annotated with nullable are always checked for null before dereference"
   and crashcontext =
     mk_checker ~long:"crashcontext"
       "the crashcontext checker for Java stack trace context reconstruction"
@@ -665,6 +669,7 @@ and ( annotation_reachability
   ( annotation_reachability
   , biabduction
   , bufferoverrun
+  , check_nullable
   , crashcontext
   , eradicate
   , fragment_retains_view
@@ -1974,11 +1979,11 @@ and buck_out = !buck_out
 
 and bufferoverrun = !bufferoverrun
 
-and changed_files_index = !changed_files_index
-
 and calls_csv = !calls_csv
 
-and dump_duplicate_symbols = !dump_duplicate_symbols
+and changed_files_index = !changed_files_index
+
+and check_nullable = !check_nullable
 
 and clang_biniou_file = !clang_biniou_file
 
@@ -2025,6 +2030,8 @@ and differential_filter_files = !differential_filter_files
 and differential_filter_set = !differential_filter_set
 
 and dotty_cfg_libs = !dotty_cfg_libs
+
+and dump_duplicate_symbols = !dump_duplicate_symbols
 
 and eradicate = !eradicate
 

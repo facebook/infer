@@ -159,6 +159,8 @@ val null_dereference : t
 
 val null_test_after_dereference : t
 
+val nullable_dereference : t
+
 val parameter_not_null_checked : t
 
 val pointer_size_mismatch : t

@@ -8,6 +8,8 @@
  */
 #import <Foundation/NSString.h>
 
+int* __nullable returnsNull();
+
 @interface T : NSObject
 - (void)assignUnnanotatedFieldToNullBad;
 @end
@@ -78,6 +80,25 @@
 - (void)FP_dereferenceNonnullFieldAfterTestForNullOkay {
   if (nonnullField == nil) {
     *nonnullField = 42;
+  }
+}
+
+- (void)dereferenceNullableMethodBad {
+  int* p = returnsNull();
+  *p = 42;
+}
+
+- (void)dereferenceNullableMethod1Ok {
+  int* p = returnsNull();
+  if (p) {
+    *p = 42;
+  }
+}
+
+- (void)dereferenceNullableMethod2Ok {
+  int* p = returnsNull();
+  if (p != nil) {
+    *p = 42;
   }
 }
 
