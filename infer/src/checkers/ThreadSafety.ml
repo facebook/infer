@@ -398,7 +398,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         with
         | "android.content.res.Resources", method_name
          -> (* all methods of Resources are considered @Functional except for the ones in this
-                     blacklist *)
+               blacklist *)
             let non_functional_resource_methods =
               [ "getAssets"
               ; "getConfiguration"
@@ -509,7 +509,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         AccessDomain.add_access (Unprotected (IntSet.singleton 0)) container_access
           AccessDomain.empty
     in
-    (* we need a more intelligent escape analysis, that branches on whether we own the container *)
     Some
       { locks= false
       ; threads= ThreadsDomain.empty
@@ -734,14 +733,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                       OwnershipDomain.get_owned actual_access_path astate.ownership
                                     with
                                     | OwnershipAbstractValue.OwnedIf formal_indexes
-                                     -> (* access path conditionally owned if [formal_indexex] are
+                                     -> (* access path conditionally owned if [formal_indexes] are
                                            owned *)
                                         AccessPrecondition.Unprotected formal_indexes
                                     | OwnershipAbstractValue.Owned
                                      -> assert false
                                     | OwnershipAbstractValue.Unowned
                                      -> (* access path not rooted in a formal and not conditionally
-                                       owned *)
+                                           owned *)
                                         AccessPrecondition.TotallyUnprotected
                             in
                             update_caller_accesses pre ownership_accesses accesses_acc
@@ -1055,7 +1054,6 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
   in
   let open ThreadSafetyDomain in
-  (* convert the abstract state to a summary by dropping the id map *)
   if should_analyze_proc proc_desc tenv then (
     if not (Procdesc.did_preanalysis proc_desc) then Preanal.do_liveness proc_desc tenv ;
     let formal_map = FormalMap.make proc_desc in
@@ -1076,9 +1074,9 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
            -> acc
         in
         let owned_formals =
-          (* if a constructer is called via DI, all of its formals will be freshly allocated
-               and therefore owned. we assume that constructors annotated with @Inject will only
-               be called via DI or using fresh parameters. *)
+          (* if a constructer is called via DI, all of its formals will be freshly allocated and
+             therefore owned. we assume that constructors annotated with @Inject will only be
+             called via DI or using fresh parameters. *)
           if Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject then
             List.mapi ~f:(fun i _ -> i) (Procdesc.get_formals proc_desc)
           else [0]
@@ -1190,7 +1188,7 @@ let desc_of_sink sink =
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
   | InterfaceCall _ as access
    -> if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
-        F.asprintf "%a1" ThreadSafetyDomain.Access.pp access
+        F.asprintf "%a" ThreadSafetyDomain.Access.pp access
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
 
 let trace_of_pname orig_sink orig_pdesc callee_pname =
@@ -1296,7 +1294,7 @@ let make_read_write_race_description ~read_is_sync conflicts tenv pname final_si
   in
   let conflicts_description =
     Format.asprintf "Potentially races with%s writes in method%s %a."
-      (if read_is_sync then " unsynchronized" else " synchronized")
+      (if read_is_sync then " unsynchronized" else "")
       (if Typ.Procname.Set.cardinal conflicting_proc_names > 1 then "s" else "")
       (MF.wrap_monospaced pp_conflicts) conflicting_proc_names
   in
@@ -1414,7 +1412,7 @@ let report_unsafe_accesses
         match Procdesc.get_proc_name pdesc with
         | Java _
          -> (** TODO: use a better warning message when the thread is anything but Any (perhaps
-                  show the write that this may race with) *)
+                show the write that this may race with) *)
             (* unprotected write. warn. *)
             report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
               ~make_description:make_unprotected_write_description ~conflicts:[] access thread ;
@@ -1428,8 +1426,8 @@ let report_unsafe_accesses
           reported_acc
       | ( (Access.Read _ | ContainerRead _)
         , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) )
-       -> (* unprotected read. report all writes as conflicts for java *)
-          (* for c++ filter out unprotected writes *)
+       -> (* unprotected read. report all writes as conflicts for java. for c++ filter out
+             unprotected writes *)
           let is_cpp_protected_write pre =
             match pre with
             | AccessPrecondition.Unprotected _ | TotallyUnprotected
@@ -1454,10 +1452,8 @@ let report_unsafe_accesses
               access thread ;
             update_reported access pname reported_acc )
       | (Access.Read _ | ContainerRead _), AccessPrecondition.Protected excl
-       -> (* protected read.
-             report unprotected writes and opposite protected writes as conflicts
-             Thread and Lock are opposites of one another, and
-             Both has no opposite*)
+       -> (* protected read. report unprotected writes and opposite protected writes as conflicts
+             Thread and Lock are opposites of one another, and Both has no opposite *)
           let is_opposite = function
             | Excluder.Lock, Excluder.Thread
              -> true
