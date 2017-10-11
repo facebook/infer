@@ -22,7 +22,6 @@ SOURCES = \
   ../types/attributes.m \
   ../types/void_call.m \
   ../vardecl/initlist.m \
-  ../shared/assertions/NSAssert_example.m \
   ../shared/block/BlockVar.m \
   ../shared/memory_leaks_benchmark/ArcExample.m \
   ../shared/memory_leaks_benchmark/arc_methods.m \
