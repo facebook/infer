@@ -46,9 +46,10 @@ class ThreadSafeMethods {
   public void safeMethodOverride() {
   }
 
-  // won't report this now, but should in the future. if a method annotated with @ThreadSafe
-  // in class C touches field f, then all other accesses to f in C must also be thread-safe
+  // if a method annotated with @ThreadSafe in class C writes field f, then all other accesses to f
+  // in C must also be thread-safe
   public void writeSameFieldAsThreadSafeMethod1Bad() {
+    // warn here because field1 is also written in @ThreadSafe method threadSafeMethodWriteBad
     this.field1 = new Object();
   }
 

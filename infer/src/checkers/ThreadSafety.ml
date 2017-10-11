@@ -1202,7 +1202,14 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
   | _
    -> PathDomain.empty
 
-let make_trace_with_conflicts conflicts original_path pdesc =
+type conflicts = ThreadSafetyDomain.TraceElem.t list
+
+type report_kind =
+  | WriteWriteRace of conflicts  (** possibly-empty list of conflicting accesses *)
+  | ReadWriteRace of conflicts  (** non-empty list of conflicting accesses *)
+  | UnannotatedInterface
+
+let make_trace ~report_kind original_path pdesc =
   let open ThreadSafetyDomain in
   let loc_trace_of_path path = PathDomain.to_sink_loc_trace ~desc_of_sink path in
   let make_trace_for_sink sink =
@@ -1214,22 +1221,30 @@ let make_trace_with_conflicts conflicts original_path pdesc =
      -> []
   in
   let original_trace = loc_trace_of_path original_path in
-  match conflicts with
-  | conflict_sink :: _
-   -> (* create a trace for one of the conflicts and append it to the trace for the original sink *)
-      let conflict_trace = make_trace_for_sink conflict_sink in
-      let get_start_loc = function head :: _ -> head.Errlog.lt_loc | [] -> Location.dummy in
-      let first_trace_spacer =
-        Errlog.make_trace_element 0 (get_start_loc original_trace) "<Beginning of read trace>" []
-      in
-      let second_trace_spacer =
-        Errlog.make_trace_element 0 (get_start_loc conflict_trace) "<Beginning of write trace>" []
-      in
-      first_trace_spacer :: original_trace @ second_trace_spacer :: conflict_trace
-  | []
+  let make_with_conflicts conflict_sink original_trace ~label1 ~label2 =
+    (* create a trace for one of the conflicts and append it to the trace for the original sink *)
+    let conflict_trace = make_trace_for_sink conflict_sink in
+    let get_start_loc = function head :: _ -> head.Errlog.lt_loc | [] -> Location.dummy in
+    let first_trace_spacer =
+      Errlog.make_trace_element 0 (get_start_loc original_trace) label1 []
+    in
+    let second_trace_spacer =
+      Errlog.make_trace_element 0 (get_start_loc conflict_trace) label2 []
+    in
+    first_trace_spacer :: original_trace @ second_trace_spacer :: conflict_trace
+  in
+  match report_kind with
+  | ReadWriteRace (conflict_sink :: _)
+   -> make_with_conflicts conflict_sink original_trace ~label1:"<Read trace>"
+        ~label2:"<Write trace>"
+  | WriteWriteRace (conflict_sink :: _)
+   -> make_with_conflicts conflict_sink original_trace ~label1:"<Write on unknown thread>"
+        ~label2:"<Write on background thread>"
+  | ReadWriteRace [] | WriteWriteRace [] | UnannotatedInterface
    -> original_trace
 
-let report_thread_safety_violation tenv pdesc issue_type ~make_description ~conflicts access thread =
+let report_thread_safety_violation tenv pdesc issue_type ~make_description ~report_kind access
+    thread =
   let open ThreadSafetyDomain in
   let pname = Procdesc.get_proc_name pdesc in
   let report_one_path (_, sinks as path) =
@@ -1238,7 +1253,7 @@ let report_thread_safety_violation tenv pdesc issue_type ~make_description ~conf
     let initial_sink_site = PathDomain.Sink.call_site initial_sink in
     let final_sink_site = PathDomain.Sink.call_site final_sink in
     let loc = CallSite.loc initial_sink_site in
-    let ltr = make_trace_with_conflicts conflicts path pdesc in
+    let ltr = make_trace ~report_kind path pdesc in
     let description =
       make_description tenv pname final_sink_site initial_sink_site final_sink thread
     in
@@ -1260,7 +1275,7 @@ let report_unannotated_interface_violation tenv pdesc access thread reported_pna
           class_name MF.pp_monospaced "@ThreadSafe"
       in
       report_thread_safety_violation tenv pdesc IssueType.interface_not_thread_safe
-        ~make_description ~conflicts:[] access thread
+        ~make_description ~report_kind:UnannotatedInterface access thread
   | _
    -> (* skip reporting on C++ *)
       ()
@@ -1411,11 +1426,24 @@ let report_unsafe_accesses
         , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) ) -> (
         match Procdesc.get_proc_name pdesc with
         | Java _
-         -> (** TODO: use a better warning message when the thread is anything but Any (perhaps
-                show the write that this may race with) *)
-            (* unprotected write. warn. *)
+         -> let writes_on_background_thread =
+              if ThreadsDomain.is_any thread then
+                (* unprotected write in method that may run in parallel with itself. warn *)
+                []
+              else
+                (* unprotected write, but not on a method that may run in parallel with itself
+                   (i.e., not a self race). find accesses on a background thread this access might
+                   conflict with and report them *)
+                List.filter_map
+                  ~f:(fun (other_access, _, other_thread, _, _) ->
+                    if TraceElem.is_write other_access && ThreadsDomain.is_any other_thread then
+                      Some other_access
+                    else None)
+                  accesses
+            in
             report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
-              ~make_description:make_unprotected_write_description ~conflicts:[] access thread ;
+              ~make_description:make_unprotected_write_description
+              ~report_kind:(WriteWriteRace writes_on_background_thread) access thread ;
             update_reported access pname reported_acc
         | _
          -> (* Do not report unprotected writes when an access can't run in parallel with itself, or
@@ -1448,7 +1476,8 @@ let report_unsafe_accesses
           else (
             report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
               ~make_description:(make_read_write_race_description ~read_is_sync:false all_writes)
-              ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) all_writes)
+              ~report_kind:
+                (ReadWriteRace (List.map ~f:(fun (access, _, _, _, _) -> access) all_writes))
               access thread ;
             update_reported access pname reported_acc )
       | (Access.Read _ | ContainerRead _), AccessPrecondition.Protected excl
@@ -1480,7 +1509,9 @@ let report_unsafe_accesses
             report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
               ~make_description:
                 (make_read_write_race_description ~read_is_sync:true conflicting_writes)
-              ~conflicts:(List.map ~f:(fun (access, _, _, _, _) -> access) conflicting_writes)
+              ~report_kind:
+                (ReadWriteRace
+                   (List.map ~f:(fun (access, _, _, _, _) -> access) conflicting_writes))
               access thread ;
             update_reported access pname reported_acc )
   in
