@@ -332,8 +332,6 @@ let whitelisted_cpp_classes =
     ; libcxx_whitelisted_cpp_classes
     ; other_whitelisted_cpp_classes ]
 
-type dynamic_dispatch_policy = [`None | `Interface | `Sound | `Lazy]
-
 (** Compile time configuration values *)
 
 let pp_version fmt () =

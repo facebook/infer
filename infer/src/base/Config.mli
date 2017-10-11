@@ -71,8 +71,6 @@ type compilation_database_dependencies =
   | NoDeps
   [@@deriving compare]
 
-type dynamic_dispatch_policy = [`None | `Interface | `Sound | `Lazy]
-
 val env_inside_maven : Unix.env
 
 (** Constant configuration values *)
