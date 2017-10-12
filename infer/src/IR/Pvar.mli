@@ -23,6 +23,9 @@ type translation_unit = TUFile of SourceFile.t | TUExtern [@@deriving compare]
 *)
 type t [@@deriving compare]
 
+val compare_modulo_this : t -> t -> int
+(** Comparison considering all pvars named 'this' to be equal *)
+
 val equal : t -> t -> bool
 (** Equality for pvar's *)
 

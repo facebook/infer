@@ -519,8 +519,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let cpp_force_skipped =
     let matcher =
       ( lazy
-      (QualifiedCppName.Match.of_fuzzy_qual_names ["folly::detail::SingletonHolder::createInstance"])
-      )
+      (QualifiedCppName.Match.of_fuzzy_qual_names
+         ["folly::AtomicStruct::load"; "folly::detail::SingletonHolder::createInstance"]) )
     in
     fun pname ->
       QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
@@ -1574,47 +1574,111 @@ let report_unsafe_accesses
     aggregated_access_map empty_reported
   |> ignore
 
-let sound = false
+type ('a, 'b, 'c) dat = ThreadSafetyDomain.TraceElem.t * 'a * 'b * Tenv.t * 'c
 
-let syntactic_equal_access_path tenv p1 p2 =
-  if sound then
-    (* this is much too noisy: we'll warn that accesses to *any* Map can race with accesses to any
-       other Map, etc. Instead, do something simple and unsound: just assume that two accesses can
-       be to the same container if they are to the same access path *)
-    match (AccessPath.get_typ p1 tenv, AccessPath.get_typ p2 tenv) with
-    | Some {desc= Tptr ({desc= Tstruct tn1}, _)}, Some {desc= Tptr ({desc= Tstruct tn2}, _)}
-     -> PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
-    | _
-     -> true
-  else
-    (* unsound, but effective: report that the containers alias if their access paths are
-       syntactically identical *)
-    match (fst p1, fst p2) with
-    | (Var.ProgramVar pvar1, typ1), (Var.ProgramVar pvar2, typ2)
-      when Pvar.is_this pvar1 && Pvar.is_this pvar2
-           && ( Typ.equal typ1 typ2 || Prover.Subtyping_check.check_subtype tenv typ1 typ2
-              || Prover.Subtyping_check.check_subtype tenv typ2 typ1 )
-     -> (* the `this` used in C.foo and C.bar will compare unequal if we're not careful `this` is
-           represented as a local pvar, and a local pvar contains its parent procedure name. Count
-           the `this`'s as equal if their types are compatible *)
-        AccessPath.equal_access_list (snd p1) (snd p2)
-    | _
-     -> AccessPath.equal p1 p2
+module type QuotientedAccessListMap = sig
+  type ('a, 'b, 'c) t
 
-(* equivalence relation computing whether two access paths may refer to the
-   same heap location. *)
-let may_alias tenv p1 p2 =
-  let open Typ in
-  let open AccessPath in
-  phys_equal p1 p2
-  ||
-  if Tenv.language_is tenv Clang then syntactic_equal_access_path tenv p1 p2
-  else
+  val empty : ('a, 'b, 'c) t
+
+  val add : ThreadSafetyDomain.Access.t -> ('a, 'b, 'c) dat -> ('a, 'b, 'c) t -> ('a, 'b, 'c) t
+
+  val quotient : ('a, 'b, 'c) t -> ('a, 'b, 'c) dat list AccessListMap.t
+end
+
+module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
+  module M = Caml.Map.Make (struct
+    type t = ThreadSafetyDomain.Access.t
+
+    type _var = Var.t
+
+    let compare__var (u: Var.t) (v: Var.t) =
+      if phys_equal u v then 0
+      else
+        match (u, v) with
+        | LogicalVar i, LogicalVar j
+         -> Ident.compare i j
+        | ProgramVar x, ProgramVar y
+         -> Pvar.compare_modulo_this x y
+        | _
+         -> Pervasives.compare u v
+
+    let compare (x: t) (y: t) =
+      match (x, y) with
+      | ( (Read ap1 | Write ap1 | ContainerRead (ap1, _) | ContainerWrite (ap1, _))
+        , (Read ap2 | Write ap2 | ContainerRead (ap2, _) | ContainerWrite (ap2, _)) )
+       -> [%compare : (_var * Typ.t) * AccessPath.access list] ap1 ap2
+      | InterfaceCall _, _ | _, InterfaceCall _
+       -> ThreadSafetyDomain.Access.compare x y
+  end)
+
+  type ('a, 'b, 'c) t = ('a, 'b, 'c) dat list M.t
+
+  let empty = M.empty
+
+  let add k d m =
+    let ds =
+      try M.find k m
+      with Not_found -> []
+    in
+    M.add k (d :: ds) m
+
+  let quotient m = M.fold AccessListMap.add m AccessListMap.empty
+end
+
+module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
+  type ('a, 'b, 'c) t = ('a, 'b, 'c) dat list AccessListMap.t
+
+  let empty = AccessListMap.empty
+
+  let add = AccessListMap.add
+
+  let add k d m =
+    let ds =
+      try AccessListMap.find k m
+      with Not_found -> []
+    in
+    add k (d :: ds) m
+
+  let sound = false
+
+  let syntactic_equal_access_path tenv p1 p2 =
+    if sound then
+      (* this is much too noisy: we'll warn that accesses to *any* Map can race with accesses to any
+         other Map, etc. Instead, do something simple and unsound: just assume that two accesses can
+         be to the same container if they are to the same access path *)
+      match (AccessPath.get_typ p1 tenv, AccessPath.get_typ p2 tenv) with
+      | Some {desc= Tptr ({desc= Tstruct tn1}, _)}, Some {desc= Tptr ({desc= Tstruct tn2}, _)}
+       -> PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
+      | _
+       -> true
+    else
+      (* unsound, but effective: report that the containers alias if their access paths are
+         syntactically identical *)
+      match (fst p1, fst p2) with
+      | (Var.ProgramVar pvar1, typ1), (Var.ProgramVar pvar2, typ2)
+        when Pvar.is_this pvar1 && Pvar.is_this pvar2
+             && ( Typ.equal typ1 typ2 || Prover.Subtyping_check.check_subtype tenv typ1 typ2
+                || Prover.Subtyping_check.check_subtype tenv typ2 typ1 )
+       -> (* the `this` used in C.foo and C.bar will compare unequal if we're not careful `this` is
+             represented as a local pvar, and a local pvar contains its parent procedure name. Count
+             the `this`'s as equal if their types are compatible *)
+          AccessPath.equal_access_list (snd p1) (snd p2)
+      | _
+       -> AccessPath.equal p1 p2
+
+  (* equivalence relation computing whether two access paths may refer to the
+     same heap location. *)
+  let may_alias tenv p1 p2 =
+    let open Typ in
+    let open AccessPath in
+    phys_equal p1 p2
+    ||
     match (List.last_exn (snd p1), List.last_exn (snd p2)) with
     | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _
      -> false
     (* fields in Java contain the class name /declaring/ them
-     thus two fields can be aliases *iff* they are equal *)
+       thus two fields can be aliases *iff* they are equal *)
     | FieldAccess f1, FieldAccess f2
      -> Typ.Fieldname.equal f1 f2
     (* if arrays of objects that have an inheritance rel then they can alias *)
@@ -1626,36 +1690,37 @@ let may_alias tenv p1 p2 =
     | ArrayAccess (t1, _), ArrayAccess (t2, _)
      -> if sound then equal_desc t1.desc t2.desc else syntactic_equal_access_path tenv p1 p2
 
-(* take a results table and quotient it by the may_alias relation *)
-let quotient_access_map acc_map =
-  let rec aux acc m =
-    if AccessListMap.is_empty m then acc
-    else
-      let k, vals = AccessListMap.min_binding m in
-      let _, _, _, tenv, _ =
-        List.find_exn vals ~f:(fun (elem, _, _, _, _) ->
-            ThreadSafetyDomain.Access.equal (ThreadSafetyDomain.TraceElem.kind elem) k )
-      in
-      (* assumption: the tenv for k is sufficient for k' too *)
-      let k_part, non_k_part =
-        AccessListMap.partition
-          (fun k' _ ->
-            match (k, k') with
-            | (Read ap1 | Write ap1), (Read ap2 | Write ap2)
-             -> may_alias tenv ap1 ap2
-            | ( (ContainerRead (ap1, _) | ContainerWrite (ap1, _))
-              , (ContainerRead (ap2, _) | ContainerWrite (ap2, _)) )
-             -> syntactic_equal_access_path tenv ap1 ap2
-            | _
-             -> ThreadSafetyDomain.Access.equal k k')
-          m
-      in
-      if AccessListMap.is_empty k_part then L.(die InternalError) "may_alias is not reflexive!" ;
-      let k_accesses = AccessListMap.fold (fun _ v acc' -> List.append v acc') k_part [] in
-      let new_acc = AccessListMap.add k k_accesses acc in
-      aux new_acc non_k_part
-  in
-  aux AccessListMap.empty acc_map
+  (* take a results table and quotient it by the may_alias relation *)
+  let quotient acc_map =
+    let rec aux acc m =
+      if AccessListMap.is_empty m then acc
+      else
+        let k, vals = AccessListMap.min_binding m in
+        let _, _, _, tenv, _ =
+          List.find_exn vals ~f:(fun (elem, _, _, _, _) ->
+              ThreadSafetyDomain.Access.equal (ThreadSafetyDomain.TraceElem.kind elem) k )
+        in
+        (* assumption: the tenv for k is sufficient for k' too *)
+        let k_part, non_k_part =
+          AccessListMap.partition
+            (fun k' _ ->
+              match (k, k') with
+              | (Read ap1 | Write ap1), (Read ap2 | Write ap2)
+               -> may_alias tenv ap1 ap2
+              | ( (ContainerRead (ap1, _) | ContainerWrite (ap1, _))
+                , (ContainerRead (ap2, _) | ContainerWrite (ap2, _)) )
+               -> syntactic_equal_access_path tenv ap1 ap2
+              | _
+               -> ThreadSafetyDomain.Access.equal k k')
+            m
+        in
+        if AccessListMap.is_empty k_part then L.(die InternalError) "may_alias is not reflexive!" ;
+        let k_accesses = AccessListMap.fold (fun _ v acc' -> List.append v acc') k_part [] in
+        let new_acc = AccessListMap.add k k_accesses acc in
+        aux new_acc non_k_part
+    in
+    aux AccessListMap.empty acc_map
+end
 
 (* decide if we should throw away a path before doing safety analysis
    for now, just check for whether the access is within a switch-map
@@ -1676,7 +1741,7 @@ let should_filter_access access =
 (* create a map from [abstraction of a memory loc] -> accesses that may touch that memory loc. for
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
-let make_results_table file_env =
+let make_results_table (module AccessListMap: QuotientedAccessListMap) file_env =
   let open ThreadSafetyDomain in
   let aggregate_post {threads; accesses} tenv pdesc acc =
     AccessDomain.fold
@@ -1685,13 +1750,7 @@ let make_results_table file_env =
           (fun access acc ->
             let access_kind = TraceElem.kind access in
             if should_filter_access access_kind then acc
-            else
-              let grouped_accesses =
-                try AccessListMap.find access_kind acc
-                with Not_found -> []
-              in
-              AccessListMap.add access_kind
-                ((access, pre, threads, tenv, pdesc) :: grouped_accesses) acc)
+            else AccessListMap.add access_kind (access, pre, threads, tenv, pdesc) acc)
           (PathDomain.sinks accesses) acc)
       accesses acc
   in
@@ -1702,7 +1761,7 @@ let make_results_table file_env =
     | None
      -> acc
   in
-  List.fold ~f:aggregate_posts file_env ~init:AccessListMap.empty |> quotient_access_map
+  List.fold ~f:aggregate_posts file_env ~init:AccessListMap.empty |> AccessListMap.quotient
 
 (* aggregate all of the procedures in the file env by their declaring class. this lets us analyze
    each class individually *)
@@ -1728,5 +1787,11 @@ let aggregate_by_class file_env =
    an (approximation of) thread safety *)
 let file_analysis {Callbacks.procedures} =
   String.Map.iter
-    ~f:(fun class_env -> report_unsafe_accesses (make_results_table class_env))
+    ~f:(fun class_env ->
+      let tenv = fst (List.hd_exn class_env) in
+      report_unsafe_accesses
+        (make_results_table
+           ( if Tenv.language_is tenv Clang then (module SyntacticQuotientedAccessListMap)
+           else (module MayAliasQuotientedAccessListMap) )
+           class_env))
     (aggregate_by_class procedures)
