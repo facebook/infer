@@ -722,12 +722,9 @@ let dummy =
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 let reset_summary proc_desc =
   let proc_desc_option = if Config.dynamic_dispatch = `Lazy then Some proc_desc else None in
-  init_summary
-    ( []
-    , ProcAttributes.proc_flags_empty ()
-    , []
-    , Procdesc.get_attributes proc_desc
-    , proc_desc_option )
+  let attributes = Procdesc.get_attributes proc_desc in
+  let proc_flags = attributes.ProcAttributes.proc_flags in
+  init_summary ([], proc_flags, [], attributes, proc_desc_option)
 
 (* =============== END of support for spec tables =============== *)
 (*

@@ -2383,7 +2383,18 @@ let clang_frontend_action_string =
 
 let dynamic_dispatch =
   let default_mode =
-    match analyzer with BiAbduction -> `Lazy | Checkers when quandary -> `Sound | _ -> `None
+    match analyzer with
+    | BiAbduction
+     -> `Lazy
+    | Checkers when biabduction
+     -> if quandary then
+          F.printf
+            "WARNING: Running Quanday on Java is not compatible with the Biabduction analysis@." ;
+        `Lazy
+    | Checkers when quandary
+     -> `Sound
+    | _
+     -> `None
   in
   Option.value ~default:default_mode !dynamic_dispatch
 
