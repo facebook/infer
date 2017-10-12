@@ -83,8 +83,8 @@ BUILD_SYSTEMS_TESTS += \
   resource_leak_exception_lines \
 
 DIRECT_TESTS += \
-  java_checkers java_eradicate java_infer java_tracing java_quandary java_threadsafety \
-  java_crashcontext java_harness
+  java_checkers java_eradicate java_infer java_lab java_tracing java_quandary \
+  java_threadsafety java_crashcontext java_harness
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
