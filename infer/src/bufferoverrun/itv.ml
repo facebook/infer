@@ -15,20 +15,12 @@ open! AbstractDomain.Types
 module F = Format
 module L = Logging
 
-let sym_size = ref 0
-
 exception Not_one_symbol
 
 module Symbol = struct
   type t = Typ.Procname.t * int [@@deriving compare]
 
   let eq = [%compare.equal : t]
-
-  let get_new : Typ.Procname.t -> t =
-    fun pname ->
-      let i = !sym_size in
-      sym_size := !sym_size + 1 ;
-      (pname, i)
 
   let make : Typ.Procname.t -> int -> t = fun pname i -> (pname, i)
 
@@ -70,7 +62,6 @@ module SymLinear = struct
 
   let le : t -> t -> bool = fun x y -> M.for_all (fun s v -> v <= find s y) x
 
-  let get_new : Typ.Procname.t -> t = fun pname -> M.add (Symbol.get_new pname) 1 empty
 
   let make : Typ.Procname.t -> int -> t = fun pname i -> M.add (Symbol.make pname i) 1 empty
 
@@ -731,12 +722,6 @@ module ItvPure = struct
   let of_int_lit : IntLit.t -> t option =
     fun s -> match IntLit.to_int s with size -> Some (of_int size) | exception _ -> None
 
-  let get_new_sym : Typ.Procname.t -> t =
-    fun pname ->
-      let lower = Bound.of_sym (SymLinear.get_new pname) in
-      let upper = Bound.of_sym (SymLinear.get_new pname) in
-      (lower, upper)
-
   let make_sym : unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t =
     fun ~unsigned pname new_sym_num ->
       let lower =
@@ -1121,8 +1106,6 @@ let lift2_opt : (ItvPure.t -> ItvPure.t -> ItvPure.t option) -> t -> t -> t =
 let plus : t -> t -> t = lift2 ItvPure.plus
 
 let minus : t -> t -> t = lift2 ItvPure.minus
-
-let get_new_sym : Typ.Procname.t -> t = fun pname -> NonBottom (ItvPure.get_new_sym pname)
 
 let make_sym : ?unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t =
   fun ?(unsigned= false) pname new_sym_num ->
