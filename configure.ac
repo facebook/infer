@@ -300,7 +300,7 @@ if test x"$NDKBUILD" = x"no"; then
 # ndk-build not in $PATH, look into potential android NDK install paths and record the absolute path
 # to ndk-build
   AC_PATH_PROG([NDKBUILD], [ndk-build], [no],
-    [$PATH$PATH_SEPARATOR$ANDROID_NDK$PATH_SEPARATOR/opt/android_ndk/r10e])
+    [$PATH$PATH_SEPARATOR$ANDROID_NDK$PATH_SEPARATOR/opt/android_ndk/r15c])
 fi
 
 AC_CHECK_PYTHON_MODULE([$PYTHON27], [lxml])
