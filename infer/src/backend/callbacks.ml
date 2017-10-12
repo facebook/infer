@@ -45,10 +45,10 @@ let get_procedure_definition exe_env proc_name =
 let get_language proc_name = if Typ.Procname.is_java proc_name then Config.Java else Config.Clang
 
 (** Invoke all registered procedure callbacks on the given procedure. *)
-let iterate_procedure_callbacks exe_env summary caller_pname =
-  let procedure_language = get_language caller_pname in
+let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
+  let proc_name = Procdesc.get_proc_name proc_desc in
+  let procedure_language = get_language proc_name in
   Config.curr_language := procedure_language ;
-  let get_proc_desc proc_name = Exe_env.get_proc_desc exe_env proc_name in
   let get_procs_in_file proc_name =
     match Exe_env.get_cfg exe_env proc_name with
     | Some cfg
@@ -56,16 +56,13 @@ let iterate_procedure_callbacks exe_env summary caller_pname =
     | None
      -> []
   in
-  match get_procedure_definition exe_env caller_pname with
-  | None
-   -> summary
-  | Some (tenv, proc_desc)
-   -> List.fold ~init:summary
-        ~f:(fun summary (language, proc_callback) ->
-          if Config.equal_language language procedure_language then
-            proc_callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc}
-          else summary)
-        !procedure_callbacks
+  let tenv = Exe_env.get_tenv exe_env proc_name in
+  List.fold ~init:summary
+    ~f:(fun summary (language, proc_callback) ->
+      if Config.equal_language language procedure_language then
+        proc_callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc}
+      else summary)
+    !procedure_callbacks
 
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
 let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
@@ -90,10 +87,6 @@ let iterate_callbacks call_graph exe_env =
     (* analyze all the currently defined procedures *)
     Cg.get_defined_nodes call_graph
   in
-  let analyze_ondemand summary proc_desc =
-    let proc_name = Procdesc.get_proc_name proc_desc in
-    iterate_procedure_callbacks exe_env summary proc_name
-  in
   let get_proc_desc proc_name =
     match Exe_env.get_proc_desc exe_env proc_name with
     | Some pdesc
@@ -102,6 +95,9 @@ let iterate_callbacks call_graph exe_env =
      -> Option.bind (Specs.get_summary proc_name) ~f:(fun summary -> summary.Specs.proc_desc_option)
     | None
      -> None
+  in
+  let analyze_ondemand summary proc_desc =
+    iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc
   in
   let callbacks = {Ondemand.analyze_ondemand= analyze_ondemand; get_proc_desc} in
   (* Create and register on-demand analysis callback *)
