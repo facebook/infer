@@ -1065,6 +1065,21 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         else if is_marked_thread_safe proc_desc tenv then ThreadsDomain.AnyThread
         else ThreadsDomain.NoThread
       in
+      let add_owned_local acc (name, typ) =
+        let pvar = Pvar.mk name (Procdesc.get_proc_name proc_desc) in
+        let base = AccessPath.base_of_pvar pvar typ in
+        OwnershipDomain.add (base, []) OwnershipAbstractValue.owned acc
+      in
+      (* Add ownership to local variables. In cpp, stack-allocated local
+         variables cannot be raced on as every thread has its own stack. *)
+      let own_locals_in_cpp =
+        match Procdesc.get_proc_name proc_desc with
+        | ObjC_Cpp _
+         -> List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc)
+              ~init:OwnershipDomain.empty
+        | _
+         -> OwnershipDomain.empty
+      in
       if is_initializer tenv (Procdesc.get_proc_name proc_desc) then
         let add_owned_formal acc formal_index =
           match FormalMap.get_formal_base formal_index formal_map with
@@ -1082,7 +1097,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
           else [0]
           (* express that the constructor owns [this] *)
         in
-        let ownership = List.fold ~f:add_owned_formal owned_formals ~init:OwnershipDomain.empty in
+        let ownership = List.fold ~f:add_owned_formal owned_formals ~init:own_locals_in_cpp in
         ({ThreadSafetyDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
       else
         (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
@@ -1092,7 +1107,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         in
         let ownership =
           List.fold ~f:add_owned_formal (FormalMap.get_formals_indexes formal_map)
-            ~init:OwnershipDomain.empty
+            ~init:own_locals_in_cpp
         in
         ({ThreadSafetyDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
     in
