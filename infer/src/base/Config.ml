@@ -604,6 +604,7 @@ and ( annotation_reachability
     , printf_args
     , quandary
     , repeated_calls
+    , resource_leak
     , siof
     , threadsafety
     , suggest_nullable ) =
@@ -643,6 +644,7 @@ and ( annotation_reachability
       "the detection of mismatch between the Java printf format strings and the argument types For, example, this checker will warn about the type error in `printf(\"Hello %d\", \"world\")`"
   and repeated_calls = mk_checker ~long:"repeated-calls" "check for repeated calls"
   and quandary = mk_checker ~long:"quandary" ~default:true "the quandary taint analysis"
+  and resource_leak = mk_checker ~long:"resource-leak" ""
   and siof =
     mk_checker ~long:"siof" ~default:true
       "the Static Initialization Order Fiasco analysis (C++ only)"
@@ -687,6 +689,7 @@ and ( annotation_reachability
   , printf_args
   , quandary
   , repeated_calls
+  , resource_leak
   , siof
   , threadsafety
   , suggest_nullable )
@@ -1488,9 +1491,6 @@ and report_previous =
   CLOpt.mk_path_opt ~long:"report-previous"
     ~in_help:CLOpt.([(ReportDiff, manual_generic)])
     "Report of the base revision to use for comparison"
-
-and resource_leak =
-  CLOpt.mk_bool ~long:"resource-leak" ~default:false "the resource leak analysis (experimental)"
 
 and rest =
   CLOpt.mk_rest_actions ~in_help:CLOpt.([(Capture, manual_generic); (Run, manual_generic)])
