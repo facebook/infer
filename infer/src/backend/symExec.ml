@@ -579,7 +579,7 @@ let resolve_typename prop receiver_exp =
   in
   match typexp_opt with Some Exp.Sizeof {typ= {desc= Tstruct name}} -> Some name | _ -> None
 
-(** If the dynamic type of the receiver actual T_actual is a subtype of the reciever type T_formal
+(** If the dynamic type of the receiver actual T_actual is a subtype of the receiver type T_formal
     in the signature of [pname], resolve [pname] to T_actual.[pname]. *)
 let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procname.t list =
   let resolve receiver_exp pname prop =
@@ -621,7 +621,7 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procna
       if !Config.curr_language <> Config.Java then
         (* default mode for Obj-C/C++/Java virtual calls: resolution only *)
         [do_resolve callee_pname receiver_exp actual_receiver_typ]
-      else if Config.dynamic_dispatch = `Sound then
+      else if Config.(equal_dynamic_dispatch dynamic_dispatch Sound) then
         let targets =
           if call_flags.CallFlags.cf_virtual then
             (* virtual call--either [called_pname] or an override in some subtype may be called *)
@@ -1182,7 +1182,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
      -> exec_builtin (call_args prop_ callee_pname actual_params ret_id loc)
     | None ->
       match callee_pname with
-      | Java callee_pname_java when Config.dynamic_dispatch = `Lazy
+      | Java callee_pname_java when Config.(equal_dynamic_dispatch dynamic_dispatch Lazy)
        -> (
           let norm_prop, norm_args' = normalize_params tenv current_pname prop_ actual_params in
           let norm_args = call_constructor_url_update_args callee_pname norm_args' in

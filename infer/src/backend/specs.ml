@@ -721,7 +721,9 @@ let dummy =
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 let reset_summary proc_desc =
-  let proc_desc_option = if Config.dynamic_dispatch = `Lazy then Some proc_desc else None in
+  let proc_desc_option =
+    if Config.(equal_dynamic_dispatch dynamic_dispatch Lazy) then Some proc_desc else None
+  in
   let attributes = Procdesc.get_attributes proc_desc in
   let proc_flags = attributes.ProcAttributes.proc_flags in
   init_summary ([], proc_flags, [], attributes, proc_desc_option)

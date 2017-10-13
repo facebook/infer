@@ -394,7 +394,7 @@ let mk_option ?(default= None) ?(default_to_string= fun _ -> "") ~f ?(mk_reset= 
   else mk ()
 
 let mk_bool ?(deprecated_no= []) ?(default= false) ?(f= fun b -> b) ?(deprecated= []) ~long ?short
-    ?parse_mode ?in_help ?(meta= "") doc =
+    ?parse_mode ?in_help ?(meta= "") doc0 =
   let nolong =
     let len = String.length long in
     if len > 3 && String.sub long ~pos:0 ~len:3 = "no-" then String.sub long ~pos:3 ~len:(len - 3)
@@ -408,12 +408,13 @@ let mk_bool ?(deprecated_no= []) ?(default= false) ?(f= fun b -> b) ?(deprecated
   let doc long short =
     match short with
     | Some short
-     -> doc ^ " (Conversely: $(b,--" ^ long ^ ") | $(b,-" ^ String.of_char short ^ "))"
+     -> doc0 ^ " (Conversely: $(b,--" ^ long ^ ") | $(b,-" ^ String.of_char short ^ "))"
     | None
-     -> doc ^ " (Conversely: $(b,--" ^ long ^ "))"
+     -> doc0 ^ " (Conversely: $(b,--" ^ long ^ "))"
   in
   let doc, nodoc =
-    if not default then ("Activates: " ^ doc nolong noshort, "")
+    if String.equal doc0 "" then ("", "")
+    else if not default then ("Activates: " ^ doc nolong noshort, "")
     else ("", "Deactivates: " ^ doc long short)
   in
   let default_to_string _ = "" in

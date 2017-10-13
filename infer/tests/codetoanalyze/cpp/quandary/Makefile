@@ -10,7 +10,10 @@ TESTS_DIR = ../../..
 ANALYZER = checkers
 # see explanations in cpp/errors/Makefile for the custom isystem
 CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
-INFER_OPTIONS = --quandary --passthroughs --ml-buckets cpp --no-filtering --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = \
+  --quandary-only --passthroughs --debug-exceptions \
+  --project-root $(TESTS_DIR) \
+
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.cpp)

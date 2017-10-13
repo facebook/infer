@@ -14,7 +14,7 @@ module L = Logging
 
 (** mutate the cfg/cg to add dynamic dispatch handling *)
 let add_dispatch_calls pdesc cg tenv =
-  let sound_dynamic_dispatch = Config.dynamic_dispatch = `Sound in
+  let sound_dynamic_dispatch = Config.(equal_dynamic_dispatch dynamic_dispatch Sound) in
   let node_add_dispatch_calls caller_pname node =
     let call_flags_is_dispatch call_flags =
       (* if sound dispatch is turned off, only consider dispatch for interface calls *)
@@ -244,8 +244,10 @@ let do_abstraction pdesc =
   add_abstraction_instructions pdesc ; Procdesc.signal_did_preanalysis pdesc
 
 let do_dynamic_dispatch pdesc cg tenv =
-  let pname = Procdesc.get_proc_name pdesc in
-  if Typ.Procname.is_java pname
-     && (Config.dynamic_dispatch = `Interface || Config.dynamic_dispatch = `Sound)
-  then add_dispatch_calls pdesc cg tenv ;
+  ( match Config.dynamic_dispatch with
+  | Interface | Sound
+   -> let pname = Procdesc.get_proc_name pdesc in
+      if Typ.Procname.is_java pname then add_dispatch_calls pdesc cg tenv
+  | NoDynamicDispatch | Lazy
+   -> () ) ;
   Procdesc.signal_did_preanalysis pdesc

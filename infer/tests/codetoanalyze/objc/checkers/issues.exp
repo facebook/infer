@@ -1,3 +1,4 @@
+codetoanalyze/objc/checkers/Nullable.m, T_DeadStoreFP_testUnnanotatedFieldInClosureBad, 2, DEAD_STORE, [Write of unused value]
 codetoanalyze/objc/checkers/Nullable.m, T_FP_dereferenceNonnullFieldAfterTestForNullOkay, 1, FIELD_SHOULD_BE_NULLABLE, [Field nonnullField is compared to null here]
 codetoanalyze/objc/checkers/Nullable.m, T_FP_dereferenceNonnullFieldAfterTestForNullOkay, 2, NULL_DEREFERENCE, [start of procedure FP_dereferenceNonnullFieldAfterTestForNullOkay,Condition is true]
 codetoanalyze/objc/checkers/Nullable.m, T_assignNonnullFieldToNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field nonnullField is assigned null here]
@@ -9,4 +10,4 @@ codetoanalyze/objc/checkers/Nullable.m, T_dereferenceUnnanotatedFieldAfterTestFo
 codetoanalyze/objc/checkers/Nullable.m, T_dereferenceUnnanotatedFieldAfterTestForNullBad, 2, NULL_DEREFERENCE, [start of procedure dereferenceUnnanotatedFieldAfterTestForNullBad,Condition is true]
 codetoanalyze/objc/checkers/Nullable.m, T_testNonnullFieldForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field nonnullField is compared to null here]
 codetoanalyze/objc/checkers/Nullable.m, T_testUnnanotatedFieldForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]
-codetoanalyze/objc/checkers/Nullable.m, __objc_anonymous_block_T_testUnnanotatedFieldInClosureBad______1, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]
+codetoanalyze/objc/checkers/Nullable.m, __objc_anonymous_block_T_DeadStoreFP_testUnnanotatedFieldInClosureBad______1, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]

@@ -1342,7 +1342,9 @@ let do_analysis_closures exe_env : Tasks.closure list =
     let attributes =
       {(Procdesc.get_attributes pdesc) with ProcAttributes.err_log= static_err_log}
     in
-    let proc_desc_option = if Config.dynamic_dispatch = `Lazy then Some pdesc else None in
+    let proc_desc_option =
+      if Config.(equal_dynamic_dispatch dynamic_dispatch Lazy) then Some pdesc else None
+    in
     ignore (Specs.init_summary (nodes, proc_flags, calls, attributes, proc_desc_option))
   in
   let callbacks =
@@ -1350,7 +1352,7 @@ let do_analysis_closures exe_env : Tasks.closure list =
       match Exe_env.get_proc_desc exe_env proc_name with
       | Some pdesc
        -> Some pdesc
-      | None when Config.dynamic_dispatch = `Lazy
+      | None when Config.(equal_dynamic_dispatch dynamic_dispatch Lazy)
        -> Option.bind (Specs.get_summary proc_name) ~f:(fun summary ->
               summary.Specs.proc_desc_option )
       | None

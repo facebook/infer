@@ -91,7 +91,7 @@ let iterate_callbacks call_graph exe_env =
     match Exe_env.get_proc_desc exe_env proc_name with
     | Some pdesc
      -> Some pdesc
-    | None when Config.dynamic_dispatch = `Lazy
+    | None when Config.(equal_dynamic_dispatch dynamic_dispatch Lazy)
      -> Option.bind (Specs.get_summary proc_name) ~f:(fun summary -> summary.Specs.proc_desc_option)
     | None
      -> None

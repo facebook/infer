@@ -47,7 +47,7 @@ type language = Clang | Java | Python [@@deriving compare]
 
 let equal_language = [%compare.equal : language]
 
-let string_of_language = function Java -> "Java" | Clang -> "C_CPP" | Python -> "python"
+let string_of_language = function Java -> "Java" | Clang -> "C/C++/ObjC" | Python -> "python"
 
 let ml_bucket_symbols =
   [ ("all", `MLeak_all)
@@ -332,7 +332,16 @@ let whitelisted_cpp_classes =
     ; libcxx_whitelisted_cpp_classes
     ; other_whitelisted_cpp_classes ]
 
-(** Compile time configuration values *)
+type dynamic_dispatch = NoDynamicDispatch | Interface | Sound | Lazy [@@deriving compare]
+
+let equal_dynamic_dispatch = [%compare.equal : dynamic_dispatch]
+
+let string_to_dynamic_dispatch =
+  [("none", NoDynamicDispatch); ("interface", Interface); ("sound", Sound); ("lazy", Lazy)]
+
+let string_of_dynamic_dispatch ddp =
+  List.find_exn ~f:(fun (_, ddp') -> equal_dynamic_dispatch ddp ddp') string_to_dynamic_dispatch
+  |> fst
 
 let pp_version fmt () =
   F.fprintf fmt "Infer version %s@\nCopyright 2009 - present Facebook. All Rights Reserved."
@@ -1037,7 +1046,7 @@ and dump_duplicate_symbols =
 and dynamic_dispatch =
   CLOpt.mk_symbol_opt ~long:"dynamic-dispatch"
     "Specify treatment of dynamic dispatch in Java code: 'none' treats dynamic dispatch as a call to unknown code, 'lazy' follows the JVM semantics and creates procedure descriptions during symbolic execution using the type information found in the abstract state; 'sound' is significantly more computationally expensive"
-    ~symbols:[("none", `None); ("interface", `Interface); ("sound", `Sound); ("lazy", `Lazy)]
+    ~symbols:string_to_dynamic_dispatch
 
 and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant" "Condition redundant warnings"
@@ -2370,9 +2379,7 @@ let clang_frontend_do_capture, clang_frontend_do_lint =
     | Some BiAbduction | Some Checkers
      -> (true, false) (* capture, no lint *)
     | _
-     -> (true, true)
-
-(* capture, lint *)
+     -> (* capture, lint *) (true, true)
 
 let analyzer = match !analyzer with Some a -> a | None -> BiAbduction
 
@@ -2385,16 +2392,16 @@ let dynamic_dispatch =
   let default_mode =
     match analyzer with
     | BiAbduction
-     -> `Lazy
+     -> Lazy
     | Checkers when biabduction
      -> if quandary then
-          F.printf
-            "WARNING: Running Quanday on Java is not compatible with the Biabduction analysis@." ;
-        `Lazy
+          F.eprintf
+            "WARNING: Running Quandary on Java is not compatible with the Biabduction analysis@." ;
+        Lazy
     | Checkers when quandary
-     -> `Sound
+     -> Sound
     | _
-     -> `None
+     -> NoDynamicDispatch
   in
   Option.value ~default:default_mode !dynamic_dispatch
 

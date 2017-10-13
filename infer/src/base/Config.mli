@@ -71,6 +71,12 @@ type compilation_database_dependencies =
   | NoDeps
   [@@deriving compare]
 
+type dynamic_dispatch = NoDynamicDispatch | Interface | Sound | Lazy [@@deriving compare]
+
+val equal_dynamic_dispatch : dynamic_dispatch -> dynamic_dispatch -> bool
+
+val string_of_dynamic_dispatch : dynamic_dispatch -> string
+
 val env_inside_maven : Unix.env
 
 (** Constant configuration values *)
@@ -360,7 +366,7 @@ val dotty_cfg_libs : bool
 
 val dump_duplicate_symbols : bool
 
-val dynamic_dispatch : [`None | `Interface | `Sound | `Lazy]
+val dynamic_dispatch : dynamic_dispatch
 
 val eradicate : bool
 

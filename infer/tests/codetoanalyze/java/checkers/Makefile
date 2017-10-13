@@ -8,7 +8,11 @@
 TESTS_DIR = ../../..
 
 ANALYZER = checkers
-INFER_OPTIONS = --no-filtering --debug-exceptions --default-checkers --resource-leak --suggest-nullable
+INFER_OPTIONS = \
+  --debug-exceptions --dynamic-dispatch none --no-default-checkers \
+  --annotation-reachability --fragment-retains-view --immutable-cast --printf-args --quandary \
+  --suggest-nullable --threadsafety \
+
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 

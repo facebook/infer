@@ -42,7 +42,7 @@ int* __nullable returnsNull();
   }
 }
 
-- (int)testUnnanotatedFieldInClosureBad {
+- (int)DeadStoreFP_testUnnanotatedFieldInClosureBad {
   int (^testField)(int defaultValue);
   testField = ^(int defaultValue) {
     if (unnanotatedField != nil) {

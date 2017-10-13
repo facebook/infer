@@ -63,7 +63,8 @@ let output_json_makefile_stats clusters =
 let process_cluster_cmdline fname =
   match Cluster.load_from_file (DB.filename_from_string fname) with
   | None
-   -> L.internal_error "Cannot find cluster file %s@." fname
+   -> (if Config.keep_going then L.internal_error else L.die InternalError)
+        "Cannot find cluster file %s@." fname
   | Some (nr, cluster)
    -> analyze_cluster (nr - 1) cluster
 
@@ -100,7 +101,7 @@ let cluster_should_be_analyzed ~changed_files cluster =
   in
   let check_modified () =
     let modified = DB.file_was_updated_after_start (DB.filename_from_string fname) in
-    if modified && Config.developer_mode then L.progress "Modified: %s@." fname ;
+    if modified && Config.developer_mode then L.debug Analysis Medium "Modified: %s@." fname ;
     modified
   in
   match is_changed_file with
@@ -140,8 +141,10 @@ let main ~changed_files ~makefile =
           ~f:(fun cl -> DB.string_crc_has_extension ~ext:"java" (DB.source_dir_to_string cl))
           all_clusters
       in
-      if Config.print_active_checkers then
-        L.result "Active checkers: %a@." RegisterCheckers.pp_active_checkers () ;
+      (if Config.print_active_checkers then L.result else L.debug Analysis Quiet)
+        "Active checkers: %a@\n" RegisterCheckers.pp_active_checkers () ;
+      L.debug Analysis Quiet "Dynamic dispatch mode: %s@."
+        Config.(string_of_dynamic_dispatch dynamic_dispatch) ;
       print_legend () ;
       if Config.per_procedure_parallelism && not (is_java ()) then (
         (* Java uses ZipLib which is incompatible with forking *)
