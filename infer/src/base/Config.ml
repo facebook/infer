@@ -30,7 +30,8 @@ type analyzer =
 let equal_analyzer = [%compare.equal : analyzer]
 
 let string_to_analyzer =
-  [ ("capture", CaptureOnly)
+  [ ("biabduction", BiAbduction)
+  ; ("capture", CaptureOnly)
   ; ("checkers", Checkers)
   ; ("compile", CompileOnly)
   ; ("crashcontext", Crashcontext)
@@ -568,12 +569,13 @@ and analyzer =
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
     ~in_help:CLOpt.([(Analyze, manual_generic); (Run, manual_generic)])
     {|Specify which analyzer to run (only one at a time is supported):
-- $(b,infer): run the bi-abduction based checker, in particular to check for memory errors (activated by default)
+- $(b,biabduction): run the bi-abduction based checker only, in particular to check for memory errors  (default)
 - $(b,checkers): run the checkers
+- $(b,infer): alias for $(b,biabduction)
+- $(b,linters): run linters based on the ast only (clang only, activated by default)
 - $(b,capture): similar to specifying the $(b,capture) subcommand (DEPRECATED)
 - $(b,compile): similar to specifying the $(b,compile) subcommand (DEPRECATED)
-- $(b,crashcontext): experimental (see $(b,--crashcontext))
-- $(b,linters): run linters based on the ast only (Objective-C and Objective-C++ only, activated by default)|}
+- $(b,crashcontext): experimental (see $(b,--crashcontext))|}
     ~f:(function
         | CaptureOnly | CompileOnly as x
          -> let analyzer_str =
