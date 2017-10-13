@@ -1131,34 +1131,57 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
 
 module AccessListMap = Caml.Map.Make (ThreadSafetyDomain.Access)
 
+type conflicts = ThreadSafetyDomain.TraceElem.t list
+
+type report_kind =
+  | WriteWriteRace of conflicts  (** possibly-empty list of conflicting accesses *)
+  | ReadWriteRace of conflicts  (** non-empty list of conflicting accesses *)
+  | UnannotatedInterface
+
 (** Explain why we are reporting this access *)
-let get_reporting_explanation tenv pname thread =
-  let thread_assumption =
-    if ThreadSafetyDomain.ThreadsDomain.is_any thread then
-      F.asprintf
-        "so we assume that this method can run in parallel with other non-private methods in the class (incuding itself)"
+let get_reporting_explanation report_kind tenv pname thread =
+  (* best explanation is always that the current class or method is annotated thread-safe. try for
+     that first. *)
+  let annotation_explanation_opt =
+    if is_thread_safe_method pname tenv then
+      Some
+        (F.asprintf
+           "@\n Reporting because current method is annotated %a or overrides an annotated method."
+           MF.pp_monospaced "@ThreadSafe")
     else
-      "and another access to the same memory may occur on a background thread even though this access may not"
+      match get_current_class_and_threadsafe_superclasses tenv pname with
+      | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes))
+       -> Some
+            ( if List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class then
+                F.asprintf "@\n Reporting because the current class is annotated %a"
+                  MF.pp_monospaced "@ThreadSafe"
+            else
+              F.asprintf "@\n Reporting because a superclass %a is annotated %a"
+                (MF.wrap_monospaced Typ.Name.pp) thread_safe_class MF.pp_monospaced "@ThreadSafe" )
+      | _
+       -> None
   in
-  match get_current_class_and_threadsafe_superclasses tenv pname with
-  | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes))
-   -> if List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class then
-        F.asprintf "@\n Reporting because the current class is annotated %a, %s." MF.pp_monospaced
-          "@ThreadSafe" thread_assumption
-      else
-        F.asprintf "@\n Reporting because a superclass %a is annotated %a, %s."
-          (MF.wrap_monospaced Typ.Name.pp) thread_safe_class MF.pp_monospaced "@ThreadSafe"
-          thread_assumption
-  | _
-   -> if is_thread_safe_method pname tenv then
-        F.asprintf
-          "@\n Reporting because current method is annotated %a or overrides an annotated method, %s."
-          MF.pp_monospaced "@ThreadSafe" thread_assumption
-      else if ThreadSafetyDomain.ThreadsDomain.is_any thread then
+  match (report_kind, annotation_explanation_opt) with
+  | UnannotatedInterface, Some threadsafe_explanation
+   -> F.asprintf "%s." threadsafe_explanation
+  | UnannotatedInterface, None
+   -> Logging.die InternalError
+        "Reporting non-threadsafe interface call, but can't find a @ThreadSafe annotation"
+  | _, Some threadsafe_explanation when ThreadSafetyDomain.ThreadsDomain.is_any thread
+   -> F.asprintf
+        "%s, so we assume that this method can run in parallel with other non-private methods in the class (incuding itself)."
+        threadsafe_explanation
+  | _, Some threadsafe_explanation
+   -> F.asprintf
+        "%s. Although this access is not known to run on a background thread, it may happen in parallel with another access that does."
+        threadsafe_explanation
+  | _, None
+   -> (* failed to explain based on @ThreadSafe annotation; have to justify using background thread *)
+      if ThreadSafetyDomain.ThreadsDomain.is_any thread then
         F.asprintf "@\n Reporting because this access may occur on a background thread."
       else
         F.asprintf
-          "@\n Reporting because another access to the same memory may run on a background thread."
+          "@\n Reporting because another access to the same memory occurs on a background thread, although this access may not."
 
 let filter_by_access access_filter trace =
   let open ThreadSafetyDomain in
@@ -1217,13 +1240,6 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
   | _
    -> PathDomain.empty
 
-type conflicts = ThreadSafetyDomain.TraceElem.t list
-
-type report_kind =
-  | WriteWriteRace of conflicts  (** possibly-empty list of conflicting accesses *)
-  | ReadWriteRace of conflicts  (** non-empty list of conflicting accesses *)
-  | UnannotatedInterface
-
 let make_trace ~report_kind original_path pdesc =
   let open ThreadSafetyDomain in
   let loc_trace_of_path path = PathDomain.to_sink_loc_trace ~desc_of_sink path in
@@ -1269,11 +1285,13 @@ let report_thread_safety_violation tenv pdesc issue_type ~make_description ~repo
     let final_sink_site = PathDomain.Sink.call_site final_sink in
     let loc = CallSite.loc initial_sink_site in
     let ltr = make_trace ~report_kind path pdesc in
-    let description =
-      make_description tenv pname final_sink_site initial_sink_site final_sink thread
-    in
+    (* what the potential bug is *)
+    let description = make_description pname final_sink_site initial_sink_site final_sink in
+    (* why we are reporting it *)
+    let explanation = get_reporting_explanation report_kind tenv pname thread in
+    let error_message = F.sprintf "%s%s" description explanation in
     let exn =
-      Exceptions.Checkers (issue_type.IssueType.unique_id, Localise.verbatim_desc description)
+      Exceptions.Checkers (issue_type.IssueType.unique_id, Localise.verbatim_desc error_message)
     in
     Reporting.log_error_deprecated ~store_summary:true pname ~loc ~ltr exn
   in
@@ -1284,7 +1302,7 @@ let report_unannotated_interface_violation tenv pdesc access thread reported_pna
   match reported_pname with
   | Typ.Procname.Java java_pname
    -> let class_name = Typ.Procname.java_get_class_name java_pname in
-      let make_description _ _ _ _ _ _ =
+      let make_description _ _ _ _ =
         F.asprintf
           "Unprotected call to method of un-annotated interface %s. Consider annotating the class with %a, adding a lock, or using an interface that is known to be thread-safe."
           class_name MF.pp_monospaced "@ThreadSafe"
@@ -1302,17 +1320,16 @@ let pp_procname_short fmt = function
   | pname
    -> Typ.Procname.pp fmt pname
 
-let make_unprotected_write_description tenv pname final_sink_site initial_sink_site final_sink
-    write_thread =
-  Format.asprintf "Unprotected write. Non-private method %a%s %s %a outside of synchronization.%s"
+let make_unprotected_write_description pname final_sink_site initial_sink_site final_sink =
+  Format.asprintf "Unprotected write. Non-private method %a%s %s %a outside of synchronization."
     (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     ( if ThreadSafetyDomain.TraceElem.is_container_write final_sink then "mutates"
     else "writes to field" )
-    pp_access final_sink (get_reporting_explanation tenv pname write_thread)
+    pp_access final_sink
 
-let make_read_write_race_description ~read_is_sync conflicts tenv pname final_sink_site
-    initial_sink_site final_sink read_thread =
+let make_read_write_race_description ~read_is_sync conflicts pname final_sink_site
+    initial_sink_site final_sink =
   let conflicting_proc_names =
     List.map ~f:(fun (_, _, _, _, pdesc) -> Procdesc.get_proc_name pdesc) conflicts
     |> Typ.Procname.Set.of_list
@@ -1323,16 +1340,16 @@ let make_read_write_race_description ~read_is_sync conflicts tenv pname final_si
     else Typ.Procname.Set.pp fmt conflicts
   in
   let conflicts_description =
-    Format.asprintf "Potentially races with%s writes in method%s %a."
+    Format.asprintf "Potentially races with%s writes in method%s %a"
       (if read_is_sync then " unsynchronized" else "")
       (if Typ.Procname.Set.cardinal conflicting_proc_names > 1 then "s" else "")
       (MF.wrap_monospaced pp_conflicts) conflicting_proc_names
   in
-  Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s%s"
+  Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s."
     (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if read_is_sync then " with synchronization" else " without synchronization")
-    pp_access final_sink conflicts_description (get_reporting_explanation tenv pname read_thread)
+    pp_access final_sink conflicts_description
 
 (** type for remembering what we have already reported to avoid duplicates. our policy is to report
     each kind of access (read/write) to the same field reachable from the same procedure only once.
