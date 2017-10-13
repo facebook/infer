@@ -12,7 +12,6 @@ package codetoanalyze.java.checkers;
 import com.facebook.infer.annotation.ThreadSafe;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.MyImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
 public class Builders {
@@ -78,11 +77,6 @@ public class Builders {
     Obj obj = new Obj("a", "b");
     Obj.Builder builder = new Obj.Builder();
     return builder.setFromObj(obj).build();
-  }
-
-  @ThreadSafe
-  public void writeImmutableListFieldOk(MyImmutableList<Object> list) {
-    list.writeFld();
   }
 
   @ThreadSafe
