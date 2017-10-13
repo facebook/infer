@@ -32,6 +32,7 @@ BUILD_SYSTEMS_TESTS += \
   clang_with_E_flag \
   clang_with_M_flag \
   clang_with_MD_flag \
+  deduplicate_template_warnings \
   delete_results_dir \
   diff \
   diff_gen_build_script \
