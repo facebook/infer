@@ -30,12 +30,12 @@ type analyzer =
 let equal_analyzer = [%compare.equal : analyzer]
 
 let string_to_analyzer =
-  [ ("biabduction", BiAbduction)
+  [ ("infer", BiAbduction)
+  ; ("biabduction", BiAbduction)
   ; ("capture", CaptureOnly)
   ; ("checkers", Checkers)
   ; ("compile", CompileOnly)
   ; ("crashcontext", Crashcontext)
-  ; ("infer", BiAbduction)
   ; ("linters", Linters) ]
 
 let string_of_analyzer a =
