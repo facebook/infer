@@ -569,43 +569,44 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       exps ~init:accesses
 
   let expand_actuals actuals accesses pdesc =
-    let rec get_access_path = function
-      | HilExp.AccessPath ap
-       -> Some ap
-      | HilExp.Cast (_, e) | HilExp.Exception e
-       -> get_access_path e
-      | _
-       -> None
-    in
     let open Domain in
-    let formals, _ = FormalMap.make pdesc |> FormalMap.get_formals_indexes |> List.unzip in
-    let n = min (List.length formals) (List.length actuals) in
-    let fmls_actls =
-      List.zip_exn (List.take formals n) (List.take actuals n)
-      |> List.filter_map ~f:(fun (fml, act) ->
-             match get_access_path act with Some path -> Some (fml, path) | _ -> None )
-    in
-    let fmap =
-      List.fold fmls_actls ~init:AccessPath.BaseMap.empty ~f:(fun acc (fml, act) ->
-          AccessPath.BaseMap.add fml act acc )
-    in
-    let expand_path (base, accesses as path) =
-      try
-        let actual = AccessPath.BaseMap.find base fmap in
-        AccessPath.append actual accesses
-      with Not_found -> path
-    in
-    let expand_pre accesses =
-      let sinks =
-        PathDomain.Sinks.fold
-          (fun elem acc ->
-            let new_elem = TraceElem.map ~f:expand_path elem in
-            PathDomain.Sinks.add new_elem acc)
-          (PathDomain.sinks accesses) PathDomain.Sinks.empty
+    if AccessDomain.is_empty accesses then accesses
+    else
+      let rec get_access_path = function
+        | HilExp.AccessPath ap
+         -> Some ap
+        | HilExp.Cast (_, e) | HilExp.Exception e
+         -> get_access_path e
+        | _
+         -> None
       in
-      PathDomain.update_sinks accesses sinks
-    in
-    AccessDomain.map expand_pre accesses
+      let formal_map = FormalMap.make pdesc in
+      let expand_path (base, accesses as path) =
+        match FormalMap.get_formal_index base formal_map with
+        | Some formal_index -> (
+          match List.nth actuals formal_index with
+          | Some actual_exp -> (
+            match get_access_path actual_exp with
+            | Some actual
+             -> AccessPath.append actual accesses
+            | None
+             -> path )
+          | None
+           -> path )
+        | None
+         -> path
+      in
+      let expand_pre accesses =
+        let sinks =
+          PathDomain.Sinks.fold
+            (fun elem acc ->
+              let new_elem = TraceElem.map ~f:expand_path elem in
+              PathDomain.Sinks.add new_elem acc)
+            (PathDomain.sinks accesses) PathDomain.Sinks.empty
+        in
+        PathDomain.update_sinks accesses sinks
+      in
+      AccessDomain.map expand_pre accesses
 
   let exec_instr (astate: Domain.astate) ({ProcData.tenv; extras; pdesc} as proc_data) _
       (instr: HilInstr.t) =
