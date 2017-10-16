@@ -77,6 +77,27 @@ val equal_dynamic_dispatch : dynamic_dispatch -> dynamic_dispatch -> bool
 
 val string_of_dynamic_dispatch : dynamic_dispatch -> string
 
+type build_system =
+  | BAnalyze
+  | BAnt
+  | BBuck
+  | BClang
+  | BGradle
+  | BJava
+  | BJavac
+  | BMake
+  | BMvn
+  | BNdk
+  | BPython
+  | BXcode
+  [@@deriving compare]
+
+val equal_build_system : build_system -> build_system -> bool
+
+val build_system_of_exe_name : string -> build_system
+
+val string_of_build_system : build_system -> string
+
 val env_inside_maven : Unix.env
 
 (** Constant configuration values *)
@@ -403,6 +424,8 @@ val flavors : bool
 val force_delete_results_dir : bool
 
 val fragment_retains_view : bool
+
+val force_integration : build_system option
 
 val from_json_report : string option
 

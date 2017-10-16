@@ -88,6 +88,57 @@ type compilation_database_dependencies =
   | NoDeps
   [@@deriving compare]
 
+type build_system =
+  | BAnalyze
+  | BAnt
+  | BBuck
+  | BClang
+  | BGradle
+  | BJava
+  | BJavac
+  | BMake
+  | BMvn
+  | BNdk
+  | BPython
+  | BXcode
+  [@@deriving compare]
+
+let equal_build_system = [%compare.equal : build_system]
+
+(* List of ([build system], [executable name]). Several executables may map to the same build
+   system. In that case, the first one in the list will be used for printing, eg, in which mode
+   infer is running. *)
+let build_system_exe_assoc =
+  [ (BAnalyze, "analyze")
+  ; (BAnt, "ant")
+  ; (BBuck, "buck")
+  ; (BGradle, "gradle")
+  ; (BGradle, "gradlew")
+  ; (BJava, "java")
+  ; (BJavac, "javac")
+  ; (BClang, "cc")
+  ; (BClang, "clang")
+  ; (BClang, "gcc")
+  ; (BClang, "clang++")
+  ; (BClang, "c++")
+  ; (BClang, "g++")
+  ; (BMake, "make")
+  ; (BMake, "configure")
+  ; (BMake, "cmake")
+  ; (BMake, "waf")
+  ; (BMvn, "mvn")
+  ; (BMvn, "mvnw")
+  ; (BNdk, "ndk-build")
+  ; (BPython, "python")
+  ; (BXcode, "xcodebuild") ]
+
+let build_system_of_exe_name name =
+  try List.Assoc.find_exn ~equal:String.equal (List.Assoc.inverse build_system_exe_assoc) name
+  with Not_found -> L.(die InternalError) "Unsupported build command %s" name
+
+let string_of_build_system build_system =
+  List.Assoc.find_exn ~equal:equal_build_system build_system_exe_assoc build_system
+
 (** Constant configuration values *)
 
 let anonymous_block_num_sep = "______"
@@ -1112,6 +1163,15 @@ and force_delete_results_dir =
         ; (Run, manual_generic) ]))
     "Do not refuse to delete the results directory if it doesn't look like an infer results directory."
 
+and force_integration =
+  CLOpt.mk_symbol_opt ~long:"force-integration" ~meta:"command"
+    ~symbols:(List.Assoc.inverse build_system_exe_assoc)
+    ~in_help:CLOpt.([(Capture, manual_generic); (Run, manual_generic)])
+    (Printf.sprintf
+       "Proceed as if the first argument after $(b,--) was $(i,command). Possible values: %s."
+       ( List.map build_system_exe_assoc ~f:(fun (_, s) -> Printf.sprintf "$(i,%s)" s)
+       |> String.concat ~sep:", " ))
+
 and from_json_report =
   CLOpt.mk_path_opt ~long:"from-json-report"
     ~in_help:CLOpt.([(Report, manual_generic)])
@@ -2079,6 +2139,8 @@ and flavors = !flavors
 and force_delete_results_dir = !force_delete_results_dir
 
 and fragment_retains_view = !fragment_retains_view
+
+and force_integration = !force_integration
 
 and from_json_report = !from_json_report
 

@@ -12,25 +12,6 @@ open! IStd
 (** entry points for top-level functionalities such as capture under various build systems,
     analysis, and reporting *)
 
-type build_system =
-  | BAnalyze
-  | BAnt
-  | BBuck
-  | BClang
-  | BGradle
-  | BJava
-  | BJavac
-  | BMake
-  | BMvn
-  | BNdk
-  | BPython
-  | BXcode
-  [@@deriving compare]
-
-val equal_build_system : build_system -> build_system -> bool
-
-val string_of_build_system : build_system -> string
-
 (** based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
@@ -41,7 +22,7 @@ type mode =
   | Javac of Javac.compiler * string * string list
   | Maven of string * string list
   | Python of string list
-  | PythonCapture of build_system * string list
+  | PythonCapture of Config.build_system * string list
   | XcodeXcpretty of string * string list
   [@@deriving compare]
 

@@ -15,57 +15,6 @@ module CLOpt = CommandLineOption
 module L = Logging
 module F = Format
 
-type build_system =
-  | BAnalyze
-  | BAnt
-  | BBuck
-  | BClang
-  | BGradle
-  | BJava
-  | BJavac
-  | BMake
-  | BMvn
-  | BNdk
-  | BPython
-  | BXcode
-  [@@deriving compare]
-
-let equal_build_system = [%compare.equal : build_system]
-
-(* List of ([build system], [executable name]). Several executables may map to the same build
-   system. In that case, the first one in the list will be used for printing, eg, in which mode
-   infer is running. *)
-let build_system_exe_assoc =
-  [ (BAnalyze, "analyze")
-  ; (BAnt, "ant")
-  ; (BBuck, "buck")
-  ; (BGradle, "gradle")
-  ; (BGradle, "gradlew")
-  ; (BJava, "java")
-  ; (BJavac, "javac")
-  ; (BClang, "cc")
-  ; (BClang, "clang")
-  ; (BClang, "gcc")
-  ; (BClang, "clang++")
-  ; (BClang, "c++")
-  ; (BClang, "g++")
-  ; (BMake, "make")
-  ; (BMake, "configure")
-  ; (BMake, "cmake")
-  ; (BMake, "waf")
-  ; (BMvn, "mvn")
-  ; (BMvn, "mvnw")
-  ; (BNdk, "ndk-build")
-  ; (BPython, "python")
-  ; (BXcode, "xcodebuild") ]
-
-let build_system_of_exe_name name =
-  try List.Assoc.find_exn ~equal:String.equal (List.Assoc.inverse build_system_exe_assoc) name
-  with Not_found -> L.(die InternalError) "Unsupported build command %s" name
-
-let string_of_build_system build_system =
-  List.Assoc.find_exn ~equal:equal_build_system build_system_exe_assoc build_system
-
 (* based on the build_system and options passed to infer, we run in different driver modes *)
 type mode =
   | Analyze
@@ -76,7 +25,7 @@ type mode =
   | Javac of Javac.compiler * string * string list
   | Maven of string * string list
   | Python of string list
-  | PythonCapture of build_system * string list
+  | PythonCapture of Config.build_system * string list
   | XcodeXcpretty of string * string list
   [@@deriving compare]
 
@@ -271,8 +220,8 @@ let capture ~changed_files mode =
    -> (* pretend prog is the root directory of the project *)
       PythonMain.go args
   | PythonCapture (build_system, build_cmd)
-   -> L.progress "Capturing in %s mode...@." (string_of_build_system build_system) ;
-      let in_buck_mode = equal_build_system build_system BBuck in
+   -> L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
+      let in_buck_mode = Config.equal_build_system build_system BBuck in
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
       let args =
         List.rev_append Config.anon_args
@@ -486,15 +435,15 @@ let assert_supported_mode required_analyzer requested_mode_string =
       requested_mode_string analyzer_string analyzer_string
 
 let assert_supported_build_system build_system =
-  match build_system with
+  match (build_system : Config.build_system) with
   | BAnt | BGradle | BJava | BJavac | BMvn
-   -> string_of_build_system build_system |> assert_supported_mode `Java
+   -> Config.string_of_build_system build_system |> assert_supported_mode `Java
   | BClang | BMake | BNdk
-   -> string_of_build_system build_system |> assert_supported_mode `Clang
+   -> Config.string_of_build_system build_system |> assert_supported_mode `Clang
   | BPython
-   -> string_of_build_system build_system |> assert_supported_mode `Python
+   -> Config.string_of_build_system build_system |> assert_supported_mode `Python
   | BXcode
-   -> string_of_build_system build_system |> assert_supported_mode `Xcode
+   -> Config.string_of_build_system build_system |> assert_supported_mode `Xcode
   | BBuck
    -> let analyzer, build_string =
         if Config.flavors then (`Clang, "buck with flavors")
@@ -504,7 +453,7 @@ let assert_supported_build_system build_system =
           if Config.reactive_mode then
             L.user_error
               "WARNING: The reactive analysis mode is not compatible with the Buck integration for Java" ;
-          (`Java, string_of_build_system build_system) )
+          (`Java, Config.string_of_build_system build_system) )
       in
       assert_supported_mode analyzer build_string
   | BAnalyze
@@ -518,9 +467,15 @@ let mode_of_build_command build_cmd =
         ClangCompilationDB !Config.clang_compilation_dbs )
       else Analyze
   | prog :: args
-   -> let build_system = build_system_of_exe_name (Filename.basename prog) in
+   -> let build_system =
+        match Config.force_integration with
+        | Some build_system
+         -> build_system
+        | None
+         -> Config.build_system_of_exe_name (Filename.basename prog)
+      in
       assert_supported_build_system build_system ;
-      match build_system_of_exe_name (Filename.basename prog) with
+      match (build_system : Config.build_system) with
       | BAnalyze
        -> CLOpt.warnf
             "WARNING: `infer -- analyze` is deprecated; use the `infer analyze` subcommand instead@." ;
