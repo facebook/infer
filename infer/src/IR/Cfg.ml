@@ -417,7 +417,8 @@ let specialize_types callee_pdesc resolved_pname args =
       ~init:([], Mangled.Map.empty) callee_attributes.formals args
   in
   let resolved_attributes =
-    {callee_attributes with formals= List.rev resolved_params; proc_name= resolved_pname}
+    { callee_attributes with
+      formals= List.rev resolved_params; proc_name= resolved_pname; err_log= Errlog.empty () }
   in
   Attributes.store resolved_attributes ;
   let resolved_pdesc =
