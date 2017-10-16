@@ -166,18 +166,6 @@ install_infer-deps () {
     opam pin add infer-deps "$INFER_DEPS_DIR"
 }
 
-# temporary: patch javalib and use local version as source of truth. can be removed once javalib
-# creates a new release with the patch
-# (https://gforge.inria.fr/tracker/index.php?func=detail&aid=21418&group_id=686&atid=2817)
-install_patched_javalib() {
-    local javalib_dir="$INFER_ROOT"/dependencies/javalib
-    local unzipped_javalib_dir="$javalib_dir"/javalib-2.3.3
-    tar xvf "$javalib_dir"/javalib-2.3.3.tar.bz2 -C "$javalib_dir"
-    # apply the patch
-    patch -d "$unzipped_javalib_dir"/src < "$javalib_dir"/allow_empty_method.patch
-    opam pin add --no-action javalib "$unzipped_javalib_dir"
-}
-
 install_locked_deps() {
     if ! opam lock 2> /dev/null; then
         echo "opam-lock not found in the current switch, installing from '$OPAM_LOCK_URL'..." >&2
@@ -187,7 +175,6 @@ install_locked_deps() {
 }
 
 install_opam_deps() {
-    install_patched_javalib
     if [ "$USE_OPAM_LOCK" = yes ]; then
         install_locked_deps
     else

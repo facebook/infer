@@ -33,7 +33,7 @@ depends: [
   "conf-autoconf" {build}
   "ctypes" {>="0.9.2"}
   "extlib-compat"
-  "javalib" {>="2.3.3"}
+  "javalib" {>="2.3.4"}
   "jbuilder" {build & >="1.0+beta14"}
   "mtime"
   "ocamlfind" {build}
