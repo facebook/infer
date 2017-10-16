@@ -75,12 +75,12 @@ struct LM {
   typedef LMB<T> B;
   void l(lt& t, const lo& o) { lI(t, o); }
   void tL(lt& t, const lo& o) { lI(t, o); }
-  void u(lt& t, const lo& o) {
+  void u_FP(lt& t, const lo& o) {
     ASSERT(fB(o) == t.bI);
     if (t.bI == kBN) {
       return;
     }
-    uI(t.bI, o);
+    uI_FP(t.bI, o);
     t.bI = kBN;
   }
 
@@ -95,7 +95,7 @@ struct LM {
     }
     t.bI = bi;
   }
-  void uI(BI bi, const lo& o) { b[bi - 1]->u(o); }
+  void uI_FP(BI bi, const lo& o) { b[bi - 1]->u(o); }
   std::vector<std::unique_ptr<B>> b;
 };
 
@@ -105,10 +105,10 @@ typedef TFM LMDM;
 
 static LM<LMDM>* al;
 
-static inline void ral(lt* t, ai a) {
+static inline void ral_FP(lt* t, ai a) {
   ASSERT(t);
   lo o = alo(a);
-  al->u(*t, o);
+  al->u_FP(*t, o);
 }
 
 static inline void gal(lt* t, ai a) {
@@ -135,10 +135,10 @@ struct arh {
   ft i1;
 };
 
-static void am_Good_FP(im* it) {
+static void am_Good(im* it) {
   const arh* ch = (const arh*)it->gKPC();
   const ai a = aft(ch->i1);
   lt at;
   gal(&at, a);
-  ral(&at, a);
+  ral_FP(&at, a);
 }

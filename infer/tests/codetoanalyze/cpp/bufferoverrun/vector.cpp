@@ -133,3 +133,13 @@ void call_safe_access5_Good() {
   std::vector<int> v;
   safe_access5(v);
 }
+
+void safe_access6(std::vector<int> v) {
+  std::vector<int> v2(2);
+  v2[v.empty()];
+}
+
+void call_safe_access6_Good() {
+  std::vector<int> v;
+  safe_access6(v);
+}

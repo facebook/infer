@@ -18,22 +18,33 @@ module L = Logging
 exception Not_one_symbol
 
 module Symbol = struct
-  type t = Typ.Procname.t * int [@@deriving compare]
+  type t = {pname: Typ.Procname.t; id: int; unsigned: bool} [@@deriving compare]
 
   let eq = [%compare.equal : t]
 
-  let make : Typ.Procname.t -> int -> t = fun pname i -> (pname, i)
+  let make : unsigned:bool -> Typ.Procname.t -> int -> t =
+    fun ~unsigned pname id -> {pname; id; unsigned}
 
   let pp : F.formatter -> t -> unit =
-    fun fmt x ->
-      if Config.bo_debug <= 1 then F.fprintf fmt "s$%d" (snd x)
-      else F.fprintf fmt "%s-s$%d" (fst x |> Typ.Procname.to_string) (snd x)
+    fun fmt {pname; id; unsigned} ->
+      let symbol_name = if unsigned then "u" else "s" in
+      if Config.bo_debug <= 1 then F.fprintf fmt "%s$%d" symbol_name id
+      else F.fprintf fmt "%s-%s$%d" (Typ.Procname.to_string pname) symbol_name id
+
+  let is_unsigned : t -> bool = fun x -> x.unsigned
 end
 
 module SubstMap = Caml.Map.Make (Symbol)
 
 module SymLinear = struct
-  module M = Caml.Map.Make (Symbol)
+  module M = struct
+    include Caml.Map.Make (Symbol)
+
+    let for_all2 : (key -> 'a option -> 'b option -> bool) -> 'a t -> 'b t -> bool =
+      fun cond x y ->
+        let merge_function k x y = if cond k x y then None else raise Exit in
+        match merge merge_function x y with _ -> true | exception Exit -> false
+  end
 
   type t = int M.t [@@deriving compare]
 
@@ -60,10 +71,22 @@ module SymLinear = struct
       try M.find s x
       with Not_found -> 0
 
-  let le : t -> t -> bool = fun x y -> M.for_all (fun s v -> v <= find s y) x
+  let is_le_zero : t -> bool =
+    fun x -> M.for_all (fun s v -> Int.equal v 0 || Symbol.is_unsigned s && v <= 0) x
 
+  let is_ge_zero : t -> bool =
+    fun x -> M.for_all (fun s v -> Int.equal v 0 || Symbol.is_unsigned s && v >= 0) x
 
-  let make : Typ.Procname.t -> int -> t = fun pname i -> M.add (Symbol.make pname i) 1 empty
+  let le : t -> t -> bool =
+    fun x y ->
+      let le_one_pair s v1_opt v2_opt =
+        let v1, v2 = (Option.value v1_opt ~default:0, Option.value v2_opt ~default:0) in
+        Int.equal v1 v2 || Symbol.is_unsigned s && v1 <= v2
+      in
+      M.for_all2 le_one_pair x y
+
+  let make : unsigned:bool -> Typ.Procname.t -> int -> t =
+    fun ~unsigned pname i -> M.add (Symbol.make ~unsigned pname i) 1 empty
 
   let eq : t -> t -> bool = fun x y -> le x y && le y x
 
@@ -195,7 +218,7 @@ module Bound = struct
         | PInf
          -> F.fprintf fmt "+oo"
         | Linear (c, x)
-         -> if SymLinear.le x SymLinear.empty then F.fprintf fmt "%d" c
+         -> if SymLinear.is_zero x then F.fprintf fmt "%d" c
             else if Int.equal c 0 then F.fprintf fmt "%a" SymLinear.pp x
             else F.fprintf fmt "%a + %d" SymLinear.pp x c
         | MinMax (c, sign, m, d, x)
@@ -248,6 +271,21 @@ module Bound = struct
   let is_one_symbol : t -> bool = fun x -> get_one_symbol_opt x <> None
 
   let is_mone_symbol : t -> bool = fun x -> get_mone_symbol_opt x <> None
+
+  let mk_MinMax (c, sign, m, d, s) =
+    if Symbol.is_unsigned s then
+      match m with
+      | Min when d <= 0 -> (
+        match sign with Plus -> of_int (c + d) | Minus -> of_int (c - d) )
+      | Max when d <= 0 -> (
+        match sign with
+        | Plus
+         -> Linear (c, SymLinear.singleton s 1)
+        | Minus
+         -> Linear (c, SymLinear.singleton s (-1)) )
+      | _
+       -> MinMax (c, sign, m, d, s)
+    else MinMax (c, sign, m, d, s)
 
   let use_symbol : Symbol.t -> t -> bool =
     fun s ->
@@ -304,37 +342,35 @@ module Bound = struct
             | MinMax (c1, Minus, Max, d1, _), Linear (c2, se) when SymLinear.is_zero se
              -> Linear (c1 - max d1 c2, SymLinear.zero)
             | MinMax (c, sign, m, d, _), _ when is_one_symbol y
-             -> MinMax (c, sign, m, d, get_one_symbol y)
+             -> mk_MinMax (c, sign, m, d, get_one_symbol y)
             | MinMax (c, sign, m, d, _), _ when is_mone_symbol y
-             -> MinMax (c, neg_sign sign, neg_min_max m, -d, get_mone_symbol y)
+             -> mk_MinMax (c, neg_sign sign, neg_min_max m, -d, get_mone_symbol y)
             | MinMax (c1, Plus, Min, d1, _), MinMax (c2, Plus, Min, d2, s')
-             -> MinMax (c1 + c2, Plus, Min, min (d1 - c2) d2, s')
+             -> mk_MinMax (c1 + c2, Plus, Min, min (d1 - c2) d2, s')
             | MinMax (c1, Plus, Max, d1, _), MinMax (c2, Plus, Max, d2, s')
-             -> MinMax (c1 + c2, Plus, Max, max (d1 - c2) d2, s')
+             -> mk_MinMax (c1 + c2, Plus, Max, max (d1 - c2) d2, s')
             | MinMax (c1, Minus, Min, d1, _), MinMax (c2, Plus, Min, d2, s')
-             -> MinMax (c1 - c2, Minus, Min, min (d1 - c2) d2, s')
+             -> mk_MinMax (c1 - c2, Minus, Min, min (d1 - c2) d2, s')
             | MinMax (c1, Minus, Max, d1, _), MinMax (c2, Plus, Max, d2, s')
-             -> MinMax (c1 - c2, Minus, Max, max (d1 - c2) d2, s')
+             -> mk_MinMax (c1 - c2, Minus, Max, max (d1 - c2) d2, s')
             | MinMax (c1, Plus, Min, d1, _), MinMax (c2, Minus, Max, d2, s')
-             -> MinMax (c1 + c2, Minus, Max, max (-d1 + c2) d2, s')
+             -> mk_MinMax (c1 + c2, Minus, Max, max (-d1 + c2) d2, s')
             | MinMax (c1, Plus, Max, d1, _), MinMax (c2, Minus, Min, d2, s')
-             -> MinMax (c1 + c2, Minus, Min, min (-d1 + c2) d2, s')
+             -> mk_MinMax (c1 + c2, Minus, Min, min (-d1 + c2) d2, s')
             | MinMax (c1, Minus, Min, d1, _), MinMax (c2, Minus, Max, d2, s')
-             -> MinMax (c1 - c2, Minus, Max, max (-d1 + c2) d2, s')
+             -> mk_MinMax (c1 - c2, Minus, Max, max (-d1 + c2) d2, s')
             | MinMax (c1, Minus, Max, d1, _), MinMax (c2, Minus, Min, d2, s')
-             -> MinMax (c1 - c2, Minus, Min, min (-d1 + c2) d2, s')
+             -> mk_MinMax (c1 - c2, Minus, Min, min (-d1 + c2) d2, s')
             | _
              -> default
           in
           NonBottom res
 
-  (* substitution symbols in ``x'' with respect to ``map'' *)
-  let subst : default:t -> t -> t bottom_lifted SubstMap.t -> t bottom_lifted =
-    fun ~default x map -> SubstMap.fold (fun s y x -> subst1 ~default x s y) map (NonBottom x)
-
   let int_ub_of_minmax = function
     | MinMax (c, Plus, Min, d, _)
      -> Some (c + d)
+    | MinMax (c, Minus, Max, d, s) when Symbol.is_unsigned s
+     -> Some (min c (c - d))
     | MinMax (c, Minus, Max, d, _)
      -> Some (c - d)
     | MinMax _
@@ -343,6 +379,8 @@ module Bound = struct
      -> assert false
 
   let int_lb_of_minmax = function
+    | MinMax (c, Plus, Max, d, s) when Symbol.is_unsigned s
+     -> Some (max c (c + d))
     | MinMax (c, Plus, Max, d, _)
      -> Some (c + d)
     | MinMax (c, Minus, Min, d, _)
@@ -387,7 +425,7 @@ module Bound = struct
       | _, MInf | PInf, _
        -> false
       | Linear (c0, x0), Linear (c1, x1)
-       -> c0 <= c1 && SymLinear.eq x0 x1
+       -> c0 <= c1 && SymLinear.le x0 x1
       | MinMax (c1, sign1, m1, d1, x1), MinMax (c2, sign2, m2, d2, x2)
         when sign_equal sign1 sign2 && min_max_equal m1 m2
        -> c1 <= c2 && Int.equal d1 d2 && Symbol.eq x1 x2
@@ -396,14 +434,12 @@ module Bound = struct
       | MinMax (c1, Plus, Min, _, x1), MinMax (c2, Plus, Max, _, x2)
       | MinMax (c1, Minus, Max, _, x1), MinMax (c2, Minus, Min, _, x2)
        -> c1 <= c2 && Symbol.eq x1 x2
-      | MinMax _, Linear (c, se) when SymLinear.is_zero se
-       -> le_opt1 ( <= ) (int_ub_of_minmax x) c
-      | MinMax _, Linear _
-       -> le_opt1 le (linear_ub_of_minmax x) y
-      | Linear (c, se), MinMax _ when SymLinear.is_zero se
-       -> le_opt2 ( <= ) c (int_lb_of_minmax y)
-      | Linear _, MinMax _
-       -> le_opt2 le x (linear_lb_of_minmax y)
+      | MinMax _, Linear (c, se)
+       -> SymLinear.is_ge_zero se && le_opt1 ( <= ) (int_ub_of_minmax x) c
+          || le_opt1 le (linear_ub_of_minmax x) y
+      | Linear (c, se), MinMax _
+       -> SymLinear.is_le_zero se && le_opt2 ( <= ) c (int_lb_of_minmax y)
+          || le_opt2 le x (linear_lb_of_minmax y)
       | _, _
        -> false
 
@@ -415,7 +451,7 @@ module Bound = struct
       | Linear (c, x), _
        -> le (Linear (c + 1, x)) y
       | MinMax (c, sign, min_max, d, x), _
-       -> le (MinMax (c + 1, sign, min_max, d, x)) y
+       -> le (mk_MinMax (c + 1, sign, min_max, d, x)) y
       | _, _
        -> false
 
@@ -453,29 +489,29 @@ module Bound = struct
       else
         match (x, y) with
         | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_one_symbol x2
-         -> MinMax (c2, Plus, Min, c1 - c2, SymLinear.get_one_symbol x2)
+         -> mk_MinMax (c2, Plus, Min, c1 - c2, SymLinear.get_one_symbol x2)
         | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_one_symbol x1 && SymLinear.is_zero x2
-         -> MinMax (c1, Plus, Min, c2 - c1, SymLinear.get_one_symbol x1)
+         -> mk_MinMax (c1, Plus, Min, c2 - c1, SymLinear.get_one_symbol x1)
         | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_mone_symbol x2
-         -> MinMax (c2, Minus, Max, c2 - c1, SymLinear.get_mone_symbol x2)
+         -> mk_MinMax (c2, Minus, Max, c2 - c1, SymLinear.get_mone_symbol x2)
         | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2
-         -> MinMax (c1, Minus, Max, c1 - c2, SymLinear.get_mone_symbol x1)
+         -> mk_MinMax (c1, Minus, Max, c1 - c2, SymLinear.get_mone_symbol x1)
         | MinMax (c1, Plus, Min, d1, s), Linear (c2, se)
         | Linear (c2, se), MinMax (c1, Plus, Min, d1, s)
           when SymLinear.is_zero se
-         -> MinMax (c1, Plus, Min, min d1 (c2 - c1), s)
+         -> mk_MinMax (c1, Plus, Min, min d1 (c2 - c1), s)
         | MinMax (c1, Plus, Max, _, s), Linear (c2, se)
         | Linear (c2, se), MinMax (c1, Plus, Max, _, s)
           when SymLinear.is_zero se
-         -> MinMax (c1, Plus, Min, c2 - c1, s)
+         -> mk_MinMax (c1, Plus, Min, c2 - c1, s)
         | MinMax (c1, Minus, Min, _, s), Linear (c2, se)
         | Linear (c2, se), MinMax (c1, Minus, Min, _, s)
           when SymLinear.is_zero se
-         -> MinMax (c1, Minus, Max, c1 - c2, s)
+         -> mk_MinMax (c1, Minus, Max, c1 - c2, s)
         | MinMax (c1, Minus, Max, d1, s), Linear (c2, se)
         | Linear (c2, se), MinMax (c1, Minus, Max, d1, s)
           when SymLinear.is_zero se
-         -> MinMax (c1, Minus, Max, max d1 (c1 - c2), s)
+         -> mk_MinMax (c1, Minus, Max, max d1 (c1 - c2), s)
         | MinMax (_, Plus, Min, _, _), MinMax (_, Plus, Max, _, _)
         | MinMax (_, Plus, Min, _, _), MinMax (_, Minus, Min, _, _)
         | MinMax (_, Minus, Max, _, _), MinMax (_, Plus, Max, _, _)
@@ -491,22 +527,22 @@ module Bound = struct
         | _, _
          -> default
 
-  let ub : t -> t -> t =
-    fun x y ->
+  let ub : ?default:t -> t -> t -> t =
+    fun ?(default= PInf) x y ->
       if le x y then y
       else if le y x then x
       else
         match (x, y) with
         | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_one_symbol x2
-         -> MinMax (c2, Plus, Max, c1 - c2, SymLinear.get_one_symbol x2)
+         -> mk_MinMax (c2, Plus, Max, c1 - c2, SymLinear.get_one_symbol x2)
         | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_one_symbol x1 && SymLinear.is_zero x2
-         -> MinMax (c1, Plus, Max, c2 - c1, SymLinear.get_one_symbol x1)
+         -> mk_MinMax (c1, Plus, Max, c2 - c1, SymLinear.get_one_symbol x1)
         | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_zero x1 && SymLinear.is_mone_symbol x2
-         -> MinMax (c2, Minus, Min, c2 - c1, SymLinear.get_mone_symbol x2)
+         -> mk_MinMax (c2, Minus, Min, c2 - c1, SymLinear.get_mone_symbol x2)
         | Linear (c1, x1), Linear (c2, x2) when SymLinear.is_mone_symbol x1 && SymLinear.is_zero x2
-         -> MinMax (c1, Minus, Min, c1 - c2, SymLinear.get_mone_symbol x1)
+         -> mk_MinMax (c1, Minus, Min, c1 - c2, SymLinear.get_mone_symbol x1)
         | _, _
-         -> PInf
+         -> default
 
   let widen_l : t -> t -> t =
     fun x y ->
@@ -538,6 +574,21 @@ module Bound = struct
   let is_const : t -> int option =
     fun x -> match x with Linear (c, y) when SymLinear.is_zero y -> Some c | _ -> None
 
+  (* substitution symbols in ``x'' with respect to ``map'' *)
+  let subst : default:t -> t -> t bottom_lifted SubstMap.t -> t bottom_lifted =
+    fun ~default x map ->
+      let subst_helper s y x =
+        let y' =
+          match y with
+          | Bottom
+           -> Bottom
+          | NonBottom r
+           -> NonBottom (if Symbol.is_unsigned s then ub ~default:r zero r else r)
+        in
+        subst1 ~default x s y'
+      in
+      SubstMap.fold subst_helper map (NonBottom x)
+
   let plus_l : t -> t -> t =
     fun x y ->
       match (x, y) with
@@ -550,7 +601,7 @@ module Bound = struct
       | MinMax (c1, sign, min_max, d1, x1), Linear (c2, x2)
       | Linear (c2, x2), MinMax (c1, sign, min_max, d1, x1)
         when SymLinear.is_zero x2
-       -> MinMax (c1 + c2, sign, min_max, d1, x1)
+       -> mk_MinMax (c1 + c2, sign, min_max, d1, x1)
       | MinMax (c1, Plus, Max, d1, _), Linear (c2, x2)
       | Linear (c2, x2), MinMax (c1, Plus, Max, d1, _)
        -> Linear (c1 + d1 + c2, x2)
@@ -572,7 +623,7 @@ module Bound = struct
       | MinMax (c1, sign, min_max, d1, x1), Linear (c2, x2)
       | Linear (c2, x2), MinMax (c1, sign, min_max, d1, x1)
         when SymLinear.is_zero x2
-       -> MinMax (c1 + c2, sign, min_max, d1, x1)
+       -> mk_MinMax (c1 + c2, sign, min_max, d1, x1)
       | MinMax (c1, Plus, Min, d1, _), Linear (c2, x2)
       | Linear (c2, x2), MinMax (c1, Plus, Min, d1, _)
        -> Linear (c1 + d1 + c2, x2)
@@ -619,7 +670,7 @@ module Bound = struct
     | Linear (c, x)
      -> Some (Linear (-c, SymLinear.neg x))
     | MinMax (c, sign, min_max, d, x)
-     -> Some (MinMax (-c, neg_sign sign, min_max, d, x))
+     -> Some (mk_MinMax (-c, neg_sign sign, min_max, d, x))
 
   let get_symbols : t -> Symbol.t list = function
     | MInf | PInf
@@ -724,12 +775,8 @@ module ItvPure = struct
 
   let make_sym : unsigned:bool -> Typ.Procname.t -> (unit -> int) -> t =
     fun ~unsigned pname new_sym_num ->
-      let lower =
-        if unsigned then
-          Bound.MinMax (0, Bound.Plus, Bound.Max, 0, Symbol.make pname (new_sym_num ()))
-        else Bound.of_sym (SymLinear.make pname (new_sym_num ()))
-      in
-      let upper = Bound.of_sym (SymLinear.make pname (new_sym_num ())) in
+      let lower = Bound.of_sym (SymLinear.make ~unsigned pname (new_sym_num ())) in
+      let upper = Bound.of_sym (SymLinear.make ~unsigned pname (new_sym_num ())) in
       (lower, upper)
 
   let m1_255 = (Bound.minus_one, Bound._255)
@@ -911,21 +958,21 @@ module ItvPure = struct
       | (l1, Bound.Linear (c1, s1)), (_, Bound.Linear (c2, s2)) when SymLinear.eq s1 s2
        -> (l1, Bound.Linear (min c1 c2, s1))
       | (l1, Bound.Linear (c, se)), (_, u) when SymLinear.is_zero se && Bound.is_one_symbol u
-       -> (l1, Bound.MinMax (0, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
+       -> (l1, Bound.mk_MinMax (0, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
       | (l1, u), (_, Bound.Linear (c, se)) when SymLinear.is_zero se && Bound.is_one_symbol u
-       -> (l1, Bound.MinMax (0, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
+       -> (l1, Bound.mk_MinMax (0, Bound.Plus, Bound.Min, c, Bound.get_one_symbol u))
       | (l1, Bound.Linear (c, se)), (_, u) when SymLinear.is_zero se && Bound.is_mone_symbol u
-       -> (l1, Bound.MinMax (0, Bound.Minus, Bound.Max, -c, Bound.get_mone_symbol u))
+       -> (l1, Bound.mk_MinMax (0, Bound.Minus, Bound.Max, -c, Bound.get_mone_symbol u))
       | (l1, u), (_, Bound.Linear (c, se)) when SymLinear.is_zero se && Bound.is_mone_symbol u
-       -> (l1, Bound.MinMax (0, Bound.Minus, Bound.Max, -c, Bound.get_mone_symbol u))
+       -> (l1, Bound.mk_MinMax (0, Bound.Minus, Bound.Max, -c, Bound.get_mone_symbol u))
       | (l1, Bound.Linear (c1, se)), (_, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se'))
       | (l1, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se')), (_, Bound.Linear (c1, se))
         when SymLinear.is_zero se
-       -> (l1, Bound.MinMax (c2, Bound.Plus, Bound.Min, min (c1 - c2) d2, se'))
+       -> (l1, Bound.mk_MinMax (c2, Bound.Plus, Bound.Min, min (c1 - c2) d2, se'))
       | ( (l1, Bound.MinMax (c1, Bound.Plus, Bound.Min, d1, se1))
         , (_, Bound.MinMax (c2, Bound.Plus, Bound.Min, d2, se2)) )
         when Int.equal c1 c2 && Symbol.eq se1 se2
-       -> (l1, Bound.MinMax (c1, Bound.Plus, Bound.Min, min d1 d2, se1))
+       -> (l1, Bound.mk_MinMax (c1, Bound.Plus, Bound.Min, min d1 d2, se1))
       | _
        -> x
 
@@ -937,21 +984,21 @@ module ItvPure = struct
       | (Bound.Linear (c1, s1), u1), (Bound.Linear (c2, s2), _) when SymLinear.eq s1 s2
        -> (Bound.Linear (max c1 c2, s1), u1)
       | (Bound.Linear (c, se), u1), (l, _) when SymLinear.is_zero se && Bound.is_one_symbol l
-       -> (Bound.MinMax (0, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
+       -> (Bound.mk_MinMax (0, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
       | (l, u1), (Bound.Linear (c, se), _) when SymLinear.is_zero se && Bound.is_one_symbol l
-       -> (Bound.MinMax (0, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
+       -> (Bound.mk_MinMax (0, Bound.Plus, Bound.Max, c, Bound.get_one_symbol l), u1)
       | (Bound.Linear (c, se), u1), (l, _) when SymLinear.is_zero se && Bound.is_mone_symbol l
-       -> (Bound.MinMax (0, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
+       -> (Bound.mk_MinMax (0, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
       | (l, u1), (Bound.Linear (c, se), _) when SymLinear.is_zero se && Bound.is_mone_symbol l
-       -> (Bound.MinMax (0, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
+       -> (Bound.mk_MinMax (0, Bound.Minus, Bound.Min, c, Bound.get_mone_symbol l), u1)
       | (Bound.Linear (c1, se), u1), (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se'), _)
       | (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se'), u1), (Bound.Linear (c1, se), _)
         when SymLinear.is_zero se
-       -> (Bound.MinMax (c2, Bound.Plus, Bound.Max, max (c1 - c2) d2, se'), u1)
+       -> (Bound.mk_MinMax (c2, Bound.Plus, Bound.Max, max (c1 - c2) d2, se'), u1)
       | ( (Bound.MinMax (c1, Bound.Plus, Bound.Max, d1, se1), u1)
         , (Bound.MinMax (c2, Bound.Plus, Bound.Max, d2, se2), _) )
         when Int.equal c1 c2 && Symbol.eq se1 se2
-       -> (Bound.MinMax (c1, Bound.Plus, Bound.Max, max d1 d2, se1), u1)
+       -> (Bound.mk_MinMax (c1, Bound.Plus, Bound.Max, max d1 d2, se1), u1)
       | _
        -> x
 
