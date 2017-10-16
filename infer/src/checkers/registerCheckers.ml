@@ -17,7 +17,10 @@ module F = Format
 (* make sure SimpleChecker.ml is not dead code *)
 let () = if false then let module SC = SimpleChecker.Make in ()
 
-type callback = Procedure of Callbacks.proc_callback_t | Cluster of Callbacks.cluster_callback_t
+type callback =
+  | Procedure of Callbacks.proc_callback_t
+  | DynamicDispatch of Callbacks.proc_callback_t
+  | Cluster of Callbacks.cluster_callback_t
 
 let checkers =
   [ ( "annotation reachability"
@@ -26,7 +29,7 @@ let checkers =
   ; ( "biabduction"
     , Config.biabduction
     , [ (Procedure Interproc.analyze_procedure, Config.Clang)
-      ; (Procedure Interproc.analyze_procedure, Config.Java) ] )
+      ; (DynamicDispatch Interproc.analyze_procedure, Config.Java) ] )
   ; ( "buffer overrun"
     , Config.bufferoverrun
     , [ (Procedure BufferOverrunChecker.checker, Config.Clang)
@@ -68,6 +71,8 @@ let register () =
       match callback with
       | Procedure procedure_cb
        -> Callbacks.register_procedure_callback language procedure_cb
+      | DynamicDispatch procedure_cb
+       -> Callbacks.register_procedure_callback ~dynamic_dispath:true language procedure_cb
       | Cluster cluster_cb
        -> Callbacks.register_cluster_callback language cluster_cb
     in

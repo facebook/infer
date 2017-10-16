@@ -31,8 +31,8 @@ let procedure_callbacks = ref []
 
 let cluster_callbacks = ref []
 
-let register_procedure_callback language (callback: proc_callback_t) =
-  procedure_callbacks := (language, callback) :: !procedure_callbacks
+let register_procedure_callback ?(dynamic_dispath= false) language (callback: proc_callback_t) =
+  procedure_callbacks := (language, dynamic_dispath, callback) :: !procedure_callbacks
 
 let register_cluster_callback language (callback: cluster_callback_t) =
   cluster_callbacks := (language, callback) :: !cluster_callbacks
@@ -57,9 +57,10 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
      -> []
   in
   let tenv = Exe_env.get_tenv exe_env proc_name in
+  let is_specialized = Procdesc.is_specialized proc_desc in
   List.fold ~init:summary
-    ~f:(fun summary (language, proc_callback) ->
-      if Config.equal_language language procedure_language then
+    ~f:(fun summary (language, resolved, proc_callback) ->
+      if Config.equal_language language procedure_language && (resolved || not is_specialized) then
         proc_callback {get_proc_desc; get_procs_in_file; tenv; summary; proc_desc}
       else summary)
     !procedure_callbacks

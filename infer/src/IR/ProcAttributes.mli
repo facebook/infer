@@ -52,6 +52,7 @@ type t =
   ; is_cpp_noexcept_method: bool  (** the procedure is an C++ method annotated with "noexcept" *)
   ; is_java_synchronized_method: bool  (** the procedure is a Java synchronized method *)
   ; is_model: bool  (** the procedure is a model *)
+  ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; language: Config.language  (** language of the procedure *)
   ; loc: Location.t  (** location of this procedure in the source code *)

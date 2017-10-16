@@ -247,3 +247,5 @@ val signal_did_preanalysis : t -> unit
 val is_loop_head : t -> Node.t -> bool
 
 val pp_signature : Format.formatter -> t -> unit
+
+val is_specialized : t -> bool

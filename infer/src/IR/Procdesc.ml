@@ -510,3 +510,7 @@ let pp_signature fmt pdesc =
   if not (Annot.Method.is_empty method_annotation) then
     Format.fprintf fmt ", Annotation: %a" (Annot.Method.pp pname_string) method_annotation ;
   Format.fprintf fmt "]@\n"
+
+let is_specialized pdesc =
+  let attributes = get_attributes pdesc in
+  attributes.ProcAttributes.is_specialized

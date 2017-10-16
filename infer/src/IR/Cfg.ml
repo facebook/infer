@@ -418,7 +418,10 @@ let specialize_types callee_pdesc resolved_pname args =
   in
   let resolved_attributes =
     { callee_attributes with
-      formals= List.rev resolved_params; proc_name= resolved_pname; err_log= Errlog.empty () }
+      formals= List.rev resolved_params
+    ; proc_name= resolved_pname
+    ; is_specialized= true
+    ; err_log= Errlog.empty () }
   in
   Attributes.store resolved_attributes ;
   let resolved_pdesc =
