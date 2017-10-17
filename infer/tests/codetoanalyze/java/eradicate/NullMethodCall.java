@@ -15,6 +15,9 @@ import java.lang.System;
 import javax.annotation.Nullable;
 import com.facebook.infer.annotation.Assertions;
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NullMethodCall {
 
@@ -258,4 +261,23 @@ public class NullMethodCall {
       int n = s.length();
     }
   }
+
+  public void testMapGetBad
+      (Map<String, String> m,
+       HashMap<String, String> hm,
+       ConcurrentHashMap<String, String> chm) {
+      m.get("foo").toString();
+      hm.get("foo").toString();
+      chm.get("foo").toString();
+  }
+
+  public void testMapRemoveBad
+      (Map<String, String> m,
+       HashMap<String, String> hm,
+       ConcurrentHashMap<String, String> chm) {
+      m.remove("foo").toString();
+      hm.remove("foo").toString();
+      chm.remove("foo").toString();
+  }
+
 }
