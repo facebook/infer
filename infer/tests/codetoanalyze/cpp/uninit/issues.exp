@@ -1,0 +1,4 @@
+codetoanalyze/cpp/uninit/uninit.mm, bad1, 2, UNINITIALIZED_VALUE, []
+codetoanalyze/cpp/uninit/uninit.mm, branch1_FP, 11, UNINITIALIZED_VALUE, []
+codetoanalyze/cpp/uninit/uninit.mm, loop1_FP, 10, UNINITIALIZED_VALUE, []
+codetoanalyze/cpp/uninit/uninit.mm, no_init_return_bad, 2, UNINITIALIZED_VALUE, []

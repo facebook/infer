@@ -337,7 +337,8 @@ type payload =
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.astate option
   ; threadsafety: ThreadSafetyDomain.summary option
-  ; buffer_overrun: BufferOverrunDomain.Summary.t option }
+  ; buffer_overrun: BufferOverrunDomain.Summary.t option
+  ; uninit: UninitDomain.summary option }
 
 type summary =
   { nodes: Procdesc.Node.id list  (** ids of cfg nodes of the procedure *)
@@ -466,14 +467,15 @@ let pp_payload pe fmt
     ; siof
     ; threadsafety
     ; buffer_overrun
-    ; annot_map } =
+    ; annot_map
+    ; uninit } =
   let pp_opt prefix pp fmt = function
     | Some x
      -> F.fprintf fmt "%s: %a@\n" prefix pp x
     | None
      -> ()
   in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a@\n"
+  F.fprintf fmt "%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "PrePosts" (pp_specs pe))
     (Option.map ~f:NormSpec.tospecs preposts)
     (pp_opt "TypeState" (TypeState.pp TypeState.unit_ext))
@@ -482,6 +484,7 @@ let pp_payload pe fmt
     (pp_opt "ThreadSafety" ThreadSafetyDomain.pp_summary) threadsafety
     (pp_opt "BufferOverrun" BufferOverrunDomain.Summary.pp) buffer_overrun
     (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp) annot_map
+    (pp_opt "Uninitialised" UninitDomain.pp_summary) uninit
 
 let pp_summary_text fmt summary =
   let err_log = summary.attributes.ProcAttributes.err_log in
@@ -693,7 +696,8 @@ let empty_payload =
   ; resources= None
   ; siof= None
   ; threadsafety= None
-  ; buffer_overrun= None }
+  ; buffer_overrun= None
+  ; uninit= None }
 
 (** [init_summary (depend_list, nodes,
     proc_flags, calls, in_out_calls_opt, proc_attributes)]

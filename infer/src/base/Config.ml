@@ -660,7 +660,8 @@ and ( annotation_reachability
     , resource_leak
     , siof
     , threadsafety
-    , suggest_nullable ) =
+    , suggest_nullable
+    , uninit ) =
   let all_checkers = ref [] in
   let default_checkers = ref [] in
   let mk_checker ?(default= false) ~long doc =
@@ -705,7 +706,7 @@ and ( annotation_reachability
   and suggest_nullable =
     mk_checker ~long:"suggest-nullable" ~default:false
       "Nullable annotation sugesstions analysis (experimental)"
-  in
+  and uninit = mk_checker ~long:"uninit" ~default:true "checker for use of uninitialized values" in
   let mk_only (var, long) =
     let _ : bool ref =
       CLOpt.mk_bool_group ~long:(long ^ "-only")
@@ -745,7 +746,8 @@ and ( annotation_reachability
   , resource_leak
   , siof
   , threadsafety
-  , suggest_nullable )
+  , suggest_nullable
+  , uninit )
 
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
@@ -2337,6 +2339,8 @@ and show_buckets = !print_buckets
 and show_progress_bar = !progress_bar
 
 and siof = !siof
+
+and uninit = !uninit
 
 and siof_safe_methods = !siof_safe_methods
 
