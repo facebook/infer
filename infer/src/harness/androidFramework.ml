@@ -17,6 +17,8 @@ let on_destroy = "onDestroy"
 
 let on_destroy_view = "onDestroyView"
 
+let drawable_prefix = "R$drawable"
+
 (** return true if [pname] is a special lifecycle cleanup method *)
 let is_destroy_method pname =
   match pname with

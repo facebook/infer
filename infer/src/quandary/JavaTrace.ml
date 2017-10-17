@@ -13,6 +13,7 @@ module L = Logging
 
 module SourceKind = struct
   type t =
+    | DrawableResource of Pvar.t  (** Drawable resource ID read from a global *)
     | Intent  (** external Intent or a value read from one *)
     | Other  (** for testing or uncategorized sources *)
     | PrivateData  (** private user or device-specific data *)
@@ -39,7 +40,7 @@ module SourceKind = struct
       ~f:(fun {QuandaryConfig.Source.procedure; kind} -> (Str.regexp procedure, kind))
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
-  let get pname _ tenv =
+  let get pname actuals tenv =
     let return = None in
     match pname with
     | Typ.Procname.Java pname -> (
@@ -85,6 +86,18 @@ module SourceKind = struct
                   if Str.string_match procedure_regex procedure 0 then Some (of_string kind, return)
                   else None)
                 external_sources )
+    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access -> (
+      match (* accessed global will be passed to us as the only parameter *)
+            actuals with
+      | [(HilExp.AccessPath ((Var.ProgramVar pvar, _), _))]
+       -> let pvar_string = Pvar.to_string pvar in
+          (* checking substring instead of prefix because we expect field names like
+             com.myapp.R$drawable.whatever *)
+          if String.is_substring ~substring:AndroidFramework.drawable_prefix pvar_string then
+            Some (DrawableResource pvar, None)
+          else None
+      | _
+       -> None )
     | pname when BuiltinDecl.is_declared pname
      -> None
     | pname
@@ -156,8 +169,10 @@ module SourceKind = struct
           "Non-Java procedure %a where only Java procedures are expected" Typ.Procname.pp procname
 
   let pp fmt kind =
-    F.fprintf fmt
+    F.fprintf fmt "%s"
       ( match kind with
+      | DrawableResource pvar
+       -> Pvar.to_string pvar
       | Intent
        -> "Intent"
       | Other
@@ -176,6 +191,7 @@ module SinkKind = struct
   type t =
     | CreateFile  (** sink that creates a file *)
     | CreateIntent  (** sink that creates an Intent *)
+    | OpenDrawableResource  (** sink that inflates a Drawable resource from an integer ID *)
     | Deserialization  (** sink that deserializes a Java object *)
     | HTML  (** sink that creates HTML *)
     | JavaScript  (** sink that passes its arguments to untrusted JS code *)
@@ -199,6 +215,8 @@ module SinkKind = struct
      -> JavaScript
     | "Logging"
      -> Logging
+    | "OpenDrawableResource"
+     -> OpenDrawableResource
     | "StartComponent"
      -> StartComponent
     | _
@@ -312,6 +330,8 @@ module SinkKind = struct
        -> "JavaScript"
       | Logging
        -> "Logging"
+      | OpenDrawableResource
+       -> "OpenDrawableResource"
       | StartComponent
        -> "StartComponent"
       | Other
@@ -345,6 +365,9 @@ include Trace.Make (struct
         true
     | (Intent | UserControlledURI | UserControlledString), Deserialization
      -> (* shouldn't let anyone external control what we deserialize *)
+        true
+    | DrawableResource _, OpenDrawableResource
+     -> (* not a security issue, but useful for debugging flows from resource IDs to inflation *)
         true
     | Other, _ | _, Other
      -> (* for testing purposes, Other matches everything *)

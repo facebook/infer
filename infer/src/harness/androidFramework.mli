@@ -11,6 +11,9 @@ open! IStd
 
 (** Android lifecycle types and their lifecycle methods that are called by the framework *)
 
+val drawable_prefix : string
+(** prefix for Drawable fields in generated resources *)
+
 val get_lifecycles : (string * string * string list) list
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
 
