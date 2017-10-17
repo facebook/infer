@@ -82,7 +82,7 @@ on the line with this boolean condition.
 
 A solution to the threading problem here is to make both methods `synchronized` to wrap both read and write accesses, or to use an `AtomicInteger` for `mBalance` rather than an ordinary `int`.
 
-### Interprocedural Reasoning
+### <a name="interprocedural"></a> Interprocedural Reasoning
 
 Interprocedural, and even interclass, reasoning is essential for out analyzer's effectiveness. Often, it is the case that
 a race occurs between methods in one class that access data in other classes.  
