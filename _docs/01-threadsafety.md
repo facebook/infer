@@ -14,7 +14,7 @@ Infer statically analyzes Java code to detect potential concurrency bugs. This a
 
 ## Triggering the analysis
 
-Infer doesn't try to check *all* code for concurrency issues; it only looks at code that it believes can run in a concurrent context. There are two signals that Infer looks for: (1) Explicitly annotating a class/method with `@ThreadSafe` and (2) using a lock via the `synchronized` keyword. In both cases, Infer will look for concurrency issuess in the code containing the signal and all of its dependencies. Annotating a class/interface with `@ThreadSafe` also triggers checking for all of the subclasses of the class/implementations of the interface.
+Infer doesn't try to check *all* code for concurrency issues; it only looks at code that it believes can run in a concurrent context. There are two signals that Infer looks for: (1) Explicitly annotating a class/method with `@ThreadSafe` and (2) using a lock via the `synchronized` keyword. In both cases, Infer will look for concurrency issuess in the code containing the signal and all of its dependencies. In particular, it will report races between any non-`private` methods of the same class that can peform conflicting accesses. Annotating a class/interface with `@ThreadSafe` also triggers checking for all of the subclasses of the class/implementations of the interface.
 
 ## Warnings
 
@@ -103,11 +103,11 @@ You might wonder why it's necessary to annotate `I`--can't Infer just look at al
 
 ## Annotations to help Infer understand your code
 
+Getting started with Infer doesn't require any annotations at all--Infer will look at your usage of locks and figure out what data is not guarded consistently. But increasing the coverage and signal-to-noise ratio may require adding `@ThreadSafe` annotations along with some of the other annotations described below. Most of annotations described below can be used via the Maven Central package available [here](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation/0.10.0.2).
+
 ### `@ThreadConfined`
 
-The annotations described below can be used via the Maven Central package [here](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation/0.10.0.2).
-
-The intuitive idea of thread-safety is that a class is impervious to concurrency issues for all concurrent contexts, even those that have not been written yet (it is future proof). Infer implements this by naively assuming that any method can potentially be called on any thread. You may determine, however, that an object, method, or field is only ever accessed on a single thread during program execution. Annotating such elements with `@ThreadConfined` informs Infer of this restriction. Note that a thread-confined method cannot race with itself but it can still race with other methods.
+The intuitive idea of thread-safety is that a class is impervious to concurrency issues for all concurrent contexts, even those that have not been written yet (it is future-proof). Infer implements this by naively assuming that any method can potentially be called on any thread. You may determine, however, that an object, method, or field is only ever accessed on a single thread during program execution. Annotating such elements with `@ThreadConfined` informs Infer of this restriction. Note that a thread-confined method cannot race with itself but it can still race with other methods.
 
 ```
 List mCache;
@@ -125,30 +125,32 @@ void prepareCache() {
   });
 }
 ```
-In this example, both `prepareCache` and `run` touch `mCache`. But there's no possibility of a race between the two methods because both of them will run sequentially on the UI thread. Adding a `@ThreadConfined(UI)` annotation to these methods will stop it from warning that there is a race on `mCache`. We could also choose to add a `@ThreadConfined` annotation to `mCache` itself.
+In this example, both `prepareCache` and `run` touch `mCache`. But there's no possibility of a race between the two methods because both of them will run sequentially on the UI thread. Adding a `@ThreadConfined(UI)` or `@UiThread` annotation to these methods will stop it from warning that there is a race on `mCache`. We could also choose to add a `@ThreadConfined` annotation to `mCache` itself.
 
 ### `@Functional`
-Some writes may be race safe - ie. regardless of program execution order, the write will always be the same value. Consider the method `helloWorld()` which caches the string `"Hello World"`. The write to `mHelloWorld` is unprotected and Infer would normally generate a warning. Yet, the write is safe because (a) `concat(String a, String b)` always returns an equivalent value for equivalent parameters, and (b) this is the only write to `mHelloWorld` (THIS IS IMPORTANT! And make sure it's true, because Infer won't check that for you). `concat()` can be annotated with `@Functional` to suppress the warning.
+
+Not all races are bugs; a race can be benign. Consider the following:
 
 ```
-private String mHelloWorld;
+@Functional Boolean askNetworkIfShouldShowFeature();
 
-@ThreadSafe
-private String helloWorld() {
-  if (mHelloWorld == null) {
-    // This write is unprotected but safe.
-    mHelloWorld = concat("Hello ", "World");
+private Boolean mShouldShowFeature;
+
+@ThreadSafe boolean shouldShowFeature() {
+  if (mShouldShowFeature == null) {
+    mShouldShowFeature = askNetworkIfShouldShowFeature();
   }
-  return mHelloWorld;
-}
-
-@Functional
-private String concat(String a, String b) {
-  return a + b
+  return mShouldShowFeature;
 }
 ```
 
-Be sure not to use the `@Functional` pattern for *singleton instantiation*, as it's possible the “singleton” can be constructed more than once.
+This code caches the result of an expensive network call that checks whether the current user should be shown an experimental feature. This code looks racy, and indeed it is: if two threads execute `shouldShowFeature()` at the same time, one may read `mShouldShowFeature` at the same time the other is writing it.
+
+However, this is actually a *benign* race that the programmer intentionally allows for performance reasons. The reason this code is safe is that the programmer knows that `askNetworkIfShouldShowFeature()` will always return the same value in the same run of the app. Adding synchronization would remove the race, but it acquiring/releasing locks and lock contention would potentially slow down every call to `shouldShowFeature()`. The benign race approach makes every call after the first fast without changing the safety of the code.
+
+Infer will report a race on this code by default, but adding the `@Functional annotation to askNetworkIfShouldShowFeature()` informs Infer that the function is always expected to return the same value. This assumption allows Infer to understand that this particular code is safe, though it will still (correctly) warn if `mShouldShowFeature` is read/written elsewhere.
+
+Be sure not to use the `@Functional` pattern for *singleton instantiation*, as it's possible the "singleton" can be constructed more than once.
 
 ```
 public class MySingleton {
@@ -166,7 +168,7 @@ public class MySingleton {
 ```
 
 ### `@ReturnsOwnership`
-Infer does not warn on unprotected writes to “owned” objects. A method “owns” an object if that object is only referenced by local variables. Infer automatically tracks ownership through non-overridden methods but needs help with polymorphic ones. Annotate super-class and interface methods with `@ReturnsOwnership` if they return an object without saving it.
+Infer does not warn on unprotected writes to *owned* objects. An object is owned if it has been freshly allocated in the current thread and has not escaped to another thread. Infer automatically tracks ownership in most cases, but it needs help with `abstract` and `interface` methods that return ownership:
 
 ```
 @ThreadSafe
@@ -181,6 +183,25 @@ public interface Car {
   }
 }
 ```
+
+### `@VisibleForTesting`
+
+Infer reports races between any two non`-private` methods of a class that may run in a concurrent conext. Sometimes, an Infer report may be false because one of the methods cannot actually be called from outside the current class. One fix is making the method `private` to enforce this, but this might break unit tests that need to call the method in order to test it. In this case, the `@VisibleForTesting` annotation will allow Infer to consider the method as effectively `private` will still allowing it to be called from the unit test:
+
+```
+@VisibleForTesting void setF() {
+  this.f = ...; // Infer would normally warn here, but @VisibleForTesting will silence the warning
+}
+
+synchronized void setFWithLock() {
+  setF();
+}
+```
+
+Unlike the other annotations shown here, this one lives in [Android](https://developer.android.com/reference/android/support/annotation/VisibleForTesting.html).
+
+### The
+
 
 ## Limitations
 There are many types of concurrency issues out there that Infer does not check for (but might in the future). Examples include deadlock, thread confined objects escaping to other threads, and check-then-act bugs (shown below). You must look for these bugs yourself!
