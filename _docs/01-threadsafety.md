@@ -202,9 +202,6 @@ synchronized void setFWithLock() {
 
 Unlike the other annotations shown here, this one lives in [Android](https://developer.android.com/reference/android/support/annotation/VisibleForTesting.html).
 
-### The
-
-
 ## Limitations
 
 There are a number of known limitations to the design of the race detector.
