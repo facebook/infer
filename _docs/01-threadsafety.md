@@ -45,7 +45,7 @@ The class `Dinner` will generate the following report on the public method `make
 
 This warning can be fixed synchronizing the access to `mTemperature`, making `mTemperature` `volatile`, marking `makeDinner` as `@VisibleForTesting`, or suppressing the warning by annotating the `Dinner` class or `makeDinner` method with `@ThreadSafe(enableChecks = false)`. See the `com.facebook.infer.annotation` package for the full details on this and other annotations.
 
-### Read/Write Race Warning
+### Read/Write Race
 
 We sometimes need to protect read accesses as well as writes. Consider the following class with unsynchronized methods.
 
@@ -53,18 +53,18 @@ We sometimes need to protect read accesses as well as writes. Consider the follo
 @ThreadSafe
 public class Account {
 
-  int balance = 0;
+  int mBalance = 0;
 
   public void deposit(int amount) {
     if (amount > 0) {
-      balance = balance + amount;
+      mBalance += amount;
     } 
   }
 
   public int withdraw(int amount){
-    if (amount >= 0 && balance - amount >= 0) {
-      balance = balance - amount;
-      return balance;
+    if (amount >= 0 && mBalance - amount >= 0) {
+      mBalance -= amount;
+      return mBalance;
     } else {
       return 0;
     }
@@ -72,15 +72,38 @@ public class Account {
 }
 ```
 
-If you run the `withdraw()` method in parallel with itself or with `deposit()` you can get unexpected results here. For instance, if the stored balance is 11 and you run `withdraw(10)` in parallel with itself you can get a negative balance. Furthermore, if you synchronize only the write statement `balance = balance - amount`, then you can still get this bad result. The reason is that there is a read/write race between the boolean condition `balance - amount >= 0` and the writes. Infer will duly warn
+If you run the `withdraw()` method in parallel with itself or with `deposit()` you can get unexpected results here. For instance, if the stored balance is 11 and you run `withdraw(10)` in parallel with itself you can get a negative balance. Furthermore, if you synchronize only the write statement `mBalance -= amount`, then you can still get this bad result. The reason is that there is a read/write race between the boolean condition `mBalance - amount >= 0` and the writes. Infer will duly warn
 
-`Read/Write race. Public method int Account.withdraw(int) reads from field Account.balance. Potentially races with writes in methods void Account.deposit(int), int Account.withdraw(int)`
+`Read/Write race. Public method int Account.withdraw(int) reads from field Account.mBalance. Potentially races with writes in methods void Account.deposit(int), int Account.withdraw(int)`
 
 on the line with this boolean condition.
 
-A solution to the threading problem here is to make both methods `synchronized` to wrap both read and write accesses, and not only the writes.
+A solution to the threading problem here is to make both methods `synchronized` to wrap both read and write accesses, or to use an `AtomicInteger` for `mBalance` rather than an ordinary `int`.
 
-## Annotations: `@ThreadConfined`
+### Interface not thread-safe
+
+In the following code, Infer will report an `Interface not thread-safe` warning on the call to `i.bar()`:
+
+```
+interface I { 
+  void bar();
+}
+
+@ThreadSafe
+class C {
+  void foo(I i) {
+    i.bar(); // Infer warns here
+  }
+}
+```
+
+The way to fix this warning is to add a `@ThreadSafe` annotation to the interface `I`, which will enforce the thread-safety of each of the implementations of `I`.
+
+You might wonder why it's necessary to annotate `I`--can't Infer just look at all the implementations of `i` at the call site for `bar`? Although this is a fine idea idea in principle, but a bad idea in practice due to a (a) separate compilation and (b) our diff-based deployment model. In the example above, the compiler doesn't have to know about all implementations (or indeed, any implementations) of `I` at the time it compiles this code, so there's no guarantee that Infer will know about or be able to check all implementations of `I`. That's (a). For (b), say that we check that all implementations of `I` are thread-safe at the time this code is written, but we don't add the annotation. If someone else comes along and adds a new implementation of `I` that is not thread-safe, Infer will have no way of knowing that this will cause a potential bug in `foo`. But if `I` is annotated, Infer will enforce that all new implementations of `I` are thread-safe, and `foo` will remain bug-free.
+
+## Annotations to help Infer understand your code
+
+### `@ThreadConfined`
 
 The annotations described below can be used via the Maven Central package [here](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation/0.10.0.2).
 
@@ -104,7 +127,7 @@ void prepareCache() {
 ```
 In this example, both `prepareCache` and `run` touch `mCache`. But there's no possibility of a race between the two methods because both of them will run sequentially on the UI thread. Adding a `@ThreadConfined(UI)` annotation to these methods will stop it from warning that there is a race on `mCache`. We could also choose to add a `@ThreadConfined` annotation to `mCache` itself.
 
-## Annotations: `@Functional`
+### `@Functional`
 Some writes may be race safe - ie. regardless of program execution order, the write will always be the same value. Consider the method `helloWorld()` which caches the string `"Hello World"`. The write to `mHelloWorld` is unprotected and Infer would normally generate a warning. Yet, the write is safe because (a) `concat(String a, String b)` always returns an equivalent value for equivalent parameters, and (b) this is the only write to `mHelloWorld` (THIS IS IMPORTANT! And make sure it's true, because Infer won't check that for you). `concat()` can be annotated with `@Functional` to suppress the warning.
 
 ```
@@ -142,7 +165,7 @@ public class MySingleton {
 }
 ```
 
-## Annotations: `@ReturnsOwnership`
+### `@ReturnsOwnership`
 Infer does not warn on unprotected writes to “owned” objects. A method “owns” an object if that object is only referenced by local variables. Infer automatically tracks ownership through non-overridden methods but needs help with polymorphic ones. Annotate super-class and interface methods with `@ReturnsOwnership` if they return an object without saving it.
 
 ```
@@ -179,18 +202,3 @@ public class ListUtil<T> {
 }
 ```
 Unfortunately, using `synchronized` blindly as a means to fix every unprotected write or read is not always safe. Even with Infer, finding, understanding, and fixing concurrency issues is difficult. If you would like to learn more about best practices, [Java Concurrency in Practice](http://jcip.net/) is an excellent resource.
-
-## FAQ
-
-### Why do I need to annotate interfaces?
-
-Good question. This is a fine idea in principle, but a bad idea in practice due to a (a) separate compilation and (b) our diff-based deployment model. Consider the following example:
-
-```
-@ThreadSafe void foo(Interface i) {
-  i.bar();
-}
-```
-
-The compiler doesn't have to know about all implementations (or indeed, any implementations) of `Interface` at the time it compiles this code, so there's no guarantee that Infer will know about or be able to check all implementations of `Interface`. That's (a).
-For (b), say that we check that all implementations of `Interface` are thread-safe at the time this code is written, but we don't add the annotation. If someone else comes along and adds a new implementation of `Interface` that is not thread-safe, Infer will have no way of knowing that this will cause a potential bug in `foo`. But if `Interface` is annotated, Infer will enforce that all new implementations of `Interface` are thread-safe, and `foo` will remain bug-free.
