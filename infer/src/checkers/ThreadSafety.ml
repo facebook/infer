@@ -658,11 +658,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           if is_thread_utils_method "assertMainThread" callee_pname then
             {astate with threads= ThreadsDomain.AnyThreadButSelf}
           else
+            (* if we don't have any evidence about whether the current function can run in parallel
+               with other threads or not, start assuming that it can. why use a lock if the function
+               can't run in a multithreaded context? *)
+            let update_for_lock_use = function
+              | ThreadsDomain.AnyThreadButSelf
+               -> ThreadsDomain.AnyThreadButSelf
+              | _
+               -> ThreadsDomain.AnyThread
+            in
             match get_lock_model callee_pname actuals with
             | Lock
-             -> {astate with locks= true}
+             -> {astate with locks= true; threads= update_for_lock_use astate.threads}
             | Unlock
-             -> {astate with locks= false}
+             -> {astate with locks= false; threads= update_for_lock_use astate.threads}
             | LockedIfTrue -> (
               match ret_opt with
               | Some ret_access_path
@@ -670,7 +679,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     AttributeMapDomain.add_attribute (ret_access_path, []) (Choice Choice.LockHeld)
                       astate.attribute_map
                   in
-                  {astate with attribute_map}
+                  {astate with attribute_map; threads= update_for_lock_use astate.threads}
               | None
                -> L.(die InternalError)
                     "Procedure %a specified as returning boolean, but returns nothing"
@@ -1045,7 +1054,8 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
       let threads =
         if runs_on_ui_thread proc_desc || is_thread_confined_method tenv proc_desc then
           ThreadsDomain.AnyThreadButSelf
-        else if is_marked_thread_safe proc_desc tenv then ThreadsDomain.AnyThread
+        else if Procdesc.is_java_synchronized proc_desc || is_marked_thread_safe proc_desc tenv
+        then ThreadsDomain.AnyThread
         else ThreadsDomain.NoThread
       in
       let add_owned_local acc (name, typ) =
@@ -1456,10 +1466,13 @@ let report_unsafe_accesses
                     else None)
                   accesses
             in
-            report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
-              ~make_description:make_unprotected_write_description
-              ~report_kind:(WriteWriteRace writes_on_background_thread) access thread ;
-            update_reported access pname reported_acc
+            if List.is_empty writes_on_background_thread && not (ThreadsDomain.is_any thread) then
+              reported_acc
+            else (
+              report_thread_safety_violation tenv pdesc IssueType.thread_safety_violation
+                ~make_description:make_unprotected_write_description
+                ~report_kind:(WriteWriteRace writes_on_background_thread) access thread ;
+              update_reported access pname reported_acc )
         | _
          -> (* Do not report unprotected writes when an access can't run in parallel with itself, or
                for ObjC_Cpp *)
@@ -1478,13 +1491,17 @@ let report_unsafe_accesses
             | AccessPrecondition.Protected _
              -> true
           in
+          let is_conflict other_access pre other_thread =
+            TraceElem.is_write other_access
+            &&
+            if Typ.Procname.is_java pname then ThreadsDomain.is_any thread
+              || ThreadsDomain.is_any other_thread
+            else is_cpp_protected_write pre
+          in
           let all_writes =
             List.filter
               ~f:(fun (other_access, pre, other_thread, _, _) ->
-                TraceElem.is_write other_access
-                && ( not (Typ.Procname.is_java pname) || ThreadsDomain.is_any thread
-                   || ThreadsDomain.is_any other_thread )
-                && is_cpp_protected_write pre)
+                is_conflict other_access pre other_thread)
               accesses
           in
           if List.is_empty all_writes then reported_acc
@@ -1508,10 +1525,10 @@ let report_unsafe_accesses
           in
           let conflicting_writes =
             List.filter
-              ~f:(fun (access, pre, _, _, _) ->
+              ~f:(fun (access, pre, other_thread, _, _) ->
                 match pre with
                 | AccessPrecondition.Unprotected _
-                 -> TraceElem.is_write access
+                 -> TraceElem.is_write access && ThreadsDomain.is_any other_thread
                 | AccessPrecondition.Protected other_excl when is_opposite (excl, other_excl)
                  -> TraceElem.is_write access
                 | _

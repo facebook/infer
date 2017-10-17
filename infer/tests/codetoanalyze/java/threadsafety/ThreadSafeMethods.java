@@ -83,7 +83,7 @@ class ThreadSafeMethods {
   }
 
   @ThreadSafe
-  public synchronized Object synchronizedReadBad() {
+  public synchronized Object FN_synchronizedReadBad() {
     return this.field5;
   }
 
@@ -92,7 +92,7 @@ class ThreadSafeMethods {
   }
 
   // unprotected write to a field that is read safely in a method marked thread-safe
-  public void writeSameFieldAsThreadSafeMethod3Bad() {
+  public void FN_writeSameFieldAsThreadSafeMethod3Bad() {
     this.field5 = new Object();
   }
 
