@@ -8,6 +8,8 @@ permalink: /docs/threadsafety.html
 Infer's thread-safety analysis find data races in your Java code. 
 To run the analysis, you can use plain `infer` (to run thread-safety along with other analyses that are run by default) or `infer --threadsafety-only` (to run only the thread-safety analysis).
 
+For example, the command `infer --threadsafety-only -- javac File.java` will run the thread-dafety analysis on FIle.java.
+
 ## Background
 
 Infer statically analyzes Java code to detect potential concurrency bugs. This analysis does not attempt to prove thread-safety, rather, it searches for a high-confidence class of data races. At the moment Infer concentrates on race conditions between methods in a class that is itself intended to be thread safe. A race condition occurs when there are two concurrent accesses to a class member variable that are not separated by mutual exclusion, and at least one of the accesses is a write. Mutual exclusion can be ensured by synchronization primitives such as locks, or by knowledge that both accesses occur on the same thread.
@@ -204,7 +206,18 @@ Unlike the other annotations shown here, this one lives in [Android](https://dev
 
 
 ## Limitations
-There are many types of concurrency issues out there that Infer does not check for (but might in the future). Examples include deadlock, thread confined objects escaping to other threads, and check-then-act bugs (shown below). You must look for these bugs yourself!
+
+There are a number of known limitations to the design of the race detector.
+* It looks for races involving syntactically identical access paths, and misses races due to aliasing
+* It misses races that arise from a locally declared object escaping its scope
+* It uses a boolean locks abstraction, and so misses races where two accesses are mistakenly protected by different locks
+* It assumes a deep ownership model, which misses races where local objects refer to or contain non-owned objects. 
+* It avoids reasoning about weak memory and Java's volatile keyword
+Most of these limitations are consistent with the design goal of reducing false positives, even if they lead to false negatives. They also allow technical tradeoffs which are different than if we were to favour reduction of false negatives over false positives.  
+
+A different kind of limitation concenrs the bugs searched for: Data races are the most basic form of concurrency error, but
+there are many types of concurrency issues out there that Infer does not check for (but might in the future). Examples include 
+deadlock, atomicity, and check-then-act bugs (shown below). You must look for these bugs yourself!
 
 ```
 @ThreadSafe
@@ -222,4 +235,4 @@ public class ListUtil<T> {
   }
 }
 ```
-Unfortunately, using `synchronized` blindly as a means to fix every unprotected write or read is not always safe. Even with Infer, finding, understanding, and fixing concurrency issues is difficult. If you would like to learn more about best practices, [Java Concurrency in Practice](http://jcip.net/) is an excellent resource.
+Finally, using `synchronized` blindly as a means to fix every unprotected write or read is not always safe. Even with Infer, finding, understanding, and fixing concurrency issues is difficult. If you would like to learn more about best practices, [Java Concurrency in Practice](http://jcip.net/) is an excellent resource.
