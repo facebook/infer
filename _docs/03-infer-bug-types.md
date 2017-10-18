@@ -11,6 +11,7 @@ Here is an overview of the types of bugs currently reported by Infer.
   - [Context leak](/docs/infer-bug-types.html#CONTEXT_LEAK)
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
   - [Resource leak](/docs/infer-bug-types.html#RESOURCE_LEAK)
+  - [Unsafe_GuardedBy_Access](/docs/infer-bug-types.html#UNSAFE_GUARDEDBY_ACCESS)
 
 - Bugs reported in C, C++, and Objective-C
   - [Null dereference](/docs/infer-bug-types.html#NULL_DEREFERENCE)
@@ -481,6 +482,77 @@ An example of such variadic methods is [arrayWithObjects](https://developer.appl
 ```
 
 In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be created, and not an array `@[@"aaa", str, @"bbb"]` of size 3 as expected.
+
+## <a name="UNSAFE_GUARDEDBY_ACCESS"></a> Unsafe GuardedBy Access
+
+Infer reports issues when a field or method is accessed when a lock is not held, when the firld or method has been annotated
+with `@GuardedBy(lock)`. In many cases the lock is `this`. Here is a basic example:
+
+```
+
+import javax.annotation.concurrent.GuardedBy;
+
+class GB{
+
+@GuardedBy("this")
+int y;
+
+void foo(){  y = 22; }
+
+void goo(){  synchronized (this) {y = 82;} }
+
+}
+```
+Infer duly warns on the access to `y` in `foo()`, but not in `goo()`. 
+
+```
+GB.java:9: error: UNSAFE_GUARDED_BY_ACCESS
+  The field `GB.y` is annotated with `@GuardedBy("GB.this")`, but the lock `GB.this` is not held during the access to the field at line 9. Since the current method is non-private, it can be called from outside the current class without synchronization. Consider wrapping the access in a `synchronized(GB.this)` block or making the method private.
+  7.   int y;
+  8.   
+  9. > void foo(){  y = 22; }
+  10.   
+  11.   void goo(){  synchronized (this) {y = 82;} }
+```
+Infer can distinguish between different locks. A particularly tricky example comes up sometimes where different 
+occurrences of the keyword `this` in the same file mean different things ("this this is not that this"). 
+
+```
+
+class Outer{
+
+@GuardedBy("this")
+Object y;
+
+Object foo(){
+  return new Object () {
+    void m0() {
+           synchronized (this)
+             { y = null; }
+    }
+    void m1() {
+           synchronized (Outer.this)
+             { y = null; }
+    }
+  };
+}
+
+}
+```
+
+In this use of "anonymous inner classes" th eoccurrence of `this` in method `m0()` refers to the closure created when the new object is created, not to the `this` that guards `y`. It is a bug, and the fix is to refer to the proper `this` as in method `m1()`.
+Infer correctly warns on the access in `m0()` but not `m1()`.
+
+```
+Outer.java:13: error: UNSAFE_GUARDED_BY_ACCESS
+  The field `Outer.y` is annotated with `@GuardedBy("Outer.this")`, but the lock `Outer.this` is not held during the access to the field at line 13. Since the current method is non-private, it can be called from outside the current class without synchronization. Consider wrapping the access in a `synchronized(Outer.this)` block or making the method private.
+  11.       void m0() { 
+  12.              synchronized (this) 
+  13. >              { y = null; }
+  14.       }
+
+``` 
+
 
 
 
