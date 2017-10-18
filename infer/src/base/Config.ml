@@ -575,11 +575,32 @@ and ( analysis_blacklist_files_containing_options
     , analysis_path_regex_whitelist_options
     , analysis_suppress_errors_options ) =
   let mk_filtering_options ~suffix ?(deprecated_suffix= []) ~help ~meta =
-    let mk_option analyzer_name =
+    (* reuse the same config var for all the forms of the analyzer name (eg infer and biabduction
+       must map to the same filtering config)*)
+    let config_vars = ref [] in
+    let mk_option analyzer analyzer_name =
       let long = Printf.sprintf "%s-%s" analyzer_name suffix in
       let deprecated = List.map ~f:(Printf.sprintf "%s_%s" analyzer_name) deprecated_suffix in
+      let source_of_truth =
+        List.find_map !config_vars ~f:(fun (a, v) ->
+            if equal_analyzer a analyzer then Some v else None )
+      in
+      (** if the analyzer already has a variable associated to it, make the new name update the same
+          variable *)
+      let mirror opt =
+        Option.iter source_of_truth ~f:(fun var -> var := opt :: !var) ;
+        opt
+      in
       (* empty doc to hide the options from --help since there are many redundant ones *)
-      CLOpt.mk_string_list ~deprecated ~long ~meta ""
+      let var = CLOpt.mk_string_list ~deprecated ~long ~meta ~f:mirror "" in
+      match source_of_truth with
+      | Some var
+       -> (* if the analyzer already has a variable associated to it, use it *) var
+      | None
+       -> (* record the variable associated to the analyzer if this is the first time we see this
+             analyzer *)
+          config_vars := (analyzer, var) :: !config_vars ;
+          var
     in
     ignore
       (let long = "<analyzer>-" ^ suffix in
@@ -587,7 +608,7 @@ and ( analysis_blacklist_files_containing_options
          ~f:(fun _ -> raise (Arg.Bad "invalid option"))
          ~in_help:CLOpt.([(Report, manual_generic); (Run, manual_generic)])
          help) ;
-    List.map ~f:(fun (name, analyzer) -> (analyzer, mk_option name)) string_to_analyzer
+    List.map ~f:(fun (name, analyzer) -> (analyzer, mk_option analyzer name)) string_to_analyzer
   in
   ( mk_filtering_options ~suffix:"blacklist-files-containing"
       ~deprecated_suffix:["blacklist_files_containing"]
