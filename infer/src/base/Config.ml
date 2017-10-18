@@ -624,8 +624,8 @@ and analyzer =
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
     ~in_help:CLOpt.([(Analyze, manual_generic); (Run, manual_generic)])
     {|Specify which analyzer to run (only one at a time is supported):
-- $(b,biabduction): run the bi-abduction based checker only, in particular to check for memory errors  (default)
-- $(b,checkers): run the checkers
+- $(b,biabduction): run the bi-abduction based checker only, in particular to check for memory errors
+- $(b,checkers): run the default checkers, including the bi-abduction based checker for memory errors (default)
 - $(b,infer): alias for $(b,biabduction)
 - $(b,linters): run linters based on the ast only (clang only, activated by default)
 - $(b,capture): similar to specifying the $(b,capture) subcommand (DEPRECATED)
@@ -1855,7 +1855,7 @@ let post_parsing_initialization command_opt =
       let analyzer_name =
         List.Assoc.find_exn ~equal:equal_analyzer
           (List.map ~f:(fun (n, a) -> (a, n)) string_to_analyzer)
-          (match !analyzer with Some a -> a | None -> BiAbduction)
+          (match !analyzer with Some a -> a | None -> Checkers)
       in
       let infer_version =
         match inferconfig_file with
@@ -2463,7 +2463,7 @@ let clang_frontend_do_capture, clang_frontend_do_lint =
     | _
      -> (* capture, lint *) (true, true)
 
-let analyzer = match !analyzer with Some a -> a | None -> BiAbduction
+let analyzer = match !analyzer with Some a -> a | None -> Checkers
 
 let clang_frontend_action_string =
   String.concat ~sep:" and "
