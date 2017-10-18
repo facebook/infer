@@ -485,7 +485,7 @@ In this example, if `str` is `nil` then an array `@[@"aaa"]` of size 1 will be c
 
 ## <a name="UNSAFE_GUARDEDBY_ACCESS"></a> Unsafe GuardedBy Access
 
-Infer reports issues when a field or method is accessed when a lock is not held, when the firld or method has been annotated
+Infer reports issues when a field or method is accessed when a lock is not held, when the field or method has been annotated
 with `@GuardedBy(lock)`. In many cases the lock is `this`. Here is a basic example:
 
 ```
@@ -514,6 +514,8 @@ GB.java:9: error: UNSAFE_GUARDED_BY_ACCESS
   10.   
   11.   void goo(){  synchronized (this) {y = 82;} }
 ```
+
+<a name="anonymous_inner"></a>
 Infer can distinguish between different locks. A particularly tricky example comes up sometimes where different 
 occurrences of the keyword `this` in the same file mean different things ("this this is not that this"). 
 
@@ -540,7 +542,7 @@ Object foo(){
 }
 ```
 
-In this use of "anonymous inner classes" th eoccurrence of `this` in method `m0()` refers to the closure created when the new object is created, not to the `this` that guards `y`. It is a bug, and the fix is to refer to the proper `this` as in method `m1()`.
+In this use of "anonymous inner classes" the occurrence of `this` in method `m0()` refers to the closure created when the new object is created, not to the `this` that guards `y`. It is a bug, and the fix is to refer to the proper `this` as in method `m1()`.
 Infer correctly warns on the access in `m0()` but not `m1()`.
 
 ```
