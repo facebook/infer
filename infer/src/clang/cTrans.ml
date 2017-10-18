@@ -136,8 +136,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     ignore (Tenv.mk_struct tenv ~fields block_typename) ;
     let block_type = Typ.mk (Typ.Tstruct block_typename) in
     let trans_res =
-      CTrans_utils.alloc_trans trans_state loc (Ast_expressions.dummy_stmt_info ()) block_type true
-        None
+      CTrans_utils.alloc_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc_no_fail loc
+        (Ast_expressions.dummy_stmt_info ()) block_type
     in
     let id_block = match trans_res.exps with [(Exp.Var id, _)] -> id | _ -> assert false in
     let mblock = Mangled.from_string block_name in

@@ -99,8 +99,8 @@ val cxx_method_builtin_trans :
   trans_state -> Location.t -> trans_result list -> Typ.Procname.t -> trans_result option
 
 val alloc_trans :
-  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Typ.t -> bool -> Typ.Procname.t option
-  -> trans_result
+  trans_state -> alloc_builtin:Typ.Procname.t -> ?alloc_source_function:Typ.Procname.t
+  -> Location.t -> Clang_ast_t.stmt_info -> Typ.t -> trans_result
 
 val new_or_alloc_trans :
   trans_state -> Location.t -> Clang_ast_t.stmt_info -> Clang_ast_t.qual_type -> Typ.Name.t option

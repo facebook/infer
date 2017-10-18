@@ -343,7 +343,7 @@ module Scope = struct
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
-let create_alloc_instrs sil_loc function_type fname size_exp_opt procname_opt =
+let create_alloc_instrs ~alloc_builtin ?alloc_source_function ?size_exp sil_loc function_type =
   let function_type, function_type_np =
     match function_type.Typ.desc with
     | Tptr (styp, Typ.Pk_pointer)
@@ -354,50 +354,48 @@ let create_alloc_instrs sil_loc function_type fname size_exp_opt procname_opt =
     | _
      -> (CType.add_pointer_to_typ function_type, function_type)
   in
-  let sizeof_exp_ =
-    Exp.Sizeof {typ= function_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
-  in
-  let sizeof_exp =
-    match size_exp_opt with
-    | Some exp
-     -> Exp.BinOp (Binop.Mult, sizeof_exp_, exp)
-    | None
-     -> sizeof_exp_
-  in
-  let exp = (sizeof_exp, Typ.mk (Tint Typ.IULong)) in
-  let procname_arg =
-    match procname_opt with
+  let alloc_source_function_arg =
+    match alloc_source_function with
     | Some procname
      -> [(Exp.Const (Const.Cfun procname), Typ.mk Tvoid)]
     | None
      -> []
   in
-  let args = exp :: procname_arg in
   let ret_id = Ident.create_fresh Ident.knormal in
+  let args =
+    let sizeof_exp_ =
+      Exp.Sizeof {typ= function_type_np; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+    in
+    let sizeof_exp =
+      match size_exp with
+      | Some exp
+       -> Exp.BinOp (Binop.Mult, sizeof_exp_, exp)
+      | None
+       -> sizeof_exp_
+    in
+    let exp = (sizeof_exp, Typ.mk (Tint Typ.IULong)) in
+    exp :: alloc_source_function_arg
+  in
   let ret_id_typ = Some (ret_id, function_type) in
   let stmt_call =
-    Sil.Call (ret_id_typ, Exp.Const (Const.Cfun fname), args, sil_loc, CallFlags.default)
+    Sil.Call (ret_id_typ, Exp.Const (Const.Cfun alloc_builtin), args, sil_loc, CallFlags.default)
   in
-  (function_type, stmt_call, Exp.Var ret_id)
+  (function_type, [stmt_call], Exp.Var ret_id)
 
-let alloc_trans trans_state loc stmt_info function_type is_cf_non_null_alloc procname_opt =
-  let fname =
-    if is_cf_non_null_alloc then BuiltinDecl.__objc_alloc_no_fail else BuiltinDecl.__objc_alloc
+let alloc_trans trans_state ~alloc_builtin ?alloc_source_function loc stmt_info function_type =
+  let function_type, instrs, exp =
+    create_alloc_instrs ~alloc_builtin ?alloc_source_function loc function_type
   in
-  let function_type, stmt_call, exp =
-    create_alloc_instrs loc function_type fname None procname_opt
-  in
-  let res_trans_tmp = {empty_res_trans with instrs= [stmt_call]} in
+  let res_trans_tmp = {empty_res_trans with instrs} in
   let res_trans =
     let nname = "Call alloc" in
     PriorityNode.compute_results_to_parent trans_state loc nname stmt_info [res_trans_tmp]
   in
   {res_trans with exps= [(exp, function_type)]}
 
-let objc_new_trans trans_state loc stmt_info cls_name function_type =
-  let fname = BuiltinDecl.__objc_alloc_no_fail in
+let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_type =
   let alloc_ret_type, alloc_stmt_call, alloc_ret_exp =
-    create_alloc_instrs loc function_type fname None None
+    create_alloc_instrs ~alloc_builtin loc function_type
   in
   let init_ret_id = Ident.create_fresh Ident.knormal in
   let is_instance = true in
@@ -412,7 +410,7 @@ let objc_new_trans trans_state loc stmt_info cls_name function_type =
   let init_stmt_call =
     Sil.Call (ret_id_typ, Exp.Const (Const.Cfun pname), args, loc, call_flags)
   in
-  let instrs = [alloc_stmt_call; init_stmt_call] in
+  let instrs = alloc_stmt_call @ [init_stmt_call] in
   let res_trans_tmp = {empty_res_trans with instrs} in
   let res_trans =
     let nname = "Call objC new" in
@@ -431,19 +429,21 @@ let new_or_alloc_trans trans_state loc stmt_info qual_type class_name_opt select
      -> CType.objc_classname_of_type function_type
   in
   if String.equal selector CFrontend_config.alloc then
-    alloc_trans trans_state loc stmt_info function_type true None
+    alloc_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc_no_fail loc stmt_info
+      function_type
   else if String.equal selector CFrontend_config.new_str then
-    objc_new_trans trans_state loc stmt_info class_name function_type
-  else assert false
+    objc_new_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc_no_fail loc stmt_info
+      class_name function_type
+  else Logging.die InternalError "Expected selector new or alloc but got, %s" selector
 
-let cpp_new_trans sil_loc function_type size_exp_opt =
-  let fname =
-    match size_exp_opt with Some _ -> BuiltinDecl.__new_array | None -> BuiltinDecl.__new
+let cpp_new_trans sil_loc function_type size_exp =
+  let alloc_builtin =
+    match size_exp with Some _ -> BuiltinDecl.__new_array | None -> BuiltinDecl.__new
   in
   let function_type, stmt_call, exp =
-    create_alloc_instrs sil_loc function_type fname size_exp_opt None
+    create_alloc_instrs ~alloc_builtin ?size_exp sil_loc function_type
   in
-  {empty_res_trans with instrs= [stmt_call]; exps= [(exp, function_type)]}
+  {empty_res_trans with instrs= stmt_call; exps= [(exp, function_type)]}
 
 let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
@@ -559,9 +559,13 @@ let trans_replace_with_deref_first_arg sil_loc params_trans_res ~cxx_method_call
 
 let builtin_trans trans_state loc stmt_info function_type params_trans_res pname =
   if CTrans_models.is_cf_non_null_alloc pname || CTrans_models.is_alloc_model function_type pname
-  then Some (alloc_trans trans_state loc stmt_info function_type true (Some pname))
+  then
+    Some
+      (alloc_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc_no_fail
+         ~alloc_source_function:pname loc stmt_info function_type)
   else if CTrans_models.is_alloc pname then
-    Some (alloc_trans trans_state loc stmt_info function_type false None)
+    Some
+      (alloc_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc loc stmt_info function_type)
   else if CTrans_models.is_assert_log pname then Some (trans_assertion trans_state loc)
   else if CTrans_models.is_builtin_expect pname then trans_builtin_expect params_trans_res
   else if CTrans_models.is_replace_with_deref_first_arg pname then
