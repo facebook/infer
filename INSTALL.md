@@ -115,6 +115,7 @@ sudo apt-get install -y \
   libgmp-dev \
   libmpc-dev \
   libmpfr-dev \
+  libsqlite3-dev \
   m4 \
   openjdk-7-jdk \
   pkg-config \
@@ -134,7 +135,9 @@ sudo apt install -y \
   libgmp-dev \
   libmpc-dev \
   libmpfr-dev \
+  libsqlite3-dev \
   m4 \
+  opam \
   openjdk-7-jdk \
   unzip \
   zlib1g-dev \
@@ -146,38 +149,10 @@ sudo apt install -y \
   aspcud
 ```
 
-### Ubuntu 12.04.4 LTS
-
-```sh
-sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-sudo apt-get update
-sudo apt-get upgrade
-sudo apt-get install -y \
-  autoconf \
-  automake \
-  build-essential \
-  g++-4.8 \
-  gcc-4.8 \
-  git \
-  libgmp-dev \
-  libmpc-dev \
-  libmpfr-dev \
-  m4 \
-  openjdk-7-jdk \
-  pkg-config \
-  python-software-properties \
-  unzip \
-  zlib1g-dev
-sudo update-alternatives \
-  --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 \
-  --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
-```
-
 ### Setting up opam
 
-Unfortunately, the version of opam that ships with some Linux
-distributions is broken, so you'll have to get it from the
-[web](http://opam.ocaml.org/doc/Install.html#Binarydistribution).
+Get opam from your distribution, or from the
+[opam website](http://opam.ocaml.org/doc/Install.html#Binarydistribution).
 
 The OCaml dependencies needed by Infer are automatically handled by
 opam when running `./build-infer.sh`.
