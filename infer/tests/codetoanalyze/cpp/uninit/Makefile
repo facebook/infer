@@ -13,7 +13,7 @@ CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(MODELS_DIR)/cpp/include 
 INFER_OPTIONS = --uninit --ml-buckets cpp --no-filtering --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = uninit.mm
+SOURCES = uninit.cpp
 
 include $(TESTS_DIR)/clang.make
 
