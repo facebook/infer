@@ -89,10 +89,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       | _
        -> access_tree
       | exception Failure s
-       -> L.(die InternalError)
+       -> L.internal_error
             "Bad source specification: index %d out of bounds (%s) for source %a, actuals %a" index
             s TraceDomain.Source.pp source (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
-            actuals
+            actuals ;
+          access_tree
 
     let endpoints =
       (lazy (String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)))
@@ -269,9 +270,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             | None
              -> access_tree_acc )
         | None
-         -> L.(die InternalError)
+         -> L.internal_error
               "Taint is supposed to flow into sink %a at index %d, but the index is out of bounds"
-              CallSite.pp callee_site sink_index
+              CallSite.pp callee_site sink_index ;
+            access_tree_acc
         | _
          -> access_tree_acc
       in
@@ -551,9 +553,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   exec_write lhs_access_path rhs_exp access_tree
                   |> exec_write dummy_ret_access_path rhs_exp
               | _
-               -> L.(die InternalError)
-                    "Unexpected call to operator= %a in %a" HilInstr.pp instr Typ.Procname.pp
-                    callee_pname )
+               -> L.internal_error "Unexpected call to operator= %a in %a" HilInstr.pp instr
+                    Typ.Procname.pp callee_pname ;
+                  access_tree )
             | _
              -> let model =
                   TaintSpecification.handle_unknown_call callee_pname (Option.map ~f:snd ret_opt)
@@ -769,9 +771,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     | Some (access_tree, _)
      -> Summary.update_summary (make_summary proc_data access_tree) summary
     | None
-     -> if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then
-          L.(die InternalError)
-            "Couldn't compute post for %a. Broken CFG suspected" Typ.Procname.pp
-            (Procdesc.get_proc_name proc_desc)
+     -> if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
+          L.internal_error "Couldn't compute post for %a. Broken CFG suspected" Typ.Procname.pp
+            (Procdesc.get_proc_name proc_desc) ;
+          summary )
         else summary
 end
