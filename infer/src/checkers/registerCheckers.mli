@@ -9,6 +9,10 @@
 
 open! IStd
 
-val register : unit -> unit
+type checker
 
-val pp_active_checkers : Format.formatter -> unit -> unit
+val get_active_checkers : unit -> checker list
+
+val register : checker list -> unit
+
+val pp_checker : Format.formatter -> checker -> unit

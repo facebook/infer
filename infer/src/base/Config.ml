@@ -529,6 +529,10 @@ let exe_usage =
 
 let anon_args = CLOpt.mk_anon ()
 
+let all_checkers = ref []
+
+let disable_all_checkers () = List.iter !all_checkers ~f:(fun (var, _, _, _) -> var := false)
+
 let () =
   let on_unknown_arg_from_command (cmd: CLOpt.command) =
     match cmd with
@@ -662,19 +666,16 @@ and ( annotation_reachability
     , threadsafety
     , suggest_nullable
     , uninit ) =
-  let all_checkers = ref [] in
-  let default_checkers = ref [] in
   let mk_checker ?(default= false) ~long doc =
     let var = CLOpt.mk_bool ~long ~in_help:CLOpt.([(Analyze, manual_generic)]) ~default doc in
-    all_checkers := (var, long) :: !all_checkers ;
-    if default then default_checkers := (var, long) :: !default_checkers ;
+    all_checkers := (var, long, doc, default) :: !all_checkers ;
     var
   in
   let annotation_reachability =
     mk_checker ~default:true ~long:"annotation-reachability"
       "the annotation reachability checker. Given a pair of source and sink annotation, e.g. @PerformanceCritical and @Expensive, this checker will warn whenever some method annotated with @PerformanceCritical calls, directly or indirectly, another method annotated with @Expensive"
   and biabduction =
-    mk_checker ~long:"biabduction"
+    mk_checker ~long:"biabduction" ~default:true
       "the separation logic based bi-abduction analysis using the checkers framework"
   and bufferoverrun = mk_checker ~long:"bufferoverrun" "the buffer overrun analysis"
   and check_nullable =
@@ -696,27 +697,29 @@ and ( annotation_reachability
   and printf_args =
     mk_checker ~long:"printf-args" ~default:true
       "the detection of mismatch between the Java printf format strings and the argument types For, example, this checker will warn about the type error in `printf(\"Hello %d\", \"world\")`"
-  and repeated_calls = mk_checker ~long:"repeated-calls" "check for repeated calls"
   and quandary = mk_checker ~long:"quandary" ~default:true "the quandary taint analysis"
+  and repeated_calls = mk_checker ~long:"repeated-calls" "check for repeated calls"
   and resource_leak = mk_checker ~long:"resource-leak" ""
   and siof =
     mk_checker ~long:"siof" ~default:true
       "the Static Initialization Order Fiasco analysis (C++ only)"
-  and threadsafety = mk_checker ~long:"threadsafety" ~default:true "the thread safety analysis"
   and suggest_nullable =
-    mk_checker ~long:"suggest-nullable" ~default:false
-      "Nullable annotation sugesstions analysis (experimental)"
+    mk_checker ~long:"suggest-nullable" ~default:false "Nullable annotation sugesstions analysis"
+  and threadsafety = mk_checker ~long:"threadsafety" ~default:true "the thread safety analysis"
   and uninit = mk_checker ~long:"uninit" ~default:true "checker for use of uninitialized values" in
-  let mk_only (var, long) =
+  let mk_only (var, long, doc, _) =
     let _ : bool ref =
       CLOpt.mk_bool_group ~long:(long ^ "-only")
         ~in_help:CLOpt.([(Analyze, manual_generic)])
-        (Printf.sprintf "Enable $(b,--%s) and disable all other checkers" long)
-        [(* enable this checker *) var]
-        ((* disable all checkers except this one *)
-         List.filter_map
-           ~f:(fun (var', long') -> if String.equal long long' then None else Some var')
-           !all_checkers)
+        ~f:(fun b ->
+          disable_all_checkers () ;
+          var := b ;
+          b)
+        ( if String.equal doc "" then ""
+        else Printf.sprintf "Enable $(b,--%s) and disable all other checkers" long )
+        [] (* do all the work in ~f *)
+           []
+      (* do all the work in ~f *)
     in
     ()
   in
@@ -726,10 +729,20 @@ and ( annotation_reachability
       ~in_help:CLOpt.([(Analyze, manual_generic)])
       ~default:true
       ( "Default checkers: "
-      ^ ( List.map ~f:(fun (_, s) -> Printf.sprintf "$(b,--%s)" s) !default_checkers
+      ^ ( List.rev_filter_map
+            ~f:(fun (_, long, _, default) ->
+              if default then Some (Printf.sprintf "$(b,--%s)" long) else None)
+            !all_checkers
         |> String.concat ~sep:", " ) )
-      (List.map ~f:fst !default_checkers)
-      []
+      ~f:(fun b ->
+        List.iter
+          ~f:(fun (var, _, _, default) ->
+            var := if b then default || !var else not default && !var)
+          !all_checkers ;
+        b)
+      [] (* do all the work in ~f *)
+         []
+    (* do all the work in ~f *)
   in
   ( annotation_reachability
   , biabduction
@@ -1798,7 +1811,7 @@ and () = CLOpt.mk_set ~parse_mode:CLOpt.Javac version ~deprecated:["version"] ~l
 
 (** Parse Command Line Args *)
 
-let config_file =
+let inferconfig_file =
   let rec find dir =
     match Sys.file_exists ~follow_symlinks:false (dir ^/ CommandDoc.inferconfig_file) with
     | `Yes
@@ -1845,7 +1858,7 @@ let post_parsing_initialization command_opt =
           (match !analyzer with Some a -> a | None -> BiAbduction)
       in
       let infer_version =
-        match config_file with
+        match inferconfig_file with
         | Some inferconfig
          -> Printf.sprintf "version %s/inferconfig %s" Version.commit
               (Digest.to_hex (Digest.file inferconfig))
@@ -1933,28 +1946,29 @@ let post_parsing_initialization command_opt =
   (* set analyzer mode to linters in linters developer mode *)
   if !linters_developer_mode then analyzer := Some Linters ;
   if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
-  ( match !analyzer with
-  | Some BiAbduction
-   -> biabduction := true
-  | Some Crashcontext
-   -> crashcontext := true
-  | Some (CaptureOnly | CompileOnly | Checkers | Linters)
-   -> ()
-  | None
-   -> let open CLOpt in
-      match command_opt with
+  ( if Option.is_none !analyzer then
+      match (command_opt : CLOpt.command option) with
       | Some Compile
        -> analyzer := Some CompileOnly
       | Some Capture
        -> analyzer := Some CaptureOnly
       | _
-       -> biabduction := true
-      (* the default option is to run the biabduction analysis *) ) ;
+       -> () ) ;
+  ( match !analyzer with
+  | Some BiAbduction | None
+   -> disable_all_checkers () ;
+      (* technically the biabduction checker doesn't run in this mode, but this gives an easy way to test if the biabduction *analysis* is active *)
+      biabduction := true
+  | Some Crashcontext
+   -> disable_all_checkers () ;
+      crashcontext := true
+  | Some (CaptureOnly | Checkers | CompileOnly | Linters)
+   -> () ) ;
   Option.value ~default:CLOpt.Run command_opt
 
 let command, parse_args_and_return_usage_exit =
   let command_opt, usage_exit =
-    CLOpt.parse ?config_file ~usage:exe_usage startup_action initial_command
+    CLOpt.parse ?config_file:inferconfig_file ~usage:exe_usage startup_action initial_command
   in
   let command = post_parsing_initialization command_opt in
   (command, usage_exit)
@@ -2462,10 +2476,7 @@ let dynamic_dispatch =
     | BiAbduction
      -> Lazy
     | Checkers when biabduction
-     -> if quandary then
-          F.eprintf
-            "WARNING: Running Quandary on Java is not compatible with the Biabduction analysis@." ;
-        Lazy
+     -> Lazy
     | Checkers when quandary
      -> Sound
     | _

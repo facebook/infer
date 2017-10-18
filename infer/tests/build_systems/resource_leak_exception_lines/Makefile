@@ -17,8 +17,8 @@ default: analyze
 .PHONY: analyze
 analyze: $(REPORT)
 
-$(REPORT):
-	$(QUIET)$(call silent_on_success, Running analysis,\
+$(REPORT): $(JAVA_DEPS) $(MAKEFILE_LIST) SimpleLeak.java
+	$(QUIET)$(call silent_on_success,Running analysis,\
 	  $(INFER_BIN) -o $(INFER_OUT) --project-root $(CURDIR) -- javac SimpleLeak.java)
 
 $(EXPECTED_TEST_OUTPUT): $(REPORT)

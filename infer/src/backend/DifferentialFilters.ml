@@ -252,10 +252,7 @@ let do_filter (diff: Differential.t) (renamings: FileRenamings.t) ~(skip_duplica
     else issues
   in
   let diff' =
-    diff
-    |> ( if Config.equal_analyzer Config.analyzer Config.BiAbduction then
-           skip_anonymous_class_renamings
-       else Fn.id )
+    diff |> (if Config.biabduction then skip_anonymous_class_renamings else Fn.id)
     |> (if skip_duplicated_types then skip_duplicated_types_on_filenames renamings else Fn.id)
     |> Fn.id
   in

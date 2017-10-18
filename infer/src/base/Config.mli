@@ -453,6 +453,8 @@ val infer_is_clang : bool
 
 val infer_is_javac : bool
 
+val inferconfig_file : string option
+
 val iphoneos_target_sdk_version : string option
 
 type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string}

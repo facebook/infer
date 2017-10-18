@@ -43,15 +43,29 @@ let setup () =
   | Explore
    -> ResultsDir.assert_results_dir "please run an infer analysis first"
 
+let print_active_checkers () =
+  (if Config.print_active_checkers && CLOpt.is_originator then L.result else L.environment_info)
+    "Analyzer: %s@."
+    Config.(string_of_analyzer analyzer) ;
+  (if Config.print_active_checkers && CLOpt.is_originator then L.result else L.environment_info)
+    "Active checkers: %a@." (Pp.seq ~sep:", " RegisterCheckers.pp_checker)
+    (RegisterCheckers.get_active_checkers ())
+
 let log_environment_info () =
   L.environment_info "CWD = %s@\n" (Sys.getcwd ()) ;
+  ( match Config.inferconfig_file with
+  | Some file
+   -> L.environment_info "Read configuration in %s@\n" file
+  | None
+   -> L.environment_info "No .inferconfig file found@\n" ) ;
   L.environment_info "Project root = %s@\n" Config.project_root ;
   let infer_args =
     Sys.getenv CLOpt.args_env_var |> Option.map ~f:(String.split ~on:CLOpt.env_var_sep)
     |> Option.value ~default:["<not set>"]
   in
   L.environment_info "INFER_ARGS = %a" Pp.cli_args infer_args ;
-  L.environment_info "command line arguments: %a" Pp.cli_args (Array.to_list Sys.argv)
+  L.environment_info "command line arguments: %a" Pp.cli_args (Array.to_list Sys.argv) ;
+  print_active_checkers ()
 
 let () =
   ( if Config.linters_validate_syntax_only then

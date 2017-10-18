@@ -112,14 +112,21 @@ let cluster_should_be_analyzed ~changed_files cluster =
   | None
    -> true
 
+let register_active_checkers () =
+  match Config.analyzer with
+  | Checkers | Crashcontext
+   -> RegisterCheckers.get_active_checkers () |> RegisterCheckers.register
+  | BiAbduction | CaptureOnly | CompileOnly | Linters
+   -> ()
+
 let main ~changed_files ~makefile =
   BuiltinDefn.init () ;
-  RegisterCheckers.register () ;
   ( match Config.modified_targets with
   | Some file
    -> MergeCapture.record_modified_targets_from_file file
   | None
    -> () ) ;
+  register_active_checkers () ;
   match Config.cluster_cmdline with
   | Some fname
    -> process_cluster_cmdline fname
@@ -136,17 +143,16 @@ let main ~changed_files ~makefile =
         else "" )
         (if Int.equal n_clusters_to_analyze 1 then "" else "s")
         Config.results_dir ;
-      let is_java () =
-        List.exists
-          ~f:(fun cl -> DB.string_crc_has_extension ~ext:"java" (DB.source_dir_to_string cl))
-          all_clusters
+      let is_java =
+        ( lazy
+        (List.exists
+           ~f:(fun cl -> DB.string_crc_has_extension ~ext:"java" (DB.source_dir_to_string cl))
+           all_clusters) )
       in
-      (if Config.print_active_checkers then L.result else L.debug Analysis Quiet)
-        "Active checkers: %a@\n" RegisterCheckers.pp_active_checkers () ;
       L.debug Analysis Quiet "Dynamic dispatch mode: %s@."
         Config.(string_of_dynamic_dispatch dynamic_dispatch) ;
       print_legend () ;
-      if Config.per_procedure_parallelism && not (is_java ()) then (
+      if Config.per_procedure_parallelism && not (Lazy.force is_java) then (
         (* Java uses ZipLib which is incompatible with forking *)
         (* per-procedure parallelism *)
         L.environment_info "Per-procedure parallelism jobs: %d@." Config.jobs ;
