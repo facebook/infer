@@ -8,7 +8,7 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = infer
+ANALYZER = checkers
 SOURCES_DIR = $(ROOT_DIR)/examples/java_hello
 SOURCES = $(wildcard $(SOURCES_DIR)/*.java)
 # no objects since we only run a mock gradle that cannot compile Java sources

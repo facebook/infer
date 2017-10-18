@@ -7,7 +7,7 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = infer
+ANALYZER = checkers
 CLANG_OPTIONS = -c
 INFER_OPTIONS = --report-custom-error --developer-mode --headers --project-root ../codetoanalyze
 INFERPRINT_OPTIONS = --issues-tests

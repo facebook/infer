@@ -7,7 +7,7 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = infer
+ANALYZER = checkers
 INFERPRINT_OPTIONS = --issues-tests
 
 MVN_DIRS = app_with_submodules  simple_app  app_with_infer_profile  app_with_profiles

@@ -10,7 +10,7 @@ TESTS_DIR = ../..
 CMAKE_DIR = ../codetoanalyze/clang_compilation_database
 CMAKE_BUILD_DIR = $(CMAKE_DIR)/_build_infer
 
-ANALYZER = infer
+ANALYZER = checkers
 CLEAN_EXTRA = $(CMAKE_BUILD_DIR)
 INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(CMAKE_DIR)
 SOURCES = $(CMAKE_DIR)/hello.cpp

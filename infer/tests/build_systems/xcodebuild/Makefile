@@ -7,7 +7,7 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = infer
+ANALYZER = checkers
 APP_DIR = ../codetoanalyze/xcodebuild/simple_app
 SOURCES = $(wildcard $(APP_DIR)/simple_app/*.m)
 OBJECTS = $(APP_DIR)/app_built

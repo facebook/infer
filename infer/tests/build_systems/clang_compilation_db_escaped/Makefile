@@ -7,7 +7,7 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = infer
+ANALYZER = checkers
 INFER_OPTIONS = --report-custom-error --developer-mode
 SOURCES = ../codetoanalyze/path\ with\ spaces/hel\ lo.c
 OBJECTS = $(SOURCES:.c=.o)

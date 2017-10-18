@@ -9,10 +9,10 @@ TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 CODETOANALYZE_DIR = ../codetoanalyze/objc_getters_setters
 
-ANALYZER = infer
+ANALYZER = checkers
 SOURCES = $(CODETOANALYZE_DIR)/A.m $(CODETOANALYZE_DIR)/B.m
 OBJECTS = $(CODETOANALYZE_DIR)/A.o $(CODETOANALYZE_DIR)/B.o
-INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(TESTS_DIR)
+INFER_OPTIONS = --biabduction-only --report-custom-error --developer-mode --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --project-root $(TESTS_DIR) --issues-tests
 CLEAN_EXTRA = -c
 

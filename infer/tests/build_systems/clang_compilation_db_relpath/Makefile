@@ -7,7 +7,7 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = infer
+ANALYZER = checkers
 INFER_OPTIONS = --report-custom-error --developer-mode
 SOURCES = \
   ../codetoanalyze/hello.c ../codetoanalyze/hello2.c ../codetoanalyze/hello3.c \

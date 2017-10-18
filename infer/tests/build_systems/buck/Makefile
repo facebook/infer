@@ -8,7 +8,7 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = infer
+ANALYZER = checkers
 BUCK_TARGET = //infer/tests/build_systems/genrule/module2:module2
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
 OBJECTS = $(ROOT_DIR)/buck-out/gen/infer/tests/build_systems/genrule/module2/lib__module2__output/module2.jar

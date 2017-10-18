@@ -7,7 +7,7 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = infer
+ANALYZER = checkers
 
 PROJECT_ROOT = ../codetoanalyze/ndk-build/hello_app
 SOURCES = $(PROJECT_ROOT)/hello.c

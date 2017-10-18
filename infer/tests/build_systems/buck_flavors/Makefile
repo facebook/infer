@@ -8,7 +8,7 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = infer
+ANALYZER = checkers
 BUCK_TARGET = //src:hello @buck_target.txt 
 SOURCES = $(wildcard src/*.c) $(wildcard src/subtarget1/*.c) $(wildcard src/subtarget2/*.c)
 OBJECTS = buck-out/gen/src/hello\#compile-hello.c.o1f717d69,default/hello.c.o

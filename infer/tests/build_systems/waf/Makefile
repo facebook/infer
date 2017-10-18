@@ -8,7 +8,7 @@
 CUR_DIR = $(shell pwd)
 TESTS_DIR = ../..
 
-ANALYZER = infer
+ANALYZER = checkers
 
 CLANG_OPTIONS = -c
 INFERPRINT_OPTIONS = --issues-tests

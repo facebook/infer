@@ -8,7 +8,7 @@
 TESTS_DIR = ../..
 ROOT_DIR = $(TESTS_DIR)/../..
 
-ANALYZER = infer
+ANALYZER = checkers
 BUCK_TARGET = //infer/tests/build_systems/genrule/module2:module2
 INFER_TARGET = $(BUCK_TARGET)_infer
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)

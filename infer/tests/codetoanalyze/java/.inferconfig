@@ -11,7 +11,7 @@
       "method": "get"
     }
   ],
-  "infer-blacklist-files-containing": [
+  "checkers-blacklist-files-containing": [
     "@generated"
   ],
   "enable-issue-type": [

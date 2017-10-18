@@ -7,8 +7,8 @@
 
 TESTS_DIR = ../../..
 
-ANALYZER = infer
-INFER_OPTIONS = --tracing --debug-exceptions
+ANALYZER = checkers
+INFER_OPTIONS = --biabduction-only --tracing --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)
 

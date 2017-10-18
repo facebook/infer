@@ -7,7 +7,7 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = infer
+ANALYZER = checkers
 SOURCES = $(wildcard src/infer/*.java)
 OBJECTS = $(patsubst %.java,ant_out/%.class,$(SOURCES))
 INFERPRINT_OPTIONS = --issues-tests

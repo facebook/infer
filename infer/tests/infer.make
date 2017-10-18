@@ -8,8 +8,7 @@
 include $(TESTS_DIR)/base.make
 
 # useful to print non-default analyzer
-ANALYZER_STRING=$(shell if [ -n $(ANALYZER) ] && [ $(ANALYZER) != infer ]; then \
-  printf ' ($(ANALYZER))'; fi)
+ANALYZER_STRING=$(shell if [ -n $(ANALYZER) ]; then printf ' ($(ANALYZER))'; fi)
 
 default: compile
 

@@ -7,7 +7,7 @@
 
 TESTS_DIR = ../..
 
-ANALYZER = infer
+ANALYZER = checkers
 
 CODETOANALYZE_DIR = ../codetoanalyze
 

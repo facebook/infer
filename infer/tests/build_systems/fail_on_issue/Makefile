@@ -9,7 +9,7 @@ TESTS_DIR = ../..
 
 include $(TESTS_DIR)/base.make
 
-ANALYZER = infer
+ANALYZER = checkers
 
 CODETOANALYZE_DIR = ../codetoanalyze
 
