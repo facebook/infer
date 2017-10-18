@@ -8,7 +8,7 @@ permalink: /docs/threadsafety.html
 Infer's thread-safety analysis find data races in your Java code. 
 To run the analysis, you can use plain `infer` (to run thread-safety along with other analyses that are run by default) or `infer --threadsafety-only` (to run only the thread-safety analysis).
 
-For example, the command `infer --threadsafety-only -- javac File.java` will run the thread-dafety analysis on FIle.java.
+For example, the command `infer --threadsafety-only -- javac File.java` will run the thread-dafety analysis on File.java.
 
 ## Background
 
@@ -226,7 +226,7 @@ An industrial static analysis tool from [Contemplate](http://homepages.inf.ed.ac
 [A separate blog post looked at  100 recent data race fixes](https://code.facebook.com/posts/1537144479682247/finding-inter-procedural-bugs-at-scale-with-infer-static-analyzer/) in Infer's deployment in various bug categories, and for data races observed that 53 of them were inter-file (and thus involving multiple classes). 
 
 One reaction to the challenge of developing effective static race detectors has been to ask the programmer to do more work to help the analyzer. Examples of this approach include the [Clang Thread Safety Analyzer](https://clang.llvm.org/docs/ThreadSafetyAnalysis.html), 
-the typing of locks (https://doc.rust-lang.org/std/sync/struct.Mutex.html) in Rust, and the use/checking of @GuardedBy annotations in [Java](https://homes.cs.washington.edu/~mernst/pubs/locking-semantics-nfm2016.pdf) including 
+the typing of [locks](https://doc.rust-lang.org/std/sync/struct.Mutex.html) in Rust, and the use/checking of @GuardedBy annotations in [Java](https://homes.cs.washington.edu/~mernst/pubs/locking-semantics-nfm2016.pdf) including 
 in [Google's Error Prone analyzer](https://github.com/google/error-prone/blob/master/docs/bugpattern/GuardedBy.md). When lock annotations are present they make the analyzer's life easier, but we have shown that it is possible to have a very effective race analysis without decreeing that such annotations must be present. This was essential for our deployment, since *requiring* lock annotations would have been a show stopper for converting many thousands of lines of code to a concurrent context. We believe that this finding should be transportable to new type systems and language designs, as well as to other analyses for existing languages.
 
 Another reaction to difficulties in static race detection has been to instead develop dynamic analyses, automatic testing  tools which work by running a program to attempt to find flaws.  Google's Thread Sanitizer is a widely used and mature tool in this area, which has been used in production to find many bugs in C-family languages. [The Thread Sanitizer authors explicitly call out limitations with static race analyzers](http://www.cs.columbia.edu/~junfeng/11fa-e6121/papers/thread-sanitizer.pdf) as part of their motivation: “It seems unlikely that static detectors will work effectively in our environment: Google’s code is large and complex enough that it would be expensive to add the annotations required by a typical static detector”.
