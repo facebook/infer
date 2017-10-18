@@ -219,7 +219,7 @@ One reaction to the challenge of developing effective static race detectors has 
 the typing of [locks](https://doc.rust-lang.org/std/sync/struct.Mutex.html) in Rust, and the use/checking of @GuardedBy annotations in [Java](https://homes.cs.washington.edu/~mernst/pubs/locking-semantics-nfm2016.pdf) including 
 in [Google's Error Prone analyzer](https://github.com/google/error-prone/blob/master/docs/bugpattern/GuardedBy.md). When lock annotations are present they make the analyzer's life easier, and we have [GuardedBy checking as part of Infer](http://fbinfer.com/docs/infer-bug-types.html#UNSAFE_GUARDEDBY_ACCESS) (though separate from the race detector). 
 Our GuardedBy checker can find some bugs that the race detector does not 
-(see this example on anonymous inner classes), but the race detector finds a greater number because it can 
+(see [this example on anonymous inner classes](http://fbinfer.com/docs/infer-bug-types.html#anonymous_inner)), but the race detector finds a greater number because it can 
 work on un-annotated code. 
 It is possible to have a very effective race analysis without decreeing that such annotations must be present. This was essential for our deployment, since *requiring* lock annotations would have been a show stopper for converting many thousands of lines of code to a concurrent context. We believe that this finding should be transportable to new type systems and language designs, as well as to other analyses for existing languages.
 
