@@ -1856,9 +1856,9 @@ let post_parsing_initialization command_opt =
   if CommandLineOption.is_originator then
     Unix.putenv ~key:infer_top_results_dir_env_var ~data:!results_dir ;
   ( match !version with
-  | `Full
-   -> (* TODO(11791235) change back to stdout once buck integration is fixed *)
-      prerr_endline version_string
+  | `Full when !buck
+   -> (* Buck reads stderr in some versions, stdout in others *)
+      print_endline version_string ; prerr_endline version_string
   | `Javac when !buck
    -> (* print buck key *)
       let javac_version =
@@ -1886,9 +1886,12 @@ let post_parsing_initialization command_opt =
         | None
          -> Version.commit
       in
+      F.printf "%s/%s/%s@." javac_version analyzer_name infer_version ;
       F.eprintf "%s/%s/%s@." javac_version analyzer_name infer_version
+  | `Full
+   -> print_endline version_string
   | `Javac
-   -> prerr_endline version_string
+   -> (* javac prints version on stderr *) prerr_endline version_string
   | `Json
    -> print_endline Version.versionJson
   | `Vcs
