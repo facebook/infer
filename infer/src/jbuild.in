@@ -14,6 +14,7 @@ let source_dirs =
        ; "base"
        ; "bufferoverrun"
        ; "checkers"
+       ; "concurrency"
        ; "eradicate"
        ; "harness"
        ; "integration"

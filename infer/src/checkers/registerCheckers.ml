@@ -84,13 +84,13 @@ let all_checkers =
             Procedure ResourceLeaks.checker
           , Config.Java ) ] }
   ; {name= "SIOF"; active= Config.siof; callbacks= [(Procedure Siof.checker, Config.Clang)]}
-  ; { name= "thread safety"
-    ; active= Config.threadsafety
+  ; { name= "RacerD"
+    ; active= Config.racerd
     ; callbacks=
-        [ (Procedure ThreadSafety.analyze_procedure, Config.Clang)
-        ; (Procedure ThreadSafety.analyze_procedure, Config.Java)
-        ; (Cluster ThreadSafety.file_analysis, Config.Clang)
-        ; (Cluster ThreadSafety.file_analysis, Config.Java) ] }
+        [ (Procedure RacerD.analyze_procedure, Config.Clang)
+        ; (Procedure RacerD.analyze_procedure, Config.Java)
+        ; (Cluster RacerD.file_analysis, Config.Clang)
+        ; (Cluster RacerD.file_analysis, Config.Java) ] }
   ; { name= "uninitialized variables"
     ; active= Config.uninit
     ; callbacks= [(Procedure Uninit.checker, Config.Clang)] } ]

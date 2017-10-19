@@ -242,9 +242,9 @@ let manual_java = "JAVA OPTIONS"
 
 let manual_quandary = "QUANDARY CHECKER OPTIONS"
 
-let manual_siof = "SIOF CHECKER OPTIONS"
+let manual_racerd = "RACERD CHECKER OPTIONS"
 
-let manual_threadsafety = "THREADSAFETY CHECKER OPTIONS"
+let manual_siof = "SIOF CHECKER OPTIONS"
 
 (** Maximum level of recursion during the analysis, after which a timeout is generated *)
 let max_recursion = 5
@@ -681,14 +681,16 @@ and ( annotation_reachability
     , liveness
     , printf_args
     , quandary
+    , racerd
     , repeated_calls
     , resource_leak
     , siof
-    , threadsafety
     , suggest_nullable
     , uninit ) =
-  let mk_checker ?(default= false) ~long doc =
-    let var = CLOpt.mk_bool ~long ~in_help:CLOpt.([(Analyze, manual_generic)]) ~default doc in
+  let mk_checker ?(default= false) ?(deprecated= []) ~long doc =
+    let var =
+      CLOpt.mk_bool ~long ~in_help:CLOpt.([(Analyze, manual_generic)]) ~default ~deprecated doc
+    in
     all_checkers := (var, long, doc, default) :: !all_checkers ;
     var
   in
@@ -719,6 +721,9 @@ and ( annotation_reachability
     mk_checker ~long:"printf-args" ~default:true
       "the detection of mismatch between the Java printf format strings and the argument types For, example, this checker will warn about the type error in `printf(\"Hello %d\", \"world\")`"
   and quandary = mk_checker ~long:"quandary" ~default:true "the quandary taint analysis"
+  and racerd =
+    mk_checker ~long:"racerd" ~deprecated:["-threadsafety"] ~default:true
+      "the RacerD thread safety analysis"
   and repeated_calls = mk_checker ~long:"repeated-calls" "check for repeated calls"
   and resource_leak = mk_checker ~long:"resource-leak" ""
   and siof =
@@ -726,7 +731,6 @@ and ( annotation_reachability
       "the Static Initialization Order Fiasco analysis (C++ only)"
   and suggest_nullable =
     mk_checker ~long:"suggest-nullable" ~default:false "Nullable annotation sugesstions analysis"
-  and threadsafety = mk_checker ~long:"threadsafety" ~default:true "the thread safety analysis"
   and uninit = mk_checker ~long:"uninit" "checker for use of uninitialized values" in
   let mk_only (var, long, doc, _) =
     let _ : bool ref =
@@ -776,10 +780,10 @@ and ( annotation_reachability
   , liveness
   , printf_args
   , quandary
+  , racerd
   , repeated_calls
   , resource_leak
   , siof
-  , threadsafety
   , suggest_nullable
   , uninit )
 
@@ -1728,7 +1732,7 @@ and testing_mode =
 
 and threadsafe_aliases =
   CLOpt.mk_json ~long:"threadsafe-aliases"
-    ~in_help:CLOpt.([(Analyze, manual_threadsafety)])
+    ~in_help:CLOpt.([(Analyze, manual_racerd)])
     "Specify custom annotations that should be considered aliases of @ThreadSafe"
 
 and trace_join =
@@ -1979,14 +1983,14 @@ let post_parsing_initialization command_opt =
       | _
        -> () ) ;
   ( match !analyzer with
-  | Some BiAbduction | None
+  | Some BiAbduction
    -> disable_all_checkers () ;
       (* technically the biabduction checker doesn't run in this mode, but this gives an easy way to test if the biabduction *analysis* is active *)
       biabduction := true
   | Some Crashcontext
    -> disable_all_checkers () ;
       crashcontext := true
-  | Some (CaptureOnly | Checkers | CompileOnly | Linters)
+  | Some (CaptureOnly | Checkers | CompileOnly | Linters) | None
    -> () ) ;
   Option.value ~default:CLOpt.Run command_opt
 
@@ -2342,6 +2346,8 @@ and quandary_sinks = !quandary_sinks
 
 and quiet = !quiet
 
+and racerd = !racerd
+
 and reactive_mode = !reactive || CLOpt.(equal_command Diff) command
 
 and reactive_capture = !reactive_capture
@@ -2377,8 +2383,6 @@ and show_buckets = !print_buckets
 and show_progress_bar = !progress_bar
 
 and siof = !siof
-
-and uninit = !uninit
 
 and siof_safe_methods = !siof_safe_methods
 
@@ -2418,8 +2422,6 @@ and test_filtering = !test_filtering
 
 and testing_mode = !testing_mode
 
-and threadsafety = !threadsafety
-
 and threadsafe_aliases = !threadsafe_aliases
 
 and trace_error = !trace_error
@@ -2435,6 +2437,8 @@ and tracing = !tracing
 and tv_limit = !tv_limit
 
 and type_size = !type_size
+
+and uninit = !uninit
 
 and unsafe_malloc = !unsafe_malloc
 

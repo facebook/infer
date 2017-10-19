@@ -13,17 +13,17 @@ module L = Logging
 module MF = MarkupFormatter
 
 module Summary = Summary.Make (struct
-  type payload = ThreadSafetyDomain.summary
+  type payload = RacerDDomain.summary
 
   let update_payload post (summary: Specs.summary) =
-    {summary with payload= {summary.payload with threadsafety= Some post}}
+    {summary with payload= {summary.payload with racerd= Some post}}
 
-  let read_payload (summary: Specs.summary) = summary.payload.threadsafety
+  let read_payload (summary: Specs.summary) = summary.payload.racerd
 end)
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
-  module Domain = ThreadSafetyDomain
+  module Domain = RacerDDomain
 
   type extras = Typ.Procname.t -> Procdesc.t option
 
@@ -238,7 +238,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let rec aux acc = function [] -> acc | _ :: tail as all -> aux (List.rev all :: acc) tail in
     let prefixes = aux [] but_last_rev in
     List.for_all
-      ~f:(fun ap -> ThreadSafetyDomain.OwnershipDomain.is_owned (base, ap) attribute_map)
+      ~f:(fun ap -> RacerDDomain.OwnershipDomain.is_owned (base, ap) attribute_map)
       prefixes
 
   let propagate_attributes lhs_access_path rhs_exp attribute_map =
@@ -963,7 +963,7 @@ let runs_on_ui_thread proc_desc =
       || Annotations.ia_is_on_unbind annot || Annotations.ia_is_on_unmount annot )
 
 let threadsafe_annotations =
-  Annotations.thread_safe :: ThreadSafetyConfig.AnnotationAliases.of_json Config.threadsafe_aliases
+  Annotations.thread_safe :: RacerDConfig.AnnotationAliases.of_json Config.threadsafe_aliases
 
 (* returns true if the annotation is @ThreadSafe, @ThreadSafe(enableChecks = true), or is defined
    as an alias of @ThreadSafe in a .inferconfig file. *)
@@ -1034,18 +1034,18 @@ let is_marked_thread_safe pdesc tenv =
   let pname = Procdesc.get_proc_name pdesc in
   is_thread_safe_class pname tenv || is_thread_safe_method pname tenv
 
-let empty_post : ThreadSafetyDomain.summary =
-  { threads= ThreadSafetyDomain.ThreadsDomain.empty
+let empty_post : RacerDDomain.summary =
+  { threads= RacerDDomain.ThreadsDomain.empty
   ; locks= false
-  ; accesses= ThreadSafetyDomain.AccessDomain.empty
-  ; return_ownership= ThreadSafetyDomain.OwnershipAbstractValue.unowned
-  ; return_attributes= ThreadSafetyDomain.AttributeSetDomain.empty }
+  ; accesses= RacerDDomain.AccessDomain.empty
+  ; return_ownership= RacerDDomain.OwnershipAbstractValue.unowned
+  ; return_attributes= RacerDDomain.AttributeSetDomain.empty }
 
 let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
   let is_initializer tenv proc_name =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
   in
-  let open ThreadSafetyDomain in
+  let open RacerDDomain in
   if should_analyze_proc proc_desc tenv then (
     if not (Procdesc.did_preanalysis proc_desc) then Preanal.do_liveness proc_desc tenv ;
     let formal_map = FormalMap.make proc_desc in
@@ -1091,7 +1091,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
           (* express that the constructor owns [this] *)
         in
         let ownership = List.fold ~f:add_owned_formal owned_formals ~init:own_locals_in_cpp in
-        ({ThreadSafetyDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
+        ({RacerDDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
       else
         (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
            it is owned in the caller *)
@@ -1102,7 +1102,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
           List.fold ~f:add_owned_formal (FormalMap.get_formals_indexes formal_map)
             ~init:own_locals_in_cpp
         in
-        ({ThreadSafetyDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
+        ({RacerDDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
     in
     match Analyzer.compute_post proc_data ~initial ~debug:false with
     | Some ({threads; locks; accesses; ownership; attribute_map}, _)
@@ -1122,9 +1122,9 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
      -> summary )
   else Summary.update_summary empty_post summary
 
-module AccessListMap = Caml.Map.Make (ThreadSafetyDomain.Access)
+module AccessListMap = Caml.Map.Make (RacerDDomain.Access)
 
-type conflicts = ThreadSafetyDomain.TraceElem.t list
+type conflicts = RacerDDomain.TraceElem.t list
 
 type report_kind =
   | WriteWriteRace of conflicts  (** possibly-empty list of conflicting accesses *)
@@ -1160,7 +1160,7 @@ let get_reporting_explanation report_kind tenv pname thread =
   | UnannotatedInterface, None
    -> Logging.die InternalError
         "Reporting non-threadsafe interface call, but can't find a @ThreadSafe annotation"
-  | _, Some threadsafe_explanation when ThreadSafetyDomain.ThreadsDomain.is_any thread
+  | _, Some threadsafe_explanation when RacerDDomain.ThreadsDomain.is_any thread
    -> F.asprintf
         "%s, so we assume that this method can run in parallel with other non-private methods in the class (incuding itself)."
         threadsafe_explanation
@@ -1170,18 +1170,18 @@ let get_reporting_explanation report_kind tenv pname thread =
         threadsafe_explanation
   | _, None
    -> (* failed to explain based on @ThreadSafe annotation; have to justify using background thread *)
-      if ThreadSafetyDomain.ThreadsDomain.is_any thread then
+      if RacerDDomain.ThreadsDomain.is_any thread then
         F.asprintf "@\n Reporting because this access may occur on a background thread."
       else
         F.asprintf
           "@\n Reporting because another access to the same memory occurs on a background thread, although this access may not."
 
 let filter_by_access access_filter trace =
-  let open ThreadSafetyDomain in
+  let open RacerDDomain in
   PathDomain.Sinks.filter access_filter (PathDomain.sinks trace) |> PathDomain.update_sinks trace
 
 let get_all_accesses_with_pre pre_filter access_filter accesses =
-  let open ThreadSafetyDomain in
+  let open RacerDDomain in
   AccessDomain.fold
     (fun pre trace acc ->
       if pre_filter pre then PathDomain.join (filter_by_access access_filter trace) acc else acc)
@@ -1194,17 +1194,17 @@ let pp_container_access fmt (access_path, access_pname) =
     (MF.monospaced_to_string (Typ.Procname.get_method access_pname))
 
 let pp_access fmt sink =
-  match ThreadSafetyDomain.PathDomain.Sink.kind sink with
+  match RacerDDomain.PathDomain.Sink.kind sink with
   | Read access_path | Write access_path
    -> F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp) access_path
   | ContainerRead (access_path, access_pname) | ContainerWrite (access_path, access_pname)
    -> pp_container_access fmt (access_path, access_pname)
   | InterfaceCall _ as access
-   -> F.fprintf fmt "%a" ThreadSafetyDomain.Access.pp access
+   -> F.fprintf fmt "%a" RacerDDomain.Access.pp access
 
 let desc_of_sink sink =
-  let sink_pname = CallSite.pname (ThreadSafetyDomain.PathDomain.Sink.call_site sink) in
-  match ThreadSafetyDomain.PathDomain.Sink.kind sink with
+  let sink_pname = CallSite.pname (RacerDDomain.PathDomain.Sink.call_site sink) in
+  match RacerDDomain.PathDomain.Sink.kind sink with
   | Read _ | Write _
    -> if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
         F.asprintf "access to %a" pp_access sink
@@ -1219,11 +1219,11 @@ let desc_of_sink sink =
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
   | InterfaceCall _ as access
    -> if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
-        F.asprintf "%a" ThreadSafetyDomain.Access.pp access
+        F.asprintf "%a" RacerDDomain.Access.pp access
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
 
 let trace_of_pname orig_sink orig_pdesc callee_pname =
-  let open ThreadSafetyDomain in
+  let open RacerDDomain in
   let orig_access = PathDomain.Sink.kind orig_sink in
   match Summary.read_summary orig_pdesc callee_pname with
   | Some {accesses}
@@ -1234,7 +1234,7 @@ let trace_of_pname orig_sink orig_pdesc callee_pname =
    -> PathDomain.empty
 
 let make_trace ~report_kind original_path pdesc =
-  let open ThreadSafetyDomain in
+  let open RacerDDomain in
   let loc_trace_of_path path = PathDomain.to_sink_loc_trace ~desc_of_sink path in
   let make_trace_for_sink sink =
     let trace_of_pname = trace_of_pname sink pdesc in
@@ -1269,7 +1269,7 @@ let make_trace ~report_kind original_path pdesc =
 
 let report_thread_safety_violation tenv pdesc issue_type ~make_description ~report_kind access
     thread =
-  let open ThreadSafetyDomain in
+  let open RacerDDomain in
   let pname = Procdesc.get_proc_name pdesc in
   let report_one_path (_, sinks as path) =
     let initial_sink, _ = List.last_exn sinks in
@@ -1317,8 +1317,7 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
   Format.asprintf "Unprotected write. Non-private method %a%s %s %a outside of synchronization."
     (MF.wrap_monospaced pp_procname_short) pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
-    ( if ThreadSafetyDomain.TraceElem.is_container_write final_sink then "mutates"
-    else "writes to field" )
+    (if RacerDDomain.TraceElem.is_container_write final_sink then "mutates" else "writes to field")
     pp_access final_sink
 
 let make_read_write_race_description ~read_is_sync conflicts pname final_sink_site
@@ -1398,14 +1397,14 @@ let should_report_on_proc proc_desc tenv =
 *)
 let report_unsafe_accesses
     (aggregated_access_map:
-    ( ThreadSafetyDomain.TraceElem.t
-    * ThreadSafetyDomain.AccessPrecondition.t
-    * ThreadSafetyDomain.ThreadsDomain.astate
+    ( RacerDDomain.TraceElem.t
+    * RacerDDomain.AccessPrecondition.t
+    * RacerDDomain.ThreadsDomain.astate
     * Tenv.t
     * Procdesc.t )
     list
     AccessListMap.t) =
-  let open ThreadSafetyDomain in
+  let open RacerDDomain in
   let is_duplicate_report access pname {reported_sites; reported_writes; reported_reads} =
     if Config.filtering then CallSite.Set.mem (TraceElem.call_site access) reported_sites
       ||
@@ -1591,21 +1590,21 @@ let report_unsafe_accesses
     aggregated_access_map empty_reported
   |> ignore
 
-type ('a, 'b, 'c) dat = ThreadSafetyDomain.TraceElem.t * 'a * 'b * Tenv.t * 'c
+type ('a, 'b, 'c) dat = RacerDDomain.TraceElem.t * 'a * 'b * Tenv.t * 'c
 
 module type QuotientedAccessListMap = sig
   type ('a, 'b, 'c) t
 
   val empty : ('a, 'b, 'c) t
 
-  val add : ThreadSafetyDomain.Access.t -> ('a, 'b, 'c) dat -> ('a, 'b, 'c) t -> ('a, 'b, 'c) t
+  val add : RacerDDomain.Access.t -> ('a, 'b, 'c) dat -> ('a, 'b, 'c) t -> ('a, 'b, 'c) t
 
   val quotient : ('a, 'b, 'c) t -> ('a, 'b, 'c) dat list AccessListMap.t
 end
 
 module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
   module M = Caml.Map.Make (struct
-    type t = ThreadSafetyDomain.Access.t
+    type t = RacerDDomain.Access.t
 
     type _var = Var.t
 
@@ -1626,7 +1625,7 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
         , (Read ap2 | Write ap2 | ContainerRead (ap2, _) | ContainerWrite (ap2, _)) )
        -> [%compare : (_var * Typ.t) * AccessPath.access list] ap1 ap2
       | InterfaceCall _, _ | _, InterfaceCall _
-       -> ThreadSafetyDomain.Access.compare x y
+       -> RacerDDomain.Access.compare x y
   end)
 
   type ('a, 'b, 'c) t = ('a, 'b, 'c) dat list M.t
@@ -1715,7 +1714,7 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
         let k, vals = AccessListMap.min_binding m in
         let _, _, _, tenv, _ =
           List.find_exn vals ~f:(fun (elem, _, _, _, _) ->
-              ThreadSafetyDomain.Access.equal (ThreadSafetyDomain.TraceElem.kind elem) k )
+              RacerDDomain.Access.equal (RacerDDomain.TraceElem.kind elem) k )
         in
         (* assumption: the tenv for k is sufficient for k' too *)
         let k_part, non_k_part =
@@ -1728,7 +1727,7 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
                 , (ContainerRead (ap2, _) | ContainerWrite (ap2, _)) )
                -> syntactic_equal_access_path tenv ap1 ap2
               | _
-               -> ThreadSafetyDomain.Access.equal k k')
+               -> RacerDDomain.Access.equal k k')
             m
         in
         if AccessListMap.is_empty k_part then L.(die InternalError) "may_alias is not reflexive!" ;
@@ -1743,7 +1742,7 @@ end
    for now, just check for whether the access is within a switch-map
    that is auto-generated by Java. *)
 let should_filter_access access =
-  match ThreadSafetyDomain.Access.get_access_path access with
+  match RacerDDomain.Access.get_access_path access with
   | Some (_, path)
    -> let check_access_step = function
         | AccessPath.ArrayAccess _
@@ -1759,7 +1758,7 @@ let should_filter_access access =
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
 let make_results_table (module AccessListMap: QuotientedAccessListMap) file_env =
-  let open ThreadSafetyDomain in
+  let open RacerDDomain in
   let aggregate_post {threads; accesses} tenv pdesc acc =
     AccessDomain.fold
       (fun pre accesses acc ->

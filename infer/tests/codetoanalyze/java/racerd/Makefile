@@ -8,13 +8,8 @@
 TESTS_DIR = ../../..
 
 ANALYZER = checkers
-# see explanations in cpp/errors/Makefile for the custom isystem
-CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(ROOT_DIR) -isystem$(CLANG_INCLUDES)/c++/v1/ -c
-INFER_OPTIONS = --threadsafety-only --debug-exceptions --project-root $(TESTS_DIR)
+INFER_OPTIONS = --racerd-only --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
+SOURCES = $(wildcard *.java)
 
-SOURCES = $(wildcard *.cpp)
-
-include $(TESTS_DIR)/clang.make
-
-infer-out/report.json: $(MAKEFILE_LIST)
+include $(TESTS_DIR)/javac.make

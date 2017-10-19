@@ -627,8 +627,6 @@ val show_progress_bar : bool
 
 val siof : bool
 
-val uninit : bool
-
 val siof_safe_methods : string list
 
 val skip_analysis_in_path : string list
@@ -665,7 +663,7 @@ val test_filtering : bool
 
 val testing_mode : bool
 
-val threadsafety : bool
+val racerd : bool
 
 val threadsafe_aliases : Yojson.Basic.json
 
@@ -680,6 +678,8 @@ val trace_rearrange : bool
 val tv_limit : int
 
 val type_size : bool
+
+val uninit : bool
 
 val unsafe_malloc : bool
 

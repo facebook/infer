@@ -336,7 +336,7 @@ type payload =
   ; quandary: QuandarySummary.t option
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.astate option
-  ; threadsafety: ThreadSafetyDomain.summary option
+  ; racerd: RacerDDomain.summary option
   ; buffer_overrun: BufferOverrunDomain.Summary.t option
   ; uninit: UninitDomain.summary option }
 
@@ -465,7 +465,7 @@ let pp_payload pe fmt
     ; crashcontext_frame
     ; quandary
     ; siof
-    ; threadsafety
+    ; racerd
     ; buffer_overrun
     ; annot_map
     ; uninit } =
@@ -481,7 +481,7 @@ let pp_payload pe fmt
     (pp_opt "TypeState" (TypeState.pp TypeState.unit_ext))
     typestate (pp_opt "CrashContext" Crashcontext.pp_stacktree) crashcontext_frame
     (pp_opt "Quandary" QuandarySummary.pp) quandary (pp_opt "Siof" SiofDomain.pp) siof
-    (pp_opt "ThreadSafety" ThreadSafetyDomain.pp_summary) threadsafety
+    (pp_opt "RacerD" RacerDDomain.pp_summary) racerd
     (pp_opt "BufferOverrun" BufferOverrunDomain.Summary.pp) buffer_overrun
     (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp) annot_map
     (pp_opt "Uninitialised" UninitDomain.pp_summary) uninit
@@ -695,7 +695,7 @@ let empty_payload =
   ; quandary= None
   ; resources= None
   ; siof= None
-  ; threadsafety= None
+  ; racerd= None
   ; buffer_overrun= None
   ; uninit= None }
 

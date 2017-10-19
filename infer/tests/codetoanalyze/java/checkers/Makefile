@@ -11,7 +11,7 @@ ANALYZER = checkers
 INFER_OPTIONS = \
   --debug-exceptions --dynamic-dispatch none --no-default-checkers \
   --annotation-reachability --fragment-retains-view --immutable-cast --printf-args --quandary \
-  --suggest-nullable --threadsafety \
+  --suggest-nullable --racerd \
 
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java)

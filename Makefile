@@ -48,7 +48,7 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   c_biabduction c_bufferoverrun c_errors c_frontend \
-  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_quandary cpp_siof cpp_threadsafety cpp_uninit cpp_nullable \
+  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_quandary cpp_racerd cpp_siof cpp_uninit cpp_nullable \
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
@@ -86,7 +86,7 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   java_checkers java_eradicate java_infer java_lab java_tracing java_quandary \
-  java_threadsafety java_crashcontext java_harness
+  java_racerd java_crashcontext java_harness
 ifneq ($(ANT),no)
 BUILD_SYSTEMS_TESTS += ant
 endif
