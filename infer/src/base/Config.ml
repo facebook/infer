@@ -727,7 +727,7 @@ and ( annotation_reachability
   and suggest_nullable =
     mk_checker ~long:"suggest-nullable" ~default:false "Nullable annotation sugesstions analysis"
   and threadsafety = mk_checker ~long:"threadsafety" ~default:true "the thread safety analysis"
-  and uninit = mk_checker ~long:"uninit" ~default:true "checker for use of uninitialized values" in
+  and uninit = mk_checker ~long:"uninit" "checker for use of uninitialized values" in
   let mk_only (var, long, doc, _) =
     let _ : bool ref =
       CLOpt.mk_bool_group ~long:(long ^ "-only")
