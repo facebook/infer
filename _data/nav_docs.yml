@@ -10,7 +10,7 @@
   - id: checkers
   - id: eradicate
   - id: linters
-  - id: threadsafety
+  - id: racerd
   - id: experimental-checkers
   - id: advanced-features
   - id: adding-models
