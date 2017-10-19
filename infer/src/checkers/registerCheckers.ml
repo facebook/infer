@@ -72,6 +72,13 @@ let all_checkers =
     ; callbacks=
         [ (Procedure JavaTaintAnalysis.checker, Config.Java)
         ; (Procedure ClangTaintAnalysis.checker, Config.Clang) ] }
+  ; { name= "RacerD"
+    ; active= Config.racerd
+    ; callbacks=
+        [ (Procedure RacerD.analyze_procedure, Config.Clang)
+        ; (Procedure RacerD.analyze_procedure, Config.Java)
+        ; (Cluster RacerD.file_analysis, Config.Clang)
+        ; (Cluster RacerD.file_analysis, Config.Java) ] }
   ; { name= "repeated calls"
     ; active= Config.repeated_calls
     ; callbacks= [(Procedure RepeatedCallsChecker.callback_check_repeated_calls, Config.Java)] }
@@ -84,13 +91,6 @@ let all_checkers =
             Procedure ResourceLeaks.checker
           , Config.Java ) ] }
   ; {name= "SIOF"; active= Config.siof; callbacks= [(Procedure Siof.checker, Config.Clang)]}
-  ; { name= "RacerD"
-    ; active= Config.racerd
-    ; callbacks=
-        [ (Procedure RacerD.analyze_procedure, Config.Clang)
-        ; (Procedure RacerD.analyze_procedure, Config.Java)
-        ; (Cluster RacerD.file_analysis, Config.Clang)
-        ; (Cluster RacerD.file_analysis, Config.Java) ] }
   ; { name= "uninitialized variables"
     ; active= Config.uninit
     ; callbacks= [(Procedure Uninit.checker, Config.Clang)] } ]
