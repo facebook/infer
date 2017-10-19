@@ -202,6 +202,59 @@ synchronized void setFWithLock() {
 
 Unlike the other annotations shown here, this one lives in [Android](https://developer.android.com/reference/android/support/annotation/VisibleForTesting.html).
 
+## <a name="interprocedural"></a> Interprocedural Reasoning
+
+An important feature of RacerD is that it finds races by analyzing not just one file or class, but by looking at memory 
+accesses that occur after going through several procedure calls. It handles this even between classes and between files.
+
+Here is a very basic example
+```
+@ThreadSafe
+class A{
+
+  void m1(B bb) {
+    bb.meth_write();
+  }
+}
+
+class B{
+ Integer x;
+
+ void meth_write() {
+   x = 88;
+ }
+
+}
+```
+
+Class `B` is not annotated '@ThreadSafe' and does not have any locks, so RacerD does not directly look for threading issues there.
+However, method `m1()` in class `A` has a potential self-race, if it is run in parallel with itself and the same argument for each call.
+RacerD discovers this.
+```
+InterProc.java:17: error: THREAD_SAFETY_VIOLATION
+  Unprotected write. Non-private method `A.m1` indirectly writes to field `&this.B.x` outside of synchronization.
+ Reporting because the current class is annotated `@ThreadSafe`, so we assume that this method can run in 
+ parallel with other non-private methods in the class (incuding itself).
+  15.   
+  16.     void m1(B bb) {
+  17. >     bb.meth_write();
+  18.     }
+  19.   }
+```
+
+RacerD does this sort of reasoning using what is known as a *compositional inteprocedural analysis*. There, each method is
+analyzed independently of its context to produce a summary of the behaviour of the procedure. In this case the summaries for `m1()' and `meth()' include information as follows.
+```
+Procedure: void A.m1(B) 
+Accesses: { Unprotected({ 1 }) -> { Write to &bb.B.x at void B.meth_write() at line 17 } } 
+
+Procedure: void B.meth_write() 
+Accesses { Unprotected({ 0 }) -> { Write to &this.B.x at  at line 25 } } 
+```
+The descriptions here are cryptic and do not include all the information in the summaries, but the main point is 
+that you can use RacerD to look for races in condebases where the mutations done by threads might occur only 
+after a chain of procedure calls. 
+
 ## <a name="context"></a> Context and Selected Related Work
 
 Reasoning about concurrency divides into bug detection and proving absence of bugs. Our analyzer is on the detection side of reasoning.  
@@ -213,7 +266,7 @@ The rapid growth in the number of interleavings is problematic for tools that at
 Static analysis for concurrency has attracted a lot of attention from researchers, but difficulties with scalability and precision have meant that previous techniques have had little industrial impact. Automatic static race detection itself has seen significant work.  The most advanced approaches, exemplified by the [Chord](http://www.cis.upenn.edu/~mhnaik/pubs/pldi06.pdf) tool, often use a whole-program analysis paired with a sophisticated alias analysis, two features we have consciously avoided. Generally speaking, the leading research tools can be more precise,  but our analyzer is faster and can operate without the whole program: we have opted to go for speed in a way that enables industrial deployment on a large, rapidly changing codebase, while trying to use as simple techniques as possible to cover many (not all) of the patterns covered by slower but precise research tools.
 
 An industrial static analysis tool from [Contemplate](http://homepages.inf.ed.ac.uk/dts/pub/avocs2015.pdf) also targets @ThreadSafe annotations, but limits the amount of inter-procedural reasoning: “This analysis is interprocedural, but to keep the overall analysis scalable, only calls to private and protected methods on the same class are followed”. Our analyzer does deep, cross-file and cross-class inter-procedural reasoning, and yet still scales; the inter-class capability was one of the first requests from Facebook engineers.
-[A separate blog post looked at  100 recent data race fixes](https://code.facebook.com/posts/1537144479682247/finding-inter-procedural-bugs-at-scale-with-infer-static-analyzer/) in Infer's deployment in various bug categories, and for data races observed that 53 of them were inter-file (and thus involving multiple classes). 
+[A separate blog post looked at  100 recent data race fixes](https://code.facebook.com/posts/1537144479682247/finding-inter-procedural-bugs-at-scale-with-infer-static-analyzer/) in Infer's deployment in various bug categories, and for data races observed that 53 of them were inter-file (and thus involving multiple classes). [See above](http://fbinfer.com/docs/racerd.html#interprocedural) for an example of RacerD's interprocedural capabilities. 
 
 One reaction to the challenge of developing effective static race detectors has been to ask the programmer to do more work to help the analyzer. Examples of this approach include the [Clang Thread Safety Analyzer](https://clang.llvm.org/docs/ThreadSafetyAnalysis.html), 
 the typing of [locks](https://doc.rust-lang.org/std/sync/struct.Mutex.html) in Rust, and the use/checking of @GuardedBy annotations in [Java](https://homes.cs.washington.edu/~mernst/pubs/locking-semantics-nfm2016.pdf) including 
