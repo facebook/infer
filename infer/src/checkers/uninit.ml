@@ -255,5 +255,8 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       {RecordDomain.uninit_vars= _; RecordDomain.aliased_vars= _; RecordDomain.prepost= pre, post}
    -> Summary.update_summary {pre; post} summary
   | None
-   -> L.(die InternalError)
-        "Analyzer failed to compute post for %a" Typ.Procname.pp (Procdesc.get_proc_name proc_desc)
+   -> if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
+        L.internal_error "Uninit analyzer failed to compute post for %a" Typ.Procname.pp
+          (Procdesc.get_proc_name proc_desc) ;
+        summary )
+      else summary
