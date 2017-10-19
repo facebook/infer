@@ -227,7 +227,7 @@ class B{
 }
 ```
 
-Class `B` is not annotated '@ThreadSafe' and does not have any locks, so RacerD does not directly look for threading issues there.
+Class `B` is not annotated `@ThreadSafe` and does not have any locks, so RacerD does not directly look for threading issues there.
 However, method `m1()` in class `A` has a potential self-race, if it is run in parallel with itself and the same argument for each call.
 RacerD discovers this.
 ```
