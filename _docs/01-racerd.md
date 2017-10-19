@@ -1,6 +1,6 @@
 ---
 docid: racerd
-title: "RacerD : static data race dectector"
+title: "Infer : RacerD"
 layout: docs
 permalink: /docs/racerd.html
 ---
