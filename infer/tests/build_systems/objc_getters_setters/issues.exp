@@ -1,2 +1,3 @@
 build_systems/codetoanalyze/objc_getters_setters/B.m, B_npe_no_bad_footprint_in_getter:, 3, NULL_DEREFERENCE, [start of procedure npe_no_bad_footprint_in_getter:]
 build_systems/codetoanalyze/objc_getters_setters/B.m, B_npe_no_bad_footprint_in_setter:andMetadata:, 3, NULL_DEREFERENCE, [start of procedure npe_no_bad_footprint_in_setter:andMetadata:]
+build_systems/codetoanalyze/objc_getters_setters/B.m, B_npe_no_precondition_not_met:, 4, NULL_DEREFERENCE, [start of procedure npe_no_precondition_not_met:,start of procedure infer_field_get_spec:,start of procedure withMetadata:,return from a call to A_withMetadata:,return from a call to B_infer_field_get_spec:,start of procedure getX,return from a call to A_getX,Condition is true]

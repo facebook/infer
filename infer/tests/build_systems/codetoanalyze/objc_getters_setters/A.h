@@ -13,4 +13,6 @@
 
 @property(nullable, nonatomic, copy) NSData* metadata;
 
+- (int)getX;
+
 @end

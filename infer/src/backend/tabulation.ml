@@ -1076,21 +1076,21 @@ let exe_spec tenv ret_id_opt (n, nspecs) caller_pdesc callee_pname loc prop path
           Invalid_res (Dereference_error (deref_error, desc, pjoin))
       | None
        -> let split = do_split () in
-          (* check if a missing_fld hpred is about a hidden field *)
-          let hpred_missing_hidden = function
-            | Sil.Hpointsto (_, Sil.Estruct ([(fld, _)], _), _)
-             -> Typ.Fieldname.is_hidden fld
+          (* check if a missing_fld hpred is from a dyn language (ObjC) *)
+          let hpred_missing_objc_class = function
+            | Sil.Hpointsto (_, Sil.Estruct (_, _), Exp.Sizeof {typ})
+             -> Typ.is_objc_class typ
             | _
              -> false
           in
           (* missing fields minus hidden fields *)
-          let missing_fld_nohidden =
-            List.filter ~f:(fun hp -> not (hpred_missing_hidden hp)) missing_fld
+          let missing_fld_not_objc_class =
+            List.filter ~f:(fun hp -> not (hpred_missing_objc_class hp)) missing_fld
           in
           if not !Config.footprint && split.missing_sigma <> [] then (
             L.d_strln "Implication error: missing_sigma not empty in re-execution" ;
             Invalid_res Missing_sigma_not_empty )
-          else if not !Config.footprint && missing_fld_nohidden <> [] then (
+          else if not !Config.footprint && missing_fld_not_objc_class <> [] then (
             L.d_strln "Implication error: missing_fld not empty in re-execution" ;
             Invalid_res Missing_fld_not_empty )
           else report_valid_res split

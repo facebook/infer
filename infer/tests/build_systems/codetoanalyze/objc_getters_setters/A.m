@@ -8,6 +8,20 @@
  */
 #import "A.h"
 
-@implementation A
+@implementation A {
+
+  int _x;
+  NSString* _name;
+}
+
+- (instancetype)withMetadata:(NSString*)name {
+  self->_x = 5;
+  self->_name = name;
+  return self;
+}
+
+- (int)getX {
+  return _x;
+}
 
 @end
