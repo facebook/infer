@@ -652,14 +652,6 @@ let create_procdesc_with_pointer context pointer class_name_opt name =
       in
       create_external_procdesc context.cfg callee_name false None ; callee_name
 
-let add_default_method_for_class trans_unit_ctx class_name decl_info =
-  let loc =
-    CLocation.get_sil_location_from_range trans_unit_ctx decl_info.Clang_ast_t.di_source_range true
-  in
-  let proc_name = Typ.Procname.get_default_objc_class_method class_name in
-  let attrs = {(ProcAttributes.default proc_name Config.Clang) with loc} in
-  Attributes.store attrs
-
 let get_procname_from_cpp_lambda context dec =
   match dec with
   | Clang_ast_t.CXXRecordDecl (_, _, _, _, _, _, _, cxx_rdi) -> (

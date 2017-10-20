@@ -277,12 +277,10 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
          -> let curr_class = CContext.ContextClsDeclPtr dec_ptr in
             ignore (ObjcCategory_decl.category_impl_decl CType_decl.qual_type_to_sil_type tenv dec) ;
             process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
-        | ObjCImplementationDecl (decl_info, _, decl_list, _, _)
+        | ObjCImplementationDecl (_, _, decl_list, _, _)
          -> let curr_class = CContext.ContextClsDeclPtr dec_ptr in
-            let class_typename = CType_decl.get_record_typename ~tenv dec in
             let qual_type_to_sil_type = CType_decl.qual_type_to_sil_type in
             ignore (ObjcInterface_decl.interface_impl_declaration qual_type_to_sil_type tenv dec) ;
-            CMethod_trans.add_default_method_for_class trans_unit_ctx class_typename decl_info ;
             process_methods trans_unit_ctx tenv cg cfg curr_class decl_list
         | CXXMethodDecl (decl_info, _, _, _, _)
         | CXXConstructorDecl (decl_info, _, _, _, _)

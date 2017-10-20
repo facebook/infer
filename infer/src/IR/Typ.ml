@@ -614,12 +614,6 @@ module Procname = struct
   let objc_cpp class_name method_name kind template_args ~is_generic_model =
     {class_name; method_name; kind; template_args; is_generic_model}
 
-  let get_default_objc_class_method objc_class =
-    let objc_cpp =
-      objc_cpp objc_class "__find_class_" ObjCInternalMethod NoTemplate ~is_generic_model:false
-    in
-    ObjC_Cpp objc_cpp
-
   (** Create an objc procedure name from a class_name and method_name. *)
   let mangled_objc_block name = Block name
 

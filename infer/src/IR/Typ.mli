@@ -374,8 +374,6 @@ module Procname : sig
     -> objc_cpp
   (** Create an objc procedure name from a class_name and method_name. *)
 
-  val get_default_objc_class_method : Name.t -> t
-
   val objc_cpp_get_class_name : objc_cpp -> string
   (** Get the class name of a Objective-C/C++ procedure name. *)
 

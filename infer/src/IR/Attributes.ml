@@ -131,14 +131,6 @@ let store (attr: ProcAttributes.t) =
 
 let load_defined pname = Data.of_pname pname |> find ~defined:true
 
-let get_correct_type_from_objc_class_name type_name =
-  (* ToDo: this function should return a type that includes a reference to the tenv computed by:
-     let class_method = Typ.Procname.get_default_objc_class_method (Typ.Name.name type_name);
-     switch (find_tenv_from_class_of_proc class_method) {
-     | Some tenv =>
-    *)
-  Some (Typ.mk (Tstruct type_name))
-
 let find_file_capturing_procedure pname =
   match load pname with
   | None

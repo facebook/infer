@@ -765,15 +765,6 @@ let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id; 
   in
   let size_exp, procname =
     match args with
-    | [((Exp.Sizeof ({typ= {Typ.desc= Tstruct (ObjcClass _ as name)}} as sizeof_data) as e), _)]
-     -> let e' =
-          match Attributes.get_correct_type_from_objc_class_name name with
-          | Some struct_type
-           -> Exp.Sizeof {sizeof_data with typ= struct_type}
-          | None
-           -> e
-        in
-        (e', pname)
     | [(size_exp, _)]
      -> (* for malloc and __new *)
         (size_exp, PredSymb.mem_alloc_pname mk)
