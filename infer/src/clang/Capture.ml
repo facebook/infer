@@ -171,6 +171,10 @@ let capture clang_cmd =
     (* this command compiles some code; replace the invocation of clang with our own clang and
        plugin *)
     cc1_capture clang_cmd
+  else if Option.is_some Config.buck_compilation_database then
+    (* when running with buck's compilation-database, skip commands where frontend cannot be
+       attached, as they may cause unnecessary compilation errors *)
+    ()
   else
     (* Non-compilation (eg, linking) command. Run the command as-is. It will not get captured
        further since `clang -### ...` will only output commands that invoke binaries using their
