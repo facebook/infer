@@ -242,13 +242,15 @@ module Make (Spec : Spec) = struct
     Passthroughs.t * (path_source * Passthroughs.t) list * (path_sink * Passthroughs.t) list
 
   let pp fmt {sources; sinks; passthroughs} =
+    let pp_passthroughs fmt passthroughs =
+      if not (Passthroughs.is_empty passthroughs) then
+        F.fprintf fmt " via %a" Passthroughs.pp passthroughs
+    in
+    let pp_sinks fmt sinks =
+      if Sinks.is_empty sinks then F.fprintf fmt "?" else Sinks.pp fmt sinks
+    in
     (* empty sources implies empty sinks and passthroughs *)
-    if not (Passthroughs.is_empty passthroughs) then
-      if not (Sinks.is_empty sinks) then
-        F.fprintf fmt "%a ~> %a via %a" Sources.pp sources Sinks.pp sinks Passthroughs.pp
-          passthroughs
-      else F.fprintf fmt "%a ~> ? via %a" Sources.pp sources Passthroughs.pp passthroughs
-    else F.fprintf fmt "%a ~> ?" Sources.pp sources
+    F.fprintf fmt "%a ~> %a%a" Sources.pp sources pp_sinks sinks pp_passthroughs passthroughs
 
   let get_path_source_call_site = function
     | Known source
