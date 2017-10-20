@@ -289,9 +289,10 @@ There are a number of known limitations to the design of the race detector.
 * It uses a boolean locks abstraction, and so misses races where two accesses are mistakenly protected by different locks
 * It assumes a deep ownership model, which misses races where local objects refer to or contain non-owned objects. 
 * It avoids reasoning about weak memory and Java's volatile keyword
+
 Most of these limitations are consistent with the design goal of reducing false positives, even if they lead to false negatives. They also allow technical tradeoffs which are different than if we were to favour reduction of false negatives over false positives.  
 
-A different kind of limitation concenrs the bugs searched for: Data races are the most basic form of concurrency error, but
+A different kind of limitation concerns the bugs searched for: Data races are the most basic form of concurrency error, but
 there are many types of concurrency issues out there that RacerD does not check for (but might in the future). Examples include 
 deadlock, atomicity, and check-then-act bugs (shown below). You must look for these bugs yourself!
 
