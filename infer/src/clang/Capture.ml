@@ -18,8 +18,10 @@ let debug_mode = Config.debug_mode || Config.frontend_stats
 let validate_decl_from_file fname =
   Ag_util.Biniou.from_file ~len:CFrontend_config.biniou_buffer_size Clang_ast_b.read_decl fname
 
+
 let validate_decl_from_channel chan =
   Ag_util.Biniou.from_channel ~len:CFrontend_config.biniou_buffer_size Clang_ast_b.read_decl chan
+
 
 let register_perf_stats_report source_file =
   let stats_dir = Filename.concat Config.results_dir Config.frontend_stats_dir_name in
@@ -28,12 +30,14 @@ let register_perf_stats_report source_file =
   Unix.mkdir_p stats_dir ;
   PerfStats.register_report_at_exit (Filename.concat stats_dir stats_file)
 
+
 let init_global_state_for_capture_and_linters source_file =
   L.(debug Capture Medium) "Processing %s" (Filename.basename (SourceFile.to_abs_path source_file)) ;
   if Config.developer_mode then register_perf_stats_report source_file ;
   Config.curr_language := Config.Clang ;
   if Config.clang_frontend_do_capture then DB.Results_dir.init source_file ;
   CFrontend_config.reset_global_state ()
+
 
 let run_clang_frontend ast_source =
   let init_time = Mtime_clock.counter () in
@@ -42,40 +46,40 @@ let run_clang_frontend ast_source =
   in
   let ast_decl =
     match ast_source with
-    | `File path
-     -> validate_decl_from_file path
-    | `Pipe chan
-     -> validate_decl_from_channel chan
+    | `File path ->
+        validate_decl_from_file path
+    | `Pipe chan ->
+        validate_decl_from_channel chan
   in
   let trans_unit_ctx =
     match ast_decl with
-    | Clang_ast_t.TranslationUnitDecl (_, _, _, info)
-     -> Config.arc_mode := info.Clang_ast_t.tudi_arc_enabled ;
+    | Clang_ast_t.TranslationUnitDecl (_, _, _, info) ->
+        Config.arc_mode := info.Clang_ast_t.tudi_arc_enabled ;
         let source_file = SourceFile.from_abs_path info.Clang_ast_t.tudi_input_path in
         init_global_state_for_capture_and_linters source_file ;
         let lang =
           match info.Clang_ast_t.tudi_input_kind with
-          | `IK_C
-           -> CFrontend_config.C
-          | `IK_CXX
-           -> CFrontend_config.CPP
-          | `IK_ObjC
-           -> CFrontend_config.ObjC
-          | `IK_ObjCXX
-           -> CFrontend_config.ObjCPP
-          | _
-           -> assert false
+          | `IK_C ->
+              CFrontend_config.C
+          | `IK_CXX ->
+              CFrontend_config.CPP
+          | `IK_ObjC ->
+              CFrontend_config.ObjC
+          | `IK_ObjCXX ->
+              CFrontend_config.ObjCPP
+          | _ ->
+              assert false
         in
-        {CFrontend_config.source_file= source_file; lang}
-    | _
-     -> assert false
+        {CFrontend_config.source_file; lang}
+    | _ ->
+        assert false
   in
   let pp_ast_filename fmt ast_source =
     match ast_source with
-    | `File path
-     -> Format.fprintf fmt "%s" path
-    | `Pipe _
-     -> Format.fprintf fmt "stdin of %a" SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
+    | `File path ->
+        Format.fprintf fmt "%s" path
+    | `Pipe _ ->
+        Format.fprintf fmt "stdin of %a" SourceFile.pp trans_unit_ctx.CFrontend_config.source_file
   in
   ClangPointers.populate_all_tables ast_decl ;
   L.(debug Capture Quiet) "Clang frontend action is %s@\n" Config.clang_frontend_action_string ;
@@ -89,11 +93,13 @@ let run_clang_frontend ast_source =
     ast_source ;
   print_elapsed ()
 
+
 let run_and_validate_clang_frontend ast_source =
   try run_clang_frontend ast_source
   with exc ->
     reraise_if exc ~f:(fun () -> not Config.keep_going) ;
     L.internal_error "ERROR RUNNING CAPTURE: %a@\n%s@\n" Exn.pp exc (Printexc.get_backtrace ())
+
 
 let run_clang clang_command read =
   let exit_with_error exit_code =
@@ -103,13 +109,14 @@ let run_clang clang_command read =
   in
   (* NOTE: exceptions will propagate through without exiting here *)
   match Utils.with_process_in clang_command read with
-  | res, Ok ()
-   -> res
-  | _, Error `Exit_non_zero n
-   -> (* exit with the same error code as clang in case of compilation failure *)
+  | res, Ok () ->
+      res
+  | _, Error `Exit_non_zero n ->
+      (* exit with the same error code as clang in case of compilation failure *)
       exit_with_error n
-  | _
-   -> exit_with_error 1
+  | _ ->
+      exit_with_error 1
+
 
 let run_plugin_and_frontend source_path frontend clang_args =
   let clang_command = ClangCommand.command_to_run (ClangCommand.with_plugin_args clang_args) in
@@ -127,6 +134,7 @@ let run_plugin_and_frontend source_path frontend clang_args =
         biniou_fname basename ;
       Out_channel.close debug_script_out ) ;
   run_clang clang_command frontend
+
 
 let cc1_capture clang_cmd =
   let source_path =
@@ -150,12 +158,13 @@ let cc1_capture clang_cmd =
     () )
   else
     match Config.clang_biniou_file with
-    | Some fname
-     -> run_and_validate_clang_frontend (`File fname)
-    | None
-     -> run_plugin_and_frontend source_path
+    | Some fname ->
+        run_and_validate_clang_frontend (`File fname)
+    | None ->
+        run_plugin_and_frontend source_path
           (fun chan_in -> run_and_validate_clang_frontend (`Pipe chan_in))
           clang_cmd
+
 
 let capture clang_cmd =
   if ClangCommand.can_attach_ast_exporter clang_cmd then
@@ -169,3 +178,4 @@ let capture clang_cmd =
     let command_to_run = ClangCommand.command_to_run clang_cmd in
     L.(debug Capture Quiet) "Running non-cc command without capture: %s@\n" command_to_run ;
     run_clang command_to_run Utils.consume_in
+

@@ -19,6 +19,7 @@ module Summary = Summary.Make (struct
   let update_payload resources_payload (summary: Specs.summary) =
     {summary with payload= {summary.payload with resources= Some resources_payload}}
 
+
   let read_payload (summary: Specs.summary) = summary.payload.resources
 end)
 
@@ -34,18 +35,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let exec_instr (astate: Domain.astate) {ProcData.pdesc; tenv} _ (instr: HilInstr.t) =
     let is_closeable procname tenv =
       match procname with
-      | Typ.Procname.Java java_procname
-       -> let is_closable_interface typename _ =
+      | Typ.Procname.Java java_procname ->
+          let is_closable_interface typename _ =
             match Typ.Name.name typename with
-            | "java.io.AutoCloseable" | "java.io.Closeable"
-             -> true
-            | _
-             -> false
+            | "java.io.AutoCloseable" | "java.io.Closeable" ->
+                true
+            | _ ->
+                false
           in
           PatternMatch.supertype_exists tenv is_closable_interface
             (Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_procname))
-      | _
-       -> false
+      | _ ->
+          false
     in
     (* We assume all constructors of a subclass of Closeable acquire a resource *)
     let acquires_resource procname tenv =
@@ -54,14 +55,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     (* We assume the close method of a Closeable releases all of its resources *)
     let releases_resource procname tenv =
       match Typ.Procname.get_method procname with
-      | "close"
-       -> is_closeable procname tenv
-      | _
-       -> false
+      | "close" ->
+          is_closeable procname tenv
+      | _ ->
+          false
     in
     match instr with
     | Call (_return_opt, Direct callee_procname, _actuals, _, _loc)
-     -> (
+      -> (
         (* function call [return_opt] := invoke [callee_procname]([actuals]) *)
         (* 1(e) *)
         let astate' =
@@ -70,23 +71,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else astate
         in
         match Summary.read_summary pdesc callee_procname with
-        | Some _summary
-         -> (* Looked up the summary for callee_procname... do something with it *)
+        | Some _summary ->
+            (* Looked up the summary for callee_procname... do something with it *)
             (* 4(a) *)
             (* 5(b) *)
             astate'
-        | None
-         -> (* No summary for callee_procname; it's native code or missing for some reason *)
+        | None ->
+            (* No summary for callee_procname; it's native code or missing for some reason *)
             astate' )
-    | Assign (_lhs_access_path, _rhs_exp, _loc)
-     -> (* an assigment [lhs_access_path] := [rhs_exp] *)
+    | Assign (_lhs_access_path, _rhs_exp, _loc) ->
+        (* an assigment [lhs_access_path] := [rhs_exp] *)
         astate
-    | Assume (_assume_exp, _, _, _loc)
-     -> (* a conditional assume([assume_exp]). blocks if [assume_exp] evaluates to false *)
+    | Assume (_assume_exp, _, _, _loc) ->
+        (* a conditional assume([assume_exp]). blocks if [assume_exp] evaluates to false *)
         astate
-    | Call (_, Indirect _, _, _, _)
-     -> (* This should never happen in Java. Fail if it does. *)
+    | Call (_, Indirect _, _, _, _) ->
+        (* This should never happen in Java. Fail if it does. *)
         L.(die InternalError) "Unexpected indirect call %a" HilInstr.pp instr
+
 end
 
 (* Create an intraprocedural abstract interpreter from the transfer functions we defined *)
@@ -118,11 +120,12 @@ let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =
   let proc_data = ProcData.make proc_desc tenv extras in
   let initial = (ResourceLeakDomain.initial, IdAccessPathMapDomain.empty) in
   match Analyzer.compute_post proc_data ~initial ~debug:false with
-  | Some (post, _)
-   -> (* 1(f) *)
+  | Some (post, _) ->
+      (* 1(f) *)
       report post proc_data ;
       Summary.update_summary (convert_to_summary post) summary
-  | None
-   -> L.(die InternalError)
+  | None ->
+      L.(die InternalError)
         "Analyzer failed to compute post for %a" Typ.Procname.pp
         (Procdesc.get_proc_name proc_data.pdesc)
+

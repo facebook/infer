@@ -18,6 +18,7 @@ module Summary = Summary.Make (struct
   let update_payload post (summary: Specs.summary) =
     {summary with payload= {summary.payload with racerd= Some post}}
 
+
   let read_payload (summary: Specs.summary) = summary.payload.racerd
 end)
 
@@ -37,12 +38,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let pn = Typ.Procname.java_get_class_name java_pname in
     String.is_suffix ~suffix:"ThreadUtils" pn || String.is_suffix ~suffix:"ThreadUtil" pn
 
+
   let is_thread_utils_method method_name_str = function
-    | Typ.Procname.Java java_pname
-     -> is_thread_utils_type java_pname
+    | Typ.Procname.Java java_pname ->
+        is_thread_utils_type java_pname
         && String.equal (Typ.Procname.java_get_method java_pname) method_name_str
-    | _
-     -> false
+    | _ ->
+        false
+
 
   let get_lock_model =
     let is_cpp_lock =
@@ -88,7 +91,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     fun pname actuals ->
       match pname with
       | Typ.Procname.Java java_pname
-       -> (
+        -> (
           if is_thread_utils_method "assertHoldsLock" (Typ.Procname.Java java_pname) then Lock
           else
             match
@@ -97,47 +100,49 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             | ( ( "java.util.concurrent.locks.Lock" | "java.util.concurrent.locks.ReentrantLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" )
-              , ("lock" | "lockInterruptibly") )
-             -> Lock
+              , ("lock" | "lockInterruptibly") ) ->
+                Lock
             | ( ( "java.util.concurrent.locks.Lock" | "java.util.concurrent.locks.ReentrantLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" )
-              , "unlock" )
-             -> Unlock
+              , "unlock" ) ->
+                Unlock
             | ( ( "java.util.concurrent.locks.Lock" | "java.util.concurrent.locks.ReentrantLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$ReadLock"
                 | "java.util.concurrent.locks.ReentrantReadWriteLock$WriteLock" )
-              , "tryLock" )
-             -> LockedIfTrue
+              , "tryLock" ) ->
+                LockedIfTrue
             | ( "com.facebook.buck.util.concurrent.AutoCloseableReadWriteUpdateLock"
-              , ("readLock" | "updateLock" | "writeLock") )
-             -> Lock
-            | _
-             -> NoEffect )
-      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_lock pname actuals
-       -> Lock
-      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_unlock pname
-       -> Unlock
-      | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute
-       -> Lock
-      | pname when Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute
-       -> Unlock
-      | _
-       -> NoEffect
+              , ("readLock" | "updateLock" | "writeLock") ) ->
+                Lock
+            | _ ->
+                NoEffect )
+      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_lock pname actuals ->
+          Lock
+      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_unlock pname ->
+          Unlock
+      | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
+          Lock
+      | pname when Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
+          Unlock
+      | _ ->
+          NoEffect
+
 
   let get_thread_model = function
     | Typ.Procname.Java java_pname when is_thread_utils_type java_pname -> (
       match Typ.Procname.java_get_method java_pname with
-      | "assertMainThread" | "assertOnUiThread" | "checkOnMainThread"
-       -> MainThread
-      | "isMainThread" | "isUiThread"
-       -> MainThreadIfTrue
-      | "assertOnBackgroundThread" | "assertOnNonUiThread" | "checkOnNonUiThread"
-       -> BackgroundThread
-      | _
-       -> UnknownThread )
-    | _
-     -> UnknownThread
+      | "assertMainThread" | "assertOnUiThread" | "checkOnMainThread" ->
+          MainThread
+      | "isMainThread" | "isUiThread" ->
+          MainThreadIfTrue
+      | "assertOnBackgroundThread" | "assertOnNonUiThread" | "checkOnNonUiThread" ->
+          BackgroundThread
+      | _ ->
+          UnknownThread )
+    | _ ->
+        UnknownThread
+
 
   let get_container_access =
     let is_cpp_container_read =
@@ -153,49 +158,50 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     fun pn tenv ->
       match pn with
-      | Typ.Procname.Java java_pname
-       -> let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
+      | Typ.Procname.Java java_pname ->
+          let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
           let get_container_access_ typename =
             match (Typ.Name.name typename, Typ.Procname.java_get_method java_pname) with
             | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
               , ( "append" | "clear" | "delete" | "put" | "remove" | "removeAt" | "removeAtRange"
-                | "setValueAt" ) )
-             -> Some ContainerWrite
+                | "setValueAt" ) ) ->
+                Some ContainerWrite
             | ( ("android.util.SparseArray" | "android.support.v4.util.SparseArrayCompat")
-              , ("clone" | "get" | "indexOfKey" | "indexOfValue" | "keyAt" | "size" | "valueAt") )
-             -> Some ContainerRead
+              , ("clone" | "get" | "indexOfKey" | "indexOfValue" | "keyAt" | "size" | "valueAt") ) ->
+                Some ContainerRead
             | ( "android.support.v4.util.SimpleArrayMap"
               , ( "clear" | "ensureCapacity" | "put" | "putAll" | "remove" | "removeAt"
-                | "setValueAt" ) )
-             -> Some ContainerWrite
+                | "setValueAt" ) ) ->
+                Some ContainerWrite
             | ( "android.support.v4.util.SimpleArrayMap"
               , ( "containsKey" | "containsValue" | "get" | "hashCode" | "indexOfKey" | "isEmpty"
-                | "keyAt" | "size" | "valueAt" ) )
-             -> Some ContainerRead
-            | "android.support.v4.util.Pools$SimplePool", ("acquire" | "release")
-             -> Some ContainerWrite
-            | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set")
-             -> Some ContainerWrite
+                | "keyAt" | "size" | "valueAt" ) ) ->
+                Some ContainerRead
+            | "android.support.v4.util.Pools$SimplePool", ("acquire" | "release") ->
+                Some ContainerWrite
+            | "java.util.List", ("add" | "addAll" | "clear" | "remove" | "set") ->
+                Some ContainerWrite
             | ( "java.util.List"
               , ( "contains" | "containsAll" | "equals" | "get" | "hashCode" | "indexOf"
-                | "isEmpty" | "iterator" | "lastIndexOf" | "listIterator" | "size" | "toArray" ) )
-             -> Some ContainerRead
-            | "java.util.Map", ("clear" | "put" | "putAll" | "remove")
-             -> Some ContainerWrite
+                | "isEmpty" | "iterator" | "lastIndexOf" | "listIterator" | "size" | "toArray" ) ) ->
+                Some ContainerRead
+            | "java.util.Map", ("clear" | "put" | "putAll" | "remove") ->
+                Some ContainerWrite
             | ( "java.util.Map"
               , ( "containsKey" | "containsValue" | "entrySet" | "equals" | "get" | "hashCode"
-                | "isEmpty" | "keySet" | "size" | "values" ) )
-             -> Some ContainerRead
-            | _
-             -> None
+                | "isEmpty" | "keySet" | "size" | "values" ) ) ->
+                Some ContainerRead
+            | _ ->
+                None
           in
           PatternMatch.supertype_find_map_opt tenv get_container_access_ typename
-      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_container_read pname
-       -> Some ContainerRead
-      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_container_write pname
-       -> Some ContainerWrite
-      | _
-       -> None
+      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_container_read pname ->
+          Some ContainerRead
+      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_container_write pname ->
+          Some ContainerWrite
+      | _ ->
+          None
+
 
   (* propagate attributes from the leaves to the root of an RHS Hil expression *)
   let rec attributes_of_expr attribute_map e =
@@ -205,31 +211,33 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | HilExp.AccessPath ap -> (
       try AttributeMapDomain.find ap attribute_map
       with Not_found -> AttributeSetDomain.empty )
-    | Constant _
-     -> AttributeSetDomain.of_list [Attribute.Functional]
-    | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr)
-     -> attributes_of_expr attribute_map expr
-    | UnaryOperator (_, expr, _)
-     -> attributes_of_expr attribute_map expr
-    | BinaryOperator (_, expr1, expr2)
-     -> let attributes1 = attributes_of_expr attribute_map expr1 in
+    | Constant _ ->
+        AttributeSetDomain.of_list [Attribute.Functional]
+    | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr) ->
+        attributes_of_expr attribute_map expr
+    | UnaryOperator (_, expr, _) ->
+        attributes_of_expr attribute_map expr
+    | BinaryOperator (_, expr1, expr2) ->
+        let attributes1 = attributes_of_expr attribute_map expr1 in
         let attributes2 = attributes_of_expr attribute_map expr2 in
         AttributeSetDomain.join attributes1 attributes2
-    | Closure _ | Sizeof _
-     -> AttributeSetDomain.empty
+    | Closure _ | Sizeof _ ->
+        AttributeSetDomain.empty
+
 
   let rec ownership_of_expr expr ownership =
     let open Domain in
     let open HilExp in
     match expr with
-    | AccessPath ap
-     -> OwnershipDomain.get_owned ap ownership
-    | Constant _
-     -> OwnershipAbstractValue.owned
-    | Exception e (* treat exceptions as transparent wrt ownership *) | Cast (_, e)
-     -> ownership_of_expr e ownership
-    | _
-     -> OwnershipAbstractValue.unowned
+    | AccessPath ap ->
+        OwnershipDomain.get_owned ap ownership
+    | Constant _ ->
+        OwnershipAbstractValue.owned
+    | Exception e (* treat exceptions as transparent wrt ownership *) | Cast (_, e) ->
+        ownership_of_expr e ownership
+    | _ ->
+        OwnershipAbstractValue.unowned
+
 
   (* will return true on x.f.g.h when x.f and x.f.g are owned, but not requiring x.f.g.h *)
   (* must not be called with an empty access list *)
@@ -241,56 +249,59 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~f:(fun ap -> RacerDDomain.OwnershipDomain.is_owned (base, ap) attribute_map)
       prefixes
 
+
   let propagate_attributes lhs_access_path rhs_exp attribute_map =
     let rhs_attributes = attributes_of_expr attribute_map rhs_exp in
     Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
 
-  let propagate_ownership (lhs_root, accesses as lhs_access_path) rhs_exp ownership =
+
+  let propagate_ownership ((lhs_root, accesses) as lhs_access_path) rhs_exp ownership =
     if Var.is_global (fst lhs_root) then
       (* do not assign ownership to access paths rooted at globals *)
       ownership
     else
       let ownership_value =
         match accesses with
-        | []
-         -> ownership_of_expr rhs_exp ownership
+        | [] ->
+            ownership_of_expr rhs_exp ownership
         | [_]
           when match Domain.OwnershipDomain.get_owned (lhs_root, []) ownership with
-               | Domain.OwnershipAbstractValue.OwnedIf _
-                -> true
-               | _
-                -> false
-         -> ownership_of_expr rhs_exp ownership
-        | _ when all_prefixes_owned lhs_access_path ownership
-         -> ownership_of_expr rhs_exp ownership
-        | _
-         -> Domain.OwnershipAbstractValue.unowned
+               | Domain.OwnershipAbstractValue.OwnedIf _ ->
+                   true
+               | _ ->
+                   false ->
+            ownership_of_expr rhs_exp ownership
+        | _ when all_prefixes_owned lhs_access_path ownership ->
+            ownership_of_expr rhs_exp ownership
+        | _ ->
+            Domain.OwnershipAbstractValue.unowned
       in
       Domain.OwnershipDomain.add lhs_access_path ownership_value ownership
+
 
   let propagate_return ret_opt ret_ownership ret_attributes actuals
       {Domain.ownership; attribute_map} =
     let open Domain in
     match ret_opt with
-    | None
-     -> (ownership, attribute_map)
-    | Some ret
-     -> let ret_access_path = (ret, []) in
+    | None ->
+        (ownership, attribute_map)
+    | Some ret ->
+        let ret_access_path = (ret, []) in
         let get_ownership formal_index acc =
           match List.nth actuals formal_index with
-          | Some HilExp.AccessPath actual_ap
-           -> OwnershipDomain.get_owned actual_ap ownership |> OwnershipAbstractValue.join acc
-          | Some HilExp.Constant _
-           -> acc
-          | _
-           -> OwnershipAbstractValue.unowned
+          | Some HilExp.AccessPath actual_ap ->
+              OwnershipDomain.get_owned actual_ap ownership |> OwnershipAbstractValue.join acc
+          | Some HilExp.Constant _ ->
+              acc
+          | _ ->
+              OwnershipAbstractValue.unowned
         in
         let ownership' =
           match ret_ownership with
-          | OwnershipAbstractValue.Owned | Unowned
-           -> OwnershipDomain.add ret_access_path ret_ownership ownership
-          | OwnershipAbstractValue.OwnedIf formal_indexes
-           -> let actuals_ownership =
+          | OwnershipAbstractValue.Owned | Unowned ->
+              OwnershipDomain.add ret_access_path ret_ownership ownership
+          | OwnershipAbstractValue.OwnedIf formal_indexes ->
+              let actuals_ownership =
                 IntSet.fold get_ownership formal_indexes OwnershipAbstractValue.owned
               in
               OwnershipDomain.add ret_access_path actuals_ownership ownership
@@ -298,27 +309,31 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let attribute_map' = AttributeMapDomain.add ret_access_path ret_attributes attribute_map in
         (ownership', attribute_map')
 
+
   (** return true if this function is library code from the JDK core libraries or Android *)
   let is_java_library = function
     | Typ.Procname.Java java_pname -> (
       match Typ.Procname.java_get_package java_pname with
-      | Some package_name
-       -> String.is_prefix ~prefix:"java." package_name
+      | Some package_name ->
+          String.is_prefix ~prefix:"java." package_name
           || String.is_prefix ~prefix:"android." package_name
           || String.is_prefix ~prefix:"com.google." package_name
-      | None
-       -> false )
-    | _
-     -> false
+      | None ->
+          false )
+    | _ ->
+        false
+
 
   let is_builder_function = function
-    | Typ.Procname.Java java_pname
-     -> String.is_suffix ~suffix:"$Builder" (Typ.Procname.java_get_class_name java_pname)
-    | _
-     -> false
+    | Typ.Procname.Java java_pname ->
+        String.is_suffix ~suffix:"$Builder" (Typ.Procname.java_get_class_name java_pname)
+    | _ ->
+        false
+
 
   let has_return_annot predicate pn =
     Annotations.pname_has_return_annot pn ~attrs_of_pname:Specs.proc_resolve_attributes predicate
+
 
   let add_unannotated_call_access pname (call_flags: CallFlags.t) loc tenv ~locks ~threads
       attribute_map (proc_data: extras ProcData.t) =
@@ -334,6 +349,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       AccessDomain.add_access pre (make_unannotated_call_access pname loc) attribute_map
     else attribute_map
 
+
   let add_access exp loc ~is_write_access accesses locks threads ownership
       (proc_data: extras ProcData.t) =
     let open Domain in
@@ -344,20 +360,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | ( AccessPath.FieldAccess fieldname
         , Some ({Typ.desc= Tstruct typename} | {desc= Tptr ({desc= Tstruct typename}, _)}) ) -> (
         match Tenv.lookup tenv typename with
-        | Some struct_typ
-         -> Annotations.struct_typ_has_annot struct_typ Annotations.ia_is_thread_confined
+        | Some struct_typ ->
+            Annotations.struct_typ_has_annot struct_typ Annotations.ia_is_thread_confined
             || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_thread_confined
             || Annotations.field_has_annot fieldname struct_typ Annotations.ia_is_volatile
-        | None
-         -> false )
-      | _
-       -> false
+        | None ->
+            false )
+      | _ ->
+          false
     in
     let rec add_field_accesses pre prefix_path access_acc = function
-      | []
-       -> access_acc
-      | access :: access_list'
-       -> let is_write = if List.is_empty access_list' then is_write_access else false in
+      | [] ->
+          access_acc
+      | access :: access_list' ->
+          let is_write = if List.is_empty access_list' then is_write_access else false in
           let access_path = (fst prefix_path, snd prefix_path @ [access]) in
           let access_acc' =
             if OwnershipDomain.is_owned prefix_path ownership
@@ -374,20 +390,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       else
         let pre =
           match AccessPrecondition.make locks threads proc_data.pdesc with
-          | AccessPrecondition.Protected _ as excluder
-           -> excluder
+          | AccessPrecondition.Protected _ as excluder ->
+              excluder
           | _ ->
             match OwnershipDomain.get_owned base_access_path ownership with
-            | OwnershipAbstractValue.OwnedIf formal_indexes
-             -> AccessPrecondition.Unprotected formal_indexes
-            | OwnershipAbstractValue.Owned
-             -> assert false
-            | OwnershipAbstractValue.Unowned
-             -> AccessPrecondition.TotallyUnprotected
+            | OwnershipAbstractValue.OwnedIf formal_indexes ->
+                AccessPrecondition.Unprotected formal_indexes
+            | OwnershipAbstractValue.Owned ->
+                assert false
+            | OwnershipAbstractValue.Unowned ->
+                AccessPrecondition.TotallyUnprotected
         in
         add_field_accesses pre base_access_path acc accesses
     in
     List.fold ~f:add_access_ ~init:accesses (HilExp.get_access_paths exp)
+
 
   let is_functional pname =
     let is_annotated_functional = has_return_annot Annotations.ia_is_functional in
@@ -396,8 +413,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match
           (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
         with
-        | "android.content.res.Resources", method_name
-         -> (* all methods of Resources are considered @Functional except for the ones in this
+        | "android.content.res.Resources", method_name ->
+            (* all methods of Resources are considered @Functional except for the ones in this
                blacklist *)
             let non_functional_resource_methods =
               [ "getAssets"
@@ -408,12 +425,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               ; "openRawResourceFd" ]
             in
             not (List.mem ~equal:String.equal non_functional_resource_methods method_name)
-        | _
-         -> false )
-      | _
-       -> false
+        | _ ->
+            false )
+      | _ ->
+          false
     in
     is_annotated_functional pname || is_modeled_functional pname
+
 
   let acquires_ownership pname tenv =
     let is_allocation pn =
@@ -425,77 +443,80 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match
           (Typ.Procname.java_get_class_name java_pname, Typ.Procname.java_get_method java_pname)
         with
-        | "javax.inject.Provider", "get"
-         -> (* in dependency injection, the library allocates fresh values behind the scenes *)
+        | "javax.inject.Provider", "get" ->
+            (* in dependency injection, the library allocates fresh values behind the scenes *)
             true
-        | ("java.lang.Class" | "java.lang.reflect.Constructor"), "newInstance"
-         -> (* reflection can perform allocations *)
+        | ("java.lang.Class" | "java.lang.reflect.Constructor"), "newInstance" ->
+            (* reflection can perform allocations *)
             true
-        | "java.lang.Object", "clone"
-         -> (* cloning is like allocation *)
+        | "java.lang.Object", "clone" ->
+            (* cloning is like allocation *)
             true
-        | "java.lang.ThreadLocal", "get"
-         -> (* ThreadLocal prevents sharing between threads behind the scenes *)
+        | "java.lang.ThreadLocal", "get" ->
+            (* ThreadLocal prevents sharing between threads behind the scenes *)
             true
-        | ("android.app.Activity" | "android.view.View"), "findViewById"
-         -> (* assume findViewById creates fresh View's (note: not always true) *)
+        | ("android.app.Activity" | "android.view.View"), "findViewById" ->
+            (* assume findViewById creates fresh View's (note: not always true) *)
             true
         | ( ( "android.support.v4.util.Pools$Pool" | "android.support.v4.util.Pools$SimplePool"
             | "android.support.v4.util.Pools$SynchronizedPool" )
-          , "acquire" )
-         -> (* a pool should own all of its objects *)
+          , "acquire" ) ->
+            (* a pool should own all of its objects *)
             true
-        | _
-         -> false )
-      | _
-       -> false
+        | _ ->
+            false )
+      | _ ->
+          false
     in
     is_allocation pname || is_owned_in_library pname
     || PatternMatch.override_exists is_owned_in_library tenv pname
 
+
   let is_threadsafe_collection pn tenv =
     match pn with
-    | Typ.Procname.Java java_pname
-     -> let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
+    | Typ.Procname.Java java_pname ->
+        let typename = Typ.Name.Java.from_string (Typ.Procname.java_get_class_name java_pname) in
         let aux tn _ =
           match Typ.Name.name tn with
           | "java.util.concurrent.ConcurrentMap"
           | "java.util.concurrent.CopyOnWriteArrayList"
-          | "android.support.v4.util.Pools$SynchronizedPool"
-           -> true
-          | _
-           -> false
+          | "android.support.v4.util.Pools$SynchronizedPool" ->
+              true
+          | _ ->
+              false
         in
         PatternMatch.supertype_exists tenv aux typename
-    | _
-     -> false
+    | _ ->
+        false
+
 
   let is_synchronized_container callee_pname ((_, (base_typ: Typ.t)), accesses) tenv =
     if is_threadsafe_collection callee_pname tenv then true
     else
       let is_annotated_synchronized base_typename container_field tenv =
         match Tenv.lookup tenv base_typename with
-        | Some base_typ
-         -> Annotations.field_has_annot container_field base_typ
+        | Some base_typ ->
+            Annotations.field_has_annot container_field base_typ
               Annotations.ia_is_synchronized_collection
-        | None
-         -> false
+        | None ->
+            false
       in
       match List.rev accesses with
       | (AccessPath.FieldAccess base_field) :: (AccessPath.FieldAccess container_field) :: _
-        when Typ.Procname.is_java callee_pname
-       -> let base_typename =
+        when Typ.Procname.is_java callee_pname ->
+          let base_typename =
             Typ.Name.Java.from_string (Typ.Fieldname.java_get_class base_field)
           in
           is_annotated_synchronized base_typename container_field tenv
       | [(AccessPath.FieldAccess container_field)] -> (
         match base_typ.desc with
-        | Typ.Tstruct base_typename | Tptr ({Typ.desc= Tstruct base_typename}, _)
-         -> is_annotated_synchronized base_typename container_field tenv
-        | _
-         -> false )
-      | _
-       -> false
+        | Typ.Tstruct base_typename | Tptr ({Typ.desc= Tstruct base_typename}, _) ->
+            is_annotated_synchronized base_typename container_field tenv
+        | _ ->
+            false )
+      | _ ->
+          false
+
 
   let make_container_access callee_pname ~is_write receiver_ap callee_loc tenv =
     (* create a dummy write that represents mutating the contents of the container *)
@@ -516,36 +537,39 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ; return_ownership= OwnershipAbstractValue.unowned
       ; return_attributes= AttributeSetDomain.empty }
 
+
   let cpp_force_skipped =
     let matcher =
-      ( lazy
-      (QualifiedCppName.Match.of_fuzzy_qual_names
-         ["folly::AtomicStruct::load"; "folly::detail::SingletonHolder::createInstance"]) )
+      lazy
+        (QualifiedCppName.Match.of_fuzzy_qual_names
+           ["folly::AtomicStruct::load"; "folly::detail::SingletonHolder::createInstance"])
     in
     fun pname ->
       QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
         (Typ.Procname.get_qualifiers pname)
 
+
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
     let get_receiver_ap actuals =
       match List.hd actuals with
-      | Some HilExp.AccessPath receiver_ap
-       -> receiver_ap
-      | _
-       -> L.(die InternalError)
+      | Some HilExp.AccessPath receiver_ap ->
+          receiver_ap
+      | _ ->
+          L.(die InternalError)
             "Call to %a is marked as a container write, but has no receiver" Typ.Procname.pp
             callee_pname
     in
     match (get_container_access callee_pname tenv, callee_pname) with
-    | Some ContainerWrite, _
-     -> make_container_access callee_pname ~is_write:true (get_receiver_ap actuals) callee_loc tenv
-    | Some ContainerRead, _
-     -> make_container_access callee_pname ~is_write:false (get_receiver_ap actuals) callee_loc
+    | Some ContainerWrite, _ ->
+        make_container_access callee_pname ~is_write:true (get_receiver_ap actuals) callee_loc tenv
+    | Some ContainerRead, _ ->
+        make_container_access callee_pname ~is_write:false (get_receiver_ap actuals) callee_loc
           tenv
-    | None, Typ.Procname.ObjC_Cpp _ when cpp_force_skipped callee_pname
-     -> None
-    | None, _
-     -> Summary.read_summary caller_pdesc callee_pname
+    | None, Typ.Procname.ObjC_Cpp _ when cpp_force_skipped callee_pname ->
+        None
+    | None, _ ->
+        Summary.read_summary caller_pdesc callee_pname
+
 
   (* return true if the given procname boxes a primitive type into a reference type *)
   let is_box = function
@@ -555,12 +579,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       with
       | ( ( "java.lang.Boolean" | "java.lang.Byte" | "java.lang.Char" | "java.lang.Double"
           | "java.lang.Float" | "java.lang.Integer" | "java.lang.Long" | "java.lang.Short" )
-        , "valueOf" )
-       -> true
-      | _
-       -> false )
-    | _
-     -> false
+        , "valueOf" ) ->
+          true
+      | _ ->
+          false )
+    | _ ->
+        false
+
 
   let add_reads exps loc accesses locks threads ownership proc_data =
     List.fold
@@ -568,33 +593,34 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         add_access exp loc ~is_write_access:false acc locks threads ownership proc_data)
       exps ~init:accesses
 
+
   let expand_actuals actuals accesses pdesc =
     let open Domain in
     if AccessDomain.is_empty accesses then accesses
     else
       let rec get_access_path = function
-        | HilExp.AccessPath ap
-         -> Some ap
-        | HilExp.Cast (_, e) | HilExp.Exception e
-         -> get_access_path e
-        | _
-         -> None
+        | HilExp.AccessPath ap ->
+            Some ap
+        | HilExp.Cast (_, e) | HilExp.Exception e ->
+            get_access_path e
+        | _ ->
+            None
       in
       let formal_map = FormalMap.make pdesc in
-      let expand_path (base, accesses as path) =
+      let expand_path ((base, accesses) as path) =
         match FormalMap.get_formal_index base formal_map with
         | Some formal_index -> (
           match List.nth actuals formal_index with
           | Some actual_exp -> (
             match get_access_path actual_exp with
-            | Some actual
-             -> AccessPath.append actual accesses
-            | None
-             -> path )
-          | None
-           -> path )
-        | None
-         -> path
+            | Some actual ->
+                AccessPath.append actual accesses
+            | None ->
+                path )
+          | None ->
+              path )
+        | None ->
+            path
       in
       let expand_pre accesses =
         let sinks =
@@ -608,12 +634,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       AccessDomain.map expand_pre accesses
 
+
   let exec_instr (astate: Domain.astate) ({ProcData.tenv; extras; pdesc} as proc_data) _
       (instr: HilInstr.t) =
     let open Domain in
     match instr with
-    | Call (Some ret_base, Direct procname, actuals, _, loc) when acquires_ownership procname tenv
-     -> let accesses =
+    | Call (Some ret_base, Direct procname, actuals, _, loc) when acquires_ownership procname tenv ->
+        let accesses =
           add_reads actuals loc astate.accesses astate.locks astate.threads astate.ownership
             proc_data
         in
@@ -622,7 +649,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         {astate with accesses; ownership}
     | Call (ret_opt, Direct callee_pname, actuals, call_flags, loc)
-     -> (
+      -> (
         let accesses_with_unannotated_calls =
           add_unannotated_call_access callee_pname call_flags loc tenv ~locks:astate.locks
             ~threads:astate.threads astate.accesses proc_data
@@ -634,24 +661,24 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let astate = {astate with accesses} in
         let astate =
           match get_thread_model callee_pname with
-          | BackgroundThread
-           -> {astate with threads= ThreadsDomain.AnyThread}
-          | MainThread
-           -> {astate with threads= ThreadsDomain.AnyThreadButSelf}
+          | BackgroundThread ->
+              {astate with threads= ThreadsDomain.AnyThread}
+          | MainThread ->
+              {astate with threads= ThreadsDomain.AnyThreadButSelf}
           | MainThreadIfTrue -> (
             match ret_opt with
-            | Some ret_access_path
-             -> let attribute_map =
+            | Some ret_access_path ->
+                let attribute_map =
                   AttributeMapDomain.add_attribute (ret_access_path, [])
                     (Choice Choice.OnMainThread) astate.attribute_map
                 in
                 {astate with attribute_map}
-            | None
-             -> L.(die InternalError)
+            | None ->
+                L.(die InternalError)
                   "Procedure %a specified as returning boolean, but returns nothing"
                   Typ.Procname.pp callee_pname )
-          | UnknownThread
-           -> astate
+          | UnknownThread ->
+              astate
         in
         let astate_callee =
           (* assuming that modeled procedures do not have useful summaries *)
@@ -662,30 +689,30 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                with other threads or not, start assuming that it can. why use a lock if the function
                can't run in a multithreaded context? *)
             let update_for_lock_use = function
-              | ThreadsDomain.AnyThreadButSelf
-               -> ThreadsDomain.AnyThreadButSelf
-              | _
-               -> ThreadsDomain.AnyThread
+              | ThreadsDomain.AnyThreadButSelf ->
+                  ThreadsDomain.AnyThreadButSelf
+              | _ ->
+                  ThreadsDomain.AnyThread
             in
             match get_lock_model callee_pname actuals with
-            | Lock
-             -> {astate with locks= true; threads= update_for_lock_use astate.threads}
-            | Unlock
-             -> {astate with locks= false; threads= update_for_lock_use astate.threads}
+            | Lock ->
+                {astate with locks= true; threads= update_for_lock_use astate.threads}
+            | Unlock ->
+                {astate with locks= false; threads= update_for_lock_use astate.threads}
             | LockedIfTrue -> (
               match ret_opt with
-              | Some ret_access_path
-               -> let attribute_map =
+              | Some ret_access_path ->
+                  let attribute_map =
                     AttributeMapDomain.add_attribute (ret_access_path, []) (Choice Choice.LockHeld)
                       astate.attribute_map
                   in
                   {astate with attribute_map; threads= update_for_lock_use astate.threads}
-              | None
-               -> L.(die InternalError)
+              | None ->
+                  L.(die InternalError)
                     "Procedure %a specified as returning boolean, but returns nothing"
                     Typ.Procname.pp callee_pname )
-            | NoEffect
-             -> let summary_opt = get_summary pdesc callee_pname actuals loc tenv in
+            | NoEffect ->
+                let summary_opt = get_summary pdesc callee_pname actuals loc tenv in
                 let callee_pdesc = extras callee_pname in
                 match
                   Option.map summary_opt ~f:(fun summary ->
@@ -695,8 +722,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       in
                       {summary with accesses= rebased_accesses} )
                 with
-                | Some {threads; locks; accesses; return_ownership; return_attributes}
-                 -> let update_caller_accesses pre callee_accesses caller_accesses =
+                | Some {threads; locks; accesses; return_ownership; return_attributes} ->
+                    let update_caller_accesses pre callee_accesses caller_accesses =
                       let combined_accesses =
                         PathDomain.with_callsite callee_accesses (CallSite.make callee_pname loc)
                         |> PathDomain.join (AccessDomain.get_accesses pre caller_accesses)
@@ -706,75 +733,74 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                     let locks = locks || astate.locks in
                     let threads =
                       match (astate.threads, threads) with
-                      | _, ThreadsDomain.AnyThreadButSelf | AnyThreadButSelf, _
-                       -> ThreadsDomain.AnyThreadButSelf
-                      | _, ThreadsDomain.AnyThread
-                       -> astate.threads
-                      | _
-                       -> ThreadsDomain.join threads astate.threads
+                      | _, ThreadsDomain.AnyThreadButSelf | AnyThreadButSelf, _ ->
+                          ThreadsDomain.AnyThreadButSelf
+                      | _, ThreadsDomain.AnyThread ->
+                          astate.threads
+                      | _ ->
+                          ThreadsDomain.join threads astate.threads
                     in
                     (* add [ownership_accesses] to the [accesses_acc] with a protected pre if
                        [exp] is owned, and an appropriate unprotected pre otherwise *)
                     let add_ownership_access ownership_accesses actual_exp accesses_acc =
                       match actual_exp with
-                      | HilExp.Constant _
-                       -> (* the actual is a constant, so it's owned in the caller. *)
+                      | HilExp.Constant _ ->
+                          (* the actual is a constant, so it's owned in the caller. *)
                           accesses_acc
-                      | HilExp.AccessPath actual_access_path
-                       -> if OwnershipDomain.is_owned actual_access_path astate.ownership then
+                      | HilExp.AccessPath actual_access_path ->
+                          if OwnershipDomain.is_owned actual_access_path astate.ownership then
                             (* the actual passed to the current callee is owned. drop all the
                              conditional accesses for that actual, since they're all safe *)
                             accesses_acc
                           else
                             let pre =
                               match AccessPrecondition.make locks threads pdesc with
-                              | AccessPrecondition.Protected _ as excluder (* access protected *)
-                               -> excluder
-                              | _
-                               -> let base = fst actual_access_path in
+                              | AccessPrecondition.Protected _ as excluder (* access protected *) ->
+                                  excluder
+                              | _ ->
+                                  let base = fst actual_access_path in
                                   match OwnershipDomain.get_owned (base, []) astate.ownership with
-                                  | OwnershipAbstractValue.OwnedIf formal_indexes
-                                   -> (* the actual passed to the current callee is rooted in a
+                                  | OwnershipAbstractValue.OwnedIf formal_indexes ->
+                                      (* the actual passed to the current callee is rooted in a
                                      formal *)
                                       AccessPrecondition.Unprotected formal_indexes
-                                  | OwnershipAbstractValue.Unowned | OwnershipAbstractValue.Owned
-                                   ->
+                                  | OwnershipAbstractValue.Unowned | OwnershipAbstractValue.Owned ->
                                     match
                                       OwnershipDomain.get_owned actual_access_path astate.ownership
                                     with
-                                    | OwnershipAbstractValue.OwnedIf formal_indexes
-                                     -> (* access path conditionally owned if [formal_indexes] are
+                                    | OwnershipAbstractValue.OwnedIf formal_indexes ->
+                                        (* access path conditionally owned if [formal_indexes] are
                                            owned *)
                                         AccessPrecondition.Unprotected formal_indexes
-                                    | OwnershipAbstractValue.Owned
-                                     -> assert false
-                                    | OwnershipAbstractValue.Unowned
-                                     -> (* access path not rooted in a formal and not conditionally
+                                    | OwnershipAbstractValue.Owned ->
+                                        assert false
+                                    | OwnershipAbstractValue.Unowned ->
+                                        (* access path not rooted in a formal and not conditionally
                                            owned *)
                                         AccessPrecondition.TotallyUnprotected
                             in
                             update_caller_accesses pre ownership_accesses accesses_acc
-                      | _
-                       -> (* couldn't find access path, don't know if it's owned *)
+                      | _ ->
+                          (* couldn't find access path, don't know if it's owned *)
                           update_caller_accesses AccessPrecondition.TotallyUnprotected
                             ownership_accesses accesses_acc
                     in
                     let accesses =
                       let update_accesses pre callee_accesses accesses_acc =
                         match pre with
-                        | AccessPrecondition.Protected _
-                         -> update_caller_accesses pre callee_accesses accesses_acc
-                        | AccessPrecondition.TotallyUnprotected
-                         -> let pre' = AccessPrecondition.make locks threads pdesc in
+                        | AccessPrecondition.Protected _ ->
+                            update_caller_accesses pre callee_accesses accesses_acc
+                        | AccessPrecondition.TotallyUnprotected ->
+                            let pre' = AccessPrecondition.make locks threads pdesc in
                             update_caller_accesses pre' callee_accesses accesses_acc
-                        | AccessPrecondition.Unprotected formal_indexes
-                         -> IntSet.fold
+                        | AccessPrecondition.Unprotected formal_indexes ->
+                            IntSet.fold
                               (fun index acc ->
                                 match List.nth actuals index with
-                                | Some actual
-                                 -> add_ownership_access callee_accesses actual acc
-                                | None
-                                 -> L.internal_error
+                                | Some actual ->
+                                    add_ownership_access callee_accesses actual acc
+                                | None ->
+                                    L.internal_error
                                       "Bad actual index %d for callee %a with %d actuals." index
                                       Typ.Procname.pp callee_pname (List.length actuals) ;
                                     acc)
@@ -786,8 +812,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       propagate_return ret_opt return_ownership return_attributes actuals astate
                     in
                     {locks; threads; accesses; ownership; attribute_map}
-                | None
-                 -> let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
+                | None ->
+                    let should_assume_returns_ownership (call_flags: CallFlags.t) actuals =
                       (* assume non-interface methods with no summary and no parameters return
                          ownership *)
                       not call_flags.cf_interface && List.is_empty actuals
@@ -796,30 +822,30 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                       match (ret_opt, actuals) with
                       | Some ret, (HilExp.AccessPath actual_ap) :: _
                         when AttributeMapDomain.has_attribute actual_ap Functional
-                               astate.attribute_map
-                       -> (* TODO: check for constants, which are functional? *)
+                               astate.attribute_map ->
+                          (* TODO: check for constants, which are functional? *)
                           let attribute_map =
                             AttributeMapDomain.add_attribute (ret, []) Functional
                               astate.attribute_map
                           in
                           {astate with attribute_map}
-                      | _
-                       -> astate
+                      | _ ->
+                          astate
                     else if should_assume_returns_ownership call_flags actuals then
                       match ret_opt with
-                      | Some ret
-                       -> let ownership =
+                      | Some ret ->
+                          let ownership =
                             OwnershipDomain.add (ret, []) OwnershipAbstractValue.owned
                               astate.ownership
                           in
                           {astate with ownership}
-                      | None
-                       -> astate
+                      | None ->
+                          astate
                     else astate
         in
         match ret_opt with
-        | Some ret
-         -> let add_if_annotated predicate attribute attribute_map =
+        | Some ret ->
+            let add_if_annotated predicate attribute attribute_map =
               if PatternMatch.override_exists predicate tenv callee_pname then
                 AttributeMapDomain.add_attribute (ret, []) attribute attribute_map
               else attribute_map
@@ -829,16 +855,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             in
             let ownership =
               if PatternMatch.override_exists
-                   (has_return_annot Annotations.ia_is_returns_ownership) tenv callee_pname
+                   (has_return_annot Annotations.ia_is_returns_ownership)
+                   tenv callee_pname
               then
                 OwnershipDomain.add (ret, []) OwnershipAbstractValue.owned astate_callee.ownership
               else astate_callee.ownership
             in
             {astate_callee with ownership; attribute_map}
-        | _
-         -> astate_callee )
-    | Assign (lhs_access_path, rhs_exp, loc)
-     -> let rhs_accesses =
+        | _ ->
+            astate_callee )
+    | Assign (lhs_access_path, rhs_exp, loc) ->
+        let rhs_accesses =
           add_access rhs_exp loc ~is_write_access:false astate.accesses astate.locks astate.threads
             astate.ownership proc_data
         in
@@ -851,13 +878,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                rhs_access_paths
           &&
           match AccessPath.get_typ lhs_access_path tenv with
-          | Some {Typ.desc= Typ.Tint ILong | Tfloat FDouble}
-           -> (* writes to longs and doubles are not guaranteed to be atomic in Java
+          | Some {Typ.desc= Typ.Tint ILong | Tfloat FDouble} ->
+              (* writes to longs and doubles are not guaranteed to be atomic in Java
                  (http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.7), so there
                  can be a race even if the RHS is functional *)
               false
-          | _
-           -> true
+          | _ ->
+              true
         in
         let accesses =
           if is_functional then
@@ -871,42 +898,42 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let ownership = propagate_ownership lhs_access_path rhs_exp astate.ownership in
         let attribute_map = propagate_attributes lhs_access_path rhs_exp astate.attribute_map in
         {astate with accesses; ownership; attribute_map}
-    | Assume (assume_exp, _, _, loc)
-     -> let rec eval_binop op var e1 e2 =
+    | Assume (assume_exp, _, _, loc) ->
+        let rec eval_binop op var e1 e2 =
           match (eval_bexp var e1, eval_bexp var e2) with
-          | Some b1, Some b2
-           -> Some (op b1 b2)
-          | _
-           -> None
+          | Some b1, Some b2 ->
+              Some (op b1 b2)
+          | _ ->
+              None
         (* return Some bool_value if the given boolean expression evaluates to bool_value when
            [var] is set to true. return None if it has free variables that stop us from
            evaluating it *)
         and eval_bexp var = function
-          | HilExp.AccessPath ap when AccessPath.equal ap var
-           -> Some true
-          | HilExp.Constant c
-           -> Some (not (Const.iszero_int_float c))
-          | HilExp.UnaryOperator (Unop.LNot, e, _)
-           -> let b_opt = eval_bexp var e in
+          | HilExp.AccessPath ap when AccessPath.equal ap var ->
+              Some true
+          | HilExp.Constant c ->
+              Some (not (Const.iszero_int_float c))
+          | HilExp.UnaryOperator (Unop.LNot, e, _) ->
+              let b_opt = eval_bexp var e in
               Option.map ~f:not b_opt
-          | HilExp.BinaryOperator (Binop.LAnd, e1, e2)
-           -> eval_binop ( && ) var e1 e2
-          | HilExp.BinaryOperator (Binop.LOr, e1, e2)
-           -> eval_binop ( || ) var e1 e2
-          | HilExp.BinaryOperator (Binop.Eq, e1, e2)
-           -> eval_binop Bool.equal var e1 e2
-          | HilExp.BinaryOperator (Binop.Ne, e1, e2)
-           -> eval_binop ( <> ) var e1 e2
-          | _
-           -> (* non-boolean expression; can't evaluate it *)
+          | HilExp.BinaryOperator (Binop.LAnd, e1, e2) ->
+              eval_binop ( && ) var e1 e2
+          | HilExp.BinaryOperator (Binop.LOr, e1, e2) ->
+              eval_binop ( || ) var e1 e2
+          | HilExp.BinaryOperator (Binop.Eq, e1, e2) ->
+              eval_binop Bool.equal var e1 e2
+          | HilExp.BinaryOperator (Binop.Ne, e1, e2) ->
+              eval_binop ( <> ) var e1 e2
+          | _ ->
+              (* non-boolean expression; can't evaluate it *)
               None
         in
         let add_choice bool_value (acc: Domain.astate) = function
-          | Choice.LockHeld
-           -> let locks = bool_value in
+          | Choice.LockHeld ->
+              let locks = bool_value in
               {acc with locks}
-          | Choice.OnMainThread
-           -> let threads =
+          | Choice.OnMainThread ->
+              let threads =
                 if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
               in
               {acc with threads}
@@ -918,25 +945,26 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let astate' =
           match HilExp.get_access_paths assume_exp with
           | [access_path]
-           -> (
+            -> (
               let choices = AttributeMapDomain.get_choices access_path astate.attribute_map in
               match eval_bexp access_path assume_exp with
-              | Some bool_value
-               -> (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
+              | Some bool_value ->
+                  (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
                      add the constraint that the the choice must be [bool_value] to the state *)
                   List.fold ~f:(add_choice bool_value) ~init:astate choices
-              | None
-               -> astate )
-          | _
-           -> astate
+              | None ->
+                  astate )
+          | _ ->
+              astate
         in
         {astate' with accesses}
     | Call (_, Indirect _, _, _, _) ->
       match Procdesc.get_proc_name pdesc with
-      | Typ.Procname.Java _
-       -> L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
-      | _
-       -> astate
+      | Typ.Procname.Java _ ->
+          L.(die InternalError) "Unexpected indirect call instruction %a" HilInstr.pp instr
+      | _ ->
+          astate
+
 end
 
 module Analyzer =
@@ -952,6 +980,7 @@ let is_thread_confined_method tenv pdesc =
   || PatternMatch.check_current_class_attributes Annotations.ia_is_thread_confined tenv
        (Procdesc.get_proc_name pdesc)
 
+
 (* we don't want to warn on methods that run on the UI thread because they should always be
    single-threaded *)
 let runs_on_ui_thread proc_desc =
@@ -962,8 +991,10 @@ let runs_on_ui_thread proc_desc =
       || Annotations.ia_is_on_event annot || Annotations.ia_is_on_mount annot
       || Annotations.ia_is_on_unbind annot || Annotations.ia_is_on_unmount annot )
 
+
 let threadsafe_annotations =
   Annotations.thread_safe :: RacerDConfig.AnnotationAliases.of_json Config.threadsafe_aliases
+
 
 (* returns true if the annotation is @ThreadSafe, @ThreadSafe(enableChecks = true), or is defined
    as an alias of @ThreadSafe in a .inferconfig file. *)
@@ -978,6 +1009,7 @@ let is_thread_safe item_annot =
   in
   List.exists ~f item_annot
 
+
 (* returns true if the annotation is @ThreadSafe(enableChecks = false) *)
 let is_assumed_thread_safe item_annot =
   let f (annot, _) =
@@ -986,10 +1018,12 @@ let is_assumed_thread_safe item_annot =
   in
   List.exists ~f item_annot
 
+
 let pdesc_is_assumed_thread_safe pdesc tenv =
   is_assumed_thread_safe (Annotations.pdesc_get_return_annot pdesc)
   || PatternMatch.check_current_class_attributes is_assumed_thread_safe tenv
        (Procdesc.get_proc_name pdesc)
+
 
 (* return true if we should compute a summary for the procedure. if this returns false, we won't
    analyze the procedure or report any warnings on it *)
@@ -1000,16 +1034,18 @@ let should_analyze_proc pdesc tenv =
   not (Typ.Procname.is_class_initializer pn) && not (FbThreadSafety.is_logging_method pn)
   && not (pdesc_is_assumed_thread_safe pdesc tenv)
 
+
 let get_current_class_and_threadsafe_superclasses tenv pname =
   match pname with
-  | Typ.Procname.Java java_pname
-   -> let current_class = Typ.Procname.java_get_class_type_name java_pname in
+  | Typ.Procname.Java java_pname ->
+      let current_class = Typ.Procname.java_get_class_type_name java_pname in
       let thread_safe_annotated_classes =
         PatternMatch.find_superclasses_with_attributes is_thread_safe tenv current_class
       in
       Some (current_class, thread_safe_annotated_classes)
-  | _
-   -> None
+  | _ ->
+      None
+
 
 let is_thread_safe_class pname tenv =
   not
@@ -1018,10 +1054,11 @@ let is_thread_safe_class pname tenv =
   &&
   (* current class or superclass is marked thread-safe *)
   match get_current_class_and_threadsafe_superclasses tenv pname with
-  | Some (_, thread_safe_annotated_classes)
-   -> not (List.is_empty thread_safe_annotated_classes)
-  | _
-   -> false
+  | Some (_, thread_safe_annotated_classes) ->
+      not (List.is_empty thread_safe_annotated_classes)
+  | _ ->
+      false
+
 
 let is_thread_safe_method pname tenv =
   PatternMatch.override_exists
@@ -1030,9 +1067,11 @@ let is_thread_safe_method pname tenv =
         is_thread_safe)
     tenv pname
 
+
 let is_marked_thread_safe pdesc tenv =
   let pname = Procdesc.get_proc_name pdesc in
   is_thread_safe_class pname tenv || is_thread_safe_method pname tenv
+
 
 let empty_post : RacerDDomain.summary =
   { threads= RacerDDomain.ThreadsDomain.empty
@@ -1040,6 +1079,7 @@ let empty_post : RacerDDomain.summary =
   ; accesses= RacerDDomain.AccessDomain.empty
   ; return_ownership= RacerDDomain.OwnershipAbstractValue.unowned
   ; return_attributes= RacerDDomain.AttributeSetDomain.empty }
+
 
 let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
   let is_initializer tenv proc_name =
@@ -1067,19 +1107,19 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
          variables cannot be raced on as every thread has its own stack. *)
       let own_locals_in_cpp =
         match Procdesc.get_proc_name proc_desc with
-        | ObjC_Cpp _
-         -> List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc)
+        | ObjC_Cpp _ ->
+            List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc)
               ~init:OwnershipDomain.empty
-        | _
-         -> OwnershipDomain.empty
+        | _ ->
+            OwnershipDomain.empty
       in
       if is_initializer tenv (Procdesc.get_proc_name proc_desc) then
         let add_owned_formal acc formal_index =
           match FormalMap.get_formal_base formal_index formal_map with
-          | Some base
-           -> OwnershipDomain.add (base, []) OwnershipAbstractValue.owned acc
-          | None
-           -> acc
+          | Some base ->
+              OwnershipDomain.add (base, []) OwnershipAbstractValue.owned acc
+          | None ->
+              acc
         in
         let owned_formals =
           (* if a constructer is called via DI, all of its formals will be freshly allocated and
@@ -1099,14 +1139,15 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
           OwnershipDomain.add (formal, []) (OwnershipAbstractValue.make_owned_if formal_index) acc
         in
         let ownership =
-          List.fold ~f:add_owned_formal (FormalMap.get_formals_indexes formal_map)
+          List.fold ~f:add_owned_formal
+            (FormalMap.get_formals_indexes formal_map)
             ~init:own_locals_in_cpp
         in
         ({RacerDDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
     in
     match Analyzer.compute_post proc_data ~initial ~debug:false with
-    | Some ({threads; locks; accesses; ownership; attribute_map}, _)
-     -> let return_var_ap =
+    | Some ({threads; locks; accesses; ownership; attribute_map}, _) ->
+        let return_var_ap =
           AccessPath.of_pvar
             (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))
             (Procdesc.get_ret_type proc_desc)
@@ -1118,9 +1159,10 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         in
         let post = {threads; locks; accesses; return_ownership; return_attributes} in
         Summary.update_summary post summary
-    | None
-     -> summary )
+    | None ->
+        summary )
   else Summary.update_summary empty_post summary
+
 
 module AccessListMap = Caml.Map.Make (RacerDDomain.Access)
 
@@ -1143,42 +1185,44 @@ let get_reporting_explanation report_kind tenv pname thread =
            MF.pp_monospaced "@ThreadSafe")
     else
       match get_current_class_and_threadsafe_superclasses tenv pname with
-      | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes))
-       -> Some
+      | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes)) ->
+          Some
             ( if List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class then
                 F.asprintf "@\n Reporting because the current class is annotated %a"
                   MF.pp_monospaced "@ThreadSafe"
             else
               F.asprintf "@\n Reporting because a superclass %a is annotated %a"
                 (MF.wrap_monospaced Typ.Name.pp) thread_safe_class MF.pp_monospaced "@ThreadSafe" )
-      | _
-       -> None
+      | _ ->
+          None
   in
   match (report_kind, annotation_explanation_opt) with
-  | UnannotatedInterface, Some threadsafe_explanation
-   -> F.asprintf "%s." threadsafe_explanation
-  | UnannotatedInterface, None
-   -> Logging.die InternalError
+  | UnannotatedInterface, Some threadsafe_explanation ->
+      F.asprintf "%s." threadsafe_explanation
+  | UnannotatedInterface, None ->
+      Logging.die InternalError
         "Reporting non-threadsafe interface call, but can't find a @ThreadSafe annotation"
-  | _, Some threadsafe_explanation when RacerDDomain.ThreadsDomain.is_any thread
-   -> F.asprintf
+  | _, Some threadsafe_explanation when RacerDDomain.ThreadsDomain.is_any thread ->
+      F.asprintf
         "%s, so we assume that this method can run in parallel with other non-private methods in the class (incuding itself)."
         threadsafe_explanation
-  | _, Some threadsafe_explanation
-   -> F.asprintf
+  | _, Some threadsafe_explanation ->
+      F.asprintf
         "%s. Although this access is not known to run on a background thread, it may happen in parallel with another access that does."
         threadsafe_explanation
-  | _, None
-   -> (* failed to explain based on @ThreadSafe annotation; have to justify using background thread *)
+  | _, None ->
+      (* failed to explain based on @ThreadSafe annotation; have to justify using background thread *)
       if RacerDDomain.ThreadsDomain.is_any thread then
         F.asprintf "@\n Reporting because this access may occur on a background thread."
       else
         F.asprintf
           "@\n Reporting because another access to the same memory occurs on a background thread, although this access may not."
 
+
 let filter_by_access access_filter trace =
   let open RacerDDomain in
   PathDomain.Sinks.filter access_filter (PathDomain.sinks trace) |> PathDomain.update_sinks trace
+
 
 let get_all_accesses_with_pre pre_filter access_filter accesses =
   let open RacerDDomain in
@@ -1187,51 +1231,58 @@ let get_all_accesses_with_pre pre_filter access_filter accesses =
       if pre_filter pre then PathDomain.join (filter_by_access access_filter trace) acc else acc)
     accesses PathDomain.empty
 
+
 let get_all_accesses = get_all_accesses_with_pre (fun _ -> true)
 
 let pp_container_access fmt (access_path, access_pname) =
-  F.fprintf fmt "container %a via call to %s" (MF.wrap_monospaced AccessPath.pp) access_path
+  F.fprintf fmt "container %a via call to %s"
+    (MF.wrap_monospaced AccessPath.pp)
+    access_path
     (MF.monospaced_to_string (Typ.Procname.get_method access_pname))
+
 
 let pp_access fmt sink =
   match RacerDDomain.PathDomain.Sink.kind sink with
-  | Read access_path | Write access_path
-   -> F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp) access_path
-  | ContainerRead (access_path, access_pname) | ContainerWrite (access_path, access_pname)
-   -> pp_container_access fmt (access_path, access_pname)
-  | InterfaceCall _ as access
-   -> F.fprintf fmt "%a" RacerDDomain.Access.pp access
+  | Read access_path | Write access_path ->
+      F.fprintf fmt "%a" (MF.wrap_monospaced AccessPath.pp) access_path
+  | ContainerRead (access_path, access_pname) | ContainerWrite (access_path, access_pname) ->
+      pp_container_access fmt (access_path, access_pname)
+  | InterfaceCall _ as access ->
+      F.fprintf fmt "%a" RacerDDomain.Access.pp access
+
 
 let desc_of_sink sink =
   let sink_pname = CallSite.pname (RacerDDomain.PathDomain.Sink.call_site sink) in
   match RacerDDomain.PathDomain.Sink.kind sink with
-  | Read _ | Write _
-   -> if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
+  | Read _ | Write _ ->
+      if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
         F.asprintf "access to %a" pp_access sink
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
-  | ContainerRead (access_path, access_pname)
-   -> if Typ.Procname.equal sink_pname access_pname then
+  | ContainerRead (access_path, access_pname) ->
+      if Typ.Procname.equal sink_pname access_pname then
         F.asprintf "Read of %a" pp_container_access (access_path, access_pname)
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
-  | ContainerWrite (access_path, access_pname)
-   -> if Typ.Procname.equal sink_pname access_pname then
+  | ContainerWrite (access_path, access_pname) ->
+      if Typ.Procname.equal sink_pname access_pname then
         F.asprintf "Write to %a" pp_container_access (access_path, access_pname)
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
-  | InterfaceCall _ as access
-   -> if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
+  | InterfaceCall _ as access ->
+      if Typ.Procname.equal sink_pname Typ.Procname.empty_block then
         F.asprintf "%a" RacerDDomain.Access.pp access
       else F.asprintf "call to %a" Typ.Procname.pp sink_pname
+
 
 let trace_of_pname orig_sink orig_pdesc callee_pname =
   let open RacerDDomain in
   let orig_access = PathDomain.Sink.kind orig_sink in
   match Summary.read_summary orig_pdesc callee_pname with
-  | Some {accesses}
-   -> get_all_accesses
+  | Some {accesses} ->
+      get_all_accesses
         (fun access -> Access.matches ~caller:orig_access ~callee:(PathDomain.Sink.kind access))
         accesses
-  | _
-   -> PathDomain.empty
+  | _ ->
+      PathDomain.empty
+
 
 let make_trace ~report_kind original_path pdesc =
   let open RacerDDomain in
@@ -1239,10 +1290,10 @@ let make_trace ~report_kind original_path pdesc =
   let make_trace_for_sink sink =
     let trace_of_pname = trace_of_pname sink pdesc in
     match PathDomain.get_reportable_sink_path sink ~trace_of_pname with
-    | Some path
-     -> loc_trace_of_path path
-    | None
-     -> []
+    | Some path ->
+        loc_trace_of_path path
+    | None ->
+        []
   in
   let original_trace = loc_trace_of_path original_path in
   let make_with_conflicts conflict_sink original_trace ~label1 ~label2 =
@@ -1258,20 +1309,21 @@ let make_trace ~report_kind original_path pdesc =
     first_trace_spacer :: original_trace @ second_trace_spacer :: conflict_trace
   in
   match report_kind with
-  | ReadWriteRace (conflict_sink :: _)
-   -> make_with_conflicts conflict_sink original_trace ~label1:"<Read trace>"
+  | ReadWriteRace (conflict_sink :: _) ->
+      make_with_conflicts conflict_sink original_trace ~label1:"<Read trace>"
         ~label2:"<Write trace>"
-  | WriteWriteRace (conflict_sink :: _)
-   -> make_with_conflicts conflict_sink original_trace ~label1:"<Write on unknown thread>"
+  | WriteWriteRace (conflict_sink :: _) ->
+      make_with_conflicts conflict_sink original_trace ~label1:"<Write on unknown thread>"
         ~label2:"<Write on background thread>"
-  | ReadWriteRace [] | WriteWriteRace [] | UnannotatedInterface
-   -> original_trace
+  | ReadWriteRace [] | WriteWriteRace [] | UnannotatedInterface ->
+      original_trace
+
 
 let report_thread_safety_violation tenv pdesc issue_type ~make_description ~report_kind access
     thread =
   let open RacerDDomain in
   let pname = Procdesc.get_proc_name pdesc in
-  let report_one_path (_, sinks as path) =
+  let report_one_path ((_, sinks) as path) =
     let initial_sink, _ = List.last_exn sinks in
     let final_sink, _ = List.hd_exn sinks in
     let initial_sink_site = PathDomain.Sink.call_site initial_sink in
@@ -1291,10 +1343,11 @@ let report_thread_safety_violation tenv pdesc issue_type ~make_description ~repo
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)
 
+
 let report_unannotated_interface_violation tenv pdesc access thread reported_pname =
   match reported_pname with
-  | Typ.Procname.Java java_pname
-   -> let class_name = Typ.Procname.java_get_class_name java_pname in
+  | Typ.Procname.Java java_pname ->
+      let class_name = Typ.Procname.java_get_class_name java_pname in
       let make_description _ _ _ _ =
         F.asprintf
           "Unprotected call to method of un-annotated interface %s. Consider annotating the class with %a, adding a lock, or using an interface that is known to be thread-safe."
@@ -1302,23 +1355,28 @@ let report_unannotated_interface_violation tenv pdesc access thread reported_pna
       in
       report_thread_safety_violation tenv pdesc IssueType.interface_not_thread_safe
         ~make_description ~report_kind:UnannotatedInterface access thread
-  | _
-   -> (* skip reporting on C++ *)
+  | _ ->
+      (* skip reporting on C++ *)
       ()
 
+
 let pp_procname_short fmt = function
-  | Typ.Procname.Java java
-   -> F.fprintf fmt "%s.%s" (Typ.Procname.java_get_class_name java)
+  | Typ.Procname.Java java ->
+      F.fprintf fmt "%s.%s"
+        (Typ.Procname.java_get_class_name java)
         (Typ.Procname.java_get_method java)
-  | pname
-   -> Typ.Procname.pp fmt pname
+  | pname ->
+      Typ.Procname.pp fmt pname
+
 
 let make_unprotected_write_description pname final_sink_site initial_sink_site final_sink =
   Format.asprintf "Unprotected write. Non-private method %a%s %s %a outside of synchronization."
-    (MF.wrap_monospaced pp_procname_short) pname
+    (MF.wrap_monospaced pp_procname_short)
+    pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if RacerDDomain.TraceElem.is_container_write final_sink then "mutates" else "writes to field")
     pp_access final_sink
+
 
 let make_read_write_race_description ~read_is_sync conflicts pname final_sink_site
     initial_sink_site final_sink =
@@ -1338,10 +1396,12 @@ let make_read_write_race_description ~read_is_sync conflicts pname final_sink_si
       (MF.wrap_monospaced pp_conflicts) conflicting_proc_names
   in
   Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s."
-    (MF.wrap_monospaced pp_procname_short) pname
+    (MF.wrap_monospaced pp_procname_short)
+    pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if read_is_sync then " with synchronization" else " without synchronization")
     pp_access final_sink conflicts_description
+
 
 (** type for remembering what we have already reported to avoid duplicates. our policy is to report
     each kind of access (read/write) to the same field reachable from the same procedure only once.
@@ -1358,6 +1418,7 @@ let empty_reported =
   let reported_reads = Typ.Procname.Set.empty in
   {reported_sites; reported_reads; reported_writes}
 
+
 (* return true if procedure is at an abstraction boundary or reporting has been explicitly
    requested via @ThreadSafe *)
 let should_report_on_proc proc_desc tenv =
@@ -1366,6 +1427,7 @@ let should_report_on_proc proc_desc tenv =
   || not (Typ.Procname.java_is_autogen_method proc_name)
      && Procdesc.get_access proc_desc <> PredSymb.Private
      && not (Annotations.pdesc_return_annot_ends_with proc_desc Annotations.visibleForTesting)
+
 
 (** Report accesses that may race with each other.
 
@@ -1397,38 +1459,38 @@ let should_report_on_proc proc_desc tenv =
 *)
 let report_unsafe_accesses
     (aggregated_access_map:
-    ( RacerDDomain.TraceElem.t
-    * RacerDDomain.AccessPrecondition.t
-    * RacerDDomain.ThreadsDomain.astate
-    * Tenv.t
-    * Procdesc.t )
-    list
-    AccessListMap.t) =
+      ( RacerDDomain.TraceElem.t
+      * RacerDDomain.AccessPrecondition.t
+      * RacerDDomain.ThreadsDomain.astate
+      * Tenv.t
+      * Procdesc.t )
+      list
+      AccessListMap.t) =
   let open RacerDDomain in
   let is_duplicate_report access pname {reported_sites; reported_writes; reported_reads} =
     if Config.filtering then CallSite.Set.mem (TraceElem.call_site access) reported_sites
       ||
       match TraceElem.kind access with
-      | Access.Write _ | Access.ContainerWrite _
-       -> Typ.Procname.Set.mem pname reported_writes
-      | Access.Read _ | Access.ContainerRead _
-       -> Typ.Procname.Set.mem pname reported_reads
-      | Access.InterfaceCall _
-       -> false
+      | Access.Write _ | Access.ContainerWrite _ ->
+          Typ.Procname.Set.mem pname reported_writes
+      | Access.Read _ | Access.ContainerRead _ ->
+          Typ.Procname.Set.mem pname reported_reads
+      | Access.InterfaceCall _ ->
+          false
     else false
   in
   let update_reported access pname reported =
     if Config.filtering then
       let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
       match TraceElem.kind access with
-      | Access.Write _ | Access.ContainerWrite _
-       -> let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
+      | Access.Write _ | Access.ContainerWrite _ ->
+          let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
           {reported with reported_writes; reported_sites}
-      | Access.Read _ | Access.ContainerRead _
-       -> let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
+      | Access.Read _ | Access.ContainerRead _ ->
+          let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
           {reported with reported_reads; reported_sites}
-      | Access.InterfaceCall _
-       -> reported
+      | Access.InterfaceCall _ ->
+          reported
     else reported
   in
   let report_unsafe_access (access, pre, thread, tenv, pdesc) accesses reported_acc =
@@ -1437,20 +1499,20 @@ let report_unsafe_accesses
     else
       match (TraceElem.kind access, pre) with
       | ( Access.InterfaceCall unannoted_call_pname
-        , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) )
-       -> if ThreadsDomain.is_any thread && is_marked_thread_safe pdesc tenv then (
+        , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) ) ->
+          if ThreadsDomain.is_any thread && is_marked_thread_safe pdesc tenv then (
             (* un-annotated interface call + no lock in method marked thread-safe. warn *)
             report_unannotated_interface_violation tenv pdesc access thread unannoted_call_pname ;
             update_reported access pname reported_acc )
           else reported_acc
-      | Access.InterfaceCall _, AccessPrecondition.Protected _
-       -> (* un-annotated interface call, but it's protected by a lock/thread. don't report *)
+      | Access.InterfaceCall _, AccessPrecondition.Protected _ ->
+          (* un-annotated interface call, but it's protected by a lock/thread. don't report *)
           reported_acc
       | ( (Access.Write _ | ContainerWrite _)
         , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) ) -> (
         match Procdesc.get_proc_name pdesc with
-        | Java _
-         -> let writes_on_background_thread =
+        | Java _ ->
+            let writes_on_background_thread =
               if ThreadsDomain.is_any thread then
                 (* unprotected write in method that may run in parallel with itself. warn *)
                 []
@@ -1472,23 +1534,23 @@ let report_unsafe_accesses
                 ~make_description:make_unprotected_write_description
                 ~report_kind:(WriteWriteRace writes_on_background_thread) access thread ;
               update_reported access pname reported_acc )
-        | _
-         -> (* Do not report unprotected writes when an access can't run in parallel with itself, or
+        | _ ->
+            (* Do not report unprotected writes when an access can't run in parallel with itself, or
                for ObjC_Cpp *)
             reported_acc )
-      | (Access.Write _ | ContainerWrite _), AccessPrecondition.Protected _
-       -> (* protected write, do nothing *)
+      | (Access.Write _ | ContainerWrite _), AccessPrecondition.Protected _ ->
+          (* protected write, do nothing *)
           reported_acc
       | ( (Access.Read _ | ContainerRead _)
-        , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) )
-       -> (* unprotected read. report all writes as conflicts for java. for c++ filter out
+        , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) ) ->
+          (* unprotected read. report all writes as conflicts for java. for c++ filter out
              unprotected writes *)
           let is_cpp_protected_write pre =
             match pre with
-            | AccessPrecondition.Unprotected _ | TotallyUnprotected
-             -> Typ.Procname.is_java pname
-            | AccessPrecondition.Protected _
-             -> true
+            | AccessPrecondition.Unprotected _ | TotallyUnprotected ->
+                Typ.Procname.is_java pname
+            | AccessPrecondition.Protected _ ->
+                true
           in
           let is_conflict other_access pre other_thread =
             TraceElem.is_write other_access
@@ -1511,27 +1573,27 @@ let report_unsafe_accesses
                 (ReadWriteRace (List.map ~f:(fun (access, _, _, _, _) -> access) all_writes))
               access thread ;
             update_reported access pname reported_acc )
-      | (Access.Read _ | ContainerRead _), AccessPrecondition.Protected excl
-       -> (* protected read. report unprotected writes and opposite protected writes as conflicts
+      | (Access.Read _ | ContainerRead _), AccessPrecondition.Protected excl ->
+          (* protected read. report unprotected writes and opposite protected writes as conflicts
              Thread and Lock are opposites of one another, and Both has no opposite *)
           let is_opposite = function
-            | Excluder.Lock, Excluder.Thread
-             -> true
-            | Excluder.Thread, Excluder.Lock
-             -> true
-            | _, _
-             -> false
+            | Excluder.Lock, Excluder.Thread ->
+                true
+            | Excluder.Thread, Excluder.Lock ->
+                true
+            | _, _ ->
+                false
           in
           let conflicting_writes =
             List.filter
               ~f:(fun (access, pre, other_thread, _, _) ->
                 match pre with
-                | AccessPrecondition.Unprotected _
-                 -> TraceElem.is_write access && ThreadsDomain.is_any other_thread
-                | AccessPrecondition.Protected other_excl when is_opposite (excl, other_excl)
-                 -> TraceElem.is_write access
-                | _
-                 -> false)
+                | AccessPrecondition.Unprotected _ ->
+                    TraceElem.is_write access && ThreadsDomain.is_any other_thread
+                | AccessPrecondition.Protected other_excl when is_opposite (excl, other_excl) ->
+                    TraceElem.is_write access
+                | _ ->
+                    false)
               accesses
           in
           if List.is_empty conflicting_writes then reported_acc
@@ -1564,8 +1626,8 @@ let report_unsafe_accesses
       in
       let should_report pdesc tenv =
         match Procdesc.get_proc_name pdesc with
-        | Java _
-         -> (* report if
+        | Java _ ->
+            (* report if
                 - the method/class of the access is thread-safe
                   (or an override or superclass is), or
                 - any access is in a field marked thread-safe (or an override) *)
@@ -1573,13 +1635,13 @@ let report_unsafe_accesses
               ~f:(fun (_, _, thread, _, _) -> ThreadsDomain.is_any thread)
               grouped_accesses
             && should_report_on_proc pdesc tenv
-        | ObjC_Cpp objc_cpp
-         -> (* do not report if a procedure is private  *)
+        | ObjC_Cpp objc_cpp ->
+            (* do not report if a procedure is private  *)
             Procdesc.get_access pdesc <> PredSymb.Private
             && (* report if the class has a mutex member  *)
                class_has_mutex_member objc_cpp tenv
-        | _
-         -> false
+        | _ ->
+            false
       in
       let reportable_accesses =
         List.filter ~f:(fun (_, _, _, tenv, pdesc) -> should_report pdesc tenv) grouped_accesses
@@ -1589,6 +1651,7 @@ let report_unsafe_accesses
         reportable_accesses ~init:reported)
     aggregated_access_map empty_reported
   |> ignore
+
 
 type ('a, 'b, 'c) dat = RacerDDomain.TraceElem.t * 'a * 'b * Tenv.t * 'c
 
@@ -1612,20 +1675,22 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
       if phys_equal u v then 0
       else
         match (u, v) with
-        | LogicalVar i, LogicalVar j
-         -> Ident.compare i j
-        | ProgramVar x, ProgramVar y
-         -> Pvar.compare_modulo_this x y
-        | _
-         -> Pervasives.compare u v
+        | LogicalVar i, LogicalVar j ->
+            Ident.compare i j
+        | ProgramVar x, ProgramVar y ->
+            Pvar.compare_modulo_this x y
+        | _ ->
+            Pervasives.compare u v
+
 
     let compare (x: t) (y: t) =
       match (x, y) with
       | ( (Read ap1 | Write ap1 | ContainerRead (ap1, _) | ContainerWrite (ap1, _))
-        , (Read ap2 | Write ap2 | ContainerRead (ap2, _) | ContainerWrite (ap2, _)) )
-       -> [%compare : (_var * Typ.t) * AccessPath.access list] ap1 ap2
-      | InterfaceCall _, _ | _, InterfaceCall _
-       -> RacerDDomain.Access.compare x y
+        , (Read ap2 | Write ap2 | ContainerRead (ap2, _) | ContainerWrite (ap2, _)) ) ->
+          [%compare : (_var * Typ.t) * AccessPath.access list] ap1 ap2
+      | InterfaceCall _, _ | _, InterfaceCall _ ->
+          RacerDDomain.Access.compare x y
+
   end)
 
   type ('a, 'b, 'c) t = ('a, 'b, 'c) dat list M.t
@@ -1638,6 +1703,7 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
       with Not_found -> []
     in
     M.add k (d :: ds) m
+
 
   let quotient m = M.fold AccessListMap.add m AccessListMap.empty
 end
@@ -1656,6 +1722,7 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
     in
     add k (d :: ds) m
 
+
   let sound = false
 
   let syntactic_equal_access_path tenv p1 p2 =
@@ -1664,10 +1731,10 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
          other Map, etc. Instead, do something simple and unsound: just assume that two accesses can
          be to the same container if they are to the same access path *)
       match (AccessPath.get_typ p1 tenv, AccessPath.get_typ p2 tenv) with
-      | Some {desc= Tptr ({desc= Tstruct tn1}, _)}, Some {desc= Tptr ({desc= Tstruct tn2}, _)}
-       -> PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
-      | _
-       -> true
+      | Some {desc= Tptr ({desc= Tstruct tn1}, _)}, Some {desc= Tptr ({desc= Tstruct tn2}, _)} ->
+          PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
+      | _ ->
+          true
     else
       (* unsound, but effective: report that the containers alias if their access paths are
          syntactically identical *)
@@ -1675,13 +1742,14 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
       | (Var.ProgramVar pvar1, typ1), (Var.ProgramVar pvar2, typ2)
         when Pvar.is_this pvar1 && Pvar.is_this pvar2
              && ( Typ.equal typ1 typ2 || Prover.Subtyping_check.check_subtype tenv typ1 typ2
-                || Prover.Subtyping_check.check_subtype tenv typ2 typ1 )
-       -> (* the `this` used in C.foo and C.bar will compare unequal if we're not careful `this` is
+                || Prover.Subtyping_check.check_subtype tenv typ2 typ1 ) ->
+          (* the `this` used in C.foo and C.bar will compare unequal if we're not careful `this` is
              represented as a local pvar, and a local pvar contains its parent procedure name. Count
              the `this`'s as equal if their types are compatible *)
           AccessPath.equal_access_list (snd p1) (snd p2)
-      | _
-       -> AccessPath.equal p1 p2
+      | _ ->
+          AccessPath.equal p1 p2
+
 
   (* equivalence relation computing whether two access paths may refer to the
      same heap location. *)
@@ -1691,20 +1759,21 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
     phys_equal p1 p2
     ||
     match (List.last_exn (snd p1), List.last_exn (snd p2)) with
-    | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _
-     -> false
+    | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _ ->
+        false
     (* fields in Java contain the class name /declaring/ them
        thus two fields can be aliases *iff* they are equal *)
-    | FieldAccess f1, FieldAccess f2
-     -> Typ.Fieldname.equal f1 f2
+    | FieldAccess f1, FieldAccess f2 ->
+        Typ.Fieldname.equal f1 f2
     (* if arrays of objects that have an inheritance rel then they can alias *)
     | ( ArrayAccess ({desc= Tptr ({desc= Tstruct tn1}, _)}, _)
-      , ArrayAccess ({desc= Tptr ({desc= Tstruct tn2}, _)}, _) )
-     -> if sound then PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
+      , ArrayAccess ({desc= Tptr ({desc= Tstruct tn2}, _)}, _) ) ->
+        if sound then PatternMatch.is_subtype tenv tn1 tn2 || PatternMatch.is_subtype tenv tn2 tn1
         else syntactic_equal_access_path tenv p1 p2
     (* primitive type arrays can alias if the prim. type is the same *)
-    | ArrayAccess (t1, _), ArrayAccess (t2, _)
-     -> if sound then equal_desc t1.desc t2.desc else syntactic_equal_access_path tenv p1 p2
+    | ArrayAccess (t1, _), ArrayAccess (t2, _) ->
+        if sound then equal_desc t1.desc t2.desc else syntactic_equal_access_path tenv p1 p2
+
 
   (* take a results table and quotient it by the may_alias relation *)
   let quotient acc_map =
@@ -1721,13 +1790,13 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
           AccessListMap.partition
             (fun k' _ ->
               match (k, k') with
-              | (Read ap1 | Write ap1), (Read ap2 | Write ap2)
-               -> may_alias tenv ap1 ap2
+              | (Read ap1 | Write ap1), (Read ap2 | Write ap2) ->
+                  may_alias tenv ap1 ap2
               | ( (ContainerRead (ap1, _) | ContainerWrite (ap1, _))
-                , (ContainerRead (ap2, _) | ContainerWrite (ap2, _)) )
-               -> syntactic_equal_access_path tenv ap1 ap2
-              | _
-               -> RacerDDomain.Access.equal k k')
+                , (ContainerRead (ap2, _) | ContainerWrite (ap2, _)) ) ->
+                  syntactic_equal_access_path tenv ap1 ap2
+              | _ ->
+                  RacerDDomain.Access.equal k k')
             m
         in
         if AccessListMap.is_empty k_part then L.(die InternalError) "may_alias is not reflexive!" ;
@@ -1736,6 +1805,7 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
         aux new_acc non_k_part
     in
     aux AccessListMap.empty acc_map
+
 end
 
 (* decide if we should throw away a path before doing safety analysis
@@ -1743,16 +1813,17 @@ end
    that is auto-generated by Java. *)
 let should_filter_access access =
   match RacerDDomain.Access.get_access_path access with
-  | Some (_, path)
-   -> let check_access_step = function
-        | AccessPath.ArrayAccess _
-         -> false
-        | AccessPath.FieldAccess fld
-         -> String.is_substring ~substring:"$SwitchMap" (Typ.Fieldname.to_string fld)
+  | Some (_, path) ->
+      let check_access_step = function
+        | AccessPath.ArrayAccess _ ->
+            false
+        | AccessPath.FieldAccess fld ->
+            String.is_substring ~substring:"$SwitchMap" (Typ.Fieldname.to_string fld)
       in
       List.exists path ~f:check_access_step
-  | None
-   -> false
+  | None ->
+      false
+
 
 (* create a map from [abstraction of a memory loc] -> accesses that may touch that memory loc. for
    now, our abstraction is an access path like x.f.g whose concretization is the set of memory cells
@@ -1772,25 +1843,26 @@ let make_results_table (module AccessListMap: QuotientedAccessListMap) file_env 
   in
   let aggregate_posts acc (tenv, proc_desc) =
     match Summary.read_summary proc_desc (Procdesc.get_proc_name proc_desc) with
-    | Some summary
-     -> aggregate_post summary tenv proc_desc acc
-    | None
-     -> acc
+    | Some summary ->
+        aggregate_post summary tenv proc_desc acc
+    | None ->
+        acc
   in
   List.fold ~f:aggregate_posts file_env ~init:AccessListMap.empty |> AccessListMap.quotient
+
 
 (* aggregate all of the procedures in the file env by their declaring class. this lets us analyze
    each class individually *)
 let aggregate_by_class file_env =
   List.fold file_env
-    ~f:(fun acc (_, pdesc as proc) ->
+    ~f:(fun acc ((_, pdesc) as proc) ->
       let pname = Procdesc.get_proc_name pdesc in
       let classname =
         match pname with
-        | Typ.Procname.Java java_pname
-         -> Typ.Procname.java_get_class_name java_pname
-        | _
-         -> "unknown"
+        | Typ.Procname.Java java_pname ->
+            Typ.Procname.java_get_class_name java_pname
+        | _ ->
+            "unknown"
       in
       let bucket =
         try String.Map.find_exn acc classname
@@ -1798,6 +1870,7 @@ let aggregate_by_class file_env =
       in
       String.Map.add ~key:classname ~data:(proc :: bucket) acc)
     ~init:String.Map.empty
+
 
 (* Gathers results by analyzing all the methods in a file, then post-processes the results to check
    an (approximation of) thread safety *)
@@ -1811,3 +1884,4 @@ let file_analysis {Callbacks.procedures} =
            else (module MayAliasQuotientedAccessListMap) )
            class_env))
     (aggregate_by_class procedures)
+

@@ -16,10 +16,12 @@ let int64_of_attributes_kind =
   let int64_two = Int64.of_int 2 in
   function ProcUndefined -> Int64.zero | ProcObjCAccessor -> Int64.one | ProcDefined -> int64_two
 
+
 let proc_kind_of_attr (proc_attributes: ProcAttributes.t) =
   if proc_attributes.is_defined then ProcDefined
   else if Option.is_some proc_attributes.objc_accessor then ProcObjCAccessor
   else ProcUndefined
+
 
 module type Data = sig
   val of_pname : Typ.Procname.t -> Sqlite3.Data.t
@@ -37,6 +39,7 @@ module Data : Data = struct
   let of_pname pname =
     let default () = Sqlite3.Data.TEXT (Typ.Procname.to_filename pname) in
     Base.Hashtbl.find_or_add pname_to_key pname ~default
+
 
   let of_source_file file = Sqlite3.Data.TEXT (SourceFile.to_string file)
 
@@ -76,6 +79,7 @@ FROM (
   WHERE attr_kind < :akind
         OR (attr_kind = :akind AND source_file < :sfile) )|}
 
+
 let replace pname_blob akind loc_file attr_blob =
   let replace_stmt = get_replace_statement () in
   Sqlite3.bind replace_stmt 1 (* :pname *) pname_blob
@@ -88,6 +92,7 @@ let replace pname_blob akind loc_file attr_blob =
   |> SqliteUtils.check_sqlite_error ~log:"replace bind proc attributes" ;
   SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Attributes.replace" replace_stmt
 
+
 let get_find_more_defined_statement =
   ResultsDir.register_statement
     {|
@@ -96,6 +101,7 @@ FROM attributes
 WHERE proc_name = :pname
       AND attr_kind > :akind
 |}
+
 
 let should_try_to_update pname_blob akind =
   let find_stmt = get_find_more_defined_statement () in
@@ -106,13 +112,16 @@ let should_try_to_update pname_blob akind =
   SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.replace" find_stmt
   |> (* there is no entry with a strictly larger "definedness" for that proc name *) Option.is_none
 
+
 let get_select_statement =
   ResultsDir.register_statement "SELECT proc_attributes FROM attributes WHERE proc_name = :k"
+
 
 let get_select_defined_statement =
   ResultsDir.register_statement
     "SELECT proc_attributes FROM attributes WHERE proc_name = :k AND attr_kind = %Ld"
     (int64_of_attributes_kind ProcDefined)
+
 
 let find ~defined pname_blob =
   let select_stmt = if defined then get_select_defined_statement () else get_select_statement () in
@@ -120,6 +129,7 @@ let find ~defined pname_blob =
   |> SqliteUtils.check_sqlite_error ~log:"find bind proc name" ;
   SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.find" select_stmt
   |> Option.map ~f:Data.to_proc_attr
+
 
 let load pname = Data.of_pname pname |> find ~defined:false
 
@@ -129,26 +139,28 @@ let store (attr: ProcAttributes.t) =
   if should_try_to_update key pkind then
     replace key pkind (Data.of_source_file attr.loc.Location.file) (Data.of_proc_attr attr)
 
+
 let load_defined pname = Data.of_pname pname |> find ~defined:true
 
 let find_file_capturing_procedure pname =
   match load pname with
-  | None
-   -> None
-  | Some proc_attributes
-   -> let source_file = proc_attributes.ProcAttributes.source_file_captured in
+  | None ->
+      None
+  | Some proc_attributes ->
+      let source_file = proc_attributes.ProcAttributes.source_file_captured in
       let source_dir = DB.source_dir_from_source_file source_file in
       let origin =
         (* Procedure coming from include files if it has different location
          than the file where it was captured. *)
         match SourceFile.compare source_file proc_attributes.ProcAttributes.loc.file <> 0 with
-        | true
-         -> `Include
-        | false
-         -> `Source
+        | true ->
+            `Include
+        | false ->
+            `Source
       in
       let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg" in
       let cfg_fname_exists =
         PVariant.( = ) `Yes (Sys.file_exists (DB.filename_to_string cfg_fname))
       in
       if cfg_fname_exists then Some (source_file, origin) else None
+

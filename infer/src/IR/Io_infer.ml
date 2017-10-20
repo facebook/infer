@@ -20,10 +20,10 @@ module Html = struct
   let create pk path =
     let fname, dir_path =
       match List.rev path with
-      | fname :: path_rev
-       -> (fname, List.rev ((fname ^ ".html") :: path_rev))
-      | []
-       -> raise (Failure "Html.create")
+      | fname :: path_rev ->
+          (fname, List.rev ((fname ^ ".html") :: path_rev))
+      | [] ->
+          raise (Failure "Html.create")
     in
     let fd = DB.Results_dir.create_file pk dir_path in
     let outc = Unix.out_channel_of_descr fd in
@@ -84,22 +84,25 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
     in
     F.fprintf fmt "%s" s ; (fd, fmt)
 
+
   (** Get the full html filename from a path *)
   let get_full_fname source path =
     let dir_path =
       match List.rev path with
-      | fname :: path_rev
-       -> List.rev ((fname ^ ".html") :: path_rev)
-      | []
-       -> raise (Failure "Html.open_out")
+      | fname :: path_rev ->
+          List.rev ((fname ^ ".html") :: path_rev)
+      | [] ->
+          raise (Failure "Html.open_out")
     in
     DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source) dir_path
+
 
   (** Open an Html file to append data *)
   let open_out source path =
     let full_fname = get_full_fname source path in
     let fd =
-      Unix.openfile (DB.filename_to_string full_fname)
+      Unix.openfile
+        (DB.filename_to_string full_fname)
         ~mode:Unix.([O_WRONLY; O_APPEND])
         ~perm:0o777
     in
@@ -107,14 +110,19 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
     let fmt = F.formatter_of_out_channel outc in
     (fd, fmt)
 
+
   (** Return true if the html file was modified since the beginning of the analysis *)
   let modified_during_analysis source path =
     let fname = get_full_fname source path in
     if DB.file_exists fname then DB.file_modified_time fname >= Config.initial_analysis_time
     else false
 
+
   (** Close an Html file *)
-  let close (fd, fmt) = F.fprintf fmt "</body>@\n</html>@." ; Unix.close fd
+  let close (fd, fmt) =
+    F.fprintf fmt "</body>@\n</html>@." ;
+    Unix.close fd
+
 
   (** Print a horizontal line *)
   let pp_hline fmt () = F.fprintf fmt "<hr width=\"100%%\">@\n"
@@ -135,6 +143,7 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
     let name_str = match name with None -> "" | Some n -> "name=\"" ^ n ^ "\"" in
     let pr_str = "<a " ^ name_str ^ "href=\"" ^ link_str ^ "\">" ^ text ^ "</a>" in
     F.fprintf fmt " %s" pr_str
+
 
   (** File name for the node, given the procedure name and node id *)
   let node_filename pname id = Typ.Procname.to_filename pname ^ "_node" ^ string_of_int id
@@ -161,9 +170,11 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
     in
     pp_link ~path:(path_to_root @ ["nodes"; node_fname]) fmt node_text
 
+
   (** Print an html link to the given proc *)
   let pp_proc_link path_to_root proc_name fmt text =
     pp_link ~path:(path_to_root @ [Typ.Procname.to_filename proc_name]) fmt text
+
 
   (** Print an html link to the given line number of the current source file *)
   let pp_line_link ?(with_name= false) ?(text= None) source path_to_root fmt linenum =
@@ -176,6 +187,7 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
       ~path:(path_to_root @ [".."; fname])
       fmt
       (match text with Some s -> s | None -> linenum_str)
+
 
   (** Print an html link given node id and session *)
   let pp_session_link ?(with_name= false) ?proc_name source path_to_root fmt
@@ -191,6 +203,7 @@ td.rowname { text-align:right; font-weight:bold; color:#444444; padding-right:2e
       ~pos:(Some pos) ~path:path_to_node fmt
       (node_name ^ "#" ^ pos) ;
     F.fprintf fmt "(%a)" (pp_line_link source path_to_root) linenum
+
 end
 
 (* =============== END of module Html =============== *)
@@ -294,22 +307,23 @@ module Xml = struct
 
   (** print an xml node *)
   let rec pp_node newline indent fmt = function
-    | Tree {name; attributes; forest}
-     -> let indent' = if String.equal newline "" then "" else indent ^ "  " in
+    | Tree {name; attributes; forest} ->
+        let indent' = if String.equal newline "" then "" else indent ^ "  " in
         let space = if List.is_empty attributes then "" else " " in
         let pp_inside fmt () =
           match forest with
-          | []
-           -> ()
-          | [(String s)]
-           -> pp fmt "%s" s
-          | _
-           -> pp fmt "%s%a%s" newline (pp_forest newline indent') forest indent
+          | [] ->
+              ()
+          | [(String s)] ->
+              pp fmt "%s" s
+          | _ ->
+              pp fmt "%s%a%s" newline (pp_forest newline indent') forest indent
         in
         pp fmt "%s<%s%s%a>%a</%s>%s" indent name space pp_attributes attributes pp_inside () name
           newline
-    | String s
-     -> F.fprintf fmt "%s%s%s" indent s newline
+    | String s ->
+        F.fprintf fmt "%s%s%s" indent s newline
+
 
   and pp_forest newline indent fmt forest = List.iter ~f:(pp_node newline indent fmt) forest
 
@@ -327,6 +341,7 @@ module Xml = struct
     if on_several_lines then pp_prelude fmt ;
     pp_node newline "" fmt node ;
     if on_several_lines then pp fmt "@."
+
 end
 
 (* =============== END of module Xml =============== *)

@@ -24,6 +24,7 @@ let equal_visibility = [%compare.equal : visibility]
 let string_of_visibility vis =
   match vis with Exn_user -> "user" | Exn_developer -> "developer" | Exn_system -> "system"
 
+
 (** severity of bugs *)
 type severity =
   | High  (** high severity bug *)
@@ -160,24 +161,24 @@ type t =
 let recognize_exception exn =
   match exn with
   (* all the static names of errors must be defined in Config.IssueType *)
-  | Abduction_case_not_implemented ml_loc
-   -> { name= IssueType.abduction_case_not_implemented
+  | Abduction_case_not_implemented ml_loc ->
+      { name= IssueType.abduction_case_not_implemented
       ; description= Localise.no_desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | Context_leak (desc, _)
-   -> { name= IssueType.context_leak
+  | Context_leak (desc, _) ->
+      { name= IssueType.context_leak
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Nocat }
-  | Analysis_stops (desc, ml_loc_opt)
-   -> let visibility = if Config.analysis_stops then Exn_user else Exn_developer in
+  | Analysis_stops (desc, ml_loc_opt) ->
+      let visibility = if Config.analysis_stops then Exn_user else Exn_developer in
       { name= IssueType.analysis_stops
       ; description= desc
       ; ml_loc= ml_loc_opt
@@ -185,40 +186,40 @@ let recognize_exception exn =
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Array_of_pointsto ml_loc
-   -> { name= IssueType.array_of_pointsto
+  | Array_of_pointsto ml_loc ->
+      { name= IssueType.array_of_pointsto
       ; description= Localise.no_desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | Array_out_of_bounds_l1 (desc, ml_loc)
-   -> { name= IssueType.array_out_of_bounds_l1
+  | Array_out_of_bounds_l1 (desc, ml_loc) ->
+      { name= IssueType.array_out_of_bounds_l1
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= Some Kerror
       ; category= Checker }
-  | Array_out_of_bounds_l2 (desc, ml_loc)
-   -> { name= IssueType.array_out_of_bounds_l2
+  | Array_out_of_bounds_l2 (desc, ml_loc) ->
+      { name= IssueType.array_out_of_bounds_l2
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Array_out_of_bounds_l3 (desc, ml_loc)
-   -> { name= IssueType.array_out_of_bounds_l3
+  | Array_out_of_bounds_l3 (desc, ml_loc) ->
+      { name= IssueType.array_out_of_bounds_l3
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Assert_failure (f, l, c)
-   -> let ml_loc = (f, l, c, c) in
+  | Assert_failure (f, l, c) ->
+      let ml_loc = (f, l, c, c) in
       { name= IssueType.assert_failure
       ; description= Localise.no_desc
       ; ml_loc= Some ml_loc
@@ -226,48 +227,48 @@ let recognize_exception exn =
       ; severity= High
       ; kind= None
       ; category= Nocat }
-  | Bad_footprint ml_loc
-   -> { name= IssueType.bad_footprint
+  | Bad_footprint ml_loc ->
+      { name= IssueType.bad_footprint
       ; description= Localise.no_desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | Cannot_star ml_loc
-   -> { name= IssueType.cannot_star
+  | Cannot_star ml_loc ->
+      { name= IssueType.cannot_star
       ; description= Localise.no_desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | Class_cast_exception (desc, ml_loc)
-   -> { name= IssueType.class_cast_exception
+  | Class_cast_exception (desc, ml_loc) ->
+      { name= IssueType.class_cast_exception
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Codequery desc
-   -> { name= IssueType.codequery
+  | Codequery desc ->
+      { name= IssueType.codequery
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Comparing_floats_for_equality (desc, ml_loc)
-   -> { name= IssueType.comparing_floats_for_equality
+  | Comparing_floats_for_equality (desc, ml_loc) ->
+      { name= IssueType.comparing_floats_for_equality
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Condition_always_true_false (desc, b, ml_loc)
-   -> let name = if b then IssueType.condition_always_true else IssueType.condition_always_false in
+  | Condition_always_true_false (desc, b, ml_loc) ->
+      let name = if b then IssueType.condition_always_true else IssueType.condition_always_false in
       { name
       ; description= desc
       ; ml_loc= Some ml_loc
@@ -275,21 +276,21 @@ let recognize_exception exn =
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Custom_error (error_msg, desc)
-   -> { name= IssueType.from_string error_msg
+  | Custom_error (error_msg, desc) ->
+      { name= IssueType.from_string error_msg
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Checker }
-  | Dangling_pointer_dereference (dko, desc, ml_loc)
-   -> let visibility =
+  | Dangling_pointer_dereference (dko, desc, ml_loc) ->
+      let visibility =
         match dko with
-        | Some _
-         -> Exn_user (* only show to the user if the category was identified *)
-        | None
-         -> Exn_developer
+        | Some _ ->
+            Exn_user (* only show to the user if the category was identified *)
+        | None ->
+            Exn_developer
       in
       { name= IssueType.dangling_pointer_dereference
       ; description= desc
@@ -298,128 +299,128 @@ let recognize_exception exn =
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Deallocate_stack_variable desc
-   -> { name= IssueType.deallocate_stack_variable
+  | Deallocate_stack_variable desc ->
+      { name= IssueType.deallocate_stack_variable
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Deallocate_static_memory desc
-   -> { name= IssueType.deallocate_static_memory
+  | Deallocate_static_memory desc ->
+      { name= IssueType.deallocate_static_memory
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Deallocation_mismatch (desc, ml_loc)
-   -> { name= IssueType.deallocation_mismatch
+  | Deallocation_mismatch (desc, ml_loc) ->
+      { name= IssueType.deallocation_mismatch
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Divide_by_zero (desc, ml_loc)
-   -> { name= IssueType.divide_by_zero
+  | Divide_by_zero (desc, ml_loc) ->
+      { name= IssueType.divide_by_zero
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= Some Kerror
       ; category= Checker }
-  | Double_lock (desc, ml_loc)
-   -> { name= IssueType.double_lock
+  | Double_lock (desc, ml_loc) ->
+      { name= IssueType.double_lock
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= Some Kerror
       ; category= Prover }
-  | Eradicate (kind_s, desc)
-   -> { name= IssueType.from_string kind_s
+  | Eradicate (kind_s, desc) ->
+      { name= IssueType.from_string kind_s
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Empty_vector_access (desc, ml_loc)
-   -> { name= IssueType.empty_vector_access
+  | Empty_vector_access (desc, ml_loc) ->
+      { name= IssueType.empty_vector_access
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= Some Kerror
       ; category= Prover }
-  | Field_not_null_checked (desc, ml_loc)
-   -> { name= IssueType.field_not_null_checked
+  | Field_not_null_checked (desc, ml_loc) ->
+      { name= IssueType.field_not_null_checked
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= Some Kwarning
       ; category= Nocat }
-  | Frontend_warning ((name, hum), desc, ml_loc)
-   -> { name= IssueType.from_string name ?hum
+  | Frontend_warning ((name, hum), desc, ml_loc) ->
+      { name= IssueType.from_string name ?hum
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= None
       ; category= Linters }
-  | Checkers (kind_s, desc)
-   -> { name= IssueType.from_string kind_s
+  | Checkers (kind_s, desc) ->
+      { name= IssueType.from_string kind_s
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Null_dereference (desc, ml_loc)
-   -> { name= IssueType.null_dereference
+  | Null_dereference (desc, ml_loc) ->
+      { name= IssueType.null_dereference
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Null_test_after_dereference (desc, ml_loc)
-   -> { name= IssueType.null_test_after_dereference
+  | Null_test_after_dereference (desc, ml_loc) ->
+      { name= IssueType.null_test_after_dereference
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Nocat }
-  | Pointer_size_mismatch (desc, ml_loc)
-   -> { name= IssueType.pointer_size_mismatch
+  | Pointer_size_mismatch (desc, ml_loc) ->
+      { name= IssueType.pointer_size_mismatch
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= Some Kerror
       ; category= Checker }
-  | Inherently_dangerous_function desc
-   -> { name= IssueType.inherently_dangerous_function
+  | Inherently_dangerous_function desc ->
+      { name= IssueType.inherently_dangerous_function
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_developer
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Internal_error desc
-   -> { name= IssueType.internal_error
+  | Internal_error desc ->
+      { name= IssueType.internal_error
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_developer
       ; severity= High
       ; kind= None
       ; category= Nocat }
-  | Java_runtime_exception (exn_name, _, desc)
-   -> let exn_str = Typ.Name.name exn_name in
+  | Java_runtime_exception (exn_name, _, desc) ->
+      let exn_str = Typ.Name.name exn_name in
       { name= IssueType.from_string exn_str
       ; description= desc
       ; ml_loc= None
@@ -427,8 +428,8 @@ let recognize_exception exn =
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Leak (fp_part, _, (exn_vis, error_desc), done_array_abstraction, resource, ml_loc)
-   -> if done_array_abstraction then
+  | Leak (fp_part, _, (exn_vis, error_desc), done_array_abstraction, resource, ml_loc) ->
+      if done_array_abstraction then
         { name= IssueType.leak_after_array_abstraction
         ; description= error_desc
         ; ml_loc= Some ml_loc
@@ -447,14 +448,14 @@ let recognize_exception exn =
       else
         let name =
           match resource with
-          | PredSymb.Rmemory _
-           -> IssueType.memory_leak
-          | PredSymb.Rfile
-           -> IssueType.resource_leak
-          | PredSymb.Rlock
-           -> IssueType.resource_leak
-          | PredSymb.Rignore
-           -> IssueType.memory_leak
+          | PredSymb.Rmemory _ ->
+              IssueType.memory_leak
+          | PredSymb.Rfile ->
+              IssueType.resource_leak
+          | PredSymb.Rlock ->
+              IssueType.resource_leak
+          | PredSymb.Rignore ->
+              IssueType.memory_leak
         in
         { name
         ; description= error_desc
@@ -463,8 +464,8 @@ let recognize_exception exn =
         ; severity= High
         ; kind= None
         ; category= Prover }
-  | Missing_fld (fld, ml_loc)
-   -> let desc = Localise.verbatim_desc (Typ.Fieldname.to_full_string fld) in
+  | Missing_fld (fld, ml_loc) ->
+      let desc = Localise.verbatim_desc (Typ.Fieldname.to_full_string fld) in
       { name= IssueType.missing_fld
       ; description= desc
       ; ml_loc= Some ml_loc
@@ -472,32 +473,32 @@ let recognize_exception exn =
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Premature_nil_termination (desc, ml_loc)
-   -> { name= IssueType.premature_nil_termination
+  | Premature_nil_termination (desc, ml_loc) ->
+      { name= IssueType.premature_nil_termination
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Parameter_not_null_checked (desc, ml_loc)
-   -> { name= IssueType.parameter_not_null_checked
+  | Parameter_not_null_checked (desc, ml_loc) ->
+      { name= IssueType.parameter_not_null_checked
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= Some Kwarning
       ; category= Nocat }
-  | Precondition_not_found (desc, ml_loc)
-   -> { name= IssueType.precondition_not_found
+  | Precondition_not_found (desc, ml_loc) ->
+      { name= IssueType.precondition_not_found
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | Precondition_not_met (desc, ml_loc)
-   -> { name= IssueType.precondition_not_met
+  | Precondition_not_met (desc, ml_loc) ->
+      { name= IssueType.precondition_not_met
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
@@ -505,72 +506,72 @@ let recognize_exception exn =
       ; kind= Some Kwarning
       ; category= Nocat }
       (* always a warning *)
-  | Retain_cycle (_, desc, ml_loc)
-   -> { name= IssueType.retain_cycle
+  | Retain_cycle (_, desc, ml_loc) ->
+      { name= IssueType.retain_cycle
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Registered_observer_being_deallocated (desc, ml_loc)
-   -> { name= IssueType.registered_observer_being_deallocated
+  | Registered_observer_being_deallocated (desc, ml_loc) ->
+      { name= IssueType.registered_observer_being_deallocated
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= Some Kerror
       ; category= Nocat }
-  | Return_expression_required (desc, ml_loc)
-   -> { name= IssueType.return_expression_required
+  | Return_expression_required (desc, ml_loc) ->
+      { name= IssueType.return_expression_required
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Stack_variable_address_escape (desc, ml_loc)
-   -> { name= IssueType.stack_variable_address_escape
+  | Stack_variable_address_escape (desc, ml_loc) ->
+      { name= IssueType.stack_variable_address_escape
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= Some Kerror
       ; category= Nocat }
-  | Return_statement_missing (desc, ml_loc)
-   -> { name= IssueType.return_statement_missing
+  | Return_statement_missing (desc, ml_loc) ->
+      { name= IssueType.return_statement_missing
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Return_value_ignored (desc, ml_loc)
-   -> { name= IssueType.return_value_ignored
+  | Return_value_ignored (desc, ml_loc) ->
+      { name= IssueType.return_value_ignored
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | SymOp.Analysis_failure_exe _
-   -> { name= IssueType.failure_exe
+  | SymOp.Analysis_failure_exe _ ->
+      { name= IssueType.failure_exe
       ; description= Localise.no_desc
       ; ml_loc= None
       ; visibility= Exn_system
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | Skip_function desc
-   -> { name= IssueType.skip_function
+  | Skip_function desc ->
+      { name= IssueType.skip_function
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_developer
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | Skip_pointer_dereference (desc, ml_loc)
-   -> { name= IssueType.skip_pointer_dereference
+  | Skip_pointer_dereference (desc, ml_loc) ->
+      { name= IssueType.skip_pointer_dereference
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
@@ -578,72 +579,72 @@ let recognize_exception exn =
       ; kind= Some Kinfo
       ; category= Nocat }
       (* always an info *)
-  | Symexec_memory_error ml_loc
-   -> { name= IssueType.symexec_memory_error
+  | Symexec_memory_error ml_loc ->
+      { name= IssueType.symexec_memory_error
       ; description= Localise.no_desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | Uninitialized_value (desc, ml_loc)
-   -> { name= IssueType.uninitialized_value
+  | Uninitialized_value (desc, ml_loc) ->
+      { name= IssueType.uninitialized_value
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Unary_minus_applied_to_unsigned_expression (desc, ml_loc)
-   -> { name= IssueType.unary_minus_applied_to_unsigned_expression
+  | Unary_minus_applied_to_unsigned_expression (desc, ml_loc) ->
+      { name= IssueType.unary_minus_applied_to_unsigned_expression
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Unknown_proc
-   -> { name= IssueType.unknown_proc
+  | Unknown_proc ->
+      { name= IssueType.unknown_proc
       ; description= Localise.no_desc
       ; ml_loc= None
       ; visibility= Exn_developer
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | Unreachable_code_after (desc, ml_loc)
-   -> { name= IssueType.unreachable_code_after
+  | Unreachable_code_after (desc, ml_loc) ->
+      { name= IssueType.unreachable_code_after
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= Medium
       ; kind= None
       ; category= Nocat }
-  | Unsafe_guarded_by_access (desc, ml_loc)
-   -> { name= IssueType.unsafe_guarded_by_access
+  | Unsafe_guarded_by_access (desc, ml_loc) ->
+      { name= IssueType.unsafe_guarded_by_access
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Use_after_free (desc, ml_loc)
-   -> { name= IssueType.use_after_free
+  | Use_after_free (desc, ml_loc) ->
+      { name= IssueType.use_after_free
       ; description= desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_user
       ; severity= High
       ; kind= None
       ; category= Prover }
-  | Wrong_argument_number ml_loc
-   -> { name= IssueType.wrong_argument_number
+  | Wrong_argument_number ml_loc ->
+      { name= IssueType.wrong_argument_number
       ; description= Localise.no_desc
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Low
       ; kind= None
       ; category= Nocat }
-  | exn
-   -> { name= IssueType.failure_exe
+  | exn ->
+      { name= IssueType.failure_exe
       ; description=
           Localise.verbatim_desc (F.asprintf "%a: %s" Exn.pp exn (Caml.Printexc.get_backtrace ()))
       ; ml_loc= None
@@ -651,6 +652,7 @@ let recognize_exception exn =
       ; severity= Low
       ; kind= None
       ; category= Nocat }
+
 
 (** print a description of the exception to the html output *)
 let print_exception_html s exn =
@@ -661,29 +663,32 @@ let print_exception_html s exn =
   let desc_str = F.asprintf "%a" Localise.pp_error_desc error.description in
   L.d_strln_color Red (s ^ error.name.IssueType.unique_id ^ " " ^ desc_str ^ ml_loc_string)
 
+
 (** string describing an error kind *)
 let err_kind_string = function
-  | Kwarning
-   -> "WARNING"
-  | Kerror
-   -> "ERROR"
-  | Kinfo
-   -> "INFO"
-  | Kadvice
-   -> "ADVICE"
-  | Klike
-   -> "LIKE"
+  | Kwarning ->
+      "WARNING"
+  | Kerror ->
+      "ERROR"
+  | Kinfo ->
+      "INFO"
+  | Kadvice ->
+      "ADVICE"
+  | Klike ->
+      "LIKE"
+
 
 (** string describing an error class *)
 let err_class_string = function
-  | Checker
-   -> "CHECKER"
-  | Prover
-   -> "PROVER"
-  | Nocat
-   -> ""
-  | Linters
-   -> "Linters"
+  | Checker ->
+      "CHECKER"
+  | Prover ->
+      "PROVER"
+  | Nocat ->
+      ""
+  | Linters ->
+      "Linters"
+
 
 (** whether to print the bug key together with the error message *)
 let print_key = false
@@ -695,7 +700,9 @@ let pp_err ~node_key loc ekind ex_name desc ml_loc_opt fmt () =
   F.fprintf fmt "%a:%d: %s: %a %a%a%a@\n" SourceFile.pp loc.Location.file loc.Location.line kind
     IssueType.pp ex_name Localise.pp_error_desc desc pp_key node_key L.pp_ml_loc_opt ml_loc_opt
 
+
 (** Return true if the exception is not serious and should be handled in timeout mode *)
 let handle_exception exn =
   let error = recognize_exception exn in
   equal_visibility error.visibility Exn_user || equal_visibility error.visibility Exn_developer
+

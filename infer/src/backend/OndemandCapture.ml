@@ -9,7 +9,7 @@
 open! IStd
 module L = Logging
 
-let compilation_db = (lazy (CompilationDatabase.from_json_files !Config.clang_compilation_dbs))
+let compilation_db = lazy (CompilationDatabase.from_json_files !Config.clang_compilation_dbs)
 
 (** Given proc_attributes try to produce proc_attributes' where proc_attributes'.is_defined = true
     It may trigger capture of extra files to do so and when it does, it waits for
@@ -45,12 +45,12 @@ let try_capture (attributes: ProcAttributes.t) : ProcAttributes.t option =
             SourceFile.pp definition_file Typ.Procname.pp attributes.proc_name
       in
       match definition_file_opt with
-      | None
-       -> L.(debug Capture Medium)
+      | None ->
+          L.(debug Capture Medium)
             "Couldn't find source file for %a (declared in %a)@\n" Typ.Procname.pp
             attributes.proc_name SourceFile.pp decl_file
-      | Some file
-       -> try_compile file ) ;
+      | Some file ->
+          try_compile file ) ;
   (* It's important to call load_defined_attributes again in all cases to make sure we try
      reading from disk again no matter which condition happened. If previous call to
      load_defined_attributes is None, it may mean couple of things:
@@ -62,3 +62,4 @@ let try_capture (attributes: ProcAttributes.t) : ProcAttributes.t option =
      Caveat: it's possible that procedure will be captured in some other unrelated file
              later - infer may ignore it then. *)
   Attributes.load_defined attributes.proc_name
+

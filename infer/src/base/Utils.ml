@@ -30,11 +30,12 @@ let read_file fname =
     done ;
     assert false
   with
-  | End_of_file
-   -> cleanup () ;
+  | End_of_file ->
+      cleanup () ;
       Ok (List.rev !res)
-  | Sys_error error
-   -> cleanup () ; Error error
+  | Sys_error error ->
+      cleanup () ; Error error
+
 
 (** copy a source file, return the number of lines, or None in case of error *)
 let copy_file fname_from fname_to =
@@ -52,14 +53,17 @@ let copy_file fname_from fname_to =
     cout_ref := Some cout ;
     while true do
       let line = In_channel.input_line_exn cin in
-      Out_channel.output_string cout line ; Out_channel.output_char cout '\n' ; incr res
+      Out_channel.output_string cout line ;
+      Out_channel.output_char cout '\n' ;
+      incr res
     done ;
     assert false
   with
-  | End_of_file
-   -> cleanup () ; Some !res
-  | Sys_error _
-   -> cleanup () ; None
+  | End_of_file ->
+      cleanup () ; Some !res
+  | Sys_error _ ->
+      cleanup () ; None
+
 
 (** type for files used for printing *)
 type outfile =
@@ -73,7 +77,10 @@ let create_outfile fname =
     let out_c = Out_channel.create fname in
     let fmt = F.formatter_of_out_channel out_c in
     Some {fname; out_c; fmt}
-  with Sys_error _ -> F.fprintf F.err_formatter "error: cannot create file %s@." fname ; None
+  with Sys_error _ ->
+    F.fprintf F.err_formatter "error: cannot create file %s@." fname ;
+    None
+
 
 (** operate on an outfile reference if it is not None *)
 let do_outf outf_opt f = match outf_opt with None -> () | Some outf -> f outf
@@ -85,36 +92,38 @@ let close_outf outf = Out_channel.close outf.out_c
 let filename_to_absolute ~root fname =
   let add_entry rev_done entry =
     match (entry, rev_done) with
-    | ".", []
-     -> entry :: rev_done (* id on . *)
-    | ".", _
-     -> rev_done (* path/. --> path *)
-    | "..", ("." | "..") :: _
-     -> entry :: rev_done (* id on {.,..}/.. *)
-    | "..", ["/"]
-     -> rev_done (* /.. -> / *)
-    | "..", _ :: rev_done_parent
-     -> rev_done_parent (* path/dir/.. --> path *)
-    | _
-     -> entry :: rev_done
+    | ".", [] ->
+        entry :: rev_done (* id on . *)
+    | ".", _ ->
+        rev_done (* path/. --> path *)
+    | "..", ("." | "..") :: _ ->
+        entry :: rev_done (* id on {.,..}/.. *)
+    | "..", ["/"] ->
+        rev_done (* /.. -> / *)
+    | "..", _ :: rev_done_parent ->
+        rev_done_parent (* path/dir/.. --> path *)
+    | _ ->
+        entry :: rev_done
   in
   let abs_fname = if Filename.is_absolute fname then fname else root ^/ fname in
   Filename.of_parts (List.rev (List.fold ~f:add_entry ~init:[] (Filename.parts abs_fname)))
+
 
 (** Convert an absolute filename to one relative to the given directory. *)
 let filename_to_relative ~root fname =
   let rec relativize_if_under origin target =
     match (origin, target) with
-    | x :: xs, y :: ys when String.equal x y
-     -> relativize_if_under xs ys
-    | [], []
-     -> Some "."
-    | [], ys
-     -> Some (Filename.of_parts ys)
-    | _
-     -> None
+    | x :: xs, y :: ys when String.equal x y ->
+        relativize_if_under xs ys
+    | [], [] ->
+        Some "."
+    | [], ys ->
+        Some (Filename.of_parts ys)
+    | _ ->
+        None
   in
   relativize_if_under (Filename.parts root) (Filename.parts fname)
+
 
 let directory_fold f init path =
   let collect current_dir (accu, dirs) path =
@@ -126,13 +135,14 @@ let directory_fold f init path =
   in
   let rec loop accu dirs =
     match dirs with
-    | []
-     -> accu
-    | d :: tl
-     -> let new_accu, new_dirs = Array.fold ~f:(collect d) ~init:(accu, tl) (Sys.readdir d) in
+    | [] ->
+        accu
+    | d :: tl ->
+        let new_accu, new_dirs = Array.fold ~f:(collect d) ~init:(accu, tl) (Sys.readdir d) in
         loop new_accu new_dirs
   in
   if Sys.is_directory path = `Yes then loop init [path] else f init path
+
 
 let directory_iter f path =
   let apply current_dir dirs path =
@@ -146,13 +156,14 @@ let directory_iter f path =
   in
   let rec loop dirs =
     match dirs with
-    | []
-     -> ()
-    | d :: tl
-     -> let new_dirs = Array.fold ~f:(apply d) ~init:tl (Sys.readdir d) in
+    | [] ->
+        ()
+    | d :: tl ->
+        let new_dirs = Array.fold ~f:(apply d) ~init:tl (Sys.readdir d) in
         loop new_dirs
   in
   if Sys.is_directory path = `Yes then loop [path] else f path
+
 
 let directory_is_empty path = Sys.readdir path |> Array.is_empty
 
@@ -161,6 +172,7 @@ let string_crc_hex32 s = Digest.to_hex (Digest.string s)
 let read_json_file path =
   try Ok (Yojson.Basic.from_file path)
   with Sys_error msg | Yojson.Json_error msg -> Error msg
+
 
 let do_finally_swallow_timeout ~f ~finally =
   let res =
@@ -173,9 +185,11 @@ let do_finally_swallow_timeout ~f ~finally =
   let res' = finally () in
   (res, res')
 
+
 let try_finally_swallow_timeout ~f ~finally =
   let res, () = do_finally_swallow_timeout ~f ~finally in
   res
+
 
 let with_file_in file ~f =
   let ic = In_channel.create file in
@@ -183,24 +197,29 @@ let with_file_in file ~f =
   let finally () = In_channel.close ic in
   try_finally_swallow_timeout ~f ~finally
 
+
 let with_file_out file ~f =
   let oc = Out_channel.create file in
   let f () = f oc in
   let finally () = Out_channel.close oc in
   try_finally_swallow_timeout ~f ~finally
 
+
 let write_json_to_file destfile json =
   with_file_out destfile ~f:(fun oc -> Yojson.Basic.pretty_to_channel oc json)
+
 
 let consume_in chan_in =
   try while true do In_channel.input_line_exn chan_in |> ignore done
   with End_of_file -> ()
+
 
 let with_process_in command read =
   let chan = Unix.open_process_in command in
   let f () = read chan in
   let finally () = consume_in chan ; Unix.close_process_in chan in
   do_finally_swallow_timeout ~f ~finally
+
 
 let shell_escape_command cmd =
   let escape arg =
@@ -209,6 +228,7 @@ let shell_escape_command cmd =
     Escape.escape_map (function '\'' -> Some "'\"'\"'" | _ -> None) arg |> Printf.sprintf "'%s'"
   in
   List.map ~f:escape cmd |> String.concat ~sep:" "
+
 
 (** Create a directory if it does not exist already. *)
 let create_dir dir =
@@ -225,28 +245,31 @@ let create_dir dir =
       in
       if not created_concurrently then L.(die ExternalError) "cannot create directory '%s'" dir
 
+
 let realpath_cache = Hashtbl.create 1023
 
 let realpath ?(warn_on_error= true) path =
   match Hashtbl.find realpath_cache path with
   | exception Not_found -> (
     match Filename.realpath path with
-    | realpath
-     -> Hashtbl.add realpath_cache path (Ok realpath) ; realpath
-    | exception Unix.Unix_error (code, f, arg)
-     -> if warn_on_error then
+    | realpath ->
+        Hashtbl.add realpath_cache path (Ok realpath) ;
+        realpath
+    | exception Unix.Unix_error (code, f, arg) ->
+        if warn_on_error then
           F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
             (Unix.Error.message code) ;
         (* cache failures as well *)
         Hashtbl.add realpath_cache path (Error (code, f, arg)) ;
         raise (Unix.Unix_error (code, f, arg)) )
-  | Ok path
-   -> path
-  | Error (code, f, arg)
-   -> raise (Unix.Unix_error (code, f, arg))
+  | Ok path ->
+      path
+  | Error (code, f, arg) ->
+      raise (Unix.Unix_error (code, f, arg))
+
 
 (* never closed *)
-let devnull = (lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY]))
+let devnull = lazy (Unix.openfile "/dev/null" ~mode:[Unix.O_WRONLY])
 
 let suppress_stderr2 f2 x1 x2 =
   let restore_stderr src = Unix.dup2 ~src ~dst:Unix.stderr ; Unix.close src in
@@ -255,6 +278,7 @@ let suppress_stderr2 f2 x1 x2 =
   let f () = f2 x1 x2 in
   let finally () = restore_stderr orig_stderr in
   protect ~f ~finally
+
 
 let compare_versions v1 v2 =
   let int_list_of_version v =
@@ -268,6 +292,7 @@ let compare_versions v1 v2 =
   let lv1 = int_list_of_version v1 in
   let lv2 = int_list_of_version v2 in
   [%compare : int list] lv1 lv2
+
 
 let write_file_with_locking ?(delete= false) ~f:do_write fname =
   Unix.with_file ~mode:Unix.([O_WRONLY; O_CREAT]) fname ~f:(fun file_descr ->
@@ -285,26 +310,28 @@ let write_file_with_locking ?(delete= false) ~f:do_write fname =
     try Unix.unlink fname
     with Unix.Unix_error _ -> ()
 
+
 let rec rmtree name =
   match Unix.((lstat name).st_kind) with
-  | S_DIR
-   -> let dir = Unix.opendir name in
+  | S_DIR ->
+      let dir = Unix.opendir name in
       let rec rmdir dir =
         match Unix.readdir_opt dir with
-        | Some entry
-         -> if not
+        | Some entry ->
+            if not
                  ( String.equal entry Filename.current_dir_name
                  || String.equal entry Filename.parent_dir_name )
             then rmtree (name ^/ entry) ;
             rmdir dir
-        | None
-         -> Unix.closedir dir ; Unix.rmdir name
+        | None ->
+            Unix.closedir dir ; Unix.rmdir name
       in
       rmdir dir
-  | _
-   -> Unix.unlink name
-  | exception Unix.Unix_error (Unix.ENOENT, _, _)
-   -> ()
+  | _ ->
+      Unix.unlink name
+  | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
+      ()
+
 
 let without_gc ~f =
   let stat = Gc.get () in
@@ -314,5 +341,7 @@ let without_gc ~f =
   Gc.set {stat with space_overhead= space_oh} ;
   res
 
+
 let yield () =
   Unix.select ~read:[] ~write:[] ~except:[] ~timeout:(`After Time_ns.Span.min_value) |> ignore
+

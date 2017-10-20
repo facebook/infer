@@ -23,43 +23,51 @@ module L = Logging
 let is_pointer_to_objc_class typ =
   match typ.Typ.desc with Tptr (typ, _) when Typ.is_objc_class typ -> true | _ -> false
 
+
 let get_super_interface_decl otdi_super =
   match otdi_super with
-  | Some dr
-   -> Option.map ~f:CAst_utils.get_qualified_name dr.Clang_ast_t.dr_name
-  | _
-   -> None
+  | Some dr ->
+      Option.map ~f:CAst_utils.get_qualified_name dr.Clang_ast_t.dr_name
+  | _ ->
+      None
+
 
 let get_protocols protocols =
   let protocol_names =
     List.map
       ~f:(fun decl ->
         match decl.Clang_ast_t.dr_name with
-        | Some name_info
-         -> CAst_utils.get_qualified_name name_info
-        | None
-         -> assert false)
+        | Some name_info ->
+            CAst_utils.get_qualified_name name_info
+        | None ->
+            assert false)
       protocols
   in
   protocol_names
+
 
 let add_class_decl qual_type_to_sil_type tenv idi =
   let decl_ref_opt = idi.Clang_ast_t.oidi_class_interface in
   CAst_utils.add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt true
 
+
 let add_super_class_decl qual_type_to_sil_type tenv ocdi =
   let decl_ref_opt = ocdi.Clang_ast_t.otdi_super in
   CAst_utils.add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt false
 
+
 let add_protocols_decl qual_type_to_sil_type tenv protocols =
   CAst_utils.add_type_from_decl_ref_list qual_type_to_sil_type tenv protocols
+
 
 let add_categories_decl qual_type_to_sil_type tenv categories =
   CAst_utils.add_type_from_decl_ref_list qual_type_to_sil_type tenv categories
 
+
 let add_class_implementation qual_type_to_sil_type tenv idi =
   let decl_ref_opt = idi.Clang_ast_t.otdi_implementation in
   CAst_utils.add_type_from_decl_ref_opt qual_type_to_sil_type tenv decl_ref_opt false
+
 
 (*The superclass is the first element in the list of super classes of structs in the tenv, *)
 (* then come the protocols and categories. *)
@@ -71,12 +79,14 @@ let get_interface_supers super_opt protocols =
   let super_classes = super_class @ protocol_names in
   super_classes
 
+
 let create_supers_fields qual_type_to_sil_type tenv class_tname decl_list otdi_super otdi_protocols =
   let super = get_super_interface_decl otdi_super in
   let protocols = get_protocols otdi_protocols in
   let supers = get_interface_supers super protocols in
   let fields = CField_decl.get_fields qual_type_to_sil_type tenv class_tname decl_list in
   (supers, fields)
+
 
 (* Adds pairs (interface name, interface_type_info) to the global environment. *)
 let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list ocidi =
@@ -99,11 +109,11 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
   (*In case we found categories, or partial definition of this class earlier and they are already in the tenv *)
   let fields, (supers: Typ.Name.t list) =
     match Tenv.lookup tenv interface_name with
-    | Some {fields; supers}
-     -> ( CGeneral_utils.append_no_duplicates_fields decl_fields fields
+    | Some {fields; supers} ->
+        ( CGeneral_utils.append_no_duplicates_fields decl_fields fields
         , CGeneral_utils.append_no_duplicates_csu decl_supers supers )
-    | _
-     -> (decl_fields, decl_supers)
+    | _ ->
+        (decl_fields, decl_supers)
   in
   let fields = CGeneral_utils.append_no_duplicates_fields fields fields_sc in
   (* We add the special hidden counter_field for implementing reference counting *)
@@ -120,36 +130,41 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
     (Tenv.mk_struct tenv ~fields:all_fields ~supers ~methods:[] ~annots:Annot.Class.objc
        interface_name) ;
   L.(debug Capture Verbose)
-    "  >>>Verifying that Typename '%s' is in tenv@\n" (Typ.Name.to_string interface_name) ;
+    "  >>>Verifying that Typename '%s' is in tenv@\n"
+    (Typ.Name.to_string interface_name) ;
   ( match Tenv.lookup tenv interface_name with
-  | Some st
-   -> L.(debug Capture Verbose)
-        "  >>>OK. Found typ='%a'@\n" (Typ.Struct.pp Pp.text interface_name) st
-  | None
-   -> L.(debug Capture Verbose) "  >>>NOT Found!!@\n" ) ;
+  | Some st ->
+      L.(debug Capture Verbose)
+        "  >>>OK. Found typ='%a'@\n"
+        (Typ.Struct.pp Pp.text interface_name)
+        st
+  | None ->
+      L.(debug Capture Verbose) "  >>>NOT Found!!@\n" ) ;
   interface_desc
+
 
 (* Interface_type_info has the name of instance variables and the name of methods. *)
 let interface_declaration qual_type_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
-  | ObjCInterfaceDecl (decl_info, name_info, decl_list, _, ocidi)
-   -> let typ = add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list ocidi in
+  | ObjCInterfaceDecl (decl_info, name_info, decl_list, _, ocidi) ->
+      let typ = add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list ocidi in
       let _ = add_class_implementation qual_type_to_sil_type tenv ocidi in
       let _ = add_super_class_decl qual_type_to_sil_type tenv ocidi in
       let _ = add_protocols_decl qual_type_to_sil_type tenv ocidi.Clang_ast_t.otdi_protocols in
       let known_categories = ocidi.Clang_ast_t.otdi_known_categories in
       let _ = add_categories_decl qual_type_to_sil_type tenv known_categories in
       typ
-  | _
-   -> assert false
+  | _ ->
+      assert false
+
 
 (* Translate the methods defined in the implementation.*)
 let interface_impl_declaration qual_type_to_sil_type tenv decl =
   let open Clang_ast_t in
   match decl with
-  | ObjCImplementationDecl (decl_info, name_info, decl_list, _, idi)
-   -> let class_name = CAst_utils.get_qualified_name name_info in
+  | ObjCImplementationDecl (decl_info, name_info, decl_list, _, idi) ->
+      let class_name = CAst_utils.get_qualified_name name_info in
       L.(debug Capture Verbose)
         "ADDING: ObjCImplementationDecl for class '%a'@\n" QualifiedCppName.pp class_name ;
       let _ = add_class_decl qual_type_to_sil_type tenv idi in
@@ -158,6 +173,8 @@ let interface_impl_declaration qual_type_to_sil_type tenv decl =
       CField_decl.add_missing_fields tenv class_name fields ;
       let decl_key = Clang_ast_extend.DeclPtr decl_info.Clang_ast_t.di_pointer in
       let class_desc = Typ.Tstruct class_tn_name in
-      CAst_utils.update_sil_types_map decl_key class_desc ; class_desc
-  | _
-   -> assert false
+      CAst_utils.update_sil_types_map decl_key class_desc ;
+      class_desc
+  | _ ->
+      assert false
+

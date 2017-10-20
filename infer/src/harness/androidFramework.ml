@@ -22,11 +22,12 @@ let drawable_prefix = "R$drawable"
 (** return true if [pname] is a special lifecycle cleanup method *)
 let is_destroy_method pname =
   match pname with
-  | Typ.Procname.Java pname_java
-   -> let method_name = Typ.Procname.java_get_method pname_java in
+  | Typ.Procname.Java pname_java ->
+      let method_name = Typ.Procname.java_get_method pname_java in
       String.equal method_name on_destroy || String.equal method_name on_destroy_view
-  | _
-   -> false
+  | _ ->
+      false
+
 
 let android_lifecycles =
   let android_content = "android.content" in
@@ -68,10 +69,12 @@ let android_lifecycles =
   ; (android_content, "BroadcastReceiever", ["onReceive"])
   ; (android_app, "Fragment", fragment_lifecycle)
   ; (* this is the pre-Android 3.0 Fragment type (can also be used post-3.0) *)
-  ("android.support.v4.app", "Fragment", fragment_lifecycle) ]
+    ("android.support.v4.app", "Fragment", fragment_lifecycle) ]
+
 
 let is_subtype_package_class tenv tname package classname =
   PatternMatch.is_subtype tenv tname (Typ.Name.Java.from_package_class package classname)
+
 
 let is_autocloseable tenv tname = is_subtype_package_class tenv tname "java.lang" "AutoCloseable"
 
@@ -87,25 +90,27 @@ let is_fragment tenv tname =
   is_subtype_package_class tenv tname "android.app" "Fragment"
   || is_subtype_package_class tenv tname "android.support.v4.app" "Fragment"
 
+
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
 let is_android_lib_class class_name =
   let class_str = Typ.Name.name class_name in
   String.is_prefix ~prefix:"android" class_str || String.is_prefix ~prefix:"com.android" class_str
 
+
 (** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity) and
     a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
   match Tenv.lookup tenv lifecycle_typ with
-  | Some {methods}
-   -> (* TODO (t4645631): collect the procedures for which is_java is returning false *)
+  | Some {methods} ->
+      (* TODO (t4645631): collect the procedures for which is_java is returning false *)
       let lookup_proc lifecycle_proc =
         List.find_exn
           ~f:(fun decl_proc ->
             match decl_proc with
-            | Typ.Procname.Java decl_proc_java
-             -> String.equal lifecycle_proc (Typ.Procname.java_get_method decl_proc_java)
-            | _
-             -> false)
+            | Typ.Procname.Java decl_proc_java ->
+                String.equal lifecycle_proc (Typ.Procname.java_get_method decl_proc_java)
+            | _ ->
+                false)
           methods
       in
       (* convert each of the framework lifecycle proc strings to a lifecycle method procname *)
@@ -117,8 +122,9 @@ let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
           ~init:[] lifecycle_proc_strs
       in
       lifecycle_procs
-  | _
-   -> []
+  | _ ->
+      []
+
 
 (** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
 let get_lifecycles = android_lifecycles

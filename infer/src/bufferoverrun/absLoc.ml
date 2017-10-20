@@ -35,16 +35,17 @@ module Loc = struct
   let unknown = Allocsite Allocsite.unknown
 
   let rec pp fmt = function
-    | Var v
-     -> Var.pp F.str_formatter v ;
+    | Var v ->
+        Var.pp F.str_formatter v ;
         let s = F.flush_str_formatter () in
         if Char.equal s.[0] '&' then
           F.fprintf fmt "%s" (String.sub s ~pos:1 ~len:(String.length s - 1))
         else F.fprintf fmt "%s" s
-    | Allocsite a
-     -> Allocsite.pp fmt a
-    | Field (l, f)
-     -> F.fprintf fmt "%a.%a" pp l Typ.Fieldname.pp f
+    | Allocsite a ->
+        Allocsite.pp fmt a
+    | Field (l, f) ->
+        F.fprintf fmt "%a.%a" pp l Typ.Fieldname.pp f
+
 
   let is_var = function Var _ -> true | _ -> false
 
@@ -61,10 +62,11 @@ module Loc = struct
   let append_field l f = Field (l, f)
 
   let is_return = function
-    | Var Var.ProgramVar x
-     -> Mangled.equal (Pvar.get_name x) Ident.name_return
-    | _
-     -> false
+    | Var Var.ProgramVar x ->
+        Mangled.equal (Pvar.get_name x) Ident.name_return
+    | _ ->
+        false
+
 end
 
 module PowLoc = struct
@@ -83,6 +85,7 @@ module PowLoc = struct
   let append_field ploc fn =
     if is_bot ploc then singleton Loc.unknown
     else fold (fun l -> add (Loc.append_field l fn)) ploc empty
+
 
   let is_singleton x = Int.equal (cardinal x) 1
 end

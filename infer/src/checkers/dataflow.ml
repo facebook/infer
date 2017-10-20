@@ -54,29 +54,30 @@ let node_throws pdesc node (proc_throws: Typ.Procname.t -> throws) : throws =
       Pvar.equal pvar ret_pvar
     in
     match instr with
-    | Sil.Store (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar
-     -> (* assignment to return variable is an artifact of a throw instruction *)
+    | Sil.Store (Exp.Lvar pvar, _, Exp.Exn _, _) when is_return pvar ->
+        (* assignment to return variable is an artifact of a throw instruction *)
         Throws
-    | Sil.Call (_, Exp.Const Const.Cfun callee_pn, _, _, _) when BuiltinDecl.is_declared callee_pn
-     -> if Typ.Procname.equal callee_pn BuiltinDecl.__cast then DontKnow else DoesNotThrow
-    | Sil.Call (_, Exp.Const Const.Cfun callee_pn, _, _, _)
-     -> proc_throws callee_pn
-    | _
-     -> DoesNotThrow
+    | Sil.Call (_, Exp.Const Const.Cfun callee_pn, _, _, _) when BuiltinDecl.is_declared callee_pn ->
+        if Typ.Procname.equal callee_pn BuiltinDecl.__cast then DontKnow else DoesNotThrow
+    | Sil.Call (_, Exp.Const Const.Cfun callee_pn, _, _, _) ->
+        proc_throws callee_pn
+    | _ ->
+        DoesNotThrow
   in
   let res = ref DoesNotThrow in
   let update_res throws =
     match (!res, throws) with
-    | DontKnow, DontKnow
-     -> res := DontKnow
-    | Throws, _ | _, Throws
-     -> res := Throws
-    | DoesNotThrow, t | t, DoesNotThrow
-     -> res := t
+    | DontKnow, DontKnow ->
+        res := DontKnow
+    | Throws, _ | _, Throws ->
+        res := Throws
+    | DoesNotThrow, t | t, DoesNotThrow ->
+        res := t
   in
   let do_instr instr = update_res (instr_throws instr) in
   List.iter ~f:do_instr (Procdesc.Node.get_instrs node) ;
   !res
+
 
 (** Create an instance of the dataflow algorithm given a state parameter. *)
 module MakeDF (St : DFStateType) : DF with type state = St.t = struct
@@ -124,6 +125,7 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
     H.replace t.post_states node states_succ ;
     H.replace t.exn_states node states_exn
 
+
   (** Run the worklist-based dataflow algorithm. *)
   let run tenv proc_desc state =
     let t =
@@ -155,6 +157,7 @@ module MakeDF (St : DFStateType) : DF with type state = St.t = struct
       with Not_found -> Dead_state
     in
     transitions
+
 end
 
 (* MakeDF *)
@@ -174,6 +177,7 @@ let callback_test_dataflow {Callbacks.proc_desc; tenv; summary} =
         L.(debug Analysis Verbose) "visiting node %a with state %d@." Procdesc.Node.pp n s ;
       ([s + 1], [s + 1])
 
+
     let proc_throws _ = DoesNotThrow
   end) in
   let transitions = DFCount.run tenv proc_desc 0 in
@@ -182,3 +186,4 @@ let callback_test_dataflow {Callbacks.proc_desc; tenv; summary} =
   in
   List.iter ~f:do_node (Procdesc.get_nodes proc_desc) ;
   summary
+

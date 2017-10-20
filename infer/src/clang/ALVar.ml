@@ -29,30 +29,30 @@ type t = alexp [@@deriving compare]
 
 let equal = [%compare.equal : t]
 
-let formula_id_to_string fid =
-  match fid
-  with Formula_id s -> s
+let formula_id_to_string fid = match fid with Formula_id s -> s
 
 let alexp_to_string = function
-  | Const string | Regexp {string} | Var string | FId Formula_id string
-   -> string
+  | Const string | Regexp {string} | Var string | FId Formula_id string ->
+      string
+
 
 let keyword_to_string k =
   match k with
-  | Doc_url
-   -> "doc_url"
-  | Message
-   -> "message"
-  | Mode
-   -> "mode"
-  | Name
-   -> "name_hum_readable"
-  | Report_when
-   -> "report_when"
-  | Severity
-   -> "severity"
-  | Suggestion
-   -> "suggestion"
+  | Doc_url ->
+      "doc_url"
+  | Message ->
+      "message"
+  | Mode ->
+      "mode"
+  | Name ->
+      "name_hum_readable"
+  | Report_when ->
+      "report_when"
+  | Severity ->
+      "severity"
+  | Suggestion ->
+      "suggestion"
+
 
 let is_report_when_keyword k = match k with Report_when -> true | _ -> false
 
@@ -73,17 +73,19 @@ let str_match_forward container regexp =
   try Str.search_forward regexp container 0 >= 0
   with Not_found -> false
 
+
 let compare_str_with_alexp s ae =
   match ae with
-  | Const s' | Var s'
-   -> String.equal s s'
-  | Regexp {regexp}
-   -> str_match_forward s (Lazy.force regexp)
-  | _
-   -> L.(debug Linters Medium)
+  | Const s' | Var s' ->
+      String.equal s s'
+  | Regexp {regexp} ->
+      str_match_forward s (Lazy.force regexp)
+  | _ ->
+      L.(debug Linters Medium)
         "[WARNING]: ALVAR expression '%s' is not a constant, variable, or regexp@\n"
         (alexp_to_string ae) ;
       false
+
 
 module FormulaIdMap = Caml.Map.Make (struct
   type t = formula_id [@@deriving compare]

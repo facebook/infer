@@ -27,29 +27,32 @@ let convert_string s =
     String.iter ~f s ; !s'
   else s
 
+
 (** Print a string in the given style, after converting it into latex-friendly format *)
 let pp_string style f s =
   let converted = convert_string s in
   match style with
-  | Boldface
-   -> F.fprintf f "\\textbf{%s}" converted
-  | Roman
-   -> F.fprintf f "\\textrm{%s}" converted
-  | Italics
-   -> F.fprintf f "\\textit{%s}" converted
+  | Boldface ->
+      F.fprintf f "\\textbf{%s}" converted
+  | Roman ->
+      F.fprintf f "\\textrm{%s}" converted
+  | Italics ->
+      F.fprintf f "\\textit{%s}" converted
+
 
 let color_to_string (c: Pp.color) =
   match c with
-  | Black
-   -> "black"
-  | Blue
-   -> "blue"
-  | Green
-   -> "green"
-  | Orange
-   -> "orange"
-  | Red
-   -> "red"
+  | Black ->
+      "black"
+  | Blue ->
+      "blue"
+  | Green ->
+      "green"
+  | Orange ->
+      "orange"
+  | Red ->
+      "red"
+
 
 (** Print color command *)
 let pp_color f color = F.fprintf f "\\color{%s}" (color_to_string color)
@@ -60,6 +63,7 @@ let pp_begin f (author, title, table_of_contents) =
   F.fprintf f
     "\\documentclass{article}@\n\\usepackage{hyperref}@\n\\usepackage{color}@\n\\author{%s}@\n\\title{%s}@\n\\begin{document}@\n\\maketitle@\n%a"
     author title pp_toc ()
+
 
 (** Epilogue for a latex file *)
 let pp_end f () = F.fprintf f "\\end{document}@\n"

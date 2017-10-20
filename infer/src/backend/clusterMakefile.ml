@@ -17,10 +17,10 @@ module CLOpt = CommandLineOption
 let pp_prolog fmt clusters =
   let escape = Escape.escape_map (fun c -> if Char.equal c '#' then Some "\\#" else None) in
   let infer_flag_of_compilation_db = function
-    | `Escaped f
-     -> F.sprintf "--compilation-database-escaped '%s'" f
-    | `Raw f
-     -> F.sprintf "--compilation-database '%s'" f
+    | `Escaped f ->
+        F.sprintf "--compilation-database-escaped '%s'" f
+    | `Raw f ->
+        F.sprintf "--compilation-database '%s'" f
   in
   let compilation_dbs_cmd =
     List.map ~f:infer_flag_of_compilation_db !Config.clang_compilation_dbs
@@ -35,6 +35,7 @@ let pp_prolog fmt clusters =
   F.fprintf fmt "test: $(CLUSTERS)@\n" ;
   if Config.show_progress_bar then F.fprintf fmt "\t%@echo@\n@."
 
+
 let pp_epilog fmt () = F.fprintf fmt "@.clean:@.\trm -f $(CLUSTERS)@."
 
 let create_cluster_makefile (clusters: Cluster.t list) (fname: string) =
@@ -48,3 +49,4 @@ let create_cluster_makefile (clusters: Cluster.t list) (fname: string) =
   List.iteri ~f:do_cluster clusters ;
   pp_epilog fmt () ;
   Out_channel.close outc
+

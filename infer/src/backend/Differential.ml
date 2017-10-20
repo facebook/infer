@@ -20,17 +20,18 @@ let of_reports ~(current_report: Jsonbug_t.report) ~(previous_report: Jsonbug_t.
   in
   let fold_aux ~key:_ ~data (left, both, right) =
     match data with
-    | `Left left'
-     -> (List.rev_append left' left, both, right)
-    | `Both (both', _)
-     -> (left, List.rev_append both' both, right)
-    | `Right right'
-     -> (left, both, List.rev_append right' right)
+    | `Left left' ->
+        (List.rev_append left' left, both, right)
+    | `Both (both', _) ->
+        (left, List.rev_append both' both, right)
+    | `Right right' ->
+        (left, both, List.rev_append right' right)
   in
   let introduced, preexisting, fixed =
     Map.fold2 (to_map current_report) (to_map previous_report) ~f:fold_aux ~init:([], [], [])
   in
   {introduced; fixed; preexisting}
+
 
 let to_files {introduced; fixed; preexisting} destdir =
   Out_channel.write_all (destdir ^/ "introduced.json")
@@ -38,3 +39,4 @@ let to_files {introduced; fixed; preexisting} destdir =
   Out_channel.write_all (destdir ^/ "fixed.json") ~data:(Jsonbug_j.string_of_report fixed) ;
   Out_channel.write_all (destdir ^/ "preexisting.json")
     ~data:(Jsonbug_j.string_of_report preexisting)
+

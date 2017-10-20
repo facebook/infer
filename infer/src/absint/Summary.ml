@@ -32,8 +32,9 @@ module Make (P : Payload) : S with type payload = P.payload = struct
 
   let read_summary caller_pdesc callee_pname =
     match Ondemand.analyze_proc_name caller_pdesc callee_pname with
-    | None
-     -> None
-    | Some summary
-     -> P.read_payload summary
+    | None ->
+        None
+    | Some summary ->
+        P.read_payload summary
+
 end

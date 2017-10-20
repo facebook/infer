@@ -23,12 +23,13 @@ module MockTraceElem = struct
   let make ?indexes:_ kind _ = kind
 
   let pp fmt = function
-    | Kind1
-     -> F.fprintf fmt "Kind1"
-    | Kind2
-     -> F.fprintf fmt "Kind2"
-    | Footprint
-     -> F.fprintf fmt "Footprint"
+    | Kind1 ->
+        F.fprintf fmt "Kind1"
+    | Kind2 ->
+        F.fprintf fmt "Kind2"
+    | Footprint ->
+        F.fprintf fmt "Footprint"
+
 
   module Kind = struct
     type nonrec t = t
@@ -81,16 +82,18 @@ module MockTrace = Trace.Make (struct
 
   let should_report source sink =
     [%compare.equal : MockTraceElem.t] (Source.kind source) (Sink.kind sink)
+
 end)
 
 let trace_equal t1 t2 = MockTrace.( <= ) ~lhs:t1 ~rhs:t2 && MockTrace.( <= ) ~lhs:t2 ~rhs:t1
 
 let source_equal path_source source =
   match path_source with
-  | MockTrace.Known s
-   -> MockSource.equal s source
-  | MockTrace.Footprint _
-   -> false
+  | MockTrace.Known s ->
+      MockSource.equal s source
+  | MockTrace.Footprint _ ->
+      false
+
 
 let tests =
   let source1 = MockSource.make MockTraceElem.Kind1 CallSite.dummy in
@@ -132,3 +135,4 @@ let tests =
     "append" >:: append_
   in
   "trace_domain_suite" >::: [get_reports; append]
+

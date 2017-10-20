@@ -27,6 +27,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           || attributes.ProcAttributes.is_cpp_instance_method)
         (Specs.proc_resolve_attributes callee_pname)
 
+
   let report_nullable_dereference ap call_sites {ProcData.pdesc; extras} loc =
     let pname = Procdesc.get_proc_name pdesc in
     let annotation = Localise.nullable_annotation_name pname in
@@ -41,8 +42,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let message =
       Format.asprintf
         "Variable %a is indirectly annotated with %a (source %a) and is dereferenced without being checked for null"
-        (MF.wrap_monospaced AccessPath.pp) ap MF.pp_monospaced annotation
-        (MF.wrap_monospaced CallSite.pp) call_site
+        (MF.wrap_monospaced AccessPath.pp)
+        ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site
     in
     let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
     let summary = extras in
@@ -50,10 +51,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let with_origin_site =
         let callee_pname = CallSite.pname call_site in
         match Specs.proc_resolve_attributes callee_pname with
-        | None
-         -> []
-        | Some attributes
-         -> let description =
+        | None ->
+            []
+        | Some attributes ->
+            let description =
               Format.asprintf "definition of %s" (Typ.Procname.get_method callee_pname)
             in
             let trace_element =
@@ -78,37 +79,39 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     Reporting.log_error summary ~loc ~ltr:trace exn
 
+
   let exec_instr (astate: Domain.astate) proc_data _ (instr: HilInstr.t) : Domain.astate =
     match instr with
     | Call (Some ret_var, Direct callee_pname, _, _, loc)
       when Annotations.pname_has_return_annot callee_pname
-             ~attrs_of_pname:Specs.proc_resolve_attributes Annotations.ia_is_nullable
-     -> let call_site = CallSite.make callee_pname loc in
+             ~attrs_of_pname:Specs.proc_resolve_attributes Annotations.ia_is_nullable ->
+        let call_site = CallSite.make callee_pname loc in
         Domain.add (ret_var, []) (CallSites.singleton call_site) astate
     | Call (_, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, loc)
       when is_instance_method callee_pname -> (
       match Domain.find_opt receiver astate with
-      | None
-       -> astate
-      | Some call_sites
-       -> report_nullable_dereference receiver call_sites proc_data loc ;
+      | None ->
+          astate
+      | Some call_sites ->
+          report_nullable_dereference receiver call_sites proc_data loc ;
           Domain.remove receiver astate )
-    | Call (Some ret_var, _, _, _, _)
-     -> Domain.remove (ret_var, []) astate
-    | Assign (lhs, _, loc) when Domain.mem lhs astate
-     -> report_nullable_dereference lhs (Domain.find lhs astate) proc_data loc ;
+    | Call (Some ret_var, _, _, _, _) ->
+        Domain.remove (ret_var, []) astate
+    | Assign (lhs, _, loc) when Domain.mem lhs astate ->
+        report_nullable_dereference lhs (Domain.find lhs astate) proc_data loc ;
         Domain.remove lhs astate
-    | Assign (lhs, HilExp.AccessPath rhs, _) when Domain.mem rhs astate
-     -> Domain.add lhs (Domain.find rhs astate) astate
-    | Assign (lhs, _, _)
-     -> Domain.remove lhs astate
-    | Assume (HilExp.AccessPath ap, _, _, _)
-     -> Domain.remove ap astate
+    | Assign (lhs, HilExp.AccessPath rhs, _) when Domain.mem rhs astate ->
+        Domain.add lhs (Domain.find rhs astate) astate
+    | Assign (lhs, _, _) ->
+        Domain.remove lhs astate
+    | Assume (HilExp.AccessPath ap, _, _, _) ->
+        Domain.remove ap astate
     | Assume (HilExp.BinaryOperator (Binop.Ne, HilExp.AccessPath ap, exp), _, _, _)
-      when HilExp.is_null_literal exp
-     -> Domain.remove ap astate
-    | _
-     -> astate
+      when HilExp.is_null_literal exp ->
+        Domain.remove ap astate
+    | _ ->
+        astate
+
 end
 
 module Analyzer =
@@ -119,3 +122,4 @@ let checker {Callbacks.summary; proc_desc; tenv} =
   let proc_data = ProcData.make proc_desc tenv summary in
   ignore (Analyzer.compute_post proc_data ~initial ~debug:false) ;
   summary
+

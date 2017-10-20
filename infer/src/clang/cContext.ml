@@ -58,6 +58,7 @@ let create_context translation_unit_context tenv cg cfg procdesc curr_class retu
   ; label_map= Hashtbl.create 17
   ; vars_to_destroy }
 
+
 let get_cfg context = context.cfg
 
 let get_cg context = context.cg
@@ -68,66 +69,73 @@ let get_procdesc context = context.procdesc
 
 let rec is_objc_method context =
   match context.outer_context with
-  | Some outer_context
-   -> is_objc_method outer_context
-  | None
-   -> context.is_objc_method
+  | Some outer_context ->
+      is_objc_method outer_context
+  | None ->
+      context.is_objc_method
+
 
 let rec is_objc_instance context =
   match context.outer_context with
-  | Some outer_context
-   -> is_objc_instance outer_context
-  | None
-   -> let attrs = Procdesc.get_attributes context.procdesc in
+  | Some outer_context ->
+      is_objc_instance outer_context
+  | None ->
+      let attrs = Procdesc.get_attributes context.procdesc in
       attrs.ProcAttributes.is_objc_instance_method
+
 
 let rec get_curr_class context =
   match (context.curr_class, context.outer_context) with
-  | ContextNoCls, Some outer_context
-   -> get_curr_class outer_context
-  | _
-   -> context.curr_class
+  | ContextNoCls, Some outer_context ->
+      get_curr_class outer_context
+  | _ ->
+      context.curr_class
+
 
 let get_curr_class_decl_ptr curr_class =
   match curr_class with ContextClsDeclPtr ptr -> ptr | _ -> assert false
 
+
 let get_curr_class_ptr curr_class =
   let decl_ptr = get_curr_class_decl_ptr curr_class in
   let get_ptr_from_decl_ref = function
-    | Some dr
-     -> dr.Clang_ast_t.dr_decl_pointer
-    | None
-     -> assert false
+    | Some dr ->
+        dr.Clang_ast_t.dr_decl_pointer
+    | None ->
+        assert false
   in
   (* Resolve categories to their class names *)
   match CAst_utils.get_decl decl_ptr with
-  | Some ObjCCategoryDecl (_, _, _, _, ocdi)
-   -> get_ptr_from_decl_ref ocdi.odi_class_interface
-  | Some ObjCCategoryImplDecl (_, _, _, _, ocidi)
-   -> get_ptr_from_decl_ref ocidi.ocidi_class_interface
-  | _
-   -> decl_ptr
+  | Some ObjCCategoryDecl (_, _, _, _, ocdi) ->
+      get_ptr_from_decl_ref ocdi.odi_class_interface
+  | Some ObjCCategoryImplDecl (_, _, _, _, ocidi) ->
+      get_ptr_from_decl_ref ocidi.ocidi_class_interface
+  | _ ->
+      decl_ptr
+
 
 let get_curr_class_typename context =
   let tenv = context.tenv in
   let curr_class = get_curr_class context in
   match get_curr_class_ptr curr_class |> CAst_utils.get_decl with
-  | Some decl
-   -> CType_decl.get_record_typename ~tenv decl
-  | None
-   -> assert false
+  | Some decl ->
+      CType_decl.get_record_typename ~tenv decl
+  | None ->
+      assert false
+
 
 let curr_class_to_string curr_class =
   match curr_class with
-  | ContextClsDeclPtr ptr
-   -> "decl_ptr: " ^ string_of_int ptr
-  | ContextNoCls
-   -> "no class"
+  | ContextClsDeclPtr ptr ->
+      "decl_ptr: " ^ string_of_int ptr
+  | ContextNoCls ->
+      "no class"
+
 
 let add_block_static_var context block_name static_var_typ =
   match (context.outer_context, static_var_typ) with
-  | Some outer_context, (static_var, _) when Pvar.is_global static_var
-   -> let new_static_vars, duplicate =
+  | Some outer_context, (static_var, _) when Pvar.is_global static_var ->
+      let new_static_vars, duplicate =
         try
           let static_vars = Typ.Procname.Map.find block_name outer_context.blocks_static_vars in
           if List.mem
@@ -142,16 +150,19 @@ let add_block_static_var context block_name static_var_typ =
           Typ.Procname.Map.add block_name new_static_vars outer_context.blocks_static_vars
         in
         outer_context.blocks_static_vars <- blocks_static_vars
-  | _
-   -> ()
+  | _ ->
+      ()
+
 
 let static_vars_for_block context block_name =
   try Typ.Procname.Map.find block_name context.blocks_static_vars
   with Not_found -> []
 
+
 let rec get_outer_procname context =
   match context.outer_context with
-  | Some outer_context
-   -> get_outer_procname outer_context
-  | None
-   -> Procdesc.get_proc_name context.procdesc
+  | Some outer_context ->
+      get_outer_procname outer_context
+  | None ->
+      Procdesc.get_proc_name context.procdesc
+

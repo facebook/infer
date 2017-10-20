@@ -35,6 +35,7 @@ let unit_ext : unit ext =
   ; join= (fun () () -> ())
   ; pp= (fun _ () -> ()) }
 
+
 module M = Caml.Map.Make (struct
   type t = Exp.t
 
@@ -63,6 +64,7 @@ let pp ext fmt typestate =
   let pp_map map = M.iter pp_one map in
   pp_map typestate.map ; ext.pp fmt typestate.extension
 
+
 let type_join typ1 typ2 = if PatternMatch.type_is_object typ1 then typ2 else typ1
 
 let locs_join locs1 locs2 = IList.merge_sorted_nodup Location.compare [] locs1 locs2
@@ -71,6 +73,7 @@ let locs_join locs1 locs2 = IList.merge_sorted_nodup Location.compare [] locs1 l
 let range_add_locs (typ, ta, locs1) locs2 =
   let locs' = locs_join locs1 locs2 in
   (typ, ta, locs')
+
 
 (** Only keep variables if they are present on both sides of the join. *)
 let only_keep_intersection = true
@@ -81,10 +84,10 @@ let map_join m1 m2 =
   let tjoined = ref (if only_keep_intersection then M.empty else m1) in
   let range_join (typ1, ta1, locs1) (typ2, ta2, locs2) =
     match TypeAnnotation.join ta1 ta2 with
-    | None
-     -> None
-    | Some ta'
-     -> let typ' = type_join typ1 typ2 in
+    | None ->
+        None
+    | Some ta' ->
+        let typ' = type_join typ1 typ2 in
         let locs' = locs_join locs1 locs2 in
         Some (typ', ta', locs')
   in
@@ -93,10 +96,10 @@ let map_join m1 m2 =
     try
       let range1 = M.find exp2 m1 in
       match range_join range1 range2 with
-      | None
-       -> if only_keep_intersection then tjoined := M.add exp2 range1 !tjoined
-      | Some range'
-       -> tjoined := M.add exp2 range' !tjoined
+      | None ->
+          if only_keep_intersection then tjoined := M.add exp2 range1 !tjoined
+      | Some range' ->
+          tjoined := M.add exp2 range' !tjoined
     with Not_found -> if not only_keep_intersection then tjoined := M.add exp2 range2 !tjoined
   in
   let missing_rhs exp1 range1 =
@@ -112,6 +115,7 @@ let map_join m1 m2 =
   in
   if phys_equal m1 m2 then m1 else ( M.iter extend_lhs m2 ; M.iter missing_rhs m1 ; !tjoined )
 
+
 let join ext t1 t2 =
   let tjoin = {map= map_join t1.map t2.map; extension= ext.join t1.extension t2.extension} in
   ( if Config.write_html then
@@ -122,25 +126,31 @@ let join ext t1 t2 =
       L.d_strln s ) ;
   tjoin
 
+
 let lookup_id id typestate =
   try Some (M.find (Exp.Var id) typestate.map)
   with Not_found -> None
+
 
 let lookup_pvar pvar typestate =
   try Some (M.find (Exp.Lvar pvar) typestate.map)
   with Not_found -> None
 
+
 let add_id id range typestate =
   let map' = M.add (Exp.Var id) range typestate.map in
   if phys_equal map' typestate.map then typestate else {typestate with map= map'}
+
 
 let add pvar range typestate =
   let map' = M.add (Exp.Lvar pvar) range typestate.map in
   if phys_equal map' typestate.map then typestate else {typestate with map= map'}
 
+
 let remove_id id typestate =
   let map' = M.remove (Exp.Var id) typestate.map in
   if phys_equal map' typestate.map then typestate else {typestate with map= map'}
+
 
 let get_extension typestate = typestate.extension
 

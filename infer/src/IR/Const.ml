@@ -26,34 +26,36 @@ let equal = [%compare.equal : t]
 
 let kind_equal c1 c2 =
   let const_kind_number = function
-    | Cint _
-     -> 1
-    | Cfun _
-     -> 2
-    | Cstr _
-     -> 3
-    | Cfloat _
-     -> 4
-    | Cclass _
-     -> 5
+    | Cint _ ->
+        1
+    | Cfun _ ->
+        2
+    | Cstr _ ->
+        3
+    | Cfloat _ ->
+        4
+    | Cclass _ ->
+        5
   in
   Int.equal (const_kind_number c1) (const_kind_number c2)
 
+
 let pp pe f = function
-  | Cint i
-   -> IntLit.pp f i
+  | Cint i ->
+      IntLit.pp f i
   | Cfun fn -> (
     match pe.Pp.kind with
-    | HTML
-     -> F.fprintf f "_fun_%s" (Escape.escape_xml (Typ.Procname.to_string fn))
-    | _
-     -> F.fprintf f "_fun_%s" (Typ.Procname.to_string fn) )
-  | Cstr s
-   -> F.fprintf f "\"%s\"" (String.escaped s)
-  | Cfloat v
-   -> F.fprintf f "%f" v
-  | Cclass c
-   -> F.fprintf f "%a" Ident.pp_name c
+    | HTML ->
+        F.fprintf f "_fun_%s" (Escape.escape_xml (Typ.Procname.to_string fn))
+    | _ ->
+        F.fprintf f "_fun_%s" (Typ.Procname.to_string fn) )
+  | Cstr s ->
+      F.fprintf f "\"%s\"" (String.escaped s)
+  | Cfloat v ->
+      F.fprintf f "%f" v
+  | Cclass c ->
+      F.fprintf f "%a" Ident.pp_name c
+
 
 let to_string c = F.asprintf "%a" (pp Pp.text) c
 
@@ -62,9 +64,10 @@ let iszero_int_float = function Cint i -> IntLit.iszero i | Cfloat 0.0 -> true |
 let isone_int_float = function Cint i -> IntLit.isone i | Cfloat 1.0 -> true | _ -> false
 
 let isminusone_int_float = function
-  | Cint i
-   -> IntLit.isminusone i
-  | Cfloat -1.0
-   -> true
-  | _
-   -> false
+  | Cint i ->
+      IntLit.isminusone i
+  | Cfloat -1.0 ->
+      true
+  | _ ->
+      false
+

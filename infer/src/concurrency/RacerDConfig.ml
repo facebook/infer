@@ -13,9 +13,10 @@ module L = Logging
 
 module AnnotationAliases = struct
   let of_json = function
-    | `List aliases
-     -> List.map ~f:Yojson.Basic.Util.to_string aliases
-    | _
-     -> L.(die UserError)
+    | `List aliases ->
+        List.map ~f:Yojson.Basic.Util.to_string aliases
+    | _ ->
+        L.(die UserError)
           "Couldn't parse thread-safety annotation aliases; expected list of strings"
+
 end

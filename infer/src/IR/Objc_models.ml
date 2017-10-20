@@ -56,6 +56,7 @@ module Core_foundation_model = struct
     ; "__CFURLEnumerator"
     ; "__CFUUID" ]
 
+
   let cf_network =
     [ "_CFHTTPAuthentication"
     ; "__CFHTTPMessage"
@@ -64,6 +65,7 @@ module Core_foundation_model = struct
     ; "__CFNetService"
     ; "__CFNetServiceMonitor"
     ; "__CFNetServiceBrowser" ]
+
 
   let core_media =
     [ "OpaqueCMBlockBuffer"
@@ -75,6 +77,7 @@ module Core_foundation_model = struct
     ; "opaqueCMSimpleQueue"
     ; "OpaqueCMClock"
     ; "OpaqueCMTimebase" ]
+
 
   let core_text =
     [ "__CTFont"
@@ -91,8 +94,10 @@ module Core_foundation_model = struct
     ; "__CTTextTab"
     ; "__CTTypesetter" ]
 
+
   let core_video =
     ["__CVBuffer"; "__CVMetalTextureCache"; "__CVOpenGLESTextureCache"; "__CVPixelBufferPool"]
+
 
   let image_io = ["CGImageDestination"; "CGImageMetadata"; "CGImageMetadataTag"; "CGImageSource"]
 
@@ -107,6 +112,7 @@ module Core_foundation_model = struct
     ; "__SecTrust"
     ; "__SecRequirement" ]
 
+
   let system_configuration =
     [ "__SCDynamicStore"
     ; "__SCNetworkInterface"
@@ -117,6 +123,7 @@ module Core_foundation_model = struct
     ; "__SCNetworkConnection"
     ; "__SCNetworkReachability"
     ; "__SCPreferences" ]
+
 
   let core_graphics_types =
     [ "CGAffineTransform"
@@ -149,9 +156,11 @@ module Core_foundation_model = struct
     ; "CGPDFString"
     ; "CGShading" ]
 
+
   let core_foundation_types =
     core_foundation @ cf_network @ core_media @ core_text @ core_video @ image_io @ security
     @ system_configuration
+
 
   let copy = "Copy"
 
@@ -171,24 +180,27 @@ module Core_foundation_model = struct
 
   let core_lib_to_type_list lib =
     match lib with
-    | Core_foundation
-     -> core_foundation_types
-    | Core_graphics
-     -> core_graphics_types
+    | Core_foundation ->
+        core_foundation_types
+    | Core_graphics ->
+        core_graphics_types
+
 
   let is_objc_memory_model_controlled o =
     List.mem ~equal:String.equal core_foundation_types o
     || List.mem ~equal:String.equal core_graphics_types o
 
+
   let rec is_core_lib lib typ =
     match typ.Typ.desc with
-    | Typ.Tptr (styp, _)
-     -> is_core_lib lib styp
-    | Typ.Tstruct name
-     -> let core_lib_types = core_lib_to_type_list lib in
+    | Typ.Tptr (styp, _) ->
+        is_core_lib lib styp
+    | Typ.Tstruct name ->
+        let core_lib_types = core_lib_to_type_list lib in
         List.mem ~equal:String.equal core_lib_types (Typ.Name.name name)
-    | _
-     -> false
+    | _ ->
+        false
+
 
   let is_core_foundation_type typ = is_core_lib Core_foundation typ
 
@@ -199,6 +211,7 @@ module Core_foundation_model = struct
   let is_core_lib_create typ funct =
     is_core_lib_type typ
     && (String.is_substring ~substring:create funct || String.is_substring ~substring:copy funct)
+
 
   let function_arg_is_cftype typ = String.is_substring ~substring:cf_type typ
 
@@ -211,6 +224,7 @@ module Core_foundation_model = struct
       String.equal funct (lib ^ upper_release) && String.is_substring ~substring:(lib ^ ref) typ
     in
     List.exists ~f core_graphics_types
+
 
   (*
   let function_arg_is_core_pgraphics typ =

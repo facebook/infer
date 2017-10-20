@@ -21,23 +21,26 @@ module PathCountDomain = struct
     (* guarding against overflow *)
     if c < 0 then Top else PathCount c
 
+
   let initial = make_path_count 1
 
   let ( <= ) ~lhs ~rhs =
     match (lhs, rhs) with
-    | PathCount c1, PathCount c2
-     -> c1 <= c2
-    | _, Top
-     -> true
-    | Top, PathCount _
-     -> false
+    | PathCount c1, PathCount c2 ->
+        c1 <= c2
+    | _, Top ->
+        true
+    | Top, PathCount _ ->
+        false
+
 
   let join a1 a2 =
     match (a1, a2) with
-    | PathCount c1, PathCount c2
-     -> make_path_count (c1 + c2)
-    | Top, _ | PathCount _, Top
-     -> Top
+    | PathCount c1, PathCount c2 ->
+        make_path_count (c1 + c2)
+    | Top, _ | PathCount _, Top ->
+        Top
+
 
   let widen ~prev:_ ~next:_ ~num_iters:_ = Top
 
@@ -116,15 +119,16 @@ let tests =
             ( (* point 3 *)
               [ (* note: each instruction in try block is treated as potentially-excepting... *)
                 (* point 1 *)
-              invariant "1"
+                invariant "1"
               ; (* point 2 *)
-              invariant "1" ]
+                invariant "1" ]
             , (* point 4 *)
               [ (* ... so |paths through catch block| shoud be |number of instructions in try block| *)
-              invariant "2" ]
+                invariant "2" ]
             , (* could arrive here via (1, 2, 3), (1, 4), or (2, 4) *)
               [invariant "3"] )
         ; invariant "3" ] ) ]
     |> ExceptionalTestInterpreter.create_tests ProcData.empty_extras ~initial
   in
   "analyzer_tests_suite" >::: normal_test_list @ exceptional_test_list
+

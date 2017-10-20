@@ -25,6 +25,7 @@ module Summary = Summary.Make (struct
   let update_payload sum (summary: Specs.summary) =
     {summary with payload= {summary.payload with uninit= Some sum}}
 
+
   let read_payload (summary: Specs.summary) = summary.payload.uninit
 end)
 
@@ -38,8 +39,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let exec_instr (astate: Domain.astate) {ProcData.extras} _ (instr: HilInstr.t) =
     match instr with
-    | Assign (((lhs_var, _), _), HilExp.AccessPath ((rhs_var, rhs_typ as rhs_base), _), _)
-     -> let uninit_vars = D.remove lhs_var astate.uninit_vars in
+    | Assign (((lhs_var, _), _), HilExp.AccessPath (((rhs_var, rhs_typ) as rhs_base), _), _) ->
+        let uninit_vars = D.remove lhs_var astate.uninit_vars in
         let prepost =
           if FormalMap.is_formal rhs_base extras
              && match rhs_typ.desc with Typ.Tptr _ -> true | _ -> false
@@ -50,25 +51,26 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           else astate.prepost
         in
         {astate with uninit_vars; prepost}
-    | Assign (((lhs_var, _), _), _, _)
-     -> let uninit_vars = D.remove lhs_var astate.uninit_vars in
+    | Assign (((lhs_var, _), _), _, _) ->
+        let uninit_vars = D.remove lhs_var astate.uninit_vars in
         {astate with uninit_vars}
-    | Call (_, _, actuals, _, _)
-     -> (* in case of intraprocedural only analysis we assume that parameters passed by reference
+    | Call (_, _, actuals, _, _) ->
+        (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
         let uninit_vars =
           List.fold
             ~f:(fun acc actual_exp ->
               match actual_exp with
-              | HilExp.AccessPath ((actual_var, {Typ.desc= Tptr _}), _)
-               -> D.remove actual_var acc
-              | _
-               -> acc)
+              | HilExp.AccessPath ((actual_var, {Typ.desc= Tptr _}), _) ->
+                  D.remove actual_var acc
+              | _ ->
+                  acc)
             ~init:astate.uninit_vars actuals
         in
         {astate with uninit_vars}
-    | Assume _
-     -> astate
+    | Assume _ ->
+        astate
+
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
@@ -101,19 +103,19 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   let zip_actual_formal_params callee_pname actual_params =
     match Ondemand.get_proc_desc callee_pname with
-    | Some pdesc
-     -> let formals, _ = List.unzip (Procdesc.get_formals pdesc) in
+    | Some pdesc ->
+        let formals, _ = List.unzip (Procdesc.get_formals pdesc) in
         let actual, _ = List.unzip actual_params in
         (List.zip actual formals, actual)
-    | _
-     -> (None, [])
+    | _ ->
+        (None, [])
   in
   let deref_actual_params callee_pname actual_params deref_formal_params =
     match zip_actual_formal_params callee_pname actual_params with
-    | None, _
-     -> []
-    | Some assoc_actual_formal, _
-     -> List.fold
+    | None, _ ->
+        []
+    | Some assoc_actual_formal, _ ->
+        List.fold
           ~f:(fun acc (a, f) ->
             let fe = Exp.Lvar (Pvar.mk f callee_pname) in
             if exp_in_set fe deref_formal_params then a :: acc else acc)
@@ -129,16 +131,16 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     match instr with
     | Sil.Load (_, Exp.Lvar pv, _, loc)
     | Sil.Store (_, _, Exp.Lvar pv, loc)
-      when exp_in_set (Exp.Lvar pv) uninit_vars
-     -> let message =
+      when exp_in_set (Exp.Lvar pv) uninit_vars ->
+        let message =
           F.asprintf "The value read from %a was never initialized" Exp.pp (Exp.Lvar pv)
         in
         report message loc
     | Sil.Call (_, Exp.Const Const.Cfun callee_pname, actual_params, loc, _)
       when not intraprocedural_only -> (
       match Summary.read_summary proc_desc callee_pname with
-      | Some {pre= deref_formal_params; post= _}
-       -> let deref_actual_params =
+      | Some {pre= deref_formal_params; post= _} ->
+          let deref_actual_params =
             deref_actual_params callee_pname actual_params deref_formal_params
           in
           List.iter
@@ -150,10 +152,10 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
                 in
                 report message loc)
             actual_params
-      | _
-       -> () )
-    | _
-     -> ()
+      | _ ->
+          () )
+    | _ ->
+        ()
   in
   let report_on_node node =
     List.iter (CFG.instr_ids node) ~f:(fun (instr, node_id_opt) ->
@@ -164,22 +166,23 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
               ( { RecordDomain.uninit_vars= uninitialized_vars
                 ; RecordDomain.aliased_vars= _
                 ; RecordDomain.prepost= _ }
-              , _ )
-           -> report_uninit_value uninitialized_vars instr
-          | None
-           -> () )
-        | None
-         -> () )
+              , _ ) ->
+              report_uninit_value uninitialized_vars instr
+          | None ->
+              () )
+        | None ->
+            () )
   in
   List.iter (CFG.nodes cfg) ~f:report_on_node ;
   match Analyzer.extract_post (CFG.id (CFG.exit_node cfg)) invariant_map with
   | Some
       ( {RecordDomain.uninit_vars= _; RecordDomain.aliased_vars= _; RecordDomain.prepost= pre, post}
-      , _ )
-   -> Summary.update_summary {pre; post} summary
-  | None
-   -> if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
+      , _ ) ->
+      Summary.update_summary {pre; post} summary
+  | None ->
+      if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (
         L.internal_error "Uninit analyzer failed to compute post for %a" Typ.Procname.pp
           (Procdesc.get_proc_name proc_desc) ;
         summary )
       else summary
+

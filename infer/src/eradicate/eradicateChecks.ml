@@ -21,10 +21,10 @@ let check_library_calls = false
 let get_field_annotation tenv fn typ =
   let lookup = Tenv.lookup tenv in
   match Typ.Struct.get_field_type_and_annotation ~lookup fn typ with
-  | None
-   -> None
-  | Some (t, ia)
-   -> let ia' =
+  | None ->
+      None
+  | Some (t, ia) ->
+      let ia' =
         (* TODO (t4968422) eliminate not !Config.eradicate check by marking fields as nullified *)
         (* outside of Eradicate in some other way *)
         if (Models.Inference.enabled || not Config.eradicate)
@@ -34,14 +34,16 @@ let get_field_annotation tenv fn typ =
       in
       Some (t, ia')
 
+
 let report_error tenv = TypeErr.report_error tenv (Checkers.ST.report_error tenv)
 
 let explain_expr tenv node e =
   match Errdesc.exp_rv_dexp tenv node e with
-  | Some de
-   -> Some (DecompiledExp.to_string de)
-  | None
-   -> None
+  | Some de ->
+      Some (DecompiledExp.to_string de)
+  | None ->
+      None
+
 
 (** Classify a procedure. *)
 let classify_procedure proc_attributes =
@@ -56,11 +58,13 @@ let classify_procedure proc_attributes =
   in
   classification
 
+
 let is_virtual = function
-  | (p, _, _) :: _ when String.equal (Mangled.to_string p) "this"
-   -> true
-  | _
-   -> false
+  | (p, _, _) :: _ when String.equal (Mangled.to_string p) "this" ->
+      true
+  | _ ->
+      false
+
 
 (** Check an access (read or write) to a field. *)
 let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref exp fname ta loc
@@ -71,6 +75,7 @@ let check_field_access tenv find_canonical_duplicate curr_pname node instr_ref e
       (TypeErr.Null_field_access (explain_expr tenv node exp, fname, origin_descr, false))
       (Some instr_ref) loc curr_pname
 
+
 (** Check an access to an array *)
 let check_array_access tenv find_canonical_duplicate curr_pname node instr_ref array_exp fname ta
     loc indexed =
@@ -79,6 +84,7 @@ let check_array_access tenv find_canonical_duplicate curr_pname node instr_ref a
     report_error tenv find_canonical_duplicate
       (TypeErr.Null_field_access (explain_expr tenv node array_exp, fname, origin_descr, indexed))
       (Some instr_ref) loc curr_pname
+
 
 (** Where the condition is coming from *)
 type from_call =
@@ -97,11 +103,11 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
     from_call idenv linereader loc instr_ref : unit =
   let is_fun_nonnull ta =
     match TypeAnnotation.get_origin ta with
-    | TypeOrigin.Proc proc_origin
-     -> let ia, _ = proc_origin.TypeOrigin.annotated_signature.AnnotatedSignature.ret in
+    | TypeOrigin.Proc proc_origin ->
+        let ia, _ = proc_origin.TypeOrigin.annotated_signature.AnnotatedSignature.ret in
         Annotations.ia_is_nonnull ia
-    | _
-     -> false
+    | _ ->
+        false
   in
   let contains_instanceof_throwable pdesc node =
     (* Check if the current procedure has a catch Throwable. *)
@@ -110,17 +116,17 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
     let throwable_found = ref false in
     let typ_is_throwable {Typ.desc} =
       match desc with
-      | Typ.Tstruct (Typ.JavaClass _ as name)
-       -> String.equal (Typ.Name.name name) "java.lang.Throwable"
-      | _
-       -> false
+      | Typ.Tstruct (Typ.JavaClass _ as name) ->
+          String.equal (Typ.Name.name name) "java.lang.Throwable"
+      | _ ->
+          false
     in
     let do_instr = function
       | Sil.Call (_, Exp.Const Const.Cfun pn, [_; (Exp.Sizeof {typ}, _)], _, _)
-        when Typ.Procname.equal pn BuiltinDecl.__instanceof && typ_is_throwable typ
-       -> throwable_found := true
-      | _
-       -> ()
+        when Typ.Procname.equal pn BuiltinDecl.__instanceof && typ_is_throwable typ ->
+          throwable_found := true
+      | _ ->
+          ()
     in
     let do_node n =
       if Location.equal loc (Procdesc.Node.get_loc n) then
@@ -131,11 +137,11 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
   let from_try_with_resources () : bool =
     (* heuristic to check if the condition is the translation of try-with-resources *)
     match Printer.LineReader.from_loc linereader loc with
-    | Some line
-     -> not (String.is_substring ~substring:"==" line || String.is_substring ~substring:"!=" line)
+    | Some line ->
+        not (String.is_substring ~substring:"==" line || String.is_substring ~substring:"!=" line)
         && String.is_substring ~substring:"}" line && contains_instanceof_throwable curr_pdesc node
-    | None
-     -> false
+    | None ->
+        false
   in
   let is_temp = Idenv.exp_is_temp idenv e in
   let nonnull = is_fun_nonnull ta in
@@ -152,12 +158,14 @@ let check_condition tenv case_zero find_canonical_duplicate curr_pdesc node e ty
       (TypeErr.Condition_redundant (is_always_true, explain_expr tenv node e, nonnull))
       (Some instr_ref) loc curr_pdesc
 
+
 (** Check an "is zero" condition. *)
 let check_zero tenv find_canonical_duplicate = check_condition tenv true find_canonical_duplicate
 
 (** Check an "is not zero" condition. *)
 let check_nonzero tenv find_canonical_duplicate =
   check_condition tenv false find_canonical_duplicate
+
 
 (** Check an assignment to a field. *)
 let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_ref typestate
@@ -174,10 +182,10 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
   let should_report_nullable =
     let field_is_field_injector_readwrite () =
       match t_ia_opt with
-      | Some (_, ia)
-       -> Annotations.ia_is_field_injector_readwrite ia
-      | _
-       -> false
+      | Some (_, ia) ->
+          Annotations.ia_is_field_injector_readwrite ia
+      | _ ->
+          false
     in
     not (TypeAnnotation.get_value AnnotatedSignature.Nullable ta_lhs)
     && TypeAnnotation.get_value AnnotatedSignature.Nullable ta_rhs
@@ -210,6 +218,7 @@ let check_field_assignment tenv find_canonical_duplicate curr_pdesc node instr_r
     report_error tenv find_canonical_duplicate (TypeErr.Field_not_mutable (fname, origin_descr))
       (Some instr_ref) loc curr_pdesc
 
+
 (** Check that nonnullable fields are initialized in constructors. *)
 let check_constructor_initialization tenv find_canonical_duplicate curr_pname curr_pdesc start_node
     final_initializer_typestates final_constructor_typestates loc : unit =
@@ -218,8 +227,8 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
     match PatternMatch.get_this_type (Procdesc.get_attributes curr_pdesc) with
     | Some {desc= Tptr (({desc= Tstruct name} as ts), _)} -> (
       match Tenv.lookup tenv name with
-      | Some {fields}
-       -> let do_field (fn, ft, _) =
+      | Some {fields} ->
+          let do_field (fn, ft, _) =
             let annotated_with f =
               match get_field_annotation tenv fn ts with None -> false | Some (_, ia) -> f ia
             in
@@ -232,8 +241,8 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
               let filter_range_opt = function Some (_, ta, _) -> f ta | None -> unknown in
               List.exists
                 ~f:(function
-                    | pname, typestate
-                     -> let pvar =
+                    | pname, typestate ->
+                        let pvar =
                           Pvar.mk (Mangled.from_string (Typ.Fieldname.to_string fn)) pname
                         in
                         filter_range_opt (TypeState.lookup_pvar pvar typestate))
@@ -241,13 +250,13 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
             in
             let may_be_assigned_in_final_typestate =
               let origin_is_initialized = function
-                | TypeOrigin.Undef
-                 -> false
-                | TypeOrigin.Field (TypeOrigin.Formal name, _, _)
-                 -> let circular = String.equal (Mangled.to_string name) "this" in
+                | TypeOrigin.Undef ->
+                    false
+                | TypeOrigin.Field (TypeOrigin.Formal name, _, _) ->
+                    let circular = String.equal (Mangled.to_string name) "this" in
                     not circular
-                | _
-                 -> true
+                | _ ->
+                    true
               in
               final_type_annotation_with false (Lazy.force final_initializer_typestates) (fun ta ->
                   origin_is_initialized (TypeAnnotation.get_origin ta) )
@@ -280,16 +289,17 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
                   (TypeErr.Field_over_annotated (fn, curr_pname)) None loc curr_pdesc )
           in
           List.iter ~f:do_field fields
-      | None
-       -> () )
-    | _
-     -> ()
+      | None ->
+          () )
+    | _ ->
+        ()
+
 
 (** Make the return type @Nullable by modifying the spec. *)
 let spec_make_return_nullable curr_pname =
   match Specs.get_summary curr_pname with
-  | Some summary
-   -> let proc_attributes = Specs.get_attributes summary in
+  | Some summary ->
+      let proc_attributes = Specs.get_attributes summary in
       let method_annotation = proc_attributes.ProcAttributes.method_annotation in
       let method_annotation' =
         AnnotatedSignature.method_annotation_mark_return AnnotatedSignature.Nullable
@@ -300,8 +310,9 @@ let spec_make_return_nullable curr_pname =
       in
       let summary' = {summary with Specs.attributes= proc_attributes'} in
       Specs.add_summary curr_pname summary'
-  | None
-   -> ()
+  | None ->
+      ()
+
 
 (** Check the annotations when returning from a method. *)
 let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
@@ -319,10 +330,10 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
   match ret_range with
   (* Disables the warnings since it is not clear how to annotate the return value of lambdas *)
   | Some _
-    when Typ.Procname.java_is_lambda curr_pname
-   -> ()
-  | Some (_, final_ta, _)
-   -> let final_nullable = TypeAnnotation.get_value AnnotatedSignature.Nullable final_ta in
+    when Typ.Procname.java_is_lambda curr_pname ->
+      ()
+  | Some (_, final_ta, _) ->
+      let final_nullable = TypeAnnotation.get_value AnnotatedSignature.Nullable final_ta in
       let final_present = TypeAnnotation.get_value AnnotatedSignature.Present final_ta in
       let origin_descr = TypeAnnotation.descr_origin tenv final_ta in
       let return_not_nullable =
@@ -349,15 +360,16 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
       if return_over_annotated then
         report_error tenv find_canonical_duplicate (TypeErr.Return_over_annotated curr_pname) None
           loc curr_pdesc
-  | None
-   -> ()
+  | None ->
+      ()
+
 
 (** Check the receiver of a virtual call. *)
 let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate call_params
     callee_pname (instr_ref: TypeErr.InstrRef.t) loc typecheck_expr : unit =
   match call_params with
-  | ((original_this_e, this_e), typ) :: _
-   -> let _, this_ta, _ =
+  | ((original_this_e, this_e), typ) :: _ ->
+      let _, this_ta, _ =
         typecheck_expr tenv node instr_ref curr_pdesc typestate this_e
           (typ, TypeAnnotation.const AnnotatedSignature.Nullable false TypeOrigin.ONone, []) loc
       in
@@ -375,8 +387,9 @@ let check_call_receiver tenv find_canonical_duplicate curr_pdesc node typestate 
         report_error tenv find_canonical_duplicate
           (TypeErr.Call_receiver_annotation_inconsistent (ann, descr, callee_pname, origin_descr))
           (Some instr_ref) loc curr_pdesc
-  | []
-   -> ()
+  | [] ->
+      ()
+
 
 type resolved_param =
   { num: int
@@ -393,10 +406,10 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
     let report ann =
       let description =
         match explain_expr tenv node orig_e2 with
-        | Some descr
-         -> descr
-        | None
-         -> "formal parameter " ^ Mangled.to_string s1
+        | Some descr ->
+            descr
+        | None ->
+            "formal parameter " ^ Mangled.to_string s1
       in
       let origin_descr = TypeAnnotation.descr_origin tenv ta2 in
       let callee_loc = callee_attributes.ProcAttributes.loc in
@@ -409,14 +422,14 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
       let b1 = TypeAnnotation.get_value ann ta1 in
       let b2 = TypeAnnotation.get_value ann ta2 in
       match (ann, b1, b2) with
-      | AnnotatedSignature.Nullable, false, true
-       -> report ann ;
+      | AnnotatedSignature.Nullable, false, true ->
+          report ann ;
           if Models.Inference.enabled then
             Models.Inference.proc_add_parameter_nullable callee_pname param_num tot_param_num
-      | AnnotatedSignature.Present, true, false
-       -> report ann
-      | _
-       -> ()
+      | AnnotatedSignature.Present, true, false ->
+          report ann
+      | _ ->
+          ()
     in
     if PatternMatch.type_is_class t1 then (
       check_ann AnnotatedSignature.Nullable ;
@@ -430,6 +443,7 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
   if should_check_parameters then
     (* left to right to avoid guessing the different lengths *)
     List.iter ~f:check resolved_params
+
 
 (** Checks if the annotations are consistent with the inherited class or with the
     implemented interfaces *)
@@ -472,11 +486,12 @@ let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_de
   in
   let check overriden_proc_name =
     match Specs.proc_resolve_attributes overriden_proc_name with
-    | Some attributes
-     -> let overridden_signature = Models.get_modelled_annotated_signature attributes in
+    | Some attributes ->
+        let overridden_signature = Models.get_modelled_annotated_signature attributes in
         check_return overriden_proc_name overridden_signature ;
         check_params overriden_proc_name overridden_signature
-    | None
-     -> ()
+    | None ->
+        ()
   in
   PatternMatch.override_iter check tenv proc_name
+

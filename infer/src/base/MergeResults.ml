@@ -32,8 +32,10 @@ WHERE
   OR (main_attr_kind = attr_kind AND main_source_file < source_file)
 |}
   in
-  SqliteUtils.sqlite_unit_step ~log:(Printf.sprintf "copying contents of database '%s'" db_file)
+  SqliteUtils.sqlite_unit_step
+    ~log:(Printf.sprintf "copying contents of database '%s'" db_file)
     copy_stmt
+
 
 let merge ~db_file =
   (* no need to wrap all the individual table merges in a single transaction (to batch writes)
@@ -48,21 +50,23 @@ let merge ~db_file =
     (Sqlite3.exec main_db "DETACH attached") ;
   ()
 
+
 let merge_buck_flavors_results infer_deps_file =
   let one_line line =
     match String.split ~on:'\t' line with
-    | [_; _; target_results_dir]
-     -> let infer_out_src =
+    | [_; _; target_results_dir] ->
+        let infer_out_src =
           if Filename.is_relative target_results_dir then
             Filename.dirname (Config.project_root ^/ "buck-out") ^/ target_results_dir
           else target_results_dir
         in
         merge ~db_file:(infer_out_src ^/ ResultsDir.database_filename)
-    | _
-     -> assert false
+    | _ ->
+        assert false
   in
   match Utils.read_file infer_deps_file with
-  | Ok lines
-   -> List.iter ~f:one_line lines
-  | Error error
-   -> L.internal_error "Couldn't read deps file '%s': %s" infer_deps_file error
+  | Ok lines ->
+      List.iter ~f:one_line lines
+  | Error error ->
+      L.internal_error "Couldn't read deps file '%s': %s" infer_deps_file error
+

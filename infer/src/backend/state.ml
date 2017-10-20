@@ -57,6 +57,7 @@ let initial () =
   ; last_session= 0
   ; failure_map= NodeHash.create 1 }
 
+
 (** Global state *)
 let gs = ref (initial ())
 
@@ -65,6 +66,7 @@ let save_state () =
   let old = !gs in
   gs := initial () ;
   old
+
 
 (** Restore the old state. *)
 let restore_state st = gs := st
@@ -77,11 +79,14 @@ let get_failure_stats node =
   try NodeHash.find !gs.failure_map node
   with Not_found ->
     let fs = {instr_fail= 0; instr_ok= 0; node_fail= 0; node_ok= 0; first_failure= None} in
-    NodeHash.add !gs.failure_map node fs ; fs
+    NodeHash.add !gs.failure_map node fs ;
+    fs
+
 
 let add_diverging_states pset =
   !gs.diverging_states_proc <- Paths.PathSet.union pset !gs.diverging_states_proc ;
   !gs.diverging_states_node <- Paths.PathSet.union pset !gs.diverging_states_node
+
 
 let get_diverging_states_node () = !gs.diverging_states_node
 
@@ -91,10 +96,11 @@ let get_instr () = !gs.last_instr
 
 let get_loc () =
   match !gs.last_instr with
-  | Some instr
-   -> Sil.instr_get_loc instr
-  | None
-   -> Procdesc.Node.get_loc !gs.last_node
+  | Some instr ->
+      Sil.instr_get_loc instr
+  | None ->
+      Procdesc.Node.get_loc !gs.last_node
+
 
 let get_node () = !gs.last_node
 
@@ -106,25 +112,26 @@ let node_simple_key node =
     if Sil.instr_is_auxiliary instr then ()
     else
       match instr with
-      | Sil.Load _
-       -> add_key 1
-      | Sil.Store _
-       -> add_key 2
-      | Sil.Prune _
-       -> add_key 3
-      | Sil.Call _
-       -> add_key 4
-      | Sil.Nullify _
-       -> add_key 5
-      | Sil.Abstract _
-       -> add_key 6
-      | Sil.Remove_temps _
-       -> add_key 7
-      | Sil.Declare_locals _
-       -> add_key 8
+      | Sil.Load _ ->
+          add_key 1
+      | Sil.Store _ ->
+          add_key 2
+      | Sil.Prune _ ->
+          add_key 3
+      | Sil.Call _ ->
+          add_key 4
+      | Sil.Nullify _ ->
+          add_key 5
+      | Sil.Abstract _ ->
+          add_key 6
+      | Sil.Remove_temps _ ->
+          add_key 7
+      | Sil.Declare_locals _ ->
+          add_key 8
   in
   List.iter ~f:do_instr (Procdesc.Node.get_instrs node) ;
   Hashtbl.hash !key
+
 
 (** key for a node: look at the current node, successors and predecessors *)
 let node_key node =
@@ -134,6 +141,7 @@ let node_key node =
     (node_simple_key node, List.map ~f:node_simple_key succs, List.map ~f:node_simple_key preds)
   in
   Hashtbl.hash v
+
 
 (** normalize the list of instructions by renaming let-bound ids *)
 let instrs_normalize instrs =
@@ -150,6 +158,7 @@ let instrs_normalize instrs =
     Sil.subst_of_list (List.map ~f:(fun id -> (id, Exp.Var (gensym id))) bound_ids)
   in
   List.map ~f:(Sil.instr_sub subst) instrs
+
 
 (** Create a function to find duplicate nodes.
     A node is a duplicate of another one if they have the same kind and location
@@ -202,10 +211,10 @@ let mk_find_duplicate_nodes proc_desc : Procdesc.Node.t -> Procdesc.NodeSet.t =
       let (_, node_normalized_instrs), _ =
         let filter (node', _) = Procdesc.Node.equal node node' in
         match List.partition_tf ~f:filter elements with
-        | [this], others
-         -> (this, others)
-        | _
-         -> raise Not_found
+        | [this], others ->
+            (this, others)
+        | _ ->
+            raise Not_found
       in
       let duplicates =
         let equal_normalized_instrs (_, normalized_instrs') =
@@ -220,6 +229,7 @@ let mk_find_duplicate_nodes proc_desc : Procdesc.Node.t -> Procdesc.NodeSet.t =
   in
   find_duplicate_nodes
 
+
 let get_node_id () = Procdesc.Node.get_id !gs.last_node
 
 let get_node_id_key () = (Procdesc.Node.get_id !gs.last_node, node_key !gs.last_node)
@@ -228,16 +238,19 @@ let get_inst_update pos =
   let loc = get_loc () in
   Sil.inst_update loc pos
 
+
 let get_path () =
   match !gs.last_path with
-  | None
-   -> (Paths.Path.start !gs.last_node, None)
-  | Some (path, pos_opt)
-   -> (path, pos_opt)
+  | None ->
+      (Paths.Path.start !gs.last_node, None)
+  | Some (path, pos_opt) ->
+      (path, pos_opt)
+
 
 let get_loc_trace () : Errlog.loc_trace =
   let path, pos_opt = get_path () in
   Paths.Path.create_loc_trace path pos_opt
+
 
 let get_prop_tenv_pdesc () = !gs.last_prop_tenv_pdesc
 
@@ -260,33 +273,37 @@ let extract_pre p tenv pdesc abstract_fun =
   in
   Prop.normalize tenv (Prop.prop_sub sub pre')
 
+
 (** return the normalized precondition extracted form the last prop seen, if any
     the abstraction function is a parameter to get around module dependencies *)
 let get_normalized_pre (abstract_fun: Tenv.t -> Prop.normal Prop.t -> Prop.normal Prop.t)
     : Prop.normal Prop.t option =
   match get_prop_tenv_pdesc () with
-  | None
-   -> None
-  | Some (prop, tenv, pdesc)
-   -> Some (extract_pre prop tenv pdesc abstract_fun)
+  | None ->
+      None
+  | Some (prop, tenv, pdesc) ->
+      Some (extract_pre prop tenv pdesc abstract_fun)
+
 
 let get_session () = !gs.last_session
 
 let get_path_pos () =
   let pname =
     match get_prop_tenv_pdesc () with
-    | Some (_, _, pdesc)
-     -> Procdesc.get_proc_name pdesc
-    | None
-     -> Typ.Procname.from_string_c_fun "unknown_procedure"
+    | Some (_, _, pdesc) ->
+        Procdesc.get_proc_name pdesc
+    | None ->
+        Typ.Procname.from_string_c_fun "unknown_procedure"
   in
   let nid = get_node_id () in
   (pname, (nid :> int))
+
 
 let mark_execution_start node =
   let fs = get_failure_stats node in
   fs.instr_ok <- 0 ;
   fs.instr_fail <- 0
+
 
 let mark_execution_end node =
   let fs = get_failure_stats node in
@@ -295,9 +312,11 @@ let mark_execution_end node =
   fs.instr_fail <- 0 ;
   if success then fs.node_ok <- fs.node_ok + 1 else fs.node_fail <- fs.node_fail + 1
 
+
 let mark_instr_ok () =
   let fs = get_failure_stats (get_node ()) in
   fs.instr_ok <- fs.instr_ok + 1
+
 
 let mark_instr_fail exn =
   let loc = get_loc () in
@@ -309,6 +328,7 @@ let mark_instr_fail exn =
     fs.first_failure <- Some (loc, key, (session :> int), loc_trace, exn) ;
   fs.instr_fail <- fs.instr_fail + 1
 
+
 type log_issue =
   ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * int -> ?session:int
   -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> exn -> unit
@@ -317,15 +337,16 @@ let process_execution_failures (log_issue: log_issue) pname =
   let do_failure _ fs =
     (* L.out "Node:%a node_ok:%d node_fail:%d@." Procdesc.Node.pp node fs.node_ok fs.node_fail; *)
     match (fs.node_ok, fs.first_failure) with
-    | 0, Some (loc, key, _, loc_trace, exn) when not Config.debug_exceptions
-     -> let error = Exceptions.recognize_exception exn in
+    | 0, Some (loc, key, _, loc_trace, exn) when not Config.debug_exceptions ->
+        let error = Exceptions.recognize_exception exn in
         let desc' = Localise.verbatim_desc ("exception: " ^ error.name.IssueType.unique_id) in
         let exn' = Exceptions.Analysis_stops (desc', error.ml_loc) in
         log_issue pname ~loc ~node_id:key ~ltr:loc_trace exn'
-    | _
-     -> ()
+    | _ ->
+        ()
   in
   NodeHash.iter do_failure !gs.failure_map
+
 
 let set_instr (instr: Sil.instr) = !gs.last_instr <- Some instr
 
@@ -336,6 +357,7 @@ let set_prop_tenv_pdesc prop tenv pdesc = !gs.last_prop_tenv_pdesc <- Some (prop
 let set_node (node: Procdesc.Node.t) =
   !gs.last_instr <- None ;
   !gs.last_node <- node
+
 
 let set_session (session: int) = !gs.last_session <- session
 

@@ -59,10 +59,12 @@ let text =
   ; color= Black
   ; obj_sub= None }
 
+
 (** Default html print environment *)
 let html color =
   { text with
     kind= HTML; cmap_norm= colormap_from_color color; cmap_foot= colormap_from_color color; color }
+
 
 (** Default latex print environment *)
 let latex color =
@@ -74,10 +76,12 @@ let latex color =
   ; color
   ; obj_sub= None }
 
+
 (** Extend the normal colormap for the given object with the given color *)
 let extend_colormap pe (x: Obj.t) (c: color) =
   let colormap (y: Obj.t) = if phys_equal x y then c else pe.cmap_norm y in
   {pe with cmap_norm= colormap}
+
 
 (** Set the object substitution, which is supposed to preserve the type.
     Currently only used for a map from (identifier) expressions to the program var containing them *)
@@ -88,36 +92,39 @@ let set_obj_sub pe (sub: 'a -> 'a) =
   in
   {pe with obj_sub= Some new_obj_sub}
 
+
 (** Reset the object substitution, so that no substitution takes place *)
 let reset_obj_sub pe = {pe with obj_sub= None}
 
 (** string representation of colors *)
 let color_string = function
-  | Black
-   -> "color_black"
-  | Blue
-   -> "color_blue"
-  | Green
-   -> "color_green"
-  | Orange
-   -> "color_orange"
-  | Red
-   -> "color_red"
+  | Black ->
+      "color_black"
+  | Blue ->
+      "color_blue"
+  | Green ->
+      "color_green"
+  | Orange ->
+      "color_orange"
+  | Red ->
+      "color_red"
+
 
 let seq ?(print_env= text) ?sep:(sep_text = " ") ?(sep_html= sep_text) ?(sep_latex= sep_text) pp =
   let rec aux f = function
-    | []
-     -> ()
-    | [x]
-     -> F.fprintf f "%a" pp x
-    | x :: l
-     -> let sep =
+    | [] ->
+        ()
+    | [x] ->
+        F.fprintf f "%a" pp x
+    | x :: l ->
+        let sep =
           match print_env.kind with TEXT -> sep_text | HTML -> sep_html | LATEX -> sep_latex
         in
         if print_env.break_lines then F.fprintf f "%a%s@ %a" pp x sep aux l
         else F.fprintf f "%a%s%a" pp x sep aux l
   in
   aux
+
 
 let comma_seq ?print_env pp f l = seq ?print_env ~sep:"," pp f l
 
@@ -130,6 +137,7 @@ let current_time f () =
   let tm = Unix.localtime (Unix.time ()) in
   F.fprintf f "%02d/%02d/%4d %02d:%02d" tm.Unix.tm_mday tm.Unix.tm_mon (tm.Unix.tm_year + 1900)
     tm.Unix.tm_hour tm.Unix.tm_min
+
 
 (** Print the time in seconds elapsed since the beginning of the execution of the current command. *)
 let elapsed_time fmt () = Mtime.Span.pp fmt (Mtime_clock.elapsed ())
@@ -147,8 +155,10 @@ let pp_argfile fmt fname =
     F.fprintf fmt "  /Contents of '%s'@\n" fname
   with exn -> F.fprintf fmt "  Error reading file '%s':@\n  %a@\n" fname Exn.pp exn
 
+
 let cli_args fmt args =
   F.fprintf fmt "%a@\n%a"
     (seq ~sep:(String.of_char CLOpt.env_var_sep) string)
     args (seq ~sep:"\n" pp_argfile)
     (List.filter_map ~f:(String.chop_prefix ~prefix:"@") args)
+

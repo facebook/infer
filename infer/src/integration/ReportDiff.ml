@@ -22,10 +22,10 @@ let reportdiff ~current_report:current_report_fname ~previous_report:previous_re
     if Config.filtering then
       let file_renamings =
         match Config.file_renamings with
-        | Some f
-         -> DifferentialFilters.FileRenamings.from_json_file f
-        | None
-         -> DifferentialFilters.FileRenamings.empty
+        | Some f ->
+            DifferentialFilters.FileRenamings.from_json_file f
+        | None ->
+            DifferentialFilters.FileRenamings.empty
       in
       let interesting_paths =
         Option.map
@@ -38,4 +38,6 @@ let reportdiff ~current_report:current_report_fname ~previous_report:previous_re
     else unfiltered_diff
   in
   let out_path = Config.results_dir ^/ "differential" in
-  Unix.mkdir_p out_path ; Differential.to_files diff out_path
+  Unix.mkdir_p out_path ;
+  Differential.to_files diff out_path
+

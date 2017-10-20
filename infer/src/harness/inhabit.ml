@@ -37,13 +37,16 @@ let procdesc_from_name cfg pname =
       if Typ.Procname.equal cfg_pname pname then pdesc_ref := Some pdesc ) ;
   !pdesc_ref
 
+
 let formals_from_name cfg pname =
   match procdesc_from_name cfg pname with Some pdesc -> Procdesc.get_formals pdesc | None -> []
+
 
 (** add an instruction to the env, update tmp_vars, and bump the pc *)
 let env_add_instr instr env =
   let incr_pc pc = {pc with Location.line= pc.Location.line + 1} in
   {env with instrs= instr :: env.instrs; pc= incr_pc env.pc}
+
 
 (** call flags for an allocation or call to a constructor *)
 let cf_alloc = CallFlags.default
@@ -55,6 +58,7 @@ let local_name_cntr = ref 0
 let create_fresh_local_name () =
   incr local_name_cntr ;
   "dummy_local" ^ string_of_int !local_name_cntr
+
 
 (** more forgiving variation of List.tl that won't raise an exception on the empty list *)
 let tl_or_empty l = if List.is_empty l then l else List.tl_exn l
@@ -77,6 +81,7 @@ let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
   in
   (inhabited_exp, env_add_instr call_instr env)
 
+
 (* TODO: this should be done in a differnt way: just make typ a param of the harness procedure *)
 
 (** find or create a Sil expression with type typ *)
@@ -85,12 +90,12 @@ let rec inhabit_typ tenv typ cfg env =
   with Not_found ->
     let inhabit_internal typ env =
       match typ.Typ.desc with
-      | Typ.Tptr ({desc= Tarray (inner_typ, Some _, _)}, Typ.Pk_pointer)
-       -> let len = Exp.Const (Const.Cint IntLit.one) in
+      | Typ.Tptr ({desc= Tarray (inner_typ, Some _, _)}, Typ.Pk_pointer) ->
+          let len = Exp.Const (Const.Cint IntLit.one) in
           let arr_typ = Typ.mk (Tarray (inner_typ, Some IntLit.one, None)) in
           inhabit_alloc arr_typ (Some len) typ BuiltinDecl.__new_array env
-      | Typ.Tptr (typ, Typ.Pk_pointer)
-       -> (* TODO (t4575417): this case does not work correctly for enums, but they are currently
+      | Typ.Tptr (typ, Typ.Pk_pointer) ->
+          (* TODO (t4575417): this case does not work correctly for enums, but they are currently
            * broken in Infer anyway (see t4592290) *)
           let allocated_obj_exp, env = inhabit_alloc typ None typ BuiltinDecl.__new env in
           (* select methods that are constructors and won't force us into infinite recursion because
@@ -99,8 +104,8 @@ let rec inhabit_typ tenv typ cfg env =
             match typ.desc with
             | Tstruct name when Typ.Name.is_class name -> (
               match Tenv.lookup tenv name with
-              | Some {methods}
-               -> let is_suitable_constructor p =
+              | Some {methods} ->
+                  let is_suitable_constructor p =
                     let try_get_non_receiver_formals p =
                       get_non_receiver_formals (formals_from_name cfg p)
                     in
@@ -110,29 +115,29 @@ let rec inhabit_typ tenv typ cfg env =
                          (try_get_non_receiver_formals p)
                   in
                   List.filter ~f:(fun p -> is_suitable_constructor p) methods
-              | _
-               -> [] )
-            | _
-             -> []
+              | _ ->
+                  [] )
+            | _ ->
+                []
           in
           let env, typ_class_name =
             match get_all_suitable_constructors typ with
-            | constructor :: _
-             -> (* arbitrarily choose a constructor for typ and invoke it. eventually, we may want to
+            | constructor :: _ ->
+                (* arbitrarily choose a constructor for typ and invoke it. eventually, we may want to
                  * nondeterministically call all possible constructors instead *)
                 let env = inhabit_constructor tenv constructor (allocated_obj_exp, typ) cfg env in
                 (* try to get the unqualified name as a class (e.g., Object for java.lang.Object so we
                  * we can use it as a descriptive local variable name in the harness *)
                 let typ_class_name =
                   match constructor with
-                  | Typ.Procname.Java pname_java
-                   -> Typ.Procname.java_get_simple_class_name pname_java
-                  | _
-                   -> create_fresh_local_name ()
+                  | Typ.Procname.Java pname_java ->
+                      Typ.Procname.java_get_simple_class_name pname_java
+                  | _ ->
+                      create_fresh_local_name ()
                 in
                 (env, Mangled.from_string typ_class_name)
-            | []
-             -> (env, Mangled.from_string (create_fresh_local_name ()))
+            | [] ->
+                (env, Mangled.from_string (create_fresh_local_name ()))
           in
           (* add the instructions *& local = [allocated_obj_exp]; id = *& local, where local and id are
            * both fresh. the only point of this is to add a descriptive local name that makes error
@@ -145,12 +150,12 @@ let rec inhabit_typ tenv typ cfg env =
           let fresh_id = Ident.create_fresh Ident.knormal in
           let read_from_local_instr = Sil.Load (fresh_id, fresh_local_exp, typ, env'.pc) in
           (Exp.Var fresh_id, env_add_instr read_from_local_instr env')
-      | Typ.Tint _
-       -> (Exp.Const (Const.Cint IntLit.zero), env)
-      | Typ.Tfloat _
-       -> (Exp.Const (Const.Cfloat 0.0), env)
-      | _
-       -> L.die InternalError "Couldn't inhabit typ: %a" (Typ.pp Pp.text) typ
+      | Typ.Tint _ ->
+          (Exp.Const (Const.Cint IntLit.zero), env)
+      | Typ.Tfloat _ ->
+          (Exp.Const (Const.Cfloat 0.0), env)
+      | _ ->
+          L.die InternalError "Couldn't inhabit typ: %a" (Typ.pp Pp.text) typ
     in
     let inhabited_exp, env' =
       inhabit_internal typ {env with cur_inhabiting= TypSet.add typ env.cur_inhabiting}
@@ -159,6 +164,7 @@ let rec inhabit_typ tenv typ cfg env =
     , {env' with cache= TypMap.add typ inhabited_exp env.cache; cur_inhabiting= env.cur_inhabiting}
     )
 
+
 (** inhabit each of the types in the formals list *)
 and inhabit_args tenv formals cfg env =
   let inhabit_arg (_, formal_typ) (args, env) =
@@ -166,6 +172,7 @@ and inhabit_args tenv formals cfg env =
     ((exp, formal_typ) :: args, env)
   in
   List.fold_right ~f:inhabit_arg formals ~init:([], env)
+
 
 (** create Sil that calls the constructor in constr_name on allocated_obj and inhabits the
  * remaining arguments *)
@@ -184,6 +191,7 @@ and inhabit_constructor tenv constr_name (allocated_obj, obj_type) cfg env =
     env_add_instr constr_instr env
   with Not_found -> env
 
+
 let inhabit_call_with_args procname procdesc args env =
   let retval =
     let ret_typ = Procdesc.get_ret_type procdesc in
@@ -199,28 +207,30 @@ let inhabit_call_with_args procname procdesc args env =
   in
   env_add_instr call_instr env
 
+
 (** create Sil that inhabits args to and calls proc_name *)
 let inhabit_call tenv (procname, receiver) cfg env =
   try
     match procdesc_from_name cfg procname with
-    | Some procdesc
-     -> (* swap the type of the 'this' formal with the receiver type, if there is one *)
+    | Some procdesc ->
+        (* swap the type of the 'this' formal with the receiver type, if there is one *)
         let formals =
           match (Procdesc.get_formals procdesc, receiver) with
-          | (name, _) :: formals, Some receiver
-           -> (name, receiver) :: formals
-          | formals, None
-           -> formals
-          | [], Some _
-           -> L.(die InternalError)
+          | (name, _) :: formals, Some receiver ->
+              (name, receiver) :: formals
+          | formals, None ->
+              formals
+          | [], Some _ ->
+              L.(die InternalError)
                 "Expected at least one formal to bind receiver to in method %a" Typ.Procname.pp
                 procname
         in
         let args, env = inhabit_args tenv formals cfg env in
         inhabit_call_with_args procname procdesc args env
-    | None
-     -> env
+    | None ->
+        env
   with Not_found -> env
+
 
 (** create a dummy file for the harness and associate them in the exe_env *)
 let create_dummy_harness_filename harness_name =
@@ -230,6 +240,7 @@ let create_dummy_harness_filename harness_name =
     ^ ".java"
   in
   Filename.concat dummy_file_dir file_str
+
 
 (* TODO (t3040429): fill this file up with Java-like code that matches the SIL *)
 
@@ -243,12 +254,14 @@ let write_harness_to_file harness_instrs harness_file_name =
   in
   Utils.do_outf harness_file (fun outf -> pp_harness outf.fmt ; Utils.close_outf outf)
 
+
 (** add the harness proc to the cg and make sure its callees can be looked up by sym execution *)
 let add_harness_to_cg harness_name harness_node cg =
   Cg.add_defined_node cg (Typ.Procname.Java harness_name) ;
   List.iter
     ~f:(fun p -> Cg.add_edge cg (Typ.Procname.Java harness_name) p)
     (Procdesc.Node.get_callees harness_node)
+
 
 (** create and fill the appropriate nodes and add them to the harness cfg. also add the harness
  * proc to the cg *)
@@ -280,6 +293,7 @@ let setup_harness_cfg harness_name env cg cfg =
   Procdesc.node_set_succs_exn procdesc harness_node [exit_node] [exit_node] ;
   add_harness_to_cg harness_name harness_node cg
 
+
 (** create a procedure named harness_name that calls each of the methods in trace in the specified
  * order with the specified receiver and add it to the execution environment *)
 let inhabit_trace tenv trace harness_name cg cfg =
@@ -299,3 +313,4 @@ let inhabit_trace tenv trace harness_name cg cfg =
       setup_harness_cfg harness_name env'' cg cfg ;
       write_harness_to_file (List.rev env''.instrs) harness_filename
     with Not_found -> ()
+

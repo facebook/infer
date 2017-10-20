@@ -59,6 +59,7 @@ module Node = struct
     ; preds= []
     ; exn= [] }
 
+
   let compare node1 node2 = Int.compare node1.id node2.id
 
   let hash node = Hashtbl.hash node.id
@@ -98,6 +99,7 @@ module Node = struct
     in
     NodeSet.elements (slice_nodes node.succs)
 
+
   let get_sliced_preds node f =
     let visited = ref NodeSet.empty in
     let rec slice_nodes nodes : NodeSet.t =
@@ -112,16 +114,18 @@ module Node = struct
     in
     NodeSet.elements (slice_nodes node.preds)
 
+
   let get_exn node = node.exn
 
   (** Get the name of the procedure the node belongs to *)
   let get_proc_name node =
     match node.pname_opt with
-    | None
-     -> L.internal_error "get_proc_name: at node %d@\n" node.id ;
+    | None ->
+        L.internal_error "get_proc_name: at node %d@\n" node.id ;
         assert false
-    | Some pname
-     -> pname
+    | Some pname ->
+        pname
+
 
   (** Get the predecessors of the node *)
   let get_preds node = node.preds
@@ -137,6 +141,7 @@ module Node = struct
     in
     nodes start_node
 
+
   (** Get the node kind *)
   let get_kind node = node.kind
 
@@ -149,10 +154,11 @@ module Node = struct
       match instr with
       | Sil.Call (_, exp, _, _, _) -> (
         match exp with Exp.Const Const.Cfun procname -> procname :: callees | _ -> callees )
-      | _
-       -> callees
+      | _ ->
+          callees
     in
     List.fold ~f:collect ~init:[] (get_instrs node)
+
 
   (** Get the location of the node *)
   let get_loc n = n.loc
@@ -160,6 +166,7 @@ module Node = struct
   (** Get the source location of the last instruction in the node *)
   let get_last_loc n =
     match List.rev (get_instrs n) with instr :: _ -> Sil.instr_get_loc instr | [] -> n.loc
+
 
   let pp_id f id = F.fprintf f "%d" id
 
@@ -189,6 +196,7 @@ module Node = struct
     let instr = Sil.Declare_locals (ptl, loc) in
     prepend_instrs node [instr]
 
+
   (** Print extended instructions for the node,
       highlighting the given subinstruction if present *)
   let pp_instrs pe0 ~sub_instrs instro fmt node =
@@ -201,44 +209,47 @@ module Node = struct
     else
       let () =
         match get_kind node with
-        | Stmt_node s
-         -> F.fprintf fmt "statements (%s)" s
-        | Prune_node (_, _, descr)
-         -> F.fprintf fmt "assume %s" descr
-        | Exit_node _
-         -> F.fprintf fmt "exit"
-        | Skip_node s
-         -> F.fprintf fmt "skip (%s)" s
-        | Start_node _
-         -> F.fprintf fmt "start"
-        | Join_node
-         -> F.fprintf fmt "join"
+        | Stmt_node s ->
+            F.fprintf fmt "statements (%s)" s
+        | Prune_node (_, _, descr) ->
+            F.fprintf fmt "assume %s" descr
+        | Exit_node _ ->
+            F.fprintf fmt "exit"
+        | Skip_node s ->
+            F.fprintf fmt "skip (%s)" s
+        | Start_node _ ->
+            F.fprintf fmt "start"
+        | Join_node ->
+            F.fprintf fmt "join"
       in
       F.fprintf fmt "  %a " Location.pp (get_loc node)
+
 
   (** Dump extended instructions for the node *)
   let d_instrs ~(sub_instrs: bool) (curr_instr: Sil.instr option) (node: t) =
     L.add_print_action (L.PTnode_instrs, Obj.repr (sub_instrs, curr_instr, node))
 
+
   (** Return a description of the cfg node *)
   let get_description pe node =
     let str =
       match get_kind node with
-      | Stmt_node _
-       -> "Instructions"
-      | Prune_node (_, _, descr)
-       -> "Conditional" ^ " " ^ descr
-      | Exit_node _
-       -> "Exit"
-      | Skip_node _
-       -> "Skip"
-      | Start_node _
-       -> "Start"
-      | Join_node
-       -> "Join"
+      | Stmt_node _ ->
+          "Instructions"
+      | Prune_node (_, _, descr) ->
+          "Conditional" ^ " " ^ descr
+      | Exit_node _ ->
+          "Exit"
+      | Skip_node _ ->
+          "Skip"
+      | Start_node _ ->
+          "Start"
+      | Join_node ->
+          "Join"
     in
     let pp fmt = F.fprintf fmt "%s@\n%a@?" str (pp_instrs pe None ~sub_instrs:true) node in
     F.asprintf "%t" pp
+
 end
 
 (* =============== END of module Node =============== *)
@@ -273,6 +284,7 @@ let from_proc_attributes ~called_from_cfg attributes =
   let exit_node = Node.dummy pname_opt in
   {attributes; nodes= []; nodes_num= 0; start_node; exit_node; loop_heads= None}
 
+
 (** Compute the distance of each node to the exit node, if not computed already *)
 let compute_distance_to_exit_node pdesc =
   let exit_node = pdesc.exit_node in
@@ -280,16 +292,17 @@ let compute_distance_to_exit_node pdesc =
     let next_nodes = ref [] in
     let do_node (node: Node.t) =
       match node.dist_exit with
-      | Some _
-       -> ()
-      | None
-       -> node.dist_exit <- Some dist ;
+      | Some _ ->
+          ()
+      | None ->
+          node.dist_exit <- Some dist ;
           next_nodes := node.preds @ !next_nodes
     in
     List.iter ~f:do_node nodes ;
     if !next_nodes <> [] then mark_distance (dist + 1) !next_nodes
   in
   mark_distance 0 [exit_node]
+
 
 (** check or indicate if we have performed preanalysis on the CFG *)
 let did_preanalysis pdesc = pdesc.attributes.did_preanalysis
@@ -334,6 +347,7 @@ let get_start_node pdesc = pdesc.start_node
 let get_sliced_slope pdesc f =
   Node.get_generated_slope (get_start_node pdesc) (fun n -> Node.get_sliced_succs n f)
 
+
 (** List of nodes in the procedure up to the first branching *)
 let get_slope pdesc = Node.get_generated_slope (get_start_node pdesc) Node.get_succs
 
@@ -354,12 +368,14 @@ let fold_calls f acc pdesc =
   in
   List.fold ~f:do_node ~init:acc (get_nodes pdesc)
 
+
 (** iterate over the calls from the procedure: (callee,location) pairs *)
 let iter_calls f pdesc = fold_calls (fun _ call -> f call) () pdesc
 
 let iter_instrs f pdesc =
   let do_node node = List.iter ~f:(fun i -> f node i) (Node.get_instrs node) in
   iter_nodes do_node pdesc
+
 
 let fold_nodes f acc pdesc = List.fold ~f ~init:acc (List.rev (get_nodes pdesc))
 
@@ -369,22 +385,25 @@ let fold_instrs f acc pdesc =
   in
   fold_nodes fold_node acc pdesc
 
+
 let iter_slope f pdesc =
   let visited = ref NodeSet.empty in
   let rec do_node node =
     visited := NodeSet.add node !visited ;
     f node ;
     match Node.get_succs node with
-    | [n]
-     -> if not (NodeSet.mem n !visited) then do_node n
-    | _
-     -> ()
+    | [n] ->
+        if not (NodeSet.mem n !visited) then do_node n
+    | _ ->
+        ()
   in
   do_node (get_start_node pdesc)
+
 
 let iter_slope_calls f pdesc =
   let do_node node = List.iter ~f:(fun callee_pname -> f callee_pname) (Node.get_callees node) in
   iter_slope do_node pdesc
+
 
 (** iterate between two nodes or until we reach a branching structure *)
 let iter_slope_range f src_node dst_node =
@@ -393,12 +412,13 @@ let iter_slope_range f src_node dst_node =
     visited := NodeSet.add node !visited ;
     f node ;
     match Node.get_succs node with
-    | [n]
-     -> if not (NodeSet.mem n !visited) && not (Node.equal node dst_node) then do_node n
-    | _
-     -> ()
+    | [n] ->
+        if not (NodeSet.mem n !visited) && not (Node.equal node dst_node) then do_node n
+    | _ ->
+        ()
   in
   do_node src_node
+
 
 (** Set the exit node of the proc desc *)
 let set_exit_node pdesc node = pdesc.exit_node <- node
@@ -413,11 +433,13 @@ let set_start_node pdesc node = pdesc.start_node <- node
 let append_locals pdesc new_locals =
   (pdesc.attributes).locals <- pdesc.attributes.locals @ new_locals
 
+
 (** Set the successor nodes and exception nodes, and build predecessor links *)
 let set_succs_exn_base (node: Node.t) succs exn =
   node.succs <- succs ;
   node.exn <- exn ;
   List.iter ~f:(fun (n: Node.t) -> n.preds <- node :: n.preds) succs
+
 
 (** Create a new cfg node *)
 let create_node pdesc loc kind instrs =
@@ -437,18 +459,20 @@ let create_node pdesc loc kind instrs =
   pdesc.nodes <- node :: pdesc.nodes ;
   node
 
+
 (** Set the successor and exception nodes.
     If this is a join node right before the exit node, add an extra node in the middle,
     otherwise nullify and abstract instructions cannot be added after a conditional. *)
 let node_set_succs_exn pdesc (node: Node.t) succs exn =
   match (node.kind, succs) with
-  | Join_node, [({Node.kind= Exit_node _} as exit_node)]
-   -> let kind = Node.Stmt_node "between_join_and_exit" in
+  | Join_node, [({Node.kind= Exit_node _} as exit_node)] ->
+      let kind = Node.Stmt_node "between_join_and_exit" in
       let node' = create_node pdesc node.loc kind node.instrs in
       set_succs_exn_base node [node'] exn ;
       set_succs_exn_base node' [exit_node] exn
-  | _
-   -> set_succs_exn_base node succs exn
+  | _ ->
+      set_succs_exn_base node succs exn
+
 
 (** Get loop heads for widening.
     It collects all target nodes of back-edges in a depth-first
@@ -457,10 +481,10 @@ let node_set_succs_exn pdesc (node: Node.t) succs exn =
 let get_loop_heads pdesc =
   let rec set_loop_head_rec visited heads wl =
     match wl with
-    | []
-     -> heads
-    | (n, ancester) :: wl'
-     -> if NodeSet.mem n visited then
+    | [] ->
+        heads
+    | (n, ancester) :: wl' ->
+        if NodeSet.mem n visited then
           if NodeSet.mem n ancester then set_loop_head_rec visited (NodeSet.add n heads) wl'
           else set_loop_head_rec visited heads wl'
         else
@@ -474,9 +498,11 @@ let get_loop_heads pdesc =
   pdesc.loop_heads <- Some lh ;
   lh
 
+
 let is_loop_head pdesc (node: Node.t) =
   let lh = match pdesc.loop_heads with Some lh -> lh | None -> get_loop_heads pdesc in
   NodeSet.mem node lh
+
 
 let pp_variable_list fmt etl =
   if List.is_empty etl then Format.fprintf fmt "None"
@@ -485,14 +511,16 @@ let pp_variable_list fmt etl =
       ~f:(fun (id, ty) -> Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty)
       etl
 
+
 let pp_objc_accessor fmt accessor =
   match accessor with
-  | Some ProcAttributes.Objc_getter field
-   -> Format.fprintf fmt "Getter of %a, " (Typ.Struct.pp_field Pp.text) field
-  | Some ProcAttributes.Objc_setter field
-   -> Format.fprintf fmt "Setter of %a, " (Typ.Struct.pp_field Pp.text) field
-  | None
-   -> ()
+  | Some ProcAttributes.Objc_getter field ->
+      Format.fprintf fmt "Getter of %a, " (Typ.Struct.pp_field Pp.text) field
+  | Some ProcAttributes.Objc_setter field ->
+      Format.fprintf fmt "Setter of %a, " (Typ.Struct.pp_field Pp.text) field
+  | None ->
+      ()
+
 
 let pp_signature fmt pdesc =
   let attributes = get_attributes pdesc in
@@ -511,6 +539,8 @@ let pp_signature fmt pdesc =
     Format.fprintf fmt ", Annotation: %a" (Annot.Method.pp pname_string) method_annotation ;
   Format.fprintf fmt "]@\n"
 
+
 let is_specialized pdesc =
   let attributes = get_attributes pdesc in
   attributes.ProcAttributes.is_specialized
+

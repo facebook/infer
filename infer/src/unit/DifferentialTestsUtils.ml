@@ -38,11 +38,17 @@ let create_fake_jsonbug ?(bug_class= "bug_class") ?(kind= "kind") ?(bug_type= "b
   ; doc_url
   ; traceview_id= None }
 
+
 let pp_diff_of_int_list group_name fmt (expected, actual) =
   Format.fprintf fmt "[%s]: Expected: [%a] Found: [%a]" group_name
-    (Pp.comma_seq Format.pp_print_int) expected (Pp.comma_seq Format.pp_print_int) actual
+    (Pp.comma_seq Format.pp_print_int)
+    expected
+    (Pp.comma_seq Format.pp_print_int)
+    actual
+
 
 (* Sort hashes to make things easier to compare *)
 let sorted_hashes_of_issues issues =
   let hash i = i.Jsonbug_t.hash in
   List.sort ~cmp:Int.compare (List.map ~f:hash issues)
+

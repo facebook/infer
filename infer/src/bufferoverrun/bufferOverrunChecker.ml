@@ -26,6 +26,7 @@ module Summary = Summary.Make (struct
   let update_payload astate (summary: Specs.summary) =
     {summary with payload= {summary.payload with buffer_overrun= Some astate}}
 
+
   let read_payload (summary: Specs.summary) = summary.payload.buffer_overrun
 end)
 
@@ -38,31 +39,33 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let set_uninitialized node (typ: Typ.t) loc mem =
     match typ.desc with
-    | Tint _ | Tfloat _
-     -> Dom.Mem.weak_update_heap loc Dom.Val.Itv.top mem
-    | _
-     -> L.(debug BufferOverrun Verbose)
+    | Tint _ | Tfloat _ ->
+        Dom.Mem.weak_update_heap loc Dom.Val.Itv.top mem
+    | _ ->
+        L.(debug BufferOverrun Verbose)
           "/!\\ Do not know how to uninitialize type %a at %a@\n" (Typ.pp Pp.text) typ Location.pp
           (CFG.loc node) ;
         mem
 
+
   (* NOTE: heuristic *)
   let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t = function
     | Exp.BinOp (Binop.Mult, Exp.Sizeof {typ; nbytes}, length)
-    | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes})
-     -> (typ, nbytes, length)
-    | Exp.Sizeof {typ; nbytes}
-     -> (typ, nbytes, Exp.one)
-    | x
-     -> (Typ.mk (Typ.Tint Typ.IChar), Some 1, x)
+    | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes}) ->
+        (typ, nbytes, length)
+    | Exp.Sizeof {typ; nbytes} ->
+        (typ, nbytes, Exp.one)
+    | x ->
+        (Typ.mk (Typ.Tint Typ.IChar), Some 1, x)
+
 
   let model_malloc
       : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
         -> Location.t -> Dom.Mem.astate -> Dom.Mem.astate =
     fun pname ret params node location mem ->
       match ret with
-      | Some (id, _)
-       -> let typ, stride, length0 = get_malloc_info (List.hd_exn params |> fst) in
+      | Some (id, _) ->
+          let typ, stride, length0 = get_malloc_info (List.hd_exn params |> fst) in
           let length = Sem.eval length0 mem (CFG.loc node) in
           let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
           let v =
@@ -71,10 +74,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           in
           mem |> Dom.Mem.add_stack (Loc.of_id id) v
           |> set_uninitialized node typ (Dom.Val.get_array_locs v)
-      | _
-       -> L.(debug BufferOverrun Verbose)
+      | _ ->
+          L.(debug BufferOverrun Verbose)
             "/!\\ Do not know where to model malloc at %a@\n" Location.pp (CFG.loc node) ;
           mem
+
 
   let model_realloc
       : Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node
@@ -82,77 +86,83 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     fun pname ret params node location mem ->
       model_malloc pname ret (List.tl_exn params) node location mem
 
+
   let model_min
       : (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> Location.t -> Dom.Mem.astate
         -> Dom.Mem.astate =
     fun ret params location mem ->
       match (ret, params) with
-      | Some (id, _), [(e1, _); (e2, _)]
-       -> let i1 = Sem.eval e1 mem location |> Dom.Val.get_itv in
+      | Some (id, _), [(e1, _); (e2, _)] ->
+          let i1 = Sem.eval e1 mem location |> Dom.Val.get_itv in
           let i2 = Sem.eval e2 mem location |> Dom.Val.get_itv in
           let v = Itv.min_sem i1 i2 |> Dom.Val.of_itv in
           mem |> Dom.Mem.add_stack (Loc.of_id id) v
-      | _
-       -> mem
+      | _ ->
+          mem
+
 
   let model_by_value value ret mem =
     match ret with
-    | Some (id, _)
-     -> Dom.Mem.add_stack (Loc.of_id id) value mem
-    | None
-     -> L.(debug BufferOverrun Verbose)
+    | Some (id, _) ->
+        Dom.Mem.add_stack (Loc.of_id id) value mem
+    | None ->
+        L.(debug BufferOverrun Verbose)
           "/!\\ Do not know where to model value %a@\n" Dom.Val.pp value ;
         mem
+
 
   let model_infer_print : (Exp.t * Typ.t) list -> Dom.Mem.astate -> Location.t -> Dom.Mem.astate =
     fun params mem loc ->
       match params with
-      | (e, _) :: _
-       -> L.(debug BufferOverrun Medium)
+      | (e, _) :: _ ->
+          L.(debug BufferOverrun Medium)
             "@[<v>=== Infer Print === at %a@,%a@]%!" Location.pp loc Dom.Val.pp
             (Sem.eval e mem loc) ;
           mem
-      | _
-       -> mem
+      | _ ->
+          mem
+
 
   let model_infer_set_array_length pname node params mem loc =
     match params with
-    | [(Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray (typ, _, stride0)}); (length_exp, _)]
-     -> let length = Sem.eval length_exp mem loc |> Dom.Val.get_itv in
+    | [(Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray (typ, _, stride0)}); (length_exp, _)] ->
+        let length = Sem.eval length_exp mem loc |> Dom.Val.get_itv in
         let stride = Option.map ~f:IntLit.to_int stride0 in
         let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero length 0 1 in
         mem |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
         |> set_uninitialized node typ (Dom.Val.get_array_locs v)
-    | [_; _]
-     -> L.(die InternalError) "Unexpected type of arguments for __set_array_length()"
-    | _
-     -> L.(die InternalError) "Unexpected number of arguments for __set_array_length()"
+    | [_; _] ->
+        L.(die InternalError) "Unexpected type of arguments for __set_array_length()"
+    | _ ->
+        L.(die InternalError) "Unexpected number of arguments for __set_array_length()"
+
 
   let handle_unknown_call
       : Typ.Procname.t -> (Ident.t * Typ.t) option -> Typ.Procname.t -> (Exp.t * Typ.t) list
         -> CFG.node -> Dom.Mem.astate -> Location.t -> Dom.Mem.astate =
     fun pname ret callee_pname params node mem loc ->
       match Typ.Procname.get_method callee_pname with
-      | "__inferbo_min"
-       -> model_min ret params loc mem
-      | "__exit" | "exit"
-       -> Bottom
-      | "fgetc"
-       -> model_by_value Dom.Val.Itv.m1_255 ret mem
-      | "infer_print"
-       -> model_infer_print params mem loc
-      | "malloc" | "__new_array"
-       -> model_malloc pname ret params node loc mem
-      | "realloc"
-       -> model_realloc pname ret params node loc mem
-      | "__set_array_length"
-       -> model_infer_set_array_length pname node params mem loc
-      | "strlen"
-       -> model_by_value Dom.Val.Itv.nat ret mem
-      | proc_name
-       -> L.(debug BufferOverrun Verbose)
+      | "__inferbo_min" ->
+          model_min ret params loc mem
+      | "__exit" | "exit" ->
+          Bottom
+      | "fgetc" ->
+          model_by_value Dom.Val.Itv.m1_255 ret mem
+      | "infer_print" ->
+          model_infer_print params mem loc
+      | "malloc" | "__new_array" ->
+          model_malloc pname ret params node loc mem
+      | "realloc" ->
+          model_realloc pname ret params node loc mem
+      | "__set_array_length" ->
+          model_infer_set_array_length pname node params mem loc
+      | "strlen" ->
+          model_by_value Dom.Val.Itv.nat ret mem
+      | proc_name ->
+          L.(debug BufferOverrun Verbose)
             "/!\\ Unknown call to %s at %a@\n" proc_name Location.pp loc ;
           model_by_value Dom.Val.unknown ret mem |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown
+
 
   let rec declare_array
       : Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t -> length:IntLit.t option
@@ -169,11 +179,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       let loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num dimension) in
       match typ.Typ.desc with
-      | Typ.Tarray (typ, length, stride)
-       -> declare_array pname node location loc typ ~length
-            ?stride:(Option.map ~f:IntLit.to_int stride) ~inst_num ~dimension:(dimension + 1) mem
-      | _
-       -> mem
+      | Typ.Tarray (typ, length, stride) ->
+          declare_array pname node location loc typ ~length
+            ?stride:(Option.map ~f:IntLit.to_int stride)
+            ~inst_num ~dimension:(dimension + 1) mem
+      | _ ->
+          mem
+
 
   let counter_gen init =
     let num_ref = ref init in
@@ -183,6 +195,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       v
     in
     get_num
+
 
   let declare_symbolic_val
       : Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> Loc.t -> Typ.typ -> inst_num:int
@@ -195,35 +208,35 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         else
           let depth = depth + 1 in
           match typ.Typ.desc with
-          | Typ.Tint ikind
-           -> let unsigned = Typ.ikind_is_unsigned ikind in
+          | Typ.Tint ikind ->
+              let unsigned = Typ.ikind_is_unsigned ikind in
               let v =
                 Dom.Val.make_sym ~unsigned pname new_sym_num
                 |> Dom.Val.add_trace_elem (Trace.SymAssign location)
               in
               Dom.Mem.add_heap loc v mem
-          | Typ.Tfloat _
-           -> let v =
+          | Typ.Tfloat _ ->
+              let v =
                 Dom.Val.make_sym pname new_sym_num
                 |> Dom.Val.add_trace_elem (Trace.SymAssign location)
               in
               Dom.Mem.add_heap loc v mem
-          | Typ.Tptr (typ, _)
-           -> decl_sym_arr ~depth loc location typ mem
-          | Typ.Tarray (typ, opt_int_lit, _)
-           -> let opt_size = Option.map ~f:Itv.of_int_lit opt_int_lit in
+          | Typ.Tptr (typ, _) ->
+              decl_sym_arr ~depth loc location typ mem
+          | Typ.Tarray (typ, opt_int_lit, _) ->
+              let opt_size = Option.map ~f:Itv.of_int_lit opt_int_lit in
               let opt_offset = Some Itv.zero in
               decl_sym_arr ~depth loc location typ ~opt_offset ~opt_size mem
-          | Typ.Tstruct typename
-           -> let decl_fld mem (fn, typ, _) =
+          | Typ.Tstruct typename ->
+              let decl_fld mem (fn, typ, _) =
                 let loc_fld = Loc.append_field loc fn in
                 decl_sym_val ~depth loc_fld typ mem
               in
               let decl_flds str = List.fold ~f:decl_fld ~init:mem str.Typ.Struct.fields in
               let opt_struct = Tenv.lookup tenv typename in
               Option.value_map opt_struct ~default:mem ~f:decl_flds
-          | _
-           -> if Config.bo_debug >= 3 then
+          | _ ->
+              if Config.bo_debug >= 3 then
                 L.(debug BufferOverrun Verbose)
                   "/!\\ decl_fld of unhandled type: %a at %a@." (Typ.pp Pp.text) typ Location.pp
                   (CFG.loc node) ;
@@ -245,6 +258,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       decl_sym_val ~depth:0 loc typ mem
 
+
   let declare_symbolic_parameter
       : Procdesc.t -> Tenv.t -> CFG.node -> Location.t -> int -> Dom.Mem.astate -> Dom.Mem.astate =
     fun pdesc tenv node location inst_num mem ->
@@ -259,18 +273,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       List.fold ~f:add_formal ~init:(mem, inst_num) (Sem.get_formals pdesc) |> fst
 
+
   let instantiate_ret ret callee_pname callee_exit_mem subst_map mem ret_alias loc =
     match ret with
-    | Some (id, _)
-     -> let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
+    | Some (id, _) ->
+        let ret_loc = Loc.of_pvar (Pvar.get_ret_pvar callee_pname) in
         let ret_val = Dom.Mem.find_heap ret_loc callee_exit_mem in
         let ret_var = Loc.of_var (Var.of_id id) in
         let add_ret_alias l = Dom.Mem.load_alias id l mem in
         let mem = Option.value_map ret_alias ~default:mem ~f:add_ret_alias in
         Dom.Val.subst ret_val subst_map loc |> Dom.Val.add_trace_elem (Trace.Return loc)
         |> Fn.flip (Dom.Mem.add_stack ret_var) mem
-    | None
-     -> mem
+    | None ->
+        mem
+
 
   let instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map location mem =
     let formals = Sem.get_formals pdesc in
@@ -281,8 +297,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match typ.Typ.desc with
         | Typ.Tstruct typename -> (
           match Tenv.lookup tenv typename with
-          | Some str
-           -> let formal_locs =
+          | Some str ->
+              let formal_locs =
                 Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_entry_mem
                 |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc
               in
@@ -294,10 +310,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 |> Fn.flip (Dom.Mem.strong_update_heap actual_fields) mem
               in
               List.fold ~f:instantiate_fld ~init:mem str.Typ.Struct.fields
-          | _
-           -> mem )
-        | _
-         -> let formal_locs =
+          | _ ->
+              mem )
+        | _ ->
+            let formal_locs =
               Dom.Mem.find_heap (Loc.of_pvar (fst formal)) callee_entry_mem
               |> Dom.Val.get_array_blk |> ArrayBlk.get_pow_loc
             in
@@ -305,11 +321,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             let actual_locs = Dom.Val.get_all_locs actual in
             Dom.Val.subst v subst_map location
             |> Fn.flip (Dom.Mem.strong_update_heap actual_locs) mem )
-      | _
-       -> mem
+      | _ ->
+          mem
     in
     try List.fold2_exn formals actuals ~init:mem ~f
     with Invalid_argument _ -> mem
+
 
   let instantiate_mem
       : Tenv.t -> (Ident.t * Typ.t) option -> Procdesc.t option -> Typ.Procname.t
@@ -319,14 +336,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let callee_exit_mem = Dom.Summary.get_output summary in
       let callee_ret_alias = Dom.Mem.find_ret_alias callee_exit_mem in
       match callee_pdesc with
-      | Some pdesc
-       -> let subst_map, ret_alias =
+      | Some pdesc ->
+          let subst_map, ret_alias =
             Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias loc
           in
           instantiate_ret ret callee_pname callee_exit_mem subst_map caller_mem ret_alias loc
           |> instantiate_param tenv pdesc params callee_entry_mem callee_exit_mem subst_map loc
-      | None
-       -> caller_mem
+      | None ->
+          caller_mem
+
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> Dom.Mem.astate -> unit =
     fun instr pre post ->
@@ -338,13 +356,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       L.(debug BufferOverrun Verbose) "@]@\n" ;
       L.(debug BufferOverrun Verbose) "================================@\n@."
 
+
   let exec_instr : Dom.Mem.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Dom.Mem.astate =
     fun mem {pdesc; tenv; extras} node instr ->
       let pname = Procdesc.get_proc_name pdesc in
       let output_mem =
         match instr with
-        | Load (id, exp, _, loc)
-         -> let locs = Sem.eval exp mem loc |> Dom.Val.get_all_locs in
+        | Load (id, exp, _, loc) ->
+            let locs = Sem.eval exp mem loc |> Dom.Val.get_all_locs in
             let v = Dom.Mem.find_heap_set locs mem in
             if Ident.is_none id then mem
             else
@@ -352,8 +371,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               if PowLoc.is_singleton locs then
                 Dom.Mem.load_simple_alias id (PowLoc.min_elt locs) mem
               else mem
-        | Store (exp1, _, exp2, loc)
-         -> let locs = Sem.eval exp1 mem loc |> Dom.Val.get_all_locs in
+        | Store (exp1, _, exp2, loc) ->
+            let locs = Sem.eval exp1 mem loc |> Dom.Val.get_all_locs in
             let v = Sem.eval exp2 mem loc |> Dom.Val.add_trace_elem (Trace.Assign loc) in
             let mem = Dom.Mem.update_mem locs v mem in
             if PowLoc.is_singleton locs then
@@ -361,52 +380,54 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               match Typ.Procname.get_method pname with
               | "__inferbo_empty" when Loc.is_return loc_v -> (
                 match Sem.get_formals pdesc with
-                | [(formal, _)]
-                 -> let formal_v = Dom.Mem.find_heap (Loc.of_pvar formal) mem in
+                | [(formal, _)] ->
+                    let formal_v = Dom.Mem.find_heap (Loc.of_pvar formal) mem in
                     Dom.Mem.store_empty_alias formal_v loc_v exp2 mem
-                | _
-                 -> assert false )
-              | _
-               -> Dom.Mem.store_simple_alias loc_v exp2 mem
+                | _ ->
+                    assert false )
+              | _ ->
+                  Dom.Mem.store_simple_alias loc_v exp2 mem
             else mem
-        | Prune (exp, loc, _, _)
-         -> Sem.prune exp loc mem
+        | Prune (exp, loc, _, _) ->
+            Sem.prune exp loc mem
         | Call (ret, Const Cfun callee_pname, params, loc, _) -> (
           match Summary.read_summary pdesc callee_pname with
-          | Some summary
-           -> let callee = extras callee_pname in
+          | Some summary ->
+              let callee = extras callee_pname in
               instantiate_mem tenv ret callee callee_pname params mem summary loc
-          | None
-           -> handle_unknown_call pname ret callee_pname params node mem loc )
-        | Declare_locals (locals, location)
-         -> (* array allocation in stack e.g., int arr[10] *)
+          | None ->
+              handle_unknown_call pname ret callee_pname params node mem loc )
+        | Declare_locals (locals, location) ->
+            (* array allocation in stack e.g., int arr[10] *)
             let try_decl_arr location (mem, inst_num) (pvar, typ) =
               match typ.Typ.desc with
-              | Typ.Tarray (typ, length, stride0)
-               -> let loc = Loc.of_pvar pvar in
+              | Typ.Tarray (typ, length, stride0) ->
+                  let loc = Loc.of_pvar pvar in
                   let stride = Option.map ~f:IntLit.to_int stride0 in
                   let mem =
                     declare_array pname node location loc typ ~length ?stride ~inst_num
                       ~dimension:1 mem
                   in
                   (mem, inst_num + 1)
-              | _
-               -> (mem, inst_num)
+              | _ ->
+                  (mem, inst_num)
             in
             let mem, inst_num = List.fold ~f:(try_decl_arr location) ~init:(mem, 1) locals in
             declare_symbolic_parameter pdesc tenv node location inst_num mem
-        | Call (_, fun_exp, _, loc, _)
-         -> let () =
+        | Call (_, fun_exp, _, loc, _) ->
+            let () =
               L.(debug BufferOverrun Verbose)
                 "/!\\ Call to non-const function %a at %a" Exp.pp fun_exp Location.pp loc
             in
             mem
-        | Remove_temps (temps, _)
-         -> Dom.Mem.remove_temps temps mem
-        | Abstract _ | Nullify _
-         -> mem
+        | Remove_temps (temps, _) ->
+            Dom.Mem.remove_temps temps mem
+        | Abstract _ | Nullify _ ->
+            mem
       in
-      print_debug_info instr mem output_mem ; output_mem
+      print_debug_info instr mem output_mem ;
+      output_mem
+
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
@@ -422,13 +443,13 @@ module Report = struct
     fun pname node exp loc mem cond_set ->
       let array_access =
         match exp with
-        | Exp.Var _
-         -> let v = Sem.eval exp mem loc in
+        | Exp.Var _ ->
+            let v = Sem.eval exp mem loc in
             let arr = Dom.Val.get_array_blk v in
             let arr_traces = Dom.Val.get_traces v in
             Some (arr, arr_traces, Itv.zero, TraceSet.empty, true)
-        | Exp.Lindex (e1, e2)
-         -> let locs = Sem.eval_locs e1 mem loc |> Dom.Val.get_all_locs in
+        | Exp.Lindex (e1, e2) ->
+            let locs = Sem.eval_locs e1 mem loc |> Dom.Val.get_all_locs in
             let v_arr = Dom.Mem.find_set locs mem in
             let arr = Dom.Val.get_array_blk v_arr in
             let arr_traces = Dom.Val.get_traces v_arr in
@@ -436,8 +457,8 @@ module Report = struct
             let idx = Dom.Val.get_itv v_idx in
             let idx_traces = Dom.Val.get_traces v_idx in
             Some (arr, arr_traces, idx, idx_traces, true)
-        | Exp.BinOp ((Binop.PlusA as bop), e1, e2) | Exp.BinOp ((Binop.MinusA as bop), e1, e2)
-         -> let v_arr = Sem.eval e1 mem loc in
+        | Exp.BinOp ((Binop.PlusA as bop), e1, e2) | Exp.BinOp ((Binop.MinusA as bop), e1, e2) ->
+            let v_arr = Sem.eval e1 mem loc in
             let arr = Dom.Val.get_array_blk v_arr in
             let arr_traces = Dom.Val.get_traces v_arr in
             let v_idx = Sem.eval e2 mem loc in
@@ -445,12 +466,12 @@ module Report = struct
             let idx_traces = Dom.Val.get_traces v_idx in
             let is_plus = Binop.equal bop Binop.PlusA in
             Some (arr, arr_traces, idx, idx_traces, is_plus)
-        | _
-         -> None
+        | _ ->
+            None
       in
       match array_access with
       | Some (arr, traces_arr, idx, traces_idx, is_plus)
-       -> (
+        -> (
           let site = Sem.get_allocsite pname node 0 0 in
           let size = ArrayBlk.sizeof arr in
           let offset = ArrayBlk.offsetof arr in
@@ -460,13 +481,14 @@ module Report = struct
           L.(debug BufferOverrun Verbose) "  idx: %a@," Itv.pp idx ;
           L.(debug BufferOverrun Verbose) "@]@." ;
           match (size, idx) with
-          | NonBottom size, NonBottom idx
-           -> let traces = TraceSet.merge ~traces_arr ~traces_idx loc in
+          | NonBottom size, NonBottom idx ->
+              let traces = TraceSet.merge ~traces_arr ~traces_idx loc in
               PO.ConditionSet.add_bo_safety pname loc site ~size ~idx traces cond_set
-          | _
-           -> cond_set )
-      | None
-       -> cond_set
+          | _ ->
+              cond_set )
+      | None ->
+          cond_set
+
 
   let instantiate_cond
       : Tenv.t -> Typ.Procname.t -> Procdesc.t option -> (Exp.t * Typ.t) list -> Dom.Mem.astate
@@ -475,15 +497,16 @@ module Report = struct
       let callee_entry_mem = Dom.Summary.get_input summary in
       let callee_cond = Dom.Summary.get_cond_set summary in
       match callee_pdesc with
-      | Some pdesc
-       -> let subst_map, _ =
+      | Some pdesc ->
+          let subst_map, _ =
             Sem.get_subst_map tenv pdesc params caller_mem callee_entry_mem ~callee_ret_alias:None
               loc
           in
           let pname = Procdesc.get_proc_name pdesc in
           PO.ConditionSet.subst callee_cond subst_map caller_pname pname loc
-      | _
-       -> callee_cond
+      | _ ->
+          callee_cond
+
 
   let print_debug_info : Sil.instr -> Dom.Mem.astate -> PO.ConditionSet.t -> unit =
     fun instr pre cond_set ->
@@ -494,6 +517,7 @@ module Report = struct
       L.(debug BufferOverrun Verbose) "@]@\n" ;
       L.(debug BufferOverrun Verbose) "================================@\n@."
 
+
   module ExitStatement = struct
     let successors node = Procdesc.Node.get_succs node
 
@@ -502,15 +526,17 @@ module Report = struct
     let preds_of_singleton_successor node =
       match successors node with [succ] -> Some (predecessors succ) | _ -> None
 
+
     (* last statement in if branch *)
     (* do we transfer control to a node with multiple predecessors *)
     let has_multiple_sibling_nodes_and_one_successor node =
       match preds_of_singleton_successor node with
       (* we need at least 2 predecessors *)
-      | Some (_ :: _ :: _)
-       -> true
-      | _
-       -> false
+      | Some (_ :: _ :: _) ->
+          true
+      | _ ->
+          false
+
 
     (* check that we are the last instruction in the current node
      * and that the current node is followed by a unique successor
@@ -525,12 +551,13 @@ module Report = struct
       match Procdesc.Node.get_succs node with
       | [succ] -> (
         match CFG.instrs succ with
-        | []
-         -> List.is_empty (Procdesc.Node.get_succs succ)
-        | _
-         -> false )
-      | _
-       -> false
+        | [] ->
+            List.is_empty (Procdesc.Node.get_succs succ)
+        | _ ->
+            false )
+      | _ ->
+          false
+
   end
 
   let rec collect_instrs
@@ -538,34 +565,34 @@ module Report = struct
         -> PO.ConditionSet.t =
     fun ({pdesc; tenv; extras} as pdata) node instrs mem cond_set ->
       match instrs with
-      | []
-       -> cond_set
-      | instr :: rem_instrs
-       -> let pname = Procdesc.get_proc_name pdesc in
+      | [] ->
+          cond_set
+      | instr :: rem_instrs ->
+          let pname = Procdesc.get_proc_name pdesc in
           let cond_set =
             match instr with
-            | Sil.Load (_, exp, _, loc) | Sil.Store (exp, _, _, loc)
-             -> add_condition pname node exp loc mem cond_set
+            | Sil.Load (_, exp, _, loc) | Sil.Store (exp, _, _, loc) ->
+                add_condition pname node exp loc mem cond_set
             | Sil.Call (_, Const Cfun callee_pname, params, loc, _) -> (
               match Summary.read_summary pdesc callee_pname with
-              | Some summary
-               -> let callee = extras callee_pname in
+              | Some summary ->
+                  let callee = extras callee_pname in
                   instantiate_cond tenv pname callee params mem summary loc
                   |> PO.ConditionSet.join cond_set
-              | _
-               -> cond_set )
-            | _
-             -> cond_set
+              | _ ->
+                  cond_set )
+            | _ ->
+                cond_set
           in
           let mem' = Analyzer.TransferFunctions.exec_instr mem pdata node instr in
           let () =
             match (mem, mem') with
             | NonBottom _, Bottom -> (
               match instr with
-              | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp))
-               -> ()
-              | Sil.Prune (cond, loc, true_branch, _)
-               -> let i = match cond with Exp.Const Const.Cint i -> i | _ -> IntLit.zero in
+              | Sil.Prune (_, _, _, (Ik_land_lor | Ik_bexp)) ->
+                  ()
+              | Sil.Prune (cond, loc, true_branch, _) ->
+                  let i = match cond with Exp.Const Const.Cint i -> i | _ -> IntLit.zero in
                   let desc = Errdesc.explain_condition_always_true_false tenv i cond node loc in
                   let exn =
                     Exceptions.Condition_always_true_false (desc, not true_branch, __POS__)
@@ -575,56 +602,61 @@ module Report = struct
               | Sil.Call (_, Const Cfun pname, _, _, _)
                 when String.equal (Typ.Procname.get_method pname) "exit"
                      && ExitStatement.is_last_in_node_and_followed_by_empty_successor node
-                          rem_instrs
-               -> ()
+                          rem_instrs ->
+                  ()
               | Sil.Call (_, Const Cfun pname, _, _, _)
                 when String.equal (Typ.Procname.get_method pname) "exit"
-                     && ExitStatement.has_multiple_sibling_nodes_and_one_successor node
-               -> ()
-              | _
-               -> let loc = Sil.instr_get_loc instr in
+                     && ExitStatement.has_multiple_sibling_nodes_and_one_successor node ->
+                  ()
+              | _ ->
+                  let loc = Sil.instr_get_loc instr in
                   let desc = Errdesc.explain_unreachable_code_after loc in
                   let exn = Exceptions.Unreachable_code_after (desc, __POS__) in
                   Reporting.log_error_deprecated pname ~loc exn )
-            | _
-             -> ()
+            | _ ->
+                ()
           in
-          print_debug_info instr mem' cond_set ; collect_instrs pdata node rem_instrs mem' cond_set
+          print_debug_info instr mem' cond_set ;
+          collect_instrs pdata node rem_instrs mem' cond_set
+
 
   let collect_node
       : extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t -> CFG.node
         -> PO.ConditionSet.t =
     fun pdata inv_map cond_set node ->
       match Analyzer.extract_pre (CFG.id node) inv_map with
-      | Some mem
-       -> let instrs = CFG.instrs node in
+      | Some mem ->
+          let instrs = CFG.instrs node in
           collect_instrs pdata node instrs mem cond_set
-      | _
-       -> cond_set
+      | _ ->
+          cond_set
+
 
   let collect : extras ProcData.t -> Analyzer.invariant_map -> PO.ConditionSet.t =
     fun ({pdesc} as pdata) inv_map ->
       let add_node1 acc node = collect_node pdata inv_map acc node in
       Procdesc.fold_nodes add_node1 PO.ConditionSet.empty pdesc
 
+
   let make_err_trace : Trace.t -> string -> Errlog.loc_trace =
     fun trace desc ->
       let f elem (trace, depth) =
         match elem with
-        | Trace.Assign loc
-         -> (Errlog.make_trace_element depth loc "Assignment" [] :: trace, depth)
-        | Trace.ArrDecl loc
-         -> (Errlog.make_trace_element depth loc "ArrayDeclaration" [] :: trace, depth)
-        | Trace.Call loc
-         -> (Errlog.make_trace_element depth loc "Call" [] :: trace, depth + 1)
-        | Trace.Return loc
-         -> (Errlog.make_trace_element (depth - 1) loc "Return" [] :: trace, depth - 1)
-        | Trace.SymAssign _
-         -> (trace, depth)
-        | Trace.ArrAccess loc
-         -> (Errlog.make_trace_element depth loc ("ArrayAccess: " ^ desc) [] :: trace, depth)
+        | Trace.Assign loc ->
+            (Errlog.make_trace_element depth loc "Assignment" [] :: trace, depth)
+        | Trace.ArrDecl loc ->
+            (Errlog.make_trace_element depth loc "ArrayDeclaration" [] :: trace, depth)
+        | Trace.Call loc ->
+            (Errlog.make_trace_element depth loc "Call" [] :: trace, depth + 1)
+        | Trace.Return loc ->
+            (Errlog.make_trace_element (depth - 1) loc "Return" [] :: trace, depth - 1)
+        | Trace.SymAssign _ ->
+            (trace, depth)
+        | Trace.ArrAccess loc ->
+            (Errlog.make_trace_element depth loc ("ArrayAccess: " ^ desc) [] :: trace, depth)
       in
       List.fold_right ~f ~init:([], 0) trace.trace |> fst |> List.rev
+
 
   let report_error : Procdesc.t -> PO.ConditionSet.t -> unit =
     fun pdesc conds ->
@@ -632,15 +664,15 @@ module Report = struct
       let report1 cond trace =
         let alarm = PO.Condition.check cond in
         match alarm with
-        | None
-         -> ()
-        | Some issue_type
-         -> let caller_pname, loc =
+        | None ->
+            ()
+        | Some issue_type ->
+            let caller_pname, loc =
               match PO.ConditionTrace.get_cond_trace trace with
-              | PO.ConditionTrace.Inter (caller_pname, _, loc)
-               -> (caller_pname, loc)
-              | PO.ConditionTrace.Intra pname
-               -> (pname, PO.ConditionTrace.get_location trace)
+              | PO.ConditionTrace.Inter (caller_pname, _, loc) ->
+                  (caller_pname, loc)
+              | PO.ConditionTrace.Intra pname ->
+                  (pname, PO.ConditionTrace.get_location trace)
             in
             if Typ.Procname.equal pname caller_pname then
               let description = PO.description cond trace in
@@ -648,14 +680,15 @@ module Report = struct
               let exn = Exceptions.Checkers (issue_type.IssueType.unique_id, error_desc) in
               let trace =
                 match TraceSet.choose_shortest trace.PO.ConditionTrace.val_traces with
-                | trace
-                 -> make_err_trace trace description
-                | exception _
-                 -> [Errlog.make_trace_element 0 loc description []]
+                | trace ->
+                    make_err_trace trace description
+                | exception _ ->
+                    [Errlog.make_trace_element 0 loc description []]
               in
               Reporting.log_error_deprecated pname ~loc ~ltr:trace exn
       in
       PO.ConditionSet.iter conds ~f:report1
+
 end
 
 let compute_post : Analyzer.TransferFunctions.extras ProcData.t -> Summary.payload option =
@@ -674,15 +707,17 @@ let compute_post : Analyzer.TransferFunctions.extras ProcData.t -> Summary.paylo
     let cond_set = Report.collect pdata inv_map in
     Report.report_error pdesc cond_set ;
     match (entry_mem, exit_mem) with
-    | Some entry_mem, Some exit_mem
-     -> Some (entry_mem, exit_mem, cond_set)
-    | _
-     -> None
+    | Some entry_mem, Some exit_mem ->
+        Some (entry_mem, exit_mem, cond_set)
+    | _ ->
+        None
+
 
 let print_summary : Typ.Procname.t -> Dom.Summary.t -> unit =
   fun proc_name s ->
     L.(debug BufferOverrun Medium)
       "@\n@[<v 2>Summary of %a :@,%a@]@." Typ.Procname.pp proc_name Dom.Summary.pp_summary s
+
 
 let checker : Callbacks.proc_callback_args -> Specs.summary =
   fun {proc_desc; tenv; summary; get_proc_desc} ->
@@ -690,8 +725,9 @@ let checker : Callbacks.proc_callback_args -> Specs.summary =
     let proc_data = ProcData.make proc_desc tenv get_proc_desc in
     if not (Procdesc.did_preanalysis proc_desc) then Preanal.do_liveness proc_desc tenv ;
     match compute_post proc_data with
-    | Some post
-     -> if Config.bo_debug >= 1 then print_summary proc_name post ;
+    | Some post ->
+        if Config.bo_debug >= 1 then print_summary proc_name post ;
         Summary.update_summary post summary
-    | None
-     -> summary
+    | None ->
+        summary
+

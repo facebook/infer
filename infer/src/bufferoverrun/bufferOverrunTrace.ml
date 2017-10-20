@@ -35,23 +35,25 @@ module BoTrace = struct
   let pp_elem : F.formatter -> elem -> unit =
     fun fmt elem ->
       match elem with
-      | Assign loc
-       -> F.fprintf fmt "Assign (%a)" Location.pp_file_pos loc
-      | ArrDecl loc
-       -> F.fprintf fmt "ArrDecl (%a)" Location.pp_file_pos loc
-      | Call loc
-       -> F.fprintf fmt "Call (%a)" Location.pp_file_pos loc
-      | Return loc
-       -> F.fprintf fmt "Return (%a)" Location.pp_file_pos loc
-      | SymAssign loc
-       -> F.fprintf fmt "SymAssign (%a)" Location.pp_file_pos loc
-      | ArrAccess loc
-       -> F.fprintf fmt "ArrAccess (%a)" Location.pp_file_pos loc
+      | Assign loc ->
+          F.fprintf fmt "Assign (%a)" Location.pp_file_pos loc
+      | ArrDecl loc ->
+          F.fprintf fmt "ArrDecl (%a)" Location.pp_file_pos loc
+      | Call loc ->
+          F.fprintf fmt "Call (%a)" Location.pp_file_pos loc
+      | Return loc ->
+          F.fprintf fmt "Return (%a)" Location.pp_file_pos loc
+      | SymAssign loc ->
+          F.fprintf fmt "SymAssign (%a)" Location.pp_file_pos loc
+      | ArrAccess loc ->
+          F.fprintf fmt "ArrAccess (%a)" Location.pp_file_pos loc
+
 
   let pp : F.formatter -> t -> unit =
     fun fmt t ->
       let pp_sep fmt () = F.fprintf fmt " :: " in
       F.pp_print_list ~pp_sep pp_elem fmt t.trace
+
 end
 
 module Set = struct
@@ -65,13 +67,16 @@ module Set = struct
       let tx, ty = (min_elt x, min_elt y) in
       if Pervasives.( <= ) tx.length ty.length then x else y
 
+
   let choose_shortest set = min_elt set
 
   let add_elem elem t =
     if is_empty t then singleton (BoTrace.singleton elem) else map (BoTrace.add_elem elem) t
 
+
   let add_elem_last elem t =
     if is_empty t then singleton (BoTrace.singleton elem) else map (BoTrace.add_elem_last elem) t
+
 
   let instantiate ~traces_caller ~traces_callee loc =
     if is_empty traces_caller then
@@ -87,6 +92,7 @@ module Set = struct
             traces_caller traces)
         traces_callee empty
 
+
   let merge ~traces_arr ~traces_idx loc =
     if is_empty traces_idx then
       map (fun trace_arr -> BoTrace.add_elem (BoTrace.ArrAccess loc) trace_arr) traces_arr
@@ -100,6 +106,7 @@ module Set = struct
               add new_trace traces)
             traces_arr traces)
         traces_idx empty
+
 end
 
 include BoTrace

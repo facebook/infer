@@ -36,17 +36,18 @@ let load_models_tenv zip_channel =
     try
       Zip.copy_entry_to_file zip_channel entry temp_tenv_file ;
       match Tenv.load_from_file temp_tenv_filename with
-      | None
-       -> L.(die InternalError) "Models tenv file could not be loaded"
-      | Some tenv
-       -> tenv
+      | None ->
+          L.(die InternalError) "Models tenv file could not be loaded"
+      | Some tenv ->
+          tenv
     with
-    | Not_found
-     -> L.(die InternalError) "Models tenv not found in jar file"
-    | Sys_error msg
-     -> L.(die InternalError) "Models jar could not be opened: %s" msg
+    | Not_found ->
+        L.(die InternalError) "Models tenv not found in jar file"
+    | Sys_error msg ->
+        L.(die InternalError) "Models jar could not be opened: %s" msg
   in
   DB.file_remove temp_tenv_filename ; models_tenv
+
 
 let collect_specs_filenames jar_filename =
   let zip_channel = Zip.open_in jar_filename in
@@ -62,10 +63,12 @@ let collect_specs_filenames jar_filename =
   models_tenv := load_models_tenv zip_channel ;
   Zip.close_in zip_channel
 
+
 let add_models jar_filename =
   models_jar := jar_filename ;
   if Sys.file_exists !models_jar = `Yes then collect_specs_filenames jar_filename
   else L.(die InternalError) "Java model file not found"
+
 
 let is_model procname = String.Set.mem !models_specs_filenames (Typ.Procname.to_filename procname)
 
@@ -77,6 +80,7 @@ let append_path classpath path =
     let full_path = Utils.filename_to_absolute ~root path in
     if Int.equal (String.length classpath) 0 then full_path else classpath ^ JFile.sep ^ full_path
   else classpath
+
 
 type file_entry = Singleton of SourceFile.t | Duplicate of (string * SourceFile.t) list
 
@@ -93,15 +97,16 @@ let read_package_declaration source_file =
     try
       let line = remove_trailing_semicolon (In_channel.input_line_exn file_in) in
       match Str.split (Str.regexp "[ \t]+") line with
-      | []
-       -> loop ()
-      | [hd; package] when String.equal hd "package"
-       -> package
-      | _
-       -> loop ()
+      | [] ->
+          loop ()
+      | [hd; package] when String.equal hd "package" ->
+          package
+      | _ ->
+          loop ()
     with End_of_file -> In_channel.close file_in ; empty_package
   in
   loop ()
+
 
 let add_source_file path map =
   let convert_to_absolute p =
@@ -112,8 +117,8 @@ let add_source_file path map =
     let current_source_file = SourceFile.from_abs_path (convert_to_absolute path) in
     try
       match String.Map.find_exn map basename with
-      | Singleton previous_source_file
-       -> (* Another source file with the same base name has been found.
+      | Singleton previous_source_file ->
+          (* Another source file with the same base name has been found.
              Reading the package from the source file to resolve the ambiguity
              only happens in this case *)
           let previous_package = read_package_declaration previous_source_file
@@ -122,8 +127,8 @@ let add_source_file path map =
             [(current_package, current_source_file); (previous_package, previous_source_file)]
           in
           Duplicate source_list
-      | Duplicate previous_source_files
-       -> (* Two or more source file with the same base name have been found *)
+      | Duplicate previous_source_files ->
+          (* Two or more source file with the same base name have been found *)
           let current_package = read_package_declaration current_source_file in
           Duplicate ((current_package, current_source_file) :: previous_source_files)
     with Not_found ->
@@ -131,6 +136,7 @@ let add_source_file path map =
       Singleton current_source_file
   in
   String.Map.add ~key:basename ~data:entry map
+
 
 let add_root_path path roots = String.Set.add roots path
 
@@ -159,35 +165,40 @@ let load_from_verbose_output javac_verbose_out =
       else (* skip this line *)
         loop paths roots sources classes
     with
-    | JBasics.Class_structure_error _ | Invalid_argument _
-     -> loop paths roots sources classes
-    | End_of_file
-     -> In_channel.close file_in ;
+    | JBasics.Class_structure_error _ | Invalid_argument _ ->
+        loop paths roots sources classes
+    | End_of_file ->
+        In_channel.close file_in ;
         let classpath = List.fold ~f:append_path ~init:"" (String.Set.elements roots @ paths) in
         (classpath, sources, classes)
   in
   loop [] String.Set.empty String.Map.empty JBasics.ClassSet.empty
 
+
 let classname_of_class_filename class_filename =
   JBasics.make_cn (String.map ~f:(function '/' -> '.' | c -> c) class_filename)
+
 
 let extract_classnames classnames jar_filename =
   let file_in = Zip.open_in jar_filename in
   let collect classes entry =
     let class_filename = entry.Zip.filename in
     match Filename.split_extension class_filename with
-    | basename, Some "class"
-     -> classname_of_class_filename basename :: classes
-    | _
-     -> classes
+    | basename, Some "class" ->
+        classname_of_class_filename basename :: classes
+    | _ ->
+        classes
   in
   let classnames_after = List.fold ~f:collect ~init:classnames (Zip.entries file_in) in
   Zip.close_in file_in ; classnames_after
 
+
 let collect_classnames start_classmap jar_filename =
   List.fold
     ~f:(fun map cn -> JBasics.ClassSet.add cn map)
-    ~init:start_classmap (extract_classnames [] jar_filename)
+    ~init:start_classmap
+    (extract_classnames [] jar_filename)
+
 
 let search_classes path =
   let add_class roots classes class_filename =
@@ -203,17 +214,19 @@ let search_classes path =
       else accu)
     (String.Set.empty, JBasics.ClassSet.empty) path
 
+
 let search_sources () =
   let initial_map =
     List.fold ~f:(fun map path -> add_source_file path map) ~init:String.Map.empty Config.sources
   in
   match Config.sourcepath with
-  | None
-   -> initial_map
-  | Some sourcepath
-   -> Utils.directory_fold
+  | None ->
+      initial_map
+  | Some sourcepath ->
+      Utils.directory_fold
         (fun map p -> if Filename.check_suffix p "java" then add_source_file p map else map)
         initial_map sourcepath
+
 
 let load_from_arguments classes_out_path =
   let roots, classes = search_classes classes_out_path in
@@ -226,6 +239,7 @@ let load_from_arguments classes_out_path =
     |> combine (split Config.bootclasspath)
   in
   (classpath, search_sources (), classes)
+
 
 type classmap = JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
 
@@ -240,6 +254,7 @@ let get_models program = program.models
 let add_class cn jclass program =
   program.classmap <- JBasics.ClassMap.add cn jclass program.classmap
 
+
 let cleanup program = Javalib.close_class_path program.classpath
 
 let lookup_node cn program =
@@ -250,6 +265,7 @@ let lookup_node cn program =
       add_class cn jclass program ; Some jclass
     with JBasics.No_class_found _ | JBasics.Class_structure_error _ | Invalid_argument _ -> None
 
+
 let collect_classes start_classmap jar_filename =
   let classpath = Javalib.class_path jar_filename in
   let collect classmap cn =
@@ -257,7 +273,9 @@ let collect_classes start_classmap jar_filename =
     with JBasics.Class_structure_error _ -> classmap
   in
   let classmap = List.fold ~f:collect ~init:start_classmap (extract_classnames [] jar_filename) in
-  Javalib.close_class_path classpath ; classmap
+  Javalib.close_class_path classpath ;
+  classmap
+
 
 let load_program classpath classes =
   L.(debug Capture Medium) "loading program ... %!" ;
@@ -271,3 +289,4 @@ let load_program classpath classes =
   JBasics.ClassSet.iter (fun cn -> ignore (lookup_node cn program)) classes ;
   L.(debug Capture Medium) "done@." ;
   program
+

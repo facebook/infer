@@ -19,23 +19,24 @@ let pp_revision f r = F.fprintf f "%s" (string_of_revision r)
 let checkout revision =
   let script_opt =
     match revision with
-    | Current
-     -> Config.previous_to_current_script
-    | Previous
-     -> Config.current_to_previous_script
+    | Current ->
+        Config.previous_to_current_script
+    | Previous ->
+        Config.current_to_previous_script
   in
   match script_opt with
-  | None
-   -> L.(die UserError)
+  | None ->
+      L.(die UserError)
         "Please specify a script to checkout the %a revision of your project using --checkout-%a <script>."
         pp_revision revision pp_revision revision
-  | Some script
-   -> L.progress "Checking out %a version:@\n  %s@\n" pp_revision revision script ;
+  | Some script ->
+      L.progress "Checking out %a version:@\n  %s@\n" pp_revision revision script ;
       let (), exit_or_signal = Utils.with_process_in script Utils.consume_in in
       Result.iter_error exit_or_signal ~f:(fun _ ->
           L.(die ExternalError)
             "Failed to checkout %a revision: %s" pp_revision revision
             (Unix.Exit_or_signal.to_string_hum exit_or_signal) )
+
 
 let save_report revision =
   let report_name = Config.results_dir ^/ F.asprintf "report-%a.json" pp_revision revision in
@@ -43,18 +44,21 @@ let save_report revision =
   L.progress "Results for the %a revision stored in %s@\n" pp_revision revision report_name ;
   report_name
 
+
 let gen_previous_driver_mode script =
   let output, exit_or_signal = Utils.with_process_in script In_channel.input_lines in
   match exit_or_signal with
-  | Error _ as status
-   -> L.(die UserError)
-        "*** command failed:@\n*** %s@\n*** %s@." script (Unix.Exit_or_signal.to_string_hum status)
-  | Ok ()
-   -> (* FIXME(t15553258): this won't work if the build command has arguments that contain spaces. In that case the user should be able to use an argfile for the build command instead, so not critical to fix. *)
+  | Error _ as status ->
+      L.(die UserError)
+        "*** command failed:@\n*** %s@\n*** %s@." script
+        (Unix.Exit_or_signal.to_string_hum status)
+  | Ok () ->
+      (* FIXME(t15553258): this won't work if the build command has arguments that contain spaces. In that case the user should be able to use an argfile for the build command instead, so not critical to fix. *)
       let command = List.concat_map ~f:(String.split ~on:' ') output in
       L.environment_info "Build command for the previous project version: '%s'@\n%!"
         (String.concat ~sep:" " command) ;
       Driver.mode_of_build_command command
+
 
 let diff driver_mode =
   Driver.run_prologue driver_mode ;
@@ -76,4 +80,7 @@ let diff driver_mode =
   checkout Current ;
   let previous_report = Some (save_report Previous) in
   (* compute differential *)
-  ReportDiff.reportdiff ~current_report ~previous_report ; Driver.run_epilogue driver_mode ; ()
+  ReportDiff.reportdiff ~current_report ~previous_report ;
+  Driver.run_epilogue driver_mode ;
+  ()
+

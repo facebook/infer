@@ -17,12 +17,13 @@ let verbose = false
 (* Merge two constant maps by adding keys as necessary *)
 let merge_values _ c1_opt c2_opt =
   match (c1_opt, c2_opt) with
-  | Some Some c1, Some Some c2 when Const.equal c1 c2
-   -> Some (Some c1)
-  | Some c, None | None, Some c
-   -> Some c
-  | _
-   -> Some None
+  | Some Some c1, Some Some c2 when Const.equal c1 c2 ->
+      Some (Some c1)
+  | Some c, None | None, Some c ->
+      Some c
+  | _ ->
+      Some None
+
 
 module ConstantMap = Exp.Map
 
@@ -35,12 +36,15 @@ module ConstantFlow = Dataflow.MakeDF (struct
   let pp fmt constants =
     let pp_key fmt = Exp.pp fmt in
     let print_kv k = function
-      | Some v
-       -> Format.fprintf fmt "  %a -> %a@." pp_key k (Const.pp Pp.text) v
-      | _
-       -> Format.fprintf fmt "  %a -> None@." pp_key k
+      | Some v ->
+          Format.fprintf fmt "  %a -> %a@." pp_key k (Const.pp Pp.text) v
+      | _ ->
+          Format.fprintf fmt "  %a -> None@." pp_key k
     in
-    Format.fprintf fmt "[@." ; ConstantMap.iter print_kv constants ; Format.fprintf fmt "]@."
+    Format.fprintf fmt "[@." ;
+    ConstantMap.iter print_kv constants ;
+    Format.fprintf fmt "]@."
+
 
   let join = ConstantMap.merge merge_values
 
@@ -54,36 +58,36 @@ module ConstantFlow = Dataflow.MakeDF (struct
         in
         let has_class pn name =
           match pn with
-          | Typ.Procname.Java pn_java
-           -> String.equal (Typ.Procname.java_get_class_name pn_java) name
-          | _
-           -> false
+          | Typ.Procname.Java pn_java ->
+              String.equal (Typ.Procname.java_get_class_name pn_java) name
+          | _ ->
+              false
         in
         let has_method pn name =
           match pn with
-          | Typ.Procname.Java pn_java
-           -> String.equal (Typ.Procname.java_get_method pn_java) name
-          | _
-           -> false
+          | Typ.Procname.Java pn_java ->
+              String.equal (Typ.Procname.java_get_method pn_java) name
+          | _ ->
+              false
         in
         match instr with
-        | Sil.Load (i, Exp.Lvar p, _, _)
-         -> (* tmp = var *)
+        | Sil.Load (i, Exp.Lvar p, _, _) ->
+            (* tmp = var *)
             update (Exp.Var i) (ConstantMap.find (Exp.Lvar p) constants) constants
-        | Sil.Store (Exp.Lvar p, _, Exp.Const c, _)
-         -> (* var = const *)
+        | Sil.Store (Exp.Lvar p, _, Exp.Const c, _) ->
+            (* var = const *)
             update (Exp.Lvar p) (Some c) constants
-        | Sil.Store (Exp.Lvar p, _, Exp.Var i, _)
-         -> (* var = tmp *)
+        | Sil.Store (Exp.Lvar p, _, Exp.Var i, _) ->
+            (* var = tmp *)
             update (Exp.Lvar p) (ConstantMap.find (Exp.Var i) constants) constants
         (* Handle propagation of string with StringBuilder. Does not handle null case *)
         | Sil.Call (_, Exp.Const Const.Cfun pn, [(Exp.Var sb, _)], _, _)
-          when has_class pn "java.lang.StringBuilder" && has_method pn "<init>"
-         -> (* StringBuilder.<init> *)
+          when has_class pn "java.lang.StringBuilder" && has_method pn "<init>" ->
+            (* StringBuilder.<init> *)
             update (Exp.Var sb) (Some (Const.Cstr "")) constants
         | Sil.Call (Some (i, _), Exp.Const Const.Cfun pn, [(Exp.Var i1, _)], _, _)
-          when has_class pn "java.lang.StringBuilder" && has_method pn "toString"
-         -> (* StringBuilder.toString *)
+          when has_class pn "java.lang.StringBuilder" && has_method pn "toString" ->
+            (* StringBuilder.toString *)
             update (Exp.Var i) (ConstantMap.find (Exp.Var i1) constants) constants
         | Sil.Call (Some (i, _), Exp.Const Const.Cfun pn, [(Exp.Var i1, _); (Exp.Var i2, _)], _, _)
           when has_class pn "java.lang.StringBuilder" && has_method pn "append" -> (
@@ -91,16 +95,16 @@ module ConstantFlow = Dataflow.MakeDF (struct
             (* StringBuilder.append *)
             (ConstantMap.find (Exp.Var i1) constants, ConstantMap.find (Exp.Var i2) constants)
           with
-          | Some Const.Cstr s1, Some Const.Cstr s2
-           -> let s = s1 ^ s2 in
+          | Some Const.Cstr s1, Some Const.Cstr s2 ->
+              let s = s1 ^ s2 in
               let u =
                 if String.length s < string_widening_limit then Some (Const.Cstr s) else None
               in
               update (Exp.Var i) u constants
-          | _
-           -> constants )
-        | _
-         -> constants
+          | _ ->
+              constants )
+        | _ ->
+            constants
       with Not_found -> constants
     in
     if verbose then (
@@ -112,24 +116,26 @@ module ConstantFlow = Dataflow.MakeDF (struct
     let constants = List.fold ~f:do_instr ~init:constants (Procdesc.Node.get_instrs node) in
     if verbose then L.(debug Analysis Verbose) "%a@\n@." pp constants ;
     ([constants], [constants])
+
 end)
 
 let run tenv proc_desc =
   let transitions = ConstantFlow.run tenv proc_desc ConstantMap.empty in
   let get_constants node =
     match transitions node with
-    | ConstantFlow.Transition (_, post_states, _)
-     -> ConstantFlow.join post_states ConstantMap.empty
-    | ConstantFlow.Dead_state
-     -> ConstantMap.empty
+    | ConstantFlow.Transition (_, post_states, _) ->
+        ConstantFlow.join post_states ConstantMap.empty
+    | ConstantFlow.Dead_state ->
+        ConstantMap.empty
   in
   get_constants
+
 
 type const_map = Procdesc.Node.t -> Exp.t -> Const.t option
 
 (** Build a const map lazily. *)
 let build_const_map tenv pdesc =
-  let const_map = (lazy (run tenv pdesc)) in
+  let const_map = lazy (run tenv pdesc) in
   let f node exp =
     try
       let map = Lazy.force const_map node in
@@ -137,3 +143,4 @@ let build_const_map tenv pdesc =
     with Not_found -> None
   in
   f
+

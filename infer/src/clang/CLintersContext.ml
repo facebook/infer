@@ -39,10 +39,13 @@ let empty translation_unit_context =
   ; if_context= None
   ; in_for_loop_declaration= false }
 
+
 let add_parent_method decl_opt parent_methods =
   match decl_opt with Some decl -> decl :: parent_methods | None -> parent_methods
+
 
 let update_current_method context decl =
   { context with
     current_method= Some decl
   ; parent_methods= add_parent_method context.current_method context.parent_methods }
+

@@ -30,6 +30,7 @@ let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_
   if not Config.filtering (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     Errlog.log_issue err_kind err_log loc node_id session ltr ?linters_def_file ?doc_url exn
 
+
 let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
     exn =
   let is_generated_method = Typ.Procname.java_is_generated (Specs.get_proc_name summary) in
@@ -44,19 +45,21 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
     log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
       exn
 
+
 let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_id ?session ?ltr
     ?linters_def_file ?doc_url exn =
   match Specs.get_summary proc_name with
-  | Some summary
-   -> log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file
+  | Some summary ->
+      log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file
         ?doc_url exn ;
       if store_summary then
         (* TODO (#16348004): This is currently needed as ThreadSafety works as a cluster checker *)
         Specs.store_summary summary
-  | None
-   -> L.(die InternalError)
+  | None ->
+      L.(die InternalError)
         "Trying to report error on procedure %a, but cannot because no summary exists for this procedure. Did you mean to log the error on the caller of %a instead?"
         Typ.Procname.pp proc_name Typ.Procname.pp proc_name
+
 
 let log_error_from_errlog = log_issue_from_errlog Exceptions.Kerror
 
@@ -73,8 +76,11 @@ let log_info = log_issue_from_summary Exceptions.Kwarning
 let log_error_deprecated ?(store_summary= false) =
   log_issue_deprecated ~store_summary Exceptions.Kerror
 
+
 let log_warning_deprecated ?(store_summary= false) =
   log_issue_deprecated ~store_summary Exceptions.Kwarning
 
+
 let log_info_deprecated ?(store_summary= false) =
   log_issue_deprecated ~store_summary Exceptions.Kinfo
+

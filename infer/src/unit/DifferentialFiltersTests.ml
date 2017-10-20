@@ -21,12 +21,12 @@ let test_file_renamings_from_json =
       Format.fprintf fmt "Expected %a but got %a" pp expected pp actual
     in
     match expected_output with
-    | Return exp
-     -> assert_equal ~pp_diff
+    | Return exp ->
+        assert_equal ~pp_diff
           ~cmp:DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.equal exp
           (test_output test_input)
-    | Raise exc
-     -> assert_raises exc (fun () -> test_output test_input)
+    | Raise exc ->
+        assert_raises exc (fun () -> test_output test_input)
   in
   [ ( "test_file_renamings_from_json_with_good_input"
     , "[" ^ "{\"current\": \"aaa.java\", \"previous\": \"BBB.java\"},"
@@ -59,6 +59,7 @@ let test_file_renamings_from_json =
   |> List.map ~f:(fun (name, test_input, expected_output) ->
          name >:: create_test test_input expected_output )
 
+
 let test_file_renamings_find_previous =
   let renamings =
     DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.from_renamings
@@ -82,6 +83,7 @@ let test_file_renamings_find_previous =
   ; ("test_file_renamings_find_previous_with_existing_value", "abc.java", None) ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
          name >:: create_test test_input expected_output )
+
 
 let test_relative_complements =
   let create_test pred (l1, l2) (expected_l1, expected_l2, expected_l3) _ =
@@ -144,6 +146,7 @@ let test_relative_complements =
   |> List.map ~f:(fun (name, pred, test_input, expected_output) ->
          name >:: create_test pred test_input expected_output )
 
+
 let test_skip_duplicated_types_on_filenames =
   let current_report =
     [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2'.java" ~hash:22 ()
@@ -171,14 +174,21 @@ let test_skip_duplicated_types_on_filenames =
       renamings diff
   in
   let do_assert _ =
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of introduced") [4]
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Hashes of introduced")
+      [4]
       (sorted_hashes_of_issues diff'.introduced) ;
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of fixed") [3]
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Hashes of fixed")
+      [3]
       (sorted_hashes_of_issues diff'.fixed) ;
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting") [22; 55; 111; 222]
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting")
+      [22; 55; 111; 222]
       (sorted_hashes_of_issues diff'.preexisting)
   in
   "test_skip_duplicated_types_on_filenames" >:: do_assert
+
 
 let test_value_of_qualifier_tag =
   let qts = [{Jsonbug_t.tag= "tag1"; value= "value1"}; {Jsonbug_t.tag= "tag2"; value= "value2"}] in
@@ -199,6 +209,7 @@ let test_value_of_qualifier_tag =
   in
   "test_value_of_qualifier_tag" >:: do_assert
 
+
 let test_skip_anonymous_class_renamings =
   let qt1 = [{Jsonbug_t.tag= "call_procedure"; value= "aValue1"}] in
   let qt2 = [{Jsonbug_t.tag= "call_procedure"; value= "aValue2"}] in
@@ -207,11 +218,17 @@ let test_skip_anonymous_class_renamings =
       DifferentialFilters.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.skip_anonymous_class_renamings
         input_diff
     in
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of introduced") exp_introduced
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Hashes of introduced")
+      exp_introduced
       (sorted_hashes_of_issues diff'.introduced) ;
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of fixed") exp_fixed
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Hashes of fixed")
+      exp_fixed
       (sorted_hashes_of_issues diff'.fixed) ;
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting") exp_preexisting
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting")
+      exp_preexisting
       (sorted_hashes_of_issues diff'.preexisting)
   in
   (* [(test_name, diff, expected hashes); ...] *)
@@ -322,6 +339,7 @@ let test_skip_anonymous_class_renamings =
     , ([1], [2], []) ) ]
   |> List.map ~f:(fun (name, diff, expected_output) -> name >:: create_test diff expected_output)
 
+
 let test_interesting_paths_filter =
   let report =
     [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:1 ()
@@ -352,9 +370,11 @@ let test_interesting_paths_filter =
   |> List.map ~f:(fun (name, interesting_paths, expected_output) ->
          name >:: create_test interesting_paths expected_output )
 
+
 let tests =
   "differential_filters_suite"
   >::: test_file_renamings_from_json @ test_file_renamings_find_previous
        @ test_relative_complements @ test_skip_anonymous_class_renamings
        @ test_interesting_paths_filter
        @ [test_skip_duplicated_types_on_filenames; test_value_of_qualifier_tag]
+

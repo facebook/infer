@@ -51,6 +51,7 @@ module MockProcCfg = struct
     List.find ~f:(fun (node, _) -> equal_id (id node) node_id) t
     |> Option.value_map ~f:snd ~default:[]
 
+
   let preds t n =
     try
       let node_id = id n in
@@ -59,6 +60,7 @@ module MockProcCfg = struct
         t
       |> List.map ~f:fst
     with Not_found -> []
+
 
   let nodes t = List.map ~f:fst t
 
@@ -90,10 +92,10 @@ let create_test test_graph expected_result _ =
   (* keep popping and scheduling until the queue is empty, record the results *)
   let rec pop_schedule_record q visited_acc =
     match S.pop q with
-    | Some (n, _, q')
-     -> pop_schedule_record (S.schedule_succs q' n) (n :: visited_acc)
-    | None
-     -> List.rev visited_acc
+    | Some (n, _, q') ->
+        pop_schedule_record (S.schedule_succs q' n) (n :: visited_acc)
+    | None ->
+        List.rev visited_acc
   in
   let pp_diff fmt (exp, actual) =
     let pp_sched fmt l =
@@ -105,6 +107,7 @@ let create_test test_graph expected_result _ =
   let q = S.schedule_succs (S.empty cfg) 1 in
   let result = pop_schedule_record q [1] in
   OUnit2.assert_equal ~pp_diff result expected_result
+
 
 let tests =
   let open OUnit2 in
@@ -124,3 +127,4 @@ let tests =
     |> List.map ~f:(fun (name, test, expected) -> name >:: create_test test expected)
   in
   "scheduler_suite" >::: test_list
+

@@ -18,13 +18,14 @@ include IdMap
 let pp fmt astate = IdMap.pp ~pp_value:AccessPath.pp fmt astate
 
 let check_invariant ap1 ap2 = function
-  | Var.ProgramVar pvar when Pvar.is_ssa_frontend_tmp pvar
-   -> (* Sawja reuses temporary variables which sometimes breaks this invariant *)
+  | Var.ProgramVar pvar when Pvar.is_ssa_frontend_tmp pvar ->
+      (* Sawja reuses temporary variables which sometimes breaks this invariant *)
       ()
-  | id
-   -> if not (AccessPath.equal ap1 ap2) then
+  | id ->
+      if not (AccessPath.equal ap1 ap2) then
         L.(die InternalError)
           "Id %a maps to both %a and %a" Var.pp id AccessPath.pp ap1 AccessPath.pp ap2
+
 
 let ( <= ) ~lhs ~rhs =
   if phys_equal lhs rhs then true
@@ -36,21 +37,23 @@ let ( <= ) ~lhs ~rhs =
         rhs_has)
       lhs
 
+
 let join astate1 astate2 =
   if phys_equal astate1 astate2 then astate1
   else
     IdMap.merge
       (fun var ap1_opt ap2_opt ->
         match (ap1_opt, ap2_opt) with
-        | Some ap1, Some ap2
-         -> if Config.debug_exceptions then check_invariant ap1 ap2 var ;
+        | Some ap1, Some ap2 ->
+            if Config.debug_exceptions then check_invariant ap1 ap2 var ;
             ap1_opt
-        | Some _, None
-         -> ap1_opt
-        | None, Some _
-         -> ap2_opt
-        | None, None
-         -> None)
+        | Some _, None ->
+            ap1_opt
+        | None, Some _ ->
+            ap2_opt
+        | None, None ->
+            None)
       astate1 astate2
+
 
 let widen ~prev ~next ~num_iters:_ = join prev next

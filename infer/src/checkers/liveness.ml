@@ -33,27 +33,29 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~f:(fun astate_acc pvar -> Domain.add (Var.of_pvar pvar) astate_acc)
       ~init:astate' pvars
 
+
   let exec_instr astate _ _ = function
-    | Sil.Load (lhs_id, rhs_exp, _, _)
-     -> Domain.remove (Var.of_id lhs_id) astate |> exp_add_live rhs_exp
-    | Sil.Store (Lvar lhs_pvar, _, rhs_exp, _)
-     -> let astate' =
+    | Sil.Load (lhs_id, rhs_exp, _, _) ->
+        Domain.remove (Var.of_id lhs_id) astate |> exp_add_live rhs_exp
+    | Sil.Store (Lvar lhs_pvar, _, rhs_exp, _) ->
+        let astate' =
           if Pvar.is_global lhs_pvar then astate (* never kill globals *)
           else Domain.remove (Var.of_pvar lhs_pvar) astate
         in
         exp_add_live rhs_exp astate'
-    | Sil.Store (lhs_exp, _, rhs_exp, _)
-     -> exp_add_live lhs_exp astate |> exp_add_live rhs_exp
-    | Sil.Prune (exp, _, _, _)
-     -> exp_add_live exp astate
-    | Sil.Call (ret_id, call_exp, params, _, _)
-     -> Option.value_map
+    | Sil.Store (lhs_exp, _, rhs_exp, _) ->
+        exp_add_live lhs_exp astate |> exp_add_live rhs_exp
+    | Sil.Prune (exp, _, _, _) ->
+        exp_add_live exp astate
+    | Sil.Call (ret_id, call_exp, params, _, _) ->
+        Option.value_map
           ~f:(fun (ret_id, _) -> Domain.remove (Var.of_id ret_id) astate)
           ~default:astate ret_id
         |> exp_add_live call_exp
         |> fun x -> List.fold_right ~f:exp_add_live (List.map ~f:fst params) ~init:x
-    | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _
-     -> astate
+    | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
+        astate
+
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
@@ -81,26 +83,27 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     | Sil.Store (Lvar pvar, _, _, loc)
       when not
              ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
-             || Domain.mem (Var.of_pvar pvar) live_vars || is_captured_var pvar )
-     -> let issue_id = IssueType.dead_store.unique_id in
+             || Domain.mem (Var.of_pvar pvar) live_vars || is_captured_var pvar ) ->
+        let issue_id = IssueType.dead_store.unique_id in
         let message = F.asprintf "The value written to %a is never used" (Pvar.pp Pp.text) pvar in
         let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
         let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
         Reporting.log_error summary ~loc ~ltr exn
-    | _
-     -> ()
+    | _ ->
+        ()
   in
   let report_on_node node =
     List.iter (CFG.instr_ids node) ~f:(fun (instr, node_id_opt) ->
         match node_id_opt with
         | Some node_id -> (
           match Analyzer.extract_pre node_id invariant_map with
-          | Some live_vars
-           -> report_dead_store live_vars instr
-          | None
-           -> () )
-        | None
-         -> () )
+          | Some live_vars ->
+              report_dead_store live_vars instr
+          | None ->
+              () )
+        | None ->
+            () )
   in
   List.iter (CFG.nodes cfg) ~f:report_on_node ;
   summary
+

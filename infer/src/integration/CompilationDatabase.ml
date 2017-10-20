@@ -23,6 +23,7 @@ let iter database f = SourceFile.Map.iter f !database
 let filter_compilation_data database ~f =
   SourceFile.Map.filter (fun s _ -> f s) !database |> SourceFile.Map.bindings |> List.map ~f:snd
 
+
 let find database key = SourceFile.Map.find key !database
 
 let parse_command_and_arguments command_and_arguments =
@@ -32,22 +33,21 @@ let parse_command_and_arguments command_and_arguments =
   let arguments = Str.string_after command_and_arguments (index + 1) in
   (command, arguments)
 
+
 (** Parse the compilation database json file into the compilationDatabase
     map. The json file consists of an array of json objects that contain the file
     to be compiled, the directory to be compiled in, and the compilation command as a list
     and as a string. We pack this information into the compilationDatabase map, and remove the
     clang invocation part, because we will use a clang wrapper. *)
 let decode_json_file (database: t) json_format =
-  let json_path =
-    match json_format
-    with `Raw x | `Escaped x -> x
-  in
+  let json_path = match json_format with `Raw x | `Escaped x -> x in
   let to_string s =
     match json_format with
-    | `Raw _
-     -> s
-    | `Escaped _
-     -> Utils.with_process_in (Printf.sprintf "/bin/sh -c 'printf \"%%s\" %s'" s)
+    | `Raw _ ->
+        s
+    | `Escaped _ ->
+        Utils.with_process_in
+          (Printf.sprintf "/bin/sh -c 'printf \"%%s\" %s'" s)
           In_channel.input_line_exn
         |> fst
   in
@@ -59,10 +59,10 @@ let decode_json_file (database: t) json_format =
   let get_cmd el = match el with "command", `String cmd -> Some cmd | _ -> None in
   let rec parse_json json =
     match json with
-    | `List arguments
-     -> List.iter ~f:parse_json arguments
-    | `Assoc l
-     -> let dir =
+    | `List arguments ->
+        List.iter ~f:parse_json arguments
+    | `Assoc l ->
+        let dir =
           match List.find_map ~f:get_dir l with Some dir -> dir | None -> exit_format_error ()
         in
         let file =
@@ -76,13 +76,15 @@ let decode_json_file (database: t) json_format =
         let abs_file = if Filename.is_relative file then dir ^/ file else file in
         let source_file = SourceFile.from_abs_path abs_file in
         database := SourceFile.Map.add source_file compilation_data !database
-    | _
-     -> exit_format_error ()
+    | _ ->
+        exit_format_error ()
   in
   parse_json json
+
 
 let from_json_files db_json_files =
   let db = empty () in
   List.iter ~f:(decode_json_file db) db_json_files ;
   L.(debug Capture Quiet) "created database with %d entries@\n" (get_size db) ;
   db
+

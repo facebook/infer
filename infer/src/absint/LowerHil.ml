@@ -29,7 +29,7 @@ struct
 
   type extras = TransferFunctions.extras
 
-  let exec_instr (actual_state, id_map as astate) extras node instr =
+  let exec_instr ((actual_state, id_map) as astate) extras node instr =
     let f_resolve_id id =
       try Some (IdAccessPathMapDomain.find id id_map)
       with Not_found -> None
@@ -37,16 +37,16 @@ struct
     match
       HilInstr.of_sil ~include_array_indexes:HilConfig.include_array_indexes ~f_resolve_id instr
     with
-    | Bind (id, access_path)
-     -> let id_map' = IdAccessPathMapDomain.add id access_path id_map in
+    | Bind (id, access_path) ->
+        let id_map' = IdAccessPathMapDomain.add id access_path id_map in
         if phys_equal id_map id_map' then astate else (actual_state, id_map')
-    | Unbind ids
-     -> let id_map' =
+    | Unbind ids ->
+        let id_map' =
           List.fold ~f:(fun acc id -> IdAccessPathMapDomain.remove id acc) ~init:id_map ids
         in
         if phys_equal id_map id_map' then astate else (actual_state, id_map')
-    | Instr hil_instr
-     -> let actual_state' = TransferFunctions.exec_instr actual_state extras node hil_instr in
+    | Instr hil_instr ->
+        let actual_state' = TransferFunctions.exec_instr actual_state extras node hil_instr in
         ( if Config.write_html then
             let underyling_node = CFG.underlying_node node in
             NodePrinter.start_session underyling_node ;
@@ -55,8 +55,9 @@ struct
                  (fst astate) HilInstr.pp hil_instr TransferFunctions.Domain.pp actual_state') ;
             NodePrinter.finish_session underyling_node ) ;
         if phys_equal actual_state actual_state' then astate else (actual_state', id_map)
-    | Ignore
-     -> astate
+    | Ignore ->
+        astate
+
 end
 
 module MakeDefault (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S) =

@@ -52,83 +52,86 @@ let invertible = function PlusA | PlusPI | MinusA | MinusPI -> true | _ -> false
     If the [binop] operation is not invertible, the function raises Assert_failure. *)
 let invert bop =
   match bop with
-  | PlusA
-   -> MinusA
-  | PlusPI
-   -> MinusPI
-  | MinusA
-   -> PlusA
-  | MinusPI
-   -> PlusPI
-  | _
-   -> assert false
+  | PlusA ->
+      MinusA
+  | PlusPI ->
+      MinusPI
+  | MinusA ->
+      PlusA
+  | MinusPI ->
+      PlusPI
+  | _ ->
+      assert false
+
 
 (** This function returns true if 0 is the right unit of [binop].
     The return value false means "don't know". *)
 let is_zero_runit = function PlusA | PlusPI | MinusA | MinusPI | MinusPP -> true | _ -> false
 
 let text = function
-  | PlusA
-   -> "+"
-  | PlusPI
-   -> "+"
-  | MinusA | MinusPP
-   -> "-"
-  | MinusPI
-   -> "-"
-  | Mult
-   -> "*"
-  | Div
-   -> "/"
-  | Mod
-   -> "%"
-  | Shiftlt
-   -> "<<"
-  | Shiftrt
-   -> ">>"
-  | Lt
-   -> "<"
-  | Gt
-   -> ">"
-  | Le
-   -> "<="
-  | Ge
-   -> ">="
-  | Eq
-   -> "=="
-  | Ne
-   -> "!="
-  | BAnd
-   -> "&"
-  | BXor
-   -> "^"
-  | BOr
-   -> "|"
-  | LAnd
-   -> "&&"
-  | LOr
-   -> "||"
+  | PlusA ->
+      "+"
+  | PlusPI ->
+      "+"
+  | MinusA | MinusPP ->
+      "-"
+  | MinusPI ->
+      "-"
+  | Mult ->
+      "*"
+  | Div ->
+      "/"
+  | Mod ->
+      "%"
+  | Shiftlt ->
+      "<<"
+  | Shiftrt ->
+      ">>"
+  | Lt ->
+      "<"
+  | Gt ->
+      ">"
+  | Le ->
+      "<="
+  | Ge ->
+      ">="
+  | Eq ->
+      "=="
+  | Ne ->
+      "!="
+  | BAnd ->
+      "&"
+  | BXor ->
+      "^"
+  | BOr ->
+      "|"
+  | LAnd ->
+      "&&"
+  | LOr ->
+      "||"
+
 
 (** Pretty print a binary operator. *)
 let str pe binop =
   match pe.Pp.kind with
   | HTML -> (
     match binop with
-    | Ge
-     -> " &gt;= "
-    | Le
-     -> " &lt;= "
-    | Gt
-     -> " &gt; "
-    | Lt
-     -> " &lt; "
-    | Shiftlt
-     -> " &lt;&lt; "
-    | Shiftrt
-     -> " &gt;&gt; "
-    | _
-     -> text binop )
+    | Ge ->
+        " &gt;= "
+    | Le ->
+        " &lt;= "
+    | Gt ->
+        " &gt; "
+    | Lt ->
+        " &lt; "
+    | Shiftlt ->
+        " &lt;&lt; "
+    | Shiftrt ->
+        " &gt;&gt; "
+    | _ ->
+        text binop )
   | LATEX -> (
     match binop with Ge -> " \\geq " | Le -> " \\leq " | _ -> text binop )
-  | _
-   -> text binop
+  | _ ->
+      text binop
+

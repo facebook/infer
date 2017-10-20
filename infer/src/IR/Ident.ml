@@ -29,16 +29,17 @@ module Name = struct
   let from_string s = FromString s
 
   let to_string = function
-    | Primed
-     -> primed
-    | Normal
-     -> normal
-    | Footprint
-     -> footprint
-    | Spec
-     -> spec
-    | FromString s
-     -> s
+    | Primed ->
+        primed
+    | Normal ->
+        normal
+    | Footprint ->
+        footprint
+    | Spec ->
+        spec
+    | FromString s ->
+        s
+
 end
 
 type name = Name.t [@@deriving compare]
@@ -74,6 +75,7 @@ type t = {kind: kind; name: Name.t; stamp: int} [@@deriving compare]
 (* most unlikely first *)
 let equal i1 i2 =
   Int.equal i1.stamp i2.stamp && equal_kind i1.kind i2.kind && equal_name i1.name i2.name
+
 
 (** {2 Set for identifiers} *)
 module IdentSet = Caml.Set.Make (struct
@@ -149,6 +151,7 @@ module NameGenerator = struct
     in
     {kind; name; stamp}
 
+
   (** Make sure that fresh ids after whis one will be with different stamps *)
   let update_name_hash name stamp =
     try
@@ -156,6 +159,7 @@ module NameGenerator = struct
       let new_stamp = max curr_stamp stamp in
       NameHash.replace !name_map name new_stamp
     with Not_found -> NameHash.add !name_map name stamp
+
 end
 
 (** Name used for the return variable *)
@@ -167,9 +171,12 @@ let standard_name kind =
   else if equal_kind kind KFootprint then Name.Footprint
   else Name.Primed
 
+
 (** Every identifier with a given stamp should unltimately be created using this function *)
 let create_with_stamp kind name stamp =
-  NameGenerator.update_name_hash name stamp ; {kind; name; stamp}
+  NameGenerator.update_name_hash name stamp ;
+  {kind; name; stamp}
+
 
 (** Create an identifier with default name for the given kind *)
 let create kind stamp = create_with_stamp kind (standard_name kind) stamp
@@ -210,14 +217,17 @@ let make_unprimed id =
   else if has_kind id KNone then {id with kind= KNone}
   else {id with kind= KNormal}
 
+
 (** Update the name generator so that the given id's are not generated again *)
 let update_name_generator ids =
   let upd id = ignore (create_with_stamp id.kind id.name id.stamp) in
   List.iter ~f:upd ids
 
+
 (** Generate a normal identifier whose name encodes a path given as a string. *)
 let create_path pathstring =
   create_normal (string_to_name ("%path%" ^ pathstring)) path_ident_stamp
+
 
 (** {2 Pretty Printing} *)
 
@@ -230,6 +240,7 @@ let to_string id =
     let suffix = "$" ^ string_of_int id.stamp in
     prefix ^ base_name ^ suffix
 
+
 (** Pretty print a name. *)
 let pp_name f name = F.fprintf f "%s" (name_to_string name)
 
@@ -239,16 +250,17 @@ let pp_name_latex style f (name: name) = Latex.pp_string style f (name_to_string
 (** Pretty print an identifier. *)
 let pp pe f id =
   match pe.Pp.kind with
-  | TEXT | HTML
-   -> F.fprintf f "%s" (to_string id)
-  | LATEX
-   -> let base_name = name_to_string id.name in
+  | TEXT | HTML ->
+      F.fprintf f "%s" (to_string id)
+  | LATEX ->
+      let base_name = name_to_string id.name in
       let style =
         if has_kind id KFootprint then Latex.Boldface
         else if has_kind id KNormal then Latex.Roman
         else Latex.Roman
       in
       F.fprintf f "%a_{%s}" (Latex.pp_string style) base_name (string_of_int id.stamp)
+
 
 (** pretty printer for lists of identifiers *)
 let pp_list pe = Pp.comma_seq (pp pe)

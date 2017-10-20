@@ -37,18 +37,23 @@ let check_register_populated () =
   if Int.equal (Typ.Procname.Hash.length builtin_functions) 0 then
     L.(die InternalError) "Builtins were not initialized"
 
+
 (** check if the function is a builtin *)
 let is_registered name =
   Typ.Procname.Hash.mem builtin_functions name || (check_register_populated () ; false)
+
 
 (** get the symbolic execution handler associated to the builtin function name *)
 let get name : t option =
   try Some (Typ.Procname.Hash.find builtin_functions name)
   with Not_found -> check_register_populated () ; None
 
+
 (** register a builtin [Typ.Procname.t] and symbolic execution handler *)
 let register proc_name sym_exe_fun : registered =
-  Typ.Procname.Hash.replace builtin_functions proc_name sym_exe_fun ; sym_exe_fun
+  Typ.Procname.Hash.replace builtin_functions proc_name sym_exe_fun ;
+  sym_exe_fun
+
 
 (** print the functions registered *)
 let pp_registered fmt () =
@@ -60,5 +65,9 @@ let pp_registered fmt () =
   List.iter ~f:pp !builtin_names ;
   Format.fprintf fmt "@]@."
 
+
 (** print the builtin functions and exit *)
-let print_and_exit () = pp_registered Format.std_formatter () ; L.exit 0
+let print_and_exit () =
+  pp_registered Format.std_formatter () ;
+  L.exit 0
+

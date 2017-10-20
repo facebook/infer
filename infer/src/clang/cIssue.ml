@@ -40,9 +40,11 @@ let pp_issue fmt issue =
   Format.fprintf fmt "   Loc = %s@\n" (Location.to_string issue.loc) ;
   Format.fprintf fmt "}@\n"
 
+
 let should_run_check mode =
   match mode with
-  | On
-   -> true
-  | Off
-   -> Config.debug_mode || Config.debug_exceptions || not Config.filtering
+  | On ->
+      true
+  | Off ->
+      Config.debug_mode || Config.debug_exceptions || not Config.filtering
+

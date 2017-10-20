@@ -14,23 +14,25 @@ module L = Logging
 let frame_id_of_stackframe frame =
   let loc_str =
     match frame.Stacktrace.line_num with
-    | None
-     -> frame.Stacktrace.file_str
-    | Some line
-     -> F.sprintf "%s:%d" frame.Stacktrace.file_str line
+    | None ->
+        frame.Stacktrace.file_str
+    | Some line ->
+        F.sprintf "%s:%d" frame.Stacktrace.file_str line
   in
   F.sprintf "%s.%s(%s)" frame.Stacktrace.class_str frame.Stacktrace.method_str loc_str
+
 
 let frame_id_of_summary stacktree =
   let short_name = List.hd_exn (Str.split (Str.regexp "(") stacktree.Stacktree_j.method_name) in
   match stacktree.Stacktree_j.location with
-  | None
-   -> L.(die InternalError)
+  | None ->
+      L.(die InternalError)
         "Attempted to take signature of a frame without location information. This is undefined."
-  | Some {line= Some line_num; file}
-   -> F.sprintf "%s(%s:%d)" short_name (Filename.basename file) line_num
-  | Some {file}
-   -> F.sprintf "%s(%s)" short_name (Filename.basename file)
+  | Some {line= Some line_num; file} ->
+      F.sprintf "%s(%s:%d)" short_name (Filename.basename file) line_num
+  | Some {file} ->
+      F.sprintf "%s(%s)" short_name (Filename.basename file)
+
 
 let stracktree_of_frame frame =
   { Stacktree_j.method_name=
@@ -42,6 +44,7 @@ let stracktree_of_frame frame =
         ; line= frame.Stacktrace.line_num
         ; blame_range= [] }
   ; callees= [] }
+
 
 (** k = 1 implementation, where k is the number of levels of calls inlined *)
 let stitch_summaries stacktrace_file summary_files out_file =
@@ -64,6 +67,7 @@ let stitch_summaries stacktrace_file summary_files out_file =
   let crashcontext = {Stacktree_j.stack= expanded_frames} in
   Ag_util.Json.to_file Stacktree_j.write_crashcontext_t out_file crashcontext
 
+
 let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
   let method_summaries =
     Utils.directory_fold
@@ -77,19 +81,19 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
   in
   let pair_for_stacktrace_file =
     match stacktrace_file with
-    | None
-     -> None
-    | Some file
-     -> let crashcontext_dir = Config.results_dir ^/ "crashcontext" in
+    | None ->
+        None
+    | Some file ->
+        let crashcontext_dir = Config.results_dir ^/ "crashcontext" in
         Utils.create_dir crashcontext_dir ; Some (file, crashcontext_dir ^/ "crashcontext.json")
   in
   let trace_file_regexp = Str.regexp "\\(.*\\)\\.json" in
   let pairs_for_stactrace_dir =
     match stacktraces_dir with
-    | None
-     -> []
-    | Some s
-     -> let dir = DB.filename_from_string s in
+    | None ->
+        []
+    | Some s ->
+        let dir = DB.filename_from_string s in
         let trace_file_matcher path =
           let path_str = DB.filename_to_string path in
           Str.string_match trace_file_regexp path_str 0
@@ -101,23 +105,24 @@ let collect_all_summaries root_summaries_dir stacktrace_file stacktraces_dir =
         in
         try DB.fold_paths_matching ~dir ~p:trace_file_matcher ~init:[] ~f:trace_fold
         with
-        | (* trace_fold runs immediately after trace_file_matcher in the
+        (* trace_fold runs immediately after trace_file_matcher in the
            DB.fold_paths_matching statement below, so we don't need to
            call Str.string_match again. *)
-        Not_found
+        | Not_found
         -> assert false
   in
   let input_output_file_pairs =
     match pair_for_stacktrace_file with
-    | None
-     -> pairs_for_stactrace_dir
-    | Some pair
-     -> pair :: pairs_for_stactrace_dir
+    | None ->
+        pairs_for_stactrace_dir
+    | Some pair ->
+        pair :: pairs_for_stactrace_dir
   in
   let process_stacktrace (stacktrace_file, out_file) =
     stitch_summaries stacktrace_file method_summaries out_file
   in
   List.iter ~f:process_stacktrace input_output_file_pairs
+
 
 let crashcontext_epilogue ~in_buck_mode =
   (* if we are the top-level process, then find the output directory and
@@ -133,5 +138,6 @@ let crashcontext_epilogue ~in_buck_mode =
     else Config.results_dir
   in
   collect_all_summaries root_summaries_dir Config.stacktrace Config.stacktraces_dir
+
 
 let pp_stacktree fmt st = Format.fprintf fmt "%s" (Stacktree_j.string_of_stacktree st)

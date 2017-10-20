@@ -145,16 +145,17 @@ module Expander (TraceElem : TraceElem.S) = struct
       in
       (* arbitrarily pick one elem and explore it further *)
       match matching_elems with
-      | callee_elem :: _
-       -> (* TODO: pick the shortest path to a sink here instead (t14242809) *)
+      | callee_elem :: _ ->
+          (* TODO: pick the shortest path to a sink here instead (t14242809) *)
           let filtered_passthroughs =
             filter_passthroughs caller_elem_site (TraceElem.call_site callee_elem) passthroughs
           in
           expand_ callee_elem ((elem, filtered_passthroughs) :: elems_passthroughs_acc, seen_acc')
-      | _
-       -> ((elem, Passthrough.Set.empty) :: elems_passthroughs_acc, seen_acc')
+      | _ ->
+          ((elem, Passthrough.Set.empty) :: elems_passthroughs_acc, seen_acc')
     in
     fst (expand_ elem0 ([], CallSite.Set.empty))
+
 end
 
 module Make (Spec : Spec) = struct
@@ -174,12 +175,14 @@ module Make (Spec : Spec) = struct
       else Known.( <= ) ~lhs:lhs.known ~rhs:rhs.known
         && Footprint.( <= ) ~lhs:lhs.footprint ~rhs:rhs.footprint
 
+
     let join astate1 astate2 =
       if phys_equal astate1 astate2 then astate1
       else
         let known = Known.join astate1.known astate2.known in
         let footprint = Footprint.join astate1.footprint astate2.footprint in
         {known; footprint}
+
 
     let widen ~prev ~next ~num_iters =
       if phys_equal prev next then prev
@@ -188,11 +191,13 @@ module Make (Spec : Spec) = struct
         let footprint = Footprint.widen ~prev:prev.footprint ~next:next.footprint ~num_iters in
         {known; footprint}
 
+
     let pp fmt {known; footprint} =
       if Known.is_empty known then
         if Footprint.is_empty footprint then F.fprintf fmt "{}"
         else F.fprintf fmt "Footprint(%a)" Footprint.pp footprint
       else F.fprintf fmt "%a + Footprint(%a)" Known.pp known Footprint.pp footprint
+
 
     let empty = {known= Known.empty; footprint= Footprint.empty}
 
@@ -202,23 +207,27 @@ module Make (Spec : Spec) = struct
       let footprint = Footprint.add_trace access_path true Footprint.empty in
       {empty with footprint}
 
+
     let of_source source =
       let known = Known.singleton source in
       {empty with known}
+
 
     let add source astate =
       let known = Known.add source astate.known in
       {astate with known}
 
+
     let get_footprint_indexes {footprint} =
       Footprint.BaseMap.fold
         (fun base _ acc ->
           match AccessPath.Abs.get_footprint_index_base base with
-          | Some footprint_index
-           -> IntSet.add footprint_index acc
-          | None
-           -> acc)
+          | Some footprint_index ->
+              IntSet.add footprint_index acc
+          | None ->
+              acc)
         footprint IntSet.empty
+
   end
 
   module Sinks = Sink.Set
@@ -252,11 +261,13 @@ module Make (Spec : Spec) = struct
     (* empty sources implies empty sinks and passthroughs *)
     F.fprintf fmt "%a ~> %a%a" Sources.pp sources pp_sinks sinks pp_passthroughs passthroughs
 
+
   let get_path_source_call_site = function
-    | Known source
-     -> Source.call_site source
-    | Footprint _
-     -> CallSite.dummy
+    | Known source ->
+        Source.call_site source
+    | Footprint _ ->
+        CallSite.dummy
+
 
   let sources t = t.sources
 
@@ -268,15 +279,16 @@ module Make (Spec : Spec) = struct
     (* sources empty => sinks empty and passthroughs empty *)
     Sources.is_empty t.sources
 
+
   let get_reports ?cur_site t =
     if Sinks.is_empty t.sinks || Sources.is_empty t.sources then []
     else
       let should_report_at_site source sink =
         match cur_site with
-        | None
-         -> true
-        | Some call_site
-         -> (* report when: (1) [cur_site] introduces the sink, and (2) [cur_site] does not also
+        | None ->
+            true
+        | Some call_site ->
+            (* report when: (1) [cur_site] introduces the sink, and (2) [cur_site] does not also
                introduce the source. otherwise, we'll report paths that don't respect control
                flow. *)
             CallSite.equal call_site (Sink.call_site sink)
@@ -294,11 +306,13 @@ module Make (Spec : Spec) = struct
       let report_sources source acc = report_source source t.sinks acc in
       Sources.Known.fold report_sources t.sources.known []
 
+
   let pp_path_source fmt = function
-    | Known source
-     -> Source.pp fmt source
-    | Footprint access_path
-     -> AccessPath.Abs.pp fmt access_path
+    | Known source ->
+        Source.pp fmt source
+    | Footprint access_path ->
+        AccessPath.Abs.pp fmt access_path
+
 
   let pp_path cur_pname fmt (cur_passthroughs, sources_passthroughs, sinks_passthroughs) =
     let pp_passthroughs fmt passthroughs =
@@ -320,6 +334,7 @@ module Make (Spec : Spec) = struct
       original_source Sink.pp final_sink pp_sources sources_passthroughs Typ.Procname.pp cur_pname
       pp_passthroughs cur_passthroughs pp_sinks (List.rev sinks_passthroughs)
 
+
   type passthrough_kind =
     | Source  (** passthroughs of a source *)
     | Sink  (** passthroughs of a sink *)
@@ -333,19 +348,19 @@ module Make (Spec : Spec) = struct
       let between_start_and_end passthrough =
         let passthrough_line = line_number (Passthrough.site passthrough) in
         match passthrough_kind with
-        | Source
-         -> passthrough_line >= end_line
-        | Sink
-         -> passthrough_line <= end_line
-        | Top_level
-         -> passthrough_line >= start_line && passthrough_line <= end_line
+        | Source ->
+            passthrough_line >= end_line
+        | Sink ->
+            passthrough_line <= end_line
+        | Top_level ->
+            passthrough_line >= start_line && passthrough_line <= end_line
       in
       Passthrough.Set.filter between_start_and_end passthroughs
     in
     let expand_path path_source sink =
       match path_source with
-      | Known source
-       -> let sources_of_pname pname =
+      | Known source ->
+          let sources_of_pname pname =
             let trace = trace_of_pname pname in
             (Sources.Known.elements (sources trace).known, passthroughs trace)
           in
@@ -365,8 +380,8 @@ module Make (Spec : Spec) = struct
               ~filter_passthroughs
           in
           (sources_passthroughs, sinks_passthroughs)
-      | Footprint _
-       -> ([], [])
+      | Footprint _ ->
+          ([], [])
     in
     List.map
       ~f:(fun (path_source, sink, passthroughs) ->
@@ -374,24 +389,25 @@ module Make (Spec : Spec) = struct
         let filtered_passthroughs =
           let source_site =
             match path_source with
-            | Known source
-             -> Source.call_site source
-            | Footprint _
-             -> Option.value ~default:CallSite.dummy cur_site
+            | Known source ->
+                Source.call_site source
+            | Footprint _ ->
+                Option.value ~default:CallSite.dummy cur_site
           in
           filter_passthroughs_ Top_level source_site (Sink.call_site sink) passthroughs
         in
         (filtered_passthroughs, sources_passthroughs, sinks_passthroughs))
       (get_reports ?cur_site t)
 
+
   let to_loc_trace
       ?(desc_of_source= function
-                          | Known source
-                           -> let callsite = Source.call_site source in
+                          | Known source ->
+                              let callsite = Source.call_site source in
                               Format.asprintf "return from %a" Typ.Procname.pp
                                 (CallSite.pname callsite)
-                          | Footprint access_path
-                           -> Format.asprintf "read from %a" AccessPath.Abs.pp access_path)
+                          | Footprint access_path ->
+                              Format.asprintf "read from %a" AccessPath.Abs.pp access_path)
       ?(source_should_nest= fun _ -> true)
       ?(desc_of_sink= fun sink ->
                         let callsite = Sink.call_site sink in
@@ -418,7 +434,7 @@ module Make (Spec : Spec) = struct
     in
     let get_nesting should_nest elems start_nesting =
       let level = ref start_nesting in
-      let get_nesting_ (elem, _ as pair) =
+      let get_nesting_ ((elem, _) as pair) =
         if should_nest elem then incr level ;
         (pair, !level)
       in
@@ -450,26 +466,32 @@ module Make (Spec : Spec) = struct
       ~f:(fun acc source -> trace_elems_of_source source acc)
       ~init:trace_prefix sources_with_level
 
+
   let of_sources sources =
     let passthroughs = Passthroughs.empty in
     let sinks = Sinks.empty in
     {sources; passthroughs; sinks}
 
+
   let of_source source =
     let sources = Sources.of_source source in
     of_sources sources
+
 
   let of_footprint access_path =
     let sources = Sources.of_footprint access_path in
     of_sources sources
 
+
   let add_source source t =
     let sources = Sources.add source t.sources in
     {t with sources}
 
+
   let add_sink sink t =
     let sinks = Sinks.add sink t.sinks in
     {t with sinks}
+
 
   let update_sources t sources = {t with sources}
 
@@ -492,7 +514,7 @@ module Make (Spec : Spec) = struct
               (Sources.Known.elements non_footprint_callee_sources)
             |> Sources.Known.of_list |> Sources.Known.union caller_trace.sources.known
           in
-          {caller_trace.sources with Sources.known= known}
+          {caller_trace.sources with Sources.known}
       in
       let sinks =
         if Sinks.subset callee_trace.sinks caller_trace.sinks then caller_trace.sinks
@@ -512,16 +534,19 @@ module Make (Spec : Spec) = struct
       in
       {sources; sinks; passthroughs}
 
+
   let empty =
     let sources = Sources.empty in
     let sinks = Sinks.empty in
     let passthroughs = Passthroughs.empty in
     {sources; sinks; passthroughs}
 
+
   let ( <= ) ~lhs ~rhs =
     phys_equal lhs rhs
     || Sources.( <= ) ~lhs:lhs.sources ~rhs:rhs.sources && Sinks.subset lhs.sinks rhs.sinks
        && Passthroughs.subset lhs.passthroughs rhs.passthroughs
+
 
   let join t1 t2 =
     if phys_equal t1 t2 then t1
@@ -531,6 +556,7 @@ module Make (Spec : Spec) = struct
       let passthroughs = Passthroughs.union t1.passthroughs t2.passthroughs in
       {sources; sinks; passthroughs}
 
+
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
@@ -538,4 +564,5 @@ module Make (Spec : Spec) = struct
       let sinks = Sinks.union prev.sinks next.sinks in
       let passthroughs = Passthroughs.union prev.passthroughs next.passthroughs in
       {sources; sinks; passthroughs}
+
 end

@@ -23,13 +23,16 @@ type serializer_t = int * t
 let serializer : serializer_t Serialization.serializer =
   Serialization.create_serializer Serialization.Key.cluster
 
+
 (** Load a cluster from a file *)
 let load_from_file (filename: DB.filename) : serializer_t option =
   Serialization.read_from_file serializer filename
 
+
 (** Save a cluster into a file *)
 let store_to_file (filename: DB.filename) (data: serializer_t) =
   Serialization.write_to_file serializer filename ~data
+
 
 let cl_name n = "cl" ^ string_of_int n
 
@@ -46,3 +49,4 @@ let pp_cluster fmt (nr, cluster) =
   (* touch the target of the rule to let `make` know that the job has been done *)
   F.fprintf fmt "\t%@touch $%@@\n" ;
   F.fprintf fmt "@\n"
+

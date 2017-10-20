@@ -53,13 +53,16 @@ struct
     try Some (InvariantMap.find node_id inv_map)
     with Not_found -> None
 
+
   (** extract the postcondition of node [n] from [inv_map] *)
   let extract_post node_id inv_map =
     match extract_state node_id inv_map with Some state -> Some state.post | None -> None
 
+
   (** extract the precondition of node [n] from [inv_map] *)
   let extract_pre node_id inv_map =
     match extract_state node_id inv_map with Some state -> Some state.pre | None -> None
+
 
   let exec_node node astate_pre work_queue inv_map ({ProcData.pdesc} as proc_data) ~debug =
     let node_id = CFG.id node in
@@ -67,10 +70,10 @@ struct
       let compute_post (pre, inv_map) (instr, id_opt) =
         let post = TransferFunctions.exec_instr pre proc_data node instr in
         match id_opt with
-        | Some id
-         -> (post, InvariantMap.add id {pre; post; visit_count} inv_map)
-        | None
-         -> (post, inv_map)
+        | Some id ->
+            (post, InvariantMap.add id {pre; post; visit_count} inv_map)
+        | None ->
+            (post, inv_map)
       in
       (* hack to ensure that we call `exec_instr` on a node even if it has no instructions *)
       let instr_ids = match CFG.instr_ids node with [] -> [(Sil.skip_instr, None)] | l -> l in
@@ -108,6 +111,7 @@ struct
       let visit_count = 1 in
       update_inv_map astate_pre visit_count
 
+
   let rec exec_worklist cfg work_queue inv_map proc_data ~debug =
     let compute_pre node inv_map =
       (* if the [pred] -> [node] transition was normal, use post([pred]) *)
@@ -119,25 +123,26 @@ struct
         List.fold ~f:extract_pre_f ~init:normal_posts (CFG.exceptional_preds cfg node)
       in
       match List.filter_opt all_posts with
-      | post :: posts
-       -> Some (List.fold ~f:Domain.join ~init:post posts)
-      | []
-       -> None
+      | post :: posts ->
+          Some (List.fold ~f:Domain.join ~init:post posts)
+      | [] ->
+          None
     in
     match Scheduler.pop work_queue with
-    | Some (_, [], work_queue')
-     -> exec_worklist cfg work_queue' inv_map proc_data ~debug
-    | Some (node, _, work_queue')
-     -> let inv_map_post, work_queue_post =
+    | Some (_, [], work_queue') ->
+        exec_worklist cfg work_queue' inv_map proc_data ~debug
+    | Some (node, _, work_queue') ->
+        let inv_map_post, work_queue_post =
           match compute_pre node inv_map with
-          | Some astate_pre
-           -> exec_node node astate_pre work_queue' inv_map proc_data ~debug
-          | None
-           -> (inv_map, work_queue')
+          | Some astate_pre ->
+              exec_node node astate_pre work_queue' inv_map proc_data ~debug
+          | None ->
+              (inv_map, work_queue')
         in
         exec_worklist cfg work_queue_post inv_map_post proc_data ~debug
-    | None
-     -> inv_map
+    | None ->
+        inv_map
+
 
   (* compute and return an invariant map for [cfg] *)
   let exec_cfg cfg proc_data ~initial ~debug =
@@ -147,15 +152,18 @@ struct
     in
     exec_worklist cfg work_queue' inv_map' proc_data ~debug
 
+
   (* compute and return an invariant map for [pdesc] *)
   let exec_pdesc ({ProcData.pdesc} as proc_data) =
     exec_cfg (CFG.from_pdesc pdesc) proc_data ~debug:Config.write_html
+
 
   (* compute and return the postcondition of [pdesc] *)
   let compute_post ?(debug= Config.write_html) ({ProcData.pdesc} as proc_data) ~initial =
     let cfg = CFG.from_pdesc pdesc in
     let inv_map = exec_cfg cfg proc_data ~initial ~debug in
     extract_post (CFG.id (CFG.exit_node cfg)) inv_map
+
 end
 
 module MakeWithScheduler (C : ProcCfg.S) (S : Scheduler.Make) (T : TransferFunctions.MakeSIL) =

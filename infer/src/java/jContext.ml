@@ -41,6 +41,7 @@ let create_context icfg procdesc impl cn source_file program =
   ; source_file
   ; program }
 
+
 let get_cfg context = context.icfg.cfg
 
 let get_cg context = context.icfg.cg
@@ -66,21 +67,25 @@ let get_or_set_pvar_type context var typ =
     set_var_map context (JBir.VarMap.add var (pvar, typ, typ) var_map) ;
     (pvar, typ)
 
+
 let set_pvar context var typ = fst (get_or_set_pvar_type context var typ)
 
 let reset_pvar_type context =
   let var_map = context.var_map in
   let aux var item =
-    match item
-    with pvar, otyp, _ -> set_var_map context (JBir.VarMap.add var (pvar, otyp, otyp) var_map)
+    match item with
+    | pvar, otyp, _ ->
+        set_var_map context (JBir.VarMap.add var (pvar, otyp, otyp) var_map)
   in
   JBir.VarMap.iter aux var_map
+
 
 let get_var_type context var =
   try
     let _, _, otyp = JBir.VarMap.find var context.var_map in
     Some otyp
   with Not_found -> None
+
 
 let get_if_jumps context = context.if_jumps
 
@@ -92,15 +97,18 @@ let get_if_jump context node =
   try Some (NodeTbl.find (get_if_jumps context) node)
   with Not_found -> None
 
+
 let add_goto_jump context pc jump = Hashtbl.add (get_goto_jumps context) pc jump
 
 let get_goto_jump context pc =
   try Hashtbl.find (get_goto_jumps context) pc
   with Not_found -> Next
 
+
 let is_goto_jump context pc =
   try match Hashtbl.find (get_goto_jumps context) pc with Jump _ -> true | _ -> false
   with Not_found -> false
+
 
 let exn_node_table = Typ.Procname.Hash.create 100
 
@@ -109,6 +117,8 @@ let reset_exn_node_table () = Typ.Procname.Hash.clear exn_node_table
 let add_exn_node procname (exn_node: Procdesc.Node.t) =
   Typ.Procname.Hash.add exn_node_table procname exn_node
 
+
 let get_exn_node procdesc =
   try Some (Typ.Procname.Hash.find exn_node_table (Procdesc.get_proc_name procdesc))
   with Not_found -> None
+

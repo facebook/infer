@@ -59,6 +59,7 @@ module Make (Spec : Spec) : S = struct
         L.(die InternalError)
           "Stopping analysis after 1000 iterations without convergence. Make sure your domain is finite height."
       else widen ~prev ~next ~num_iters
+
   end
 
   module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -74,6 +75,7 @@ module Make (Spec : Spec) : S = struct
         (fun astate acc ->
           Domain.add (Spec.exec_instr astate instr node_kind pname proc_data.ProcData.tenv) acc)
         astate_set Domain.empty
+
   end
 
   module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)
@@ -97,5 +99,7 @@ module Make (Spec : Spec) : S = struct
     let inv_map =
       Analyzer.exec_pdesc (ProcData.make_default proc_desc tenv) ~initial:Domain.empty
     in
-    Analyzer.InvariantMap.iter do_reporting inv_map ; summary
+    Analyzer.InvariantMap.iter do_reporting inv_map ;
+    summary
+
 end

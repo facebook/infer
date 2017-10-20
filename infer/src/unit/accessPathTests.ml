@@ -73,10 +73,10 @@ let tests =
     let check_make_ap exp expected_ap ~f_resolve_id =
       let make_ap exp =
         match AccessPath.of_lhs_exp ~include_array_indexes:true exp dummy_typ ~f_resolve_id with
-        | Some ap
-         -> ap
-        | None
-         -> assert false
+        | Some ap ->
+            ap
+        | None ->
+            assert false
       in
       let actual_ap = make_ap exp in
       let pp_diff fmt (actual_ap, expected_ap) =
@@ -106,10 +106,11 @@ let tests =
       (* make sure we can grab access paths from compound expressions *)
       let binop_exp = Exp.le xF_exp xFG_exp in
       match AccessPath.of_exp ~include_array_indexes:true binop_exp dummy_typ ~f_resolve_id with
-      | [ap1; ap2]
-       -> assert_equal ~cmp:AccessPath.equal ap1 xFG ; assert_equal ~cmp:AccessPath.equal ap2 xF
-      | _
-       -> assert false
+      | [ap1; ap2] ->
+          assert_equal ~cmp:AccessPath.equal ap1 xFG ;
+          assert_equal ~cmp:AccessPath.equal ap2 xF
+      | _ ->
+          assert false
     in
     "of_exp" >:: of_exp_test_
   in
@@ -179,3 +180,4 @@ let tests =
   in
   "all_tests_suite"
   >::: [equal_test; append_test; prefix_test; of_exp_test; abstraction_test; domain_test]
+

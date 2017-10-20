@@ -138,17 +138,23 @@ fb-setup:
 	$(QUIET)$(call silent_on_success,Facebook setup,\
 	$(MAKE) -C facebook setup)
 
-OCAMLFORMAT_EXE=facebook/dependencies/ocamlformat/src/_build/opt/ocamlformat.exe
+OCAMLFORMAT_EXE?=ocamlformat
 
 .PHONY: fmt
 fmt:
-	parallel $(OCAMLFORMAT_EXE) --no-warn-error -i ::: $$(git diff --name-only $$(git merge-base origin/master HEAD) | grep "\.mli\?$$")
+	parallel $(OCAMLFORMAT_EXE) -i ::: $$(git diff --name-only $$(git merge-base origin/master HEAD) | grep "\.mli\?$$")
+
+JBUILD_ML:=$(shell find * -name 'jbuild*.in' | grep -v workspace)
+
+.PHONY: fmt_jbuild
+fmt_jbuild:
+	parallel $(OCAMLFORMAT_EXE) -i ::: $(JBUILD_ML)
 
 SRC_ML:=$(shell find * \( -name _build -or -name facebook-clang-plugins -or -path facebook/dependencies \) -not -prune -or -type f -and -name '*'.ml -or -name '*'.mli 2>/dev/null)
 
 .PHONY: fmt_all
 fmt_all:
-	parallel $(OCAMLFORMAT_EXE) --no-warn-error -i ::: $(SRC_ML)
+	parallel $(OCAMLFORMAT_EXE) -i ::: $(SRC_ML) $(JBUILD_ML)
 
 # pre-building these avoids race conditions when building, eg src_build and test_build in parallel
 .PHONY: src_build_common
@@ -584,6 +590,8 @@ devsetup: Makefile.autoconf
 	$(QUIET)[ $(OPAM) != "no" ] || (echo 'No `opam` found, aborting setup.' >&2; exit 1)
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
 	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-checksum user-setup $(OPAM_DEV_DEPS))
+	$(QUIET)$(call silent_on_success,installing ocamlformat,\
+	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) pin add --yes ocamlformat https://github.com/ocaml-ppx/ocamlformat.git#$$(grep version .ocamlformat | cut -d ' ' -f 2))
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam config setup -a`$(TERM_RESET)' >&2
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); $(OPAM) config --yes setup -a
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2

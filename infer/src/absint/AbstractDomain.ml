@@ -57,34 +57,37 @@ module BottomLifted (Domain : S) = struct
     if phys_equal lhs rhs then true
     else
       match (lhs, rhs) with
-      | Bottom, _
-       -> true
-      | _, Bottom
-       -> false
-      | NonBottom lhs, NonBottom rhs
-       -> Domain.( <= ) ~lhs ~rhs
+      | Bottom, _ ->
+          true
+      | _, Bottom ->
+          false
+      | NonBottom lhs, NonBottom rhs ->
+          Domain.( <= ) ~lhs ~rhs
+
 
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
     else
       match (astate1, astate2) with
-      | Bottom, _
-       -> astate2
-      | _, Bottom
-       -> astate1
-      | NonBottom a1, NonBottom a2
-       -> NonBottom (Domain.join a1 a2)
+      | Bottom, _ ->
+          astate2
+      | _, Bottom ->
+          astate1
+      | NonBottom a1, NonBottom a2 ->
+          NonBottom (Domain.join a1 a2)
+
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
       match (prev, next) with
-      | Bottom, _
-       -> next
-      | _, Bottom
-       -> prev
-      | NonBottom prev, NonBottom next
-       -> NonBottom (Domain.widen ~prev ~next ~num_iters)
+      | Bottom, _ ->
+          next
+      | _, Bottom ->
+          prev
+      | NonBottom prev, NonBottom next ->
+          NonBottom (Domain.widen ~prev ~next ~num_iters)
+
 
   let pp fmt = function Bottom -> F.fprintf fmt "_|_" | NonBottom astate -> Domain.pp fmt astate
 end
@@ -98,30 +101,33 @@ module TopLifted (Domain : S) = struct
     if phys_equal lhs rhs then true
     else
       match (lhs, rhs) with
-      | _, Top
-       -> true
-      | Top, _
-       -> false
-      | NonTop lhs, NonTop rhs
-       -> Domain.( <= ) ~lhs ~rhs
+      | _, Top ->
+          true
+      | Top, _ ->
+          false
+      | NonTop lhs, NonTop rhs ->
+          Domain.( <= ) ~lhs ~rhs
+
 
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
     else
       match (astate1, astate2) with
-      | Top, _ | _, Top
-       -> Top
-      | NonTop a1, NonTop a2
-       -> NonTop (Domain.join a1 a2)
+      | Top, _ | _, Top ->
+          Top
+      | NonTop a1, NonTop a2 ->
+          NonTop (Domain.join a1 a2)
+
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
       match (prev, next) with
-      | Top, _ | _, Top
-       -> Top
-      | NonTop prev, NonTop next
-       -> NonTop (Domain.widen ~prev ~next ~num_iters)
+      | Top, _ | _, Top ->
+          Top
+      | NonTop prev, NonTop next ->
+          NonTop (Domain.widen ~prev ~next ~num_iters)
+
 
   let pp fmt = function Top -> F.fprintf fmt "T" | NonTop astate -> Domain.pp fmt astate
 end
@@ -134,15 +140,18 @@ module Pair (Domain1 : S) (Domain2 : S) = struct
     else Domain1.( <= ) ~lhs:(fst lhs) ~rhs:(fst rhs)
       && Domain2.( <= ) ~lhs:(snd lhs) ~rhs:(snd rhs)
 
+
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
     else (Domain1.join (fst astate1) (fst astate2), Domain2.join (snd astate1) (snd astate2))
+
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
       ( Domain1.widen ~prev:(fst prev) ~next:(fst next) ~num_iters
       , Domain2.widen ~prev:(snd prev) ~next:(snd next) ~num_iters )
+
 
   let pp fmt (astate1, astate2) = F.fprintf fmt "(%a, %a)" Domain1.pp astate1 Domain2.pp astate2
 end
@@ -187,19 +196,21 @@ module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = stru
           with Not_found -> false)
         lhs
 
+
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
     else
       M.merge
         (fun _ v1_opt v2_opt ->
           match (v1_opt, v2_opt) with
-          | Some v1, Some v2
-           -> Some (ValueDomain.join v1 v2)
-          | Some v, _ | _, Some v
-           -> Some v
-          | None, None
-           -> None)
+          | Some v1, Some v2 ->
+              Some (ValueDomain.join v1 v2)
+          | Some v, _ | _, Some v ->
+              Some v
+          | None, None ->
+              None)
         astate1 astate2
+
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
@@ -207,13 +218,14 @@ module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = stru
       M.merge
         (fun _ v1_opt v2_opt ->
           match (v1_opt, v2_opt) with
-          | Some v1, Some v2
-           -> Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
-          | Some v, _ | _, Some v
-           -> Some v
-          | None, None
-           -> None)
+          | Some v1, Some v2 ->
+              Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
+          | Some v, _ | _, Some v ->
+              Some v
+          | None, None ->
+              None)
         prev next
+
 
   let pp fmt astate = M.pp ~pp_value:ValueDomain.pp fmt astate
 end
@@ -230,17 +242,19 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
       try M.for_all (fun k rhs_v -> ValueDomain.( <= ) ~lhs:(M.find k lhs) ~rhs:rhs_v) rhs
       with Not_found -> false
 
+
   let join astate1 astate2 =
     if phys_equal astate1 astate2 then astate1
     else
       M.merge
         (fun _ v1_opt v2_opt ->
           match (v1_opt, v2_opt) with
-          | Some v1, Some v2
-           -> Some (ValueDomain.join v1 v2)
-          | _
-           -> None)
+          | Some v1, Some v2 ->
+              Some (ValueDomain.join v1 v2)
+          | _ ->
+              None)
         astate1 astate2
+
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
@@ -248,11 +262,12 @@ module InvertedMap (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S
       M.merge
         (fun _ v1_opt v2_opt ->
           match (v1_opt, v2_opt) with
-          | Some v1, Some v2
-           -> Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
-          | _
-           -> None)
+          | Some v1, Some v2 ->
+              Some (ValueDomain.widen ~prev:v1 ~next:v2 ~num_iters)
+          | _ ->
+              None)
         prev next
+
 
   let pp fmt astate = M.pp ~pp_value:ValueDomain.pp fmt astate
 end

@@ -39,35 +39,39 @@ let is_active, add_active, remove_active =
   in
   (is_active, add_active, remove_active)
 
+
 let should_create_summary proc_name proc_attributes =
   match proc_name with
-  | Typ.Procname.Java _
-   -> true
-  | _
-   -> proc_attributes.ProcAttributes.is_defined
+  | Typ.Procname.Java _ ->
+      true
+  | _ ->
+      proc_attributes.ProcAttributes.is_defined
+
 
 let should_be_analyzed proc_name proc_attributes =
   let already_analyzed () =
     match Specs.get_summary proc_name with
-    | Some summary
-     -> Specs.equal_status (Specs.get_status summary) Specs.Analyzed
-    | None
-     -> false
+    | Some summary ->
+        Specs.equal_status (Specs.get_status summary) Specs.Analyzed
+    | None ->
+        false
   in
   should_create_summary proc_name proc_attributes && not (is_active proc_name)
   && (* avoid infinite loops *)
      not (already_analyzed ())
 
+
 let procedure_should_be_analyzed proc_name =
   match Specs.proc_resolve_attributes proc_name with
-  | Some proc_attributes when Config.reactive_capture && not proc_attributes.is_defined
-   -> (* try to capture procedure first *)
+  | Some proc_attributes when Config.reactive_capture && not proc_attributes.is_defined ->
+      (* try to capture procedure first *)
       let defined_proc_attributes = OndemandCapture.try_capture proc_attributes in
       Option.value_map ~f:(should_be_analyzed proc_name) ~default:false defined_proc_attributes
-  | Some proc_attributes
-   -> should_be_analyzed proc_name proc_attributes
-  | None
-   -> false
+  | Some proc_attributes ->
+      should_be_analyzed proc_name proc_attributes
+  | None ->
+      false
+
 
 type global_state =
   { abs_val: int
@@ -89,6 +93,7 @@ let save_global_state () =
   ; name_generator= Ident.NameGenerator.get_current ()
   ; symexec_state= State.save_state () }
 
+
 let restore_global_state st =
   Config.abs_val := st.abs_val ;
   Abs.set_current_rules st.abstraction_rules ;
@@ -98,6 +103,7 @@ let restore_global_state st =
   Ident.NameGenerator.set_current st.name_generator ;
   State.restore_state st.symexec_state ;
   Timeout.resume_previous_timeout ()
+
 
 let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
   let curr_pname = Procdesc.get_proc_name curr_pdesc in
@@ -130,7 +136,7 @@ let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
     Reporting.log_error summary exn ;
     let stats = {summary.Specs.stats with Specs.stats_failure= Some kind} in
     let payload = {summary.Specs.payload with Specs.preposts= Some []} in
-    let new_summary = {summary with Specs.stats= stats; payload} in
+    let new_summary = {summary with Specs.stats; payload} in
     Specs.store_summary new_summary ;
     remove_active callee_pname ;
     log_elapsed_time () ;
@@ -151,44 +157,50 @@ let run_proc_analysis analyze_proc curr_pdesc callee_pdesc =
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Typ.Procname.pp
       callee_pname (Exn.to_string exn) (Printexc.get_backtrace ()) ;
     match exn with
-    | SymOp.Analysis_failure_exe kind
-     -> (* in production mode, log the timeout/crash and continue with the summary we had before
+    | SymOp.Analysis_failure_exe kind ->
+        (* in production mode, log the timeout/crash and continue with the summary we had before
             the failure occurred *)
         log_error_and_continue exn initial_summary kind
-    | _
-     -> (* this happens with assert false or some other unrecognized exception *)
+    | _ ->
+        (* this happens with assert false or some other unrecognized exception *)
         log_error_and_continue exn initial_summary (FKcrash (Exn.to_string exn))
+
 
 let analyze_proc_desc curr_pdesc callee_pdesc : Specs.summary option =
   let callee_pname = Procdesc.get_proc_name callee_pdesc in
   let proc_attributes = Procdesc.get_attributes callee_pdesc in
   match !callbacks_ref with
-  | None
-   -> L.(die InternalError)
+  | None ->
+      L.(die InternalError)
         "No callbacks registered to analyze proc desc %a when analyzing %a" Typ.Procname.pp
-        callee_pname Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
-  | Some callbacks
-   -> if should_be_analyzed callee_pname proc_attributes then
+        callee_pname Typ.Procname.pp
+        (Procdesc.get_proc_name curr_pdesc)
+  | Some callbacks ->
+      if should_be_analyzed callee_pname proc_attributes then
         Some (run_proc_analysis callbacks.analyze_ondemand curr_pdesc callee_pdesc)
       else Specs.get_summary callee_pname
+
 
 (** analyze_proc_name curr_pdesc proc_name performs an on-demand analysis of proc_name triggered
     during the analysis of curr_pname *)
 let analyze_proc_name curr_pdesc callee_pname : Specs.summary option =
   match !callbacks_ref with
-  | None
-   -> L.(die InternalError)
+  | None ->
+      L.(die InternalError)
         "No callbacks registered to analyze proc name %a when analyzing %a@." Typ.Procname.pp
-        callee_pname Typ.Procname.pp (Procdesc.get_proc_name curr_pdesc)
-  | Some callbacks
-   -> if procedure_should_be_analyzed callee_pname then
+        callee_pname Typ.Procname.pp
+        (Procdesc.get_proc_name curr_pdesc)
+  | Some callbacks ->
+      if procedure_should_be_analyzed callee_pname then
         match callbacks.get_proc_desc callee_pname with
-        | Some callee_pdesc
-         -> analyze_proc_desc curr_pdesc callee_pdesc
-        | None
-         -> Specs.get_summary callee_pname
+        | Some callee_pdesc ->
+            analyze_proc_desc curr_pdesc callee_pdesc
+        | None ->
+            Specs.get_summary callee_pname
       else Specs.get_summary callee_pname
+
 
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
 let get_proc_desc callee_pname =
   match !callbacks_ref with Some callbacks -> callbacks.get_proc_desc callee_pname | None -> None
+

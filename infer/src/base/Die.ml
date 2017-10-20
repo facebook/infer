@@ -21,25 +21,27 @@ exception InferExit of int
 
 let raise_error error ~msg =
   match error with
-  | ExternalError
-   -> raise (InferExternalError msg)
-  | InternalError
-   -> raise (InferInternalError msg)
-  | UserError
-   -> raise (InferUserError msg)
+  | ExternalError ->
+      raise (InferExternalError msg)
+  | InternalError ->
+      raise (InferInternalError msg)
+  | UserError ->
+      raise (InferUserError msg)
+
 
 let die error fmt = F.kasprintf (fun msg -> raise_error error ~msg) fmt
 
 let exit exitcode = raise (InferExit exitcode)
 
 let exit_code_of_exception = function
-  | InferUserError _
-   -> 1
-  | InferExternalError _
-   -> 3
-  | InferInternalError _
-   -> 4
-  | InferExit exitcode
-   -> exitcode
-  | _
-   -> (* exit code 2 is used by the OCaml runtime in cases of uncaught exceptions *) 2
+  | InferUserError _ ->
+      1
+  | InferExternalError _ ->
+      3
+  | InferInternalError _ ->
+      4
+  | InferExit exitcode ->
+      exitcode
+  | _ ->
+      (* exit code 2 is used by the OCaml runtime in cases of uncaught exceptions *) 2
+

@@ -47,6 +47,7 @@ let to_json ps =
     ; ("stack_kb", `Float ps.stack_kb)
     ; ("minor_heap_kb", `Float ps.minor_heap_kb) ]
 
+
 let from_json json =
   let open! Yojson.Basic.Util in
   { rtime= json |> member "rtime" |> to_float
@@ -64,6 +65,7 @@ let from_json json =
   ; top_heap_gb= json |> member "top_heap_gb" |> to_float
   ; stack_kb= json |> member "stack_kb" |> to_float
   ; minor_heap_kb= json |> member "minor_heap_kb" |> to_float }
+
 
 let aggregate s =
   let mk_stats f = StatisticsToolbox.compute_statistics (List.map ~f s) in
@@ -99,6 +101,7 @@ let aggregate s =
     ; ("stack_kb", StatisticsToolbox.to_json aggr_stack_kb)
     ; ("minor_heap_kb", StatisticsToolbox.to_json aggr_minor_heap_kb) ]
 
+
 let stats () =
   let words_to_kb n = n *. float_of_int (Sys.word_size / 8) /. 1024. in
   let words_to_mb n = words_to_kb n /. 1024. in
@@ -123,6 +126,7 @@ let stats () =
   ; stack_kb= words_to_kb (float_of_int gc_stats.stack_size)
   ; minor_heap_kb= words_to_kb (float_of_int gc_ctrl.minor_heap_size) }
 
+
 let report_at_exit file () =
   try
     let json_stats = to_json (stats ()) in
@@ -133,10 +137,13 @@ let report_at_exit file () =
           Yojson.Basic.pretty_to_channel stats_oc json_stats )
     with exc ->
       L.internal_error "Info: failed to write stats to %s@\n%s@\n%s@\n%s@." file
-        (Exn.to_string exc) (Yojson.Basic.pretty_to_string json_stats) (Printexc.get_backtrace ())
+        (Exn.to_string exc)
+        (Yojson.Basic.pretty_to_string json_stats)
+        (Printexc.get_backtrace ())
   with exc ->
     L.internal_error "Info: failed to compute stats for %s@\n%s@\n%s@." file (Exn.to_string exc)
       (Printexc.get_backtrace ())
+
 
 let register_report_at_exit =
   (* take care of not double-registering the same perf stat report *)
@@ -146,3 +153,4 @@ let register_report_at_exit =
       String.Table.set registered_files ~key:file ~data:() ;
       if not Config.buck_cache_mode then
         Epilogues.register ~f:(report_at_exit file) ("stats reporting in " ^ file) )
+

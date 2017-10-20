@@ -39,7 +39,7 @@ val db_canonicalize : unit -> unit
 val db_close : unit -> unit
 (** close the current connection to the database *)
 
-val register_statement : ('a, unit, string, (unit -> Sqlite3.stmt)) Base.format4 -> 'a
+val register_statement : ('a, unit, string, unit -> Sqlite3.stmt) Base.format4 -> 'a
 (** Return a function unit -> Sqlite3.stmt that can be called (once the DB has been initialized) to
     get the prepared statement corresponding to the current DB connection. Use this to prepare
     statements only once per DB connection.

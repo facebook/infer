@@ -51,13 +51,16 @@ module Make (TraceElem : TraceElem.S) = struct
     let dummy_source = () in
     of_source dummy_source
 
+
   let get_reportable_sink_paths t ~trace_of_pname =
     List.map
       ~f:(fun (passthroughs, _, sinks) -> (passthroughs, sinks))
       (get_reportable_paths t ~trace_of_pname)
 
+
   let to_sink_loc_trace ?desc_of_sink ?sink_should_nest (passthroughs, sinks) =
     to_loc_trace ?desc_of_sink ?sink_should_nest (passthroughs, [], sinks)
+
 
   let with_callsite t call_site =
     List.fold
@@ -67,22 +70,26 @@ module Make (TraceElem : TraceElem.S) = struct
       ~init:empty
       (Sinks.elements (sinks t))
 
+
   let of_sink sink =
     let sinks = Sinks.add sink Sinks.empty in
     update_sinks empty sinks
 
+
   let get_reportable_sink_path sink ~trace_of_pname =
     match get_reportable_sink_paths (of_sink sink) ~trace_of_pname with
-    | []
-     -> None
-    | [report]
-     -> Some report
-    | _
-     -> L.(die InternalError) "Should not get >1 report for 1 sink"
+    | [] ->
+        None
+    | [report] ->
+        Some report
+    | _ ->
+        L.(die InternalError) "Should not get >1 report for 1 sink"
+
 
   let pp fmt t =
     let pp_passthroughs_if_not_empty fmt p =
       if not (Passthroughs.is_empty p) then F.fprintf fmt " via %a" Passthroughs.pp p
     in
     F.fprintf fmt "%a%a" Sinks.pp (sinks t) pp_passthroughs_if_not_empty (passthroughs t)
+
 end

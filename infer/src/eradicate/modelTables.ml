@@ -106,6 +106,7 @@ let check_not_null_parameter_list, check_not_null_list =
   in
   (List.map ~f:(fun (x, _, z) -> (x, z)) list, List.map ~f:(fun (_, y, z) -> (y, z)) list)
 
+
 let check_state_list =
   [ ((o, [n]), "Preconditions.checkState(boolean):void")
   ; ((o, [n]), "com.facebook.common.internal.Preconditions.checkState(boolean):void")
@@ -126,6 +127,7 @@ let check_state_list =
   ; ( (o, [n; o])
     , "com.facebook.infer.annotation.Assertions.assumeCondition(boolean,java.lang.String):void" ) ]
 
+
 let check_argument_list =
   [ ((o, [n]), "com.facebook.common.internal.Preconditions.checkArgument(boolean):void")
   ; ( (o, [n; n])
@@ -140,22 +142,27 @@ let check_argument_list =
     , "com.google.common.base.Preconditions.checkArgument(boolean,java.lang.String,java.lang.Object[]):void"
     ) ]
 
+
 let optional_get_list : ((_ * bool list) * _) list =
   [ ((o, []), "Optional.get():java.lang.Object")
   ; ((o, []), "com.google.common.base.Optional.get():java.lang.Object") ]
+
 
 let optional_isPresent_list : ((_ * bool list) * _) list =
   [ ((o, []), "Optional.isPresent():boolean")
   ; ((o, []), "com.google.common.base.Optional.isPresent():boolean") ]
 
+
 (** Models for boolean functions that return true on null. *)
 let true_on_null_list : ((_ * bool list) * _) list =
   [(n1, "android.text.TextUtils.isEmpty(java.lang.CharSequence):boolean")]
+
 
 (** Models for Map.containsKey *)
 let containsKey_list =
   [ (n1, "com.google.common.collect.ImmutableMap.containsKey(java.lang.Object):boolean")
   ; (n1, "java.util.Map.containsKey(java.lang.Object):boolean") ]
+
 
 (** Models for Map.put *)
 let mapPut_list =
@@ -163,6 +170,7 @@ let mapPut_list =
     , "com.google.common.collect.ImmutableMap.put(java.lang.Object,java.lang.Object):java.lang.Object"
     )
   ; (cp, "java.util.Map.put(java.lang.Object,java.lang.Object):java.lang.Object") ]
+
 
 (** Models for @Nullable annotations *)
 let annotated_list_nullable =
@@ -190,9 +198,9 @@ let annotated_list_nullable =
     ; (n1, "com.google.common.base.Strings.nullToEmpty(java.lang.String):java.lang.String")
     ; (cg, "com.google.common.collect.ImmutableMap.get(java.lang.Object):java.lang.Object")
     ; (* container get *)
-    ( o1
-    , "com.google.common.collect.ImmutableList$Builder.add(java.lang.Object):com.google.common.collect.ImmutableList$Builder"
-    )
+      ( o1
+      , "com.google.common.collect.ImmutableList$Builder.add(java.lang.Object):com.google.common.collect.ImmutableList$Builder"
+      )
     ; ( o1
       , "com.google.common.collect.ImmutableList$Builder.addAll(java.lang.Iterable):com.google.common.collect.ImmutableList$Builder"
       )
@@ -221,15 +229,15 @@ let annotated_list_nullable =
     ; (n1, "java.util.AbstractList.equals(java.lang.Object):boolean")
     ; (ca, "java.util.ArrayList.add(java.lang.Object):boolean")
     ; (* container add *)
-    (ca, "java.util.List.add(java.lang.Object):boolean")
+      (ca, "java.util.List.add(java.lang.Object):boolean")
     ; (* container add *)
-    (cg, "java.util.Map.get(java.lang.Object):java.lang.Object")
+      (cg, "java.util.Map.get(java.lang.Object):java.lang.Object")
     ; (* container get *)
-    (cp, "java.util.Map.put(java.lang.Object,java.lang.Object):java.lang.Object")
+      (cp, "java.util.Map.put(java.lang.Object,java.lang.Object):java.lang.Object")
     ; (* container put *)
-    ( (n, [o])
-    , "javax.lang.model.element.Element.getAnnotation(java.lang.Class):java.lang.annotation.Annotation"
-    )
+      ( (n, [o])
+      , "javax.lang.model.element.Element.getAnnotation(java.lang.Class):java.lang.annotation.Annotation"
+      )
     ; ( ng
       , "javax.lang.model.element.Element.getEnclosingElement():javax.lang.model.element.Element" )
     ; ( ng
@@ -396,11 +404,12 @@ let annotated_list_nullable =
       , "org.w3c.dom.Node.setUserData(java.lang.String,java.lang.Object,org.w3c.dom.UserDataHandler):java.lang.Object"
       )
     ; (* References *)
-    (ng, "java.lang.ref.Reference.get():java.lang.Object")
+      (ng, "java.lang.ref.Reference.get():java.lang.Object")
     ; (ng, "java.lang.ref.PhantomReference.get():java.lang.Object")
     ; (ng, "java.lang.ref.SoftReference.get():java.lang.Object")
     ; (ng, "java.lang.ref.WeakReference.get():java.lang.Object")
     ; (ng, "java.util.concurrent.atomic.AtomicReference.get():java.lang.Object") ]
+
 
 (** Models for @Present annotations *)
 let annotated_list_present =
@@ -408,15 +417,17 @@ let annotated_list_present =
   ; ( (n, [o])
     , "com.google.common.base.Optional.of(java.lang.Object):com.google.common.base.Optional" ) ]
 
+
 (** Models for methods that do not return *)
 let noreturn_list = [((o, [o]), "java.lang.System.exit(int):void")]
 
-type model_table_t = (string, (bool * bool list)) Hashtbl.t
+type model_table_t = (string, bool * bool list) Hashtbl.t
 
 let mk_table list =
   let map = Hashtbl.create 1 in
   List.iter ~f:(function v, pn_id -> Hashtbl.replace map pn_id v) list ;
   map
+
 
 let this_file = Filename.basename __FILE__
 
@@ -426,6 +437,7 @@ let annotated_table_present = mk_table annotated_list_present
 
 let check_not_null_table, check_not_null_parameter_table =
   (mk_table check_not_null_list, mk_table check_not_null_parameter_list)
+
 
 let check_state_table = mk_table check_state_list
 

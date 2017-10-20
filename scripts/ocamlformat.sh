@@ -15,7 +15,7 @@ set -o pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-OCAMLFORMAT="$SCRIPT_DIR"/../facebook/dependencies/ocamlformat/src/_build/opt/ocamlformat.exe
+OCAMLFORMAT=ocamlformat
 
 TMPFILE=$(mktemp)
 

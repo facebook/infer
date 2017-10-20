@@ -31,12 +31,15 @@ let pp f (loc: t) =
   F.fprintf f "line %d" loc.line ;
   if loc.col <> -1 then F.fprintf f ", column %d" loc.col
 
+
 let to_string loc =
   let s = string_of_int loc.line in
   if loc.col <> -1 then Printf.sprintf "%s:%d" s loc.col else s
+
 
 (** Pretty print a file-position of a location *)
 let pp_file_pos f (loc: t) =
   let fname = SourceFile.to_string loc.file in
   let pos = to_string loc in
   F.fprintf f "%s:%s" fname pos
+

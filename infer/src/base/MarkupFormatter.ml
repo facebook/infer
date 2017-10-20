@@ -37,6 +37,7 @@ end = struct
     ; wrap_bold= wrap_simple
     ; pp_bold= pp_simple
     ; bold_to_string= Fn.id }
+
 end
 
 module PhabricatorFormatter : sig
@@ -71,14 +72,16 @@ end = struct
     ; wrap_bold
     ; pp_bold
     ; bold_to_string }
+
 end
 
 let formatter =
   match Config.report_formatter with
-  | `No_formatter
-   -> NoFormatter.formatter
-  | `Phabricator_formatter
-   -> PhabricatorFormatter.formatter
+  | `No_formatter ->
+      NoFormatter.formatter
+  | `Phabricator_formatter ->
+      PhabricatorFormatter.formatter
+
 
 let wrap_monospaced = formatter.wrap_monospaced
 

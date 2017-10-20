@@ -25,16 +25,18 @@ let strip_template_args quals =
   let no_template_name s = List.hd_exn (String.split ~on:'<' s) in
   List.map ~f:no_template_name quals
 
+
 let append_template_args_to_last quals ~args =
   match quals with
-  | [last; _] when String.contains last '<'
-   -> L.(die InternalError)
+  | [last; _] when String.contains last '<' ->
+      L.(die InternalError)
         "expected qualified name without template args, but got %s, the last qualifier of %s" last
         (String.concat ~sep:", " quals)
-  | last :: rest
-   -> (last ^ args) :: rest
-  | []
-   -> L.(die InternalError) "expected non-empty qualified name"
+  | last :: rest ->
+      (last ^ args) :: rest
+  | [] ->
+      L.(die InternalError) "expected non-empty qualified name"
+
 
 let to_list = List.rev
 
@@ -68,12 +70,14 @@ module Match = struct
   let regexp_string_of_qualifiers quals =
     Str.quote (to_separated_string ~sep:matching_separator quals) ^ "$"
 
+
   let qualifiers_list_matcher quals_list =
     ( if List.is_empty quals_list then "a^"
     else
       (* regexp that does not match anything *)
       List.map ~f:regexp_string_of_qualifiers quals_list |> String.concat ~sep:"\\|" )
     |> Str.regexp
+
 
   let qualifiers_of_fuzzy_qual_name qual_name =
     (* Fail if we detect templates in the fuzzy name. Template instantiations are not taken into
@@ -86,12 +90,15 @@ module Match = struct
           L.(die InternalError) "Unexpected template in fuzzy qualified name %s." qual_name ) ;
     of_qual_string qual_name
 
+
   let of_fuzzy_qual_names fuzzy_qual_names =
     List.map fuzzy_qual_names ~f:qualifiers_of_fuzzy_qual_name |> qualifiers_list_matcher
+
 
   let match_qualifiers matcher quals =
     (* qual_name may have qualifiers with template parameters - drop them to whitelist all
        instantiations *)
     let normalized_qualifiers = strip_template_args quals in
     Str.string_match matcher (to_separated_string ~sep:matching_separator normalized_qualifiers) 0
+
 end

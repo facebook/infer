@@ -32,50 +32,57 @@ module Raw = struct
   let pp_base fmt (pvar, _) = Var.pp fmt pvar
 
   let rec pp_access fmt = function
-    | FieldAccess field_name
-     -> Typ.Fieldname.pp fmt field_name
-    | ArrayAccess (_, [])
-     -> F.fprintf fmt "[_]"
-    | ArrayAccess (_, index_aps)
-     -> F.fprintf fmt "[%a]" (PrettyPrintable.pp_collection ~pp_item:pp) index_aps
+    | FieldAccess field_name ->
+        Typ.Fieldname.pp fmt field_name
+    | ArrayAccess (_, []) ->
+        F.fprintf fmt "[_]"
+    | ArrayAccess (_, index_aps) ->
+        F.fprintf fmt "[%a]" (PrettyPrintable.pp_collection ~pp_item:pp) index_aps
+
 
   and pp_access_list fmt accesses =
     let pp_sep _ _ = F.fprintf fmt "." in
     F.pp_print_list ~pp_sep pp_access fmt accesses
 
+
   and pp fmt = function
-    | base, []
-     -> pp_base fmt base
-    | base, accesses
-     -> F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
+    | base, [] ->
+        pp_base fmt base
+    | base, accesses ->
+        F.fprintf fmt "%a.%a" pp_base base pp_access_list accesses
+
 
   let equal = [%compare.equal : t]
 
   let truncate = function
-    | base, [] | base, [_]
-     -> (base, [])
-    | base, accesses
-     -> (base, List.rev (List.tl_exn (List.rev accesses)))
+    | base, [] | base, [_] ->
+        (base, [])
+    | base, accesses ->
+        (base, List.rev (List.tl_exn (List.rev accesses)))
+
 
   let lookup_field_type_annot tenv base_typ field_name =
     let lookup = Tenv.lookup tenv in
     Typ.Struct.get_field_type_and_annotation ~lookup field_name base_typ
 
+
   (* Get the type of an access, or None if the type cannot be determined *)
   let get_access_type tenv base_typ = function
-    | FieldAccess field_name
-     -> Option.map (lookup_field_type_annot tenv base_typ field_name) ~f:fst
-    | ArrayAccess (array_typ, _)
-     -> Some array_typ
+    | FieldAccess field_name ->
+        Option.map (lookup_field_type_annot tenv base_typ field_name) ~f:fst
+    | ArrayAccess (array_typ, _) ->
+        Some array_typ
+
 
   (* For field access, get the field name and the annotation associated with it
    * Return None if given an array access, or if the info cannot be obtained *)
   let get_access_field_annot tenv base_typ = function
-    | FieldAccess field_name
-     -> Option.map (lookup_field_type_annot tenv base_typ field_name) ~f:(fun (_, annot) ->
+    | FieldAccess field_name ->
+        Option.map (lookup_field_type_annot tenv base_typ field_name) ~f:(fun (_, annot) ->
             (field_name, annot) )
-    | ArrayAccess _
-     -> None
+    | ArrayAccess _ ->
+        None
+
 
   (* Extract the last access of the given access path together with its base type.
    * Here the base type is defined to be the declaring class of the last accessed field,
@@ -86,36 +93,39 @@ module Raw = struct
    * - for x, the base type of the last access is type(x) *)
   let last_access_info ((_, base_typ), accesses) tenv =
     let rec last_access_info_impl tenv base_typ = function
-      | []
-       -> (Some base_typ, None)
-      | [last_access]
-       -> (Some base_typ, Some last_access)
+      | [] ->
+          (Some base_typ, None)
+      | [last_access] ->
+          (Some base_typ, Some last_access)
       | curr_access :: rest ->
         match get_access_type tenv base_typ curr_access with
-        | Some access_typ
-         -> last_access_info_impl tenv access_typ rest
-        | None
-         -> (None, None)
+        | Some access_typ ->
+            last_access_info_impl tenv access_typ rest
+        | None ->
+            (None, None)
     in
     last_access_info_impl tenv base_typ accesses
+
 
   let get_last_access (_, accesses) = List.last accesses
 
   let get_field_and_annotation ap tenv =
     match last_access_info ap tenv with
-    | Some base_typ, Some access
-     -> get_access_field_annot tenv base_typ access
-    | _
-     -> None
+    | Some base_typ, Some access ->
+        get_access_field_annot tenv base_typ access
+    | _ ->
+        None
+
 
   let get_typ ap tenv =
     match last_access_info ap tenv with
-    | (Some _ as typ), None
-     -> typ
-    | Some base_typ, Some access
-     -> get_access_type tenv base_typ access
-    | _
-     -> None
+    | (Some _ as typ), None ->
+        typ
+    | Some base_typ, Some access ->
+        get_access_type tenv base_typ access
+    | _ ->
+        None
+
 
   let base_of_pvar pvar typ = (Var.of_pvar pvar, typ)
 
@@ -131,48 +141,50 @@ module Raw = struct
       match exp with
       | Exp.Var id -> (
         match f_resolve_id (Var.of_id id) with
-        | Some (base, base_accesses)
-         -> (base, base_accesses @ accesses) :: acc
-        | None
-         -> (base_of_id id typ, accesses) :: acc )
+        | Some (base, base_accesses) ->
+            (base, base_accesses @ accesses) :: acc
+        | None ->
+            (base_of_id id typ, accesses) :: acc )
       | Exp.Lvar pvar when Pvar.is_ssa_frontend_tmp pvar -> (
         match f_resolve_id (Var.of_pvar pvar) with
-        | Some (base, base_accesses)
-         -> (base, base_accesses @ accesses) :: acc
-        | None
-         -> (base_of_pvar pvar typ, accesses) :: acc )
-      | Exp.Lvar pvar
-       -> (base_of_pvar pvar typ, accesses) :: acc
-      | Exp.Lfield (root_exp, fld, root_exp_typ)
-       -> let field_access = FieldAccess fld in
+        | Some (base, base_accesses) ->
+            (base, base_accesses @ accesses) :: acc
+        | None ->
+            (base_of_pvar pvar typ, accesses) :: acc )
+      | Exp.Lvar pvar ->
+          (base_of_pvar pvar typ, accesses) :: acc
+      | Exp.Lfield (root_exp, fld, root_exp_typ) ->
+          let field_access = FieldAccess fld in
           of_exp_ root_exp root_exp_typ (field_access :: accesses) acc
-      | Exp.Lindex (root_exp, index_exp)
-       -> let index_access_paths =
+      | Exp.Lindex (root_exp, index_exp) ->
+          let index_access_paths =
             if include_array_indexes then of_exp_ index_exp typ [] [] else []
           in
           let array_access = ArrayAccess (typ, index_access_paths) in
           let array_typ = Typ.mk (Tarray (typ, None, None)) in
           of_exp_ root_exp array_typ (array_access :: accesses) acc
-      | Exp.Cast (cast_typ, cast_exp)
-       -> of_exp_ cast_exp cast_typ [] acc
-      | Exp.UnOp (_, unop_exp, _)
-       -> of_exp_ unop_exp typ [] acc
-      | Exp.Exn exn_exp
-       -> of_exp_ exn_exp typ [] acc
-      | Exp.BinOp (_, exp1, exp2)
-       -> of_exp_ exp1 typ [] acc |> of_exp_ exp2 typ []
-      | Exp.Const _ | Closure _ | Sizeof _
-       -> (* trying to make access path from an invalid expression *)
+      | Exp.Cast (cast_typ, cast_exp) ->
+          of_exp_ cast_exp cast_typ [] acc
+      | Exp.UnOp (_, unop_exp, _) ->
+          of_exp_ unop_exp typ [] acc
+      | Exp.Exn exn_exp ->
+          of_exp_ exn_exp typ [] acc
+      | Exp.BinOp (_, exp1, exp2) ->
+          of_exp_ exp1 typ [] acc |> of_exp_ exp2 typ []
+      | Exp.Const _ | Closure _ | Sizeof _ ->
+          (* trying to make access path from an invalid expression *)
           acc
     in
     of_exp_ exp0 typ0 [] []
 
+
   let of_lhs_exp ~include_array_indexes lhs_exp typ ~(f_resolve_id: Var.t -> t option) =
     match of_exp ~include_array_indexes lhs_exp typ ~f_resolve_id with
-    | [lhs_ap]
-     -> Some lhs_ap
-    | _
-     -> None
+    | [lhs_ap] ->
+        Some lhs_ap
+    | _ ->
+        None
+
 
   let append (base, old_accesses) new_accesses = (base, old_accesses @ new_accesses)
 
@@ -180,15 +192,17 @@ module Raw = struct
     if phys_equal path1 path2 then true
     else
       match (path1, path2) with
-      | [], _
-       -> true
-      | _, []
-       -> false
-      | access1 :: p1, access2 :: p2
-       -> equal_access access1 access2 && is_prefix_path p1 p2
+      | [], _ ->
+          true
+      | _, [] ->
+          false
+      | access1 :: p1, access2 :: p2 ->
+          equal_access access1 access2 && is_prefix_path p1 p2
 
-  let is_prefix (base1, path1 as ap1) (base2, path2 as ap2) =
+
+  let is_prefix ((base1, path1) as ap1) ((base2, path2) as ap2) =
     if phys_equal ap1 ap2 then true else equal_base base1 base2 && is_prefix_path path1 path2
+
 end
 
 module Abs = struct
@@ -201,42 +215,48 @@ module Abs = struct
   let extract = function Exact ap | Abstracted ap -> ap
 
   let with_base base = function
-    | Exact (_, accesses)
-     -> Exact (base, accesses)
-    | Abstracted (_, accesses)
-     -> Abstracted (base, accesses)
+    | Exact (_, accesses) ->
+        Exact (base, accesses)
+    | Abstracted (_, accesses) ->
+        Abstracted (base, accesses)
+
 
   let to_footprint formal_index access_path =
     let _, base_typ = fst (extract access_path) in
     with_base (Var.of_formal_index formal_index, base_typ) access_path
 
+
   let get_footprint_index_base base =
     match base with
-    | Var.LogicalVar id, _ when Ident.is_footprint id
-     -> Some (Ident.get_stamp id)
-    | _
-     -> None
+    | Var.LogicalVar id, _ when Ident.is_footprint id ->
+        Some (Ident.get_stamp id)
+    | _ ->
+        None
+
 
   let get_footprint_index access_path =
     let base, _ = extract access_path in
     get_footprint_index_base base
 
+
   let is_exact = function Exact _ -> true | Abstracted _ -> false
 
   let ( <= ) ~lhs ~rhs =
     match (lhs, rhs) with
-    | Abstracted _, Exact _
-     -> false
-    | Exact lhs_ap, Exact rhs_ap
-     -> Raw.equal lhs_ap rhs_ap
-    | (Exact lhs_ap | Abstracted lhs_ap), Abstracted rhs_ap
-     -> Raw.is_prefix rhs_ap lhs_ap
+    | Abstracted _, Exact _ ->
+        false
+    | Exact lhs_ap, Exact rhs_ap ->
+        Raw.equal lhs_ap rhs_ap
+    | (Exact lhs_ap | Abstracted lhs_ap), Abstracted rhs_ap ->
+        Raw.is_prefix rhs_ap lhs_ap
+
 
   let pp fmt = function
-    | Exact access_path
-     -> Raw.pp fmt access_path
-    | Abstracted access_path
-     -> F.fprintf fmt "%a*" Raw.pp access_path
+    | Exact access_path ->
+        Raw.pp fmt access_path
+    | Abstracted access_path ->
+        F.fprintf fmt "%a*" Raw.pp access_path
+
 end
 
 include Raw

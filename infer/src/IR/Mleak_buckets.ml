@@ -17,16 +17,17 @@ let objc_arc_flag = "objc_arc"
 
 let bucket_to_message bucket =
   match bucket with
-  | `MLeak_cf
-   -> "[CF]"
-  | `MLeak_arc
-   -> "[ARC]"
-  | `MLeak_no_arc
-   -> "[NO ARC]"
-  | `MLeak_cpp
-   -> "[CPP]"
-  | `MLeak_unknown
-   -> "[UNKNOWN ORIGIN]"
+  | `MLeak_cf ->
+      "[CF]"
+  | `MLeak_arc ->
+      "[ARC]"
+  | `MLeak_no_arc ->
+      "[NO ARC]"
+  | `MLeak_cpp ->
+      "[CPP]"
+  | `MLeak_unknown ->
+      "[UNKNOWN ORIGIN]"
+
 
 let contains_all = List.mem ~equal:PVariant.( = ) Config.ml_buckets `MLeak_all
 
@@ -64,6 +65,7 @@ let should_raise_objc_leak typ =
   else if should_raise_leak_arc () then Some (bucket_to_message `MLeak_arc)
   else if should_raise_leak_no_arc () then Some (bucket_to_message `MLeak_no_arc)
   else None
+
 
 (*
 let bucket_to_string bucket =

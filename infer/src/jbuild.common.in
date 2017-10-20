@@ -5,14 +5,15 @@ type build_mode = Default | Opt | Test
 
 let build_mode =
   match Jbuild_plugin.V1.context with
-  | "test"
-   -> Test
-  | "default"
-   -> Default
-  | "opt"
-   -> Opt
-  | ctx
-   -> invalid_arg ("unknown context: " ^ ctx)
+  | "test" ->
+      Test
+  | "default" ->
+      Default
+  | "opt" ->
+      Opt
+  | ctx ->
+      invalid_arg ("unknown context: " ^ ctx)
+
 
 let is_yes = String.equal "yes"
 
@@ -41,14 +42,13 @@ let common_cflags =
     ; warnings ]
   in
   match build_mode with
-  | Default | Opt
-   -> common_flags
-  | Test
-   -> "-warn-error" :: fatal_warnings :: common_flags
+  | Default | Opt ->
+      common_flags
+  | Test ->
+      "-warn-error" :: fatal_warnings :: common_flags
 
-let common_optflags = match build_mode with
-  | Opt -> ["-O3"]
-  | Default | Test -> []
+
+let common_optflags = match build_mode with Opt -> ["-O3"] | Default | Test -> []
 
 let common_libraries =
   (if java then ["javalib"; "ptrees"; "sawja"] else [])
@@ -67,3 +67,4 @@ let common_libraries =
     ; "xmlm"
     ; "yojson"
     ; "zip" ]
+

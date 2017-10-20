@@ -43,22 +43,23 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
   (** Update the summary with stats from the checker. *)
   let update_summary proc_name proc_desc final_typestate_opt =
     match Specs.get_summary proc_name with
-    | Some old_summ
-     -> let nodes = List.map ~f:(fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes proc_desc) in
+    | Some old_summ ->
+        let nodes = List.map ~f:(fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes proc_desc) in
         let method_annotation =
           (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation
         in
         let new_summ =
           { old_summ with
-            Specs.nodes= nodes
+            Specs.nodes
           ; Specs.payload= Extension.update_payload final_typestate_opt old_summ.Specs.payload
           ; Specs.attributes=
               { old_summ.Specs.attributes with
                 ProcAttributes.loc= Procdesc.get_loc proc_desc; method_annotation } }
         in
         Specs.add_summary proc_name new_summ
-    | None
-     -> ()
+    | None ->
+        ()
+
 
   let callback1 tenv find_canonical_duplicate calls_this checks get_proc_desc idenv curr_pname
       curr_pdesc annotated_signature linereader proc_loc
@@ -128,17 +129,19 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
             List.iter ~f:d_typestate typestates_succ ) ;
         NodePrinter.finish_session node ; (typestates_succ, typestates_exn)
 
+
       let proc_throws _ = DontKnow
     end) in
     let initial_typestate = get_initial_typestate () in
     do_before_dataflow initial_typestate ;
     let transitions = DFTypeCheck.run tenv curr_pdesc initial_typestate in
     match transitions (Procdesc.get_exit_node curr_pdesc) with
-    | DFTypeCheck.Transition (final_typestate, _, _)
-     -> do_after_dataflow find_canonical_duplicate final_typestate ;
+    | DFTypeCheck.Transition (final_typestate, _, _) ->
+        do_after_dataflow find_canonical_duplicate final_typestate ;
         (!calls_this, Some final_typestate)
-    | DFTypeCheck.Dead_state
-     -> (!calls_this, None)
+    | DFTypeCheck.Dead_state ->
+        (!calls_this, None)
+
 
   let callback2 calls_this checks
       {Callbacks.proc_desc= curr_pdesc; summary; get_proc_desc; tenv; get_procs_in_file}
@@ -154,10 +157,10 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let typecheck_proc do_checks pname pdesc proc_details_opt =
       let ann_sig, loc, idenv_pn =
         match proc_details_opt with
-        | Some (ann_sig, loc, idenv_pn)
-         -> (ann_sig, loc, idenv_pn)
-        | None
-         -> let ann_sig =
+        | Some (ann_sig, loc, idenv_pn) ->
+            (ann_sig, loc, idenv_pn)
+        | None ->
+            let ann_sig =
               Models.get_modelled_annotated_signature (Procdesc.get_attributes pdesc)
             in
             let loc = Procdesc.get_loc pdesc in
@@ -187,10 +190,10 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
               let same_class =
                 let get_class_opt pn =
                   match pn with
-                  | Typ.Procname.Java pn_java
-                   -> Some (Typ.Procname.java_get_class_name pn_java)
-                  | _
-                   -> None
+                  | Typ.Procname.Java pn_java ->
+                      Some (Typ.Procname.java_get_class_name pn_java)
+                  | _ ->
+                      None
                 in
                 equal_class_opt (get_class_opt init_pn) (get_class_opt callee_pn)
               in
@@ -201,10 +204,10 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
             in
             let do_called (callee_pn, _) =
               match get_proc_desc callee_pn with
-              | Some callee_pd
-               -> res := (callee_pn, callee_pd) :: !res
-              | None
-               -> ()
+              | Some callee_pd ->
+                  res := (callee_pn, callee_pd) :: !res
+              | None ->
+                  ()
             in
             List.iter ~f:do_called private_called
           in
@@ -234,69 +237,73 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         let final_typestates = ref [] in
         let get_final_typestate (pname, pdesc) =
           match typecheck_proc false pname pdesc None with
-          | _, Some final_typestate
-           -> final_typestates := (pname, final_typestate) :: !final_typestates
-          | _, None
-           -> ()
+          | _, Some final_typestate ->
+              final_typestates := (pname, final_typestate) :: !final_typestates
+          | _, None ->
+              ()
         in
         List.iter ~f:get_final_typestate initializers_recursive ;
         List.rev !final_typestates
+
 
       let pname_and_pdescs_with f =
         let res = ref [] in
         let filter pname =
           match Specs.proc_resolve_attributes pname with
-          | Some proc_attributes
-           -> f (pname, proc_attributes)
-          | None
-           -> false
+          | Some proc_attributes ->
+              f (pname, proc_attributes)
+          | None ->
+              false
         in
         let do_proc pname =
           if filter pname then
             match get_proc_desc pname with
-            | Some pdesc
-             -> res := (pname, pdesc) :: !res
-            | None
-             -> ()
+            | Some pdesc ->
+                res := (pname, pdesc) :: !res
+            | None ->
+                ()
         in
         List.iter ~f:do_proc (get_procs_in_file curr_pname) ;
         List.rev !res
 
+
       let get_class pn =
         match pn with
-        | Typ.Procname.Java pn_java
-         -> Some (Typ.Procname.java_get_class_name pn_java)
-        | _
-         -> None
+        | Typ.Procname.Java pn_java ->
+            Some (Typ.Procname.java_get_class_name pn_java)
+        | _ ->
+            None
+
 
       (** Typestates after the current procedure and all initializer procedures. *)
       let final_initializer_typestates_lazy =
-        ( lazy
-        (let is_initializer proc_attributes =
-           PatternMatch.method_is_initializer tenv proc_attributes
-           ||
-           let ia, _ =
-             (Models.get_modelled_annotated_signature proc_attributes).AnnotatedSignature.ret
+        lazy
+          (let is_initializer proc_attributes =
+             PatternMatch.method_is_initializer tenv proc_attributes
+             ||
+             let ia, _ =
+               (Models.get_modelled_annotated_signature proc_attributes).AnnotatedSignature.ret
+             in
+             Annotations.ia_is_initializer ia
            in
-           Annotations.ia_is_initializer ia
-         in
-         let initializers_current_class =
-           pname_and_pdescs_with (function
-             | pname, proc_attributes
-              -> is_initializer proc_attributes
+           let initializers_current_class =
+             pname_and_pdescs_with (function pname, proc_attributes ->
+                 is_initializer proc_attributes
                  && equal_class_opt (get_class pname) (get_class curr_pname) )
-         in
-         final_typestates ((curr_pname, curr_pdesc) :: initializers_current_class)) )
+           in
+           final_typestates ((curr_pname, curr_pdesc) :: initializers_current_class))
+
 
       (** Typestates after all constructors. *)
       let final_constructor_typestates_lazy =
-        ( lazy
-        (let constructors_current_class =
-           pname_and_pdescs_with (fun (pname, _) ->
-               Typ.Procname.is_constructor pname
-               && equal_class_opt (get_class pname) (get_class curr_pname) )
-         in
-         final_typestates constructors_current_class) )
+        lazy
+          (let constructors_current_class =
+             pname_and_pdescs_with (fun (pname, _) ->
+                 Typ.Procname.is_constructor pname
+                 && equal_class_opt (get_class pname) (get_class curr_pname) )
+           in
+           final_typestates constructors_current_class)
+
     end
     (* Initializers *) in
     let do_final_typestate typestate_opt calls_this =
@@ -325,6 +332,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     TypeErr.report_forall_checks_and_reset tenv (Checkers.ST.report_error tenv) curr_pdesc ;
     update_summary curr_pname curr_pdesc final_typestate_opt
 
+
   (** Entry point for the eradicate-based checker infrastructure. *)
   let callback checks ({Callbacks.proc_desc; summary} as callback_args) : Specs.summary =
     let proc_name = Procdesc.get_proc_name proc_desc in
@@ -340,15 +348,16 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
         Some annotated_signature
     in
     ( match filter_special_cases () with
-    | None
-     -> ()
-    | Some annotated_signature
-     -> let loc = Procdesc.get_loc proc_desc in
+    | None ->
+        ()
+    | Some annotated_signature ->
+        let loc = Procdesc.get_loc proc_desc in
         let linereader = Printer.LineReader.create () in
         if Config.eradicate_verbose then
           L.result "%a@." (AnnotatedSignature.pp proc_name) annotated_signature ;
         callback2 calls_this checks callback_args annotated_signature linereader loc ) ;
     summary
+
 end
 
 (* MkCallback *)
@@ -370,7 +379,8 @@ module EmptyExtension : ExtensionT = struct
     let check_instr _ _ _ _ ext _ _ = ext in
     let join () () = () in
     let pp _ () = () in
-    {TypeState.empty= empty; check_instr; join; pp}
+    {TypeState.empty; check_instr; join; pp}
+
 
   let update_payload typestate_opt payload = {payload with Specs.typestate= typestate_opt}
 end
@@ -382,9 +392,11 @@ let callback_eradicate =
   let checks = {TypeCheck.eradicate= true; check_extension= false; check_ret_type= []} in
   Main.callback checks
 
+
 (** Call the given check_return_type at the end of every procedure. *)
 let callback_check_return_type check_return_type callback_args =
   let checks =
     {TypeCheck.eradicate= false; check_extension= false; check_ret_type= [check_return_type]}
   in
   Main.callback checks callback_args
+

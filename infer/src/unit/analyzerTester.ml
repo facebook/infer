@@ -33,24 +33,26 @@ module StructuredSil = struct
   type structured_program = structured_instr list
 
   let rec pp_structured_instr fmt = function
-    | Cmd instr
-     -> Sil.pp_instr Pp.text fmt instr
-    | If (exp, then_instrs, else_instrs)
-     -> (* TODO (t10287763): indent bodies of if/while *)
+    | Cmd instr ->
+        Sil.pp_instr Pp.text fmt instr
+    | If (exp, then_instrs, else_instrs) ->
+        (* TODO (t10287763): indent bodies of if/while *)
         F.fprintf fmt "if (%a) {@.%a@.} else {@.%a@.}" Exp.pp exp pp_structured_instr_list
           then_instrs pp_structured_instr_list else_instrs
-    | While (exp, instrs)
-     -> F.fprintf fmt "while (%a) {@.%a@.}" Exp.pp exp pp_structured_instr_list instrs
-    | Try (try_, catch, finally)
-     -> F.fprintf fmt "try {@.%a@.} catch (...) {@.%a@.} finally {@.%a@.}" pp_structured_instr_list
+    | While (exp, instrs) ->
+        F.fprintf fmt "while (%a) {@.%a@.}" Exp.pp exp pp_structured_instr_list instrs
+    | Try (try_, catch, finally) ->
+        F.fprintf fmt "try {@.%a@.} catch (...) {@.%a@.} finally {@.%a@.}" pp_structured_instr_list
           try_ pp_structured_instr_list catch pp_structured_instr_list finally
-    | Invariant (inv_str, label)
-     -> F.fprintf fmt "invariant %d: %s" label inv_str
+    | Invariant (inv_str, label) ->
+        F.fprintf fmt "invariant %d: %s" label inv_str
+
 
   and pp_structured_instr_list fmt instrs =
     F.pp_print_list ~pp_sep:F.pp_print_newline
       (fun fmt instr -> F.fprintf fmt "%a" pp_structured_instr instr)
       fmt instrs
+
 
   let pp_structured_program = pp_structured_instr_list
 
@@ -82,32 +84,39 @@ module StructuredSil = struct
     let call_exp = Exp.Const (Const.Cfun procname) in
     Cmd (Sil.Call (ret_id, call_exp, args, dummy_loc, CallFlags.default))
 
+
   let make_store ~rhs_typ root_exp fld_str ~rhs_exp =
     let fld = AccessPathTestUtils.make_fieldname fld_str in
     let lhs_exp = Exp.Lfield (root_exp, fld, rhs_typ) in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
+
 
   let make_load_fld ~rhs_typ lhs_str fld_str root_exp =
     let fld = AccessPathTestUtils.make_fieldname fld_str in
     let rhs_exp = Exp.Lfield (root_exp, fld, rhs_typ) in
     make_load ~rhs_typ (ident_of_str lhs_str) rhs_exp
 
+
   let id_assign_exp ?(rhs_typ= dummy_typ) lhs rhs_exp =
     let lhs_id = ident_of_str lhs in
     make_load ~rhs_typ lhs_id rhs_exp
 
+
   let id_assign_id ?(rhs_typ= dummy_typ) lhs rhs =
     id_assign_exp ~rhs_typ lhs (Exp.Var (ident_of_str rhs))
+
 
   let id_assign_var ?(rhs_typ= dummy_typ) lhs rhs =
     let lhs_id = ident_of_str lhs in
     let rhs_exp = var_of_str rhs in
     make_load ~rhs_typ lhs_id rhs_exp
 
+
   let id_set_id ?(rhs_typ= dummy_typ) lhs_id rhs_id =
     let lhs_exp = Exp.Var (ident_of_str lhs_id) in
     let rhs_exp = Exp.Var (ident_of_str rhs_id) in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
+
 
   let cast_id_to_id lhs cast_typ rhs =
     let lhs_id = ident_of_str lhs in
@@ -118,19 +127,23 @@ module StructuredSil = struct
     let args = [(rhs_id, cast_typ); (cast_sizeof, cast_typ)] in
     make_call ~procname:BuiltinDecl.__cast (Some (lhs_id, cast_typ)) args
 
+
   let var_assign_exp ~rhs_typ lhs rhs_exp =
     let lhs_exp = var_of_str lhs in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
+
 
   let var_assign_int lhs rhs =
     let rhs_exp = Exp.int (IntLit.of_int rhs) in
     let rhs_typ = Typ.mk (Tint Typ.IInt) in
     var_assign_exp ~rhs_typ lhs rhs_exp
 
+
   let var_assign_id ?(rhs_typ= dummy_typ) lhs rhs =
     let lhs_exp = var_of_str lhs in
     let rhs_exp = Exp.Var (ident_of_str rhs) in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
+
 
   (* x = &y *)
   let var_assign_addrof_var ?(rhs_typ= dummy_typ) lhs rhs =
@@ -138,10 +151,12 @@ module StructuredSil = struct
     let rhs_exp = var_of_str rhs in
     make_set ~rhs_typ ~lhs_exp ~rhs_exp
 
+
   let call_unknown ret_id_str_opt arg_strs =
     let args = List.map ~f:(fun param_str -> (var_of_str param_str, dummy_typ)) arg_strs in
     let ret_id = Option.map ~f:(fun (str, typ) -> (ident_of_str str, typ)) ret_id_str_opt in
     make_call ret_id args
+
 
   let call_unknown_no_ret arg_strs = call_unknown None arg_strs
 end
@@ -177,12 +192,12 @@ struct
       (true_prune_node, false_prune_node)
     in
     let rec structured_instr_to_node (last_node, assert_map) exn_handlers = function
-      | Cmd cmd
-       -> let node = create_node (Procdesc.Node.Stmt_node "") [cmd] in
+      | Cmd cmd ->
+          let node = create_node (Procdesc.Node.Stmt_node "") [cmd] in
           set_succs last_node [node] ~exn_handlers ;
           (node, assert_map)
-      | If (exp, then_instrs, else_instrs)
-       -> let then_prune_node, else_prune_node = mk_prune_nodes_for_cond exp Sil.Ik_if in
+      | If (exp, then_instrs, else_instrs) ->
+          let then_prune_node, else_prune_node = mk_prune_nodes_for_cond exp Sil.Ik_if in
           set_succs last_node [then_prune_node; else_prune_node] ~exn_handlers ;
           let then_branch_end_node, assert_map' =
             structured_instrs_to_node then_prune_node assert_map exn_handlers then_instrs
@@ -194,8 +209,8 @@ struct
           set_succs then_branch_end_node [join_node] ~exn_handlers ;
           set_succs else_branch_end_node [join_node] ~exn_handlers ;
           (join_node, assert_map'')
-      | While (exp, body_instrs)
-       -> let loop_head_join_node = create_node Procdesc.Node.Join_node [] in
+      | While (exp, body_instrs) ->
+          let loop_head_join_node = create_node Procdesc.Node.Join_node [] in
           set_succs last_node [loop_head_join_node] ~exn_handlers ;
           let true_prune_node, false_prune_node = mk_prune_nodes_for_cond exp Sil.Ik_while in
           set_succs loop_head_join_node [true_prune_node; false_prune_node] ~exn_handlers ;
@@ -206,8 +221,8 @@ struct
           set_succs loop_body_end_node [loop_head_join_node] ~exn_handlers ;
           set_succs false_prune_node [loop_exit_node] ~exn_handlers ;
           (loop_exit_node, assert_map')
-      | Try (try_instrs, catch_instrs, finally_instrs)
-       -> let catch_start_node = create_node (Procdesc.Node.Skip_node "exn_handler") [] in
+      | Try (try_instrs, catch_instrs, finally_instrs) ->
+          let catch_start_node = create_node (Procdesc.Node.Skip_node "exn_handler") [] in
           (* use [catch_start_node] as the exn handler *)
           let try_end_node, assert_map' =
             structured_instrs_to_node last_node assert_map [catch_start_node] try_instrs
@@ -219,8 +234,8 @@ struct
           set_succs try_end_node [finally_start_node] ~exn_handlers ;
           set_succs catch_end_node [finally_start_node] ~exn_handlers ;
           structured_instrs_to_node finally_start_node assert_map'' exn_handlers finally_instrs
-      | Invariant (inv_str, inv_label)
-       -> let node = create_node (Procdesc.Node.Stmt_node "Invariant") [] in
+      | Invariant (inv_str, inv_label) ->
+          let node = create_node (Procdesc.Node.Stmt_node "Invariant") [] in
           set_succs last_node [node] ~exn_handlers ;
           (* add the assertion to be checked after analysis converges *)
           (node, M.add (CFG.id node) (inv_str, inv_label) assert_map)
@@ -239,6 +254,7 @@ struct
     set_succs last_node [exit_node] ~exn_handlers:no_exn_handlers ;
     Procdesc.set_exit_node pdesc exit_node ;
     (pdesc, assert_map)
+
 
   let create_test test_program extras pp_opt ~initial test_pname _ =
     let pp_state = Option.value ~default:I.TransferFunctions.Domain.pp pp_opt in
@@ -261,10 +277,10 @@ struct
       else error_msgs_acc
     in
     match M.fold collect_invariant_mismatches assert_map [] with
-    | []
-     -> () (* no mismatches, test passed *)
-    | error_msgs
-     -> let mismatches_str =
+    | [] ->
+        () (* no mismatches, test passed *)
+    | error_msgs ->
+        let mismatches_str =
           F.pp_print_list
             (fun fmt error_msg -> F.fprintf fmt "%s" error_msg)
             F.str_formatter (List.rev error_msgs)
@@ -277,10 +293,12 @@ struct
         in
         OUnit2.assert_failure assert_fail_message
 
+
   let create_tests ?(test_pname= Typ.Procname.empty_block) ~initial ?pp_opt extras tests =
     let open OUnit2 in
     List.map
       ~f:(fun (name, test_program) ->
         name >:: create_test test_program extras ~initial pp_opt test_pname)
       tests
+
 end

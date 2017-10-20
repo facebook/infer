@@ -21,7 +21,8 @@ let analyze_exe_env_tasks cluster exe_env : Tasks.t =
   let biabduction_only = Config.equal_analyzer Config.analyzer Config.BiAbduction in
   if biabduction_only then
     (* run the biabduction analysis only *)
-    Tasks.create (Interproc.do_analysis_closures exe_env)
+    Tasks.create
+      (Interproc.do_analysis_closures exe_env)
       ~continuation:
         ( if Config.write_html || Config.developer_mode then
             Some
@@ -37,6 +38,7 @@ let analyze_exe_env_tasks cluster exe_env : Tasks.t =
           Callbacks.iterate_callbacks call_graph exe_env ;
           if Config.write_html then Printer.write_all_html_files cluster) ]
 
+
 (** Create tasks to analyze a cluster *)
 let analyze_cluster_tasks cluster_num (cluster: Cluster.t) : Tasks.t =
   let exe_env = Exe_env.from_cluster cluster in
@@ -45,6 +47,7 @@ let analyze_cluster_tasks cluster_num (cluster: Cluster.t) : Tasks.t =
   L.(debug Analysis Medium)
     "@\nProcessing cluster #%d with %d procedures@." (cluster_num + 1) num_procs ;
   analyze_exe_env_tasks cluster exe_env
+
 
 let analyze_cluster cluster_num cluster = Tasks.run (analyze_cluster_tasks cluster_num cluster)
 
@@ -60,13 +63,15 @@ let output_json_makefile_stats clusters =
   let f = Out_channel.create (Filename.concat Config.results_dir Config.proc_stats_filename) in
   Yojson.Basic.pretty_to_channel f file_stats
 
+
 let process_cluster_cmdline fname =
   match Cluster.load_from_file (DB.filename_from_string fname) with
-  | None
-   -> (if Config.keep_going then L.internal_error else L.die InternalError)
+  | None ->
+      (if Config.keep_going then L.internal_error else L.die InternalError)
         "Cannot find cluster file %s@." fname
-  | Some (nr, cluster)
-   -> analyze_cluster (nr - 1) cluster
+  | Some (nr, cluster) ->
+      analyze_cluster (nr - 1) cluster
+
 
 let print_legend () =
   L.progress "Starting analysis...@\n" ;
@@ -83,6 +88,7 @@ let print_legend () =
     L.progress "  \"%s\" timeout: procedure analysis took too many recursive iterations@\n"
       Config.log_analysis_recursion_timeout ) ;
   L.progress "@\n@?"
+
 
 let cluster_should_be_analyzed ~changed_files cluster =
   let fname = DB.source_dir_to_string cluster in
@@ -105,33 +111,35 @@ let cluster_should_be_analyzed ~changed_files cluster =
     modified
   in
   match is_changed_file with
-  | Some b
-   -> b
-  | None when Config.reactive_mode
-   -> check_modified ()
-  | None
-   -> true
+  | Some b ->
+      b
+  | None when Config.reactive_mode ->
+      check_modified ()
+  | None ->
+      true
+
 
 let register_active_checkers () =
   match Config.analyzer with
-  | Checkers | Crashcontext
-   -> RegisterCheckers.get_active_checkers () |> RegisterCheckers.register
-  | BiAbduction | CaptureOnly | CompileOnly | Linters
-   -> ()
+  | Checkers | Crashcontext ->
+      RegisterCheckers.get_active_checkers () |> RegisterCheckers.register
+  | BiAbduction | CaptureOnly | CompileOnly | Linters ->
+      ()
+
 
 let main ~changed_files ~makefile =
   BuiltinDefn.init () ;
   ( match Config.modified_targets with
-  | Some file
-   -> MergeCapture.record_modified_targets_from_file file
-  | None
-   -> () ) ;
+  | Some file ->
+      MergeCapture.record_modified_targets_from_file file
+  | None ->
+      () ) ;
   register_active_checkers () ;
   match Config.cluster_cmdline with
-  | Some fname
-   -> process_cluster_cmdline fname
-  | None
-   -> if Config.allow_specs_cleanup then DB.Results_dir.clean_specs_dir () ;
+  | Some fname ->
+      process_cluster_cmdline fname
+  | None ->
+      if Config.allow_specs_cleanup then DB.Results_dir.clean_specs_dir () ;
       let all_clusters = DB.find_source_dirs () in
       let clusters_to_analyze =
         List.filter ~f:(cluster_should_be_analyzed ~changed_files) all_clusters
@@ -144,10 +152,10 @@ let main ~changed_files ~makefile =
         (if Int.equal n_clusters_to_analyze 1 then "" else "s")
         Config.results_dir ;
       let is_java =
-        ( lazy
-        (List.exists
-           ~f:(fun cl -> DB.string_crc_has_extension ~ext:"java" (DB.source_dir_to_string cl))
-           all_clusters) )
+        lazy
+          (List.exists
+             ~f:(fun cl -> DB.string_crc_has_extension ~ext:"java" (DB.source_dir_to_string cl))
+             all_clusters)
       in
       L.debug Analysis Quiet "Dynamic dispatch mode: %s@."
         Config.(string_of_dynamic_dispatch dynamic_dispatch) ;
@@ -164,7 +172,8 @@ let main ~changed_files ~makefile =
           let aggregate_tasks = Tasks.aggregate ~size:Config.procedures_per_process tasks in
           Tasks.Runner.start runner ~tasks:aggregate_tasks
         in
-        List.iteri ~f:cluster_start_tasks clusters_to_analyze ; Tasks.Runner.complete runner )
+        List.iteri ~f:cluster_start_tasks clusters_to_analyze ;
+        Tasks.Runner.complete runner )
       else if makefile <> "" then
         ClusterMakefile.create_cluster_makefile clusters_to_analyze makefile
       else (
@@ -173,9 +182,11 @@ let main ~changed_files ~makefile =
         L.progress "@\nAnalysis finished in %as@." Pp.elapsed_time () ) ;
       output_json_makefile_stats clusters_to_analyze
 
+
 let register_perf_stats_report () =
   let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name in
   let cluster = match Config.cluster_cmdline with Some cl -> "_" ^ cl | None -> "" in
   let stats_base = Config.perf_stats_prefix ^ Filename.basename cluster ^ ".json" in
   let stats_file = Filename.concat stats_dir stats_base in
   PerfStats.register_report_at_exit stats_file
+

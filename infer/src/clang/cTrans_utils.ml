@@ -19,7 +19,13 @@ module L = Logging
 (* assume in many places that a list is just a singleton. We use the       *)
 (* warning if to see which assumption was not correct                      *)
 let extract_item_from_singleton l warning_string failure_val =
-  match l with [item] -> item | _ -> L.(debug Capture Medium) "%s" warning_string ; failure_val
+  match l with
+  | [item] ->
+      item
+  | _ ->
+      L.(debug Capture Medium) "%s" warning_string ;
+      failure_val
+
 
 let dummy_exp = (Exp.minus_one, Typ.mk (Tint Typ.IInt))
 
@@ -29,25 +35,30 @@ let dummy_exp = (Exp.minus_one, Typ.mk (Tint Typ.IInt))
 let extract_exp_from_list el warning_string =
   extract_item_from_singleton el warning_string dummy_exp
 
+
 module Nodes = struct
   let prune_kind b = Procdesc.Node.Prune_node (b, Sil.Ik_bexp, string_of_bool b ^ " Branch")
 
   let is_join_node n =
     match Procdesc.Node.get_kind n with Procdesc.Node.Join_node -> true | _ -> false
 
+
   let is_prune_node n =
     match Procdesc.Node.get_kind n with Procdesc.Node.Prune_node _ -> true | _ -> false
 
+
   let is_true_prune_node n =
     match Procdesc.Node.get_kind n with
-    | Procdesc.Node.Prune_node (true, _, _)
-     -> true
-    | _
-     -> false
+    | Procdesc.Node.Prune_node (true, _, _) ->
+        true
+    | _ ->
+        false
+
 
   let create_node node_kind instrs loc context =
     let procdesc = CContext.get_procdesc context in
     Procdesc.create_node procdesc loc node_kind instrs
+
 
   let create_prune_node ~branch ~negate_cond e_cond instrs_cond loc ik context =
     let e_cond', _ =
@@ -57,6 +68,7 @@ module Nodes = struct
     let e_cond'' = if negate_cond then Exp.UnOp (Unop.LNot, e_cond', None) else e_cond' in
     let instrs_cond' = instrs_cond @ [Sil.Prune (e_cond'', loc, branch, ik)] in
     create_node (prune_kind branch) instrs_cond' loc context
+
 
   (** Check if this binary opertor requires the creation of a node in the cfg. *)
   let is_binary_assign_op boi =
@@ -71,8 +83,8 @@ module Nodes = struct
     | `ShrAssign
     | `AndAssign
     | `XorAssign
-    | `OrAssign
-     -> true
+    | `OrAssign ->
+        true
     | `PtrMemD
     | `PtrMemI
     | `Mul
@@ -93,16 +105,18 @@ module Nodes = struct
     | `Or
     | `LAnd
     | `LOr
-    | `Comma
-     -> false
+    | `Comma ->
+        false
+
 
   (** Check if this unary opertor requires the creation of a node in the cfg. *)
   let need_unary_op_node uoi =
     match uoi.Clang_ast_t.uoi_kind with
-    | `PostInc | `PostDec | `PreInc | `PreDec | `AddrOf | `Deref | `Plus
-     -> true
-    | `Minus | `Not | `LNot | `Real | `Imag | `Extension | `Coawait
-     -> false
+    | `PostInc | `PostDec | `PreInc | `PreDec | `AddrOf | `Deref | `Plus ->
+        true
+    | `Minus | `Not | `LNot | `Real | `Imag | `Extension | `Coawait ->
+        false
+
 end
 
 module GotoLabel = struct
@@ -111,7 +125,9 @@ module GotoLabel = struct
     with Not_found ->
       let node_name = Format.sprintf "GotoLabel_%s" label in
       let new_node = Nodes.create_node (Procdesc.Node.Skip_node node_name) [] sil_loc context in
-      Hashtbl.add context.CContext.label_map label new_node ; new_node
+      Hashtbl.add context.CContext.label_map label new_node ;
+      new_node
+
 end
 
 type continuation =
@@ -123,16 +139,18 @@ type continuation =
 let is_return_temp continuation =
   match continuation with Some cont -> cont.return_temp | _ -> false
 
+
 let ids_to_parent cont ids = if is_return_temp cont then ids else []
 
 let ids_to_node cont ids = if is_return_temp cont then [] else ids
 
 let mk_cond_continuation cont =
   match cont with
-  | Some cont'
-   -> Some {cont' with return_temp= true}
-  | None
-   -> Some {break= []; continue= []; return_temp= true}
+  | Some cont' ->
+      Some {cont' with return_temp= true}
+  | None ->
+      Some {break= []; continue= []; return_temp= true}
+
 
 type priority_node = Free | Busy of Clang_ast_t.pointer
 
@@ -167,16 +185,17 @@ type trans_result =
 let empty_res_trans =
   {root_nodes= []; leaf_nodes= []; instrs= []; exps= []; initd_exps= []; is_cpp_call_virtual= false}
 
+
 let undefined_expression () = Exp.Var (Ident.create_fresh Ident.knormal)
 
 (** Collect the results of translating a list of instructions, and link up the nodes created. *)
 let collect_res_trans pdesc l =
   let rec collect l rt =
     match l with
-    | []
-     -> rt
-    | rt' :: l'
-     -> let root_nodes = if rt.root_nodes <> [] then rt.root_nodes else rt'.root_nodes in
+    | [] ->
+        rt
+    | rt' :: l' ->
+        let root_nodes = if rt.root_nodes <> [] then rt.root_nodes else rt'.root_nodes in
         let leaf_nodes = if rt'.leaf_nodes <> [] then rt'.leaf_nodes else rt.leaf_nodes in
         if rt'.root_nodes <> [] then
           List.iter
@@ -192,6 +211,7 @@ let collect_res_trans pdesc l =
   in
   let rt = collect l empty_res_trans in
   {rt with instrs= List.rev rt.instrs; exps= List.rev rt.exps; initd_exps= List.rev rt.initd_exps}
+
 
 (* priority_node is used to enforce some kind of policy for creating nodes *)
 (* in the cfg. Certain elements of the AST _must_ create nodes therefore   *)
@@ -210,22 +230,25 @@ module PriorityNode = struct
 
   let try_claim_priority_node trans_state stmt_info =
     match trans_state.priority with
-    | Free
-     -> L.(debug Capture Verbose)
+    | Free ->
+        L.(debug Capture Verbose)
           "Priority is free. Locking priority node in %d@\n@." stmt_info.Clang_ast_t.si_pointer ;
         {trans_state with priority= Busy stmt_info.Clang_ast_t.si_pointer}
-    | _
-     -> L.(debug Capture Verbose)
+    | _ ->
+        L.(debug Capture Verbose)
           "Priority busy in %d. No claim possible@\n@." stmt_info.Clang_ast_t.si_pointer ;
         trans_state
 
+
   let force_claim_priority_node trans_state stmt_info =
     {trans_state with priority= Busy stmt_info.Clang_ast_t.si_pointer}
+
 
   let is_priority_free trans_state = match trans_state.priority with Free -> true | _ -> false
 
   let own_priority_node pri stmt_info =
     match pri with Busy p when Int.equal p stmt_info.Clang_ast_t.si_pointer -> true | _ -> false
+
 
   (* Used by translation functions to handle potenatial cfg nodes. *)
   (* It connects nodes returned by translation of stmt children and *)
@@ -248,6 +271,7 @@ module PriorityNode = struct
     else
       (* The node is created by the parent. We just pass back nodes/leafs params *)
       {res_state with exps= []}
+
 end
 
 module Loops = struct
@@ -267,20 +291,21 @@ module Loops = struct
 
   let loop_kind_to_if_kind loop_kind =
     match loop_kind with
-    | For _
-     -> Sil.Ik_for
-    | While _
-     -> Sil.Ik_while
-    | DoWhile _
-     -> Sil.Ik_dowhile
+    | For _ ->
+        Sil.Ik_for
+    | While _ ->
+        Sil.Ik_while
+    | DoWhile _ ->
+        Sil.Ik_dowhile
+
 
   let get_body loop_kind =
-    match loop_kind
-    with For (_, _, _, _, body) | While (_, _, body) | DoWhile (_, body) -> body
+    match loop_kind with For (_, _, _, _, body) | While (_, _, body) | DoWhile (_, body) -> body
+
 
   let get_cond loop_kind =
-    match loop_kind
-    with For (_, _, cond, _, _) | While (_, cond, _) | DoWhile (cond, _) -> cond
+    match loop_kind with For (_, _, cond, _, _) | While (_, cond, _) | DoWhile (cond, _) -> cond
+
 end
 
 module Scope = struct
@@ -290,6 +315,7 @@ module Scope = struct
     let ptr = stmt_info.Clang_ast_t.si_pointer in
     StmtMap.add var_map ~key:ptr ~data:vars
 
+
   let rec compute_vars vars_in_scope break_count var_map stmt =
     (* vars_in_scope corresponds to the list of all variables existing in the current scope *)
     (* break_count saves the number of variables in the current scope when entering the most recent loop *)
@@ -297,49 +323,51 @@ module Scope = struct
     let open Clang_ast_t in
     let get_var_info_from_decl = function VarDecl _ as decl -> Some decl | _ -> None in
     let get_new_vars = function
-      | DeclStmt (_, _, decl_list)
-       -> List.filter_map ~f:get_var_info_from_decl decl_list
-      | _
-       -> []
+      | DeclStmt (_, _, decl_list) ->
+          List.filter_map ~f:get_var_info_from_decl decl_list
+      | _ ->
+          []
     in
     let rec handle_instructions_block var_map vars_in_scope break_count instrs =
       match instrs with
-      | []
-       -> (vars_in_scope, var_map)
-      | stmt :: rest
-       -> let new_var_map = compute_vars vars_in_scope break_count var_map stmt in
+      | [] ->
+          (vars_in_scope, var_map)
+      | stmt :: rest ->
+          let new_var_map = compute_vars vars_in_scope break_count var_map stmt in
           let new_vars_in_stmt = get_new_vars stmt in
           handle_instructions_block new_var_map (new_vars_in_stmt @ vars_in_scope) break_count rest
     in
     (* TODO handle following stmts: *)
     (* GotoStmt _ |  | LabelStmt_ *)
     match stmt with
-    | CompoundStmt (stmt_info, stmt_list)
-     -> let vars, new_var_map =
+    | CompoundStmt (stmt_info, stmt_list) ->
+        let vars, new_var_map =
           handle_instructions_block var_map vars_in_scope break_count stmt_list
         in
         (* vars contains the variables defined in the current compound statement + vars_in_scope *)
         let vars_to_destroy = List.take vars (List.length vars - List.length vars_in_scope) in
         add_scope_vars_to_destroy new_var_map stmt_info vars_to_destroy
-    | ReturnStmt (stmt_info, _)
-     -> add_scope_vars_to_destroy var_map stmt_info vars_in_scope
-    | BreakStmt (stmt_info, _) | ContinueStmt (stmt_info, _)
-     -> let vars_to_destroy = List.take vars_in_scope (List.length vars_in_scope - break_count) in
+    | ReturnStmt (stmt_info, _) ->
+        add_scope_vars_to_destroy var_map stmt_info vars_in_scope
+    | BreakStmt (stmt_info, _) | ContinueStmt (stmt_info, _) ->
+        let vars_to_destroy = List.take vars_in_scope (List.length vars_in_scope - break_count) in
         add_scope_vars_to_destroy var_map stmt_info vars_to_destroy
     | WhileStmt (_, stmt_list)
     | DoStmt (_, stmt_list)
     | SwitchStmt (_, stmt_list)
     (* TODO handle variable declarations inside for / foreach *)
     | ForStmt (_, stmt_list)
-    | CXXForRangeStmt (_, stmt_list)
-     -> let break_count = List.length vars_in_scope in
+    | CXXForRangeStmt (_, stmt_list) ->
+        let break_count = List.length vars_in_scope in
         List.fold_left ~f:(compute_vars vars_in_scope break_count) stmt_list ~init:var_map
-    | _
-     -> let stmt_list = snd (Clang_ast_proj.get_stmt_tuple stmt) in
+    | _ ->
+        let stmt_list = snd (Clang_ast_proj.get_stmt_tuple stmt) in
         List.fold_left ~f:(compute_vars vars_in_scope break_count) stmt_list ~init:var_map
+
 
   let compute_vars_to_destroy body =
     List.fold_left ~f:(compute_vars [] 0) ~init:StmtMap.empty [body]
+
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
@@ -349,17 +377,17 @@ let create_alloc_instrs ~alloc_builtin ?alloc_source_function ?size_exp sil_loc 
     | Tptr (styp, Typ.Pk_pointer)
     | Tptr (styp, Typ.Pk_objc_weak)
     | Tptr (styp, Typ.Pk_objc_unsafe_unretained)
-    | Tptr (styp, Typ.Pk_objc_autoreleasing)
-     -> (function_type, styp)
-    | _
-     -> (CType.add_pointer_to_typ function_type, function_type)
+    | Tptr (styp, Typ.Pk_objc_autoreleasing) ->
+        (function_type, styp)
+    | _ ->
+        (CType.add_pointer_to_typ function_type, function_type)
   in
   let alloc_source_function_arg =
     match alloc_source_function with
-    | Some procname
-     -> [(Exp.Const (Const.Cfun procname), Typ.mk Tvoid)]
-    | None
-     -> []
+    | Some procname ->
+        [(Exp.Const (Const.Cfun procname), Typ.mk Tvoid)]
+    | None ->
+        []
   in
   let ret_id = Ident.create_fresh Ident.knormal in
   let args =
@@ -368,10 +396,10 @@ let create_alloc_instrs ~alloc_builtin ?alloc_source_function ?size_exp sil_loc 
     in
     let sizeof_exp =
       match size_exp with
-      | Some exp
-       -> Exp.BinOp (Binop.Mult, sizeof_exp_, exp)
-      | None
-       -> sizeof_exp_
+      | Some exp ->
+          Exp.BinOp (Binop.Mult, sizeof_exp_, exp)
+      | None ->
+          sizeof_exp_
     in
     let exp = (sizeof_exp, Typ.mk (Tint Typ.IULong)) in
     exp :: alloc_source_function_arg
@@ -381,6 +409,7 @@ let create_alloc_instrs ~alloc_builtin ?alloc_source_function ?size_exp sil_loc 
     Sil.Call (ret_id_typ, Exp.Const (Const.Cfun alloc_builtin), args, sil_loc, CallFlags.default)
   in
   (function_type, [stmt_call], Exp.Var ret_id)
+
 
 let alloc_trans trans_state ~alloc_builtin ?alloc_source_function loc stmt_info function_type =
   let function_type, instrs, exp =
@@ -392,6 +421,7 @@ let alloc_trans trans_state ~alloc_builtin ?alloc_source_function loc stmt_info 
     PriorityNode.compute_results_to_parent trans_state loc nname stmt_info [res_trans_tmp]
   in
   {res_trans with exps= [(exp, function_type)]}
+
 
 let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_type =
   let alloc_ret_type, alloc_stmt_call, alloc_ret_exp =
@@ -418,15 +448,16 @@ let objc_new_trans trans_state ~alloc_builtin loc stmt_info cls_name function_ty
   in
   {res_trans with exps= [(Exp.Var init_ret_id, alloc_ret_type)]}
 
+
 let new_or_alloc_trans trans_state loc stmt_info qual_type class_name_opt selector =
   let tenv = trans_state.context.CContext.tenv in
   let function_type = CType_decl.qual_type_to_sil_type tenv qual_type in
   let class_name =
     match class_name_opt with
-    | Some class_name
-     -> class_name
-    | None
-     -> CType.objc_classname_of_type function_type
+    | Some class_name ->
+        class_name
+    | None ->
+        CType.objc_classname_of_type function_type
   in
   if String.equal selector CFrontend_config.alloc then
     alloc_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc_no_fail loc stmt_info
@@ -436,6 +467,7 @@ let new_or_alloc_trans trans_state loc stmt_info qual_type class_name_opt select
       class_name function_type
   else Logging.die InternalError "Expected selector new or alloc but got, %s" selector
 
+
 let cpp_new_trans sil_loc function_type size_exp =
   let alloc_builtin =
     match size_exp with Some _ -> BuiltinDecl.__new_array | None -> BuiltinDecl.__new
@@ -444,6 +476,7 @@ let cpp_new_trans sil_loc function_type size_exp =
     create_alloc_instrs ~alloc_builtin ?size_exp sil_loc function_type
   in
   {empty_res_trans with instrs= stmt_call; exps= [(exp, function_type)]}
+
 
 let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
   let ret_id = Ident.create_fresh Ident.knormal in
@@ -457,19 +490,22 @@ let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
   in
   (stmt_call, Exp.Var ret_id)
 
+
 let cast_trans exps sil_loc function_type pname =
   if CTrans_models.is_toll_free_bridging pname then
     match exps with
-    | [(exp, typ)]
-     -> Some (create_cast_instrs exp typ function_type sil_loc)
-    | _
-     -> assert false
+    | [(exp, typ)] ->
+        Some (create_cast_instrs exp typ function_type sil_loc)
+    | _ ->
+        assert false
   else None
+
 
 let dereference_var_sil (exp, typ) sil_loc =
   let id = Ident.create_fresh Ident.knormal in
   let sil_instr = Sil.Load (id, exp, typ, sil_loc) in
   ([sil_instr], Exp.Var id)
+
 
 (** Given trans_result with ONE expression, create temporary variable with value of an expression
     assigned to it *)
@@ -480,35 +516,37 @@ let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   let cast_inst, cast_exp = dereference_var_sil (obj_sil, cast_typ) sil_loc in
   {trans_result with instrs= trans_result.instrs @ cast_inst; exps= [(cast_exp, cast_typ)]}
 
+
 let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
   let exp, typ = extract_exp_from_list exps "" in
   let is_objc_bridged = Option.is_some trans_state.obj_bridged_cast_typ || is_objc_bridged in
   match cast_kind with
-  | `NoOp | `DerivedToBase | `UncheckedDerivedToBase
-   -> (* These casts ignore change of type *)
+  | `NoOp | `DerivedToBase | `UncheckedDerivedToBase ->
+      (* These casts ignore change of type *)
       ([], (exp, typ))
-  | `BitCast | `IntegralCast | `IntegralToBoolean
-   -> (* This is treated as a nop by returning the same expressions exps*)
+  | `BitCast | `IntegralCast | `IntegralToBoolean ->
+      (* This is treated as a nop by returning the same expressions exps*)
       ([], (exp, cast_typ))
-  | (`CPointerToObjCPointerCast | `ARCProduceObject | `ARCConsumeObject) when is_objc_bridged
-   -> (* Translation of __bridge_transfer or __bridge_retained *)
+  | (`CPointerToObjCPointerCast | `ARCProduceObject | `ARCConsumeObject) when is_objc_bridged ->
+      (* Translation of __bridge_transfer or __bridge_retained *)
       let objc_cast_typ =
         match trans_state.obj_bridged_cast_typ with Some typ -> typ | None -> cast_typ
       in
       let instr, exp = create_cast_instrs exp typ objc_cast_typ sil_loc in
       ([instr], (exp, cast_typ))
-  | `LValueToRValue
-   -> (* Takes an LValue and allow it to use it as RValue. *)
+  | `LValueToRValue ->
+      (* Takes an LValue and allow it to use it as RValue. *)
       (* So we assign the LValue to a temp and we pass it to the parent.*)
       let instrs, deref_exp = dereference_var_sil (exp, cast_typ) sil_loc in
       (instrs, (deref_exp, cast_typ))
-  | `NullToPointer
-   -> if Exp.is_zero exp then ([], (Exp.null, cast_typ)) else ([], (exp, cast_typ))
-  | _
-   -> L.(debug Capture Verbose)
+  | `NullToPointer ->
+      if Exp.is_zero exp then ([], (Exp.null, cast_typ)) else ([], (exp, cast_typ))
+  | _ ->
+      L.(debug Capture Verbose)
         "@\nWARNING: Missing translation for Cast Kind %s. The construct has been ignored...@\n"
         (Clang_ast_j.string_of_cast_kind cast_kind) ;
       ([], (exp, cast_typ))
+
 
 let trans_assertion_failure sil_loc (context: CContext.t) =
   let assert_fail_builtin = Exp.Const (Const.Cfun BuiltinDecl.__infer_fail) in
@@ -521,41 +559,47 @@ let trans_assertion_failure sil_loc (context: CContext.t) =
   Procdesc.node_set_succs_exn context.procdesc failure_node [exit_node] [] ;
   {empty_res_trans with root_nodes= [failure_node]}
 
+
 let trans_assume_false sil_loc (context: CContext.t) succ_nodes =
   let instrs_cond = [Sil.Prune (Exp.zero, sil_loc, true, Sil.Ik_land_lor)] in
   let prune_node = Nodes.create_node (Nodes.prune_kind true) instrs_cond sil_loc context in
   Procdesc.node_set_succs_exn context.procdesc prune_node succ_nodes [] ;
   {empty_res_trans with root_nodes= [prune_node]; leaf_nodes= [prune_node]}
 
+
 let trans_assertion trans_state sil_loc =
   let context = trans_state.context in
   if Config.report_custom_error then trans_assertion_failure sil_loc context
   else trans_assume_false sil_loc context trans_state.succ_nodes
+
 
 let trans_builtin_expect params_trans_res =
   (* Translate call to __builtin_expect as the first argument *)
   (* for simpler symbolic execution *)
   match params_trans_res with [_; fst_arg_res; _] -> Some fst_arg_res | _ -> None
 
+
 let trans_std_addressof params_trans_res =
   (* Translate call to std::addressof as the first argument *)
   (* for simpler symbolic execution. *)
   match params_trans_res with [_; fst_arg_res] -> Some fst_arg_res | _ -> assert false
 
+
 let trans_replace_with_deref_first_arg sil_loc params_trans_res ~cxx_method_call =
   let first_arg_res_trans =
     match params_trans_res with
-    | _ :: fst_arg_res :: _ when not cxx_method_call
-     -> fst_arg_res
-    | ({exps= _method_exp :: this_exp} as fst_arg_res) :: _ when cxx_method_call
-     -> (* method_deref_trans uses different format to store first argument - it stores
+    | _ :: fst_arg_res :: _ when not cxx_method_call ->
+        fst_arg_res
+    | ({exps= _method_exp :: this_exp} as fst_arg_res) :: _ when cxx_method_call ->
+        (* method_deref_trans uses different format to store first argument - it stores
            two things in exps: [method_exp; this_exp].
            We need to get rid of first exp before calling dereference_value_from_result *)
         {fst_arg_res with exps= this_exp}
-    | _
-     -> assert false
+    | _ ->
+        assert false
   in
   dereference_value_from_result sil_loc first_arg_res_trans ~strip_pointer:true
+
 
 let builtin_trans trans_state loc stmt_info function_type params_trans_res pname =
   if CTrans_models.is_cf_non_null_alloc pname || CTrans_models.is_alloc_model function_type pname
@@ -573,29 +617,34 @@ let builtin_trans trans_state loc stmt_info function_type params_trans_res pname
   else if CTrans_models.is_std_addressof pname then trans_std_addressof params_trans_res
   else None
 
+
 let cxx_method_builtin_trans trans_state loc params_trans_res pname =
   if CTrans_models.is_assert_log pname then Some (trans_assertion trans_state loc)
   else if CTrans_models.is_replace_with_deref_first_arg pname then
     Some (trans_replace_with_deref_first_arg loc params_trans_res ~cxx_method_call:true)
   else None
 
+
 let define_condition_side_effects e_cond instrs_cond sil_loc =
   let e', typ =
     extract_exp_from_list e_cond "@\nWARNING: Missing expression in IfStmt. Need to be fixed@\n"
   in
   match e' with
-  | Exp.Lvar pvar
-   -> let id = Ident.create_fresh Ident.knormal in
+  | Exp.Lvar pvar ->
+      let id = Ident.create_fresh Ident.knormal in
       ([(Exp.Var id, typ)], [Sil.Load (id, Exp.Lvar pvar, typ, sil_loc)])
-  | _
-   -> ([(e', typ)], instrs_cond)
+  | _ ->
+      ([(e', typ)], instrs_cond)
+
 
 let is_superinstance mei =
   match mei.Clang_ast_t.omei_receiver_kind with `SuperInstance -> true | _ -> false
 
+
 let get_selector_receiver obj_c_message_expr_info =
   ( obj_c_message_expr_info.Clang_ast_t.omei_selector
   , obj_c_message_expr_info.Clang_ast_t.omei_receiver_kind )
+
 
 let is_member_exp stmt = match stmt with Clang_ast_t.MemberExpr _ -> true | _ -> false
 
@@ -605,49 +654,52 @@ let is_enumeration_constant stmt =
     match drei.Clang_ast_t.drti_decl_ref with
     | Some d -> (
       match d.Clang_ast_t.dr_kind with `EnumConstant -> true | _ -> false )
-    | _
-     -> false )
-  | _
-   -> false
+    | _ ->
+        false )
+  | _ ->
+      false
+
 
 let is_null_stmt s = match s with Clang_ast_t.NullStmt _ -> true | _ -> false
 
 let extract_stmt_from_singleton stmt_list warning_string =
   extract_item_from_singleton stmt_list warning_string (Ast_expressions.dummy_stmt ())
 
+
 let rec get_type_from_exp_stmt stmt =
   let do_decl_ref_exp i =
     match i.Clang_ast_t.drti_decl_ref with
     | Some d -> (
       match d.Clang_ast_t.dr_qual_type with Some n -> n | _ -> assert false )
-    | _
-     -> assert false
+    | _ ->
+        assert false
   in
   let open Clang_ast_t in
   match stmt with
-  | CXXOperatorCallExpr (_, _, ei) | CallExpr (_, _, ei)
-   -> ei.Clang_ast_t.ei_qual_type
-  | MemberExpr (_, _, ei, _)
-   -> ei.Clang_ast_t.ei_qual_type
-  | ParenExpr (_, _, ei)
-   -> ei.Clang_ast_t.ei_qual_type
-  | ArraySubscriptExpr (_, _, ei)
-   -> ei.Clang_ast_t.ei_qual_type
-  | ObjCIvarRefExpr (_, _, ei, _)
-   -> ei.Clang_ast_t.ei_qual_type
-  | ObjCMessageExpr (_, _, ei, _)
-   -> ei.Clang_ast_t.ei_qual_type
-  | PseudoObjectExpr (_, _, ei)
-   -> ei.Clang_ast_t.ei_qual_type
+  | CXXOperatorCallExpr (_, _, ei) | CallExpr (_, _, ei) ->
+      ei.Clang_ast_t.ei_qual_type
+  | MemberExpr (_, _, ei, _) ->
+      ei.Clang_ast_t.ei_qual_type
+  | ParenExpr (_, _, ei) ->
+      ei.Clang_ast_t.ei_qual_type
+  | ArraySubscriptExpr (_, _, ei) ->
+      ei.Clang_ast_t.ei_qual_type
+  | ObjCIvarRefExpr (_, _, ei, _) ->
+      ei.Clang_ast_t.ei_qual_type
+  | ObjCMessageExpr (_, _, ei, _) ->
+      ei.Clang_ast_t.ei_qual_type
+  | PseudoObjectExpr (_, _, ei) ->
+      ei.Clang_ast_t.ei_qual_type
   | CStyleCastExpr (_, stmt_list, _, _, _)
   | UnaryOperator (_, stmt_list, _, _)
-  | ImplicitCastExpr (_, stmt_list, _, _)
-   -> get_type_from_exp_stmt
+  | ImplicitCastExpr (_, stmt_list, _, _) ->
+      get_type_from_exp_stmt
         (extract_stmt_from_singleton stmt_list "WARNING: We expect only one stmt.")
-  | DeclRefExpr (_, _, _, info)
-   -> do_decl_ref_exp info
-  | _
-   -> L.die InternalError "get_type_from_expr_stmt failure: %s" (Clang_ast_j.string_of_stmt stmt)
+  | DeclRefExpr (_, _, _, info) ->
+      do_decl_ref_exp info
+  | _ ->
+      L.die InternalError "get_type_from_expr_stmt failure: %s" (Clang_ast_j.string_of_stmt stmt)
+
 
 module Self = struct
   exception SelfClassException of Typ.Name.t
@@ -665,9 +717,11 @@ module Self = struct
       {empty_res_trans with exps= [(self_expr, typ)]; instrs= ins}
     else empty_res_trans
 
+
   let is_var_self pvar is_objc_method =
     let is_self = String.equal (Mangled.to_string (Pvar.get_name pvar)) CFrontend_config.self in
     is_self && is_objc_method
+
 end
 
 (* From the manual: A selector is in a certain selector family if, ignoring any leading underscores, *)
@@ -686,58 +740,63 @@ let is_owning_name n =
   match Str.split (Str.regexp_string ":") n with
   | fst :: _ -> (
     match Str.split (Str.regexp "['_']+") fst with
-    | [no_und] | _ :: no_und :: _
-     -> is_family CFrontend_config.alloc no_und || is_family CFrontend_config.copy no_und
+    | [no_und] | _ :: no_und :: _ ->
+        is_family CFrontend_config.alloc no_und || is_family CFrontend_config.copy no_und
         || is_family CFrontend_config.new_str no_und
         || is_family CFrontend_config.mutableCopy no_und || is_family CFrontend_config.init no_und
-    | _
-     -> assert false )
-  | _
-   -> assert false
+    | _ ->
+        assert false )
+  | _ ->
+      assert false
+
 
 let rec is_owning_method s =
   match s with
-  | Clang_ast_t.ObjCMessageExpr (_, _, _, mei)
-   -> is_owning_name mei.Clang_ast_t.omei_selector
+  | Clang_ast_t.ObjCMessageExpr (_, _, _, mei) ->
+      is_owning_name mei.Clang_ast_t.omei_selector
   | _ ->
     match snd (Clang_ast_proj.get_stmt_tuple s) with
-    | []
-     -> false
-    | s'' :: _
-     -> is_owning_method s''
+    | [] ->
+        false
+    | s'' :: _ ->
+        is_owning_method s''
+
 
 let rec is_method_call s =
   match s with
-  | Clang_ast_t.ObjCMessageExpr _
-   -> true
+  | Clang_ast_t.ObjCMessageExpr _ ->
+      true
   | _ ->
     match snd (Clang_ast_proj.get_stmt_tuple s) with [] -> false | s'' :: _ -> is_method_call s''
+
 
 let rec get_decl_ref_info s =
   match s with
   | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info) -> (
     match decl_ref_expr_info.Clang_ast_t.drti_decl_ref with
-    | Some decl_ref
-     -> decl_ref
-    | None
-     -> assert false )
+    | Some decl_ref ->
+        decl_ref
+    | None ->
+        assert false )
   | _ ->
     match Clang_ast_proj.get_stmt_tuple s with
-    | _, []
-     -> assert false
-    | _, s'' :: _
-     -> get_decl_ref_info s''
+    | _, [] ->
+        assert false
+    | _, s'' :: _ ->
+        get_decl_ref_info s''
+
 
 let rec contains_opaque_value_expr s =
   match s with
-  | Clang_ast_t.OpaqueValueExpr _
-   -> true
+  | Clang_ast_t.OpaqueValueExpr _ ->
+      true
   | _ ->
     match snd (Clang_ast_proj.get_stmt_tuple s) with
-    | []
-     -> false
-    | s'' :: _
-     -> contains_opaque_value_expr s''
+    | [] ->
+        false
+    | s'' :: _ ->
+        contains_opaque_value_expr s''
+
 
 (* checks if a unary operator is a logic negation applied to integers*)
 let is_logical_negation_of_int tenv ei uoi =
@@ -745,25 +804,27 @@ let is_logical_negation_of_int tenv ei uoi =
     ( (CType_decl.qual_type_to_sil_type tenv ei.Clang_ast_t.ei_qual_type).desc
     , uoi.Clang_ast_t.uoi_kind )
   with
-  | Typ.Tint _, `LNot
-   -> true
-  | _, _
-   -> false
+  | Typ.Tint _, `LNot ->
+      true
+  | _, _ ->
+      false
+
 
 let rec is_block_stmt stmt =
   let open Clang_ast_t in
   match stmt with
-  | BlockExpr _
-   -> true
-  | DeclRefExpr (_, _, expr_info, _)
-   -> let qt = expr_info.Clang_ast_t.ei_qual_type in
+  | BlockExpr _ ->
+      true
+  | DeclRefExpr (_, _, expr_info, _) ->
+      let qt = expr_info.Clang_ast_t.ei_qual_type in
       CType.is_block_type qt
   | _ ->
     match snd (Clang_ast_proj.get_stmt_tuple stmt) with
-    | [sub_stmt]
-     -> is_block_stmt sub_stmt
-    | _
-     -> false
+    | [sub_stmt] ->
+        is_block_stmt sub_stmt
+    | _ ->
+        false
+
 
 (* Checks if stmt_list is a call to a special dispatch function *)
 let is_dispatch_function stmt_list =
@@ -772,34 +833,36 @@ let is_dispatch_function stmt_list =
     match stmt with
     | DeclRefExpr (_, _, _, di) -> (
       match di.Clang_ast_t.drti_decl_ref with
-      | None
-       -> None
+      | None ->
+          None
       | Some d ->
         match (d.Clang_ast_t.dr_kind, d.Clang_ast_t.dr_name) with
         | `Function, Some name_info
-         -> (
+          -> (
             let s = name_info.Clang_ast_t.ni_name in
             match CTrans_models.is_dispatch_function_name s with
-            | None
-             -> None
+            | None ->
+                None
             | Some (_, block_arg_pos) ->
               try
                 let arg_stmt = List.nth_exn arg_stmts block_arg_pos in
                 if is_block_stmt arg_stmt then Some block_arg_pos else None
               with Invalid_argument _ -> None )
-        | _
-         -> None )
+        | _ ->
+            None )
     | _ ->
       match snd (Clang_ast_proj.get_stmt_tuple stmt) with
-      | [sub_stmt]
-       -> is_dispatch_function sub_stmt arg_stmts
-      | _
-       -> None
+      | [sub_stmt] ->
+          is_dispatch_function sub_stmt arg_stmts
+      | _ ->
+          None
   in
   match stmt_list with stmt :: arg_stmts -> is_dispatch_function stmt arg_stmts | _ -> None
 
+
 let is_block_enumerate_function mei =
   String.equal mei.Clang_ast_t.omei_selector CFrontend_config.enumerateObjectsUsingBlock
+
 
 (*
 (** Similar to extract_item_from_singleton but for option type *)

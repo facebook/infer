@@ -5,8 +5,7 @@ let ( ^/ ) = Filename.concat
 
 let source_dirs =
   (if facebook then "facebook" else "opensource")
-  :: ( ( if clang then ["clang"; ("unit" ^/ "clang")]
-       else ["clang_stubs"; ("unit" ^/ "clang_stubs")] )
+  :: ( (if clang then ["clang"; "unit" ^/ "clang"] else ["clang_stubs"; "unit" ^/ "clang_stubs"])
      @ [ (if java then "java" else "java_stubs")
        ; (if python && facebook then "python" else "python_stubs")
        ; "absint"
@@ -23,11 +22,14 @@ let source_dirs =
        ; "quandary"
        ; "unit" ] )
 
+
 let infer_binaries =
   ["infer"; "inferunit"] @ if facebook then ["InferCreateTraceViewLinks"] else []
 
+
 let infer_cflags =
   common_cflags @ ["-open"; "InferStdlib"; "-open"; "IStd"; "-open"; "InferGenerated"]
+
 
 let infer_libraries = "InferStdlib" :: "InferGenerated" :: common_libraries
 
@@ -49,8 +51,10 @@ let stanzas =
   (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
  ))
 |}
-        (String.concat " " infer_cflags) (String.concat " " common_optflags)
-        (String.concat " " infer_libraries) (String.concat " " infer_binaries)
+        (String.concat " " infer_cflags)
+        (String.concat " " common_optflags)
+        (String.concat " " infer_libraries)
+        (String.concat " " infer_binaries)
     ; Format.sprintf
         {|
 (executables
@@ -62,8 +66,10 @@ let stanzas =
   (preprocess (pps (ppx_compare ppx_sexp_conv -no-check)))
  ))
 |}
-        (String.concat " " infer_binaries) (String.concat " " infer_cflags)
-        (String.concat " " common_optflags) (String.concat " " infer_binaries)
+        (String.concat " " infer_binaries)
+        (String.concat " " infer_cflags)
+        (String.concat " " common_optflags)
+        (String.concat " " infer_binaries)
     ; Format.sprintf
         {|
 (executable
@@ -74,15 +80,17 @@ let stanzas =
   (modules (:standard \ %s))
   (link_flags (-linkall -warn-error -31))))
 |}
-        (String.concat " " infer_cflags) (String.concat " " common_optflags)
+        (String.concat " " infer_cflags)
+        (String.concat " " common_optflags)
         (String.concat " " infer_binaries) ]
   @ ( List.map
         (fun source_dir ->
           [ Printf.sprintf "(copy_files# %s/*.ml{,i,l})" source_dir
           ; (* menhir doesn't support '# 1 "<source file>"' directives at the start of the file inserted by
        copy# actions *)
-          Printf.sprintf "(copy_files %s/*.mly)" source_dir ])
+            Printf.sprintf "(copy_files %s/*.mly)" source_dir ])
         source_dirs
     |> List.concat )
+
 
 ;; String.concat "\n" stanzas |> Jbuild_plugin.V1.send

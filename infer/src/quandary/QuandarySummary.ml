@@ -19,10 +19,11 @@ module AccessTree = struct
   type t = Java of Java.t | Clang of Clang.t
 
   let pp fmt = function
-    | Java access_tree
-     -> Java.pp fmt access_tree
-    | Clang access_tree
-     -> Clang.pp fmt access_tree
+    | Java access_tree ->
+        Java.pp fmt access_tree
+    | Clang access_tree ->
+        Clang.pp fmt access_tree
+
 end
 
 type t = AccessTree.t

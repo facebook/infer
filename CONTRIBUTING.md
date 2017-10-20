@@ -145,7 +145,7 @@ module MF = MarkupFormatter
 
 - Use the `_hum` suffix to flag functions that output human-readable strings.
 
-- Format code with ocamlformat.
+- Format code with [ocamlformat](https://github.com/ocaml-ppx/ocamlformat).
 
 ### C/C++/Objective-C
 

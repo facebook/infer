@@ -13,10 +13,10 @@ module L = Logging
 let infer_profile_name = "infer-capture"
 
 let infer_profile =
-  ( lazy
-  (* indented so that users may copy it into their projects if they want to *)
-  (Printf.sprintf
-     {|
+  lazy
+    (* indented so that users may copy it into their projects if they want to *)
+    (Printf.sprintf
+       {|
     <profile>
       <id>%s</id>
       <build>
@@ -34,7 +34,9 @@ let infer_profile =
         </plugins>
       </build>
     </profile>|}
-     infer_profile_name (Config.bin_dir ^/ CLOpt.infer_exe_name)) )
+       infer_profile_name
+       (Config.bin_dir ^/ CLOpt.infer_exe_name))
+
 
 let pom_worklist = ref [CLOpt.init_work_dir]
 
@@ -54,65 +56,66 @@ let add_infer_profile_to_xml dir maven_xml infer_xml =
   and process xml_in xml_out tag_stack =
     let elt_in = Xmlm.input xml_in in
     match elt_in with
-    | `El_start tag
-     -> Xmlm.output xml_out elt_in ;
+    | `El_start tag ->
+        Xmlm.output xml_out elt_in ;
         let tag_name = snd (fst tag) in
         if String.equal tag_name "profiles" then found_profiles_tag := true ;
         process xml_in xml_out (tag_name :: tag_stack)
     | `El_end
-     -> (
+      -> (
         ( match tag_stack with
-        | "profiles" :: _ when not !found_infer_profile
-         -> (* found the </profiles> tag but no infer profile found, add one *)
+        | "profiles" :: _ when not !found_infer_profile ->
+            (* found the </profiles> tag but no infer profile found, add one *)
             insert_infer_profile xml_out
-        | [_] when not !found_profiles_tag
-         -> (* closing the root tag but no <profiles> tag found, add
+        | [_] when not !found_profiles_tag ->
+            (* closing the root tag but no <profiles> tag found, add
                 <profiles>[infer profile]</profiles> *)
             Xmlm.output xml_out (`El_start (("", "profiles"), [])) ;
             found_profiles_tag := true ;
             (* do not add <profiles> again *)
             insert_infer_profile xml_out ;
             Xmlm.output xml_out `El_end
-        | _
-         -> () ) ;
+        | _ ->
+            () ) ;
         Xmlm.output xml_out elt_in ;
         match tag_stack with
-        | _ :: parent :: tl
-         -> process xml_in xml_out (parent :: tl)
-        | [_]
-         -> (* closing the first tag, we're done *)
+        | _ :: parent :: tl ->
+            process xml_in xml_out (parent :: tl)
+        | [_] ->
+            (* closing the first tag, we're done *)
             ()
-        | []
-         -> L.(die UserError) "ill-formed xml" )
-    | `Data data
-     -> Xmlm.output xml_out elt_in ;
+        | [] ->
+            L.(die UserError) "ill-formed xml" )
+    | `Data data ->
+        Xmlm.output xml_out elt_in ;
         ( match tag_stack with
-        | "id" :: "profile" :: "profiles" :: _ when String.equal data infer_profile_name
-         -> L.(debug Capture Quiet) "Found infer profile, not adding one@." ;
+        | "id" :: "profile" :: "profiles" :: _ when String.equal data infer_profile_name ->
+            L.(debug Capture Quiet) "Found infer profile, not adding one@." ;
             found_infer_profile := true
-        | "module" :: "modules" :: _
-         -> let abs_data = dir ^/ data in
+        | "module" :: "modules" :: _ ->
+            let abs_data = dir ^/ data in
             L.(debug Capture Quiet) "Adding maven module %s@." abs_data ;
             pom_worklist := abs_data :: !pom_worklist
-        | _
-         -> () ) ;
+        | _ ->
+            () ) ;
         process xml_in xml_out tag_stack
-    | `Dtd _
-     -> (* already processed the Dtd node *)
+    | `Dtd _ ->
+        (* already processed the Dtd node *)
         assert false
   in
   let process_document () =
     (* process `Dtd; if present, it is always the first node *)
     ( match Xmlm.peek maven_xml with
-    | `Dtd _
-     -> copy maven_xml infer_xml
-    | _
-     -> Xmlm.output infer_xml (`Dtd None) ) ;
+    | `Dtd _ ->
+        copy maven_xml infer_xml
+    | _ ->
+        Xmlm.output infer_xml (`Dtd None) ) ;
     process_root maven_xml infer_xml ;
     Xmlm.eoi maven_xml |> ignore ;
     if not (Xmlm.eoi maven_xml) then L.(die UserError) "More than one document"
   in
   process_document ()
+
 
 let add_infer_profile mvn_pom infer_pom =
   let ic = In_channel.create mvn_pom in
@@ -134,6 +137,7 @@ let add_infer_profile mvn_pom infer_pom =
   with Xmlm.Error ((line, col), error) ->
     L.die ExternalError "%s:%d:%d: ERROR: %s" mvn_pom line col (Xmlm.error_message error)
 
+
 let add_profile_to_pom_in_directory dir =
   (* Even though there is a "-f" command-line arguments to change the config file Maven reads from,
      this is unreliable and Maven pretty much always reads from "pom.xml" anyway. So, we replace
@@ -153,6 +157,7 @@ let add_profile_to_pom_in_directory dir =
       ~f:(fun () -> Unix.rename ~src:maven_pom_path ~dst:infer_pom_path)
       "saving infer's pom.xml"
 
+
 let capture ~prog ~args =
   while not (List.is_empty !pom_worklist) do
     let pom = List.hd_exn !pom_worklist in
@@ -167,10 +172,11 @@ let capture ~prog ~args =
   (* let children infer processes know that they are spawned by Maven *)
   Unix.fork_exec ~prog ~argv:(prog :: capture_args) ~env:Config.env_inside_maven () |> Unix.waitpid
   |> function
-    | Ok ()
-     -> ()
-    | Error _ as status
-     -> L.(die UserError)
+    | Ok () ->
+        ()
+    | Error _ as status ->
+        L.(die UserError)
           "*** Maven command failed:@\n*** %s@\n*** %s@\n"
           (String.concat ~sep:" " (prog :: capture_args))
           (Unix.Exit_or_signal.to_string_hum status)
+

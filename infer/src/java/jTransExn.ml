@@ -24,6 +24,7 @@ let create_handler_table impl =
   List.iter ~f:collect (JBir.exception_edges impl) ;
   handler_tb
 
+
 let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler_table =
   let catch_block_table = Hashtbl.create 1 in
   let exn_message = "exception handler" in
@@ -56,26 +57,26 @@ let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler
         let catch_nodes = get_body_nodes handler.JBir.e_handler in
         let loc =
           match catch_nodes with
-          | n :: _
-           -> Procdesc.Node.get_loc n
-          | []
-           -> Location.none context.source_file
+          | n :: _ ->
+              Procdesc.Node.get_loc n
+          | [] ->
+              Location.none context.source_file
         in
         match handler.JBir.e_catch_type with
-        | None
-         -> let finally_node = create_node loc (Procdesc.Node.Stmt_node "Finally branch") [] in
+        | None ->
+            let finally_node = create_node loc (Procdesc.Node.Stmt_node "Finally branch") [] in
             Procdesc.node_set_succs_exn procdesc finally_node catch_nodes exit_nodes ;
             [finally_node]
-        | Some exn_class_name
-         -> let exn_type =
+        | Some exn_class_name ->
+            let exn_type =
               match
                 JTransType.get_class_type context.program (JContext.get_tenv context)
                   exn_class_name
               with
-              | {Typ.desc= Tptr (typ, _)}
-               -> typ
-              | _
-               -> assert false
+              | {Typ.desc= Tptr (typ, _)} ->
+                  typ
+              | _ ->
+                  assert false
             in
             let id_instanceof = Ident.create_fresh Ident.knormal in
             let instr_call_instanceof =
@@ -135,10 +136,10 @@ let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler
       in
       let loc =
         match nodes_first_handler with
-        | n :: _
-         -> Procdesc.Node.get_loc n
-        | []
-         -> Location.none context.source_file
+        | n :: _ ->
+            Procdesc.Node.get_loc n
+        | [] ->
+            Location.none context.source_file
       in
       let entry_node = create_entry_node loc in
       Procdesc.node_set_succs_exn procdesc entry_node nodes_first_handler exit_nodes ;
@@ -147,12 +148,13 @@ let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler
   Hashtbl.iter (fun _ handler_list -> create_entry_block handler_list) handler_table ;
   catch_block_table
 
+
 let create_exception_handlers context exit_nodes get_body_nodes impl =
   match JBir.exc_tbl impl with
-  | []
-   -> fun _ -> exit_nodes
-  | _
-   -> let handler_table = create_handler_table impl in
+  | [] ->
+      fun _ -> exit_nodes
+  | _ ->
+      let handler_table = create_handler_table impl in
       let catch_block_table =
         translate_exceptions context exit_nodes get_body_nodes handler_table
       in
@@ -161,3 +163,4 @@ let create_exception_handlers context exit_nodes get_body_nodes impl =
           let handler_list = Hashtbl.find handler_table pc in
           Hashtbl.find catch_block_table handler_list
         with Not_found -> exit_nodes
+

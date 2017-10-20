@@ -44,6 +44,7 @@ let biniou_buffer_size =
   (* the C++ standard suggests that implementation should support string literals up to this length *)
   65535
 
+
 let block = "block"
 
 let builtin_expect = "__builtin_expect"
@@ -70,6 +71,7 @@ let ckcomponentcontroller_cl = "CKComponentController"
 let clang_bin xx =
   Config.bin_dir ^/ Filename.parent_dir_name ^/ Filename.parent_dir_name
   ^/ "facebook-clang-plugins" ^/ "clang" ^/ "install" ^/ "bin" ^/ "clang" ^ xx
+
 
 let class_method = "class"
 
@@ -178,5 +180,6 @@ let reset_global_state () =
   global_translation_unit_decls := [] ;
   log_out := Format.std_formatter ;
   sil_types_map := Clang_ast_extend.TypePointerMap.empty
+
 
 let tableaux_evaluation = false

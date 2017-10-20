@@ -48,12 +48,14 @@ let mk_command_doc ~see_also:see_also_commands ?environment:environment_opt ?fil
     ~date:Version.man_pages_last_modify_date ~synopsis:[`Pre synopsis] ~environment ~files
     ~see_also
 
+
 let analyze =
   mk_command_doc ~title:"Infer Analysis" ~short_description:"analyze the files captured by infer"
     ~synopsis:{|$(b,infer) $(b,analyze) $(i,[options])
 $(b,infer) $(i,[options])|}
     ~description:[`P "Analyze the files captured in the project results directory and report."]
     ~see_also:CLOpt.([Report; Run])
+
 
 let capture =
   mk_command_doc ~title:"Infer Compilation Capture"
@@ -75,6 +77,7 @@ $(b,infer) $(b,capture) $(i,[--no-xcpretty]) $(i,[options]) $(b,--) $(b,xcodebui
           "Capture the build command or compilation database specified on the command line: infer intercepts calls to the compiler to read source files, translate them into infer's intermediate representation, and store the result of the translation in the results directory."
       ]
     ~see_also:CLOpt.([Analyze; Compile; Run])
+
 
 let compile =
   mk_command_doc ~title:"Infer Project Compilation"
@@ -103,12 +106,14 @@ let compile =
       ]
     ~see_also:CLOpt.([Capture])
 
+
 let diff =
   mk_command_doc ~title:"Infer Differential Analysis of a Project"
     ~short_description:"Report the difference between two versions of a project"
     ~synopsis:"$(b,infer) $(b,diff) $(i,[options])"
     ~description:[`P "EXPERIMENTAL AND IN NO WAY READY TO USE"]
     ~see_also:CLOpt.([ReportDiff; Run])
+
 
 let explore =
   mk_command_doc ~title:"Infer Explore"
@@ -119,6 +124,7 @@ let explore =
           "Show the list of bugs on the console and explore symbolic program traces emitted by infer to explain a report. Can also generate an HTML report from a JSON report."
       ]
     ~see_also:CLOpt.([Report; Run])
+
 
 let infer =
   mk_command_doc ~title:"Infer Static Analyzer"
@@ -199,6 +205,7 @@ $(b,infer) $(i,[options])|}
   }|}
       ] ~see_also:CLOpt.all_commands "infer"
 
+
 let report =
   mk_command_doc ~title:"Infer Reporting" ~short_description:"compute and manipulate infer results"
     ~synopsis:"$(b,infer) $(b,report) $(i,[options]) [$(i,file.specs)...]"
@@ -209,6 +216,7 @@ let report =
           "If no specs file are passed on the command line, process all the .specs in the results directory."
       ]
     ~see_also:CLOpt.([ReportDiff; Run])
+
 
 let reportdiff =
   mk_command_doc ~title:"Infer Report Difference"
@@ -229,6 +237,7 @@ let reportdiff =
       ; `P "All three files follow the same format as normal infer reports." ]
     ~see_also:CLOpt.([Report])
 
+
 let run =
   mk_command_doc ~title:"Infer Analysis of a Project"
     ~short_description:"capture source files, analyze, and report"
@@ -241,6 +250,7 @@ $(b,infer) $(i,[options]) $(b,--) $(i,compile command)|}
       ; `Pre {|$(b,infer) $(b,capture) $(i,[options])
 $(b,infer) $(b,analyze) $(i,[options])|} ]
     ~see_also:CLOpt.([Analyze; Capture; Report])
+
 
 let command_to_data =
   let mk cmd mk_doc =
@@ -258,5 +268,7 @@ let command_to_data =
   ; mk ReportDiff reportdiff
   ; mk Run run ]
 
+
 let data_of_command command =
   List.Assoc.find_exn ~equal:CLOpt.equal_command command_to_data command
+

@@ -20,6 +20,7 @@ module GlobalVar = struct
   let pp fmt v =
     F.fprintf fmt "%a|%a" Mangled.pp (Pvar.get_name v) Pvar.pp_translation_unit
       (Pvar.get_translation_unit v)
+
 end
 
 module GlobalVarSet = PrettyPrintable.MakePPSet (GlobalVar)
@@ -43,6 +44,7 @@ module TraceElem = struct
       Kind.pp (snd kind) ;
     match fst kind with `Call -> F.fprintf fmt " via call to %a" CallSite.pp site | `Access -> ()
 
+
   module Set = PrettyPrintable.MakePPSet (struct
     (* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 *)
     (* type nonrec t = t [@@deriving compare]; *)
@@ -60,6 +62,7 @@ let make_access kind loc =
   let site = CallSite.make Typ.Procname.empty_block loc in
   {TraceElem.kind= (`Access, kind); site}
 
+
 let is_intraprocedural_access {TraceElem.kind= kind, _} = kind = `Access
 
 let trace_of_error loc gname path =
@@ -74,3 +77,4 @@ let trace_of_error loc gname path =
     Errlog.make_trace_element 0 loc (Format.asprintf "initialization of %s" gname) []
   in
   trace_elem_of_global :: to_sink_loc_trace ~desc_of_sink ~sink_should_nest path
+

@@ -30,6 +30,7 @@ let do_not_filter : filters =
   ; error_filter= default_error_filter
   ; proc_filter= default_proc_filter }
 
+
 type filter_config =
   { whitelist: string list
   ; blacklist: string list
@@ -44,11 +45,13 @@ let is_matching patterns source_file =
       with Not_found -> false)
     patterns
 
+
 (** Check if a proc name is matching the name given as string. *)
 let match_method language proc_name method_name =
   not (BuiltinDecl.is_declared proc_name)
   && Config.equal_language (Typ.Procname.get_language proc_name) language
   && String.equal (Typ.Procname.get_method proc_name) method_name
+
 
 (* Module to create matcher based on strings present in the source file *)
 module FileContainsStringMatcher = struct
@@ -59,12 +62,13 @@ module FileContainsStringMatcher = struct
   let file_contains regexp file_in =
     let rec loop () =
       try Str.search_forward regexp (In_channel.input_line_exn file_in) 0 >= 0 with
-      | Not_found
-       -> loop ()
-      | End_of_file
-       -> false
+      | Not_found ->
+          loop ()
+      | End_of_file ->
+          false
     in
     loop ()
+
 
   let create_matcher s_patterns =
     if List.is_empty s_patterns then default_matcher
@@ -81,6 +85,7 @@ module FileContainsStringMatcher = struct
             source_map := SourceFile.Map.add source_file pattern_found !source_map ;
             pattern_found
           with Sys_error _ -> false
+
 end
 
 type method_pattern =
@@ -123,13 +128,14 @@ module FileOrProcMatcher = struct
       fun _ proc_name ->
         match proc_name with Typ.Procname.Java pname_java -> do_java pname_java | _ -> false
 
+
   let create_file_matcher patterns =
     let s_patterns, m_patterns =
       let collect (s_patterns, m_patterns) = function
-        | Source_contains (_, s)
-         -> (s :: s_patterns, m_patterns)
-        | Method_pattern (_, mp)
-         -> (s_patterns, mp :: m_patterns)
+        | Source_contains (_, s) ->
+            (s :: s_patterns, m_patterns)
+        | Method_pattern (_, mp) ->
+            (s_patterns, mp :: m_patterns)
       in
       List.fold ~f:collect ~init:([], []) patterns
     in
@@ -139,15 +145,16 @@ module FileOrProcMatcher = struct
     and m_matcher = create_method_matcher m_patterns in
     fun source_file proc_name -> m_matcher source_file proc_name || s_matcher source_file proc_name
 
+
   let load_matcher = create_file_matcher
 
   let _pp_pattern fmt pattern =
     let pp_string fmt s = Format.fprintf fmt "%s" s in
     let pp_option pp_value fmt = function
-      | None
-       -> pp_string fmt "None"
-      | Some value
-       -> Format.fprintf fmt "%a" pp_value value
+      | None ->
+          pp_string fmt "None"
+      | Some value ->
+          Format.fprintf fmt "%a" pp_value value
     in
     let pp_key_value pp_value fmt (key, value) =
       Format.fprintf fmt "  %s: %a,@\n" key (pp_option pp_value) value
@@ -161,12 +168,15 @@ module FileOrProcMatcher = struct
         ("parameters", mp.parameters)
     and pp_source_contains fmt sc = Format.fprintf fmt "  pattern: %s@\n" sc in
     match pattern with
-    | Method_pattern (language, mp)
-     -> Format.fprintf fmt "Method pattern (%s) {@\n%a}@\n" (Config.string_of_language language)
+    | Method_pattern (language, mp) ->
+        Format.fprintf fmt "Method pattern (%s) {@\n%a}@\n"
+          (Config.string_of_language language)
           pp_method_pattern mp
-    | Source_contains (language, sc)
-     -> Format.fprintf fmt "Source contains (%s) {@\n%a}@\n" (Config.string_of_language language)
+    | Source_contains (language, sc) ->
+        Format.fprintf fmt "Source contains (%s) {@\n%a}@\n"
+          (Config.string_of_language language)
           pp_source_contains sc
+
 end
 
 (* of module FileOrProcMatcher *)
@@ -174,62 +184,63 @@ end
 module OverridesMatcher = struct
   let load_matcher patterns is_subtype proc_name =
     let is_matching = function
-      | Method_pattern (language, mp)
-       -> is_subtype mp.class_name
+      | Method_pattern (language, mp) ->
+          is_subtype mp.class_name
           && Option.value_map ~f:(match_method language proc_name) ~default:false mp.method_name
-      | _
-       -> L.(die UserError) "Expecting method pattern"
+      | _ ->
+          L.(die UserError) "Expecting method pattern"
     in
     List.exists ~f:is_matching patterns
+
 end
 
 let patterns_of_json_with_key (json_key, json) =
   let default_method_pattern = {class_name= ""; method_name= None; parameters= None} in
   let default_source_contains = "" in
   let language_of_string = function
-    | "Java"
-     -> Ok Config.Java
-    | l
-     -> Error ("JSON key " ^ json_key ^ " not supported for language " ^ l)
+    | "Java" ->
+        Ok Config.Java
+    | l ->
+        Error ("JSON key " ^ json_key ^ " not supported for language " ^ l)
   in
   let rec detect_language = function
-    | []
-     -> Error ("No language found for " ^ json_key)
-    | ("language", `String s) :: _
-     -> language_of_string s
-    | _ :: tl
-     -> detect_language tl
+    | [] ->
+        Error ("No language found for " ^ json_key)
+    | ("language", `String s) :: _ ->
+        language_of_string s
+    | _ :: tl ->
+        detect_language tl
   in
   (* Detect the kind of pattern, method pattern or pattern based on the content of the source file.
      Detecting the kind of patterns in a first step makes it easier to parse the parts of the
      pattern in a second step *)
   let detect_pattern assoc =
     match detect_language assoc with
-    | Ok language
-     -> let is_method_pattern key = List.exists ~f:(String.equal key) ["class"; "method"]
+    | Ok language ->
+        let is_method_pattern key = List.exists ~f:(String.equal key) ["class"; "method"]
         and is_source_contains key = List.exists ~f:(String.equal key) ["source_contains"] in
         let rec loop = function
-          | []
-           -> Error ("Unknown pattern for " ^ json_key)
-          | (key, _) :: _ when is_method_pattern key
-           -> Ok (Method_pattern (language, default_method_pattern))
-          | (key, _) :: _ when is_source_contains key
-           -> Ok (Source_contains (language, default_source_contains))
-          | _ :: tl
-           -> loop tl
+          | [] ->
+              Error ("Unknown pattern for " ^ json_key)
+          | (key, _) :: _ when is_method_pattern key ->
+              Ok (Method_pattern (language, default_method_pattern))
+          | (key, _) :: _ when is_source_contains key ->
+              Ok (Source_contains (language, default_source_contains))
+          | _ :: tl ->
+              loop tl
         in
         loop assoc
-    | Error _ as error
-     -> error
+    | Error _ as error ->
+        error
   in
   (* Translate a JSON entry into a matching pattern *)
   let create_pattern (assoc: (string * Yojson.Basic.json) list) =
     let collect_params l =
       let collect accu = function
-        | `String s
-         -> s :: accu
-        | _
-         -> L.(die UserError)
+        | `String s ->
+            s :: accu
+        | _ ->
+            L.(die UserError)
               "Unrecognised parameters in %s"
               (Yojson.Basic.to_string (`Assoc assoc))
       in
@@ -237,73 +248,79 @@ let patterns_of_json_with_key (json_key, json) =
     in
     let create_method_pattern assoc =
       let loop mp = function
-        | key, `String s when String.equal key "class"
-         -> {mp with class_name= s}
-        | key, `String s when String.equal key "method"
-         -> {mp with method_name= Some s}
-        | key, `List l when String.equal key "parameters"
-         -> {mp with parameters= Some (collect_params l)}
-        | key, _ when String.equal key "language"
-         -> mp
-        | _
-         -> L.(die UserError) "Failed to parse %s" (Yojson.Basic.to_string (`Assoc assoc))
+        | key, `String s when String.equal key "class" ->
+            {mp with class_name= s}
+        | key, `String s when String.equal key "method" ->
+            {mp with method_name= Some s}
+        | key, `List l when String.equal key "parameters" ->
+            {mp with parameters= Some (collect_params l)}
+        | key, _ when String.equal key "language" ->
+            mp
+        | _ ->
+            L.(die UserError) "Failed to parse %s" (Yojson.Basic.to_string (`Assoc assoc))
       in
       List.fold ~f:loop ~init:default_method_pattern assoc
     and create_string_contains assoc =
       let loop sc = function
-        | key, `String pattern when String.equal key "source_contains"
-         -> pattern
-        | key, _ when String.equal key "language"
-         -> sc
-        | _
-         -> L.(die UserError) "Failed to parse %s" (Yojson.Basic.to_string (`Assoc assoc))
+        | key, `String pattern when String.equal key "source_contains" ->
+            pattern
+        | key, _ when String.equal key "language" ->
+            sc
+        | _ ->
+            L.(die UserError) "Failed to parse %s" (Yojson.Basic.to_string (`Assoc assoc))
       in
       List.fold ~f:loop ~init:default_source_contains assoc
     in
     match detect_pattern assoc with
-    | Ok Method_pattern (language, _)
-     -> Ok (Method_pattern (language, create_method_pattern assoc))
-    | Ok Source_contains (language, _)
-     -> Ok (Source_contains (language, create_string_contains assoc))
-    | Error _ as error
-     -> error
+    | Ok Method_pattern (language, _) ->
+        Ok (Method_pattern (language, create_method_pattern assoc))
+    | Ok Source_contains (language, _) ->
+        Ok (Source_contains (language, create_string_contains assoc))
+    | Error _ as error ->
+        error
   in
   let warn_user msg = CLOpt.warnf "WARNING: error parsing option %s@\n%s@." json_key msg in
   (* Translate all the JSON entries into matching patterns *)
   let rec translate accu = function
     | `Assoc l -> (
       match create_pattern l with
-      | Ok pattern
-       -> pattern :: accu
-      | Error msg
-       -> warn_user msg ; accu )
-    | `List l
-     -> List.fold ~f:translate ~init:accu l
-    | json
-     -> warn_user
+      | Ok pattern ->
+          pattern :: accu
+      | Error msg ->
+          warn_user msg ; accu )
+    | `List l ->
+        List.fold ~f:translate ~init:accu l
+    | json ->
+        warn_user
           (Printf.sprintf "expected list or assoc json type, but got value %s"
              (Yojson.Basic.to_string json)) ;
         accu
   in
   translate [] json
 
+
 let modeled_expensive_matcher =
   OverridesMatcher.load_matcher (patterns_of_json_with_key Config.patterns_modeled_expensive)
+
 
 let never_return_null_matcher =
   FileOrProcMatcher.load_matcher (patterns_of_json_with_key Config.patterns_never_returning_null)
 
+
 let skip_translation_matcher =
   FileOrProcMatcher.load_matcher (patterns_of_json_with_key Config.patterns_skip_translation)
 
+
 let skip_implementation_matcher =
   FileOrProcMatcher.load_matcher (patterns_of_json_with_key Config.patterns_skip_implementation)
+
 
 let load_filters analyzer =
   { whitelist= Config.analysis_path_regex_whitelist analyzer
   ; blacklist= Config.analysis_path_regex_blacklist analyzer
   ; blacklist_files_containing= Config.analysis_blacklist_files_containing analyzer
   ; suppress_errors= Config.analysis_suppress_errors analyzer }
+
 
 let filters_from_inferconfig inferconfig : filters =
   let path_filter =
@@ -318,21 +335,23 @@ let filters_from_inferconfig inferconfig : filters =
       FileContainsStringMatcher.create_matcher inferconfig.blacklist_files_containing
     in
     function
-      | source_file
-       -> whitelist_filter source_file && not (blacklist_filter source_file)
+      | source_file ->
+          whitelist_filter source_file && not (blacklist_filter source_file)
           && not (blacklist_files_containing_filter source_file)
   in
   let error_filter = function
-    | error_name
-     -> let error_str = error_name.IssueType.unique_id in
+    | error_name ->
+        let error_str = error_name.IssueType.unique_id in
         not (List.exists ~f:(String.equal error_str) inferconfig.suppress_errors)
   in
   {path_filter; error_filter; proc_filter= default_proc_filter}
+
 
 (* Create filters based on .inferconfig *)
 let create_filters analyzer =
   if not Config.filter_paths then do_not_filter
   else filters_from_inferconfig (load_filters analyzer)
+
 
 (* This function loads and list the path that are being filtered by the analyzer. The results *)
 (* are of the form: path/to/file.java -> {infer, checkers} meaning that analysis results will *)
@@ -357,3 +376,4 @@ let test () =
           let matching_s = String.concat ~sep:", " (List.map ~f:fst matching) in
           L.result "%s -> {%s}@." (SourceFile.to_rel_path source_file) matching_s)
     (Sys.getcwd ())
+

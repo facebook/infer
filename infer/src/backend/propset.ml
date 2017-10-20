@@ -35,6 +35,7 @@ let add tenv p pset =
     ~f:(fun pset' p' -> PropSet.add (Prop.prop_rename_primed_footprint_vars tenv p') pset')
     ~init:pset ps
 
+
 (** Singleton set. *)
 let singleton tenv p = add tenv p PropSet.empty
 
@@ -71,6 +72,7 @@ let map_option tenv f pset =
   let plist = List.map ~f:(function Some p -> p | None -> assert false) plisto in
   from_proplist tenv plist
 
+
 (** Apply function to all the elements of [propset]. *)
 let map tenv f pset = from_proplist tenv (List.map ~f (to_proplist pset))
 
@@ -79,6 +81,7 @@ let map tenv f pset = from_proplist tenv (List.map ~f (to_proplist pset))
 let fold f a pset =
   let l = to_proplist pset in
   List.fold ~f ~init:a l
+
 
 (** [iter f pset] computes (f p1;f p2;..;f pN)
     where [p1 ... pN] are the elements of pset, in increasing order. *)
@@ -95,6 +98,8 @@ let pp pe prop f pset =
   let plist = to_proplist pset in
   Propgraph.pp_proplist pe "PROP" (prop, false) f plist
 
+
 let d p ps =
   let plist = to_proplist ps in
   Propgraph.d_proplist p plist
+

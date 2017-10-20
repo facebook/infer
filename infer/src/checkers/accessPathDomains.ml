@@ -32,6 +32,7 @@ module Set = struct
              aps))
       aps
 
+
   let add = APSet.add
 
   let of_list = APSet.of_list
@@ -40,17 +41,20 @@ module Set = struct
     APSet.mem ap aps
     || APSet.exists (fun other_ap -> AccessPath.Abs.( <= ) ~lhs:ap ~rhs:other_ap) aps
 
+
   let mem_fuzzy ap aps =
     let has_overlap ap1 ap2 =
       AccessPath.Abs.( <= ) ~lhs:ap1 ~rhs:ap2 || AccessPath.Abs.( <= ) ~lhs:ap2 ~rhs:ap1
     in
     APSet.mem ap aps || APSet.exists (has_overlap ap) aps
 
+
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else
       let rhs_contains lhs_ap = mem lhs_ap rhs in
       APSet.subset lhs rhs || APSet.for_all rhs_contains lhs
+
 
   let join aps1 aps2 = if phys_equal aps1 aps2 then aps1 else APSet.union aps1 aps2
 
@@ -59,11 +63,12 @@ module Set = struct
     else
       let abstract_access_path ap aps =
         match ap with
-        | AccessPath.Abs.Exact exact_ap
-         -> APSet.add (AccessPath.Abs.Abstracted exact_ap) aps
-        | AccessPath.Abs.Abstracted _
-         -> APSet.add ap aps
+        | AccessPath.Abs.Exact exact_ap ->
+            APSet.add (AccessPath.Abs.Abstracted exact_ap) aps
+        | AccessPath.Abs.Abstracted _ ->
+            APSet.add ap aps
       in
       let diff_aps = APSet.diff next prev in
       APSet.fold abstract_access_path diff_aps APSet.empty |> join prev
+
 end

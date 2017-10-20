@@ -34,6 +34,7 @@ module Key = struct
     , 579094948
     , 972393003
     , 852343110 )
+
 end
 
 (** version of the binary files, to be incremented for each change *)
@@ -49,6 +50,7 @@ let retry_exception ~timeout ~catch_exn ~f x =
     with e when catch_exn e && not (expired ()) -> Utils.yield () ; (retry [@tailcall]) ()
   in
   retry ()
+
 
 type 'a write_command = Replace of 'a | Update of ('a option -> 'a)
 
@@ -75,22 +77,22 @@ let create_serializer (key: Key.t) : 'a serializer =
   let read_from_file (fname: DB.filename) : 'a option =
     let fname_str = DB.filename_to_string fname in
     match In_channel.create ~binary:true fname_str with
-    | exception Sys_error _
-     -> None
-    | inc
-     -> let read () =
+    | exception Sys_error _ ->
+        None
+    | inc ->
+        let read () =
           try
             In_channel.seek inc 0L ;
             read_data (Marshal.from_channel inc) fname_str
           with Sys_error _ -> None
         in
         let catch_exn = function
-          | End_of_file
-           -> true
-          | Failure _
-           -> true (* handle input_value: truncated object *)
-          | _
-           -> false
+          | End_of_file ->
+              true
+          | Failure _ ->
+              true (* handle input_value: truncated object *)
+          | _ ->
+              false
         in
         (* Retry to read for 1 second in case of end of file, *)
         (* which indicates that another process is writing the same file. *)
@@ -115,10 +117,10 @@ let create_serializer (key: Key.t) : 'a serializer =
     Utils.write_file_with_locking fname_str_lock ~delete:true ~f:(fun _outc ->
         let data_to_write : 'a =
           match cmd with
-          | Replace data
-           -> data
-          | Update upd
-           -> let old_data_opt =
+          | Replace data ->
+              data
+          | Update upd ->
+              let old_data_opt =
                 if DB.file_exists fname then
                   (* Because of locking, this should be the latest data written
                        by any writer, and can be used for updating *)
@@ -137,6 +139,7 @@ let create_serializer (key: Key.t) : 'a serializer =
   in
   let update_file ~f (fname: DB.filename) = execute_write_command_with_lock fname (Update f) in
   {read_from_string; read_from_file; update_file; write_to_file}
+
 
 let read_from_string s = s.read_from_string
 

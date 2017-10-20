@@ -23,32 +23,34 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let rec add_address_taken_pvars exp astate =
     match exp with
-    | Exp.Lvar pvar
-     -> Domain.add pvar astate
-    | Exp.Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _)
-     -> add_address_taken_pvars e astate
-    | Exp.BinOp (_, e1, e2) | Lindex (e1, e2)
-     -> add_address_taken_pvars e1 astate |> add_address_taken_pvars e2
+    | Exp.Lvar pvar ->
+        Domain.add pvar astate
+    | Exp.Cast (_, e) | UnOp (_, e, _) | Lfield (e, _, _) ->
+        add_address_taken_pvars e astate
+    | Exp.BinOp (_, e1, e2) | Lindex (e1, e2) ->
+        add_address_taken_pvars e1 astate |> add_address_taken_pvars e2
     | Exp.Exn _
     | Exp.Closure _
     | Exp.Const (Cint _ | Cfun _ | Cstr _ | Cfloat _ | Cclass _)
     | Exp.Var _
-    | Exp.Sizeof _
-     -> astate
+    | Exp.Sizeof _ ->
+        astate
+
 
   let exec_instr astate _ _ = function
-    | Sil.Store (_, {desc= Tptr _}, rhs_exp, _)
-     -> add_address_taken_pvars rhs_exp astate
-    | Sil.Call (_, _, actuals, _, _)
-     -> let add_actual_by_ref astate_acc = function
-          | actual_exp, {Typ.desc= Tptr _}
-           -> add_address_taken_pvars actual_exp astate_acc
-          | _
-           -> astate_acc
+    | Sil.Store (_, {desc= Tptr _}, rhs_exp, _) ->
+        add_address_taken_pvars rhs_exp astate
+    | Sil.Call (_, _, actuals, _, _) ->
+        let add_actual_by_ref astate_acc = function
+          | actual_exp, {Typ.desc= Tptr _} ->
+              add_address_taken_pvars actual_exp astate_acc
+          | _ ->
+              astate_acc
         in
         List.fold ~f:add_actual_by_ref ~init:astate actuals
-    | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Declare_locals _
-     -> astate
+    | Sil.Store _ | Load _ | Prune _ | Nullify _ | Abstract _ | Remove_temps _ | Declare_locals _ ->
+        astate
+
 end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Exceptional) (TransferFunctions)

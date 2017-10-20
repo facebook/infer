@@ -18,11 +18,12 @@ module RepeatedCallsExtension : Eradicate.ExtensionT = struct
 
     let compare i1 i2 =
       match (i1, i2) with
-      | Sil.Call (_, e1, etl1, _, cf1), Sil.Call (_, e2, etl2, _, cf2)
-       -> (* ignore return ids and call flags *)
+      | Sil.Call (_, e1, etl1, _, cf1), Sil.Call (_, e2, etl2, _, cf2) ->
+          (* ignore return ids and call flags *)
           [%compare : Exp.t * (Exp.t * Typ.t) list * CallFlags.t] (e1, etl1, cf1) (e2, etl2, cf2)
-      | _
-       -> Sil.compare_instr i1 i2
+      | _ ->
+          Sil.compare_instr i1 i2
+
   end)
 
   type extension = InstrSet.t
@@ -35,9 +36,11 @@ module RepeatedCallsExtension : Eradicate.ExtensionT = struct
     let pp_call instr = F.fprintf fmt "  %a@\n" (Sil.pp_instr Pp.text) instr in
     if not (InstrSet.is_empty calls) then ( F.fprintf fmt "Calls:@\n" ; InstrSet.iter pp_call calls )
 
+
   let get_old_call instr calls =
     try Some (InstrSet.find instr calls)
     with Not_found -> None
+
 
   let add_call instr calls = if InstrSet.mem instr calls then calls else InstrSet.add instr calls
 
@@ -59,10 +62,10 @@ module RepeatedCallsExtension : Eradicate.ExtensionT = struct
       in
       let do_instr instr =
         match instr with
-        | Sil.Call (_, Exp.Const Const.Cfun pn, _, loc, _) when proc_is_new pn
-         -> found := Some loc
-        | _
-         -> ()
+        | Sil.Call (_, Exp.Const Const.Cfun pn, _, loc, _) when proc_is_new pn ->
+            found := Some loc
+        | _ ->
+            ()
       in
       List.iter ~f:do_instr (Procdesc.Node.get_instrs node) ;
       !found
@@ -75,12 +78,13 @@ module RepeatedCallsExtension : Eradicate.ExtensionT = struct
       let join_ paths_ l1o l2o =
         (* join with left priority *)
         match (l1o, l2o) with
-        | None, None
-         -> None
-        | Some loc, None | None, Some loc
-         -> if equal_paths paths_ AllPaths then None else Some loc
-        | Some loc1, Some _
-         -> Some loc1
+        | None, None ->
+            None
+        | Some loc, None | None, Some loc ->
+            if equal_paths paths_ AllPaths then None else Some loc
+        | Some loc1, Some _ ->
+            Some loc1
+
 
       (* left priority *)
       let join = join_ paths
@@ -93,14 +97,16 @@ module RepeatedCallsExtension : Eradicate.ExtensionT = struct
         in
         ([lo'], [lo'])
 
+
       let proc_throws _ = Dataflow.DontKnow
     end) in
     let transitions = DFAllocCheck.run tenv pdesc None in
     match transitions (Procdesc.get_exit_node pdesc) with
-    | DFAllocCheck.Transition (loc, _, _)
-     -> loc
-    | DFAllocCheck.Dead_state
-     -> None
+    | DFAllocCheck.Transition (loc, _, _) ->
+        loc
+    | DFAllocCheck.Dead_state ->
+        None
+
 
   (** Check repeated calls to the same procedure. *)
   let check_instr tenv get_proc_desc curr_pname curr_pdesc extension instr normalized_etl =
@@ -108,49 +114,51 @@ module RepeatedCallsExtension : Eradicate.ExtensionT = struct
     let arguments_not_temp args =
       let filter_arg (e, _) =
         match e with
-        | Exp.Lvar pvar
-         -> (* same temporary variable does not imply same value *)
+        | Exp.Lvar pvar ->
+            (* same temporary variable does not imply same value *)
             not (Pvar.is_frontend_tmp pvar)
-        | _
-         -> true
+        | _ ->
+            true
       in
       List.for_all ~f:filter_arg args
     in
     match instr with
     | Sil.Call ((Some _ as ret_id), Exp.Const Const.Cfun callee_pname, _, loc, call_flags)
-      when arguments_not_temp normalized_etl
-     -> let instr_normalized_args =
+      when arguments_not_temp normalized_etl ->
+        let instr_normalized_args =
           Sil.Call (ret_id, Exp.Const (Const.Cfun callee_pname), normalized_etl, loc, call_flags)
         in
         let report proc_desc =
           match get_old_call instr_normalized_args extension with
           | Some Sil.Call (_, _, _, loc_old, _) -> (
             match proc_performs_allocation tenv proc_desc AllPaths with
-            | Some alloc_loc
-             -> let description =
+            | Some alloc_loc ->
+                let description =
                   Format.asprintf "call to %s seen before on line %d (may allocate at %a:%d)"
-                    (Typ.Procname.to_simplified_string callee_pname) loc_old.Location.line
-                    SourceFile.pp alloc_loc.Location.file alloc_loc.Location.line
+                    (Typ.Procname.to_simplified_string callee_pname)
+                    loc_old.Location.line SourceFile.pp alloc_loc.Location.file
+                    alloc_loc.Location.line
                 in
                 Checkers.ST.report_error tenv curr_pname curr_pdesc
                   IssueType.checkers_repeated_calls loc description
-            | None
-             -> () )
-          | _
-           -> ()
+            | None ->
+                () )
+          | _ ->
+              ()
         in
         let () =
           match get_proc_desc callee_pname with
-          | None
-           -> ()
-          | Some proc_desc
-           -> if Procdesc.is_defined proc_desc then report proc_desc
+          | None ->
+              ()
+          | Some proc_desc ->
+              if Procdesc.is_defined proc_desc then report proc_desc
         in
         add_call instr_normalized_args extension
-    | _
-     -> extension
+    | _ ->
+        extension
 
-  let ext = {TypeState.empty= empty; check_instr; join; pp}
+
+  let ext = {TypeState.empty; check_instr; join; pp}
 
   let update_payload _ payload = payload
 end
@@ -164,3 +172,4 @@ let callback_check_repeated_calls callback_args =
     {TypeCheck.eradicate= false; check_extension= Config.repeated_calls; check_ret_type= []}
   in
   MainRepeatedCalls.callback checks callback_args
+

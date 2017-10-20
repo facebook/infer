@@ -21,13 +21,14 @@ type style =
 
 let quote style =
   match style with
-  | EscapedNoQuotes
-   -> fun s -> s
-  | EscapedDoubleQuotes
-   -> fun s -> "\"" ^ s ^ "\""
-  | SingleQuotes
-   -> let map = function '\'' -> Some "\\'" | '\\' -> Some "\\\\" | _ -> None in
+  | EscapedNoQuotes ->
+      fun s -> s
+  | EscapedDoubleQuotes ->
+      fun s -> "\"" ^ s ^ "\""
+  | SingleQuotes ->
+      let map = function '\'' -> Some "\\'" | '\\' -> Some "\\\\" | _ -> None in
       fun s -> "'" ^ Escape.escape_map map s ^ "'"
+
 
 let mk_arg_file prefix style args =
   let file = Filename.temp_file prefix ".txt" in
@@ -37,3 +38,4 @@ let mk_arg_file prefix style args =
   Utils.with_file_out file ~f:write_args |> ignore ;
   L.(debug Capture Medium) "Clang options stored in file %s@\n" file ;
   file
+

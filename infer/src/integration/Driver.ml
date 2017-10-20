@@ -39,26 +39,28 @@ let pp_mode fmt mode =
   | ClangCompilationDB _
   | Python _
   | PythonCapture (_, _)
-  | XcodeXcpretty _
-   -> (* these are pretty boring, do not log anything *)
+  | XcodeXcpretty _ ->
+      (* these are pretty boring, do not log anything *)
       ()
-  | Javac (_, prog, args)
-   -> F.fprintf fmt "Javac driver mode:@\nprog = %s@\nargs = %a" prog Pp.cli_args args
-  | Maven (prog, args)
-   -> F.fprintf fmt "Maven driver mode:@\nprog = %s@\nargs = %a" prog Pp.cli_args args
-  | Clang (_, prog, args)
-   -> F.fprintf fmt "Clang driver mode:@\nprog = %s@\nargs = %a" prog Pp.cli_args args
+  | Javac (_, prog, args) ->
+      F.fprintf fmt "Javac driver mode:@\nprog = %s@\nargs = %a" prog Pp.cli_args args
+  | Maven (prog, args) ->
+      F.fprintf fmt "Maven driver mode:@\nprog = %s@\nargs = %a" prog Pp.cli_args args
+  | Clang (_, prog, args) ->
+      F.fprintf fmt "Clang driver mode:@\nprog = %s@\nargs = %a" prog Pp.cli_args args
+
 
 (* A clean command for each driver mode to be suggested to the user
    in case nothing got captured. *)
 let clean_compilation_command mode =
   match mode with
-  | BuckCompilationDB (prog, _) | Clang (_, prog, _)
-   -> Some (prog ^ " clean")
-  | XcodeXcpretty (prog, args)
-   -> Some (String.concat ~sep:" " (List.append (prog :: args) ["clean"]))
-  | _
-   -> None
+  | BuckCompilationDB (prog, _) | Clang (_, prog, _) ->
+      Some (prog ^ " clean")
+  | XcodeXcpretty (prog, args) ->
+      Some (String.concat ~sep:" " (List.append (prog :: args) ["clean"]))
+  | _ ->
+      None
+
 
 (* Clean up the results dir to select only what's relevant to go in the Buck cache. In particular,
    get rid of non-deterministic outputs.*)
@@ -85,8 +87,8 @@ let clean_results_dir () =
     let files_to_delete =
       [ Config.log_file
       ; (* some versions of sqlite do not clean up after themselves *)
-      (ResultsDir.database_filename ^ "-shm")
-      ; (ResultsDir.database_filename ^ "-wal") ]
+        ResultsDir.database_filename ^ "-shm"
+      ; ResultsDir.database_filename ^ "-wal" ]
     in
     let suffixes_to_delete =
       ".txt" :: ".csv" :: ".json" :: (if Config.flavors then [] else [".cfg"; ".cg"])
@@ -100,44 +102,47 @@ let clean_results_dir () =
   let rec delete_temp_results name =
     let rec cleandir dir =
       match Unix.readdir_opt dir with
-      | Some entry
-       -> if should_delete_dir entry then Utils.rmtree (name ^/ entry)
+      | Some entry ->
+          if should_delete_dir entry then Utils.rmtree (name ^/ entry)
           else if not
                     ( String.equal entry Filename.current_dir_name
                     || String.equal entry Filename.parent_dir_name )
           then delete_temp_results (name ^/ entry) ;
           cleandir dir
           (* next entry *)
-      | None
-       -> Unix.closedir dir
+      | None ->
+          Unix.closedir dir
     in
     match Unix.opendir name with
-    | dir
-     -> cleandir dir
-    | exception Unix.Unix_error (Unix.ENOTDIR, _, _)
-     -> if should_delete_file name then Unix.unlink name ;
+    | dir ->
+        cleandir dir
+    | exception Unix.Unix_error (Unix.ENOTDIR, _, _) ->
+        if should_delete_file name then Unix.unlink name ;
         ()
-    | exception Unix.Unix_error (Unix.ENOENT, _, _)
-     -> ()
+    | exception Unix.Unix_error (Unix.ENOENT, _, _) ->
+        ()
   in
   delete_temp_results Config.results_dir
+
 
 let check_captured_empty mode =
   let clean_command_opt = clean_compilation_command mode in
   if Config.clang_frontend_do_capture && Utils.directory_is_empty Config.captured_dir then (
     ( match clean_command_opt with
-    | Some clean_command
-     -> L.user_warning "@\nNothing to compile. Try running `%s` first.@." clean_command
-    | None
-     -> L.user_warning "@\nNothing to compile. Try cleaning the build first.@." ) ;
+    | Some clean_command ->
+        L.user_warning "@\nNothing to compile. Try running `%s` first.@." clean_command
+    | None ->
+        L.user_warning "@\nNothing to compile. Try cleaning the build first.@." ) ;
     true )
   else false
+
 
 let register_perf_stats_report () =
   let stats_dir = Filename.concat Config.results_dir Config.backend_stats_dir_name in
   let stats_base = Config.perf_stats_prefix ^ ".json" in
   let stats_file = Filename.concat stats_dir stats_base in
   PerfStats.register_report_at_exit stats_file
+
 
 let reset_duplicates_file () =
   let start = Config.results_dir ^/ Config.duplicates_filename in
@@ -147,6 +152,7 @@ let reset_duplicates_file () =
   in
   if Sys.file_exists start = `Yes then delete () ;
   create ()
+
 
 (* Create the .start file, and update the timestamp unless in continue mode *)
 let touch_start_file_unless_continue () =
@@ -158,17 +164,19 @@ let touch_start_file_unless_continue () =
   if not (Sys.file_exists start = `Yes) then create ()
   else if not Config.continue_capture then ( delete () ; create () )
 
+
 exception Infer_error of string
 
 let default_error_handling : Unix.Exit_or_signal.t -> unit = function
-  | Ok _
-   -> ()
-  | Error _ as status when Config.keep_going
-   -> (* Log error and proceed past the failure when keep going mode is on *)
+  | Ok _ ->
+      ()
+  | Error _ as status when Config.keep_going ->
+      (* Log error and proceed past the failure when keep going mode is on *)
       L.external_error "%s" (Unix.Exit_or_signal.to_string_hum status) ;
       ()
-  | Error _ as status
-   -> raise (Infer_error (Unix.Exit_or_signal.to_string_hum status))
+  | Error _ as status ->
+      raise (Infer_error (Unix.Exit_or_signal.to_string_hum status))
+
 
 let run_command ?(cleanup= default_error_handling) ~prog ~args () =
   Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())
@@ -176,51 +184,56 @@ let run_command ?(cleanup= default_error_handling) ~prog ~args () =
   cleanup status ;
   ok_exn (Unix.Exit_or_signal.or_error status)
 
+
 let check_xcpretty () =
   match Unix.system "xcpretty --version" with
-  | Ok ()
-   -> ()
-  | Error _
-   -> L.user_error
+  | Ok () ->
+      ()
+  | Error _ ->
+      L.user_error
         "@\nxcpretty not found in the path. Please consider installing xcpretty for a more robust integration with xcodebuild. Otherwise use the option --no-xcpretty.@\n@."
+
 
 let capture_with_compilation_database db_files =
   let root = Unix.getcwd () in
   Config.clang_compilation_dbs
   := List.map db_files ~f:(function
-       | `Escaped fname
-        -> `Escaped (Utils.filename_to_absolute ~root fname)
-       | `Raw fname
-        -> `Raw (Utils.filename_to_absolute ~root fname) ) ;
+       | `Escaped fname ->
+           `Escaped (Utils.filename_to_absolute ~root fname)
+       | `Raw fname ->
+           `Raw (Utils.filename_to_absolute ~root fname) ) ;
   let compilation_database = CompilationDatabase.from_json_files db_files in
   CaptureCompilationDatabase.capture_files_in_database compilation_database
 
+
 let capture ~changed_files mode =
   match mode with
-  | Analyze
-   -> ()
-  | BuckCompilationDB (prog, args)
-   -> L.progress "Capturing using Buck's compilation database...@." ;
+  | Analyze ->
+      ()
+  | BuckCompilationDB (prog, args) ->
+      L.progress "Capturing using Buck's compilation database...@." ;
       let json_cdb = CaptureCompilationDatabase.get_compilation_database_files_buck ~prog ~args in
       capture_with_compilation_database ~changed_files json_cdb
-  | BuckGenrule path
-   -> L.progress "Capturing for Buck genrule compatibility...@." ; JMain.from_arguments path
-  | Clang (compiler, prog, args)
-   -> if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
+  | BuckGenrule path ->
+      L.progress "Capturing for Buck genrule compatibility...@." ;
+      JMain.from_arguments path
+  | Clang (compiler, prog, args) ->
+      if CLOpt.is_originator then L.progress "Capturing in make/cc mode...@." ;
       Clang.capture compiler ~prog ~args
-  | ClangCompilationDB db_files
-   -> L.progress "Capturing using compilation database...@." ;
+  | ClangCompilationDB db_files ->
+      L.progress "Capturing using compilation database...@." ;
       capture_with_compilation_database ~changed_files db_files
-  | Javac (compiler, prog, args)
-   -> if CLOpt.is_originator then L.progress "Capturing in javac mode...@." ;
+  | Javac (compiler, prog, args) ->
+      if CLOpt.is_originator then L.progress "Capturing in javac mode...@." ;
       Javac.capture compiler ~prog ~args
-  | Maven (prog, args)
-   -> L.progress "Capturing in maven mode...@." ; Maven.capture ~prog ~args
-  | Python args
-   -> (* pretend prog is the root directory of the project *)
+  | Maven (prog, args) ->
+      L.progress "Capturing in maven mode...@." ;
+      Maven.capture ~prog ~args
+  | Python args ->
+      (* pretend prog is the root directory of the project *)
       PythonMain.go args
-  | PythonCapture (build_system, build_cmd)
-   -> L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
+  | PythonCapture (build_system, build_cmd) ->
+      L.progress "Capturing in %s mode...@." (Config.string_of_build_system build_system) ;
       let in_buck_mode = Config.equal_build_system build_system BBuck in
       let infer_py = Config.lib_dir ^/ "python" ^/ "infer.py" in
       let args =
@@ -230,81 +243,82 @@ let capture ~changed_files mode =
                 (List.map ~f:(fun (n, a) -> (a, n)) Config.string_to_analyzer)
                 Config.analyzer ]
           @ ( match Config.blacklist with
-            | Some s when in_buck_mode
-             -> ["--blacklist-regex"; s]
-            | _
-             -> [] )
+            | Some s when in_buck_mode ->
+                ["--blacklist-regex"; s]
+            | _ ->
+                [] )
           @ (if not Config.continue_capture then [] else ["--continue"])
           @ ( match Config.java_jar_compiler with
-            | None
-             -> []
-            | Some p
-             -> ["--java-jar-compiler"; p] )
+            | None ->
+                []
+            | Some p ->
+                ["--java-jar-compiler"; p] )
           @ ( match List.rev Config.buck_build_args with
-            | args when in_buck_mode
-             -> List.map ~f:(fun arg -> ["--Xbuck"; ("'" ^ arg ^ "'")]) args |> List.concat
-            | _
-             -> [] )
+            | args when in_buck_mode ->
+                List.map ~f:(fun arg -> ["--Xbuck"; "'" ^ arg ^ "'"]) args |> List.concat
+            | _ ->
+                [] )
           @ (if not Config.debug_mode then [] else ["--debug"])
           @ (if not Config.debug_exceptions then [] else ["--debug-exceptions"])
           @ (if Config.filtering then [] else ["--no-filtering"])
           @ (if not Config.flavors || not in_buck_mode then [] else ["--use-flavors"])
           @ "-j"
             :: string_of_int Config.jobs
-               :: ( match Config.load_average with
-                  | None
-                   -> []
-                  | Some l
-                   -> ["-l"; string_of_float l] )
+            :: (match Config.load_average with None -> [] | Some l -> ["-l"; string_of_float l])
           @ (if not Config.pmd_xml then [] else ["--pmd-xml"])
           @ ["--project-root"; Config.project_root]
           @ (if not Config.quiet then [] else ["--quiet"])
           @ (if not Config.reactive_mode then [] else ["--reactive"])
           @ "--out"
             :: Config.results_dir
-               :: ( match Config.xcode_developer_dir with
-                  | None
-                   -> []
-                  | Some d
-                   -> ["--xcode-developer-dir"; d] )
+            ::
+            ( match Config.xcode_developer_dir with
+            | None ->
+                []
+            | Some d ->
+                ["--xcode-developer-dir"; d] )
           @ "--"
-            :: ( if in_buck_mode && Config.flavors then
-                   (* let children infer processes know that they are inside Buck *)
-                   let infer_args_with_buck =
-                     String.concat ~sep:(String.of_char CLOpt.env_var_sep)
-                       (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
-                   in
-                   Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
-                   let all_buck_args = Buck.inline_argument_files build_cmd in
-                   let targets, no_targets =
-                     List.partition_tf ~f:Buck.is_target_string all_buck_args
-                   in
-                   let targets_with_flavor = Buck.add_flavors_to_buck_command targets in
-                   let targets_in_file = Buck.store_targets_in_file targets_with_flavor in
-                   let updated_buck_cmd = no_targets @ [targets_in_file] in
-                   Logging.(debug Capture Quiet)
-                     "Processed buck command '%s'@\n" (String.concat ~sep:" " updated_buck_cmd) ;
-                   updated_buck_cmd
-               else build_cmd ) )
+            ::
+            ( if in_buck_mode && Config.flavors then
+                (* let children infer processes know that they are inside Buck *)
+                let infer_args_with_buck =
+                  String.concat
+                    ~sep:(String.of_char CLOpt.env_var_sep)
+                    (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
+                in
+                Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
+                let all_buck_args = Buck.inline_argument_files build_cmd in
+                let targets, no_targets =
+                  List.partition_tf ~f:Buck.is_target_string all_buck_args
+                in
+                let targets_with_flavor = Buck.add_flavors_to_buck_command targets in
+                let targets_in_file = Buck.store_targets_in_file targets_with_flavor in
+                let updated_buck_cmd = no_targets @ [targets_in_file] in
+                Logging.(debug Capture Quiet)
+                  "Processed buck command '%s'@\n"
+                  (String.concat ~sep:" " updated_buck_cmd) ;
+                updated_buck_cmd
+            else build_cmd ) )
       in
       run_command ~prog:infer_py ~args
         ~cleanup:(function
             | Error `Exit_non_zero exit_code
-              when Int.equal exit_code Config.infer_py_argparse_error_exit_code
-             -> (* swallow infer.py argument parsing error *)
+              when Int.equal exit_code Config.infer_py_argparse_error_exit_code ->
+                (* swallow infer.py argument parsing error *)
                 Config.print_usage_exit ()
-            | Error _ as status
-             -> raise (Infer_error (Unix.Exit_or_signal.to_string_hum status))
-            | Ok _
-             -> ())
+            | Error _ as status ->
+                raise (Infer_error (Unix.Exit_or_signal.to_string_hum status))
+            | Ok _ ->
+                ())
         ()
-  | XcodeXcpretty (prog, args)
-   -> L.progress "Capturing using xcodebuild and xcpretty...@." ;
+  | XcodeXcpretty (prog, args) ->
+      L.progress "Capturing using xcodebuild and xcpretty...@." ;
       check_xcpretty () ;
       let json_cdb =
         CaptureCompilationDatabase.get_compilation_database_files_xcodebuild ~prog ~args
       in
       capture_with_compilation_database ~changed_files json_cdb
+
 
 let run_parallel_analysis ~changed_files : unit =
   let multicore_dir = Config.results_dir ^/ Config.multicore_dir_name in
@@ -315,19 +329,21 @@ let run_parallel_analysis ~changed_files : unit =
     ~args:
       ( "--directory"
         :: multicore_dir
-           :: (if Config.keep_going then "--keep-going" else "--no-keep-going")
-              :: "--jobs"
-                 :: string_of_int Config.jobs
-                    :: Option.value_map
-                         ~f:(fun l -> ["--load-average"; string_of_float l])
-                         ~default:[] Config.load_average
+        :: (if Config.keep_going then "--keep-going" else "--no-keep-going")
+        :: "--jobs"
+        :: string_of_int Config.jobs
+        :: Option.value_map
+             ~f:(fun l -> ["--load-average"; string_of_float l])
+             ~default:[] Config.load_average
       @ if Config.debug_mode then [] else ["--silent"] )
     ()
+
 
 let execute_analyze ~changed_files =
   if Int.equal Config.jobs 1 || Config.cluster_cmdline <> None then
     InferAnalyze.main ~changed_files ~makefile:""
   else run_parallel_analysis ~changed_files
+
 
 let report ?(suppress_console= false) () =
   let report_csv =
@@ -340,15 +356,16 @@ let report ?(suppress_console= false) () =
 
      Do not bother calling the report hook when called from within Buck. *)
   match (Config.buck_cache_mode, Config.report_hook) with
-  | true, _ | false, None
-   -> ()
-  | false, Some prog
-   -> let if_some key opt args = match opt with None -> args | Some arg -> key :: arg :: args in
+  | true, _ | false, None ->
+      ()
+  | false, Some prog ->
+      let if_some key opt args = match opt with None -> args | Some arg -> key :: arg :: args in
       let if_true key opt args = if not opt then args else key :: args in
       let bugs_txt = Option.value ~default:(Config.results_dir ^/ "bugs.txt") Config.issues_txt in
       let args =
         if_some "--issues-csv" report_csv @@ if_true "--pmd-xml" Config.pmd_xml
-        @@ if_true "--quiet" (Config.quiet || suppress_console)
+        @@ if_true "--quiet"
+             (Config.quiet || suppress_console)
              [ "--issues-json"
              ; report_json
              ; "--issues-txt"
@@ -363,29 +380,30 @@ let report ?(suppress_console= false) () =
           "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
           (String.concat ~sep:" " args)
 
+
 let analyze_and_report ?suppress_console_report ~changed_files mode =
   let should_analyze, should_report =
     match (mode, Config.analyzer) with
-    | PythonCapture (BBuck, _), _ when not Config.flavors
-     -> (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
+    | PythonCapture (BBuck, _), _ when not Config.flavors ->
+        (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
         (false, false)
-    | _ when Config.infer_is_clang || Config.infer_is_javac
-     -> (* Called from another integration to do capture only. *)
+    | _ when Config.infer_is_clang || Config.infer_is_javac ->
+        (* Called from another integration to do capture only. *)
         (false, false)
-    | _, (CaptureOnly | CompileOnly)
-     -> (false, false)
-    | _, (BiAbduction | Checkers | Crashcontext)
-     -> (true, true)
-    | _, Linters
-     -> (false, true)
+    | _, (CaptureOnly | CompileOnly) ->
+        (false, false)
+    | _, (BiAbduction | Checkers | Crashcontext) ->
+        (true, true)
+    | _, Linters ->
+        (false, true)
   in
   let should_merge =
     match mode with
-    | PythonCapture (BBuck, _) when Config.flavors && CLOpt.(equal_command Run) Config.command
-     -> (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
+    | PythonCapture (BBuck, _) when Config.flavors && CLOpt.(equal_command Run) Config.command ->
+        (* if doing capture + analysis of buck with flavors, we always need to merge targets before the analysis phase *)
         true
-    | _
-     -> (* else rely on the command line value *) Config.merge
+    | _ ->
+        (* else rely on the command line value *) Config.merge
   in
   if should_merge then MergeCapture.merge_captured_targets () ;
   if (should_analyze || should_report)
@@ -394,58 +412,62 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
   else if should_analyze then execute_analyze ~changed_files ;
   if should_report && Config.report then report ?suppress_console:suppress_console_report ()
 
+
 (** as the Config.fail_on_bug flag mandates, exit with error when an issue is reported *)
 let fail_on_issue_epilogue () =
   let issues_json =
     DB.Results_dir.(path_to_filename Abs_root [Config.report_json]) |> DB.filename_to_string
   in
   match Utils.read_file issues_json with
-  | Ok lines
-   -> let issues = Jsonbug_j.report_of_string @@ String.concat ~sep:"" lines in
+  | Ok lines ->
+      let issues = Jsonbug_j.report_of_string @@ String.concat ~sep:"" lines in
       if issues <> [] then L.exit Config.fail_on_issue_exit_code
-  | Error error
-   -> L.internal_error "Failed to read report file '%s': %s@." issues_json error ; ()
+  | Error error ->
+      L.internal_error "Failed to read report file '%s': %s@." issues_json error ;
+      ()
+
 
 let assert_supported_mode required_analyzer requested_mode_string =
   let analyzer_enabled =
     match required_analyzer with
-    | `Clang
-     -> Version.clang_enabled
-    | `Java
-     -> Version.java_enabled
-    | `Python
-     -> Version.python_enabled
-    | `Xcode
-     -> Version.clang_enabled && Version.xcode_enabled
+    | `Clang ->
+        Version.clang_enabled
+    | `Java ->
+        Version.java_enabled
+    | `Python ->
+        Version.python_enabled
+    | `Xcode ->
+        Version.clang_enabled && Version.xcode_enabled
   in
   if not analyzer_enabled then
     let analyzer_string =
       match required_analyzer with
-      | `Clang
-       -> "clang"
-      | `Java
-       -> "java"
-      | `Python
-       -> "python"
-      | `Xcode
-       -> "clang and xcode"
+      | `Clang ->
+          "clang"
+      | `Java ->
+          "java"
+      | `Python ->
+          "python"
+      | `Xcode ->
+          "clang and xcode"
     in
     L.(die UserError)
       "Unsupported build mode: %s@\nInfer was built with %s analyzers disabled.@ Please rebuild infer with %s enabled.@."
       requested_mode_string analyzer_string analyzer_string
 
+
 let assert_supported_build_system build_system =
   match (build_system : Config.build_system) with
-  | BAnt | BGradle | BJava | BJavac | BMvn
-   -> Config.string_of_build_system build_system |> assert_supported_mode `Java
-  | BClang | BMake | BNdk
-   -> Config.string_of_build_system build_system |> assert_supported_mode `Clang
-  | BPython
-   -> Config.string_of_build_system build_system |> assert_supported_mode `Python
-  | BXcode
-   -> Config.string_of_build_system build_system |> assert_supported_mode `Xcode
-  | BBuck
-   -> let analyzer, build_string =
+  | BAnt | BGradle | BJava | BJavac | BMvn ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Java
+  | BClang | BMake | BNdk ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Clang
+  | BPython ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Python
+  | BXcode ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Xcode
+  | BBuck ->
+      let analyzer, build_string =
         if Config.flavors then (`Clang, "buck with flavors")
         else if Option.is_some Config.buck_compilation_database then
           (`Clang, "buck compilation database")
@@ -456,66 +478,69 @@ let assert_supported_build_system build_system =
           (`Java, Config.string_of_build_system build_system) )
       in
       assert_supported_mode analyzer build_string
-  | BAnalyze
-   -> ()
+  | BAnalyze ->
+      ()
+
 
 let mode_of_build_command build_cmd =
   match build_cmd with
-  | []
-   -> if not (List.is_empty !Config.clang_compilation_dbs) then (
+  | [] ->
+      if not (List.is_empty !Config.clang_compilation_dbs) then (
         assert_supported_mode `Clang "clang compilation database" ;
         ClangCompilationDB !Config.clang_compilation_dbs )
       else Analyze
-  | prog :: args
-   -> let build_system =
+  | prog :: args ->
+      let build_system =
         match Config.force_integration with
-        | Some build_system
-         -> build_system
-        | None
-         -> Config.build_system_of_exe_name (Filename.basename prog)
+        | Some build_system ->
+            build_system
+        | None ->
+            Config.build_system_of_exe_name (Filename.basename prog)
       in
       assert_supported_build_system build_system ;
       match (build_system : Config.build_system) with
-      | BAnalyze
-       -> CLOpt.warnf
+      | BAnalyze ->
+          CLOpt.warnf
             "WARNING: `infer -- analyze` is deprecated; use the `infer analyze` subcommand instead@." ;
           Analyze
-      | BBuck when Option.is_some Config.buck_compilation_database
-       -> BuckCompilationDB (prog, List.append args (List.rev Config.buck_build_args))
-      | BClang
-       -> Clang (Clang.Clang, prog, args)
-      | BMake
-       -> Clang (Clang.Make, prog, args)
-      | BJava
-       -> Javac (Javac.Java, prog, args)
-      | BJavac
-       -> Javac (Javac.Javac, prog, args)
-      | BMvn
-       -> Maven (prog, args)
-      | BPython
-       -> Python args
-      | BXcode when Config.xcpretty
-       -> XcodeXcpretty (prog, args)
-      | BAnt | BBuck | BGradle | BNdk | BXcode as build_system
-       -> PythonCapture (build_system, build_cmd)
+      | BBuck when Option.is_some Config.buck_compilation_database ->
+          BuckCompilationDB (prog, List.append args (List.rev Config.buck_build_args))
+      | BClang ->
+          Clang (Clang.Clang, prog, args)
+      | BMake ->
+          Clang (Clang.Make, prog, args)
+      | BJava ->
+          Javac (Javac.Java, prog, args)
+      | BJavac ->
+          Javac (Javac.Javac, prog, args)
+      | BMvn ->
+          Maven (prog, args)
+      | BPython ->
+          Python args
+      | BXcode when Config.xcpretty ->
+          XcodeXcpretty (prog, args)
+      | BAnt | BBuck | BGradle | BNdk | BXcode as build_system ->
+          PythonCapture (build_system, build_cmd)
+
 
 let mode_from_command_line =
-  ( lazy
-  ( match Config.generated_classes with
-  | _ when Config.infer_is_clang
-   -> let prog, args =
-        match Array.to_list Sys.argv with prog :: args -> (prog, args) | [] -> assert false
-        (* Sys.argv is never empty *)
-      in
-      Clang (Clang.Clang, prog, args)
-  | _ when Config.infer_is_javac
-   -> let build_args = match Array.to_list Sys.argv with _ :: args -> args | [] -> [] in
-      Javac (Javac.Javac, "javac", build_args)
-  | Some path
-   -> assert_supported_mode `Java "Buck genrule" ;
-      BuckGenrule path
-  | None
-   -> mode_of_build_command (List.rev Config.rest) ) )
+  lazy
+    ( match Config.generated_classes with
+    | _ when Config.infer_is_clang ->
+        let prog, args =
+          match Array.to_list Sys.argv with prog :: args -> (prog, args) | [] -> assert false
+          (* Sys.argv is never empty *)
+        in
+        Clang (Clang.Clang, prog, args)
+    | _ when Config.infer_is_javac ->
+        let build_args = match Array.to_list Sys.argv with _ :: args -> args | [] -> [] in
+        Javac (Javac.Javac, "javac", build_args)
+    | Some path ->
+        assert_supported_mode `Java "Buck genrule" ;
+        BuckGenrule path
+    | None ->
+        mode_of_build_command (List.rev Config.rest) )
+
 
 let run_prologue mode =
   if CLOpt.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
@@ -532,6 +557,7 @@ let run_prologue mode =
     touch_start_file_unless_continue () ;
   ()
 
+
 let run_epilogue mode =
   ( if CLOpt.is_originator then
       let in_buck_mode = match mode with PythonCapture (BBuck, _) -> true | _ -> false in
@@ -542,13 +568,16 @@ let run_epilogue mode =
   if Config.buck_cache_mode then clean_results_dir () ;
   ()
 
+
 let read_config_changed_files () =
   match Config.changed_files_index with
-  | None
-   -> None
+  | None ->
+      None
   | Some index ->
     match Utils.read_file index with
-    | Ok lines
-     -> Some (SourceFile.changed_sources_from_changed_files lines)
-    | Error error
-     -> L.external_error "Error reading the changed files index '%s': %s@." index error ; None
+    | Ok lines ->
+        Some (SourceFile.changed_sources_from_changed_files lines)
+    | Error error ->
+        L.external_error "Error reading the changed files index '%s': %s@." index error ;
+        None
+

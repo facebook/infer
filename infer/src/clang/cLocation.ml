@@ -21,6 +21,7 @@ let clang_to_sil_location trans_unit_ctx clang_loc =
   in
   Location.{line; col; file}
 
+
 let source_file_in_project source_file =
   let file_in_project = SourceFile.is_under_project_root source_file in
   let rel_source_file = SourceFile.to_string source_file in
@@ -31,13 +32,15 @@ let source_file_in_project source_file =
   in
   file_in_project && not file_should_be_skipped
 
+
 let should_do_frontend_check trans_unit_ctx (loc_start, _) =
   match Option.map ~f:SourceFile.from_abs_path loc_start.Clang_ast_t.sl_file with
-  | Some source_file
-   -> SourceFile.equal source_file trans_unit_ctx.CFrontend_config.source_file
+  | Some source_file ->
+      SourceFile.equal source_file trans_unit_ctx.CFrontend_config.source_file
       || source_file_in_project source_file && not Config.testing_mode
-  | None
-   -> false
+  | None ->
+      false
+
 
 (** We translate by default the instructions in the current file.  In C++ development, we also
     translate the headers that are part of the project. However, in testing mode, we don't want to
@@ -46,10 +49,10 @@ let should_do_frontend_check trans_unit_ctx (loc_start, _) =
 let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~translate_when_used =
   let map_file_of pred loc =
     match Option.map ~f:SourceFile.from_abs_path loc.Clang_ast_t.sl_file with
-    | Some f
-     -> pred f
-    | None
-     -> false
+    | Some f ->
+        pred f
+    | None ->
+        false
   in
   (* it's not necessary to compare inodes here because both files come from
      the same context - they are produced by the same invocation of ASTExporter
@@ -72,9 +75,11 @@ let should_translate trans_unit_ctx (loc_start, loc_end) decl_trans_context ~tra
   || Config.cxx && decl_trans_context = `Translation && translate_on_demand
      && not Config.testing_mode
 
+
 let should_translate_lib trans_unit_ctx source_range decl_trans_context ~translate_when_used =
   not Config.no_translate_libs
   || should_translate trans_unit_ctx source_range decl_trans_context ~translate_when_used
+
 
 let is_file_blacklisted file =
   let paths = Config.skip_analysis_in_path in
@@ -83,11 +88,14 @@ let is_file_blacklisted file =
   in
   is_file_blacklisted
 
+
 let get_sil_location_from_range trans_unit_ctx source_range prefer_first =
   let sloc1, sloc2 = source_range in
   let sloc = if not prefer_first then sloc2 else sloc1 in
   clang_to_sil_location trans_unit_ctx sloc
 
+
 let get_sil_location stmt_info context =
   let sloc1, _ = stmt_info.Clang_ast_t.si_source_range in
   clang_to_sil_location context.CContext.translation_unit_context sloc1
+

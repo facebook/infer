@@ -17,8 +17,8 @@ and CFrontend_declImpl : CModule_type.CFrontend = CFrontend_decl.CFrontend_decl_
 (* Translates a file by translating the ast into a cfg. *)
 let compute_icfg trans_unit_ctx tenv ast =
   match ast with
-  | Clang_ast_t.TranslationUnitDecl (_, decl_list, _, _)
-   -> CFrontend_config.global_translation_unit_decls := decl_list ;
+  | Clang_ast_t.TranslationUnitDecl (_, decl_list, _, _) ->
+      CFrontend_config.global_translation_unit_decls := decl_list ;
       L.(debug Capture Verbose) "@\n Start creating icfg@\n" ;
       let cg = Cg.create trans_unit_ctx.CFrontend_config.source_file in
       let cfg = Cfg.create_cfg () in
@@ -27,8 +27,9 @@ let compute_icfg trans_unit_ctx tenv ast =
         decl_list ;
       L.(debug Capture Verbose) "@\n Finished creating icfg@\n" ;
       (cg, cfg)
-  | _
-   -> assert false
+  | _ ->
+      assert false
+
 
 (* NOTE: Assumes that an AST alsways starts with a TranslationUnitDecl *)
 
@@ -36,6 +37,7 @@ let init_global_state_capture () =
   Ident.NameGenerator.reset () ;
   CFrontend_config.global_translation_unit_decls := [] ;
   CProcname.reset_block_counter ()
+
 
 let do_source_file translation_unit_context ast =
   let tenv = Tenv.create () in
@@ -63,7 +65,10 @@ let do_source_file translation_unit_context ast =
   if Config.stats_mode then Cfg.check_cfg_connectedness cfg ;
   if Config.stats_mode || Config.debug_mode || Config.testing_mode || Config.frontend_tests
      || Option.is_some Config.icfg_dotty_outfile
-  then ( Dotty.print_icfg_dotty source_file cfg ; Cg.save_call_graph_dotty source_file call_graph ) ;
+  then (
+    Dotty.print_icfg_dotty source_file cfg ;
+    Cg.save_call_graph_dotty source_file call_graph ) ;
   L.(debug Capture Verbose) "%a" Cfg.pp_proc_signatures cfg ;
   (* NOTE: nothing should be written to source_dir after this *)
   DB.mark_file_updated (DB.source_dir_to_string source_dir)
+

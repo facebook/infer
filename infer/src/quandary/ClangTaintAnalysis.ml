@@ -18,33 +18,34 @@ include TaintAnalysis.Make (struct
   let to_summary_access_tree tree = QuandarySummary.AccessTree.Clang tree
 
   let of_summary_access_tree = function
-    | QuandarySummary.AccessTree.Clang tree
-     -> tree
-    | _
-     -> assert false
+    | QuandarySummary.AccessTree.Clang tree ->
+        tree
+    | _ ->
+        assert false
+
 
   let handle_unknown_call pname ret_typ_opt actuals _ =
     let handle_generic_unknown ret_typ_opt actuals =
       match (ret_typ_opt, List.rev actuals) with
-      | Some _, _
-       -> (* propagate taint from actuals to return value *)
+      | Some _, _ ->
+          (* propagate taint from actuals to return value *)
           [TaintSpec.Propagate_to_return]
-      | None, []
-       -> []
-      | None, _ when Typ.Procname.is_constructor pname
-       -> (* "this" is always the first arg of a constructor; propagate taint there *)
+      | None, [] ->
+          []
+      | None, _ when Typ.Procname.is_constructor pname ->
+          (* "this" is always the first arg of a constructor; propagate taint there *)
           [TaintSpec.Propagate_to_receiver]
       | ( None
         , (HilExp.AccessPath ((Var.ProgramVar pvar, {desc= Typ.Tptr (_, Typ.Pk_pointer)}), []))
           :: _ )
-        when Pvar.is_frontend_tmp pvar
-       -> (* no return value, but the frontend has introduced a dummy return variable and will
+        when Pvar.is_frontend_tmp pvar ->
+          (* no return value, but the frontend has introduced a dummy return variable and will
                assign the return value to this variable. So propagate taint to the dummy return
                variable *)
           let actual_index = List.length actuals - 1 in
           [TaintSpec.Propagate_to_actual actual_index]
-      | None, _
-       -> (* no return value; propagate taint from actuals to receiver *)
+      | None, _ ->
+          (* no return value; propagate taint from actuals to receiver *)
           [TaintSpec.Propagate_to_receiver]
     in
     (* if we have a specific model for a procedure, use that. otherwise, use the generic
@@ -59,17 +60,18 @@ include TaintAnalysis.Make (struct
     | "operator>>="
     | "operator&="
     | "operator^="
-    | "operator|="
-     -> [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
-    | "memcpy" | "memmove" | "strcpy" | "strncpy"
-     -> [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
-    | "sprintf"
-     -> [TaintSpec.Propagate_to_receiver]
-    | "strlen"
-     -> (* don't propagate taint for strlen *)
+    | "operator|=" ->
+        [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
+    | "memcpy" | "memmove" | "strcpy" | "strncpy" ->
+        [TaintSpec.Propagate_to_receiver; TaintSpec.Propagate_to_return]
+    | "sprintf" ->
+        [TaintSpec.Propagate_to_receiver]
+    | "strlen" ->
+        (* don't propagate taint for strlen *)
         []
-    | _
-     -> handle_generic_unknown ret_typ_opt actuals
+    | _ ->
+        handle_generic_unknown ret_typ_opt actuals
+
 
   (* treat folly functions as unknown library code. we often specify folly functions as sinks,
        and we don't want to double-report if these functions eventually call other sinks (e.g.,
@@ -91,16 +93,18 @@ include TaintAnalysis.Make (struct
     | Typ.Procname.ObjC_Cpp _
       when is_default_constructor pname
            || QualifiedCppName.Match.match_qualifiers models_matcher
-                (Typ.Procname.get_qualifiers pname)
-     -> Some (handle_unknown_call pname ret_typ_opt actuals tenv)
-    | _
-     -> None
+                (Typ.Procname.get_qualifiers pname) ->
+        Some (handle_unknown_call pname ret_typ_opt actuals tenv)
+    | _ ->
+        None
+
 
   let external_sanitizers =
     List.map
       ~f:(fun {QuandaryConfig.Sanitizer.procedure} ->
         QualifiedCppName.Match.of_fuzzy_qual_names [procedure])
       (QuandaryConfig.Sanitizer.of_json Config.quandary_sanitizers)
+
 
   let get_sanitizer pname =
     let qualified_pname = Typ.Procname.get_qualifiers pname in
@@ -110,6 +114,7 @@ include TaintAnalysis.Make (struct
           Some TaintSpec.Return
         else None)
       external_sanitizers
+
 
   let is_taintable_type _ = true
 end)

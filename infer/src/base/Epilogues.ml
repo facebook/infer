@@ -12,14 +12,16 @@ module F = Format
 (* Run the epilogues when we get SIGINT (Control-C). We do not want to mask SIGINT unless at least
    one epilogue has been registered, so make this value lazy. *)
 let activate_run_epilogues_on_signal =
-  ( lazy
-  (let run_epilogues_on_signal s =
-     F.eprintf "*** %s: Caught %s, time to die@." (Filename.basename Sys.executable_name)
-       (Signal.to_string s) ;
-     (* Epilogues are registered with [at_exit] so exiting will make them run. *)
-     Pervasives.exit 0
-   in
-   Signal.Expert.handle Signal.int run_epilogues_on_signal) )
+  lazy
+    (let run_epilogues_on_signal s =
+       F.eprintf "*** %s: Caught %s, time to die@."
+         (Filename.basename Sys.executable_name)
+         (Signal.to_string s) ;
+       (* Epilogues are registered with [at_exit] so exiting will make them run. *)
+       Pervasives.exit 0
+     in
+     Signal.Expert.handle Signal.int run_epilogues_on_signal)
+
 
 let register ~f desc =
   let f_no_exn () =
@@ -33,3 +35,4 @@ let register ~f desc =
   Pervasives.at_exit f_no_exn ;
   (* Register signal masking. *)
   Lazy.force activate_run_epilogues_on_signal
+

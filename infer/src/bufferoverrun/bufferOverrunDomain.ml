@@ -39,12 +39,14 @@ module Val = struct
       F.fprintf fmt "(%a, %a, %a, %a)" Itv.pp x.itv PowLoc.pp x.powloc ArrayBlk.pp x.arrayblk
         TraceSet.pp x.traces
 
+
   let unknown : t = {bot with itv= Itv.top; powloc= PowLoc.unknown; arrayblk= ArrayBlk.unknown}
 
   let ( <= ) ~lhs ~rhs =
     if phys_equal lhs rhs then true
     else Itv.( <= ) ~lhs:lhs.itv ~rhs:rhs.itv && PowLoc.( <= ) ~lhs:lhs.powloc ~rhs:rhs.powloc
       && ArrayBlk.( <= ) ~lhs:lhs.arrayblk ~rhs:rhs.arrayblk
+
 
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
@@ -54,6 +56,7 @@ module Val = struct
       ; arrayblk= ArrayBlk.widen ~prev:prev.arrayblk ~next:next.arrayblk ~num_iters
       ; traces= TraceSet.join prev.traces next.traces }
 
+
   let join : t -> t -> t =
     fun x y ->
       if phys_equal x y then x
@@ -62,6 +65,7 @@ module Val = struct
         ; powloc= PowLoc.join x.powloc y.powloc
         ; arrayblk= ArrayBlk.join x.arrayblk y.arrayblk
         ; traces= TraceSet.join x.traces y.traces }
+
 
   let rec joins : t list -> t = function [] -> bot | [a] -> a | a :: b -> join a (joins b)
 
@@ -95,6 +99,7 @@ module Val = struct
     fun ?(unsigned= false) pname new_sym_num ->
       {bot with itv= Itv.make_sym ~unsigned pname new_sym_num}
 
+
   let unknown_bit : t -> t = fun x -> {x with itv= Itv.top}
 
   let neg : t -> t = fun x -> {x with itv= Itv.neg x.itv}
@@ -104,11 +109,13 @@ module Val = struct
   let lift_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
     fun f x y -> {bot with itv= f x.itv y.itv}
 
+
   let has_pointer : t -> bool = fun x -> not (PowLoc.is_bot x.powloc && ArrayBlk.is_bot x.arrayblk)
 
   let lift_cmp_itv : (Itv.t -> Itv.t -> Itv.t) -> t -> t -> t =
     fun f x y ->
       if has_pointer x || has_pointer y then {bot with itv= Itv.unknown_bool} else lift_itv f x y
+
 
   let plus : t -> t -> t =
     fun x y ->
@@ -117,17 +124,21 @@ module Val = struct
       ; arrayblk= ArrayBlk.plus_offset x.arrayblk y.itv
       ; traces= TraceSet.join x.traces y.traces }
 
+
   let minus : t -> t -> t =
     fun x y ->
       let n = Itv.join (Itv.minus x.itv y.itv) (ArrayBlk.diff x.arrayblk y.arrayblk) in
       let a = ArrayBlk.minus_offset x.arrayblk y.itv in
       {bot with itv= n; arrayblk= a; traces= TraceSet.join x.traces y.traces}
 
+
   let mult : t -> t -> t =
     fun x y -> {(lift_itv Itv.mult x y) with traces= TraceSet.join x.traces y.traces}
 
+
   let div : t -> t -> t =
     fun x y -> {(lift_itv Itv.div x y) with traces= TraceSet.join x.traces y.traces}
+
 
   let mod_sem : t -> t -> t = lift_itv Itv.mod_sem
 
@@ -162,10 +173,12 @@ module Val = struct
       ; arrayblk= g x.arrayblk y.arrayblk
       ; traces= TraceSet.join x.traces y.traces }
 
+
   let prune_zero : t -> t = lift_prune1 Itv.prune_zero
 
   let prune_comp : Binop.t -> t -> t -> t =
     fun c -> lift_prune2 (Itv.prune_comp c) (ArrayBlk.prune_comp c)
+
 
   let prune_eq : t -> t -> t = lift_prune2 Itv.prune_eq ArrayBlk.prune_eq
 
@@ -173,6 +186,7 @@ module Val = struct
 
   let lift_pi : (ArrayBlk.astate -> Itv.t -> ArrayBlk.astate) -> t -> t -> t =
     fun f x y -> {bot with arrayblk= f x.arrayblk y.itv; traces= TraceSet.join x.traces y.traces}
+
 
   let plus_pi : t -> t -> t = fun x y -> lift_pi ArrayBlk.plus_offset x y
 
@@ -187,11 +201,14 @@ module Val = struct
       else
         {bot with itv= ArrayBlk.diff x.arrayblk y.arrayblk; traces= TraceSet.join x.traces y.traces}
 
+
   let get_symbols : t -> Itv.Symbol.t list =
     fun x -> List.append (Itv.get_symbols x.itv) (ArrayBlk.get_symbols x.arrayblk)
 
+
   let normalize : t -> t =
     fun x -> {x with itv= Itv.normalize x.itv; arrayblk= ArrayBlk.normalize x.arrayblk}
+
 
   let subst
       : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Location.t
@@ -209,6 +226,7 @@ module Val = struct
       {x with itv= Itv.subst x.itv bound_map; arrayblk= ArrayBlk.subst x.arrayblk bound_map; traces}
       |> normalize
 
+
   (* normalize bottom *)
 
   let add_trace_elem : Trace.elem -> t -> t =
@@ -216,13 +234,16 @@ module Val = struct
       let traces = TraceSet.add_elem elem x.traces in
       {x with traces}
 
+
   let add_trace_elem_last : Trace.elem -> t -> t =
     fun elem x ->
       let traces = TraceSet.add_elem_last elem x.traces in
       {x with traces}
 
+
   let pp_summary : F.formatter -> t -> unit =
     fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk
+
 
   module Itv = struct
     let nat = of_itv Itv.nat
@@ -245,16 +266,20 @@ module Stack = struct
       try find l m
       with Not_found -> Val.bot
 
+
   let find_set : PowLoc.t -> astate -> Val.t =
     fun locs mem ->
       let find_join loc acc = Val.join acc (find loc mem) in
       PowLoc.fold find_join locs Val.bot
 
+
   let strong_update : PowLoc.t -> Val.astate -> astate -> astate =
     fun locs v mem -> PowLoc.fold (fun x -> add x v) locs mem
 
+
   let weak_update : PowLoc.t -> Val.astate -> astate -> astate =
     fun locs v mem -> PowLoc.fold (fun x -> add x (Val.join v (find x mem))) locs mem
+
 
   let pp_summary : F.formatter -> astate -> unit =
     fun fmt mem ->
@@ -263,6 +288,7 @@ module Stack = struct
       in
       iter pp_not_logical_var mem
 
+
   let remove_temps : Ident.t list -> astate -> astate =
     fun temps mem ->
       let remove_temp mem temp =
@@ -270,6 +296,7 @@ module Stack = struct
         remove temp_loc mem
       in
       List.fold temps ~init:mem ~f:remove_temp
+
 end
 
 module Heap = struct
@@ -281,12 +308,14 @@ module Heap = struct
         let pp_sep fmt () = F.fprintf fmt ",@," in
         F.pp_print_list ~pp_sep pp_item fmt c
 
+
     let pp : pp_value:(F.formatter -> 'a -> unit) -> F.formatter -> 'a t -> unit =
       fun ~pp_value fmt m ->
         let pp_item fmt (k, v) = F.fprintf fmt "%a -> %a" Loc.pp k pp_value v in
         F.fprintf fmt "@[<v 2>{ " ;
         pp_collection ~pp_item fmt (bindings m) ;
         F.fprintf fmt " }@]"
+
   end
 
   include AbstractDomain.Map (Loc) (Val)
@@ -298,16 +327,20 @@ module Heap = struct
       try find l m
       with Not_found -> Val.Itv.top
 
+
   let find_set : PowLoc.t -> astate -> Val.t =
     fun locs mem ->
       let find_join loc acc = Val.join acc (find loc mem) in
       PowLoc.fold find_join locs Val.bot
 
+
   let strong_update : PowLoc.t -> Val.t -> astate -> astate =
     fun locs v mem -> PowLoc.fold (fun x -> add x v) locs mem
 
+
   let weak_update : PowLoc.t -> Val.t -> astate -> astate =
     fun locs v mem -> PowLoc.fold (fun x -> add x (Val.join v (find x mem))) locs mem
+
 
   let pp_summary : F.formatter -> astate -> unit =
     fun fmt mem ->
@@ -316,13 +349,16 @@ module Heap = struct
       F.pp_print_list pp_map fmt (bindings mem) ;
       F.fprintf fmt " }@]"
 
+
   let get_symbols : astate -> Itv.Symbol.t list =
     fun mem -> List.concat_map ~f:(fun (_, v) -> Val.get_symbols v) (bindings mem)
+
 
   let get_return : astate -> Val.t =
     fun mem ->
       let mem = filter (fun l _ -> Loc.is_return l) mem in
       if is_empty mem then Val.bot else snd (choose mem)
+
 end
 
 module AliasTarget = struct
@@ -371,21 +407,24 @@ module AliasMap = struct
       in
       M.for_all is_in_rhs lhs
 
+
   let join : t -> t -> t =
     fun x y ->
       let join_v _ v1_opt v2_opt =
         match (v1_opt, v2_opt) with
-        | None, None
-         -> None
-        | Some v, None | None, Some v
-         -> Some v
-        | Some v1, Some v2
-         -> if AliasTarget.equal v1 v2 then Some v1 else assert false
+        | None, None ->
+            None
+        | Some v, None | None, Some v ->
+            Some v
+        | Some v1, Some v2 ->
+            if AliasTarget.equal v1 v2 then Some v1 else assert false
       in
       M.merge join_v x y
 
+
   let widen : prev:t -> next:t -> num_iters:int -> t =
     fun ~prev ~next ~num_iters:_ -> join prev next
+
 
   let pp : F.formatter -> t -> unit =
     fun fmt x ->
@@ -397,20 +436,24 @@ module AliasMap = struct
       F.fprintf fmt " }@]" ;
       F.fprintf fmt "@]"
 
+
   let load : Ident.t -> AliasTarget.t -> t -> t = fun id loc m -> M.add id loc m
 
   let store : Loc.t -> Exp.t -> t -> t =
     fun l _ m -> M.filter (fun _ y -> not (AliasTarget.use l y)) m
+
 
   let find : Ident.t -> t -> AliasTarget.t option =
     fun k m ->
       try Some (M.find k m)
       with Not_found -> None
 
+
   let remove_temps : Ident.t list -> t -> t =
     fun temps m ->
       let remove_temp m temp = M.remove temp m in
       List.fold temps ~init:m ~f:remove_temp
+
 end
 
 module AliasRet = struct
@@ -421,35 +464,39 @@ module AliasRet = struct
   let ( <= ) : lhs:astate -> rhs:astate -> bool =
     fun ~lhs ~rhs ->
       match (lhs, rhs) with
-      | Bot, _ | _, Top
-       -> true
-      | Top, _ | _, Bot
-       -> false
-      | L loc1, L loc2
-       -> AliasTarget.equal loc1 loc2
+      | Bot, _ | _, Top ->
+          true
+      | Top, _ | _, Bot ->
+          false
+      | L loc1, L loc2 ->
+          AliasTarget.equal loc1 loc2
+
 
   let join : astate -> astate -> astate =
     fun x y ->
       match (x, y) with
-      | Top, _ | _, Top
-       -> Top
-      | Bot, a | a, Bot
-       -> a
-      | L loc1, L loc2
-       -> if AliasTarget.equal loc1 loc2 then x else Top
+      | Top, _ | _, Top ->
+          Top
+      | Bot, a | a, Bot ->
+          a
+      | L loc1, L loc2 ->
+          if AliasTarget.equal loc1 loc2 then x else Top
+
 
   let widen : prev:astate -> next:astate -> num_iters:int -> astate =
     fun ~prev ~next ~num_iters:_ -> join prev next
 
+
   let pp : F.formatter -> astate -> unit =
     fun fmt x ->
       match x with
-      | Top
-       -> F.fprintf fmt "T"
-      | L loc
-       -> AliasTarget.pp fmt loc
-      | Bot
-       -> F.fprintf fmt "_|_"
+      | Top ->
+          F.fprintf fmt "T"
+      | L loc ->
+          AliasTarget.pp fmt loc
+      | Bot ->
+          F.fprintf fmt "_|_"
+
 
   let find : astate -> AliasTarget.t option = fun x -> match x with L loc -> Some loc | _ -> None
 end
@@ -462,6 +509,7 @@ module Alias = struct
   let lift : (AliasMap.astate -> AliasMap.astate) -> astate -> astate =
     fun f a -> (f (fst a), snd a)
 
+
   let lift_v : (AliasMap.astate -> 'a) -> astate -> 'a = fun f a -> f (fst a)
 
   let find : Ident.t -> astate -> AliasTarget.t option = fun x -> lift_v (AliasMap.find x)
@@ -471,15 +519,17 @@ module Alias = struct
   let load : Ident.t -> AliasTarget.t -> astate -> astate =
     fun id loc -> lift (AliasMap.load id loc)
 
+
   let store_simple : Loc.t -> Exp.t -> astate -> astate =
     fun loc e a ->
       let a = lift (AliasMap.store loc e) a in
       match e with
-      | Exp.Var l when Loc.is_return loc
-       -> let update_ret retl = (fst a, AliasRet.L retl) in
+      | Exp.Var l when Loc.is_return loc ->
+          let update_ret retl = (fst a, AliasRet.L retl) in
           Option.value_map (find l a) ~default:a ~f:update_ret
-      | _
-       -> a
+      | _ ->
+          a
+
 
   let store_empty : Val.t -> Loc.t -> Exp.t -> astate -> astate =
     fun formal loc e a ->
@@ -489,8 +539,10 @@ module Alias = struct
         (fst a, AliasRet.L (AliasTarget.of_empty (PowLoc.min_elt locs)))
       else a
 
+
   let remove_temps : Ident.t list -> astate -> astate =
     fun temps a -> (AliasMap.remove_temps temps (fst a), snd a)
+
 end
 
 module MemReach = struct
@@ -505,6 +557,7 @@ module MemReach = struct
     else Stack.( <= ) ~lhs:lhs.stack ~rhs:rhs.stack && Heap.( <= ) ~lhs:lhs.heap ~rhs:rhs.heap
       && Alias.( <= ) ~lhs:lhs.alias ~rhs:rhs.alias
 
+
   let widen ~prev ~next ~num_iters =
     if phys_equal prev next then prev
     else
@@ -512,11 +565,13 @@ module MemReach = struct
       ; heap= Heap.widen ~prev:prev.heap ~next:next.heap ~num_iters
       ; alias= Alias.widen ~prev:prev.alias ~next:next.alias ~num_iters }
 
+
   let join : t -> t -> t =
     fun x y ->
       { stack= Stack.join x.stack y.stack
       ; heap= Heap.join x.heap y.heap
       ; alias= Alias.join x.alias y.alias }
+
 
   let pp : F.formatter -> t -> unit =
     fun fmt x ->
@@ -525,11 +580,13 @@ module MemReach = struct
       F.fprintf fmt "Heap:@;" ;
       F.fprintf fmt "%a" Heap.pp x.heap
 
+
   let pp_summary : F.formatter -> t -> unit =
     fun fmt x ->
       F.fprintf fmt "@[<v 0>Parameters:@," ;
       F.fprintf fmt "%a" Heap.pp_summary x.heap ;
       F.fprintf fmt "@]"
+
 
   let find_stack : Loc.t -> t -> Val.t = fun k m -> Stack.find k m.stack
 
@@ -542,26 +599,31 @@ module MemReach = struct
   let find_set : PowLoc.t -> t -> Val.t =
     fun k m -> Val.join (find_stack_set k m) (find_heap_set k m)
 
+
   let find_alias : Ident.t -> t -> AliasTarget.t option = fun k m -> Alias.find k m.alias
 
   let find_simple_alias : Ident.t -> t -> Loc.t option =
     fun k m ->
       match Alias.find k m.alias with
-      | Some AliasTarget.Simple l
-       -> Some l
-      | Some AliasTarget.Empty _ | None
-       -> None
+      | Some AliasTarget.Simple l ->
+          Some l
+      | Some AliasTarget.Empty _ | None ->
+          None
+
 
   let find_ret_alias : t -> AliasTarget.t option = fun m -> Alias.find_ret m.alias
 
   let load_alias : Ident.t -> AliasTarget.t -> t -> t =
     fun id loc m -> {m with alias= Alias.load id loc m.alias}
 
+
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
     fun loc e m -> {m with alias= Alias.store_simple loc e m.alias}
 
+
   let store_empty_alias : Val.t -> Loc.t -> Exp.t -> t -> t =
     fun formal loc e m -> {m with alias= Alias.store_empty formal loc e m.alias}
+
 
   let add_stack : Loc.t -> Val.t -> t -> t = fun k v m -> {m with stack= Stack.add k v m.stack}
 
@@ -570,14 +632,18 @@ module MemReach = struct
   let strong_update_stack : PowLoc.t -> Val.t -> t -> t =
     fun p v m -> {m with stack= Stack.strong_update p v m.stack}
 
+
   let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
     fun p v m -> {m with heap= Heap.strong_update p v m.heap}
+
 
   let weak_update_stack : PowLoc.t -> Val.t -> t -> t =
     fun p v m -> {m with stack= Stack.weak_update p v m.stack}
 
+
   let weak_update_heap : PowLoc.t -> Val.t -> t -> t =
     fun p v m -> {m with heap= Heap.weak_update p v m.heap}
+
 
   let get_heap_symbols : t -> Itv.Symbol.t list = fun m -> Heap.get_symbols m.heap
 
@@ -589,6 +655,7 @@ module MemReach = struct
       else if Int.equal (PowLoc.cardinal ploc) 1 then Loc.is_var (PowLoc.choose ploc)
       else false
 
+
   let update_mem : PowLoc.t -> Val.t -> t -> t =
     fun ploc v s ->
       if can_strong_update ploc then strong_update_heap ploc v s
@@ -598,9 +665,11 @@ module MemReach = struct
         in
         weak_update_heap ploc v s
 
+
   let remove_temps : Ident.t list -> t -> t =
     fun temps m ->
       {m with stack= Stack.remove_temps temps m.stack; alias= Alias.remove_temps temps m.alias}
+
 end
 
 module Mem = struct
@@ -615,48 +684,59 @@ module Mem = struct
   let f_lift_default : 'a -> (MemReach.t -> 'a) -> t -> 'a =
     fun default f m -> match m with Bottom -> default | NonBottom m' -> f m'
 
+
   let f_lift : (MemReach.t -> MemReach.t) -> t -> t =
     fun f -> f_lift_default Bottom (fun m' -> NonBottom (f m'))
+
 
   let pp_summary : F.formatter -> t -> unit =
     fun fmt m ->
       match m with
-      | Bottom
-       -> F.fprintf fmt "unreachable"
-      | NonBottom m'
-       -> MemReach.pp_summary fmt m'
+      | Bottom ->
+          F.fprintf fmt "unreachable"
+      | NonBottom m' ->
+          MemReach.pp_summary fmt m'
+
 
   let find_stack : Loc.t -> t -> Val.t = fun k -> f_lift_default Val.bot (MemReach.find_stack k)
 
   let find_stack_set : PowLoc.t -> t -> Val.t =
     fun k -> f_lift_default Val.bot (MemReach.find_stack_set k)
 
+
   let find_heap : Loc.t -> t -> Val.t = fun k -> f_lift_default Val.bot (MemReach.find_heap k)
 
   let find_heap_set : PowLoc.t -> t -> Val.t =
     fun k -> f_lift_default Val.bot (MemReach.find_heap_set k)
+
 
   let find_set : PowLoc.t -> t -> Val.t = fun k -> f_lift_default Val.bot (MemReach.find_set k)
 
   let find_alias : Ident.t -> t -> AliasTarget.t option =
     fun k -> f_lift_default None (MemReach.find_alias k)
 
+
   let find_simple_alias : Ident.t -> t -> Loc.t option =
     fun k -> f_lift_default None (MemReach.find_simple_alias k)
+
 
   let find_ret_alias : t -> AliasTarget.t option = f_lift_default None MemReach.find_ret_alias
 
   let load_alias : Ident.t -> AliasTarget.t -> t -> t =
     fun id loc -> f_lift (MemReach.load_alias id loc)
 
+
   let load_simple_alias : Ident.t -> Loc.t -> t -> t =
     fun id loc -> load_alias id (AliasTarget.Simple loc)
+
 
   let store_simple_alias : Loc.t -> Exp.t -> t -> t =
     fun loc e -> f_lift (MemReach.store_simple_alias loc e)
 
+
   let store_empty_alias : Val.t -> Loc.t -> Exp.t -> t -> t =
     fun formal loc e -> f_lift (MemReach.store_empty_alias formal loc e)
+
 
   let add_stack : Loc.t -> Val.t -> t -> t = fun k v -> f_lift (MemReach.add_stack k v)
 
@@ -665,14 +745,18 @@ module Mem = struct
   let strong_update_stack : PowLoc.t -> Val.t -> t -> t =
     fun p v -> f_lift (MemReach.strong_update_stack p v)
 
+
   let strong_update_heap : PowLoc.t -> Val.t -> t -> t =
     fun p v -> f_lift (MemReach.strong_update_heap p v)
+
 
   let weak_update_stack : PowLoc.t -> Val.t -> t -> t =
     fun p v -> f_lift (MemReach.weak_update_stack p v)
 
+
   let weak_update_heap : PowLoc.t -> Val.t -> t -> t =
     fun p v -> f_lift (MemReach.weak_update_heap p v)
+
 
   let get_heap_symbols : t -> Itv.Symbol.t list = f_lift_default [] MemReach.get_heap_symbols
 
@@ -705,18 +789,22 @@ module Summary = struct
       F.pp_print_list ~pp_sep Itv.Symbol.pp fmt (get_symbols s) ;
       F.fprintf fmt "}@]"
 
+
   let pp_symbol_map : F.formatter -> t -> unit = fun fmt s -> Mem.pp_summary fmt (get_input s)
 
   let pp_return : F.formatter -> t -> unit =
     fun fmt s -> F.fprintf fmt "Return value: %a" Val.pp_summary (get_return s)
+
 
   let pp_summary : F.formatter -> t -> unit =
     fun fmt s ->
       F.fprintf fmt "%a@,%a@,%a" pp_symbol_map s pp_return s PO.ConditionSet.pp_summary
         (get_cond_set s)
 
+
   let pp : F.formatter -> t -> unit =
     fun fmt (entry_mem, exit_mem, condition_set) ->
       F.fprintf fmt "%a@,%a@,%a@," Mem.pp entry_mem Mem.pp exit_mem PO.ConditionSet.pp
         condition_set
+
 end

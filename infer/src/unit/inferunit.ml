@@ -14,12 +14,13 @@ open! IStd
 let rec mk_test_fork_proof test =
   let open OUnitTest in
   match test with
-  | TestCase (length, f)
-   -> TestCase (length, Tasks.fork_protect ~f)
-  | TestList l
-   -> TestList (List.map ~f:mk_test_fork_proof l)
-  | TestLabel (label, test)
-   -> TestLabel (label, mk_test_fork_proof test)
+  | TestCase (length, f) ->
+      TestCase (length, Tasks.fork_protect ~f)
+  | TestList l ->
+      TestList (List.map ~f:mk_test_fork_proof l)
+  | TestLabel (label, test) ->
+      TestLabel (label, mk_test_fork_proof test)
+
 
 let () =
   ResultsDir.create_results_dir () ;
@@ -44,3 +45,4 @@ let () =
   in
   let test_suite = "all" >::: tests in
   OUnit2.run_test_tt_main test_suite
+

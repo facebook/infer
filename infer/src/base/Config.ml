@@ -38,11 +38,14 @@ let string_to_analyzer =
   ; ("crashcontext", Crashcontext)
   ; ("linters", Linters) ]
 
+
 let string_of_analyzer a =
   List.find_exn ~f:(fun (_, a') -> equal_analyzer a a') string_to_analyzer |> fst
 
+
 let clang_frontend_action_symbols =
   [("lint", `Lint); ("capture", `Capture); ("lint_and_capture", `Lint_and_capture)]
+
 
 type language = Clang | Java | Python [@@deriving compare]
 
@@ -57,6 +60,7 @@ let ml_bucket_symbols =
   ; ("narc", `MLeak_no_arc)
   ; ("cpp", `MLeak_cpp)
   ; ("unknown_origin", `MLeak_unknown) ]
+
 
 let issues_fields_symbols =
   [ ("bug_class", `Issue_field_bug_class)
@@ -78,6 +82,7 @@ let issues_fields_symbols =
   ; ("procedure_id_without_crc", `Issue_field_procedure_id_without_crc)
   ; ( "qualifier_contains_potential_exception_note"
     , `Issue_field_qualifier_contains_potential_exception_note ) ]
+
 
 type os_type = Unix | Win32 | Cygwin
 
@@ -132,12 +137,15 @@ let build_system_exe_assoc =
   ; (BPython, "python")
   ; (BXcode, "xcodebuild") ]
 
+
 let build_system_of_exe_name name =
   try List.Assoc.find_exn ~equal:String.equal (List.Assoc.inverse build_system_exe_assoc) name
   with Not_found -> L.(die InternalError) "Unsupported build command %s" name
 
+
 let string_of_build_system build_system =
   List.Assoc.find_exn ~equal:equal_build_system build_system_exe_assoc build_system
+
 
 (** Constant configuration values *)
 
@@ -327,6 +335,7 @@ let std_whitelisted_cpp_methods =
   ; "std::operator>="
   ; "std::swap" ]
 
+
 let libstdcxx_whitelisted_cpp_methods =
   [ "__gnu_cxx::operator!="
   ; "__gnu_cxx::operator<"
@@ -336,6 +345,7 @@ let libstdcxx_whitelisted_cpp_methods =
   ; "__gnu_cxx::operator>="
   ; "__gnu_cxx::operator+"
   ; "__gnu_cxx::operator-" ]
+
 
 let libcxx_whitelisted_cpp_methods = []
 
@@ -347,6 +357,7 @@ let whitelisted_cpp_methods =
     ; libstdcxx_whitelisted_cpp_methods
     ; libcxx_whitelisted_cpp_methods
     ; other_whitelisted_cpp_methods ]
+
 
 (* Whitelists for C++ library classes *)
 
@@ -364,16 +375,19 @@ let std_whitelisted_cpp_classes =
   ; "std::pair"
   ; "std::reverse_iterator" ]
 
+
 let libstdcxx_whitelisted_cpp_classes =
   (* libstdc++ internal support class for std::get<std::pair> *)
   [ "__gnu_cxx::__normal_iterator" (* libstdc++ internal name of vector iterator *)
   ; "std::__pair_get" ]
+
 
 let libcxx_whitelisted_cpp_classes =
   (* libc++ internal support class for std::get<std::pair> *)
   [ "std::__less"
   ; "std::__wrap_iter" (* libc++ internal name of vector iterator *)
   ; "std::__get_pair" ]
+
 
 let other_whitelisted_cpp_classes = []
 
@@ -384,6 +398,7 @@ let whitelisted_cpp_classes =
     ; libcxx_whitelisted_cpp_classes
     ; other_whitelisted_cpp_classes ]
 
+
 type dynamic_dispatch = NoDynamicDispatch | Interface | Sound | Lazy [@@deriving compare]
 
 let equal_dynamic_dispatch = [%compare.equal : dynamic_dispatch]
@@ -391,13 +406,16 @@ let equal_dynamic_dispatch = [%compare.equal : dynamic_dispatch]
 let string_to_dynamic_dispatch =
   [("none", NoDynamicDispatch); ("interface", Interface); ("sound", Sound); ("lazy", Lazy)]
 
+
 let string_of_dynamic_dispatch ddp =
   List.find_exn ~f:(fun (_, ddp') -> equal_dynamic_dispatch ddp ddp') string_to_dynamic_dispatch
   |> fst
 
+
 let pp_version fmt () =
   F.fprintf fmt "Infer version %s@\nCopyright 2009 - present Facebook. All Rights Reserved."
     Version.versionString
+
 
 let version_string = F.asprintf "%a" pp_version ()
 
@@ -409,25 +427,29 @@ let initial_analysis_time = Unix.time ()
 
 let clang_exe_aliases =
   [ (* this must be kept in sync with the clang-like symlinks in [wrappers_dir] (see below) *)
-  "c++"
+    "c++"
   ; "cc"
   ; "clang"
   ; "clang++"
   ; "g++"
   ; "gcc" ]
 
+
 let exe_basename =
   (* Sys.executable_name tries to do clever things which we must avoid, use argv[0] instead *)
   Filename.basename Sys.argv.(0)
+
 
 let infer_is_clang = List.mem ~equal:String.equal clang_exe_aliases exe_basename
 
 let initial_command =
   match CLOpt.command_of_exe_name exe_basename with Some _ as command -> command | None -> None
 
+
 let bin_dir =
   (* Resolve symlinks to get to the real executable, which is located in [bin_dir]. *)
   Filename.dirname (Utils.realpath Sys.executable_name)
+
 
 let lib_dir = bin_dir ^/ Filename.parent_dir_name ^/ "lib"
 
@@ -442,6 +464,7 @@ let models_src_dir =
   let root = Unix.getcwd () in
   let dir = bin_dir ^/ Filename.parent_dir_name ^/ "models" in
   Utils.filename_to_absolute ~root dir
+
 
 (* Normalize the path *)
 
@@ -463,6 +486,7 @@ let ncpu =
         Scanf.bscanf (Scanf.Scanning.from_channel chan) "%d" (fun n -> n) )
     |> fst
   with _ -> 1
+
 
 let os_type = match Sys.os_type with "Win32" -> Win32 | "Cygwin" -> Cygwin | _ -> Unix
 
@@ -487,17 +511,20 @@ let startup_action =
   else if infer_is_clang then NoParse
   else InferCommand
 
+
 let exe_usage =
   let exe_command_name =
     match initial_command with
-    | Some command
-     -> Some (CLOpt.name_of_command command)
-    | None
-     -> None
+    | Some command ->
+        Some (CLOpt.name_of_command command)
+    | None ->
+        None
   in
   Printf.sprintf "%s\nUsage: infer %s [options]\nSee `infer%s --help` for more information."
-    version_string (Option.value ~default:"command" exe_command_name)
+    version_string
+    (Option.value ~default:"command" exe_command_name)
     (Option.value_map ~default:"" ~f:(( ^ ) " ") exe_command_name)
+
 
 (** Command Line options *)
 
@@ -536,10 +563,10 @@ let disable_all_checkers () = List.iter !all_checkers ~f:(fun (var, _, _, _) -> 
 let () =
   let on_unknown_arg_from_command (cmd: CLOpt.command) =
     match cmd with
-    | Report
-     -> `Add
-    | Analyze | Capture | Compile | Diff | Explore | ReportDiff | Run
-     -> `Reject
+    | Report ->
+        `Add
+    | Analyze | Capture | Compile | Diff | Explore | ReportDiff | Run ->
+        `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
   List.iter CLOpt.all_commands ~f:(fun cmd ->
@@ -548,12 +575,14 @@ let () =
       let deprecated_long = if CLOpt.(equal_command ReportDiff) cmd then Some "diff" else None in
       CLOpt.mk_subcommand cmd ~name ?deprecated_long ~on_unknown_arg (Some command_doc) )
 
+
 let abs_struct =
   CLOpt.mk_int ~deprecated:["absstruct"] ~long:"abs-struct" ~default:1 ~meta:"int"
     {|Specify abstraction level for fields of structs:
 - 0 = no
 - 1 = forget some fields during matching (and so lseg abstraction)
 |}
+
 
 and abs_val =
   CLOpt.mk_int ~deprecated:["absval"] ~long:"abs-val" ~default:2 ~meta:"int"
@@ -563,12 +592,15 @@ and abs_val =
 - 2 = 1 + abstract constant integer values during join
 |}
 
+
 and allow_leak =
   CLOpt.mk_bool ~deprecated:["leak"] ~long:"allow-leak" "Forget leaked memory during abstraction"
+
 
 and allow_specs_cleanup =
   CLOpt.mk_bool ~deprecated:["allow_specs_cleanup"] ~long:"allow-specs-cleanup" ~default:true
     "Allow to remove existing specs before running analysis when it's not incremental"
+
 
 and ( analysis_blacklist_files_containing_options
     , analysis_path_regex_blacklist_options
@@ -585,8 +617,8 @@ and ( analysis_blacklist_files_containing_options
         List.find_map !config_vars ~f:(fun (a, v) ->
             if equal_analyzer a analyzer then Some v else None )
       in
-      (** if the analyzer already has a variable associated to it, make the new name update the same
-          variable *)
+      (* if the analyzer already has a variable associated to it, make the new name update the same
+         variable *)
       let mirror opt =
         Option.iter source_of_truth ~f:(fun var -> var := opt :: !var) ;
         opt
@@ -594,10 +626,10 @@ and ( analysis_blacklist_files_containing_options
       (* empty doc to hide the options from --help since there are many redundant ones *)
       let var = CLOpt.mk_string_list ~deprecated ~long ~meta ~f:mirror "" in
       match source_of_truth with
-      | Some var
-       -> (* if the analyzer already has a variable associated to it, use it *) var
-      | None
-       -> (* record the variable associated to the analyzer if this is the first time we see this
+      | Some var ->
+          (* if the analyzer already has a variable associated to it, use it *) var
+      | None ->
+          (* record the variable associated to the analyzer if this is the first time we see this
              analyzer *)
           config_vars := (analyzer, var) :: !config_vars ;
           var
@@ -624,23 +656,24 @@ and ( analysis_blacklist_files_containing_options
   , mk_filtering_options ~suffix:"suppress-errors" ~deprecated_suffix:["suppress_errors"]
       ~help:"do not report a type of errors" ~meta:"error_name" )
 
+
 and analysis_stops =
   CLOpt.mk_bool ~deprecated:["analysis_stops"] ~long:"analysis-stops"
     "Issue a warning when the analysis stops"
 
+
 and analyzer =
   let () =
-    match BiAbduction
-    with
-    | (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
+    match BiAbduction with
+    (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
-    BiAbduction
+    | BiAbduction
     | CaptureOnly
     | CompileOnly
     | Checkers
     | Crashcontext
-    | Linters
-    -> ()
+    | Linters ->
+        ()
   in
   CLOpt.mk_symbol_opt ~deprecated:["analyzer"] ~long:"analyzer" ~short:'a'
     ~in_help:CLOpt.([(Analyze, manual_generic); (Run, manual_generic)])
@@ -653,8 +686,8 @@ and analyzer =
 - $(b,compile): similar to specifying the $(b,compile) subcommand (DEPRECATED)
 - $(b,crashcontext): experimental (see $(b,--crashcontext))|}
     ~f:(function
-        | CaptureOnly | CompileOnly as x
-         -> let analyzer_str =
+        | CaptureOnly | CompileOnly as x ->
+            let analyzer_str =
               List.find_map_exn string_to_analyzer ~f:(fun (s, y) ->
                   if equal_analyzer x y then Some s else None )
             in
@@ -662,13 +695,15 @@ and analyzer =
               "WARNING: The analyzer '%s' is deprecated, use the '%s' subcommand instead:@\n@\n  infer %s ..."
               analyzer_str analyzer_str analyzer_str ;
             x
-        | _ as x
-         -> x)
+        | _ as x ->
+            x)
     ~symbols:string_to_analyzer
+
 
 and android_harness =
   CLOpt.mk_bool ~deprecated:["harness"] ~long:"android-harness"
     "(Experimental) Create harness to detect issues involving the Android lifecycle"
+
 
 and ( annotation_reachability
     , biabduction
@@ -787,6 +822,7 @@ and ( annotation_reachability
   , suggest_nullable
   , uninit )
 
+
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
     ~in_help:CLOpt.([(Analyze, manual_java)])
@@ -794,10 +830,12 @@ and annotation_reachability_custom_pairs =
 Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1}
 { "sources" : ["Source1", "Source2"], "sink" : "Sink1" }|}
 
+
 and append_buck_flavors =
   CLOpt.mk_string_list ~long:"append-buck-flavors"
     ~in_help:CLOpt.([(Capture, manual_buck_flavors)])
     "Additional Buck flavors to append to targets discovered by the $(b,--buck-compilation-database) option."
+
 
 and array_level =
   CLOpt.mk_int ~deprecated:["arraylevel"] ~long:"array-level" ~default:0 ~meta:"int"
@@ -807,19 +845,23 @@ and array_level =
 - 2 = assumes that all heap dereferences via array indexing and pointer arithmetic are correct
 |}
 
+
 and ast_file =
   CLOpt.mk_path_opt ~deprecated:["ast"] ~long:"ast-file" ~meta:"file"
     "AST file for the translation"
+
 
 and blacklist =
   CLOpt.mk_string_opt ~deprecated:["-blacklist-regex"; "-blacklist"] ~long:"buck-blacklist"
     ~in_help:CLOpt.([(Run, manual_buck_flavors); (Capture, manual_buck_flavors)])
     ~meta:"regex" "Skip analysis of files matched by the specified regular expression"
 
+
 and bootclasspath =
   CLOpt.mk_string_opt ~long:"bootclasspath"
     ~in_help:CLOpt.([(Capture, manual_java)])
     "Specify the Java bootclasspath"
+
 
 (** Automatically set when running from within Buck *)
 and buck = CLOpt.mk_bool ~long:"buck" ""
@@ -829,11 +871,13 @@ and buck_build_args =
     ~in_help:CLOpt.([(Capture, manual_buck_flavors)])
     "Pass values as command-line arguments to invocations of $(i,`buck build`)"
 
+
 and buck_compilation_database_depth =
   CLOpt.mk_int_opt ~long:"buck-compilation-database-depth"
     ~in_help:CLOpt.([(Capture, manual_buck_compilation_db)])
     "Depth of dependencies used by the $(b,--buck-compilation-database deps) option. By default, all recursive dependencies are captured."
     ~meta:"int"
+
 
 and buck_compilation_database =
   CLOpt.mk_symbol_opt ~long:"buck-compilation-database" ~deprecated:["-use-compilation-database"]
@@ -841,15 +885,18 @@ and buck_compilation_database =
     "Buck integration using the compilation database, with or without dependencies."
     ~symbols:[("no-deps", `NoDeps); ("deps", `DepsTmp)]
 
+
 and buck_out =
   CLOpt.mk_path_opt ~long:"buck-out"
     ~in_help:CLOpt.([(Capture, manual_buck_java)])
     ~meta:"dir" "Specify the root directory of buck-out"
 
+
 and calls_csv =
   CLOpt.mk_path_opt ~deprecated:["calls"] ~long:"calls-csv"
     ~in_help:CLOpt.([(Report, manual_generic)])
     ~meta:"file" "Write individual calls in CSV format to $(i,file)"
+
 
 and changed_files_index =
   CLOpt.mk_path_opt ~long:"changed-files-index"
@@ -857,10 +904,12 @@ and changed_files_index =
     ~meta:"file"
     "Specify the file containing the list of source files from which reactive analysis should start. Source files should be specified relative to project root or be absolute"
 
+
 and clang_biniou_file =
   CLOpt.mk_path_opt ~long:"clang-biniou-file"
     ~in_help:CLOpt.([(Capture, manual_clang)])
     ~meta:"file" "Specify a file containing the AST of the program, in biniou format"
+
 
 and clang_compilation_dbs = ref []
 
@@ -870,14 +919,17 @@ and clang_frontend_action =
     "Specify whether the clang frontend should capture or lint or both."
     ~symbols:clang_frontend_action_symbols
 
+
 and clang_include_to_override_regex =
   CLOpt.mk_string_opt ~long:"clang-include-to-override-regex"
     ~deprecated:["-clang-include-to-override"] ~meta:"dir_OCaml_regex"
     "Use this option in the uncommon case where the normal compilation process overrides the location of internal compiler headers. This option should specify regular expression with the path to those headers so that infer can use its own clang internal headers instead."
 
+
 and clang_ignore_regex =
   CLOpt.mk_string_opt ~long:"clang-ignore-regex" ~meta:"dir_OCaml_regex"
     "The files in this regex will be ignored in the compilation process and an empty file will be passed to clang instead. This is to be used with the buck flavour infer-capture-all to work around missing generated files."
+
 
 and classpath = CLOpt.mk_string_opt ~long:"classpath" "Specify the Java classpath"
 
@@ -885,10 +937,12 @@ and cluster =
   CLOpt.mk_path_opt ~deprecated:["cluster"] ~long:"cluster" ~meta:"file"
     "Specify a .cluster file to be analyzed"
 
+
 and compilation_database =
   CLOpt.mk_path_list ~long:"compilation-database" ~deprecated:["-clang-compilation-db-files"]
     ~in_help:CLOpt.([(Capture, manual_clang)])
     "File that contain compilation commands (can be specified multiple times)"
+
 
 and compilation_database_escaped =
   CLOpt.mk_path_list ~long:"compilation-database-escaped"
@@ -896,10 +950,12 @@ and compilation_database_escaped =
     ~in_help:CLOpt.([(Capture, manual_clang)])
     "File that contain compilation commands where all entries are escaped for the shell, eg coming from Xcode (can be specified multiple times)"
 
+
 and compute_analytics =
   CLOpt.mk_bool ~long:"compute-analytics" ~default:false
     ~in_help:CLOpt.([(Capture, manual_clang); (Run, manual_clang)])
     "Emit analytics as info-level issues, like component kit line count and component kit file cyclomatic complexity"
+
 
 (** Continue the capture for reactive mode:
     If a procedure was changed beforehand, keep the changed marking. *)
@@ -908,11 +964,13 @@ and continue =
     ~in_help:CLOpt.([(Analyze, manual_generic)])
     "Continue the capture for the reactive analysis, increasing the changed files/procedures. (If a procedure was changed beforehand, keep the changed marking.)"
 
+
 and current_to_previous_script =
   CLOpt.mk_string_opt ~long:"current-to-previous-script"
     ~in_help:CLOpt.([(Diff, manual_generic)])
     ~meta:"shell"
     "Specify a script to checkout a previous version of the project to compare against, assuming we are on the current version already."
+
 
 and cxx, cxx_infer_headers =
   let cxx_infer_headers =
@@ -926,6 +984,7 @@ and cxx, cxx_infer_headers =
       "Analyze C++ methods" [cxx_infer_headers] []
   in
   (cxx, cxx_infer_headers)
+
 
 and ( bo_debug
     , developer_mode
@@ -1088,21 +1147,25 @@ and ( bo_debug
   , write_html_whitelist_regex
   , write_dotty )
 
+
 and dependencies =
   CLOpt.mk_bool ~deprecated:["dependencies"] ~long:"dependencies"
     ~in_help:CLOpt.([(Capture, manual_java)])
     "Translate all the dependencies during the capture. The classes in the given jar file will be translated. No sources needed."
+
 
 and differential_filter_files =
   CLOpt.mk_string_opt ~long:"differential-filter-files"
     ~in_help:CLOpt.([(Report, manual_generic)])
     "Specify the file containing the list of source files for which a differential report is desired. Source files should be specified relative to project root or be absolute"
 
+
 and differential_filter_set =
   CLOpt.mk_symbol_seq ~long:"differential-filter-set" ~eq:PVariant.( = )
     "Specify which set of the differential results is filtered with the modified files provided through the $(b,--differential-modified-files) argument. By default it is applied to all sets ($(b,introduced), $(b,fixed), and $(b,preexisting))"
     ~symbols:[("introduced", `Introduced); ("fixed", `Fixed); ("preexisting", `Preexisting)]
     ~default:[`Introduced; `Fixed; `Preexisting]
+
 
 and () =
   let mk b ?deprecated ~long ?default doc =
@@ -1130,44 +1193,56 @@ and () =
   mk true ~long:"enable-issue-type" ~deprecated:["enable_checks"; "-enable-checks"]
     "Show reports coming from this type of issue. By default, all issue types are enabled except the ones listed in $(b,--disable-issue-type). Note that enabling issue types does not make the corresponding checker run; see individual checker options to turn them on or off."
 
+
 and dotty_cfg_libs =
   CLOpt.mk_bool ~deprecated:["dotty_no_cfg_libs"] ~long:"dotty-cfg-libs" ~default:true
     "Print the cfg of the code coming from the libraries"
+
 
 and dump_duplicate_symbols =
   CLOpt.mk_bool ~long:"dump-duplicate-symbols"
     ~in_help:CLOpt.([(Capture, manual_clang)])
     "Dump all symbols with the same name that are defined in more than one file."
 
+
 and dynamic_dispatch =
   CLOpt.mk_symbol_opt ~long:"dynamic-dispatch"
     "Specify treatment of dynamic dispatch in Java code: 'none' treats dynamic dispatch as a call to unknown code, 'lazy' follows the JVM semantics and creates procedure descriptions during symbolic execution using the type information found in the abstract state; 'sound' is significantly more computationally expensive"
     ~symbols:string_to_dynamic_dispatch
 
+
 and eradicate_condition_redundant =
   CLOpt.mk_bool ~long:"eradicate-condition-redundant" "Condition redundant warnings"
+
 
 and eradicate_field_not_mutable =
   CLOpt.mk_bool ~long:"eradicate-field-not-mutable" "Field not mutable warnings"
 
+
 and eradicate_field_over_annotated =
   CLOpt.mk_bool ~long:"eradicate-field-over-annotated" "Field over-annotated warnings"
 
+
 and eradicate_optional_present =
   CLOpt.mk_bool ~long:"eradicate-optional-present" "Check for @Present annotations"
+
 
 and eradicate_propagate_return_nullable =
   CLOpt.mk_bool ~long:"eradicate-propagate-return-nullable"
     "Propagation of nullable to the return value"
 
+
 and eradicate_return_over_annotated =
   CLOpt.mk_bool ~long:"eradicate-return-over-annotated" "Return over-annotated warning"
+
 
 and eradicate_debug =
   CLOpt.mk_bool ~long:"eradicate-debug" "Print debug info when errors are found"
 
+
 and eradicate_verbose =
   CLOpt.mk_bool ~long:"eradicate-verbose" "Print initial and final typestates"
+
 
 and fail_on_bug =
   CLOpt.mk_bool ~deprecated:["-fail-on-bug"] ~long:"fail-on-issue" ~default:false
@@ -1175,8 +1250,10 @@ and fail_on_bug =
     (Printf.sprintf "Exit with error code %d if Infer found something to report"
        fail_on_issue_exit_code)
 
+
 and fcp_apple_clang =
   CLOpt.mk_path_opt ~long:"fcp-apple-clang" ~meta:"path" "Specify the path to Apple Clang"
+
 
 and fcp_syntax_only = CLOpt.mk_bool ~long:"fcp-syntax-only" "Skip creation of object files"
 
@@ -1185,13 +1262,16 @@ and file_renamings =
     ~in_help:CLOpt.([(ReportDiff, manual_generic)])
     "JSON with a list of file renamings to use while computing differential reports"
 
+
 and filter_paths =
   CLOpt.mk_bool ~long:"filter-paths" ~default:true "Filters specified in .inferconfig"
+
 
 and flavors =
   CLOpt.mk_bool ~deprecated:["-use-flavors"] ~long:"flavors"
     ~in_help:CLOpt.([(Capture, manual_buck_flavors)])
     "Buck integration using Buck flavors (clang only), eg $(i,`infer --flavors -- buck build //foo:bar#infer`)"
+
 
 and force_delete_results_dir =
   CLOpt.mk_bool ~long:"force-delete-results-dir" ~default:false
@@ -1203,6 +1283,7 @@ and force_delete_results_dir =
         ; (Run, manual_generic) ]))
     "Do not refuse to delete the results directory if it doesn't look like an infer results directory."
 
+
 and force_integration =
   CLOpt.mk_symbol_opt ~long:"force-integration" ~meta:"command"
     ~symbols:(List.Assoc.inverse build_system_exe_assoc)
@@ -1212,15 +1293,18 @@ and force_integration =
        ( List.map build_system_exe_assoc ~f:(fun (_, s) -> Printf.sprintf "$(i,%s)" s)
        |> String.concat ~sep:", " ))
 
+
 and from_json_report =
   CLOpt.mk_path_opt ~long:"from-json-report"
     ~in_help:CLOpt.([(Report, manual_generic)])
     ~meta:"report.json"
     "Load analysis results from a report file (default is to load the results from the specs files generated by the analysis)."
 
+
 and frontend_stats =
   CLOpt.mk_bool ~deprecated:["fs"] ~deprecated_no:["nfs"] ~long:"frontend-stats"
     "Output statistics about the capture phase to *.o.astlog (clang only)"
+
 
 and gen_previous_build_command_script =
   CLOpt.mk_string_opt ~long:"gen-previous-build-command-script"
@@ -1228,15 +1312,18 @@ and gen_previous_build_command_script =
     ~meta:"shell"
     "Specify a script that outputs the build command to capture in the previous version of the project. The script should output the command on stdout. For example \"echo make\"."
 
+
 and generated_classes =
   CLOpt.mk_path_opt ~long:"generated-classes"
     ~in_help:CLOpt.([(Capture, manual_java)])
     "Specify where to load the generated class files"
 
+
 and headers =
   CLOpt.mk_bool ~deprecated:["headers"; "hd"] ~deprecated_no:["no_headers"; "nhd"] ~long:"headers"
     ~in_help:CLOpt.([(Capture, manual_clang)])
     "Analyze code in header files"
+
 
 and help =
   let var = ref `None in
@@ -1248,6 +1335,7 @@ and help =
     (Printf.sprintf "Show this manual with all internal options in the %s section" manual_internal) ;
   var
 
+
 and help_format =
   CLOpt.mk_symbol ~long:"help-format"
     ~symbols:[("auto", `Auto); ("groff", `Groff); ("pager", `Pager); ("plain", `Plain)]
@@ -1255,35 +1343,43 @@ and help_format =
     ~in_help:(List.map CLOpt.all_commands ~f:(fun command -> (command, manual_generic)))
     "Show this help in the specified format. $(b,auto) sets the format to $(b,plain) if the environment variable $(b,TERM) is \"dumb\" or undefined, and to $(b,pager) otherwise."
 
+
 and html =
   CLOpt.mk_bool ~long:"html" ~in_help:CLOpt.([(Explore, manual_generic)]) "Generate html report."
+
 
 and icfg_dotty_outfile =
   CLOpt.mk_path_opt ~long:"icfg-dotty-outfile" ~meta:"path"
     "If set, specifies path where .dot file should be written, it overrides the path for all other options that would generate icfg file otherwise"
 
+
 and ignore_trivial_traces =
   CLOpt.mk_bool ~long:"ignore-trivial-traces" ~default:true
     "Ignore traces whose length is at most 1"
 
+
 and infer_cache =
   CLOpt.mk_path_opt ~deprecated:["infer_cache"; "-infer_cache"] ~long:"infer-cache" ~meta:"dir"
     "Select a directory to contain the infer cache (Buck and Java only)"
+
 
 and iphoneos_target_sdk_version =
   CLOpt.mk_string_opt ~long:"iphoneos-target-sdk-version"
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
     "Specify the target SDK version to use for iphoneos"
 
+
 and iphoneos_target_sdk_version_path_regex =
   CLOpt.mk_string_list ~long:"iphoneos-target-sdk-version-path-regex"
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
     "To pass a specific target SDK version to use for iphoneos in a particular path, with the format path:version (can be specified multiple times)"
 
+
 and issues_csv =
   CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
     ~in_help:CLOpt.([(Report, manual_generic)])
     ~meta:"file" "Write a list of issues in CSV format to $(i,file)"
+
 
 and issues_fields =
   CLOpt.mk_symbol_seq ~long:"issues-fields"
@@ -1296,29 +1392,35 @@ and issues_fields =
       ; `Issue_field_bug_trace ] ~symbols:issues_fields_symbols ~eq:PVariant.( = )
     "Fields to emit with $(b,--issues-tests)"
 
+
 and issues_tests =
   CLOpt.mk_path_opt ~long:"issues-tests"
     ~in_help:CLOpt.([(Report, manual_generic)])
     ~meta:"file" "Write a list of issues in a format suitable for tests to $(i,file)"
+
 
 and issues_txt =
   CLOpt.mk_path_opt ~deprecated:["bugs_txt"] ~long:"issues-txt"
     ~in_help:CLOpt.([(Report, manual_generic)])
     ~meta:"file" "Write a list of issues in text format to $(i,file) (default: infer-out/bugs.txt)"
 
+
 and iterations =
   CLOpt.mk_int ~deprecated:["iterations"] ~long:"iterations" ~default:1 ~meta:"int"
     "Specify the maximum number of operations for each function, expressed as a multiple of symbolic operations and a multiple of seconds of elapsed time"
+
 
 and java_jar_compiler =
   CLOpt.mk_path_opt ~long:"java-jar-compiler"
     ~in_help:CLOpt.([(Capture, manual_java)])
     ~meta:"path" "Specify the Java compiler jar used to generate the bytecode"
 
+
 and jobs =
   CLOpt.mk_int ~deprecated:["-multicore"] ~long:"jobs" ~short:'j' ~default:ncpu
     ~in_help:CLOpt.([(Analyze, manual_generic)])
     ~meta:"int" "Run the specified number of analysis jobs simultaneously"
+
 
 and join_cond =
   CLOpt.mk_int ~deprecated:["join_cond"] ~long:"join-cond" ~default:1 ~meta:"int"
@@ -1327,23 +1429,28 @@ and join_cond =
 - 1 = use the least aggressive join for preconditions
 |}
 
+
 and latex =
   CLOpt.mk_path_opt ~deprecated:["latex"] ~long:"latex" ~meta:"file"
     "Write a latex report of the analysis results to a file"
 
+
 and log_file =
   CLOpt.mk_string ~deprecated:["out_file"; "-out-file"] ~long:"log-file" ~meta:"file"
     ~default:"logs" "Specify the file to use for logging"
+
 
 and linter =
   CLOpt.mk_string_opt ~long:"linter"
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
     "From the linters available, only run this one linter. (Useful together with $(b,--linters-developer-mode))"
 
+
 and linters_def_file =
   CLOpt.mk_path_list ~default:[] ~long:"linters-def-file"
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
     ~meta:"file" "Specify the file containing linters definition (e.g. 'linters.al')"
+
 
 and linters_def_folder =
   let linters_def_folder =
@@ -1357,15 +1464,18 @@ and linters_def_folder =
   in
   linters_def_folder
 
+
 and linters_doc_url =
   CLOpt.mk_string_list ~long:"linters-doc-url"
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
     "Specify custom documentation URL for some linter that overrides the default one. Useful if your project has specific ways of fixing a lint error that is not true in general or public info. Format: linter_name:doc_url."
 
+
 and linters_ignore_clang_failures =
   CLOpt.mk_bool ~long:"linters-ignore-clang-failures"
     ~in_help:CLOpt.([(Capture, manual_clang_linters)])
     ~default:false "Continue linting files even if some compilation fails."
+
 
 and linters_validate_syntax_only =
   CLOpt.mk_bool ~long:"linters-validate-syntax-only"
@@ -1373,16 +1483,19 @@ and linters_validate_syntax_only =
     ~default:false
     "Validate syntax of AL files, then emit possible errors in JSON format to stdout"
 
+
 and load_average =
   CLOpt.mk_float_opt ~long:"load-average" ~short:'l'
     ~in_help:CLOpt.([(Capture, manual_generic)])
     ~meta:"float"
     "Do not start new parallel jobs if the load average is greater than that specified (Buck and make only)"
 
+
 and load_results =
   CLOpt.mk_path_opt ~deprecated:["load_results"] ~long:"load-results"
     ~in_help:CLOpt.([(Report, manual_generic)])
     ~meta:"file.iar" "Load analysis results from Infer Analysis Results file file.iar"
+
 
 (** name of the makefile to create with clusters and dependencies *)
 and makefile = CLOpt.mk_path ~deprecated:["makefile"] ~long:"makefile" ~default:"" ~meta:"file" ""
@@ -1391,15 +1504,18 @@ and margin =
   CLOpt.mk_int ~deprecated:["set_pp_margin"] ~long:"margin" ~default:100 ~meta:"int"
     "Set right margin for the pretty printing functions"
 
+
 and max_nesting =
   CLOpt.mk_int_opt ~long:"max-nesting"
     ~in_help:CLOpt.([(Explore, manual_generic)])
     "Level of nested procedure calls to show. Trace elements beyond the maximum nesting level are skipped. If omitted, all levels are shown."
 
+
 and merge =
   CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
     ~in_help:CLOpt.([(Analyze, manual_buck_flavors)])
     "Merge the captured results directories specified in the dependency file"
+
 
 and ml_buckets =
   CLOpt.mk_symbol_seq ~deprecated:["ml_buckets"; "-ml_buckets"] ~long:"ml-buckets"
@@ -1413,34 +1529,42 @@ and ml_buckets =
 |}
     ~symbols:ml_bucket_symbols ~eq:PVariant.( = )
 
+
 and modified_targets =
   CLOpt.mk_path_opt ~deprecated:["modified_targets"] ~long:"modified-targets" ~meta:"file"
     "Read the file of Buck targets modified since the last analysis"
 
+
 and monitor_prop_size =
   CLOpt.mk_bool ~deprecated:["monitor_prop_size"] ~long:"monitor-prop-size"
     "Monitor size of props, and print every time the current max is exceeded"
+
 
 and nelseg = CLOpt.mk_bool ~deprecated:["nelseg"] ~long:"nelseg" "Use only nonempty lsegs"
 
 and nullable_annotation =
   CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify custom nullable annotation name"
 
+
 (* TODO: document *)
 and objc_memory_model =
   CLOpt.mk_bool ~deprecated:["objcm"] ~long:"objc-memory-model" "Use ObjC memory model"
 
+
 and only_footprint =
   CLOpt.mk_bool ~deprecated:["only_footprint"] ~long:"only-footprint" "Skip the re-execution phase"
+
 
 and only_show =
   CLOpt.mk_bool ~long:"only-show"
     ~in_help:CLOpt.([(Explore, manual_generic)])
     "Show the list of reports and exit"
 
+
 and passthroughs =
   CLOpt.mk_bool ~long:"passthroughs" ~default:false
     "In error traces, show intermediate steps that propagate data. When false, error traces are shorter and show only direct flow via souces/sinks"
+
 
 and patterns_modeled_expensive =
   let long = "modeled-expensive" in
@@ -1449,11 +1573,13 @@ and patterns_modeled_expensive =
       "Matcher or list of matchers for methods that should be considered expensive by the performance critical checker."
   )
 
+
 and patterns_never_returning_null =
   let long = "never-returning-null" in
   ( long
   , CLOpt.mk_json ~deprecated:["never_returning_null"] ~long
       "Matcher or list of matchers for functions that never return $(i,null)." )
+
 
 and patterns_skip_implementation =
   let long = "skip-implementation" in
@@ -1462,24 +1588,29 @@ and patterns_skip_implementation =
       "Matcher or list of matchers for names of files where we only want to translate the method declaration, skipping the body of the methods (Java only)."
   )
 
+
 and patterns_skip_translation =
   let long = "skip-translation" in
   ( long
   , CLOpt.mk_json ~deprecated:["skip_translation"] ~long
       "Matcher or list of matchers for names of files that should not be analyzed at all." )
 
+
 and per_procedure_parallelism =
   CLOpt.mk_bool ~long:"per-procedure-parallelism" ~default:true
     "Perform analysis with per-procedure parallelism. Java is not supported."
+
 
 and pmd_xml =
   CLOpt.mk_bool ~long:"pmd-xml"
     ~in_help:CLOpt.([(Run, manual_generic)])
     "Output issues in (PMD) XML format"
 
+
 and precondition_stats =
   CLOpt.mk_bool ~deprecated:["precondition_stats"] ~long:"precondition-stats"
     "Print stats about preconditions to standard output"
+
 
 and previous_to_current_script =
   CLOpt.mk_string_opt ~long:"previous-to-current-script"
@@ -1487,36 +1618,44 @@ and previous_to_current_script =
     ~meta:"shell"
     "Specify a script to checkout the current version of the project. The project is supposed to already be at that current version when running $(b,infer diff); the script is used after having analyzed the current and previous versions of the project, to restore the project to the current version."
 
+
 and print_active_checkers =
   CLOpt.mk_bool ~long:"print-active-checkers"
     ~in_help:CLOpt.([(Analyze, manual_generic)])
     "Print the active checkers before starting the analysis"
 
+
 and print_builtins =
   CLOpt.mk_bool ~deprecated:["print_builtins"] ~long:"print-builtins"
     "Print the builtin functions and exit"
+
 
 and print_using_diff =
   CLOpt.mk_bool ~deprecated_no:["noprintdiff"] ~long:"print-using-diff" ~default:true
     "Highlight the difference w.r.t. the previous prop when printing symbolic execution debug info"
 
+
 and procedures_per_process =
   CLOpt.mk_int ~long:"procedures-per-process" ~default:1000 ~meta:"int"
     "Specify the number of procedures to analyze per process when using $(b,--per-procedure-parallelism).  If 0 is specified, each file is divided into $(b,--jobs) groups of procedures."
+
 
 and procs_csv =
   CLOpt.mk_path_opt ~deprecated:["procs"] ~long:"procs-csv" ~meta:"file"
     "Write statistics for each procedure in CSV format to a file"
 
+
 and procs_xml =
   CLOpt.mk_path_opt ~deprecated:["procs_xml"] ~long:"procs-xml" ~meta:"file"
     "Write statistics for each procedure in XML format to a file (as a path relative to $(b,--results-dir))"
+
 
 and progress_bar =
   CLOpt.mk_bool ~deprecated:["pb"] ~deprecated_no:["no_progress_bar"; "npb"] ~short:'p'
     ~long:"progress-bar" ~default:true
     ~in_help:CLOpt.([(Run, manual_generic)])
     "Show a progress bar"
+
 
 and project_root =
   CLOpt.mk_path ~deprecated:["project_root"; "-project_root"; "pr"] ~long:"project-root" ~short:'C'
@@ -1529,49 +1668,59 @@ and project_root =
         ; (Report, manual_generic) ]))
     ~meta:"dir" "Specify the root directory of the project"
 
+
 and quandary_endpoints =
   CLOpt.mk_json ~long:"quandary-endpoints"
     ~in_help:CLOpt.([(Analyze, manual_quandary)])
     "Specify endpoint classes for Quandary"
+
 
 and quandary_sanitizers =
   CLOpt.mk_json ~long:"quandary-sanitizers"
     ~in_help:CLOpt.([(Analyze, manual_quandary)])
     "Specify custom sanitizers for Quandary"
 
+
 and quandary_sources =
   CLOpt.mk_json ~long:"quandary-sources"
     ~in_help:CLOpt.([(Analyze, manual_quandary)])
     "Specify custom sources for Quandary"
+
 
 and quandary_sinks =
   CLOpt.mk_json ~long:"quandary-sinks"
     ~in_help:CLOpt.([(Analyze, manual_quandary)])
     "Specify custom sinks for Quandary"
 
+
 and quiet =
   CLOpt.mk_bool ~long:"quiet" ~short:'q' ~default:false
     ~in_help:CLOpt.([(Analyze, manual_generic); (Report, manual_generic)])
     "Do not print specs on standard output (default: only print for the $(b,report) command)"
+
 
 and reactive =
   CLOpt.mk_bool ~deprecated:["reactive"] ~long:"reactive" ~short:'r'
     ~in_help:CLOpt.([(Analyze, manual_generic)])
     "Reactive mode: the analysis starts from the files captured since the $(i,infer) command started"
 
+
 and reactive_capture =
   CLOpt.mk_bool ~long:"reactive-capture"
     "Compile source files only when required by analyzer (clang only)"
+
 
 and report =
   CLOpt.mk_bool ~long:"report" ~default:true
     ~in_help:CLOpt.([(Analyze, manual_generic); (Run, manual_generic)])
     "Run the reporting phase once the analysis has completed"
 
+
 and report_current =
   CLOpt.mk_path_opt ~long:"report-current"
     ~in_help:CLOpt.([(ReportDiff, manual_generic)])
     "report of the latest revision"
+
 
 and report_custom_error = CLOpt.mk_bool ~long:"report-custom-error" ""
 
@@ -1582,6 +1731,7 @@ and report_formatter =
     ~symbols:[("none", `No_formatter); ("phabricator", `Phabricator_formatter)] ~eq:PVariant.( = )
     "Which formatter to use when emitting the report"
 
+
 and report_hook =
   CLOpt.mk_string_opt ~long:"report-hook"
     ~in_help:CLOpt.([(Analyze, manual_generic); (Run, manual_generic)])
@@ -1589,16 +1739,19 @@ and report_hook =
     ~meta:"script"
     "Specify a script to be executed after the analysis results are written.  This script will be passed $(b,--issues-csv), $(b,--issues-json), $(b,--issues-txt), $(b,--issues-xml), $(b,--project-root), and $(b,--results-dir)."
 
+
 and report_previous =
   CLOpt.mk_path_opt ~long:"report-previous"
     ~in_help:CLOpt.([(ReportDiff, manual_generic)])
     "Report of the base revision to use for comparison"
+
 
 and rest =
   CLOpt.mk_rest_actions ~in_help:CLOpt.([(Capture, manual_generic); (Run, manual_generic)])
     "Stop argument processing, use remaining arguments as a build command" ~usage:exe_usage
     (fun build_exe ->
       match Filename.basename build_exe with "java" | "javac" -> CLOpt.Javac | _ -> CLOpt.NoParse )
+
 
 and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:'o'
@@ -1612,24 +1765,29 @@ and results_dir =
         ; (Report, manual_generic) ]))
     ~meta:"dir" "Write results and internal files in the specified directory"
 
+
 and save_results =
   CLOpt.mk_path_opt ~deprecated:["save_results"] ~long:"save-results"
     ~in_help:CLOpt.([(Report, manual_generic)])
     ~meta:"file.iar" "Save analysis results to Infer Analysis Results file file.iar"
 
+
 and seconds_per_iteration =
   CLOpt.mk_float_opt ~deprecated:["seconds_per_iteration"] ~long:"seconds-per-iteration"
     ~meta:"float" "Set the number of seconds per iteration (see $(b,--iterations))"
+
 
 and select =
   CLOpt.mk_int_opt ~long:"select" ~meta:"N"
     ~in_help:CLOpt.([(Explore, manual_generic)])
     "Select bug number $(i,N). If omitted, prompt for input."
 
+
 and siof_safe_methods =
   CLOpt.mk_string_list ~long:"siof-safe-methods"
     ~in_help:CLOpt.([(Analyze, manual_siof)])
     "Methods that are SIOF-safe; \"foo::bar\" will match \"foo::bar()\", \"foo<int>::bar()\", etc. (can be specified multiple times)"
+
 
 and skip_analysis_in_path =
   CLOpt.mk_string_list ~deprecated:["-skip-clang-analysis-in-path"] ~long:"skip-analysis-in-path"
@@ -1637,25 +1795,30 @@ and skip_analysis_in_path =
     ~meta:"path_prefix_OCaml_regex"
     "Ignore files whose path matches the given prefix (can be specified multiple times)"
 
+
 and skip_analysis_in_path_skips_compilation =
   CLOpt.mk_bool ~long:"skip-analysis-in-path-skips-compilation"
     ~in_help:CLOpt.([(Report, manual_generic)])
     ~default:false "Whether paths in --skip-analysis-in-path should be compiled or not"
+
 
 and skip_duplicated_types =
   CLOpt.mk_bool ~long:"skip-duplicated-types" ~default:true
     ~in_help:CLOpt.([(ReportDiff, manual_generic)])
     "Skip fixed-then-introduced duplicated types while computing differential reports"
 
+
 and skip_translation_headers =
   CLOpt.mk_string_list ~deprecated:["skip_translation_headers"] ~long:"skip-translation-headers"
     ~in_help:CLOpt.([(Capture, manual_clang)])
     ~meta:"path_prefix" "Ignore headers whose path matches the given prefix"
 
+
 and source_preview =
   CLOpt.mk_bool ~long:"source-preview" ~default:true
     ~in_help:CLOpt.([(Explore, manual_generic)])
     "print code excerpts around trace elements"
+
 
 and sources = CLOpt.mk_string_list ~long:"sources" "Specify the list of source files"
 
@@ -1668,6 +1831,7 @@ and spec_abs_level =
 - 1 = filter out redundant posts implied by other posts
 |}
 
+
 and specs_library =
   let specs_library =
     CLOpt.mk_path_list ~deprecated:["lib"] ~long:"specs-library" ~short:'L' ~meta:"dir|jar"
@@ -1678,10 +1842,10 @@ and specs_library =
        absolute *)
     let read_specs_dir_list_file fname =
       match Utils.read_file (resolve fname) with
-      | Ok pathlist
-       -> pathlist
-      | Error error
-       -> L.(die UserError) "cannot read file '%s' from cwd '%s': %s" fname (Sys.getcwd ()) error
+      | Ok pathlist ->
+          pathlist
+      | Error error ->
+          L.(die UserError) "cannot read file '%s' from cwd '%s': %s" fname (Sys.getcwd ()) error
     in
     (* Add the newline-separated directories listed in <file> to the list of directories to be
        searched for .spec files *)
@@ -1695,11 +1859,13 @@ and specs_library =
   in
   specs_library
 
+
 and stacktrace =
   CLOpt.mk_path_opt ~deprecated:["st"] ~long:"stacktrace"
     ~in_help:CLOpt.([(Analyze, manual_crashcontext)])
     ~meta:"file"
     "File path containing a json-encoded Java crash stacktrace. Used to guide the analysis (only with '-a crashcontext').  See tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
+
 
 and stacktraces_dir =
   CLOpt.mk_path_opt ~long:"stacktraces-dir"
@@ -1707,13 +1873,16 @@ and stacktraces_dir =
     ~meta:"dir"
     "Directory path containing multiple json-encoded Java crash stacktraces. Used to guide the  analysis (only with '-a crashcontext').  See tests/codetoanalyze/java/crashcontext/*.json for examples of the expected format."
 
+
 and stats_report =
   CLOpt.mk_path_opt ~long:"stats-report" ~meta:"file"
     "Write a report of the analysis results to a file"
 
+
 and subtype_multirange =
   CLOpt.mk_bool ~deprecated:["subtype_multirange"] ~long:"subtype-multirange" ~default:true
     "Use the multirange subtyping domain"
+
 
 and svg = CLOpt.mk_bool ~deprecated:["svg"] ~long:"svg" "Generate .dot and .svg files from specs"
 
@@ -1721,23 +1890,28 @@ and symops_per_iteration =
   CLOpt.mk_int_opt ~deprecated:["symops_per_iteration"] ~long:"symops-per-iteration" ~meta:"int"
     "Set the number of symbolic operations per iteration (see $(b,--iterations))"
 
+
 and test_filtering =
   CLOpt.mk_bool ~deprecated:["test_filtering"] ~long:"test-filtering"
     "List all the files Infer can report on (should be called from the root of the project)"
+
 
 and testing_mode =
   CLOpt.mk_bool ~deprecated:["testing_mode"; "-testing_mode"; "tm"] ~deprecated_no:["ntm"]
     ~long:"testing-mode"
     "Mode for testing, where no headers are translated, and dot files are created (clang only)"
 
+
 and threadsafe_aliases =
   CLOpt.mk_json ~long:"threadsafe-aliases"
     ~in_help:CLOpt.([(Analyze, manual_racerd)])
     "Specify custom annotations that should be considered aliases of @ThreadSafe"
 
+
 and trace_join =
   CLOpt.mk_bool ~deprecated:["trace_join"] ~long:"trace-join"
     "Detailed tracing information during prop join operations"
+
 
 and trace_ondemand = CLOpt.mk_bool ~long:"trace-ondemand" ""
 
@@ -1745,26 +1919,32 @@ and trace_rearrange =
   CLOpt.mk_bool ~deprecated:["trace_rearrange"] ~long:"trace-rearrange"
     "Detailed tracing information during prop re-arrangement operations"
 
+
 and tracing =
   CLOpt.mk_bool ~deprecated:["tracing"] ~long:"tracing"
     "Report error traces for runtime exceptions (Java only): generate preconditions for runtimeexceptions in Java and report errors for public methods which throw runtime exceptions"
+
 
 and tv_limit =
   CLOpt.mk_int ~long:"tv-limit" ~default:100 ~meta:"int"
     "The maximum number of traces to submit to Traceview"
 
+
 and type_size =
   CLOpt.mk_bool ~deprecated:["type_size"] ~long:"type-size"
     "Consider the size of types during analysis, e.g. cannot use an int pointer to write to a char"
+
 
 and unsafe_malloc =
   CLOpt.mk_bool ~long:"unsafe-malloc"
     ~in_help:CLOpt.([(Analyze, manual_clang)])
     "Assume that malloc(3) never returns null."
 
+
 (** Set the path to the javac verbose output *)
 and verbose_out =
   CLOpt.mk_path ~deprecated:["verbose_out"] ~long:"verbose-out" ~default:"" ~meta:"file" ""
+
 
 and version =
   let var = ref `None in
@@ -1777,8 +1957,10 @@ and version =
   CLOpt.mk_set var `Vcs ~long:"version-vcs" "Print version control system commit and exit" ;
   var
 
+
 and whole_seconds =
   CLOpt.mk_bool ~deprecated:["whole_seconds"] ~long:"whole-seconds" "Print whole seconds only"
+
 
 (** visit mode for the worklist:
     0 depth - fist visit
@@ -1793,19 +1975,23 @@ and worklist_mode =
     "nodes visited fewer times are analyzed first" ;
   var
 
+
 and xcode_developer_dir =
   CLOpt.mk_path_opt ~long:"xcode-developer-dir"
     ~in_help:CLOpt.([(Capture, manual_buck_flavors)])
     ~meta:"XCODE_DEVELOPER_DIR" "Specify the path to Xcode developer directory"
+
 
 and xcpretty =
   CLOpt.mk_bool ~long:"xcpretty" ~default:true
     ~in_help:CLOpt.([(Capture, manual_clang)])
     "Infer will use xcpretty together with xcodebuild to analyze an iOS app. xcpretty just needs to be in the path, infer command is still just $(i,`infer -- <xcodebuild command>`). (Recommended)"
 
+
 and xml_specs =
   CLOpt.mk_bool ~deprecated:["xml"] ~long:"xml-specs"
     "Export specs into XML files file1.xml ... filen.xml"
+
 
 (* The "rest" args must appear after "--" on the command line, and hence after other args, so they
    are allowed to refer to the other arg variables. *)
@@ -1821,6 +2007,7 @@ let javac_classes_out =
       classes_out)
     ""
 
+
 and _ =
   CLOpt.mk_string_opt ~parse_mode:CLOpt.Javac ~deprecated:["classpath"; "cp"] ~long:""
     ~f:(fun classpath ->
@@ -1832,6 +2019,7 @@ and _ =
       classpath)
     ""
 
+
 and () = CLOpt.mk_set ~parse_mode:CLOpt.Javac version ~deprecated:["version"] ~long:"" `Javac ""
 
 (** Parse Command Line Args *)
@@ -1839,32 +2027,33 @@ and () = CLOpt.mk_set ~parse_mode:CLOpt.Javac version ~deprecated:["version"] ~l
 let inferconfig_file =
   let rec find dir =
     match Sys.file_exists ~follow_symlinks:false (dir ^/ CommandDoc.inferconfig_file) with
-    | `Yes
-     -> Some dir
-    | `No | `Unknown
-     -> let parent = Filename.dirname dir in
+    | `Yes ->
+        Some dir
+    | `No | `Unknown ->
+        let parent = Filename.dirname dir in
         let is_root = String.equal dir parent in
         if is_root then None else find parent
   in
   match Sys.getenv CommandDoc.inferconfig_env_var with
-  | Some env_path
-   -> (* make sure the path makes sense in children infer processes *)
+  | Some env_path ->
+      (* make sure the path makes sense in children infer processes *)
       Some
         ( if Filename.is_relative env_path then
             Utils.filename_to_absolute ~root:CLOpt.init_work_dir env_path
         else env_path )
-  | None
-   -> find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
+  | None ->
+      find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
+
 
 let post_parsing_initialization command_opt =
   if CommandLineOption.is_originator then
     Unix.putenv ~key:infer_top_results_dir_env_var ~data:!results_dir ;
   ( match !version with
-  | `Full when !buck
-   -> (* Buck reads stderr in some versions, stdout in others *)
+  | `Full when !buck ->
+      (* Buck reads stderr in some versions, stdout in others *)
       print_endline version_string ; prerr_endline version_string
-  | `Javac when !buck
-   -> (* print buck key *)
+  | `Javac when !buck ->
+      (* print buck key *)
       let javac_version =
         let javac_args =
           if infer_is_javac then
@@ -1884,31 +2073,31 @@ let post_parsing_initialization command_opt =
       in
       let infer_version =
         match inferconfig_file with
-        | Some inferconfig
-         -> Printf.sprintf "version %s/inferconfig %s" Version.commit
+        | Some inferconfig ->
+            Printf.sprintf "version %s/inferconfig %s" Version.commit
               (Digest.to_hex (Digest.file inferconfig))
-        | None
-         -> Version.commit
+        | None ->
+            Version.commit
       in
       F.printf "%s/%s/%s@." javac_version analyzer_name infer_version ;
       F.eprintf "%s/%s/%s@." javac_version analyzer_name infer_version
-  | `Full
-   -> print_endline version_string
-  | `Javac
-   -> (* javac prints version on stderr *) prerr_endline version_string
-  | `Json
-   -> print_endline Version.versionJson
-  | `Vcs
-   -> print_endline Version.commit
-  | `None
-   -> () ) ;
+  | `Full ->
+      print_endline version_string
+  | `Javac ->
+      (* javac prints version on stderr *) prerr_endline version_string
+  | `Json ->
+      print_endline Version.versionJson
+  | `Vcs ->
+      print_endline Version.commit
+  | `None ->
+      () ) ;
   ( match !help with
-  | `Help
-   -> CLOpt.show_manual !help_format CommandDoc.infer command_opt
-  | `HelpFull
-   -> CLOpt.show_manual ~internal_section:manual_internal !help_format CommandDoc.infer command_opt
-  | `None
-   -> () ) ;
+  | `Help ->
+      CLOpt.show_manual !help_format CommandDoc.infer command_opt
+  | `HelpFull ->
+      CLOpt.show_manual ~internal_section:manual_internal !help_format CommandDoc.infer command_opt
+  | `None ->
+      () ) ;
   if !version <> `None || !help <> `None then Pervasives.exit 0 ;
   let uncaught_exception_handler exn raw_backtrace =
     let should_print_backtrace_default =
@@ -1923,18 +2112,18 @@ let post_parsing_initialization command_opt =
         Out_channel.newline stderr
       in
       match exn with
-      | Failure msg
-       -> error "ERROR: " msg
-      | L.InferExternalError msg
-       -> error "External Error: " msg
-      | L.InferInternalError msg
-       -> error "Internal Error: " msg
-      | L.InferUserError msg
-       -> error "Usage Error: " msg
-      | L.InferExit _
-       -> ()
-      | _
-       -> error "Uncaught error: " (Exn.to_string exn)
+      | Failure msg ->
+          error "ERROR: " msg
+      | L.InferExternalError msg ->
+          error "External Error: " msg
+      | L.InferInternalError msg ->
+          error "Internal Error: " msg
+      | L.InferUserError msg ->
+          error "Usage Error: " msg
+      | L.InferExit _ ->
+          ()
+      | _ ->
+          error "Uncaught error: " (Exn.to_string exn)
     in
     if should_print_backtrace_default || !developer_mode then (
       Out_channel.newline stderr ;
@@ -1976,23 +2165,24 @@ let post_parsing_initialization command_opt =
   if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
   ( if Option.is_none !analyzer then
       match (command_opt : CLOpt.command option) with
-      | Some Compile
-       -> analyzer := Some CompileOnly
-      | Some Capture
-       -> analyzer := Some CaptureOnly
-      | _
-       -> () ) ;
+      | Some Compile ->
+          analyzer := Some CompileOnly
+      | Some Capture ->
+          analyzer := Some CaptureOnly
+      | _ ->
+          () ) ;
   ( match !analyzer with
-  | Some BiAbduction
-   -> disable_all_checkers () ;
+  | Some BiAbduction ->
+      disable_all_checkers () ;
       (* technically the biabduction checker doesn't run in this mode, but this gives an easy way to test if the biabduction *analysis* is active *)
       biabduction := true
-  | Some Crashcontext
-   -> disable_all_checkers () ;
+  | Some Crashcontext ->
+      disable_all_checkers () ;
       crashcontext := true
-  | Some (CaptureOnly | Checkers | CompileOnly | Linters) | None
-   -> () ) ;
+  | Some (CaptureOnly | Checkers | CompileOnly | Linters) | None ->
+      () ) ;
   Option.value ~default:CLOpt.Run command_opt
+
 
 let command, parse_args_and_return_usage_exit =
   let command_opt, usage_exit =
@@ -2001,6 +2191,7 @@ let command, parse_args_and_return_usage_exit =
   let command = post_parsing_initialization command_opt in
   (command, usage_exit)
 
+
 let print_usage_exit () = parse_args_and_return_usage_exit 1
 
 type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string}
@@ -2008,28 +2199,30 @@ type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string
 let process_iphoneos_target_sdk_version_path_regex args =
   let process_iphoneos_target_sdk_version_path_regex arg : iphoneos_target_sdk_version_path_regex =
     match String.rsplit2 ~on:':' arg with
-    | Some (path, version)
-     -> {path= Str.regexp path; version}
-    | None
-     -> L.(die UserError)
+    | Some (path, version) ->
+        {path= Str.regexp path; version}
+    | None ->
+        L.(die UserError)
           "Incorrect format for the option iphoneos-target-sdk_version-path-regex. The correct format is path:version but got %s"
           arg
   in
   List.map ~f:process_iphoneos_target_sdk_version_path_regex args
+
 
 type linter_doc_url = {linter: string; doc_url: string}
 
 let process_linters_doc_url args =
   let linters_doc_url arg =
     match String.lsplit2 ~on:':' arg with
-    | Some (linter, doc_url)
-     -> {linter; doc_url}
-    | None
-     -> L.(die UserError)
+    | Some (linter, doc_url) ->
+        {linter; doc_url}
+    | None ->
+        L.(die UserError)
           "Incorrect format for the option linters-doc-url. The correct format is linter:doc_url but got %s"
           arg
   in
   List.map ~f:linters_doc_url args
+
 
 (** Freeze initialized configuration values *)
 
@@ -2046,14 +2239,18 @@ and allow_specs_cleanup = !allow_specs_cleanup
 and analysis_path_regex_whitelist_options =
   List.map ~f:(fun (a, b) -> (a, !b)) analysis_path_regex_whitelist_options
 
+
 and analysis_path_regex_blacklist_options =
   List.map ~f:(fun (a, b) -> (a, !b)) analysis_path_regex_blacklist_options
+
 
 and analysis_blacklist_files_containing_options =
   List.map ~f:(fun (a, b) -> (a, !b)) analysis_blacklist_files_containing_options
 
+
 and analysis_suppress_errors_options =
   List.map ~f:(fun (a, b) -> (a, !b)) analysis_suppress_errors_options
+
 
 and analysis_stops = !analysis_stops
 
@@ -2083,12 +2280,13 @@ and buck_cache_mode = !buck && not !debug
 
 and buck_compilation_database =
   match !buck_compilation_database with
-  | Some `DepsTmp
-   -> Some (Deps !buck_compilation_database_depth)
-  | Some `NoDeps
-   -> Some NoDeps
-  | None
-   -> None
+  | Some `DepsTmp ->
+      Some (Deps !buck_compilation_database_depth)
+  | Some `NoDeps ->
+      Some NoDeps
+  | None ->
+      None
+
 
 and buck_out = !buck_out
 
@@ -2213,6 +2411,7 @@ and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 and iphoneos_target_sdk_version_path_regex =
   process_iphoneos_target_sdk_version_path_regex !iphoneos_target_sdk_version_path_regex
 
+
 and issues_csv = !issues_csv
 
 and issues_fields = !issues_fields
@@ -2254,6 +2453,7 @@ and liveness = !liveness
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
 
+
 and load_analysis_results = !load_results
 
 and log_file = !log_file
@@ -2290,21 +2490,13 @@ and only_show = !only_show
 
 and passthroughs = !passthroughs
 
-and patterns_modeled_expensive =
-  match patterns_modeled_expensive
-  with k, r -> (k, !r)
+and patterns_modeled_expensive = match patterns_modeled_expensive with k, r -> (k, !r)
 
-and patterns_never_returning_null =
-  match patterns_never_returning_null
-  with k, r -> (k, !r)
+and patterns_never_returning_null = match patterns_never_returning_null with k, r -> (k, !r)
 
-and patterns_skip_implementation =
-  match patterns_skip_implementation
-  with k, r -> (k, !r)
+and patterns_skip_implementation = match patterns_skip_implementation with k, r -> (k, !r)
 
-and patterns_skip_translation =
-  match patterns_skip_translation
-  with k, r -> (k, !r)
+and patterns_skip_translation = match patterns_skip_translation with k, r -> (k, !r)
 
 and per_procedure_parallelism = !per_procedure_parallelism
 
@@ -2463,33 +2655,38 @@ and xml_specs = !xml_specs
 let analysis_path_regex_whitelist analyzer =
   List.Assoc.find_exn ~equal:equal_analyzer analysis_path_regex_whitelist_options analyzer
 
+
 and analysis_path_regex_blacklist analyzer =
   List.Assoc.find_exn ~equal:equal_analyzer analysis_path_regex_blacklist_options analyzer
+
 
 and analysis_blacklist_files_containing analyzer =
   List.Assoc.find_exn ~equal:equal_analyzer analysis_blacklist_files_containing_options analyzer
 
+
 and analysis_suppress_errors analyzer =
   List.Assoc.find_exn ~equal:equal_analyzer analysis_suppress_errors_options analyzer
+
 
 let captured_dir = results_dir ^/ captured_dir_name
 
 let clang_frontend_do_capture, clang_frontend_do_lint =
   match !clang_frontend_action with
-  | Some `Lint
-   -> (false, true) (* no capture, lint *)
-  | Some `Capture
-   -> (true, false) (* capture, no lint *)
-  | Some `Lint_and_capture
-   -> (true, true) (* capture, lint *)
+  | Some `Lint ->
+      (false, true) (* no capture, lint *)
+  | Some `Capture ->
+      (true, false) (* capture, no lint *)
+  | Some `Lint_and_capture ->
+      (true, true) (* capture, lint *)
   | None ->
     match !analyzer with
-    | Some Linters
-     -> (false, true) (* no capture, lint *)
-    | Some BiAbduction | Some Checkers
-     -> (true, false) (* capture, no lint *)
-    | _
-     -> (* capture, lint *) (true, true)
+    | Some Linters ->
+        (false, true) (* no capture, lint *)
+    | Some BiAbduction | Some Checkers ->
+        (true, false) (* capture, no lint *)
+    | _ ->
+        (* capture, lint *) (true, true)
+
 
 let analyzer = match !analyzer with Some a -> a | None -> Checkers
 
@@ -2498,47 +2695,51 @@ let clang_frontend_action_string =
     ( (if clang_frontend_do_capture then ["translating"] else [])
     @ if clang_frontend_do_lint then ["linting"] else [] )
 
+
 let dynamic_dispatch =
   let default_mode =
     match analyzer with
-    | BiAbduction
-     -> Lazy
-    | Checkers when biabduction
-     -> Lazy
-    | Checkers when quandary
-     -> Sound
-    | _
-     -> NoDynamicDispatch
+    | BiAbduction ->
+        Lazy
+    | Checkers when biabduction ->
+        Lazy
+    | Checkers when quandary ->
+        Sound
+    | _ ->
+        NoDynamicDispatch
   in
   Option.value ~default:default_mode !dynamic_dispatch
 
+
 let specs_library =
   match infer_cache with
-  | Some cache_dir when use_jar_cache
-   -> let add_spec_lib specs_library filename =
+  | Some cache_dir when use_jar_cache ->
+      let add_spec_lib specs_library filename =
         let basename = Filename.basename filename in
         let key = basename ^ Utils.string_crc_hex32 filename in
         let key_dir = cache_dir ^/ key in
         let extract_specs dest_dir filename =
           if Filename.check_suffix filename ".jar" then
             match Unix.mkdir dest_dir ~perm:0o700 with
-            | exception Unix.Unix_error _
-             -> ()
-            | ()
-             -> let zip_channel = Zip.open_in filename in
+            | exception Unix.Unix_error _ ->
+                ()
+            | () ->
+                let zip_channel = Zip.open_in filename in
                 let entries = Zip.entries zip_channel in
                 let extract_entry (entry: Zip.entry) =
                   let dest_file = dest_dir ^/ Filename.basename entry.filename in
                   if Filename.check_suffix entry.filename specs_files_suffix then
                     Zip.copy_entry_to_file zip_channel entry dest_file
                 in
-                List.iter ~f:extract_entry entries ; Zip.close_in zip_channel
+                List.iter ~f:extract_entry entries ;
+                Zip.close_in zip_channel
         in
         extract_specs key_dir filename ; key_dir :: specs_library
       in
       List.fold ~f:add_spec_lib ~init:[] !specs_library
-  | _
-   -> !specs_library
+  | _ ->
+      !specs_library
+
 
 (** Global variables *)
 
@@ -2550,6 +2751,7 @@ let set_reference_and_call_function reference value f x =
       reference := value ;
       f x)
     ~finally:restore
+
 
 (** Current Objective-C Automatic Reference Counting (ARC) mode *)
 let arc_mode = ref false

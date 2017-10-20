@@ -21,6 +21,7 @@ let compare_proc_flags x y =
   let bindings x = Hashtbl.fold (fun k d l -> (k, d) :: l) x [] in
   [%compare : (string * string) list] (bindings x) (bindings y)
 
+
 let proc_flags_empty () : proc_flags = Hashtbl.create 1
 
 let proc_flag_ignore_return = "ignore_return"
@@ -99,3 +100,4 @@ let default proc_name language =
   ; proc_name
   ; ret_type= Typ.mk Typ.Tvoid
   ; source_file_captured= SourceFile.invalid __FILE__ }
+

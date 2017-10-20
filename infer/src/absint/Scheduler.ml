@@ -58,16 +58,19 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     let compute_priority cfg node visited_preds =
       List.length (CFG.preds cfg node) - IdSet.cardinal visited_preds
 
+
     let make cfg node =
       let visited_preds = IdSet.empty in
       let priority = compute_priority cfg node visited_preds in
       {node; visited_preds; priority}
+
 
     (* add [node_id] to the visited preds for [t] *)
     let add_visited_pred cfg t node_id =
       let visited_preds' = IdSet.add node_id t.visited_preds in
       let priority' = compute_priority cfg t.node visited_preds' in
       {t with visited_preds= visited_preds'; priority= priority'}
+
   end
 
   type t = {worklist: WorkUnit.t M.t; cfg: CFG.t}
@@ -87,6 +90,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     in
     let new_worklist = List.fold ~f:schedule_succ ~init:t.worklist (CFG.succs t.cfg node) in
     {t with worklist= new_worklist}
+
 
   (* remove and return the node with the highest priority (note that smaller integers have higher
      priority), the ids of its visited predecessors, and new schedule *)
@@ -108,6 +112,7 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
       let t' = {t with worklist= M.remove (CFG.id node) t.worklist} in
       Some (node, WorkUnit.visited_preds max_priority_work, t')
     with Not_found -> None
+
 
   let empty cfg = {worklist= M.empty; cfg}
 end

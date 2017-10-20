@@ -17,8 +17,8 @@ module F = Format
     constituting a lifecycle trace *)
 let try_create_lifecycle_trace name lifecycle_name lifecycle_procs tenv =
   match name with
-  | Typ.JavaClass _
-   -> if PatternMatch.is_subtype tenv name lifecycle_name
+  | Typ.JavaClass _ ->
+      if PatternMatch.is_subtype tenv name lifecycle_name
          && not (AndroidFramework.is_android_lib_class name)
       then
         let ptr_to_struct_typ = Some (Typ.mk (Tptr (Typ.mk (Tstruct name), Pk_pointer))) in
@@ -30,8 +30,9 @@ let try_create_lifecycle_trace name lifecycle_name lifecycle_procs tenv =
             (resolved_proc, ptr_to_struct_typ) :: trace)
           ~init:[] lifecycle_procs
       else []
-  | _
-   -> []
+  | _ ->
+      []
+
 
 (** generate a harness for a lifecycle type in an Android application *)
 let create_harness cfg cg tenv =
@@ -48,22 +49,24 @@ let create_harness cfg cg tenv =
       Tenv.iter
         (fun name _ ->
           match try_create_lifecycle_trace name typname framework_procs tenv with
-          | []
-           -> ()
-          | lifecycle_trace
-           -> let harness_procname =
+          | [] ->
+              ()
+          | lifecycle_trace ->
+              let harness_procname =
                 let harness_cls_name = Typ.Name.name name in
                 let pname =
                   Typ.Procname.Java
-                    (Typ.Procname.java (Typ.Name.Java.from_string harness_cls_name) None
-                       "InferGeneratedHarness" [] Typ.Procname.Static)
+                    (Typ.Procname.java
+                       (Typ.Name.Java.from_string harness_cls_name)
+                       None "InferGeneratedHarness" [] Typ.Procname.Static)
                 in
                 match pname with
-                | Typ.Procname.Java harness_procname
-                 -> harness_procname
-                | _
-                 -> assert false
+                | Typ.Procname.Java harness_procname ->
+                    harness_procname
+                | _ ->
+                    assert false
               in
               Inhabit.inhabit_trace tenv lifecycle_trace harness_procname cg cfg)
         tenv)
     AndroidFramework.get_lifecycles
+

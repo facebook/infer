@@ -12,5 +12,6 @@ let cflags = common_cflags @ ["-w"; "-27-32-34-35-39"]
   (libraries (atdgen))
  ))
 |}
-     (String.concat " " cflags) (String.concat " " common_optflags)
+     (String.concat " " cflags)
+     (String.concat " " common_optflags)
    |> Jbuild_plugin.V1.send

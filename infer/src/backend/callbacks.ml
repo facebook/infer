@@ -34,13 +34,16 @@ let cluster_callbacks = ref []
 let register_procedure_callback ?(dynamic_dispath= false) language (callback: proc_callback_t) =
   procedure_callbacks := (language, dynamic_dispath, callback) :: !procedure_callbacks
 
+
 let register_cluster_callback language (callback: cluster_callback_t) =
   cluster_callbacks := (language, callback) :: !cluster_callbacks
+
 
 (** Collect what we need to know about a procedure for the analysis. *)
 let get_procedure_definition exe_env proc_name =
   let tenv = Exe_env.get_tenv exe_env proc_name in
   Option.map ~f:(fun proc_desc -> (tenv, proc_desc)) (Exe_env.get_proc_desc exe_env proc_name)
+
 
 let get_language proc_name = if Typ.Procname.is_java proc_name then Config.Java else Config.Clang
 
@@ -51,10 +54,10 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
   Config.curr_language := procedure_language ;
   let get_procs_in_file proc_name =
     match Exe_env.get_cfg exe_env proc_name with
-    | Some cfg
-     -> List.map ~f:Procdesc.get_proc_name (Cfg.get_defined_procs cfg)
-    | None
-     -> []
+    | Some cfg ->
+        List.map ~f:Procdesc.get_proc_name (Cfg.get_defined_procs cfg)
+    | None ->
+        []
   in
   let tenv = Exe_env.get_tenv exe_env proc_name in
   let is_specialized = Procdesc.is_specialized proc_desc in
@@ -65,21 +68,23 @@ let iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc =
       else summary)
     !procedure_callbacks
 
+
 (** Invoke all registered cluster callbacks on a cluster of procedures. *)
 let iterate_cluster_callbacks all_procs exe_env get_proc_desc =
   let procedures = List.filter_map ~f:(get_procedure_definition exe_env) all_procs in
   let environment = {procedures; get_proc_desc} in
   let language_matches language =
     match procedures with
-    | (_, pdesc) :: _
-     -> Config.equal_language language (get_language (Procdesc.get_proc_name pdesc))
-    | _
-     -> true
+    | (_, pdesc) :: _ ->
+        Config.equal_language language (get_language (Procdesc.get_proc_name pdesc))
+    | _ ->
+        true
   in
   List.iter
     ~f:(fun (language_opt, cluster_callback) ->
       if language_matches language_opt then cluster_callback environment)
     !cluster_callbacks
+
 
 (** Invoke all procedure and cluster callbacks on a given environment. *)
 let iterate_callbacks call_graph exe_env =
@@ -90,24 +95,24 @@ let iterate_callbacks call_graph exe_env =
   in
   let get_proc_desc proc_name =
     match Exe_env.get_proc_desc exe_env proc_name with
-    | Some pdesc
-     -> Some pdesc
-    | None when Config.(equal_dynamic_dispatch dynamic_dispatch Lazy)
-     -> Option.bind (Specs.get_summary proc_name) ~f:(fun summary -> summary.Specs.proc_desc_option)
-    | None
-     -> None
+    | Some pdesc ->
+        Some pdesc
+    | None when Config.(equal_dynamic_dispatch dynamic_dispatch Lazy) ->
+        Option.bind (Specs.get_summary proc_name) ~f:(fun summary -> summary.Specs.proc_desc_option)
+    | None ->
+        None
   in
   let analyze_ondemand summary proc_desc =
     iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc
   in
-  let callbacks = {Ondemand.analyze_ondemand= analyze_ondemand; get_proc_desc} in
+  let callbacks = {Ondemand.analyze_ondemand; get_proc_desc} in
   (* Create and register on-demand analysis callback *)
   let analyze_proc_name pname =
     match Ondemand.get_proc_desc pname with
-    | None
-     -> L.(die InternalError) "Could not find proc desc for %a" Typ.Procname.pp pname
-    | Some pdesc
-     -> ignore (Ondemand.analyze_proc_desc pdesc pdesc)
+    | None ->
+        L.(die InternalError) "Could not find proc desc for %a" Typ.Procname.pp pname
+    | Some pdesc ->
+        ignore (Ondemand.analyze_proc_desc pdesc pdesc)
   in
   Ondemand.set_callbacks callbacks ;
   (* Invoke procedure callbacks using on-demand anlaysis schedulling *)
@@ -117,3 +122,4 @@ let iterate_callbacks call_graph exe_env =
   (* Unregister callbacks *)
   Ondemand.unset_callbacks () ;
   Config.curr_language := saved_language
+

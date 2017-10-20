@@ -18,16 +18,18 @@ let new_session node =
   let pname = Procdesc.Node.get_proc_name node in
   let node_id = (Procdesc.Node.get_id node :> int) in
   match Specs.get_summary pname with
-  | None
-   -> 0
-  | Some summary
-   -> (summary.stats).nodes_visited_fp <- IntSet.add node_id summary.stats.nodes_visited_fp ;
+  | None ->
+      0
+  | Some summary ->
+      (summary.stats).nodes_visited_fp <- IntSet.add node_id summary.stats.nodes_visited_fp ;
       incr summary.Specs.sessions ;
       !(summary.Specs.sessions)
+
 
 let start_session node =
   if Config.write_html then
     let session = new_session node in
     Printer.node_start_session node session
+
 
 let finish_session node = if Config.write_html then Printer.node_finish_session node

@@ -61,7 +61,7 @@ type failure_kind =
   | FKrecursion_timeout of int  (** max recursion level exceeded *)
   | FKcrash of string  (** uncaught exception or failed assertion *)
 
-exception Analysis_failure_exe of failure_kind(** Timeout exception *)
+exception Analysis_failure_exe of failure_kind  (** Timeout exception *)
 
 val exn_not_failure : exn -> bool
 (** check that the exception is not a timeout exception *)

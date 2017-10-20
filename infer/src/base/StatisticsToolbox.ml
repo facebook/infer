@@ -29,6 +29,7 @@ let to_json s =
     ; ("max", `Float s.max)
     ; ("count", `Int s.count) ]
 
+
 let from_json json =
   let open! Yojson.Basic.Util in
   { sum= json |> member "sum" |> to_float
@@ -39,6 +40,7 @@ let from_json json =
   ; p75= json |> member "p75" |> to_float
   ; max= json |> member "max" |> to_float
   ; count= json |> member "count" |> to_int }
+
 
 let compute_statistics values =
   let num_elements = List.length values in
@@ -67,3 +69,4 @@ let compute_statistics values =
   ; p75= percentile 0.75
   ; max= percentile 1.0
   ; count= num_elements }
+

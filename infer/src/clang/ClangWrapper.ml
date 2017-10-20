@@ -29,25 +29,26 @@ let check_for_existing_file args =
     let all_args = List.map ~f:String.strip all_args_ in
     let rec check_for_existing_file_arg args =
       match args with
-      | []
-       -> ()
-      | option :: rest
-       -> if String.equal option "-c" then
+      | [] ->
+          ()
+      | option :: rest ->
+          if String.equal option "-c" then
             match
               (* infer-capture-all flavour of buck produces path to generated file that doesn't exist.
              Create empty file empty file and pass that to clang. This is to enable compilation to continue *)
               (clang_ignore_regex, List.hd rest)
             with
-            | Some regexp, Some arg
-             -> if Str.string_match regexp arg 0 && Sys.file_exists arg <> `Yes then (
+            | Some regexp, Some arg ->
+                if Str.string_match regexp arg 0 && Sys.file_exists arg <> `Yes then (
                   Unix.mkdir_p (Filename.dirname arg) ;
                   let file = Unix.openfile ~mode:[Unix.O_CREAT; Unix.O_RDONLY] arg in
                   Unix.close file )
-            | _
-             -> ()
+            | _ ->
+                ()
           else check_for_existing_file_arg rest
     in
     check_for_existing_file_arg all_args
+
 
 (** Given a list of arguments for clang [args], return a list of new commands to run according to
     the results of `clang -### [args]`. *)
@@ -82,10 +83,10 @@ let normalize ~prog ~args : action_item list =
             "\"" ^ line ^ " \"" |> (* split by whitespace *)
                                    Str.split (Str.regexp_string "\" \"")
           with
-        | prog :: args
-         -> ClangCommand.mk ClangQuotes.EscapedDoubleQuotes ~prog ~args
-        | []
-         -> L.(die InternalError) "ClangWrapper: argv cannot be empty" )
+        | prog :: args ->
+            ClangCommand.mk ClangQuotes.EscapedDoubleQuotes ~prog ~args
+        | [] ->
+            L.(die InternalError) "ClangWrapper: argv cannot be empty" )
     else if Str.string_match (Str.regexp "clang[^ :]*: warning: ") line 0 then ClangWarning line
     else ClangError line
   in
@@ -108,17 +109,19 @@ let normalize ~prog ~args : action_item list =
   normalized_commands := List.rev !normalized_commands ;
   !normalized_commands
 
+
 let exec_action_item = function
-  | ClangError error
-   -> (* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
+  | ClangError error ->
+      (* An error in the output of `clang -### ...`. Outputs the error and fail. This is because
        `clang -###` pretty much never fails, but warns of failures on stderr instead. *)
       L.(die UserError)
         "Failed to execute compilation command. Output:@\n%s@\n*** Infer needs a working compilation command to run."
         error
-  | ClangWarning warning
-   -> L.external_warning "%s@\n" warning
-  | Command clang_cmd
-   -> Capture.capture clang_cmd
+  | ClangWarning warning ->
+      L.external_warning "%s@\n" warning
+  | Command clang_cmd ->
+      Capture.capture clang_cmd
+
 
 let exe ~prog ~args =
   let xx_suffix = match String.is_suffix ~suffix:"++" prog with true -> "++" | false -> "" in
@@ -130,11 +133,12 @@ let exe ~prog ~args =
      generate precompiled headers compatible with Apple's clang. *)
   let prog, should_run_original_command =
     match Config.fcp_apple_clang with
-    | Some bin
-     -> let bin_xx = bin ^ xx_suffix in
-        L.(debug Capture Medium) "Will run Apple clang %s" bin_xx ; (bin_xx, true)
-    | None
-     -> (clang_xx, false)
+    | Some bin ->
+        let bin_xx = bin ^ xx_suffix in
+        L.(debug Capture Medium) "Will run Apple clang %s" bin_xx ;
+        (bin_xx, true)
+    | None ->
+        (clang_xx, false)
   in
   List.iter ~f:exec_action_item commands ;
   if List.is_empty commands || should_run_original_command then (
@@ -151,3 +155,4 @@ let exe ~prog ~args =
         "WARNING: `clang -### <args>` returned an empty set of commands to run and no error. Will run the original command directly:@\n  %s@\n"
         (String.concat ~sep:" " @@ prog :: args) ;
     Process.create_process_and_wait ~prog ~args )
+

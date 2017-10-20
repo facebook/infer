@@ -14,6 +14,7 @@ let all_formals_untainted pdesc =
   let make_untainted (name, typ) = (name, typ, None) in
   List.map ~f:make_untainted (Procdesc.get_formals pdesc)
 
+
 module type Kind = sig
   include TraceElem.Kind
 
@@ -47,11 +48,12 @@ module Make (Kind : Kind) = struct
 
   let get site actuals tenv =
     match Kind.get (CallSite.pname site) actuals tenv with
-    | Some (kind, index)
-     -> let source = make kind site in
+    | Some (kind, index) ->
+        let source = make kind site in
         Some {source; index}
-    | None
-     -> None
+    | None ->
+        None
+
 
   let get_tainted_formals pdesc tenv =
     let site = CallSite.make (Procdesc.get_proc_name pdesc) (Procdesc.get_loc pdesc) in
@@ -59,6 +61,7 @@ module Make (Kind : Kind) = struct
       ~f:(fun (name, typ, kind_opt) ->
         (name, typ, Option.map kind_opt ~f:(fun kind -> make kind site)))
       (Kind.get_tainted_formals pdesc tenv)
+
 
   let pp fmt s = F.fprintf fmt "%a(%a)" Kind.pp s.kind CallSite.pp s.site
 
@@ -90,6 +93,7 @@ module Dummy = struct
 
   let get_tainted_formals pdesc _ =
     List.map ~f:(fun (name, typ) -> (name, typ, None)) (Procdesc.get_formals pdesc)
+
 
   module Kind = struct
     type nonrec t = t

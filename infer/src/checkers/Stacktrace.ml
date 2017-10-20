@@ -49,6 +49,7 @@ let frame_matches_location frame_obj loc =
   in
   matches_file && matches_line
 
+
 let parse_stack_frame frame_str =
   (* separate the qualified method name and the parenthesized text/line number*)
   ignore (Str.string_match frame_regexp frame_str 0) ;
@@ -74,30 +75,33 @@ let parse_stack_frame frame_str =
     in
     make_frame class_str method_str file_str line_num
 
+
 let parse_exception_line exception_line =
   ignore (Str.string_match exception_regexp exception_line 0) ;
   let exception_name = Str.matched_group 2 exception_line in
   exception_name
 
+
 let of_string s =
   let lines = Str.split new_line_regexp s in
   match lines with
-  | exception_line :: trace
-   -> let exception_name = parse_exception_line exception_line in
+  | exception_line :: trace ->
+      let exception_name = parse_exception_line exception_line in
       let parsed = List.map ~f:parse_stack_frame trace in
       make exception_name parsed
-  | []
-   -> L.(die UserError) "Empty stack trace"
+  | [] ->
+      L.(die UserError) "Empty stack trace"
+
 
 let of_json filename json =
   let exception_name_key = "exception_type" in
   let frames_key = "stack_trace" in
   let extract_json_member key =
     match Yojson.Basic.Util.member key json with
-    | `Null
-     -> L.(die UserError) "Missing key in supplied JSON data: %s (in file %s)" key filename
-    | item
-     -> item
+    | `Null ->
+        L.(die UserError) "Missing key in supplied JSON data: %s (in file %s)" key filename
+    | item ->
+        item
   in
   let exception_name = Yojson.Basic.Util.to_string (extract_json_member exception_name_key) in
   let frames =
@@ -107,8 +111,10 @@ let of_json filename json =
   in
   make exception_name frames
 
+
 let of_json_file filename =
   try of_json filename (Yojson.Basic.from_file filename)
   with Sys_error msg | Yojson.Json_error msg ->
     L.(die UserError)
       "Could not read or parse the supplied JSON stacktrace file %s :@\n %s" filename msg
+

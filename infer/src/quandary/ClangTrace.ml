@@ -23,22 +23,24 @@ module SourceKind = struct
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
   let of_string = function
-    | "CommandLineFlag"
-     -> L.die UserError "User-specified CommandLineFlag sources are not supported"
-    | "Endpoint"
-     -> Endpoint (Mangled.from_string "NONE", Typ.Tvoid)
-    | "EnvironmentVariable"
-     -> EnvironmentVariable
-    | "File"
-     -> File
-    | _
-     -> Other
+    | "CommandLineFlag" ->
+        L.die UserError "User-specified CommandLineFlag sources are not supported"
+    | "Endpoint" ->
+        Endpoint (Mangled.from_string "NONE", Typ.Tvoid)
+    | "EnvironmentVariable" ->
+        EnvironmentVariable
+    | "File" ->
+        File
+    | _ ->
+        Other
+
 
   let external_sources =
     List.map
       ~f:(fun {QuandaryConfig.Source.procedure; kind; index} ->
         (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kind, index))
       (QuandaryConfig.Source.of_json Config.quandary_sources)
+
 
   let endpoints = String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints)
 
@@ -56,11 +58,12 @@ module SourceKind = struct
         else None)
       external_sources
 
+
   let get pname actuals _ =
     let return = None in
     match pname with
     | Typ.Procname.ObjC_Cpp cpp_name
-     -> (
+      -> (
         let qualified_pname = Typ.Procname.get_qualifiers pname in
         match
           ( QualifiedCppName.to_list
@@ -68,12 +71,12 @@ module SourceKind = struct
           , Typ.Procname.get_method pname )
         with
         | ( ["std"; ("basic_istream" | "basic_iostream")]
-          , ("getline" | "read" | "readsome" | "operator>>") )
-         -> Some (File, Some 1)
-        | _
-         -> get_external_source qualified_pname )
+          , ("getline" | "read" | "readsome" | "operator>>") ) ->
+            Some (File, Some 1)
+        | _ ->
+            get_external_source qualified_pname )
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__global_access
-     -> (
+      -> (
         (* is this var a command line flag created by the popular C++ gflags library for creating
            command-line flags (https://github.com/gflags/gflags)? *)
         let is_gflag access_path =
@@ -81,28 +84,29 @@ module SourceKind = struct
             String.is_substring ~substring:"FLAGS_" (Pvar.get_simplified_name pvar)
           in
           match access_path with
-          | (Var.ProgramVar pvar, _), _
-           -> Pvar.is_global pvar && pvar_is_gflag pvar
-          | _
-           -> false
+          | (Var.ProgramVar pvar, _), _ ->
+              Pvar.is_global pvar && pvar_is_gflag pvar
+          | _ ->
+              false
         in
         (* accessed global will be passed to us as the only parameter *)
         match actuals with
-        | [(HilExp.AccessPath access_path)] when is_gflag access_path
-         -> let (global_pvar, _), _ = access_path in
+        | [(HilExp.AccessPath access_path)] when is_gflag access_path ->
+            let (global_pvar, _), _ = access_path in
             Some (CommandLineFlag global_pvar, None)
-        | _
-         -> None )
+        | _ ->
+            None )
     | Typ.Procname.C _ -> (
       match Typ.Procname.to_string pname with
-      | "getenv"
-       -> Some (EnvironmentVariable, return)
-      | _
-       -> get_external_source (Typ.Procname.get_qualifiers pname) )
-    | Typ.Procname.Block _
-     -> None
-    | pname
-     -> L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
+      | "getenv" ->
+          Some (EnvironmentVariable, return)
+      | _ ->
+          get_external_source (Typ.Procname.get_qualifiers pname) )
+    | Typ.Procname.Block _ ->
+        None
+    | pname ->
+        L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
+
 
   let get_tainted_formals pdesc _ =
     let get_tainted_formals_ qualified_pname =
@@ -113,28 +117,31 @@ module SourceKind = struct
       else Source.all_formals_untainted pdesc
     in
     match Procdesc.get_proc_name pdesc with
-    | Typ.Procname.ObjC_Cpp objc as pname
-     -> let qualified_pname =
-          F.sprintf "%s::%s" (Typ.Procname.objc_cpp_get_class_name objc)
+    | Typ.Procname.ObjC_Cpp objc as pname ->
+        let qualified_pname =
+          F.sprintf "%s::%s"
+            (Typ.Procname.objc_cpp_get_class_name objc)
             (Typ.Procname.get_method pname)
         in
         get_tainted_formals_ qualified_pname
-    | Typ.Procname.C _ as pname
-     -> get_tainted_formals_ (Typ.Procname.get_method pname)
-    | _
-     -> Source.all_formals_untainted pdesc
+    | Typ.Procname.C _ as pname ->
+        get_tainted_formals_ (Typ.Procname.get_method pname)
+    | _ ->
+        Source.all_formals_untainted pdesc
+
 
   let pp fmt = function
-    | Endpoint (formal_name, _)
-     -> F.fprintf fmt "Endpoint[%s]" (Mangled.to_string formal_name)
-    | EnvironmentVariable
-     -> F.fprintf fmt "EnvironmentVariable"
-    | File
-     -> F.fprintf fmt "File"
-    | CommandLineFlag var
-     -> F.fprintf fmt "CommandLineFlag[%a]" Var.pp var
-    | Other
-     -> F.fprintf fmt "Other"
+    | Endpoint (formal_name, _) ->
+        F.fprintf fmt "Endpoint[%s]" (Mangled.to_string formal_name)
+    | EnvironmentVariable ->
+        F.fprintf fmt "EnvironmentVariable"
+    | File ->
+        F.fprintf fmt "File"
+    | CommandLineFlag var ->
+        F.fprintf fmt "CommandLineFlag[%a]" Var.pp var
+    | Other ->
+        F.fprintf fmt "Other"
+
 end
 
 module CppSource = Source.Make (SourceKind)
@@ -151,14 +158,15 @@ module SinkKind = struct
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
   let of_string = function
-    | "Allocation"
-     -> Allocation
-    | "ShellExec"
-     -> ShellExec
-    | "SQL"
-     -> SQL
-    | _
-     -> Other
+    | "Allocation" ->
+        Allocation
+    | "ShellExec" ->
+        ShellExec
+    | "SQL" ->
+        SQL
+    | _ ->
+        Other
+
 
   let external_sinks =
     List.map
@@ -166,12 +174,15 @@ module SinkKind = struct
         (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], kind, index))
       (QuandaryConfig.Sink.of_json Config.quandary_sinks)
 
+
   (* taint the nth parameter (0-indexed) *)
   let taint_nth n kind actuals =
     if n < List.length actuals then Some (kind, IntSet.singleton n) else None
 
+
   let taint_all kind actuals =
     Some (kind, IntSet.of_list (List.mapi ~f:(fun actual_num _ -> actual_num) actuals))
+
 
   (* return Some(sink kind) if [procedure_name] is in the list of externally specified sinks *)
   let get_external_sink pname actuals =
@@ -189,6 +200,7 @@ module SinkKind = struct
         else None)
       external_sinks
 
+
   let get pname actuals _ =
     let is_buffer_class cpp_name =
       (* assume it's a buffer class if it's "vector-y", "array-y", or "string-y". don't want to
@@ -204,26 +216,26 @@ module SinkKind = struct
     match pname with
     | Typ.Procname.ObjC_Cpp cpp_name -> (
       match Typ.Procname.get_method pname with
-      | "operator[]" when Config.developer_mode && is_buffer_class cpp_name
-       -> taint_nth 1 BufferAccess actuals
-      | _
-       -> get_external_sink pname actuals )
+      | "operator[]" when Config.developer_mode && is_buffer_class cpp_name ->
+          taint_nth 1 BufferAccess actuals
+      | _ ->
+          get_external_sink pname actuals )
     | Typ.Procname.C _
-      when Config.developer_mode && Typ.Procname.equal pname BuiltinDecl.__array_access
-     -> taint_all BufferAccess actuals
-    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__set_array_length
-     -> (* called when creating a stack-allocated array *)
+      when Config.developer_mode && Typ.Procname.equal pname BuiltinDecl.__array_access ->
+        taint_all BufferAccess actuals
+    | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__set_array_length ->
+        (* called when creating a stack-allocated array *)
         taint_nth 1 Allocation actuals
     | Typ.Procname.C _ -> (
       match Typ.Procname.to_string pname with
-      | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system"
-       -> taint_all ShellExec actuals
-      | "popen"
-       -> taint_nth 0 ShellExec actuals
-      | ("brk" | "calloc" | "malloc" | "realloc" | "sbrk") when Config.developer_mode
-       -> taint_all Allocation actuals
-      | "strcpy" when Config.developer_mode
-       -> (* warn if source array is tainted *)
+      | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system" ->
+          taint_all ShellExec actuals
+      | "popen" ->
+          taint_nth 0 ShellExec actuals
+      | ("brk" | "calloc" | "malloc" | "realloc" | "sbrk") when Config.developer_mode ->
+          taint_all Allocation actuals
+      | "strcpy" when Config.developer_mode ->
+          (* warn if source array is tainted *)
           taint_nth 1 BufferAccess actuals
       | "memcpy"
       | "memmove"
@@ -231,29 +243,31 @@ module SinkKind = struct
       | "strncpy"
       | "wmemcpy"
       | "wmemmove"
-        when Config.developer_mode
-       -> (* warn if count argument is tainted *)
+        when Config.developer_mode ->
+          (* warn if count argument is tainted *)
           taint_nth 2 BufferAccess actuals
-      | _
-       -> get_external_sink pname actuals )
-    | Typ.Procname.Block _
-     -> None
-    | pname
-     -> L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
+      | _ ->
+          get_external_sink pname actuals )
+    | Typ.Procname.Block _ ->
+        None
+    | pname ->
+        L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
+
 
   let pp fmt kind =
     F.fprintf fmt
       ( match kind with
-      | Allocation
-       -> "Allocation"
-      | BufferAccess
-       -> "BufferAccess"
-      | ShellExec
-       -> "ShellExec"
-      | SQL
-       -> "SQL"
-      | Other
-       -> "Other" )
+      | Allocation ->
+          "Allocation"
+      | BufferAccess ->
+          "BufferAccess"
+      | ShellExec ->
+          "ShellExec"
+      | SQL ->
+          "SQL"
+      | Other ->
+          "Other" )
+
 end
 
 module CppSink = Sink.Make (SinkKind)
@@ -270,24 +284,25 @@ include Trace.Make (struct
       || String.is_substring ~substring:"char*" lowercase_typ
     in
     match (Source.kind source, Sink.kind sink) with
-    | Endpoint _, BufferAccess
-     -> (* untrusted data from an endpoint flowing into a buffer *)
+    | Endpoint _, BufferAccess ->
+        (* untrusted data from an endpoint flowing into a buffer *)
         true
-    | Endpoint (_, typ), (ShellExec | SQL)
-     -> (* untrusted string data flowing to shell exec/SQL *)
+    | Endpoint (_, typ), (ShellExec | SQL) ->
+        (* untrusted string data flowing to shell exec/SQL *)
         is_stringy typ
-    | (EnvironmentVariable | File), (BufferAccess | ShellExec | SQL)
-     -> (* untrusted environment var or file data flowing to buffer or code injection *)
+    | (EnvironmentVariable | File), (BufferAccess | ShellExec | SQL) ->
+        (* untrusted environment var or file data flowing to buffer or code injection *)
         true
-    | (Endpoint _ | EnvironmentVariable | File), Allocation
-     -> (* untrusted data flowing to memory allocation *)
+    | (Endpoint _ | EnvironmentVariable | File), Allocation ->
+        (* untrusted data flowing to memory allocation *)
         true
-    | CommandLineFlag _, (Allocation | BufferAccess | Other | ShellExec | SQL)
-     -> (* data controlled by a command line flag flowing somewhere sensitive *)
+    | CommandLineFlag _, (Allocation | BufferAccess | Other | ShellExec | SQL) ->
+        (* data controlled by a command line flag flowing somewhere sensitive *)
         true
-    | Other, _
-     -> (* Other matches everything *)
+    | Other, _ ->
+        (* Other matches everything *)
         true
-    | _, Other
-     -> true
+    | _, Other ->
+        true
+
 end)

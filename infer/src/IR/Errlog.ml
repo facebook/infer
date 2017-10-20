@@ -32,15 +32,17 @@ let pp_loc_trace fmt l = PrettyPrintable.pp_collection ~pp_item:pp_loc_trace_ele
 let contains_exception loc_trace_elem =
   let pred nt =
     match nt with
-    | Exception _
-     -> true
-    | Condition _ | Procedure_start _ | Procedure_end _
-     -> false
+    | Exception _ ->
+        true
+    | Condition _ | Procedure_start _ | Procedure_end _ ->
+        false
   in
   List.exists ~f:pred loc_trace_elem.lt_node_tags
 
+
 let make_trace_element lt_level lt_loc lt_description lt_node_tags =
   {lt_level; lt_loc; lt_description; lt_node_tags}
+
 
 (** Trace of locations *)
 type loc_trace = loc_trace_elem list
@@ -48,19 +50,20 @@ type loc_trace = loc_trace_elem list
 let compute_local_exception_line loc_trace =
   let compute_local_exception_line state step =
     match state with
-    | `Stop _
-     -> state
-    | `Continue (last_known_step_at_level_zero_opt, line_opt)
-     -> let last_known_step_at_level_zero_opt' =
+    | `Stop _ ->
+        state
+    | `Continue (last_known_step_at_level_zero_opt, line_opt) ->
+        let last_known_step_at_level_zero_opt' =
           if Int.equal step.lt_level 0 then Some step else last_known_step_at_level_zero_opt
         in
         match last_known_step_at_level_zero_opt' with
-        | Some step_zero when contains_exception step
-         -> `Stop (last_known_step_at_level_zero_opt', Some step_zero.lt_loc.line)
-        | _
-         -> `Continue (last_known_step_at_level_zero_opt', line_opt)
+        | Some step_zero when contains_exception step ->
+            `Stop (last_known_step_at_level_zero_opt', Some step_zero.lt_loc.line)
+        | _ ->
+            `Continue (last_known_step_at_level_zero_opt', line_opt)
   in
   snd (List_.fold_until ~init:(`Continue (None, None)) ~f:compute_local_exception_line loc_trace)
+
 
 type node_id_key = {node_id: int; node_key: int}
 
@@ -103,11 +106,13 @@ module ErrLogHash = struct
       Hashtbl.hash
         (key.err_kind, key.in_footprint, key.err_name, Localise.error_desc_hash key.err_desc)
 
+
     let equal key1 key2 =
       [%compare.equal : Exceptions.err_kind * bool * IssueType.t]
         (key1.err_kind, key1.in_footprint, key1.err_name)
         (key2.err_kind, key2.in_footprint, key2.err_name)
       && Localise.error_desc_equal key1.err_desc key2.err_desc
+
   end
 
   include Hashtbl.Make (Key)
@@ -122,6 +127,7 @@ let compare x y =
   let bindings x = ErrLogHash.fold (fun k d l -> (k, d) :: l) x [] in
   [%compare : (ErrLogHash.Key.t * ErrDataSet.t) list] (bindings x) (bindings y)
 
+
 (** Empty error log *)
 let empty () = ErrLogHash.create 13
 
@@ -134,10 +140,12 @@ let iter (f: iter_fun) (err_log: t) =
     (fun err_key set -> ErrDataSet.iter (fun err_data -> f err_key err_data) set)
     err_log
 
+
 let fold (f: err_key -> err_data -> 'a -> 'a) t acc =
   ErrLogHash.fold
     (fun err_key set acc -> ErrDataSet.fold (fun err_data acc -> f err_key err_data acc) set acc)
     t acc
+
 
 (** Return the number of elements in the error log which satisfy [filter] *)
 let size filter (err_log: t) =
@@ -148,6 +156,7 @@ let size filter (err_log: t) =
     err_log ;
   !count
 
+
 (** Print errors from error log *)
 let pp_errors fmt (errlog: t) =
   let f key _ =
@@ -156,6 +165,7 @@ let pp_errors fmt (errlog: t) =
   in
   ErrLogHash.iter f errlog
 
+
 (** Print warnings from error log *)
 let pp_warnings fmt (errlog: t) =
   let f key _ =
@@ -163,6 +173,7 @@ let pp_warnings fmt (errlog: t) =
       F.fprintf fmt "%a %a@ " IssueType.pp key.err_name Localise.pp_error_desc key.err_desc
   in
   ErrLogHash.iter f errlog
+
 
 (** Print an error log in html format *)
 let pp_html source path_to_root fmt (errlog: t) =
@@ -191,15 +202,17 @@ let pp_html source path_to_root fmt (errlog: t) =
   F.fprintf fmt "%aINFOS DURING RE-EXECUTION@\n" Io_infer.Html.pp_hline () ;
   ErrLogHash.iter (pp_err_log false Exceptions.Kinfo) errlog
 
+
 (* I use string in case we want to display a different name to the user*)
 let severity_to_str severity =
   match severity with
-  | Exceptions.High
-   -> "HIGH"
-  | Exceptions.Medium
-   -> "MEDIUM"
-  | Exceptions.Low
-   -> "LOW"
+  | Exceptions.High ->
+      "HIGH"
+  | Exceptions.Medium ->
+      "MEDIUM"
+  | Exceptions.Low ->
+      "LOW"
+
 
 (** Add an error description to the error log unless there is
     one already at the same node + session; return true if added *)
@@ -210,11 +223,15 @@ let add_issue tbl err_key (err_datas: ErrDataSet.t) : bool =
     else (
       ErrLogHash.replace tbl err_key (ErrDataSet.union err_datas current_eds) ;
       true )
-  with Not_found -> ErrLogHash.add tbl err_key err_datas ; true
+  with Not_found ->
+    ErrLogHash.add tbl err_key err_datas ;
+    true
+
 
 (** Update an old error log with a new one *)
 let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
+
 
 let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_file ?doc_url exn =
   let error = Exceptions.recognize_exception exn in
@@ -226,10 +243,10 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
   in
   let hide_memory_error =
     match Localise.error_desc_get_bucket error.description with
-    | Some bucket when String.equal bucket Mleak_buckets.ml_bucket_unknown_origin
-     -> not Mleak_buckets.should_raise_leak_unknown_origin
-    | _
-     -> false
+    | Some bucket when String.equal bucket Mleak_buckets.ml_bucket_unknown_origin ->
+        not Mleak_buckets.should_raise_leak_unknown_origin
+    | _ ->
+        false
   in
   let log_it =
     Exceptions.equal_visibility error.visibility Exceptions.Exn_user
@@ -263,7 +280,8 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
     let print_now () =
       L.(debug Analysis Medium)
         "@\n%a@\n@?"
-        (Exceptions.pp_err ~node_key loc err_kind error.name error.description error.ml_loc) () ;
+        (Exceptions.pp_err ~node_key loc err_kind error.name error.description error.ml_loc)
+        () ;
       if err_kind <> Exceptions.Kerror then
         let warn_str =
           let pp fmt =
@@ -274,16 +292,17 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
         in
         let d =
           match err_kind with
-          | Exceptions.Kerror
-           -> L.d_error
-          | Exceptions.Kwarning
-           -> L.d_warning
-          | Exceptions.Kinfo | Exceptions.Kadvice | Exceptions.Klike
-           -> L.d_info
+          | Exceptions.Kerror ->
+              L.d_error
+          | Exceptions.Kwarning ->
+              L.d_warning
+          | Exceptions.Kinfo | Exceptions.Kadvice | Exceptions.Klike ->
+              L.d_info
         in
         d warn_str ; L.d_ln ()
     in
     if should_print_now then print_now ()
+
 
 type err_log = t
 
@@ -316,6 +335,7 @@ module Err_table = struct
     let pp ~key:err_string ~data:count = F.fprintf fmt " %s:%d" err_string count in
     String.Map.iteri ~f:pp !err_name_map
 
+
   module LocMap = Caml.Map.Make (struct
     type t = ErrDataSet.elt
 
@@ -333,20 +353,20 @@ module Err_table = struct
     let add_err nslm key =
       let map =
         match (key.in_footprint, key.err_kind) with
-        | true, Exceptions.Kerror
-         -> map_err_fp
-        | false, Exceptions.Kerror
-         -> map_err_re
-        | true, Exceptions.Kwarning
-         -> map_warn_fp
-        | false, Exceptions.Kwarning
-         -> map_warn_re
-        | _, Exceptions.Kinfo
-         -> map_info
-        | _, Exceptions.Kadvice
-         -> map_advice
-        | _, Exceptions.Klike
-         -> map_likes
+        | true, Exceptions.Kerror ->
+            map_err_fp
+        | false, Exceptions.Kerror ->
+            map_err_re
+        | true, Exceptions.Kwarning ->
+            map_warn_fp
+        | false, Exceptions.Kwarning ->
+            map_warn_re
+        | _, Exceptions.Kinfo ->
+            map_info
+        | _, Exceptions.Kadvice ->
+            map_advice
+        | _, Exceptions.Klike ->
+            map_likes
       in
       try
         let err_list = LocMap.find nslm !map in
@@ -378,6 +398,7 @@ module Err_table = struct
     LocMap.iter
       (fun nslm err_names -> F.fprintf fmt "%a" (pp Exceptions.Kwarning nslm) err_names)
       !map_warn_re
+
 end
 
 type err_table = Err_table.t
@@ -392,6 +413,7 @@ let extend_table err_table err_log = ErrLogHash.iter (Err_table.count_err err_ta
 let err_table_size_footprint ekind =
   let filter ekind' in_footprint = Exceptions.equal_err_kind ekind ekind' && in_footprint in
   Err_table.table_size filter
+
 
 (** Print stats for the global per-file error table *)
 let pp_err_table_stats ekind = Err_table.pp_stats_footprint ekind

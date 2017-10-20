@@ -22,7 +22,9 @@ let copy_formatter f =
   let out_string, flush = F.pp_get_formatter_output_functions f () in
   let out_funs = F.pp_get_formatter_out_functions f () in
   let new_f = F.make_formatter out_string flush in
-  F.pp_set_formatter_out_functions new_f out_funs ; new_f
+  F.pp_set_formatter_out_functions new_f out_funs ;
+  new_f
+
 
 (* Return a formatter that multiplexes to [fmt1] and [fmt2]. *)
 let dup_formatter fmt1 fmt2 =
@@ -35,6 +37,7 @@ let dup_formatter fmt1 fmt2 =
     ; out_newline= (fun () -> out_funs1.out_newline () ; out_funs2.out_newline ())
     ; out_spaces= (fun n -> out_funs1.out_spaces n ; out_funs2.out_spaces n) } ;
   f
+
 
 (* can be set up to emit to a file later on, but can also be left as-is and logging will only happen
    on the console *)
@@ -69,7 +72,10 @@ let mk_file_formatter category0 =
       prev_category := prefix ;
       out_functions_orig.out_string prefix 0 (String.length prefix) )
   in
-  let out_string s p n = print_prefix_if_newline () ; out_functions_orig.out_string s p n in
+  let out_string s p n =
+    print_prefix_if_newline () ;
+    out_functions_orig.out_string s p n
+  in
   let out_newline () =
     print_prefix_if_newline () ;
     out_functions_orig.out_newline () ;
@@ -77,8 +83,9 @@ let mk_file_formatter category0 =
   in
   let out_spaces n = print_prefix_if_newline () ; out_functions_orig.out_spaces n in
   F.pp_set_formatter_out_functions f
-    {F.out_string= out_string; out_flush= out_functions_orig.out_flush; out_newline; out_spaces} ;
+    {F.out_string; out_flush= out_functions_orig.out_flush; out_newline; out_spaces} ;
   f
+
 
 let register_formatter =
   let all_prefixes = ref [] in
@@ -86,28 +93,30 @@ let register_formatter =
     all_prefixes := prefix :: !all_prefixes ;
     (* lazy so that we get a chance to register all prefixes before computing their max length for
        alignment purposes *)
-    ( lazy
-    (let max_prefix = List.map ~f:String.length !all_prefixes |> List.fold_left ~f:max ~init:0 in
-     let fill =
-       let n = max_prefix - String.length prefix in
-       String.make n ' '
-     in
-     let justified_prefix = fill ^ prefix in
-     let mk_formatters () =
-       let file = mk_file_formatter justified_prefix in
-       let console_file =
-         let console = if use_stdout then F.std_formatter else F.err_formatter in
-         dup_formatter console file
+    lazy
+      (let max_prefix = List.map ~f:String.length !all_prefixes |> List.fold_left ~f:max ~init:0 in
+       let fill =
+         let n = max_prefix - String.length prefix in
+         String.make n ' '
        in
-       {file; console_file}
-     in
-     let formatters = mk_formatters () in
-     let formatters_ref = ref formatters in
-     logging_formatters := ((formatters_ref, mk_formatters), formatters) :: !logging_formatters ;
-     formatters_ref) )
+       let justified_prefix = fill ^ prefix in
+       let mk_formatters () =
+         let file = mk_file_formatter justified_prefix in
+         let console_file =
+           let console = if use_stdout then F.std_formatter else F.err_formatter in
+           dup_formatter console file
+         in
+         {file; console_file}
+       in
+       let formatters = mk_formatters () in
+       let formatters_ref = ref formatters in
+       logging_formatters := ((formatters_ref, mk_formatters), formatters) :: !logging_formatters ;
+       formatters_ref)
+
 
 let flush_formatters {file; console_file} =
   F.pp_print_flush file () ; F.pp_print_flush console_file ()
+
 
 let reset_formatters () =
   let refresh_formatter ((formatters_ref, mk_formatters), formatters) =
@@ -124,6 +133,7 @@ let reset_formatters () =
   if not !is_newline then F.pp_print_newline (fst !log_file) () ;
   is_newline := true
 
+
 let close_logs () =
   let close_fmt (_, formatters) = flush_formatters formatters in
   List.iter ~f:close_fmt !logging_formatters ;
@@ -131,18 +141,20 @@ let close_logs () =
   F.pp_print_flush fmt () ;
   match chan with `Console -> () | `Channel c -> Out_channel.close c
 
+
 let () = Epilogues.register ~f:close_logs "flushing logs and closing log file"
 
 let log ~to_console ?(to_file= true) (lazy formatters) =
   match (to_console, to_file) with
-  | false, false
-   -> F.ifprintf F.std_formatter
-  | true, _ when not Config.print_logs
-   -> F.fprintf !formatters.console_file
-  | _
-   -> (* to_console might be true, but in that case so is Config.print_logs so do not print to
+  | false, false ->
+      F.ifprintf F.std_formatter
+  | true, _ when not Config.print_logs ->
+      F.fprintf !formatters.console_file
+  | _ ->
+      (* to_console might be true, but in that case so is Config.print_logs so do not print to
          stderr because it will get logs from the log file already *)
       F.fprintf !formatters.file
+
 
 let debug_file_fmts = register_formatter "debug"
 
@@ -173,6 +185,7 @@ let progress_bar text =
     ~to_console:(Config.show_progress_bar && not Config.quiet)
     ~to_file:true progress_file_fmts "%s@?" text
 
+
 let progressbar_file () = progress_bar Config.log_analysis_file
 
 let progressbar_procedure () = progress_bar Config.log_analysis_procedure
@@ -180,14 +193,15 @@ let progressbar_procedure () = progress_bar Config.log_analysis_procedure
 let progressbar_timeout_event failure_kind =
   if Config.stats_mode || Config.debug_mode then
     match failure_kind with
-    | SymOp.FKtimeout
-     -> progress_bar Config.log_analysis_wallclock_timeout
-    | SymOp.FKsymops_timeout _
-     -> progress_bar Config.log_analysis_symops_timeout
-    | SymOp.FKrecursion_timeout _
-     -> progress_bar Config.log_analysis_recursion_timeout
-    | SymOp.FKcrash msg
-     -> progress_bar (Printf.sprintf "%s(%s)" Config.log_analysis_crash msg)
+    | SymOp.FKtimeout ->
+        progress_bar Config.log_analysis_wallclock_timeout
+    | SymOp.FKsymops_timeout _ ->
+        progress_bar Config.log_analysis_symops_timeout
+    | SymOp.FKrecursion_timeout _ ->
+        progress_bar Config.log_analysis_recursion_timeout
+    | SymOp.FKcrash msg ->
+        progress_bar (Printf.sprintf "%s(%s)" Config.log_analysis_crash msg)
+
 
 let user_warning fmt = log ~to_console:(not Config.quiet) user_warning_file_fmts fmt
 
@@ -197,6 +211,7 @@ type debug_level = Quiet | Medium | Verbose [@@deriving compare]
 
 let debug_level_of_int n =
   if n <= 0 then Quiet else if Int.equal n 1 then Medium else (* >= 2 *) Verbose
+
 
 let analysis_debug_level = debug_level_of_int Config.debug_level_analysis
 
@@ -213,19 +228,20 @@ type debug_kind = Analysis | BufferOverrun | Capture | Linters | MergeCapture
 let debug kind level fmt =
   let base_level =
     match kind with
-    | Analysis
-     -> analysis_debug_level
-    | BufferOverrun
-     -> bufferoverrun_debug_level
-    | Capture
-     -> capture_debug_level
-    | Linters
-     -> linters_debug_level
-    | MergeCapture
-     -> mergecapture_debug_level
+    | Analysis ->
+        analysis_debug_level
+    | BufferOverrun ->
+        bufferoverrun_debug_level
+    | Capture ->
+        capture_debug_level
+    | Linters ->
+        linters_debug_level
+    | MergeCapture ->
+        mergecapture_debug_level
   in
   let to_file = compare_debug_level level base_level <= 0 in
   log ~to_console:false ~to_file debug_file_fmts fmt
+
 
 let result fmt = log ~to_console:true result_file_fmts fmt
 
@@ -250,26 +266,29 @@ let pp_ml_loc_opt fmt ml_loc_opt =
   if Config.developer_mode then
     match ml_loc_opt with None -> () | Some ml_loc -> F.fprintf fmt "(%a)" pp_ml_loc ml_loc
 
+
 let log_of_kind error fmt =
   match error with
-  | UserError
-   -> log ~to_console:false user_error_file_fmts fmt
-  | ExternalError
-   -> log ~to_console:false external_error_file_fmts fmt
-  | InternalError
-   -> log ~to_console:false internal_error_file_fmts fmt
+  | UserError ->
+      log ~to_console:false user_error_file_fmts fmt
+  | ExternalError ->
+      log ~to_console:false external_error_file_fmts fmt
+  | InternalError ->
+      log ~to_console:false internal_error_file_fmts fmt
+
 
 let die error msg =
   F.kasprintf (fun msg -> log_of_kind error "%s@\n" msg ; raise_error error ~msg) msg
 
+
 (* create new channel from the log file, and dumps the contents of the temporary log buffer there *)
 let setup_log_file () =
   match !log_file with
-  | _, `Channel _
-   -> (* already set up *)
+  | _, `Channel _ ->
+      (* already set up *)
       ()
-  | _, `Console
-   -> let fmt, chan, preexisting_logfile =
+  | _, `Console ->
+      let fmt, chan, preexisting_logfile =
         let results_dir =
           (* if invoked in a sub-dir (e.g., in Buck integrations), log inside the original log
               file *)
@@ -292,6 +311,7 @@ let setup_log_file () =
       if CLOpt.is_originator && preexisting_logfile then
         phase
           "============================================================@\n= New infer execution begins@\n============================================================"
+
 
 (** type of printable elements *)
 type print_type =
@@ -347,6 +367,7 @@ let add_print_action pact =
   if Config.write_html then delayed_actions := pact :: !delayed_actions
   else if not Config.only_cheap_debug then !printer_hook (fst !log_file) pact
 
+
 (** reset the delayed print actions *)
 let reset_delayed_prints () = delayed_actions := []
 
@@ -385,6 +406,7 @@ let d_indent indent =
   let s = ref "" in
   for _ = 1 to indent do s := "  " ^ !s done ;
   if indent <> 0 then add_print_action (PTstr, Obj.repr !s)
+
 
 (** dump command to increase the indentation level *)
 let d_increase_indent (indent: int) = add_print_action (PTincrease_indent, Obj.repr indent)

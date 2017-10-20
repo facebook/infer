@@ -45,37 +45,41 @@ let version_numbers : t list =
   ; (1348.0, "10.0")
   ; (1348.22, "10.2") ]
 
+
 let sort_versions versions =
   let compare (version_float1, _) (version_float2, _) =
     Float.compare version_float1 version_float2
   in
   List.sort ~cmp:compare versions
 
+
 let version_of number_s : human_readable_version option =
   let epsilon = 0.001 in
   let rec version_of_aux version_numbers number =
     match version_numbers with
-    | (version_n, version_s) :: (next_version_n, next_version_s) :: rest
-     -> if number -. version_n < epsilon && number -. version_n > ~-.epsilon then Some version_s
+    | (version_n, version_s) :: (next_version_n, next_version_s) :: rest ->
+        if number -. version_n < epsilon && number -. version_n > ~-.epsilon then Some version_s
         else if number >= version_n +. epsilon && number <= next_version_n -. epsilon then
           Some next_version_s
         else version_of_aux ((next_version_n, next_version_s) :: rest) number
-    | [(version_n, version_s)]
-     -> if number >= version_n then Some version_s else None
-    | []
-     -> None
+    | [(version_n, version_s)] ->
+        if number >= version_n then Some version_s else None
+    | [] ->
+        None
   in
   let number_opt =
     try Some (float_of_string number_s)
     with Failure _ -> None
   in
   match number_opt with
-  | None
-   -> None
-  | Some number
-   -> version_of_aux (sort_versions version_numbers) number
+  | None ->
+      None
+  | Some number ->
+      version_of_aux (sort_versions version_numbers) number
+
 
 let pp_diff_of_version_opt fmt (expected, actual) =
   let option_to_string opt = Option.value ~default:"" opt in
   Format.fprintf fmt "Expected: [%s] Found: [%s]" (option_to_string expected)
     (option_to_string actual)
+

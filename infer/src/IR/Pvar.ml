@@ -44,66 +44,72 @@ let compare_modulo_this x y =
       else if String.equal "this" (Mangled.to_string x.pv_name) then 0
       else compare_pvar_kind x.pv_kind y.pv_kind
 
+
 let equal = [%compare.equal : t]
 
 let pp_translation_unit fmt = function
-  | TUFile fname
-   -> SourceFile.pp fmt fname
-  | TUExtern
-   -> Format.fprintf fmt "EXTERN"
+  | TUFile fname ->
+      SourceFile.pp fmt fname
+  | TUExtern ->
+      Format.fprintf fmt "EXTERN"
+
 
 let _pp f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
-  | Local_var n
-   -> if !Config.pp_simple then F.fprintf f "%a" Mangled.pp name
+  | Local_var n ->
+      if !Config.pp_simple then F.fprintf f "%a" Mangled.pp name
       else F.fprintf f "%a$%a" Typ.Procname.pp n Mangled.pp name
-  | Callee_var n
-   -> if !Config.pp_simple then F.fprintf f "%a|callee" Mangled.pp name
+  | Callee_var n ->
+      if !Config.pp_simple then F.fprintf f "%a|callee" Mangled.pp name
       else F.fprintf f "%a$%a|callee" Typ.Procname.pp n Mangled.pp name
-  | Abduced_retvar (n, l)
-   -> if !Config.pp_simple then F.fprintf f "%a|abducedRetvar" Mangled.pp name
+  | Abduced_retvar (n, l) ->
+      if !Config.pp_simple then F.fprintf f "%a|abducedRetvar" Mangled.pp name
       else F.fprintf f "%a$[%a]%a|abducedRetvar" Typ.Procname.pp n Location.pp l Mangled.pp name
-  | Abduced_ref_param (n, index, l)
-   -> if !Config.pp_simple then F.fprintf f "%a|abducedRefParam%d" Mangled.pp name index
+  | Abduced_ref_param (n, index, l) ->
+      if !Config.pp_simple then F.fprintf f "%a|abducedRefParam%d" Mangled.pp name index
       else F.fprintf f "%a$[%a]%a|abducedRefParam" Typ.Procname.pp n Location.pp l Mangled.pp name
-  | Global_var (translation_unit, is_const, is_pod, _)
-   -> F.fprintf f "#GB<%a%s%s>$%a" pp_translation_unit translation_unit
+  | Global_var (translation_unit, is_const, is_pod, _) ->
+      F.fprintf f "#GB<%a%s%s>$%a" pp_translation_unit translation_unit
         (if is_const then "|const" else "")
         (if not is_pod then "|!pod" else "")
         Mangled.pp name
-  | Seed_var
-   -> F.fprintf f "old_%a" Mangled.pp name
+  | Seed_var ->
+      F.fprintf f "old_%a" Mangled.pp name
+
 
 (** Pretty print a program variable in latex. *)
 let pp_latex f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
-  | Local_var _
-   -> Latex.pp_string Latex.Roman f (Mangled.to_string name)
-  | Callee_var _
-   -> F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
+  | Local_var _ ->
+      Latex.pp_string Latex.Roman f (Mangled.to_string name)
+  | Callee_var _ ->
+      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "callee"
-  | Abduced_retvar _
-   -> F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
+  | Abduced_retvar _ ->
+      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "abducedRetvar"
-  | Abduced_ref_param _
-   -> F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
+  | Abduced_ref_param _ ->
+      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "abducedRefParam"
-  | Global_var _
-   -> Latex.pp_string Latex.Boldface f (Mangled.to_string name)
-  | Seed_var
-   -> F.fprintf f "%a^{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
+  | Global_var _ ->
+      Latex.pp_string Latex.Boldface f (Mangled.to_string name)
+  | Seed_var ->
+      F.fprintf f "%a^{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
         (Latex.pp_string Latex.Roman) "old"
+
 
 (** Pretty print a pvar which denotes a value, not an address *)
 let pp_value pe f pv =
   match pe.Pp.kind with TEXT -> _pp f pv | HTML -> _pp f pv | LATEX -> pp_latex f pv
 
+
 (** Pretty print a program variable. *)
 let pp pe f pv =
   let ampersand = match pe.Pp.kind with TEXT -> "&" | HTML -> "&amp;" | LATEX -> "\\&" in
   F.fprintf f "%s%a" ampersand (pp_value pe) pv
+
 
 (** Dump a program variable. *)
 let d (pvar: t) = L.add_print_action (L.PTpvar, Obj.repr pvar)
@@ -123,12 +129,14 @@ let get_simplified_name pv =
   match String.rsplit2 s ~on:'.' with
   | Some (s1, s2) -> (
     match String.rsplit2 s1 ~on:'.' with Some (_, s4) -> s4 ^ "." ^ s2 | _ -> s )
-  | _
-   -> s
+  | _ ->
+      s
+
 
 (** Check if the pvar is an abucted return var or param passed by ref *)
 let is_abduced pv =
   match pv.pv_kind with Abduced_retvar _ | Abduced_ref_param _ -> true | _ -> false
+
 
 (** Turn a pvar into a seed pvar (which stored the initial value) *)
 let to_seed pv = {pv with pv_kind= Seed_var}
@@ -173,10 +181,11 @@ let is_frontend_tmp pvar =
   is_sil_tmp name
   ||
   match pvar.pv_kind with
-  | Local_var pname
-   -> Typ.Procname.is_java pname && is_bytecode_tmp name
-  | _
-   -> false
+  | Local_var pname ->
+      Typ.Procname.is_java pname && is_bytecode_tmp name
+  | _ ->
+      false
+
 
 (* in Sawja, variables like $T0_18 are temporaries, but not SSA vars. *)
 let is_ssa_frontend_tmp pvar =
@@ -185,24 +194,27 @@ let is_ssa_frontend_tmp pvar =
   let name = to_string pvar in
   not (String.contains name '_' && String.contains name '$')
 
+
 (** Turn an ordinary program variable into a callee program variable *)
 let to_callee pname pvar =
   match pvar.pv_kind with
-  | Local_var _
-   -> {pvar with pv_kind= Callee_var pname}
-  | Global_var _
-   -> pvar
-  | Callee_var _ | Abduced_retvar _ | Abduced_ref_param _ | Seed_var
-   -> L.d_str "Cannot convert pvar to callee: " ;
+  | Local_var _ ->
+      {pvar with pv_kind= Callee_var pname}
+  | Global_var _ ->
+      pvar
+  | Callee_var _ | Abduced_retvar _ | Abduced_ref_param _ | Seed_var ->
+      L.d_str "Cannot convert pvar to callee: " ;
       d pvar ;
       L.d_ln () ;
       assert false
+
 
 let name_hash (name: Mangled.t) = Hashtbl.hash name
 
 (** [mk name proc_name] creates a program var with the given function name *)
 let mk (name: Mangled.t) (proc_name: Typ.Procname.t) : t =
   {pv_hash= name_hash name; pv_name= name; pv_kind= Local_var proc_name}
+
 
 let get_ret_pvar pname = mk Ident.name_return pname
 
@@ -211,6 +223,7 @@ let get_ret_pvar pname = mk Ident.name_return pname
 let mk_callee (name: Mangled.t) (proc_name: Typ.Procname.t) : t =
   {pv_hash= name_hash name; pv_name= name; pv_kind= Callee_var proc_name}
 
+
 (** create a global variable with the given name *)
 let mk_global ?(is_constexpr= false) ?(is_pod= true) ?(is_static_local= false) (name: Mangled.t)
     translation_unit : t =
@@ -218,27 +231,32 @@ let mk_global ?(is_constexpr= false) ?(is_pod= true) ?(is_static_local= false) (
   ; pv_name= name
   ; pv_kind= Global_var (translation_unit, is_constexpr, is_pod, is_static_local) }
 
+
 (** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! *)
 let mk_tmp name pname =
   let id = Ident.create_fresh Ident.knormal in
   let pvar_mangled = Mangled.from_string (tmp_prefix ^ name ^ Ident.to_string id) in
   mk pvar_mangled pname
 
+
 (** create an abduced return variable for a call to [proc_name] at [loc] *)
 let mk_abduced_ret (proc_name: Typ.Procname.t) (loc: Location.t) : t =
   let name = Mangled.from_string ("$RET_" ^ Typ.Procname.to_unique_id proc_name) in
   {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_retvar (proc_name, loc)}
 
+
 let mk_abduced_ref_param (proc_name: Typ.Procname.t) (index: int) (loc: Location.t) : t =
   let name = Mangled.from_string ("$REF_PARAM_VAL_" ^ Typ.Procname.to_unique_id proc_name) in
   {pv_hash= name_hash name; pv_name= name; pv_kind= Abduced_ref_param (proc_name, index, loc)}
 
+
 let get_translation_unit pvar =
   match pvar.pv_kind with
-  | Global_var (tu, _, _, _)
-   -> tu
-  | _
-   -> L.(die InternalError) "Expected a global variable"
+  | Global_var (tu, _, _, _) ->
+      tu
+  | _ ->
+      L.(die InternalError) "Expected a global variable"
+
 
 let is_compile_constant pvar = match pvar.pv_kind with Global_var (_, b, _, _) -> b | _ -> false
 
@@ -246,9 +264,10 @@ let is_pod pvar = match pvar.pv_kind with Global_var (_, _, b, _) -> b | _ -> tr
 
 let get_initializer_pname {pv_name; pv_kind} =
   match pv_kind with
-  | Global_var _
-   -> Some
+  | Global_var _ ->
+      Some
         (Typ.Procname.from_string_c_fun
            (Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name))
-  | _
-   -> None
+  | _ ->
+      None
+

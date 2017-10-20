@@ -18,8 +18,10 @@ let current_report =
   ; create_fake_jsonbug ~hash:2 ()
   ; create_fake_jsonbug ~hash:2 () ]
 
+
 let previous_report =
   [create_fake_jsonbug ~hash:1 (); create_fake_jsonbug ~hash:4 (); create_fake_jsonbug ~hash:1 ()]
+
 
 let diff = Differential.of_reports ~current_report ~previous_report
 
@@ -38,16 +40,24 @@ let test_diff_keeps_duplicated_hashes =
   let do_assert _ = assert_equal ~pp_diff hashes_expected hashes_found in
   "test_diff_keeps_duplicated_hashes" >:: do_assert
 
+
 (* Sets operations to compute introduced, fixed and preexisting issues are correct *)
 let test_set_operations =
   let do_assert _ =
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of introduced") [2; 2; 2; 3]
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Hashes of introduced")
+      [2; 2; 2; 3]
       (sorted_hashes_of_issues diff.introduced) ;
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of fixed") [4]
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Hashes of fixed")
+      [4]
       (sorted_hashes_of_issues diff.fixed) ;
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting") [1]
+    assert_equal
+      ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting")
+      [1]
       (sorted_hashes_of_issues diff.preexisting)
   in
   "test_set_operations" >:: do_assert
+
 
 let tests = "differential_suite" >::: [test_diff_keeps_duplicated_hashes; test_set_operations]
