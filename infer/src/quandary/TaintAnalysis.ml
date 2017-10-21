@@ -373,44 +373,52 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       TaintDomain.trace_fold add_to_caller_tree summary caller_access_tree
 
 
-    let preprocess_exp exp =
-      (* hack: preprocessor for expressions to convert some literals into dummy field reads. needed in
-       Java when we want to us an R.id.whatever field as a source, but the compiler inlines the
-       field read because it's a static final constant *)
-      let convert_id_literal_to_read = function
-        | HilExp.Constant Const.Cint i as e ->
-            let int_value =
-              try IntLit.to_int i
-              with _ -> 0
-            in
-            (* heuristic to decide if this looks like a resource ID *)
-            if Int.abs int_value > 1000 then
-              (* convert this resource ID literal into a dummy field read *)
-              let dummy_pvar =
-                Pvar.mk_global
-                  (Mangled.from_string
-                     (F.sprintf "%s_%d" AndroidFramework.drawable_prefix int_value))
-                  Pvar.TUExtern
-              in
-              HilExp.AccessPath ((Var.of_pvar dummy_pvar, Typ.mk (Typ.Tint Typ.IInt)), [])
-            else e
-        | e ->
-            e
-      in
-      convert_id_literal_to_read exp
+    let preprocess_exp exp = function
+      | Config.Java ->
+          (* hack: preprocessor for expressions to convert some literals into dummy field reads.
+           needed in Java when we want to us an R.id.whatever field as a source, but the compiler
+           inlines the field read because it's a static final constant *)
+          let convert_id_literal_to_read = function
+            | HilExp.Constant Const.Cint i as e ->
+                let int_value =
+                  try IntLit.to_int i
+                  with _ -> 0
+                in
+                (* heuristic to decide if this looks like a resource ID *)
+                if Int.abs int_value > 1000 then
+                  (* convert this resource ID literal into a dummy field read *)
+                  let dummy_pvar =
+                    Pvar.mk_global
+                      (Mangled.from_string
+                         (F.sprintf "%s_%d" AndroidFramework.drawable_prefix int_value))
+                      Pvar.TUExtern
+                  in
+                  HilExp.AccessPath ((Var.of_pvar dummy_pvar, Typ.mk (Typ.Tint Typ.IInt)), [])
+                else e
+            | e ->
+                e
+          in
+          convert_id_literal_to_read exp
+      | _ ->
+          exp
 
 
     (* avoid overhead of allocating new list in the (very) common case that preprocess is a no-op *)
-    let preprocess_exps exps =
-      if List.exists ~f:(fun exp -> not (phys_equal exp (preprocess_exp exp))) exps then
-        List.map ~f:preprocess_exp exps
-      else exps
+    let preprocess_exps exps language =
+      match language with
+      | Config.Java ->
+          if List.exists ~f:(fun exp -> not (phys_equal exp (preprocess_exp exp language))) exps
+          then List.map ~f:(fun exp -> preprocess_exp exp language) exps
+          else exps
+      | _ ->
+          exps
 
 
     let exec_instr (astate: Domain.astate) (proc_data: extras ProcData.t) _ (instr: HilInstr.t) =
       (* not all sinks are function calls; we might want to treat an array or field access as a
          sink too. do this by pretending an access is a call to a dummy function and using the
          existing machinery for adding function call sinks *)
+      let language = Typ.Procname.get_language (Procdesc.get_proc_name proc_data.pdesc) in
       let add_sinks_for_access_path (_, accesses) loc astate =
         let add_sinks_for_access astate_acc = function
           | AccessPath.FieldAccess _ | AccessPath.ArrayAccess (_, []) ->
@@ -475,14 +483,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
              `return null` in a void function *)
           astate
       | Assign (lhs_access_path, rhs_exp, loc) ->
-          let rhs_exp = preprocess_exp rhs_exp in
+          let rhs_exp = preprocess_exp rhs_exp language in
           add_sources_sinks_for_exp rhs_exp loc astate
           |> add_sinks_for_access_path lhs_access_path loc |> exec_write lhs_access_path rhs_exp
       | Assume (assume_exp, _, _, loc) ->
-          let assume_exp = preprocess_exp assume_exp in
+          let assume_exp = preprocess_exp assume_exp language in
           add_sources_sinks_for_exp assume_exp loc astate
       | Call (ret_opt, Direct called_pname, actuals, call_flags, callee_loc) ->
-          let actuals = preprocess_exps actuals in
+          let actuals = preprocess_exps actuals language in
           let astate =
             List.fold
               ~f:(fun acc exp -> add_sources_sinks_for_exp exp callee_loc acc)
