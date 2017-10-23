@@ -127,3 +127,12 @@ let store_targets_in_file buck_targets =
   L.(debug Capture Quiet) "Buck targets options stored in file '%s'@\n" file ;
   Printf.sprintf "@%s" file
 
+
+let filter_compatible subcommand args =
+  match subcommand with
+  | `Targets ->
+      let blacklist = "--keep-going" in
+      List.filter args ~f:(fun arg -> not (String.equal blacklist arg))
+  | _ ->
+      args
+

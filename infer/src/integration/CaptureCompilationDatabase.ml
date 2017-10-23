@@ -111,7 +111,8 @@ let get_compilation_database_files_buck ~prog ~args =
         (String.concat ~sep:" " build_args) ;
       Process.create_process_and_wait ~prog ~args:build_args ;
       let buck_targets_shell =
-        List.append [prog; "targets"; "--show-output"; targets_in_file] no_targets_no_build
+        Buck.filter_compatible `Targets no_targets_no_build
+        |> List.append [prog; "targets"; "--show-output"; targets_in_file]
         |> Utils.shell_escape_command
       in
       let output, exit_or_signal =

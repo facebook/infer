@@ -33,3 +33,6 @@ val inline_argument_files : string list -> string list
 
 val store_targets_in_file : string list -> string
 (** Given a list of buck targets, stores them in a file and returns the file name *)
+
+val filter_compatible : [> `Targets] -> string list -> string list
+(** keep only the options compatible with the given Buck subcommand *)
