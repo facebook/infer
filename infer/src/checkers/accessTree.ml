@@ -49,6 +49,10 @@ module type S = sig
 
   val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
 
+  val exists : (AccessPath.Abs.t -> node -> bool) -> t -> bool
+
+  val iter : (AccessPath.Abs.t -> node -> unit) -> t -> unit
+
   val depth : t -> int
 
   val pp_node : F.formatter -> node -> unit
@@ -368,6 +372,18 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) = struct
     fold f_
 
 
+  exception Found
+
+  let exists (f: AccessPath.Abs.t -> node -> bool) tree =
+    try
+      fold (fun _ access_path node -> if f access_path node then raise Found else false) tree false
+    with Found -> true
+
+
+  let iter (f: AccessPath.Abs.t -> node -> unit) tree =
+    fold (fun () access_path node -> f access_path node) tree ()
+
+
   (* try for a bit to reach a fixed point before widening aggressively *)
   let joins_before_widen = 3
 
@@ -421,6 +437,10 @@ end
 
 module PathSet (Config : Config) = struct
   include Make (AbstractDomain.BooleanOr) (Config)
+
+  let mem access_path tree =
+    match get_node access_path tree with None -> false | Some (is_mem, _) -> is_mem
+
 
   (* print as a set of paths rather than a map of paths to bools *)
   let pp fmt tree =

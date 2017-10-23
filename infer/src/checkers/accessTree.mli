@@ -75,6 +75,10 @@ module type S = sig
 
   val trace_fold : ('a -> AccessPath.Abs.t -> TraceDomain.astate -> 'a) -> t -> 'a -> 'a
 
+  val exists : (AccessPath.Abs.t -> node -> bool) -> t -> bool
+
+  val iter : (AccessPath.Abs.t -> node -> unit) -> t -> unit
+
   val depth : t -> int
   (** number of traces in the tallest branch of the tree *)
 
@@ -93,4 +97,8 @@ module Make (TraceDomain : AbstractDomain.WithBottom) (Config : Config) :
   S with module TraceDomain = TraceDomain
 
 (** Concise representation of a set of access paths *)
-module PathSet : module type of Make (AbstractDomain.BooleanOr)
+module PathSet (Config : Config) : sig
+  include module type of Make (AbstractDomain.BooleanOr) (Config)
+
+  val mem : AccessPath.Abs.t -> astate -> bool
+end

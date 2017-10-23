@@ -693,6 +693,44 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   module Analyzer =
     AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.Make (TransferFunctions) (HilConfig))
 
+  (* sanity checks for summaries. should only be used in developer mode *)
+  let check_invariants access_tree =
+    let open TraceDomain in
+    TaintDomain.iter
+      (fun access_path (trace, _) ->
+        let sources = sources trace in
+        let footprint_sources = sources.footprint in
+        let passthroughs = passthroughs trace in
+        let sinks = sinks trace in
+        (* invariant 1: sinks with no footprint sources are dead and should be forgotten *)
+        if Sources.Footprint.is_empty footprint_sources && not (Sinks.is_empty sinks) then
+          Logging.die InternalError
+            "Trace %a associated with %a tracks sinks even though no more sources can flow into them"
+            Sinks.pp sinks AccessPath.Abs.pp access_path ;
+        (* invariant 2: we should never have sinks without sources *)
+        if Sources.is_empty sources && not (Sinks.is_empty sinks) then
+          Logging.die InternalError "We have sinks %a associated with %a, but no sources" Sinks.pp
+            sinks AccessPath.Abs.pp access_path ;
+        (* invariant 3: we should never have passthroughs without sources *)
+        if Sources.is_empty sources && not (Passthroughs.is_empty passthroughs) then
+          Logging.die InternalError "We have passthroughs %a associated with %a, but no sources"
+            Passthroughs.pp passthroughs AccessPath.Abs.pp access_path ;
+        (* invariant 4: we should never map an access path to a trace consisting only of its
+           corresponding footprint source. a trace like this is a waste of space, since we can
+           lazily create it if/when someone actually tries to read the access path instead *)
+        if AccessPath.Abs.is_exact access_path && Sinks.is_empty sinks
+           && Sources.Footprint.mem access_path footprint_sources
+           && Sources.Footprint.exists
+                (fun footprint_access_path (is_mem, _) ->
+                  is_mem && AccessPath.Abs.equal access_path footprint_access_path)
+                footprint_sources
+        then
+          Logging.die InternalError
+            "The trace associated with %a consists only of its footprint source: %a"
+            AccessPath.Abs.pp access_path pp trace)
+      access_tree
+
+
   let make_summary {ProcData.pdesc; extras= {formal_map}} access_tree =
     let is_java = Typ.Procname.is_java (Procdesc.get_proc_name pdesc) in
     (* if a trace has footprint sources, attach them to the appropriate footprint var *)
@@ -764,6 +802,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 acc)
         access_tree' TaintDomain.empty
     in
+    if Config.developer_mode && false
+       (* TODO: temporarily disabled to avoid crashes until we clean up all violations *)
+    then check_invariants with_footprint_vars ;
     TaintSpecification.to_summary_access_tree with_footprint_vars
 
 
