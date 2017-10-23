@@ -17,8 +17,6 @@ module F = Format
 
 type t = Builtin.registered
 
-let execute___no_op prop path : Builtin.ret_typ = [(prop, path)]
-
 (** model va_arg as always returning 0 *)
 let execute___builtin_va_arg {Builtin.pdesc; tenv; prop_; path; ret_id; args; loc}
     : Builtin.ret_typ =
@@ -544,11 +542,6 @@ let execute___objc_retain_impl ({Builtin.tenv; prop_; args; ret_id} as builtin_a
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-let execute___objc_retain builtin_args : Builtin.ret_typ =
-  if Config.objc_memory_model_on then execute___objc_retain_impl builtin_args
-  else execute___no_op builtin_args.Builtin.prop_ builtin_args.Builtin.path
-
-
 let execute___objc_retain_cf builtin_args : Builtin.ret_typ =
   execute___objc_retain_impl builtin_args
 
@@ -559,59 +552,8 @@ let execute___objc_release_impl ({Builtin.args} as builtin_args) : Builtin.ret_t
     {builtin_args with Builtin.args= args'}
 
 
-let execute___objc_release builtin_args : Builtin.ret_typ =
-  if Config.objc_memory_model_on then execute___objc_release_impl builtin_args
-  else execute___no_op builtin_args.Builtin.prop_ builtin_args.Builtin.path
-
-
 let execute___objc_release_cf builtin_args : Builtin.ret_typ =
   execute___objc_release_impl builtin_args
-
-
-(** Set the attibute of the value as objc autoreleased *)
-let execute___set_autorelease_attribute {Builtin.tenv; pdesc; prop_; path; ret_id; args}
-    : Builtin.ret_typ =
-  match (args, ret_id) with
-  | [(lexp, _)], _ ->
-      let pname = Procdesc.get_proc_name pdesc in
-      let prop = return_result tenv lexp prop_ ret_id in
-      if Config.objc_memory_model_on then
-        let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop in
-        let prop' = Attribute.add_or_replace tenv prop (Apred (Aautorelease, [n_lexp])) in
-        [(prop', path)]
-      else execute___no_op prop path
-  | _ ->
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-
-(** Release all the objects in the pool *)
-let execute___release_autorelease_pool ({Builtin.tenv; prop_; path} as builtin_args)
-    : Builtin.ret_typ =
-  if Config.objc_memory_model_on then
-    let autoreleased_objects = Attribute.get_for_symb prop_ Aautorelease in
-    let prop_without_attribute = Attribute.remove_for_attr tenv prop_ Aautorelease in
-    let call_release res atom =
-      match (res, atom) with
-      | (prop', path') :: _, Sil.Apred (_, exp :: _) ->
-          List.find
-            ~f:(function Sil.Hpointsto (e1, _, _) -> Exp.equal e1 exp | _ -> false)
-            prop_.Prop.sigma
-          |> Option.value_map
-               ~f:(function
-                   | Sil.Hpointsto (_, _, Exp.Sizeof {typ}) ->
-                       let res1 =
-                         execute___objc_release
-                           {builtin_args with Builtin.args= [(exp, typ)]; prop_= prop'; path= path'}
-                       in
-                       res1
-                   | _ ->
-                       res)
-               ~default:res
-      | _ ->
-          res
-    in
-    List.fold ~f:call_release ~init:[(prop_without_attribute, path)] autoreleased_objects
-  else execute___no_op prop_ path
 
 
 let set_attr tenv pdesc prop path exp attr =
@@ -1151,16 +1093,7 @@ let __objc_cast = Builtin.register BuiltinDecl.__objc_cast execute___objc_cast
 let __objc_dictionary_literal =
   Builtin.register BuiltinDecl.__objc_dictionary_literal execute___objc_dictionary_literal
 
-
-let __objc_release = Builtin.register BuiltinDecl.__objc_release execute___objc_release
-
-let __objc_release_autorelease_pool =
-  Builtin.register BuiltinDecl.__objc_release_autorelease_pool execute___release_autorelease_pool
-
-
 let __objc_release_cf = Builtin.register BuiltinDecl.__objc_release_cf execute___objc_release_cf
-
-let __objc_retain = Builtin.register BuiltinDecl.__objc_retain execute___objc_retain
 
 let __objc_retain_cf = Builtin.register BuiltinDecl.__objc_retain_cf execute___objc_retain_cf
 
@@ -1175,12 +1108,7 @@ let __print_value = Builtin.register BuiltinDecl.__print_value execute___print_v
 let __require_allocated_array =
   Builtin.register BuiltinDecl.__require_allocated_array execute___require_allocated_array
 
-
 let __set_array_length = Builtin.register BuiltinDecl.__set_array_length execute___set_array_length
-
-let __set_autorelease_attribute =
-  Builtin.register BuiltinDecl.__set_autorelease_attribute execute___set_autorelease_attribute
-
 
 let __set_file_attribute =
   Builtin.register BuiltinDecl.__set_file_attribute execute___set_file_attribute

@@ -12,48 +12,6 @@
 open! IStd
 module L = Logging
 
-(* Returns the translation of assignment when ARC mode is enabled in Obj-C *)
-(* For __weak and __unsafe_unretained the translation is the same as non-ARC *)
-(* (this is because, in these cases, there is no change in the reference counter *)
-(* of the pointee).*)
-(* The difference is when the lvalue is a __strong or __autoreleasing. In those*)
-(* case we need to add proper retain/release.*)
-(* See document: "Objective-C Automatic Reference Counting" describing the semantics *)
-let assignment_arc_mode e1 typ e2 loc rhs_owning_method is_e1_decl =
-  let assign = Sil.Store (e1, typ, e2, loc) in
-  let retain_pname = BuiltinDecl.__objc_retain in
-  let release_pname = BuiltinDecl.__objc_release in
-  let autorelease_pname = BuiltinDecl.__set_autorelease_attribute in
-  let mk_call procname e t =
-    let bi_retain = Exp.Const (Const.Cfun procname) in
-    Sil.Call (None, bi_retain, [(e, t)], loc, CallFlags.default)
-  in
-  match typ.Typ.desc with
-  | Typ.Tptr (_, Typ.Pk_pointer) when not rhs_owning_method && not is_e1_decl ->
-      (* for __strong e1 = e2 the semantics is*)
-      (* retain(e2); tmp=e1; e1=e2; release(tmp); *)
-      let retain = mk_call retain_pname e2 typ in
-      let id = Ident.create_fresh Ident.knormal in
-      let tmp_assign = Sil.Load (id, e1, typ, loc) in
-      let release = mk_call release_pname (Exp.Var id) typ in
-      (e1, [retain; tmp_assign; assign; release])
-  | Typ.Tptr (_, Typ.Pk_pointer) when not rhs_owning_method && is_e1_decl ->
-      (* for A __strong *e1 = e2 the semantics is*)
-      (* retain(e2); e1=e2; *)
-      let retain = mk_call retain_pname e2 typ in
-      (e1, [retain; assign])
-  | Typ.Tptr (_, Typ.Pk_objc_weak) | Typ.Tptr (_, Typ.Pk_objc_unsafe_unretained) ->
-      (e1, [assign])
-  | Typ.Tptr (_, Typ.Pk_objc_autoreleasing) ->
-      (* for __autoreleasing e1 = e2 the semantics is*)
-      (* retain(e2); autorelease(e2); e1=e2; *)
-      let retain = mk_call retain_pname e2 typ in
-      let autorelease = mk_call autorelease_pname e2 typ in
-      (e1, [retain; autorelease; assign])
-  | _ ->
-      (e1, [assign])
-
-
 (* Returns a pair ([binary_expression], instructions) for binary operator representing a *)
 (* CompoundAssignment. "binary_expression" is returned when we are calculating an expression*)
 (* "instructions" is not empty when the binary operator is actually a statement like an *)
@@ -103,7 +61,7 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
 (* is returned when we are calculating an expression "instructions" is not *)
 (* empty when the binary operator is actually a statement like an          *)
 (* assignment.                                                             *)
-let binary_operation_instruction boi e1 typ e2 loc rhs_owning_method =
+let binary_operation_instruction boi e1 typ e2 loc =
   let binop_exp op = Exp.BinOp (op, e1, e2) in
   match boi.Clang_ast_t.boi_kind with
   | `Add ->
@@ -143,9 +101,7 @@ let binary_operation_instruction boi e1 typ e2 loc rhs_owning_method =
   | `LOr ->
       (binop_exp Binop.LOr, [])
   | `Assign ->
-      if !Config.arc_mode && ObjcInterface_decl.is_pointer_to_objc_class typ then
-        assignment_arc_mode e1 typ e2 loc rhs_owning_method false
-      else (e1, [Sil.Store (e1, typ, e2, loc)])
+      (e1, [Sil.Store (e1, typ, e2, loc)])
   | `Comma ->
       (e2, []) (* C99 6.5.17-2 *)
   | `MulAssign
@@ -292,4 +248,3 @@ let sil_const_plus_one const =
       Exp.Const (Const.Cint (IntLit.add n IntLit.one))
   | _ ->
       Exp.BinOp (Binop.PlusA, const, Exp.Const (Const.Cint IntLit.one))
-

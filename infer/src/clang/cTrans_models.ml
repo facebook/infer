@@ -57,19 +57,6 @@ let is_release_predefined_model typ pname =
   || Core_foundation_model.is_core_graphics_release typ funct
 
 
-let is_retain_method funct = String.equal funct CFrontend_config.retain
-
-let is_release_method funct = String.equal funct CFrontend_config.release
-
-let is_autorelease_method funct = String.equal funct CFrontend_config.autorelease
-
-let get_builtinname method_name =
-  if is_retain_method method_name then Some BuiltinDecl.__objc_retain
-  else if is_autorelease_method method_name then Some BuiltinDecl.__set_autorelease_attribute
-  else if is_release_method method_name then Some BuiltinDecl.__objc_release
-  else None
-
-
 let is_modeled_builtin funct = String.equal funct CFrontend_config.builtin_memset_chk
 
 let is_modeled_attribute attr_name =
@@ -118,10 +105,6 @@ let is_assert_log_method m = String.equal m CFrontend_config.google_LogMessageFa
 let is_handleFailureInMethod funct =
   String.equal funct CFrontend_config.handleFailureInMethod
   || String.equal funct CFrontend_config.handleFailureInFunction
-
-
-let is_retain_or_release funct =
-  is_retain_method funct || is_release_method funct || is_autorelease_method funct
 
 
 let is_toll_free_bridging pn =
@@ -183,44 +166,6 @@ let get_predefined_ms_stringWithUTF8String class_name method_name mk_procname la
     mk_procname lang args id_type [] None
 
 
-let get_predefined_ms_retain_release method_name mk_procname lang =
-  let condition = is_retain_or_release method_name in
-  let return_type =
-    if is_retain_method method_name || is_autorelease_method method_name then
-      Ast_expressions.create_id_type
-    else Ast_expressions.create_void_type
-  in
-  let class_typename = Typ.Name.Objc.from_string CFrontend_config.nsobject_cl in
-  let class_type = Ast_expressions.create_class_qual_type class_typename in
-  let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
-  get_predefined_ms_method condition class_typename method_name Typ.Procname.ObjCInstanceMethod
-    mk_procname lang args return_type [] (get_builtinname method_name)
-
-
-let get_predefined_ms_autoreleasepool_init class_name method_name mk_procname lang =
-  let condition =
-    String.equal method_name CFrontend_config.init
-    && class_equal class_name CFrontend_config.nsautorelease_pool_cl
-  in
-  let class_type = Ast_expressions.create_class_qual_type class_name in
-  get_predefined_ms_method condition class_name method_name Typ.Procname.ObjCInstanceMethod
-    mk_procname lang [(Mangled.from_string CFrontend_config.self, class_type)]
-    Ast_expressions.create_void_type [] None
-
-
-let get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname lang =
-  let condition =
-    ( String.equal method_name CFrontend_config.release
-    || String.equal method_name CFrontend_config.drain )
-    && class_equal class_name CFrontend_config.nsautorelease_pool_cl
-  in
-  let class_type = Ast_expressions.create_class_qual_type class_name in
-  let args = [(Mangled.from_string CFrontend_config.self, class_type)] in
-  get_predefined_ms_method condition class_name method_name Typ.Procname.ObjCInstanceMethod
-    mk_procname lang args Ast_expressions.create_void_type []
-    (Some BuiltinDecl.__objc_release_autorelease_pool)
-
-
 let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
   let condition = String.equal method_name CFrontend_config.is_kind_of_class in
   let class_type = Ast_expressions.create_class_qual_type class_name in
@@ -231,10 +176,7 @@ let get_predefined_ms_is_kind_of_class class_name method_name mk_procname lang =
 
 let get_predefined_model_method_signature class_name method_name mk_procname lang =
   let next_predefined f = function Some _ as x -> x | None -> f method_name mk_procname lang in
-  get_predefined_ms_nsautoreleasepool_release class_name method_name mk_procname lang
-  |> next_predefined get_predefined_ms_retain_release
-  |> next_predefined (get_predefined_ms_stringWithUTF8String class_name)
-  |> next_predefined (get_predefined_ms_autoreleasepool_init class_name)
+  None |> next_predefined (get_predefined_ms_stringWithUTF8String class_name)
   |> next_predefined (get_predefined_ms_is_kind_of_class class_name)
 
 

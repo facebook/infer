@@ -67,13 +67,7 @@ module type S = sig
 
   val __objc_dictionary_literal : t
 
-  val __objc_release : t
-
-  val __objc_release_autorelease_pool : t
-
   val __objc_release_cf : t
-
-  val __objc_retain : t
 
   val __objc_retain_cf : t
 
@@ -86,8 +80,6 @@ module type S = sig
   val __require_allocated_array : t
 
   val __set_array_length : t
-
-  val __set_autorelease_attribute : t
 
   val __set_file_attribute : t
 

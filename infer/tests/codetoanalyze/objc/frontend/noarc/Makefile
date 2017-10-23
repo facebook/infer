@@ -50,7 +50,6 @@ SOURCES = \
   ../shared/memory_leaks_benchmark/AutoreleaseExample.m \
   ../shared/memory_leaks_benchmark/MemoryLeakExample.m \
   ../shared/memory_leaks_benchmark/RetainReleaseExample.m \
-  ../shared/memory_leaks_benchmark/RetainReleaseExample2.m \
   ../shared/memory_leaks_benchmark/TollBridgeExample.m \
   ../shared/npe/npe_malloc.m \
   ../shared/property/GetterExample.m \

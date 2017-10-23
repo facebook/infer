@@ -3,18 +3,14 @@ digraph iCFG {
 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_1" [label="1: Start super_example_main\nFormals:  argc:int argv:char**\nLocals:  a:objc_object* \n   DECLARE_LOCALS(&return,&a); [line 40, column 1]\n " color=yellow style=filled]
 	
 
-	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_1" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_4" ;
+	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_1" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" ;
 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" [label="2: Exit super_example_main \n  " color=yellow style=filled]
 	
 
-"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" [label="3:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool() [line 41, column 3]\n " shape="box"]
+"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" [label="3:  DeclStmt \n   n$0=_fun___objc_alloc_no_fail(sizeof(t=ASuper):unsigned long) [line 42, column 21]\n  n$1=_fun_NSObject_init(n$0:ASuper*) virtual [line 42, column 21]\n  *&a:objc_object*=n$1 [line 42, column 5]\n " shape="box"]
 	
 
 	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_2" ;
-"super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_4" [label="4:  DeclStmt \n   n$1=_fun___objc_alloc_no_fail(sizeof(t=ASuper):unsigned long) [line 42, column 21]\n  n$2=_fun_NSObject_init(n$1:ASuper*) virtual [line 42, column 21]\n  *&a:objc_object*=n$2 [line 42, column 5]\n " shape="box"]
-	
-
-	 "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_4" -> "super_example_main.e3ebe95e6c5ae811733f235c29fbbf6d_3" ;
 "init#ASuper#instance.9832dae2a83c036d9d82b45709c4855e_1" [label="1: Start ASuper_init\nFormals:  self:ASuper*\nLocals:  \n   DECLARE_LOCALS(&return); [line 32, column 1]\n " color=yellow style=filled]
 	
 

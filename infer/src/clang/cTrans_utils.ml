@@ -724,44 +724,6 @@ module Self = struct
 
 end
 
-(* From the manual: A selector is in a certain selector family if, ignoring any leading underscores, *)
-(* the first component of the selector either consists entirely of the name of *)
-(* the method family or it begins with that followed by character other than lower case letter.*)
-(* For example: '__perform:with' and 'performWith:' would fall into the 'perform' family (if we had one),*)
-(* but 'performing:with' would not.  *)
-let is_owning_name n =
-  let is_family fam s' =
-    if String.length s' < String.length fam then false
-    else
-      let prefix = Str.string_before s' (String.length fam) in
-      let suffix = Str.string_after s' (String.length fam) in
-      String.equal prefix fam && not (Str.string_match (Str.regexp "[a-z]") suffix 0)
-  in
-  match Str.split (Str.regexp_string ":") n with
-  | fst :: _ -> (
-    match Str.split (Str.regexp "['_']+") fst with
-    | [no_und] | _ :: no_und :: _ ->
-        is_family CFrontend_config.alloc no_und || is_family CFrontend_config.copy no_und
-        || is_family CFrontend_config.new_str no_und
-        || is_family CFrontend_config.mutableCopy no_und || is_family CFrontend_config.init no_und
-    | _ ->
-        assert false )
-  | _ ->
-      assert false
-
-
-let rec is_owning_method s =
-  match s with
-  | Clang_ast_t.ObjCMessageExpr (_, _, _, mei) ->
-      is_owning_name mei.Clang_ast_t.omei_selector
-  | _ ->
-    match snd (Clang_ast_proj.get_stmt_tuple s) with
-    | [] ->
-        false
-    | s'' :: _ ->
-        is_owning_method s''
-
-
 let rec is_method_call s =
   match s with
   | Clang_ast_t.ObjCMessageExpr _ ->

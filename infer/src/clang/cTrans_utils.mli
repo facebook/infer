@@ -81,10 +81,6 @@ val cast_operation :
 
 val trans_assertion : trans_state -> Location.t -> trans_result
 
-val is_owning_method : Clang_ast_t.stmt -> bool
-
-val is_owning_name : string -> bool
-
 val is_method_call : Clang_ast_t.stmt -> bool
 
 val contains_opaque_value_expr : Clang_ast_t.stmt -> bool

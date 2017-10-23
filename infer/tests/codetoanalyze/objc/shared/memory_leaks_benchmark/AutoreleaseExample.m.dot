@@ -7,7 +7,7 @@ digraph iCFG {
 "createA.48a5d7f480131d59bba69d521715b836_2" [label="2: Exit createA \n  " color=yellow style=filled]
 	
 
-"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 31, column 11]\n  n$1=_fun___set_autorelease_attribute(n$0:Auto*) [line 31, column 10]\n  *&return:Auto*=n$1 [line 31, column 3]\n " shape="box"]
+"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 31, column 11]\n  n$1=_fun_Auto_autorelease(n$0:Auto*) virtual [line 31, column 10]\n  *&return:Auto*=n$1 [line 31, column 3]\n " shape="box"]
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_3" -> "createA.48a5d7f480131d59bba69d521715b836_2" ;
@@ -18,7 +18,7 @@ digraph iCFG {
 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" [label="1: Start autorelease_test1\nFormals: \nLocals:  s3:Auto* s2:Auto* s1:Auto* \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 34, column 1]\n " color=yellow style=filled]
 	
 
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" ;
+	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_1" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" ;
 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_2" [label="2: Exit autorelease_test1 \n  " color=yellow style=filled]
 	
 
@@ -26,42 +26,38 @@ digraph iCFG {
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_2" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s3:Auto*,&s1:Auto*,&s2:Auto*) [line 38, column 3]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_createA() [line 42, column 10]\n  *&s3:Auto*=n$0 [line 42, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_3" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 42, column 10]\n  *&s3:Auto*=n$1 [line 42, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 41, column 10]\n  *&s2:Auto*=n$1 [line 41, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 41, column 10]\n  *&s2:Auto*=n$2 [line 41, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  Message Call: retain \n   n$2=*&s1:Auto* [line 40, column 6]\n  n$3=_fun_Auto_retain(n$2:Auto*) virtual [line 40, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" [label="7:  Message Call: retain \n   n$3=*&s1:Auto* [line 40, column 6]\n  n$4=_fun___objc_retain(n$3:Auto*) [line 40, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" [label="7:  BinaryOperatorStmt: Assign \n   n$4=_fun_createA() [line 39, column 10]\n  *&s1:Auto*=n$4 [line 39, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" [label="8:  BinaryOperatorStmt: Assign \n   n$5=_fun_createA() [line 39, column 10]\n  *&s1:Auto*=n$5 [line 39, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" [label="8:  DeclStmt \n   *&s3:Auto*=null [line 37, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_7" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" [label="9:  DeclStmt \n   *&s3:Auto*=null [line 37, column 3]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" [label="9:  DeclStmt \n   *&s2:Auto*=null [line 36, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_8" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" [label="10:  DeclStmt \n   *&s2:Auto*=null [line 36, column 3]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" [label="10:  DeclStmt \n   *&s1:Auto*=null [line 35, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_9" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" [label="11:  DeclStmt \n   *&s1:Auto*=null [line 35, column 3]\n " shape="box"]
-	
-
-	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_11" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_10" ;
 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_1" [label="1: Start autorelease_test2\nFormals: \nLocals:  s3:Auto* s2:Auto* s1:Auto* \n   DECLARE_LOCALS(&return,&s3,&s2,&s1); [line 47, column 1]\n " color=yellow style=filled]
 	
 
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_1" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" ;
+	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_1" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" ;
 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_2" [label="2: Exit autorelease_test2 \n  " color=yellow style=filled]
 	
 
@@ -69,34 +65,30 @@ digraph iCFG {
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_2" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" [label="4:  Release the autorelease pool \n   n$0=_fun___objc_release_autorelease_pool(&s2:Auto*,&s3:Auto*,&s1:Auto*) [line 51, column 3]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" [label="4:  BinaryOperatorStmt: Assign \n   n$0=_fun_createA() [line 54, column 10]\n  *&s3:Auto*=n$0 [line 54, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_3" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 54, column 10]\n  *&s3:Auto*=n$1 [line 54, column 5]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" [label="5:  BinaryOperatorStmt: Assign \n   n$1=_fun_createA() [line 53, column 10]\n  *&s2:Auto*=n$1 [line 53, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_4" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 53, column 10]\n  *&s2:Auto*=n$2 [line 53, column 5]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" [label="6:  BinaryOperatorStmt: Assign \n   n$2=_fun_createA() [line 52, column 10]\n  *&s1:Auto*=n$2 [line 52, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_5" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" [label="7:  BinaryOperatorStmt: Assign \n   n$3=_fun_createA() [line 52, column 10]\n  *&s1:Auto*=n$3 [line 52, column 5]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" [label="7:  DeclStmt \n   *&s3:Auto*=null [line 50, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_6" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" [label="8:  DeclStmt \n   *&s3:Auto*=null [line 50, column 3]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" [label="8:  DeclStmt \n   *&s2:Auto*=null [line 49, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_7" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" [label="9:  DeclStmt \n   *&s2:Auto*=null [line 49, column 3]\n " shape="box"]
+"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" [label="9:  DeclStmt \n   *&s1:Auto*=null [line 48, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_8" ;
-"autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" [label="10:  DeclStmt \n   *&s1:Auto*=null [line 48, column 3]\n " shape="box"]
-	
-
-	 "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_10" -> "autorelease_test2.d978c6e21f1931e19bc731b4ffb90225_9" ;
 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_1" [label="1: Start autorelease_test3\nFormals: \nLocals:  c:NSString* string:NSString* pool:NSAutoreleasePool* \n   DECLARE_LOCALS(&return,&c,&string,&pool); [line 59, column 1]\n " color=yellow style=filled]
 	
 
@@ -108,11 +100,11 @@ digraph iCFG {
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 63, column 4]\n  _fun___objc_release_autorelease_pool(n$1:NSAutoreleasePool*) [line 63, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 63, column 4]\n  _fun_NSAutoreleasePool_release(n$1:NSAutoreleasePool*) virtual [line 63, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 61, column 23]\n  n$3=_fun___set_autorelease_attribute(n$2:NSString*) [line 61, column 22]\n  *&string:NSString*=n$3 [line 61, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 61, column 23]\n  n$3=_fun_NSString_autorelease(n$2:NSString*) virtual [line 61, column 22]\n  *&string:NSString*=n$3 [line 61, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" ;
@@ -127,7 +119,7 @@ digraph iCFG {
 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" [label="2: Exit Auto_autorelease_main \n  " color=yellow style=filled]
 	
 
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 24, column 11]\n  n$1=_fun___set_autorelease_attribute(n$0:NSString*) [line 24, column 10]\n  *&return:NSString*=n$1 [line 24, column 3]\n " shape="box"]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 24, column 11]\n  n$1=_fun_NSString_autorelease(n$0:NSString*) virtual [line 24, column 10]\n  *&return:NSString*=n$1 [line 24, column 3]\n " shape="box"]
 	
 
 	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" ;

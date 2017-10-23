@@ -76,21 +76,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (proc_name, mc_type)
 
 
-  let add_autorelease_call context exp typ sil_loc =
-    let method_name = Typ.Procname.get_method (Procdesc.get_proc_name context.CContext.procdesc) in
-    if !Config.arc_mode && not (CTrans_utils.is_owning_name method_name)
-       && ObjcInterface_decl.is_pointer_to_objc_class typ
-    then
-      let fname = BuiltinDecl.__set_autorelease_attribute in
-      let ret_id = Some (Ident.create_fresh Ident.knormal, Typ.mk Typ.Tvoid) in
-      (* TODO(jjb): change ret_id to None? *)
-      let stmt_call =
-        Sil.Call (ret_id, Exp.Const (Const.Cfun fname), [(exp, typ)], sil_loc, CallFlags.default)
-      in
-      [stmt_call]
-    else []
-
-
   let rec is_block_expr s =
     let open Clang_ast_t in
     match s with
@@ -973,7 +958,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match stmt_list with
     | [s1; s2] ->
         (* Assumption: We expect precisely 2 stmt corresponding to the 2 operands*)
-        let rhs_owning_method = CTrans_utils.is_owning_method s2 in
         (* NOTE: we create a node only if required. In that case this node *)
         (* becomes the successor of the nodes that may be created when     *)
         (* translating the operands.                                       *)
@@ -998,7 +982,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           else
             let exp_op, instr_bin =
               CArithmetic_trans.binary_operation_instruction binary_operator_info var_exp typ
-                sil_e2 sil_loc rhs_owning_method
+                sil_e2 sil_loc
             in
             (* Create a node if the priority if free and there are instructions *)
             let creating_node =
@@ -2310,22 +2294,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           extract_exp_from_list res_trans_ie.exps
             "WARNING: In DeclStmt we expect only one expression returned in recursive call@\n"
         in
-        let rhs_owning_method = CTrans_utils.is_owning_method ie in
         let _, instrs_assign =
           (* variable might be initialized already - do nothing in that case*)
           if List.exists ~f:(Exp.equal var_exp) res_trans_ie.initd_exps then ([], [])
-          else if !Config.arc_mode
-                  && ( CTrans_utils.is_method_call ie
-                     || ObjcInterface_decl.is_pointer_to_objc_class ie_typ )
-          then
-            (* In arc mode, if it's a method call or we are initializing
-               with a pointer to objc class *)
-            (* we need to add retain/release *)
-            let e, instrs =
-              CArithmetic_trans.assignment_arc_mode var_exp ie_typ sil_e1' sil_loc
-                rhs_owning_method true
-            in
-            ([(e, ie_typ)], instrs)
           else ([], [Sil.Store (var_exp, ie_typ, sil_e1', sil_loc)])
         in
         let res_trans_assign = {empty_res_trans with instrs= instrs_assign} in
@@ -2608,8 +2579,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             if List.exists ~f:(Exp.equal ret_exp) res_trans_stmt.initd_exps then []
             else [Sil.Store (ret_exp, ret_type, sil_expr, sil_loc)]
           in
-          let autorelease_instrs = add_autorelease_call context sil_expr ret_type sil_loc in
-          let instrs = var_instrs @ res_trans_stmt.instrs @ ret_instrs @ autorelease_instrs in
+          let instrs = var_instrs @ res_trans_stmt.instrs @ ret_instrs in
           let ret_node = mk_ret_node instrs in
           List.iter
             ~f:(fun n -> Procdesc.node_set_succs_exn procdesc n [ret_node] [])
@@ -2705,27 +2675,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_mess_expr_info)
     in
     instruction trans_state message_stmt
-
-
-  (** When objects are autoreleased, they get added a flag AUTORELEASE. All these objects will be
-      ignored when checking for memory leaks. When the end of the block autoreleasepool is reached,
-      then those objects are released and the autorelease flag is removed. *)
-  and objcAutoreleasePool_trans trans_state stmt_info stmts =
-    let context = trans_state.context in
-    let sil_loc = CLocation.get_sil_location stmt_info context in
-    let fname = BuiltinDecl.__objc_release_autorelease_pool in
-    let ret_id = Some (Ident.create_fresh Ident.knormal, Typ.mk Tvoid) in
-    (* TODO(jjb): change ret_id to None? *)
-    let autorelease_pool_vars = CVar_decl.compute_autorelease_pool_vars context stmts in
-    let stmt_call =
-      Sil.Call
-        (ret_id, Exp.Const (Const.Cfun fname), autorelease_pool_vars, sil_loc, CallFlags.default)
-    in
-    let node_kind = Procdesc.Node.Stmt_node "Release the autorelease pool" in
-    let call_node = create_node node_kind [stmt_call] sil_loc context in
-    Procdesc.node_set_succs_exn context.procdesc call_node trans_state.succ_nodes [] ;
-    let trans_state' = {trans_state with continuation= None; succ_nodes= [call_node]} in
-    instructions trans_state' stmts
 
 
   (* Assumption: stmt_list contains 2 items, the first can be ObjCMessageExpr or ParenExpr *)
@@ -3338,7 +3287,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | BlockExpr (stmt_info, _, expr_info, decl) ->
         blockExpr_trans trans_state stmt_info expr_info decl
     | ObjCAutoreleasePoolStmt (stmt_info, stmts) ->
-        objcAutoreleasePool_trans trans_state stmt_info stmts
+        compoundStmt_trans trans_state stmt_info stmts
     | ObjCAtTryStmt (stmt_info, stmts) ->
         compoundStmt_trans trans_state stmt_info stmts
     | CXXTryStmt (stmt_info, stmts) ->
