@@ -20,44 +20,43 @@ let strict_containers = false
 (* in strict mode, give an error if a nullable is passed to checkNotNull *)
 let check_not_null_strict = false
 
+(* o is not annotated and n is annotated with @Nullable *)
 let o = false
 
 and n = true
 
-(* o is not annotated and n is annotated with @Nullable *)
+(* not annotated with one unannotated argument *)
 let o1 = (o, [o])
 
-(* not annotated with one argument *)
+(* not annotated with two unannotated arguments *)
 let o2 = (o, [o; o])
 
-(* not annotated with two arguments *)
+(* not annotated with three unannotated arguments *)
 let o3 = (o, [o; o; o])
 
-(* not annotated with three arguments *)
+(* one argument nullable *)
 let n1 = (o, [n])
 
-(* one argument nullable *)
+(* two arguments nullable *)
 let n2 = (o, [n; n])
 
-(* two arguments nullable *)
+(* three arguments nullable *)
 let n3 = (o, [n; n; n])
 
-(* three arguments nullable *)
+(* the second argument is nullable *)
 let on = (o, [o; n])
 
-(* the second argument is nullable *)
+(* container add *)
 let ca = if strict_containers then (o, [o]) else (o, [n])
 
-(* container add *)
+(* container get *)
 let cg = if strict_containers then (n, [o]) else (n, [n])
 
-(* container get *)
+(* container put *)
 let cp = if strict_containers then (n, [o; o]) else (n, [n; n])
 
-(* container put *)
+(* nullable getter *)
 let ng = (n, [])
-
-(* Nullable getter *)
 
 let check_not_null_parameter_list, check_not_null_list =
   let x = if check_not_null_strict then o else n in
@@ -228,14 +227,10 @@ let annotated_list_nullable =
       )
     ; (n1, "java.util.AbstractList.equals(java.lang.Object):boolean")
     ; (ca, "java.util.ArrayList.add(java.lang.Object):boolean")
-    ; (* container add *)
-      (ca, "java.util.List.add(java.lang.Object):boolean")
-    ; (* container add *)
-      (cg, "java.util.Map.get(java.lang.Object):java.lang.Object")
-    ; (* container get *)
-      (cp, "java.util.Map.put(java.lang.Object,java.lang.Object):java.lang.Object")
-    ; (* container put *)
-      ( (n, [o])
+    ; (ca, "java.util.List.add(java.lang.Object):boolean")
+    ; (cg, "java.util.Map.get(java.lang.Object):java.lang.Object")
+    ; (cp, "java.util.Map.put(java.lang.Object,java.lang.Object):java.lang.Object")
+    ; ( (n, [o])
       , "javax.lang.model.element.Element.getAnnotation(java.lang.Class):java.lang.annotation.Annotation"
       )
     ; ( ng
