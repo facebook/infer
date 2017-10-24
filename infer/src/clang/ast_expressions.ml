@@ -21,15 +21,6 @@ let dummy_stmt_info () =
   {Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer (); si_source_range= dummy_source_range ()}
 
 
-(* given a stmt_info return the same stmt_info with a fresh pointer *)
-let fresh_stmt_info stmt_info =
-  {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
-
-
-let fresh_decl_info decl_info =
-  {decl_info with Clang_ast_t.di_pointer= CAst_utils.get_fresh_pointer ()}
-
-
 let stmt_info_with_fresh_pointer stmt_info =
   { Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()
   ; si_source_range= stmt_info.Clang_ast_t.si_source_range }
@@ -50,9 +41,6 @@ let create_reference_qual_type ?quals typ =
   create_qual_type ?quals (Clang_ast_extend.ReferenceOf typ)
 
 
-(* We translate function types as the return type of the function *)
-let function_type_ptr return_type = return_type
-
 let create_int_type = builtin_to_qual_type `Int
 
 let create_void_type = builtin_to_qual_type `Void
@@ -69,10 +57,6 @@ let create_BOOL_type = builtin_to_qual_type `SChar
 
 let create_class_qual_type ?quals typename =
   create_qual_type ?quals (Clang_ast_extend.ClassType typename)
-
-
-let make_objc_class_qual_type class_name =
-  create_class_qual_type (Typ.Name.Objc.from_string class_name)
 
 
 let create_integer_literal n =
@@ -162,14 +146,8 @@ let make_decl_ref_qt k decl_ptr name is_hidden qt =
   make_decl_ref k decl_ptr name is_hidden (Some qt)
 
 
-let make_decl_ref_no_qt k decl_ptr name is_hidden = make_decl_ref k decl_ptr name is_hidden None
-
 let make_decl_ref_expr_info decl_ref =
   {Clang_ast_t.drti_decl_ref= Some decl_ref; drti_found_decl_ref= None}
-
-
-let make_expr_info qt =
-  {Clang_ast_t.ei_qual_type= qt; ei_value_kind= `LValue; ei_object_kind= `ObjCProperty}
 
 
 let make_general_expr_info qt vk ok =
@@ -242,13 +220,6 @@ let translate_dispatch_function stmt_info stmt_list n =
   | _ ->
       assert false
 
-
-let build_OpaqueValueExpr si source_expr ei =
-  let opaque_value_expr_info = {Clang_ast_t.ovei_source_expr= Some source_expr} in
-  Clang_ast_t.OpaqueValueExpr (si, [], ei, opaque_value_expr_info)
-
-
-let pseudo_object_qt = make_objc_class_qual_type CFrontend_config.pseudo_object_type
 
 (* We translate an expression with a conditional*)
 (* x <=> x?1:0 *)
