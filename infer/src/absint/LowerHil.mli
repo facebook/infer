@@ -33,6 +33,17 @@ module Make
   val exec_instr : Domain.astate -> extras ProcData.t -> CFG.node -> Sil.instr -> Domain.astate
 end
 
-module MakeDefault (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S) : sig
-  include module type of Make (MakeTransferFunctions) (DefaultConfig) (CFG)
+(** Wrapper around Interpreter to prevent clients from having to deal with IdAccessPathMapDomain *)
+module MakeAbstractInterpreter
+    (CFG : ProcCfg.S)
+    (MakeTransferFunctions : TransferFunctions.MakeHIL) : sig
+  module Interpreter :
+      module type of AbstractInterpreter.Make (CFG) (Make (MakeTransferFunctions) (DefaultConfig))
+
+  val compute_post :
+    ?debug:bool -> Interpreter.TransferFunctions.extras ProcData.t
+    -> initial:MakeTransferFunctions(CFG).Domain.astate
+    -> MakeTransferFunctions(CFG).Domain.astate option
+  (** compute and return the postcondition for the given procedure starting from [initial]. If
+      [debug] is true, print html debugging output. *)
 end

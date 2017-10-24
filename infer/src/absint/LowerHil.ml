@@ -60,5 +60,15 @@ struct
 
 end
 
-module MakeDefault (MakeTransferFunctions : TransferFunctions.MakeHIL) (CFG : ProcCfg.S) =
-  Make (MakeTransferFunctions) (DefaultConfig) (CFG)
+module MakeAbstractInterpreter
+    (CFG : ProcCfg.S)
+    (MakeTransferFunctions : TransferFunctions.MakeHIL) =
+struct
+  module Interpreter =
+    AbstractInterpreter.Make (CFG) (Make (MakeTransferFunctions) (DefaultConfig))
+
+  let compute_post ?(debug= Config.debug_mode) proc_data ~initial =
+    let initial' = (initial, IdAccessPathMapDomain.empty) in
+    Option.map ~f:fst (Interpreter.compute_post ~debug proc_data ~initial:initial')
+
+end

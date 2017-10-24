@@ -74,7 +74,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 end
 
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
-module Analyzer = AbstractInterpreter.Make (CFG) (LowerHil.MakeDefault (TransferFunctions))
+module Analyzer =
+  AbstractInterpreter.Make (CFG) (LowerHil.Make (TransferFunctions) (LowerHil.DefaultConfig))
 
 let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   let cfg = CFG.from_pdesc proc_desc in

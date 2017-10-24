@@ -93,12 +93,12 @@ end
 
 (* Create an intraprocedural abstract interpreter from the transfer functions we defined *)
 module Analyzer =
-  AbstractInterpreter.Make
+  LowerHil.MakeAbstractInterpreter
     (* Type of CFG to analyze--Exceptional to follow exceptional control-flow edges, Normal to
        ignore them *)
     (ProcCfg.Normal)
     (* 5(a) *)
-    (LowerHil.Make (TransferFunctions) (LowerHil.DefaultConfig))
+    (TransferFunctions)
 
 (* Callback for invoking the checker from the outside--registered in RegisterCheckers *)
 let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =
@@ -118,9 +118,8 @@ let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =
   in
   let extras = FormalMap.make proc_desc in
   let proc_data = ProcData.make proc_desc tenv extras in
-  let initial = (ResourceLeakDomain.initial, IdAccessPathMapDomain.empty) in
-  match Analyzer.compute_post proc_data ~initial ~debug:false with
-  | Some (post, _) ->
+  match Analyzer.compute_post proc_data ~initial:ResourceLeakDomain.initial ~debug:false with
+  | Some post ->
       (* 1(f) *)
       report post proc_data ;
       Summary.update_summary (convert_to_summary post) summary

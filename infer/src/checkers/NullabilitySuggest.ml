@@ -104,8 +104,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 end
 
-module Analyzer =
-  AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.MakeDefault (TransferFunctions))
+module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
 
 let make_error_trace astate ap ud =
   let name_of ap =
@@ -184,11 +183,10 @@ let checker {Callbacks.summary; proc_desc; tenv} =
     summary
   else
     (* Assume all fields are not null in the beginning *)
-    let initial = (Domain.empty, IdAccessPathMapDomain.empty) in
+    let initial = Domain.empty in
     let proc_data = ProcData.make_default proc_desc tenv in
     match Analyzer.compute_post proc_data ~initial ~debug:false with
-    | Some (post, _) ->
+    | Some post ->
         report post proc_data ; summary
     | None ->
         L.(die InternalError) "Analyzer failed to compute post for %a" Typ.Procname.pp proc_name
-

@@ -967,8 +967,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 end
 
-module Analyzer =
-  AbstractInterpreter.Make (ProcCfg.Normal) (LowerHil.MakeDefault (TransferFunctions))
+module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Normal) (TransferFunctions)
 
 (* Methods in @ThreadConfined classes and methods annotated with @ThreadConfined are assumed to all
    run on the same thread. For the moment we won't warn on accesses resulting from use of such
@@ -1131,7 +1130,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
           (* express that the constructor owns [this] *)
         in
         let ownership = List.fold ~f:add_owned_formal owned_formals ~init:own_locals_in_cpp in
-        ({RacerDDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
+        {RacerDDomain.empty with ownership; threads}
       else
         (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
            it is owned in the caller *)
@@ -1143,10 +1142,10 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
             (FormalMap.get_formals_indexes formal_map)
             ~init:own_locals_in_cpp
         in
-        ({RacerDDomain.empty with ownership; threads}, IdAccessPathMapDomain.empty)
+        {RacerDDomain.empty with ownership; threads}
     in
     match Analyzer.compute_post proc_data ~initial ~debug:false with
-    | Some ({threads; locks; accesses; ownership; attribute_map}, _) ->
+    | Some {threads; locks; accesses; ownership; attribute_map} ->
         let return_var_ap =
           AccessPath.of_pvar
             (Pvar.get_ret_pvar (Procdesc.get_proc_name proc_desc))

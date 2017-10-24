@@ -114,12 +114,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 end
 
-module Analyzer =
-  AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.MakeDefault (TransferFunctions))
+module Analyzer = LowerHil.MakeAbstractInterpreter (ProcCfg.Exceptional) (TransferFunctions)
 
 let checker {Callbacks.summary; proc_desc; tenv} =
-  let initial = (Domain.empty, IdAccessPathMapDomain.empty) in
+  let initial = Domain.empty in
   let proc_data = ProcData.make proc_desc tenv summary in
   ignore (Analyzer.compute_post proc_data ~initial ~debug:false) ;
   summary
-
