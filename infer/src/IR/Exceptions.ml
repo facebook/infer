@@ -137,8 +137,6 @@ exception Symexec_memory_error of L.ml_loc
 
 exception Unary_minus_applied_to_unsigned_expression of Localise.error_desc * L.ml_loc
 
-exception Uninitialized_value of Localise.error_desc * L.ml_loc
-
 exception Unknown_proc
 
 exception Unreachable_code_after of Localise.error_desc * L.ml_loc
@@ -585,14 +583,6 @@ let recognize_exception exn =
       ; ml_loc= Some ml_loc
       ; visibility= Exn_developer
       ; severity= Low
-      ; kind= None
-      ; category= Nocat }
-  | Uninitialized_value (desc, ml_loc) ->
-      { name= IssueType.uninitialized_value
-      ; description= desc
-      ; ml_loc= Some ml_loc
-      ; visibility= Exn_user
-      ; severity= Medium
       ; kind= None
       ; category= Nocat }
   | Unary_minus_applied_to_unsigned_expression (desc, ml_loc) ->

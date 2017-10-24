@@ -94,7 +94,6 @@ let check_block_retain_cycle tenv caller_pname prop block_nullified =
     false cases for field and array accesses. *)
 let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, typ) offlist
     (f: Exp.t option -> Exp.t) inst lookup_inst =
-  let pname = Procdesc.get_proc_name pdesc in
   let pp_error () =
     L.d_strln ".... Invalid Field ...." ;
     L.d_str "strexp : " ;
@@ -113,38 +112,8 @@ let rec apply_offlist pdesc tenv p fp_root nullify_struct (root_lexp, strexp, ty
   in
   match (offlist, strexp, typ.Typ.desc) with
   | [], Sil.Eexp (e, inst_curr), _ ->
-      let inst_is_uninitialized = function
-        | Sil.Ialloc ->
-            (* java allocation initializes with default values *)
-            !Config.curr_language <> Config.Java
-        | Sil.Iinitial ->
-            true
-        | _ ->
-            false
-      in
-      let is_hidden_field () =
-        match State.get_instr () with
-        | Some Sil.Load (_, Exp.Lfield (_, fieldname, _), _, _) ->
-            Typ.Fieldname.is_hidden fieldname
-        | _ ->
-            false
-      in
       let inst_new =
         match inst with
-        | Sil.Ilookup when inst_is_uninitialized inst_curr && not (is_hidden_field ()) ->
-            (* we are in a lookup of an uninitialized value *)
-            lookup_inst := Some inst_curr ;
-            let alloc_attribute_opt =
-              if Sil.equal_inst inst_curr Sil.Iinitial then None
-              else Attribute.get_undef tenv p root_lexp
-            in
-            let deref_str = Localise.deref_str_uninitialized alloc_attribute_opt in
-            let err_desc =
-              Errdesc.explain_memory_access pname tenv deref_str p (State.get_loc ())
-            in
-            let exn = Exceptions.Uninitialized_value (err_desc, __POS__) in
-            Reporting.log_warning_deprecated pname exn ;
-            Sil.update_inst inst_curr inst
         | Sil.Ilookup ->
             (* a lookup does not change an inst unless it is inst_initial *)
             lookup_inst := Some inst_curr ;

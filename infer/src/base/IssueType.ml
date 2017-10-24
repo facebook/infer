@@ -293,7 +293,7 @@ let unary_minus_applied_to_unsigned_expression =
   from_string ~enabled:false "UNARY_MINUS_APPLIED_TO_UNSIGNED_EXPRESSION"
 
 
-let uninitialized_value = from_string ~enabled:false "UNINITIALIZED_VALUE"
+let uninitialized_value = from_string "UNINITIALIZED_VALUE"
 
 let unknown_proc = from_string "Unknown_proc" ~hum:"Unknown Procedure"
 

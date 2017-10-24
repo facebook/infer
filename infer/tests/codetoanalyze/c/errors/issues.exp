@@ -1,7 +1,6 @@
 codetoanalyze/c/errors/arithmetic/array_out_of_bounds.c, bound_error, 2, ARRAY_OUT_OF_BOUNDS_L1
 codetoanalyze/c/errors/arithmetic/array_out_of_bounds.c, bound_error_nested, 2, ARRAY_OUT_OF_BOUNDS_L1
 codetoanalyze/c/errors/arithmetic/divide_by_zero.c, arith_divide_by_zero, 3, DIVIDE_BY_ZERO
-codetoanalyze/c/errors/arithmetic/test_sizeof.c, my_realloc, 10, UNINITIALIZED_VALUE
 codetoanalyze/c/errors/arithmetic/unsigned_values.c, signed_array, 3, DIVIDE_BY_ZERO
 codetoanalyze/c/errors/arithmetic/unsigned_values.c, signed_field, 3, DIVIDE_BY_ZERO
 codetoanalyze/c/errors/arithmetic/unsigned_values.c, signed_int, 3, DIVIDE_BY_ZERO
@@ -16,9 +15,7 @@ codetoanalyze/c/errors/attributes/sentinel.c, truncated_call, 5, PREMATURE_NIL_T
 codetoanalyze/c/errors/custom_error/custom.c, paf, 3, UNEXPECTED_NEGATIVE_EXPONENT
 codetoanalyze/c/errors/custom_error/custom.c, pouf, 3, UNEXPECTED_NEGATIVE_EXPONENT
 codetoanalyze/c/errors/dangling_deref/dpd.c, dpd, 3, DANGLING_POINTER_DEREFERENCE
-codetoanalyze/c/errors/dangling_deref/dpd.c, dpd, 3, UNINITIALIZED_VALUE
 codetoanalyze/c/errors/dangling_deref/dpd.c, intraprocdpd, 3, DANGLING_POINTER_DEREFERENCE
-codetoanalyze/c/errors/dangling_deref/dpd.c, intraprocdpd, 3, UNINITIALIZED_VALUE
 codetoanalyze/c/errors/dangling_deref/dpd.c, nodpd1, 3, NULL_DEREFERENCE
 codetoanalyze/c/errors/initialization/compound_literal.c, divide_by_zero, 0, DIVIDE_BY_ZERO
 codetoanalyze/c/errors/initialization/initlistexpr.c, init_divide_by_zero, 2, Assert_failure
