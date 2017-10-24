@@ -64,6 +64,16 @@ let compound_assignment_binary_operation_instruction boi e1 typ e2 loc =
 let binary_operation_instruction boi e1 typ e2 loc =
   let binop_exp op = Exp.BinOp (op, e1, e2) in
   match boi.Clang_ast_t.boi_kind with
+  (* Note: Pointers to members that are not statically known are not
+     expressible in Sil. The translation of the PtrMem ops treats the field as
+     an integer offset, which is itself semantically ok though too low-level,
+     but the translation of the argument expressions does not compute such
+     offsets and instead passes the member pointer at type 'void'. *)
+  | `PtrMemD ->
+      (binop_exp Binop.PlusPI, [])
+  | `PtrMemI ->
+      let id = Ident.create_fresh Ident.knormal in
+      (Exp.BinOp (PlusPI, Exp.Var id, e2), [Sil.Load (id, e1, typ, loc)])
   | `Add ->
       (binop_exp Binop.PlusA, [])
   | `Mul ->
@@ -115,13 +125,6 @@ let binary_operation_instruction boi e1 typ e2 loc =
   | `XorAssign
   | `OrAssign ->
       compound_assignment_binary_operation_instruction boi e1 typ e2 loc
-  (* We should not get here.  *)
-  (* These should be treated by compound_assignment_binary_operation_instruction*)
-  | bok ->
-      L.(debug Capture Medium)
-        "@\nWARNING: Missing translation for Binary Operator Kind %s. Construct ignored...@\n"
-        (Clang_ast_j.string_of_binary_operator_kind bok) ;
-      (Exp.minus_one, [])
 
 
 let unary_operation_instruction translation_unit_context uoi e typ loc =

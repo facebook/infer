@@ -87,9 +87,11 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
                 ap
             | [] ->
                 L.(die InternalError)
-                  "Invalid pointer arithmetic expression %a used as LHS" Exp.pp lhs_exp )
+                  "Invalid pointer arithmetic expression %a used as LHS at %a" Exp.pp lhs_exp
+                  Location.pp_file_pos loc )
         | _ ->
-            L.(die InternalError) "Non-assignable LHS expression %a" Exp.pp lhs_exp
+            L.(die InternalError)
+              "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp Location.pp_file_pos loc
       in
       Instr (Assign (lhs_access_path, exp_of_sil rhs_exp typ, loc))
   | Call (ret_opt, call_exp, formals, loc, call_flags) ->
