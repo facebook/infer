@@ -41,7 +41,7 @@ let parse_command_and_arguments command_and_arguments =
     clang invocation part, because we will use a clang wrapper. *)
 let decode_json_file (database: t) json_format =
   let json_path = match json_format with `Raw x | `Escaped x -> x in
-  let to_string s =
+  let unescape_path s =
     match json_format with
     | `Raw _ ->
         s
@@ -52,34 +52,100 @@ let decode_json_file (database: t) json_format =
         |> fst
   in
   L.(debug Capture Quiet) "parsing compilation database from %s@\n" json_path ;
-  let exit_format_error () = L.(die ExternalError) "Json file doesn't have the expected format" in
-  let json = Yojson.Basic.from_file json_path in
-  let get_dir el = match el with "directory", `String dir -> Some (to_string dir) | _ -> None in
-  let get_file el = match el with "file", `String file -> Some (to_string file) | _ -> None in
-  let get_cmd el = match el with "command", `String cmd -> Some cmd | _ -> None in
-  let rec parse_json json =
+  let exit_format_error error =
+    L.(die ExternalError) ("Json file doesn't have the expected format: " ^^ error)
+  in
+  let parse_command json =
+    let directory = ref None in
+    let file = ref None in
+    let command = ref None in
+    let one_field = function
+      | "directory", `String dir ->
+          directory := Some (unescape_path dir)
+      | "directory", json ->
+          exit_format_error
+            "the value of the \"directory\" field is not a string; found '%s' instead"
+            (Yojson.Basic.to_string json)
+      | "file", `String f ->
+          file := Some (unescape_path f)
+      | "file", json ->
+          exit_format_error "the value of the \"file\" field is not a string; found '%s' instead"
+            (Yojson.Basic.to_string json)
+      | "command", `String cmd ->
+          (* prefer "arguments" when available *)
+          if Option.is_none !command then command := Some (parse_command_and_arguments cmd)
+      | "command", json ->
+          exit_format_error
+            "the value of the \"command\" field is not a string; found '%s' instead"
+            (Yojson.Basic.to_string json)
+      | "arguments", `List args
+        -> (
+          let args =
+            List.map args ~f:(function
+              | `String argument ->
+                  argument
+              | _ ->
+                  exit_format_error
+                    "the value of the \"arguments\" field is not a list of strings in command %s"
+                    (Yojson.Basic.to_string json) )
+          in
+          match args with
+          | [] ->
+              exit_format_error
+                "the value of the \"arguments\" field is an empty list in command %s"
+                (Yojson.Basic.to_string json)
+          | cmd :: args ->
+              command := Some (cmd, Utils.shell_escape_command args) )
+      | "arguments", json ->
+          exit_format_error
+            "the value of the \"arguments\" field is not a list; found '%s' instead"
+            (Yojson.Basic.to_string json)
+      | "output", _ ->
+          ()
+      | _, _ (* be generous and allow anything else too *) ->
+          ()
+    in
     match json with
-    | `List arguments ->
-        List.iter ~f:parse_json arguments
-    | `Assoc l ->
+    | `Assoc fields ->
+        List.iter ~f:one_field fields ;
         let dir =
-          match List.find_map ~f:get_dir l with Some dir -> dir | None -> exit_format_error ()
+          match !directory with
+          | Some directory ->
+              directory
+          | None ->
+              exit_format_error "no \"directory\" entry found in command %s"
+                (Yojson.Basic.to_string json)
         in
         let file =
-          match List.find_map ~f:get_file l with Some file -> file | None -> exit_format_error ()
+          match !file with
+          | Some file ->
+              file
+          | None ->
+              exit_format_error "no \"file\" entry found in command %s"
+                (Yojson.Basic.to_string json)
         in
-        let cmd =
-          match List.find_map ~f:get_cmd l with Some cmd -> cmd | None -> exit_format_error ()
+        let command, args =
+          match !command with
+          | Some x ->
+              x
+          | None ->
+              exit_format_error "no \"command\" or \"arguments\" entry found in command %s"
+                (Yojson.Basic.to_string json)
         in
-        let command, args = parse_command_and_arguments cmd in
         let compilation_data = {dir; command; args} in
         let abs_file = if Filename.is_relative file then dir ^/ file else file in
         let source_file = SourceFile.from_abs_path abs_file in
         database := SourceFile.Map.add source_file compilation_data !database
     | _ ->
-        exit_format_error ()
+        exit_format_error "Compilation database entry is not an object: %s"
+          (Yojson.Basic.to_string json)
   in
-  parse_json json
+  match Yojson.Basic.from_file json_path with
+  | `List commands ->
+      List.iter ~f:parse_command commands
+  | _ as json ->
+      exit_format_error "Compilation database is not a list of commands: %s"
+        (Yojson.Basic.to_string json)
 
 
 let from_json_files db_json_files =

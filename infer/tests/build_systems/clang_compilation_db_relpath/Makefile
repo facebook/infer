@@ -11,18 +11,20 @@ ANALYZER = checkers
 INFER_OPTIONS = --report-custom-error --developer-mode
 SOURCES = \
   ../codetoanalyze/hello.c ../codetoanalyze/hello2.c ../codetoanalyze/hello3.c \
-  ../codetoanalyze/path\ with\ spaces/hel\ lo.c
+  ../codetoanalyze/path\ with\ spaces/hel\ lo.c ../codetoanalyze/path\ with\ spaces/hel\ lo2.c
 OBJECTS = $(SOURCES:.c=.o)
 CLEAN_EXTRA = compile_commands.json ../codetoanalyze/path\ with\ spaces
 INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/infer.make
 
-../codetoanalyze/path\ with\ spaces/hel\ lo.c: ../codetoanalyze/path_with_spaces/hel_lo.c
+../codetoanalyze/path\ with\ spaces/hel\ lo.c ../codetoanalyze/path\ with\ spaces/hel\ lo2.c:
 #	make does not want to interpret "$(@D)" in the right way here...
 	$(QUIET)$(MKDIR_P) ../codetoanalyze/path\ with\ spaces/
 	$(QUIET)cp "$<" "$@"
 	$(QUIET)touch "$@"
+../codetoanalyze/path\ with\ spaces/hel\ lo.c: ../codetoanalyze/path_with_spaces/hel_lo.c
+../codetoanalyze/path\ with\ spaces/hel\ lo2.c: ../codetoanalyze/path_with_spaces/hel_lo2.c
 
 compile_commands.json: compile_commands.json.in
 	$(QUIET)sed -e 's#%pwd%#$(CURDIR)#g' $< > $@ || $(REMOVE) $@

@@ -10,6 +10,11 @@
       "command" : "clang -c hel\\ lo.c"
    },
    {
+      "directory" : "%pwd%/../codetoanalyze/path with spaces",
+      "file" : "hel lo2.c",
+      "arguments" : ["clang", "-c", "hel lo2.c"]
+   },
+   {
       "directory" : "%pwd%/../codetoanalyze",
       "file" : "hello2.c",
       "command" : "clang -c hello2.c"
