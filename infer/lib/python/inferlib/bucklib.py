@@ -146,14 +146,14 @@ def collect_results(args, start_time, targets):
     """Walks through buck-out/, collects results for the different buck targets
     and stores them in in args.infer_out/results.json.
     """
-    all_json_rows = set()
+    all_json_rows = []
 
     for path in get_output_jars(targets):
         try:
             with zipfile.ZipFile(path) as jar:
                 json_rows = load_json_report(jar)
                 for row in json_rows:
-                    all_json_rows.add(json.dumps(row))
+                    all_json_rows.append(row)
         except NotFoundInJar:
             pass
         except zipfile.BadZipfile:
@@ -161,12 +161,8 @@ def collect_results(args, start_time, targets):
 
     json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
 
-    with open(json_report, 'w') as report:
-        json_string = '['
-        json_string += ','.join(all_json_rows)
-        json_string += ']'
-        report.write(json_string)
-        report.flush()
+    with open(json_report, 'w') as file_out:
+        json.dump(all_json_rows, file_out)
 
     bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
     issues.print_and_save_errors(args.infer_out, args.project_root,
