@@ -9,6 +9,9 @@
 bool star();
 
 class T {
+ public:
+  int x;
+  T* field;
 
  public:
   int* _Nullable mayReturnNullPointer() {
@@ -52,4 +55,20 @@ void callMethodOnNullableObjectOk(T* t) {
   if (p != nullptr) {
     p->doSomething();
   }
+}
+
+void dereferenceFieldOfNullableObjectBad(T* t) {
+  T* p = t->mayReturnNullObject();
+  p->x = 42;
+}
+
+void methodCallOnFieldOfNullableObjectBad(T* t) {
+  T* p = t->mayReturnNullObject();
+  p->field->doSomething();
+}
+
+void avoidDoubleReportingBad(T* t) {
+  T* p = t->mayReturnNullObject();
+  p->doSomething(); // should report here
+  p->doSomething(); // should not report here
 }

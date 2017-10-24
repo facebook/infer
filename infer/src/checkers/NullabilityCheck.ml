@@ -80,6 +80,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Reporting.log_error summary ~loc ~ltr:trace exn
 
 
+  let rec longest_nullable_prefix ap astate =
+    try Some (ap, Domain.find ap astate)
+    with Not_found ->
+      match ap with _, [] -> None | p -> longest_nullable_prefix (AccessPath.truncate p) astate
+
+
   let exec_instr (astate: Domain.astate) proc_data _ (instr: HilInstr.t) : Domain.astate =
     match instr with
     | Call (Some ret_var, Direct callee_pname, _, _, loc)
@@ -89,21 +95,31 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.add (ret_var, []) (CallSites.singleton call_site) astate
     | Call (_, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, loc)
       when is_instance_method callee_pname -> (
-      match Domain.find_opt receiver astate with
+      match longest_nullable_prefix receiver astate with
       | None ->
           astate
-      | Some call_sites ->
-          report_nullable_dereference receiver call_sites proc_data loc ;
+      | Some (nullable_ap, call_sites) ->
+          report_nullable_dereference nullable_ap call_sites proc_data loc ;
           Domain.remove receiver astate )
     | Call (Some ret_var, _, _, _, _) ->
         Domain.remove (ret_var, []) astate
-    | Assign (lhs, _, loc) when Domain.mem lhs astate ->
-        report_nullable_dereference lhs (Domain.find lhs astate) proc_data loc ;
-        Domain.remove lhs astate
-    | Assign (lhs, HilExp.AccessPath rhs, _) when Domain.mem rhs astate ->
-        Domain.add lhs (Domain.find rhs astate) astate
-    | Assign (lhs, _, _) ->
-        Domain.remove lhs astate
+    | Assign (lhs, rhs, loc)
+      -> (
+        Option.iter
+          ~f:(fun (nullable_ap, call_sites) ->
+            report_nullable_dereference nullable_ap call_sites proc_data loc)
+          (longest_nullable_prefix lhs astate) ;
+        match rhs with
+        | HilExp.AccessPath ap -> (
+          try
+            (* Add the lhs to the list of nullable values if the rhs is nullable *)
+            Domain.add lhs (Domain.find ap astate) astate
+          with Not_found ->
+            (* Remove the lhs from the list of nullable values if the rhs is not nullable *)
+            Domain.remove lhs astate )
+        | _ ->
+            (* Remove the lhs from the list of nullable values if the rhs is not an access path *)
+            Domain.remove lhs astate )
     | Assume (HilExp.AccessPath ap, _, _, _) ->
         Domain.remove ap astate
     | Assume (HilExp.BinaryOperator (Binop.Ne, HilExp.AccessPath ap, exp), _, _, _)
@@ -121,3 +137,4 @@ let checker {Callbacks.summary; proc_desc; tenv} =
   let proc_data = ProcData.make proc_desc tenv summary in
   ignore (Analyzer.compute_post proc_data ~initial ~debug:false) ;
   summary
+
