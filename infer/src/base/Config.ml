@@ -149,9 +149,9 @@ let string_of_build_system build_system =
 
 (** Constant configuration values *)
 
-let anonymous_block_num_sep = "______"
+let anonymous_block_num_sep = "_"
 
-let anonymous_block_prefix = "__objc_anonymous_block_"
+let anonymous_block_prefix = "objc_block"
 
 let assign = "<\"Assign\">"
 

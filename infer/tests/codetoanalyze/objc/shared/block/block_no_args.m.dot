@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&__objc_anonymous_block_My_manager_m______1); [line 25, column 7]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_My_manager_m______1):unsigned long) [line 25, column 7]\n  *&__objc_anonymous_block_My_manager_m______1:__objc_anonymous_block_My_manager_m______1=n$7 [line 25, column 7]\n  n$8=*&z:int [line 25, column 7]\n  n$9=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 25, column 7]\n  *n$7.z:int=n$8 [line 25, column 7]\n  *n$7.g:int=n$9 [line 25, column 7]\n  n$5=*&z:int [line 25, column 7]\n  *&b:_fn_(*)=(_fun___objc_anonymous_block_My_manager_m______1,n$5) [line 25, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&0$?%__sil_tmp_block_heap_var_n$8); [line 25, column 7]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=Objc_blockMy_manager_m_1Class):unsigned long) [line 25, column 7]\n  *&0$?%__sil_tmp_block_heap_var_n$8:Objc_blockMy_manager_m_1Class=n$7 [line 25, column 7]\n  n$9=*&z:int [line 25, column 7]\n  n$10=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 25, column 7]\n  *n$7.z:int=n$9 [line 25, column 7]\n  *n$7.g:int=n$10 [line 25, column 7]\n  n$5=*&z:int [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_m_1,n$5) [line 25, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" ;
@@ -56,15 +56,15 @@ digraph iCFG {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_14" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_13" ;
-"__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_1" [label="1: Start __objc_anonymous_block_My_manager_m______1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n   DECLARE_LOCALS(&return); [line 25, column 7]\n " color=yellow style=filled]
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" [label="1: Start objc_blockMy_manager_m_1\nFormals:  z:int\nLocals: \nCaptured:  z:int \n   DECLARE_LOCALS(&return); [line 25, column 7]\n " color=yellow style=filled]
 	
 
-	 "__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_1" -> "__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_3" ;
-"__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_2" [label="2: Exit __objc_anonymous_block_My_manager_m______1 \n  " color=yellow style=filled]
+	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_1" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" ;
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" [label="2: Exit objc_blockMy_manager_m_1 \n  " color=yellow style=filled]
 	
 
-"__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_3" [label="3:  BinaryOperatorStmt: Assign \n   n$6=*&z:int [line 26, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$6 + 3) [line 26, column 5]\n " shape="box"]
+"objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" [label="3:  BinaryOperatorStmt: Assign \n   n$6=*&z:int [line 26, column 9]\n  *&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int=(n$6 + 3) [line 26, column 5]\n " shape="box"]
 	
 
-	 "__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_3" -> "__objc_anonymous_block_My_manager_m______1.3cc413211d47d071e2197fcf824430cb_2" ;
+	 "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_3" -> "objc_blockMy_manager_m_1.b75c41325ae3c65dcf5321924a57fc38_2" ;
 }

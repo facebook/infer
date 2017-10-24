@@ -41,11 +41,11 @@ digraph iCFG {
 "capture#A#instance.d411336575e4bf632a1828f5f5979726_2" [label="2: Exit A_capture \n  " color=yellow style=filled]
 	
 
-"capture#A#instance.d411336575e4bf632a1828f5f5979726_3" [label="3:  Message Call: sHandler: \n   n$0=*&self:A* [line 47, column 4]\n  n$1=*n$0._b:B* [line 47, column 4]\n  DECLARE_LOCALS(&__objc_anonymous_block_A_capture______1); [line 47, column 16]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=__objc_anonymous_block_A_capture______1):unsigned long) [line 47, column 16]\n  *&__objc_anonymous_block_A_capture______1:__objc_anonymous_block_A_capture______1=n$5 [line 47, column 16]\n  n$6=*&self:A* [line 47, column 16]\n  *n$5.self:A*=n$6 [line 47, column 16]\n  n$2=*&self:A* [line 47, column 16]\n  n$7=*&__objc_anonymous_block_A_capture______1:_fn_(*) [line 47, column 3]\n  _fun_B_sHandler:(n$1:B*,n$7:_fn_(*),n$2:_fn_(*)) virtual [line 47, column 3]\n " shape="box"]
+"capture#A#instance.d411336575e4bf632a1828f5f5979726_3" [label="3:  Message Call: sHandler: \n   n$0=*&self:A* [line 47, column 4]\n  n$1=*n$0._b:B* [line 47, column 4]\n  DECLARE_LOCALS(&0$?%__sil_tmp_block_heap_var_n$6); [line 47, column 16]\n  n$5=_fun___objc_alloc_no_fail(sizeof(t=Objc_blockA_capture_1Class):unsigned long) [line 47, column 16]\n  *&0$?%__sil_tmp_block_heap_var_n$6:Objc_blockA_capture_1Class=n$5 [line 47, column 16]\n  n$7=*&self:A* [line 47, column 16]\n  *n$5.self:A*=n$7 [line 47, column 16]\n  n$2=*&self:A* [line 47, column 16]\n  n$8=*&objc_blockA_capture_1:_fn_(*) [line 47, column 3]\n  _fun_B_sHandler:(n$1:B*,n$8:_fn_(*),n$2:_fn_(*)) virtual [line 47, column 3]\n " shape="box"]
 	
 
 	 "capture#A#instance.d411336575e4bf632a1828f5f5979726_3" -> "capture#A#instance.d411336575e4bf632a1828f5f5979726_2" ;
-"capture#A#instance.d411336575e4bf632a1828f5f5979726_4" [label="4:  BinaryOperatorStmt: Assign \n   n$8=*&self:A* [line 46, column 3]\n  n$9=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 46, column 8]\n  *n$8._b:B*=n$9 [line 46, column 3]\n " shape="box"]
+"capture#A#instance.d411336575e4bf632a1828f5f5979726_4" [label="4:  BinaryOperatorStmt: Assign \n   n$9=*&self:A* [line 46, column 3]\n  n$10=_fun___objc_alloc_no_fail(sizeof(t=B):unsigned long) [line 46, column 8]\n  *n$9._b:B*=n$10 [line 46, column 3]\n " shape="box"]
 	
 
 	 "capture#A#instance.d411336575e4bf632a1828f5f5979726_4" -> "capture#A#instance.d411336575e4bf632a1828f5f5979726_3" ;
@@ -60,15 +60,15 @@ digraph iCFG {
 	
 
 	 "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_3" -> "sHandler:#B#instance.590685250eb38eaab242405cd45c572b_2" ;
-"__objc_anonymous_block_A_capture______1.d90c81461d9f2b21a67db8a7dea413da_1" [label="1: Start __objc_anonymous_block_A_capture______1\nFormals:  self:A* d:D*\nLocals: \nCaptured:  self:A* \n   DECLARE_LOCALS(&return); [line 47, column 16]\n " color=yellow style=filled]
+"objc_blockA_capture_1.6fdcfe58244de8603cec62dad07f2ae4_1" [label="1: Start objc_blockA_capture_1\nFormals:  self:A* d:D*\nLocals: \nCaptured:  self:A* \n   DECLARE_LOCALS(&return); [line 47, column 16]\n " color=yellow style=filled]
 	
 
-	 "__objc_anonymous_block_A_capture______1.d90c81461d9f2b21a67db8a7dea413da_1" -> "__objc_anonymous_block_A_capture______1.d90c81461d9f2b21a67db8a7dea413da_3" ;
-"__objc_anonymous_block_A_capture______1.d90c81461d9f2b21a67db8a7dea413da_2" [label="2: Exit __objc_anonymous_block_A_capture______1 \n  " color=yellow style=filled]
+	 "objc_blockA_capture_1.6fdcfe58244de8603cec62dad07f2ae4_1" -> "objc_blockA_capture_1.6fdcfe58244de8603cec62dad07f2ae4_3" ;
+"objc_blockA_capture_1.6fdcfe58244de8603cec62dad07f2ae4_2" [label="2: Exit objc_blockA_capture_1 \n  " color=yellow style=filled]
 	
 
-"__objc_anonymous_block_A_capture______1.d90c81461d9f2b21a67db8a7dea413da_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:A* [line 48, column 5]\n  n$4=*&d:D* [line 48, column 13]\n  *n$3._data:D*=n$4 [line 48, column 5]\n " shape="box"]
+"objc_blockA_capture_1.6fdcfe58244de8603cec62dad07f2ae4_3" [label="3:  BinaryOperatorStmt: Assign \n   n$3=*&self:A* [line 48, column 5]\n  n$4=*&d:D* [line 48, column 13]\n  *n$3._data:D*=n$4 [line 48, column 5]\n " shape="box"]
 	
 
-	 "__objc_anonymous_block_A_capture______1.d90c81461d9f2b21a67db8a7dea413da_3" -> "__objc_anonymous_block_A_capture______1.d90c81461d9f2b21a67db8a7dea413da_2" ;
+	 "objc_blockA_capture_1.6fdcfe58244de8603cec62dad07f2ae4_3" -> "objc_blockA_capture_1.6fdcfe58244de8603cec62dad07f2ae4_2" ;
 }

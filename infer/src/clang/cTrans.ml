@@ -108,10 +108,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let tenv = trans_state.context.CContext.tenv in
     let procdesc = trans_state.context.CContext.procdesc in
     let procname = Procdesc.get_proc_name procdesc in
+    let block_typename = Typ.Name.Objc.from_string (String.capitalize (block_name ^ "Class")) in
     let mk_field_from_captured_var (var, typ) =
       let vname = Pvar.get_name var in
-      let tname = Typ.Name.C.from_string block_name in
-      let fname = CGeneral_utils.mk_class_field_name tname (Mangled.to_string vname) in
+      let fname = CGeneral_utils.mk_class_field_name block_typename (Mangled.to_string vname) in
       let item_annot = Annot.Item.empty in
       (fname, typ, item_annot)
     in
@@ -121,7 +121,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ~f:(fun (fn, _, _) ->
         L.(debug Capture Verbose) "-----> field: '%s'@\n" (Typ.Fieldname.to_string fn))
       fields ;
-    let block_typename = Typ.Name.Objc.from_string block_name in
     ignore (Tenv.mk_struct tenv ~fields block_typename) ;
     let block_type = Typ.mk (Typ.Tstruct block_typename) in
     let trans_res =
@@ -130,8 +129,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         block_type
     in
     let id_block = match trans_res.exps with [(Exp.Var id, _)] -> id | _ -> assert false in
-    let mblock = Mangled.from_string block_name in
-    let block_var = Pvar.mk mblock procname in
+    let block_var = Pvar.mk_tmp "_block_heap_var_" procname in
     let declare_block_local =
       Sil.Declare_locals ([(block_var, CType.add_pointer_to_typ block_type)], loc)
     in
