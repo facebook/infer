@@ -202,21 +202,22 @@ module SinkKind = struct
 
 
   let get pname actuals _ =
-    let is_buffer_class cpp_name =
+    let is_buffer_like pname =
       (* assume it's a buffer class if it's "vector-y", "array-y", or "string-y". don't want to
          report on accesses to maps etc., but also want to recognize custom vectors like fbvector
          rather than overfitting to std::vector *)
       let typename =
-        String.lowercase (Typ.Name.to_string (Typ.Procname.objc_cpp_get_class_type_name cpp_name))
+        Typ.Procname.get_qualifiers pname |> QualifiedCppName.strip_template_args
+        |> QualifiedCppName.to_qual_string |> String.lowercase
       in
       String.is_substring ~substring:"vec" typename
       || String.is_substring ~substring:"array" typename
       || String.is_substring ~substring:"string" typename
     in
     match pname with
-    | Typ.Procname.ObjC_Cpp cpp_name -> (
+    | Typ.Procname.ObjC_Cpp _ -> (
       match Typ.Procname.get_method pname with
-      | "operator[]" when Config.developer_mode && is_buffer_class cpp_name ->
+      | "operator[]" when Config.developer_mode && is_buffer_like pname ->
           taint_nth 1 BufferAccess actuals
       | _ ->
           get_external_sink pname actuals )

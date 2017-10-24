@@ -8,6 +8,7 @@
  */
 
 #include <map>
+#include <string>
 #include <vector>
 
 extern int __infer_taint_source();
@@ -30,7 +31,12 @@ void write_map_ok(std::map<int, int> map) {
   map[source] = 2;
 }
 
-void read_map_ok(std::map<int, int> map) {
+void write_string_map_ok(std::map<int, std::string> map) {
+  int source = __infer_taint_source();
+  map[source] = "string";
+}
+
+int read_map_ok(std::map<int, int> map) {
   int source = __infer_taint_source();
   return map[source];
 }
