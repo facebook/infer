@@ -56,10 +56,6 @@ val make_obj_c_message_expr_info_instance : string -> obj_c_message_expr_info
 
 val translate_dispatch_function : stmt_info -> stmt list -> int -> stmt
 
-val translate_block_enumerate :
-  string -> stmt_info -> stmt list -> expr_info
-  -> stmt * (string * Clang_ast_t.pointer * qual_type) list
-
 (* We translate an expression with a conditional*)
 (* x <=> x?1:0 *)
 

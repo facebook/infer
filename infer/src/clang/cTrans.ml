@@ -1352,17 +1352,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     instruction trans_state transformed_stmt
 
 
-  and block_enumeration_trans trans_state stmt_info stmt_list ei =
-    L.(debug Capture Verbose)
-      "@\n Call to a block enumeration function treated as special case...@\n@." ;
-    let procname = Procdesc.get_proc_name trans_state.context.CContext.procdesc in
-    let pvar = CProcname.get_next_block_pvar procname in
-    let transformed_stmt, _ =
-      Ast_expressions.translate_block_enumerate (Pvar.to_string pvar) stmt_info stmt_list ei
-    in
-    instruction trans_state transformed_stmt
-
-
   and compute_this_for_destructor_calls trans_state stmt_info class_ptr =
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -3162,10 +3151,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CXXTemporaryObjectExpr (stmt_info, stmt_list, expr_info, cxx_constr_info) ->
         cxxConstructExpr_trans trans_state stmt_info stmt_list expr_info cxx_constr_info
     | ObjCMessageExpr (stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
-        if is_block_enumerate_function obj_c_message_expr_info then
-          block_enumeration_trans trans_state stmt_info stmt_list expr_info
-        else
-          objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
+        objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
     | CompoundStmt (stmt_info, stmt_list) ->
         (* No node for this statement. We just collect its statement list*)
         compoundStmt_trans trans_state stmt_info stmt_list
