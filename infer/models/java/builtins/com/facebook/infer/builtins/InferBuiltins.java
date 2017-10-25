@@ -16,11 +16,7 @@ public class InferBuiltins {
 
     public native static void __set_mem_attribute(Object o);
 
-    public native static void __set_lock_attribute(Object o);
-
     public native static void __set_locked_attribute(Object o);
-
-    public native static void __set_unlocked_attribute(Object o);
 
     public native static void __delete_locked_attribute(Object o);
 

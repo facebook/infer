@@ -112,15 +112,11 @@ let __set_file_attribute = create_procname "__set_file_attribute"
 
 let __set_hidden_field = create_procname "__set_hidden_field"
 
-let __set_lock_attribute = create_procname "__set_lock_attribute"
-
 let __set_locked_attribute = create_procname "__set_locked_attribute"
 
 let __set_mem_attribute = create_procname "__set_mem_attribute"
 
 let __set_observer_attribute = create_procname "__set_observer_attribute"
-
-let __set_unlocked_attribute = create_procname "__set_unlocked_attribute"
 
 let __set_unsubscribed_observer_attribute = create_procname "__set_unsubscribed_observer_attribute"
 

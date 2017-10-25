@@ -372,19 +372,6 @@ let execute___set_file_attribute {Builtin.tenv; pdesc; prop_; path; ret_id; args
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
-
-(** Set the attibute of the value as lock *)
-let execute___set_lock_attribute {Builtin.tenv; pdesc; prop_; path; ret_id; args; loc}
-    : Builtin.ret_typ =
-  match (args, ret_id) with
-  | [(lexp, _)], _ ->
-      let pname = Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
-      set_resource_attribute tenv prop path n_lexp loc PredSymb.Rlock
-  | _ ->
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-
 (** Set the resource attribute of the first real argument of method as ignore, the first argument is
     assumed to be "this" *)
 let execute___method_set_ignore_attribute {Builtin.tenv; pdesc; prop_; path; ret_id; args; loc}
@@ -589,20 +576,6 @@ let execute___delete_locked_attribute {Builtin.tenv; prop_; pdesc; path; args} :
 (** Set the attibute of the value as locked*)
 let execute___set_locked_attribute builtin_args : Builtin.ret_typ =
   execute___set_attr PredSymb.Alocked builtin_args
-
-
-(** Set the attibute of the value as resource/unlocked*)
-let execute___set_unlocked_attribute ({Builtin.pdesc; loc} as builtin_args) : Builtin.ret_typ =
-  let pname = Procdesc.get_proc_name pdesc in
-  (* ra_kind = Rrelease in following indicates unlocked *)
-  let ra =
-    { PredSymb.ra_kind= PredSymb.Rrelease
-    ; ra_res= PredSymb.Rlock
-    ; ra_pname= pname
-    ; ra_loc= loc
-    ; ra_vpath= None }
-  in
-  execute___set_attr (PredSymb.Aresource ra) builtin_args
 
 
 (** Set the attibute of the value as wont leak*)
@@ -1117,9 +1090,6 @@ let __set_file_attribute =
 (* set a hidden field in the struct to the given value *)
 let __set_hidden_field = Builtin.register BuiltinDecl.__set_hidden_field execute___set_hidden_field
 
-let __set_lock_attribute =
-  Builtin.register BuiltinDecl.__set_lock_attribute execute___set_lock_attribute
-
 
 let __set_locked_attribute =
   Builtin.register BuiltinDecl.__set_locked_attribute execute___set_locked_attribute
@@ -1131,10 +1101,6 @@ let __set_mem_attribute =
 
 let __set_observer_attribute =
   Builtin.register BuiltinDecl.__set_observer_attribute (execute___set_attr PredSymb.Aobserver)
-
-
-let __set_unlocked_attribute =
-  Builtin.register BuiltinDecl.__set_unlocked_attribute execute___set_unlocked_attribute
 
 
 let __set_unsubscribed_observer_attribute =

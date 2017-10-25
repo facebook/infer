@@ -85,15 +85,11 @@ module type S = sig
 
   val __set_hidden_field : t
 
-  val __set_lock_attribute : t
-
   val __set_locked_attribute : t
 
   val __set_mem_attribute : t
 
   val __set_observer_attribute : t
-
-  val __set_unlocked_attribute : t
 
   val __set_unsubscribed_observer_attribute : t
 
