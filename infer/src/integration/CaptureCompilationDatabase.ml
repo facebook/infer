@@ -63,18 +63,16 @@ let run_compilation_database compilation_database should_capture_file =
     CompilationDatabase.filter_compilation_data compilation_database ~f:should_capture_file
   in
   let number_of_jobs = List.length compilation_data in
-  let capture_text =
-    if Config.equal_analyzer Config.analyzer Config.Linters then "linting" else "translating"
-  in
-  L.(debug Capture Quiet) "Starting %s %d files@\n%!" capture_text number_of_jobs ;
-  L.progress "Starting %s %d files@\n%!" capture_text number_of_jobs ;
+  L.(debug Capture Quiet)
+    "Starting %s %d files@\n%!" Config.clang_frontend_action_string number_of_jobs ;
+  L.progress "Starting %s %d files@\n%!" Config.clang_frontend_action_string number_of_jobs ;
   let sequence = Parmap.L (List.map ~f:create_cmd compilation_data) in
   let fail_sentinel_fname = Config.results_dir ^/ Config.linters_failed_sentinel_filename in
   let fail_sentinel =
     if Config.linters_ignore_clang_failures then None
     else
       match Config.buck_compilation_database with
-      | Some NoDeps when Config.clang_frontend_do_lint ->
+      | Some NoDeps when Config.linters ->
           Some fail_sentinel_fname
       | Some NoDeps | Some Deps _ | None ->
           None

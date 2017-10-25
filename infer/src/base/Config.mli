@@ -326,6 +326,8 @@ val bufferoverrun : bool
 
 val calls_csv : string option
 
+val capture : bool
+
 val captured_dir : string
 (** directory where the results of the capture phase are stored *)
 
@@ -336,10 +338,6 @@ val check_nullable : bool
 val clang_biniou_file : string option
 
 val clang_frontend_action_string : string
-
-val clang_frontend_do_capture : bool
-
-val clang_frontend_do_lint : bool
 
 val clang_ignore_regex : string option
 
@@ -505,6 +503,8 @@ val keep_going : bool
 val latex : string option
 
 val linter : string option
+
+val linters : bool
 
 val linters_def_file : string list
 

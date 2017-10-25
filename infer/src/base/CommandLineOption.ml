@@ -277,14 +277,16 @@ let add parse_mode sections desc =
     ()
 
 
-let deprecate_desc parse_mode ~long ~short ~deprecated desc =
+let deprecate_desc parse_mode ~long ~short ~deprecated doc desc =
   let warn () =
     match parse_mode with
     | Javac | NoParse ->
         ()
-    | InferCommand ->
+    | InferCommand when long <> "" ->
         warnf "WARNING: '-%s' is deprecated. Use '--%s'%s instead.@." deprecated long
           (if short = "" then "" else Printf.sprintf " or '-%s'" short)
+    | InferCommand ->
+        warnf "WARNING: '-%s' is deprecated. Here is its documentation:@\n%s@." deprecated doc
   in
   let warn_then_f f x = warn () ; f x in
   let deprecated_spec =
@@ -335,7 +337,7 @@ let mk ?(deprecated= []) ?(parse_mode= InferCommand) ?(in_help= []) ~long ?short
   if short <> "" then add parse_mode [] {desc with long= ""; meta= ""; doc= ""} ;
   (* add desc for deprecated options only for parsing, without documentation *)
   List.iter deprecated ~f:(fun deprecated ->
-      deprecate_desc parse_mode ~long ~short ~deprecated desc |> add parse_mode [] ) ;
+      deprecate_desc parse_mode ~long ~short ~deprecated doc desc |> add parse_mode [] ) ;
   variable
 
 

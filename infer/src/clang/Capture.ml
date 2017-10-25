@@ -35,7 +35,7 @@ let init_global_state_for_capture_and_linters source_file =
   L.(debug Capture Medium) "Processing %s" (Filename.basename (SourceFile.to_abs_path source_file)) ;
   if Config.developer_mode then register_perf_stats_report source_file ;
   Config.curr_language := Config.Clang ;
-  if Config.clang_frontend_do_capture then DB.Results_dir.init source_file ;
+  if Config.capture then DB.Results_dir.init source_file ;
   CFrontend_config.reset_global_state ()
 
 
@@ -85,9 +85,8 @@ let run_clang_frontend ast_source =
   L.(debug Capture Quiet) "Clang frontend action is %s@\n" Config.clang_frontend_action_string ;
   L.(debug Capture Medium)
     "Start %s of AST from %a@\n" Config.clang_frontend_action_string pp_ast_filename ast_source ;
-  if Config.clang_frontend_do_lint then
-    CFrontend_checkers_main.do_frontend_checks trans_unit_ctx ast_decl ;
-  if Config.clang_frontend_do_capture then CFrontend.do_source_file trans_unit_ctx ast_decl ;
+  if Config.linters then CFrontend_checkers_main.do_frontend_checks trans_unit_ctx ast_decl ;
+  if Config.capture then CFrontend.do_source_file trans_unit_ctx ast_decl ;
   L.(debug Capture Medium)
     "End %s of AST file %a... OK!@\n" Config.clang_frontend_action_string pp_ast_filename
     ast_source ;

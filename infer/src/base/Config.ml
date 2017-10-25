@@ -713,6 +713,7 @@ and ( annotation_reachability
     , eradicate
     , fragment_retains_view
     , immutable_cast
+    , linters
     , liveness
     , printf_args
     , quandary
@@ -750,6 +751,7 @@ and ( annotation_reachability
   and immutable_cast =
     mk_checker ~long:"immutable-cast" ~default:true
       "the detection of object cast from immutable type to mutable type. For instance, it will detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
+  and linters = mk_checker ~long:"linters" ~default:true "syntactic linters"
   and liveness =
     mk_checker ~long:"liveness" ~default:true "the detection of dead stores and unused variables"
   and printf_args =
@@ -812,6 +814,7 @@ and ( annotation_reachability
   , eradicate
   , fragment_retains_view
   , immutable_cast
+  , linters
   , liveness
   , printf_args
   , quandary
@@ -898,6 +901,11 @@ and calls_csv =
     ~meta:"file" "Write individual calls in CSV format to $(i,file)"
 
 
+and capture =
+  CLOpt.mk_bool ~long:"capture" ~default:true
+    "capture and translate source files into infer's intermediate language for analysis"
+
+
 and changed_files_index =
   CLOpt.mk_path_opt ~long:"changed-files-index"
     ~in_help:CLOpt.([(Analyze, manual_generic); (Diff, manual_generic)])
@@ -914,10 +922,10 @@ and clang_biniou_file =
 and clang_compilation_dbs = ref []
 
 and clang_frontend_action =
-  CLOpt.mk_symbol_opt ~long:"clang-frontend-action"
+  CLOpt.mk_symbol_opt ~long:"" ~deprecated:["-clang-frontend-action"]
     ~in_help:CLOpt.([(Capture, manual_clang); (Run, manual_clang)])
-    "Specify whether the clang frontend should capture or lint or both."
-    ~symbols:clang_frontend_action_symbols
+    (* doc only shows up in deprecation warnings *)
+    "use --capture and --linters instead" ~symbols:clang_frontend_action_symbols
 
 
 and clang_include_to_override_regex =
@@ -2161,7 +2169,7 @@ let post_parsing_initialization command_opt =
   := List.rev_map ~f:(fun x -> `Raw x) !compilation_database
      |> List.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
   (* set analyzer mode to linters in linters developer mode *)
-  if !linters_developer_mode then analyzer := Some Linters ;
+  if !linters_developer_mode then linters := true ;
   if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
   ( if Option.is_none !analyzer then
       match (command_opt : CLOpt.command option) with
@@ -2179,7 +2187,11 @@ let post_parsing_initialization command_opt =
   | Some Crashcontext ->
       disable_all_checkers () ;
       crashcontext := true
-  | Some (CaptureOnly | Checkers | CompileOnly | Linters) | None ->
+  | Some Linters ->
+      disable_all_checkers () ;
+      capture := false ;
+      linters := true
+  | Some (CaptureOnly | Checkers | CompileOnly) | None ->
       () ) ;
   Option.value ~default:CLOpt.Run command_opt
 
@@ -2293,6 +2305,17 @@ and buck_out = !buck_out
 and bufferoverrun = !bufferoverrun
 
 and calls_csv = !calls_csv
+
+and capture =
+  (* take `--clang-frontend-action` as the source of truth as long as that option exists *)
+  match !clang_frontend_action with
+  | Some (`Capture | `Lint_and_capture) ->
+      true
+  | Some `Lint ->
+      false
+  | None ->
+      !capture
+
 
 and changed_files_index = !changed_files_index
 
@@ -2435,6 +2458,17 @@ and join_cond = !join_cond
 and latex = !latex
 
 and linter = !linter
+
+and linters =
+  (* take `--clang-frontend-action` as the source of truth as long as that option exists *)
+  match !clang_frontend_action with
+  | Some (`Lint | `Lint_and_capture) ->
+      true
+  | Some `Capture ->
+      false
+  | None ->
+      !linters
+
 
 and linters_def_file = !linters_def_file
 
@@ -2670,30 +2704,11 @@ and analysis_suppress_errors analyzer =
 
 let captured_dir = results_dir ^/ captured_dir_name
 
-let clang_frontend_do_capture, clang_frontend_do_lint =
-  match !clang_frontend_action with
-  | Some `Lint ->
-      (false, true) (* no capture, lint *)
-  | Some `Capture ->
-      (true, false) (* capture, no lint *)
-  | Some `Lint_and_capture ->
-      (true, true) (* capture, lint *)
-  | None ->
-    match !analyzer with
-    | Some Linters ->
-        (false, true) (* no capture, lint *)
-    | Some BiAbduction | Some Checkers ->
-        (true, false) (* capture, no lint *)
-    | _ ->
-        (* capture, lint *) (true, true)
-
-
 let analyzer = match !analyzer with Some a -> a | None -> Checkers
 
 let clang_frontend_action_string =
   String.concat ~sep:" and "
-    ( (if clang_frontend_do_capture then ["translating"] else [])
-    @ if clang_frontend_do_lint then ["linting"] else [] )
+    ((if capture then ["translating"] else []) @ if linters then ["linting"] else [])
 
 
 let dynamic_dispatch =

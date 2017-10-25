@@ -127,7 +127,7 @@ let clean_results_dir () =
 
 let check_captured_empty mode =
   let clean_command_opt = clean_compilation_command mode in
-  if Config.clang_frontend_do_capture && Utils.directory_is_empty Config.captured_dir then (
+  if Config.capture && Utils.directory_is_empty Config.captured_dir then (
     ( match clean_command_opt with
     | Some clean_command ->
         L.user_warning "@\nNothing to compile. Try running `%s` first.@." clean_command
