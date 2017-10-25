@@ -390,14 +390,17 @@ public class Ownership {
 
   static MyObj global;
 
-  void storeInGlobalAndWriteBad() {
+  // would need escape analysis to detect this
+  void FN_storeInGlobalAndWriteBad() {
     MyObj x = new MyObj();
-    synchronized(this) { global = x; }
+    synchronized (Ownership.class) {
+      global = x;
+    }
     x.data = 5;
   }
 
   int readGlobalBad() {
-    synchronized(this) { return global.data; }
+    return global.data;
   }
 
   public void writeOwnedWithExceptionOk() {

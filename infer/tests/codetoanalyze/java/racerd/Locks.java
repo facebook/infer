@@ -188,4 +188,31 @@ public class Locks {
     mReentrantReadWriteLock.readLock().unlock();
   }
 
+  boolean mField;
+
+  boolean readUnderLockOk() {
+    synchronized (this) {
+      return mField;
+    }
+  }
+
+  void writeUnderLockOk() {
+    synchronized (this) {
+      mField = true;
+    }
+  }
+
+  boolean readOutsideLock1Bad() {
+    synchronized (this) {
+    }
+    return mField;
+  }
+
+  boolean readOutsideLock2Bad() {
+    boolean tmp = mField;
+    synchronized (this) {
+    }
+    return tmp;
+  }
+
 }
