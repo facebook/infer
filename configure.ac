@@ -201,14 +201,22 @@ AC_ASSERT_OCAML_PKG([yojson])
 
 AC_ARG_VAR([CAML_LD_LIBRARY_PATH],
   [Additional directories to search for dynamically-loaded libraries.])
-
+AC_ARG_VAR([OPAMROOT], [Root of the local opam installation.])
+AC_ARG_VAR([OPAMSWITCH], [Opam switch used for building infer.])
 
 AC_CHECK_TOOL([OPAM], [opam], [no])
 AS_IF([test "$OPAM" != "no"], [
+  AC_MSG_CHECKING([current opam root])
+  OPAMROOT=$("$OPAM" config var root)
+  AC_MSG_RESULT([$OPAMROOT])
   AC_MSG_CHECKING([current opam switch])
   OPAMSWITCH=$("$OPAM" switch show)
   AC_MSG_RESULT([$OPAMSWITCH])
-], [OPAMSWITCH=no])
+], [
+  OPAMROOT=no
+  OPAMSWITCH=no
+])
+AC_SUBST([OPAMROOT])
 AC_SUBST([OPAMSWITCH])
 
 if test "x$enable_java_analyzers" = "xyes"; then

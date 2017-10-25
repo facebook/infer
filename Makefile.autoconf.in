@@ -60,6 +60,7 @@ OCAMLFIND = @OCAMLFIND@
 OCAMLLEX = @OCAMLLEX@
 OCAMLOPT = @OCAMLOPT@
 OPAM = @OPAM@
+OPAMROOT = @OPAMROOT@
 OPAMSWITCH = @OPAMSWITCH@
 PATH = @PATH@
 prefix = @prefix@
@@ -80,3 +81,4 @@ endif
 # Export parts of the config relevant to running other programs
 export PATH := $(PATH)
 export CAML_LD_LIBRARY_PATH := $(CAML_LD_LIBRARY_PATH)
+export OPAMROOT := $(OPAMROOT)
