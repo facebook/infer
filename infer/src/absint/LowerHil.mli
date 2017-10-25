@@ -41,7 +41,7 @@ module MakeAbstractInterpreter
       module type of AbstractInterpreter.Make (CFG) (Make (MakeTransferFunctions) (DefaultConfig))
 
   val compute_post :
-    ?debug:bool -> Interpreter.TransferFunctions.extras ProcData.t
+    Interpreter.TransferFunctions.extras ProcData.t
     -> initial:MakeTransferFunctions(CFG).Domain.astate
     -> MakeTransferFunctions(CFG).Domain.astate option
   (** compute and return the postcondition for the given procedure starting from [initial]. If

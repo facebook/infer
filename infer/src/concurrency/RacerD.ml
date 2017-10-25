@@ -1144,7 +1144,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         in
         {RacerDDomain.empty with ownership; threads}
     in
-    match Analyzer.compute_post proc_data ~initial ~debug:false with
+    match Analyzer.compute_post proc_data ~initial with
     | Some {threads; locks; accesses; ownership; attribute_map} ->
         let return_var_ap =
           AccessPath.of_pvar
@@ -1883,4 +1883,3 @@ let file_analysis {Callbacks.procedures} =
            else (module MayAliasQuotientedAccessListMap) )
            class_env))
     (aggregate_by_class procedures)
-

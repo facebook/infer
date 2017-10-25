@@ -88,8 +88,7 @@ struct
   module Interpreter =
     AbstractInterpreter.Make (CFG) (Make (MakeTransferFunctions) (DefaultConfig))
 
-  let compute_post ?(debug= Config.debug_mode) proc_data ~initial =
+  let compute_post proc_data ~initial =
     let initial' = (initial, IdAccessPathMapDomain.empty) in
-    Option.map ~f:fst (Interpreter.compute_post ~debug proc_data ~initial:initial')
-
+    Option.map ~f:fst (Interpreter.compute_post ~debug:false proc_data ~initial:initial')
 end

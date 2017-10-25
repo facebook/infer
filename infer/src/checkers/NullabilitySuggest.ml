@@ -185,7 +185,7 @@ let checker {Callbacks.summary; proc_desc; tenv} =
     (* Assume all fields are not null in the beginning *)
     let initial = Domain.empty in
     let proc_data = ProcData.make_default proc_desc tenv in
-    match Analyzer.compute_post proc_data ~initial ~debug:false with
+    match Analyzer.compute_post proc_data ~initial with
     | Some post ->
         report post proc_data ; summary
     | None ->
