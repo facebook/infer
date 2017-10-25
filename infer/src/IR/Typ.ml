@@ -187,6 +187,8 @@ let mk ?default ?quals desc : t =
   mk_aux ?default ?quals desc
 
 
+let void_star = mk (Tptr (mk Tvoid, Pk_pointer))
+
 let merge_quals quals1 quals2 =
   { is_const= quals1.is_const || quals2.is_const
   ; is_restrict= quals1.is_restrict || quals2.is_restrict

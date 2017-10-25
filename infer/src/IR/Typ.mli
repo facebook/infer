@@ -113,6 +113,9 @@ and template_spec_info =
 val mk : ?default:t -> ?quals:type_quals -> desc -> t
 (** Create Typ.t from given desc. if [default] is passed then use its value to set other fields such as quals *)
 
+val void_star : t
+(** void* type *)
+
 (** Stores information about type substitution *)
 type type_subst_t [@@deriving compare]
 
