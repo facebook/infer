@@ -1,11 +1,11 @@
 ---
 docid: absint-framework
-title: Building checkers with the abstract interpretation framework
+title: Building checkers with the Infer.AI framework
 layout: docs
 permalink: /docs/absint-framework.html
 ---
 
-Infer has a new framework for quickly developing abstract interpretation-based checkers (intraprocedural or interprocedural). You define only:
+Infer.AI is a framework for quickly developing abstract interpretation-based checkers (intraprocedural or interprocedural). You define only:
 
 (1) An abstract domain (type of abstract state plus `<=`, `join`, and `widen` operations)
 
@@ -13,7 +13,7 @@ Infer has a new framework for quickly developing abstract interpretation-based c
 
 and then you have an analysis that can run on all of the languages Infer supports (C, Obj-C, C++, and Java)!
 
-This guide covers how to use the framework. For background on why we built the framework and how it works, check out this [talk](https://atscaleconference.com/videos/getting-the-most-out-of-static-analyzers) from @Scale2016.
+This guide covers how to use the framework. For background on why we built the framework and how it works, check out these [slides](http://fbinfer.com/downloads/pldi17-infer-ai-tutorial.pdf) from a PLDI 2017 tutorial and this [talk](https://atscaleconference.com/videos/getting-the-most-out-of-static-analyzers) from @Scale2016.
 
 ## By example: intraprocedural analysis
 
@@ -27,18 +27,17 @@ There are basically three important bits here: defining the domain, defining the
 module Analyzer =
   AbstractInterpreter.Make
     (ProcCfg.Backward(ProcCfg.Exceptional))
-    (Scheduler.ReversePostorder)
     (TransferFunctions)
 ```
 
-The `ProcCfg.Backward(ProcCfg.Exceptional)` part says: "I want the direction of iteration to be backward" (since liveness is a backward analysis), and "I want to the analysis to follow exceptional edges". For a forward analysis that ignores exceptional edges, you would do `ProcCfg.Normal` instead (and many other combinations are possible; take a look at [ProcCfg.mli](https://github.com/facebook/infer/blob/master/infer/src/checkers/procCfg.mli) for more). Let's ignore the `Scheduler.ReversePostorder` part for now; you'll never want to change this bit unless you care about the order in which nested loops are analyzed. And finally, the `TransferFunctions` part says "Use the transfer functions I defined above".
+The `ProcCfg.Backward(ProcCfg.Exceptional)` part says: "I want the direction of iteration to be backward" (since liveness is a backward analysis), and "I want to the analysis to follow exceptional edges". For a forward analysis that ignores exceptional edges, you would do `ProcCfg.Normal` instead (and many other combinations are possible; take a look at [ProcCfg.mli](https://github.com/facebook/infer/blob/master/infer/src/absint/ProcCfg.mli) for more). And finally, the `TransferFunctions` part says "Use the transfer functions I defined above".
 
-Now you have an `Analyzer` module that exposes useful functions like [`compute_post`](https://github.com/facebook/infer/blob/master/infer/src/checkers/AbstractInterpreter.mli#L30) (take a procedure as input and compute a postcondition) and [`exec_pdesc`](https://github.com/facebook/infer/blob/master/infer/src/checkers/AbstractInterpreter.mli#L36) (take a procedure and compute an invariant map from node id's to the pre/post at each node). The next step is to hook your checker up to the Infer CLI. For the liveness analysis, you would do this by exposing a function for running the checker on a single procedure:
+Now you have an `Analyzer` module that exposes useful functions like [`compute_post`](https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractInterpreter.mli#L30) (take a procedure as input and compute a postcondition) and [`exec_pdesc`](https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractInterpreter.mli#L36) (take a procedure and compute an invariant map from node id's to the pre/post at each node). The next step is to hook your checker up to the Infer CLI. For the liveness analysis, you would do this by exposing a function for running the checker on a single procedure:
 
 ```
-let checker { Callbacks.proc_desc; proc_name; tenv; } =
+let checker { Callbacks.proc_desc; tenv; } =
   match Analyzer.compute_post (ProcData.make_default proc_desc tenv) with
-  | Some post -> Logging.stderr "Computed post %a for %a" Analyzer.Domain.pp post Procname.pp proc_name;
+  | Some post -> Logging.progress "Computed post %a for %a" Analyzer.Domain.pp post Typ.Procname.pp (Procdesc.get_proc_name proc_desc);
   | None -> ()
 ```
 
@@ -50,7 +49,7 @@ Other examples of simple intraprocedural checkers are [addressTaken.ml](https://
 
 ## Basic error reporting
 
-Useful analyses have output. Basic printing to stderr or stderr is good for debugging, but to report a programmer-readable error that is tied to a source code location, you'll want to use `Reporting.log_error`. Some examples of error-logging code: [1](https://github.com/facebook/infer/blob/master/infer/src/checkers/ThreadSafety.ml#L166), [2](https://github.com/facebook/infer/blob/master/infer/src/checkers/annotationReachability.ml#L224), or [3](https://github.com/facebook/infer/blob/master/infer/src/quandary/TaintAnalysis.ml#L186).
+Useful analyses have output. Basic printing to stderr or stderr is good for debugging, but to report a programmer-readable error that is tied to a source code location, you'll want to use `Reporting.log_error`. Some examples of error-logging code: [1](https://github.com/facebook/infer/blob/master/infer/src/concurrency/RacerD.ml#L166), [2](https://github.com/facebook/infer/blob/master/infer/src/checkers/annotationReachability.ml#L224), or [3](https://github.com/facebook/infer/blob/master/infer/src/quandary/TaintAnalysis.ml#L186).
 
 ## By example: interprocedural analysis
 
@@ -86,7 +85,7 @@ match Summary.read_summary pdesc callee_pname with
 
 This says: "read the summary for `callee_pname` from procedure `pdesc` with type environment `tenv`". You must then add logic for applying the summary to the current abstract state (often, this is as simple as doing a join).
 
-Because our summary type is the same as the abstract state, part (2b) can be done for us by making use of the convenient `AbstractInterpreter.Interprocedural` [functor](https://github.com/facebook/infer/blob/master/infer/src/checkers/AbstractInterpreter.mli#L19) (for an example of what to do when the types are different, take a look at [Quandary](https://github.com/facebook/infer/blob/master/infer/src/quandary/TaintAnalysis.ml#L540)):
+Because our summary type is the same as the abstract state, part (2b) can be done for us by making use of the convenient `AbstractInterpreter.Interprocedural` [functor](https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractInterpreter.mli#L19) (for an example of what to do when the types are different, take a look at [Quandary](https://github.com/facebook/infer/blob/master/infer/src/quandary/TaintAnalysis.ml#L540)):
 
 ```
 module Interprocedural = Analyzer.Interprocedural (Summary)
@@ -120,16 +119,16 @@ Reporting errors with interprocedural traces:
 - Implementation: [`Trace`](https://github.com/facebook/infer/blob/master/infer/src/checkers/Trace.mli)
 
 Implementation:
-- [`AbstractDomain`](https://github.com/facebook/infer/blob/master/infer/src/checkers/AbstractDomain.ml)
-- [`TransferFunctions`](https://github.com/facebook/infer/blob/master/infer/src/checkers/AbstractInterpreter.mli)
-- [`AbstractInterpreter`](https://github.com/facebook/infer/blob/master/infer/src/checkers/AbstractInterpreter.mli)
-- [`ProcCFG`](https://github.com/facebook/infer/blob/master/infer/src/checkers/procCfg.mli)
-- [`Summary`](https://github.com/facebook/infer/blob/master/infer/src/checkers/summary.ml)
-- [`Scheduler`](https://github.com/facebook/infer/blob/master/infer/src/checkers/scheduler.ml)
+- [`AbstractDomain`](https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractDomain.ml)
+- [`TransferFunctions`](https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractInterpreter.mli)
+- [`AbstractInterpreter`](https://github.com/facebook/infer/blob/master/infer/src/absint/AbstractInterpreter.mli)
+- [`ProcCFG`](https://github.com/facebook/infer/blob/master/infer/src/absint/ProcCfg.mli)
+- [`Summary`](https://github.com/facebook/infer/blob/master/infer/src/absint/Summary.ml)
+- [`Scheduler`](https://github.com/facebook/infer/blob/master/infer/src/absint/Scheduler.ml)
 
 ## IR basics: SIL, CFG's, `tenv`'s, `procdesc`'s, and `procname`'s
 
-All of the languages analyzed by Infer are converted into a common intermediate representation. A program is represented as a control-flow graph ([CFG](https://github.com/facebook/infer/blob/master/infer/src/IR/Cfg.rei)) whose nodes contain lists of instructions in the SIL language. SIL is a small low-level language that has some similarities C, LLVM [IR](http://llvm.org/docs/LangRef.html), and [Boogie](https://research.microsoft.com/en-us/um/people/leino/papers/krml178.pdf).
+All of the languages analyzed by Infer are converted into a common intermediate representation. A program is represented as a control-flow graph ([CFG](https://github.com/facebook/infer/blob/master/infer/src/IR/Cfg.rei)) whose nodes contain lists of instructions in the SIL language. SIL is a small low-level language that has some similarities with C, LLVM [IR](http://llvm.org/docs/LangRef.html), and [Boogie](https://research.microsoft.com/en-us/um/people/leino/papers/krml178.pdf).
 
 [Expressions](https://github.com/facebook/infer/blob/master/infer/src/IR/Exp.rei#L25) are literals, program variables (`Pvar`'s), temporary variables (`Ident`'s), a field offset from a struct (OO features like objects are lowered into struct's), or an index offset from an array.
 
@@ -145,9 +144,9 @@ A procedure name or [`procname`](https://github.com/facebook/infer/blob/master/i
 
 The abstract interpretation framework has a few additional constructs that are worth explaining.
 
-A [`ProcCfG`](https://github.com/facebook/infer/blob/master/infer/src/checkers/procCfg.mli) represents the CFG of a *single* procedure whereas (perhaps confusingly) a [`Cfg`](https://github.com/facebook/infer/blob/master/infer/src/IR/Cfg.rei) is the CFG for an entire file. A `ProcCfg` is really a customizable view of the underlying procedure CFG; we can get a view the CFG with its edges  backward (`ProcCfg.Backward`), with or without exceptional edges (`Normal`/`Exceptional`, respectively), or with each node holding at most one instruction (`OneInstrPerNode`).
+A [`ProcCfG`](https://github.com/facebook/infer/blob/master/infer/src/absint/procCfg.mli) represents the CFG of a *single* procedure whereas (perhaps confusingly) a [`Cfg`](https://github.com/facebook/infer/blob/master/infer/src/IR/Cfg.rei) is the CFG for an entire file. A `ProcCfg` is really a customizable view of the underlying procedure CFG; we can get a view the CFG with its edges  backward (`ProcCfg.Backward`), with or without exceptional edges (`Normal`/`Exceptional`, respectively), or with each node holding at most one instruction (`OneInstrPerNode`).
 
-[`ProcData`](https://github.com/facebook/infer/blob/master/infer/src/checkers/procData.mli) is a container that holds all of the read-only information required to analyze a single procedure: procedure description, and `extras`. The `extras` are custom read-only data that are computed before analysis begins, and can be accessed from the transfer functions. Most often, no extras are required for analysis (`ProcData.empty_extras`), but it can be useful to stash information like a map from a formal to its [index](https://github.com/facebook/infer/blob/master/infer/src/quandary/TaintAnalysis.ml#L88) or an invariant [map](https://github.com/facebook/infer/blob/master/infer/src/backend/preanal.ml#L115) from a prior analysis in the extras.
+[`ProcData`](https://github.com/facebook/infer/blob/master/infer/src/absint/procData.mli) is a container that holds all of the read-only information required to analyze a single procedure: procedure description, and `extras`. The `extras` are custom read-only data that are computed before analysis begins, and can be accessed from the transfer functions. Most often, no extras are required for analysis (`ProcData.empty_extras`), but it can be useful to stash information like a map from a formal to its [index](https://github.com/facebook/infer/blob/master/infer/src/quandary/TaintAnalysis.ml#L88) or an invariant [map](https://github.com/facebook/infer/blob/master/infer/src/backend/preanal.ml#L115) from a prior analysis in the extras.
 
 ## How it works
 
@@ -157,6 +156,6 @@ Coming soon.
 
 Coming soon.
 
-## How do I make an analysis modular?
+## How do I make an analysis compositional?
 
 Coming soon.
