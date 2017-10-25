@@ -32,15 +32,15 @@ digraph iCFG {
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_5" ;
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_6" ;
-"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" [label="9:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&0$?%__sil_tmp_block_heap_var_n$9); [line 25, column 7]\n  n$8=_fun___objc_alloc_no_fail(sizeof(t=Objc_blockMy_manager_blockReleaseTODO_1Class):unsigned long) [line 25, column 7]\n  *&0$?%__sil_tmp_block_heap_var_n$9:Objc_blockMy_manager_blockReleaseTODO_1Class=n$8 [line 25, column 7]\n  n$10=*&newImage:CGImage* [line 25, column 7]\n  *n$8.newImage:CGImage*=n$10 [line 25, column 7]\n  n$5=*&newImage:CGImage* [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_blockReleaseTODO_1,n$5) [line 25, column 3]\n " shape="box"]
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" [label="9:  BinaryOperatorStmt: Assign \n   n$5=*&newImage:CGImage* [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_blockReleaseTODO_1,n$5) [line 25, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_8" ;
-"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_10" [label="10:  DeclStmt \n   n$11=*&context:CGContext* [line 24, column 52]\n  n$12=_fun_CGBitmapContextCreateImage(n$11:CGContext*) [line 24, column 25]\n  *&newImage:CGImage*=n$12 [line 24, column 3]\n " shape="box"]
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_10" [label="10:  DeclStmt \n   n$8=*&context:CGContext* [line 24, column 52]\n  n$9=_fun_CGBitmapContextCreateImage(n$8:CGContext*) [line 24, column 25]\n  *&newImage:CGImage*=n$9 [line 24, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_10" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_9" ;
-"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_11" [label="11:  DeclStmt \n   n$13=_fun_CGBitmapContextCreate(null:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,null:CGColorSpace*,0:unsigned int) [line 23, column 26]\n  *&context:CGContext*=n$13 [line 23, column 3]\n " shape="box"]
+"blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_11" [label="11:  DeclStmt \n   n$10=_fun_CGBitmapContextCreate(null:void*,0:unsigned long,0:unsigned long,8:unsigned long,0:unsigned long,null:CGColorSpace*,0:unsigned int) [line 23, column 26]\n  *&context:CGContext*=n$10 [line 23, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_11" -> "blockReleaseTODO#My_manager#instance.8c1d633cf596e86a307167d9425628a8_10" ;

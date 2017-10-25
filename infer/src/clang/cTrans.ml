@@ -98,57 +98,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         false
 
 
-  (* This function add in tenv a class representing an objc block. *)
-  (* An object of this class has type:*)
-  (* name_of_block |-> {capture_var1:typ_of_capture_var1,... capture_varn:typ_of_capture_varn} *)
-  (* It allocates one element and sets its fields with the current values of the *)
-  (* captured variables. This allocated instance
-     is used to detect retain cycles involving the block.*)
-  let allocate_block trans_state block_name captured_vars loc =
-    let tenv = trans_state.context.CContext.tenv in
-    let procdesc = trans_state.context.CContext.procdesc in
-    let procname = Procdesc.get_proc_name procdesc in
-    let block_typename = Typ.Name.Objc.from_string (String.capitalize (block_name ^ "Class")) in
-    let mk_field_from_captured_var (var, typ) =
-      let vname = Pvar.get_name var in
-      let fname = CGeneral_utils.mk_class_field_name block_typename (Mangled.to_string vname) in
-      let item_annot = Annot.Item.empty in
-      (fname, typ, item_annot)
-    in
-    let fields = List.map ~f:mk_field_from_captured_var captured_vars in
-    L.(debug Capture Verbose) "Block %s field:@\n" block_name ;
-    List.iter
-      ~f:(fun (fn, _, _) ->
-        L.(debug Capture Verbose) "-----> field: '%s'@\n" (Typ.Fieldname.to_string fn))
-      fields ;
-    ignore (Tenv.mk_struct tenv ~fields block_typename) ;
-    let block_type = Typ.mk (Typ.Tstruct block_typename) in
-    let trans_res =
-      CTrans_utils.alloc_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc_no_fail loc
-        (Ast_expressions.dummy_stmt_info ())
-        block_type
-    in
-    let id_block = match trans_res.exps with [(Exp.Var id, _)] -> id | _ -> assert false in
-    let block_var = Pvar.mk_tmp "_block_heap_var_" procname in
-    let declare_block_local =
-      Sil.Declare_locals ([(block_var, CType.add_pointer_to_typ block_type)], loc)
-    in
-    let set_instr = Sil.Store (Exp.Lvar block_var, block_type, Exp.Var id_block, loc) in
-    let create_field_exp (var, typ) =
-      let id = Ident.create_fresh Ident.knormal in
-      (id, Sil.Load (id, Exp.Lvar var, typ, loc))
-    in
-    let ids, captured_instrs = List.unzip (List.map ~f:create_field_exp captured_vars) in
-    let fields_ids = List.zip_exn fields ids in
-    let set_fields =
-      List.map
-        ~f:(fun ((f, t, _), id) ->
-          Sil.Store (Exp.Lfield (Exp.Var id_block, f, block_type), t, Exp.Var id, loc))
-        fields_ids
-    in
-    declare_block_local :: trans_res.instrs @ [set_instr] @ captured_instrs @ set_fields
-
-
   (* From a list of expression extract blocks from tuples and *)
   (* returns block names and assignment to temp vars  *)
   let extract_block_from_tuple procname exps loc =
@@ -2711,11 +2660,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           List.map2_exn ~f:(fun id (pvar, typ) -> (Exp.Var id, pvar, typ)) ids captureds
         in
         let closure = Exp.Closure {name= block_pname; captured_vars} in
-        let block_name = Typ.Procname.to_string block_pname in
-        let static_vars = CContext.static_vars_for_block context block_pname in
-        let captured_static_vars = captureds @ static_vars in
-        let alloc_block_instr = allocate_block trans_state block_name captured_static_vars loc in
-        {empty_res_trans with instrs= alloc_block_instr @ instrs; exps= [(closure, typ)]}
+        {empty_res_trans with instrs; exps= [(closure, typ)]}
     | _ ->
         assert false
 

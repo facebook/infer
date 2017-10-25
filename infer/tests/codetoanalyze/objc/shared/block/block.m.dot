@@ -41,15 +41,15 @@ digraph iCFG {
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_5" -> "main1.38f534a9576db7ec6ebcbca8c111f942_4" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_6" [label="6:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&0$?%__sil_tmp_block_heap_var_n$8); [line 34, column 14]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=Objc_blockmain1_1Class):unsigned long) [line 34, column 14]\n  *&0$?%__sil_tmp_block_heap_var_n$8:Objc_blockmain1_1Class=n$7 [line 34, column 14]\n  n$9=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 34, column 14]\n  *n$7.main1_s:int=n$9 [line 34, column 14]\n  *&addblock:_fn_(*)=(_fun_objc_blockmain1_1) [line 34, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_6" [label="6:  BinaryOperatorStmt: Assign \n   *&addblock:_fn_(*)=(_fun_objc_blockmain1_1) [line 34, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_6" -> "main1.38f534a9576db7ec6ebcbca8c111f942_5" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_7" [label="7:  BinaryOperatorStmt: Assign \n   n$10=*&addblock:_fn_(*) [line 32, column 10]\n  n$11=n$10(1:int,2:int) [line 32, column 10]\n  *&add1:int=n$11 [line 32, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_7" [label="7:  BinaryOperatorStmt: Assign \n   n$7=*&addblock:_fn_(*) [line 32, column 10]\n  n$8=n$7(1:int,2:int) [line 32, column 10]\n  *&add1:int=n$8 [line 32, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_7" -> "main1.38f534a9576db7ec6ebcbca8c111f942_6" ;
-"main1.38f534a9576db7ec6ebcbca8c111f942_8" [label="8:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&0$?%__sil_tmp_block_heap_var_n$30); [line 18, column 14]\n  n$29=_fun___objc_alloc_no_fail(sizeof(t=Objc_blockmain1_2Class):unsigned long) [line 18, column 14]\n  *&0$?%__sil_tmp_block_heap_var_n$30:Objc_blockmain1_2Class=n$29 [line 18, column 14]\n  n$31=*&x:int [line 18, column 14]\n  *n$29.x:int=n$31 [line 18, column 14]\n  n$12=*&x:int [line 18, column 14]\n  *&addblock:_fn_(*)=(_fun_objc_blockmain1_2,n$12) [line 18, column 3]\n " shape="box"]
+"main1.38f534a9576db7ec6ebcbca8c111f942_8" [label="8:  BinaryOperatorStmt: Assign \n   n$9=*&x:int [line 18, column 14]\n  *&addblock:_fn_(*)=(_fun_objc_blockmain1_2,n$9) [line 18, column 3]\n " shape="box"]
 	
 
 	 "main1.38f534a9576db7ec6ebcbca8c111f942_8" -> "main1.38f534a9576db7ec6ebcbca8c111f942_7" ;
@@ -68,15 +68,15 @@ digraph iCFG {
 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_2" [label="2: Exit objc_blockmain1_2 \n  " color=yellow style=filled]
 	
 
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_3" [label="3:  Return Stmt \n   n$13=*&c:int [line 29, column 12]\n  n$14=*&add2:int [line 29, column 16]\n  n$15=*&bla:int [line 29, column 23]\n  *&return:int=((n$13 + n$14) + n$15) [line 29, column 5]\n " shape="box"]
+"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_3" [label="3:  Return Stmt \n   n$10=*&c:int [line 29, column 12]\n  n$11=*&add2:int [line 29, column 16]\n  n$12=*&bla:int [line 29, column 23]\n  *&return:int=((n$10 + n$11) + n$12) [line 29, column 5]\n " shape="box"]
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_3" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_2" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_4" [label="4:  BinaryOperatorStmt: Assign \n   n$16=*&addblock2:_fn_(*) [line 28, column 12]\n  n$17=n$16(1:int) [line 28, column 12]\n  *&add2:int=n$17 [line 28, column 5]\n " shape="box"]
+"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_4" [label="4:  BinaryOperatorStmt: Assign \n   n$13=*&addblock2:_fn_(*) [line 28, column 12]\n  n$14=n$13(1:int) [line 28, column 12]\n  *&add2:int=n$14 [line 28, column 5]\n " shape="box"]
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_4" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_3" ;
-"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" [label="5:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&0$?%__sil_tmp_block_heap_var_n$25); [line 24, column 17]\n  n$24=_fun___objc_alloc_no_fail(sizeof(t=Objc_blockobjc_blockmain1_2_3Class):unsigned long) [line 24, column 17]\n  *&0$?%__sil_tmp_block_heap_var_n$25:Objc_blockobjc_blockmain1_2_3Class=n$24 [line 24, column 17]\n  n$26=*&x:int [line 24, column 17]\n  n$27=*&bla:int [line 24, column 17]\n  n$28=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 24, column 17]\n  *n$24.x:int=n$26 [line 24, column 17]\n  *n$24.bla:int=n$27 [line 24, column 17]\n  *n$24.main1_s:int=n$28 [line 24, column 17]\n  n$18=*&x:int [line 24, column 17]\n  n$19=*&bla:int [line 24, column 17]\n  *&addblock2:_fn_(*)=(_fun_objc_blockobjc_blockmain1_2_3,n$18,n$19) [line 24, column 5]\n " shape="box"]
+"objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" [label="5:  BinaryOperatorStmt: Assign \n   n$15=*&x:int [line 24, column 17]\n  n$16=*&bla:int [line 24, column 17]\n  *&addblock2:_fn_(*)=(_fun_objc_blockobjc_blockmain1_2_3,n$15,n$16) [line 24, column 5]\n " shape="box"]
 	
 
 	 "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_5" -> "objc_blockmain1_2.0d332204bbe33f46a9283d2c0df5700a_4" ;
@@ -91,7 +91,7 @@ digraph iCFG {
 "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_2" [label="2: Exit objc_blockobjc_blockmain1_2_3 \n  " color=yellow style=filled]
 	
 
-"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" [label="3:  Return Stmt \n   n$20=*&z:int [line 25, column 14]\n  n$21=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 25, column 18]\n  n$22=*&x:int [line 25, column 22]\n  n$23=*&bla:int [line 25, column 26]\n  *&return:int=(((n$20 + n$21) + n$22) + n$23) [line 25, column 7]\n " shape="box"]
+"objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" [label="3:  Return Stmt \n   n$17=*&z:int [line 25, column 14]\n  n$18=*&#GB<codetoanalyze/objc/shared/block/block.m>$main1_s:int [line 25, column 18]\n  n$19=*&x:int [line 25, column 22]\n  n$20=*&bla:int [line 25, column 26]\n  *&return:int=(((n$17 + n$18) + n$19) + n$20) [line 25, column 7]\n " shape="box"]
 	
 
 	 "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_3" -> "objc_blockobjc_blockmain1_2_3.0824f0806cf4ebad2920e9a12535d20e_2" ;

@@ -44,7 +44,7 @@ digraph iCFG {
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_10" ;
-"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   DECLARE_LOCALS(&0$?%__sil_tmp_block_heap_var_n$8); [line 25, column 7]\n  n$7=_fun___objc_alloc_no_fail(sizeof(t=Objc_blockMy_manager_m_1Class):unsigned long) [line 25, column 7]\n  *&0$?%__sil_tmp_block_heap_var_n$8:Objc_blockMy_manager_m_1Class=n$7 [line 25, column 7]\n  n$9=*&z:int [line 25, column 7]\n  n$10=*&#GB<codetoanalyze/objc/shared/block/block_no_args.m>$g:int [line 25, column 7]\n  *n$7.z:int=n$9 [line 25, column 7]\n  *n$7.g:int=n$10 [line 25, column 7]\n  n$5=*&z:int [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_m_1,n$5) [line 25, column 3]\n " shape="box"]
+"m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" [label="12:  BinaryOperatorStmt: Assign \n   n$5=*&z:int [line 25, column 7]\n  *&b:_fn_(*)=(_fun_objc_blockMy_manager_m_1,n$5) [line 25, column 3]\n " shape="box"]
 	
 
 	 "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_12" -> "m#My_manager#instance.e773f849d062cb9801497b62f5c98f5e_11" ;

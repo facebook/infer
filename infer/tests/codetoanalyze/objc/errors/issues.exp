@@ -29,7 +29,6 @@ codetoanalyze/objc/shared/assertions/NSAssert_example.m, test2, 1, MEMORY_LEAK, 
 codetoanalyze/objc/shared/block/BlockVar.m, BlockVar_blockPostBad, 5, NULL_DEREFERENCE, [start of procedure blockPostBad,start of procedure block,return from a call to objc_blockBlockVar_blockPostBad_2]
 codetoanalyze/objc/shared/block/BlockVar.m, BlockVar_capturedNullDeref, 5, NULL_DEREFERENCE, [start of procedure capturedNullDeref,start of procedure block]
 codetoanalyze/objc/shared/block/BlockVar.m, BlockVar_navigateToURLInBackground, 8, NULL_DEREFERENCE, [start of procedure navigateToURLInBackground,start of procedure block,start of procedure test,return from a call to BlockVar_test,return from a call to objc_blockBlockVar_navigateToURLInBackground_1,Condition is true]
-codetoanalyze/objc/shared/block/block.m, BlockMain, 0, Assert_failure, [start of procedure BlockMain()]
 codetoanalyze/objc/shared/block/block.m, main1, 31, DIVIDE_BY_ZERO, [start of procedure main1(),start of procedure block,start of procedure block,return from a call to objc_blockobjc_blockmain1_2_3,return from a call to objc_blockmain1_2,start of procedure block,return from a call to objc_blockmain1_1]
 codetoanalyze/objc/shared/block/block_no_args.m, My_manager_m, 10, NULL_DEREFERENCE, [start of procedure m,start of procedure block,return from a call to objc_blockMy_manager_m_1,Condition is true]
 codetoanalyze/objc/shared/block/block_release.m, My_manager_blockReleaseTODO, 5, MEMORY_LEAK, [start of procedure blockReleaseTODO]
