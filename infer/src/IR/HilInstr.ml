@@ -89,6 +89,13 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
                 L.(die InternalError)
                   "Invalid pointer arithmetic expression %a used as LHS at %a" Exp.pp lhs_exp
                   Location.pp_file_pos loc )
+        | Constant Const.Cint i ->
+            (* this can happen in intentionally crashing code like *0xdeadbeef = 0 used for
+               debugging. doesn't really matter what we do here, so just create a dummy var *)
+            let dummy_base_var =
+              Var.of_id (Ident.create_normal (Ident.string_to_name (IntLit.to_string i)) 0)
+            in
+            ((dummy_base_var, Typ.void_star), [])
         | _ ->
             L.(die InternalError)
               "Non-assignable LHS expression %a at %a" Exp.pp lhs_exp Location.pp_file_pos loc

@@ -137,3 +137,6 @@ int ok6() {
   x = 7;
   return x;
 }
+
+// this crashes HIL if we're not careful
+void deref_magic_addr_ok() { *(int*)0xdeadbeef = 0; }
