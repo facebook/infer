@@ -16,8 +16,8 @@ module type Spec = sig
 
   module Sink : Sink.S
 
-  val should_report : Source.t -> Sink.t -> bool
-  (** should a flow originating at source and entering sink be reported? *)
+  val get_report : Source.t -> Sink.t -> IssueType.t option
+  (** return Some(issue) if the source and sink match, None otherwise *)
 end
 
 module type S = sig
@@ -71,6 +71,12 @@ module type S = sig
   type path =
     Passthroughs.t * (path_source * Passthroughs.t) list * (path_sink * Passthroughs.t) list
 
+  type report =
+    { issue: IssueType.t
+    ; path_source: path_source
+    ; path_sink: path_sink
+    ; path_passthroughs: Passthroughs.t }
+
   val empty : t
   (** the empty trace *)
 
@@ -83,7 +89,7 @@ module type S = sig
   val passthroughs : t -> Passthroughs.t
   (** get the passthroughs of the trace *)
 
-  val get_reports : ?cur_site:CallSite.t -> t -> (path_source * path_sink * Passthroughs.t) list
+  val get_reports : ?cur_site:CallSite.t -> t -> report list
   (** get the reportable source-sink flows in this trace. specifying [cur_site] restricts the
       reported paths to ones introduced by the call at [cur_site]  *)
 

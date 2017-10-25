@@ -353,7 +353,7 @@ include Trace.Make (struct
   module Source = JavaSource
   module Sink = JavaSink
 
-  let should_report source sink =
+  let get_report source sink =
     match (Source.kind source, Sink.kind sink) with
     | PrivateData, Logging
     (* logging private data issue *)
@@ -371,17 +371,17 @@ include Trace.Make (struct
     (* create file from user-controller URI; potential path-traversal vulnerability *)
     | UserControlledString, (StartComponent | CreateIntent | JavaScript | CreateFile | HTML) ->
         (* do something sensitive with a user-controlled string *)
-        true
+        Some IssueType.quandary_taint_error
     | (Intent | UserControlledURI | UserControlledString), Deserialization ->
         (* shouldn't let anyone external control what we deserialize *)
-        true
+        Some IssueType.quandary_taint_error
     | DrawableResource _, OpenDrawableResource ->
         (* not a security issue, but useful for debugging flows from resource IDs to inflation *)
-        true
+        Some IssueType.quandary_taint_error
     | Other, _ | _, Other ->
         (* for testing purposes, Other matches everything *)
-        true
+        Some IssueType.quandary_taint_error
     | _ ->
-        false
+        None
 
 end)

@@ -39,7 +39,7 @@ module MockTrace = Trace.Make (struct
 
   end)
 
-  let should_report _ _ = false
+  let get_report _ _ = None
 end)
 
 module MockTaintAnalysis = TaintAnalysis.Make (struct

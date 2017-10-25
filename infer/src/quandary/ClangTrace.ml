@@ -277,7 +277,7 @@ include Trace.Make (struct
   module Source = CppSource
   module Sink = CppSink
 
-  let should_report source sink =
+  let get_report source sink =
     (* using this to match custom string wrappers such as folly::StringPiece *)
     let is_stringy typ =
       let lowercase_typ = String.lowercase (Typ.to_string (Typ.mk typ)) in
@@ -287,23 +287,23 @@ include Trace.Make (struct
     match (Source.kind source, Sink.kind sink) with
     | Endpoint _, BufferAccess ->
         (* untrusted data from an endpoint flowing into a buffer *)
-        true
+        Some IssueType.quandary_taint_error
     | Endpoint (_, typ), (ShellExec | SQL) ->
         (* untrusted string data flowing to shell exec/SQL *)
-        is_stringy typ
+        Option.some_if (is_stringy typ) IssueType.quandary_taint_error
     | (EnvironmentVariable | File), (BufferAccess | ShellExec | SQL) ->
         (* untrusted environment var or file data flowing to buffer or code injection *)
-        true
+        Some IssueType.quandary_taint_error
     | (Endpoint _ | EnvironmentVariable | File), Allocation ->
         (* untrusted data flowing to memory allocation *)
-        true
+        Some IssueType.quandary_taint_error
     | CommandLineFlag _, (Allocation | BufferAccess | Other | ShellExec | SQL) ->
         (* data controlled by a command line flag flowing somewhere sensitive *)
-        true
+        Some IssueType.quandary_taint_error
     | Other, _ ->
         (* Other matches everything *)
-        true
+        Some IssueType.quandary_taint_error
     | _, Other ->
-        true
+        Some IssueType.quandary_taint_error
 
 end)

@@ -16,8 +16,7 @@ module type Spec = sig
 
   module Sink : Sink.S
 
-  val should_report : Source.t -> Sink.t -> bool
-  (** should a flow originating at source and entering sink be reported? *)
+  val get_report : Source.t -> Sink.t -> IssueType.t option
 end
 
 module type S = sig
@@ -63,6 +62,12 @@ module type S = sig
   type path =
     Passthroughs.t * (path_source * Passthroughs.t) list * (path_sink * Passthroughs.t) list
 
+  type report =
+    { issue: IssueType.t
+    ; path_source: path_source
+    ; path_sink: path_sink
+    ; path_passthroughs: Passthroughs.t }
+
   val empty : t
 
   val sources : t -> Sources.t
@@ -74,7 +79,7 @@ module type S = sig
   val passthroughs : t -> Passthroughs.t
   (** get the passthroughs of the trace *)
 
-  val get_reports : ?cur_site:CallSite.t -> t -> (path_source * path_sink * Passthroughs.t) list
+  val get_reports : ?cur_site:CallSite.t -> t -> report list
   (** get the reportable source-sink flows in this trace. specifying [cur_site] restricts the
       reported paths to ones introduced by the call at [cur_site]  *)
 
@@ -250,6 +255,12 @@ module Make (Spec : Spec) = struct
   type path =
     Passthroughs.t * (path_source * Passthroughs.t) list * (path_sink * Passthroughs.t) list
 
+  type report =
+    { issue: IssueType.t
+    ; path_source: path_source
+    ; path_sink: path_sink
+    ; path_passthroughs: Passthroughs.t }
+
   let pp fmt {sources; sinks; passthroughs} =
     let pp_passthroughs fmt passthroughs =
       if not (Passthroughs.is_empty passthroughs) then
@@ -297,8 +308,16 @@ module Make (Spec : Spec) = struct
       (* written to avoid closure allocations in hot code. change with caution. *)
       let report_source source sinks acc0 =
         let report_one sink acc =
-          if Spec.should_report source sink && should_report_at_site source sink then
-            (Known source, sink, t.passthroughs) :: acc
+          if should_report_at_site source sink then
+            match Spec.get_report source sink with
+            | Some issue ->
+                { issue
+                ; path_source= Known source
+                ; path_sink= sink
+                ; path_passthroughs= t.passthroughs }
+                :: acc
+            | None ->
+                acc
           else acc
         in
         Sinks.fold report_one sinks acc0
@@ -384,8 +403,8 @@ module Make (Spec : Spec) = struct
           ([], [])
     in
     List.map
-      ~f:(fun (path_source, sink, passthroughs) ->
-        let sources_passthroughs, sinks_passthroughs = expand_path path_source sink in
+      ~f:(fun {path_source; path_sink; path_passthroughs} ->
+        let sources_passthroughs, sinks_passthroughs = expand_path path_source path_sink in
         let filtered_passthroughs =
           let source_site =
             match path_source with
@@ -394,7 +413,7 @@ module Make (Spec : Spec) = struct
             | Footprint _ ->
                 Option.value ~default:CallSite.dummy cur_site
           in
-          filter_passthroughs_ Top_level source_site (Sink.call_site sink) passthroughs
+          filter_passthroughs_ Top_level source_site (Sink.call_site path_sink) path_passthroughs
         in
         (filtered_passthroughs, sources_passthroughs, sinks_passthroughs))
       (get_reports ?cur_site t)

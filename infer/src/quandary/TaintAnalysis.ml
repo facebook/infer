@@ -136,7 +136,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           final_sink
           (if is_endpoint original_path_source then ". Note: source is an endpoint." else "")
       in
-      let report_one (path_source, sink, _) =
+      let report_one {TraceDomain.issue; path_source; path_sink} =
         let open TraceDomain in
         let rec expand_source source0 ((report_acc, seen_acc) as acc) =
           let kind = Source.kind source0 in
@@ -215,7 +215,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           | Footprint _ ->
               ([(None, path_source)], CallSite.Set.empty)
         in
-        let expanded_sinks, _ = expand_sink sink sink_indexes ([sink], CallSite.Set.empty) in
+        let expanded_sinks, _ =
+          expand_sink path_sink sink_indexes ([path_sink], CallSite.Set.empty)
+        in
         let source_trace =
           let pp_access_path_opt fmt = function
             | None ->
@@ -251,12 +253,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               Errlog.make_trace_element 0 (CallSite.loc call_site) desc [])
             expanded_sinks
         in
-        let msg = IssueType.quandary_taint_error.unique_id in
         let _, original_path_source = List.hd_exn expanded_sources in
         let final_sink = List.hd_exn expanded_sinks in
         let trace_str = get_short_trace_string original_path_source final_sink in
         let ltr = source_trace @ List.rev sink_trace in
-        let exn = Exceptions.Checkers (msg, Localise.verbatim_desc trace_str) in
+        let exn = Exceptions.Checkers (issue.unique_id, Localise.verbatim_desc trace_str) in
         Reporting.log_error proc_data.extras.summary ~loc:(CallSite.loc cur_site) ~ltr exn
       in
       List.iter ~f:report_one (TraceDomain.get_reports ~cur_site trace)

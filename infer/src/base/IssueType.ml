@@ -148,6 +148,8 @@ let divide_by_zero = from_string ~enabled:false "DIVIDE_BY_ZERO"
 
 let double_lock = from_string "DOUBLE_LOCK"
 
+let do_not_report = from_string "DO_NOT_REPORT"
+
 let empty_vector_access = from_string "EMPTY_VECTOR_ACCESS"
 
 let eradicate_condition_redundant =

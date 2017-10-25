@@ -99,6 +99,9 @@ val divide_by_zero : t
 
 val double_lock : t
 
+val do_not_report : t
+(** an issue type that should never be reported *)
+
 val empty_vector_access : t
 
 val eradicate_condition_redundant : t
