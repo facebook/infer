@@ -13,11 +13,13 @@ Infer.AI is a framework for quickly developing abstract interpretation-based che
 
 and then you have an analysis that can run on all of the languages Infer supports (C, Obj-C, C++, and Java)!
 
-This guide covers how to use the framework. For background on why we built the framework and how it works, check out these [slides](http://fbinfer.com/downloads/pldi17-infer-ai-tutorial.pdf) from a PLDI 2017 tutorial and this [talk](https://atscaleconference.com/videos/getting-the-most-out-of-static-analyzers) from @Scale2016.
+This guide covers how to use the framework. For background on why we built the framework and how it works, check out these [slides](http://fbinfer.com/downloads/pldi17-infer-ai-tutorial.pdf) from a PLDI 2017 tutorial and this [talk](https://atscaleconference.com/videos/getting-the-most-out-of-static-analyzers) from @Scale2016. 
+
+**If you feel like coding instead of reading, a great way to get started with Infer.AI is to go through the lab exercise [here](https://github.com/facebook/infer/blob/master/infer/src/labs/lab.md).**
 
 ## By example: intraprocedural analysis
 
-This section helps you get started ASAP if you already understand [abstract interpretation](http://www.di.ens.fr/~cousot/AI/IntroAbsInt.html) (or don't, but are feeling impatient).
+This section helps you get started ASAP if you already understand [abstract interpretation](http://www.di.ens.fr/~cousot/AI/IntroAbsInt.html) (or don't, but are feeling bold).
 
 Take a look at [liveness.ml](https://github.com/facebook/infer/blob/master/infer/src/checkers/liveness.ml). This code is performing a compilers-101 style liveness analysis over [SIL](#ir-basics-sil-cfgs-tenvs-procdescs-and-procnames), Infer's intermediate language. Since this code is fairly small and you should already understand what it's trying to do, it's a fairly good place to look in order to understand both how to use the abstract interpretation framework and what SIL is.
 
