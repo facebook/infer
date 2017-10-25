@@ -95,7 +95,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     , IdAccessPathMapDomain.empty )
   in
   let invariant_map =
-    Analyzer.exec_cfg cfg (ProcData.make proc_desc tenv formal_map) ~initial:init ~debug:true
+    Analyzer.exec_cfg cfg (ProcData.make proc_desc tenv formal_map) ~initial:init ~debug:false
   in
   (* Check if an expression is in set of variables *)
   let exp_in_set exp vset =
@@ -186,4 +186,3 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
           (Procdesc.get_proc_name proc_desc) ;
         summary )
       else summary
-
