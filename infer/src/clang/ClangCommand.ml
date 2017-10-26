@@ -23,9 +23,6 @@ let plugin_path = fcp_dir ^/ "libtooling" ^/ "build" ^/ "FacebookClangPlugin.dyl
 (** name of the plugin to use *)
 let plugin_name = "BiniouASTExporter"
 
-(** whether to amend include search path with C++ model headers *)
-let infer_cxx_models = Config.cxx_infer_headers
-
 let value_of_argv_option argv opt_name =
   List.fold
     ~f:(fun (prev_arg, result) arg ->
@@ -156,13 +153,17 @@ let command_to_run cmd =
 let with_exec exec args = {args with exec}
 
 let with_plugin_args args =
+  if Config.cxx_infer_headers && Config.biabduction && Config.bufferoverrun then
+    L.(die UserError)
+      "The biabduction and bufferoverrun analyses have conflicting header models for C++. Either disable infer's custom C++ headers (--no-cxx-infer-headers), the biabduction analysis (--no-biabduction), or the bufferoverrun analysis (--no-bufferoverrun)." ;
   let plugin_arg_flag = "-plugin-arg-" ^ plugin_name in
   let args_before_rev =
     []
     |> (* -cc1 has to be the first argument or clang will think it runs in driver mode *)
        argv_cons "-cc1"
     |> (* It's important to place this option before other -isystem options. *)
-       argv_do_if infer_cxx_models (List.rev_append ["-isystem"; Config.cpp_extra_include_dir])
+       argv_do_if Config.cxx_infer_headers
+         (List.rev_append ["-isystem"; Config.cpp_extra_include_dir])
     |> List.rev_append
          [ "-load"
          ; plugin_path
