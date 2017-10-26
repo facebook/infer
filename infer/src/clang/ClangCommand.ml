@@ -162,7 +162,8 @@ let with_plugin_args args =
     |> (* -cc1 has to be the first argument or clang will think it runs in driver mode *)
        argv_cons "-cc1"
     |> (* It's important to place this option before other -isystem options. *)
-       argv_do_if Config.cxx_infer_headers
+       argv_do_if
+         Config.(cxx_infer_headers && (biabduction || bufferoverrun))
          (List.rev_append ["-isystem"; Config.cpp_extra_include_dir])
     |> List.rev_append
          [ "-load"
