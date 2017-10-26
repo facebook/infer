@@ -90,45 +90,36 @@ let run_compilation_database compilation_database should_capture_file =
 
 (** Computes the compilation database files. *)
 let get_compilation_database_files_buck ~prog ~args =
-  let all_buck_args = Buck.inline_argument_files args in
-  let targets, no_targets = List.partition_tf ~f:Buck.is_target_string all_buck_args in
-  let targets =
-    match Config.buck_compilation_database with
-    | Some Deps depth ->
-        Buck.get_dependency_targets_and_add_flavors targets ~depth
-    | _ ->
-        Buck.add_flavors_to_buck_command targets
+  let dep_depth =
+    match Config.buck_compilation_database with Some Deps depth -> Some depth | _ -> None
   in
-  match no_targets with
-  | "build" :: no_targets_no_build
-    -> (
-      let targets_in_file = Buck.store_targets_in_file targets in
-      let build_args = no_targets @ ["--config"; "*//cxx.pch_enabled=false"; targets_in_file] in
+  match
+    Buck.add_flavors_to_buck_arguments ~filter_kind:true ~dep_depth
+      ~extra_flavors:Config.append_buck_flavors args
+  with
+  | {command= "build" as command; rev_not_targets; targets} ->
+      let targets_args = Buck.store_args_in_file targets in
+      let build_args =
+        command
+        :: List.rev_append rev_not_targets
+             ("--config" :: "*//cxx.pch_enabled=false" :: targets_args)
+      in
       Logging.(debug Linters Quiet)
-        "Processed buck command is : 'buck %s'@\n"
-        (String.concat ~sep:" " build_args) ;
+        "Processed buck command is: 'buck %a'@\n" (Pp.seq Pp.string) build_args ;
       Process.create_process_and_wait ~prog ~args:build_args ;
       let buck_targets_shell =
-        Buck.filter_compatible `Targets no_targets_no_build
-        |> List.append [prog; "targets"; "--show-output"; targets_in_file]
-        |> Utils.shell_escape_command
+        prog
+        :: "targets"
+        :: List.rev_append
+             (Buck.filter_compatible `Targets rev_not_targets)
+             ("--show-output" :: targets_args)
       in
-      let output, exit_or_signal =
-        Utils.with_process_in buck_targets_shell In_channel.input_lines
-      in
-      match exit_or_signal with
-      | Error _ as status ->
-          L.(die ExternalError)
-            "*** command failed:@\n*** %s@\n*** %s@." buck_targets_shell
-            (Unix.Exit_or_signal.to_string_hum status)
-      | Ok () ->
-        match output with
+      let on_target_lines = function
         | [] ->
-            L.external_error "There are no files to process, exiting@." ;
-            L.exit 0
+            L.(die ExternalError) "There are no files to process, exiting"
         | lines ->
             L.(debug Capture Quiet)
-              "Reading compilation database from:@\n%s@\n" (String.concat ~sep:"\n" lines) ;
+              "Reading compilation database from:@\n%a@\n" (Pp.seq ~sep:"\n" Pp.string) lines ;
             (* this assumes that flavors do not contain spaces *)
             let split_regex = Str.regexp "#[^ ]* " in
             let scan_output compilation_database_files line =
@@ -139,11 +130,14 @@ let get_compilation_database_files_buck ~prog ~args =
                   L.(die ExternalError)
                     "Failed to parse `buck targets --show-output ...` line of output:@\n%s" line
             in
-            List.fold ~f:scan_output ~init:[] lines )
+            List.fold ~f:scan_output ~init:[] lines
+      in
+      Utils.with_process_lines
+        ~debug:L.(debug Capture Quiet)
+        ~cmd:buck_targets_shell ~tmp_prefix:"buck_targets_" ~f:on_target_lines
   | _ ->
-      let cmd = String.concat ~sep:" " (prog :: args) in
-      Process.print_error_and_exit "Incorrect buck command: %s. Please use buck build <targets>"
-        cmd
+      Process.print_error_and_exit "Incorrect buck command: %s %a. Please use buck build <targets>"
+        prog (Pp.seq Pp.string) args
 
 
 (** Compute the compilation database files. *)

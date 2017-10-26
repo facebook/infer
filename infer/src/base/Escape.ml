@@ -129,3 +129,5 @@ let escape_filename s =
   in
   escape_map map s
 
+
+let escape_double_quotes s = escape_map (function '"' -> Some "\\\"" | _ -> None) s

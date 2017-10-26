@@ -27,3 +27,6 @@ val inter : ('a -> 'a -> int) -> 'a list -> 'a list -> 'a list
 (** [inter cmp xs ys] are the elements in both [xs] and [ys], sorted according to [cmp]. *)
 
 val to_string : ('a -> string) -> 'a list -> string
+
+val uncons_exn : 'a list -> 'a * 'a list
+(** deconstruct a list, like hd_exn and tl_exn *)

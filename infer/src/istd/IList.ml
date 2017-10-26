@@ -100,3 +100,5 @@ let to_string f l =
   let rec aux l = match l with [] -> "" | [s] -> f s | s :: rest -> f s ^ ", " ^ aux rest in
   "[" ^ aux l ^ "]"
 
+
+let uncons_exn = function [] -> failwith "uncons_exn" | hd :: tl -> (hd, tl)

@@ -221,13 +221,46 @@ let with_process_in command read =
   do_finally_swallow_timeout ~f ~finally
 
 
-let shell_escape_command cmd =
-  let escape arg =
-    (* ends on-going single quote, output single quote inside double quotes, then open a new single
+let shell_escape_command =
+  let no_quote_needed = Str.regexp "^[A-Za-z0-9-_%/:,.]+$" in
+  let easy_single_quotable = Str.regexp "^[^']+$" in
+  let easy_double_quotable = Str.regexp "^[^$`\\!]+$" in
+  let escape = function
+    | "" ->
+        "''"
+    | arg ->
+        if Str.string_match no_quote_needed arg 0 then arg
+        else if Str.string_match easy_single_quotable arg 0 then F.sprintf "'%s'" arg
+        else if Str.string_match easy_double_quotable arg 0 then arg |> Escape.escape_double_quotes
+          |> F.sprintf "\"%s\""
+        else
+          (* ends on-going single quote, output single quote inside double quotes, then open a new single
        quote *)
-    Escape.escape_map (function '\'' -> Some "'\"'\"'" | _ -> None) arg |> Printf.sprintf "'%s'"
+          arg |> Escape.escape_map (function '\'' -> Some "'\"'\"'" | _ -> None)
+          |> F.sprintf "'%s'"
   in
-  List.map ~f:escape cmd |> String.concat ~sep:" "
+  fun cmd -> List.map ~f:escape cmd |> String.concat ~sep:" "
+
+
+let with_process_lines ~(debug: ('a, F.formatter, unit) format -> 'a) ~cmd ~tmp_prefix ~f =
+  let shell_cmd = shell_escape_command cmd in
+  let verbose_err_file = Filename.temp_file tmp_prefix ".err" in
+  let shell_cmd_redirected = Printf.sprintf "%s 2>'%s'" shell_cmd verbose_err_file in
+  debug "Trying to execute: %s@\n%!" shell_cmd_redirected ;
+  let input_lines chan = In_channel.input_lines ~fix_win_eol:true chan in
+  let res = with_process_in shell_cmd_redirected input_lines in
+  let verbose_errlog = with_file_in verbose_err_file ~f:In_channel.input_all in
+  if not (String.equal verbose_errlog "") then
+    debug "@\nlog:@\n<<<<<<@\n%s@\n>>>>>>@\n%!" verbose_errlog ;
+  match res with
+  | lines, Ok () ->
+      f lines
+  | lines, (Error _ as err) ->
+      let output = String.concat ~sep:"\n" lines in
+      L.(die ExternalError)
+        "*** Failed to execute: %s@\n*** Command: %s@\n*** Output:@\n%s@."
+        (Unix.Exit_or_signal.to_string_hum err)
+        shell_cmd output
 
 
 (** Create a directory if it does not exist already. *)

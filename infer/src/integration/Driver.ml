@@ -287,16 +287,15 @@ let capture ~changed_files mode =
                     (Option.to_list (Sys.getenv CLOpt.args_env_var) @ ["--buck"])
                 in
                 Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
-                let all_buck_args = Buck.inline_argument_files build_cmd in
-                let targets, no_targets =
-                  List.partition_tf ~f:Buck.is_target_string all_buck_args
+                let prog, buck_args = IList.uncons_exn build_cmd in
+                let {Buck.command; rev_not_targets; targets} =
+                  Buck.add_flavors_to_buck_arguments ~filter_kind:false ~dep_depth:None
+                    ~extra_flavors:[] buck_args
                 in
-                let targets_with_flavor = Buck.add_flavors_to_buck_command targets in
-                let targets_in_file = Buck.store_targets_in_file targets_with_flavor in
-                let updated_buck_cmd = no_targets @ [targets_in_file] in
+                let all_args = List.rev_append rev_not_targets targets in
+                let updated_buck_cmd = prog :: command :: Buck.store_args_in_file all_args in
                 Logging.(debug Capture Quiet)
-                  "Processed buck command '%s'@\n"
-                  (String.concat ~sep:" " updated_buck_cmd) ;
+                  "Processed buck command '%a'@\n" (Pp.seq Pp.string) updated_buck_cmd ;
                 updated_buck_cmd
             else build_cmd ) )
       in

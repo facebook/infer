@@ -31,3 +31,6 @@ val escape_url : string -> string
 
 val escape_filename : string -> string
 (** escape a string to be used as a file name *)
+
+val escape_double_quotes : string -> string
+(** replaces double-quote with backslash double-quote *)
