@@ -148,22 +148,27 @@ module CppSource = Source.Make (SourceKind)
 
 module SinkKind = struct
   type t =
-    | Allocation  (** memory allocation *)
     | BufferAccess  (** read/write an array *)
+    | HeapAllocation  (** heap memory allocation *)
     | ShellExec  (** shell exec function *)
     | SQL  (** SQL query *)
+    | StackAllocation  (** stack memory allocation *)
     | Other  (** for testing or uncategorized sinks *)
     [@@deriving compare]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
 
   let of_string = function
-    | "Allocation" ->
-        Allocation
+    | "BufferAccess" ->
+        BufferAccess
+    | "HeapAllocation" ->
+        HeapAllocation
     | "ShellExec" ->
         ShellExec
     | "SQL" ->
         SQL
+    | "StackAllocation" ->
+        StackAllocation
     | _ ->
         Other
 
@@ -226,7 +231,7 @@ module SinkKind = struct
         taint_all BufferAccess actuals
     | Typ.Procname.C _ when Typ.Procname.equal pname BuiltinDecl.__set_array_length ->
         (* called when creating a stack-allocated array *)
-        taint_nth 1 Allocation actuals
+        taint_nth 1 StackAllocation actuals
     | Typ.Procname.C _ -> (
       match Typ.Procname.to_string pname with
       | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system" ->
@@ -234,7 +239,7 @@ module SinkKind = struct
       | "popen" ->
           taint_nth 0 ShellExec actuals
       | ("brk" | "calloc" | "malloc" | "realloc" | "sbrk") when Config.developer_mode ->
-          taint_all Allocation actuals
+          taint_all HeapAllocation actuals
       | "strcpy" when Config.developer_mode ->
           (* warn if source array is tainted *)
           taint_nth 1 BufferAccess actuals
@@ -258,14 +263,16 @@ module SinkKind = struct
   let pp fmt kind =
     F.fprintf fmt
       ( match kind with
-      | Allocation ->
-          "Allocation"
       | BufferAccess ->
           "BufferAccess"
+      | HeapAllocation ->
+          "HeapAllocation"
       | ShellExec ->
           "ShellExec"
       | SQL ->
           "SQL"
+      | StackAllocation ->
+          "StackAllocation"
       | Other ->
           "Other" )
 
@@ -303,9 +310,13 @@ include Trace.Make (struct
     | (CommandLineFlag _ | EnvironmentVariable | File | Other), SQL ->
         (* untrusted flag, environment var, or file data flowing to SQL *)
         Some IssueType.sql_injection
-    | (CommandLineFlag _ | Endpoint _ | EnvironmentVariable | File), Allocation ->
-        (* untrusted data of any kind flowing to memory allocation *)
+    | (CommandLineFlag _ | Endpoint _ | EnvironmentVariable | File | Other), HeapAllocation ->
+        (* untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS. *)
         Some IssueType.quandary_taint_error
+    | (CommandLineFlag _ | Endpoint _ | EnvironmentVariable | File | Other), StackAllocation ->
+        (* untrusted data of any kind flowing to stack buffer allocation. trying to allocate a stack
+           buffer that's too large will cause a stack overflow. *)
+        Some IssueType.untrusted_variable_length_array
     | Other, _ ->
         (* Other matches everything *)
         Some IssueType.quandary_taint_error

@@ -309,4 +309,6 @@ let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
 
 let use_after_free = from_string "USE_AFTER_FREE"
 
+let untrusted_variable_length_array = from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"
+
 let wrong_argument_number = from_string "Wrong_argument_number" ~hum:"Wrong Argument Number"

@@ -218,4 +218,6 @@ val unsafe_guarded_by_access : t
 
 val use_after_free : t
 
+val untrusted_variable_length_array : t
+
 val wrong_argument_number : t
