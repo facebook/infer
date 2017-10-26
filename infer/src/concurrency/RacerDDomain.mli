@@ -41,6 +41,16 @@ module TraceElem : sig
   val is_container_write : t -> bool
 
   val map : f:(AccessPath.t -> AccessPath.t) -> t -> t
+
+  val is_direct : t -> bool
+  (** return true if the given trace elem represents a direct access, not a call that eventually
+      leads to an access *)
+
+  val make_container_access : AccessPath.t -> Typ.Procname.t -> is_write:bool -> Location.t -> t
+
+  val make_field_access : AccessPath.t -> is_write:bool -> Location.t -> t
+
+  val make_unannotated_call_access : Typ.Procname.t -> Location.t -> t
 end
 
 (** A bool that is true if a lock is definitely held. Note that this is unsound because it assumes
@@ -200,12 +210,5 @@ type summary =
   ; return_attributes: AttributeSetDomain.astate }
 
 include AbstractDomain.WithBottom with type astate := astate
-
-val make_container_access :
-  AccessPath.t -> Typ.Procname.t -> is_write:bool -> Location.t -> TraceElem.t
-
-val make_field_access : AccessPath.t -> is_write:bool -> Location.t -> TraceElem.t
-
-val make_unannotated_call_access : Typ.Procname.t -> Location.t -> TraceElem.t
 
 val pp_summary : F.formatter -> summary -> unit

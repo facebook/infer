@@ -346,7 +346,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     then
       let open Domain in
       let pre = AccessPrecondition.make locks threads proc_data.pdesc in
-      AccessDomain.add_access pre (make_unannotated_call_access pname loc) attribute_map
+      AccessDomain.add_access pre (TraceElem.make_unannotated_call_access pname loc) attribute_map
     else attribute_map
 
 
@@ -380,7 +380,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                || is_safe_access access prefix_path proc_data.tenv
             then access_acc
             else
-              AccessDomain.add_access pre (make_field_access access_path ~is_write loc) access_acc
+              AccessDomain.add_access pre
+                (TraceElem.make_field_access access_path ~is_write loc)
+                access_acc
           in
           add_field_accesses pre access_path access_acc' access_list'
     in
@@ -525,7 +527,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       if is_synchronized_container callee_pname receiver_ap tenv then AccessDomain.empty
       else
         let container_access =
-          make_container_access receiver_ap ~is_write callee_pname callee_loc
+          TraceElem.make_container_access receiver_ap ~is_write callee_pname callee_loc
         in
         AccessDomain.add_access (Unprotected (IntSet.singleton 0)) container_access
           AccessDomain.empty
@@ -1323,21 +1325,25 @@ let report_thread_safety_violation tenv pdesc issue_type ~make_description ~repo
   let open RacerDDomain in
   let pname = Procdesc.get_proc_name pdesc in
   let report_one_path ((_, sinks) as path) =
-    let initial_sink, _ = List.last_exn sinks in
     let final_sink, _ = List.hd_exn sinks in
-    let initial_sink_site = PathDomain.Sink.call_site initial_sink in
-    let final_sink_site = PathDomain.Sink.call_site final_sink in
-    let loc = CallSite.loc initial_sink_site in
-    let ltr = make_trace ~report_kind path pdesc in
-    (* what the potential bug is *)
-    let description = make_description pname final_sink_site initial_sink_site final_sink in
-    (* why we are reporting it *)
-    let explanation = get_reporting_explanation report_kind tenv pname thread in
-    let error_message = F.sprintf "%s%s" description explanation in
-    let exn =
-      Exceptions.Checkers (issue_type.IssueType.unique_id, Localise.verbatim_desc error_message)
-    in
-    Reporting.log_error_deprecated ~store_summary:true pname ~loc ~ltr exn
+    let is_full_trace = TraceElem.is_direct final_sink in
+    (* Traces can be truncated due to limitations of our Buck integration. If we have a truncated
+       trace, it's probably going to be too confusing to be actionable. Skip it. *)
+    if is_full_trace || not Config.filtering then
+      let final_sink_site = PathDomain.Sink.call_site final_sink in
+      let initial_sink, _ = List.last_exn sinks in
+      let initial_sink_site = PathDomain.Sink.call_site initial_sink in
+      let loc = CallSite.loc initial_sink_site in
+      let ltr = make_trace ~report_kind path pdesc in
+      (* what the potential bug is *)
+      let description = make_description pname final_sink_site initial_sink_site final_sink in
+      (* why we are reporting it *)
+      let explanation = get_reporting_explanation report_kind tenv pname thread in
+      let error_message = F.sprintf "%s%s" description explanation in
+      let exn =
+        Exceptions.Checkers (issue_type.IssueType.unique_id, Localise.verbatim_desc error_message)
+      in
+      Reporting.log_error_deprecated ~store_summary:true pname ~loc ~ltr exn
   in
   let trace_of_pname = trace_of_pname access pdesc in
   Option.iter ~f:report_one_path (PathDomain.get_reportable_sink_path access ~trace_of_pname)

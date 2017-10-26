@@ -124,26 +124,34 @@ module TraceElem = struct
 
     let pp = pp
   end)
+
+  let dummy_pname = Typ.Procname.empty_block
+
+  let make_dummy_site = CallSite.make dummy_pname
+
+  (* all trace elems are created with a dummy call site. any trace elem without a dummy call site
+     represents a call that leads to an access rather than a direct access *)
+  let is_direct {site} = Typ.Procname.equal (CallSite.pname site) dummy_pname
+
+  let make_container_access access_path pname ~is_write loc =
+    let site = make_dummy_site loc in
+    let access =
+      if is_write then Access.ContainerWrite (access_path, pname)
+      else Access.ContainerRead (access_path, pname)
+    in
+    make access site
+
+
+  let make_field_access access_path ~is_write loc =
+    let site = make_dummy_site loc in
+    make (Access.make_field_access access_path ~is_write) site
+
+
+  let make_unannotated_call_access pname loc =
+    let site = make_dummy_site loc in
+    make (Access.InterfaceCall pname) site
+
 end
-
-let make_container_access access_path pname ~is_write loc =
-  let site = CallSite.make Typ.Procname.empty_block loc in
-  let access =
-    if is_write then Access.ContainerWrite (access_path, pname)
-    else Access.ContainerRead (access_path, pname)
-  in
-  TraceElem.make access site
-
-
-let make_field_access access_path ~is_write loc =
-  let site = CallSite.make Typ.Procname.empty_block loc in
-  TraceElem.make (Access.make_field_access access_path ~is_write) site
-
-
-let make_unannotated_call_access pname loc =
-  let site = CallSite.make Typ.Procname.empty_block loc in
-  TraceElem.make (Access.InterfaceCall pname) site
-
 
 (* In this domain true<=false. The intended denotations [[.]] are
     [[true]] = the set of all states where we know according, to annotations
