@@ -77,12 +77,11 @@ let stanzas =
   (flags (%s))
   (ocamlopt_flags (%s))
   (libraries (utop InferModules))
-  (modules (:standard \ %s))
+  (modules (Infertop))
   (link_flags (-linkall -warn-error -31))))
 |}
         (String.concat " " infer_cflags)
-        (String.concat " " common_optflags)
-        (String.concat " " infer_binaries) ]
+        (String.concat " " common_optflags) ]
   @ ( List.map
         (fun source_dir ->
           [ Printf.sprintf "(copy_files# %s/*.ml{,i,l})" source_dir
