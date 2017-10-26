@@ -722,6 +722,12 @@ module Procname = struct
         "Linters_dummy_method"
 
 
+  (** Return whether the procname is a block procname. *)
+  let is_objc_block = function Block _ -> true | _ -> false
+
+  (** Return whether the procname is a cpp lambda. *)
+  let is_cpp_lambda procname = String.is_substring ~substring:"operator()" (get_method procname)
+
   (** Return the language of the procedure. *)
   let get_language = function
     | ObjC_Cpp _ ->

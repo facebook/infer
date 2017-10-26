@@ -20,11 +20,10 @@
     __assert_fn__ = __assert_fn__ ? __assert_fn__ : @"<Unknown Function>";
     NSString* __assert_file__ = [NSString stringWithUTF8String:"A.m"];
     __assert_file__ = __assert_file__ ? __assert_file__ : @"<Unknown File>";
-    [[NSAssertionHandler currentHandler]
-        handleFailureInFunction:__assert_fn__
-                           file:__assert_file__
-                     lineNumber:23
-                    description:(@"Hello")];
+    [[NSAssertionHandler currentHandler] handleFailureInFunction:__assert_fn__
+                                                            file:__assert_file__
+                                                      lineNumber:23
+                                                     description:(@"Hello")];
   }
 }
 

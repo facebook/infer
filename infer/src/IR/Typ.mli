@@ -332,6 +332,12 @@ module Procname : sig
   val get_method : t -> string
   (** Return the method/function of a procname. *)
 
+  val is_objc_block : t -> bool
+  (** Return whether the procname is a block procname. *)
+
+  val is_cpp_lambda : t -> bool
+  (** Return whether the procname is a cpp lambda. *)
+
   val hash_pname : t -> int
   (** Hash function for procname. *)
 
