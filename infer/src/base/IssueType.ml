@@ -281,6 +281,10 @@ let skip_function = from_string "SKIP_FUNCTION"
 
 let skip_pointer_dereference = from_string "SKIP_POINTER_DEREFERENCE"
 
+let shell_injection = from_string "SHELL_INJECTION"
+
+let sql_injection = from_string "SQL_INJECTION"
+
 let stack_variable_address_escape = from_string ~enabled:false "STACK_VARIABLE_ADDRESS_ESCAPE"
 
 let static_initialization_order_fiasco = from_string "STATIC_INITIALIZATION_ORDER_FIASCO"

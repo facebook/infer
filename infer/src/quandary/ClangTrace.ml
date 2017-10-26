@@ -288,17 +288,23 @@ include Trace.Make (struct
     | Endpoint _, BufferAccess ->
         (* untrusted data from an endpoint flowing into a buffer *)
         Some IssueType.quandary_taint_error
-    | Endpoint (_, typ), (ShellExec | SQL) ->
-        (* untrusted string data flowing to shell exec/SQL *)
-        Option.some_if (is_stringy typ) IssueType.quandary_taint_error
-    | (EnvironmentVariable | File), (BufferAccess | ShellExec | SQL) ->
-        (* untrusted environment var or file data flowing to buffer or code injection *)
+    | Endpoint (_, typ), ShellExec ->
+        (* untrusted string data flowing to shell ShellExec *)
+        Option.some_if (is_stringy typ) IssueType.shell_injection
+    | Endpoint (_, typ), SQL ->
+        (* untrusted string data flowing to SQL *)
+        Option.some_if (is_stringy typ) IssueType.sql_injection
+    | (CommandLineFlag _ | EnvironmentVariable | File | Other), BufferAccess ->
+        (* untrusted flag, environment var, or file data flowing to buffer *)
         Some IssueType.quandary_taint_error
-    | (Endpoint _ | EnvironmentVariable | File), Allocation ->
-        (* untrusted data flowing to memory allocation *)
-        Some IssueType.quandary_taint_error
-    | CommandLineFlag _, (Allocation | BufferAccess | Other | ShellExec | SQL) ->
-        (* data controlled by a command line flag flowing somewhere sensitive *)
+    | (CommandLineFlag _ | EnvironmentVariable | File | Other), ShellExec ->
+        (* untrusted flag, environment var, or file data flowing to shell *)
+        Some IssueType.shell_injection
+    | (CommandLineFlag _ | EnvironmentVariable | File | Other), SQL ->
+        (* untrusted flag, environment var, or file data flowing to SQL *)
+        Some IssueType.sql_injection
+    | (CommandLineFlag _ | Endpoint _ | EnvironmentVariable | File), Allocation ->
+        (* untrusted data of any kind flowing to memory allocation *)
         Some IssueType.quandary_taint_error
     | Other, _ ->
         (* Other matches everything *)

@@ -194,6 +194,10 @@ val skip_function : t
 
 val skip_pointer_dereference : t
 
+val shell_injection : t
+
+val sql_injection : t
+
 val stack_variable_address_escape : t
 
 val static_initialization_order_fiasco : t
