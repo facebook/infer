@@ -31,6 +31,8 @@ end)
 
 let intraprocedural_only = true
 
+let is_address_pvar e = match e with Exp.Lvar _ -> true | _ -> false
+
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RecordDomain
@@ -131,8 +133,14 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     in
     match instr with
     | Sil.Load (_, Exp.Lvar pv, _, loc)
-    | Sil.Store (_, _, Exp.Lvar pv, loc)
-      when exp_in_set (Exp.Lvar pv) uninit_vars ->
+      when not (Pvar.is_frontend_tmp pv) && exp_in_set (Exp.Lvar pv) uninit_vars ->
+        let message =
+          F.asprintf "The value read from %a was never initialized" Exp.pp (Exp.Lvar pv)
+        in
+        report message loc
+    | Sil.Store (lhs, _, Exp.Lvar pv, loc)
+      when not (Pvar.is_frontend_tmp pv) && exp_in_set (Exp.Lvar pv) uninit_vars
+           && not (is_address_pvar lhs) ->
         let message =
           F.asprintf "The value read from %a was never initialized" Exp.pp (Exp.Lvar pv)
         in
@@ -186,3 +194,4 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
           (Procdesc.get_proc_name proc_desc) ;
         summary )
       else summary
+

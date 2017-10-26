@@ -140,3 +140,9 @@ int ok6() {
 
 // this crashes HIL if we're not careful
 void deref_magic_addr_ok() { *(int*)0xdeadbeef = 0; }
+
+char ok7() {
+  char buf[1024], *res = buf;
+  res[1] = 'a';
+  return res[1];
+}
