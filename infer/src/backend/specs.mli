@@ -179,7 +179,7 @@ val get_ret_type : summary -> Typ.t
 (** Get the return type of the procedure *)
 
 val get_formals : summary -> (Mangled.t * Typ.t) list
-(** Get the formal paramters of the procedure *)
+(** Get the formal parameters of the procedure *)
 
 val get_phase : summary -> phase
 (** Return the current phase for the proc *)
