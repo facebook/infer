@@ -13,6 +13,9 @@
 extern int __infer_taint_source();
 extern void skip(int i, int j);
 
+// mocking gflags-generated field
+extern int FLAGS_size;
+
 namespace arrays {
 
 void array_sink1_bad(int arr[]) {
@@ -46,6 +49,14 @@ int stack_smash_bad() {
   int source = __infer_taint_source();
   int arr[source];
   return arr[0]; // could read from anywhere in the stack
+}
+
+void gflag_to_stack_allocated_array_bad() { int arr[FLAGS_size]; }
+
+// if we're not careful, this will re-report the warning in the callee
+void read_global_no_double_report_ok() {
+  int i = FLAGS_size;
+  gflag_to_stack_allocated_array_bad();
 }
 
 void strcpy_bad(char* str) {

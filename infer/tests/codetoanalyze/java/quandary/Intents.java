@@ -11,6 +11,7 @@ package codetoanalyze.java.quandary;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.List;
 
 import android.app.Activity;
 import android.app.Service;
@@ -208,6 +209,23 @@ public class Intents {
     Intent newIntent = new Intent();
     newIntent.putExtra("foo", extra);
     mActivity.startActivity(newIntent);
+  }
+
+  List<Intent> mIntents;
+
+  Context mContext;
+
+  void callStartWithArrayOk() {
+    Intent[] intents = mIntents.toArray(new Intent[mIntents.size()]);
+    intents[0] = new Intent(intents[0]).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    if (startWithArrayOk(mContext, intents)) {
+      mContext.startActivity(intents[1]);
+    }
+  }
+
+  boolean startWithArrayOk(Context context, Intent[] newIntents) {
+    context.startActivities(newIntents, null);
+    return true;
   }
 
 }

@@ -278,8 +278,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 in
                 let actual_trace' = TraceDomain.add_sink sink' actual_trace in
                 report_trace actual_trace' callee_site proc_data ;
-                TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
-            | None ->
+                if TraceDomain.Sources.Footprint.is_empty
+                     (TraceDomain.sources actual_trace').footprint
+                then
+                  (* no more sources can flow into this sink; no sense in keeping track of it *)
+                  access_tree_acc
+                else TaintDomain.add_trace actual_ap actual_trace' access_tree_acc
+            | _ ->
                 access_tree_acc )
         | None ->
             L.internal_error
@@ -366,7 +371,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         match get_caller_ap_node_opt callee_ap access_tree_acc with
         | Some (caller_ap, (caller_trace, caller_tree)) ->
             let trace = instantiate_and_report callee_trace caller_trace access_tree_acc in
-            TaintDomain.add_node caller_ap (trace, caller_tree) access_tree_acc
+            let pruned_trace =
+              if TraceDomain.Sources.Footprint.is_empty (TraceDomain.sources trace).footprint then
+                (* empty footprint; nothing else can flow into these sinks. so don't track them *)
+                TraceDomain.update_sinks trace TraceDomain.Sinks.empty
+              else trace
+            in
+            TaintDomain.add_node caller_ap (pruned_trace, caller_tree) access_tree_acc
         | None ->
             ignore (instantiate_and_report callee_trace TraceDomain.empty access_tree_acc) ;
             access_tree_acc
@@ -538,7 +549,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               if TraceDomain.Sources.is_empty filtered_sources then access_tree
               else
                 let trace' = TraceDomain.update_sources trace_with_propagation filtered_sources in
-                TaintDomain.add_trace access_path trace' access_tree
+                let pruned_trace =
+                  if TraceDomain.Sources.Footprint.is_empty filtered_footprint then
+                    (* empty footprint; nothing else can flow into these sinks. so don't track them *)
+                    TraceDomain.update_sinks trace' TraceDomain.Sinks.empty
+                  else trace'
+                in
+                TaintDomain.add_trace access_path pruned_trace access_tree
             in
             let handle_model_ astate_acc propagation =
               match (propagation, actuals, ret_opt) with
@@ -719,7 +736,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         (* invariant 4: we should never map an access path to a trace consisting only of its
            corresponding footprint source. a trace like this is a waste of space, since we can
            lazily create it if/when someone actually tries to read the access path instead *)
-        if AccessPath.Abs.is_exact access_path && Sinks.is_empty sinks
+        (* TODO: tmp to focus on invariant 1 *)
+        if false && AccessPath.Abs.is_exact access_path && Sinks.is_empty sinks
            && Sources.Footprint.mem access_path footprint_sources
            && Sources.Footprint.exists
                 (fun footprint_access_path (is_mem, _) ->
@@ -803,9 +821,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 acc)
         access_tree' TaintDomain.empty
     in
-    if Config.developer_mode && false
-       (* TODO: temporarily disabled to avoid crashes until we clean up all violations *)
-    then check_invariants with_footprint_vars ;
+    if Config.developer_mode then check_invariants with_footprint_vars ;
     TaintSpecification.to_summary_access_tree with_footprint_vars
 
 

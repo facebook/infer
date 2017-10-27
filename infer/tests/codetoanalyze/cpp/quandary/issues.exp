@@ -9,6 +9,7 @@ codetoanalyze/cpp/quandary/arrays.cpp, arrays::array_sink1_bad, 2, QUANDARY_TAIN
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::array_sink2_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to __array_access]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::array_sink3_bad, 0, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to __array_access]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::array_sink4_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to __array_access]
+codetoanalyze/cpp/quandary/arrays.cpp, arrays::gflag_to_stack_allocated_array_bad, 0, UNTRUSTED_VARIABLE_LENGTH_ARRAY, [Return from __global_access,Call to __set_array_length]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::memcpy_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to memcpy]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::memmove_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to memmove]
 codetoanalyze/cpp/quandary/arrays.cpp, arrays::memset_bad, 2, QUANDARY_TAINT_ERROR, [Return from __infer_taint_source,Call to memset]
