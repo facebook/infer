@@ -18,9 +18,6 @@ CLEAN_EXTRA = buck-out
 
 include $(TESTS_DIR)/infer.make
 
-# Buck passes -a capture to infer
-export INFER_STRICT_MODE=0
-
 $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(QUIET)$(call silent_on_success,Compiling Buck flavors tests,\
 	NO_BUCKD=1 $(BUCK) build --no-cache $(BUCK_TARGET))

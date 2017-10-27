@@ -18,9 +18,6 @@ CLEAN_EXTRA = buck-out capture_hash-1.sha capture_hash-2.sha
 
 include $(TESTS_DIR)/base.make
 
-# Buck passes -a capture to infer
-export INFER_STRICT_MODE=0
-
 $(OBJECTS): $(JAVA_SOURCE_FILES)
 	$(QUIET)$(call silent_on_success,Compiling Buck flavors tests,\
 	NO_BUCKD=1 $(BUCK) build --no-cache $(BUCK_TARGET))
