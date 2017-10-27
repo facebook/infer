@@ -938,7 +938,7 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
       (* use existing pre's (in recursion some might exist) as starting points *)
       let init_props_from_pres =
         let specs = Specs.get_specs_from_payload summary in
-        (* rename spec vars to footrpint vars, and copy current to footprint *)
+        (* rename spec vars to footprint vars, and copy current to footprint *)
         let mk_init precondition =
           initial_prop_from_pre tenv pdesc (Specs.Jprop.to_prop precondition)
         in
