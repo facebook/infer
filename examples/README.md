@@ -29,8 +29,8 @@ Contents
 - `ios_hello/`: a sample iOS app. Try this example by running
   ```infer -- xcodebuild -target HelloWorldApp -configuration Debug -sdk iphonesimulator```
 
-- java_hello/: a sample Java project. Try this example by running
-  infer -- javac Pointers.java Resources.java Hello.java
+- `java_hello/`: a sample Java project. Try this example by running
+  ```infer -- javac Pointers.java Resources.java Hello.java```
 
 Note
 ----
