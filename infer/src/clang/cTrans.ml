@@ -98,33 +98,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         false
 
 
-  (* From a list of expression extract blocks from tuples and *)
-  (* returns block names and assignment to temp vars  *)
-  let extract_block_from_tuple procname exps loc =
-    let insts = ref [] in
-    let make_function_name typ bn =
-      let bn' = Typ.Procname.to_string bn in
-      let bn'' = Mangled.from_string bn' in
-      let block = Exp.Lvar (Pvar.mk bn'' procname) in
-      let id = Ident.create_fresh Ident.knormal in
-      insts := Sil.Load (id, block, typ, loc) :: !insts ;
-      (Exp.Var id, typ)
-    in
-    let make_arg typ (id, _, _) = (id, typ) in
-    let f = function
-      | Exp.Closure {name; captured_vars}, ({Typ.desc= Tptr ({Typ.desc= Tfun _}, _)} as t) ->
-          let function_name = make_function_name t name in
-          let args = List.map ~f:(make_arg t) captured_vars in
-          function_name :: args
-      | e ->
-          [e]
-    in
-    (* evaluation order matters here *)
-    let exps' = List.concat_map ~f exps in
-    let insts' = !insts in
-    (exps', insts')
-
-
   let collect_exprs res_trans_list =
     List.concat_map ~f:(fun res_trans -> res_trans.exps) res_trans_list
 
@@ -1276,19 +1249,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CMethod_trans.equal_method_call_type method_call_type CMethod_trans.MCVirtual
         in
         Cg.add_edge context.CContext.cg procname callee_name ;
-        let param_exps, instr_block_param =
-          extract_block_from_tuple procname subexpr_exprs sil_loc
-        in
-        let res_trans_block = {empty_res_trans with instrs= instr_block_param} in
         let call_flags = {CallFlags.default with CallFlags.cf_virtual= is_virtual} in
         let method_sil = Exp.Const (Const.Cfun callee_name) in
         let res_trans_call =
-          create_call_instr trans_state method_type method_sil param_exps sil_loc call_flags
+          create_call_instr trans_state method_type method_sil subexpr_exprs sil_loc call_flags
             ~is_objc_method:true
         in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
         let nname = "Message Call: " ^ selector in
-        let all_res_trans = res_trans_subexpr_list @ [res_trans_block; res_trans_call] in
+        let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
         let res_trans_to_parent =
           PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans
         in
