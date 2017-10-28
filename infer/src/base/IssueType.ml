@@ -241,6 +241,8 @@ let leak_after_array_abstraction = from_string "Leak_after_array_abstraction"
 
 let leak_in_footprint = from_string "Leak_in_footprint"
 
+let lock_consistency_violation = from_string "LOCK_CONSISTENCY_VIOLATION"
+
 let memory_leak = from_string "MEMORY_LEAK"
 
 let missing_fld = from_string "Missing_fld" ~hum:"Missing Field"

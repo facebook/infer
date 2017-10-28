@@ -154,6 +154,8 @@ val leak_after_array_abstraction : t
 
 val leak_in_footprint : t
 
+val lock_consistency_violation : t
+
 val memory_leak : t
 
 val missing_fld : t
