@@ -58,6 +58,15 @@ class UniqueLock {
     return result + suspiciously_read2;
   }
 
+  int get5() {
+    std::unique_lock<std::mutex> lock(mutex_, std::try_to_lock);
+    if (lock.owns_lock()) {
+      return well_guarded1;
+    } else {
+      return suspiciously_read1;
+    }
+  }
+
  private:
   int well_guarded1;
   int suspiciously_read1;

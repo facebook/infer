@@ -87,6 +87,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       in
       fun pname ->
         QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+    and is_cpp_trylock =
+      let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::unique_lock::owns_lock"] in
+      fun pname ->
+        QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
     in
     fun pname actuals ->
       match pname with
@@ -121,6 +125,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           Lock
       | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_unlock pname ->
           Unlock
+      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_trylock pname ->
+          LockedIfTrue
       | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
           Lock
       | pname when Typ.Procname.equal pname BuiltinDecl.__delete_locked_attribute ->
