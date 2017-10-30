@@ -375,6 +375,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           false
     in
+    let is_static_access ((base: Var.t), _) =
+      match base with ProgramVar pvar -> Pvar.is_static_local pvar | _ -> false
+    in
     let rec add_field_accesses pre prefix_path access_acc = function
       | [] ->
           access_acc
@@ -394,7 +397,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let add_access_ acc (base, accesses) =
       let base_access_path = (base, []) in
-      if List.is_empty accesses || OwnershipDomain.is_owned base_access_path ownership then acc
+      if List.is_empty accesses || OwnershipDomain.is_owned base_access_path ownership
+         || is_static_access base
+      then acc
       else
         let pre =
           match AccessPrecondition.make locks threads proc_data.pdesc with
@@ -1908,3 +1913,4 @@ let file_analysis {Callbacks.procedures} =
            else (module MayAliasQuotientedAccessListMap) )
            class_env))
     (aggregate_by_class procedures)
+
