@@ -142,25 +142,41 @@ let add_root_path path roots = String.Set.add roots path
 
 let load_from_verbose_output javac_verbose_out =
   let file_in = In_channel.create javac_verbose_out in
-  let class_filename_re = Str.regexp "\\[wrote RegularFileObject\\[\\(.*\\)\\]\\]" in
-  let source_filename_re = Str.regexp "\\[parsing started RegularFileObject\\[\\(.*\\)\\]\\]" in
+  let class_filename_re =
+    Str.regexp
+      (Printf.sprintf
+         (* the unreadable regexp below captures 3 possible forms:
+            1. [wrote DirectoryFileObject[/path/to/classes_out:path/to/File.java]], leaves `path/to/File.java` in match group 2
+            2. [wrote RegularFileObject[path/to/File.java]], leaves `path/to/File.java` in match group 5
+            3. [wrote SimpleFileObject[path/to/File.java]], also leaves `path/to/File.java` in match group 5 *)
+         "\\[wrote \\(DirectoryFileObject\\[%s:\\(.*\\)\\|\\(\\(Regular\\|Simple\\)FileObject\\[\\(.*\\)\\)\\)\\]\\]"
+         Config.javac_classes_out)
+  in
+  let source_filename_re =
+    Str.regexp "\\[parsing started \\(Regular\\|Simple\\)FileObject\\[\\(.*\\)\\]\\]"
+  in
   let classpath_re = Str.regexp "\\[search path for class files: \\(.*\\)\\]" in
   let rec loop paths roots sources classes =
     try
       let line = In_channel.input_line_exn file_in in
       if Str.string_match class_filename_re line 0 then
-        let path = Str.matched_group 1 line in
+        let path =
+          try Str.matched_group 5 line
+          with Not_found ->
+            (* either matched group 5 is found, or matched group 2 is found, see doc for [class_filename_re] above *)
+            Config.javac_classes_out ^/ Str.matched_group 2 line
+        in
         let cn, root_info = Javalib.extract_class_name_from_file path in
         let root_dir =
           if String.equal root_info "" then Filename.current_dir_name else root_info
         in
         loop paths (add_root_path root_dir roots) sources (JBasics.ClassSet.add cn classes)
       else if Str.string_match source_filename_re line 0 then
-        let path = Str.matched_group 1 line in
+        let path = Str.matched_group 2 line in
         loop paths roots (add_source_file path sources) classes
       else if Str.string_match classpath_re line 0 then
         let classpath = Str.matched_group 1 line in
-        let parsed_paths = Str.split (Str.regexp_string ",") classpath in
+        let parsed_paths = String.split ~on:',' classpath in
         loop parsed_paths roots sources classes
       else (* skip this line *)
         loop paths roots sources classes

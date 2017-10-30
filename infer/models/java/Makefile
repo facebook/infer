@@ -34,7 +34,7 @@ $(INFER_REPORT): $(JAVA_DEPS_NO_MODELS) $(JAVA_SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Building Java models,\
 	  $(INFER_BIN) -a checkers --biabduction-only --results-dir $(INFER_RESULTS_DIR) --models-mode -- \
 	  $(JAVAC) -bootclasspath $(ANDROID_JAR) -d $(MODELS_OUT) -classpath $(MODELS_CLASSPATH) \
-	    $(JAVA_SOURCES))
+	    $(JAVA_SOURCES) -source 7 -target 7)
 
 $(MODELS_JAR): $(INFER_REPORT)
 	cd $(MODELS_OUT); jar cf ../$(MODELS_JAR) *

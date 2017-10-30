@@ -2005,7 +2005,12 @@ and xml_specs =
    are allowed to refer to the other arg variables. *)
 
 let javac_classes_out =
-  CLOpt.mk_string_opt ~parse_mode:CLOpt.Javac ~deprecated:["classes_out"] ~long:"" ~short:'d'
+  CLOpt.mk_string ~parse_mode:CLOpt.Javac ~deprecated:["classes_out"] ~long:""
+    ~short:
+      'd'
+      (* Ensure that some form of "-d ..." is passed to javac. It's unclear whether this is strictly
+       needed but the tests break without this for now. See discussion in D4397716. *)
+    ~default:CLOpt.init_work_dir
     ~f:(fun classes_out ->
       ( if !buck then
           let classes_out_infer = resolve classes_out ^/ buck_results_dir_name in

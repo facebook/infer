@@ -490,7 +490,7 @@ val iterations : int
 
 val java_jar_compiler : string option
 
-val javac_classes_out : string option
+val javac_classes_out : string
 
 val javac_verbose_out : string
 

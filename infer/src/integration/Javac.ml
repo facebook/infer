@@ -26,18 +26,7 @@ let compile compiler build_prog build_args =
         ("java", ["-jar"; jar])
   in
   let cli_args, file_args =
-    let args =
-      "-verbose"
-      :: "-g"
-      ::
-      (* Ensure that some form of "-d ..." is passed to javac. It's unclear whether this is strictly
-         needed but the tests break without this for now. See discussion in D4397716. *)
-      ( match Config.javac_classes_out with
-      | Some _ ->
-          build_args
-      | None ->
-          "-d" :: CLOpt.init_work_dir :: build_args )
-    in
+    let args = "-verbose" :: "-g" :: "-d" :: Config.javac_classes_out :: build_args in
     List.partition_tf args ~f:(fun arg ->
         (* As mandated by javac, argument files must not contain certain arguments. *)
         String.is_prefix ~prefix:"-J" arg || String.is_prefix ~prefix:"@" arg )
