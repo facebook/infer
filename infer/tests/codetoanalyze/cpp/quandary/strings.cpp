@@ -83,7 +83,7 @@ void constructor2_bad() {
   __infer_taint_sink(laundered_source);
 }
 
-void FN_constructor3_bad() {
+void constructor3_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = std::string(source.begin(), source.begin() + 5);
   __infer_taint_sink(laundered_source);

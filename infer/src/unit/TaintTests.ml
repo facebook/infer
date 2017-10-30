@@ -125,38 +125,38 @@ let tests =
   let callbacks = {Ondemand.analyze_ondemand; get_proc_desc} in
   Ondemand.set_callbacks callbacks ;
   let test_list =
-    [ ("source recorded", [assign_to_source "ret_id"; invariant "{ ret_id$0 => (SOURCE -> ?) }"])
+    [ ("source recorded", [assign_to_source "ret_id"; invariant "{ ret_id$0* => (SOURCE -> ?) }"])
     ; ("non-source not recorded", [assign_to_non_source "ret_id"; assert_empty])
     ; ( "source flows to var"
       , [ assign_to_source "ret_id"
         ; var_assign_id "var" "ret_id"
-        ; invariant "{ ret_id$0 => (SOURCE -> ?), &var => (SOURCE -> ?) }" ] )
+        ; invariant "{ ret_id$0* => (SOURCE -> ?), &var* => (SOURCE -> ?) }" ] )
     ; ( "source flows to field"
       , [ assign_to_source "ret_id"
         ; assign_id_to_field "base_id" "f" "ret_id"
-        ; invariant "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?) }" ] )
+        ; invariant "{ base_id$0.f* => (SOURCE -> ?), ret_id$0* => (SOURCE -> ?) }" ] )
     ; ( "source flows to field then var"
       , [ assign_to_source "ret_id"
         ; assign_id_to_field "base_id" "f" "ret_id"
         ; read_field_to_id "read_id" "base_id" "f"
         ; var_assign_id "var" "read_id"
         ; invariant
-            "{ base_id$0.f => (SOURCE -> ?),\n  ret_id$0 => (SOURCE -> ?),\n  &var => (SOURCE -> ?) }"
+            "{ base_id$0.f* => (SOURCE -> ?),\n  ret_id$0* => (SOURCE -> ?),\n  &var* => (SOURCE -> ?) }"
         ] )
     ; ( "source flows to var then cleared"
       , [ assign_to_source "ret_id"
         ; var_assign_id "var" "ret_id"
-        ; invariant "{ ret_id$0 => (SOURCE -> ?), &var => (SOURCE -> ?) }"
+        ; invariant "{ ret_id$0* => (SOURCE -> ?), &var* => (SOURCE -> ?) }"
         ; assign_to_non_source "non_source_id"
         ; var_assign_id "var" "non_source_id"
-        ; invariant "{ ret_id$0 => (SOURCE -> ?) }" ] )
+        ; invariant "{ ret_id$0* => (SOURCE -> ?) }" ] )
     ; ( "source flows to field then cleared"
       , [ assign_to_source "ret_id"
         ; assign_id_to_field "base_id" "f" "ret_id"
-        ; invariant "{ base_id$0.f => (SOURCE -> ?), ret_id$0 => (SOURCE -> ?) }"
+        ; invariant "{ base_id$0.f* => (SOURCE -> ?), ret_id$0* => (SOURCE -> ?) }"
         ; assign_to_non_source "non_source_id"
         ; assign_id_to_field "base_id" "f" "non_source_id"
-        ; invariant "{ ret_id$0 => (SOURCE -> ?) }" ] )
+        ; invariant "{ ret_id$0* => (SOURCE -> ?) }" ] )
     ; ( "sink without source not tracked"
       , [assign_to_non_source "ret_id"; call_sink "ret_id"; assert_empty] ) ]
     |> TestInterpreter.create_tests ~pp_opt:pp_sparse
@@ -164,4 +164,3 @@ let tests =
          ~initial:(MockTaintAnalysis.Domain.empty, IdAccessPathMapDomain.empty)
   in
   "taint_test_suite" >::: test_list
-

@@ -82,14 +82,14 @@ module Make (TaintSpecification : TaintSpec.S) = struct
 
     let add_return_source source ret_base access_tree =
       let trace = TraceDomain.of_source source in
-      let id_ap = AccessPath.Abs.Exact (ret_base, []) in
+      let id_ap = AccessPath.Abs.Abstracted (ret_base, []) in
       TaintDomain.add_trace id_ap trace access_tree
 
 
     let add_actual_source source index actuals access_tree proc_data =
       match List.nth_exn actuals index with
       | HilExp.AccessPath actual_ap_raw ->
-          let actual_ap = AccessPath.Abs.Exact actual_ap_raw in
+          let actual_ap = AccessPath.Abs.Abstracted actual_ap_raw in
           let trace = access_path_get_trace actual_ap access_tree proc_data in
           TaintDomain.add_trace actual_ap (TraceDomain.add_source source trace) access_tree
       | _ ->
@@ -562,16 +562,18 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | _, [], _ ->
                   astate_acc
               | TaintSpec.Propagate_to_return, actuals, Some ret_ap ->
-                  propagate_to_access_path (AccessPath.Abs.Exact (ret_ap, [])) actuals astate_acc
+                  propagate_to_access_path (AccessPath.Abs.Abstracted (ret_ap, [])) actuals
+                    astate_acc
               | ( TaintSpec.Propagate_to_receiver
                 , (AccessPath receiver_ap) :: (_ :: _ as other_actuals)
                 , _ ) ->
-                  propagate_to_access_path (AccessPath.Abs.Exact receiver_ap) other_actuals
+                  propagate_to_access_path (AccessPath.Abs.Abstracted receiver_ap) other_actuals
                     astate_acc
               | TaintSpec.Propagate_to_actual actual_index, _, _ -> (
                 match List.nth actuals actual_index with
                 | Some HilExp.AccessPath actual_ap ->
-                    propagate_to_access_path (AccessPath.Abs.Exact actual_ap) actuals astate_acc
+                    propagate_to_access_path (AccessPath.Abs.Abstracted actual_ap) actuals
+                      astate_acc
                 | _ ->
                     astate_acc )
               | _ ->
@@ -834,7 +836,9 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           ~f:(fun acc (name, typ, taint_opt) ->
             match taint_opt with
             | Some source ->
-                let base_ap = AccessPath.Abs.Exact (AccessPath.of_pvar (Pvar.mk name pname) typ) in
+                let base_ap =
+                  AccessPath.Abs.Abstracted (AccessPath.of_pvar (Pvar.mk name pname) typ)
+                in
                 TaintDomain.add_trace base_ap (TraceDomain.of_source source) acc
             | None ->
                 acc)
