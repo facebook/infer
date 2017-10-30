@@ -13,3 +13,4 @@ codetoanalyze/cpp/racerd/unique_lock.cpp, basics::UniqueLock_get2, 4, LOCK_CONSI
 codetoanalyze/cpp/racerd/unique_lock.cpp, basics::UniqueLock_get4, 1, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,access to `&this.suspiciously_read1`,<Write trace>,access to `&this.suspiciously_read1`]
 codetoanalyze/cpp/racerd/unique_lock.cpp, basics::UniqueLock_get4, 2, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,access to `&this.suspiciously_read2`,<Write trace>,access to `&this.suspiciously_read2`]
 codetoanalyze/cpp/racerd/unique_lock.cpp, basics::UniqueLock_get5, 5, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,access to `&this.suspiciously_read1`,<Write trace>,access to `&this.suspiciously_read1`]
+codetoanalyze/cpp/racerd/unique_lock.cpp, basics::UniqueLock_get6, 5, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,access to `&this.suspiciously_read1`,<Write trace>,access to `&this.suspiciously_read1`]
