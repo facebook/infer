@@ -558,8 +558,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            ["folly::AtomicStruct::load"; "folly::detail::SingletonHolder::createInstance"])
     in
     fun pname ->
-      QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
-        (Typ.Procname.get_qualifiers pname)
+      Typ.Procname.is_destructor pname
+      || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
+           (Typ.Procname.get_qualifiers pname)
 
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
