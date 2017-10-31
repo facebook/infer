@@ -568,4 +568,3 @@ let has_block_attribute decl =
 let is_implicit_decl decl =
   let decl_info = Clang_ast_proj.get_decl_tuple decl in
   decl_info.Clang_ast_t.di_is_implicit
-

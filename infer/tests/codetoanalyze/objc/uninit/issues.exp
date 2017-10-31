@@ -1,0 +1,1 @@
+codetoanalyze/objc/uninit/uninit_blocks.m, A_bad1, 5, UNINITIALIZED_VALUE, []

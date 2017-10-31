@@ -48,7 +48,7 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   c_biabduction c_bufferoverrun c_errors c_frontend \
-  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_quandary cpp_racerd cpp_siof cpp_uninit cpp_nullable \
+  cpp_bufferoverrun cpp_errors cpp_frontend  cpp_liveness cpp_quandary cpp_racerd cpp_siof cpp_uninit  cpp_nullable \
 
 ifneq ($(BUCK),no)
 BUILD_SYSTEMS_TESTS += buck-clang-db buck_flavors buck_flavors_run buck_flavors_deterministic
@@ -67,7 +67,7 @@ BUILD_SYSTEMS_TESTS += xcodebuild_no_xcpretty objc_getters_setters
 DIRECT_TESTS += \
   objc_frontend objc_errors objc_linters objc_ioslints \
 	objcpp_frontend objcpp_linters objc_linters-for-test-only objcpp_linters-for-test-only \
-	objc_linters-def-folder objc_checkers objc_liveness
+	objc_linters-def-folder objc_checkers objc_liveness objc_uninit
 ifneq ($(XCPRETTY),no)
 BUILD_SYSTEMS_TESTS += xcodebuild
 endif

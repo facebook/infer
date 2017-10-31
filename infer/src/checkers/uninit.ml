@@ -31,20 +31,32 @@ end)
 
 let intraprocedural_only = true
 
-let is_address_pvar e = match e with Exp.Lvar _ -> true | _ -> false
+let is_type_pointer t = match t.Typ.desc with Typ.Tptr _ -> true | _ -> false
+
+let exp_in_set exp vset =
+  let _, pvars = Exp.get_vars exp in
+  List.exists ~f:(fun pv -> D.mem (Var.of_pvar pv) vset) pvars
+
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RecordDomain
 
-  type extras = FormalMap.t
+  let report message loc summary =
+    let issue_id = IssueType.uninitialized_value.unique_id in
+    let ltr = [Errlog.make_trace_element 0 loc "" []] in
+    let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
+    Reporting.log_error summary ~loc ~ltr exn
 
-  let exec_instr (astate: Domain.astate) {ProcData.extras} _ (instr: HilInstr.t) =
+
+  type extras = FormalMap.t * Specs.summary
+
+  let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras} _ (instr: HilInstr.t) =
     match instr with
-    | Assign (((lhs_var, _), _), HilExp.AccessPath (((rhs_var, rhs_typ) as rhs_base), _), _) ->
+    | Assign (((lhs_var, lhs_typ), _), HilExp.AccessPath (((rhs_var, rhs_typ) as rhs_base), _), loc) ->
         let uninit_vars = D.remove lhs_var astate.uninit_vars in
         let prepost =
-          if FormalMap.is_formal rhs_base extras
+          if FormalMap.is_formal rhs_base (fst extras)
              && match rhs_typ.desc with Typ.Tptr _ -> true | _ -> false
           then
             let pre' = D.add rhs_var (fst astate.prepost) in
@@ -52,6 +64,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             (pre', post)
           else astate.prepost
         in
+        ( match rhs_var with
+        | Var.ProgramVar pv
+          when not (Pvar.is_frontend_tmp pv) && not (Procdesc.is_captured_var pdesc pv)
+               && exp_in_set (Exp.Lvar pv) uninit_vars && not (is_type_pointer lhs_typ) ->
+            let message =
+              F.asprintf "The value read from %a was never initialized" Exp.pp (Exp.Lvar pv)
+            in
+            report message loc (snd extras)
+        | _ ->
+            () ) ;
         {astate with uninit_vars; prepost}
     | Assign (((lhs_var, _), _), _, _) ->
         let uninit_vars = D.remove lhs_var astate.uninit_vars in
@@ -65,6 +87,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               match actual_exp with
               | HilExp.AccessPath ((actual_var, {Typ.desc= Tptr _}), _) ->
                   D.remove actual_var acc
+              | HilExp.Closure (_, apl) ->
+                  (* remove the captured variables of a block *)
+                  List.fold ~f:(fun acc' ((av, _), _) -> D.remove av acc') ~init:acc apl
               | _ ->
                   acc)
             ~init:astate.uninit_vars actuals
@@ -97,92 +122,10 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     , IdAccessPathMapDomain.empty )
   in
   let invariant_map =
-    Analyzer.exec_cfg cfg (ProcData.make proc_desc tenv formal_map) ~initial:init ~debug:false
+    Analyzer.exec_cfg cfg
+      (ProcData.make proc_desc tenv (formal_map, summary))
+      ~initial:init ~debug:false
   in
-  (* Check if an expression is in set of variables *)
-  let exp_in_set exp vset =
-    let _, pvars = Exp.get_vars exp in
-    List.exists ~f:(fun pv -> D.mem (Var.of_pvar pv) vset) pvars
-  in
-  let zip_actual_formal_params callee_pname actual_params =
-    match Ondemand.get_proc_desc callee_pname with
-    | Some pdesc ->
-        let formals, _ = List.unzip (Procdesc.get_formals pdesc) in
-        let actual, _ = List.unzip actual_params in
-        (List.zip actual formals, actual)
-    | _ ->
-        (None, [])
-  in
-  let deref_actual_params callee_pname actual_params deref_formal_params =
-    match zip_actual_formal_params callee_pname actual_params with
-    | None, _ ->
-        []
-    | Some assoc_actual_formal, _ ->
-        List.fold
-          ~f:(fun acc (a, f) ->
-            let fe = Exp.Lvar (Pvar.mk f callee_pname) in
-            if exp_in_set fe deref_formal_params then a :: acc else acc)
-          ~init:[] assoc_actual_formal
-  in
-  let report_uninit_value uninit_vars instr =
-    let report message loc =
-      let issue_id = IssueType.uninitialized_value.unique_id in
-      let ltr = [Errlog.make_trace_element 0 loc "" []] in
-      let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
-      Reporting.log_error summary ~loc ~ltr exn
-    in
-    match instr with
-    | Sil.Load (_, Exp.Lvar pv, _, loc)
-      when not (Pvar.is_frontend_tmp pv) && exp_in_set (Exp.Lvar pv) uninit_vars ->
-        let message =
-          F.asprintf "The value read from %a was never initialized" Exp.pp (Exp.Lvar pv)
-        in
-        report message loc
-    | Sil.Store (lhs, _, Exp.Lvar pv, loc)
-      when not (Pvar.is_frontend_tmp pv) && exp_in_set (Exp.Lvar pv) uninit_vars
-           && not (is_address_pvar lhs) ->
-        let message =
-          F.asprintf "The value read from %a was never initialized" Exp.pp (Exp.Lvar pv)
-        in
-        report message loc
-    | Sil.Call (_, Exp.Const Const.Cfun callee_pname, actual_params, loc, _)
-      when not intraprocedural_only -> (
-      match Summary.read_summary proc_desc callee_pname with
-      | Some {pre= deref_formal_params; post= _} ->
-          let deref_actual_params =
-            deref_actual_params callee_pname actual_params deref_formal_params
-          in
-          List.iter
-            ~f:(fun (e, _) ->
-              if exp_in_set e uninit_vars && List.mem ~equal:Exp.equal deref_actual_params e then
-                let message =
-                  F.asprintf "The value of %a is read in %a but was never initialized" Exp.pp e
-                    Typ.Procname.pp callee_pname
-                in
-                report message loc)
-            actual_params
-      | _ ->
-          () )
-    | _ ->
-        ()
-  in
-  let report_on_node node =
-    List.iter (CFG.instr_ids node) ~f:(fun (instr, node_id_opt) ->
-        match node_id_opt with
-        | Some node_id -> (
-          match Analyzer.extract_pre node_id invariant_map with
-          | Some
-              ( { RecordDomain.uninit_vars= uninitialized_vars
-                ; RecordDomain.aliased_vars= _
-                ; RecordDomain.prepost= _ }
-              , _ ) ->
-              report_uninit_value uninitialized_vars instr
-          | None ->
-              () )
-        | None ->
-            () )
-  in
-  List.iter (CFG.nodes cfg) ~f:report_on_node ;
   match Analyzer.extract_post (CFG.id (CFG.exit_node cfg)) invariant_map with
   | Some
       ( {RecordDomain.uninit_vars= _; RecordDomain.aliased_vars= _; RecordDomain.prepost= pre, post}

@@ -249,3 +249,7 @@ val is_loop_head : t -> Node.t -> bool
 val pp_signature : Format.formatter -> t -> unit
 
 val is_specialized : t -> bool
+
+(* true if pvar is a captred variable of a cpp lambda or obcj block *)
+
+val is_captured_var : t -> Pvar.t -> bool
