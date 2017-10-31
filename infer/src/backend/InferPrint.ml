@@ -73,10 +73,10 @@ let error_desc_to_xml_tags error_desc =
 
 
 let get_bug_hash (kind: string) (type_str: string) (procedure_id: string) (filename: string)
-    (node_key: int) (error_desc: Localise.error_desc) =
+    (node_key: Digest.t) (error_desc: Localise.error_desc) =
   let qualifier_tag_call_procedure = Localise.error_desc_get_tag_call_procedure error_desc in
   let qualifier_tag_value = Localise.error_desc_get_tag_value error_desc in
-  Hashtbl.hash
+  Utils.better_hash
     ( kind
     , type_str
     , procedure_id
@@ -309,11 +309,12 @@ module IssuesCsv = struct
       pp "\"%s\"," (Escape.escape_csv procedure_id) ;
       pp "%s," filename ;
       pp "\"%s\"," (Escape.escape_csv trace) ;
-      pp "\"%d\"," err_data.node_id_key.node_key ;
+      pp "\"%s\"," (Digest.to_hex err_data.node_id_key.node_key) ;
       pp "\"%s\"," qualifier_tag_xml ;
-      pp "\"%d\","
-        (get_bug_hash kind type_str procedure_id filename err_data.node_id_key.node_key
-           key.err_desc) ;
+      pp "\"%s\","
+        ( get_bug_hash kind type_str procedure_id filename err_data.node_id_key.node_key
+            key.err_desc
+        |> Digest.to_hex ) ;
       pp "\"%d\"," !csv_issues_id ;
       (* bug id *)
       pp "\"%s\"," always_report ;
@@ -399,10 +400,11 @@ module IssuesJson = struct
         ; procedure_start_line
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
-        ; key= err_data.node_id_key.node_key
+        ; key= err_data.node_id_key.node_key |> Digest.to_hex
         ; qualifier_tags= Localise.Tags.tag_value_records_of_tags key.err_desc.tags
         ; hash=
             get_bug_hash kind bug_type procedure_id file err_data.node_id_key.node_key key.err_desc
+            |> Digest.to_hex
         ; dotty= error_desc_to_dotty_string key.err_desc
         ; infer_source_loc= json_ml_loc
         ; bug_type_hum= key.err_name.IssueType.hum
@@ -460,9 +462,9 @@ let pp_custom_of_report fmt report fields =
       | `Issue_field_bug_trace ->
           pp_trace fmt issue.bug_trace (comma_separator index)
       | `Issue_field_key ->
-          Format.fprintf fmt "%s%d" (comma_separator index) issue.key
+          Format.fprintf fmt "%s%s" (comma_separator index) (Digest.to_hex issue.key)
       | `Issue_field_hash ->
-          Format.fprintf fmt "%s%d" (comma_separator index) issue.hash
+          Format.fprintf fmt "%s%s" (comma_separator index) (Digest.to_hex issue.hash)
       | `Issue_field_line_offset ->
           Format.fprintf fmt "%s%d" (comma_separator index)
             (issue.line - issue.procedure_start_line)
@@ -479,7 +481,7 @@ let pp_custom_of_report fmt report fields =
 
 let tests_jsonbug_compare bug1 bug2 =
   let open Jsonbug_t in
-  [%compare : string * string * int * string * int]
+  [%compare : string * string * int * string * Digest.t]
     (bug1.file, bug1.procedure, bug1.line - bug1.procedure_start_line, bug1.bug_type, bug1.hash)
     (bug2.file, bug2.procedure, bug2.line - bug2.procedure_start_line, bug2.bug_type, bug2.hash)
 

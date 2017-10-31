@@ -158,7 +158,7 @@ val print_exception_html : string -> exn -> unit
 (** print a description of the exception to the html output *)
 
 val pp_err :
-  node_key:int -> Location.t -> err_kind -> IssueType.t -> Localise.error_desc
+  node_key:Digest.t -> Location.t -> err_kind -> IssueType.t -> Localise.error_desc
   -> Logging.ml_loc option -> Format.formatter -> unit -> unit
 (** pretty print an error *)
 

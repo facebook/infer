@@ -149,19 +149,19 @@ let test_relative_complements =
 
 let test_skip_duplicated_types_on_filenames =
   let current_report =
-    [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2'.java" ~hash:22 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1'.java" ~hash:11 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1'.java" ~hash:111 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_2" ~file:"file_4.java" ~hash:4 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2'.java" ~hash:222 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_2" ~file:"file_5.java" ~hash:55 () ]
+    [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2'.java" ~hash:"22" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1'.java" ~hash:"11" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1'.java" ~hash:"111" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_2" ~file:"file_4.java" ~hash:"4" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2'.java" ~hash:"222" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_2" ~file:"file_5.java" ~hash:"55" () ]
   in
   let previous_report =
-    [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2'.java" ~hash:222 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_2" ~file:"file_5.java" ~hash:5 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:1 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_2" ~file:"file_3.java" ~hash:3 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2.java" ~hash:2 () ]
+    [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2'.java" ~hash:"222" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_2" ~file:"file_5.java" ~hash:"5" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:"1" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_2" ~file:"file_3.java" ~hash:"3" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_2.java" ~hash:"2" () ]
   in
   let renamings =
     DifferentialFilters.FileRenamings.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY.from_renamings
@@ -175,16 +175,16 @@ let test_skip_duplicated_types_on_filenames =
   in
   let do_assert _ =
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Hashes of introduced")
-      [4]
+      ~pp_diff:(pp_diff_of_string_list "Hashes of introduced")
+      ["4"]
       (sorted_hashes_of_issues diff'.introduced) ;
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Hashes of fixed")
-      [3]
+      ~pp_diff:(pp_diff_of_string_list "Hashes of fixed")
+      ["3"]
       (sorted_hashes_of_issues diff'.fixed) ;
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting")
-      [22; 55; 111; 222]
+      ~pp_diff:(pp_diff_of_string_list "Hashes of preexisting")
+      ["111"; "22"; "222"; "55"]
       (sorted_hashes_of_issues diff'.preexisting)
   in
   "test_skip_duplicated_types_on_filenames" >:: do_assert
@@ -219,15 +219,15 @@ let test_skip_anonymous_class_renamings =
         input_diff
     in
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Hashes of introduced")
+      ~pp_diff:(pp_diff_of_string_list "Hashes of introduced")
       exp_introduced
       (sorted_hashes_of_issues diff'.introduced) ;
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Hashes of fixed")
+      ~pp_diff:(pp_diff_of_string_list "Hashes of fixed")
       exp_fixed
       (sorted_hashes_of_issues diff'.fixed) ;
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting")
+      ~pp_diff:(pp_diff_of_string_list "Hashes of preexisting")
       exp_preexisting
       (sorted_hashes_of_issues diff'.preexisting)
   in
@@ -240,112 +240,112 @@ let test_skip_anonymous_class_renamings =
                 ( "com.whatever.package00.abcd."
                 ^ "ABasicExampleFragment$83.onMenuItemActionExpand(android.view.MenuItem):b."
                 ^ "5ab5e18cae498c35d887ce88f3d5fa82" )
-              ~file:"a.java" ~key:1 ~qualifier_tags:qt1 ~hash:3 ()
+              ~file:"a.java" ~key:"1" ~qualifier_tags:qt1 ~hash:"3" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 ( "com.whatever.package00.abcd."
                 ^ "ABasicExampleFragment$83$7.onMenuItemActionExpand(android.view.MenuItem)."
                 ^ "522cc747174466169781c9d2fc980dbc" )
-              ~file:"a.java" ~key:1 ~qualifier_tags:qt1 ~hash:4 ()
+              ~file:"a.java" ~key:"1" ~qualifier_tags:qt1 ~hash:"4" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_2"
-              ~procedure_id:"procid5.c854fd4a98113d9ab5b82deb3545de89" ~file:"b.java" ~key:5
-              ~hash:5 () ]
+              ~procedure_id:"procid5.c854fd4a98113d9ab5b82deb3545de89" ~file:"b.java" ~key:"5"
+              ~hash:"5" () ]
         ~previous_report:
           [ create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 ( "com.whatever.package00.abcd."
                 ^ "ABasicExampleFragment$9.onMenuItemActionExpand(android.view.MenuItem):bo."
                 ^ "ba1776155fba2899542401da5bc779a5" )
-              ~file:"a.java" ~key:1 ~qualifier_tags:qt1 ~hash:1 ()
+              ~file:"a.java" ~key:"1" ~qualifier_tags:qt1 ~hash:"1" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_2"
-              ~procedure_id:"procid2.92095aee3f1884c37e96feae031f4931" ~file:"b.java" ~key:2
-              ~hash:2 () ]
-    , ([4; 5], [2], [3]) )
+              ~procedure_id:"procid2.92095aee3f1884c37e96feae031f4931" ~file:"b.java" ~key:"2"
+              ~hash:"2" () ]
+    , (["4"; "5"], ["2"], ["3"]) )
   ; ( "test_skip_anonymous_class_renamings_with_empty_qualifier_tags"
     , Differential.of_reports
         ~current_report:
           [ create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class$1.foo():bool.bf13089cf4c47ff8ff089a1a4767324f"
-              ~file:"a.java" ~key:1 ~hash:1 ()
+              ~file:"a.java" ~key:"1" ~hash:"1" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_2"
               ~procedure_id:
                 "com.whatever.package.Class$1.foo():bool.bf13089cf4c47ff8ff089a1a4767324f"
-              ~file:"a.java" ~key:1 ~hash:3 () ]
+              ~file:"a.java" ~key:"1" ~hash:"3" () ]
         ~previous_report:
           [ create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class$21$1.foo():bool.db89561ad9dab28587c8c04833f09b03"
-              ~file:"a.java" ~key:1 ~hash:2 ()
+              ~file:"a.java" ~key:"1" ~hash:"2" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_2"
               ~procedure_id:
                 "com.whatever.package.Class$8.foo():bool.cffd4e941668063eb802183dbd3e856d"
-              ~file:"a.java" ~key:1 ~hash:4 () ]
-    , ([1], [2], [3]) )
+              ~file:"a.java" ~key:"1" ~hash:"4" () ]
+    , (["1"], ["2"], ["3"]) )
   ; ( "test_skip_anonymous_class_renamings_with_matching_non_anonymous_procedure_ids"
     , Differential.of_reports
         ~current_report:
           [ create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class.foo():bool.919f37fd0993058a01f438210ba8a247"
-              ~file:"a.java" ~key:1 ~hash:1 ()
+              ~file:"a.java" ~key:"1" ~hash:"1" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class.foo():bool.919f37fd0993058a01f438210ba8a247"
-              ~file:"a.java" ~key:1 ~hash:3 () ]
+              ~file:"a.java" ~key:"1" ~hash:"3" () ]
         ~previous_report:
           [ create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class.foo():bool.919f37fd0993058a01f438210ba8a247"
-              ~file:"a.java" ~key:1 ~hash:2 ()
+              ~file:"a.java" ~key:"1" ~hash:"2" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class.foo():bool.919f37fd0993058a01f438210ba8a247"
-              ~file:"a.java" ~key:1 ~hash:4 () ]
-    , ([1; 3], [2; 4], []) )
+              ~file:"a.java" ~key:"1" ~hash:"4" () ]
+    , (["1"; "3"], ["2"; "4"], []) )
   ; ( "test_skip_anonymous_class_renamings_with_non_java_files"
     , Differential.of_reports
         ~current_report:
           [ create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class$3$1.foo():bool.9ff39eb5c53c81da9f6a7ade324345b6"
-              ~file:"a.java" ~key:1 ~hash:1 ()
+              ~file:"a.java" ~key:"1" ~hash:"1" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_2"
               ~procedure_id:
                 "com.whatever.package.Class$1.foo():bool.bf13089cf4c47ff8ff089a1a4767324f"
-              ~file:"a.mm" ~key:1 ~hash:3 () ]
+              ~file:"a.mm" ~key:"1" ~hash:"3" () ]
         ~previous_report:
           [ create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class$21$1.foo():bool.db89561ad9dab28587c8c04833f09b03"
-              ~file:"a.java" ~key:1 ~hash:2 ()
+              ~file:"a.java" ~key:"1" ~hash:"2" ()
           ; create_fake_jsonbug ~bug_type:"bug_type_2"
               ~procedure_id:
                 "com.whatever.package.Class$8.foo():bool.cffd4e941668063eb802183dbd3e856d"
-              ~file:"a.mm" ~key:1 ~hash:4 () ]
-    , ([3], [4], [1]) )
+              ~file:"a.mm" ~key:"1" ~hash:"4" () ]
+    , (["3"], ["4"], ["1"]) )
   ; ( "test_skip_anonymous_class_renamings_with_different_call_procedure_qualifier_tags"
     , Differential.of_reports
         ~current_report:
           [ create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class$3$1.foo():bool.9ff39eb5c53c81da9f6a7ade324345b6"
-              ~file:"a.java" ~key:1 ~qualifier_tags:qt1 ~hash:1 () ]
+              ~file:"a.java" ~key:"1" ~qualifier_tags:qt1 ~hash:"1" () ]
         ~previous_report:
           [ create_fake_jsonbug ~bug_type:"bug_type_1"
               ~procedure_id:
                 "com.whatever.package.Class$21$1.foo():bool.db89561ad9dab28587c8c04833f09b03"
-              ~file:"a.java" ~key:1 ~qualifier_tags:qt2 ~hash:2 () ]
-    , ([1], [2], []) ) ]
+              ~file:"a.java" ~key:"1" ~qualifier_tags:qt2 ~hash:"2" () ]
+    , (["1"], ["2"], []) ) ]
   |> List.map ~f:(fun (name, diff, expected_output) -> name >:: create_test diff expected_output)
 
 
 let test_interesting_paths_filter =
   let report =
-    [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:1 ()
+    [ create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_1.java" ~hash:"1" ()
     ; create_fake_jsonbug ~bug_type:IssueType.null_dereference.unique_id ~file:"file_2.java"
-        ~hash:2 ()
-    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_4.java" ~hash:4 () ]
+        ~hash:"2" ()
+    ; create_fake_jsonbug ~bug_type:"bug_type_1" ~file:"file_4.java" ~hash:"4" () ]
   in
   let create_test interesting_paths expected_hashes _ =
     let filter =
@@ -353,15 +353,17 @@ let test_interesting_paths_filter =
         interesting_paths
     in
     let filtered_report = filter report in
-    assert_equal ~pp_diff:(pp_diff_of_int_list "Bug hash") expected_hashes
+    assert_equal
+      ~pp_diff:(pp_diff_of_string_list "Bug hash")
+      expected_hashes
       (sorted_hashes_of_issues filtered_report)
   in
-  [ ("test_interesting_paths_filter_with_none_interesting_paths", None, [1; 2; 4])
+  [ ("test_interesting_paths_filter_with_none_interesting_paths", None, ["1"; "2"; "4"])
   ; ( "test_interesting_paths_filter_with_some_interesting_paths"
     , Some
         [ SourceFile.create ~warn_on_error:false "file_not_existing.java"
         ; SourceFile.create ~warn_on_error:false "file_4.java" ]
-    , [4] )
+    , ["4"] )
   ; ( "test_interesting_paths_filter_with_some_interesting_paths_that_are_not_in_report"
     , Some
         [ SourceFile.create ~warn_on_error:false "file_not_existing.java"

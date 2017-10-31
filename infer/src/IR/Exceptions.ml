@@ -686,7 +686,7 @@ let print_key = false
 (** pretty print an error  *)
 let pp_err ~node_key loc ekind ex_name desc ml_loc_opt fmt () =
   let kind = err_kind_string (if equal_err_kind ekind Kinfo then Kwarning else ekind) in
-  let pp_key fmt k = if print_key then F.fprintf fmt " key: %d " k else () in
+  let pp_key fmt k = if print_key then F.fprintf fmt " key: %s " (Digest.to_hex k) else () in
   F.fprintf fmt "%a:%d: %s: %a %a%a%a@\n" SourceFile.pp loc.Location.file loc.Location.line kind
     IssueType.pp ex_name Localise.pp_error_desc desc pp_key node_key L.pp_ml_loc_opt ml_loc_opt
 

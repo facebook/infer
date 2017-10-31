@@ -12,8 +12,8 @@ open! IStd
 let create_fake_jsonbug ?(bug_class= "bug_class") ?(kind= "kind") ?(bug_type= "bug_type")
     ?(qualifier= "qualifier") ?(severity= "severity") ?(visibility= "visibility") ?(line= 1)
     ?(column= 1) ?(procedure= "procedure") ?(procedure_id= "procedure_id")
-    ?(procedure_start_line= 1) ?(file= "file/at/a/certain/path.java") ?(bug_trace= []) ?(key= 1234)
-    ?(qualifier_tags= []) ?(hash= 1) ?(dotty= None) ?(infer_source_loc= None)
+    ?(procedure_start_line= 1) ?(file= "file/at/a/certain/path.java") ?(bug_trace= [])
+    ?(key= "1234") ?(qualifier_tags= []) ?(hash= "1") ?(dotty= None) ?(infer_source_loc= None)
     ?(linters_def_file= Some "file/at/certain/path.al") ?doc_url () : Jsonbug_t.jsonbug =
   { bug_class
   ; kind
@@ -39,16 +39,17 @@ let create_fake_jsonbug ?(bug_class= "bug_class") ?(kind= "kind") ?(bug_type= "b
   ; traceview_id= None }
 
 
-let pp_diff_of_int_list group_name fmt (expected, actual) =
-  Format.fprintf fmt "[%s]: Expected: [%a] Found: [%a]" group_name
-    (Pp.comma_seq Format.pp_print_int)
-    expected
-    (Pp.comma_seq Format.pp_print_int)
-    actual
+let pp_diff_of_list ~pp group_name fmt (expected, actual) =
+  Format.fprintf fmt "[%s]: Expected: [%a] Found: [%a]" group_name (Pp.comma_seq pp) expected
+    (Pp.comma_seq pp) actual
 
+
+let pp_diff_of_string_list = pp_diff_of_list ~pp:Format.pp_print_string
+
+let pp_diff_of_int_list = pp_diff_of_list ~pp:Format.pp_print_int
 
 (* Sort hashes to make things easier to compare *)
 let sorted_hashes_of_issues issues =
   let hash i = i.Jsonbug_t.hash in
-  List.sort ~cmp:Int.compare (List.map ~f:hash issues)
+  List.sort ~cmp:String.compare (List.rev_map ~f:hash issues)
 

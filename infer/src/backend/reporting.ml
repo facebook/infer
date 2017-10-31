@@ -11,23 +11,27 @@ open! IStd
 module L = Logging
 
 type log_t =
-  ?loc:Location.t -> ?node_id:int * int -> ?session:int -> ?ltr:Errlog.loc_trace
+  ?loc:Location.t -> ?node_id:int * Digest.t -> ?session:int -> ?ltr:Errlog.loc_trace
   -> ?linters_def_file:string -> ?doc_url:string -> exn -> unit
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
 let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
     exn =
-  let loc = match loc with None -> State.get_loc () | Some loc -> loc in
-  let node_id =
-    match node_id with None -> (State.get_node_id_key () :> int * int) | Some node_id -> node_id
-  in
-  let session =
-    match session with None -> (State.get_session () :> int) | Some session -> session
-  in
-  let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
   let issue_type = (Exceptions.recognize_exception exn).name in
   if not Config.filtering (* no-filtering takes priority *) || issue_type.IssueType.enabled then
+    let loc = match loc with None -> State.get_loc () | Some loc -> loc in
+    let node_id =
+      match node_id with
+      | None ->
+          (State.get_node_id_key () :> int * Digest.t)
+      | Some node_id ->
+          node_id
+    in
+    let session =
+      match session with None -> (State.get_session () :> int) | Some session -> session
+    in
+    let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
     Errlog.log_issue err_kind err_log loc node_id session ltr ?linters_def_file ?doc_url exn
 
 

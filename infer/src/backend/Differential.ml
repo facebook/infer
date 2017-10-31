@@ -16,7 +16,7 @@ let of_reports ~(current_report: Jsonbug_t.report) ~(previous_report: Jsonbug_t.
   let to_map report =
     List.fold_left
       ~f:(fun map issue -> Map.add_multi map ~key:issue.Jsonbug_t.hash ~data:issue)
-      ~init:Int.Map.empty report
+      ~init:String.Map.empty report
   in
   let fold_aux ~key:_ ~data (left, both, right) =
     match data with

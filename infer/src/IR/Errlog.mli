@@ -36,7 +36,7 @@ val compute_local_exception_line : loc_trace -> int option
     This extra information adds value to the report itself, and may avoid
     digging into the trace to understand the cause of the report. *)
 
-type node_id_key = private {node_id: int; node_key: int}
+type node_id_key = private {node_id: int; node_key: Digest.t}
 
 type err_key = private
   { err_kind: Exceptions.err_kind
@@ -93,7 +93,7 @@ val update : t -> t -> unit
 (** Update an old error log with a new one *)
 
 val log_issue :
-  Exceptions.err_kind -> t -> Location.t -> int * int -> int -> loc_trace
+  Exceptions.err_kind -> t -> Location.t -> int * Digest.t -> int -> loc_trace
   -> ?linters_def_file:string -> ?doc_url:string -> exn -> unit
 
 (** {2 Functions for manipulating per-file error tables} *)

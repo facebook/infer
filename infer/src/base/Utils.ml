@@ -378,3 +378,5 @@ let without_gc ~f =
 let yield () =
   Unix.select ~read:[] ~write:[] ~except:[] ~timeout:(`After Time_ns.Span.min_value) |> ignore
 
+
+let better_hash x = Marshal.to_string x [Marshal.No_sharing] |> Digest.string

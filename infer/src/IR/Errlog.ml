@@ -65,7 +65,7 @@ let compute_local_exception_line loc_trace =
   snd (List_.fold_until ~init:(`Continue (None, None)) ~f:compute_local_exception_line loc_trace)
 
 
-type node_id_key = {node_id: int; node_key: int}
+type node_id_key = {node_id: int; node_key: Digest.t}
 
 type err_key =
   { err_kind: Exceptions.err_kind

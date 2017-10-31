@@ -34,9 +34,9 @@ type jsonbug = {
   procedure_start_line : int;
   file : string;
   bug_trace : json_trace_item list;
-  key : int;
+  key : string;
   qualifier_tags : tag_value_record list;
-  hash : int;
+  hash : string;
   ?dotty : string option;
   ?infer_source_loc: loc option;
   bug_type_hum: string;

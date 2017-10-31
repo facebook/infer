@@ -27,7 +27,7 @@ type failure_stats =
   ; (* number of node failures (i.e. at least one instruction failure) *)
   mutable node_ok: int
   ; (* number of node successes (i.e. no instruction failures) *)
-  mutable first_failure: (Location.t * (int * int) * int * Errlog.loc_trace * exn) option
+  mutable first_failure: (Location.t * (int * Digest.t) * int * Errlog.loc_trace * exn) option
   (* exception at the first failure *) }
 
 module NodeHash = Procdesc.NodeHash
@@ -106,31 +106,31 @@ let get_node () = !gs.last_node
 
 (** simple key for a node: just look at the instructions *)
 let node_simple_key node =
-  let key = ref [] in
-  let add_key k = key := k :: !key in
-  let do_instr instr =
-    if Sil.instr_is_auxiliary instr then ()
+  let add_instr key instr =
+    if Sil.instr_is_auxiliary instr then key
     else
-      match instr with
-      | Sil.Load _ ->
-          add_key 1
-      | Sil.Store _ ->
-          add_key 2
-      | Sil.Prune _ ->
-          add_key 3
-      | Sil.Call _ ->
-          add_key 4
-      | Sil.Nullify _ ->
-          add_key 5
-      | Sil.Abstract _ ->
-          add_key 6
-      | Sil.Remove_temps _ ->
-          add_key 7
-      | Sil.Declare_locals _ ->
-          add_key 8
+      let instr_key =
+        match instr with
+        | Sil.Load _ ->
+            1
+        | Sil.Store _ ->
+            2
+        | Sil.Prune _ ->
+            3
+        | Sil.Call _ ->
+            4
+        | Sil.Nullify _ ->
+            5
+        | Sil.Abstract _ ->
+            6
+        | Sil.Remove_temps _ ->
+            7
+        | Sil.Declare_locals _ ->
+            8
+      in
+      instr_key :: key
   in
-  List.iter ~f:do_instr (Procdesc.Node.get_instrs node) ;
-  Hashtbl.hash !key
+  Procdesc.Node.get_instrs node |> List.fold ~init:[] ~f:add_instr |> Utils.better_hash
 
 
 (** key for a node: look at the current node, successors and predecessors *)
@@ -138,9 +138,11 @@ let node_key node =
   let succs = Procdesc.Node.get_succs node in
   let preds = Procdesc.Node.get_preds node in
   let v =
-    (node_simple_key node, List.map ~f:node_simple_key succs, List.map ~f:node_simple_key preds)
+    ( node_simple_key node
+    , List.rev_map ~f:node_simple_key succs
+    , List.rev_map ~f:node_simple_key preds )
   in
-  Hashtbl.hash v
+  Utils.better_hash v
 
 
 (** normalize the list of instructions by renaming let-bound ids *)
@@ -320,7 +322,7 @@ let mark_instr_ok () =
 
 let mark_instr_fail exn =
   let loc = get_loc () in
-  let key = (get_node_id_key () :> int * int) in
+  let key = (get_node_id_key () :> int * Digest.t) in
   let session = get_session () in
   let loc_trace = get_loc_trace () in
   let fs = get_failure_stats (get_node ()) in
@@ -330,8 +332,9 @@ let mark_instr_fail exn =
 
 
 type log_issue =
-  ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * int -> ?session:int
-  -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> exn -> unit
+  ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * Digest.t
+  -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> exn
+  -> unit
 
 let process_execution_failures (log_issue: log_issue) pname =
   let do_failure _ fs =

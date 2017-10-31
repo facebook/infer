@@ -47,7 +47,7 @@ val get_node : unit -> Procdesc.Node.t
 val get_node_id : unit -> Procdesc.Node.id
 (** Get id of last node seen in symbolic execution *)
 
-val get_node_id_key : unit -> Procdesc.Node.id * int
+val get_node_id_key : unit -> Procdesc.Node.id * Digest.t
 (** Get id and key of last node seen in symbolic execution *)
 
 val get_normalized_pre :
@@ -85,8 +85,9 @@ val mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
     and normalized (w.r.t. renaming of let - bound ids) list of instructions. *)
 
 type log_issue =
-  ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * int -> ?session:int
-  -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> exn -> unit
+  ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * Digest.t
+  -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> exn
+  -> unit
 
 val process_execution_failures : log_issue -> Typ.Procname.t -> unit
 (** Process the failures during symbolic execution of a procedure *)

@@ -461,7 +461,7 @@ let log_frontend_issue translation_unit_context method_decl_opt (node: Ctl_parse
     | Stmt st ->
         CAst_utils.generate_key_stmt st
   in
-  let key = Hashtbl.hash key_str in
+  let key = Utils.better_hash key_str in
   Reporting.log_issue_from_errlog err_kind errlog exn ~loc:issue_desc.loc ~ltr:trace
     ~node_id:(0, key) ?linters_def_file ?doc_url:issue_desc.doc_url
 

@@ -12,15 +12,17 @@ open OUnit2
 open DifferentialTestsUtils
 
 let current_report =
-  [ create_fake_jsonbug ~hash:3 ()
-  ; create_fake_jsonbug ~hash:1 ()
-  ; create_fake_jsonbug ~hash:2 ()
-  ; create_fake_jsonbug ~hash:2 ()
-  ; create_fake_jsonbug ~hash:2 () ]
+  [ create_fake_jsonbug ~hash:"3" ()
+  ; create_fake_jsonbug ~hash:"1" ()
+  ; create_fake_jsonbug ~hash:"2" ()
+  ; create_fake_jsonbug ~hash:"2" ()
+  ; create_fake_jsonbug ~hash:"2" () ]
 
 
 let previous_report =
-  [create_fake_jsonbug ~hash:1 (); create_fake_jsonbug ~hash:4 (); create_fake_jsonbug ~hash:1 ()]
+  [ create_fake_jsonbug ~hash:"1" ()
+  ; create_fake_jsonbug ~hash:"4" ()
+  ; create_fake_jsonbug ~hash:"1" () ]
 
 
 let diff = Differential.of_reports ~current_report ~previous_report
@@ -30,7 +32,7 @@ let test_diff_keeps_duplicated_hashes =
   let hashes_expected = 3 in
   let hashes_found =
     List.fold ~init:0
-      ~f:(fun acc i -> if Int.equal i.Jsonbug_t.hash 2 then acc + 1 else acc)
+      ~f:(fun acc i -> if String.equal i.Jsonbug_t.hash "2" then acc + 1 else acc)
       diff.introduced
   in
   let pp_diff fmt (expected, actual) =
@@ -45,16 +47,16 @@ let test_diff_keeps_duplicated_hashes =
 let test_set_operations =
   let do_assert _ =
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Hashes of introduced")
-      [2; 2; 2; 3]
+      ~pp_diff:(pp_diff_of_string_list "Hashes of introduced")
+      ["2"; "2"; "2"; "3"]
       (sorted_hashes_of_issues diff.introduced) ;
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Hashes of fixed")
-      [4]
+      ~pp_diff:(pp_diff_of_string_list "Hashes of fixed")
+      ["4"]
       (sorted_hashes_of_issues diff.fixed) ;
     assert_equal
-      ~pp_diff:(pp_diff_of_int_list "Hashes of preexisting")
-      [1]
+      ~pp_diff:(pp_diff_of_string_list "Hashes of preexisting")
+      ["1"]
       (sorted_hashes_of_issues diff.preexisting)
   in
   "test_set_operations" >:: do_assert
