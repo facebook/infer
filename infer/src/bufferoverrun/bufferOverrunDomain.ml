@@ -245,6 +245,10 @@ module Val = struct
     fun fmt x -> F.fprintf fmt "(%a, %a)" Itv.pp x.itv ArrayBlk.pp x.arrayblk
 
 
+  let set_array_size : Itv.t -> t -> t =
+    fun size v -> {v with arrayblk= ArrayBlk.set_size size v.arrayblk}
+
+
   module Itv = struct
     let nat = of_itv Itv.nat
 

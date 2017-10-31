@@ -105,6 +105,8 @@ module ArrInfo = struct
   let prune_ne : t -> t -> t =
     fun arr1 arr2 -> {arr1 with offset= Itv.prune_ne arr1.offset arr2.offset}
 
+
+  let set_size : Itv.t -> t -> t = fun size arr -> {arr with size}
 end
 
 include AbstractDomain.Map (Allocsite) (ArrInfo)
@@ -182,3 +184,5 @@ let prune_comp : Binop.t -> astate -> astate -> astate =
 let prune_eq : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_eq a1 a2
 
 let prune_ne : astate -> astate -> astate = fun a1 a2 -> do_prune ArrInfo.prune_ne a1 a2
+
+let set_size : Itv.t -> astate -> astate = fun size a -> map (ArrInfo.set_size size) a

@@ -29,6 +29,8 @@
 
 extern "C" {
 int __inferbo_min(int, int);
+
+void __inferbo_set_size(void* p, int size);
 }
 
 bool __inferbo_empty(int* size) { return 1 - __inferbo_min(*size, 1); }
@@ -233,9 +235,17 @@ class vector {
   reference back() { return (reference)*get(); }
   const_reference back() const { return (const_reference)*get(); }
 
-  value_type* data() noexcept { return get(); }
+  value_type* data() noexcept {
+    value_type* p = get();
+    __inferbo_set_size((void*)&p, infer_size);
+    return p;
+  }
 
-  const value_type* data() const noexcept { return get(); }
+  const value_type* data() const noexcept {
+    value_type* p = get();
+    __inferbo_set_size((void*)&p, infer_size);
+    return p;
+  }
 
   void push_back(const_reference __x);
   void push_back(value_type&& __x);

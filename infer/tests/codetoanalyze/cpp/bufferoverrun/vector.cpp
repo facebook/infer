@@ -143,3 +143,16 @@ void call_safe_access6_Good() {
   std::vector<int> v;
   safe_access6(v);
 }
+
+void data_Good() {
+  std::vector<int> v(5);
+  int* p = v.data();
+  p[4] = 1;
+}
+
+void data_Bad() {
+  std::vector<int> v(5);
+  int* p = v.data();
+  p[4] = 10;
+  p[v[4]] = 1;
+}

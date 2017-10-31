@@ -101,6 +101,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           mem
 
 
+  let model_set_size : (Exp.t * Typ.t) list -> Location.t -> Dom.Mem.astate -> Dom.Mem.astate =
+    fun params location mem ->
+      match params with
+      | [(e1, _); (e2, _)] ->
+          let locs = Sem.eval_locs e1 mem location |> Dom.Val.get_pow_loc in
+          let size = Sem.eval e2 mem location |> Dom.Val.get_itv in
+          let arr = Dom.Mem.find_heap_set locs mem in
+          let arr = Dom.Val.set_array_size size arr in
+          Dom.Mem.strong_update_heap locs arr mem
+      | _ ->
+          mem
+
+
   let model_by_value value ret mem =
     match ret with
     | Some (id, _) ->
@@ -144,6 +157,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       match Typ.Procname.get_method callee_pname with
       | "__inferbo_min" ->
           model_min ret params loc mem
+      | "__inferbo_set_size" ->
+          model_set_size params loc mem
       | "__exit" | "exit" ->
           Bottom
       | "fgetc" ->
