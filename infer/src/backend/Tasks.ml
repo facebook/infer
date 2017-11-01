@@ -44,7 +44,7 @@ let run t =
 
 let fork_protect ~f x =
   L.reset_formatters () ;
-  ResultsDir.new_database_connection () ;
+  ResultsDatabase.new_database_connection () ;
   f x
 
 

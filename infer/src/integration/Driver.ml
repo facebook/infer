@@ -67,10 +67,10 @@ let clean_compilation_command mode =
 let clean_results_dir () =
   if not Config.flavors then
     (* we do not need to keep the capture data in Buck/Java mode *)
-    ResultsDir.reset_attributes_table () ;
-  ResultsDir.db_canonicalize () ;
+    ResultsDatabase.reset_attributes_table () ;
+  ResultsDatabase.db_canonicalize () ;
   (* make sure we are done with the database *)
-  ResultsDir.db_close () ;
+  ResultsDatabase.db_close () ;
   (* In Buck flavors mode we keep all capture data, but in Java mode we keep only the tenv *)
   let should_delete_dir =
     let dirs_to_delete =
@@ -87,8 +87,8 @@ let clean_results_dir () =
     let files_to_delete =
       [ Config.log_file
       ; (* some versions of sqlite do not clean up after themselves *)
-        ResultsDir.database_filename ^ "-shm"
-      ; ResultsDir.database_filename ^ "-wal" ]
+        ResultsDatabase.database_filename ^ "-shm"
+      ; ResultsDatabase.database_filename ^ "-wal" ]
     in
     let suffixes_to_delete =
       ".txt" :: ".csv" :: ".json" :: (if Config.flavors then [] else [".cfg"; ".cg"])
@@ -579,4 +579,3 @@ let read_config_changed_files () =
     | Error error ->
         L.external_error "Error reading the changed files index '%s': %s@." index error ;
         None
-

@@ -65,7 +65,7 @@ let get_replace_statement =
      in several files *)
   (* TRICK: older versions of sqlite (prior to version 3.15.0 (2016-10-14)) do not support row
      values so the lexicographic ordering for (:akind, :sfile) is done by hand *)
-  ResultsDir.register_statement
+  ResultsDatabase.register_statement
     {|
 INSERT OR REPLACE INTO attributes
 SELECT :pname, :akind, :sfile, :pattr
@@ -94,7 +94,7 @@ let replace pname_blob akind loc_file attr_blob =
 
 
 let get_find_more_defined_statement =
-  ResultsDir.register_statement
+  ResultsDatabase.register_statement
     {|
 SELECT attr_kind
 FROM attributes
@@ -114,11 +114,11 @@ let should_try_to_update pname_blob akind =
 
 
 let get_select_statement =
-  ResultsDir.register_statement "SELECT proc_attributes FROM attributes WHERE proc_name = :k"
+  ResultsDatabase.register_statement "SELECT proc_attributes FROM attributes WHERE proc_name = :k"
 
 
 let get_select_defined_statement =
-  ResultsDir.register_statement
+  ResultsDatabase.register_statement
     "SELECT proc_attributes FROM attributes WHERE proc_name = :k AND attr_kind = %Ld"
     (int64_of_attributes_kind ProcDefined)
 

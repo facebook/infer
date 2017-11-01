@@ -15,7 +15,7 @@ let merge_attributes_table ~db_file =
      cases where a proc_name is present in both the sub-table and the main one (main_attr_kind !=
      NULL). All the rows that pass this filter are inserted/updated into the main table. *)
   let copy_stmt =
-    Sqlite3.prepare (ResultsDir.get_database ())
+    Sqlite3.prepare (ResultsDatabase.get_database ())
       {|
 INSERT OR REPLACE INTO attributes
 SELECT proc_name, attr_kind, source_file, proc_attributes
@@ -40,7 +40,7 @@ WHERE
 let merge ~db_file =
   (* no need to wrap all the individual table merges in a single transaction (to batch writes)
      because we open the table with synchronous=OFF *)
-  let main_db = ResultsDir.get_database () in
+  let main_db = ResultsDatabase.get_database () in
   SqliteUtils.check_sqlite_error ~fatal:true
     ~log:(Printf.sprintf "attaching database '%s'" db_file)
     (Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)) ;
@@ -60,7 +60,7 @@ let merge_buck_flavors_results infer_deps_file =
             Filename.dirname (Config.project_root ^/ "buck-out") ^/ target_results_dir
           else target_results_dir
         in
-        merge ~db_file:(infer_out_src ^/ ResultsDir.database_filename)
+        merge ~db_file:(infer_out_src ^/ ResultsDatabase.database_filename)
     | _ ->
         assert false
   in
