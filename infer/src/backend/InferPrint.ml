@@ -247,6 +247,21 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
       else true
 
 
+(* The reason an issue should be censored (that is, not reported). The empty
+   string (that is "no reason") means that the issue should be reported. *)
+let censored_reason (issue_type: IssueType.t) source_file =
+  let filename = SourceFile.to_rel_path source_file in
+  let rejected_by ((issue_type_polarity, issue_type_re), (filename_polarity, filename_re), reason) =
+    let accepted =
+      (* matches issue_type_re implies matches filename_re *)
+      not (Bool.equal issue_type_polarity (Str.string_match issue_type_re issue_type.unique_id 0))
+      || Bool.equal filename_polarity (Str.string_match filename_re filename 0)
+    in
+    Option.some_if (not accepted) reason
+  in
+  Option.value ~default:"" (List.find_map Config.filter_report ~f:rejected_by)
+
+
 module IssuesCsv = struct
   let csv_issues_id = ref 0
 
@@ -410,7 +425,8 @@ module IssuesJson = struct
         ; bug_type_hum= key.err_name.IssueType.hum
         ; linters_def_file= err_data.linters_def_file
         ; doc_url= err_data.doc_url
-        ; traceview_id= None }
+        ; traceview_id= None
+        ; censored_reason= censored_reason key.err_name source_file }
       in
       if not !is_first_item then pp "," else is_first_item := false ;
       pp "%s@?" (Jsonbug_j.string_of_jsonbug bug)
@@ -495,7 +511,9 @@ module IssuesTxt = struct
       | None ->
           err_data.loc.Location.file
     in
-    if key.in_footprint && error_filter source_file key.err_desc key.err_name then
+    if key.in_footprint && error_filter source_file key.err_desc key.err_name
+       && (not Config.filtering || String.is_empty (censored_reason key.err_name source_file))
+    then
       Exceptions.pp_err ~node_key:err_data.node_id_key.node_key err_data.loc key.err_kind
         key.err_name key.err_desc None fmt ()
 

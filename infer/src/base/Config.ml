@@ -1275,6 +1275,12 @@ and filter_paths =
   CLOpt.mk_bool ~long:"filter-paths" ~default:true "Filters specified in .inferconfig"
 
 
+and filter_report =
+  CLOpt.mk_string_list ~long:"filter-report"
+    ~in_help:CLOpt.([(Report, manual_generic); (Run, manual_generic)])
+    "Specify a filter for issues to report. If multiple filters are specified, they are applied in the order in which they are specified. Each filter is applied to each issue detected, and only issues which are accepted by all filters are reported. Each filter is of the form: `<issue_type_regex>:<filename_regex>:<reason_string>`. The first two components are OCaml Str regular expressions, with an optional `!` character prefix. If a regex has a `!` prefix, the polarity is inverted, and the filter becomes a \"blacklist\" instead of a \"whitelist\". Each filter is interpreted as an implication: an issue matches if it does not match the `issue_type_regex` or if it does match the `filename_regex`. The filenames that are tested by the regex are relative to the `--project-root` directory. The `<reason_string>` is a non-empty string used to explain why the issue was filtered."
+
+
 and flavors =
   CLOpt.mk_bool ~deprecated:["-use-flavors"] ~long:"flavors"
     ~in_help:CLOpt.([(Capture, manual_buck_flavors)])
@@ -2401,6 +2407,21 @@ and fcp_syntax_only = !fcp_syntax_only
 and file_renamings = !file_renamings
 
 and filter_paths = !filter_paths
+
+and filter_report =
+  List.map !filter_report ~f:(fun str ->
+      match String.split str ~on:':' with
+      | [issue_type_re; filename_re; reason_str]
+        when not String.(is_empty issue_type_re || is_empty filename_re || is_empty reason_str) ->
+          let polarity_regex re =
+            let polarity = not (Char.equal '!' re.[0]) in
+            let regex = Str.regexp (if polarity then re else String.slice re 1 0) in
+            (polarity, regex)
+          in
+          (polarity_regex issue_type_re, polarity_regex filename_re, reason_str)
+      | _ ->
+          L.(die UserError) "Ill-formed report filter: %s" str )
+
 
 and filtering = !filtering
 

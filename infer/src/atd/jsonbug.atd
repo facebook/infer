@@ -42,6 +42,7 @@ type jsonbug = {
   bug_type_hum: string;
   ?linters_def_file: string option;
   ?traceview_id: int option;
+  censored_reason : string;
 }
 
 type report = jsonbug list

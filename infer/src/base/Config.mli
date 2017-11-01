@@ -415,6 +415,8 @@ val file_renamings : string option
 
 val filter_paths : bool
 
+val filter_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
+
 val filtering : bool
 
 val flavors : bool
