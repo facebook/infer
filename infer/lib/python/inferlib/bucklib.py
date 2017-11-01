@@ -142,18 +142,29 @@ def get_output_jars(targets):
         return filter(os.path.isfile, classpath_jars)
 
 
+def get_key(e):
+    return (e[issues.JSON_INDEX_FILENAME], e[issues.JSON_INDEX_TYPE],
+            e[issues.JSON_INDEX_LINE], e[issues.JSON_INDEX_QUALIFIER])
+
+
+def merge_reports(report, collected):
+    for e in report:
+        key = get_key(e)
+        if key not in collected:
+            collected[key] = e
+
+
 def collect_results(args, start_time, targets):
     """Walks through buck-out/, collects results for the different buck targets
     and stores them in in args.infer_out/results.json.
     """
-    all_json_rows = []
+    collected_reports = {}
 
     for path in get_output_jars(targets):
         try:
             with zipfile.ZipFile(path) as jar:
-                json_rows = load_json_report(jar)
-                for row in json_rows:
-                    all_json_rows.append(row)
+                report = load_json_report(jar)
+                merge_reports(report, collected_reports)
         except NotFoundInJar:
             pass
         except zipfile.BadZipfile:
@@ -162,7 +173,7 @@ def collect_results(args, start_time, targets):
     json_report = os.path.join(args.infer_out, config.JSON_REPORT_FILENAME)
 
     with open(json_report, 'w') as file_out:
-        json.dump(all_json_rows, file_out)
+        json.dump(collected_reports.values(), file_out)
 
     bugs_out = os.path.join(args.infer_out, config.BUGS_FILENAME)
     issues.print_and_save_errors(args.infer_out, args.project_root,
