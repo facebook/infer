@@ -1123,7 +1123,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
          variables cannot be raced on as every thread has its own stack. *)
       let own_locals_in_cpp =
         match Procdesc.get_proc_name proc_desc with
-        | ObjC_Cpp _ ->
+        | ObjC_Cpp _ | C _ ->
             List.fold ~f:add_owned_local (Procdesc.get_locals proc_desc)
               ~init:OwnershipDomain.empty
         | _ ->
@@ -1917,4 +1917,3 @@ let file_analysis {Callbacks.procedures} =
            else (module MayAliasQuotientedAccessListMap) )
            class_env))
     (aggregate_by_class procedures)
-
