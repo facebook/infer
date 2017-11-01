@@ -38,15 +38,34 @@ public class Constructors {
     this.field = 7;
   }
 
-  public static synchronized Constructors singletonOk() {
+  public static synchronized Constructors singleton1Ok() {
     // ok because lock is held during write to static field in constructor
     return new Constructors(new Object());
   }
 
-  public static Constructors singletonBad() {
+  private static Constructors sSingleton1;
+
+  public static Constructors FP_singleton2Ok() {
+    synchronized (Constructors.class) {
+      if (sSingleton1 != null) {
+        sSingleton1 = new Constructors(0);
+      }
+    }
+    return sSingleton1; // not currently smart enough to understand that this read is ok
+  }
+
+  public static Constructors singleton1Bad() {
     // not ok because no lock is held
     return new Constructors(new Object());
   }
 
+  private static Constructors sSingleton2;
+
+  public static Constructors singleton2Bad() {
+    if (sSingleton2 == null) {
+      sSingleton2 = new Constructors(0);
+    }
+    return sSingleton2;
+  }
 
 }

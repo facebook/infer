@@ -39,6 +39,12 @@ struct
       NodePrinter.finish_session underyling_node
 
 
+  let is_java_unlock pname actuals =
+    (* would check is_java, but we want to include builtins too *)
+    not (Typ.Procname.is_c_method pname)
+    && match RacerDConfig.Models.get_lock pname actuals with Unlock -> true | _ -> false
+
+
   let exec_instr ((actual_state, id_map) as astate) extras node instr =
     let f_resolve_id id =
       try Some (IdAccessPathMapDomain.find id id_map)
@@ -55,9 +61,10 @@ struct
           List.fold ~f:(fun acc id -> IdAccessPathMapDomain.remove id acc) ~init:id_map ids
         in
         if phys_equal id_map id_map' then astate else (actual_state, id_map')
-    | Instr (Call (_, Direct callee_pname, _, _, loc) as hil_instr)
-      when Typ.Procname.equal callee_pname BuiltinDecl.__delete_locked_attribute ->
-        (* need to be careful not to move reads/writes out of a critical section. to ensure this,
+    | Instr (Call (_, Direct callee_pname, actuals, _, loc) as hil_instr)
+      when is_java_unlock callee_pname actuals ->
+        (* need to be careful not to move reads/writes out of a critical section due to odd
+           temporaries introduced in our translation of try/synchronized in Java. to ensure this,
            "dump" all of the temporaries out of the id map, then execute the unlock instruction. *)
         let actual_state' =
           IdAccessPathMapDomain.fold
@@ -91,4 +98,5 @@ struct
   let compute_post proc_data ~initial =
     let initial' = (initial, IdAccessPathMapDomain.empty) in
     Option.map ~f:fst (Interpreter.compute_post ~debug:false proc_data ~initial:initial')
+
 end

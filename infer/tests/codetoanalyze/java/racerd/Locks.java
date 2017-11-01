@@ -215,4 +215,22 @@ public class Locks {
     return tmp;
   }
 
+  public boolean readInTryCatchWithLockOk() {
+    mLock.lock();
+    try {
+      return mField;
+    } finally {
+      mLock.unlock();
+    }
+  }
+
+  public void writeInsideTryCatchWithLockOk() {
+    mLock.lock();
+    try {
+      mField = true;
+    } finally {
+      mLock.unlock();
+    }
+  }
+
 }

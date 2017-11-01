@@ -14,3 +14,25 @@ module F = Format
 module AnnotationAliases : sig
   val of_json : Yojson.Basic.json -> string list
 end
+
+module Models : sig
+  type lock = Lock | Unlock | LockedIfTrue | NoEffect
+
+  type thread = BackgroundThread | MainThread | MainThreadIfTrue | UnknownThread
+
+  type container_access = ContainerRead | ContainerWrite
+
+  (* TODO: clean this up so it takes only a procname *)
+
+  val is_thread_utils_method : string -> Typ.Procname.t -> bool
+  (** return true if the given method name is a utility class for checking what thread we're on *)
+
+  val get_lock : Typ.Procname.t -> HilExp.t list -> lock
+  (** describe how this procedure behaves with respect to locking *)
+
+  val get_thread : Typ.Procname.t -> thread
+  (** describe how this procedure behaves with respect to thread access *)
+
+  val get_container_access : Typ.Procname.t -> Tenv.t -> container_access option
+  (** return Some (access) if this procedure accesses the contents of a container (e.g., Map.get) *)
+end
