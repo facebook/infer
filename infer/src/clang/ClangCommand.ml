@@ -163,7 +163,7 @@ let with_plugin_args args =
        argv_cons "-cc1"
     |> (* It's important to place this option before other -isystem options. *)
        argv_do_if
-         Config.(cxx_infer_headers && (biabduction || bufferoverrun))
+         Config.(cxx_infer_headers && (biabduction || bufferoverrun || siof))
          (List.rev_append ["-isystem"; Config.cpp_extra_include_dir])
     |> List.rev_append
          [ "-load"
