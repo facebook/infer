@@ -122,9 +122,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Domain.remove lhs astate )
     | Assume (HilExp.AccessPath ap, _, _, _) ->
         Domain.remove ap astate
-    | Assume (HilExp.BinaryOperator (Binop.Ne, HilExp.AccessPath ap, exp), _, _, _)
-      when HilExp.is_null_literal exp ->
-        Domain.remove ap astate
+    | Assume
+        ( ( HilExp.BinaryOperator (Binop.Ne, HilExp.AccessPath ap, exp)
+          | HilExp.BinaryOperator (Binop.Ne, exp, HilExp.AccessPath ap) )
+        , _
+        , _
+        , _ ) ->
+        if HilExp.is_null_literal exp then Domain.remove ap astate else astate
     | _ ->
         astate
 
@@ -137,3 +141,4 @@ let checker {Callbacks.summary; proc_desc; tenv} =
   let proc_data = ProcData.make proc_desc tenv summary in
   ignore (Analyzer.compute_post proc_data ~initial) ;
   summary
+
