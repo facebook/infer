@@ -32,6 +32,9 @@ class T {
   }
 
  public:
+  T* doesNotReturnNullObject() { return new T(); }
+
+ public:
   void doSomething() {}
 };
 
@@ -71,4 +74,52 @@ void avoidDoubleReportingBad(T* t) {
   T* p = t->mayReturnNullObject();
   p->doSomething(); // should report here
   p->doSomething(); // should not report here
+}
+
+void nullableAssignmentInOneBranchBad(T* t) {
+  T* p;
+  if (star()) {
+    p = t->mayReturnNullObject();
+  } else {
+    p = t->doesNotReturnNullObject();
+  }
+  p->doSomething(); // reports here
+}
+
+void methodCheckedForNullOkay(T* t) {
+  if (t->mayReturnNullObject() != nullptr) {
+    t->mayReturnNullObject()->doSomething(); // does not report here
+  }
+}
+
+void reportsViolationOutsideOfNullCheckBad(T* t) {
+  if (t->mayReturnNullObject() != nullptr) {
+    t->mayReturnNullObject()->doSomething(); // does not report here
+  }
+  t->mayReturnNullObject()->doSomething(); // reports here
+}
+
+void reportsViolationInNullBranchBad(T* t) {
+  if (t->mayReturnNullObject() == nullptr) {
+    t->mayReturnNullObject()->doSomething(); // reports here
+  }
+}
+
+void reportsViolationInNotNullElseBranchBad(T* t) {
+  if (t->mayReturnNullObject() != nullptr) {
+  } else {
+    t->mayReturnNullObject()->doSomething(); // reports here
+  }
+}
+
+void methodNotAlwaysCheckedForNullOkay(T* t) {
+  if (star() && t->mayReturnNullObject() != nullptr) {
+    t->mayReturnNullObject()->doSomething(); // does not report here
+  }
+}
+
+void methodNotAlwaysCheckedForNullBad(T* t) {
+  if (star() || t->mayReturnNullObject() != nullptr) {
+    t->mayReturnNullObject()->doSomething(); // reports here
+  }
 }
