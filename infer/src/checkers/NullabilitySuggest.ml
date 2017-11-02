@@ -185,8 +185,10 @@ let checker {Callbacks.summary; proc_desc; tenv} =
     (* Assume all fields are not null in the beginning *)
     let initial = Domain.empty in
     let proc_data = ProcData.make_default proc_desc tenv in
-    match Analyzer.compute_post proc_data ~initial with
+    ( match Analyzer.compute_post proc_data ~initial with
     | Some post ->
-        report post proc_data ; summary
+        report post proc_data
     | None ->
-        L.(die InternalError) "Analyzer failed to compute post for %a" Typ.Procname.pp proc_name
+        L.internal_error "Analyzer failed to compute post for %a@." Typ.Procname.pp proc_name ) ;
+    summary
+
