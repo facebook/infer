@@ -151,6 +151,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           | HilExp.BinaryOperator (Binop.Ne, exp, HilExp.AccessPath ap) )
         , _
         , _
+        , _ )
+    | Assume
+        ( HilExp.UnaryOperator
+            ( Unop.LNot
+            , ( HilExp.BinaryOperator (Binop.Eq, HilExp.AccessPath ap, exp)
+              | HilExp.BinaryOperator (Binop.Eq, exp, HilExp.AccessPath ap) )
+            , _ )
+        , _
+        , _
         , _ ) ->
         if HilExp.is_null_literal exp then assume_pnames_notnull ap astate else astate
     | _ ->

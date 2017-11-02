@@ -112,7 +112,7 @@ void reportsViolationInNotNullElseBranchBad(T* t) {
   }
 }
 
-void methodNotAlwaysCheckedForNullOkay(T* t) {
+void methodAlwaysCheckedForNullOkay(T* t) {
   if (star() && t->mayReturnNullObject() != nullptr) {
     t->mayReturnNullObject()->doSomething(); // does not report here
   }
