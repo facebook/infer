@@ -477,7 +477,7 @@ end = struct
           trace := Errlog.make_trace_element level curr_loc descr node_tags :: !trace ;
           Option.iter
             ~f:(fun loc ->
-              if Typ.Procname.is_java pname && loc.Location.line > 0 then
+              if Typ.Procname.is_java pname then
                 let definition_descr =
                   Format.sprintf "Definition of %s" (Typ.Procname.to_simplified_string pname)
                 in
