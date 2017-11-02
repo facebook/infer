@@ -34,37 +34,37 @@ void dead_pointer_bad() {
 }
 
 void plus_plus1_bad() {
-  int i = 0;
+  int i = 1;
   ++i;
 }
 
 void plus_plus2_bad() {
-  int i = 0;
+  int i = 1;
   i++;
 }
 
 int plus_plus3_bad() {
-  int i = 0;
+  int i = 1;
   return i++;
 }
 
 void FN_capture_no_read_bad() {
-  int x = 0;
+  int x = 1;
   [x]() { return; }();
 }
 
 void init_capture_reassign_bad() {
-  int i = 0; // this is a dead store
-  return [i = 0]() { return i; }
+  int i = 1; // this is a dead store
+  return [i = 1]() { return i; }
   ();
 }
 
 void init_capture_no_call_bad() {
-  [i = 0]() { return i; };
+  [i = 1]() { return i; };
 }
 
 int FN_init_capture_no_read_bad() {
-  return [i = 0]() { return 0; }
+  return [i = 1]() { return 0; }
   ();
 }
 
@@ -125,19 +125,19 @@ void by_ref1_ok(int& ref) { ref = 7; }
 void by_ref2_ok(int& ref) { ref++; }
 
 int capture_by_ref3_ok() {
-  int x = 0;
+  int x = 1;
   [&](auto y) { x += y; }(3);
   return x;
 }
 
 int plus_plus_ok() {
-  int x = 0;
+  int x = 1;
   return ++x;
 }
 
 int plus_plus_loop_ok(int n) {
   int i;
-  for (i = 0; i < n; i++) {
+  for (i = 1; i < n; i++) {
     i++;
   }
   return i;
@@ -162,14 +162,14 @@ void capture2_ok(int x) {
 }
 
 int capture_by_ref1_ok() {
-  int x = 0;
+  int x = 1;
   [&x]() { x++; }();
   return x;
 }
 
 int capture_by_ref2_ok() {
-  int x = 0;
-  int y = 0;
+  int x = 1;
+  int y = 1;
   [&]() {
     x = x + y;
     y = x;
@@ -178,7 +178,7 @@ int capture_by_ref2_ok() {
 }
 
 int FN_capture_by_ref_reuseBad() {
-  int x = 0;
+  int x = 1;
   [&x]() {
     x = 1; // dead, but we won't report
     x = 2;
@@ -187,31 +187,31 @@ int FN_capture_by_ref_reuseBad() {
 }
 
 int init_capture1_ok() {
-  return [i = 0]() { return i; }
+  return [i = 1]() { return i; }
   ();
 }
 
 int init_capture2_ok() {
-  int i = 0;
+  int i = 1;
   return [j = i]() { return j; }
   ();
 }
 
 int init_capture3_ok() {
-  int i = 0;
+  int i = 1;
   return [i = i]() { return i; }
   ();
 }
 
 int init_capture4_ok() {
-  int i = 0;
-  int j = 0;
-  return [ a = 0, b = i, c = j ]() { return a + b + c; }
+  int i = 1;
+  int j = 1;
+  return [ a = 1, b = i, c = j ]() { return a + b + c; }
   ();
 }
 
 int init_capture5_ok() {
-  int i = 0;
+  int i = 1;
   int k = [j = i]() { return j; }
   ();
   i = 5; // should not be flagged
@@ -219,7 +219,7 @@ int init_capture5_ok() {
 }
 
 int init_capture6_ok() {
-  int i = 0;
+  int i = 1;
   int k = [i = i + 1]() { return i; }
   ();
   i = 5; // should not be flagged;
@@ -240,6 +240,44 @@ void placement_new_ok(int len, int* ptr) {
   while (len--) {
     new (placement++) int(5);
   }
+}
+
+// we don't report on dead stores where the RHS is 0, 0.0, false, nullptr, etc.
+
+bool sentinel_bool_ok() {
+  bool b = false;
+  b = true;
+  return b;
+}
+
+int sentinel_int_ok() {
+  int i = 0;
+  i = 1;
+  return i;
+}
+
+int sentinel_long_ok() {
+  long l = 0L;
+  l = 1L;
+  return l;
+}
+
+float sentinel_float_ok() {
+  float f = 0.0;
+  f = 1.0;
+  return f;
+}
+
+double sentinel_double_ok() {
+  double d = 0.0;
+  d = 1.0;
+  return d;
+}
+
+int* sentinel_ptr_ok(int* j) {
+  int* i = nullptr;
+  i = j;
+  return i;
 }
 
 }

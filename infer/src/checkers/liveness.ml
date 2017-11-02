@@ -73,12 +73,23 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   let invariant_map =
     Analyzer.exec_cfg cfg (ProcData.make_default proc_desc tenv) ~initial:Domain.empty ~debug:true
   in
+  (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
+     that create an intentional dead store as an attempt to imitate default value semantics.
+     use dead stores to a "sentinel" value as a heuristic for ignoring this case *)
+  let is_sentinel_exp = function
+    | Exp.Const Cint i ->
+        IntLit.iszero i || IntLit.isnull i
+    | Exp.Const Cfloat 0.0 ->
+        true
+    | _ ->
+        false
+  in
   let report_dead_store live_vars = function
-    | Sil.Store (Lvar pvar, _, _, loc)
+    | Sil.Store (Lvar pvar, _, rhs_exp, loc)
       when not
              ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
              || Domain.mem (Var.of_pvar pvar) live_vars || Procdesc.is_captured_var proc_desc pvar
-             || is_whitelisted_var pvar ) ->
+             || is_whitelisted_var pvar || is_sentinel_exp rhs_exp ) ->
         let issue_id = IssueType.dead_store.unique_id in
         let message = F.asprintf "The value written to %a is never used" (Pvar.pp Pp.text) pvar in
         let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
