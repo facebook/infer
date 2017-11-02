@@ -921,7 +921,6 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
   in
   let open RacerDDomain in
   if should_analyze_proc proc_desc tenv then (
-    if not (Procdesc.did_preanalysis proc_desc) then Preanal.do_liveness proc_desc tenv ;
     let formal_map = FormalMap.make proc_desc in
     let proc_data = ProcData.make proc_desc tenv get_proc_desc in
     let initial =

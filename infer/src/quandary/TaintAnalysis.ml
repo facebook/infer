@@ -847,9 +847,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       in
       (access_tree, IdAccessPathMapDomain.empty)
     in
-    if not (Procdesc.did_preanalysis proc_desc) then (
-      Preanal.do_liveness proc_desc tenv ;
-      Preanal.do_dynamic_dispatch proc_desc (Cg.create (SourceFile.invalid __FILE__)) tenv ) ;
+    Preanal.do_dynamic_dispatch proc_desc (Cg.create (SourceFile.invalid __FILE__)) tenv ;
     let initial = make_initial proc_desc in
     let extras =
       let formal_map = FormalMap.make proc_desc in
