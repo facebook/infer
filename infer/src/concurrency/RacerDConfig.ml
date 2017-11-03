@@ -133,11 +133,11 @@ module Models = struct
                 Lock
             | _ ->
                 NoEffect )
-      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_lock pname actuals ->
+      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_lock pname actuals ->
           Lock
-      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_unlock pname ->
+      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_unlock pname ->
           Unlock
-      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_trylock pname ->
+      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_trylock pname ->
           LockedIfTrue
       | pname when Typ.Procname.equal pname BuiltinDecl.__set_locked_attribute ->
           Lock
@@ -198,9 +198,9 @@ module Models = struct
                 None
           in
           PatternMatch.supertype_find_map_opt tenv get_container_access_ typename
-      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_container_read pname ->
+      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_container_read pname ->
           Some ContainerRead
-      | Typ.Procname.ObjC_Cpp _ as pname when is_cpp_container_write pname ->
+      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_container_write pname ->
           Some ContainerWrite
       | _ ->
           None

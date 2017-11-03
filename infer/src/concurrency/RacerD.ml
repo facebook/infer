@@ -1723,4 +1723,3 @@ let file_analysis {Callbacks.procedures} =
            else (module MayAliasQuotientedAccessListMap) )
            class_env))
     (aggregate_by_class procedures)
-

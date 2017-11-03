@@ -347,6 +347,9 @@ module Procname : sig
   val is_c_method : t -> bool
   (** Check if this is an Objective-C/C++ method name. *)
 
+  val is_obj_c_pp : t -> bool
+  (** Check if this is an Objective-C/C++ method name or C-style function. *)
+
   val is_objc_constructor : string -> bool
   (** Check if this is a constructor method in Objective-C. *)
 
