@@ -35,4 +35,8 @@ module Models : sig
 
   val get_container_access : Typ.Procname.t -> Tenv.t -> container_access option
   (** return Some (access) if this procedure accesses the contents of a container (e.g., Map.get) *)
+
+  val should_skip : Typ.Procname.t -> bool
+  (** holds of procedure names which should not be analyzed in order to avoid known sources of
+      inaccuracy *)
 end

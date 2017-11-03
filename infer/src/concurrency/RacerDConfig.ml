@@ -205,4 +205,28 @@ module Models = struct
       | _ ->
           None
 
+
+  let should_skip =
+    let matcher =
+      lazy
+        (QualifiedCppName.Match.of_fuzzy_qual_names
+           [ "folly::AtomicStruct::AtomicStruct"
+           ; "folly::Future::Future"
+           ; "folly::LockedPtr::LockedPtr"
+           ; "folly::Optional::Optional"
+           ; "folly::Optional::hasValue"
+           ; "folly::Promise::Promise"
+           ; "folly::ThreadLocal::ThreadLocal"
+           ; "folly::detail::SingletonHolder::createInstance"
+           ; "std::atomic"
+           ; "std::vector::vector" ])
+    in
+    function
+      | Typ.Procname.ObjC_Cpp _ | C _ as pname ->
+          Typ.Procname.is_destructor pname
+          || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
+               (Typ.Procname.get_qualifiers pname)
+      | _ ->
+          false
+
 end
