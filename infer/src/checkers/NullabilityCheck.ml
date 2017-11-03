@@ -24,9 +24,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     if Typ.Procname.is_java callee_pname then not (Typ.Procname.java_is_static callee_pname)
     else
       Option.exists
-        ~f:(fun attributes ->
-          attributes.ProcAttributes.is_objc_instance_method
-          || attributes.ProcAttributes.is_cpp_instance_method)
+        ~f:(fun attributes -> attributes.ProcAttributes.is_cpp_instance_method)
         (Specs.proc_resolve_attributes callee_pname)
 
 

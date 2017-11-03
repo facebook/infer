@@ -11,7 +11,7 @@
 int* __nullable returnsNull();
 
 @interface T : NSObject
-- (void)assignUnnanotatedFieldToNullBad;
+- (NSObject* _Nullable)nullableMethod;
 @end
 
 @implementation T {
@@ -83,23 +83,32 @@ int* __nullable returnsNull();
   }
 }
 
-- (void)dereferenceNullableMethodBad {
+- (void)dereferenceNullableFunctionBad {
   int* p = returnsNull();
   *p = 42;
 }
 
-- (void)dereferenceNullableMethod1Ok {
+- (void)dereferenceNullableFunction1Ok {
   int* p = returnsNull();
   if (p) {
     *p = 42;
   }
 }
 
-- (void)dereferenceNullableMethod2Ok {
+- (void)dereferenceNullableFunction2Ok {
   int* p = returnsNull();
   if (p != nil) {
     *p = 42;
   }
+}
+
+- (NSObject* _Nullable)nullableMethod {
+  return nil;
+}
+
+- (NSString*)dereferenceNullableMethodOkay {
+  NSObject* object = [self nullableMethod];
+  return [object description];
 }
 
 @end
