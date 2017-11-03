@@ -122,7 +122,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           astate
       | Some (nullable_ap, call_sites) ->
           report_nullable_dereference nullable_ap call_sites proc_data loc ;
-          remove_nullable_ap receiver astate )
+          assume_pnames_notnull receiver astate )
     | Call (Some ret_var, _, _, _, _) ->
         remove_nullable_ap (ret_var, []) astate
     | Assign (lhs, rhs, loc)

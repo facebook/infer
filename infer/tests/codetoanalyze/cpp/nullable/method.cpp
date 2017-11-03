@@ -123,3 +123,9 @@ void methodNotAlwaysCheckedForNullBad(T* t) {
     t->mayReturnNullObject()->doSomething(); // reports here
   }
 }
+
+void onlyReportOnceBad(T* t) {
+  t->mayReturnNullObject()->doSomething(); // reports here
+  // ...
+  t->mayReturnNullObject()->doSomething(); // does not report here
+}
