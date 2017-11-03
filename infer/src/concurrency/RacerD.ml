@@ -162,12 +162,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let add_unannotated_call_access pname (call_flags: CallFlags.t) loc tenv ~locks ~threads
       attribute_map (proc_data: extras ProcData.t) =
+    let thread_safe_or_thread_confined annot =
+      Annotations.ia_is_thread_safe annot || Annotations.ia_is_thread_confined annot
+    in
     if call_flags.cf_interface && Typ.Procname.is_java pname
        && not (is_java_library pname || is_builder_function pname)
        (* can't ask anyone to annotate interfaces in library code, and Builder's should always be
           thread-safe (would be unreasonable to ask everyone to annotate them) *)
-       && not (PatternMatch.check_class_attributes Annotations.ia_is_thread_safe tenv pname)
-       && not (has_return_annot Annotations.ia_is_thread_safe pname)
+       && not (PatternMatch.check_class_attributes thread_safe_or_thread_confined tenv pname)
+       && not (has_return_annot thread_safe_or_thread_confined pname)
     then
       let open Domain in
       let pre = AccessPrecondition.make locks threads proc_data.pdesc in

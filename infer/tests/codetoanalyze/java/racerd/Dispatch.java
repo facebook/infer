@@ -9,6 +9,7 @@
 
 package codetoanalyze.java.checkers;
 
+import com.facebook.infer.annotation.ThreadConfined;
 import com.facebook.infer.annotation.ThreadSafe;
 
 interface UnannotatedInterface {
@@ -31,6 +32,17 @@ class NotThreadSafe {
   }
 }
 
+@ThreadConfined(ThreadConfined.ANY)
+interface ThreadConfinedInterface {
+  void foo();
+}
+
+
+interface ThreadConfinedMethod {
+
+  @ThreadConfined(ThreadConfined.ANY)
+  void foo();
+}
 
 @ThreadSafe
 public class Dispatch {
@@ -53,6 +65,14 @@ public class Dispatch {
 
   void callAnnotatedInterfaceMethodOk(AnnotatedInterfaceMethod i) {
     i.foo();
+  }
+
+  void callThreadConfinedInterfaceOk(ThreadConfinedInterface t) {
+    t.foo();
+  }
+
+  void callThreadConfinedInterfaceMethodOk(ThreadConfinedMethod t) {
+    t.foo();
   }
 
 }
