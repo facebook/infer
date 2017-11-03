@@ -8,6 +8,7 @@
  */
 package codetoanalyze.java.checkers;
 
+import com.google.common.base.Preconditions;
 import javax.annotation.Nullable;
 
 public class NullableViolation {
@@ -66,6 +67,21 @@ public class NullableViolation {
     if (star() || returnsNullable() != null) {
       returnsNullable().doSomething(); // reports here
     }
+  }
+
+  void usePreconditionsCheckNotNullOnVariableOkay() {
+      T t = returnsNullable();
+      Preconditions.checkNotNull(t);
+      t.doSomething(); // does not report here
+  }
+
+  void usePreconditionsCheckNotNullOnMethodOkay() {
+      Preconditions.checkNotNull(returnsNullable()).doSomething(); // does not report here
+  }
+
+  void usePreconditionsCheckNotNullRepeatedCallOkay() {
+      Preconditions.checkNotNull(returnsNullable());
+      returnsNullable().doSomething(); // does not report here
   }
 
 }
