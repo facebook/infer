@@ -52,7 +52,7 @@ In each captured folder, we obtain the file `icfg.dot`, which is the graphical r
 `call_graph.dot`, that is the graphical representation of the call graph.
 
 
-Moreover, we obtain an html page for each captured file inside `infer-out/captured`. This html file contains the source file. In each line of the file there are links to the nodes of the control flow graph that correspond to that line of code. So one can see what the translation looks like. Moreover, when you click on those links you can see details of the symbolic execution of that particular node. If the option `--no_test` is also passed to `infer`, then the page pointed to from the nodes contains the printout of the whole symbolic execution.
+Moreover, we obtain an HTML page for each captured file inside `infer-out/captured`. This HTML file contains the source file. In each line of the file there are links to the nodes of the control flow graph that correspond to that line of code. So one can see what the translation looks like. Moreover, when you click on those links you can see details of the symbolic execution of that particular node. If the option `--no_test` is also passed to `infer`, then the page pointed to from the nodes contains the printout of the whole symbolic execution.
 
 ## Print the specs
 
