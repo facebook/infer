@@ -13,7 +13,6 @@
 open! IStd
 open AbsLoc
 open! AbstractDomain.Types
-module F = Format
 module L = Logging
 module Dom = BufferOverrunDomain
 module PO = BufferOverrunProofObligations
@@ -33,130 +32,10 @@ end)
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Dom.Mem
-  module Sem = BufferOverrunSemantics.Make (CFG)
+  module Models = BufferOverrunModels.Make (CFG)
+  module Sem = Models.Sem
 
   type extras = Typ.Procname.t -> Procdesc.t option
-
-  let set_uninitialized node (typ: Typ.t) loc mem =
-    match typ.desc with
-    | Tint _ | Tfloat _ ->
-        Dom.Mem.weak_update_heap loc Dom.Val.Itv.top mem
-    | _ ->
-        L.(debug BufferOverrun Verbose)
-          "/!\\ Do not know how to uninitialize type %a at %a@\n" (Typ.pp Pp.text) typ Location.pp
-          (CFG.loc node) ;
-        mem
-
-
-  (* NOTE: heuristic *)
-  let get_malloc_info : Exp.t -> Typ.t * Int.t option * Exp.t = function
-    | Exp.BinOp (Binop.Mult, Exp.Sizeof {typ; nbytes}, length)
-    | Exp.BinOp (Binop.Mult, length, Exp.Sizeof {typ; nbytes}) ->
-        (typ, nbytes, length)
-    | Exp.Sizeof {typ; nbytes} ->
-        (typ, nbytes, Exp.one)
-    | x ->
-        (Typ.mk (Typ.Tint Typ.IChar), Some 1, x)
-
-
-  type model_fun =
-    Typ.Procname.t -> (Ident.t * Typ.t) option -> (Exp.t * Typ.t) list -> CFG.node -> Location.t
-    -> Dom.Mem.astate -> Dom.Mem.astate
-
-  let model_malloc pname ret params node location mem =
-    match ret with
-    | Some (id, _) ->
-        let typ, stride, length0 = get_malloc_info (List.hd_exn params |> fst) in
-        let length = Sem.eval length0 mem (CFG.loc node) in
-        let traces = TraceSet.add_elem (Trace.ArrDecl location) (Dom.Val.get_traces length) in
-        let v =
-          Sem.eval_array_alloc pname node typ ?stride Itv.zero (Dom.Val.get_itv length) 0 1
-          |> Dom.Val.set_traces traces
-        in
-        mem |> Dom.Mem.add_stack (Loc.of_id id) v
-        |> set_uninitialized node typ (Dom.Val.get_array_locs v)
-    | _ ->
-        L.(debug BufferOverrun Verbose)
-          "/!\\ Do not know where to model malloc at %a@\n" Location.pp (CFG.loc node) ;
-        mem
-
-
-  let model_realloc pname ret params node location mem =
-    model_malloc pname ret (List.tl_exn params) node location mem
-
-
-  let model_min _pname ret params _node location mem =
-    match (ret, params) with
-    | Some (id, _), [(e1, _); (e2, _)] ->
-        let i1 = Sem.eval e1 mem location |> Dom.Val.get_itv in
-        let i2 = Sem.eval e2 mem location |> Dom.Val.get_itv in
-        let v = Itv.min_sem i1 i2 |> Dom.Val.of_itv in
-        mem |> Dom.Mem.add_stack (Loc.of_id id) v
-    | _ ->
-        mem
-
-
-  let model_set_size _pname _ret params _node location mem =
-    match params with
-    | [(e1, _); (e2, _)] ->
-        let locs = Sem.eval_locs e1 mem location |> Dom.Val.get_pow_loc in
-        let size = Sem.eval e2 mem location |> Dom.Val.get_itv in
-        let arr = Dom.Mem.find_heap_set locs mem in
-        let arr = Dom.Val.set_array_size size arr in
-        Dom.Mem.strong_update_heap locs arr mem
-    | _ ->
-        mem
-
-
-  let model_by_value value _pname ret _params _node _location mem =
-    match ret with
-    | Some (id, _) ->
-        Dom.Mem.add_stack (Loc.of_id id) value mem
-    | None ->
-        L.(debug BufferOverrun Verbose)
-          "/!\\ Do not know where to model value %a@\n" Dom.Val.pp value ;
-        mem
-
-
-  let model_bottom _pname _ret _params _node _location _mem = Bottom
-
-  let model_infer_print _pname _ret params _node location mem =
-    match params with
-    | (e, _) :: _ ->
-        L.(debug BufferOverrun Medium)
-          "@[<v>=== Infer Print === at %a@,%a@]%!" Location.pp location Dom.Val.pp
-          (Sem.eval e mem location) ;
-        mem
-    | _ ->
-        mem
-
-
-  let model_infer_set_array_length pname _ret params node location mem =
-    match params with
-    | [(Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray (typ, _, stride0)}); (length_exp, _)] ->
-        let length = Sem.eval length_exp mem location |> Dom.Val.get_itv in
-        let stride = Option.map ~f:IntLit.to_int stride0 in
-        let v = Sem.eval_array_alloc pname node typ ?stride Itv.zero length 0 1 in
-        mem |> Dom.Mem.add_stack (Loc.of_pvar array_pvar) v
-        |> set_uninitialized node typ (Dom.Val.get_array_locs v)
-    | [_; _] ->
-        L.(die InternalError) "Unexpected type of arguments for __set_array_length()"
-    | _ ->
-        L.(die InternalError) "Unexpected number of arguments for __set_array_length()"
-
-
-  let model_dispatcher : model_fun QualifiedCppName.Dispatch.quals_dispatcher =
-    QualifiedCppName.Dispatch.of_fuzzy_qual_names
-      [ (["__inferbo_min"], model_min)
-      ; (["__inferbo_set_size"], model_set_size)
-      ; (["__exit"; "exit"], model_bottom)
-      ; (["fgetc"], model_by_value Dom.Val.Itv.m1_255)
-      ; (["infer_print"], model_infer_print)
-      ; (["malloc"; "__new_array"], model_malloc)
-      ; (["realloc"], model_realloc)
-      ; (["__set_array_length"], model_infer_set_array_length)
-      ; (["strlen"], model_by_value Dom.Val.Itv.nat) ]
-
 
   let rec declare_array
       : Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t -> length:IntLit.t option
@@ -387,7 +266,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | Call (ret, Const Cfun callee_pname, params, loc, _)
           -> (
             let quals = Typ.Procname.get_qualifiers callee_pname in
-            match QualifiedCppName.Dispatch.dispatch_qualifiers model_dispatcher quals with
+            match QualifiedCppName.Dispatch.dispatch_qualifiers Models.dispatcher quals with
             | Some model ->
                 model callee_pname ret params node loc mem
             | None ->
@@ -398,7 +277,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | None ->
                   L.(debug BufferOverrun Verbose)
                     "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp loc ;
-                  model_by_value Dom.Val.unknown callee_pname ret params node loc mem
+                  Models.model_by_value Dom.Val.unknown callee_pname ret params node loc mem
                   |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown )
         | Declare_locals (locals, location) ->
             (* array allocation in stack e.g., int arr[10] *)
