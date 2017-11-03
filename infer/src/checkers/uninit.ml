@@ -42,7 +42,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RecordDomain
 
-  let report message loc summary =
+  let report var loc summary =
+    let message = F.asprintf "The value read from %a was never initialized" Var.pp var in
     let issue_id = IssueType.uninitialized_value.unique_id in
     let ltr = [Errlog.make_trace_element 0 loc "" []] in
     let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
@@ -50,6 +51,27 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   type extras = FormalMap.t * Specs.summary
+
+  let should_report_var pdesc uninit_vars var =
+    match var with
+    | Var.ProgramVar pv ->
+        not (Pvar.is_frontend_tmp pv) && not (Procdesc.is_captured_var pdesc pv)
+        && exp_in_set (Exp.Lvar pv) uninit_vars
+    | _ ->
+        false
+
+
+  let report_on_function_params pdesc uninit_vars actuals loc extras =
+    List.iter
+      ~f:(fun e ->
+        match e with
+        | HilExp.AccessPath ((var, t), _)
+          when should_report_var pdesc uninit_vars var && not (is_type_pointer t) ->
+            report var loc (snd extras)
+        | _ ->
+            ())
+      actuals
+
 
   let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras} _ (instr: HilInstr.t) =
     match instr with
@@ -64,21 +86,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             (pre', post)
           else astate.prepost
         in
-        ( match rhs_var with
-        | Var.ProgramVar pv
-          when not (Pvar.is_frontend_tmp pv) && not (Procdesc.is_captured_var pdesc pv)
-               && exp_in_set (Exp.Lvar pv) uninit_vars && not (is_type_pointer lhs_typ) ->
-            let message =
-              F.asprintf "The value read from %a was never initialized" Exp.pp (Exp.Lvar pv)
-            in
-            report message loc (snd extras)
-        | _ ->
-            () ) ;
+        (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
+        if should_report_var pdesc uninit_vars rhs_var && not (is_type_pointer lhs_typ) then
+          report rhs_var loc (snd extras) ;
         {astate with uninit_vars; prepost}
     | Assign (((lhs_var, _), _), _, _) ->
         let uninit_vars = D.remove lhs_var astate.uninit_vars in
         {astate with uninit_vars}
-    | Call (_, _, actuals, _, _) ->
+    | Call (_, _, actuals, _, loc) ->
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
         let uninit_vars =
@@ -88,12 +103,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | HilExp.AccessPath ((actual_var, {Typ.desc= Tptr _}), _) ->
                   D.remove actual_var acc
               | HilExp.Closure (_, apl) ->
-                  (* remove the captured variables of a block *)
+                  (* remove the captured variables of a block/lambda *)
                   List.fold ~f:(fun acc' ((av, _), _) -> D.remove av acc') ~init:acc apl
               | _ ->
                   acc)
             ~init:astate.uninit_vars actuals
         in
+        report_on_function_params pdesc uninit_vars actuals loc extras ;
         {astate with uninit_vars}
     | Assume _ ->
         astate

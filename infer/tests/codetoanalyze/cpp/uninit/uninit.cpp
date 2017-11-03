@@ -36,7 +36,9 @@ int ok1() {
   int b;
   no_init(&a);
 
-  b = a; // OK (only intraprocedural)
+  b = a; // OK only for intraprocedural case (we assume that something passed by
+         // reference is initialized). When analysis extended to
+         // interprocedural, it should report a warning.
   return b;
 }
 
@@ -45,7 +47,9 @@ int ok2() {
   int c;
   no_init(&a);
 
-  c = inc(a); // OK (only intraprocedural)
+  c = inc(a); // OK only for intraprocedural case (we assume that something
+              // passed by reference is initialized). When analysis extended to
+              // interprocedural, it should report a warning.
   return c;
 }
 
@@ -54,7 +58,8 @@ int ok3() {
   int c;
 
   init(&a);
-  c = a; // OK
+  c = a; // no report since the variable could be initialized when passed by
+         // reference in previous call
 
   return c;
 }
@@ -65,7 +70,8 @@ int ok4() {
 
   init(&a);
 
-  c = inc(a); // ok
+  c = inc(a); // no report since the variable could be initialized when passed
+              // by reference in previous call
   return c;
 }
 
@@ -76,9 +82,11 @@ int ok5() {
 
   no_init(&a);
 
-  b = a; // ok (only intraprocedural)
+  b = a; // OK only for intraprocedural case (we assume that something passed by
+         // reference is initialized). When analysis extended to
+         // interprocedural, it should report a warning.
 
-  c = inc(b); // do not report as it depends from line 31
+  c = inc(b); // do not report as it depends from line above
 
   return c;
 }
@@ -90,13 +98,15 @@ int square_no_init(int x, int& res) { return res * res; }
 void use_square_ok1() {
 
   int i;
-  square_init(2, i);
+  square_init(2, i); // OK since i is initialized when passed by reference
 }
 
 int use_square_ok2() {
 
   int i;
-  i = square_no_init(2, i); // OK only intraprocedural
+  i = square_no_init(
+      2, i); // OK only for intraprocedural case. When analysis extended
+             // to interprocedural, it should report.
   return i;
 }
 
@@ -113,7 +123,8 @@ int branch1_FP() {
   }
 
   if (ok) {
-    return size;
+    return size; // report here because size initialized only on the then-branch
+                 // above
   }
 
   return 0;
@@ -129,7 +140,7 @@ int loop1_FP() {
       break;
   }
 
-  return size;
+  return size; // report here because size initialized only inside loop
 }
 
 int ok6() {
@@ -142,7 +153,74 @@ int ok6() {
 void deref_magic_addr_ok() { *(int*)0xdeadbeef = 0; }
 
 char ok7() {
-  char buf[1024], *res = buf;
+  char buf[1024], *res = buf; // OK, because we copy an address
   res[1] = 'a';
   return res[1];
+}
+
+void use_an_int(int);
+
+void bad2() {
+  int a;
+  use_an_int(a); // Report as we pass an unitialized value
+}
+
+void ok8() {
+  int a;
+  init(&a); // no report since the variable could be initialized when passed by
+            // reference.
+}
+
+int ret_undef() {
+  int* p;
+  return *p; // report as p was not initialized
+}
+
+int ret_undef_FP() {
+  int* p;
+  int* q;
+  p = q; // no report as we copy an address
+  return *p; // NO report as we don't keep track of aliasing (for now)
+}
+
+void use_an_int2(int*);
+
+int ok9() {
+  int buf[1024];
+  use_an_int2(buf); // no report as we pass the pointer to buf
+  return 1;
+}
+
+void FN_capture_read_bad() {
+  int x;
+  [x]() {
+    int y = x;
+    return;
+  }(); // We should report that captured x is not init
+}
+
+void init_capture_read_ok() {
+  int x;
+  [x = 0]() {
+    int y = x;
+    return;
+  }
+  ();
+}
+
+void init_capture_ok() {
+  [i = 0]() { return i; };
+}
+
+void FN_capture_by_ref_reuseBad() {
+  int x;
+  [&x]() {
+    int y = x;
+  }(); // We don't report here as we only do intraprocedural analysis for now
+}
+
+int capture_by_ref_init_ok() {
+  int x;
+  [&x]() { x = 1; }();
+  return x;
 }
