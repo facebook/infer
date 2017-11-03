@@ -111,7 +111,7 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
     match Tenv.lookup tenv interface_name with
     | Some {fields; supers} ->
         ( CGeneral_utils.append_no_duplicates_fields decl_fields fields
-        , CGeneral_utils.append_no_duplicates_csu decl_supers supers )
+        , IList.append_no_duplicates Typ.Name.equal decl_supers supers )
     | _ ->
         (decl_fields, decl_supers)
   in
@@ -177,4 +177,3 @@ let interface_impl_declaration qual_type_to_sil_type tenv decl =
       class_desc
   | _ ->
       assert false
-

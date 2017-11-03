@@ -30,20 +30,11 @@ let rec string_from_list l =
   match l with [] -> "" | [item] -> item | item :: l' -> item ^ " " ^ string_from_list l'
 
 
-let rec append_no_duplicates eq list1 list2 =
-  match list2 with
-  | el :: rest2 ->
-      if List.mem ~equal:eq list1 el then append_no_duplicates eq list1 rest2
-      else append_no_duplicates eq list1 rest2 @ [el]
-  | [] ->
-      list1
-
-
-let append_no_duplicates_csu list1 list2 = append_no_duplicates Typ.Name.equal list1 list2
-
 let append_no_duplicates_annotations list1 list2 =
-  let eq (annot1, _) (annot2, _) = String.equal annot1.Annot.class_name annot2.Annot.class_name in
-  append_no_duplicates eq list1 list2
+  let equal (annot1, _) (annot2, _) =
+    String.equal annot1.Annot.class_name annot2.Annot.class_name
+  in
+  IList.append_no_duplicates equal list1 list2
 
 
 let add_no_duplicates_fields field_tuple l =
@@ -201,4 +192,3 @@ let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname o
         CAst_utils.get_qualified_name named_decl_info |> QualifiedCppName.to_qual_string
       in
       Pvar.mk (Mangled.from_string name_string) procname
-

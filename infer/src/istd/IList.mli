@@ -30,3 +30,8 @@ val to_string : ('a -> string) -> 'a list -> string
 
 val uncons_exn : 'a list -> 'a * 'a list
 (** deconstruct a list, like hd_exn and tl_exn *)
+
+val append_no_duplicates : ('a -> 'a -> bool) -> 'a list -> 'a list -> 'a list
+(** [append_no_duplicates list1 list2], assuming that list1 and list2 have no duplicates on their own,
+   it computes list1 @ (filtered list2), so it keeps the order of both lists and has no duplicates.
+   However, the complexity is O(n^2), don't use for big lists!  *)
