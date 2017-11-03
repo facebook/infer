@@ -12,6 +12,10 @@ RUN apt-get update && \
             libsqlite3-dev \
             zlib1g-dev \
             cmake \
+            libc6-dev \
+            libc6-i386 \
+            lib32z1 \
+            lib32stdc++6 \
             openjdk-8-jdk-headless && \
     rm -rf /var/lib/apt/lists/*
 
@@ -32,15 +36,6 @@ RUN OCAML_VERSION=4.05.0; \
 # Install Infer
 ENV INFER_HOME /infer/infer
 ENV PATH ${INFER_HOME}/bin:${PATH}
-
-# Install dependencies for Android sample
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-            libc6-dev \
-            libc6-i386 \
-            lib32z1 \
-            lib32stdc++6 && \
-    rm -rf /var/lib/apt/lists/*
 
 ENV ANDROID_HOME /opt/android-sdk-linux
 WORKDIR $ANDROID_HOME
