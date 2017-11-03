@@ -679,6 +679,8 @@ val trace_rearrange : bool
 
 val tv_limit : int
 
+val tv_limit_filtered : int
+
 val type_size : bool
 
 val uninit : bool

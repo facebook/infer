@@ -1944,6 +1944,11 @@ and tv_limit =
     "The maximum number of traces to submit to Traceview"
 
 
+and tv_limit_filtered =
+  CLOpt.mk_int ~long:"tv-limit-filtered" ~default:100 ~meta:"int"
+    "The maximum number of traces for issues filtered out by --report-filter to submit to Traceview"
+
+
 and type_size =
   CLOpt.mk_bool ~deprecated:["type_size"] ~long:"type-size"
     "Consider the size of types during analysis, e.g. cannot use an int pointer to write to a char"
@@ -2687,6 +2692,8 @@ and trace_rearrange = !trace_rearrange
 and tracing = !tracing
 
 and tv_limit = !tv_limit
+
+and tv_limit_filtered = !tv_limit_filtered
 
 and type_size = !type_size
 
