@@ -193,6 +193,7 @@ is_objc_extension ()
 is_objc_interface_named ("name")
 is_property_pointer_type ()
 is_strong_property ()
+is_weak_property ()
 is_unop_with_kind ("kind")
 method_return_type ("type") // only builtin type, pointers, and Objective-C classes available at the moment
 objc_method_has_nth_parameter_of_type("type")
