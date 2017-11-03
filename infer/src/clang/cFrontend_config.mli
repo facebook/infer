@@ -148,8 +148,6 @@ val return_param : string
 
 val self : string
 
-val static : string
-
 val std_addressof : QualifiedCppName.Match.quals_matcher
 
 val string_with_utf8_m : string

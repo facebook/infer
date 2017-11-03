@@ -26,8 +26,6 @@ val collect_list_tuples :
 
 val swap_elements_list : 'a list -> 'a list
 
-val is_static_var : Clang_ast_t.var_decl_info -> bool
-
 val zip : 'a list -> 'b list -> ('a * 'b) list
 
 val list_range : int -> int -> int list

@@ -70,14 +70,6 @@ let rec collect_list_tuples l (a, a1, b, c, d) =
       collect_list_tuples l' (a @ a', a1 @ a1', b @ b', c @ c', d @ d')
 
 
-let is_static_var var_decl_info =
-  match var_decl_info.Clang_ast_t.vdi_storage_class with
-  | Some sc ->
-      String.equal sc CFrontend_config.static
-  | _ ->
-      false
-
-
 let rec zip xs ys =
   match (xs, ys) with [], _ | _, [] -> [] | x :: xs, y :: ys -> (x, y) :: zip xs ys
 
@@ -136,15 +128,15 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) na
     var_decl_info qt =
   let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
   let translation_unit =
-    match Clang_ast_t.((var_decl_info.vdi_storage_class, var_decl_info.vdi_init_expr)) with
-    | Some "extern", None ->
-        (* some compilers simply disregard "extern" when the global is given some initialisation
-           code, which is why we make sure that [vdi_init_expr] is None here... *)
+    match Clang_ast_t.((var_decl_info.vdi_is_extern, var_decl_info.vdi_init_expr)) with
+    | true, None ->
         Pvar.TUExtern
     | _, None when var_decl_info.Clang_ast_t.vdi_is_static_data_member ->
         (* non-const static data member get extern scope unless they are defined out of line here (in which case vdi_init_expr will not be None) *)
         Pvar.TUExtern
-    | _ ->
+    | true, Some _
+    (* "extern" variables with initialisation code are not extern at all, but compilers accept this *)
+    | false, _ ->
         Pvar.TUFile source_file
   in
   let is_constexpr = var_decl_info.Clang_ast_t.vdi_is_const_expr in
