@@ -238,6 +238,7 @@ let siof_check pdesc gname (summary: Specs.summary) =
 
 
 let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summary =
+  let pname = Procdesc.get_proc_name proc_desc in
   let standard_streams_initialized_in_tu =
     let includes_iostream tu =
       let magic_iostream_marker =
@@ -250,8 +251,7 @@ let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summ
               (TUFile tu)
           |> Pvar.get_initializer_pname )
       in
-      get_procs_in_file (Procdesc.get_proc_name proc_desc)
-      |> List.exists ~f:(Typ.Procname.equal magic_iostream_marker)
+      get_procs_in_file pname |> List.exists ~f:(Typ.Procname.equal magic_iostream_marker)
     in
     Option.value_map ~default:false ~f:includes_iostream
       (Procdesc.get_attributes proc_desc).ProcAttributes.translation_unit
@@ -263,13 +263,19 @@ let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summ
       else SiofDomain.VarNames.empty )
   in
   let updated_summary =
-    match Analyzer.compute_post proc_data ~initial with
-    | Some post ->
-        Summary.update_summary post summary
-    | None ->
-        summary
+    (* If the function is constexpr then it doesn't participate in SIOF. The checker should be able
+       to figure this out when analyzing the function, but we might as well use the user's
+       specification if it's given to us. This also serves as an optimization as this skips the
+       analysis of the function. *)
+    if Typ.Procname.is_constexpr pname then Summary.update_summary initial summary
+    else
+      match Analyzer.compute_post proc_data ~initial with
+      | Some post ->
+          Summary.update_summary post summary
+      | None ->
+          summary
   in
-  ( match Typ.Procname.get_global_name_of_initializer (Procdesc.get_proc_name proc_desc) with
+  ( match Typ.Procname.get_global_name_of_initializer pname with
   | Some gname ->
       siof_check proc_desc gname updated_summary
   | None ->

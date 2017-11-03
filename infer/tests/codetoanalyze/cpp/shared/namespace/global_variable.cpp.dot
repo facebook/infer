@@ -26,15 +26,15 @@ digraph iCFG {
 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_2" [label="2: Exit div0_static_field \n  " color=yellow style=filled]
 	
 
-"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::A::v:int [line 37, column 15]\n  n$1=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$B::v:int [line 37, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 37, column 3]\n " shape="box"]
+"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" [label="3:  Return Stmt \n   n$0=*&#GB<EXTERN>$f1::A::v:int [line 37, column 15]\n  n$1=*&#GB<EXTERN>$B::v:int [line 37, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 37, column 3]\n " shape="box"]
 	
 
 	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_2" ;
-"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" [label="4:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::A::v:int=-2 [line 36, column 3]\n " shape="box"]
+"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" [label="4:  BinaryOperatorStmt: Assign \n   *&#GB<EXTERN>$f1::A::v:int=-2 [line 36, column 3]\n " shape="box"]
 	
 
 	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_3" ;
-"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$B::v:int=1 [line 35, column 3]\n " shape="box"]
+"div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<EXTERN>$B::v:int=1 [line 35, column 3]\n " shape="box"]
 	
 
 	 "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_5" -> "div0_static_field#12231470699631142739.dca5ebae856e9b404facab8151fb6246_4" ;
@@ -45,15 +45,15 @@ digraph iCFG {
 "div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_2" [label="2: Exit div0_static_field_member_access \n  " color=yellow style=filled]
 	
 
-"div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_3" [label="3:  Return Stmt \n   n$0=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::A::v:int [line 43, column 15]\n  n$1=*&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$B::v:int [line 43, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 43, column 3]\n " shape="box"]
+"div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_3" [label="3:  Return Stmt \n   n$0=*&#GB<EXTERN>$f1::A::v:int [line 43, column 15]\n  n$1=*&#GB<EXTERN>$B::v:int [line 43, column 26]\n  *&return:int=(1 / ((n$0 + n$1) + 1)) [line 43, column 3]\n " shape="box"]
 	
 
 	 "div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_3" -> "div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_2" ;
-"div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_4" [label="4:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$B::v:int=-2 [line 42, column 3]\n " shape="box"]
+"div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_4" [label="4:  BinaryOperatorStmt: Assign \n   *&#GB<EXTERN>$B::v:int=-2 [line 42, column 3]\n " shape="box"]
 	
 
 	 "div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_4" -> "div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_3" ;
-"div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<codetoanalyze/cpp/shared/namespace/global_variable.cpp>$f1::A::v:int=1 [line 41, column 3]\n " shape="box"]
+"div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_5" [label="5:  BinaryOperatorStmt: Assign \n   *&#GB<EXTERN>$f1::A::v:int=1 [line 41, column 3]\n " shape="box"]
 	
 
 	 "div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_5" -> "div0_static_field_member_access#8775359855042425857.b606a4de40e2ad34cbe0f38ab2d7e485_4" ;

@@ -136,12 +136,13 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) na
     var_decl_info qt =
   let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
   let translation_unit =
-    match
-      (var_decl_info.Clang_ast_t.vdi_storage_class, var_decl_info.Clang_ast_t.vdi_init_expr)
-    with
+    match Clang_ast_t.((var_decl_info.vdi_storage_class, var_decl_info.vdi_init_expr)) with
     | Some "extern", None ->
         (* some compilers simply disregard "extern" when the global is given some initialisation
            code, which is why we make sure that [vdi_init_expr] is None here... *)
+        Pvar.TUExtern
+    | _, None when var_decl_info.Clang_ast_t.vdi_is_static_data_member ->
+        (* non-const static data member get extern scope unless they are defined out of line here (in which case vdi_init_expr will not be None) *)
         Pvar.TUExtern
     | _ ->
         Pvar.TUFile source_file
