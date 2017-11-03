@@ -812,7 +812,7 @@ module Issue = struct
     ( if Config.developer_mode then
         let num_pruned_issues = List.length issues - List.length issues' in
         if num_pruned_issues > 0 then
-          L.user_warning "Note: pruned %d duplicate issues" num_pruned_issues ) ;
+          L.user_warning "Note: pruned %d duplicate issues@\n" num_pruned_issues ) ;
     issues'
 
 end

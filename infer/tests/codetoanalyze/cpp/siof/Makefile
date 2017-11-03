@@ -25,8 +25,10 @@ SOURCES = \
   siof/siof_templated.cpp \
   siof/siof_different_tu.cpp \
   siof/std_ios_base_init.cpp \
+  siof/smart_pointer1.cpp \
+  siof/smart_pointer2.cpp \
 
-HEADERS = siof/siof_types.h
+HEADERS = siof/siof_types.h siof/smart_pointer1.h
 
 include $(TESTS_DIR)/clang.make
 

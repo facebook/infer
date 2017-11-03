@@ -1121,11 +1121,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
        There is no LValueToRvalue cast in the AST afterwards since clang doesn't know
        that class type is translated as pointer type. It gets added here instead. *)
     let extra_res_trans =
-      match class_type.desc with
-      | Typ.Tptr _ ->
-          dereference_value_from_result sil_loc tmp_res_trans ~strip_pointer:false
-      | _ ->
-          tmp_res_trans
+      let do_extra_deref =
+        match class_type.desc with
+        | Typ.Tptr _ ->
+            (* do not inject the extra dereference for procedures generated to record the
+               initialization code of globals *)
+            Procdesc.get_proc_name trans_state.context.procdesc
+            |> Typ.Procname.get_global_name_of_initializer |> Option.is_none
+        | _ ->
+            false
+      in
+      if do_extra_deref then
+        dereference_value_from_result sil_loc tmp_res_trans ~strip_pointer:false
+      else tmp_res_trans
     in
     let res_trans_callee =
       decl_ref_trans trans_state this_res_trans si decl_ref ~is_constructor_init:false
