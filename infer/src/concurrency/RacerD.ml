@@ -377,9 +377,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
            ["folly::AtomicStruct::load"; "folly::detail::SingletonHolder::createInstance"])
     in
     fun pname ->
-      Typ.Procname.is_destructor pname
-      || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
-           (Typ.Procname.get_qualifiers pname)
+      QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
+        (Typ.Procname.get_qualifiers pname)
 
 
   let get_summary caller_pdesc callee_pname actuals callee_loc tenv =
@@ -865,8 +864,8 @@ let pdesc_is_assumed_thread_safe pdesc tenv =
    find more bugs. this is just a temporary measure to avoid obvious false positives *)
 let should_analyze_proc pdesc tenv =
   let pn = Procdesc.get_proc_name pdesc in
-  not (Typ.Procname.is_class_initializer pn) && not (FbThreadSafety.is_logging_method pn)
-  && not (pdesc_is_assumed_thread_safe pdesc tenv)
+  not (Typ.Procname.is_destructor pn) && not (Typ.Procname.is_class_initializer pn)
+  && not (FbThreadSafety.is_logging_method pn) && not (pdesc_is_assumed_thread_safe pdesc tenv)
 
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
@@ -920,7 +919,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
     Typ.Procname.is_constructor proc_name || FbThreadSafety.is_custom_init tenv proc_name
   in
   let open RacerDDomain in
-  if should_analyze_proc proc_desc tenv then (
+  if should_analyze_proc proc_desc tenv then
     let formal_map = FormalMap.make proc_desc in
     let proc_data = ProcData.make proc_desc tenv get_proc_desc in
     let initial =
@@ -993,7 +992,7 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         let post = {threads; locks; accesses; return_ownership; return_attributes} in
         Summary.update_summary post summary
     | None ->
-        summary )
+        summary
   else Summary.update_summary empty_post summary
 
 
