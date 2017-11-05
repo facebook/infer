@@ -108,7 +108,12 @@ int* __nullable returnsNull();
 
 - (NSString*)dereferenceNullableMethodOkay {
   NSObject* object = [self nullableMethod];
-  return [object description];
+  return [object description]; // does not report here
+}
+
+- (void)reassigningNullableObjectOkay {
+  NSObject* object = [self nullableMethod];
+  object = nil; // does not report here
 }
 
 @end

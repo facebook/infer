@@ -105,6 +105,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let exec_instr ((_, checked_pnames) as astate) proc_data _ (instr: HilInstr.t) : Domain.astate =
+    let is_pointer_assignment tenv lhs rhs =
+      HilExp.is_null_literal rhs
+      (* the rhs has type int when assigning the lhs to null *)
+      || Option.equal Typ.equal (AccessPath.get_typ lhs tenv) (HilExp.get_typ tenv rhs)
+      (* the lhs and rhs have the same type in the case of pointer assignment
+         but the types are different when assigning the pointee *)
+    in
     match instr with
     | Call (Some ret_var, Direct callee_pname, _, _, _)
       when NullCheckedPname.mem callee_pname checked_pnames ->
@@ -132,7 +139,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       -> (
         Option.iter
           ~f:(fun (nullable_ap, call_sites) ->
-            report_nullable_dereference nullable_ap call_sites proc_data loc)
+            if not (is_pointer_assignment proc_data.ProcData.tenv nullable_ap rhs) then
+              (* TODO (T22426288): Undertand why the pointer derference and the pointer
+                 assignment have the same HIL representation *)
+              report_nullable_dereference nullable_ap call_sites proc_data loc)
           (longest_nullable_prefix lhs astate) ;
         match rhs with
         | HilExp.AccessPath ap -> (

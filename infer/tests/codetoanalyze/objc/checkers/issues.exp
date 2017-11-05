@@ -7,6 +7,7 @@ codetoanalyze/objc/checkers/Nullable.m, T_dereferenceNullableFunctionBad, 2, NUL
 codetoanalyze/objc/checkers/Nullable.m, T_dereferenceNullableFunctionBad, 2, NULL_DEREFERENCE, [start of procedure dereferenceNullableFunctionBad,Skipping returnsNull(): function or method not found]
 codetoanalyze/objc/checkers/Nullable.m, T_dereferenceUnnanotatedFieldAfterTestForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]
 codetoanalyze/objc/checkers/Nullable.m, T_dereferenceUnnanotatedFieldAfterTestForNullBad, 2, NULL_DEREFERENCE, [start of procedure dereferenceUnnanotatedFieldAfterTestForNullBad,Condition is true]
+codetoanalyze/objc/checkers/Nullable.m, T_reassigningNullableObjectOkay, 1, DEAD_STORE, [Write of unused value]
 codetoanalyze/objc/checkers/Nullable.m, T_testNonnullFieldForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field nonnullField is compared to null here]
 codetoanalyze/objc/checkers/Nullable.m, T_testUnnanotatedFieldForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]
 codetoanalyze/objc/checkers/Nullable.m, objc_blockT_DeadStoreFP_testUnnanotatedFieldInClosureBad_1, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]

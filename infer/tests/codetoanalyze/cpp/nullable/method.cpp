@@ -43,17 +43,22 @@ void assignNullableValueBad(T* t) {
   *p = 42;
 }
 
-void FP_reAssigningNullableValueOk(T* t) {
+void reassigningNullablePointerOkay(T* t) {
   int* p = t->mayReturnNullPointer();
-  p = new int;
-  *p = 42;
+  p = new int; // does not report here
+  *p = 42; // does not report here
+}
+
+void reassigningNullablePointerToNullOkay(T* t) {
+  int* p = t->mayReturnNullPointer();
+  p = nullptr; // does not report here
 }
 
 void callMethodOnNullableObjectBad(T* t) {
   t->mayReturnNullObject()->doSomething();
 }
 
-void callMethodOnNullableObjectOk(T* t) {
+void callMethodOnNullableObjectOkay(T* t) {
   T* p = t->mayReturnNullObject();
   if (p != nullptr) {
     p->doSomething();
@@ -72,8 +77,8 @@ void methodCallOnFieldOfNullableObjectBad(T* t) {
 
 void avoidDoubleReportingBad(T* t) {
   T* p = t->mayReturnNullObject();
-  p->doSomething(); // should report here
-  p->doSomething(); // should not report here
+  p->doSomething(); // reports here
+  p->doSomething(); // does not report here
 }
 
 void nullableAssignmentInOneBranchBad(T* t) {
