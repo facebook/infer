@@ -65,6 +65,9 @@
   ],
   "quandary-sanitizers": [
     {
+      "procedure": "__infer_string_sanitizer"
+    },
+    {
       "procedure": "basics::Obj::sanitizer1"
     },
     {

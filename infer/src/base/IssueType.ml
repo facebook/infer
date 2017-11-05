@@ -269,6 +269,8 @@ let quandary_taint_error = from_string "QUANDARY_TAINT_ERROR"
 
 let registered_observer_being_deallocated = from_string "REGISTERED_OBSERVER_BEING_DEALLOCATED"
 
+let remote_code_execution_risk = from_string "REMOTE_CODE_EXECUTION_RISK"
+
 let resource_leak = from_string "RESOURCE_LEAK"
 
 let retain_cycle = from_string ~enabled:false "RETAIN_CYCLE"

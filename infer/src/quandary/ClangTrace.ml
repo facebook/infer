@@ -18,6 +18,8 @@ module SourceKind = struct
     | EnvironmentVariable  (** source that was read from an environment variable *)
     | File  (** source that was read from a file *)
     | Other  (** for testing or uncategorized sources *)
+    | UserControlledEndpoint of (Mangled.t * Typ.desc)
+        (** source originating from formal of an endpoint that is known to hold user-controlled data *)
     [@@deriving compare]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
@@ -31,6 +33,8 @@ module SourceKind = struct
         EnvironmentVariable
     | "File" ->
         File
+    | "UserControlledEndpoint" ->
+        Endpoint (Mangled.from_string "NONE", Typ.Tvoid)
     | _ ->
         Other
 
@@ -108,26 +112,40 @@ module SourceKind = struct
         L.(die InternalError) "Non-C++ procname %a in C++ analysis" Typ.Procname.pp pname
 
 
-  let get_tainted_formals pdesc _ =
-    let get_tainted_formals_ qualified_pname =
-      if String.Set.mem endpoints qualified_pname then
-        List.map
-          ~f:(fun (name, typ) -> (name, typ, Some (Endpoint (name, typ.Typ.desc))))
-          (Procdesc.get_formals pdesc)
-      else Source.all_formals_untainted pdesc
-    in
-    match Procdesc.get_proc_name pdesc with
-    | Typ.Procname.ObjC_Cpp objc as pname ->
-        let qualified_pname =
-          F.sprintf "%s::%s"
-            (Typ.Procname.objc_cpp_get_class_name objc)
-            (Typ.Procname.get_method pname)
+  let get_tainted_formals pdesc tenv =
+    if PredSymb.equal_access (Procdesc.get_attributes pdesc).ProcAttributes.access PredSymb.Private
+    then Source.all_formals_untainted pdesc
+    else
+      let is_thrift_service cpp_pname =
+        let is_thrift_service_ typename _ =
+          match QualifiedCppName.to_list (Typ.Name.unqualified_name typename) with
+          | ["facebook"; "fb303"; "cpp2"; ("FacebookServiceSvIf" | "FacebookServiceSvAsyncIf")] ->
+              true
+          | _ ->
+              false
         in
-        get_tainted_formals_ qualified_pname
-    | Typ.Procname.C _ as pname ->
-        get_tainted_formals_ (Typ.Procname.get_method pname)
-    | _ ->
-        Source.all_formals_untainted pdesc
+        let typename = Typ.Procname.objc_cpp_get_class_type_name cpp_pname in
+        PatternMatch.supertype_exists tenv is_thrift_service_ typename
+      in
+      let taint_all ~make_source =
+        List.map
+          ~f:(fun (name, typ) -> (name, typ, Some (make_source name typ.Typ.desc)))
+          (Procdesc.get_formals pdesc)
+      in
+      match Procdesc.get_proc_name pdesc with
+      | Typ.Procname.ObjC_Cpp cpp_pname as pname ->
+          let qualified_pname =
+            F.sprintf "%s::%s"
+              (Typ.Procname.objc_cpp_get_class_name cpp_pname)
+              (Typ.Procname.get_method pname)
+          in
+          if String.Set.mem endpoints qualified_pname then
+            taint_all ~make_source:(fun name desc -> UserControlledEndpoint (name, desc))
+          else if is_thrift_service cpp_pname then
+            taint_all ~make_source:(fun name desc -> Endpoint (name, desc))
+          else Source.all_formals_untainted pdesc
+      | _ ->
+          Source.all_formals_untainted pdesc
 
 
   let pp fmt = function
@@ -141,6 +159,8 @@ module SourceKind = struct
         F.fprintf fmt "CommandLineFlag[%a]" Var.pp var
     | Other ->
         F.fprintf fmt "Other"
+    | UserControlledEndpoint (formal_name, _) ->
+        F.fprintf fmt "UserControlledEndpoint[%s]" (Mangled.to_string formal_name)
 
 end
 
@@ -285,6 +305,7 @@ include Trace.Make (struct
   module Sink = CppSink
 
   let get_report source sink =
+    (* TODO: make this accept structs/objects too, but not primitive types or enumes *)
     (* using this to match custom string wrappers such as folly::StringPiece *)
     let is_stringy typ =
       let lowercase_typ = String.lowercase (Typ.to_string (Typ.mk typ)) in
@@ -292,13 +313,19 @@ include Trace.Make (struct
       || String.is_substring ~substring:"char*" lowercase_typ
     in
     match (Source.kind source, Sink.kind sink) with
-    | Endpoint _, BufferAccess ->
+    | Endpoint (_, typ), (ShellExec | SQL) ->
+        (* remote code execution if the caller of the endpoint doesn't sanitize *)
+        Option.some_if (is_stringy typ) IssueType.remote_code_execution_risk
+    | Endpoint _, (BufferAccess | HeapAllocation | StackAllocation) ->
+        (* may want to report this in the future, but don't care for now *)
+        None
+    | UserControlledEndpoint _, BufferAccess ->
         (* untrusted data from an endpoint flowing into a buffer *)
         Some IssueType.quandary_taint_error
-    | Endpoint (_, typ), ShellExec ->
+    | UserControlledEndpoint (_, typ), ShellExec ->
         (* untrusted string data flowing to shell ShellExec *)
         Option.some_if (is_stringy typ) IssueType.shell_injection
-    | Endpoint (_, typ), SQL ->
+    | UserControlledEndpoint (_, typ), SQL ->
         (* untrusted string data flowing to SQL *)
         Option.some_if (is_stringy typ) IssueType.sql_injection
     | (CommandLineFlag _ | EnvironmentVariable | File | Other), BufferAccess ->
@@ -310,10 +337,12 @@ include Trace.Make (struct
     | (CommandLineFlag _ | EnvironmentVariable | File | Other), SQL ->
         (* untrusted flag, environment var, or file data flowing to SQL *)
         Some IssueType.sql_injection
-    | (CommandLineFlag _ | Endpoint _ | EnvironmentVariable | File | Other), HeapAllocation ->
+    | ( (CommandLineFlag _ | UserControlledEndpoint _ | EnvironmentVariable | File | Other)
+      , HeapAllocation ) ->
         (* untrusted data of any kind flowing to heap allocation. this can cause crashes or DOS. *)
         Some IssueType.quandary_taint_error
-    | (CommandLineFlag _ | Endpoint _ | EnvironmentVariable | File | Other), StackAllocation ->
+    | ( (CommandLineFlag _ | UserControlledEndpoint _ | EnvironmentVariable | File | Other)
+      , StackAllocation ) ->
         (* untrusted data of any kind flowing to stack buffer allocation. trying to allocate a stack
            buffer that's too large will cause a stack overflow. *)
         Some IssueType.untrusted_variable_length_array

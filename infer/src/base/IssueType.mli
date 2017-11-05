@@ -182,6 +182,8 @@ val quandary_taint_error : t
 
 val registered_observer_being_deallocated : t
 
+val remote_code_execution_risk : t
+
 val resource_leak : t
 
 val retain_cycle : t
