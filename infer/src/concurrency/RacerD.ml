@@ -1524,10 +1524,11 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
 
     let compare (x: t) (y: t) =
       match (x, y) with
-      | ( (Read ap1 | Write ap1 | ContainerRead (ap1, _) | ContainerWrite (ap1, _))
-        , (Read ap2 | Write ap2 | ContainerRead (ap2, _) | ContainerWrite (ap2, _)) ) ->
+      | (Read ap1 | Write ap1), (Read ap2 | Write ap2)
+      | ( (ContainerRead (ap1, _) | ContainerWrite (ap1, _))
+        , (ContainerRead (ap2, _) | ContainerWrite (ap2, _)) ) ->
           [%compare : (_var * Typ.t) * AccessPath.access list] ap1 ap2
-      | InterfaceCall _, _ | _, InterfaceCall _ ->
+      | (InterfaceCall _ | Read _ | Write _ | ContainerRead _ | ContainerWrite _), _ ->
           RacerDDomain.Access.compare x y
 
   end)
