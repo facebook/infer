@@ -40,10 +40,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           Typ.Procname.pp pname
     in
     let message =
-      Format.asprintf
-        "Variable %a is indirectly annotated with %a (source %a) and is dereferenced without being checked for null"
-        (MF.wrap_monospaced AccessPath.pp)
-        ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site
+      match ap with
+      | (Var.LogicalVar _, _), _ ->
+          (* direct dereference without intermediate variable *)
+          Format.asprintf
+            "The return value of %s is annotated with %a and is dereferenced without being checked for null at %a"
+            (MF.monospaced_to_string
+               (Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname call_site)))
+            MF.pp_monospaced annotation Location.pp loc
+      | _ ->
+          (* dereference with intermediate variable *)
+          Format.asprintf
+            "Variable %a is indirectly annotated with %a (source %a) and is dereferenced without being checked for null at %a"
+            (MF.wrap_monospaced AccessPath.pp)
+            ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site Location.pp
+            loc
     in
     let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
     let summary = extras in
