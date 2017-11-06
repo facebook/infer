@@ -50,7 +50,7 @@ Once the new linter is added to the linters' file it will then work out of the b
 
 <a name="clang_ast">**Getting the clang AST**</a>  
 
-When you write a linter that traverses the AST of some programs to check some property, you probably need to understand how the AST looks like. You can get the AST of programs using clang directly, or using Infer. 
+When you write a linter that traverses the AST of some programs to check some property, you probably need to understand what the AST looks like. You can get the AST of programs using clang directly, or using Infer. 
 
 If you have a clang command `clang <clang arguments> File.m` then you can get the AST with 
 
@@ -331,7 +331,7 @@ DEFINE-CHECKER ASSIGN_POINTER_WARNING = {
   };
 ```
 
-The checker uses two predefined predicates `is_assign_property()` and `is_property_pointer_type()` which are true if the property being declared is assign and has a pointer type respectively. We want to check both condition only on nodes declaring properties, i.e., `ObjCPropertyDecl`.
+The checker uses two predefined predicates `is_assign_property()` and `is_property_pointer_type()` which are true if the property being declared is assign and has a pointer type respectively. We want to check both conditions only on nodes declaring properties, i.e., `ObjCPropertyDecl`.
 
 <hr>
 
@@ -527,11 +527,11 @@ DEFINE-CHECKER ENUM_CONSTANTS = {
 
 <a name="info_message">**AST info in messages**</a>
 
-When you write the message of your rule, you may want to specify which particular ast items were involved in the issue, such as a type or a variable name. We have a mechanism for that, we specified a few placeholders that can be used in rules with the syntax `%placeholder%` and it will be substituted by the correct ast info. At the moment we have `%type%`, `%child_type%` and `%name%` that print the type of the node, the type of the node's child, and a string representation of the node, respectively. As with predicates, we can add more as needed.
+When you write the message of your rule, you may want to specify which particular AST items were involved in the issue, such as a type or a variable name. We have a mechanism for that, we specified a few placeholders that can be used in rules with the syntax `%placeholder%` and it will be substituted by the correct AST info. At the moment we have `%type%`, `%child_type%` and `%name%` that print the type of the node, the type of the node's child, and a string representation of the node, respectively. As with predicates, we can add more as needed.
 
 <a name="testing">**Testing your rule**</a>
 
-To test your rule you need to run it with Infer. If you are adding a new linter you can test it in a separate al file that you can pass to Infer with the option `--linters-def-file file.al`. Pass the option `--linters-developer-mode` to Infer that will print debug information and only take the linters from that file into account in the execution, it will ignore the default linters, so it will be faster and debug info will be only 
+To test your rule you need to run it with Infer. If you are adding a new linter you can test it in a separate al file that you can pass to Infer with the option `--linters-def-file file.al`. Pass the option `--linters-developer-mode` to Infer to print debug information and only take the linters from that file into account in the execution, it will ignore the default linters, so it will be faster and the debug info will be only 
 about your linter.
 
 To test your code, write a small example that triggers the rule. Then, run your code with
@@ -559,7 +559,7 @@ Moreover, the bug can be found in the file `infer-out/report.json` where `infer-
 
 <a name="debugging">**Debugging**</a>
 
-If there are syntax errors or other parsing errors with your al file, you will get an error message when testing the rule, remember to use `linters-developer-mode` when you are developing a rule. If the rule gets parsed but still doesn't behave as you expect, you can debug it, by adding the following line to a test source file in the line where you want to debug the rule: `//INFER_BREAKPOINT`. Then run infer again in linters developer mode, and it will stop the execution of the linter in the line of the breakpoint. Then you can follow the execution step by step. It shows the current formula that is being evaluated, and the current part of the AST that is being checked. A red node means that the formula failed, a green node means that it succeeded.
+If there are syntax errors or other parsing errors with your al file, you will get an error message when testing the rule, remember to use `linters-developer-mode` when you are developing a rule. If the rule gets parsed but still doesn't behave as you expect, you can debug it, by adding the following line to a test source file in the line where you want to debug the rule: `//INFER_BREAKPOINT`. Then run infer again in linters developer mode, and it will stop the execution of the linter on the line of the breakpoint. Then you can follow the execution step by step. It shows the current formula that is being evaluated, and the current part of the AST that is being checked. A red node means that the formula failed, a green node means that it succeeded.
 
 <a name="demo">**Demo**</a>
 
