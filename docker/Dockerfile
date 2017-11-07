@@ -29,8 +29,7 @@ RUN INFER_VERSION=v0.13.0; \
     ln -s ${PWD}/infer-linux64-$INFER_VERSION /infer
 
 # Compile Infer
-RUN OCAML_VERSION=4.05.0; \
-    opam init --compiler=$OCAML_VERSION -j $(nproc) --yes && \
+RUN OCAML_VERSION=4.05.0+flambda; \
     cd /infer && ./build-infer.sh --opam-switch $OCAML_VERSION && rm -rf /root/.opam
 
 # Install Infer
