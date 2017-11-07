@@ -17,6 +17,7 @@ Here is an overview of the linter checks we provide in Infer:
   - [Strong delegate warning](/docs/linters-bug-types.html#STRONG_DELEGATE_WARNING)
   - [Unavailable api in supported ios sdk](/docs/linters-bug-types.html#UNAVAILABLE_API_IN_SUPPORTED_IOS_SDK)
   - [Pointer To const Objective-C Class](/docs/linters-bug-types.html#POINTER_TO_CONST_OBJC_CLASS)
+  - [Objective-C Weak Property has Custom Setter](/doc/linters-bug-types.html#DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER)
   
 - Issues reported in iOS code about [ComponentKit](http://componentkit.org)
   - [Component factory funciton](/docs/linters-bug-types.html#COMPONENT_FACTORY_FUNCTION)
@@ -108,6 +109,74 @@ if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_9_0) {
 
 In Objective-C, `const Class *` represents a mutable pointer pointing to an Objective-C class where the ivars cannot be changed. More useful is `Class *const` instead, meaning the destination of the pointer cannot be changed.
 
+
+## <a name="DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER"></a> Objective-C Weak Property has Custom Setter
+
+This check warns you when you have a custom setter for a weak
+property. When compiled with Automatic Reference Counting (ARC,
+`-fobj-arc`) ARC may set the property to `nil` without invoking the
+setter, for example:
+
+```objc
+#import <Foundation/Foundation.h>
+
+@interface Employee : NSObject {
+  NSString* _name;
+  __weak Employee* _manager;
+}
+-(id)initWithName:(NSString*)name;
+@property(atomic, weak) Employee* manager;
+-(void)report;
+@end
+
+@implementation Employee
+
+-(id)initWithName:(NSString*)name {
+  _name = name;
+  return self;
+}
+
+-(NSString*)description {
+  return _name;
+}
+
+-(void)report {
+  NSLog(@"I work for %@", _manager);
+}
+
+-(Employee*)manager {
+  return _manager;
+}
+
+// DON'T do this; ARC will not call this when setting _manager to nil.
+-(void)setManager:(Employee*)newManager {
+  NSLog(@"Meet the new boss...");
+  _manager = newManager;
+}
+
+@end
+
+int main(int argc, char *argv[])
+{
+  Employee* bob = [[Employee alloc] initWithName:@"Bob"];
+  Employee* sue = [[Employee alloc] initWithName:@"Sue"];
+  bob.manager = sue;
+  [bob report];
+  sue = nil;
+  [bob report];
+  return 0;
+}
+```
+
+This prints:
+
+```
+Meet the new boss...
+I work for Sue
+I work for (null)
+```
+
+Note that the custom setter was only invoked once.
 
 ## <a name="COMPONENT_FACTORY_FUNCTION"></a> Component factory function
 
