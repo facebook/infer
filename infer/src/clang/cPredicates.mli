@@ -39,6 +39,8 @@ val call_function : Ctl_parser_types.ast_node -> ALVar.alexp -> bool
 
 val is_strong_property : Ctl_parser_types.ast_node -> bool
 
+val is_weak_property : Ctl_parser_types.ast_node -> bool
+
 val is_assign_property : Ctl_parser_types.ast_node -> bool
 
 val is_property_pointer_type : Ctl_parser_types.ast_node -> bool

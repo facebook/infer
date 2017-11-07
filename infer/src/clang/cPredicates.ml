@@ -308,6 +308,14 @@ let is_strong_property an =
       false
 
 
+let is_weak_property an =
+  match an with
+  | Ctl_parser_types.Decl Clang_ast_t.ObjCPropertyDecl (_, _, pdi) ->
+      ObjcProperty_decl.is_weak_property pdi
+  | _ ->
+      false
+
+
 let is_assign_property an =
   match an with
   | Ctl_parser_types.Decl Clang_ast_t.ObjCPropertyDecl (_, _, pdi) ->

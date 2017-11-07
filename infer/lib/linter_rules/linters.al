@@ -256,3 +256,20 @@ DEFINE-CHECKER POINTER_TO_CONST_OBJC_CLASS = {
   SET severity = "WARNING";
   SET mode = "ON";
 };
+
+
+DEFINE-CHECKER DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER = {
+  LET has_body = HOLDS-NEXT WITH-TRANSITION Body (TRUE);
+  LET is_weak_property_setter =
+    HOLDS-NEXT WITH-TRANSITION AccessorForProperty "setter" (
+      is_weak_property()
+    );
+  SET report_when =
+    WHEN
+      has_body AND
+      is_weak_property_setter
+    HOLDS-IN-NODE ObjCMethodDecl;
+  SET message = "Custom setters are not called when ARC sets weak properties to nil.";
+  SET severity = "WARNING";
+  SET mode = "ON";
+};

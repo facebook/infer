@@ -16,6 +16,7 @@ open Ctl_parser_types
 
 (** Transition labels used for example to switch from decl to stmt *)
 type transitions =
+  | AccessorForProperty of ALVar.alexp  (** decl to decl *)
   | Body  (** decl to stmt *)
   | FieldName of ALVar.alexp  (** stmt to stmt, decl to decl *)
   | Fields  (** stmt to stmt, decl to decl *)

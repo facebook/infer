@@ -75,6 +75,7 @@
 %token <string> STRING
 %token WHITELIST_PATH
 %token BLACKLIST_PATH
+%token ACCESSOR_FOR_PROPERTY
 %token ANY
 %token BODY
 %token COND
@@ -237,6 +238,7 @@ actual_params:
   ;
 
 transition_label:
+  | ACCESSOR_FOR_PROPERTY alexp { Some (CTL.AccessorForProperty $2) }
   | ANY { None }
   | BODY { Some CTL.Body }
   | COND { Some CTL.Cond }

@@ -70,6 +70,7 @@ rule token = parse
   | "NOT" { NOT }
   | "IMPLIES" { IMPLIES }
   | "REGEXP" { REGEXP }
+  | "AccessorForProperty" { ACCESSOR_FOR_PROPERTY }
   | "Any" {ANY}
   | "Fields" { FIELDS }
   | "FieldName" { FIELD_NAME }

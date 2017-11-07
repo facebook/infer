@@ -18,6 +18,7 @@ module L = Logging
 
 (** Transition labels used for example to switch from decl to stmt *)
 type transitions =
+  | AccessorForProperty of ALVar.alexp  (** decl to decl *)
   | Body  (** decl to stmt *)
   | FieldName of ALVar.alexp  (** stmt to stmt, decl to decl *)
   | Fields  (** stmt to stmt, decl to decl *)
@@ -35,7 +36,7 @@ let is_transition_to_successor trans =
   match trans with
   | Body | InitExpr | FieldName _ | Fields | ParameterName _ | ParameterPos _ | Parameters | Cond ->
       true
-  | Super | PointerToDecl | Protocol ->
+  | Super | PointerToDecl | Protocol | AccessorForProperty _ ->
       false
 
 
@@ -134,6 +135,8 @@ module Debug = struct
   let pp_transition fmt trans_opt =
     let pp_aux fmt trans =
       match trans with
+      | AccessorForProperty kind ->
+          Format.pp_print_string fmt ("AccessorForProperty " ^ ALVar.alexp_to_string kind)
       | Body ->
           Format.pp_print_string fmt "Body"
       | FieldName name ->
@@ -648,6 +651,80 @@ let transition_decl_to_stmt d trs =
   List.fold ~f:(fun l e -> match e with Some st -> Stmt st :: l | _ -> l) temp_res ~init:[]
 
 
+let transition_decl_to_decl_via_accessor_for_property d desired_kind =
+  let open Clang_ast_t in
+  let find_property_for_accessor decl_opt predicate =
+    let decl_matches decl =
+      match decl with ObjCPropertyDecl (_, _, opdi) -> predicate opdi | _ -> false
+    in
+    match decl_opt with
+    | Some ObjCCategoryImplDecl (_, _, _, _, ocidi) ->
+        let category_decls =
+          match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_category_decl with
+          | Some ObjCCategoryDecl (_, _, decls, _, _) ->
+              List.filter ~f:decl_matches decls
+          | _ ->
+              []
+        in
+        let class_decls =
+          match CAst_utils.get_decl_opt_with_decl_ref ocidi.ocidi_class_interface with
+          | Some ObjCInterfaceDecl (_, _, decls, _, _) ->
+              List.filter ~f:decl_matches decls
+          | _ ->
+              []
+        in
+        category_decls @ class_decls
+    | Some ObjCImplementationDecl (_, _, _, _, oidi) -> (
+      match CAst_utils.get_decl_opt_with_decl_ref oidi.oidi_class_interface with
+      | Some ObjCInterfaceDecl (_, _, decls, _, _) ->
+          List.filter ~f:decl_matches decls
+      | _ ->
+          [] )
+    | _ ->
+        []
+  in
+  match d with
+  | ObjCMethodDecl (di, method_decl_name, mdi)
+    -> (
+      (* infer whether this method may be a getter or setter (or
+         neither) from its argument list *)
+      let num_params = List.length mdi.omdi_parameters in
+      let actual_kind, accessor_decl_ref_of_property_decl_info =
+        match num_params with
+        | 0 ->
+            ("getter", fun opdi -> opdi.opdi_getter_method)
+        | 1 ->
+            ("setter", fun opdi -> opdi.opdi_setter_method)
+        | _ ->
+            ("", fun _ -> None)
+      in
+      if not (ALVar.compare_str_with_alexp actual_kind desired_kind) then []
+      else
+        match CAst_utils.get_decl_opt_with_decl_ref mdi.omdi_property_decl with
+        | Some property_decl ->
+            (* clang handles most cases: property declarations with
+               accessor method declarations in the inferface; property
+               declarations in base classes; etc. *)
+            [Decl property_decl]
+        | None ->
+            (* search the interface for a matching property *)
+            let name_check opdi =
+              match accessor_decl_ref_of_property_decl_info opdi with
+              | None ->
+                  false
+              | Some dr ->
+                match dr.dr_name with
+                | Some ni ->
+                    String.equal method_decl_name.ni_name ni.ni_name
+                | _ ->
+                    false
+            in
+            let impl_decl_opt = CAst_utils.get_decl_opt di.di_parent_pointer in
+            List.map ~f:(fun x -> Decl x) (find_property_for_accessor impl_decl_opt name_check) )
+  | _ ->
+      []
+
+
 let transition_decl_to_decl_via_super d =
   let decl_opt_to_ast_node_opt d_opt = match d_opt with Some d' -> [Decl d'] | None -> [] in
   let do_ObjCImplementationDecl d =
@@ -865,6 +942,8 @@ let next_state_via_transition an trans =
       transition_via_parameter_name an name
   | an, ParameterPos pos ->
       transition_via_parameter_pos an pos
+  | Decl d, AccessorForProperty name ->
+      transition_decl_to_decl_via_accessor_for_property d name
   | _, _ ->
       []
 
@@ -967,6 +1046,8 @@ let rec eval_Atomic _pred_name args an lcxt =
       CPredicates.is_strong_property an
   | "is_unop_with_kind", [kind], an ->
       CPredicates.is_unop_with_kind an kind
+  | "is_weak_property", [], an ->
+      CPredicates.is_weak_property an
   | "iphoneos_target_sdk_version_greater_or_equal", [version], _ ->
       CPredicates.iphoneos_target_sdk_version_greater_or_equal lcxt (ALVar.alexp_to_string version)
   | "method_return_type", [typ], an ->
