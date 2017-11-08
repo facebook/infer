@@ -276,6 +276,11 @@ val block_pvar : Pvar.t
 val is_block_pvar : Pvar.t -> bool
 (** Check if a pvar is a local pointing to a block in objc *)
 
+val add_with_block_parameters_flag : instr -> instr
+(** Adds a with_blocks_parameters flag to a method call, when the arguments
+   contain an Objective-C block, and the method is an Objective-C method
+   (to be extended to other methods) *)
+
 val hpred_get_lhs : hpred -> Exp.t
 (** Return the lhs expression of a hpred *)
 

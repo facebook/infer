@@ -437,6 +437,20 @@ let pp_instr pe0 f instr =
   color_post_wrapper changed pe0 f
 
 
+let add_with_block_parameters_flag instr =
+  match instr with
+  | Call (ret_id, Exp.Const Const.Cfun name, arg_ts, loc, cf) ->
+      if List.exists ~f:(fun (exp, _) -> Exp.is_objc_block_closure exp) arg_ts
+         && Typ.Procname.is_objc_method name
+         (* to be extended to other methods *)
+      then
+        let cf' = {cf with cf_with_block_parameters= true} in
+        Call (ret_id, Exp.Const (Const.Cfun name), arg_ts, loc, cf')
+      else instr
+  | _ ->
+      instr
+
+
 (** Check if a pvar is a local pointing to a block in objc *)
 let is_block_pvar pvar = Typ.has_block_prefix (Mangled.to_string (Pvar.get_name pvar))
 

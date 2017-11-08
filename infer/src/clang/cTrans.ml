@@ -256,7 +256,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (ret_id, params_sil, [], match ret_id with Some (i, t) -> [(Exp.Var i, t)] | None -> [])
     in
     let call_instr = Sil.Call (ret_id', function_sil, params, sil_loc, call_flags) in
-    {empty_res_trans with instrs= [call_instr]; exps= ret_exps; initd_exps}
+    let call_instr' = Sil.add_with_block_parameters_flag call_instr in
+    {empty_res_trans with instrs= [call_instr']; exps= ret_exps; initd_exps}
 
 
   let stringLiteral_trans trans_state expr_info str =
@@ -1125,7 +1126,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         match class_type.desc with
         | Typ.Tptr _ ->
             (* do not inject the extra dereference for procedures generated to record the
-               initialization code of globals *)
+                      initialization code of globals *)
             Procdesc.get_proc_name trans_state.context.procdesc
             |> Typ.Procname.get_global_name_of_initializer |> Option.is_none
         | _ ->

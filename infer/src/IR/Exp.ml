@@ -271,3 +271,9 @@ let pp_printenv pe pp_typ f e = pp_ pe (pp_typ pe) f e
 let pp f e = pp_printenv Pp.text Typ.pp f e
 
 let to_string e = F.asprintf "%a" pp e
+
+let is_objc_block_closure = function
+  | Closure {name} ->
+      Typ.Procname.is_objc_block name
+  | _ ->
+      false

@@ -133,3 +133,5 @@ val pp_printenv : Pp.env -> (Pp.env -> F.formatter -> Typ.t -> unit) -> F.format
 val pp : F.formatter -> t -> unit
 
 val to_string : t -> string
+
+val is_objc_block_closure : t -> bool

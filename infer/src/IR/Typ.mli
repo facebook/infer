@@ -353,6 +353,9 @@ module Procname : sig
   val is_objc_constructor : string -> bool
   (** Check if this is a constructor method in Objective-C. *)
 
+  val is_objc_method : t -> bool
+  (** Check if this is an Objective-C method. *)
+
   val is_constructor : t -> bool
   (** Check if this is a constructor. *)
 

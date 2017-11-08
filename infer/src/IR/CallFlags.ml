@@ -20,12 +20,14 @@ type t =
   ; cf_interface: bool
   ; cf_noreturn: bool
   ; cf_is_objc_block: bool
-  ; cf_targets: Typ.Procname.t list }
+  ; cf_targets: Typ.Procname.t list
+  ; cf_with_block_parameters: bool }
   [@@deriving compare]
 
 let pp f cf =
   if cf.cf_virtual then F.fprintf f " virtual" ;
-  if cf.cf_noreturn then F.fprintf f " noreturn"
+  if cf.cf_noreturn then F.fprintf f " noreturn" ;
+  if cf.cf_with_block_parameters then F.fprintf f " block_params"
 
 
 let default =
@@ -33,5 +35,6 @@ let default =
   ; cf_interface= false
   ; cf_noreturn= false
   ; cf_is_objc_block= false
+  ; cf_with_block_parameters= false
   ; cf_targets= [] }
 

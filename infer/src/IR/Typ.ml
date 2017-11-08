@@ -898,6 +898,8 @@ module Procname = struct
         false
 
 
+  let is_objc_method = function ObjC_Cpp {kind} -> is_objc_kind kind | _ -> false
+
   (** [is_constructor pname] returns true if [pname] is a constructor *)
   let is_constructor = function
     | Java js ->
