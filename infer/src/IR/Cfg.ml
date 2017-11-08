@@ -293,12 +293,54 @@ let store_cfg_to_file ~source_file (filename: DB.filename) (cfg: cfg) =
   Serialization.write_to_file cfg_serializer filename ~data:cfg
 
 
-(** clone a procedure description and apply the type substitutions where
-    the parameters are used *)
-let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
+(** Applies convert_instr_list to all the instructions in all the nodes of the cfg *)
+let convert_cfg ~callee_pdesc ~resolved_pdesc convert_instr_list =
   let resolved_pname = Procdesc.get_proc_name resolved_pdesc
   and callee_start_node = Procdesc.get_start_node callee_pdesc
   and callee_exit_node = Procdesc.get_exit_node callee_pdesc in
+  let convert_node_kind = function
+    | Procdesc.Node.Start_node _ ->
+        Procdesc.Node.Start_node resolved_pname
+    | Procdesc.Node.Exit_node _ ->
+        Procdesc.Node.Exit_node resolved_pname
+    | node_kind ->
+        node_kind
+  in
+  let node_map = ref Procdesc.NodeMap.empty in
+  let rec convert_node node =
+    let loc = Procdesc.Node.get_loc node
+    and kind = convert_node_kind (Procdesc.Node.get_kind node)
+    and instrs = convert_instr_list (Procdesc.Node.get_instrs node) in
+    Procdesc.create_node resolved_pdesc loc kind instrs
+  and loop callee_nodes =
+    match callee_nodes with
+    | [] ->
+        []
+    | node :: other_node ->
+        let converted_node =
+          try Procdesc.NodeMap.find node !node_map
+          with Not_found ->
+            let new_node = convert_node node
+            and successors = Procdesc.Node.get_succs node
+            and exn_nodes = Procdesc.Node.get_exn node in
+            node_map := Procdesc.NodeMap.add node new_node !node_map ;
+            if Procdesc.Node.equal node callee_start_node then
+              Procdesc.set_start_node resolved_pdesc new_node ;
+            if Procdesc.Node.equal node callee_exit_node then
+              Procdesc.set_exit_node resolved_pdesc new_node ;
+            Procdesc.node_set_succs_exn callee_pdesc new_node (loop successors) (loop exn_nodes) ;
+            new_node
+        in
+        converted_node :: loop other_node
+  in
+  ignore (loop [callee_start_node]) ;
+  resolved_pdesc
+
+
+(** clone a procedure description and apply the type substitutions where
+      the parameters are used *)
+let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
+  let resolved_pname = Procdesc.get_proc_name resolved_pdesc in
   let convert_pvar pvar = Pvar.mk (Pvar.get_name pvar) resolved_pname in
   let mk_ptr_typ typename =
     (* Only consider pointers from Java objects for now *)
@@ -377,43 +419,8 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
         (* these are generated instructions that will be replaced by the preanalysis *)
         instrs
   in
-  let convert_node_kind = function
-    | Procdesc.Node.Start_node _ ->
-        Procdesc.Node.Start_node resolved_pname
-    | Procdesc.Node.Exit_node _ ->
-        Procdesc.Node.Exit_node resolved_pname
-    | node_kind ->
-        node_kind
-  in
-  let node_map = ref Procdesc.NodeMap.empty in
-  let rec convert_node node =
-    let loc = Procdesc.Node.get_loc node
-    and kind = convert_node_kind (Procdesc.Node.get_kind node)
-    and instrs = List.fold ~f:convert_instr ~init:[] (Procdesc.Node.get_instrs node) |> List.rev in
-    Procdesc.create_node resolved_pdesc loc kind instrs
-  and loop callee_nodes =
-    match callee_nodes with
-    | [] ->
-        []
-    | node :: other_node ->
-        let converted_node =
-          try Procdesc.NodeMap.find node !node_map
-          with Not_found ->
-            let new_node = convert_node node
-            and successors = Procdesc.Node.get_succs node
-            and exn_nodes = Procdesc.Node.get_exn node in
-            node_map := Procdesc.NodeMap.add node new_node !node_map ;
-            if Procdesc.Node.equal node callee_start_node then
-              Procdesc.set_start_node resolved_pdesc new_node ;
-            if Procdesc.Node.equal node callee_exit_node then
-              Procdesc.set_exit_node resolved_pdesc new_node ;
-            Procdesc.node_set_succs_exn callee_pdesc new_node (loop successors) (loop exn_nodes) ;
-            new_node
-        in
-        converted_node :: loop other_node
-  in
-  ignore (loop [callee_start_node]) ;
-  resolved_pdesc
+  let convert_instr_list instrs = List.fold ~f:convert_instr ~init:[] instrs |> List.rev in
+  convert_cfg ~callee_pdesc ~resolved_pdesc convert_instr_list
 
 
 (** Creates a copy of a procedure description and a list of type substitutions of the form
