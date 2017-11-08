@@ -118,7 +118,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   (Typ.Procname.objc_cpp_get_class_name objc_cpp_prod)
             | Typ.Procname.C _ ->
                 true (* Needed for test code. *)
-            | Typ.Procname.Block _ | Typ.Procname.Linters_dummy_method ->
+            | Typ.Procname.Block _
+            | Typ.Procname.Linters_dummy_method
+            | Typ.Procname.WithBlockParameters _ ->
                 L.(die InternalError) "Proc type not supported by crashcontext: block"
           in
           String.equal frame.Stacktrace.method_str (Typ.Procname.get_method caller)

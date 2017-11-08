@@ -272,16 +272,26 @@ module Procname : sig
   type objc_cpp
 
   (** Type of Objective C block names. *)
-  type block
+  type block_name
 
-  (** Type of procedure names. *)
+  (** Type of procedure names. 
+  WithBlockParameters is used for creating an instantiation of a method that contains block parameters 
+  and it's called with concrete blocks. For example: 
+  foo(Block block) {block();}
+  bar() {foo(my_block)} is executed as  foo_my_block() {my_block(); } 
+  where foo_my_block is created with WithBlockParameters (foo, [my_block]) *)
   type t =
     | Java of java
     | C of c
     | Linters_dummy_method
-    | Block of block
+    | Block of block_name
     | ObjC_Cpp of objc_cpp
+    | WithBlockParameters of t * block_name list
     [@@deriving compare]
+
+  val block_from_string : string -> block_name
+
+  val block_name_of_procname : t -> block_name
 
   val equal : t -> t -> bool
 
@@ -334,6 +344,9 @@ module Procname : sig
 
   val is_objc_block : t -> bool
   (** Return whether the procname is a block procname. *)
+
+  val is_with_block_parameters : t -> bool
+  (** Return whether the procname is a procname instantiated with block parameters. *)
 
   val is_cpp_lambda : t -> bool
   (** Return whether the procname is a cpp lambda. *)
@@ -388,6 +401,10 @@ module Procname : sig
     Name.t -> string -> objc_cpp_method_kind -> template_spec_info -> is_generic_model:bool
     -> objc_cpp
   (** Create an objc procedure name from a class_name and method_name. *)
+
+  val with_block_parameters : t -> block_name list -> t
+  (** Create a procedure name instantiated with block parameters from a base procedure name
+    and a list of block procedure names (the arguments). *)
 
   val objc_cpp_get_class_name : objc_cpp -> string
   (** Get the class name of a Objective-C/C++ procedure name. *)

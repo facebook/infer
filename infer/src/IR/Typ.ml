@@ -561,15 +561,18 @@ module Procname = struct
     [@@deriving compare]
 
   (** Type of Objective C block names. *)
-  type block = string [@@deriving compare]
+  type block_name = string [@@deriving compare]
+
+  let block_from_string s = s
 
   (** Type of procedure names. *)
   type t =
     | Java of java
     | C of c
     | Linters_dummy_method
-    | Block of block
+    | Block of block_name
     | ObjC_Cpp of objc_cpp
+    | WithBlockParameters of t * block_name list
     [@@deriving compare]
 
   let equal = [%compare.equal : t]
@@ -583,6 +586,14 @@ module Procname = struct
 
   let objc_method_kind_of_bool is_instance =
     if is_instance then ObjCInstanceMethod else ObjCClassMethod
+
+
+  let block_name_of_procname procname =
+    match procname with
+    | Block block_name ->
+        block_name
+    | _ ->
+        Logging.die InternalError "Only to be called with Objective-C block names"
 
 
   let empty_block = Block ""
@@ -650,6 +661,8 @@ module Procname = struct
     {class_name; method_name; kind; template_args; is_generic_model}
 
 
+  let with_block_parameters base blocks = WithBlockParameters (base, blocks)
+
   (** Create an objc procedure name from a class_name and method_name. *)
   let mangled_objc_block name = Block name
 
@@ -663,20 +676,24 @@ module Procname = struct
 
   (** Replace the class name component of a procedure name.
       In case of Java, replace package and class name. *)
-  let replace_class t (new_class: Name.t) =
+  let rec replace_class t (new_class: Name.t) =
     match t with
     | Java j ->
         Java {j with class_name= new_class}
     | ObjC_Cpp osig ->
         ObjC_Cpp {osig with class_name= new_class}
+    | WithBlockParameters (base, blocks) ->
+        WithBlockParameters (replace_class base new_class, blocks)
     | C _ | Block _ | Linters_dummy_method ->
         t
 
 
-  let objc_cpp_replace_method_name t (new_method_name: string) =
+  let rec objc_cpp_replace_method_name t (new_method_name: string) =
     match t with
     | ObjC_Cpp osig ->
         ObjC_Cpp {osig with method_name= new_method_name}
+    | WithBlockParameters (base, blocks) ->
+        WithBlockParameters (objc_cpp_replace_method_name base new_method_name, blocks)
     | C _ | Block _ | Linters_dummy_method | Java _ ->
         t
 
@@ -711,9 +728,11 @@ module Procname = struct
   let java_replace_parameters j parameters = {j with parameters}
 
   (** Return the method/function of a procname. *)
-  let get_method = function
+  let rec get_method = function
     | ObjC_Cpp name ->
         name.method_name
+    | WithBlockParameters (base, _) ->
+        get_method base
     | C {name} ->
         QualifiedCppName.to_qual_string name
     | Block name ->
@@ -727,6 +746,8 @@ module Procname = struct
   (** Return whether the procname is a block procname. *)
   let is_objc_block = function Block _ -> true | _ -> false
 
+  let is_with_block_parameters = function WithBlockParameters _ -> true | _ -> false
+
   (** Return whether the procname is a cpp lambda. *)
   let is_cpp_lambda procname = String.is_substring ~substring:"operator()" (get_method procname)
 
@@ -739,6 +760,8 @@ module Procname = struct
     | Block _ ->
         Config.Clang
     | Linters_dummy_method ->
+        Config.Clang
+    | WithBlockParameters _ ->
         Config.Clang
     | Java _ ->
         Config.Java
@@ -988,8 +1011,13 @@ module Procname = struct
         Name.name osig.class_name ^ "_" ^ osig.method_name ^ m_str
 
 
+  let with_blocks_parameters_to_string base blocks to_string_f =
+    let base_id = to_string_f base in
+    String.concat ~sep:"_" (base_id :: blocks)
+
+
   (** Very verbose representation of an existing Procname.t *)
-  let to_unique_id pn =
+  let rec to_unique_id pn =
     match pn with
     | Java j ->
         java_to_string j Verbose
@@ -999,12 +1027,14 @@ module Procname = struct
         c_method_to_string osig Verbose
     | Block name ->
         name
+    | WithBlockParameters (base, blocks) ->
+        with_blocks_parameters_to_string base blocks to_unique_id
     | Linters_dummy_method ->
         "Linters_dummy_method"
 
 
   (** Convert a proc name to a string for the user to see *)
-  let to_string p =
+  let rec to_string p =
     match p with
     | Java j ->
         java_to_string j Non_verbose
@@ -1014,6 +1044,8 @@ module Procname = struct
         c_method_to_string osig Non_verbose
     | Block name ->
         name
+    | WithBlockParameters (base, blocks) ->
+        with_blocks_parameters_to_string base blocks to_string
     | Linters_dummy_method ->
         to_unique_id p
 
@@ -1021,7 +1053,7 @@ module Procname = struct
   let sexp_of_t p = Sexp.Atom (to_string p)
 
   (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
-  let to_simplified_string ?(withclass= false) p =
+  let rec to_simplified_string ?(withclass= false) p =
     match p with
     | Java j ->
         java_to_string ~withclass j Simple
@@ -1031,6 +1063,8 @@ module Procname = struct
         c_method_to_string osig Simple
     | Block _ ->
         "block"
+    | WithBlockParameters (base, _) ->
+        to_simplified_string base
     | Linters_dummy_method ->
         to_unique_id p
 
