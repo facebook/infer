@@ -11,17 +11,17 @@ digraph iCFG {
 	
 
 	 "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_3" -> "__infer_globals_initializer_global.bdc08c089842ce08b974b22a75daf78e_2" ;
-"__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_1" [label="1: Start __infer_globals_initializer_v\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 1]\n " color=yellow style=filled]
+"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_1" [label="1: Start __infer_globals_initializer_v\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 17, column 1]\n " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_1" -> "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" ;
-"__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_2" [label="2: Exit __infer_globals_initializer_v \n  " color=yellow style=filled]
+	 "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_1" -> "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" ;
+"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_2" [label="2: Exit __infer_globals_initializer_v \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int=2 [line 17, column 1]\n " shape="box"]
+"__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/cpp/frontend/globals/global_const1.cpp>$v:int=2 [line 17, column 1]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_3" -> "__infer_globals_initializer_v.4e4b88201c5f529e31ed314500b0b0e5_2" ;
+	 "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_3" -> "__infer_globals_initializer_v#708fabe5dc8ff523caaa5f44184921e8.588095fa475e4a9e8c83f50f26a48ea9_2" ;
 "test2#3587805488049044947.69e45cfdc4e36a6f741ce3985858724b_1" [label="1: Start test2\nFormals: \nLocals:  local:int \n   DECLARE_LOCALS(&return,&local); [line 19, column 1]\n " color=yellow style=filled]
 	
 
