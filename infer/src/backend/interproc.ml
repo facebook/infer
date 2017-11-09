@@ -762,7 +762,7 @@ let collect_postconditions wl tenv proc_cfg : Paths.PathSet.t * Specs.Visitedset
         vset_ref_add_pathset vset_ref pathset_diverging ;
         compute_visited !vset_ref
       in
-      (do_join_post pname tenv pathset, visited)
+      (pathset, visited)
     with Exceptions.Leak _ ->
       L.d_strln "Leak in post collection" ;
       assert false
