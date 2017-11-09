@@ -262,41 +262,25 @@ let get_method_name_from_clang tenv ms_opt =
 
 let get_superclass_curr_class_objc context =
   let open Clang_ast_t in
-  let super_of_decl_ref_opt decl_ref =
-    match
-      decl_ref |> Option.value_map ~f:(fun dr -> dr.dr_name) ~default:None
-      |> Option.map ~f:CAst_utils.get_qualified_name
-    with
-    | Some name ->
-        name
-    | None ->
-        assert false
+  let decl_ref =
+    match CContext.get_curr_class context with
+    | CContext.ContextClsDeclPtr ptr -> (
+      match CAst_utils.get_decl ptr with
+      | Some decl ->
+          CAst_utils.get_superclass_curr_class_objc_from_decl decl
+      | None ->
+          Logging.die InternalError
+            "Expected that the current class ptr in the context is a valid pointer to class decl, but didn't find declaration, ptr is %d "
+            ptr )
+    | CContext.ContextNoCls ->
+        Logging.die InternalError
+          "This should only be called in the context of a class, but got CContext.ContextNoCls"
   in
-  let retreive_super_name ptr =
-    match CAst_utils.get_decl ptr with
-    | Some ObjCInterfaceDecl (_, _, _, _, otdi) ->
-        super_of_decl_ref_opt otdi.otdi_super
-    | Some ObjCImplementationDecl (_, _, _, _, oi) -> (
-      match
-        oi.Clang_ast_t.oidi_class_interface |> Option.map ~f:(fun dr -> dr.dr_decl_pointer)
-        |> Option.value_map ~f:CAst_utils.get_decl ~default:None
-      with
-      | Some ObjCInterfaceDecl (_, _, _, _, otdi) ->
-          super_of_decl_ref_opt otdi.otdi_super
-      | _ ->
-          assert false )
-    | Some ObjCCategoryDecl (_, _, _, _, ocdi) ->
-        super_of_decl_ref_opt ocdi.odi_class_interface
-    | Some ObjCCategoryImplDecl (_, _, _, _, ocidi) ->
-        super_of_decl_ref_opt ocidi.ocidi_class_interface
-    | _ ->
-        assert false
-  in
-  match CContext.get_curr_class context with
-  | CContext.ContextClsDeclPtr ptr ->
-      Typ.Name.Objc.from_qual_name (retreive_super_name ptr)
-  | CContext.ContextNoCls ->
-      assert false
+  match decl_ref |> Option.value_map ~f:(fun dr -> dr.dr_name) ~default:None with
+  | Some name ->
+      Typ.Name.Objc.from_qual_name (CAst_utils.get_qualified_name name)
+  | None ->
+      Logging.die InternalError "Expected to always find a superclass, but found none"
 
 
 (* Gets the class name from a method signature found by clang, if search is successful *)

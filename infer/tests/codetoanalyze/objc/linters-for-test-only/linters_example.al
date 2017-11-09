@@ -423,3 +423,10 @@ DEFINE-CHECKER TEST_PARAMETER_SEL_TYPE = {
  SET message = "Method has parameter of type SEL";
 
  };
+ 
+ DEFINE-CHECKER IN_SUBCLASS_TEST = {
+   SET report_when =
+   		       WHEN is_in_objc_subclass_of("SubClassTestClass") 
+             HOLDS-IN-NODE ObjCMessageExpr;
+   SET message = "Found a message call in a class that is not subclass of A.";
+ };

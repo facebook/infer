@@ -457,6 +457,30 @@ let is_in_block context =
   match context.CLintersContext.current_method with Some BlockDecl _ -> true | _ -> false
 
 
+let rec is_subclass_of decl name =
+  match CAst_utils.get_superclass_curr_class_objc_from_decl decl with
+  | Some super_ref
+    -> (
+      let ndi = match super_ref.Clang_ast_t.dr_name with Some ni -> ni | _ -> assert false in
+      if ALVar.compare_str_with_alexp ndi.ni_name name then true
+      else
+        match CAst_utils.get_decl_opt_with_decl_ref (Some super_ref) with
+        | Some decl ->
+            is_subclass_of decl name
+        | None ->
+            false )
+  | None ->
+      false
+
+
+let is_in_objc_subclass_of context name =
+  match context.CLintersContext.current_objc_class with
+  | Some cls ->
+      is_subclass_of cls name
+  | None ->
+      false
+
+
 let captures_cxx_references an = List.length (captured_variables_cxx_ref an) > 0
 
 let is_binop_with_kind an alexp_kind =

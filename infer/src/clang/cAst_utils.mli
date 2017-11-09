@@ -155,3 +155,5 @@ val is_std_vector : Clang_ast_t.qual_type -> bool
 val has_block_attribute : Clang_ast_t.decl -> bool
 
 val is_implicit_decl : Clang_ast_t.decl -> bool
+
+val get_superclass_curr_class_objc_from_decl : Clang_ast_t.decl -> Clang_ast_t.decl_ref option
