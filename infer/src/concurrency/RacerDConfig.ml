@@ -209,17 +209,16 @@ module Models = struct
   let should_skip =
     let matcher =
       lazy
-        (QualifiedCppName.Match.of_fuzzy_qual_names
-           [ "folly::AtomicStruct::AtomicStruct"
-           ; "folly::Future::Future"
-           ; "folly::LockedPtr::LockedPtr"
-           ; "folly::Optional::Optional"
-           ; "folly::Optional::hasValue"
-           ; "folly::Promise::Promise"
-           ; "folly::ThreadLocal::ThreadLocal"
-           ; "folly::detail::SingletonHolder::createInstance"
+        (QualifiedCppName.Match.of_fuzzy_qual_names ~prefix:true
+           [ "folly::AtomicStruct"
+           ; "folly::Future"
+           ; "folly::LockedPtr"
+           ; "folly::Optional"
+           ; "folly::Promise"
+           ; "folly::ThreadLocal"
+           ; "folly::detail::SingletonHolder"
            ; "std::atomic"
-           ; "std::vector::vector" ])
+           ; "std::vector" ])
     in
     function
       | Typ.Procname.ObjC_Cpp _ | C _ as pname ->

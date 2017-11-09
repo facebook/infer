@@ -67,13 +67,14 @@ module Match = struct
 
   let matching_separator = "#"
 
-  let regexp_string_of_qualifiers quals =
-    Str.quote (to_separated_string ~sep:matching_separator quals) ^ "$"
+  let regexp_string_of_qualifiers ?(prefix= false) quals =
+    Str.quote (to_separated_string ~sep:matching_separator quals) ^ if prefix then "" else "$"
 
 
-  let qualifiers_list_matcher quals_list =
+  let qualifiers_list_matcher ?prefix quals_list =
     ( if List.is_empty quals_list then "a^" (* regexp that does not match anything *)
-    else List.rev_map ~f:regexp_string_of_qualifiers quals_list |> String.concat ~sep:"\\|" )
+    else List.rev_map ~f:(regexp_string_of_qualifiers ?prefix) quals_list
+      |> String.concat ~sep:"\\|" )
     |> Str.regexp
 
 
@@ -89,8 +90,9 @@ module Match = struct
     of_qual_string qual_name
 
 
-  let of_fuzzy_qual_names fuzzy_qual_names =
-    List.rev_map fuzzy_qual_names ~f:qualifiers_of_fuzzy_qual_name |> qualifiers_list_matcher
+  let of_fuzzy_qual_names ?prefix fuzzy_qual_names =
+    List.rev_map fuzzy_qual_names ~f:qualifiers_of_fuzzy_qual_name
+    |> qualifiers_list_matcher ?prefix
 
 
   let match_qualifiers matcher quals =
