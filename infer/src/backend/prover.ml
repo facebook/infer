@@ -2417,7 +2417,7 @@ and sigma_imply tenv calc_index_frame calc_missing subs prop1 sigma2 : subst2 * 
     Sil.Hpointsto (root, sexp, const_string_texp)
   in
   let mk_constant_class_hpred s =
-    (* creat an hpred from a constant class *)
+    (* create an hpred from a constant class *)
     let root = Exp.Const (Const.Cclass (Ident.string_to_name s)) in
     let sexp =
       (* TODO: add appropriate fields *)

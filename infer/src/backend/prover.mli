@@ -95,11 +95,11 @@ val check_implication_for_footprint :
     frame)] where [sub] is a substitution which instantiates the
     primed vars of [p1] and [p2], which are assumed to be disjoint. *)
 
-(** {2 Cover: miminum set of pi's whose disjunction is equivalent to true} *)
+(** {2 Cover: minimum set of pi's whose disjunction is equivalent to true} *)
 
 val find_minimum_pure_cover :
   Tenv.t -> (Sil.atom list * 'a) list -> (Sil.atom list * 'a) list option
-(** Find miminum set of pi's  in [cases] whose disjunction covers true *)
+(** Find minimum set of pi's  in [cases] whose disjunction covers true *)
 
 (** {2 Compute various lower or upper bounds} *)
 
