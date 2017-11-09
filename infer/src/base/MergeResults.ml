@@ -38,8 +38,6 @@ WHERE
 
 
 let merge ~db_file =
-  (* no need to wrap all the individual table merges in a single transaction (to batch writes)
-     because we open the table with synchronous=OFF *)
   let main_db = ResultsDatabase.get_database () in
   SqliteUtils.check_sqlite_error ~fatal:true
     ~log:(Printf.sprintf "attaching database '%s'" db_file)
@@ -69,4 +67,3 @@ let merge_buck_flavors_results infer_deps_file =
       List.iter ~f:one_line lines
   | Error error ->
       L.internal_error "Couldn't read deps file '%s': %s" infer_deps_file error
-

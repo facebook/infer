@@ -78,4 +78,3 @@ let db_close db =
          (Printf.sprintf "closing: %s (%s)"
             (Sqlite3.errcode db |> Sqlite3.Rc.to_string)
             (Sqlite3.errmsg db)))
-

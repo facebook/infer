@@ -103,13 +103,10 @@ let db_close () =
 
 
 let new_database_connection () =
+  (* we always want at most one connection alive throughout the lifetime of the module *)
   db_close () ;
   let db = Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL database_fullpath in
   Sqlite3.busy_timeout db 10_000 ;
-  (* Higher level of "synchronous" are only useful to guarantee that the db will not be corrupted if the machine crashes for some reason before the data has been actually written to disk. We do not need this kind of guarantee for infer results as one can always rerun infer if interrupted. *)
-  SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
+  SqliteUtils.exec db ~log:"synchronous=NORMAL" ~stmt:"PRAGMA synchronous=NORMAL" ;
   database := Some db ;
   List.iter ~f:(fun callback -> callback db) !new_db_callbacks
-
-
-let () = Epilogues.register "closing results database" ~f:db_close
