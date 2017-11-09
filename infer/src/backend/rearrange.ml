@@ -1100,7 +1100,7 @@ let pp_rearrangement_error message prop lexp =
   L.d_ln ()
 
 
-(** do re-arrangment for an iter whose current element is a pointsto *)
+(** do re-arrangement for an iter whose current element is a pointsto *)
 let iter_rearrange_ptsto pname tenv orig_prop iter lexp inst =
   if Config.trace_rearrange then (
     L.d_increase_indent 1 ;
