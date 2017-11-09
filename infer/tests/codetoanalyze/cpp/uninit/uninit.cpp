@@ -224,3 +224,37 @@ int capture_by_ref_init_ok() {
   [&x]() { x = 1; }();
   return x;
 }
+
+int no_warning_on_throw_ok(bool t) {
+  int x;
+  if (t) {
+    x = 2;
+  } else {
+    throw;
+  }
+  return x;
+}
+
+int warning_when_throw_in_other_branch_bad(int t) {
+  int x;
+  if (t > 0) {
+    x = 2;
+  } else if (t < 0) {
+    // reports because x is not initialized in this branch
+  } else {
+    throw;
+  }
+  return x;
+}
+
+[[noreturn]] void noreturn_function() {}
+
+int FP_no_warning_noreturn_callee_ok(bool t) {
+  int x;
+  if (t) {
+    x = 2;
+  } else {
+    noreturn_function();
+  }
+  return x;
+}

@@ -1,6 +1,8 @@
+codetoanalyze/cpp/uninit/uninit.cpp, FP_no_warning_noreturn_callee_ok, 7, UNINITIALIZED_VALUE, []
 codetoanalyze/cpp/uninit/uninit.cpp, bad1, 2, UNINITIALIZED_VALUE, []
 codetoanalyze/cpp/uninit/uninit.cpp, bad2, 2, UNINITIALIZED_VALUE, []
 codetoanalyze/cpp/uninit/uninit.cpp, branch1_FP, 11, UNINITIALIZED_VALUE, []
 codetoanalyze/cpp/uninit/uninit.cpp, loop1_FP, 10, UNINITIALIZED_VALUE, []
 codetoanalyze/cpp/uninit/uninit.cpp, no_init_return_bad, 2, UNINITIALIZED_VALUE, []
 codetoanalyze/cpp/uninit/uninit.cpp, ret_undef, 2, UNINITIALIZED_VALUE, []
+codetoanalyze/cpp/uninit/uninit.cpp, warning_when_throw_in_other_branch_bad, 9, UNINITIALIZED_VALUE, []

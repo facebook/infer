@@ -103,6 +103,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Assign (((lhs_var, _), _), _, _) ->
         let uninit_vars = D.remove lhs_var astate.uninit_vars in
         {astate with uninit_vars}
+    | Call (_, Direct callee_pname, _, _, _)
+      when Typ.Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
+        {astate with uninit_vars= D.empty}
     | Call (_, call, actuals, _, loc) ->
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
