@@ -1,37 +1,26 @@
-# Base image
-FROM buildpack-deps:xenial-curl
+FROM ubuntu:17.04
 
 MAINTAINER Infer
 
-# Debian config
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y \
             aspcud \
-            autoconf \
-            automake \
-            gcc \
-            g++ \
-            git \
-            groff-base \
-            libc6-dev \
-            libgmp-dev \
-            libmpc-dev \
-            libmpfr-dev \
-            m4 \
-            make \
-            ncurses-dev \
-            ocaml \
+            curl \
             opam \
-            openjdk-8-jdk-headless \
             pkg-config \
-            python2.7 \
-            rsync \
-            unzip \
-            zlib1g-dev && \
+            autoconf \
+            libsqlite3-dev \
+            zlib1g-dev \
+            cmake \
+            libc6-dev \
+            libc6-i386 \
+            lib32z1 \
+            lib32stdc++6 \
+            openjdk-8-jdk-headless && \
     rm -rf /var/lib/apt/lists/*
 
 # Download the latest Infer release
-RUN INFER_VERSION=v0.12.1; \
+RUN INFER_VERSION=v0.13.0; \
     cd /opt && \
     curl -sL \
       https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux64-${INFER_VERSION}.tar.xz | \
@@ -40,24 +29,12 @@ RUN INFER_VERSION=v0.12.1; \
     ln -s ${PWD}/infer-linux64-$INFER_VERSION /infer
 
 # Compile Infer
-RUN OCAML_VERSION=4.04.2; \
-    opam init --compiler=$OCAML_VERSION -j $(getconf _NPROCESSORS_ONLN || echo 1) --yes && \
-    cd /infer && \
-    ./build-infer.sh --opam-switch $OCAML_VERSION && \
-    rm -rf /root/.opam
+RUN OCAML_VERSION=4.05.0+flambda; \
+    cd /infer && ./build-infer.sh --opam-switch $OCAML_VERSION && rm -rf /root/.opam
 
 # Install Infer
 ENV INFER_HOME /infer/infer
 ENV PATH ${INFER_HOME}/bin:${PATH}
-
-# Install dependencies for Android sample
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-            libc6-dev \
-            libc6-i386 \
-            lib32z1 \
-            lib32stdc++6 && \
-    rm -rf /var/lib/apt/lists/*
 
 ENV ANDROID_HOME /opt/android-sdk-linux
 WORKDIR $ANDROID_HOME
