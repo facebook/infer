@@ -31,7 +31,17 @@ end)
 
 let intraprocedural_only = true
 
+let blacklisted_functions = [BuiltinDecl.__set_array_length]
+
 let is_type_pointer t = match t.Typ.desc with Typ.Tptr _ -> true | _ -> false
+
+let is_blacklisted_function call =
+  match call with
+  | HilInstr.Direct pname ->
+      List.exists ~f:(fun fname -> Typ.Procname.equal pname fname) blacklisted_functions
+  | _ ->
+      false
+
 
 let exp_in_set exp vset =
   let _, pvars = Exp.get_vars exp in
@@ -93,13 +103,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Assign (((lhs_var, _), _), _, _) ->
         let uninit_vars = D.remove lhs_var astate.uninit_vars in
         {astate with uninit_vars}
-    | Call (_, _, actuals, _, loc) ->
+    | Call (_, call, actuals, _, loc) ->
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
         let uninit_vars =
           List.fold
             ~f:(fun acc actual_exp ->
               match actual_exp with
+              | HilExp.AccessPath ((actual_var, {Typ.desc= Tarray _}), _)
+                when is_blacklisted_function call ->
+                  D.remove actual_var acc
               | HilExp.AccessPath ((actual_var, {Typ.desc= Tptr _}), _) ->
                   D.remove actual_var acc
               | HilExp.Closure (_, apl) ->

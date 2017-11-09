@@ -13,7 +13,7 @@ CLANG_OPTIONS = -x objective-c -c
 INFER_OPTIONS = --uninit-only --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = uninit_blocks.m
+SOURCES = $(wildcard *.m)
 
 include $(TESTS_DIR)/clang.make
 
