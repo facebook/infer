@@ -33,6 +33,14 @@ type pvar_kind =
 (** Names for program variables. *)
 type t = {pv_hash: int; pv_name: Mangled.t; pv_kind: pvar_kind} [@@deriving compare]
 
+let get_name_of_local_with_procname var =
+  match var.pv_kind with
+  | Local_var pname ->
+      Mangled.from_string (Mangled.to_string var.pv_name ^ "_" ^ Typ.Procname.to_string pname)
+  | _ ->
+      var.pv_name
+
+
 let compare_modulo_this x y =
   if phys_equal x y then 0
   else

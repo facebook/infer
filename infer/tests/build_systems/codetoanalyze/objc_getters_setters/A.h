@@ -11,8 +11,15 @@
 
 @interface A : NSObject
 
+typedef void (^MyBlock)(int x);
+
 @property(nullable, nonatomic, copy) NSData* metadata;
 
 - (int)getX;
+
++ (void)foo:(int)z
+         and:(_Nonnull MyBlock)block1
+    and_also:(_Nonnull MyBlock)block2
+         and:(nullable NSString*)name;
 
 @end

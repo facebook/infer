@@ -24,4 +24,14 @@
   return _x;
 }
 
++ (void)foo:(int)z
+         and:(_Nonnull MyBlock)block1
+    and_also:(_Nonnull MyBlock)block2
+         and:(nullable NSString*)name {
+  block1(22);
+  int my_var = 11;
+  block2(33);
+  int my_other_var = 12;
+}
+
 @end

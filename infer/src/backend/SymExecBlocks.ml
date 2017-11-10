@@ -1,0 +1,90 @@
+(*
+ * Copyright (c) 2017 - present Facebook, Inc.
+ * All rights reserved.
+ *
+ * This source code is licensed under the BSD style license found in the
+ * LICENSE file in the root directory of this source tree. An additional grant
+ * of patent rights can be found in the PATENTS file in the same directory.
+ *)
+(* Given two lists of tuples (exp1, var1, typ1) and (exp2, var2, typ2)
+append the lists avoiding duplicates, where if the variables exist we check their
+equality, otherwise we check the equality of the expressions. This is to avoid
+adding the same captured variable twice. *)
+let append_no_duplicates_vars list1 list2 =
+  let eq (exp1, var1_opt, _) (exp2, var2_opt, _) =
+    match (var1_opt, var2_opt) with
+    | Some var1, Some var2 ->
+        Pvar.equal var1 var2
+    | None, None ->
+        Exp.equal exp1 exp2
+    | _ ->
+        false
+  in
+  IList.append_no_duplicates eq list1 list2
+
+
+(* Given a list of actual parameters for a function, replaces the closures with the
+captured variables, avoiding adding the same captured variable twice. *)
+let get_extended_args_for_method_with_block_analysis act_params =
+  let ext_actuals = List.map ~f:(fun (exp, typ) -> (exp, None, typ)) act_params in
+  let args_and_captured =
+    List.fold ext_actuals ~init:[] ~f:(fun all_args act_param ->
+        match act_param with
+        | Exp.Closure cl, _, _ ->
+            let captured =
+              List.map ~f:(fun (exp, var, typ) -> (exp, Some var, typ)) cl.captured_vars
+            in
+            append_no_duplicates_vars all_args captured
+        | _ ->
+            append_no_duplicates_vars all_args [act_param] )
+  in
+  List.map ~f:(fun (exp, _, typ) -> (exp, typ)) args_and_captured
+
+
+let resolve_method_with_block_args_and_analyze caller_pdesc pname act_params =
+  match Ondemand.get_proc_desc pname with
+  | Some pdesc
+    when Procdesc.is_defined pdesc
+         && Int.equal (List.length (Procdesc.get_formals pdesc)) (List.length act_params)
+         (* only specialize defined methods, and when formals and actuals have the same length  *)
+    -> (
+      (* a list with the same length of the actual params of the function,
+        containing either a Closure or None. *)
+      let block_args =
+        List.map act_params ~f:(function
+          | Exp.Closure cl, _ when Typ.Procname.is_objc_block cl.name ->
+              Some cl
+          | _ ->
+              None )
+      in
+      (* name for the specialized method instantiated with block arguments *)
+      let pname_with_block_args =
+        let block_name_args =
+          List.filter_map block_args ~f:(function
+            | Some (cl: Exp.closure) ->
+                Some (Typ.Procname.block_name_of_procname cl.name)
+            | None ->
+                None )
+        in
+        Typ.Procname.with_block_parameters pname block_name_args
+      in
+      (* new procdesc cloned from the original one, where the block parameters have been
+       replaced by the block arguments. The formals have also been expanded with the captured variables  *)
+      let specialized_pdesc =
+        Cfg.specialize_with_block_args pdesc pname_with_block_args block_args
+      in
+      Logging.(debug Analysis Verbose) "Instructions of specialized method:@." ;
+      Procdesc.iter_instrs
+        (fun _ instr -> Logging.(debug Analysis Verbose) "%a@." (Sil.pp_instr Pp.text) instr)
+        specialized_pdesc ;
+      Logging.(debug Analysis Verbose) "End of instructions@." ;
+      match Ondemand.analyze_proc_desc caller_pdesc specialized_pdesc with
+      | Some summary ->
+          (* Since the closures in the formals were replaced by the captured variables,
+           we do the same with the actual arguments *)
+          let extended_args = get_extended_args_for_method_with_block_analysis act_params in
+          Some (summary, extended_args)
+      | None ->
+          None )
+  | _ ->
+      None

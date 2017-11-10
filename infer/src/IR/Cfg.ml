@@ -455,8 +455,158 @@ let specialize_types callee_pdesc resolved_pname args =
   specialize_types_proc callee_pdesc resolved_pdesc substitutions
 
 
+let specialize_with_block_args_instrs resolved_pdesc substitutions =
+  let resolved_pname = Procdesc.get_proc_name resolved_pdesc in
+  let convert_pvar pvar = Pvar.mk (Pvar.get_name pvar) resolved_pname in
+  let convert_exp exp =
+    match exp with
+    | Exp.Lvar origin_pvar ->
+        let new_pvar = convert_pvar origin_pvar in
+        Exp.Lvar new_pvar
+    | _ ->
+        exp
+  in
+  let convert_instr (instrs, id_map) instr =
+    let convert_generic_call return_ids exp origin_args loc call_flags =
+      let converted_args = List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args in
+      let call_instr = Sil.Call (return_ids, exp, converted_args, loc, call_flags) in
+      (call_instr :: instrs, id_map)
+    in
+    match instr with
+    | Sil.Load (id, Exp.Lvar block_param, _, _)
+      when Mangled.Map.mem (Pvar.get_name block_param) substitutions ->
+        let id_map = Ident.IdentMap.add id (Pvar.get_name block_param) id_map in
+        (* we don't need the load the block param instruction anymore *)
+        (instrs, id_map)
+    | Sil.Load (id, origin_exp, origin_typ, loc) ->
+        (Sil.Load (id, convert_exp origin_exp, origin_typ, loc) :: instrs, id_map)
+    | Sil.Store (assignee_exp, origin_typ, origin_exp, loc) ->
+        let set_instr =
+          Sil.Store (convert_exp assignee_exp, origin_typ, convert_exp origin_exp, loc)
+        in
+        (set_instr :: instrs, id_map)
+    | Sil.Call (return_ids, Exp.Var id, origin_args, loc, call_flags) -> (
+      try
+        let block_name, extra_formals =
+          let block_var = Ident.IdentMap.find id id_map in
+          Mangled.Map.find block_var substitutions
+        in
+        (* once we find the block in the map, it means that we need to subsitute it with the
+        call to the concrete block, and pass the fresh formals as arguments *)
+        let ids_typs, load_instrs =
+          let captured_ids_instrs =
+            List.map extra_formals ~f:(fun (var, typ) ->
+                let id = Ident.create_fresh Ident.knormal in
+                let pvar = Pvar.mk var resolved_pname in
+                ((id, typ), Sil.Load (id, Exp.Lvar pvar, typ, loc)) )
+          in
+          List.unzip captured_ids_instrs
+        in
+        let call_instr =
+          let id_exps = List.map ~f:(fun (id, typ) -> (Exp.Var id, typ)) ids_typs in
+          let converted_args =
+            List.map ~f:(fun (exp, typ) -> (convert_exp exp, typ)) origin_args
+          in
+          Sil.Call
+            ( return_ids
+            , Exp.Const (Const.Cfun block_name)
+            , id_exps @ converted_args
+            , loc
+            , call_flags )
+        in
+        let remove_temps_instrs =
+          let ids = List.map ~f:(fun (id, _) -> id) ids_typs in
+          Sil.Remove_temps (ids, loc)
+        in
+        let instrs = remove_temps_instrs :: call_instr :: load_instrs @ instrs in
+        (instrs, id_map)
+      with Not_found -> convert_generic_call return_ids (Exp.Var id) origin_args loc call_flags )
+    | Sil.Call (return_ids, origin_call_exp, origin_args, loc, call_flags) ->
+        convert_generic_call return_ids origin_call_exp origin_args loc call_flags
+    | Sil.Prune (origin_exp, loc, is_true_branch, if_kind) ->
+        (Sil.Prune (convert_exp origin_exp, loc, is_true_branch, if_kind) :: instrs, id_map)
+    | Sil.Declare_locals (typed_vars, loc) ->
+        let new_typed_vars =
+          List.map ~f:(fun (pvar, typ) -> (convert_pvar pvar, typ)) typed_vars
+        in
+        (Sil.Declare_locals (new_typed_vars, loc) :: instrs, id_map)
+    | Sil.Nullify _ | Abstract _ | Sil.Remove_temps _ ->
+        (* these are generated instructions that will be replaced by the preanalysis *)
+        (instrs, id_map)
+  in
+  let convert_instr_list instrs =
+    let instrs, _ = List.fold ~f:convert_instr ~init:([], Ident.IdentMap.empty) instrs in
+    List.rev instrs
+  in
+  convert_instr_list
+
+
+let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
+  let callee_attributes = Procdesc.get_attributes callee_pdesc in
+  (* Substitution from a block parameter to the block name and the new formals
+  that correspond to the captured variables *)
+  let substitutions : (Typ.Procname.t * (Mangled.t * Typ.t) list) Mangled.Map.t =
+    List.fold2_exn callee_attributes.formals block_args ~init:Mangled.Map.empty ~f:
+      (fun subts (param_name, _) block_arg_opt ->
+        match block_arg_opt with
+        | Some (cl: Exp.closure) ->
+            let formals_from_captured =
+              List.map
+                ~f:(fun (_, var, typ) ->
+                  (* Here we create fresh names for the new formals, based on the names of the captured
+                   variables annotated with the name of the caller method *)
+                  (Pvar.get_name_of_local_with_procname var, typ))
+                cl.captured_vars
+            in
+            Mangled.Map.add param_name (cl.name, formals_from_captured) subts
+        | None ->
+            subts )
+  in
+  (* Extend formals with fresh variables for the captured variables of the block arguments,
+    without duplications. *)
+  let new_formals_blocks_captured_vars, extended_formals_annots =
+    let new_formals_blocks_captured_vars_with_annots =
+      let formals_annots =
+        List.zip_exn callee_attributes.formals (snd callee_attributes.method_annotation)
+      in
+      let append_no_duplicates_formals_and_annot list1 list2 =
+        IList.append_no_duplicates
+          (fun ((name1, _), _) ((name2, _), _) -> Mangled.equal name1 name2)
+          list1 list2
+      in
+      List.fold formals_annots ~init:[] ~f:(fun acc ((param_name, typ), annot) ->
+          try
+            let _, captured = Mangled.Map.find param_name substitutions in
+            append_no_duplicates_formals_and_annot acc
+              (List.map captured ~f:(fun captured_var -> (captured_var, Annot.Item.empty)))
+          with Not_found -> append_no_duplicates_formals_and_annot acc [((param_name, typ), annot)]
+      )
+    in
+    List.unzip new_formals_blocks_captured_vars_with_annots
+  in
+  let resolved_attributes =
+    { callee_attributes with
+      proc_name= pname_with_block_args
+    ; is_defined= true
+    ; err_log= Errlog.empty ()
+    ; source_file_captured= callee_attributes.loc.Location.file
+    ; formals= new_formals_blocks_captured_vars
+    ; method_annotation= (fst callee_attributes.method_annotation, extended_formals_annots) }
+  in
+  Attributes.store resolved_attributes ;
+  let resolved_pdesc =
+    let tmp_cfg = create_cfg () in
+    create_proc_desc tmp_cfg resolved_attributes
+  in
+  Logging.(debug Analysis Verbose)
+    "signature of base method %a@." Procdesc.pp_signature callee_pdesc ;
+  Logging.(debug Analysis Verbose)
+    "signature of specialized method %a@." Procdesc.pp_signature resolved_pdesc ;
+  convert_cfg ~callee_pdesc ~resolved_pdesc
+    (specialize_with_block_args_instrs resolved_pdesc substitutions)
+
+
 let pp_proc_signatures fmt cfg =
   F.fprintf fmt "METHOD SIGNATURES@\n@." ;
   let sorted_procs = List.sort ~cmp:Procdesc.compare (get_all_procs cfg) in
   List.iter ~f:(fun pdesc -> F.fprintf fmt "%a@." Procdesc.pp_signature pdesc) sorted_procs
-

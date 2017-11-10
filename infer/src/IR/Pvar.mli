@@ -131,3 +131,7 @@ val is_pod : t -> bool
 
 val get_initializer_pname : t -> Typ.Procname.t option
 (** Get the procname of the initializer function for the given global variable *)
+
+val get_name_of_local_with_procname : t -> Mangled.t
+(** [get_name_of_local_with_procname var] Return a name that is composed of the name of
+var and the name of the procname in case of locals *)

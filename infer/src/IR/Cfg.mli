@@ -56,4 +56,12 @@ val specialize_types : Procdesc.t -> Typ.Procname.t -> (Exp.t * Typ.t) list -> P
     all the type of the parameters are replaced in the instructions according to the list.
     The virtual calls are also replaced to match the parameter types *)
 
+val specialize_with_block_args :
+  Procdesc.t -> Typ.Procname.t -> Exp.closure option list -> Procdesc.t
+(** Creates a copy of a procedure description given a list of possible closures 
+  that are passed as arguments to the method. The resulting procdesc is isomorphic but
+  a) the block parameters are replaces with the closures 
+  b) the parameters of the method are extended with parameters for the captured variables 
+  in the closures *)
+
 val pp_proc_signatures : Format.formatter -> cfg -> unit

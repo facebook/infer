@@ -46,4 +46,31 @@
                      // infer_field_get_spec
   }
 }
+
+- (int)calling_method_with_block_parameters {
+  int h = 10;
+  int z = 10;
+  [A foo:h
+      and:^(int i) {
+        self->x = i;
+      }
+      and_also:^(int i) {
+        self->y = h + z;
+      }
+      and:@"Hi"];
+  return self->y;
+}
+
++ (int)calling_method_with_block_parameters_sets_fields_correctly {
+  B* b = [B new];
+  [b calling_method_with_block_parameters];
+  if (b->x + b->y == 42) {
+    int* p = 0;
+    return *p; //  NPE here, because we know that the values x and y
+               //  are set correctly by calling blocks
+  } else {
+    int* p = 0;
+    return *p; // and not here
+  }
+}
 @end

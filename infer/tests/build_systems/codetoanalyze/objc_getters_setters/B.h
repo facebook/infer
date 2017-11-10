@@ -8,6 +8,9 @@
  */
 #import <Foundation/NSObject.h>
 
-@interface B : NSObject
+@interface B : NSObject {
+  int y;
+  int x;
+}
 
 @end

@@ -1259,73 +1259,90 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             | [] ->
                 callee_pname
           in
-          let resolved_summary_opt = Ondemand.analyze_proc_name current_pdesc resolved_pname in
-          let callee_pdesc_opt = Ondemand.get_proc_desc resolved_pname in
-          let ret_typ_opt = Option.map ~f:Procdesc.get_ret_type callee_pdesc_opt in
-          let sentinel_result =
-            if Config.curr_language_is Config.Clang then
-              check_variadic_sentinel_if_present
-                (call_args prop_r callee_pname actual_params ret_id loc)
-            else [(prop_r, path)]
+          (* method with block parameters *)
+          let with_block_parameters_summary_opt =
+            if call_flags.CallFlags.cf_with_block_parameters then
+              SymExecBlocks.resolve_method_with_block_args_and_analyze current_pdesc resolved_pname
+                actual_params
+            else None
           in
-          let do_call (prop, path) =
-            if Option.value_map
-                 ~f:(fun summary -> is_some (reason_to_skip summary))
-                 ~default:true resolved_summary_opt
-            then
-              (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
-              let attrs_opt =
-                let attr_opt = Option.map ~f:Procdesc.get_attributes callee_pdesc_opt in
-                match (attr_opt, resolved_pname) with
-                | Some attrs, Typ.Procname.ObjC_Cpp _ ->
-                    Some attrs
-                | None, Typ.Procname.ObjC_Cpp _ ->
-                    Attributes.load resolved_pname
-                | _ ->
-                    None
+          match with_block_parameters_summary_opt with
+          | Some (resolved_summary, extended_actual_params) ->
+              let prop_r, n_extended_actual_params =
+                normalize_params tenv current_pname prop_r extended_actual_params
               in
-              let objc_property_accessor_ret_typ_opt =
-                match attrs_opt with
-                | Some attrs -> (
-                  match attrs.ProcAttributes.objc_accessor with
-                  | Some objc_accessor ->
-                      Some (objc_accessor, attrs.ProcAttributes.ret_type)
-                  | None ->
-                      None )
-                | None ->
-                    None
+              Logging.d_strln "Calling method specialized with blocks... " ;
+              proc_call resolved_summary
+                (call_args prop_r resolved_pname n_extended_actual_params ret_id loc)
+          | None ->
+              (* Generic fun call with known name *)
+              let resolved_summary_opt = Ondemand.analyze_proc_name current_pdesc resolved_pname in
+              let callee_pdesc_opt = Ondemand.get_proc_desc resolved_pname in
+              let ret_typ_opt = Option.map ~f:Procdesc.get_ret_type callee_pdesc_opt in
+              let sentinel_result =
+                if Config.curr_language_is Config.Clang then
+                  check_variadic_sentinel_if_present
+                    (call_args prop_r callee_pname actual_params ret_id loc)
+                else [(prop_r, path)]
               in
-              match objc_property_accessor_ret_typ_opt with
-              | Some (objc_property_accessor, ret_typ) ->
-                  handle_objc_instance_method_call n_actual_params n_actual_params prop tenv ret_id
-                    current_pdesc callee_pname loc path
-                    (sym_exec_objc_accessor objc_property_accessor ret_typ)
-              | None ->
-                  let ret_annots =
-                    match resolved_summary_opt with
-                    | Some summ ->
-                        let ret_annots, _ =
-                          summ.Specs.attributes.ProcAttributes.method_annotation
-                        in
-                        ret_annots
-                    | None ->
-                        load_ret_annots resolved_pname
+              let do_call (prop, path) =
+                if Option.value_map
+                     ~f:(fun summary -> is_some (reason_to_skip summary))
+                     ~default:true resolved_summary_opt
+                then
+                  (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
+                  let attrs_opt =
+                    let attr_opt = Option.map ~f:Procdesc.get_attributes callee_pdesc_opt in
+                    match (attr_opt, resolved_pname) with
+                    | Some attrs, Typ.Procname.ObjC_Cpp _ ->
+                        Some attrs
+                    | None, Typ.Procname.ObjC_Cpp _ ->
+                        Attributes.load resolved_pname
+                    | _ ->
+                        None
                   in
-                  let is_objc_instance_method =
+                  let objc_property_accessor_ret_typ_opt =
                     match attrs_opt with
-                    | Some attrs ->
-                        attrs.ProcAttributes.is_objc_instance_method
+                    | Some attrs -> (
+                      match attrs.ProcAttributes.objc_accessor with
+                      | Some objc_accessor ->
+                          Some (objc_accessor, attrs.ProcAttributes.ret_type)
+                      | None ->
+                          None )
                     | None ->
-                        false
+                        None
                   in
-                  skip_call ~is_objc_instance_method ~reason:"function or method not found" prop
-                    path resolved_pname ret_annots loc ret_id ret_typ_opt n_actual_params
-            else
-              proc_call
-                (Option.value_exn resolved_summary_opt)
-                (call_args prop resolved_pname n_actual_params ret_id loc)
-          in
-          List.concat_map ~f:do_call sentinel_result )
+                  match objc_property_accessor_ret_typ_opt with
+                  | Some (objc_property_accessor, ret_typ) ->
+                      handle_objc_instance_method_call n_actual_params n_actual_params prop tenv
+                        ret_id current_pdesc callee_pname loc path
+                        (sym_exec_objc_accessor objc_property_accessor ret_typ)
+                  | None ->
+                      let ret_annots =
+                        match resolved_summary_opt with
+                        | Some summ ->
+                            let ret_annots, _ =
+                              summ.Specs.attributes.ProcAttributes.method_annotation
+                            in
+                            ret_annots
+                        | None ->
+                            load_ret_annots resolved_pname
+                      in
+                      let is_objc_instance_method =
+                        match attrs_opt with
+                        | Some attrs ->
+                            attrs.ProcAttributes.is_objc_instance_method
+                        | None ->
+                            false
+                      in
+                      skip_call ~is_objc_instance_method ~reason:"function or method not found"
+                        prop path resolved_pname ret_annots loc ret_id ret_typ_opt n_actual_params
+                else
+                  proc_call
+                    (Option.value_exn resolved_summary_opt)
+                    (call_args prop resolved_pname n_actual_params ret_id loc)
+              in
+              List.concat_map ~f:do_call sentinel_result )
   | Sil.Call (ret_id, fun_exp, actual_params, loc, call_flags) ->
       (* Call via function pointer *)
       let prop_r, n_actual_params = normalize_params tenv current_pname prop_ actual_params in
