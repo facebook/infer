@@ -70,8 +70,7 @@ let is_name_keyword k = match k with Name -> true | _ -> false
 
 (** true if and only if a substring of container matches the regular expression *)
 let str_match_forward container regexp =
-  try Str.search_forward regexp container 0 >= 0
-  with Not_found -> false
+  try Str.search_forward regexp container 0 >= 0 with Not_found -> false
 
 
 let compare_str_with_alexp s ae =

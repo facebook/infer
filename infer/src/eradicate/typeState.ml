@@ -104,8 +104,7 @@ let map_join m1 m2 =
   in
   let missing_rhs exp1 range1 =
     (* handle elements missing in the rhs *)
-    try ignore (M.find exp1 m2)
-    with Not_found ->
+    try ignore (M.find exp1 m2) with Not_found ->
       let t1, ta1, locs1 = range1 in
       let range1' =
         let ta1' = TypeAnnotation.with_origin ta1 TypeOrigin.Undef in
@@ -127,14 +126,10 @@ let join ext t1 t2 =
   tjoin
 
 
-let lookup_id id typestate =
-  try Some (M.find (Exp.Var id) typestate.map)
-  with Not_found -> None
-
+let lookup_id id typestate = try Some (M.find (Exp.Var id) typestate.map) with Not_found -> None
 
 let lookup_pvar pvar typestate =
-  try Some (M.find (Exp.Lvar pvar) typestate.map)
-  with Not_found -> None
+  try Some (M.find (Exp.Lvar pvar) typestate.map) with Not_found -> None
 
 
 let add_id id range typestate =

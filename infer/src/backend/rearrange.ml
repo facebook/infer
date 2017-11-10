@@ -862,7 +862,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
     in
     List.find_map
       ~f:(fun hpred ->
-        ( match[@warning "-57"] (* FIXME: silenced warning may be legit *) hpred with
+        match[@warning "-57"] (* FIXME: silenced warning may be legit *) hpred with
         | Sil.Hpointsto ((Const Cclass clazz as lhs_exp), _, Exp.Sizeof {typ})
         | Sil.Hpointsto (_, Sil.Eexp ((Const Cclass clazz as lhs_exp), _), Exp.Sizeof {typ})
           when guarded_by_str_is_class guarded_by_str0 (Ident.name_to_string clazz) ->
@@ -888,7 +888,7 @@ let add_guarded_by_constraints tenv prop lexp pdesc =
                && Pvar.is_this pvar ->
             Some (rhs_exp, typ)
         | _ ->
-            None ))
+            None)
       sigma
   in
   (* warn if the access to [lexp] is not protected by the [guarded_by_fld_str] lock *)
@@ -1507,8 +1507,7 @@ let attr_has_annot is_annotation tenv prop exp =
     | _ ->
         None
   in
-  try List.find_map ~f:attr_has_annot (Attribute.get_for_exp tenv prop exp)
-  with Not_found -> None
+  try List.find_map ~f:attr_has_annot (Attribute.get_for_exp tenv prop exp) with Not_found -> None
 
 
 let is_strexp_pt_fld_with_annot tenv obj_str is_annotation typ deref_exp (fld, strexp) =

@@ -151,8 +151,7 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     let find_duplicate_nodes = State.mk_find_duplicate_nodes curr_pdesc in
     let find_canonical_duplicate node =
       let duplicate_nodes = find_duplicate_nodes node in
-      try Procdesc.NodeSet.min_elt duplicate_nodes
-      with Not_found -> node
+      try Procdesc.NodeSet.min_elt duplicate_nodes with Not_found -> node
     in
     let typecheck_proc do_checks pname pdesc proc_details_opt =
       let ann_sig, loc, idenv_pn =

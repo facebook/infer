@@ -392,10 +392,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
            inlines the field read because it's a static final constant *)
           let convert_id_literal_to_read = function
             | HilExp.Constant Const.Cint i as e ->
-                let int_value =
-                  try IntLit.to_int i
-                  with _ -> 0
-                in
+                let int_value = try IntLit.to_int i with _ -> 0 in
                 (* heuristic to decide if this looks like a resource ID *)
                 if Int.abs int_value > 1000 then
                   (* convert this resource ID literal into a dummy field read *)

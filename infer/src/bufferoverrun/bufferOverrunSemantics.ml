@@ -24,8 +24,7 @@ module Make (CFG : ProcCfg.S) = struct
 
   let eval_const : Const.t -> Val.t = function
     | Const.Cint intlit -> (
-      try Val.of_int (IntLit.to_int intlit)
-      with _ -> Val.Itv.top )
+      try Val.of_int (IntLit.to_int intlit) with _ -> Val.Itv.top )
     | Const.Cfloat f ->
         f |> int_of_float |> Val.of_int
     | _ ->

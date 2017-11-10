@@ -301,8 +301,7 @@ module OwnershipDomain = struct
   include AbstractDomain.Map (AccessPath) (OwnershipAbstractValue)
 
   let get_owned access_path astate =
-    try find access_path astate
-    with Not_found -> OwnershipAbstractValue.Unowned
+    try find access_path astate with Not_found -> OwnershipAbstractValue.Unowned
 
 
   let is_owned access_path astate =
@@ -320,8 +319,7 @@ module AttributeMapDomain = struct
 
 
   let has_attribute access_path attribute t =
-    try find access_path t |> AttributeSetDomain.mem attribute
-    with Not_found -> false
+    try find access_path t |> AttributeSetDomain.mem attribute with Not_found -> false
 
 
   let get_choices access_path t =
@@ -335,8 +333,7 @@ module AttributeMapDomain = struct
 
   let add_attribute access_path attribute t =
     let attribute_set =
-      ( try find access_path t
-        with Not_found -> AttributeSetDomain.empty )
+      (try find access_path t with Not_found -> AttributeSetDomain.empty)
       |> AttributeSetDomain.add attribute
     in
     add access_path attribute_set t
@@ -388,18 +385,12 @@ module AccessDomain = struct
   include AbstractDomain.Map (AccessPrecondition) (PathDomain)
 
   let add_access precondition access_path t =
-    let precondition_accesses =
-      try find precondition t
-      with Not_found -> PathDomain.empty
-    in
+    let precondition_accesses = try find precondition t with Not_found -> PathDomain.empty in
     let precondition_accesses' = PathDomain.add_sink access_path precondition_accesses in
     add precondition precondition_accesses' t
 
 
-  let get_accesses precondition t =
-    try find precondition t
-    with Not_found -> PathDomain.empty
-
+  let get_accesses precondition t = try find precondition t with Not_found -> PathDomain.empty
 end
 
 type astate =

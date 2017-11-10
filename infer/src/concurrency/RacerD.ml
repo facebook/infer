@@ -34,8 +34,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open Domain in
     match e with
     | HilExp.AccessPath ap -> (
-      try AttributeMapDomain.find ap attribute_map
-      with Not_found -> AttributeSetDomain.empty )
+      try AttributeMapDomain.find ap attribute_map with Not_found -> AttributeSetDomain.empty )
     | Constant _ ->
         AttributeSetDomain.of_list [Attribute.Functional]
     | Exception expr (* treat exceptions as transparent wrt attributes *) | Cast (_, expr) ->
@@ -976,8 +975,8 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         in
         let return_ownership = OwnershipDomain.get_owned return_var_ap ownership in
         let return_attributes =
-          try AttributeMapDomain.find return_var_ap attribute_map
-          with Not_found -> AttributeSetDomain.empty
+          try AttributeMapDomain.find return_var_ap attribute_map with Not_found ->
+            AttributeSetDomain.empty
         in
         let post = {threads; locks; accesses; return_ownership; return_attributes} in
         Summary.update_summary post summary
@@ -1538,10 +1537,7 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
   let empty = M.empty
 
   let add k d m =
-    let ds =
-      try M.find k m
-      with Not_found -> []
-    in
+    let ds = try M.find k m with Not_found -> [] in
     M.add k (d :: ds) m
 
 
@@ -1556,10 +1552,7 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
   let add = AccessListMap.add
 
   let add k d m =
-    let ds =
-      try AccessListMap.find k m
-      with Not_found -> []
-    in
+    let ds = try AccessListMap.find k m with Not_found -> [] in
     add k (d :: ds) m
 
 
@@ -1704,10 +1697,7 @@ let aggregate_by_class file_env =
         | _ ->
             "unknown"
       in
-      let bucket =
-        try String.Map.find_exn acc classname
-        with Not_found -> []
-      in
+      let bucket = try String.Map.find_exn acc classname with Not_found -> [] in
       String.Map.add ~key:classname ~data:(proc :: bucket) acc)
     ~init:String.Map.empty
 
@@ -1724,3 +1714,4 @@ let file_analysis {Callbacks.procedures} =
            else (module MayAliasQuotientedAccessListMap) )
            class_env))
     (aggregate_by_class procedures)
+

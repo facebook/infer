@@ -192,8 +192,7 @@ module Map (Key : PrettyPrintable.PrintableOrderedType) (ValueDomain : S) = stru
     else
       M.for_all
         (fun k lhs_v ->
-          try ValueDomain.( <= ) ~lhs:lhs_v ~rhs:(M.find k rhs)
-          with Not_found -> false)
+          try ValueDomain.( <= ) ~lhs:lhs_v ~rhs:(M.find k rhs) with Not_found -> false)
         lhs
 
 

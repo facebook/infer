@@ -118,8 +118,7 @@ let add_cg (exe_env: t) (source_dir: DB.source_dir) =
 let get_cg exe_env = exe_env.cg
 
 let get_file_data exe_env pname =
-  try Some (Typ.Procname.Hash.find exe_env.proc_map pname)
-  with Not_found ->
+  try Some (Typ.Procname.Hash.find exe_env.proc_map pname) with Not_found ->
     let source_file_opt =
       match Attributes.load pname with
       | None ->

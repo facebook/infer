@@ -33,8 +33,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let annotation = Localise.nullable_annotation_name pname in
     let issue_kind = IssueType.nullable_dereference.unique_id in
     let call_site =
-      try CallSites.min_elt call_sites
-      with Not_found ->
+      try CallSites.min_elt call_sites with Not_found ->
         L.(die InternalError)
           "Expecting a least one element in the set of call sites when analyzing %a"
           Typ.Procname.pp pname
@@ -110,8 +109,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let rec longest_nullable_prefix ap ((nulable_aps, _) as astate) =
-    try Some (ap, NullableAP.find ap nulable_aps)
-    with Not_found ->
+    try Some (ap, NullableAP.find ap nulable_aps) with Not_found ->
       match ap with _, [] -> None | p -> longest_nullable_prefix (AccessPath.truncate p) astate
 
 

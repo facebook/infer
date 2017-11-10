@@ -654,8 +654,8 @@ let type_ptr_equal_type type_ptr type_str =
     try Types_parser.abs_ctype token lexbuf with
     | CTLExceptions.ALParserInvariantViolationException s ->
         raise
-          (CTLExceptions.(
-            ALFileException (create_exc_info ("Syntax Error when defining type " ^ s) lexbuf)))
+          CTLExceptions.(
+            ALFileException (create_exc_info ("Syntax Error when defining type " ^ s) lexbuf))
     | SyntaxError _ | Types_parser.Error ->
         raise CTLExceptions.(ALFileException (create_exc_info "SYNTAX ERROR" lexbuf))
   in

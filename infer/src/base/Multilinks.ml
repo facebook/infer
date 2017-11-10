@@ -50,8 +50,7 @@ let write multilinks ~dir =
 
 
 let lookup ~dir =
-  try Some (String.Table.find_exn multilink_files_cache dir)
-  with Not_found -> read ~dir
+  try Some (String.Table.find_exn multilink_files_cache dir) with Not_found -> read ~dir
 
 
 let resolve fname =
@@ -64,6 +63,5 @@ let resolve fname =
     | None ->
         fname
     | Some links ->
-      try DB.filename_from_string (String.Table.find_exn links base)
-      with Not_found -> fname
+      try DB.filename_from_string (String.Table.find_exn links base) with Not_found -> fname
 

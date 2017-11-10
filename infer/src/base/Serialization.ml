@@ -46,8 +46,7 @@ let retry_exception ~timeout ~catch_exn ~f x =
   let init_time = Mtime_clock.counter () in
   let expired () = Mtime.Span.compare timeout (Mtime_clock.count init_time) <= 0 in
   let rec retry () =
-    try f x
-    with e when catch_exn e && not (expired ()) -> Utils.yield () ; (retry [@tailcall]) ()
+    try f x with e when catch_exn e && not (expired ()) -> Utils.yield () ; (retry [@tailcall]) ()
   in
   retry ()
 
@@ -69,8 +68,7 @@ let create_serializer (key: Key.t) : 'a serializer =
     else Some value
   in
   let read_from_string (str: string) : 'a option =
-    try read_data (Marshal.from_string str 0) "string"
-    with Sys_error _ -> None
+    try read_data (Marshal.from_string str 0) "string" with Sys_error _ -> None
   in
   (* The reads happen without synchronization.
      The writes are synchronized with a .lock file. *)

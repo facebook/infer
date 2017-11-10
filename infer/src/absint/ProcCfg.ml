@@ -189,8 +189,7 @@ module Exceptional = struct
       let add_exn_pred exn_preds_acc exn_succ_node =
         let exn_succ_node_id = Procdesc.Node.get_id exn_succ_node in
         let existing_exn_preds =
-          try Procdesc.IdMap.find exn_succ_node_id exn_preds_acc
-          with Not_found -> []
+          try Procdesc.IdMap.find exn_succ_node_id exn_preds_acc with Not_found -> []
         in
         if not (List.mem ~equal:Procdesc.Node.equal existing_exn_preds n) then
           (* don't add duplicates *)
@@ -216,8 +215,7 @@ module Exceptional = struct
   let normal_preds _ n = Procdesc.Node.get_preds n
 
   let exceptional_preds (_, exn_pred_map) n =
-    try Procdesc.IdMap.find (Procdesc.Node.get_id n) exn_pred_map
-    with Not_found -> []
+    try Procdesc.IdMap.find (Procdesc.Node.get_id n) exn_pred_map with Not_found -> []
 
 
   (** get all normal and exceptional successors of [n]. *)

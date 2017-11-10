@@ -579,3 +579,4 @@ let read_config_changed_files () =
     | Error error ->
         L.external_error "Error reading the changed files index '%s': %s@." index error ;
         None
+

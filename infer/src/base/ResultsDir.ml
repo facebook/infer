@@ -66,3 +66,4 @@ let delete_capture_and_analysis_data () =
   List.iter ~f:Utils.rmtree dirs_to_delete ;
   List.iter ~f:Unix.mkdir_p dirs_to_delete ;
   ()
+

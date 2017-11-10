@@ -73,9 +73,8 @@ let set_pvar context var typ = fst (get_or_set_pvar_type context var typ)
 let reset_pvar_type context =
   let var_map = context.var_map in
   let aux var item =
-    match item with
-    | pvar, otyp, _ ->
-        set_var_map context (JBir.VarMap.add var (pvar, otyp, otyp) var_map)
+    match item with pvar, otyp, _ ->
+      set_var_map context (JBir.VarMap.add var (pvar, otyp, otyp) var_map)
   in
   JBir.VarMap.iter aux var_map
 
@@ -94,15 +93,13 @@ let get_goto_jumps context = context.goto_jumps
 let add_if_jump context node pc = NodeTbl.add (get_if_jumps context) node pc
 
 let get_if_jump context node =
-  try Some (NodeTbl.find (get_if_jumps context) node)
-  with Not_found -> None
+  try Some (NodeTbl.find (get_if_jumps context) node) with Not_found -> None
 
 
 let add_goto_jump context pc jump = Hashtbl.add (get_goto_jumps context) pc jump
 
 let get_goto_jump context pc =
-  try Hashtbl.find (get_goto_jumps context) pc
-  with Not_found -> Next
+  try Hashtbl.find (get_goto_jumps context) pc with Not_found -> Next
 
 
 let is_goto_jump context pc =

@@ -274,8 +274,7 @@ module CallStats = struct
 
   let trace t proc_name loc res in_footprint =
     let tr_old =
-      try PnameLocHash.find t (proc_name, loc)
-      with Not_found ->
+      try PnameLocHash.find t (proc_name, loc) with Not_found ->
         PnameLocHash.add t (proc_name, loc) empty_trace ;
         empty_trace
     in
@@ -652,8 +651,8 @@ let load_summary_to_spec_table proc_name =
 
 
 let rec get_summary proc_name =
-  try Some (Typ.Procname.Hash.find spec_tbl proc_name)
-  with Not_found -> if load_summary_to_spec_table proc_name then get_summary proc_name else None
+  try Some (Typ.Procname.Hash.find spec_tbl proc_name) with Not_found ->
+    if load_summary_to_spec_table proc_name then get_summary proc_name else None
 
 
 let get_summary_unsafe s proc_name =

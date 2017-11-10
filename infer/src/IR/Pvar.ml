@@ -278,3 +278,4 @@ let get_initializer_pname {pv_name; pv_kind} =
            (Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name))
   | _ ->
       None
+

@@ -26,8 +26,7 @@ let activate_run_epilogues_on_signal =
 let register ~f desc =
   let f_no_exn () =
     if not !ProcessPool.in_child then
-      try f ()
-      with exn ->
+      try f () with exn ->
         F.eprintf "Error while running epilogue \"%s\":@ %a.@ Powering through...@." desc Exn.pp
           exn
   in

@@ -99,8 +99,7 @@ end)
 let check_subtype =
   let subtMap = ref SubtypesMap.empty in
   fun tenv c1 c2 ->
-    ( try SubtypesMap.find (c1, c2) !subtMap
-      with Not_found ->
+    ( try SubtypesMap.find (c1, c2) !subtMap with Not_found ->
         let is_subt = check_subclass_tenv tenv c1 c2 in
         subtMap := SubtypesMap.add (c1, c2) is_subt !subtMap ;
         is_subt

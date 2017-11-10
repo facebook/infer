@@ -69,11 +69,7 @@ module SymLinear = struct
 
   let singleton : Symbol.t -> int -> t = M.singleton
 
-  let find : Symbol.t -> t -> int =
-    fun s x ->
-      try M.find s x
-      with Not_found -> 0
-
+  let find : Symbol.t -> t -> int = fun s x -> try M.find s x with Not_found -> 0
 
   let is_le_zero : t -> bool =
     fun x -> M.for_all (fun s v -> Int.equal v 0 || Symbol.is_unsigned s && v <= 0) x
@@ -1182,10 +1178,7 @@ let ub : t -> Bound.t = function
 
 let of_int : int -> astate = fun n -> NonBottom (ItvPure.of_int n)
 
-let of_int_lit n =
-  try of_int (IntLit.to_int n)
-  with _ -> top
-
+let of_int_lit n = try of_int (IntLit.to_int n) with _ -> top
 
 let is_bot : t -> bool = fun x -> equal x Bottom
 

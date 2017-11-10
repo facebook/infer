@@ -177,3 +177,4 @@ let interface_impl_declaration qual_type_to_sil_type tenv decl =
       class_desc
   | _ ->
       assert false
+

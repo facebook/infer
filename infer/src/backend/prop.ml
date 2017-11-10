@@ -1076,8 +1076,8 @@ module Normalize = struct
           else
             match (e1, e2) with
             | Const Cint n, Const Cint m -> (
-              try Exp.int (IntLit.shift_left n m)
-              with IntLit.OversizedShift -> BinOp (Shiftlt, eval e1, eval e2) )
+              try Exp.int (IntLit.shift_left n m) with IntLit.OversizedShift ->
+                BinOp (Shiftlt, eval e1, eval e2) )
             | _, Const Cint m when IntLit.iszero m ->
                 eval e1
             | _, Const Cint m when IntLit.isone m ->
@@ -1092,8 +1092,8 @@ module Normalize = struct
           else
             match (e1, e2) with
             | Const Cint n, Const Cint m -> (
-              try Exp.int (IntLit.shift_right n m)
-              with IntLit.OversizedShift -> BinOp (Shiftrt, eval e1, eval e2) )
+              try Exp.int (IntLit.shift_right n m) with IntLit.OversizedShift ->
+                BinOp (Shiftrt, eval e1, eval e2) )
             | _, Const Cint m when IntLit.iszero m ->
                 eval e1
             | Const Cint m, _ when IntLit.iszero m ->
@@ -2131,10 +2131,7 @@ let rec idlist_assoc id = function
       if Ident.equal i id then x else idlist_assoc id l
 
 
-let ident_captured_ren ren id =
-  try idlist_assoc id ren
-  with Not_found -> id
-
+let ident_captured_ren ren id = try idlist_assoc id ren with Not_found -> id
 
 (* If not defined in ren, id should be mapped to itself *)
 

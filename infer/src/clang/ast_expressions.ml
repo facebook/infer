@@ -119,7 +119,6 @@ let make_expr_info qt vk objc_kind =
 
 let make_expr_info_with_objc_kind qt objc_kind = make_expr_info qt `LValue objc_kind
 
-
 let make_obj_c_message_expr_info_instance sel =
   { Clang_ast_t.omei_selector= sel
   ; omei_receiver_kind= `Instance
@@ -212,10 +211,7 @@ let translate_dispatch_function stmt_info stmt_list n =
   match stmt_list with
   | _ :: args_stmts ->
       let expr_info_call = make_general_expr_info create_void_star_type `XValue `Ordinary in
-      let arg_stmt =
-        try List.nth_exn args_stmts n
-        with Failure _ -> assert false
-      in
+      let arg_stmt = try List.nth_exn args_stmts n with Failure _ -> assert false in
       CallExpr (stmt_info, [arg_stmt], expr_info_call)
   | _ ->
       assert false
@@ -233,3 +229,4 @@ let trans_with_conditional stmt_info expr_info stmt_list =
 let trans_negation_with_conditional stmt_info expr_info stmt_list =
   let stmt_list_cond = stmt_list @ [create_integer_literal "0"] @ [create_integer_literal "1"] in
   Clang_ast_t.ConditionalOperator (stmt_info, stmt_list_cond, expr_info)
+

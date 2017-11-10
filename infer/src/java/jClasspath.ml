@@ -161,8 +161,7 @@ let load_from_verbose_output javac_verbose_out =
       let line = In_channel.input_line_exn file_in in
       if Str.string_match class_filename_re line 0 then
         let path =
-          try Str.matched_group 5 line
-          with Not_found ->
+          try Str.matched_group 5 line with Not_found ->
             (* either matched group 5 is found, or matched group 2 is found, see doc for [class_filename_re] above *)
             Config.javac_classes_out ^/ Str.matched_group 2 line
         in
@@ -274,12 +273,13 @@ let add_class cn jclass program =
 let cleanup program = Javalib.close_class_path program.classpath
 
 let lookup_node cn program =
-  try Some (JBasics.ClassMap.find cn (get_classmap program))
-  with Not_found ->
+  try Some (JBasics.ClassMap.find cn (get_classmap program)) with Not_found ->
     try
       let jclass = javalib_get_class (get_classpath program) cn in
       add_class cn jclass program ; Some jclass
-    with JBasics.No_class_found _ | JBasics.Class_structure_error _ | Invalid_argument _ -> None
+    with
+    | JBasics.No_class_found _ | JBasics.Class_structure_error _ | Invalid_argument _ ->
+        None
 
 
 let collect_classes start_classmap jar_filename =

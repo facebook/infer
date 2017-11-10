@@ -82,8 +82,8 @@ module ReversePostorder (CFG : ProcCfg.S) = struct
     let schedule_succ worklist_acc node_to_schedule =
       let id_to_schedule = CFG.id node_to_schedule in
       let old_work =
-        try M.find id_to_schedule worklist_acc
-        with Not_found -> WorkUnit.make t.cfg node_to_schedule
+        try M.find id_to_schedule worklist_acc with Not_found ->
+          WorkUnit.make t.cfg node_to_schedule
       in
       let new_work = WorkUnit.add_visited_pred t.cfg old_work node_id in
       M.add id_to_schedule new_work worklist_acc

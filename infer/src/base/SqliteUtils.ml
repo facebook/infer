@@ -25,8 +25,8 @@ let check_sqlite_error ?(fatal= false) ~log rc =
 
 let exec db ~log ~stmt =
   (* Call [check_sqlite_error] with [fatal:true] and catch exceptions to rewrite the error message. This avoids allocating the error string when not needed. *)
-  try check_sqlite_error ~fatal:true ~log (Sqlite3.exec db stmt)
-  with Error err -> error ~fatal:true "exec: %s" err
+  try check_sqlite_error ~fatal:true ~log (Sqlite3.exec db stmt) with Error err ->
+    error ~fatal:true "exec: %s" err
 
 
 let finalize ~log stmt =
@@ -78,3 +78,4 @@ let db_close db =
          (Printf.sprintf "closing: %s (%s)"
             (Sqlite3.errcode db |> Sqlite3.Rc.to_string)
             (Sqlite3.errmsg db)))
+

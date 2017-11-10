@@ -197,8 +197,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           mem
     in
-    try List.fold2_exn formals actuals ~init:mem ~f
-    with Invalid_argument _ -> mem
+    try List.fold2_exn formals actuals ~init:mem ~f with Invalid_argument _ -> mem
 
 
   let instantiate_mem

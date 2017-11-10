@@ -46,8 +46,7 @@ module LineReader = struct
 
 
   let file_data (hash: t) fname =
-    try Some (Hashtbl.find hash fname)
-    with Not_found ->
+    try Some (Hashtbl.find hash fname) with Not_found ->
       try
         let lines_arr = read_file (SourceFile.to_abs_path fname) in
         Hashtbl.add hash fname lines_arr ; Some lines_arr
@@ -416,10 +415,7 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
   let proc_name = Procdesc.get_proc_name proc_desc in
   let process_node n =
     let lnum = (Procdesc.Node.get_loc n).Location.line in
-    let curr_nodes =
-      try Hashtbl.find table_nodes_at_linenum lnum
-      with Not_found -> []
-    in
+    let curr_nodes = try Hashtbl.find table_nodes_at_linenum lnum with Not_found -> [] in
     Hashtbl.replace table_nodes_at_linenum lnum (n :: curr_nodes)
   in
   let proc_loc = Procdesc.get_loc proc_desc in
@@ -463,8 +459,7 @@ let write_html_file linereader filename procs =
           raise End_of_file
     in
     let nodes_at_linenum =
-      try Hashtbl.find table_nodes_at_linenum line_number
-      with Not_found -> []
+      try Hashtbl.find table_nodes_at_linenum line_number with Not_found -> []
     in
     let errors_at_linenum =
       try

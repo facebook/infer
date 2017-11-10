@@ -127,3 +127,4 @@ let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =
       L.(die InternalError)
         "Analyzer failed to compute post for %a" Typ.Procname.pp
         (Procdesc.get_proc_name proc_data.pdesc)
+

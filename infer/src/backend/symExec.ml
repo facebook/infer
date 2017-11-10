@@ -37,8 +37,7 @@ let unroll_type tenv (typ: Typ.t) (off: Sil.offset) =
   | Tstruct name, Off_fld (fld, _) -> (
     match Tenv.lookup tenv name with
     | Some {fields; statics} -> (
-      try fldlist_assoc fld (fields @ statics)
-      with Not_found -> fail Typ.Fieldname.to_string fld )
+      try fldlist_assoc fld (fields @ statics) with Not_found -> fail Typ.Fieldname.to_string fld )
     | None ->
         fail Typ.Fieldname.to_string fld )
   | Tarray (typ', _, _), Off_index _ ->
@@ -398,10 +397,7 @@ let reason_to_skip callee_summary : string option =
 (** In case of constant string dereference, return the result immediately *)
 let check_constant_string_dereference lexp =
   let string_lookup s n =
-    let c =
-      try Char.to_int s.[IntLit.to_int n]
-      with Invalid_argument _ -> 0
-    in
+    let c = try Char.to_int s.[IntLit.to_int n] with Invalid_argument _ -> 0 in
     Exp.int (IntLit.of_int c)
   in
   match lexp with
@@ -1132,7 +1128,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           Specs.CallStats.trace summary.Specs.stats.Specs.call_stats callee_pname loc
             Specs.CallStats.CR_skip !Config.footprint ) ;
       unknown_or_scan_call ~is_scan:false ~reason ret_typ_opt ret_annots
-        (Builtin.
+        Builtin.
           { pdesc= current_pdesc
           ; instr
           ; tenv
@@ -1141,7 +1137,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
           ; ret_id
           ; args= actual_args
           ; proc_name= callee_pname
-          ; loc })
+          ; loc }
     in
     if is_objc_instance_method then
       handle_objc_instance_method_call_or_skip current_pdesc tenv actual_args path callee_pname
@@ -1362,7 +1358,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         let callee_pname = Typ.Procname.from_string_c_fun "__function_pointer__" in
         unknown_or_scan_call ~is_scan:false ~reason:"unresolved function pointer" None
           Annot.Item.empty
-          (Builtin.
+          Builtin.
             { pdesc= current_pdesc
             ; instr
             ; tenv
@@ -1371,7 +1367,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             ; ret_id
             ; args= n_actual_params
             ; proc_name= callee_pname
-            ; loc }) )
+            ; loc } )
   | Sil.Nullify (pvar, _)
     -> (
       let eprop = Prop.expose prop_ in
@@ -1436,8 +1432,7 @@ and instrs ?(mask_errors= false) tenv pdesc instrs ppl =
     L.d_str "Executing Generated Instruction " ;
     Sil.d_instr instr ;
     L.d_ln () ;
-    try sym_exec tenv pdesc instr p path
-    with exn ->
+    try sym_exec tenv pdesc instr p path with exn ->
       reraise_if exn ~f:(fun () -> not mask_errors || not (SymOp.exn_not_failure exn)) ;
       let error = Exceptions.recognize_exception exn in
       let loc =
@@ -1642,8 +1637,7 @@ and check_variadic_sentinel ?(fails_on_nil= false) n_formals (sentinel, null_pos
     (* simulate a Load for [lexp] *)
     let tmp_id_deref = Ident.create_fresh Ident.kprimed in
     let load_instr = Sil.Load (tmp_id_deref, lexp, typ, loc) in
-    try instrs tenv pdesc [load_instr] result
-    with e when SymOp.exn_not_failure e ->
+    try instrs tenv pdesc [load_instr] result with e when SymOp.exn_not_failure e ->
       reraise_if e ~f:(fun () -> fails_on_nil) ;
       let deref_str = Localise.deref_str_nil_argument_in_variadic_method proc_name nargs i in
       let err_desc =

@@ -11,8 +11,7 @@ include Core
 
 module Unix_ = struct
   let improve f make_arg_sexps =
-    try f ()
-    with Unix.Unix_error (e, s, _) ->
+    try f () with Unix.Unix_error (e, s, _) ->
       let buf = Buffer.create 100 in
       let fmt = Format.formatter_of_buffer buf in
       Format.pp_set_margin fmt 10000 ;

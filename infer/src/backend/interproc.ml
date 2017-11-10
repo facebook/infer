@@ -79,10 +79,7 @@ end = struct
 
   let create () : t = Hashtbl.create 11
 
-  let find table i =
-    try Hashtbl.find table i
-    with Not_found -> Paths.PathSet.empty
-
+  let find table i = try Hashtbl.find table i with Not_found -> Paths.PathSet.empty
 
   let add table i dset = Hashtbl.replace table i dset
 end
@@ -109,8 +106,7 @@ module Worklist = struct
   let add (wl: t) (node: Procdesc.Node.t) : unit =
     let visits =
       (* recover visit count if it was visited before *)
-      try Procdesc.NodeMap.find node wl.visit_map
-      with Not_found -> 0
+      try Procdesc.NodeMap.find node wl.visit_map with Not_found -> 0
     in
     wl.todo_set <- NodeVisitSet.add {node; visits} wl.todo_set
 
@@ -140,8 +136,7 @@ let path_set_create_worklist proc_cfg =
 
 let htable_retrieve (htable: (Procdesc.Node.id, Paths.PathSet.t) Hashtbl.t) (key: Procdesc.Node.id)
     : Paths.PathSet.t =
-  try Hashtbl.find htable key
-  with Not_found ->
+  try Hashtbl.find htable key with Not_found ->
     Hashtbl.replace htable key Paths.PathSet.empty ;
     Paths.PathSet.empty
 
@@ -702,8 +697,7 @@ let extract_specs tenv pdesc pathset : Prop.normal Specs.spec list =
   let pre_post_map =
     let add map (pre, post, visited) =
       let current_posts, current_visited =
-        try Pmap.find pre map
-        with Not_found -> (Paths.PathSet.empty, Specs.Visitedset.empty)
+        try Pmap.find pre map with Not_found -> (Paths.PathSet.empty, Specs.Visitedset.empty)
       in
       let new_posts =
         match post with
@@ -1387,8 +1381,7 @@ let analyze_procedure_aux cg_opt tenv proc_desc =
 let analyze_procedure {Callbacks.summary; proc_desc; tenv} : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   Specs.add_summary proc_name summary ;
-  ( try ignore (analyze_procedure_aux None tenv proc_desc)
-    with exn ->
+  ( try ignore (analyze_procedure_aux None tenv proc_desc) with exn ->
       reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       Reporting.log_error_deprecated proc_name exn ) ;
   Specs.get_summary_unsafe __FILE__ proc_name

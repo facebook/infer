@@ -42,10 +42,7 @@ let from_abs_path ?(warn_on_error= true) fname =
   if Filename.is_relative fname then
     L.(die InternalError) "Path '%s' is relative, when absolute path was expected." fname ;
   (* try to get realpath of source file. Use original if it fails *)
-  let fname_real =
-    try Utils.realpath ~warn_on_error fname
-    with Unix.Unix_error _ -> fname
-  in
+  let fname_real = try Utils.realpath ~warn_on_error fname with Unix.Unix_error _ -> fname in
   let project_root_real = Utils.realpath ~warn_on_error Config.project_root in
   let models_dir_real = Config.models_src_dir in
   match Utils.filename_to_relative ~root:project_root_real fname_real with
@@ -130,8 +127,7 @@ let is_under_project_root = function
 let exists_cache = String.Table.create ~size:256 ()
 
 let path_exists abs_path =
-  try String.Table.find_exn exists_cache abs_path
-  with Not_found ->
+  try String.Table.find_exn exists_cache abs_path with Not_found ->
     let result = Sys.file_exists abs_path = `Yes in
     String.Table.set exists_cache ~key:abs_path ~data:result ;
     result

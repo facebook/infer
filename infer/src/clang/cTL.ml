@@ -431,22 +431,21 @@ module Debug = struct
       if Stack.is_empty t.eval_stack then
         raise (Empty_stack "Unbalanced number of eval_begin/eval_end invocations") ;
       let evaluated_tree, eval_node, ast_node_to_display =
-        match Stack.pop_exn t.eval_stack with
-        | Tree (({id= _; content} as eval_node), children), ast_node_to_display ->
-            let content' =
-              {content with eval_result= eval_result_of_bool result_bool; witness= result}
-            in
-            let eval_node' = {eval_node with content= content'} in
-            (Tree (eval_node', children), eval_node', ast_node_to_display)
+        match Stack.pop_exn t.eval_stack
+        with Tree (({id= _; content} as eval_node), children), ast_node_to_display ->
+          let content' =
+            {content with eval_result= eval_result_of_bool result_bool; witness= result}
+          in
+          let eval_node' = {eval_node with content= content'} in
+          (Tree (eval_node', children), eval_node', ast_node_to_display)
       in
       let t' = explain t ~eval_node ~ast_node_to_display in
       let forest' =
         if Stack.is_empty t'.eval_stack then evaluated_tree :: t'.forest
         else
           let parent =
-            match Stack.pop_exn t'.eval_stack with
-            | Tree (node, children), ntd ->
-                (Tree (node, evaluated_tree :: children), ntd)
+            match Stack.pop_exn t'.eval_stack with Tree (node, children), ntd ->
+              (Tree (node, evaluated_tree :: children), ntd)
           in
           Stack.push t'.eval_stack parent ; t'.forest
       in
@@ -814,12 +813,7 @@ let parameter_of_corresp_name method_name args name =
 
 let parameter_of_corresp_pos args pos =
   let pos_int =
-    match pos with
-    | ALVar.Const n -> (
-      try int_of_string n
-      with Failure _ -> -1 )
-    | _ ->
-        -1
+    match pos with ALVar.Const n -> ( try int_of_string n with Failure _ -> -1 ) | _ -> -1
   in
   List.nth args pos_int
 

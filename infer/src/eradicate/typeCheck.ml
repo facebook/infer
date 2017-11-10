@@ -122,8 +122,7 @@ module ComplexExpressions = struct
     in
     match map_dexp (Errdesc.exp_rv_dexp tenv node' exp) with
     | Some de -> (
-      try Some (dexp_to_string de)
-      with Not_handled -> None )
+      try Some (dexp_to_string de) with Not_handled -> None )
     | None ->
         None
 
@@ -953,7 +952,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
           | _ ->
               typestate2
         in
-        ( match[@warning "-57"] c with
+        match[@warning "-57"] c with
         | Exp.BinOp (Binop.Eq, Exp.Const Const.Cint i, e)
         | Exp.BinOp (Binop.Eq, e, Exp.Const Const.Cint i)
           when IntLit.iszero i
@@ -1032,7 +1031,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
         | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.Ne, e1, e2), _) ->
             check_condition node' (Exp.BinOp (Binop.Eq, e1, e2))
         | _ ->
-            typestate )
+            typestate
         (* FIXME: silenced warning may be legit *)
       in
       (* Handle assigment fron a temp pvar in a condition.

@@ -37,10 +37,7 @@ module RepeatedCallsExtension : Eradicate.ExtensionT = struct
     if not (InstrSet.is_empty calls) then ( F.fprintf fmt "Calls:@\n" ; InstrSet.iter pp_call calls )
 
 
-  let get_old_call instr calls =
-    try Some (InstrSet.find instr calls)
-    with Not_found -> None
-
+  let get_old_call instr calls = try Some (InstrSet.find instr calls) with Not_found -> None
 
   let add_call instr calls = if InstrSet.mem instr calls then calls else InstrSet.add instr calls
 

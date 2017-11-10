@@ -372,6 +372,7 @@ let execute___set_file_attribute {Builtin.tenv; pdesc; prop_; path; ret_id; args
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
+
 (** Set the resource attribute of the first real argument of method as ignore, the first argument is
     assumed to be "this" *)
 let execute___method_set_ignore_attribute {Builtin.tenv; pdesc; prop_; path; ret_id; args; loc}
@@ -1066,6 +1067,7 @@ let __objc_cast = Builtin.register BuiltinDecl.__objc_cast execute___objc_cast
 let __objc_dictionary_literal =
   Builtin.register BuiltinDecl.__objc_dictionary_literal execute___objc_dictionary_literal
 
+
 let __objc_release_cf = Builtin.register BuiltinDecl.__objc_release_cf execute___objc_release_cf
 
 let __objc_retain_cf = Builtin.register BuiltinDecl.__objc_retain_cf execute___objc_retain_cf
@@ -1081,6 +1083,7 @@ let __print_value = Builtin.register BuiltinDecl.__print_value execute___print_v
 let __require_allocated_array =
   Builtin.register BuiltinDecl.__require_allocated_array execute___require_allocated_array
 
+
 let __set_array_length = Builtin.register BuiltinDecl.__set_array_length execute___set_array_length
 
 let __set_file_attribute =
@@ -1089,7 +1092,6 @@ let __set_file_attribute =
 
 (* set a hidden field in the struct to the given value *)
 let __set_hidden_field = Builtin.register BuiltinDecl.__set_hidden_field execute___set_hidden_field
-
 
 let __set_locked_attribute =
   Builtin.register BuiltinDecl.__set_locked_attribute execute___set_locked_attribute

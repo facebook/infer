@@ -86,8 +86,7 @@ let inhabit_alloc sizeof_typ sizeof_len ret_typ alloc_kind env =
 
 (** find or create a Sil expression with type typ *)
 let rec inhabit_typ tenv typ cfg env =
-  try (TypMap.find typ env.cache, env)
-  with Not_found ->
+  try (TypMap.find typ env.cache, env) with Not_found ->
     let inhabit_internal typ env =
       match typ.Typ.desc with
       | Typ.Tptr ({desc= Tarray (inner_typ, Some _, _)}, Typ.Pk_pointer) ->

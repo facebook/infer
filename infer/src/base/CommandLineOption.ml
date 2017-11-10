@@ -234,10 +234,7 @@ let add parse_mode sections desc =
   desc_list := desc :: !desc_list ;
   let add_to_section (command, section) =
     let sections = List.Assoc.find_exn ~equal:equal_command help_sections_desc_lists command in
-    let prev_contents =
-      try SectionMap.find section !sections
-      with Not_found -> []
-    in
+    let prev_contents = try SectionMap.find section !sections with Not_found -> [] in
     sections := SectionMap.add section (desc :: prev_contents) !sections
   in
   List.iter sections ~f:add_to_section ;
@@ -317,8 +314,7 @@ let mk ?(deprecated= []) ?(parse_mode= InferCommand) ?(in_help= []) ~long ?short
   let variable = ref default in
   let closure = mk_setter variable in
   let setter str =
-    try closure str
-    with exc ->
+    try closure str with exc ->
       raise (Arg.Bad ("bad value " ^ str ^ " for flag " ^ long ^ " (" ^ Exn.to_string exc ^ ")"))
   in
   let spec = mk_spec setter in

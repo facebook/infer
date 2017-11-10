@@ -54,10 +54,7 @@ module SourceKind = struct
     List.find_map
       ~f:(fun (qualifiers, kind, index) ->
         if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then
-          let source_index =
-            try Some (int_of_string index)
-            with Failure _ -> return
-          in
+          let source_index = try Some (int_of_string index) with Failure _ -> return in
           Some (of_string kind, source_index)
         else None)
       external_sources

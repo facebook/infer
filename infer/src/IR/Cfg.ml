@@ -25,8 +25,7 @@ let remove_proc_desc cfg pname = Typ.Procname.Hash.remove cfg.proc_desc_table pn
 let iter_proc_desc cfg f = Typ.Procname.Hash.iter f cfg.proc_desc_table
 
 let find_proc_desc_from_name cfg pname =
-  try Some (Typ.Procname.Hash.find cfg.proc_desc_table pname)
-  with Not_found -> None
+  try Some (Typ.Procname.Hash.find cfg.proc_desc_table pname) with Not_found -> None
 
 
 (** Create a new procdesc *)
@@ -253,8 +252,7 @@ let mark_unchanged_pdescs cfg_new cfg_old =
              (Procdesc.Node.get_preds n2)
         && instrs_eq (Procdesc.Node.get_instrs n1) (Procdesc.Node.get_instrs n2)
       in
-      try List.for_all2_exn ~f:node_eq n1s n2s
-      with Invalid_argument _ -> false
+      try List.for_all2_exn ~f:node_eq n1s n2s with Invalid_argument _ -> false
     in
     let att1 = Procdesc.get_attributes pd1 and att2 = Procdesc.get_attributes pd2 in
     Bool.equal att1.is_defined att2.is_defined && Typ.equal att1.ret_type att2.ret_type
@@ -318,8 +316,7 @@ let convert_cfg ~callee_pdesc ~resolved_pdesc convert_instr_list =
         []
     | node :: other_node ->
         let converted_node =
-          try Procdesc.NodeMap.find node !node_map
-          with Not_found ->
+          try Procdesc.NodeMap.find node !node_map with Not_found ->
             let new_node = convert_node node
             and successors = Procdesc.Node.get_succs node
             and exn_nodes = Procdesc.Node.get_exn node in
@@ -354,8 +351,7 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
   in
   let subst_map = ref Ident.IdentMap.empty in
   let redirect_typename origin_id =
-    try Some (Ident.IdentMap.find origin_id !subst_map)
-    with Not_found -> None
+    try Some (Ident.IdentMap.find origin_id !subst_map) with Not_found -> None
   in
   let convert_instr instrs = function
     | Sil.Load
@@ -364,8 +360,8 @@ let specialize_types_proc callee_pdesc resolved_pdesc substitutions =
         , {Typ.desc= Tptr ({desc= Tstruct origin_typename}, Pk_pointer)}
         , loc ) ->
         let specialized_typname =
-          try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions
-          with Not_found -> origin_typename
+          try Mangled.Map.find (Pvar.get_name origin_pvar) substitutions with Not_found ->
+            origin_typename
         in
         subst_map := Ident.IdentMap.add id specialized_typname !subst_map ;
         Sil.Load (id, convert_exp origin_exp, mk_ptr_typ specialized_typname, loc) :: instrs
@@ -610,3 +606,4 @@ let pp_proc_signatures fmt cfg =
   F.fprintf fmt "METHOD SIGNATURES@\n@." ;
   let sorted_procs = List.sort ~cmp:Procdesc.compare (get_all_procs cfg) in
   List.iter ~f:(fun pdesc -> F.fprintf fmt "%a@." Procdesc.pp_signature pdesc) sorted_procs
+

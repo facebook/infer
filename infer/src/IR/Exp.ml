@@ -277,3 +277,4 @@ let is_objc_block_closure = function
       Typ.Procname.is_objc_block name
   | _ ->
       false
+

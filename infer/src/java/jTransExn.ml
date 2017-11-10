@@ -51,8 +51,7 @@ let translate_exceptions (context: JContext.t) exit_nodes get_body_nodes handler
       [instr_get_ret_val; instr_deactivate_exn; instr_unwrap_ret_val]
   in
   let create_entry_block handler_list =
-    try ignore (Hashtbl.find catch_block_table handler_list)
-    with Not_found ->
+    try ignore (Hashtbl.find catch_block_table handler_list) with Not_found ->
       let collect succ_nodes rethrow_exception handler =
         let catch_nodes = get_body_nodes handler.JBir.e_handler in
         let loc =

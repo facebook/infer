@@ -100,8 +100,7 @@ end = struct
   let lookup' tbl e default =
     match e with
     | Exp.Var _ -> (
-      try Hashtbl.find tbl e
-      with Not_found -> Hashtbl.replace tbl e default ; default )
+      try Hashtbl.find tbl e with Not_found -> Hashtbl.replace tbl e default ; default )
     | _ ->
         assert false
 

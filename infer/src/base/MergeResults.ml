@@ -67,3 +67,4 @@ let merge_buck_flavors_results infer_deps_file =
       List.iter ~f:one_line lines
   | Error error ->
       L.internal_error "Couldn't read deps file '%s': %s" infer_deps_file error
+

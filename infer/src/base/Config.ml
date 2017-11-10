@@ -1033,7 +1033,7 @@ and ( bo_debug
       "Debug level for the capture. See $(b,--debug-level) for accepted values."
   and debug_level_linters =
     CLOpt.mk_int ~long:"debug-level-linters" ~default:0
-      ~in_help:(CLOpt.((Capture, manual_clang_linters)) :: all_generic_manuals)
+      ~in_help:(CLOpt.(Capture, manual_clang_linters) :: all_generic_manuals)
       "Debug level for the linters. See $(b,--debug-level) for accepted values."
   and developer_mode =
     CLOpt.mk_bool ~long:"developer-mode"
@@ -1111,11 +1111,11 @@ and ( bo_debug
   and print_logs =
     CLOpt.mk_bool ~long:"print-logs"
       ~in_help:
-        (CLOpt.(
+        CLOpt.(
           [ (Analyze, manual_generic)
           ; (Capture, manual_generic)
           ; (Run, manual_generic)
-          ; (Report, manual_generic) ]))
+          ; (Report, manual_generic) ])
       "Also log messages to stdout and stderr"
   and stats =
     CLOpt.mk_bool ~deprecated:["stats"] ~long:"stats" "Stats mode (debugging)" ~f:(fun stats ->
@@ -1290,11 +1290,11 @@ and flavors =
 and force_delete_results_dir =
   CLOpt.mk_bool ~long:"force-delete-results-dir" ~default:false
     ~in_help:
-      (CLOpt.(
+      CLOpt.(
         [ (Capture, manual_generic)
         ; (Compile, manual_generic)
         ; (Diff, manual_generic)
-        ; (Run, manual_generic) ]))
+        ; (Run, manual_generic) ])
     "Do not refuse to delete the results directory if it doesn't look like an infer results directory."
 
 
@@ -1675,11 +1675,11 @@ and project_root =
   CLOpt.mk_path ~deprecated:["project_root"; "-project_root"; "pr"] ~long:"project-root" ~short:'C'
     ~default:CLOpt.init_work_dir
     ~in_help:
-      (CLOpt.(
+      CLOpt.(
         [ (Analyze, manual_generic)
         ; (Capture, manual_generic)
         ; (Run, manual_generic)
-        ; (Report, manual_generic) ]))
+        ; (Report, manual_generic) ])
     ~meta:"dir" "Specify the root directory of the project"
 
 
@@ -1771,12 +1771,12 @@ and results_dir =
   CLOpt.mk_path ~deprecated:["results_dir"; "-out"] ~long:"results-dir" ~short:'o'
     ~default:(CLOpt.init_work_dir ^/ "infer-out")
     ~in_help:
-      (CLOpt.(
+      CLOpt.(
         [ (Analyze, manual_generic)
         ; (Capture, manual_generic)
         ; (Explore, manual_generic)
         ; (Run, manual_generic)
-        ; (Report, manual_generic) ]))
+        ; (Report, manual_generic) ])
     ~meta:"dir" "Write results and internal files in the specified directory"
 
 

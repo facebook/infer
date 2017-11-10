@@ -169,8 +169,7 @@ and type_desc_of_c_type translate_decl tenv c_type : Typ.desc =
 and decl_ptr_to_type_desc translate_decl tenv decl_ptr : Typ.desc =
   let open Clang_ast_t in
   let typ = Clang_ast_extend.DeclPtr decl_ptr in
-  try Clang_ast_extend.TypePointerMap.find typ !CFrontend_config.sil_types_map
-  with Not_found ->
+  try Clang_ast_extend.TypePointerMap.find typ !CFrontend_config.sil_types_map with Not_found ->
     match CAst_utils.get_decl decl_ptr with
     | Some (CXXRecordDecl _ as d)
     | Some (RecordDecl _ as d)

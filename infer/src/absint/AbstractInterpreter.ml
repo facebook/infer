@@ -50,8 +50,7 @@ struct
 
   (** extract the state of node [n] from [inv_map] *)
   let extract_state node_id inv_map =
-    try Some (InvariantMap.find node_id inv_map)
-    with Not_found -> None
+    try Some (InvariantMap.find node_id inv_map) with Not_found -> None
 
 
   (** extract the postcondition of node [n] from [inv_map] *)

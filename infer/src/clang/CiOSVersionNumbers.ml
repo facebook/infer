@@ -67,10 +67,7 @@ let version_of number_s : human_readable_version option =
     | [] ->
         None
   in
-  let number_opt =
-    try Some (float_of_string number_s)
-    with Failure _ -> None
-  in
+  let number_opt = try Some (float_of_string number_s) with Failure _ -> None in
   match number_opt with
   | None ->
       None

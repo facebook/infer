@@ -321,10 +321,7 @@ module Err_table = struct
     (* map error name to count *)
     let count_err (err_name: IssueType.t) n =
       let err_string = err_name.IssueType.unique_id in
-      let count =
-        try String.Map.find_exn !err_name_map err_string
-        with Not_found -> 0
-      in
+      let count = try String.Map.find_exn !err_name_map err_string with Not_found -> 0 in
       err_name_map := String.Map.add ~key:err_string ~data:(count + n) !err_name_map
     in
     let count key err_datas =

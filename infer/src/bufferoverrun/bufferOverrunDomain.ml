@@ -218,8 +218,7 @@ module Val = struct
       let traces_caller =
         List.fold symbols
           ~f:(fun traces symbol ->
-            try TraceSet.join (Itv.SubstMap.find symbol trace_map) traces
-            with Not_found -> traces)
+            try TraceSet.join (Itv.SubstMap.find symbol trace_map) traces with Not_found -> traces)
           ~init:TraceSet.empty
       in
       let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces loc in
@@ -265,11 +264,7 @@ module Stack = struct
 
   let bot = empty
 
-  let find : Loc.t -> astate -> Val.t =
-    fun l m ->
-      try find l m
-      with Not_found -> Val.bot
-
+  let find : Loc.t -> astate -> Val.t = fun l m -> try find l m with Not_found -> Val.bot
 
   let find_set : PowLoc.t -> astate -> Val.t =
     fun locs mem ->
@@ -326,11 +321,7 @@ module Heap = struct
 
   let bot = empty
 
-  let find : Loc.t -> astate -> Val.t =
-    fun l m ->
-      try find l m
-      with Not_found -> Val.Itv.top
-
+  let find : Loc.t -> astate -> Val.t = fun l m -> try find l m with Not_found -> Val.Itv.top
 
   let find_set : PowLoc.t -> astate -> Val.t =
     fun locs mem ->
@@ -448,9 +439,7 @@ module AliasMap = struct
 
 
   let find : Ident.t -> t -> AliasTarget.t option =
-    fun k m ->
-      try Some (M.find k m)
-      with Not_found -> None
+    fun k m -> try Some (M.find k m) with Not_found -> None
 
 
   let remove_temps : Ident.t list -> t -> t =

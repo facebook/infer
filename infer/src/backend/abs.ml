@@ -71,8 +71,7 @@ let create_condition_ls ids_private id_base p_leftover (inst: Sil.exp_subst) =
     let inst_private, inst_public = Sil.sub_domain_partition f inst in
     let insts_of_public_ids = Sil.sub_range inst_public in
     let inst_of_base =
-      try Sil.sub_find (Ident.equal id_base) inst_public
-      with Not_found -> assert false
+      try Sil.sub_find (Ident.equal id_base) inst_public with Not_found -> assert false
     in
     let insts_of_private_ids = Sil.sub_range inst_private in
     (insts_of_private_ids, insts_of_public_ids, inst_of_base)

@@ -406,8 +406,7 @@ end = struct
     let delayed_num = ref 0 in
     let delayed = ref PathMap.empty in
     let add_path p =
-      try ignore (PathMap.find p !delayed)
-      with Not_found ->
+      try ignore (PathMap.find p !delayed) with Not_found ->
         incr delayed_num ;
         delayed := PathMap.add p !delayed_num !delayed
     in

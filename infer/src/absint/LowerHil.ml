@@ -47,8 +47,7 @@ struct
 
   let exec_instr ((actual_state, id_map) as astate) extras node instr =
     let f_resolve_id id =
-      try Some (IdAccessPathMapDomain.find id id_map)
-      with Not_found -> None
+      try Some (IdAccessPathMapDomain.find id id_map) with Not_found -> None
     in
     match
       HilInstr.of_sil ~include_array_indexes:HilConfig.include_array_indexes ~f_resolve_id instr

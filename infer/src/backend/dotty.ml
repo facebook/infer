@@ -114,8 +114,7 @@ let strip_special_chars b =
   let replace st c c' =
     if String.contains st c then
       let idx = String.index_exn st c in
-      try st.[idx] <- c' ; st
-      with Invalid_argument _ ->
+      try st.[idx] <- c' ; st with Invalid_argument _ ->
         L.internal_error "@\n@\nstrip_special_chars: Invalid argument!@\n@." ;
         assert false
     else st
@@ -1300,8 +1299,7 @@ let pp_speclist_to_file (filename: DB.filename) spec_list =
 
 
 let pp_speclist_dotty_file (filename: DB.filename) spec_list =
-  try pp_speclist_to_file filename spec_list
-  with exn when SymOp.exn_not_failure exn -> ()
+  try pp_speclist_to_file filename spec_list with exn when SymOp.exn_not_failure exn -> ()
 
 
 (**********************************************************************)

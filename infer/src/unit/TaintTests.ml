@@ -164,3 +164,4 @@ let tests =
          ~initial:(MockTaintAnalysis.Domain.empty, IdAccessPathMapDomain.empty)
   in
   "taint_test_suite" >::: test_list
+

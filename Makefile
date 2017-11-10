@@ -579,7 +579,7 @@ opam.lock: opam
 # This is a magical version number that doesn't reinstall the world when added on top of what we
 # have in opam.lock. To upgrade this version number, manually try to install several utop versions
 # until you find one that doesn't recompile the world. TODO(t20828442): get rid of magic
-OPAM_DEV_DEPS = ocp-indent merlin utop.2.0.1
+OPAM_DEV_DEPS = ocamlformat.$$(grep version .ocamlformat | cut -d ' ' -f 2) ocp-indent merlin utop.2.0.1
 
 ifneq ($(EMACS),no)
 OPAM_DEV_DEPS += tuareg
@@ -589,9 +589,8 @@ endif
 devsetup: Makefile.autoconf
 	$(QUIET)[ $(OPAM) != "no" ] || (echo 'No `opam` found, aborting setup.' >&2; exit 1)
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
+	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) pin remove --yes ocamlformat $(OPAM_DEV_DEPS)\
 	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-checksum user-setup $(OPAM_DEV_DEPS))
-	$(QUIET)$(call silent_on_success,installing ocamlformat,\
-	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) pin add --yes ocamlformat https://github.com/ocaml-ppx/ocamlformat.git#$$(grep version .ocamlformat | cut -d ' ' -f 2))
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam config setup -a`$(TERM_RESET)' >&2
 	$(QUIET)OPAMSWITCH=$(OPAMSWITCH); $(OPAM) config --yes setup -a
 	$(QUIET)echo '$(TERM_INFO)*** Running `opam user-setup`$(TERM_RESET)' >&2

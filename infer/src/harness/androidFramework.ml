@@ -117,8 +117,7 @@ let get_lifecycle_for_framework_typ_opt tenv lifecycle_typ lifecycle_proc_strs =
       let lifecycle_procs =
         List.fold
           ~f:(fun lifecycle_procs lifecycle_proc_str ->
-            try lookup_proc lifecycle_proc_str :: lifecycle_procs
-            with Not_found -> lifecycle_procs)
+            try lookup_proc lifecycle_proc_str :: lifecycle_procs with Not_found -> lifecycle_procs)
           ~init:[] lifecycle_proc_strs
       in
       lifecycle_procs

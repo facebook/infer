@@ -39,8 +39,8 @@ let create_db () =
   (* Write-ahead log is much faster than other journalling modes. *)
   SqliteUtils.exec db ~log:"journal_mode=WAL" ~stmt:"PRAGMA journal_mode=WAL" ;
   SqliteUtils.db_close db ;
-  try Sys.rename temp_db database_fullpath
-  with Sys_error _ -> (* lost the race, doesn't matter *) ()
+  try Sys.rename temp_db database_fullpath with Sys_error _ ->
+    (* lost the race, doesn't matter *) ()
 
 
 let new_db_callbacks = ref []
@@ -69,8 +69,7 @@ let register_statement stmt_fmt =
     let stmt_ref = ref None in
     let new_statement db =
       let stmt =
-        try Sqlite3.prepare db stmt0
-        with Sqlite3.Error error ->
+        try Sqlite3.prepare db stmt0 with Sqlite3.Error error ->
           L.die InternalError "Could not prepare the following statement:@\n%s@\nReason: %s" stmt0
             error
       in
@@ -110,3 +109,4 @@ let new_database_connection () =
   SqliteUtils.exec db ~log:"synchronous=NORMAL" ~stmt:"PRAGMA synchronous=NORMAL" ;
   database := Some db ;
   List.iter ~f:(fun callback -> callback db) !new_db_callbacks
+

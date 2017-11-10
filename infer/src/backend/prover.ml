@@ -16,8 +16,8 @@ module L = Logging
 module F = Format
 
 let decrease_indent_when_exception thunk =
-  try thunk ()
-  with exn when SymOp.exn_not_failure exn -> reraise_after exn ~f:(fun () -> L.d_decrease_indent 1)
+  try thunk () with exn when SymOp.exn_not_failure exn ->
+    reraise_after exn ~f:(fun () -> L.d_decrease_indent 1)
 
 
 let compute_max_from_nonempty_int_list l = uw (List.max_elt ~cmp:IntLit.compare_value l)
@@ -1504,8 +1504,8 @@ let array_len_imply tenv calc_missing subs len1 len2 indices2 =
   | _, Exp.BinOp (Binop.PlusA, Exp.Var _, _)
   | _, Exp.BinOp (Binop.PlusA, _, Exp.Var _)
   | Exp.BinOp (Binop.Mult, _, _), _ -> (
-    try exp_imply tenv calc_missing subs len1 len2
-    with IMPL_EXC (s, subs', x) -> raise (IMPL_EXC ("array len:" ^ s, subs', x)) )
+    try exp_imply tenv calc_missing subs len1 len2 with IMPL_EXC (s, subs', x) ->
+      raise (IMPL_EXC ("array len:" ^ s, subs', x)) )
   | _ ->
       ProverState.add_bounds_check (ProverState.BClen_imply (len1, len2, indices2)) ;
       subs
@@ -2260,11 +2260,10 @@ let rec hpred_imply tenv calc_index_frame calc_missing subs prop1 sigma2 hpred2
               let subs' = exp_list_imply tenv calc_missing subs (f2 :: elist2) (f2 :: elist2) in
               let prop1' = Prop.prop_iter_remove_curr_then_to_prop tenv iter1' in
               let hpred1 =
-                match Prop.prop_iter_current tenv iter1' with
-                | hpred1, b ->
-                    if b then ProverState.add_missing_pi (Sil.Aneq (_e2, _f2)) ;
-                    (* for PE |- NE *)
-                    hpred1
+                match Prop.prop_iter_current tenv iter1' with hpred1, b ->
+                  if b then ProverState.add_missing_pi (Sil.Aneq (_e2, _f2)) ;
+                  (* for PE |- NE *)
+                  hpred1
               in
               match hpred1 with
               | Sil.Hlseg _ ->
@@ -2775,8 +2774,7 @@ let find_minimum_pure_cover tenv cases =
         else _shrink ((pi, x) :: seen) todo'
   in
   let shrink cases = if List.length cases > 2 then _shrink [] cases else cases in
-  try Some (shrink (grow [] cases))
-  with NO_COVER -> None
+  try Some (shrink (grow [] cases)) with NO_COVER -> None
 
 
 (*

@@ -52,16 +52,13 @@ let mem tenv name = TypenameHash.mem tenv name
 
 (** Look up a name in the global type environment. *)
 let lookup tenv name : Typ.Struct.t option =
-  try Some (TypenameHash.find tenv name)
-  with Not_found ->
+  try Some (TypenameHash.find tenv name) with Not_found ->
     (* ToDo: remove the following additional lookups once C/C++ interop is resolved *)
     match (name : Typ.Name.t) with
     | CStruct m -> (
-      try Some (TypenameHash.find tenv (CppClass (m, NoTemplate)))
-      with Not_found -> None )
+      try Some (TypenameHash.find tenv (CppClass (m, NoTemplate))) with Not_found -> None )
     | CppClass (m, NoTemplate) -> (
-      try Some (TypenameHash.find tenv (CStruct m))
-      with Not_found -> None )
+      try Some (TypenameHash.find tenv (CStruct m)) with Not_found -> None )
     | _ ->
         None
 

@@ -16,8 +16,7 @@ let errLogMap = ref Typ.Procname.Map.empty
 let exists_issues () = not (Typ.Procname.Map.is_empty !errLogMap)
 
 let get_err_log procname =
-  try Typ.Procname.Map.find procname !errLogMap
-  with Not_found ->
+  try Typ.Procname.Map.find procname !errLogMap with Not_found ->
     let errlog = Errlog.empty () in
     errLogMap := Typ.Procname.Map.add procname errlog !errLogMap ;
     errlog
@@ -38,10 +37,7 @@ let load_issues issues_file = Serialization.read_from_file lint_issues_serialize
 (** Load all the lint issues in the given dir and update the issues map *)
 let load_issues_to_errlog_map dir =
   let issues_dir = Filename.concat Config.results_dir dir in
-  let children_opt =
-    try Some (Sys.readdir issues_dir)
-    with Sys_error _ -> None
-  in
+  let children_opt = try Some (Sys.readdir issues_dir) with Sys_error _ -> None in
   let load_issues_to_map issues_file =
     let file = DB.filename_from_string (Filename.concat issues_dir issues_file) in
     match load_issues file with

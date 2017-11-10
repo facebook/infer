@@ -128,7 +128,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) na
     var_decl_info qt =
   let name_string, simple_name = get_var_name_mangled named_decl_info var_decl_info in
   let translation_unit =
-    match Clang_ast_t.((var_decl_info.vdi_is_extern, var_decl_info.vdi_init_expr)) with
+    match Clang_ast_t.(var_decl_info.vdi_is_extern, var_decl_info.vdi_init_expr) with
     | true, None ->
         Pvar.TUExtern
     | _, None when var_decl_info.Clang_ast_t.vdi_is_static_data_member ->
@@ -185,3 +185,4 @@ let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname o
         CAst_utils.get_qualified_name named_decl_info |> QualifiedCppName.to_qual_string
       in
       Pvar.mk (Mangled.from_string name_string) procname
+

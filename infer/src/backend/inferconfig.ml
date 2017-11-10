@@ -41,8 +41,7 @@ let is_matching patterns source_file =
   let path = SourceFile.to_rel_path source_file in
   List.exists
     ~f:(fun pattern ->
-      try Int.equal (Str.search_forward pattern path 0) 0
-      with Not_found -> false)
+      try Int.equal (Str.search_forward pattern path 0) 0 with Not_found -> false)
     patterns
 
 
@@ -76,8 +75,7 @@ module FileContainsStringMatcher = struct
       let source_map = ref SourceFile.Map.empty in
       let regexp = Str.regexp (String.concat ~sep:"\\|" s_patterns) in
       fun source_file ->
-        try SourceFile.Map.find source_file !source_map
-        with Not_found ->
+        try SourceFile.Map.find source_file !source_map with Not_found ->
           try
             let file_in = In_channel.create (SourceFile.to_abs_path source_file) in
             let pattern_found = file_contains regexp file_in in
@@ -107,10 +105,7 @@ module FileOrProcMatcher = struct
       let pattern_map =
         List.fold
           ~f:(fun map pattern ->
-            let previous =
-              try String.Map.find_exn map pattern.class_name
-              with Not_found -> []
-            in
+            let previous = try String.Map.find_exn map pattern.class_name with Not_found -> [] in
             String.Map.add ~key:pattern.class_name ~data:(pattern :: previous) map)
           ~init:String.Map.empty m_patterns
       in

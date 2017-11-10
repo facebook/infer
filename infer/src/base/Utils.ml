@@ -170,17 +170,14 @@ let directory_is_empty path = Sys.readdir path |> Array.is_empty
 let string_crc_hex32 s = Digest.to_hex (Digest.string s)
 
 let read_json_file path =
-  try Ok (Yojson.Basic.from_file path)
-  with Sys_error msg | Yojson.Json_error msg -> Error msg
+  try Ok (Yojson.Basic.from_file path) with Sys_error msg | Yojson.Json_error msg -> Error msg
 
 
 let do_finally_swallow_timeout ~f ~finally =
   let res =
-    try f ()
-    with exc ->
+    try f () with exc ->
       reraise_after exc ~f:(fun () ->
-          try finally () |> ignore
-          with _ -> (* swallow in favor of the original exception *) () )
+          try finally () |> ignore with _ -> (* swallow in favor of the original exception *) () )
   in
   let res' = finally () in
   (res, res')
@@ -210,8 +207,7 @@ let write_json_to_file destfile json =
 
 
 let consume_in chan_in =
-  try while true do In_channel.input_line_exn chan_in |> ignore done
-  with End_of_file -> ()
+  try while true do In_channel.input_line_exn chan_in |> ignore done with End_of_file -> ()
 
 
 let with_process_in command read =
@@ -269,8 +265,7 @@ let create_dir dir =
     if (Unix.stat dir).Unix.st_kind <> Unix.S_DIR then
       L.(die ExternalError) "file '%s' already exists and is not a directory" dir
   with Unix.Unix_error _ ->
-    try Unix.mkdir dir ~perm:0o700
-    with Unix.Unix_error _ ->
+    try Unix.mkdir dir ~perm:0o700 with Unix.Unix_error _ ->
       let created_concurrently =
         (* check if another process created it meanwhile *)
         try Polymorphic_compare.( = ) (Unix.stat dir).Unix.st_kind Unix.S_DIR
@@ -316,10 +311,7 @@ let suppress_stderr2 f2 x1 x2 =
 let compare_versions v1 v2 =
   let int_list_of_version v =
     let lv = String.split ~on:'.' v in
-    let int_of_string_or_zero v =
-      try int_of_string v
-      with Failure _ -> 0
-    in
+    let int_of_string_or_zero v = try int_of_string v with Failure _ -> 0 in
     List.map ~f:int_of_string_or_zero lv
   in
   let lv1 = int_list_of_version v1 in
@@ -339,9 +331,7 @@ let write_file_with_locking ?(delete= false) ~f:do_write fname =
         do_write outc ;
         Out_channel.flush outc ;
         ignore (Unix.flock file_descr Unix.Flock_command.unlock) ) ) ;
-  if delete then
-    try Unix.unlink fname
-    with Unix.Unix_error _ -> ()
+  if delete then try Unix.unlink fname with Unix.Unix_error _ -> ()
 
 
 let rec rmtree name =

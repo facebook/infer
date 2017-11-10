@@ -251,8 +251,7 @@ let create_parsed_linters linters_def_file checkers : linter list =
 
 let rec apply_substitution f sub =
   let sub_param p =
-    try snd (List.find_exn sub ~f:(fun (a, _) -> ALVar.equal p a))
-    with Not_found -> p
+    try snd (List.find_exn sub ~f:(fun (a, _) -> ALVar.equal p a)) with Not_found -> p
   in
   let sub_list_param ps = List.map ps ~f:sub_param in
   let open CTL in
@@ -396,11 +395,10 @@ let build_paths_map paths =
     let paths_map =
       List.fold
         ~f:(fun map' data ->
-          match data with
-          | path_name, paths ->
-              if ALVar.VarMap.mem path_name map' then
-                L.(die ExternalError) "Path '%s' has more than one definition." path_name
-              else ALVar.VarMap.add path_name paths map')
+          match data with path_name, paths ->
+            if ALVar.VarMap.mem path_name map' then
+              L.(die ExternalError) "Path '%s' has more than one definition." path_name
+            else ALVar.VarMap.add path_name paths map')
         ~init:init_map paths
     in
     paths_map

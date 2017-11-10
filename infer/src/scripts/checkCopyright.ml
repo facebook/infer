@@ -147,8 +147,7 @@ let get_fb_year cstart cend lines_arr =
       let _ = Str.search_forward fmt_re line 0 in
       let fmt_match = Str.matched_string line in
       if String.length fmt_match = 4 then
-        try found := Some (int_of_string fmt_match)
-        with _ -> ()
+        try found := Some (int_of_string fmt_match) with _ -> ()
     with Not_found -> ()
   in
   for i = cstart to cend do

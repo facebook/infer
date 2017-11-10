@@ -45,8 +45,8 @@ let is_registered name =
 
 (** get the symbolic execution handler associated to the builtin function name *)
 let get name : t option =
-  try Some (Typ.Procname.Hash.find builtin_functions name)
-  with Not_found -> check_register_populated () ; None
+  try Some (Typ.Procname.Hash.find builtin_functions name) with Not_found ->
+    check_register_populated () ; None
 
 
 (** register a builtin [Typ.Procname.t] and symbolic execution handler *)

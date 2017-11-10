@@ -1945,10 +1945,7 @@ type sharing_env = {exph: Exp.t Exp.Hash.t; hpredh: hpred HpredInstHash.t}
 let create_sharing_env () = {exph= Exp.Hash.create 3; hpredh= HpredInstHash.create 3}
 
 (** Return a canonical representation of the exp *)
-let exp_compact sh e =
-  try Exp.Hash.find sh.exph e
-  with Not_found -> Exp.Hash.add sh.exph e e ; e
-
+let exp_compact sh e = try Exp.Hash.find sh.exph e with Not_found -> Exp.Hash.add sh.exph e e ; e
 
 let rec sexp_compact sh se =
   match se with
@@ -1975,8 +1972,7 @@ let _hpred_compact sh hpred =
 
 
 let hpred_compact sh hpred =
-  try HpredInstHash.find sh.hpredh hpred
-  with Not_found ->
+  try HpredInstHash.find sh.hpredh hpred with Not_found ->
     let hpred' = _hpred_compact sh hpred in
     HpredInstHash.add sh.hpredh hpred' hpred' ;
     hpred'
@@ -2052,8 +2048,7 @@ let sigma_to_sigma_ne sigma : (atom list * hpred list) list =
 let hpara_instantiate para e1 e2 elist =
   let subst_for_svars =
     let g id e = (id, e) in
-    try List.map2_exn ~f:g para.svars elist
-    with Invalid_argument _ -> assert false
+    try List.map2_exn ~f:g para.svars elist with Invalid_argument _ -> assert false
   in
   let ids_evars =
     let g _ = Ident.create_fresh Ident.kprimed in
@@ -2061,8 +2056,7 @@ let hpara_instantiate para e1 e2 elist =
   in
   let subst_for_evars =
     let g id id' = (id, Exp.Var id') in
-    try List.map2_exn ~f:g para.evars ids_evars
-    with Invalid_argument _ -> assert false
+    try List.map2_exn ~f:g para.evars ids_evars with Invalid_argument _ -> assert false
   in
   let subst =
     `Exp
@@ -2079,8 +2073,7 @@ let hpara_instantiate para e1 e2 elist =
 let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
   let subst_for_svars =
     let g id e = (id, e) in
-    try List.map2_exn ~f:g para.svars_dll elist
-    with Invalid_argument _ -> assert false
+    try List.map2_exn ~f:g para.svars_dll elist with Invalid_argument _ -> assert false
   in
   let ids_evars =
     let g _ = Ident.create_fresh Ident.kprimed in
@@ -2088,8 +2081,7 @@ let hpara_dll_instantiate (para: hpara_dll) cell blink flink elist =
   in
   let subst_for_evars =
     let g id id' = (id, Exp.Var id') in
-    try List.map2_exn ~f:g para.evars_dll ids_evars
-    with Invalid_argument _ -> assert false
+    try List.map2_exn ~f:g para.evars_dll ids_evars with Invalid_argument _ -> assert false
   in
   let subst =
     `Exp

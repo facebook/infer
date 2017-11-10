@@ -24,10 +24,7 @@ let load_specfiles () =
     let is_specs_file fname =
       Sys.is_directory fname <> `Yes && Filename.check_suffix fname Config.specs_files_suffix
     in
-    let all_filenames =
-      try Array.to_list (Sys.readdir dir)
-      with Sys_error _ -> []
-    in
+    let all_filenames = try Array.to_list (Sys.readdir dir) with Sys_error _ -> [] in
     let all_filepaths = List.map ~f:(fun fname -> Filename.concat dir fname) all_filenames in
     List.filter ~f:is_specs_file all_filepaths
   in
@@ -585,8 +582,8 @@ module Stats = struct
 
 
   let process_loc loc stats =
-    try Hashtbl.find stats.files loc.Location.file
-    with Not_found -> Hashtbl.add stats.files loc.Location.file ()
+    try Hashtbl.find stats.files loc.Location.file with Not_found ->
+      Hashtbl.add stats.files loc.Location.file ()
 
 
   let loc_trace_to_string_list linereader indent_num ltr =

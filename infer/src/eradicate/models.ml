@@ -46,9 +46,7 @@ module Inference = struct
   let update_count_str s_old =
     let n =
       if String.is_empty s_old then 0
-      else
-        try int_of_string s_old
-        with Failure _ -> L.die InternalError "int_of_string %s" s_old
+      else try int_of_string s_old with Failure _ -> L.die InternalError "int_of_string %s" s_old
     in
     string_of_int (n + 1)
 
@@ -175,8 +173,7 @@ let is_check_not_null proc_name = table_has_procedure check_not_null_table proc_
 (** Parameter number for a procedure known to be a checkNotNull *)
 let get_check_not_null_parameter proc_name =
   let proc_id = Typ.Procname.to_unique_id proc_name in
-  try Hashtbl.find check_not_null_parameter_table proc_id
-  with Not_found -> 0
+  try Hashtbl.find check_not_null_parameter_table proc_id with Not_found -> 0
 
 
 (** Check if the procedure is one of the known Preconditions.checkState. *)

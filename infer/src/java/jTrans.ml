@@ -57,10 +57,7 @@ let fix_method_definition_line linereader proc_name loc =
 
 let get_location source_file impl pc =
   let line_number =
-    let ln =
-      try JBir.get_source_line_number pc impl
-      with Invalid_argument _ -> None
-    in
+    let ln = try JBir.get_source_line_number pc impl with Invalid_argument _ -> None in
     match ln with None -> 0 | Some n -> n
   in
   {Location.line= line_number; col= -1; file= source_file}
@@ -268,14 +265,14 @@ let get_implementation cm =
 
 let update_constr_loc cn ms loc_start =
   if String.equal (JBasics.ms_name ms) JConfig.constructor_name then
-    try ignore (JBasics.ClassMap.find cn !constr_loc_map)
-    with Not_found -> constr_loc_map := JBasics.ClassMap.add cn loc_start !constr_loc_map
+    try ignore (JBasics.ClassMap.find cn !constr_loc_map) with Not_found ->
+      constr_loc_map := JBasics.ClassMap.add cn loc_start !constr_loc_map
 
 
 let update_init_loc cn ms loc_start =
   if JBasics.ms_equal ms JBasics.clinit_signature then
-    try ignore (JBasics.ClassMap.find cn !init_loc_map)
-    with Not_found -> init_loc_map := JBasics.ClassMap.add cn loc_start !init_loc_map
+    try ignore (JBasics.ClassMap.find cn !init_loc_map) with Not_found ->
+      init_loc_map := JBasics.ClassMap.add cn loc_start !init_loc_map
 
 
 let trans_access = function
@@ -666,9 +663,8 @@ let method_invocation (context: JContext.t) loc pc var_opt cn ms sil_obj_opt exp
 let get_array_length context pc expr_list content_type =
   let get_expr_instr expr other_instrs =
     let instrs, sil_len_expr, _ = expression context pc expr in
-    match other_instrs with
-    | other_instrs, other_exprs ->
-        (instrs @ other_instrs, sil_len_expr :: other_exprs)
+    match other_instrs with other_instrs, other_exprs ->
+      (instrs @ other_instrs, sil_len_expr :: other_exprs)
   in
   let instrs, sil_len_exprs = List.fold_right ~f:get_expr_instr expr_list ~init:([], []) in
   let get_array_type_len sil_len_expr (content_type, _) =

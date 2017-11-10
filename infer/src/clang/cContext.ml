@@ -155,8 +155,7 @@ let add_block_static_var context block_name static_var_typ =
 
 
 let static_vars_for_block context block_name =
-  try Typ.Procname.Map.find block_name context.blocks_static_vars
-  with Not_found -> []
+  try Typ.Procname.Map.find block_name context.blocks_static_vars with Not_found -> []
 
 
 let rec get_outer_procname context =
