@@ -47,8 +47,8 @@ let of_sil ~include_array_indexes ~f_resolve_id (instr: Sil.instr) =
   let exp_of_sil = HilExp.of_sil ~include_array_indexes ~f_resolve_id in
   let analyze_id_assignment lhs_id rhs_exp rhs_typ loc =
     let rhs_hil_exp = exp_of_sil rhs_exp rhs_typ in
-    match HilExp.get_access_paths rhs_hil_exp with
-    | [rhs_access_path] ->
+    match rhs_hil_exp with
+    | AccessPath rhs_access_path ->
         Bind (lhs_id, rhs_access_path)
     | _ ->
         Instr (Assign (((lhs_id, rhs_typ), []), rhs_hil_exp, loc))
