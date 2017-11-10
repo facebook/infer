@@ -980,18 +980,16 @@ and current_to_previous_script =
     "Specify a script to checkout a previous version of the project to compare against, assuming we are on the current version already."
 
 
-and cxx, cxx_infer_headers =
-  let cxx_infer_headers =
-    CLOpt.mk_bool ~long:"cxx-infer-headers" ~default:true
-      ~in_help:CLOpt.([(Capture, manual_clang)])
-      "Include C++ header models during compilation, set by $(b,--cxx). Infer swaps some C++ headers for its own in order to get a better model of, eg, the standard library. This can sometimes cause compilation failures."
-  in
-  let cxx =
-    CLOpt.mk_bool_group ~long:"cxx" ~default:true
-      ~in_help:CLOpt.([(Capture, manual_clang)])
-      "Analyze C++ methods" [cxx_infer_headers] []
-  in
-  (cxx, cxx_infer_headers)
+and cxx_infer_headers =
+  CLOpt.mk_bool ~long:"cxx-infer-headers" ~default:true
+    ~in_help:CLOpt.([(Capture, manual_clang)])
+    "Include C++ header models during compilation. Infer swaps some C++ headers for its own in order to get a better model of, eg, the standard library. This can sometimes cause compilation failures."
+
+
+and cxx =
+  CLOpt.mk_bool ~long:"cxx" ~default:true
+    ~in_help:CLOpt.([(Capture, manual_clang)])
+    "Analyze C++ methods"
 
 
 and ( bo_debug
