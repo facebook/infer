@@ -13,7 +13,7 @@ module type Payload = sig
   type payload
 
   val update_payload : payload -> Specs.summary -> Specs.summary
-  (** Uptade the corresponding part of the payload in the procedure summary *)
+  (** Update the corresponding part of the payload in the procedure summary *)
 
   val read_payload : Specs.summary -> payload option
   (** Read the corresponding part of the payload from the procedure summary *)
@@ -23,7 +23,7 @@ module type S = sig
   type payload
 
   val update_summary : payload -> Specs.summary -> Specs.summary
-  (** Uptade the corresponding part of the payload in the procedure summary *)
+  (** Update the corresponding part of the payload in the procedure summary *)
 
   val read_summary : Procdesc.t -> Typ.Procname.t -> payload option
   (** Return the payload for the given procedure.
