@@ -708,7 +708,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
   end
 
   module Analyzer =
-    AbstractInterpreter.Make (ProcCfg.Exceptional) (LowerHil.Make (TransferFunctions) (HilConfig))
+    LowerHil.MakeAbstractInterpreterWithConfig (HilConfig) (ProcCfg.Exceptional)
+      (TransferFunctions)
 
   (* sanity checks for summaries. should only be used in developer mode *)
   let check_invariants access_tree =
@@ -828,21 +829,18 @@ module Make (TaintSpecification : TaintSpec.S) = struct
     (* bind parameters to a trace with a tainted source (if applicable) *)
     let make_initial pdesc =
       let pname = Procdesc.get_proc_name pdesc in
-      let access_tree =
-        List.fold
-          ~f:(fun acc (name, typ, taint_opt) ->
-            match taint_opt with
-            | Some source ->
-                let base_ap =
-                  AccessPath.Abs.Abstracted (AccessPath.of_pvar (Pvar.mk name pname) typ)
-                in
-                TaintDomain.add_trace base_ap (TraceDomain.of_source source) acc
-            | None ->
-                acc)
-          ~init:TaintDomain.empty
-          (TraceDomain.Source.get_tainted_formals pdesc tenv)
-      in
-      (access_tree, IdAccessPathMapDomain.empty)
+      List.fold
+        ~f:(fun acc (name, typ, taint_opt) ->
+          match taint_opt with
+          | Some source ->
+              let base_ap =
+                AccessPath.Abs.Abstracted (AccessPath.of_pvar (Pvar.mk name pname) typ)
+              in
+              TaintDomain.add_trace base_ap (TraceDomain.of_source source) acc
+          | None ->
+              acc)
+        ~init:TaintDomain.empty
+        (TraceDomain.Source.get_tainted_formals pdesc tenv)
     in
     Preanal.do_dynamic_dispatch proc_desc (Cg.create (SourceFile.invalid __FILE__)) tenv ;
     let initial = make_initial proc_desc in
@@ -851,8 +849,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       {formal_map; summary}
     in
     let proc_data = ProcData.make proc_desc tenv extras in
-    match Analyzer.compute_post proc_data ~initial ~debug:false with
-    | Some (access_tree, _) ->
+    match Analyzer.compute_post proc_data ~initial with
+    | Some access_tree ->
         Summary.update_summary (make_summary proc_data access_tree) summary
     | None ->
         if Procdesc.Node.get_succs (Procdesc.get_start_node proc_desc) <> [] then (

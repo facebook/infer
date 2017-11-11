@@ -34,11 +34,12 @@ module Make
 end
 
 (** Wrapper around Interpreter to prevent clients from having to deal with IdAccessPathMapDomain *)
-module MakeAbstractInterpreter
+module MakeAbstractInterpreterWithConfig
+    (HilConfig : HilConfig)
     (CFG : ProcCfg.S)
     (MakeTransferFunctions : TransferFunctions.MakeHIL) : sig
   module Interpreter :
-      module type of AbstractInterpreter.Make (CFG) (Make (MakeTransferFunctions) (DefaultConfig))
+      module type of AbstractInterpreter.Make (CFG) (Make (MakeTransferFunctions) (HilConfig))
 
   val compute_post :
     Interpreter.TransferFunctions.extras ProcData.t
@@ -46,4 +47,12 @@ module MakeAbstractInterpreter
     -> MakeTransferFunctions(CFG).Domain.astate option
   (** compute and return the postcondition for the given procedure starting from [initial]. If
       [debug] is true, print html debugging output. *)
+end
+
+(** Simpler version of the above wrapper that uses the default HIL config *)
+module MakeAbstractInterpreter
+    (CFG : ProcCfg.S)
+    (MakeTransferFunctions : TransferFunctions.MakeHIL) : sig
+  include module type of
+    MakeAbstractInterpreterWithConfig (DefaultConfig) (CFG) (MakeTransferFunctions)
 end
