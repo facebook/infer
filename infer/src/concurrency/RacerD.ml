@@ -1026,7 +1026,7 @@ let get_reporting_explanation_java report_kind tenv pname thread =
   | _, Some threadsafe_explanation when RacerDDomain.ThreadsDomain.is_any thread ->
       ( IssueType.thread_safety_violation
       , F.asprintf
-          "%s, so we assume that this method can run in parallel with other non-private methods in the class (incuding itself)."
+          "%s, so we assume that this method can run in parallel with other non-private methods in the class (including itself)."
           threadsafe_explanation )
   | _, Some threadsafe_explanation ->
       ( IssueType.thread_safety_violation
