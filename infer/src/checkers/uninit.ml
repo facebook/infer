@@ -14,7 +14,7 @@ module L = Logging
 (** Forward analysis to compute uninitialized variables at each program point *)
 module D =
 UninitDomain.Domain
-module UninitVars = AbstractDomain.FiniteSet (Var)
+module UninitVars = AbstractDomain.FiniteSet (AccessPath)
 module AliasedVars = AbstractDomain.FiniteSet (UninitDomain.VarPair)
 module PrePost = AbstractDomain.Pair (D) (D)
 module RecordDomain = UninitDomain.Record (UninitVars) (AliasedVars) (D)
@@ -35,17 +35,18 @@ let blacklisted_functions = [BuiltinDecl.__set_array_length]
 
 let is_type_pointer t = match t.Typ.desc with Typ.Tptr _ -> true | _ -> false
 
-let is_blacklisted_function call =
-  match call with
-  | HilInstr.Direct pname ->
-      List.exists ~f:(fun fname -> Typ.Procname.equal pname fname) blacklisted_functions
+let rec is_basic_type t =
+  match t.Typ.desc with
+  | Tint _ | Tfloat _ | Tvoid ->
+      true
+  | Tptr (t', _) ->
+      is_basic_type t'
   | _ ->
       false
 
 
-let exp_in_set exp vset =
-  let _, pvars = Exp.get_vars exp in
-  List.exists ~f:(fun pv -> D.mem (Var.of_pvar pv) vset) pvars
+let is_blacklisted_function pname =
+  List.exists ~f:(fun fname -> Typ.Procname.equal pname fname) blacklisted_functions
 
 
 module TransferFunctions (CFG : ProcCfg.S) = struct
@@ -62,72 +63,101 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = FormalMap.t * Specs.summary
 
-  let should_report_var pdesc uninit_vars var =
-    match var with
-    | Var.ProgramVar pv ->
+  let should_report_var pdesc tenv uninit_vars ap =
+    match (AccessPath.get_typ ap tenv, ap) with
+    | Some typ, ((Var.ProgramVar pv, _), _) ->
         not (Pvar.is_frontend_tmp pv) && not (Procdesc.is_captured_var pdesc pv)
-        && exp_in_set (Exp.Lvar pv) uninit_vars
-    | _ ->
+        && D.mem ap uninit_vars && is_basic_type typ
+    | _, _ ->
         false
 
 
-  let report_on_function_params pdesc uninit_vars actuals loc extras =
+  let report_on_function_params pdesc tenv uninit_vars actuals loc extras =
     List.iter
       ~f:(fun e ->
         match e with
-        | HilExp.AccessPath ((var, t), _)
-          when should_report_var pdesc uninit_vars var && not (is_type_pointer t) ->
+        | HilExp.AccessPath ((var, t), al)
+          when should_report_var pdesc tenv uninit_vars ((var, t), al) && not (is_type_pointer t) ->
             report var loc (snd extras)
         | _ ->
             ())
       actuals
 
 
-  let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras} _ (instr: HilInstr.t) =
+  let remove_fields tenv base uninit_vars =
+    match base with
+    | _, {Typ.desc= Tptr ({Typ.desc= Tstruct name_struct}, _)} -> (
+      match Tenv.lookup tenv name_struct with
+      | Some {fields} ->
+          List.fold
+            ~f:(fun acc (fn, _, _) -> D.remove (base, [AccessPath.FieldAccess fn]) acc)
+            fields ~init:uninit_vars
+      | _ ->
+          uninit_vars )
+    | _ ->
+        uninit_vars
+
+
+  let remove_array_element base uninit_vars =
+    D.remove (base, [AccessPath.ArrayAccess (snd base, [])]) uninit_vars
+
+
+  let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras; ProcData.tenv} _
+      (instr: HilInstr.t) =
     match instr with
-    | Assign (((lhs_var, lhs_typ), _), HilExp.AccessPath (((rhs_var, rhs_typ) as rhs_base), _), loc) ->
-        let uninit_vars = D.remove lhs_var astate.uninit_vars in
+    | Assign
+        ( (((_, lhs_typ), _) as lhs_ap)
+        , HilExp.AccessPath (((rhs_var, rhs_typ) as rhs_base), al)
+        , loc ) ->
+        let uninit_vars = D.remove lhs_ap astate.uninit_vars in
         let prepost =
           if FormalMap.is_formal rhs_base (fst extras)
              && match rhs_typ.desc with Typ.Tptr _ -> true | _ -> false
           then
-            let pre' = D.add rhs_var (fst astate.prepost) in
+            let pre' = D.add (rhs_base, al) (fst astate.prepost) in
             let post = snd astate.prepost in
             (pre', post)
           else astate.prepost
         in
         (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
-        if should_report_var pdesc uninit_vars rhs_var && not (is_type_pointer lhs_typ) then
-          report rhs_var loc (snd extras) ;
+        if should_report_var pdesc tenv uninit_vars (rhs_base, al) && not (is_type_pointer lhs_typ)
+        then report rhs_var loc (snd extras) ;
         {astate with uninit_vars; prepost}
-    | Assign (((lhs_var, _), _), _, _) ->
-        let uninit_vars = D.remove lhs_var astate.uninit_vars in
+    | Assign (lhs, _, _) ->
+        let uninit_vars = D.remove lhs astate.uninit_vars in
         {astate with uninit_vars}
     | Call (_, Direct callee_pname, _, _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
         {astate with uninit_vars= D.empty}
-    | Call (_, call, actuals, _, loc) ->
+    | Call (_, HilInstr.Direct call, actuals, _, loc) ->
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
         let uninit_vars =
           List.fold
             ~f:(fun acc actual_exp ->
               match actual_exp with
-              | HilExp.AccessPath ((actual_var, {Typ.desc= Tarray _}), _)
+              | HilExp.AccessPath (((_, {Typ.desc= Tarray _}) as base), al)
                 when is_blacklisted_function call ->
-                  D.remove actual_var acc
-              | HilExp.AccessPath ((actual_var, {Typ.desc= Tptr _}), _) ->
-                  D.remove actual_var acc
+                  D.remove (base, al) acc
+              | HilExp.AccessPath ap when Typ.Procname.is_constructor call ->
+                  remove_fields tenv (fst ap) (D.remove ap acc)
+              | HilExp.AccessPath (((_, {Typ.desc= Tptr _}) as base), al)
+                when not (Typ.Procname.is_constructor call) ->
+                  let acc' = D.remove (base, al) acc in
+                  remove_fields tenv base acc'
+              | HilExp.AccessPath (((_, {Typ.desc= Tptr (t', _)}) as base), al) ->
+                  let acc' = D.remove (base, al) acc in
+                  remove_array_element (fst base, t') acc'
               | HilExp.Closure (_, apl) ->
                   (* remove the captured variables of a block/lambda *)
-                  List.fold ~f:(fun acc' ((av, _), _) -> D.remove av acc') ~init:acc apl
+                  List.fold ~f:(fun acc' (base, _) -> D.remove (base, []) acc') ~init:acc apl
               | _ ->
                   acc)
             ~init:astate.uninit_vars actuals
         in
-        report_on_function_params pdesc uninit_vars actuals loc extras ;
+        report_on_function_params pdesc tenv uninit_vars actuals loc extras ;
         {astate with uninit_vars}
-    | Assume _ ->
+    | Call _ | Assume _ ->
         astate
 
 end
@@ -136,17 +166,37 @@ module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Normal)
 module Analyzer =
   AbstractInterpreter.Make (CFG) (LowerHil.Make (TransferFunctions) (LowerHil.DefaultConfig))
 
+let get_locals cfg tenv pdesc =
+  List.fold
+    ~f:(fun acc (name, t) ->
+      let pvar = Pvar.mk name (Procdesc.get_proc_name pdesc) in
+      let base_ap = ((Var.of_pvar pvar, t), []) in
+      match t.Typ.desc with
+      | Typ.Tstruct qual_name -> (
+        match Tenv.lookup tenv qual_name with
+        | Some {fields} ->
+            let flist =
+              List.fold
+                ~f:(fun acc' (fn, _, _) -> (fst base_ap, [AccessPath.FieldAccess fn]) :: acc')
+                ~init:acc fields
+            in
+            base_ap :: flist
+            (* for struct we take the struct address, and the access_path
+                                    to the fields one level down *)
+        | _ ->
+            acc )
+      | Typ.Tarray (t', _, _) ->
+          (fst base_ap, [AccessPath.ArrayAccess (t', [])]) :: acc
+      | _ ->
+          base_ap :: acc)
+    ~init:[] (Procdesc.get_locals cfg)
+
+
 let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   let cfg = CFG.from_pdesc proc_desc in
   (* start with empty set of uninit local vars and  empty set of init formal params *)
   let formal_map = FormalMap.make proc_desc in
-  let uninit_vars =
-    List.map
-      ~f:(fun (name, _) ->
-        let pvar = Pvar.mk name (Procdesc.get_proc_name proc_desc) in
-        Var.of_pvar pvar)
-      (Procdesc.get_locals cfg)
-  in
+  let uninit_vars = get_locals cfg tenv proc_desc in
   let init =
     ( { RecordDomain.uninit_vars= UninitVars.of_list uninit_vars
       ; RecordDomain.aliased_vars= AliasedVars.empty
@@ -169,4 +219,3 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
           (Procdesc.get_proc_name proc_desc) ;
         summary )
       else summary
-

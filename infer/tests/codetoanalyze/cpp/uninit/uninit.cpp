@@ -171,7 +171,7 @@ void ok8() {
             // reference.
 }
 
-int ret_undef() {
+int ret_undef_bad() {
   int* p;
   return *p; // report as p was not initialized
 }

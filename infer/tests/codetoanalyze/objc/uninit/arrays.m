@@ -59,3 +59,10 @@ int array_length_undef_bad() {
   int x;
   int arr[x];
 }
+
+init_array_helper(int*);
+
+void pass_array_address_ok() {
+  int x[8];
+  init_array_helper(x);
+}

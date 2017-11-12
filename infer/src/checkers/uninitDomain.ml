@@ -12,7 +12,7 @@ module F = Format
 module L = Logging
 
 (** Forward analysis to compute uninitialized variables at each program point *)
-module Domain = AbstractDomain.InvertedSet (Var)
+module Domain = AbstractDomain.InvertedSet (AccessPath)
 
 type summary = {pre: Domain.t; post: Domain.t}
 
