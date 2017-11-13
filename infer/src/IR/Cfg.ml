@@ -13,7 +13,7 @@ module L = Logging
 module F = Format
 
 (** data type for the control flow graph *)
-type cfg = {proc_desc_table: Procdesc.t Typ.Procname.Hash.t  (** Map proc name to procdesc *)}
+type t = {proc_desc_table: Procdesc.t Typ.Procname.Hash.t  (** Map proc name to procdesc *)}
 
 (** create a new empty cfg *)
 let create_cfg () = {proc_desc_table= Typ.Procname.Hash.create 16}
@@ -95,12 +95,12 @@ let check_cfg_connectedness cfg =
 
 
 (** Serializer for control flow graphs *)
-let cfg_serializer : cfg Serialization.serializer =
+let cfg_serializer : t Serialization.serializer =
   Serialization.create_serializer Serialization.Key.cfg
 
 
 (** Load a cfg from a file *)
-let load_cfg_from_file (filename: DB.filename) : cfg option =
+let load_from_file (filename: DB.filename) : t option =
   Serialization.read_from_file cfg_serializer filename
 
 
@@ -276,10 +276,10 @@ let mark_unchanged_pdescs cfg_new cfg_old =
 
 
 (** Save a cfg into a file *)
-let store_cfg_to_file ~source_file (filename: DB.filename) (cfg: cfg) =
+let store_to_file ~source_file (filename: DB.filename) (cfg: t) =
   inline_java_synthetic_methods cfg ;
   ( if Config.incremental_procs then
-      match load_cfg_from_file filename with
+      match load_from_file filename with
       | Some old_cfg ->
           mark_unchanged_pdescs cfg old_cfg
       | None ->

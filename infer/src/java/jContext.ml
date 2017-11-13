@@ -17,7 +17,7 @@ module NodeTbl = Procdesc.NodeHash
 type jump_kind = Next | Jump of int | Exit
 
 (** Translation data *)
-type icfg = {tenv: Tenv.t; cg: Cg.t; cfg: Cfg.cfg}
+type icfg = {tenv: Tenv.t; cg: Cg.t; cfg: Cfg.t}
 
 type t =
   { icfg: icfg

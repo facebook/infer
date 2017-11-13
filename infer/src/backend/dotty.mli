@@ -34,7 +34,7 @@ val pp_proplist_parsed2dotty_file : string -> Prop.normal Prop.t list -> unit
 
 (** {2 Contol-Flow Graph} *)
 
-val print_icfg_dotty : SourceFile.t -> Cfg.cfg -> unit
+val print_icfg_dotty : SourceFile.t -> Cfg.t -> unit
 (** Print the cfg *)
 
 val reset_dotty_spec_counter : unit -> unit

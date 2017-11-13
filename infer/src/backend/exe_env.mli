@@ -34,11 +34,11 @@ val get_source : t -> Typ.Procname.t -> SourceFile.t option
 val get_tenv : t -> Typ.Procname.t -> Tenv.t
 (** return the type environment associated to the procedure *)
 
-val get_cfg : t -> Typ.Procname.t -> Cfg.cfg option
+val get_cfg : t -> Typ.Procname.t -> Cfg.t option
 (** return the cfg associated to the procedure *)
 
 val get_proc_desc : t -> Typ.Procname.t -> Procdesc.t option
 (** return the proc desc associated to the procedure *)
 
-val iter_files : (SourceFile.t -> Cfg.cfg -> unit) -> t -> unit
+val iter_files : (SourceFile.t -> Cfg.t -> unit) -> t -> unit
 (** [iter_files f exe_env] applies [f] to the source file and tenv and cfg for each file in [exe_env] *)

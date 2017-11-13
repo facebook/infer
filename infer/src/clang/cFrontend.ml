@@ -59,7 +59,7 @@ let do_source_file translation_unit_context ast =
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
   NullabilityPreanalysis.analysis cfg tenv ;
   Cg.store_to_file cg_file call_graph ;
-  Cfg.store_cfg_to_file ~source_file cfg_file cfg ;
+  Cfg.store_to_file ~source_file cfg_file cfg ;
   Tenv.sort_fields_tenv tenv ;
   Tenv.store_to_file tenv_file tenv ;
   if Config.stats_mode then Cfg.check_cfg_connectedness cfg ;

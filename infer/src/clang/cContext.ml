@@ -31,7 +31,7 @@ type t =
   { translation_unit_context: CFrontend_config.translation_unit_context
   ; tenv: Tenv.t
   ; cg: Cg.t
-  ; cfg: Cfg.cfg
+  ; cfg: Cfg.t
   ; procdesc: Procdesc.t
   ; is_objc_method: bool
   ; curr_class: curr_class

@@ -23,7 +23,7 @@ type file_data =
   ; tenv_file: DB.filename
   ; mutable tenv: Tenv.t option
   ; cfg_file: DB.filename
-  ; mutable cfg: Cfg.cfg option }
+  ; mutable cfg: Cfg.t option }
 
 (** get the path to the tenv file, which either one tenv file per source file or a global tenv file *)
 let tenv_filename file_base =
@@ -151,7 +151,7 @@ let file_data_to_tenv file_data =
 
 
 let file_data_to_cfg file_data =
-  if is_none file_data.cfg then file_data.cfg <- Cfg.load_cfg_from_file file_data.cfg_file ;
+  if is_none file_data.cfg then file_data.cfg <- Cfg.load_from_file file_data.cfg_file ;
   file_data.cfg
 
 

@@ -13,41 +13,41 @@ open! IStd
 (** Control Flow Graph for Interprocedural Analysis *)
 
 (** A control-flow graph *)
-type cfg
+type t
 
-val load_cfg_from_file : DB.filename -> cfg option
+val load_from_file : DB.filename -> t option
 (** Load a cfg from a file *)
 
-val store_cfg_to_file : source_file:SourceFile.t -> DB.filename -> cfg -> unit
-(** Save a cfg into a file, and save a copy of the source files if the boolean is true *)
+val store_to_file : source_file:SourceFile.t -> DB.filename -> t -> unit
+(** Save a cfg into a file *)
 
 (** {2 Functions for manipulating an interprocedural CFG} *)
 
-val create_cfg : unit -> cfg
+val create_cfg : unit -> t
 (** create a new empty cfg *)
 
-val create_proc_desc : cfg -> ProcAttributes.t -> Procdesc.t
+val create_proc_desc : t -> ProcAttributes.t -> Procdesc.t
 (** Create a new procdesc *)
 
-val iter_proc_desc : cfg -> (Typ.Procname.t -> Procdesc.t -> unit) -> unit
+val iter_proc_desc : t -> (Typ.Procname.t -> Procdesc.t -> unit) -> unit
 (** Iterate over all the procdesc's *)
 
-val find_proc_desc_from_name : cfg -> Typ.Procname.t -> Procdesc.t option
+val find_proc_desc_from_name : t -> Typ.Procname.t -> Procdesc.t option
 (** Find the procdesc given the proc name. Return None if not found. *)
 
-val get_all_procs : cfg -> Procdesc.t list
+val get_all_procs : t -> Procdesc.t list
 (** Get all the procedures (defined and declared) *)
 
-val get_defined_procs : cfg -> Procdesc.t list
+val get_defined_procs : t -> Procdesc.t list
 (** Get the procedures whose body is defined in this cfg *)
 
-val iter_all_nodes : ?sorted:bool -> (Procdesc.t -> Procdesc.Node.t -> unit) -> cfg -> unit
+val iter_all_nodes : ?sorted:bool -> (Procdesc.t -> Procdesc.Node.t -> unit) -> t -> unit
 (** Iterate over all the nodes in the cfg *)
 
-val check_cfg_connectedness : cfg -> unit
+val check_cfg_connectedness : t -> unit
 (** checks whether a cfg is connected or not *)
 
-val remove_proc_desc : cfg -> Typ.Procname.t -> unit
+val remove_proc_desc : t -> Typ.Procname.t -> unit
 (** Remove the procdesc from the control flow graph. *)
 
 val specialize_types : Procdesc.t -> Typ.Procname.t -> (Exp.t * Typ.t) list -> Procdesc.t
@@ -64,4 +64,4 @@ val specialize_with_block_args :
   b) the parameters of the method are extended with parameters for the captured variables 
   in the closures *)
 
-val pp_proc_signatures : Format.formatter -> cfg -> unit
+val pp_proc_signatures : Format.formatter -> t -> unit
