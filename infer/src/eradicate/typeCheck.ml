@@ -531,9 +531,15 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
       , etl_
       , loc
       , cflags ) ->
-      ignore (Ondemand.analyze_proc_name curr_pdesc callee_pname) ;
+      let callee_summary_opt = Ondemand.analyze_proc_name curr_pdesc callee_pname in
       let callee_attributes =
-        match Specs.proc_resolve_attributes (* AttributesTable.load_attributes *) callee_pname with
+        let proc_attriutes_opt =
+          Option.value_map
+            ~default:(Specs.proc_resolve_attributes callee_pname)
+            ~f:(fun summary -> Some (Specs.get_attributes summary))
+            callee_summary_opt
+        in
+        match proc_attriutes_opt with
         | Some proc_attributes ->
             proc_attributes
         | None ->
@@ -830,7 +836,7 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
                 (typecheck_expr find_canonical_duplicate calls_this checks) ;
             if checks.eradicate then
               EradicateChecks.check_call_parameters tenv find_canonical_duplicate curr_pdesc node
-                callee_attributes resolved_params loc instr_ref ;
+                callee_summary_opt callee_attributes resolved_params loc instr_ref ;
             let typestate2 =
               if checks.check_extension then
                 let etl' = List.map ~f:(fun ((_, e), t) -> (e, t)) call_params in

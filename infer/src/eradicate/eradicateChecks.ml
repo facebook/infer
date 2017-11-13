@@ -398,8 +398,8 @@ type resolved_param =
   ; propagates_nullable: bool }
 
 (** Check the parameters of a call. *)
-let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_attributes
-    resolved_params loc instr_ref : unit =
+let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_summary_opt
+    callee_attributes resolved_params loc instr_ref : unit =
   let callee_pname = callee_attributes.ProcAttributes.proc_name in
   let tot_param_num = List.length resolved_params in
   let check {num= param_num; formal= s1, ta1, t1; actual= orig_e2, ta2} =
@@ -438,7 +438,7 @@ let check_call_parameters tenv find_canonical_duplicate curr_pdesc node callee_a
   let should_check_parameters =
     if check_library_calls then true
     else Models.is_modelled_nullable callee_pname || callee_attributes.ProcAttributes.is_defined
-      || Specs.get_summary callee_pname <> None
+      || Option.is_some callee_summary_opt
   in
   if should_check_parameters then
     (* left to right to avoid guessing the different lengths *)
