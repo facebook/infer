@@ -274,11 +274,11 @@ module Procname : sig
   (** Type of Objective C block names. *)
   type block_name
 
-  (** Type of procedure names. 
-  WithBlockParameters is used for creating an instantiation of a method that contains block parameters 
-  and it's called with concrete blocks. For example: 
+  (** Type of procedure names.
+  WithBlockParameters is used for creating an instantiation of a method that contains block parameters
+  and it's called with concrete blocks. For example:
   foo(Block block) {block();}
-  bar() {foo(my_block)} is executed as  foo_my_block() {my_block(); } 
+  bar() {foo(my_block)} is executed as  foo_my_block() {my_block(); }
   where foo_my_block is created with WithBlockParameters (foo, [my_block]) *)
   type t =
     | Java of java
@@ -359,6 +359,9 @@ module Procname : sig
 
   val is_c_method : t -> bool
   (** Check if this is an Objective-C/C++ method name. *)
+
+  val is_c_function : t -> bool
+  (** Check if this is a C function name. *)
 
   val is_obj_c_pp : t -> bool
   (** Check if this is an Objective-C/C++ method name or C-style function. *)

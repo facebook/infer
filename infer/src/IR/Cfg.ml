@@ -580,14 +580,24 @@ let specialize_with_block_args callee_pdesc pname_with_block_args block_args =
     in
     List.unzip new_formals_blocks_captured_vars_with_annots
   in
+  let source_file_captured =
+    let pname = Procdesc.get_proc_name callee_pdesc in
+    match Attributes.find_file_capturing_procedure pname with
+    | Some (source_file, _) ->
+        source_file
+    | None ->
+        Logging.die InternalError
+          "specialize_with_block_args ahould only be called with defined procedures, but we cannot find the captured file of procname %a"
+          Typ.Procname.pp pname
+  in
   let resolved_attributes =
     { callee_attributes with
       proc_name= pname_with_block_args
     ; is_defined= true
     ; err_log= Errlog.empty ()
-    ; source_file_captured= callee_attributes.loc.Location.file
     ; formals= new_formals_blocks_captured_vars
-    ; method_annotation= (fst callee_attributes.method_annotation, extended_formals_annots) }
+    ; method_annotation= (fst callee_attributes.method_annotation, extended_formals_annots)
+    ; source_file_captured }
   in
   Attributes.store resolved_attributes ;
   let resolved_pdesc =

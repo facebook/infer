@@ -670,6 +670,8 @@ module Procname = struct
 
   let is_c_method = function ObjC_Cpp _ -> true | _ -> false
 
+  let is_c_function = function C _ -> true | _ -> false
+
   let is_obj_c_pp = function ObjC_Cpp _ | C _ -> true | _ -> false
 
   let is_constexpr = function ObjC_Cpp {kind= CPPConstructor (_, true)} -> true | _ -> false

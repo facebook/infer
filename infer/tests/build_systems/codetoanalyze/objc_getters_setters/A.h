@@ -23,3 +23,12 @@ typedef void (^MyBlock)(int x);
          and:(nullable NSString*)name;
 
 @end
+
+void c_function(_Nonnull MyBlock block1,
+                _Nonnull MyBlock block2,
+                NSString* _Nonnull name) {
+  block1(22);
+  int my_var = 11;
+  block2(33);
+  int my_other_var = 12;
+};

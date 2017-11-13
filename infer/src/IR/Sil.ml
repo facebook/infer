@@ -441,7 +441,7 @@ let add_with_block_parameters_flag instr =
   match instr with
   | Call (ret_id, Exp.Const Const.Cfun name, arg_ts, loc, cf) ->
       if List.exists ~f:(fun (exp, _) -> Exp.is_objc_block_closure exp) arg_ts
-         && Typ.Procname.is_objc_method name
+         && (Typ.Procname.is_objc_method name || Typ.Procname.is_c_function name)
          (* to be extended to other methods *)
       then
         let cf' = {cf with cf_with_block_parameters= true} in
