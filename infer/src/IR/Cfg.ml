@@ -13,19 +13,19 @@ module L = Logging
 module F = Format
 
 (** data type for the control flow graph *)
-type t = {proc_desc_table: Procdesc.t Typ.Procname.Hash.t  (** Map proc name to procdesc *)}
+type t = Procdesc.t Typ.Procname.Hash.t
 
 (** create a new empty cfg *)
-let create_cfg () = {proc_desc_table= Typ.Procname.Hash.create 16}
+let create_cfg () = Typ.Procname.Hash.create 16
 
-let add_proc_desc cfg pname pdesc = Typ.Procname.Hash.add cfg.proc_desc_table pname pdesc
+let add_proc_desc cfg pname pdesc = Typ.Procname.Hash.add cfg pname pdesc
 
-let remove_proc_desc cfg pname = Typ.Procname.Hash.remove cfg.proc_desc_table pname
+let remove_proc_desc cfg pname = Typ.Procname.Hash.remove cfg pname
 
-let iter_proc_desc cfg f = Typ.Procname.Hash.iter f cfg.proc_desc_table
+let iter_proc_desc cfg f = Typ.Procname.Hash.iter f cfg
 
 let find_proc_desc_from_name cfg pname =
-  try Some (Typ.Procname.Hash.find cfg.proc_desc_table pname) with Not_found -> None
+  try Some (Typ.Procname.Hash.find cfg pname) with Not_found -> None
 
 
 (** Create a new procdesc *)
@@ -47,7 +47,7 @@ let iter_all_nodes ?(sorted= false) f cfg =
         List.fold
           ~f:(fun desc_nodes node -> (pdesc, node) :: desc_nodes)
           ~init:desc_nodes (Procdesc.get_nodes pdesc))
-      cfg.proc_desc_table []
+      cfg []
     |> List.sort ~cmp:[%compare : Procdesc.t * Procdesc.Node.t]
     |> List.iter ~f:(fun (d, n) -> f d n)
 
@@ -259,11 +259,9 @@ let mark_unchanged_pdescs cfg_new cfg_old =
     && formals_eq att1.formals att2.formals
     && nodes_eq (Procdesc.get_nodes pd1) (Procdesc.get_nodes pd2)
   in
-  let old_procs = cfg_old.proc_desc_table in
-  let new_procs = cfg_new.proc_desc_table in
   let mark_pdesc_if_unchanged pname (new_pdesc: Procdesc.t) =
     try
-      let old_pdesc = Typ.Procname.Hash.find old_procs pname in
+      let old_pdesc = Typ.Procname.Hash.find cfg_old pname in
       let changed =
         (* in continue_capture mode keep the old changed bit *)
         Config.continue_capture && (Procdesc.get_attributes old_pdesc).changed
@@ -272,7 +270,7 @@ let mark_unchanged_pdescs cfg_new cfg_old =
       (Procdesc.get_attributes new_pdesc).changed <- changed
     with Not_found -> ()
   in
-  Typ.Procname.Hash.iter mark_pdesc_if_unchanged new_procs
+  Typ.Procname.Hash.iter mark_pdesc_if_unchanged cfg_new
 
 
 (** Save a cfg into a file *)
