@@ -1169,7 +1169,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
       let loc = CallSite.loc initial_sink_site in
       let ltr = make_trace ~report_kind path pdesc in
       (* what the potential bug is *)
-      let description = make_description pname final_sink_site initial_sink_site final_sink in
+      let description = make_description pname final_sink_site initial_sink_site initial_sink in
       (* why we are reporting it *)
       let issue_type, explanation = get_reporting_explanation report_kind tenv pname thread in
       let error_message = F.sprintf "%s%s" description explanation in
