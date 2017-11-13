@@ -40,6 +40,7 @@ end
 module Make (TraceElem : TraceElem.S) = struct
   include Trace.Make (struct
     module Source = Source.Dummy
+    module Sanitizer = Sanitizer.Dummy
     module Sink = MakeSink (TraceElem)
 
     let get_report _ _ = Some IssueType.do_not_report

@@ -79,6 +79,7 @@ end
 module MockTrace = Trace.Make (struct
   module Source = MockSource
   module Sink = MockSink
+  module Sanitizer = Sanitizer.Dummy
 
   let get_report source sink =
     if [%compare.equal : MockTraceElem.t] (Source.kind source) (Sink.kind sink) then
@@ -139,4 +140,3 @@ let tests =
     "append" >:: append_
   in
   "trace_domain_suite" >::: [get_reports; append]
-

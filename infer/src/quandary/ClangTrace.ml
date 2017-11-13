@@ -297,9 +297,32 @@ end
 
 module CppSink = Sink.Make (SinkKind)
 
+module CppSanitizer = struct
+  type t = All [@@deriving compare]
+
+  let external_sanitizers =
+    List.map
+      ~f:(fun {QuandaryConfig.Sanitizer.procedure} ->
+        QualifiedCppName.Match.of_fuzzy_qual_names [procedure])
+      (QuandaryConfig.Sanitizer.of_json Config.quandary_sanitizers)
+
+
+  let get pname =
+    let qualified_pname = Typ.Procname.get_qualifiers pname in
+    List.find_map
+      ~f:(fun qualifiers ->
+        if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then Some All
+        else None)
+      external_sanitizers
+
+
+  let pp fmt = function All -> F.fprintf fmt "All"
+end
+
 include Trace.Make (struct
   module Source = CppSource
   module Sink = CppSink
+  module Sanitizer = CppSanitizer
 
   let get_report source sink =
     (* TODO: make this accept structs/objects too, but not primitive types or enumes *)

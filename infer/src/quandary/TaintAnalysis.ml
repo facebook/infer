@@ -627,13 +627,8 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               | None ->
                   astate_with_summary
               | Some ret_base ->
-                match TaintSpecification.get_sanitizer callee_pname with
-                | Some Return ->
-                    (* clear the trace associated with the return value. ideally, we would
-                          associate a kind with the sanitizer and only clear the trace when its
-                          kind matches the source. but this gets complicated to do properly with
-                          footprint sources, since we don't know their kind. so do the simple
-                          thing for now. *)
+                match TraceDomain.Sanitizer.get callee_pname with
+                | Some _ ->
                     TaintDomain.BaseMap.remove ret_base astate_with_summary
                 | None ->
                     astate_with_summary

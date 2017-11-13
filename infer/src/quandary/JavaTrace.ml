@@ -349,9 +349,37 @@ end
 
 module JavaSink = Sink.Make (SinkKind)
 
+module JavaSanitizer = struct
+  type t = All [@@deriving compare]
+
+  let external_sanitizers =
+    List.map
+      ~f:(fun {QuandaryConfig.Sanitizer.procedure} -> Str.regexp procedure)
+      (QuandaryConfig.Sanitizer.of_json Config.quandary_sanitizers)
+
+
+  let get = function
+    | Typ.Procname.Java java_pname ->
+        let procedure_string =
+          Printf.sprintf "%s.%s"
+            (Typ.Procname.java_get_class_name java_pname)
+            (Typ.Procname.java_get_method java_pname)
+        in
+        List.find_map
+          ~f:(fun procedure_regex ->
+            if Str.string_match procedure_regex procedure_string 0 then Some All else None)
+          external_sanitizers
+    | _ ->
+        None
+
+
+  let pp fmt = function All -> F.fprintf fmt "All"
+end
+
 include Trace.Make (struct
   module Source = JavaSource
   module Sink = JavaSink
+  module Sanitizer = JavaSanitizer
 
   let get_report source sink =
     match (Source.kind source, Sink.kind sink) with

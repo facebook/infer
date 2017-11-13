@@ -79,28 +79,6 @@ include TaintAnalysis.Make (struct
 
   let get_model _ _ _ _ _ = None
 
-  let external_sanitizers =
-    List.map
-      ~f:(fun {QuandaryConfig.Sanitizer.procedure} -> Str.regexp procedure)
-      (QuandaryConfig.Sanitizer.of_json Config.quandary_sanitizers)
-
-
-  let get_sanitizer = function
-    | Typ.Procname.Java java_pname ->
-        let procedure_string =
-          Printf.sprintf "%s.%s"
-            (Typ.Procname.java_get_class_name java_pname)
-            (Typ.Procname.java_get_method java_pname)
-        in
-        List.find_map
-          ~f:(fun procedure_regex ->
-            if Str.string_match procedure_regex procedure_string 0 then Some TaintSpec.Return
-            else None)
-          external_sanitizers
-    | _ ->
-        None
-
-
   let is_taintable_type typ =
     match typ.Typ.desc with
     | Typ.Tptr ({desc= Tstruct JavaClass typename}, _) | Tstruct JavaClass typename -> (

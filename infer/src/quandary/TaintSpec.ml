@@ -19,8 +19,6 @@ type action =
       (** Propagate taint from all non-receiver actuals to the receiver actual *)
   | Propagate_to_return  (** Propagate taint from all actuals to the return value *)
 
-type sanitizer = Return  (** a sanitizer that removes taint from its return value *)
-
 module type S = sig
   module Trace : Trace.S
 
@@ -38,9 +36,6 @@ module type S = sig
 
   val is_taintable_type : Typ.t -> bool
   (** return true if the given typ can be tainted *)
-
-  val get_sanitizer : Typ.Procname.t -> sanitizer option
-  (** get the sanitizer associated with the given type, if any *)
 
   val to_summary_access_tree : AccessTree.t -> QuandarySummary.AccessTree.t
 

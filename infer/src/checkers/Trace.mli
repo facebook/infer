@@ -16,6 +16,8 @@ module type Spec = sig
 
   module Sink : Sink.S
 
+  module Sanitizer : Sanitizer.S
+
   val get_report : Source.t -> Sink.t -> IssueType.t option
   (** return Some(issue) if the source and sink match, None otherwise *)
 end
