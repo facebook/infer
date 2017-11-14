@@ -384,6 +384,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       in
       TaintDomain.trace_fold add_to_caller_tree summary caller_access_tree
 
+
     let exec_instr (astate: Domain.astate) (proc_data: extras ProcData.t) _ (instr: HilInstr.t) =
       (* not all sinks are function calls; we might want to treat an array or field access as a
          sink too. do this by pretending an access is a call to a dummy function and using the
@@ -456,7 +457,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           |> add_sinks_for_access_path lhs_access_path loc |> exec_write lhs_access_path rhs_exp
       | Assume (assume_exp, _, _, loc) ->
           add_sources_sinks_for_exp assume_exp loc astate
-      | Call (ret_opt, Direct called_pname, actuals, call_flags, callee_loc) ->
+      | Call (ret_opt, Direct called_pname, actuals, _, callee_loc) ->
           let astate =
             List.fold
               ~f:(fun acc exp -> add_sources_sinks_for_exp exp callee_loc acc)
@@ -635,20 +636,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
             in
             Domain.join astate_acc astate_with_sanitizer
           in
-          (* highly polymorphic call sites stress reactive mode too much by using too much memory.
-             here, we choose an arbitrary call limit that allows us to finish the analysis in
-             practice. this is obviously unsound; will try to remove in the future. *)
-          let max_calls = 3 in
-          let targets =
-            if List.length call_flags.cf_targets <= max_calls then
-              called_pname :: call_flags.cf_targets
-            else (
-              L.(debug Analysis Medium)
-                "Skipping highly polymorphic call site for %a@." Typ.Procname.pp called_pname ;
-              [called_pname] )
-          in
-          (* for each possible target of the call, apply the summary. join all results together *)
-          List.fold ~f:analyze_call ~init:Domain.empty targets
+          analyze_call Domain.empty called_pname
       | _ ->
           astate
 
@@ -794,7 +782,6 @@ module Make (TaintSpecification : TaintSpec.S) = struct
         ~init:TaintDomain.empty
         (TraceDomain.Source.get_tainted_formals pdesc tenv)
     in
-    Preanal.do_dynamic_dispatch proc_desc (Cg.create (SourceFile.invalid __FILE__)) tenv ;
     let initial = make_initial proc_desc in
     let extras =
       let formal_map = FormalMap.make proc_desc in

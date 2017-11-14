@@ -72,12 +72,12 @@ public class DynamicDispatch {
   /** interface tests. for all of these, we should see a warning for both BadInterfaceImpl1 and
    BadInterfaceImpl2, but not OkInterfaceImpl */
 
-  static void returnSourceViaInterfaceBad(Interface i) {
+  static void FN_returnSourceViaInterfaceBad(Interface i) {
     Object source = i.returnSource();
     InferTaint.inferSensitiveSink(source);
   }
 
-  static void callSinkViaInterfaceBad(Interface i) {
+  static void FN_callSinkViaInterfaceBad(Interface i) {
     Object source = InferTaint.inferSecretSource();
     i.callSink(source);
   }
@@ -130,24 +130,24 @@ public class DynamicDispatch {
     }
   }
 
-  static void returnSourceViaSubtypeBad(Supertype s) {
+  static void FN_returnSourceViaSubtypeBad(Supertype s) {
     Object source = s.returnSource();
     InferTaint.inferSensitiveSink(source);
   }
 
-  static void callSinkViaSubtypeBad(Supertype s) {
+  static void FN_callSinkViaSubtypeBad(Supertype s) {
     Object source = InferTaint.inferSecretSource();
     s.callSink(source);
   }
 
-  static void propagateViaSubtypeBad(Supertype s) {
+  static void FN_propagateViaSubtypeBad(Supertype s) {
     Object source = InferTaint.inferSecretSource();
     Object launderedSource = s.propagate(source);
     InferTaint.inferSensitiveSink(launderedSource);
   }
 
   // need to look and see if we know the concrete type of the receiver to get this one
-  static void FP_propagateViaConcreteTypeOk() {
+  static void propagateViaConcreteTypeOk() {
     Supertype s = new Supertype();
 
     Object source1 = s.returnSource();
