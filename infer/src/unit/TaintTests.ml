@@ -41,7 +41,7 @@ module MockTrace = Trace.Make (struct
 
   module Sanitizer = Sanitizer.Dummy
 
-  let get_report _ _ = None
+  let get_report _ _ _ = None
 end)
 
 module MockTaintAnalysis = TaintAnalysis.Make (struct

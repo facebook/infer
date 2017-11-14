@@ -18,8 +18,9 @@ module type Spec = sig
 
   module Sanitizer : Sanitizer.S
 
-  val get_report : Source.t -> Sink.t -> IssueType.t option
-  (** return Some(issue) if the source and sink match, None otherwise *)
+  val get_report : Source.t -> Sink.t -> Sanitizer.t list -> IssueType.t option
+  (** return Some(issue) a trace from source to sink passing through the given sanitizers should be
+      reported, None otherwise *)
 end
 
 module type S = sig
@@ -40,7 +41,10 @@ module type S = sig
     (** Set of access paths representing the sources that may flow in from the caller *)
     module Footprint : module type of AccessTree.PathSet (FootprintConfig)
 
-    type astate = {known: Known.astate; footprint: Footprint.astate}
+    (** Set of sanitizers that have been applied to these sources *)
+    module Sanitizers : module type of AbstractDomain.FiniteSet (Sanitizer)
+
+    type astate = {known: Known.astate; footprint: Footprint.astate; sanitizers: Sanitizers.astate}
 
     type t = astate
 
@@ -119,6 +123,9 @@ module type S = sig
 
   val add_sink : Sink.t -> t -> t
   (** add a sink to the current trace. *)
+
+  val add_sanitizer : Sanitizer.t -> t -> t
+  (** add a sanitizer to the current trace *)
 
   val update_sources : t -> Sources.t -> t
 

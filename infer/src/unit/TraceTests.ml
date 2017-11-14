@@ -81,7 +81,7 @@ module MockTrace = Trace.Make (struct
   module Sink = MockSink
   module Sanitizer = Sanitizer.Dummy
 
-  let get_report source sink =
+  let get_report source sink _ =
     if [%compare.equal : MockTraceElem.t] (Source.kind source) (Sink.kind sink) then
       Some IssueType.quandary_taint_error
     else None

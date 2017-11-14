@@ -640,8 +640,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                   astate_with_summary
               | Some ret_base ->
                 match TraceDomain.Sanitizer.get callee_pname with
-                | Some _ ->
-                    TaintDomain.BaseMap.remove ret_base astate_with_summary
+                | Some sanitizer ->
+                    let ret_ap = AccessPath.Abs.Exact (ret_base, []) in
+                    let ret_trace = access_path_get_trace ret_ap astate_with_summary proc_data in
+                    let ret_trace' = TraceDomain.add_sanitizer sanitizer ret_trace in
+                    TaintDomain.add_trace ret_ap ret_trace' astate_with_summary
                 | None ->
                     astate_with_summary
             in

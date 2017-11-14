@@ -18,7 +18,7 @@ module type Spec = sig
 
   module Sanitizer : Sanitizer.S
 
-  val get_report : Source.t -> Sink.t -> IssueType.t option
+  val get_report : Source.t -> Sink.t -> Sanitizer.t list -> IssueType.t option
 end
 
 module type S = sig
@@ -37,7 +37,9 @@ module type S = sig
 
     module Footprint : module type of AccessTree.PathSet (FootprintConfig)
 
-    type astate = {known: Known.astate; footprint: Footprint.astate}
+    module Sanitizers : module type of AbstractDomain.FiniteSet (Sanitizer)
+
+    type astate = {known: Known.astate; footprint: Footprint.astate; sanitizers: Sanitizers.astate}
 
     type t = astate
 
@@ -110,6 +112,9 @@ module type S = sig
   val add_sink : Sink.t -> t -> t
   (** add a sink to the current trace. *)
 
+  val add_sanitizer : Sanitizer.t -> t -> t
+  (** add a sanitizer to the current trace *)
+
   val update_sources : t -> Sources.t -> t
 
   val update_sinks : t -> Sinks.t -> t
@@ -172,8 +177,9 @@ module Make (Spec : Spec) = struct
     module Known = AbstractDomain.FiniteSet (Source)
     module FootprintConfig = AccessTree.DefaultConfig
     module Footprint = AccessTree.PathSet (FootprintConfig)
+    module Sanitizers = AbstractDomain.FiniteSet (Sanitizer)
 
-    type astate = {known: Known.astate; footprint: Footprint.astate}
+    type astate = {known: Known.astate; footprint: Footprint.astate; sanitizers: Sanitizers.astate}
 
     type t = astate
 
@@ -181,6 +187,7 @@ module Make (Spec : Spec) = struct
       if phys_equal lhs rhs then true
       else Known.( <= ) ~lhs:lhs.known ~rhs:rhs.known
         && Footprint.( <= ) ~lhs:lhs.footprint ~rhs:rhs.footprint
+        && Sanitizers.( <= ) ~lhs:lhs.sanitizers ~rhs:rhs.sanitizers
 
 
     let join astate1 astate2 =
@@ -188,7 +195,8 @@ module Make (Spec : Spec) = struct
       else
         let known = Known.join astate1.known astate2.known in
         let footprint = Footprint.join astate1.footprint astate2.footprint in
-        {known; footprint}
+        let sanitizers = Sanitizers.join astate1.sanitizers astate2.sanitizers in
+        {known; footprint; sanitizers}
 
 
     let widen ~prev ~next ~num_iters =
@@ -196,18 +204,26 @@ module Make (Spec : Spec) = struct
       else
         let known = Known.widen ~prev:prev.known ~next:next.known ~num_iters in
         let footprint = Footprint.widen ~prev:prev.footprint ~next:next.footprint ~num_iters in
-        {known; footprint}
+        let sanitizers = Sanitizers.widen ~prev:prev.sanitizers ~next:next.sanitizers ~num_iters in
+        {known; footprint; sanitizers}
 
 
-    let pp fmt {known; footprint} =
+    let pp fmt {known; footprint; sanitizers} =
+      let pp_sanitizers fmt sanitizers =
+        if not (Sanitizers.is_empty sanitizers) then
+          F.fprintf fmt " + Sanitizers(%a)" Sanitizers.pp sanitizers
+      in
       if Known.is_empty known then
         if Footprint.is_empty footprint then F.fprintf fmt "{}"
-        else F.fprintf fmt "Footprint(%a)" Footprint.pp footprint
-      else F.fprintf fmt "%a + Footprint(%a)" Known.pp known Footprint.pp footprint
+        else F.fprintf fmt "Footprint(%a)%a" Footprint.pp footprint pp_sanitizers sanitizers
+      else
+        F.fprintf fmt "%a + Footprint(%a)%a" Known.pp known Footprint.pp footprint pp_sanitizers
+          sanitizers
 
 
-    let empty = {known= Known.empty; footprint= Footprint.empty}
+    let empty = {known= Known.empty; footprint= Footprint.empty; sanitizers= Sanitizers.empty}
 
+    (* note: empty known/footprint implies empty sanitizers *)
     let is_empty {known; footprint} = Known.is_empty known && Footprint.BaseMap.is_empty footprint
 
     let of_footprint access_path =
@@ -311,7 +327,9 @@ module Make (Spec : Spec) = struct
       let report_source source sinks acc0 =
         let report_one sink acc =
           if should_report_at_site source sink then
-            match Spec.get_report source sink with
+            match
+              Spec.get_report source sink (Sources.Sanitizers.elements t.sources.sanitizers)
+            with
             | Some issue ->
                 { issue
                 ; path_source= Known source
@@ -514,6 +532,12 @@ module Make (Spec : Spec) = struct
     {t with sinks}
 
 
+  let add_sanitizer sanitizer t =
+    let sanitizers = Sources.Sanitizers.add sanitizer t.sources.sanitizers in
+    let sources = {t.sources with sanitizers} in
+    {t with sources}
+
+
   let update_sources t sources = {t with sources}
 
   let update_sinks t sinks = {t with sinks}
@@ -524,10 +548,14 @@ module Make (Spec : Spec) = struct
   let append caller_trace callee_trace callee_site =
     if is_empty callee_trace then caller_trace
     else
+      let sanitizers =
+        Sources.Sanitizers.join callee_trace.sources.sanitizers caller_trace.sources.sanitizers
+      in
       let non_footprint_callee_sources = callee_trace.sources.known in
       let sources =
         if Sources.Known.subset non_footprint_callee_sources caller_trace.sources.known then
-          caller_trace.sources
+          if phys_equal sanitizers caller_trace.sources.sanitizers then caller_trace.sources
+          else {caller_trace.sources with Sources.sanitizers}
         else
           let known =
             List.map
@@ -535,7 +563,7 @@ module Make (Spec : Spec) = struct
               (Sources.Known.elements non_footprint_callee_sources)
             |> Sources.Known.of_list |> Sources.Known.union caller_trace.sources.known
           in
-          {caller_trace.sources with Sources.known}
+          {caller_trace.sources with Sources.known; sanitizers}
       in
       let sinks =
         if Sinks.subset callee_trace.sinks caller_trace.sinks then caller_trace.sinks

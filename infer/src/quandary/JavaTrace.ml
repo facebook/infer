@@ -381,8 +381,11 @@ include Trace.Make (struct
   module Sink = JavaSink
   module Sanitizer = JavaSanitizer
 
-  let get_report source sink =
+  let get_report source sink sanitizers =
     match (Source.kind source, Sink.kind sink) with
+    | _ when not (List.is_empty sanitizers) ->
+        (* assume any sanitizer clears all forms of taint *)
+        L.d_strln "non-empty sanitizers!" ; None
     | PrivateData, Logging
     (* logging private data issue *)
     | Intent, StartComponent
@@ -407,6 +410,7 @@ include Trace.Make (struct
         (* not a security issue, but useful for debugging flows from resource IDs to inflation *)
         Some IssueType.quandary_taint_error
     | Other, _ | _, Other ->
+        L.d_strln (F.asprintf "have %d sanitizers" (List.length sanitizers)) ;
         (* for testing purposes, Other matches everything *)
         Some IssueType.quandary_taint_error
     | _ ->

@@ -43,7 +43,7 @@ module Make (TraceElem : TraceElem.S) = struct
     module Sanitizer = Sanitizer.Dummy
     module Sink = MakeSink (TraceElem)
 
-    let get_report _ _ = Some IssueType.do_not_report
+    let get_report _ _ _ = Some IssueType.do_not_report
   end)
 
   type sink_path = Passthroughs.t * (Sink.t * Passthroughs.t) list

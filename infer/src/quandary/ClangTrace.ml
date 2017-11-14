@@ -324,7 +324,7 @@ include Trace.Make (struct
   module Sink = CppSink
   module Sanitizer = CppSanitizer
 
-  let get_report source sink =
+  let get_report source sink sanitizers =
     (* TODO: make this accept structs/objects too, but not primitive types or enumes *)
     (* using this to match custom string wrappers such as folly::StringPiece *)
     let is_stringy typ =
@@ -333,6 +333,9 @@ include Trace.Make (struct
       || String.is_substring ~substring:"char*" lowercase_typ
     in
     match (Source.kind source, Sink.kind sink) with
+    | _ when not (List.is_empty sanitizers) ->
+        (* assume any sanitizer clears all forms of taint *)
+        None
     | Endpoint (_, typ), (ShellExec | SQL) ->
         (* remote code execution if the caller of the endpoint doesn't sanitize *)
         Option.some_if (is_stringy typ) IssueType.remote_code_execution_risk
