@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <map>
+#include <memory>
 #include <string>
 
 extern std::string __infer_taint_source();
@@ -14,6 +16,8 @@ extern void __infer_taint_sink(std::string);
 extern std::string skip_value(std::string);
 extern std::string* skip_pointer(std::string);
 extern void skip_by_ref(std::string, std::string&);
+
+extern int of_string(std::string);
 
 namespace unknown_code {
 
@@ -54,4 +58,5 @@ void FN_via_skip_by_ref_bad() {
   skip_by_ref(source, laundered_by_ref);
   __infer_taint_sink(laundered_by_ref);
 }
+
 }
