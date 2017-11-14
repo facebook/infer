@@ -718,7 +718,6 @@ and ( annotation_reachability
     , printf_args
     , quandary
     , racerd
-    , repeated_calls
     , resource_leak
     , siof
     , suggest_nullable
@@ -761,7 +760,6 @@ and ( annotation_reachability
   and racerd =
     mk_checker ~long:"racerd" ~deprecated:["-threadsafety"] ~default:true
       "the RacerD thread safety analysis"
-  and repeated_calls = mk_checker ~long:"repeated-calls" "check for repeated calls"
   and resource_leak = mk_checker ~long:"resource-leak" ""
   and siof =
     mk_checker ~long:"siof" ~default:true
@@ -819,7 +817,6 @@ and ( annotation_reachability
   , printf_args
   , quandary
   , racerd
-  , repeated_calls
   , resource_leak
   , siof
   , suggest_nullable
@@ -2606,8 +2603,6 @@ and racerd = !racerd
 and reactive_mode = !reactive || CLOpt.(equal_command Diff) command
 
 and reactive_capture = !reactive_capture
-
-and repeated_calls = !repeated_calls
 
 and report = !report
 

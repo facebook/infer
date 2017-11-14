@@ -599,8 +599,6 @@ val reactive_mode : bool
 
 val reactive_capture : bool
 
-val repeated_calls : bool
-
 val report_current : string option
 
 val report_formatter : [`No_formatter | `Phabricator_formatter]

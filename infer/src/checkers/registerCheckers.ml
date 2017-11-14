@@ -81,9 +81,6 @@ let all_checkers =
         ; (Procedure RacerD.analyze_procedure, Config.Java)
         ; (Cluster RacerD.file_analysis, Config.Clang)
         ; (Cluster RacerD.file_analysis, Config.Java) ] }
-  ; { name= "repeated calls"
-    ; active= Config.repeated_calls
-    ; callbacks= [(Procedure RepeatedCallsChecker.callback_check_repeated_calls, Config.Java)] }
     (* toy resource analysis to use in the infer lab, see the lab/ directory *)
   ; { name= "resource leak"
     ; active= Config.resource_leak
@@ -134,4 +131,3 @@ let pp_checker fmt {name; callbacks} =
   F.fprintf fmt "%s (%a)" name
     (Pp.seq ~sep:", " (Pp.to_string ~f:Config.string_of_language))
     langs_of_callbacks
-

@@ -116,10 +116,6 @@ let checkers_print_objc_method_calls = from_string "CHECKERS_PRINT_OBJC_METHOD_C
 
 let checkers_printf_args = from_string "CHECKERS_PRINTF_ARGS"
 
-let checkers_repeated_calls = from_string "CHECKERS_REPEATED_CALLS"
-
-let checkers_trace_calls_sequence = from_string "CHECKERS_TRACE_CALLS_SEQUENCE"
-
 let class_cast_exception = from_string ~enabled:false "CLASS_CAST_EXCEPTION"
 
 let cluster_callback = from_string "CLUSTER_CALLBACK"

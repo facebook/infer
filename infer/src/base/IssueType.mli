@@ -67,10 +67,6 @@ val checkers_print_objc_method_calls : t
 
 val checkers_printf_args : t
 
-val checkers_repeated_calls : t
-
-val checkers_trace_calls_sequence : t
-
 val class_cast_exception : t
 
 val cluster_callback : t
