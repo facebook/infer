@@ -481,6 +481,14 @@ let is_in_objc_subclass_of context name =
       false
 
 
+let is_in_objc_class_named context name =
+  match context.CLintersContext.current_objc_class with
+  | Some cls ->
+      is_objc_interface_named (Decl cls) name
+  | None ->
+      false
+
+
 let captures_cxx_references an = List.length (captured_variables_cxx_ref an) > 0
 
 let is_binop_with_kind an alexp_kind =

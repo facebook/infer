@@ -70,6 +70,8 @@ val is_objc_dealloc : CLintersContext.context -> bool
 
 val is_in_objc_subclass_of : CLintersContext.context -> ALVar.alexp -> bool
 
+val is_in_objc_class_named : CLintersContext.context -> ALVar.alexp -> bool
+
 val is_subclass_of : Clang_ast_t.decl -> ALVar.alexp -> bool
 
 val captures_cxx_references : Ctl_parser_types.ast_node -> bool
