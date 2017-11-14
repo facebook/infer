@@ -871,3 +871,13 @@ let has_value an al_exp =
   | _ ->
       false
 
+
+(* check if method is called on superclass *)
+let is_method_called_by_superclass an =
+  let open Clang_ast_t in
+  let open Ctl_parser_types in
+  match an with
+  | Stmt ObjCMessageExpr (_, _, _, obj_c_message_expr_info) -> (
+    match obj_c_message_expr_info.omei_receiver_kind with `SuperInstance -> true | _ -> false )
+  | _ ->
+      false

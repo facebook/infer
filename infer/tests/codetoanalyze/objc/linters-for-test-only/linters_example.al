@@ -430,3 +430,15 @@ DEFINE-CHECKER TEST_PARAMETER_SEL_TYPE = {
              HOLDS-IN-NODE ObjCMessageExpr;
    SET message = "Found a message call in a class that is not subclass of A.";
  };
+
+ DEFINE-CHECKER TEST_IF_VIEW_METHOD_IS_NOT_CALLED_WITH_SUPER = {
+
+  SET report_when =
+      WHEN
+        call_method("testView") AND
+        NOT is_method_called_by_superclass()
+      HOLDS-IN-NODE ObjCMessageExpr;
+
+  SET message = "Method %name% is not called with super.";
+
+};

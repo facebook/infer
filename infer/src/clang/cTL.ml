@@ -1064,6 +1064,8 @@ let rec eval_Atomic _pred_name args an lcxt =
       CPredicates.has_used_attribute an
   | "within_available_class_block", [], an ->
       CPredicates.within_available_class_block lcxt an
+  | "is_method_called_by_superclass", [], an ->
+      CPredicates.is_method_called_by_superclass an
   | _ ->
       L.(die ExternalError) "Undefined Predicate or wrong set of arguments: '%s'" pred_name
 
@@ -1251,4 +1253,3 @@ and eval_formula f an lcxt : Ctl_parser_types.ast_node option =
         eval_ET tl sw phi an lcxt
   in
   debug_eval_end res ; res
-

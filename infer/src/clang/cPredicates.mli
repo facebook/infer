@@ -140,3 +140,5 @@ val has_type_const_ptr_to_objc_class : Ctl_parser_types.ast_node -> bool
 val is_decl : Ctl_parser_types.ast_node -> bool
 
 val get_ast_node_type_ptr : Ctl_parser_types.ast_node -> Clang_ast_t.type_ptr option
+
+val is_method_called_by_superclass : Ctl_parser_types.ast_node -> bool
