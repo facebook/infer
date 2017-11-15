@@ -1869,6 +1869,19 @@ and specs_library =
   specs_library
 
 
+and sqlite_vfs =
+  let default =
+    match Utils.read_file "/proc/version" with
+    | Result.Ok [line] ->
+        let re = Str.regexp "Linux.+-Microsoft" in
+        (* on WSL (bash on Windows) standard SQLite VFS can't be used, see WSL/issues/1927 WSL/issues/2395 *)
+        if Str.string_match re line 0 then Some "unix-excl" else None
+    | _ ->
+        None
+  in
+  CLOpt.mk_string_opt ?default ~long:"sqlite-vfs" "VFS for SQLite"
+
+
 and stacktrace =
   CLOpt.mk_path_opt ~deprecated:["st"] ~long:"stacktrace"
     ~in_help:CLOpt.([(Analyze, manual_crashcontext)])
@@ -2651,6 +2664,8 @@ and sources = !sources
 and sourcepath = !sourcepath
 
 and spec_abs_level = !spec_abs_level
+
+and sqlite_vfs = !sqlite_vfs
 
 and stacktrace = !stacktrace
 
