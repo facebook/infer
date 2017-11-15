@@ -295,25 +295,6 @@ let check_constructor_initialization tenv find_canonical_duplicate curr_pname cu
         ()
 
 
-(** Make the return type @Nullable by modifying the spec. *)
-let spec_make_return_nullable curr_pname =
-  match Specs.get_summary curr_pname with
-  | Some summary ->
-      let proc_attributes = Specs.get_attributes summary in
-      let method_annotation = proc_attributes.ProcAttributes.method_annotation in
-      let method_annotation' =
-        AnnotatedSignature.method_annotation_mark_return AnnotatedSignature.Nullable
-          method_annotation
-      in
-      let proc_attributes' =
-        {proc_attributes with ProcAttributes.method_annotation= method_annotation'}
-      in
-      let summary' = {summary with Specs.attributes= proc_attributes'} in
-      Specs.add_summary curr_pname summary'
-  | None ->
-      ()
-
-
 (** Check the annotations when returning from a method. *)
 let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
     (annotated_signature: AnnotatedSignature.t) ret_implicitly_nullable loc : unit =
@@ -348,8 +329,6 @@ let check_return_annotation tenv find_canonical_duplicate curr_pdesc ret_range
       in
       if return_not_nullable && Models.Inference.enabled then
         Models.Inference.proc_mark_return_nullable curr_pname ;
-      if return_not_nullable && Config.eradicate_propagate_return_nullable then
-        spec_make_return_nullable curr_pname ;
       ( if return_not_nullable || return_value_not_present then
           let ann =
             if return_not_nullable then AnnotatedSignature.Nullable else AnnotatedSignature.Present
@@ -494,4 +473,3 @@ let check_overridden_annotations find_canonical_duplicate tenv proc_name proc_de
         ()
   in
   PatternMatch.override_iter check tenv proc_name
-

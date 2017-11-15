@@ -45,16 +45,10 @@ module MkCallback (Extension : ExtensionT) : CallBackT = struct
     match Specs.get_summary proc_name with
     | Some old_summ ->
         let nodes = List.map ~f:(fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes proc_desc) in
-        let method_annotation =
-          (Specs.pdesc_resolve_attributes proc_desc).ProcAttributes.method_annotation
-        in
         let new_summ =
           { old_summ with
             Specs.nodes
-          ; Specs.payload= Extension.update_payload final_typestate_opt old_summ.Specs.payload
-          ; Specs.attributes=
-              { old_summ.Specs.attributes with
-                ProcAttributes.loc= Procdesc.get_loc proc_desc; method_annotation } }
+          ; Specs.payload= Extension.update_payload final_typestate_opt old_summ.Specs.payload }
         in
         Specs.add_summary proc_name new_summ
     | None ->
@@ -398,4 +392,3 @@ let callback_check_return_type check_return_type callback_args =
     {TypeCheck.eradicate= false; check_extension= false; check_ret_type= [check_return_type]}
   in
   Main.callback checks callback_args
-
