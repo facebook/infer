@@ -133,7 +133,10 @@ let parameters_with_argument =
   ["--build-report"; "--config"; "-j"; "--num-threads"; "--out"; "-v"; "--verbose"]
 
 
-let accepted_buck_kinds_pattern = "(apple|cxx)_(binary|library|test)"
+let get_accepted_buck_kinds_pattern () =
+  if Option.is_some Config.buck_compilation_database then "(apple|cxx)_(binary|library|test)"
+  else "(apple|cxx)_(binary|library)"
+
 
 let max_command_line_length = 50
 
@@ -142,8 +145,8 @@ let die_if_empty f = function [] -> f L.(die UserError) | l -> l
 let resolve_pattern_targets ~filter_kind ~dep_depth targets =
   targets |> List.rev_map ~f:Query.target |> Query.set
   |> (match dep_depth with None -> Fn.id | Some depth -> Query.deps ?depth)
-  |> (if filter_kind then Query.kind ~pattern:accepted_buck_kinds_pattern else Fn.id) |> Query.exec
-  |> die_if_empty (fun die -> die "*** buck query returned no targets.")
+  |> (if filter_kind then Query.kind ~pattern:(get_accepted_buck_kinds_pattern ()) else Fn.id)
+  |> Query.exec |> die_if_empty (fun die -> die "*** buck query returned no targets.")
 
 
 let resolve_alias_targets aliases =
