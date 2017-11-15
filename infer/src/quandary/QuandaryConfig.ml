@@ -53,14 +53,17 @@ module Sink = struct
 end
 
 module Sanitizer = struct
-  type t = {procedure: string}
+  type t = {procedure: string; kind: string}
 
   let of_json = function
     | `List sinks ->
         let parse_sanitizer json =
           let open Yojson.Basic in
           let procedure = Util.member "procedure" json |> Util.to_string in
-          {procedure}
+          let kind =
+            Util.member "kind" json |> Util.to_string_option |> Option.value ~default:"All"
+          in
+          {procedure; kind}
         in
         List.map ~f:parse_sanitizer sinks
     | _ ->

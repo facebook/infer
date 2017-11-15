@@ -298,31 +298,53 @@ end
 module CppSink = Sink.Make (SinkKind)
 
 module CppSanitizer = struct
-  type t = All [@@deriving compare]
+  type t =
+    | Escape  (** escaped string to sanitize SQL injection or ShellExec sinks *)
+    | All  (** sanitizes all forms of taint *)
+    [@@deriving compare]
+
+  let equal = [%compare.equal : t]
+
+  let of_string = function "Escape" -> Escape | _ -> All
 
   let external_sanitizers =
     List.map
-      ~f:(fun {QuandaryConfig.Sanitizer.procedure} ->
-        QualifiedCppName.Match.of_fuzzy_qual_names [procedure])
+      ~f:(fun {QuandaryConfig.Sanitizer.procedure; kind} ->
+        (QualifiedCppName.Match.of_fuzzy_qual_names [procedure], of_string kind))
       (QuandaryConfig.Sanitizer.of_json Config.quandary_sanitizers)
 
 
   let get pname =
     let qualified_pname = Typ.Procname.get_qualifiers pname in
     List.find_map
-      ~f:(fun qualifiers ->
-        if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then Some All
+      ~f:(fun (qualifiers, kind) ->
+        if QualifiedCppName.Match.match_qualifiers qualifiers qualified_pname then Some kind
         else None)
       external_sanitizers
 
 
-  let pp fmt = function All -> F.fprintf fmt "All"
+  let pp fmt = function Escape -> F.fprintf fmt "Escape" | All -> F.fprintf fmt "All"
 end
 
 include Trace.Make (struct
   module Source = CppSource
   module Sink = CppSink
   module Sanitizer = CppSanitizer
+
+  let is_sanitized (sink_kind: SinkKind.t) sanitizers =
+    match sanitizers with
+    | [] ->
+        false
+    | _ when List.mem sanitizers Sanitizer.All ~equal:Sanitizer.equal ->
+        (* the All sanitizer clears any form of taint *)
+        true
+    | _ ->
+      match sink_kind with
+      | ShellExec | SQL ->
+          List.mem sanitizers Sanitizer.Escape ~equal:Sanitizer.equal
+      | _ ->
+          false
+
 
   let get_report source sink sanitizers =
     (* TODO: make this accept structs/objects too, but not primitive types or enumes *)
@@ -333,8 +355,8 @@ include Trace.Make (struct
       || String.is_substring ~substring:"char*" lowercase_typ
     in
     match (Source.kind source, Sink.kind sink) with
-    | _ when not (List.is_empty sanitizers) ->
-        (* assume any sanitizer clears all forms of taint *)
+    | _, sink_kind when is_sanitized sink_kind sanitizers ->
+        (* trace is sanitized; don't report *)
         None
     | Endpoint (_, typ), (ShellExec | SQL) ->
         (* remote code execution if the caller of the endpoint doesn't sanitize *)

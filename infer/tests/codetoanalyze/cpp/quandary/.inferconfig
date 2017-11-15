@@ -65,7 +65,12 @@
   ],
   "quandary-sanitizers": [
     {
-      "procedure": "__infer_string_sanitizer"
+      "procedure": "__infer_all_sanitizer",
+      "kind": "All"
+    },
+    {
+      "procedure": "__infer_string_sanitizer",
+      "kind": "Escape"
     },
     {
       "procedure": "basics::Obj::sanitizer1"

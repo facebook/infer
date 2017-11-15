@@ -24,7 +24,7 @@ module Sink : sig
 end
 
 module Sanitizer : sig
-  type t = {procedure: string}
+  type t = {procedure: string; kind: string}
 
   val of_json : [> `List of Yojson.Basic.json list] -> t list
 end
