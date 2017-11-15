@@ -22,3 +22,15 @@ int div0_using() {
 }
 
 int div0_namespace_resolution() { return 1 / (f1::get() + f2::get()); }
+
+namespace f3 {
+class C {
+ public:
+  static int ret_zero() { return 0; }
+};
+} // namespace f3
+
+int using_div0() {
+  using f3::C;
+  return 1 / C::ret_zero();
+}

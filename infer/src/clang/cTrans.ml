@@ -2274,7 +2274,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | (RecordDecl _) :: _ ->
           (* Case for struct *)
           collect_all_decl trans_state decl_list succ_nodes stmt_info
-      | (TypedefDecl _) :: _ | (UsingDirectiveDecl _) :: _ ->
+      | (TypedefDecl _ | UsingDecl _ | UsingDirectiveDecl _) :: _ ->
           empty_res_trans
       | decl :: _ ->
           CFrontend_config.unimplemented "In DeclStmt found an unknown declaration type %s"
