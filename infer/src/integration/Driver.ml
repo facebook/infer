@@ -289,7 +289,7 @@ let capture ~changed_files mode =
                 Unix.putenv ~key:CLOpt.args_env_var ~data:infer_args_with_buck ;
                 let prog, buck_args = IList.uncons_exn build_cmd in
                 let {Buck.command; rev_not_targets; targets} =
-                  Buck.add_flavors_to_buck_arguments ~filter_kind:false ~dep_depth:None
+                  Buck.add_flavors_to_buck_arguments ~filter_kind:`Auto ~dep_depth:None
                     ~extra_flavors:[] buck_args
                 in
                 let all_args = List.rev_append rev_not_targets targets in

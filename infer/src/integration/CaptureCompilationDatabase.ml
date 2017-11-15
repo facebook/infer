@@ -94,7 +94,7 @@ let get_compilation_database_files_buck ~prog ~args =
     match Config.buck_compilation_database with Some Deps depth -> Some depth | _ -> None
   in
   match
-    Buck.add_flavors_to_buck_arguments ~filter_kind:true ~dep_depth
+    Buck.add_flavors_to_buck_arguments ~filter_kind:`Yes ~dep_depth
       ~extra_flavors:Config.append_buck_flavors args
   with
   | {command= "build" as command; rev_not_targets; targets} ->

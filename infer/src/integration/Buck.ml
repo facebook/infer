@@ -228,11 +228,12 @@ let add_flavors_to_buck_arguments ~filter_kind ~dep_depth ~extra_flavors origina
   let parsed_args = parse_cmd_args empty_parsed_args args in
   let targets =
     match (filter_kind, dep_depth, parsed_args) with
-    | false, None, {pattern_targets= []; alias_targets= []; normal_targets} ->
+    | (`No | `Auto), None, {pattern_targets= []; alias_targets= []; normal_targets} ->
         normal_targets
-    | false, None, {pattern_targets= []; alias_targets; normal_targets} ->
+    | `No, None, {pattern_targets= []; alias_targets; normal_targets} ->
         alias_targets |> resolve_alias_targets |> List.rev_append normal_targets
-    | _, _, {pattern_targets; alias_targets; normal_targets} ->
+    | (`Yes | `No | `Auto), _, {pattern_targets; alias_targets; normal_targets} ->
+        let filter_kind = match filter_kind with `No -> false | `Yes | `Auto -> true in
         pattern_targets |> List.rev_append alias_targets |> List.rev_append normal_targets
         |> resolve_pattern_targets ~filter_kind ~dep_depth
   in
