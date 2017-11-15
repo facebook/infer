@@ -1997,9 +1997,9 @@ and xcode_developer_dir =
 
 
 and xcpretty =
-  CLOpt.mk_bool ~long:"xcpretty" ~default:true
+  CLOpt.mk_bool ~long:"xcpretty" ~default:false
     ~in_help:CLOpt.([(Capture, manual_clang)])
-    "Infer will use xcpretty together with xcodebuild to analyze an iOS app. xcpretty just needs to be in the path, infer command is still just $(i,`infer -- <xcodebuild command>`). (Recommended)"
+    "Infer will use xcpretty together with xcodebuild to analyze an iOS app. xcpretty just needs to be in the path, infer command is still just $(i,`infer -- <xcodebuild command>`)."
 
 
 and xml_specs =
