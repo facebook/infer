@@ -36,8 +36,13 @@ let create_db () =
   create_attributes_table db ;
   (* This should be the default but better be sure, otherwise we cannot access the database concurrently. This has to happen before setting WAL mode. *)
   SqliteUtils.exec db ~log:"locking mode=NORMAL" ~stmt:"PRAGMA locking_mode=NORMAL" ;
-  (* Write-ahead log is much faster than other journalling modes. *)
-  SqliteUtils.exec db ~log:"journal_mode=WAL" ~stmt:"PRAGMA journal_mode=WAL" ;
+  ( match Config.sqlite_vfs with
+  | None ->
+      (* Write-ahead log is much faster than other journalling modes. *)
+      SqliteUtils.exec db ~log:"journal_mode=WAL" ~stmt:"PRAGMA journal_mode=WAL"
+  | Some _ ->
+      (* Can't use WAL with custom VFS *)
+      () ) ;
   SqliteUtils.db_close db ;
   try Sys.rename temp_db database_fullpath with Sys_error _ ->
     (* lost the race, doesn't matter *) ()
@@ -104,7 +109,10 @@ let db_close () =
 let new_database_connection () =
   (* we always want at most one connection alive throughout the lifetime of the module *)
   db_close () ;
-  let db = Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL database_fullpath in
+  let db =
+    Sqlite3.db_open ~mode:`NO_CREATE ~cache:`PRIVATE ~mutex:`FULL ?vfs:Config.sqlite_vfs
+      database_fullpath
+  in
   Sqlite3.busy_timeout db 10_000 ;
   SqliteUtils.exec db ~log:"synchronous=NORMAL" ~stmt:"PRAGMA synchronous=NORMAL" ;
   database := Some db ;
