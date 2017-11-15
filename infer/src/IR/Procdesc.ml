@@ -562,4 +562,3 @@ let is_captured_var procdesc pvar =
     Typ.Procname.is_objc_block procname && List.exists ~f:pvar_matches (get_captured procdesc)
   in
   is_captured_var_cpp_lambda || is_captured_var_objc_block
-

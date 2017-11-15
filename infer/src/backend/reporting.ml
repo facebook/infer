@@ -41,11 +41,11 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
   let should_suppress_lint =
     Config.curr_language_is Config.Java
     && Annotations.ia_is_suppress_lint
-         (fst summary.Specs.attributes.ProcAttributes.method_annotation)
+         (fst (Specs.get_attributes summary).ProcAttributes.method_annotation)
   in
   if should_suppress_lint || is_generated_method then () (* Skip the reporting *)
   else
-    let err_log = summary.Specs.attributes.ProcAttributes.err_log in
+    let err_log = Specs.get_err_log summary in
     log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
       exn
 
@@ -87,4 +87,3 @@ let log_warning_deprecated ?(store_summary= false) =
 
 let log_info_deprecated ?(store_summary= false) =
   log_issue_deprecated ~store_summary Exceptions.Kinfo
-

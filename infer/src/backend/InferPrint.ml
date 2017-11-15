@@ -140,8 +140,8 @@ type summary_val =
 (** compute values from summary data to export to csv format *)
 let summary_values summary =
   let stats = summary.Specs.stats in
-  let attributes = summary.Specs.attributes in
-  let err_log = attributes.ProcAttributes.err_log in
+  let attributes = Specs.get_attributes summary in
+  let err_log = Specs.get_err_log summary in
   let proc_name = Specs.get_proc_name summary in
   let signature = Specs.get_signature summary in
   let nodes_nr = List.length summary.Specs.nodes in
@@ -541,7 +541,7 @@ module CallsCsv = struct
       pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_filename caller_name)) ;
       pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_string callee_name)) ;
       pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_filename callee_name)) ;
-      pp "%s," (SourceFile.to_string summary.Specs.attributes.ProcAttributes.loc.Location.file) ;
+      pp "%s," (SourceFile.to_string (Specs.get_loc summary).Location.file) ;
       pp "%d," loc.Location.line ;
       pp "%a@\n" Specs.CallStats.pp_trace trace
     in
@@ -650,9 +650,7 @@ module Stats = struct
 
   let process_summary error_filter summary linereader stats =
     let specs = Specs.get_specs_from_payload summary in
-    let found_errors =
-      process_err_log error_filter linereader summary.Specs.attributes.ProcAttributes.err_log stats
-    in
+    let found_errors = process_err_log error_filter linereader (Specs.get_err_log summary) stats in
     let is_defective = found_errors in
     let is_verified = specs <> [] && not is_defective in
     let is_checked = not (is_defective || is_verified) in
@@ -665,7 +663,7 @@ module Stats = struct
     if is_checked then stats.nchecked <- stats.nchecked + 1 ;
     if is_timeout then stats.ntimeouts <- stats.ntimeouts + 1 ;
     if is_defective then stats.ndefective <- stats.ndefective + 1 ;
-    process_loc summary.Specs.attributes.ProcAttributes.loc stats
+    process_loc (Specs.get_loc summary) stats
 
 
   let num_files stats = Hashtbl.length stats.files
@@ -721,8 +719,8 @@ module Summary = struct
       then
         let xml_out = Utils.create_outfile (DB.filename_to_string xml_file) in
         Utils.do_outf xml_out (fun outf ->
-            Dotty.print_specs_xml (Specs.get_signature summary) specs
-              summary.Specs.attributes.ProcAttributes.loc outf.fmt ;
+            Dotty.print_specs_xml (Specs.get_signature summary) specs (Specs.get_loc summary)
+              outf.fmt ;
             Utils.close_outf outf )
 
 
@@ -896,9 +894,9 @@ let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log
 
 
 let collect_issues summary issues_acc =
-  let err_log = summary.Specs.attributes.ProcAttributes.err_log in
+  let err_log = Specs.get_err_log summary in
   let proc_name = Specs.get_proc_name summary in
-  let proc_location = summary.Specs.attributes.ProcAttributes.loc in
+  let proc_location = Specs.get_loc summary in
   Errlog.fold
     (fun err_key err_data acc -> {Issue.proc_name; proc_location; err_key; err_data} :: acc)
     err_log issues_acc
@@ -1012,7 +1010,7 @@ let pp_lint_issues filters formats_by_report_kind linereader procname error_log 
 
 (** Process a summary *)
 let process_summary filters formats_by_report_kind linereader stats fname summary issues_acc =
-  let file = summary.Specs.attributes.ProcAttributes.loc.Location.file in
+  let file = (Specs.get_loc summary).Location.file in
   let proc_name = Specs.get_proc_name summary in
   let error_filter = error_filter filters proc_name in
   let pp_simple_saved = !Config.pp_simple in
@@ -1056,14 +1054,9 @@ module AnalysisResults = struct
     let do_load () = spec_files_from_cmdline () |> List.iter ~f:load_file in
     Utils.without_gc ~f:do_load ;
     let summ_cmp (_, summ1) (_, summ2) =
-      let n =
-        SourceFile.compare summ1.Specs.attributes.ProcAttributes.loc.Location.file
-          summ2.Specs.attributes.ProcAttributes.loc.Location.file
-      in
-      if n <> 0 then n
-      else
-        Int.compare summ1.Specs.attributes.ProcAttributes.loc.Location.line
-          summ2.Specs.attributes.ProcAttributes.loc.Location.line
+      let loc1 = Specs.get_loc summ1 and loc2 = Specs.get_loc summ2 in
+      let n = SourceFile.compare loc1.Location.file loc2.Location.file in
+      if n <> 0 then n else Int.compare loc1.Location.line loc2.Location.line
     in
     List.sort ~cmp:summ_cmp !summaries
 

@@ -365,8 +365,26 @@ type summary =
   ; sessions: int ref  (** Session number: how many nodes went trough symbolic execution *)
   ; stats: stats  (** statistics: execution time and list of errors *)
   ; status: status  (** Analysis status of the procedure *)
-  ; attributes: ProcAttributes.t  (** Attributes of the procedure *)
-  ; proc_desc_option: Procdesc.t option }
+  ; proc_desc: Procdesc.t  (** Proc desc of the procdure *) }
+
+let get_status summary = summary.status
+
+let get_proc_desc summary = summary.proc_desc
+
+let get_attributes summary = Procdesc.get_attributes summary.proc_desc
+
+let get_proc_name summary = (get_attributes summary).ProcAttributes.proc_name
+
+let get_ret_type summary = (get_attributes summary).ProcAttributes.ret_type
+
+let get_formals summary = (get_attributes summary).ProcAttributes.formals
+
+let get_err_log summary = (get_attributes summary).ProcAttributes.err_log
+
+let get_loc summary = (get_attributes summary).ProcAttributes.loc
+
+(** Return the current phase for the proc *)
+let get_phase summary = summary.phase
 
 type spec_tbl = summary Typ.Procname.Hash.t
 
@@ -465,10 +483,10 @@ let get_signature summary =
       let pp f = F.fprintf f "%a %a" (Typ.pp_full Pp.text) typ Mangled.pp p in
       let decl = F.asprintf "%t" pp in
       s := if String.equal !s "" then decl else !s ^ ", " ^ decl)
-    summary.attributes.ProcAttributes.formals ;
+    (get_formals summary) ;
   let pp f =
-    F.fprintf f "%a %a" (Typ.pp_full Pp.text) summary.attributes.ProcAttributes.ret_type
-      Typ.Procname.pp summary.attributes.ProcAttributes.proc_name
+    F.fprintf f "%a %a" (Typ.pp_full Pp.text) (get_ret_type summary) Typ.Procname.pp
+      (get_proc_name summary)
   in
   let decl = F.asprintf "%t" pp in
   decl ^ "(" ^ !s ^ ")"
@@ -521,32 +539,29 @@ let pp_payload pe fmt
 
 
 let pp_summary_text fmt summary =
-  let err_log = summary.attributes.ProcAttributes.err_log in
   let pe = Pp.text in
   pp_summary_no_stats_specs fmt summary ;
-  F.fprintf fmt "%a@\n%a%a" pp_errlog err_log pp_stats summary.stats (pp_payload pe)
+  F.fprintf fmt "%a@\n%a%a" pp_errlog (get_err_log summary) pp_stats summary.stats (pp_payload pe)
     summary.payload
 
 
 let pp_summary_latex color fmt summary =
-  let err_log = summary.attributes.ProcAttributes.err_log in
   let pe = Pp.latex color in
   F.fprintf fmt "\\begin{verbatim}@\n" ;
   pp_summary_no_stats_specs fmt summary ;
-  F.fprintf fmt "%a@\n" pp_errlog err_log ;
+  F.fprintf fmt "%a@\n" pp_errlog (get_err_log summary) ;
   F.fprintf fmt "%a@\n" pp_stats summary.stats ;
   F.fprintf fmt "\\end{verbatim}@\n" ;
   F.fprintf fmt "%a@\n" (pp_specs pe) (get_specs_from_payload summary)
 
 
 let pp_summary_html source color fmt summary =
-  let err_log = summary.attributes.ProcAttributes.err_log in
   let pe = Pp.html color in
   Io_infer.Html.pp_start_color fmt Black ;
   F.fprintf fmt "@\n%a" pp_summary_no_stats_specs summary ;
   Io_infer.Html.pp_end_color fmt () ;
   F.fprintf fmt "<br />%a<br />@\n" pp_stats summary.stats ;
-  Errlog.pp_html source [] fmt err_log ;
+  Errlog.pp_html source [] fmt (get_err_log summary) ;
   Io_infer.Html.pp_hline fmt () ;
   F.fprintf fmt "<LISTING>@\n" ;
   pp_payload pe fmt summary.payload ;
@@ -683,9 +698,7 @@ let proc_is_library proc_attributes =
 *)
 let proc_resolve_attributes proc_name =
   let from_attributes_table () = Attributes.load proc_name in
-  let from_specs () =
-    match get_summary proc_name with Some summary -> Some summary.attributes | None -> None
-  in
+  let from_specs () = Option.map ~f:get_attributes (get_summary proc_name) in
   match from_specs () with
   | Some attributes
     -> (
@@ -712,19 +725,6 @@ let pdesc_resolve_attributes proc_desc =
 
 
 let summary_exists proc_name = match get_summary proc_name with Some _ -> true | None -> false
-
-let get_status summary = summary.status
-
-let get_proc_name summary = summary.attributes.ProcAttributes.proc_name
-
-let get_ret_type summary = summary.attributes.ProcAttributes.ret_type
-
-let get_formals summary = summary.attributes.ProcAttributes.formals
-
-let get_attributes summary = summary.attributes
-
-(** Return the current phase for the proc *)
-let get_phase summary = summary.phase
 
 (** Save summary for the procedure into the spec database *)
 let store_summary (summ1: summary) =
@@ -757,7 +757,7 @@ let empty_payload =
 (** [init_summary (depend_list, nodes,
     proc_flags, calls, in_out_calls_opt, proc_attributes)]
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
-let init_summary (nodes, proc_flags, calls, proc_attributes, proc_desc_option) =
+let init_summary (nodes, calls, proc_desc) =
   let summary =
     { nodes
     ; phase= FOOTPRINT
@@ -765,31 +765,20 @@ let init_summary (nodes, proc_flags, calls, proc_attributes, proc_desc_option) =
     ; payload= empty_payload
     ; stats= empty_stats calls
     ; status= Pending
-    ; attributes= {proc_attributes with ProcAttributes.proc_flags}
-    ; proc_desc_option }
+    ; proc_desc }
   in
-  Typ.Procname.Hash.replace spec_tbl proc_attributes.ProcAttributes.proc_name summary ;
+  Typ.Procname.Hash.replace spec_tbl (Procdesc.get_proc_name proc_desc) summary ;
   summary
 
 
 let dummy =
-  init_summary
-    ( []
-    , ProcAttributes.proc_flags_empty ()
-    , []
-    , ProcAttributes.default Typ.Procname.empty_block Config.Java
-    , None )
+  let dummy_attributes = ProcAttributes.default Typ.Procname.empty_block Config.Java in
+  let dummy_proc_desc = Procdesc.from_proc_attributes ~called_from_cfg:true dummy_attributes in
+  init_summary ([], [], dummy_proc_desc)
 
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-let reset_summary proc_desc =
-  let proc_desc_option =
-    if Config.(equal_dynamic_dispatch dynamic_dispatch Lazy) then Some proc_desc else None
-  in
-  let attributes = Procdesc.get_attributes proc_desc in
-  let proc_flags = attributes.ProcAttributes.proc_flags in
-  init_summary ([], proc_flags, [], attributes, proc_desc_option)
-
+let reset_summary proc_desc = init_summary ([], [], proc_desc)
 
 (* =============== END of support for spec tables =============== *)
 (*

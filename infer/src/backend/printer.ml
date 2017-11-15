@@ -437,7 +437,7 @@ let write_html_proc source proof_cover table_nodes_at_linenum global_err_log pro
         List.iter
           ~f:(fun sp -> proof_cover := Specs.Visitedset.union sp.Specs.visited !proof_cover)
           (Specs.get_specs_from_payload summary) ;
-        Errlog.update global_err_log summary.Specs.attributes.ProcAttributes.err_log )
+        Errlog.update global_err_log (Specs.get_err_log summary) )
 
 
 (** Create filename.ext.html. *)
@@ -559,4 +559,3 @@ let write_all_html_files cluster =
         (fun file -> write_html_file linereader file (Cfg.get_all_procs cfg))
         source_files_in_cfg)
     exe_env
-

@@ -189,11 +189,7 @@ let report_annotation_stack src_annot snk_annot src_summary loc trace stack_str 
 let report_call_stack summary end_of_stack lookup_next_calls report call_site sink_map =
   (* TODO: stop using this; we can use the call site instead *)
   let lookup_location pname =
-    match Specs.get_summary pname with
-    | None ->
-        Location.dummy
-    | Some summary ->
-        summary.Specs.attributes.ProcAttributes.loc
+    Option.value_map ~f:Specs.get_loc ~default:Location.dummy (Specs.get_summary pname)
   in
   let rec loop fst_call_loc visited_pnames (trace, stack_str) (callee_pname, call_loc) =
     if end_of_stack callee_pname then
@@ -473,4 +469,3 @@ let checker ({Callbacks.proc_desc; tenv; summary} as callback) : Specs.summary =
       Summary.update_summary annot_map summary
   | None ->
       summary
-

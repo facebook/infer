@@ -386,7 +386,7 @@ let check_inherently_dangerous_function caller_pname callee_pname =
 
 
 let reason_to_skip callee_summary : string option =
-  let attributes = callee_summary.Specs.attributes in
+  let attributes = Specs.get_attributes callee_summary in
   if attributes.ProcAttributes.is_abstract then Some "abstract method"
   else if not attributes.ProcAttributes.is_defined then Some "method has no implementation"
   else if List.is_empty (Specs.get_specs_from_payload callee_summary) then
@@ -1214,7 +1214,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
             | None ->
                 proc_call resolved_summary (call_args prop_ callee_pname norm_args ret_id loc)
             | Some reason ->
-                let proc_attrs = resolved_summary.Specs.attributes in
+                let proc_attrs = Specs.get_attributes resolved_summary in
                 let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
                 exec_skip_call ~reason resolved_pname ret_annots proc_attrs.ProcAttributes.ret_type
           )
@@ -1240,7 +1240,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                   let handled_args = call_args norm_prop pname url_handled_args ret_id loc in
                   proc_call callee_summary handled_args
               | Some reason ->
-                  let proc_attrs = callee_summary.Specs.attributes in
+                  let proc_attrs = Specs.get_attributes callee_summary in
                   let ret_annots, _ = proc_attrs.ProcAttributes.method_annotation in
                   exec_skip_call ~reason ret_annots proc_attrs.ProcAttributes.ret_type
           in
@@ -1318,7 +1318,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
                         match resolved_summary_opt with
                         | Some summ ->
                             let ret_annots, _ =
-                              summ.Specs.attributes.ProcAttributes.method_annotation
+                              (Specs.get_attributes summ).ProcAttributes.method_annotation
                             in
                             ret_annots
                         | None ->
@@ -1881,4 +1881,3 @@ let node handle_exn tenv proc_cfg (node: ProcCfg.Exceptional.node) (pset: Paths.
     Paths.PathSet.fold (exe_instr_prop instr) pset Paths.PathSet.empty
   in
   List.fold ~f:exe_instr_pset ~init:pset (ProcCfg.Exceptional.instrs node)
-

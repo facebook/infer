@@ -1165,7 +1165,7 @@ let report_custom_errors tenv summary =
   let error_preconditions, all_post_error = custom_error_preconditions summary in
   let report (pre, custom_error) =
     if all_post_error || is_unavoidable tenv pre then
-      let loc = summary.Specs.attributes.ProcAttributes.loc in
+      let loc = Specs.get_loc summary in
       let err_desc = Localise.desc_custom_error loc in
       let exn = Exceptions.Custom_error (custom_error, err_desc) in
       Reporting.log_error_deprecated pname exn
@@ -1400,28 +1400,16 @@ let do_analysis_closures exe_env : Tasks.closure list =
       match Exe_env.get_proc_desc exe_env pname with Some pdesc -> pdesc | None -> assert false
     in
     let nodes = List.map ~f:(fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes pdesc) in
-    let proc_flags = Procdesc.get_flags pdesc in
-    let static_err_log = Procdesc.get_err_log pdesc in
-    (* err log from translation *)
     let calls = get_calls pdesc in
-    let attributes =
-      {(Procdesc.get_attributes pdesc) with ProcAttributes.err_log= static_err_log}
-    in
-    let proc_desc_option =
-      if Config.(equal_dynamic_dispatch dynamic_dispatch Lazy) then Some pdesc else None
-    in
-    ignore (Specs.init_summary (nodes, proc_flags, calls, attributes, proc_desc_option))
+    ignore (Specs.init_summary (nodes, calls, pdesc))
   in
   let callbacks =
     let get_proc_desc proc_name =
       match Exe_env.get_proc_desc exe_env proc_name with
       | Some pdesc ->
           Some pdesc
-      | None when Config.(equal_dynamic_dispatch dynamic_dispatch Lazy) ->
-          Option.bind (Specs.get_summary proc_name) ~f:(fun summary ->
-              summary.Specs.proc_desc_option )
       | None ->
-          None
+          Option.map ~f:Specs.get_proc_desc (Specs.get_summary proc_name)
     in
     let analyze_ondemand _ proc_desc =
       let proc_name = Procdesc.get_proc_name proc_desc in
@@ -1503,7 +1491,7 @@ let print_stats_cfg proc_shadowed source cfg =
           Typ.Procname.pp proc_name
     | Some summary ->
         let stats = summary.Specs.stats in
-        let err_log = summary.Specs.attributes.ProcAttributes.err_log in
+        let err_log = Specs.get_err_log summary in
         incr num_proc ;
         let specs = Specs.get_specs_from_payload summary in
         tot_specs := List.length specs + !tot_specs ;
@@ -1578,4 +1566,3 @@ let print_stats cluster =
       in
       print_stats_cfg proc_shadowed source cfg)
     exe_env
-

@@ -97,10 +97,8 @@ let iterate_callbacks call_graph exe_env =
     match Exe_env.get_proc_desc exe_env proc_name with
     | Some pdesc ->
         Some pdesc
-    | None when Config.(equal_dynamic_dispatch dynamic_dispatch Lazy) ->
-        Option.bind (Specs.get_summary proc_name) ~f:(fun summary -> summary.Specs.proc_desc_option)
     | None ->
-        None
+        Option.map ~f:Specs.get_proc_desc (Specs.get_summary proc_name)
   in
   let analyze_ondemand summary proc_desc =
     iterate_procedure_callbacks get_proc_desc exe_env summary proc_desc
@@ -122,4 +120,3 @@ let iterate_callbacks call_graph exe_env =
   (* Unregister callbacks *)
   Ondemand.unset_callbacks () ;
   Config.curr_language := saved_language
-

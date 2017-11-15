@@ -148,8 +148,7 @@ type summary =
   ; sessions: int ref  (** Session number: how many nodes went trough symbolic execution *)
   ; stats: stats  (** statistics: execution time and list of errors *)
   ; status: status  (** Analysis status of the procedure *)
-  ; attributes: ProcAttributes.t  (** Attributes of the procedure *)
-  ; proc_desc_option: Procdesc.t option }
+  ; proc_desc: Procdesc.t }
 
 val dummy : summary
 (** dummy summary for testing *)
@@ -172,6 +171,8 @@ val get_summary : Typ.Procname.t -> summary option
 val get_proc_name : summary -> Typ.Procname.t
 (** Get the procedure name *)
 
+val get_proc_desc : summary -> Procdesc.t
+
 val get_attributes : summary -> ProcAttributes.t
 (** Get the attributes of the procedure. *)
 
@@ -183,6 +184,10 @@ val get_formals : summary -> (Mangled.t * Typ.t) list
 
 val get_phase : summary -> phase
 (** Return the current phase for the proc *)
+
+val get_err_log : summary -> Errlog.t
+
+val get_loc : summary -> Location.t
 
 val get_signature : summary -> string
 (** Return the signature of a procedure declaration as a string *)
@@ -197,16 +202,10 @@ val get_status : summary -> status
 (** Return the status (active v.s. inactive) of a procedure summary *)
 
 val init_summary :
-  Procdesc.Node.id list
-  * (* nodes *)
-    ProcAttributes.proc_flags
-  * (* procedure flags *)
-    (Typ.Procname.t * Location.t) list
-  * (* calls *)
-    ProcAttributes.t
-  * (* attributes of the procedure *)
-    Procdesc.t option
-  (* procdesc option *) -> summary
+  Procdesc.Node.id list * (* nodes *)
+                          (Typ.Procname.t * Location.t) list * (* calls *)
+                                                               Procdesc.t
+  (* procdesc *) -> summary
 (** Initialize the summary for [proc_name] given dependent procs in list [depend_list].
     This also stores the new summary in the spec table. *)
 
