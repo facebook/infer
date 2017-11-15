@@ -189,4 +189,3 @@ let register_perf_stats_report () =
   let stats_base = Config.perf_stats_prefix ^ Filename.basename cluster ^ ".json" in
   let stats_file = Filename.concat stats_dir stats_base in
   PerfStats.register_report_at_exit stats_file
-

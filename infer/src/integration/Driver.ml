@@ -382,19 +382,19 @@ let report ?(suppress_console= false) () =
 
 let analyze_and_report ?suppress_console_report ~changed_files mode =
   let should_analyze, should_report =
-    match (mode, Config.analyzer) with
-    | PythonCapture (BBuck, _), _ when not Config.flavors ->
+    match (Config.command, mode, Config.analyzer) with
+    | _, PythonCapture (BBuck, _), _ when not Config.flavors ->
         (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
         (false, false)
     | _ when Config.infer_is_clang || Config.infer_is_javac ->
         (* Called from another integration to do capture only. *)
         (false, false)
-    | _, (CaptureOnly | CompileOnly) ->
-        (false, false)
-    | _, (BiAbduction | Checkers | Crashcontext) ->
-        (true, true)
-    | _, Linters ->
+    | _, _, Linters ->
         (false, true)
+    | (Capture | Compile), _, _ | _, _, (CaptureOnly | CompileOnly) ->
+        (false, false)
+    | _, _, (BiAbduction | Checkers | Crashcontext) ->
+        (true, true)
   in
   let should_merge =
     match mode with
@@ -579,4 +579,3 @@ let read_config_changed_files () =
     | Error error ->
         L.external_error "Error reading the changed files index '%s': %s@." index error ;
         None
-
