@@ -1005,17 +1005,22 @@ let get_reporting_explanation_java report_kind tenv pname thread =
            "@\n Reporting because current method is annotated %a or overrides an annotated method."
            MF.pp_monospaced "@ThreadSafe")
     else
-      match get_current_class_and_threadsafe_superclasses tenv pname with
-      | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes)) ->
-          Some
-            ( if List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class then
-                F.asprintf "@\n Reporting because the current class is annotated %a"
-                  MF.pp_monospaced "@ThreadSafe"
-            else
-              F.asprintf "@\n Reporting because a superclass %a is annotated %a"
-                (MF.wrap_monospaced Typ.Name.pp) thread_safe_class MF.pp_monospaced "@ThreadSafe" )
-      | _ ->
-          None
+      match FbThreadSafety.get_fbthreadsafe_class_annot pname tenv with
+      | Some (qual, annot) ->
+          Some (FbThreadSafety.message_fbthreadsafe_class qual annot)
+      | None ->
+        match get_current_class_and_threadsafe_superclasses tenv pname with
+        | Some (current_class, (thread_safe_class :: _ as thread_safe_annotated_classes)) ->
+            Some
+              ( if List.mem ~equal:Typ.Name.equal thread_safe_annotated_classes current_class then
+                  F.asprintf "@\n Reporting because the current class is annotated %a"
+                    MF.pp_monospaced "@ThreadSafe"
+              else
+                F.asprintf "@\n Reporting because a superclass %a is annotated %a"
+                  (MF.wrap_monospaced Typ.Name.pp) thread_safe_class MF.pp_monospaced "@ThreadSafe"
+              )
+        | _ ->
+            None
   in
   match (report_kind, annotation_explanation_opt) with
   | UnannotatedInterface, Some threadsafe_explanation ->
@@ -1714,4 +1719,3 @@ let file_analysis {Callbacks.procedures} =
            else (module MayAliasQuotientedAccessListMap) )
            class_env))
     (aggregate_by_class procedures)
-
