@@ -34,3 +34,9 @@ int using_div0() {
   using f3::C;
   return 1 / C::ret_zero();
 }
+
+int type_alias_div0() {
+  using my_int = int;
+  my_int x = 0;
+  return 1 / x;
+}
