@@ -311,4 +311,6 @@ let use_after_free = from_string "USE_AFTER_FREE"
 
 let untrusted_variable_length_array = from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"
 
+let user_controlled_sql_risk = from_string "USER_CONTROLLED_SQL_RISK"
+
 let wrong_argument_number = from_string "Wrong_argument_number" ~hum:"Wrong Argument Number"

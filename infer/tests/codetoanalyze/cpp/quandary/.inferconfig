@@ -81,6 +81,8 @@
   ],
   "quandary-endpoints": [
     "basics::Obj::endpoint",
+    "endpoints::Service1::user_controlled_endpoint_to_sql_bad",
+    "endpoints::Service1::user_controlled_endpoint_to_shell_bad",
     "execs::Obj::endpoint"
   ]
 }

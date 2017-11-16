@@ -220,4 +220,6 @@ val use_after_free : t
 
 val untrusted_variable_length_array : t
 
+val user_controlled_sql_risk : t
+
 val wrong_argument_number : t
