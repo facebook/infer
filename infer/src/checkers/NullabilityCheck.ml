@@ -7,6 +7,7 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  *)
 
+module F = Format
 module L = Logging
 module MF = MarkupFormatter
 module CallSites = AbstractDomain.FiniteSet (CallSite)
@@ -38,22 +39,29 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           "Expecting a least one element in the set of call sites when analyzing %a"
           Typ.Procname.pp pname
     in
-    let message =
+    let simplified_pname =
+      Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname call_site)
+    in
+    let is_direct_dereference =
       match ap with
       | (Var.LogicalVar _, _), _ ->
-          (* direct dereference without intermediate variable *)
-          Format.asprintf
-            "The return value of %s is annotated with %a and is dereferenced without being checked for null at %a"
-            (MF.monospaced_to_string
-               (Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname call_site)))
-            MF.pp_monospaced annotation Location.pp loc
-      | _ ->
-          (* dereference with intermediate variable *)
-          Format.asprintf
-            "Variable %a is indirectly annotated with %a (source %a) and is dereferenced without being checked for null at %a"
-            (MF.wrap_monospaced AccessPath.pp)
-            ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site Location.pp
-            loc
+          true
+      | (Var.ProgramVar pvar, _), _ ->
+          Pvar.is_frontend_tmp pvar
+    in
+    let message =
+      if is_direct_dereference then
+        (* direct dereference without intermediate variable *)
+        F.asprintf
+          "The return value of %s is annotated with %a and is dereferenced without being checked for null at %a"
+          (MF.monospaced_to_string simplified_pname)
+          MF.pp_monospaced annotation Location.pp loc
+      else
+        (* dereference with intermediate variable *)
+        F.asprintf
+          "Variable %a is indirectly annotated with %a (source %a) and is dereferenced without being checked for null at %a"
+          (MF.wrap_monospaced AccessPath.pp)
+          ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site Location.pp loc
     in
     let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
     let summary = extras in
@@ -65,7 +73,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             []
         | Some attributes ->
             let description =
-              Format.asprintf "definition of %s" (Typ.Procname.get_method callee_pname)
+              F.asprintf "definition of %s" (Typ.Procname.get_method callee_pname)
             in
             let trace_element =
               Errlog.make_trace_element 1 attributes.ProcAttributes.loc description []
@@ -82,7 +90,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           trace_element :: with_origin_site
       in
       let dereference_site =
-        let description = Format.asprintf "deference of %a" AccessPath.pp ap in
+        let description =
+          if is_direct_dereference then
+            F.asprintf "dereferencing the return of %s" simplified_pname
+          else F.asprintf "dereference of %a" AccessPath.pp ap
+        in
         Errlog.make_trace_element 0 loc description []
       in
       dereference_site :: with_assignment_site
