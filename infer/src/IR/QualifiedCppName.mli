@@ -85,11 +85,3 @@ module Match : sig
 
   val match_qualifiers : quals_matcher -> t -> bool
 end
-
-module Dispatch : sig
-  type 'a quals_dispatcher
-
-  val of_fuzzy_qual_names : (string list * 'a) list -> 'a quals_dispatcher
-
-  val dispatch_qualifiers : 'a quals_dispatcher -> t -> 'a option
-end

@@ -125,16 +125,19 @@ module Make (CFG : ProcCfg.S) = struct
         L.(die InternalError) "Unexpected number of arguments for __set_array_length()"
 
 
-  let dispatcher : model_fun QualifiedCppName.Dispatch.quals_dispatcher =
-    QualifiedCppName.Dispatch.of_fuzzy_qual_names
-      [ (["__inferbo_min"], model_min)
-      ; (["__inferbo_set_size"], model_set_size)
-      ; (["__exit"; "exit"], model_bottom)
-      ; (["fgetc"], model_by_value Dom.Val.Itv.m1_255)
-      ; (["infer_print"], model_infer_print)
-      ; (["malloc"; "__new_array"], model_malloc)
-      ; (["realloc"], model_realloc)
-      ; (["__set_array_length"], model_infer_set_array_length)
-      ; (["strlen"], model_by_value Dom.Val.Itv.nat) ]
+  let dispatcher : model_fun ProcnameDispatcher.dispatcher =
+    let open ProcnameDispatcher in
+    make_dispatcher
+      [ -"__inferbo_min" <>--> model_min
+      ; -"__inferbo_set_size" <>--> model_set_size
+      ; -"__exit" <>--> model_bottom
+      ; -"exit" <>--> model_bottom
+      ; -"fgetc" <>--> model_by_value Dom.Val.Itv.m1_255
+      ; -"infer_print" <>--> model_infer_print
+      ; -"malloc" <>--> model_malloc
+      ; -"__new_array" <>--> model_malloc
+      ; -"realloc" <>--> model_realloc
+      ; -"__set_array_length" <>--> model_infer_set_array_length
+      ; -"strlen" <>--> model_by_value Dom.Val.Itv.nat ]
 
 end

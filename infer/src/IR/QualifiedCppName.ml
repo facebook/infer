@@ -102,18 +102,3 @@ module Match = struct
     Str.string_match matcher (to_separated_string ~sep:matching_separator normalized_qualifiers) 0
 
 end
-
-module Dispatch = struct
-  (* Simple implementation of a dispatcher, could be much more optimized *)
-
-  type 'a quals_dispatcher = (Match.quals_matcher * 'a) list
-
-  let of_fuzzy_qual_names fqnames_val_pairs =
-    List.map fqnames_val_pairs ~f:(fun (fqns, v) -> (Match.of_fuzzy_qual_names fqns, v))
-
-
-  let dispatch_qualifiers dispatcher quals =
-    List.find_map dispatcher ~f:(fun (matcher, v) ->
-        Option.some_if (Match.match_qualifiers matcher quals) v )
-
-end

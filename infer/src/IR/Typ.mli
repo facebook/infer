@@ -266,10 +266,27 @@ module Procname : sig
   type java
 
   (** Type of c procedure names. *)
-  type c
+  type c = private
+    { name: QualifiedCppName.t
+    ; mangled: string option
+    ; template_args: template_spec_info
+    ; is_generic_model: bool }
+
+  type objc_cpp_method_kind =
+    | CPPMethod of string option  (** with mangling *)
+    | CPPConstructor of (string option * bool)  (** with mangling + is it constexpr? *)
+    | CPPDestructor of string option  (** with mangling *)
+    | ObjCClassMethod
+    | ObjCInstanceMethod
+    | ObjCInternalMethod
 
   (** Type of Objective C and C++ procedure names. *)
-  type objc_cpp
+  type objc_cpp = private
+    { method_name: string
+    ; class_name: Name.t
+    ; kind: objc_cpp_method_kind
+    ; template_args: template_spec_info
+    ; is_generic_model: bool }
 
   (** Type of Objective C block names. *)
   type block_name
@@ -305,14 +322,6 @@ module Procname : sig
     | Non_Static
         (** in Java, procedures called with invokevirtual, invokespecial, and invokeinterface *)
     | Static  (** in Java, procedures called with invokestatic *)
-
-  type objc_cpp_method_kind =
-    | CPPMethod of string option  (** with mangling *)
-    | CPPConstructor of (string option * bool)  (** with mangling + is it constexpr? *)
-    | CPPDestructor of string option  (** with mangling *)
-    | ObjCClassMethod
-    | ObjCInstanceMethod
-    | ObjCInternalMethod
 
   (** Hash tables with proc names as keys. *)
   module Hashable : Caml.Hashtbl.HashedType with type t = t

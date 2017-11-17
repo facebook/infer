@@ -263,23 +263,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             else mem
         | Prune (exp, _, _, _) ->
             Sem.prune exp mem
-        | Call (ret, Const Cfun callee_pname, params, location, _)
-          -> (
-            let quals = Typ.Procname.get_qualifiers callee_pname in
-            match QualifiedCppName.Dispatch.dispatch_qualifiers Models.dispatcher quals with
-            | Some model ->
-                model callee_pname ret params node location mem
+        | Call (ret, Const Cfun callee_pname, params, location, _) -> (
+          match Models.dispatcher callee_pname params with
+          | Some model ->
+              model callee_pname ret params node location mem
+          | None ->
+            match Summary.read_summary pdesc callee_pname with
+            | Some summary ->
+                let callee = extras callee_pname in
+                instantiate_mem tenv ret callee callee_pname params mem summary location
             | None ->
-              match Summary.read_summary pdesc callee_pname with
-              | Some summary ->
-                  let callee = extras callee_pname in
-                  instantiate_mem tenv ret callee callee_pname params mem summary location
-              | None ->
-                  L.(debug BufferOverrun Verbose)
-                    "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
-                    location ;
-                  Models.model_by_value Dom.Val.unknown callee_pname ret params node location mem
-                  |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown )
+                L.(debug BufferOverrun Verbose)
+                  "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
+                  location ;
+                Models.model_by_value Dom.Val.unknown callee_pname ret params node location mem
+                |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown )
         | Declare_locals (locals, location) ->
             (* array allocation in stack e.g., int arr[10] *)
             let try_decl_arr location (mem, inst_num) (pvar, typ) =
