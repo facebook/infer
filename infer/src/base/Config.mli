@@ -353,8 +353,6 @@ val continue_capture : bool
 
 val crashcontext : bool
 
-val create_harness : bool
-
 val current_to_previous_script : string option
 
 val cxx : bool

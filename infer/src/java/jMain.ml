@@ -28,11 +28,10 @@ let init_global_state source_file =
   JContext.reset_exn_node_table ()
 
 
-let store_icfg source_file tenv cg cfg =
+let store_icfg source_file cg cfg =
   let source_dir = DB.source_dir_from_source_file source_file in
   let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
-  if Config.create_harness then Harness.create_harness cfg cg tenv ;
   Cg.store_to_file cg_file cg ;
   Cfg.store_to_file ~source_file cfg_file cfg ;
   if Config.debug_mode || Config.frontend_tests then (
@@ -50,7 +49,7 @@ let do_source_file linereader classes program tenv source_basename package_opt s
     JFrontend.compute_source_icfg linereader classes program tenv source_basename package_opt
       source_file
   in
-  store_icfg source_file tenv call_graph cfg
+  store_icfg source_file call_graph cfg
 
 
 let capture_libs linereader program tenv =
@@ -66,7 +65,7 @@ let capture_libs linereader program tenv =
         let call_graph, cfg =
           JFrontend.compute_class_icfg fake_source_file linereader program tenv node
         in
-        store_icfg fake_source_file tenv call_graph cfg ;
+        store_icfg fake_source_file call_graph cfg ;
         JFrontend.cache_classname cn
   in
   JBasics.ClassMap.iter (capture_class tenv) (JClasspath.get_classmap program)

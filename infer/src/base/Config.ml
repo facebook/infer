@@ -699,12 +699,6 @@ and analyzer =
             x)
     ~symbols:string_to_analyzer
 
-
-and android_harness =
-  CLOpt.mk_bool ~deprecated:["harness"] ~long:"android-harness"
-    "(Experimental) Create harness to detect issues involving the Android lifecycle"
-
-
 and ( annotation_reachability
     , biabduction
     , bufferoverrun
@@ -2362,8 +2356,6 @@ and continue_capture = !continue
 and current_to_previous_script = !current_to_previous_script
 
 and crashcontext = !crashcontext
-
-and create_harness = !android_harness
 
 and cxx = !cxx
 

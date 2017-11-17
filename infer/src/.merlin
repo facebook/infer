@@ -78,7 +78,6 @@ S clang
 S concurrency
 S eradicate
 S facebook
-S harness
 S integration
 S istd
 S java

@@ -15,7 +15,6 @@ let source_dirs =
        ; "checkers"
        ; "concurrency"
        ; "eradicate"
-       ; "harness"
        ; "integration"
        ; "IR"
        ; "labs"

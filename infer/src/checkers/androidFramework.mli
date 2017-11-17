@@ -14,9 +14,6 @@ open! IStd
 val drawable_prefix : string
 (** prefix for Drawable fields in generated resources *)
 
-val get_lifecycles : (string * string * string list) list
-(** return the complete list of (package, lifecycle_classname, lifecycle_methods) trios *)
-
 val is_autocloseable : Tenv.t -> Typ.Name.t -> bool
 
 val is_context : Tenv.t -> Typ.Name.t -> bool
@@ -35,11 +32,6 @@ val is_fragment : Tenv.t -> Typ.Name.t -> bool
 
 val is_destroy_method : Typ.Procname.t -> bool
 (** return true if [procname] is a special lifecycle cleanup method *)
-
-val get_lifecycle_for_framework_typ_opt :
-  Tenv.t -> Typ.Name.t -> string list -> Typ.Procname.t list
-(** given an Android framework type mangled string [lifecycle_typ] (e.g., android.app.Activity)
-    and a list of method names [lifecycle_procs_strs], get the appropriate typ and procnames *)
 
 val is_android_lib_class : Typ.Name.t -> bool
 (** return true if [class_name] is the name of a class that belong to the Android framework *)
