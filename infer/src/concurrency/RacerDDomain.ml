@@ -371,7 +371,7 @@ module AccessPrecondition = struct
           (IntSet.elements indexes)
 
 
-  let make locks thread pdesc =
+  let make_protected locks thread pdesc =
     let is_main_thread = ThreadsDomain.is_any_but_self thread in
     let locked = locks || Procdesc.is_java_synchronized pdesc in
     if not locked && not is_main_thread then TotallyUnprotected
@@ -379,6 +379,13 @@ module AccessPrecondition = struct
     else if locked then Protected Excluder.Lock
     else Protected Excluder.Thread
 
+
+  let make_unprotected indexes =
+    assert (not (IntSet.is_empty indexes)) ;
+    Unprotected indexes
+
+
+  let totally_unprotected = TotallyUnprotected
 end
 
 module AccessDomain = struct

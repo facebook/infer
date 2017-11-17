@@ -11,7 +11,7 @@ open! IStd
 module F = Format
 
 module Access : sig
-  type t =
+  type t = private
     | Read of AccessPath.t  (** Field or array read *)
     | Write of AccessPath.t  (** Field or array write *)
     | ContainerRead of AccessPath.t * Typ.Procname.t  (** Read of container object *)
@@ -163,7 +163,7 @@ module Excluder : sig
 end
 
 module AccessPrecondition : sig
-  type t =
+  type t = private
     | Protected of Excluder.t
         (** access potentially protected for mutual exclusion by
         lock or thread or both *)
@@ -175,7 +175,11 @@ module AccessPrecondition : sig
 
   val pp : F.formatter -> t -> unit
 
-  val make : LocksDomain.astate -> ThreadsDomain.astate -> Procdesc.t -> t
+  val make_protected : LocksDomain.astate -> ThreadsDomain.astate -> Procdesc.t -> t
+
+  val make_unprotected : IntSet.t -> t
+
+  val totally_unprotected : t
 end
 
 (** map of access precondition |-> set of accesses. the map should hold all accesses to a

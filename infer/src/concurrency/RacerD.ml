@@ -172,7 +172,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
        && not (has_return_annot thread_safe_or_thread_confined pname)
     then
       let open Domain in
-      let pre = AccessPrecondition.make locks threads proc_data.pdesc in
+      let pre = AccessPrecondition.make_protected locks threads proc_data.pdesc in
       AccessDomain.add_access pre (TraceElem.make_unannotated_call_access pname loc) attribute_map
     else attribute_map
 
@@ -223,17 +223,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       then acc
       else
         let pre =
-          match AccessPrecondition.make locks threads proc_data.pdesc with
+          match AccessPrecondition.make_protected locks threads proc_data.pdesc with
           | AccessPrecondition.Protected _ as excluder ->
               excluder
           | _ ->
             match OwnershipDomain.get_owned base_access_path ownership with
             | OwnershipAbstractValue.OwnedIf formal_indexes ->
-                AccessPrecondition.Unprotected formal_indexes
+                AccessPrecondition.make_unprotected formal_indexes
             | OwnershipAbstractValue.Owned ->
                 assert false
             | OwnershipAbstractValue.Unowned ->
-                AccessPrecondition.TotallyUnprotected
+                AccessPrecondition.totally_unprotected
         in
         add_field_accesses pre base_access_path acc accesses
     in
@@ -361,8 +361,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let container_access =
           TraceElem.make_container_access receiver_ap ~is_write callee_pname callee_loc
         in
-        AccessDomain.add_access (Unprotected (IntSet.singleton 0)) container_access
-          AccessDomain.empty
+        AccessDomain.add_access
+          (AccessPrecondition.make_unprotected (IntSet.singleton 0))
+          container_access AccessDomain.empty
     in
     Some
       { locks= false
@@ -577,7 +578,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                             accesses_acc
                           else
                             let pre =
-                              match AccessPrecondition.make locks threads pdesc with
+                              match AccessPrecondition.make_protected locks threads pdesc with
                               | AccessPrecondition.Protected _ as excluder (* access protected *) ->
                                   excluder
                               | _ ->
@@ -585,8 +586,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                   match OwnershipDomain.get_owned (base, []) astate.ownership with
                                   | OwnershipAbstractValue.OwnedIf formal_indexes ->
                                       (* the actual passed to the current callee is rooted in a
-                                     formal *)
-                                      AccessPrecondition.Unprotected formal_indexes
+                                         formal *)
+                                      AccessPrecondition.make_unprotected formal_indexes
                                   | OwnershipAbstractValue.Unowned | OwnershipAbstractValue.Owned ->
                                     match
                                       OwnershipDomain.get_owned actual_access_path astate.ownership
@@ -594,18 +595,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                                     | OwnershipAbstractValue.OwnedIf formal_indexes ->
                                         (* access path conditionally owned if [formal_indexes] are
                                            owned *)
-                                        AccessPrecondition.Unprotected formal_indexes
+                                        AccessPrecondition.make_unprotected formal_indexes
                                     | OwnershipAbstractValue.Owned ->
                                         assert false
                                     | OwnershipAbstractValue.Unowned ->
                                         (* access path not rooted in a formal and not conditionally
                                            owned *)
-                                        AccessPrecondition.TotallyUnprotected
+                                        AccessPrecondition.totally_unprotected
                             in
                             update_caller_accesses pre ownership_accesses accesses_acc
                       | _ ->
                           (* couldn't find access path, don't know if it's owned *)
-                          update_caller_accesses AccessPrecondition.TotallyUnprotected
+                          update_caller_accesses AccessPrecondition.totally_unprotected
                             ownership_accesses accesses_acc
                     in
                     let accesses =
@@ -614,7 +615,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                         | AccessPrecondition.Protected _ ->
                             update_caller_accesses pre callee_accesses accesses_acc
                         | AccessPrecondition.TotallyUnprotected ->
-                            let pre' = AccessPrecondition.make locks threads pdesc in
+                            let pre' = AccessPrecondition.make_protected locks threads pdesc in
                             update_caller_accesses pre' callee_accesses accesses_acc
                         | AccessPrecondition.Unprotected formal_indexes ->
                             IntSet.fold
