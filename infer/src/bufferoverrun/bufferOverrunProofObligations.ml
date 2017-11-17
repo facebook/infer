@@ -167,23 +167,23 @@ module ConditionTrace = struct
 
   type t =
     { proc_name: Typ.Procname.t
-    ; loc: Location.t
+    ; location: Location.t
     ; id: string
     ; cond_trace: cond_trace
     ; val_traces: ValTraceSet.t }
     [@@deriving compare]
 
-  let pp_location : F.formatter -> t -> unit = fun fmt ct -> Location.pp_file_pos fmt ct.loc
+  let pp_location : F.formatter -> t -> unit = fun fmt ct -> Location.pp_file_pos fmt ct.location
 
   let pp : F.formatter -> t -> unit =
     fun fmt ct ->
       if Config.bo_debug <= 1 then F.fprintf fmt "at %a" pp_location ct
       else
         match ct.cond_trace with
-        | Inter (_, pname, loc) ->
+        | Inter (_, pname, location) ->
             let pname = Typ.Procname.to_string pname in
             F.fprintf fmt "at %a by call %s() at %a (%a)" pp_location ct pname Location.pp_file_pos
-              loc ValTraceSet.pp ct.val_traces
+              location ValTraceSet.pp ct.val_traces
         | Intra _ ->
             F.fprintf fmt "%a (%a)" pp_location ct ValTraceSet.pp ct.val_traces
 
@@ -192,14 +192,14 @@ module ConditionTrace = struct
     fun fmt ct ->
       match ct.cond_trace with
       | Inter (_, pname, _)
-        when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.loc.Location.file) ->
+        when Config.bo_debug >= 1 || not (SourceFile.is_cpp_model ct.location.Location.file) ->
           F.fprintf fmt " %@ %a by call %a " pp_location ct MF.pp_monospaced
             (Typ.Procname.to_string pname ^ "()")
       | _ ->
           ()
 
 
-  let get_location : t -> Location.t = fun ct -> ct.loc
+  let get_location : t -> Location.t = fun ct -> ct.location
 
   let get_cond_trace : t -> cond_trace = fun ct -> ct.cond_trace
 
@@ -210,12 +210,15 @@ module ConditionTrace = struct
 
 
   let make : Typ.Procname.t -> Location.t -> string -> ValTraceSet.t -> t =
-    fun proc_name loc id val_traces -> {proc_name; loc; id; cond_trace= Intra proc_name; val_traces}
+    fun proc_name location id val_traces ->
+      {proc_name; location; id; cond_trace= Intra proc_name; val_traces}
 
 
-  let make_call_and_subst ~traces_caller ~caller_pname ~callee_pname loc ct =
-    let val_traces = ValTraceSet.instantiate ~traces_caller ~traces_callee:ct.val_traces loc in
-    {ct with cond_trace= Inter (caller_pname, callee_pname, loc); val_traces}
+  let make_call_and_subst ~traces_caller ~caller_pname ~callee_pname location ct =
+    let val_traces =
+      ValTraceSet.instantiate ~traces_caller ~traces_callee:ct.val_traces location
+    in
+    {ct with cond_trace= Inter (caller_pname, callee_pname, location); val_traces}
 
 end
 
@@ -270,17 +273,17 @@ module ConditionSet = struct
 
   let join condset1 condset2 = List.fold_left ~f:add_one condset1 ~init:condset2
 
-  let add_bo_safety pname loc id ~idx ~size val_traces condset =
+  let add_bo_safety pname location id ~idx ~size val_traces condset =
     match Condition.make ~idx ~size with
     | None ->
         condset
     | Some cond ->
-        let trace = ConditionTrace.make pname loc id val_traces in
+        let trace = ConditionTrace.make pname location id val_traces in
         let cwt = {cond; trace} in
         join [cwt] condset
 
 
-  let subst condset (bound_map, trace_map) caller_pname callee_pname loc =
+  let subst condset (bound_map, trace_map) caller_pname callee_pname location =
     let subst_add_cwt condset cwt =
       match Condition.get_symbols cwt.cond with
       | [] ->
@@ -299,8 +302,8 @@ module ConditionSet = struct
                       val_traces )
             in
             let make_call_and_subst trace =
-              ConditionTrace.make_call_and_subst ~traces_caller ~caller_pname ~callee_pname loc
-                trace
+              ConditionTrace.make_call_and_subst ~traces_caller ~caller_pname ~callee_pname
+                location trace
             in
             let trace = make_call_and_subst cwt.trace in
             add_one condset {cond; trace}

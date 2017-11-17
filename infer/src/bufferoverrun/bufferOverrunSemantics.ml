@@ -186,8 +186,8 @@ module Make (CFG : ProcCfg.S) = struct
           false
 
 
-  let rec eval : Exp.t -> Mem.astate -> Location.t -> Val.t =
-    fun exp mem loc ->
+  let rec eval : Exp.t -> Mem.astate -> Val.t =
+    fun exp mem ->
       if must_alias_cmp exp mem then Val.of_int 0
       else
         match exp with
@@ -198,20 +198,19 @@ module Make (CFG : ProcCfg.S) = struct
             let arr = Mem.find_stack_set ploc mem in
             ploc |> Val.of_pow_loc |> Val.join arr
         | Exp.UnOp (uop, e, _) ->
-            eval_unop uop e mem loc
+            eval_unop uop e mem
         | Exp.BinOp (bop, e1, e2) ->
-            eval_binop bop e1 e2 mem loc
+            eval_binop bop e1 e2 mem
         | Exp.Const c ->
             eval_const c
         | Exp.Cast (_, e) ->
-            eval e mem loc
+            eval e mem
         | Exp.Lfield (e, fn, _) ->
-            eval e mem loc |> Val.get_array_locs |> Fn.flip PowLoc.append_field fn
-            |> Val.of_pow_loc
+            eval e mem |> Val.get_array_locs |> Fn.flip PowLoc.append_field fn |> Val.of_pow_loc
         | Exp.Lindex (e1, _) ->
-            let arr = eval e1 mem loc |> Val.get_array_blk in
+            let arr = eval e1 mem |> Val.get_array_blk in
             (* must have array blk *)
-            (* let idx = eval e2 mem loc in *)
+            (* let idx = eval e2 mem in *)
             let ploc = if ArrayBlk.is_bot arr then PowLoc.unknown else ArrayBlk.get_pow_loc arr in
             (* if nested array, add the array blk *)
             let arr = Mem.find_heap_set ploc mem in
@@ -224,9 +223,9 @@ module Make (CFG : ProcCfg.S) = struct
             Val.Itv.top
 
 
-  and eval_unop : Unop.t -> Exp.t -> Mem.astate -> Location.t -> Val.t =
-    fun unop e mem loc ->
-      let v = eval e mem loc in
+  and eval_unop : Unop.t -> Exp.t -> Mem.astate -> Val.t =
+    fun unop e mem ->
+      let v = eval e mem in
       match unop with
       | Unop.Neg ->
           Val.neg v
@@ -236,10 +235,10 @@ module Make (CFG : ProcCfg.S) = struct
           Val.lnot v
 
 
-  and eval_binop : Binop.t -> Exp.t -> Exp.t -> Mem.astate -> Location.t -> Val.t =
-    fun binop e1 e2 mem loc ->
-      let v1 = eval e1 mem loc in
-      let v2 = eval e2 mem loc in
+  and eval_binop : Binop.t -> Exp.t -> Exp.t -> Mem.astate -> Val.t =
+    fun binop e1 e2 mem ->
+      let v1 = eval e1 mem in
+      let v2 = eval e2 mem in
       match binop with
       | Binop.PlusA ->
           Val.join (Val.plus v1 v2) (Val.plus_pi v1 v2)
@@ -281,8 +280,8 @@ module Make (CFG : ProcCfg.S) = struct
           Val.lor_sem v1 v2
 
 
-  let rec eval_locs : Exp.t -> Mem.astate -> Location.t -> Val.t =
-    fun exp mem loc ->
+  let rec eval_locs : Exp.t -> Mem.astate -> Val.t =
+    fun exp mem ->
       match exp with
       | Exp.Var id -> (
         match Mem.find_alias id mem with
@@ -293,14 +292,14 @@ module Make (CFG : ProcCfg.S) = struct
       | Exp.Lvar pvar ->
           pvar |> Loc.of_pvar |> PowLoc.singleton |> Val.of_pow_loc
       | Exp.BinOp (bop, e1, e2) ->
-          eval_binop bop e1 e2 mem loc
+          eval_binop bop e1 e2 mem
       | Exp.Cast (_, e) ->
-          eval_locs e mem loc
+          eval_locs e mem
       | Exp.Lfield (e, fn, _) ->
-          eval e mem loc |> Val.get_all_locs |> Fn.flip PowLoc.append_field fn |> Val.of_pow_loc
+          eval e mem |> Val.get_all_locs |> Fn.flip PowLoc.append_field fn |> Val.of_pow_loc
       | Exp.Lindex (e1, e2) ->
-          let arr = eval e1 mem loc in
-          let idx = eval e2 mem loc in
+          let arr = eval e1 mem in
+          let idx = eval e2 mem in
           Val.plus_pi arr idx
       | Exp.Const _ | Exp.UnOp _ | Exp.Sizeof _ | Exp.Exn _ | Exp.Closure _ ->
           Val.bot
@@ -358,8 +357,8 @@ module Make (CFG : ProcCfg.S) = struct
           mem
 
 
-  let prune_binop_left : Exp.t -> Location.t -> Mem.astate -> Mem.astate =
-    fun e loc mem ->
+  let prune_binop_left : Exp.t -> Mem.astate -> Mem.astate =
+    fun e mem ->
       match e with
       | Exp.BinOp ((Binop.Lt as comp), Exp.Var x, e')
       | Exp.BinOp ((Binop.Gt as comp), Exp.Var x, e')
@@ -368,7 +367,7 @@ module Make (CFG : ProcCfg.S) = struct
         match Mem.find_simple_alias x mem with
         | Some lv ->
             let v = Mem.find_heap lv mem in
-            let v' = Val.prune_comp comp v (eval e' mem loc) in
+            let v' = Val.prune_comp comp v (eval e' mem) in
             Mem.update_mem (PowLoc.singleton lv) v' mem
         | None ->
             mem )
@@ -376,7 +375,7 @@ module Make (CFG : ProcCfg.S) = struct
         match Mem.find_simple_alias x mem with
         | Some lv ->
             let v = Mem.find_heap lv mem in
-            let v' = Val.prune_eq v (eval e' mem loc) in
+            let v' = Val.prune_eq v (eval e' mem) in
             Mem.update_mem (PowLoc.singleton lv) v' mem
         | None ->
             mem )
@@ -384,7 +383,7 @@ module Make (CFG : ProcCfg.S) = struct
         match Mem.find_simple_alias x mem with
         | Some lv ->
             let v = Mem.find_heap lv mem in
-            let v' = Val.prune_ne v (eval e' mem loc) in
+            let v' = Val.prune_ne v (eval e' mem) in
             Mem.update_mem (PowLoc.singleton lv) v' mem
         | None ->
             mem )
@@ -392,8 +391,8 @@ module Make (CFG : ProcCfg.S) = struct
           mem
 
 
-  let prune_binop_right : Exp.t -> Location.t -> Mem.astate -> Mem.astate =
-    fun e loc mem ->
+  let prune_binop_right : Exp.t -> Mem.astate -> Mem.astate =
+    fun e mem ->
       match e with
       | Exp.BinOp ((Binop.Lt as c), e', Exp.Var x)
       | Exp.BinOp ((Binop.Gt as c), e', Exp.Var x)
@@ -401,43 +400,42 @@ module Make (CFG : ProcCfg.S) = struct
       | Exp.BinOp ((Binop.Ge as c), e', Exp.Var x)
       | Exp.BinOp ((Binop.Eq as c), e', Exp.Var x)
       | Exp.BinOp ((Binop.Ne as c), e', Exp.Var x) ->
-          prune_binop_left (Exp.BinOp (comp_rev c, Exp.Var x, e')) loc mem
+          prune_binop_left (Exp.BinOp (comp_rev c, Exp.Var x, e')) mem
       | _ ->
           mem
 
 
-  let is_unreachable_constant : Exp.t -> Location.t -> Mem.astate -> bool =
-    fun e loc m -> Val.( <= ) ~lhs:(eval e m loc) ~rhs:(Val.of_int 0)
+  let is_unreachable_constant : Exp.t -> Mem.astate -> bool =
+    fun e m -> Val.( <= ) ~lhs:(eval e m) ~rhs:(Val.of_int 0)
 
 
-  let prune_unreachable : Exp.t -> Location.t -> Mem.astate -> Mem.astate =
-    fun e loc mem -> if is_unreachable_constant e loc mem then Mem.bot else mem
+  let prune_unreachable : Exp.t -> Mem.astate -> Mem.astate =
+    fun e mem -> if is_unreachable_constant e mem then Mem.bot else mem
 
 
-  let rec prune : Exp.t -> Location.t -> Mem.astate -> Mem.astate =
-    fun e loc mem ->
+  let rec prune : Exp.t -> Mem.astate -> Mem.astate =
+    fun e mem ->
       let mem =
-        mem |> prune_unreachable e loc |> prune_unop e |> prune_binop_left e loc
-        |> prune_binop_right e loc
+        mem |> prune_unreachable e |> prune_unop e |> prune_binop_left e |> prune_binop_right e
       in
       match e with
       | Exp.BinOp (Binop.Ne, e, Exp.Const Const.Cint i) when IntLit.iszero i ->
-          prune e loc mem
+          prune e mem
       | Exp.BinOp (Binop.Eq, e, Exp.Const Const.Cint i) when IntLit.iszero i ->
-          prune (Exp.UnOp (Unop.LNot, e, None)) loc mem
+          prune (Exp.UnOp (Unop.LNot, e, None)) mem
       | Exp.UnOp (Unop.Neg, Exp.Var x, _) ->
-          prune (Exp.Var x) loc mem
+          prune (Exp.Var x) mem
       | Exp.BinOp (Binop.LAnd, e1, e2) ->
-          mem |> prune e1 loc |> prune e2 loc
+          mem |> prune e1 |> prune e2
       | Exp.UnOp (Unop.LNot, Exp.BinOp (Binop.LOr, e1, e2), t) ->
-          mem |> prune (Exp.UnOp (Unop.LNot, e1, t)) loc |> prune (Exp.UnOp (Unop.LNot, e2, t)) loc
+          mem |> prune (Exp.UnOp (Unop.LNot, e1, t)) |> prune (Exp.UnOp (Unop.LNot, e2, t))
       | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Lt as c), e1, e2), _)
       | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Gt as c), e1, e2), _)
       | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Le as c), e1, e2), _)
       | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Ge as c), e1, e2), _)
       | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Eq as c), e1, e2), _)
       | Exp.UnOp (Unop.LNot, Exp.BinOp ((Binop.Ne as c), e1, e2), _) ->
-          prune (Exp.BinOp (comp_not c, e1, e2)) loc mem
+          prune (Exp.BinOp (comp_not c, e1, e2)) mem
       | _ ->
           mem
 
@@ -553,10 +551,10 @@ module Make (CFG : ProcCfg.S) = struct
 
   let get_subst_map
       : Tenv.t -> Procdesc.t -> (Exp.t * 'a) list -> Mem.astate -> Mem.astate
-        -> callee_ret_alias:AliasTarget.t option -> Location.t
+        -> callee_ret_alias:AliasTarget.t option
         -> (Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t)
            * AliasTarget.t option =
-    fun tenv callee_pdesc params caller_mem callee_entry_mem ~callee_ret_alias loc ->
+    fun tenv callee_pdesc params caller_mem callee_entry_mem ~callee_ret_alias ->
       let add_pair (formal, typ) actual (l, ret_alias) =
         let formal = Mem.find_heap (Loc.of_pvar formal) callee_entry_mem in
         let new_matching, ret_alias' =
@@ -565,7 +563,7 @@ module Make (CFG : ProcCfg.S) = struct
         (List.rev_append new_matching l, Option.first_some ret_alias ret_alias')
       in
       let formals = get_formals callee_pdesc in
-      let actuals = List.map ~f:(fun (a, _) -> eval a caller_mem loc) params in
+      let actuals = List.map ~f:(fun (a, _) -> eval a caller_mem) params in
       let pairs, ret_alias =
         list_fold2_def ~default:Val.Itv.top ~f:add_pair formals actuals ~init:([], None)
       in

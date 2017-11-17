@@ -213,7 +213,7 @@ module Val = struct
   let subst
       : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t * TraceSet.t Itv.SubstMap.t -> Location.t
         -> t =
-    fun x (bound_map, trace_map) loc ->
+    fun x (bound_map, trace_map) location ->
       let symbols = get_symbols x in
       let traces_caller =
         List.fold symbols
@@ -221,7 +221,7 @@ module Val = struct
             try TraceSet.join (Itv.SubstMap.find symbol trace_map) traces with Not_found -> traces)
           ~init:TraceSet.empty
       in
-      let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces loc in
+      let traces = TraceSet.instantiate ~traces_caller ~traces_callee:x.traces location in
       {x with itv= Itv.subst x.itv bound_map; arrayblk= ArrayBlk.subst x.arrayblk bound_map; traces}
       |> normalize
 

@@ -35,18 +35,18 @@ module BoTrace = struct
   let pp_elem : F.formatter -> elem -> unit =
     fun fmt elem ->
       match elem with
-      | Assign loc ->
-          F.fprintf fmt "Assign (%a)" Location.pp_file_pos loc
-      | ArrDecl loc ->
-          F.fprintf fmt "ArrDecl (%a)" Location.pp_file_pos loc
-      | Call loc ->
-          F.fprintf fmt "Call (%a)" Location.pp_file_pos loc
-      | Return loc ->
-          F.fprintf fmt "Return (%a)" Location.pp_file_pos loc
-      | SymAssign loc ->
-          F.fprintf fmt "SymAssign (%a)" Location.pp_file_pos loc
-      | ArrAccess loc ->
-          F.fprintf fmt "ArrAccess (%a)" Location.pp_file_pos loc
+      | Assign location ->
+          F.fprintf fmt "Assign (%a)" Location.pp_file_pos location
+      | ArrDecl location ->
+          F.fprintf fmt "ArrDecl (%a)" Location.pp_file_pos location
+      | Call location ->
+          F.fprintf fmt "Call (%a)" Location.pp_file_pos location
+      | Return location ->
+          F.fprintf fmt "Return (%a)" Location.pp_file_pos location
+      | SymAssign location ->
+          F.fprintf fmt "SymAssign (%a)" Location.pp_file_pos location
+      | ArrAccess location ->
+          F.fprintf fmt "ArrAccess (%a)" Location.pp_file_pos location
 
 
   let pp : F.formatter -> t -> unit =
@@ -78,30 +78,32 @@ module Set = struct
     if is_empty t then singleton (BoTrace.singleton elem) else map (BoTrace.add_elem_last elem) t
 
 
-  let instantiate ~traces_caller ~traces_callee loc =
+  let instantiate ~traces_caller ~traces_callee location =
     if is_empty traces_caller then
-      map (fun trace_callee -> BoTrace.add_elem_last (BoTrace.Call loc) trace_callee) traces_callee
+      map
+        (fun trace_callee -> BoTrace.add_elem_last (BoTrace.Call location) trace_callee)
+        traces_callee
     else
       fold
         (fun trace_callee traces ->
           fold
             (fun trace_caller traces ->
-              let new_trace_caller = BoTrace.add_elem (BoTrace.Call loc) trace_caller in
+              let new_trace_caller = BoTrace.add_elem (BoTrace.Call location) trace_caller in
               let new_trace = BoTrace.append trace_callee new_trace_caller in
               add new_trace traces)
             traces_caller traces)
         traces_callee empty
 
 
-  let merge ~traces_arr ~traces_idx loc =
+  let merge ~traces_arr ~traces_idx location =
     if is_empty traces_idx then
-      map (fun trace_arr -> BoTrace.add_elem (BoTrace.ArrAccess loc) trace_arr) traces_arr
+      map (fun trace_arr -> BoTrace.add_elem (BoTrace.ArrAccess location) trace_arr) traces_arr
     else
       fold
         (fun trace_idx traces ->
           fold
             (fun trace_arr traces ->
-              let new_trace_idx = BoTrace.add_elem (BoTrace.ArrAccess loc) trace_idx in
+              let new_trace_idx = BoTrace.add_elem (BoTrace.ArrAccess location) trace_idx in
               let new_trace = BoTrace.append new_trace_idx trace_arr in
               add new_trace traces)
             traces_arr traces)
