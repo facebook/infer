@@ -277,8 +277,6 @@ let get_initializer_pname {pv_name; pv_kind} =
   match pv_kind with
   | Global_var (translation, _, _, _, is_static_global) ->
       let name = Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name in
-      if is_static_global then print_endline ("Static : " ^ name) ;
-      (* let is_static_global = false in *)
       if is_static_global then
         match translation with
         | TUFile file ->
