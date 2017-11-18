@@ -1005,18 +1005,16 @@ let check_inconsistency_base tenv prop =
         false
     | Some (_, _, pdesc) ->
         let procedure_attr = Procdesc.get_attributes pdesc in
-        let is_java_this pvar =
-          Config.equal_language procedure_attr.ProcAttributes.language Config.Java
-          && Pvar.is_this pvar
-        in
+        let language = Typ.Procname.get_language (Procdesc.get_proc_name pdesc) in
+        let is_java_this pvar = Config.equal_language language Config.Java && Pvar.is_this pvar in
         let is_objc_instance_self pvar =
-          Config.equal_language procedure_attr.ProcAttributes.language Config.Clang
+          Config.equal_language language Config.Clang
           && Mangled.equal (Pvar.get_name pvar) (Mangled.from_string "self")
           && procedure_attr.ProcAttributes.is_objc_instance_method
         in
         let is_cpp_this pvar =
-          Config.equal_language procedure_attr.ProcAttributes.language Config.Clang
-          && Pvar.is_this pvar && procedure_attr.ProcAttributes.is_cpp_instance_method
+          Config.equal_language language Config.Clang && Pvar.is_this pvar
+          && procedure_attr.ProcAttributes.is_cpp_instance_method
         in
         let do_hpred = function
           | Sil.Hpointsto (Exp.Lvar pv, Sil.Eexp (e, _), _) ->

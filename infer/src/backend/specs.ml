@@ -772,7 +772,7 @@ let init_summary (nodes, calls, proc_desc) =
 
 
 let dummy =
-  let dummy_attributes = ProcAttributes.default Typ.Procname.empty_block Config.Java in
+  let dummy_attributes = ProcAttributes.default Typ.Procname.empty_block in
   let dummy_proc_desc = Procdesc.from_proc_attributes ~called_from_cfg:true dummy_attributes in
   init_summary ([], [], dummy_proc_desc)
 
@@ -781,12 +781,3 @@ let dummy =
 let reset_summary proc_desc = init_summary ([], [], proc_desc)
 
 (* =============== END of support for spec tables =============== *)
-(*
-let rec post_equal pl1 pl2 = match pl1, pl2 with
-  | [],[] -> true
-  | [], _:: _ -> false
-  | _:: _,[] -> false
-  | p1:: pl1', p2:: pl2' ->
-      if Prop.equal_prop p1 p2 then post_equal pl1' pl2'
-      else false
-*)

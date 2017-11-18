@@ -57,7 +57,6 @@ type t =
   ; is_model: bool  (** the procedure is a model *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
-  ; language: Config.language  (** language of the procedure *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t option  (** translation unit to which the procedure belongs *)
   ; mutable locals: (Mangled.t * Typ.t) list  (** name and type of local variables *)
@@ -69,7 +68,7 @@ type t =
   ; source_file_captured: SourceFile.t  (** source file where the procedure was captured *) }
   [@@deriving compare]
 
-let default proc_name language =
+let default proc_name =
   { access= PredSymb.Default
   ; captured= []
   ; changed= true
@@ -90,7 +89,6 @@ let default proc_name language =
   ; is_model= false
   ; is_specialized= false
   ; is_synthetic_method= false
-  ; language
   ; loc= Location.dummy
   ; translation_unit= None
   ; locals= []
@@ -100,4 +98,3 @@ let default proc_name language =
   ; proc_name
   ; ret_type= Typ.mk Typ.Tvoid
   ; source_file_captured= SourceFile.invalid __FILE__ }
-

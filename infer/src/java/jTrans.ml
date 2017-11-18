@@ -306,7 +306,7 @@ let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
   let method_annotation = JAnnotation.translate_method am.Javalib.am_annotations in
   let procdesc =
     let proc_attributes =
-      { (ProcAttributes.default proc_name Config.Java) with
+      { (ProcAttributes.default proc_name) with
         ProcAttributes.access= trans_access am.Javalib.am_access
       ; exceptions= List.map ~f:JBasics.cn_name am.Javalib.am_exceptions
       ; formals
@@ -332,7 +332,7 @@ let create_native_procdesc source_file program icfg cm proc_name =
   let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
   let procdesc =
     let proc_attributes =
-      { (ProcAttributes.default proc_name Config.Java) with
+      { (ProcAttributes.default proc_name) with
         ProcAttributes.access= trans_access cm.Javalib.cm_access
       ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
       ; formals
@@ -368,7 +368,7 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name skip_imp
       update_constr_loc cn ms loc_start ;
       update_init_loc cn ms loc_exit ;
       let proc_attributes =
-        { (ProcAttributes.default proc_name Config.Java) with
+        { (ProcAttributes.default proc_name) with
           ProcAttributes.access= trans_access cm.Javalib.cm_access
         ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
         ; formals
@@ -1124,4 +1124,3 @@ let instruction (context: JContext.t) pc instr : translation =
   with Frontend_error s ->
     L.internal_error "Skipping because of: %s@." s ;
     Skip
-

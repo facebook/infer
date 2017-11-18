@@ -1047,7 +1047,7 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
 
 
 let set_current_language proc_desc =
-  let language = (Procdesc.get_attributes proc_desc).ProcAttributes.language in
+  let language = Typ.Procname.get_language (Procdesc.get_proc_name proc_desc) in
   Config.curr_language := language
 
 

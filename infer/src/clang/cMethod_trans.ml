@@ -600,7 +600,7 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
     in
     let procdesc =
       let proc_attributes =
-        { (ProcAttributes.default proc_name Config.Clang) with
+        { (ProcAttributes.default proc_name) with
           ProcAttributes.captured= captured_mangled
         ; formals
         ; const_formals
@@ -648,7 +648,7 @@ let create_external_procdesc cfg proc_name is_objc_inst_method type_opt =
             (Typ.mk Typ.Tvoid, [])
       in
       let proc_attributes =
-        { (ProcAttributes.default proc_name Config.Clang) with
+        { (ProcAttributes.default proc_name) with
           ProcAttributes.formals; is_objc_instance_method= is_objc_inst_method; ret_type }
       in
       ignore (Cfg.create_proc_desc cfg proc_attributes)
@@ -694,4 +694,3 @@ let get_captures_from_cpp_lambda dec =
       cxx_rdi.xrdi_lambda_captures
   | _ ->
       assert false
-

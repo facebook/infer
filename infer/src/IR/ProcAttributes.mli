@@ -54,7 +54,6 @@ type t =
   ; is_model: bool  (** the procedure is a model *)
   ; is_specialized: bool  (** the procedure is a clone specialized for dynamic dispatch handling *)
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
-  ; language: Config.language  (** language of the procedure *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t option  (** translation unit to which the procedure belongs *)
   ; mutable locals: (Mangled.t * Typ.t) list  (** name and type of local variables *)
@@ -66,5 +65,5 @@ type t =
   ; source_file_captured: SourceFile.t  (** source file where the procedure was captured *) }
   [@@deriving compare]
 
-val default : Typ.Procname.t -> Config.language -> t
+val default : Typ.Procname.t -> t
 (** Create a proc_attributes with default values. *)
