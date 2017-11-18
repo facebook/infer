@@ -6,7 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
-#import <Foundation/NSString.h>
+#import <Foundation/Foundation.h>
 
 int* __nullable returnsNull();
 
@@ -107,13 +107,37 @@ int* __nullable returnsNull();
 }
 
 - (NSString*)dereferenceNullableMethodOkay {
-  NSObject* object = [self nullableMethod];
-  return [object description]; // does not report here
+  NSObject* nullableObject = [self nullableMethod];
+  return [nullableObject description]; // does not report here
 }
 
 - (void)reassigningNullableObjectOkay {
-  NSObject* object = [self nullableMethod];
-  object = nil; // does not report here
+  NSObject* nullableObject = [self nullableMethod];
+  nullableObject = nil; // does not report here
+}
+
+- (NSArray*)nullableObjectInNSArrayBad {
+  NSObject* nullableObject = [self nullableMethod];
+  NSArray* array = @[ nullableObject ];
+  return array;
+}
+
+- (NSArray*)secondElementNullableObjectInNSArrayBad {
+  NSObject* allocatedObject = [NSObject alloc];
+  NSObject* nullableObject = [self nullableMethod];
+  NSArray* array = @[ allocatedObject, nullableObject ];
+  return array;
+}
+
+- (NSArray*)nullableObjectInNSArrayOkay {
+  NSObject* nullableObject = [self nullableMethod];
+  NSArray* array;
+  if (nullableObject) {
+    array = @[ nullableObject ];
+  } else {
+    array = @[ @"String" ];
+  }
+  return array;
 }
 
 @end

@@ -125,6 +125,27 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       match ap with _, [] -> None | p -> longest_nullable_prefix (AccessPath.truncate p) astate
 
 
+  let check_ap proc_data loc ap astate =
+    match longest_nullable_prefix ap astate with
+    | None ->
+        astate
+    | Some (nullable_ap, call_sites) ->
+        report_nullable_dereference nullable_ap call_sites proc_data loc ;
+        assume_pnames_notnull ap astate
+
+
+  let rec check_nil_in_nsarray proc_data loc args astate =
+    match args with
+    | [] ->
+        astate
+    | [arg] when HilExp.is_null_literal arg ->
+        astate
+    | (HilExp.AccessPath ap) :: other_args ->
+        check_nil_in_nsarray proc_data loc other_args (check_ap proc_data loc ap astate)
+    | _ :: other_args ->
+        check_nil_in_nsarray proc_data loc other_args astate
+
+
   let exec_instr ((_, checked_pnames) as astate) proc_data _ (instr: HilInstr.t) : Domain.astate =
     let is_pointer_assignment tenv lhs rhs =
       HilExp.is_null_literal rhs
@@ -147,13 +168,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let call_site = CallSite.make callee_pname loc in
         add_nullable_ap (ret_var, []) (CallSites.singleton call_site) astate
     | Call (_, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, loc)
-      when is_instance_method callee_pname -> (
-      match longest_nullable_prefix receiver astate with
-      | None ->
-          astate
-      | Some (nullable_ap, call_sites) ->
-          report_nullable_dereference nullable_ap call_sites proc_data loc ;
-          assume_pnames_notnull receiver astate )
+      when is_instance_method callee_pname ->
+        check_ap proc_data loc receiver astate
+    | Call (_, Direct callee_pname, args, _, loc)
+      when Typ.Procname.equal callee_pname BuiltinDecl.nsArray_arrayWithObjectsCount ->
+        check_nil_in_nsarray proc_data loc args astate
     | Call (Some ret_var, _, _, _, _) ->
         remove_nullable_ap (ret_var, []) astate
     | Assign (lhs, rhs, loc)
