@@ -29,6 +29,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (Specs.proc_resolve_attributes callee_pname)
 
 
+  let is_blacklisted callee_pname =
+    let blacklist = ["URLWithString:"]
+    and simplified_callee_pname = Typ.Procname.to_simplified_string callee_pname in
+    List.exists ~f:(String.equal simplified_callee_pname) blacklist
+
+
   let report_nullable_dereference ap call_sites {ProcData.pdesc; extras} loc =
     let pname = Procdesc.get_proc_name pdesc in
     let annotation = Localise.nullable_annotation_name pname in
@@ -162,6 +168,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, _)
       when Models.is_check_not_null callee_pname ->
         assume_pnames_notnull receiver astate
+    | Call (_, Direct callee_pname, _, _, _) when is_blacklisted callee_pname ->
+        astate
     | Call (Some ret_var, Direct callee_pname, _, _, loc)
       when Annotations.pname_has_return_annot callee_pname
              ~attrs_of_pname:Specs.proc_resolve_attributes Annotations.ia_is_nullable ->

@@ -140,4 +140,9 @@ int* __nullable returnsNull();
   return array;
 }
 
+- (NSArray*)URLWithStringOkay {
+  NSURL* url = [NSURL URLWithString:@"some/url/string"];
+  NSArray* array = @[ url ];
+}
+
 @end
