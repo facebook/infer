@@ -28,7 +28,7 @@ type ikind =
   | ILong  (** [long] *)
   | IULong  (** [unsigned long] *)
   | ILongLong  (** [long long] (or [_int64] on Microsoft Visual C) *)
-  | IULongLong  (** [unsigned long long] (or [unsigned _int64] on Microsoft Visual C) *)
+  | IULongLong  (** [unsigned long long] (or [unsigned int64_] on Microsoft Visual C) *)
   | I128  (** [__int128_t] *)
   | IU128  (** [__uint128_t] *)
   [@@deriving compare]

@@ -11,13 +11,13 @@ open! IStd
 module F = Format
 
 module Raw = struct
-  type _typ = Typ.t
+  type typ_ = Typ.t
 
-  let compare__typ _ _ = 0
+  let compare_typ_ _ _ = 0
 
   (* ignore types while comparing bases. we can't trust the types from all of our frontends to be
    consistent, and the variable names should already be enough to distinguish the bases. *)
-  type base = Var.t * _typ [@@deriving compare]
+  type base = Var.t * typ_ [@@deriving compare]
 
   let equal_base = [%compare.equal : base]
 

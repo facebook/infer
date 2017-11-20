@@ -911,12 +911,12 @@ let combine tenv ret_id (posts: ('a Prop.t * Paths.Path.t) list) actual_pre path
     in
     post_p4
   in
-  let _results = List.map ~f:(fun (p, path) -> (compute_result p, path)) instantiated_post in
-  if List.exists ~f:(fun (x, _) -> is_none x) _results then (* at least one combine failed *)
+  let results_ = List.map ~f:(fun (p, path) -> (compute_result p, path)) instantiated_post in
+  if List.exists ~f:(fun (x, _) -> is_none x) results_ then (* at least one combine failed *)
     None
   else
     let results =
-      List.map ~f:(function Some x, path -> (x, path) | None, _ -> assert false) _results
+      List.map ~f:(function Some x, path -> (x, path) | None, _ -> assert false) results_
     in
     print_results tenv actual_pre (List.map ~f:fst results) ;
     Some results

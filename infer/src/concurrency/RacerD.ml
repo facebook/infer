@@ -1513,9 +1513,9 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
   module M = Caml.Map.Make (struct
     type t = RacerDDomain.Access.t
 
-    type _var = Var.t
+    type var_ = Var.t
 
-    let compare__var (u: Var.t) (v: Var.t) =
+    let compare_var_ (u: Var.t) (v: Var.t) =
       if phys_equal u v then 0
       else
         match (u, v) with
@@ -1532,7 +1532,7 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
       | (Read ap1 | Write ap1), (Read ap2 | Write ap2)
       | ( (ContainerRead (ap1, _) | ContainerWrite (ap1, _))
         , (ContainerRead (ap2, _) | ContainerWrite (ap2, _)) ) ->
-          [%compare : (_var * Typ.t) * AccessPath.access list] ap1 ap2
+          [%compare : (var_ * Typ.t) * AccessPath.access list] ap1 ap2
       | (InterfaceCall _ | Read _ | Write _ | ContainerRead _ | ContainerWrite _), _ ->
           RacerDDomain.Access.compare x y
 

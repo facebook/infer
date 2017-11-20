@@ -36,8 +36,8 @@ let expand_expr idenv e =
   match e with Exp.Var id -> ( match lookup idenv id with Some e' -> e' | None -> e ) | _ -> e
 
 
-let expand_expr_temps idenv node _exp =
-  let exp = expand_expr idenv _exp in
+let expand_expr_temps idenv node exp_ =
+  let exp = expand_expr idenv exp_ in
   match exp with
   | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
     match Errdesc.find_program_variable_assignment node pvar with

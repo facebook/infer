@@ -619,7 +619,7 @@ let execute_abort {Builtin.proc_name} : Builtin.ret_typ =
 
 let execute_exit {Builtin.prop_; path} : Builtin.ret_typ = SymExec.diverge prop_ path
 
-let _execute_free tenv mk loc acc iter =
+let execute_free_ tenv mk loc acc iter =
   match Prop.prop_iter_current tenv iter with
   | Sil.Hpointsto (lexp, _, _), [] ->
       let prop = Prop.prop_iter_remove_curr_then_to_prop tenv iter in
@@ -645,7 +645,7 @@ let _execute_free tenv mk loc acc iter =
 
 (* should not happen *)
 
-let _execute_free_nonzero mk pdesc tenv instr prop lexp typ loc =
+let execute_free_nonzero_ mk pdesc tenv instr prop lexp typ loc =
   try
     match Prover.is_root tenv prop lexp lexp with
     | None ->
@@ -653,7 +653,7 @@ let _execute_free_nonzero mk pdesc tenv instr prop lexp typ loc =
         assert false
     | Some _ ->
         let prop_list =
-          List.fold ~f:(_execute_free tenv mk loc) ~init:[]
+          List.fold ~f:(execute_free_ tenv mk loc) ~init:[]
             (Rearrange.rearrange pdesc tenv lexp typ prop loc)
         in
         List.rev prop_list
@@ -685,10 +685,10 @@ let execute_free mk {Builtin.pdesc; instr; tenv; prop_; path; args; loc} : Built
       in
       let plist =
         prop_zero
-        @ (* model: if 0 then skip else _execute_free_nonzero *)
+        @ (* model: if 0 then skip else execute_free_nonzero_ *)
           List.concat_map
             ~f:(fun p ->
-              _execute_free_nonzero mk pdesc tenv instr p
+              execute_free_nonzero_ mk pdesc tenv instr p
                 (Prop.exp_normalize_prop tenv p lexp)
                 typ loc)
             prop_nonzero

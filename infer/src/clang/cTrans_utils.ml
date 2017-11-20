@@ -213,7 +213,7 @@ let collect_res_trans pdesc l =
 
 
 (* priority_node is used to enforce some kind of policy for creating nodes *)
-(* in the cfg. Certain elements of the AST _must_ create nodes therefore   *)
+(* in the cfg. Certain elements of the AST must__ create nodes therefore   *)
 (* there is no need for them to use priority_node. Certain elements        *)
 (* instead need or need not to create a node depending of certain factors. *)
 (* When an element of the latter kind wants to create a node it must claim *)

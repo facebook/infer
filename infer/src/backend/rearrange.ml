@@ -196,7 +196,7 @@ let rec create_struct_values pname tenv orig_prop footprint_part kind max_stamp 
     for array accesses. This does not catch the array - bounds errors.
     If we want to implement the checks for array bounds errors,
     we need to change this function. *)
-let rec _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se (typ: Typ.t)
+let rec strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se (typ: Typ.t)
     (off: Sil.offset list) inst =
   let new_id () =
     incr max_stamp ;
@@ -207,10 +207,10 @@ let rec _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp
       [([], se, typ)]
   | [], Sil.Earray _, _ ->
       let off_new = Sil.Off_index Exp.zero :: off in
-      _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
+      strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
   | (Off_fld _) :: _, Sil.Earray _, Tarray _ ->
       let off_new = Sil.Off_index Exp.zero :: off in
-      _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
+      strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ off_new inst
   | (Off_fld (f, _)) :: off', Sil.Estruct (fsel, inst'), Tstruct name -> (
     match Tenv.lookup tenv name with
     | Some ({fields; statics} as struct_typ) -> (
@@ -219,7 +219,7 @@ let rec _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp
         match List.find ~f:(fun (f', _) -> Typ.Fieldname.equal f f') fsel with
         | Some (_, se') ->
             let atoms_se_typ_list' =
-              _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se' typ'
+              strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se' typ'
                 off' inst
             in
             let replace acc (res_atoms', res_se', res_typ') =
@@ -276,7 +276,7 @@ let rec _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp
       in
       let se_new = Sil.Earray (len, [(Exp.zero, se)], inst) in
       let typ_new = Typ.mk (Tarray (typ, None, None)) in
-      _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se_new typ_new off
+      strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se_new typ_new off
         inst
   | (Off_index e) :: off', Sil.Earray (len, esel, inst_arr), Tarray (typ', len_for_typ', stride)
     -> (
@@ -284,7 +284,7 @@ let rec _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp
       match List.find ~f:(fun (e', _) -> Exp.equal e e') esel with
       | Some (_, se') ->
           let atoms_se_typ_list' =
-            _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se' typ' off'
+            strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se' typ' off'
               inst
           in
           let replace acc (res_atoms', res_se', res_typ') =
@@ -356,7 +356,7 @@ and array_case_analysis_index pname tenv orig_prop footprint_part kind max_stamp
           List.concat (List.rev (res_new :: acc))
       | ((i, se) as ise) :: isel_unseen ->
           let atoms_se_typ_list =
-            _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se typ_cont
+            strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ_cont
               off inst
           in
           let atoms_se_typ_list' =
@@ -425,7 +425,7 @@ let strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se t
     Sil.d_offset_list off' ;
     L.d_strln (if footprint_part then " FP" else " RE") ) ;
   let atoms_se_typ_list =
-    _strexp_extend_values pname tenv orig_prop footprint_part kind max_stamp se typ off' inst
+    strexp_extend_values_ pname tenv orig_prop footprint_part kind max_stamp se typ off' inst
   in
   let atoms_se_typ_list_filtered =
     let check_neg_atom atom =

@@ -44,8 +44,8 @@ let check_nested_loop path pos_opt =
   let do_any_node _level _node =
     incr trace_length
     (* L.d_strln *)
-    (*   ("level " ^ string_of_int _level ^ *)
-    (*    " (Procdesc.Node.get_id node) " ^ string_of_int (Procdesc.Node.get_id _node)) *)
+    (*   ("level " ^ string_of_int level_ ^ *)
+    (*    " (Procdesc.Node.get_id node) " ^ string_of_int (Procdesc.Node.get_id node_)) *)
   in
   let f level p _ _ =
     match Paths.Path.curr_node p with

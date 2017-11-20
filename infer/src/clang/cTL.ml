@@ -961,8 +961,8 @@ let choose_witness_opt witness_opt1 witness_opt2 =
 (* Evaluation of formulas *)
 (* evaluate an atomic formula (i.e. a predicate) on a ast node an and a
    linter context lcxt. That is:  an, lcxt |= pred_name(params) *)
-let rec eval_Atomic _pred_name args an lcxt =
-  let pred_name = ALVar.formula_id_to_string _pred_name in
+let rec eval_Atomic pred_name_ args an lcxt =
+  let pred_name = ALVar.formula_id_to_string pred_name_ in
   match (pred_name, args, an) with
   | "call_class_method", [c; m], an ->
       CPredicates.call_class_method an c m

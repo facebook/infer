@@ -86,31 +86,31 @@ end = struct
     (* number of linear sequences described by the path *) }
 
   (* type aliases for components of t values that compare should ignore *)
-  type _stats = stats
+  type stats_ = stats
 
-  let compare__stats _ _ = 0
+  let compare_stats_ _ _ = 0
 
-  type _procname = Typ.Procname.t
+  type procname_ = Typ.Procname.t
 
-  let compare__procname _ _ = 0
+  let compare_procname_ _ _ = 0
 
-  type _string_option = string option
+  type string_option_ = string option
 
-  let compare__string_option _ _ = 0
+  let compare_string_option_ _ _ = 0
 
-  type _path_exec =
+  type path_exec_ =
     | ExecSkipped of string * Location.t option  (** call was skipped with a reason *)
     | ExecCompleted of t  (** call was completed *)
 
   and t =
     (* INVARIANT: stats are always set to dummy_stats unless we are in the middle of a traversal *)
     (* in particular: a new traversal cannot be initiated during an existing traversal *)
-    | Pstart of Procdesc.Node.t * _stats  (** start node *)
-    | Pnode of Procdesc.Node.t * Typ.Name.t option * session * t * _stats * _string_option
+    | Pstart of Procdesc.Node.t * stats_  (** start node *)
+    | Pnode of Procdesc.Node.t * Typ.Name.t option * session * t * stats_ * string_option_
         (** we got to [node] from last [session] perhaps propagating exception [exn_opt],
         and continue with [path].  *)
-    | Pjoin of t * t * _stats  (** join of two paths *)
-    | Pcall of t * _procname * _path_exec * _stats  (** add a sub-path originating from a call *)
+    | Pjoin of t * t * stats_  (** join of two paths *)
+    | Pcall of t * procname_ * path_exec_ * stats_  (** add a sub-path originating from a call *)
     [@@deriving compare]
 
   let get_dummy_stats () = {max_length= -1; linear_num= -1.0}

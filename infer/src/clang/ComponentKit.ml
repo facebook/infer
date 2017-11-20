@@ -342,7 +342,7 @@ let is_in_factory_method (context: CLintersContext.context) =
     relies on other threads (dispatch_sync). Other side-effects, like reading
     of global variables, is not checked by this analyzer, although still an
     infraction of the rule. *)
-let rec _component_initializer_with_side_effects_advice (context: CLintersContext.context)
+let rec component_initializer_with_side_effects_advice_ (context: CLintersContext.context)
     call_stmt =
   let condition =
     in_ck_class context && is_in_factory_method context
@@ -356,7 +356,7 @@ let rec _component_initializer_with_side_effects_advice (context: CLintersContex
   if condition then
     match call_stmt with
     | Clang_ast_t.ImplicitCastExpr (_, stmt :: _, _, _) ->
-        _component_initializer_with_side_effects_advice context stmt
+        component_initializer_with_side_effects_advice_ context stmt
     | Clang_ast_t.DeclRefExpr (_, _, _, decl_ref_expr_info)
       -> (
         let refs = [decl_ref_expr_info.drti_decl_ref; decl_ref_expr_info.drti_found_decl_ref] in
@@ -382,7 +382,7 @@ let rec _component_initializer_with_side_effects_advice (context: CLintersContex
 let component_initializer_with_side_effects_advice (context: CLintersContext.context) an =
   match an with
   | Ctl_parser_types.Stmt CallExpr (_, called_func_stmt :: _, _) ->
-      _component_initializer_with_side_effects_advice context called_func_stmt
+      component_initializer_with_side_effects_advice_ context called_func_stmt
   | _ ->
       None
 

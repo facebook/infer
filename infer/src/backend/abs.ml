@@ -1079,12 +1079,12 @@ let should_raise_objc_leak hpred =
       None
 
 
-let get_retain_cycle_dotty _prop cycle =
-  match _prop with
+let get_retain_cycle_dotty prop_ cycle =
+  match prop_ with
   | None ->
       None
-  | Some Some _prop ->
-      Dotty.dotty_prop_to_str _prop cycle
+  | Some Some prop_ ->
+      Dotty.dotty_prop_to_str prop_ cycle
   | _ ->
       None
 
@@ -1140,7 +1140,7 @@ let get_var_retain_cycle prop_ =
   do_sigma sigma
 
 
-let remove_opt _prop = match _prop with Some Some p -> p | _ -> Prop.prop_emp
+let remove_opt prop_ = match prop_ with Some Some p -> p | _ -> Prop.prop_emp
 
 (** Checks if cycle has fields (derived from a property or directly defined as ivar) with attributes
     weak/unsafe_unretained/assing *)
@@ -1514,16 +1514,16 @@ let abstract_footprint pname (tenv: Tenv.t) (prop: Prop.normal Prop.t) : Prop.no
   Prop.normalize tenv prop'
 
 
-let _abstract pname pay tenv p =
+let abstract_ pname pay tenv p =
   if pay then SymOp.pay () ;
   (* pay one symop *)
   let p' = if !Config.footprint then abstract_footprint pname tenv p else p in
   abstract_prop pname tenv ~rename_primed:true ~from_abstract_footprint:false p'
 
 
-let abstract pname tenv p = _abstract pname true tenv p
+let abstract pname tenv p = abstract_ pname true tenv p
 
-let abstract_no_symop pname tenv p = _abstract pname false tenv p
+let abstract_no_symop pname tenv p = abstract_ pname false tenv p
 
 let lifted_abstract pname tenv pset =
   let f p = if Prover.check_inconsistency tenv p then None else Some (abstract pname tenv p) in

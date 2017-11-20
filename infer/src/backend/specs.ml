@@ -22,14 +22,14 @@ module F = Format
 (** Module for joined props *)
 module Jprop = struct
   (* type aliases for component of t values that compare should ignore *)
-  type _id = int
+  type id_ = int
 
-  let compare__id _ _ = 0
+  let compare_id_ _ _ = 0
 
   (** Remember when a prop is obtained as the join of two other props; the first parameter is an id *)
   type 'a t =
-    | Prop of _id * 'a Prop.t
-    | Joined of _id * 'a Prop.t * 'a t * 'a t
+    | Prop of id_ * 'a Prop.t
+    | Joined of id_ * 'a Prop.t * 'a t * 'a t
     [@@deriving compare]
 
   (** Comparison for joined_prop *)

@@ -142,9 +142,9 @@ let captured_variables_cxx_ref an =
 
 type t = ALVar.formula_id * (* (name, [param1,...,paramK]) *) ALVar.alexp list [@@deriving compare]
 
-let pp_predicate fmt (_name, _arglist) =
-  let name = ALVar.formula_id_to_string _name in
-  let arglist = List.map ~f:ALVar.alexp_to_string _arglist in
+let pp_predicate fmt (name_, arglist_) =
+  let name = ALVar.formula_id_to_string name_ in
+  let arglist = List.map ~f:ALVar.alexp_to_string arglist_ in
   Format.fprintf fmt "%s(%a)" name (Pp.comma_seq Format.pp_print_string) arglist
 
 
@@ -696,8 +696,8 @@ let get_ast_node_type_ptr an =
       CAst_utils.type_of_decl decl
 
 
-let has_type an _typ =
-  match (get_ast_node_type_ptr an, _typ) with
+let has_type an typ_ =
+  match (get_ast_node_type_ptr an, typ_) with
   | Some pt, ALVar.Const typ ->
       type_ptr_equal_type pt typ
   | _ ->
@@ -721,9 +721,9 @@ let is_decl node =
   match node with Ctl_parser_types.Decl _ -> true | Ctl_parser_types.Stmt _ -> false
 
 
-let method_return_type an _typ =
+let method_return_type an typ_ =
   L.(debug Linters Verbose) "@\n Executing method_return_type..." ;
-  match (an, _typ) with
+  match (an, typ_) with
   | Ctl_parser_types.Decl Clang_ast_t.ObjCMethodDecl (_, _, mdi), ALVar.Const typ ->
       L.(debug Linters Verbose) "@\n with parameter `%s`...." typ ;
       let qual_type = mdi.Clang_ast_t.omdi_result_type in
@@ -732,10 +732,10 @@ let method_return_type an _typ =
       false
 
 
-let rec check_protocol_hiearachy decls_ptr _prot_name =
+let rec check_protocol_hiearachy decls_ptr prot_name_ =
   let open Clang_ast_t in
   let is_this_protocol di_opt =
-    match di_opt with Some di -> ALVar.compare_str_with_alexp di.ni_name _prot_name | _ -> false
+    match di_opt with Some di -> ALVar.compare_str_with_alexp di.ni_name prot_name_ | _ -> false
   in
   match decls_ptr with
   | [] ->
@@ -752,10 +752,10 @@ let rec check_protocol_hiearachy decls_ptr _prot_name =
       then true
       else
         let super_prot = List.map ~f:(fun dr -> dr.dr_decl_pointer) protocols in
-        check_protocol_hiearachy (super_prot @ decls') _prot_name
+        check_protocol_hiearachy (super_prot @ decls') prot_name_
 
 
-let has_type_subprotocol_of an _prot_name =
+let has_type_subprotocol_of an prot_name_ =
   let open Clang_ast_t in
   let rec check_subprotocol t =
     match t with
@@ -763,13 +763,13 @@ let has_type_subprotocol_of an _prot_name =
         check_subprotocol (CAst_utils.get_type qt.qt_type_ptr)
     | Some ObjCObjectType (_, ooti) ->
         if List.length ooti.ooti_protocol_decls_ptr > 0 then
-          check_protocol_hiearachy ooti.ooti_protocol_decls_ptr _prot_name
+          check_protocol_hiearachy ooti.ooti_protocol_decls_ptr prot_name_
         else
           List.exists
             ~f:(fun qt -> check_subprotocol (CAst_utils.get_type qt.qt_type_ptr))
             ooti.ooti_type_args
     | Some ObjCInterfaceType (_, pt) ->
-        check_protocol_hiearachy [pt] _prot_name
+        check_protocol_hiearachy [pt] prot_name_
     | _ ->
         false
   in

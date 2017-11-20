@@ -292,7 +292,7 @@ let rec apply_substitution f sub =
       ET (sub_list_param ntl, sw, apply_substitution f1 sub)
 
 
-let expand_formula phi _map _error_msg =
+let expand_formula phi map_ error_msg_ =
   let fail_with_circular_macro_definition name error_msg =
     L.(die ExternalError) "Macro '%s' has a circular definition.@\n Cycle:@\n%s" name error_msg
   in
@@ -352,7 +352,7 @@ let expand_formula phi _map _error_msg =
     | ET (tl, sw, f1) ->
         ET (tl, sw, expand f1 map error_msg)
   in
-  expand phi _map _error_msg
+  expand phi map_ error_msg_
 
 
 let rec expand_path paths path_map =
@@ -368,7 +368,7 @@ let rec expand_path paths path_map =
       path :: expand_path rest path_map
 
 
-let _build_macros_map macros init_map =
+let build_macros_map_ macros init_map =
   let macros_map =
     List.fold
       ~f:(fun map' data ->
@@ -387,7 +387,7 @@ let _build_macros_map macros init_map =
 
 let build_macros_map macros =
   let init_map : macros_map = ALVar.FormulaIdMap.empty in
-  _build_macros_map macros init_map
+  build_macros_map_ macros init_map
 
 
 let build_paths_map paths =
@@ -411,7 +411,7 @@ let expand_checkers macro_map path_map checkers =
   let open CTL in
   let expand_one_checker c =
     L.(debug Linters Medium) " +Start expanding %s@\n" c.id ;
-    let map = _build_macros_map c.definitions macro_map in
+    let map = build_macros_map_ c.definitions macro_map in
     let exp_defs =
       List.fold
         ~f:(fun defs clause ->

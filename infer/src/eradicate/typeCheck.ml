@@ -258,8 +258,8 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
   in
   (* Convert a complex expressions into a pvar.
      When [is_assigment] is true, update the relevant annotations for the pvar. *)
-  let convert_complex_exp_to_pvar node' is_assignment _exp typestate loc =
-    let exp = handle_field_access_via_temporary typestate (Idenv.expand_expr idenv _exp) in
+  let convert_complex_exp_to_pvar node' is_assignment exp_ typestate loc =
+    let exp = handle_field_access_via_temporary typestate (Idenv.expand_expr idenv exp_) in
     let default = (exp, typestate) in
     (* If this is an assignment, update the typestate for a field access pvar. *)
     let update_typestate_fld pvar origin fn typ =
@@ -649,11 +649,11 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
         in
         let handle_negated_condition cond_node =
           let do_instr = function[@warning "-57"]
-            | Sil.Prune (Exp.BinOp (Binop.Eq, _cond_e, Exp.Const Const.Cint i), _, _, _)
-            | Sil.Prune (Exp.BinOp (Binop.Eq, Exp.Const Const.Cint i, _cond_e), _, _, _)
+            | Sil.Prune (Exp.BinOp (Binop.Eq, cond_e_, Exp.Const Const.Cint i), _, _, _)
+            | Sil.Prune (Exp.BinOp (Binop.Eq, Exp.Const Const.Cint i, cond_e_), _, _, _)
               when IntLit.iszero i
               -> (
-                let cond_e = Idenv.expand_expr_temps idenv cond_node _cond_e in
+                let cond_e = Idenv.expand_expr_temps idenv cond_node cond_e_ in
                 match convert_complex_exp_to_pvar cond_node false cond_e typestate' loc with
                 | Exp.Lvar pvar', _ ->
                     set_flag pvar' AnnotatedSignature.Nullable false
@@ -1058,30 +1058,30 @@ let typecheck_instr tenv ext calls_this checks (node: Procdesc.Node.t) idenv get
             None
       in
       (* Normalize the condition by resolving temp variables. *)
-      let rec normalize_cond _node _cond =
-        match _cond with
+      let rec normalize_cond node_ cond_ =
+        match cond_ with
         | Exp.UnOp (Unop.LNot, c, top) ->
-            let node', c' = normalize_cond _node c in
+            let node', c' = normalize_cond node_ c in
             (node', Exp.UnOp (Unop.LNot, c', top))
         | Exp.BinOp (bop, c1, c2) ->
-            let node', c1' = normalize_cond _node c1 in
+            let node', c1' = normalize_cond node_ c1 in
             let node'', c2' = normalize_cond node' c2 in
             (node'', Exp.BinOp (bop, c1', c2'))
         | Exp.Var _ ->
-            let c' = Idenv.expand_expr idenv _cond in
-            if not (Exp.equal c' _cond) then normalize_cond _node c' else (_node, c')
+            let c' = Idenv.expand_expr idenv cond_ in
+            if not (Exp.equal c' cond_) then normalize_cond node_ c' else (node_, c')
         | Exp.Lvar pvar when Pvar.is_frontend_tmp pvar -> (
           match handle_assignment_in_condition pvar with
           | None -> (
-            match Errdesc.find_program_variable_assignment _node pvar with
+            match Errdesc.find_program_variable_assignment node_ pvar with
             | Some (node', id) ->
                 (node', Exp.Var id)
             | None ->
-                (_node, _cond) )
+                (node_, cond_) )
           | Some e2 ->
-              (_node, e2) )
+              (node_, e2) )
         | c ->
-            (_node, c)
+            (node_, c)
       in
       let node', ncond = normalize_cond node cond in
       check_condition node' ncond

@@ -2164,9 +2164,9 @@ let pathset_join pname tenv (pset1: Paths.PathSet.t) (pset2: Paths.PathSet.t)
         let ppa2_new, ppalist1_cur' = join_proppath_plist [] ppa2'' ppalist1_cur in
         join ppalist1_cur' (ppa2_new :: ppalist2_acc') ppalist2_rest'
   in
-  let _ppalist1_res, _ppalist2_res = join ppalist1 [] ppalist2 in
+  let ppalist1_res_, ppalist2_res_ = join ppalist1 [] ppalist2 in
   let ren l = List.map ~f:(fun (p, x) -> (Prop.prop_rename_primed_footprint_vars tenv p, x)) l in
-  let ppalist1_res, ppalist2_res = (ren _ppalist1_res, ren _ppalist2_res) in
+  let ppalist1_res, ppalist2_res = (ren ppalist1_res_, ren ppalist2_res_) in
   let res =
     (Paths.PathSet.from_renamed_list ppalist1_res, Paths.PathSet.from_renamed_list ppalist2_res)
   in

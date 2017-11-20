@@ -1082,10 +1082,10 @@ let execute_store ?(report_deref_errors= true) pname pdesc tenv lhs_exp typ rhs_
 
 
 (** Execute [instr] with a symbolic heap [prop].*)
-let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
+let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
     : (Prop.normal Prop.t * Paths.Path.t) list =
   let current_pname = Procdesc.get_proc_name current_pdesc in
-  State.set_instr _instr ;
+  State.set_instr instr_ ;
   (* mark instruction last seen *)
   State.set_prop_tenv_pdesc prop_ tenv current_pdesc ;
   (* mark prop,tenv,pdesc last seen *)
@@ -1096,7 +1096,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
     List.map ~f:(fun p -> (p, path)) pl
   in
   let instr =
-    match _instr with
+    match instr_ with
     | Sil.Call (ret, exp, par, loc, call_flags) ->
         let exp' = Prop.exp_normalize_prop tenv prop_ exp in
         let instr' =
@@ -1111,7 +1111,7 @@ let rec sym_exec tenv current_pdesc _instr (prop_: Prop.normal Prop.t) path
         in
         instr'
     | _ ->
-        _instr
+        instr_
   in
   let skip_call ?(is_objc_instance_method= false) ~reason prop path callee_pname ret_annots loc
       ret_id ret_typ_opt actual_args =

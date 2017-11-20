@@ -157,9 +157,9 @@ let get_fb_year cstart cend lines_arr =
   !found
 
 
-let pp_copyright mono fb_year com_style fmt _prefix =
+let pp_copyright mono fb_year com_style fmt prefix_ =
   let running_comment = match com_style with Line (s, _) | Block (_, s, _) -> s in
-  let prefix = _prefix ^ running_comment in
+  let prefix = prefix_ ^ running_comment in
   let pp_line str = F.fprintf fmt "%s%s@\n" prefix str in
   let pp_start () =
     match com_style with
@@ -173,7 +173,7 @@ let pp_copyright mono fb_year com_style fmt _prefix =
     | Line _ ->
         F.fprintf fmt "@\n"
     | Block (_, _, finish) ->
-        F.fprintf fmt "%s%s@\n" _prefix finish
+        F.fprintf fmt "%s%s@\n" prefix_ finish
   in
   pp_start () ;
   if mono then pp_line " Copyright (c) 2009 - 2013 Monoidics ltd." ;

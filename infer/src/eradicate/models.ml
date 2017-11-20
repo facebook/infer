@@ -51,8 +51,8 @@ module Inference = struct
     string_of_int (n + 1)
 
 
-  let update_boolvec_str _s size index bval =
-    let s = if String.is_empty _s then String.make size '0' else _s in
+  let update_boolvec_str s_ size index bval =
+    let s = if String.is_empty s_ then String.make size '0' else s_ in
     s.[index] <- (if bval then '1' else '0') ;
     s
 

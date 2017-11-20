@@ -62,7 +62,7 @@ let pp_translation_unit fmt = function
       Format.fprintf fmt "EXTERN"
 
 
-let _pp f pv =
+let pp_ f pv =
   let name = pv.pv_name in
   match pv.pv_kind with
   | Local_var n ->
@@ -110,7 +110,7 @@ let pp_latex f pv =
 
 (** Pretty print a pvar which denotes a value, not an address *)
 let pp_value pe f pv =
-  match pe.Pp.kind with TEXT -> _pp f pv | HTML -> _pp f pv | LATEX -> pp_latex f pv
+  match pe.Pp.kind with TEXT -> pp_ f pv | HTML -> pp_ f pv | LATEX -> pp_latex f pv
 
 
 (** Pretty print a program variable. *)

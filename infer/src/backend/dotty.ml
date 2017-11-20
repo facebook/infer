@@ -1003,25 +1003,25 @@ and display_pure_info f pe prop =
 
 
 (** Pretty print a proposition in dotty format. *)
-and pp_dotty f kind (_prop: Prop.normal Prop.t) cycle =
+and pp_dotty f kind (prop_: Prop.normal Prop.t) cycle =
   incr proposition_counter ;
   let pe, prop =
     match kind with
     | Spec_postcondition pre ->
         target_invisible_arrow_pre := !proposition_counter ;
         let diff =
-          Propgraph.compute_diff Black (Propgraph.from_prop pre) (Propgraph.from_prop _prop)
+          Propgraph.compute_diff Black (Propgraph.from_prop pre) (Propgraph.from_prop prop_)
         in
         let cmap_norm = Propgraph.diff_get_colormap false diff in
         let cmap_foot = Propgraph.diff_get_colormap true diff in
         let pe = {(Prop.prop_update_obj_sub Pp.text pre) with cmap_norm; cmap_foot} in
         (* add stack vars from pre *)
         let pre_stack = fst (Prop.sigma_get_stack_nonstack true pre.Prop.sigma) in
-        let prop = Prop.set _prop ~sigma:(pre_stack @ _prop.Prop.sigma) in
+        let prop = Prop.set prop_ ~sigma:(pre_stack @ prop_.Prop.sigma) in
         (pe, Prop.normalize (Tenv.create ()) prop)
     | _ ->
-        let pe = Prop.prop_update_obj_sub Pp.text _prop in
-        (pe, _prop)
+        let pe = Prop.prop_update_obj_sub Pp.text prop_ in
+        (pe, prop_)
   in
   dangling_dotboxes := [] ;
   nil_dotboxes := [] ;
@@ -1681,11 +1681,11 @@ let reset_node_counter () = global_node_counter := 0
 let print_specs_xml signature specs loc fmt =
   reset_node_counter () ;
   let do_one_spec pre posts n =
-    let add_stack_to_prop _prop =
+    let add_stack_to_prop prop_ =
       (* add stack vars from pre *)
       let pre_stack = fst (Prop.sigma_get_stack_nonstack true pre.Prop.sigma) in
-      let _prop' = Prop.set _prop ~sigma:(pre_stack @ _prop.Prop.sigma) in
-      Prop.normalize (Tenv.create ()) _prop'
+      let prop'_ = Prop.set prop_ ~sigma:(pre_stack @ prop_.Prop.sigma) in
+      Prop.normalize (Tenv.create ()) prop'_
     in
     let jj = ref 0 in
     let xml_pre = prop_to_xml pre "precondition" !jj in

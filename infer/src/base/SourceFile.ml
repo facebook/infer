@@ -30,9 +30,9 @@ let equal = [%compare.equal : t]
 
 module OrderedSourceFile = struct
   (* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 *)
-  type _t = t [@@deriving compare]
+  type t_ = t [@@deriving compare]
 
-  type t = _t [@@deriving compare]
+  type t = t_ [@@deriving compare]
 end
 
 module Map = Caml.Map.Make (OrderedSourceFile)

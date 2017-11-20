@@ -217,7 +217,7 @@ let error_desc_equal desc1 desc2 =
   [%compare.equal : string list] (desc_get_comparable desc1) (desc_get_comparable desc2)
 
 
-let _line_tag tags tag loc =
+let line_tag_ tags tag loc =
   let line_str = string_of_int loc.Location.line in
   Tags.update tags tag line_str ;
   let s = "line " ^ line_str in
@@ -227,9 +227,9 @@ let _line_tag tags tag loc =
   else s
 
 
-let at_line_tag tags tag loc = "at " ^ _line_tag tags tag loc
+let at_line_tag tags tag loc = "at " ^ line_tag_ tags tag loc
 
-let _line tags loc = _line_tag tags Tags.line loc
+let line_ tags loc = line_tag_ tags Tags.line loc
 
 let at_line tags loc = at_line_tag tags Tags.line loc
 
@@ -295,20 +295,20 @@ type deref_str =
 
 let pointer_or_object () = if Config.curr_language_is Config.Java then "object" else "pointer"
 
-let _deref_str_null proc_name_opt _problem_str tags =
-  let problem_str = add_by_call_to_opt _problem_str tags proc_name_opt in
+let deref_str_null_ proc_name_opt problem_str_ tags =
+  let problem_str = add_by_call_to_opt problem_str_ tags proc_name_opt in
   {tags; value_pre= Some (pointer_or_object ()); value_post= None; problem_str}
 
 
 (** dereference strings for null dereference *)
 let deref_str_null proc_name_opt =
   let problem_str = "could be null and is dereferenced" in
-  _deref_str_null proc_name_opt problem_str (Tags.create ())
+  deref_str_null_ proc_name_opt problem_str (Tags.create ())
 
 
 let access_str_empty proc_name_opt =
   let problem_str = "could be empty and is accessed" in
-  _deref_str_null proc_name_opt problem_str (Tags.create ())
+  deref_str_null_ proc_name_opt problem_str (Tags.create ())
 
 
 (** dereference strings for null dereference due to Nullable annotation *)
@@ -317,7 +317,7 @@ let deref_str_nullable proc_name_opt nullable_obj_str =
   Tags.update tags Tags.nullable_src nullable_obj_str ;
   (* to be completed once we know if the deref'd expression is directly or transitively @Nullable*)
   let problem_str = "" in
-  _deref_str_null proc_name_opt problem_str tags
+  deref_str_null_ proc_name_opt problem_str tags
 
 
 (** dereference strings for null dereference due to weak captured variable in block *)
@@ -325,7 +325,7 @@ let deref_str_weak_variable_in_block proc_name_opt nullable_obj_str =
   let tags = Tags.create () in
   Tags.update tags Tags.weak_captured_var_src nullable_obj_str ;
   let problem_str = "" in
-  _deref_str_null proc_name_opt problem_str tags
+  deref_str_null_ proc_name_opt problem_str tags
 
 
 (** dereference strings for nonterminal nil arguments in c/objc variadic methods *)
@@ -341,7 +341,7 @@ let deref_str_nil_argument_in_variadic_method pn total_args arg_number =
       (Typ.Procname.to_simplified_string pn)
       arg_number (total_args - 1) nil_null function_method
   in
-  _deref_str_null None problem_str tags
+  deref_str_null_ None problem_str tags
 
 
 (** dereference strings for an undefined value coming from the given procedure *)
@@ -800,7 +800,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     match bucket_opt with Some bucket -> Tags.update tags Tags.bucket bucket | None -> ()
   in
   let xxx_allocated_to =
-    let value_str, _to, _on =
+    let value_str, to_, on_ =
       match value_str_opt with
       | None ->
           ("", "", "")
@@ -817,11 +817,11 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
     let desc_str =
       match resource_opt with
       | Some PredSymb.Rmemory _ ->
-          mem_dyn_allocated ^ _to ^ value_str
+          mem_dyn_allocated ^ to_ ^ value_str
       | Some PredSymb.Rfile ->
-          "resource" ^ typ_str ^ "acquired" ^ _to ^ value_str
+          "resource" ^ typ_str ^ "acquired" ^ to_ ^ value_str
       | Some PredSymb.Rlock ->
-          lock_acquired ^ _on ^ value_str
+          lock_acquired ^ on_ ^ value_str
       | Some PredSymb.Rignore | None ->
           if is_none value_str_opt then "memory" else value_str
     in
@@ -840,7 +840,7 @@ let desc_leak hpred_type_opt value_str_opt resource_opt resource_action_opt loc 
       | Some PredSymb.Rignore | None ->
           reachable
     in
-    ["is not " ^ rxxx ^ " after " ^ _line tags loc]
+    ["is not " ^ rxxx ^ " after " ^ line_ tags loc]
   in
   let bucket_str =
     match bucket_opt with Some bucket when Config.show_buckets -> bucket | _ -> ""

@@ -75,17 +75,17 @@ let compare_res_action {ra_kind= k1; ra_res= r1} {ra_kind= k2; ra_res= r2} =
 
 
 (* type aliases for components of t values that compare should ignore *)
-type _annot_item = Annot.Item.t
+type annot_item_ = Annot.Item.t
 
-let compare__annot_item _ _ = 0
+let compare_annot_item_ _ _ = 0
 
-type _location = Location.t
+type location_ = Location.t
 
-let compare__location _ _ = 0
+let compare_location_ _ _ = 0
 
-type _path_pos = path_pos
+type path_pos_ = path_pos
 
-let compare__path_pos _ _ = 0
+let compare_path_pos_ _ _ = 0
 
 (** Attributes are nary function symbols that are applied to expression arguments in Apred and
     Anpred atomic formulas.  Many operations don't make much sense for nullary predicates, and are
@@ -99,7 +99,7 @@ type t =
   | Aresource of res_action  (** resource acquire/release *)
   | Aautorelease
   | Adangling of dangling_kind  (** dangling pointer *)
-  | Aundef of Typ.Procname.t * _annot_item * _location * _path_pos
+  | Aundef of Typ.Procname.t * annot_item_ * location_ * path_pos_
   | Alocked
   | Aunlocked
   | Adiv0 of path_pos  (** value appeared in second argument of division at given path position *)

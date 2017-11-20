@@ -42,9 +42,9 @@ module Item = struct
   (* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 *)
   (* type nonrec t = list (t, bool) [@@deriving compare]; *)
   (** Annotation for one item: a list of annotations with visibility. *)
-  type _t = (t * bool) list [@@deriving compare]
+  type t_ = (t * bool) list [@@deriving compare]
 
-  type t = _t [@@deriving compare]
+  type t = t_ [@@deriving compare]
 
   let equal = [%compare.equal : t]
 

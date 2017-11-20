@@ -16,9 +16,9 @@ module L = Logging
 module F = Format
 
 (* reverse the natural order on Var *)
-type _ident = Ident.t
+type ident_ = Ident.t
 
-let compare__ident x y = Ident.compare y x
+let compare_ident_ x y = Ident.compare y x
 
 type closure = {name: Typ.Procname.t; captured_vars: (t * Pvar.t * Typ.t) list}
 
@@ -36,7 +36,7 @@ and sizeof_data = {typ: Typ.t; nbytes: int option; dynamic_length: t option; sub
 
 (** Program expressions. *)
 and t =
-  | Var of _ident  (** Pure variable: it is not an lvalue *)
+  | Var of ident_  (** Pure variable: it is not an lvalue *)
   | UnOp of Unop.t * t * Typ.t option  (** Unary operator with type of the result if known *)
   | BinOp of Binop.t * t * t  (** Binary operator *)
   | Exn of t  (** Exception *)

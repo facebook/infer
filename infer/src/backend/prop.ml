@@ -101,8 +101,8 @@ let equal_prop p1 p2 = Int.equal (compare_prop p1 p2) 0
 (** {1 Functions for Pretty Printing} *)
 
 (** Pretty print a footprint. *)
-let pp_footprint _pe f fp =
-  let pe = {_pe with Pp.cmap_norm= _pe.Pp.cmap_foot} in
+let pp_footprint pe_ f fp =
+  let pe = {pe_ with Pp.cmap_norm= pe_.Pp.cmap_foot} in
   let pp_pi f () =
     if fp.pi_fp <> [] then
       F.fprintf f "%a ;@\n"
@@ -199,8 +199,8 @@ let sigma_get_stack_nonstack only_local_vars sigma =
 (** Pretty print a sigma in simple mode. *)
 let pp_sigma_simple pe env fmt sigma =
   let sigma_stack, sigma_nonstack = sigma_get_stack_nonstack false sigma in
-  let pp_stack fmt _sg =
-    let sg = List.sort ~cmp:Sil.compare_hpred _sg in
+  let pp_stack fmt sg_ =
+    let sg = List.sort ~cmp:Sil.compare_hpred sg_ in
     if sg <> [] then
       Format.fprintf fmt "%a" (Pp.semicolon_seq ~print_env:pe (pp_hpred_stackvar pe)) sg
   in
@@ -270,8 +270,8 @@ let pp_evars pe f evars =
 
 
 (** Print an hpara in simple mode *)
-let pp_hpara_simple _pe env n f pred =
-  let pe = Pp.reset_obj_sub _pe in
+let pp_hpara_simple pe_ env n f pred =
+  let pe = Pp.reset_obj_sub pe_ in
   (* no free vars: disable object substitution *)
   match pe.kind with
   | TEXT | HTML ->
@@ -285,8 +285,8 @@ let pp_hpara_simple _pe env n f pred =
 
 
 (** Print an hpara_dll in simple mode *)
-let pp_hpara_dll_simple _pe env n f pred =
-  let pe = Pp.reset_obj_sub _pe in
+let pp_hpara_dll_simple pe_ env n f pred =
+  let pe = Pp.reset_obj_sub pe_ in
   (* no free vars: disable object substitution *)
   match pe.kind with
   | TEXT | HTML ->
@@ -322,8 +322,8 @@ let prop_update_obj_sub pe prop =
 
 
 (** Pretty print a footprint in simple mode. *)
-let pp_footprint_simple _pe env f fp =
-  let pe = {_pe with Pp.cmap_norm= _pe.Pp.cmap_foot} in
+let pp_footprint_simple pe_ env f fp =
+  let pe = {pe_ with Pp.cmap_norm= pe_.Pp.cmap_foot} in
   let pp_pure f pi = if pi <> [] then F.fprintf f "%a *@\n" (pp_pi pe) pi in
   if fp.pi_fp <> [] || fp.sigma_fp <> [] then
     F.fprintf f "@\n[footprint@\n   @[%a%a@]  ]" pp_pure fp.pi_fp (pp_sigma_simple pe env)
@@ -2301,7 +2301,7 @@ let exist_quantify tenv fav (prop: normal t) : normal t =
     let gen_fresh_id_sub id = (id, Exp.Var (Ident.create_fresh Ident.kprimed)) in
     let ren_sub = Sil.exp_subst_of_list (List.map ~f:gen_fresh_id_sub ids) in
     let prop' =
-      (* throw away x=E if x becomes _x *)
+      (* throw away x=E if x becomes x_ *)
       let mem_idlist i = List.exists ~f:(fun id -> Ident.equal i id) in
       let sub = Sil.sub_filter (fun i -> not (mem_idlist i ids)) prop.sub in
       if Sil.equal_exp_subst sub prop.sub then prop else unsafe_cast_to_normal (set prop ~sub)

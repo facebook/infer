@@ -279,10 +279,10 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
   let rec pp_seq_newline n f = function
     | [] ->
         ()
-    | [_x]
+    | [x_]
       -> (
-        let pe = update_pe_diff _x in
-        let x = add_base_stack _x in
+        let pe = update_pe_diff x_ in
+        let x = add_base_stack x_ in
         match pe.kind with
         | TEXT ->
             F.fprintf f "%s %d of %d:@\n%a" s n num (Prop.pp_prop pe) x
@@ -290,9 +290,9 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
             F.fprintf f "%s %d of %d:@\n%a@\n" s n num (Prop.pp_prop pe) x
         | LATEX ->
             F.fprintf f "@[%a@]@\n" (Prop.pp_prop pe) x )
-    | _x :: l ->
-        let pe = update_pe_diff _x in
-        let x = add_base_stack _x in
+    | x_ :: l ->
+        let pe = update_pe_diff x_ in
+        let x = add_base_stack x_ in
         match pe.kind with
         | TEXT ->
             F.fprintf f "%s %d of %d:@\n%a@\n%a" s n num (Prop.pp_prop pe) x
