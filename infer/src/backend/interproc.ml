@@ -381,10 +381,7 @@ let instrs_get_normal_vars instrs =
 (** Perform symbolic execution for a node starting from an initial prop *)
 let do_symbolic_execution proc_cfg handle_exn tenv (node: ProcCfg.Exceptional.node)
     (prop: Prop.normal Prop.t) (path: Paths.Path.t) =
-  let pdesc = ProcCfg.Exceptional.proc_desc proc_cfg in
   State.mark_execution_start node ;
-  (* build the const map lazily *)
-  State.set_const_map (ConstantPropagation.build_const_map tenv pdesc) ;
   let instrs = ProcCfg.Exceptional.instrs node in
   (* fresh normal vars must be fresh w.r.t. instructions *)
   Ident.update_name_generator (instrs_get_normal_vars instrs) ;

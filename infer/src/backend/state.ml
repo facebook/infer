@@ -15,8 +15,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-type const_map = Procdesc.Node.t -> Exp.t -> Const.t option
-
 (** failure statistics for symbolic execution on a given node *)
 type failure_stats =
   { mutable instr_fail: int
@@ -33,8 +31,7 @@ type failure_stats =
 module NodeHash = Procdesc.NodeHash
 
 type t =
-  { mutable const_map: const_map  (** Constant map for the procedure *)
-  ; mutable diverging_states_node: Paths.PathSet.t
+  { mutable diverging_states_node: Paths.PathSet.t
         (** Diverging states since the last reset for the node *)
   ; mutable diverging_states_proc: Paths.PathSet.t
         (** Diverging states since the last reset for the procedure *)
@@ -47,8 +44,7 @@ type t =
   ; failure_map: failure_stats NodeHash.t  (** Map visited nodes to failure statistics *) }
 
 let initial () =
-  { const_map= (fun _ _ -> None)
-  ; diverging_states_node= Paths.PathSet.empty
+  { diverging_states_node= Paths.PathSet.empty
   ; diverging_states_proc= Paths.PathSet.empty
   ; last_instr= None
   ; last_node= Procdesc.Node.dummy None
@@ -355,7 +351,3 @@ let set_node (node: Procdesc.Node.t) =
 
 
 let set_session (session: int) = !gs.last_session <- session
-
-let get_const_map () = !gs.const_map
-
-let set_const_map const_map' = !gs.const_map <- const_map'

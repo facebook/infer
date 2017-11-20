@@ -18,11 +18,6 @@ type t
 val add_diverging_states : Paths.PathSet.t -> unit
 (** Add diverging states *)
 
-type const_map = Procdesc.Node.t -> Exp.t -> Const.t option
-
-val get_const_map : unit -> const_map
-(** Get the constant map for the current procedure. *)
-
 val get_diverging_states_node : unit -> Paths.PathSet.t
 (** Get the diverging states for the node *)
 
@@ -103,9 +98,6 @@ val restore_state : t -> unit
 
 val save_state : unit -> t
 (** Return the old state, and revert the current state to the initial one. *)
-
-val set_const_map : const_map -> unit
-(** Set the constant map for the current procedure. *)
 
 val set_instr : Sil.instr -> unit
 (** Set last instruction seen in symbolic execution *)
