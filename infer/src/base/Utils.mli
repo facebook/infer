@@ -113,3 +113,6 @@ val yield : unit -> unit
 
 val better_hash : 'a -> Caml.Digest.t
 (** Hashtbl.hash only hashes the first 10 meaningful values, [better_hash] uses everything. *)
+
+val unlink_file_on_exit : string -> unit
+(** delete [temporary] file on exit *)

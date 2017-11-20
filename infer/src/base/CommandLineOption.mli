@@ -249,3 +249,5 @@ val show_manual :
 (** Display the manual of [command] to the user, or [command_doc] if [command] is None. [format] is
     used as for [Cmdliner.Manpage.print]. If [internal_section] is specified, add a section titled
     [internal_section] about internal (hidden) options. *)
+
+val keep_args_file : bool ref
