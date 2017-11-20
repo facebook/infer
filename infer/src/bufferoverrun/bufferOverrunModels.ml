@@ -128,8 +128,8 @@ module Make (CFG : ProcCfg.S) = struct
   let dispatcher : model_fun ProcnameDispatcher.dispatcher =
     let open ProcnameDispatcher in
     make_dispatcher
-      [ -"__inferbo_min" <>--> model_min
-      ; -"__inferbo_set_size" <>--> model_set_size
+      [ -"__inferbo_min" <>$ any_arg $+ any_arg $!--> model_min
+      ; -"__inferbo_set_size" <>$ any_arg $+ any_arg $!--> model_set_size
       ; -"__exit" <>--> model_bottom
       ; -"exit" <>--> model_bottom
       ; -"fgetc" <>--> model_by_value Dom.Val.Itv.m1_255
@@ -137,7 +137,7 @@ module Make (CFG : ProcCfg.S) = struct
       ; -"malloc" <>--> model_malloc
       ; -"__new_array" <>--> model_malloc
       ; -"realloc" <>--> model_realloc
-      ; -"__set_array_length" <>--> model_infer_set_array_length
+      ; -"__set_array_length" <>$ any_arg $+ any_arg $!--> model_infer_set_array_length
       ; -"strlen" <>--> model_by_value Dom.Val.Itv.nat ]
 
 end

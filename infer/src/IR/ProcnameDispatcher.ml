@@ -100,20 +100,39 @@ type ('f_in, 'f_out, 'captured_types) proc_matcher =
   { on_objc_cpp: 'f_in -> objc_cpp -> ('f_out * 'captured_types) option
   ; on_c: 'f_in -> c -> ('f_out * 'captured_types) option }
 
-type ('f_in, 'f_out, 'captured_types, 'markers, 'list_constraint) args_matcher =
+type 'captured_types on_args = 'captured_types -> FuncArg.t list -> FuncArg.t list option
+
+type ('f_in, 'f_out, 'captured_types, 'markers) args_matcher =
   { on_proc: ('f_in, 'f_out, 'captured_types) proc_matcher
-  ; on_args: 'captured_types -> FuncArg.t list -> FuncArg.t list option
+  ; on_args: 'captured_types on_args
   ; markers: 'markers }
 
-type ('captured_types, 'markers, 'list_constraint) func_arg =
-  { eat_func_arg: 'captured_types -> FuncArg.t list -> FuncArg.t list option
-  ; marker_static_checker: 'markers -> bool }
-
-type ('f_in, 'f_out) all_args_matcher =
-  { on_objc_cpp: 'f_in -> objc_cpp -> FuncArg.t list -> 'f_out option
-  ; on_c: 'f_in -> c -> FuncArg.t list -> 'f_out option }
+type ('captured_types, 'markers) func_arg =
+  {eat_func_arg: 'captured_types on_args; marker_static_checker: 'markers -> bool}
 
 type 'f matcher = Typ.Procname.t -> FuncArg.t list -> 'f option
+
+type 'f pre_result = DoesNotMatch | Matches of 'f | RetryWith of 'f matcher
+
+let pre_bind_opt opt ~f = match opt with None -> DoesNotMatch | Some x -> f x
+
+let pre_map_opt opt ~f = match opt with None -> DoesNotMatch | Some x -> Matches (f x)
+
+let pre_to_opt procname args = function
+  | DoesNotMatch ->
+      None
+  | Matches x ->
+      Some x
+  | RetryWith f ->
+      f procname args
+
+
+type ('f, 'captured_types) func_args_end =
+  on_args:'captured_types on_args -> FuncArg.t list -> 'f * 'captured_types -> 'f pre_result
+
+type ('f_in, 'f_out) all_args_matcher =
+  { on_objc_cpp: 'f_in -> objc_cpp -> FuncArg.t list -> 'f_out pre_result
+  ; on_c: 'f_in -> c -> FuncArg.t list -> 'f_out pre_result }
 
 (* they are actually just the same thing *)
 type 'f dispatcher = 'f matcher
@@ -225,7 +244,7 @@ let templ_end
 
 let args_begin
     : ('f_in, 'f_out, 'captured_types, unit, 'markers, non_empty) path_matcher
-      -> ('f_in, 'f_out, 'captured_types, 'markers, accept_more) args_matcher =
+      -> ('f_in, 'f_out, 'captured_types, 'markers) args_matcher =
   let on_args _capt args = Some args in
   fun m ->
     let {on_templated_name; path_extra= PathNonEmpty {on_objc_cpp}; get_markers} = m in
@@ -241,9 +260,9 @@ let args_begin
 
 
 let args_cons
-    : ('f_in, 'f_out, 'captured_types, 'markers, accept_more) args_matcher
-      -> ('captured_types, 'markers, 'lc) func_arg
-      -> ('f_in, 'f_out, 'captured_types, 'markers, 'lc) args_matcher =
+    : ('f_in, 'f_out, 'captured_types, 'markers) args_matcher
+      -> ('captured_types, 'markers) func_arg
+      -> ('f_in, 'f_out, 'captured_types, 'markers) args_matcher =
   fun m func_arg ->
     let {on_proc; on_args; markers} = m in
     let {marker_static_checker; eat_func_arg} = func_arg in
@@ -253,14 +272,14 @@ let args_cons
 
 
 let args_end
-    : ('f_in, 'f_out, 'captured_types, 'markers, _) args_matcher
-      -> ('f_in, 'f_out) all_args_matcher =
-  let match_empty_args f = function Some [] -> Some f | _ -> None in
-  fun m ->
+    : ('f_in, 'f_out, 'captured_types, 'markers) args_matcher
+      -> ('f_out, 'captured_types) func_args_end -> ('f_in, 'f_out) all_args_matcher =
+  fun m func_args_end ->
     let {on_proc= {on_c; on_objc_cpp}; on_args} = m in
-    let on_args args (f, capt) = on_args capt args |> match_empty_args f in
-    let on_c f c args = on_c f c |> Option.bind ~f:(on_args args) in
-    let on_objc_cpp f objc_cpp args = on_objc_cpp f objc_cpp |> Option.bind ~f:(on_args args) in
+    let on_c f c args = on_c f c |> pre_bind_opt ~f:(func_args_end ~on_args args) in
+    let on_objc_cpp f objc_cpp args =
+      on_objc_cpp f objc_cpp |> pre_bind_opt ~f:(func_args_end ~on_args args)
+    in
     {on_c; on_objc_cpp}
 
 
@@ -270,9 +289,9 @@ let make_matcher : ('f_in, 'f_out) all_args_matcher -> 'f_in -> 'f_out matcher =
     fun procname args ->
       match procname with
       | ObjC_Cpp objc_cpp ->
-          on_objc_cpp f objc_cpp args
+          on_objc_cpp f objc_cpp args |> pre_to_opt procname args
       | C c ->
-          on_c f c args
+          on_c f c args |> pre_to_opt procname args
       | _ ->
           None
 
@@ -362,12 +381,6 @@ let capt_all
 
 let no_checker _ = true
 
-(** Eats all the args *)
-let any_func_args : (_, _, end_of_list) func_arg =
-  let eat_func_arg _capt _args = Some [] in
-  {eat_func_arg; marker_static_checker= no_checker}
-
-
 let eat_one_func_arg ~match_if capt = function
   | arg :: rest when match_if capt arg ->
       Some rest
@@ -376,14 +389,14 @@ let eat_one_func_arg ~match_if capt = function
 
 
 (** Eats one arg *)
-let any_arg : (_, _, accept_more) func_arg =
+let any_arg : (_, _) func_arg =
   let eat_func_arg capt = eat_one_func_arg ~match_if:(fun _ _ -> true) capt in
   {eat_func_arg; marker_static_checker= no_checker}
 
 
 let mk_typ_nth
     : ('markers -> 'marker) -> ('captured_types -> 'marker mtyp) -> 'marker
-      -> ('captured_types, 'markers, _) func_arg =
+      -> ('captured_types, 'markers) func_arg =
   fun get_m get_c marker ->
     let marker_static_checker markers = Polymorphic_compare.( = ) marker (get_m markers) in
     let eat_func_arg =
@@ -394,21 +407,60 @@ let mk_typ_nth
 
 
 (** Matches first captured type *)
-let typ1 : 'marker -> ('marker mtyp * _, 'marker * _, accept_more) func_arg =
+let typ1 : 'marker -> ('marker mtyp * _, 'marker * _) func_arg =
   let pos1 (x, _) = x in
   fun marker -> mk_typ_nth pos1 pos1 marker
 
 
 (** Matches second captured type *)
-let typ2 : 'marker -> (_ * ('marker mtyp * _), _ * ('marker * _), accept_more) func_arg =
+let typ2 : 'marker -> (_ * ('marker mtyp * _), _ * ('marker * _)) func_arg =
   let pos2 (_, (x, _)) = x in
   fun marker -> mk_typ_nth pos2 pos2 marker
 
 
 (** Matches third captured type *)
-let typ3 : 'marker -> (_ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _)), accept_more) func_arg =
+let typ3 : 'marker -> (_ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) func_arg =
   let pos3 (_, (_, (x, _))) = x in
   fun marker -> mk_typ_nth pos3 pos3 marker
+
+
+(* Function args end *)
+
+(** Matches if there is no function arguments left *)
+let no_args_left : (_, _) func_args_end =
+  let match_empty_args f = function Some [] -> Matches f | _ -> DoesNotMatch in
+  fun ~on_args args (f, capt) -> on_args capt args |> match_empty_args f
+
+
+(** Matches any function arguments *)
+let any_func_args : (_, _) func_args_end =
+  fun ~on_args args (f, capt) -> on_args capt args |> pre_map_opt ~f:(fun _ -> f)
+
+
+(** If [func_args_end1] does not match, use [func_args_end2] *)
+let alternative_args_end
+    : ('f, 'captured_types) func_args_end -> ('f, 'captured_types) func_args_end
+      -> ('f, 'captured_types) func_args_end =
+  fun func_args_end1 func_args_end2 ~on_args args f_capt ->
+    match func_args_end1 ~on_args args f_capt with
+    | DoesNotMatch ->
+        func_args_end2 ~on_args args f_capt
+    | otherwise ->
+        otherwise
+
+
+(** Retries matching with another matcher *)
+let args_end_retry : _ -> (_, _) func_args_end = fun f ~on_args:_ _args _f_capt -> RetryWith f
+
+(** Retries matching with another matcher if the function does not have the
+    exact number/types of args *)
+let exact_args_or_retry : 'f -> (_, _) func_args_end =
+  fun f -> alternative_args_end no_args_left (args_end_retry f)
+
+
+let wrong_args_internal_error procname _args =
+  Logging.(die InternalError)
+    "Unexpected number/types of arguments for %a" Typ.Procname.pp procname
 
 
 (* Notation shorthands *)
@@ -422,8 +474,6 @@ let ( $! ) path_matcher () = args_begin path_matcher
 let ( >$! ) templ_matcher () = templ_matcher >! () $! ()
 
 let ( &::! ) path_matcher name = name_cons path_matcher name
-
-let ( $*! ) args_matcher () = args_end args_matcher
 
 let ( $*--> ) all_args_matcher f = make_matcher all_args_matcher f
 
@@ -439,7 +489,9 @@ let ( $+ ) args_matcher func_arg = args_cons args_matcher func_arg
 
 let ( >$ ) templ_matcher func_arg = templ_matcher >$! () $+ func_arg
 
-let ( $--> ) args_matcher f = args_matcher $*! () $*--> f
+let ( $* ) args_matcher func_args_end = args_end args_matcher func_args_end
+
+let ( $--> ) args_matcher f = args_matcher $* no_args_left $*--> f
 
 let ( &+...>:: ) templ_matcher name = templ_matcher &+ any_template_args >:: name
 
@@ -451,9 +503,9 @@ let ( $ ) name_matcher func_arg = name_matcher < any_template_args >$ func_arg
 
 let ( <>$ ) name_matcher func_arg = name_matcher <! () >$ func_arg
 
-let ( >--> ) templ_matcher f = templ_matcher >$ any_func_args $--> f
+let ( $+...$--> ) args_matcher f = args_matcher $* any_func_args $*--> f
 
-let ( $+...$--> ) args_matcher f = args_matcher $+ any_func_args $--> f
+let ( >--> ) templ_matcher f = templ_matcher >$! () $+...$--> f
 
 let ( >$$--> ) templ_matcher f = templ_matcher >$! () $--> f
 
@@ -464,3 +516,7 @@ let ( <>$$--> ) name_matcher f = name_matcher <! () >$$--> f
 let ( &--> ) name_matcher f = name_matcher < any_template_args >--> f
 
 let ( <>--> ) name_matcher f = name_matcher <! () >--> f
+
+let ( $!--> ) args_matcher f =
+  args_matcher $* exact_args_or_retry wrong_args_internal_error $*--> f
+
