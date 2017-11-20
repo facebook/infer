@@ -13,3 +13,9 @@ void pointer_arith_bad() {
   if (&x - 1 == 0)
     arr[10] = 1;
 }
+
+void array_pointer_arith_Bad() {
+  int arr[10];
+  int* p = &arr[5];
+  p[5] = 1;
+}

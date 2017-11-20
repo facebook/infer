@@ -207,13 +207,13 @@ module Make (CFG : ProcCfg.S) = struct
             eval e mem
         | Exp.Lfield (e, fn, _) ->
             eval e mem |> Val.get_array_locs |> Fn.flip PowLoc.append_field fn |> Val.of_pow_loc
-        | Exp.Lindex (e1, _) ->
-            let arr = eval e1 mem |> Val.get_array_blk in
-            (* must have array blk *)
-            (* let idx = eval e2 mem in *)
-            let ploc = if ArrayBlk.is_bot arr then PowLoc.unknown else ArrayBlk.get_pow_loc arr in
-            (* if nested array, add the array blk *)
-            let arr = Mem.find_heap_set ploc mem in
+        | Exp.Lindex (e1, e2) ->
+            let arr = Val.plus_pi (eval e1 mem) (eval e2 mem) in
+            let ploc =
+              if ArrayBlk.is_bot (Val.get_array_blk arr) then PowLoc.unknown
+              else Val.get_all_locs arr
+            in
+            (* NOTE: multidimensional array is not supported yet *)
             Val.join (Val.of_pow_loc ploc) arr
         | Exp.Sizeof {nbytes= Some size} ->
             Val.of_int size

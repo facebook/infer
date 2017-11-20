@@ -45,6 +45,7 @@ codetoanalyze/c/bufferoverrun/models.c, fgetc_256_bad, 3, BUFFER_OVERRUN_L2, [Ar
 codetoanalyze/c/bufferoverrun/models.c, fgetc_m1_bad, 3, BUFFER_OVERRUN_L3, [ArrayDeclaration,Assignment,ArrayAccess: Offset: [-1, 255] Size: [10000, 10000]]
 codetoanalyze/c/bufferoverrun/nested_loop.c, nested_loop, 7, BUFFER_OVERRUN_L2, [ArrayDeclaration,Assignment,ArrayAccess: Offset: [0, 10] Size: [10, 10]]
 codetoanalyze/c/bufferoverrun/nested_loop_with_label.c, nested_loop_with_label, 6, BUFFER_OVERRUN_L4, [ArrayDeclaration,Assignment,ArrayAccess: Offset: [0, +oo] Size: [10, 10]]
+codetoanalyze/c/bufferoverrun/pointer_arith.c, array_pointer_arith_Bad, 3, BUFFER_OVERRUN_L1, [ArrayDeclaration,Assignment,ArrayAccess: Offset: [10, 10] Size: [10, 10]]
 codetoanalyze/c/bufferoverrun/pointer_arith.c, pointer_arith_bad, 4, BUFFER_OVERRUN_L1, [ArrayDeclaration,ArrayAccess: Offset: [10, 10] Size: [10, 10]]
 codetoanalyze/c/bufferoverrun/prune_alias.c, FP_prune_alias_exp_Ok, 4, BUFFER_OVERRUN_L1, [ArrayDeclaration,ArrayAccess: Offset: [1, 1] Size: [1, 1]]
 codetoanalyze/c/bufferoverrun/prune_alias.c, prune_alias_and_Ok, 3, CONDITION_ALWAYS_FALSE, []
