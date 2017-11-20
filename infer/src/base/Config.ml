@@ -597,11 +597,6 @@ and allow_leak =
   CLOpt.mk_bool ~deprecated:["leak"] ~long:"allow-leak" "Forget leaked memory during abstraction"
 
 
-and allow_specs_cleanup =
-  CLOpt.mk_bool ~deprecated:["allow_specs_cleanup"] ~long:"allow-specs-cleanup" ~default:true
-    "Allow to remove existing specs before running analysis when it's not incremental"
-
-
 and ( analysis_blacklist_files_containing_options
     , analysis_path_regex_blacklist_options
     , analysis_path_regex_whitelist_options
@@ -2263,8 +2258,6 @@ and rest = !rest
 and abs_struct = !abs_struct
 
 and abs_val_orig = !abs_val
-
-and allow_specs_cleanup = !allow_specs_cleanup
 
 and analysis_path_regex_whitelist_options =
   List.map ~f:(fun (a, b) -> (a, !b)) analysis_path_regex_whitelist_options

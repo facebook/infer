@@ -240,10 +240,10 @@ module Results_dir = struct
 
 
   let clean_specs_dir () =
-    Utils.create_dir specs_dir ;
     (* create dir just in case it doesn't exist to avoid errors *)
-    let files_to_remove = Array.map ~f:(Filename.concat specs_dir) (Sys.readdir specs_dir) in
-    Array.iter ~f:Sys.remove files_to_remove
+    Utils.create_dir specs_dir ;
+    Array.iter (Sys.readdir specs_dir) ~f:(fun specs ->
+        Filename.concat specs_dir specs |> Sys.remove )
 
 
   (** create a file at the given path, creating any missing directories *)
