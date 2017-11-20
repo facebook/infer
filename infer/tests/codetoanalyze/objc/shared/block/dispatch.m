@@ -48,7 +48,7 @@
     static_storage__ = ([self new]);
   };
   static dispatch_once_t once_token__;
-  _dispatch_once(&once_token__, initialization_block__);
+  dispatch_once(&once_token__, initialization_block__);
   return static_storage__;
 }
 
@@ -59,7 +59,7 @@
       static_storage__ = ([self new]);
     };
     static dispatch_once_t once_token__;
-    _dispatch_once(&once_token__, initialization_block__);
+    dispatch_once(&once_token__, initialization_block__);
     static_storage__;
   });
 }

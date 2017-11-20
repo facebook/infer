@@ -9,6 +9,8 @@
 
 open! IStd
 
+val is_modelled_static_function : string -> bool
+
 val is_cf_non_null_alloc : Typ.Procname.t -> bool
 
 val is_alloc : Typ.Procname.t -> bool
@@ -45,5 +47,3 @@ val get_predefined_model_method_signature :
   Typ.Name.t -> string
   -> (Typ.Name.t -> string -> Typ.Procname.objc_cpp_method_kind -> Typ.Procname.t)
   -> CFrontend_config.clang_lang -> CMethod_signature.method_signature option
-
-val is_dispatch_function_name : string -> (string * int) option

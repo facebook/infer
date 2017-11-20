@@ -10,6 +10,10 @@
 open! IStd
 open Objc_models
 
+let is_modelled_static_function name =
+  let modelled_functions = ["_dispatch_once"] in
+  List.mem ~equal:String.equal modelled_functions name
+
 let class_equal class_typename class_name = String.equal (Typ.Name.name class_typename) class_name
 
 let is_cf_non_null_alloc pname =
@@ -178,28 +182,3 @@ let get_predefined_model_method_signature class_name method_name mk_procname lan
   let next_predefined f = function Some _ as x -> x | None -> f method_name mk_procname lang in
   None |> next_predefined (get_predefined_ms_stringWithUTF8String class_name)
   |> next_predefined (get_predefined_ms_is_kind_of_class class_name)
-
-
-let dispatch_functions =
-  [ ("_dispatch_once", 1)
-  ; ("dispatch_async", 1)
-  ; ("dispatch_sync", 1)
-  ; ("dispatch_after", 2)
-  ; ("dispatch_group_async", 2)
-  ; ("dispatch_group_notify", 2)
-  ; ("dispatch_group_wait", 2)
-  ; ("dispatch_barrier_async", 1)
-  ; ("dispatch_source_set_cancel_handler", 1)
-  ; ("dispatch_source_set_event_handler", 1) ]
-
-
-let is_dispatch_function_name function_name =
-  let rec is_dispatch functions =
-    match functions with
-    | [] ->
-        None
-    | (el, block_arg_pos) :: rest ->
-        if String.equal el function_name then Some (el, block_arg_pos) else is_dispatch rest
-  in
-  is_dispatch dispatch_functions
-

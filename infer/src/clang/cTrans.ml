@@ -1272,12 +1272,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         {res_trans_to_parent with exps= res_trans_call.exps}
 
 
-  and dispatch_function_trans trans_state stmt_info stmt_list n =
-    L.(debug Capture Verbose) "@\n Call to a dispatch function treated as special case...@\n" ;
-    let transformed_stmt = Ast_expressions.translate_dispatch_function stmt_info stmt_list n in
-    instruction trans_state transformed_stmt
-
-
   and compute_this_for_destructor_calls trans_state stmt_info class_ptr =
     let context = trans_state.context in
     let sil_loc = CLocation.get_sil_location stmt_info context in
@@ -3058,12 +3052,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         arraySubscriptExpr_trans trans_state expr_info stmt_list
     | BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) ->
         binaryOperator_trans_with_cond trans_state stmt_info stmt_list expr_info binop_info
-    | CallExpr (stmt_info, stmt_list, ei) -> (
-      match is_dispatch_function stmt_list with
-      | Some block_arg_pos ->
-          dispatch_function_trans trans_state stmt_info stmt_list block_arg_pos
-      | None ->
-          callExpr_trans trans_state stmt_info stmt_list ei )
+    | CallExpr (stmt_info, stmt_list, ei) ->
+        callExpr_trans trans_state stmt_info stmt_list ei
     | CXXMemberCallExpr (stmt_info, stmt_list, ei) ->
         cxxMemberCallExpr_trans trans_state stmt_info stmt_list ei
     | CXXOperatorCallExpr (stmt_info, stmt_list, ei) ->

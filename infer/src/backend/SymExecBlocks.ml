@@ -42,7 +42,14 @@ let get_extended_args_for_method_with_block_analysis act_params =
 
 
 let resolve_method_with_block_args_and_analyze caller_pdesc pname act_params =
-  match Ondemand.get_proc_desc pname with
+  let pdesc_opt =
+    match Specs.get_summary pname with
+    | Some summary ->
+        Some (Specs.get_proc_desc summary)
+    | None ->
+        Ondemand.get_proc_desc pname
+  in
+  match pdesc_opt with
   | Some pdesc
     when Procdesc.is_defined pdesc
          && Int.equal (List.length (Procdesc.get_formals pdesc)) (List.length act_params)
@@ -88,4 +95,3 @@ let resolve_method_with_block_args_and_analyze caller_pdesc pname act_params =
           None )
   | _ ->
       None
-
