@@ -25,10 +25,7 @@ let analyze_exe_env_tasks cluster exe_env : Tasks.t =
       (Interproc.do_analysis_closures exe_env)
       ~continuation:
         ( if Config.write_html || Config.developer_mode then
-            Some
-              (fun () ->
-                if Config.write_html then Printer.write_all_html_files cluster ;
-                if Config.developer_mode then Interproc.print_stats cluster)
+            Some (fun () -> if Config.write_html then Printer.write_all_html_files cluster)
         else None )
   else
     (* run the registered checkers *)
@@ -189,3 +186,4 @@ let register_perf_stats_report () =
   let stats_base = Config.perf_stats_prefix ^ Filename.basename cluster ^ ".json" in
   let stats_file = Filename.concat stats_dir stats_base in
   PerfStats.register_report_at_exit stats_file
+

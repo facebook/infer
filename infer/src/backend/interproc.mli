@@ -17,6 +17,3 @@ val analyze_procedure : Callbacks.proc_callback_t
 
 val do_analysis_closures : Exe_env.t -> Tasks.closure list
 (** Create closures to perform the analysis of an exe_env *)
-
-val print_stats : Cluster.t -> unit
-(** Print the stats for all the files in the cluster *)
