@@ -271,5 +271,5 @@ DEFINE-CHECKER DISCOURAGED_WEAK_PROPERTY_CUSTOM_SETTER = {
     HOLDS-IN-NODE ObjCMethodDecl;
   SET message = "Custom setters are not called when ARC sets weak properties to nil.";
   SET severity = "WARNING";
-  SET mode = "ON";
+  SET mode = "OFF";
 };
