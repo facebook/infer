@@ -86,7 +86,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let remove_fields tenv base uninit_vars =
     match base with
-    | _, {Typ.desc= Tptr ({Typ.desc= Tstruct name_struct}, _)} -> (
+    | _, {Typ.desc= Tptr ({Typ.desc= Tstruct name_struct}, _)} | _, {Typ.desc= Tstruct name_struct}
+          -> (
       match Tenv.lookup tenv name_struct with
       | Some {fields} ->
           List.fold
@@ -106,10 +107,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       (instr: HilInstr.t) =
     match instr with
     | Assign
-        ( (((_, lhs_typ), _) as lhs_ap)
+        ( (((lhs_var, lhs_typ), apl) as lhs_ap)
         , HilExp.AccessPath (((rhs_var, rhs_typ) as rhs_base), al)
         , loc ) ->
-        let uninit_vars = D.remove lhs_ap astate.uninit_vars in
+        let uninit_vars' = D.remove lhs_ap astate.uninit_vars in
+        let uninit_vars =
+          if Int.equal (List.length apl) 0 then
+            (* if we assign to the root of a struct then we need to remove all the fields *)
+            remove_fields tenv (lhs_var, lhs_typ) uninit_vars'
+          else uninit_vars'
+        in
         let prepost =
           if FormalMap.is_formal rhs_base (fst extras)
              && match rhs_typ.desc with Typ.Tptr _ -> true | _ -> false
