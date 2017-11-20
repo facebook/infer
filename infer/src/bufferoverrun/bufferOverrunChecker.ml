@@ -266,7 +266,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | Call (ret, Const Cfun callee_pname, params, location, _) -> (
           match Models.dispatcher callee_pname params with
           | Some model ->
-              model callee_pname ret params node location mem
+              model callee_pname ret node location mem
           | None ->
             match Summary.read_summary pdesc callee_pname with
             | Some summary ->
@@ -276,7 +276,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 L.(debug BufferOverrun Verbose)
                   "/!\\ Unknown call to %a at %a@\n" Typ.Procname.pp callee_pname Location.pp
                   location ;
-                Models.model_by_value Dom.Val.unknown callee_pname ret params node location mem
+                Models.model_by_value Dom.Val.unknown callee_pname ret node location mem
                 |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown )
         | Declare_locals (locals, location) ->
             (* array allocation in stack e.g., int arr[10] *)

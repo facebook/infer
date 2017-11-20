@@ -46,9 +46,9 @@ type ( 'f_in
 
 type ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'list_constraint) templ_matcher
 
-type ('f_in, 'f_out, 'captured_types, 'markers) args_matcher
+type ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
 
-type ('captured_types, 'markers) func_arg
+type ('f_in, 'f_out, 'captured_types, 'markers) func_arg
 
 type 'f matcher = Typ.Procname.t -> FuncArg.t list -> 'f option
 
@@ -99,16 +99,19 @@ val capt_all :
 
 (* Function args *)
 
-val any_arg : (_, _) func_arg
+val any_arg : ('f, 'f, _, _) func_arg
 (** Eats one arg *)
 
-val typ1 : 'marker -> ('marker mtyp * _, 'marker * _) func_arg
+val capt_arg : (FuncArg.t -> 'f, 'f, _, _) func_arg
+(** Captures one arg *)
+
+val typ1 : 'marker -> ('f, 'f, 'marker mtyp * _, 'marker * _) func_arg
 (** Matches first captured type *)
 
-val typ2 : 'marker -> (_ * ('marker mtyp * _), _ * ('marker * _)) func_arg
+val typ2 : 'marker -> ('f, 'f, _ * ('marker mtyp * _), _ * ('marker * _)) func_arg
 (** Matches second captured type *)
 
-val typ3 : 'marker -> (_ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) func_arg
+val typ3 : 'marker -> ('f, 'f, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) func_arg
 (** Matches third captured type *)
 
 (* A matcher is a rule associating a function [f] to a [C/C++ function/method]:
@@ -161,17 +164,18 @@ val ( >:: ) :
 (** Ends template arguments and starts a name *)
 
 val ( $+ ) :
-  ('f_in, 'f_out, 'captured_types, 'markers) args_matcher -> ('captured_types, 'markers) func_arg
-  -> ('f_in, 'f_out, 'captured_types, 'markers) args_matcher
+  ('f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
+  -> ('f_interm, 'f_out, 'captured_types, 'markers) func_arg
+  -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
 (** Separate function arguments *)
 
 val ( >$ ) :
-  ('f_in, 'f_out, 'captured_types, unit, 'markers, _) templ_matcher
-  -> ('captured_types, 'markers) func_arg
-  -> ('f_in, 'f_out, 'captured_types, 'markers) args_matcher
+  ('f_in, 'f_proc_out, 'ct, unit, 'cm, _) templ_matcher -> ('f_proc_out, 'f_out, 'ct, 'cm) func_arg
+  -> ('f_in, 'f_proc_out, 'f_out, 'ct, 'cm) args_matcher
 (** Ends template arguments and starts function arguments *)
 
-val ( $--> ) : ('f_in, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
+val ( $--> ) :
+  ('f_in, _, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
 (** Ends function arguments, binds the function *)
 
 val ( &+...>:: ) :
@@ -190,15 +194,15 @@ val ( <>:: ) :
 (** Separates names (accepts NO template arguments on the left one) *)
 
 val ( $ ) :
-  ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher
-  -> ('captured_types, 'markers) func_arg
-  -> ('f_in, 'f_out, 'captured_types, 'markers) args_matcher
+  ('f_in, 'f_proc_out, 'captured_types, unit, 'markers) name_matcher
+  -> ('f_proc_out, 'f_out, 'captured_types, 'markers) func_arg
+  -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
 (** Ends a name with accept-ALL template arguments and starts function arguments *)
 
 val ( <>$ ) :
-  ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher
-  -> ('captured_types, 'markers) func_arg
-  -> ('f_in, 'f_out, 'captured_types, 'markers) args_matcher
+  ('f_in, 'f_proc_out, 'captured_types, unit, 'markers) name_matcher
+  -> ('f_proc_out, 'f_out, 'captured_types, 'markers) func_arg
+  -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
 (** Ends a name with accept-NO template arguments and starts function arguments *)
 
 val ( >--> ) :
@@ -206,7 +210,7 @@ val ( >--> ) :
 (** Ends template arguments, accepts ALL function arguments, binds the function *)
 
 val ( $+...$--> ) :
-  ('f_in, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
+  ('f_in, _, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
 (** Ends function arguments with eats-ALL and binds the function *)
 
 val ( >$$--> ) :
@@ -229,7 +233,8 @@ val ( <>--> ) :
   ('f_in, 'f_out, 'captured_types, unit, 'markers) name_matcher -> 'f_in -> 'f_out matcher
 (** After a name, accepts NO template arguments, accepts ALL function arguments, binds the function *)
 
-val ( $!--> ) : ('f_in, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
+val ( $!--> ) :
+  ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher -> 'f_in -> 'f_out matcher
 (** Ends function arguments, accepts NO more function arguments.
     If the args do not match, raise an internal error.
  *)
