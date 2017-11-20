@@ -154,8 +154,14 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) na
          | _ ->
              true )
   in
+  let is_static_global =
+    var_decl_info.Clang_ast_t.vdi_is_global
+    (* only top level declarations are really have file scope, static field members have a global scope *)
+    && not var_decl_info.Clang_ast_t.vdi_is_static_data_member
+    && match var_decl_info.Clang_ast_t.vdi_storage_class with Some "static" -> true | _ -> false
+  in
   Pvar.mk_global ~is_constexpr ~is_pod
-    ~is_static_local:var_decl_info.Clang_ast_t.vdi_is_static_local
+    ~is_static_local:var_decl_info.Clang_ast_t.vdi_is_static_local ~is_static_global
     (mk_name name_string simple_name) translation_unit
 
 

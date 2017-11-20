@@ -24,9 +24,9 @@ type pvar_kind =
       (** synthetic variable to represent return value *)
   | Abduced_ref_param of Typ.Procname.t * int * Location.t
       (** synthetic variable to represent param passed by reference *)
-  | Global_var of (translation_unit * bool * bool * bool)
+  | Global_var of (translation_unit * bool * bool * bool * bool)
       (** global variable: translation unit + is it compile constant? + is it POD? + is it a static
-      local? *)
+      local?  + is it a static global *)
   | Seed_var  (** variable used to store the initial value of formal parameters *)
   [@@deriving compare]
 
@@ -77,7 +77,7 @@ let pp_ f pv =
   | Abduced_ref_param (n, index, l) ->
       if !Config.pp_simple then F.fprintf f "%a|abducedRefParam%d" Mangled.pp name index
       else F.fprintf f "%a$[%a]%a|abducedRefParam" Typ.Procname.pp n Location.pp l Mangled.pp name
-  | Global_var (translation_unit, is_const, is_pod, _) ->
+  | Global_var (translation_unit, is_const, is_pod, _, _) ->
       F.fprintf f "#GB<%a%s%s>$%a" pp_translation_unit translation_unit
         (if is_const then "|const" else "")
         (if not is_pod then "|!pod" else "")
@@ -161,7 +161,7 @@ let is_seed pv = match pv.pv_kind with Seed_var -> true | _ -> false
 (** Check if the pvar is a global var *)
 let is_global pv = match pv.pv_kind with Global_var _ -> true | _ -> false
 
-let is_static_local pv = match pv.pv_kind with Global_var (_, _, _, true) -> true | _ -> false
+let is_static_local pv = match pv.pv_kind with Global_var (_, _, _, true, _) -> true | _ -> false
 
 (** Check if a pvar is the special "this" var *)
 let is_this pvar = Mangled.equal (get_name pvar) (Mangled.from_string "this")
@@ -233,11 +233,12 @@ let mk_callee (name: Mangled.t) (proc_name: Typ.Procname.t) : t =
 
 
 (** create a global variable with the given name *)
-let mk_global ?(is_constexpr= false) ?(is_pod= true) ?(is_static_local= false) (name: Mangled.t)
-    translation_unit : t =
+let mk_global ?(is_constexpr= false) ?(is_pod= true) ?(is_static_local= false)
+    ?(is_static_global= false) (name: Mangled.t) translation_unit : t =
   { pv_hash= name_hash name
   ; pv_name= name
-  ; pv_kind= Global_var (translation_unit, is_constexpr, is_pod, is_static_local) }
+  ; pv_kind= Global_var (translation_unit, is_constexpr, is_pod, is_static_local, is_static_global)
+  }
 
 
 (** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! *)
@@ -260,22 +261,34 @@ let mk_abduced_ref_param (proc_name: Typ.Procname.t) (index: int) (loc: Location
 
 let get_translation_unit pvar =
   match pvar.pv_kind with
-  | Global_var (tu, _, _, _) ->
+  | Global_var (tu, _, _, _, _) ->
       tu
   | _ ->
       L.(die InternalError) "Expected a global variable"
 
 
-let is_compile_constant pvar = match pvar.pv_kind with Global_var (_, b, _, _) -> b | _ -> false
+let is_compile_constant pvar =
+  match pvar.pv_kind with Global_var (_, b, _, _, _) -> b | _ -> false
 
-let is_pod pvar = match pvar.pv_kind with Global_var (_, _, b, _) -> b | _ -> true
+
+let is_pod pvar = match pvar.pv_kind with Global_var (_, _, b, _, _) -> b | _ -> true
 
 let get_initializer_pname {pv_name; pv_kind} =
   match pv_kind with
-  | Global_var _ ->
-      Some
-        (Typ.Procname.from_string_c_fun
-           (Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name))
+  | Global_var (translation, _, _, _, is_static_global) ->
+      let name = Config.clang_initializer_prefix ^ Mangled.to_string_full pv_name in
+      if is_static_global then
+        match translation with
+        | TUFile file ->
+            let mangled = SourceFile.to_string file |> Utils.string_crc_hex32 in
+            Typ.Procname.C
+              (Typ.Procname.c
+                 (QualifiedCppName.of_qual_string name)
+                 mangled Typ.NoTemplate ~is_generic_model:false)
+            |> Option.return
+        | TUExtern ->
+            None
+      else Some (Typ.Procname.from_string_c_fun name)
   | _ ->
       None
 

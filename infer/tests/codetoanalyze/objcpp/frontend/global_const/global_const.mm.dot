@@ -1,16 +1,16 @@
 /* @generated */
 digraph iCFG {
-"__infer_globals_initializer___someFields.1930c0ca3aad91e2bee375979857d426_1" [label="1: Start __infer_globals_initializer___someFields\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 1]\n " color=yellow style=filled]
+"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_1" [label="1: Start __infer_globals_initializer___someFields\nFormals: \nLocals:  \n   DECLARE_LOCALS(&return); [line 16, column 1]\n " color=yellow style=filled]
 	
 
-	 "__infer_globals_initializer___someFields.1930c0ca3aad91e2bee375979857d426_1" -> "__infer_globals_initializer___someFields.1930c0ca3aad91e2bee375979857d426_3" ;
-"__infer_globals_initializer___someFields.1930c0ca3aad91e2bee375979857d426_2" [label="2: Exit __infer_globals_initializer___someFields \n  " color=yellow style=filled]
+	 "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_1" -> "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" ;
+"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_2" [label="2: Exit __infer_globals_initializer___someFields \n  " color=yellow style=filled]
 	
 
-"__infer_globals_initializer___someFields.1930c0ca3aad91e2bee375979857d426_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field1:float=1 [line 16, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field2:float=2 [line 16, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field3:float=3 [line 16, column 36]\n " shape="box"]
+"__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" [label="3:  DeclStmt \n   *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field1:float=1 [line 16, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field2:float=2 [line 16, column 36]\n  *&#GB<codetoanalyze/objcpp/frontend/global_const/global_const.mm>$__someFields.field3:float=3 [line 16, column 36]\n " shape="box"]
 	
 
-	 "__infer_globals_initializer___someFields.1930c0ca3aad91e2bee375979857d426_3" -> "__infer_globals_initializer___someFields.1930c0ca3aad91e2bee375979857d426_2" ;
+	 "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_3" -> "__infer_globals_initializer___someFields#305cac08d8197bd145f7f55cc8a06d16.794b83eea8b5794c71808060b1f3b5c7_2" ;
 "fields#3037629886785813687.69ed098353fab08d543db5cb8ab409b5_1" [label="1: Start fields\nFormals:  __return_param:Fields*\nLocals:  \n   DECLARE_LOCALS(&return); [line 20, column 1]\n " color=yellow style=filled]
 	
 
