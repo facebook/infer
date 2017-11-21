@@ -142,8 +142,7 @@ type payload =
 
 (** Procedure summary *)
 type summary =
-  { nodes: Procdesc.Node.id list  (** ids of cfg nodes of the procedure *)
-  ; phase: phase  (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
+  { phase: phase  (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
   ; payload: payload  (** payload containing the result of some analysis *)
   ; sessions: int ref  (** Session number: how many nodes went trough symbolic execution *)
   ; stats: stats  (** statistics: execution time and list of errors *)

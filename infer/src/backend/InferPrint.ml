@@ -133,8 +133,6 @@ type summary_val =
   ; vflags: ProcAttributes.proc_flags
   ; vline: int
   ; vsignature: string
-  ; vweight: int
-  ; vproof_coverage: string
   ; vproof_trace: string }
 
 (** compute values from summary data to export to csv format *)
@@ -144,9 +142,8 @@ let summary_values summary =
   let err_log = Specs.get_err_log summary in
   let proc_name = Specs.get_proc_name summary in
   let signature = Specs.get_signature summary in
-  let nodes_nr = List.length summary.Specs.nodes in
   let specs = Specs.get_specs_from_payload summary in
-  let nr_nodes_visited, lines_visited =
+  let lines_visited =
     let visited = ref Specs.Visitedset.empty in
     let do_spec spec = visited := Specs.Visitedset.union spec.Specs.visited !visited in
     List.iter ~f:do_spec specs ;
@@ -154,15 +151,12 @@ let summary_values summary =
     Specs.Visitedset.iter
       (fun (_, ls) -> List.iter ~f:(fun l -> visited_lines := Int.Set.add !visited_lines l) ls)
       !visited ;
-    (Specs.Visitedset.cardinal !visited, Int.Set.elements !visited_lines)
+    Int.Set.elements !visited_lines
   in
   let proof_trace =
     let pp_line fmt l = F.fprintf fmt "%d" l in
     let pp fmt = F.fprintf fmt "%a" (Pp.seq pp_line) lines_visited in
     F.asprintf "%t" pp
-  in
-  let node_coverage =
-    if Int.equal nodes_nr 0 then 0.0 else float_of_int nr_nodes_visited /. float_of_int nodes_nr
   in
   let pp_failure failure = F.asprintf "%a" SymOp.pp_failure_kind failure in
   { vname= Typ.Procname.to_string proc_name
@@ -179,8 +173,6 @@ let summary_values summary =
   ; vfile= SourceFile.to_string attributes.ProcAttributes.loc.Location.file
   ; vline= attributes.ProcAttributes.loc.Location.line
   ; vsignature= signature
-  ; vweight= nodes_nr
-  ; vproof_coverage= Printf.sprintf "%2.2f" node_coverage
   ; vproof_trace= proof_trace }
 
 
@@ -208,8 +200,6 @@ module ProcsCsv = struct
     pp "%s," sv.vfile ;
     pp "%d," sv.vline ;
     pp "\"%s\"," (Escape.escape_csv sv.vsignature) ;
-    pp "%d," sv.vweight ;
-    pp "%s," sv.vproof_coverage ;
     pp "%s@\n" sv.vproof_trace
 
 end
@@ -1241,4 +1231,3 @@ let main ~report_csv ~report_json =
       pp_json_report_by_report_kind formats_by_report_kind fname
   | None ->
       pp_summary_and_issues formats_by_report_kind issue_formats
-

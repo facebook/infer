@@ -356,8 +356,7 @@ type payload =
   ; uninit: UninitDomain.summary option }
 
 type summary =
-  { nodes: Procdesc.Node.id list  (** ids of cfg nodes of the procedure *)
-  ; phase: phase  (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
+  { phase: phase  (** in FOOTPRINT phase or in RE_EXECUTION PHASE *)
   ; payload: payload  (** payload containing the result of some analysis *)
   ; sessions: int ref  (** Session number: how many nodes went trough symbolic execution *)
   ; stats: stats  (** statistics: execution time and list of errors *)
@@ -756,8 +755,7 @@ let empty_payload =
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
 let init_summary proc_desc =
   let summary =
-    { nodes= [] (* TODO(T23648322): remove this information from the summary *)
-    ; phase= FOOTPRINT
+    { phase= FOOTPRINT
     ; sessions= ref 0
     ; payload= empty_payload
     ; stats= empty_stats
