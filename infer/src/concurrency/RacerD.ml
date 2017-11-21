@@ -1168,7 +1168,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
     let is_full_trace = TraceElem.is_direct final_sink in
     (* Traces can be truncated due to limitations of our Buck integration. If we have a truncated
        trace, it's probably going to be too confusing to be actionable. Skip it. *)
-    if is_full_trace || not Config.filtering then
+    if not (Typ.Procname.is_java pname) || is_full_trace || not Config.filtering then
       let final_sink_site = PathDomain.Sink.call_site final_sink in
       let initial_sink, _ = List.last_exn sinks in
       let initial_sink_site = PathDomain.Sink.call_site initial_sink in
