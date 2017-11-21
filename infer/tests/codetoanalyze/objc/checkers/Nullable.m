@@ -118,14 +118,14 @@ int* __nullable returnsNull();
 
 - (NSArray*)nullableObjectInNSArrayBad {
   NSObject* nullableObject = [self nullableMethod];
-  NSArray* array = @[ nullableObject ];
+  NSArray* array = @[ nullableObject ]; // reports here
   return array;
 }
 
 - (NSArray*)secondElementNullableObjectInNSArrayBad {
   NSObject* allocatedObject = [NSObject alloc];
   NSObject* nullableObject = [self nullableMethod];
-  NSArray* array = @[ allocatedObject, nullableObject ];
+  NSArray* array = @[ allocatedObject, nullableObject ]; // reports here
   return array;
 }
 
@@ -133,7 +133,7 @@ int* __nullable returnsNull();
   NSObject* nullableObject = [self nullableMethod];
   NSArray* array;
   if (nullableObject) {
-    array = @[ nullableObject ];
+    array = @[ nullableObject ]; // reports here
   } else {
     array = @[ @"String" ];
   }
@@ -142,7 +142,21 @@ int* __nullable returnsNull();
 
 - (NSArray*)URLWithStringOkay {
   NSURL* url = [NSURL URLWithString:@"some/url/string"];
-  NSArray* array = @[ url ];
+  NSArray* array = @[ url ]; // reports here
+}
+
+- (NSDictionary*)nullableValueInNSDictionary {
+  NSObject* nullableValue = [self nullableMethod];
+  NSMutableDictionary* dict = [NSMutableDictionary
+      dictionaryWithObjectsAndKeys:@"key", nullableValue, nil]; // reports here
+  return dict;
+}
+
+- (NSDictionary*)nullableKeyInNSDictionary {
+  NSObject* nullableKey = [self nullableMethod];
+  NSMutableDictionary* dict = [NSMutableDictionary
+      dictionaryWithObjectsAndKeys:nullableKey, @"value", nil]; // reports here
+  return dict;
 }
 
 @end

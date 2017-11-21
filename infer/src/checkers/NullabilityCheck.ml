@@ -29,10 +29,20 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         (Specs.proc_resolve_attributes callee_pname)
 
 
-  let is_blacklisted callee_pname =
-    let blacklist = ["URLWithString:"]
-    and simplified_callee_pname = Typ.Procname.to_simplified_string callee_pname in
-    List.exists ~f:(String.equal simplified_callee_pname) blacklist
+  let is_blacklisted_method : Typ.Procname.t -> bool =
+    let blacklist = ["URLWithString:"] in
+    fun proc_name ->
+      let simplified_callee_pname = Typ.Procname.to_simplified_string proc_name in
+      List.exists ~f:(String.equal simplified_callee_pname) blacklist
+
+
+  let is_objc_container_add_method : Typ.Procname.t -> bool =
+    let add_methods =
+      ["arrayWithObjects:"; "arrayWithObjects:count:"; "dictionaryWithObjectsAndKeys:"]
+    in
+    fun proc_name ->
+      let simplified_callee_pname = Typ.Procname.to_simplified_string proc_name in
+      List.exists ~f:(String.equal simplified_callee_pname) add_methods
 
 
   let report_nullable_dereference ap call_sites {ProcData.pdesc; extras} loc =
@@ -168,7 +178,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, _)
       when Models.is_check_not_null callee_pname ->
         assume_pnames_notnull receiver astate
-    | Call (_, Direct callee_pname, _, _, _) when is_blacklisted callee_pname ->
+    | Call (_, Direct callee_pname, _, _, _) when is_blacklisted_method callee_pname ->
         astate
     | Call (Some ret_var, Direct callee_pname, _, _, loc)
       when Annotations.pname_has_return_annot callee_pname
@@ -178,8 +188,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, loc)
       when is_instance_method callee_pname ->
         check_ap proc_data loc receiver astate
-    | Call (_, Direct callee_pname, args, _, loc)
-      when Typ.Procname.equal callee_pname BuiltinDecl.nsArray_arrayWithObjectsCount ->
+    | Call (_, Direct callee_pname, args, _, loc) when is_objc_container_add_method callee_pname ->
         check_nil_in_nsarray proc_data loc args astate
     | Call (Some ret_var, _, _, _, _) ->
         remove_nullable_ap (ret_var, []) astate
