@@ -61,13 +61,6 @@ end
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
 module Analyzer = AbstractInterpreter.Make (CFG) (TransferFunctions)
 
-let is_whitelisted_var var =
-  let whitelisted_vars = ["__assert_file__"; "__assert_fn__"] in
-  List.exists
-    ~f:(fun whitelisted_var -> String.equal whitelisted_var (Pvar.get_simplified_name var))
-    whitelisted_vars
-
-
 let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   let cfg = CFG.from_pdesc proc_desc in
   let invariant_map =
@@ -89,7 +82,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       when not
              ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
              || Domain.mem (Var.of_pvar pvar) live_vars || Procdesc.is_captured_var proc_desc pvar
-             || is_whitelisted_var pvar || is_sentinel_exp rhs_exp ) ->
+             || is_sentinel_exp rhs_exp ) ->
         let issue_id = IssueType.dead_store.unique_id in
         let message = F.asprintf "The value written to %a is never used" (Pvar.pp Pp.text) pvar in
         let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in

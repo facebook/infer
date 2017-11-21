@@ -1192,9 +1192,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           in
           Some (new_or_alloc_trans trans_state_pri sil_loc si qual_type class_opt selector)
       | _ ->
-          None (* assertions *)
-    else if CTrans_models.is_handleFailureInMethod selector then
-      Some (CTrans_utils.trans_assertion trans_state sil_loc)
+          None
     else None
 
 
@@ -1265,7 +1263,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         in
         let selector = obj_c_message_expr_info.Clang_ast_t.omei_selector in
         let nname = "Message Call: " ^ selector in
-        let all_res_trans = res_trans_subexpr_list @ [res_trans_call] in
+        let assertion_trans_opt =
+          if CTrans_models.is_handleFailureInMethod selector then
+            CTrans_utils.trans_assertion trans_state sil_loc
+          else empty_res_trans
+        in
+        let all_res_trans = res_trans_subexpr_list @ [res_trans_call; assertion_trans_opt] in
         let res_trans_to_parent =
           PriorityNode.compute_results_to_parent trans_state_pri sil_loc nname si all_res_trans
         in
