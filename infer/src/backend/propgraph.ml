@@ -287,12 +287,10 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
         | TEXT ->
             F.fprintf f "%s %d of %d:@\n%a" s n num (Prop.pp_prop pe) x
         | HTML ->
-            F.fprintf f "%s %d of %d:@\n%a@\n" s n num (Prop.pp_prop pe) x
-        | LATEX ->
-            F.fprintf f "@[%a@]@\n" (Prop.pp_prop pe) x )
-    | x_ :: l ->
-        let pe = update_pe_diff x_ in
-        let x = add_base_stack x_ in
+            F.fprintf f "%s %d of %d:@\n%a@\n" s n num (Prop.pp_prop pe) x )
+    | _x :: l ->
+        let pe = update_pe_diff _x in
+        let x = add_base_stack _x in
         match pe.kind with
         | TEXT ->
             F.fprintf f "%s %d of %d:@\n%a@\n%a" s n num (Prop.pp_prop pe) x
@@ -302,10 +300,6 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
             F.fprintf f "%s %d of %d:@\n%a@\n%a" s n num (Prop.pp_prop pe) x
               (pp_seq_newline (n + 1))
               l
-        | LATEX ->
-            F.fprintf f "@[%a@]\\\\@\n\\bigvee\\\\@\n%a" (Prop.pp_prop pe) x
-              (pp_seq_newline (n + 1))
-              l
   in
   pp_seq_newline 1 f plist
 
@@ -313,4 +307,3 @@ let pp_proplist pe0 s (base_prop, extract_stack) f plist =
 (** dump a propset *)
 let d_proplist (p: 'a Prop.t) (pl: 'b Prop.t list) =
   L.add_print_action (L.PTproplist, Obj.repr (p, pl))
-

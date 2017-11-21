@@ -32,14 +32,6 @@ let load_specfiles () =
   specs_files_in_dir result_specs_dir
 
 
-(** Create and initialize latex file *)
-let begin_latex_file fmt =
-  let author = "Infer " ^ Version.versionString in
-  let title = "Report on Analysis Results" in
-  let table_of_contents = true in
-  Latex.pp_begin fmt (author, title, table_of_contents)
-
-
 let error_desc_to_csv_string error_desc =
   let pp fmt = F.fprintf fmt "%a" Localise.pp_error_desc error_desc in
   Escape.escape_csv (F.asprintf "%t" pp)
@@ -684,55 +676,6 @@ module Report = struct
   let pp_stats fmt stats = Stats.pp fmt stats
 end
 
-module Summary = struct
-  let pp_summary_out summary =
-    let proc_name = Specs.get_proc_name summary in
-    if CLOpt.equal_command Config.command CLOpt.Report && not Config.quiet then
-      L.result "Procedure: %a@\n%a@." Typ.Procname.pp proc_name Specs.pp_summary_text summary
-
-
-  (** Write proc summary to latex file *)
-  let write_summary_latex fmt summary =
-    let proc_name = Specs.get_proc_name summary in
-    Latex.pp_section fmt
-      ("Analysis of function " ^ Latex.convert_string (Typ.Procname.to_string proc_name)) ;
-    F.fprintf fmt "@[<v>%a@]" (Specs.pp_summary_latex Black) summary
-
-
-  let pp_summary_xml summary fname =
-    if Config.xml_specs then
-      let base = DB.chop_extension (DB.filename_from_string fname) in
-      let xml_file = DB.filename_add_suffix base ".xml" in
-      let specs = Specs.get_specs_from_payload summary in
-      if not (DB.file_exists xml_file)
-         || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time xml_file
-      then
-        let xml_out = Utils.create_outfile (DB.filename_to_string xml_file) in
-        Utils.do_outf xml_out (fun outf ->
-            Dotty.print_specs_xml (Specs.get_signature summary) specs (Specs.get_loc summary)
-              outf.fmt ;
-            Utils.close_outf outf )
-
-
-  let print_summary_dot_svg summary fname =
-    if Config.svg then
-      let base = DB.chop_extension (DB.filename_from_string fname) in
-      let specs = Specs.get_specs_from_payload summary in
-      let dot_file = DB.filename_add_suffix base ".dot" in
-      let svg_file = DB.filename_add_suffix base ".svg" in
-      if not (DB.file_exists dot_file)
-         || DB.file_modified_time (DB.filename_from_string fname) > DB.file_modified_time dot_file
-      then Dotty.pp_speclist_dotty_file base specs ;
-      if not (DB.file_exists svg_file)
-         || DB.file_modified_time dot_file > DB.file_modified_time svg_file
-      then
-        ignore
-          (Sys.command
-             ( "dot -Tsvg \"" ^ DB.filename_to_string dot_file ^ "\" >\""
-             ^ DB.filename_to_string svg_file ^ "\"" ))
-
-end
-
 (** Categorize the preconditions of specs and print stats *)
 module PreconditionStats = struct
   let nr_nopres = ref 0
@@ -811,9 +754,9 @@ let error_filter filters proc_name file error_desc error_name =
   && filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name
 
 
-type report_kind = Issues | Procs | Stats | Calls | Summary [@@deriving compare]
+type report_kind = Issues | Procs | Stats | Calls [@@deriving compare]
 
-type bug_format_kind = Json | Csv | Tests | Text | Latex [@@deriving compare]
+type bug_format_kind = Json | Csv | Tests | Text [@@deriving compare]
 
 let pp_issue_in_format (format_kind, (outf: Utils.outfile)) error_filter
     {Issue.proc_name; proc_location; err_key; err_data} =
@@ -822,8 +765,6 @@ let pp_issue_in_format (format_kind, (outf: Utils.outfile)) error_filter
       IssuesCsv.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
   | Json ->
       IssuesJson.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
-  | Latex ->
-      L.(die InternalError) "Printing issues in latex is not implemented"
   | Tests ->
       L.(die InternalError) "Print issues as tests is not implemented"
   | Text ->
@@ -840,40 +781,30 @@ let pp_issues_in_format (format_kind, (outf: Utils.outfile)) =
       L.(die InternalError) "Print issues as tests is not implemented"
   | Text ->
       IssuesTxt.pp_issues_of_error_log outf.fmt
-  | Latex ->
-      L.(die InternalError) "Printing issues in latex is not implemented"
 
 
 let pp_procs_in_format (format_kind, (outf: Utils.outfile)) =
   match format_kind with
   | Csv ->
       ProcsCsv.pp_summary outf.fmt
-  | Json | Latex | Tests | Text ->
-      L.(die InternalError) "Printing procs in json/latex/tests/text is not implemented"
+  | Json | Tests | Text ->
+      L.(die InternalError) "Printing procs in json/tests/text is not implemented"
 
 
 let pp_calls_in_format (format_kind, (outf: Utils.outfile)) =
   match format_kind with
   | Csv ->
       CallsCsv.pp_calls outf.fmt
-  | Json | Tests | Text | Latex ->
-      L.(die InternalError) "Printing calls in json/tests/text/latex is not implemented"
+  | Json | Tests | Text ->
+      L.(die InternalError) "Printing calls in json/tests/text is not implemented"
 
 
 let pp_stats_in_format (format_kind, _) =
   match format_kind with
   | Csv ->
       Stats.process_summary
-  | Json | Tests | Text | Latex ->
-      L.(die InternalError) "Printing stats in json/tests/text/latex is not implemented"
-
-
-let pp_summary_in_format (format_kind, (outf: Utils.outfile)) =
-  match format_kind with
-  | Latex ->
-      Summary.write_summary_latex outf.fmt
-  | Json | Csv | Tests | Text ->
-      L.(die InternalError) "Printing summary in json/csv/tests/text is not implemented"
+  | Json | Tests | Text ->
+      L.(die InternalError) "Printing stats in json/tests/text is not implemented"
 
 
 let pp_issues_of_error_log error_filter linereader proc_loc_opt procname err_log bug_format_list =
@@ -916,19 +847,8 @@ let pp_stats error_filter linereader summary stats stats_format_list =
   List.iter ~f:pp_stats_in_format stats_format_list
 
 
-let pp_summary summary fname summary_format_list =
-  let pp_summary_in_format format =
-    let pp_summary = pp_summary_in_format format in
-    pp_summary summary
-  in
-  List.iter ~f:pp_summary_in_format summary_format_list ;
-  Summary.pp_summary_out summary ;
-  Summary.pp_summary_xml summary fname ;
-  Summary.print_summary_dot_svg summary fname
-
-
-let pp_summary_by_report_kind formats_by_report_kind summary fname error_filter linereader stats
-    file issues_acc =
+let pp_summary_by_report_kind formats_by_report_kind summary error_filter linereader stats file
+    issues_acc =
   let pp_summary_by_report_kind (report_kind, format_list) =
     match (report_kind, format_list) with
     | Procs, _ :: _ ->
@@ -937,8 +857,6 @@ let pp_summary_by_report_kind formats_by_report_kind summary fname error_filter 
         pp_stats (error_filter file) linereader summary stats format_list
     | Calls, _ :: _ ->
         pp_calls summary format_list
-    | Summary, _ ->
-        pp_summary summary fname format_list
     | _ ->
         ()
   in
@@ -960,8 +878,6 @@ let pp_json_report_by_report_kind formats_by_report_kind fname =
               L.(die InternalError) "Printing issues from json does not support json output"
           | Csv ->
               L.(die InternalError) "Printing issues from json does not support csv output"
-          | Latex ->
-              L.(die InternalError) "Printing issues from json does not support latex output"
         in
         List.iter ~f:pp_json_issue format_list
       in
@@ -999,15 +915,15 @@ let pp_lint_issues filters formats_by_report_kind linereader procname error_log 
 
 
 (** Process a summary *)
-let process_summary filters formats_by_report_kind linereader stats fname summary issues_acc =
+let process_summary filters formats_by_report_kind linereader stats summary issues_acc =
   let file = (Specs.get_loc summary).Location.file in
   let proc_name = Specs.get_proc_name summary in
   let error_filter = error_filter filters proc_name in
   let pp_simple_saved = !Config.pp_simple in
   Config.pp_simple := true ;
   let issues_acc' =
-    pp_summary_by_report_kind formats_by_report_kind summary fname error_filter linereader stats
-      file issues_acc
+    pp_summary_by_report_kind formats_by_report_kind summary error_filter linereader stats file
+      issues_acc
   in
   if Config.precondition_stats then PreconditionStats.do_summary proc_name summary ;
   Config.pp_simple := pp_simple_saved ;
@@ -1135,11 +1051,6 @@ let init_stats_format_list () =
   csv_format
 
 
-let init_summary_format_list () =
-  let latex_format = Option.value_map ~f:(mk_format Latex) ~default:[] Config.latex in
-  latex_format
-
-
 let init_files format_list_by_kind =
   let init_files_of_report_kind (report_kind, format_list) =
     let init_files_of_format (format_kind, (outfile: Utils.outfile)) =
@@ -1152,9 +1063,7 @@ let init_files format_list_by_kind =
           Report.pp_header outfile.fmt ()
       | Json, Issues ->
           IssuesJson.pp_json_open outfile.fmt ()
-      | Latex, Summary ->
-          begin_latex_file outfile.fmt
-      | (Csv | Json | Latex | Tests | Text), _ ->
+      | (Csv | Json | Tests | Text), _ ->
           ()
     in
     List.iter ~f:init_files_of_format format_list
@@ -1162,7 +1071,7 @@ let init_files format_list_by_kind =
   List.iter ~f:init_files_of_report_kind format_list_by_kind
 
 
-let finalize_and_close_files format_list_by_kind stats pdflatex =
+let finalize_and_close_files format_list_by_kind stats =
   let close_files_of_report_kind (report_kind, format_list) =
     let close_files_of_format (format_kind, (outfile: Utils.outfile)) =
       ( match (format_kind, report_kind) with
@@ -1170,18 +1079,9 @@ let finalize_and_close_files format_list_by_kind stats pdflatex =
           F.fprintf outfile.fmt "%a@?" Report.pp_stats stats
       | Json, Issues ->
           IssuesJson.pp_json_close outfile.fmt ()
-      | Latex, Summary ->
-          Latex.pp_end outfile.fmt ()
-      | (Csv | Latex | Tests | Text | Json), _ ->
+      | (Csv | Tests | Text | Json), _ ->
           () ) ;
-      Utils.close_outf outfile ;
-      (* bug_format_kind report_kind *)
-      if [%compare.equal : bug_format_kind * report_kind]
-           (format_kind, report_kind) (Latex, Summary)
-      then (
-        pdflatex outfile.fname ;
-        let pdf_name = Filename.chop_extension outfile.fname ^ ".pdf" in
-        ignore (Sys.command ("open " ^ pdf_name)) )
+      Utils.close_outf outfile
     in
     List.iter ~f:close_files_of_format format_list ;
     ()
@@ -1190,16 +1090,14 @@ let finalize_and_close_files format_list_by_kind stats pdflatex =
 
 
 let pp_summary_and_issues formats_by_report_kind issue_formats =
-  let pdflatex fname = ignore (Sys.command ("pdflatex " ^ fname)) in
   let stats = Stats.create () in
   let linereader = Printer.LineReader.create () in
   let filters = Inferconfig.create_filters Config.analyzer in
   let iterate_summaries = AnalysisResults.get_summary_iterator () in
   let all_issues = ref [] in
-  iterate_summaries (fun (filename, summary) ->
+  iterate_summaries (fun (_, summary) ->
       all_issues
-      := process_summary filters formats_by_report_kind linereader stats filename summary
-           !all_issues ) ;
+      := process_summary filters formats_by_report_kind linereader stats summary !all_issues ) ;
   List.iter
     ~f:(fun ({Issue.proc_name} as issue) ->
       let error_filter = error_filter filters proc_name in
@@ -1212,7 +1110,7 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
   Typ.Procname.Map.iter
     (pp_lint_issues filters formats_by_report_kind linereader)
     !LintIssues.errLogMap ;
-  finalize_and_close_files formats_by_report_kind stats pdflatex
+  finalize_and_close_files formats_by_report_kind stats
 
 
 let main ~report_csv ~report_json =
@@ -1221,8 +1119,7 @@ let main ~report_csv ~report_json =
     [ (Issues, issue_formats)
     ; (Procs, init_procs_format_list ())
     ; (Calls, init_calls_format_list ())
-    ; (Stats, init_stats_format_list ())
-    ; (Summary, init_summary_format_list ()) ]
+    ; (Stats, init_stats_format_list ()) ]
   in
   if Config.developer_mode then register_perf_stats_report () ;
   init_files formats_by_report_kind ;

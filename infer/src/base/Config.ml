@@ -1425,11 +1425,6 @@ and join_cond =
 |}
 
 
-and latex =
-  CLOpt.mk_path_opt ~deprecated:["latex"] ~long:"latex" ~meta:"file"
-    "Write a latex report of the analysis results to a file"
-
-
 and log_file =
   CLOpt.mk_string ~deprecated:["out_file"; "-out-file"] ~long:"log-file" ~meta:"file"
     ~default:"logs" "Specify the file to use for logging"
@@ -2471,8 +2466,6 @@ and javac_verbose_out = !verbose_out
 and jobs = !jobs
 
 and join_cond = !join_cond
-
-and latex = !latex
 
 and linter = !linter
 

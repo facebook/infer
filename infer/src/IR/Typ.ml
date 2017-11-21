@@ -1279,8 +1279,6 @@ module Fieldname = struct
         Format.fprintf f "%s" field_name
 
 
-  let pp_latex style f fn = Latex.pp_string style f (to_string fn)
-
   let class_name_replace fname ~f =
     match fname with
     | Clang {class_name; field_name} ->

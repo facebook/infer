@@ -424,7 +424,7 @@ module AliasMap = struct
   let pp : F.formatter -> t -> unit =
     fun fmt x ->
       let pp_sep fmt () = F.fprintf fmt ", @," in
-      let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" (Ident.pp Pp.text) k AliasTarget.pp v in
+      let pp1 fmt (k, v) = F.fprintf fmt "%a=%a" Ident.pp k AliasTarget.pp v in
       (* F.fprintf fmt "@[<v 0>Logical Variables :@,"; *)
       F.fprintf fmt "@[<hov 2>{ @," ;
       F.pp_print_list ~pp_sep pp1 fmt (M.bindings x) ;

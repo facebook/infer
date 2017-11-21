@@ -86,37 +86,13 @@ let pp_ f pv =
       F.fprintf f "old_%a" Mangled.pp name
 
 
-(** Pretty print a program variable in latex. *)
-let pp_latex f pv =
-  let name = pv.pv_name in
-  match pv.pv_kind with
-  | Local_var _ ->
-      Latex.pp_string Latex.Roman f (Mangled.to_string name)
-  | Callee_var _ ->
-      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
-        (Latex.pp_string Latex.Roman) "callee"
-  | Abduced_retvar _ ->
-      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
-        (Latex.pp_string Latex.Roman) "abducedRetvar"
-  | Abduced_ref_param _ ->
-      F.fprintf f "%a_{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
-        (Latex.pp_string Latex.Roman) "abducedRefParam"
-  | Global_var _ ->
-      Latex.pp_string Latex.Boldface f (Mangled.to_string name)
-  | Seed_var ->
-      F.fprintf f "%a^{%a}" (Latex.pp_string Latex.Roman) (Mangled.to_string name)
-        (Latex.pp_string Latex.Roman) "old"
-
-
 (** Pretty print a pvar which denotes a value, not an address *)
-let pp_value pe f pv =
-  match pe.Pp.kind with TEXT -> pp_ f pv | HTML -> pp_ f pv | LATEX -> pp_latex f pv
-
+let pp_value f pv = pp_ f pv
 
 (** Pretty print a program variable. *)
 let pp pe f pv =
-  let ampersand = match pe.Pp.kind with TEXT -> "&" | HTML -> "&amp;" | LATEX -> "\\&" in
-  F.fprintf f "%s%a" ampersand (pp_value pe) pv
+  let ampersand = match pe.Pp.kind with TEXT -> "&" | HTML -> "&amp;" in
+  F.fprintf f "%s%a" ampersand pp_value pv
 
 
 (** Dump a program variable. *)
@@ -291,4 +267,3 @@ let get_initializer_pname {pv_name; pv_kind} =
       else Some (Typ.Procname.from_string_c_fun name)
   | _ ->
       None
-

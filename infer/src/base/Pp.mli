@@ -25,7 +25,7 @@ type colormap = Obj.t -> color
 type simple_kind = SIM_DEFAULT | SIM_WITH_TYP
 
 (** Kind of printing *)
-type print_kind = TEXT | LATEX | HTML [@@deriving compare]
+type print_kind = TEXT | HTML [@@deriving compare]
 
 val equal_print_kind : print_kind -> print_kind -> bool
 
@@ -62,9 +62,6 @@ val text : env
 val html : color -> env
 (** Default html print environment *)
 
-val latex : color -> env
-(** Default latex print environment *)
-
 val color_string : color -> string
 (** string representation of colors *)
 
@@ -76,10 +73,10 @@ val cli_args : F.formatter -> string list -> unit
 (** pretty print command line arguments, expanding argument files to print their contents *)
 
 val seq :
-  ?print_env:env -> ?sep:string -> ?sep_html:string -> ?sep_latex:string
-  -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
+  ?print_env:env -> ?sep:string -> ?sep_html:string -> (F.formatter -> 'a -> unit) -> F.formatter
+  -> 'a list -> unit
 (** Pretty print a sequence with [sep] followed by a space between each element. By default,
-    [print_env] is [text], [sep] is "", and [sep_html] and [sep_latex] set to [sep]. *)
+    [print_env] is [text], [sep] is "", and [sep_html] set to [sep]. *)
 
 val comma_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 (** Pretty print a comma-separated sequence. *)

@@ -18,7 +18,7 @@ module CLOpt = CommandLineOption
 type simple_kind = SIM_DEFAULT | SIM_WITH_TYP
 
 (** Kind of printing *)
-type print_kind = TEXT | LATEX | HTML [@@deriving compare]
+type print_kind = TEXT | HTML [@@deriving compare]
 
 let equal_print_kind = [%compare.equal : print_kind]
 
@@ -66,17 +66,6 @@ let html color =
     kind= HTML; cmap_norm= colormap_from_color color; cmap_foot= colormap_from_color color; color }
 
 
-(** Default latex print environment *)
-let latex color =
-  { opt= SIM_DEFAULT
-  ; kind= LATEX
-  ; break_lines= false
-  ; cmap_norm= colormap_from_color color
-  ; cmap_foot= colormap_from_color color
-  ; color
-  ; obj_sub= None }
-
-
 (** Extend the normal colormap for the given object with the given color *)
 let extend_colormap pe (x: Obj.t) (c: color) =
   let colormap (y: Obj.t) = if phys_equal x y then c else pe.cmap_norm y in
@@ -110,16 +99,14 @@ let color_string = function
       "color_red"
 
 
-let seq ?(print_env= text) ?sep:(sep_text = " ") ?(sep_html= sep_text) ?(sep_latex= sep_text) pp =
+let seq ?(print_env= text) ?sep:(sep_text = " ") ?(sep_html= sep_text) pp =
   let rec aux f = function
     | [] ->
         ()
     | [x] ->
         F.fprintf f "%a" pp x
     | x :: l ->
-        let sep =
-          match print_env.kind with TEXT -> sep_text | HTML -> sep_html | LATEX -> sep_latex
-        in
+        let sep = match print_env.kind with TEXT -> sep_text | HTML -> sep_html in
         if print_env.break_lines then F.fprintf f "%a%s@ %a" pp x sep aux l
         else F.fprintf f "%a%s%a" pp x sep aux l
   in
@@ -130,7 +117,7 @@ let comma_seq ?print_env pp f l = seq ?print_env ~sep:"," pp f l
 
 let semicolon_seq ?print_env pp f l = seq ?print_env ~sep:";" pp f l
 
-let or_seq ?print_env pp f = seq ?print_env ~sep:" ||" ~sep_html:" &or;" ~sep_latex:" \\vee" pp f
+let or_seq ?print_env pp f = seq ?print_env ~sep:" ||" ~sep_html:" &or;" pp f
 
 (** Print the current time and date in a format similar to the "date" command *)
 let current_time f () =

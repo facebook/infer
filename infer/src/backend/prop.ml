@@ -123,8 +123,7 @@ let pp_texp_simple pe =
 let pp_hpred_stackvar pe0 f (hpred: Sil.hpred) =
   let pe, changed = Sil.color_pre_wrapper pe0 f hpred in
   ( match hpred with
-  | Hpointsto (Exp.Lvar pvar, se, te)
-    -> (
+  | Hpointsto (Exp.Lvar pvar, se, te) ->
       let pe' =
         match se with
         | Eexp (Exp.Var _, _) when not (Pvar.is_global pvar) ->
@@ -132,15 +131,10 @@ let pp_hpred_stackvar pe0 f (hpred: Sil.hpred) =
         | _ ->
             pe
       in
-      match pe'.kind with
-      | TEXT | HTML ->
-          F.fprintf f "%a = %a:%a" (Pvar.pp_value pe') pvar (Sil.pp_sexp pe') se
-            (pp_texp_simple pe') te
-      | LATEX ->
-          F.fprintf f "%a{=}%a" (Pvar.pp_value pe') pvar (Sil.pp_sexp pe') se )
+      F.fprintf f "%a = %a:%a" Pvar.pp_value pvar (Sil.pp_sexp pe') se (pp_texp_simple pe') te
   | Hpointsto _ | Hlseg _ | Hdllseg _ ->
       assert false (* should not happen *) ) ;
-  Sil.color_post_wrapper changed pe0 f
+  Sil.color_post_wrapper changed f
 
 
 (** Pretty print a substitution. *)
@@ -158,12 +152,8 @@ let d_sub (sub: Sil.subst) = L.add_print_action (PTsub, Obj.repr sub)
 let pp_sub_entry pe0 f entry =
   let pe, changed = Sil.color_pre_wrapper pe0 f entry in
   let x, e = entry in
-  ( match pe.kind with
-  | TEXT | HTML ->
-      F.fprintf f "%a = %a" (Ident.pp pe) x (Sil.pp_exp_printenv pe) e
-  | LATEX ->
-      F.fprintf f "%a{=}%a" (Ident.pp pe) x (Sil.pp_exp_printenv pe) e ) ;
-  Sil.color_post_wrapper changed pe0 f
+  F.fprintf f "%a = %a" Ident.pp x (Sil.pp_exp_printenv pe) e ;
+  Sil.color_post_wrapper changed f
 
 
 (** Pretty print a substitution as a list of (ident,exp) pairs *)
@@ -204,14 +194,7 @@ let pp_sigma_simple pe env fmt sigma =
     if sg <> [] then
       Format.fprintf fmt "%a" (Pp.semicolon_seq ~print_env:pe (pp_hpred_stackvar pe)) sg
   in
-  let pp_nl fmt doit =
-    if doit then
-      match pe.Pp.kind with
-      | TEXT | HTML ->
-          Format.fprintf fmt " ;@\n"
-      | LATEX ->
-          Format.fprintf fmt " ; \\\\@\n"
-  in
+  let pp_nl fmt doit = if doit then Format.fprintf fmt " ;@\n" in
   let pp_nonstack fmt = Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)) fmt in
   if sigma_stack <> [] || sigma_nonstack <> [] then
     Format.fprintf fmt "%a%a%a" pp_stack sigma_stack pp_nl
@@ -260,43 +243,26 @@ let get_pure_extended p =
 
 
 (** Print existential quantification *)
-let pp_evars pe f evars =
-  if evars <> [] then
-    match pe.Pp.kind with
-    | TEXT | HTML ->
-        F.fprintf f "exists [%a]. " (Pp.comma_seq (Ident.pp pe)) evars
-    | LATEX ->
-        F.fprintf f "\\exists %a. " (Pp.comma_seq (Ident.pp pe)) evars
+let pp_evars f evars =
+  if evars <> [] then F.fprintf f "exists [%a]. " (Pp.comma_seq Ident.pp) evars
 
 
 (** Print an hpara in simple mode *)
 let pp_hpara_simple pe_ env n f pred =
   let pe = Pp.reset_obj_sub pe_ in
   (* no free vars: disable object substitution *)
-  match pe.kind with
-  | TEXT | HTML ->
-      F.fprintf f "P%d = %a%a" n (pp_evars pe) pred.Sil.evars
-        (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
-        pred.Sil.body
-  | LATEX ->
-      F.fprintf f "P_{%d} = %a%a\\\\" n (pp_evars pe) pred.Sil.evars
-        (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
-        pred.Sil.body
+  F.fprintf f "P%d = %a%a" n pp_evars pred.Sil.evars
+    (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
+    pred.Sil.body
 
 
 (** Print an hpara_dll in simple mode *)
 let pp_hpara_dll_simple pe_ env n f pred =
   let pe = Pp.reset_obj_sub pe_ in
   (* no free vars: disable object substitution *)
-  match pe.kind with
-  | TEXT | HTML ->
-      F.fprintf f "P%d = %a%a" n (pp_evars pe) pred.Sil.evars_dll
-        (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
-        pred.Sil.body_dll
-  | LATEX ->
-      F.fprintf f "P_{%d} = %a%a" n (pp_evars pe) pred.Sil.evars_dll
-        (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
-        pred.Sil.body_dll
+  F.fprintf f "P%d = %a%a" n pp_evars pred.Sil.evars_dll
+    (Pp.semicolon_seq ~print_env:pe (Sil.pp_hpred_env pe (Some env)))
+    pred.Sil.body_dll
 
 
 (** Create an environment mapping (ident) expressions to the program variables containing them *)
@@ -341,7 +307,6 @@ let prop_pred_env prop =
 (** Pretty print a proposition. *)
 let pp_prop pe0 f prop =
   let pe = prop_update_obj_sub pe0 prop in
-  let latex = Pp.equal_print_kind pe.Pp.kind Pp.LATEX in
   let do_print f () =
     let subl = Sil.sub_to_list prop.sub in
     (* since prop diff is based on physical equality, we need to extract the sub verbatim *)
@@ -350,7 +315,7 @@ let pp_prop pe0 f prop =
       if subl <> [] then F.fprintf f "%a ;@\n" (pp_subl pe) subl ;
       if pi <> [] then F.fprintf f "%a ;@\n" (pp_pi pe) pi
     in
-    if !Config.pp_simple || latex then
+    if !Config.pp_simple then
       let env = prop_pred_env prop in
       let iter_f n hpara = F.fprintf f "@,@[<h>%a@]" (pp_hpara_simple pe env n) hpara in
       let iter_f_dll n hpara_dll =
@@ -358,9 +323,6 @@ let pp_prop pe0 f prop =
       in
       let pp_predicates _ () =
         if Sil.Predicates.is_empty env then ()
-        else if latex then (
-          F.fprintf f "@\n\\\\\\textsf{where }" ;
-          Sil.Predicates.iter env iter_f iter_f_dll )
         else (
           F.fprintf f "@,where" ;
           Sil.Predicates.iter env iter_f iter_f_dll )
@@ -2517,7 +2479,7 @@ let prop_iter_make_id_primed tenv id iter =
       | Aeq (Var id1, e1) when Sil.ident_in_exp id1 e1 ->
           L.internal_error "@[<2>#### ERROR: an assumption of the analyzer broken ####@\n" ;
           L.internal_error "Broken Assumption: id notin e for all (id,e) in sub@\n" ;
-          L.internal_error "(id,e) : (%a,%a)@\n" (Ident.pp Pp.text) id1 Exp.pp e1 ;
+          L.internal_error "(id,e) : (%a,%a)@\n" Ident.pp id1 Exp.pp e1 ;
           L.internal_error "PROP : %a@\n@." (pp_prop Pp.text) (prop_iter_to_prop tenv iter) ;
           assert false
       | Aeq (Var id1, e1) when Ident.equal pid id1 ->

@@ -589,9 +589,6 @@ module Fieldname : sig
   val pp : Format.formatter -> t -> unit
   (** Pretty print a field name. *)
 
-  val pp_latex : Latex.style -> Format.formatter -> t -> unit
-  (** Pretty print a field name in latex. *)
-
   val java_get_class : t -> string
   (** The class part of the fieldname *)
 

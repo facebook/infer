@@ -29,12 +29,7 @@ let is_return = function ProgramVar pvar -> Pvar.is_return pvar | LogicalVar _ -
 
 let is_footprint = function ProgramVar _ -> false | LogicalVar id -> Ident.is_footprint id
 
-let pp fmt = function
-  | ProgramVar pv ->
-      Pvar.pp Pp.text fmt pv
-  | LogicalVar id ->
-      Ident.pp Pp.text fmt id
-
+let pp fmt = function ProgramVar pv -> Pvar.pp Pp.text fmt pv | LogicalVar id -> Ident.pp fmt id
 
 module Map = PrettyPrintable.MakePPMap (struct
   type nonrec t = t

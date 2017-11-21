@@ -232,7 +232,7 @@ let rec pp_ pe pp_t f e =
   in
   match (e : t) with
   | Var id ->
-      Ident.pp pe f id
+      Ident.pp f id
   | Const c ->
       F.fprintf f "%a" (Const.pp pe) c
   | Cast (typ, e) ->
@@ -277,4 +277,3 @@ let is_objc_block_closure = function
       Typ.Procname.is_objc_block name
   | _ ->
       false
-

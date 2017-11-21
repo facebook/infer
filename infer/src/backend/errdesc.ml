@@ -571,7 +571,7 @@ let explain_leak tenv hpred prop alloc_att_opt bucket =
   let hpred_typ_opt = find_hpred_typ hpred in
   let value_str_from_pvars_vpath pvars vpath =
     if pvars <> [] then
-      let pp = Pp.seq (Pvar.pp_value Pp.text) in
+      let pp = Pp.seq Pvar.pp_value in
       let desc_string = F.asprintf "%a" pp pvars in
       Some desc_string
     else
@@ -1331,4 +1331,3 @@ let explain_null_test_after_dereference tenv exp node line loc =
 
 let warning_err loc fmt_string =
   L.(debug Analysis Medium) ("%a: Warning: " ^^ fmt_string) Location.pp loc
-

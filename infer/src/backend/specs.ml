@@ -430,13 +430,6 @@ let pp_spec pe num_opt fmt spec =
         pre Io_infer.Html.pp_end_color () ;
       F.fprintf fmt "%a" (Propgraph.pp_proplist pe_post "POST" (pre, true)) post_list ;
       F.fprintf fmt "----------------------------------------------------------------"
-  | LATEX ->
-      F.fprintf fmt "\\textbf{\\large Requires}\\\\@\n@[%a%a%a@]\\\\@\n" Latex.pp_color Pp.Blue
-        (Prop.pp_prop (Pp.latex Blue))
-        pre Latex.pp_color pe.Pp.color ;
-      F.fprintf fmt "\\textbf{\\large Ensures}\\\\@\n@[%a@]"
-        (Propgraph.pp_proplist pe_post "POST" (pre, true))
-        post_list
 
 
 (** Dump a spec *)
@@ -457,13 +450,6 @@ let pp_specs pe fmt specs =
         ~f:(fun spec ->
           incr cnt ;
           F.fprintf fmt "%a<br>@\n" (pp_spec pe (Some (!cnt, total))) spec)
-        specs
-  | LATEX ->
-      List.iter
-        ~f:(fun spec ->
-          incr cnt ;
-          F.fprintf fmt "\\subsection*{Spec %d of %d}@\n\\(%a\\)@\n" !cnt total (pp_spec pe None)
-            spec)
         specs
 
 
@@ -539,16 +525,6 @@ let pp_summary_text fmt summary =
   pp_summary_no_stats_specs fmt summary ;
   F.fprintf fmt "%a@\n%a%a" pp_errlog (get_err_log summary) pp_stats summary.stats (pp_payload pe)
     summary.payload
-
-
-let pp_summary_latex color fmt summary =
-  let pe = Pp.latex color in
-  F.fprintf fmt "\\begin{verbatim}@\n" ;
-  pp_summary_no_stats_specs fmt summary ;
-  F.fprintf fmt "%a@\n" pp_errlog (get_err_log summary) ;
-  F.fprintf fmt "%a@\n" pp_stats summary.stats ;
-  F.fprintf fmt "\\end{verbatim}@\n" ;
-  F.fprintf fmt "%a@\n" (pp_specs pe) (get_specs_from_payload summary)
 
 
 let pp_summary_html source color fmt summary =

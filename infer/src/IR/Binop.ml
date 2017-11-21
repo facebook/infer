@@ -130,8 +130,5 @@ let str pe binop =
         " &gt;&gt; "
     | _ ->
         text binop )
-  | LATEX -> (
-    match binop with Ge -> " \\geq " | Le -> " \\leq " | _ -> text binop )
   | _ ->
       text binop
-

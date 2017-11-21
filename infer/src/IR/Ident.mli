@@ -135,16 +135,13 @@ val set_stamp : t -> int -> t
 val pp_name : Format.formatter -> name -> unit
 (** Pretty print a name. *)
 
-val pp_name_latex : Latex.style -> Format.formatter -> name -> unit
-(** Pretty print a name in latex. *)
-
-val pp : Pp.env -> Format.formatter -> t -> unit
+val pp : Format.formatter -> t -> unit
 (** Pretty print an identifier. *)
 
 val to_string : t -> string
 (** Convert an identifier to a string. *)
 
-val pp_list : Pp.env -> Format.formatter -> t list -> unit
+val pp_list : Format.formatter -> t list -> unit
 (** Pretty print a list of identifiers. *)
 
 val pp_name_list : Format.formatter -> name list -> unit

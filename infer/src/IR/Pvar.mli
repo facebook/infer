@@ -105,7 +105,7 @@ val pp : Pp.env -> F.formatter -> t -> unit
 val pp_list : Pp.env -> F.formatter -> t list -> unit
 (** Pretty print a list of program variables. *)
 
-val pp_value : Pp.env -> F.formatter -> t -> unit
+val pp_value : F.formatter -> t -> unit
 (** Pretty print a pvar which denotes a value, not an address *)
 
 val pp_translation_unit : F.formatter -> translation_unit -> unit

@@ -289,7 +289,7 @@ val hpred_get_lhs : hpred -> Exp.t
 val color_pre_wrapper : Pp.env -> F.formatter -> 'a -> Pp.env * bool
 (** Begin change color if using diff printing, return updated printenv and change status *)
 
-val color_post_wrapper : bool -> Pp.env -> F.formatter -> unit
+val color_post_wrapper : bool -> F.formatter -> unit
 (** Close color annotation if changed *)
 
 val pp_exp_printenv : Pp.env -> F.formatter -> Exp.t -> unit
@@ -476,7 +476,7 @@ val fav_duplicates : bool ref
 (** flag to indicate whether fav's are stored in duplicate form.
     Only to be used with fav_to_list *)
 
-val pp_fav : Pp.env -> F.formatter -> fav -> unit
+val pp_fav : F.formatter -> fav -> unit
 (** Pretty print a fav. *)
 
 val fav_new : unit -> fav

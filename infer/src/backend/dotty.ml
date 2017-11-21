@@ -135,7 +135,7 @@ let rec strexp_to_string pe coo f se =
   | Sil.Eexp (Exp.Lvar pvar, _) ->
       F.fprintf f "%a" (Pvar.pp pe) pvar
   | Sil.Eexp (Exp.Var id, _) ->
-      if !print_full_prop then F.fprintf f "%a" (Ident.pp pe) id else ()
+      if !print_full_prop then F.fprintf f "%a" Ident.pp id else ()
   | Sil.Eexp (e, _) ->
       if !print_full_prop then F.fprintf f "%a" (Sil.pp_exp_printenv pe) e else F.fprintf f "_"
   | Sil.Estruct (ls, _) ->
@@ -1715,4 +1715,3 @@ let print_specs_xml signature specs loc fmt =
       [xml_signature; xml_specifications]
   in
   Io_infer.Xml.pp_document true fmt proc_summary
-

@@ -221,9 +221,6 @@ val pp_specs : Pp.env -> Format.formatter -> Prop.normal spec list -> unit
 val pp_summary_html : SourceFile.t -> Pp.color -> Format.formatter -> summary -> unit
 (** Print the summary in html format *)
 
-val pp_summary_latex : Pp.color -> Format.formatter -> summary -> unit
-(** Print the summary in latext format *)
-
 val pp_summary_text : Format.formatter -> summary -> unit
 (** Print the summary in text format *)
 

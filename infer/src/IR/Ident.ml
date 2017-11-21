@@ -244,26 +244,11 @@ let to_string id =
 (** Pretty print a name. *)
 let pp_name f name = F.fprintf f "%s" (name_to_string name)
 
-(** Pretty print a name in latex. *)
-let pp_name_latex style f (name: name) = Latex.pp_string style f (name_to_string name)
-
 (** Pretty print an identifier. *)
-let pp pe f id =
-  match pe.Pp.kind with
-  | TEXT | HTML ->
-      F.fprintf f "%s" (to_string id)
-  | LATEX ->
-      let base_name = name_to_string id.name in
-      let style =
-        if has_kind id KFootprint then Latex.Boldface
-        else if has_kind id KNormal then Latex.Roman
-        else Latex.Roman
-      in
-      F.fprintf f "%a_{%s}" (Latex.pp_string style) base_name (string_of_int id.stamp)
-
+let pp f id = F.fprintf f "%s" (to_string id)
 
 (** pretty printer for lists of identifiers *)
-let pp_list pe = Pp.comma_seq (pp pe)
+let pp_list = Pp.comma_seq pp
 
 (** pretty printer for lists of names *)
 let pp_name_list = Pp.comma_seq pp_name
