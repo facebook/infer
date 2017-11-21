@@ -15,7 +15,6 @@ module CLOpt = CommandLineOption
     time by system calls, environment variables, or command line options *)
 
 type analyzer =
-  | BiAbduction
   | CaptureOnly
   | CompileOnly
   | Checkers

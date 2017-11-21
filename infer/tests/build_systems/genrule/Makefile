@@ -10,10 +10,10 @@ ROOT_DIR = $(TESTS_DIR)/../..
 
 ANALYZER = checkers
 BUCK_TARGET = //infer/tests/build_systems/genrule/module2:module2
-INFER_TARGET = $(BUCK_TARGET)_infer
+INFER_TARGET = $(BUCK_TARGET)_checkers
 SOURCES = $(wildcard $(TESTS_DIR)/codetoanalyze/java/infer/*.java)
 OBJECTS = $(ROOT_DIR)/buck-out/genruletest/gen/infer/tests/build_systems/genrule/module2/lib__module2_compile__output/module2_compile.jar
-JSON_REPORT = $(ROOT_DIR)/buck-out/gen/infer/tests/build_systems/genrule/module2/module2_infer/infer_out/report.json
+JSON_REPORT = $(ROOT_DIR)/buck-out/gen/infer/tests/build_systems/genrule/module2/module2_checkers/checkers_out/report.json
 INFER_OPTIONS = --project-root $(ROOT_DIR)
 INFERPRINT_OPTIONS = --project-root $(ROOT_DIR) --issues-tests
 CLEAN_EXTRA = $(ROOT_DIR)/buck-out/genruletest

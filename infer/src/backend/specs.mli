@@ -201,14 +201,6 @@ val get_summary_unsafe : string -> Typ.Procname.t -> summary
 val get_status : summary -> status
 (** Return the status (active v.s. inactive) of a procedure summary *)
 
-val init_summary :
-  Procdesc.Node.id list * (* nodes *)
-                          (Typ.Procname.t * Location.t) list * (* calls *)
-                                                               Procdesc.t
-  (* procdesc *) -> summary
-(** Initialize the summary for [proc_name] given dependent procs in list [depend_list].
-    This also stores the new summary in the spec table. *)
-
 val reset_summary : Procdesc.t -> summary
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
 

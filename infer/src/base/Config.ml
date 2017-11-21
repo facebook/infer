@@ -19,7 +19,6 @@ module CLOpt = CommandLineOption
 module L = Die
 
 type analyzer =
-  | BiAbduction
   | CaptureOnly
   | CompileOnly
   | Checkers
@@ -32,7 +31,6 @@ let equal_analyzer = [%compare.equal : analyzer]
 let string_to_analyzer =
   [ ("checkers", Checkers)
   ; ("infer", Checkers)
-  ; ("biabduction", BiAbduction)
   ; ("capture", CaptureOnly)
   ; ("compile", CompileOnly)
   ; ("crashcontext", Crashcontext)
@@ -659,10 +657,9 @@ and analysis_stops =
 
 and analyzer =
   let () =
-    match BiAbduction with
+    match Checkers with
     (* NOTE: if compilation fails here, it means you have added a new analyzer without updating the
        documentation of this option *)
-    | BiAbduction
     | CaptureOnly
     | CompileOnly
     | Checkers
@@ -2193,10 +2190,6 @@ let post_parsing_initialization command_opt =
       | _ ->
           () ) ;
   ( match !analyzer with
-  | Some BiAbduction ->
-      disable_all_checkers () ;
-      (* technically the biabduction checker doesn't run in this mode, but this gives an easy way to test if the biabduction *analysis* is active *)
-      biabduction := true
   | Some Crashcontext ->
       disable_all_checkers () ;
       crashcontext := true
@@ -2740,8 +2733,6 @@ let clang_frontend_action_string =
 let dynamic_dispatch =
   let default_mode =
     match analyzer with
-    | BiAbduction ->
-        Lazy
     | Checkers when biabduction ->
         Lazy
     | Checkers when quandary ->

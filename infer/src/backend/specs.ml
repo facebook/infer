@@ -21,7 +21,7 @@ module F = Format
 
 (** Module for joined props *)
 module Jprop = struct
-  (* type aliases for component of t values that compare should ignore *)
+  (** type aliases for component of t values that compare should ignore *)
   type id_ = int
 
   let compare_id_ _ _ = 0
@@ -320,9 +320,6 @@ module CallStats = struct
 *)
 end
 
-(** stats of the calls performed during the analysis *)
-type call_stats = CallStats.t
-
 (** Execution statistics *)
 type stats =
   { stats_failure: SymOp.failure_kind option
@@ -330,7 +327,7 @@ type stats =
   ; symops: int  (** Number of SymOp's throughout the whole analysis of the function *)
   ; mutable nodes_visited_fp: IntSet.t  (** Nodes visited during the footprint phase *)
   ; mutable nodes_visited_re: IntSet.t  (** Nodes visited during the re-execution phase *)
-  ; call_stats: call_stats }
+  ; call_stats: CallStats.t }
 
 type status = Pending | Analyzed [@@deriving compare]
 
@@ -568,12 +565,12 @@ let pp_summary_html source color fmt summary =
   F.fprintf fmt "</LISTING>@\n"
 
 
-let empty_stats calls =
+let empty_stats =
   { stats_failure= None
   ; symops= 0
   ; nodes_visited_fp= IntSet.empty
   ; nodes_visited_re= IntSet.empty
-  ; call_stats= CallStats.init calls }
+  ; call_stats= CallStats.init [] (* TODO(T23648322): remove the call_stats *) }
 
 
 let payload_compact sh payload =
@@ -757,13 +754,13 @@ let empty_payload =
 (** [init_summary (depend_list, nodes,
     proc_flags, calls, in_out_calls_opt, proc_attributes)]
     initializes the summary for [proc_name] given dependent procs in list [depend_list]. *)
-let init_summary (nodes, calls, proc_desc) =
+let init_summary proc_desc =
   let summary =
-    { nodes
+    { nodes= [] (* TODO(T23648322): remove this information from the summary *)
     ; phase= FOOTPRINT
     ; sessions= ref 0
     ; payload= empty_payload
-    ; stats= empty_stats calls
+    ; stats= empty_stats
     ; status= Pending
     ; proc_desc }
   in
@@ -774,10 +771,10 @@ let init_summary (nodes, calls, proc_desc) =
 let dummy =
   let dummy_attributes = ProcAttributes.default Typ.Procname.empty_block in
   let dummy_proc_desc = Procdesc.from_proc_attributes ~called_from_cfg:true dummy_attributes in
-  init_summary ([], [], dummy_proc_desc)
+  init_summary dummy_proc_desc
 
 
 (** Reset a summary rebuilding the dependents and preserving the proc attributes if present. *)
-let reset_summary proc_desc = init_summary ([], [], proc_desc)
+let reset_summary proc_desc = init_summary proc_desc
 
 (* =============== END of support for spec tables =============== *)

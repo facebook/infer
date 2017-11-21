@@ -41,7 +41,7 @@ module Target = struct
         add_flavor_internal target "compilation-database"
     | None, CompileOnly ->
         target
-    | None, (BiAbduction | CaptureOnly | Checkers | Linters) ->
+    | None, (CaptureOnly | Checkers | Linters) ->
         add_flavor_internal target "infer-capture-all"
     | None, Crashcontext ->
         L.(die UserError)
@@ -276,4 +276,3 @@ let filter_compatible subcommand args =
       List.filter args ~f:(fun arg -> not (String.equal blacklist arg))
   | _ ->
       args
-

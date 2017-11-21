@@ -1338,28 +1338,6 @@ let perform_transition proc_cfg tenv proc_name =
       ()
 
 
-(* Create closures for the interprocedural algorithm *)
-let interprocedural_algorithm_closures ~prepare_proc exe_env : Tasks.closure list =
-  let call_graph = Exe_env.get_cg exe_env in
-  let process_one_proc proc_name =
-    prepare_proc proc_name ;
-    let analyze proc_desc = ignore (Ondemand.analyze_proc_desc proc_desc proc_desc) in
-    match Exe_env.get_proc_desc exe_env proc_name with
-    | Some proc_desc
-      when Config.reactive_mode
-           (* in reactive mode, only analyze changed procedures *)
-           && (Procdesc.get_attributes proc_desc).ProcAttributes.changed ->
-        analyze proc_desc
-    | Some proc_desc ->
-        analyze proc_desc
-    | None ->
-        ()
-  in
-  let procs_to_analyze = Cg.get_defined_nodes call_graph in
-  let create_closure proc_name () = process_one_proc proc_name in
-  List.map ~f:create_closure procs_to_analyze
-
-
 let analyze_procedure_aux cg_opt tenv proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
@@ -1382,48 +1360,3 @@ let analyze_procedure {Callbacks.summary; proc_desc; tenv} : Specs.summary =
       reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       Reporting.log_error_deprecated proc_name exn ) ;
   Specs.get_summary_unsafe __FILE__ proc_name
-
-
-(** Create closures to perform the analysis of an exe_env *)
-let do_analysis_closures exe_env : Tasks.closure list =
-  let get_calls caller_pdesc =
-    let calls = ref [] in
-    let f (callee_pname, loc) = calls := (callee_pname, loc) :: !calls in
-    Procdesc.iter_calls f caller_pdesc ;
-    List.rev !calls
-  in
-  let init_proc pname =
-    let pdesc =
-      match Exe_env.get_proc_desc exe_env pname with Some pdesc -> pdesc | None -> assert false
-    in
-    let nodes = List.map ~f:(fun n -> Procdesc.Node.get_id n) (Procdesc.get_nodes pdesc) in
-    let calls = get_calls pdesc in
-    ignore (Specs.init_summary (nodes, calls, pdesc))
-  in
-  let callbacks =
-    let get_proc_desc proc_name =
-      match Exe_env.get_proc_desc exe_env proc_name with
-      | Some pdesc ->
-          Some pdesc
-      | None ->
-          Option.map ~f:Specs.get_proc_desc (Specs.get_summary proc_name)
-    in
-    let analyze_ondemand _ proc_desc =
-      let proc_name = Procdesc.get_proc_name proc_desc in
-      let tenv = Exe_env.get_tenv exe_env proc_name in
-      let cg = Exe_env.get_cg exe_env in
-      analyze_procedure_aux (Some cg) tenv proc_desc
-    in
-    {Ondemand.analyze_ondemand; get_proc_desc}
-  in
-  let prepare_proc pn =
-    let should_init = Config.models_mode || is_none (Specs.get_summary pn) in
-    if should_init then init_proc pn
-  in
-  let closures =
-    List.map
-      ~f:(fun closure () ->
-        Ondemand.set_callbacks callbacks ; closure () ; Ondemand.unset_callbacks ())
-      (interprocedural_algorithm_closures ~prepare_proc exe_env)
-  in
-  closures

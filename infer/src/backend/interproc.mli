@@ -14,6 +14,3 @@ open! IStd
 
 val analyze_procedure : Callbacks.proc_callback_t
 (** Run the biabduction analysis on the given procedure *)
-
-val do_analysis_closures : Exe_env.t -> Tasks.closure list
-(** Create closures to perform the analysis of an exe_env *)

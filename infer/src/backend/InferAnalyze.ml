@@ -18,22 +18,11 @@ let analyze_exe_env_tasks cluster exe_env : Tasks.t =
   L.progressbar_file () ;
   Specs.clear_spec_tbl () ;
   Random.self_init () ;
-  let biabduction_only = Config.equal_analyzer Config.analyzer Config.BiAbduction in
-  if biabduction_only then
-    (* run the biabduction analysis only *)
-    Tasks.create
-      (Interproc.do_analysis_closures exe_env)
-      ~continuation:
-        ( if Config.write_html || Config.developer_mode then
-            Some (fun () -> if Config.write_html then Printer.write_all_html_files cluster)
-        else None )
-  else
-    (* run the registered checkers *)
-    Tasks.create
-      [ (fun () ->
-          let call_graph = Exe_env.get_cg exe_env in
-          Callbacks.iterate_callbacks call_graph exe_env ;
-          if Config.write_html then Printer.write_all_html_files cluster) ]
+  Tasks.create
+    [ (fun () ->
+        let call_graph = Exe_env.get_cg exe_env in
+        Callbacks.iterate_callbacks call_graph exe_env ;
+        if Config.write_html then Printer.write_all_html_files cluster) ]
 
 
 (** Create tasks to analyze a cluster *)
@@ -120,7 +109,7 @@ let register_active_checkers () =
   match Config.analyzer with
   | Checkers | Crashcontext ->
       RegisterCheckers.get_active_checkers () |> RegisterCheckers.register
-  | BiAbduction | CaptureOnly | CompileOnly | Linters ->
+  | CaptureOnly | CompileOnly | Linters ->
       ()
 
 

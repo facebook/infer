@@ -393,7 +393,7 @@ let analyze_and_report ?suppress_console_report ~changed_files mode =
         (false, true)
     | (Capture | Compile), _, _ | _, _, (CaptureOnly | CompileOnly) ->
         (false, false)
-    | _, _, (BiAbduction | Checkers | Crashcontext) ->
+    | _, _, (Checkers | Crashcontext) ->
         (true, true)
   in
   let should_merge =
