@@ -334,19 +334,13 @@ include Trace.Make (struct
   (* return true if code injection is possible because the source is a string/is not sanitized *)
   let is_injection_possible ?typ sanitizers =
     let is_escaped = List.mem sanitizers Sanitizer.Escape ~equal:Sanitizer.equal in
-    (* using this to match custom string wrappers such as folly::StringPiece *)
-    let is_stringy typ =
-      let lowercase_typ = String.lowercase (Typ.to_string (Typ.mk typ)) in
-      String.is_substring ~substring:"string" lowercase_typ
-      || String.is_substring ~substring:"char*" lowercase_typ
-    in
     not is_escaped
     &&
     match typ with
-    | Some typ ->
-        is_stringy typ
-    | None ->
-        (* not sure if it's a string; assume injection possible *)
+    | Some (Typ.Tint _ | Tfloat _ | Tvoid) ->
+        false
+    | _ ->
+        (* possible a string/object/struct type; assume injection possible *)
         true
 
 

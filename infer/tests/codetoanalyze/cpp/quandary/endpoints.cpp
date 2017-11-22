@@ -26,6 +26,11 @@ class FacebookServiceSvAsyncIf {};
 
 namespace endpoints {
 
+struct request {
+  std::string s;
+  int i;
+};
+
 class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
 
  public:
@@ -62,6 +67,14 @@ class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
 
   void service1_endpoint_shell_sanitized_ok(std::string formal) {
     system(__infer_string_sanitizer(formal).c_str());
+  }
+
+  void service1_endpoint_struct_string_field_bad(request formal) {
+    system(formal.s.c_str());
+  }
+
+  void FP_service1_endpoint_struct_int_field_ok(request formal) {
+    system(std::to_string(formal.i).c_str());
   }
 
  private:
