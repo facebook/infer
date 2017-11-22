@@ -15,7 +15,7 @@ module ItvPure = Itv.ItvPure
 module MF = MarkupFormatter
 module ValTraceSet = BufferOverrunTrace.Set
 
-module Condition = struct
+module ArrayAccessCondition = struct
   type t = {idx: ItvPure.astate; size: ItvPure.astate} [@@deriving compare]
 
   let get_symbols c = ItvPure.get_symbols c.idx @ ItvPure.get_symbols c.size
@@ -149,14 +149,43 @@ module Condition = struct
       else Some IssueType.buffer_overrun_l3
 
 
-  let subst : t -> Itv.Bound.t bottom_lifted Itv.SubstMap.t -> t option =
-    fun c bound_map ->
+  let subst : Itv.Bound.t bottom_lifted Itv.SubstMap.t -> t -> t option =
+    fun bound_map c ->
       match (ItvPure.subst c.idx bound_map, ItvPure.subst c.size bound_map) with
       | NonBottom idx, NonBottom size ->
           Some {idx; size}
       | _ ->
           None
 
+end
+
+module Condition = struct
+  type t = ArrayAccess of ArrayAccessCondition.t [@@deriving compare]
+
+  let make_array_access = Option.map ~f:(fun c -> ArrayAccess c)
+
+  let get_symbols = function ArrayAccess c -> ArrayAccessCondition.get_symbols c
+
+  let subst bound_map = function
+    | ArrayAccess c ->
+        ArrayAccessCondition.subst bound_map c |> make_array_access
+
+
+  let have_similar_bounds c1 c2 =
+    match (c1, c2) with ArrayAccess c1, ArrayAccess c2 ->
+      ArrayAccessCondition.have_similar_bounds c1 c2
+
+
+  let xcompare ~lhs ~rhs =
+    match (lhs, rhs) with ArrayAccess lhs, ArrayAccess rhs ->
+      ArrayAccessCondition.xcompare ~lhs ~rhs
+
+
+  let pp fmt = function ArrayAccess c -> ArrayAccessCondition.pp fmt c
+
+  let pp_description fmt = function ArrayAccess c -> ArrayAccessCondition.pp_description fmt c
+
+  let check = function ArrayAccess c -> ArrayAccessCondition.check c
 end
 
 module ConditionTrace = struct
@@ -238,14 +267,14 @@ module ConditionSet = struct
 
 
   let try_merge ~existing ~new_ =
+    (* we don't want to remove issues that would end up in a higher bucket,
+     e.g. [a, b] < [c, d] is subsumed by [a, +oo] < [c, d] but the latter is less precise *)
     if Condition.have_similar_bounds existing.cond new_.cond then
       match Condition.xcompare ~lhs:existing.cond ~rhs:new_.cond with
       | `Equal ->
           (* keep the first one in the code *)
           if compare_by_location existing new_ <= 0 then `DoNotAddAndStop
           else `RemoveExistingAndContinue
-      (* we don't want to remove issues that would end up in a higher bucket,
-         e.g. [a, b] < [c, d] is subsumed by [a, +oo] < [c, d] but the latter is less precise *)
       | `LeftSubsumesRight ->
           `DoNotAddAndStop
       | `RightSubsumesLeft ->
@@ -274,7 +303,7 @@ module ConditionSet = struct
   let join condset1 condset2 = List.fold_left ~f:add_one condset1 ~init:condset2
 
   let add_bo_safety pname location id ~idx ~size val_traces condset =
-    match Condition.make ~idx ~size with
+    match ArrayAccessCondition.make ~idx ~size |> Condition.make_array_access with
     | None ->
         condset
     | Some cond ->
@@ -293,7 +322,7 @@ module ConditionSet = struct
       | [] ->
           add_one condset cwt
       | symbols ->
-        match Condition.subst cwt.cond bound_map with
+        match Condition.subst bound_map cwt.cond with
         | None ->
             condset
         | Some cond ->
@@ -315,7 +344,14 @@ module ConditionSet = struct
     List.fold condset ~f:subst_add_cwt ~init:[]
 
 
-  let iter ~f condset = List.iter condset ~f:(fun cwt -> f cwt.cond cwt.trace)
+  let check_all ~report condset =
+    List.iter condset ~f:(fun cwt ->
+        match Condition.check cwt.cond with
+        | None ->
+            ()
+        | Some issue_type ->
+            report cwt.cond cwt.trace issue_type )
+
 
   let pp_cwt fmt cwt = F.fprintf fmt "%a %a" Condition.pp cwt.cond ConditionTrace.pp cwt.trace
 

@@ -541,35 +541,30 @@ module Report = struct
 
 
   let report_error : Procdesc.t -> PO.ConditionSet.t -> unit =
-    fun pdesc conds ->
+    fun pdesc cond_set ->
       let pname = Procdesc.get_proc_name pdesc in
-      let report1 cond trace =
-        let alarm = PO.Condition.check cond in
-        match alarm with
-        | None ->
-            ()
-        | Some issue_type ->
-            let caller_pname, location =
-              match PO.ConditionTrace.get_cond_trace trace with
-              | PO.ConditionTrace.Inter (caller_pname, _, location) ->
-                  (caller_pname, location)
-              | PO.ConditionTrace.Intra pname ->
-                  (pname, PO.ConditionTrace.get_location trace)
-            in
-            if Typ.Procname.equal pname caller_pname then
-              let description = PO.description cond trace in
-              let error_desc = Localise.desc_buffer_overrun description in
-              let exn = Exceptions.Checkers (issue_type.IssueType.unique_id, error_desc) in
-              let trace =
-                match TraceSet.choose_shortest trace.PO.ConditionTrace.val_traces with
-                | trace ->
-                    make_err_trace trace description
-                | exception _ ->
-                    [Errlog.make_trace_element 0 location description []]
-              in
-              Reporting.log_error_deprecated pname ~loc:location ~ltr:trace exn
+      let report cond trace issue_type =
+        let caller_pname, location =
+          match PO.ConditionTrace.get_cond_trace trace with
+          | PO.ConditionTrace.Inter (caller_pname, _, location) ->
+              (caller_pname, location)
+          | PO.ConditionTrace.Intra pname ->
+              (pname, PO.ConditionTrace.get_location trace)
+        in
+        if Typ.Procname.equal pname caller_pname then
+          let description = PO.description cond trace in
+          let error_desc = Localise.desc_buffer_overrun description in
+          let exn = Exceptions.Checkers (issue_type.IssueType.unique_id, error_desc) in
+          let trace =
+            match TraceSet.choose_shortest trace.PO.ConditionTrace.val_traces with
+            | trace ->
+                make_err_trace trace description
+            | exception _ ->
+                [Errlog.make_trace_element 0 location description []]
+          in
+          Reporting.log_error_deprecated pname ~loc:location ~ltr:trace exn
       in
-      PO.ConditionSet.iter conds ~f:report1
+      PO.ConditionSet.check_all ~report cond_set
 
 end
 
