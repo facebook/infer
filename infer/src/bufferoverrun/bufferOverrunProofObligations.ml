@@ -283,6 +283,10 @@ module ConditionSet = struct
         join [cwt] condset
 
 
+  let add_alloc_size _pname _location _size _val_traces _condset =
+    L.(die InternalError) "Not implemented add_alloc_size"
+
+
   let subst condset (bound_map, trace_map) caller_pname callee_pname location =
     let subst_add_cwt condset cwt =
       match Condition.get_symbols cwt.cond with

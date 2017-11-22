@@ -265,8 +265,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Sem.prune exp mem
         | Call (ret, Const Cfun callee_pname, params, location, _) -> (
           match Models.dispatcher callee_pname params with
-          | Some model ->
-              model callee_pname ret node location mem
+          | Some {Models.exec} ->
+              exec callee_pname ret node location mem
           | None ->
             match Summary.read_summary pdesc callee_pname with
             | Some summary ->
