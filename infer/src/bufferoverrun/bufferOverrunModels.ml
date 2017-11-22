@@ -45,9 +45,12 @@ module Make (CFG : ProcCfg.S) = struct
   let check_alloc_size size_exp pname _node location mem cond_set =
     let _, _, length0 = get_malloc_info size_exp in
     let v_length = Sem.eval length0 mem in
-    let traces = Dom.Val.get_traces v_length in
-    let length = Dom.Val.get_itv v_length in
-    PO.ConditionSet.add_alloc_size pname location length traces cond_set
+    match Dom.Val.get_itv v_length with
+    | Bottom ->
+        cond_set
+    | NonBottom length ->
+        let traces = Dom.Val.get_traces v_length in
+        PO.ConditionSet.add_alloc_size pname location ~length traces cond_set
 
 
   let set_uninitialized node (typ: Typ.t) ploc mem =

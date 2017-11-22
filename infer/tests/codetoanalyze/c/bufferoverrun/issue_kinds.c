@@ -142,3 +142,19 @@ void may_over_or_underrun_symbolic2_Nowarn_Good(int n) {
   int a[n];
   a[1] = 0;
 }
+
+void alloc_is_negative_Bad() { malloc(-2); }
+
+void alloc_may_be_negative_Bad() { malloc(zero_or_ten(0) - 5); }
+
+void alloc_may_be_negative_Good_FP() { malloc(zero_or_ten(1) - 5); }
+
+void alloc_is_zero_Bad() { malloc(0 * sizeof(int)); }
+
+void alloc_is_big_Bad() { malloc(2 * 1000 * 1000 * 1000); }
+
+void alloc_may_be_big_Bad() { malloc(zero_or_ten(1) * 100 * 1000 * 1000 + 1); }
+
+void alloc_may_be_big_Good_FP() {
+  malloc(zero_or_ten(1) * 100 * 1000 * 1000 + 1);
+}

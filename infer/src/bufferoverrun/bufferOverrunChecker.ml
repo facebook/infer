@@ -316,12 +316,16 @@ module CFG = Analyzer.TransferFunctions.CFG
 module Sem = BufferOverrunSemantics.Make (CFG)
 
 module Report = struct
+  (* I'd like to avoid rebuilding this :(
+    Everything depend on CFG only because of `get_allocsite` *)
+  module Models = BufferOverrunModels.Make (CFG)
+
   type extras = Typ.Procname.t -> Procdesc.t option
 
   let add_condition
-      : Typ.Procname.t -> CFG.node -> Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
+      : Typ.Procname.t -> Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
         -> PO.ConditionSet.t =
-    fun pname node exp location mem cond_set ->
+    fun pname exp location mem cond_set ->
       let array_access =
         match exp with
         | Exp.Var _ ->
@@ -353,7 +357,6 @@ module Report = struct
       match array_access with
       | Some (arr, traces_arr, idx, traces_idx, is_plus)
         -> (
-          let site = Sem.get_allocsite pname node 0 0 in
           let size = ArrayBlk.sizeof arr in
           let offset = ArrayBlk.offsetof arr in
           let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
@@ -364,7 +367,7 @@ module Report = struct
           match (size, idx) with
           | NonBottom size, NonBottom idx ->
               let traces = TraceSet.merge ~traces_arr ~traces_idx location in
-              PO.ConditionSet.add_bo_safety pname location site ~size ~idx traces cond_set
+              PO.ConditionSet.add_array_access pname location ~size ~idx traces cond_set
           | _ ->
               cond_set )
       | None ->
@@ -452,15 +455,19 @@ module Report = struct
           let cond_set =
             match instr with
             | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
-                add_condition pname node exp location mem cond_set
+                add_condition pname exp location mem cond_set
             | Sil.Call (_, Const Cfun callee_pname, params, location, _) -> (
-              match Summary.read_summary pdesc callee_pname with
-              | Some summary ->
-                  let callee = extras callee_pname in
-                  instantiate_cond tenv pname callee params mem summary location
-                  |> PO.ConditionSet.join cond_set
-              | _ ->
-                  cond_set )
+              match Models.dispatcher callee_pname params with
+              | Some {Models.check} ->
+                  check pname node location mem cond_set
+              | None ->
+                match Summary.read_summary pdesc callee_pname with
+                | Some summary ->
+                    let callee = extras callee_pname in
+                    instantiate_cond tenv pname callee params mem summary location
+                    |> PO.ConditionSet.join cond_set
+                | _ ->
+                    cond_set )
             | _ ->
                 cond_set
           in

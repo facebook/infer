@@ -837,6 +837,8 @@ module ItvPure = struct
       (lower, upper)
 
 
+  let mone = of_bound Bound.mone
+
   let m1_255 = (Bound.minus_one, Bound._255)
 
   let nat = (Bound.zero, Bound.PInf)

@@ -15,6 +15,77 @@ module ItvPure = Itv.ItvPure
 module MF = MarkupFormatter
 module ValTraceSet = BufferOverrunTrace.Set
 
+module AllocSizeCondition = struct
+  type t = ItvPure.astate
+
+  let get_symbols = ItvPure.get_symbols
+
+  let pp fmt length = F.fprintf fmt "alloc(%a)" ItvPure.pp length
+
+  let pp_description fmt length = F.fprintf fmt "Alloc: %a" ItvPure.pp length
+
+  let make ~length = if ItvPure.is_invalid length then None else Some length
+
+  let have_similar_bounds = ItvPure.have_similar_bounds
+
+  let xcompare ~lhs ~rhs =
+    match ItvPure.xcompare ~lhs ~rhs with
+    | `Equal ->
+        `Equal
+    | `NotComparable ->
+        `NotComparable
+    | `LeftSubsumesRight ->
+        `LeftSubsumesRight
+    | `RightSubsumesLeft ->
+        `RightSubsumesLeft
+    | `LeftSmallerThanRight | `RightSmallerThanLeft as cmp ->
+        let lpos = ItvPure.le_sem ItvPure.zero lhs in
+        let rpos = ItvPure.le_sem ItvPure.zero rhs in
+        if not (ItvPure.equal lpos rpos) then `NotComparable
+        else if ItvPure.is_true lpos then
+          match cmp with
+          | `LeftSmallerThanRight ->
+              `RightSubsumesLeft
+          | `RightSmallerThanLeft ->
+              `LeftSubsumesRight
+        else if ItvPure.is_false lpos then
+          match cmp with
+          | `LeftSmallerThanRight ->
+              `LeftSubsumesRight
+          | `RightSmallerThanLeft ->
+              `RightSubsumesLeft
+        else `NotComparable
+
+
+  let itv_big = ItvPure.of_int 1_000_000
+
+  let check length =
+    match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.zero with
+    | `Equal | `RightSubsumesLeft ->
+        Some IssueType.inferbo_alloc_is_zero
+    | `LeftSmallerThanRight ->
+        Some IssueType.inferbo_alloc_is_negative
+    | _ ->
+      match ItvPure.xcompare ~lhs:length ~rhs:ItvPure.mone with
+      | `Equal | `LeftSmallerThanRight | `RightSubsumesLeft ->
+          Some IssueType.inferbo_alloc_is_negative
+      | `LeftSubsumesRight when Itv.Bound.is_not_infty (ItvPure.lb length) ->
+          Some IssueType.inferbo_alloc_may_be_negative
+      | _ ->
+        match ItvPure.xcompare ~lhs:length ~rhs:itv_big with
+        | `Equal | `RightSmallerThanLeft | `RightSubsumesLeft ->
+            Some IssueType.inferbo_alloc_is_big
+        | `LeftSubsumesRight when Itv.Bound.is_not_infty (ItvPure.ub length) ->
+            Some IssueType.inferbo_alloc_may_be_big
+        | _ ->
+            None
+
+
+  let subst bound_map length =
+    match ItvPure.subst length bound_map with NonBottom length -> Some length | Bottom -> None
+
+end
+
 module ArrayAccessCondition = struct
   type t = {idx: ItvPure.astate; size: ItvPure.astate} [@@deriving compare]
 
@@ -160,32 +231,66 @@ module ArrayAccessCondition = struct
 end
 
 module Condition = struct
-  type t = ArrayAccess of ArrayAccessCondition.t [@@deriving compare]
+  type t = AllocSize of AllocSizeCondition.t | ArrayAccess of ArrayAccessCondition.t
+
+  let make_alloc_size = Option.map ~f:(fun c -> AllocSize c)
 
   let make_array_access = Option.map ~f:(fun c -> ArrayAccess c)
 
-  let get_symbols = function ArrayAccess c -> ArrayAccessCondition.get_symbols c
+  let get_symbols = function
+    | AllocSize c ->
+        AllocSizeCondition.get_symbols c
+    | ArrayAccess c ->
+        ArrayAccessCondition.get_symbols c
+
 
   let subst bound_map = function
+    | AllocSize c ->
+        AllocSizeCondition.subst bound_map c |> make_alloc_size
     | ArrayAccess c ->
         ArrayAccessCondition.subst bound_map c |> make_array_access
 
 
   let have_similar_bounds c1 c2 =
-    match (c1, c2) with ArrayAccess c1, ArrayAccess c2 ->
-      ArrayAccessCondition.have_similar_bounds c1 c2
+    match (c1, c2) with
+    | AllocSize c1, AllocSize c2 ->
+        AllocSizeCondition.have_similar_bounds c1 c2
+    | ArrayAccess c1, ArrayAccess c2 ->
+        ArrayAccessCondition.have_similar_bounds c1 c2
+    | _ ->
+        false
 
 
   let xcompare ~lhs ~rhs =
-    match (lhs, rhs) with ArrayAccess lhs, ArrayAccess rhs ->
-      ArrayAccessCondition.xcompare ~lhs ~rhs
+    match (lhs, rhs) with
+    | AllocSize lhs, AllocSize rhs ->
+        AllocSizeCondition.xcompare ~lhs ~rhs
+    | ArrayAccess lhs, ArrayAccess rhs ->
+        ArrayAccessCondition.xcompare ~lhs ~rhs
+    | _ ->
+        `NotComparable
 
 
-  let pp fmt = function ArrayAccess c -> ArrayAccessCondition.pp fmt c
+  let pp fmt = function
+    | AllocSize c ->
+        AllocSizeCondition.pp fmt c
+    | ArrayAccess c ->
+        ArrayAccessCondition.pp fmt c
 
-  let pp_description fmt = function ArrayAccess c -> ArrayAccessCondition.pp_description fmt c
 
-  let check = function ArrayAccess c -> ArrayAccessCondition.check c
+  let pp_description fmt = function
+    | AllocSize c ->
+        AllocSizeCondition.pp_description fmt c
+    | ArrayAccess c ->
+        ArrayAccessCondition.pp_description fmt c
+
+
+  let check = function
+    | AllocSize c ->
+        AllocSizeCondition.check c
+    | ArrayAccess c ->
+        ArrayAccessCondition.check c
+
 end
 
 module ConditionTrace = struct
@@ -197,7 +302,6 @@ module ConditionTrace = struct
   type t =
     { proc_name: Typ.Procname.t
     ; location: Location.t
-    ; id: string
     ; cond_trace: cond_trace
     ; val_traces: ValTraceSet.t }
     [@@deriving compare]
@@ -238,9 +342,9 @@ module ConditionTrace = struct
     match ct.cond_trace with Intra pname -> pname | Inter (caller_pname, _, _) -> caller_pname
 
 
-  let make : Typ.Procname.t -> Location.t -> string -> ValTraceSet.t -> t =
-    fun proc_name location id val_traces ->
-      {proc_name; location; id; cond_trace= Intra proc_name; val_traces}
+  let make : Typ.Procname.t -> Location.t -> ValTraceSet.t -> t =
+    fun proc_name location val_traces ->
+      {proc_name; location; cond_trace= Intra proc_name; val_traces}
 
 
   let make_call_and_subst ~traces_caller ~caller_pname ~callee_pname location ct =
@@ -256,7 +360,7 @@ module ConditionSet = struct
 
   type t = condition_with_trace list
 
-  (* invariant: add_one of one of the elements should return the original list *)
+  (* invariant: join_one of one of the elements should return the original list *)
 
   let empty = []
 
@@ -284,7 +388,7 @@ module ConditionSet = struct
     else `KeepExistingAndContinue
 
 
-  let add_one condset new_ =
+  let join_one condset new_ =
     let rec aux ~new_ acc ~same = function
       | [] ->
           if same then new_ :: condset else new_ :: acc
@@ -300,27 +404,32 @@ module ConditionSet = struct
     aux ~new_ [] ~same:true condset
 
 
-  let join condset1 condset2 = List.fold_left ~f:add_one condset1 ~init:condset2
+  let join condset1 condset2 = List.fold_left ~f:join_one condset1 ~init:condset2
 
-  let add_bo_safety pname location id ~idx ~size val_traces condset =
-    match ArrayAccessCondition.make ~idx ~size |> Condition.make_array_access with
+  let add_opt pname location val_traces condset = function
     | None ->
         condset
     | Some cond ->
-        let trace = ConditionTrace.make pname location id val_traces in
+        let trace = ConditionTrace.make pname location val_traces in
         let cwt = {cond; trace} in
         join [cwt] condset
 
 
-  let add_alloc_size _pname _location _size _val_traces _condset =
-    L.(die InternalError) "Not implemented add_alloc_size"
+  let add_array_access pname location ~idx ~size val_traces condset =
+    ArrayAccessCondition.make ~idx ~size |> Condition.make_array_access
+    |> add_opt pname location val_traces condset
+
+
+  let add_alloc_size pname location ~length val_traces condset =
+    AllocSizeCondition.make ~length |> Condition.make_alloc_size
+    |> add_opt pname location val_traces condset
 
 
   let subst condset (bound_map, trace_map) caller_pname callee_pname location =
     let subst_add_cwt condset cwt =
       match Condition.get_symbols cwt.cond with
       | [] ->
-          add_one condset cwt
+          join_one condset cwt
       | symbols ->
         match Condition.subst bound_map cwt.cond with
         | None ->
@@ -339,7 +448,7 @@ module ConditionSet = struct
                 location trace
             in
             let trace = make_call_and_subst cwt.trace in
-            add_one condset {cond; trace}
+            join_one condset {cond; trace}
     in
     List.fold condset ~f:subst_add_cwt ~init:[]
 

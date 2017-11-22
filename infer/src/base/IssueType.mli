@@ -140,6 +140,16 @@ val field_should_be_nullable : t
 
 val field_not_null_checked : t
 
+val inferbo_alloc_is_big : t
+
+val inferbo_alloc_is_negative : t
+
+val inferbo_alloc_is_zero : t
+
+val inferbo_alloc_may_be_big : t
+
+val inferbo_alloc_may_be_negative : t
+
 val inherently_dangerous_function : t
 
 val interface_not_thread_safe : t

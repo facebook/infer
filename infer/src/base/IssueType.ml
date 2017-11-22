@@ -227,6 +227,16 @@ let _global_variable_initialized_with_function_or_method_call =
   from_string ~enabled:false "GLOBAL_VARIABLE_INITIALIZED_WITH_FUNCTION_OR_METHOD_CALL"
 
 
+let inferbo_alloc_is_big = from_string "INFERBO_ALLOC_IS_BIG"
+
+let inferbo_alloc_is_negative = from_string "INFERBO_ALLOC_IS_NEGATIVE"
+
+let inferbo_alloc_is_zero = from_string "INFERBO_ALLOC_IS_ZERO"
+
+let inferbo_alloc_may_be_big = from_string ~enabled:false "INFERBO_ALLOC_MAY_BE_BIG"
+
+let inferbo_alloc_may_be_negative = from_string ~enabled:false "INFERBO_ALLOC_MAY_BE_NEGATIVE"
+
 let inherently_dangerous_function = from_string "INHERENTLY_DANGEROUS_FUNCTION"
 
 let interface_not_thread_safe = from_string "INTERFACE_NOT_THREAD_SAFE"
