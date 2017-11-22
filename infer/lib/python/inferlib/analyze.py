@@ -11,16 +11,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
-import csv
 import multiprocessing
-import sys
 
 
 from . import config, utils
-
-# Increase the limit of the CSV parser to sys.maxlimit
-csv.field_size_limit(sys.maxsize)
-
 
 base_parser = argparse.ArgumentParser(add_help=False)
 base_group = base_parser.add_argument_group('global arguments')

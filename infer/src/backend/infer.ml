@@ -96,7 +96,7 @@ let () =
       if Config.developer_mode then InferAnalyze.register_perf_stats_report () ;
       Driver.analyze_and_report Analyze ~changed_files:(Driver.read_config_changed_files ())
   | Report ->
-      InferPrint.main ~report_csv:Config.issues_csv ~report_json:None
+      InferPrint.main ~report_json:None
   | ReportDiff ->
       (* at least one report must be passed in input to compute differential *)
       ( match (Config.report_current, Config.report_previous) with
@@ -127,4 +127,3 @@ let () =
         L.external_error
           "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
           (String.concat ~sep:" " args)
-

@@ -691,6 +691,7 @@ and analyzer =
             x)
     ~symbols:string_to_analyzer
 
+
 and ( annotation_reachability
     , biabduction
     , bufferoverrun
@@ -1370,12 +1371,6 @@ and iphoneos_target_sdk_version_path_regex =
     "To pass a specific target SDK version to use for iphoneos in a particular path, with the format path:version (can be specified multiple times)"
 
 
-and issues_csv =
-  CLOpt.mk_path_opt ~deprecated:["bugs"] ~long:"issues-csv"
-    ~in_help:CLOpt.([(Report, manual_generic)])
-    ~meta:"file" "Write a list of issues in CSV format to $(i,file)"
-
-
 and issues_fields =
   CLOpt.mk_symbol_seq ~long:"issues-fields"
     ~in_help:CLOpt.([(Report, manual_generic)])
@@ -1727,7 +1722,7 @@ and report_hook =
     ~in_help:CLOpt.([(Analyze, manual_generic); (Run, manual_generic)])
     ~default:(lib_dir ^/ "python" ^/ "report.py")
     ~meta:"script"
-    "Specify a script to be executed after the analysis results are written.  This script will be passed $(b,--issues-csv), $(b,--issues-json), $(b,--issues-txt), $(b,--issues-xml), $(b,--project-root), and $(b,--results-dir)."
+    "Specify a script to be executed after the analysis results are written.  This script will be passed, $(b,--issues-json), $(b,--issues-txt), $(b,--issues-xml), $(b,--project-root), and $(b,--results-dir)."
 
 
 and report_previous =
@@ -2446,8 +2441,6 @@ and iphoneos_target_sdk_version = !iphoneos_target_sdk_version
 and iphoneos_target_sdk_version_path_regex =
   process_iphoneos_target_sdk_version_path_regex !iphoneos_target_sdk_version_path_regex
 
-
-and issues_csv = !issues_csv
 
 and issues_fields = !issues_fields
 

@@ -102,7 +102,6 @@ def _text_of_report_list(project_root, reports, bugs_txt_path, limit=None,
             utils.stderr(msg)
         return msg
 
-
     text_errors_list = []
     for report in reports[:limit]:
         filename = report[JSON_INDEX_FILENAME]

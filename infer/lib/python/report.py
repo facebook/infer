@@ -13,14 +13,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
-import os
 import sys
 
-from inferlib import config, issues, utils
+from inferlib import issues, utils
 
 arg_parser = argparse.ArgumentParser(add_help=False)
-arg_parser.add_argument('--issues-csv', metavar='<file>',
-                        help='Location of the csv report (ignored for now)')
 arg_parser.add_argument('--issues-json', metavar='<file>', required=True,
                         help='Location of the json report')
 arg_parser.add_argument('--issues-txt', metavar='<file>',

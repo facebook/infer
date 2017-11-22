@@ -456,8 +456,6 @@ type iphoneos_target_sdk_version_path_regex = {path: Str.regexp; version: string
 
 val iphoneos_target_sdk_version_path_regex : iphoneos_target_sdk_version_path_regex list
 
-val issues_csv : string option
-
 val issues_fields :
   [ `Issue_field_bug_class
   | `Issue_field_kind

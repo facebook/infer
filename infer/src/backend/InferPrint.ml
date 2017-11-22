@@ -32,16 +32,6 @@ let load_specfiles () =
   specs_files_in_dir result_specs_dir
 
 
-let error_desc_to_csv_string error_desc =
-  let pp fmt = F.fprintf fmt "%a" Localise.pp_error_desc error_desc in
-  Escape.escape_csv (F.asprintf "%t" pp)
-
-
-let error_advice_to_csv_string error_desc =
-  let pp fmt = F.fprintf fmt "%a" Localise.pp_error_advice error_desc in
-  Escape.escape_csv (F.asprintf "%t" pp)
-
-
 let error_desc_to_plain_string error_desc =
   let pp fmt = F.fprintf fmt "%a" Localise.pp_error_desc error_desc in
   let s = F.asprintf "%t" pp in
@@ -54,12 +44,6 @@ let error_desc_to_plain_string error_desc =
 
 
 let error_desc_to_dotty_string error_desc = Localise.error_desc_get_dotty error_desc
-
-let error_desc_to_xml_tags error_desc =
-  let tags = Localise.error_desc_get_tags error_desc in
-  let subtree label contents = Io_infer.Xml.create_tree label [] [Io_infer.Xml.String contents] in
-  List.map ~f:(fun (tag, value) -> subtree tag (Escape.escape_xml value)) tags
-
 
 let get_bug_hash (kind: string) (type_str: string) (procedure_id: string) (filename: string)
     (node_key: Digest.t) (error_desc: Localise.error_desc) =
@@ -240,86 +224,6 @@ let censored_reason (issue_type: IssueType.t) source_file =
   in
   Option.value ~default:"" (List.find_map Config.filter_report ~f:rejected_by)
 
-
-module IssuesCsv = struct
-  let csv_issues_id = ref 0
-
-  let pp_header fmt () =
-    Format.fprintf fmt "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s@\n" Io_infer.Xml.tag_class
-      Io_infer.Xml.tag_kind Io_infer.Xml.tag_type Io_infer.Xml.tag_qualifier
-      Io_infer.Xml.tag_severity Io_infer.Xml.tag_line Io_infer.Xml.tag_procedure
-      Io_infer.Xml.tag_procedure_id Io_infer.Xml.tag_file Io_infer.Xml.tag_trace
-      Io_infer.Xml.tag_key Io_infer.Xml.tag_qualifier_tags Io_infer.Xml.tag_hash "bug_id"
-      "always_report" "advice"
-
-
-  let pp_issue fmt error_filter procname proc_loc_opt (key: Errlog.err_key)
-      (err_data: Errlog.err_data) =
-    let pp x = F.fprintf fmt x in
-    let source_file =
-      match proc_loc_opt with
-      | Some proc_loc ->
-          proc_loc.Location.file
-      | None ->
-          err_data.loc.Location.file
-    in
-    if key.in_footprint && error_filter source_file key.err_desc key.err_name
-       && should_report key.err_kind key.err_name key.err_desc err_data.err_class
-    then
-      let err_desc_string = error_desc_to_csv_string key.err_desc in
-      let err_advice_string = error_advice_to_csv_string key.err_desc in
-      let qualifier_tag_xml =
-        let xml_node =
-          Io_infer.Xml.create_tree Io_infer.Xml.tag_qualifier_tags []
-            (error_desc_to_xml_tags key.err_desc)
-        in
-        let p fmt = F.fprintf fmt "%a" (Io_infer.Xml.pp_document false) xml_node in
-        let s = F.asprintf "%t" p in
-        Escape.escape_csv s
-      in
-      let kind = Exceptions.err_kind_string key.err_kind in
-      let type_str = key.err_name.IssueType.unique_id in
-      let procedure_id = Typ.Procname.to_filename procname in
-      let filename = SourceFile.to_string source_file in
-      let always_report =
-        match Localise.error_desc_extract_tag_value key.err_desc "always_report" with
-        | "" ->
-            "false"
-        | v ->
-            v
-      in
-      let trace =
-        Jsonbug_j.string_of_json_trace
-          {trace= loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind}
-      in
-      incr csv_issues_id ;
-      pp "%s," (Exceptions.err_class_string err_data.err_class) ;
-      pp "%s," kind ;
-      pp "%s," type_str ;
-      pp "\"%s\"," err_desc_string ;
-      pp "%s," key.severity ;
-      pp "%d," err_data.loc.Location.line ;
-      pp "\"%s\"," (Escape.escape_csv (Typ.Procname.to_string procname)) ;
-      pp "\"%s\"," (Escape.escape_csv procedure_id) ;
-      pp "%s," filename ;
-      pp "\"%s\"," (Escape.escape_csv trace) ;
-      pp "\"%s\"," (Digest.to_hex err_data.node_id_key.node_key) ;
-      pp "\"%s\"," qualifier_tag_xml ;
-      pp "\"%s\","
-        ( get_bug_hash kind type_str procedure_id filename err_data.node_id_key.node_key
-            key.err_desc
-        |> Digest.to_hex ) ;
-      pp "\"%d\"," !csv_issues_id ;
-      (* bug id *)
-      pp "\"%s\"," always_report ;
-      pp "\"%s\"@\n" err_advice_string
-
-
-  (** Write bug report in csv format *)
-  let pp_issues_of_error_log fmt error_filter _ proc_loc_opt procname err_log =
-    Errlog.iter (pp_issue fmt error_filter procname proc_loc_opt) err_log
-
-end
 
 let potential_exception_message = "potential exception at line"
 
@@ -762,11 +666,11 @@ let pp_issue_in_format (format_kind, (outf: Utils.outfile)) error_filter
     {Issue.proc_name; proc_location; err_key; err_data} =
   match format_kind with
   | Csv ->
-      IssuesCsv.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
+      L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Json ->
       IssuesJson.pp_issue outf.fmt error_filter proc_name (Some proc_location) err_key err_data
   | Tests ->
-      L.(die InternalError) "Print issues as tests is not implemented"
+      L.(die InternalError) "Printing issues as tests is not implemented"
   | Text ->
       IssuesTxt.pp_issue outf.fmt error_filter (Some proc_location) err_key err_data
 
@@ -776,9 +680,9 @@ let pp_issues_in_format (format_kind, (outf: Utils.outfile)) =
   | Json ->
       IssuesJson.pp_issues_of_error_log outf.fmt
   | Csv ->
-      IssuesCsv.pp_issues_of_error_log outf.fmt
+      L.(die InternalError) "Printing issues in a CSV format is not implemented"
   | Tests ->
-      L.(die InternalError) "Print issues as tests is not implemented"
+      L.(die InternalError) "Printing issues as tests is not implemented"
   | Text ->
       IssuesTxt.pp_issues_of_error_log outf.fmt
 
@@ -1031,12 +935,11 @@ let mk_format format_kind fname =
     ~default:[] (Utils.create_outfile fname)
 
 
-let init_issues_format_list report_csv report_json =
-  let csv_format = Option.value_map ~f:(mk_format Csv) ~default:[] report_csv in
+let init_issues_format_list report_json =
   let json_format = Option.value_map ~f:(mk_format Json) ~default:[] report_json in
   let tests_format = Option.value_map ~f:(mk_format Tests) ~default:[] Config.issues_tests in
   let txt_format = Option.value_map ~f:(mk_format Text) ~default:[] Config.issues_txt in
-  csv_format @ json_format @ tests_format @ txt_format
+  json_format @ tests_format @ txt_format
 
 
 let init_procs_format_list () = Option.value_map ~f:(mk_format Csv) ~default:[] Config.procs_csv
@@ -1056,7 +959,7 @@ let init_files format_list_by_kind =
     let init_files_of_format (format_kind, (outfile: Utils.outfile)) =
       match (format_kind, report_kind) with
       | Csv, Issues ->
-          IssuesCsv.pp_header outfile.fmt ()
+          L.(die InternalError) "Printing issues in a CSV format is not implemented"
       | Csv, Procs ->
           ProcsCsv.pp_header outfile.fmt ()
       | Csv, Stats ->
@@ -1113,8 +1016,8 @@ let pp_summary_and_issues formats_by_report_kind issue_formats =
   finalize_and_close_files formats_by_report_kind stats
 
 
-let main ~report_csv ~report_json =
-  let issue_formats = init_issues_format_list report_csv report_json in
+let main ~report_json =
+  let issue_formats = init_issues_format_list report_json in
   let formats_by_report_kind =
     [ (Issues, issue_formats)
     ; (Procs, init_procs_format_list ())

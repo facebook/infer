@@ -29,6 +29,7 @@ def terminal_only(s):
         return ''
     return s
 
+
 BLUE = terminal_only('\033[34m')
 BLUE_BG = terminal_only('\033[44m')
 MAGENTA = terminal_only('\033[35m')

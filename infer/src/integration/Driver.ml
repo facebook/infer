@@ -345,11 +345,8 @@ let execute_analyze ~changed_files =
 
 
 let report ?(suppress_console= false) () =
-  let report_csv =
-    if Config.buck_cache_mode then None else Some (Config.results_dir ^/ "report.csv")
-  in
   let report_json = Config.(results_dir ^/ report_json) in
-  InferPrint.main ~report_csv ~report_json:(Some report_json) ;
+  InferPrint.main ~report_json:(Some report_json) ;
   (* Post-process the report according to the user config. By default, calls report.py to create a
      human-readable report.
 
@@ -358,11 +355,10 @@ let report ?(suppress_console= false) () =
   | true, _ | false, None ->
       ()
   | false, Some prog ->
-      let if_some key opt args = match opt with None -> args | Some arg -> key :: arg :: args in
       let if_true key opt args = if not opt then args else key :: args in
       let bugs_txt = Option.value ~default:(Config.results_dir ^/ "bugs.txt") Config.issues_txt in
       let args =
-        if_some "--issues-csv" report_csv @@ if_true "--pmd-xml" Config.pmd_xml
+        if_true "--pmd-xml" Config.pmd_xml
         @@ if_true "--quiet"
              (Config.quiet || suppress_console)
              [ "--issues-json"

@@ -12,9 +12,6 @@ from __future__ import unicode_literals
 
 import argparse
 import codecs
-import csv
-import fnmatch
-import gzip
 import json
 import logging
 import os
