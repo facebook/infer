@@ -2053,6 +2053,15 @@ let inferconfig_file =
       find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
 
 
+let late_epilogue_callback = ref (fun () -> ())
+
+let register_late_epilogue f =
+  let g = !late_epilogue_callback in
+  late_epilogue_callback := fun () -> f () ; g ()
+
+
+let late_epilogue () = !late_epilogue_callback ()
+
 let post_parsing_initialization command_opt =
   if CommandLineOption.is_originator then
     Unix.putenv ~key:infer_top_results_dir_env_var ~data:!results_dir ;
@@ -2108,11 +2117,14 @@ let post_parsing_initialization command_opt =
       () ) ;
   if !version <> `None || !help <> `None then Pervasives.exit 0 ;
   let uncaught_exception_handler exn raw_backtrace =
+    let is_infer_exit_zero = match exn with L.InferExit 0 -> true | _ -> false in
     let should_print_backtrace_default =
       match exn with L.InferUserError _ | L.InferExit _ -> false | _ -> true
     in
     let suggest_keep_going = should_print_backtrace_default && not !keep_going in
-    let backtrace = Caml.Printexc.raw_backtrace_to_string raw_backtrace in
+    let backtrace =
+      if is_infer_exit_zero then "" else Caml.Printexc.raw_backtrace_to_string raw_backtrace
+    in
     let print_exception () =
       let error prefix msg =
         ANSITerminal.(prerr_string [Bold; Foreground Red]) prefix ;
@@ -2133,17 +2145,18 @@ let post_parsing_initialization command_opt =
       | _ ->
           error "Uncaught error: " (Exn.to_string exn)
     in
-    if should_print_backtrace_default || !developer_mode then (
+    if not is_infer_exit_zero && (should_print_backtrace_default || !developer_mode) then (
       Out_channel.newline stderr ;
       ANSITerminal.(prerr_string [Foreground Red]) "Error backtrace:" ;
       Out_channel.newline stderr ;
       ANSITerminal.(prerr_string [Foreground Red]) backtrace ) ;
     print_exception () ;
-    Out_channel.newline stderr ;
+    if not is_infer_exit_zero then Out_channel.newline stderr ;
     if suggest_keep_going then (
       ANSITerminal.(prerr_string [])
         "Run the command again with `--keep-going` to try and ignore this error." ;
       Out_channel.newline stderr ) ;
+    late_epilogue () ;
     Pervasives.exit (L.exit_code_of_exception exn)
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;

@@ -733,3 +733,9 @@ val clang_compilation_dbs : [`Escaped of string | `Raw of string] list ref
 (** Command Line Interface Documentation *)
 
 val print_usage_exit : unit -> 'a
+
+(** Miscellanous *)
+
+val register_late_epilogue : (unit -> unit) -> unit
+
+val late_epilogue : unit -> unit

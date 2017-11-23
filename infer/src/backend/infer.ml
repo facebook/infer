@@ -84,7 +84,7 @@ let () =
   log_environment_info () ;
   if Config.debug_mode && CLOpt.is_originator then
     L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
-  match Config.command with
+  ( match Config.command with
   | Analyze ->
       let pp_cluster_opt fmt = function
         | None ->
@@ -126,4 +126,5 @@ let () =
       if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
         L.external_error
           "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
-          (String.concat ~sep:" " args)
+          (String.concat ~sep:" " args) ) ;
+  L.exit 0

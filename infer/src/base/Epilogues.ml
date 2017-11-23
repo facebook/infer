@@ -17,6 +17,8 @@ let activate_run_epilogues_on_signal =
        F.eprintf "*** %s: Caught %s, time to die@."
          (Filename.basename Sys.executable_name)
          (Signal.to_string s) ;
+       (* Invoke the callback that runs at the end of uncaught_exception_handler *)
+       Config.late_epilogue () ;
        (* Epilogues are registered with [at_exit] so exiting will make them run. *)
        Pervasives.exit 0
      in
@@ -34,4 +36,3 @@ let register ~f desc =
   Pervasives.at_exit f_no_exn ;
   (* Register signal masking. *)
   Lazy.force activate_run_epilogues_on_signal
-

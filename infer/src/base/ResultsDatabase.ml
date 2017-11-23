@@ -118,3 +118,5 @@ let new_database_connection () =
   database := Some db ;
   List.iter ~f:(fun callback -> callback db) !new_db_callbacks
 
+
+let () = Config.register_late_epilogue db_close
