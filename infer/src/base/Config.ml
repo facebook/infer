@@ -480,7 +480,7 @@ let wrappers_dir = lib_dir ^/ "wrappers"
 
 let ncpu =
   try
-    Utils.with_process_in "getconf NPROCESSORS_ONLN_ 2>/dev/null" (fun chan ->
+    Utils.with_process_in "getconf _NPROCESSORS_ONLN 2>/dev/null" (fun chan ->
         Scanf.bscanf (Scanf.Scanning.from_channel chan) "%d" (fun n -> n) )
     |> fst
   with _ -> 1
