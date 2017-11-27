@@ -164,8 +164,7 @@ type trans_state =
   ; (* current continuation *)
   priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
-  ; opaque_exp: (Exp.t * Typ.t) option
-  ; obj_bridged_cast_typ: Typ.t option }
+  ; opaque_exp: (Exp.t * Typ.t) option }
 
 (* A translation result. It is returned by the translation function. *)
 type trans_result =
@@ -370,7 +369,7 @@ module Scope = struct
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
-let create_alloc_instrs ~alloc_builtin ?alloc_source_function ?size_exp sil_loc function_type =
+let create_alloc_instrs ~alloc_builtin ?size_exp sil_loc function_type =
   let function_type, function_type_np =
     match function_type.Typ.desc with
     | Tptr (styp, Typ.Pk_pointer)
@@ -380,13 +379,6 @@ let create_alloc_instrs ~alloc_builtin ?alloc_source_function ?size_exp sil_loc 
         (function_type, styp)
     | _ ->
         (CType.add_pointer_to_typ function_type, function_type)
-  in
-  let alloc_source_function_arg =
-    match alloc_source_function with
-    | Some procname ->
-        [(Exp.Const (Const.Cfun procname), Typ.mk Tvoid)]
-    | None ->
-        []
   in
   let ret_id = Ident.create_fresh Ident.knormal in
   let args =
@@ -401,7 +393,7 @@ let create_alloc_instrs ~alloc_builtin ?alloc_source_function ?size_exp sil_loc 
           sizeof_exp_
     in
     let exp = (sizeof_exp, Typ.mk (Tint Typ.IULong)) in
-    exp :: alloc_source_function_arg
+    [exp]
   in
   let ret_id_typ = Some (ret_id, function_type) in
   let stmt_call =
@@ -410,10 +402,8 @@ let create_alloc_instrs ~alloc_builtin ?alloc_source_function ?size_exp sil_loc 
   (function_type, [stmt_call], Exp.Var ret_id)
 
 
-let alloc_trans trans_state ~alloc_builtin ?alloc_source_function loc stmt_info function_type =
-  let function_type, instrs, exp =
-    create_alloc_instrs ~alloc_builtin ?alloc_source_function loc function_type
-  in
+let alloc_trans trans_state ~alloc_builtin loc stmt_info function_type =
+  let function_type, instrs, exp = create_alloc_instrs ~alloc_builtin loc function_type in
   let res_trans_tmp = {empty_res_trans with instrs} in
   let res_trans =
     let nname = "Call alloc" in
@@ -477,27 +467,12 @@ let cpp_new_trans sil_loc function_type size_exp =
   {empty_res_trans with instrs= stmt_call; exps= [(exp, function_type)]}
 
 
-let create_cast_instrs exp cast_from_typ cast_to_typ sil_loc =
-  let ret_id = Ident.create_fresh Ident.knormal in
-  let ret_id_typ = Some (ret_id, cast_to_typ) in
-  let typ = CType.remove_pointer_to_typ cast_to_typ in
-  let sizeof_exp = Exp.Sizeof {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact} in
-  let pname = BuiltinDecl.__objc_cast in
-  let args = [(exp, cast_from_typ); (sizeof_exp, Typ.mk (Tint Typ.IULong))] in
+let create_call_to_free_cf sil_loc exp typ =
+  let pname = BuiltinDecl.__free_cf in
   let stmt_call =
-    Sil.Call (ret_id_typ, Exp.Const (Const.Cfun pname), args, sil_loc, CallFlags.default)
+    Sil.Call (None, Exp.Const (Const.Cfun pname), [(exp, typ)], sil_loc, CallFlags.default)
   in
-  (stmt_call, Exp.Var ret_id)
-
-
-let cast_trans exps sil_loc function_type pname =
-  if CTrans_models.is_toll_free_bridging pname then
-    match exps with
-    | [(exp, typ)] ->
-        Some (create_cast_instrs exp typ function_type sil_loc)
-    | _ ->
-        assert false
-  else None
+  stmt_call
 
 
 let dereference_var_sil (exp, typ) sil_loc =
@@ -516,9 +491,8 @@ let dereference_value_from_result sil_loc trans_result ~strip_pointer =
   {trans_result with instrs= trans_result.instrs @ cast_inst; exps= [(cast_exp, cast_typ)]}
 
 
-let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
+let cast_operation cast_kind exps cast_typ sil_loc =
   let exp, typ = extract_exp_from_list exps "" in
-  let is_objc_bridged = Option.is_some trans_state.obj_bridged_cast_typ || is_objc_bridged in
   match cast_kind with
   | `NoOp | `DerivedToBase | `UncheckedDerivedToBase ->
       (* These casts ignore change of type *)
@@ -526,12 +500,9 @@ let cast_operation trans_state cast_kind exps cast_typ sil_loc is_objc_bridged =
   | `BitCast | `IntegralCast | `IntegralToBoolean ->
       (* This is treated as a nop by returning the same expressions exps*)
       ([], (exp, cast_typ))
-  | (`CPointerToObjCPointerCast | `ARCProduceObject | `ARCConsumeObject) when is_objc_bridged ->
-      (* Translation of __bridge_transfer or __bridge_retained *)
-      let objc_cast_typ =
-        match trans_state.obj_bridged_cast_typ with Some typ -> typ | None -> cast_typ
-      in
-      let instr, exp = create_cast_instrs exp typ objc_cast_typ sil_loc in
+  | `CPointerToObjCPointerCast when Objc_models.is_core_lib_type typ ->
+      (* Translation of __bridge_transfer *)
+      let instr = create_call_to_free_cf sil_loc exp typ in
       ([instr], (exp, cast_typ))
   | `LValueToRValue ->
       (* Takes an LValue and allow it to use it as RValue. *)
@@ -600,16 +571,8 @@ let trans_replace_with_deref_first_arg sil_loc params_trans_res ~cxx_method_call
   dereference_value_from_result sil_loc first_arg_res_trans ~strip_pointer:true
 
 
-let builtin_trans trans_state loc stmt_info function_type params_trans_res pname =
-  if CTrans_models.is_cf_non_null_alloc pname || CTrans_models.is_alloc_model function_type pname
-  then
-    Some
-      (alloc_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc_no_fail
-         ~alloc_source_function:pname loc stmt_info function_type)
-  else if CTrans_models.is_alloc pname then
-    Some
-      (alloc_trans trans_state ~alloc_builtin:BuiltinDecl.__objc_alloc loc stmt_info function_type)
-  else if CTrans_models.is_assert_log pname then Some (trans_assertion trans_state loc)
+let builtin_trans trans_state loc params_trans_res pname =
+  if CTrans_models.is_assert_log pname then Some (trans_assertion trans_state loc)
   else if CTrans_models.is_builtin_expect pname then trans_builtin_expect params_trans_res
   else if CTrans_models.is_replace_with_deref_first_arg pname then
     Some (trans_replace_with_deref_first_arg loc params_trans_res ~cxx_method_call:false)

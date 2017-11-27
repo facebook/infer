@@ -11,25 +11,14 @@ open! IStd
 open Objc_models
 
 let is_modelled_static_function name =
-  let modelled_functions = ["_dispatch_once"] in
+  let modelled_functions = ["_dispatch_once"; "CFAutorelease"; "CFBridgingRelease"] in
   List.mem ~equal:String.equal modelled_functions name
+
 
 let class_equal class_typename class_name = String.equal (Typ.Name.name class_typename) class_name
 
-let is_cf_non_null_alloc pname =
-  String.equal (Typ.Procname.to_string pname) CFrontend_config.cf_non_null_alloc
-
-
-let is_alloc pname = String.equal (Typ.Procname.to_string pname) CFrontend_config.cf_alloc
-
 let is_alloc_model typ pname =
-  if Specs.summary_exists pname then false
-  else
-    let funct = Typ.Procname.to_string pname in
-    (* if (Core_foundation_model.is_core_lib_create typ funct) then
-       print_endline ("\nCore Foundation create not modelled "
-       ^(Typ.to_string typ)^" "^(funct));*)
-    Core_foundation_model.is_core_lib_create typ funct
+  Core_foundation_model.is_core_lib_create typ (Typ.Procname.to_string pname)
 
 
 let is_builtin_expect pname =
@@ -50,52 +39,10 @@ let is_replace_with_deref_first_arg pname =
   String.equal (Typ.Procname.to_string pname) CFrontend_config.replace_with_deref_first_arg_attr
 
 
-let is_retain_predefined_model typ pname =
-  let funct = Typ.Procname.to_string pname in
-  Core_foundation_model.is_core_lib_retain typ funct
-
-
-let is_release_predefined_model typ pname =
-  let funct = Typ.Procname.to_string pname in
-  Core_foundation_model.is_core_lib_release typ funct
-  || Core_foundation_model.is_core_graphics_release typ funct
-
-
 let is_modeled_builtin funct = String.equal funct CFrontend_config.builtin_memset_chk
 
 let is_modeled_attribute attr_name =
   List.mem ~equal:String.equal CFrontend_config.modeled_function_attributes attr_name
-
-
-let get_first_param_typedef_string_opt type_ptr =
-  match CAst_utils.get_desugared_type type_ptr with
-  | Some Clang_ast_t.FunctionProtoType (_, _, {pti_params_type= [param_ptr]}) ->
-      CAst_utils.name_opt_of_typedef_qual_type param_ptr
-      |> Option.map ~f:QualifiedCppName.to_qual_string
-  | _ ->
-      None
-
-
-let is_release_builtin funct fun_type =
-  let pn = Typ.Procname.from_string_c_fun funct in
-  if Specs.summary_exists pn then false
-  else
-    match get_first_param_typedef_string_opt fun_type with
-    | Some typ ->
-        is_release_predefined_model typ pn
-    | _ ->
-        false
-
-
-let is_retain_builtin funct fun_type =
-  let pn = Typ.Procname.from_string_c_fun funct in
-  if Specs.summary_exists pn then false
-  else
-    match get_first_param_typedef_string_opt fun_type with
-    | Some typ ->
-        is_retain_predefined_model typ pn
-    | _ ->
-        false
 
 
 let is_assert_log_s funct =
@@ -109,19 +56,6 @@ let is_assert_log_method m = String.equal m CFrontend_config.google_LogMessageFa
 let is_handleFailureInMethod funct =
   String.equal funct CFrontend_config.handleFailureInMethod
   || String.equal funct CFrontend_config.handleFailureInFunction
-
-
-let is_toll_free_bridging pn =
-  let funct = Typ.Procname.to_string pn in
-  String.equal funct CFrontend_config.cf_bridging_release
-  || String.equal funct CFrontend_config.cf_bridging_retain
-  || String.equal funct CFrontend_config.cf_autorelease
-  || String.equal funct CFrontend_config.ns_make_collectable
-
-
-let is_cf_retain_release pn =
-  Typ.Procname.equal pn BuiltinDecl.__objc_retain_cf
-  || Typ.Procname.equal pn BuiltinDecl.__objc_release_cf
 
 
 (** If the function is a builtin model, return the model, otherwise return the function *)

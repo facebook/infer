@@ -11,10 +11,6 @@ open! IStd
 
 val is_modelled_static_function : string -> bool
 
-val is_cf_non_null_alloc : Typ.Procname.t -> bool
-
-val is_alloc : Typ.Procname.t -> bool
-
 val is_alloc_model : Typ.t -> Typ.Procname.t -> bool
 
 val is_builtin_expect : Typ.Procname.t -> bool
@@ -33,15 +29,7 @@ val is_handleFailureInMethod : string -> bool
 
 val is_modeled_builtin : string -> bool
 
-val is_release_builtin : string -> Clang_ast_t.type_ptr -> bool
-
-val is_retain_builtin : string -> Clang_ast_t.type_ptr -> bool
-
 val is_modeled_attribute : string -> bool
-
-val is_toll_free_bridging : Typ.Procname.t -> bool
-
-val is_cf_retain_release : Typ.Procname.t -> bool
 
 val get_predefined_model_method_signature :
   Typ.Name.t -> string

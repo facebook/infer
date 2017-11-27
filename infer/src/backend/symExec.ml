@@ -1286,53 +1286,43 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
                      ~f:(fun summary -> is_some (reason_to_skip summary))
                      ~default:true resolved_summary_opt
                 then
-                  (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
-                  let attrs_opt =
-                    let attr_opt = Option.map ~f:Procdesc.get_attributes callee_pdesc_opt in
-                    match (attr_opt, resolved_pname) with
-                    | Some attrs, Typ.Procname.ObjC_Cpp _ ->
-                        Some attrs
-                    | None, Typ.Procname.ObjC_Cpp _ ->
-                        Attributes.load resolved_pname
-                    | _ ->
-                        None
-                  in
-                  let objc_property_accessor_ret_typ_opt =
-                    match attrs_opt with
-                    | Some attrs -> (
-                      match attrs.ProcAttributes.objc_accessor with
-                      | Some objc_accessor ->
-                          Some (objc_accessor, attrs.ProcAttributes.ret_type)
-                      | None ->
-                          None )
+                  let ret_annots =
+                    match resolved_summary_opt with
+                    | Some summ ->
+                        let ret_annots, _ =
+                          (Specs.get_attributes summ).ProcAttributes.method_annotation
+                        in
+                        ret_annots
                     | None ->
-                        None
+                        load_ret_annots resolved_pname
                   in
-                  match objc_property_accessor_ret_typ_opt with
-                  | Some (objc_property_accessor, ret_typ) ->
-                      handle_objc_instance_method_call n_actual_params n_actual_params prop tenv
-                        ret_id current_pdesc callee_pname loc path
-                        (sym_exec_objc_accessor objc_property_accessor ret_typ)
-                  | None ->
-                      let ret_annots =
-                        match resolved_summary_opt with
-                        | Some summ ->
-                            let ret_annots, _ =
-                              (Specs.get_attributes summ).ProcAttributes.method_annotation
-                            in
-                            ret_annots
-                        | None ->
-                            load_ret_annots resolved_pname
-                      in
-                      let is_objc_instance_method =
-                        match attrs_opt with
-                        | Some attrs ->
+                  let attrs_opt = Option.map ~f:Procdesc.get_attributes callee_pdesc_opt in
+                  match attrs_opt with
+                  | Some attrs
+                    -> (
+                      let ret_type = attrs.ProcAttributes.ret_type in
+                      let model_as_malloc = Objc_models.is_malloc_model ret_type callee_pname in
+                      match (attrs.ProcAttributes.objc_accessor, model_as_malloc) with
+                      | Some objc_accessor, _ ->
+                          (* If it's an ObjC getter or setter, call the builtin rather than skipping *)
+                          handle_objc_instance_method_call n_actual_params n_actual_params prop
+                            tenv ret_id current_pdesc callee_pname loc path
+                            (sym_exec_objc_accessor objc_accessor ret_type)
+                      | None, true ->
+                          (* If it's an alloc model, call alloc rather than skipping *)
+                          sym_exec_alloc_model callee_pname ret_type tenv ret_id current_pdesc loc
+                            prop path
+                      | None, false ->
+                          let is_objc_instance_method =
                             attrs.ProcAttributes.is_objc_instance_method
-                        | None ->
-                            false
-                      in
-                      skip_call ~is_objc_instance_method ~reason:"function or method not found"
-                        prop path resolved_pname ret_annots loc ret_id ret_typ_opt n_actual_params
+                          in
+                          skip_call ~is_objc_instance_method ~reason:"function or method not found"
+                            prop path resolved_pname ret_annots loc ret_id ret_typ_opt
+                            n_actual_params )
+                  | None ->
+                      skip_call ~is_objc_instance_method:false
+                        ~reason:"function or method not found" prop path resolved_pname ret_annots
+                        loc ret_id ret_typ_opt n_actual_params
                 else
                   proc_call
                     (Option.value_exn resolved_summary_opt)
@@ -1715,6 +1705,21 @@ and sym_exec_objc_accessor property_accesor ret_typ tenv ret_id pdesc _ loc args
      since this is the procname of the setter/getter method *)
   let cur_pname = Procdesc.get_proc_name pdesc in
   f_accessor ret_typ tenv ret_id pdesc cur_pname loc args prop |> List.map ~f:(fun p -> (p, path))
+
+
+and sym_exec_alloc_model pname ret_typ tenv ret_id pdesc loc prop path : Builtin.ret_typ =
+  let alloc_source_function_arg = (Exp.Const (Const.Cfun pname), Typ.mk Tvoid) in
+  let args =
+    let sizeof_exp =
+      Exp.Sizeof {typ= ret_typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact}
+    in
+    let exp = (sizeof_exp, Typ.mk (Tint Typ.IULong)) in
+    [exp; alloc_source_function_arg]
+  in
+  let alloc_fun = Exp.Const (Const.Cfun BuiltinDecl.malloc_no_fail) in
+  let alloc_instr = Sil.Call (ret_id, alloc_fun, args, loc, CallFlags.default) in
+  L.d_strln "No spec found, method should be model as alloc, executing alloc... " ;
+  instrs tenv pdesc [alloc_instr] [(prop, path)]
 
 
 (** Perform symbolic execution for a function call *)

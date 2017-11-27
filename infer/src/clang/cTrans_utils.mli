@@ -25,8 +25,7 @@ type trans_state =
   ; continuation: continuation option
   ; priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
-  ; opaque_exp: (Exp.t * Typ.t) option
-  ; obj_bridged_cast_typ: Typ.t option }
+  ; opaque_exp: (Exp.t * Typ.t) option }
 
 type trans_result =
   { root_nodes: Procdesc.Node.t list
@@ -76,7 +75,7 @@ val dereference_value_from_result :
     expression assigned to it *)
 
 val cast_operation :
-  trans_state -> Clang_ast_t.cast_kind -> (Exp.t * Typ.t) list -> Typ.t -> Location.t -> bool
+  Clang_ast_t.cast_kind -> (Exp.t * Typ.t) list -> Typ.t -> Location.t
   -> Sil.instr list * (Exp.t * Typ.t)
 
 val trans_assertion : trans_state -> Location.t -> trans_result
@@ -88,24 +87,20 @@ val contains_opaque_value_expr : Clang_ast_t.stmt -> bool
 val get_decl_ref_info : Clang_ast_t.stmt -> Clang_ast_t.decl_ref
 
 val builtin_trans :
-  trans_state -> Location.t -> Clang_ast_t.stmt_info -> Typ.t -> trans_result list
-  -> Typ.Procname.t -> trans_result option
+  trans_state -> Location.t -> trans_result list -> Typ.Procname.t -> trans_result option
 
 val cxx_method_builtin_trans :
   trans_state -> Location.t -> trans_result list -> Typ.Procname.t -> trans_result option
 
 val alloc_trans :
-  trans_state -> alloc_builtin:Typ.Procname.t -> ?alloc_source_function:Typ.Procname.t
-  -> Location.t -> Clang_ast_t.stmt_info -> Typ.t -> trans_result
+  trans_state -> alloc_builtin:Typ.Procname.t -> Location.t -> Clang_ast_t.stmt_info -> Typ.t
+  -> trans_result
 
 val new_or_alloc_trans :
   trans_state -> Location.t -> Clang_ast_t.stmt_info -> Clang_ast_t.qual_type -> Typ.Name.t option
   -> string -> trans_result
 
 val cpp_new_trans : Location.t -> Typ.t -> Exp.t option -> trans_result
-
-val cast_trans :
-  (Exp.t * Typ.t) list -> Location.t -> Typ.t -> Typ.Procname.t -> (Sil.instr * Exp.t) option
 
 val dereference_var_sil : Exp.t * Typ.t -> Location.t -> Sil.instr list * Exp.t
 

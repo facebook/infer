@@ -434,7 +434,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {empty_res_trans with root_nodes= [root_node']; leaf_nodes= trans_state.succ_nodes}
 
 
-  let get_builtin_pname_opt trans_unit_ctx qual_name decl_opt (qual_type: Clang_ast_t.qual_type) =
+  let get_builtin_pname_opt trans_unit_ctx qual_name decl_opt =
     let get_annotate_attr_arg decl =
       let open Clang_ast_t in
       let decl_info = Clang_ast_proj.get_decl_tuple decl in
@@ -458,10 +458,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         Some (Typ.Procname.from_string_c_fun attr)
     | _ when CTrans_models.is_modeled_builtin name ->
         Some (Typ.Procname.from_string_c_fun (CFrontend_config.infer ^ name))
-    | _ when CTrans_models.is_release_builtin name qual_type.qt_type_ptr ->
-        Some BuiltinDecl.__objc_release_cf
-    | _ when CTrans_models.is_retain_builtin name qual_type.qt_type_ptr ->
-        Some BuiltinDecl.__objc_retain_cf
     | _
       when String.equal name CFrontend_config.malloc
            && CGeneral_utils.is_objc_extension trans_unit_ctx ->
@@ -479,9 +475,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let qual_name = CAst_utils.get_qualified_name name_info in
     let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
     let pname =
-      match
-        get_builtin_pname_opt context.translation_unit_context qual_name decl_opt qual_type
-      with
+      match get_builtin_pname_opt context.translation_unit_context qual_name decl_opt with
       | Some builtin_pname ->
           builtin_pname
       | None ->
@@ -599,9 +593,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* use qualified method name for builtin matching, but use unqualified name elsewhere *)
     let qual_method_name = CAst_utils.get_qualified_name name_info in
     let pname =
-      match
-        get_builtin_pname_opt context.translation_unit_context qual_method_name decl_opt qual_type
-      with
+      match get_builtin_pname_opt context.translation_unit_context qual_method_name decl_opt with
       | Some builtin_pname ->
           builtin_pname
       | None ->
@@ -979,16 +971,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     match
       Option.bind callee_pname_opt
-        ~f:
-          (CTrans_utils.builtin_trans trans_state_pri sil_loc si function_type
-             result_trans_subexprs)
+        ~f:(CTrans_utils.builtin_trans trans_state_pri sil_loc result_trans_subexprs)
     with
     | Some builtin ->
         builtin
     | None ->
-        let is_cf_retain_release =
-          Option.value_map ~f:CTrans_models.is_cf_retain_release ~default:false callee_pname_opt
-        in
         let act_params =
           let params = List.tl_exn (collect_exprs result_trans_subexprs) in
           if Int.equal (List.length params) (List.length params_stmt) then params
@@ -1001,23 +988,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               (Pp.seq (Pp.to_string ~f:Clang_ast_j.string_of_stmt))
               params_stmt
         in
-        let act_params =
-          if is_cf_retain_release then
-            (Exp.Const (Const.Cint IntLit.one), Typ.mk (Tint Typ.IBool)) :: act_params
-          else act_params
-        in
         let res_trans_call =
-          let cast_trans_fun = cast_trans act_params sil_loc function_type in
-          match Option.bind callee_pname_opt ~f:cast_trans_fun with
-          | Some (instr, cast_exp) ->
-              {empty_res_trans with instrs= [instr]; exps= [(cast_exp, function_type)]}
-          | _ ->
-              let is_call_to_block = objc_exp_of_type_block fun_exp_stmt in
-              let call_flags =
-                {CallFlags.default with CallFlags.cf_is_objc_block= is_call_to_block}
-              in
-              create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags
-                ~is_objc_method:false
+          let is_call_to_block = objc_exp_of_type_block fun_exp_stmt in
+          let call_flags = {CallFlags.default with CallFlags.cf_is_objc_block= is_call_to_block} in
+          create_call_instr trans_state function_type sil_fe act_params sil_loc call_flags
+            ~is_objc_method:false
         in
         let nname = "Call " ^ Exp.to_string sil_fe in
         let all_res_trans = result_trans_subexprs @ [res_trans_call] in
@@ -2358,13 +2333,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let cast_kind = cast_expr_info.Clang_ast_t.cei_cast_kind in
     (* This gives the differnece among cast operations kind*)
-    let is_objc_bridged_cast_expr _ stmt =
-      match stmt with Clang_ast_t.ObjCBridgedCastExpr _ -> true | _ -> false
-    in
-    let is_objc_bridged = CAst_utils.exists_eventually_st is_objc_bridged_cast_expr () stmt in
-    let cast_inst, cast_exp =
-      cast_operation trans_state cast_kind res_trans_stmt.exps typ sil_loc is_objc_bridged
-    in
+    let cast_inst, cast_exp = cast_operation cast_kind res_trans_stmt.exps typ sil_loc in
     {res_trans_stmt with instrs= res_trans_stmt.instrs @ cast_inst; exps= [cast_exp]}
 
 
@@ -2959,14 +2928,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     {res_trans_to_parent with exps= res_trans_call.exps}
 
 
-  and objCBridgedCastExpr_trans trans_state stmts expr_info =
-    let stmt = extract_stmt_from_singleton stmts "" in
-    let tenv = trans_state.context.CContext.tenv in
-    let typ = CType_decl.get_type_from_expr_info expr_info tenv in
-    let trans_state' = {trans_state with obj_bridged_cast_typ= Some typ} in
-    instruction trans_state' stmt
-
-
   and binaryOperator_trans_with_cond trans_state stmt_info stmt_list expr_info binop_info =
     let open Clang_ast_t in
     match binop_info.boi_kind with
@@ -3111,8 +3072,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         pseudoObjectExpr_trans trans_state stmt_list
     | UnaryExprOrTypeTraitExpr (_, _, expr_info, ei) ->
         unaryExprOrTypeTraitExpr_trans trans_state expr_info ei
-    | ObjCBridgedCastExpr (_, stmt_list, expr_info, _, _) ->
-        objCBridgedCastExpr_trans trans_state stmt_list expr_info
+    | ObjCBridgedCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | ImplicitCastExpr (stmt_info, stmt_list, expr_info, cast_kind)
     | CStyleCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
     | CXXReinterpretCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
@@ -3459,8 +3419,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ; continuation= None
       ; priority= Free
       ; var_exp_typ= None
-      ; opaque_exp= None
-      ; obj_bridged_cast_typ= None }
+      ; opaque_exp= None }
     in
     let res_trans_stmt = instruction trans_state stmt in
     fst (CTrans_utils.extract_exp_from_list res_trans_stmt.exps warning)
@@ -3473,8 +3432,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ; continuation= None
       ; priority= Free
       ; var_exp_typ= None
-      ; opaque_exp= None
-      ; obj_bridged_cast_typ= None }
+      ; opaque_exp= None }
     in
     let procname = Procdesc.get_proc_name context.CContext.procdesc in
     let is_destructor = Typ.Procname.is_destructor procname in

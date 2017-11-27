@@ -166,16 +166,6 @@ module Core_foundation_model = struct
 
   let create = "Create"
 
-  let cf_retain = "CFRetain"
-
-  let cf_release = "CFRelease"
-
-  let upper_release = "Release"
-
-  let ref = "Ref"
-
-  let cf_type = "CFTypeRef"
-
   type core_lib = Core_foundation | Core_graphics
 
   let core_lib_to_type_list lib =
@@ -212,25 +202,10 @@ module Core_foundation_model = struct
     is_core_lib_type typ
     && (String.is_substring ~substring:create funct || String.is_substring ~substring:copy funct)
 
-
-  let function_arg_is_cftype typ = String.is_substring ~substring:cf_type typ
-
-  let is_core_lib_retain typ funct = function_arg_is_cftype typ && String.equal funct cf_retain
-
-  let is_core_lib_release typ funct = function_arg_is_cftype typ && String.equal funct cf_release
-
-  let is_core_graphics_release typ funct =
-    let f lib =
-      String.equal funct (lib ^ upper_release) && String.is_substring ~substring:(lib ^ ref) typ
-    in
-    List.exists ~f core_graphics_types
-
-
-  (*
-  let function_arg_is_core_pgraphics typ =
-    let res = (String.is_substring ~substring:cf_type typ) in
-    res
-*)
 end
 
 let is_core_lib_type typ = Core_foundation_model.is_core_lib_type typ
+
+let is_malloc_model return_type pname =
+  Core_foundation_model.is_core_lib_create return_type (Typ.Procname.to_string pname)
+

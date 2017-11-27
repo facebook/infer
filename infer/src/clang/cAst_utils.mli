@@ -60,9 +60,6 @@ val get_decl_from_typ_ptr : Clang_ast_t.type_ptr -> Clang_ast_t.decl option
 
 val name_of_typedef_type_info : Clang_ast_t.typedef_type_info -> QualifiedCppName.t
 
-val name_opt_of_typedef_qual_type : Clang_ast_t.qual_type -> QualifiedCppName.t option
-(** returns name of typedef if qual_type points to Typedef, None otherwise *)
-
 val string_of_qual_type : Clang_ast_t.qual_type -> string
 
 val make_name_decl : string -> Clang_ast_t.named_decl_info

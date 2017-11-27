@@ -38,6 +38,8 @@ module type S = sig
 
   val __exit : t
 
+  val __free_cf : t
+
   val __get_array_length : t
 
   val __get_hidden_field : t
@@ -59,17 +61,9 @@ module type S = sig
 
   val __new_array : t
 
-  val __objc_alloc : t
-
   val __objc_alloc_no_fail : t
 
-  val __objc_cast : t
-
   val __objc_dictionary_literal : t
-
-  val __objc_release_cf : t
-
-  val __objc_retain_cf : t
 
   val __placement_delete : t
 

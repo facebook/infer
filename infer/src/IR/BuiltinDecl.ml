@@ -56,6 +56,8 @@ let __delete_locked_attribute = create_procname "__delete_locked_attribute"
 
 let __exit = create_procname "_exit"
 
+let __free_cf = create_procname "__free_cf"
+
 let __get_array_length = create_procname "__get_array_length"
 
 let __get_hidden_field = create_procname "__get_hidden_field"
@@ -85,16 +87,6 @@ let __objc_cast = create_procname "__objc_cast"
 let __objc_dictionary_literal =
   create_objc_class_method "NSDictionary" "dictionaryWithObjects:forKeys:count:"
 
-
-let __objc_release = create_procname "__objc_release"
-
-let __objc_release_autorelease_pool = create_procname "__objc_release_autorelease_pool"
-
-let __objc_release_cf = create_procname "__objc_release_cf"
-
-let __objc_retain = create_procname "__objc_retain"
-
-let __objc_retain_cf = create_procname "__objc_retain_cf"
 
 let __placement_delete = create_procname "__placement_delete"
 

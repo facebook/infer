@@ -480,70 +480,6 @@ let execute___set_hidden_field {Builtin.tenv; pdesc; prop_; path; args} : Builti
       raise (Exceptions.Wrong_argument_number __POS__)
 
 
-(* Update the objective-c hidden counter by applying the operation op and the operand delta.*)
-(* Eg. op=+/- delta is an integer *)
-let execute___objc_counter_update ~mask_errors op delta
-    {Builtin.pdesc; tenv; prop_; path; args; loc} : Builtin.ret_typ =
-  match args with
-  | [(lexp, (({Typ.desc= Tstruct _} as typ) | {desc= Tptr (({desc= Tstruct _} as typ), _)}))] ->
-      (* Assumes that lexp is a temp n$1 that has the value of the object. *)
-      (* This is the case as a call f(o) it's translates as n$1=*&o; f(n$1) *)
-      (* n$2 = *n$1.hidden *)
-      let tmp = Ident.create_fresh Ident.knormal in
-      let hidden_field = Exp.Lfield (lexp, Typ.Fieldname.hidden, typ) in
-      let counter_to_tmp = Sil.Load (tmp, hidden_field, typ, loc) in
-      (* *n$1.hidden = (n$2 +/- delta) *)
-      let update_counter =
-        Sil.Store (hidden_field, typ, BinOp (op, Var tmp, Const (Cint delta)), loc)
-      in
-      let update_counter_instrs =
-        [counter_to_tmp; update_counter; Sil.Remove_temps ([tmp], loc)]
-      in
-      SymExec.instrs ~mask_errors tenv pdesc update_counter_instrs [(prop_, path)]
-  | [(_, typ)] ->
-      L.d_str ("Trying to update hidden field of non-struct value. Type: " ^ Typ.to_string typ) ;
-      assert false
-  | _ ->
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-
-(* Given a list of args checks if the first is the flag indicating whether is a call to
-   retain/release for which we have to suppress NPE report or not. If the flag is present it is
-   removed from the list of args. *)
-let get_suppress_npe_flag args =
-  match args with
-  | (Exp.Const Const.Cint i, {Typ.desc= Tint Typ.IBool}) :: args' when IntLit.isone i ->
-      (false, args') (* this is a CFRelease/CFRetain *)
-  | _ ->
-      (true, args)
-
-
-let execute___objc_retain_impl ({Builtin.tenv; prop_; args; ret_id} as builtin_args)
-    : Builtin.ret_typ =
-  let mask_errors, args' = get_suppress_npe_flag args in
-  match args' with
-  | [(lexp, _)] ->
-      let prop = return_result tenv lexp prop_ ret_id in
-      execute___objc_counter_update ~mask_errors Binop.PlusA IntLit.one
-        {builtin_args with Builtin.prop_= prop; args= args'}
-  | _ ->
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-
-let execute___objc_retain_cf builtin_args : Builtin.ret_typ =
-  execute___objc_retain_impl builtin_args
-
-
-let execute___objc_release_impl ({Builtin.args} as builtin_args) : Builtin.ret_typ =
-  let mask_errors, args' = get_suppress_npe_flag args in
-  execute___objc_counter_update ~mask_errors Binop.MinusA IntLit.one
-    {builtin_args with Builtin.args= args'}
-
-
-let execute___objc_release_cf builtin_args : Builtin.ret_typ =
-  execute___objc_release_impl builtin_args
-
-
 let set_attr tenv pdesc prop path exp attr =
   let pname = Procdesc.get_proc_name pdesc in
   let n_lexp, prop = check_arith_norm_exp tenv pname exp prop in
@@ -584,33 +520,6 @@ let execute___set_wont_leak_attribute builtin_args : Builtin.ret_typ =
   execute___set_attr PredSymb.Awont_leak builtin_args
 
 
-let execute___objc_cast {Builtin.tenv; pdesc; prop_; path; ret_id; args} : Builtin.ret_typ =
-  match args with
-  | [(val1_, _); (texp2_, _)]
-    -> (
-      let pname = Procdesc.get_proc_name pdesc in
-      let val1, prop__ = check_arith_norm_exp tenv pname val1_ prop_ in
-      let texp2, prop = check_arith_norm_exp tenv pname texp2_ prop__ in
-      match
-        List.find
-          ~f:(function Sil.Hpointsto (e1, _, _) -> Exp.equal e1 val1 | _ -> false)
-          prop.Prop.sigma
-        |> Option.map ~f:(fun hpred ->
-               match (hpred, texp2) with
-               | Sil.Hpointsto (val1, _, _), Exp.Sizeof _ ->
-                   let prop' = replace_ptsto_texp tenv prop val1 texp2 in
-                   [(return_result tenv val1 prop' ret_id, path)]
-               | _ ->
-                   [(return_result tenv val1 prop ret_id, path)] )
-      with
-      | Some res ->
-          res
-      | None ->
-          [(return_result tenv val1 prop ret_id, path)] )
-  | _ ->
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-
 let execute_abort {Builtin.proc_name} : Builtin.ret_typ =
   raise
     (Exceptions.Precondition_not_found
@@ -619,24 +528,26 @@ let execute_abort {Builtin.proc_name} : Builtin.ret_typ =
 
 let execute_exit {Builtin.prop_; path} : Builtin.ret_typ = SymExec.diverge prop_ path
 
-let execute_free_ tenv mk loc acc iter =
+let execute_free_ tenv mk ?(mark_as_freed= true) loc acc iter =
   match Prop.prop_iter_current tenv iter with
   | Sil.Hpointsto (lexp, _, _), [] ->
       let prop = Prop.prop_iter_remove_curr_then_to_prop tenv iter in
-      let pname = PredSymb.mem_dealloc_pname mk in
-      let ra =
-        { PredSymb.ra_kind= PredSymb.Rrelease
-        ; PredSymb.ra_res= PredSymb.Rmemory mk
-        ; PredSymb.ra_pname= pname
-        ; PredSymb.ra_loc= loc
-        ; PredSymb.ra_vpath= None }
-      in
-      (* mark value as freed *)
-      let p_res =
-        Attribute.add_or_replace_check_changed tenv Tabulation.check_attr_dealloc_mismatch prop
-          (Apred (Aresource ra, [lexp]))
-      in
-      p_res :: acc
+      if mark_as_freed then
+        let pname = PredSymb.mem_dealloc_pname mk in
+        let ra =
+          { PredSymb.ra_kind= PredSymb.Rrelease
+          ; PredSymb.ra_res= PredSymb.Rmemory mk
+          ; PredSymb.ra_pname= pname
+          ; PredSymb.ra_loc= loc
+          ; PredSymb.ra_vpath= None }
+        in
+        (* mark value as freed *)
+        let p_res =
+          Attribute.add_or_replace_check_changed tenv Tabulation.check_attr_dealloc_mismatch prop
+            (Apred (Aresource ra, [lexp]))
+        in
+        p_res :: acc
+      else prop :: acc
   | Sil.Hpointsto _, _ :: _ ->
       assert false (* alignment error *)
   | _ ->
@@ -645,7 +556,7 @@ let execute_free_ tenv mk loc acc iter =
 
 (* should not happen *)
 
-let execute_free_nonzero_ mk pdesc tenv instr prop lexp typ loc =
+let execute_free_nonzero_ mk ?(mark_as_freed= true) pdesc tenv instr prop lexp typ loc =
   try
     match Prover.is_root tenv prop lexp lexp with
     | None ->
@@ -653,7 +564,9 @@ let execute_free_nonzero_ mk pdesc tenv instr prop lexp typ loc =
         assert false
     | Some _ ->
         let prop_list =
-          List.fold ~f:(execute_free_ tenv mk loc) ~init:[]
+          List.fold
+            ~f:(execute_free_ tenv mk ~mark_as_freed loc)
+            ~init:[]
             (Rearrange.rearrange pdesc tenv lexp typ prop loc)
         in
         List.rev prop_list
@@ -670,7 +583,8 @@ let execute_free_nonzero_ mk pdesc tenv instr prop lexp typ loc =
       raise (Exceptions.Array_of_pointsto __POS__) )
 
 
-let execute_free mk {Builtin.pdesc; instr; tenv; prop_; path; args; loc} : Builtin.ret_typ =
+let execute_free mk ?(mark_as_freed= true) {Builtin.pdesc; instr; tenv; prop_; path; args; loc}
+    : Builtin.ret_typ =
   match args with
   | [(lexp, typ)] ->
       let pname = Procdesc.get_proc_name pdesc in
@@ -688,7 +602,7 @@ let execute_free mk {Builtin.pdesc; instr; tenv; prop_; path; args; loc} : Built
         @ (* model: if 0 then skip else execute_free_nonzero_ *)
           List.concat_map
             ~f:(fun p ->
-              execute_free_nonzero_ mk pdesc tenv instr p
+              execute_free_nonzero_ mk ~mark_as_freed pdesc tenv instr p
                 (Prop.exp_normalize_prop tenv p lexp)
                 typ loc)
             prop_nonzero
@@ -697,6 +611,13 @@ let execute_free mk {Builtin.pdesc; instr; tenv; prop_; path; args; loc} : Built
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
+
+(* This is for objects of CoreFoundation and CoreGraphics that ned to be released.
+ However, we want to treat them a bit differently to standard free; in particular we
+ don't want to flag Use_after_free because they can be used after CFRelease. The main purpose
+ of this builtin is to remove the memory attribute so that we don't report Memory Leaks.
+ This should behave correctly most of the time. *)
+let execute_free_cf mk = execute_free mk ~mark_as_freed:false
 
 let execute_alloc mk can_return_null {Builtin.pdesc; tenv; prop_; path; ret_id; args; loc}
     : Builtin.ret_typ =
@@ -1026,6 +947,8 @@ let __delete_locked_attribute =
 
 let __exit = Builtin.register BuiltinDecl.__exit execute_exit
 
+let __free_cf = Builtin.register BuiltinDecl.__free_cf (execute_free_cf PredSymb.Mmalloc)
+
 (* return the length of the array passed as a parameter *)
 let __get_array_length = Builtin.register BuiltinDecl.__get_array_length execute___get_array_length
 
@@ -1055,22 +978,14 @@ let __new_array =
   Builtin.register BuiltinDecl.__new_array (execute_alloc PredSymb.Mnew_array false)
 
 
-let __objc_alloc = Builtin.register BuiltinDecl.__objc_alloc (execute_alloc PredSymb.Mobjc true)
-
 (* like __objc_alloc, but does not return nil *)
 let __objc_alloc_no_fail =
   Builtin.register BuiltinDecl.__objc_alloc_no_fail (execute_alloc PredSymb.Mobjc false)
 
 
-let __objc_cast = Builtin.register BuiltinDecl.__objc_cast execute___objc_cast
-
 let __objc_dictionary_literal =
   Builtin.register BuiltinDecl.__objc_dictionary_literal execute___objc_dictionary_literal
 
-
-let __objc_release_cf = Builtin.register BuiltinDecl.__objc_release_cf execute___objc_release_cf
-
-let __objc_retain_cf = Builtin.register BuiltinDecl.__objc_retain_cf execute___objc_retain_cf
 
 let __placement_delete = Builtin.register BuiltinDecl.__placement_delete execute_skip
 

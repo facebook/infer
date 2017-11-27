@@ -13,15 +13,11 @@ open! IStd
     for which there are particular rules for memory management. *)
 
 module Core_foundation_model : sig
-  val is_core_lib_release : string -> string -> bool
-
   val is_core_lib_create : Typ.t -> string -> bool
-
-  val is_core_lib_retain : string -> string -> bool
-
-  val is_core_graphics_release : string -> string -> bool
 
   val is_objc_memory_model_controlled : string -> bool
 end
 
 val is_core_lib_type : Typ.t -> bool
+
+val is_malloc_model : Typ.t -> Typ.Procname.t -> bool
