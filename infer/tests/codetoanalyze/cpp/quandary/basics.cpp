@@ -195,4 +195,8 @@ void loop_ok() {
   }
 }
 
+void ret_void_ok() { return; }
+
+void ret_void_transitive_ok() { return ret_void_ok(); }
+
 }

@@ -317,9 +317,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           | Some base_var ->
               Some (AccessPath.Abs.with_base base_var ret_ap)
           | None ->
-              L.internal_error
-                "Have summary for retval %a of callee %a, but no ret id to bind it to@\n"
-                AccessPath.Abs.pp ret_ap Typ.Procname.pp (CallSite.pname callee_site) ;
+              (* TODO (T23832636): fail hard here *)
               None
         in
         let project ~formal_ap ~actual_ap =
