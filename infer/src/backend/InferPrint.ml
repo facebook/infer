@@ -658,7 +658,7 @@ let error_filter filters proc_name file error_desc error_name =
   && filters.Inferconfig.error_filter error_name && filters.Inferconfig.proc_filter proc_name
 
 
-type report_kind = Issues | Procs | Stats | Calls [@@deriving compare]
+type report_kind = Issues | Procs | Stats | Calls | Summary [@@deriving compare]
 
 type bug_format_kind = Json | Csv | Tests | Text [@@deriving compare]
 
@@ -751,6 +751,11 @@ let pp_stats error_filter linereader summary stats stats_format_list =
   List.iter ~f:pp_stats_in_format stats_format_list
 
 
+let pp_summary summary =
+  L.result "Procedure: %a@\n%a@." Typ.Procname.pp (Specs.get_proc_name summary)
+    Specs.pp_summary_text summary
+
+
 let pp_summary_by_report_kind formats_by_report_kind summary error_filter linereader stats file
     issues_acc =
   let pp_summary_by_report_kind (report_kind, format_list) =
@@ -761,6 +766,8 @@ let pp_summary_by_report_kind formats_by_report_kind summary error_filter linere
         pp_stats (error_filter file) linereader summary stats format_list
     | Calls, _ :: _ ->
         pp_calls summary format_list
+    | Summary, _ when CLOpt.equal_command Config.command CLOpt.Report && not Config.quiet ->
+        pp_summary summary
     | _ ->
         ()
   in
@@ -1022,7 +1029,8 @@ let main ~report_json =
     [ (Issues, issue_formats)
     ; (Procs, init_procs_format_list ())
     ; (Calls, init_calls_format_list ())
-    ; (Stats, init_stats_format_list ()) ]
+    ; (Stats, init_stats_format_list ())
+    ; (Summary, []) ]
   in
   if Config.developer_mode then register_perf_stats_report () ;
   init_files formats_by_report_kind ;
