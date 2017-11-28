@@ -6,6 +6,7 @@
  * LICENSE file in the root directory of this source tree. An additional grant
  * of patent rights can be found in the PATENTS file in the same directory.
  */
+
 #include <string>
 
 struct SimpleRuleKey {
@@ -38,7 +39,7 @@ std::string struct_uninit_ok() {
   return s1;
 }
 
-int FN_struct_uninit() {
+int struct_uninit_bad() {
   int k;
   SimpleRuleKey srk;
   k = srk.i; // Should reports here: srk was not initialized and i has type int
@@ -89,6 +90,22 @@ int init_field_via_function_ptr_ok() {
 
   *t = init_all_fields();
   return t->n;
+}
+
+int get_a_int_pointer(int* x) { return *x; };
+
+void pass_pointer_of_field_OK() {
+  struct s my_t;
+
+  get_a_int_pointer(&my_t.n);
+}
+
+int get_an_int(int x){};
+
+void pass_basic_type_field_bad() {
+  struct s my_t;
+
+  get_an_int(my_t.n); // pass an uninit int
 }
 
 enum class FieldType : uint8_t {

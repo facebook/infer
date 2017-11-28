@@ -53,8 +53,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RecordDomain
 
-  let report var loc summary =
-    let message = F.asprintf "The value read from %a was never initialized" Var.pp var in
+  let report ap loc summary =
+    let message = F.asprintf "The value read from %a was never initialized" AccessPath.pp ap in
     let issue_id = IssueType.uninitialized_value.unique_id in
     let ltr = [Errlog.make_trace_element 0 loc "" []] in
     let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
@@ -78,7 +78,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match e with
         | HilExp.AccessPath ((var, t), al)
           when should_report_var pdesc tenv uninit_vars ((var, t), al) && not (is_type_pointer t) ->
-            report var loc (snd extras)
+            report ((var, t), al) loc (snd extras)
         | _ ->
             ())
       actuals
@@ -103,12 +103,38 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     D.remove (base, [AccessPath.ArrayAccess (snd base, [])]) uninit_vars
 
 
+  let get_formals call =
+    match Ondemand.get_proc_desc call with
+    | Some proc_desc ->
+        Procdesc.get_formals proc_desc
+    | _ ->
+        []
+
+
+  let is_struct t = match Typ.name t with Some _ -> true | _ -> false
+
+  let function_expect_a_pointer call idx =
+    let formals = get_formals call in
+    match List.nth formals idx with Some (_, typ) -> is_type_pointer typ | _ -> false
+
+
+  let is_dummy_constructor_of_a_struct call =
+    let is_dummy_constructor_of_struct =
+      match get_formals call with
+      | [(_, {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct _}, _)})] ->
+          true
+      | _ ->
+          false
+    in
+    Typ.Procname.is_constructor call && is_dummy_constructor_of_struct
+
+
   let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras; ProcData.tenv} _
       (instr: HilInstr.t) =
     match instr with
     | Assign
         ( (((lhs_var, lhs_typ), apl) as lhs_ap)
-        , HilExp.AccessPath (((rhs_var, rhs_typ) as rhs_base), al)
+        , HilExp.AccessPath (((_, rhs_typ) as rhs_base), al)
         , loc ) ->
         let uninit_vars' = D.remove lhs_ap astate.uninit_vars in
         let uninit_vars =
@@ -128,7 +154,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
         if should_report_var pdesc tenv uninit_vars (rhs_base, al) && not (is_type_pointer lhs_typ)
-        then report rhs_var loc (snd extras) ;
+        then report (rhs_base, al) loc (snd extras) ;
         {astate with uninit_vars; prepost}
     | Assign (lhs, _, _) ->
         let uninit_vars = D.remove lhs astate.uninit_vars in
@@ -136,12 +162,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call (_, Direct callee_pname, _, _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
         {astate with uninit_vars= D.empty}
+    | Call (_, HilInstr.Direct call, _, _, _) when is_dummy_constructor_of_a_struct call ->
+        astate
     | Call (_, HilInstr.Direct call, actuals, _, loc) ->
         (* in case of intraprocedural only analysis we assume that parameters passed by reference
            to a function will be initialized inside that function *)
         let uninit_vars =
-          List.fold
-            ~f:(fun acc actual_exp ->
+          List.foldi
+            ~f:(fun idx acc actual_exp ->
               match actual_exp with
               | HilExp.AccessPath (((_, {Typ.desc= Tarray _}) as base), al)
                 when is_blacklisted_function call ->
@@ -155,6 +183,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | HilExp.AccessPath (((_, {Typ.desc= Tptr (t', _)}) as base), al) ->
                   let acc' = D.remove (base, al) acc in
                   remove_array_element (fst base, t') acc'
+              | HilExp.AccessPath (((_, t) as base), al)
+                when is_struct t && List.length al > 0 && function_expect_a_pointer call idx ->
+                  (* Access to a field of a struct by reference *)
+                  D.remove (base, al) acc
               | HilExp.Closure (_, apl) ->
                   (* remove the captured variables of a block/lambda *)
                   List.fold ~f:(fun acc' (base, _) -> D.remove (base, []) acc') ~init:acc apl
