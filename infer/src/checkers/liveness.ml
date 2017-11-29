@@ -34,7 +34,32 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       ~init:astate' pvars
 
 
+  let add_live_actuals actuals call_exp live_acc =
+    let add_live_actuals_ exps acc =
+      List.fold exps ~f:(fun acc_ (exp, _) -> exp_add_live exp acc_) ~init:acc
+    in
+    match call_exp with
+    | Exp.Const Cfun (Typ.Procname.ObjC_Cpp _ as pname) when Typ.Procname.is_constructor pname -> (
+      match
+        (* first actual passed to a C++ constructor is actually written, not read *)
+        actuals
+      with
+      | (Exp.Lvar pvar, _) :: exps ->
+          Domain.remove (Var.of_pvar pvar) live_acc |> add_live_actuals_ exps
+      | exps ->
+          add_live_actuals_ exps live_acc )
+    | _ ->
+        add_live_actuals_ actuals live_acc
+
+
   let exec_instr astate _ _ = function
+    | Sil.Load (lhs_id, _, _, _) when Ident.is_none lhs_id ->
+        (* dummy deref inserted by frontend--don't count as a read *)
+        astate
+    | Sil.Call (_, Exp.Const Cfun (Typ.Procname.ObjC_Cpp _ as pname), _, _, _)
+      when Typ.Procname.is_destructor pname ->
+        (* don't count destructor calls as a read *)
+        astate
     | Sil.Load (lhs_id, rhs_exp, _, _) ->
         Domain.remove (Var.of_id lhs_id) astate |> exp_add_live rhs_exp
     | Sil.Store (Lvar lhs_pvar, _, rhs_exp, _) ->
@@ -47,12 +72,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         exp_add_live lhs_exp astate |> exp_add_live rhs_exp
     | Sil.Prune (exp, _, _, _) ->
         exp_add_live exp astate
-    | Sil.Call (ret_id, call_exp, params, _, _) ->
+    | Sil.Call (ret_id, call_exp, actuals, _, _) ->
         Option.value_map
           ~f:(fun (ret_id, _) -> Domain.remove (Var.of_id ret_id) astate)
           ~default:astate ret_id
-        |> exp_add_live call_exp
-        |> fun x -> List.fold_right ~f:exp_add_live (List.map ~f:fst params) ~init:x
+        |> exp_add_live call_exp |> add_live_actuals actuals call_exp
     | Sil.Declare_locals _ | Remove_temps _ | Abstract _ | Nullify _ ->
         astate
 
@@ -77,17 +101,26 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     | _ ->
         false
   in
+  let should_report pvar live_vars =
+    not
+      ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
+      || Domain.mem (Var.of_pvar pvar) live_vars || Procdesc.is_captured_var proc_desc pvar )
+  in
+  let log_report pvar loc =
+    let issue_id = IssueType.dead_store.unique_id in
+    let message = F.asprintf "The value written to %a is never used" (Pvar.pp Pp.text) pvar in
+    let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
+    let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
+    Reporting.log_error summary ~loc ~ltr exn
+  in
   let report_dead_store live_vars = function
     | Sil.Store (Lvar pvar, _, rhs_exp, loc)
-      when not
-             ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
-             || Domain.mem (Var.of_pvar pvar) live_vars || Procdesc.is_captured_var proc_desc pvar
-             || is_sentinel_exp rhs_exp ) ->
-        let issue_id = IssueType.dead_store.unique_id in
-        let message = F.asprintf "The value written to %a is never used" (Pvar.pp Pp.text) pvar in
-        let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
-        let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
-        Reporting.log_error summary ~loc ~ltr exn
+      when should_report pvar live_vars && not (is_sentinel_exp rhs_exp) ->
+        log_report pvar loc
+    | Sil.Call
+        (None, Exp.Const Cfun (Typ.Procname.ObjC_Cpp _ as pname), (Exp.Lvar pvar, _) :: _, loc, _)
+      when Typ.Procname.is_constructor pname && should_report pvar live_vars ->
+        log_report pvar loc
     | _ ->
         ()
   in

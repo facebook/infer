@@ -280,4 +280,36 @@ int* sentinel_ptr_ok(int* j) {
   return i;
 }
 
+struct S {
+  ~S() {}
+};
+
+typedef S&& B;
+
+S mk_s() {
+  S s;
+  return s;
+};
+
+// s gets read by the destructor for S
+void dead_struct_value1_bad() { S s = mk_s(); }
+
+// need to handle operator= in order to detect this case
+void FN_dead_struct_value2_bad() {
+  S s = mk_s();
+  s = mk_s();
+}
+
+void dead_struct_rvalue_ref_bad() { B b = mk_s(); }
+
+S struct_value_used_ok() {
+  S s = mk_s();
+  return s;
+}
+
+B& struct_rvalue_ref_used_ok() {
+  B b = mk_s();
+  return b;
+}
+
 }
