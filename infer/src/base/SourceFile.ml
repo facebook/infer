@@ -29,10 +29,9 @@ type t =
 let equal = [%compare.equal : t]
 
 module OrderedSourceFile = struct
-  (* Don't use nonrec due to https://github.com/janestreet/ppx_compare/issues/2 *)
-  type t_ = t [@@deriving compare]
+  type nonrec t = t
 
-  type t = t_ [@@deriving compare]
+  let compare = compare
 end
 
 module Map = Caml.Map.Make (OrderedSourceFile)
@@ -53,10 +52,9 @@ let from_abs_path ?(warn_on_error= true) fname =
     | Some path ->
         RelativeInferModel path
     | None ->
+        (* fname_real is absolute already *)
         Absolute fname_real
 
-
-(* fname_real is absolute already *)
 
 let to_string fname =
   match fname with
@@ -70,7 +68,6 @@ let to_string fname =
 
 let pp fmt fname = Format.fprintf fmt "%s" (to_string fname)
 
-(* Checking if the path exists may be needed only in some cases, hence the flag check_exists *)
 let to_abs_path fname =
   match fname with
   | Invalid origin ->
@@ -137,16 +134,14 @@ let of_header ?(warn_on_error= true) header_file =
   let abs_path = to_abs_path header_file in
   let source_exts = ["c"; "cc"; "cpp"; "cxx"; "m"; "mm"] in
   let header_exts = ["h"; "hh"; "hpp"; "hxx"] in
-  let file_no_ext, ext_opt = Filename.split_extension abs_path in
-  let file_opt =
-    match ext_opt with
-    | Some ext when List.mem ~equal:String.equal header_exts ext ->
-        let possible_files = List.map ~f:(fun ext -> file_no_ext ^ "." ^ ext) source_exts in
-        List.find ~f:path_exists possible_files
-    | _ ->
-        None
-  in
-  Option.map ~f:(from_abs_path ~warn_on_error) file_opt
+  match Filename.split_extension abs_path with
+  | file_no_ext, Some ext when List.mem ~equal:String.equal header_exts ext ->
+      List.find_map source_exts ~f:(fun ext ->
+          let possible_file = file_no_ext ^ "." ^ ext in
+          if path_exists possible_file then Some (from_abs_path ~warn_on_error possible_file)
+          else None )
+  | _ ->
+      None
 
 
 let create ?(warn_on_error= true) path =
@@ -167,7 +162,3 @@ let changed_sources_from_changed_files changed_files =
       | None ->
           changed_files' )
 
-
-module UNSAFE = struct
-  let from_string str = if Filename.is_relative str then RelativeProjectRoot str else Absolute str
-end

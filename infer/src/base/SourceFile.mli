@@ -17,13 +17,6 @@ module Map : Caml.Map.S with type key = t
 (** Set of source files *)
 module Set : Caml.Set.S with type elt = t
 
-module UNSAFE : sig
-  val from_string : string -> t
-  (** Create a SourceFile from any path. This is unchecked and should not be
-      used when the existence of source files is a requirement. Furthermore,
-      absolute paths won't be made relative to project root.*)
-end
-
 val is_invalid : t -> bool
 (** Is the source file the invalid source file? *)
 
@@ -43,11 +36,10 @@ val from_abs_path : ?warn_on_error:bool -> string -> t
     WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for
     the given path (e.g. if it does not exist). *)
 
-(* Create a SourceFile from a given path. If relative, it assumes it is w.r.t. project root.
+val create : ?warn_on_error:bool -> string -> t
+(** Create a SourceFile from a given path. If relative, it assumes it is w.r.t. project root.
    WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for
    the given path (e.g. if it does not exist). *)
-
-val create : ?warn_on_error:bool -> string -> t
 
 val is_cpp_model : t -> bool
 (** Returns true if the file is a C++ model *)
@@ -63,8 +55,8 @@ val line_count : t -> int
 val of_header : ?warn_on_error:bool -> t -> t option
 (** Return approximate source file corresponding to the parameter if it's header file and
     file exists. returns None otherwise.
-    WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for
-    the given SourceFile (e.g. if it does not exist).*)
+  WARNING: If warn_on_error is false, no warning will be shown whenever an error occurs for
+  the given SourceFile (e.g. if it does not exist). *)
 
 val pp : Format.formatter -> t -> unit
 (** pretty print t *)

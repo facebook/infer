@@ -283,17 +283,17 @@ let realpath ?(warn_on_error= true) path =
     | realpath ->
         Hashtbl.add realpath_cache path (Ok realpath) ;
         realpath
-    | exception Unix.Unix_error (code, f, arg) ->
-        if warn_on_error then
-          F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
-            (Unix.Error.message code) ;
-        (* cache failures as well *)
-        Hashtbl.add realpath_cache path (Error (code, f, arg)) ;
-        raise (Unix.Unix_error (code, f, arg)) )
+    | exception (Unix.Unix_error (code, _, arg) as exn) ->
+        reraise_after exn ~f:(fun () ->
+            if warn_on_error then
+              F.eprintf "WARNING: Failed to resolve file %s with \"%s\" @\n@." arg
+                (Unix.Error.message code) ;
+            (* cache failures as well *)
+            Hashtbl.add realpath_cache path (Error exn) ) )
   | Ok path ->
       path
-  | Error (code, f, arg) ->
-      raise (Unix.Unix_error (code, f, arg))
+  | Error exn ->
+      raise exn
 
 
 (* never closed *)
