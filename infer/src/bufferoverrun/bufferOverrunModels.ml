@@ -154,7 +154,7 @@ module Make (CFG : ProcCfg.S) = struct
 
 
   let dispatcher : model ProcnameDispatcher.dispatcher =
-    let open ProcnameDispatcher in
+    let open ProcnameDispatcher.Procname in
     make_dispatcher
       [ -"__inferbo_min" <>$ capt_arg $+ capt_arg $!--> inferbo_min
       ; -"__inferbo_set_size" <>$ capt_arg $+ capt_arg $!--> inferbo_set_size

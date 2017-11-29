@@ -136,8 +136,12 @@ type ('f_in, 'f_out) all_args_matcher =
   { on_objc_cpp: 'f_in -> objc_cpp -> FuncArg.t list -> 'f_out pre_result
   ; on_c: 'f_in -> c -> FuncArg.t list -> 'f_out pre_result }
 
+type 'f typ_matcher = Typ.name -> 'f option
+
 (* they are actually just the same thing *)
 type 'f dispatcher = 'f matcher
+
+type 'f typ_dispatcher = 'f typ_matcher
 
 (* Combinators *)
 
@@ -285,245 +289,377 @@ let args_end
     {on_c; on_objc_cpp}
 
 
-let make_matcher : ('f_in, 'f_out) all_args_matcher -> 'f_in -> 'f_out matcher =
-  fun m f ->
-    let {on_c; on_objc_cpp} : (_, _) all_args_matcher = m in
-    fun procname args ->
-      match procname with
-      | ObjC_Cpp objc_cpp ->
-          on_objc_cpp f objc_cpp args |> pre_to_opt procname args
-      | C c ->
-          on_c f c args |> pre_to_opt procname args
-      | _ ->
-          None
+module type Common = sig
+  (* Template arguments *)
+
+  val any_typ :
+    ('f, 'f, 'captured_types, 'captured_types, 'markers, 'markers, accept_more) template_arg
+  (** Eats a type *)
+
+  val capt_typ :
+    'marker
+    -> ( 'marker mtyp -> 'f
+       , 'f
+       , 'captured_types
+       , 'marker mtyp * 'captured_types
+       , 'markers
+       , 'marker * 'markers
+       , accept_more )
+       template_arg
+  (** Captures a type than can be back-referenced *)
+
+  val capt_int :
+    ( Int64.t -> 'f
+    , 'f
+    , 'captured_types
+    , 'captured_types
+    , 'markers
+    , 'markers
+    , accept_more )
+    template_arg
+  (** Captures an int *)
+
+  val capt_all :
+    ( Typ.template_arg list -> 'f
+    , 'f
+    , 'captured_types
+    , 'captured_types
+    , 'markers
+    , 'markers
+    , end_of_list )
+    template_arg
+  (** Captures all template args *)
+
+  val ( ~- ) : string -> ('f, 'f, unit, 'markers, 'markers) name_matcher
+  (** Starts a path with a name *)
+
+  val ( &+ ) :
+    ( 'f_in
+    , 'f_interm
+    , 'captured_types_in
+    , 'markers_interm
+    , 'markers_out
+    , accept_more )
+    templ_matcher
+    -> ( 'f_interm
+       , 'f_out
+       , 'captured_types_in
+       , 'captured_types_out
+       , 'markers_in
+       , 'markers_interm
+       , 'lc )
+       template_arg
+    -> ('f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher
+  (** Separate template arguments *)
+
+  val ( < ) :
+    ('f_in, 'f_interm, 'captured_types_in, 'markers_interm, 'markers_out) name_matcher
+    -> ( 'f_interm
+       , 'f_out
+       , 'captured_types_in
+       , 'captured_types_out
+       , 'markers_in
+       , 'markers_interm
+       , 'lc )
+       template_arg
+    -> ('f_in, 'f_out, 'captured_types_out, 'markers_in, 'markers_out, 'lc) templ_matcher
+  (** Starts template arguments after a name *)
+
+  val ( >:: ) :
+    ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, _) templ_matcher -> string
+    -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+  (** Ends template arguments and starts a name *)
+
+  val ( &+...>:: ) :
+    ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, accept_more) templ_matcher
+    -> string -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+  (** Ends template arguments with eats-ALL and starts a name *)
+
+  val ( &:: ) :
+    ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher -> string
+    -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+  (** Separates names (accepts ALL template arguments on the left one) *)
+
+  val ( <>:: ) :
+    ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher -> string
+    -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher
+  (** Separates names (accepts NO template arguments on the left one) *)
+end
+
+module Common = struct
+  (* Template arguments *)
+
+  let add_no_marker capture_markers = capture_markers
+
+  (** Eats all template args *)
+  let any_template_args
+      : ('f, 'f, 'captured_types, 'captured_types, 'markers, 'markers, end_of_list) template_arg =
+    let eat_template_arg (f, captured_types, _) = Some (f, captured_types, []) in
+    {eat_template_arg; add_marker= add_no_marker}
 
 
-(** Simple implementation of a dispatcher, could be optimized later *)
-let make_dispatcher : 'f matcher list -> 'f dispatcher =
-  fun matchers procname args -> List.find_map matchers ~f:(fun matcher -> matcher procname args)
-
-
-(* Template arguments *)
-
-let add_no_marker capture_markers = capture_markers
-
-(** Eats all template args *)
-let any_template_args
-    : ('f, 'f, 'captured_types, 'captured_types, 'markers, 'markers, end_of_list) template_arg =
-  let eat_template_arg (f, captured_types, _) = Some (f, captured_types, []) in
-  {eat_template_arg; add_marker= add_no_marker}
-
-
-(** Eats a type *)
-let any_typ
-    : ('f, 'f, 'captured_types, 'captured_types, 'markers, 'markers, accept_more) template_arg =
-  let eat_template_arg (f, captured_types, template_args) =
-    match template_args with (Typ.TType _) :: rest -> Some (f, captured_types, rest) | _ -> None
-  in
-  {eat_template_arg; add_marker= add_no_marker}
-
-
-(** Captures a type than can be back-referenced *)
-let capt_typ
-    : 'marker
-      -> ( 'marker mtyp -> 'f
-         , 'f
-         , 'captured_types
-         , 'marker mtyp * 'captured_types
-         , 'markers
-         , 'marker * 'markers
-         , accept_more )
-         template_arg =
-  fun marker ->
+  (** Eats a type *)
+  let any_typ
+      : ('f, 'f, 'captured_types, 'captured_types, 'markers, 'markers, accept_more) template_arg =
     let eat_template_arg (f, captured_types, template_args) =
       match template_args with
-      | (Typ.TType ty) :: rest ->
-          let captured_types () = (ty, captured_types ()) in
-          Some (f ty, captured_types, rest)
+      | (Typ.TType _) :: rest ->
+          Some (f, captured_types, rest)
       | _ ->
           None
     in
-    let add_marker capture_markers = (marker, capture_markers) in
-    {eat_template_arg; add_marker}
+    {eat_template_arg; add_marker= add_no_marker}
 
 
-(** Captures an int *)
-let capt_int
-    : ( Int64.t -> 'f
-      , 'f
-      , 'captured_types
-      , 'captured_types
-      , 'markers
-      , 'markers
-      , accept_more )
-      template_arg =
-  let eat_template_arg (f, captured_types, template_args) =
-    match template_args with (Typ.TInt i) :: rest -> Some (f i, captured_types, rest) | _ -> None
-  in
-  {eat_template_arg; add_marker= add_no_marker}
+  (** Captures a type than can be back-referenced *)
+  let capt_typ
+      : 'marker
+        -> ( 'marker mtyp -> 'f
+           , 'f
+           , 'captured_types
+           , 'marker mtyp * 'captured_types
+           , 'markers
+           , 'marker * 'markers
+           , accept_more )
+           template_arg =
+    fun marker ->
+      let eat_template_arg (f, captured_types, template_args) =
+        match template_args with
+        | (Typ.TType ty) :: rest ->
+            let captured_types () = (ty, captured_types ()) in
+            Some (f ty, captured_types, rest)
+        | _ ->
+            None
+      in
+      let add_marker capture_markers = (marker, capture_markers) in
+      {eat_template_arg; add_marker}
 
 
-(** Captures all template args *)
-let capt_all
-    : ( Typ.template_arg list -> 'f
-      , 'f
-      , 'captured_types
-      , 'captured_types
-      , 'markers
-      , 'markers
-      , end_of_list )
-      template_arg =
-  let eat_template_arg (f, captured_types, template_args) =
-    Some (f template_args, captured_types, [])
-  in
-  {eat_template_arg; add_marker= add_no_marker}
-
-
-(* Function args *)
-
-let no_checker _ = true
-
-let eat_one_func_arg ~match_if capt (f, args) =
-  match args with arg :: rest when match_if capt arg -> Some (f, rest) | _ -> None
-
-
-(** Eats one arg *)
-let any_arg : ('f, 'f, _, _) func_arg =
-  let eat_func_arg capt = eat_one_func_arg ~match_if:(fun _ _ -> true) capt in
-  {eat_func_arg; marker_static_checker= no_checker}
-
-
-let mk_typ_nth
-    : ('markers -> 'marker) -> ('captured_types -> 'marker mtyp) -> 'marker
-      -> ('f, 'f, 'captured_types, 'markers) func_arg =
-  fun get_m get_c marker ->
-    let marker_static_checker markers = Polymorphic_compare.( = ) marker (get_m markers) in
-    let eat_func_arg =
-      eat_one_func_arg ~match_if:(fun capt func_arg ->
-          Typ.equal (FuncArg.typ func_arg) (get_c capt) )
+  (** Captures an int *)
+  let capt_int
+      : ( Int64.t -> 'f
+        , 'f
+        , 'captured_types
+        , 'captured_types
+        , 'markers
+        , 'markers
+        , accept_more )
+        template_arg =
+    let eat_template_arg (f, captured_types, template_args) =
+      match template_args with
+      | (Typ.TInt i) :: rest ->
+          Some (f i, captured_types, rest)
+      | _ ->
+          None
     in
-    {eat_func_arg; marker_static_checker}
+    {eat_template_arg; add_marker= add_no_marker}
 
 
-(** Matches first captured type *)
-let typ1 : 'marker -> ('f, 'f, 'marker mtyp * _, 'marker * _) func_arg =
-  let pos1 (x, _) = x in
-  fun marker -> mk_typ_nth pos1 pos1 marker
+  (** Captures all template args *)
+  let capt_all
+      : ( Typ.template_arg list -> 'f
+        , 'f
+        , 'captured_types
+        , 'captured_types
+        , 'markers
+        , 'markers
+        , end_of_list )
+        template_arg =
+    let eat_template_arg (f, captured_types, template_args) =
+      Some (f template_args, captured_types, [])
+    in
+    {eat_template_arg; add_marker= add_no_marker}
 
 
-(** Matches second captured type *)
-let typ2 : 'marker -> ('f, 'f, _ * ('marker mtyp * _), _ * ('marker * _)) func_arg =
-  let pos2 (_, (x, _)) = x in
-  fun marker -> mk_typ_nth pos2 pos2 marker
+  let ( <! ) name_matcher () = templ_begin name_matcher
+
+  let ( >! ) templ_matcher () = templ_end templ_matcher
+
+  let ( &::! ) path_matcher name = name_cons path_matcher name
+
+  let ( ~- ) name = empty &::! name
+
+  let ( &+ ) templ_matcher template_arg = templ_cons templ_matcher template_arg
+
+  let ( < ) name_matcher template_arg = name_matcher <! () &+ template_arg
+
+  let ( >:: ) templ_matcher name = templ_matcher >! () &::! name
+
+  let ( &+...>:: ) templ_matcher name = templ_matcher &+ any_template_args >:: name
+
+  let ( &:: ) path_matcher name = path_matcher < any_template_args >:: name
+
+  let ( <>:: ) name_matcher name = name_matcher <! () >:: name
+end
+
+module Procname = struct
+  include Common
+
+  let make_matcher : ('f_in, 'f_out) all_args_matcher -> 'f_in -> 'f_out matcher =
+    fun m f ->
+      let {on_c; on_objc_cpp} : (_, _) all_args_matcher = m in
+      fun procname args ->
+        match procname with
+        | ObjC_Cpp objc_cpp ->
+            on_objc_cpp f objc_cpp args |> pre_to_opt procname args
+        | C c ->
+            on_c f c args |> pre_to_opt procname args
+        | _ ->
+            None
 
 
-(** Matches third captured type *)
-let typ3 : 'marker -> ('f, 'f, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) func_arg =
-  let pos3 (_, (_, (x, _))) = x in
-  fun marker -> mk_typ_nth pos3 pos3 marker
+  (** Simple implementation of a dispatcher, could be optimized later *)
+  let make_dispatcher : 'f matcher list -> 'f dispatcher =
+    fun matchers procname args -> List.find_map matchers ~f:(fun matcher -> matcher procname args)
 
 
-let capt_arg : (FuncArg.t -> 'f, 'f, _, _) func_arg =
-  let eat_func_arg _capt (f, args) =
-    match args with arg :: rest -> Some (f arg, rest) | _ -> None
-  in
-  {eat_func_arg; marker_static_checker= no_checker}
+  (* Function args *)
+
+  let no_checker _ = true
+
+  let eat_one_func_arg ~match_if capt (f, args) =
+    match args with arg :: rest when match_if capt arg -> Some (f, rest) | _ -> None
 
 
-(* Function args end *)
-
-(** Matches if there is no function arguments left *)
-let no_args_left : (_, _, _) func_args_end =
-  let match_empty_args = function Some (f, []) -> Matches f | _ -> DoesNotMatch in
-  fun ~on_args args (f, capt) -> on_args capt (f, args) |> match_empty_args
+  (** Eats one arg *)
+  let any_arg : ('f, 'f, _, _) func_arg =
+    let eat_func_arg capt = eat_one_func_arg ~match_if:(fun _ _ -> true) capt in
+    {eat_func_arg; marker_static_checker= no_checker}
 
 
-(** Matches any function arguments *)
-let any_func_args : (_, _, _) func_args_end =
-  fun ~on_args args (f, capt) -> on_args capt (f, args) |> pre_map_opt ~f:fst
+  let mk_typ_nth
+      : ('markers -> 'marker) -> ('captured_types -> 'marker mtyp) -> 'marker
+        -> ('f, 'f, 'captured_types, 'markers) func_arg =
+    fun get_m get_c marker ->
+      let marker_static_checker markers = Polymorphic_compare.( = ) marker (get_m markers) in
+      let eat_func_arg =
+        eat_one_func_arg ~match_if:(fun capt func_arg ->
+            Typ.equal (FuncArg.typ func_arg) (get_c capt) )
+      in
+      {eat_func_arg; marker_static_checker}
 
 
-(** If [func_args_end1] does not match, use [func_args_end2] *)
-let alternative_args_end
-    : ('f_in, 'f_out, 'captured_types) func_args_end
-      -> ('f_in, 'f_out, 'captured_types) func_args_end
-      -> ('f_in, 'f_out, 'captured_types) func_args_end =
-  fun func_args_end1 func_args_end2 ~on_args args f_capt ->
-    match func_args_end1 ~on_args args f_capt with
-    | DoesNotMatch ->
-        func_args_end2 ~on_args args f_capt
-    | otherwise ->
-        otherwise
+  (** Matches first captured type *)
+  let typ1 : 'marker -> ('f, 'f, 'marker mtyp * _, 'marker * _) func_arg =
+    let pos1 (x, _) = x in
+    fun marker -> mk_typ_nth pos1 pos1 marker
 
 
-(** Retries matching with another matcher *)
-let args_end_retry : _ -> (_, _, _) func_args_end = fun f ~on_args:_ _args _f_capt -> RetryWith f
+  (** Matches second captured type *)
+  let typ2 : 'marker -> ('f, 'f, _ * ('marker mtyp * _), _ * ('marker * _)) func_arg =
+    let pos2 (_, (x, _)) = x in
+    fun marker -> mk_typ_nth pos2 pos2 marker
 
-(** Retries matching with another matcher if the function does not have the
+
+  (** Matches third captured type *)
+  let typ3 : 'marker -> ('f, 'f, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) func_arg =
+    let pos3 (_, (_, (x, _))) = x in
+    fun marker -> mk_typ_nth pos3 pos3 marker
+
+
+  let capt_arg : (FuncArg.t -> 'f, 'f, _, _) func_arg =
+    let eat_func_arg _capt (f, args) =
+      match args with arg :: rest -> Some (f arg, rest) | _ -> None
+    in
+    {eat_func_arg; marker_static_checker= no_checker}
+
+
+  (* Function args end *)
+  (** Matches if there is no function arguments left *)
+  let no_args_left : (_, _, _) func_args_end =
+    let match_empty_args = function Some (f, []) -> Matches f | _ -> DoesNotMatch in
+    fun ~on_args args (f, capt) -> on_args capt (f, args) |> match_empty_args
+
+
+  (** Matches any function arguments *)
+  let any_func_args : (_, _, _) func_args_end =
+    fun ~on_args args (f, capt) -> on_args capt (f, args) |> pre_map_opt ~f:fst
+
+
+  (** If [func_args_end1] does not match, use [func_args_end2] *)
+  let alternative_args_end
+      : ('f_in, 'f_out, 'captured_types) func_args_end
+        -> ('f_in, 'f_out, 'captured_types) func_args_end
+        -> ('f_in, 'f_out, 'captured_types) func_args_end =
+    fun func_args_end1 func_args_end2 ~on_args args f_capt ->
+      match func_args_end1 ~on_args args f_capt with
+      | DoesNotMatch ->
+          func_args_end2 ~on_args args f_capt
+      | otherwise ->
+          otherwise
+
+
+  (** Retries matching with another matcher *)
+  let args_end_retry : _ -> (_, _, _) func_args_end = fun f ~on_args:_ _args _f_capt -> RetryWith f
+
+  (** Retries matching with another matcher if the function does not have the
     exact number/types of args *)
-let exact_args_or_retry : 'f -> (_, _, _) func_args_end =
-  fun f -> alternative_args_end no_args_left (args_end_retry f)
+  let exact_args_or_retry : 'f -> (_, _, _) func_args_end =
+    fun f -> alternative_args_end no_args_left (args_end_retry f)
 
 
-let wrong_args_internal_error procname _args =
-  Logging.(die InternalError)
-    "Unexpected number/types of arguments for %a" Typ.Procname.pp procname
+  let wrong_args_internal_error procname _args =
+    Logging.(die InternalError)
+      "Unexpected number/types of arguments for %a" Typ.Procname.pp procname
 
 
-(* Notation shorthands *)
+  let ( $! ) path_matcher () = args_begin path_matcher
 
-let ( <! ) name_matcher () = templ_begin name_matcher
+  let ( >$! ) templ_matcher () = templ_matcher >! () $! ()
 
-let ( >! ) templ_matcher () = templ_end templ_matcher
+  let ( $*--> ) all_args_matcher f = make_matcher all_args_matcher f
 
-let ( $! ) path_matcher () = args_begin path_matcher
+  let ( $+ ) args_matcher func_arg = args_cons args_matcher func_arg
 
-let ( >$! ) templ_matcher () = templ_matcher >! () $! ()
+  let ( >$ ) templ_matcher func_arg = templ_matcher >$! () $+ func_arg
 
-let ( &::! ) path_matcher name = name_cons path_matcher name
+  let ( $* ) args_matcher func_args_end = args_end args_matcher func_args_end
 
-let ( $*--> ) all_args_matcher f = make_matcher all_args_matcher f
+  let ( $--> ) args_matcher f = args_matcher $* no_args_left $*--> f
 
-let ( ~- ) name = empty &::! name
+  let ( $ ) name_matcher func_arg = name_matcher < any_template_args >$ func_arg
 
-let ( &+ ) templ_matcher template_arg = templ_cons templ_matcher template_arg
+  let ( <>$ ) name_matcher func_arg = name_matcher <! () >$ func_arg
 
-let ( < ) name_matcher template_arg = name_matcher <! () &+ template_arg
+  let ( $+...$--> ) args_matcher f = args_matcher $* any_func_args $*--> f
 
-let ( >:: ) templ_matcher name = templ_matcher >! () &::! name
+  let ( >--> ) templ_matcher f = templ_matcher >$! () $+...$--> f
 
-let ( $+ ) args_matcher func_arg = args_cons args_matcher func_arg
+  let ( >$$--> ) templ_matcher f = templ_matcher >$! () $--> f
 
-let ( >$ ) templ_matcher func_arg = templ_matcher >$! () $+ func_arg
+  let ( $$--> ) name_matcher f = name_matcher < any_template_args >$$--> f
 
-let ( $* ) args_matcher func_args_end = args_end args_matcher func_args_end
+  let ( <>$$--> ) name_matcher f = name_matcher <! () >$$--> f
 
-let ( $--> ) args_matcher f = args_matcher $* no_args_left $*--> f
+  let ( &--> ) name_matcher f = name_matcher < any_template_args >--> f
 
-let ( &+...>:: ) templ_matcher name = templ_matcher &+ any_template_args >:: name
+  let ( <>--> ) name_matcher f = name_matcher <! () >--> f
 
-let ( &:: ) path_matcher name = path_matcher < any_template_args >:: name
+  let ( $!--> ) args_matcher f =
+    args_matcher $* exact_args_or_retry wrong_args_internal_error $*--> f
 
-let ( <>:: ) name_matcher name = name_matcher <! () >:: name
+end
 
-let ( $ ) name_matcher func_arg = name_matcher < any_template_args >$ func_arg
+module TypName = struct
+  include Common
 
-let ( <>$ ) name_matcher func_arg = name_matcher <! () >$ func_arg
+  let make_matcher
+      : ('f_in, 'f_out, _, _, _, non_empty) path_matcher -> 'f_in -> 'f_out typ_matcher =
+    fun m f ->
+      let {on_templated_name} = m in
+      function
+        | name -> name |> templated_name_of_class_name |> on_templated_name f |> Option.map ~f:fst
 
-let ( $+...$--> ) args_matcher f = args_matcher $* any_func_args $*--> f
 
-let ( >--> ) templ_matcher f = templ_matcher >$! () $+...$--> f
+  let make_dispatcher : 'f typ_matcher list -> 'f typ_dispatcher =
+    fun matchers typname -> List.find_map matchers ~f:(fun matcher -> matcher typname)
 
-let ( >$$--> ) templ_matcher f = templ_matcher >$! () $--> f
 
-let ( $$--> ) name_matcher f = name_matcher < any_template_args >$$--> f
+  let ( &-->! ) path_matcher f = make_matcher path_matcher f
 
-let ( <>$$--> ) name_matcher f = name_matcher <! () >$$--> f
+  let ( >--> ) templ_matcher f = templ_matcher >! () &-->! f
 
-let ( &--> ) name_matcher f = name_matcher < any_template_args >--> f
+  let ( <>--> ) name_matcher f = name_matcher <! () >--> f
 
-let ( <>--> ) name_matcher f = name_matcher <! () >--> f
-
-let ( $!--> ) args_matcher f =
-  args_matcher $* exact_args_or_retry wrong_args_internal_error $*--> f
-
+  let ( &--> ) name_matcher f = name_matcher < any_template_args >--> f
+end
