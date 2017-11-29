@@ -2,6 +2,7 @@ ANSITerminal = 0.7
 atd = 1.12.0
 atdgen = 1.12.0
 base = v0.9.3
+base64 = 2.2.0
 bin_prot = v0.9.1
 biniou = 1.2.0
 camlp4 = 4.05+1

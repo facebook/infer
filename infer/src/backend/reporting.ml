@@ -12,12 +12,12 @@ module L = Logging
 
 type log_t =
   ?loc:Location.t -> ?node_id:int * Digest.t -> ?session:int -> ?ltr:Errlog.loc_trace
-  -> ?linters_def_file:string -> ?doc_url:string -> exn -> unit
+  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> exn -> unit
 
 type log_issue_from_errlog = Errlog.t -> log_t
 
 let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
-    exn =
+    ?access exn =
   let issue_type = (Exceptions.recognize_exception exn).name in
   if not Config.filtering (* no-filtering takes priority *) || issue_type.IssueType.enabled then
     let loc = match loc with None -> State.get_loc () | Some loc -> loc in
@@ -32,11 +32,12 @@ let log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_
       match session with None -> (State.get_session () :> int) | Some session -> session
     in
     let ltr = match ltr with None -> State.get_loc_trace () | Some ltr -> ltr in
-    Errlog.log_issue err_kind err_log loc node_id session ltr ?linters_def_file ?doc_url exn
+    Errlog.log_issue err_kind err_log loc node_id session ltr ?linters_def_file ?doc_url ?access
+      exn
 
 
 let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
-    exn =
+    ?access exn =
   let is_generated_method = Typ.Procname.java_is_generated (Specs.get_proc_name summary) in
   let should_suppress_lint =
     Config.curr_language_is Config.Java
@@ -47,15 +48,15 @@ let log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters
   else
     let err_log = Specs.get_err_log summary in
     log_issue_from_errlog err_kind err_log ?loc ?node_id ?session ?ltr ?linters_def_file ?doc_url
-      exn
+      ?access exn
 
 
 let log_issue_deprecated ?(store_summary= false) err_kind proc_name ?loc ?node_id ?session ?ltr
-    ?linters_def_file ?doc_url exn =
+    ?linters_def_file ?doc_url ?access exn =
   match Specs.get_summary proc_name with
   | Some summary ->
       log_issue_from_summary err_kind summary ?loc ?node_id ?session ?ltr ?linters_def_file
-        ?doc_url exn ;
+        ?doc_url ?access exn ;
       if store_summary then
         (* TODO (#16348004): This is currently needed as ThreadSafety works as a cluster checker *)
         Specs.store_summary summary
@@ -87,3 +88,4 @@ let log_warning_deprecated ?(store_summary= false) =
 
 let log_info_deprecated ?(store_summary= false) =
   log_issue_deprecated ~store_summary Exceptions.Kinfo
+

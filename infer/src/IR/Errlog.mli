@@ -56,8 +56,8 @@ type err_data = private
   ; err_class: Exceptions.err_class
   ; visibility: Exceptions.visibility
   ; linters_def_file: string option
-  ; doc_url: string option
-  (* url to documentation of the issue type *) }
+  ; doc_url: string option  (** url to documentation of the issue type *)
+  ; access: string option }
 
 (** Type of the error log *)
 type t [@@deriving compare]
@@ -94,7 +94,7 @@ val update : t -> t -> unit
 
 val log_issue :
   Exceptions.err_kind -> t -> Location.t -> int * Digest.t -> int -> loc_trace
-  -> ?linters_def_file:string -> ?doc_url:string -> exn -> unit
+  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> exn -> unit
 
 (** {2 Functions for manipulating per-file error tables} *)
 

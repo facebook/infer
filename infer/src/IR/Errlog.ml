@@ -85,7 +85,8 @@ type err_data =
   ; err_class: Exceptions.err_class
   ; visibility: Exceptions.visibility
   ; linters_def_file: string option
-  ; doc_url: string option }
+  ; doc_url: string option
+  ; access: string option }
 
 let compare_err_data err_data1 err_data2 = Location.compare err_data1.loc err_data2.loc
 
@@ -233,7 +234,8 @@ let update errlog_old errlog_new =
   ErrLogHash.iter (fun err_key l -> ignore (add_issue errlog_old err_key l)) errlog_new
 
 
-let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_file ?doc_url exn =
+let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_file ?doc_url
+    ?access exn =
   let error = Exceptions.recognize_exception exn in
   let err_kind = match error.kind with Some err_kind -> err_kind | _ -> err_kind in
   let hide_java_loc_zero =
@@ -265,7 +267,8 @@ let log_issue err_kind err_log loc (node_id, node_key) session ltr ?linters_def_
         ; err_class= error.category
         ; visibility= error.visibility
         ; linters_def_file
-        ; doc_url }
+        ; doc_url
+        ; access }
       in
       let err_key =
         { err_kind

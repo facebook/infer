@@ -81,8 +81,8 @@ val mk_find_duplicate_nodes : Procdesc.t -> Procdesc.Node.t -> Procdesc.NodeSet.
 
 type log_issue =
   ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * Digest.t
-  -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> exn
-  -> unit
+  -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string
+  -> ?access:string -> exn -> unit
 
 val process_execution_failures : log_issue -> Typ.Procname.t -> unit
 (** Process the failures during symbolic execution of a procedure *)

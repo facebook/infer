@@ -37,7 +37,8 @@ let create_fake_jsonbug ?(bug_class= "bug_class") ?(kind= "kind") ?(bug_type= "b
   ; linters_def_file
   ; doc_url
   ; traceview_id= None
-  ; censored_reason= "" }
+  ; censored_reason= ""
+  ; access= None }
 
 
 let pp_diff_of_list ~pp group_name fmt (expected, actual) =

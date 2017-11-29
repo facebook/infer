@@ -13,7 +13,7 @@ open! IStd
 
 type log_t =
   ?loc:Location.t -> ?node_id:int * Digest.t -> ?session:int -> ?ltr:Errlog.loc_trace
-  -> ?linters_def_file:string -> ?doc_url:string -> exn -> unit
+  -> ?linters_def_file:string -> ?doc_url:string -> ?access:string -> exn -> unit
 
 type log_issue_from_errlog = Errlog.t -> log_t
 

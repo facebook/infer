@@ -9,6 +9,77 @@
 
 open! IStd
 
+(** type for remembering what we have already reported to avoid duplicates. our policy is to report
+    each kind of access (read/write) to the same field reachable from the same procedure only once.
+    in addition, if a call to a procedure (transitively) accesses multiple fields, we will only
+    report one of each kind of access *)
+type reported =
+  { reported_sites: CallSite.Set.t
+  ; reported_writes: Typ.Procname.Set.t
+  ; reported_reads: Typ.Procname.Set.t }
+
+let empty_reported =
+  let reported_sites = CallSite.Set.empty in
+  let reported_writes = Typ.Procname.Set.empty in
+  let reported_reads = Typ.Procname.Set.empty in
+  {reported_sites; reported_reads; reported_writes}
+
+
+module Access = struct
+  type t = Typ.Procname.t * RacerDDomain.TraceElem.t [@@deriving compare]
+end
+
+(** map from accesses to reported sets for remembering what has been reported for each access *)
+module AccessMap = Caml.Map.Make (Access)
+
+let is_duplicate_report (pname, access) {reported_sites; reported_writes; reported_reads} =
+  let open RacerDDomain in
+  if Config.filtering then CallSite.Set.mem (TraceElem.call_site access) reported_sites
+    ||
+    match TraceElem.kind access with
+    | Access.Write _ | Access.ContainerWrite _ ->
+        Typ.Procname.Set.mem pname reported_writes
+    | Access.Read _ | Access.ContainerRead _ ->
+        Typ.Procname.Set.mem pname reported_reads
+    | Access.InterfaceCall _ ->
+        false
+  else false
+
+
+let update_reported (pname, access) reported =
+  let open RacerDDomain in
+  if Config.filtering then
+    let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
+    match TraceElem.kind access with
+    | Access.Write _ | Access.ContainerWrite _ ->
+        let reported_writes = Typ.Procname.Set.add pname reported.reported_writes in
+        {reported with reported_writes; reported_sites}
+    | Access.Read _ | Access.ContainerRead _ ->
+        let reported_reads = Typ.Procname.Set.add pname reported.reported_reads in
+        {reported with reported_reads; reported_sites}
+    | Access.InterfaceCall _ ->
+        reported
+  else reported
+
+
+let dedup (issues: Jsonbug_t.jsonbug list) =
+  List.fold issues ~init:(AccessMap.empty, []) ~f:
+    (fun (reported_map, nondup_issues) (issue: Jsonbug_t.jsonbug) ->
+      match issue.access with
+      | Some access_serial ->
+          let access : Access.t = Marshal.from_string (B64.decode access_serial) 0 in
+          let reported =
+            Option.value (AccessMap.find_opt access reported_map) ~default:empty_reported
+          in
+          if is_duplicate_report access reported then (reported_map, nondup_issues)
+          else
+            ( AccessMap.add access (update_reported access reported) reported_map
+            , {issue with access= None} :: nondup_issues )
+      | None ->
+          (reported_map, {issue with access= None} :: nondup_issues) )
+  |> snd
+
+
 type t = {introduced: Jsonbug_t.report; fixed: Jsonbug_t.report; preexisting: Jsonbug_t.report}
 
 (** Set operations should keep duplicated issues with identical hashes *)
@@ -30,7 +101,7 @@ let of_reports ~(current_report: Jsonbug_t.report) ~(previous_report: Jsonbug_t.
   let introduced, preexisting, fixed =
     Map.fold2 (to_map current_report) (to_map previous_report) ~f:fold_aux ~init:([], [], [])
   in
-  {introduced; fixed; preexisting}
+  {introduced= dedup introduced; fixed= dedup fixed; preexisting= dedup preexisting}
 
 
 let to_files {introduced; fixed; preexisting} destdir =

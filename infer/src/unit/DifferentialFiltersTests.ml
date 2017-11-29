@@ -184,7 +184,7 @@ let test_skip_duplicated_types_on_filenames =
       (sorted_hashes_of_issues diff'.fixed) ;
     assert_equal
       ~pp_diff:(pp_diff_of_string_list "Hashes of preexisting")
-      ["111"; "22"; "222"; "55"]
+      ["11"; "22"; "222"; "55"]
       (sorted_hashes_of_issues diff'.preexisting)
   in
   "test_skip_duplicated_types_on_filenames" >:: do_assert

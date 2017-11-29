@@ -321,8 +321,8 @@ let mark_instr_fail exn =
 
 type log_issue =
   ?store_summary:bool -> Typ.Procname.t -> ?loc:Location.t -> ?node_id:int * Digest.t
-  -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string -> exn
-  -> unit
+  -> ?session:int -> ?ltr:Errlog.loc_trace -> ?linters_def_file:string -> ?doc_url:string
+  -> ?access:string -> exn -> unit
 
 let process_execution_failures (log_issue: log_issue) pname =
   let do_failure _ fs =

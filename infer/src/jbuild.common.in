@@ -55,6 +55,7 @@ let common_libraries =
   @ [ "ANSITerminal"
     ; "atdgen"
     ; "base"
+    ; "base64"
     ; "cmdliner"
     ; "core"
     ; "extlib"
