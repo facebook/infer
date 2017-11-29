@@ -137,6 +137,7 @@ type payload =
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.astate option
   ; racerd: RacerDDomain.summary option
+  ; should_update: ShouldUpdateDomain.astate option
   ; buffer_overrun: BufferOverrunDomain.Summary.t option
   ; uninit: UninitDomain.summary option }
 

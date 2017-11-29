@@ -89,6 +89,9 @@ let all_checkers =
                interprocedural later on *)
             Procedure ResourceLeaks.checker
           , Config.Java ) ] }
+  ; { name= "should update"
+    ; active= Config.should_update
+    ; callbacks= [(Procedure ShouldUpdate.checker, Config.Java)] }
   ; {name= "SIOF"; active= Config.siof; callbacks= [(Procedure Siof.checker, Config.Clang)]}
   ; { name= "uninitialized variables"
     ; active= Config.uninit

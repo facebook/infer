@@ -352,6 +352,7 @@ type payload =
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.astate option
   ; racerd: RacerDDomain.summary option
+  ; should_update: ShouldUpdateDomain.astate option
   ; buffer_overrun: BufferOverrunDomain.Summary.t option
   ; uninit: UninitDomain.summary option }
 
@@ -722,6 +723,7 @@ let empty_payload =
   ; resources= None
   ; siof= None
   ; racerd= None
+  ; should_update= None
   ; buffer_overrun= None
   ; uninit= None }
 

@@ -612,6 +612,8 @@ val seconds_per_iteration : float option
 
 val select : int option
 
+val should_update : bool
+
 val show_buckets : bool
 
 val show_progress_bar : bool
