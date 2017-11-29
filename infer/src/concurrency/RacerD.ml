@@ -180,6 +180,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let add_access exp loc ~is_write_access accesses locks threads ownership
       (proc_data: extras ProcData.t) =
     let open Domain in
+    let is_static_access = function
+      | Var.ProgramVar pvar ->
+          Pvar.is_static_local pvar
+      | _ ->
+          false
+    in
     (* we don't want to warn on accesses to the field if it is (a) thread-confined, or
        (b) volatile *)
     let is_safe_access access prefix_path tenv =
@@ -196,48 +202,39 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | _ ->
           false
     in
-    let is_static_access ((base: Var.t), _) =
-      match base with ProgramVar pvar -> Pvar.is_static_local pvar | _ -> false
-    in
-    let rec add_field_accesses pre prefix_path access_acc = function
+    let rec add_field_accesses prefix_path access_acc = function
       | [] ->
           access_acc
-      | access :: access_list' ->
-          let is_write = if List.is_empty access_list' then is_write_access else false in
-          let access_path = (fst prefix_path, snd prefix_path @ [access]) in
-          let access_acc' =
-            if OwnershipDomain.is_owned prefix_path ownership
-               || is_safe_access access prefix_path proc_data.tenv
-            then access_acc
-            else
+      | access :: access_list ->
+          let prefix_path' = (fst prefix_path, snd prefix_path @ [access]) in
+          let add_field_access pre =
+            let is_write = if List.is_empty access_list then is_write_access else false in
+            let access_acc' =
               AccessDomain.add_access pre
-                (TraceElem.make_field_access access_path ~is_write loc)
+                (TraceElem.make_field_access prefix_path' ~is_write loc)
                 access_acc
+            in
+            add_field_accesses prefix_path' access_acc' access_list
           in
-          add_field_accesses pre access_path access_acc' access_list'
+          if is_safe_access access prefix_path proc_data.tenv then
+            add_field_accesses prefix_path' access_acc access_list
+          else
+            match AccessPrecondition.make_protected locks threads proc_data.pdesc with
+            | AccessPrecondition.Protected _ as excluder ->
+                add_field_access excluder
+            | _ ->
+              match OwnershipDomain.get_owned prefix_path ownership with
+              | OwnershipAbstractValue.OwnedIf formal_indexes ->
+                  add_field_access (AccessPrecondition.make_unprotected formal_indexes)
+              | OwnershipAbstractValue.Owned ->
+                  add_field_accesses prefix_path' access_acc access_list
+              | OwnershipAbstractValue.Unowned ->
+                  add_field_access AccessPrecondition.totally_unprotected
     in
-    let add_access_ acc (base, accesses) =
-      let base_access_path = (base, []) in
-      if List.is_empty accesses || OwnershipDomain.is_owned base_access_path ownership
-         || is_static_access base
-      then acc
-      else
-        let pre =
-          match AccessPrecondition.make_protected locks threads proc_data.pdesc with
-          | AccessPrecondition.Protected _ as excluder ->
-              excluder
-          | _ ->
-            match OwnershipDomain.get_owned base_access_path ownership with
-            | OwnershipAbstractValue.OwnedIf formal_indexes ->
-                AccessPrecondition.make_unprotected formal_indexes
-            | OwnershipAbstractValue.Owned ->
-                assert false
-            | OwnershipAbstractValue.Unowned ->
-                AccessPrecondition.totally_unprotected
-        in
-        add_field_accesses pre base_access_path acc accesses
-    in
-    List.fold ~f:add_access_ ~init:accesses (HilExp.get_access_paths exp)
+    List.fold
+      ~f:(fun acc (base, accesses) ->
+        if is_static_access (fst base) then acc else add_field_accesses (base, []) acc accesses)
+      ~init:accesses (HilExp.get_access_paths exp)
 
 
   let is_functional pname =
@@ -1720,3 +1717,4 @@ let file_analysis {Callbacks.procedures} =
            else (module MayAliasQuotientedAccessListMap) )
            class_env))
     (aggregate_by_class procedures)
+
