@@ -32,51 +32,19 @@ end)
 module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = Dom.Mem
-  module Models = BufferOverrunModels.Make (CFG)
-  module Sem = Models.Sem
+  module BoUtils = BufferOverrunUtils.Make (CFG)
+  module Sem = BoUtils.Sem
+  module Models = BufferOverrunModels.Make (BoUtils)
 
   type extras = Typ.Procname.t -> Procdesc.t option
-
-  let rec declare_array
-      : Typ.Procname.t -> CFG.node -> Location.t -> Loc.t -> Typ.t -> length:IntLit.t option
-        -> ?stride:int -> inst_num:int -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate =
-    fun pname node location loc typ ~length ?stride ~inst_num ~dimension mem ->
-      let size = Option.value_map ~default:Itv.top ~f:Itv.of_int_lit length in
-      let arr =
-        Sem.eval_array_alloc pname node typ Itv.zero size ?stride inst_num dimension
-        |> Dom.Val.add_trace_elem (Trace.ArrDecl location)
-      in
-      let mem =
-        if Int.equal dimension 1 then Dom.Mem.add_stack loc arr mem
-        else Dom.Mem.add_heap loc arr mem
-      in
-      match typ.Typ.desc with
-      | Typ.Tarray (typ, length, stride) ->
-          let loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num dimension) in
-          declare_array pname node location loc typ ~length
-            ?stride:(Option.map ~f:IntLit.to_int stride)
-            ~inst_num ~dimension:(dimension + 1) mem
-      | _ ->
-          mem
-
-
-  let counter_gen init =
-    let num_ref = ref init in
-    let get_num () =
-      let v = !num_ref in
-      num_ref := v + 1 ;
-      v
-    in
-    get_num
-
 
   let declare_symbolic_val
       : Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> Loc.t -> Typ.typ -> inst_num:int
         -> new_sym_num:(unit -> int) -> Domain.t -> Domain.t =
     fun pname tenv node location loc typ ~inst_num ~new_sym_num mem ->
       let max_depth = 2 in
-      let new_alloc_num = counter_gen 1 in
-      let rec decl_sym_val ~depth loc typ mem =
+      let new_alloc_num = BoUtils.counter_gen 1 in
+      let rec decl_sym_val pname tenv node location ~depth loc typ mem =
         if depth > max_depth then mem
         else
           let depth = depth + 1 in
@@ -95,15 +63,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               in
               Dom.Mem.add_heap loc v mem
           | Typ.Tptr (typ, _) ->
-              decl_sym_arr ~depth loc location typ mem
+              BoUtils.Exec.decl_sym_arr ~decl_sym_val pname tenv node location ~depth loc typ
+                ~inst_num ~new_sym_num ~new_alloc_num mem
           | Typ.Tarray (typ, opt_int_lit, _) ->
-              let opt_size = Option.map ~f:Itv.of_int_lit opt_int_lit in
-              let opt_offset = Some Itv.zero in
-              decl_sym_arr ~depth loc location typ ~opt_offset ~opt_size mem
+              let size = Option.map ~f:Itv.of_int_lit opt_int_lit in
+              let offset = Itv.zero in
+              BoUtils.Exec.decl_sym_arr ~decl_sym_val pname tenv node location ~depth loc typ
+                ~offset ?size ~inst_num ~new_sym_num ~new_alloc_num mem
           | Typ.Tstruct typename ->
               let decl_fld mem (fn, typ, _) =
                 let loc_fld = Loc.append_field loc fn in
-                decl_sym_val ~depth loc_fld typ mem
+                decl_sym_val pname tenv node location ~depth loc_fld typ mem
               in
               let decl_flds str = List.fold ~f:decl_fld ~init:mem str.Typ.Struct.fields in
               let opt_struct = Tenv.lookup tenv typename in
@@ -114,29 +84,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   "/!\\ decl_fld of unhandled type: %a at %a@." (Typ.pp Pp.text) typ Location.pp
                   (CFG.loc node) ;
               mem
-      and decl_sym_arr ~depth loc location typ ?(opt_offset= None) ?(opt_size= None) mem =
-        let option_value opt_x default_f = match opt_x with Some x -> x | None -> default_f () in
-        let itv_make_sym () = Itv.make_sym pname new_sym_num in
-        let offset = option_value opt_offset itv_make_sym in
-        let size = option_value opt_size itv_make_sym in
-        let alloc_num = new_alloc_num () in
-        let elem = Trace.SymAssign location in
-        let arr =
-          Sem.eval_array_alloc pname node typ offset size inst_num alloc_num
-          |> Dom.Val.add_trace_elem elem
-        in
-        let mem = Dom.Mem.add_heap loc arr mem in
-        let deref_loc = Loc.of_allocsite (Sem.get_allocsite pname node inst_num alloc_num) in
-        decl_sym_val ~depth deref_loc typ mem
       in
-      decl_sym_val ~depth:0 loc typ mem
+      decl_sym_val pname tenv node location ~depth:0 loc typ mem
 
 
-  let declare_symbolic_parameter
-      : Procdesc.t -> Tenv.t -> CFG.node -> Location.t -> int -> Dom.Mem.astate -> Dom.Mem.astate =
-    fun pdesc tenv node location inst_num mem ->
-      let pname = Procdesc.get_proc_name pdesc in
-      let new_sym_num = counter_gen 0 in
+  let declare_symbolic_parameters
+      : Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t -> inst_num:int -> (Pvar.t * Typ.t) list
+        -> Dom.Mem.astate -> Dom.Mem.astate =
+    fun pname tenv node location ~inst_num formals mem ->
+      let new_sym_num = BoUtils.counter_gen 0 in
       let add_formal (mem, inst_num) (pvar, typ) =
         let loc = Loc.of_pvar pvar in
         let mem =
@@ -144,7 +100,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         (mem, inst_num + 1)
       in
-      List.fold ~f:add_formal ~init:(mem, inst_num) (Sem.get_formals pdesc) |> fst
+      List.fold ~f:add_formal ~init:(mem, inst_num) formals |> fst
 
 
   let instantiate_ret ret callee_pname callee_exit_mem subst_map mem ret_alias location =
@@ -235,15 +191,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       let pname = Procdesc.get_proc_name pdesc in
       let output_mem =
         match instr with
+        | Load (id, _, _, _) when Ident.is_none id ->
+            mem
         | Load (id, exp, _, _) ->
-            let locs = Sem.eval exp mem |> Dom.Val.get_all_locs in
-            let v = Dom.Mem.find_heap_set locs mem in
-            if Ident.is_none id then mem
-            else
-              let mem = Dom.Mem.add_stack (Loc.of_var (Var.of_id id)) v mem in
-              if PowLoc.is_singleton locs then
-                Dom.Mem.load_simple_alias id (PowLoc.min_elt locs) mem
-              else mem
+            BoUtils.Exec.load_val id (Sem.eval exp mem) mem
         | Store (exp1, _, exp2, location) ->
             let locs = Sem.eval exp1 mem |> Dom.Val.get_all_locs in
             let v = Sem.eval exp2 mem |> Dom.Val.add_trace_elem (Trace.Assign location) in
@@ -280,21 +231,22 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 |> Dom.Mem.add_heap Loc.unknown Dom.Val.unknown )
         | Declare_locals (locals, location) ->
             (* array allocation in stack e.g., int arr[10] *)
-            let try_decl_arr location (mem, inst_num) (pvar, typ) =
+            let rec decl_local pname node location loc typ ~inst_num ~dimension mem =
               match typ.Typ.desc with
               | Typ.Tarray (typ, length, stride0) ->
-                  let loc = Loc.of_pvar pvar in
                   let stride = Option.map ~f:IntLit.to_int stride0 in
-                  let mem =
-                    declare_array pname node location loc typ ~length ?stride ~inst_num
-                      ~dimension:1 mem
-                  in
-                  (mem, inst_num + 1)
+                  BoUtils.Exec.decl_local_array ~decl_local pname node location loc typ ~length
+                    ?stride ~inst_num ~dimension mem
               | _ ->
                   (mem, inst_num)
             in
-            let mem, inst_num = List.fold ~f:(try_decl_arr location) ~init:(mem, 1) locals in
-            declare_symbolic_parameter pdesc tenv node location inst_num mem
+            let try_decl_local (mem, inst_num) (pvar, typ) =
+              let loc = Loc.of_pvar pvar in
+              decl_local pname node location loc typ ~inst_num ~dimension:1 mem
+            in
+            let mem, inst_num = List.fold ~f:try_decl_local ~init:(mem, 1) locals in
+            let formals = Sem.get_formals pdesc in
+            declare_symbolic_parameters pname tenv node location ~inst_num formals mem
         | Call (_, fun_exp, _, location, _) ->
             let () =
               L.(debug BufferOverrun Verbose)
@@ -313,12 +265,13 @@ end
 
 module Analyzer = AbstractInterpreter.Make (ProcCfg.Normal) (TransferFunctions)
 module CFG = Analyzer.TransferFunctions.CFG
-module Sem = BufferOverrunSemantics.Make (CFG)
 
 module Report = struct
   (* I'd like to avoid rebuilding this :(
     Everything depend on CFG only because of `get_allocsite` *)
-  module Models = BufferOverrunModels.Make (CFG)
+  module BoUtils = BufferOverrunUtils.Make (CFG)
+  module Sem = BoUtils.Sem
+  module Models = BufferOverrunModels.Make (BoUtils)
 
   type extras = Typ.Procname.t -> Procdesc.t option
 
@@ -326,51 +279,26 @@ module Report = struct
       : Typ.Procname.t -> Exp.t -> Location.t -> Dom.Mem.astate -> PO.ConditionSet.t
         -> PO.ConditionSet.t =
     fun pname exp location mem cond_set ->
-      let array_access =
-        match exp with
-        | Exp.Var _ ->
-            let v = Sem.eval exp mem in
-            let arr = Dom.Val.get_array_blk v in
-            let arr_traces = Dom.Val.get_traces v in
-            Some (arr, arr_traces, Itv.zero, TraceSet.empty, true)
-        | Exp.Lindex (e1, e2) ->
-            let locs = Sem.eval_locs e1 mem |> Dom.Val.get_all_locs in
-            let v_arr = Dom.Mem.find_set locs mem in
-            let arr = Dom.Val.get_array_blk v_arr in
-            let arr_traces = Dom.Val.get_traces v_arr in
-            let v_idx = Sem.eval e2 mem in
-            let idx = Dom.Val.get_itv v_idx in
-            let idx_traces = Dom.Val.get_traces v_idx in
-            Some (arr, arr_traces, idx, idx_traces, true)
-        | Exp.BinOp ((Binop.PlusA as bop), e1, e2) | Exp.BinOp ((Binop.MinusA as bop), e1, e2) ->
-            let v_arr = Sem.eval e1 mem in
-            let arr = Dom.Val.get_array_blk v_arr in
-            let arr_traces = Dom.Val.get_traces v_arr in
-            let v_idx = Sem.eval e2 mem in
-            let idx = Dom.Val.get_itv v_idx in
-            let idx_traces = Dom.Val.get_traces v_idx in
-            let is_plus = Binop.equal bop Binop.PlusA in
-            Some (arr, arr_traces, idx, idx_traces, is_plus)
-        | _ ->
-            None
-      in
-      match array_access with
-      | Some (arr, traces_arr, idx, traces_idx, is_plus)
-        -> (
-          let size = ArrayBlk.sizeof arr in
-          let offset = ArrayBlk.offsetof arr in
-          let idx = (if is_plus then Itv.plus else Itv.minus) offset idx in
-          L.(debug BufferOverrun Verbose) "@[<v 2>Add condition :@," ;
-          L.(debug BufferOverrun Verbose) "array: %a@," ArrayBlk.pp arr ;
-          L.(debug BufferOverrun Verbose) "  idx: %a@," Itv.pp idx ;
-          L.(debug BufferOverrun Verbose) "@]@." ;
-          match (size, idx) with
-          | NonBottom size, NonBottom idx ->
-              let traces = TraceSet.merge ~traces_arr ~traces_idx location in
-              PO.ConditionSet.add_array_access pname location ~size ~idx traces cond_set
-          | _ ->
-              cond_set )
-      | None ->
+      match exp with
+      | Exp.Var _ ->
+          let v = Sem.eval exp mem in
+          let arr = Dom.Val.get_array_blk v in
+          let arr_traces = Dom.Val.get_traces v in
+          BoUtils.Check.array_access ~arr ~arr_traces ~idx:Itv.zero ~idx_traces:TraceSet.empty
+            ~is_plus:true pname location cond_set
+      | Exp.Lindex (array_exp, index_exp) ->
+          BoUtils.Check.lindex ~array_exp ~index_exp mem pname location cond_set
+      | Exp.BinOp ((Binop.PlusA as bop), e1, e2) | Exp.BinOp ((Binop.MinusA as bop), e1, e2) ->
+          let v_arr = Sem.eval e1 mem in
+          let arr = Dom.Val.get_array_blk v_arr in
+          let arr_traces = Dom.Val.get_traces v_arr in
+          let v_idx = Sem.eval e2 mem in
+          let idx = Dom.Val.get_itv v_idx in
+          let idx_traces = Dom.Val.get_traces v_idx in
+          let is_plus = Binop.equal bop Binop.PlusA in
+          BoUtils.Check.array_access ~arr ~arr_traces ~idx ~idx_traces ~is_plus pname location
+            cond_set
+      | _ ->
           cond_set
 
 

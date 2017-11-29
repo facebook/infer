@@ -16,8 +16,9 @@ module PO = BufferOverrunProofObligations
 module Trace = BufferOverrunTrace
 module TraceSet = Trace.Set
 
-module Make (CFG : ProcCfg.S) = struct
-  module Sem = BufferOverrunSemantics.Make (CFG)
+module Make (BoUtils : BufferOverrunUtils.S) = struct
+  module CFG = BoUtils.CFG
+  module Sem = BoUtils.Sem
 
   type exec_fun =
     Typ.Procname.t -> (Ident.t * Typ.t) option -> CFG.node -> Location.t -> Dom.Mem.astate

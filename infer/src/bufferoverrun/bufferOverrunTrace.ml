@@ -95,19 +95,19 @@ module Set = struct
         traces_callee empty
 
 
-  let merge ~traces_arr ~traces_idx location =
-    if is_empty traces_idx then
-      map (fun trace_arr -> BoTrace.add_elem (BoTrace.ArrAccess location) trace_arr) traces_arr
+  let merge ~arr_traces ~idx_traces location =
+    if is_empty idx_traces then
+      map (fun arr_traces -> BoTrace.add_elem (BoTrace.ArrAccess location) arr_traces) arr_traces
     else
       fold
-        (fun trace_idx traces ->
+        (fun idx_traces traces ->
           fold
-            (fun trace_arr traces ->
-              let new_trace_idx = BoTrace.add_elem (BoTrace.ArrAccess location) trace_idx in
-              let new_trace = BoTrace.append new_trace_idx trace_arr in
+            (fun arr_traces traces ->
+              let new_trace_idx = BoTrace.add_elem (BoTrace.ArrAccess location) idx_traces in
+              let new_trace = BoTrace.append new_trace_idx arr_traces in
               add new_trace traces)
-            traces_arr traces)
-        traces_idx empty
+            arr_traces traces)
+        idx_traces empty
 
 end
 
