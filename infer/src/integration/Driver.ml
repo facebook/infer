@@ -539,8 +539,7 @@ let mode_from_command_line =
 
 let run_prologue mode =
   if CLOpt.is_originator then L.environment_info "%a@\n" Config.pp_version () ;
-  if Config.debug_mode || Config.stats_mode then
-    L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
+  if Config.debug_mode then L.environment_info "Driver mode:@\n%a@." pp_mode mode ;
   if Config.dump_duplicate_symbols then reset_duplicates_file () ;
   (* infer might be called from a Makefile and itself uses `make` to run the analysis in parallel,
      but cannot communicate with the parent make command. Since infer won't interfere with them
@@ -575,3 +574,4 @@ let read_config_changed_files () =
     | Error error ->
         L.external_error "Error reading the changed files index '%s': %s@." index error ;
         None
+

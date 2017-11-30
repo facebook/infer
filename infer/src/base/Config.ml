@@ -999,7 +999,6 @@ and ( bo_debug
     , print_logs
     , print_types
     , reports_include_ml_loc
-    , stats
     , trace_error
     , write_html
     , write_html_whitelist_regex
@@ -1061,7 +1060,8 @@ and ( bo_debug
     debug_level_linters := level
   in
   let debug =
-    CLOpt.mk_bool_group ~deprecated:["debug"] ~long:"debug" ~short:'g' ~in_help:all_generic_manuals
+    CLOpt.mk_bool_group ~deprecated:["debug"; "-stats"] ~long:"debug" ~short:'g'
+      ~in_help:all_generic_manuals
       "Debug mode (also sets $(b,--debug-level 2), $(b,--developer-mode), $(b,--no-filtering), $(b,--print-buckets), $(b,--print-types), $(b,--reports-include-ml-loc), $(b,--no-only-cheap-debug), $(b,--trace-error), $(b,--write-dotty), $(b,--write-html))"
       ~f:(fun debug ->
         if debug then set_debug_level 2 else set_debug_level 0 ;
@@ -1104,10 +1104,6 @@ and ( bo_debug
           ; (Run, manual_generic)
           ; (Report, manual_generic) ])
       "Also log messages to stdout and stderr"
-  and stats =
-    CLOpt.mk_bool ~deprecated:["stats"] ~long:"stats" "Stats mode (debugging)" ~f:(fun stats ->
-        if stats then set_debug_level 1 else set_debug_level 0 ;
-        stats )
   in
   let linters_developer_mode =
     CLOpt.mk_bool_group ~long:"linters-developer-mode"
@@ -1136,7 +1132,6 @@ and ( bo_debug
   , print_logs
   , print_types
   , reports_include_ml_loc
-  , stats
   , trace_error
   , write_html
   , write_html_whitelist_regex
@@ -2654,8 +2649,6 @@ and sqlite_vfs = !sqlite_vfs
 and stacktrace = !stacktrace
 
 and stacktraces_dir = !stacktraces_dir
-
-and stats_mode = !stats
 
 and stats_report = !stats_report
 

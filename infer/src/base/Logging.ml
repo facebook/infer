@@ -191,7 +191,7 @@ let progressbar_file () = progress_bar Config.log_analysis_file
 let progressbar_procedure () = progress_bar Config.log_analysis_procedure
 
 let progressbar_timeout_event failure_kind =
-  if Config.stats_mode || Config.debug_mode then
+  if Config.debug_mode then
     match failure_kind with
     | SymOp.FKtimeout ->
         progress_bar Config.log_analysis_wallclock_timeout

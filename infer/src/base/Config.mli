@@ -642,8 +642,6 @@ val stacktrace : string option
 
 val stacktraces_dir : string option
 
-val stats_mode : bool
-
 val stats_report : string option
 
 val subtype_multirange : bool

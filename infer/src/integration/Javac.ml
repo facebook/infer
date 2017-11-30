@@ -84,5 +84,4 @@ let compile compiler build_prog build_args =
 let capture compiler ~prog ~args =
   let verbose_out_file = compile compiler prog args in
   if Config.analyzer <> Config.CompileOnly then JMain.from_verbose_out verbose_out_file ;
-  if not (Config.debug_mode || Config.stats_mode) then Unix.unlink verbose_out_file
-
+  if not Config.debug_mode then Unix.unlink verbose_out_file

@@ -65,7 +65,7 @@ let print_legend () =
   L.progress "legend:@." ;
   L.progress "  \"%s\" analyzing a file@\n" Config.log_analysis_file ;
   L.progress "  \"%s\" analyzing a procedure@\n" Config.log_analysis_procedure ;
-  if Config.stats_mode || Config.debug_mode then (
+  if Config.debug_mode then (
     L.progress "  \"%s\" analyzer crashed@\n" Config.log_analysis_crash ;
     L.progress "  \"%s\" timeout: procedure analysis took too much time@\n"
       Config.log_analysis_wallclock_timeout ;
@@ -177,4 +177,3 @@ let register_perf_stats_report () =
   let stats_base = Config.perf_stats_prefix ^ Filename.basename cluster ^ ".json" in
   let stats_file = Filename.concat stats_dir stats_base in
   PerfStats.register_report_at_exit stats_file
-

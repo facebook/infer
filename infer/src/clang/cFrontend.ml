@@ -62,8 +62,8 @@ let do_source_file translation_unit_context ast =
   Cfg.store_to_file ~source_file cfg_file cfg ;
   Tenv.sort_fields_tenv tenv ;
   Tenv.store_to_file tenv_file tenv ;
-  if Config.stats_mode then Cfg.check_cfg_connectedness cfg ;
-  if Config.stats_mode || Config.debug_mode || Config.testing_mode || Config.frontend_tests
+  if Config.debug_mode then Cfg.check_cfg_connectedness cfg ;
+  if Config.debug_mode || Config.testing_mode || Config.frontend_tests
      || Option.is_some Config.icfg_dotty_outfile
   then (
     Dotty.print_icfg_dotty source_file cfg ;
@@ -71,4 +71,3 @@ let do_source_file translation_unit_context ast =
   L.(debug Capture Verbose) "%a" Cfg.pp_proc_signatures cfg ;
   (* NOTE: nothing should be written to source_dir after this *)
   DB.mark_file_updated (DB.source_dir_to_string source_dir)
-
