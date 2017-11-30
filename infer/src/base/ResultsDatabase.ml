@@ -114,7 +114,7 @@ let new_database_connection () =
       database_fullpath
   in
   Sqlite3.busy_timeout db 10_000 ;
-  SqliteUtils.exec db ~log:"synchronous=NORMAL" ~stmt:"PRAGMA synchronous=NORMAL" ;
+  SqliteUtils.exec db ~log:"synchronous=OFF" ~stmt:"PRAGMA synchronous=OFF" ;
   database := Some db ;
   List.iter ~f:(fun callback -> callback db) !new_db_callbacks
 
