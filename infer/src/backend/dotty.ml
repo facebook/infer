@@ -1152,11 +1152,13 @@ let pp_etlist byvals fmt etl =
     etl
 
 
-let pp_local_list fmt etl =
+let pp_var_list fmt etl =
   List.iter
     ~f:(fun (id, ty) -> Format.fprintf fmt " %a:%a" Mangled.pp id (Typ.pp_full Pp.text) ty)
     etl
 
+
+let pp_local_list fmt etl = List.iter ~f:(Procdesc.pp_local fmt) etl
 
 let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
   let pp_label fmt n =
@@ -1168,7 +1170,7 @@ let pp_cfgnodelabel pdesc fmt (n: Procdesc.Node.t) =
         Format.fprintf fmt "Start %s\\nFormals: %a\\nLocals: %a" pname_string (pp_etlist byvals)
           (Procdesc.get_formals pdesc) pp_local_list (Procdesc.get_locals pdesc) ;
         if List.length (Procdesc.get_captured pdesc) <> 0 then
-          Format.fprintf fmt "\\nCaptured: %a" pp_local_list (Procdesc.get_captured pdesc) ;
+          Format.fprintf fmt "\\nCaptured: %a" pp_var_list (Procdesc.get_captured pdesc) ;
         let method_annotation = attributes.ProcAttributes.method_annotation in
         if not (Annot.Method.is_empty method_annotation) then
           Format.fprintf fmt "\\nAnnotation: %a" (Annot.Method.pp pname_string) method_annotation

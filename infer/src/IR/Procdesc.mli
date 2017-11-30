@@ -41,7 +41,7 @@ module Node : sig
   val throw_kind : nodekind
   (** kind of Stmt_node for a throw instruction. *)
 
-  val add_locals_ret_declaration : t -> ProcAttributes.t -> (Mangled.t * Typ.t) list -> unit
+  val add_locals_ret_declaration : t -> ProcAttributes.t -> ProcAttributes.var_data list -> unit
   (** Add declarations for local variables and return variable to the node *)
 
   val append_instrs : t -> Sil.instr list -> unit
@@ -136,7 +136,7 @@ module NodeSet : Caml.Set.S with type elt = Node.t
 (** proc description *)
 type t [@@deriving compare]
 
-val append_locals : t -> (Mangled.t * Typ.t) list -> unit
+val append_locals : t -> ProcAttributes.var_data list -> unit
 (** append a list of new local variables to the existing list of local variables *)
 
 val compute_distance_to_exit_node : t -> unit
@@ -183,8 +183,8 @@ val get_formals : t -> (Mangled.t * Typ.t) list
 val get_loc : t -> Location.t
 (** Return loc information for the procedure *)
 
-val get_locals : t -> (Mangled.t * Typ.t) list
-(** Return name and type of local variables *)
+val get_locals : t -> ProcAttributes.var_data list
+(** Return name and type and attributes of local variables *)
 
 val get_nodes : t -> Node.t list
 
@@ -248,8 +248,12 @@ val is_loop_head : t -> Node.t -> bool
 
 val pp_signature : Format.formatter -> t -> unit
 
+val pp_local : Format.formatter -> ProcAttributes.var_data -> unit
+
 val is_specialized : t -> bool
 
 (* true if pvar is a captred variable of a cpp lambda or obcj block *)
 
 val is_captured_var : t -> Pvar.t -> bool
+
+val has_modify_in_block_attr : t -> Pvar.t -> bool

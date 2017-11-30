@@ -925,9 +925,9 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         then ThreadsDomain.AnyThread
         else ThreadsDomain.NoThread
       in
-      let add_owned_local acc (name, typ) =
-        let pvar = Pvar.mk name (Procdesc.get_proc_name proc_desc) in
-        let base = AccessPath.base_of_pvar pvar typ in
+      let add_owned_local acc (var_data: ProcAttributes.var_data) =
+        let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name proc_desc) in
+        let base = AccessPath.base_of_pvar pvar var_data.typ in
         OwnershipDomain.add (base, []) OwnershipAbstractValue.owned acc
       in
       (* Add ownership to local variables. In cpp, stack-allocated local

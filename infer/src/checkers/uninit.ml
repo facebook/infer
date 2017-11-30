@@ -207,10 +207,10 @@ module Analyzer =
 
 let get_locals cfg tenv pdesc =
   List.fold
-    ~f:(fun acc (name, t) ->
-      let pvar = Pvar.mk name (Procdesc.get_proc_name pdesc) in
-      let base_ap = ((Var.of_pvar pvar, t), []) in
-      match t.Typ.desc with
+    ~f:(fun acc (var_data: ProcAttributes.var_data) ->
+      let pvar = Pvar.mk var_data.name (Procdesc.get_proc_name pdesc) in
+      let base_ap = ((Var.of_pvar pvar, var_data.typ), []) in
+      match var_data.typ.Typ.desc with
       | Typ.Tstruct qual_name -> (
         match Tenv.lookup tenv qual_name with
         | Some {fields} ->

@@ -33,6 +33,15 @@
   return sharedInstance;
 }
 
++ (int)block_attribute {
+  static dispatch_once_t once;
+  __block DispatchA* a = [DispatchA new];
+  dispatch_once(&once, ^{
+    a->_x = 10;
+  });
+  return a->_x;
+}
+
 + (instancetype)trans {
   static id sharedInstance;
   void (^dummy_block)() = ^{

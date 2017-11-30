@@ -8,7 +8,9 @@
  *)
 open! IStd
 
-let get_name_of_local (curr_f: Procdesc.t) (x, _) = Pvar.mk x (Procdesc.get_proc_name curr_f)
+let get_name_of_local (curr_f: Procdesc.t) (var_data: ProcAttributes.var_data) =
+  Pvar.mk var_data.name (Procdesc.get_proc_name curr_f)
+
 
 (* returns a list of local static variables (ie local variables defined static) in a proposition *)
 let get_name_of_objc_static_locals (curr_f: Procdesc.t) p =

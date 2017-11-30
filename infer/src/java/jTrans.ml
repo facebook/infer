@@ -358,7 +358,11 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name skip_imp
     let bytecode, jbir_code = get_implementation cm in
     let procdesc =
       let formals = translate_formals program tenv cn jbir_code in
-      let locals = translate_locals program tenv formals bytecode jbir_code in
+      let locals_ = translate_locals program tenv formals bytecode jbir_code in
+      let locals =
+        List.map locals_ ~f:(fun (name, typ) ->
+            ({name; typ; attributes= []} : ProcAttributes.var_data) )
+      in
       let loc_start =
         let loc = get_location source_file jbir_code 0 in
         fix_method_definition_line linereader proc_name loc

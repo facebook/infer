@@ -191,7 +191,9 @@ module Node = struct
       let ret_type = proc_attributes.ret_type in
       (Pvar.get_ret_pvar pname, ret_type)
     in
-    let construct_decl (x, typ) = (Pvar.mk x pname, typ) in
+    let construct_decl (var_data: ProcAttributes.var_data) =
+      (Pvar.mk var_data.name pname, var_data.typ)
+    in
     let ptl = ret_var :: List.map ~f:construct_decl locals in
     let instr = Sil.Declare_locals (ptl, loc) in
     prepend_instrs node [instr]
@@ -504,6 +506,22 @@ let is_loop_head pdesc (node: Node.t) =
   NodeSet.mem node lh
 
 
+let pp_var_attributes fmt attrs =
+  let pp_attribute fmt attr =
+    match attr with ProcAttributes.Modify_in_block -> Format.fprintf fmt "__block"
+  in
+  if List.is_empty attrs then () else F.fprintf fmt "(%a)" (Pp.seq ~sep:"," pp_attribute) attrs
+
+
+let pp_local fmt (var_data: ProcAttributes.var_data) =
+  Format.fprintf fmt " %a:%a%a" Mangled.pp var_data.name (Typ.pp_full Pp.text) var_data.typ
+    pp_var_attributes var_data.attributes
+
+
+let pp_locals_list fmt etl =
+  if List.is_empty etl then Format.fprintf fmt "None" else List.iter ~f:(pp_local fmt) etl
+
+
 let pp_variable_list fmt etl =
   if List.is_empty etl then Format.fprintf fmt "None"
   else
@@ -531,7 +549,7 @@ let pp_signature fmt pdesc =
     defined_string
     (Typ.to_string (get_ret_type pdesc))
     pp_objc_accessor attributes.ProcAttributes.objc_accessor pp_variable_list (get_formals pdesc)
-    pp_variable_list (get_locals pdesc) ;
+    pp_locals_list (get_locals pdesc) ;
   if not (List.is_empty (get_captured pdesc)) then
     Format.fprintf fmt ", Captured: %a" pp_variable_list (get_captured pdesc) ;
   let method_annotation = attributes.ProcAttributes.method_annotation in
@@ -549,12 +567,15 @@ let is_specialized pdesc =
 let is_captured_var procdesc pvar =
   let procname = get_proc_name procdesc in
   let pvar_name = Pvar.get_name pvar in
+  let pvar_local_matches (var_data: ProcAttributes.var_data) =
+    Mangled.equal var_data.name pvar_name
+  in
   let pvar_matches (name, _) = Mangled.equal name pvar_name in
   let is_captured_var_cpp_lambda =
     (* var is captured if the procedure is a lambda and the var is not in the locals or formals *)
     Typ.Procname.is_cpp_lambda procname
     && not
-         ( List.exists ~f:pvar_matches (get_locals procdesc)
+         ( List.exists ~f:pvar_local_matches (get_locals procdesc)
          || List.exists ~f:pvar_matches (get_formals procdesc) )
   in
   let is_captured_var_objc_block =
@@ -562,3 +583,14 @@ let is_captured_var procdesc pvar =
     Typ.Procname.is_objc_block procname && List.exists ~f:pvar_matches (get_captured procdesc)
   in
   is_captured_var_cpp_lambda || is_captured_var_objc_block
+
+
+let has_modify_in_block_attr procdesc pvar =
+  let pvar_name = Pvar.get_name pvar in
+  let pvar_local_matches (var_data: ProcAttributes.var_data) =
+    Mangled.equal var_data.name pvar_name
+    && List.exists var_data.attributes ~f:(fun attr ->
+           ProcAttributes.var_attribute_equal attr ProcAttributes.Modify_in_block )
+  in
+  List.exists ~f:pvar_local_matches (get_locals procdesc)
+

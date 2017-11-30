@@ -210,7 +210,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let context = trans_state.context in
     let procdesc = context.CContext.procdesc in
     let pvar, typ = mk_temp_sil_var_for_expr context.CContext.tenv procdesc var_name expr_info in
-    Procdesc.append_locals procdesc [(Pvar.get_name pvar, typ)] ;
+    let var_data : ProcAttributes.var_data = {name= Pvar.get_name pvar; typ; attributes= []} in
+    Procdesc.append_locals procdesc [var_data] ;
     (Exp.Lvar pvar, typ)
 
 
@@ -231,7 +232,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | _ ->
               let procdesc = trans_state.context.CContext.procdesc in
               let pvar = mk_temp_sil_var procdesc "__temp_return_" in
-              Procdesc.append_locals procdesc [(Pvar.get_name pvar, return_type)] ;
+              let var_data : ProcAttributes.var_data =
+                {name= Pvar.get_name pvar; typ= return_type; attributes= []}
+              in
+              Procdesc.append_locals procdesc [var_data] ;
               Exp.Lvar pvar
         in
         (* It is very confusing - same expression has two different types in two contexts:*)
@@ -1083,7 +1087,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           let procdesc = trans_state.context.CContext.procdesc in
           let pvar = Pvar.mk_tmp "__temp_construct_" (Procdesc.get_proc_name procdesc) in
           let class_type = CType_decl.get_type_from_expr_info ei context.CContext.tenv in
-          Procdesc.append_locals procdesc [(Pvar.get_name pvar, class_type)] ;
+          let var_data : ProcAttributes.var_data =
+            {name= Pvar.get_name pvar; typ= class_type; attributes= []}
+          in
+          Procdesc.append_locals procdesc [var_data] ;
           (Exp.Lvar pvar, class_type)
     in
     let this_type = CType.add_pointer_to_typ class_type in
@@ -1461,7 +1468,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let join_node = create_node Procdesc.Node.Join_node [] sil_loc context in
         Procdesc.node_set_succs_exn context.procdesc join_node succ_nodes [] ;
         let pvar = mk_temp_sil_var procdesc "SIL_temp_conditional___" in
-        Procdesc.append_locals procdesc [(Pvar.get_name pvar, var_typ)] ;
+        let var_data : ProcAttributes.var_data =
+          {name= Pvar.get_name pvar; typ= var_typ; attributes= []}
+        in
+        Procdesc.append_locals procdesc [var_data] ;
         let continuation' = mk_cond_continuation trans_state.continuation in
         let trans_state' = {trans_state with continuation= continuation'; succ_nodes= []} in
         let res_trans_cond =
@@ -2781,7 +2791,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let var_exp_typ = (Exp.Lvar pvar, typ_tmp) in
     let res_trans = init_expr_trans trans_state var_exp_typ stmt_info (Some temp_exp) in
     let _, typ = extract_exp_from_list res_trans.exps "MaterializeExpr initializer missing@\n" in
-    Procdesc.append_locals procdesc [(Pvar.get_name pvar, typ)] ;
+    let var_data : ProcAttributes.var_data = {name= Pvar.get_name pvar; typ; attributes= []} in
+    Procdesc.append_locals procdesc [var_data] ;
     res_trans
 
 

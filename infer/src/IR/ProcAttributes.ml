@@ -36,6 +36,12 @@ type objc_accessor_type =
   | Objc_setter of Typ.Struct.field
   [@@deriving compare]
 
+type var_attribute = Modify_in_block [@@deriving compare]
+
+let var_attribute_equal = [%compare.equal : var_attribute]
+
+type var_data = {name: Mangled.t; typ: Typ.t; attributes: var_attribute list} [@@deriving compare]
+
 type t =
   { access: PredSymb.access  (** visibility access *)
   ; captured: (Mangled.t * Typ.t) list  (** name and type of variables captured in blocks *)
@@ -59,8 +65,8 @@ type t =
   ; is_synthetic_method: bool  (** the procedure is a synthetic method *)
   ; loc: Location.t  (** location of this procedure in the source code *)
   ; translation_unit: SourceFile.t option  (** translation unit to which the procedure belongs *)
-  ; mutable locals: (Mangled.t * Typ.t) list  (** name and type of local variables *)
-  ; method_annotation: Annot.Method.t  (** annotations for java methods *)
+  ; mutable locals: var_data list  (** name, type and attributes of local variables *)
+  ; method_annotation: Annot.Method.t  (** annotations for all methods *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_flags: proc_flags  (** flags of the procedure *)
   ; proc_name: Typ.Procname.t  (** name of the procedure *)
