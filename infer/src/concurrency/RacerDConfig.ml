@@ -149,9 +149,18 @@ module Models = struct
 
   let get_container_access =
     let is_cpp_container_read =
+      let is_container_operator pname_qualifiers =
+        match QualifiedCppName.extract_last pname_qualifiers with
+        | Some (last, _) ->
+            String.equal last "operator[]"
+        | None ->
+            false
+      in
       let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::find"] in
       fun pname ->
-        QualifiedCppName.Match.match_qualifiers matcher (Typ.Procname.get_qualifiers pname)
+        let pname_qualifiers = Typ.Procname.get_qualifiers pname in
+        QualifiedCppName.Match.match_qualifiers matcher pname_qualifiers
+        || is_container_operator pname_qualifiers
     and is_cpp_container_write =
       let matcher =
         QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::operator[]"; "std::map::erase"]
@@ -198,10 +207,14 @@ module Models = struct
                 None
           in
           PatternMatch.supertype_find_map_opt tenv get_container_access_ typename
+      (* The following order matters: we want to check if pname is a container write
+         before we check if pname is a container read. This is due to a different
+         treatment between std::map::operator[] and all other operator[]. *)
+      | Typ.Procname.ObjC_Cpp _ | C _ as pname
+        when is_cpp_container_write pname ->
+          Some ContainerWrite
       | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_container_read pname ->
           Some ContainerRead
-      | Typ.Procname.ObjC_Cpp _ | C _ as pname when is_cpp_container_write pname ->
-          Some ContainerWrite
       | _ ->
           None
 

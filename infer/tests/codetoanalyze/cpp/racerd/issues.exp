@@ -1,6 +1,7 @@
 codetoanalyze/cpp/racerd/basics.cpp, basics::Basic_get2, 3, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,access to `&this.suspiciously_written`,<Write trace>,access to `&this.suspiciously_written`]
 codetoanalyze/cpp/racerd/basics.cpp, basics::Basic_get4, 0, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,access to `&this.suspiciously_read`,<Write trace>,access to `&this.suspiciously_read`]
 codetoanalyze/cpp/racerd/basics.cpp, basics::Basic_get5, 0, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,call to basics::Basic_get_private_suspiciously_read,access to `&this.suspiciously_read`,<Write trace>,access to `&this.suspiciously_read`]
+codetoanalyze/cpp/racerd/constructor_ownership.cpp, constructors::TSL_not_locked_race, 0, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,call to constructors::BSS_toJson_race,call to constructors::dynamic_operator=,access to `&this.type_`,<Write trace>,call to constructors::BSS_toJson_race,call to constructors::dynamic_operator=,access to `&this.type_`]
 codetoanalyze/cpp/racerd/locals_ownership.cpp, locals::Ownership_test2_bad, 5, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,access to `&x.f`,<Write trace>,access to `&x.f`]
 codetoanalyze/cpp/racerd/locals_ownership.cpp, locals::Ownership_test3_bad, 5, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,access to `&x.f`,<Write trace>,access to `&x.f`]
 codetoanalyze/cpp/racerd/lock_guard.cpp, basics::LockGuard_get2, 3, LOCK_CONSISTENCY_VIOLATION, [<Read trace>,access to `&this.suspiciously_written`,<Write trace>,access to `&this.suspiciously_written`]

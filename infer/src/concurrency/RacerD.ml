@@ -362,11 +362,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (AccessPrecondition.make_unprotected (IntSet.singleton 0))
           container_access AccessDomain.empty
     in
+    (* if a container c is owned in cpp, make c[i] owned for all i *)
+    let return_ownership =
+      match callee_pname with
+      | Typ.Procname.ObjC_Cpp _ | C _ ->
+          OwnershipAbstractValue.make_owned_if 0
+      | _ ->
+          OwnershipAbstractValue.unowned
+    in
     Some
       { locks= false
       ; threads= ThreadsDomain.empty
       ; accesses= callee_accesses
-      ; return_ownership= OwnershipAbstractValue.unowned
+      ; return_ownership
       ; return_attributes= AttributeSetDomain.empty }
 
 
