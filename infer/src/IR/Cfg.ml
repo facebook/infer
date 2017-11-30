@@ -614,4 +614,3 @@ let pp_proc_signatures fmt cfg =
   F.fprintf fmt "METHOD SIGNATURES@\n@." ;
   let sorted_procs = List.sort ~cmp:Procdesc.compare (get_all_procs cfg) in
   List.iter ~f:(fun pdesc -> F.fprintf fmt "%a@." Procdesc.pp_signature pdesc) sorted_procs
-

@@ -1341,10 +1341,7 @@ let perform_transition proc_cfg tenv proc_name =
 let analyze_procedure_aux cg_opt tenv proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
-  if not (Procdesc.did_preanalysis proc_desc) then (
-    Preanal.do_liveness proc_desc tenv ;
-    Preanal.do_abstraction proc_desc ;
-    Option.iter cg_opt ~f:(fun cg -> Preanal.do_dynamic_dispatch proc_desc cg tenv) ) ;
+  Preanal.do_preanalysis proc_desc cg_opt tenv ;
   let summaryfp = Config.run_in_footprint_mode (analyze_proc tenv) proc_cfg in
   Specs.add_summary proc_name summaryfp ;
   perform_transition proc_cfg tenv proc_name ;

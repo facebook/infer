@@ -535,11 +535,10 @@ let checker : Callbacks.proc_callback_args -> Specs.summary =
   fun {proc_desc; tenv; summary; get_proc_desc} ->
     let proc_name = Specs.get_proc_name summary in
     let proc_data = ProcData.make proc_desc tenv get_proc_desc in
-    if not (Procdesc.did_preanalysis proc_desc) then Preanal.do_liveness proc_desc tenv ;
+    Preanal.do_preanalysis proc_desc None tenv ;
     match compute_post proc_data with
     | Some post ->
         if Config.bo_debug >= 1 then print_summary proc_name post ;
         Summary.update_summary post summary
     | None ->
         summary
-

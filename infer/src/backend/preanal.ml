@@ -237,6 +237,8 @@ let add_nullify_instrs pdesc tenv liveness_inv_map =
     node_add_nullify_instructions exit_node (AddressTaken.Domain.elements address_taken_vars)
 
 
+(** perform liveness analysis and insert Nullify/Remove_temps instructions into the IR to make it
+    easy for analyses to do abstract garbage collection *)
 let do_liveness pdesc tenv =
   let liveness_proc_cfg = BackwardCfg.from_pdesc pdesc in
   let initial = Liveness.Domain.empty in
@@ -249,11 +251,14 @@ let do_liveness pdesc tenv =
   Procdesc.signal_did_preanalysis pdesc
 
 
+(** add Abstract instructions into the IR to give hints about when abstraction should be
+    performed *)
 let do_abstraction pdesc =
   add_abstraction_instructions pdesc ;
   Procdesc.signal_did_preanalysis pdesc
 
 
+(** add possible dynamic dispatch targets to the call_flags of each call site *)
 let do_dynamic_dispatch pdesc cg tenv =
   ( match Config.dynamic_dispatch with
   | Interface | Sound ->
@@ -262,4 +267,11 @@ let do_dynamic_dispatch pdesc cg tenv =
   | NoDynamicDispatch | Lazy ->
       () ) ;
   Procdesc.signal_did_preanalysis pdesc
+
+
+let do_preanalysis pdesc cg_opt tenv =
+  if not (Procdesc.did_preanalysis pdesc) then (
+    do_liveness pdesc tenv ;
+    do_abstraction pdesc ;
+    Option.iter cg_opt ~f:(fun cg -> do_dynamic_dispatch pdesc cg tenv) )
 
