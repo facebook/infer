@@ -101,10 +101,32 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     | _ ->
         false
   in
-  let should_report pvar live_vars =
+  let matcher_scope_guard =
+    QualifiedCppName.Match.of_fuzzy_qual_names
+      [ "folly::RWSpinLock::ReadHolder"
+      ; "folly::RWSpinLock::WriteHolder"
+      ; "folly::SpinLockGuard"
+      ; "folly::ScopeGuard"
+      ; "std::lock_guard"
+      ; "std::scoped_lock"
+      ; "std::unique_lock" ]
+  in
+  (* It's fine to have a dead store on a type that uses the "scope guard" pattern. These types
+     are only read in their destructors, and this is expected/ok.
+     (e.g., https://github.com/facebook/folly/blob/master/folly/ScopeGuard.h). *)
+  let rec is_scope_guard = function
+    | {Typ.desc= Tstruct name} ->
+        QualifiedCppName.Match.match_qualifiers matcher_scope_guard (Typ.Name.qual_name name)
+    | {Typ.desc= Tptr (typ, _)} ->
+        is_scope_guard typ
+    | _ ->
+        false
+  in
+  let should_report pvar typ live_vars =
     not
       ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
-      || Domain.mem (Var.of_pvar pvar) live_vars || Procdesc.is_captured_var proc_desc pvar )
+      || Domain.mem (Var.of_pvar pvar) live_vars || Procdesc.is_captured_var proc_desc pvar
+      || is_scope_guard typ )
   in
   let log_report pvar loc =
     let issue_id = IssueType.dead_store.unique_id in
@@ -114,12 +136,12 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     Reporting.log_error summary ~loc ~ltr exn
   in
   let report_dead_store live_vars = function
-    | Sil.Store (Lvar pvar, _, rhs_exp, loc)
-      when should_report pvar live_vars && not (is_sentinel_exp rhs_exp) ->
+    | Sil.Store (Lvar pvar, typ, rhs_exp, loc)
+      when should_report pvar typ live_vars && not (is_sentinel_exp rhs_exp) ->
         log_report pvar loc
     | Sil.Call
-        (None, Exp.Const Cfun (Typ.Procname.ObjC_Cpp _ as pname), (Exp.Lvar pvar, _) :: _, loc, _)
-      when Typ.Procname.is_constructor pname && should_report pvar live_vars ->
+        (None, Exp.Const Cfun (Typ.Procname.ObjC_Cpp _ as pname), (Exp.Lvar pvar, typ) :: _, loc, _)
+      when Typ.Procname.is_constructor pname && should_report pvar typ live_vars ->
         log_report pvar loc
     | _ ->
         ()
@@ -138,4 +160,3 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   List.iter (CFG.nodes cfg) ~f:report_on_node ;
   summary
-

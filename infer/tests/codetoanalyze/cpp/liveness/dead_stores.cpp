@@ -7,7 +7,13 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <mutex>
 #include <new>
+#include <thread>
+
+namespace folly {
+class ScopeGuard {};
+} // namespace folly
 
 namespace dead_stores {
 
@@ -243,7 +249,6 @@ void placement_new_ok(int len, int* ptr) {
 }
 
 // we don't report on dead stores where the RHS is 0, 0.0, false, nullptr, etc.
-
 bool sentinel_bool_ok() {
   bool b = false;
   b = true;
@@ -280,6 +285,11 @@ int* sentinel_ptr_ok(int* j) {
   return i;
 }
 
+void scope_guard_ok() {
+  // realistically, it would be something like guard = folly::makeGuard();
+  folly::ScopeGuard* guard = nullptr;
+}
+
 struct S {
   ~S() {}
 };
@@ -311,5 +321,11 @@ B& struct_rvalue_ref_used_ok() {
   B b = mk_s();
   return b;
 }
+
+std::mutex my_mutex;
+
+void dead_lock_guard_ok() { std::lock_guard<std::mutex> lock(my_mutex); }
+
+void dead_unique_lock_ok() { std::unique_lock<std::mutex> lock(my_mutex); }
 
 }
