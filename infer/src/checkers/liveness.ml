@@ -126,7 +126,7 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     not
       ( Pvar.is_frontend_tmp pvar || Pvar.is_return pvar || Pvar.is_global pvar
       || Domain.mem (Var.of_pvar pvar) live_vars || Procdesc.is_captured_var proc_desc pvar
-      || is_scope_guard typ )
+      || is_scope_guard typ || Procdesc.has_modify_in_block_attr proc_desc pvar )
   in
   let log_report pvar loc =
     let issue_id = IssueType.dead_store.unique_id in
