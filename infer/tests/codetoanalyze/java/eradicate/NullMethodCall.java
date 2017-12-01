@@ -280,4 +280,18 @@ public class NullMethodCall {
       chm.remove("foo").toString();
   }
 
+  @Nullable Object nullableField;
+
+  void FP_propagatesNonNullAfterComparisonFieldOkay(Object nonNullObject) {
+    if (nullableField == nonNullObject) {
+      nullableField.toString();
+    }
+  }
+
+  void FP_propagatesNonNullAfterComparisonParameterOkay(
+      @Nullable Object nullableParameter, Object nonNullParameter) {
+    if (nullableParameter == nonNullParameter) {
+      nullableParameter.toString();
+    }
+  }
 }
