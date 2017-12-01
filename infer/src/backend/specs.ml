@@ -562,8 +562,6 @@ let summary_compact sh summary = {summary with payload= payload_compact sh summa
 
 (** Add the summary to the table for the given function *)
 let add_summary (proc_name: Typ.Procname.t) (summary: summary) : unit =
-  L.(debug Analysis Medium)
-    "Adding summary for %a@\n@[<v 2>  %a@]@." Typ.Procname.pp proc_name pp_summary_text summary ;
   Typ.Procname.Hash.replace spec_tbl proc_name summary
 
 
