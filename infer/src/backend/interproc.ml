@@ -898,19 +898,6 @@ let execute_filter_prop wl tenv proc_cfg init_node (precondition: Prop.normal Sp
     None
 
 
-let pp_intra_stats wl proc_cfg fmt _ =
-  let nstates = ref 0 in
-  let nodes = ProcCfg.Exceptional.nodes proc_cfg in
-  List.iter
-    ~f:(fun node ->
-      nstates
-      := !nstates
-         + Paths.PathSet.size
-             (htable_retrieve wl.Worklist.path_set_visited (ProcCfg.Exceptional.id node)))
-    nodes ;
-  F.fprintf fmt "(%d nodes containing %d states)" (List.length nodes) !nstates
-
-
 type exe_phase = (unit -> unit) * (unit -> Prop.normal Specs.spec list * Specs.phase)
 
 (** Return functions to perform one phase of the analysis for a procedure.
@@ -942,8 +929,6 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
         in
         Propset.fold add Paths.PathSet.empty init_props
       in
-      L.(debug Analysis Medium)
-        "@\n#### Start: Footprint Computation for %a ####@." Typ.Procname.pp pname ;
       L.d_increase_indent 1 ;
       L.d_strln "initial props =" ;
       Propset.d Prop.prop_emp init_props ;
@@ -958,13 +943,6 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
     let get_results (wl: Worklist.t) () =
       State.process_execution_failures Reporting.log_warning_deprecated pname ;
       let results = collect_analysis_result tenv wl proc_cfg in
-      L.(debug Analysis Medium) "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname ;
-      L.(debug Analysis Medium)
-        "#### Finished: Footprint Computation for %a %a ####@." Typ.Procname.pp pname
-        (pp_intra_stats wl proc_cfg) pname ;
-      L.(debug Analysis Medium)
-        "#### [FUNCTION %a] Footprint Analysis result ####@\n%a@." Typ.Procname.pp pname
-        (Paths.PathSet.pp Pp.text) results ;
       let specs =
         try extract_specs tenv (ProcCfg.Exceptional.proc_desc proc_cfg) results
         with Exceptions.Leak _ ->
@@ -986,22 +964,10 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
     in
     let valid_specs = ref [] in
     let go () =
-      L.(debug Analysis Medium) "@.#### Start: Re-Execution for %a ####@." Typ.Procname.pp pname ;
       let filter p =
         let wl = path_set_create_worklist proc_cfg in
         let speco = execute_filter_prop wl tenv proc_cfg start_node p in
-        let is_valid =
-          match speco with
-          | None ->
-              false
-          | Some spec ->
-              valid_specs := !valid_specs @ [spec] ;
-              true
-        in
-        let outcome = if is_valid then "pass" else "fail" in
-        L.(debug Analysis Medium)
-          "Finished re-execution for precondition %d %a (%s)@." (Specs.Jprop.to_number p)
-          (pp_intra_stats wl proc_cfg) pname outcome ;
+        (match speco with None -> () | Some spec -> valid_specs := !valid_specs @ [spec]) ;
         speco
       in
       if Config.undo_join then ignore (Specs.Jprop.filter filter candidate_preconditions)
@@ -1009,29 +975,12 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
     in
     let get_results () =
       let specs = !valid_specs in
-      L.(debug Analysis Medium) "#### [FUNCTION %a] ... OK #####@\n" Typ.Procname.pp pname ;
-      L.(debug Analysis Medium) "#### Finished: Re-Execution for %a ####@." Typ.Procname.pp pname ;
-      let valid_preconditions = List.map ~f:(fun spec -> spec.Specs.pre) specs in
       let source = (Procdesc.get_loc (ProcCfg.Exceptional.proc_desc proc_cfg)).file in
       let filename =
         DB.Results_dir.path_to_filename (DB.Results_dir.Abs_source_dir source)
           [Typ.Procname.to_filename pname]
       in
       if Config.write_dotty then Dotty.pp_speclist_dotty_file filename specs ;
-      L.(debug Analysis Medium) "@\n@\n================================================" ;
-      L.(debug Analysis Medium) "@\n *** CANDIDATE PRECONDITIONS FOR %a: " Typ.Procname.pp pname ;
-      L.(debug Analysis Medium) "@\n================================================@\n" ;
-      L.(debug Analysis Medium)
-        "@\n%a @\n@\n"
-        (Specs.Jprop.pp_list Pp.text false)
-        candidate_preconditions ;
-      L.(debug Analysis Medium) "@\n@\n================================================" ;
-      L.(debug Analysis Medium) "@\n *** VALID PRECONDITIONS FOR %a: " Typ.Procname.pp pname ;
-      L.(debug Analysis Medium) "@\n================================================@\n" ;
-      L.(debug Analysis Medium)
-        "@\n%a @\n@."
-        (Specs.Jprop.pp_list Pp.text true)
-        valid_preconditions ;
       (specs, Specs.RE_EXECUTION)
     in
     (go, get_results)
@@ -1199,8 +1148,6 @@ let update_specs tenv prev_summary phase (new_specs: Specs.NormSpec.t list)
                new_specs)
     then (
       changed := true ;
-      L.(debug Analysis Medium)
-        "Specs changed: removing pre of spec@\n%a@." (Specs.pp_spec Pp.text None) old_spec ;
       current_specs := SpecMap.remove old_spec.Specs.pre !current_specs )
     else ()
   in
@@ -1214,17 +1161,11 @@ let update_specs tenv prev_summary phase (new_specs: Specs.NormSpec.t list)
       in
       if not (Paths.PathSet.equal old_post new_post) then (
         changed := true ;
-        L.(debug Analysis Medium)
-          "Specs changed: added new post@\n%a@."
-          (Propset.pp Pp.text (Specs.Jprop.to_prop spec.Specs.pre))
-          (Paths.PathSet.to_propset tenv new_post) ;
         current_specs
         := SpecMap.add spec.Specs.pre (new_post, new_visited)
              (SpecMap.remove spec.Specs.pre !current_specs) )
     with Not_found ->
       changed := true ;
-      L.(debug Analysis Medium)
-        "Specs changed: added new pre@\n%a@." (Specs.Jprop.pp_short Pp.text) spec.Specs.pre ;
       current_specs
       := SpecMap.add spec.Specs.pre
            (Paths.PathSet.from_renamed_list spec.Specs.posts, spec.Specs.visited) !current_specs
@@ -1283,7 +1224,6 @@ let analyze_proc tenv proc_cfg : Specs.summary =
 
 (** Perform the transition from [FOOTPRINT] to [RE_EXECUTION] in spec table *)
 let transition_footprint_re_exe tenv proc_name joined_pres =
-  L.(debug Analysis Medium) "Transition %a from footprint to re-exe@." Typ.Procname.pp proc_name ;
   let summary = Specs.get_summary_unsafe "transition_footprint_re_exe" proc_name in
   let summary' =
     if Config.only_footprint then {summary with Specs.phase= Specs.RE_EXECUTION}
@@ -1357,3 +1297,4 @@ let analyze_procedure {Callbacks.summary; proc_desc; tenv} : Specs.summary =
       reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       Reporting.log_error_deprecated proc_name exn ) ;
   Specs.get_summary_unsafe __FILE__ proc_name
+
