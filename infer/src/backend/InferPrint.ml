@@ -45,18 +45,16 @@ let error_desc_to_plain_string error_desc =
 
 let error_desc_to_dotty_string error_desc = Localise.error_desc_get_dotty error_desc
 
-let get_bug_hash (kind: string) (type_str: string) (procedure_id: string) (filename: string)
-    (node_key: Digest.t) (error_desc: Localise.error_desc) =
-  let qualifier_tag_call_procedure = Localise.error_desc_get_tag_call_procedure error_desc in
-  let qualifier_tag_value = Localise.error_desc_get_tag_value error_desc in
+let compute_hash (kind: string) (type_str: string) (proc_name: Typ.Procname.t) (filename: string)
+    (qualifier: string) =
+  let base_filename = Filename.basename filename in
+  let simple_procedure_name = Typ.Procname.to_simplified_string proc_name in
+  let location_independent_qualifier =
+    Str.global_replace (Str.regexp "\\(line\\|column\\)\\ [0-9]+") "_" qualifier
+  in
   Utils.better_hash
-    ( kind
-    , type_str
-    , procedure_id
-    , filename
-    , node_key
-    , qualifier_tag_call_procedure
-    , qualifier_tag_value )
+    (kind, type_str, simple_procedure_name, base_filename, location_independent_qualifier)
+  |> Digest.to_hex
 
 
 let exception_value = "exception"
@@ -260,7 +258,6 @@ module IssuesJson = struct
     then
       let kind = Exceptions.err_kind_string key.err_kind in
       let bug_type = key.err_name.IssueType.unique_id in
-      let procedure_id = Typ.Procname.to_filename procname in
       let file = SourceFile.to_string source_file in
       let json_ml_loc =
         match err_data.loc_in_ml_source with
@@ -294,15 +291,13 @@ module IssuesJson = struct
         ; line= err_data.loc.Location.line
         ; column= err_data.loc.Location.col
         ; procedure= Typ.Procname.to_string procname
-        ; procedure_id
+        ; procedure_id= Typ.Procname.to_filename procname
         ; procedure_start_line
         ; file
         ; bug_trace= loc_trace_to_jsonbug_record err_data.loc_trace key.err_kind
         ; key= err_data.node_id_key.node_key |> Digest.to_hex
         ; qualifier_tags= Localise.Tags.tag_value_records_of_tags key.err_desc.tags
-        ; hash=
-            get_bug_hash kind bug_type procedure_id file err_data.node_id_key.node_key key.err_desc
-            |> Digest.to_hex
+        ; hash= compute_hash kind bug_type procname file qualifier
         ; dotty= error_desc_to_dotty_string key.err_desc
         ; infer_source_loc= json_ml_loc
         ; bug_type_hum= key.err_name.IssueType.hum
