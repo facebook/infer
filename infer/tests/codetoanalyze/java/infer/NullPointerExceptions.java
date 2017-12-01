@@ -645,4 +645,12 @@ public class NullPointerExceptions {
 
   }
 
+  Object getObject() {
+    return null;
+  }
+
+  void addNullToImmutableListBuilderBad() {
+    ImmutableList.Builder<Object> listBuilder = ImmutableList.builder();
+    listBuilder.add(getObject());
+  }
 }
