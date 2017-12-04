@@ -255,7 +255,7 @@ val exp_compact : sharing_env -> Exp.t -> Exp.t
 val hpred_compact : sharing_env -> hpred -> hpred
 (** Return a compact representation of the exp *)
 
-val has_objc_ref_counter : Tenv.t -> hpred -> bool
+val is_objc_object : hpred -> bool
 (** {2 Comparision And Inspection Functions} *)
 
 val zero_value_of_numerical_type_option : Typ.t -> Exp.t option
@@ -451,6 +451,8 @@ val atom_list_expmap : (Exp.t -> Exp.t) -> atom list -> atom list
     WARNING: the result might not be normalized. *)
 
 val hpred_list_get_lexps : (Exp.t -> bool) -> hpred list -> Exp.t list
+
+val hpred_entries : hpred -> Exp.t list
 
 (** {2 Function for computing lexps in sigma} *)
 

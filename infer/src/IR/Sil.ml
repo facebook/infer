@@ -207,14 +207,9 @@ let hpred_get_lhs h =
 
 
 (** {2 Comparision and Inspection Functions} *)
-let has_objc_ref_counter tenv hpred =
-  match hpred with
-  | Hpointsto (_, _, Sizeof {typ= {desc= Tstruct name}}) -> (
-    match Tenv.lookup tenv name with
-    | Some {fields} ->
-        List.exists ~f:Typ.Struct.is_objc_ref_counter_field fields
-    | _ ->
-        false )
+let is_objc_object = function
+  | Hpointsto (_, _, Sizeof {typ}) ->
+      Typ.is_objc_class typ
   | _ ->
       false
 
@@ -1065,6 +1060,8 @@ let hpred_list_get_lexps (filter: Exp.t -> bool) (hlist: hpred list) : Exp.t lis
   let lexps = List.fold ~f:hpred_get_lexp ~init:[] hlist in
   List.filter ~f:filter lexps
 
+
+let hpred_entries hpred = hpred_get_lexp [] hpred
 
 (** {2 Functions for computing program variables} *)
 let rec exp_fpv e =
