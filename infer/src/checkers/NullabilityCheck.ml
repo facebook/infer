@@ -21,12 +21,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = Specs.summary
 
-  let is_instance_method callee_pname =
+  let is_non_objc_instance_method callee_pname =
     if Typ.Procname.is_java callee_pname then not (Typ.Procname.java_is_static callee_pname)
     else
       Option.exists
         ~f:(fun attributes -> attributes.ProcAttributes.is_cpp_instance_method)
         (Specs.proc_resolve_attributes callee_pname)
+
+
+  let is_objc_instance_method callee_pname =
+    Option.exists
+      ~f:(fun attributes -> attributes.ProcAttributes.is_objc_instance_method)
+      (Specs.proc_resolve_attributes callee_pname)
 
 
   let is_blacklisted_method : Typ.Procname.t -> bool =
@@ -156,16 +162,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         assume_pnames_notnull ap astate
 
 
-  let rec check_nil_in_nsarray proc_data loc args astate =
+  let rec check_nil_in_objc_container proc_data loc args astate =
     match args with
     | [] ->
         astate
     | [arg] when HilExp.is_null_literal arg ->
         astate
     | (HilExp.AccessPath ap) :: other_args ->
-        check_nil_in_nsarray proc_data loc other_args (check_ap proc_data loc ap astate)
+        check_nil_in_objc_container proc_data loc other_args (check_ap proc_data loc ap astate)
     | _ :: other_args ->
-        check_nil_in_nsarray proc_data loc other_args astate
+        check_nil_in_objc_container proc_data loc other_args astate
 
 
   let exec_instr ((_, checked_pnames) as astate) proc_data _ (instr: HilInstr.t) : Domain.astate =
@@ -192,10 +198,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         let call_site = CallSite.make callee_pname loc in
         add_nullable_ap (ret_var, []) (CallSites.singleton call_site) astate
     | Call (_, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, loc)
-      when is_instance_method callee_pname ->
+      when is_non_objc_instance_method callee_pname ->
         check_ap proc_data loc receiver astate
     | Call (_, Direct callee_pname, args, _, loc) when is_objc_container_add_method callee_pname ->
-        check_nil_in_nsarray proc_data loc args astate
+        check_nil_in_objc_container proc_data loc args astate
+    | Call (Some ret_var, Direct callee_pname, (HilExp.AccessPath receiver) :: _, _, _)
+      when is_objc_instance_method callee_pname -> (
+      match longest_nullable_prefix receiver astate with
+      | None ->
+          astate
+      | Some (_, call_sites) ->
+          (* Objective C method will return nil when called on a nil receiver *)
+          add_nullable_ap (ret_var, []) call_sites astate )
     | Call (Some ret_var, _, _, _, _) ->
         remove_nullable_ap (ret_var, []) astate
     | Assign (lhs, rhs, loc)

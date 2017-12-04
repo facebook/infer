@@ -185,4 +185,12 @@ int* __nullable returnsNull();
   return dict;
 }
 
+- (NSDictionary*)indirectNullableKeyInNSDictionaryBad {
+  NSObject* nullableKey = [self nullableMethod];
+  NSString* nullableKeyString = [nullableKey description];
+  NSDictionary* dict = [[NSDictionary alloc]
+      initWithObjectsAndKeys:nullableKeyString, @"value", nil]; // reports here
+  return dict;
+}
+
 @end
