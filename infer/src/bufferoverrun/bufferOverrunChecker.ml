@@ -70,14 +70,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               let offset = Itv.zero in
               BoUtils.Exec.decl_sym_arr ~decl_sym_val pname tenv node location ~depth loc typ
                 ~offset ?size ~inst_num ~new_sym_num ~new_alloc_num mem
-          | Typ.Tstruct typename ->
-              let decl_fld mem (fn, typ, _) =
-                let loc_fld = Loc.append_field loc fn in
-                decl_sym_val pname tenv node location ~depth loc_fld typ mem
-              in
-              let decl_flds str = List.fold ~f:decl_fld ~init:mem str.Typ.Struct.fields in
-              let opt_struct = Tenv.lookup tenv typename in
-              Option.value_map opt_struct ~default:mem ~f:decl_flds
+          | Typ.Tstruct typename -> (
+            match Models.TypName.dispatch typename with
+            | Some {Models.declare_symbolic} ->
+                declare_symbolic ~decl_sym_val pname tenv node location ~depth loc ~inst_num
+                  ~new_sym_num ~new_alloc_num mem
+            | None ->
+                let decl_fld mem (fn, typ, _) =
+                  let loc_fld = Loc.append_field loc fn in
+                  decl_sym_val pname tenv node location ~depth loc_fld typ mem
+                in
+                let decl_flds str = List.fold ~f:decl_fld ~init:mem str.Typ.Struct.fields in
+                let opt_struct = Tenv.lookup tenv typename in
+                Option.value_map opt_struct ~default:mem ~f:decl_flds )
           | _ ->
               if Config.bo_debug >= 3 then
                 L.(debug BufferOverrun Verbose)
@@ -215,7 +220,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | Prune (exp, _, _, _) ->
             Sem.prune exp mem
         | Call (ret, Const Cfun callee_pname, params, location, _) -> (
-          match Models.dispatcher callee_pname params with
+          match Models.Procname.dispatch callee_pname params with
           | Some {Models.exec} ->
               exec callee_pname ret node location mem
           | None ->
@@ -237,6 +242,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   let stride = Option.map ~f:IntLit.to_int stride0 in
                   BoUtils.Exec.decl_local_array ~decl_local pname node location loc typ ~length
                     ?stride ~inst_num ~dimension mem
+              | Typ.Tstruct typname -> (
+                match Models.TypName.dispatch typname with
+                | Some {Models.declare_local} ->
+                    declare_local ~decl_local pname node location loc ~inst_num ~dimension mem
+                | None ->
+                    (mem, inst_num) )
               | _ ->
                   (mem, inst_num)
             in
@@ -385,7 +396,7 @@ module Report = struct
             | Sil.Load (_, exp, _, location) | Sil.Store (exp, _, _, location) ->
                 add_condition pname exp location mem cond_set
             | Sil.Call (_, Const Cfun callee_pname, params, location, _) -> (
-              match Models.dispatcher callee_pname params with
+              match Models.Procname.dispatch callee_pname params with
               | Some {Models.check} ->
                   check pname node location mem cond_set
               | None ->

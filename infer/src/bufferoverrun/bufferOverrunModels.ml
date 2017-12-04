@@ -30,6 +30,17 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
   type model = {exec: exec_fun; check: check_fun}
 
+  type declare_local_fun =
+    decl_local:BoUtils.Exec.decl_local -> Typ.Procname.t -> CFG.node -> Location.t -> Loc.t
+    -> inst_num:int -> dimension:int -> Dom.Mem.astate -> Dom.Mem.astate * int
+
+  type declare_symbolic_fun =
+    decl_sym_val:BoUtils.Exec.decl_sym_val -> Typ.Procname.t -> Tenv.t -> CFG.node -> Location.t
+    -> depth:int -> Loc.t -> inst_num:int -> new_sym_num:BoUtils.counter
+    -> new_alloc_num:BoUtils.counter -> Dom.Mem.astate -> Dom.Mem.astate
+
+  type typ_model = {declare_local: declare_local_fun; declare_symbolic: declare_symbolic_fun}
+
   let no_check _pname _node _location _mem cond_set = cond_set
 
   (* NOTE: heuristic *)
@@ -154,19 +165,27 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     {exec; check}
 
 
-  let dispatcher : model ProcnameDispatcher.dispatcher =
-    let open ProcnameDispatcher.Procname in
-    make_dispatcher
-      [ -"__inferbo_min" <>$ capt_arg $+ capt_arg $!--> inferbo_min
-      ; -"__inferbo_set_size" <>$ capt_arg $+ capt_arg $!--> inferbo_set_size
-      ; -"__exit" <>--> bottom
-      ; -"exit" <>--> bottom
-      ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
-      ; -"infer_print" <>$ capt_arg $!--> infer_print
-      ; -"malloc" <>$ capt_arg $+...$--> malloc
-      ; -"__new_array" <>$ capt_arg $+...$--> malloc
-      ; -"realloc" <>$ any_arg $+ capt_arg $+...$--> realloc
-      ; -"__set_array_length" <>$ capt_arg $+ capt_arg $!--> set_array_length
-      ; -"strlen" <>--> by_value Dom.Val.Itv.nat ]
+  module Procname = struct
+    let dispatch : model ProcnameDispatcher.dispatcher =
+      let open ProcnameDispatcher.Procname in
+      make_dispatcher
+        [ -"__inferbo_min" <>$ capt_arg $+ capt_arg $!--> inferbo_min
+        ; -"__inferbo_set_size" <>$ capt_arg $+ capt_arg $!--> inferbo_set_size
+        ; -"__exit" <>--> bottom
+        ; -"exit" <>--> bottom
+        ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
+        ; -"infer_print" <>$ capt_arg $!--> infer_print
+        ; -"malloc" <>$ capt_arg $+...$--> malloc
+        ; -"__new_array" <>$ capt_arg $+...$--> malloc
+        ; -"realloc" <>$ any_arg $+ capt_arg $+...$--> realloc
+        ; -"__set_array_length" <>$ capt_arg $+ capt_arg $!--> set_array_length
+        ; -"strlen" <>--> by_value Dom.Val.Itv.nat ]
 
+  end
+
+  module TypName = struct
+    let dispatch : typ_model ProcnameDispatcher.typ_dispatcher =
+      ProcnameDispatcher.TypName.make_dispatcher []
+
+  end
 end
