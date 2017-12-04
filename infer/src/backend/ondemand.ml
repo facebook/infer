@@ -183,21 +183,29 @@ let analyze_proc_desc curr_pdesc callee_pdesc : Specs.summary option =
 
 (** analyze_proc_name curr_pdesc proc_name performs an on-demand analysis of proc_name triggered
     during the analysis of curr_pname *)
-let analyze_proc_name curr_pdesc callee_pname : Specs.summary option =
-  match !callbacks_ref with
-  | None ->
-      L.(die InternalError)
-        "No callbacks registered to analyze proc name %a when analyzing %a@." Typ.Procname.pp
-        callee_pname Typ.Procname.pp
-        (Procdesc.get_proc_name curr_pdesc)
-  | Some callbacks ->
-      if procedure_should_be_analyzed callee_pname then
-        match callbacks.get_proc_desc callee_pname with
-        | Some callee_pdesc ->
-            analyze_proc_desc curr_pdesc callee_pdesc
+let analyze_proc_name : Procdesc.t -> Typ.Procname.t -> Specs.summary option =
+  let cached_results = Typ.Procname.Hash.create 100 in
+  fun curr_pdesc callee_pname ->
+    try Typ.Procname.Hash.find cached_results callee_pname with Not_found ->
+      let summary_option =
+        match !callbacks_ref with
         | None ->
-            Specs.get_summary callee_pname
-      else Specs.get_summary callee_pname
+            L.(die InternalError)
+              "No callbacks registered to analyze proc name %a when analyzing %a@." Typ.Procname.pp
+              callee_pname Typ.Procname.pp
+              (Procdesc.get_proc_name curr_pdesc)
+        | Some callbacks ->
+            if procedure_should_be_analyzed callee_pname then
+              match callbacks.get_proc_desc callee_pname with
+              | Some callee_pdesc ->
+                  analyze_proc_desc curr_pdesc callee_pdesc
+              | None ->
+                  Specs.get_summary callee_pname
+            else Specs.get_summary callee_pname
+      in
+      if not (is_active callee_pname) then
+        Typ.Procname.Hash.add cached_results callee_pname summary_option ;
+      summary_option
 
 
 (** Find a proc desc for the procedure, perhaps loading it from disk. *)
