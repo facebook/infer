@@ -145,17 +145,43 @@ int* __nullable returnsNull();
   NSArray* array = @[ url ]; // reports here
 }
 
-- (NSDictionary*)nullableValueInNSDictionary {
+- (NSDictionary*)nullableValueInNSDictionaryBad {
   NSObject* nullableValue = [self nullableMethod];
   NSMutableDictionary* dict = [NSMutableDictionary
       dictionaryWithObjectsAndKeys:@"key", nullableValue, nil]; // reports here
   return dict;
 }
 
-- (NSDictionary*)nullableKeyInNSDictionary {
+- (NSDictionary*)nullableKeyInNSDictionaryBad {
   NSObject* nullableKey = [self nullableMethod];
   NSMutableDictionary* dict = [NSMutableDictionary
       dictionaryWithObjectsAndKeys:nullableKey, @"value", nil]; // reports here
+  return dict;
+}
+
+- (NSDictionary*)nullableKeyInNSDictionaryInitBad {
+  NSObject* nullableKey = [self nullableMethod];
+  NSDictionary* dict = [[NSDictionary alloc]
+      initWithObjectsAndKeys:nullableKey, @"value", nil]; // reports here
+  return dict;
+}
+
+- (NSDictionary*)nullableValueInNSDictionaryInitBad {
+  NSObject* nullableValue = [self nullableMethod];
+  NSDictionary* dict = [[NSDictionary alloc]
+      initWithObjectsAndKeys:@"key", nullableValue, nil]; // reports here
+  return dict;
+}
+
+- (NSDictionary*)nullableKeyInNSDictionaryInitLiteralBad {
+  NSObject* nullableKey = [self nullableMethod];
+  NSDictionary* dict = @{nullableKey : @"value"}; // reports here
+  return dict;
+}
+
+- (NSDictionary*)nullableValueInNSDictionaryInitLiteralBad {
+  NSObject* nullableValue = [self nullableMethod];
+  NSDictionary* dict = @{@"key" : nullableValue}; // reports here
   return dict;
 }
 

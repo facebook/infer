@@ -37,12 +37,18 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let is_objc_container_add_method : Typ.Procname.t -> bool =
-    let add_methods =
-      ["arrayWithObjects:"; "arrayWithObjects:count:"; "dictionaryWithObjectsAndKeys:"]
+    let method_prefixes =
+      [ "arrayWithObjects:"
+      ; "arrayWithObjects:count:"
+      ; "dictionaryWithObjectsAndKeys:"
+      ; "initWithObjectsAndKeys:"
+      ; "dictionaryWithObjects:" ]
     in
     fun proc_name ->
       let simplified_callee_pname = Typ.Procname.to_simplified_string proc_name in
-      List.exists ~f:(String.equal simplified_callee_pname) add_methods
+      List.exists
+        ~f:(fun prefix -> String.is_prefix ~prefix simplified_callee_pname)
+        method_prefixes
 
 
   let report_nullable_dereference ap call_sites {ProcData.pdesc; extras} loc =
