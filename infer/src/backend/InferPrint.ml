@@ -48,8 +48,15 @@ let error_desc_to_dotty_string error_desc = Localise.error_desc_get_dotty error_
 let compute_hash (kind: string) (type_str: string) (proc_name: Typ.Procname.t) (filename: string)
     (qualifier: string) =
   let base_filename = Filename.basename filename in
-  let simple_procedure_name = Typ.Procname.to_simplified_string proc_name in
+  let simple_procedure_name =
+    (* Force the anonymous inner class to have the same class by removing the index
+       in order to make the hash invariant when introducing new annonynous classes *)
+    Str.global_replace (Str.regexp "[0-9]+") "_"
+      (Typ.Procname.to_simplified_string ~withclass:true proc_name)
+  in
   let location_independent_qualifier =
+    (* Removing the line and column information from the error message to make the
+       hash invariant when moving the source code in the file *)
     Str.global_replace (Str.regexp "\\(line\\|column\\)\\ [0-9]+") "_" qualifier
   in
   Utils.better_hash
