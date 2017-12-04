@@ -27,6 +27,7 @@ SOURCES_DEFAULT = \
   memory_leaks_benchmark/NSString_models_tests.m \
 	memory_leaks_benchmark/NSData_models_tests.m \
   memory_leaks_benchmark/RetainReleaseExampleBucketing.m \
+	memory_leaks_benchmark/CoreVideoExample.m \
   npe/Fraction.m \
   npe/NPD_core_foundation.m \
   npe/Npe_with_equal_names.m \
