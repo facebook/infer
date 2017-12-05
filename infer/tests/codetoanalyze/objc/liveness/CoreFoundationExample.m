@@ -15,3 +15,28 @@ static NSDictionary* dictionaryRepresentationFromCFPreferences(
   return (__bridge_transfer NSDictionary*)CFPreferencesCopyMultiple(
       NULL, ID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
 }
+
+// mock for testing
+class CKComponentScope {
+ public:
+  CKComponentScope(Class __unsafe_unretained componentClass,
+                   id identifier = nil,
+                   id (^initialStateCreator)(void) = nil);
+  ~CKComponentScope();
+  int a;
+
+ private:
+  CKComponentScope(const CKComponentScope&) = delete;
+  CKComponentScope& operator=(const CKComponentScope&) = delete;
+};
+
+@interface ScopeTest : NSObject
+@end
+
+@implementation ScopeTest
+
++ (void)dead_ckcomponentscope_ok {
+  CKComponentScope scope(self); // created for side effects; should not warn
+}
+
+@end

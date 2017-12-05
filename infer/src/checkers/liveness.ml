@@ -103,13 +103,15 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   let matcher_scope_guard =
     QualifiedCppName.Match.of_fuzzy_qual_names
-      [ "folly::RWSpinLock::ReadHolder"
+      [ (* C++ *)
+        "folly::RWSpinLock::ReadHolder"
       ; "folly::RWSpinLock::WriteHolder"
       ; "folly::SpinLockGuard"
       ; "folly::ScopeGuard"
       ; "std::lock_guard"
       ; "std::scoped_lock"
-      ; "std::unique_lock" ]
+      ; "std::unique_lock" (* Obj-C *)
+      ; "CKComponentScope" ]
   in
   (* It's fine to have a dead store on a type that uses the "scope guard" pattern. These types
      are only read in their destructors, and this is expected/ok.
@@ -160,3 +162,4 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   List.iter (CFG.nodes cfg) ~f:report_on_node ;
   summary
+
