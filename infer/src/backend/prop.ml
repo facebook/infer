@@ -478,15 +478,12 @@ let rec create_strexp_of_type ~path tenv struct_init_mode (typ: Typ.t) len inst 
       | Fld_init, Some {fields} ->
           (* pass len as an accumulator, so that it is passed to create_strexp_of_type for the last
              field, but always return None so that only the last field receives len *)
-          let f (fld, t, a) (flds, len) =
-            if Typ.Struct.is_objc_ref_counter_field (fld, t, a) then
-              ((fld, Sil.Eexp (Exp.one, inst)) :: flds, None)
-            else
-              ( ( fld
-                , create_strexp_of_type ~path:((name, fld) :: path) tenv struct_init_mode t len
-                    inst )
-                :: flds
-              , None )
+          let f (fld, t, _) (flds, len) =
+            ( ( fld
+              , create_strexp_of_type ~path:((name, fld) :: path) tenv struct_init_mode t len inst
+              )
+              :: flds
+            , None )
           in
           let flds, _ = List.fold_right ~f fields ~init:([], len) in
           Estruct (flds, inst)

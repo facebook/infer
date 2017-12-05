@@ -241,15 +241,9 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
             record_decl_info.rdi_is_complete_definition
             && not record_decl_info.rdi_is_dependent_type
           in
-          let extra_fields =
-            if CTrans_models.is_objc_memory_model_controlled (Typ.Name.name sil_typename) then
-              [Typ.Struct.objc_ref_counter_field]
-            else []
-          in
           if is_translatable_definition then (
             CAst_utils.update_sil_types_map type_ptr sil_desc ;
-            let non_statics = get_struct_fields tenv definition_decl in
-            let fields = CGeneral_utils.append_no_duplicates_fields non_statics extra_fields in
+            let fields = get_struct_fields tenv definition_decl in
             let statics = [] in
             (* Note: We treat static field same as global variables *)
             let methods = [] in
@@ -265,7 +259,7 @@ and get_record_struct_type tenv definition_decl : Typ.desc =
           else (
             (* There is no definition for that struct in whole translation unit.
                 Put empty struct into tenv to prevent backend problems *)
-            ignore (Tenv.mk_struct tenv ~fields:extra_fields sil_typename) ;
+            ignore (Tenv.mk_struct tenv ~fields:[] sil_typename) ;
             CAst_utils.update_sil_types_map type_ptr sil_desc ;
             sil_desc ) )
   | _ ->

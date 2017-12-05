@@ -936,7 +936,6 @@ let perform_analysis_phase tenv (summary: Specs.summary) (proc_cfg: ProcCfg.Exce
       L.d_ln () ;
       L.d_decrease_indent 1 ;
       Worklist.add wl start_node ;
-      Config.arc_mode := Hashtbl.mem (Procdesc.get_flags pdesc) Mleak_buckets.objc_arc_flag ;
       ignore (path_set_put_todo wl start_node init_edgeset) ;
       forward_tabulate tenv proc_cfg wl
     in

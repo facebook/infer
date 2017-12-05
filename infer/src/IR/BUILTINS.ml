@@ -42,8 +42,6 @@ module type S = sig
 
   val __get_array_length : t
 
-  val __get_hidden_field : t
-
   val __get_type_of : t
 
   val __global_access : t
@@ -76,8 +74,6 @@ module type S = sig
   val __set_array_length : t
 
   val __set_file_attribute : t
-
-  val __set_hidden_field : t
 
   val __set_locked_attribute : t
 

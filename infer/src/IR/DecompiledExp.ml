@@ -87,15 +87,13 @@ let rec to_string = function
       (* this->fieldname *)
       Typ.Fieldname.to_simplified_string f
   | Darrow (de, f) ->
-      if Typ.Fieldname.is_hidden f then to_string de
-      else if java () then to_string de ^ "." ^ Typ.Fieldname.to_flat_string f
+      if java () then to_string de ^ "." ^ Typ.Fieldname.to_flat_string f
       else to_string de ^ "->" ^ Typ.Fieldname.to_string f
   | Ddot (Dpvar _, fe) when eradicate_java () ->
       (* static field access *)
       Typ.Fieldname.to_simplified_string fe
   | Ddot (de, f) ->
-      if Typ.Fieldname.is_hidden f then "&" ^ to_string de
-      else if java () then to_string de ^ "." ^ Typ.Fieldname.to_flat_string f
+      if java () then to_string de ^ "." ^ Typ.Fieldname.to_flat_string f
       else to_string de ^ "." ^ Typ.Fieldname.to_string f
   | Dpvar pv ->
       Mangled.to_string (Pvar.get_name pv)

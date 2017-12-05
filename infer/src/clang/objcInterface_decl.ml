@@ -116,10 +116,7 @@ let add_class_to_tenv qual_type_to_sil_type tenv decl_info name_info decl_list o
         (decl_fields, decl_supers)
   in
   let fields = CGeneral_utils.append_no_duplicates_fields fields fields_sc in
-  (* We add the special hidden counter_field for implementing reference counting *)
-  let modelled_fields =
-    Typ.Struct.objc_ref_counter_field :: CField_decl.modelled_field name_info
-  in
+  let modelled_fields = CField_decl.modelled_field name_info in
   let all_fields = CGeneral_utils.append_no_duplicates_fields modelled_fields fields in
   L.(debug Capture Verbose) "Class %a field:@\n" QualifiedCppName.pp class_name ;
   List.iter

@@ -1218,14 +1218,7 @@ let java_proc_return_typ pname_java : t =
 module Fieldname = struct
   type clang_field_info = {class_name: Name.t; field_name: string} [@@deriving compare]
 
-  type t =
-    | Hidden
-    (* Backend relies that Hidden is the smallest (first) field in Abs.should_raise_objc_leak *)
-    | Clang of clang_field_info
-    | Java of string
-    [@@deriving compare]
-
-  let hidden_str = ".hidden"
+  type t = Clang of clang_field_info | Java of string [@@deriving compare]
 
   let equal = [%compare.equal : t]
 
@@ -1239,14 +1232,7 @@ module Fieldname = struct
   module Map = Caml.Map.Make (T)
 
   (** Convert a fieldname to a string. *)
-  let to_string = function
-    | Hidden ->
-        hidden_str
-    | Java fname ->
-        fname
-    | Clang {field_name} ->
-        field_name
-
+  let to_string = function Java fname -> fname | Clang {field_name} -> field_name
 
   (** Convert a fieldname to a simplified string with at most one-level path. *)
   let to_simplified_string fn =
@@ -1272,12 +1258,7 @@ module Fieldname = struct
     match String.rsplit2 s ~on:'.' with Some (_, s2) -> s2 | _ -> s
 
 
-  let pp f = function
-    | Hidden ->
-        Format.fprintf f "%s" hidden_str
-    | Java field_name | Clang {field_name} ->
-        Format.fprintf f "%s" field_name
-
+  let pp f = function Java field_name | Clang {field_name} -> Format.fprintf f "%s" field_name
 
   let class_name_replace fname ~f =
     match fname with
@@ -1322,12 +1303,6 @@ module Fieldname = struct
         None
 
 
-  (** hidded fieldname constant *)
-  let hidden = Hidden
-
-  (** hidded fieldname constant *)
-  let is_hidden fn = equal fn hidden
-
   module Clang = struct
     let from_class_name class_name field_name = Clang {class_name; field_name}
   end
@@ -1339,7 +1314,7 @@ module Fieldname = struct
       match field_name with
       | Java _ ->
           String.is_prefix ~prefix:"val$" (to_flat_string field_name)
-      | Hidden | Clang _ ->
+      | Clang _ ->
           false
 
   end
@@ -1434,14 +1409,5 @@ module Struct = struct
           None )
     | _ ->
         None
-
-
-  let objc_ref_counter_annot = [({Annot.class_name= "ref_counter"; parameters= []}, false)]
-
-  (** Field used for objective-c reference counting *)
-  let objc_ref_counter_field = (Fieldname.hidden, mk (T.Tint IInt), objc_ref_counter_annot)
-
-  let is_objc_ref_counter_field (fld, _, a) =
-    Fieldname.is_hidden fld && Annot.Item.equal a objc_ref_counter_annot
 
 end

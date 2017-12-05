@@ -374,8 +374,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 match Tenv.lookup tenv tn with
                 | Some {fields} ->
                     List.filter_map fields ~f:(fun (fieldname, fieldtype, _) ->
-                        if Typ.Fieldname.is_hidden fieldname then None
-                        else Some (Exp.Lfield (exp, fieldname, typ), fieldtype) )
+                        Some (Exp.Lfield (exp, fieldname, typ), fieldtype) )
                 | None ->
                     assert false
               in
@@ -2051,8 +2050,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match Tenv.lookup tenv tname with
       | Some {fields} ->
           List.filter_map fields ~f:(fun (fieldname, fieldtype, _) ->
-              if Typ.Fieldname.is_hidden fieldname then None
-              else Some (Exp.Lfield (var_exp, fieldname, var_typ), fieldtype) )
+              Some (Exp.Lfield (var_exp, fieldname, var_typ), fieldtype) )
       | None ->
           assert false
     in

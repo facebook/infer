@@ -989,19 +989,6 @@ let sigma_reachable root_fav sigma =
   !reach_set
 
 
-(** Check whether the hidden counter field of a struct representing an objective-c object is
-      positive, and whether the leak is part of the specified buckets. In the positive case, it
-      returns the bucket *)
-let should_raise_objc_leak hpred =
-  match hpred with
-  | Sil.Hpointsto
-      (_, Sil.Estruct ((fn, Sil.Eexp (Exp.Const Const.Cint i, _)) :: _, _), Exp.Sizeof {typ})
-    when Typ.Fieldname.is_hidden fn && IntLit.gt i IntLit.zero (* counter > 0 *) ->
-      Mleak_buckets.should_raise_objc_leak typ
-  | _ ->
-      None
-
-
 let check_observer_is_unsubscribed_deallocation tenv prop e =
   let pvar_opt =
     match Attribute.get_resource tenv prop e with
@@ -1124,8 +1111,6 @@ let check_junk ?original_prop pname tenv prop =
             in
             let ml_bucket_opt =
               match resource with
-              | PredSymb.Rmemory PredSymb.Mobjc ->
-                  should_raise_objc_leak hpred
               | PredSymb.Rmemory PredSymb.Mnew
               | PredSymb.Rmemory PredSymb.Mnew_array
                 when Config.curr_language_is Config.Clang ->

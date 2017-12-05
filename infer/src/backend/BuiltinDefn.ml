@@ -397,89 +397,6 @@ let execute___set_mem_attribute {Builtin.tenv; pdesc; prop_; path; ret_id; args;
   | _ ->
       raise (Exceptions.Wrong_argument_number __POS__)
 
-
-(** take a pointer to a struct, and return the value of a hidden field in the struct *)
-let execute___get_hidden_field {Builtin.tenv; pdesc; prop_; path; ret_id; args} : Builtin.ret_typ =
-  match args with
-  | [(lexp, _)] ->
-      let pname = Procdesc.get_proc_name pdesc in
-      let n_lexp, prop = check_arith_norm_exp tenv pname lexp prop_ in
-      let ret_val = ref None in
-      let return_val p =
-        match !ret_val with Some e -> return_result tenv e p ret_id | None -> p
-      in
-      let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
-      let filter_fld_hidden (f, _) = Typ.Fieldname.is_hidden f in
-      let has_fld_hidden fsel = List.exists ~f:filter_fld_hidden fsel in
-      let do_hpred in_foot hpred =
-        match hpred with
-        | Sil.Hpointsto (e, Sil.Estruct (fsel, inst), texp)
-          when Exp.equal e n_lexp && not (has_fld_hidden fsel) ->
-            let foot_e = Lazy.force foot_var in
-            ret_val := Some foot_e ;
-            let se = Sil.Eexp (foot_e, Sil.inst_none) in
-            let fsel' = (Typ.Fieldname.hidden, se) :: fsel in
-            Sil.Hpointsto (e, Sil.Estruct (fsel', inst), texp)
-        | Sil.Hpointsto (e, Sil.Estruct (fsel, _), _)
-          when Exp.equal e n_lexp && not in_foot && has_fld_hidden fsel ->
-            let set_ret_val () =
-              match List.find ~f:filter_fld_hidden fsel with
-              | Some (_, Sil.Eexp (e, _)) ->
-                  ret_val := Some e
-              | _ ->
-                  ()
-            in
-            set_ret_val () ; hpred
-        | _ ->
-            hpred
-      in
-      let sigma' = List.map ~f:(do_hpred false) prop.Prop.sigma in
-      let sigma_fp' = List.map ~f:(do_hpred true) prop.Prop.sigma_fp in
-      let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp' in
-      let prop'' = return_val (Prop.normalize tenv prop') in
-      [(prop'', path)]
-  | _ ->
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-
-(** take a pointer to a struct and a value,
-    and set a hidden field in the struct to the given value *)
-let execute___set_hidden_field {Builtin.tenv; pdesc; prop_; path; args} : Builtin.ret_typ =
-  match args with
-  | [(lexp1, _); (lexp2, _)] ->
-      let pname = Procdesc.get_proc_name pdesc in
-      let n_lexp1, prop__ = check_arith_norm_exp tenv pname lexp1 prop_ in
-      let n_lexp2, prop = check_arith_norm_exp tenv pname lexp2 prop__ in
-      let foot_var = lazy (Exp.Var (Ident.create_fresh Ident.kfootprint)) in
-      let filter_fld_hidden (f, _) = Typ.Fieldname.is_hidden f in
-      let has_fld_hidden fsel = List.exists ~f:filter_fld_hidden fsel in
-      let do_hpred in_foot hpred =
-        match hpred with
-        | Sil.Hpointsto (e, Sil.Estruct (fsel, inst), texp) when Exp.equal e n_lexp1 && not in_foot ->
-            let se = Sil.Eexp (n_lexp2, Sil.inst_none) in
-            let fsel' =
-              (Typ.Fieldname.hidden, se)
-              :: List.filter ~f:(fun x -> not (filter_fld_hidden x)) fsel
-            in
-            Sil.Hpointsto (e, Sil.Estruct (fsel', inst), texp)
-        | Sil.Hpointsto (e, Sil.Estruct (fsel, inst), texp)
-          when Exp.equal e n_lexp1 && in_foot && not (has_fld_hidden fsel) ->
-            let foot_e = Lazy.force foot_var in
-            let se = Sil.Eexp (foot_e, Sil.inst_none) in
-            let fsel' = (Typ.Fieldname.hidden, se) :: fsel in
-            Sil.Hpointsto (e, Sil.Estruct (fsel', inst), texp)
-        | _ ->
-            hpred
-      in
-      let sigma' = List.map ~f:(do_hpred false) prop.Prop.sigma in
-      let sigma_fp' = List.map ~f:(do_hpred true) prop.Prop.sigma_fp in
-      let prop' = Prop.set prop ~sigma:sigma' ~sigma_fp:sigma_fp' in
-      let prop'' = Prop.normalize tenv prop' in
-      [(prop'', path)]
-  | _ ->
-      raise (Exceptions.Wrong_argument_number __POS__)
-
-
 let set_attr tenv pdesc prop path exp attr =
   let pname = Procdesc.get_proc_name pdesc in
   let n_lexp, prop = check_arith_norm_exp tenv pname exp prop in
@@ -952,8 +869,6 @@ let __free_cf = Builtin.register BuiltinDecl.__free_cf (execute_free_cf PredSymb
 (* return the length of the array passed as a parameter *)
 let __get_array_length = Builtin.register BuiltinDecl.__get_array_length execute___get_array_length
 
-let __get_hidden_field = Builtin.register BuiltinDecl.__get_hidden_field execute___get_hidden_field
-
 let __get_type_of = Builtin.register BuiltinDecl.__get_type_of execute___get_type_of
 
 (* only used in Quandary, so ok to skip *)
@@ -1004,9 +919,6 @@ let __set_array_length = Builtin.register BuiltinDecl.__set_array_length execute
 let __set_file_attribute =
   Builtin.register BuiltinDecl.__set_file_attribute execute___set_file_attribute
 
-
-(* set a hidden field in the struct to the given value *)
-let __set_hidden_field = Builtin.register BuiltinDecl.__set_hidden_field execute___set_hidden_field
 
 let __set_locked_attribute =
   Builtin.register BuiltinDecl.__set_locked_attribute execute___set_locked_attribute

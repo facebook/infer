@@ -1506,10 +1506,7 @@ and ml_buckets =
   CLOpt.mk_symbol_seq ~deprecated:["ml_buckets"; "-ml_buckets"] ~long:"ml-buckets"
     ~default:[`MLeak_cf]
     ~in_help:CLOpt.([(Analyze, manual_clang)])
-    {|Specify the memory leak buckets to be checked in Objective-C/C++:
-- $(b,cf) checks leaks from Core Foundation (activated by default),
-- $(b,arc) from code compiled in ARC mode,
-- $(b,narc) from code not compiled in ARC mode,
+    {|Specify the memory leak buckets to be checked in C++:
 - $(b,cpp) from C++ code
 |}
     ~symbols:ml_bucket_symbols ~eq:PVariant.( = )

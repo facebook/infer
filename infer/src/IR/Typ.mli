@@ -600,12 +600,6 @@ module Fieldname : sig
 
   val clang_get_qual_class : t -> QualifiedCppName.t option
   (** get qualified classname of a field if it's coming from clang frontend. returns None otherwise *)
-
-  val hidden : t
-  (** hidded fieldname constant *)
-
-  val is_hidden : t -> bool
-  (** hidded fieldname constant *)
 end
 
 module Struct : sig
@@ -644,8 +638,4 @@ module Struct : sig
     lookup:lookup -> Fieldname.t -> typ -> (typ * Annot.Item.t) option
   (** Return the type of the field [fn] and its annotation, None if [typ] has no field named [fn] *)
 
-  val objc_ref_counter_field : Fieldname.t * typ * Annot.Item.t
-  (** Field used for objective-c reference counting *)
-
-  val is_objc_ref_counter_field : Fieldname.t * typ * Annot.Item.t -> bool
 end
