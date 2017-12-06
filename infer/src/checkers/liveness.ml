@@ -104,10 +104,17 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   let matcher_scope_guard =
     QualifiedCppName.Match.of_fuzzy_qual_names
       [ (* C++ *)
-        "folly::RWSpinLock::ReadHolder"
+        "faiss::ScopeDeleter"
+      ; "folly::RWSpinLock::ReadHolder"
       ; "folly::RWSpinLock::WriteHolder"
-      ; "folly::SpinLockGuard"
       ; "folly::ScopeGuard"
+      ; "folly::SharedMutex::ReadHolder"
+      ; "folly::SharedMutex::WriteHolder"
+      ; "folly::SharedMutexReadPriority::ReadHolder"
+      ; "folly::SharedMutexReadPriority::WriteHolder"
+      ; "folly::SharedMutexWritePriority::ReadHolder"
+      ; "folly::SharedMutexWritePriority::WriteHolder"
+      ; "folly::SpinLockGuard"
       ; "std::lock_guard"
       ; "std::scoped_lock"
       ; "std::unique_lock" (* Obj-C *)
@@ -162,4 +169,3 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   List.iter (CFG.nodes cfg) ~f:report_on_node ;
   summary
-

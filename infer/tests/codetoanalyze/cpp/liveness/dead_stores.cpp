@@ -13,6 +13,13 @@
 
 namespace folly {
 class ScopeGuard {};
+
+class SharedMutex {
+ public:
+  class ReadHolder {};
+  class WriteHolder {};
+};
+
 } // namespace folly
 
 namespace dead_stores {
@@ -287,8 +294,12 @@ int* sentinel_ptr_ok(int* j) {
 
 void scope_guard_ok() {
   // realistically, it would be something like guard = folly::makeGuard();
-  folly::ScopeGuard* guard = nullptr;
+  folly::ScopeGuard guard;
 }
+
+void read_holder_ok() { folly::SharedMutex::ReadHolder guard; }
+
+void write_holder_ok() { folly::SharedMutex::WriteHolder guard; }
 
 struct S {
   ~S() {}
