@@ -139,10 +139,46 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           | None ->
               TaintDomain.empty
       in
-      let get_short_trace_string original_path_source final_sink =
-        F.asprintf "%a -> %a%s" TraceDomain.Source.pp original_path_source TraceDomain.Sink.pp
-          final_sink
-          (if is_endpoint original_path_source then ". Note: source is an endpoint." else "")
+      let get_caller_string caller_site =
+        let caller_pname = CallSite.pname caller_site in
+        F.sprintf " in procedure %s"
+          (Typ.Procname.to_simplified_string ~withclass:true caller_pname)
+      in
+      let pp_trace_elem site fmt caller_string =
+        F.fprintf fmt "(%s)%s at %a"
+          (Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname site))
+          caller_string Location.pp (CallSite.loc site)
+      in
+      let pp_source source_caller_opt fmt initial_source =
+        let source_caller_string =
+          match source_caller_opt with
+          | Some source_caller ->
+              get_caller_string (TraceDomain.Source.call_site source_caller)
+          | None ->
+              ""
+        in
+        F.fprintf fmt "%a%a" TraceDomain.Source.Kind.pp
+          (TraceDomain.Source.kind initial_source)
+          (pp_trace_elem (TraceDomain.Source.call_site initial_source))
+          source_caller_string
+      in
+      let pp_sink sink_caller_opt fmt final_sink =
+        let sink_caller_string =
+          match sink_caller_opt with
+          | Some sink_caller ->
+              get_caller_string (TraceDomain.Sink.call_site sink_caller)
+          | None ->
+              ""
+        in
+        F.fprintf fmt "%a%a" TraceDomain.Sink.Kind.pp
+          (TraceDomain.Sink.kind final_sink)
+          (pp_trace_elem (TraceDomain.Sink.call_site final_sink))
+          sink_caller_string
+      in
+      let get_short_trace_string initial_source source_caller_opt final_sink sink_caller_opt =
+        F.asprintf "%a ~> %a%s" (pp_source source_caller_opt) initial_source
+          (pp_sink sink_caller_opt) final_sink
+          (if is_endpoint initial_source then ". Note: source is an endpoint." else "")
       in
       let report_one {TraceDomain.issue; path_source; path_sink} =
         let open TraceDomain in
@@ -252,9 +288,13 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               Errlog.make_trace_element 0 (CallSite.loc call_site) desc [])
             expanded_sinks
         in
-        let _, original_path_source = List.hd_exn expanded_sources in
+        let _, initial_source = List.hd_exn expanded_sources in
+        let initial_source_caller = Option.map ~f:snd (List.nth expanded_sources 1) in
         let final_sink = List.hd_exn expanded_sinks in
-        let trace_str = get_short_trace_string original_path_source final_sink in
+        let final_sink_caller = List.nth expanded_sinks 1 in
+        let trace_str =
+          get_short_trace_string initial_source initial_source_caller final_sink final_sink_caller
+        in
         let ltr = source_trace @ List.rev sink_trace in
         let exn = Exceptions.Checkers (issue.unique_id, Localise.verbatim_desc trace_str) in
         Reporting.log_error proc_data.extras.summary ~loc:(CallSite.loc cur_site) ~ltr exn
