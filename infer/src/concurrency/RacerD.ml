@@ -1170,12 +1170,26 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
   let pname = Procdesc.get_proc_name pdesc in
   let report_one_path ((_, sinks) as path) =
     let final_sink, _ = List.hd_exn sinks in
+    let initial_sink, _ = List.last_exn sinks in
     let is_full_trace = TraceElem.is_direct final_sink in
+    let is_pvar_base initial_sink =
+      let access_path = Access.get_access_path (PathDomain.Sink.kind initial_sink) in
+      Option.value_map ~default:false access_path ~f:(fun ap ->
+          match ap with
+          | (Var.LogicalVar _, _), _ ->
+              false
+          | (Var.ProgramVar pvar, _), _ ->
+              not (Pvar.is_frontend_tmp pvar) )
+    in
     (* Traces can be truncated due to limitations of our Buck integration. If we have a truncated
-       trace, it's probably going to be too confusing to be actionable. Skip it. *)
-    if not (Typ.Procname.is_java pname) || is_full_trace || not Config.filtering then
+       trace, it's probably going to be too confusing to be actionable. Skip it.
+       For C++ it is difficult to understand error messages when access path starts with a logical
+       variable or a temporary variable. We want to skip the reports for now until we
+       find a solution *)
+    if not Config.filtering
+       || if Typ.Procname.is_java pname then is_full_trace else is_pvar_base initial_sink
+    then
       let final_sink_site = PathDomain.Sink.call_site final_sink in
-      let initial_sink, _ = List.last_exn sinks in
       let initial_sink_site = PathDomain.Sink.call_site initial_sink in
       let loc = CallSite.loc initial_sink_site in
       let ltr = make_trace ~report_kind path pdesc in
