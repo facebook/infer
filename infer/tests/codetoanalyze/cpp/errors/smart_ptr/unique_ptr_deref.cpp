@@ -119,4 +119,41 @@ int unique_ptr_move_null_deref() {
   std::unique_ptr<int> p2 = std::move(p1);
   return *p1;
 }
+
+} // namespace unique_ptr
+
+namespace unique_ptr_with_deleter {
+
+/* This is just a compilation test */
+
+template <class T>
+class Pointer {
+ public:
+  /* No constructor with only one T* argument */
+  /* implicit */ Pointer(std::nullptr_t = nullptr) noexcept {}
+  Pointer(T* ptr, int n) noexcept {}
+
+  friend bool operator==(Pointer a, Pointer b) noexcept { return true; }
+  friend bool operator!=(Pointer a, Pointer b) noexcept { return true; }
+  explicit operator bool() const noexcept { return true; }
+  T* operator->() const noexcept { return get(); }
+  T& operator*() const noexcept { return *get(); }
+  T* get() const noexcept { return nullptr; }
+};
+
+template <class T>
+struct Deleter {
+  using pointer = Pointer<T>;
+
+  void operator()(pointer ptr) const {}
+};
+
+template <class T>
+using my_unique_ptr = std::unique_ptr<T, Deleter<T>>;
+
+bool instantiate() {
+  my_unique_ptr<int> p;
+  my_unique_ptr<int[]> q;
+  return p != nullptr && q != nullptr;
+}
 }

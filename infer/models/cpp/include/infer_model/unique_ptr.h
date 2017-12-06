@@ -81,10 +81,6 @@ struct unique_ptr {
     model_set(other, nullptr);
   }
 
-  static pointer model_get(infer_unique_ptr_t self) noexcept {
-    return (pointer)(*self);
-  }
-
   static void model_swap(infer_unique_ptr_t infer_self,
                          infer_unique_ptr_t infer_other) noexcept {
     const void* t = *infer_self;
@@ -179,7 +175,7 @@ struct unique_ptr {
   _Dp_reference get_deleter() {}
 
   explicit operator bool() const {
-    return !!(bool)(model_get(__cast_to_infer_ptr(this)));
+    return !!(bool)(*__cast_to_infer_ptr(this));
   }
   pointer release() INFER_MODEL_AS_DEREF_FIRST_ARG;
 
@@ -233,10 +229,6 @@ struct unique_ptr<_Tp[], _Dp> {
                          infer_unique_ptr_t other) noexcept {
     *self = *other;
     model_set(other, nullptr);
-  }
-
-  static pointer model_get(infer_unique_ptr_t self) noexcept {
-    return (pointer)(*self);
   }
 
   static void model_swap(infer_unique_ptr_t infer_self,
@@ -329,7 +321,7 @@ struct unique_ptr<_Tp[], _Dp> {
   _Dp_reference get_deleter() {}
 
   explicit operator bool() const {
-    return !!(bool)(model_get(__cast_to_infer_ptr(this)));
+    return !!(bool)(*__cast_to_infer_ptr(this));
   }
   pointer release() INFER_MODEL_AS_DEREF_FIRST_ARG;
 

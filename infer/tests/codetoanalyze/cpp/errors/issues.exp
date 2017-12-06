@@ -1,4 +1,5 @@
 INFER_MODEL/cpp/include/infer_model/shared_ptr.h, std::make_shared<lol>, 1, MEMORY_LEAK, [start of procedure std::make_shared<lol>(),Skipping lol: function or method not found]
+INFER_MODEL/cpp/include/infer_model/unique_ptr.h, std::operator!=<65d659492edc5cb5>, 1, Abduction_case_not_implemented, [start of procedure std::operator!=<65d659492edc5cb5>()]
 codetoanalyze/cpp/errors/c_tests/c_bugs.cpp, crash_fgetc, 4, NULL_DEREFERENCE, [start of procedure crash_fgetc()]
 codetoanalyze/cpp/errors/c_tests/c_bugs.cpp, crash_getc, 4, NULL_DEREFERENCE, [start of procedure crash_getc()]
 codetoanalyze/cpp/errors/c_tests/c_bugs.cpp, malloc_fail_gets_reported, 2, NULL_DEREFERENCE, [start of procedure malloc_fail_gets_reported()]

@@ -77,8 +77,6 @@ class shared_ptr : public std__shared_ptr<T> {
     model_set(other, nullptr);
   }
 
-  static T* model_get(infer_shared_ptr_t self) { return (T*)(*self); }
-
   static void model_swap(infer_shared_ptr_t infer_self,
                          infer_shared_ptr_t infer_other) {
     const void* t = *infer_self;
@@ -268,7 +266,7 @@ class shared_ptr : public std__shared_ptr<T> {
   explicit operator bool() const noexcept {
     // for some reason analyzer can't cast to bool correctly, trick with two
     // negations creates right specs for this function
-    return !!(bool)(model_get(__cast_to_infer_ptr(this)));
+    return !!(bool)(*__cast_to_infer_ptr(this));
   }
   template <class U>
   bool owner_before(shared_ptr<U> const& b) const {
