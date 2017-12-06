@@ -90,12 +90,7 @@ end)
 
 let trace_equal t1 t2 = MockTrace.( <= ) ~lhs:t1 ~rhs:t2 && MockTrace.( <= ) ~lhs:t2 ~rhs:t1
 
-let source_equal path_source source =
-  match path_source with
-  | MockTrace.Known s ->
-      MockSource.equal s source
-  | MockTrace.Footprint _ ->
-      false
+let source_equal s source = MockSource.equal s source
 
 
 let tests =

@@ -118,14 +118,11 @@ module Make (TaintSpecification : TaintSpec.S) = struct
       lazy (String.Set.of_list (QuandaryConfig.Endpoint.of_json Config.quandary_endpoints))
 
 
-    let is_endpoint = function
-      | TraceDomain.Known source -> (
-        match CallSite.pname (TraceDomain.Source.call_site source) with
-        | Typ.Procname.Java java_pname ->
-            String.Set.mem (Lazy.force endpoints) (Typ.Procname.java_get_class_name java_pname)
-        | _ ->
-            false )
-      | TraceDomain.Footprint _ ->
+    let is_endpoint source =
+      match CallSite.pname (TraceDomain.Source.call_site source) with
+      | Typ.Procname.Java java_pname ->
+          String.Set.mem (Lazy.force endpoints) (Typ.Procname.java_get_class_name java_pname)
+      | _ ->
           false
 
 
@@ -143,7 +140,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
               TaintDomain.empty
       in
       let get_short_trace_string original_path_source final_sink =
-        F.asprintf "%a -> %a%s" TraceDomain.pp_path_source original_path_source TraceDomain.Sink.pp
+        F.asprintf "%a -> %a%s" TraceDomain.Source.pp original_path_source TraceDomain.Sink.pp
           final_sink
           (if is_endpoint original_path_source then ". Note: source is an endpoint." else "")
       in
@@ -219,12 +216,7 @@ module Make (TaintSpecification : TaintSpec.S) = struct
                 acc
         in
         let expanded_sources, _ =
-          match path_source with
-          | Known source ->
-              let sources, calls = expand_source source ([(None, source)], CallSite.Set.empty) in
-              (List.map ~f:(fun (ap_opt, source) -> (ap_opt, Known source)) sources, calls)
-          | Footprint _ ->
-              ([(None, path_source)], CallSite.Set.empty)
+          expand_source path_source ([(None, path_source)], CallSite.Set.empty)
         in
         let expanded_sinks, _ =
           expand_sink path_sink sink_indexes ([path_sink], CallSite.Set.empty)
@@ -244,14 +236,10 @@ module Make (TaintSpecification : TaintSpec.S) = struct
           List.map
             ~f:(fun (access_path_opt, path_source) ->
               let desc, loc =
-                match path_source with
-                | Known source ->
-                    let call_site = Source.call_site source in
-                    ( Format.asprintf "Return from %a%a" Typ.Procname.pp (CallSite.pname call_site)
-                        pp_access_path_opt access_path_opt
-                    , CallSite.loc call_site )
-                | Footprint access_path ->
-                    (Format.asprintf "Read from %a" AccessPath.Abs.pp access_path, Location.dummy)
+                let call_site = Source.call_site path_source in
+                ( Format.asprintf "Return from %a%a" Typ.Procname.pp (CallSite.pname call_site)
+                    pp_access_path_opt access_path_opt
+                , CallSite.loc call_site )
               in
               Errlog.make_trace_element 0 loc desc [])
             expanded_sources
