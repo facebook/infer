@@ -522,6 +522,9 @@ module Procname : sig
   val to_simplified_string : ?withclass:bool -> t -> string
   (** Convert a proc name into a easy string for the user to see in an IDE. *)
 
+  val hashable_name : t -> string
+  (** Print the procedure name in a format suitable for computing the bug hash *)
+
   val to_unique_id : t -> string
   (** Convert a proc name into a unique identifier. *)
 
