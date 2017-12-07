@@ -982,11 +982,11 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
 
 module AccessListMap = Caml.Map.Make (RacerDDomain.Access)
 
-type conflicts = RacerDDomain.TraceElem.t list
+type conflict = RacerDDomain.TraceElem.t
 
 type report_kind =
-  | WriteWriteRace of conflicts  (** possibly-empty list of conflicting accesses *)
-  | ReadWriteRace of conflicts  (** non-empty list of conflicting accesses *)
+  | WriteWriteRace of conflict option  (** one of conflicting access, if there are any *)
+  | ReadWriteRace of conflict  (** one of several conflicting accesses *)
   | UnannotatedInterface
 
 (** Explain why we are reporting this access, in Java *)
@@ -1144,13 +1144,13 @@ let make_trace ~report_kind original_path pdesc =
     first_trace_spacer :: original_trace @ second_trace_spacer :: conflict_trace
   in
   match report_kind with
-  | ReadWriteRace (conflict_sink :: _) ->
+  | ReadWriteRace conflict_sink ->
       make_with_conflicts conflict_sink original_trace ~label1:"<Read trace>"
         ~label2:"<Write trace>"
-  | WriteWriteRace (conflict_sink :: _) ->
+  | WriteWriteRace Some conflict_sink ->
       make_with_conflicts conflict_sink original_trace ~label1:"<Write on unknown thread>"
         ~label2:"<Write on background thread>"
-  | ReadWriteRace [] | WriteWriteRace [] | UnannotatedInterface ->
+  | WriteWriteRace None | UnannotatedInterface ->
       original_trace
 
 
@@ -1231,22 +1231,16 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
     pp_access final_sink
 
 
-let make_read_write_race_description ~read_is_sync conflicts pname final_sink_site
-    initial_sink_site final_sink =
-  let conflicting_proc_names =
-    List.map ~f:(fun (_, _, _, _, pdesc) -> Procdesc.get_proc_name pdesc) conflicts
-    |> Typ.Procname.Set.of_list
-  in
-  let pp_conflicts fmt conflicts =
-    if Int.equal (Typ.Procname.Set.cardinal conflicts) 1 then
-      Typ.Procname.pp fmt (Typ.Procname.Set.min_elt conflicts)
-    else Typ.Procname.Set.pp fmt conflicts
+let make_read_write_race_description ~read_is_sync conflict pname final_sink_site initial_sink_site
+    final_sink =
+  let pp_conflict fmt (_, _, _, _, pdesc) =
+    F.fprintf fmt "%s"
+      (Typ.Procname.to_simplified_string ~withclass:true (Procdesc.get_proc_name pdesc))
   in
   let conflicts_description =
-    Format.asprintf "Potentially races with%s writes in method%s %a"
+    Format.asprintf "Potentially races with%s write in method %a"
       (if read_is_sync then " unsynchronized" else "")
-      (if Typ.Procname.Set.cardinal conflicting_proc_names > 1 then "s" else "")
-      (MF.wrap_monospaced pp_conflicts) conflicting_proc_names
+      (MF.wrap_monospaced pp_conflict) conflict
   in
   Format.asprintf "Read/Write race. Non-private method %a%s reads%s from %a. %s."
     (MF.wrap_monospaced pp_procname_short)
@@ -1336,9 +1330,10 @@ let report_unsafe_accesses
           in
           if not (List.is_empty writes_on_background_thread && not (ThreadsDomain.is_any thread))
           then
+            let conflict = List.hd writes_on_background_thread in
             report_thread_safety_violation tenv pdesc
               ~make_description:make_unprotected_write_description
-              ~report_kind:(WriteWriteRace writes_on_background_thread) access thread
+              ~report_kind:(WriteWriteRace conflict) access thread
       | _ ->
           (* Do not report unprotected writes when an access can't run in parallel with itself, or
                for ObjC_Cpp *)
@@ -1371,11 +1366,10 @@ let report_unsafe_accesses
             accesses
         in
         if not (List.is_empty all_writes) then
+          let (conflict_access, _, _, _, _) as conflict = List.hd_exn all_writes in
           report_thread_safety_violation tenv pdesc
-            ~make_description:(make_read_write_race_description ~read_is_sync:false all_writes)
-            ~report_kind:
-              (ReadWriteRace (List.map ~f:(fun (access, _, _, _, _) -> access) all_writes))
-            access thread
+            ~make_description:(make_read_write_race_description ~read_is_sync:false conflict)
+            ~report_kind:(ReadWriteRace conflict_access) access thread
     | (Access.Read _ | ContainerRead _), AccessPrecondition.Protected excl ->
         (* protected read. report unprotected writes and opposite protected writes as conflicts
              Thread and Lock are opposites of one another, and Both has no opposite *)
@@ -1400,13 +1394,11 @@ let report_unsafe_accesses
             accesses
         in
         if not (List.is_empty conflicting_writes) then
+          let (conflict_access, _, _, _, _) as conflict = List.hd_exn conflicting_writes in
           (* protected read with conflicting unprotected write(s). warn. *)
           report_thread_safety_violation tenv pdesc
-            ~make_description:
-              (make_read_write_race_description ~read_is_sync:true conflicting_writes)
-            ~report_kind:
-              (ReadWriteRace (List.map ~f:(fun (access, _, _, _, _) -> access) conflicting_writes))
-            access thread
+            ~make_description:(make_read_write_race_description ~read_is_sync:true conflict)
+            ~report_kind:(ReadWriteRace conflict_access) access thread
   in
   AccessListMap.iter
     (fun _ grouped_accesses ->
