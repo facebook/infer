@@ -225,6 +225,7 @@ module Models = struct
         (QualifiedCppName.Match.of_fuzzy_qual_names ~prefix:true
            [ "folly::AtomicStruct"
            ; "folly::Future"
+           ; "folly::futures"
            ; "folly::LockedPtr"
            ; "folly::Optional"
            ; "folly::Promise"
