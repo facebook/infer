@@ -77,6 +77,11 @@ class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
     system(std::to_string(formal.i).c_str());
   }
 
+  void service_this_ok() {
+    // endpoint object itself should not be treated as tainted
+    system((const char*)this);
+  }
+
  private:
   void private_not_endpoint_ok(std::string formal) { system(formal.c_str()); }
 };

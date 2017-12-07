@@ -124,9 +124,18 @@ module SourceKind = struct
         let typename = Typ.Procname.objc_cpp_get_class_type_name cpp_pname in
         PatternMatch.supertype_exists tenv is_thrift_service_ typename
       in
-      let taint_all ~make_source =
+      (* taint all formals except for [this] *)
+      let taint_all_but_this ~make_source =
         List.map
-          ~f:(fun (name, typ) -> (name, typ, Some (make_source name typ.Typ.desc)))
+          ~f:(fun (name, typ) ->
+            let taint =
+              match Mangled.to_string name with
+              | "this" ->
+                  None
+              | _ ->
+                  Some (make_source name typ.Typ.desc)
+            in
+            (name, typ, taint))
           (Procdesc.get_formals pdesc)
       in
       match Procdesc.get_proc_name pdesc with
@@ -137,9 +146,9 @@ module SourceKind = struct
               (Typ.Procname.get_method pname)
           in
           if String.Set.mem endpoints qualified_pname then
-            taint_all ~make_source:(fun name desc -> UserControlledEndpoint (name, desc))
+            taint_all_but_this ~make_source:(fun name desc -> UserControlledEndpoint (name, desc))
           else if is_thrift_service cpp_pname then
-            taint_all ~make_source:(fun name desc -> Endpoint (name, desc))
+            taint_all_but_this ~make_source:(fun name desc -> Endpoint (name, desc))
           else Source.all_formals_untainted pdesc
       | _ ->
           Source.all_formals_untainted pdesc
