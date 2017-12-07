@@ -63,17 +63,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         OwnershipAbstractValue.unowned
 
 
-  (* will return true on x.f.g.h when x.f and x.f.g are owned, but not requiring x.f.g.h *)
-  (* must not be called with an empty access list *)
-  let all_prefixes_owned (base, accesses) attribute_map =
-    let but_last_rev = List.rev accesses |> List.tl_exn in
-    let rec aux acc = function [] -> acc | _ :: tail as all -> aux (List.rev all :: acc) tail in
-    let prefixes = aux [] but_last_rev in
-    List.for_all
-      ~f:(fun ap -> RacerDDomain.OwnershipDomain.is_owned (base, ap) attribute_map)
-      prefixes
-
-
   let propagate_attributes lhs_access_path rhs_exp attribute_map =
     let rhs_attributes = attributes_of_expr attribute_map rhs_exp in
     Domain.AttributeMapDomain.add lhs_access_path rhs_attributes attribute_map
@@ -95,7 +84,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                | _ ->
                    false ->
             ownership_of_expr rhs_exp ownership
-        | _ when all_prefixes_owned lhs_access_path ownership ->
+        | _ when Domain.OwnershipDomain.is_owned lhs_access_path ownership ->
             ownership_of_expr rhs_exp ownership
         | _ ->
             Domain.OwnershipAbstractValue.unowned

@@ -300,12 +300,38 @@ end
 module OwnershipDomain = struct
   include AbstractDomain.Map (AccessPath) (OwnershipAbstractValue)
 
-  let get_owned access_path astate =
+  (* Helper function used by both is_owned and get_owned. Not exported.*)
+  let get_owned_shallow access_path astate =
     try find access_path astate with Not_found -> OwnershipAbstractValue.Unowned
 
 
-  let is_owned access_path astate =
-    match get_owned access_path astate with OwnershipAbstractValue.Owned -> true | _ -> false
+  (*deep ownership model where only a prefix needs to be owned in the astate*)
+  let is_owned (base, accesses) astate =
+    let is_owned_shallow access_path astate =
+      match get_owned_shallow access_path astate with
+      | OwnershipAbstractValue.Owned ->
+          true
+      | _ ->
+          false
+    in
+    let rec helper = function
+      | prefix, _ when is_owned_shallow (base, prefix) astate ->
+          true
+      | _, [] ->
+          false
+      | prefix, hd :: tl ->
+          helper (List.append prefix [hd], tl)
+    in
+    helper ([], accesses)
+
+
+  (*
+returns Owned if any prefix is owned on any prefix, else OwnedIf if it is 
+OwnedIf in the astate, else UnOwned
+*)
+  let get_owned access_path astate =
+    if is_owned access_path astate then OwnershipAbstractValue.Owned
+    else try find access_path astate with Not_found -> OwnershipAbstractValue.Unowned
 
 
   let find = `Use_get_owned_instead
