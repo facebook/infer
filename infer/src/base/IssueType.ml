@@ -321,6 +321,10 @@ let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
 
 let use_after_free = from_string "USE_AFTER_FREE"
 
+let untrusted_file = from_string "UNTRUSTED_FILE"
+
+let untrusted_file_risk = from_string "UNTRUSTED_FILE_RISK"
+
 let untrusted_variable_length_array = from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"
 
 let user_controlled_sql_risk = from_string "USER_CONTROLLED_SQL_RISK"

@@ -7,6 +7,8 @@
  * of patent rights can be found in the PATENTS file in the same directory.
  */
 
+#include <fcntl.h>
+#include <fstream>
 #include <string>
 
 extern void __infer_sql_sink(std::string);
@@ -71,6 +73,33 @@ class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
 
   void service1_endpoint_struct_string_field_bad(request formal) {
     system(formal.s.c_str());
+  }
+
+  void open_or_create_c_style_file_bad(const char* filename) {
+    open(filename, 0);
+    openat(1, filename, 2);
+    creat(filename, 3);
+    fopen(filename, "w");
+    freopen(filename, "w", nullptr);
+    rename(filename, "mud");
+  }
+
+  void ofstream_open_file_bad(std::string filename) {
+    std::ofstream file1(filename);
+    std::ofstream file2;
+    file2.open(filename);
+  }
+
+  void ifstream_open_file_bad(std::string filename) {
+    std::ifstream file1(filename);
+    std::ifstream file2;
+    file2.open(filename);
+  }
+
+  void fstream_open_file_bad(std::string filename) {
+    std::fstream file1(filename);
+    std::fstream file2;
+    file2.open(filename);
   }
 
   void FP_service1_endpoint_struct_int_field_ok(request formal) {

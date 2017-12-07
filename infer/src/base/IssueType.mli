@@ -230,6 +230,10 @@ val unsafe_guarded_by_access : t
 
 val use_after_free : t
 
+val untrusted_file : t
+
+val untrusted_file_risk : t
+
 val untrusted_variable_length_array : t
 
 val user_controlled_sql_risk : t
