@@ -66,11 +66,10 @@ class MyActivity extends Activity {
 
   @Override
   public void onResume() {
-    FN_startServiceWithTaintedIntent();
+    startServiceWithTaintedIntent();
   }
 
-  // need to understand the lifecycle to get this
-  void FN_startServiceWithTaintedIntent() {
+  void startServiceWithTaintedIntent() {
     Intent taintedIntent = new Intent("", mUri);
     startService(taintedIntent);
   }

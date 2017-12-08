@@ -120,6 +120,8 @@ let class_cast_exception = from_string ~enabled:false "CLASS_CAST_EXCEPTION"
 
 let cluster_callback = from_string "CLUSTER_CALLBACK"
 
+let create_intent_from_uri = from_string "CREATE_INTENT_FROM_URI"
+
 let codequery = from_string "Codequery"
 
 let comparing_floats_for_equality = from_string "COMPARING_FLOAT_FOR_EQUALITY"

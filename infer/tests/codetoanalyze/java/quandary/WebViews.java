@@ -55,7 +55,8 @@ public class WebViews {
     @Override
     public void onLoadResource(WebView w, String url) {
       try {
-        Intent.parseUri(url, 0); // should report
+        Intent i = Intent.parseUri(url, 0);
+        mActivity.startActivity(i); // should report
       } catch (URISyntaxException e) {
       }
     }
@@ -69,7 +70,8 @@ public class WebViews {
     @Override
     public boolean shouldOverrideUrlLoading(WebView w, String url) {
       try {
-        Intent.parseUri(url, 0); // should report
+        Intent i = Intent.parseUri(url, 0);
+        mActivity.startActivity(i); // should report
       } catch (URISyntaxException e) {
       }
       return false;
@@ -81,7 +83,8 @@ public class WebViews {
     @Override
     public boolean onJsAlert(WebView w, String url, String message, JsResult result) {
       try {
-        Intent.parseUri(url, 0); // should report
+        Intent i = Intent.parseUri(url, 0);
+        mActivity.startActivity(i);
       } catch (URISyntaxException e) {
       }
       return false;
@@ -90,7 +93,8 @@ public class WebViews {
     @Override
     public boolean onJsBeforeUnload(WebView w, String url, String m, JsResult result) {
       try {
-        Intent.parseUri(url, 0); // should report
+        Intent i = Intent.parseUri(url, 0);
+        mActivity.startActivity(i);
       } catch (URISyntaxException e) {
       }
       return false;
@@ -99,7 +103,8 @@ public class WebViews {
     @Override
     public boolean onJsConfirm(WebView w, String url, String m, JsResult result) {
       try {
-        Intent.parseUri(url, 0); // should report
+        Intent i = Intent.parseUri(url, 0);
+        mActivity.startActivity(i);
       } catch (URISyntaxException e) {
       }
       return false;
@@ -108,7 +113,8 @@ public class WebViews {
     @Override
     public boolean onJsPrompt(WebView w, String url, String m, String s, JsPromptResult result) {
       try {
-        Intent.parseUri(url, 0); // should report
+        Intent i = Intent.parseUri(url, 0);
+        mActivity.startActivity(i);
       } catch (URISyntaxException e) {
       }
       return false;

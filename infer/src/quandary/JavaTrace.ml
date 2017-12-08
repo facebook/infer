@@ -15,10 +15,11 @@ module SourceKind = struct
   type t =
     | DrawableResource of Pvar.t  (** Drawable resource ID read from a global *)
     | Intent  (** external Intent or a value read from one *)
+    | IntentFromURI  (** Intent created from a URI *)
     | Other  (** for testing or uncategorized sources *)
     | PrivateData  (** private user or device-specific data *)
     | UserControlledString  (** data read from a text box or the clipboard service *)
-    | UserControlledURI  (** resource locator from the browser bar *)
+    | UserControlledURI  (** resource locator originating from the browser bar *)
     [@@deriving compare]
 
   let matches ~caller ~callee = Int.equal 0 (compare caller callee)
@@ -26,6 +27,8 @@ module SourceKind = struct
   let of_string = function
     | "Intent" ->
         Intent
+    | "IntentFromURI" ->
+        IntentFromURI
     | "PrivateData" ->
         PrivateData
     | "UserControlledURI" ->
@@ -47,6 +50,13 @@ module SourceKind = struct
     match pname with
     | Typ.Procname.Java pname -> (
       match (Typ.Procname.java_get_class_name pname, Typ.Procname.java_get_method pname) with
+      | "android.content.Intent", "<init>" when List.length actuals > 2 ->
+          (* taint the [this] parameter passed to the constructor *)
+          Some (IntentFromURI, Some 0)
+      | ( "android.content.Intent"
+        , ( "parseUri" | "setData" | "setDataAndNormalize" | "setDataAndType"
+          | "setDataAndTypeAndNormalize" ) ) ->
+          Some (IntentFromURI, return)
       | ( "android.location.Location"
         , ("getAltitude" | "getBearing" | "getLatitude" | "getLongitude" | "getSpeed") ) ->
           Some (PrivateData, return)
@@ -179,6 +189,8 @@ module SourceKind = struct
           Pvar.to_string pvar
       | Intent ->
           "Intent"
+      | IntentFromURI ->
+          "IntentFromURI"
       | Other ->
           "Other"
       | PrivateData ->
@@ -385,7 +397,7 @@ include Trace.Make (struct
     match (Source.kind source, Sink.kind sink) with
     | _ when not (List.is_empty sanitizers) ->
         (* assume any sanitizer clears all forms of taint *)
-        L.d_strln "non-empty sanitizers!" ; None
+        None
     | PrivateData, Logging
     (* logging private data issue *)
     | Intent, StartComponent
@@ -395,8 +407,6 @@ include Trace.Make (struct
     | Intent, JavaScript
     (* external data flows into JS: remote code execution risk *)
     | PrivateData, JavaScript
-    (* leaking private data into JS *)
-    | UserControlledURI, (CreateIntent | StartComponent)
     (* create intent/launch component from user-controlled URI *)
     | UserControlledURI, CreateFile
     (* create file from user-controller URI; potential path-traversal vulnerability *)
@@ -409,8 +419,11 @@ include Trace.Make (struct
     | DrawableResource _, OpenDrawableResource ->
         (* not a security issue, but useful for debugging flows from resource IDs to inflation *)
         Some IssueType.quandary_taint_error
+    | IntentFromURI, StartComponent ->
+        (* create an intent/start a component using a (possibly user-controlled) URI. may or may not
+           be an issue; depends on where the URI comes from *)
+        Some IssueType.create_intent_from_uri
     | Other, _ | _, Other ->
-        L.d_strln (F.asprintf "have %d sanitizers" (List.length sanitizers)) ;
         (* for testing purposes, Other matches everything *)
         Some IssueType.quandary_taint_error
     | _ ->

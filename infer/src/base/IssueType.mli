@@ -71,6 +71,8 @@ val class_cast_exception : t
 
 val cluster_callback : t
 
+val create_intent_from_uri : t
+
 val codequery : t
 
 val comparing_floats_for_equality : t
