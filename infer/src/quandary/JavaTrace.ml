@@ -398,24 +398,21 @@ include Trace.Make (struct
     | _ when not (List.is_empty sanitizers) ->
         (* assume any sanitizer clears all forms of taint *)
         None
-    | PrivateData, Logging
-    (* logging private data issue *)
-    | Intent, StartComponent
-    (* intent reuse issue *)
-    | Intent, CreateIntent
-    (* intent configured with external values issue *)
-    | Intent, JavaScript
-    (* external data flows into JS: remote code execution risk *)
-    | PrivateData, JavaScript
-    (* create intent/launch component from user-controlled URI *)
-    | UserControlledURI, CreateFile
-    (* create file from user-controller URI; potential path-traversal vulnerability *)
-    | UserControlledString, (StartComponent | CreateIntent | JavaScript | CreateFile | HTML) ->
-        (* do something sensitive with a user-controlled string *)
-        Some IssueType.quandary_taint_error
-    | (Intent | UserControlledURI | UserControlledString), Deserialization ->
+    | (Intent | UserControlledString | UserControlledURI), CreateIntent ->
+        (* creating Intent from user-congrolled data *)
+        Some IssueType.untrusted_intent_creation
+    | (Intent | IntentFromURI | UserControlledString | UserControlledURI), CreateFile ->
+        (* user-controlled file creation; may be vulnerable to path traversal + more *)
+        Some IssueType.untrusted_file
+    | (Intent | IntentFromURI | UserControlledString | UserControlledURI), Deserialization ->
         (* shouldn't let anyone external control what we deserialize *)
-        Some IssueType.quandary_taint_error
+        Some IssueType.untrusted_deserialization
+    | (Intent | IntentFromURI | UserControlledString | UserControlledURI), HTML ->
+        (* untrusted data flows into HTML; XSS risk *)
+        Some IssueType.cross_site_scripting
+    | (Intent | IntentFromURI | UserControlledString | UserControlledURI), JavaScript ->
+        (* untrusted data flows into JS *)
+        Some IssueType.javascript_injection
     | DrawableResource _, OpenDrawableResource ->
         (* not a security issue, but useful for debugging flows from resource IDs to inflation *)
         Some IssueType.quandary_taint_error
@@ -423,10 +420,17 @@ include Trace.Make (struct
         (* create an intent/start a component using a (possibly user-controlled) URI. may or may not
            be an issue; depends on where the URI comes from *)
         Some IssueType.create_intent_from_uri
+    | PrivateData, Logging ->
+        Some IssueType.logging_private_data
     | Other, _ | _, Other ->
         (* for testing purposes, Other matches everything *)
         Some IssueType.quandary_taint_error
-    | _ ->
+    | DrawableResource _, _
+    | IntentFromURI, _
+    | PrivateData, _
+    | _, Logging
+    | _, OpenDrawableResource
+    | _, StartComponent ->
         None
 
 end)

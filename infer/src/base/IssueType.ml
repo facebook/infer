@@ -120,8 +120,6 @@ let class_cast_exception = from_string ~enabled:false "CLASS_CAST_EXCEPTION"
 
 let cluster_callback = from_string "CLUSTER_CALLBACK"
 
-let create_intent_from_uri = from_string "CREATE_INTENT_FROM_URI"
-
 let codequery = from_string "Codequery"
 
 let comparing_floats_for_equality = from_string "COMPARING_FLOAT_FOR_EQUALITY"
@@ -131,6 +129,10 @@ let condition_always_false = from_string ~enabled:false "CONDITION_ALWAYS_FALSE"
 let condition_always_true = from_string ~enabled:false "CONDITION_ALWAYS_TRUE"
 
 let context_leak = from_string "CONTEXT_LEAK"
+
+let create_intent_from_uri = from_string "CREATE_INTENT_FROM_URI"
+
+let cross_site_scripting = from_string "CROSS_SITE_SCRIPTING"
 
 let dangling_pointer_dereference = from_string ~enabled:false "DANGLING_POINTER_DEREFERENCE"
 
@@ -247,11 +249,15 @@ let interface_not_thread_safe = from_string "INTERFACE_NOT_THREAD_SAFE"
 
 let internal_error = from_string "Internal_error"
 
+let javascript_injection = from_string "JAVASCRIPT_INJECTION"
+
 let leak_after_array_abstraction = from_string "Leak_after_array_abstraction"
 
 let leak_in_footprint = from_string "Leak_in_footprint"
 
 let lock_consistency_violation = from_string "LOCK_CONSISTENCY_VIOLATION"
+
+let logging_private_data = from_string "LOGGING_PRIVATE_DATA"
 
 let memory_leak = from_string "MEMORY_LEAK"
 
@@ -323,9 +329,13 @@ let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
 
 let use_after_free = from_string "USE_AFTER_FREE"
 
+let untrusted_deserialization = from_string "UNTRUSTED_DESERIALIZATION"
+
 let untrusted_file = from_string "UNTRUSTED_FILE"
 
 let untrusted_file_risk = from_string "UNTRUSTED_FILE_RISK"
+
+let untrusted_intent_creation = from_string "UNTRUSTED_INTENT_CREATION"
 
 let untrusted_variable_length_array = from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"
 

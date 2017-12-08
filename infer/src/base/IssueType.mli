@@ -71,8 +71,6 @@ val class_cast_exception : t
 
 val cluster_callback : t
 
-val create_intent_from_uri : t
-
 val codequery : t
 
 val comparing_floats_for_equality : t
@@ -82,6 +80,10 @@ val condition_always_false : t
 val condition_always_true : t
 
 val context_leak : t
+
+val create_intent_from_uri : t
+
+val cross_site_scripting : t
 
 val dangling_pointer_dereference : t
 
@@ -160,11 +162,15 @@ val interface_not_thread_safe : t
 
 val internal_error : t
 
+val javascript_injection : t
+
 val leak_after_array_abstraction : t
 
 val leak_in_footprint : t
 
 val lock_consistency_violation : t
+
+val logging_private_data : t
 
 val memory_leak : t
 
@@ -232,12 +238,16 @@ val unsafe_guarded_by_access : t
 
 val use_after_free : t
 
+val user_controlled_sql_risk : t
+
+val untrusted_deserialization : t
+
 val untrusted_file : t
 
 val untrusted_file_risk : t
 
-val untrusted_variable_length_array : t
+val untrusted_intent_creation : t
 
-val user_controlled_sql_risk : t
+val untrusted_variable_length_array : t
 
 val wrong_argument_number : t
