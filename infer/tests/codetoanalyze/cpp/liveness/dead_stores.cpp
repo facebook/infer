@@ -11,6 +11,10 @@
 #include <new>
 #include <thread>
 
+namespace infer {
+class ScopeGuard {};
+}; // namespace infer
+
 namespace folly {
 class ScopeGuard {};
 
@@ -300,6 +304,8 @@ void scope_guard_ok() {
 void read_holder_ok() { folly::SharedMutex::ReadHolder guard; }
 
 void write_holder_ok() { folly::SharedMutex::WriteHolder guard; }
+
+void custom_scope_guard_ok() { infer::ScopeGuard guard; }
 
 struct S {
   ~S() {}

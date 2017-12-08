@@ -85,6 +85,37 @@ end
 module CFG = ProcCfg.OneInstrPerNode (ProcCfg.Backward (ProcCfg.Exceptional))
 module Analyzer = AbstractInterpreter.Make (CFG) (TransferFunctions)
 
+(* It's fine to have a dead store on a type that uses the "scope guard" pattern. These types
+   are only read in their destructors, and this is expected/ok.
+   (e.g., https://github.com/facebook/folly/blob/master/folly/ScopeGuard.h). *)
+let matcher_scope_guard =
+  let of_json init = function
+    | `List scope_guards ->
+        List.fold scope_guards ~f:(fun acc json -> Yojson.Basic.Util.to_string json :: acc) ~init
+    | _ ->
+        init
+  in
+  let default_scope_guards =
+    [ (* C++ *)
+      "folly::RWSpinLock::ReadHolder"
+    ; "folly::RWSpinLock::WriteHolder"
+    ; "folly::ScopeGuard"
+    ; "folly::SharedMutex::ReadHolder"
+    ; "folly::SharedMutex::WriteHolder"
+    ; "folly::SharedMutexReadPriority::ReadHolder"
+    ; "folly::SharedMutexReadPriority::WriteHolder"
+    ; "folly::SharedMutexWritePriority::ReadHolder"
+    ; "folly::SharedMutexWritePriority::WriteHolder"
+    ; "folly::SpinLockGuard"
+    ; "std::lock_guard"
+    ; "std::scoped_lock"
+    ; "std::unique_lock" (* Obj-C *)
+    ; "CKComponentScope" ]
+  in
+  of_json default_scope_guards Config.cxx_scope_guards
+  |> QualifiedCppName.Match.of_fuzzy_qual_names
+
+
 let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   let cfg = CFG.from_pdesc proc_desc in
   let invariant_map =
@@ -101,28 +132,6 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
     | _ ->
         false
   in
-  let matcher_scope_guard =
-    QualifiedCppName.Match.of_fuzzy_qual_names
-      [ (* C++ *)
-        "faiss::ScopeDeleter"
-      ; "folly::RWSpinLock::ReadHolder"
-      ; "folly::RWSpinLock::WriteHolder"
-      ; "folly::ScopeGuard"
-      ; "folly::SharedMutex::ReadHolder"
-      ; "folly::SharedMutex::WriteHolder"
-      ; "folly::SharedMutexReadPriority::ReadHolder"
-      ; "folly::SharedMutexReadPriority::WriteHolder"
-      ; "folly::SharedMutexWritePriority::ReadHolder"
-      ; "folly::SharedMutexWritePriority::WriteHolder"
-      ; "folly::SpinLockGuard"
-      ; "std::lock_guard"
-      ; "std::scoped_lock"
-      ; "std::unique_lock" (* Obj-C *)
-      ; "CKComponentScope" ]
-  in
-  (* It's fine to have a dead store on a type that uses the "scope guard" pattern. These types
-     are only read in their destructors, and this is expected/ok.
-     (e.g., https://github.com/facebook/folly/blob/master/folly/ScopeGuard.h). *)
   let rec is_scope_guard = function
     | {Typ.desc= Tstruct name} ->
         QualifiedCppName.Match.match_qualifiers matcher_scope_guard (Typ.Name.qual_name name)
@@ -169,3 +178,4 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   List.iter (CFG.nodes cfg) ~f:report_on_node ;
   summary
+

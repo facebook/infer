@@ -975,6 +975,12 @@ and cxx_infer_headers =
     "Include C++ header models during compilation. Infer swaps some C++ headers for its own in order to get a better model of, eg, the standard library. This can sometimes cause compilation failures."
 
 
+and cxx_scope_guards =
+  CLOpt.mk_json ~long:"cxx-scope-guards"
+    ~in_help:CLOpt.([(Analyze, manual_clang)])
+    "Specify scope guard classes that can be read only by destructors without being reported as dead stores."
+
+
 and cxx =
   CLOpt.mk_bool ~long:"cxx" ~default:true
     ~in_help:CLOpt.([(Capture, manual_clang)])
@@ -2346,6 +2352,8 @@ and crashcontext = !crashcontext
 and cxx = !cxx
 
 and cxx_infer_headers = !cxx_infer_headers
+
+and cxx_scope_guards = !cxx_scope_guards
 
 and debug_level_analysis = !debug_level_analysis
 
