@@ -63,20 +63,15 @@ let update_reported (pname, access) reported =
 
 
 let dedup (issues: Jsonbug_t.jsonbug list) =
-  List.fold issues ~init:(AccessMap.empty, []) ~f:
-    (fun (reported_map, nondup_issues) (issue: Jsonbug_t.jsonbug) ->
+  List.fold issues ~init:(empty_reported, []) ~f:
+    (fun (reported, nondup_issues) (issue: Jsonbug_t.jsonbug) ->
       match issue.access with
       | Some access_serial ->
           let access : Access.t = Marshal.from_string (B64.decode access_serial) 0 in
-          let reported =
-            Option.value (AccessMap.find_opt access reported_map) ~default:empty_reported
-          in
-          if is_duplicate_report access reported then (reported_map, nondup_issues)
-          else
-            ( AccessMap.add access (update_reported access reported) reported_map
-            , {issue with access= None} :: nondup_issues )
+          if is_duplicate_report access reported then (reported, nondup_issues)
+          else (update_reported access reported, {issue with access= None} :: nondup_issues)
       | None ->
-          (reported_map, {issue with access= None} :: nondup_issues) )
+          (reported, {issue with access= None} :: nondup_issues) )
   |> snd
 
 
