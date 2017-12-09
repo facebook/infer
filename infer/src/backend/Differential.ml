@@ -25,28 +25,34 @@ let empty_reported =
   {reported_sites; reported_reads; reported_writes}
 
 
-module Access = struct
-  type t = Typ.Procname.t * RacerDDomain.TraceElem.t [@@deriving compare]
+(** set of lists of locations for remembering what trace ends have been reported *)
+module LocListSet = struct
+  include Caml.Set.Make (struct
+    type t = Location.t list [@@deriving compare]
+  end)
+
+  let mem s xs = not (List.is_empty xs) && mem (List.sort ~cmp:Location.compare xs) s
+
+  let add s xs = if List.is_empty xs then s else add (List.sort ~cmp:Location.compare xs) s
 end
 
-(** map from accesses to reported sets for remembering what has been reported for each access *)
-module AccessMap = Caml.Map.Make (Access)
-
-let is_duplicate_report (pname, access) {reported_sites; reported_writes; reported_reads} =
+let is_duplicate_report pname access end_locs {reported_sites; reported_writes; reported_reads}
+    reported_ends =
   let open RacerDDomain in
-  if Config.filtering then CallSite.Set.mem (TraceElem.call_site access) reported_sites
-    ||
-    match TraceElem.kind access with
-    | Access.Write _ | Access.ContainerWrite _ ->
-        Typ.Procname.Set.mem pname reported_writes
-    | Access.Read _ | Access.ContainerRead _ ->
-        Typ.Procname.Set.mem pname reported_reads
-    | Access.InterfaceCall _ ->
-        false
-  else false
+  Config.filtering
+  && ( LocListSet.mem reported_ends end_locs
+     || CallSite.Set.mem (TraceElem.call_site access) reported_sites
+     ||
+     match TraceElem.kind access with
+     | Access.Write _ | Access.ContainerWrite _ ->
+         Typ.Procname.Set.mem pname reported_writes
+     | Access.Read _ | Access.ContainerRead _ ->
+         Typ.Procname.Set.mem pname reported_reads
+     | Access.InterfaceCall _ ->
+         false )
 
 
-let update_reported (pname, access) reported =
+let update_reported pname access reported =
   let open RacerDDomain in
   if Config.filtering then
     let reported_sites = CallSite.Set.add (TraceElem.call_site access) reported.reported_sites in
@@ -62,17 +68,40 @@ let update_reported (pname, access) reported =
   else reported
 
 
+let sort_by_decreasing_preference_to_report issues =
+  let cmp (x: Jsonbug_t.jsonbug) (y: Jsonbug_t.jsonbug) =
+    let n = Int.compare (List.length x.bug_trace) (List.length y.bug_trace) in
+    if n <> 0 then n
+    else
+      let n = String.compare x.hash y.hash in
+      if n <> 0 then n else Pervasives.compare x y
+  in
+  List.sort ~cmp issues
+
+
+let sort_by_location issues =
+  let cmp (x: Jsonbug_t.jsonbug) (y: Jsonbug_t.jsonbug) =
+    [%compare : string * int * int] (x.file, x.line, x.column) (y.file, y.line, y.column)
+  in
+  List.sort ~cmp issues
+
+
 let dedup (issues: Jsonbug_t.jsonbug list) =
-  List.fold issues ~init:(empty_reported, []) ~f:
-    (fun (reported, nondup_issues) (issue: Jsonbug_t.jsonbug) ->
+  List.fold (sort_by_decreasing_preference_to_report issues)
+    ~init:(empty_reported, LocListSet.empty, []) ~f:
+    (fun (reported, reported_ends, nondup_issues) (issue: Jsonbug_t.jsonbug) ->
       match issue.access with
-      | Some access_serial ->
-          let access : Access.t = Marshal.from_string (B64.decode access_serial) 0 in
-          if is_duplicate_report access reported then (reported, nondup_issues)
-          else (update_reported access reported, {issue with access= None} :: nondup_issues)
+      | Some encoded ->
+          let pname, access, end_locs = IssueAuxData.decode encoded in
+          if is_duplicate_report pname access end_locs reported reported_ends then
+            (reported, reported_ends, nondup_issues)
+          else
+            ( update_reported pname access reported
+            , LocListSet.add reported_ends end_locs
+            , {issue with access= None} :: nondup_issues )
       | None ->
-          (reported, {issue with access= None} :: nondup_issues) )
-  |> snd
+          (reported, reported_ends, {issue with access= None} :: nondup_issues) )
+  |> trd3 |> sort_by_location
 
 
 type t = {introduced: Jsonbug_t.report; fixed: Jsonbug_t.report; preexisting: Jsonbug_t.report}

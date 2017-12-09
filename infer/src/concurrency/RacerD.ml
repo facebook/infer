@@ -1131,9 +1131,12 @@ let make_trace ~report_kind original_path pdesc =
         []
   in
   let original_trace = loc_trace_of_path original_path in
+  let get_end_loc trace = Option.map (List.last trace) ~f:(function {Errlog.lt_loc} -> lt_loc) in
+  let original_end = get_end_loc original_trace in
   let make_with_conflicts conflict_sink original_trace ~label1 ~label2 =
     (* create a trace for one of the conflicts and append it to the trace for the original sink *)
     let conflict_trace = make_trace_for_sink conflict_sink in
+    let conflict_end = get_end_loc conflict_trace in
     let get_start_loc = function head :: _ -> head.Errlog.lt_loc | [] -> Location.dummy in
     let first_trace_spacer =
       Errlog.make_trace_element 0 (get_start_loc original_trace) label1 []
@@ -1141,7 +1144,9 @@ let make_trace ~report_kind original_path pdesc =
     let second_trace_spacer =
       Errlog.make_trace_element 0 (get_start_loc conflict_trace) label2 []
     in
-    first_trace_spacer :: original_trace @ second_trace_spacer :: conflict_trace
+    ( first_trace_spacer :: original_trace @ second_trace_spacer :: conflict_trace
+    , original_end
+    , conflict_end )
   in
   match report_kind with
   | ReadWriteRace conflict_sink ->
@@ -1151,7 +1156,7 @@ let make_trace ~report_kind original_path pdesc =
       make_with_conflicts conflict_sink original_trace ~label1:"<Write on unknown thread>"
         ~label2:"<Write on background thread>"
   | WriteWriteRace None | UnannotatedInterface ->
-      original_trace
+      (original_trace, original_end, None)
 
 
 let report_thread_safety_violation tenv pdesc ~make_description ~report_kind access thread =
@@ -1181,7 +1186,7 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
       let final_sink_site = PathDomain.Sink.call_site final_sink in
       let initial_sink_site = PathDomain.Sink.call_site initial_sink in
       let loc = CallSite.loc initial_sink_site in
-      let ltr = make_trace ~report_kind path pdesc in
+      let ltr, original_end, conflict_end = make_trace ~report_kind path pdesc in
       (* what the potential bug is *)
       let description = make_description pname final_sink_site initial_sink_site initial_sink in
       (* why we are reporting it *)
@@ -1190,7 +1195,8 @@ let report_thread_safety_violation tenv pdesc ~make_description ~report_kind acc
       let exn =
         Exceptions.Checkers (issue_type.IssueType.unique_id, Localise.verbatim_desc error_message)
       in
-      let access = B64.encode (Marshal.to_string (pname, access) []) in
+      let end_locs = Option.to_list original_end @ Option.to_list conflict_end in
+      let access = IssueAuxData.encode (pname, access, end_locs) in
       Reporting.log_error_deprecated ~store_summary:true pname ~loc ~ltr ~access exn
   in
   let trace_of_pname = trace_of_pname access pdesc in

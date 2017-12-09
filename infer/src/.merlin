@@ -10,6 +10,7 @@ PKG atdgen
 PKG base
 PKG base.caml
 PKG base.shadow_stdlib
+PKG base64
 PKG bigarray
 PKG bin_prot
 PKG bin_prot.shape
