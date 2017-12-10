@@ -517,3 +517,14 @@ class Subclass extends Obj {
   }
 
 }
+
+@ThreadSafe
+class OtherObj {
+  private OtherObj(Obj o) {
+    o.f = new Object();
+  }
+
+  void mutateInConstructorOk() {
+    new OtherObj(new Obj());
+  }
+}

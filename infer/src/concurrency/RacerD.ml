@@ -929,6 +929,9 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
         | _ ->
             OwnershipDomain.empty
       in
+      let add_conditional_owned_formal acc (formal, formal_index) =
+        OwnershipDomain.add (formal, []) (OwnershipAbstractValue.make_owned_if formal_index) acc
+      in
       if is_initializer tenv (Procdesc.get_proc_name proc_desc) then
         let add_owned_formal acc formal_index =
           match FormalMap.get_formal_base formal_index formal_map with
@@ -937,25 +940,27 @@ let analyze_procedure {Callbacks.proc_desc; get_proc_desc; tenv; summary} =
           | None ->
               acc
         in
-        let owned_formals =
+        let ownership =
           (* if a constructer is called via DI, all of its formals will be freshly allocated and
              therefore owned. we assume that constructors annotated with @Inject will only be
              called via DI or using fresh parameters. *)
           if Annotations.pdesc_has_return_annot proc_desc Annotations.ia_is_inject then
             List.mapi ~f:(fun i _ -> i) (Procdesc.get_formals proc_desc)
-          else [0]
-          (* express that the constructor owns [this] *)
+            |> List.fold ~f:add_owned_formal ~init:own_locals_in_cpp
+          else
+            (* express that the constructor owns [this] *)
+            let init = add_owned_formal own_locals_in_cpp 0 in
+            List.fold ~f:add_conditional_owned_formal ~init
+              (List.filter
+                 ~f:(fun (_, index) -> not (Int.equal index 0))
+                 (FormalMap.get_formals_indexes formal_map))
         in
-        let ownership = List.fold ~f:add_owned_formal owned_formals ~init:own_locals_in_cpp in
         {RacerDDomain.empty with ownership; threads}
       else
         (* add Owned(formal_index) predicates for each formal to indicate that each one is owned if
            it is owned in the caller *)
-        let add_owned_formal acc (formal, formal_index) =
-          OwnershipDomain.add (formal, []) (OwnershipAbstractValue.make_owned_if formal_index) acc
-        in
         let ownership =
-          List.fold ~f:add_owned_formal
+          List.fold ~f:add_conditional_owned_formal
             (FormalMap.get_formals_indexes formal_map)
             ~init:own_locals_in_cpp
         in
