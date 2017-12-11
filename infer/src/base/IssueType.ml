@@ -329,6 +329,8 @@ let unsafe_guarded_by_access = from_string "UNSAFE_GUARDED_BY_ACCESS"
 
 let use_after_free = from_string "USE_AFTER_FREE"
 
+let user_controlled_sql_risk = from_string "USER_CONTROLLED_SQL_RISK"
+
 let untrusted_deserialization = from_string "UNTRUSTED_DESERIALIZATION"
 
 let untrusted_file = from_string "UNTRUSTED_FILE"
@@ -337,8 +339,10 @@ let untrusted_file_risk = from_string "UNTRUSTED_FILE_RISK"
 
 let untrusted_intent_creation = from_string "UNTRUSTED_INTENT_CREATION"
 
-let untrusted_variable_length_array = from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"
+let untrusted_url = from_string "UNTRUSTED_URL"
 
-let user_controlled_sql_risk = from_string "USER_CONTROLLED_SQL_RISK"
+let untrusted_url_risk = from_string "UNTRUSTED_URL_RISK"
+
+let untrusted_variable_length_array = from_string "UNTRUSTED_VARIABLE_LENGTH_ARRAY"
 
 let wrong_argument_number = from_string "Wrong_argument_number" ~hum:"Wrong Argument Number"

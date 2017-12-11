@@ -177,6 +177,7 @@ module SinkKind = struct
     | BufferAccess  (** read/write an array *)
     | CreateFile  (** create/open a file *)
     | HeapAllocation  (** heap memory allocation *)
+    | Network  (** network access *)
     | ShellExec  (** shell exec function *)
     | SQL  (** SQL query *)
     | StackAllocation  (** stack memory allocation *)
@@ -192,6 +193,8 @@ module SinkKind = struct
         CreateFile
     | "HeapAllocation" ->
         HeapAllocation
+    | "Network" ->
+        Network
     | "ShellExec" ->
         ShellExec
     | "SQL" ->
@@ -212,6 +215,17 @@ module SinkKind = struct
   (* taint the nth parameter (0-indexed) *)
   let taint_nth n kind actuals =
     if n < List.length actuals then Some (kind, IntSet.singleton n) else None
+
+
+  (* taint all parameters after the nth (exclusive) *)
+  let taint_after_nth n kind actuals =
+    match
+      List.filter_mapi ~f:(fun actual_num _ -> Option.some_if (actual_num > n) actual_num) actuals
+    with
+    | [] ->
+        None
+    | to_taint ->
+        Some (kind, IntSet.of_list to_taint)
 
 
   let taint_all kind actuals =
@@ -272,6 +286,9 @@ module SinkKind = struct
       match Typ.Procname.to_string pname with
       | "creat" | "fopen" | "freopen" | "open" ->
           taint_nth 0 CreateFile actuals
+      | "curl_easy_setopt" ->
+          (* first two actuals are curl object + a constant *)
+          taint_after_nth 1 Network actuals
       | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system" ->
           taint_all ShellExec actuals
       | "openat" ->
@@ -311,6 +328,8 @@ module SinkKind = struct
           "CreateFile"
       | HeapAllocation ->
           "HeapAllocation"
+      | Network ->
+          "Network"
       | ShellExec ->
           "ShellExec"
       | SQL ->
@@ -380,6 +399,12 @@ include Trace.Make (struct
         Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_file
     | Endpoint (_, typ), CreateFile ->
         Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_file_risk
+    | UserControlledEndpoint (_, typ), Network ->
+        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_url
+    | Endpoint (_, typ), Network ->
+        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_url_risk
+    | (CommandLineFlag _ | EnvironmentVariable | ReadFile), Network ->
+        None
     | UserControlledEndpoint (_, typ), SQL ->
         if is_injection_possible ~typ sanitizers then Some IssueType.sql_injection
         else

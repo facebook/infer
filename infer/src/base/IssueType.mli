@@ -238,8 +238,6 @@ val unsafe_guarded_by_access : t
 
 val use_after_free : t
 
-val user_controlled_sql_risk : t
-
 val untrusted_deserialization : t
 
 val untrusted_file : t
@@ -248,6 +246,12 @@ val untrusted_file_risk : t
 
 val untrusted_intent_creation : t
 
+val untrusted_url : t
+
+val untrusted_url_risk : t
+
 val untrusted_variable_length_array : t
+
+val user_controlled_sql_risk : t
 
 val wrong_argument_number : t

@@ -15,6 +15,8 @@ extern void __infer_sql_sink(std::string);
 extern std::string __infer_all_sanitizer(std::string);
 extern std::string __infer_string_sanitizer(std::string);
 
+extern void curl_easy_setopt(void*, int, ...);
+
 namespace facebook {
 namespace fb303 {
 namespace cpp2 {
@@ -100,6 +102,12 @@ class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
     std::fstream file1(filename);
     std::fstream file2;
     file2.open(filename);
+  }
+
+  const int CURLOPT_URL = 10002;
+
+  void endpoint_to_curl_url_bad(request formal) {
+    curl_easy_setopt(nullptr, CURLOPT_URL, formal.s.c_str());
   }
 
   void FP_service1_endpoint_struct_int_field_ok(request formal) {
