@@ -32,4 +32,4 @@ HEADERS = siof/siof_types.h siof/smart_pointer1.h
 
 include $(TESTS_DIR)/clang.make
 
-infer-out/report.json: $(MAKEFILE_LIST)
+infer-out$(TEST_SUFFIX)/report.json: $(MAKEFILE_LIST)
