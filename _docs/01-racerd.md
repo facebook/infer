@@ -16,7 +16,7 @@ RacerD statically analyzes Java code to detect potential concurrency bugs. This 
 
 ## Triggering the analysis
 
-RacerD doesn't try to check *all* code for concurrency issues; it only looks at code that it believes can run in a concurrent context. There are two signals that RacerD looks for: (1) Explicitly annotating a class/method with `@ThreadSafe` and (2) using a lock via the `synchronized` keyword. In both cases, RacerD will look for concurrency issuess in the code containing the signal and all of its dependencies. In particular, it will report races between any non-`private` methods of the same class that can peform conflicting accesses. Annotating a class/interface with `@ThreadSafe` also triggers checking for all of the subclasses of the class/implementations of the interface.
+RacerD doesn't try to check *all* code for concurrency issues; it only looks at code that it believes can run in a concurrent context. There are two signals that RacerD looks for: (1) Explicitly annotating a class/method with `@ThreadSafe` and (2) using a lock via the `synchronized` keyword. In both cases, RacerD will look for concurrency issues in the code containing the signal and all of its dependencies. In particular, it will report races between any non-`private` methods of the same class that can peform conflicting accesses. Annotating a class/interface with `@ThreadSafe` also triggers checking for all of the subclasses of the class/implementations of the interface.
 
 ## Warnings
 
@@ -252,7 +252,7 @@ Procedure: void B.meth_write()
 Accesses { Unprotected({ 0 }) -> { Write to &this.B.x at  at line 25 } } 
 ```
 The descriptions here are cryptic and do not include all the information in the summaries, but the main point is 
-that you can use RacerD to look for races in condebases where the mutations done by threads might occur only 
+that you can use RacerD to look for races in codebases where the mutations done by threads might occur only 
 after a chain of procedure calls. 
 
 ## <a name="context"></a> Context and Selected Related Work
