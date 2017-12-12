@@ -45,7 +45,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let is_objc_container_add_method : Typ.Procname.t -> bool =
     let method_prefixes =
       [ "arrayWithObjects:"
-      ; "arrayWithObjects:count:"
+      ; "arrayWithObjects:"
+      ; "arrayByAddingObject:"
       ; "dictionaryWithObjectsAndKeys:"
       ; "initWithObjectsAndKeys:"
       ; "dictionaryWithObjects:" ]
@@ -262,4 +263,3 @@ let checker {Callbacks.summary; proc_desc; tenv} =
   let proc_data = ProcData.make proc_desc tenv summary in
   ignore (Analyzer.compute_post proc_data ~initial) ;
   summary
-

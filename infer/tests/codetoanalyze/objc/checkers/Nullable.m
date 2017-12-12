@@ -193,4 +193,9 @@ int* __nullable returnsNull();
   return dict;
 }
 
+- (NSArray*)createArrayByAddingNilBad {
+  NSArray* array = @[ [NSObject alloc] ];
+  return [array arrayByAddingObject:[self nullableMethod]];
+}
+
 @end
