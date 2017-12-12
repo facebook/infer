@@ -1097,8 +1097,24 @@ let pp_dotty_prop fmt (prop, cycle) =
   Format.fprintf fmt "@\n}"
 
 
-let dotty_prop_to_str prop cycle =
-  try Some (F.asprintf "%a" pp_dotty_prop (prop, cycle))
+let dotty_retain_cycle_to_str prop (cycle: RetainCyclesType.t) =
+  let open RetainCyclesType in
+  let rec cycle_to_list elements =
+    match elements with
+    | edge1 :: edge2 :: rest ->
+        ( edge1.rc_from.rc_node_exp
+        , edge1.rc_field.rc_field_name
+        , Sil.Eexp (edge2.rc_from.rc_node_exp, Sil.Inone) )
+        :: cycle_to_list (edge2 :: rest)
+    | [edge] ->
+        [ ( edge.rc_from.rc_node_exp
+          , edge.rc_field.rc_field_name
+          , Sil.Eexp (cycle.rc_head.rc_from.rc_node_exp, Sil.Inone) ) ]
+    | [] ->
+        []
+  in
+  let cycle_list = cycle_to_list cycle.rc_elements in
+  try Some (F.asprintf "%a" pp_dotty_prop (prop, cycle_list))
   with exn when SymOp.exn_not_failure exn -> None
 
 
@@ -1717,3 +1733,4 @@ let print_specs_xml signature specs loc fmt =
       [xml_signature; xml_specifications]
   in
   Io_infer.Xml.pp_document true fmt proc_summary
+

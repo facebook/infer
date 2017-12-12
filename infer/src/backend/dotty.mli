@@ -49,8 +49,7 @@ val dotty_prop_to_dotty_file :
   string -> Prop.normal Prop.t -> ((Sil.strexp * Typ.t) * Typ.Fieldname.t * Sil.strexp) list
   -> unit
 
-val dotty_prop_to_str :
-  Prop.normal Prop.t -> ((Sil.strexp * Typ.t) * Typ.Fieldname.t * Sil.strexp) list -> string option
+val dotty_retain_cycle_to_str : Prop.normal Prop.t -> RetainCyclesType.t -> string option
 
 val reset_node_counter : unit -> unit
 (** reset the counter used for node and heap identifiers *)

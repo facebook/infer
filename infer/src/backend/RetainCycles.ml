@@ -10,64 +10,54 @@ module L = Logging
 module F = Format
 
 let get_cycle root prop =
+  let open RetainCyclesType in
   let sigma = prop.Prop.sigma in
   let get_points_to e =
-    match e with
-    | Sil.Eexp (e', _) ->
-        List.find
-          ~f:(fun hpred ->
-            match hpred with Sil.Hpointsto (e'', _, _) -> Exp.equal e'' e' | _ -> false)
-          sigma
-    | _ ->
-        None
-  in
-  let print_cycle cyc =
-    L.d_str "Cycle= " ;
-    List.iter
-      ~f:(fun ((e, t), f, e') ->
-        match (e, e') with
-        | Sil.Eexp (e, _), Sil.Eexp (e', _) ->
-            L.d_str
-              ( "(" ^ Exp.to_string e ^ ": " ^ Typ.to_string t ^ ", " ^ Typ.Fieldname.to_string f
-              ^ ", " ^ Exp.to_string e' ^ ")" )
-        | _ ->
-            ())
-      cyc ;
-    L.d_strln ""
+    List.find
+      ~f:(fun hpred -> match hpred with Sil.Hpointsto (e', _, _) -> Exp.equal e' e | _ -> false)
+      sigma
   in
   (* Perform a dfs of a graph stopping when e_root is reached.
-     Returns a pair (path, bool) where path is a list of edges ((e1,type_e1),f,e2)
-     describing the path to e_root and bool is true if e_root is reached. *)
-  let rec dfs e_root et_src path el visited =
-    match el with
+   Returns a pair (path, bool) where path is a list of edges 
+   describing the path to e_root and bool is true if e_root is reached. *)
+  let rec dfs root_node from_node path fields visited =
+    match fields with
     | [] ->
         (path, false)
-    | (f, e) :: el' ->
-        if Sil.equal_strexp e e_root then ((et_src, f, e) :: path, true)
-        else if List.mem ~equal:Sil.equal_strexp visited e then (path, false)
+    | (field, Sil.Eexp (f_exp, f_inst)) :: el' ->
+        if Exp.equal f_exp root_node.rc_node_exp then
+          let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
+          let edge = {rc_from= from_node; rc_field} in
+          (edge :: path, true)
+        else if List.mem ~equal:Exp.equal visited f_exp then (path, false)
         else
-          let visited' = fst et_src :: visited in
+          let visited' = from_node.rc_node_exp :: visited in
           let res =
-            match get_points_to e with
+            match get_points_to f_exp with
             | None ->
                 (path, false)
-            | Some Sil.Hpointsto (_, Sil.Estruct (fl, _), Exp.Sizeof {typ= te}) ->
-                dfs e_root (e, te) ((et_src, f, e) :: path) fl visited'
+            | Some Sil.Hpointsto (_, Sil.Estruct (new_fields, _), Exp.Sizeof {typ= te}) ->
+                let rc_field = {rc_field_name= field; rc_field_inst= f_inst} in
+                let edge = {rc_from= from_node; rc_field} in
+                let rc_to = {rc_node_exp= f_exp; rc_node_typ= te} in
+                dfs root_node rc_to (edge :: path) new_fields visited'
             | _ ->
                 (path, false)
             (* check for lists *)
           in
-          if snd res then res else dfs e_root et_src path el' visited'
+          if snd res then res else dfs root_node from_node path el' visited'
+    | _ ->
+        (path, false)
   in
   L.d_strln "Looking for cycle with root expression: " ;
   Sil.d_hpred root ;
   L.d_strln "" ;
   match root with
   | Sil.Hpointsto (e_root, Sil.Estruct (fl, _), Exp.Sizeof {typ= te}) ->
-      let se_root = Sil.Eexp (e_root, Sil.Inone) in
+      let se_root = {rc_node_exp= e_root; rc_node_typ= te} in
       (* start dfs with empty path and expr pointing to root *)
-      let pot_cycle, res = dfs se_root (se_root, te) [] fl [] in
-      if res then ( print_cycle pot_cycle ; pot_cycle )
+      let pot_cycle, res = dfs se_root se_root [] fl [] in
+      if res then pot_cycle
       else (
         L.d_strln "NO cycle found from root" ;
         [] )
@@ -81,45 +71,13 @@ let get_retain_cycle_dotty prop_ cycle =
   | None ->
       None
   | Some Some prop_ ->
-      Dotty.dotty_prop_to_str prop_ cycle
+      Dotty.dotty_retain_cycle_to_str prop_ cycle
   | _ ->
       None
 
 
 let get_var_retain_cycle prop_ =
   let sigma = prop_.Prop.sigma in
-  let is_pvar v h =
-    match h with
-    | Sil.Hpointsto (Exp.Lvar _, v', _) when Sil.equal_strexp v v' ->
-        true
-    | _ ->
-        false
-  in
-  let is_hpred_block v h =
-    match (h, v) with
-    | Sil.Hpointsto (e, _, Exp.Sizeof {typ}), Sil.Eexp (e', _)
-      when Exp.equal e e' && Typ.is_block_type typ ->
-        true
-    | _, _ ->
-        false
-  in
-  let find v = List.find ~f:(is_pvar v) sigma |> Option.map ~f:Sil.hpred_get_lhs in
-  let find_block v =
-    if List.exists ~f:(is_hpred_block v) sigma then Some (Exp.Lvar Sil.block_pvar) else None
-  in
-  let sexp e = Sil.Eexp (e, Sil.Inone) in
-  let find_or_block ((e, t), f, e') =
-    match find e with
-    | Some pvar ->
-        [((sexp pvar, t), f, e')]
-    | _ ->
-      match find_block e with
-      | Some blk ->
-          [((sexp blk, t), f, e')]
-      | _ ->
-          let sizeof = {Exp.typ= t; nbytes= None; dynamic_length= None; subtype= Subtype.exact} in
-          [((sexp (Exp.Sizeof sizeof), t), f, e')]
-  in
   (* returns the pvars of the first cycle we find in sigma.
      This is an heuristic that works if there is one cycle.
      In case there are more than one cycle we may return not necessarily
@@ -130,16 +88,16 @@ let get_var_retain_cycle prop_ =
         []
     | hp :: sigma' ->
         let cycle = get_cycle hp prop_ in
-        L.d_strln "Filtering pvar in cycle " ;
-        let cycle' = List.concat_map ~f:find_or_block cycle in
-        if List.is_empty cycle' then do_sigma sigma' else cycle'
+        if List.is_empty cycle then do_sigma sigma' else cycle
   in
-  do_sigma sigma
+  let cycle_elements = do_sigma sigma in
+  RetainCyclesType.create_cycle cycle_elements
 
 
 (** Checks if cycle has fields (derived from a property or directly defined as ivar) with attributes
     weak/unsafe_unretained/assing *)
 let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
+  let open RetainCyclesType in
   (* returns items annotation for field fn in struct t *)
   let get_item_annotation (t: Typ.t) fn =
     match t.desc with
@@ -171,14 +129,15 @@ let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
     && has_weak_or_unretained_or_assign a.parameters
   in
   let rec do_cycle c =
+    let open RetainCyclesType in
     match c with
     | [] ->
         false
-    | ((_, t), fn, _) :: c' ->
-        let ia = get_item_annotation t fn in
+    | edge :: c' ->
+        let ia = get_item_annotation edge.rc_from.rc_node_typ edge.rc_field.rc_field_name in
         if List.exists ~f:do_annotation ia then true else do_cycle c'
   in
-  do_cycle cycle
+  do_cycle cycle.rc_elements
 
 
 let exn_retain_cycle original_prop hpred cycle =
@@ -192,9 +151,10 @@ let report_cycle tenv hpred original_prop =
         only if it's empty or it has weak or unsafe_unretained fields.
         Otherwise we report a retain cycle. *)
   let remove_opt prop_ = match prop_ with Some Some p -> p | _ -> Prop.prop_emp in
-  let cycle = get_var_retain_cycle (remove_opt original_prop) in
-  let ignore_cycle =
-    Int.equal (List.length cycle) 0 || cycle_has_weak_or_unretained_or_assign_field tenv cycle
-  in
-  (ignore_cycle, exn_retain_cycle original_prop hpred cycle)
+  match get_var_retain_cycle (remove_opt original_prop) with
+  | Some cycle when not (cycle_has_weak_or_unretained_or_assign_field tenv cycle) ->
+      RetainCyclesType.print_cycle cycle ;
+      Some (exn_retain_cycle original_prop hpred cycle)
+  | _ ->
+      None
 

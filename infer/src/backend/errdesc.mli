@@ -101,9 +101,7 @@ val explain_frontend_warning : string -> string option -> Location.t -> Localise
 val explain_return_statement_missing : Location.t -> Localise.error_desc
 (** explain a return statement missing *)
 
-val explain_retain_cycle :
-  ((Sil.strexp * Typ.t) * Typ.Fieldname.t * Sil.strexp) list -> Location.t -> string option
-  -> Localise.error_desc
+val explain_retain_cycle : RetainCyclesType.t -> Location.t -> string option -> Localise.error_desc
 (** explain a retain cycle *)
 
 val explain_unary_minus_applied_to_unsigned_expression :

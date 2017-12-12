@@ -891,41 +891,34 @@ let desc_return_expression_required typ_str loc =
 
 let desc_retain_cycle cycle loc cycle_dotty =
   Logging.d_strln "Proposition with retain cycle:" ;
-  let ct = ref 1 in
   let tags = Tags.create () in
-  let str_cycle = ref "" in
-  let remove_old s =
-    match Str.split_delim (Str.regexp_string "&old_") s with [_; s'] -> s' | _ -> s
+  let desc_retain_cycle (cycle: RetainCyclesType.t) =
+    let open RetainCyclesType in
+    let remove_old s =
+      match Str.split_delim (Str.regexp_string "&old_") s with [_; s'] -> s' | _ -> s
+    in
+    let do_edge index_ edge =
+      let index = index_ + 1 in
+      let from_exp_str =
+        match edge.rc_from.rc_node_exp with
+        | Exp.Lvar pvar when Pvar.equal pvar Sil.block_pvar ->
+            "a block capturing"
+        | Exp.Lvar pvar as e ->
+            let e_str = Exp.to_string e in
+            if Pvar.is_seed pvar then remove_old e_str else e_str
+        | _ ->
+            Format.sprintf "An object of type %s"
+              (MF.monospaced_to_string (Typ.to_string edge.rc_from.rc_node_typ))
+      in
+      Format.sprintf "(%d) %s retaining another object via instance variable %s, " index
+        from_exp_str
+        (MF.monospaced_to_string (Typ.Fieldname.to_string edge.rc_field.rc_field_name))
+    in
+    let cycle_str = List.mapi ~f:do_edge cycle.rc_elements in
+    String.concat cycle_str ~sep:" "
   in
-  let do_edge ((se, _), f, _) =
-    match se with
-    | Sil.Eexp (Exp.Lvar pvar, _) when Pvar.equal pvar Sil.block_pvar ->
-        str_cycle
-        := !str_cycle ^ " (" ^ string_of_int !ct ^ ") a block capturing "
-           ^ MF.monospaced_to_string (Typ.Fieldname.to_string f) ^ "; " ;
-        ct := !ct + 1
-    | Sil.Eexp ((Exp.Lvar pvar as e), _) ->
-        let e_str = Exp.to_string e in
-        let e_str = if Pvar.is_seed pvar then remove_old e_str else e_str in
-        str_cycle
-        := !str_cycle ^ " (" ^ string_of_int !ct ^ ") object " ^ e_str ^ " retaining "
-           ^ MF.monospaced_to_string (e_str ^ "." ^ Typ.Fieldname.to_string f) ^ ", " ;
-        ct := !ct + 1
-    | Sil.Eexp (Exp.Sizeof {typ}, _) ->
-        let step =
-          " (" ^ string_of_int !ct ^ ") an object of "
-          ^ MF.monospaced_to_string (Typ.to_string typ)
-          ^ " retaining another object via instance variable "
-          ^ MF.monospaced_to_string (Typ.Fieldname.to_string f) ^ ", "
-        in
-        str_cycle := !str_cycle ^ step ;
-        ct := !ct + 1
-    | _ ->
-        ()
-  in
-  List.iter ~f:do_edge cycle ;
   let desc =
-    Format.sprintf "Retain cycle involving the following objects: %s  %s" !str_cycle
+    Format.sprintf "Retain cycle involving the following objects:%s %s" (desc_retain_cycle cycle)
       (at_line tags loc)
   in
   {no_desc with descriptions= [desc]; tags= !tags; dotty= cycle_dotty}
