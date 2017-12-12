@@ -130,8 +130,11 @@ let clang_cc1_cmd_sanitizer cmd =
 
 let mk quoting_style ~prog ~args =
   (* Some arguments break the compiler so they need to be removed even before the normalization step *)
+  let blacklisted_flags = ["-fsanitize=builtin"] in
   let blacklisted_flags_with_arg = ["-index-store-path"] in
-  let sanitized_args = filter_and_replace_unsupported_args ~blacklisted_flags_with_arg args in
+  let sanitized_args =
+    filter_and_replace_unsupported_args ~blacklisted_flags ~blacklisted_flags_with_arg args
+  in
   {exec= prog; orig_argv= sanitized_args; argv= sanitized_args; quoting_style}
 
 
