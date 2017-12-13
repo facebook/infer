@@ -13,7 +13,7 @@ ANALYZER = checkers
 # a folder, is not discarded, and Clang considers it as a source file. This
 # leads to an error. This weird case can be observed when -index-store-path is
 # passed in a sequence like the one in CLANG_OPTIONS.
-CLANG_OPTIONS = -x c -index-store-path . -c -fsanitize=builtin
+CLANG_OPTIONS = -x c -index-store-path . -c -fsanitize=builtin -fsanitize=address,builtin
 INFER_OPTIONS = --report-custom-error --developer-mode --project-root ../codetoanalyze
 INFERPRINT_OPTIONS = --issues-tests
 

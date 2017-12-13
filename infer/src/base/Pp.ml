@@ -144,8 +144,6 @@ let pp_argfile fmt fname =
 
 
 let cli_args fmt args =
-  F.fprintf fmt "%a@\n%a"
-    (seq ~sep:(String.of_char CLOpt.env_var_sep) string)
-    args (seq ~sep:"\n" pp_argfile)
+  F.fprintf fmt "'%a'@\n%a" (seq ~sep:"' '" string) args (seq ~sep:"\n" pp_argfile)
     (List.filter_map ~f:(String.chop_prefix ~prefix:"@") args)
 

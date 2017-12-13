@@ -43,11 +43,11 @@ let pp_mode fmt mode =
       (* these are pretty boring, do not log anything *)
       ()
   | Javac (_, prog, args) ->
-      F.fprintf fmt "Javac driver mode:@\nprog = %s@\nargs = %a" prog Pp.cli_args args
+      F.fprintf fmt "Javac driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Maven (prog, args) ->
-      F.fprintf fmt "Maven driver mode:@\nprog = %s@\nargs = %a" prog Pp.cli_args args
+      F.fprintf fmt "Maven driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Clang (_, prog, args) ->
-      F.fprintf fmt "Clang driver mode:@\nprog = %s@\nargs = %a" prog Pp.cli_args args
+      F.fprintf fmt "Clang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
 
 
 (* A clean command for each driver mode to be suggested to the user

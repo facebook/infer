@@ -139,7 +139,7 @@ let cc1_capture clang_cmd =
     let root = Unix.getcwd () in
     let orig_argv = ClangCommand.get_orig_argv clang_cmd in
     (* the source file is always the last argument of the original -cc1 clang command *)
-    Utils.filename_to_absolute ~root orig_argv.(Array.length orig_argv - 1)
+    Utils.filename_to_absolute ~root (List.last_exn orig_argv)
   in
   L.(debug Capture Quiet) "@\n*** Beginning capture of file %s ***@\n" source_path ;
   if Config.equal_analyzer Config.analyzer Config.CompileOnly

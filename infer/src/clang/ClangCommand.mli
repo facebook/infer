@@ -40,7 +40,7 @@ val prepend_args : string list -> t -> t
 
 val append_args : string list -> t -> t
 
-val get_orig_argv : t -> string array
+val get_orig_argv : t -> string list
 
 val with_exec : string -> t -> t
 (** update the executable to be run *)
