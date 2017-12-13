@@ -227,4 +227,16 @@ public class Intents {
     return true;
   }
 
+  void startWithClassLiteralOk() {
+    mActivity.startActivity(new Intent(mActivity, MyActivity.class));
+  }
+
+  void startWithUri1Bad(Uri uri) {
+    mActivity.startActivity(new Intent("action", uri));
+  }
+
+  void startWithUri2Bad(Uri uri) {
+    mActivity.startActivity(new Intent("action", uri, mActivity, MyActivity.class));
+  }
+
 }

@@ -45,12 +45,25 @@ module SourceKind = struct
       (QuandaryConfig.Source.of_json Config.quandary_sources)
 
 
+  let actual_has_type n type_string actuals tenv =
+    let is_typ typename _ = String.equal (Typ.Name.name typename) type_string in
+    match List.nth actuals n with
+    | Some actual -> (
+      match HilExp.get_typ tenv actual with
+      | Some {desc= Tptr ({desc= Tstruct typename}, _)} ->
+          PatternMatch.supertype_exists tenv is_typ typename
+      | _ ->
+          false )
+    | None ->
+        false
+
+
   let get pname actuals tenv =
     let return = None in
     match pname with
     | Typ.Procname.Java pname -> (
       match (Typ.Procname.java_get_class_name pname, Typ.Procname.java_get_method pname) with
-      | "android.content.Intent", "<init>" when List.length actuals > 2 ->
+      | "android.content.Intent", "<init>" when actual_has_type 2 "android.net.Uri" actuals tenv ->
           (* taint the [this] parameter passed to the constructor *)
           Some (IntentFromURI, Some 0)
       | ( "android.content.Intent"

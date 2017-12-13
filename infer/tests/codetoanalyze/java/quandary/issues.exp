@@ -96,6 +96,8 @@ codetoanalyze/java/quandary/Intents.java, void Intents.callAllIntentSinks(), 12,
 codetoanalyze/java/quandary/Intents.java, void Intents.callAllIntentSinks(), 13, QUANDARY_TAINT_ERROR, [Return from Object InferTaint.inferSecretSource(),Call to Intent Intent.setPackage(String)]
 codetoanalyze/java/quandary/Intents.java, void Intents.extraToDataBad(), 5, UNTRUSTED_INTENT_CREATION, [Return from String Intent.getStringExtra(String),Call to Intent Intent.setData(Uri)]
 codetoanalyze/java/quandary/Intents.java, void Intents.extraToDataBad(), 7, UNTRUSTED_INTENT_CREATION, [Return from String Intent.getStringExtra(String),Call to Intent Intent.setData(Uri)]
+codetoanalyze/java/quandary/Intents.java, void Intents.startWithUri1Bad(Uri), 1, CREATE_INTENT_FROM_URI, [Return from Intent.<init>(String,Uri),Call to void Activity.startActivity(Intent)]
+codetoanalyze/java/quandary/Intents.java, void Intents.startWithUri2Bad(Uri), 1, CREATE_INTENT_FROM_URI, [Return from Intent.<init>(String,Uri,Context,Class),Call to void Activity.startActivity(Intent)]
 codetoanalyze/java/quandary/Intents.java, void Intents.subclassCallBad(IntentSubclass,ContextSubclass), 3, QUANDARY_TAINT_ERROR, [Return from Object InferTaint.inferSecretSource(),Call to void Context.startActivity(Intent)]
 codetoanalyze/java/quandary/Intents.java, void MyActivity.startServiceWithTaintedIntent(), 2, CREATE_INTENT_FROM_URI, [Return from Intent.<init>(String,Uri),Call to ComponentName ContextWrapper.startService(Intent)]
 codetoanalyze/java/quandary/Interprocedural.java, Object Interprocedural.irrelevantPassthroughsIntraprocedural(Object), 4, QUANDARY_TAINT_ERROR, [Return from Object InferTaint.inferSecretSource(),Call to void InferTaint.inferSensitiveSink(Object)]
