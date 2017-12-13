@@ -566,6 +566,24 @@ let nullable_annotation_name proc_name =
       "_Nullable"
 
 
+let access_desc tags access_opt =
+  match access_opt with
+  | None ->
+      []
+  | Some Last_accessed (n, _) ->
+      let line_str = string_of_int n in
+      Tags.update tags Tags.accessed_line line_str ;
+      ["last accessed on line " ^ line_str]
+  | Some Last_assigned (n, _) ->
+      let line_str = string_of_int n in
+      Tags.update tags Tags.assigned_line line_str ;
+      ["last assigned on line " ^ line_str]
+  | Some Returned_from_call _ ->
+      []
+  | Some Initialized_automatically ->
+      ["initialized automatically"]
+
+
 let dereference_string proc_name deref_str value_str access_opt loc =
   let tags = deref_str.tags in
   Tags.update tags Tags.value value_str ;
@@ -576,23 +594,6 @@ let dereference_string proc_name deref_str value_str access_opt loc =
       ; (if is_call_access then "returned by " else "")
       ; MF.monospaced_to_string value_str
       ; (match deref_str.value_post with Some s -> " " ^ MF.monospaced_to_string s | _ -> "") ]
-  in
-  let access_desc =
-    match access_opt with
-    | None ->
-        []
-    | Some Last_accessed (n, _) ->
-        let line_str = string_of_int n in
-        Tags.update tags Tags.accessed_line line_str ;
-        ["last accessed on line " ^ line_str]
-    | Some Last_assigned (n, _) ->
-        let line_str = string_of_int n in
-        Tags.update tags Tags.assigned_line line_str ;
-        ["last assigned on line " ^ line_str]
-    | Some Returned_from_call _ ->
-        []
-    | Some Initialized_automatically ->
-        ["initialized automatically"]
   in
   let problem_desc =
     let problem_str =
@@ -613,6 +614,7 @@ let dereference_string proc_name deref_str value_str access_opt loc =
     in
     [problem_str ^ " " ^ at_line tags loc]
   in
+  let access_desc = access_desc tags access_opt in
   {no_desc with descriptions= value_desc :: access_desc @ problem_desc; tags= !tags}
 
 
@@ -889,37 +891,12 @@ let desc_return_expression_required typ_str loc =
   {no_desc with descriptions= [description]; tags= !tags}
 
 
-let desc_retain_cycle cycle loc cycle_dotty =
+let desc_retain_cycle cycle_str loc cycle_dotty =
   Logging.d_strln "Proposition with retain cycle:" ;
   let tags = Tags.create () in
-  let desc_retain_cycle (cycle: RetainCyclesType.t) =
-    let open RetainCyclesType in
-    let remove_old s =
-      match Str.split_delim (Str.regexp_string "&old_") s with [_; s'] -> s' | _ -> s
-    in
-    let do_edge index_ edge =
-      let index = index_ + 1 in
-      let from_exp_str =
-        match edge.rc_from.rc_node_exp with
-        | Exp.Lvar pvar when Pvar.equal pvar Sil.block_pvar ->
-            "a block capturing"
-        | Exp.Lvar pvar as e ->
-            let e_str = Exp.to_string e in
-            if Pvar.is_seed pvar then remove_old e_str else e_str
-        | _ ->
-            Format.sprintf "An object of type %s"
-              (MF.monospaced_to_string (Typ.to_string edge.rc_from.rc_node_typ))
-      in
-      Format.sprintf "(%d) %s retaining another object via instance variable %s, " index
-        from_exp_str
-        (MF.monospaced_to_string (Typ.Fieldname.to_string edge.rc_field.rc_field_name))
-    in
-    let cycle_str = List.mapi ~f:do_edge cycle.rc_elements in
-    String.concat cycle_str ~sep:" "
-  in
   let desc =
-    Format.sprintf "Retain cycle involving the following objects:%s %s" (desc_retain_cycle cycle)
-      (at_line tags loc)
+    Format.sprintf "Retain cycle %s involving the following objects:%s" (at_line tags loc)
+      cycle_str
   in
   {no_desc with descriptions= [desc]; tags= !tags; dotty= cycle_dotty}
 

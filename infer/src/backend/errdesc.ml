@@ -786,6 +786,22 @@ let vpath_find tenv prop exp_ : DExp.t option * Typ.t option =
   res
 
 
+let access_opt ?(is_nullable= false) inst =
+  match inst with
+  | Sil.Iupdate (_, ncf, n, _) ->
+      Some (Localise.Last_assigned (n, ncf))
+  | Sil.Irearrange (_, _, n, _) ->
+      Some (Localise.Last_accessed (n, is_nullable))
+  | Sil.Ireturn_from_call n ->
+      Some (Localise.Returned_from_call n)
+  | Sil.Ialloc when Config.curr_language_is Config.Java ->
+      Some Localise.Initialized_automatically
+  | inst ->
+      if verbose then
+        L.d_strln ("explain_dexp_access: inst is not an update " ^ Sil.inst_to_string inst) ;
+      None
+
+
 (** produce a description of the access from the instrumentation at position [dexp] in [prop] *)
 let explain_dexp_access prop dexp is_nullable =
   let sigma = prop.Prop.sigma in
@@ -906,26 +922,12 @@ let explain_dexp_access prop dexp is_nullable =
         if verbose then L.d_strln ("lookup: unknown case not matched " ^ DExp.to_string de) ;
         None
   in
-  let access_opt =
-    match sexpo_to_inst (lookup dexp) with
-    | None ->
-        if verbose then
-          L.d_strln ("explain_dexp_access: cannot find inst of " ^ DExp.to_string dexp) ;
-        None
-    | Some Sil.Iupdate (_, ncf, n, _) ->
-        Some (Localise.Last_assigned (n, ncf))
-    | Some Sil.Irearrange (_, _, n, _) ->
-        Some (Localise.Last_accessed (n, is_nullable))
-    | Some Sil.Ireturn_from_call n ->
-        Some (Localise.Returned_from_call n)
-    | Some Sil.Ialloc when Config.curr_language_is Config.Java ->
-        Some Localise.Initialized_automatically
-    | Some inst ->
-        if verbose then
-          L.d_strln ("explain_dexp_access: inst is not an update " ^ Sil.inst_to_string inst) ;
-        None
-  in
-  access_opt
+  match sexpo_to_inst (lookup dexp) with
+  | Some inst ->
+      access_opt inst ~is_nullable
+  | None ->
+      if verbose then L.d_strln ("explain_dexp_access: cannot find inst of " ^ DExp.to_string dexp) ;
+      None
 
 
 let explain_dereference_access outermost_array is_nullable de_opt_ prop =
@@ -1004,6 +1006,59 @@ let create_dereference_desc proc_name tenv ?(use_buckets= false) ?(outermost_arr
   if use_buckets then Buckets.classify_access desc access_opt' de_opt is_nullable else desc
 
 
+let rec find_outermost_dereference tenv node e =
+  match e with
+  | Exp.Const _ ->
+      if verbose then (
+        L.d_str "find_outermost_dereference: constant " ;
+        Sil.d_exp e ;
+        L.d_ln () ) ;
+      exp_lv_dexp tenv node e
+  | Exp.Var id when Ident.is_normal id ->
+      (* look up the normal variable declaration *)
+      if verbose then (
+        L.d_str "find_outermost_dereference: normal var " ;
+        Sil.d_exp e ;
+        L.d_ln () ) ;
+      find_normal_variable_load tenv node id
+  | Exp.Lfield (e', _, _) ->
+      if verbose then (
+        L.d_str "find_outermost_dereference: Lfield " ;
+        Sil.d_exp e ;
+        L.d_ln () ) ;
+      find_outermost_dereference tenv node e'
+  | Exp.Lindex (e', _) ->
+      if verbose then (
+        L.d_str "find_outermost_dereference: Lindex " ;
+        Sil.d_exp e ;
+        L.d_ln () ) ;
+      find_outermost_dereference tenv node e'
+  | Exp.Lvar _ ->
+      if verbose then (
+        L.d_str "find_outermost_dereference: Lvar " ;
+        Sil.d_exp e ;
+        L.d_ln () ) ;
+      exp_lv_dexp tenv node e
+  | Exp.BinOp (Binop.PlusPI, Exp.Lvar _, _) ->
+      if verbose then (
+        L.d_str "find_outermost_dereference: Lvar+index " ;
+        Sil.d_exp e ;
+        L.d_ln () ) ;
+      exp_lv_dexp tenv node e
+  | Exp.Cast (_, e') ->
+      if verbose then (
+        L.d_str "find_outermost_dereference: cast " ;
+        Sil.d_exp e ;
+        L.d_ln () ) ;
+      find_outermost_dereference tenv node e'
+  | _ ->
+      if verbose then (
+        L.d_str "find_outermost_dereference: no match for " ;
+        Sil.d_exp e ;
+        L.d_ln () ) ;
+      None
+
+
 (** explain memory access performed by the current instruction
     if outermost_array is true, the outermost array access is removed
     if outermost_dereference is true, stop at the outermost dereference
@@ -1011,58 +1066,6 @@ let create_dereference_desc proc_name tenv ?(use_buckets= false) ?(outermost_arr
 let explain_access_ proc_name tenv ?(use_buckets= false) ?(outermost_array= false)
     ?(outermost_dereference= false) ?(is_nullable= false) ?(is_premature_nil= false) deref_str prop
     loc =
-  let rec find_outermost_dereference node e =
-    match e with
-    | Exp.Const _ ->
-        if verbose then (
-          L.d_str "find_outermost_dereference: constant " ;
-          Sil.d_exp e ;
-          L.d_ln () ) ;
-        exp_lv_dexp tenv node e
-    | Exp.Var id when Ident.is_normal id ->
-        (* look up the normal variable declaration *)
-        if verbose then (
-          L.d_str "find_outermost_dereference: normal var " ;
-          Sil.d_exp e ;
-          L.d_ln () ) ;
-        find_normal_variable_load tenv node id
-    | Exp.Lfield (e', _, _) ->
-        if verbose then (
-          L.d_str "find_outermost_dereference: Lfield " ;
-          Sil.d_exp e ;
-          L.d_ln () ) ;
-        find_outermost_dereference node e'
-    | Exp.Lindex (e', _) ->
-        if verbose then (
-          L.d_str "find_outermost_dereference: Lindex " ;
-          Sil.d_exp e ;
-          L.d_ln () ) ;
-        find_outermost_dereference node e'
-    | Exp.Lvar _ ->
-        if verbose then (
-          L.d_str "find_outermost_dereference: Lvar " ;
-          Sil.d_exp e ;
-          L.d_ln () ) ;
-        exp_lv_dexp tenv node e
-    | Exp.BinOp (Binop.PlusPI, Exp.Lvar _, _) ->
-        if verbose then (
-          L.d_str "find_outermost_dereference: Lvar+index " ;
-          Sil.d_exp e ;
-          L.d_ln () ) ;
-        exp_lv_dexp tenv node e
-    | Exp.Cast (_, e') ->
-        if verbose then (
-          L.d_str "find_outermost_dereference: cast " ;
-          Sil.d_exp e ;
-          L.d_ln () ) ;
-        find_outermost_dereference node e'
-    | _ ->
-        if verbose then (
-          L.d_str "find_outermost_dereference: no match for " ;
-          Sil.d_exp e ;
-          L.d_ln () ) ;
-        None
-  in
   let find_exp_dereferenced () =
     match State.get_instr () with
     | Some Sil.Store (e, _, _, _) ->
@@ -1102,7 +1105,7 @@ let explain_access_ proc_name tenv ?(use_buckets= false) ?(outermost_array= fals
   | Some e ->
       L.d_strln "Finding deref'd exp" ;
       let de_opt =
-        if outermost_dereference then find_outermost_dereference node e
+        if outermost_dereference then find_outermost_dereference tenv node e
         else exp_lv_dexp tenv node e
       in
       create_dereference_desc proc_name tenv ~use_buckets ~outermost_array ~is_nullable
@@ -1270,9 +1273,6 @@ let explain_return_expression_required loc typ =
   Localise.desc_return_expression_required typ_str loc
 
 
-(** Explain retain cycle value error *)
-let explain_retain_cycle cycle loc dotty_str = Localise.desc_retain_cycle cycle loc dotty_str
-
 (** explain a return statement missing *)
 let explain_return_statement_missing loc = Localise.desc_return_statement_missing loc
 
@@ -1331,3 +1331,4 @@ let explain_null_test_after_dereference tenv exp node line loc =
 
 let warning_err loc fmt_string =
   L.(debug Analysis Medium) ("%a: Warning: " ^^ fmt_string) Location.pp loc
+

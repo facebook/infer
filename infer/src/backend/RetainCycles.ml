@@ -8,6 +8,39 @@
  *)
 module L = Logging
 module F = Format
+module MF = MarkupFormatter
+
+let desc_retain_cycle tenv (cycle: RetainCyclesType.t) =
+  let open RetainCyclesType in
+  Logging.d_strln "Proposition with retain cycle:" ;
+  let do_edge index_ edge =
+    let index = index_ + 1 in
+    let node = State.get_node () in
+    let from_exp_str =
+      match edge.rc_from.rc_node_exp with
+      | Exp.Lvar pvar when Pvar.equal pvar Sil.block_pvar ->
+          "a block"
+      | _ ->
+        match Errdesc.find_outermost_dereference tenv node edge.rc_from.rc_node_exp with
+        | Some de ->
+            DecompiledExp.to_string de
+        | None ->
+            Format.sprintf "(object of type %s)" (Typ.to_string edge.rc_from.rc_node_typ)
+    in
+    let inst_str inst =
+      let update_str_list = Localise.access_desc (ref []) (Errdesc.access_opt inst) in
+      if List.is_empty update_str_list then " " else ", " ^ String.concat ~sep:"," update_str_list
+    in
+    let cycle_item_str =
+      Format.sprintf "%s->%s" from_exp_str (Typ.Fieldname.to_string edge.rc_field.rc_field_name)
+    in
+    Format.sprintf "(%d) %s%s" index
+      (MF.monospaced_to_string cycle_item_str)
+      (inst_str edge.rc_field.rc_field_inst)
+  in
+  let cycle_str = List.mapi ~f:do_edge cycle.rc_elements in
+  List.fold_left cycle_str ~f:(fun acc s -> Format.sprintf "%s\n %s" acc s) ~init:""
+
 
 let get_cycle root prop =
   let open RetainCyclesType in
@@ -64,16 +97,6 @@ let get_cycle root prop =
   | _ ->
       L.d_strln "Root exp is not an allocated object. No cycle found" ;
       []
-
-
-let get_retain_cycle_dotty prop_ cycle =
-  match prop_ with
-  | None ->
-      None
-  | Some Some prop_ ->
-      Dotty.dotty_retain_cycle_to_str prop_ cycle
-  | _ ->
-      None
 
 
 let get_var_retain_cycle prop_ =
@@ -140,9 +163,10 @@ let cycle_has_weak_or_unretained_or_assign_field tenv cycle =
   do_cycle cycle.rc_elements
 
 
-let exn_retain_cycle original_prop hpred cycle =
-  let cycle_dotty = get_retain_cycle_dotty original_prop cycle in
-  let desc = Errdesc.explain_retain_cycle cycle (State.get_loc ()) cycle_dotty in
+let exn_retain_cycle tenv prop hpred cycle =
+  let retain_cycle = desc_retain_cycle tenv cycle in
+  let cycle_dotty = Dotty.dotty_retain_cycle_to_str prop cycle in
+  let desc = Localise.desc_retain_cycle retain_cycle (State.get_loc ()) cycle_dotty in
   Exceptions.Retain_cycle (hpred, desc, __POS__)
 
 
@@ -151,10 +175,11 @@ let report_cycle tenv hpred original_prop =
         only if it's empty or it has weak or unsafe_unretained fields.
         Otherwise we report a retain cycle. *)
   let remove_opt prop_ = match prop_ with Some Some p -> p | _ -> Prop.prop_emp in
-  match get_var_retain_cycle (remove_opt original_prop) with
+  let prop = remove_opt original_prop in
+  match get_var_retain_cycle prop with
   | Some cycle when not (cycle_has_weak_or_unretained_or_assign_field tenv cycle) ->
       RetainCyclesType.print_cycle cycle ;
-      Some (exn_retain_cycle original_prop hpred cycle)
+      Some (exn_retain_cycle tenv prop hpred cycle)
   | _ ->
       None
 

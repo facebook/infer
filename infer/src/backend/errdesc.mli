@@ -101,9 +101,6 @@ val explain_frontend_warning : string -> string option -> Location.t -> Localise
 val explain_return_statement_missing : Location.t -> Localise.error_desc
 (** explain a return statement missing *)
 
-val explain_retain_cycle : RetainCyclesType.t -> Location.t -> string option -> Localise.error_desc
-(** explain a retain cycle *)
-
 val explain_unary_minus_applied_to_unsigned_expression :
   Tenv.t -> Exp.t -> Typ.t -> Procdesc.Node.t -> Location.t -> Localise.error_desc
 (** explain unary minus applied to unsigned expression *)
@@ -136,3 +133,7 @@ type pvar_off = Fpvar (* value of a pvar *)
 
 val find_with_exp : 'a Prop.t -> Exp.t -> (Pvar.t * pvar_off) option
 (** Find a program variable whose value is [exp] or pointing to a struct containing [exp] *)
+
+val find_outermost_dereference : Tenv.t -> Procdesc.Node.t -> Exp.t -> DecompiledExp.t option
+
+val access_opt : ?is_nullable:bool -> Sil.inst -> Localise.access option
