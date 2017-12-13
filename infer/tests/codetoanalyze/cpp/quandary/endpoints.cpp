@@ -110,6 +110,22 @@ class Service1 : facebook::fb303::cpp2::FacebookServiceSvIf {
     curl_easy_setopt(nullptr, CURLOPT_URL, formal.s.c_str());
   }
 
+  void endpoint_to_curl_url_exp_bad(request formal) {
+    curl_easy_setopt(nullptr, 10000 + 2, formal.s.c_str());
+  }
+
+  void endpoint_to_curl_url_unknown_exp_bad(request formal, int i) {
+    curl_easy_setopt(nullptr, i + 17, formal.s.c_str());
+  }
+
+  void endpoint_to_curl_other_const_ok(request formal) {
+    curl_easy_setopt(nullptr, 0, formal.s.c_str());
+  }
+
+  void endpoint_to_curl_other_exp_ok(request formal) {
+    curl_easy_setopt(nullptr, 1 + 2, formal.s.c_str());
+  }
+
   void FP_service1_endpoint_struct_int_field_ok(request formal) {
     system(std::to_string(formal.i).c_str());
   }

@@ -38,3 +38,5 @@ val get_access_paths : t -> AccessPath.t list
     used more than once. *)
 
 val is_null_literal : t -> bool
+
+val eval : t -> Const.t option

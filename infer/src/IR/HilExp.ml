@@ -171,3 +171,29 @@ let of_sil ~include_array_indexes ~f_resolve_id exp typ =
 
 
 let is_null_literal = function Constant Cint n -> IntLit.isnull n | _ -> false
+
+let rec eval_arithmetic_binop op e1 e2 =
+  match (eval e1, eval e2) with
+  | Some Const.Cint i1, Some Const.Cint i2 ->
+      Some (Const.Cint (op i1 i2))
+  | _ ->
+      None
+
+
+and eval = function
+  | Constant c ->
+      Some c
+  | BinaryOperator (Binop.Div, e1, e2) -> (
+    try eval_arithmetic_binop IntLit.div e1 e2 with Division_by_zero -> None )
+  | BinaryOperator (Binop.MinusA, e1, e2) ->
+      eval_arithmetic_binop IntLit.sub e1 e2
+  | BinaryOperator (Binop.Mod, e1, e2) ->
+      eval_arithmetic_binop IntLit.rem e1 e2
+  | BinaryOperator (Binop.Mult, e1, e2) ->
+      eval_arithmetic_binop IntLit.mul e1 e2
+  | BinaryOperator (Binop.PlusA, e1, e2) ->
+      eval_arithmetic_binop IntLit.add e1 e2
+  | _ ->
+      (* TODO: handle bitshifting cases, port eval_binop from RacerD.ml *)
+      None
+

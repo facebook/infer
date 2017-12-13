@@ -286,9 +286,23 @@ module SinkKind = struct
       match Typ.Procname.to_string pname with
       | "creat" | "fopen" | "freopen" | "open" ->
           taint_nth 0 CreateFile actuals
-      | "curl_easy_setopt" ->
-          (* first two actuals are curl object + a constant *)
-          taint_after_nth 1 Network actuals
+      | "curl_easy_setopt"
+        -> (
+          (* magic constant for setting request URL *)
+          let curlopt_url = 10002 in
+          (* first two actuals are curl object + integer code for data kind. *)
+          match List.nth actuals 1 with
+          | Some exp -> (
+            match HilExp.eval exp with
+            | Some Const.Cint i ->
+                (* check if the data kind might be CURLOPT_URL *)
+                if Int.equal (IntLit.to_int i) curlopt_url then taint_after_nth 1 Network actuals
+                else None
+            | _ ->
+                (* can't statically resolve data kind; taint it just in case *)
+                taint_after_nth 1 Network actuals )
+          | None ->
+              None )
       | "execl" | "execlp" | "execle" | "execv" | "execve" | "execvp" | "system" ->
           taint_all ShellExec actuals
       | "openat" ->
