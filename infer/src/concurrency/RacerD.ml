@@ -1242,11 +1242,18 @@ let make_unprotected_write_description pname final_sink_site initial_sink_site f
     pp_access final_sink
 
 
-let make_read_write_race_description ~read_is_sync conflict pname final_sink_site initial_sink_site
-    final_sink =
-  let pp_conflict fmt (_, _, _, _, pdesc) =
+type reported_access =
+  { access: RacerDDomain.TraceElem.t
+  ; threads: RacerDDomain.ThreadsDomain.astate
+  ; precondition: RacerDDomain.AccessPrecondition.t
+  ; tenv: Tenv.t
+  ; procdesc: Procdesc.t }
+
+let make_read_write_race_description ~read_is_sync (conflict: reported_access) pname
+    final_sink_site initial_sink_site final_sink =
+  let pp_conflict fmt {procdesc} =
     F.fprintf fmt "%s"
-      (Typ.Procname.to_simplified_string ~withclass:true (Procdesc.get_proc_name pdesc))
+      (Typ.Procname.to_simplified_string ~withclass:true (Procdesc.get_proc_name procdesc))
   in
   let conflicts_description =
     Format.asprintf "Potentially races with%s write in method %a"
@@ -1299,33 +1306,25 @@ let should_report_on_proc proc_desc tenv =
     currently not distinguishing different locks, and are treating "known to be confined to a
     thread" as if "known to be confined to UI thread".
 *)
-let report_unsafe_accesses
-    (aggregated_access_map:
-      ( RacerDDomain.TraceElem.t
-      * RacerDDomain.AccessPrecondition.t
-      * RacerDDomain.ThreadsDomain.astate
-      * Tenv.t
-      * Procdesc.t )
-      list
-      AccessListMap.t) =
+let report_unsafe_accesses (aggregated_access_map: reported_access list AccessListMap.t) =
   let open RacerDDomain in
-  let report_unsafe_access (access, pre, thread, tenv, pdesc) accesses =
-    let pname = Procdesc.get_proc_name pdesc in
-    match (TraceElem.kind access, pre) with
+  let report_unsafe_access {access; precondition; threads; tenv; procdesc} accesses =
+    let pname = Procdesc.get_proc_name procdesc in
+    match (TraceElem.kind access, precondition) with
     | ( Access.InterfaceCall unannoted_call_pname
       , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) ) ->
-        if ThreadsDomain.is_any thread && is_marked_thread_safe pdesc tenv then
+        if ThreadsDomain.is_any threads && is_marked_thread_safe procdesc tenv then
           (* un-annotated interface call + no lock in method marked thread-safe. warn *)
-          report_unannotated_interface_violation tenv pdesc access thread unannoted_call_pname
+          report_unannotated_interface_violation tenv procdesc access threads unannoted_call_pname
     | Access.InterfaceCall _, AccessPrecondition.Protected _ ->
         (* un-annotated interface call, but it's protected by a lock/thread. don't report *)
         ()
     | ( (Access.Write _ | ContainerWrite _)
       , (AccessPrecondition.Unprotected _ | AccessPrecondition.TotallyUnprotected) ) -> (
-      match Procdesc.get_proc_name pdesc with
+      match Procdesc.get_proc_name procdesc with
       | Java _ ->
           let writes_on_background_thread =
-            if ThreadsDomain.is_any thread then
+            if ThreadsDomain.is_any threads then
               (* unprotected write in method that may run in parallel with itself. warn *)
               []
             else
@@ -1333,18 +1332,18 @@ let report_unsafe_accesses
                    (i.e., not a self race). find accesses on a background thread this access might
                    conflict with and report them *)
               List.filter_map
-                ~f:(fun (other_access, _, other_thread, _, _) ->
-                  if TraceElem.is_write other_access && ThreadsDomain.is_any other_thread then
+                ~f:(fun {access= other_access; threads= other_threads} ->
+                  if TraceElem.is_write other_access && ThreadsDomain.is_any other_threads then
                     Some other_access
                   else None)
                 accesses
           in
-          if not (List.is_empty writes_on_background_thread && not (ThreadsDomain.is_any thread))
+          if not (List.is_empty writes_on_background_thread && not (ThreadsDomain.is_any threads))
           then
             let conflict = List.hd writes_on_background_thread in
-            report_thread_safety_violation tenv pdesc
+            report_thread_safety_violation tenv procdesc
               ~make_description:make_unprotected_write_description
-              ~report_kind:(WriteWriteRace conflict) access thread
+              ~report_kind:(WriteWriteRace conflict) access threads
       | _ ->
           (* Do not report unprotected writes when an access can't run in parallel with itself, or
                for ObjC_Cpp *)
@@ -1366,21 +1365,21 @@ let report_unsafe_accesses
         let is_conflict other_access pre other_thread =
           TraceElem.is_write other_access
           &&
-          if Typ.Procname.is_java pname then ThreadsDomain.is_any thread
+          if Typ.Procname.is_java pname then ThreadsDomain.is_any threads
             || ThreadsDomain.is_any other_thread
           else is_cpp_protected_write pre
         in
         let all_writes =
           List.filter
-            ~f:(fun (other_access, pre, other_thread, _, _) ->
-              is_conflict other_access pre other_thread)
+            ~f:(fun {access= other_access; precondition; threads= other_threads} ->
+              is_conflict other_access precondition other_threads)
             accesses
         in
         if not (List.is_empty all_writes) then
-          let (conflict_access, _, _, _, _) as conflict = List.hd_exn all_writes in
-          report_thread_safety_violation tenv pdesc
+          let conflict = List.hd_exn all_writes in
+          report_thread_safety_violation tenv procdesc
             ~make_description:(make_read_write_race_description ~read_is_sync:false conflict)
-            ~report_kind:(ReadWriteRace conflict_access) access thread
+            ~report_kind:(ReadWriteRace conflict.access) access threads
     | (Access.Read _ | ContainerRead _), AccessPrecondition.Protected excl ->
         (* protected read. report unprotected writes and opposite protected writes as conflicts
              Thread and Lock are opposites of one another, and Both has no opposite *)
@@ -1394,10 +1393,10 @@ let report_unsafe_accesses
         in
         let conflicting_writes =
           List.filter
-            ~f:(fun (access, pre, other_thread, _, _) ->
-              match pre with
+            ~f:(fun {access; precondition; threads= other_threads} ->
+              match precondition with
               | AccessPrecondition.Unprotected _ ->
-                  TraceElem.is_write access && ThreadsDomain.is_any other_thread
+                  TraceElem.is_write access && ThreadsDomain.is_any other_threads
               | AccessPrecondition.Protected other_excl when is_opposite (excl, other_excl) ->
                   TraceElem.is_write access
               | _ ->
@@ -1405,14 +1404,14 @@ let report_unsafe_accesses
             accesses
         in
         if not (List.is_empty conflicting_writes) then
-          let (conflict_access, _, _, _, _) as conflict = List.hd_exn conflicting_writes in
+          let conflict = List.hd_exn conflicting_writes in
           (* protected read with conflicting unprotected write(s). warn. *)
-          report_thread_safety_violation tenv pdesc
+          report_thread_safety_violation tenv procdesc
             ~make_description:(make_read_write_race_description ~read_is_sync:true conflict)
-            ~report_kind:(ReadWriteRace conflict_access) access thread
+            ~report_kind:(ReadWriteRace conflict.access) access threads
   in
   AccessListMap.iter
-    (fun _ grouped_accesses ->
+    (fun _ (grouped_accesses: reported_access list) ->
       let class_has_mutex_member objc_cpp tenv =
         let class_name = Typ.Procname.objc_cpp_get_class_type_name objc_cpp in
         let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::mutex"] in
@@ -1430,7 +1429,7 @@ let report_unsafe_accesses
                   (or an override or superclass is), or
                 - any access is in a field marked thread-safe (or an override) *)
             List.exists
-              ~f:(fun (_, _, thread, _, _) -> ThreadsDomain.is_any thread)
+              ~f:(fun ({threads}: reported_access) -> ThreadsDomain.is_any threads)
               grouped_accesses
             && should_report_on_proc pdesc tenv
         | ObjC_Cpp objc_cpp ->
@@ -1442,7 +1441,7 @@ let report_unsafe_accesses
             false
       in
       let reportable_accesses =
-        List.filter ~f:(fun (_, _, _, tenv, pdesc) -> should_report pdesc tenv) grouped_accesses
+        List.filter ~f:(fun {tenv; procdesc} -> should_report procdesc tenv) grouped_accesses
       in
       List.iter
         ~f:(fun access -> report_unsafe_access access reportable_accesses)
@@ -1451,16 +1450,14 @@ let report_unsafe_accesses
   |> ignore
 
 
-type ('a, 'b, 'c) dat = RacerDDomain.TraceElem.t * 'a * 'b * Tenv.t * 'c
-
 module type QuotientedAccessListMap = sig
-  type ('a, 'b, 'c) t
+  type t
 
-  val empty : ('a, 'b, 'c) t
+  val empty : t
 
-  val add : RacerDDomain.Access.t -> ('a, 'b, 'c) dat -> ('a, 'b, 'c) t -> ('a, 'b, 'c) t
+  val add : RacerDDomain.Access.t -> reported_access -> t -> t
 
-  val quotient : ('a, 'b, 'c) t -> ('a, 'b, 'c) dat list AccessListMap.t
+  val quotient : t -> reported_access list AccessListMap.t
 end
 
 module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
@@ -1492,7 +1489,7 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
 
   end)
 
-  type ('a, 'b, 'c) t = ('a, 'b, 'c) dat list M.t
+  type t = reported_access list M.t
 
   let empty = M.empty
 
@@ -1505,7 +1502,7 @@ module SyntacticQuotientedAccessListMap : QuotientedAccessListMap = struct
 end
 
 module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
-  type ('a, 'b, 'c) t = ('a, 'b, 'c) dat list AccessListMap.t
+  type t = reported_access list AccessListMap.t
 
   let empty = AccessListMap.empty
 
@@ -1574,9 +1571,10 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
       if AccessListMap.is_empty m then acc
       else
         let k, vals = AccessListMap.min_binding m in
-        let _, _, _, tenv, _ =
-          List.find_exn vals ~f:(fun (elem, _, _, _, _) ->
-              RacerDDomain.Access.equal (RacerDDomain.TraceElem.kind elem) k )
+        let tenv =
+          (List.find_exn vals ~f:(fun {access} ->
+               RacerDDomain.Access.equal (RacerDDomain.TraceElem.kind access) k ))
+            .tenv
         in
         (* assumption: the tenv for k is sufficient for k' too *)
         let k_part, non_k_part =
@@ -1623,14 +1621,16 @@ let should_filter_access access =
    that x.f.g may point to during execution *)
 let make_results_table (module AccessListMap: QuotientedAccessListMap) file_env =
   let open RacerDDomain in
-  let aggregate_post {threads; accesses} tenv pdesc acc =
+  let aggregate_post {threads; accesses} tenv procdesc acc =
     AccessDomain.fold
-      (fun pre accesses acc ->
+      (fun precondition accesses acc ->
         PathDomain.Sinks.fold
           (fun access acc ->
             let access_kind = TraceElem.kind access in
             if should_filter_access access_kind then acc
-            else AccessListMap.add access_kind (access, pre, threads, tenv, pdesc) acc)
+            else
+              let reported_access = {access; precondition; threads; tenv; procdesc} in
+              AccessListMap.add access_kind reported_access acc)
           (PathDomain.sinks accesses) acc)
       accesses acc
   in
