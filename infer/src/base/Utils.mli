@@ -13,6 +13,9 @@ open! IStd
 val initial_times : Unix.process_times
 (** initial process times *)
 
+val find_files : path:string -> extension:string -> string list
+(** recursively traverse a path for files ending with a given extension *)
+
 val string_crc_hex32 : string -> string
 (** Compute a 32-character hexadecimal crc using the Digest module  *)
 

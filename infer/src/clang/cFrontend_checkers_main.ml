@@ -355,20 +355,9 @@ let store_issues source_file =
 
 
 let find_linters_files () =
-  let rec find_aux init dir_path =
-    let aux base_path files rel_path =
-      let full_path = Filename.concat base_path rel_path in
-      match (Unix.stat full_path).Unix.st_kind with
-      | Unix.S_REG when String.is_suffix ~suffix:".al" full_path ->
-          full_path :: files
-      | Unix.S_DIR ->
-          find_aux files full_path
-      | _ ->
-          files
-    in
-    Sys.fold_dir ~init ~f:(aux dir_path) dir_path
-  in
-  List.concat (List.map ~f:(fun folder -> find_aux [] folder) Config.linters_def_folder)
+  List.concat_map
+    ~f:(fun folder -> Utils.find_files ~path:folder ~extension:".al")
+    Config.linters_def_folder
 
 
 let linters_files =
@@ -410,4 +399,3 @@ let do_frontend_checks (trans_unit_ctx: CFrontend_config.translation_unit_contex
         Tableaux.print_global_valuation_map ()) *)
   | _ (* NOTE: Assumes that an AST always starts with a TranslationUnitDecl *) ->
       assert false
-
