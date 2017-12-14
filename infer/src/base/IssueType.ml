@@ -301,7 +301,7 @@ let remote_code_execution_risk = from_string "REMOTE_CODE_EXECUTION_RISK"
 
 let resource_leak = from_string "RESOURCE_LEAK"
 
-let retain_cycle = from_string ~enabled:false "RETAIN_CYCLE"
+let retain_cycle = from_string ~enabled:true "RETAIN_CYCLE"
 
 let return_expression_required = from_string "RETURN_EXPRESSION_REQUIRED"
 
