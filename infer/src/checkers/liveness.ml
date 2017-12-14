@@ -56,10 +56,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Sil.Load (lhs_id, _, _, _) when Ident.is_none lhs_id ->
         (* dummy deref inserted by frontend--don't count as a read *)
         astate
-    | Sil.Call (_, Exp.Const Cfun (Typ.Procname.ObjC_Cpp _ as pname), _, _, _)
-      when Typ.Procname.is_destructor pname ->
-        (* don't count destructor calls as a read *)
-        astate
     | Sil.Load (lhs_id, rhs_exp, _, _) ->
         Domain.remove (Var.of_id lhs_id) astate |> exp_add_live rhs_exp
     | Sil.Store (Lvar lhs_pvar, _, rhs_exp, _) ->
@@ -95,23 +91,7 @@ let matcher_scope_guard =
     | _ ->
         init
   in
-  let default_scope_guards =
-    [ (* C++ *)
-      "folly::RWSpinLock::ReadHolder"
-    ; "folly::RWSpinLock::WriteHolder"
-    ; "folly::ScopeGuard"
-    ; "folly::SharedMutex::ReadHolder"
-    ; "folly::SharedMutex::WriteHolder"
-    ; "folly::SharedMutexReadPriority::ReadHolder"
-    ; "folly::SharedMutexReadPriority::WriteHolder"
-    ; "folly::SharedMutexWritePriority::ReadHolder"
-    ; "folly::SharedMutexWritePriority::WriteHolder"
-    ; "folly::SpinLockGuard"
-    ; "std::lock_guard"
-    ; "std::scoped_lock"
-    ; "std::unique_lock" (* Obj-C *)
-    ; "CKComponentScope" ]
-  in
+  let default_scope_guards = ["CKComponentScope"] in
   of_json default_scope_guards Config.cxx_scope_guards
   |> QualifiedCppName.Match.of_fuzzy_qual_names
 
@@ -180,3 +160,4 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   List.iter (CFG.nodes cfg) ~f:report_on_node ;
   summary
+
