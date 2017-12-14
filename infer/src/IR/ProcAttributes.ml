@@ -104,3 +104,8 @@ let default proc_name =
   ; proc_name
   ; ret_type= Typ.mk Typ.Tvoid
   ; source_file_captured= SourceFile.invalid __FILE__ }
+
+
+module SQLite = SqliteUtils.MarshalledData (struct
+  type nonrec t = t
+end)

@@ -1052,8 +1052,6 @@ module Procname = struct
         to_unique_id p
 
 
-  let sexp_of_t p = Sexp.Atom (to_string p)
-
   (** Convenient representation of a procname for external tools (e.g. eclipse plugin) *)
   let rec to_simplified_string ?(withclass= false) p =
     match p with
@@ -1169,6 +1167,27 @@ module Procname = struct
     | _ ->
         to_concrete_filename ?crc_only pname
 
+
+  module SQLite = struct
+    let pname_to_key =
+      Base.Hashtbl.create
+        ( module struct
+          type nonrec t = t
+
+          let compare = compare
+
+          let hash = hash
+
+          let sexp_of_t p = Sexp.Atom (to_string p)
+        end )
+        ()
+
+
+    let serialize pname =
+      let default () = Sqlite3.Data.TEXT (to_filename pname) in
+      Base.Hashtbl.find_or_add pname_to_key pname ~default
+
+  end
 
   (** given two template arguments, try to generate mapping from generic ones to concrete ones. *)
   let get_template_args_mapping generic_procname concrete_procname =

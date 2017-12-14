@@ -94,32 +94,20 @@ let check_cfg_connectedness cfg =
   List.iter ~f:do_pdesc pdescs
 
 
-module type Data = sig
-  val of_cfg : t -> Sqlite3.Data.t
-
-  val of_source_file : SourceFile.t -> Sqlite3.Data.t
-
-  val to_cfg : Sqlite3.Data.t -> t
-end
-
-module Data : Data = struct
-  let of_source_file file = Sqlite3.Data.TEXT (SourceFile.to_string file)
-
-  let of_cfg x = Sqlite3.Data.BLOB (Marshal.to_string x [])
-
-  let to_cfg = function[@warning "-8"] Sqlite3.Data.BLOB b -> Marshal.from_string b 0
-end
-
 let get_load_statement =
   ResultsDatabase.register_statement "SELECT cfgs FROM cfg WHERE source_file = :k"
 
 
+module SQLite = SqliteUtils.MarshalledData (struct
+  type nonrec t = t
+end)
+
 let load source =
   let load_stmt = get_load_statement () in
-  Data.of_source_file source |> Sqlite3.bind load_stmt 1
+  SourceFile.SQLite.serialize source |> Sqlite3.bind load_stmt 1
   |> SqliteUtils.check_sqlite_error ~log:"load bind source file" ;
   SqliteUtils.sqlite_result_step ~finalize:false ~log:"Cfg.load" load_stmt
-  |> Option.map ~f:Data.to_cfg
+  |> Option.map ~f:SQLite.deserialize
 
 
 (** Save the .attr files for the procedures in the cfg. *)
@@ -304,10 +292,10 @@ let store source_file cfg =
      sure that all attributes were written to disk (but not necessarily flushed) *)
   save_attributes source_file cfg ;
   let store_stmt = get_store_statement () in
-  Data.of_source_file source_file |> Sqlite3.bind store_stmt 1
+  SourceFile.SQLite.serialize source_file |> Sqlite3.bind store_stmt 1
   (* :source *)
   |> SqliteUtils.check_sqlite_error ~log:"store bind source file" ;
-  Data.of_cfg cfg |> Sqlite3.bind store_stmt 2
+  SQLite.serialize cfg |> Sqlite3.bind store_stmt 2
   (* :cfg *)
   |> SqliteUtils.check_sqlite_error ~log:"store bind cfg" ;
   SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Cfg.store" store_stmt

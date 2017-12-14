@@ -79,3 +79,22 @@ let db_close db =
             (Sqlite3.errcode db |> Sqlite3.Rc.to_string)
             (Sqlite3.errmsg db)))
 
+
+module type Data = sig
+  type t
+
+  val serialize : t -> Sqlite3.Data.t
+
+  val deserialize : Sqlite3.Data.t -> t
+end
+
+module MarshalledData (D : sig
+  type t
+end) =
+struct
+  type t = D.t
+
+  let deserialize = function[@warning "-8"] Sqlite3.Data.BLOB b -> Marshal.from_string b 0
+
+  let serialize x = Sqlite3.Data.BLOB (Marshal.to_string x [])
+end

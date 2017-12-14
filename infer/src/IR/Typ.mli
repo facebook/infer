@@ -314,8 +314,6 @@ module Procname : sig
 
   val hash : t -> int
 
-  val sexp_of_t : t -> Sexp.t
-
   type java_type = string option * string
 
   type method_kind =
@@ -329,12 +327,14 @@ module Procname : sig
   module Hash : Caml.Hashtbl.S with type key = t
 
   (** Maps from proc names. *)
-
   module Map : PrettyPrintable.PPMap with type key = t
 
   (** Sets of proc names. *)
-
   module Set : PrettyPrintable.PPSet with type elt = t
+
+  module SQLite : sig
+    val serialize : t -> Sqlite3.Data.t
+  end
 
   val c : QualifiedCppName.t -> string -> template_spec_info -> is_generic_model:bool -> c
   (** Create a C procedure name from plain and mangled name. *)

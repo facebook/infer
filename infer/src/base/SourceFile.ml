@@ -162,3 +162,22 @@ let changed_sources_from_changed_files changed_files =
       | None ->
           changed_files' )
 
+
+module SQLite = struct
+  type nonrec t = t
+
+  let serialize = function
+    | RelativeProjectRoot path ->
+        (* show the most common paths as text (for debugging, possibly perf) *)
+        Sqlite3.Data.TEXT path
+    | _ as x ->
+        Sqlite3.Data.BLOB (Marshal.to_string x [])
+
+
+  let deserialize = function[@warning "-8"]
+    | Sqlite3.Data.TEXT rel_path ->
+        RelativeProjectRoot rel_path
+    | Sqlite3.Data.BLOB b ->
+        Marshal.from_string b 0
+
+end

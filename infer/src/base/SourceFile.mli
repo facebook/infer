@@ -71,3 +71,5 @@ val to_string : t -> string
 (** convert a source file to a string
     WARNING: result may not be valid file path, do not use this function to perform operations
              on filenames *)
+
+module SQLite : SqliteUtils.Data with type t = t

@@ -23,31 +23,6 @@ let proc_kind_of_attr (proc_attributes: ProcAttributes.t) =
   else ProcUndefined
 
 
-module type Data = sig
-  val of_pname : Typ.Procname.t -> Sqlite3.Data.t
-
-  val of_source_file : SourceFile.t -> Sqlite3.Data.t
-
-  val of_proc_attr : ProcAttributes.t -> Sqlite3.Data.t
-
-  val to_proc_attr : Sqlite3.Data.t -> ProcAttributes.t
-end
-
-module Data : Data = struct
-  let pname_to_key = Base.Hashtbl.create (module Typ.Procname) ()
-
-  let of_pname pname =
-    let default () = Sqlite3.Data.TEXT (Typ.Procname.to_filename pname) in
-    Base.Hashtbl.find_or_add pname_to_key pname ~default
-
-
-  let of_source_file file = Sqlite3.Data.TEXT (SourceFile.to_string file)
-
-  let to_proc_attr = function[@warning "-8"] Sqlite3.Data.BLOB b -> Marshal.from_string b 0
-
-  let of_proc_attr x = Sqlite3.Data.BLOB (Marshal.to_string x [])
-end
-
 let get_replace_statement =
   (* The innermost SELECT returns either the current attributes_kind and source_file associated with
      the given proc name, or default values of (-1,""). These default values have the property that
@@ -128,19 +103,21 @@ let find ~defined pname_blob =
   Sqlite3.bind select_stmt 1 pname_blob
   |> SqliteUtils.check_sqlite_error ~log:"find bind proc name" ;
   SqliteUtils.sqlite_result_step ~finalize:false ~log:"Attributes.find" select_stmt
-  |> Option.map ~f:Data.to_proc_attr
+  |> Option.map ~f:ProcAttributes.SQLite.deserialize
 
 
-let load pname = Data.of_pname pname |> find ~defined:false
+let load pname = Typ.Procname.SQLite.serialize pname |> find ~defined:false
 
 let store (attr: ProcAttributes.t) =
   let pkind = proc_kind_of_attr attr in
-  let key = Data.of_pname attr.proc_name in
+  let key = Typ.Procname.SQLite.serialize attr.proc_name in
   if should_try_to_update key pkind then
-    replace key pkind (Data.of_source_file attr.loc.Location.file) (Data.of_proc_attr attr)
+    replace key pkind
+      (SourceFile.SQLite.serialize attr.loc.Location.file)
+      (ProcAttributes.SQLite.serialize attr)
 
 
-let load_defined pname = Data.of_pname pname |> find ~defined:true
+let load_defined pname = Typ.Procname.SQLite.serialize pname |> find ~defined:true
 
 let find_file_capturing_procedure pname =
   Option.map (load pname) ~f:(fun proc_attributes ->

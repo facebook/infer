@@ -33,3 +33,18 @@ val sqlite_unit_step : ?finalize:bool -> log:string -> Sqlite3.stmt -> unit
 
 val db_close : Sqlite3.db -> unit
 (** Close the given database and asserts that it was effective. Raises [Error] if not. *)
+
+(** An API commonly needed to store and retrieve objects from the database *)
+module type Data = sig
+  type t
+
+  val serialize : t -> Sqlite3.Data.t
+
+  val deserialize : Sqlite3.Data.t -> t
+end
+
+(** A default implementation of the Data API that encodes every objects as marshalled blobs *)
+module MarshalledData (D : sig
+  type t
+end) :
+  Data with type t = D.t
