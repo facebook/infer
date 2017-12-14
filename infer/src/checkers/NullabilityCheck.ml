@@ -44,12 +44,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let is_objc_container_add_method : Typ.Procname.t -> bool =
     let method_prefixes =
-      [ "arrayWithObjects:"
-      ; "arrayWithObjects:"
+      [ "addObject:"
       ; "arrayByAddingObject:"
+      ; "arrayWithObjects:"
+      ; "dictionaryWithObjects:"
       ; "dictionaryWithObjectsAndKeys:"
       ; "initWithObjectsAndKeys:"
-      ; "dictionaryWithObjects:" ]
+      ; "insertObject:"
+      ; "setObject:" ]
     in
     fun proc_name ->
       let simplified_callee_pname = Typ.Procname.to_simplified_string proc_name in

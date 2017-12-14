@@ -198,4 +198,22 @@ int* __nullable returnsNull();
   return [array arrayByAddingObject:[self nullableMethod]];
 }
 
+- (NSDictionary*)setNullableObjectInDictionaryBad {
+  NSMutableDictionary* mutableDict = [NSMutableDictionary dictionary];
+  [mutableDict setObject:[self nullableMethod] forKey:@"key"]; // reports here
+  return mutableDict;
+}
+
+- (NSArray*)addNullableObjectInMutableArrayBad {
+  NSMutableArray* mutableArray = [[NSMutableArray alloc] init];
+  [mutableArray addObject:[self nullableMethod]]; // reports here
+  return mutableArray;
+}
+
+- (NSArray*)insertNullableObjectInMutableArrayBad {
+  NSMutableArray* mutableArray = [[NSMutableArray alloc] init];
+  [mutableArray insertObject:[self nullableMethod] atIndex:0]; // reports here
+  return mutableArray;
+}
+
 @end
