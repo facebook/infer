@@ -515,6 +515,8 @@ val linters_ignore_clang_failures : bool
 
 val linters_validate_syntax_only : bool
 
+val litho : bool
+
 val liveness : bool
 
 val load_analysis_results : string option
@@ -613,8 +615,6 @@ val save_analysis_results : string option
 val seconds_per_iteration : float option
 
 val select : int option
-
-val should_update : bool
 
 val show_buckets : bool
 

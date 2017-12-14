@@ -31,6 +31,10 @@ let is_footprint = function ProgramVar _ -> false | LogicalVar id -> Ident.is_fo
 
 let pp fmt = function ProgramVar pv -> Pvar.pp Pp.text fmt pv | LogicalVar id -> Ident.pp fmt id
 
+let get_footprint_index t =
+  match t with LogicalVar id when is_footprint t -> Some (Ident.get_stamp id) | _ -> None
+
+
 module Map = PrettyPrintable.MakePPMap (struct
   type nonrec t = t
 

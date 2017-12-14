@@ -343,17 +343,16 @@ let equal_phase = [%compare.equal : phase]
 
 (** Payload: results of some analysis *)
 type payload =
-  { preposts: NormSpec.t list option  (** list of specs *)
-  ; typestate: unit TypeState.t option  (** final typestate *)
-  ; annot_map: AnnotReachabilityDomain.astate option
+  { annot_map: AnnotReachabilityDomain.astate option
+  ; buffer_overrun: BufferOverrunDomain.Summary.t option
   ; crashcontext_frame: Stacktree_t.stacktree option
-        (** Proc location and blame_range info for crashcontext analysis *)
+  ; litho: LithoDomain.astate option
+  ; preposts: NormSpec.t list option
   ; quandary: QuandarySummary.t option
+  ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.astate option
-  ; racerd: RacerDDomain.summary option
-  ; should_update: ShouldUpdateDomain.astate option
-  ; buffer_overrun: BufferOverrunDomain.Summary.t option
+  ; typestate: unit TypeState.t option
   ; uninit: UninitDomain.summary option }
 
 type summary =
@@ -493,6 +492,7 @@ let pp_payload pe fmt
     ; quandary
     ; siof
     ; racerd
+    ; litho
     ; buffer_overrun
     ; annot_map
     ; uninit } =
@@ -502,7 +502,7 @@ let pp_payload pe fmt
     | None ->
         ()
   in
-  F.fprintf fmt "%a%a%a%a%a%a%a%a%a@\n"
+  F.fprintf fmt "%a%a%a%a%a%a%a%a%a%a@\n"
     (pp_opt "PrePosts" (pp_specs pe))
     (Option.map ~f:NormSpec.tospecs preposts)
     (pp_opt "TypeState" (TypeState.pp TypeState.unit_ext))
@@ -512,7 +512,7 @@ let pp_payload pe fmt
     (pp_opt "Quandary" QuandarySummary.pp)
     quandary (pp_opt "Siof" SiofDomain.pp) siof
     (pp_opt "RacerD" RacerDDomain.pp_summary)
-    racerd
+    racerd (pp_opt "Litho" LithoDomain.pp) litho
     (pp_opt "BufferOverrun" BufferOverrunDomain.Summary.pp)
     buffer_overrun
     (pp_opt "AnnotationReachability" AnnotReachabilityDomain.pp)
@@ -721,7 +721,7 @@ let empty_payload =
   ; resources= None
   ; siof= None
   ; racerd= None
-  ; should_update= None
+  ; litho= None
   ; buffer_overrun= None
   ; uninit= None }
 

@@ -128,17 +128,16 @@ val equal_phase : phase -> phase -> bool
 
 (** Payload: results of some analysis *)
 type payload =
-  { preposts: NormSpec.t list option  (** list of specs *)
-  ; typestate: unit TypeState.t option  (** final typestate *)
-  ; annot_map: AnnotReachabilityDomain.astate option  (** list of calls of the form (call, loc) *)
-  ; crashcontext_frame: Stacktree_j.stacktree option
-        (** Procedure location and blame_range info for crashcontext analysis *)
+  { annot_map: AnnotReachabilityDomain.astate option
+  ; buffer_overrun: BufferOverrunDomain.Summary.t option
+  ; crashcontext_frame: Stacktree_t.stacktree option
+  ; litho: LithoDomain.astate option
+  ; preposts: NormSpec.t list option
   ; quandary: QuandarySummary.t option
+  ; racerd: RacerDDomain.summary option
   ; resources: ResourceLeakDomain.summary option
   ; siof: SiofDomain.astate option
-  ; racerd: RacerDDomain.summary option
-  ; should_update: ShouldUpdateDomain.astate option
-  ; buffer_overrun: BufferOverrunDomain.Summary.t option
+  ; typestate: unit TypeState.t option
   ; uninit: UninitDomain.summary option }
 
 (** Procedure summary *)

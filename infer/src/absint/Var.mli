@@ -30,6 +30,8 @@ val is_return : t -> bool
 
 val is_footprint : t -> bool
 
+val get_footprint_index : t -> int option
+
 val pp : Format.formatter -> t -> unit
 
 module Map : PrettyPrintable.PPMap with type key = t

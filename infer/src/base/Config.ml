@@ -701,12 +701,12 @@ and ( annotation_reachability
     , fragment_retains_view
     , immutable_cast
     , linters
+    , litho
     , liveness
     , printf_args
     , quandary
     , racerd
     , resource_leak
-    , should_update
     , siof
     , suggest_nullable
     , uninit ) =
@@ -739,6 +739,7 @@ and ( annotation_reachability
     mk_checker ~long:"immutable-cast" ~default:true
       "the detection of object cast from immutable type to mutable type. For instance, it will detect cast from ImmutableList to List, ImmutableMap to Map, and ImmutableSet to Set."
   and linters = mk_checker ~long:"linters" ~default:true "syntactic linters"
+  and litho = mk_checker ~long:"litho" "Experimental checkers supporting the Litho framework"
   and liveness =
     mk_checker ~long:"liveness" ~default:true "the detection of dead stores and unused variables"
   and printf_args =
@@ -749,9 +750,6 @@ and ( annotation_reachability
     mk_checker ~long:"racerd" ~deprecated:["-threadsafety"] ~default:true
       "the RacerD thread safety analysis"
   and resource_leak = mk_checker ~long:"resource-leak" ""
-  and should_update =
-    mk_checker ~long:"should-update"
-      "Experimental checker for identifying GraphQL dependencies of a Litho component"
   and siof =
     mk_checker ~long:"siof" ~default:true
       "the Static Initialization Order Fiasco analysis (C++ only)"
@@ -804,12 +802,12 @@ and ( annotation_reachability
   , fragment_retains_view
   , immutable_cast
   , linters
+  , litho
   , liveness
   , printf_args
   , quandary
   , racerd
   , resource_leak
-  , should_update
   , siof
   , suggest_nullable
   , uninit )
@@ -2503,6 +2501,8 @@ and linters_ignore_clang_failures = !linters_ignore_clang_failures
 
 and linters_validate_syntax_only = !linters_validate_syntax_only
 
+and litho = !litho
+
 and liveness = !liveness
 
 and load_average =
@@ -2622,8 +2622,6 @@ and save_analysis_results = !save_results
 and seconds_per_iteration = !seconds_per_iteration
 
 and select = !select
-
-and should_update = !should_update
 
 and show_buckets = !print_buckets
 

@@ -89,9 +89,7 @@ let all_checkers =
                interprocedural later on *)
             Procedure ResourceLeaks.checker
           , Config.Java ) ] }
-  ; { name= "should update"
-    ; active= Config.should_update
-    ; callbacks= [(Procedure ShouldUpdate.checker, Config.Java)] }
+  ; {name= "litho"; active= Config.litho; callbacks= [(Procedure Litho.checker, Config.Java)]}
   ; {name= "SIOF"; active= Config.siof; callbacks= [(Procedure Siof.checker, Config.Clang)]}
   ; { name= "uninitialized variables"
     ; active= Config.uninit
@@ -134,3 +132,4 @@ let pp_checker fmt {name; callbacks} =
   F.fprintf fmt "%s (%a)" name
     (Pp.seq ~sep:", " (Pp.to_string ~f:Config.string_of_language))
     langs_of_callbacks
+
