@@ -178,6 +178,14 @@ test_build: src_build_common
 	$(QUIET)$(call silent_on_success,Testing Infer builds without warnings,\
 	$(MAKE_SOURCE) test)
 
+.PHONY: toplevel
+toplevel: src_build_common
+	$(QUIET)$(call silent_on_success,Building Infer REPL,\
+	$(MAKE_SOURCE) toplevel)
+	$(QUIET)echo
+	$(QUIET)echo "You can now use the infer REPL:"
+	$(QUIET)echo "  \"$(ABSOLUTE_ROOT_DIR)/scripts/infer_repl\""
+
 ifeq ($(IS_FACEBOOK_TREE),yes)
 byte src_build_common src_build test_build: fb-setup
 endif
