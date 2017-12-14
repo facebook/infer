@@ -100,7 +100,7 @@ val source_dir_to_string : source_dir -> string
 (** expose the source dir as a string *)
 
 val source_dir_get_internal_file : source_dir -> string -> filename
-(** get the path to an internal file with the given extention (.cfg, .cg, .tenv) *)
+(** get the path to an internal file with the given extention (.cg, .tenv) *)
 
 val source_dir_from_source_file : SourceFile.t -> source_dir
 (** get the source directory corresponding to a source file *)

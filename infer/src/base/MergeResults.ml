@@ -33,7 +33,17 @@ WHERE
 |}
   in
   SqliteUtils.sqlite_unit_step
-    ~log:(Printf.sprintf "copying contents of database '%s'" db_file)
+    ~log:(Printf.sprintf "copying attributes of database '%s'" db_file)
+    copy_stmt
+
+
+let merge_cfg_table ~db_file =
+  let copy_stmt =
+    Sqlite3.prepare (ResultsDatabase.get_database ())
+      "INSERT OR REPLACE INTO cfg SELECT * FROM attached.cfg"
+  in
+  SqliteUtils.sqlite_unit_step
+    ~log:(Printf.sprintf "copying cfgs of database '%s'" db_file)
     copy_stmt
 
 
@@ -43,6 +53,7 @@ let merge ~db_file =
     ~log:(Printf.sprintf "attaching database '%s'" db_file)
     (Sqlite3.exec main_db (Printf.sprintf "ATTACH '%s' AS attached" db_file)) ;
   merge_attributes_table ~db_file ;
+  merge_cfg_table ~db_file ;
   SqliteUtils.check_sqlite_error ~fatal:true
     ~log:(Printf.sprintf "detaching database '%s'" db_file)
     (Sqlite3.exec main_db "DETACH attached") ;

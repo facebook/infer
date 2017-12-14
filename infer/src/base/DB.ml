@@ -69,7 +69,7 @@ type source_dir = string [@@deriving compare]
 (** expose the source dir as a string *)
 let source_dir_to_string source_dir = source_dir
 
-(** get the path to an internal file with the given extention (.cfg, .cg, .tenv) *)
+(** get the path to an internal file with the given extention (.cg, .tenv) *)
 let source_dir_get_internal_file source_dir extension =
   let source_dir_name =
     append_crc_cutoff (Caml.Filename.remove_extension (Filename.basename source_dir))

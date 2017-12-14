@@ -94,14 +94,32 @@ let check_cfg_connectedness cfg =
   List.iter ~f:do_pdesc pdescs
 
 
-(** Serializer for control flow graphs *)
-let cfg_serializer : t Serialization.serializer =
-  Serialization.create_serializer Serialization.Key.cfg
+module type Data = sig
+  val of_cfg : t -> Sqlite3.Data.t
+
+  val of_source_file : SourceFile.t -> Sqlite3.Data.t
+
+  val to_cfg : Sqlite3.Data.t -> t
+end
+
+module Data : Data = struct
+  let of_source_file file = Sqlite3.Data.TEXT (SourceFile.to_string file)
+
+  let of_cfg x = Sqlite3.Data.BLOB (Marshal.to_string x [])
+
+  let to_cfg = function[@warning "-8"] Sqlite3.Data.BLOB b -> Marshal.from_string b 0
+end
+
+let get_load_statement =
+  ResultsDatabase.register_statement "SELECT cfgs FROM cfg WHERE source_file = :k"
 
 
-(** Load a cfg from a file *)
-let load_from_file (filename: DB.filename) : t option =
-  Serialization.read_from_file cfg_serializer filename
+let load source =
+  let load_stmt = get_load_statement () in
+  Data.of_source_file source |> Sqlite3.bind load_stmt 1
+  |> SqliteUtils.check_sqlite_error ~log:"load bind source file" ;
+  SqliteUtils.sqlite_result_step ~finalize:false ~log:"Cfg.load" load_stmt
+  |> Option.map ~f:Data.to_cfg
 
 
 (** Save the .attr files for the procedures in the cfg. *)
@@ -273,20 +291,26 @@ let mark_unchanged_pdescs cfg_new cfg_old =
   Typ.Procname.Hash.iter mark_pdesc_if_unchanged cfg_new
 
 
-(** Save a cfg into a file *)
-let store_to_file ~source_file (filename: DB.filename) (cfg: t) =
+let get_store_statement =
+  ResultsDatabase.register_statement "INSERT OR REPLACE INTO cfg VALUES (:source, :cfgs)"
+
+
+let store source_file cfg =
   inline_java_synthetic_methods cfg ;
   ( if Config.incremental_procs then
-      match load_from_file filename with
-      | Some old_cfg ->
-          mark_unchanged_pdescs cfg old_cfg
-      | None ->
-          () ) ;
-  (* NOTE: it's important to write attribute files to disk before writing .cfg file to disk.
-     OndemandCapture module relies on it - it uses existance of .cfg file as a barrier to make
+      match load source_file with Some old_cfg -> mark_unchanged_pdescs cfg old_cfg | None -> () ) ;
+  (* NOTE: it's important to write attribute files to disk before writing cfgs to disk.
+     OndemandCapture module relies on it - it uses existance of the cfg as a barrier to make
      sure that all attributes were written to disk (but not necessarily flushed) *)
   save_attributes source_file cfg ;
-  Serialization.write_to_file cfg_serializer filename ~data:cfg
+  let store_stmt = get_store_statement () in
+  Data.of_source_file source_file |> Sqlite3.bind store_stmt 1
+  (* :source *)
+  |> SqliteUtils.check_sqlite_error ~log:"store bind source file" ;
+  Data.of_cfg cfg |> Sqlite3.bind store_stmt 2
+  (* :cfg *)
+  |> SqliteUtils.check_sqlite_error ~log:"store bind cfg" ;
+  SqliteUtils.sqlite_unit_step ~finalize:false ~log:"Cfg.store" store_stmt
 
 
 (** Applies convert_instr_list to all the instructions in all the nodes of the cfg *)
@@ -614,3 +638,9 @@ let pp_proc_signatures fmt cfg =
   F.fprintf fmt "METHOD SIGNATURES@\n@." ;
   let sorted_procs = List.sort ~cmp:Procdesc.compare (get_all_procs cfg) in
   List.iter ~f:(fun pdesc -> F.fprintf fmt "%a@." Procdesc.pp_signature pdesc) sorted_procs
+
+
+let exists_for_source_file source =
+  (* simplistic implementation that allocates the cfg as this is only used for reactive capture for now *)
+  load source |> Option.is_some
+

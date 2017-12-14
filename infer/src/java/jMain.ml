@@ -30,10 +30,9 @@ let init_global_state source_file =
 
 let store_icfg source_file cg cfg =
   let source_dir = DB.source_dir_from_source_file source_file in
-  let cfg_file = DB.source_dir_get_internal_file source_dir ".cfg" in
   let cg_file = DB.source_dir_get_internal_file source_dir ".cg" in
   Cg.store_to_file cg_file cg ;
-  Cfg.store_to_file ~source_file cfg_file cfg ;
+  Cfg.store source_file cfg ;
   if Config.debug_mode || Config.frontend_tests then (
     Dotty.print_icfg_dotty source_file cfg ;
     Cg.save_call_graph_dotty source_file cg ) ;

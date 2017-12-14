@@ -20,7 +20,7 @@ let database_fullpath = Config.results_dir ^/ database_filename
 let create_attributes_table db =
   (* it would be nice to use "WITHOUT ROWID" here but ancient versions of sqlite do not support
      it *)
-  SqliteUtils.exec db ~log:"initializing results DB"
+  SqliteUtils.exec db ~log:"creating attributes table"
     ~stmt:
       {|
 CREATE TABLE IF NOT EXISTS attributes
@@ -30,10 +30,20 @@ CREATE TABLE IF NOT EXISTS attributes
   , proc_attributes BLOB NOT NULL )|}
 
 
+let create_cfg_table db =
+  SqliteUtils.exec db ~log:"creating cfg table"
+    ~stmt:
+      {|
+CREATE TABLE IF NOT EXISTS cfg
+  ( source_file TEXT PRIMARY KEY
+  , cfgs BLOB NOT NULL )|}
+
+
 let create_db () =
   let temp_db = Filename.temp_file ~in_dir:Config.results_dir database_filename ".tmp" in
   let db = Sqlite3.db_open ~mutex:`FULL temp_db in
   create_attributes_table db ;
+  create_cfg_table db ;
   (* This should be the default but better be sure, otherwise we cannot access the database concurrently. This has to happen before setting WAL mode. *)
   SqliteUtils.exec db ~log:"locking mode=NORMAL" ~stmt:"PRAGMA locking_mode=NORMAL" ;
   ( match Config.sqlite_vfs with
@@ -58,10 +68,12 @@ let on_close_database ~f = close_db_callbacks := f :: !close_db_callbacks
 
 let get_database () = Option.value_exn !database
 
-let reset_attributes_table () =
+let reset_capture_tables () =
   let db = get_database () in
   SqliteUtils.exec db ~log:"drop attributes table" ~stmt:"DROP TABLE attributes" ;
-  create_attributes_table db
+  create_attributes_table db ;
+  SqliteUtils.exec db ~log:"drop cfg table" ~stmt:"DROP TABLE cfg" ;
+  create_cfg_table db
 
 
 let db_canonicalize () =

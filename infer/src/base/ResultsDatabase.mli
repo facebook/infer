@@ -16,8 +16,8 @@ val database_fullpath : string
 val get_database : unit -> Sqlite3.db
 (** The results database. You should always use this function to access the database, as the connection to it may change during the execution (see [new_database_connection]). *)
 
-val reset_attributes_table : unit -> unit
-(** zero out the attributes table *)
+val reset_capture_tables : unit -> unit
+(** zero out the tables associated with capture data *)
 
 val new_database_connection : unit -> unit
 (** Closes the previous connection to the database (if any), and opens a new one. Needed after calls to fork(2). *)

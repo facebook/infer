@@ -59,7 +59,7 @@ let assert_results_dir advice =
 
 
 let delete_capture_and_analysis_data () =
-  ResultsDatabase.reset_attributes_table () ;
+  ResultsDatabase.reset_capture_tables () ;
   let dirs_to_delete =
     List.map ~f:(Filename.concat Config.results_dir) Config.([captured_dir_name; specs_dir_name])
   in

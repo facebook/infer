@@ -67,7 +67,7 @@ let clean_compilation_command mode =
 let clean_results_dir () =
   if not Config.flavors then
     (* we do not need to keep the capture data in Buck/Java mode *)
-    ResultsDatabase.reset_attributes_table () ;
+    ResultsDatabase.reset_capture_tables () ;
   ResultsDatabase.db_canonicalize () ;
   (* make sure we are done with the database *)
   ResultsDatabase.db_close () ;
@@ -91,7 +91,7 @@ let clean_results_dir () =
       ; ResultsDatabase.database_filename ^ "-wal" ]
     in
     let suffixes_to_delete =
-      ".txt" :: ".csv" :: ".json" :: (if Config.flavors then [] else [".cfg"; ".cg"])
+      ".txt" :: ".csv" :: ".json" :: (if Config.flavors then [] else [".cg"])
     in
     fun name ->
       (* Keep the JSON report *)

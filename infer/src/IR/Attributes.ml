@@ -143,24 +143,16 @@ let store (attr: ProcAttributes.t) =
 let load_defined pname = Data.of_pname pname |> find ~defined:true
 
 let find_file_capturing_procedure pname =
-  match load pname with
-  | None ->
-      None
-  | Some proc_attributes ->
+  Option.map (load pname) ~f:(fun proc_attributes ->
       let source_file = proc_attributes.ProcAttributes.source_file_captured in
-      let source_dir = DB.source_dir_from_source_file source_file in
       let origin =
-        (* Procedure coming from include files if it has different location
-         than the file where it was captured. *)
+        (* Procedure coming from include files if it has different location than the file where it
+           was captured. *)
         match SourceFile.compare source_file proc_attributes.ProcAttributes.loc.file <> 0 with
         | true ->
             `Include
         | false ->
             `Source
       in
-      let cfg_fname = DB.source_dir_get_internal_file source_dir ".cfg" in
-      let cfg_fname_exists =
-        PVariant.( = ) `Yes (Sys.file_exists (DB.filename_to_string cfg_fname))
-      in
-      if cfg_fname_exists then Some (source_file, origin) else None
+      (source_file, origin) )
 

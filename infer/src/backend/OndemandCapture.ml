@@ -20,14 +20,11 @@ let try_capture (attributes: ProcAttributes.t) : ProcAttributes.t option =
       let decl_file = attributes.loc.file in
       let definition_file_opt = SourceFile.of_header decl_file in
       let try_compile definition_file =
-        let source_dir = DB.source_dir_from_source_file definition_file in
-        (* Use cfg_filename as a proxy to find out whether definition_file was already captured.
-         If it was, there is no point in trying to capture it again.
-         Treat existance of cfg_filename as a barrier - if it exists it means that
-         all attributes files have been created - write logic is defined in
-         Cfg.store_cfg_to_file *)
-        let cfg_filename = DB.source_dir_get_internal_file source_dir ".cfg" in
-        if not (DB.file_exists cfg_filename) then (
+        (* Use the cfg as a proxy to find out whether definition_file was already captured.  If it
+           was, there is no point in trying to capture it again.  Treat existance of the cfg as a
+           barrier - if it exists it means that all attributes files have been created - write logic
+           is defined in Cfg.store *)
+        if not (Cfg.exists_for_source_file decl_file) then (
           L.(debug Capture Verbose) "Started capture of %a...@\n" SourceFile.pp definition_file ;
           Timeout.suspend_existing_timeout ~keep_symop_total:true ;
           protect

@@ -15,11 +15,11 @@ open! IStd
 (** A control-flow graph *)
 type t
 
-val load_from_file : DB.filename -> t option
-(** Load a cfg from a file *)
+val load : SourceFile.t -> t option
+(** Load the cfgs of the procedures of a source file *)
 
-val store_to_file : source_file:SourceFile.t -> DB.filename -> t -> unit
-(** Save a cfg into a file *)
+val store : SourceFile.t -> t -> unit
+(** Save a cfg into the database *)
 
 (** {2 Functions for manipulating an interprocedural CFG} *)
 
@@ -65,3 +65,5 @@ val specialize_with_block_args :
   in the closures *)
 
 val pp_proc_signatures : Format.formatter -> t -> unit
+
+val exists_for_source_file : SourceFile.t -> bool

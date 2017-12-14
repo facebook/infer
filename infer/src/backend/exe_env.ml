@@ -22,7 +22,6 @@ type file_data =
   { source: SourceFile.t
   ; tenv_file: DB.filename
   ; mutable tenv: Tenv.t option
-  ; cfg_file: DB.filename
   ; mutable cfg: Cfg.t option }
 
 (** get the path to the tenv file, which either one tenv file per source file or a global tenv file *)
@@ -45,12 +44,9 @@ end)
 let new_file_data source cg_fname =
   let file_base = DB.chop_extension cg_fname in
   let tenv_file = tenv_filename file_base in
-  let cfg_file = DB.filename_add_suffix file_base ".cfg" in
   { source
   ; tenv_file
-  ; tenv= None
-  ; (* Sil.load_tenv_from_file tenv_file *)
-  cfg_file
+  ; tenv= None (* Sil.load_tenv_from_file tenv_file *)
   ; cfg= None (* Cfg.load_cfg_from_file cfg_file *) }
 
 
@@ -151,7 +147,7 @@ let file_data_to_tenv file_data =
 
 
 let file_data_to_cfg file_data =
-  if is_none file_data.cfg then file_data.cfg <- Cfg.load_from_file file_data.cfg_file ;
+  if is_none file_data.cfg then file_data.cfg <- Cfg.load file_data.source ;
   file_data.cfg
 
 
