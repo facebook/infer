@@ -69,8 +69,7 @@ let report receiver call_chain summary =
   let call_strings = List.map ~f:(Typ.Procname.to_simplified_string ~withclass:false) call_chain in
   let call_string = String.concat ~sep:"." call_strings in
   let message = F.asprintf "GraphQL getter chain %a.%s" AccessPath.pp receiver call_string in
-  let issue_id = IssueType.graphql_field_access.unique_id in
-  let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
+  let exn = Exceptions.Checkers (IssueType.graphql_field_access, Localise.verbatim_desc message) in
   let loc = Specs.get_loc summary in
   Reporting.log_error summary ~loc exn
 
@@ -116,4 +115,3 @@ let checker {Callbacks.summary; proc_desc; tenv} =
       summary
   | None ->
       summary
-

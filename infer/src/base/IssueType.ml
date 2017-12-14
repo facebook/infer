@@ -108,6 +108,18 @@ let cannot_star = from_string "Cannot_star"
 
 let checkers_access_global = from_string "CHECKERS_ACCESS_GLOBAL"
 
+let checkers_allocates_memory = from_string "CHECKERS_ALLOCATES_MEMORY"
+
+let checkers_annotation_reachability_error = from_string "CHECKERS_ANNOTATION_REACHABILITY_ERROR"
+
+let checkers_calls_expensive_method = from_string "CHECKERS_CALLS_EXPENSIVE_METHOD"
+
+let checkers_expensive_overrides_unexpensive =
+  from_string "CHECKERS_EXPENSIVE_OVERRIDES_UNANNOTATED"
+
+
+let checkers_fragment_retain_view = from_string "CHECKERS_FRAGMENT_RETAINS_VIEW"
+
 let checkers_immutable_cast = from_string "CHECKERS_IMMUTABLE_CAST"
 
 let checkers_print_c_call = from_string "CHECKERS_PRINT_C_CALL"

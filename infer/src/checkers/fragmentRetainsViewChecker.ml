@@ -15,9 +15,8 @@ module P = Printf
 
 let report_error fragment_typ fld fld_typ summary pdesc =
   let pname = Procdesc.get_proc_name pdesc in
-  let retained_view = "CHECKERS_FRAGMENT_RETAINS_VIEW" in
   let description = Localise.desc_fragment_retains_view fragment_typ fld fld_typ pname in
-  let exn = Exceptions.Checkers (retained_view, description) in
+  let exn = Exceptions.Checkers (IssueType.checkers_fragment_retain_view, description) in
   let loc = Procdesc.get_loc pdesc in
   Reporting.log_error summary ~loc exn
 
@@ -64,4 +63,3 @@ let callback_fragment_retains_view ({Callbacks.summary} as args) : Specs.summary
   | _ ->
       () ) ;
   summary
-

@@ -84,13 +84,13 @@ exception Double_lock of Localise.error_desc * L.ml_loc
 
 exception Empty_vector_access of Localise.error_desc * L.ml_loc
 
-exception Eradicate of string * Localise.error_desc
+exception Eradicate of IssueType.t * Localise.error_desc
 
 exception Field_not_null_checked of Localise.error_desc * L.ml_loc
 
 exception Frontend_warning of (string * string option) * Localise.error_desc * L.ml_loc
 
-exception Checkers of string * Localise.error_desc
+exception Checkers of IssueType.t * Localise.error_desc
 
 exception Inherently_dangerous_function of Localise.error_desc
 
@@ -337,8 +337,8 @@ let recognize_exception exn =
       ; severity= High
       ; kind= Some Kerror
       ; category= Prover }
-  | Eradicate (kind_s, desc) ->
-      { name= IssueType.from_string kind_s
+  | Eradicate (kind, desc) ->
+      { name= kind
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_user
@@ -369,8 +369,8 @@ let recognize_exception exn =
       ; severity= Medium
       ; kind= None
       ; category= Linters }
-  | Checkers (kind_s, desc) ->
-      { name= IssueType.from_string kind_s
+  | Checkers (kind, desc) ->
+      { name= kind
       ; description= desc
       ; ml_loc= None
       ; visibility= Exn_user
@@ -695,4 +695,3 @@ let pp_err ~node_key loc ekind ex_name desc ml_loc_opt fmt () =
 let handle_exception exn =
   let error = recognize_exception exn in
   equal_visibility error.visibility Exn_user || equal_visibility error.visibility Exn_developer
-

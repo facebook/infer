@@ -43,7 +43,7 @@ module ST = struct
       Localise.custom_desc_with_advice description (Option.value ~default:"" advice)
         [("always_report", string_of_bool always_report)]
     in
-    let exn = exception_kind kind.IssueType.unique_id localized_description in
+    let exn = exception_kind kind localized_description in
     let proc_attributes = Specs.pdesc_resolve_attributes proc_desc in
     (* Errors can be suppressed with annotations. An error of kind CHECKER_ERROR_NAME can be
        suppressed with the following annotations:

@@ -106,9 +106,8 @@ let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =
   let report leak_count (proc_data: extras ProcData.t) =
     if leak_count > 0 (* 2(a) *) then
       let last_loc = Procdesc.Node.get_loc (Procdesc.get_exit_node proc_data.pdesc) in
-      let issue_kind = IssueType.resource_leak.unique_id in
       let message = F.asprintf "Leaked %d resource(s)" leak_count in
-      let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
+      let exn = Exceptions.Checkers (IssueType.resource_leak, Localise.verbatim_desc message) in
       Reporting.log_error summary ~loc:last_loc exn
   in
   (* Convert the abstract state to a summary. for now, just the identity function *)
@@ -127,4 +126,3 @@ let checker {Callbacks.summary; proc_desc; tenv} : Specs.summary =
       L.(die InternalError)
         "Analyzer failed to compute post for %a" Typ.Procname.pp
         (Procdesc.get_proc_name proc_data.pdesc)
-

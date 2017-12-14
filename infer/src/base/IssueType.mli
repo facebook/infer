@@ -59,6 +59,22 @@ val cannot_star : t
 
 val checkers_access_global : t
 
+val checkers_allocates_memory : t
+(** Warning name when a performance critical method directly or indirectly
+    calls a method allocating memory *)
+
+val checkers_annotation_reachability_error : t
+
+val checkers_calls_expensive_method : t
+(** Warning name when a performance critical method directly or indirectly
+    calls a method annotatd as expensive *)
+
+val checkers_expensive_overrides_unexpensive : t
+(** Warning name for the subtyping rule: method not annotated as expensive cannot be overridden
+    by a method annotated as expensive *)
+
+val checkers_fragment_retain_view : t
+
 val checkers_immutable_cast : t
 
 val checkers_print_c_call : t

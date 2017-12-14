@@ -84,9 +84,9 @@ exception Field_not_null_checked of Localise.error_desc * Logging.ml_loc
 
 exception Empty_vector_access of Localise.error_desc * Logging.ml_loc
 
-exception Eradicate of string * Localise.error_desc
+exception Eradicate of IssueType.t * Localise.error_desc
 
-exception Checkers of string * Localise.error_desc
+exception Checkers of IssueType.t * Localise.error_desc
 
 exception Frontend_warning of (string * string option) * Localise.error_desc * Logging.ml_loc
 

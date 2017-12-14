@@ -500,7 +500,7 @@ module Report = struct
         if Typ.Procname.equal pname caller_pname then
           let description = PO.description cond trace in
           let error_desc = Localise.desc_buffer_overrun description in
-          let exn = Exceptions.Checkers (issue_type.IssueType.unique_id, error_desc) in
+          let exn = Exceptions.Checkers (issue_type, error_desc) in
           let trace =
             match TraceSet.choose_shortest trace.PO.ConditionTrace.val_traces with
             | trace ->

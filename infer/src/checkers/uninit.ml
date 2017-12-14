@@ -55,9 +55,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let report ap loc summary =
     let message = F.asprintf "The value read from %a was never initialized" AccessPath.pp ap in
-    let issue_id = IssueType.uninitialized_value.unique_id in
     let ltr = [Errlog.make_trace_element 0 loc "" []] in
-    let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
+    let exn =
+      Exceptions.Checkers (IssueType.uninitialized_value, Localise.verbatim_desc message)
+    in
     Reporting.log_error summary ~loc ~ltr exn
 
 

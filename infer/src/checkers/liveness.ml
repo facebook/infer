@@ -147,13 +147,12 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
       || is_scope_guard typ || Procdesc.has_modify_in_block_attr proc_desc pvar )
   in
   let log_report pvar typ loc =
-    let issue_id = IssueType.dead_store.unique_id in
     let message =
       F.asprintf "The value written to %a (type %a) is never used" (Pvar.pp Pp.text) pvar
         (Typ.pp_full Pp.text) typ
     in
     let ltr = [Errlog.make_trace_element 0 loc "Write of unused value" []] in
-    let exn = Exceptions.Checkers (issue_id, Localise.verbatim_desc message) in
+    let exn = Exceptions.Checkers (IssueType.dead_store, Localise.verbatim_desc message) in
     Reporting.log_error summary ~loc ~ltr exn
   in
   let report_dead_store live_vars = function
@@ -181,4 +180,3 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
   in
   List.iter (CFG.nodes cfg) ~f:report_on_node ;
   summary
-

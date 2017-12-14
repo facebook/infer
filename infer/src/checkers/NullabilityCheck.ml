@@ -63,7 +63,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let report_nullable_dereference ap call_sites {ProcData.pdesc; extras} loc =
     let pname = Procdesc.get_proc_name pdesc in
     let annotation = Localise.nullable_annotation_name pname in
-    let issue_kind = IssueType.nullable_dereference.unique_id in
     let call_site =
       try CallSites.min_elt call_sites with Not_found ->
         L.(die InternalError)
@@ -94,7 +93,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
           (MF.wrap_monospaced AccessPath.pp)
           ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site Location.pp loc
     in
-    let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
+    let exn =
+      Exceptions.Checkers (IssueType.nullable_dereference, Localise.verbatim_desc message)
+    in
     let summary = extras in
     let trace =
       let with_origin_site =

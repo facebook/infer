@@ -171,7 +171,6 @@ let checker {Callbacks.summary; proc_desc; tenv} =
   let annotation = Localise.nullable_annotation_name (Procdesc.get_proc_name proc_desc) in
   let report astate (proc_data: extras ProcData.t) =
     let report_access_path ap udchain =
-      let issue_kind = IssueType.field_should_be_nullable.unique_id in
       match AccessPath.get_field_and_annotation ap proc_data.tenv with
       | Some (field_name, _) when is_outside_codebase proc_desc tenv field_name ->
           (* Skip reporting when the field is outside the analyzed codebase *)
@@ -186,7 +185,9 @@ let checker {Callbacks.summary; proc_desc; tenv} =
               (pretty_field_name proc_data field_name)
               MF.pp_monospaced annotation
           in
-          let exn = Exceptions.Checkers (issue_kind, Localise.verbatim_desc message) in
+          let exn =
+            Exceptions.Checkers (IssueType.field_should_be_nullable, Localise.verbatim_desc message)
+          in
           match make_error_trace astate ap udchain with
           | Some (loc, ltr) ->
               Reporting.log_warning summary ~loc ~ltr exn
