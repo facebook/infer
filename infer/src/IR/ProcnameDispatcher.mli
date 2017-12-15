@@ -48,7 +48,7 @@ type ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out, 'list_constrain
 
 type ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
 
-type ('f_in, 'f_out, 'captured_types, 'markers) func_arg
+type ('arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers) one_arg
 
 type 'f matcher = Typ.Procname.t -> FuncArg.t list -> 'f option
 
@@ -175,19 +175,23 @@ module Procname : sig
 
   (* Function args *)
 
-  val any_arg : ('f, 'f, _, _) func_arg
+  val any_arg : (unit, _, 'f, 'f, _, _) one_arg
   (** Eats one arg *)
 
-  val capt_arg : (FuncArg.t -> 'f, 'f, _, _) func_arg
+  val capt_arg : (FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg *)
 
-  val typ1 : 'marker -> ('f, 'f, 'marker mtyp * _, 'marker * _) func_arg
+  val capt_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+  (** Captures one arg expression *)
+
+  val typ1 : 'marker -> (unit, _, 'f, 'f, 'marker mtyp * _, 'marker * _) one_arg
   (** Matches first captured type *)
 
-  val typ2 : 'marker -> ('f, 'f, _ * ('marker mtyp * _), _ * ('marker * _)) func_arg
+  val typ2 : 'marker -> (unit, _, 'f, 'f, _ * ('marker mtyp * _), _ * ('marker * _)) one_arg
   (** Matches second captured type *)
 
-  val typ3 : 'marker -> ('f, 'f, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) func_arg
+  val typ3 :
+    'marker -> (unit, _, 'f, 'f, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) one_arg
   (** Matches third captured type *)
 
   val make_dispatcher : 'f matcher list -> 'f dispatcher
@@ -195,13 +199,19 @@ module Procname : sig
 
   val ( $+ ) :
     ('f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
-    -> ('f_interm, 'f_out, 'captured_types, 'markers) func_arg
+    -> ('arg, 'arg, 'f_interm, 'f_out, 'captured_types, 'markers) one_arg
     -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
   (** Separate function arguments *)
 
+  val ( $+? ) :
+    ('f_in, 'f_proc_out, 'f_interm, 'captured_types, 'markers) args_matcher
+    -> ('arg, 'arg option, 'f_interm, 'f_out, 'captured_types, 'markers) one_arg
+    -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
+  (** Add an optional argument *)
+
   val ( >$ ) :
     ('f_in, 'f_proc_out, 'ct, unit, 'cm, _) templ_matcher
-    -> ('f_proc_out, 'f_out, 'ct, 'cm) func_arg
+    -> ('arg, 'arg, 'f_proc_out, 'f_out, 'ct, 'cm) one_arg
     -> ('f_in, 'f_proc_out, 'f_out, 'ct, 'cm) args_matcher
   (** Ends template arguments and starts function arguments *)
 
@@ -211,13 +221,13 @@ module Procname : sig
 
   val ( $ ) :
     ('f_in, 'f_proc_out, 'captured_types, unit, 'markers) name_matcher
-    -> ('f_proc_out, 'f_out, 'captured_types, 'markers) func_arg
+    -> ('arg, 'arg, 'f_proc_out, 'f_out, 'captured_types, 'markers) one_arg
     -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
   (** Ends a name with accept-ALL template arguments and starts function arguments *)
 
   val ( <>$ ) :
     ('f_in, 'f_proc_out, 'captured_types, unit, 'markers) name_matcher
-    -> ('f_proc_out, 'f_out, 'captured_types, 'markers) func_arg
+    -> ('arg, 'arg, 'f_proc_out, 'f_out, 'captured_types, 'markers) one_arg
     -> ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher
   (** Ends a name with accept-NO template arguments and starts function arguments *)
 

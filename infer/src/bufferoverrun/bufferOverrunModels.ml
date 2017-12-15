@@ -76,7 +76,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
         mem
 
 
-  let malloc (size_exp, _) =
+  let malloc size_exp =
     let exec pname ret node location mem =
       match ret with
       | Some (id, _) ->
@@ -99,7 +99,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
 
   let realloc = malloc
 
-  let inferbo_min (e1, _) (e2, _) =
+  let inferbo_min e1 e2 =
     let exec _pname ret _node _location mem =
       match ret with
       | Some (id, _) ->
@@ -113,7 +113,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     {exec; check= no_check}
 
 
-  let inferbo_set_size (e1, _) (e2, _) =
+  let inferbo_set_size e1 e2 =
     let exec _pname _ret _node _location mem =
       let locs = Sem.eval_locs e1 mem |> Dom.Val.get_pow_loc in
       let size = Sem.eval e2 mem |> Dom.Val.get_itv in
@@ -141,7 +141,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     {exec; check= no_check}
 
 
-  let infer_print (e, _) =
+  let infer_print e =
     let exec _pname _ret _node location mem =
       L.(debug BufferOverrun Medium)
         "@[<v>=== Infer Print === at %a@,%a@]%!" Location.pp location Dom.Val.pp (Sem.eval e mem) ;
@@ -150,7 +150,7 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     {exec; check= no_check}
 
 
-  let set_array_length array (length_exp, _) =
+  let set_array_length array length_exp =
     let exec pname _ret node _location mem =
       match array with
       | Exp.Lvar array_pvar, {Typ.desc= Typ.Tarray (typ, _, stride0)} ->
@@ -169,16 +169,16 @@ module Make (BoUtils : BufferOverrunUtils.S) = struct
     let dispatch : model ProcnameDispatcher.dispatcher =
       let open ProcnameDispatcher.Procname in
       make_dispatcher
-        [ -"__inferbo_min" <>$ capt_arg $+ capt_arg $!--> inferbo_min
-        ; -"__inferbo_set_size" <>$ capt_arg $+ capt_arg $!--> inferbo_set_size
+        [ -"__inferbo_min" <>$ capt_exp $+ capt_exp $!--> inferbo_min
+        ; -"__inferbo_set_size" <>$ capt_exp $+ capt_exp $!--> inferbo_set_size
         ; -"__exit" <>--> bottom
         ; -"exit" <>--> bottom
         ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
-        ; -"infer_print" <>$ capt_arg $!--> infer_print
-        ; -"malloc" <>$ capt_arg $+...$--> malloc
-        ; -"__new_array" <>$ capt_arg $+...$--> malloc
-        ; -"realloc" <>$ any_arg $+ capt_arg $+...$--> realloc
-        ; -"__set_array_length" <>$ capt_arg $+ capt_arg $!--> set_array_length
+        ; -"infer_print" <>$ capt_exp $!--> infer_print
+        ; -"malloc" <>$ capt_exp $+...$--> malloc
+        ; -"__new_array" <>$ capt_exp $+...$--> malloc
+        ; -"realloc" <>$ any_arg $+ capt_exp $+...$--> realloc
+        ; -"__set_array_length" <>$ capt_arg $+ capt_exp $!--> set_array_length
         ; -"strlen" <>--> by_value Dom.Val.Itv.nat ]
 
   end

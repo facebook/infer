@@ -58,6 +58,8 @@ module FuncArg = struct
   type t = Exp.t * Typ.t
 
   let typ (_, ty) = ty
+
+  let exp (e, _) = e
 end
 
 (* Intermediate matcher types *)
@@ -107,6 +109,20 @@ type ('f_in, 'f_proc_out, 'f_out, 'captured_types, 'markers) args_matcher =
   { on_proc: ('f_in, 'f_proc_out, 'captured_types) proc_matcher
   ; on_args: ('f_proc_out, 'f_out, 'captured_types) on_args
   ; markers: 'markers }
+
+type ('captured_types, 'markers) one_arg_matcher =
+  {match_arg: 'captured_types -> FuncArg.t -> bool; marker_static_checker: 'markers -> bool}
+
+type ('arg_in, 'arg_out, 'f_in, 'f_out) arg_capture =
+  {get_captured_value: FuncArg.t -> 'arg_in; do_capture: 'f_in -> 'arg_out -> 'f_out}
+
+type ('arg_in, 'arg_out, 'f_in, 'f_out, 'captured_types, 'markers) one_arg =
+  { one_arg_matcher: ('captured_types, 'markers) one_arg_matcher
+  ; capture: ('arg_in, 'arg_out, 'f_in, 'f_out) arg_capture }
+
+type ('arg_in, 'arg_out, 'f_in, 'f_out) arg_preparer =
+  { on_empty: ('f_in -> 'arg_out -> 'f_out) -> 'f_in -> ('f_out * FuncArg.t list) option
+  ; wrapper: 'arg_in -> 'arg_out }
 
 type ('f_in, 'f_out, 'captured_types, 'markers) func_arg =
   {eat_func_arg: ('f_in, 'f_out, 'captured_types) on_args; marker_static_checker: 'markers -> bool}
@@ -514,54 +530,117 @@ module Procname = struct
 
 
   (* Function args *)
-
-  let no_checker _ = true
-
-  let eat_one_func_arg ~match_if capt (f, args) =
-    match args with arg :: rest when match_if capt arg -> Some (f, rest) | _ -> None
-
-
-  (** Eats one arg *)
-  let any_arg : ('f, 'f, _, _) func_arg =
-    let eat_func_arg capt = eat_one_func_arg ~match_if:(fun _ _ -> true) capt in
-    {eat_func_arg; marker_static_checker= no_checker}
+  (** Matches any arg *)
+  let match_any_arg : (_, _) one_arg_matcher =
+    let match_arg _capt _arg = true in
+    let marker_static_checker _markers = true in
+    {match_arg; marker_static_checker}
 
 
-  let mk_typ_nth
+  let mk_match_typ_nth
       : ('markers -> 'marker) -> ('captured_types -> 'marker mtyp) -> 'marker
-        -> ('f, 'f, 'captured_types, 'markers) func_arg =
+        -> ('captured_types, 'markers) one_arg_matcher =
     fun get_m get_c marker ->
       let marker_static_checker markers = Polymorphic_compare.( = ) marker (get_m markers) in
-      let eat_func_arg =
-        eat_one_func_arg ~match_if:(fun capt func_arg ->
-            Typ.equal (FuncArg.typ func_arg) (get_c capt) )
+      let match_arg capt arg = Typ.equal (FuncArg.typ arg) (get_c capt) in
+      {match_arg; marker_static_checker}
+
+
+  (** Matches first captured type *)
+  let match_typ1 : 'marker -> ('marker mtyp * _, 'marker * _) one_arg_matcher =
+    let pos1 (x, _) = x in
+    fun marker -> mk_match_typ_nth pos1 pos1 marker
+
+
+  (** Matches second captured type *)
+  let match_typ2 : 'marker -> (_ * ('marker mtyp * _), _ * ('marker * _)) one_arg_matcher =
+    let pos2 (_, (x, _)) = x in
+    fun marker -> mk_match_typ_nth pos2 pos2 marker
+
+
+  (** Matches third captured type *)
+  let match_typ3
+      : 'marker -> (_ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) one_arg_matcher =
+    let pos3 (_, (_, (x, _))) = x in
+    fun marker -> mk_match_typ_nth pos3 pos3 marker
+
+
+  (* Function argument capture *)
+  (** Do not capture this argument *)
+  let no_capture : (_, _, 'f, 'f) arg_capture =
+    let get_captured_value _arg = () in
+    let do_capture f _v = f in
+    {get_captured_value; do_capture}
+
+
+  (** Capture the argument *)
+  let capture_arg : (FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f) arg_capture =
+    let get_captured_value arg = arg in
+    let do_capture f v = f v in
+    {get_captured_value; do_capture}
+
+
+  (** Capture the argument expression *)
+  let capture_arg_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f) arg_capture =
+    let get_captured_value arg = FuncArg.exp arg in
+    let do_capture f v = f v in
+    {get_captured_value; do_capture}
+
+
+  let mandatory_arg =
+    let on_empty _do_capture _f = None in
+    let wrapper = Fn.id in
+    {on_empty; wrapper}
+
+
+  let optional_arg =
+    let on_empty do_capture f = Some (do_capture f None, []) in
+    let wrapper = Option.some in
+    {on_empty; wrapper}
+
+
+  let make_arg
+      : ('arg_in, 'arg_out, 'f_in, 'f_out) arg_preparer
+        -> ('arg_in, 'arg_out, 'f_in, 'f_out, _, _) one_arg -> ('f_in, 'f_out, _, _) func_arg =
+    fun arg_preparer one_arg ->
+      let {on_empty; wrapper} = arg_preparer in
+      let {one_arg_matcher; capture} = one_arg in
+      let {match_arg; marker_static_checker} = one_arg_matcher in
+      let {get_captured_value; do_capture} = capture in
+      let eat_func_arg capt (f, args) =
+        match args with
+        | [] ->
+            on_empty do_capture f
+        | arg :: rest when match_arg capt arg ->
+            Some (arg |> get_captured_value |> wrapper |> do_capture f, rest)
+        | _ ->
+            None
       in
       {eat_func_arg; marker_static_checker}
 
 
-  (** Matches first captured type *)
-  let typ1 : 'marker -> ('f, 'f, 'marker mtyp * _, 'marker * _) func_arg =
-    let pos1 (x, _) = x in
-    fun marker -> mk_typ_nth pos1 pos1 marker
+  let any_arg : (unit, _, 'f, 'f, _, _) one_arg =
+    {one_arg_matcher= match_any_arg; capture= no_capture}
 
 
-  (** Matches second captured type *)
-  let typ2 : 'marker -> ('f, 'f, _ * ('marker mtyp * _), _ * ('marker * _)) func_arg =
-    let pos2 (_, (x, _)) = x in
-    fun marker -> mk_typ_nth pos2 pos2 marker
+  let capt_arg : (FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
+    {one_arg_matcher= match_any_arg; capture= capture_arg}
 
 
-  (** Matches third captured type *)
-  let typ3 : 'marker -> ('f, 'f, _ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) func_arg =
-    let pos3 (_, (_, (x, _))) = x in
-    fun marker -> mk_typ_nth pos3 pos3 marker
+  let capt_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
+    {one_arg_matcher= match_any_arg; capture= capture_arg_exp}
 
 
-  let capt_arg : (FuncArg.t -> 'f, 'f, _, _) func_arg =
-    let eat_func_arg _capt (f, args) =
-      match args with arg :: rest -> Some (f arg, rest) | _ -> None
-    in
-    {eat_func_arg; marker_static_checker= no_checker}
+  let typ1 : 'marker -> (unit, _, 'f, 'f, _, _) one_arg =
+    fun m -> {one_arg_matcher= match_typ1 m; capture= no_capture}
+
+
+  let typ2 : 'marker -> (unit, _, 'f, 'f, _, _) one_arg =
+    fun m -> {one_arg_matcher= match_typ2 m; capture= no_capture}
+
+
+  let typ3 : 'marker -> (unit, _, 'f, 'f, _, _) one_arg =
+    fun m -> {one_arg_matcher= match_typ3 m; capture= no_capture}
 
 
   (* Function args end *)
@@ -609,17 +688,25 @@ module Procname = struct
 
   let ( $*--> ) all_args_matcher f = make_matcher all_args_matcher f
 
-  let ( $+ ) args_matcher func_arg = args_cons args_matcher func_arg
+  let ( $+! ) args_matcher func_arg = args_cons args_matcher func_arg
 
-  let ( >$ ) templ_matcher func_arg = templ_matcher >$! () $+ func_arg
+  let ( $!! ) one_arg () = make_arg mandatory_arg one_arg
+
+  let ( $?! ) one_arg () = make_arg optional_arg one_arg
+
+  let ( $+ ) args_matcher one_arg = args_matcher $+! (one_arg $!! ())
+
+  let ( $+? ) args_matcher one_arg = args_matcher $+! (one_arg $?! ())
+
+  let ( >$ ) templ_matcher one_arg = templ_matcher >$! () $+ one_arg
 
   let ( $* ) args_matcher func_args_end = args_end args_matcher func_args_end
 
   let ( $--> ) args_matcher f = args_matcher $* no_args_left $*--> f
 
-  let ( $ ) name_matcher func_arg = name_matcher < any_template_args >$ func_arg
+  let ( $ ) name_matcher one_arg = name_matcher < any_template_args >$ one_arg
 
-  let ( <>$ ) name_matcher func_arg = name_matcher <! () >$ func_arg
+  let ( <>$ ) name_matcher one_arg = name_matcher <! () >$ one_arg
 
   let ( $+...$--> ) args_matcher f = args_matcher $* any_func_args $*--> f
 
