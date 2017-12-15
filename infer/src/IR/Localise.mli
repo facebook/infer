@@ -74,6 +74,9 @@ val error_desc_get_bucket : error_desc -> string option
 val error_desc_set_bucket : error_desc -> string -> error_desc
 (** set the bucket value of an error_desc *)
 
+val error_desc_is_reportable_bucket : error_desc -> bool
+(** check if the report is in a high confidence bucket *)
+
 val error_desc_hash : error_desc -> int
 (** hash function for error_desc *)
 

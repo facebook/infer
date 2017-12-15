@@ -60,78 +60,93 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         method_prefixes
 
 
+  let is_conflicting_report summary report_location =
+    if not Config.filtering then false
+    else
+      Errlog.fold
+        (fun {Errlog.err_name; err_desc; in_footprint} {Errlog.loc} found_confict ->
+          found_confict
+          || in_footprint && IssueType.equal err_name IssueType.null_dereference
+             && Location.equal loc report_location
+             && Localise.error_desc_is_reportable_bucket err_desc)
+        (Specs.get_err_log summary) false
+
+
   let report_nullable_dereference ap call_sites {ProcData.pdesc; extras} loc =
-    let pname = Procdesc.get_proc_name pdesc in
-    let annotation = Localise.nullable_annotation_name pname in
-    let call_site =
-      try CallSites.min_elt call_sites with Not_found ->
-        L.(die InternalError)
-          "Expecting a least one element in the set of call sites when analyzing %a"
-          Typ.Procname.pp pname
-    in
-    let simplified_pname =
-      Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname call_site)
-    in
-    let is_direct_dereference =
-      match ap with
-      | (Var.LogicalVar _, _), _ ->
-          true
-      | (Var.ProgramVar pvar, _), _ ->
-          Pvar.is_frontend_tmp pvar
-    in
-    let message =
-      if is_direct_dereference then
-        (* direct dereference without intermediate variable *)
-        F.asprintf
-          "The return value of %s is annotated with %a and is dereferenced without being checked for null at %a"
-          (MF.monospaced_to_string simplified_pname)
-          MF.pp_monospaced annotation Location.pp loc
-      else
-        (* dereference with intermediate variable *)
-        F.asprintf
-          "Variable %a is indirectly annotated with %a (source %a) and is dereferenced without being checked for null at %a"
-          (MF.wrap_monospaced AccessPath.pp)
-          ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site Location.pp loc
-    in
-    let exn =
-      Exceptions.Checkers (IssueType.nullable_dereference, Localise.verbatim_desc message)
-    in
     let summary = extras in
-    let trace =
-      let with_origin_site =
-        let callee_pname = CallSite.pname call_site in
-        match Specs.proc_resolve_attributes callee_pname with
-        | None ->
-            []
-        | Some attributes ->
-            let description =
-              F.asprintf "definition of %s" (Typ.Procname.get_method callee_pname)
-            in
-            let trace_element =
-              Errlog.make_trace_element 1 attributes.ProcAttributes.loc description []
-            in
-            [trace_element]
+    if is_conflicting_report summary loc then ()
+    else
+      let pname = Procdesc.get_proc_name pdesc in
+      let annotation = Localise.nullable_annotation_name pname in
+      let call_site =
+        try CallSites.min_elt call_sites with Not_found ->
+          L.(die InternalError)
+            "Expecting a least one element in the set of call sites when analyzing %a"
+            Typ.Procname.pp pname
       in
-      let with_assignment_site =
-        let call_site_loc = CallSite.loc call_site in
-        if Location.equal call_site_loc loc then with_origin_site
+      let simplified_pname =
+        Typ.Procname.to_simplified_string ~withclass:true (CallSite.pname call_site)
+      in
+      let is_direct_dereference =
+        match ap with
+        | (Var.LogicalVar _, _), _ ->
+            true
+        | (Var.ProgramVar pvar, _), _ ->
+            Pvar.is_frontend_tmp pvar
+      in
+      let message =
+        if is_direct_dereference then
+          (* direct dereference without intermediate variable *)
+          F.asprintf
+            "The return value of %s is annotated with %a and is dereferenced without being checked for null at %a"
+            (MF.monospaced_to_string simplified_pname)
+            MF.pp_monospaced annotation Location.pp loc
         else
-          let trace_element =
-            Errlog.make_trace_element 0 call_site_loc "assignment of the nullable value" []
-          in
-          trace_element :: with_origin_site
+          (* dereference with intermediate variable *)
+          F.asprintf
+            "Variable %a is indirectly annotated with %a (source %a) and is dereferenced without being checked for null at %a"
+            (MF.wrap_monospaced AccessPath.pp)
+            ap MF.pp_monospaced annotation (MF.wrap_monospaced CallSite.pp) call_site Location.pp
+            loc
       in
-      let dereference_site =
-        let description =
-          if is_direct_dereference then
-            F.asprintf "dereferencing the return of %s" simplified_pname
-          else F.asprintf "dereference of %a" AccessPath.pp ap
+      let exn =
+        Exceptions.Checkers (IssueType.nullable_dereference, Localise.verbatim_desc message)
+      in
+      let trace =
+        let with_origin_site =
+          let callee_pname = CallSite.pname call_site in
+          match Specs.proc_resolve_attributes callee_pname with
+          | None ->
+              []
+          | Some attributes ->
+              let description =
+                F.asprintf "definition of %s" (Typ.Procname.get_method callee_pname)
+              in
+              let trace_element =
+                Errlog.make_trace_element 1 attributes.ProcAttributes.loc description []
+              in
+              [trace_element]
         in
-        Errlog.make_trace_element 0 loc description []
+        let with_assignment_site =
+          let call_site_loc = CallSite.loc call_site in
+          if Location.equal call_site_loc loc then with_origin_site
+          else
+            let trace_element =
+              Errlog.make_trace_element 0 call_site_loc "assignment of the nullable value" []
+            in
+            trace_element :: with_origin_site
+        in
+        let dereference_site =
+          let description =
+            if is_direct_dereference then
+              F.asprintf "dereferencing the return of %s" simplified_pname
+            else F.asprintf "dereference of %a" AccessPath.pp ap
+          in
+          Errlog.make_trace_element 0 loc description []
+        in
+        dereference_site :: with_assignment_site
       in
-      dereference_site :: with_assignment_site
-    in
-    Reporting.log_error summary ~loc ~ltr:trace exn
+      Reporting.log_error summary ~loc ~ltr:trace exn
 
 
   let add_nullable_ap ap call_sites (aps, pnames) = (NullableAP.add ap call_sites aps, pnames)

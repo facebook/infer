@@ -195,6 +195,13 @@ let error_desc_set_bucket err_desc bucket =
   {err_desc with descriptions; tags}
 
 
+let error_desc_is_reportable_bucket err_desc =
+  let issue_bucket = error_desc_get_bucket err_desc in
+  let high_buckets = BucketLevel.([b1; b2]) in
+  Option.value_map issue_bucket ~default:false ~f:(fun b ->
+      List.mem ~equal:String.equal high_buckets b )
+
+
 (** get the value tag, if any *)
 let get_value_line_tag tags =
   try
@@ -988,4 +995,3 @@ let desc_uninitialized_dangling_pointer_deref deref expr_str loc =
       (at_line tags loc)
   in
   {no_desc with descriptions= [description]; tags= !tags}
-

@@ -147,7 +147,6 @@ let fold (f: err_key -> err_data -> 'a -> 'a) t acc =
     (fun err_key set acc -> ErrDataSet.fold (fun err_data acc -> f err_key err_data acc) set acc)
     t acc
 
-
 (** Return the number of elements in the error log which satisfy [filter] *)
 let size filter (err_log: t) =
   let count = ref 0 in

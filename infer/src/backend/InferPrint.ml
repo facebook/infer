@@ -199,14 +199,7 @@ let should_report (issue_kind: Exceptions.err_kind) issue_type error_desc eclass
         in
         List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
       in
-      if issue_type_is_null_deref then
-        let issue_bucket_is_high =
-          let issue_bucket = Localise.error_desc_get_bucket error_desc in
-          let high_buckets = Localise.BucketLevel.([b1; b2]) in
-          Option.value_map issue_bucket ~default:false ~f:(fun b ->
-              List.mem ~equal:String.equal high_buckets b )
-        in
-        issue_bucket_is_high
+      if issue_type_is_null_deref then Localise.error_desc_is_reportable_bucket error_desc
       else true
 
 
