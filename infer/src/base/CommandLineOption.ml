@@ -95,6 +95,7 @@ type command =
   | Capture
   | Compile
   | Diff
+  | Events
   | Explore
   | Report
   | ReportDiff
@@ -110,6 +111,7 @@ let command_to_name =
   ; (Capture, "capture")
   ; (Compile, "compile")
   ; (Diff, "diff")
+  ; (Events, "events")
   ; (Explore, "explore")
   ; (Report, "report")
   ; (ReportDiff, "reportdiff")

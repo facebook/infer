@@ -42,20 +42,25 @@ let remove_results_dir () =
     Utils.rmtree Config.results_dir )
 
 
+let prepare_logging_and_db () =
+  L.setup_log_file () ;
+  EventLogger.prepare () ;
+  if Sys.is_file ResultsDatabase.database_fullpath <> `Yes then ResultsDatabase.create_db () ;
+  ResultsDatabase.new_database_connection ()
+
+
 let create_results_dir () =
   Unix.mkdir_p Config.results_dir ;
-  L.setup_log_file () ;
-  if Sys.is_file ResultsDatabase.database_fullpath <> `Yes then ResultsDatabase.create_db () ;
-  ResultsDatabase.new_database_connection () ;
-  List.iter ~f:Unix.mkdir_p results_dir_dir_markers
+  Unix.mkdir_p (Config.results_dir ^/ Config.events_dir_name) ;
+  List.iter ~f:Unix.mkdir_p results_dir_dir_markers ;
+  prepare_logging_and_db ()
 
 
 let assert_results_dir advice =
   Result.iter_error (is_results_dir ~check_correct_version:true ()) ~f:(fun err ->
       L.(die UserError)
         "ERROR: No results directory at '%s': %s@\nERROR: %s@." Config.results_dir err advice ) ;
-  L.setup_log_file () ;
-  ResultsDatabase.new_database_connection ()
+  prepare_logging_and_db ()
 
 
 let delete_capture_and_analysis_data () =
@@ -66,4 +71,3 @@ let delete_capture_and_analysis_data () =
   List.iter ~f:Utils.rmtree dirs_to_delete ;
   List.iter ~f:Unix.mkdir_p dirs_to_delete ;
   ()
-

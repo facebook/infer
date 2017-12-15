@@ -43,6 +43,7 @@ let run t =
 
 
 let fork_protect ~f x =
+  EventLogger.prepare () ;
   L.reset_formatters () ;
   ResultsDatabase.new_database_connection () ;
   f x
@@ -56,6 +57,8 @@ module Runner = struct
   let start runner ~tasks =
     let pool = runner.pool in
     Queue.enqueue_all runner.all_continuations (Queue.to_list tasks.continuations) ;
+    (* Flush here all buffers to avoid passing unflushed data to forked processes, leading to duplication *)
+    Pervasives.flush_all () ;
     List.iter
       ~f:(fun x -> ProcessPool.start_child ~f:(fun f -> fork_protect ~f ()) ~pool x)
       tasks.closures

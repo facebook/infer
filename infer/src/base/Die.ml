@@ -29,6 +29,12 @@ let raise_error error ~msg =
       raise (InferUserError msg)
 
 
+let log_uncaught_exception_callback_ref = ref (fun _ ~exitcode:_ -> ())
+
+let set_log_uncaught_exception_callback fn = log_uncaught_exception_callback_ref := fn
+
+let log_uncaught_exception exn ~exitcode = !log_uncaught_exception_callback_ref exn ~exitcode
+
 let die error fmt = F.kasprintf (fun msg -> raise_error error ~msg) fmt
 
 let exit exitcode = raise (InferExit exitcode)

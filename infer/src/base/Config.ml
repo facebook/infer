@@ -186,6 +186,8 @@ let dotty_output = "icfg.dot"
 
 let duplicates_filename = "duplicates.txt"
 
+let events_dir_name = "events"
+
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
 
@@ -563,7 +565,7 @@ let () =
     match cmd with
     | Report ->
         `Add
-    | Analyze | Capture | Compile | Diff | Explore | ReportDiff | Run ->
+    | Analyze | Capture | Compile | Diff | Events | Explore | ReportDiff | Run ->
         `Reject
   in
   (* make sure we generate doc for all the commands we know about *)
@@ -2157,8 +2159,10 @@ let post_parsing_initialization command_opt =
       ANSITerminal.(prerr_string [])
         "Run the command again with `--keep-going` to try and ignore this error." ;
       Out_channel.newline stderr ) ;
+    let exitcode = L.exit_code_of_exception exn in
+    L.log_uncaught_exception exn ~exitcode ;
     late_epilogue () ;
-    Pervasives.exit (L.exit_code_of_exception exn)
+    Pervasives.exit exitcode
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
   F.set_margin !margin ;

@@ -43,6 +43,8 @@ let setup () =
       ResultsDir.create_results_dir ()
   | Explore ->
       ResultsDir.assert_results_dir "please run an infer analysis first"
+  | Events ->
+      ResultsDir.assert_results_dir "have you run infer before?"
 
 
 let print_active_checkers () =
@@ -72,6 +74,17 @@ let log_environment_info () =
   print_active_checkers ()
 
 
+let prepare_events_logging () =
+  (* there's no point in logging data from the events command. To fetch them we'd need to run events again... *)
+  if CLOpt.equal_command Config.command CLOpt.Events then ()
+  else (
+    L.environment_info "Infer log identifier is %s\n" (EventLogger.get_log_identifier ()) ;
+    let log_uncaught_exn exn ~exitcode =
+      EventLogger.log (EventLogger.UncaughtException (exn, exitcode))
+    in
+    L.set_log_uncaught_exception_callback log_uncaught_exn )
+
+
 let () =
   ( if Config.linters_validate_syntax_only then
       match CTLParserHelper.validate_al_files () with
@@ -82,6 +95,7 @@ let () =
   if Config.print_builtins then Builtin.print_and_exit () ;
   setup () ;
   log_environment_info () ;
+  prepare_events_logging () ;
   if Config.debug_mode && CLOpt.is_originator then
     L.progress "Logs in %s@." (Config.results_dir ^/ Config.log_file) ;
   ( match Config.command with
@@ -126,5 +140,9 @@ let () =
       if is_error (Unix.waitpid (Unix.fork_exec ~prog ~argv:(prog :: args) ())) then
         L.external_error
           "** Error running the reporting script:@\n**   %s %s@\n** See error above@." prog
-          (String.concat ~sep:" " args) ) ;
+          (String.concat ~sep:" " args)
+  | Events ->
+      EventLogger.dump () ) ;
+  (* to make sure the exitcode=0 case is logged, explicitly invoke exit *)
   L.exit 0
+

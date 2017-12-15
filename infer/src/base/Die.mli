@@ -27,6 +27,10 @@ val exit : int -> 'a
 
 val exit_code_of_exception : Exn.t -> int
 
+val set_log_uncaught_exception_callback : (exn -> exitcode:int -> unit) -> unit
+
+val log_uncaught_exception : exn -> exitcode:int -> unit
+
 val die : error -> ('a, Format.formatter, unit, _) format4 -> 'a
 (** Raise the corresponding exception. *)
 
