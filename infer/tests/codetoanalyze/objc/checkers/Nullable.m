@@ -217,3 +217,12 @@ int* __nullable returnsNull();
 }
 
 @end
+
+@protocol P
+- (NSObject* _Nullable)nullableMethod;
+@end
+
+NSDictionary* callNullableMethodFromProtocolBad(id<P> pObject) {
+  NSObject* nullableObject = [pObject nullableMethod];
+  return @{@"key" : nullableObject};
+}

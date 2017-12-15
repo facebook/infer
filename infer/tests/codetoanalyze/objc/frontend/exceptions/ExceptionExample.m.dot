@@ -7,7 +7,7 @@ digraph iCFG {
 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" [label="2: Exit ExceptionExample_test \n  " color=yellow style=filled]
 	
 
-"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" [label="3:  Message Call: description \n   n$0=*&self:ExceptionExample* [line 23, column 6]\n  n$1=_fun_ExceptionExample_description(n$0:ExceptionExample*) [line 23, column 5]\n " shape="box"]
+"test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" [label="3:  Message Call: description \n   n$0=*&self:ExceptionExample* [line 23, column 6]\n  n$1=_fun_NSObject_description(n$0:ExceptionExample*) [line 23, column 5]\n " shape="box"]
 	
 
 	 "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_3" -> "test#ExceptionExample#instance.513cde8d794322493646dbd1821516dd_2" ;

@@ -112,7 +112,7 @@ digraph iCFG {
 "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_2" [label="2: Exit MemoryLeakExample_layoutSubviews \n  " color=yellow style=filled]
 	
 
-"layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_3" [label="3:  Message Call: release \n   n$0=*&attachmentContainerView:UIView* [line 25, column 4]\n  _fun_UIView_release(n$0:UIView*) virtual [line 25, column 3]\n " shape="box"]
+"layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_3" [label="3:  Message Call: release \n   n$0=*&attachmentContainerView:UIView* [line 25, column 4]\n  _fun_NSObject_release(n$0:UIView*) virtual [line 25, column 3]\n " shape="box"]
 	
 
 	 "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_3" -> "layoutSubviews#MemoryLeakExample#instance.2b3151f18431bcdbc08267ea4ff96f53_2" ;

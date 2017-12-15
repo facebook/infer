@@ -242,18 +242,17 @@ let get_method_name_from_clang tenv ms_opt =
   match ms_opt with
   | Some ms -> (
     match CAst_utils.get_decl_opt (CMethod_signature.ms_get_pointer_to_parent ms) with
-    | Some decl ->
-        if ObjcProtocol_decl.is_protocol decl then None
-        else (
-          ignore (CType_decl.add_types_from_decl_to_tenv tenv decl) ;
-          match ObjcCategory_decl.get_base_class_name_from_category decl with
-          | Some class_typename ->
-              let procname = CMethod_signature.ms_get_name ms in
-              let new_procname = Typ.Procname.replace_class procname class_typename in
-              CMethod_signature.ms_set_name ms new_procname ;
-              Some ms
-          | None ->
-              Some ms )
+    | Some decl
+      -> (
+        ignore (CType_decl.add_types_from_decl_to_tenv tenv decl) ;
+        match ObjcCategory_decl.get_base_class_name_from_category decl with
+        | Some class_typename ->
+            let procname = CMethod_signature.ms_get_name ms in
+            let new_procname = Typ.Procname.replace_class procname class_typename in
+            CMethod_signature.ms_set_name ms new_procname ;
+            Some ms
+        | None ->
+            Some ms )
     | None ->
         Some ms )
   | None ->
@@ -620,13 +619,13 @@ let create_local_procdesc ?(set_objc_accessor_attr= false) trans_unit_ctx cfg te
       in
       Cfg.create_proc_desc cfg proc_attributes
     in
-    if defined then (
+    if defined then
       let start_kind = Procdesc.Node.Start_node proc_name in
       let start_node = Procdesc.create_node procdesc loc_start start_kind [] in
       let exit_kind = Procdesc.Node.Exit_node proc_name in
       let exit_node = Procdesc.create_node procdesc loc_exit exit_kind [] in
       Procdesc.set_start_node procdesc start_node ;
-      Procdesc.set_exit_node procdesc exit_node )
+      Procdesc.set_exit_node procdesc exit_node
   in
   if should_create_procdesc cfg proc_name defined set_objc_accessor_attr then (
     create_new_procdesc () ; true )
@@ -693,3 +692,4 @@ let get_captures_from_cpp_lambda dec =
       cxx_rdi.xrdi_lambda_captures
   | _ ->
       assert false
+

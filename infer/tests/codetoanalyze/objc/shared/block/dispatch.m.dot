@@ -22,7 +22,7 @@ digraph iCFG {
 "objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_2" [label="2: Exit objc_blockDispatchA_sharedInstance_1 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 31, column 23]\n  n$3=_fun_DispatchA_init(n$2:DispatchA*) virtual [line 31, column 22]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_sharedInstance_sharedInstance:objc_object*=n$3 [line 31, column 5]\n " shape="box"]
+"objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_3" [label="3:  BinaryOperatorStmt: Assign \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 31, column 23]\n  n$3=_fun_NSBundleResourceRequest_init(n$2:DispatchA*) virtual [line 31, column 22]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_sharedInstance_sharedInstance:objc_object*=n$3 [line 31, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_3" -> "objc_blockDispatchA_sharedInstance_1.0b8803e75b6a82e1a4530bcb953490e2_2" ;
@@ -71,7 +71,7 @@ digraph iCFG {
 "objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_2" [label="2: Exit objc_blockDispatchA_trans_3 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$12=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 48, column 23]\n  n$13=_fun_DispatchA_init(n$12:DispatchA*) virtual [line 48, column 22]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_trans_sharedInstance:objc_object*=n$13 [line 48, column 5]\n " shape="box"]
+"objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_3" [label="3:  BinaryOperatorStmt: Assign \n   n$12=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 48, column 23]\n  n$13=_fun_NSBundleResourceRequest_init(n$12:DispatchA*) virtual [line 48, column 22]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_trans_sharedInstance:objc_object*=n$13 [line 48, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_3" -> "objc_blockDispatchA_trans_3.80c09fe69dc0d5591de63a0c525de29b_2" ;
@@ -101,7 +101,7 @@ digraph iCFG {
 "objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_2" [label="2: Exit objc_blockDispatchA_dispatch_a_block_variable_4 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$16=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 57, column 25]\n  n$17=_fun_DispatchA_init(n$16:DispatchA*) virtual [line 57, column 25]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_dispatch_a_block_variable_static_storage__:objc_object*=n$17 [line 57, column 5]\n " shape="box"]
+"objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$16=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 57, column 25]\n  n$17=_fun_NSObject_init(n$16:DispatchA*) virtual [line 57, column 25]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_dispatch_a_block_variable_static_storage__:objc_object*=n$17 [line 57, column 5]\n " shape="box"]
 	
 
 	 "objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_3" -> "objc_blockDispatchA_dispatch_a_block_variable_4.2eedc45fca2c35e6e8c11937ba7a2df8_2" ;
@@ -135,7 +135,7 @@ digraph iCFG {
 "objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_2" [label="2: Exit objc_blockDispatchA_dispatch_a_block_variable_from_macro_5 \n  " color=yellow style=filled]
 	
 
-"objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$20=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 68, column 27]\n  n$21=_fun_DispatchA_init(n$20:DispatchA*) virtual [line 68, column 27]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_dispatch_a_block_variable_from_macro_static_storage__:objc_object*=n$21 [line 68, column 7]\n " shape="box"]
+"objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_3" [label="3:  BinaryOperatorStmt: Assign \n   n$20=_fun___objc_alloc_no_fail(sizeof(t=DispatchA):unsigned long) [line 68, column 27]\n  n$21=_fun_NSObject_init(n$20:DispatchA*) virtual [line 68, column 27]\n  *&#GB<codetoanalyze/objc/shared/block/dispatch.m>$DispatchA_dispatch_a_block_variable_from_macro_static_storage__:objc_object*=n$21 [line 68, column 7]\n " shape="box"]
 	
 
 	 "objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_3" -> "objc_blockDispatchA_dispatch_a_block_variable_from_macro_5.e4f37df69df9d95138cb008e85eedab8_2" ;

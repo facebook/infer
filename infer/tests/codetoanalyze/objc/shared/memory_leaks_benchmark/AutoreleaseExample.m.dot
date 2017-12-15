@@ -7,7 +7,7 @@ digraph iCFG {
 "createA.48a5d7f480131d59bba69d521715b836_2" [label="2: Exit createA \n  " color=yellow style=filled]
 	
 
-"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 31, column 11]\n  n$1=_fun_Auto_autorelease(n$0:Auto*) virtual [line 31, column 10]\n  *&return:Auto*=n$1 [line 31, column 3]\n " shape="box"]
+"createA.48a5d7f480131d59bba69d521715b836_3" [label="3:  Return Stmt \n   n$0=*&s1:Auto* [line 31, column 11]\n  n$1=_fun_NSObject_autorelease(n$0:Auto*) virtual [line 31, column 10]\n  *&return:Auto*=n$1 [line 31, column 3]\n " shape="box"]
 	
 
 	 "createA.48a5d7f480131d59bba69d521715b836_3" -> "createA.48a5d7f480131d59bba69d521715b836_2" ;
@@ -34,7 +34,7 @@ digraph iCFG {
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_4" ;
-"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  Message Call: retain \n   n$2=*&s1:Auto* [line 40, column 6]\n  n$3=_fun_Auto_retain(n$2:Auto*) virtual [line 40, column 5]\n " shape="box"]
+"autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" [label="6:  Message Call: retain \n   n$2=*&s1:Auto* [line 40, column 6]\n  n$3=_fun_NSObject_retain(n$2:Auto*) virtual [line 40, column 5]\n " shape="box"]
 	
 
 	 "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_6" -> "autorelease_test1.8f3499e28c7129f0f6b2300d214d7864_5" ;
@@ -100,11 +100,11 @@ digraph iCFG {
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_2" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 63, column 4]\n  _fun_NSAutoreleasePool_release(n$1:NSAutoreleasePool*) virtual [line 63, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" [label="4:  Message Call: release \n   n$1=*&pool:NSAutoreleasePool* [line 63, column 4]\n  _fun_NSObject_release(n$1:NSAutoreleasePool*) virtual [line 63, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_3" ;
-"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 61, column 23]\n  n$3=_fun_NSString_autorelease(n$2:NSString*) virtual [line 61, column 22]\n  *&string:NSString*=n$3 [line 61, column 3]\n " shape="box"]
+"autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" [label="5:  DeclStmt \n   n$2=_fun___objc_alloc_no_fail(sizeof(t=NSString):unsigned long) [line 61, column 23]\n  n$3=_fun_NSObject_autorelease(n$2:NSString*) virtual [line 61, column 22]\n  *&string:NSString*=n$3 [line 61, column 3]\n " shape="box"]
 	
 
 	 "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_5" -> "autorelease_test3.5fa2e6ceb6075e26a47f9b8c9cdf65ba_4" ;
@@ -119,7 +119,7 @@ digraph iCFG {
 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" [label="2: Exit Auto_autorelease_main \n  " color=yellow style=filled]
 	
 
-"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 24, column 11]\n  n$1=_fun_NSString_autorelease(n$0:NSString*) virtual [line 24, column 10]\n  *&return:NSString*=n$1 [line 24, column 3]\n " shape="box"]
+"autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" [label="3:  Return Stmt \n   n$0=*&s:NSString* [line 24, column 11]\n  n$1=_fun_NSObject_autorelease(n$0:NSString*) virtual [line 24, column 10]\n  *&return:NSString*=n$1 [line 24, column 3]\n " shape="box"]
 	
 
 	 "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_3" -> "autorelease_main#Auto#instance.dbdd003a511fe2beb7e0a817d39f6fd8_2" ;

@@ -21,7 +21,7 @@ digraph iCFG {
 "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_2" [label="2: Exit A_call_test_class \n  " color=yellow style=filled]
 	
 
-"call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" [label="3:  Message Call: test_class \n   _fun_A_test_class() [line 54, column 3]\n " shape="box"]
+"call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" [label="3:  Message Call: test_class \n   _fun_C_test_class() [line 54, column 3]\n " shape="box"]
 	
 
 	 "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_3" -> "call_test_class#A#class.cc4e8c6ada1c4f85dad976d179e36c9a_2" ;
@@ -119,7 +119,7 @@ digraph iCFG {
 "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_2" [label="2: Exit A_call_class_instance \n  " color=yellow style=filled]
 	
 
-"call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" [label="3:  Message Call: test_class \n   _fun_A_test_class() [line 66, column 3]\n " shape="box"]
+"call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" [label="3:  Message Call: test_class \n   _fun_C_test_class() [line 66, column 3]\n " shape="box"]
 	
 
 	 "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_3" -> "call_class_instance#A#instance.eb1ae02cd94582eb1fc7cb426794f9f0_2" ;

@@ -7,11 +7,11 @@ digraph iCFG {
 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_2" [label="2: Exit retain_release_test \n  " color=yellow style=filled]
 	
 
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" [label="3:  Message Call: release \n   n$0=*&a:RRA* [line 27, column 4]\n  _fun_RRA_release(n$0:RRA*) virtual [line 27, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" [label="3:  Message Call: release \n   n$0=*&a:RRA* [line 27, column 4]\n  _fun_NSObject_release(n$0:RRA*) virtual [line 27, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_2" ;
-"retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" [label="4:  Message Call: retain \n   n$1=*&a:RRA* [line 26, column 4]\n  n$2=_fun_RRA_retain(n$1:RRA*) virtual [line 26, column 3]\n " shape="box"]
+"retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" [label="4:  Message Call: retain \n   n$1=*&a:RRA* [line 26, column 4]\n  n$2=_fun_NSObject_retain(n$1:RRA*) virtual [line 26, column 3]\n " shape="box"]
 	
 
 	 "retain_release_test.65a9467f2c991ef519f3b0d97687f937_4" -> "retain_release_test.65a9467f2c991ef519f3b0d97687f937_3" ;

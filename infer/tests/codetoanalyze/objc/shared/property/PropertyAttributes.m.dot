@@ -11,7 +11,7 @@ digraph iCFG {
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_3" -> "test.098f6bcd4621d373cade4e832627b4f6_2" ;
-"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 45, column 4]\n  _fun_PropertyA_release(n$0:PropertyA*) virtual [line 45, column 3]\n " shape="box"]
+"test.098f6bcd4621d373cade4e832627b4f6_4" [label="4:  Message Call: release \n   n$0=*&a:PropertyA* [line 45, column 4]\n  _fun_NSObject_release(n$0:PropertyA*) virtual [line 45, column 3]\n " shape="box"]
 	
 
 	 "test.098f6bcd4621d373cade4e832627b4f6_4" -> "test.098f6bcd4621d373cade4e832627b4f6_3" ;

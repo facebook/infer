@@ -15,7 +15,7 @@ digraph iCFG {
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_4" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_2" ;
-"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 25, column 8]\n  n$1=_fun_Bla_conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 25, column 7]\n " shape="box"]
+"fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" [label="5:  Message Call: conformsToProtocol: \n   n$0=*&self:Bla* [line 25, column 8]\n  n$1=_fun_NSObject_conformsToProtocol:(n$0:Bla*,\"Foo\":Protocol*) virtual [line 25, column 7]\n " shape="box"]
 	
 
 	 "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_5" -> "fooMethod#Bla#instance.d982e99c073f2d30dc24c41bb29add6a_6" ;

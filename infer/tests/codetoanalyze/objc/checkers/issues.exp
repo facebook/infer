@@ -38,4 +38,7 @@ codetoanalyze/objc/checkers/Nullable.m, T_setNullableObjectInDictionaryBad, 2, N
 codetoanalyze/objc/checkers/Nullable.m, T_setNullableObjectInDictionaryBad, 2, NULL_DEREFERENCE, [start of procedure setNullableObjectInDictionaryBad,start of procedure nullableMethod,return from a call to T_nullableMethod]
 codetoanalyze/objc/checkers/Nullable.m, T_testNonnullFieldForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field nonnullField is compared to null here]
 codetoanalyze/objc/checkers/Nullable.m, T_testUnnanotatedFieldForNullBad, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]
+codetoanalyze/objc/checkers/Nullable.m, callNullableMethodFromProtocolBad, 2, NULLABLE_DEREFERENCE, [dereference of &nullableObject,assignment of the nullable value,definition of nullableMethod]
+codetoanalyze/objc/checkers/Nullable.m, callNullableMethodFromProtocolBad, 2, NULL_DEREFERENCE, [start of procedure callNullableMethodFromProtocolBad(),Skipping nullableMethod: function or method not found]
+codetoanalyze/objc/checkers/Nullable.m, callNullableMethodFromProtocolBad, 2, PARAMETER_NOT_NULL_CHECKED, [start of procedure callNullableMethodFromProtocolBad(),Message nullableMethod with receiver nil returns nil.]
 codetoanalyze/objc/checkers/Nullable.m, objc_blockT_DeadStoreFP_testUnnanotatedFieldInClosureBad_1, 1, FIELD_SHOULD_BE_NULLABLE, [Field unnanotatedField is compared to null here]
