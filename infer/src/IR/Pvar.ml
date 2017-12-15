@@ -52,7 +52,6 @@ let compare_modulo_this x y =
       else if String.equal "this" (Mangled.to_string x.pv_name) then 0
       else compare_pvar_kind x.pv_kind y.pv_kind
 
-
 let equal = [%compare.equal : t]
 
 let pp_translation_unit fmt = function

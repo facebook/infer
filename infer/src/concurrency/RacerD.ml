@@ -1549,10 +1549,8 @@ module MayAliasQuotientedAccessListMap : QuotientedAccessListMap = struct
     match (List.last_exn (snd p1), List.last_exn (snd p2)) with
     | FieldAccess _, ArrayAccess _ | ArrayAccess _, FieldAccess _ ->
         false
-    (* fields in Java contain the class name /declaring/ them
-       thus two fields can be aliases *iff* they are equal *)
-    | FieldAccess f1, FieldAccess f2 ->
-        Typ.Fieldname.equal f1 f2
+    | FieldAccess _, FieldAccess _ ->
+        syntactic_equal_access_path tenv p1 p2
     (* if arrays of objects that have an inheritance rel then they can alias *)
     | ( ArrayAccess ({desc= Tptr ({desc= Tstruct tn1}, _)}, _)
       , ArrayAccess ({desc= Tptr ({desc= Tstruct tn2}, _)}, _) ) ->
