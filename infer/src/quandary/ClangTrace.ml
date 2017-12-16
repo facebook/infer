@@ -13,7 +13,7 @@ module L = Logging
 
 module SourceKind = struct
   type t =
-    | CommandLineFlag of Var.t  (** source that was read from a command line flag *)
+    | CommandLineFlag of (Var.t * Typ.desc)  (** source that was read from a command line flag *)
     | Endpoint of (Mangled.t * Typ.desc)  (** source originating from formal of an endpoint *)
     | EnvironmentVariable  (** source that was read from an environment variable *)
     | ReadFile  (** source that was read from a file *)
@@ -60,7 +60,7 @@ module SourceKind = struct
       external_sources
 
 
-  let get pname actuals _ =
+  let get pname actuals tenv =
     let return = None in
     match pname with
     | Typ.Procname.ObjC_Cpp cpp_name
@@ -94,7 +94,14 @@ module SourceKind = struct
         match actuals with
         | [(HilExp.AccessPath access_path)] when is_gflag access_path ->
             let (global_pvar, _), _ = access_path in
-            Some (CommandLineFlag global_pvar, None)
+            let typ_desc =
+              match AccessPath.get_typ access_path tenv with
+              | Some {Typ.desc} ->
+                  desc
+              | None ->
+                  Typ.void_star.desc
+            in
+            Some (CommandLineFlag (global_pvar, typ_desc), None)
         | _ ->
             None )
     | Typ.Procname.C _ -> (
@@ -161,7 +168,7 @@ module SourceKind = struct
         F.fprintf fmt "EnvironmentVariable"
     | ReadFile ->
         F.fprintf fmt "File"
-    | CommandLineFlag var ->
+    | CommandLineFlag (var, _) ->
         F.fprintf fmt "CommandLineFlag[%a]" Var.pp var
     | Other ->
         F.fprintf fmt "Other"
@@ -411,15 +418,15 @@ include Trace.Make (struct
         None
     | UserControlledEndpoint (_, typ), CreateFile ->
         Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_file
-    | Endpoint (_, typ), CreateFile ->
+    | (Endpoint (_, typ) | CommandLineFlag (_, typ)), CreateFile ->
         Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_file_risk
     | UserControlledEndpoint (_, typ), Network ->
         Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_url
-    | Endpoint (_, typ), Network ->
+    | (Endpoint (_, typ) | CommandLineFlag (_, typ)), Network ->
         Option.some_if (is_injection_possible ~typ sanitizers) IssueType.untrusted_url_risk
-    | (CommandLineFlag _ | EnvironmentVariable | ReadFile), Network ->
+    | (EnvironmentVariable | ReadFile), Network ->
         None
-    | UserControlledEndpoint (_, typ), SQL ->
+    | (UserControlledEndpoint (_, typ) | CommandLineFlag (_, typ)), SQL ->
         if is_injection_possible ~typ sanitizers then Some IssueType.sql_injection
         else
           (* no injection risk, but still user-controlled *)
@@ -431,12 +438,12 @@ include Trace.Make (struct
         else
           (* no injection risk, but still user-controlled *)
           Some IssueType.user_controlled_sql_risk
+    | (UserControlledEndpoint (_, typ) | CommandLineFlag (_, typ)), ShellExec ->
+        (* we know the user controls the endpoint, so it's code injection without a sanitizer *)
+        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.shell_injection
     | Endpoint (_, typ), ShellExec ->
         (* code injection if the caller of the endpoint doesn't sanitize on its end *)
         Option.some_if (is_injection_possible ~typ sanitizers) IssueType.remote_code_execution_risk
-    | UserControlledEndpoint (_, typ), ShellExec ->
-        (* we know the user controls the endpoint, so it's code injection without a sanitizer *)
-        Option.some_if (is_injection_possible ~typ sanitizers) IssueType.shell_injection
     | UserControlledEndpoint _, BufferAccess ->
         (* untrusted data from an endpoint flowing into a buffer *)
         Some IssueType.quandary_taint_error
@@ -446,10 +453,10 @@ include Trace.Make (struct
     | (CommandLineFlag _ | EnvironmentVariable | ReadFile | Other), BufferAccess ->
         (* untrusted flag, environment var, or file data flowing to buffer *)
         Some IssueType.quandary_taint_error
-    | (CommandLineFlag _ | EnvironmentVariable | ReadFile | Other), ShellExec ->
+    | (EnvironmentVariable | ReadFile | Other), ShellExec ->
         (* untrusted flag, environment var, or file data flowing to shell *)
         Option.some_if (is_injection_possible sanitizers) IssueType.shell_injection
-    | (CommandLineFlag _ | EnvironmentVariable | ReadFile | Other), SQL ->
+    | (EnvironmentVariable | ReadFile | Other), SQL ->
         (* untrusted flag, environment var, or file data flowing to SQL *)
         Option.some_if (is_injection_possible sanitizers) IssueType.sql_injection
     | ( (CommandLineFlag _ | UserControlledEndpoint _ | EnvironmentVariable | ReadFile | Other)
@@ -461,7 +468,7 @@ include Trace.Make (struct
         (* untrusted data of any kind flowing to stack buffer allocation. trying to allocate a stack
            buffer that's too large will cause a stack overflow. *)
         Some IssueType.untrusted_variable_length_array
-    | (CommandLineFlag _ | EnvironmentVariable | ReadFile), CreateFile ->
+    | (EnvironmentVariable | ReadFile), CreateFile ->
         None
     | Other, _ ->
         (* Other matches everything *)

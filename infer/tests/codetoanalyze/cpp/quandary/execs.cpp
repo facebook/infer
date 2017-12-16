@@ -21,6 +21,8 @@ namespace execs {
 // mocking gflags-generated field
 extern char* FLAGS_cli_string;
 
+extern int FLAGS_cli_int;
+
 int callAllSinks(const char* stringSource, char ** arrSource) {
   switch (rand()) {
     case 1:
@@ -99,14 +101,20 @@ void customGetEnvOk() {
   return execl(NULL, source);
 }
 
-void exec_flag_bad() { execl(FLAGS_cli_string, NULL); }
+void exec_string_flag_bad() { execl(FLAGS_cli_string, NULL); }
+
+void exec_int_flag_ok() {
+  char buffer[25];
+  sprintf(buffer, "foo -i %d", FLAGS_cli_int);
+  execl(buffer, NULL);
+}
 
 char* return_global() {
   char* local = FLAGS_cli_string;
   return local;
 }
 
-void exec_flag_interproc_bad() {
+void exec_string_flag_interproc_bad() {
   char* flag = return_global();
   execl(flag, NULL);
 }
