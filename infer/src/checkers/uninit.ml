@@ -100,10 +100,6 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         uninit_vars
 
 
-  let remove_array_element base uninit_vars =
-    D.remove (base, [AccessPath.ArrayAccess (snd base, [])]) uninit_vars
-
-
   let get_formals call =
     match Ondemand.get_proc_desc call with
     | Some proc_desc ->
@@ -175,19 +171,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               | HilExp.AccessPath (((_, {Typ.desc= Tarray _}) as base), al)
                 when is_blacklisted_function call ->
                   D.remove (base, al) acc
-              | HilExp.AccessPath ap when Typ.Procname.is_constructor call ->
-                  remove_fields tenv (fst ap) (D.remove ap acc)
-              | HilExp.AccessPath (((_, {Typ.desc= Tptr _}) as base), al)
-                when not (Typ.Procname.is_constructor call) ->
-                  let acc' = D.remove (base, al) acc in
-                  remove_fields tenv base acc'
-              | HilExp.AccessPath (((_, {Typ.desc= Tptr (t', _)}) as base), al) ->
-                  let acc' = D.remove (base, al) acc in
-                  remove_array_element (fst base, t') acc'
               | HilExp.AccessPath (((_, t) as base), al)
                 when is_struct t && List.length al > 0 && function_expect_a_pointer call idx ->
                   (* Access to a field of a struct by reference *)
                   D.remove (base, al) acc
+              | HilExp.AccessPath ap when Typ.Procname.is_constructor call ->
+                  remove_fields tenv (fst ap) (D.remove ap acc)
+              | HilExp.AccessPath (((_, {Typ.desc= Tptr _}) as base), al) ->
+                  let acc' = D.remove (base, al) acc in
+                  remove_fields tenv base acc'
               | HilExp.Closure (_, apl) ->
                   (* remove the captured variables of a block/lambda *)
                   List.fold ~f:(fun acc' (base, _) -> D.remove (base, []) acc') ~init:acc apl
