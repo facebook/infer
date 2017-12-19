@@ -1186,6 +1186,8 @@ let is_bot : t -> bool = fun x -> equal x Bottom
 
 let is_finite : t -> bool = function NonBottom x -> ItvPure.is_finite x | Bottom -> false
 
+let is_false : t -> bool = function NonBottom x -> ItvPure.is_false x | Bottom -> false
+
 let false_sem = NonBottom ItvPure.false_sem
 
 let m1_255 = NonBottom ItvPure.m1_255

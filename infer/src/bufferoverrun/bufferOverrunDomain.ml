@@ -83,11 +83,9 @@ module Val = struct
 
   let set_traces : TraceSet.t -> t -> t = fun traces x -> {x with traces}
 
-  let of_itv itv = {bot with itv}
+  let of_itv ?(traces= TraceSet.empty) itv = {bot with itv; traces}
 
   let of_int n = of_itv (Itv.of_int n)
-
-  let of_itv : Itv.t -> t = fun itv -> {bot with itv}
 
   let of_pow_loc : PowLoc.t -> t = fun x -> {bot with powloc= x}
 
@@ -327,6 +325,10 @@ module Heap = struct
     fun locs mem ->
       let find_join loc acc = Val.join acc (find loc mem) in
       PowLoc.fold find_join locs Val.bot
+
+
+  let transform : f:(Val.t -> Val.t) -> PowLoc.t -> astate -> astate =
+    fun ~f locs mem -> PowLoc.fold (fun loc -> find loc mem |> f |> add loc) locs mem
 
 
   let strong_update : PowLoc.t -> Val.t -> astate -> astate =
@@ -630,6 +632,10 @@ module MemReach = struct
     fun p v m -> {m with heap= Heap.strong_update p v m.heap}
 
 
+  let transform_heap : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
+    fun ~f p m -> {m with heap= Heap.transform ~f p m.heap}
+
+
   let weak_update_stack : PowLoc.t -> Val.t -> t -> t =
     fun p v m -> {m with stack= Stack.weak_update p v m.stack}
 
@@ -657,6 +663,10 @@ module MemReach = struct
           L.(debug BufferOverrun Verbose) "Weak update for %a <- %a@." PowLoc.pp ploc Val.pp v
         in
         weak_update_heap ploc v s
+
+
+  let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
+    fun ~f ploc s -> transform_heap ~f ploc s
 
 
   let remove_temps : Ident.t list -> t -> t =
@@ -758,6 +768,10 @@ module Mem = struct
   let can_strong_update : PowLoc.t -> bool = MemReach.can_strong_update
 
   let update_mem : PowLoc.t -> Val.t -> t -> t = fun ploc v -> f_lift (MemReach.update_mem ploc v)
+
+  let transform_mem : f:(Val.t -> Val.t) -> PowLoc.t -> t -> t =
+    fun ~f ploc -> f_lift (MemReach.transform_mem ~f ploc)
+
 
   let remove_temps : Ident.t list -> t -> t = fun temps -> f_lift (MemReach.remove_temps temps)
 end

@@ -184,6 +184,16 @@ module Procname : sig
   val capt_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
   (** Captures one arg expression *)
 
+  val capt_arg_of_typ :
+    (unit, _, unit, unit, unit) name_matcher
+    -> (FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+  (** Captures one arg of the given type *)
+
+  val capt_exp_of_typ :
+    (unit, _, unit, unit, unit) name_matcher
+    -> (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg
+  (** Captures one arg expression of the given type *)
+
   val typ1 : 'marker -> (unit, _, 'f, 'f, 'marker mtyp * _, 'marker * _) one_arg
   (** Matches first captured type *)
 

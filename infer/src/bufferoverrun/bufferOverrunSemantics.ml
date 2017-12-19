@@ -206,7 +206,7 @@ module Make (CFG : ProcCfg.S) = struct
         | Exp.Cast (_, e) ->
             eval e mem
         | Exp.Lfield (e, fn, _) ->
-            eval e mem |> Val.get_array_locs |> Fn.flip PowLoc.append_field fn |> Val.of_pow_loc
+            eval e mem |> Val.get_array_locs |> PowLoc.append_field ~fn |> Val.of_pow_loc
         | Exp.Lindex (e1, e2) ->
             eval_lindex e1 e2 mem
         | Exp.Sizeof {nbytes= Some size} ->
@@ -299,7 +299,7 @@ module Make (CFG : ProcCfg.S) = struct
       | Exp.Cast (_, e) ->
           eval_locs e mem
       | Exp.Lfield (e, fn, _) ->
-          eval e mem |> Val.get_all_locs |> Fn.flip PowLoc.append_field fn |> Val.of_pow_loc
+          eval e mem |> Val.get_all_locs |> PowLoc.append_field ~fn |> Val.of_pow_loc
       | Exp.Lindex (e1, e2) ->
           let arr = eval e1 mem in
           let idx = eval e2 mem in
@@ -458,7 +458,7 @@ module Make (CFG : ProcCfg.S) = struct
       let get_offset v = v |> Val.get_array_blk |> ArrayBlk.offsetof in
       let get_size v = v |> Val.get_array_blk |> ArrayBlk.sizeof in
       let get_field_name (fn, _, _) = fn in
-      let append_field v fn = PowLoc.append_field (Val.get_all_locs v) fn in
+      let append_field v fn = PowLoc.append_field (Val.get_all_locs v) ~fn in
       let deref_field v fn mem = Mem.find_heap_set (append_field v fn) mem in
       let deref_ptr v mem =
         let array_locs = Val.get_array_locs v in

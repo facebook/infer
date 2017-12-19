@@ -181,9 +181,12 @@ let name_cons
       -> ('f_in, 'f_out, 'captured_types, 'markers_in, 'markers_out) name_matcher =
   fun m name ->
     let {on_templated_name; get_markers} = m in
+    let fuzzy_name_regexp =
+      name |> Str.quote |> Printf.sprintf "^%s\\(<[a-z0-9]+>\\)?$" |> Str.regexp
+    in
     let on_qual_name f qual_name =
       match QualifiedCppName.extract_last qual_name with
-      | Some (last, rest) when String.equal name last ->
+      | Some (last, rest) when Str.string_match fuzzy_name_regexp last 0 ->
           on_templated_name f (rest, [])
       | _ ->
           None
@@ -497,6 +500,10 @@ module Common = struct
 
   let ( &+ ) templ_matcher template_arg = templ_cons templ_matcher template_arg
 
+  let ( &+...>! ) templ_matcher () = templ_matcher &+ any_template_args >! ()
+
+  let ( <...>! ) name_matcher () = name_matcher <! () &+...>! ()
+
   let ( < ) name_matcher template_arg = name_matcher <! () &+ template_arg
 
   let ( >:: ) templ_matcher name = templ_matcher >! () &::! name
@@ -530,11 +537,13 @@ module Procname = struct
 
 
   (* Function args *)
+
+  let no_marker_checker _markers = true
+
   (** Matches any arg *)
   let match_any_arg : (_, _) one_arg_matcher =
     let match_arg _capt _arg = true in
-    let marker_static_checker _markers = true in
-    {match_arg; marker_static_checker}
+    {match_arg; marker_static_checker= no_marker_checker}
 
 
   let mk_match_typ_nth
@@ -563,6 +572,23 @@ module Procname = struct
       : 'marker -> (_ * (_ * ('marker mtyp * _)), _ * (_ * ('marker * _))) one_arg_matcher =
     let pos3 (_, (_, (x, _))) = x in
     fun marker -> mk_match_typ_nth pos3 pos3 marker
+
+
+  (** Matches the type matched by the given path_matcher *)
+  let match_typ : (_, _, unit, unit, unit, non_empty) path_matcher -> (_, _) one_arg_matcher =
+    fun m ->
+      let {on_templated_name} = m in
+      let rec match_typ typ =
+        match typ with
+        | {Typ.desc= Tstruct name} ->
+            name |> templated_name_of_class_name |> on_templated_name () |> Option.is_some
+        | {Typ.desc= Tptr (typ, _ptr_kind)} ->
+            match_typ typ
+        | _ ->
+            false
+      in
+      let match_arg _capt arg = match_typ (FuncArg.typ arg) in
+      {match_arg; marker_static_checker= no_marker_checker}
 
 
   (* Function argument capture *)
@@ -630,6 +656,10 @@ module Procname = struct
   let capt_exp : (Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, _, _) one_arg =
     {one_arg_matcher= match_any_arg; capture= capture_arg_exp}
 
+
+  let capt_arg_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg}
+
+  let capt_exp_of_typ m = {one_arg_matcher= match_typ (m <...>! ()); capture= capture_arg_exp}
 
   let typ1 : 'marker -> (unit, _, 'f, 'f, _, _) one_arg =
     fun m -> {one_arg_matcher= match_typ1 m; capture= no_capture}

@@ -59,7 +59,7 @@ module Loc = struct
 
   let of_id id = Var (Var.of_id id)
 
-  let append_field l f = Field (l, f)
+  let append_field l ~fn = Field (l, fn)
 
   let is_return = function
     | Var Var.ProgramVar x ->
@@ -82,9 +82,9 @@ module PowLoc = struct
 
   let of_id id = singleton (Loc.of_id id)
 
-  let append_field ploc fn =
+  let append_field ploc ~fn =
     if is_bot ploc then singleton Loc.unknown
-    else fold (fun l -> add (Loc.append_field l fn)) ploc empty
+    else fold (fun l -> add (Loc.append_field l ~fn)) ploc empty
 
 
   let is_singleton x = Int.equal (cardinal x) 1
