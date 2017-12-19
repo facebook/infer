@@ -296,14 +296,19 @@ module SinkKind = struct
       | "curl_easy_setopt"
         -> (
           (* magic constant for setting request URL *)
-          let curlopt_url = 10002 in
+          let controls_request = function
+            | 10002 (* CURLOPT_URL *) | 10015 (* CURLOPT_POSTFIELDS *) ->
+                true
+            | _ ->
+                false
+          in
           (* first two actuals are curl object + integer code for data kind. *)
           match List.nth actuals 1 with
           | Some exp -> (
             match HilExp.eval exp with
             | Some Const.Cint i ->
                 (* check if the data kind might be CURLOPT_URL *)
-                if Int.equal (IntLit.to_int i) curlopt_url then taint_after_nth 1 Network actuals
+                if controls_request (IntLit.to_int i) then taint_after_nth 1 Network actuals
                 else None
             | _ ->
                 (* can't statically resolve data kind; taint it just in case *)
