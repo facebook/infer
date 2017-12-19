@@ -741,5 +741,3 @@ val print_usage_exit : unit -> 'a
 (** Miscellanous *)
 
 val register_late_epilogue : (unit -> unit) -> unit
-
-val late_epilogue : unit -> unit

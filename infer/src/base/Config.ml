@@ -2055,14 +2055,7 @@ let inferconfig_file =
       find (Sys.getcwd ()) |> Option.map ~f:(fun dir -> dir ^/ CommandDoc.inferconfig_file)
 
 
-let late_epilogue_callback = ref (fun () -> ())
-
-let register_late_epilogue f =
-  let g = !late_epilogue_callback in
-  late_epilogue_callback := fun () -> f () ; g ()
-
-
-let late_epilogue () = !late_epilogue_callback ()
+let register_late_epilogue = Epilogues.register_late
 
 let post_parsing_initialization command_opt =
   if CommandLineOption.is_originator then
@@ -2160,7 +2153,7 @@ let post_parsing_initialization command_opt =
       Out_channel.newline stderr ) ;
     let exitcode = L.exit_code_of_exception exn in
     L.log_uncaught_exception exn ~exitcode ;
-    late_epilogue () ;
+    Epilogues.late () ;
     Pervasives.exit exitcode
   in
   Caml.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
