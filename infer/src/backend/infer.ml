@@ -77,12 +77,16 @@ let log_environment_info () =
 let prepare_events_logging () =
   (* there's no point in logging data from the events command. To fetch them we'd need to run events again... *)
   if CLOpt.equal_command Config.command CLOpt.Events then ()
-  else (
-    L.environment_info "Infer log identifier is %s\n" (EventLogger.get_log_identifier ()) ;
+  else
+    let log_identifier_msg =
+      Printf.sprintf "Infer log identifier is %s\n" (EventLogger.get_log_identifier ())
+    in
+    L.environment_info "%s" log_identifier_msg ;
+    if CLOpt.is_originator && Config.print_log_identifier then L.progress "%s" log_identifier_msg ;
     let log_uncaught_exn exn ~exitcode =
       EventLogger.log (EventLogger.UncaughtException (exn, exitcode))
     in
-    L.set_log_uncaught_exception_callback log_uncaught_exn )
+    L.set_log_uncaught_exception_callback log_uncaught_exn
 
 
 let () =
@@ -145,4 +149,3 @@ let () =
       EventLogger.dump () ) ;
   (* to make sure the exitcode=0 case is logged, explicitly invoke exit *)
   L.exit 0
-

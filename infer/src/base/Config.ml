@@ -1618,6 +1618,12 @@ and print_builtins =
     "Print the builtin functions and exit"
 
 
+and print_log_identifier =
+  CLOpt.mk_bool ~long:"print-log-identifier"
+    ~in_help:CLOpt.([(Run, manual_generic)])
+    "Print the unique identifier that is common to all logged events"
+
+
 and print_using_diff =
   CLOpt.mk_bool ~deprecated_no:["noprintdiff"] ~long:"print-using-diff" ~default:true
     "Highlight the difference w.r.t. the previous prop when printing symbolic execution debug info"
@@ -2570,6 +2576,8 @@ and printf_args = !printf_args
 and print_active_checkers = !print_active_checkers
 
 and print_builtins = !print_builtins
+
+and print_log_identifier = !print_log_identifier
 
 and print_logs = !print_logs
 
