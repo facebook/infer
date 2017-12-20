@@ -111,7 +111,9 @@ let clang_cc1_cmd_sanitizer cmd =
           arg
     else arg
   in
-  let args_defines = if Config.bufferoverrun then ["-D__INFER_BUFFEROVERRUN"] else [] in
+  let args_defines =
+    if Config.bufferoverrun && not Config.biabduction then ["-D__INFER_BUFFEROVERRUN"] else []
+  in
   let post_args_rev =
     [] |> List.rev_append ["-include"; Config.lib_dir ^/ "clang_wrappers" ^/ "global_defines.h"]
     |> List.rev_append args_defines
@@ -153,9 +155,6 @@ let command_to_run cmd =
 let with_exec exec args = {args with exec}
 
 let with_plugin_args args =
-  if Config.cxx_infer_headers && Config.biabduction && Config.bufferoverrun then
-    L.(die UserError)
-      "The biabduction and bufferoverrun analyses have conflicting header models for C++. Either disable infer's custom C++ headers (--no-cxx-infer-headers), the biabduction analysis (--no-biabduction), or the bufferoverrun analysis (--no-bufferoverrun)." ;
   let plugin_arg_flag = "-plugin-arg-" ^ plugin_name in
   let args_before_rev =
     []
