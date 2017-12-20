@@ -400,9 +400,15 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name skip_imp
       procdesc
     in
     Some (procdesc, bytecode, jbir_code)
-  with JBir.Subroutine ->
-    L.internal_error "create_procdesc raised JBir.Subroutine on %a@." Typ.Procname.pp proc_name ;
-    None
+  with
+  | JBir.Subroutine ->
+      L.internal_error "create_procdesc raised JBir.Subroutine when translating %a in %a@."
+        Typ.Procname.pp proc_name SourceFile.pp source_file ;
+      None
+  | Invalid_argument msg ->
+      L.internal_error "create_procdesc raised Invalid_argument \"%s\" when translating %a in %a@."
+        msg Typ.Procname.pp proc_name SourceFile.pp source_file ;
+      None
 
 
 let builtin_new = Exp.Const (Const.Cfun BuiltinDecl.__new)
