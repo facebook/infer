@@ -523,6 +523,8 @@ val liveness : bool
 
 val load_analysis_results : string option
 
+val log_events : bool
+
 val log_file : string
 
 val makefile_cmdline : string

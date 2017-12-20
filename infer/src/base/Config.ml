@@ -1426,6 +1426,12 @@ and join_cond =
 |}
 
 
+and log_events =
+  CLOpt.mk_bool ~long:"log-events"
+    ~in_help:CLOpt.([(Run, manual_generic)])
+    "Turn on the feature that logs events in a machine-readable format"
+
+
 and log_file =
   CLOpt.mk_string ~deprecated:["out_file"; "-out-file"] ~long:"log-file" ~meta:"file"
     ~default:"logs" "Specify the file to use for logging"
@@ -2520,6 +2526,8 @@ and load_average =
 
 
 and load_analysis_results = !load_results
+
+and log_events = !log_events
 
 and log_file = !log_file
 
