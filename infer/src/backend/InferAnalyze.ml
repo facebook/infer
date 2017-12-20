@@ -145,8 +145,6 @@ let main ~changed_files ~makefile =
              ~f:(fun cl -> DB.string_crc_has_extension ~ext:"java" (DB.source_dir_to_string cl))
              all_clusters)
       in
-      L.debug Analysis Quiet "Dynamic dispatch mode: %s@."
-        Config.(string_of_dynamic_dispatch dynamic_dispatch) ;
       print_legend () ;
       if Config.per_procedure_parallelism && not (Lazy.force is_java) then (
         (* Java uses ZipLib which is incompatible with forking *)

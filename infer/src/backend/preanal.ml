@@ -12,67 +12,6 @@ open! IStd
 open! PVariant
 module L = Logging
 
-(** mutate the cfg/cg to add dynamic dispatch handling *)
-let add_dispatch_calls pdesc cg tenv =
-  let sound_dynamic_dispatch = Config.(equal_dynamic_dispatch dynamic_dispatch Sound) in
-  let node_add_dispatch_calls caller_pname node =
-    let call_flags_is_dispatch call_flags =
-      (* if sound dispatch is turned off, only consider dispatch for interface calls *)
-      sound_dynamic_dispatch && call_flags.CallFlags.cf_virtual
-      || call_flags.CallFlags.cf_interface
-    in
-    let instr_is_dispatch_call = function
-      | Sil.Call (_, _, _, _, call_flags) ->
-          call_flags_is_dispatch call_flags
-      | _ ->
-          false
-    in
-    let has_dispatch_call instrs = List.exists ~f:instr_is_dispatch_call instrs in
-    let replace_dispatch_calls = function
-      | Sil.Call
-          ( ret_id
-          , (Exp.Const Const.Cfun callee_pname as call_exp)
-          , ((_, receiver_typ) :: _ as args)
-          , loc
-          , call_flags ) as instr
-        when call_flags_is_dispatch call_flags
-        -> (
-          (* the frontend should not populate the list of targets *)
-          assert (List.is_empty call_flags.CallFlags.cf_targets) ;
-          let receiver_typ_no_ptr =
-            match receiver_typ.Typ.desc with Typ.Tptr (typ', _) -> typ' | _ -> receiver_typ
-          in
-          let sorted_overrides =
-            let overrides = Prover.get_overrides_of tenv receiver_typ_no_ptr callee_pname in
-            List.sort ~cmp:(fun (_, p1) (_, p2) -> Typ.Procname.compare p1 p2) overrides
-          in
-          match sorted_overrides with
-          | (_, target_pname) :: _ as all_targets ->
-              let targets_to_add =
-                if sound_dynamic_dispatch then List.map ~f:snd all_targets
-                else
-                  (* if sound dispatch is turned off, consider only the first target. we do this
-                      because choosing all targets is too expensive for everyday use *)
-                  [target_pname]
-              in
-              List.iter
-                ~f:(fun target_pname -> Cg.add_edge cg caller_pname target_pname)
-                targets_to_add ;
-              let call_flags' = {call_flags with CallFlags.cf_targets= targets_to_add} in
-              Sil.Call (ret_id, call_exp, args, loc, call_flags')
-          | [] ->
-              instr )
-      | instr ->
-          instr
-    in
-    let instrs = Procdesc.Node.get_instrs node in
-    if has_dispatch_call instrs then List.map ~f:replace_dispatch_calls instrs
-      |> Procdesc.Node.replace_instrs node
-  in
-  let pname = Procdesc.get_proc_name pdesc in
-  Procdesc.iter_nodes (node_add_dispatch_calls pname) pdesc
-
-
 (** add instructions to perform abstraction *)
 let add_abstraction_instructions pdesc =
   let open Procdesc in
@@ -258,20 +197,6 @@ let do_abstraction pdesc =
   Procdesc.signal_did_preanalysis pdesc
 
 
-(** add possible dynamic dispatch targets to the call_flags of each call site *)
-let do_dynamic_dispatch pdesc cg tenv =
-  ( match Config.dynamic_dispatch with
-  | Interface | Sound ->
-      let pname = Procdesc.get_proc_name pdesc in
-      if Typ.Procname.is_java pname then add_dispatch_calls pdesc cg tenv
-  | NoDynamicDispatch | Lazy ->
-      () ) ;
-  Procdesc.signal_did_preanalysis pdesc
-
-
-let do_preanalysis pdesc cg_opt tenv =
-  if not (Procdesc.did_preanalysis pdesc) then (
-    do_liveness pdesc tenv ;
-    do_abstraction pdesc ;
-    Option.iter cg_opt ~f:(fun cg -> do_dynamic_dispatch pdesc cg tenv) )
+let do_preanalysis pdesc tenv =
+  if not (Procdesc.did_preanalysis pdesc) then ( do_liveness pdesc tenv ; do_abstraction pdesc )
 

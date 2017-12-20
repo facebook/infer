@@ -399,19 +399,6 @@ let whitelisted_cpp_classes =
     ; other_whitelisted_cpp_classes ]
 
 
-type dynamic_dispatch = NoDynamicDispatch | Interface | Sound | Lazy [@@deriving compare]
-
-let equal_dynamic_dispatch = [%compare.equal : dynamic_dispatch]
-
-let string_to_dynamic_dispatch =
-  [("none", NoDynamicDispatch); ("interface", Interface); ("sound", Sound); ("lazy", Lazy)]
-
-
-let string_of_dynamic_dispatch ddp =
-  List.find_exn ~f:(fun (_, ddp') -> equal_dynamic_dispatch ddp ddp') string_to_dynamic_dispatch
-  |> fst
-
-
 let pp_version fmt () =
   F.fprintf fmt "Infer version %s@\nCopyright 2009 - present Facebook. All Rights Reserved."
     Version.versionString
@@ -1199,12 +1186,6 @@ and dump_duplicate_symbols =
   CLOpt.mk_bool ~long:"dump-duplicate-symbols"
     ~in_help:CLOpt.([(Capture, manual_clang)])
     "Dump all symbols with the same name that are defined in more than one file."
-
-
-and dynamic_dispatch =
-  CLOpt.mk_symbol_opt ~long:"dynamic-dispatch"
-    "Specify treatment of dynamic dispatch in Java code: 'none' treats dynamic dispatch as a call to unknown code, 'lazy' follows the JVM semantics and creates procedure descriptions during symbolic execution using the type information found in the abstract state; 'sound' is significantly more computationally expensive"
-    ~symbols:string_to_dynamic_dispatch
 
 
 and eradicate_condition_redundant =
@@ -2753,17 +2734,12 @@ let clang_frontend_action_string =
 
 
 let dynamic_dispatch =
-  let default_mode =
-    match analyzer with
-    | Checkers when biabduction ->
-        Lazy
-    | Checkers when quandary ->
-        Sound
-    | _ ->
-        NoDynamicDispatch
-  in
-  Option.value ~default:default_mode !dynamic_dispatch
+  CLOpt.mk_bool ~long:"dynamic-dispatch" ~default:biabduction
+    "Specify treatment of dynamic dispatch in Java code: false 'none' treats dynamic dispatch as a call to unknown code and true triggers lazy dynamic dispatch. The latter mode follows the JVM semantics and creates procedure descriptions during symbolic execution using the type information found in the abstract state"
+    ~in_help:CLOpt.([(Analyze, manual_java)])
 
+
+let dynamic_dispatch = !dynamic_dispatch
 
 let specs_library =
   match infer_cache with

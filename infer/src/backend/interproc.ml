@@ -1277,10 +1277,10 @@ let perform_transition proc_cfg tenv proc_name =
       ()
 
 
-let analyze_procedure_aux cg_opt tenv proc_desc =
+let analyze_procedure_aux tenv proc_desc =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let proc_cfg = ProcCfg.Exceptional.from_pdesc proc_desc in
-  Preanal.do_preanalysis proc_desc cg_opt tenv ;
+  Preanal.do_preanalysis proc_desc tenv ;
   let summaryfp = Config.run_in_footprint_mode (analyze_proc tenv) proc_cfg in
   Specs.add_summary proc_name summaryfp ;
   perform_transition proc_cfg tenv proc_name ;
@@ -1292,8 +1292,7 @@ let analyze_procedure_aux cg_opt tenv proc_desc =
 let analyze_procedure {Callbacks.summary; proc_desc; tenv} : Specs.summary =
   let proc_name = Procdesc.get_proc_name proc_desc in
   Specs.add_summary proc_name summary ;
-  ( try ignore (analyze_procedure_aux None tenv proc_desc) with exn ->
+  ( try ignore (analyze_procedure_aux tenv proc_desc) with exn ->
       reraise_if exn ~f:(fun () -> not (Exceptions.handle_exception exn)) ;
       Reporting.log_error_deprecated proc_name exn ) ;
   Specs.get_summary_unsafe __FILE__ proc_name
-

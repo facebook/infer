@@ -95,7 +95,7 @@ struct
   module Interpreter = AbstractInterpreter.Make (CFG) (Make (MakeTransferFunctions) (HilConfig))
 
   let compute_post ({ProcData.pdesc; tenv} as proc_data) ~initial =
-    Preanal.do_preanalysis pdesc None tenv ;
+    Preanal.do_preanalysis pdesc tenv ;
     let initial' = (initial, IdAccessPathMapDomain.empty) in
     Option.map ~f:fst (Interpreter.compute_post ~debug:false proc_data ~initial:initial')
 

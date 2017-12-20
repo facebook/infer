@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 
 ANALYZER = checkers
 INFER_OPTIONS = \
-  --debug-exceptions --dynamic-dispatch none --no-default-checkers \
+  --debug-exceptions --no-default-checkers \
   --annotation-reachability --fragment-retains-view --immutable-cast --printf-args --quandary \
   --suggest-nullable --check-nullable --racerd \
 

@@ -614,26 +614,6 @@ let resolve_virtual_pname tenv prop actuals callee_pname call_flags : Typ.Procna
       if !Config.curr_language <> Config.Java then
         (* default mode for Obj-C/C++/Java virtual calls: resolution only *)
         [do_resolve callee_pname receiver_exp actual_receiver_typ]
-      else if Config.(equal_dynamic_dispatch dynamic_dispatch Sound) then
-        let targets =
-          if call_flags.CallFlags.cf_virtual then
-            (* virtual call--either [called_pname] or an override in some subtype may be called *)
-            callee_pname :: call_flags.CallFlags.cf_targets
-          else
-            (* interface call--[called_pname] has no implementation), we don't want to consider *)
-            call_flags.CallFlags.cf_targets
-          (* interface call, don't want to consider *)
-        in
-        (* return true if (receiver typ of [target_pname]) <: [actual_receiver_typ] *)
-        let may_dispatch_to target_pname =
-          let target_receiver_typ = get_receiver_typ target_pname actual_receiver_typ in
-          Prover.Subtyping_check.check_subtype tenv target_receiver_typ actual_receiver_typ
-        in
-        let resolved_pname = do_resolve callee_pname receiver_exp actual_receiver_typ in
-        let feasible_targets = List.filter ~f:may_dispatch_to targets in
-        (* make sure [resolved_pname] is not a duplicate *)
-        if List.mem ~equal:Typ.Procname.equal feasible_targets resolved_pname then feasible_targets
-        else resolved_pname :: feasible_targets
       else
         let resolved_target = do_resolve callee_pname receiver_exp actual_receiver_typ in
         match call_flags.CallFlags.cf_targets with
@@ -1193,7 +1173,7 @@ let rec sym_exec tenv current_pdesc instr_ (prop_: Prop.normal Prop.t) path
         exec_builtin (call_args prop_ callee_pname actual_params ret_id loc)
     | None ->
       match callee_pname with
-      | Java callee_pname_java when Config.(equal_dynamic_dispatch dynamic_dispatch Lazy)
+      | Java callee_pname_java when Config.dynamic_dispatch
         -> (
           let norm_prop, norm_args' = normalize_params tenv current_pname prop_ actual_params in
           let norm_args = call_constructor_url_update_args callee_pname norm_args' in
