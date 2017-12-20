@@ -245,7 +245,7 @@ let is_java_native cm = Poly.( = ) cm.Javalib.cm_implementation Javalib.Native
 
 let is_clone ms = String.equal (JBasics.ms_name ms) JConfig.clone_name
 
-let get_implementation cm =
+let get_bytecode cm =
   match cm.Javalib.cm_implementation with
   | Javalib.Native ->
       let cms = cm.Javalib.cm_class_method_signature in
@@ -267,11 +267,11 @@ let get_implementation cm =
                   opcode)
           bytecode.JCode.c_code
       in
-      let hacked_bytecode = {bytecode with JCode.c_code} in
-      let jbir_code =
-        JBir.transform ~bcv:false ~ch_link:false ~formula:false ~formula_cmd:[] cm hacked_bytecode
-      in
-      (hacked_bytecode, jbir_code)
+      {bytecode with JCode.c_code}
+
+
+let get_jbir_representation cm bytecode =
+  JBir.transform ~bcv:false ~ch_link:false ~formula:false ~formula_cmd:[] cm bytecode
 
 
 let trans_access = function
@@ -297,7 +297,6 @@ let create_empty_cfg proc_name source_file procdesc =
 
 
 let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
-  let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let m = Javalib.AbstractMethod am in
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
@@ -317,13 +316,12 @@ let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
       ; ret_type= JTransType.return_type program tenv ms
       ; loc= Location.none source_file }
     in
-    Cfg.create_proc_desc cfg proc_attributes
+    Cfg.create_proc_desc icfg.JContext.cfg proc_attributes
   in
   create_empty_cfg proc_name source_file procdesc
 
 
 let create_native_procdesc source_file program icfg cm proc_name =
-  let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let m = Javalib.ConcreteMethod cm in
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
@@ -342,69 +340,89 @@ let create_native_procdesc source_file program icfg cm proc_name =
       ; ret_type= JTransType.return_type program tenv ms
       ; loc= Location.none source_file }
     in
-    Cfg.create_proc_desc cfg proc_attributes
+    Cfg.create_proc_desc icfg.JContext.cfg proc_attributes
   in
   create_empty_cfg proc_name source_file procdesc
 
 
+let create_empty_procdesc source_file program linereader icfg cm proc_name =
+  let tenv = icfg.JContext.tenv in
+  let m = Javalib.ConcreteMethod cm in
+  let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
+  let bytecode = get_bytecode cm in
+  let loc_start =
+    get_start_location source_file bytecode |> fix_method_definition_line linereader proc_name
+  in
+  let formals = formals_from_signature program tenv cn ms (JTransType.get_method_kind m) in
+  let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
+  let proc_attributes =
+    { (ProcAttributes.default proc_name) with
+      ProcAttributes.access= trans_access cm.Javalib.cm_access
+    ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
+    ; formals
+    ; is_bridge_method= cm.Javalib.cm_bridge
+    ; is_model= Config.models_mode
+    ; is_synthetic_method= cm.Javalib.cm_synthetic
+    ; is_java_synchronized_method= cm.Javalib.cm_synchronized
+    ; loc= loc_start
+    ; method_annotation
+    ; ret_type= JTransType.return_type program tenv ms }
+  in
+  let proc_desc = Cfg.create_proc_desc icfg.JContext.cfg proc_attributes in
+  create_empty_cfg proc_name source_file proc_desc
+
+
 (** Creates a procedure description. *)
-let create_cm_procdesc source_file program linereader icfg cm proc_name skip_implementation =
+let create_cm_procdesc source_file program linereader icfg cm proc_name =
   let cfg = icfg.JContext.cfg in
   let tenv = icfg.JContext.tenv in
   let m = Javalib.ConcreteMethod cm in
   let cn, ms = JBasics.cms_split (Javalib.get_class_method_signature m) in
   try
-    let bytecode, jbir_code = get_implementation cm in
-    let procdesc =
-      let formals = translate_formals program tenv cn jbir_code in
-      let locals_ = translate_locals program tenv formals bytecode jbir_code in
-      let locals =
-        List.map locals_ ~f:(fun (name, typ) ->
-            ({name; typ; attributes= []} : ProcAttributes.var_data) )
-      in
-      let loc_start =
-        get_start_location source_file bytecode |> fix_method_definition_line linereader proc_name
-      in
-      let loc_exit = get_exit_location source_file bytecode in
-      let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
-      let proc_attributes =
-        { (ProcAttributes.default proc_name) with
-          ProcAttributes.access= trans_access cm.Javalib.cm_access
-        ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
-        ; formals
-        ; is_bridge_method= cm.Javalib.cm_bridge
-        ; is_defined= not skip_implementation
-        ; is_model= Config.models_mode
-        ; is_synthetic_method= cm.Javalib.cm_synthetic
-        ; is_java_synchronized_method= cm.Javalib.cm_synchronized
-        ; loc= loc_start
-        ; locals
-        ; method_annotation
-        ; ret_type= JTransType.return_type program tenv ms }
-      in
-      let procdesc = Cfg.create_proc_desc cfg proc_attributes in
-      let start_kind = Procdesc.Node.Start_node proc_name in
-      let start_node = Procdesc.create_node procdesc loc_start start_kind [] in
-      let exit_kind = Procdesc.Node.Exit_node proc_name in
-      let exit_node = Procdesc.create_node procdesc loc_exit exit_kind [] in
-      let exn_kind = Procdesc.Node.exn_sink_kind in
-      let exn_node = Procdesc.create_node procdesc loc_exit exn_kind [] in
-      JContext.add_exn_node proc_name exn_node ;
-      Procdesc.set_start_node procdesc start_node ;
-      Procdesc.set_exit_node procdesc exit_node ;
-      Procdesc.Node.add_locals_ret_declaration start_node proc_attributes locals ;
-      procdesc
+    let bytecode = get_bytecode cm in
+    let jbir_code = get_jbir_representation cm bytecode in
+    let loc_start =
+      get_start_location source_file bytecode |> fix_method_definition_line linereader proc_name
     in
-    Some (procdesc, bytecode, jbir_code)
-  with
-  | JBir.Subroutine ->
-      L.internal_error "create_procdesc raised JBir.Subroutine when translating %a in %a@."
-        Typ.Procname.pp proc_name SourceFile.pp source_file ;
-      None
-  | Invalid_argument msg ->
-      L.internal_error "create_procdesc raised Invalid_argument \"%s\" when translating %a in %a@."
-        msg Typ.Procname.pp proc_name SourceFile.pp source_file ;
-      None
+    let loc_exit = get_exit_location source_file bytecode in
+    let formals = translate_formals program tenv cn jbir_code in
+    let locals_ = translate_locals program tenv formals bytecode jbir_code in
+    let locals =
+      List.map locals_ ~f:(fun (name, typ) ->
+          ({name; typ; attributes= []} : ProcAttributes.var_data) )
+    in
+    let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
+    let proc_attributes =
+      { (ProcAttributes.default proc_name) with
+        ProcAttributes.access= trans_access cm.Javalib.cm_access
+      ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
+      ; formals
+      ; is_bridge_method= cm.Javalib.cm_bridge
+      ; is_defined= true
+      ; is_model= Config.models_mode
+      ; is_synthetic_method= cm.Javalib.cm_synthetic
+      ; is_java_synchronized_method= cm.Javalib.cm_synchronized
+      ; loc= loc_start
+      ; locals
+      ; method_annotation
+      ; ret_type= JTransType.return_type program tenv ms }
+    in
+    let procdesc = Cfg.create_proc_desc cfg proc_attributes in
+    let start_kind = Procdesc.Node.Start_node proc_name in
+    let start_node = Procdesc.create_node procdesc loc_start start_kind [] in
+    let exit_kind = Procdesc.Node.Exit_node proc_name in
+    let exit_node = Procdesc.create_node procdesc loc_exit exit_kind [] in
+    let exn_kind = Procdesc.Node.exn_sink_kind in
+    let exn_node = Procdesc.create_node procdesc loc_exit exn_kind [] in
+    JContext.add_exn_node proc_name exn_node ;
+    Procdesc.set_start_node procdesc start_node ;
+    Procdesc.set_exit_node procdesc exit_node ;
+    Procdesc.Node.add_locals_ret_declaration start_node proc_attributes locals ;
+    Some (procdesc, start_node, exit_node, exn_node, jbir_code)
+  with JBir.Subroutine ->
+    L.internal_error "create_procdesc raised JBir.Subroutine when translating %a in %a@."
+      Typ.Procname.pp proc_name SourceFile.pp source_file ;
+    None
 
 
 let builtin_new = Exp.Const (Const.Cfun BuiltinDecl.__new)

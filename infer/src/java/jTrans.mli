@@ -31,10 +31,14 @@ val create_native_procdesc :
   -> Typ.Procname.t -> Procdesc.t
 (** Create the procedure description for a concrete method *)
 
+val create_empty_procdesc :
+  SourceFile.t -> JClasspath.program -> Printer.LineReader.t -> JContext.icfg
+  -> JCode.jcode Javalib.concrete_method -> Typ.Procname.t -> Procdesc.t
+
 val create_cm_procdesc :
   SourceFile.t -> JClasspath.program -> Printer.LineReader.t -> JContext.icfg
-  -> JCode.jcode Javalib.concrete_method -> Typ.Procname.t -> bool
-  -> (Procdesc.t * Javalib_pack.JCode.jcode * JBir.t) option
+  -> JCode.jcode Javalib.concrete_method -> Typ.Procname.t
+  -> (Procdesc.t * Procdesc.Node.t * Procdesc.Node.t * Procdesc.Node.t * JBir.t) option
 (** [create_procdesc source_file program linereader icfg cm proc_name] creates
     a procedure description for the concrete method cm and adds it to cfg *)
 

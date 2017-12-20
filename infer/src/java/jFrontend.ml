@@ -89,28 +89,15 @@ let add_edges (context: JContext.t) start_node exn_node exit_nodes method_body_n
 (** Add a concrete method. *)
 let add_cmethod source_file program linereader icfg cm proc_name =
   let cn, _ = JBasics.cms_split cm.Javalib.cm_class_method_signature in
-  let skip_implementation = Inferconfig.skip_implementation_matcher source_file proc_name in
-  match
-    JTrans.create_cm_procdesc source_file program linereader icfg cm proc_name skip_implementation
-  with
-  | None ->
-      ()
-  | Some (procdesc, _, jbir_code) ->
-      let start_node = Procdesc.get_start_node procdesc in
-      let exit_node = Procdesc.get_exit_node procdesc in
-      let exn_node =
-        match JContext.get_exn_node procdesc with
-        | Some node ->
-            node
-        | None ->
-            L.(die InternalError) "No exn node found for %s" (Typ.Procname.to_string proc_name)
-      in
-      if skip_implementation then
-        Procdesc.node_set_succs_exn procdesc start_node [exit_node] [exn_node]
-      else
-        let instrs = JBir.code jbir_code in
+  if Inferconfig.skip_implementation_matcher source_file proc_name then
+    ignore (JTrans.create_empty_procdesc source_file program linereader icfg cm proc_name)
+  else
+    match JTrans.create_cm_procdesc source_file program linereader icfg cm proc_name with
+    | None ->
+        ()
+    | Some (procdesc, start_node, exit_node, exn_node, jbir_code) ->
         let context = JContext.create_context icfg procdesc jbir_code cn source_file program in
-        let method_body_nodes = Array.mapi ~f:(JTrans.instruction context) instrs in
+        let method_body_nodes = Array.mapi ~f:(JTrans.instruction context) (JBir.code jbir_code) in
         add_edges context start_node exn_node [exit_node] method_body_nodes jbir_code false
 
 
