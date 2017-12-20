@@ -45,7 +45,7 @@ The class `Dinner` will generate the following report on the public method `make
 
 `There may be a Thread Safety Violation: makeDinner() indirectly writes to mTemperature outside of synchronization.`
 
-This warning can be fixed synchronizing the access to `mTemperature`, making `mTemperature` `volatile`, marking `makeDinner` as `@VisibleForTesting`, or suppressing the warning by annotating the `Dinner` class or `makeDinner` method with `@ThreadSafe(enableChecks = false)`. See the `com.facebook.infer.annotation` package for the full details on this and other annotations.
+This warning can be fixed synchronizing the access to `mTemperature`, making `mTemperature` `volatile`, marking `makeDinner` as `@VisibleForTesting`, or suppressing the warning by annotating the `Dinner` class or `makeDinner` method with `@ThreadSafe(enableChecks = false)`. See the `com.facebook.infer.annotation` [package](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation) for the full details on this and other annotations.
 
 ### Read/Write Race
 
@@ -105,7 +105,7 @@ You might wonder why it's necessary to annotate `I`--can't RacerD just look at a
 
 ## Annotations to help RacerD understand your code
 
-Getting started with RacerD doesn't require any annotations at all--RacerD will look at your usage of locks and figure out what data is not guarded consistently. But increasing the coverage and signal-to-noise ratio may require adding `@ThreadSafe` annotations along with some of the other annotations described below. Most of annotations described below can be used via the Maven Central package available [here](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation/0.10.0.2).
+Getting started with RacerD doesn't require any annotations at all--RacerD will look at your usage of locks and figure out what data is not guarded consistently. But increasing the coverage and signal-to-noise ratio may require adding `@ThreadSafe` annotations along with some of the other annotations described below. Most of annotations described below can be used via the Maven Central package available [here](https://maven-repository.com/artifact/com.facebook.infer.annotation/infer-annotation).
 
 ### `@ThreadConfined`
 
