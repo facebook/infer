@@ -59,6 +59,21 @@ let get_location source_file impl pc =
   {Location.line= line_number; col= -1; file= source_file}
 
 
+let get_start_location source_file bytecode =
+  let line_number = Option.value (JCode.get_source_line_number 0 bytecode) ~default:(-1) in
+  {Location.line= line_number; col= -1; file= source_file}
+
+
+let get_exit_location source_file bytecode =
+  let last_line_number =
+    let cmp (_, ln1) (_, ln2) = Int.compare ln1 ln2 in
+    Option.value_map ~default:(-1)
+      ~f:(fun l -> Option.value_map ~f:snd ~default:(-1) (List.max_elt ~cmp l))
+      bytecode.JCode.c_line_number_table
+  in
+  {Location.line= last_line_number; col= -1; file= source_file}
+
+
 let retrieve_fieldname fieldname =
   try
     let subs = Str.split (Str.regexp (Str.quote ".")) (Typ.Fieldname.to_string fieldname) in
@@ -348,10 +363,9 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name skip_imp
             ({name; typ; attributes= []} : ProcAttributes.var_data) )
       in
       let loc_start =
-        let loc = get_location source_file jbir_code 0 in
-        fix_method_definition_line linereader proc_name loc
+        get_start_location source_file bytecode |> fix_method_definition_line linereader proc_name
       in
-      let loc_exit = get_location source_file jbir_code (Array.length (JBir.code jbir_code) - 1) in
+      let loc_exit = get_exit_location source_file bytecode in
       let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
       let proc_attributes =
         { (ProcAttributes.default proc_name) with
