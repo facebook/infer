@@ -17,10 +17,6 @@ type invoke_kind = I_Virtual | I_Interface | I_Special | I_Static
 
 exception Frontend_error of string
 
-let constr_loc_map : Location.t JBasics.ClassMap.t ref = ref JBasics.ClassMap.empty
-
-let init_loc_map : Location.t JBasics.ClassMap.t ref = ref JBasics.ClassMap.empty
-
 (** Fix the line associated to a method definition.
     Since Sawja often reports a method off by a few lines, we search
     backwards for a line where the method name is. *)
@@ -263,18 +259,6 @@ let get_implementation cm =
       (hacked_bytecode, jbir_code)
 
 
-let update_constr_loc cn ms loc_start =
-  if String.equal (JBasics.ms_name ms) JConfig.constructor_name then
-    try ignore (JBasics.ClassMap.find cn !constr_loc_map) with Not_found ->
-      constr_loc_map := JBasics.ClassMap.add cn loc_start !constr_loc_map
-
-
-let update_init_loc cn ms loc_start =
-  if JBasics.ms_equal ms JBasics.clinit_signature then
-    try ignore (JBasics.ClassMap.find cn !init_loc_map) with Not_found ->
-      init_loc_map := JBasics.ClassMap.add cn loc_start !init_loc_map
-
-
 let trans_access = function
   | `Default ->
       PredSymb.Default
@@ -369,8 +353,6 @@ let create_cm_procdesc source_file program linereader icfg cm proc_name skip_imp
       in
       let loc_exit = get_location source_file jbir_code (Array.length (JBir.code jbir_code) - 1) in
       let method_annotation = JAnnotation.translate_method cm.Javalib.cm_annotations in
-      update_constr_loc cn ms loc_start ;
-      update_init_loc cn ms loc_exit ;
       let proc_attributes =
         { (ProcAttributes.default proc_name) with
           ProcAttributes.access= trans_access cm.Javalib.cm_access
