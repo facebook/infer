@@ -65,13 +65,20 @@ int global_struct_ok() {
   return j;
 }
 
-void init_struct(struct s*);
+void init_struct(struct s* z) { z->n = 10; };
 
 int call_init_struct_ok() {
   struct s t;
   init_struct(&t);
 
   return t.n;
+}
+
+int FN_call_init_struct() {
+  struct s t;
+  init_struct(&t);
+
+  return t.b;
 }
 
 struct s init_all_fields(void);

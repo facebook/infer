@@ -31,28 +31,6 @@ int bad1() {
   return c;
 }
 
-int ok1() {
-  int a;
-  int b;
-  no_init(&a);
-
-  b = a; // OK only for intraprocedural case (we assume that something passed by
-         // reference is initialized). When analysis extended to
-         // interprocedural, it should report a warning.
-  return b;
-}
-
-int ok2() {
-  int a;
-  int c;
-  no_init(&a);
-
-  c = inc(a); // OK only for intraprocedural case (we assume that something
-              // passed by reference is initialized). When analysis extended to
-              // interprocedural, it should report a warning.
-  return c;
-}
-
 int ok3() {
   int a;
   int c;
@@ -72,22 +50,6 @@ int ok4() {
 
   c = inc(a); // no report since the variable could be initialized when passed
               // by reference in previous call
-  return c;
-}
-
-int ok5() {
-  int a;
-  int b;
-  int c;
-
-  no_init(&a);
-
-  b = a; // OK only for intraprocedural case (we assume that something passed by
-         // reference is initialized). When analysis extended to
-         // interprocedural, it should report a warning.
-
-  c = inc(b); // do not report as it depends from line above
-
   return c;
 }
 

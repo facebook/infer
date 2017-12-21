@@ -45,6 +45,7 @@ BUILD_SYSTEMS_TESTS += \
   reactive \
   run_hidden_linters \
   tracebugs \
+  uninit \
   utf8_in_procname \
 
 DIRECT_TESTS += \

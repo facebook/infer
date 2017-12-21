@@ -1934,6 +1934,11 @@ and type_size =
     "Consider the size of types during analysis, e.g. cannot use an int pointer to write to a char"
 
 
+and uninit_interproc =
+  CLOpt.mk_bool ~long:"uninit-interproc"
+    "Run uninit check in the experimental interprocedural mode"
+
+
 and unsafe_malloc =
   CLOpt.mk_bool ~long:"unsafe-malloc"
     ~in_help:CLOpt.([(Analyze, manual_clang)])
@@ -2687,6 +2692,8 @@ and tv_limit_filtered = !tv_limit_filtered
 and type_size = !type_size
 
 and uninit = !uninit
+
+and uninit_interproc = !uninit_interproc
 
 and unsafe_malloc = !unsafe_malloc
 

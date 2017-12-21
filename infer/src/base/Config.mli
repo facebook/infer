@@ -678,6 +678,8 @@ val type_size : bool
 
 val uninit : bool
 
+val uninit_interproc : bool
+
 val unsafe_malloc : bool
 
 val whole_seconds : bool

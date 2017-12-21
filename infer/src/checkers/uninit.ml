@@ -29,8 +29,6 @@ module Summary = Summary.Make (struct
   let read_payload (summary: Specs.summary) = summary.payload.uninit
 end)
 
-let intraprocedural_only = true
-
 let blacklisted_functions = [BuiltinDecl.__set_array_length]
 
 let is_type_pointer t = match t.Typ.desc with Typ.Tptr _ -> true | _ -> false
@@ -53,7 +51,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   module CFG = CFG
   module Domain = RecordDomain
 
-  let report ap loc summary =
+  let report_intra ap loc summary =
     let message = F.asprintf "The value read from %a was never initialized" AccessPath.pp ap in
     let ltr = [Errlog.make_trace_element 0 loc "" []] in
     let exn =
@@ -64,6 +62,16 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   type extras = FormalMap.t * Specs.summary
 
+  let is_struct t = match t.Typ.desc with Typ.Tstruct _ -> true | _ -> false
+
+  let get_formals call =
+    match Ondemand.get_proc_desc call with
+    | Some proc_desc ->
+        Procdesc.get_formals proc_desc
+    | _ ->
+        []
+
+
   let should_report_var pdesc tenv uninit_vars ap =
     match (AccessPath.get_typ ap tenv, ap) with
     | Some typ, ((Var.ProgramVar pv, _), _) ->
@@ -73,19 +81,37 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         false
 
 
-  let report_on_function_params pdesc tenv uninit_vars actuals loc extras =
-    List.iter
-      ~f:(fun e ->
+  let nth_formal_param callee_pname idx =
+    let formals = get_formals callee_pname in
+    List.nth formals idx
+
+
+  let function_expects_a_pointer_as_nth_param callee_pname idx =
+    match nth_formal_param callee_pname idx with
+    | Some (_, typ) ->
+        is_type_pointer typ
+    | _ ->
+        false
+
+
+  let is_struct_field_passed_by_ref call t al idx =
+    is_struct t && List.length al > 0 && function_expects_a_pointer_as_nth_param call idx
+
+
+  let report_on_function_params call pdesc tenv uninit_vars actuals loc extras =
+    List.iteri
+      ~f:(fun idx e ->
         match e with
         | HilExp.AccessPath ((var, t), al)
-          when should_report_var pdesc tenv uninit_vars ((var, t), al) && not (is_type_pointer t) ->
-            report ((var, t), al) loc (snd extras)
+          when should_report_var pdesc tenv uninit_vars ((var, t), al) && not (is_type_pointer t)
+               && not (is_struct_field_passed_by_ref call t al idx) ->
+            report_intra ((var, t), al) loc (snd extras)
         | _ ->
             ())
       actuals
 
 
-  let remove_fields tenv base uninit_vars =
+  let remove_all_fields tenv base uninit_vars =
     match base with
     | _, {Typ.desc= Tptr ({Typ.desc= Tstruct name_struct}, _)} | _, {Typ.desc= Tstruct name_struct}
           -> (
@@ -100,19 +126,34 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         uninit_vars
 
 
-  let get_formals call =
-    match Ondemand.get_proc_desc call with
-    | Some proc_desc ->
-        Procdesc.get_formals proc_desc
+  let remove_init_fields base formal_var uninit_vars init_fields =
+    let subst_formal_actual_fields initialized_fields =
+      D.map
+        (fun ((v, t), a) ->
+          let v' = if Var.equal v formal_var then fst base else v in
+          let t' =
+            match t.desc with
+            | Typ.Tptr ({Typ.desc= Tstruct n}, _) ->
+                (* a pointer to struct needs to be changed into struct
+                       as the actual is just type struct and it would make it
+                       equality fail. Not sure why the actual are type struct when
+                      passed by reference *)
+                {t with Typ.desc= Tstruct n}
+            | _ ->
+                t
+          in
+          ((v', t'), a))
+        initialized_fields
+    in
+    match base with
+    | _, {Typ.desc= Tptr ({Typ.desc= Tstruct _}, _)} | _, {Typ.desc= Tstruct _} ->
+        D.diff uninit_vars (subst_formal_actual_fields init_fields)
     | _ ->
-        []
+        uninit_vars
 
 
-  let is_struct t = match Typ.name t with Some _ -> true | _ -> false
-
-  let function_expect_a_pointer call idx =
-    let formals = get_formals call in
-    match List.nth formals idx with Some (_, typ) -> is_type_pointer typ | _ -> false
+  let remove_array_element base uninit_vars =
+    D.remove (base, [AccessPath.ArrayAccess (snd base, [])]) uninit_vars
 
 
   let is_dummy_constructor_of_a_struct call =
@@ -126,36 +167,71 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Typ.Procname.is_constructor call && is_dummy_constructor_of_struct
 
 
+  let is_pointer_assignment tenv lhs rhs =
+    HilExp.is_null_literal rhs
+    (* the rhs has type int when assigning the lhs to null *)
+    || Option.equal Typ.equal (AccessPath.get_typ lhs tenv) (HilExp.get_typ tenv rhs)
+       && is_type_pointer (snd (fst lhs))
+
+
+  (* checks that the set of initialized formal parameters defined in the precondition of
+   the function (init_formal_params) contains the (base of) nth formal parameter of the function  *)
+  let init_nth_actual_param callee_pname idx init_formal_params =
+    match nth_formal_param callee_pname idx with
+    | None ->
+        None
+    | Some (fparam, t) ->
+        let var_fparam = Var.of_pvar (Pvar.mk fparam callee_pname) in
+        if D.exists
+             (fun (base, _) -> AccessPath.equal_base base (var_fparam, t))
+             init_formal_params
+        then Some var_fparam
+        else None
+
+
+  let remove_initialized_params pdesc call acc idx (base, al) remove_fields =
+    match Summary.read_summary pdesc call with
+    | Some {pre= initialized_formal_params; post= _} -> (
+      match init_nth_actual_param call idx initialized_formal_params with
+      | Some nth_formal ->
+          let acc' = D.remove (base, al) acc in
+          if remove_fields then remove_init_fields base nth_formal acc' initialized_formal_params
+          else acc'
+      | _ ->
+          acc )
+    | _ ->
+        acc
+
+
   let exec_instr (astate: Domain.astate) {ProcData.pdesc; ProcData.extras; ProcData.tenv} _
       (instr: HilInstr.t) =
+    let update_prepost (((_, lhs_typ), apl) as lhs_ap) rhs =
+      if FormalMap.is_formal (fst lhs_ap) (fst extras) && is_type_pointer lhs_typ
+         && (not (is_pointer_assignment tenv lhs_ap rhs) || List.length apl > 0)
+      then
+        let pre' = D.add lhs_ap (fst astate.prepost) in
+        let post = snd astate.prepost in
+        (pre', post)
+      else astate.prepost
+    in
     match instr with
-    | Assign
-        ( (((lhs_var, lhs_typ), apl) as lhs_ap)
-        , HilExp.AccessPath (((_, rhs_typ) as rhs_base), al)
-        , loc ) ->
+    | Assign ((((lhs_var, lhs_typ), apl) as lhs_ap), (HilExp.AccessPath (rhs_base, al) as rhs), loc) ->
         let uninit_vars' = D.remove lhs_ap astate.uninit_vars in
         let uninit_vars =
           if Int.equal (List.length apl) 0 then
             (* if we assign to the root of a struct then we need to remove all the fields *)
-            remove_fields tenv (lhs_var, lhs_typ) uninit_vars'
+            remove_all_fields tenv (lhs_var, lhs_typ) uninit_vars'
           else uninit_vars'
         in
-        let prepost =
-          if FormalMap.is_formal rhs_base (fst extras)
-             && match rhs_typ.desc with Typ.Tptr _ -> true | _ -> false
-          then
-            let pre' = D.add (rhs_base, al) (fst astate.prepost) in
-            let post = snd astate.prepost in
-            (pre', post)
-          else astate.prepost
-        in
+        let prepost = update_prepost lhs_ap rhs in
         (* check on lhs_typ to avoid false positive when assigning a pointer to another *)
         if should_report_var pdesc tenv uninit_vars (rhs_base, al) && not (is_type_pointer lhs_typ)
-        then report (rhs_base, al) loc (snd extras) ;
+        then report_intra (rhs_base, al) loc (snd extras) ;
         {astate with uninit_vars; prepost}
-    | Assign (lhs, _, _) ->
+    | Assign (((lhs_ap, apl) as lhs), rhs, _) ->
         let uninit_vars = D.remove lhs astate.uninit_vars in
-        {astate with uninit_vars}
+        let prepost = update_prepost (lhs_ap, apl) rhs in
+        {astate with uninit_vars; prepost}
     | Call (_, Direct callee_pname, _, _, _)
       when Typ.Procname.equal callee_pname BuiltinDecl.objc_cpp_throw ->
         {astate with uninit_vars= D.empty}
@@ -172,14 +248,19 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                 when is_blacklisted_function call ->
                   D.remove (base, al) acc
               | HilExp.AccessPath (((_, t) as base), al)
-                when is_struct t && List.length al > 0 && function_expect_a_pointer call idx ->
+                when is_struct_field_passed_by_ref call t al idx ->
                   (* Access to a field of a struct by reference *)
-                  D.remove (base, al) acc
+                  if Config.uninit_interproc then
+                    remove_initialized_params pdesc call acc idx (base, al) false
+                  else D.remove (base, al) acc
               | HilExp.AccessPath ap when Typ.Procname.is_constructor call ->
-                  remove_fields tenv (fst ap) (D.remove ap acc)
+                  remove_all_fields tenv (fst ap) (D.remove ap acc)
               | HilExp.AccessPath (((_, {Typ.desc= Tptr _}) as base), al) ->
-                  let acc' = D.remove (base, al) acc in
-                  remove_fields tenv base acc'
+                  if Config.uninit_interproc then
+                    remove_initialized_params pdesc call acc idx (base, al) true
+                  else
+                    let acc' = D.remove (base, al) acc in
+                    remove_all_fields tenv base acc'
               | HilExp.Closure (_, apl) ->
                   (* remove the captured variables of a block/lambda *)
                   List.fold ~f:(fun acc' (base, _) -> D.remove (base, []) acc') ~init:acc apl
@@ -187,7 +268,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
                   acc)
             ~init:astate.uninit_vars actuals
         in
-        report_on_function_params pdesc tenv uninit_vars actuals loc extras ;
+        report_on_function_params call pdesc tenv uninit_vars actuals loc extras ;
         {astate with uninit_vars}
     | Call _ | Assume _ ->
         astate
@@ -251,3 +332,4 @@ let checker {Callbacks.tenv; summary; proc_desc} : Specs.summary =
           (Procdesc.get_proc_name proc_desc) ;
         summary )
       else summary
+
