@@ -12,7 +12,6 @@ ANALYZER = checkers
 CLANG_OPTIONS = -x c++ -std=c++11 -nostdinc++ -isystem$(MODELS_DIR)/cpp/include -isystem$(CLANG_INCLUDES)/c++/v1/ -c
 INFER_OPTIONS = --uninit-only --uninit-interproc --debug-exceptions --project-root $(TESTS_DIR)
 INFERPRINT_OPTIONS = --issues-tests
-CLEAN_EXTRA = -c
 SOURCES = $(wildcard *.cpp)
 
 include $(TESTS_DIR)/infer.make
@@ -22,4 +21,4 @@ infer-out/report.json: $(MAKEFILE_LIST)
 infer-out/report.json: $(CLANG_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(REMOVE_DIR) buck-out && \
 	$(call silent_on_success,Testing uninit analysis with inter-procedural mode,\
-	$(INFER_BIN) $(INFER_OPTIONS) --results-dir $(CURDIR)/infer-out -- clang $(CLEAN_EXTRA) $(SOURCES))
+	$(INFER_BIN) $(INFER_OPTIONS) --results-dir $(CURDIR)/infer-out -- clang $(CLANG_OPTIONS) $(SOURCES))
