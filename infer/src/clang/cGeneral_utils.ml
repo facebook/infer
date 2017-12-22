@@ -162,7 +162,7 @@ let mk_sil_global_var {CFrontend_config.source_file} ?(mk_name= fun _ x -> x) na
   in
   Pvar.mk_global ~is_constexpr ~is_pod
     ~is_static_local:var_decl_info.Clang_ast_t.vdi_is_static_local ~is_static_global
-    (mk_name name_string simple_name) translation_unit
+    ~translation_unit (mk_name name_string simple_name)
 
 
 let mk_sil_var trans_unit_ctx named_decl_info decl_info_qual_type_opt procname outer_procname =

@@ -13,7 +13,11 @@
 open! IStd
 module F = Format
 
-type translation_unit = TUFile of SourceFile.t | TUExtern [@@deriving compare]
+type translation_unit =
+  | TUAnonymous
+  | TUExtern
+  | TUFile of SourceFile.t
+  [@@deriving compare]
 
 (** Type for program variables. There are 4 kinds of variables:
         1) local variables, used for local variables and formal parameters
@@ -93,7 +97,7 @@ val mk_callee : Mangled.t -> Typ.Procname.t -> t
 
 val mk_global :
   ?is_constexpr:bool -> ?is_pod:bool -> ?is_static_local:bool -> ?is_static_global:bool
-  -> Mangled.t -> translation_unit -> t
+  -> ?translation_unit:translation_unit -> Mangled.t -> t
 (** create a global variable with the given name *)
 
 val mk_tmp : string -> Typ.Procname.t -> t

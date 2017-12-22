@@ -183,6 +183,8 @@ let is_foreign tu_opt v =
       not (SourceFile.equal current_tu v_tu)
   | TUExtern, Some _ ->
       true
+  | TUAnonymous, _ ->
+      L.(die InternalError) "for C/++, translation units should be known"
   | _, None ->
       L.(die InternalError) "cannot be called with translation unit set to None"
 
@@ -246,10 +248,10 @@ let checker {Callbacks.proc_desc; tenv; summary; get_procs_in_file} : Specs.summ
         (* always [Some _] because we create a global variable with [mk_global] *)
         Option.value_exn
           ( Pvar.mk_global
+              ~translation_unit:(TUFile tu)
               (Mangled.from_string
                  (* infer's C++ headers define this global variable in <iostream> *)
                  "__infer_translation_unit_init_streams")
-              (TUFile tu)
           |> Pvar.get_initializer_pname )
       in
       get_procs_in_file pname |> List.exists ~f:(Typ.Procname.equal magic_iostream_marker)

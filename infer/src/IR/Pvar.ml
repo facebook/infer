@@ -14,7 +14,11 @@ open! IStd
 module L = Logging
 module F = Format
 
-type translation_unit = TUFile of SourceFile.t | TUExtern [@@deriving compare]
+type translation_unit =
+  | TUAnonymous
+  | TUExtern
+  | TUFile of SourceFile.t
+  [@@deriving compare]
 
 (** Kind of global variables *)
 type pvar_kind =
@@ -56,10 +60,12 @@ let compare_modulo_this x y =
 let equal = [%compare.equal : t]
 
 let pp_translation_unit fmt = function
-  | TUFile fname ->
-      SourceFile.pp fmt fname
+  | TUAnonymous ->
+      ()
   | TUExtern ->
       Format.fprintf fmt "EXTERN"
+  | TUFile fname ->
+      SourceFile.pp fmt fname
 
 
 let pp_ f pv =
@@ -210,7 +216,7 @@ let mk_callee (name: Mangled.t) (proc_name: Typ.Procname.t) : t =
 
 (** create a global variable with the given name *)
 let mk_global ?(is_constexpr= false) ?(is_pod= true) ?(is_static_local= false)
-    ?(is_static_global= false) (name: Mangled.t) translation_unit : t =
+    ?(is_static_global= false) ?(translation_unit= TUAnonymous) (name: Mangled.t) : t =
   { pv_hash= name_hash name
   ; pv_name= name
   ; pv_kind= Global_var (translation_unit, is_constexpr, is_pod, is_static_local, is_static_global)
@@ -262,7 +268,7 @@ let get_initializer_pname {pv_name; pv_kind} =
                  (QualifiedCppName.of_qual_string name)
                  mangled Typ.NoTemplate ~is_generic_model:false)
             |> Option.return
-        | TUExtern ->
+        | TUAnonymous | TUExtern ->
             None
       else Some (Typ.Procname.from_string_c_fun name)
   | _ ->
